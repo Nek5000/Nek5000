@@ -1,0 +1,12 @@
+      integer maxps
+      parameter (maxps = 9)
+
+      integer iposx,iposy,iposz
+      integer iposu,iposv,ipos,w
+      integer iposp,ipost
+      integer iposps(maxps)
+      common /pos/ iposx,iposy,iposz,
+     &             iposu,iposv,iposw,
+     &             iposp,ipost,
+     &             iposps
+

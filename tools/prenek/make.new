@@ -1,0 +1,84 @@
+S     = .
+L     = .
+C     = ../hmt_code
+X     = /usr/openwin/include
+CC    =  gcc
+
+#FLAGS = -fns -dalign -xdepend -fast -xO4 -xtarget=native -xarch=v8plusa -xchip=ultra -Dr8 -DBLAS -DV
+FLAGS = -Dr8 -DBLAS -DV
+
+CDFLAGS  = -c -xO0 -g -DV -Dr8
+
+#CFLAGS   = -c -O4 -DMYMALLOC -DV -Dr8
+#CFLAGS   = -c -O4 -DV -Dr8
+
+CFLAGS   = -c -fast -xtarget=ultra -DV -Dr8
+FDFLAGS  = -c -O0 -g -Mr8
+FFLAGS   = -c -fast -xtarget=ultra 
+
+NOBJS = prenek.o curve.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib.o subs.o zipper2.o postnek6.o error.o ivec.o queue.o stack.o bss_malloc.o adj_list.o sparse_matrix.o screen.o  revert.o rsb.o mxm.o xdriver.o rsb_driver.o pythag.o tqli.o sorts.o smbwr.o rsb_ex.o
+
+
+all: prex print
+
+
+prex:	$(NOBJS)
+	cc -o prex $(NOBJS) -L/usr/lib/X11 -lX11 -lm -fast $(FLAGS) -xlic_lib=sunperf 
+
+
+print:
+	size prex
+
+
+clean:
+	'rm' *.o
+	'rm' prex
+
+
+
+#plot.o		: plot.f 	basics.inc	; f77 -c $(FLAGS) -O0 plot.f
+#screen.o	: screen.f	basics.inc	; f77 -c $(FLAGS) -O0 screen.f
+#mxm.o		: mxm.f		basics.inc	; f77 -c $(FLAGS) -O  mxm.f
+#bound.o	: bound.f 	basics.inc	; f77 -c $(FLAGS) -O3 bound.f
+
+plot.o		: plot.f 	basics.inc	; f77 -c $(FLAGS) plot.f
+screen.o	: screen.f	basics.inc	; f77 -c $(FLAGS) screen.f
+mxm.o		: mxm.f		basics.inc	; f77 -c $(FLAGS) mxm.f
+bound.o		: bound.f 	basics.inc	; f77 -c $(FLAGS) bound.f
+
+prenek.o	: prenek.f	basics.inc	; f77 -c $(FLAGS) prenek.f
+zipper.o	: zipper.f	basics.inc	; f77 -c $(FLAGS) zipper.f
+zipper2.o	: zipper2.f	basics.inc	; f77 -c $(FLAGS) zipper2.f
+curve.o		: curve.f 	basics.inc	; f77 -c $(FLAGS) curve.f
+build.o		: build.f 	basics.inc	; f77 -c $(FLAGS) build.f
+xinterface.o	: xinterface.f 	basics.inc	; f77 -c $(FLAGS) xinterface.f
+postnek6.o	: postnek6.f 	basics.inc	; f77 -c $(FLAGS) postnek6.f
+glomod.o	: glomod.f 	basics.inc	; f77 -c $(FLAGS) glomod.f
+legend.o	: legend.f	basics.inc	; f77 -c $(FLAGS) legend.f
+vprops.o	: vprops.f	basics.inc	; f77 -c $(FLAGS) vprops.f
+iolib.o		: iolib.f	basics.inc	; f77 -c $(FLAGS) iolib.f
+subs.o		: subs.f	basics.inc	; f77 -c $(FLAGS) subs.f
+build1.o	: build1.f	basics.inc	; f77 -c $(FLAGS) build1.f
+build2.o	: build2.f	basics.inc	; f77 -c $(FLAGS) build2.f
+g3d.o		: g3d.f		basics.inc	; f77 -c $(FLAGS) g3d.f
+rsb.o		: rsb.f		basics.inc	; f77 -c $(FLAGS) rsb.f
+
+
+xdriver.o	: xdriver.c		; $(CC) -c -I$X -L$X $(FLAGS) xdriver.c
+revert.o	: revert.c		; $(CC) -c $(FLAGS) revert.c
+
+bss_malloc.o	: $C/bss_malloc.c	; $(CC) -c  $(FLAGS) $C/bss_malloc.c
+error.o		: $C/error.c		; $(CC) -c  $(FLAGS) $C/error.c
+ivec.o		: $C/ivec.c		; $(CC) -c  $(FLAGS) $C/ivec.c
+queue.o		: $C/queue.c		; $(CC) -c  $(FLAGS) $C/queue.c
+stack.o		: $C/stack.c		; $(CC) -c  $(FLAGS) $C/stack.c
+
+sparse_matrix.o	: $L/sparse_matrix.c	; $(CC) -c -I$C $(FLAGS) $L/sparse_matrix.c
+rsb_ex.o	: $L/rsb_ex.c		; $(CC) -c -I$C $(FLAGS) $L/rsb_ex.c
+adj_list.o	: $L/adj_list.c		; $(CC) -c -I$C $(FLAGS) $L/adj_list.c
+rsb_driver.o	: $L/rsb_driver.c	; $(CC) -c -I$C $(FLAGS) $L/rsb_driver.c
+pythag.o	: $L/pythag.c		; $(CC) -c -I$C $(FLAGS) $L/pythag.c
+tqli.o		: $L/tqli.c		; $(CC) -c -I$C $(FLAGS) $L/tqli.c
+sorts.o		: $L/sorts.c		; $(CC) -c -I$C $(FLAGS) $L/sorts.c
+smbwr.o		: $L/smbwr.c		; $(CC) -c -I$C $(FLAGS) $L/smbwr.c
+

@@ -1,0 +1,8 @@
+C
+C     Solution and data
+C
+      COMMON /VPTSOL/  VX     (LX1*LY1*LZ1*LELV)
+     $               , VY     (LX1*LY1*LZ1*LELV)
+     $               , VZ     (LX1*LY1*LZ1*LELV)
+     $               , PR     (LX1*LY1*LZ1*LELV)
+     $               , T      (LX1*LY1*LZ1*LELT,LDIMT)

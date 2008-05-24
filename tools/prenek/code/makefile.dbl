@@ -1,0 +1,177 @@
+############################################################################### 
+L	= .
+S	= ../src_hmt
+#D	= /home/hmt/gs_web/transfer
+#D	= /home/hmt/gwk4/gs
+#D	= ../../gs_web
+D	= ../../code
+F77	= if77 -nx 
+CC	= icc  -nx
+P	= -Mr8 
+G	= 
+################################################################################
+#
+# core nekton files ...
+#
+CORE = bdry.o  coef.o commcube.o conduct.o connect1.o connect2.o drive.o \
+dssmr.o dssm0.o edgec.o eigsolv.o gauss.o genxyz.o hmholtz.o mxm.o navier1.o \
+navier2.o navier3.o navier4.o prepost.o speclib.o subs1.o subs2.o subuser.o \
+map2.o turb.o mvmesh.o ic.o ssolv.o planx.o mperre.o mat1.o mat2std.o \
+convert.o ginterface.o revert.o cbit.o navier0.o byte.o
+#
+# gwk4 non-conforming
+#
+NC  = util_pc.o qqt.o hmholtz_pc.o setup_pc1.o setup_pc2.o
+#
+# pff overlapping schwarz 
+#
+OS = navier5.o navier6.o navier7.o navier8.o smbwr.o fast3d.o fasts.o calcz.o 
+#
+# gather-scatter package 
+# 
+GS = bit_mask.o bss_malloc.o ivec.o error.o comm.o gs.o queue.o
+#
+# coarse grid solver
+XXT = xxt.o xxt_tools.o
+#
+#
+#
+NOBJS = $(CORE) $(OS) $(GS) $(XXT)
+#$(NC) 
+################################################################################
+# pauls' start
+#cFLAGS = -c    -O
+#FFLAGS = -c    -O2 -r8 
+#OFLAGS = -c    -O2 -r8 
+#O3LAGS = -c    -O3 -r8 
+#OKLAGS = -c    -O3 -r8 
+################################################################################
+# my gs flags w/-r8 added 
+#FLAGS  = $G -r8 -fns -dalign -xdepend -fast -xO4 -xtarget=native 
+#         -xarch=v8plusa -xchip=ultra -DNXSRC -DNXLIB -Dr8 -DBLAS -DV
+################################################################################
+#FLAGS = $(G) -fns -dalign -xdepend -fast -xO4 -xtarget=native -xarch=v8plusa \
+-xchip=ultra 
+
+FLAGS = $(G) -O3 -Knoieee -lm
+
+HMT   = -DDELTA -DNXSRC -Dr8 -DBLAS # -DV -DDEBUG -DSAFE 
+
+FFLAGS = $(FLAGS) $(HMT) $(P)
+
+OFLAGS = $(FLAGS) $(HMT) $(P)
+
+O3LAGS = $(FLAGS) $(HMT) $(P)
+
+#OKLAGS = $(FLAGS) $(HMT) $(P)
+OKLAGS = $(G) -O4 -Knoieee -lm $(HMT) $(P)
+
+cFLAGS = $(FLAGS) $(HMT) 
+
+#special for driver ... having problems with input files
+#SFLAGS = $(G) -xtarget=native -xarch=v8plusa -xchip=ultra $(HMT) $(P)
+
+SFLAGS = $(FFLAGS)
+
+lFLAGS = $(FFLAGS)
+
+################################################################################
+
+all : nek5000  print
+
+nek5000:	 $(NOBJS) 
+	 $(F77) -o nek5000 $G $(NOBJS) $(lFLAGS)  -lkmath
+
+print:
+	size860 nek5000
+	echo "I am done" 
+
+clean:
+	rm *.o nek5000
+
+
+################################################################################
+# fortran source files
+################################################################################
+drive.o		:$S/drive.f;		$(F77) -c $(SFLAGS) $S/drive.f
+#
+prepost.o	:$S/prepost.f;		$(F77) -c $(FFLAGS) $S/prepost.f
+connect1.o	:$S/connect1.f;		$(F77) -c $(FFLAGS) $S/connect1.f
+connect2.o	:$S/connect2.f;		$(F77) -c $(FFLAGS) $S/connect2.f
+edgec.o		:$S/edgec.f;		$(F77) -c $(FFLAGS) $S/edgec.f
+ginterface.o	:$S/ginterface.f;	$(F77) -c $(FFLAGS) $S/ginterface.f
+genxyz.o	:$S/genxyz.f;		$(F77) -c $(FFLAGS) $S/genxyz.f
+subs1.o		:$S/subs1.f;		$(F77) -c $(FFLAGS) $S/subs1.f
+subs2.o		:$S/subs2.f;		$(F77) -c $(FFLAGS) $S/subs2.f
+turb.o		:$S/turb.f;		$(F77) -c $(FFLAGS) $S/turb.f
+map2.o		:$S/map2.f;		$(F77) -c $(FFLAGS) $S/map2.f
+mvmesh.o	:$S/mvmesh.f;		$(F77) -c $(FFLAGS) $S/mvmesh.f
+reverf.o	:$S/reverf.f;		$(F77) -c $(FFLAGS) $S/reverf.f
+################################################################################
+bdry.o		:$S/bdry.f;		$(F77) -c $(OFLAGS) $S/bdry.f
+coef.o		:$S/coef.f;		$(F77) -c $(OFLAGS) $S/coef.f
+commcube.o	:$S/commcube.f;		$(F77) -c $(OFLAGS) $S/commcube.f
+subuser.o	:$S/subuser.f;		$(F77) -c $(OFLAGS) $S/subuser.f
+ic.o		:$S/ic.f;		$(F77) -c $(OFLAGS) $S/ic.f
+conduct.o	:$S/conduct.f;		$(F77) -c $(OFLAGS) $S/conduct.f
+col2a.o		:$S/col2a.s;		$(F77) -c $(OFLAGS) $S/col2a.s
+col3a.o		:$S/col3a.s;		$(F77) -c $(OFLAGS) $S/col3a.s
+add2a.o		:$S/add2a.s;		$(F77) -c $(OFLAGS) $S/add2a.s
+add3a.o		:$S/add3a.s;		$(F77) -c $(OFLAGS) $S/add3a.s
+convert.o	:$S/convert.f;		$(F77) -c $(OFLAGS) $S/convert.f
+navier0.o	:$S/navier0.f;		$(F77) -c $(OFLAGS) $S/navier0.f
+navier1.o	:$S/navier1.f;		$(F77) -c $(OFLAGS) $S/navier1.f
+navier2.o	:$S/navier2.f;		$(F77) -c $(OFLAGS) $S/navier2.f
+navier3.o	:$S/navier3.f;		$(F77) -c $(OFLAGS) $S/navier3.f
+navier4.o	:$S/navier4.f;		$(F77) -c $(OFLAGS) $S/navier4.f
+navier5.o	:$S/navier5.f;		$(F77) -c $(OFLAGS) $S/navier5.f
+navier6.o	:$S/navier6.f;		$(F77) -c $(OFLAGS) $S/navier6.f
+navier7.o	:$S/navier7.f;		$(F77) -c $(OFLAGS) $S/navier7.f
+navier8.o	:$S/navier8.f;		$(F77) -c $(OFLAGS) $S/navier8.f
+speclib.o	:$S/speclib.f;		$(F77) -c $(OFLAGS) $S/speclib.f
+calcz.o		:$S/calcz.f;		$(F77) -c $(OFLAGS) $S/calcz.f
+fasts.o		:$S/fasts.f;		$(F77) -c $(OFLAGS) $S/fasts.f
+fast3d.o	:$S/fast3d.f;		$(F77) -c $(OFLAGS) $S/fast3d.f
+util_pc.o       :$S/util_pc.f;		$(F77) -c $(OFLAGS) $S/util_pc.f
+qqt.o           :$S/qqt.f;		$(F77) -c $(OFLAGS) $S/qqt.f
+hmholtz_pc.o    :$S/hmholtz_pc.f;	$(F77) -c $(OFLAGS) $S/hmholtz_pc.f
+setup_pc1.o     :$S/setup_pc1.f;	$(F77) -c $(OFLAGS) $S/setup_pc1.f
+setup_pc2.o     :$S/setup_pc2.f;	$(F77) -c $(OFLAGS) $S/setup_pc2.f
+################################################################################
+dssmr.o		:$S/dssmr.f;		$(F77) -c $(O3LAGS) $S/dssmr.f
+dssm0.o		:$S/dssm0.f;		$(F77) -c $(O3LAGS) $S/dssm0.f
+eigsolv.o	:$S/eigsolv.f;		$(F77) -c $(O3LAGS) $S/eigsolv.f
+gauss.o		:$S/gauss.f;		$(F77) -c $(O3LAGS) $S/gauss.f
+planx.o		:$S/planx.f;		$(F77) -c $(O3LAGS) $S/planx.f
+ssolv.o		:$S/ssolv.f;		$(F77) -c $(O3LAGS) $S/ssolv.f
+mperre.o	:$S/mperre.f;		$(F77) -c $(O3LAGS) $S/mperre.f
+################################################################################
+mxm.o		:$S/mxm.f;		$(F77) -c $(OKLAGS) $S/mxm.f
+hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(OFLAGS) $S/hmholtz.f
+mat1.o		:$S/mat1.f;		$(F77) -c $(OKLAGS) $S/mat1.f
+mat2.o		:$S/mat2.f;		$(F77) -c $(OKLAGS) $S/mat2.f
+mat2std.o	:$S/mat2std.f;		$(F77) -c $(OKLAGS) $S/mat2std.f
+################################################################################
+
+################################################################################
+xxt_tools.o     :$S/xxt_tools.f;        $(F77) -c $(OKLAGS) $S/xxt_tools.f
+
+################################################################################
+# c source files
+################################################################################
+cbit.o		:$S/cbit.c;		$(CC)  -c $(cFLAGS) $S/cbit.c
+byte.o		:$S/byte.c;		$(CC)  -c $(cFLAGS) $S/byte.c
+smbwr.o		:$S/smbwr.c;		$(CC)  -c $(cFLAGS) $S/smbwr.c
+revert.o	:$S/revert.c;		$(CC)  -c $(cFLAGS) $S/revert.c
+################################################################################
+xxt.o		:$S/xxt.c;		$(CC)  -c -I$D $(cFLAGS) $S/xxt.c
+################################################################################
+bit_mask.o      :$D/bit_mask.c;		$(CC)  -c $(cFLAGS) $D/bit_mask.c
+bss_malloc.o    :$D/bss_malloc.c;	$(CC)  -c $(cFLAGS) $D/bss_malloc.c
+error.o         :$D/error.c;		$(CC)  -c $(cFLAGS) $D/error.c
+ivec.o          :$D/ivec.c;		$(CC)  -c $(cFLAGS) $D/ivec.c 
+comm.o          :$D/comm.c;		$(CC)  -c $(cFLAGS) $D/comm.c
+queue.o         :$D/queue.c;		$(CC)  -c $(cFLAGS) $D/queue.c
+c_driver.o      :$D/c_driver.c;		$(CC)  -c $(cFLAGS) $D/c_driver.c
+gs.o            :$D/gs.c;		$(CC)  -c $(cFLAGS) $D/gs.c
+################################################################################

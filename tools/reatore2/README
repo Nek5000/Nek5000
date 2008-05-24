@@ -1,0 +1,59 @@
+
+The code "reatore2" converts standard Nek5000 "old.rea" files to a two-file format
+comprising:
+
+new.rea
+new.re2
+
+(Here, "old" and "new" are session names of the user's choice.)
+
+In the new file format, the .rea file contains the complete set of
+job control parameters that does _not_ scale the problem size, while
+the .re2 file contains those control parameters that _do_ scale with
+problem size (i.e., geometry, curve side information, and boundary 
+conditions).
+
+BUILD:
+
+cd to tools/converter and type
+
+   make
+
+USAGE:
+
+To generate the new files, run the exectutable and input two session names:
+
+   reatore2
+   new            (enter name of existing std-format .rea file )
+   old            (enter desired session name attached to new files)
+
+To run nek5000 after this, be certain to copy or move the "old.map" 
+file to "new.map".
+
+Note that genmap does not currently read the new file format.  Thus,
+if you don't have a .map file, you must run genmap and enter "old"
+for the session name.
+
+Then:
+
+   mv old.map new.map
+
+will provide the file set:  new.rea, new.re2, and new.map, that is
+required to run nek5000.
+
+ADVANTAGES:
+
+.Speed:       The .re2 file is in binary and the parallel reader has
+              been changed so that only node 0 reads this file.  Example
+              savings indicate a reduction from ~30 minutes to ~22 seconds
+              for 4096 processors with E=360,000.
+
+.Flexibility: When editing the .rea file to change number of timesteps,
+              viscosity, etc., it is much easier for large files to not
+              have to load all of the geometry and boundary condition
+              information into the editor.
+
+IMPLEMENTATION ISSUES:
+
+.The read format is indicated to Nek5000 by the presence of a negative
+ number of elements for the solid/fluid domain.
