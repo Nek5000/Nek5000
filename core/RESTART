@@ -1,0 +1,36 @@
+
+
+c     TODO:
+c
+c     wdsizr
+c     byte_close call
+c
+
+
+
+      common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
+     $              , wdsizr,wdsizo
+     $              , nfileo,nproc_o
+     $              , er(lelg)
+      integer wdsizr,wdsizo,er
+
+      common /cmfi_r/ timer
+
+      common /cmfi_c/ ihdr,rdcode,mfi_fname
+      character*3  ihdr
+      character*10 rdcode
+      character*80 mfi_fname
+
+      character*1  rdcode1(10)
+      equivalence (rdcode,rdcode1)
+
+      common /cmfi_l/ 
+     $        ifgetx,ifgetu,ifgetp,ifgett,ifgtps(ldimt1),ifgtim
+     $       ,if_byte_sw
+      logical ifgetx,ifgetu,ifgetp,ifgett,ifgtps        ,ifgtim
+     $       ,if_byte_sw
+
+      common /cmfi_p/ fid0,pid0,pid1  ! file #, parent & next id
+      integer fid0,pid0,pid1
+
+

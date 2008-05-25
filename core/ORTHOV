@@ -1,0 +1,12 @@
+c     parameter (ktot = lbx1*lby1*lbz1*lbelt)
+c     parameter (ktot = 1)
+
+      parameter (ktot = lx1*ly1*lz1*lelt)
+
+      common /vrthoi/ mprev,nprev(ldim)
+      common /vrthov/ vbar(ktot,ldim),vnew(ktot,ldim)
+     $              , sln (ktot*mxprev,ldim)
+      common /vrthos/ alpha(mxprev)
+c
+      common /vrthol/ ifproj
+      logical         ifproj

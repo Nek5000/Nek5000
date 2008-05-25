@@ -1,0 +1,10 @@
+      parameter (ktot = lx1*ly1*lz1*lelt)
+      parameter (laxt = mxprev)
+c
+c     parameter (ktot = 1)
+c     parameter (laxt = 1)
+c
+      common /trthoi/ napprox(2)
+      common /trthov/ approx(ktot,0:laxt)
+      common /trthoc/ name4
+      character*4     name4

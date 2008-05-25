@@ -1,0 +1,16 @@
+C
+C     Moving mesh data
+C
+      COMMON /WSOL/   WX    (LX1M,LY1M,LZ1M,LELT)
+     $            ,   WY    (LX1M,LY1M,LZ1M,LELT)
+     $            ,   WZ    (LX1M,LY1M,LZ1M,LELT)
+      COMMON /WLAG/   WXLAG (LX1M,LY1M,LZ1M,LELT,LORDER-1)
+     $            ,   WYLAG (LX1M,LY1M,LZ1M,LELT,LORDER-1)
+     $            ,   WZLAG (LX1M,LY1M,LZ1M,LELT,LORDER-1)
+      COMMON /WMSU/   W1MASK(LX1M,LY1M,LZ1M,LELT)
+     $            ,   W2MASK(LX1M,LY1M,LZ1M,LELT)
+     $            ,   W3MASK(LX1M,LY1M,LZ1M,LELT)
+     $            ,   WMULT (LX1M,LY1M,LZ1M,LELT)
+      COMMON /EIGVEC/ EV1   (LX1M,LY1M,LZ1M,LELV)
+     $              , EV2   (LX1M,LY1M,LZ1M,LELV)
+     $              , EV3   (LX1M,LY1M,LZ1M,LELV)

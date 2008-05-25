@@ -1,0 +1,4 @@
+      parameter (ktob = lbelv*lbx1*lby1*lbz1)
+      common /wrthoi/ ivproj(2,6)
+      common /wrthov/  vproj(ktob*mxprev,2*ldim)
+

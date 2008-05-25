@@ -1,0 +1,62 @@
+c
+c     Eigenvalue arrays and pointers for Global Tensor Product 
+c
+      parameter (ltfdm2=2*lx2*ly2*lz2*lelt)
+c
+      parameter (leig2=2*lx2*lx2*(lelx*lelx+lely*lely+lelz*lelz))
+      parameter (leig =2*lx2*(lelx+lely+lelz))
+c
+      common /peigi/ neigx ,neigy ,neigz
+     $             , pvalx ,pvaly ,pvalz 
+     $             , pvecx ,pvecy ,pvecz 
+      integer        pvalx ,pvaly ,pvalz 
+     $             , pvecx ,pvecy ,pvecz 
+c
+      common /eigpr/ sp(leig2),spt(leig2),eigp(leig)
+     $              ,wavep(ltfdm2)
+      common /eigpi/ msp(3,2),mlp(3,2)
+c
+c
+c     Logical, array and geometry data for tensor-product box
+c
+      common /perlog/  ifycrv,ifzper,ifgfdm,ifgtp
+      logical          ifycrv,ifzper,ifgfdm,ifgtp
+c
+      common /gfdmic/  nelx,nely,nelz,nelxy
+     $                ,lex2pst(3),pst2lex(3)
+     $                ,ngfdm_p(3),ngfdm_v(3,2)
+      integer          lex2pst   ,pst2lex
+c
+c     Complete exchange arrays for pressure
+c
+      common /gfdmcx/  part_in(0:lp),part_out(0:lp)
+     $                ,msg_id(0:lp,2)
+     $                ,mcex
+      integer          part_in,part_out
+c
+c     Permutation arrays for gfdm pressure solve
+c
+      common /gfdmia/  tpn1(ltfdm2),tpn2(ltfdm2)
+     $                ,tpn3(ltfdm2),ind23(ltfdm2)
+      integer tpn1,tpn2,tpn3
+c
+      common /pergeo/  xgtp(0:lelx),ygtp(0:lely),zgtp(0:lelz)
+c
+c
+c     Metrics for 2D x tensor-product solver
+c
+      common /permet/  rx2  (lx2,ly2,lelv)
+     $               , ry2  (lx2,ly2,lelv)
+     $               , sx2  (lx2,ly2,lelv)
+     $               , sy2  (lx2,ly2,lelv)
+     $               , w2d  (lx2,ly2,lelv)
+     $               , bxyi (lx1,ly1,lelv)
+c
+c
+c     parameter (lmsk = lelv*lx1)
+c     common /permsk/ n1m,n2m,n3m
+c    $             ,  v1msk(lmsk) , v2msk(lmsk) , v3msk(lmsk) 
+c     integer         v1msk       , v2msk       , v3msk
+c
+      common /gtpcbc/  gtp_cbc(6,0:ldimt1+1)
+      character*3      gtp_cbc

@@ -1,0 +1,79 @@
+C
+C     Input parameters from preprocessors.
+C
+C     Note that in parallel implementations, we distinguish between
+C     distributed data (LELT) and uniformly distributed data.
+C
+C     Input common block structure:
+C
+C     INPUT1:  REAL            INPUT5: REAL      with LELT entries
+C     INPUT2:  INTEGER         INPUT6: INTEGER   with LELT entries
+C     INPUT3:  LOGICAL         INPUT7: LOGICAL   with LELT entries
+C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
+C
+      COMMON /INPUT1/ PARAM(200)
+     $               ,RSTIM,VNEKTON
+     $               ,CPFLD(LDIMT1,3)
+     $               ,CPGRP(-5:10,LDIMT1,3)
+     $               ,QINTEG(LDIMT3,MAXOBJ)
+C
+      COMMON /INPUT2/ MATYPE(-5:10,LDIMT1)
+     $               ,NKTONV,NHIS,LOCHIS(4,lhis)
+     $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
+     $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
+C
+      COMMON /INPUT3/ IF3D
+     $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
+     $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
+     $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
+     $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
+     $               ,IFMODEL,IFKEPS
+     $               ,IFINTQ
+     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT),IFFMTIN
+     $               ,IFBO
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFCVODE,IFLOMACH,IFEXPL
+      LOGICAL         IF3D
+     $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
+     $               ,IFMGRID,IFADVC,IFTMSH
+     $               ,IFMVBD,IFNATC,IFCHAR,IFNONL
+     $               ,IFVARP,IFPSCO,IFVPS
+     $               ,IFMODEL,IFKEPS
+     $               ,IFINTQ
+     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
+     $               ,IFBO
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFCVODE,IFLOMACH,IFEXPL
+      LOGICAL         IFNAV
+      EQUIVALENCE    (IFNAV, IFADVC(1))
+C
+      COMMON /INPUT4/ HCODE(11,lhis),OCODE(8),RSTV,RSTT,DRIVC(5)
+     $               ,INITC(15),TEXTSW(100,2)
+      CHARACTER*1     HCODE
+      CHARACTER*2     OCODE
+      CHARACTER*10    DRIVC
+      CHARACTER*14    RSTV,RSTT
+      CHARACTER*40    TEXTSW,TURBMOD
+      CHARACTER*80    INITC
+      EQUIVALENCE    (TURBMOD,TEXTSW(1,1))
+C
+      COMMON /CFILES/ REAFLE,FLDFLE,DMPFLE,HISFLE,SCHFLE,OREFLE,NREFLE
+      CHARACTER*132   REAFLE,FLDFLE,DMPFLE,HISFLE,SCHFLE,OREFLE,NREFLE
+      COMMON /CFILE2/ SESSION,PATH,RE2FLE
+      CHARACTER*132   SESSION,PATH,RE2FLE
+C
+C proportional to LELT
+C
+      COMMON /INPUT5/ XC(8,LELT),YC(8,LELT),ZC(8,LELT)
+     $               ,BC(5,6,LELT,0:LDIMT1)
+     $               ,CURVE(6,8,LELT)
+     $               ,CERROR(LELT)
+C
+      COMMON /INPUT6/ IGROUP(LELT),OBJECT(MAXOBJ,MAXMBR,2)
+      INTEGER OBJECT
+C
+      COMMON /INPUT8/ CBC(6,LELT,0:LDIMT1),CCURVE(8,LELT)
+     $              , CDOF(6,LELT), solver_type
+      CHARACTER*1     CCURVE,CDOF
+      CHARACTER*3     CBC, solver_type
+      COMMON /INPUT9/ IEACT(LELT),NEACT

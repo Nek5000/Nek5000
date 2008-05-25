@@ -1,0 +1,9 @@
+      parameter (lr2=2*lx1*lx1)
+      common /ahat/ ah (lr2),bh (lr2),ch (lr2),dh (lr2)
+     $             ,dph(lr2),jph(lr2),zh (lr2),wh (lr2)  ! Pressure GLL
+     $             ,bgl(lr2),zgl(lr2),dgl(lr2),jgl(lr2)  ! Pressure GL 
+      real ah,bh,ch,dh,dph,jph,zh,wh,bgl,zgl,dgl,jgl
+c
+      parameter (l3=lx1*(lx1+1)*(lx1+2)/3)
+      parameter (l2=lx1*(lx1+1)/2)
+      common /hata/ dd(l3),zp(l2),ww(l2)   ! Aggregate arrays
