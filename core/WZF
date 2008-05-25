@@ -1,0 +1,36 @@
+c
+c Points (z) and weights (w) on velocity, pressure
+c
+c     zgl -- velocity points on Gauss-Lobatto points i = 1,...nx
+c     zgp -- pressure points on Gauss         points i = 1,...nxp (nxp = nx-2)
+c
+      parameter (lxm = lx1)
+      parameter (lxq = lx2)
+c
+      common /wz1/   zgl(lxm),wgl(lxm)
+     $           ,   zgp(lxm),wgp(lxq)
+c
+c     Tensor- (outer-) product of 1D weights   (for volumetric integration)
+c
+      common /wz2/  wgl1(lxm*lxm),wgl2(lxq*lxq)
+     $           ,  wgli(lxm*lxm)
+c
+c
+c    Frequently used derivative matrices:
+c
+c    D1, D1t   ---  differentiate on mesh 1 (velocity mesh)
+c    D2, D2t   ---  differentiate on mesh 2 (pressure mesh)
+c
+c    DXd,DXdt  ---  differentiate from velocity mesh ONTO dealiased mesh
+c                   (currently the same as D1 and D1t...)
+c
+c
+      common /deriv/  d1    (lxm*lxm) , d1t    (lxm*lxm)
+     $             ,  d2    (lxm*lxm) , b2p    (lxm*lxm)
+     $             ,  B1iA1 (lxm*lxm) , B1iA1t (lxm*lxm)
+     $             ,  da    (lxm*lxm) , dat    (lxm*lxm)
+     $             ,  iggl  (lxm*lxq) , igglt  (lxm*lxq)
+     $             ,  dglg  (lxm*lxq) , dglgt  (lxm*lxq)
+     $             ,  wglg  (lxm*lxq) , wglgt  (lxm*lxq)
+      real ixd,ixdt,iggl,igglt
+c

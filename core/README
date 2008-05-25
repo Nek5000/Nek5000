@@ -1,0 +1,1105 @@
+March/08:       .Need to improve projection guards
+
+12/12/06:       .New multifile restart capability available.
+
+12/12/06:       .Fixed 2D torq_calc error (extra ut) in navier5.f
+12/11/06:       .Need to include pressure in parallel input capability  DONE
+11/29/06:       .There is a bug; if mhd arrays not set, velocity proj. fails.
+
+11/28/06:       .gs2.c:  fail mode to stdout instead of stderr
+
+11/14/06:       .fixed BQL() in conduct.f -- was wrong for passive scalars
+                .fast3d() - turn off excessive "Reset Eig" info. (already off)
+                .added timer info to hsmg_coarse_solve() in hsmg.f
+                .norm_fac in uzawa_gmres saved (earlier correction, doc. here)
+                .Fix lelx/nelx bounds checking for FDM
+                .added gfdm_chk_size
+                .Fixed pndoi output   (added SIZE to appr. routine)
+                .Fixed multiple output of "History point"  
+                .Fixed CFL for MHD Hartmann case
+
+11/3/06:        .navier5.f:  change sign of dpdx_mean = -scale_vf(1), etc.
+                .navier5.f: make certain that B format (line 1718) is i2.2
+                .multiple files: institute "nio" in addition to nid in SIZE for io output
+
+
+6/18/06:        .NOTE that dealiased interpolation points are GL, not GLL
+                 in convect.f
+
+6/14/06:        .IS convect.f up to date with a NS version of code ?
+6/14/06:        .convect.f is inconsistent w/ prior convect.f ???
+6/14/06:        .DSSUM problem (seg fault) for mhd:
+                     ifldt was not defined in vec_dssum
+
+Sep  1, 2005:   .LHIS now required in SIZEu file
+                .fixed history point problems for > 10 objects/history etc.
+                .fixed mvmesh mask problems
+                .defined ifldmhd > nfield even if ifmhd=F.
+
+Aug 26, 2005:   .usrdat3() now required in .usr file - for fluid/solid
+                .dsygv2() no longer used - update makefile accordingly
+                .blas() is fixed.
+
+Aug 4, 2005:     fixed memory error in use of VPROJ in induct.f 
+Aug 4, 2005:     fixed "cb1" --> cbc1 error causing multiprocessor startup failure
+
+Feb. 20, 2003:   gfdm routines modified to include ZPER, so it's not in TOTAL
+Feb. 20, 2003:   mktotal modified to NOT include (size dept) ZPER
+
+
+Aug 25, 2003:    drive.f --- if p103 < 0, no filter.
+
+Aug 21, 2003:    connect2.f --- lochis = -1 ==> lochis = (nxk+1)/2
+
+May 29, 2003:    connect1.f --- changed outfldrp and ro:  nr--> nx1, nx2.
+
+March 27, 2003:  For 3D pipe flow with LX1=5, it is important to use LX3=LX1-2
+                 and to therefore modify reset_geom() in ic.f to map from mesh 1
+                 to mesh 3.   This subparametric formulation should be the nek5000
+                 standard.
+
+
+Dec 10, 2002:   we should modify hmholtz to handle d velocity components (and T ?)
+Dec 10, 2002:   navier4.f - delete ssnormp call, which does nothing
+Dec 10, 2002:   try to clean up unnecessary AXHELM and glsum calls, by
+                eliminating needless norm checks (e.g,. chktcg1)
+
+Dec  5, 2002:   navier1.f - only 2 gops/cg iteration
+
+Dec  2, 2002:   implement Chebyshev iteration
+
+Sep 28, 2002:   Fixed map2.f.  Reassigned ip,is,it so that gfdm works in 2D.
+
+Aug 12, 2002:   Updated navier4_div.f to allow nonzero divergence to fix outflow turbulent bc 
+
+Aug 12, 2002:   Updated ZPER for more memory, and gfdm_solve.f to handle 2D.
+
+Aug 12, 2002:   Fixed prepost.f to not dump his info for 'avg', 'rms', etc.
+
+Aug 11, 2002:   Fixed ic.f to support up to 4 passive scalars in ascii restart
+
+July 7, 2002:   Fixed prepost.f to support more than 9 fields in output.
+
+June ?, 2002,   .... gfdm_op.f nn, nel
+
+May 22, 2002 Updates (also, listing differences from hmt code)
+
+coef.f
+  . upgraded chkjac() refs to issue collective "call exitt" upon failure
+
+navier1.f:
+  . new dealiasing algorithm
+  . 2nd anelastic formulation
+
+navier4.f:
+  . more robust treatment for loss of orthogonality in E-conj vectors
+
+navier5.f:
+  . added "scale" to drag-calc
+  . changed filter diagnostics for node 0 only
+
+
+May 16, 2002 pff
+
+todo:
+
+  navier1.f - ensure that anelastic2 formulation is in place
+            - ensure that dealias p99=3 option is set
+
+  fast3d.f  - ensure that plane_space2 is in place
+
+  get nc5.f set up
+
+  get new convective operator set
+
+  if flag.eq.false in comm_mpi
+
+  fix libtfs to allow 48 processors
+
+
+
+April    2,2002 pff
+
+o  Update navier4.f to handle loss of orthogonality in pressure projection
+   spaces.  This is sometimes necessary if the boundary conditions change.
+
+
+March   25,2002 pff
+
+o  lbcast logic in ic.f fixed
+
+January 20,2002 pff
+
+o  drive.f now supports constant volume flow rate in x, y, or z
+   direction, depending on whether param54 is 1,2,or 3.  x=default
+   for any other value of p54.
+
+o  Global fdm method incorporated as solver and preconditioner for
+   E solve when p116=nelx, p117=nely, p118=nelz.   Note that setting
+   one of these to its negative value determins the "primary" direction
+   that is wholly contained within each processor.  Thus, if, for example,
+   nelx = -6, nely = 8 and nelz = 5, then the 8x5 array of elements would
+   be partitioned among P processors, and each processor would receive
+   (8x5)/P stacks of depth 6.   It is thus relatively important that
+   the product of the number of elements in the remaining secondary
+   and tertiary directions (those not flagged by a minus sign) should
+   be a multiple of P.
+
+o  Dealiasing is currently enabled, whenever p99=2.   There is some memory
+   savings to be had if dealiasing is not being used by editing DEALIAS
+   and commenting out the appropriate parameter statements.
+
+o  The comm_mpi routine has been cleaned up.   All vector reductions are
+   performed using mpi_all_reduce so, in theory, there should not be a 
+   constraint that P=2**cd, provided one isn't using the XXt solver (e.g.,
+   if one is using the gfdm solver).
+
+o  The XXt solver is almost in place for the steady conduction case.
+
+--------------------------------------------------------------------------------
+
+
+9/10/01, pff
+
+The routines navier5.f and connect1.f have been modified to allow for multiple
+passive scalars.
+
+
+
+--------------------------------------------------------------------------------
+
+Using Nekton 2ex.
+
+This is a research variant of the commercial code, Nekton 2.0, developed in
+the late 80's by P. Fischer, L. Ho, and E. Ronquist, with technical input from
+A. Patera and Y. Maday.   The graphics were developed by P. Fischer and 
+E. Bullister.
+
+Modifications subseqent to 1991 were made by P. Fischer and H. Tufo.
+
+
+
+Nekton consists of three principal modules:  the pre-processor, the solver, 
+and the post-processor.  The pre- and post-processors, (resp. prenek and 
+postnek) are based upon an X-windows GUI.   Recently, postnek has been 
+extended to output Visual Toolkit (vtk) files, so that output my be viewed 
+in the cave.  This is still under development.   
+
+The solver, nekton, is written in F77 and C and supports either MPI or 
+Intel's NX message passing libraries.   It is a time-stepping based code 
+and does not currently support steady-state solvers, other than steady 
+Stokes and steady heat conduction.
+
+
+-----------------------------------------------------------------------------
+
+To get started, you create a directory, say, nekton, and unpack the tarfile:
+
+mkdir  nekton
+mv tarfile.gz nekton
+cd nekton
+gunzip tarfile
+tar -xvf tarfile
+rm tarfile
+
+The tarfile will put the source code in the directory src, and will
+create additional subdirectories: nekton/bin, nekton/2d8, nekton/3d6,
+and nekton/prep.
+
+nekton/bin contains the shell scripts which I use to start a job.
+I usually keep these files in my /bin directory at the top level.   
+The scripts will be of use so you can see how I manage the files 
+created by nekton.
+
+nekton/3d6 (2d8) contains an example .rea file, with associated .fld00 file
+for restarting.  Once you "gunzip *" in all of the directories
+you should be able to build the executable by typing "makenek" in 
+the 3d6 directory.  
+
+For each job that you run, you need a corresponding "subuser.f" file in the
+nekton/src directory.  "subuser.f" provides the user supplied function 
+definitions (e.g., for boundary conditions, initial conditions, etc).  I 
+usually keep several subuser.f files in the nekton directory for different 
+cases under the name of *.user, e.g., channel.user for channel flow, or
+cyl.user for flow past a cylinder, etc.  
+
+
+To build the source, simply
+
+cd 3d6
+makenek   (or,  "makebk" to make in the background...)
+
+To run it, type
+
+nekb co1a
+
+This will run the job entitled "co1a" in background.  The scripts I have
+set up in nekton/bin are:
+
+   nek:    runs interactively, 
+
+   nekl:   runs interactively, but redirects std. out to job.log ( & logfile)
+
+   nekb:   like nekl, but in the background
+
+   nekd:   like nek, but with dbx
+
+Each looks for the session name (the prefix of the "*.rea" file) as
+an argument.
+
+To  build the pre- and post-processors, you will  cd to nekton/prep.
+Type "make" to make postx, and "make -f mpre" to build prex.
+
+If you then put postx and prex into your top-level bin directory
+you'll be able to invoke the pre and post-processors with the 
+commands "prex" or "postx", etc.  (I assume you're already somewhat
+familiar w/ using pre and post?).
+
+OK... I'm going to stop here.  If I can, I'll try to make a more
+comprehensive user manual.  In the meantime I can help boot you up
+via email  (pff@cfm.brown.edu).
+
+Best,
+
+Paul  
+
+-------------------------------------------------------------
+
+
+Here's a brief explanation of the nekton input format.
+
+First, an overview of the structure of the file:
+
+Section I:   Parameters, logical switches, etc.
+
+  This section tells nekton whether the input file reflects
+  a 2D/3D job, what combination of heat transfer/ Stokes /
+  Navier-Stokes/ steady-unsteady / etc.  shall be run.
+
+  What are the relevant physical parameters.
+  What solution algorithm within Nekton to use, what timestep size
+  or Courant number to use, or whether to run variable DT, etc.
+
+
+Section II:   Mesh Geometry Info
+
+  This section gives the number of elements, followed by the
+  4 (8) vertex pairs (triplets) which specify the corner of
+  each two- (three-) dimensional element.
+
+  A subsection which follows specifies which element surfaces
+  a curved.  The exact parameter definitions vary according to
+  the type of curved surface.  I usually make my own definitions 
+  when I need to generate a new curved surface, e.g., spheres
+  or ellipsoids.  We use the Gordon-Hall mapping to generate
+  the point distribution within elements, and map according to
+  arc-length for points along the edges of two-dimensional 
+  elements.  For 3D spheres, I take the element surface point
+  distribution to be the intersection of the great circles
+  generated by the corresponding edge vertices, and again use
+  Gordon-Hall to fill the element interior volume.
+
+  The next subsection contains all the boundary condition information
+  for each element.  "E" means that the element is connected to 
+  the element specifed by parameter 1, on the side specified by
+  parameter 2.  "T" means a constant temperature along the edge
+  of the element, "t" means a temperature distribution according
+  to a fortran function which the user writes and links in with
+  source code contained in "subuser.f".   Similarly, "V" means
+  a constant velocity along the element edge (three components
+  specifed in parameters 1, 2, and 3, resp.), and "v" implies a
+  user specifed fortran function.  "O" is for outflow, "SYM" is
+  for symmetry bc's., etc.
+
+Section III:   Output Info.
+
+  This section specifies what data should be output, including
+  field dumps (i.e., X,Y,Z + U,V,W + P + T, or any combination
+  thereof) and time history trace info... e.g., u(t), v(t), etc.
+  at a particular point, for each time step.  (Corresponds to a
+  hot wire probe output in some sense.)
+
+  Also, if this run is to restart from a previous field dump (e.g.,
+  one computed with a lower order, but the same spectral element
+  configuration), that is specified in this section.
+
+This is very brief, but it should give you a road map to the 
+general layout of the input files.
+
+------------------------------------------------------------------------
+
+Using PRENEK
+
+This is a brief description of how to modify an existing mesh.
+Typically it's easiest to modify run parameters just by editing
+the file.  If you wish to modify the geometry, it's (generally)
+best to do this through prenek.  To do this,  type "pre"  
+(to begin executing prenek).
+
+Then, click on "READ PREVIOUS PARAMETERS" 
+
+Enter "box"  with the keyboard.
+
+Then "ACCEPT PARAMETERS"
+
+Then, "BUILD FROM FILE"
+
+Just hit <cr> to accept the default, box.rea.
+
+Then,  ACCEPT...  ACCEPT... ACCEPT... EXIT
+
+Type a "1" on the keyboard to get a formatted .rea file.
+
+-------------------------------------------------------------------------
+
+Ok - hopefully you now have a good .rea file.
+
+You can edit it to change the 
+
+    viscosity
+    number of steps
+    Courant number (typ.=2)
+    Torder (order of time stepping - typ. 1 in the beginning, 
+            for more stability, then Torder=2 when you are after
+            sensitive results...)
+    IOSTEP  (frequency of .fld dumps)
+    etc.
+
+I can help you with these settings.
+
+==============================================================================
+STARTING THE JOB: 
+
+   If you've compiled your code (with LELT=LELV=sufficiently large), you
+   should now be set to run nekton.  I'll give you some shell scripts,
+   (I keep these in my /bin directory...)
+
+   nek:    runs interactively, 
+
+   nekl:   runs interactively, but redirects std. out to job.log ( & logfile)
+
+   nekb:   like nekl, but in the background
+
+==============================================================================
+ENDING THE JOB: 
+
+   The job will quit after either FINTIME is reached (I never use this)
+   or NSTEPS have completed.
+
+   Should you wish to terminate sooner, or get an output *right now*, I've
+   implemented a little check for a file called "ioinfo" into the code.
+
+      To get an output at the end of the current step, but keep on running,
+      type:  "echo 1 > ioinfo".
+
+      To get an output at the end of the current step, and then stop the job,
+      type:  "echo -1 > ioinfo".
+
+      To stop the job without dumping the .fld file,
+      type:  "echo -2 > ioinfo".
+==============================================================================
+
+CHANGING BOUNDARY CONDITIONS, INITIAL CONDITIONS, ETC.
+
+I've set the genbox2.dat and genbox2.small files to specify fortran boundary 
+conditions at inflow (denoted by lower-case characters)
+
+These are computed in the user accessible source code 
+in "../src/subuser.f"  (SUBROUTINE USERBC and SUBROUTINE USERIC).
+
+In the subuser.f file which I gave you,  I specified
+a blasius profile for the initial and boundary conditions.
+This is the same code I used for my hemisphere runs 
+
+                          ***NOTE****  
+You probably will want to change the boundary layer thickness (delta) in 
+subuser.f.  Just edit subuser.f, search for where delta is specified, change
+it, and go back to 3d6 (3d8? 3d10?) and type "makenek".   We can very easily
+make this a runtime parameter, if you find that you're making many trials
+with different boundary layer thicknesses.
+
+=============================================================================
+
+RESTARTING
+
+This is really easy...
+
+Just take the .rea file you're about to start with, go to the bottom
+of the file, go up ~33 lines, and change the line:
+
+"            0 PRESOLVE/RESTART OPTIONS  *****"
+
+to:
+"            1 PRESOLVE/RESTART OPTIONS  *****"
+"my_old_run"
+
+or:
+"            1 PRESOLVE/RESTART OPTIONS  *****"
+"my_old_run.fld"
+
+or:
+"            1 PRESOLVE/RESTART OPTIONS  *****"
+"my_old_run.fld01  TIME=0.0 "
+
+etc....  (note, drop quotations)
+
+Note that the new run must have the same topology as the old run,
+that is, the same number of elements in the same location.  However,
+you can change polynomial degree by running in a different directory
+(e.g., 3d8) with a code which has been compiled with a different
+SIZEu file.
+
+--------------------------------------------------------------------------
+
+Files needed to start a particular run called, say, "hemi1":
+
+    hemi1.rea
+    hemi1.sep
+    hemi1.map
+
+If hemi1 is to use an old field file (say, "hemi_old.fld23") as an 
+initial condition, you will also need to have:
+
+    hemi_old.fld23
+
+If hemi_old.fld23 is in binary format, you will need the associated
+header file (which is ascii):
+
+    hemi_old.fhd23
+
+Note that hemi_old must have the same number of elements as hemi1.
+However, it can be of different polynomial degree, provided it is
+of degree less than or equal to NX1+2,  where NX1 is the number
+of grid points in each direction within each element.
+(Note:  NX1 := polynomial degree + 1.)
+
+
+In addition to the above hemi1-specific files, you will also need
+a job specific "subuser.f" file to be compiled and linked in with
+the source code.   Frequently this file is the same over a broad
+range of parametric studies.   It incorporates the user defined
+forcing functions, boundary conditions, and initial conditions (if
+not restarting from a previous .fld file).   Hence, it's likely
+that you will not need to edit/recompile this routine very often.
+
+Note that if you are simultaneously undertaking two *different*
+Nekton studies in two different directories which both point to
+the same source, you will need to swap subuser.f files each time
+you recompile the source in either directory.   I usually do this
+by keeping the subuser.f files in the src directory under the names,
+e.g.,  hemi.user, cylinder.user, channel.user, etc.   Then when I'm
+compiling the source code for the hemisphere problem I would go to
+the /src directory and copy hemi.user to subuser.f prior to compiling
+in the working directory.
+
+
+-----------------------------------------------------------------------------
+
+To build nekton,
+
+cd 3d6
+makenek
+
+-----------------------------------------------------------------------------
+To run nekton in foreground
+
+../bin/nek hemi1
+
+To run nekton in background
+
+../bin/nekb hemi1
+
+-----------------------------------------------------------------------------
+
+To terminate a job (other than "kill")
+
+echo  1 > ioinfo        --- dumps fld file after current step and continues
+
+echo -1 > ioinfo        --- dumps fld file at end of step and quits
+
+echo -2 > ioinfo        --- quits at end of step. No fld file dumped.
+
+echo -# > ioinfo  (#>2) --- quits at end of step #, after dumping fld file.
+
+-----------------------------------------------------------------------------
+
+To run with multiple passive scalars (e.g., temperature and one or more other
+convected fields), you should do the following.
+
+0)  Make sure that you have a version of nek5000 and postx that works with 
+    multiple passive scalars.  (If you receive these after 9/9/01, you 
+    probably do.)
+
+1)  Assuming you already have a .rea file set for Navier-Stokes plus heat 
+    transfer, you can use prex to generate a new .rea/.map/.sep file set 
+    that allows for an additional passive scalar.   Simply start prenek in 
+    the director of interest.  Read parameters from your existing .rea file, 
+    then select
+
+         ALTER PARAMETERS
+
+         PASSIVE SCALAR    (1)
+
+         WITH CONVECTION   (Y)
+
+    Hit <cr> through all the parameters (edit these in the .rea file later, 
+    with the editor of your choice).   Then, read the geometry from your 
+    existing file.  When you get to the boundary condition menu, you will be 
+    prompted for BC's for the new passive scalar.   SET ENTIRE LEVEL,  
+    Insulated, is a common choice.
+
+2)  Exit prenek.    Note that the default conductivity and rhocp for the 
+    new passive scalar is (1.0,1.0).   These can be changed by editing the 
+    .rea file (if you're not making them functions of time or space).  
+    Simply locate the following lines (found right after the parameters)
+
+
+      4  Lines of passive scalar data follows2 CONDUCT; 2RHOCP
+   0.00100       1.00000       1.00000       1.00000       1.00000
+   1.00000       1.00000       1.00000       1.00000
+   2.00000       1.00000       1.00000       1.00000       1.00000
+   1.00000       1.00000       1.00000       1.00000
+
+
+    The first 2 lines are the conductivities for the 9 passive scalars.
+    You only need to set the first of these.  In the example above,
+    we have conduct(PS1) =.001.
+
+    The second 2 lines are the rhocp values for the 9 passive scalars.
+    You only need to set the first of these.  In the example above,
+    we have rhocp(PS1) =2.0.
+
+/homes/fischer/f/nek5/src
+Thu Sep 27 15:56:29 CDT 2001
+/nfs/proj-flash/flash/fischer/nek5/src
+Fri Oct 26 16:35:44 CDT 2001
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed Dec 19 13:23:25 CST 2001
+/homes/fischer/f/nek5/src
+Wed Jan  2 10:41:12 CST 2002
+/homes/fischer/f/nek5/src
+Wed Jan  2 10:42:01 CST 2002
+/nfs/mcs-homes16/fischer/tools/src
+Tue Jan  8 10:58:54 CST 2002
+/nfs/mcs-homes16/fischer/tools/src
+Sat Jan 12 07:39:56 CST 2002
+/nfs/mcs-homes16/fischer/tools/src
+Sat Jan 19 05:22:35 CST 2002
+/nfs/mcs-homes16/fischer/tools/src
+Sat Jan 19 05:22:49 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Jan 20 14:15:03 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Jan 20 17:14:47 CST 2002
+/homes/fischer/f/nek5/src
+Tue Jan 22 11:24:12 CST 2002
+/homes/fischer/f/nek5/src
+Sun Jan 27 16:10:30 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Jan 27 21:37:16 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Jan 27 21:40:00 CST 2002
+/homes/fischer/f/nek5/src
+Fri Feb  8 16:28:43 CST 2002
+/homes/fischer/f/nek5/src
+Fri Feb  8 17:25:37 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Feb 11 14:13:06 CST 2002
+/homes/fischer/f/nek5/src
+Wed Feb 13 15:36:39 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sat Feb 23 14:19:20 CST 2002
+/homes/fischer/f/nek5/src
+Sat Feb 23 16:33:09 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Feb 24 16:51:44 CST 2002
+/homes/fischer/f/nek5/src
+Tue Feb 26 13:37:30 CST 2002
+/homes/fischer/f/nek5/src
+Thu Mar 14 09:18:40 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Mar 18 17:41:46 CST 2002
+/homes/fischer/f/nek5/src
+Wed May  1 12:07:53 CDT 2002
+/homes/fischer/f/nek5/src
+Mon May  6 10:33:16 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 22 15:00:14 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 22 23:10:06 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 22 23:17:36 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 22 23:20:26 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 22 23:21:05 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 29 10:33:02 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Wed May 29 22:36:28 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Thu May 30 09:15:57 CDT 2002
+/homes/fischer/f/nek5/src
+Thu May 30 09:53:28 CDT 2002
+/homes/fischer/f/nek5/src
+Wed Jun 19 06:02:05 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Jul  7 20:41:15 CDT 2002
+/homes/fischer/f/nek5/src
+Tue Jul  9 19:29:17 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Aug 12 09:33:59 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Aug 12 09:59:34 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Aug 12 10:18:15 CDT 2002
+/homes/fischer/f/nek5/src
+Mon Aug 12 11:05:06 CDT 2002
+/homes/fischer/f/nek5/src
+Mon Aug 12 14:20:27 CDT 2002
+/homes/fischer/f/nek5/src
+Mon Aug 12 14:22:09 CDT 2002
+/homes/fischer/f/nek5/src
+Wed Aug 14 15:27:52 CDT 2002
+/homes/fischer/f/nek5/src
+Tue Sep  3 16:21:23 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Sun Sep 29 13:45:23 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Sep 30 04:19:13 CDT 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Mon Sep 30 14:17:03 CDT 2002
+/homes/fischer/f/nek5/src
+Tue Oct  8 04:37:18 CDT 2002
+/homes/fischer/f/nek5/src
+Fri Nov 15 10:52:09 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Tue Nov 19 21:03:45 CST 2002
+/nfs/proj-flash/flash/fischer/nek5/src
+Thu Nov 21 10:47:24 CST 2002
+/homes/fischer/f/nek5/src
+Tue Dec 10 13:59:39 CST 2002
+/homes/fischer/f/nek5/src
+Mon Jan  6 15:59:07 CST 2003
+/homes/fischer/f/nek5/src
+Mon Jan 20 11:24:22 CST 2003
+/homes/fischer/f/nek5/src
+Fri Apr 11 10:10:44 CDT 2003
+/homes/fischer/f/nek5/src
+Thu Jun  5 10:08:20 CDT 2003
+/homes/fischer/f/nek5/src
+Tue Jun 10 23:31:43 CDT 2003
+/homes/fischer/f/nek5/src
+Mon Aug 18 12:47:35 CDT 2003
+/homes/fischer/f/nek5/src
+Wed Aug 20 13:04:05 CDT 2003
+/nfs/proj-flash/flash/fischer/nek5/src
+Fri Sep 12 10:32:32 CDT 2003
+/homes/fischer/f/nek5/src
+Wed Oct 22 13:47:12 CDT 2003
+/homes/fischer/f/nek5/src
+Wed Oct 22 21:09:11 CDT 2003
+/home/fischer/nek5/src
+Wed Oct 22 22:28:37 CDT 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:28 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:29 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:30 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:31 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:32 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:33 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:34 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:00:35 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 10:01:18 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 17:52:11 CST 2003
+/home/fischer/nek5/src
+Tue Nov  4 17:53:23 CST 2003
+/home/fischer/nek5/src
+Wed Nov 12 15:46:26 CST 2003
+/homes/fischer/f/nek5/src
+Fri Jan  9 08:08:16 CST 2004
+/homes/fischer/f/nek5/src
+Fri Feb 20 14:07:36 CST 2004
+/homes/fischer/f/nek5/src
+Fri Feb 20 14:42:45 CST 2004
+/homes/fischer/f/nek5/src
+Thu Apr  1 20:12:39 CST 2004
+/homes/fischer/f/nek5/srcmhd
+Mon Apr 19 16:26:51 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Tue Apr 20 10:12:00 CDT 2004
+/home/fischer/nek5/srcmhd
+Fri Apr 23 16:46:24 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue Apr 27 14:19:04 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue Apr 27 14:20:42 CDT 2004
+/nfs/proj-flash/flash/fischer/nek5/srcmhd
+Tue Apr 27 17:41:46 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Wed Apr 28 06:48:44 CDT 2004
+/home/fischer/nek5/srcmhd
+Wed Apr 28 15:20:42 CDT 2004
+/home/fischer/nek5/srcmhd
+Mon May  3 15:43:24 CDT 2004
+/home/fischer/nek5/srcmhd
+Mon May 10 11:18:29 CDT 2004
+/home/fischer/nek5/srcmhd
+Mon May 10 20:48:39 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue May 11 17:58:18 CDT 2004
+/home/fischer/nek5/srcmhd
+Thu May 13 07:02:00 CDT 2004
+/home/fischer/nek5/srcmhd
+Fri May 14 22:59:18 CDT 2004
+/home/fischer/nek5/srcmhd
+Thu May 20 11:15:55 CDT 2004
+/home/fischer/nek5/srcmhd
+Fri May 21 17:00:55 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue May 25 05:08:00 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue May 25 23:22:42 CDT 2004
+/home/fischer/nek5/srcmhd
+Fri Jul  9 13:43:35 CDT 2004
+/home/fischer/nek5/srcmhd_real
+Mon Jul 12 17:27:02 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue Jul 13 14:23:40 CDT 2004
+/home/fischer/nek5/srcmhd
+Mon Jul 19 00:39:41 CDT 2004
+/home/fischer/nek5/srcmhd
+Sat Jul 31 14:53:10 CDT 2004
+/home/fischer/nek5/srcmhd
+Wed Aug 11 16:49:04 CDT 2004
+/home/fischer/nek5/srcmhd
+Mon Aug 23 13:18:44 CDT 2004
+/home/fischer/nek5/srcmhd
+Fri Aug 27 10:21:11 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue Sep 14 13:35:30 CDT 2004
+/home/fischer/nek5/srcmhd
+Tue Sep 14 13:35:35 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Wed Sep 15 11:32:00 CDT 2004
+/home/fischer/nek5/srcmhd2
+Wed Sep 15 14:11:44 CDT 2004
+/home/fischer/nek5/srcmhd2
+Sat Sep 18 04:51:39 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Thu Oct 21 10:51:59 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Thu Oct 28 09:57:40 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Thu Oct 28 14:42:03 CDT 2004
+/homes/fischer/f/nek5/srcmhd
+Wed Dec 15 04:54:43 CST 2004
+/homes/fischer/f/nek5/srcmhd
+Wed Dec 15 06:00:15 CST 2004
+/homes/fischer/f/nek5/srcmhd
+Wed Dec 15 06:03:24 CST 2004
+/homes/fischer/f/nek5/srcmhd
+Mon Dec 20 18:21:34 CST 2004
+/homes/fischer/f/nek5/srcmhd
+Mon Jan 17 17:50:45 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Jan 19 06:31:07 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Tue Mar  1 06:01:26 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Mar  4 10:10:10 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Mon Mar  7 16:12:24 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Tue Apr 19 14:10:10 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Apr 27 09:22:37 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed May  4 14:44:41 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed May 11 13:32:58 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Fri May 13 13:32:04 CDT 2005
+/homes/jlottes/sum05/srcmhd
+Mon Jun  6 15:00:14 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Tue Jul 19 19:42:27 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Jul 20 19:27:34 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Jul 29 13:41:04 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Mon Aug  1 23:27:51 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Aug  3 13:37:38 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Aug  3 13:45:25 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Wed Aug  3 13:49:28 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Aug  4 13:05:31 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Aug  4 13:06:37 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Aug  4 14:19:58 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Tue Aug  9 10:43:00 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Aug 18 14:59:00 CDT 2005
+/home/fischer/nek5/srcmhd
+Fri Aug 19 11:31:43 CDT 2005
+/home/fischer/lin2/srcmhd
+Tue Aug 23 14:17:19 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Aug 25 15:18:39 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Aug 26 15:29:08 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Aug 26 17:30:43 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Sep  1 08:11:45 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Sep  1 17:05:54 CDT 2005
+/home/fischer/nek5/srcmhd
+Thu Sep  1 22:47:00 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Oct 13 10:18:48 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Mon Oct 24 15:58:16 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Mon Oct 24 16:22:19 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Sat Oct 29 13:55:45 CDT 2005
+/homes/fischer/f/nek5/srcmhd
+Mon Oct 31 14:34:07 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Thu Nov  3 10:55:08 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Nov 11 14:28:03 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Dec  9 13:23:01 CST 2005
+/homes/fischer/f/nek5/srcmhd
+Fri Jan 13 16:13:26 CST 2006
+/homes/fischer/f/nek5/srcmhd
+Tue Feb  7 09:05:46 CST 2006
+/homes/fischer/f/nek5/srcmhd
+Mon Apr 10 17:10:29 CDT 2006
+/homes/fischer/f/nek5/srcmhd
+Tue Apr 11 05:19:02 CDT 2006
+/homes/fischer/f/nek5/srcmhd
+Sat Apr 15 04:12:41 CDT 2006
+/home/fischer/nek5/srcmhg
+Sun Apr 16 22:03:00 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed Apr 19 10:45:04 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed Apr 19 13:34:29 CDT 2006
+/home/fischer/nek5/srcmhg
+Mon May  8 16:58:52 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed May 31 16:06:12 CDT 2006
+/home/fischer/nek5/srcmhg
+Tue Jun  6 07:18:16 CDT 2006
+/home/fischer/T/srcmhg
+Wed Jun 14 17:28:48 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed Jun 14 17:38:19 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed Jun 14 17:57:59 CDT 2006
+/home/fischer/nek5/srcmhg
+Thu Jun 15 08:11:46 CDT 2006
+/home/fischer/nek5/srcmhg
+Thu Jun 15 22:32:57 CDT 2006
+/home/fischer/nek5/srcmhg
+Thu Jun 15 22:57:34 CDT 2006
+/home/fischer/nek5/srcmhg
+Fri Jun 16 10:39:35 CDT 2006
+/home/fischer/nek5/srcmhg
+Wed Jun 21 07:05:10 CDT 2006
+/gpfs/F_fs1/xpfischr/nek5/srcmhg
+Wed Jun 21 12:11:01 EDT 2006
+/home/fischer/nek5/srcmhg
+Mon Jun 26 15:09:18 CDT 2006
+/home/fischer/nek5/srcmhg
+Sun Jul  9 11:41:01 CDT 2006
+/home/fischer/nek5/srcmhg
+Tue Jul 11 23:51:42 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Mon Jul 17 10:26:33 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Tue Jul 18 11:46:05 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Thu Jul 20 14:43:23 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Wed Jul 26 13:10:37 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Wed Jul 26 13:14:57 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Wed Jul 26 13:16:49 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Sun Sep 10 17:00:12 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Sun Sep 10 17:00:52 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Fri Oct  6 15:02:21 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Fri Oct 27 14:05:35 CDT 2006
+/homes/fischer/f/nek5/srcmhg
+Thu Nov  2 13:18:53 CST 2006
+/homes/fischer/f/nek5/srcmhg
+Thu Nov  9 08:57:13 CST 2006
+/homes/fischer/f/nek5/srcmhg
+Tue Nov 14 13:44:39 CST 2006
+/homes/fischer/f/nek5/srcmhg
+Thu Nov 16 09:52:18 CST 2006
+/homes/fischer/f/nek5/srcmhg
+Thu Nov 16 09:55:39 CST 2006
+/homes/fischer/t0/nek5n/srcmhg
+Tue Nov 28 09:03:01 CST 2006
+/homes/fischer/t0/nek5n/srcmhg
+Wed Nov 29 21:52:37 CST 2006
+/homes/fischer/t0/nek5n/srcmhg
+Tue Dec  5 09:07:32 CST 2006
+/homes/fischer/t0/nek5n/srcmhg
+Tue Dec 12 11:54:55 CST 2006
+/homes/fischer/t0/SHARP/modules/nek/src
+Mon Dec 18 15:02:35 CST 2006
+/homes/fischer/t0/nek5n/srcmhg
+Mon Dec 18 15:12:00 CST 2006
+/home/fischer/nek5n/src
+Sat Apr 14 22:17:14 CDT 2007
+/home/fischer/nek5n/src
+Sat Apr 14 22:17:28 CDT 2007
+/home/fischer/nek5n/src
+Sun May 13 06:58:35 CDT 2007
+/home/fischer/nek5n/src
+Thu Jun 14 07:19:00 CDT 2007
+/home/fischer/nek5n/src
+Sat Jun 16 13:36:29 CDT 2007
+/home/fischer/nek5n/src
+Sat Jun 16 13:41:00 CDT 2007
+/home/fischer/nek5n/src
+Sat Jun 16 13:41:24 CDT 2007
+/home/fischer/nek5n/src
+Sat Jun 16 13:41:46 CDT 2007
+/home/fischer/nek5n/src
+Sat Jun 16 13:42:08 CDT 2007
+/home/fischer/mpaul2/nek5n/src
+Tue Sep 11 15:21:19 CDT 2007
+/homes/fischer/nek5n/mpaul2
+Tue Sep 11 15:52:05 CDT 2007
+/homes/fischer/nek5n/mpaul2
+Tue Sep 11 15:52:30 CDT 2007
+/homes/fischer/nek5n/src
+Tue Oct  2 10:26:59 CDT 2007
+/homes/fischer/nek5n/src
+Wed Oct  3 09:32:49 CDT 2007
+/homes/fischer/nek5n/src
+Wed Oct 10 09:40:03 CDT 2007
+/homes/fischer/nek5n/src
+Mon Oct 15 14:58:47 CDT 2007
+/homes/fischer/nek5n/src
+Wed Oct 17 09:59:26 CDT 2007
+/homes/fischer/nek5n/src
+Fri Nov  2 10:50:48 CDT 2007
+/homes/fischer/nek5n/src
+Mon Nov  5 11:23:52 CST 2007
+/homes/fischer/nek5n/src
+Fri Nov  9 07:50:10 CST 2007
+/homes/fischer/nek5n/src
+Tue Nov 27 09:19:49 CST 2007
+/homes/fischer/nek5n/src
+Tue Dec  4 10:20:56 CST 2007
+/homes/fischer/nek5n/src
+Sat Dec  8 17:52:05 CST 2007
+/homes/fischer/nek5n/src
+Tue Dec 18 17:28:44 CST 2007
+/homes/fischer/nek5n/src
+Thu Dec 20 10:10:34 CST 2007
+/homes/fischer/nek5n/src
+Thu Dec 20 12:53:20 CST 2007
+/homes/fischer/nek5n/src
+Thu Dec 20 20:57:10 CST 2007
+/homes/fischer/nek5n/src
+Thu Dec 20 22:40:22 CST 2007
+/home/fischer/james/src
+Tue Dec 25 12:28:54 CST 2007
+/home/fischer/james/src
+Fri Dec 28 18:09:25 CST 2007
+/home/fischer/james/src
+Mon Jan  7 15:39:46 CST 2008
+/home/fischer/james/src
+Mon Jan  7 16:05:13 CST 2008
+/home/fischer/james/src
+Tue Jan  8 16:10:28 CST 2008
+/home/fischer/james/src
+Fri Jan 11 16:50:32 CST 2008
+/homes/fischer/nek5n/src
+Sun Jan 13 00:05:45 CST 2008
+/homes/fischer/nek5n/src
+Sun Jan 13 16:25:15 CST 2008
+/homes/fischer/nek5n/src
+Mon Jan 21 17:28:25 CST 2008
+/homes/fischer/nek5n/src
+Mon Jan 21 17:31:23 CST 2008
+/homes/fischer/nek5n/src
+Fri Feb  1 05:36:56 CST 2008
+/home/fischer/nek5/src
+Fri Feb  1 15:41:13 CST 2008
+/homes/fischer/nek5n/src
+Wed Feb  6 15:14:22 CST 2008
+/homes/fischer/nek5n/src
+Wed Feb  6 15:51:26 CST 2008
+/homes/fischer/nek5n/src
+Mon Feb 18 16:15:54 CST 2008
+/homes/fischer/nek5n/src
+Mon Feb 18 16:38:36 CST 2008
+/homes/fischer/nek5n/src
+Mon Mar  3 17:17:08 CST 2008
+/homes/fischer/nek5n/src
+Mon Mar 10 11:01:46 CDT 2008
+/homes/fischer/nek5n/src
+Tue Mar 18 16:48:20 CDT 2008
+/home/fischer/nek5x/src
+Fri Apr 25 13:57:10 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Mon Apr 28 13:49:38 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Fri May  2 11:06:09 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Tue May  6 10:56:11 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Wed May  7 16:39:49 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Wed May  7 17:43:24 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Fri May  9 04:32:30 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Fri May  9 13:07:52 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Fri May  9 17:52:40 CDT 2008
+/homes/fischer/nek5n/nek5k_svn/src/nek5
+Thu May 15 13:28:13 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Thu May 15 14:29:42 CDT 2008
+/home/fischer/nek5n/stefan/nek5
+Tue May 20 14:42:31 CDT 2008
+/home/fischer/nek5n/src
+Tue May 20 14:55:18 CDT 2008
+/homes/fischer/nek5n/src_xhmt
+Tue May 20 16:44:58 CDT 2008
+/home/fischer/nek5n/src
+Wed May 21 10:39:08 CDT 2008
+/home/fischer/nek5n/src
+Thu May 22 03:49:29 CDT 2008
+/home/fischer/nek5n/src
+Thu May 22 04:13:24 CDT 2008

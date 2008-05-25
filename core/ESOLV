@@ -1,0 +1,4 @@
+      common /econst/ iesolv
+      common /efastm/ ifalgn(lelv), ifrsxy(lelv)
+      logical         ifalgn, ifrsxy
+      common /eouter/ volel(lelv) 
