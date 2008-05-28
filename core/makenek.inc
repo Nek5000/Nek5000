@@ -1,7 +1,6 @@
 # This is include file is needed for the makenek script
 # -----------------------------------------------------
 
-
 # do some checks
 
 if [ $# -eq 0 ]
@@ -17,6 +16,20 @@ then
   exit 1
 fi
 
+which $F77 1>/dev/null
+if [ $? -ne 0 ]
+then
+  echo "Cannot find $F77! Check settings in makenek."
+  exit 1
+fi
+
+which $CC 1>/dev/null
+if [ $? -ne 0 ]
+then
+  echo "Cannot find $CC! Check settings in makenek."
+  exit 1
+fi
+
 if [ $# -eq 1 ]
 then
   if [ $1 = "clean" ]
@@ -27,7 +40,7 @@ then
   
   if [ ! -f ${1}'.usr' ]
   then
-     echo "$1.usr does not exist!"
+     echo "Cannot find $1.usr!"
      exit 1
   fi
 fi
@@ -47,7 +60,7 @@ cat > tmp.f << _ACEOF
       end
 _ACEOF
 
-$F77 -c tmp.f 2>$1>/dev/null 
+$F77 -c tmp.f 1>/dev/null 
 nm tmp.o | grep byte_write_ 1>/dev/null
 if [ $? -eq 0 ] 
 then
@@ -84,8 +97,8 @@ rm tmp.f a.out 2>/dev/null
 
 export F77
 export CC
-export P
 export G
+export P
 export IFMPI
 export UNDERSCORE
 export SOURCE_ROOT
