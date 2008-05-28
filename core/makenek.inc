@@ -95,6 +95,13 @@ else
 fi
 rm tmp.f a.out 2>/dev/null
 
+cp $SOURCE_ROOT/makefile makefile
+if [ "$USR" != "" ]
+then  
+  echo "###########################################################" >> makefile
+  echo "include makefile_usr.inc" >> makefile
+fi
+
 export F77
 export CC
 export G
@@ -104,3 +111,4 @@ export UNDERSCORE
 export SOURCE_ROOT
 export USR
 export USR_LIB
+
