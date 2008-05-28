@@ -75,15 +75,15 @@ cat > tmp.f << _ACEOF
       end
 _ACEOF
 
-$F77 -r8 tmp.f 2>$1>/dev/null 
+$F77 -r8 tmp.f 2>&1>/dev/null 
 
 if [ -f "a.out" ]; then status=`./a.out`; fi
- 
+
 if [ "$status" == "wdsize=8" ]
 then
   P=" -r8"
 else
-  xlf -qrealsize=8 tmp.f 2>$1>/dev/null
+  xlf -qrealsize=8 tmp.f 2>&1>/dev/null
   if [ -f "a.out" ]; then status=`./a.out`; fi
   if [ "$status" == "wdsize=8" ] 
   then
