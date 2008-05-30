@@ -50,8 +50,8 @@ rm -f $SOURCE_ROOT/SIZE 2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 
 \mv ./obj/*.o . 2>/dev/null
-ln -sf `pwd`/SIZEu    $SOURCE_ROOT/SIZE
-ln -sf `pwd`/$1.usr   $SOURCE_ROOT/subuser.f
+cp  `pwd`/SIZEu    $SOURCE_ROOT/SIZE
+cp  `pwd`/$1.usr   $SOURCE_ROOT/subuser.f
 
 # check if the compiler adds an underscore to external functions
 cat > tmp.f << _ACEOF

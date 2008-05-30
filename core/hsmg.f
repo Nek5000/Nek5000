@@ -115,7 +115,7 @@ c----------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
       include 'HSMG'
-      common /scrns/ glo_num(1*lx1*ly1*lz1*lelv)
+      common /c_is1/ glo_num(lx1*ly1*lz1*lelv)
       common /ivrtx/ vertex ((2**ldim)*lelg)
 
       integer glo_num,vertex

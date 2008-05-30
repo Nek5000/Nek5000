@@ -114,6 +114,23 @@ c     error check
       ENDIF
       IF (NDIM.EQ.3) IF3D=.TRUE.
       IF (NDIM.NE.3) IF3D=.FALSE.
+
+
+      if (if3d) then
+         if (ly1.ne.lx1.or.lz1.ne.lx1) then
+            if (nid.eq.0) write(6,13) lx1,ly1,lz1
+   13       format('ERROR: lx1,ly1,lz1:',3i5,' must be equal for 3D')
+            call exitt
+         endif
+      else
+         if (ly1.ne.lx1.or.lz1.ne.1) then
+            if (nid.eq.0) write(6,12) lx1,ly1,lz1
+   12       format('ERROR: ',3i5,' must have lx1=ly1; lz1=1, for 2D')
+            call exitt
+         endif
+      endif
+
+
       READ(9,*,ERR=400) NPARAM
       DO 20 I=1,NPARAM
          READ(9,*,ERR=400)PARAM(I)

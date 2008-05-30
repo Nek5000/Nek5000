@@ -2465,7 +2465,7 @@ c
       common /c_ixr/ jreg(lx1*lx1),jregt(lx1*lx1),xreg(lx1)
       real jreg,jregt,xreg
 
-      common /c_iso/ glo_num(lt),cell(8,lt),ncell
+      common /c_is1/ glo_num(lt),cell(8,lt),ncell
       integer        glo_num    ,cell      ,ncell
 c
       integer nxo
