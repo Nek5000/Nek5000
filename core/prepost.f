@@ -1268,13 +1268,10 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       if (nid.eq.0) then
-         if (p66.eq.3) then
-            close(unit=27)
-            call byte_close()
-         elseif (p66.eq.4 .or. p66.eq.5) then
-            call byte_close()
-         else
+         if (p66.lt.1) then
             close(unit=24)
+         else
+            call byte_close()
          endif
       endif
 
