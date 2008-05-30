@@ -2657,7 +2657,7 @@ c-----------------------------------------------------------------------
       if (ifgtp) then
          call gen_gtp_vertex    (vertex, ncrnr)
       else
-         call f77_get_vert  (vertex, ncrnr, nelgt, '.map')
+         call f77_get_vert
       endif
 
       return
