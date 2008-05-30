@@ -49,7 +49,7 @@ NOBJS = $(CORE) $(OS) $(CRYSTAL) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
 L0 = $(G) -O0 
 L2 = $(G) -O2
 L3 = $(G) -O2
-L4 = $(G) -O2
+L4 = $(G) -O3
 JL    = $(MPI) $(UNDERSCORE)
 JL2   = -DPREFIX=jl_ $(MPI) $(UNDERSCORE)
 

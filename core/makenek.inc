@@ -95,9 +95,20 @@ else
 fi
 rm tmp.f a.out 2>/dev/null
 
+# copy makefile template to working directory
+# and check for debug or additional files to compile
+
 cp $SOURCE_ROOT/makefile makefile
-if [ "$USR" != "" ]
-then  
+
+echo $G | grep '\-g' 1>/dev/null
+if [ $? -eq 0 ]; then
+  sed 's/-O[1-4]/-O0/g' makefile > .makefile.tmp
+  mv .makefile.tmp makefile
+  echo "DEBUG mode activated - press any key to continue"
+  read
+fi
+
+if [ "$USR" != "" ]; then
   echo "###########################################################" >> makefile
   echo "include makefile_usr.inc" >> makefile
 fi
