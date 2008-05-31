@@ -304,21 +304,21 @@ c             write header as character string
 C     Figure out what goes in EXCODE
       CALL BLANK(EXCODE,30)
       NDUMPS=NDUMPS+1
+      i=1
       if (mod(p66,1.0).eq.0.0) then !old header format
-         i=1
-         IF(IFXYO)then
+         IF(IFXYO) then
             EXCODE(1)='X'
             EXCODE(2)=' '
             EXCODE(3)='Y'
             EXCODE(4)=' '
             i = 5
             IF(IF3D) THEN
-              EXCODE(5)='Z'
-              EXCODE(6)=' '
-              i = 7
+              EXCODE(i)  ='Z'
+              EXCODE(i+1)=' '
+              i = i + 2
             ENDIF
          ENDIF
-         IF(IFVO)then
+         IF(IFVO) then
             EXCODE(i)  ='U'
             EXCODE(i+1)=' '
             i = i + 2
@@ -344,14 +344,26 @@ C     Figure out what goes in EXCODE
          ENDIF
       else
          !new header format
-         IF (IFXYO) EXCODE(1)='X'
-         IF (IFVO)  EXCODE(2)='U'
-         IF (IFPO)  EXCODE(3)='P'
-         IF (IFTO)  EXCODE(4)='T'
+         IF (IFXYO) THEN
+            EXCODE(i)='X'
+            i = i + 1
+         ENDIF
+         IF (IFVO) THEN
+            EXCODE(i)='U'
+            i = i + 1
+         ENDIF
+         IF (IFPO) THEN
+            EXCODE(i)='P'
+            i = i + 1
+         ENDIF
+         IF (IFTO) THEN
+            EXCODE(i)='T'
+            i = i + 1
+         ENDIF
          IF (NPSCAL.GT.0) THEN
-            EXCODE(5) = 'S'
-            WRITE(EXCODE(6),'(I1)') NPSCAL/10
-            WRITE(EXCODE(7),'(I1)') NPSCAL-(NPSCAL/10)
+            EXCODE(i) = 'S'
+            WRITE(EXCODE(i+1),'(I1)') NPSCAL/10
+            WRITE(EXCODE(i+2),'(I1)') NPSCAL-(NPSCAL/10)
          ENDIF
       endif
 c
@@ -1461,16 +1473,29 @@ c-----------------------------------------------------------------------
       enddo
 
       call blank(rdcode1,10)
-      if (ifxyo) rdcode1(1) = 'X'
-      if (ifvo ) rdcode1(2) = 'U'
-      if (ifpo ) rdcode1(3) = 'P'
-      if (ifto ) rdcode1(4) = 'T'
-      IF (NPSCAL.GT.0) THEN
-         rdcode1(5) = 'S'
-         WRITE(rdcode1(6),'(I1)') NPSCAL/10
-         WRITE(rdcode1(7),'(I1)') NPSCAL-(NPSCAL/10)
+      i = 1
+      IF (IFXYO) THEN
+         rdcode1(i)='X'
+         i = i + 1
       ENDIF
-
+      IF (IFVO) THEN
+         rdcode1(i)='U'
+         i = i + 1
+      ENDIF
+      IF (IFPO) THEN
+         rdcode1(i)='P'
+         i = i + 1
+      ENDIF
+      IF (IFTO) THEN
+         rdcode1(i)='T'
+         i = i + 1
+      ENDIF
+      IF (NPSCAL.GT.0) THEN
+         rdcode1(i) = 'S'
+         WRITE(rdcode1(i+1),'(I1)') NPSCAL/10
+         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)
+      ENDIF
+ 
       write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
      $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,

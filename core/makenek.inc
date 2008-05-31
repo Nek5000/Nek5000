@@ -1,8 +1,8 @@
-# This is include file is needed for the makenek script
-# -----------------------------------------------------
+# This include file is used by the makenek script
+# to setup all needed variables to compile Nek5 
+# --------------------------------------------------------
 
-# do some checks
-
+# first do some checks ...
 if [ $# -eq 0 ]
 then
   echo "missing argument!"
@@ -53,7 +53,8 @@ rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 cp  `pwd`/SIZEu    $SOURCE_ROOT/SIZE
 cp  `pwd`/$1.usr   $SOURCE_ROOT/subuser.f
 
-# check if the compiler adds an underscore to external functions
+
+# Check if the compiler adds an underscore to external functions
 cat > tmp.f << _ACEOF
       subroutine tmp
         call byte_write
@@ -68,7 +69,8 @@ then
 fi
 rm -f tmp.o 2>/dev/null
 
-# check flag for casting to 8 byte reals
+
+# Check compiler flag for casting to 8 byte reals
 cat > tmp.f << _ACEOF
       program tmp
         if ((1.+1.e-12).ne.1.) write(*,'(A)') 'wdsize=8'
@@ -76,9 +78,7 @@ cat > tmp.f << _ACEOF
 _ACEOF
 
 $F77 -r8 tmp.f 2>&1 1>/dev/null 
-
 if [ -f "a.out" ]; then status=`./a.out`; fi
-
 if [ "$status" == "wdsize=8" ]
 then
   P=" -r8"
@@ -94,6 +94,7 @@ else
   fi
 fi
 rm tmp.f a.out 2>/dev/null
+
 
 # copy makefile template to working directory
 # and check for debug or additional files to compile
@@ -113,13 +114,33 @@ if [ "$USR" != "" ]; then
   echo "include makefile_usr.inc" >> makefile
 fi
 
+
+# set logical flags
+if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]
+then
+  IFMPI=false
+else
+  # default
+  IFMPI=true
+fi
+
+if [ "$IFAMG" == "true" -o "$IFAMG" == "yes" ]
+then
+  IFAMG=true
+else
+  # default
+  IFAMG=false
+fi
+
+
+# export variables (make need to know them because they appear in the makefile) 
 export F77
 export CC
 export G
 export P
+export IFAMG
 export IFMPI
 export UNDERSCORE
 export SOURCE_ROOT
 export USR
 export USR_LIB
-
