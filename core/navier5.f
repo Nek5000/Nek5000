@@ -165,7 +165,7 @@ c
             endif
          endif
       endif
-    1 format(i8,i3,' qfilt:',1p10e12.4)
+    1 format(i8,i3,' qfilt:',1p50e12.4)
 c
 c
 c - - - - - - - - - - - - - - - - - - - - - -
