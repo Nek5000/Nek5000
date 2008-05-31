@@ -711,6 +711,7 @@ C
    40          CONTINUE
 
                IPS = 0
+               NPS = 0
                DO 50 I=1, 30
                   IF (EXCODER1(I).EQ.'X') THEN
                      NOUTS=NOUTS + 1
