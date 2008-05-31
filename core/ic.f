@@ -2189,6 +2189,7 @@ c                 For now, what you see in file is what you get.
 
       ifgtim = .true.  ! this is the default
 
+      NPS=0
       if (rdcode1(1).eq.'X') ifgetx = .true.
       if (rdcode1(2).eq.'U') ifgetu = .true.
       if (rdcode1(3).eq.'P') ifgetp = .true.
