@@ -32,11 +32,14 @@ JO2 = jl2_
 GS = $(JO2)gs.o $(JO2)gs_local.o $(JO2)sarray_sort.o $(JO2)sarray_transfer.o \
 $(JO2)crystal.o $(JO2)comm.o $(JO2)sort.o $(JO2)errmem.o
 #
-XXT = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 #
+ifeq ($(IFAMG),true)
 JO = jl_
-AMG = $(JO)errmem.o $(JO)sort.o $(JO)crystal.o $(JO)fcrystal.o \
+XXT = $(JO)errmem.o $(JO)sort.o $(JO)crystal.o $(JO)fcrystal.o \
 $(JO)tuple_list.o $(JO)transfer.o $(JO)gs.o $(JO)amg.o
+else
+XXT = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
+endif
 #
 COMM_MPI = comm_seq.o
 ifeq ($(IFMPI),true) 
@@ -44,7 +47,7 @@ COMM_MPI = comm_mpi.o
 MPI  = -DMPI
 endif
 
-NOBJS = $(CORE) $(OS) $(CRYSTAL) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
+NOBJS = $(CORE) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
 
 L0 = $(G) -O0 
 L2 = $(G) -O2
