@@ -9,14 +9,10 @@ C------------------------------------------------------
 C     Initialize cube process parameters for iPSC
 C------------------------------------------------------
 C
-C HMT hack 
-C
+      call init_nek_comm (nid,np,wdsize)
       flag_gs_init = 0
-C
-      NP  = NUMNODES()
+
       CD  = LOG2(NP)
-      NID = MYNODE()
-c     PID = MYPID()
       PID = 0
       NODE= NID+1
 C
@@ -31,12 +27,6 @@ C
      $   'Aborting in routine INIPROC.'
       ENDIF
 C
-      WDSIZE=4
-      eps=1.0e-12
-      oneeps = 1.0+eps
-      if (oneeps.ne.1.0) WDSIZE=8
-      IF (NID.EQ.0) WRITE(6,*) ' WDSIZE:',WDSIZE
-c
 c     These flags added for native 64-bit machines  (pff 10/1/98)
 c
       ifdblas = .false.
@@ -53,7 +43,6 @@ c     ifdblas = .false.
 c     isize   = 8
 c
 c
-c     MANAGER=MYHOST()
       MANAGER=0
       ALLNODES=-1
       NULLPID=0
@@ -87,6 +76,29 @@ C------------------------------------------------------
 C
       RETURN
       END
+
+      subroutine init_nek_comm(nido,npo,wdsize)
+C------------------------------------------------------
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      integer wdsize
+C
+      nekcomm = 1
+      nekgroup = 1
+      nid  = mynode()
+      np   = numnodes()
+      nido = nid
+      npo  = np
+c
+      wdsize=4
+      eps=1.0e-12
+      oneeps = 1.0+eps
+      if (oneeps.ne.1.0) wdsize=8
+      nekreal = mpi_real
+      if (wdsize.eq.8) nekreal = mpi_double_precision
+c
+      return
+      end
+c
 c-----------------------------------------------------------------------
       SUBROUTINE RRING(WORK,X,N,IRG)
       DIMENSION X(N),WORK(N)
