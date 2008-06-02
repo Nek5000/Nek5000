@@ -383,12 +383,12 @@ void amg_solve(real *x, amg_data *data, const real *b)
   gs_op(cb, GS_OP_ADD, data->gs_top);
   amg_exec(data);
   if(data->null_space) {
-    real avg = 0;
+    real avg = 0, sum;
     for(i=0;i<ln;++i) avg += cx[i];
 #ifdef MPI
-    MPI_Allreduce(MPI_IN_PLACE,&avg,1,REAL_MPI,MPI_SUM,data->comm);
+    MPI_Allreduce(&avg,&sum,1,REAL_MPI,MPI_SUM,data->comm);
 #endif
-    avg /= data->tn;
+    avg = sum/data->tn;
     for(i=0;i<ln;++i) cx[i] -= avg;
   }
   for(i=ln;i<cn;++i) cx[i]=0;
@@ -556,7 +556,7 @@ static void organize_data(amg_data *data, tuple_list *cdof,
   uint i; unsigned m,lvl,nl = data->levels;
   uint nloc;
   uint *perm_level;
-  real *gln;
+  real *gln, *gln_in;
   tuple_list mat[3];
   tuple_list C_id, F_id; uint Fnloc, Cnloc; real Fnglob, Cnglob;
   for(i=0;i<cdof->n;++i)
@@ -564,11 +564,12 @@ static void organize_data(amg_data *data, tuple_list *cdof,
       cdof->vi[cdof_mi*i+cdof_level] = nl;
 
   arrange_cdof_by_level(data,cdof,buf);
-  
+
   gln = tmalloc(real, nl);
-  for(i=0;i<nl;++i) gln[i] = data->lvl_offset[i+1]-data->lvl_offset[i];
+  buffer_reserve(buf, nl*sizeof(real)); gln_in = buf->ptr;
+  for(i=0;i<nl;++i) gln_in[i] = data->lvl_offset[i+1]-data->lvl_offset[i];
 #ifdef MPI  
-  MPI_Allreduce(MPI_IN_PLACE,gln,nl,REAL_MPI,MPI_SUM,data->comm);
+  MPI_Allreduce(gln_in,gln,nl,REAL_MPI,MPI_SUM,data->comm);
 #endif
   if(data->pid==0)
     for(i=0;i<nl;++i)
