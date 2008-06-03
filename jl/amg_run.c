@@ -20,7 +20,7 @@
 
 typedef struct {
   uint nloc, n;
-  gs_data *gs;
+  /*gs_data *gs;*/
   jl_gs_data *jgs;
 } amg_Q;
 
@@ -166,7 +166,7 @@ typedef struct {
   real tn;
   uint un, cn;
   sint *perm;
-  gs_data *gs_top;
+  jl_gs_data *gs_top;
   
   unsigned levels;
   unsigned *cheb_m;
@@ -380,7 +380,7 @@ void amg_solve(real *x, amg_data *data, const real *b)
     sint p = data->perm[i];
     if(p!=-1) cb[p] += b[i];
   }
-  gs_op(cb, GS_OP_ADD, data->gs_top);
+  jl_gs_op(cb,gs_double,gs_add,0,data->gs_top,0);
   amg_exec(data);
   if(data->null_space) {
     real avg = 0, sum;
@@ -392,7 +392,7 @@ void amg_solve(real *x, amg_data *data, const real *b)
     for(i=0;i<ln;++i) cx[i] -= avg;
   }
   for(i=ln;i<cn;++i) cx[i]=0;
-  gs_op(cx, GS_OP_ADD, data->gs_top);
+  jl_gs_op(cx,gs_double,gs_add,0,data->gs_top,0);
   for(i=0;i<un;++i) {
     sint p = data->perm[i];
     x[i] = (p == -1 ? 0 : cx[p]);
@@ -519,7 +519,7 @@ static void organize_matrix(amg_Q *Q, amg_mat *M,
   
   Q->nloc = cnloc;
   Q->n = id->n;
-  Q->gs = gs_data_setup(id->n,(ulong*)id->vl,1,crystal);
+  /*Q->gs = gs_data_setup(id->n,(ulong*)id->vl,1,crystal);*/
   {
 #ifdef MPI
     jl_comm_t comm = {crystal->id,crystal->num,crystal->comm};
@@ -896,8 +896,15 @@ amg_data *amg_setup(uint n, const ulong *id,
   separate_cdof(&cdof,data->pid,buf);
   read_all_files(data,&cdof,crystal,buf);
 
-  data->gs_top = gs_data_setup(cdof.n,(const ulong*)cdof.vl,1,crystal);
-
+  {
+#ifdef MPI
+    jl_comm_t comm = {crystal->id,crystal->num,crystal->comm};
+#else
+    jl_comm_t comm = {0,1,0};
+#endif
+    data->gs_top = jl_gs_setup((const slong*)cdof.vl,cdof.n,&comm);
+  }
+  
   bufn = 0, chbn=0;
   for(i=0;i<data->levels-1;++i) {
     uint fn = data->lvl_offset[i+1]-data->lvl_offset[i];
@@ -949,10 +956,10 @@ void amg_free(amg_data *data)
   free(data->lvl_offset);
   free(data->Dff);
   free(data->b);
-  gs_data_free(data->gs_top);
+  jl_gs_free(data->gs_top);
   n = 3*(data->levels-1);
   for(i=0;i<n;++i) {
-    gs_data_free(data->Q_W[i].gs);
+    /* gs_data_free(data->Q_W[i].gs); */
     jl_gs_free(data->Q_W[i].jgs);
     free(data->W[i].row_off);
     free(data->W[i].pr);
