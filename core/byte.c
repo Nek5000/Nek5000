@@ -208,7 +208,8 @@ byte_write(float *buf, int *n)
       flags = O_WRONLY|O_CREAT;
       mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH;
       if ((fp=open(name, flags, mode))==-1)
-	{error_msg_fatal("byte_write() :: open failure!\n");}
+	{printf("%s\n",name);
+         error_msg_fatal("byte_write() :: open failure!\n");}
       flag=WRITE;
     }
 
@@ -264,7 +265,8 @@ byte_read(float *buf, int *n)
       flags = O_RDONLY;
       mode = S_IRUSR|S_IRGRP|S_IROTH;
       if ((fp=open(name, flags, mode))==-1)
-	{error_msg_fatal("byte_read() :: open failure!\n");}
+	{printf("%s\n",name);
+	 error_msg_fatal("byte_read() :: open failure1!\n");}
       flag=READ;
     }
 
@@ -276,7 +278,8 @@ byte_read(float *buf, int *n)
   if (!fp)
     {
       if (!(fp=fopen(name,"rb")))
-        {printf("byte_read() :: fopen failure!\n"); abort();}
+	{printf("%s\n",name);
+         printf("byte_read() :: fopen failure2!\n"); abort();}
       flag=READ;
     }
 
@@ -393,5 +396,18 @@ main(int argc, char **argv)
 
   exit(0);
 }
-  
 #endif
+  
+
+void
+#ifdef UPCASE
+WHATAMI (int *pa, char *vname)
+#elif  UNDERSCORE
+whatami_(int *pa, char *vname)
+#else
+whatami (int *pa, char *vname)
+#endif
+{
+/*  printf("whatami: %p %d %s\n", pa, *pa, vname); */
+    printf("whatami: %d %d %s\n", pa, *pa, vname);
+}
