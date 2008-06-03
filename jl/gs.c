@@ -391,7 +391,7 @@ typedef struct {
 #endif
 } gs_data;
 
-double gs_op(real *u, int op, const gs_data *data)
+double ogs_op(real *u, int op, const gs_data *data)
 {
   double t = 0;
   local_condense(u,op,data->local_cm);
@@ -402,7 +402,7 @@ double gs_op(real *u, int op, const gs_data *data)
   return t;
 }
 
-double gs_op_vec(real *u, uint n, int op, const gs_data *data)
+double ogs_op_vec(real *u, uint n, int op, const gs_data *data)
 {
   double t = 0;
 #ifdef MPI
@@ -418,7 +418,7 @@ double gs_op_vec(real *u, uint n, int op, const gs_data *data)
   return t;
 }
 
-double gs_op_many(real **u, uint n, int op, const gs_data *data)
+double ogs_op_many(real **u, uint n, int op, const gs_data *data)
 {
   double t = 0;
   uint i;
@@ -688,7 +688,7 @@ void cpgs_op(const sint *handle, real u[], const sint *op)
   if(*op<1 || *op>4) failwith("invalid operation to cgps_op");
   if(*handle<0 || *handle>=cpgs_n || !cpgs_info[*handle])
     failwith("invalid handle to cgps_op");
-  gs_op(u,*op,cpgs_info[*handle]);
+  ogs_op(u,*op,cpgs_info[*handle]);
 }
 
 void cpgs_op_vec(const sint *handle, real u[], const sint *n, const sint *op)
@@ -696,7 +696,7 @@ void cpgs_op_vec(const sint *handle, real u[], const sint *n, const sint *op)
   if(*op<1 || *op>4) failwith("invalid operation to cgps_op_vec");
   if(*handle<0 || *handle>=cpgs_n || !cpgs_info[*handle])
     failwith("invalid handle to cgps_op_vec");
-  gs_op_vec(u,*n,*op,cpgs_info[*handle]);
+  ogs_op_vec(u,*n,*op,cpgs_info[*handle]);
 }
 
 void cpgs_op_many(const sint *handle,
@@ -708,7 +708,7 @@ void cpgs_op_many(const sint *handle,
   if(*op<1 || *op>4) failwith("invalid operation to cgps_op_many");
   if(*handle<0 || *handle>=cpgs_n || !cpgs_info[*handle])
     failwith("invalid handle to cgps_op_many");
-  gs_op_many(uu,*n,*op,cpgs_info[*handle]);
+  ogs_op_many(uu,*n,*op,cpgs_info[*handle]);
 }
 
 void cpgs_free(sint *handle)

@@ -22,9 +22,9 @@ void gs_data_stats(double stats[3], const gs_data *data);
 #endif
 
 void gs_data_free(gs_data *data);
-double gs_op(real *u, int op, const gs_data *data);
-double gs_op_vec(real *u, uint n, int op, const gs_data *data);
-double gs_op_many(real **u, uint n, int op, const gs_data *data);
+double ogs_op(real *u, int op, const gs_data *data);
+double ogs_op_vec(real *u, uint n, int op, const gs_data *data);
+double ogs_op_many(real **u, uint n, int op, const gs_data *data);
 
 #define GS_OP_ADD 1
 #define GS_OP_MUL 2
