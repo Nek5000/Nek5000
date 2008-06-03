@@ -13,6 +13,7 @@ c
       INCLUDE 'MASS'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
+      INCLUDE 'ORTHOP'
 C
       COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
      $ ,             RES2  (LX1,LY1,LZ1,LELV)
@@ -50,8 +51,16 @@ C
       call ctolspl (tolspl,respr)
 
       if(nid.eq.0) write(*,'(13X,A)') 'Solving Hydrodynamics'
-      CALL HMHOLTZ ('PRES',DPR,RESPR,H1,H2,PMASK,VMULT,
-     $              IMESH,TOLSPL,NMXH,1)
+
+c     CALL HMHOLTZ ('PRES',DPR,RESPR,H1,H2,PMASK,VMULT,
+c    $              IMESH,TOLSPL,NMXH,1)
+
+      napprox(1) = laxt
+      call hsolve  ('Pres',dpr,respr,h1,h2 
+     $                    ,pmask,vmult
+     $                    ,imesh,tolspl,nmxh,1
+     $                    ,approx,napprox,binvm1)
+
 
       CALL ADD2    (PR,DPR,NTOT1)
       CALL ZAVER1  (PR)
@@ -369,3 +378,4 @@ C
   100 CONTINUE
       RETURN
       END
+c-----------------------------------------------------------------------
