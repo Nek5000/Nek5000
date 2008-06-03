@@ -730,7 +730,6 @@ c
       n_sav = napprox(2)
       ntot=nx1*ny1*nz1*nelv
 c
-c
 c     Reconstruct solution and save current du
 c
       if (n_sav.lt.n_max) then
@@ -756,6 +755,7 @@ c        normalize
       endif
 c
       napprox(2) = n_sav
+
       return
       end
 c-----------------------------------------------------------------------
@@ -977,7 +977,7 @@ c
      $ ,             W2   (2+2*mxprev)
 c
 c
-      ntot = nx1*ny1*nz1*nelv
+      ntot = nx1*ny1*nz1*nelfld(ifield)
       if (param(95).ne.0.and.istep.gt.param(95)) then
          call col2 (r,vmk,ntot)
          call dssum(r,nx1,ny1,nz1)
