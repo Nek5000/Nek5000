@@ -3,9 +3,8 @@
 # ------------------------------------------------
 
 # first do some checks ...
-if [ $# -eq 0 ]; then
-  echo "ERROR: missing argument!"
-  echo "usage: makenek [.usr filename] [clean]"
+if [ $# -ne 1 ]; then
+  echo "usage: makenek <.usr filename | clean>"
   exit 1
 fi
 
@@ -31,18 +30,19 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+\rm test_f77.o 2>/dev/null
 # basic compiler test
-cat > tmp.f << _ACEOF
-      program test
+cat > test_f77.f << _ACEOF
+      subroutine test
       end
 _ACEOF
-rm a.out 2>/dev/null
-$F77 tmp.f 2>&1 > /dev/null
-if [ ! -f a.out ]; then
+
+$F77 -c test_f77.f >/dev/null
+if [ ! -f test_f77.o ]; then
   echo "FATAL ERROR: Basic compiler test for $F77 failed!"
   exit 1
 fi
-rm tmp.f a.out 2>/dev/null
+\rm test_f77.* 2>/dev/null
 
 which $CC 1>/dev/null
 if [ $? -ne 0 ]; then
@@ -50,18 +50,17 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+\rm test_cc.o 2>/dev/null
 # basic compiler test
-cat > tmp.c << _ACEOF
-      int main(){}
+cat > test_cc.c << _ACEOF
+      void function(){}
 _ACEOF
-rm a.out 2>/dev/null
-$CC tmp.c
-if [ ! -f a.out ]; then
+$CC -c test_cc.c 1>/dev/null
+if [ ! -f test_cc.o ]; then
   echo "FATAL ERROR: Basic compiler test for $CC failed!"
   exit 1
 fi
-rm tmp.c a.out 2>/dev/null
-
+\rm test_cc.* 2>/dev/null
 
 rm -f nek5000 2>/dev/null
 rm -f $SOURCE_ROOT/SIZE 2>/dev/null
@@ -73,48 +72,45 @@ cp  `pwd`/$1.usr   $SOURCE_ROOT/subuser.f
 
 
 # Check if the compiler adds an underscore to external functions
-cat > tmp.f << _ACEOF
+cat > test_underscore.f << _ACEOF
       subroutine underscore_test
         call byte_write
       end
 _ACEOF
 
 IFUNDERSCORE=false
-$F77 -c tmp.f 1>/dev/null 
-nm tmp.o | grep byte_write_ 1>/dev/null
+$F77 -c test_underscore.f 2>&1 >/dev/null 
+nm test_underscore.o | grep byte_write_ 1>/dev/null
 if [ $? -eq 0 ] 
 then
   IFUNDERSCORE=true
 fi
-rm -f tmp.o 2>/dev/null
+\rm test_underscore.* 2>/dev/null
 
-
-# Check compiler flag for casting to 8 byte reals
-cat > tmp.f << _ACEOF
-      program tmp
-        if ((1.+1.e-12).ne.1.) write(*,'(A)') 'wdsize=8'
-      end
-_ACEOF
-
-$F77 -r8 tmp.f 2>&1 >/dev/null 
-if [ -f "a.out" ]; then status=`./a.out`; fi
-if [ "$status" == "wdsize=8" ]
-then
-  P="-r8"
-else
-  xlf -qrealsize=8 tmp.f 2>&1 >/dev/null
-  if [ -f "a.out" ]; then status=`./a.out`; fi
-  if [ "$status" == "wdsize=8" ] 
-  then
-    P="-qrealsize=8"
-  else
-   echo "WARNING: Cannot detect compiler flag to promote REAL to 8 bytes!"
-   echo "         Please specify the compiler option using the P flag in the makefile"
-   echo "Press return to continue"
-   read
-  fi
+# assign compiler flag to promote REAL to 8 bytes 
+F77comp=$F77
+echo $F77comp | grep -i mpi
+if [ $? -eq 0 ]; then
+ F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
 fi
-rm tmp.f a.out 2>/dev/null
+
+echo "Used Fortran compiler:" $F77comp
+
+case $F77comp in
+  pgf77)       P="-r8";;
+  pgf90)       P="-r8";;
+  gfortran)    P="-fdefault-real-8";;
+  ifort)       P="-r8";;
+  bgxlf)       P="-qrealsize=8";;
+  bgxlf_r)     P="-qrealsize=8";;
+  blrts_xlf)   P="-qrealsize=8";;
+  ftn)         P="-r8";;
+  *)  echo "WARNING: Cannot detect compiler flag to promote REAL to 8 bytes!"
+      echo "         Please specify the right compiler option using the P flag in the makefile"
+      P=""
+      echo "Press return to continue"
+      read;;
+esac
 
 # set logical flags
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
@@ -164,6 +160,9 @@ if [ -f .makefile ]; then
   sed "1i\### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###\n" \
       .makefile > makefile
   echo "makefile created"
+  if [ "$P" = "" ]; then
+    exit 1
+  fi
 else
   echo "FATAL ERROR: Makefile could not be created!" 
 fi

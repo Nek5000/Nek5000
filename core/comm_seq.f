@@ -944,12 +944,6 @@ c     ENDIF
       RETURN
       END
 c-----------------------------------------------------------------------
-c      FUNCTION SECOND(A)
-c      REAL*8 DCLOCK
-c      SECOND=DCLOCK(A)
-c      SECOND=DCLOCK()
-c      RETURN
-c      END
       SUBROUTINE LBCAST(IFIF)
 C
 C  Broadcast logical variable to all processors.
