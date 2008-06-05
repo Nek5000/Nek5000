@@ -134,7 +134,7 @@ echo "try to generate makefile ..."
 
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
--e "s/^G[ ]*=.*/G:=$G/1" \
+-e "s:^G[ ]*=.*:G\:=$G:" \
 -e "s/^P[ ]*=.*/P:=$P/" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
