@@ -127,7 +127,7 @@ c
      $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
          ifield = 1
-         if (ifheat) 
+         if (ifheat .and. .not.ifcvode) 
      $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
         enddo
@@ -139,7 +139,7 @@ c     pmax = glmax(pmax,1)
       wmax = glmax(wmax,1)
 c
       nfldt = 1+npscal
-      if (ifheat) then
+      if (ifheat .and. .not.ifcvode) then
          do ifld=1,nfldt
             ifield = ifld + 1
             call filterq(t(1,1,1,1,ifld),intv
@@ -152,20 +152,14 @@ c
 c
       if (nid.eq.0) then
          if (if3d) then
-            if (ifheat) then
-              write(6,1)istep,ifield,umax,vmax,wmax,(tmax(k),k=1,nfldt)
-            else
-               write(6,1) istep,ifield,umax,vmax,wmax
-            endif
+            write(6,1) istep,ifield,umax,vmax,wmax
          else
-            if (ifheat) then
-               write(6,1) istep,ifield,umax,vmax,(tmax(k),k=1,nfldt)
-            else
-               write(6,1) istep,ifield,umax,vmax
-            endif
+            write(6,1) istep,ifield,umax,vmax
          endif
+         if(ifheat .and. .not.ifcvode) 
+     &         write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
       endif
-    1 format(i8,i3,' qfilt:',1p50e12.4)
+    1 format(i8,i3,' qfilt:',1p3e12.4)
 c
 c
 c - - - - - - - - - - - - - - - - - - - - - -

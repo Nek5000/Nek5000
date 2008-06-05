@@ -1,15 +1,15 @@
-############################################################################### 
-S         = $(SOURCE_ROOT)
-J         = $(SOURCE_ROOT)/jl
-J2        = $J/../jl2
-# FLAGS ARE SET BY MAKENEK
-#IFMPI     = true
-#F77       = mpif77
-#CC        = mpicc
-#P         = -r8
-#G         = -g
-#UNDERSCORE= -DUNDERSCORE
-#USR_LIB   = -lblas
+S= 
+J:=$S/jl
+J2:=$J/../jl2
+IFMPI= 
+IFAMG= 
+F77=
+CC=
+P=
+G=
+USR=
+USR_LIB=
+IFUNDERSCORE= 
 ################################################################################
 #
 # core nekton files ...
@@ -44,7 +44,8 @@ endif
 COMM_MPI = comm_seq.o
 ifeq ($(IFMPI),true) 
 COMM_MPI = comm_mpi.o
-MPI  = -DMPI
+JL := -DMPI
+JL2 := -DMPI
 endif
 
 NOBJS = $(CORE) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
@@ -53,8 +54,12 @@ L0 = $(G) -O0
 L2 = $(G) -O2
 L3 = $(G) -O2
 L4 = $(G) -O3
-JL    = $(MPI) $(UNDERSCORE)
-JL2   = -DPREFIX=jl_ $(MPI) $(UNDERSCORE)
+
+ifeq ($(IFUNDERSCORE),true)
+JL := ${JL} -DUNDERSCORE
+JL2 := ${JL2} -DUNDERSCORE
+endif
+JL2   := ${JL2} -DPREFIX=jl_
 
 FL0i4 = $(L0)
 FL0   = $(L0) $(P)
@@ -63,33 +68,12 @@ FL3   = $(L3) $(P)
 FL4   = $(L4) $(P)
 FLd   = $(L4) $(P)
 
-###
-DRL0    = $(FL0) 
-DFL0    = $(FL0) 
-DFL2    = $(FL2)
-DFL3    = $(FL3)
-DFL4    = $(FL4)
-
-RFL0    = $(FL0)
-RFL2    = $(FL2)
-RFL3    = $(FL3)
-RFL4    = $(FL4)
-RFLd    = $(FLd)
-
-DRFL0   = $(FL0)
-DRFL2   = $(FL3)
-DRFL3   = $(FL3)
-DRFL4   = $(FL4)
-
 cFL0   = $(L0) 
 cFL2   = $(L2) 
 cFL3   = $(L3) 
 cFL4   = $(L4) 
 
-###
-
 lFLAGS = $(USR_LIB)
-
 
 ################################################################################
 
@@ -108,84 +92,84 @@ clean:
 ################################################################################
 # fortran source files
 ################################################################################
-drive.o		:$S/drive.f;		$(F77) -c $(FL2) $S/drive.f
+drive.o		:$S/drive.f;			$(F77) -c $(FL2) $S/drive.f
 ################################################################################
-dsygv.o         :$S/dsygv.f;            $(F77) -c $(FL0i4) $S/dsygv.f
-ssygv.o         :$S/ssygv.f;            $(F77) -c $(FL0i4) $S/ssygv.f
-blas.o	        :$S/blas.f;		$(F77) -c $(FL0i4) $S/blas.f
+dsygv.o     :$S/dsygv.f;     		$(F77) -c $(FL0i4) $S/dsygv.f
+ssygv.o     :$S/ssygv.f;     		$(F77) -c $(FL0i4) $S/ssygv.f
+blas.o	   :$S/blas.f;				$(F77) -c $(FL0i4) $S/blas.f
 ################################################################################
-prepost.o	:$S/prepost.f;		$(F77) -c $(FL2) $S/prepost.f
+prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
 connect1.o	:$S/connect1.f;		$(F77) -c $(FL2) $S/connect1.f
 connect2.o	:$S/connect2.f;		$(F77) -c $(FL2) $S/connect2.f
-edgec.o		:$S/edgec.f;		$(F77) -c $(FL2) $S/edgec.f
-genxyz.o	:$S/genxyz.f;		$(F77) -c $(FL2) $S/genxyz.f
-subs1.o		:$S/subs1.f;		$(F77) -c $(FL2) $S/subs1.f
-subs2.o		:$S/subs2.f;		$(F77) -c $(FL2) $S/subs2.f
-turb.o		:$S/turb.f;		$(F77) -c $(FL2) $S/turb.f
-map2.o		:$S/map2.f;		$(F77) -c $(FL2) $S/map2.f
-mvmesh.o	:$S/mvmesh.f;		$(F77) -c $(FL2) $S/mvmesh.f
-induct.o	:$S/induct.f;	        $(F77) -c $(FL2) $S/induct.f
-convect.o	:$S/convect.f;	        $(F77) -c $(FL2) $S/convect.f
-perturb.o	:$S/perturb.f;	        $(F77) -c $(FL2) $S/perturb.f
-genbox.o	:$S/genbox.f;		$(F77) -c $(FL2) $S/genbox.f
-hsmg.o		:$S/hsmg.f;		$(F77) -c $(FL2) $S/hsmg.f
-uzawa_gmres.o	:$S/uzawa_gmres.f;	$(F77) -c $(FL2) $S/uzawa_gmres.f
+edgec.o		:$S/edgec.f;			$(F77) -c $(FL2) $S/edgec.f
+genxyz.o		:$S/genxyz.f;			$(F77) -c $(FL2) $S/genxyz.f
+subs1.o		:$S/subs1.f;			$(F77) -c $(FL2) $S/subs1.f
+subs2.o		:$S/subs2.f;			$(F77) -c $(FL2) $S/subs2.f
+turb.o		:$S/turb.f;				$(F77) -c $(FL2) $S/turb.f
+map2.o		:$S/map2.f;				$(F77) -c $(FL2) $S/map2.f
+mvmesh.o		:$S/mvmesh.f;			$(F77) -c $(FL2) $S/mvmesh.f
+induct.o		:$S/induct.f;	      $(F77) -c $(FL2) $S/induct.f
+convect.o	:$S/convect.f;	      $(F77) -c $(FL2) $S/convect.f
+perturb.o	:$S/perturb.f;	      $(F77) -c $(FL2) $S/perturb.f
+genbox.o		:$S/genbox.f;			$(F77) -c $(FL2) $S/genbox.f
+hsmg.o		:$S/hsmg.f;				$(F77) -c $(FL2) $S/hsmg.f
+uzawa_gmres.o	:$S/uzawa_gmres.f;$(F77) -c $(FL2) $S/uzawa_gmres.f
 ################################################################################
-bdry.o		:$S/bdry.f;		$(F77) -c $(FL2) $S/bdry.f
+bdry.o		:$S/bdry.f;				$(F77) -c $(FL2) $S/bdry.f
 comm_seq.o	:$S/comm_seq.f;		$(F77) -c $(FL2) $S/comm_seq.f
 comm_mpi.o	:$S/comm_mpi.f;		$(F77) -c $(FL2) $S/comm_mpi.f
-ic.o		:$S/ic.f;		$(F77) -c $(FL2) $S/ic.f
-conduct.o	:$S/conduct.f;		$(F77) -c $(FL2) $S/conduct.f
-navier0.o	:$S/navier0.f;		$(F77) -c $(FL2) $S/navier0.f
-navier2.o	:$S/navier2.f;		$(F77) -c $(FL2) $S/navier2.f
-navier3.o	:$S/navier3.f;		$(F77) -c $(FL2) $S/navier3.f
-navier4_std.o	:$S/navier4_std.f;	$(F77) -c $(FL2) $S/navier4_std.f
-navier4_div.o	:$S/navier4_div.f;	$(F77) -c $(FL2) $S/navier4_div.f
-navier5.o	:$S/navier5.f;		$(F77) -c $(FL2) $S/navier5.f
-navier6.o	:$S/navier6.f;		$(F77) -c $(FL2) $S/navier6.f
-navier7.o	:$S/navier7.f;		$(F77) -c $(FL2) $S/navier7.f
-navier8.o	:$S/navier8.f;		$(F77) -c $(FL2) $S/navier8.f
-speclib.o	:$S/speclib.f;		$(F77) -c $(FL2) $S/speclib.f
-calcz.o		:$S/calcz.f;		$(F77) -c $(FL2) $S/calcz.f
-fast3d.o	:$S/fast3d.f;		$(F77) -c $(FL2) $S/fast3d.f
+ic.o			:$S/ic.f;				$(F77) -c $(FL2) $S/ic.f
+conduct.o	:$S/conduct.f;			$(F77) -c $(FL2) $S/conduct.f
+navier0.o	:$S/navier0.f;			$(F77) -c $(FL2) $S/navier0.f
+navier2.o	:$S/navier2.f;			$(F77) -c $(FL2) $S/navier2.f
+navier3.o	:$S/navier3.f;			$(F77) -c $(FL2) $S/navier3.f
+navier4_std.o	:$S/navier4_std.f;$(F77) -c $(FL2) $S/navier4_std.f
+navier4_div.o	:$S/navier4_div.f;$(F77) -c $(FL2) $S/navier4_div.f
+navier5.o	:$S/navier5.f;			$(F77) -c $(FL2) $S/navier5.f
+navier6.o	:$S/navier6.f;			$(F77) -c $(FL2) $S/navier6.f
+navier7.o	:$S/navier7.f;			$(F77) -c $(FL2) $S/navier7.f
+navier8.o	:$S/navier8.f;			$(F77) -c $(FL2) $S/navier8.f
+speclib.o	:$S/speclib.f;			$(F77) -c $(FL2) $S/speclib.f
+calcz.o		:$S/calcz.f;			$(F77) -c $(FL2) $S/calcz.f
+fast3d.o		:$S/fast3d.f;			$(F77) -c $(FL2) $S/fast3d.f
 ################################################################################
-dssum.o		:$S/dssum.f;		$(F77) -c $(FL3) $S/dssum.f
-eigsolv.o	:$S/eigsolv.f;		$(F77) -c $(FL3) $S/eigsolv.f
-gauss.o		:$S/gauss.f;		$(F77) -c $(FL3) $S/gauss.f
-planx.o		:$S/planx.f;		$(F77) -c $(FL3) $S/planx.f
-ssolv.o		:$S/ssolv.f;		$(F77) -c $(FL3) $S/ssolv.f
+dssum.o		:$S/dssum.f;			$(F77) -c $(FL3) $S/dssum.f
+eigsolv.o	:$S/eigsolv.f;			$(F77) -c $(FL3) $S/eigsolv.f
+gauss.o		:$S/gauss.f;			$(F77) -c $(FL3) $S/gauss.f
+planx.o		:$S/planx.f;			$(F77) -c $(FL3) $S/planx.f
+ssolv.o		:$S/ssolv.f;			$(F77) -c $(FL3) $S/ssolv.f
 gfdm_par.o	:$S/gfdm_par.f;		$(F77) -c $(FL3) $S/gfdm_par.f
 gfdm_solve.o	:$S/gfdm_solve.f;	$(F77) -c $(FL3) $S/gfdm_solve.f
-gfdm_op.o	:$S/gfdm_op.f;		$(F77) -c $(FL3) $S/gfdm_op.f
+gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL3) $S/gfdm_op.f
 ################################################################################
-coef.o		:$S/coef.f;		$(F77) -c $(FL4) $S/coef.f
-mat1.o		:$S/mat1.f;		$(F77) -c $(FL4) $S/mat1.f
-mat2std.o	:$S/mat2std.f;		$(F77) -c $(FL4) $S/mat2std.f
+coef.o		:$S/coef.f;				$(F77) -c $(FL4) $S/coef.f
+mat1.o		:$S/mat1.f;				$(F77) -c $(FL4) $S/mat1.f
+mat2std.o	:$S/mat2std.f;			$(F77) -c $(FL4) $S/mat2std.f
 ################################################################################
-plan4.o		:$S/plan4.f;		$(F77) -c $(FL2) $S/plan4.f
-qthermal.o	:$S/qthermal.f;	        $(F77) -c $(FL2) $S/qthermal.f
-setprop.o	:$S/setprop.f;	        $(F77) -c $(FL2) $S/setprop.f
+plan4.o			:$S/plan4.f;		$(F77) -c $(FL2) $S/plan4.f
+qthermal.o		:$S/qthermal.f;   $(F77) -c $(FL2) $S/qthermal.f
+setprop.o		:$S/setprop.f;	   $(F77) -c $(FL2) $S/setprop.f
 cvode_driver.o	:$S/cvode_driver.f;	$(F77) -c $(FL2) $S/cvode_driver.f
-makeq.o	        :$S/makeq.f;		$(F77) -c $(FL2) $S/makeq.f
+makeq.o	      :$S/makeq.f;		$(F77) -c $(FL2) $S/makeq.f
 
 
 ################################################################################
 #reentrant modules
 ################################################################################
-mat2.o		:$S/mat2.f;		$(F77) -c $(RFLd) $S/mat2.f
-mxm.o		:$S/mxm.f;		$(F77) -c $(RFLd) $S/mxm.f
-mxm44f2.o	:$S/mxm44f2.f;		$(F77) -c $(RFLd) $S/mxm44f2.f
-fastsa.o	:$S/fastsa.f;		$(F77) -c $(RFL4) $S/fastsa.f
+mat2.o		:$S/mat2.f;			$(F77) -c $(FLd) $S/mat2.f
+mxm.o			:$S/mxm.f;			$(F77) -c $(FLd) $S/mxm.f
+mxm44f2.o	:$S/mxm44f2.f;		$(F77) -c $(FLd) $S/mxm44f2.f
+fastsa.o		:$S/fastsa.f;		$(F77) -c $(FL4) $S/fastsa.f
 ################################################################################
 
 
 ################################################################################
 #dual mode modules
 ################################################################################
-hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(DFL4) $S/hmholtz.f
-navier1.o	:$S/navier1.f;		$(F77) -c $(DFL4) $S/navier1.f
-fasts.o		:$S/fasts.f;		$(F77) -c $(DFL4) $S/fasts.f
-subuser.o	:$S/subuser.f;		$(F77) -c $(RFL2) $S/subuser.f
+hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(FL4) $S/hmholtz.f
+navier1.o	:$S/navier1.f;		$(F77) -c $(FL4) $S/navier1.f
+fasts.o		:$S/fasts.f;		$(F77) -c $(FL4) $S/fasts.f
+subuser.o	:$S/subuser.f;		$(F77) -c $(FL2) $S/subuser.f
 ################################################################################
 ################################################################################
 # c source files
@@ -221,3 +205,4 @@ $(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L4) $(JL2) $< -o $@
 $(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L4) $(JL2) $< -o $@
 $(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L4) $(JL2) $< -o $@
 $(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L4) $(JL2) $< -o $@
+#

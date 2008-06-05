@@ -56,7 +56,7 @@ c     CALL HMHOLTZ ('PRES',DPR,RESPR,H1,H2,PMASK,VMULT,
 c    $              IMESH,TOLSPL,NMXH,1)
 
       napprox(1) = laxt
-      call hsolve  ('Pres',dpr,respr,h1,h2 
+      call hsolve  ('PRES',dpr,respr,h1,h2 
      $                    ,pmask,vmult
      $                    ,imesh,tolspl,nmxh,1
      $                    ,approx,napprox,binvm1)

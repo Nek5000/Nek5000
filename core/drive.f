@@ -55,36 +55,26 @@ C--------------------------------------------------------------------------
 c
       include 'OPCTR'
       include 'CTIMER'
-C
+
 C     Declare scratch arrays
-C
-      PARAMETER (LXR=LX1+6)
-      PARAMETER (LYR=LY1+6)
-      PARAMETER (LZR=LZ1+6)
-      PARAMETER (LXYZR=LXR*LYR*LZR)
-      PARAMETER (LPSC9=LDIMT+9)
-      parameter (lctmp1n = LXYZR*LPSC9)
-c     COMMON /CTMP1/ DUMMY1(LCTMP1)
-      COMMON /CTMP1/ DUMMY1(LCTMP1n)
-      real*4 dummy1
-C
-      COMMON /CTMP0/ DUMMY0(LCTMP0)
-C      COMMON /CTMP1/ DUMMY1(LCTMP1)
-      COMMON /SCRNS/ DUMMY2(LX1,LY1,LZ1,LELT,7)
-      COMMON /SCRUZ/ DUMMY3(LX1,LY1,LZ1,LELT,4)
-      COMMON /SCREV/ DUMMY4(LX1,LY1,LZ1,LELT,2)
-      COMMON /SCRVH/ DUMMY5(LX1,LY1,LZ1,LELT,2)
-      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
-      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
-      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
-      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
-C
+C     NOTE: no initial declaration needed. Linker will take 
+c           care about the size of the CBs
+c
+c      COMMON /CTMP1/ DUMMY1(LCTMP1)
+c      COMMON /CTMP0/ DUMMY0(LCTMP0)
+c
+c      COMMON /SCRNS/ DUMMY2(LX1,LY1,LZ1,LELT,7)
+c      COMMON /SCRUZ/ DUMMY3(LX1,LY1,LZ1,LELT,4)
+c      COMMON /SCREV/ DUMMY4(LX1,LY1,LZ1,LELT,2)
+c      COMMON /SCRVH/ DUMMY5(LX1,LY1,LZ1,LELT,2)
+c      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
+c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
+c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
+c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
+  
       REAL e, oe
       integer WDS
       REAL*8 t0,tp
-
-      logical ifdoit
-
 
       call iniproc !  processor initialization 
       if (nid.eq.0) write(6,*) 'Number of Processors ::',np
@@ -109,8 +99,6 @@ C
 
       call setvar  ! initialize some variables
       call echopar ! echo back the parameter stack
-
-
 
 c     Check for zero steps
 
@@ -173,12 +161,13 @@ C     Solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
          endif
       endif
 
+
+      call usrdat3
+
 C     The properties are set if PRESOLVE is used in SETICS,
 C     otherwise they are set in the beginning of the time stepping loop
 
       call setics
-
-      call usrdat3
 
       CALL SETPROP
 
