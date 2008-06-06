@@ -1106,6 +1106,8 @@ C
  100    CONTINUE
         SI2   = SII (IX,IY,IZ,IEL)
         SI3   = SIII(IX,IY,IZ,IEL)
+        UDIFF = VDIFF (IX,IY,IZ,IEL,IFIELD)
+        UTRANS= VTRANS(IX,IY,IZ,IEL,IFIELD)
 c
         cbu   = cb
 C
