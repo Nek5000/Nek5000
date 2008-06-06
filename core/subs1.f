@@ -998,14 +998,23 @@ C
 C
 C        First time around, set defaults
 C
-         IFVARP(IFIELD) = .FALSE.
-         DO 10 IEL=1,NEL
-            IGRP  = IGROUP(IEL)
-            ITYPE = MATYPE(IGRP,IFIELD)
-            IF(ITYPE.NE.0) IFVARP(IFIELD) = .TRUE.
-   10    CONTINUE
-C
-      ENDIF         
+         ifvarp(ifield) = .false.
+         if (iflomach) ifvarp(ifield) = .true.
+
+         if (.not.ifvarp(ifield)) then ! check all groups
+            do iel=1,nel
+               igrp  = igroup(iel)
+               itype = matype(igrp,ifield)
+               if(itype.ne.0) ifvarp(ifield) = .true.
+            enddo
+         endif
+
+         itest = 0                        ! test against all processors
+         if (ifvarp(ifield)) itest = 1
+         itest = iglmax(itest,1)
+         if (itest.gt.0) ifvarp(ifield) = .true.
+
+      endif         
 C
 C     Fill up property arrays every time step
 C
