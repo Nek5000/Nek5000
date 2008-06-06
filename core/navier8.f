@@ -2483,7 +2483,7 @@ c
 
       nmx = min(neli,lt7)    ! communicate imap to all procs
       i1  = 1
-      npass = neli/nmx
+      npass = 1 + neli/nmx
       do k=1,npass
          if (nid.eq.0) write(6,*) k,i1,' imap xfer'
          call igop(imap(i1),work,'M  ',nmx)
