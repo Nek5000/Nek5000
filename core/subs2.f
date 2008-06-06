@@ -2388,6 +2388,7 @@ C
 
 c     calculate surface normal
 
+      include 'SIZE'
       include 'GEOM'
       include 'TOPOL'
 
