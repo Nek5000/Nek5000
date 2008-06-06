@@ -2383,3 +2383,32 @@ C
 C
       RETURN
       END
+
+      subroutine getSnormal(sn,ix,iy,iz,iside,e)
+
+c     calculate surface normal
+
+      include 'GEOM'
+      include 'TOPOL'
+
+      real sn(3)
+      integer e,f
+
+      f = eface1(iside)
+
+      if (1.le.f.and.f.le.2) then     ! "r face"
+         sn(1) = unx(iy,iz,iside,e)
+         sn(2) = uny(iy,iz,iside,e)
+         sn(3) = unz(iy,iz,iside,e)
+      elseif (3.le.f.and.f.le.4) then ! "s face"
+         sn(1) = unx(ix,iz,iside,e)
+         sn(2) = uny(ix,iz,iside,e)
+         sn(3) = unz(ix,iz,iside,e)
+      elseif (5.le.f.and.f.le.6) then ! "t face"
+         sn(1) = unx(ix,iy,iside,e)
+         sn(2) = uny(ix,iy,iside,e)
+         sn(3) = unz(ix,iy,iside,e)
+      endif
+
+      return
+      end
