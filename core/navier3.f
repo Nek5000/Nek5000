@@ -78,13 +78,13 @@ c
       ntot  = nx2*ny2*nz2*nelv
       call rzero(u,ntot)
 c
-      etime1=dclock()
+      etime1=dnekclock()
       call local_solves_fdm    (u,v)
-      tddsl=tddsl+dclock()-etime1
+      tddsl=tddsl+dnekclock()-etime1
 c
-      etime1=dclock()
+      etime1=dnekclock()
       call crs_solve_l2 (uc,v)
-      tcrsl=tcrsl+dclock()-etime1
+      tcrsl=tcrsl+dnekclock()-etime1
 c
       alpha = 10.
       if (param(89).ne.0.) alpha = abs(param(89))

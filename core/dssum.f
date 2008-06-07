@@ -23,7 +23,7 @@ c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
       endif
       icalld=icalld+1
 c
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c                 T         ~  ~T  T
 c     Implement QQ   :=   J Q  Q  J
@@ -48,7 +48,7 @@ c
 c      call apply_J(u,nx,ny,nz,nel)
 c
 c
-      timee=(dclock()-etime1)
+      timee=(dnekclock()-etime1)
 c
       tdsum=tdsum+timee
       ndsum=icalld
@@ -148,7 +148,7 @@ c
       if (icalld.eq.0) tdadd=0.0d0
       icalld=icalld+1
       nvdss=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c============================================================================
 c     execution phase
@@ -160,7 +160,7 @@ c
 c
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
-      timee=(dclock()-etime1)
+      timee=(dnekclock()-etime1)
       tvdss=tvdss+timee
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
@@ -484,7 +484,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c                        ~  ~T  
 c     Implement   :=   J Q  Q  Mu
@@ -505,7 +505,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-      timee=(dclock()-etime1)
+      timee=(dnekclock()-etime1)
 c
       tdsum=tdsum+timee
       ndsum=icalld
@@ -539,7 +539,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c                    T           ~  ~T  T
 c     Implement Q M Q   :=   J M Q  Q  J
@@ -564,7 +564,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-      timee=(dclock()-etime1)
+      timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)
@@ -597,7 +597,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c                    T           ~  ~T  T
 c     Implement Q M Q   :=   J M Q  Q  J
@@ -622,7 +622,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-      timee=(dclock()-etime1)
+      timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)

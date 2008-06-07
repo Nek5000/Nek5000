@@ -109,7 +109,7 @@ C
       if (icalld.eq.0) tinvc=0.0
       icalld=icalld+1
       ninvc=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 C
 C
 C
@@ -127,7 +127,7 @@ C
       DO 100 I=1,N
          A(I)=A(I)/B(I)
  100  CONTINUE
-      tinvc=tinvc+(dclock()-etime1)
+      tinvc=tinvc+(dnekclock()-etime1)
       return
       END
 C
@@ -139,7 +139,7 @@ C
       if (icalld.eq.0) tinv3=0.0
       icalld=icalld+1
       ninv3=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 C
 C
       if (isclld.eq.0) then
@@ -156,7 +156,7 @@ C
       DO 100 I=1,N
          A(I)=B(I)/C(I)
  100  CONTINUE
-      tinv3=tinv3+(dclock()-etime1)
+      tinv3=tinv3+(dnekclock()-etime1)
       return
       END
 C
@@ -388,12 +388,12 @@ C
       if (icalld.eq.0) tcopy=0.0
       icalld=icalld+1
       ncopy=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 C
 C
       DO 100 I = 1, N
  100     A(I) = B(I)
-      tcopy=tcopy+(dclock()-etime1)
+      tcopy=tcopy+(dnekclock()-etime1)
       return
       END
 C

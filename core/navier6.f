@@ -36,7 +36,7 @@ c
       include 'ESOLV'
       include 'INPUT'
 c
-      REAL*8 dclock,t0
+      REAL*8 dnekclock,t0
 c
       parameter (          n_tri = 7*ltotd )
       common /scrns/  tri (n_tri)

@@ -83,7 +83,7 @@ c
       if (icalld.eq.0) tbmhd=0.0
       icalld = icalld+1
       nbmhd  = icalld
-      etime1 = dclock()
+      etime1 = dnekclock()
 c
       ifield = 1
                                       call makeuf
@@ -120,7 +120,7 @@ c
       if (iftran)                     call makextb
                                       call makebdfb
 c
-      tbmhd=tbmhd+(dclock()-etime1)
+      tbmhd=tbmhd+(dnekclock()-etime1)
       return
       end
 c--------------------------------------------------------------------
@@ -464,7 +464,7 @@ c
       if (icalld.eq.0) tpres=0.0
       icalld = icalld+1
       npres  = icalld
-      etime1 = dclock()
+      etime1 = dnekclock()
 
       ntot1  = nx1*ny1*nz1*nelv
       ntot2  = nx2*ny2*nz2*nelv
@@ -490,7 +490,7 @@ c
       call add2(up,dp,ntot2)  ! Only up to 2nd-order accurate
       call chkptol
 
-      tpres=tpres+(dclock()-etime1)
+      tpres=tpres+(dnekclock()-etime1)
 
       return
       end

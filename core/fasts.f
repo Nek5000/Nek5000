@@ -52,11 +52,11 @@ c     Fill interiors
 c
 c     Now solve each subdomain problem:
 c
-      etime1=dclock()
+      etime1=dnekclock()
       do ie = 1,nelv
          call fastdm1(v1(1,1,1,ie),ie,w1,w2)
       enddo
-      tsolv=tsolv+dclock()-etime1
+      tsolv=tsolv+dnekclock()-etime1
 c
 c     Exchange/add elemental solutions
 c

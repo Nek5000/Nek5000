@@ -234,7 +234,7 @@ C
         icalld=1
       endif
       ngop = ngop + 1
-      etime1=dclock()
+      etime1=dnekclock()
 C
 c     IF (IFGPRNT) THEN
 c        A1=0.0
@@ -402,7 +402,7 @@ c           WRITE(6,101) NID,OP,TYPE,I,N,X(I),ORGNL(I),ETIME,GTIME
 c 100    CONTINUE
 c 101    FORMAT(I3,' GOP ',A3,I6,2I2,4G12.4)
 c     ENDIF
-      tgop =tgop +(dclock()-etime1)
+      tgop =tgop +(dnekclock()-etime1)
       if (ifgprnt.and.nid.eq.302) 
      $   write(6,303) bytes,typer,x(1),op,ngop
   303 format(' gop2',2i12,g17.8,1x,a3,i12)
@@ -453,7 +453,7 @@ c
       IF (IFGPRNT) THEN
          A1=0.0
 c         TIME1=SECOND(A1)
-         TIME1=dclock()
+         TIME1=dnekclock()
          N100=MIN(9,N)
          CALL COPY(ORGNL,X,N100)
       ENDIF
@@ -596,7 +596,7 @@ C     Diagnostics?
 C
       IF (IFGPRNT) THEN
 c         TIME2=SECOND(A1)
-         TIME2=dclock()
+         TIME2=dnekclock()
          GTIME=TIME2-TIME1
          ETIME=TIME2-TIME0
          DO 100 I=1,N100
@@ -821,7 +821,7 @@ c
       IF (IFGPRNT) THEN
          A1=0.0
 c         TIME1=SECOND(A1)
-         TIME1=dclock()
+         TIME1=dnekclock()
          N100=MIN(9,N)
          CALL ICOPY(ORGNL,X,N100)
       ENDIF
@@ -906,7 +906,7 @@ C     Diagnostics?
 C
       IF (IFGPRNT) THEN
 c         TIME2=SECOND(A1)
-         TIME2=dclock()
+         TIME2=dnekclock()
          GTIME=TIME2-TIME1
          ETIME=TIME2-TIME0
          DO 100 I=1,N100
@@ -975,11 +975,11 @@ C
 C
 c-----------------------------------------------------------------------
       FUNCTION CPUTIME(DUMMY)
-      REAL*8 cpu2,dclock
+      REAL*8 cpu2,dnekclock
 C
 C     this function returns the cpu time in seconds
 C
-      cpu2=dclock()
+      cpu2=dnekclock()
       CPUTIME = cpu2
       RETURN
       END
@@ -1073,14 +1073,14 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-      REAL*8 FUNCTION DCLOCK()
+      REAL*8 FUNCTION DNEKCLOCK()
       real*4 A(2),etime,s1
       A(1)=0.0
       A(2)=0.0
       S1=ETIME(A)
 c     S1=0.
-      DCLOCK = S1
-c     DCLOCK = 0.0
+      DNEKCLOCK = S1
+c     DNEKCLOCK = 0.0
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -1135,17 +1135,6 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       write(6,*) 'quittin'
 
-c     write(6,*) 'quittin2',z,b   ! comment out these 2 lines
-c     call exit                   ! to trap the exitt() call
- 
-      z = -nx1
-      z = sqrt(z)
-      y = 1./(nx1-lx1)
-      y = 0.*y
-      a = 1./y
-      b = 1./y
-      write(6,*) 'quittin3',z,b
- 
       call exit
 
       return

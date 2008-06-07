@@ -34,7 +34,7 @@ c
 c
       icalld=icalld+1
       nhmhz=icalld
-      etime1=dclock()
+      etime1=dnekclock()
       IF (IMESH.EQ.1) NTOT = NX1*NY1*NZ1*NELV
       IF (IMESH.EQ.2) NTOT = NX1*NY1*NZ1*NELT
 C
@@ -67,7 +67,7 @@ C
      $      (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
 
-      thmhz=thmhz+(dclock()-etime1)
+      thmhz=thmhz+(dnekclock()-etime1)
       return
       END
 C
@@ -120,7 +120,7 @@ C
       if (icalld.eq.0) taxhm=0.0
       icalld=icalld+1
       naxhm=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 C
       IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
       CALL RZERO (AU,NTOT)
@@ -255,7 +255,7 @@ C
   200    CONTINUE
       ENDIF
 C
-      taxhm=taxhm+(dclock()-etime1)
+      taxhm=taxhm+(dnekclock()-etime1)
       return
       END
 C

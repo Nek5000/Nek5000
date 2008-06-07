@@ -1265,14 +1265,14 @@ c-----------------------------------------------------------------------
 
 c     Initialize gather-scatter code
 
-      t0 = dclock()
+      t0 = dnekclock()
       ntot      = nx*ny*nz*nel
 
       call gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
 
 c     call gs_chkr(glo_num)
 
-      t1 = dclock()
+      t1 = dnekclock()
       et = t1-t0
 c
       if (nid.eq.0) then

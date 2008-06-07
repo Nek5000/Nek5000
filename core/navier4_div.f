@@ -60,11 +60,11 @@ C******************************************************************
       IFPRJP=.FALSE.    ! Project out previous pressure solutions?
       istart=param(95)  
       IF (ISTEP.GE.istart.and.istart.ne.0) IFPRJP=.TRUE.
-      etime1=dclock()
+      etime1=dnekclock()
       IF (IFPRJP)   CALL SETRHS(RESPR,H1,H2,H2INV)
                     CALL ESOLVER (RESPR,H1,H2,H2INV,INTYPE)
       IF (IFPRJP)   CALL GENSOLN(RESPR,H1,H2,H2INV)
-      tpres=tpres+(dclock()-etime1)
+      tpres=tpres+(dnekclock()-etime1)
 C******************************************************************
 c
       CALL OPGRADT (W1 ,W2 ,W3 ,RESPR)
@@ -936,7 +936,7 @@ c
       COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
      $ ,             W2   (LX1,LY1,LZ1,LELT)
 c
-      etime1=dclock()
+      etime1=dnekclock()
 c
       IF (IMESH.EQ.1) NTOT = NX1*NY1*NZ1*NELV
       IF (IMESH.EQ.2) NTOT = NX1*NY1*NZ1*NELT
@@ -957,7 +957,7 @@ c     if (name.eq.'VELZ') kfldfdm =  3
 c
       call cggo
      $      (u,r,h1,h2,mask,mult,imesh,tol,maxit,isd,bi,name)
-      thmhz=thmhz+(dclock()-etime1)
+      thmhz=thmhz+(dnekclock()-etime1)
 c
 c
       return

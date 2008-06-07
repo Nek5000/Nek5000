@@ -79,8 +79,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call iniproc !  processor initialization 
       if (nid.eq.0) write(6,*) 'Number of Processors ::',np
 
-      TIME0  = dclock()
-      etimes = dclock()
+      TIME0  = dnekclock()
+      etimes = dnekclock()
       ISTEP  = 0
       tpp    = 0.0
 
@@ -92,10 +92,11 @@ C     Data initialization
 C
       call initdat
       call files
-      t0 = dclock()
+      t0 = dnekclock()
 
       call readat  ! Read processor map, followed by data.
-      if (nid.eq.0) write(6,*) 'readat time ::',dclock()-t0,' seconds'
+      if (nid.eq.0) write(6,*) 'readat time ::',dnekclock()-t0,
+     &                         ' seconds'
 
       call setvar  ! initialize some variables
       call echopar ! echo back the parameter stack
@@ -249,9 +250,9 @@ c     call prepost (.true.,'his')
 c
       if (instep.eq.0) then
          lastep=1
-         t0 = dclock()
+         t0 = dnekclock()
          call prepost (.true.,'his')
-         tpp = tpp + (dclock()-t0)
+         tpp = tpp + (dnekclock()-t0)
          nsteps=0
          call userchk
       endif
@@ -365,15 +366,15 @@ C---------------------------------------------------------------------
       REAL*8 ETIME0,ETIME1,ETIME2
       SAVE   ETIME0,ETIME1,ETIME2
       DATA   ETIME0,ETIME1,ETIME2 /0.0, 0.0, 0.0/
-      REAL*8 DCLOCK
+      REAL*8 DNEKCLOCK
 C
 C     Only node zero makes comments.
       IF (NID.NE.0) RETURN
 C
 C
-      IF (ETIME0.EQ.0.0) ETIME0=DCLOCK()
+      IF (ETIME0.EQ.0.0) ETIME0=DNEKCLOCK()
       ETIME1=ETIME2
-      ETIME2=DCLOCK()
+      ETIME2=DNEKCLOCK()
 C
       IF (ISTEP.EQ.0) THEN
          IFCOUR  = .FALSE.
@@ -391,15 +392,15 @@ C
          ETIME=ETIME2-ETIME1
          TTIME=ETIME2-ETIME0
          IF (     IFCOUR) 
-     $      WRITE (6,100) ISTEP,TIME,DT,COURNO,TTIME,ETIME
+     $      WRITE (6,100) ISTEP,TIME,DT,COURNO/10,TTIME,ETIME
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
       ELSEIF (LASTEP.EQ.1) THEN
          WRITE (6,*) ' '
          WRITE (6,*) 'Simulation successfully completed'
       ENDIF
- 100  FORMAT('Step',I6,', t=',E14.7,', DT=',E14.7
-     $,', C=',F7.3,2E11.4)
- 101  FORMAT('Step',I6,', time=',E12.5,', DT=',E11.3)
+ 100  FORMAT('Step',I6,', t=',1pE14.7,', DT=',1pE14.7
+     $,', C=',F7.3,2(1pE11.4))
+ 101  FORMAT('Step',I6,', time=',1pE12.5,', DT=',1pE11.3)
 C      call flush_io()
       RETURN
       END
@@ -1352,7 +1353,7 @@ c
       tdott=0.0
       tbsol=0.0
       tbso2=0.0
-      etims0= dclock()
+      etims0= dnekclock()
 C
       return
       end
@@ -1372,7 +1373,7 @@ C
 c
       real dhc, dwork
 C
-      tstop=dclock()
+      tstop=dnekclock()
       ttotal=tstop-etimes
       tttstp=tstop-etims0
 c
