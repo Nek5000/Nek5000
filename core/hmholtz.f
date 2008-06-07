@@ -715,8 +715,8 @@ c
          if (tin.lt.0)       tol=abs(tin)*rbn0
 
          ifprint_hmh = .false.
-         if (ifprint.and.nid.eq.0.and.param(74).ne.0) ifprint_hmh=.true.
-         if (istep.eq.1)                              ifprint_hmh=.true.
+         if (nid.eq.0.and.ifprint.and.param(74).ne.0) ifprint_hmh=.true.
+         if (nid.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
 
          if (ifprint_hmh)
      $      write(6,3002) istep,iter,name,ifmcor,rbn2,tol,h1(1),h2(1)
