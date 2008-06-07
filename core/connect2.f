@@ -1737,7 +1737,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
 
-      etime1 = dclock()
+      etime1 = dnekclock()
 
                   ibc = 2
       if (ifflow) ibc = 1
@@ -1770,7 +1770,7 @@ c
 
       call close_bin_file
 
-      etime2 = dclock() - etime1
+      etime2 = dnekclock() - etime1
       if (nid.eq.0) write(6,*) nid,' done mesh read, sec: ',etime2
 
       return

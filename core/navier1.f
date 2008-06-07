@@ -384,7 +384,7 @@ C
       if (icalld.eq.0) tcdtp=0.0
       icalld=icalld+1
       ncdtp=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 
       nxyz1 = nx1*ny1*nz1
       nxyz2 = nx2*ny2*nz2
@@ -504,7 +504,7 @@ C
 
       enddo
 C
-      tcdtp=tcdtp+(dclock()-etime1)
+      tcdtp=tcdtp+(dnekclock()-etime1)
       return
       end
 C
@@ -548,7 +548,7 @@ C
       if (icalld.eq.0) tmltd=0.0
       icalld=icalld+1
       nmltd=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 
       nyz1  = ny1*nz1
       nxy2  = nx2*ny2
@@ -660,7 +660,7 @@ c        NOTE: NZ1=NZ2=1
 C
       enddo
 C
-      tmltd=tmltd+(dclock()-etime1)
+      tmltd=tmltd+(dnekclock()-etime1)
       return
       END
 C
@@ -3143,9 +3143,9 @@ C-----------------------------------------------------------------------
 c
       logical ifsavep
 C
-      real*8 etime1,dclock
+      real*8 etime1,dnekclock
 C
-      etime1 = dclock()
+      etime1 = dnekclock()
       DIVEX = 0.
       ITER  = 0
 c
@@ -3254,7 +3254,7 @@ c
          CALL CADD (RCG,-XAVER,NTOT2)
       ENDIF
 C
-      etime1 = dclock()-etime1
+      etime1 = dnekclock()-etime1
       IF (NID.EQ.0) WRITE(6,9999) ISTEP,ITER,DIVEX,tolpss,div0,etime1
  9999 FORMAT(I10,' U-Press std. : ',I6,1p4E13.4)
 19999 FORMAT(I10,' U-Press 1.e-5: ',I6,1p4E13.4)
@@ -3291,7 +3291,7 @@ C
       if (icalld.eq.0) tslvb=0.0
       icalld=icalld+1
       nslvb=nslvb+1
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c     solve trans(r)*y = b
 c
@@ -3336,7 +3336,7 @@ c
             call saxpy(lm,t,abd(la,k),1,b(lb),1)
          enddo
       endif
-      tslvb=tslvb+dclock()-etime1
+      tslvb=tslvb+dnekclock()-etime1
       return
       end
 c-----------------------------------------------------------------------

@@ -1344,11 +1344,11 @@ c
       icalld = icalld + 1
       nddsl  = nddsl  + 1
       ncrsl  = ncrsl  + 1
-      etime1=dclock()
-      etime2=dclock()
+      etime1=dnekclock()
+      etime2=dnekclock()
       call crs_solve(xxth,e,r)
-      tcrsl=tcrsl+dclock()-etime2
-      tddsl=tddsl+dclock()-etime1
+      tcrsl=tcrsl+dnekclock()-etime2
+      tddsl=tddsl+dnekclock()-etime1
       return
       end
 c----------------------------------------------------------------------
@@ -1429,9 +1429,9 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
       nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
       ! e := W M        r
       !         Schwarz
-      time_0 = dclock()
+      time_0 = dnekclock()
       call local_solves_fdm(e,r)
-      time_1 = dclock()
+      time_1 = dnekclock()
 
       if_hybrid = .false.
       if (param(80).eq.1) if_hybrid = .true.
@@ -1441,7 +1441,7 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
          rbd1dt = rhoavg*bd(1)/dt ! Assumes constant density!!!
          call cdabdtp(mg_work2,e,h1,h2,h2inv,1)
          call cmult  (mg_work2,rbd1dt,nt)
-         time_2 = dclock()
+         time_2 = dnekclock()
          if (istep.eq.1) then
             copt(1)  = vlsc2(r       ,mg_work2,nt)
             copt(2)  = vlsc2(mg_work2,mg_work2,nt)
@@ -1465,7 +1465,7 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
          do i = 1,nt
             mg_work2(i) = r(i)
          enddo
-         time_2 = dclock()
+         time_2 = dnekclock()
       endif
  
       do l = mg_lmax-1,2,-1
@@ -1514,7 +1514,7 @@ c     $        mg_solve_e(mg_solve_index(l)+1)*alpha
      $                       mg_solve_r(mg_solve_index(1)))
       call hsmg_do_wt(mg_solve_e(mg_solve_index(1)),
      $                mg_mask(mg_mask_index(1)),2,2,1)
-      time_3 = dclock()
+      time_3 = dnekclock()
       do l = 2,mg_lmax-1
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          ! w   :=  J e
@@ -1554,7 +1554,7 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax3'
       do i = 1,nt
          e(i) = e(i) + copt2*mg_work2(i)
       enddo
-      time_4 = dclock()
+      time_4 = dnekclock()
 c     print *, 'Did an MG iteration'
 c
       taaaa = taaaa + (time_1 - time_0)

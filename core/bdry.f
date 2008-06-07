@@ -571,7 +571,7 @@ c
          icalld=icalld+1
       endif
       nusbc=nusbc+1
-      etime1=dclock()
+      etime1=dnekclock()
 C
 C
       NFACES=2*NDIM
@@ -664,7 +664,7 @@ C
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
 C
-      tusbc=tusbc+(dclock()-etime1)
+      tusbc=tusbc+(dnekclock()-etime1)
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -1082,6 +1082,7 @@ C
       INCLUDE 'GEOM'
       INCLUDE 'SOLN'
       INCLUDE 'INPUT'
+      INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 c
       common  /nekcb/ cb

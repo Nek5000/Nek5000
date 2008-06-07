@@ -113,9 +113,9 @@ C
       include 'TSTEP'
       include 'ZPER'
 c
-      REAL*8 dclock,t0
+      REAL*8 dnekclock,t0
 c
-      t0 = dclock()
+      t0 = dnekclock()
 c     if (.not.(ifgtp.or.ifgfdm)) then
       if (.not.ifgtp) then
 c

@@ -114,7 +114,7 @@ c
         icalld=1
       endif
       ngop = ngop + 1
-      etime1=dclock()
+      etime1=dnekclock()
 c
       if (op.eq.'+  ') then
 c        call mpi_allreduce_(x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
@@ -135,7 +135,7 @@ c        call mpi_allreduce_(x,w,n,nekreal,mpi_prod,nekcomm,ierr)
 c
       call copy(x,w,n)
 c
-      tgop =tgop +(dclock()-etime1)
+      tgop =tgop +(dnekclock()-etime1)
 c
       return
       end
@@ -241,16 +241,15 @@ c     call mpi_comm_rank_(nekcomm, myid, ierr)
       return
       end
 c-----------------------------------------------------------------------
-      real*8 function dclock()
+      real*8 function dnekclock()
       include 'mpif.h'
 c
       real*4 etime,q(2)
       save q
       data q /0.,0./
 c
-c     dclock=mpi_wtime_()
-      dclock=mpi_wtime ()
-c     dclock=etime(q)    ! for alpha
+      dnekclock=mpi_wtime ()
+c     dnekclock=etime(q)    ! for alpha
 c
       return
       end

@@ -55,7 +55,7 @@ c
       save    maxstep
       data    maxstep /999999999/
 
-      etime1=dclock()
+      etime1=dnekclock()
 c
 c     Trigger history output only if prefix = 'his'   pff 8/18/05
 c
@@ -127,7 +127,7 @@ c
 C
       icalld = icalld+1
       nprep=icalld
-      tprep=tprep+dclock()-etime1
+      tprep=tprep+dnekclock()-etime1
       ifdoit=.false.
       return
       end

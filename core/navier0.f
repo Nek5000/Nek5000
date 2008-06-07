@@ -21,7 +21,7 @@ c
       if (icalld.eq.0) teslv=0.0
       icalld=icalld+1
       neslv=icalld
-      etime1=dclock()
+      etime1=dnekclock()
 C
 c     write(6,*) solver_type,' solver type',iesolv
       IF (IESOLV.EQ.1) THEN
@@ -41,7 +41,7 @@ c     write(6,*) solver_type,' solver type',iesolv
          WRITE(6,*) 'Stop in ESOLVER'
          CALL EXITT
       ENDIF
-      teslv=teslv+(dclock()-etime1)
+      teslv=teslv+(dnekclock()-etime1)
       RETURN
       END
       SUBROUTINE ESTRAT

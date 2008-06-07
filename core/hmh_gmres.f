@@ -30,7 +30,7 @@ c
       real    norm_fac
       save    norm_fac
 c
-      real*8 etime1,dclock
+      real*8 etime1,dnekclock
 c
       n = nx1*ny1*nz1*nelv
 
@@ -40,7 +40,7 @@ c
          norm_fac = 1./sqrt(volvm1)
       endif
 c
-      etime1 = dclock()
+      etime1 = dnekclock()
       divex = 0.
       iter  = 0
       m = lgmres
@@ -164,7 +164,7 @@ c
          call cadd(res,-xaver,n)
       endif
 c
-      etime1 = dclock()-etime1
+      etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime1
 c     call flush_hack
  9999 format(I10,' U-Press gmres: ',I6,1p4E13.4)

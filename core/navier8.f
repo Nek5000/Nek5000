@@ -676,7 +676,7 @@ c
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
 
-      t0 = dclock()
+      t0 = dnekclock()
 
 c     nxc is order of coarse grid space + 1, nxc=2, linear, 3=quad,etc.
 c     nxc=param(82)
@@ -751,7 +751,7 @@ c        NOTE: a(),h1,...,w2() must all be large enough
      $               nz,ia,ja,a, null_space)
 c     call crs_stats(xxth)
 
-      t0 = dclock()-t0
+      t0 = dnekclock()-t0
       if (nid.eq.0) write(6,*) 'set_up_h1_crs time:',t0,' seconds'
 
       return
