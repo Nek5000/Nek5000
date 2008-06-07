@@ -67,8 +67,13 @@ rm -f $SOURCE_ROOT/SIZE 2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 
 \mv ./obj/*.o . 2>/dev/null
-cp  `pwd`/SIZEu    $SOURCE_ROOT/SIZE
-cp  `pwd`/$1.usr   $SOURCE_ROOT/subuser.f
+if [ -f SIZEu ]; then 
+  cp SIZEu    $SOURCE_ROOT/SIZE
+else
+  echo "FATAL ERROR: Cannot find SIZEu"
+  exit 1
+fi
+cp $1.usr   $SOURCE_ROOT/subuser.f
 
 
 # Check if the compiler adds an underscore to external functions
@@ -93,8 +98,6 @@ echo $F77comp | grep -i mpi
 if [ $? -eq 0 ]; then
  F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
 fi
-
-echo "Used Fortran compiler:" $F77comp
 
 case $F77comp in
   pgf77)       P="-r8";;
