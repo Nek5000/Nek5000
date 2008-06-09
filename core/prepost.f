@@ -363,9 +363,10 @@ C     Figure out what goes in EXCODE
          IF (NPSCAL.GT.0) THEN
             EXCODE(i) = 'S'
             WRITE(EXCODE(i+1),'(I1)') NPSCAL/10
-            WRITE(EXCODE(i+2),'(I1)') NPSCAL-(NPSCAL/10)
+            WRITE(EXCODE(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
          ENDIF
       endif
+     
 c
 C     Dump header
       if (nid.eq.0) call dump_header(excode,p66)
@@ -1493,7 +1494,7 @@ c-----------------------------------------------------------------------
       IF (NPSCAL.GT.0) THEN
          rdcode1(i) = 'S'
          WRITE(rdcode1(i+1),'(I1)') NPSCAL/10
-         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)
+         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
       ENDIF
  
       write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
