@@ -588,7 +588,7 @@ c     Quick check on maximum #dofs:
       m    = nxyz*nelt
       ngvm = iglmax(glo_num,m)
       if (nid.eq.0) write(6,1) nx,ngvv,ngve,ngvs,ngv,ngvm
-    1 format('setupds3d:',9i9)
+    1 format('setupds3d:',6i14)
 c
       return
       end
