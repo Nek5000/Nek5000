@@ -107,7 +107,9 @@ c - - - - - - - - - - - - - - - - - - - - - -
          call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
          call filterq(vy,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $   call filterq(vz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $      call filterq(vz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+         if (ifsplit.and..not.iflomach) 
+     $      call filterq(pr,intv,nx1,nz1,wk1,wk2,intt,if3d,pmax)
       endif
 c
       if (ifmhd.and.ifield.eq.ifldmhd) then
@@ -1551,56 +1553,58 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine err_est(u,name8,ifverb)
-c
-c     Local error estimates for u_e
-c
-      include 'SIZE'
-      include 'TOTAL'
-c
-      real u(nx1*ny1*nz1,nelt)
-      character*8 name8
-      logical ifverb
-c
-      common /ctmp1/ uh(lx1,ly1,lz1),w(lx1,ly1,lz1)
-      common /ctmp0/ errg(10,lelg),wg(10*lelg)
-c
-      common /errcmn/ Lj(lx1*lx1),Ljt(lx1*lx1)
-      real Lj,Ljt
-c
-      integer e,eg
-c
-      integer icalld
-      save    icalld
-      data    icalld  /0/
-c
-      if (icalld.eq.0) then
-         icalld = 1
-         call build_legend_transform(Lj,Ljt,zgm1,nx1)
-      endif
-c
-      call rzero(errg,10*nelgt)
-c
-      nel = nelfld(ifield)
-      do e=1,nel
-         eg = lglel(e,node)
-         call local_err_est(errg(1,eg),u(1,e),nx1,Lj,Ljt,uh,w,if3d)
-      enddo
-c
-      call gop(errg,wg,'+  ',10*nelgt)
-c
-      if (ifverb.and.nid.eq.0) then
-         write(6,1) istep,time,name8
-         do eg=1,nelgt
-            write(6,2) name8,eg,(errg(k,eg),k=1,10)
-         enddo
-      endif
-    1 format(i8,2x,1pe14.7,' Error: ',a8)
-    2 format(a8,i6,1p10e9.2)
-c
-      return
-      end
-c-----------------------------------------------------------------------
+ccc       subroutine err_est(u,name8,ifverb)
+ccc 
+ccc c     NO ERROR ESTIMATES IN THIS FORM... too much memory required
+ccc c
+ccc c     Local error estimates for u_e
+ccc c
+ccc       include 'SIZE'
+ccc       include 'TOTAL'
+ccc c
+ccc       real u(nx1*ny1*nz1,nelt)
+ccc       character*8 name8
+ccc       logical ifverb
+ccc c
+ccc       common /ctmp1/ uh(lx1,ly1,lz1),w(lx1,ly1,lz1)
+ccc       common /ctmp0/ errg(10,lelg),wg(10*lelg)
+ccc c
+ccc       common /errcmn/ Lj(lx1*lx1),Ljt(lx1*lx1)
+ccc       real Lj,Ljt
+ccc c
+ccc       integer e,eg
+ccc c
+ccc       integer icalld
+ccc       save    icalld
+ccc       data    icalld  /0/
+ccc c
+ccc       if (icalld.eq.0) then
+ccc          icalld = 1
+ccc          call build_legend_transform(Lj,Ljt,zgm1,nx1)
+ccc       endif
+ccc c
+ccc       call rzero(errg,10*nelgt)
+ccc c
+ccc       nel = nelfld(ifield)
+ccc       do e=1,nel
+ccc          eg = lglel(e,node)
+ccc          call local_err_est(errg(1,eg),u(1,e),nx1,Lj,Ljt,uh,w,if3d)
+ccc       enddo
+ccc c
+ccc       call gop(errg,wg,'+  ',10*nelgt)
+ccc c
+ccc       if (ifverb.and.nid.eq.0) then
+ccc          write(6,1) istep,time,name8
+ccc          do eg=1,nelgt
+ccc             write(6,2) name8,eg,(errg(k,eg),k=1,10)
+ccc          enddo
+ccc       endif
+ccc     1 format(i8,2x,1pe14.7,' Error: ',a8)
+ccc     2 format(a8,i6,1p10e9.2)
+ccc c
+ccc       return
+ccc       end
+ccc c-----------------------------------------------------------------------
       subroutine transpose1(a,n)
       real a(n,n)
 c
