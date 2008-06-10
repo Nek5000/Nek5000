@@ -2171,8 +2171,7 @@ c-----------------------------------------------------------------------
 
       character*4 dummy
 
-
-      read(hdr,*) dummy
+      read(hdr,*,err=99) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
@@ -2203,22 +2202,68 @@ c                 For now, what you see in file is what you get.
          enddo
       endif
   
-      IF (NPS.NE.NPSCAL) THEN
-         IF (NID.EQ.0) THEN 
-           WRITE(*,'(A)')    'ERROR: unexpect number of NPSCAL'
-           WRITE(*,'(A,I2)') 'NPSCAL_restart ',NPS
-           WRITE(*,'(A,I2)') 'NPSCAL_rea '    ,NPSCAL
-         ENDIF
-         CALL EXITT
-      ENDIF
+      if (nps.ne.npscal) then
+         if (nid.eq.0) then 
+           write(*,'(a)')    'ERROR: unexpect number of NPSCAL'
+           write(*,'(a,i2)') 'NPSCAL_restart ',NPS
+           write(*,'(a,i2)') 'NPSCAL_rea '    ,NPSCAL
+         endif
+         call exitt
+      endif
 
-      IF (NPS.GT.(LDIMT-1)) THEN
-         IF (NID.EQ.0) THEN 
-           WRITE(*,'(A)')    'ERROR: NSPCAL > LDIMT'
-           WRITE(*,'(A,I2)') 'Change LDIMT in SIZEu'
-         ENDIF
-         CALL EXITT
-      ENDIF
+      if (nps.gt.(ldimt-1)) then
+         if (nid.eq.0) then 
+           write(*,'(A)')    'ERROR: NSPCAL > LDIMT'
+           write(*,'(A,I2)') 'Change LDIMT in SIZEu'
+         endif
+         call exitt
+      endif
+
+      return
+
+   99 continue   !  If we got here, then the May 2008 variant of std hdr
+                 !  failed and we may have an older input file.
+
+      call parse_std_hdr_2006(hdr,rdcode)  ! try the original header format
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine parse_std_hdr_2006(hdr,rlcode)
+      include 'SIZE'
+      include 'INPUT'
+      include 'RESTART'
+
+      character*132 hdr
+      character*1 rlcode(20)
+
+c                4  7  10  13   23    33    53    62     68     74
+      read(hdr,1) wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         , ifiler,nfiler
+     $         , (rlcode(k),k=1,20)                   ! 74+20=94
+    1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
+
+c     Assign read conditions, according to rdcode
+c          NOTE:  This will be extended to general case in future.
+c                 For now, what you see in file is what you get.
+
+      ifgetx = .false.
+      ifgetu = .false.
+      ifgetp = .false.
+      ifgett = .false.
+      do k=1,npscal
+         ifgtps(k) = .false.
+      enddo
+
+      ifgtim = .true.  ! this is the default
+
+      if (rlcode(1).eq.'X') ifgetx = .true.
+      if (rlcode(2).eq.'U') ifgetu = .true.
+      if (rlcode(3).eq.'P') ifgetp = .true.
+      if (rlcode(4).eq.'T') ifgett = .true.
+      do k=1,npscal
+         if (rlcode(4+k).ne.' ') ifgtps(k) = .true.
+      enddo
 
       return
       end
