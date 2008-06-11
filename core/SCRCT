@@ -16,10 +16,8 @@ C
 C     global arrarys
 C
       PARAMETER (LGLOB=( 4*(3-LDIM) + 20*(LDIM-2) )*LELG)
-      COMMON /SCRNS/ GLNUM(LGLOB)
       COMMON /SCRSF/ WORK(LGLOB)
-      COMMON /SCRUZ/ WRK2(LGLOB) ,NODD(LELG)
-      INTEGER        GLNUM,WORK,WRK2,NODD
+      INTEGER        WORK
 C
 C     ring pass arrays
 C
