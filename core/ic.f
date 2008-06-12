@@ -2189,20 +2189,24 @@ c                 For now, what you see in file is what you get.
       ifgtim = .true.  ! this is the default
 
       NPS=0
-      if (rdcode1(1).eq.'X') ifgetx = .true.
-      if (rdcode1(2).eq.'U') ifgetu = .true.
-      if (rdcode1(3).eq.'P') ifgetp = .true.
-      if (rdcode1(4).eq.'T') ifgett = .true.
-      if (npscal.gt.0 .and. rdcode1(5).eq.'S') then
-         read(rdcode1(6),'(I1)') NPS1
-         read(rdcode1(7),'(I1)') NPS0
-         NPS = 10*NPS1+NPS0
-         do k=1,(NPS)
-           ifgtps(k) = .true.
-         enddo
-      endif
+      do i=1,10 
+         if (rdcode1(i).eq.'X') ifgetx = .true.
+         if (rdcode1(i).eq.'U') ifgetu = .true.
+         if (rdcode1(i).eq.'P') ifgetp = .true.
+         if (rdcode1(i).eq.'T') ifgett = .true.
+         if (npscal.gt.0 .and. rdcode1(i).eq.'S') then
+            read(rdcode1(i+1),'(I1)') NPS1
+            read(rdcode1(i+2),'(I1)') NPS0
+            NPS = 10*NPS1+NPS0
+            do k=1,NPS
+               ifgtps(k) = .true.
+            enddo
+            ! nothing will follow
+            GOTO 50
+         endif
+      enddo
   
-      if (nps.ne.npscal) then
+ 50   if (nps.ne.npscal) then
          if (nid.eq.0) then 
            write(*,'(a)')    'ERROR: unexpect number of NPSCAL'
            write(*,'(a,i2)') 'NPSCAL_restart ',NPS
