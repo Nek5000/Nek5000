@@ -1467,10 +1467,13 @@ c-----------------------------------------------------------------------
 
       call blank(hdr,132)              ! write header
 
+      ifld_nelp = 1 
+      if (nfield.ge.2) ifld_nelp = 2 
+
       nelo = 0
       do jnid = pid0,pid1              ! write global el. #s for this group
          nod = jnid+1
-         nelo = nelo + nelp(1,nod)
+         nelo = nelo + nelp(ifld_nelp,nod)
       enddo
 
       call blank(rdcode1,10)
@@ -1509,7 +1512,7 @@ c-----------------------------------------------------------------------
 
       do jnid = pid0,pid1              ! write global el. #s for this group
          nod = jnid+1
-         call byte_write(lglel(1,nod),nelp(1,nod))
+         call byte_write(lglel(1,nod),nelp(ifld_nelp,nod))
       enddo
 
       return
@@ -1528,6 +1531,9 @@ c-----------------------------------------------------------------------
       equivalence (u4,u8)
 
       integer e
+
+      ifld_nelp = 1
+      if (nfield.ge.2) ifld_nelp = 2
 
       call gsync() ! clear outstanding message queues.
 
@@ -1559,7 +1565,7 @@ c-----------------------------------------------------------------------
 
          idum  = 1
          do k=pid0+1,pid1
-         do e=1,nelp(1,k+1)
+         do e=1,nelp(ifld_nelp,k+1)
             mtype = lglel(e,k+1)
             call csend(mtype,idum,4,k,0)      ! handshake
             call crecv(mtype,u4  ,len )
@@ -1610,6 +1616,9 @@ c-----------------------------------------------------------------------
 
       integer e
 
+      ifld_nelp = 1
+      if (nfield.ge.2) ifld_nelp = 2
+
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
@@ -1648,7 +1657,7 @@ c-----------------------------------------------------------------------
 
          idum  = 1
          do k=pid0+1,pid1
-         do e=1,nelp(1,k+1)
+         do e=1,nelp(ifld_nelp,k+1)
             mtype = lglel(e,k+1)
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,u4  ,len )
