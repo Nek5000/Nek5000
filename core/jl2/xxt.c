@@ -282,14 +282,14 @@ static void init_sep_ids(xxt_data *data, array *dofa, ulong *xid)
     while(s!=si) {
       memset(xid,0,size*sizeof(ulong));
       xid+=size;
-      size=data->sep_size[++s];
+      if(++s != ns) size=data->sep_size[s];
     }
     *xid++ = dof[i].id, --size;
   }
   while(s!=ns) {
     memset(xid,0,size*sizeof(ulong));
     xid+=size;
-    size=data->sep_size[++s];
+    if(++s != ns) size=data->sep_size[s];
   }
 }
 
