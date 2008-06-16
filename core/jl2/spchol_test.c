@@ -37,7 +37,7 @@ int main()
     b[o[i]]=0;
   }
   sparse_cholesky_free(&data);
-  
+  buffer_free(&buf);
   /*
   sparse_cholesky_solve(b,&data,b);
   sparse_cholesky_free(&data);

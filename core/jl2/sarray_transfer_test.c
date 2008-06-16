@@ -9,10 +9,10 @@
 #include "sarray_transfer.h"
 
 typedef struct {
-  uint i;
-  ulong l;
-  uint p;
   double d;
+  ulong l,l2;
+  uint i;
+  uint p;
 } rec_t;
 
 int main(int narg, char *arg[])
@@ -36,7 +36,7 @@ int main(int narg, char *arg[])
   array_init(rec_t,&A,np*3), A.n=np*3, row=A.ptr;
   for(i=0;i<A.n;++i) {
     row[i].i = rand();
-    row[i].l = rand();
+    row[i].l = row[i].l2 = rand();
     row[i].p = rand()%np;
     row[i].d = rand()/(double)rand();
     printf("%d send: %x %x %d %g\n",

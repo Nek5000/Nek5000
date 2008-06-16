@@ -25,7 +25,7 @@
 #include "types.h"
 #include "name.h"
 
-typedef slong real;
+typedef long real;
 sint datatype = 4;
 
 #define fgs_setup   FORTRAN_NAME(gs_setup  ,GS_SETUP  )

@@ -65,6 +65,7 @@ int main(int narg, char* arg[])
     }
     printf("%d : max dif = %g\n",id,dif);
   }
+  free(A); free(Ai); free(x); free(xid);
   
 #ifdef MPI
   MPI_Finalize();

@@ -36,6 +36,7 @@ int main()
   for(i=0;i<500;++i)
     printf("%g\t%g\t%ld\t%d\n",
       recs[i].d,recs[i].f,(long)recs[i].l,(int)recs[i].i);
+  buffer_free(&buf);
   return 0;
 }
 
