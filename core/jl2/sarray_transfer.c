@@ -32,7 +32,7 @@ static void pack(const char *input, uint n, crystal_data *cr,
   out = cr->data.ptr; cn=0;
   for(i=0;i<n;++i) {
     const char *row = input + size*perm[i];
-    p = *(uint*)(row+off);
+    memcpy(&p,row+off,sizeof(uint));
     if(p!=lp) {
       lp = p;
       *out++ = p;           /* target */
@@ -67,7 +67,7 @@ static void unpack(array *A, crystal_data *cr, size_t off, size_t size)
     for(;len;len-=row_size) {
       memcpy(out,in,off);
       memcpy(out+off,&p,sizeof(uint));
-      memcpy(out+after,(char*)in+off,after_len);
+      memcpy(out+after,(const char*)in+off,after_len);
       out += size;
       in += row_size;
     }
