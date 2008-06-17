@@ -178,31 +178,32 @@ subuser.o	:$S/subuser.f;		$(F77) -c $(FL2) $S/subuser.f
 isosurf.o       :$S/isosurf.c;          $(CC)  -c $(cFL3) $(JL) $S/isosurf.c
 byte.o          :$S/byte.c;             $(CC)  -c $(cFL3) $(JL) $S/byte.c
 ################################################################################
-$(JO)errmem.o          :$J/errmem.c;          $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)sort.o            :$J/sort.c;            $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)crystal.o         :$J/crystal.c;         $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)tuple_list.o      :$J/tuple_list.c;      $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)transfer.o        :$J/transfer.c;        $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)fcrystal.o        :$J/fcrystal.c;        $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)gs.o              :$J/gs.c;              $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)sparse_cholesky.o :$J/sparse_cholesky.c; $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)xxt.o             :$J/xxt.c;             $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)poly.o            :$J/poly.c;            $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)tensor.o          :$J/tensor.c;          $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)findpt.o          :$J/findpt.c;          $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)pfindpt.o         :$J/pfindpt.c;         $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)findpts.o         :$J/findpts.c;         $(CC) -c $(L4) $(JL) $< -o $@
-$(JO)amg.o             :$J/amg.c;             $(CC) -c $(L4) $(JL) $< -o $@
+#             -L2 required here for BGP
+$(JO)errmem.o          :$J/errmem.c;          $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)sort.o            :$J/sort.c;            $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)crystal.o         :$J/crystal.c;         $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)tuple_list.o      :$J/tuple_list.c;      $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)transfer.o        :$J/transfer.c;        $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)fcrystal.o        :$J/fcrystal.c;        $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)gs.o              :$J/gs.c;              $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)sparse_cholesky.o :$J/sparse_cholesky.c; $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)xxt.o             :$J/xxt.c;             $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)poly.o            :$J/poly.c;            $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)tensor.o          :$J/tensor.c;          $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)findpt.o          :$J/findpt.c;          $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)pfindpt.o         :$J/pfindpt.c;         $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)findpts.o         :$J/findpts.c;         $(CC) -c $(L2) $(JL) $< -o $@
+$(JO)amg.o             :$J/amg.c;             $(CC) -c $(L2) $(JL) $< -o $@
 ################################################################################
-$(JO2)errmem.o          :$(J2)/errmem.c;          $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L4) $(JL2) $< -o $@
-$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L4) $(JL2) $< -o $@
+$(JO2)errmem.o          :$(J2)/errmem.c;          $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L2) $(JL2) $< -o $@
 #
