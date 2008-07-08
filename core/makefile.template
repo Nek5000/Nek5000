@@ -166,7 +166,7 @@ fastsa.o		:$S/fastsa.f;		$(F77) -c $(FL4) $S/fastsa.f
 ################################################################################
 #dual mode modules
 ################################################################################
-hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(FL4) $S/hmholtz.f
+hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(FL2) $S/hmholtz.f
 navier1.o	:$S/navier1.f;		$(F77) -c $(FL4) $S/navier1.f
 fasts.o		:$S/fasts.f;		$(F77) -c $(FL4) $S/fasts.f
 subuser.o	:$S/subuser.f;		$(F77) -c $(FL2) $S/subuser.f
