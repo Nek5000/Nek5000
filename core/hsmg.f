@@ -286,7 +286,15 @@ c----------------------------------------------------------------------
       subroutine hsmg_dssum(u,l)
       include 'SIZE'
       include 'HSMG'
+
+      include 'CTIMER'
+
+      etime1=dnekclock()
+
       call gs_op(mg_gsh_handle(l),u,1,1,0)
+
+      tdadd =tdadd + dnekclock()-etime1
+
       return
       end
 c----------------------------------------------------------------------

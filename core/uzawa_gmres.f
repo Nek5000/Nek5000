@@ -18,9 +18,11 @@ c-----------------------------------------------------------------------
       real             h1   (lx1,ly1,lz1,lelv)
       real             h2   (lx1,ly1,lz1,lelv)
       real             h2inv(lx1,ly1,lz1,lelv)
-c
+
       real wp(lx2,ly2,lz2,lelv)
-c
+
+      common /ctmp0/ wk1(lgmres),wk2(lgmres)
+
       real y(lgmres)
       real alpha, l, temp
       integer j,m
@@ -99,13 +101,25 @@ c            call copy(r,res,ntot2)
                                                   !      -1
             call col2(w,ml,ntot2)                 ! w = L   w
             !modified Gram-Schmidt
+
+c           do i=1,j
+c
+c              h(i,j)=glsc2(w,v(1,i),ntot2)       ! h    = (w,v )
+c                                                 !  i,j       i
+c              call add2s2(w,v(1,i),-h(i,j),ntot2)! w = w - h    v
+c                                                 !          i,j  i
+c           enddo
+
+c           1-PASS GS, 1st pass:
             do i=1,j
-               h(i,j)=glsc2(w,v(1,i),ntot2)       ! h    = (w,v )
-                                                  !  i,j       i
-                                               
+               h(i,j)=vlsc2(w,v(1,i),ntot2)       ! h    = (w,v )
+            enddo                                 !  i,j       i
+            call gop(h(1,j),wk1,'+  ',j)          ! sum over P procs
+            do i=1,j
                call add2s2(w,v(1,i),-h(i,j),ntot2)! w = w - h    v
-                                                  !          i,j  i
-            enddo
+            enddo                                 !          i,j  i
+
+
             !apply Givens rotations to new column
             do i=1,j-1
                temp = h(i,j)                   
@@ -124,7 +138,7 @@ c            call copy(r,res,ntot2)
             gamma(j+1) = -s(j) * gamma(j)
             gamma(j)   =  c(j) * gamma(j)
 
-c            call outmat(h,m,j,' h    ',j)
+c           call outmat(h,m,j,' h    ',j)
             
             rnorm = abs(gamma(j+1))*norm_fac
             ratio = rnorm/div0
@@ -138,32 +152,6 @@ c            call outmat(h,m,j,' h    ',j)
             temp = 1./alpha
             call cmult2(v(1,j+1),w,temp,ntot2)   ! v    = w / alpha
                                                  !  j+1            
-c           DIAGNOSTICS
-c            do k=j,1,-1
-c               temp = gamma(k)
-c               do i=j,k+1,-1
-c                  temp = temp - h(k,i)*y(i)
-c               enddo
-c               y(k) = temp/h(k,k)
-c            enddo
-c            !sum up Arnoldi vectors
-c            call copy(w,x,ntot2)
-c            do i=1,j
-c               call add2s2(w,z(1,i),y(i),ntot2)     ! x = x + c  z
-c                                                    !          i  i
-c            enddo
-c            call dbg_write(w,nx2,ny2,nz2,nelv,
-c     $            'sol'//char(iter+64),3)
-c            if(iter.eq.26) call exitt
-c            call copy(r,res,ntot2)                ! r = res
-c            call cdabdtp(mu,w,h1,h2,h2inv,intype)  ! mu = A x
-c            call add2s2(r,mu,-1.,ntot2)            ! r = r - mu
-c            call col2(r,ml,ntot2)
-c            rnorm = sqrt(glsc2(r,r,ntot2)/volvm2)
-c            print *, 'Divergence: ',rnorm
-c            if(rnorm.lt.tolpss) goto 900 ! converged
-c           END DIAGNOSTICS
-                                                 
          enddo
   900    iconv = 1
  1000    continue

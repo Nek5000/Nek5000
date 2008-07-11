@@ -1512,7 +1512,7 @@ c
          call gop(vdadd,work,'+  ',np)
 c
          call rzero(vgsum,np)
-         vgsum(node)=tgsum
+         vgsum(node)=tcrsl
          call gop(vgsum,work,'+  ',np)
 c
          call rzero(vvdss,np)
