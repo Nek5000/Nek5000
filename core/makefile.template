@@ -53,7 +53,7 @@ NOBJS = $(CORE) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
 L0 = $(G) -O0 
 L2 = $(G) -O2
 L3 = $(G) -O2
-L4 = $(G) -O3
+L4 = $(G) -O2
 
 ifeq ($(IFUNDERSCORE),true)
 JL := ${JL} -DUNDERSCORE
@@ -77,14 +77,12 @@ lFLAGS = $(USR_LIB)
 
 ################################################################################
 
-all : nek5000  print
+all : nek5000
 
 nek5000:	 $(NOBJS) 
-	 $(F77) -o nek5000 $G $(NOBJS) $(lFLAGS)
-
-print:
-	size nek5000
-	echo "I am done" 
+	$(F77) -o nek5000 $G $(NOBJS) $(lFLAGS)
+	size nek5000	
+	echo "I am done"
 
 clean:
 	rm -rf ./obj nek5000
