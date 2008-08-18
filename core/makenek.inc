@@ -122,6 +122,7 @@ else
   # default
   IFMPI=true
 fi
+export IFMPI
 
 if [ "$IFAMG" == "true" -o "$IFAMG" == "yes" ]; then
   IFAMG=true
