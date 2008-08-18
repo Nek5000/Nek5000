@@ -105,5 +105,5 @@ C
 c
       common /ppointr/ jp
 
-      integer DUPMASK(LX1,LY1,LZ1,LELT)
-      common /dmask/ DUPMASK
+      integer DUPMASKV(LX1,LY1,LZ1,LELT)
+      common /dmask/ DUPMASKV
