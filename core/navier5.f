@@ -24,11 +24,11 @@ c
       save intup
       save intv
       save intp
-c
+
       common /ctmp0/ intw,intt
      $             , wk1,wk2
-     $             , zgmv,wgtv,zgmp,wgtp,tmax(100)
-c
+     $             , zgmv,wgtv,zgmp,wgtp,tmax(100),omax(103)
+
       real intw(lx1,lx1)
       real intt(lx1,lx1)
       real wk1  (lx1,lx1,lx1,lelt)
@@ -38,6 +38,8 @@ c
 c     outpost arrays
       parameter (lt=lx1*ly1*lz1*lelv)
       common /scruz/ w1(lt),w2(lt),w3(lt),wt(lt)
+
+      character*18 sfmt
 
       integer icalld
       save    icalld
@@ -100,7 +102,7 @@ c
 c - - - - - - - - - - - - - - - - - - - - - -
 
       ifldt  = ifield
-      ifield = 1
+c     ifield = 1
 
       if ( (ifflow.and. .not. ifmhd)  .or.
      $     (ifield.eq.1 .and. ifmhd)      ) then
@@ -135,10 +137,15 @@ c
         enddo
       endif
 c
-c     pmax = glmax(pmax,1)
-      umax = glmax(umax,1)
-      vmax = glmax(vmax,1)
-      wmax = glmax(wmax,1)
+      mmax = 0
+      if (ifflow) then
+c        pmax    = glmax(pmax,1)
+         omax(1) = glmax(umax,1)
+         omax(2) = glmax(vmax,1)
+         omax(3) = glmax(wmax,1)
+         mmax = ndim
+      endif
+         
 c
       nfldt = 1+npscal
       if (ifheat .and. .not.ifcvode) then
@@ -146,23 +153,31 @@ c
             ifield = ifld + 1
             call filterq(t(1,1,1,1,ifld),intv
      $                  ,nx1,nz1,wk1,wk2,intt,if3d,tmax(ifld))
-
+            mmax = mmax+1
+            omax(mmax) = glmax(tmax(ifld),1)
          enddo
-         tmax(ifld) = glmax(tmax(ifld),1)
       endif
-c
-c
+
       if (nid.eq.0) then
-         if (if3d) then
-            write(6,1) istep,ifield,umax,vmax,wmax
+         if (npscal.eq.0) then
+            write(6,101) mmax
+            write(sfmt,101) mmax
+  101       format('''(i8,1p',i1,'e12.4,a6)''')
+c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
+c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
          else
-            write(6,1) istep,ifield,umax,vmax
+            if (if3d) then
+               write(6,1) istep,ifield,umax,vmax,wmax
+            else
+               write(6,1) istep,ifield,umax,vmax
+            endif
+    1       format(i8,i3,' qfilt:',1p3e12.4)
+            if(ifheat .and. .not.ifcvode) 
+     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
          endif
-         if(ifheat .and. .not.ifcvode) 
-     &         write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
       endif
-    1 format(i8,i3,' qfilt:',1p3e12.4)
-c
+
+
 c
 c - - - - - - - - - - - - - - - - - - - - - -
 c     Check to see if we should dump U-F(U)
@@ -3478,6 +3493,243 @@ c
 
       if (strsmax.gt.0) strsmax = sqrt(strsmax)
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fix_geom ! fix up geometry irregularities
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lt = lx1*ly1*lz1)
+      common /scrns/ xb(lt,lelt),yb(lt,lelt),zb(lt,lelt)
+      common /scruz/ tmsk(lt,lelt),tmlt(lt,lelt),w1(lt),w2(lt)
+
+      integer e,f
+      character*3 cb
+
+      n      = nx1*ny1*nz1*nelt
+      nxyz   = nx1*ny1*nz1
+      nfaces = 2*ndim
+      ifield = 1       ! velocity field
+
+
+      call rone  (tmlt,n)
+      call dssum (tmlt,nx1,ny1,nz1)  ! denominator
+
+      call rone  (tmsk,n)
+      do e=1,nelv      ! fill mask where bc is periodic
+      do f=1,nfaces    ! so we don't translate periodic bcs (z only)
+         cb =cbc(f,e,ifield)
+         if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
+      enddo
+      enddo
+
+      do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
+                            ! Extra pass is just to test convergence
+
+         call opcopy (xb,yb,zb,xm1,ym1,zm1)
+         call opdssum(xb,yb,zb)
+
+         xm = 0.
+         ym = 0.
+         zm = 0.
+
+         do e=1,nelt
+            do i=1,nxyz                       ! compute averages of geometry
+               s     = 1./tmlt(i,e)
+               xb(i,e) = s*xb(i,e)
+               yb(i,e) = s*yb(i,e)
+               zb(i,e) = s*zb(i,e)
+
+               xb(i,e) = xb(i,e) - xm1(i,1,1,e)   ! local displacements
+               yb(i,e) = yb(i,e) - ym1(i,1,1,e)
+               zb(i,e) = zb(i,e) - zm1(i,1,1,e)
+               zb(i,e) = zb(i,e)*tmsk(i,e)
+
+               xm = max(xm,abs(xb(i,e)))
+               ym = max(ym,abs(yb(i,e)))
+               zm = max(zm,abs(zb(i,e)))
+            enddo
+
+            if (kpass.le.ndim) then
+               call gh_face_extend(xb(1,e),zgm1,nx1,kpass,w1,w2)
+               call gh_face_extend(yb(1,e),zgm1,nx1,kpass,w1,w2)
+               call gh_face_extend(zb(1,e),zgm1,nx1,kpass,w1,w2)
+            endif
+
+         enddo
+
+         if (kpass.le.ndim) then
+            call add2(xm1,xb,n)
+            call add2(ym1,yb,n)
+            call add2(zm1,zb,n)
+         endif
+         
+         xx = glamax(xb,n)
+         yx = glamax(yb,n)
+         zx = glamax(zb,n)
+
+         xm = glmax(xm,1)
+         ym = glmax(ym,1)
+         zm = glmax(zm,1)
+
+         if (nid.eq.0) write(6,1) xm,ym,zm,xx,yx,zx,kpass
+    1    format(1p6e12.4,' xyz repair',i2)
+
+      enddo
+
+      param(59) = 1.       ! ifdef = .true.
+      call geom_reset(1)   ! reset metrics, etc.
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gh_face_extend(x,zg,n,gh_type,e,v)
+c
+c     Extend faces into interior via gordon hall
+c
+c     gh_type:  1 - vertex only
+c               2 - vertex and edges
+c               3 - vertex, edges, and faces
+c
+c
+      real x(n,n,n)
+      real zg(n)
+      real e(n,n,n)
+      real v(n,n,n)
+      integer gh_type
+c
+c     Build vertex interpolant
+c
+      ntot=n*n*n
+      call rzero(v,ntot)
+      do kk=1,n,n-1
+      do jj=1,n,n-1
+      do ii=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            si       = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            sj       = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            sk       = 0.5*((n-kk)*(1-zg(k))+(kk-1)*(1+zg(k)))/(n-1)
+            v(i,j,k) = v(i,j,k) + si*sj*sk*x(ii,jj,kk)
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+      enddo
+      if (gh_type.eq.1) then
+         call copy(x,v,ntot)
+         return
+      endif
+c
+c
+c     Extend 12 edges
+      call rzero(e,ntot)
+c
+c     x-edges
+c
+      do kk=1,n,n-1
+      do jj=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hj       = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            hk       = 0.5*((n-kk)*(1-zg(k))+(kk-1)*(1+zg(k)))/(n-1)
+            e(i,j,k) = e(i,j,k) + hj*hk*(x(i,jj,kk)-v(i,jj,kk))
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+c
+c     y-edges
+c
+      do kk=1,n,n-1
+      do ii=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hi       = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            hk       = 0.5*((n-kk)*(1-zg(k))+(kk-1)*(1+zg(k)))/(n-1)
+            e(i,j,k) = e(i,j,k) + hi*hk*(x(ii,j,kk)-v(ii,j,kk))
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+c
+c     z-edges
+c
+      do jj=1,n,n-1
+      do ii=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hi       = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            hj       = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            e(i,j,k) = e(i,j,k) + hi*hj*(x(ii,jj,k)-v(ii,jj,k))
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+c
+      call add2(e,v,ntot)
+c
+      if (gh_type.eq.2) then
+         call copy(x,e,ntot)
+         return
+      endif
+c
+c     Extend faces
+c
+      call rzero(v,ntot)
+c
+c     x-edges
+c
+      do ii=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hi       = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            v(i,j,k) = v(i,j,k) + hi*(x(ii,j,k)-e(ii,j,k))
+         enddo
+         enddo
+         enddo
+      enddo
+c
+c     y-edges
+c
+      do jj=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hj       = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            v(i,j,k) = v(i,j,k) + hj*(x(i,jj,k)-e(i,jj,k))
+         enddo
+         enddo
+         enddo
+      enddo
+c
+c     z-edges
+c
+      do kk=1,n,n-1
+         do k=1,n
+         do j=1,n
+         do i=1,n
+            hk       = 0.5*((n-kk)*(1-zg(k))+(kk-1)*(1+zg(k)))/(n-1)
+            v(i,j,k) = v(i,j,k) + hk*(x(i,j,kk)-e(i,j,kk))
+         enddo
+         enddo
+         enddo
+      enddo
+c
+      call add2(v,e,ntot)
+      call copy(x,v,ntot)
+c
       return
       end
 c-----------------------------------------------------------------------
