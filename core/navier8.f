@@ -2420,6 +2420,8 @@ c-----------------------------------------------------------------------
       ncrnr = 2**ndim
       call f77_get_vert_map(gllnid, vertex, ncrnr, nelgt, '.map')
 
+      call split_gllnid   ! added to remove CPU=2^k restriction
+
       npstar = ivlmax(gllnid,nelgt)+1
       nnpstr = npstar/np
       do eg=1,nelgt
@@ -2663,3 +2665,55 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+
+      subroutine split_gllnid
+
+c  Split the sorted gllnid array (read from .map file) in NP contiguous
+c  partitions. NP is an arbitrary number and denotes the numbers of CPUs
+c  used to run NEK. 
+c  To load balance the partitions in case of mod(nelgt,np)>0
+c  add 1 contiguous entry (out of the sorted list) to every RANK_i where 
+c  i = 1,mod(nelgt,np)+1
+c
+      include 'SIZE'
+      include 'TOTAL'
+ 
+      integer iunsort(lelg)
+
+      le    = nelgt/np
+      nmod  = mod(nelgt,np)
+
+      ! sort gllnid to do the paritioning
+      call isort(gllnid,iunsort,nelgt)
+
+      ip = -1
+      do iel = 1,le
+         ip = ip + 1
+         gllnid(iel) = iel-1
+      enddo
+      iel0 = le
+      
+      do inode = 1,nmod
+         do iel = 1,le
+            ip = ip + 1
+            ieln = (inode-1)*(le+1)
+            gllnid(iel0+ieln+iel) = ip
+         enddo
+         gllnid(iel0+ieln+le+1) = ip
+      enddo
+
+      iel0 = iel0 + nmod*(le+1)
+       
+      do inode = nmod+1,np
+         do iel = 1,le
+            ip = ip + 1
+            ieln = (inode-nmod-1)*le
+            gllnid(iel0+ieln+iel) = ip
+         enddo
+      enddo
+
+      ! unddo sorting
+      call iswapt_ip(gllnid,iunsort,nelgt)
+
+      return
+      end
