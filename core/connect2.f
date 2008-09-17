@@ -597,7 +597,7 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   52             FORMAT(A1,A3,I6,5G14.7)
+   52             FORMAT(A1,A3,I6,I1,5G14.7)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP
