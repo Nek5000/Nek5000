@@ -592,7 +592,7 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    51             FORMAT(A1,A3,I5,I1,5G14.7)
-               ELSEIF (NELGT.LT.10000000) THEN
+               ELSEIF (NELGT.LT.1000000) THEN
                   READ(9,52,ERR=500,END=500)    
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
