@@ -51,7 +51,7 @@ c
       character*1  fout1(80)
       equivalence (fout1,fout)
 c
-      parameter(nelm=8888)
+      parameter(nelm=9999)
       common /array/ x(6,nelm),y(6,nelm),bc(5,6,nelm),curve(6,8,nelm)
       common /arrai/ nlev,nel,ncurve
       common /arrac/ cbc,ccurve,ca
@@ -140,7 +140,7 @@ c
 c
       write(6,*)
       write(6,6) neln,(fout1(k),k=1,len+4)
-    6 format(i4,' elements written to ',40a1)
+    6 format(i8,' elements written to ',40a1)
 c
       close (unit=10)
       close (unit=11)
@@ -190,7 +190,7 @@ c
       logical      ifcem,ifper, ifpec,ifpmc,ifpml
 c
 c     Nekton stuff
-      parameter(nelm=8888)
+      parameter(nelm=9999)
       common /array/ x(6,nelm),y(6,nelm),bc(5,6,nelm),curve(6,8,nelm)
       common /arrai/ nlev,nel,ncurve
       common /arrac/ cbc,ccurve,ca
@@ -289,7 +289,7 @@ c
       endif
       neln = nlev*nel
       write(11,11) neln,ndim3,neln
-   11 format(3i6,11x,'NEL,NDIM,NELV')
+   11 format(3i10,11x,'NEL,NDIM,NELV')
 c
 c     Read & write xy data 
       dz = dzi(1)
@@ -403,8 +403,10 @@ c
             do k=1,6
                if (neln.lt.1000) then
                   write(11,20) cbc(k,ie),ie,k,(bc(j,k,ie),j=1,5)
-               else
+               elseif (neln.lt.100000) then
                   write(11,21) cbc(k,ie),id,k,(bc(j,k,ie),j=1,5)
+               else
+                  write(11,22) cbc(k,ie),id,k,(bc(j,k,ie),j=1,5)
                endif
             enddo
             cbc(5,ie) = 'E  '
@@ -445,8 +447,10 @@ c              Periodic bc's on Z plane
                do  k = 1,6
                   if (neln.lt.1000) then
                      write(11,20) cbc(k,ie),id,k,(bc(j,k,ie),j=1,5)
-                  else
+                  elseif (neln.lt.100000) then
                      write(11,21) cbc(k,ie),id,k,(bc(j,k,ie),j=1,5)
+                  else
+                     write(11,22) cbc(k,ie),id,k,(bc(j,k,ie),j=1,5)
                   endif
                enddo
             enddo
@@ -459,8 +463,10 @@ c
 c
       call readwrite(string,'endendend',9)
 c
-   20 FORMAT(1x,A3,2I3,5G14.6)
-   21 FORMAT(1x,A3,i5,i1,5G14.6)
+   20 FORMAT(1x,A3,2I3,5G14.7)
+   21 FORMAT(1x,A3,i5,i1,5G14.7)
+   22 FORMAT(1x,A3,i6,i1,5G14.7)
+
 c
    80 format(a80)
    81 format(80a1)
@@ -588,7 +594,7 @@ c
       character*16 s4
 c
 c     Nekton stuff
-      parameter(nelm=8888)
+      parameter(nelm=9999)
       parameter(nxm=9)
       common /array/ data(6*nelm*nxm*nxm)
 c
@@ -666,7 +672,7 @@ c
 c-----------------------------------------------------------------------
       subroutine rdcurve
 C
-      parameter(nelm=8888)
+      parameter(nelm=9999)
       common /array/ x(6,nelm),y(6,nelm),bc(5,6,nelm),curve(6,8,nelm)
       common /arrai/ nlev,nel,ncurve
       common /arrac/ cbc,ccurve,ca
@@ -713,7 +719,7 @@ C
 c-----------------------------------------------------------------------
       subroutine out_curve
 C
-      parameter(nelm=8888)
+      parameter(nelm=9999)
       common /array/ x(6,nelm),y(6,nelm),bc(5,6,nelm),curve(6,8,nelm)
       common /arrai/ nlev,nel,ncurve
       common /arrac/ cbc,ccurve,ca
@@ -727,7 +733,7 @@ C
       neln = nlev*nel
       ncun = 2*nlev*ncurve
       write(11,11)
-      write(11,12)NCUn
+      write(11,12) NCUn
    11 format(' ***** CURVED SIDE DATA *****')
    12 format(i8
      $ ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
@@ -747,15 +753,21 @@ C
                   write(11,60) IEDG,IE,R1,R2,R3,R4,R5,ANS
                   ied4 = iedg+4
                   write(11,60) IED4,IE,R1,R2,R3,R4,R5,ANS
-               ELSE
+               ELSEIF (neln.lt.1000000) then
                   write(11,61) IEDG,IE,R1,R2,R3,R4,R5,ANS
                   ied4 = iedg+4
                   write(11,61) IED4,IE,R1,R2,R3,R4,R5,ANS
+               ELSE
+                  write(11,62) IEDG,IE,R1,R2,R3,R4,R5,ANS
+                  ied4 = iedg+4
+                  write(11,62) IED4,IE,R1,R2,R3,R4,R5,ANS
                ENDIF
             endif
    50    CONTINUE
    60    FORMAT(I3,I3,5G14.6,1X,A1)
    61    FORMAT(I2,I6,5G14.6,1X,A1)
+   62    FORMAT(I1,I7,5G14.6,1X,A1)
+
       ENDIF
       RETURN
 C

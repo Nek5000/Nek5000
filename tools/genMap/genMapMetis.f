@@ -295,12 +295,12 @@ c    $      (bc(ii,f,e),ii=1,nbcrea)
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
-         elseif (nel.lt.10000000) then
+         elseif (nel.lt.1000000) then
             read(io,52,err=500,end=500)    
      $      chtemp,
      $      cbc(f,e),id1,
      $      (bc(ii,f,e),ii=1,nbcrea)
-   52       format(a1,a3,i6,5g14.7)
+   52       format(a1,a3,i6,i1,5g14.7)
          endif
       enddo
       enddo
