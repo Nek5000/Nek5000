@@ -2420,7 +2420,7 @@ c-----------------------------------------------------------------------
       ncrnr = 2**ndim
       call f77_get_vert_map(gllnid, vertex, ncrnr, nelgt, '.map')
 
-      call split_gllnid   ! added to remove CPU=2^k restriction
+      if(.not. ifgfdm) call split_gllnid   ! added to remove CPU=2^k restriction
 
       npstar = ivlmax(gllnid,nelgt)+1
       nnpstr = npstar/np
