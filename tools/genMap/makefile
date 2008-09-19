@@ -1,4 +1,4 @@
-FLAGS = 
+FLAGS = -r8 
 LFLAGS = 
 prefix = $(bin_nek_tools)
 

@@ -261,6 +261,8 @@ c     .Read Boundary Conditions (and connectivity data)
       character*3 cbc(nfc,nel)
       real        bc(5,nfc,nel)
 
+      character*1 chtemp
+
       character*3 cbt(nfc)
       real        bt(5,nfc)
 
@@ -285,17 +287,17 @@ c    $      cbc(f,e),id1,id2,
 c    $      (bc(ii,f,e),ii=1,nbcrea)
    50       format(a1,a3,2i3,5g14.7)
          elseif (nel.lt.100000) then
-            read(io,51,err=500,end=500)    
+            read(io,51,err=500,end=500)   
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
          elseif (nel.lt.1000000) then
-            read(io,52,err=500,end=500)    
-     $      chtemp,
-     $      cbc(f,e),id1,
+            read(io,52,err=500,end=500) 
+     $      chtemp, 
+     $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-   52       format(a1,a3,i6,i1,5g14.7)
+   52       FORMAT(A1,A3,i6,i1,5G14.7)
          endif
       enddo
       enddo
