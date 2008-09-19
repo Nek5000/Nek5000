@@ -2404,6 +2404,7 @@ c-----------------------------------------------------------------------
       subroutine f77_get_vert
       include 'SIZE'
       include 'TOTAL'
+      include 'ZPER'
 
       common /ivrtx/ vertex ((2**ldim)*lelg)
       integer vertex

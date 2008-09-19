@@ -29,6 +29,12 @@ C     Read Mesh Data and Group ID
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
+      if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
+         write(6,*)
+     $   'For GFDM or GTP, need number of processor = 2^k'
+         call exitt
+      endif
+c
       call chk_nel  ! make certain sufficient array sizes
       call mapelpr  ! read .map file, est. gllnid, etc.
 
@@ -149,9 +155,6 @@ C
          call exitt
       endif
 
-
-
-
       if (ifmhd .and. lbx1.ne.lx1) then
          write(6,*) 
      $   'For MHD, need lbx1=lx1, etc.; Change SIZEu & recompile'
@@ -166,6 +169,7 @@ c
          write(6,*) 
      $   'For Lyapunov, need lpx1=lx1, etc.; Change SIZEu & recompile'
       endif
+
 c
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
