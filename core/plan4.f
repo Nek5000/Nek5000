@@ -50,8 +50,6 @@ C
 
       call ctolspl (tolspl,respr)
 
-      if(nid.eq.0) write(*,'(13X,A)') 'Solving Hydrodynamics'
-
 c     CALL HMHOLTZ ('PRES',DPR,RESPR,H1,H2,PMASK,VMULT,
 c    $              IMESH,TOLSPL,NMXH,1)
 
