@@ -367,6 +367,10 @@ C---------------------------------------------------------------------
       SAVE   ETIME0,ETIME1,ETIME2
       DATA   ETIME0,ETIME1,ETIME2 /0.0, 0.0, 0.0/
       REAL*8 DNEKCLOCK
+
+      COMMON /CTIME3/ etimes,ttotal,tttstp,etims0
+      real*8          etimes,ttotal,tttstp,etims0
+
 C
 C     Only node zero makes comments.
       IF (NID.NE.0) RETURN
@@ -383,7 +387,8 @@ C
  10      CONTINUE
          IF (IFWCNO) IFCOUR = .TRUE.
          WRITE (6,*) ' '
-         WRITE (6,*) 'Initialization successfully completed'
+         WRITE (6,*) 'Initialization successfully completed ',
+     &               dnekclock()-etimes 
          IF (TIME.NE.0.0) WRITE (6,*) 'Initial time is:',TIME
          WRITE (6,*) ' '
          WRITE (6,*) 'START OF SIMULATION'
@@ -958,10 +963,16 @@ C-----------------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
 
+      real*8 ts, dnekclock
+ 
       ifield = 1
       imesh  = 1
       call unorm
       call settolv
+
+      ts = dnekclock() 
+
+      if(nid.eq.0) write(*,'(12X,A)') 'Solving Fluid'
 
       if (ifsplit) then
 
@@ -998,6 +1009,11 @@ c             - Velocity/stress formulation.
 
       endif
 
+      if(nid.eq.0) write(*,'(12X,A,1pE11.4)') 'Fluid done ', 
+     &             dnekclock()-ts
+
+
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1018,6 +1034,12 @@ C
       include 'INPUT'
       include 'TSTEP'
       include 'TURBO'
+
+      real*8 ts, dnekclock
+
+      ts = dnekclock()
+
+      if (nid.eq.0) write(*,'(12x,a)') 'Solving Heat'
 
       if (ifcvode) then
 
@@ -1048,6 +1070,9 @@ C
          enddo
 
       endif
+
+      if (nid.eq.0) write(*,'(12x,a,1pE11.4)') 'Heat done ',
+     &              dnekclock()-ts 
 
       return
       end
