@@ -289,6 +289,8 @@ c----------------------------------------------------------------------
 
       include 'CTIMER'
 
+      if (ifsync) call gsync()
+
       etime1=dnekclock()
 
       call gs_op(mg_gsh_handle(l),u,1,1,0)
@@ -1344,19 +1346,20 @@ c
       data    n_crs_tot /0/
 c
       if (icalld.eq.0) then ! timer info
-         tddsl=0.0
-         tcrsl=0.0
-         nddsl=0
          ncrsl=0
+         tcrsl=0.0
       endif
-      icalld = icalld + 1
-      nddsl  = nddsl  + 1
+      icalld = 1
+
+      if (ifsync) call gsync()
+
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
-      etime2=dnekclock()
+
       call crs_solve(xxth,e,r)
-      tcrsl=tcrsl+dnekclock()-etime2
-      tddsl=tddsl+dnekclock()-etime1
+
+      tcrsl=tcrsl+dnekclock()-etime1
+
       return
       end
 c----------------------------------------------------------------------
@@ -1417,8 +1420,13 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
          ntot1  = nx1*ny1*nz1*nelv
          rhoavg = glsc2(vtrans,bm1,ntot1)/volvm1
       endif
+
  
       if (icalld.eq.0) then
+
+         tddsl=0.0
+         nddsl=0
+
          icalld = 1
          taaaa = 0
          tbbbb = 0
@@ -1426,6 +1434,9 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
          tdddd = 0
          teeee = 0
       endif
+
+      nddsl  = nddsl  + 1
+      etime1 = dnekclock()
       
 c     n = nx2*ny2*nz2*nelv
 c     rmax = glmax(r,n)
@@ -1583,7 +1594,9 @@ c         xaver = glsc2(bm2,e,ntot2)/volvm2
           xaver = glsum(e,ntot2)/(nx2*ny2*nz2*nelgv)
           call cadd(e,-xaver,ntot2)
        endif
-c
+
+      tddsl  = tddsl + ( dnekclock()-etime1 )
+
       return
       end
 c----------------------------------------------------------------------
