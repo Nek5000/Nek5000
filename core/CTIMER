@@ -43,3 +43,6 @@ C
       integer icalld
       save    icalld
       data    icalld /0/
+
+      common /ctimel/ ifsync
+      logical         ifsync
