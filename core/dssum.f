@@ -22,7 +22,9 @@ c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
          tdsmn=0.
       endif
       icalld=icalld+1
-c
+
+      if (ifsync) call gsync()
+
       etime1=dnekclock()
 c
 c                 T         ~  ~T  T
