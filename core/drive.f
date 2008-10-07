@@ -303,6 +303,7 @@ C
 C--------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
       COMMON /DOIT/ IFDOIT
       LOGICAL       IFDOIT
 C
@@ -315,6 +316,7 @@ C
       IFDOIT  = .FALSE.
       ifxxt   = .false.
       IFCVODE = .false.
+      ifsync  = .false.   ! gsync() for timing info
 
       if (lx1.eq.lx2) ifsplit=.true.
 
