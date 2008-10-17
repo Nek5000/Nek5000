@@ -767,24 +767,17 @@ C
                          NOUTS=NOUTS + 1
                          IPSPS(IS)=NOUTS
                        ENDDO
-                       GOTO 51
+                       GOTO 50
                     ENDIF
                   ENDIF
    50          CONTINUE
  
-   51          IF (NPS.NE.NPSCAL) THEN
-                  IF (NID.EQ.0) THEN 
-                    WRITE(*,'(A)')    'ERROR: unexpect number of NPSCAL'
-                    WRITE(*,'(A,I2)') 'NPSCAL_restart ',NPS
-                    WRITE(*,'(A,I2)') 'NPSCAL_rea '    ,NPSCAL
-                  ENDIF
-                  CALL EXITT
-               ENDIF
-
                IF (NPS.GT.(LDIMT-1)) THEN
                   IF (NID.EQ.0) THEN 
-                    WRITE(*,'(A)')    'ERROR: NSPCAL > LDIMT'
-                    WRITE(*,'(A,I2)') 'Change LDIMT in SIZEu'
+                    WRITE(*,'(A)') 
+     &               'ERROR: restart file has a NSPCAL > LDIMT'
+                    WRITE(*,'(A,I2)') 
+     &               'Change LDIMT in SIZE'
                   ENDIF
                   CALL EXITT
                ENDIF
@@ -2206,19 +2199,12 @@ c                 For now, what you see in file is what you get.
          endif
       enddo
   
- 50   if (nps.ne.npscal) then
+ 50   if (nps.gt.(ldimt-1)) then
          if (nid.eq.0) then 
-           write(*,'(a)')    'ERROR: unexpect number of NPSCAL'
-           write(*,'(a,i2)') 'NPSCAL_restart ',NPS
-           write(*,'(a,i2)') 'NPSCAL_rea '    ,NPSCAL
-         endif
-         call exitt
-      endif
-
-      if (nps.gt.(ldimt-1)) then
-         if (nid.eq.0) then 
-           write(*,'(A)')    'ERROR: NSPCAL > LDIMT'
-           write(*,'(A,I2)') 'Change LDIMT in SIZEu'
+           write(*,'(A)') 
+     &      'ERROR: restart file has a NSPCAL > LDIMT'
+           write(*,'(A,I2)') 
+     &      'Change LDIMT in SIZE'
          endif
          call exitt
       endif
@@ -2316,7 +2302,7 @@ c
       integer e
 
       if (nid.eq.0) write(6,*) 'IFILE:',ifile
-      if (nid.eq.0) write(6,*) initc(ifile)
+      if (nid.eq.0) write(6,*) 'FILE NAME: ', initc(ifile)
       call mfi_get_hdr0(hdr,initc(ifile))
       call parse_hdr   (hdr)
 

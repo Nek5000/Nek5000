@@ -104,6 +104,16 @@ c        call f77_get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
 c        call outmati(vertex,4,nelt,'vrtx T')
          call setupds(gsh_fld(2),nx1,ny1,nz1,nelt,nelgt,vertex,glo_num)
 
+c        check if there is a least one fluid element on each processor
+         do iel = 1,nelt
+            ieg = lglel(iel,node)
+            if (ieg.le.nelgv) goto 101 
+         enddo
+         if(nid.eq.0) write(6,*) 
+     &     'ERROR: each domain must contain at least one fluid element!'
+         call exitt
+ 101  continue
+
       endif
 
       ntotv = nx1*ny1*nz1*nelv

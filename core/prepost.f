@@ -122,7 +122,6 @@ c
 
       call prepost_map(1) ! map back axisymm. arrays
 
-
       if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
 C
       icalld = icalld+1
@@ -275,6 +274,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       common /rdump/ ntdump
       data ndumps / 0 /
+
+      if(nid.eq.0) write(6,*) 'Write dump to disk ...'
 
       p66 = abs(param(66))
       if (p66.eq.6) then
@@ -1121,8 +1122,8 @@ c
 
       call blank(fhdfle,80)
 
-       write(6,111)               !       print on screen
-     $     nelgt,nx1,ny1,nz1,time,istep,excode
+c       write(6,111)               !       print on screen
+c     $     nelgt,nx1,ny1,nz1,time,istep,excode
 c
       if (mod(p66,1.0).eq.0.0) then !       old header format
          if (p66.lt.1.0) then
@@ -1350,6 +1351,7 @@ c-----------------------------------------------------------------------
       if (ifvo ) call mfo_outv(vx,vy,vz,nelv)  ! B-field handled thru outpost
       if (ifpo ) call mfo_outs(pm1,nelv)
       if (ifto ) call mfo_outs(t,nelt)
+
       do k=1,npscal
          call mfo_outs(t(1,1,1,1,k+1),nelv)
       enddo

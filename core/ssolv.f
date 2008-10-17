@@ -777,8 +777,8 @@ C
          NTAUBD = 0
          IF (CTARG.GT.0.5) THEN
             IF (NID.EQ.0)
-     $      WRITE (6,*) 'Reset the target Courant number to .25'
-            CTARG = 0.25
+     $      WRITE (6,*) 'Reset the target Courant number to .5'
+            CTARG = 0.5
          ENDIF
       ENDIF
 C
