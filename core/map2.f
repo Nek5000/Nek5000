@@ -129,12 +129,9 @@ c
          call gfdm_elm_to_proc(gllnid,np)
       endif
 
-      if (nid.eq.0) write(6,*) 'nelgt:',nelgt,nelgv
-      if (nid.eq.0) write(6,*) 'nelt:',nelt,nelv
+      if (nid.eq.0) write(6,*) 'nelgt/nelgv:',nelgt,nelgv
+      if (nid.eq.0) write(6,*) 'nelt/nelv:',nelt,nelv
 
-      if (nelgt.gt.nelgv) then ! distribute additional solid elements
-         call solid_element_map(gllnid,nelgv,nelgt)
-      endif
 c
 c     compute global to local map (no processor info)
 c
@@ -350,15 +347,6 @@ c
       enddo
    2  format(i3,1x,a6,15i6)
       return
-      end
-c-----------------------------------------------------------------------
-      subroutine solid_element_map
-      include 'SIZE'
-      include 'PARALLEL'
-c
-c     num_el_min = ivlmin(glln
-c
-      return   ! Serial code, for now.
       end
 c-----------------------------------------------------------------------
       subroutine get_map

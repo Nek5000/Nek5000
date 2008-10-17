@@ -980,7 +980,7 @@ C
          endif
       enddo
 
-      if (nid.eq.0) write(6,*) 'Vol:',voltm1,volvm1
+      if (nid.eq.0) write(6,*) 'Vol_t/Vol_v:',voltm1,volvm1
 
 
       nxyz = nx1*ny1*nz1
