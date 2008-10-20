@@ -589,19 +589,19 @@ c                 write(6,50)
 c    $            CHTEMP,
 c    $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
 c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   50             FORMAT(A1,A3,2I3,5G14.7)
+   50             FORMAT(A1,A3,2I3,5G14.6)
                ELSEIF (NELGT.LT.100000) THEN
                   READ(9,51,ERR=500,END=500)    
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   51             FORMAT(A1,A3,I5,I1,5G14.7)
+   51             FORMAT(A1,A3,I5,I1,5G14.6)
                ELSEIF (NELGT.LT.1000000) THEN
                   READ(9,52,ERR=500,END=500)    
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   52             FORMAT(A1,A3,I6,I1,5G14.7)
+   52             FORMAT(A1,A3,I6,5G14.6)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP
