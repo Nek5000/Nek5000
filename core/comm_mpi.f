@@ -114,29 +114,26 @@ c
         icalld=1
       endif
       ngop = ngop + 1
+      if (ifsync) call gsync()
       etime1=dnekclock()
 c
       if (op.eq.'+  ') then
-c        call mpi_allreduce_(x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
          call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
       elseif (op.EQ.'M  ') then
-c        call mpi_allreduce_(x,w,n,nekreal,mpi_max ,nekcomm,ierr)
          call mpi_allreduce (x,w,n,nekreal,mpi_max ,nekcomm,ierr)
       elseif (op.EQ.'m  ') then
-c        call mpi_allreduce_(x,w,n,nekreal,mpi_min ,nekcomm,ierr)
          call mpi_allreduce (x,w,n,nekreal,mpi_min ,nekcomm,ierr)
       elseif (op.EQ.'*  ') then
-c        call mpi_allreduce_(x,w,n,nekreal,mpi_prod,nekcomm,ierr)
          call mpi_allreduce (x,w,n,nekreal,mpi_prod,nekcomm,ierr)
       else
          write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
          call exitt
       endif
-c
+
       call copy(x,w,n)
-c
+
       tgop =tgop +(dnekclock()-etime1)
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -146,29 +143,27 @@ c     Global vector commutative operation using spanning tree.
 c
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-c
+
       integer x(n), w(n)
       character*3 op
-c
+
+      if (ifsync) call gsync()
+
       if (op.eq.'+  ') then
-c       call mpi_allreduce_(x,w,n,mpi_integer,mpi_sum ,nekcomm,ierr)
         call mpi_allreduce (x,w,n,mpi_integer,mpi_sum ,nekcomm,ierr)
       elseif (op.EQ.'M  ') then
-c       call mpi_allreduce_(x,w,n,mpi_integer,mpi_max ,nekcomm,ierr)
         call mpi_allreduce (x,w,n,mpi_integer,mpi_max ,nekcomm,ierr)
       elseif (op.EQ.'m  ') then
-c       call mpi_allreduce_(x,w,n,mpi_integer,mpi_min ,nekcomm,ierr)
         call mpi_allreduce (x,w,n,mpi_integer,mpi_min ,nekcomm,ierr)
       elseif (op.EQ.'*  ') then
-c       call mpi_allreduce_(x,w,n,mpi_integer,mpi_prod,nekcomm,ierr)
         call mpi_allreduce (x,w,n,mpi_integer,mpi_prod,nekcomm,ierr)
       else
-        write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
+        write(6,*) nid,' OP ',op,' not supported.  ABORT in igop.'
         call exitt
       endif
-c
+
       call icopy(x,w,n)
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -261,17 +256,17 @@ C
       include 'SIZE'
       include 'PARALLEL'
       include 'mpif.h'
-C
+
       logical ifif
-C
+
       if (np.eq.1) return
-C
+
       item=0
       if (ifif) item=1
       call bcast(item,isize)
       ifif=.false.
       if (item.eq.1) ifif=.true.
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -350,15 +345,12 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine gsync()
-c
+
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-      integer x(1),w(1)
-c
-      x(1) = 0
-      n    = 1
-      call mpi_allreduce (x,w,n,mpi_integer,mpi_sum,nekcomm,ierr)
-c
+
+      call mpi_barrier   (nekcomm,ierr)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -493,12 +485,11 @@ c     common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       include 'TOTAL'
       include 'mpif.h'
 c
-      x = 1.0
-      x = glsum(x,1)
-c
+      call gsync()
+
       if (nid.eq.0) write(6,*) nid,' normal exit.'
       call flush_io
-c
+
 c     z = -nx1
 c     z = sqrt(z)
 c     y = 1./(nx1-lx1)
@@ -506,11 +497,10 @@ c     y = 0.*y
 c     a = 1./y
 c     b = 1./y
 c     write(6,*) 'quittin3',z,b
-c
-c     call mpi_finalize_(ierr)
+
       call mpi_finalize (ierr)
       call exit
-c
+
       return
       end
 c-----------------------------------------------------------------------
