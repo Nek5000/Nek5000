@@ -1529,87 +1529,42 @@ c
          write(6,*) 'bso2 time',nbso2,tbso2,pbso2
       endif
       if (np.gt.0) then
-c        call rzero(vbsol,np)
-c        vbsol(node)=tbsol
-c        call gop(vbsol,work,'+  ',np)
-c
+
          call rzero(vusbc,np)
          vusbc(node)=tusbc
          call gop(vusbc,work,'+  ',np)
-         write(6,*) nid,' nusbc',nusbc,pusbc
-c
-         call rzero(vvdss,np)
-         vvdss(node)=tdsnd
-         call gop(vvdss,work,'+  ',np)
-c
+
          call rzero(vdadd,np)
-         vdadd(node)=tdadd
+         vdadd(node)=tdadd     ! hsmg_dsum
          call gop(vdadd,work,'+  ',np)
-c
+
          call rzero(vgsum,np)
          vgsum(node)=tcrsl
          call gop(vgsum,work,'+  ',np)
-c
+
          call rzero(vvdss,np)
          vvdss(node)=tvdss
          call gop(vvdss,work,'+  ',np)
-c
+
          call rzero(vdsum,np)
          vdsum(node)=tdsum
          call gop(vdsum,work,'+  ',np)
-c
+
          call rzero(vgop ,np)
          vgop (node)=tgop 
          call gop(vgop ,work,'+  ',np)
-c
-         call rzero(vdsmx,np)
-         vdsmx(node)=tdsmx
-         call gop(vdsmx,work,'+  ',np)
-c
-         call rzero(vdsmn,np)
-         vdsmn(node)=tdsmn
-         call gop(vdsmn,work,'+  ',np)
-c
-         call rzero(vgsmx,np)
-         vgsmx(node)=tgsmx
-         call gop(vgsmx,work,'+  ',np)
-c
-         call rzero(vgsmn,np)
-         vgsmn(node)=tgsmn
-         call gop(vgsmn,work,'+  ',np)
-c
-         ndsum = max(ndsum,1)
-         nvdss = max(nvdss,1)
+
          if (nid.eq.0) then
-c
+
             write(6,202) np,nelgv,tttstp
-            write(6,203) ndsum,nvdss,nbsol
-            write(6,*) 'qqq ip tdsum tdsnd tdadd tgsum tgop tusbs'
-            do 100 ip=1,np
+            write(6,*) 'qqq ip dssum vdsum mgdsum tcrsl tgop tusbs'
+            do ip=1,np
                write(6,204) ip,vdsum(ip),vvdss(ip),vdadd(ip)
-     $                         ,vgsum(ip),vgop(ip),vusbc(ip)
-  100       continue
-            write(6,*) 'qqq ip dsavg tdsmn tdsmx tgsmn tgsmx'
-            do 200 ip=1,np
-               dsavg = vdsum(ip)/(ndsum)
-               write(6,204) ip,dsavg,vdsmn(ip),vdsmx(ip)
-     $                        ,vgsmn(ip),vgsmx(ip)
-  200       continue
-  202       format('qqq  np,nel,tttstp:',2i8,f12.5)
-  203       format('qqq  num procs',/,' dot,dsum,bsol:',3i8)
-  204       format('qqq', i7,6f12.5)
-C
-C
-            write(6,*) 'qqq ip tdsum tdsnd tdadd tgsum tgop'
-            do 110 ip=1,np
-               rdsum=vdsum(ip)/tttstp
-               rdsnd=vvdss(ip)/tttstp
-               rdadd=vdadd(ip)/tttstp
-               rgsum=vgsum(ip)/tttstp
-               rgop =vgop (ip)/tttstp
-               rusbc=vusbc(ip)/tttstp
-               write(6,204) ip,rdsum,rdsnd,rdadd,rgsum,rgop,rusbc
-  110       continue
+     $                        ,vgsum(ip),vgop (ip),vusbc(ip)
+            enddo
+  202       format('aqqq  np,nel,tttstp:',2i8,f12.5)
+  204       format(i7,6f12.5,' qqq')
+
          endif
       endif
 C
