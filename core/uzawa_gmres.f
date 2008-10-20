@@ -59,9 +59,9 @@ c
       call rzero(x,ntot2)
       do while(iconv.eq.0.and.iter.lt.200)
          if(iter.eq.0) then
-                                          !      -1
-            call col3(r,ml,res,ntot2)     ! r = L  res
-c            call copy(r,res,ntot2)
+                                                  !      -1
+            call col3(r,ml,res,ntot2)             ! r = L  res
+c           call copy(r,res,ntot2)
          else
             !update residual
             call copy(r,res,ntot2)                ! r = res
@@ -103,22 +103,37 @@ c            call copy(r,res,ntot2)
             !modified Gram-Schmidt
 
 c           do i=1,j
-c
 c              h(i,j)=glsc2(w,v(1,i),ntot2)       ! h    = (w,v )
 c                                                 !  i,j       i
 c              call add2s2(w,v(1,i),-h(i,j),ntot2)! w = w - h    v
-c                                                 !          i,j  i
-c           enddo
+c           enddo                                 !          i,j  i
 
-c           1-PASS GS, 1st pass:
+
+c           2-PASS GS, 1st pass:
+
             do i=1,j
                h(i,j)=vlsc2(w,v(1,i),ntot2)       ! h    = (w,v )
             enddo                                 !  i,j       i
+
             call gop(h(1,j),wk1,'+  ',j)          ! sum over P procs
+
             do i=1,j
                call add2s2(w,v(1,i),-h(i,j),ntot2)! w = w - h    v
             enddo                                 !          i,j  i
 
+
+c           2-PASS GS, 2nd pass:
+c
+c           do i=1,j
+c              wk1(i)=vlsc2(w,v(1,i),ntot2)       ! h    = (w,v )
+c           enddo                                 !  i,j       i
+c                                                 !
+c           call gop(wk1,wk2,'+  ',j)             ! sum over P procs
+c
+c           do i=1,j
+c              call add2s2(w,v(1,i),-wk1(i),ntot2)! w = w - h    v
+c              h(i,j) = h(i,j) + wk1(i)           !          i,j  i
+c           enddo
 
             !apply Givens rotations to new column
             do i=1,j-1
@@ -138,7 +153,7 @@ c           1-PASS GS, 1st pass:
             gamma(j+1) = -s(j) * gamma(j)
             gamma(j)   =  c(j) * gamma(j)
 
-c           call outmat(h,m,j,' h    ',j)
+c            call outmat(h,m,j,' h    ',j)
             
             rnorm = abs(gamma(j+1))*norm_fac
             ratio = rnorm/div0
@@ -211,6 +226,7 @@ c
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine uzawa_gmres_split(l,u,b,binv,n)
       integer n
       real l(n),u(n),b(n),binv(n)
@@ -223,6 +239,7 @@ c
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine uzawa_gmres_temp(a,b,n)
       integer n
       real a(n),b(n)
@@ -232,3 +249,4 @@ c
       enddo
       return
       end
+c-----------------------------------------------------------------------
