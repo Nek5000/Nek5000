@@ -998,6 +998,9 @@ c
       call capit (cname,4)
 
       ifstdh = .true.
+
+      if (.not.ifflow) ifstdh = .false.
+
       if (param(95).ne.0.and.istep.gt.param(95)) then
          if (cname.eq.'PRES') ifstdh = .false.
       elseif (param(94).ne.0.and.istep.gt.param(94)) then
