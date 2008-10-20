@@ -66,7 +66,7 @@ C     IF (NP.GT.0.AND.IPASS.EQ.2.AND.NID.EQ.0) THEN
 C
 C
       ifverbm=.true.
-      if (np.gt.2050) ifverbm=.false.
+      if (np.gt.2050.or.nelgt.gt.40000) ifverbm=.false.
       if (nid.eq.0.and.ifverbm) then
          IFLD=1
          IF (IFHEAT) IFLD=2
