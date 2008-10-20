@@ -3511,7 +3511,8 @@ c-----------------------------------------------------------------------
       n      = nx1*ny1*nz1*nelt
       nxyz   = nx1*ny1*nz1
       nfaces = 2*ndim
-      ifield = 1       ! velocity field
+      ifield = 1                        ! velocity field
+      if (.not.ifflow) ifield = 2       ! velocity field
 
 
       call rone  (tmlt,n)
