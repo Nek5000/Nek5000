@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      SUBROUTINE INCOMPR
+      subroutine incompr
 C--------------------------------------------------------------------
 C
 C     Project current solution onto the closest incompressible field
@@ -8,6 +8,8 @@ C--------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
+      common /cusrdiv/ usrdiv(lx2,ly2,lz2,lelv) ! User-defined divergence
+
       COMMON /SCRNS/ W1    (LX1,LY1,LZ1,LELV)
      $ ,             W2    (LX1,LY1,LZ1,LELV)
      $ ,             W3    (LX1,LY1,LZ1,LELV)
@@ -42,6 +44,9 @@ c
          CALL OPDIV   (RESPR,VX,VY,VZ)
       endif
       CALL CHSIGN  (RESPR,NTOT2)
+ 
+      call add2col2 (respr,bm2,usrdiv,ntot2) ! User-defined divergence
+ 
 c     CALL LMACHRP (RESPR)
       CALL ORTHO   (RESPR)
 C******************************************************************
@@ -66,7 +71,7 @@ c
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE SETRHS(P,H1,H2,H2INV)
+      subroutine setrhs(p,h1,h2,h2inv)
 C
 C     Project rhs onto best fit in the "E" norm.
 C
@@ -169,7 +174,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE GENSOLN(P,H1,H2,H2INV)
+      subroutine gensoln(p,h1,h2,h2inv)
 C
 C     Reconstruct the solution to the original problem by adding back
 C     the previous solutions
@@ -208,7 +213,7 @@ c
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE UPDTSET(P,H1,H2,H2INV,ierr)
+      subroutine updtset(p,h1,h2,h2inv,IERR)
 C
 C     Update the set of rhs's and the corresponding p-set:
 C
@@ -263,7 +268,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE ECONJ(Kprev,H1,H2,H2INV,ierr)
+      subroutine econj(kprev,h1,h2,h2inv,ierr)
 C
 C     Orthogonalize the rhs wrt previous rhs's for which we already
 C     know the soln.
@@ -330,7 +335,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE CHKPTOL
+      subroutine chkptol
 C--------------------------------------------------------------------
 C
 C     Check pressure tolerance for transient case.
@@ -464,7 +469,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE UPDRHSE(P,H1,H2,H2INV,ierr)
+      subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
 C     Update rhs's if E-matrix has changed
 C
@@ -538,7 +543,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE ECHECK(Kprev,H1,H2,H2INV,INTETYPE)
+      subroutine echeck(kprev,h1,h2,h2inv,intetype)
 C
 C     Orthogonalize the rhs wrt previous rhs's for which we already
 C     know the soln.
@@ -663,12 +668,16 @@ c
       n_max = napprox(1)
       n_sav = napprox(2)
       if (n_sav.eq.0) return
-      ntot=nx1*ny1*nz1*nelv
+      nel =nelfld(ifield)
+      ntot=nx1*ny1*nz1*nel
+
+      vol = voltm1
+      if (nel.eq.nelv) vol = volvm1
 c
 c     Diag to see how much reduction in the residual is attained.
 c
       alpha1 = glsc23(r,bi,vml,ntot)
-      if (alpha1.gt.0) alpha1 = sqrt(alpha1/volvm1)
+      if (alpha1.gt.0) alpha1 = sqrt(alpha1/vol)
 c
 c     Update approximation space if dt has changed
       call updrhsh(approx,napprox,h1,h2,vml,vmk,ws,name4)
@@ -693,7 +702,7 @@ c
 c ................................................................
 c   Diag.
       alpha2 = glsc23(r,bi,vml,ntot)
-      if (alpha2.gt.0) alpha2 = sqrt(alpha2/volvm1)
+      if (alpha2.gt.0) alpha2 = sqrt(alpha2/vol)
       ratio  = alpha1/alpha2
       n10=min(10,n_sav)
 c
@@ -728,9 +737,7 @@ c
 c
       n_max = napprox(1)
       n_sav = napprox(2)
-      ntot=nx1*ny1*nz1*nelv
-c     write(6,*) ntot,n_max,n_sav,' HSOLV'
-c
+      ntot=nx1*ny1*nz1*nelfld(ifield)
 c
 c     Reconstruct solution and save current du
 c
@@ -742,9 +749,14 @@ c
             call add2(v1,approx(1,0),ntot)
 c           orthogonalize rhs against previous rhs and normalize
             call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
-            if (ierr.ne.0) n_sav = n_sav-1
+
+c           if (ierr.ne.0) n_sav = n_sav-1
+            if (ierr.ne.0) n_sav = 0
+
          else
+
             call add2(v1,approx(1,0),ntot)
+
          endif
       else
          n_sav = 1
@@ -754,8 +766,9 @@ c        normalize
          call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
          if (ierr.ne.0) n_sav = 0
       endif
-c
-      napprox(2) = n_sav
+
+      napprox(2)=n_sav
+
       return
       end
 c-----------------------------------------------------------------------
@@ -775,7 +788,7 @@ c
       character*4 name4
 c
       ierr=0
-      ntot=nx1*ny1*nz1*nelv
+      ntot=nx1*ny1*nz1*nelfld(ifield)
 c
       call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
       call col2    (approx(1,0),vmk,ntot)
@@ -886,6 +899,7 @@ c
             ifupdate = .true.
          endif
       endif
+      if (ifvarp(ifield)) ifupdate = .true.
 c
       if (ifupdate) then
          n_sav = napprox(2)
@@ -894,13 +908,14 @@ c
          do k=1,n_sav
 c           Orthogonalize kth vector against {v_1,...,v_k-1}
             if (k.ne.l) then
-               ntot = nx1*ny1*nz1*nelt
+               ntot = nx1*ny1*nz1*nelfld(ifield)
                call copy(approx(1,l),approx(1,k),ntot)
             endif
             call hconj(approx,l,h1,h2,vml,vmk,ws,name4,ierr)
             if (ierr.eq.0) l=l+1
          enddo
-         napprox(2)=l
+         napprox(2)=min(l,n_sav)
+c        call exitt
       endif
 c
       return
@@ -975,19 +990,33 @@ c
       integer        napprox(1)
       COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
      $ ,             W2   (2+2*mxprev)
-c
-c
-      ntot = nx1*ny1*nz1*nelv
+
+      logical ifstdh
+      character*4  cname
+
+      call chcopy(cname,name,4)
+      call capit (cname,4)
+
+      ifstdh = .true.
       if (param(95).ne.0.and.istep.gt.param(95)) then
+         if (cname.eq.'PRES') ifstdh = .false.
+      elseif (param(94).ne.0.and.istep.gt.param(94)) then
+         ifstdh = .false.
+      endif
+
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+      if (ifstdh) then
+         call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
+      else
+
          call col2 (r,vmk,ntot)
          call dssum(r,nx1,ny1,nz1)
          call projh(r,h1,h2,bi,vml,vmk,approx,napprox,w1,w2,name)
          call hmhzpf(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd,bi)
          call gensh(u,h1,h2,vml,vmk,approx,napprox,w1,w2,name)
-      else
-         call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
+
       endif
-c
+
       return
       end
 c-----------------------------------------------------------------------
