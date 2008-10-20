@@ -86,3 +86,93 @@ C
       CALL ESTRAT 
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine dmp_map(imap)
+c
+c     Dump map file and element center point
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /ivrtx/ vertex ((2**ldim)*lelg)
+      common /scruz/ xbar(ldim,lelt),ibar(lelt)
+      integer vertex
+      integer imap(lelg)
+
+      integer e,eg
+
+      ncrnr = 2**ndim
+      call f77_get_vert_map(imap, vertex, ncrnr, nelgt, '.map')
+
+      nxb = (nx1+1)/2
+      nyb = (ny1+1)/2
+      nzb = (nz1+1)/2
+      
+      do e=1,nelt
+         xbar(ndim,e) = zm1(nxb,nyb,nzb,e)
+         xbar(1   ,e) = xm1(nxb,nyb,nzb,e)
+         xbar(2   ,e) = ym1(nxb,nyb,nzb,e)
+         eg           = lglel(e,node)
+         ibar(e)      = imap(eg)
+      enddo
+      call p_outvec_ir(ibar,xbar,ndim,'mpxyz.dat')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine p_outvec_ir(ia,a,lda,name9)
+      integer ia(1)
+      real    a(lda,1)
+      character*9 name9
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lbuf=50)
+      common /scbuf/ buf(lbuf)
+      integer ibuf(10),e,eg
+      equivalence (buf,ibuf)
+
+      if (nid.eq.0) then
+         open(unit=49,file=name9)
+         write(6,*) 'Opening ',name9,' in p_outveci. lda=',lda
+      endif
+
+      len = wdsize*(lda+1)
+      dum = 0.
+
+      do eg=1,nelgt
+
+         mid   = gllnid(eg)
+         e     = gllel (eg)
+         mtype = 2000+eg
+
+         if (nid.eq.0) then
+            if (mid.eq.0) then
+               call icopy(buf(1),ia(e),1)
+               call  copy(buf(2),a(1,e),lda)
+            else
+               call csend (mtype,dum,wdsize,mid,nullpid)
+               call crecv (mtype,buf,len)
+            endif
+            write(49,49) mid,ibuf(1),(buf(k+1),k=1,lda)
+   49       format(2i12,1p3e16.7)
+         elseif (nid.eq.mid) then
+            call icopy(buf(1),ia(e),1)
+            call  copy(buf(2),a(1,e),lda)
+            call crecv (mtype,dum,wdsize)
+            call csend (mtype,buf,len,node0,nullpid)
+         endif
+      enddo
+
+      if (nid.eq.0) then
+         close(49)
+         write(6,*) 'Done writing to ',name9,' p_outveci.'
+      endif
+
+      call gsync()
+
+      return
+      end
+c-----------------------------------------------------------------------
+
