@@ -830,3 +830,191 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine convect_new(bdu,u,ifuf,cx,cy,cz,ifcf)
+C
+C     Compute dealiased form:  J^T Bf *JC .grad Ju w/ correct Jacobians
+C
+      include 'SIZE'
+      include 'TOTAL'
+
+      real bdu(1),u(1),cx(1),cy(1),cz(1)
+      logical ifuf,ifcf            ! u and/or c already on fine mesh?
+
+      parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
+      common /scrns/ fx(ltd),fy(ltd),fz(ltd)
+     $             , ur(ltd),us(ltd),ut(ltd)
+     $             , tr(ltd,3),uf(ltd)
+
+      integer e
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      if (icalld.eq.0) call set_dealias_rx
+      icalld = icalld + 1
+
+      nxyz1 = nx1*ny1*nz1
+      nxyzd = nxd*nyd*nzd
+
+      nxyzu = nxyz1
+      if (ifuf) nxyzu = nxyzd
+
+      nxyzc = nxyz1
+      if (ifcf) nxyzc = nxyzd
+
+      iu = 1    ! pointer to scalar field u
+      ic = 1    ! pointer to vector field C
+      ib = 1    ! pointer to scalar field Bdu
+
+
+      do e=1,nelv
+
+         if (ifcf) then
+
+            call copy(tr(1,1),cx(ic),nxyzd)  ! already in rst form
+            call copy(tr(1,2),cy(ic),nxyzd)
+            if (if3d) call copy(tr(1,3),cz(ic),nxyzd)
+
+         else  ! map coarse velocity to fine mesh (C-->F)
+
+           call intp_rstd(fx,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
+           call intp_rstd(fy,cy(ic),nx1,nxd,if3d,0) ! 0 --> forward
+           if (if3d) call intp_rstd(fz,cz(ic),nx1,nxd,if3d,0) ! 0 --> forward
+
+           if (if3d) then  ! Convert convector F to r-s-t coordinates
+
+             do i=1,nxyzd
+               tr(i,1)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)+rx(i,3,e)*fz(i)
+               tr(i,2)=rx(i,4,e)*fx(i)+rx(i,5,e)*fy(i)+rx(i,6,e)*fz(i)
+               tr(i,3)=rx(i,7,e)*fx(i)+rx(i,8,e)*fy(i)+rx(i,9,e)*fz(i)
+             enddo
+
+           else
+
+             do i=1,nxyzd
+               tr(i,1)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)
+               tr(i,2)=rx(i,3,e)*fx(i)+rx(i,4,e)*fy(i)
+             enddo
+
+           endif
+
+         endif
+
+         if (ifuf) then
+            call grad_rst(ur,us,ut,u(iu),nx1,nxd,if3d)
+         else
+            call intp_rstd(uf,u(iu),nx1,nxd,if3d,0) ! 0 --> forward
+            call grad_rst(ur,us,ut,uf,nx1,nxd,if3d)
+         endif
+
+         if (if3d) then
+            do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
+               uf(i) = tr(i,1)*ur(i)+tr(i,2)*us(i)+tr(i,3)*ut(i)
+            enddo
+         else
+            do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
+               uf(i) = tr(i,1)*ur(i)+tr(i,2)*us(i)
+            enddo
+         endif
+         call intp_rstd(bdu(ib),uf,nx1,nxd,if3d,1) ! Project back to coarse
+
+         ic = ic + nxyzc
+         iu = iu + nxyzu
+         ib = ib + nxyz1
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convect_cons(bdu,u,ifuf,cx,cy,cz,ifcf)
+
+c     Compute dealiased form:  J^T Bf *div. JC Ju w/ correct Jacobians
+
+c     conservative form
+
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real bdu(1),u(1),cx(1),cy(1),cz(1)
+
+      logical ifuf,ifcf            ! u and/or c already on fine mesh?
+
+      parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
+      common /scrns/ uf(ltd),cf(ltd),cu(ltd)
+     $             , cr(ltd),cs(ltd),ct(ltd)
+
+
+      integer e
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+
+      if (icalld.eq.0) call set_dealias_rx
+      icalld = icalld + 1
+
+      nxyz1 = nx1*ny1*nz1
+      nxyzd = nxd*nyd*nzd
+
+      nxyzu = nxyz1
+      if (ifuf) nxyzu = nxyzd
+
+      nxyzc = nxyz1
+      if (ifcf) nxyzc = nxyzd
+
+      iu = 1    ! pointer to scalar field u
+      ic = 1    ! pointer to vector field C
+      ib = 1    ! pointer to scalar field Bdu
+
+      do e=1,nelv
+
+        call intp_rstd(uf,u(iu),nx1,nxd,if3d,0) ! 0 --> forward
+
+        call rzero(cu,nxyzd)
+        do i=1,ndim
+
+         if (ifcf) then  ! C is already on fine mesh
+
+           call exitt  ! exit for now
+
+         else  ! map coarse velocity to fine mesh (C-->F)
+
+           if (i.eq.1) call intp_rstd(cf,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
+           if (i.eq.2) call intp_rstd(cf,cy(ic),nx1,nxd,if3d,0) ! 0 --> forward
+           if (i.eq.3) call intp_rstd(cf,cz(ic),nx1,nxd,if3d,0) ! 0 --> forward
+
+           call col2(cf,uf,nxyzd)   !  collocate C and u on fine mesh
+
+           call grad_rst(cr,cs,ct,cf,nx1,nxd,if3d)  ! d/dr (C_i*u)
+
+           if (if3d) then
+
+             do j=1,nxyzd
+               cu(j)=cu(j)
+     $              +cr(j)*rx(j,i,e)+cs(j)*rx(j,i+3,e)+ct(j)*rx(j,i+6,e)
+             enddo
+
+           else  ! 2D
+
+             do j=1,nxyzd
+               cu(j)=cu(j)
+     $              +cr(j)*rx(j,i,e)+cs(j)*rx(j,i+2,e)
+             enddo
+
+           endif
+         endif
+        enddo
+
+        call intp_rstd(bdu(ib),cu,nx1,nxd,if3d,1) ! Project back to coarse
+
+        ic = ic + nxyzc
+        iu = iu + nxyzu
+        ib = ib + nxyz1
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
