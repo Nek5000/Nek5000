@@ -1,9 +1,8 @@
+c-----------------------------------------------------------------------
       SUBROUTINE SETDT
-C--------------------------------------------------------------
-C
-C     Set the new time step. All cases covered.
-C
-C--------------------------------------------------------------
+c
+c     Set the new time step. All cases covered.
+c
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
@@ -1638,6 +1637,84 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine flush_io
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fcsum2(xsum,asum,x,e,f)
+c
+c     Compute the weighted sum of X over face f of element e
+c
+c     x is an (NX,NY,NZ) data structure
+c     f  is in the preprocessor notation 
+c
+c     xsum is sum (X*area)
+c     asum is sum (area)
+
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'TOPOL'
+      real x(lx1,ly1,lz1,1)
+      integer e,f,fd
+
+      asum = 0.
+      xsum = 0.
+
+c     Set up counters ;  fd is the dssum notation.
+      call dsset(nx1,ny1,nz1)
+      fd     = eface1(f)
+      js1    = skpdat(1,fd)
+      jf1    = skpdat(2,fd)
+      jskip1 = skpdat(3,fd)
+      js2    = skpdat(4,fd)
+      jf2    = skpdat(5,fd)
+      jskip2 = skpdat(6,fd)
+
+      i = 0
+      do j2=js2,jf2,jskip2
+      do j1=js1,jf1,jskip1
+         i = i+1
+         xsum = xsum+area(i,1,f,e)*x(j1,j2,1,e)
+         asum = asum+area(i,1,f,e)
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function surf_mean(u,ifld,bc_in,ierr)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u(1)
+
+      integer e,f
+      character*3 bc_in
+
+      usum = 0
+      asum = 0
+
+      nface = 2*ndim
+      do e=1,nelv
+      do f=1,nface
+         if (cbc(f,e,ifld).eq.bc_in) then
+            call fcsum2(usum_f,asum_f,u,e,f)
+            usum = usum + usum_f
+            asum = asum + asum_f
+         endif
+      enddo
+      enddo
+
+      usum = glsum(usum,1)  ! sum across processors
+      asum = glsum(asum,1)
+
+      surf_mean = usum
+      ierr      = 1
+
+      if (asum.gt.0) surf_mean = usum/asum
+      if (asum.gt.0) ierr      = 0
+
       return
       end
 c-----------------------------------------------------------------------
