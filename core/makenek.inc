@@ -107,7 +107,7 @@ case $F77comp in
   bgxlf)       P="-qrealsize=8";;
   bgxlf_r)     P="-qrealsize=8";;
   blrts_xlf)   P="-qrealsize=8";;
-  ftn)         P="-r8";;
+  qk-pgf77)    P="-r8";;
   *)  echo "WARNING: Cannot detect compiler flag to promote REAL to 8 bytes!"
       echo "         Please specify the right compiler option using the P flag in the makefile"
       P=""
