@@ -3633,16 +3633,21 @@ C
          call convopo(conv,fi)
          return
       endif
-c
-      if (param(99).eq.2.or.param(99).eq.3) then
-C        Use dealiased form
-         call conv1d(conv,fi)
-      ELSE
-C        use the convective form
-         CALL CONV1 (CONV,FI)
+
+      if (param(99).eq.2.or.param(99).eq.3) then  
+         call conv1d(conv,fi)  !    use dealiased form
+      elseif (param(99).eq.4) then
+         call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
+         call invcol2     (conv,bm1,ntot1)  ! local mass inverse
+      elseif (param(99).eq.5) then
+         call convect_cons(conv,fi,.false.,vx,vy,vz,.false.)
+         call invcol2     (conv,bm1,ntot1)  ! local mass inverse
+      else
+         call conv1 (conv,fi)  !    use the convective form
       endif
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine conv1d (dfi,fi)
 C--------------------------------------------------------------------
