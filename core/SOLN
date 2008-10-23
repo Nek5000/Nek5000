@@ -71,6 +71,7 @@ c
      $               , V3MASK (LX1,LY1,LZ1,LELV)
      $               , PMASK  (LX1,LY1,LZ1,LELV)
      $               , TMASK  (LX1,LY1,LZ1,LELT,LDIMT)
+     $               , OMASK  (LX1,LY1,LZ1,LELT)
      $               , VMULT  (LX1,LY1,LZ1,LELV)
      $               , TMULT  (LX1,LY1,LZ1,LELT,LDIMT)
      $               , B1MASK (LBX1,LBY1,LBZ1,LBELV)  ! masks for mag. field

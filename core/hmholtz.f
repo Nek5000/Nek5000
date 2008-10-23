@@ -1214,6 +1214,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'FDMH1'
       include 'INPUT'
+      include 'GEOM'
       real d (nx1,ny1,nz1,1)
       real h1(nx1,ny1,nz1,1)
       real h2(nx1,ny1,nz1,1)
@@ -1255,10 +1256,13 @@ c
          enddo
       else
          do ie=1,nel
-            h1b = vlsum(h1(1,1,1,ie),nxyz)/nxyz
-c           h2b = (1.+abs(param(100)))*vlsum(h2(1,1,1,ie),nxyz)/nxyz
-c           h2b = abs(param(100))*vlsum(h2(1,1,1,ie),nxyz)/nxyz
-            h2b = vlsum(h2(1,1,1,ie),nxyz)/nxyz
+            if (ifaxis) then
+               h1b = vlsc2(h1(1,1,1,ie),ym1(1,1,1,ie),nxyz)/nxyz
+               h2b = vlsc2(h2(1,1,1,ie),ym1(1,1,1,ie),nxyz)/nxyz
+            else
+               h1b = vlsum(h1(1,1,1,ie),nxyz)/nxyz
+               h2b = vlsum(h2(1,1,1,ie),nxyz)/nxyz
+            endif
             k1 = ktype(ie,1,kfldfdm)
             k2 = ktype(ie,2,kfldfdm)
             vol = elsize(1,ie)*elsize(2,ie)
