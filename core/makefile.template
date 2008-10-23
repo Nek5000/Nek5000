@@ -121,8 +121,7 @@ conduct.o	:$S/conduct.f;			$(F77) -c $(FL2) $S/conduct.f
 navier0.o	:$S/navier0.f;			$(F77) -c $(FL2) $S/navier0.f
 navier2.o	:$S/navier2.f;			$(F77) -c $(FL2) $S/navier2.f
 navier3.o	:$S/navier3.f;			$(F77) -c $(FL2) $S/navier3.f
-navier4_std.o	:$S/navier4_std.f;$(F77) -c $(FL2) $S/navier4_std.f
-navier4_div.o	:$S/navier4_div.f;$(F77) -c $(FL2) $S/navier4_div.f
+navier4.o	:$S/navier4.f;			$(F77) -c $(FL2) $S/navier4.f
 navier5.o	:$S/navier5.f;			$(F77) -c $(FL2) $S/navier5.f
 navier6.o	:$S/navier6.f;			$(F77) -c $(FL2) $S/navier6.f
 navier7.o	:$S/navier7.f;			$(F77) -c $(FL2) $S/navier7.f
