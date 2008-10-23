@@ -21,6 +21,8 @@ C
       INCLUDE 'DXYZ'
       INCLUDE 'IXYZ'
       INCLUDE 'INPUT'
+
+      REAL TMP(LY1,LY1),TMPT(LY1,LY1)
 C
       IF (NDIM.EQ.2) THEN
 C
@@ -224,7 +226,17 @@ C     Compute interpolation operators between Gauss-Lobatto Jacobi
 C     and Gauss-Lobatto Legendre (to be used in PREPOST).
 C
       CALL IGLJM(IAJL1,IATJL1,ZAM1,ZGM1(1,2),NY1,NY1,NY1,NY1,ALPHA,BETA)
+      IF (IFSPLIT) THEN
+      CALL IGLJM(IAJL2,IATJL2,ZAM2,ZGM2(1,2),NY2,NY2,NY2,NY2,ALPHA,BETA)
+      ELSE
       CALL IGJM (IAJL2,IATJL2,ZAM2,ZGM2(1,2),NY2,NY2,NY2,NY2,ALPHA,BETA)
+      ENDIF
+
+      CALL INVMT(IAJL1 ,IALJ1 ,TMP ,NY1)
+      CALL INVMT(IATJL1,IATLJ1,TMPT,NY1)
+      CALL MXM (IATJL1,NY1,IATLJ1,NY1,TMPT,NY1)
+      CALL MXM (IAJL1 ,NY1,IALJ1 ,NY1,TMP ,NY1)
+
 C
 C     Compute interpolation operators between Gauss-Lobatto Legendre
 C     and Gauss-Lobatto Jacobi (to be used in subr. genxyz IN postpre).
@@ -232,6 +244,7 @@ C
 c
 c     This call is not right, and these arrays are not used. 3/27/02. pff
 c     CALL IGLLM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,NY3,NY3,NY3,NY3,ALPHA,BETA)
+      CALL IGLJM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,NY3,NY3,NY3,NY3,ALPHA,BETA)
 C
       ENDIF
 C
@@ -748,25 +761,50 @@ C     Compute the mass matrix on mesh M1.
 C
       DO 700 IEL=1,NELT
          IF (IFAXIS) CALL SETAXW1 ( IFRZER(IEL) )
-            CALL COL3 (BM1(1,1,1,IEL),JACM1(1,1,1,IEL),W3M1,NXYZ1)
-         IF (IFAXIS.AND.IFRZER(IEL)) THEN
+            CALL COL3 (BM1  (1,1,1,IEL),JACM1(1,1,1,IEL),W3M1,NXYZ1)
+         IF (IFAXIS) THEN 
+             CALL COL3(BAXM1(1,1,1,IEL),JACM1(1,1,1,IEL),W3M1,NXYZ1)
+          IF (IFRZER(IEL)) THEN
             DO 600 J=1,NY1
             IF (J.GT.1) THEN
                DO 610 I=1,NX1
                   BM1(I,J,1,IEL) = BM1(I,J,1,IEL)*YM1(I,J,1,IEL)
      $                                           /(1.+ZAM1(J))
+                  BAXM1(I,J,1,IEL)=BAXM1(I,J,1,IEL)/(1.+ZAM1(J))
  610           CONTINUE
             ELSE
                DO 620 I=1,NX1
                   BM1(I,J,1,IEL) = BM1(I,J,1,IEL)*YSM1(I,J,1,IEL)
+                  BAXM1(I,J,1,IEL)=BAXM1(I,J,1,IEL)
  620           CONTINUE
             ENDIF
  600        CONTINUE
-         ELSEIF (IFAXIS.AND.(.NOT.IFRZER(IEL))) THEN
+          ELSE
             CALL COL2 (BM1(1,1,1,IEL),YM1(1,1,1,IEL),NXYZ1)
+          ENDIF
          ENDIF
 C
  700  CONTINUE
+
+      IF(IFAXIS) THEN
+        DO IEL=1,NELT
+          IF(IFRZER(IEL)) THEN
+            DO J=1,NY1
+            DO I=1,NX1
+              IF(J.EQ.1) THEN
+                 YINVM1(I,J,1,IEL)=1.0D0/YSM1(I,J,1,IEL)
+              ELSE
+                 YINVM1(I,J,1,IEL)=1.0D0/YM1 (I,J,1,IEL)
+              ENDIF
+            ENDDO 
+            ENDDO 
+          ELSE
+            CALL INVERS2(YINVM1(1,1,1,IEL),YM1(1,1,1,IEL),NXYZ1)
+          ENDIF
+        ENDDO
+      ELSE
+        CALL CFILL(YINVM1,1.0D0,NXYZ1*NELT)
+      ENDIF
 C
 C     Compute normals, tangents, and areas on elemental surfaces
 C
@@ -980,7 +1018,7 @@ C
          endif
       enddo
 
-      if (nid.eq.0) write(6,*) 'Vol_t/Vol_v:',voltm1,volvm1
+      if (nid.eq.0) write(6,*) 'Vol_t,Vol_v:',voltm1,volvm1
 
 
       nxyz = nx1*ny1*nz1
@@ -1642,3 +1680,114 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      SUBROUTINE INVMT(A,B,AA,N)
+C
+      REAL A(N,N),AA(N,N),B(N,N)
+      INTEGER INDX(100)
+C
+      NN = N*N
+      DO 12 I=1,N
+       DO 11 J=1,N
+        B(I,J) = 0.0
+ 11    CONTINUE
+       B(I,I) = 1.0
+ 12   CONTINUE
+C
+      CALL COPY  (AA,A,NN)
+      CALL LUDCMP(AA,N,N,INDX,D)
+      DO 13 J=1,N
+       CALL LUBKSB(AA,N,N,INDX,B(1,J))
+ 13   CONTINUE
+C
+      RETURN
+      END
+
+      SUBROUTINE LUBKSB(A,N,NP,INDX,B)
+      REAL A(NP,NP),B(N)
+      INTEGER INDX(N)
+      II=0
+      DO 12 I=1,N
+        LL=INDX(I)
+        SUM=B(LL)
+        B(LL)=B(I)
+        IF (II.NE.0)THEN
+          DO 11 J=II,I-1
+            SUM=SUM-A(I,J)*B(J)
+11        CONTINUE
+        ELSE IF (SUM.NE.0.0) THEN
+          II=I
+        ENDIF
+        B(I)=SUM
+12    CONTINUE
+      DO 14 I=N,1,-1
+        SUM=B(I)
+        IF(I.LT.N)THEN
+          DO 13 J=I+1,N
+            SUM=SUM-A(I,J)*B(J)
+13        CONTINUE
+        ENDIF
+        B(I)=SUM/A(I,I)
+14    CONTINUE
+      RETURN
+      END
+      SUBROUTINE LUDCMP(A,N,NP,INDX,D)
+      PARAMETER (NMAX=100,TINY=1.0E-20)
+      REAL A(NP,NP),VV(NMAX)
+      INTEGER INDX(N)
+      D=1.0
+      DO 12 I=1,N
+        AAMAX=0.0
+        DO 11 J=1,N
+          IF (ABS(A(I,J)).GT.AAMAX) AAMAX=ABS(A(I,J))
+11      CONTINUE
+        IF (AAMAX.EQ.0.0) PAUSE 'Singular matrix.'
+        VV(I)=1.0/AAMAX
+12    CONTINUE
+      DO 19 J=1,N
+        IF (J.GT.1) THEN
+          DO 14 I=1,J-1
+            SUM=A(I,J)
+            IF (I.GT.1)THEN
+              DO 13 K=1,I-1
+                SUM=SUM-A(I,K)*A(K,J)
+13            CONTINUE
+              A(I,J)=SUM
+            ENDIF
+14        CONTINUE
+        ENDIF
+        AAMAX=0.0
+        DO 16 I=J,N
+          SUM=A(I,J)
+          IF (J.GT.1)THEN
+            DO 15 K=1,J-1
+              SUM=SUM-A(I,K)*A(K,J)
+15          CONTINUE
+            A(I,J)=SUM
+          ENDIF
+          DUM=VV(I)*ABS(SUM)
+          IF (DUM.GE.AAMAX) THEN
+            IMAX=I
+            AAMAX=DUM
+          ENDIF
+16      CONTINUE
+        IF (J.NE.IMAX)THEN
+          DO 17 K=1,N
+            DUM=A(IMAX,K)
+            A(IMAX,K)=A(J,K)
+            A(J,K)=DUM
+17        CONTINUE
+          D=-D
+          VV(IMAX)=VV(J)
+        ENDIF
+        INDX(J)=IMAX
+        IF(J.NE.N)THEN
+          IF(A(J,J).EQ.0.)A(J,J)=TINY
+          DUM=1.0/A(J,J)
+          DO 18 I=J+1,N
+            A(I,J)=A(I,J)*DUM
+18        CONTINUE
+        ENDIF
+19    CONTINUE
+      IF(A(N,N).EQ.0.0)A(N,N)=TINY
+      RETURN
+      END

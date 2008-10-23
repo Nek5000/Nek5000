@@ -551,6 +551,9 @@ C
       logical ifbytsw, if_byte_swap_test
       real*4   bytetest
 c
+      REAL AXISM1 (LX1,LY1)
+      REAL AXISM2 (LX2,LY2)
+c
       ifok=.false.
       ifbytsw = .false.
 
@@ -957,9 +960,48 @@ C              passive scalars
      $            call copy(t(1,1,1,1,i+1),sdmp2(1,i+1),ntott)
                enddo
 c
-               if (ifgtim) time=rstime
+               IF (IFAXIS) THEN
+
+               DO IEL=1,NELV
+               IF(IFRZER(IEL)) THEN
+                 IF(IFGETX) THEN
+                   CALL MXM   (XM1(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY  (XM1(1,1,1,IEL),AXISM1,NX1*NY1)
+                   CALL MXM   (YM1(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY  (YM1(1,1,1,IEL),AXISM1,NX1*NY1)
+                 ENDIF
+                 IF(IFGETU) THEN
+                   CALL MXM    (VX(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY   (VX(1,1,1,IEL),AXISM1,NX1*NY1)
+                   CALL MXM    (VY(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY   (VY(1,1,1,IEL),AXISM1,NX1*NY1)
+                 ENDIF
+                 IF(IFGETW) THEN
+                   CALL MXM    (VZ(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY   (VZ(1,1,1,IEL),AXISM1,NX1*NY1)
+                 ENDIF
+                 IF(IFGETP) THEN
+                   CALL MXM    (PR(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY   (PR(1,1,1,IEL),AXISM1,NX1*NY1)
+                 ENDIF
+                 IF(IFGETT) THEN
+                   CALL MXM  (T (1,1,1,IEL,1),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY (T (1,1,1,IEL,1),AXISM1,NX1*NY1)
+                 ENDIF
+                 DO IPS=1,NPSCAL
+                  IS1 = IPS + 1
+                  IF(IFGTPS(IPS)) THEN
+                   CALL MXM (T(1,1,1,IEL,IS1),NX1,IATLJ1,NY1,AXISM1,NY1)
+                   CALL COPY(T(1,1,1,IEL,IS1),AXISM1,NX1*NY1)
+                  ENDIF
+                 ENDDO
+               ENDIF
+               ENDDO
+               ENDIF
 c
+               if (ifgtim) time=rstime
             endif
+
  1000    CONTINUE
          GOTO 1600
 C

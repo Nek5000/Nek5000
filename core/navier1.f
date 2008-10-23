@@ -335,16 +335,18 @@ C---------------------------------------------------------------------
       REAL OUT3 (LX2,LY2,LZ2,1)
       REAL INP  (LX1,LY1,LZ1,1)
 
-      if (ifsplit) then
+      iflg = 0
+
+      if (ifsplit .and. .not.ifaxis) then
          call wgradm1(out1,out2,out3,inp,nelv) ! weak grad on FLUID mesh
          return
       endif
 
       NTOT2 = NX2*NY2*NZ2*NELV
-      CALL MULTD (OUT1,INP,RXM2,SXM2,TXM2,1)
-      CALL MULTD (OUT2,INP,RYM2,SYM2,TYM2,2)
+      CALL MULTD (OUT1,INP,RXM2,SXM2,TXM2,1,iflg)
+      CALL MULTD (OUT2,INP,RYM2,SYM2,TYM2,2,iflg)
       IF (NDIM.EQ.3) 
-     $CALL MULTD (OUT3,INP,RZM2,SZM2,TZM2,3)
+     $CALL MULTD (OUT3,INP,RZM2,SZM2,TZM2,3,iflg)
 C
       return
       END
@@ -374,6 +376,8 @@ C
      $ ,             ta1 (lx1*ly1*lz1)
      $ ,             ta2 (lx1*ly1*lz1)
      $ ,             ta3 (lx1*ly1,lz1)
+
+      REAL           DUAX(LX1)
 c
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
@@ -413,16 +417,21 @@ C       the y-direction (= radial direction if axisymmetric).
 C
 C      Collocate with weights
 C
-       if (.not.ifaxis) call col3 (wx,w3m2,x(1,e),nxyz2)
+       if(ifsplit) then
+         call col3 (wx,bm1(1,1,1,e),x(1,e),nxyz1)
+         call invcol2(wx,jacm1(1,1,1,e),nxyz1)
+       else
+         if (.not.ifaxis) call col3 (wx,w3m2,x(1,e),nxyz2)
 C
-       if (ifaxis) then
-          if (ifrzer(e)) then
-              call col3    (wx,x(1,e),bm2(1,1,1,e),nxyz2)
-              call invcol2 (wx,jacm2(1,1,1,e),nxyz2)
-          else
-              call col3    (wx,w3m2,x(1,e),nxyz2)
-              call col2    (wx,ym2(1,1,1,e),nxyz2)
-          endif
+         if (ifaxis) then
+            if (ifrzer(e)) then
+                call col3    (wx,x(1,e),bm2(1,1,1,e),nxyz2)
+                call invcol2 (wx,jacm2(1,1,1,e),nxyz2)
+            else
+                call col3    (wx,w3m2,x(1,e),nxyz2)
+                call col2    (wx,ym2(1,1,1,e),nxyz2)
+            endif
+         endif
        endif
 C
        if (ndim.eq.2) then
@@ -494,6 +503,22 @@ C     If axisymmetric, add an extra diagonal term in the radial
 C     direction (only if solving the momentum equations and ISD=2)
 C     NOTE: NZ1=NZ2=1
 C
+C
+      if(ifsplit) then
+
+       if (ifaxis.and.(isd.eq.4)) then
+        call copy    (ta1,x(1,e),nxyz1)
+        if (ifrzer(e)) THEN
+           call rzero(ta1, nx1)
+           call mxm  (x  (1,e),nx1,datm1,ny1,duax,1)
+           call copy (ta1,duax,nx1)
+        endif
+        call col2    (ta1,baxm1(1,1,1,e),nxyz1)
+        call add2    (dtx(1,e),ta1,nxyz1)
+       endif
+
+      else
+
        if (ifaxis.and.(isd.eq.2)) then
          call col3    (ta1,x(1,e),bm2(1,1,1,e),nxyz2)
          call invcol2 (ta1,ym2(1,1,1,e),nxyz2)
@@ -502,13 +527,15 @@ C
          call add2    (dtx(1,e),ta1,nxyz1)
        endif
 
+      endif
+
       enddo
 C
       tcdtp=tcdtp+(dnekclock()-etime1)
       return
       end
 C
-      subroutine multd (dx,x,rm2,sm2,tm2,isd)
+      subroutine multd (dx,x,rm2,sm2,tm2,isd,iflg)
 C---------------------------------------------------------------------
 C
 C     Compute D*X
@@ -518,6 +545,7 @@ C     RM2 : RXM2, RYM2 or RZM2
 C     SM2 : SXM2, SYM2 or SZM2
 C     TM2 : TXM2, TYM2 or TZM2
 C     ISD : spatial direction (x=1,y=2,z=3)
+C     IFLG: OPGRAD (iflg=0) or OPDIV (iflg=1)
 C
 C---------------------------------------------------------------------
       include 'SIZE'
@@ -539,6 +567,8 @@ C---------------------------------------------------------------------
      $ ,             ta2 (lx1*ly1*lz1)
      $ ,             ta3 (lx1*ly1*lz1)
 
+      real           duax(lx1)
+
       common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
       logical ifdfrm, iffast, ifh2, ifsolv
       include 'CTIMER'
@@ -552,6 +582,7 @@ C
 
       nyz1  = ny1*nz1
       nxy2  = nx2*ny2
+      nxyz1 = nx1*ny1*nz1
       nxyz2 = nx2*ny2*nz2
 
       n1    = nx2*ny1
@@ -633,9 +664,13 @@ c           call mxm (ixm12,nx2,x(1,e),nx1,ta1,nyz1) ! reuse ta3 from above
          endif
 C
 C        Collocate with the weights on the pressure mesh
-C
+
+
+       if(ifsplit) then
+         call col2   (dx(1,e),bm1(1,1,1,e),nxyz1)
+         call invcol2(dx(1,e),jacm1(1,1,1,e),nxyz1)
+       else
          if (.not.ifaxis) call col2 (dx(1,e),w3m2,nxyz2)
-C
          if (ifaxis) then
              if (ifrzer(e)) then
                  call col2    (dx(1,e),bm2(1,1,1,e),nxyz2)
@@ -645,18 +680,36 @@ C
                  call col2    (dx(1,e),ym2(1,1,1,e),nxyz2)
              endif
          endif
+       endif
 
 c        If axisymmetric, add an extra diagonal term in the radial 
 c        direction (ISD=2).
 c        NOTE: NZ1=NZ2=1
 
-         if (ifaxis.and.(isd.eq.2)) then
+      if(ifsplit) then
+
+       if (ifaxis.and.(isd.eq.2).and.iflg.eq.1) then
+        call copy    (ta3,x(1,e),nxyz1)
+        if (ifrzer(e)) then
+           call rzero(ta3, nx1)
+           call mxm  (x(1,e),nx1,datm1,ny1,duax,1)
+           call copy (ta3,duax,nx1)
+        endif
+        call col2    (ta3,baxm1(1,1,1,e),nxyz1)
+        call add2    (dx(1,e),ta3,nxyz2)
+       endif
+
+      else
+
+       if (ifaxis.and.(isd.eq.2)) then
             call mxm     (ixm12,nx2,x(1,e),nx1,ta1,ny1)
             call mxm     (ta1,nx2,iytm12,ny1,ta2,ny2)
             call col3    (ta3,bm2(1,1,1,e),ta2,nxyz2)
             call invcol2 (ta3,ym2(1,1,1,e),nxyz2)
             call add2    (dx(1,e),ta3,nxyz2)
-         endif
+       endif
+
+      endif
 C
       enddo
 C
@@ -3633,7 +3686,7 @@ C
          call convopo(conv,fi)
          return
       endif
-
+c
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
@@ -3647,7 +3700,7 @@ C
       endif
 
       return
-      end
+      END
 c-----------------------------------------------------------------------
       subroutine conv1d (dfi,fi)
 C--------------------------------------------------------------------
@@ -4581,13 +4634,15 @@ C---------------------------------------------------------------------
       real inpz   (lx1,ly1,lz1,1)
       common /ctmp0/ work (lx2,ly2,lz2,lelv)
 C
+      iflg = 1
+
       ntot2 = nx2*ny2*nz2*nelv
-      call multd (work,inpx,rxm2,sxm2,txm2,1)
+      call multd (work,inpx,rxm2,sxm2,txm2,1,iflg)
       call copy  (outfld,work,ntot2)
-      call multd (work,inpy,rym2,sym2,tym2,2)
+      call multd (work,inpy,rym2,sym2,tym2,2,iflg)
       call add2  (outfld,work,ntot2)
       if (ndim.eq.3) then
-         call multd (work,inpz,rzm2,szm2,tzm2,3)
+         call multd (work,inpz,rzm2,szm2,tzm2,3,iflg)
          call add2  (outfld,work,ntot2)
       endif
 C

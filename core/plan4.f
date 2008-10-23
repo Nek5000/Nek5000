@@ -150,16 +150,40 @@ C
       NTOT2  = NX2*NY2*NZ2*NELV
       NXYZ1  = NX1*NY1*NZ1
       NFACES = 2*NDIM
+
+      call rzero(respr,ntot1)
+      call rzero(ta1  ,ntot1)
+      call rzero(ta2  ,ntot1)
+      call rzero(ta3  ,ntot1)
+      call rzero(wa1  ,ntot1)
+      call rzero(wa2  ,ntot1)
+      call rzero(wa3  ,ntot1)
 c
 c     Add -mu*curl(omega) to Dirichet boundaries
 c
 c     *** VISCOUS TERMS ***
 c
       call op_curl  (ta1,ta2,ta3,vx ,vy ,vz ,.true. ,w1,w2)
-      call op_curl  (wa1,wa2,wa3,ta1,ta2,ta3,.false.,w1,w2)
+      if(IFAXIS) then  
+         CALL COL2 (TA2, OMASK,NTOT1)
+         CALL COL2 (TA3, OMASK,NTOT1)
+      endif
+
+      call op_curl  (wa1,wa2,wa3,ta1,ta2,ta3,.true.,w1,w2)
+      if(IFAXIS) then  
+c         CALL COL2  (WA1, OMASK,NTOT1)
+         CALL COL2  (WA2, OMASK,NTOT1)
+         CALL COL2  (WA3, OMASK,NTOT1)
+      endif
+
       call opcolv   (wa1,wa2,wa3,bm1)
 c
       call opgrad   (ta1,ta2,ta3,QTL)
+      if(IFAXIS) then  
+         CALL COL2  (ta2, OMASK,ntot1)
+         CALL COL2  (ta3, OMASK,ntot1)
+      endif
+
       scale = -4./3. 
       call opadd2cm (wa1,wa2,wa3,ta1,ta2,ta3,scale)
       call invcol3  (w1,vdiff,vtrans,ntot1)
@@ -173,6 +197,7 @@ C                                                  solve for delta PP
       CALL RZERO   (TA2,NTOT1)
       CALL AXHELM  (RESPR,PR,TA1,TA2,IMESH,1)
       CALL CHSIGN  (RESPR,NTOT2)
+
 c
 c     *** NONLINEAR TERMS ***
 C                                                  x-component
@@ -181,7 +206,6 @@ C                                                  x-component
       CALL DSSUM   (TA1,NX1,NY1,NZ1)
       CALL COL2    (TA1,BINVM1,NTOT1)
       CALL CDTP    (TA2,TA1,RXM2,SXM2,TXM2,1)
-c
       CALL ADD2    (RESPR,TA2,NTOT2)
 C                                                  y-component
       call invcol3 (ta1,bfy,vtrans,ntot1)
@@ -228,7 +252,7 @@ C                                                 surface terms
          CALL CMULT(TA1,dtbd,NTOT1)
          CALL SUB2 (RESPR,TA1,NTOT1)
   300 CONTINUE
-C
+
 C     Assure that the residual is orthogonal to (1,1,...,1)T 
 C     (only if all Dirichlet b.c.)
 C
@@ -271,6 +295,10 @@ C----------------------------------------------------------------------
       call col3    (ta4,vdiff,qtl,ntot)
       call add2s1  (ta4,pr,scale,ntot)    
       call opgrad  (ta1,ta2,ta3,TA4)
+      if(IFAXIS) then
+         CALL COL2 (TA2, OMASK,NTOT)
+         CALL COL2 (TA3, OMASK,NTOT)
+      endif
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
@@ -284,11 +312,14 @@ c
       include 'SIZE'
       include 'TOTAL'
 c
+      real duax(lx1), ta(lx1,ly1,lz1,lelv)
+
       logical ifavg
 c
       real w1(1),w2(1),w3(1),work1(1),work2(1),u1(1),u2(1),u3(1)
 c
       ntot  = nx1*ny1*nz1*nelv
+      nxyz  = nx1*ny1*nz1
 c     work1=dw/dy ; work2=dv/dz
         call dudxyz(work1,u3,rym1,sym1,tym1,jacm1,1,2)
         if (if3d) then
@@ -296,6 +327,20 @@ c     work1=dw/dy ; work2=dv/dz
            call sub3(w1,work1,work2,ntot)
         else
            call copy(w1,work1,ntot)
+
+           if(ifaxis) then
+              call copy (ta,u3,ntot)
+              do iel = 1,nelv
+                if(IFRZER(iel)) then
+                  call rzero (ta(1,1,1,iel),nx1)
+                  call MXM   (ta(1,1,1,iel),nx1,DATM1,ny1,duax,1)
+                  call copy  (ta(1,1,1,iel),duax,nx1)
+                endif
+                call col2    (ta(1,1,1,iel),yinvm1(1,1,1,iel),nxyz)
+              enddo
+              call add2      (w1,ta,ntot)
+           endif
+
         endif
 c     work1=du/dz ; work2=dw/dx
         if (if3d) then
