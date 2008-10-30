@@ -143,6 +143,7 @@ c     Global vector commutative operation using spanning tree.
 c
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      common /ctimel/ ifsync
 
       integer x(n), w(n)
       character*3 op
