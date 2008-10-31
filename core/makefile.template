@@ -14,7 +14,8 @@ IFUNDERSCORE=
 #
 # core nekton files ...
 #
-CORE = drive.o plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
+CORE = drive.o drive1.o drive2.o \
+plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
 map2.o turb.o mvmesh.o ic.o ssolv.o planx.o mat1.o mat2.o \
@@ -90,7 +91,9 @@ clean:
 ################################################################################
 # fortran source files
 ################################################################################
-drive.o		:$S/drive.f;			$(F77) -c $(FL2) $S/drive.f
+drive.o		:$S/drive.f;			$(F77) -c $(FL2)  $S/drive.f
+drive1.o		:$S/drive1.f;			$(F77) -c $(FL2)  $S/drive1.f
+drive2.o		:$S/drive2.f;			$(F77) -c $(FL2)  $S/drive2.f
 ################################################################################
 dsygv.o     :$S/dsygv.f;     		$(F77) -c $(FL0i4) $S/dsygv.f
 ssygv.o     :$S/ssygv.f;     		$(F77) -c $(FL0i4) $S/ssygv.f
