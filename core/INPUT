@@ -66,13 +66,13 @@ C proportional to LELT
 C
       COMMON /INPUT5/ XC(8,LELT),YC(8,LELT),ZC(8,LELT)
      $               ,BC(5,6,LELT,0:LDIMT1)
-     $               ,CURVE(6,8,LELT)
+     $               ,CURVE(6,12,LELT)
      $               ,CERROR(LELT)
 C
       COMMON /INPUT6/ IGROUP(LELT),OBJECT(MAXOBJ,MAXMBR,2)
       INTEGER OBJECT
 C
-      COMMON /INPUT8/ CBC(6,LELT,0:LDIMT1),CCURVE(8,LELT)
+      COMMON /INPUT8/ CBC(6,LELT,0:LDIMT1),CCURVE(12,LELT)
      $              , CDOF(6,LELT), solver_type
       CHARACTER*1     CCURVE,CDOF
       CHARACTER*3     CBC, solver_type
