@@ -1779,58 +1779,6 @@ c
 c
 c-----------------------------------------------------------------------
 c
-      subroutine xxt_matvec(itype,ug,vg)
-c
-c     Compute local matrix-vector product  (possibly involving off-processor
-c                                           contributions for rhs)
-c
-c
-c     v = A_c * u
-c
-      include 'SIZE'
-      include 'DOMAIN'
-c
-      real ug(1),vg(1)
-c
-      common /vptsol/ a(lx1*ly1*lz1*lelt*27)
-      common /ctmp1/ uloc(lx1*ly1*lz1),vloc(lx1*ly1*lz1)
-c
-c
-      if (n_crs.le.0) then
-         write(6,*) 'xxt_matvec! dont forget to initialize n_crs!'
-         call exitt
-      endif
-c
-c
-c     March through spectral elements
-c
-c     Note --- masks are implied by the se_to_lcrs() array.
-c              Pointers to "null" imply that that local node is masked.
-c              The "if" stmts below take care of this.
-c
-c
-      call rzero(vg,n_crs)
-      nxyz = nxyz_c
-c
-      ia=1
-      do ie=1,nelv
-         call rzero(uloc,nxyz)
-         do ix=1,nxyz
-            ig = se_to_lcrs(ix+nxyz*(ie-1),1)
-            if (ig.gt.0) uloc(ix)=ug(ig)
-         enddo
-         call mxm(a(ia),nxyz,uloc,nxyz,vloc,1)
-         ia=ia+nxyz*nxyz
-         do ix=1,nxyz
-            ig = se_to_lcrs(ix+nxyz*(ie-1),1)
-            if (ig.gt.0) vg(ig) = vg(ig) + vloc(ix)
-         enddo
-      enddo
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine map_c_to_f_l2_bilin(uf,uc,w)
 c
 c     H1 Iterpolation operator:  linear --> spectral GLL mesh
