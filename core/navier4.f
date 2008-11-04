@@ -900,6 +900,7 @@ c
          endif
       endif
       if (ifvarp(ifield)) ifupdate = .true.
+      if (iflomach)       ifupdate = .true.
 c
       if (ifupdate) then
          n_sav = napprox(2)
