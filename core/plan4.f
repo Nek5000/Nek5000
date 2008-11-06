@@ -34,44 +34,36 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
+
+      if (ifexplvis) call split_vis
+
       CALL MAKEF     ! nonlinear contributions, bfx, bfy, bfz
       CALL LAGVEL
 
-      CALL BCDIRVC    (VX,VY,VZ,v1mask,v2mask,v3mask)
+      CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask)
 C
 C     first, compute pressure
-
-      call copy     (h1,vdiff,ntot1)
-      call rzero    (h2,ntot1)
 
       call crespsp  (respr)
 C
       call invers2  (h1,vtrans,ntot1)
-
-      call ctolspl (tolspl,respr)
-
-c     CALL HMHOLTZ ('PRES',DPR,RESPR,H1,H2,PMASK,VMULT,
-c    $              IMESH,TOLSPL,NMXH,1)
-
+      call rzero    (h2,ntot1)
+      call ctolspl  (tolspl,respr)
       napprox(1) = laxt
-      call hsolve  ('PRES',dpr,respr,h1,h2 
-     $                    ,pmask,vmult
-     $                    ,imesh,tolspl,nmxh,1
-     $                    ,approx,napprox,binvm1)
-
-
+      call hsolve   ('PRES',dpr,respr,h1,h2 
+     $                     ,pmask,vmult
+     $                     ,imesh,tolspl,nmxh,1
+     $                     ,approx,napprox,binvm1)
       CALL ADD2    (PR,DPR,NTOT1)
       CALL ZAVER1  (PR)
 C
 C     Compute velocity
 C
       CALL CRESVSP (RES1,RES2,RES3)
-
-c      CALL SETHLM  (H1,H2,INTYPE)
-
       CALL OPHINV  (DV1,DV2,DV3,RES1,RES2,RES3,H1,H2,TOLHV,NMXH)
-c
       CALL OPADD2  (VX,VY,VZ,DV1,DV2,DV3)
+
+      if (ifexplvis) call redo_split_vis
 
 c
 c     Below is just for diagnostics...
@@ -127,7 +119,6 @@ c-----------------------------------------------------------------------
 C---------------------------------------------------------------------
 C
 C     Compute startresidual/right-hand-side in the pressure
-C     SPLIT SCHEME
 C
 C---------------------------------------------------------------------
       INCLUDE 'SIZE'
@@ -146,36 +137,29 @@ c
 c
       CHARACTER CB*3
 C
-      NTOT1  = NX1*NY1*NZ1*NELV
-      NTOT2  = NX2*NY2*NZ2*NELV
       NXYZ1  = NX1*NY1*NZ1
+      NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
 
-      call rzero(respr,ntot1)
-      call rzero(ta1  ,ntot1)
-      call rzero(ta2  ,ntot1)
-      call rzero(ta3  ,ntot1)
-      call rzero(wa1  ,ntot1)
-      call rzero(wa2  ,ntot1)
-      call rzero(wa3  ,ntot1)
-c
-c     Add -mu*curl(omega) to Dirichet boundaries
-c
-c     *** VISCOUS TERMS ***
-c
+c      call rzero(respr,ntot1)
+c      call rzero(ta1  ,ntot1)
+c      call rzero(ta2  ,ntot1)
+c      call rzero(ta3  ,ntot1)
+c      call rzero(wa1  ,ntot1)
+c      call rzero(wa2  ,ntot1)
+c      call rzero(wa3  ,ntot1)
+
+c     -mu*curl(curl(v))
       call op_curl  (ta1,ta2,ta3,vx ,vy ,vz ,.true. ,w1,w2)
       if(IFAXIS) then  
          CALL COL2 (TA2, OMASK,NTOT1)
          CALL COL2 (TA3, OMASK,NTOT1)
       endif
-
       call op_curl  (wa1,wa2,wa3,ta1,ta2,ta3,.true.,w1,w2)
       if(IFAXIS) then  
-c         CALL COL2  (WA1, OMASK,NTOT1)
          CALL COL2  (WA2, OMASK,NTOT1)
          CALL COL2  (WA3, OMASK,NTOT1)
       endif
-
       call opcolv   (wa1,wa2,wa3,bm1)
 c
       call opgrad   (ta1,ta2,ta3,QTL)
@@ -183,12 +167,11 @@ c
          CALL COL2  (ta2, OMASK,ntot1)
          CALL COL2  (ta3, OMASK,ntot1)
       endif
-
       scale = -4./3. 
       call opadd2cm (wa1,wa2,wa3,ta1,ta2,ta3,scale)
       call invcol3  (w1,vdiff,vtrans,ntot1)
-c
       call opcolv   (wa1,wa2,wa3,w1)
+
 c
 c     *** PRESSURE TERM ***
 c
@@ -196,8 +179,7 @@ C                                                  solve for delta PP
       CALL INVERS2 (TA1,VTRANS,NTOT1)
       CALL RZERO   (TA2,NTOT1)
       CALL AXHELM  (RESPR,PR,TA1,TA2,IMESH,1)
-      CALL CHSIGN  (RESPR,NTOT2)
-
+      CALL CHSIGN  (RESPR,NTOT1)
 c
 c     *** NONLINEAR TERMS ***
 C                                                  x-component
@@ -206,14 +188,14 @@ C                                                  x-component
       CALL DSSUM   (TA1,NX1,NY1,NZ1)
       CALL COL2    (TA1,BINVM1,NTOT1)
       CALL CDTP    (TA2,TA1,RXM2,SXM2,TXM2,1)
-      CALL ADD2    (RESPR,TA2,NTOT2)
+      CALL ADD2    (RESPR,TA2,NTOT1)
 C                                                  y-component
       call invcol3 (ta1,bfy,vtrans,ntot1)
       CALL SUB2    (TA1,WA2,NTOT1)
       CALL DSSUM   (TA1,NX1,NY1,NZ1)
       CALL COL2    (TA1,BINVM1,NTOT1)
       CALL CDTP    (TA2,TA1,RYM2,SYM2,TYM2,2)
-      CALL ADD2    (RESPR,TA2,NTOT2)
+      CALL ADD2    (RESPR,TA2,NTOT1)
 C                                                  z-component
       IF (NDIM.EQ.3) THEN
          call invcol3 (ta1,bfz,vtrans,ntot1)
@@ -221,10 +203,10 @@ C                                                  z-component
          CALL DSSUM   (TA1,NX1,NY1,NZ1)
          CALL COL2    (TA1,BINVM1,NTOT1)
          CALL CDTP    (TA2,TA1,RZM2,SZM2,TZM2,3)
-         CALL ADD2    (RESPR,TA2,NTOT2)
+         CALL ADD2    (RESPR,TA2,NTOT1)
       ENDIF
 C                                        add thermal divergence
-      DTBD = BD(1)/DT
+      dtbd = BD(1)/DT
       call admcol3(respr,QTL,bm1,dtbd,ntot1)
  
 C                                                 surface terms
@@ -266,7 +248,7 @@ c----------------------------------------------------------------------
       SUBROUTINE CRESVSP (RESV1,RESV2,RESV3)
 C----------------------------------------------------------------------
 C
-C     Compute the residual for the velocity - SPLIT SCHEME.
+C     Compute the residual for the velocity
 C
 C----------------------------------------------------------------------
       INCLUDE 'SIZE'
@@ -421,4 +403,57 @@ C
   100 CONTINUE
       RETURN
       END
-c-----------------------------------------------------------------------
+
+      SUBROUTINE split_vis
+C---------------------------------------------------------------------
+C
+C     Split viscosity into a constant (implicit) and variable (explicit)
+c     part.
+C
+C---------------------------------------------------------------------
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      real vis_max,fac
+
+      ntot = nx1*ny1*nz1*nelv
+
+      vis_max = glmax(vdiff,ntot)
+      call copy(vdiff_e,vdiff,ntot)
+
+      ! set implicit part
+c      vis_max = 1.5 * vis_max
+      call cfill(vdiff,vis_max,ntot)
+
+      ! set explicit part
+      fac = -1.*vis_max
+      call cadd(vdiff_e,fac,ntot)
+
+c testing
+c      fac = 2.0*param(2)
+c      call cfill(vdiff,fac,ntot)
+c      fac = -1.0*param(2)
+c      call cfill(vdiff_e,fac,ntot)
+c testing
+
+      RETURN
+      END
+
+
+      SUBROUTINE redo_split_vis
+C---------------------------------------------------------------------
+C
+C     Redo split viscosity
+C
+C---------------------------------------------------------------------
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      ntot = nx1*ny1*nz1*nelv
+
+      ! sum up explicit and implicit part
+      call add2(vdiff,vdiff_e,ntot)
+
+      RETURN
+      END
+

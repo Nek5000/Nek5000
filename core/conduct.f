@@ -21,11 +21,6 @@ C
 
       include 'ORTHOT'
 
-      if (ifexpl) then
-         call cdscal_expl (igeom)
-         return
-      endif
-
       napprox(1) = laxt
 
       nel    = nelfld(ifield)

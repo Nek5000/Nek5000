@@ -40,14 +40,15 @@ C--------------------------------------------------------------------
 C
 C     Set default logicals
 C
-      IFFLOW  = .FALSE.
-      IFMVBD  = .FALSE.
-      IFHEAT  = .TRUE.
-      IFSPLIT = .FALSE.
-      IFDOIT  = .FALSE.
-      ifxxt   = .false.
-      IFCVODE = .false.
-      ifsync  = .false.   ! gsync() for timing info
+      IFFLOW    = .FALSE.
+      IFMVBD    = .FALSE.
+      IFHEAT    = .TRUE.
+      IFSPLIT   = .FALSE.
+      IFDOIT    = .FALSE.
+      ifxxt     = .false.
+      IFCVODE   = .false.
+      IFEXPLVIS = .false.
+      ifsync    = .false.   ! gsync() for timing info
 
       if (lx1.eq.lx2) ifsplit=.true.
 
@@ -78,6 +79,7 @@ C
       CALL RZERO(ABZ2,NTOT)
       CALL RZERO(VGRADT1,NTOT)
       CALL RZERO(VGRADT2,NTOT)
+
 
       RETURN
       END
@@ -244,7 +246,6 @@ C
       endif
 
       if(abs(PARAM(16)).eq.2) IFCVODE = .true.
-      if(abs(PARAM(16)).eq.3) IFEXPL = .true.
 
 C
 C     Check accuracy requested.
@@ -720,8 +721,8 @@ C-----------------------------------------------------------------------
 c        PLAN 4: TOMBO SPLITTING
 c                - Time-dependent Navier-Stokes calculation (Re>>1).
 c                - Same approximation spaces for pressure and velocity.
-c                - Weakly compressible (div u .ne. 0).
-
+c                - Incompressibe or Weakly compressible (div u .ne. 0).
+ 
          call plan4
          call twalluz (igeom) ! Turbulence model
          call chkptol         ! check pressure tolerance

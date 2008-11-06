@@ -27,6 +27,7 @@ C
      $               , T      (LX1,LY1,LZ1,LELT,LDIMT)
      $               , VTRANS (LX1,LY1,LZ1,LELT,LDIMT1)
      $               , VDIFF  (LX1,LY1,LZ1,LELT,LDIMT1)
+     $               , VDIFF_E(LX1,LY1,LZ1,LELT)
      $               , BFX    (LX1,LY1,LZ1,LELV)
      $               , BFY    (LX1,LY1,LZ1,LELV)
      $               , BFZ    (LX1,LY1,LZ1,LELV)
@@ -105,6 +106,3 @@ C
      $              ,VGRADT2P(LPX1*LPY1*LPZ1*LPELT,LDIMT,lpert)
 c
       common /ppointr/ jp
-
-      integer DUPMASKV(LX1,LY1,LZ1,LELT)
-      common /dmask/ DUPMASKV

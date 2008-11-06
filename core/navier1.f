@@ -1480,10 +1480,11 @@ C----------------------------------------------------------------------
       include 'MASS'
       include 'INPUT'
       include 'TSTEP'
+
                                                 CALL MAKEUF
       IF (IFNATC)                               CALL NATCONV
+      IF (IFEXPLVIS)                            CALL MAKEVIS
       IF (IFNAV.AND.(.NOT.IFCHAR))              CALL ADVAB
-c     IF (.NOT.IFSTRS)                          CALL MAKEVEX  ! add explicit viscosity
       IF (IFMVBD)                               CALL ADMESHV
       IF (IFTRAN)                               CALL MAKEABF
       IF ((IFTRAN.AND..NOT.IFCHAR).OR.
@@ -1644,6 +1645,11 @@ C
          CALL SUBCOL3 (BFZ,BM1,TA3,NTOT1)
       ENDIF
 C
+      CALL COL2(BFX,VTRANS,NTOT1)
+      CALL COL2(BFY,VTRANS,NTOT1)
+      IF(NDIM.EQ.3) CALL COL2(BFZ,VTRANS,NTOT1)
+
+
       return
       END
 c-----------------------------------------------------------------------
@@ -1720,14 +1726,14 @@ C
       CALL COPY   (ABY1,BFY,NTOT1)
       CALL ADD2S1 (BFX,TA1,AB0,NTOT1)
       CALL ADD2S1 (BFY,TA2,AB0,NTOT1)
-      CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
-      CALL COL2   (BFY,VTRANS,NTOT1)
+c      CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
+c      CALL COL2   (BFY,VTRANS,NTOT1)
       IF (NDIM.EQ.3) THEN
          CALL ADD3S2 (TA3,ABZ1,ABZ2,AB1,AB2,NTOT1)
          CALL COPY   (ABZ2,ABZ1,NTOT1)
          CALL COPY   (ABZ1,BFZ,NTOT1)
          CALL ADD2S1 (BFZ,TA3,AB0,NTOT1)
-         CALL COL2   (BFZ,VTRANS,NTOT1)
+c         CALL COL2   (BFZ,VTRANS,NTOT1)
       ENDIF
 C
       return
@@ -4780,121 +4786,141 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      SUBROUTINE MAKEVEX 
+      SUBROUTINE MAKEVIS
 C----------------------------------------------------------------------
 C
-C     Add the term DEL*(2[(mue_real-1)*TAU]) to forcing function
-C     at current time step.  // SK 08/27/07 
-C     TAU:= 0.5*S - 1/3 DEL*U
+C     construct viscous term:
 c
-c     VDIFF is used as the the correction to the constant viscosity,
-c     denoted by MUE_IMP, and is treated explicitly in time
+c     DEL*[ DEL V + (DEL V)^T - 2/3*DEL*V *I ] 
+c                 =  
+c     DEL*[ 2*mue(S-1/3*tr(S)I) ]
+c
+c     where mue is the viscosity, S the strain rate tensor,
+c     tr(S) the trace of S and I the indentitiy matrix.  
 C----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
 C
-      COMMON /SCRUZ/ TA1 (LX1,LY1,LZ1,LELV)
-     $ ,             TA2 (LX1,LY1,LZ1,LELV)
-     $ ,             TA3 (LX1,LY1,LZ1,LELV)
+      COMMON /SCRUZ/ W1 (LX1,LY1,LZ1,LELV)
+     $ ,             W2 (LX1,LY1,LZ1,LELV)
+     $ ,             W3 (LX1,LY1,LZ1,LELV)
 C
-      COMMON /CTMP0/ EXZ(LX1,LY1,LZ1,LELT)
-     $             , EYZ(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP1/ EXX(LX1,LY1,LZ1,LELT)
-     $             , EXY(LX1,LY1,LZ1,LELT)
-     $             , EYY(LX1,LY1,LZ1,LELT)
-     $             , EZZ(LX1,LY1,LZ1,LELT)
+      COMMON /SCRNS/ SXZ(LX1,LY1,LZ1,LELT)
+     $             , SYZ(LX1,LY1,LZ1,LELT)
+     $             , SXX(LX1,LY1,LZ1,LELT)
+     $             , SXY(LX1,LY1,LZ1,LELT)
+     $             , SYY(LX1,LY1,LZ1,LELT)
+     $             , SZZ(LX1,LY1,LZ1,LELT)
 
-      REAL  S11(LX1,LY1,LZ1,LELV)
-     $ ,    S12(LX1,LY1,LZ1,LELV)
-     $ ,    S13(LX1,LY1,LZ1,LELV)
-     $ ,    S22(LX1,LY1,LZ1,LELV)
-     $ ,    S23(LX1,LY1,LZ1,LELV)
-     $ ,    S33(LX1,LY1,LZ1,LELV)
-
-      REAL TRACEa (LX1,LY1,LZ1,LELV)
-
-      REAL VISX(LX1,LY1,LZ1,LELV)
-     $ ,   VISY(LX1,LY1,LZ1,LELV)
-     $ ,   VISZ(LX1,LY1,LZ1,LELV) 
-      
-      REAL two,fac
-      INTEGER MATMOD
+      REAL fac
+C----------------------------------------------------------------------
 
 
-      
+      NTOT = NX1*NY1*NZ1*NELV
 
+      ! CONSTRUCT strain rate tensor S
+      CALL CALC_SIJ(VX,VY,VZ) 
 
-      NTOT = LX1*LY1*LZ1*NELV
-      MATMOD = 1
-      fac = -1./3.
- 
-      CALL STNRATE(VX,VY,VZ,NELV,MATMOD) !!!!! located in subs1.f
+      ! substract trace of S
+      CALL ADD4  (W1,SXX,SYY,SZZ,NTOT)
+c      call copy(W1,QTL,ntot)  
+      fac = -1./3. 
+      CALL CMULT (W1,fac,NTOT)
+      CALL ADD2  (SXX,W1,NTOT)
+      CALL ADD2  (SYY,W1,NTOT)
+      CALL ADD2  (SZZ,W1,NTOT)
 
-      CALL CMULT(EXZ,0.5,NTOT)  
-      CALL CMULT(EYZ,0.5,NTOT) 
-      CALL CMULT(EXY,0.5,NTOT) 
-  
-      CALL COPY  (S11,EXX,NTOT)
-      CALL COPY  (S22,EYY,NTOT)
-      CALL COPY  (S33,EZZ,NTOT)
+      CALL OPCOLV(SXX,SYY,SZZ,VDIFF_E)
+      CALL OPCOLV(SXY,SXZ,SYZ,VDIFF_E)
 
-      CALL COPY  (S12,EXY,NTOT)
-      CALL COPY  (S13,EXZ,NTOT)
-      CALL COPY  (S23,EYZ,NTOT)
- 
-      CALL ADD4   (TRACEa,S11,S22,S33,NTOT) 
-      CALL CMULT  (TRACEa,fac,NTOT)
-       
-      CALL ADD2   (S11,TRACEa,NTOT)
-      CALL ADD2   (S22,TRACEa,NTOT)
-      CALL ADD2   (S33,TRACEa,NTOT)
+      ! not sure if that is really needed
+      CALL OPCOLV (SXX,SYY,SZZ,BM1)
+      CALL OPCOLV (SXY,SXZ,SYZ,BM1)
+      CALL OPDSSUM(SXX,SYY,SZZ)
+      CALL OPDSSUM(SXY,SXZ,SYZ)
+      CALL OPCOLV (SXX,SYY,SZZ,BINVM1)
+      CALL OPCOLV (SXY,SXZ,SYZ,BINVM1)
 
-      CALL OPCOLV(S11,S12,S13,VDIFF)
-      CALL OPCOLV(S22,S23,S33,VDIFF)
-
-
-
-      CALL COL2(S11,BM1,NTOT)   
-      CALL COL2(S12,BM1,NTOT)
-      CALL COL2(S13,BM1,NTOT)
-      CALL COL2(S22,BM1,NTOT)   
-      CALL COL2(S23,BM1,NTOT)
-      CALL COL2(S33,BM1,NTOT)
-
-      CALL OPDSSUM(S11,S12,S13)
-      CALL OPDSSUM(S22,S23,S33)
-
-      CALL COL2(S11,BINVM1,NTOT)   
-      CALL COL2(S12,BINVM1,NTOT)
-      CALL COL2(S13,BINVM1,NTOT)
-      CALL COL2(S22,BINVM1,NTOT)   
-      CALL COL2(S23,BINVM1,NTOT)
-      CALL COL2(S33,BINVM1,NTOT)
-
+      ! we need to devide by the density because
+      ! in makeabf we multiply by the density
+!      CALL INVERS2(W2,VTRANS,NTOT)
+      CALL RONE(W2,NTOT)
+      fac = 2.0
+      CALL CMULT  (W2,fac,NTOT)
       
 c add to RHS (BFX,BFY,BFZ)
- 
-      two=2.
-      CALL OPDIV (VISX,S11,S12,S13)
-      CALL CMULT (VISX,two,NTOT)
-      CALL ADD2  (BFX,VISX,NTOT)
+      CALL OPDIV (W1,SXX,SXY,SXZ)
+      CALL COL2  (W1,W2,NTOT)
+      CALL ADD2  (BFX,W1,NTOT)
       
-      CALL OPDIV (VISY,S12,S22,S23)
-      CALL CMULT (VISY,two,NTOT)
-      CALL ADD2  (BFY,VISY,NTOT)
+      CALL OPDIV (W1,SXY,SYY,SYZ)
+      CALL COL2  (W1,W2,NTOT)
+      CALL ADD2  (BFY,W1,NTOT)
 
-      IF (NDIM.EQ.2) THEN
-         CALL RZERO(VISZ,NTOT)
-      ELSE
-        CALL OPDIV (VISZ,S13,S23,S33)
-        CALL CMULT (VISZ,two,NTOT)
-        CALL ADD2  (BFZ,VISZ,NTOT)
+      IF (NDIM.EQ.3) THEN
+        CALL OPDIV (W1,SXZ,SYZ,SZZ)
+        CALL COL2  (W1,W2,NTOT)
+        CALL ADD2  (BFZ,W1,NTOT)
       ENDIF
+
 
       RETURN
       END
 c-----------------------------------------------------------------------
 
+      SUBROUTINE CALC_SIJ (U1,U2,U3)
+C
+C     Compute strainrates
+C
+C     CAUTION : CB SCRNS is used for data change
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
+      INCLUDE 'GEOM'
+
+      COMMON /SCRNS/ EXZ(LX1,LY1,LZ1,LELT)
+     $             , EYZ(LX1,LY1,LZ1,LELT)
+     $             , EXX(LX1,LY1,LZ1,LELT)
+     $             , EXY(LX1,LY1,LZ1,LELT)
+     $             , EYY(LX1,LY1,LZ1,LELT)
+     $             , EZZ(LX1,LY1,LZ1,LELT)
+
+C
+      DIMENSION U1(LX1,LY1,LZ1,1)
+     $        , U2(LX1,LY1,LZ1,1)
+     $        , U3(LX1,LY1,LZ1,1)
+C
+      REAL fac
+
+      NEL = NELV
+      NTOT1 = NX1*NY1*NZ1*NEL
+
+      CALL RZERO3 (EXX,EYY,EZZ,NTOT1)
+      CALL RZERO3 (EXY,EXZ,EYZ,NTOT1)
+C
+      CALL UXYZ  (U1,EXX,EXY,EXZ,NEL)
+      CALL UXYZ  (U2,EXY,EYY,EYZ,NEL)
+      IF (NDIM.EQ.3) CALL UXYZ   (U3,EXZ,EYZ,EZZ,NEL)
+C
+      CALL INVCOL2 (EXX,JACM1,NTOT1)
+      CALL INVCOL2 (EXY,JACM1,NTOT1)
+      CALL INVCOL2 (EYY,JACM1,NTOT1)
+C
+      IF (IFAXIS) CALL AXIEZZ (U2,EYY,EZZ,NEL)
+C
+      IF (NDIM.EQ.3) THEN
+         CALL INVCOL2 (EXZ,JACM1,NTOT1)
+         CALL INVCOL2 (EYZ,JACM1,NTOT1)
+         CALL INVCOL2 (EZZ,JACM1,NTOT1)
+      ENDIF
+C
+      fac = 0.5
+      CALL CMULT (EXY,fac,NTOT1) 
+      CALL CMULT (EXZ,fac,NTOT1)  
+      CALL CMULT (EYZ,fac,NTOT1) 
+
+      RETURN
+      END
 
