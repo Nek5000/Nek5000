@@ -19,7 +19,6 @@ C
       IF (IFTURB)                                          CALL MAKETQ
       IF (.NOT.IFTURB                   .and.if_conv_std)  CALL MAKEUQ
       IF (IFADVC(IFIELD).AND..NOT.IFCHAR.and.if_conv_std)  CALL CONVAB
-      IF (ifexpl)                                          CALL DIFFAB
       IF (IFMVBD)                                          CALL ADMESHT
       IF (IFTRAN.AND..NOT.IFCVODE)                         CALL MAKEABQ
       IF ((IFTRAN.AND..NOT.IFCHAR.AND..NOT.IFCVODE).OR.
