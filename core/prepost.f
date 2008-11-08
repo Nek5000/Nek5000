@@ -1347,13 +1347,25 @@ c-----------------------------------------------------------------------
          call mfo_write_hdr                  ! write hdr, byte key, els.
       endif
 
-      if (ifxyo) call mfo_outv(xm1,ym1,zm1,nelt)
-      if (ifvo ) call mfo_outv(vx,vy,vz,nelv)  ! B-field handled thru outpost
-      if (ifpo ) call mfo_outs(pm1,nelv)
-      if (ifto ) call mfo_outs(t,nelt)
+      nout = nelt
 
+      ! dump all fields based on the t-mesh to avoid different
+      ! topologies in the post-processor
+      if (ifxyo) call mfo_outv(xm1,ym1,zm1,nout)
+      if (ifvo ) call mfo_outv(vx,vy,vz,nout)  ! B-field handled thru outpost
+      if (ifpo ) call mfo_outs(pm1,nout)
+      if (ifto ) call mfo_outs(t,nout)
       do k=1,npscal
-         call mfo_outs(t(1,1,1,1,k+1),nelv)
+         if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
+      enddo
+
+      ! add meta data to the end of the file
+      if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
+      if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
+      if (ifpo ) call mfo_mdatas(pm1,nout)
+      if (ifto ) call mfo_mdatas(t,nout)
+      do k=1,npscal
+         if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
       if (nid.eq.pid0) call byte_close()
@@ -1548,19 +1560,11 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.pid0) then
 
-         do e=1,nelt
+         do e=1,nel
             if (wdsizo.eq.4) then               ! 32-bit ouput
-               if(e.le.nel) then 
                  call copyx4 (u4,u(1,e),nxyz) 
-               else
-                 call rzero4 (u4,nxyz) 
-               endif
             else
-               if(e.le.nel) then               ! 64-bit output 
                  call copy   (u8,u(1,e),nxyz) 
-               else
-                 call rzero  (u4,nxyz) 
-               endif
             endif
             call byte_write(u4,nout)          ! u4 :=: u8
          enddo
@@ -1577,19 +1581,11 @@ c-----------------------------------------------------------------------
 
       else
 
-         do e=1,nelt
+         do e=1,nel
             if (wdsizo.eq.4) then               ! 32-bit ouput
-               if(e.le.nel) then 
                  call copyx4 (u4,u(1,e),nxyz) 
-               else
-                 call rzero4 (u4,nxyz) 
-               endif
             else
-               if(e.le.nel) then               ! 64-bit output 
                  call copy   (u8,u(1,e),nxyz) 
-               else
-                 call rzero  (u4,nxyz) 
-               endif
             endif
 
             mtype = lglel(e,node)
@@ -1632,27 +1628,15 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.pid0) then
 
-         do e=1,nelt
+         do e=1,nel
             if (wdsizo.eq.4) then                   ! 32-bit output
-               if(e.le.nel) then 
                  call copyx4 (u4(1,1),u(1,e),nxyz)   
                  call copyx4 (u4(1,2),v(1,e),nxyz)
                  if (if3d) call copyx4 (u4(1,3),w(1,e),nxyz)
-               else
-                 call rzero4 (u4(1,1),nxyz)   
-                 call rzero4 (u4(1,2),nxyz)
-                 if (if3d) call rzero4 (u4(1,3),nxyz)
-               endif
             else                                   ! 64-bit output
-               if(e.le.nel) then 
                  call copy (u8(1,1),u(1,e),nxyz)     
                  call copy (u8(1,2),v(1,e),nxyz)
                  if (if3d) call copy (u8(1,3),w(1,e),nxyz)
-               else
-                 call rzero (u8(1,1),nxyz)     
-                 call rzero (u8(1,2),nxyz)
-                 if (if3d) call rzero (u8(1,3),nxyz)
-               endif
             endif
             call byte_write(u4,nout)               ! u4 :=: u8
          enddo
@@ -1669,27 +1653,15 @@ c-----------------------------------------------------------------------
 
       else
 
-         do e=1,nelt
+         do e=1,nel
             if (wdsizo.eq.4) then                   ! 32-bit output
-               if(e.le.nel) then 
                  call copyx4 (u4(1,1),u(1,e),nxyz)   
                  call copyx4 (u4(1,2),v(1,e),nxyz)
                  if (if3d) call copyx4 (u4(1,3),w(1,e),nxyz)
-               else
-                 call rzero4 (u4(1,1),nxyz)   
-                 call rzero4 (u4(1,2),nxyz)
-                 if (if3d) call rzero4 (u4(1,3),nxyz)
-               endif
             else                                   ! 64-bit output
-               if(e.le.nel) then 
                  call copy (u8(1,1),u(1,e),nxyz)     
                  call copy (u8(1,2),v(1,e),nxyz)
                  if (if3d) call copy (u8(1,3),w(1,e),nxyz)
-               else
-                 call rzero (u8(1,1),nxyz)     
-                 call rzero (u8(1,2),nxyz)
-                 if (if3d) call rzero (u8(1,3),nxyz)
-               endif
             endif
 
             mtype = lglel(e,node)
@@ -1869,3 +1841,145 @@ c                                      ! is the only form used for restart
       return
       end
 c-----------------------------------------------------------------------
+
+      subroutine mfo_mdatav(u,v,w,nel)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+
+      real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
+
+      common /ctmp1/ mdata4(6*lelt)
+      real*4 mdata4
+
+      integer e
+
+      call gsync() ! clear outstanding message queues.
+
+      nxyz = nx1*ny1*nz1
+
+      ! hack for VisIt
+      n  = 6 !2*ndim
+
+      ! Am I an I/O node?
+      if (nid.eq.pid0) then
+         j = 1
+         do e=1,nel
+            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            mdata4(j+2) = vlmin4(v(1,e),nxyz) 
+            mdata4(j+3) = vlmax4(v(1,e),nxyz)
+            j = j + 4
+            if(n.eq.6) then
+              mdata4(j+0) = vlmin4(w(1,e),nxyz) 
+              mdata4(j+1) = vlmax4(w(1,e),nxyz)
+              j = j + 2
+            endif
+         enddo
+
+         ! write out my data
+         nout = n*nel
+         call byte_write(mdata4,nout)
+
+         ! write out the data of my childs
+         idum  = 1
+         do k=pid0+1,pid1
+            mtype = k
+            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,inelp,4)       
+            len   = n*inelp 
+            call crecv(mtype,mdata4,len)
+
+            nout  = n*inelp 
+            call byte_write(mdata4,nout)
+         enddo
+      else
+         j = 1
+         do e=1,nel
+            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            mdata4(j+2) = vlmin4(v(1,e),nxyz) 
+            mdata4(j+3) = vlmax4(v(1,e),nxyz)
+            j = j + 4
+            if(n.eq.6) then
+              mdata4(j+0) = vlmin4(w(1,e),nxyz) 
+              mdata4(j+1) = vlmax4(w(1,e),nxyz)
+              j = j + 2
+            endif
+         enddo
+
+         ! send my data to my pararent I/O node
+         mtype = nid
+         len   = n*nel
+         call crecv(mtype,idum,4)                ! hand-shake
+         call csend(mtype,nel,4,pid0)            ! nel
+         call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+      subroutine mfo_mdatas(u,nel)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+
+      real u(lx1*ly1*lz1,1)
+
+      common /ctmp1/ mdata4(2*lelt)
+      real*4 mdata4
+
+      integer e
+
+      call gsync() ! clear outstanding message queues.
+
+      nxyz = nx1*ny1*nz1
+
+      n  = 2
+
+      ! Am I an I/O node?
+      if (nid.eq.pid0) then
+         do e=1,nel
+            mdata4(e+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(e+1) = vlmax4(u(1,e),nxyz)
+         enddo
+
+         ! write out my data
+         nout = n*nel
+         call byte_write(mdata4,nout)
+
+         ! write out the data of my childs
+         idum  = 1
+         do k=pid0+1,pid1
+            mtype = k
+            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,inelp,4)       
+            len   = n*inelp 
+            call crecv(mtype,mdata4,len)
+
+            nout  = n*inelp 
+            call byte_write(mdata4,nout)
+         enddo
+      else
+         j = 1
+         do e=1,nel
+            mdata4(e+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(e+1) = vlmax4(u(1,e),nxyz)
+         enddo
+
+         ! send my data to my pararent I/O node
+         mtype = nid
+         len   = n*nel
+         call crecv(mtype,idum,4)                ! hand-shake
+         call csend(mtype,nel,4,pid0)            ! nel
+         call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
+      endif
+
+      return
+      end
+
