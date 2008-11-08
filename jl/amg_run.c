@@ -941,7 +941,9 @@ amg_data *amg_setup(uint n, const ulong *id,
   if(data->pid==0) printf("AMG: initialized\n"), fflush(stdout);
 #ifdef DIAGNOSTICS  
   check_amg_data(data);
+#ifdef MPI
   MPI_Barrier(data->comm);
+#endif
   if(data->pid==0) printf("AMG: sanity check complete\n"), fflush(stdout);
 #endif
   return data;
