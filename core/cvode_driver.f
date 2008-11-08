@@ -1,4 +1,4 @@
-      subroutine cdscal_cvode
+      subroutine cdscal_cvode(igeom)
       include 'SIZE'
       include 'TOTAL'
 
