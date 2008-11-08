@@ -192,12 +192,13 @@ C     otherwise they are set in the beginning of the time stepping loop
 
          if (ifsplit) then
 
-            if (ifheat)      call heat     (0)
+            igeom = 1
+            if (ifheat)      call heat     (igeom)
 
                              call setprop
                              call qthermal
-
-            if (ifflow)      call fluid    (0)
+            igeom = 1
+            if (ifflow)      call fluid    (igeom)
 
          else
 

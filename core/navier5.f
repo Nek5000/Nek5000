@@ -160,9 +160,9 @@ c
 
       if (nid.eq.0) then
          if (npscal.eq.0) then
-            write(6,101) mmax
-            write(sfmt,101) mmax
-  101       format('''(i8,1p',i1,'e12.4,a6)''')
+c            write(6,101) mmax
+c            write(sfmt,101) mmax
+c  101       format('''(i8,1p',i1,'e12.4,a6)''')
 c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
 c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
          else

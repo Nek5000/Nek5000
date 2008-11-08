@@ -714,7 +714,7 @@ C-----------------------------------------------------------------------
 
       ts = dnekclock() 
 
-      if(nid.eq.0) write(*,'(12X,A)') 'Solving Fluid'
+      if(nid.eq.0 .and. igeom.eq.1) write(*,'(12X,A)') 'Solving Fluid'
 
       if (ifsplit) then
 
@@ -724,6 +724,7 @@ c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
  
          call plan4
+         igeom = 2
          call twalluz (igeom) ! Turbulence model
          call chkptol         ! check pressure tolerance
          call vol_flow        ! check for fixed flow rate
@@ -751,8 +752,8 @@ c             - Velocity/stress formulation.
 
       endif
 
-      if(nid.eq.0) write(*,'(12X,A,1pE11.4)') 'Fluid done ', 
-     &             dnekclock()-ts
+      if(nid.eq.0 .and. igeom.eq.2) 
+     &   write(*,'(12X,A,1pE11.4)') 'Fluid done ', dnekclock()-ts
 
 
 
@@ -781,11 +782,12 @@ C
 
       ts = dnekclock()
 
-      if (nid.eq.0) write(*,'(12x,a)') 'Solving Heat'
+      if (nid.eq.0 .and. igeom.eq.1) write(*,'(12x,a)') 'Solving Heat'
 
       if (ifcvode) then
 
-         call cdscal_cvode
+         call cdscal_cvode(igeom)
+         igeom = 2
 
       elseif (ifsplit) then
 
@@ -813,8 +815,8 @@ C
 
       endif
 
-      if (nid.eq.0) write(*,'(12x,a,1pE11.4)') 'Heat done ',
-     &              dnekclock()-ts 
+      if (nid.eq.0 .and. igeom.eq.2) 
+     &    write(*,'(12x,a,1pE11.4)') 'Heat done ',dnekclock()-ts 
 
       return
       end
