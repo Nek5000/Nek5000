@@ -40,9 +40,10 @@ C
       ntotv=nelv*nxyz1
 c
 c
-      CALL RZERO(VX,NTOTV)
-      CALL RZERO(VY,NTOTV)
-      CALL RZERO(VZ,NTOTV)
+      CALL RZERO(VX,NTOTT)
+      CALL RZERO(VY,NTOTT)
+      CALL RZERO(VZ,NTOTT)
+      CALL RZERO(PR,nxyz2*nelt)
       DO 10 IFLD=1,LDIMT
          CALL RZERO(T(1,1,1,1,IFLD),NTOTT)
    10 CONTINUE
