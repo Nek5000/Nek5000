@@ -1645,10 +1645,6 @@ C
          CALL SUBCOL3 (BFZ,BM1,TA3,NTOT1)
       ENDIF
 C
-      CALL COL2(BFX,VTRANS,NTOT1)
-      CALL COL2(BFY,VTRANS,NTOT1)
-      IF(NDIM.EQ.3) CALL COL2(BFZ,VTRANS,NTOT1)
-
 
       return
       END
@@ -1726,14 +1722,14 @@ C
       CALL COPY   (ABY1,BFY,NTOT1)
       CALL ADD2S1 (BFX,TA1,AB0,NTOT1)
       CALL ADD2S1 (BFY,TA2,AB0,NTOT1)
-c      CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
-c      CALL COL2   (BFY,VTRANS,NTOT1)
+      CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
+      CALL COL2   (BFY,VTRANS,NTOT1)
       IF (NDIM.EQ.3) THEN
          CALL ADD3S2 (TA3,ABZ1,ABZ2,AB1,AB2,NTOT1)
          CALL COPY   (ABZ2,ABZ1,NTOT1)
          CALL COPY   (ABZ1,BFZ,NTOT1)
          CALL ADD2S1 (BFZ,TA3,AB0,NTOT1)
-c         CALL COL2   (BFZ,VTRANS,NTOT1)
+         CALL COL2   (BFZ,VTRANS,NTOT1)
       ENDIF
 C
       return
