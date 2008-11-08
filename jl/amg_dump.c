@@ -132,7 +132,9 @@ amg_data *amg_setup(uint n, const ulong *id,
 #endif
   
   if(pid==0) printf("AMG dump successful\n"), fflush(stdout);
+#ifdef MPI
   MPI_Barrier(comm);
+#endif
   exit(0);
   
   return 0;
