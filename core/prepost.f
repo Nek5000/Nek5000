@@ -1344,8 +1344,8 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.pid0) then
          call mfo_open_files(prefix)         ! open files
-         call mfo_write_hdr                  ! write hdr, byte key, els.
       endif
+      call mfo_write_hdr                    ! write hdr, byte key, els.
 
       nout = nelt
 
@@ -1359,7 +1359,7 @@ c-----------------------------------------------------------------------
          if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
-      ! add meta data to the end of the file
+c      ! add meta data to the end of the file
       if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
       if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
       if (ifpo ) call mfo_mdatas(pm1,nout)
@@ -1468,213 +1468,7 @@ c     write(6,*) nid,fid0,' FILE:',fname
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfo_write_hdr          ! write hdr, byte key, els.
 
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'RESTART'
-      include 'TSTEP'
-      real*4 test_pattern
-
-      character*132 hdr
-
-      call blank(hdr,132)              ! write header
-
-      ifld_nelp = 1 
-      if (nfield.ge.2) ifld_nelp = 2 
-
-      nelo = 0
-      do jnid = pid0,pid1              ! write global el. #s for this group
-         nod = jnid+1
-         nelo = nelo + nelp(ifld_nelp,nod)
-      enddo
-
-      call blank(rdcode1,10)
-      i = 1
-      IF (IFXYO) THEN
-         rdcode1(i)='X'
-         i = i + 1
-      ENDIF
-      IF (IFVO) THEN
-         rdcode1(i)='U'
-         i = i + 1
-      ENDIF
-      IF (IFPO) THEN
-         rdcode1(i)='P'
-         i = i + 1
-      ENDIF
-      IF (IFTO) THEN
-         rdcode1(i)='T'
-         i = i + 1
-      ENDIF
-      IF (NPSCAL.GT.0) THEN
-         rdcode1(i) = 'S'
-         WRITE(rdcode1(i+1),'(I1)') NPSCAL/10
-         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
-      ENDIF
- 
-      write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
-     $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
-    1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a)
-
-      call byte_write(hdr,33)
-
-      test_pattern = 6.54321           ! write test pattern for byte swap
-      call byte_write(test_pattern,1)
-
-      do jnid = pid0,pid1              ! write global el. #s for this group
-         nod = jnid+1
-         call byte_write(lglel(1,nod),nelp(ifld_nelp,nod))
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mfo_outs(u,nel)   ! output a scalar field
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'RESTART'
-
-      real u(lx1*ly1*lz1,1)
-      common /ctmp1/ u8(lx1*ly1*lz1)
-      real*4 u4(lx1*ly1*lz1*2)
-      equivalence (u4,u8)
-
-      integer e
-
-      ifld_nelp = 1
-      if (nfield.ge.2) ifld_nelp = 2
-
-      call gsync() ! clear outstanding message queues.
-
-      nxyz = nx1*ny1*nz1
-      len  = wdsizo*nxyz
-      nout = nxyz                   ! # 4 byte words
-      if (wdsizo.eq.8) nout=2*nout  !   8 byte words
-
-      mtype0 = pid0
-
-      if (nid.eq.pid0) then
-
-         do e=1,nel
-            if (wdsizo.eq.4) then               ! 32-bit ouput
-                 call copyx4 (u4,u(1,e),nxyz) 
-            else
-                 call copy   (u8,u(1,e),nxyz) 
-            endif
-            call byte_write(u4,nout)          ! u4 :=: u8
-         enddo
-
-         idum  = 1
-         do k=pid0+1,pid1
-         do e=1,nelp(ifld_nelp,k+1)
-            mtype = lglel(e,k+1)
-            call csend(mtype,idum,4,k,0)      ! handshake
-            call crecv(mtype,u4  ,len )
-            call byte_write(u4,nout)
-         enddo
-         enddo
-
-      else
-
-         do e=1,nel
-            if (wdsizo.eq.4) then               ! 32-bit ouput
-                 call copyx4 (u4,u(1,e),nxyz) 
-            else
-                 call copy   (u8,u(1,e),nxyz) 
-            endif
-
-            mtype = lglel(e,node)
-            call crecv(mtype,idum,4)          ! hand-shake
-            call csend(mtype,u4  ,len,pid0,0) ! u4 :=: u8
-
-         enddo
-
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mfo_outv(u,v,w,nel)   ! output a vector field
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'RESTART'
-
-      real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
-      common /ctmp1/ u4(lx1*ly1*lz1,6)
-      real*4 u4
-      real   u8(lx1*ly1*lz1,3)
-      equivalence (u4,u8)
-
-      integer e
-
-      ifld_nelp = 1
-      if (nfield.ge.2) ifld_nelp = 2
-
-      call gsync() ! clear outstanding message queues.
-
-      nxyz = nx1*ny1*nz1
-      len  = wdsizo*nxyz*ndim
-      nout = nxyz*ndim              ! # 4 byte words
-      if (wdsizo.eq.8) nout=2*nout  !   8 byte words
-
-      mtype0 = pid0
-
-      if (nid.eq.pid0) then
-
-         do e=1,nel
-            if (wdsizo.eq.4) then                   ! 32-bit output
-                 call copyx4 (u4(1,1),u(1,e),nxyz)   
-                 call copyx4 (u4(1,2),v(1,e),nxyz)
-                 if (if3d) call copyx4 (u4(1,3),w(1,e),nxyz)
-            else                                   ! 64-bit output
-                 call copy (u8(1,1),u(1,e),nxyz)     
-                 call copy (u8(1,2),v(1,e),nxyz)
-                 if (if3d) call copy (u8(1,3),w(1,e),nxyz)
-            endif
-            call byte_write(u4,nout)               ! u4 :=: u8
-         enddo
-
-         idum  = 1
-         do k=pid0+1,pid1
-         do e=1,nelp(ifld_nelp,k+1)
-            mtype = lglel(e,k+1)
-            call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,u4  ,len )
-            call byte_write(u4,nout)
-         enddo
-         enddo
-
-      else
-
-         do e=1,nel
-            if (wdsizo.eq.4) then                   ! 32-bit output
-                 call copyx4 (u4(1,1),u(1,e),nxyz)   
-                 call copyx4 (u4(1,2),v(1,e),nxyz)
-                 if (if3d) call copyx4 (u4(1,3),w(1,e),nxyz)
-            else                                   ! 64-bit output
-                 call copy (u8(1,1),u(1,e),nxyz)     
-                 call copy (u8(1,2),v(1,e),nxyz)
-                 if (if3d) call copy (u8(1,3),w(1,e),nxyz)
-            endif
-
-            mtype = lglel(e,node)
-            call crecv(mtype,idum,4)            ! hand-shake
-            call csend(mtype,u4  ,len,pid0,0)   ! u4 :=: u8
-
-         enddo
-
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine restart_nfld( nfld, prefix ) 
       character*3 prefix
 c
@@ -1889,7 +1683,7 @@ c-----------------------------------------------------------------------
             mtype = k
             call csend(mtype,idum,4,k)           ! handshake
             call crecv(mtype,inelp,4)       
-            len   = n*inelp 
+            len   = 4*n*inelp 
             call crecv(mtype,mdata4,len)
 
             nout  = n*inelp 
@@ -1912,7 +1706,7 @@ c-----------------------------------------------------------------------
 
          ! send my data to my pararent I/O node
          mtype = nid
-         len   = n*nel
+         len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
          call csend(mtype,nel,4,pid0)            ! nel
          call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
@@ -1959,7 +1753,7 @@ c-----------------------------------------------------------------------
             mtype = k
             call csend(mtype,idum,4,k)           ! handshake
             call crecv(mtype,inelp,4)       
-            len   = n*inelp 
+            len   = 4*n*inelp 
             call crecv(mtype,mdata4,len)
 
             nout  = n*inelp 
@@ -1974,11 +1768,268 @@ c-----------------------------------------------------------------------
 
          ! send my data to my pararent I/O node
          mtype = nid
-         len   = n*nel
+         len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
          call csend(mtype,nel,4,pid0)            ! nel
          call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
       endif
+
+      return
+      end
+
+
+      subroutine mfo_outs(u,nel)   ! output a scalar field
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+
+      real u(lx1*ly1*lz1,1)
+
+      common /SCRNS/ u4(lx1*ly1*lz1*2*lelt)
+      real*4         u4
+      real*8         u8(lx1*ly1*lz1*1*lelt)
+      equivalence    (u4,u8)
+
+      integer e
+
+      call gsync() ! clear outstanding message queues.
+
+      nxyz = nx1*ny1*nz1
+
+      idum = 1
+
+      if (nid.eq.pid0) then
+ 
+         ntot = nxyz*nel
+         if (wdsizo.eq.4) then             ! 32-bit output
+             call copyx4 (u4,u,ntot) 
+         else
+             call copy   (u8,u,ntot) 
+         endif
+         nout = wdsizo/4 * ntot
+         call byte_write(u4,nout)          ! u4 :=: u8
+
+         ! write out the data of my childs
+         idum  = 1
+         do k=pid0+1,pid1
+            mtype = k
+            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,inelp,4)       
+            len   = wdsizo * nxyz*inelp
+            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,u4,len)
+            nout  = len/4 
+            call byte_write(u4,nout)
+         enddo
+
+      else
+
+         ntot = nxyz*nel
+         if (wdsizo.eq.4) then             ! 32-bit output
+             call copyx4 (u4,u,ntot) 
+         else
+             call copy   (u8,u,ntot) 
+         endif
+
+         mtype = nid
+         call crecv(mtype,idum,4)            ! hand-shake
+         call csend(mtype,nelt,4,pid0,0)     ! send nelt
+         len = wdsizo * ntot
+         call crecv(mtype,idum,4)            ! hand-shake
+         call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+      subroutine mfo_outv(u,v,w,nel)   ! output a vector field
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+
+      real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
+
+      common /SCRNS/ u4(lx1*ly1*lz1*6*lelt)
+      real*4         u4
+      real*8         u8(lx1*ly1*lz1*3*lelt)
+      equivalence    (u4,u8)
+
+      integer e
+
+      call gsync() ! clear outstanding message queues.
+
+      nxyz = nx1*ny1*nz1
+      idum = 1
+
+      if (nid.eq.pid0) then
+
+         j = 0 
+         if (wdsizo.eq.4) then             ! 32-bit output
+             do iel = 1,nel
+                call copyx4   (u4(j+1),u(1,iel),nxyz)
+                j = j + nxyz
+                call copyx4   (u4(j+1),v(1,iel),nxyz)
+                j = j + nxyz
+                if(if3d) then
+                  call copyx4 (u4(j+1),w(1,iel),nxyz)
+                  j = j + nxyz
+                endif
+             enddo
+         else
+             do iel = 1,nel
+                call copy   (u8(j+1),u(1,iel),nxyz)
+                j = j + nxyz
+                call copy   (u8(j+1),v(1,iel),nxyz)
+                j = j + nxyz
+                if(if3d) then
+                  call copy (u8(j+1),w(1,iel),nxyz)
+                  j = j + nxyz
+                endif
+             enddo
+         endif
+         nout = wdsizo/4 * ndim*nel * nxyz
+         call byte_write(u4,nout)          ! u4 :=: u8
+
+         ! write out the data of my childs
+         do k=pid0+1,pid1
+            mtype = k
+            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,inelp,4)       
+            len   = wdsizo * ndim * nxyz*inelp 
+c            call csend(mtype,idum,4,k)           ! handshake
+            call crecv(mtype,u4,len)
+            nout  = len/4 
+            call byte_write(u4,nout)
+         enddo
+
+      else
+
+         j = 0
+         if (wdsizo.eq.4) then             ! 32-bit output
+             do iel = 1,nel
+                call copyx4   (u4(j+1),u(1,iel),nxyz)
+                j = j + nxyz
+                call copyx4   (u4(j+1),v(1,iel),nxyz)
+                j = j + nxyz
+                if(if3d) then
+                  call copyx4 (u4(j+1),w(1,iel),nxyz)
+                  j = j + nxyz
+                endif
+             enddo
+         else
+             do iel = 1,nel
+                call copy   (u8(j+1),u(1,iel),nxyz)
+                j = j + nxyz
+                call copy   (u8(j+1),v(1,iel),nxyz)
+                j = j + nxyz
+                if(if3d) then
+                  call copy (u8(j+1),w(1,iel),nxyz)
+                  j = j + nxyz
+                endif
+             enddo
+         endif
+
+         mtype = nid
+         call crecv(mtype,idum,4)            ! hand-shake
+         call csend(mtype,nelt,4,pid0,0)     ! send nelt
+         len = wdsizo * ndim*nxyz * nel
+c         call crecv(mtype,idum,4)            ! hand-shake
+         call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+      subroutine mfo_write_hdr          ! write hdr, byte key, els.
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+      include 'TSTEP'
+      real*4 test_pattern
+
+      character*132 hdr
+
+      call gsync()
+
+      idum = 1
+
+      if(nid.eq.pid0) then
+        nelo = nelt
+        do j = pid0+1,pid1
+           mtype = j
+           call csend(mtype,idum,4,j,0)   ! handshake
+           call crecv(mtype,inelp,4)
+           nelo = nelo + inelp
+        enddo
+      else
+        mtype = nid
+        call crecv(mtype,idum,4)          ! hand-shake
+        call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
+      endif 
+
+      if(nid.eq.pid0) then
+
+      call blank(hdr,132)              ! write header
+      call blank(rdcode1,10)
+      i = 1
+      IF (IFXYO) THEN
+         rdcode1(i)='X'
+         i = i + 1
+      ENDIF
+      IF (IFVO) THEN
+         rdcode1(i)='U'
+         i = i + 1
+      ENDIF
+      IF (IFPO) THEN
+         rdcode1(i)='P'
+         i = i + 1
+      ENDIF
+      IF (IFTO) THEN
+         rdcode1(i)='T'
+         i = i + 1
+      ENDIF
+      IF (NPSCAL.GT.0) THEN
+         rdcode1(i) = 'S'
+         WRITE(rdcode1(i+1),'(I1)') NPSCAL/10
+         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
+      ENDIF
+ 
+      write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
+     $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
+    1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
+     &       1x,i9,1x,i6,1x,i6,1x,10a)
+
+      call byte_write(hdr,33)
+
+      test_pattern = 6.54321           ! write test pattern for byte swap
+      call byte_write(test_pattern,1)
+
+      endif
+
+      ! write global element numbering for this group
+      if(nid.eq.pid0) then
+        call byte_write(lglel(1,nid+1),nelt)
+        do j = pid0+1,pid1
+           mtype = j
+           call csend(mtype,idum,4,j,0)   ! handshake
+           call crecv(mtype,inelp,4)
+           call byte_write(lglel(1,j+1),inelp)
+        enddo
+      else
+        mtype = nid
+        call crecv(mtype,idum,4)          ! hand-shake
+        call csend(mtype,nelt,4,pid0,0)  
+      endif 
 
       return
       end
