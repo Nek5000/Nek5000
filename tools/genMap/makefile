@@ -2,7 +2,7 @@ FLAGS = -r8
 LFLAGS = 
 prefix = $(bin_nek_tools)
 
-OBJS = genMapMetis.o 
+OBJS = genMap.o 
 
 all: genMap
 
@@ -13,4 +13,4 @@ genMap:	$(OBJS)
 clean:
 	'rm' *.o
 
-genMapMetis.o          : genMapMetis.f		 ;  $(F77) -c $(FLAGS) genMapMetis.f 
+genMap.o          : genMap.f		 ;  $(F77) -c $(FLAGS) genMap.f 

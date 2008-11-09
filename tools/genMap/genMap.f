@@ -14,18 +14,23 @@ c
 c  which can be extended to an arbitrary number of space dimensions
 c  (like 3).
 c
+c
+c
+c  7/27/07 -- add self-connected check
+c  7/27/07 -- verify that don't double-check periodic faces
+c
+c
 c-----------------------------------------------------------------------
       program genmap
 
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=1000000)
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
-
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
-     $               , w1   (lpts) , w2   (lpts)
+      common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
      $               , w5   (lpts)
       integer     w13(3*lpts)
@@ -43,21 +48,24 @@ c     read nekton .rea file and make a .map file
 
 
       call makemesh  (cell,nel,irnk,dx,cbc,bc,ndim) ! irnk is # unique points
+
+      nfc = 2*ndim
       nv  = 2**ndim
 
-!     Find all periodic connections, based on cbc info.
-      nfc = 2*ndim
-      call periodic_vtx
-     $               (cell,nv,nel,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
-c     nv = 2**ndim
 c     call out_cell(cell,nv,nel)
-c     call exitt(1)
-
 
 !     Determine number of outflow points and order them last
-
       call izero (order,irnk)
       call set_outflow(no,order,mo,cell,nv,nel,irnk,cbc,nfc)
+
+c     call out_cell(cell,nv,nel)
+
+!     Find all periodic connections, based on cbc info.
+      call periodic_vtx
+     $               (cell,nv,nel,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
+
+c     call out_cell(cell,nv,nel)
+c     call exitt(1)
 
 
 
@@ -68,25 +76,29 @@ c     call exitt(1)
       call isort     (elist,w1,nel)
       call iswap_ip  (pmap ,w1,nel)
 
+
       npts = nv*nel
       call iranku       (cell,nrnk,npts,w1)
+      call self_chk     (cell,nv,nel,1)     ! check for not self-ptg.
       call assign_order (cell,nv,nel,order)
 
 
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
+      call self_chk     (cell,nv,nel,2)     ! check for not self-ptg.
       call reverse_p    (pmap,nel)          ! lightly load node 0
 
 c     Output to .map file:
       noutflow    = no    ! for now - no outflow bcs
       call out_mapfile (pmap,nel,cell,nv,nrnk,noutflow)
 
-      call out_geofile (pmap,nel,cell,nv,nrnk,noutflow,dx)
+c      call out_geofile (dx,ndim,nv,nel,pmap,39)
+c      call out_geofile2(dx,ndim,nv,nel,cell,nrnk)
 
 c     call outmati(pmap,13,9,'pmat  ',nel,1)
-      open(unit=22,file='p.dat')
-      write(22,1) (pmap(k),k=1,nel)
-    1 format(i9)
-      close(unit=22)
+c      open(unit=22,file='p.dat')
+c      write(22,1) (pmap(k),k=1,nel)
+c    1 format(i9)
+c      close(unit=22)
 
       stop
       end
@@ -100,7 +112,7 @@ c     read nekton .rea file and make a metis mesh file
       real         bc (1)
       real         dx (1)
 
-      parameter(lelm=1000000)
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
@@ -122,7 +134,8 @@ c     Compress vertices based on coordinates
 
       nv   = 2**ndim
       npts = nel*nv
-      call iranku(cell,irnk,npts,i_n)
+      call iranku    (cell,irnk,npts,i_n)
+      call self_chk  (cell,nv,nel,3)       ! check for not self-ptg.
 
       return
       end
@@ -261,8 +274,6 @@ c     .Read Boundary Conditions (and connectivity data)
       character*3 cbc(nfc,nel)
       real        bc(5,nfc,nel)
 
-      character*1 chtemp
-
       character*3 cbt(nfc)
       real        bt(5,nfc)
 
@@ -287,17 +298,21 @@ c    $      cbc(f,e),id1,id2,
 c    $      (bc(ii,f,e),ii=1,nbcrea)
    50       format(a1,a3,2i3,5g14.7)
          elseif (nel.lt.100000) then
-            read(io,51,err=500,end=500)   
+            read(io,51,err=500,end=500)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
          elseif (nel.lt.1000000) then
-            read(io,52,err=500,end=500) 
-     $      chtemp, 
+            read(io,52,err=500,end=500)    
+     $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-   52       FORMAT(A1,A3,i6,i1,5G14.7)
+  52       format(a1,a3,i6,i1,5g14.7)
+c         else
+c            read(io,*,err=500,end=500)    
+c     $      cbc(f,e),id1,
+c     $      (bc(ii,f,e),ii=1,nbcrea)
          endif
       enddo
       enddo
@@ -1249,16 +1264,17 @@ c
       integer pmap(1),nmap(1),c(nv,nel)
       integer etype,edgecut,e
 
-      parameter(lelm=1000000)
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       parameter(mm  =50)
 
       common /arrayr1/ f(lelm),r(lelm),p(lelm),w(lelm),rr(lelm,mm)
      $               , ev(mm*mm),d(mm),u(mm)
 
-      common /arrayi2/ jdual(lpts) , face (3*lpts)
+      common /arrayi2/ jdual(lpts) , face (36*lelm)
      $               , idual(lelm) , list (lpts) , list2 (0:lpts)
-     $               , elist(lelm) 
+     $               , klist(lelm) 
+      common /arrayi3/ elist(lelm) 
       integer jdual,face,idual,list,elist
       logical ifconn,is_connected
 
@@ -1281,22 +1297,34 @@ c     call out_cell(c,nv,nel)
       call jjnt(elist,nel)
       call build_dualj(idual,jdual,nfc,c,nv,nel,elist,face,nvf,list)
 c     call outaij(idual,jdual,nel,'jdual ',9)
-      ifconn = is_connected(idual,jdual,nel,list,list2)
+      ifconn = is_connected(list,n0,idual,jdual,nel,list2)
 
       if (ifconn) then
-c        nflag = 1
-c        np    = 2
-c        call METIS_PartMeshDual_f
-c    $      (nel,irnk,c,etype,nflag,np,edgecut,pmap,nmap)
          m = mm
          call spec_bis(pmap,idual,jdual,nel,d,u,f,r,p,w,rr,ev,m,ndim)
       else
+         write(6,*) 'not connected',n0,nel
+
          n1 = nel/2
          n2 = nel - n1
-c        write(6,*) 'not connected',n1,n2,nel
-         do i=1,n
-            pmap(i)=1
-            if (i.gt.n1) pmap(i)=2
+         i1 = 0
+         i2 = 0
+         do i=1,nel
+            if (i1.lt.n1.and.i2.lt.n2) then
+               if (list(i).ne.0) then
+                  i1=i1+1
+                  pmap(i)=1
+               else
+                  i2=i2+1
+                  pmap(i)=2
+               endif
+            elseif (i1.lt.n1) then
+               pmap(i)=1
+               i1 = i1+1
+            else
+               pmap(i)=2
+               i2 = i2+1
+            endif
          enddo
       endif
 
@@ -1340,11 +1368,14 @@ c        write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
             depth   = da(l-1)
 
             call bipart_sort
-     $         (n1,n2,pmap(j0),order,mo,elist(j0),n,cell,nv,p,w1,w2,w3)
+     $        (n1,n2,pmap(j0),order,mo,elist(j0),n,cell,nv,p,w1,w2,w3)
             write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' DEPTH'
+    8       format(i9,2i5,6i8,a6)
+
+c           write(6,18) 'A',(pmap(k),k=1,nel) 
+c 18        format(a1,'pmap:',32i3)
 c           call outmati(ia,1,l+1,'idepth',depth,1)
 c           call outmati(da,1,l+1,'ddepth',depth,1)
-    8       format(i9,2i5,6i8,a6)
 
             depth = da(l-1)+1
             if (depth.le.max_depth) then
@@ -1356,7 +1387,11 @@ c           call outmati(da,1,l+1,'ddepth',depth,1)
                l       = l-1   !  go back in list
             endif
          endif
+
+c        call checker(elist,pmap,nel,ndim,i)
+
       enddo
+
 
 c     Fill in remaining separator sets
       do e=1,nel
@@ -1403,7 +1438,7 @@ c
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=1000000)            !
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !            !
       common /arrayr/  dx(0:3,8,lelm)      !
                                          !
       integer icalld,kj(10000),ke(10000) !
@@ -1448,7 +1483,7 @@ c--- diagnostic use only -----------------
          x=dx(1,kj(i),ke(i))
          y=dx(2,kj(i),ke(i))
          z=dx(3,kj(i),ke(i))
-         write(9,4) x,y,z,icalld
+c         write(9,4) x,y,z,icalld
       enddo
     4 format(1p3e12.4,i9)
 
@@ -1461,6 +1496,7 @@ c--- diagnostic use only -----------------
       enddo
 
       call out_order(order,mo,elist,cell,nv,n1,n2)
+c     call exitt(5)
 
 
       return
@@ -1567,6 +1603,7 @@ c
 
       npts = nv*nel
       call iranku   (c,irnk,npts,w1)
+      call self_chk (c,nv,nel,4)       ! check for not self-ptg.
 
       call part_dual(pmap,w1,c,nv,nel,irnk)  ! pmap contains processor map
 
@@ -1637,6 +1674,10 @@ c    $         write(6,*) ndif,n1,n2,mcount,' Sep count',nsep
       call ifill(pmap(j0),2,n1)   ! Since n1 > n2, let's lightly load node 0
       call ifill(pmap(j1),1,n2)   ! by assigning node 0 to shorter stack.
       call icadd(pmap,p,nel)
+c     maxp = iglmax(pmap,nel)
+c     write(6,7) maxp,n1,n2,nel
+c   7 format('bipart sort: ',4i12)
+
 
       call part_clean( order, nsep, elist, cell, nv, n1, n2, w1, w2)
 
@@ -1721,16 +1762,16 @@ c
       close(11)
 
       write(6 ,10) nel,etype,' CELL '
-      do l=1,nel
-         e = elist(l)
+c     do l=1,nel
+c        e = elist(l)
 c        write(6 ,12) e,(c(k,e),k=1,nv)
-      enddo
+c     enddo
 
       write(6 ,10) nel,etype,' SEPRT'
-      do l=1,nel
-         e = elist(l)
+c     do l=1,nel
+c        e = elist(l)
 c        write(6,12) e,(o(c(k,e)),k=1,nv)
-      enddo
+c     enddo
 
    10 format(/,2i9,a6)
    12 format(i9,'e:',8i7)
@@ -1771,7 +1812,7 @@ c-----------------------------------------------------------------------
       character*6 name6
       character*1 adum
 c
-      return
+c     return
 c
 c     Print out copies of a global matrix
 c
@@ -1781,10 +1822,10 @@ c
          do i=1,m
             write(6,2) i,name6,(u(i,j),j=1,n)
          enddo
-   2     format(i3,1x,a6,20(20i5,/,10x))
+   2     format(i8,1x,a6,20(10i9,/,10x))
       else
          write(6,3) nid,n,name6,(u(1,j),j=1,n)
-   3     format(2i3,1x,a6,20(20i5,/,10x))
+   3     format(2i8,1x,a6,20(10i9,/,10x))
       endif
       if (ic.eq.0) then
          write(6,*) 'cont: ',name6,nid,'  ??'
@@ -2136,6 +2177,7 @@ c     call out_cell(cell,nv,nel)
       nfcs = nfc*nel
       nvf2 = nvf+2
       call ituple_sort(face,nvf2,nfcs,key,nkey,ind,w6)
+c      write(6,*) face
 
 
       nvf2 = nvf + 2               !     find matched pairs
@@ -2154,8 +2196,10 @@ c     call out_cell(cell,nv,nel)
                jf   = face(nvf+2,f,e)
                ke   = last(nvf+1)
                kf   = last(nvf+2)
-               if (ie.eq.je) then
-                  write(6,*) 'dual: found self:',je,jf,kf,rank
+               if (je.eq.ke) then
+                  write(6,*) 'dual: found self:', e, f,i
+                  write(6,*) 'dual2 found self:',je,jf,rank
+                  write(6,*) 'dual3 found self:',ke,kf,rank
                   call exitt(0)
                endif
                if (rank.gt.2) then
@@ -2211,7 +2255,7 @@ c
       integer cell(nv,nel),order(1)
       character*3      cbc(nfc,nel)
 
-      parameter(lelm=1000000)
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
       integer face,elist
@@ -2251,6 +2295,7 @@ c        write(6,*) cb,e,f,' cb'
 
       npts             = nel*nv
       call iranku      (cell,nrnk,npts,ind)
+      call self_chk    (cell,nv,nel,5)       ! check for not self-ptg.
 
       out_vtm = mvtx + 1
       do e=1,nel  ! Determine number of unique outflow pts
@@ -2334,6 +2379,8 @@ c
 
       call izero(iper,ndim*irnk)   ! Zero out periodic indicator flag
 
+      call jjnt (jmin,irnk)        ! Initial permutation = identity
+
       nmn = irnk
       nmx = 0
       do e=1,nel
@@ -2341,172 +2388,172 @@ c
          cb = cbc(f,e)
 c        write(6,*) cb,e,f,' cb'
          if (cb.eq.'P  ') then
-            je = bc(1,f,e)
-            jf = bc(2,f,e)
-            jf = efaci(jf)
+           je = abs(bc(1,f,e))
+           jf = bc(2,f,e)
+           jf = efaci(jf)
 
-            cj = cbc(jf,je)
-            ke = bc(1,jf,je)
-            kf = bc(2,jf,je)
-            kf = efaci(kf)
+           cj = cbc(jf,je)
+           ke = abs(bc(1,jf,je))
+           kf = bc(2,jf,je)
+           kf = efaci(kf)
             
-            if (ke.ne.e .or. kf.ne.f .or. cj.ne.'P  ') then
+           if (bc(1,f,e).gt.0 .and. bc(1,jf,je).gt.0) then
+              if (ke.ne.e .or. kf.ne.f .or. cj.ne.'P  ') then
                write(6,*)
-               write(6,*) 'PERIODIC MISMATCH:'
+               write(6,*) 'PERIODIC MISMATCH 1:'
                write(6,6)   e,f,cb,' ie '
                write(6,6) je,jf,cj,' je '
                write(6,6) ke,kf,cj,' ke '
                write(6,*)
     6          format(i9,i3,1x,a3,1x,a4)
                call exitt(9)
-            endif
+              endif
 
-            call find_connctd_pairs
-     $                 (ipair,nvf,e,f,je,jf,cell,nv,dx,ndim)
+              call find_connctd_pairs
+     $                 (jmin,nvf,e,f,je,jf,cell,nv,dx,ndim)
             
-            do k=1,nvf   ! for each cnctd pr, store cross pointer
 
-               i = ipair(1,k)
-               j = ipair(2,k)
+c             bc(1, f, e) = -bc(1, f, e) ! indicate that 
+c             bc(1,jf,je) = -bc(1,jf,je) ! pairing is done !!!
 
-               nmn = min(i,nmn) ! find active range
-               nmn = min(j,nmn)
-               nmx = max(i,nmx)
-               nmx = max(j,nmx)
-
-               do l=1,ndim  ! at most ndim periodic connections
-                  if (iper(l,i).eq.0) then
-                     iper(l,i) = j
-                     goto 30
-                  endif
-               enddo
-   30          continue
-            enddo
-
+           elseif (bc(1,f,e)*bc(1,jf,je).le.0) then
+              write(6,*)
+              write(6,*) 'PERIODIC MISMATCH 2:'
+              write(6,6)   e,f,cb,' ie '
+              write(6,6) je,jf,cj,' je '
+              write(6,6) bc(1,f,e),bc(1,jf,je),' bc'
+              write(6,*)
+              call exitt(8)
+           endif
          endif
       enddo
       enddo
-
-      call jjnt(jmin,irnk)
-
-      do ipass=1,50 ! should be more than enough
-         nchange = 0
-         do k=nmn,nmx
-            do l=1,ndim
-               j = iper(l,k)
-               if (j.ne.0) then
-                  if (jmin(j).lt.jmin(k)) then
-                     nchange = nchange+1
-                     jmin(k) = jmin(j)
-                  endif
-               else
-                  goto 100
-               endif
-            enddo
-  100       continue
-         enddo
-         write(6,101) ipass,nchange,nmn,nmx
-  101    format(4i9,' ip,nc,mn,mx,periodic')
-         if (nchange.eq.0) goto 200
-      enddo
-  200 continue
 
 c
 c     Okay -- we now have the updated pointers, time to update
 c     the cell pointers
 c
-
-      do e=1,nel
-      do v=1,nv
-         j = cell(v,e)
-         j = min(j,jmin(j))
-         cell(v,e) = j
-      enddo
-      enddo
-
       npts = nv*nel
-      call iranku   (cell,irnk,npts,iper) ! compress cell list
+      do i=1,npts
+         cell(i,1) = jmin(cell(i,1))  ! permuted identity
+      enddo
+      call iranku      (cell,irnk,npts,iper) ! compress cell list
+      call self_chk    (cell,nv,nel,6)       ! check for not self-ptg.
+
+
+c
+c     Reset bc array
+c
+      do e=1,nel
+      do f=1,nfc
+         if (cbc(f,e).eq.'P  ') bc(1,f,e) = abs(bc(1,f,e))
+      enddo
+      enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine find_connctd_pairs(ipair,nvf,e,f,je,jf,cell,nv,dx,ndim)
+      subroutine find_connctd_pairs(jmin,nvf,e,f,je,jf,cell,nv,dx,ndim)
 
 
-      integer ipair(2,nvf)
-      integer cell(nv,1)
+      integer jmin(1),cell(nv,1)
       real dx(0:ndim,nv,1)
 
       real x0(0:3,4),x1(0:3,4)
 
       integer e,f,shift,smin
-      integer tpair(2,4)
 
-      integer vface(4,6)  ! symm. vertices ordered on symm. faces
-      save    vface
-      data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
-     $              , 1,2,3,4 , 5,6,7,8 /
+      integer vface(4,6)  ! circulant vertices on symm. faces,
+      save    vface       ! order ctr-clkws when looking at face
+      data    vface / 1,5,7,3 , 2,4,8,6 , 1,2,6,5 , 3,7,8,4
+     $              , 1,3,4,2 , 5,6,8,7 /
 
 
       nvf = nv/2     ! # vertices/face = 1/2 # vertices/cell
       
-c     write(6,*) e,f,je,jf,nv,nvf,ndim,' FACE'
+c     write(6,4) e,f,je,jf,nv,nvf,ndim,' FACE'
+c   4 format(i9,i3,i9,i3,3i3,a5)
 
       do i=1,nvf     ! Grab geometry for P-P face pair
 
          j0 = vface (i ,f)
-         i0 = cell  (j0,e)
          call copy  (x0(0,i),dx(0,j0, e),ndim+1)
-         tpair(1,i) = i0
 
          j1 = vface (i ,jf)
-         i1 = cell  (j1,je)
          call copy  (x1(0,i),dx(0,j1,je),ndim+1)
-         tpair(2,i) = i1
 
+      enddo
+
+
+      x0m = 0.
+      do k=1,ndim           ! Subtract off mean of faces
+         x0a = 0.
+         x1a = 0.
+         do i=1,nvf
+            x0a = x0a + x0(k,i)
+            x1a = x1a + x1(k,i)
+         enddo
+         do i=1,nvf
+            x0(k,i) = x0(k,i) - x0a/nvf
+            x1(k,i) = x1(k,i) - x1a/nvf
+            x0m = max(x0m,x0(k,i))
+            x0m = max(x0m,x0(1,i))
+         enddo
       enddo
 
 c     call outmat(x0,4,4,'  x0  ', e)
 c     call outmat(x1,4,4,'  x1  ',je)
 
-      do k=1,ndim           ! Subtract off mean of faces
-         x0a = 0.
-         x1a = 0.
-         do i=1,nvf
-            x0a = x0a + x0(k,i)/nvf
-            x1a = x1a + x1(k,i)/nvf
-         enddo
-         do i=1,nvf
-            x0(k,i) = x0(k,i) - x0a
-            x1(k,i) = x1(k,i) - x1a
-         enddo
-      enddo
-
       d2min = 1.e22
       do shift=0,nvf-1
-      do i=1,nvf
-         j=i+shift
-         if (j.gt.nvf) j=j-nvf
          d2 = 0.
-         do k=1,ndim
-            d2 = d2 + (x0(k,i)-x1(k,j))**2
+         do i=1,nvf
+            j=i+shift
+            if (j.gt.nvf) j=j-nvf
+            j=nvf+1-j              ! go backward for j !
+c           write(6,5)
+            do k=1,ndim
+               d2 = d2 + (x0(k,i)-x1(k,j))**2
+c              write(6,5) shift,i,j,k,x0(k,i),x1(k,j),d2
+c   5          format(4i4,1p3e12.4,'  d2')
+            enddo
          enddo
          if (d2.lt.d2min) then
             smin  = shift
             d2min = d2
          endif
       enddo
-      enddo
-      write(6,*) e,f,i,smin,d2min,' shift'
-
       shift = smin
+      if (d2min.gt.0) d2min = sqrt(d2min)
+
+      eps = 1.e-7
+      if (d2min.gt.eps*x0m) then
+         write(6,6) e,f,i,shift,d2min,eps,x0m
+   6     format(i8,i2,2i3,1p3e16.8,' FACE MATCH FAIL')
+         call exitt(0)
+      endif
+
+      write(6,7) e,f,i,shift,d2min
+   7  format(i8,i2,2i3,1p1e16.8,' shift')
+
       do i=1,nvf
-         j = i+shift
+
+         j=i+shift
          if (j.gt.nvf) j=j-nvf
-         ipair(1,i) = tpair(1,i)
-         ipair(2,i) = tpair(2,j)
-c        write(6,1) i,e,f,je,jf,jmin,ipair(1,i),ipair(2,i)
-c  1     format(i3,i7,i2,i7,i2,3i7,' jmin')
+         j=nvf+1-j              ! go backward for j to make faces match
+
+         iv = vface(i, f)
+         jv = vface(j,jf)
+
+         ic = cell(iv, e)
+         jc = cell(jv,je)
+
+         ijmin = jmin(ic)
+         jjmin = jmin(jc)
+
+         jmin(ic) = min(ijmin,jjmin)
+         jmin(jc) = min(ijmin,jjmin)
+
       enddo
 
       return
@@ -2559,7 +2606,7 @@ c     Output orders for an 8x8 array of elements
 
       enddo
       write(6,*) 'n12:',n1,n2,nv
-c     call out_a(a)
+      call out_a(a)
 
       return
       end
@@ -2659,7 +2706,7 @@ c     call outmati(stack,1,n+1,'popst:',ipop,1)
       return
       end
 c-----------------------------------------------------------------------
-      logical function is_connected(ia,ja,n,jactive,jstack)
+      logical function is_connected(jactive,n0,ia,ja,n,jstack)
 
       integer ia(0:n),ja(1),jactive(n),jstack(0:n)
 
@@ -2683,7 +2730,6 @@ c     if ja(ia) < 0, then row is already processed
          j1 = ia     (icurr)
          jj = jactive(icurr)
 
-         iii = 0
          do j=jj,j1-1
             inext = ja(j)
             if (1.le.inext.and.inext.le.n) then  ! range check
@@ -2691,7 +2737,6 @@ c     if ja(ia) < 0, then row is already processed
                   nstack = ipush(jstack,icurr)   ! push the return point
                   jactive(icurr) = j+1
                   jactive(inext) = ia(inext-1)
-                  iii = 1
                   goto 10
                endif
             endif
@@ -2706,10 +2751,17 @@ c     if ja(ia) < 0, then row is already processed
       enddo
   100 continue
 
+      n0           = 0
       is_connected = .true.
+
       do i=1,n
-         if (jactive(i).eq.0) is_connected = .false.
+         if (jactive(i).eq.0) then
+            n0           = n0+1
+            is_connected = .false.
+         endif
       enddo
+
+
 c     write(6,*) is_connected,n,nstack,' is connected?'
 c     if (.not.is_connected) then
 c        n8 = min(n,18)
@@ -2764,7 +2816,7 @@ c        f(i) = cos(a)
 c     enddo
 c     enddo
 
-      npass = 3
+      npass = 50
       do k=1,npass
          niter = m
          call glanczos(rr,n,d,u,niter,f,ia,ja,r,p,w)
@@ -2875,8 +2927,8 @@ c        Generate tridiagonal matrix for Lanczos scheme
  1001 continue
 c
       niter = iter
-      write(6,6) iter,n,rnorm,rtol,rtr
-    6 format(i4,i6,' cg:',1p6e12.4)
+      write(6,6) iter,n,rnorm,rtol
+    6 format(i4,i10,' cg:',1p6e12.4)
 c
       return
       end
@@ -3146,7 +3198,7 @@ c
          enddo
 c
          q=0.2
-         q=0.0001   ! Smaller is better
+         q=0.0010   ! Smaller is better
          do i=2,n
            if ((dx(j,i)-dx(j,i-1))**2.gt.q*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
@@ -3166,8 +3218,7 @@ c
 c
 c     Unshuffle geometry
 c
-      m = ndim+1
-      call tuple_swapt_ip(dx,m,n,cell,t1,t2)
+      call tuple_swapt_ip(dx,lda,n,cell,t1,t2)
 c
 c     Assign global node numbers (now sorted lexigraphically!)
 c
@@ -3180,7 +3231,7 @@ c
       call icopy(cell,ind,n)
 
       write(6,6) nseg,nglb,n
-    6 format('done locglob_lexico:',3i9,'$')
+    6 format('done locglob_lexico:',3i9)
 
 c     nv = 2**ndim
 c     call out_cell(cell,nv,nel)
@@ -3189,30 +3240,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_geofile (pmap,nel,cell,nv,nrnk,noutflow,dx)
-      integer pmap(nel),cell(nv,nel)
-      integer depth,d2
-      real dx(0:3,nv,nel)
-
-      depth            = log2(nel)
-      d2               = 2**depth
-      npts             = nel*nv
-      call dmp_geofile (pmap,nel,depth,cell,nv,nrnk,npts,noutflow,dx)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine dmp_geofile(pmap,nel,depth,cell,nv,nrnk,npts,noutf,dx)
-
-      real dx(0:3,nv,nel)
-      common /sess/ session
-      character*80 session
-      character*80 fname
-      character*1  fnam1(80)
-      equivalence (fnam1,fname)
-
-      integer pmap(nel),depth,cell(nv,nel)
-      integer d2,e,p0
+      subroutine out_geofile (dx,ndim,nv,nel,pmap,io)
+      integer pmap(nel),p0,e
+      real dx(0:ndim,nv,nel)
 
       do e=1,nel
          p0 = pmap(e)-1
@@ -3227,9 +3257,156 @@ c-----------------------------------------------------------------------
          x=x/nv
          y=y/nv
          z=z/nv
-         write(39,1) p0,x,y,z
+         write(io,1) p0,x,y,z
       enddo
     1 format(i9,1p3e12.4)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine self_chk(cell,nv,nel,flag)     ! check for not self-ptg.
+      integer cell(nv,nel),flag
+      integer e
+      
+      do e=1,nel
+      do i=1,nv
+         do j=i+1,nv
+            if (cell(i,e).eq.cell(j,e)) then
+               write(6,*)
+               call outmati(cell(1,e),2,4,'SELF!!',e,flag)
+               write(6,*)
+               write(6,*) 'ABORT SELF-CHK:',i,j,e,flag
+               call exitt(flag)
+            endif
+         enddo
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
+      real dx(0:ndim,nv,nel)
+      integer cell(nv,nel)
+
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lpts=8*lelm)
+      common /carrayw/ w1   (lpts) , w2   (lpts)
+     $               , w3   (lpts) , w4   (lpts)
+     $               , w5   (lpts)
+
+      integer e,v,emax,vmax
+
+      call rzero(w4,nrnk)
+      do e=1,nel                     ! Get global vertex multiplicities
+      do v=1,nv
+         i = cell(v,e)
+         if (i.gt.nrnk) then
+            write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
+    1       format(i9,i3,2i9,1p3e12.4,' i>nrnk! ERROR!')
+         else
+            w4(i)=w4(i)+1.
+         endif
+      enddo
+      enddo
+
+      do i=1,nrnk
+         if (w4(i).gt.0) then
+            w4(i)=1./w4(i)
+         else
+            write(6,*) i,' detected blank index in geofile2'
+         endif
+      enddo
+
+      call rzero(w1,nrnk)
+      call rzero(w2,nrnk)
+      call rzero(w3,nrnk)
+      do e=1,nel
+      do v=1,nv
+         i = cell(v,e)
+         if (i.le.nrnk) then           ! average global vertex coords
+            w1(i)=w1(i)+dx(1,v,e)*w4(i)
+            w2(i)=w2(i)+dx(2,v,e)*w4(i)
+            w3(i)=w3(i)+dx(3,v,e)*w4(i)
+         endif
+      enddo
+      enddo
+
+      dmax = 0.
+      do e=1,nel
+      do v=1,nv
+         i = cell(v,e)
+         if (i.le.nrnk) then    ! check for global/local Euclidian variance
+            ddx = dx(1,v,e)-w1(i)
+            ddy = dx(2,v,e)-w2(i)
+            ddz = dx(3,v,e)-w3(i)
+            dd2 = ddx*ddx + ddy*ddy
+            if (ndim.eq.3) dd2 = dd2 + ddz*ddz
+            if (dd2.ge.dmax) then
+               dmax = dd2
+               imax = i
+               emax = e
+               vmax = v
+            endif
+         endif
+      enddo
+      enddo
+      if (dmax.gt.0) dmax = sqrt(dmax)
+      write(6,3) imax,emax,vmax,dmax
+      write(6,4) w1(imax),w2(imax),w3(imax),' global xyz'
+      write(6,4) (dx(k,vmax,emax),k=1,3)   ,' local  xyz'
+    3 format(2i9,i3,1pe12.4,'dmax xyz')
+    4 format(1p3e14.6,1x,a11)
+
+c
+c     Write coordinates to a file
+c
+      write(6 ,*) 'Dumping vertex coordinates to unit 12'
+      write(12,*) nrnk
+
+      if (ndim.eq.3) then
+       do i=1,nrnk
+         if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i),w3(i)
+         write(12,5) w1(i),w2(i),w3(i)
+       enddo
+      else
+       do i=1,nrnk
+         if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i)
+         write(12,5) w1(i),w2(i)
+       enddo
+      endif
+
+    5 format(1p3e14.6)
+    6 format(i9,1x,1p3e14.6)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine checker(in_elist,in_pmap,nel,ndim,ii)
+      integer in_elist(1),in_pmap(1)
+
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lpts=8*lelm)
+
+      common /qarrayi/ pmap (lpts) , elist(lpts) , w1(lpts)
+      integer pmap,elist,w1
+
+      common /arrayr/  dx(4*lpts)
+
+      call outmati(in_pmap ,2,9,'inpmap',nel,1)
+      call outmati(in_elist,2,9,'ielist',nel,1)
+
+      call icopy(elist,in_elist,nel)
+      call icopy(pmap ,in_pmap ,nel)
+
+      call isort     (elist,w1,nel)
+      call iswap_ip  (pmap ,w1,nel)
+
+      call outmati(pmap ,2,9,'s pmap',nel,1)
+
+      nv = 2**ndim
+      io = 50+ii
+      call out_geofile (dx,ndim,nv,nel,pmap,io)
 
       return
       end
