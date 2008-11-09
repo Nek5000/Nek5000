@@ -1818,7 +1818,7 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k)           ! handshake
             call crecv(mtype,inelp,4)       
             len   = wdsizo * nxyz*inelp
-            call csend(mtype,idum,4,k)           ! handshake
+c            call csend(mtype,idum,4,k)           ! handshake
             call crecv(mtype,u4,len)
             nout  = len/4 
             call byte_write(u4,nout)
@@ -1837,7 +1837,7 @@ c-----------------------------------------------------------------------
          call crecv(mtype,idum,4)            ! hand-shake
          call csend(mtype,nelt,4,pid0,0)     ! send nelt
          len = wdsizo * ntot
-         call crecv(mtype,idum,4)            ! hand-shake
+c         call crecv(mtype,idum,4)            ! hand-shake
          call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
 
       endif
