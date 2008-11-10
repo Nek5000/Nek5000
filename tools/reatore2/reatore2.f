@@ -56,7 +56,7 @@ c     an ascii rea file for just the parameters
       read (10,*)  nel, ndim, nelv
       nels = -nel
       write(11,11) nels, ndim, nelv
-   11 format(i9,i3,i9,1x,'NEL,NDIM,NELV')
+   11 format(i11,i2,i11,1x,'NEL,NDIM,NELV')
 
 
       call blank(hdr,80)
@@ -68,10 +68,8 @@ c     an ascii rea file for just the parameters
       write(6,*) nel, ndim, nelv
       do ie=1,nel      
          if (mod(ie,10000).eq.0) write(6,*) ie,nel,' mesh'
-csk         read (10,12) igroup
-csk   12    format(43x,i5)
-         read(10,*) 
-         igroup = 0
+         read (10,12) igroup
+   12    format(43x,i5)
          call byte_write(igroup, 1)
 
          if (ndim.eq.3) then
@@ -94,20 +92,16 @@ csk   12    format(43x,i5)
       enddo
 
       read(10,*)
-      read(10,*) ncurve
+      read(10,*)ncurve
       call byte_write(ncurve,1)
+
       call blank(ccurve,4)
-      write(*,*) ncurve
       if (ncurve.gt.0) then
          do icurve=1,ncurve
-            if (mod(icurve,10000).eq.0) write(6,*) icurve, 
-     &                                  ncurve, ' curve'
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),ccurve(1)
-            elseif (nel.lt.1000000) then
-               read(10,61) f,e,(buf(k),k=1,5),ccurve(1)
             else
-               read(10,62) f,e,(buf(k),k=1,5),ccurve(1)
+               read(10,61) f,e,(buf(k),k=1,5),ccurve(1)
             endif
             call byte_write(e     ,1)
             call byte_write(f     ,1)
@@ -116,7 +110,6 @@ csk   12    format(43x,i5)
          enddo
    60    format(i3,i3,5g14.6,1x,a1)
    61    format(i2,i6,5g14.6,1x,a1)
-   62    FORMAT(I1,i7,5G14.6,1X,A1)
       endif
          
       read (10,80) string ! ***** BOUNDARY CONDITIONS *****
@@ -129,19 +122,15 @@ csk   12    format(43x,i5)
                nbc = 0
                do e=1,nel
                do f=1,nface
-                  if (nel.lt.1000) then
+                  if (nel.lt. 100 000 ) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
-                  elseif (nel.lt.100000) then
-                     read(10,21) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
-                     read(10,22) cbc(f,e),(bc(k,f,e),k=1,5)
+                     read(10,*) cbc(f,e),idum,(bc(k,f,e),k=1,5)
                   endif
                   if (cbc(f,e).ne.'E  ') nbc = nbc+1
                enddo
                enddo
-   20          FORMAT(1x,A3,6x,5G14.7)
-   21          FORMAT(1x,A3,6x,5G14.7)
-   22          FORMAT(1x,A3,7x,5G14.7)
+   20          format(1x,a3,6x,5g14.6)  ! works for any # elements (?)
 
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)
