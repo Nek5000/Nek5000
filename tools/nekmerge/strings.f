@@ -116,7 +116,18 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-c     comes from n2to3
+      subroutine cleanr(x,n)
+      real x(1)
+
+      eps = 1.e-30
+
+      do i=1,n
+         if (abs(x(i)).lt.eps) x(i) = 0.0
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine rzero(x,n)
       real x(1)
       do i=1,n
