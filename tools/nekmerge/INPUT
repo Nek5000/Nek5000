@@ -21,10 +21,11 @@ C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
      $               ,NKTONV,NHIS,LOCHIS(4,lhis)
      $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
      $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
+     $               ,ncurve
 
       COMMON /INPUT3/ IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
-     $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
+     $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(LDIMT1)
      $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
      $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
      $               ,IFMODEL,IFKEPS
@@ -50,10 +51,10 @@ C
 C     Proportional to LELT
 C
       common /input5a/ x(8,lelt),y(8,lelt),z(8,lelt)
-      common /input5b/ bc(5,6,lelt,0:ldimt1) 
+      common /input5b/ bc(5,6,lelt,ldimt1) 
       common /input5d/ curve(6,12,lelt)
 
-      common /input8a/ cbc(6,lelt,0:ldimt1)
+      common /input8a/ cbc(6,lelt,ldimt1)
       common /input8b/ ccurve(12,lelt)
       character*1     ccurve
       character*3     cbc
