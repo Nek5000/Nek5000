@@ -28,23 +28,15 @@ c
       write(6,*) 'ascii or binary output ? (a/b):'
       read (5,*) ans
 
-      call load_rea_files
-
-      write(6,66) (cbc(k,1,1),k=1,12)
-  66  format(6(1x,a3))
-
-      call set_ee_bcs(cbc,x,y,z,nel,ndim)
-
-      write(6,66) (cbc(k,1,1),k=1,12)
-
+      call load_rea_files(ans)
+      call set_ee_bcs
       call output_mesh(ans)
-
-      write(6,66) (cbc(k,1,1),k=1,12)
 
       call exitt
       end
 c-----------------------------------------------------------------------
-      subroutine load_rea_files
+      subroutine load_rea_files(ans)
+      character*1 ans
 
 c     Merge multiple .rea files together.  
 c
@@ -61,7 +53,7 @@ c     an ascii rea file for just the parameters
       nelt_all = 0
       ncurve   = 0
 
-      call open_file_out (ifile)
+      call open_file_out (ifile,ans)
 
       nfld = 1        ! CHANGE THIS IFHEAT etc.
 
@@ -83,13 +75,14 @@ c     an ascii rea file for just the parameters
 
          call rd_xyz (x(1,e),y(1,e),z(1,e),nel,ndim)
 
-         call rd_curve(ncurvn,ccurve(1,e),curve(1,1,e),nel,nelo,ndim)
+         call rd_curve(ncurvn,ccurve(1,e),curve(1,1,e),nel,ndim)
          ncurve = ncurve + ncurvn
+         write(6,*) ncurve,ncurvn,e,' NCURVE'
 
          call rd_bdry(cbc(1,e,1),bc(1,1,e,1),string
      $               ,nel,nelo,ndim,nfld,lelt)
-         write(6,66) (cbc(k,1,1),k=1,12)
-  66     format(6(1x,a3))
+c        write(6,66) (cbc(k,1,1),k=1,12)
+c 66     format(6(1x,a3))
 
       enddo
    99 continue
@@ -114,13 +107,19 @@ c-----------------------------------------------------------------------
       write(6,*) 'Input old (source) file name:'      
       call blank(file,80)
       read(5,80,err=99,end=99) file
-      len = ltrunc(file,80)
+      len = indx1(file,' ',1)-1
       if (len.eq.0) goto 99
+
+      nb = 80-len
+      call blank(file1(len+1),nb)
 
    80 format(a80)
    81 format(80a1)
 
       call chcopy(file1(len+1),'.rea',4)
+
+      len = ltrunc(file,80)
+      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
 
       open(unit=10, file=file)
       iend = 0
@@ -131,7 +130,9 @@ c-----------------------------------------------------------------------
 
       end
 c-----------------------------------------------------------------------
-      subroutine open_file_out(ifile)
+      subroutine open_file_out(ifile,ans)
+
+      character*1 ans
 
       character*80 file,fout,fbout,string
       character*1  file1(80),fout1(80),fbout1(80),string1(80)
@@ -140,39 +141,51 @@ c-----------------------------------------------------------------------
       equivalence (fbout1,fbout)
       equivalence (string,string1)
 
-      write(6,*) 'Input new (output) file name:'      
+
       call blank(fout,80)
+
+      write(6,*) 'Input new (output) file name:'      
       read(5,80) fout
    80 format(a80)
+
+      lou = indx1(fout,' ',1)-1
+      nb = 80-lou
+      call blank(fout1(lou+1),nb)
       fbout = fout
-      lou = ltrunc(fout,80)
 
       call chcopy(fout1(lou+1),'.rea',4)
-      call chcopy(fbout1(lou+1),'.re2\0',5)
+
+      len = ltrunc(fout,80)
+      write(6,*) 'Opening output file: ',(fout1(k),k=1,len)
 
       open(unit=11, file=fout)
-      call byte_open(fbout)
+
+      if (ans.eq.'b') then ! binary output
+         call chcopy(fbout1(lou+1),'.re2\0',5)
+
+         len = ltrunc(fbout,80)
+         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
+
+         call byte_open(fbout)
+
+      endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_ee_bcs(cbc,x,y,z,nel,ndim) ! connectivity 
+      subroutine set_ee_bcs ! connectivity 
 
-      parameter ( lelt = 2 000 000 )
-
-      real x(1),y(1),z(1)
-      character*3 cbc(1)
+      include 'SIZE'
+      include 'INPUT'
 
       parameter (lf = 6*lelt)
       common /cwork/ dx(4*lf),face(lf),ind(lf),ninseg(lf),ifseg(lf)
-
       real    dx
       integer face,ind,ninseg
       logical ifseg
 
       call get_side    (dx,x,y,z,nel,ndim)
       call global_fnbr (face,dx,ndim,nel,ind,ninseg,ifseg)
-
       call f_pairing(cbc,face,ndim,nel,nfld,lelt,ind)
 
       return
@@ -322,10 +335,14 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine f_pairing(cbc,face,ndim,nel,nfld,lelt,ind)
+      subroutine f_pairing(cbc,face,ndim,nel,nfld,lelt,work)
 
       character*3 cbc(6,lelt,ndim)
       integer face(2*ndim,nel),work(1)
+
+      integer eface(6)
+      save    eface
+      data    eface  / 4,2,1,3,5,6 /
 
       integer e,f
 
@@ -343,9 +360,13 @@ c-----------------------------------------------------------------------
       do e=1,nel
       do f=1,nface
          i = face(f,e)
+
+c        write(44,4) i,work(i),f,e,cbc(f,e,1)
+c  4     format(4i9,2x,a3)
+
          if (work(i).eq.2) then    ! we have adjoining faces
             do k=1,nfld
-               cbc(f,e,k) = '   '  ! This is equivalent to E-E
+               cbc(eface(f),e,k) = 'E  '  ! This is equivalent to E-E
             enddo
          elseif (work(i).gt.2) then    ! we have adjoining faces
             write(6,*) 'FACE ERROR:',e,f,i,work(i)
@@ -516,8 +537,6 @@ c     write(6 ,81) (string1(k),k=1,len)
       call scanout(string,'end',3,10,11)
 
       close (unit=10)
-      close (unit=11)
-      call byte_close (fbout)
 
       return
       end
@@ -555,7 +574,8 @@ c             123456789 123456789 123456789 123456789 123456789
             write(11,90)  (z(k,e),k=5,8)
          endif
       enddo
-   90 format(1p4e14.6)
+c  90 format(1p4e14.6)
+   90 format(4e14.6)
 
       return
       end
@@ -572,6 +592,7 @@ c     .Ouput curve side data in ascii to unit 11
 
       write(11,11)
       write(11,12) ncurve
+      write(6 ,12) ncurve
    11 format(' ***** CURVED SIDE DATA *****')
    12 format(i8
      $ ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
@@ -580,17 +601,21 @@ c     .Ouput curve side data in ascii to unit 11
          do e=1,nel
          do k=1,12
             if (ccurve(k,e).ne.' ') then
+               call cleanr(curve(1,k,e),5)
                if (nelt.lt.1000) then
                   write(11,60) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
-               else
+               elseif (nelt.lt.1000000) then
                   write(11,61) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
+               else
+                  write(11,62) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
                endif
             endif
          enddo
          enddo
    50    continue
-   60    format(i3,i3,1p5e14.6,1x,a1)
-   61    format(i2,i10,1p5e14.6,1x,a1)
+   60    format(i3,i3,1p5g14.6,1x,a1)
+   61    format(i2,i6,1p5g14.6,1x,a1)
+   62    format(i2,i10,1p5e14.6,1x,a1)
       endif
 
       return
@@ -629,14 +654,17 @@ c
          do f=1,nface
             if (nel.lt.1000) then
                write(11,20) cbc(f,e,fld),e,f,(bc(j,f,e,fld),j=1,5)
-   20          format(1x,a3,2i3,1p5e14.7)
             elseif (nel.lt.100000) then
                write(11,21) cbc(f,e,fld),e,f,(bc(j,f,e,fld),j=1,5)
-   21          format(1x,a3,i5,i1,1p5e14.7)
             else
                write(11,22) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
-   22          format(1x,a3,i10,1p5e14.7)
             endif
+c  20       format(1x,a3,2i3,1p5e14.6)
+c  21       format(1x,a3,i5,i1,1p5e14.6)
+c  22       format(1x,a3,i10,1p5e14.6)
+   20       format(1x,a3,2i3,5g14.6)
+   21       format(1x,a3,i5,i1,5g14.6)
+   22       format(1x,a3,i10,5g14.6)
          enddo
          enddo
       enddo
