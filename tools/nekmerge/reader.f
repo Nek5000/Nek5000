@@ -51,7 +51,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rd_curve(ncurve,ccurve,curve,nel,nelo,ndim)
+      subroutine rd_curve(ncurve,ccurve,curve,nel,ndim)
 
       character*1 ccurve  (12,1),cc
       real         curve(6,12,1)
@@ -60,6 +60,9 @@ c-----------------------------------------------------------------------
       real buf(6)
 
       buf(6) = 0
+
+      call blank(ccurve,12*nel)
+      call rzero(curve ,72*nel)
 
       read(10,*)
       read(10,*) ncurve
@@ -70,9 +73,8 @@ c-----------------------------------------------------------------------
             elseif (nel.lt.1000000) then
                read(10,61) f,e,(buf(k),k=1,5),cc
             else
-               read(10,62) f,e,(buf(k),k=1,5),cc
+               read(10,*) f,e,(buf(k),k=1,5),cc
             endif
-            e = e+nelo
             ccurve(f,e) = cc
             call copy(curve(1,f,e),buf,6)
          enddo
@@ -80,6 +82,8 @@ c-----------------------------------------------------------------------
    61    format(i2,i6,5g14.6,1x,a1)
    62    format(i1,i7,5g14.6,1x,a1)
       endif
+
+      call cleanr(curve ,72*nel)  ! clean up small zeros
          
       return
       end
@@ -124,6 +128,8 @@ c
 
                enddo
                enddo
+
+               call cleanr(bc(1,1,1,j),30*nel)  ! clean up small zeros
 
             endif
          else
