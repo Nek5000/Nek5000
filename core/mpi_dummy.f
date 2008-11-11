@@ -1989,9 +1989,6 @@ c
       return
       end
 
-      return
-      end
-
       subroutine mpi_initialized(mpi_is_initialized, ierr)
 
       mpi_is_initialized = 0 
