@@ -96,7 +96,6 @@ C
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
       REAL ALPHA,WORK
-      REAL dVLSC2
 C
 C
       integer icalld
@@ -125,8 +124,7 @@ C
 C     Perform Gram-Schmidt for previous rhs's.
 C
       DO 10 I=1,Nprev
-c        ALPHA(i) = dVLSC3(P,RHS(1,i),bm2inv,NTOT2)
-         ALPHA(i) = dVLSC2(P,RHS(1,i),NTOT2)
+         ALPHA(i) = VLSC2(P,RHS(1,i),NTOT2)
    10 CONTINUE
 C
       IF (Nprev.GT.0) CALL gop(alpha,WORK,'+  ',Nprev)
@@ -187,9 +185,7 @@ C
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
       REAL ALPHA,WORK
-C      REAL dVLSC3,dVLSC2
-C
-C
+
       REAL             P    (LX2,LY2,LZ2,LELV)
       REAL             H1   (LX1,LY1,LZ1,LELV)
       REAL             H2   (LX1,LY1,LZ1,LELV)
@@ -234,12 +230,9 @@ C
       COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
-C
-c     REAL ALPHA,WORK,dVLSC3,dVLSC2
+
       REAL ALPHA,WORK
-C      REAL dVLSC3,dVLSC2,GLSC2
-C      REAL Alphad
-C
+
       REAL             P    (LX2,LY2,LZ2,LELV)
       REAL             H1   (LX1,LY1,LZ1,LELV)
       REAL             H2   (LX1,LY1,LZ1,LELV)
@@ -288,7 +281,7 @@ C
       COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2),Pbrr(ltot2)
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
-      REAL ALPHA,WORK,dVLSC2,GLSC2
+      REAL ALPHA,WORK
       real ALPHAd
 C
 C
@@ -415,59 +408,6 @@ C
       VLSC3 = T
       RETURN
       END
-      REAL FUNCTION dVLSC2(X,Y,N)
-      DIMENSION X(1),Y(1)
-      REAL DT,Tx,Ty
-C
-      include 'OPCTR'
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'dVLSC2'
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + dfloat(isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + dfloat(isbcnt)
-C
-      DT = 0.0
-      DO 10 I=1,N
-         Tx = X(I)
-         Ty = Y(I)
-         DT = DT + Tx*Ty
- 10   CONTINUE
-      dVLSC2 = DT
-      RETURN
-      END
-      REAL FUNCTION dVLSC3(X,Y,B,N)
-      DIMENSION X(1),Y(1),B(1)
-      REAL DT,Tx,Ty,Tb
-C
-      include 'OPCTR'
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'dVLSC3'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + dfloat(isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + dfloat(isbcnt)
-C
-      DT = 0.0
-      DO 10 I=1,N
-         Tx = X(I)
-         Ty = Y(I)
-         Tb = B(I)
-         DT = DT + Tx*Ty*Tb
- 10   CONTINUE
-      dVLSC3 = DT
-      RETURN
-      END
 c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
@@ -486,7 +426,6 @@ C
       COMMON /ORTHOI/ Nprev,Mprev
       COMMON /ORTHOL/ IFNEWE
       REAL ALPHA,WORK
-C      REAL dVLSC3,dVLSC2
       LOGICAL IFNEWE
 C
 C
@@ -564,7 +503,6 @@ C
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
       REAL ALPHA,WORK,GLSC2
-C      REAL dVLSC3,dVLSC2
       REAL Alphad
 C
 C
@@ -608,10 +546,7 @@ C
       COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
       COMMON /ORTHOI/ Nprev,Mprev
 C
-c     REAL ALPHA,WORK,dVLSC3,dVLSC2
       REAL ALPHA,WORK
-C      REAL dVLSC3,dVLSC2,GLSC2
-C      REAL Alphad
 C
       REAL             P    (LX2,LY2,LZ2,LELV)
       REAL             H1   (LX1,LY1,LZ1,LELV)
@@ -901,10 +836,9 @@ c
       endif
       if (ifvarp(ifield)) ifupdate = .true.
       if (iflomach)       ifupdate = .true.
-c
-      if (ifupdate) then
+
+      if (ifupdate) then    ! reorthogonalize 
          n_sav = napprox(2)
-         n_tmp = n_sav
          l     = 1
          do k=1,n_sav
 c           Orthogonalize kth vector against {v_1,...,v_k-1}
@@ -916,7 +850,6 @@ c           Orthogonalize kth vector against {v_1,...,v_k-1}
             if (ierr.eq.0) l=l+1
          enddo
          napprox(2)=min(l,n_sav)
-c        call exitt
       endif
 c
       return
