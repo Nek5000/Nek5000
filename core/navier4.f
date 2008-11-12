@@ -989,8 +989,8 @@ c
       REAL           bi   (LX1,LY1,LZ1,1)
       REAL           approx (1)
       integer        napprox(1)
-      COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
-     $ ,             W2   (2+2*mxprev)
+      common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
+      common /ctmp2/ w2   (2+2*mxprev)
 
       logical ifstdh
       character*4  cname
@@ -1008,13 +1008,14 @@ c
          ifstdh = .false.
       endif
 
-      ntot = nx1*ny1*nz1*nelfld(ifield)
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
       else
 
-         call col2 (r,vmk,ntot)
+         n = nx1*ny1*nz1*nelfld(ifield)
+
          call dssum(r,nx1,ny1,nz1)
+         call col2 (r,vmk,n)
          call projh(r,h1,h2,bi,vml,vmk,approx,napprox,w1,w2,name)
          call hmhzpf(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd,bi)
          call gensh(u,h1,h2,vml,vmk,approx,napprox,w1,w2,name)
