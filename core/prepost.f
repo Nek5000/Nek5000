@@ -1711,8 +1711,8 @@ c-----------------------------------------------------------------------
          mtype = nid
          len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,nel,4,pid0,0)            ! nel
-         call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
+         call csend(mtype,nel,4,pid0,0)          ! nel
+         call csend(mtype,mdata4,len,pid0,0)     ! u4 :=: u8
       endif
 
       return
