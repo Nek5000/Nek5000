@@ -1684,7 +1684,7 @@ c-----------------------------------------------------------------------
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k)           ! handshake
+            call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,inelp,4)       
             len   = 4*n*inelp 
             call crecv(mtype,mdata4,len)
@@ -1711,7 +1711,7 @@ c-----------------------------------------------------------------------
          mtype = nid
          len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,nel,4,pid0)            ! nel
+         call csend(mtype,nel,4,pid0,0)            ! nel
          call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
       endif
 
@@ -1754,7 +1754,7 @@ c-----------------------------------------------------------------------
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k)           ! handshake
+            call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,inelp,4)       
             len   = 4*n*inelp 
             call crecv(mtype,mdata4,len)
@@ -1773,8 +1773,8 @@ c-----------------------------------------------------------------------
          mtype = nid
          len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,nel,4,pid0)            ! nel
-         call csend(mtype,mdata4,len,pid0)       ! u4 :=: u8
+         call csend(mtype,nel,4,pid0,0)          ! nel
+         call csend(mtype,mdata4,len,pid0,0)     ! u4 :=: u8
       endif
 
       return
@@ -1818,10 +1818,10 @@ c-----------------------------------------------------------------------
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k)           ! handshake
+            call csend(mtype,idum,4,k,0)          ! handshake
             call crecv(mtype,inelp,4)       
             len   = wdsizo * nxyz*inelp
-c            call csend(mtype,idum,4,k)           ! handshake
+c            call csend(mtype,idum,4,k,0)         ! handshake
             call crecv(mtype,u4,len)
             nout  = len/4 
             call byte_write(u4,nout)
@@ -1902,10 +1902,10 @@ c-----------------------------------------------------------------------
          ! write out the data of my childs
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k)           ! handshake
+            call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,inelp,4)       
             len   = wdsizo * ndim * nxyz*inelp 
-c            call csend(mtype,idum,4,k)           ! handshake
+c            call csend(mtype,idum,4,k,0)          ! handshake
             call crecv(mtype,u4,len)
             nout  = len/4 
             call byte_write(u4,nout)
