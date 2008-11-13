@@ -4,31 +4,6 @@ c*********************************************************************72
 c
 cc MPI_ABORT shuts down the processes in a given communicator.
 c
-c  Modified:
-c
-c    08 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Input, integer ERRORCODE, the error code to be returned.
-c
-c    Output, integer IERROR, an error code.
-c
       implicit none
 
       integer comm
@@ -54,51 +29,6 @@ c
 c*********************************************************************72
 c
 cc MPI_ALLGATHER gathers data from all the processes in a communicator.
-c
-c  Discussion:
-c
-c    This single processor version will copy values from DATA1 to DATA2.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer DATA1(NSEND), the data to be sent.
-c
-c    Input, integer NSEND, the number of data items to be sent.
-c
-c    Input, integer SENDTYPE, the MPI datatype of the data being sent.
-c
-c    Output, integer DATA2(NSEND*NUM_PROCS), the gathered data
-c    that is received.
-c
-c    Input, integer NRECV, the number of data items to be received
-c    from each process.
-c
-c    Input, integer RECVTYPE, the MPI datatype of the data being received.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -135,37 +65,6 @@ c*********************************************************************72
 c
 cc MPI_ALLGATHERV gathers data from all the processes in a communicator.
 c
-c  Discussion:
-c
-c    This single processor version will copy values from DATA1 to DATA2.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       include "mpi_dummy.h"
@@ -201,48 +100,6 @@ c
 c*********************************************************************72
 c
 cc MPI_ALLREDUCE carries out a reduction operation.
-c
-c  Discussion:
-c
-c    The reduction operations are MAXIMUM, MINIMUM, PRODUCT and SUM.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    07 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, DATATYPE DATA1(N), the data to be processed.
-c
-c    Output, DATATYPE DATA2, the value of the reduction operation.
-c
-c    Input, integer N, the number of items in DATA1.
-c
-c    Input, integer DATATYPE, indicates the datatype of DATA1 and DATA2.
-c
-c    Input, integer OPERATION, should have the value of one of the symbolic
-c    constants MPI_MAX, MPI_MIN, MPI_PRODUCT or MPI_SUM.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -288,29 +145,6 @@ c*********************************************************************72
 c
 cc MPI_BARRIER forces processes within a communicator to wait together.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer comm
@@ -329,44 +163,6 @@ c
 c*********************************************************************72
 c
 cc MPI_BCAST broadcasts data from one process to all others.
-c
-c  Discussion:
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    06 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, datatype DATA(N), the data to be broadcast.
-c
-c    Input, integer N, the number of items of data.
-c
-c    Input, integer DATATYPE, the MPI code for the datatype of the data.
-c
-c    Input, integer NODE, the rank of the sending process within the
-c    given communicator.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -392,48 +188,6 @@ c
 c*********************************************************************72
 c
 cc MPI_BSEND sends data from one process to another, using buffering.
-c
-c  Discussion:
-c
-c    Warn against sending message to self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    06 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, datatype DATA(N), the data to be sent.
-c
-c    Input, integer N, the number of data items to send.
-c
-c    Input, integer DATAYTPE, the MPI code for the datatype.
-c
-c    Input, integer IPROC, the rank of the process within the communicator
-c    that is to receive the message.
-c
-c    Input, integer ITAG, a tag for the message.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -465,31 +219,6 @@ c*********************************************************************72
 c
 cc MPI_CART_CREATE creates a communicator for a Cartesian topology.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer COMM_CART, the new MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer ndims
@@ -515,33 +244,6 @@ c
 c*********************************************************************72
 c
 cc MPI_CART_GET returns the "Cartesian coordinates" of the calling process.
-c
-c  Discussion:
-c
-c    Set all coordinates to 0.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -573,33 +275,6 @@ c*********************************************************************72
 c
 cc MPI_CART_SHIFT finds the destination and source for Cartesian shifts.
 c
-c  Discussion:
-c
-c    Set ISOURCE = IDEST = SELF = 0.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer comm
@@ -625,31 +300,6 @@ c*********************************************************************72
 c
 cc MPI_COMM_DUP duplicates a communicator.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer COMM_OUT, the new MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer comm
@@ -671,29 +321,6 @@ c*********************************************************************72
 c
 cc MPI_COMM_FREE "frees" a communicator.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer comm
@@ -712,29 +339,6 @@ c
 c*********************************************************************72
 c
 cc MPI_COMM_RANK reports the rank of the calling process.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -756,33 +360,6 @@ c
 c*********************************************************************72
 c
 cc MPI_COMM_SIZE reports the number of processes in a communicator.
-c
-c  Discussion:
-c
-c    The routine simply returns NPROCS = 1.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -806,31 +383,6 @@ c*********************************************************************72
 c
 cc MPI_COMM_SPLIT splits up a communicator based on a key.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Input, integer COMM_NEW, the new MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer comm
@@ -852,38 +404,6 @@ c
 c*********************************************************************72
 c
 cc MPI_COPY_DOUBLE copies a double precision vector.
-c
-c  Discussion:
-c
-c    This routine is not part of the MPI standard.  However, it is
-c    needed by other routines which do emulate standard MPI routines.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, double precision DATA1(N), the data to be copied.
-c
-c    Output, double precision DATA2(N), the copied data.
-c
-c    Input, integer N, the number of items of data.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -912,38 +432,6 @@ c*********************************************************************72
 c
 cc MPI_COPY_INTEGER copies an integer vector.
 c
-c  Discussion:
-c
-c    This routine is not part of the MPI standard.  However, it is
-c    needed by other routines which do emulate standard MPI routines.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer DATA1(N), the data to be copied.
-c
-c    Output, integer DATA2(N), the copied data.
-c
-c    Input, integer N, the number of items of data.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer n
@@ -968,40 +456,6 @@ c
       subroutine mpi_copy_real ( data1, data2, n, ierror )
 
 c*********************************************************************72
-c
-cc MPI_COPY_REAL copies a real vector.
-c
-c  Discussion:
-c
-c    This routine is not part of the MPI standard.  However, it is
-c    needed by other routines which do emulate standard MPI routines.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, real DATA1(N), the data to be copied.
-c
-c    Output, real DATA2(N), the copied data.
-c
-c    Input, integer N, the number of items of data.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1030,27 +484,6 @@ c*********************************************************************72
 c
 cc MPI_FINALIZE shuts down the MPI library.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer ierror
@@ -1068,31 +501,6 @@ c
 c*********************************************************************72
 c
 cc MPI_GET_COUNT reports the actual number of items transmitted.
-c
-c  Discussion:
-c
-c    Warn against querying message from self, since no data copy is done.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1119,27 +527,6 @@ c*********************************************************************72
 c
 cc MPI_INIT initializes the MPI library.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer ierror
@@ -1158,37 +545,6 @@ c
 c*********************************************************************72
 c
 cc MPI_IRECV receives data from another process.
-c
-c  Discussion:
-c
-c    Warn against receiving message from self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1220,51 +576,6 @@ c
 c*********************************************************************72
 c
 cc MPI_ISEND sends data from one process to another using nonblocking transmission.
-c
-c  Discussion:
-c
-c    Warn against sending message to self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    15 August 2008
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, datatype DATA(N), the data to be sent.
-c
-c    Input, integer N, the number of data items to send.
-c
-c    Input, integer DATAYTPE, the MPI code for the datatype.
-c
-c    Input, integer IPROC, the rank of the process within the communicator
-c    that is to receive the message.
-c
-c    Input, integer ITAG, a tag for the message.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer REQUEST, a handle.  To determine if the data has been received
-c    yet, call MPI_Test or MPI_Wait, including the value of REQUEST.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1298,37 +609,6 @@ c*********************************************************************72
 c
 cc MPI_RECV receives data from another process within a communicator.
 c
-c  Discussion:
-c
-c    Warn against receiving message from self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer n
@@ -1359,54 +639,6 @@ c
 c*********************************************************************72
 c
 cc MPI_REDUCE carries out a reduction operation.
-c
-c  Discussion:
-c
-c    The reduction operations are sum, maximum, minimum, product.
-c
-c    The first two arguments must not overlap or share memory in any way.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, DATATYPE DATA1(N), the data to be processed.
-c
-c    Output (to RECEIVER only), DATATYPE DATA2, the value of the
-c    reduction operation.
-c
-c    Input, integer N, the number of items in DATA1.
-c
-c    Input, integer DATATYPE, indicates the datatype of DATA1 and DATA2.
-c
-c    Input, integer OPERATION, should have the value of one of the symbolic
-c    constants MPI_MAX, MPI_MIN, MPI_PRODUCT or MPI_SUM.
-c
-c    Input, integer RECEIVER, the the process that is to receive the
-c    result.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1539,48 +771,6 @@ c*********************************************************************72
 c
 cc MPI_REDUCE_SCATTER collects a message of the same length from each process.
 c
-c  Discussion:
-c
-c    Copy values from DATA1 to DATA2.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, DATATYPE DATA1(N), the data to be processed.
-c
-c    Output, DATATYPE DATA2, the value of the reduction operation.
-c
-c    Input, integer N, the number of items in DATA1.
-c
-c    Input, integer DATATYPE, indicates the datatype of DATA1 and DATA2.
-c
-c    Input, integer OPERATION, should have the value of one of the symbolic
-c    constants MPI_MAX, MPI_MIN, MPI_PRODUCT or MPI_SUM.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       include "mpi_dummy.h"
@@ -1615,48 +805,6 @@ c*********************************************************************72
 c
 cc MPI_RSEND "ready sends" data from one process to another.
 c
-c  Discussion:
-c
-c    Warn against sending message to self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, datatype DATA(N), the data to be sent.
-c
-c    Input, integer N, the number of data items to send.
-c
-c    Input, integer DATAYTPE, the MPI code for the datatype.
-c
-c    Input, integer IPROC, the rank of the process within the communicator
-c    that is to receive the message.
-c
-c    Input, integer ITAG, a tag for the message.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer n
@@ -1687,48 +835,6 @@ c*********************************************************************72
 c
 cc MPI_SEND sends data from one process to another.
 c
-c  Discussion:
-c
-c    Warn against sending message to self, since no data copy is done.
-c
-c    The data to be transferred can be integer, real, or double precision.
-c    In this routine, it is declared and documented as INTEGER type, 
-c    but using the other types should generally not cause a problem.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Input, datatype DATA(N), the data to be sent.
-c
-c    Input, integer N, the number of data items to send.
-c
-c    Input, integer DATAYTPE, the MPI code for the datatype.
-c
-c    Input, integer IPROC, the rank of the process within the communicator
-c    that is to receive the message.
-c
-c    Input, integer ITAG, a tag for the message.
-c
-c    Input, integer COMM, the MPI communicator.
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer n
@@ -1758,31 +864,6 @@ c*********************************************************************72
 c
 cc MPI_WAIT waits for an I/O request to complete.
 c
-c  Discussion:
-c
-c    Warn against waiting on message from self, since no data copy is done.
-c
-c  Modified:
-c
-c    04 October 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer ierror
@@ -1806,31 +887,6 @@ c
 c*********************************************************************72
 c
 cc MPI_WAITALL waits until all I/O requests have completed.
-c
-c  Discussion:
-c
-c    Warn against waiting on message from self, since no data copy is done.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
 c
       implicit none
 
@@ -1858,31 +914,6 @@ c*********************************************************************72
 c
 cc MPI_WAITANY waits until one I/O requests has completed.
 c
-c  Discussion:
-c
-c    Warn against waiting on message from self, since no data copy is done.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, integer IERROR, is nonzero if an error occurred.
-c
       implicit none
 
       integer array_of_requests(*)
@@ -1909,28 +940,6 @@ c*********************************************************************72
 c
 cc MPI_WTICK returns the time between clock ticks.
 c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, double precision MPI_WTICK, the time, in seconds, between
-c    successive clock ticks.
-c
       implicit none
       
       double precision mpi_wtick
@@ -1945,47 +954,13 @@ c*********************************************************************72
 c
 cc MPI_WTIME returns the elapsed wall clock time.
 c
-c  Discussion:
-c
-c    While you might be able to get a wall clock reading if you
-c    happen to know the peculiarities of the extra routines in your
-c    own FORTRAN77 compiler, there is no standard way to do this,
-c    and I am tired of trying to make up for this.
-c
-c  Modified:
-c
-c    05 February 2007
-c
-c  Author:
-c
-c    John Burkardt
-c
-c  Reference:
-c
-c    William Gropp, Ewing Lusk, Anthony Skjellum,
-c    Using MPI: Portable Parallel Programming with the
-c    Message-Passing Interface,
-c    Second Edition,
-c    MIT Press, 1999,
-c    ISBN: 0262571323.
-c
-c  Parameters:
-c
-c    Output, double precision MPI_WTIME, the elapsed wall clock time.
-c
       implicit none
 
-      double precision fake_time
       double precision mpi_wtime
-      
-      save fake_time
+      real a(2),etime    
 
-      data fake_time / 0.0D+00 /
+      mpi_wtime = etime(a)
 
-      mpi_wtime = fake_time
-
-      fake_time = fake_time + 1.0D+00
-      
       return
       end
 
@@ -2013,5 +988,13 @@ c
       end
 
       subroutine mpi_group_free
+
+      return
+      end
+
+      subroutine mpi_comm_get_attr(icomm,ikey,ival,iflag,ierr)
+
+      ival =  9 999 999  ! dummy
+ 
       return
       end

@@ -204,7 +204,6 @@ C     first.. a test...
       if (ifflow) ifield = 1
       call rone(work,ntotv)
       ifield = 1
-      flag_gs_init = 1
       CALL DSSUM(work,NX1,NY1,NZ1)
       CALL COL2(work,VMULT,NTOTV)
       rtot  = glsum(work,ntotv)
@@ -815,7 +814,7 @@ C           not supported at the moment => just do dummy reading
 C
             IF(NID.EQ.0)THEN
                if (iffmat)
-     &             READ(91,'(6G11.4)',END=1500)(CDUMP(I),I=1,NELTR)
+     &             READ(91,'(6G11.4)',END=1500)(CDUMP,I=1,NELTR)
             ENDIF
 C
 C           Read the current dump, double buffer so that we can
@@ -2425,8 +2424,8 @@ c
    10    continue
       enddo
       
-      write(6,6) nid,istep,len,(fname1(k),k=1,len)
-    6 format(2i8,i3,' OPEN: ',80a1)
+      write(6,6) nid,istep,(fname1(k),k=1,len)
+    6 format(2i8,' OPEN: ',80a1)
 
       call byte_open(fname)
 

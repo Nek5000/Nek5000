@@ -11,9 +11,6 @@
      $         + lbt2*(lorder-1) )
 c    $         + lptmsk )
 
-      parameter (iwsize  = 4)
-      parameter (lpneed  = 36*lelg*iwsize/8)
-      parameter (lremain = max(2,lpneed-lptsol) )
       parameter (lorder2 = max(1,lorder-2) )
 C
 C     Solution and data
@@ -63,9 +60,6 @@ c     Solution and data for magnetic field
      $               , BBX2   (LBX1,LBY1,LBZ1,LBELV)
      $               , BBY2   (LBX1,LBY1,LBZ1,LBELV)
      $               , BBZ2   (LBX1,LBY1,LBZ1,LBELV)
-     $               , dmysol (lremain) ! get enough for setvert3d
-     $              ,  mue_imp
-      real             mue_imp
 c
       COMMON /VPTMSK/  V1MASK (LX1,LY1,LZ1,LELV)
      $               , V2MASK (LX1,LY1,LZ1,LELV)

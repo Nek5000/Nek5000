@@ -20,66 +20,56 @@ c
 c
 c     Distributed memory processor mapping
 c
-      IF (NP.GT.NELGV) THEN
-         WRITE(6,1000) NP,NELGV
- 1000    FORMAT(2X,'ERROR: Too many processors (',I3
-     $        ,') for to few elements (',I3,').'
-     $        ,/,2X,'ABORTING IN MAPELPR.')
+      IF (NP.GT.NELGT) THEN
+         IF(NID.EQ.0) THEN
+           WRITE(6,1000) NP,NELGT
+ 1000      FORMAT(2X,'ERROR: Too many processors (',I8
+     $          ,') for to few elements (',I8,').'
+     $          ,/,2X,'ABORTING IN MAPELPR.')
+         ENDIF
          call exitt
       ENDIF
 c
       call set_proc_map()
 c
-c     Update the number of elements on each processor.
-c
-      LL1P=(LDIMT1+1)*LP
-      CALL IZERO (NELP,LL1P)
-      NL1P=(LDIMT1+1)*NP
       DO 1200 IFIELD=MFIELD,NFLDT
          IF (IFTMSH(IFIELD)) THEN
-            NELP(IFIELD,NODE) = NELT
             NELG(IFIELD)      = NELGT
          ELSE
-            NELP(IFIELD,NODE) = NELV
             NELG(IFIELD)      = NELGV
          ENDIF
  1200 CONTINUE
 c
-c     since lelg = lp * lelt 
-c     this works when lelt >= ldimt1+1
-c
-      if (np.gt.1.and.NL1P.gt.LELG) then
-         if (nid.eq.0) then
-            write(6,*) 'ERROR MAPELPR (map2.f) :: insuf. work',LELG,NL1P
-            write(6,*) 'increase LELG in SIZEu to ',NL1P
-         endif
-         CALL IGOP (NELP,LELGWORK,'+  ',1)
-         call flush_io
-         call exitt
-      endif
-      CALL IGOP (NELP,LELGWORK,'+  ',NL1P)
 C
 C     Output the processor-element map:
 C
-C     IF (NP.GT.1.AND.IPASS.EQ.2.AND.NID.EQ.0) THEN
-C     IF (NP.GT.0.AND.IPASS.EQ.2.AND.NID.EQ.0) THEN
-C
-C
       ifverbm=.true.
       if (np.gt.2050.or.nelgt.gt.40000) ifverbm=.false.
-      if (nid.eq.0.and.ifverbm) then
-         IFLD=1
-         IF (IFHEAT) IFLD=2
-         DO 1300 IP=1,NP
-            n8=min(8,nelp(ifld,ip))
-            WRITE(6 ,1310) IP,(LGLEL(IE,IP),IE=1,N8)
-            IF (NELP(ifld,ip).gt.8)
-     $       WRITE(6 ,1315) (LGLEL(IE,IP),IE=9,NELP(IFLD,IP))
- 1300    CONTINUE
- 1310    FORMAT('IP',I6,' IEG',8I8)
- 1315    FORMAT('  ',6X,'    ',8I8)
+
+      if(ifverbm) then
+        idum = 1
+        if(nid.eq.0) then
+           N8 = min(8,nelt)
+           WRITE(6 ,1310) NODE,(LGLEL(IE,NODE),IE=1,N8)
+           IF (nelt.gt.8) WRITE(6 ,1315) (LGLEL(IE,NODE),IE=9,nelt)
+           DO inid=1,NP-1
+              mtype = inid
+              call csend(mtype,idum,4,inid)             ! handshake
+              call crecv(mtype,inelt,4)               ! nelt of other cpus
+              N8 = min(8,inelt)
+              WRITE(6 ,1310) inid+1,(LGLEL(IE,inid+1),IE=1,N8)
+              IF (inelt.gt.8) 
+     &           WRITE(6 ,1315) (LGLEL(IE,inid+1),IE=9,inelt)
+           ENDDO
+ 1310      FORMAT('IP',I6,' IEG',8I8)
+ 1315      FORMAT('  ',6X,'    ',8I8)
+        else
+           mtype = nid
+           call crecv(mtype,idum,4)                ! hand-shake
+           call csend(mtype,nelt,4,pid0)           ! nelt
+        endif
       endif
-c
+
 c
 C
 C     Check elemental distribution
@@ -350,8 +340,6 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine get_map
-      include 'SIZE'
-      include 'TOTAL'
 
       call f77_get_vert
 

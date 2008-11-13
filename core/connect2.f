@@ -31,16 +31,19 @@ C     Read Mesh Data and Group ID
 
       if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
          write(6,*)
-     $   'For GFDM or GTP, need number of processor = 2^k'
+     $   'For GFDM or GTP, number of processors need to be 2^k'
          call exitt
       endif
 c
       call chk_nel  ! make certain sufficient array sizes
+
       call mapelpr  ! read .map file, est. gllnid, etc.
 
       if (nelgs.lt.0) then
 
-         call bin_rd1  ! read mesh, curve, and bc info
+         ! new binary reader (nid.eq.0 reads the re2 file)
+         ! and sends the data to the other processors
+         call bin_rd1
 
       else
 
@@ -213,7 +216,7 @@ c
 c     passive scalars
 c
       READ(9,*,ERR=400) NSKIP
-      IF (NPSCAL.GE.1) THEN
+      IF (NPSCAL.GE.1 .AND. .NOT.IFUSERVP) THEN
          READ(9,*,ERR=400)(CPFLD(I,1),I=3,NPSCL2)
          IF(NPSCL2.LT.9)READ(9,*)
          READ(9,*,ERR=400)(CPFLD(I,2),I=3,NPSCL2)
@@ -1768,11 +1771,10 @@ c
       if (nid.eq.0) write(6,*) 'call rd1_curv ',ifbswap
       call bin_rd1_curve (ifbswap)
 
-      if (nid.eq.0) write(6,*) 'call rd1_bc   ',ifbswap,ibc,nfldt
+      if (nid.eq.0) write(6,*) 'call rd1_bc   ',ifbswap,nfldt
       do ifield = ibc,nfldt
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
-      if (nid.eq.0) write(6,*) 'done rd1_bc   ',ifbswap,ibc,nfldt
 
       call close_bin_file
 
