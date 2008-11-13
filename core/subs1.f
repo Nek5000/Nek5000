@@ -1032,7 +1032,7 @@ C
 C
          IGRP=IGROUP(IEL)
 
-         if (param(30).ne.0) then
+         if (ifuservp) then
 C
 C           User specified fortran function   (pff 2/13/01)
             CALL NEKUVP (IEL)

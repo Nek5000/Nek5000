@@ -48,10 +48,10 @@ C
       ifxxt     = .false.
       IFCVODE   = .false.
       IFEXPLVIS = .false.
+      IFUSERVP  = .false.
       ifsync    = .false.   ! gsync() for timing info
 
       if (lx1.eq.lx2) ifsplit=.true.
-
 
 C     Turn off (on) diagnostics for communication
 C
@@ -64,7 +64,7 @@ C
 C      LCBC = 3*6*LELT*(LDIMT1+1)
 C      CALL BLANK(CBC,LCBC)
 C
-      CALL BLANK(CCURVE ,8*LELT)
+      CALL BLANK(CCURVE ,12*LELT)
       NEL8 = 8*LELT
       CALL RZERO(XC,NEL8)
       CALL RZERO(YC,NEL8)
@@ -247,6 +247,7 @@ C
 
       if(abs(PARAM(16)).eq.2) IFCVODE = .true.
 
+      if(PARAM(30).ne.0) IFUSERVP = .true.
 C
 C     Check accuracy requested.
 C
@@ -1450,7 +1451,7 @@ c
 c     If either dt or the backwards difference coefficient change,
 c     then recompute base flow solution corresponding to unit forcing:
 c
-      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.param(30).ne.0)
+      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.ifuservp)
      $   call compute_vol_soln(vxc,vyc,vzc,prc)
       dt_vflow = dt
       bd_vflow = bd(1)

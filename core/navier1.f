@@ -1483,7 +1483,7 @@ C----------------------------------------------------------------------
 
                                                 CALL MAKEUF
       IF (IFNATC)                               CALL NATCONV
-      IF (IFEXPLVIS)                            CALL MAKEVIS
+      IF (IFEXPLVIS.AND.IFSPLIT)                CALL MAKEVIS
       IF (IFNAV.AND.(.NOT.IFCHAR))              CALL ADVAB
       IF (IFMVBD)                               CALL ADMESHV
       IF (IFTRAN)                               CALL MAKEABF
@@ -4812,7 +4812,6 @@ C
 
       REAL fac
 C----------------------------------------------------------------------
-
 
       NTOT = NX1*NY1*NZ1*NELV
 

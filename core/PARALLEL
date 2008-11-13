@@ -1,31 +1,21 @@
 C
 C     Communication information
 C     NOTE: NID is stored in 'SIZE' for greater accessibility
-      PARAMETER (LP1=LP+1)
-      COMMON /CUBE1/ NODE,PID,CD,NP,ALLNODES,NULLPID,MANAGER,NODE0
-     $              ,IPRING(LP1),LFTNBR,RGTNBR
-     $              ,Nprow,Npcol,ipp,iqq,prow(lp),pcol(lp)
-      INTEGER        NODE,PID,CD,NP,ALLNODES,NULLPID,MANAGER,NODE0
-     $              ,IPRING,LFTNBR,RGTNBR
-     $              ,Nprow,Npcol,ipp,iqq,prow,pcol
-      COMMON /CUBE2/ TYPE,TYPER
-      INTEGER        TYPE,TYPER
+      COMMON /CUBE1/ NODE,PID,NP,NULLPID,NODE0
+      INTEGER        NODE,PID,NP,NULLPID,NODE0
+
 C
 C     HCUBE Direct stiffness array information
 C
-      COMMON /HCGLB/ NELG(0:LDIMT1)    , NELP(0:LDIMT1,LP)
-     $              ,GLLEL(LELG)       , GLLNID(LELG)
+      COMMON /HCGLB/ NELG(0:LDIMT1)
      $              ,LGLEL(LELT,LP)
      $              ,NELGV,NELGT
+     $              ,GLLEL(LELG)
+     $              ,GLLNID(LELG)
      $              ,LELGWORK(LELG)
+
+      INTEGER        GLLEL,GLLNID,LGLEL
 C
-C     For storing error estimators for each element
-C
-      COMMON /CDERRO/ CDUMP(LELG)
-C
-      COMMON /HPACK/  WAITCNT,WAITDUM
-      INTEGER         GLLEL,GLLNID,LGLEL,WAITCNT,WAITDUM
-      COMMON /DIAGN/  IECHO,IDIAG(10)
       COMMON /DIAGR/  TIME0
       COMMON /DIAGL/  IFGPRNT
       LOGICAL IFGPRNT
@@ -36,9 +26,8 @@ C
 C
 C     gs code handles
 C
-      common /gs_handles/ gsh, gsh_fld(0:ldimt3), flag_gs_init
+      common /gs_handles/ gsh, gsh_fld(0:ldimt3)
       integer gsh,gsh_fld
-      integer flag_gs_init
 C
 C     xxt handle
 C
