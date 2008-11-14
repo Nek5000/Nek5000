@@ -54,7 +54,7 @@ C
            IF (nelt.gt.8) WRITE(6 ,1315) (LGLEL(IE,NODE),IE=9,nelt)
            DO inid=1,NP-1
               mtype = inid
-              call csend(mtype,idum,4,inid)             ! handshake
+              call csend(mtype,idum,4,inid,0)            ! handshake
               call crecv(mtype,inelt,4)               ! nelt of other cpus
               N8 = min(8,inelt)
               WRITE(6 ,1310) inid+1,(LGLEL(IE,inid+1),IE=1,N8)
@@ -66,7 +66,7 @@ C
         else
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
-           call csend(mtype,nelt,4,pid0)           ! nelt
+           call csend(mtype,nelt,4,0,0)            ! nelt
         endif
       endif
 

@@ -53,7 +53,7 @@ c      endif
       ! set word size for INTEGER
       ! HARDCODED since there is no secure way to detect an int overflow
       isize = 4
-      IF (NID.EQ.0) WRITE(6,*) ' INTEGER WDSIZE:',WDSIZE
+      IF (NID.EQ.0) WRITE(6,*) ' INTEGER WDSIZE:',ISIZE
 c
 c
       PID = 0
