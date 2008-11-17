@@ -1741,9 +1741,11 @@ c-----------------------------------------------------------------------
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
+         j = 1
          do e=1,nel
-            mdata4(e+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(e+1) = vlmax4(u(1,e),nxyz)
+            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            j = j + 2
          enddo
 
          ! write out my data
@@ -1765,8 +1767,9 @@ c-----------------------------------------------------------------------
       else
          j = 1
          do e=1,nel
-            mdata4(e+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(e+1) = vlmax4(u(1,e),nxyz)
+            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
+            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            j = j + 2
          enddo
 
          ! send my data to my pararent I/O node
