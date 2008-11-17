@@ -1362,13 +1362,13 @@ c-----------------------------------------------------------------------
          if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
-c      ! add meta data to the end of the file
+      ! add meta data to the end of the file
       if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
       if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
       if (ifpo ) call mfo_mdatas(pm1,nout)
       if (ifto ) call mfo_mdatas(t,nout)
       do k=1,npscal
-         if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
+         if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
       enddo
 
       if (nid.eq.pid0) call byte_close()
