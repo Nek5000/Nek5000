@@ -7,7 +7,7 @@ c=======================================================================
       INCLUDE 'SOLN'
       include 'FDMH1'
       include 'TSTEP'
-C
+
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
       REAL           RHS  (LX1,LY1,LZ1,1)
@@ -15,9 +15,7 @@ C
       REAL           H2   (LX1,LY1,LZ1,1)
       REAL           MASK (LX1,LY1,LZ1,1)
       REAL           MULT (LX1,LY1,LZ1,1)
-      COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
-     $ ,             W2   (LX1,LY1,LZ1,LELT)
-c
+
       logical iffdm
       character*3 nam3
 
@@ -62,9 +60,9 @@ C
       if (tli.lt.0) tol=tli ! caller-specified relative tolerance
 
       if (imsh.eq.1) call cggo
-     $      (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+     $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
       if (imsh.eq.2) call cggo
-     $      (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
+     $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
 
       thmhz=thmhz+(dnekclock()-etime1)
@@ -100,8 +98,9 @@ C
      $ ,             DUDS  (LX1,LY1,LZ1)
      $ ,             DUDT  (LX1,LY1,LZ1)
      $ ,             TMP1  (LX1,LY1,LZ1)
-      COMMON /CTMP0/ TMP2  (LX1,LY1,LZ1)
+     $ ,             TMP2  (LX1,LY1,LZ1)
      $ ,             TMP3  (LX1,LY1,LZ1)
+
       REAL           TM1   (LX1,LY1,LZ1)
       REAL           TM2   (LX1,LY1,LZ1)
       REAL           TM3   (LX1,LY1,LZ1)
@@ -633,6 +632,14 @@ c
       common /iterhm/ niterhm
       character*4 name
 c
+      if (ifsplit.and.name.eq.'PRES'.and.param(40).eq.1) then
+         n = nx1*ny1*nz1*nelv
+         call copy      (x,f,n)
+         call hmh_gmres (x,h1,h2,mult,iter)
+         return
+      endif
+      write(6,*) ifsplit,name,param(44),' P44 C'
+
 c **  zero out stuff for Lanczos eigenvalue estimator
       call rzero(diagt,maxcg)
       call rzero(upper,maxcg)
@@ -877,7 +884,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 c
-      COMMON /CTMP0/ w  (LX1,LY1,LZ1)
+      common /ctmp0/ w(lx1,ly1,lz1)
 c
       include 'FDMH1'
 c

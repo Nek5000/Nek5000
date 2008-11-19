@@ -1,16 +1,18 @@
+      parameter (lxm=lx2+2,lym=lxm,lzm=lz2+2*(ldim-2)) ! mgrid sizes
       parameter (lmgs=2)                   ! max number of multigrid solvers
       parameter (lmgn=4)                   ! max number of multigrid levels
-      parameter (lmg_rwt=lx1*lz1*2)        ! restriction weight max size
-      parameter (lmg_fasts=2*lx1*lx1)      ! FDM S max size
-      parameter (lmg_fastd=2*lx1*ly1*lz1)  ! FDM D max size
-      parameter (lmg_swt=lx1*lz1*2)        ! schwarz weight max size
-      parameter (lmg_g=lx1*ly1*lz1)        ! metrics max size
-      parameter (lmg_solve=2*lx1*ly1*lz1)  ! solver r,e max size
+      parameter (lmg_rwt=lxm*lzm*2)        ! restriction weight max size
+      parameter (lmg_fasts=2*lxm*lxm)      ! FDM S max size
+      parameter (lmg_fastd=2*lxm*lym*lzm)  ! FDM D max size
+      parameter (lmg_swt=lxm*lzm*2)        ! schwarz weight max size
+      parameter (lmg_g=lxm*lym*lzm)        ! metrics max size
+      parameter (lmg_solve=2*lxm*lym*lzm)  ! solver r,e max size
 c
       common /mghs/ mg_lmax                     !number of multigrid levels
      $            , mg_nx(lmgn)                 !level poly. order (for GLL pts)
      $            , mg_ny(lmgn), mg_nz (lmgn)
      $            , mg_nh(lmgn), mg_nhz(lmgn)   !number of 1d nodes
+     $            , mg_g_index(lmgn)
      $            , mg_gsh_handle(lmgn)         !dssum handle
      $            , mg_rstr_wt_index(lmgn)
      $            , mg_mask_index(lmgn)
@@ -27,23 +29,24 @@ c
       integer mg_gsh_schwarz_handle
       integer mg_solve_index
 c
-      common /mghr/ mg_jh(lx1*lx1,lmgn-1)  !element interpolation matrices
-     $            , mg_jht(lx1*lx1,lmgn-1) !transpose of mg_jh
-     $            , mg_ah(lx1*lx1,lmgn)    !A hat matrices
-     $            , mg_bh(lx1,lmgn)        !B hat matrices
-     $            , mg_dh(lx1*lx1,lmgn)    !D hat matrices
-     $            , mg_dht(lx1*lx1,lmgn)   !D hat transpose matrices
-     $            , mg_zh(lx1,lmgn)        !Nodal coordinates
+      common /mghr/ mg_jh(lxm*lxm,lmgn-1)  !element interpolation matrices
+     $            , mg_jht(lxm*lxm,lmgn-1) !transpose of mg_jh
+     $            , mg_ah(lxm*lxm,lmgn)    !A hat matrices
+     $            , mg_bh(lxm,lmgn)        !B hat matrices
+     $            , mg_dh(lxm*lxm,lmgn)    !D hat matrices
+     $            , mg_dht(lxm*lxm,lmgn)   !D hat transpose matrices
+     $            , mg_zh(lxm,lmgn)        !Nodal coordinates
 c
+     $            , mg_g(0:lmg_g*((ldim-1)*3)*lelv-1)      !metrics matrices
      $            , mg_rstr_wt(0:lmg_rwt*2*ldim*lelv-1)    !restriction weight
      $            , mg_mask(0:2*lmg_rwt*2*ldim*lelv)       !b.c. mask
      $            , mg_fast_s(0:lmg_fasts*2*ldim*lelv-1)
      $            , mg_fast_d(0:lmg_fastd*lelv-1)
      $            , mg_schwarz_wt(0:lmg_swt*4*ldim*lelv-1)
-     $            , mg_work(2*lx1*ly1*lz1*lelv) !must be able to hold two lower
+     $            , mg_work(2*lxm*lym*lzm*lelv) !must be able to hold two lower
                                                 !level extended schwarz arrays
-     $            , mg_work2(lx1*ly1*lz1*lelv)
-     $            , mg_worke(lx1*ly1*lz1,6)
+     $            , mg_work2(lxm*lym*lzm*lelv)
+     $            , mg_worke(lxm*lym*lzm,6)
      $            , mg_solve_e(0:lmg_solve*lelv-1)
      $            , mg_solve_r(0:lmg_solve*lelv-1)
 c
