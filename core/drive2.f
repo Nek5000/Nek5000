@@ -802,6 +802,7 @@ C
             call cdscal (igeo)
          enddo
          enddo
+         igeom = 2
 
       else  ! PN-PN-2
 

@@ -2467,6 +2467,7 @@ c      write(6,*) nid,' STRIDE:',stride,np,nfiler
          if_byte_sw = if_byte_swap_test(bytetest)
 
          call byte_read (er,nelr) ! Get list of elements to be read
+         if (if_byte_sw) call byte_reverse(er,nelr)
 
       endif
 
