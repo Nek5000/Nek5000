@@ -24,7 +24,7 @@ if [ ! -f $SOURCE_ROOT/makefile.template ]; then
   exit 1
 fi
 
-which $F77 1>/dev/null
+which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
   exit 1
@@ -44,7 +44,7 @@ if [ ! -f test_f77.o ]; then
 fi
 \rm test_f77.* 2>/dev/null
 
-which $CC 1>/dev/null
+which `echo $CC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $CC!"
   exit 1
