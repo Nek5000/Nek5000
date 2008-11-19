@@ -638,7 +638,7 @@ c
          call hmh_gmres (x,h1,h2,mult,iter)
          return
       endif
-      write(6,*) ifsplit,name,param(44),' P44 C'
+c      write(6,*) ifsplit,name,param(44),' P44 C'
 
 c **  zero out stuff for Lanczos eigenvalue estimator
       call rzero(diagt,maxcg)
