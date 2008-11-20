@@ -134,6 +134,12 @@ else
   IFAMG=false
 fi
 
+if [ "$OPT_FLAGS" == "" ]; then
+  OPT_FLAGS=-O3
+fi
+
+
+
 # Generate makefile from using the makefile template and 
 # the specified parameters in makenek
 
@@ -142,6 +148,7 @@ echo "try to generate makefile ..."
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
+-e "s:^OPT_FLAGS[ ]*=.*:OPT_FLAGS\:=$OPT_FLAGS:" \
 -e "s/^P[ ]*=.*/P:=$P/" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
