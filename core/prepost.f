@@ -1648,71 +1648,69 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
 
-      common /ctmp1/ mdata4(6*lelt)
-      real*4 mdata4
+      real*4 buffer(1+6*lelt)
 
       integer e
 
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-
-      ! hack for VisIt
-      n  = 6 !2*ndim
+      n  = 2*ndim
+      len   = 4*(1 + 6*lelt) 
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
+         buffer(j) = nel
+         j = j + 1
          do e=1,nel
-            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(j+1) = vlmax4(u(1,e),nxyz)
-            mdata4(j+2) = vlmin4(v(1,e),nxyz) 
-            mdata4(j+3) = vlmax4(v(1,e),nxyz)
+            buffer(j+0) = vlmin4(u(1,e),nxyz) 
+            buffer(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+2) = vlmin4(v(1,e),nxyz) 
+            buffer(j+3) = vlmax4(v(1,e),nxyz)
             j = j + 4
             if(n.eq.6) then
-              mdata4(j+0) = vlmin4(w(1,e),nxyz) 
-              mdata4(j+1) = vlmax4(w(1,e),nxyz)
+              buffer(j+0) = vlmin4(w(1,e),nxyz) 
+              buffer(j+1) = vlmax4(w(1,e),nxyz)
               j = j + 2
             endif
          enddo
 
          ! write out my data
          nout = n*nel
-         call byte_write(mdata4,nout)
+         call byte_write(buffer(2),nout)
 
          ! write out the data of my childs
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,inelp,4)       
-            len   = 4*n*inelp 
-            call crecv(mtype,mdata4,len)
-
+            call crecv(mtype,buffer,len)
+            inelp = buffer(1)
             nout  = n*inelp 
-            call byte_write(mdata4,nout)
+            call byte_write(buffer(2),nout)
          enddo
       else
          j = 1
+         buffer(j) = nel
+         j = j + 1
          do e=1,nel
-            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(j+1) = vlmax4(u(1,e),nxyz)
-            mdata4(j+2) = vlmin4(v(1,e),nxyz) 
-            mdata4(j+3) = vlmax4(v(1,e),nxyz)
+            buffer(j+0) = vlmin4(u(1,e),nxyz) 
+            buffer(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+2) = vlmin4(v(1,e),nxyz) 
+            buffer(j+3) = vlmax4(v(1,e),nxyz)
             j = j + 4
             if(n.eq.6) then
-              mdata4(j+0) = vlmin4(w(1,e),nxyz) 
-              mdata4(j+1) = vlmax4(w(1,e),nxyz)
+              buffer(j+0) = vlmin4(w(1,e),nxyz) 
+              buffer(j+1) = vlmax4(w(1,e),nxyz)
               j = j + 2
             endif
          enddo
 
          ! send my data to my pararent I/O node
          mtype = nid
-         len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,nel,4,pid0,0)          ! nel
-         call csend(mtype,mdata4,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,len,pid0,0)     ! u4 :=: u8
       endif
 
       return
@@ -1728,56 +1726,55 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1)
 
-      common /ctmp1/ mdata4(2*lelt)
-      real*4 mdata4
+      real*4 buffer(1+2*lelt)
 
       integer e
 
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-
-      n  = 2
+      n    = 2
+      len  = 4*(1+2*lelt)
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
+         buffer(j) = nel
+         j = j + 1
          do e=1,nel
-            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+0) = vlmin4(u(1,e),nxyz) 
+            buffer(j+1) = vlmax4(u(1,e),nxyz)
             j = j + 2
          enddo
 
          ! write out my data
          nout = n*nel
-         call byte_write(mdata4,nout)
+         call byte_write(buffer(2),nout)
 
          ! write out the data of my childs
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,inelp,4)       
-            len   = 4*n*inelp 
-            call crecv(mtype,mdata4,len)
-
+            call crecv(mtype,buffer,len)
+            inelp = buffer(1)
             nout  = n*inelp 
-            call byte_write(mdata4,nout)
+            call byte_write(buffer(2),nout)
          enddo
       else
          j = 1
+         buffer(j) = nel
+         j = j + 1
          do e=1,nel
-            mdata4(j+0) = vlmin4(u(1,e),nxyz) 
-            mdata4(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+0) = vlmin4(u(1,e),nxyz) 
+            buffer(j+1) = vlmax4(u(1,e),nxyz)
             j = j + 2
          enddo
 
          ! send my data to my pararent I/O node
          mtype = nid
-         len   = 4*n*nel
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,nel,4,pid0,0)          ! nel
-         call csend(mtype,mdata4,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,len,pid0,0)     ! u4 :=: u8
       endif
 
       return
@@ -1793,9 +1790,9 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1)
 
-      common /SCRNS/ u4(lx1*ly1*lz1*2*lelt)
+      common /SCRNS/ u4(2+lx1*ly1*lz1*2*lelt)
       real*4         u4
-      real*8         u8(lx1*ly1*lz1*1*lelt)
+      real*8         u8(1+lx1*ly1*lz1*1*lelt)
       equivalence    (u4,u8)
 
       integer e
@@ -1803,12 +1800,13 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
+      len  = wdsizo * (1+lelt*nxyz)
+      ntot = nxyz*nel
 
       idum = 1
 
       if (nid.eq.pid0) then
  
-         ntot = nxyz*nel
          if (wdsizo.eq.4) then             ! 32-bit output
              call copyx4 (u4,u,ntot) 
          else
@@ -1822,28 +1820,23 @@ c-----------------------------------------------------------------------
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)          ! handshake
-            call crecv(mtype,inelp,4)       
-            len   = wdsizo * nxyz*inelp
-c            call csend(mtype,idum,4,k,0)         ! handshake
             call crecv(mtype,u4,len)
-            nout  = len/4 
-            call byte_write(u4,nout)
+            inelp = u4(1)
+            nout  = wdsizo/4 * nxyz*inelp
+            call byte_write(u4(2),nout)
          enddo
 
       else
 
-         ntot = nxyz*nel
+         u4(1)= nel
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4,u,ntot) 
+             call copyx4 (u4(2),u,ntot) 
          else
-             call copy   (u8,u,ntot) 
+             call copy   (u8(2),u,ntot) 
          endif
 
          mtype = nid
          call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,nelt,4,pid0,0)     ! send nelt
-         len = wdsizo * ntot
-c         call crecv(mtype,idum,4)            ! hand-shake
          call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
 
       endif
@@ -1861,9 +1854,9 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
 
-      common /SCRNS/ u4(lx1*ly1*lz1*6*lelt)
+      common /SCRNS/ u4(2+lx1*ly1*lz1*6*lelt)
       real*4         u4
-      real*8         u8(lx1*ly1*lz1*3*lelt)
+      real*8         u8(1+lx1*ly1*lz1*3*lelt)
       equivalence    (u4,u8)
 
       integer e
@@ -1871,6 +1864,7 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
+      len  = wdsizo * (1+lelt*nxyz*ndim)
       idum = 1
 
       if (nid.eq.pid0) then
@@ -1906,17 +1900,16 @@ c-----------------------------------------------------------------------
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,inelp,4)       
-            len   = wdsizo * ndim * nxyz*inelp 
-c            call csend(mtype,idum,4,k,0)          ! handshake
             call crecv(mtype,u4,len)
-            nout  = len/4 
-            call byte_write(u4,nout)
+            inelp = u4(1)
+            nout  = wdsizo/4 * ndim*nxyz*inelp
+            call byte_write(u4(2),nout)
          enddo
 
       else
 
-         j = 0
+         u4(1) = nel
+         j = 1
          if (wdsizo.eq.4) then             ! 32-bit output
              do iel = 1,nel
                 call copyx4   (u4(j+1),u(1,iel),nxyz)
@@ -1943,9 +1936,6 @@ c            call csend(mtype,idum,4,k,0)          ! handshake
 
          mtype = nid
          call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,nelt,4,pid0,0)     ! send nelt
-         len = wdsizo * ndim*nxyz * nel
-c         call crecv(mtype,idum,4)            ! hand-shake
          call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
 
       endif
