@@ -1656,20 +1656,18 @@ c-----------------------------------------------------------------------
 
       nxyz = nx1*ny1*nz1
       n  = 2*ndim
-      len   = 4*(1 + 6*lelt) 
+      len   = 4*(1 + 2*ndim*lelt) 
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
-         buffer(j) = nel
-         j = j + 1
          do e=1,nel
             buffer(j+0) = vlmin4(u(1,e),nxyz) 
             buffer(j+1) = vlmax4(u(1,e),nxyz)
             buffer(j+2) = vlmin4(v(1,e),nxyz) 
             buffer(j+3) = vlmax4(v(1,e),nxyz)
             j = j + 4
-            if(n.eq.6) then
+            if(if3d) then
               buffer(j+0) = vlmin4(w(1,e),nxyz) 
               buffer(j+1) = vlmax4(w(1,e),nxyz)
               j = j + 2
@@ -1678,7 +1676,7 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
-         call byte_write(buffer(2),nout)
+         call byte_write(buffer,nout)
 
          ! write out the data of my childs
          idum  = 1
@@ -1739,8 +1737,6 @@ c-----------------------------------------------------------------------
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
-         buffer(j) = nel
-         j = j + 1
          do e=1,nel
             buffer(j+0) = vlmin4(u(1,e),nxyz) 
             buffer(j+1) = vlmax4(u(1,e),nxyz)
@@ -1749,7 +1745,7 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
-         call byte_write(buffer(2),nout)
+         call byte_write(buffer,nout)
 
          ! write out the data of my childs
          idum  = 1
@@ -1902,7 +1898,7 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,u4,len)
             inelp = u4(1)
-            nout  = wdsizo/4 * ndim*nxyz*inelp
+            nout  = wdsizo/4 * ndim*inelp *nxyz
             call byte_write(u4(2),nout)
          enddo
 
@@ -1995,9 +1991,13 @@ c-----------------------------------------------------------------------
          i = i + 1
       ENDIF
       IF (NPSCAL.GT.0) THEN
+         NPSCALO = 0
+         do k = 1,npscal
+           if(ifpsco(k)) NPSCALO = NPSCALO + 1
+         enddo
          rdcode1(i) = 'S'
-         WRITE(rdcode1(i+1),'(I1)') NPSCAL/10
-         WRITE(rdcode1(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
+         WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
+         WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
       ENDIF
  
       write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
