@@ -461,6 +461,24 @@ C
          endif
 
        else
+         if (ifsplit) then
+
+            call col3 (ta1,wx,rm2(1,e),nxyz2)
+            call mxm  (dxtm12,nx1,ta1,nx2,dtx(1,e),nyz2)
+            call col3 (ta1,wx,sm2(1,e),nxyz2)
+            i1 = 1
+            i2 = 1
+            do iz=1,nz2
+               call mxm  (ta1(i2),nx1,dym12,ny2,ta2(i1),ny1)
+               i1 = i1 + n1
+               i2 = i2 + n2
+            enddo
+            call add2 (dtx(1,e),ta2,nxyz1)
+            call col3 (ta1,wx,tm2(1,e),nxyz2)
+            call mxm  (ta1,nxy1,dzm12,nz2,ta2,nz1)
+            call add2 (dtx(1,e),ta2,nxyz1)
+
+         else
 
             call col3 (ta1,wx,rm2(1,e),nxyz2)
             call mxm  (dxtm12,nx1,ta1,nx2,ta2,nyz2)
@@ -496,6 +514,8 @@ C
             enddo
             call mxm  (ta1,nxy1,dzm12,nz2,ta2,nz1)
             call add2 (dtx(1,e),ta2,nxyz1)
+
+         endif
 
        endif         
 C
@@ -629,38 +649,56 @@ c
 
          else  ! 3D
 
-            call mxm (dxm12,nx2,x(1,e),nx1,ta1,nyz1)
-            i1=1
-            i2=1
-            do iz=1,nz1
+           if (ifsplit) then
+
+             call mxm  (dxm12,nx2,x(1,e),nx1,dx(1,e),nyz1)
+             call col2 (dx(1,e),rm2(1,e),nxyz2)
+             i1=1
+             i2=1
+             do iz=1,nz1
+                call mxm (x(1,e),nx2,dytm12,ny1,ta1(i2),ny2)
+                i1=i1+n1
+                i2=i2+n2
+             enddo
+             call addcol3 (dx(1,e),ta1,sm2(1,e),nxyz2)
+             call mxm (x(1,e),nxy2,dztm12,nz1,ta1,nz2)
+             call addcol3 (dx(1,e),ta1,tm2(1,e),nxyz2)
+
+           else ! PN - PN-2
+
+             call mxm (dxm12,nx2,x(1,e),nx1,ta1,nyz1)
+             i1=1
+             i2=1
+             do iz=1,nz1
                call mxm (ta1(i1),nx2,iytm12,ny1,ta2(i2),ny2)
                i1=i1+n1
                i2=i2+n2
-            enddo
-            call mxm  (ta2,nxy2,iztm12,nz1,dx(1,e),nz2)
-            call col2 (dx(1,e),rm2(1,e),nxyz2)
+             enddo
+             call mxm  (ta2,nxy2,iztm12,nz1,dx(1,e),nz2)
+             call col2 (dx(1,e),rm2(1,e),nxyz2)
 
-            call mxm  (ixm12,nx2,x(1,e),nx1,ta3,nyz1) ! reuse ta3 below
-            i1=1
-            i2=1
-            do iz=1,nz1
+             call mxm  (ixm12,nx2,x(1,e),nx1,ta3,nyz1) ! reuse ta3 below
+             i1=1
+             i2=1
+             do iz=1,nz1
                call mxm (ta3(i1),nx2,dytm12,ny1,ta2(i2),ny2)
                i1=i1+n1
                i2=i2+n2
-            enddo
-            call mxm     (ta2,nxy2,iztm12,nz1,ta1,nz2)
-            call addcol3 (dx(1,e),ta1,sm2(1,e),nxyz2)
+             enddo
+             call mxm     (ta2,nxy2,iztm12,nz1,ta1,nz2)
+             call addcol3 (dx(1,e),ta1,sm2(1,e),nxyz2)
 
-c           call mxm (ixm12,nx2,x(1,e),nx1,ta1,nyz1) ! reuse ta3 from above
-            i1=1
-            i2=1
-            do iz=1,nz1
+c            call mxm (ixm12,nx2,x(1,e),nx1,ta1,nyz1) ! reuse ta3 from above
+             i1=1
+             i2=1
+             do iz=1,nz1
                call mxm (ta3(i1),nx2,iytm12,ny1,ta2(i2),ny2)
                i1=i1+n1
                i2=i2+n2
-            enddo
-            call mxm (ta2,nxy2,dztm12,nz1,ta3,nz2)
-            call addcol3 (dx(1,e),ta3,tm2(1,e),nxyz2)
+             enddo
+             call mxm (ta2,nxy2,dztm12,nz1,ta3,nz2)
+             call addcol3 (dx(1,e),ta3,tm2(1,e),nxyz2)
+           endif
          endif
 C
 C        Collocate with the weights on the pressure mesh
