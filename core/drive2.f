@@ -702,6 +702,7 @@ C     (5) Lagrangian/"Eulerian"(operator splitting) modes
 C
 C-----------------------------------------------------------------------
       include 'SIZE'
+      include 'DEALIAS'
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
@@ -753,8 +754,13 @@ c             - Velocity/stress formulation.
 
       endif
 
+      call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
+      call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
+      if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+
       if(nid.eq.0 .and. igeom.eq.2) 
-     &   write(*,'(12X,A,1pE11.4)') 'Fluid done ', dnekclock()-ts
+     &   write(*,'(i11,1x,1p2e12.4,a)') 
+     &   istep,time,dnekclock()-ts,' Fluid done'
 
 
 

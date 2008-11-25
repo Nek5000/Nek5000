@@ -6,6 +6,7 @@ C     Set initial conditions.
 C
 C-----------------------------------------------------------------------
       INCLUDE 'SIZE'
+      INCLUDE 'DEALIAS'
       INCLUDE 'INPUT'
       INCLUDE 'IXYZ'
       INCLUDE 'GEOM'
@@ -47,16 +48,21 @@ c
       DO 10 IFLD=1,LDIMT
          CALL RZERO(T(1,1,1,1,IFLD),NTOTT)
    10 CONTINUE
-c
-      jp = 0
-C
-      irst = param(46)
-      if (irst.gt.0) return
-c
-c
+
+      jp = 0                  ! set counter for perturbation analysis
+
+      irst = param(46)        ! for lee's restart (rarely used)
+      if (irst.gt.0) then
+         call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
+         call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
+         if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+         return
+      endif
+
+
 c     If moving geometry then add a perturbation to the
 c     mesh coordinates (see Subroutine INIGEOM)
-c
+
       IF (IFMVBD) CALL PTBGEOM      
 C
 C     Find out what type of i.c. is requested
@@ -348,7 +354,11 @@ c        call dsavg(ym1) ! doesn't work for periodic !
 c        call dsavg(zm1) ! doesn't work for periodic !
          call geom_reset(1)
       endif
-c
+
+      call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
+      call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
+      if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+
       return
       end
 C            
