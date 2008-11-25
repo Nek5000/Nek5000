@@ -3701,6 +3701,7 @@ C     since there is no direct stiffness summation or Helmholtz-solves.
 C
       include 'SIZE'
       include 'TOTAL'
+      include 'DEALIAS'
 C
 C     Use the common blocks CTMP0 and CTMP1 as work space.
 C

@@ -754,9 +754,10 @@ c             - Velocity/stress formulation.
 
       endif
 
-      call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
-      call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
-      if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+
+c     ! save velocity on fine mesh for dealiasing
+      if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
+
 
       if(nid.eq.0 .and. igeom.eq.2) 
      &   write(*,'(i11,1x,1p2e12.4,a)') 
