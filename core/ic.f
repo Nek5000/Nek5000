@@ -53,9 +53,7 @@ c
 
       irst = param(46)        ! for lee's restart (rarely used)
       if (irst.gt.0) then
-         call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
-         call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
-         if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+         if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
          return
       endif
 
@@ -355,9 +353,8 @@ c        call dsavg(zm1) ! doesn't work for periodic !
          call geom_reset(1)
       endif
 
-      call mapw   (vxd ,nxd,vx ,nx1,1)            ! save velocity 
-      call mapw   (vyd ,nyd,vy ,ny1,1)            ! on fine mesh
-      if (if3d) call mapw   (vzd ,nzd,vz ,nz1,1)  ! for dealiasing
+c     ! save velocity on fine mesh for dealiasing
+      if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
 
       return
       end

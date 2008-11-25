@@ -1018,3 +1018,66 @@ c     conservative form
       return
       end
 c-----------------------------------------------------------------------
+      subroutine set_convect_new(cr,cs,ct)
+C
+C     Put vxd,vyd,vzd into rst form on fine mesh
+C
+C     For rst form, see eq. (4.8.5) in Deville, Fischer, Mund (2002).
+C
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
+
+      real cr(ltd,1),cs(ltd,1),ct(ltd,1)
+
+      common /scrns/ fx(ltd),fy(ltd),fz(ltd)
+     $             , ur(ltd),us(ltd),ut(ltd)
+     $             , tr(ltd,3),uf(ltd)
+
+      integer e
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      if (icalld.eq.0) call set_dealias_rx
+      icalld = icalld + 1
+
+      nxyz1 = nx1*ny1*nz1
+      nxyzd = nxd*nyd*nzd
+
+
+      ic = 1    ! pointer to vector field C
+      ic = 1    ! pointer to vector field C
+
+      do e=1,nelv 
+
+c        Map coarse velocity to fine mesh (C-->F)
+
+         call intp_rstd(fx,vx(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         call intp_rstd(fy,vy(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         if (if3d) call intp_rstd(fz,vz(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
+
+c        Convert convector F to r-s-t coordinates
+
+         if (if3d) then
+
+           do i=1,nxyzd
+              cr(i,e)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)+rx(i,3,e)*fz(i)
+              cs(i,e)=rx(i,4,e)*fx(i)+rx(i,5,e)*fy(i)+rx(i,6,e)*fz(i)
+              ct(i,e)=rx(i,7,e)*fx(i)+rx(i,8,e)*fy(i)+rx(i,9,e)*fz(i)
+           enddo
+
+         else
+
+           do i=1,nxyzd
+              cr(i,e)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)
+              cs(i,e)=rx(i,3,e)*fx(i)+rx(i,4,e)*fy(i)
+           enddo
+
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
