@@ -96,22 +96,15 @@ c
          enddo
          ifield = ifldmhd
       endif
-c
+
       if (ifnav.and.(.not.ifchar)) then
-         if (nx1.ne.nxd) then !dealiased form
-c           if (param(60).eq.1)       call advab_elsasser
-c           if (param(60).eq.0)       call advab_elsasser_fast
-                                      call advab_elsasser_fast
-         else
-                                      call advab_elsasser
-         endif
+         call advab_elsasser_fast
       endif
       if (ifchar) then
          write(6,*) 'No IFCHAR for MHD, yet.'
          call exitt
       endif
-c     if (ifnav.and.(.not.ifchar))    call advab_elsasser_2
-c
+
       ifield = 1
       if (iftran)                     call makeabf
                                       call makebdf
@@ -137,139 +130,6 @@ C
       call nekuf   (bmx,bmy,bmz)
       call opcolv2 (bmx,bmy,bmz,vtrans(1,1,1,1,ifield),bm1)
       time = time+dt
-c
-      return
-      end
-c--------------------------------------------------------------------
-      subroutine advab_elsasser
-C
-C     Eulerian scheme, add convection term to forcing function
-C     at current time step.
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'MASS'
-      include 'TSTEP'
-c
-      COMMON /SCRNS/ TA1 (LX1,LY1,LZ1,LELV)
-     $ ,             TA2 (LX1,LY1,LZ1,LELV)
-     $ ,             TA3 (LX1,LY1,LZ1,LELV)
-     $ ,             TB1 (LX1,LY1,LZ1,LELV)
-     $ ,             TB2 (LX1,LY1,LZ1,LELV)
-     $ ,             TB3 (LX1,LY1,LZ1,LELV)
-C
-      ntot1 = nx1*ny1*nz1*nelv
-c
-      call phys_to_elsasser(vx,vy,vz,bx,by,bz,ntot1) ! crude, but effective
-      if(ifaxis)call phys_to_elsasser2(t(1,1,1,1,1),t(1,1,1,1,2),ntot1)
-c
-      call compute_cfl(cflp,vx,vy,vz,dt)   !  vx = U+B
-      call compute_cfl(cflm,bx,by,bz,dt)   !  bx = U-B
-c
-      if (nid.eq.0) write(6,1) istep,time,dt,cflp,cflm
-    1 format(i9,1p4e15.7,' CFL')
-c
-c
-      if (if3d) then
-c
-         call opcopy  (tb1,tb2,tb3,vx,vy,vz)  ! Save velocity
-         call opcopy  (vx,vy,vz,bx,by,bz)     ! U <-- B   
-         call convop  (ta1,tb1)               ! B.grad U  ( z-.grad z+ )
-         call convop  (ta2,tb2)
-         call convop  (ta3,tb3)
-         call opcopy  (vx,vy,vz,tb1,tb2,tb3)  ! Restore velocity
-c
-         do i=1,ntot1
-c           tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
-            tmp = -.5*bm1(i,1,1,1)  !  Assume  _same_ unit density for z+ & z-
-c
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = bfz(i,1,1,1)+tmp*ta3(i,1,1,1)
-c
-            bmx(i,1,1,1) = bmx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = bmz(i,1,1,1)+tmp*ta3(i,1,1,1)
-         enddo
-c
-         call convop  (ta1,bx)               !  U.grad B  ( z+.grad z- )
-         call convop  (ta2,by)
-         call convop  (ta3,bz)
-c
-         do i=1,ntot1
-c
-            tmp = -.5*bm1(i,1,1,1)
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = bfz(i,1,1,1)+tmp*ta3(i,1,1,1)
-c
-            bmx(i,1,1,1) = bmx(i,1,1,1)-tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)-tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = bmz(i,1,1,1)-tmp*ta3(i,1,1,1)
-c
-         enddo
-c
-      else  ! 2D
-c
-         call opcopy  (tb1,tb2,tb3,vx,vy,vz)  ! Save velocity
-         call opcopy  (vx,vy,vz,bx,by,bz)     ! U <-- B   
-         call convop  (ta1,tb1)               ! B.grad U  ( z-.grad z+ )
-         call convop  (ta2,tb2)
-         if (ifaxis)  call convop  (ta3,t(1,1,1,1,1))
-         call opcopy  (vx,vy,vz,tb1,tb2,tb3)  ! Restore velocity
-c
-         do i=1,ntot1
-c           tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
-            tmp = -.5*bm1(i,1,1,1)  !  Assume  _same_ unit density for z+ & z-
-c
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = 0.
-c
-            bmx(i,1,1,1) = bmx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = 0.
-         enddo
-         if (ifaxis) then
-            do i=1,ntot1
-c              tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
-               tmp = -.5*bm1(i,1,1,1)  !  Assume same unit density for z+ & z-
-               bq(i,1,1,1,1) = bq(i,1,1,1,1)+tmp*ta3(i,1,1,1)
-               bq(i,1,1,1,2) = bq(i,1,1,1,2)+tmp*ta3(i,1,1,1)
-            enddo
-         endif
-c
-         call convop  (ta1,bx)               !  U.grad B  ( z+.grad z- )
-         call convop  (ta2,by)
-         if (ifaxis)  
-     $   call convop  (ta3,t(1,1,1,1,2))
-c
-         do i=1,ntot1
-c
-            tmp = -.5*bm1(i,1,1,1)
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = 0.
-c
-            bmx(i,1,1,1) = bmx(i,1,1,1)-tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)-tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = 0.
-c
-         enddo
-         if (ifaxis) then
-            do i=1,ntot1
-               tmp = -.5*bm1(i,1,1,1)
-               bq(i,1,1,1,1) = bq(i,1,1,1,1)+tmp*ta3(i,1,1,1)
-               bq(i,1,1,1,2) = bq(i,1,1,1,2)-tmp*ta3(i,1,1,1)
-            enddo
-         endif
-c
-      endif
-c
-      call elsasser_to_phys (vx,vy,vz,bx,by,bz,ntot1)
-      if (ifaxis) 
-     $call elsasser_to_phys2(t(1,1,1,1,1),t(1,1,1,1,2),ntot1)
 c
       return
       end
@@ -1114,96 +974,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine advab_elsasser_2
-c
-c     Eulerian scheme, add convection term to forcing function
-c     at current time step.
-c
-c     This is the purely physical formulation
-c
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'MASS'
-      include 'TSTEP'
-c
-      COMMON /SCRNS/ TA1 (LX1,LY1,LZ1,LELV)
-     $ ,             TA2 (LX1,LY1,LZ1,LELV)
-     $ ,             TA3 (LX1,LY1,LZ1,LELV)
-     $ ,             TB1 (LX1,LY1,LZ1,LELV)
-     $ ,             TB2 (LX1,LY1,LZ1,LELV)
-     $ ,             TB3 (LX1,LY1,LZ1,LELV)
-C
-      ntot1 = nx1*ny1*nz1*nelv
-c
-      call compute_cfl(cflp,vx,vy,vz,dt)   !  vx = U+B
-      call compute_cfl(cflm,bx,by,bz,dt)   !  bx = U-B
-c
-      if (nid.eq.0) write(6,1) istep,time,dt,cflp,cflm
-    1 format(i9,1p4e15.7,' CFL')
-c
-c
-c     U-term:   - [ U.grad U - B.grad B ]
-c
-c     B-term:   - [ U.grad B - B.grad U ]
-c
-      if (if3d) then
-c
-         call opcopy  (tb1,tb2,tb3,vx,vy,vz)  ! Save velocity
-         call opcopy  (vx,vy,vz,bx,by,bz)     ! U <-- B   
-c
-         call convop  (ta1,tb1)               ! B.grad U
-         call convop  (ta2,tb2)
-         call convop  (ta3,tb3)
-         do i=1,ntot1
-            tmp = bm1(i,1,1,1)  !  Assume  _same_ unit density for z+ & z-
-            bmx(i,1,1,1) = bmx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = bmz(i,1,1,1)+tmp*ta3(i,1,1,1)
-         enddo
-c
-         call convop  (ta1,bx )               ! B.grad B
-         call convop  (ta2,by )
-         call convop  (ta3,bz )
-         do i=1,ntot1
-            tmp = bm1(i,1,1,1)
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = bfz(i,1,1,1)+tmp*ta3(i,1,1,1)
-         enddo
-c
-         call opcopy  (vx,vy,vz,tb1,tb2,tb3)  ! Restore velocity
-c
-         call convop  (ta1,bx)               ! U.grad B
-         call convop  (ta2,by)
-         call convop  (ta3,bz)
-         do i=1,ntot1
-            tmp = -bm1(i,1,1,1)  !  Assume  _same_ unit density for z+ & z-
-            bmx(i,1,1,1) = bmx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bmy(i,1,1,1) = bmy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bmz(i,1,1,1) = bmz(i,1,1,1)+tmp*ta3(i,1,1,1)
-         enddo
-c
-         call convop  (ta1,vx)               ! U.grad U
-         call convop  (ta2,vy)
-         call convop  (ta3,vz)
-         do i=1,ntot1
-            tmp = -bm1(i,1,1,1)
-            bfx(i,1,1,1) = bfx(i,1,1,1)+tmp*ta1(i,1,1,1)
-            bfy(i,1,1,1) = bfy(i,1,1,1)+tmp*ta2(i,1,1,1)
-            bfz(i,1,1,1) = bfz(i,1,1,1)+tmp*ta3(i,1,1,1)
-         enddo
-c
-      else  ! 2D
-c
-         write(6,*) nid,' NO NEW Essas2 formulation in 2D yet.'
-         call exitt
-      endif
-c
-      return
-      end
-c--------------------------------------------------------------------
       subroutine ophinv_pr(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
 C
 C     Ok = (H1*A+H2*B)-1 * Ik  (implicit)
