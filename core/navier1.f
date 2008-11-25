@@ -3730,7 +3730,8 @@ c
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
-         call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
+c        call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
+         call convect_new (conv,fi,.false.,vxd,vyd,vzd,.true.)
          call invcol2     (conv,bm1,ntot1)  ! local mass inverse
       elseif (param(99).eq.5) then
          call convect_cons(conv,fi,.false.,vx,vy,vz,.false.)
