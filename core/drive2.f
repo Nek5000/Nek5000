@@ -245,7 +245,7 @@ C
          call exitt
       endif
 
-      if(abs(PARAM(16)).eq.2) IFCVODE = .true.
+      if(abs(PARAM(16)).ge.2) IFCVODE = .true.
 
       if(PARAM(30).ne.0) IFUSERVP = .true.
 C
