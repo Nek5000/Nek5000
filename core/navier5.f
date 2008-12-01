@@ -159,10 +159,10 @@ c
       endif
 
       if (nid.eq.0) then
-         if (npscal.eq.0) then
-c            write(6,101) mmax
-c            write(sfmt,101) mmax
-c  101       format('''(i8,1p',i1,'e12.4,a6)''')
+c        if (npscal.eq.0) then
+c           write(6,101) mmax
+c           write(sfmt,101) mmax
+c 101       format('''(i8,1p',i1,'e12.4,a6)''')
 c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
 c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
          else
@@ -3730,7 +3730,59 @@ c
 c
       call add2(v,e,ntot)
       call copy(x,v,ntot)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function ran1(idum)
 c
+      integer idum,ia,im,iq,ir,ntab,ndiv
+      real    ran1,am,eps,rnmx
+c
+      parameter (ia=16807,im=2147483647,am=1./im,iq=127773,ir=2836)
+      parameter (ntab=32,ndiv=1+(im-1)/ntab,eps=1.2e-7,rnmx=1.-eps)
+c
+c     Numerical Rec. in Fortran, 2nd eD.  P. 271
+c
+      integer j,k
+      integer iv(ntab),iy
+      save    iv,iy
+      data    iv,iy /ntab*0,0/
+c
+      if (idum.le.0.or.iy.eq.0) then
+         idum=max(-idum,1)
+         do j=ntab+8,1,-1
+            k    = idum/iq
+            idum = ia*(idum-k*iq)-ir*k
+            if(idum.lt.0) idum = idum+im
+            if (j.le.ntab) iv(j) = idum
+         enddo
+         iy = iv(1)
+      endif
+      k    = idum/iq
+      idum = ia*(idum-k*iq)-ir*k
+      if(idum.lt.0) idum = idum+im
+      j     = 1+iy/ndiv
+      iy    = iv(j)
+      iv(j) = idum
+      ran1  = min(am*iy,rnmx)
+c     ran1  = cos(ran1*1.e8)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rand_fld_h1(x)
+
+      include 'SIZE'
+      real x(1)
+
+      n=nx1*ny1*nz1*nelt
+      id = n
+      do i=1,n
+         x(i) = ran1(id)
+      enddo
+      call dsavg(x)
+
       return
       end
 c-----------------------------------------------------------------------
