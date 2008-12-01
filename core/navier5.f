@@ -159,7 +159,7 @@ c
       endif
 
       if (nid.eq.0) then
-c        if (npscal.eq.0) then
+         if (npscal.eq.0) then
 c           write(6,101) mmax
 c           write(sfmt,101) mmax
 c 101       format('''(i8,1p',i1,'e12.4,a6)''')
