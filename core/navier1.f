@@ -649,22 +649,22 @@ c
 
          else  ! 3D
 
-           if (ifsplit) then
+c           if (ifsplit) then
+c
+c             call mxm  (dxm12,nx2,x(1,e),nx1,dx(1,e),nyz1)
+c             call col2 (dx(1,e),rm2(1,e),nxyz2)
+c             i1=1
+c             i2=1
+c             do iz=1,nz1
+c                call mxm (x(1,e),nx2,dytm12,ny1,ta1(i2),ny2)
+c                i1=i1+n1
+c                i2=i2+n2
+c             enddo
+c             call addcol3 (dx(1,e),ta1,sm2(1,e),nxyz2)
+c             call mxm (x(1,e),nxy2,dztm12,nz1,ta1,nz2)
+c             call addcol3 (dx(1,e),ta1,tm2(1,e),nxyz2)
 
-             call mxm  (dxm12,nx2,x(1,e),nx1,dx(1,e),nyz1)
-             call col2 (dx(1,e),rm2(1,e),nxyz2)
-             i1=1
-             i2=1
-             do iz=1,nz1
-                call mxm (x(1,e),nx2,dytm12,ny1,ta1(i2),ny2)
-                i1=i1+n1
-                i2=i2+n2
-             enddo
-             call addcol3 (dx(1,e),ta1,sm2(1,e),nxyz2)
-             call mxm (x(1,e),nxy2,dztm12,nz1,ta1,nz2)
-             call addcol3 (dx(1,e),ta1,tm2(1,e),nxyz2)
-
-           else ! PN - PN-2
+c           else ! PN - PN-2
 
              call mxm (dxm12,nx2,x(1,e),nx1,ta1,nyz1)
              i1=1
@@ -698,7 +698,7 @@ c            call mxm (ixm12,nx2,x(1,e),nx1,ta1,nyz1) ! reuse ta3 from above
              enddo
              call mxm (ta2,nxy2,dztm12,nz1,ta3,nz2)
              call addcol3 (dx(1,e),ta3,tm2(1,e),nxyz2)
-           endif
+c           endif
          endif
 C
 C        Collocate with the weights on the pressure mesh
