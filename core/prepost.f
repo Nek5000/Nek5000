@@ -960,17 +960,17 @@ C
       call blank(name  ,132)
       call blank(fldfle,132)
 C
-C     Construct file names containing full path to host:
-C
       LS=LTRUNC(SESSION,132)
       LPP=LTRUNC(PATH,132)
       LSP=LS+LPP
       l = 0
-      DO 100 I=1,LPP
-         l = l+1
-         NAM1(l)=PATH1(I)
-  100 CONTINUE
-c
+
+c     Construct file names containing full path to host:
+c      DO 100 I=1,LPP
+c         l = l+1
+c         NAM1(l)=PATH1(I)
+c  100 CONTINUE
+C
       if (prefix(1).ne.' '.and.prefix(2).ne.' '.and.
      $     prefix(3).ne.' ') then
          do i=1,3
@@ -1360,14 +1360,16 @@ c-----------------------------------------------------------------------
          if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
-      ! add meta data to the end of the file
-      if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
-      if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
-      if (ifpo ) call mfo_mdatas(pm1,nout)
-      if (ifto ) call mfo_mdatas(t,nout)
-      do k=1,npscal
-         if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
-      enddo
+      if (if3d) then
+         ! add meta data to the end of the file
+         if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
+         if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
+         if (ifpo ) call mfo_mdatas(pm1,nout)
+         if (ifto ) call mfo_mdatas(t,nout)
+         do k=1,npscal
+            if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
+         enddo
+      endif
 
       if (nid.eq.pid0) call byte_close()
 
@@ -1660,14 +1662,14 @@ c-----------------------------------------------------------------------
       if (nid.eq.pid0) then
          j = 1
          do e=1,nel
-            buffer(j+0) = vlmin4(u(1,e),nxyz) 
-            buffer(j+1) = vlmax4(u(1,e),nxyz)
-            buffer(j+2) = vlmin4(v(1,e),nxyz) 
-            buffer(j+3) = vlmax4(v(1,e),nxyz)
+            buffer(j+0) = vlmin(u(1,e),nxyz) 
+            buffer(j+1) = vlmax(u(1,e),nxyz)
+            buffer(j+2) = vlmin(v(1,e),nxyz) 
+            buffer(j+3) = vlmax(v(1,e),nxyz)
             j = j + 4
             if(if3d) then
-              buffer(j+0) = vlmin4(w(1,e),nxyz) 
-              buffer(j+1) = vlmax4(w(1,e),nxyz)
+              buffer(j+0) = vlmin(w(1,e),nxyz) 
+              buffer(j+1) = vlmax(w(1,e),nxyz)
               j = j + 2
             endif
          enddo
@@ -1691,14 +1693,14 @@ c-----------------------------------------------------------------------
          buffer(j) = nel
          j = j + 1
          do e=1,nel
-            buffer(j+0) = vlmin4(u(1,e),nxyz) 
-            buffer(j+1) = vlmax4(u(1,e),nxyz)
-            buffer(j+2) = vlmin4(v(1,e),nxyz) 
-            buffer(j+3) = vlmax4(v(1,e),nxyz)
+            buffer(j+0) = vlmin(u(1,e),nxyz) 
+            buffer(j+1) = vlmax(u(1,e),nxyz)
+            buffer(j+2) = vlmin(v(1,e),nxyz) 
+            buffer(j+3) = vlmax(v(1,e),nxyz)
             j = j + 4
             if(n.eq.6) then
-              buffer(j+0) = vlmin4(w(1,e),nxyz) 
-              buffer(j+1) = vlmax4(w(1,e),nxyz)
+              buffer(j+0) = vlmin(w(1,e),nxyz) 
+              buffer(j+1) = vlmax(w(1,e),nxyz)
               j = j + 2
             endif
          enddo
@@ -1736,8 +1738,8 @@ c-----------------------------------------------------------------------
       if (nid.eq.pid0) then
          j = 1
          do e=1,nel
-            buffer(j+0) = vlmin4(u(1,e),nxyz) 
-            buffer(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+0) = vlmin(u(1,e),nxyz) 
+            buffer(j+1) = vlmax(u(1,e),nxyz)
             j = j + 2
          enddo
 
@@ -1760,8 +1762,8 @@ c-----------------------------------------------------------------------
          buffer(j) = nel
          j = j + 1
          do e=1,nel
-            buffer(j+0) = vlmin4(u(1,e),nxyz) 
-            buffer(j+1) = vlmax4(u(1,e),nxyz)
+            buffer(j+0) = vlmin(u(1,e),nxyz) 
+            buffer(j+1) = vlmax(u(1,e),nxyz)
             j = j + 2
          enddo
 

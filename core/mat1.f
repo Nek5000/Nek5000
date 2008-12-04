@@ -507,16 +507,6 @@ C
       return
       END
 c
-      real*4 function vlmin4(vec,n)
-      REAL VEC(1)
-      TMIN = 99.0E20
-C
-      DO 100 I=1,N
-         TMIN = MIN(TMIN,VEC(I))
- 100  CONTINUE
-      VLMIN4 = TMIN
-      return
-      END
 C
       integer function ivlmin(vec,n)
       integer vec(1),tmin
@@ -553,16 +543,6 @@ C
          TMAX = MAX(TMAX,VEC(I))
       enddo
       VLMAX = TMAX
-      return
-      END
-c
-      real*4 function vlmax4(vec,n)
-      REAL VEC(1)
-      TMAX =-99.0E20
-      do i=1,n
-         TMAX = MAX(TMAX,VEC(I))
-      enddo
-      VLMAX4 = TMAX
       return
       END
 C
