@@ -1,6 +1,0 @@
-C
-C     Geometry arrays
-C
-      common /gxyz/ xm1   (lx1*ly1*lz1*lelt)
-     $             ,ym1   (lx1*ly1*lz1*lelt)
-     $             ,zm1   (lx1*ly1*lz1*lelt)

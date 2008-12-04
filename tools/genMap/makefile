@@ -1,16 +1,17 @@
-FLAGS = -r8 
-LFLAGS = 
+FFLAGS = -r8 
+CFLAGS = -DUNDERSCORE 
 prefix = $(bin_nek_tools)
 
-OBJS = genMap.o 
+OBJS = genmap.o byte.o 
 
-all: genMap
+all: genmap
 
 
-genMap:	$(OBJS)
-	$(F77) $(FLAGS) -o $(prefix)/genMap $(OBJS) $(LFLAGS) 
+genmap:	$(OBJS)
+	$(F77) $(FFLAGS) -o $(prefix)/genmap $(OBJS)
 
 clean:
 	'rm' *.o
 
-genMap.o          : genMap.f		 ;  $(F77) -c $(FLAGS) genMap.f 
+genmap.o          : genmap.f		 		;  $(F77) -c $(FFLAGS) genmap.f
+byte.o				: ../../nek/byte.c	;  $(CC)  -c $(CFLAGS) ../../nek/byte.c

@@ -4,11 +4,11 @@ prefix = $(bin_nek_tools)
 
 OBJS = n2to3.o 
 
-all: ext2d3d
+all: n2to3
 
 
-ext2d3d:	$(OBJS)
-	$(F77) $(FLAGS) -o $(prefix)/ext2d3d $(OBJS) $(LFLAGS) 
+n2to3:	$(OBJS)
+	$(F77) $(FLAGS) -o $(prefix)/n2to3 $(OBJS) $(LFLAGS) 
 
 clean:
 	'rm' *.o

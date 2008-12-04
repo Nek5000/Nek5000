@@ -132,33 +132,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_data(y,n,fname)
-C
-      real*4 x(1),y(1)
-      character*40 fname
-c
-c      logical if_byte_sw
-c      common /byte_key/ bytetest
-c
-c
-c     Open file
-c
-      call byte_open(fname)
-c
-c     Write original header
-c
-
-c      call byte_write(bytetest,1)
-c
-c      call copy(y,x,n)
-c      if (if_byte_sw) call byte_reverse(y,n)
-      call byte_write(y,n)
-c
-      call byte_close()
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine lineout(io,s,n)
       character*1 s(n)
       m = ltrunc(s,n)

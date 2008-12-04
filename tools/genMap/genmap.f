@@ -2,8 +2,8 @@ c-----------------------------------------------------------------------
 c
 c  This code no longer relies on Metis to do the partitioning.
 c
-c  For large problems ( nel > 50000 ), compile with -r8 -mcmodel=medium.
-c
+c  For large problems ( nel > 1e6 ), compile with -mcmodel=medium and
+c  change parameter lelm (maximum number of elements)
 c
 c
 c  genmap() uses the symmetric vertex ordering
@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -51,6 +51,7 @@ c     read nekton .rea file and make a .map file
 
 
       call makemesh  (cell,nel,irnk,dx,cbc,bc,ndim) ! irnk is # unique points
+
 
       nfc = 2*ndim
       nv  = 2**ndim
@@ -94,41 +95,55 @@ c     Output to .map file:
       noutflow    = no    ! for now - no outflow bcs
       call out_mapfile (pmap,nel,cell,nv,nrnk,noutflow)
 
-      call out_geofile (dx,ndim,nv,nel,pmap,39)
-      call out_geofile2(dx,ndim,nv,nel,cell,nrnk)
+c      call out_geofile (dx,ndim,nv,nel,pmap,39)
+c      call out_geofile2(dx,ndim,nv,nel,cell,nrnk)
 
-c     call outmati(pmap,13,9,'pmat  ',nel,1)
-      open(unit=22,file='p.dat')
-      write(22,1) (pmap(k),k=1,nel)
-    1 format(i9)
-      close(unit=22)
+c      call outmati(pmap,13,9,'pmat  ',nel,1)
+c      open(unit=22,file='p.dat')
+c      write(22,1) (pmap(k),k=1,nel)
+c    1 format(i9)
+c      close(unit=22)
 
       stop
       end
 c-----------------------------------------------------------------------
       subroutine makemesh(cell,nel,irnk,dx,cbc,bc,ndim)
 
-c     read nekton .rea file and make a metis mesh file
+c     read nekton .rea file and make a mesh
 
-      integer     cell(1)
-      character*3 cbc (1)
+      integer      cell(1)
+      character*3  cbc (1)
       real         bc (1)
       real         dx (1)
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
      $              , i_o(lpts) , j_o(4*lpts)
 
-
+      logical ifbinary,ifbswap
+      integer buf(30)
+         
       call getfile2('Input (.rea) file name:$','.rea$',10)
-      call cscan_dxyz  (dx ,nel,ndim)
-
+      call cscan_dxyz  (dx,nel,ndim,ifbinary,ifbswap)
       nface = 2*ndim
-      call cscan_bcs   (cbc,bc,nface,nel,ndim)
 
-      close (unit=10)
+      if (ifbinary) then
+         ! skip curved side data
+         call byte_read(ncurve,1)
+         if (ifbswap) call byte_reverse(ncurve,1)
+         do k = 1,ncurve
+            call byte_read(buf,8)
+         enddo
+
+         call rd_bc_bin(cbc,bc,nel,ifbswap)
+         call byte_close()
+      else
+         call cscan_bcs   (cbc,bc,nface,nel,ndim)
+      endif
+      close (unit=10)  ! close .rea file
+
 
 c     Compress vertices based on coordinates
       ln = lpts-1
@@ -148,7 +163,7 @@ c-----------------------------------------------------------------------
       stop
       end
 c-----------------------------------------------------------------------
-      subroutine cscan_dxyz (dx,nel,ndim)
+      subroutine cscan_dxyz (dx,nel,ndim,ifbinary,ifbswap)
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
@@ -156,27 +171,51 @@ c
 c
       real dx(1)
       real x(8),y(8),z(8)
-      integer e
+      integer e,buf(30)
 
       integer h2s(8) ! hypercube to strange ordering
       save    h2s
       data    h2s / 1,2,4,3,5,6,8,7 /
 
+      logical ifbinary,ifbswap
+
+
+      ifbinary = .false.
+      ifbswap  = .false.
+
       call cscan(string,'MESH DATA',9)
       read (10,*) nel,ndim
-      write(6,*) nel,ndim, ' nel,ndim '
+       
+      if (nel.lt.0) then
+         ifbinary = .true.
+         nel = abs(nel)
+         call open_bin_file(ifbswap)
+         nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
+      endif
+
+      write(6,*) nel,ndim,ifbinary, ' nel,ndim,ifre2 '
+
+      if (nel.gt.lelm) then 
+         write(6,*) 'ABORT: NEL>LELM, modify LELM and recompile'
+         call exitt(1)
+      endif
 
       b = 1.e22
       l = 1
       if (ndim.eq.3) then
          do e=1,nel
-            read (10,80) string
-            read (10,*)   (x(k),k=1,4)
-            read (10,*)   (y(k),k=1,4)
-            read (10,*)   (z(k),k=1,4)
-            read (10,*)   (x(k),k=5,8)
-            read (10,*)   (y(k),k=5,8)
-            read (10,*)   (z(k),k=5,8)
+            if(ifbinary) then
+              call byte_read(buf,nwds)
+              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
+            else 
+              read (10,80) string
+              read (10,*)   (x(k),k=1,4)
+              read (10,*)   (y(k),k=1,4)
+              read (10,*)   (z(k),k=1,4)
+              read (10,*)   (x(k),k=5,8)
+              read (10,*)   (y(k),k=5,8)
+              read (10,*)   (z(k),k=5,8)
+            endif
             do k=1,8
                dx(l+0) = b
                dx(l+1) = x(h2s(k))
@@ -187,9 +226,14 @@ c
          enddo
       else
          do e=1,nel
-            read (10,80) string
-            read (10,*)   (x(k),k=1,4)
-            read (10,*)   (y(k),k=1,4)
+            if(ifbinary) then
+              call byte_read(buf,nwds)
+              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
+            else
+              read (10,80) string
+              read (10,*)   (x(k),k=1,4)
+              read (10,*)   (y(k),k=1,4)
+            endif
             do k=1,4
                dx(l+0) = b
                dx(l+1) = x(h2s(k))
@@ -264,7 +308,6 @@ c
          call cscan(string,'BOUNDARY',8) ! then, temp only
       endif
 
-
       call rd_bc(cbc,bc,nface,nel,ndim,ifield,10)
 
       return
@@ -295,12 +338,9 @@ C
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-c           write(6,50)
-c    $      chtemp,
-c    $      cbc(f,e),id1,id2,
 c    $      (bc(ii,f,e),ii=1,nbcrea)
    50       format(a1,a3,2i3,5g14.7)
-         elseif (nel.lt.100000) then
+         elseif (nel.lt.100 000) then
             read(io,51,err=500,end=500)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
@@ -308,7 +348,7 @@ c    $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
          else
             read(io,*,err=500,end=500)    
-     $      cbc(f,e),id1,
+     $      cbc(f,e),id1,id2
      $      (bc(ii,f,e),ii=1,nbcrea)
          endif
       enddo
@@ -1261,7 +1301,7 @@ c
       integer pmap(1),nmap(1),c(nv,nel)
       integer etype,edgecut,e
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       parameter(mm  =50)
 
@@ -1435,7 +1475,7 @@ c
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !            !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !            !
       common /arrayr/  dx(0:3,8,lelm)      !
                                          !
       integer icalld,kj(10000),ke(10000) !
@@ -2194,15 +2234,15 @@ c     write(6,*) face  ! DONT DO THIS
                ke   = last(nvf+1)
                kf   = last(nvf+2)
                if (je.eq.ke) then
-                  write(6,*) 'dual: found self:', e, f,i
-                  write(6,*) 'dual2 found self:',je,jf,rank
-                  write(6,*) 'dual3 found self:',ke,kf,rank
+                  write(6,*) 'abort: dual  found self:', e, f,i
+                  write(6,*) 'abort: dual2 found self:',je,jf,rank
+                  write(6,*) 'abort: dual3 found self:',ke,kf,rank
                   call exitt(0)
                endif
                if (rank.gt.2) then
                   write(6,2) e,f,je,jf,ke,kf,rank
                   write(6,3) (face(jj,f,e),jj=1,6)
-    2             format(3(i7,i2),i9,' dual: high rank:')
+    2             format(3(i7,i2),i9,'abort: dual high rank:')
     3             format(6i7,' dual2')
                   call exitt(0)
                endif
@@ -2252,7 +2292,7 @@ c
       integer cell(nv,nel),order(1)
       character*3      cbc(nfc,nel)
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
       integer face,elist
@@ -2397,7 +2437,7 @@ c        write(6,*) cb,e,f,' cb'
            if (bc(1,f,e).gt.0 .and. bc(1,jf,je).gt.0) then
               if (ke.ne.e .or. kf.ne.f .or. cj.ne.'P  ') then
                write(6,*)
-               write(6,*) 'PERIODIC MISMATCH 1:'
+               write(6,*) 'abort: PERIODIC MISMATCH 1:'
                write(6,6)   e,f,cb,' ie '
                write(6,6) je,jf,cj,' je '
                write(6,6) ke,kf,cj,' ke '
@@ -2415,7 +2455,7 @@ c             bc(1,jf,je) = -bc(1,jf,je) ! pairing is done !!!
 
            elseif (bc(1,f,e)*bc(1,jf,je).le.0) then
               write(6,*)
-              write(6,*) 'PERIODIC MISMATCH 2:'
+              write(6,*) 'abort: PERIODIC MISMATCH 2:'
               write(6,6)   e,f,cb,' ie '
               write(6,6) je,jf,cj,' je '
               write(6,6) bc(1,f,e),bc(1,jf,je),' bc'
@@ -2526,7 +2566,7 @@ c   5          format(4i4,1p3e12.4,'  d2')
       eps = 1.e-7
       if (d2min.gt.eps*x0m) then
          write(6,6) e,f,i,shift,d2min,eps,x0m
-   6     format(i8,i2,2i3,1p3e16.8,' FACE MATCH FAIL')
+   6     format(i8,i2,2i3,1p3e16.8,'abort: FACE MATCH FAIL')
          call exitt(0)
       endif
 
@@ -3287,7 +3327,7 @@ c-----------------------------------------------------------------------
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
@@ -3383,7 +3423,7 @@ c-----------------------------------------------------------------------
       subroutine checker(in_elist,in_pmap,nel,ndim,ii)
       integer in_elist(1),in_pmap(1)
 
-      parameter(lelm=1200000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /qarrayi/ pmap (lpts) , elist(lpts) , w1(lpts)
@@ -3409,3 +3449,179 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+
+
+
+      subroutine rd_bc_bin(cbc,bc,nel,ifbswap)
+
+c     .Read Boundary Conditions (and connectivity data)
+
+      integer lelt
+      parameter(lelt=1 000 000)
+
+      character*3 cbc(6,lelt)
+      real        bc (5,6,lelt)
+      logical     ifbswap
+      
+      integer e,f,buf(30)
+
+      do e=1,nelt   ! fill up cbc w/ default
+      do k=1,6
+         cbc(k,e) = 'E  '
+      enddo
+      enddo
+
+      nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
+
+      call byte_read(nbc_max,1)
+      if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
+      do k=1,nbc_max
+c        write(6,*) k,' dobc1 ',nbc_max
+         call byte_read(buf,nwds)
+         if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
+         call buf_to_bc(cbc,bc,buf)
+      enddo
+
+      return
+      end
+
+
+      subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
+
+      integer lelt
+      parameter(lelt=1 000 000)
+
+      character*3 cbl(6,lelt)
+      real        bl(5,6,lelt)
+      integer     buf(30)
+
+      integer e,eg,f
+
+      e = buf(1)
+      f  = buf(2)
+
+      call copy4r ( bl(1,f,e),buf(3),5)
+      call chcopy (cbl(  f,e),buf(8),3)
+
+c      write(6,1) e,f,cbl(f,e),' CBC'
+c  1   format(i8,i4,2x,a3,a4)
+
+      return
+      end
+
+      subroutine buf_to_xyz(buf,xc,yc,zc,e,ifbswap,ndim)  ! version 1 of binary
+
+      logical ifbswap
+      integer e,eg,buf(0:30)
+
+      real xc(8),yc(8),zc(8)
+
+      nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
+
+      if (ifbswap) call byte_reverse(buf,nwds)
+
+      igroup = buf(0)
+
+      if (ndim.eq.3) then
+         call copy4r(xc,buf( 1),8)
+         call copy4r(yc,buf( 9),8)
+         call copy4r(zc,buf(17),8)
+      else
+         call copy4r(xc,buf( 1),4)
+         call copy4r(yc,buf( 5),4)
+      endif
+
+      return
+      end
+
+      subroutine open_bin_file(ifbswap) ! open file & chk for byteswap
+
+      logical ifbswap,if_byte_swap_test
+
+      CHARACTER*132 NAME
+      CHARACTER*1  NAM1(132)
+      EQUIVALENCE  (NAME,NAM1)
+
+      integer fnami (33)
+      character*132 fname,re2fle
+      equivalence (fname,fnami)
+
+      character*80 hdr
+      character*5 version
+      real*4      test
+
+      character*1 re2(4)
+      character*4 re24
+      equivalence (re2,re24)
+      DATA re24   /'.re2'       /
+
+      common /sess/ session
+      character*80 session
+
+      call izero  (fnami,33)
+
+      len = ltrunc(session,80)
+      call chcopy (nam1,session,80)
+      len = len + 1
+      call chcopy (nam1(len),re2,4)
+      len = len + 3
+      call chcopy (fname,nam1,len)
+
+      call byte_open(fname)
+      call byte_read(hdr,20)
+
+      read (hdr,1) version,nelgt,ndum,nelgv
+    1 format(a5,i9,i3,i9)
+
+      call byte_read(test,1)
+      ifbswap = if_byte_swap_test(test)
+
+      return
+      end
+
+      logical function if_byte_swap_test(bytetest)
+c
+      real*4 bytetest,test2
+      real*4 test_pattern
+      save   test_pattern
+c
+      test_pattern = 6.54321
+      eps          = 0.00020
+      etest        = abs(test_pattern-bytetest)
+      if_byte_swap_test = .true.
+      if (etest.le.eps) if_byte_swap_test = .false.
+c
+      test2 = bytetest
+      call byte_reverse(test2,1)
+      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
+
+      return
+      end
+
+      subroutine copy4r(a,b,n)
+      real   a(1)
+      real*4 b(1)
+      do i = 1, n
+         a(i) = b(i)
+      enddo
+      return
+      end
+
+      INTEGER FUNCTION INDX132(S1,S2,L2)
+      CHARACTER*132 S1,S2
+C
+      N1=80-L2+1
+      INDX132=0
+      IF (N1.LT.1) return
+C
+      DO 100 I=1,N1
+         I2=I+L2-1
+         IF (S1(I:I2).EQ.S2(1:L2)) THEN
+            INDX132=I
+            return
+         ENDIF
+  100 CONTINUE
+C
+      return
+      END
+

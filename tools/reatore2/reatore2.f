@@ -16,7 +16,7 @@ c     an ascii rea file for just the parameters
       equivalence (fbout1,fbout)
       equivalence (string,string1)
 
-      parameter(lelt=900000)
+      parameter(lelt=1000000)
       common /array/ x(8),y(8),z(8),bc(5,6,lelt),curve(6,8)
       common /arrai/ nel,ncurve
       common /arrac/ cbc
@@ -57,7 +57,12 @@ c     an ascii rea file for just the parameters
       nels = -nel
       write(11,11) nels, ndim, nelv
    11 format(i11,i2,i11,1x,'NEL,NDIM,NELV')
-
+   
+      if(nelv.ge.lelt) then
+        write(6,*) 'Abort: number of elements too large'
+        write(6,*) 'maximum number of elements ',lelt
+        stop
+      endif
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
@@ -68,8 +73,9 @@ c     an ascii rea file for just the parameters
       write(6,*) nel, ndim, nelv
       do ie=1,nel      
          if (mod(ie,10000).eq.0) write(6,*) ie,nel,' mesh'
-         read (10,12) igroup
-   12    format(43x,i5)
+csk         read (10,12) igroup
+csk   12    format(43x,i5)
+         igroup = 0
          call byte_write(igroup, 1)
 
          if (ndim.eq.3) then
@@ -92,12 +98,13 @@ c     an ascii rea file for just the parameters
       enddo
 
       read(10,*)
-      read(10,*)ncurve
+      read(10,*) ncurve
       call byte_write(ncurve,1)
 
       call blank(ccurve,4)
       if (ncurve.gt.0) then
          do icurve=1,ncurve
+            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),ccurve(1)
             else
@@ -125,7 +132,7 @@ c     an ascii rea file for just the parameters
                   if (nel.lt. 100 000 ) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
-                     read(10,*) cbc(f,e),idum,(bc(k,f,e),k=1,5)
+                     read(10,*) cbc(f,e),idum1,idum2,(bc(k,f,e),k=1,5)
                   endif
                   if (cbc(f,e).ne.'E  ') nbc = nbc+1
                enddo

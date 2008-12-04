@@ -1,0 +1,5 @@
+matlab -nodisplay -nojvm << EOF       #starts Matlab
+go
+0.5
+exit
+EOF                                   #end of Matlab commands
