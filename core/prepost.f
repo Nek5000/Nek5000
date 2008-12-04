@@ -959,28 +959,26 @@ c
 C
       call blank(name  ,132)
       call blank(fldfle,132)
-
+C
+C     Construct file names containing full path to host:
+C
       LS=LTRUNC(SESSION,132)
       LPP=LTRUNC(PATH,132)
       LSP=LS+LPP
-
-C     Construct file names containing full path to host:
-C
-c      l = 0
-c      DO 100 I=1,LPP
-c         l = l+1
-c         NAM1(l)=PATH1(I)
-c  100 CONTINUE
-c
-c      if (prefix(1).ne.' '.and.prefix(2).ne.' '.and.
-c     $     prefix(3).ne.' ') then
-c         do i=1,3
-c            l = l+1
-c            NAM1(l)=prefix(i)
-c         enddo
-c      endif
-C
       l = 0
+      DO 100 I=1,LPP
+         l = l+1
+         NAM1(l)=PATH1(I)
+  100 CONTINUE
+c
+      if (prefix(1).ne.' '.and.prefix(2).ne.' '.and.
+     $     prefix(3).ne.' ') then
+         do i=1,3
+            l = l+1
+            NAM1(l)=prefix(i)
+         enddo
+      endif
+C
       DO 200 I=1,LS
          l = l+1
          NAM1(l)=SESS1(I)
@@ -1029,12 +1027,12 @@ C        less than 10000 dumps....
 C
 C     Write the name of the .fld file to the logfile.
 C
-      IF (NID.EQ.0) then
-         CALL CHCOPY(STRING,FLDFLE,78)
-         write(6,6) nid,istep,STRING
-    6    format(2i8,' OPEN: ',A78)
-      ENDIF
-C
+      if (nid.eq.0) then
+         call chcopy(string,fldfle,78)
+         write(6,1000) istep,time,string
+ 1000    format(/,i9,1pe12.4,' OPEN: ',a78)
+      endif
+ 
       return
       end
 c=======================================================================
@@ -2030,3 +2028,4 @@ c-----------------------------------------------------------------------
       return
       end
 
+c-----------------------------------------------------------------------
