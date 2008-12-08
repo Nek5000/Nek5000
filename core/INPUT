@@ -32,7 +32,7 @@ C
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT),IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP
+     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
       LOGICAL         IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC,IFTMSH
@@ -43,7 +43,7 @@ C
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP
+     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))
 C
