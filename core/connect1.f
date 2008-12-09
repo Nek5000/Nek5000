@@ -998,21 +998,54 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine facind (kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,iface)
+      subroutine facind (kx1,kx2,ky1,ky2,kz1,kz2,nx,ny,nz,iface)
+c      ifcase in preprocessor notation
        KX1=1
        KY1=1
        KZ1=1
-       KX2=NX1
-       KY2=NY1
-       KZ2=NZ1
+       KX2=NX
+       KY2=NY
+       KZ2=NZ
        IF (IFACE.EQ.1) KY2=1
-       IF (IFACE.EQ.2) KX1=NX1
-       IF (IFACE.EQ.3) KY1=NY1
+       IF (IFACE.EQ.2) KX1=NX
+       IF (IFACE.EQ.3) KY1=NY
        IF (IFACE.EQ.4) KX2=1
        IF (IFACE.EQ.5) KZ2=1
-       IF (IFACE.EQ.6) KZ1=NZ1
-      RETURN
-      END
+       IF (IFACE.EQ.6) KZ1=NZ
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine facindr (kx1,kx2,ky1,ky2,kz1,kz2,nx,ny,nz,iface)
+
+c     restricted index set, iface in preprocessor notation
+
+      kx1=2
+      ky1=2
+      kz1=2
+      kx2=nx-1
+      ky2=ny-1
+      kz2=nz-1
+
+      if (iface.eq.1) ky1=1
+      if (iface.eq.1) ky2=1
+
+      if (iface.eq.2) kx1=nx
+      if (iface.eq.2) kx2=nx
+
+      if (iface.eq.3) ky1=ny
+      if (iface.eq.3) ky2=ny
+
+      if (iface.eq.4) kx1=1
+      if (iface.eq.4) kx2=1
+
+      if (iface.eq.5) kz1=1
+      if (iface.eq.5) kz2=1
+
+      if (iface.eq.6) kz1=nz
+      if (iface.eq.6) kz2=nz
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine facev(a,ie,iface,val,nx,ny,nz)
 C

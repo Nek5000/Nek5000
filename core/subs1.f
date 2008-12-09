@@ -1189,6 +1189,7 @@ C
 C     IF ( .NOT.IFMGRID .OR. NAME.EQ.'NOMG') THEN
 C
       CALL RMASK   (R1,R2,R3,NEL)
+
       CALL OPDSSUM (R1,R2,R3)
       CALL RZERO3  (U1,U2,U3,NTOT1)
 C
@@ -1403,7 +1404,7 @@ C           IF ( .NOT.IFPRINT )  GOTO 9999
                if (matmod.ge.0) write(6,3000) ifin,rbnorm,tol,r0
                if (matmod.lt.0) write(6,3010) ifin,rbnorm,tol,r0
             endif
-            GO TO 9999
+            goto 9999
          ENDIF
 C
          CALL COL3 (PP1,DPC,R1,NTOT1)
@@ -1428,14 +1429,7 @@ c     call outpost(u1,u2,u3,u3,u3,'   ')
 c     call outpost(h1,h2,u3,u3,u3,'   ')
 c     call exitt
 c
-      RETURN
-C
-C 2000 FORMAT(6X,' Helmholtz3/fluid: no iteration - RBNORM =', E13.4)
-C 2010 FORMAT(6X,' Helmholtz3/mesh : no iteration - RBNORM =', E13.4)
-C 3000 FORMAT(I6,' Helmholtz3/fluid:', E13.4)
-C 3010 FORMAT(I6,' Helmholtz3/mesh :', E13.4)
-C 3001 FORMAT(I6,' Failed to converge in HMHZSF/Fluid: RBNORM =',E13.6)
-C 3011 FORMAT(I6,' Failed to converge in HMHZSF/Mesh : RBNORM =',E13.6)
+      return
 C
  2000 FORMAT(13X,'Helmholtz3/fluid: no iteration - RBNORM =', E13.4)
  2010 FORMAT(13X,'Helmholtz3/ mesh: no iteration - RBNORM =', E13.4)
@@ -1444,7 +1438,8 @@ C
  3001 FORMAT(I6,' Failed to converge in HMHZSF/Fluid: RBNORM =',E13.6)
  3011 FORMAT(I6,' Failed to converge in HMHZSF/Mesh : RBNORM =',E13.6)
 C
-      END
+      end
+
       SUBROUTINE AXHMSF (AU1,AU2,AU3,U1,U2,U3,H1,H2,MATMOD)
 C-----------------------------------------------------------------------
 C
@@ -1470,6 +1465,14 @@ C
      $        , H1 (LX1,LY1,LZ1,1)
      $        , H2 (LX1,LY1,LZ1,1)
 C
+
+      if (ifsplit) then
+         call axhelm(au1,u1,h1,h2,1,1)
+         call axhelm(au2,u2,h1,h2,1,2)
+         if (if3d) call axhelm(au3,u3,h1,h2,1,3)
+         return
+      endif
+
       NEL   = NELFLD(IFIELD)
       NTOT1 = NX1*NY1*NZ1*NEL
 C

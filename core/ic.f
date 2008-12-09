@@ -259,19 +259,15 @@ c
     
       if(ifflow) then
          ifield = 1
-         call dssum(vx,nx1,ny1,nz1)
-         call dssum(vy,nx1,ny1,nz1)
-         call dssum(vz,nx1,ny1,nz1)
+         call opdssum(vx,vy,vz)
          call col2 (vx,vmult,ntotv)
          call col2 (vy,vmult,ntotv)
          call col2 (vz,vmult,ntotv)
       endif
-c
+
       if (ifmhd) then
          ifield = ifldmhd
-         call dssum(bx,nx1,ny1,nz1)
-         call dssum(by,nx1,ny1,nz1)
-         call dssum(bz,nx1,ny1,nz1)
+         call opdssum(bx,by,bz)
          call col2 (bx,vmult,ntotv)
          call col2 (by,vmult,ntotv)
          call col2 (bz,vmult,ntotv)
@@ -299,9 +295,7 @@ c
       if (ifpert) then
          do jp=1,npert
             ifield = 1
-            call dssum(vxp(1,jp),nx1,ny1,nz1)
-            call dssum(vyp(1,jp),nx1,ny1,nz1)
-            call dssum(vzp(1,jp),nx1,ny1,nz1)
+            call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
             call col2 (vxp(1,jp),vmult,ntotv)
             call col2 (vyp(1,jp),vmult,ntotv)
             call col2 (vzp(1,jp),vmult,ntotv)

@@ -776,7 +776,7 @@ C----------------------------------------------------------------------
 C
       IMESH = 1
 C
-      IF (IFSTRS) THEN
+      if (ifstrs) then
          MATMOD = 0
          if (ifield.eq.ifldmhd) then
             CALL HMHZSF  ('NOMG',OUT1,OUT2,OUT3,INP1,INP2,INP3,H1,H2,
@@ -787,7 +787,18 @@ C
      $                     V1MASK,V2MASK,V3MASK,VMULT,
      $                     TOLH,NMXI,MATMOD)
          endif
-      ELSE
+      elseif (ifcyclic) then
+         matmod = 0
+         if (ifield.eq.ifldmhd) then
+            call hmhzsf  ('bxyz',out1,out2,out3,inp1,inp2,inp3,h1,h2,
+     $                     b1mask,b2mask,b3mask,vmult,
+     $                     tolh,nmxi,matmod)
+         else
+            call hmhzsf  ('vxyz',out1,out2,out3,inp1,inp2,inp3,h1,h2,
+     $                     v1mask,v2mask,v3mask,vmult,
+     $                     tolh,nmxi,matmod)
+         endif
+      else
          if (ifield.eq.ifldmhd) then
             CALL HMHOLTZ ('BX  ',OUT1,INP1,H1,H2,B1MASK,VMULT,
      $                                      IMESH,TOLH,NMXI,1)
@@ -2995,39 +3006,147 @@ c
       IF(NDIM.EQ.3)CALL COPY(A3,B3,NTOT1)
       return
       END
-C
-      subroutine opdssum (a,b,c) !  NOTE:  opdssum works on FLUID arrays only!
+
+c-----------------------------------------------------------------------
+      subroutine rotate_cyc(r1,r2,r3,idir)
 
       include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
       include 'PARALLEL'
       include 'TSTEP'
 
-      REAL A(1),B(1),C(1)
+      real r1(lx1,ly1,lz1,1)
+     $   , r2(lx1,ly1,lz1,1)
+     $   , r3(lx1,ly1,lz1,1)
 
-      ifldt = ifield
-      ifield= 1
+      integer e,f
+      logical ifxy
+ 
+ 
+c     (1) Face n-t transformation
 
-      call dssum(a,nx1,ny1,nz1)
-      call dssum(b,nx1,ny1,nz1)
-      if(ndim.eq.3)call dssum(c,nx1,ny1,nz1)
 
-      ifield= ifldt 
+      nface = 2*ndim
+      do e=1,nelfld(ifield)
+      do f=1,nface
+
+         if (cbc(f,e,ifield) .eq. 'P  ') then
+
+            call facind2 (js1,jf1,jskip1,js2,jf2,jskip2,f)
+            if (idir.eq.1) then
+              k=0
+              do j2=js2,jf2,jskip2
+              do j1=js1,jf1,jskip1
+               k=k+1
+
+               dotprod = unx(k,1,f,e)*ym1(j1,j2,1,e)
+     $                  -uny(k,1,f,e)*xm1(j1,j2,1,e)
+               ifxy = .false.
+               if (abs(unz(k,1,f,e)).lt.0.0001) ifxy = .true.
+
+               cost =  unx(k,1,f,e)
+               sint =  uny(k,1,f,e)
+               rnor = ( r1(j1,j2,1,e)*cost + r2(j1,j2,1,e)*sint )
+               rtn1 = (-r1(j1,j2,1,e)*sint + r2(j1,j2,1,e)*cost )
+
+               if (ifxy.and.dotprod .ge. 0.0) then 
+                  r1(j1,j2,1,e) = rnor
+                  r2(j1,j2,1,e) = rtn1
+               elseif (ifxy) then
+                  r1(j1,j2,1,e) =-rnor
+                  r2(j1,j2,1,e) =-rtn1
+               endif
+              enddo
+              enddo
+
+            else    ! reverse rotate
+
+              k=0
+              do j2=js2,jf2,jskip2
+              do j1=js1,jf1,jskip1
+               k=k+1
+
+               dotprod = unx(k,1,f,e)*ym1(j1,j2,1,e)
+     $                  -uny(k,1,f,e)*xm1(j1,j2,1,e)
+               ifxy = .false.
+               if (abs(unz(k,1,f,e)).lt.0.0001) ifxy = .true.
+
+               cost =  unx(k,1,f,e)
+               sint =  uny(k,1,f,e)
+               rnor = ( r1(j1,j2,1,e)*cost - r2(j1,j2,1,e)*sint )
+               rtn1 = ( r1(j1,j2,1,e)*sint + r2(j1,j2,1,e)*cost )
+
+               if(ifxy.and.dotprod .ge. 0.0) then 
+                  r1(j1,j2,1,e) = rnor
+                  r2(j1,j2,1,e) = rtn1
+               elseif (ifxy) then
+                  r1(j1,j2,1,e) =-rnor
+                  r2(j1,j2,1,e) =-rtn1
+               endif
+              enddo
+              enddo
+            endif
+
+         endif
+
+      enddo
+      enddo
 
       return
-
-c     if (nelgv.eq.1) return
-c     if (flag_gs_init.eq.1) then
-c        write(6,*) 'call vdssum'
-c        call vec_dssum(A,B,C,NX1,NY1,NZ1)
-c     else
-c        CALL DSSUM(A,NX1,NY1,NZ1)
-c        CALL DSSUM(B,NX1,NY1,NZ1)
-c        IF(NDIM.EQ.3)CALL DSSUM(C,NX1,NY1,NZ1)
-c     endif
-c     return
-
       end
-C
+c-----------------------------------------------------------------------
+      subroutine opdssum (a,b,c)! NOTE: opdssum works on FLUID/MHD arrays only!
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TSTEP'
+      include 'GEOM'
+
+      real a(1),b(1),c(1)
+
+      if (ifcyclic) then
+         call rotate_cyc  (a,b,c,1)
+         call vec_dssum   (a,b,c,nx1,ny1,nz1)
+         call rotate_cyc  (a,b,c,0)
+      else
+         call vec_dssum   (a,b,c,nx1,ny1,nz1)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine opdsop (a,b,c,op)! opdsop works on FLUID/MHD arrays only!
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TSTEP'
+      include 'GEOM'
+
+      real a(1),b(1),c(1)
+      character*3 op
+
+      if (ifcyclic) then
+
+         if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+            call vec_dsop    (a,b,c,nx1,ny1,nz1,op)
+         else
+            call rotate_cyc  (a,b,c,1)
+            call vec_dsop    (a,b,c,nx1,ny1,nz1,op)
+            call rotate_cyc  (a,b,c,0)
+         endif
+
+      else
+
+         call vec_dsop    (a,b,c,nx1,ny1,nz1,op)
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine opicol2 (a1,a2,a3,b1,b2,b3)
       include 'SIZE'
       REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1)
@@ -4958,4 +5077,3 @@ C
 
       RETURN
       END
-
