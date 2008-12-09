@@ -162,7 +162,6 @@ if [ $? -eq 0 ]; then
   sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
   mv .makefile.tmp .makefile
   echo "DEBUG mode activated - press return to continue"
-  read
 fi
 
 if [ "$USR" != "" ]; then

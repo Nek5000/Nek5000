@@ -132,16 +132,10 @@ c
       INCLUDE 'PARALLEL'
       INCLUDE 'TSTEP'
       include 'CTIMER'
-c
+
       REAL U(1),V(1),W(1)
-c
-c============================================================================
-c     NEW DSSUM STUFF:::
-c
-      parameter (ltotw=3*lx1*ly1*lz1*lelt)
-      common /ctmp0/ work(ltotw)
-c============================================================================
-c
+
+
       if (icalld.eq.0) tvdss=0.0d0
       if (icalld.eq.0) tgsum=0.0d0
       if (icalld.eq.0) tgsmx=0.0d0
@@ -159,7 +153,7 @@ c
       ifldt = ifield
       if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
-c
+
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
       timee=(dnekclock()-etime1)
@@ -170,6 +164,54 @@ c
       return
       end
 
+c-----------------------------------------------------------------------
+      subroutine vec_dsop(u,v,w,nx,ny,nz,op)
+c
+c     Direct stiffness summation of the face data, for field U.
+c
+c     Boundary condition data corresponds to component IFIELD of 
+c     the CBC array.
+c
+      INCLUDE 'SIZE'
+      INCLUDE 'TOPOL'
+      INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+      INCLUDE 'TSTEP'
+      include 'CTIMER'
+c
+      real u(1),v(1),w(1)
+      character*3 op
+
+c============================================================================
+c     execution phase
+c============================================================================
+
+      ifldt = ifield
+      if (ifldt.eq.0)       ifldt = 1
+      if (ifldt.eq.ifldmhd) ifldt = 1
+
+c     write(6,*) 'opdsop: ',op,ifldt,ifield
+
+      if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
+     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
+
+
+      if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL')
+     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,2,0)
+
+
+      if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
+     $                .or. op.eq.'MIN' .or. op.eq.'MNA')
+     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,3,0)
+
+
+      if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     $                .or. op.eq.'MAX' .or. op.eq.'MXA')
+     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,4,0)
+
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine nvec_dssum(u,stride,n,gs_handle)
 

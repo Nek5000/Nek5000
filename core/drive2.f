@@ -50,6 +50,7 @@ C
       IFEXPLVIS = .false.
       IFUSERVP  = .false.
       ifsync    = .false.   ! gsync() for timing info
+      ifcyclic  = .false.   ! cyclic bcs ?
 
       if (lx1.eq.lx2) ifsplit=.true.
 
@@ -212,8 +213,8 @@ C
          ENDIF
  100  CONTINUE
 C
-      NMXH   = 1000 !  1000
-      NMXP   = 2000 !  2000
+      NMXH   = 100 !  1000
+      NMXP   = 100 !  2000
       NMXE   = 100 !  1000
       NMXNL  = 10  !  100
 C

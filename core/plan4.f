@@ -1,3 +1,4 @@
+c-----------------------------------------------------------------------
       subroutine plan4
 
 C     Splitting scheme A.G. Tomboulides et al.
@@ -22,8 +23,8 @@ C
      $ ,             DV2   (LX1,LY1,LZ1,LELV)
      $ ,             DV3   (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCREV/ H1    (LX1,LY1,LZ1,LELV)
-     $ ,             H2    (LX1,LY1,LZ1,LELV)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
       REAL           DPR   (LX2,LY2,LZ2,LELV)
       EQUIVALENCE   (DPR,DV1)
       LOGICAL        IFSTSP
@@ -41,7 +42,7 @@ c
       CALL LAGVEL
 
       CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask)
-C
+
 C     first, compute pressure
 
       call crespsp  (respr)
@@ -59,9 +60,9 @@ C
 C
 C     Compute velocity
 C
-      CALL CRESVSP (RES1,RES2,RES3)
-      CALL OPHINV  (DV1,DV2,DV3,RES1,RES2,RES3,H1,H2,TOLHV,NMXH)
-      CALL OPADD2  (VX,VY,VZ,DV1,DV2,DV3)
+      call cresvsp (res1,res2,res3,h1,h2)
+      call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+      call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
       if (ifexplvis) call redo_split_vis
 
@@ -111,29 +112,27 @@ c calculate Divergence difference norms
      &                      'L1/L2 DIV(V)-QTL:',DIF1,DIF2
       
 
-      RETURN
+      return
       END
 
 c-----------------------------------------------------------------------
-      SUBROUTINE CRESPSP (RESPR)
-C---------------------------------------------------------------------
-C
+      subroutine crespsp (respr)
+
 C     Compute startresidual/right-hand-side in the pressure
-C
-C---------------------------------------------------------------------
+
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      REAL           RESPR (LX2,LY2,LZ2,LELV)
+      REAL           RESPR (LX2*LY2*LZ2*LELV)
 c
-      COMMON /SCRNS/ TA1   (LX1,LY1,LZ1,LELV)
-     $ ,             TA2   (LX1,LY1,LZ1,LELV)
-     $ ,             TA3   (LX1,LY1,LZ1,LELV)
-     $ ,             WA1   (LX1,LY1,LZ1,LELV)
-     $ ,             WA2   (LX1,LY1,LZ1,LELV)
-     $ ,             WA3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ W1    (LX1,LY1,LZ1,LELV)
-     $ ,             W2    (LX1,LY1,LZ1,LELV)
+      COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
+     $ ,             TA2   (LX1*LY1*LZ1,LELV)
+     $ ,             TA3   (LX1*LY1*LZ1,LELV)
+     $ ,             WA1   (LX1*LY1*LZ1*LELV)
+     $ ,             WA2   (LX1*LY1*LZ1*LELV)
+     $ ,             WA3   (LX1*LY1*LZ1*LELV)
+      COMMON /SCRMG/ W1    (LX1*LY1*LZ1*LELV)
+     $ ,             W2    (LX1*LY1*LZ1*LELV)
 c
       CHARACTER CB*3
 C
@@ -141,13 +140,6 @@ C
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
 
-c      call rzero(respr,ntot1)
-c      call rzero(ta1  ,ntot1)
-c      call rzero(ta2  ,ntot1)
-c      call rzero(ta3  ,ntot1)
-c      call rzero(wa1  ,ntot1)
-c      call rzero(wa2  ,ntot1)
-c      call rzero(wa3  ,ntot1)
 
 c     -mu*curl(curl(v))
       call op_curl  (ta1,ta2,ta3,vx ,vy ,vz ,.true. ,w1,w2)
@@ -183,28 +175,34 @@ C                                                  solve for delta PP
 c
 c     *** NONLINEAR TERMS ***
 C                                                  x-component
-      call invcol3 (TA1,bfx,vtrans,ntot1)
-      CALL SUB2    (TA1,WA1,NTOT1)
-      CALL DSSUM   (TA1,NX1,NY1,NZ1)
-      CALL COL2    (TA1,BINVM1,NTOT1)
-      CALL CDTP    (TA2,TA1,RXM2,SXM2,TXM2,1)
-      CALL ADD2    (RESPR,TA2,NTOT1)
-C                                                  y-component
-      call invcol3 (ta1,bfy,vtrans,ntot1)
-      CALL SUB2    (TA1,WA2,NTOT1)
-      CALL DSSUM   (TA1,NX1,NY1,NZ1)
-      CALL COL2    (TA1,BINVM1,NTOT1)
-      CALL CDTP    (TA2,TA1,RYM2,SYM2,TYM2,2)
-      CALL ADD2    (RESPR,TA2,NTOT1)
-C                                                  z-component
-      IF (NDIM.EQ.3) THEN
-         call invcol3 (ta1,bfz,vtrans,ntot1)
-         CALL SUB2    (TA1,WA3,NTOT1)
-         CALL DSSUM   (TA1,NX1,NY1,NZ1)
-         CALL COL2    (TA1,BINVM1,NTOT1)
-         CALL CDTP    (TA2,TA1,RZM2,SZM2,TZM2,3)
-         CALL ADD2    (RESPR,TA2,NTOT1)
-      ENDIF
+
+      call invcol3 (TA1,bfx,vtrans,ntot1)        ! x-component
+      n = nx1*ny1*nz1*nelv
+      do i=1,n
+         ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
+         ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
+         ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
+      enddo
+      call opdssum (ta1,ta2,ta3)
+      do i=1,n
+         ta1(i,1) = ta1(i,1)*binvm1(i,1,1,1)
+         ta2(i,1) = ta2(i,1)*binvm1(i,1,1,1)
+         ta3(i,1) = ta3(i,1)*binvm1(i,1,1,1)
+      enddo
+      if (if3d) then
+         call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
+         call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
+         call cdtp    (wa3,ta3,rzm2,szm2,tzm2,1)
+         do i=1,n
+            respr(i) = respr(i)+wa1(i)+wa2(i)+wa3(i)
+         enddo
+      else
+         call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
+         call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
+         do i=1,n
+            respr(i) = respr(i)+wa1(i)+wa2(i)
+         enddo
+      endif
 C                                        add thermal divergence
       dtbd = BD(1)/DT
       call admcol3(respr,QTL,bm1,dtbd,ntot1)
@@ -219,17 +217,17 @@ C                                                 surface terms
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v') THEN
                CALL FACCL3 
-     $         (TA1(1,1,1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
+     $         (TA1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3 
-     $         (TA2(1,1,1,IEL),VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
+     $         (TA2(1,IEL),VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
                IF (NDIM.EQ.3) 
      $          CALL FACCL3 
-     $         (TA3(1,1,1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
+     $         (TA3(1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ENDIF
-            CALL ADD2   (TA1(1,1,1,IEL),TA2(1,1,1,IEL),NXYZ1)
+            CALL ADD2   (TA1(1,IEL),TA2(1,IEL),NXYZ1)
             IF (NDIM.EQ.3)
-     $      CALL ADD2   (TA1(1,1,1,IEL),TA3(1,1,1,IEL),NXYZ1)
-            CALL FACCL2 (TA1(1,1,1,IEL),AREA(1,1,IFC,IEL),IFC)
+     $      CALL ADD2   (TA1(1,IEL),TA3(1,IEL),NXYZ1)
+            CALL FACCL2 (TA1(1,IEL),AREA(1,1,IFC,IEL),IFC)
   100    CONTINUE
          CALL CMULT(TA1,dtbd,NTOT1)
          CALL SUB2 (RESPR,TA1,NTOT1)
@@ -241,29 +239,26 @@ C
       CALL ORTHO (RESPR)
 
 C
-      RETURN
+      return
       END
-
 c----------------------------------------------------------------------
-      SUBROUTINE CRESVSP (RESV1,RESV2,RESV3)
-C----------------------------------------------------------------------
-C
+      subroutine cresvsp (resv1,resv2,resv3,h1,h2)
+
 C     Compute the residual for the velocity
-C
-C----------------------------------------------------------------------
+
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      REAL           RESV1 (LX1,LY1,LZ1,LELV)
-      REAL           RESV2 (LX1,LY1,LZ1,LELV)
-      REAL           RESV3 (LX1,LY1,LZ1,LELV)
+      real resv1(lx1,ly1,lz1,lelv)
+     $   , resv2(lx1,ly1,lz1,lelv)
+     $   , resv3(lx1,ly1,lz1,lelv)
+     $   , h1   (lx1,ly1,lz1,lelv)
+     $   , h2   (lx1,ly1,lz1,lelv)
+
       COMMON /SCRUZ/ TA1   (LX1,LY1,LZ1,LELV)
      $ ,             TA2   (LX1,LY1,LZ1,LELV)
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
      $ ,             TA4   (LX1,LY1,LZ1,LELV)
-      COMMON /SCREV/ H1    (LX1,LY1,LZ1,LELV)
-     $ ,             H2    (LX1,LY1,LZ1,LELV)
-
 
       NTOT = NX1*NY1*NZ1*NELV
       INTYPE = -1
@@ -285,8 +280,8 @@ c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
 C
-      RETURN
-      END
+      return
+      end
 
 c-----------------------------------------------------------------------
       subroutine op_curl(w1,w2,w3,u1,u2,u3,ifavg,work1,work2)
@@ -341,29 +336,24 @@ c     work1=dv/dx ; work2=du/dy
 c
 c    Avg at bndry
 c
-      if (ifavg) then
+c     if (ifavg) then
+      if (ifavg .and. .not. ifcyclic) then
+
          ifielt = ifield
          ifield = 1
-c
-         call col2  (w1,bm1,ntot)
-         call dssum (w1,nx1,ny1,nz1)
-         call col2  (w1,binvm1,ntot)
-c
-         call col2  (w2,bm1,ntot)
-         call dssum (w2,nx1,ny1,nz1)
-         call col2  (w2,binvm1,ntot)
-c
-         call col2  (w3,bm1,ntot)
-         call dssum (w3,nx1,ny1,nz1)
-         call col2  (w3,binvm1,ntot)
-c
+       
+         call opcolv  (w1,w2,w3,bm1)
+         call opdssum (w1,w2,w3)
+         call opcolv  (w1,w2,w3,binvm1)
+
          ifield = ifielt
+
       endif
 c
       return
       end
 
-      SUBROUTINE OPADD2CM (A1,A2,A3,B1,B2,B3,C)
+      subroutine opadd2cm (a1,a2,a3,b1,b2,b3,c)
       INCLUDE 'SIZE'
       REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1),C
       NTOT1=NX1*NY1*NZ1*NELV
@@ -379,10 +369,10 @@ c
             a2(i) = a2(i) + b2(i)*c
          enddo
       endif
-      RETURN
+      return
       END
 
-      SUBROUTINE ADMCOL3(A,B,C,D,N)
+      subroutine admcol3(a,b,c,d,n)
       REAL A(1),B(1),C(1),D
 C
       include 'OPCTR'
@@ -401,10 +391,10 @@ C
       DO 100 I=1,N
          A(I)=A(I)+B(I)*C(I)*D
   100 CONTINUE
-      RETURN
+      return
       END
 
-      SUBROUTINE split_vis
+      subroutine split_vis
 C---------------------------------------------------------------------
 C
 C     Split viscosity into a constant (implicit) and variable (explicit)
@@ -436,16 +426,14 @@ c      fac = -1.0*param(2)
 c      call cfill(vdiff_e,fac,ntot)
 c testing
 
-      RETURN
-      END
+      return
+      end
 
+c-----------------------------------------------------------------------
+      subroutine redo_split_vis
 
-      SUBROUTINE redo_split_vis
-C---------------------------------------------------------------------
-C
 C     Redo split viscosity
-C
-C---------------------------------------------------------------------
+
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
@@ -454,6 +442,6 @@ C---------------------------------------------------------------------
       ! sum up explicit and implicit part
       call add2(vdiff,vdiff_e,ntot)
 
-      RETURN
-      END
-
+      return
+      end
+c-----------------------------------------------------------------------

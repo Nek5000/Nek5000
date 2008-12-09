@@ -41,6 +41,9 @@ C
       ENDIF
 C
       IF (IFFLOW) THEN
+
+         call check_cyclic  ! check for cyclic bcs
+
          IFIELD = 1
          DO 100 IEL=1,NELV
          DO 100 IFC=1,NFACE
@@ -400,12 +403,11 @@ C
              CALL FACEV ( OMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
          ENDIF
   100    CONTINUE
-C
-         CALL DSOP(V1MASK,'MUL',NX1,NY1,NZ1)
-         CALL DSOP(V2MASK,'MUL',NX1,NY1,NZ1)
-         CALL DSOP( OMASK,'MUL',NX1,NY1,NZ1)
-         IF (NDIM.EQ.3) CALL DSOP(V3MASK,'MUL',NX1,NY1,NZ1)
-C
+
+         CALL DSOP  ( OMASK,'MUL',NX1,NY1,NZ1)
+         call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
+
+
        ENDIF
 C
       ENDIF
@@ -631,15 +633,11 @@ c     write(6,*) 'BCDIRV: ifield',ifield
 C
 C        Take care of Neumann-Dirichlet shared edges...
 C
-         IF (ISWEEP.EQ.1) THEN
-            CALL DSOP(TMP1,'MXA',NX1,NY1,NZ1)
-            CALL DSOP(TMP2,'MXA',NX1,NY1,NZ1)
-            IF (IF3D) CALL DSOP(TMP3,'MXA',NX1,NY1,NZ1)
-         ELSE
-            CALL DSOP(TMP1,'MNA',NX1,NY1,NZ1)
-            CALL DSOP(TMP2,'MNA',NX1,NY1,NZ1)
-            IF (IF3D) CALL DSOP(TMP3,'MNA',NX1,NY1,NZ1)
-         ENDIF
+         if (isweep.eq.1) then
+            call opdsop(tmp1,tmp2,tmp3,'MXA')
+         else
+            call opdsop(tmp1,tmp2,tmp3,'MNA')
+         endif
  2100 CONTINUE
 C
 C     Copy temporary array to velocity arrays.
@@ -1903,4 +1901,81 @@ C
  100  CONTINUE
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine check_cyclic  ! check for cyclic bcs
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /scrmg/ v1(lx1,ly1,lz1,lelt)
+     $             , v2(lx1,ly1,lz1,lelt)
+     $             , v3(lx1,ly1,lz1,lelt)
+
+      integer e,f
+
+      nface = 2*ndim
+
+      n = nx1*ny1*nz1*nelt
+      call rzero(v1,n)
+      call rzero(v2,n)
+      call rzero(v3,n)
+
+      ifield = 1
+      do e=1,nelt   ! possibly U or B field
+      do f=1,nface
+
+         if (cbc(f,e,ifield).eq.'P  ') then
+            call facind2 (js1,jf1,jskip1,js2,jf2,jskip2,f)
+            k = 0
+            do j2=js2,jf2,jskip2
+            do j1=js1,jf1,jskip1
+               k = k+1
+               v1(j1,j2,1,e) = unx(j1,j2,1,e)
+               v2(j1,j2,1,e) = uny(j1,j2,1,e)
+               v3(j1,j2,1,e) = unz(j1,j2,1,e)
+            enddo
+            enddo
+         endif
+
+      enddo
+      enddo
+
+      ifcyclic = .false.
+      call opdssum(v1,v2,v3)
+
+      eps = 1.e-4
+      if (ndim.eq.2) call rzero(v3,n)
+
+      do e=1,nelt   ! Check for turning angle
+      do f=1,nface
+
+         if (cbc(f,e,ifield).eq.'P  ') then
+
+            call facindr(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f) ! restricted indx
+            snorm = 0.
+            dnorm = 0.
+            do k=k0,k1
+            do j=j0,j1
+            do i=i0,i1
+               snorm = abs(v1(i,j,k,e))
+     $               + abs(v2(i,j,k,e))
+     $               + abs(v3(i,j,k,e))
+            enddo
+            enddo
+            enddo
+            if (snorm.gt.eps) ifcyclic = .true.
+
+         endif
+
+      enddo
+      enddo
+
+      itest = 0
+      if (ifcyclic) itest = 1
+      itest = iglmax(itest,1)
+      if (itest.gt.0) ifcyclic = .true.
+
+      if (nid.eq.0) write(6,*) ifcyclic,'  ifcyclic'
+
+      return
+      end
 c-----------------------------------------------------------------------

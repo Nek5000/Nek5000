@@ -56,7 +56,7 @@ c
 c
       iconv = 0
       call rzero(x,ntot2)
-      do while(iconv.eq.0.and.iter.lt.500)
+      do while(iconv.eq.0.and.iter.lt.100)
          if(iter.eq.0) then
                                                   !      -1
             call col3(r,ml,res,ntot2)             ! r = L  res
@@ -335,7 +335,7 @@ c     GMRES iteration.
 c
       iconv = 0
       call rzero(x,n)
-      do while(iconv.eq.0.and.iter.lt.500)
+      do while(iconv.eq.0.and.iter.lt.100)
          if(iter.eq.0) then               !      -1
             call col3(r,ml,res,n)         ! r = L  res
 c           call copy(r,res,n)
