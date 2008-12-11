@@ -104,6 +104,7 @@ case $F77comp in
   pgf90)       P="-r8";;
   gfortran)    P="-fdefault-real-8";;
   ifort)       P="-r8";;
+  xlf)         P="-qrealsize=8";;
   bgxlf)       P="-qrealsize=8";;
   bgxlf90)     P="-qrealsize=8";;
   bgxlf_r)     P="-qrealsize=8";;
@@ -112,7 +113,7 @@ case $F77comp in
   blrts_xlf90) P="-qrealsize=8";;
   ftn)         P="-r8";;
   *)  echo "WARNING: Cannot detect compiler flag to promote REAL to 8 bytes!"
-      echo "         Please specify the right compiler option using the P flag in the makefile"
+      echo "         Please specify the right compiler flag using the P flag in the makefile"
       P=""
       echo "Press return to continue"
       read;;
@@ -134,10 +135,28 @@ else
   IFAMG=false
 fi
 
-if [ "$OPT_FLAGS" == "" ]; then
-  OPT_FLAGS=-O3
+
+# set optimization flags
+L0="\$(G) -O0"
+L2="\$(G) -O2"
+L3="\$(G) -O3" 
+L4="\$(L3)"
+
+# user specified opt flags
+if [ "$OPT_FLAGS_STD" != "" ]; then
+  echo $OPT_FLAGS_STD | grep "\-O." 1>/dev/null
+  if [ $? -eq 0 ]; then
+    L2="\$(G) $OPT_FLAGS_STD"
+    L3="\$(G) $OPT_FLAGS_STD" 
+  else
+    L2="\$(G) -O2 $OPT_FLAGS_STD"
+    L3="\$(G) -O3 $OPT_FLAGS_STD"
+  fi
 fi
 
+if [ "$OPT_FLAGS_MAG" != "" ]; then
+    L4="\$(G) $OPT_FLAGS_MAG"
+fi
 
 
 # Generate makefile from using the makefile template and 
@@ -150,6 +169,10 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
 -e "s:^OPT_FLAGS[ ]*=.*:OPT_FLAGS\:=$OPT_FLAGS:" \
 -e "s/^P[ ]*=.*/P:=$P/" \
+-e "s/^L0[ ]*=.*/L0=$L0/" \
+-e "s/^L2[ ]*=.*/L2=$L2/" \
+-e "s/^L3[ ]*=.*/L3=$L3/" \
+-e "s/^L4[ ]*=.*/L4=$L4/" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFUNDERSCORE[ ]*=.*/IFUNDERSCORE:=$IFUNDERSCORE/" \
@@ -169,13 +192,19 @@ if [ "$USR" != "" ]; then
   echo "include makefile_usr.inc" >> .makefile
 fi
 
+
+if [ "$MXM_USER" != "" ]; then
+  mv .makefile .makefile.tmp
+  sed -e "s:^MXM.*:MXM=$MXM_USER:" .makefile.tmp > .makefile 
+fi
+
 if [ -f .makefile ]; then
   sed "1i\### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###\n" \
       .makefile > makefile
   echo "makefile created"
-  if [ "$P" = "" ]; then
-    exit 1
-  fi
+#  if [ "$P" = "" ]; then
+#    exit 1
+#  fi
 else
   echo "FATAL ERROR: Makefile could not be created!" 
 fi
