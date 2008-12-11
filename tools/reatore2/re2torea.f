@@ -64,11 +64,20 @@ c
       open(unit=11, file=fout)
       call byte_open(fbin)
 
-      call scanout(sstring,'PRESOLVE',8,10,11)
+      call scanout(sstring,'IFCHAR',6,10,11)
+      write(11,80) sstring      
 
       call blank(hdr,80)
       call byte_read(hdr,20)
       read (hdr,1) nelv,ndim,nel
+
+      write(11,*) 
+     & ' 30.0000  20.0000  -6.00000  -10.0000 XFAC,YFAC,XZERO,YZERO'
+      write(11,*) 
+     & '**MESH DATA** 6 lines are X,Y,Z;X,Y,Z. Columns corners 1-4;5-8'
+
+      write(11,*) abs(nelv),ndim,nel
+
 
  1    format('#v001',i9,i3,i9,' this is the hdr')
 
@@ -127,8 +136,8 @@ c curved sides
 
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
-            call byte_read(iedg, 1)
             call byte_read(ieg, 1)
+            call byte_read(iedg, 1)
             call byte_read(r1, 1)
             call byte_read(r2, 1)
             call byte_read(r3, 1)
@@ -185,7 +194,9 @@ c boundary conditions
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,i1,5G14.7)
 
-      write(11,80) sstring      
+      rewind(10) 
+      call scanout(sstring,'PRESOLVE',8,10,99)
+      write(11,80) sstring    
       call scanout(string,'endendend',9,10,11)
 c
       close (unit=10)
