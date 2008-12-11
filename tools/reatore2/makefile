@@ -5,10 +5,14 @@ prefix = $(bin_nek_tools)
 NOBJ1 = reatore2.o byte.o strings.o
 NOBJ2 = re2torea.o byte.o strings.o
 
-all: reatore2
+all: reatore2 re2torea
 
 reatore2:	$(NOBJ1)
 	$(F77) -o $(prefix)/reatore2 $(NOBJ1) 
+
+re2torea:	$(NOBJ2)
+	$(F77) -o $(prefix)/re2torea $(NOBJ2) 
+
 
 clean:
 	'rm' *.o

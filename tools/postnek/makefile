@@ -1,31 +1,28 @@
 S     = .
 L     = 
-LIBS  = ../../blas
-#LIBS  = 
+LIBS  = 
 X     = /usr/X11R6/lib
-CC    = pgcc
 P     = 
-F77   = pgf77 -Ktrap=fp
 
-FLAGS = -O  
-OLAGS = -O3 
+FLAGS =  
+OLAGS = 
+prefix = $(bin_nek_tools)
 
 
 NOBJS = postnek.o postnek2.o postnek3.o postnek5.o postnek6.o tsort.o \
 	postnek8.o postnek9.o plot.o getfld.o legend.o userf.o revert.o \
 	trap.o animate.o genxyz.o screen.o g3d.o subs.o xinterface.o \
-	locglob.o postnek5a.o \
+	locglob.o postnek5a.o blas.o \
 	xdriver.o scrdmp.o coef.o postnek7.o speclib.o mxm.o byte.o ssyev.o
 
-all: postx print
+all: postx
 
 
 ## posty:	$(NOBJS) iolib_no_graph.o
-## 	$(F77) -o posty $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm -L$(LIBS) -lblas
+## 	$(F77) -o  $(prefix)/posty $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm 
 
 postx:	$(NOBJS) iolib.o
-	$(F77) -o postx $(NOBJS) iolib.o -L$(X) -lX11 -lm -lblas # -Bstatic
-# $(F77) -o postx $(NOBJS) iolib.o -L$(X) -lX11 -lm -L$(LIBS) -lblas # -Bstatic
+	$(F77) -o  $(prefix)/postx $(NOBJS) iolib.o -L$(X) -lX11 -lm
 
 print:
 	size postx
@@ -72,3 +69,4 @@ byte.o	: byte.c			; $(CC)  -c -O2   byte.c
 #  xdriver.o	: xdriver.c		; $(CC)  -c -O2  -DLAPTOP xdriver.c
 xdriver.o	: xdriver.c		; $(CC)  -c -O2   xdriver.c
 #  xdriver.o	: xdriver.c		; cp  xdriver.ok xdriver.o
+blas.o	   : ../../nek/blas.f	; $(F77) -c $P $(FLAGS)  ../../nek/blas.f

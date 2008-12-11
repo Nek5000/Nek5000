@@ -348,7 +348,7 @@ c    $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
          else
             read(io,*,err=500,end=500)    
-     $      cbc(f,e),id1,id2
+     $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
          endif
       enddo

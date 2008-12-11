@@ -42,6 +42,11 @@ c     an ascii rea file for just the parameters
       fbout = fout
       lou = ltrunc(fout,80)
 
+      write(6,*)
+      write(6,'(A)') 'Start converting ...'
+      write(6,*)
+
+
       call chcopy(file1(len+1),'.rea',4)
       call chcopy(fout1(lou+1),'.rea',4)
       call chcopy(fbout1(lou+1),'.re2\0',5)
@@ -52,15 +57,16 @@ c     an ascii rea file for just the parameters
 
       call scanout(string,'MESH DATA',9,10,11)
       call lineout(11,string,80)
+      write(6,'(A,A)') 'read: ',string
 
-      read (10,*)  nel, ndim, nelv
-      nels = -nel
-      write(11,11) nels, ndim, nelv
-   11 format(i11,i2,i11,1x,'NEL,NDIM,NELV')
+      read (10,*)   nel, ndim, nelv
+      write(11,11) -nel, ndim, nelv
+   11 format(i9,2x,i1,2x,i9,5x,'NELT,NDIM,NELV')
    
-      if(nelv.ge.lelt) then
+      if(nel.ge.lelt) then
         write(6,*) 'Abort: number of elements too large'
         write(6,*) 'maximum number of elements ',lelt
+        write(6,*) 'change lelt and recompile'
         stop
       endif
 
@@ -70,12 +76,11 @@ c     an ascii rea file for just the parameters
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 
-      write(6,*) nel, ndim, nelv
+
+C MESH
+      igroup = 0
       do ie=1,nel      
-         if (mod(ie,10000).eq.0) write(6,*) ie,nel,' mesh'
-csk         read (10,12) igroup
-csk   12    format(43x,i5)
-         igroup = 0
+         read(10,*) !read (10,'(43X,i5)') igroup
          call byte_write(igroup, 1)
 
          if (ndim.eq.3) then
@@ -96,40 +101,54 @@ csk   12    format(43x,i5)
             call byte_write(y,4)
          endif
       enddo
+      write(6,'(i9,1x,i9,1x,i1,A)') nel,nelv,ndim, 
+     &     ' nelt/nelv/ndim'
 
-      read(10,*)
+c CURVED SIDES
+      read (10,80) string !  curved sides
+      write(6,'(A,A)') 'read: ',string
       read(10,*) ncurve
       call byte_write(ncurve,1)
 
       call blank(ccurve,4)
       if (ncurve.gt.0) then
          do icurve=1,ncurve
-            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
+c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),ccurve(1)
-            else
+            elseif (nel.lt.1000000) then
                read(10,61) f,e,(buf(k),k=1,5),ccurve(1)
+            else
+               read(10,62) f,e,(buf(k),k=1,5),ccurve(1)
             endif
             call byte_write(e     ,1)
             call byte_write(f     ,1)
             call byte_write(buf   ,5)
             call byte_write(ccurve,1)
          enddo
-   60    format(i3,i3,5g14.6,1x,a1)
-   61    format(i2,i6,5g14.6,1x,a1)
+   60    format(i3,i3 ,5g14.6,1x,a1)
+   61    format(i2,i6 ,5g14.6,1x,a1)
+   62    format(i2,i10,5g14.6,1x,a1)
+
+          write(6,*) ncurve,' Number of curved sides'
       endif
-         
+
+C BOUNDARY CONDITIONS
       read (10,80) string ! ***** BOUNDARY CONDITIONS *****
+      write(6,'(A,A)') 'read: ',string
 
       nface = 2*ndim
       do kpass = 1,50   ! for now, at most 50 fields
          read (10,80) string
          if (indx1(string,'BOUN',4).ne.0) then ! we might have bcs
             if (indx1(string,'NO ',3).eq.0)  then ! we have bcs, read and count
+               write(6,'(A,A)') 'read: ',string
                nbc = 0
-               do e=1,nel
+               nelb = nelv
+               if(kpass.eq.2) nelb=nel     ! only ifield2 is a T mesh 
+               do e=1,nelb
                do f=1,nface
-                  if (nel.lt. 100 000 ) then
+                  if (nel.lt. 100000 ) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
                      read(10,*) cbc(f,e),idum1,idum2,(bc(k,f,e),k=1,5)
@@ -174,7 +193,9 @@ c     write(6 ,81) (string1(k),k=1,len)
       call byte_close (fbout)
 
   999 continue
+      write(6,*) 'done'
       stop
+
  9999 continue
       write(6,*) 'could not find file "indat". abort.'
       stop

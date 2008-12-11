@@ -5,7 +5,8 @@ X     = /usr/X11R6/lib
 P     =
 prefix = $(bin_nek_tools)
 
-FLAGS = -O -Dr8
+FLAGS = -Dr8
+
 
 GOBJS = prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib_no_graph.o subs.o zipper2.o postnek6.o screen.o revert.o mxm.o xdriver.o error.o ivec.o queue.o stack.o bss_malloc.o adj_list.o pythag.o tqli.o smbwr.o sparse_matrix.o rsb_driver.o rsb.o
 

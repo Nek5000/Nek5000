@@ -8,7 +8,7 @@ all: genBox
 
 
 genBox:	$(OBJS)
-	$(F77) $(FLAGS) -o $(prefix)/genBox $(OBJS) $(LFLAGS) 
+	$(F77) $(FLAGS) -o $(prefix)/genbox $(OBJS) $(LFLAGS) 
 
 clean:
 	'rm' *.o
