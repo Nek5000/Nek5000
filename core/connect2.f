@@ -47,6 +47,10 @@ c
 
       else
 
+         if(nid.eq.0) write(6,*) 
+     &      'ABORT: ASCII no longer supported, use .re2 file!'
+         call exitt
+
          maxrd = 32               ! max # procs to read at once
          mread = (np-1)/maxrd+1   ! mod param
          iread = 0                ! mod param
@@ -187,12 +191,32 @@ c
       ENDIF
    
 
+c     dealiasing handling
+      if (param(99).lt.0) then
+         param(99) = 0        ! No  dealiasing 
+      else
+         param(99) = 4        ! default
+         if (lxd.le.lx1) then
+            if(nid.eq.0) write(6,*) 
+     &         'ABORT: LXD<LX1, change LXD and recompile!'
+            call exitt
+         endif
+      endif
 
-      if (param(99).eq.0) param(99) = 3 ! Set dealiasing as default
-      if (param(99).lt.0) param(99) = 0 ! No  dealiasing 
+c     I/O format handling
+      if (param(67).lt.0) then
+         param(67) = 0        ! ASCII
+ 
+      else
+         param(67) = 6        ! binary is default
+      endif
 
-
-
+      if (param(66).lt.0) then
+         param(66) = 0        ! ASCII
+ 
+      else
+         param(66) = 6        ! binary is default
+      endif
 
 c   
 c     Read in the passive scalar conduct and rhocp's:
@@ -282,7 +306,7 @@ C
          PARAM(11) = 1.0
          PARAM(12) = 1.0
          PARAM(19) = 0.0
-         ENDIF
+      ENDIF
 c     IF (PARAM(22).EQ.0.0) PARAM(22)=1.0E-5
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
@@ -448,19 +472,16 @@ C
       CALL BLANK(CCURVE, 8*LELT)
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
-
-c           read(9,*,err=500,end=500) iedg,ieg,r1,r2,r3,r4,r5,ans
-
             IF (NELGT.LT.1000) THEN
                READ(9,60,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ELSEIF (NELGT.LT.1000000) THEN
                READ(9,61,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
-            ELSEIF (NELGT.LT.10000000) THEN
+            ELSE
                READ(9,62,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ENDIF
-   60       FORMAT(I3,I3,5G14.6,1X,A1)
-   61       FORMAT(I2,I6,5G14.6,1X,A1)
-   62       FORMAT(I1,I7,5G14.6,1X,A1)
+   60       FORMAT(I3,I3 ,5G14.6,1X,A1)
+   61       FORMAT(I2,I6 ,5G14.6,1X,A1)
+   62       FORMAT(I2,I10,5G14.6,1X,A1)
 
             IF (GLLNID(IEG).EQ.NID) THEN
                IEL=GLLEL(IEG)
@@ -599,12 +620,11 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    51             FORMAT(A1,A3,I5,I1,5G14.6)
-               ELSEIF (NELGT.LT.1000000) THEN
-                  READ(9,52,ERR=500,END=500)    
+               ELSE
+                  READ(9,*,ERR=500,END=500)    
      $            CHTEMP,
-     $            CBC(ISIDE,IEL,IFIELD),ID1,
+     $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   52             FORMAT(A1,A3,I6,5G14.6)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP
@@ -620,20 +640,6 @@ C              check for fortran function as denoted by lower case bc's:
                ENDIF
             ELSE
                READ(9,*,ERR=500,END=500)   cbc1  ! dummy read, pff 4/28/05
-c              IEL=1
-c              READ(9,65,ERR=500,END=500)    
-c    $         CBCS(ISIDE,IEL),ID1,ID2,(BCS(II,ISIDE,IEL),II=1,NBCREA)
-c  65          FORMAT(1X,A3,2I3,5G14.7)
-c              check for fortran function as denoted by lower case bc's:
-c              CBC1=CBCS(ISIDE,IEL)
-c              CBC3=CBCS(ISIDE,IEL)
-c              ICBC1=ICHAR(CBC1)
-c              IF (ICBC1.GE.97.AND.ICBC1.LE.122) THEN
-c                 IF(CBC3(3:3).NE.'i')NLINES=BCS(1,ISIDE,IEL)
-c                 IF(CBC3(3:3).EQ.'i')NLINES=BCS(4,ISIDE,IEL)
-c                 DO 70 I=1,NLINES
-c  70             READ(9,*,ERR=500,END=500)
-c              ENDIF
             ENDIF
    80    CONTINUE
         endif
@@ -878,6 +884,7 @@ C     Read output specs
       READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
       READ(9,*,ERR=200,END=200) IPSCO
       IF (IPSCO.GT.0) THEN
+         IF (IPSCO.GT.NPSCAL) GOTO 200
          DO 120 I=1,IPSCO
             READ(9,*,ERR=200,END=200) IFPSCO(I)
   120    CONTINUE

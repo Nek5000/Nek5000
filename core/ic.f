@@ -105,8 +105,10 @@ C
 c
       jp = 0
       do 200 ifield=2,maxfld
-         if (nid.eq.0) write(6,*) 'nekuic?',ifield,iffort(ifield,jp)
-         if (iffort(ifield,jp)) call nekuic
+         if (iffort(ifield,jp)) then
+         if (nid.eq.0) write(6,*) 'call nekuic for ifld:', ifield
+            call nekuic
+         endif
  200  continue
 c
       if (ifpert) then
@@ -135,9 +137,11 @@ C
 C
 C     Fortran function initial conditions for velocity.
 C
-      if (nid.eq.0) write(6,*) 'call nekuic for vel:',iffort(1,jp),jp
       ifield = 1
-      if (iffort(ifield,jp)) call nekuic
+      if (iffort(ifield,jp)) then
+         if (nid.eq.0) write(6,*) 'call nekuic for vel  ',jp
+         call nekuic
+      endif
 c
       if (ifpert) then
          ifield=1
@@ -243,7 +247,7 @@ c
    17    format('PS max',50g13.5)
       endif
 c
-      small=1.0E-15
+      small=1.0E-20
       ifldsave = ifield
       if (vxmax.eq.0.0) call perturb(vx,1,small)
       if (vymax.eq.0.0) call perturb(vy,1,small)
@@ -362,13 +366,12 @@ C
 C---------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'RESTART'
 c
       logical  iffort(  ldimt1,0:lpert)
      $       , ifrest(0:ldimt1,0:lpert)
      $       , ifprsl(  ldimt1,0:lpert)
 c
-      logical ifgetx,ifgetz,ifgetu,ifgetw,ifgetp,ifgett,ifgtps(ldimt1)
-     $       ,ifgtim
       character*80 line,fname,cdum
       character*2  s2
       character*1  line1(80)
@@ -455,9 +458,10 @@ C
  1010       FORMAT(/,2X,'Restart options:')
             IF (NID.EQ.0) WRITE(6,'(A80)') LINE
 C
-C           Parse restart options 
-            call sioflag(ifgetx,ifgetz,ifgetu,ifgetw,ifgetp
-     $                  ,ifgett,ifgtps,ifgtim,ndumps,fname,line)
+C           Parse restart options
+ 
+            call sioflag(ndumps,fname,line)
+
             IF (IFGETX) THEN
                IFREST(0,jp) = .TRUE.
             ENDIF
@@ -504,6 +508,7 @@ C
 C----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
+      INCLUDE 'RESTART'
 
       common /inelr/ nelrr
 
@@ -545,8 +550,7 @@ C
 C
 C     Local logical flags to determine whether to copy data or not.
 C
-      logical ifgetx,ifgetz,ifgetu,ifgetw,ifgetp,ifgett,ifgtps(ldimt1)
-     $       ,ifgtim,ifok,iffmat
+      logical ifok,iffmat
       integer iposx,iposz,iposu,iposw,iposp,ipost,ipsps(ldimt1)
 C
       logical ifbytsw, if_byte_swap_test
@@ -568,7 +572,8 @@ c
 
       if (param(67).eq.6.0) then
          do ifile=1,nfiles
-            call  mlti_file_input(ifile)
+            call sioflag(ndumps,fname,initc(ifile))
+            call  mlti_file_input(fname)
          enddo
          return
       endif
@@ -577,8 +582,7 @@ c
 C
 C        Loop over the requested restart files
 C
-         call sioflag(ifgetx,ifgetz,ifgetu,ifgetw,ifgetp,ifgett,
-     $                ifgtps,ifgtim,ndumps,fname,initc(ifile))
+         call sioflag(ndumps,fname,initc(ifile))
 C
 C
 C       Standard Case:   Requested inputs are in the file.
@@ -1061,19 +1065,17 @@ C
       end
 C
 c-----------------------------------------------------------------------
-      subroutine sioflag(ifgetx,ifgetz,ifgetu,ifgetw,ifgetp,ifgett,
-     $                   ifgtps,ifgtim,ndumps,fname,rsopts)
+      subroutine sioflag(ndumps,fname,rsopts)
 C
 C     Set IO flags according to Restart Options File, RSOPTS
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'RESTART'
       INCLUDE 'TSTEP'
 C
       CHARACTER*80 RSOPTS,FNAME
       CHARACTER*2  S2
-      LOGICAL IFGETX,IFGETZ,IFGETU,IFGETW,IFGETP,IFGETT,IFGTPS(LDIMT1)
-     $       ,IFGTIM
       LOGICAL IFGTRL
 C
 C     Scratch variables..
@@ -1122,6 +1124,8 @@ C
 C     Parse file for i/o options and/or dump number
 C
       CALL CAPIT(RSOPT,80)
+
+
       IF (LTRUNC(RSOPT,80).NE.0) THEN
 C
 C        Check for explicit specification of restart TIME.
@@ -2003,7 +2007,7 @@ c     nxyz . nel_block scalar data
 
 
 c-----------------------------------------------------------------------
-      subroutine mfi_gets(u,wk,lwk)
+      subroutine mfi_gets(u,wk,lwk,idummy)
 
       include 'SIZE'
       include 'INPUT'
@@ -2013,6 +2017,7 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1)
       real*4 wk(lwk)
       integer e,eg,msg_id(lelt)
+      logical idummy
 
       common /scruz/ w2(4*lx1*ly1*lz1*lelt)
 
@@ -2058,6 +2063,8 @@ c-----------------------------------------------------------------------
      &   write(6,*) 'ABORT: no support for 64-bit and byte_swap'
       if (if_byte_sw.and.wdsizr.eq.8) call exitt
 
+      if (idummy) goto 100
+
       l = 1
       do e=1,nelt
          if (np.gt.1) call msgwait(msg_id(e))
@@ -2078,12 +2085,12 @@ c-----------------------------------------------------------------------
          l = l+nxyzw
       enddo
 
-      call gsync() ! clear outstanding message queues.
+ 100  call gsync() ! clear outstanding message queues.
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi_getv(u,v,w,wk,lwk)
+      subroutine mfi_getv(u,v,w,wk,lwk,idummy)
 
       include 'SIZE'
       include 'INPUT'
@@ -2093,6 +2100,7 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
       real*4 wk(lwk)
       integer e,eg,msg_id(lelt)
+      logical idummy
 
       common /scruz/ w2(4*lx1*ly1*lz1*lelt)
 
@@ -2141,6 +2149,8 @@ c-----------------------------------------------------------------------
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
+      if (idummy) goto 100
+
       l = 1
       do e=1,nelt
 
@@ -2176,7 +2186,7 @@ c-----------------------------------------------------------------------
          l = l+ndim*nxyzw
       enddo
 
-      call gsync() ! clear outstanding message queues.
+ 100  call gsync() ! clear outstanding message queues.
 
       return
       end
@@ -2214,28 +2224,28 @@ c-----------------------------------------------------------------------
 
 c          NOTE:  This will be extended to general case in future.
 c                 For now, what you see in file is what you get.
-      ifgetx = .false.
-      ifgetu = .false.
-      ifgetp = .false.
-      ifgett = .false.
+      ifgetxr = .false.
+      ifgetur = .false.
+      ifgetpr = .false.
+      ifgettr = .false.
       do k=1,npscal
-         ifgtps(k) = .false.
+         ifgtpsr(k) = .false.
       enddo
 
       ifgtim = .true.  ! this is the default
 
       NPS=0
       do i=1,10 
-         if (rdcode1(i).eq.'X') ifgetx = .true.
-         if (rdcode1(i).eq.'U') ifgetu = .true.
-         if (rdcode1(i).eq.'P') ifgetp = .true.
-         if (rdcode1(i).eq.'T') ifgett = .true.
+         if (rdcode1(i).eq.'X') ifgetxr = .true.
+         if (rdcode1(i).eq.'U') ifgetur = .true.
+         if (rdcode1(i).eq.'P') ifgetpr = .true.
+         if (rdcode1(i).eq.'T') ifgettr = .true.
          if (npscal.gt.0 .and. rdcode1(i).eq.'S') then
             read(rdcode1(i+1),'(I1)') NPS1
             read(rdcode1(i+2),'(I1)') NPS0
             NPS = 10*NPS1+NPS0
             do k=1,NPS
-               ifgtps(k) = .true.
+               ifgtpsr(k) = .true.
             enddo
             ! nothing will follow
             GOTO 50
@@ -2280,22 +2290,22 @@ c     Assign read conditions, according to rdcode
 c          NOTE:  This will be extended to general case in future.
 c                 For now, what you see in file is what you get.
 
-      ifgetx = .false.
-      ifgetu = .false.
-      ifgetp = .false.
-      ifgett = .false.
+      ifgetxr = .false.
+      ifgetur = .false.
+      ifgetpr = .false.
+      ifgettr = .false.
       do k=1,npscal
-         ifgtps(k) = .false.
+         ifgtpsr(k) = .false.
       enddo
 
       ifgtim = .true.  ! this is the default
 
-      if (rlcode(1).eq.'X') ifgetx = .true.
-      if (rlcode(2).eq.'U') ifgetu = .true.
-      if (rlcode(3).eq.'P') ifgetp = .true.
-      if (rlcode(4).eq.'T') ifgett = .true.
+      if (rlcode(1).eq.'X') ifgetxr = .true.
+      if (rlcode(2).eq.'U') ifgetur = .true.
+      if (rlcode(3).eq.'P') ifgetpr = .true.
+      if (rlcode(4).eq.'T') ifgettr = .true.
       do k=1,npscal
-         if (rlcode(4+k).ne.' ') ifgtps(k) = .true.
+         if (rlcode(4+k).ne.' ') ifgtpsr(k) = .true.
       enddo
 
       return
@@ -2319,7 +2329,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mlti_file_input(ifile)
+      subroutine mlti_file_input(fname)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2338,48 +2348,74 @@ c
       include 'TOTAL'
       include 'RESTART'
       character*132 hdr
+      character*80  fname
+
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
       integer e
 
-      if (nid.eq.0) write(6,*) 'IFILE:',ifile
-      if (nid.eq.0) write(6,*) 'FILE NAME: ', initc(ifile)
-      call mfi_get_hdr0(hdr,initc(ifile))
+      call mfi_get_hdr0(hdr,fname)
       call parse_hdr   (hdr)
 
+      call set_pid(fname)! determine reader nodes; open files
 
-      call set_pid(initc(ifile))! determine reader nodes; open files
-
-      if (ifgetx) call mfi_getv(xm1,ym1,zm1,wk,lwk)
-
-      if (ifgetu) then
-         if (ifmhd.and.ifile.eq.2) then
-            call mfi_getv(bx,by,bz,wk,lwk)
-         else
-            call mfi_getv(vx,vy,vz,wk,lwk)
+      if (ifgetxr) then      ! if available
+         if (ifgetx) then
+            call mfi_getv(xm1,ym1,zm1,wk,lwk,.false.)
+         else                ! skip
+            call mfi_getv(xm1,ym1,zm1,wk,lwk,.true.)
          endif
       endif
 
-      if (ifgetp) then
-         call mfi_gets(pm1,wk,lwk)
-         if (ifmhd.and.ifile.eq.2) then
-            do e=1,nelv
-               call map12 (pm(1,1,1,e),pm1(1,e),e)
-            enddo
-         elseif (ifsplit) then
-            call copy (pr,pm1,nx2*ny2*nz2*nelv)
+      if (ifgetur) then
+         if (ifgetu) then
+            if (ifmhd.and.ifile.eq.2) then
+               call mfi_getv(bx,by,bz,wk,lwk,.false.)
+            else
+               call mfi_getv(vx,vy,vz,wk,lwk,.false.)
+            endif
          else
-            do e=1,nelv
-               call map12 (pr(1,1,1,e),pm1(1,e),e)
-            enddo
+            call mfi_getv(vx,vy,vz,wk,lwk,.true.)
          endif
       endif
 
-      if (ifgett) call mfi_gets(t,wk,lwk)
+      if (ifgetpr) then
+         if (ifgetp) then
+            call mfi_gets(pm1,wk,lwk,.false.)
+            if (ifmhd.and.ifile.eq.2) then
+               do e=1,nelv
+                  call map12 (pm(1,1,1,e),pm1(1,e),e)
+               enddo
+            elseif (ifsplit) then
+               call copy (pr,pm1,nx2*ny2*nz2*nelv)
+            else
+               do e=1,nelv
+                  call map12 (pr(1,1,1,e),pm1(1,e),e)
+               enddo
+            endif
+         else
+            call mfi_gets(pm1,wk,lwk,.true.)
+         endif
+      endif
+
+      if (ifgettr) then
+         if (ifgett) then
+            call mfi_gets(t,wk,lwk,.false.)
+         else
+            call mfi_gets(t,wk,lwk,.true.)
+         endif
+      endif
+
       do k=1,npscal
-         if (ifgtps(k)) call mfi_gets(t(1,1,1,1,k+1),wk,lwk)
+         if (ifgtpsr(k)) then
+            if (ifgtps(k)) then
+               call mfi_gets(t(1,1,1,1,k+1),wk,lwk,.false.)
+            else
+               call mfi_gets(t(1,1,1,1,k+1),wk,lwk,.true.)
+            endif
+         endif
       enddo
 
       if (ifgtim) time = timer
@@ -2473,57 +2509,6 @@ c      write(6,*) nid,' STRIDE:',stride,np,nfiler
       endif
 
       call lbcast(if_byte_sw)     ! broadcast byte swap from node 0
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine restart_load(name,ifld,nfld)
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'RESTART'
-      include 'TSTEP'
-
-c     Open up a sequence of name.nfld files for restart, start w/ ifld.
-
-      character*80 name,fname
-      character*1  fnam1(80)
-      equivalence (fnam1,fname)
-      character*4 str
-
-      integer kfld
-      save    kfld
-      data    kfld /0/
-
-      if (istep.ge.nfld) return                        !  All done
-      if (istep.eq.0) kfld = ifld
-
-      write(6,*) 'name:',name
-
-      call blank(fname,80)
-      len = ltrunc(name,80)
-      call chcopy(fname,name,len)
-
-      k = len+1
-      call chcopy(fnam1(k  ),'.f',2)                !  Add .f appendix
-      k = k + 2
-
-      if (ifmhd) then
-         write(str,4) kfld                          !  Add kfld number
-         call chcopy(fnam1(k),str,4)
-         kfld = kfld + 1
-         call chcopy (initc(2),fname,80)
-         call  mlti_file_input(2)
-      endif
-
-      write(str,4) kfld                             !  Add kfld number
-    4 format(i4.4)
-      call chcopy(fnam1(k),str,4)
-      kfld = kfld + 1
-      call chcopy (initc(1),fname,80)
-      call  mlti_file_input(1)
-
-      if (istep.eq.0) time = timer                  !  Reset time
 
       return
       end

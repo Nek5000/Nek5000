@@ -1969,6 +1969,10 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
+csk 
+      ifcyclic = .false.
+csk
+
       itest = 0
       if (ifcyclic) itest = 1
       itest = iglmax(itest,1)

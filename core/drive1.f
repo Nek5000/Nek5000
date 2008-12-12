@@ -77,7 +77,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       REAL*8 t0,tp
 
       call iniproc !  processor initialization 
-      if (nid.eq.0) write(6,*) 'Number of Processors ::',np
 
       TIME0  = dnekclock()
       etimes = dnekclock()
