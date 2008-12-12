@@ -29,7 +29,7 @@ C
      $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
      $               ,IFMODEL,IFKEPS
      $               ,IFINTQ
-     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT),IFFMTIN
+     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC

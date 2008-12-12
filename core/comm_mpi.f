@@ -7,8 +7,6 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
-      integer i,val
-
 
       call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
       if ( mpi_is_initialized .eq. 0 ) then
@@ -20,12 +18,19 @@ c-----------------------------------------------------------------------
       np  = np_
       nid = nid_
 
+      ! print copyright
+      if (nid.eq.0) then
+         write(6,*) 'NEK5000: The Open Source Spectral Element Solver'
+         write(6,*) 'COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC' 
+         write(6,*) '' 
+      endif
+
       ! check upper tag size limit
-c      call mpi_comm_get_attr(nekcomm,MPI_TAG_UB,val,flag,ierr)
-c      if (val.lt.(10000+max(lp,lelg))) then
-c         if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
-c         call exitt
-c      endif
+      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
+      if (nval.lt.(10000+max(lp,lelg))) then
+         if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
+         call exitt
+      endif
 
       IF (NP.GT.LP) THEN
          WRITE(6,*) 
@@ -48,18 +53,20 @@ c      endif
       ifdblas = .false.
       if (wdsize.eq.8) ifdblas = .true.
 
-      IF (NID.EQ.0) WRITE(6,*) ' REAL WDSIZE:',WDSIZE
+      IF (NID.EQ.0) WRITE(6,*) 'REAL wdsize   :',WDSIZE
       
       ! set word size for INTEGER
       ! HARDCODED since there is no secure way to detect an int overflow
       isize = 4
-      IF (NID.EQ.0) WRITE(6,*) ' INTEGER WDSIZE:',ISIZE
+      IF (NID.EQ.0) WRITE(6,*) 'INTEGER wdsize:',ISIZE
 c
 c
       PID = 0
       NULLPID=0
       NODE0=0
       NODE= NID+1
+
+      if (nid.eq.0) write(6,*) 'Number of Processors:',np
 
       RETURN
       end

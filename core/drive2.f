@@ -380,6 +380,12 @@ C
          write(6,*) 'Note VISCOS  =',PARAM(2)
          write(6,*) 'Note CONDUCT =',PARAM(8)
       endif
+
+      if (param(62).gt.0) then
+         if(nid.eq.0) write(6,*)
+     &      'enable byte swap for output'
+         call set_bytesw_write(1)
+      endif
 c
       return
 C

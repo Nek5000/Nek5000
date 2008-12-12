@@ -632,7 +632,7 @@ c
       common /iterhm/ niterhm
       character*4 name
 c
-      if (ifsplit.and.name.eq.'PRES'.and.param(40).eq.1) then
+      if (ifsplit.and.name.eq.'PRES'.and.param(42).eq.0) then
          n = nx1*ny1*nz1*nelv
          call copy      (x,f,n)
          call hmh_gmres (x,h1,h2,mult,iter)

@@ -1346,7 +1346,8 @@ c-----------------------------------------------------------------------
       if (nid.eq.pid0) then
          call mfo_open_files(prefix)         ! open files
       endif
-      call mfo_write_hdr                    ! write hdr, byte key, els.
+
+      call mfo_write_hdr                     ! write hdr, byte key, els.
 
       nout = nelt
 
@@ -1655,8 +1656,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      n  = 2*ndim
-      len   = 4*(1 + 2*ndim*lelt) 
+      n    = 2*ndim
+      len  = isize + 4*(2*ndim*lelt) 
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -1732,7 +1733,7 @@ c-----------------------------------------------------------------------
 
       nxyz = nx1*ny1*nz1
       n    = 2
-      len  = 4*(1+2*lelt)
+      len  = isize + 4*(2*lelt)
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -1796,7 +1797,7 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo * (1+lelt*nxyz)
+      len  = wdsizo + wdsizo*(nel*nxyz)
       ntot = nxyz*nel
 
       idum = 1
@@ -1819,7 +1820,11 @@ c-----------------------------------------------------------------------
             call crecv(mtype,u4,len)
             inelp = u4(1)
             nout  = wdsizo/4 * nxyz*inelp
-            call byte_write(u4(2),nout)
+            if (wdsizo.eq.4) then
+               call byte_write(u4(2),nout)
+            else
+               call byte_write(u8(2),nout)
+            endif
          enddo
 
       else
@@ -1860,7 +1865,7 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo * (1+lelt*nxyz*ndim)
+      len  = wdsizo + wdsizo*(nel*nxyz*ndim)
       idum = 1
 
       if (nid.eq.pid0) then
@@ -1879,12 +1884,12 @@ c-----------------------------------------------------------------------
              enddo
          else
              do iel = 1,nel
-                call copy   (u8(j+1),u(1,iel),nxyz)
+                call copy     (u8(j+1),u(1,iel),nxyz)
                 j = j + nxyz
-                call copy   (u8(j+1),v(1,iel),nxyz)
+                call copy     (u8(j+1),v(1,iel),nxyz)
                 j = j + nxyz
                 if(if3d) then
-                  call copy (u8(j+1),w(1,iel),nxyz)
+                  call copy   (u8(j+1),w(1,iel),nxyz)
                   j = j + nxyz
                 endif
              enddo
@@ -1898,8 +1903,12 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,u4,len)
             inelp = u4(1)
-            nout  = wdsizo/4 * ndim*inelp *nxyz
-            call byte_write(u4(2),nout)
+            nout  = wdsizo/4 * ndim*inelp * nxyz
+            if (wdsizo.eq.4) then
+               call byte_write(u4(2),nout)
+            else
+               call byte_write(u8(2),nout)
+            endif
          enddo
 
       else
@@ -1919,12 +1928,12 @@ c-----------------------------------------------------------------------
              enddo
          else
              do iel = 1,nel
-                call copy   (u8(j+1),u(1,iel),nxyz)
+                call copy     (u8(j+1),u(1,iel),nxyz)
                 j = j + nxyz
-                call copy   (u8(j+1),v(1,iel),nxyz)
+                call copy     (u8(j+1),v(1,iel),nxyz)
                 j = j + nxyz
                 if(if3d) then
-                  call copy (u8(j+1),w(1,iel),nxyz)
+                  call copy   (u8(j+1),w(1,iel),nxyz)
                   j = j + nxyz
                 endif
              enddo
@@ -1952,6 +1961,11 @@ c-----------------------------------------------------------------------
       character*132 hdr
 
       call gsync()
+
+      ! if we want to switch the bytes for output
+      ! switch it again because the hdr is in ASCII
+      call get_bytesw_write(ibsw_out)
+      if (ibsw_out.ne.0) call set_bytesw_write(0)  
 
       idum = 1
 
@@ -2006,6 +2020,8 @@ c-----------------------------------------------------------------------
      &       1x,i9,1x,i6,1x,i6,1x,10a)
 
       call byte_write(hdr,33)
+
+      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
       test_pattern = 6.54321           ! write test pattern for byte swap
       call byte_write(test_pattern,1)

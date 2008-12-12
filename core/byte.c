@@ -1,38 +1,3 @@
-/************************************byte.c************************************
-Module Name: byte
-Module Info:
-
-Author:  Henry M. Tufo III
-
-e-mail:  hmt@cs.brown.edu
-
-sn-mail: Division of Applied Mathematics, 
-         Brown University,
-         Box F
-         Providence, RI 02912
-
-Tel:     (401) 863-7666
-
-
-Last Modification: 11.24.97
-*************************************byte.c***********************************/
-
-
-/************************************byte.c************************************
-NOTES ON USAGE: 
-
-*************************************byte.c***********************************/
-
-/************************************byte.c************************************
-FILE FORMAT: 
------------------------------- Begin File -------------------------------------
-
------------------------------- End   File -------------------------------------
-
-Note: 
-*************************************byte.c***********************************/
-
-/* C modules for I/O etc. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,15 +28,37 @@ static FILE *fp=NULL;
 static int  flag=0;
 static char name[MAX_NAME+1];
 
+int bytesw_write=0;
+int bytesw_read=0;
 
-/************************************byte.c************************************
-Function: 
+/*************************************byte.c***********************************/
 
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
+void
+#ifdef UPCASE
+BYTE_REVERSE (float *buf, int *nn)
+#elif  UNDERSCORE
+byte_reverse_(float *buf, int *nn)
+#else
+byte_reverse(float *buf, int *nn)
+#endif
+{
+  int n;
+  char temp, *ptr;
+
+
+#ifdef SAFE
+  if (*nn<0)
+    {printf("byte_reverse() :: n must be positive\n"); abort();}
+#endif
+  
+  for (ptr=(char *)buf,n=*nn; n--; ptr+=4)
+    {
+      SWAP(ptr[0],ptr[3])
+      SWAP(ptr[1],ptr[2])
+     }
+}
+
+
 void
 #ifdef UPCASE
 BYTE_OPEN (char *n)
@@ -110,15 +97,6 @@ byte_open(char *n)
 }
 
 
-
-/************************************byte.c************************************
-Function: 
-
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
 void
 #ifdef UPCASE
 BYTE_CLOSE ()
@@ -147,15 +125,6 @@ byte_close()
 }
 
 
-
-/************************************byte.c************************************
-Function: 
-
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
 void
 #ifdef UPCASE
 BYTE_REWIND ()
@@ -176,15 +145,6 @@ byte_rewind()
 }
 
 
-
-/************************************byte.c************************************
-Function: 
-
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
 void
 #ifdef UPCASE
 BYTE_WRITE (float *buf, int *n)
@@ -226,22 +186,24 @@ byte_write(float *buf, int *n)
     }
 
   if (flag==WRITE)
-    {fwrite(buf,sizeof(float),*n,fp);}
+    {
+      if (bytesw_write == 1)
+#ifdef UPCASE
+      BYTE_REVERSE (buf,n);
+#elif  UNDERSCORE
+      byte_reverse_(buf,n);
+#else
+      byte_reverse (buf,n);
+#endif
+
+      fwrite(buf,sizeof(float),*n,fp);
+    }
   else
     {printf("byte_write() :: can't fwrite after freading!\n"); abort();}
 #endif
 }
 
 
-
-/************************************byte.c************************************
-Function: 
-
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
 void
 #ifdef UPCASE
 BYTE_READ (float *buf, int *n)
@@ -284,45 +246,79 @@ byte_read(float *buf, int *n)
     }
 
   if (flag==READ)
-    {fread(buf,sizeof(float),*n,fp);}
+    {
+      if (bytesw_read == 1)
+#ifdef UPCASE
+      BYTE_REVERSE (buf,n);
+#elif  UNDERSCORE
+      byte_reverse_(buf,n);
+#else
+      byte_reverse (buf,n);
+#endif
+
+      fread(buf,sizeof(float),*n,fp);
+     }
   else
     {printf("byte_read() :: can't fread after fwriting!\n"); abort();}
 #endif
 }
 
 
-
-/************************************byte.c************************************
-Function: 
-
-Input : 
-Output: 
-Return: 
-Description:  
-*************************************byte.c***********************************/
 void
 #ifdef UPCASE
-BYTE_REVERSE (float *buf, int *nn)
+SET_BYTESW_WRITE (int *pa)
 #elif  UNDERSCORE
-byte_reverse_(float *buf, int *nn)
+set_bytesw_write_(int *pa)
 #else
-byte_reverse(float *buf, int *nn)
+set_bytesw_write (int *pa)
 #endif
 {
-  int n;
-  char temp, *ptr;
+    if (*pa != 0)
+       bytesw_write = 1;
+    else
+       bytesw_write = 0;
+}
 
 
-#ifdef SAFE
-  if (*nn<0)
-    {printf("byte_reverse() :: n must be positive\n"); abort();}
+void
+#ifdef UPCASE
+SET_BYTESW_READ (int *pa)
+#elif  UNDERSCORE
+set_bytesw_read_(int *pa)
+#else
+set_bytesw_read (int *pa)
 #endif
-  
-  for (ptr=(char *)buf,n=*nn; n--; ptr+=4)
-    {
-      SWAP(ptr[0],ptr[3])
-      SWAP(ptr[1],ptr[2])
-     }
+{
+    if (*pa != 0)
+       bytesw_read = 1;
+    else
+       bytesw_read = 0;
+}
+
+
+void
+#ifdef UPCASE
+GET_BYTESW_WRITE (int *pa)
+#elif  UNDERSCORE
+get_bytesw_write_(int *pa)
+#else
+get_bytesw_write (int *pa)
+#endif
+{
+    *pa = bytesw_write;
+}
+
+
+void
+#ifdef UPCASE
+GET_BYTESW_READ (int *pa)
+#elif  UNDERSCORE
+get_bytesw_read_(int *pa)
+#else
+get_bytesw_read (int *pa)
+#endif
+{
+    *pa = bytesw_read;
 }
 
 
@@ -397,17 +393,3 @@ main(int argc, char **argv)
   exit(0);
 }
 #endif
-  
-
-void
-#ifdef UPCASE
-WHATAMI (int *pa, char *vname)
-#elif  UNDERSCORE
-whatami_(int *pa, char *vname)
-#else
-whatami (int *pa, char *vname)
-#endif
-{
-/*  printf("whatami: %p %d %s\n", pa, *pa, vname); */
-    printf("whatami: %d %d %s\n", pa, *pa, vname);
-}
