@@ -18,12 +18,7 @@ c-----------------------------------------------------------------------
       np  = np_
       nid = nid_
 
-      ! print copyright
-      if (nid.eq.0) then
-         write(6,*) 'NEK5000: The Open Source Spectral Element Solver'
-         write(6,*) 'COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC' 
-         write(6,*) '' 
-      endif
+      call printVer
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
@@ -53,12 +48,9 @@ c-----------------------------------------------------------------------
       ifdblas = .false.
       if (wdsize.eq.8) ifdblas = .true.
 
-      IF (NID.EQ.0) WRITE(6,*) 'REAL wdsize   :',WDSIZE
-      
       ! set word size for INTEGER
       ! HARDCODED since there is no secure way to detect an int overflow
       isize = 4
-      IF (NID.EQ.0) WRITE(6,*) 'INTEGER wdsize:',ISIZE
 c
 c
       PID = 0
@@ -66,7 +58,11 @@ c
       NODE0=0
       NODE= NID+1
 
-      if (nid.eq.0) write(6,*) 'Number of Processors:',np
+      if (nid.eq.0) then 
+         write(6,*) 'Number of Processors:',np
+         WRITE(6,*) 'REAL    wdsize      :',WDSIZE
+         WRITE(6,*) 'INTEGER wdsize      :',ISIZE
+      endif
 
       RETURN
       end
@@ -355,3 +351,33 @@ c     write(6,*) 'quittin3',z,b
       return
       end
 c-----------------------------------------------------------------------
+
+      subroutine printVer
+
+      INCLUDE 'SIZE'
+
+      if(nid.ne.0) return
+
+      write(6,*)    
+     & '/------------------------------------------------------------\\'
+     &,'|     dBBBBb  dBBBP  dBP dBP    dBBBBBP dBBBBP dBBBBP dBBBBP |'
+     &,'|    dBP dBP dBP    dBP d8P    dBP     dB  BP dB  BP dB  BP  |'
+     &,'|   dBP dBP dBBP   dBBBBP     dBBBBBP dB  BP dB  BP dB  BP   |'
+     &,'|  dBP dBP dBP    dBP BB         dBP dB  BP dB  BP dB  BP    |'
+     &,'| dBP dBP dBBBBP dBP dB     dBBBBBP dBBBBP dBBBBP dBBBBP     |'
+     &,'|------------------------------------------------------------|'
+     &,'|                                                            |' 
+     &,'| NEK5000:  The Open Source Spectal Element Solver           |'
+     &,'| COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC                   |'
+     &,'| Version:  1.0rc1                                           |'
+     &,'| Web:      http://nek5000.mcs.anl.gov                       |'
+     &,'|                                                            |'
+     &,'\\------------------------------------------------------------/'
+     &,'                                                              '
+
+      return
+      end
+
+
+
+ 
