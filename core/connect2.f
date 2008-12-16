@@ -193,7 +193,7 @@ c
 
 c     dealiasing handling
       if (param(99).lt.0) then
-         param(99) = 0        ! No  dealiasing 
+         param(99) = -1       ! No  dealiasing 
       else
          param(99) = 4        ! default
          if (lxd.le.lx1) then
