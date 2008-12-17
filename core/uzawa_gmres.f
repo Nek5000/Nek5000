@@ -335,7 +335,7 @@ c     GMRES iteration.
 c
       iconv = 0
       call rzero(x,n)
-      do while(iconv.eq.0.and.iter.lt.100)
+      do while(iconv.eq.0.and.iter.lt.500)
          if(iter.eq.0) then               !      -1
             call col3(r,ml,res,n)         ! r = L  res
 c           call copy(r,res,n)

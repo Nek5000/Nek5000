@@ -47,9 +47,9 @@ c
 
       else
 
-         if(nid.eq.0) write(6,*) 
-     &      'ABORT: ASCII no longer supported, use .re2 file!'
-         call exitt
+c         if(nid.eq.0) write(6,*) 
+c     &      'ABORT: ASCII no longer supported, use .re2 file!'
+c         call exitt
 
          maxrd = 32               ! max # procs to read at once
          mread = (np-1)/maxrd+1   ! mod param
@@ -196,12 +196,14 @@ c     dealiasing handling
          param(99) = -1       ! No  dealiasing 
       else
          param(99) = 4        ! default
-         if (lxd.le.lx1) then
-            if(nid.eq.0) write(6,*) 
-     &         'ABORT: LXD<LX1, change LXD and recompile!'
-            call exitt
-         endif
       endif
+
+      if (param(99).gt.-1 .and. lxd.le.lx1) then
+          if(nid.eq.0) write(6,*) 
+     &    'ABORT: LXD=<LX1, change LXD and recompile!'
+          call exitt
+      endif
+
 
 c     I/O format handling
       if (param(67).lt.0) then
@@ -2174,6 +2176,11 @@ c-----------------------------------------------------------------------
      $             ,/,2X,'       The data file has dimensions',2i9,'.'
      $             ,/,6X,'   Rerun with more processors or recompile.')
          call exitt
+      endif
+
+      if (nelt.gt.lelt) then
+        write(6,'(A,3I9)') 'Error: nelt>lelt!', nid, nelt, lelt
+        call exitt
       endif
 
       return
