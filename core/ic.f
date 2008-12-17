@@ -106,7 +106,7 @@ c
       jp = 0
       do 200 ifield=2,maxfld
          if (iffort(ifield,jp)) then
-         if (nid.eq.0) write(6,*) 'call nekuic for ifld:', ifield
+         if (nid.eq.0) write(6,*) 'call nekuic for ifld ', ifield
             call nekuic
          endif
  200  continue
@@ -139,7 +139,7 @@ C     Fortran function initial conditions for velocity.
 C
       ifield = 1
       if (iffort(ifield,jp)) then
-         if (nid.eq.0) write(6,*) 'call nekuic for vel  ',jp
+         if (nid.eq.0) write(6,*) 'call nekuic for vel  '
          call nekuic
       endif
 c

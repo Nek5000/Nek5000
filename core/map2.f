@@ -120,8 +120,7 @@ c
       endif
 
       if (nid.eq.0) write(6,*) 'nelgt/nelgv:',nelgt,nelgv
-      if (nid.eq.0) write(6,*) 'nelt/nelv:',nelt,nelv
-
+      if (nid.eq.0) write(6,*) 'lelt /lx1  :',lelt ,lx1
 c
 c     compute global to local map (no processor info)
 c
