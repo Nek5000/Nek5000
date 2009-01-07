@@ -1,7 +1,7 @@
       subroutine initdim
 C-------------------------------------------------------------------
 C
-C     Transfer array dimensions to common
+C      Transfer array dimensions to common
 C
 C-------------------------------------------------------------------
       include 'SIZE'
