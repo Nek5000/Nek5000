@@ -56,7 +56,7 @@ c
          iread = 0                ! mod param
          x     = 0
          do i=0,np-1,maxrd
-            x = glmax(x,1)  !  synch
+            call gsync()   !  synch
             if (mod(nid,mread).eq.iread) then
                if (ifgtp) then
                   call genbox
@@ -1754,7 +1754,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
 
-
+      logical ifbswap
       etime1 = dnekclock()
 
                   ibc = 2
@@ -1857,8 +1857,8 @@ c-----------------------------------------------------------------------
       call copy4r ( bl(1,f,e),buf(3),5)
       call chcopy (cbl(  f,e),buf(8),3)
 
-c     write(6,1) eg,e,f,cbl(f,e),' CBC',nid
-c  1  format(2i8,i4,2x,a3,a4,i8)
+      write(6,1) eg,e,f,cbl(f,e),' CBC',nid
+   1  format(2i8,i4,2x,a3,a4,i8)
 
       return
       end
@@ -1879,8 +1879,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      x = 0.
-      x = glmax(x,1)            ! sync here
+      call gsync()              ! synch here
 
       do eg=1,nelgt             ! sync NOT needed here
 
@@ -1907,7 +1906,7 @@ c-----------------------------------------------------------------------
 
       enddo
 
-      x = glmax(x,1)
+      call gsync()   !  synch
 
       return
       end
@@ -1928,8 +1927,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      x = 0.
-      x = glmax(x,1)
+      call gsync()   !  synch
 
       if (nid.eq.0) then  ! read & send/process
 
@@ -1968,7 +1966,7 @@ c-----------------------------------------------------------------------
 
       endif
 
-      x = glmax(x,1)
+      call gsync()   !  synch
 
       return
       end
@@ -1998,8 +1996,7 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
-      x = 0.
-      x = glmax(x,1)
+      call gsync()   !  synch
 
       if (nid.eq.0) then  ! read & send/process
 
@@ -2007,25 +2004,25 @@ c-----------------------------------------------------------------------
          if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
          do k=1,nbc_max
 
-c           write(6,*) k,' dobc1 ',nbc_max
+            write(6,*) k,' dobc1 ',nbc_max
             call byte_read(buf,nwds)
             if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
 
             eg  = buf(1)
             mid = gllnid(eg)
-c           write(6,*) k,' dobc3 ',eg,mid
+            write(6,*) k,' dobc3 ',eg,mid
 
             if (mid.eq.0) then
                call buf_to_bc(cbl,bl,buf)
             else
-c              write(6,*) mid,' sendbc1 ',eg
+               write(6,*) mid,' sendbc1 ',eg
                call csend(mid,buf,len,mid,0)
-c              write(6,*) mid,' sendbc2 ',eg
+               write(6,*) mid,' sendbc2 ',eg
             endif
 
-c           write(6,*) k,' dobc2 ',nbc_max,eg
+            write(6,*) k,' dobc2 ',nbc_max,eg
          enddo
-c        write(6,*) mid,' bclose ',eg,nbc_max
+         write(6,*) mid,' bclose ',eg,nbc_max
          call buf_close_outv ! notify all procs: no more data
 
       else               ! wait for data from node 0
@@ -2048,7 +2045,7 @@ c           write(6,*) nid,' recvbc2',k,buf(1)
 
       endif
 
-      x = glmax(x,1)
+      call gsync()   !  synch
 
       return
       end
