@@ -161,7 +161,7 @@ C BOUNDARY CONDITIONS
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)
 
-               do e=1,nel
+               do e=1,nelb
                do f=1,nface
                   if (cbc(f,e).ne.'E  ') then
                      call icopy      (buf(1),e,1)
