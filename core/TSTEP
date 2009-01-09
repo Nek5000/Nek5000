@@ -9,6 +9,7 @@
      $               ,TNRML8(LDIMT),TMEAN(LDIMT)
 C
       COMMON /ISTEP2/ IFIELD,IMESH,ISTEP,NSTEPS,IOSTEP,LASTEP,IOCOMM
+     $               ,INSTEP
      $               ,NAB,NBD,NBDINP,NTAUBD
      $               ,NMXH,NMXP,NMXE,NMXNL
      $               ,NELFLD(0:LDIMT1)

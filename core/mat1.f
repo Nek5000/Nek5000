@@ -746,6 +746,19 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
+      real function glamin(a,n)
+      REAL A(1)
+      DIMENSION TMP(1),WORK(1)
+      TMIN = 0.0
+      DO 100 I=1,N
+         TMIN = MIN(TMIN,ABS(A(I)))
+ 100  CONTINUE
+      TMP(1)=TMIN
+      CALL GOP(TMP,WORK,'m  ',1)
+      GLAMIN=ABS(TMP(1))
+      return
+      END
+c-----------------------------------------------------------------------
       function iglmin(a,n)
       integer a(1),tmin
       integer tmp(1),work(1)

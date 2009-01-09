@@ -898,7 +898,6 @@ C
 C
 C     Compute inverse of mesh 2 mass matrix, pff 3/5/92
       CALL INVERS2(BM2INV,BM2,NTOT2)
-      if (nid.eq.0) write(6,*) 'this is bm2:',bm2(2,2,1,1)
 C
       RETURN
       END
@@ -1018,7 +1017,7 @@ C
          endif
       enddo
 
-      if (nid.eq.0) write(6,*) 'Vol_t,Vol_v:',voltm1,volvm1
+      if (nid.eq.0) write(6,*) 'vol_t,vol_v:',voltm1,volvm1
 
 
       nxyz = nx1*ny1*nz1

@@ -14,6 +14,8 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'ZPER'
 C
+      if(nid.eq.0) write(6,*) 'read .rea file'
+
       OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
 
 C     Read Parameters
@@ -26,6 +28,13 @@ C     Read Mesh Data and Group ID
       read(9,*) nelgs,ndim,nelgv
       nelgt = abs(nelgs)
 
+      if (nid.eq.0) then
+         write(6,22) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,22) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+ 22      format(1X,A,4I9)
+         write(6,*) ''
+      endif
+
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
@@ -37,7 +46,12 @@ C     Read Mesh Data and Group ID
 c
       call chk_nel  ! make certain sufficient array sizes
 
+      if(nid.eq.0) write(6,*) 'read .map file'
       call mapelpr  ! read .map file, est. gllnid, etc.
+      if(nid.eq.0) then
+        write(6,*) 'done :: read .map file'
+        write(6,*) ''
+      endif
 
       if (nelgs.lt.0) then
 
@@ -47,16 +61,16 @@ c
 
       else
 
-         if(nid.eq.0) write(6,*) 
-     &      'ABORT: ASCII no longer supported, use .re2 file!'
-         call exitt
+c         if(nid.eq.0) write(6,*) 
+c     &      'ABORT: ASCII no longer supported, use .re2 file!'
+c         call exitt
 
          maxrd = 32               ! max # procs to read at once
          mread = (np-1)/maxrd+1   ! mod param
          iread = 0                ! mod param
          x     = 0
          do i=0,np-1,maxrd
-            call gsync()   !  synch
+            call gsync()
             if (mod(nid,mread).eq.iread) then
                if (ifgtp) then
                   call genbox
@@ -90,6 +104,11 @@ C     End of input data, close read file.
 C
       CLOSE(UNIT=9)
       if (.not.IFFMTIN) CLOSE(UNIT=8)
+
+      if(nid.eq.0) then
+        write(6,*) 'done :: read .rea file'
+        write(6,*) ''
+      endif
 C
       return
       END
@@ -966,6 +985,8 @@ C
 
 c      call  vrdsmshx  ! verify mesh topology
 
+      if(nid.eq.0) write(*,*) 'verify mesh topology'
+
       IERR      = 0
       EPS       = 1.0e-04
       EPS       = 1.0e-03
@@ -1160,18 +1181,23 @@ C
       IF (IERR.gt.0) THEN
          WRITE(6,1400) 
  1400    FORMAT
-     $   ('  Mesh consistency check failed.  EXITING in VRDSMSH.')
+     $   (' Mesh consistency check failed.  EXITING in VRDSMSH.')
             call exitt
       ENDIF
 C
       tmp(1)=ierr
       CALL GOP(tmp,tmp(2),'M  ',1)
       IF (tmp(1).ge.4.0) THEN
+         WRITE(6,1400) 
+     $   (' Mesh consistency check failed.  EXITING in VRDSMSH.')
          call exitt
       ENDIF
 C
-      IF (NID.EQ.0) WRITE(6,1500) 
- 1500 FORMAT('  Mesh consistency check, OK.')
+      if(nid.eq.0) then
+        write(6,*) 'done :: verify mesh topology'
+        write(6,*) ''
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1755,6 +1781,9 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
       logical ifbswap
+
+      if(nid.eq.0) write(6,*) 'read .re2 file'
+   
       etime1 = dnekclock()
 
                   ibc = 2
@@ -1775,20 +1804,22 @@ c
 
       call open_bin_file (ifbswap)
 
-      if (nid.eq.0) write(6,*) 'call rd1_mesh ',ifbswap
+      if (nid.eq.0) write(6,*) '  read mesh '
       call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader
-      if (nid.eq.0) write(6,*) 'call rd1_curv ',ifbswap
+      if (nid.eq.0) write(6,*) '  read curved sides '
       call bin_rd1_curve (ifbswap)
 
-      if (nid.eq.0) write(6,*) 'call rd1_bc   ',ifbswap,nfldt
+      if (nid.eq.0) write(6,*) '  read bc ',nfldt
       do ifield = ibc,nfldt
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
       call close_bin_file
 
-      etime2 = dnekclock() - etime1
-      if (nid.eq.0) write(6,*) nid,' done mesh read, sec: ',etime2
+      if(nid.eq.0) then
+        write(6,*) 'done :: read .re2 file'
+        write(6,*) ''
+      endif
 
       return
       end
@@ -1857,8 +1888,8 @@ c-----------------------------------------------------------------------
       call copy4r ( bl(1,f,e),buf(3),5)
       call chcopy (cbl(  f,e),buf(8),3)
 
-      write(6,1) eg,e,f,cbl(f,e),' CBC',nid
-   1  format(2i8,i4,2x,a3,a4,i8)
+c     write(6,1) eg,e,f,cbl(f,e),' CBC',nid
+c  1  format(2i8,i4,2x,a3,a4,i8)
 
       return
       end
@@ -1879,7 +1910,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      call gsync()              ! synch here
+      call gsync()
 
       do eg=1,nelgt             ! sync NOT needed here
 
@@ -1906,7 +1937,7 @@ c-----------------------------------------------------------------------
 
       enddo
 
-      call gsync()   !  synch
+      call gsync()
 
       return
       end
@@ -1927,13 +1958,12 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      call gsync()   !  synch
+      call gsync()
 
       if (nid.eq.0) then  ! read & send/process
 
          call byte_read(ncurve,1)
          if (ifbswap) call byte_reverse(ncurve,1)
-         write(6,*) 'ncurve: ',ncurve,nwds
 
          do k=1,ncurve
             call byte_read(buf,nwds)
@@ -1966,7 +1996,7 @@ c-----------------------------------------------------------------------
 
       endif
 
-      call gsync()   !  synch
+      call gsync()
 
       return
       end
@@ -1996,7 +2026,7 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
-      call gsync()   !  synch
+      call gsync()
 
       if (nid.eq.0) then  ! read & send/process
 
@@ -2004,25 +2034,25 @@ c-----------------------------------------------------------------------
          if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
          do k=1,nbc_max
 
-            write(6,*) k,' dobc1 ',nbc_max
+c           write(6,*) k,' dobc1 ',nbc_max
             call byte_read(buf,nwds)
             if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
 
             eg  = buf(1)
             mid = gllnid(eg)
-            write(6,*) k,' dobc3 ',eg,mid
+c           write(6,*) k,' dobc3 ',eg,mid
 
             if (mid.eq.0) then
                call buf_to_bc(cbl,bl,buf)
             else
-               write(6,*) mid,' sendbc1 ',eg
+c              write(6,*) mid,' sendbc1 ',eg
                call csend(mid,buf,len,mid,0)
-               write(6,*) mid,' sendbc2 ',eg
+c              write(6,*) mid,' sendbc2 ',eg
             endif
 
-            write(6,*) k,' dobc2 ',nbc_max,eg
+c           write(6,*) k,' dobc2 ',nbc_max,eg
          enddo
-         write(6,*) mid,' bclose ',eg,nbc_max
+c        write(6,*) mid,' bclose ',eg,nbc_max
          call buf_close_outv ! notify all procs: no more data
 
       else               ! wait for data from node 0
@@ -2045,7 +2075,7 @@ c           write(6,*) nid,' recvbc2',k,buf(1)
 
       endif
 
-      call gsync()   !  synch
+      call gsync()
 
       return
       end

@@ -217,13 +217,9 @@ C     first.. a test...
       rtot  = glsum(work,ntotv)
       rtotv = ntotg
       rdif  = (rtot-rtotv)/rtotv
-      if (nid.eq.0) write(6,51) ntotg,rtot,rdif
-      if (nid.eq.0) write(6,52) rtotv,rtot,rdif
-   51 format('dssum test1:',i12,2g13.5)
-   52 format('dssum testf:',3g13.5)
 c
       if (rdif.gt.0.0) then
-         if (nid.eq.0) write(*,*) 'dssum test1 has failed!'
+         if (nid.eq.0) write(*,*) 'Abort: dssum has failed!'
          call exitt
       endif
 
@@ -234,14 +230,14 @@ c
 
       ntot = nxyz1*nelfld(2)
       ttmax = glamax(t ,ntot)
-      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
-   16 format('uvwpt max',5g13.5)
 
       do i=1,NPSCAL
          ntot = nx1*ny1*nz1*nelfld(i+2)
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
-c
+
+c      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
+   16 format(' uvwpt max',5g13.5)
       if (npscal.gt.0) then
          if (nid.eq.0) write(6,17) (psmax(i),i=1,NPSCAL)
    17    format('PS max',50g13.5)
@@ -315,6 +311,28 @@ c           note... must be updated for addl pass. scal's. pff 4/26/04
       endif
       jp = 0
 
+C print min values
+      vxmax = glamin(vx,ntotv)
+      vymax = glamin(vy,ntotv)
+      vzmax = glamin(vz,ntotv)
+      prmax = glamin(pr,ntot2)
+
+      ntot = nxyz1*nelfld(2)
+      ttmax = glamin(t ,ntott)
+
+      do i=1,NPSCAL
+         ntot = nxyz1*nelfld(i+2)
+         psmax(i) = glamin(T(1,1,1,1,i+1),ntot)
+      enddo
+
+      if (nid.eq.0) write(6,19) vxmax,vymax,vzmax,prmax,ttmax
+   19 format(' uvwpt min',5g13.5)
+      if (npscal.gt.0) then
+         if (nid.eq.0) write(6,20) (psmax(i),i=1,NPSCAL)
+   20    format('PS min',50g13.5)
+      endif
+
+c print max values
       vxmax = glamax(vx,ntotv)
       vymax = glamax(vy,ntotv)
       vzmax = glamax(vz,ntotv)
@@ -322,16 +340,18 @@ c           note... must be updated for addl pass. scal's. pff 4/26/04
 
       ntot = nxyz1*nelfld(2)
       ttmax = glamax(t ,ntott)
-      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
 
       do i=1,NPSCAL
          ntot = nxyz1*nelfld(i+2)
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
-c
+
+      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
       if (npscal.gt.0) then
          if (nid.eq.0) write(6,17) (psmax(i),i=1,NPSCAL)
       endif
+c
+c
 c
       xxmin = glmin(xm1,ntott)
       yymin = glmin(ym1,ntott)
@@ -339,8 +359,8 @@ c
       xxmax = glmax(xm1,ntott)
       yymax = glmax(ym1,ntott)
       zzmax = glmax(zm1,ntott)
-      if (nid.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
-    7 format('xyz minmx:',6g13.5)
+c      if (nid.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+c    7 format('xyz minmx:',6g13.5)
 c
       if (ifrest(0,jp)) then
 c        mesh has been read in.  recompute geometric factors
@@ -1903,7 +1923,7 @@ c
       test2 = bytetest
       call byte_reverse(test2,1)
       if (nid.eq.0) 
-     $   write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
+     $   write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
       end
 c-----------------------------------------------------------------------
@@ -1923,6 +1943,8 @@ c
      $ ,             ZM3 (LX1,LY1,LZ1,LELT)
 C
 c
+      if(nid.eq.0) write(6,*) 'regenerate geomerty data'
+
       ntot = nx1*ny1*nz1*nelt
 c
       if (lx3.eq.lx1) then
@@ -1943,6 +1965,11 @@ c
       CALL SETDEF
       CALL SFASTAX
 c
+      if(nid.eq.0) then
+        write(6,*) 'done :: regenerate geomerty data'
+        write(6,*) ''
+      endif
+
       return
       end
 c-----------------------------------------------------------------------

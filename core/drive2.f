@@ -1,7 +1,7 @@
       subroutine initdim
 C-------------------------------------------------------------------
 C
-C      Transfer array dimensions to common
+C     Transfer array dimensions to common
 C
 C-------------------------------------------------------------------
       include 'SIZE'
@@ -122,13 +122,6 @@ C
             IF (IFADVC(IFIELD)) IFCOUR = .TRUE.
  10      CONTINUE
          IF (IFWCNO) IFCOUR = .TRUE.
-         WRITE (6,*) ' '
-         WRITE (6,*) 'Initialization successfully completed ',
-     &               dnekclock()-etimes 
-         IF (TIME.NE.0.0) WRITE (6,*) 'Initial time is:',TIME
-         WRITE (6,*) ' '
-         WRITE (6,*) 'START OF SIMULATION'
-         WRITE (6,*) ' '
       ELSEIF (ISTEP.GT.0 .AND. LASTEP.EQ.0 .AND. IFTRAN) THEN
          ETIME=ETIME2-ETIME1
          TTIME=ETIME2-ETIME0
@@ -374,12 +367,13 @@ C
    81 FORMAT(I4,3X,80A1)
    82 FORMAT(I4,3X,'Parameters from file:',80A1)
       CLOSE (UNIT=9)
+      write(6,*) ''
 
-      if(param(2).ne.param(8).and.nid.eq.0) then
-         write(6,*) 'Note VISCOS not equal to CONDUCT!'
-         write(6,*) 'Note VISCOS  =',PARAM(2)
-         write(6,*) 'Note CONDUCT =',PARAM(8)
-      endif
+c      if(param(2).ne.param(8).and.nid.eq.0) then
+c         write(6,*) 'Note VISCOS not equal to CONDUCT!'
+c         write(6,*) 'Note VISCOS  =',PARAM(2)
+c         write(6,*) 'Note CONDUCT =',PARAM(8)
+c      endif
 
       if (param(62).gt.0) then
          if(nid.eq.0) write(6,*)
@@ -422,6 +416,9 @@ C
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
+
+      if(nid.eq.0) write(6,*) 'generate geomerty data' 
+
       IF (IGEOM.EQ.1) THEN
          RETURN
       ELSEIF (IGEOM.EQ.2) THEN
@@ -473,6 +470,11 @@ c
          ifield = ifieldo
       ENDIF
 C
+      if(nid.eq.0) then
+        write(6,*) 'done :: generate geomerty data' 
+        write(6,*) ''
+      endif
+
       RETURN
       END
 C
@@ -723,7 +725,8 @@ C-----------------------------------------------------------------------
 
       ts = dnekclock() 
 
-      if(nid.eq.0 .and. igeom.eq.1) write(*,'(12X,A)') 'Solving Fluid'
+      if(nid.eq.0 .and. igeom.eq.1) 
+     &   write(*,'(12X,A)') 'Solving for fluid'
 
       if (ifsplit) then
 
@@ -797,7 +800,8 @@ C
 
       ts = dnekclock()
 
-      if (nid.eq.0 .and. igeom.eq.1) write(*,'(12x,a)') 'Solving Heat'
+      if (nid.eq.0 .and. igeom.eq.1) 
+     &    write(*,'(12x,a)') 'Solving for heat'
 
       if (ifcvode) then
 
@@ -1197,8 +1201,6 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nid.eq.0) then
-         write(6,*) 'total time',ttotal,tttstp
-         ttotal=tttstp
          pcopy=tcopy/tttstp
          write(6,*) 'copy time',ncopy,tcopy,pcopy
          pmxmf=tmxmf/tttstp
@@ -1324,7 +1326,9 @@ C
       subroutine opcount(ICALL)
 C
       include 'SIZE'
+      include 'PARALLEL'
       include 'OPCTR'
+
       character*6 sname(maxrts)
       integer     ind  (maxrts)
       integer     idum (maxrts)
@@ -1343,11 +1347,22 @@ C
 C
 C        Sort and print out diagnostics
 C
-         write(6,*) nid,' opcount',dcount
+         if (nid.eq.0) then
+            write(6,*) nid,' opcount',dcount
+            do i = 1,np-1
+              call csend(i,idum,4,i,0) 
+              call crecv(i,ddcount,wdsize)
+               write(6,*) i,' opcount',ddcount
+            enddo
+         else
+            call crecv (nid,idum,4)
+            call csend (nid,dcount,wdsize,0,0) 
+         endif
+
          dhc = dcount
          call gop(dhc,dwork,'+  ',1)
          if (nid.eq.0) then
-            write(6,*) nid,' TOTAL OPCOUNT',dhc
+            write(6,*) ' TOTAL OPCOUNT',dhc
          endif
 C
          CALL DRCOPY(rct,dct,nrout)

@@ -59,7 +59,7 @@ c
       NODE= NID+1
 
       if (nid.eq.0) then 
-         write(6,*) 'Number of Processors:',np
+         write(6,*) 'Number of processors:',np
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
       endif
@@ -330,11 +330,17 @@ c-----------------------------------------------------------------------
       subroutine exitt
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
       include 'mpif.h'
 c
       call gsync()
 
-      if (nid.eq.0) write(6,*) nid,' normal exit.'
+      if (nid.eq.0) then
+         write(6,*) ' '
+         write(6,*) 'total elapsed time: ',ttotal,tttstp
+         write(6,*) ' '
+         write(6,*) 'calling exitt'
+      endif
       call flush_io
 
 c     z = -nx1
