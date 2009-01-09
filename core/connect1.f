@@ -31,6 +31,8 @@ C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       common /ivrtx/ vertex ((2**ldim)*lelg)
       integer glo_num,vertex
+
+      if(nid.eq.0) write(6,*) 'setup domain topology'
 C
 C     Initialize key arrays for Direct Stiffness SUM.
 C
@@ -142,6 +144,11 @@ c        check if there is a least one fluid element on each processor
             call copy (tmult(1,1,1,1,ifield-1),tmult,ntott)
          endif
       enddo
+
+      if(nid.eq.0) then
+        write(6,*) 'done :: setup domain topology'
+        write(6,*) ''
+      endif
 
       return
       end
@@ -948,9 +955,9 @@ C
 C
  2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
      $      ,' in routine VERRHE.')
- 2002 FORMAT('  Right-handed check complete for',I8,' elements. OK.')
- 2003 FORMAT('  Right-handed check failed for',I8,' elements.'
-     $      ,'  Exiting in routine VERRHE.')
+ 2002 FORMAT('   Right-handed check complete for',I8,' elements. OK.')
+ 2003 FORMAT('   Right-handed check failed for',I8,' elements.'
+     $      ,'   Exiting in routine VERRHE.')
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -1121,7 +1128,7 @@ c     call gs_chkr(glo_num)
 c
       if (nid.eq.0) then
          write(6,1) et,nx,nel,ntot,ngv,gs_handle
-    1    format('gs_init time',1pe11.4,' seconds ',i3,4i10)
+    1    format('   gs_init time',1pe11.4,' seconds ',i3,4i10)
       endif
 c
       return

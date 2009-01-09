@@ -74,6 +74,7 @@ C
          WRITE (6,*) ' '
          WRITE (6,*) 'Estimated eigenvalues'
          WRITE (6,*) 'EIGAA = ',EIGAA
+         WRITE (6,*) 'EIGGA = ',EIGGA
          IF (IFFLOW) THEN
             WRITE (6,*) 'EIGAE = ',EIGAE
             WRITE (6,*) 'EIGAS = ',EIGAS
@@ -194,7 +195,6 @@ C
          ELSE
             CALL GAMMASF (H1,H2)
          ENDIF
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGA = ',EIGGA
       ENDIF
 C
       RETURN

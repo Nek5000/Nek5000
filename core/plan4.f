@@ -397,32 +397,35 @@ C
       subroutine split_vis
 C---------------------------------------------------------------------
 C
-C     Split viscosity into a constant (implicit) and variable (explicit)
-c     part.
+C     Split viscosity into a constant implicit (VDIFF) and variable 
+C     explicit (VDIFF_E) part.
 C
 C---------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      real vis_max,fac
+      real alpha
+      parameter(alpha=1.1)
 
       ntot = nx1*ny1*nz1*nelv
 
-      vis_max = glmax(vdiff,ntot)
+      ! save total viscosity
       call copy(vdiff_e,vdiff,ntot)
 
+
       ! set implicit part
-c      vis_max = 1.5 * vis_max
+      vis_max = alpha * glmax(vdiff,ntot)
       call cfill(vdiff,vis_max,ntot)
 
       ! set explicit part
-      fac = -1.*vis_max
-      call cadd(vdiff_e,fac,ntot)
+      call sub2(vdiff_e,vdiff,ntot)
 
 c testing
-c      fac = 2.0*param(2)
+c      dmue = 0.025
+c      dmue_imp = 1.5 * dmue
+c      fac = dmue_imp
 c      call cfill(vdiff,fac,ntot)
-c      fac = -1.0*param(2)
+c      fac = dmue - dmue_imp
 c      call cfill(vdiff_e,fac,ntot)
 c testing
 

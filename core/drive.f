@@ -1,5 +1,7 @@
       program driver
 
-      call nekton()
+      call nekton
+
+      call exitt
 
       end

@@ -65,7 +65,6 @@ c
 c     memory check...
 c
       ny=nx
-      if (nid.eq.0) write(6,*) 'in setvert2dn',nx,ny
 c
       isz_have= 27*lx1*ly1*lz1*lelv*(wdsize/isize)
       isz_need= 16*melg
@@ -231,7 +230,6 @@ c
 c     Quick check on maximum #dofs:
       m    = nx*nx*nelt
       ngvm = iglmax(glo_num,m)
-      if (nid.eq.0) write(6,*) 'NUM Coarse verts:',ngvm,ngv,n_tally
 c
       return
       end
@@ -267,7 +265,7 @@ c
       nz   = nx
       nxyz = nx*ny*nz
 c
-      if (nid.eq.0) write(6,*) 'in setvert3d',nx,ny,nz
+      if (nid.eq.0) write(6,*) '  setvert3d:',nx,ny,nz
       isz_have= 27*lx1*ly1*lz1*lelv*(wdsize/isize)
       isz_need= 36*melg
       if (isz_need.gt.isz_have) then
@@ -588,7 +586,7 @@ c     Quick check on maximum #dofs:
       m    = nxyz*nelt
       ngvm = iglmax(glo_num,m)
       if (nid.eq.0) write(6,1) nx,ngvv,ngve,ngvs,ngv,ngvm
-    1 format('setupds3d:',6i14)
+    1 format('   setupds3d:',6i11)
 c
       return
       end
@@ -675,6 +673,7 @@ c
       common /scrvhx/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
+      if(nid.eq.0) write(6,*) 'setup h1 coarse grid'
 
       t0 = dnekclock()
 
@@ -752,7 +751,11 @@ c        NOTE: a(),h1,...,w2() must all be large enough
 c     call crs_stats(xxth)
 
       t0 = dnekclock()-t0
-      if (nid.eq.0) write(6,*) 'set_up_h1_crs time:',t0,' seconds'
+      if (nid.eq.0) then
+         write(6,*) '  set_up_h1_crs time:',t0,' seconds'
+         write(6,*) 'done :: setup h1 coarse grid'
+         write(6,*) ''
+      endif
 
       return
       end
