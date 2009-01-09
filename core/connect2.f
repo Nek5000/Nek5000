@@ -61,9 +61,9 @@ c
 
       else
 
-c         if(nid.eq.0) write(6,*) 
-c     &      'ABORT: ASCII no longer supported, use .re2 file!'
-c         call exitt
+         if(nid.eq.0) write(6,*) 
+     &      'ABORT: ASCII no longer supported, use .re2 file!'
+         call exitt
 
          maxrd = 32               ! max # procs to read at once
          mread = (np-1)/maxrd+1   ! mod param
