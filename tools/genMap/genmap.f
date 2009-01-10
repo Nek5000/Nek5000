@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -56,11 +56,16 @@ c     read nekton .rea file and make a .map file
       nfc = 2*ndim
       nv  = 2**ndim
 
+      nic = lpts
+      njc = lpts
+      itype = 2   ! return structured vertex (not cell) pointer
+      call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nel,itype,w3) 
 c     call out_cell(cell,nv,nel)
+c     call exitt
 
 !     Determine number of outflow points and order them last
       call izero (order,irnk)
-      call set_outflow(no,order,mo,cell,nv,nel,irnk,cbc,nfc)
+      call set_outflow(no,order,mo,cell,nv,nel,irnk,cbc,nfc,w1,i0,i1,w2)
 
 c     call out_cell(cell,nv,nel)
 
@@ -159,6 +164,7 @@ c     Compress vertices based on coordinates
       end
 c-----------------------------------------------------------------------
       subroutine exitt(ie)
+      write(6,*)
       write(6,*) ie,' quit'
       stop
       end
@@ -893,9 +899,19 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      function iglmin(a,n)
+      integer a(1),tmin
+      tmin=999999999
+      do 100 i=1,n
+         tmin=min(tmin,a(i))
+  100 continue
+      iglmin=tmin
+      return
+      end
+c-----------------------------------------------------------------------
       function iglmax(a,n)
       integer a(1),tmax
-      tmax=-9999999
+      tmax=-999999999
       do 100 i=1,n
          tmax=max(tmax,a(i))
   100 continue
@@ -2285,12 +2301,15 @@ c     Convert jdual to csr format
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_outflow(no,order,mo,cell,nv,nel,nrnk,cbc,nfc)
+      subroutine set_outflow(no,order,mo,cell,nv,nel,nrnk,cbc,nfc
+     $                      ,ic,i0,i1,jc)
 c
 c     Order outflow nodes last
 c
       integer cell(nv,nel),order(1)
       character*3      cbc(nfc,nel)
+
+      integer ic(i0:i1),jc(1)
 
       parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
@@ -2323,6 +2342,19 @@ c        write(6,*) cb,e,f,' cb'
             ifoutflow = .true.
          endif
       enddo
+      enddo
+
+c     Make cells consistent if you have an 'O  ' next to 'W  ' (say)
+      do j=1,nv*nel
+         i = cell(j,1)
+         if (i.gt.mvtx) then  ! Outflow node, make attached nodes same
+            k0 = ic(i)
+            k1 = ic(i+1)-1
+            do k=k0,k1
+               jj = jc(k)
+               cell(jj,1) = i
+            enddo
+         endif
       enddo
 
       mo = 0
@@ -2497,6 +2529,7 @@ c-----------------------------------------------------------------------
       real dx(0:ndim,nv,1)
 
       real x0(0:3,4),x1(0:3,4)
+      real z0(0:3,4),z1(0:3,4)
 
       integer e,f,shift,smin
 
@@ -2520,6 +2553,8 @@ c   4 format(i9,i3,i9,i3,3i3,a5)
          call copy  (x1(0,i),dx(0,j1,je),ndim+1)
 
       enddo
+      call copy(z0,x0,16)   ! For failure diagnosis
+      call copy(z1,x1,16)   ! For failure diagnosis
 
 
       x0m = 0.
@@ -2531,10 +2566,10 @@ c   4 format(i9,i3,i9,i3,3i3,a5)
             x1a = x1a + x1(k,i)
          enddo
          do i=1,nvf
-            x0(k,i) = x0(k,i) - x0a/nvf
-            x1(k,i) = x1(k,i) - x1a/nvf
             x0m = max(x0m,x0(k,i))
             x0m = max(x0m,x0(1,i))
+            x0(k,i) = x0(k,i) - x0a/nvf
+            x1(k,i) = x1(k,i) - x1a/nvf
          enddo
       enddo
 
@@ -2563,10 +2598,17 @@ c   5          format(4i4,1p3e12.4,'  d2')
       shift = smin
       if (d2min.gt.0) d2min = sqrt(d2min)
 
-      eps = 1.e-7
-      if (d2min.gt.eps*x0m) then
-         write(6,6) e,f,i,shift,d2min,eps,x0m
-   6     format(i8,i2,2i3,1p3e16.8,'abort: FACE MATCH FAIL')
+      eps = 1.e-4
+      eps = 1.e-3
+      tol = eps*x0m
+      if (d2min.gt.tol) then
+         call outmat(x0,4,4,'  x0  ', e)
+         call outmat(x1,4,4,'  x1  ',je)
+         call outmat(z0,4,4,'  z0  ', e)
+         call outmat(z1,4,4,'  z1  ',je)
+         write(6,6) e , f,shift,eps,x0m
+         write(6,6) je,jf,    i,tol,d2min
+   6     format(i8,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
          call exitt(0)
       endif
 
@@ -3452,6 +3494,7 @@ c-----------------------------------------------------------------------
 
 
 
+c-----------------------------------------------------------------------
       subroutine rd_bc_bin(cbc,bc,nel,ifbswap)
 
 c     .Read Boundary Conditions (and connectivity data)
@@ -3486,6 +3529,7 @@ c        write(6,*) k,' dobc1 ',nbc_max
       end
 
 
+c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
       integer lelt
@@ -3509,6 +3553,7 @@ c  1   format(i8,i4,2x,a3,a4)
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine buf_to_xyz(buf,xc,yc,zc,e,ifbswap,ndim)  ! version 1 of binary
 
       logical ifbswap
@@ -3534,6 +3579,7 @@ c  1   format(i8,i4,2x,a3,a4)
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine open_bin_file(ifbswap) ! open file & chk for byteswap
 
       logical ifbswap,if_byte_swap_test
@@ -3598,6 +3644,7 @@ c
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine copy4r(a,b,n)
       real   a(1)
       real*4 b(1)
@@ -3606,6 +3653,7 @@ c
       enddo
       return
       end
+c-----------------------------------------------------------------------
 
       INTEGER FUNCTION INDX132(S1,S2,L2)
       CHARACTER*132 S1,S2
@@ -3623,5 +3671,87 @@ C
   100 CONTINUE
 C
       return
-      END
+      end
+c-----------------------------------------------------------------------
+      subroutine cell2v(i0,i1,ic,nic,jc,njc,cell,nv,ncell,type,wk)
+c
+c     Generate a list of cells that point to each numbered
+c     vertex in [i0,i1].  ic/jc is the csr-formated list.
+c
+c     Cells (aka elements) have nv local verties.
+c
+      integer ic(1),jc(1),cell(nv,ncell),wk(1),type
+c
+      i0 = iglmin(cell,nv*ncell)
+      i1 = iglmax(cell,nv*ncell)
 
+      if (i1-i0.gt.nic) then
+         write(6,1) i0,i1,nic,nv,ncell,njc
+    1    format(' ERROR: nic too small in cell2v:',6i10)
+         i0 = 0 ! error return code
+         i1 = 0 ! error return code
+         return
+      endif
+
+      call cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
+c
+c     Generate a list of cells that point to each numbered
+c     vertex in [i0,i1].  ic/jc is the csr-formated list.
+c
+c     Cells (aka elements) have nv local verties.
+c
+      integer ic(i0:i1),jc(1),cell(nv,ncell),wk(i0:i1),type
+
+c     Step 1:  count number of cells per vertex
+
+      nic = i1-i0+1
+      call izero(wk,nic)
+      do j=1,nv*ncell
+         i = cell(j,1)
+         wk(i) = wk(i) + 1
+      enddo
+
+c     Step 2:  Generate csr pointer
+
+      ic(1) = 1
+      do i=i0,i1
+         ic(i+1) = ic(i) + wk(i)
+         wk(i)   = 0
+      enddo
+
+c     Step 3:  fill jc()
+
+      if (type.eq.1) then ! return cell
+         do k=1,ncell
+         do j=1,nv
+            i = cell(j,k)
+            jc(ic(i)+wk(i)) = k  ! This is the cell number
+            wk(i) = wk(i) + 1    ! This is number filled for ith vertex
+         enddo
+         enddo
+      else                ! return structured pointer
+         do j=1,nv*ncell
+            i = cell(j,1)
+            jc(ic(i)+wk(i)) = j  ! This is the structured pointer
+            wk(i) = wk(i) + 1    ! This is number filled for ith vertex
+         enddo
+      endif
+
+c     Diagnostics
+
+c     write(6,*)
+c     do i=i0,i1
+c        j0 = ic(i)
+c        j1 = ic(i+1)-1
+c        write(6,1) i,(jc(j),j=j0,j1)
+c  1     format(i8,' c2v:',20i5)
+c     enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
