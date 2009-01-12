@@ -2533,11 +2533,17 @@ c-----------------------------------------------------------------------
 
       integer e,f,shift,smin
 
-      integer vface(4,6)  ! circulant vertices on symm. faces,
+      integer vface(4,6)  ! circulant vertices on symm. faces, 3D
       save    vface       ! order ctr-clkws when looking at face
       data    vface / 1,5,7,3 , 2,4,8,6 , 1,2,6,5 , 3,7,8,4
      $              , 1,3,4,2 , 5,6,8,7 /
+      integer wface(4,6)  ! circulant vertices on symm. faces, 2D
+      save    wface       ! 
+      data    wface / 3,1,0,0 , 2,4,0,0 , 1,2,0,0 , 4,3,0,0
+     $              , 0,0,0,0 , 0,0,0,0 /
 
+
+      if (ndim.eq.2) call icopy(vface,wface,24)
 
       nvf = nv/2     ! # vertices/face = 1/2 # vertices/cell
       
