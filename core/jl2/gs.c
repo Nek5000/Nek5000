@@ -949,7 +949,7 @@ static void gs_setup_aux(gs_data *gs, const slong *id, uint n)
 //      if(gs->comm.id==0) printf("  all reduce                    : ");
       dry_run_time(time[1],&allreduce_exec,gs->ard,&gs->comm,
                    &cr.data,gs->ard->buffer_size);
-      if(gs->comm.id==0)
+//      if(gs->comm.id==0)
 //         printf("%g %g %g\n",time[1][0],time[1][1],time[1][2]);
       if(time[1][2]<time[0][2]) {
         if(gs->pwd) pw_free(gs->pwd), gs->pwd=0;
@@ -960,11 +960,11 @@ static void gs_setup_aux(gs_data *gs, const slong *id, uint n)
         allreduce_free(gs->ard), gs->ard=0;
     }
 
-    if(gs->comm.id==0) {
-      if(gs->pwd) printf("   all_to_all method: pairwise\n");
-      if(gs->crd) printf("   all_to_all method: crystal router\n");
-      if(gs->ard) printf("   all_to_all method: allreduce\n");
-    }
+//    if(gs->comm.id==0) {
+//      if(gs->pwd) printf("   all_to_all method: pairwise\n");
+//      if(gs->crd) printf("   all_to_all method: crystal router\n");
+//      if(gs->ard) printf("   all_to_all method: allreduce\n");
+//    }
 
   }
 
