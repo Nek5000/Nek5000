@@ -1797,7 +1797,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo + wdsizo*(nel*nxyz)
+      len  = wdsizo + wdsizo*(lelt*nxyz)
+      leo  = wdsizo + wdsizo*(nel*nxyz)
       ntot = nxyz*nel
 
       idum = 1
@@ -1838,7 +1839,7 @@ c-----------------------------------------------------------------------
 
          mtype = nid
          call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,u4,leo,pid0,0)     ! u4 :=: u8
 
       endif
 
@@ -1865,7 +1866,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo + wdsizo*(nel*nxyz*ndim)
+      len  = wdsizo + wdsizo*(lelt*nxyz*ndim)
+      leo  = wdsizo + wdsizo*(nel*nxyz*ndim)
       idum = 1
 
       if (nid.eq.pid0) then
@@ -1941,7 +1943,7 @@ c-----------------------------------------------------------------------
 
          mtype = nid
          call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,u4,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,u4,leo,pid0,0)     ! u4 :=: u8
 
       endif
 
