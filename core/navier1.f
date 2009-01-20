@@ -3889,11 +3889,6 @@ c
       nzd = lzd
       NTOTD = NXD*NYD*NZD*NELV
 c
-      if (nxd.lt.nx1) then
-         write(6,*) 'ABORT: Set p99=0 or change lxd in DEALIAS',lxd,lx1
-         call exitt
-      endif
-c
 c
 c     interpolate ta1 and vx onto larger mesh
 c

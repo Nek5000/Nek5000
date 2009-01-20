@@ -29,6 +29,10 @@ c
 
 
       real psmax(LDIMT)
+
+      if(nid.eq.0) then
+        write(6,*) 'set initial conditions'
+      endif
 C
 C     Initialize all fields:
 C
@@ -374,6 +378,10 @@ c        call dsavg(zm1) ! doesn't work for periodic !
 c     ! save velocity on fine mesh for dealiasing
       if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
 
+      if(nid.eq.0) then
+        write(6,*) 'done :: set initial conditions'
+      endif
+
       return
       end
 C            
@@ -475,7 +483,7 @@ C           found a filename
             INITC(NFILES)=LINE
 C
             IF (NID.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010)
- 1010       FORMAT(/,2X,'Restart options:')
+ 1010       FORMAT(/,1X,'Checking restart options:')
             IF (NID.EQ.0) WRITE(6,'(A80)') LINE
 C
 C           Parse restart options
@@ -581,6 +589,9 @@ c
 c
       ifok=.false.
       ifbytsw = .false.
+
+      if(nfiles.lt.1) return
+      if(nid.eq.0) write(6,*) 'Reading restart data'
 
       if (param(67).lt.1.0) then
          ! ascii 
@@ -1071,7 +1082,6 @@ C        Can't open file...
      $       ,/,A80
      $      ,//,2X,'Quitting in routine RESTART.')
          CLOSE(UNIT=91)
-         if (nid.eq.0.and.param(67).eq.3.) close(unit=92)
          call exitt
  5002    CONTINUE
          IF (NID.EQ.0) WRITE(6,5001) HNAME 

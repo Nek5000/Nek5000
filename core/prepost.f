@@ -1341,7 +1341,11 @@ c-----------------------------------------------------------------------
       call mfo_set_pido                      ! determine i/o nodes
 
       wdsizo = 4                             ! every proc needs this
-      if (param(63).eq.8) wdsizo = 8         ! 64-bit .fld file
+      if (param(63).gt.0) wdsizo = 8         ! 64-bit .fld file
+      if (wdsizo.gt.wdsize) then
+         if(nid.eq.0) write(6,*) 'ABORT: wdsizo > wdsize!'
+         call exitt
+      endif
 
       if (nid.eq.pid0) then
          call mfo_open_files(prefix)         ! open files
@@ -1657,7 +1661,9 @@ c-----------------------------------------------------------------------
 
       nxyz = nx1*ny1*nz1
       n    = 2*ndim
-      len  = isize + 4*(2*ndim*lelt) 
+      len  = 4 + 4*(n*lelt)   ! recv buffer size
+      leo  = 4 + 4*(n*nelt) 
+
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -1709,7 +1715,7 @@ c-----------------------------------------------------------------------
          ! send my data to my pararent I/O node
          mtype = nid
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,buffer,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
       endif
 
       return
@@ -1733,7 +1739,9 @@ c-----------------------------------------------------------------------
 
       nxyz = nx1*ny1*nz1
       n    = 2
-      len  = isize + 4*(2*lelt)
+      len  = 4 + 4*(n*lelt)    ! recv buffer size
+      leo  = 4 + 4*(n*nelt)
+
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -1771,7 +1779,7 @@ c-----------------------------------------------------------------------
          ! send my data to my pararent I/O node
          mtype = nid
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,buffer,len,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
       endif
 
       return
@@ -1797,8 +1805,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo + wdsizo*(lelt*nxyz)
-      leo  = wdsizo + wdsizo*(nel*nxyz)
+      len  = 8 + 8*(lelt*nxyz)  ! recv buffer size
+      leo  = 8 + wdsizo*(nel*nxyz)
       ntot = nxyz*nel
 
       idum = 1
@@ -1817,12 +1825,11 @@ c-----------------------------------------------------------------------
          idum  = 1
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k,0)          ! handshake
+            call csend(mtype,idum,4,k,0)       ! handshake
             call crecv(mtype,u4,len)
-            inelp = u4(1)
-            nout  = wdsizo/4 * nxyz*inelp
+            nout  = wdsizo/4 * nxyz * u8(1)
             if (wdsizo.eq.4) then
-               call byte_write(u4(2),nout)
+               call byte_write(u4(3),nout)
             else
                call byte_write(u8(2),nout)
             endif
@@ -1830,9 +1837,9 @@ c-----------------------------------------------------------------------
 
       else
 
-         u4(1)= nel
+         u8(1)= nel
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4(2),u,ntot) 
+             call copyx4 (u4(3),u,ntot) 
          else
              call copy   (u8(2),u,ntot) 
          endif
@@ -1866,8 +1873,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
-      len  = wdsizo + wdsizo*(lelt*nxyz*ndim)
-      leo  = wdsizo + wdsizo*(nel*nxyz*ndim)
+      len  = 8 + 8*(lelt*nxyz*ndim)   ! recv buffer size (u4)
+      leo  = 8 + wdsizo*(nel*nxyz*ndim)
       idum = 1
 
       if (nid.eq.pid0) then
@@ -1904,10 +1911,9 @@ c-----------------------------------------------------------------------
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,u4,len)
-            inelp = u4(1)
-            nout  = wdsizo/4 * ndim*inelp * nxyz
+            nout  = wdsizo/4 * ndim*nxyz * u8(1)
             if (wdsizo.eq.4) then
-               call byte_write(u4(2),nout)
+               call byte_write(u4(3),nout)
             else
                call byte_write(u8(2),nout)
             endif
@@ -1915,9 +1921,9 @@ c-----------------------------------------------------------------------
 
       else
 
-         u4(1) = nel
-         j = 1
+         u8(1) = nel
          if (wdsizo.eq.4) then             ! 32-bit output
+             j = 2
              do iel = 1,nel
                 call copyx4   (u4(j+1),u(1,iel),nxyz)
                 j = j + nxyz
@@ -1929,6 +1935,7 @@ c-----------------------------------------------------------------------
                 endif
              enddo
          else
+             j = 1
              do iel = 1,nel
                 call copy     (u8(j+1),u(1,iel),nxyz)
                 j = j + nxyz

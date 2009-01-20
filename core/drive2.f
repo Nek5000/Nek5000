@@ -130,7 +130,7 @@ C
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
       ELSEIF (LASTEP.EQ.1) THEN
          WRITE (6,*) ' '
-         WRITE (6,*) 'Simulation successfully completed'
+         WRITE (6,'(A)') 'Simulation successfully completed'
       ENDIF
  100  FORMAT('Step',I6,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',F7.3,2(1pE11.4))

@@ -405,7 +405,7 @@ C---------------------------------------------------------------------
       INCLUDE 'TOTAL'
 
       real alpha
-      parameter(alpha=1.1)
+      parameter(alpha=1.25)
 
       ntot = nx1*ny1*nz1*nelv
 

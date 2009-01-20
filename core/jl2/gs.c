@@ -960,11 +960,11 @@ static void gs_setup_aux(gs_data *gs, const slong *id, uint n)
         allreduce_free(gs->ard), gs->ard=0;
     }
 
-//    if(gs->comm.id==0) {
-//      if(gs->pwd) printf("   all_to_all method: pairwise\n");
-//      if(gs->crd) printf("   all_to_all method: crystal router\n");
-//      if(gs->ard) printf("   all_to_all method: allreduce\n");
-//    }
+    if(gs->comm.id==0) {
+      if(gs->pwd) printf("   all_to_all method: pairwise\n");
+      if(gs->crd) printf("   all_to_all method: crystal router\n");
+      if(gs->ard) printf("   all_to_all method: allreduce\n");
+    }
 
   }
 
