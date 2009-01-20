@@ -1804,13 +1804,13 @@ c
 
       call open_bin_file (ifbswap)
 
-      if (nid.eq.0) write(6,*) '  read mesh '
+      if (nid.eq.0) write(6,*)    '  read mesh '
       call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader
       if (nid.eq.0) write(6,*) '  read curved sides '
       call bin_rd1_curve (ifbswap)
 
-      if (nid.eq.0) write(6,*) '  read bc ',nfldt
       do ifield = ibc,nfldt
+         if (nid.eq.0) write(6,*) '  read bc ifld',ifield
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 

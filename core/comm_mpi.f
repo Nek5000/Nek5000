@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
       np  = np_
       nid = nid_
 
-      call printVer
+      if(nid.eq.0) call printHeader
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
@@ -337,9 +337,11 @@ c
 
       if (nid.eq.0) then
          write(6,*) ' '
-         write(6,*) 'total elapsed time: ',ttotal,tttstp
+         write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '
-         write(6,*) 'calling exitt'
+         write(6,'(A,3g13.5,A)') 'total elapsed time: ',
+     &                           ttotal,tttstp,tttstp/max(istep,1),
+     &                           ' seconds' 
       endif
       call flush_io
 
@@ -358,28 +360,9 @@ c     write(6,*) 'quittin3',z,b
       end
 c-----------------------------------------------------------------------
 
-      subroutine printVer
+      subroutine printHeader
 
-      INCLUDE 'SIZE'
-
-      if(nid.ne.0) return
-
-      write(6,*)    
-     & '/------------------------------------------------------------\\'
-     &,'|     dBBBBb  dBBBP  dBP dBP    dBBBBBP dBBBBP dBBBBP dBBBBP |'
-     &,'|    dBP dBP dBP    dBP d8P    dBP     dB  BP dB  BP dB  BP  |'
-     &,'|   dBP dBP dBBP   dBBBBP     dBBBBBP dB  BP dB  BP dB  BP   |'
-     &,'|  dBP dBP dBP    dBP BB         dBP dB  BP dB  BP dB  BP    |'
-     &,'| dBP dBP dBBBBP dBP dB     dBBBBBP dBBBBP dBBBBP dBBBBP     |'
-     &,'|------------------------------------------------------------|'
-     &,'|                                                            |' 
-     &,'| NEK5000:  The Open Source Spectal Element Solver           |'
-     &,'| COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC                   |'
-     &,'| Version:  1.0rc1                                           |'
-     &,'| Web:      http://nek5000.mcs.anl.gov                       |'
-     &,'|                                                            |'
-     &,'\\------------------------------------------------------------/'
-     &,'                                                              '
+      INCLUDE 'HEADER'
 
       return
       end

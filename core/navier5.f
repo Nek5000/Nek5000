@@ -570,12 +570,14 @@ C
  100        CONTINUE
             CALL MXM (PB(1,1,1),NXY1,IZTM21,NZ2,PM1(1,1,1,IEL),NZ1)
  1000    CONTINUE
-      ENDIF
-C
+
 C     Average the pressure on elemental boundaries
        IFIELD=1
        CALL DSSUM (PM1,NX1,NY1,NZ1)
        CALL COL2  (PM1,VMULT,NGLOB1)
+
+      ENDIF
+C
 C
       return
       end
