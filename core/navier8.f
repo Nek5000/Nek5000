@@ -754,7 +754,7 @@ c     call crs_stats(xxth)
       if (nid.eq.0) then
          write(6,*) '  set_up_h1_crs time:',t0,' seconds'
          write(6,*) 'done :: setup h1 coarse grid'
-         write(6,*) ''
+         write(6,*) ' '
       endif
 
       return
@@ -2352,7 +2352,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine f77_get_vert
+      subroutine get_vert
       include 'SIZE'
       include 'TOTAL'
       include 'ZPER'
@@ -2370,20 +2370,35 @@ c-----------------------------------------------------------------------
       icalld = 1
 
       ncrnr = 2**ndim
-      call f77_get_vert_map(gllnid, vertex, ncrnr, nelgt, '.map')
 
-      if(.not. ifgfdm) call split_gllnid   ! added to remove CPU=2^k restriction
+      if (ifmoab) then
+#ifdef MOAB
+         call nekMOAB_loadConn (vertex, nelgt, ncrnr)
+#else
+         if(nid.eq.0) write(6,*)
+     &     'ABORT: this version was not compiled with moab support!'
+         call exitt
+#endif
+      else
+         call get_vert_map(gllnid, vertex, ncrnr, nelgt, '.map')
+         log2p = log2(np)
+         np2   = 2**log2p
+         if (np2.ne.np) then
+            call split_gllnid  ! no CPU=2^k restriction
+         endif
+      endif
 
       npstar = ivlmax(gllnid,nelgt)+1
       nnpstr = npstar/np
       do eg=1,nelgt
          gllnid(eg) = gllnid(eg)/nnpstr
       enddo
+
  
       return
       end
 c-----------------------------------------------------------------------
-      subroutine f77_get_vert_map(imap, vertex, nlv, nel, suffix)
+      subroutine get_vert_map(imap, vertex, nlv, nel, suffix)
       include 'SIZE'
       include 'INPUT'
       integer imap(nel),vertex(nlv,nel)
@@ -2452,11 +2467,11 @@ c
 
    99 continue
       return
-      write(6,*) 'ABORT b in f77_get_vert',neli,nel
+      write(6,*) 'ABORT b in get_vert',neli,nel
       call exitt
 
   999 continue
-      write(6,*) 'ABORT a in f77_get_vert',mapfle
+      if(nid.eq.0) write(6,*) 'ABORT: Cannot open mapfile ',mapfle
       call exitt
 
       return
@@ -2611,7 +2626,7 @@ c-----------------------------------------------------------------------
       if (ifgtp) then
          call gen_gtp_vertex    (vertex, ncrnr)
       else
-         call f77_get_vert
+         call get_vert
       endif
 
       return
@@ -2631,6 +2646,12 @@ c
       include 'TOTAL'
  
       integer iunsort(lelg)
+
+      if(nid.eq.0) then
+        write(6,*) 'Number of processors not 2^k'
+        write(6,*)  
+     &   'split gllnid array into contiguous partitions'
+      endif
 
       le    = nelgt/np
       nmod  = mod(nelgt,np)

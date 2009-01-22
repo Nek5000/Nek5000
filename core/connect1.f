@@ -78,9 +78,9 @@ C
 
       if (nelgv.eq.nelgt) then
          if (ifgtp) then
-            call gen_gtp_vertex (vertex, ncrnr)
+            call gen_gtp_vertex    (vertex, ncrnr)
          else
-            call f77_get_vert
+            call get_vert
          endif
          call setupds(gsh_fld(1),nx1,ny1,nz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
@@ -98,11 +98,11 @@ c        We currently assume that there is at least one fluid elem.
 c        per processor.
 c
 
-         call f77_get_vert
+         call get_vert
 c        call outmati(vertex,4,nelv,'vrtx V')
          call setupds(gsh_fld(1),nx1,ny1,nz1,nelv,nelgv,vertex,glo_num)
 
-c        call f77_get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
+c        call get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
 c        call outmati(vertex,4,nelt,'vrtx T')
          call setupds(gsh_fld(2),nx1,ny1,nz1,nelt,nelgt,vertex,glo_num)
 
@@ -147,7 +147,7 @@ c        check if there is a least one fluid element on each processor
 
       if(nid.eq.0) then
         write(6,*) 'done :: setup domain topology'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       return
@@ -786,10 +786,12 @@ C     .Verify correlation between E-E BC's and physical coincidence
 C
       include 'SIZE'
       include 'PARALLEL'
+      include 'INPUT'
       include 'SCRCT'
-C
+ 
+      if (ifmoab) return
       call verrhe
-C
+
       return
       end
 c-----------------------------------------------------------------------

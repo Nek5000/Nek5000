@@ -100,24 +100,45 @@ if [ $? -eq 0 ]; then
 fi
 
 case $F77comp in
-  pgf77)       P="-r8";;
-  pgf90)       P="-r8";;
-  gfortran)    P="-fdefault-real-8";;
-  ifort)       P="-r8";;
-  xlf)         P="-qrealsize=8";;
-  bgxlf)       P="-qrealsize=8";;
-  bgxlf90)     P="-qrealsize=8";;
-  bgxlf_r)     P="-qrealsize=8";;
-  bgxlf90_r)   P="-qrealsize=8";;
-  blrts_xlf)   P="-qrealsize=8";;
-  blrts_xlf90) P="-qrealsize=8";;
-  ftn)         P="-r8";;
-  *)  echo "WARNING: Cannot detect compiler flag to promote REAL to 8 bytes!"
-      echo "         Please specify the right compiler flag using the P flag in the makefile"
+  pgf*)        P="-r8 -Mpreprocess"
+               ;;
+  gfortran)    P="-fdefault-real-8 -x f77-cpp-input"
+               ;;
+  ifort)       P="-r8" -cpp
+               ;;
+  *xlf*)       P="-qrealsize=8 -qsuffix=cpp=f"
+               PPPO="-WF,"
+               ;;
+  ftn)         P="-r8 -Mpreprocess";;
+  *)  echo "WARNING: Cannot detect compiler specfic flags
+      echo "          - to promote REAL to 8 bytes"
+      echo "          - to invoke preprocessor first
+      echo "Please edit the makefile and specify the requested compiler flags in the P variable!"
+      echo ""
       P=""
-      echo "Press return to continue"
+      echo "Press return to finish the makefile generation ..."
       read;;
 esac
+export PPPO
+
+
+
+# set preprocssor symbol for MOAB support
+if [ "$IFMOAB" == "true" -o "IFMOAB" == "yes" ]; then
+   P="$P $PPPO-DMOAB"
+   IFMOAB=true
+
+   if [ "$MOAB_DIR" == "" ]; then
+     echo "ABORT: Please specify path to MOAB in MOAB_DIR!" 
+     exit 1
+   else
+     if [ -d $MOAB_DIR ]; then
+       echo "ABORT: Cannot find " $MOAB_DIR 
+       exit 1
+     fi 
+   fi
+fi
+export IFMOAB
 
 # set logical flags
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
@@ -202,10 +223,21 @@ if [ -f .makefile ]; then
   sed "1i\### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###\n" \
       .makefile > makefile
   echo "makefile created"
-#  if [ "$P" = "" ]; then
-#    exit 1
-#  fi
 else
   echo "FATAL ERROR: Makefile could not be created!" 
 fi
 \rm .makefile 2>/dev/null
+
+mv $SOURCE_ROOT/HEADER $SOURCE_ROOT/.HEADER 
+which svnversion >/dev/null 2>&1 
+status=`echo $?`
+if [ "$status" == "0" ]; then
+  rev_number=$( svnversion ${SOURCE_ROOT} )
+  rev_number=$( printf %-11s ${rev_number} )
+  sed "s/SVN r.........../SVN r$rev_number/" \
+    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
+else
+  sed "s/SVN r.........../SVN r\?\?\?\?/" \
+    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
+fi
+rm -rf $SOURCE_ROOT/.HEADER >/dev/null 2>&1

@@ -367,7 +367,7 @@ C
    81 FORMAT(I4,3X,80A1)
    82 FORMAT(I4,3X,'Parameters from file:',80A1)
       CLOSE (UNIT=9)
-      write(6,*) ''
+      write(6,*) ' '
 
 c      if(param(2).ne.param(8).and.nid.eq.0) then
 c         write(6,*) 'Note VISCOS not equal to CONDUCT!'
@@ -472,7 +472,7 @@ c
 C
       if(nid.eq.0) then
         write(6,*) 'done :: generate geomerty data' 
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       RETURN

@@ -7,9 +7,6 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifdef CWRITE
-#include <fcntl.h>
-#endif
 
 
 #define READ     1
@@ -20,11 +17,7 @@
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
 
-#ifdef CWRITE
-static int  fp=0;
-#else
 static FILE *fp=NULL;
-#endif
 static int  flag=0;
 static char name[MAX_NAME+1];
 
@@ -32,6 +25,16 @@ int bytesw_write=0;
 int bytesw_read=0;
 
 /*************************************byte.c***********************************/
+
+void cexitt()
+{
+#ifdef UNDERSCORE
+  exitt_();
+#else
+  exitt();
+#endif
+
+}
 
 void
 #ifdef UPCASE
@@ -45,17 +48,17 @@ byte_reverse(float *buf, int *nn)
   int n;
   char temp, *ptr;
 
-
-#ifdef SAFE
   if (*nn<0)
-    {printf("byte_reverse() :: n must be positive\n"); abort();}
-#endif
+  {
+    printf("byte_reverse() :: n must be positive\n"); 
+    cexitt();
+  }
   
   for (ptr=(char *)buf,n=*nn; n--; ptr+=4)
-    {
-      SWAP(ptr[0],ptr[3])
-      SWAP(ptr[1],ptr[2])
-     }
+  {
+     SWAP(ptr[0],ptr[3])
+     SWAP(ptr[1],ptr[2])
+  }
 }
 
 
@@ -71,29 +74,33 @@ byte_open(char *n)
   int  i,len,istat;
   char slash;
   char dirname[MAX_NAME+1];
- 
 
   len = strlen(n);
   
   if (len<0)
-    {printf("byte_open() :: file name has negative length!\n"); abort();}
+  {
+    printf("byte_open() :: file name has negative length!\n"); 
+    cexitt();
+  }
 
   if (len>MAX_NAME)
-    {printf("byte_open() :: file name too long!\n"); abort();}
+  {
+    printf("byte_open() :: file name too long!\n"); 
+    cexitt();
+  }
 
   strcpy(name,n);
   strcpy(dirname,n);
 
-  for(i=1;dirname[i]!='\0';i++)
+  for (i=1;dirname[i]!='\0';i++)
   {
-     if(i>0 && dirname[i]=='/')
+     if (i>0 && dirname[i]=='/')
      {
        slash = name[i];
        dirname[i] = '\0';
        istat = mkdir(dirname,0755);
      }
   }
-
 }
 
 
@@ -106,22 +113,15 @@ byte_close_()
 byte_close()
 #endif
 {
-  if (!fp)
-    {return;}
+  if (!fp) return;
 
-
-
-#ifdef CWRITE  
-  if (close(fp))
-    {printf("byte_close() :: couldn't close file!\n"); abort();}
-
-  fp=0;
-#else
   if (fclose(fp))
-    {printf("byte_close() :: couldn't fclose file!\n"); abort();}
+  {
+    printf("byte_close() :: couldn't fclose file!\n");
+    cexitt();
+  }
 
   fp=NULL;
-#endif
 }
 
 
@@ -134,14 +134,9 @@ byte_rewind_()
 byte_rewind()
 #endif
 {
-  if (!fp)
-    {return;}
+  if (!fp) return;
 
-#ifdef CWRITE
-  lseek(fp, 0, SEEK_SET);
-#else
   rewind(fp);
-#endif
 }
 
 
@@ -157,50 +152,39 @@ byte_write(float *buf, int *n)
   int flags;
   mode_t mode;
 
-#ifdef SAFE
   if (*n<0)
-    {printf("byte_write() :: n must be positive\n"); abort();}
-#endif
+  {
+    printf("byte_write() :: n must be positive\n"); 
+    cexitt();
+  }
 
-#ifdef CWRITE
   if (!fp)
+  {
+    if (!(fp=fopen(name,"wb")))
     {
-      flags = O_WRONLY|O_CREAT;
-      mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH;
-      if ((fp=open(name, flags, mode))==-1)
-	{printf("%s\n",name);
-         error_msg_fatal("byte_write() :: open failure!\n");}
-      flag=WRITE;
+      printf("byte_write() :: fopen failure!\n"); 
+      cexitt();
     }
-
-  if (flag==WRITE)
-    {write(fp,(char *)buf,sizeof(float)* *n);}
-  else
-    {printf("byte_write() :: can't write after reading!\n"); abort();}
-#else
-  if (!fp)
-    {
-      if (!(fp=fopen(name,"wb")))
-        {printf("byte_write() :: fopen failure!\n"); abort();}
-      flag=WRITE;
-    }
+    flag=WRITE;
+  }
 
   if (flag==WRITE)
     {
       if (bytesw_write == 1)
 #ifdef UPCASE
-      BYTE_REVERSE (buf,n);
+        BYTE_REVERSE (buf,n);
 #elif  UNDERSCORE
-      byte_reverse_(buf,n);
+        byte_reverse_(buf,n);
 #else
-      byte_reverse (buf,n);
+        byte_reverse (buf,n);
 #endif
-
       fwrite(buf,sizeof(float),*n,fp);
     }
   else
-    {printf("byte_write() :: can't fwrite after freading!\n"); abort();}
-#endif
+  {
+      printf("byte_write() :: can't fwrite after freading!\n"); 
+      cexitt();
+  }
 }
 
 
@@ -216,51 +200,47 @@ byte_read(float *buf, int *n)
   int flags;
   mode_t mode;
 
-#ifdef SAFE
   if (*n<0)
-    {printf("byte_reverse() :: n must be positive\n"); abort();}
-#endif
+    {printf("byte_read() :: n must be positive\n"); cexitt();}
 
-#ifdef CWRITE
   if (!fp)
-    {
-      flags = O_RDONLY;
-      mode = S_IRUSR|S_IRGRP|S_IROTH;
-      if ((fp=open(name, flags, mode))==-1)
-	{printf("%s\n",name);
-	 error_msg_fatal("byte_read() :: open failure1!\n");}
-      flag=READ;
-    }
-
-  if (flag==READ)
-    {read(fp,(char *) buf,sizeof(float)* *n);}
-  else
-    {printf("byte_read() :: can't read after writing!\n"); abort();}
-#else
-  if (!fp)
-    {
-      if (!(fp=fopen(name,"rb")))
-	{printf("%s\n",name);
-         printf("byte_read() :: fopen failure2!\n"); abort();}
-      flag=READ;
-    }
-
-  if (flag==READ)
-    {
-      if (bytesw_read == 1)
-#ifdef UPCASE
-      BYTE_REVERSE (buf,n);
-#elif  UNDERSCORE
-      byte_reverse_(buf,n);
-#else
-      byte_reverse (buf,n);
-#endif
-
-      fread(buf,sizeof(float),*n,fp);
+  {
+     if (!(fp=fopen(name,"rb")))
+     {
+        printf("%s\n",name);
+        printf("byte_read() :: fopen failure2!\n"); cexitt();
      }
-  else
-    {printf("byte_read() :: can't fread after fwriting!\n"); abort();}
+     flag=READ;
+  }
+
+  if (flag==READ)
+  {
+     if (bytesw_read == 1)
+#ifdef UPCASE
+        BYTE_REVERSE (buf,n);
+#elif  UNDERSCORE
+        byte_reverse_(buf,n);
+#else
+        byte_reverse (buf,n);
 #endif
+     fread(buf,sizeof(float),*n,fp);
+     if (ferror(fp))
+     {
+       printf("ABORT: Error reading %s\n",name);
+       cexitt();
+     }
+     else if (feof(fp))
+     {
+       printf("ABORT: EOF found while reading %s\n",name);
+       cexitt();
+     }
+
+  }
+  else
+  {
+     printf("byte_read() :: can't fread after fwriting!\n"); 
+     cexitt();
+  }
 }
 
 
@@ -320,76 +300,3 @@ get_bytesw_read (int *pa)
 {
     *pa = bytesw_read;
 }
-
-
-#ifdef TEST_DRIVER
-
-main(int argc, char **argv)
-{
-  int i,j,k;
-  int inplace;
-  int input_ch;
-  char ch, *name;
-  FILE *ifp,*ofp;
-  float rf[]={1.0,2.0,3.0,4.0};
-
-  if (argc==2)
-    {
-      inplace=TRUE;
-      printf("warning: original file will be destroyed!!!\n"); abort();
-      printf("continue? (y/n) : ");
-      input_ch = getchar();
-      ch=toupper(input_ch);
-      if (ch!='Y')
-	{exit(0);}
-    }
-  else if (argc==3)
-    {
-      inplace=FALSE;
-      printf("warning: new file will be created!!!\n");
-      printf("continue? (y/n) : ");
-      input_ch = getchar();
-      ch=toupper(input_ch);
-      if (ch!='Y')
-	{exit(0);}
-    }
-  else
-    {
-      printf("usage: rbyte i/o_file\n");
-      printf("or\n");
-      printf("usage: rbyte i_file o_file\n");
-      exit(0);
-    }
-  printf("continuing ...\n");
-
-  if (inplace)
-    {
-      if ((name=tmpnam(NULL))==NULL)
-	{printf("tmpname() failure!\n"); exit(0);}
-    }
-  else
-    {
-      name = *(argv+2);
-    }
-
-  printf("%s,%s\n",*(argv+1),*(argv+2));
-
-  ifp = fopen(*(argv+1),"rb");
-  ofp = fopen(name,"wb");
-
-  if (!ifp||!ofp)
-    {printf("fopen() failure!\n"); exit(0);}
-
-  fwrite(&rf,sizeof(float),4,ofp);
-  fclose(ifp);
-  fclose(ofp);
-
-  if (inplace)
-    {
-      if (remove(*(argv+1))||rename(name,*(argv+1)))
-	{printf("remove() or rename() failure!\n"); exit(0);}
-    }
-
-  exit(0);
-}
-#endif

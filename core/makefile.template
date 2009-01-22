@@ -11,10 +11,15 @@ OPT_FLAGS_STD=
 USR=
 USR_LIB=
 IFUNDERSCORE=
+
 ifeq ($(IFMPI),false)
 	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
 else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
+endif
+
+ifeq ($(IFMOAB),true)
+include $(IMESH_DIR)/lib/iMesh-Defs.inc
 endif
 ################################################################################
 #
@@ -54,12 +59,16 @@ COMM_MPI = comm_mpi.o
 JL := -DMPI
 JL2 := -DMPI
 ifeq ($(IFMPI),false)
-COMM_MPI := ${COMM_MPI} mpi_dummy.o
-JL := 
-JL2 := 
+  COMM_MPI := ${COMM_MPI} mpi_dummy.o
+  JL := 
+  JL2 := 
 endif
-
-NOBJS = $(CORE) $(MXM) $(GS) $(XXT) $(USR) $(COMM_MPI) blas.o
+#
+ifeq ($(IFMOAB),true)
+  MOABO := moab.o imeshutil.o
+endif
+#
+NOBJS = $(CORE) $(MXM) $(GS) $(XXT) $(USR) $(MOABO) $(COMM_MPI) blas.o
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
@@ -72,11 +81,11 @@ JL2 := ${JL2} -DUNDERSCORE
 endif
 JL2   := ${JL2} -DPREFIX=jl_
 
-FL0i4 = $(L0)
-FL0   = $(L0) $(P)
-FL2   = $(L2) $(P)
-FL3   = $(L3) $(P)
-FL4   = $(L4) $(P)
+FL0i4 = $(L0) -I $S
+FL0   = $(L0) $(P) -I $S
+FL2   = $(L2) $(P) -I $S
+FL3   = $(L3) $(P) -I $S
+FL4   = $(L4) $(P) -I $S
 
 cFL0   = $(L0) 
 cFL2   = $(L2) 
@@ -84,6 +93,11 @@ cFL3   = $(L3)
 cFL4   = $(L4) 
 
 lFLAGS = $(USR_LIB)
+
+ifeq ($(IFMOAB),true)
+  lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
+endif
+
 
 ################################################################################
 
@@ -174,6 +188,11 @@ mat1.o		:$S/mat1.f;			$(F77) -c $(FL4) $S/mat1.f
 mat2.o		:$S/mat2.f;			$(F77) -c $(FL4) $S/mat2.f
 ################################################################################
 
+################################################################################
+#moab stuff
+################################################################################
+moab.o          :$S/moab.f;       $(F77) -c $(FL2) $(IMESH_FCFLAGS) $(IMESH_INCLUDES) $< -o $@
+imeshutil.o     :$S/imeshutil.f;  $(F77) -c $(FL2) $(IMESH_FCFLAGS) $(IMESH_INCLUDES) $< -o $@
 
 ################################################################################
 #dual mode modules

@@ -337,7 +337,7 @@ c
 c-----------------------------------------------------------------------
       subroutine get_map
 
-      call f77_get_vert
+      call get_vert
 
       return
       end

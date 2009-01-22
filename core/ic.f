@@ -380,6 +380,7 @@ c     ! save velocity on fine mesh for dealiasing
 
       if(nid.eq.0) then
         write(6,*) 'done :: set initial conditions'
+        write(6,*) ' '
       endif
 
       return
@@ -482,9 +483,9 @@ C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
-            IF (NID.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010)
- 1010       FORMAT(/,1X,'Checking restart options:')
-            IF (NID.EQ.0) WRITE(6,'(A80)') LINE
+            IF (NID.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+ 1010       FORMAT(1X,'Checking restart options: ',A80)
+c            IF (NID.EQ.0) WRITE(6,'(A80)') LINE
 C
 C           Parse restart options
  
@@ -1977,7 +1978,7 @@ c
 c
       if(nid.eq.0) then
         write(6,*) 'done :: regenerate geomerty data'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       return
@@ -2471,7 +2472,7 @@ c
 
       character*6  six,fmt,s6
       save         six
-      data         six / '??????' /
+      data         six / "??????" /
 
       character*80 fname
       character*1  fname1(80)

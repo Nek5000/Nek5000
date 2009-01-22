@@ -32,7 +32,7 @@ C     Read Mesh Data and Group ID
          write(6,22) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,22) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  22      format(1X,A,4I9)
-         write(6,*) ''
+         write(6,*) ' '
       endif
 
       ifgtp = .false.
@@ -50,7 +50,7 @@ c
       call mapelpr  ! read .map file, est. gllnid, etc.
       if(nid.eq.0) then
         write(6,*) 'done :: read .map file'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       if (nelgs.lt.0) then
@@ -107,7 +107,7 @@ C
 
       if(nid.eq.0) then
         write(6,*) 'done :: read .rea file'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 C
       return
@@ -209,36 +209,6 @@ c
          call exitt
       ENDIF
    
-
-c     dealiasing handling
-      if (param(99).lt.0) then
-         param(99) = -1       ! No  dealiasing 
-      else
-         param(99) = 4        ! default
-      endif
-
-      if (param(99).gt.-1 .and. lxd.le.lx1) then
-          if(nid.eq.0) write(6,*) 
-     &    'ABORT: LXD=<LX1, change LXD and recompile!'
-          call exitt
-      endif
-
-
-c     I/O format handling
-      if (param(67).lt.0) then
-         param(67) = 0        ! ASCII
- 
-      else
-         param(67) = 6        ! binary is default
-      endif
-
-      if (param(66).lt.0) then
-         param(66) = 0        ! ASCII
- 
-      else
-         param(66) = 6        ! binary is default
-      endif
-
 c   
 c     Read in the passive scalar conduct and rhocp's:
 c
@@ -364,6 +334,33 @@ c
       if (ifsplit)         ifchar = .false.   ! For now, at least.
       if (ifmhd)           ifchar = .false.   ! For now, at least.
 
+c     dealiasing handling
+      if (param(99).lt.0) then
+         param(99) = -1       ! No  dealiasing
+      else
+         param(99) = 4        ! default
+         if(ifaxis) param(99) = 3             ! For now, at least.
+      endif
+
+      if (param(99).gt.-1 .and. lxd.le.lx1) then
+          if(nid.eq.0) write(6,*)
+     &    'ABORT: LXD=<LX1, change LXD and recompile!'
+          call exitt
+      endif
+
+
+c     I/O format handling
+      if (param(67).lt.0) then
+         param(67) = 0        ! ASCII
+      else
+         param(67) = 6        ! binary is default
+      endif
+
+      if (param(66).lt.0) then
+         param(66) = 0        ! ASCII
+      else
+         param(66) = 6        ! binary is default
+      endif
 
 C
 C     End of PARAMETER read for all processors.
@@ -1195,7 +1192,7 @@ C
 C
       if(nid.eq.0) then
         write(6,*) 'done :: verify mesh topology'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       return
@@ -1818,7 +1815,7 @@ c
 
       if(nid.eq.0) then
         write(6,*) 'done :: read .re2 file'
-        write(6,*) ''
+        write(6,*) ' '
       endif
 
       return

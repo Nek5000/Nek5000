@@ -102,7 +102,7 @@ c
       integer e,eg
 
       ncrnr = 2**ndim
-      call f77_get_vert_map(imap, vertex, ncrnr, nelgt, '.map')
+      call get_vert_map(imap, vertex, ncrnr, nelgt, '.map')
 
       nxb = (nx1+1)/2
       nyb = (ny1+1)/2
