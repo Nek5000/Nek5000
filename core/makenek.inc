@@ -104,12 +104,13 @@ case $F77comp in
                ;;
   gfortran)    P="-fdefault-real-8 -x f77-cpp-input"
                ;;
-  ifort)       P="-r8" -cpp
+  ifort)       P="-r8 -fpp"
                ;;
   *xlf*)       P="-qrealsize=8 -qsuffix=cpp=f"
                PPPO="-WF,"
                ;;
-  ftn)         P="-r8 -Mpreprocess";;
+  ftn)         P="-r8 -Mpreprocess"
+               ;;
   *)  echo "WARNING: Cannot detect compiler specfic flags
       echo "          - to promote REAL to 8 bytes"
       echo "          - to invoke preprocessor first
