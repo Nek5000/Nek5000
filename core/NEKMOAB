@@ -1,0 +1,19 @@
+!Data common to functions in moab.f. Do #include instead of include or it won't work (because we're using preproc macros here)
+
+      IMESH_HANDLE :: imesh
+
+      IMESH_HANDLE hexHandles(*)
+      pointer (hexHandlesPointer, hexHandles)
+
+      integer hexSize
+
+      IMESH_HANDLE globalIdTag
+
+      common /nekmoab/ imesh, globalIdTag, hexHandlesPointer, hexSize
+
+      integer TWENTYSEVEN
+      parameter (TWENTYSEVEN = 27)
+
+      integer SIX
+      parameter (SIX = 6)
+

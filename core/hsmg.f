@@ -124,7 +124,7 @@ c----------------------------------------------------------------------
       
 c     set up direct stiffness summation for each level
       ncrnr = 2**ndim
-      call f77_get_vert
+      call get_vert
 
       do l=1,mg_lmax-1
          nx=mg_nh(l)

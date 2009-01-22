@@ -572,6 +572,14 @@ C
       DIMENSION XCB(2,2,2),YCB(2,2,2),ZCB(2,2,2)
 C
       CHARACTER*1 CCV
+
+#ifdef MOAB
+      if (ifmoab) then
+         call moab_geometry (xml,yml,zml,nxl,nyl,nzl)
+         return
+      endif
+#endif
+
 C
 C     Initialize geometry arrays
 C

@@ -50,7 +50,22 @@ C
 C
 C     Read .rea file (preprocssor data)
 C
-      call readat  ! Read reaprocessor map, followed by data.
+      ifmoab = .false.   ! for now, at least.
+
+      if (ifmoab) then
+#ifdef MOAB
+         call moab_dat
+#else
+         if(nid.eq.0) write(6,*) 
+     &     'ABORT: this version was not compiled with moab support!'
+         call exitt
+#endif
+      else
+         call readat  ! Read reaprocessor map, followed by data.
+      endif
+      if (nid.eq.0) write(6,*) 'readat time',dnekclock()-t0,' seconds'
+
+
       call setvar  ! initialize some variables
 
 c     Check for zero steps
@@ -167,7 +182,7 @@ C--------------------------------------------------------------------------
 
       IF (NSTEPS.EQ.0) then
           if (nid.eq.0) then
-             write(6,*) ''
+             write(6,*) ' '
              write(6,*) '0 time steps -> skip time loop'
           endif
           RETURN
@@ -266,9 +281,9 @@ C--------------------------------------------------------------------------
       include 'OPCTR'
 
       if (nid.eq.0) then
-         write(6,*) ''
+         write(6,*) ' '
          write(6,*) 'call nek_end'
-         write(6,*) ''
+         write(6,*) ' '
       endif
 
 c     check for zero steps
