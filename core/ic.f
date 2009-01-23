@@ -267,6 +267,7 @@ c
          call col2 (vx,vmult,ntotv)
          call col2 (vy,vmult,ntotv)
          call col2 (vz,vmult,ntotv)
+         if (ifsplit) call dsavg(pr)  ! continuous pressure
       endif
 
       if (ifmhd) then
