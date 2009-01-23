@@ -2149,24 +2149,33 @@ c
       include 'GEOM'
       include 'SOLN'
       include 'PARALLEL'
+      include 'CTIMER'
+
       real uf(1),vf(1)
       common /scrpre/ uc(lcr*lelt)
       common /scrpr2/ vc(lcr*lelt)
       common /scrxxt/ cmlt(lcr,lelv),mask(lcr,lelv)
-c
+
       integer n_crs_tot
       save    n_crs_tot
       data    n_crs_tot /0/
 
-      integer icalld
-      save    icalld
-      data    icalld /0/
+      
+      if (icalld.eq.0) then ! timer info
+         ncrsl=0
+         tcrsl=0.0
+      endif
+      ncrsl  = ncrsl  + 1
 
       ntot = nelv*nx1*ny1*nz1
       call col3(uf,vf,vmult,ntot)
 
       call map_f_to_c_h1_bilin(vc,uf)   ! additive Schwarz
+
+      etime1=dnekclock()
       call crs_solve(xxth,uc,vc)
+      tcrsl=tcrsl+dnekclock()-etime1
+
       call map_c_to_f_h1_bilin(uf,uc)
 
 
