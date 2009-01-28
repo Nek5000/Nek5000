@@ -97,6 +97,8 @@ F77comp=$F77
 echo $F77comp | grep -i mpi
 if [ $? -eq 0 ]; then
  F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
+else
+ F77comp=`echo $F77 | awk '{print $1}'`
 fi
 
 case $F77comp in
