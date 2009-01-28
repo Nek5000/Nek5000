@@ -766,7 +766,7 @@ c        Generate tridiagonal matrix for Lanczos scheme
       niter = iter-1
 c
       if (nid.eq.0) write (6,3001) istep,niter,name,rbn2,rbn0,tol
- 3000 format(i9,4x,'Hmholtz ',a4,': ',I6,1p6E13.4)
+ 3000 format(4x,i7,4x,'Hmholtz ',a4,': ',I6,1p6E13.4)
  3001 format(2i6,' **ERROR**: Failed in HMHOLTZ: ',a4,1p6E13.4)
  3002 format(i3,i6,' Helmholtz ',a4,1x,l4,':',1p6E13.4)
  9999 continue

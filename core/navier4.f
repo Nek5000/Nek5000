@@ -641,11 +641,11 @@ c   Diag.
       ratio  = alpha1/alpha2
       n10=min(10,n_sav)
 c
-      if (nid.eq.0) write(6,10) istep,alpha1,alpha2,ratio,n_sav,name4
-   10 format(I6,1p3e12.4,i6,' alph1n ',a4)
+      if (nid.eq.0) write(6,10) istep,name4,alpha1,alpha2,ratio,n_sav
+   10 format(4X,I7,4x,a4,' alph1n',1p3e12.4,i6)
 c
       if (nid.eq.0) write(6,11) istep,name4,n_sav,(ws(i),i=1,n10)
-   11 format(I6,1x,a4,' halpha',i4,10(1p10e12.4,/,17x))
+   11 format(4X,I7,4x,a4,' halpha',i6,10(1p10e12.4,/,17x))
 c
       return
       end

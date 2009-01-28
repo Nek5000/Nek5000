@@ -102,16 +102,20 @@ c calculate Divergence difference norms
       QTL2 = SQRT  (QTL2)
 
 
-      IF (NID .EQ. 0) WRITE(6,'(13X,A,1p2e13.4)')
+      IF (NID .EQ. 0) WRITE(6,'(15X,A,1p2e13.4)')
      &                      'L1/L2 DIV(V)    :',DIV1,DIV2
 
-      IF (NID .EQ. 0) WRITE(6,'(13X,A,1p2e13.4)') 
+      IF (NID .EQ. 0) WRITE(6,'(15X,A,1p2e13.4)') 
      &                      'L1/L2 QTL       :',QTL1,QTL2
 
-      IF (NID .EQ. 0) WRITE(6,'(13X,A,1p2e13.4)')
-     &                      'L1/L2 DIV(V)-QTL:',DIF1,DIF2
-      
-
+      IF (NID .EQ. 0) THEN
+          WRITE(6,'(15X,A,1p2e13.4)')
+     &          'L1/L2 DIV(V)-QTL:',DIF1,DIF2
+          IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
+     &          'WARNING: DIV(V)-QTL too large!'
+      ENDIF
+ 
+ 
       return
       END
 
