@@ -46,10 +46,9 @@ c     an ascii rea file for just the parameters
       write(6,'(A)') 'Start converting ...'
       write(6,*)
 
-
       call chcopy(file1(len+1),'.rea',4)
       call chcopy(fout1(lou+1),'.rea',4)
-      call chcopy(fbout1(lou+1),'.re2\0',5)
+      call chcopy(fbout1(lou+1),'.re2' // char(0),5)
 
       open(unit=10, file=file)
       open(unit=11, file=fout)
@@ -201,3 +200,9 @@ c     write(6 ,81) (string1(k),k=1,len)
       stop
       end
 c-----------------------------------------------------------------------
+      subroutine exitt
+
+      stop 
+ 
+      return
+      end
