@@ -54,7 +54,7 @@ c
 
       else
 
-#ifdef DEBUG
+#ifndef DEBUG
          if(nid.eq.0) write(6,*) 
      &      'ABORT: ASCII no longer supported, use .re2 file!'
          call exitt
@@ -552,7 +552,9 @@ C
             ELSEIF (NELGT.LT.1000000) THEN
                READ(9,61,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ELSE
-               READ(9,62,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
+               IF(NID.EQ.0) write(6,*)
+     &           'ABORT: no support for >1M elements for ASCII .rea!'
+               call exitt
             ENDIF
    60       FORMAT(I3,I3 ,5G14.6,1X,A1)
    61       FORMAT(I2,I6 ,5G14.6,1X,A1)
@@ -695,11 +697,16 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    51             FORMAT(A1,A3,I5,I1,5G14.6)
-               ELSE
-                  READ(9,*,ERR=500,END=500)    
+               ELSEIF (NELGT.LT.1000000) THEN
+                  READ(9,52,ERR=500,END=500)    
      $            CHTEMP,
-     $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
+     $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
+   52             FORMAT(A1,A3,I6,5G14.6)
+               ELSE
+                  IF(NID.EQ.0) write(6,*)
+     &              'ABORT: no support for >1M elements for ASCII .rea!'
+                  call exitt
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP

@@ -132,9 +132,9 @@ C
          WRITE (6,*) ' '
          WRITE (6,'(A)') 'Simulation successfully completed'
       ENDIF
- 100  FORMAT('Step',I6,', t=',1pE14.7,', DT=',1pE14.7
+ 100  FORMAT('Step',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',F7.3,2(1pE11.4))
- 101  FORMAT('Step',I6,', time=',1pE12.5,', DT=',1pE11.3)
+ 101  FORMAT('Step',I7,', time=',1pE12.5,', DT=',1pE11.3)
 C      call flush_io()
       RETURN
       END
@@ -726,7 +726,7 @@ C-----------------------------------------------------------------------
       ts = dnekclock() 
 
       if(nid.eq.0 .and. igeom.eq.1) 
-     &   write(*,'(12X,A)') 'Solving for fluid'
+     &   write(*,'(13X,A)') 'Solving for fluid'
 
       if (ifsplit) then
 
@@ -770,7 +770,7 @@ c     ! save velocity on fine mesh for dealiasing
 
 
       if(nid.eq.0 .and. igeom.eq.2) 
-     &   write(*,'(i11,1x,1p2e12.4,a)') 
+     &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
      &   istep,time,dnekclock()-ts,' Fluid done'
 
 
@@ -801,7 +801,7 @@ C
       ts = dnekclock()
 
       if (nid.eq.0 .and. igeom.eq.1) 
-     &    write(*,'(12x,a)') 'Solving for heat'
+     &    write(*,'(13x,a)') 'Solving for heat'
 
       if (ifcvode) then
 
@@ -835,8 +835,10 @@ C
 
       endif
 
-      if (nid.eq.0 .and. igeom.eq.2) 
-     &    write(*,'(12x,a,1pE11.4)') 'Heat done ',dnekclock()-ts 
+      if (nid.eq.0 .and. igeom.eq.2)
+     &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
+     &   istep,time,dnekclock()-ts,' Heat done'
+
 
       return
       end

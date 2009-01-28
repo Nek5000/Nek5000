@@ -218,8 +218,8 @@ c
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime1
 c     call flush_hack
- 9999 format(I10,' U-Press gmres: ',I6,1p4E13.4)
-19999 format(I10,' U-Press 1.e-5: ',I6,1p4E13.4)
+ 9999 format(4X,I7,'    U-Pres gmres:   ',I6,1p4E13.4)
+19999 format(4X,I7,'    U-Pres 1.e-5: ',I6,1p4E13.4)
 c
 c
       return
@@ -459,8 +459,8 @@ c
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime1
 c     call flush_hack
- 9999 format(I10,' U-Press gmres: ',I6,1p4E13.4)
-19999 format(I10,' U-Press 1.e-5: ',I6,1p4E13.4)
+ 9999 format(4X,I7,'    PRES gmres:   ',I6,1p4E13.4)
+19999 format(4X,I7,'    PRES 1.e-5: ',I6,1p4E13.4)
 
       return
       end
