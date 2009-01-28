@@ -77,35 +77,27 @@ c     Determine number of outflow points and order them last
 c     call out_cell(cell,nv,nelt)
 
 
-
-
-
 c     Find all periodic connections, based on cbc info.
       call periodic_vtx
      $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
-
 c     call out_cell(cell,nv,nelt)
 c     call exitt(1)
 
-
-
-!     Recursive bisection of element graph; reverse-order interface points
-
+c     Recursive bisection of element graph; reverse-order interface points
       call rec_bisect (elist,pmap,order,mo,cell,nv,nelv,ndim
      $                                              ,w1,w2,w3,w4,w5)
 
 c     Clean up 
-      call isort     (elist,w1,nelt)
-      call iswap_ip  (pmap ,w1,nelt)
+      call isort     (elist,w1,nelv)
+      call iswap_ip  (pmap ,w1,nelv)
 
 
       if (nelt.gt.nelv) then
          itype = 2   ! return structured vertex (not cell) pointer
          call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
 
-         call greedy  (elist,pmap,order,mo,cell,nv,nelv,nelt,ndim
+         call greedy  (elist,pmap,cell,nv,nelv,nelt,ndim
      $                                              ,w1,w2,w3,w4,w5)
-
 
 c        Clean up 
          call isort     (elist,w1,nelt)
@@ -114,9 +106,12 @@ c        Clean up
       endif
 
 
+
       npts = nv*nelt
       call iranku       (cell,nrnk,npts,w1)
       call self_chk     (cell,nv,nelt,1)    ! check for not self-ptg.
+
+      call fill_order   (order,mo,cell,nv,nelt)
       call assign_order (cell,nv,nelt,order)
 
 
@@ -226,6 +221,8 @@ c-----------------------------------------------------------------------
       subroutine exitt(ie)
       write(6,*)
       write(6,*) ie,' quit'
+      ke = 2*ie
+      ff = 1./(ke-ie-ie)
       stop
       end
 c-----------------------------------------------------------------------
@@ -417,8 +414,7 @@ C
    51       format(a1,a3,i5,i1,5g14.7)
          else
             read(io,*,err=500,end=500)    
-     $      cbc(f,e),id1,id2,
-     $      (bc(ii,f,e),ii=1,nbcrea)
+     $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
          endif
 c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
       enddo
@@ -1054,6 +1050,8 @@ c-----------------------------------------------------------------------
       max_depth = log2(nel)
       nel_even  = 2**max_depth
 
+      if (nel.eq.1) pmap(1) = 1
+
       p  = 0
       l  = 1
       d  = 0
@@ -1095,6 +1093,12 @@ c        call checker(elist,pmap,nel,ndim,i)
 
       enddo
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fill_order(order,mo,cell,nv,nel)
+      integer order(1),cell(nv,nel)
+      integer e,v
 
 c     Fill in remaining separator sets
       do e=1,nel
@@ -1141,8 +1145,8 @@ c
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !            !
-      common /arrayr/  dx(0:3,8,lelm)      !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
+      common /arrayr/  dx(0:3,8,lelm)    !
                                          !
       integer icalld,kj(10000),ke(10000) !
       save    icalld                     !
@@ -1179,8 +1183,8 @@ c--- diagnostic use only -----------------
       nsep = mo-mod
       if (nsep.gt.0) icalld=icalld+1
 
-      write(6,6) nsep,mo,mod,icalld
-    6 format(4i11,' nsep')
+c     write(6,6) nsep,mo,mod,icalld
+c   6 format(4i11,' nsep')
 
       do i=1,nsep
          x=dx(1,kj(i),ke(i))
@@ -3299,7 +3303,7 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
-      subroutine greedy (elist,pmap,order,mo,cell,nv,nelv,nelt,ndim
+      subroutine greedy (elist,pmap,cell,nv,nelv,nelt,ndim
      $                                              ,ip,ep,ic,jc,ne)
 c
 c     Distribute elements e > nelv to processors p \in [1,pmax]
@@ -3318,6 +3322,7 @@ c     ne(p), p(e), pmax, nep_max
 c
 
       integer elist(1),pmap(1)
+     $      , cell (nv,1)
      $      , ip(0:1),ep(1)          ! These are 
      $      , ic(1),jc(1)            ! work arrays 
      $      , ne(0:nelv)             ! upon input 
@@ -3344,7 +3349,7 @@ c
 c
 c     Build processor-to-element map
 c
-      call build_proc_el(ip,ep,ne,pmap,pmax,nelt)
+      call build_proc_el(ip,ep,ne,pmap,pmax,nelv)
 
 c
 c     First loop, use greedy to fill underloaded processors
@@ -3611,14 +3616,14 @@ c     call outmati(nee,1,ne,'nee  1',ne,1)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outbc(cbc,bc,nelt,ndim,name6)
+      subroutine outbc(cbc,bc,nel,ndim,name6)
       character*3 cbc(6,1)
       real         bc(5,6,1)
       character*6 name6
       integer e,f
 
       nface = 2*ndim
-      do e=1,nelt
+      do e=1,nel
       do f=1,nface
          write(6,1) e,f,cbc(f,e),(bc(k,f,e),k=1,5),name6
       enddo
