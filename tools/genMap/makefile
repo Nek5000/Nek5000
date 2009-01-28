@@ -1,6 +1,8 @@
-FFLAGS = -r8 
+FFLAGS = -r8 -Ktrap=fp -mcmodel=medium -Mprof=func # -g -O0
 CFLAGS = -DUNDERSCORE 
-prefix = $(bin_nek_tools)
+
+F77 = pgf77
+cc  = pgcc 
 
 OBJS = genmap.o byte.o 
 
@@ -8,7 +10,7 @@ all: genmap
 
 
 genmap:	$(OBJS)
-	$(F77) $(FFLAGS) -o $(prefix)/genmap $(OBJS)
+	$(F77) $(FFLAGS) -o genmap $(OBJS)
 
 clean:
 	'rm' *.o

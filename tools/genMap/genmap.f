@@ -22,6 +22,13 @@ c
 c  7/27/07 -- add self-connected check
 c  7/27/07 -- verify that don't double-check periodic faces
 c
+c  1/13/08 -- added support for conjugate heat transfer;
+c             Main features:
+c
+c             .recursive bisection only on fluid graph
+c             .remaining solid elements distributed round-robin/greedy
+c
+c             Will need to later modify for case nel_mhd > nelv.
 c
 c-----------------------------------------------------------------------
       program genmap
@@ -29,7 +36,7 @@ c-----------------------------------------------------------------------
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=1000000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -49,8 +56,8 @@ c     read nekton .rea file and make a .map file
 
       integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
 
-
-      call makemesh  (cell,nel,irnk,dx,cbc,bc,ndim) ! irnk is # unique points
+      call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim)
+c                                    irnk is # unique points
 
 
       nfc = 2*ndim
@@ -59,67 +66,92 @@ c     read nekton .rea file and make a .map file
       nic = lpts
       njc = lpts
       itype = 2   ! return structured vertex (not cell) pointer
-      call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nel,itype,w3) 
-c     call out_cell(cell,nv,nel)
+      call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
+c     call out_cell(cell,nv,nelt)
 c     call exitt
 
-!     Determine number of outflow points and order them last
+c     Determine number of outflow points and order them last
       call izero (order,irnk)
-      call set_outflow(no,order,mo,cell,nv,nel,irnk,cbc,nfc,w1,i0,i1,w2)
+      call set_outflow
+     $     (no,order,mo,cell,nv,nelt,irnk,cbc,nfc,w1,i0,i1,w2)
+c     call out_cell(cell,nv,nelt)
 
-c     call out_cell(cell,nv,nel)
 
-!     Find all periodic connections, based on cbc info.
+
+
+
+c     Find all periodic connections, based on cbc info.
       call periodic_vtx
-     $               (cell,nv,nel,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
+     $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
 
-c     call out_cell(cell,nv,nel)
+c     call out_cell(cell,nv,nelt)
 c     call exitt(1)
 
 
 
 !     Recursive bisection of element graph; reverse-order interface points
 
-      call rec_bisect (elist,pmap,order,mo,cell,nv,nel,ndim
+      call rec_bisect (elist,pmap,order,mo,cell,nv,nelv,ndim
      $                                              ,w1,w2,w3,w4,w5)
-      call isort     (elist,w1,nel)
-      call iswap_ip  (pmap ,w1,nel)
+
+c     Clean up 
+      call isort     (elist,w1,nelt)
+      call iswap_ip  (pmap ,w1,nelt)
 
 
-      npts = nv*nel
+      if (nelt.gt.nelv) then
+         itype = 2   ! return structured vertex (not cell) pointer
+         call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
+
+         call greedy  (elist,pmap,order,mo,cell,nv,nelv,nelt,ndim
+     $                                              ,w1,w2,w3,w4,w5)
+
+
+c        Clean up 
+         call isort     (elist,w1,nelt)
+         call iswap_ip  (pmap ,w1,nelt)
+
+      endif
+
+
+      npts = nv*nelt
       call iranku       (cell,nrnk,npts,w1)
-      call self_chk     (cell,nv,nel,1)     ! check for not self-ptg.
-      call assign_order (cell,nv,nel,order)
+      call self_chk     (cell,nv,nelt,1)    ! check for not self-ptg.
+      call assign_order (cell,nv,nelt,order)
 
 
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
-      call self_chk     (cell,nv,nel,2)     ! check for not self-ptg.
-      call reverse_p    (pmap,nel)          ! lightly load node 0
+      call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
+      call reverse_p    (pmap,nelt)         ! lightly load node 0
 
 c     Output to .map file:
       noutflow    = no    ! for now - no outflow bcs
-      call out_mapfile (pmap,nel,cell,nv,nrnk,noutflow)
+      call out_mapfile (pmap,nelt,cell,nv,nrnk,noutflow)
 
-c      call out_geofile (dx,ndim,nv,nel,pmap,39)
-c      call out_geofile2(dx,ndim,nv,nel,cell,nrnk)
+c     call out_geofile (dx,ndim,nv,nelt,pmap,39)
+c     call out_geofile2(dx,ndim,nv,nelt,cell,nrnk)
 
-c      call outmati(pmap,13,9,'pmat  ',nel,1)
-c      open(unit=22,file='p.dat')
-c      write(22,1) (pmap(k),k=1,nel)
-c    1 format(i9)
-c      close(unit=22)
+c     call outmati(pmap,13,9,'pmap  ',nelt,1)
+c     open(unit=22,file='p.dat')
+c     write(22,1) (pmap(k),k=1,nelt)
+c   1 format(i9)
+c     close(unit=22)
 
       stop
       end
 c-----------------------------------------------------------------------
-      subroutine makemesh(cell,nel,irnk,dx,cbc,bc,ndim)
+      subroutine makemesh(cell,nelv,nelt,irnk,dx,cbc,bc,ndim)
 
 c     read nekton .rea file and make a mesh
 
       integer      cell(1)
-      character*3  cbc (1)
-      real         bc (1)
-      real         dx (1)
+      character*3  cbc (6,1)
+      real         bc  (5,6,1)
+      real         dx  (1)
+      integer e,f
+
+      character*3 cbt(6)
+      real        bt(5,6)
 
       parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
@@ -129,10 +161,13 @@ c     read nekton .rea file and make a mesh
 
       logical ifbinary,ifbswap
       integer buf(30)
+
+      integer eface(6)  ! return Nekton preprocessor face ordering
+      save    eface
+      data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       call getfile2('Input (.rea) file name:$','.rea$',10)
-      call cscan_dxyz  (dx,nel,ndim,ifbinary,ifbswap)
-      nface = 2*ndim
+      call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
       if (ifbinary) then
          ! skip curved side data
@@ -142,23 +177,48 @@ c     read nekton .rea file and make a mesh
             call byte_read(buf,8)
          enddo
 
-         call rd_bc_bin(cbc,bc,nel,ifbswap)
+c        For current version of genmap, only need the fluid bcs.
+c        Later, for more complex MHD configs, we'll need fluid + induct.
+
+c        Also, if we start to have fluid/thermal domains with differing
+c        periodic bc topologies, then we'll need something completely
+c        different (two distinct numberings).
+c
+c        In fact, we need the thermal bcs because of periodicity... 
+c        This is not pretty --- there are many cases to be considered.
+c
+c        For now, we default to solid topology if nelt > nelv
+c
+
+
+         call rd_bc_bin(cbc,bc,nelv,nelt,ifbswap)
+
          call byte_close()
       else
-         call cscan_bcs   (cbc,bc,nface,nel,ndim)
+         call cscan_bcs   (cbc,bc,nelv,nelt,ndim)
       endif
+c     call outbc(cbc,bc,nelt,ndim,' CBC 1')
       close (unit=10)  ! close .rea file
+
+      nface = 2*ndim
+      do e=1,nelt !  SWAP TO PREPROCESSOR NOTATION
+         call chcopy(cbt,cbc(1,e)  ,nface*3)
+         call copy  ( bt, bc(1,1,e),nface*5)
+         do f=1,nface
+            call copy  ( bc(1,f,e), bt(1,eface(f)),5)
+            call chcopy(cbc(  f,e),cbt(  eface(f)),3)
+         enddo
+      enddo
+c     call outbc(cbc,bc,nelt,ndim,' CBC 2')
 
 
 c     Compress vertices based on coordinates
-      ln = lpts-1
-      lo = lpts-1
-      call unique_vertex2(cell,dx,ndim,nel,i_n,j_n,j_o)
+      call unique_vertex2(cell,dx,ndim,nelt,i_n,j_n,j_o)
 
       nv   = 2**ndim
-      npts = nel*nv
+      npts = nelt*nv
       call iranku    (cell,irnk,npts,i_n)
-      call self_chk  (cell,nv,nel,3)       ! check for not self-ptg.
+      call self_chk  (cell,nv,nelt,3)       ! check for not self-ptg.
 
       return
       end
@@ -169,7 +229,10 @@ c-----------------------------------------------------------------------
       stop
       end
 c-----------------------------------------------------------------------
-      subroutine cscan_dxyz (dx,nel,ndim,ifbinary,ifbswap)
+      subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
+
+      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
@@ -190,26 +253,26 @@ c
       ifbswap  = .false.
 
       call cscan(string,'MESH DATA',9)
-      read (10,*) nel,ndim
+      read (10,*) nelt,ndim,nelv
        
-      if (nel.lt.0) then
+      if (nelt.lt.0) then
          ifbinary = .true.
-         nel = abs(nel)
+         nelt = abs(nelt)
          call open_bin_file(ifbswap)
          nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
       endif
 
-      write(6,*) nel,ndim,ifbinary, ' nel,ndim,ifre2 '
+      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
 
-      if (nel.gt.lelm) then 
-         write(6,*) 'ABORT: NEL>LELM, modify LELM and recompile'
+      if (nelt.gt.lelm) then 
+         write(6,*) 'ABORT: NELT>LELM, modify LELM and recompile'
          call exitt(1)
       endif
 
       b = 1.e22
       l = 1
       if (ndim.eq.3) then
-         do e=1,nel
+         do e=1,nelt
             if(ifbinary) then
               call byte_read(buf,nwds)
               call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
@@ -231,7 +294,7 @@ c
             enddo
          enddo
       else
-         do e=1,nel
+         do e=1,nelt
             if(ifbinary) then
               call byte_read(buf,nwds)
               call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
@@ -251,7 +314,7 @@ c
    80 format(a80)
 c
       nvrt = 2**ndim
-      call set_d2(dx,nvrt,nel,ndim)
+      call set_d2(dx,nvrt,nelt,ndim)
 c
       return
       end
@@ -293,58 +356,58 @@ c     call exitt(5)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cscan_bcs  (cbc,bc,nface,nel,ndim)
+      subroutine cscan_bcs  (cbc,bc,nelv,nelt,ndim)
 c
 c     Scan for cbc data and read it
 c
-      character*3  cbc(nface,nel)
-      real         bc (5,nface,nel)
+      character*3  cbc(6,nelt)
+      real         bc (5,6,nelt)
       character*80 string
 
       integer e
 
       call cscan(string,'BOUNDARY',8) ! for now, fluid only
 
-      read (10,80) string
-   80 format(a80)
+      npass = 1
+      if (nelt.gt.nelv) npass = 2
 
-      ifield = 1
-      if (indx1(string,'NO ',3).ne.0) then
-         ifield = ifield+1
-         call cscan(string,'BOUNDARY',8) ! then, temp only
-      endif
+      do kpass = 1,npass
 
-      call rd_bc(cbc,bc,nface,nel,ndim,ifield,10)
+         read (10,80) string
+   80    format(a80)
+
+         ifield = kpass
+         if (indx1(string,'NO ',3).ne.0) then
+            ifield = ifield+1
+            call cscan(string,'BOUNDARY',8) ! then, temp only
+         endif
+
+         nel=nelv
+         if (ipass.eq.2) nel=nelt
+         call rd_bc(cbc,bc,nel,ndim,ifield,10)
+
+      enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rd_bc(cbc,bc,nfc,nel,ndim,ifield,io)
+      subroutine rd_bc(cbc,bc,nel,ndim,ifield,io)
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      character*3 cbc(nfc,nel)
-      real        bc(5,nfc,nel)
-
-      character*3 cbt(nfc)
-      real        bt(5,nfc)
-
-      integer eface(6)  ! return Nekton preprocessor face ordering
-      save    eface
-      data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
-c
-c
+      character*3 cbc(6,nel)
+      real        bc(5,6,nel)
       integer e,f
 C
       nbcrea = 5
+      nface  = 2*ndim
       do e=1,nel
-      do f=1,nfc
+      do f=1,nface
          if (nel.lt.1000) then
             read(io,50,err=500,end=500)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-c    $      (bc(ii,f,e),ii=1,nbcrea)
    50       format(a1,a3,2i3,5g14.7)
          elseif (nel.lt.100 000) then
             read(io,51,err=500,end=500)    
@@ -357,17 +420,8 @@ c    $      (bc(ii,f,e),ii=1,nbcrea)
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
          endif
+c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
       enddo
-      enddo
-
-      do e=1,nel
-         call chcopy(cbt,cbc(1,e)  ,nfc*3)
-         call copy  ( bt, bc(1,1,e),nfc*5)
-         do f=1,nfc
-            call copy  ( bc(1,f,e), bt(1,eface(f)),5)
-            call chcopy(cbc(  f,e),cbt(  eface(f)),3)
-         enddo
-         call chcopy(cbt,cbc(1,e),nfc*3)
       enddo
 
       return
@@ -381,412 +435,6 @@ C
       call exitt(ifield)
       return
 C
-      end
-c-----------------------------------------------------------------------
-      subroutine unique_vertex(cell,i_n,j_n,ln,i_o,j_o,lo,dx,nel,ndim)
-c
-      integer i_n(0:ln),j_n(ln),i_o(0:lo),j_o(lo),cell(1)
-      real dx(0:ndim,1)
-
-      nvtx = 2**ndim
-      do i=1,nvtx*nel
-         cell(i) = i
-      enddo
-      ndx = nvtx*nel
-
-      nv = 2**ndim
-c     call out_cell(cell,nv,nel)
-c     call exitt(4)
-
-
-      call build_ohash(i_n,nni,j_n,nnj,ln,i_o,noi,j_o,noj,lo,nh
-     $                                                ,dx,cell,ndx,ndim)
-
-      call csr_sort_colj(i_n,j_n,nni,cell)
-      call csr_sort_colj(i_o,j_o,noi,cell)
-
-c     call out_csrmati(i_n,j_n,nni,'mat nonov')
-c     call out_csrmati(i_o,j_o,noi,'mat    ov')
-
-      nrow = nni
-
-      do i=1,nvtx*nel  ! initialize index set
-         cell(i) = -i
-      enddo
-
-      do k=1,nrow  ! compare and condense each index set, k=1...,nrow
-
-        jn0 = i_n(k-1)
-        jn1 = i_n(k)
-        nn  = jn1-jn0
-
-        jo0 = i_o(k-1)
-        jo1 = i_o(k)
-        no  = jo1-jo0
-
-c       if (mod(k,100).eq.0.or.k.le.10) 
-c    $     write(6,*) k,jn0,jn1,jo0,jo1,' condense'
-
-        eps = .10 ! condense anything smaller than .01 x local spacing
-        call comp_condense(cell,j_n(jn0),nn,j_o(jo0),no,dx,ndim,eps)
-
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine comp_condense (indx,i_n,nn,i_o,no,dx,ndim,eps)
-c
-c     compare & condense positions in nonoverlapping (I_n) 
-c     and overlapping (I_o) index sets
-c
-      integer indx(1),i_n(nn),i_o(no),a1,a2
-      real    dx(0:ndim,1) ! dx(0,:) = local scale, dx(1,:) = x(:)
-c
-      eps2 = eps**2
-
-c     write(6,*) nn,no,' nn',eps2
-
-      do ii=1,nn
-        i  = i_n(ii)
-        i1 = indx(i)
-        a1 = abs(i1)
-        if (i1.lt.0) then   !  not condensed
-          do jj=1,no        !  compare x_i vs. x_j, j in I_o{}
-            j  = i_o(jj)
-            i2 = indx(j)
-            a2 = abs(i2)
-            d2 = min(dx(0,i),dx(0,j))
-            e2 = eps2*d2
-            s2 = 0.
-            do k=1,ndim
-              s2 = s2 + (dx(k,i)-dx(k,j))**2
-            enddo
-c           write (6,8) i,j,i1,i2,' COMP',d2,s2,e2
-c  8        format( 4i5,a5,1p3e9.2)
-            if (s2.lt.e2) then   ! found a match
-              if (i2.gt.0) then       ! jj has already been set
-                indx(i) = i2
-              else
-                i0 = min(a1,a2)
-                indx(i) = i0
-                indx(j) = i0
-              endif
-            endif
-          enddo
-        endif
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_ohash(i_n,nni,j_n,nnj,ln,i_o,noi,j_o,noj,lo,nh
-     $                                                ,dx,indx,ndx,ndim)
-c
-c     Build two hash tables, one based on nonoverlapping domains, 
-c     one based on overlapping domains.
-c
-c     Hash tables returned in csr format with (nh**ndim) rows
-c
-      integer i_n(0:ln),j_n(ln),i_o(0:lo),j_o(lo),indx(1)
-      real dx(0:ndim,1)
-      real dmn(0:3),dmx(0:3)
-
-      integer stride
-c
-      bn =  1.e22
-      bx = -1.e22
-      call cfill(dmn,bn,4)
-      call cfill(dmx,bx,4)
-
-      do i=1,ndx     ! get ranges
-         j=indx(i)
-         do k=0,ndim
-            dmn(k) = min(dmn(k),dx(k,j))
-            dmx(k) = max(dmx(k),dx(k,j))
-         enddo
-      enddo
-
-      zdx  = ndx
-      zdx  = zdx**(1./ndim)
-      nh   = zdx/3 + 1
-c     nh   = 1
-      nh   = (2*nh/3)
-      nh   = max(nh,1)
-      nrow = nh**ndim
-
-      dmn(0) = sqrt(dmn(0)) ! convert to distance
-      dmx(0) = sqrt(dmx(0))
-
-c
-c     Set overlapping hash table, csr format
-c
-      stride = 4
-      nho    = stride*nh
-
-c     Build fine hash table, in order to generate overlap
-      if (ndim.eq.3) then
-         call build_hash3(i_n,nni,j_n,nnj,ln,nho,dmn,dmx,dx,indx,ndx)
-      else
-         call build_hash2(i_n,nni,j_n,nnj,ln,nho,dmn,dmx,dx,indx,ndx)
-      endif
-c     call out_csrmati(i_n,j_n,nni,'mat   ov1')
-
-
-c     concatenate rows of (i_n,j_n) to form (i_o,j_o)
-
-      i_o(0) = 1
-      nptr   = 1
-      if (ndim.eq.3) then
-         do k=1,nh
-         do j=1,nh
-         do i=1,nh
-
-            iii      = i + nh*( (j-1) + nh*(k-1) )
-            i_o(iii) = i_o(iii-1)
-
-            i0 = max(stride*(i-1),1)
-            i1 = min(stride*(i+1),stride*nh)
-            j0 = max(stride*(j-1),1)
-            j1 = min(stride*(j+1),stride*nh)
-            k0 = max(stride*(k-1),1)
-            k1 = min(stride*(k+1),stride*nh)
-
-            do kk=k0,k1
-            do jj=j0,j1
-            do ii=i0,i1
-               irow     = ii + nho*( (jj-1) + nho*(kk-1) )
-               jj0      = i_n(irow-1)
-               jj1      = i_n(irow)
-               njj      = jj1 - jj0
-c              if (k.eq.20) write(6,1) jj0,jj1,ii,jj,kk,i,j,k
-c  1           format(8i9)
-               if (njj.gt.0) then
-                  call icopy(j_o(nptr),j_n(jj0),njj)
-                  i_o(iii) = i_o(iii) + njj
-                  nptr     = nptr     + njj
-               endif
-            enddo
-            enddo
-            enddo
-         enddo
-         enddo
-         enddo
-      else              ! 2D
-         do j=1,nh
-         do i=1,nh
-
-            iii      = i + nh*(j-1)
-            i_o(iii) = i_o(iii-1)
-
-            i0 = max(stride*(i-1),1)
-            i1 = min(stride*(i+1),stride*nh)
-            j0 = max(stride*(j-1),1)
-            j1 = min(stride*(j+1),stride*nh)
-
-            do jj=j0,j1
-            do ii=i0,i1
-               irow     = ii + nho*(jj-1)
-               jj0      = i_n(irow-1)
-               jj1      = i_n(irow)
-               njj      = jj1 - jj0
-               if (njj.gt.0) then
-                  call icopy(j_o(nptr),j_n(jj0),njj)
-                  i_o(iii) = i_o(iii) + njj
-                  nptr     = nptr     + njj
-               endif
-            enddo
-            enddo
-         enddo
-         enddo
-      endif
-
-      noi = nrow
-      noj = nptr-1
-
-c     Set nonoverlapping hash table, csr format
-      if (ndim.eq.3) then
-         call build_hash3(i_n,nni,j_n,nnj,ln,nh,dmn,dmx,dx,indx,ndx)
-      else
-         call build_hash2(i_n,nni,j_n,nnj,ln,nh,dmn,dmx,dx,indx,ndx)
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_hash3(ia,ni,ja,nj,ln,nh,dmn,dmx,dx,indx,ndx)
-c
-c     build an ( nh x nh x nh ) hash table in csr format
-c
-      integer ia(0:1),ja(1),indx(1)
-      real dx(0:3,1)                 ! scale + x + y + z
-      real dmn(0:3),dmx(0:3)
-
-      ddx = (dmx(1)-dmn(1))/nh
-      ddy = (dmx(2)-dmn(2))/nh
-      ddz = (dmx(3)-dmn(3))/nh
-
-      x0  = dmn(1)
-      y0  = dmn(2)
-      z0  = dmn(3)
-
-      nrow = nh**3
-      call izero(ia(1),nrow)
-
-      do ii=1,ndx     ! loop 1, count number in each row
-         i = indx(ii)
-         x = dx(1,i)
-         y = dx(2,i)
-         z = dx(3,i)
-
-         sx = (x - x0)/ddx
-         ix = 1 + sx
-         ix = min(ix,nh)
-         ix = max(ix,1)
-
-         sy = (y - y0)/ddy
-         iy = 1 + sy
-         iy = min(iy,nh)
-         iy = max(iy,1)
-
-         sz = (z - z0)/ddz
-         iz = 1 + sz
-         iz = min(iz,nh)
-         iz = max(iz,1)
-
-         irow     = ix + nh * ( (iy-1) + nh*(iz-1) )
-         ia(irow) = ia(irow) + 1
-      enddo
-
-      ia(0) = 1      ! convert column count to pointers
-      do i=1,nrow
-         ia(i) = ia(i-1) + ia(i)
-      enddo
-      nnzero = ia(nrow)-1
-      if (nnzero.gt.ln) then
-         write(6,*) nnzero,nj,nrow,ni,' Error hash3.'
-         call exitt(1)
-      endif
-      call izero(ja,nnzero)  ! DANGER, should check size
-
-      do ii=1,ndx     ! loop 2, fill column pointers
-         i = indx(ii)
-         x = dx(1,i)
-         y = dx(2,i)
-         z = dx(3,i)
-
-         sx = (x - x0)/ddx
-         ix = 1 + sx
-         ix = min(ix,nh)
-         ix = max(ix,1)
-
-         sy = (y - y0)/ddy
-         iy = 1 + sy
-         iy = min(iy,nh)
-         iy = max(iy,1)
-
-         sz = (z - z0)/ddz
-         iz = 1 + sz
-         iz = min(iz,nh)
-         iz = max(iz,1)
-
-         irow     = ix + nh * ( (iy-1) + nh*(iz-1) )
-         j0       = ia(irow-1)
-         j1       = ia(irow)
-         do j=j0,j1-1
-            if (ja(j).eq.0) then
-               ja(j) = i            ! put indx in csr column
-               goto 100
-            endif
-         enddo
-  100    continue
-      enddo
-
-      ni = nrow
-      nj = nnzero
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_hash2(ia,ni,ja,nj,ln,nh,dmn,dmx,dx,indx,ndx)
-c
-c     build an ( nh x nh ) hash table in csr format
-c
-      integer ia(0:1),ja(1),indx(1)
-      real dx(0:2,1)                 ! scale + x + y
-      real dmn(0:2),dmx(0:2)
-
-      ddx = (dmx(1)-dmn(1))/nh
-      ddy = (dmx(2)-dmn(2))/nh
-
-      x0  = dmn(1)
-      y0  = dmn(2)
-
-      nrow = nh**2
-      call izero(ia(1),nrow)
-
-
-      do ii=1,ndx     ! loop 1, count number in each row
-         i = indx(ii)
-         x = dx(1,i)
-         y = dx(2,i)
-
-         sx = (x - x0)/ddx
-         ix = 1 + sx
-         ix = min(ix,nh)
-         ix = max(ix,1)
-
-         sy = (y - y0)/ddy
-         iy = 1 + sy
-         iy = min(iy,nh)
-         iy = max(iy,1)
-
-         irow     = ix + nh * (iy-1)
-         ia(irow) = ia(irow) + 1
-      enddo
-
-      ia(0) = 1      ! convert column count to pointers
-      do i=1,nrow
-         ia(i) = ia(i-1) + ia(i)
-      enddo
-      nnzero = ia(nrow)-1
-      if (nnzero.gt.ln) then
-         write(6,*) nnzero,nj,nrow,ni,' Error hash2.'
-         call exitt(1)
-      endif
-      call izero(ja,nnzero)  ! DANGER, should check size
-
-      do ii=1,ndx     ! loop 2, fill column pointers
-         i = indx(ii)
-         x = dx(1,i)
-         y = dx(2,i)
-
-         sx = (x - x0)/ddx
-         ix = 1 + sx
-         ix = min(ix,nh)
-         ix = max(ix,1)
-
-         sy = (y - y0)/ddy
-         iy = 1 + sy
-         iy = min(iy,nh)
-         iy = max(iy,1)
-
-         irow     = ix + nh * (iy-1)
-         j0       = ia(irow-1)
-         j1       = ia(irow)
-         do j=j0,j1-1
-            if (ja(j).eq.0) then
-               ja(j) = i            ! put indx in csr column
-               goto 100
-            endif
-         enddo
-  100    continue
-      enddo
-
-      ni = nrow
-      nj = nnzero
-
-      return
       end
 c-----------------------------------------------------------------------
       subroutine blank(s,n)
@@ -1324,11 +972,13 @@ c
       common /arrayr1/ f(lelm),r(lelm),p(lelm),w(lelm),rr(lelm,mm)
      $               , ev(mm*mm),d(mm),u(mm)
 
-      common /arrayi2/ jdual(lpts) , face (36*lelm)
-     $               , idual(lelm) , list (lpts) , list2 (0:lpts)
-     $               , klist(lelm) 
-      common /arrayi3/ elist(lelm) 
-      integer jdual,face,idual,list,elist
+      common /arrayi2/ jdual(lpts) , vdual(lpts)
+     $               , idual(lelm) 
+      common /arrayi3/ iv2c (lpts) , jv2c (lpts)
+      common /arrayi4/ wk(lpts+2*lelm)
+      integer jdual,vdual,idual,wk
+      integer list(lpts)
+      equivalence (list ,jv2c)
       logical ifconn,is_connected
 
       if (nv.eq.4) then   ! 2D
@@ -1345,17 +995,17 @@ c     call out_cell(c,nv,nel)
 
 
       nv  = 2**ndim
-      nfc = 2*ndim
-      nvf = 2**(ndim-1)
-      call jjnt(elist,nel)
-      call build_dualj(idual,jdual,nfc,c,nv,nel,elist,face,nvf,list)
+      call c2c(idual,jdual,vdual,ni,nj,c,nv,nel,iv2c,jv2c,lpts,wk)
 c     call outaij(idual,jdual,nel,'jdual ',9)
-      ifconn = is_connected(list,n0,idual,jdual,nel,list2)
+      ifconn = is_connected(list,n0,idual,jdual,nel,wk)
 
       if (ifconn) then
          m = mm
-         call spec_bis(pmap,idual,jdual,nel,d,u,f,r,p,w,rr,ev,m,ndim)
+         call spec_bis(pmap,idual,jdual,vdual
+     $                ,nel,d,u,f,r,p,w,rr,ev,m,ndim)
+
       else
+
          write(6,*) 'not connected',n0,nel
 
          n1 = nel/2
@@ -2178,136 +1828,13 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_faces(face,nvf,nfc,cell,nv,nel,elist)
-c
-c     Count number of elements sharing each vertex
-c
-      integer face(nvf+2,nfc,nel),cell(nv,nel),elist(nel)
-      integer e,f
-
-      integer vface(4,6)  ! symm. vertices ordered on symm. faces
-      save    vface
-      data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
-     $              , 1,2,3,4 , 5,6,7,8 /
-
-
-      do l=1,nel
-         e = elist(l)
-         do f=1,nfc
-            do i=1,nvf
-               j = vface(i,f)
-               face(i,f,l) = cell(j,e)
-            enddo
-            face(nvf+1,f,l) = l ! return local element number
-            face(nvf+2,f,l) = f
-         enddo
-      enddo
-c     call exitt(7)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_dual(dual,nfc,cell,nv,nel,elist,face,nvf,ind)
-c
-      integer dual(nfc,nel),cell(nv,nel),elist(1)
-c
-      integer face(nvf+2,nfc,nel),ind(nfc,nel)
-      integer e,f,key(4),w6(6),rank,last(8),next(8)
-      logical iftuple_iaeqb,is_same
-
-c     call out_cell(cell,nv,nel)
-      call get_faces(face,nvf,nfc,cell,nv,nel,elist)
-
-      call izero(dual,nfc*nel)
-      do e=1,nel
-      do f=1,nfc
-         call isort (face(1,f,e),ind,nvf) ! sort local vertices
-      enddo
-      enddo
-
-      call jjnt(key,4)
-      nkey = nvf
-      nfcs = nfc*nel
-      nvf2 = nvf+2
-      call ituple_sort(face,nvf2,nfcs,key,nkey,ind,w6)
-c     write(6,*) face  ! DONT DO THIS
-
-
-      nvf2 = nvf + 2               !     find matched pairs
-      rank = 1
-      call icopy(last,face(1,1,1),nvf2)
-
-      i = 0
-      do e=1,nel
-      do f=1,nfc
-         i = i+1
-         if (i.gt.1) then
-            is_same = iftuple_iaeqb(face(1,f,e),last,key,nkey)
-            if (is_same) then
-               rank = rank+1
-               je   = face(nvf+1,f,e)
-               jf   = face(nvf+2,f,e)
-               ke   = last(nvf+1)
-               kf   = last(nvf+2)
-               if (je.eq.ke) then
-                  write(6,*) 'abort: dual  found self:', e, f,i
-                  write(6,*) 'abort: dual2 found self:',je,jf,rank
-                  write(6,*) 'abort: dual3 found self:',ke,kf,rank
-                  call exitt(0)
-               endif
-               if (rank.gt.2) then
-                  write(6,2) e,f,je,jf,ke,kf,rank
-                  write(6,3) (face(jj,f,e),jj=1,6)
-    2             format(3(i7,i2),i9,'abort: dual high rank:')
-    3             format(6i7,' dual2')
-                  call exitt(0)
-               endif
-               dual (jf,je) = ke
-               dual (kf,ke) = je
-            else
-               rank = 1
-            endif
-            call icopy(last,face(1,f,e),nvf2)
-         endif
-      enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_dualj(idual,jdual,nfc,cell,nv,nel,elist
-     $                                                   ,face,nvf,dual)
-
-      integer idual(0:nel),jdual(nfc*nel),cell(nv,nel),dual(nfc,nel)
-      integer elist(1),face(nvf+2,nfc,nel)
-      integer e
-
-      call build_dual(dual,nfc,cell,nv,nel,elist,face,nvf,jdual)
-
-c     Convert jdual to csr format
-
-      l = 0
-      idual(0) = 1
-      do e=1,nel
-         do j=1,nfc
-            if (dual(j,e).ne.0) then
-               l = l+1
-               jdual(l) = dual(j,e)
-            endif
-         enddo
-         idual(e) = l+1
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine set_outflow(no,order,mo,cell,nv,nel,nrnk,cbc,nfc
      $                      ,ic,i0,i1,jc)
 c
 c     Order outflow nodes last
 c
       integer cell(nv,nel),order(1)
-      character*3      cbc(nfc,nel)
+      character*3      cbc(6,nel)
 
       integer ic(i0:i1),jc(1)
 
@@ -2425,8 +1952,8 @@ c
       integer cell(nv,nel),iper(ndim,1),jmin(1)
       real dx(0:ndim,nv,nel)
 
-      character*3      cbc(  nfc,nel)
-      real             bc (5,nfc,nel)
+      character*3      cbc(  6,nel)
+      real             bc (5,6,nel)
 
       character*3      cb,cj
       integer e,f,v
@@ -2490,7 +2017,7 @@ c             bc(1,jf,je) = -bc(1,jf,je) ! pairing is done !!!
               write(6,*) 'abort: PERIODIC MISMATCH 2:'
               write(6,6)   e,f,cb,' ie '
               write(6,6) je,jf,cj,' je '
-              write(6,6) bc(1,f,e),bc(1,jf,je),' bc'
+              write(6,*) bc(1,f,e),bc(1,jf,je),' bc'
               write(6,*)
               call exitt(8)
            endif
@@ -2745,12 +2272,18 @@ c-----------------------------------------------------------------------
 c     if ia     < 0, then already on list
 c     if ja(ia) < 0, then row is already processed
 
+      write(6,*)
+      write(6,*) ' OUT Aij ',name6,n,key
+
       do i=1,n
          j0 = abs(ia(i-1))
-         j1 = abs(ia(i))
-         m  = j1-j0
-         call outmati(ja(j0),1,m,name6,i,1)
+         j1 = abs(ia(i))-1
+         m  = j1-j0 + 1
+         m  = min(16,m)
+         jm = j0 + m - 1
+         write(6,1) i,j0,j1,'aij:',(ja(j),j=j0,jm)
       enddo
+   1  format(3i4,1x,a4,1x,16i4)
 
       return
       end
@@ -2863,13 +2396,13 @@ c     read (5,*) adum
       return
       end
 c-----------------------------------------------------------------------
-      subroutine spec_bis(pmap,ia,ja,n,d,u,f,r,p,w,rr,ev,m,ndim)
+      subroutine spec_bis(pmap,ia,ja,va,n,d,u,f,r,p,w,rr,ev,m,ndim)
 
 c     n = dimension of A
 c     m = max # iterations
 
       real d(m),u(m),f(n),r(n),p(n),w(n),rr(n,m)
-      integer pmap(n),ia(0:n),ja(1)
+      integer pmap(n),ia(0:n),ja(1),va(1)
 
       if (n.lt.3) then
          call sbisect (pmap,f,p,w,n)
@@ -2904,7 +2437,7 @@ c     enddo
       npass = 50
       do k=1,npass
          niter = m
-         call glanczos(rr,n,d,u,niter,f,ia,ja,r,p,w)
+         call glanczos(rr,n,d,u,niter,f,ia,ja,va,r,p,w)
          call lanczos2(f,rr,n,ev,d,u,niter)
          if (niter.lt.m) goto 100
       enddo
@@ -2940,12 +2473,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine glanczos(rr,n,diag,upper,niter,f,ia,ja,r,p,w)
+      subroutine glanczos(rr,n,diag,upper,niter,f,ia,ja,va,r,p,w)
 c
 c     Lanczos applied to graph Laplacian
 c
       real    rr(n,1),diag(1),upper(1),f(1),r(1),p(1),w(1)
-      integer ia(1),ja(1)
+      integer ia(1),ja(1),va(1)
       real one,eps
 c
       call rzero(diag ,niter)
@@ -2981,7 +2514,7 @@ c
 
          call add2s1(p,r,beta,n)
          call ortho1(p,n)
-         call ax(w,p,ia,ja,n)
+         call ax(w,p,ia,ja,va,n)
 c
 c        Save p^Ap for eigenvalue estimates
          pap_old = pap
@@ -3019,20 +2552,20 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ax(y,x,ia,ja,n)
+      subroutine ax(y,x,ia,ja,va,n)
 
 c     This routine computes y = Ax, where A is the graph Laplacian 
 
       real y(1),x(1)
-      integer ia(0:1),ja(1)
+      integer ia(0:1),ja(1),va(1)
 c
       do i=1,n
          j0 = ia(i-1)
          j1 = ia(i) - 1
          m  = j1-j0 + 1
-         y(i) = m*x(i)
+         y(i) = 0
          do j=j0,j1
-            y(i) = y(i) - x(ja(j))
+            y(i) = y(i) + va(j)*x(ja(j))
          enddo
       enddo
       return
@@ -3501,34 +3034,40 @@ c-----------------------------------------------------------------------
 
 
 c-----------------------------------------------------------------------
-      subroutine rd_bc_bin(cbc,bc,nel,ifbswap)
+      subroutine rd_bc_bin(cbc,bc,nelv,nelt,ifbswap)
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      integer lelt
-      parameter(lelt=1 000 000)
+      parameter (lelm=1 000 000)
 
-      character*3 cbc(6,lelt)
-      real        bc (5,6,lelt)
+      character*3 cbc(6,lelm)
+      real        bc (5,6,lelm)
       logical     ifbswap
       
       integer e,f,buf(30)
 
-      do e=1,nelt   ! fill up cbc w/ default
-      do k=1,6
-         cbc(k,e) = 'E  '
-      enddo
-      enddo
+      npass = 1
+      if (nelt.gt.nelv) npass = 2   ! default to thermal topology (for now)
 
-      nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
+      do kpass = 1,npass
 
-      call byte_read(nbc_max,1)
-      if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
-      do k=1,nbc_max
-c        write(6,*) k,' dobc1 ',nbc_max
-         call byte_read(buf,nwds)
-         if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
-         call buf_to_bc(cbc,bc,buf)
+         do e=1,lelm   ! fill up cbc w/ default
+         do k=1,6
+            cbc(k,e) = 'E  '
+         enddo
+         enddo
+
+         nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
+
+         call byte_read(nbc_max,1)
+         if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
+         do k=1,nbc_max
+c           write(6,*) k,' dobc1 ',nbc_max
+            call byte_read(buf,nwds)
+            if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
+            call buf_to_bc(cbc,bc,buf)
+         enddo
+
       enddo
 
       return
@@ -3538,23 +3077,22 @@ c        write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-      integer lelt
-      parameter(lelt=1 000 000)
+      parameter(lelm=1 000 000)
 
-      character*3 cbl(6,lelt)
-      real        bl(5,6,lelt)
+      character*3 cbl(6,lelm)
+      real        bl(5,6,lelm)
       integer     buf(30)
 
       integer e,eg,f
 
-      e = buf(1)
+      e  = buf(1)
       f  = buf(2)
 
       call copy4r ( bl(1,f,e),buf(3),5)
       call chcopy (cbl(  f,e),buf(8),3)
 
-c      write(6,1) e,f,cbl(f,e),' CBC'
-c  1   format(i8,i4,2x,a3,a4)
+c      write(6,1) e,f,cbl(f,e),(bl(k,f,e),k=1,5),' CBC'
+c  1   format(i8,i4,2x,a3,5f8.3,1x,a4)
 
       return
       end
@@ -3630,7 +3168,7 @@ c-----------------------------------------------------------------------
 
       return
       end
-
+c-----------------------------------------------------------------------
       logical function if_byte_swap_test(bytetest)
 c
       real*4 bytetest,test2
@@ -3758,6 +3296,334 @@ c        write(6,1) i,(jc(j),j=j0,j1)
 c  1     format(i8,' c2v:',20i5)
 c     enddo
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine greedy (elist,pmap,order,mo,cell,nv,nelv,nelt,ndim
+     $                                              ,ip,ep,ic,jc,ne)
+c
+c     Distribute elements e > nelv to processors p \in [1,pmax]
+c
+c     Two pass strategy:
+c
+c     1st pass:  fill underloaded processors
+c
+c     2nd pass:  assign any T element to any connected processor p
+c                for which ne(p) < nep_max
+c
+c
+c     Required resources:
+c
+c     ne(p), p(e), pmax, nep_max
+c
+
+      integer elist(1),pmap(1)
+     $      , ip(0:1),ep(1)          ! These are 
+     $      , ic(1),jc(1)            ! work arrays 
+     $      , ne(0:nelv)             ! upon input 
+
+      integer e,p,pnext,pmax
+
+
+      pmax = iglmax(pmap,nelv)  ! pmap is sorted by e
+      call izero(ne,pmax+1)
+      do e=1,nelv
+         ne(pmap(e)) = ne(pmap(e)) + 1
+      enddo
+      nepf_min = iglmin(ne(1),pmax)   ! min number of elem/proc, fluid
+      nepf_max = iglmax(ne(1),pmax)   ! max number of elem/proc, fluid
+
+      if (nepf_max-nepf_min.gt.1) then
+         write(6,*) 'ERROR: nepfmax/min:',nepf_max,nepf_min,nelv,nelt
+         call exitt(11)
+      endif
+
+      nep_max = nelt/pmax
+      if (nep_max*pmax .lt. nelt) nep_max = nep_max + 1
+
+c
+c     Build processor-to-element map
+c
+      call build_proc_el(ip,ep,ne,pmap,pmax,nelt)
+
+c
+c     First loop, use greedy to fill underloaded processors
+c
+      call izero(ne,pmax+1)
+      do p=1,pmax
+       if (ne(p).lt.nepf_max) then  !  [ip,ep: csr proc-el list]
+          j0=ip(p)
+          j1=ip(p+1)-1
+          do j=j0,j1   ! loop over all elements e on proc p
+             e = ep(j)
+             do i=1,nv
+                iv=cell(i,e)   ! Find elements ke attached to e
+                k0 = ic(iv)
+                k1 = ic(iv+1)-1
+                do k=k0,k1
+                   kv = jc(k)  !   This is the structured vertex pointer
+                   ke = 1 + (kv-1)/nv      !  = neighboring element
+                   if (pmap(ke).le.0) then ! Found an unattached element
+                      pmap(ke) = p
+                      ne  (p ) = ne(p)+1
+                      goto 10
+                   endif
+                enddo
+             enddo
+          enddo
+       endif
+   10  continue  ! next processor
+      enddo
+c
+c     Repeat first loop, using _anything_ to fill underloaded processors
+c
+      ke_min = nelv
+      do p=1,pmax
+       if (ne(p).lt.nepf_max) then
+          do ke=ke_min+1,nelt
+             if (pmap(ke).le.0) then
+                pmap(ke) = p
+                ne  (p ) = ne(p)+1
+                ke_min = ke
+                goto 20
+             endif
+          enddo
+       endif
+   20  continue
+      enddo
+
+c
+c     Now, use greedy to distribute remaining elements
+c
+c     (First version of this code, we revert ot round robin...)
+c
+
+      pnext = 0
+      do e=nelv+1,nelt
+         if (pmap(e).le.0) then
+            pnext = pnext+1
+            if (pnext.gt.pmax) pnext = 1
+            pmap(e) = pnext
+            ne  (pnext) = ne(pnext) + 1
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build_proc_el(ip,ep,ne,pmap,pmax,nel)
+      integer ip(0:1),ep(1),ne(0:1),pmap(1),pmax
+      integer e,p
+
+c     Step 1:  count number of elems per proc
+      call izero(ne,pmax+1) 
+      do e=1,nel
+         p=pmap(e)   ! pmap is 1-based,  a "0" --> not specified
+         ne(p) = ne(p) + 1
+      enddo
+
+c     Step 2:  Generate csr pointer
+
+      ip(0) = 1
+      do p=0,pmax
+         ip(p+1) = ip(p) + ne(p)
+         ne(p)   = 0
+      enddo
+
+c     Step 3:  fill ep()
+
+      do e=1,nel
+         p = pmap(e)
+         ep(ip(p) + ne(p)) = e
+         ne(p)             = ne(p) + 1 ! This is number filled for proc p
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function indxi(list,item,n)
+      integer list(1)
+
+      indxi = 0
+      do j=1,n
+         if (list(j).eq.item) then
+            indxi = j
+            return
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine c2c(ic2c,jc2c,vc2c,ni,nj,cell,nv,nel,iv2c,jv2c,nn,wk)
+
+c     build the c-to-c connectivity matrix in CSR format
+
+      integer ic2c(1),jc2c(1),vc2c(1),cell(nv,nel)
+      integer iv2c(1),jv2c(1),wk(1)
+      integer e,type,row_sum
+
+c     Step 1:  build the v-to-c connectivity matrix in CSR format
+
+      nic = nn
+      njc = nn
+      type = 1 ! return vertex-to-cell pointer in (iv2c,jv2c) csr pair
+      call cell2v(i0,i1,iv2c,nic,jv2c,njc,cell,nv,nel,type,wk)
+      nic = i1-i0+1
+c     call outaij(iv2c,jv2c,nic,'iv2c  ',type)
+
+
+c     Step 2: strip mine
+
+      n_in_strip = 20
+      nstrips    = nel / n_in_strip + 1
+
+      k0 = 1                        ! offsets for work array
+      k1 = k0 + n_in_strip + 1
+      k2 = k1 + n_in_strip + 1
+
+      ie0 = 1
+      ic2c(ie0) = 1
+
+      do istrip=1,nstrips
+         ie1   = ie0 + n_in_strip - 1
+         ie1   = min(ie1,nel)
+         ncell = ie1 - ie0 + 1
+         call c2cs(ic2c,jc2c,vc2c
+     $            ,iv2c,jv2c,i0,i1
+     $            ,cell,nv,ie0,ie1
+     $            ,wk(k0),wk(k1),wk(k2))
+         ie0 = ie1+1
+      enddo
+
+c
+c     Convert vc2c to graph Laplacian
+c
+      do e=1,nel
+         j0 = ic2c(e)
+         j1 = ic2c(e+1)-1
+         nj = j1-j0 + 1
+         ii = indxi(jc2c(j0),e,nj)
+         row_sum = 0
+         do k=1,nj
+            if (k.ne.ii) then
+               j = j0+k-1
+               row_sum=row_sum + vc2c(j)
+               vc2c(j)=-vc2c(j)           ! off-diag elements < 0
+            endif
+         enddo
+         j = j0+ii-1
+         vc2c(j)=row_sum  ! diagonal entry of graph Laplacian = row_sum
+
+         if (ii.eq.0) then
+            write(6,*) 'c2c graph, did not find self?',e,j0,j1
+            call outmati(jc2c(j0),1,nj,'c2cslf',e,1)
+         endif
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine c2cs(ic2c,jc2c,vc2c
+     $               ,iv2c,jv2c,k0,k1
+     $               ,cell,nv,ie0,ie1
+     $               ,nee,ic2t,jc2t)
+
+      integer ic2c(1),jc2c(1),vc2c(1),cell(nv,1)
+      integer iv2c(k0:k1),jv2c(1)
+
+      integer nee(ie0:ie1),ic2t(ie0:ie1+1),jc2t(1)
+
+
+      ne = ie1-ie0 + 1
+      call izero(nee(ie0),ne)
+
+      do ie=ie0,ie1              ! Counting phase
+      do iv=1,nv
+         jv = cell(iv,ie)
+         j0 = iv2c(jv)
+         j1 = iv2c(jv+1)-1
+c        write(6,*) ie,iv,jv,j0,j1,nee(ie),' nee A'
+         do jj=j0,j1
+            nee(ie) = nee(ie)+1  ! this count too high; compressed below
+         enddo
+      enddo
+      enddo
+c     call outmati(nee,1,ne,'nee  1',ne,1)
+
+      ic2t(ie0) = 1
+      do ie=ie0,ie1
+         ic2t(ie+1) = ic2t(ie) + nee(ie)
+      enddo
+
+      j0 = ic2t(ie0)
+      j1 = ic2t(ie1)+1
+      nj = j1-j0 
+      call izero(jc2t(j0),nj)
+      call izero(nee(ie0),ne)
+  
+      do ie=ie0,ie1          ! First filling phase
+         i0 = ic2t(ie)
+         do iv=1,nv
+            jv = cell(iv,ie)
+            j0 = iv2c(jv)
+            j1 = iv2c(jv+1)-1
+            do jj=j0,j1
+               je       = jv2c(jj)
+               ii       = indxi(jc2t(i0),je,nee(ie))
+               if (ii.eq.0) then
+                  ji       = i0 + nee(ie)
+                  jc2t(ji) = je
+                  nee(ie)  = nee(ie)+1     ! # unique elements connected to ie
+               endif
+            enddo
+         enddo
+      enddo
+
+      do ie=ie0,ie1
+         ic2c(ie+1) = ic2c(ie) + nee(ie)
+      enddo
+      call izero(nee(ie0),ne)
+
+      do ie=ie0,ie1          ! Compression + 2nd filling phase
+         i0 = ic2c(ie)
+         do iv=1,nv
+            jv = cell(iv,ie)
+            j0 = iv2c(jv)
+            j1 = iv2c(jv+1)-1
+            do jj=j0,j1
+               je       = jv2c(jj)
+               ii       = indxi(jc2c(i0),je,nee(ie))
+               if (ii.eq.0) then
+                  ji       = i0 + nee(ie)
+                  jc2c(ji) = je
+                  vc2c(ji) =  1            ! # connections for pair (ie,je)
+                  nee(ie)  = nee(ie)+1     ! # unique elements connected to ie
+               else
+                  ji       = i0 + ii - 1
+                  vc2c(ji) = vc2c(ji) + 1  ! # connections for pair (ie,je)
+               endif
+            enddo
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outbc(cbc,bc,nelt,ndim,name6)
+      character*3 cbc(6,1)
+      real         bc(5,6,1)
+      character*6 name6
+      integer e,f
+
+      nface = 2*ndim
+      do e=1,nelt
+      do f=1,nface
+         write(6,1) e,f,cbc(f,e),(bc(k,f,e),k=1,5),name6
+      enddo
+      enddo
+    1 format(i8,i4,2x,a3,5f8.3,1x,a6)
       return
       end
 c-----------------------------------------------------------------------
