@@ -15,17 +15,15 @@ C
       INCLUDE 'ZPER'
 C
       if(nid.eq.0) write(6,*) 'read .rea file'
-
       OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
 
-C     Read Parameters
+C     Read parameters and logical flags
       CALL RDPARAM
 
 C     Read Mesh Data and Group ID
-
       read(9,*)  ! xfac,yfac,xzero,yzero
       read(9,*)
-      read(9,*) nelgs,ndim,nelgv
+      read(9,*)  nelgs,ndim,nelgv
       nelgt = abs(nelgs)
 
       if (nid.eq.0) then
@@ -38,11 +36,6 @@ C     Read Mesh Data and Group ID
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
-      if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
-         write(6,*)
-     $   'For GFDM or GTP, number of processors need to be 2^k'
-         call exitt
-      endif
 c
       call chk_nel  ! make certain sufficient array sizes
 
@@ -61,9 +54,11 @@ c
 
       else
 
+#ifdef DEBUG
          if(nid.eq.0) write(6,*) 
      &      'ABORT: ASCII no longer supported, use .re2 file!'
          call exitt
+#endif
 
          maxrd = 32               ! max # procs to read at once
          mread = (np-1)/maxrd+1   ! mod param
@@ -123,89 +118,42 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'ZPER'
+
+      character(80) string
+      
 C
       READ(9,*,ERR=400)
       READ(9,*,ERR=400) VNEKTON
       NKTONV=(VNEKTON+0.5)
       VNEKMIN=2.5
       IF(VNEKTON.LT.VNEKMIN)THEN
-         PRINT*,' Error: This NEKTON Solver Requires a .rea file'
-         PRINT*,' from prenek version ',VNEKMIN,' or higher'
-         PRINT*,' Please run the session through the preprocessor'
-         PRINT*,' to bring the .rea file up to date.'
+         if(nid.eq.0) then
+           PRINT*,' Error: This NEKTON Solver Requires a .rea file'
+           PRINT*,' from prenek version ',VNEKMIN,' or higher'
+           PRINT*,' Please run the session through the preprocessor'
+           PRINT*,' to bring the .rea file up to date.'
+         endif
          call exitt
       ENDIF
       READ(9,*,ERR=400) NDIM
-c     error check
-      IF(NDIM.NE.LDIM)THEN
-         WRITE(6,10) LDIM,NDIM
-   10       FORMAT(//,2X,'Error: This NEKTON Solver has been compiled'
-     $              /,2X,'       for spatial dimension equal to',I2,'.'
-     $              /,2X,'       The data file has dimension',I2,'.')
-         call exitt
-      ENDIF
-      IF (NDIM.EQ.3) IF3D=.TRUE.
-      IF (NDIM.NE.3) IF3D=.FALSE.
-
-
-      if (if3d) then
-         if (ly1.ne.lx1.or.lz1.ne.lx1) then
-            if (nid.eq.0) write(6,13) lx1,ly1,lz1
-   13       format('ERROR: lx1,ly1,lz1:',3i5,' must be equal for 3D')
-            call exitt
-         endif
-      else
-         if (ly1.ne.lx1.or.lz1.ne.1) then
-            if (nid.eq.0) write(6,12) lx1,ly1,lz1
-   12       format('ERROR: ',3i5,' must have lx1=ly1; lz1=1, for 2D')
-            call exitt
-         endif
-      endif
-
-
       READ(9,*,ERR=400) NPARAM
       DO 20 I=1,NPARAM
          READ(9,*,ERR=400)PARAM(I)
    20 CONTINUE
-C
-C     Check to see if code is compiled with sufficient number of fields.
-C
-      ifmhd  = .false.
-      ifessr = .false.
-      if (param(29).ne.0.) ifmhd  = .true.
-      if (ifmhd)           ifessr = .true.
-
-      if (ifmvbd .and. ifsplit) then
-         write(6,*) 
-     $   'Moving boundary in Pn-Pn is not supported'
-         call exitt
-      endif
-
-      if (ifmhd .and. lbx1.ne.lx1) then
-         write(6,*) 
-     $   'For MHD, need lbx1=lx1, etc.; Change SIZEu & recompile'
-         call exitt
-      endif
-
-      ifpert = .false.
-      if (param(31).ne.0.) ifpert = .true.
-      npert = abs(param(31)) 
-c
-      if (ifpert .and. lpx1.ne.lx1) then
-         write(6,*) 
-     $   'For Lyapunov, need lpx1=lx1, etc.; Change SIZEu & recompile'
-      endif
 
 c
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
       if (ifmhd) npscl1 = npscl1 + 1
       NPSCL2=NPSCAL+2
+
       IF (NPSCL1.GT.LDIMT) THEN
-         WRITE(6,21) LDIMT,NPSCL1
-   21    FORMAT(//,2X,'Error: This NEKTON Solver has been compiled'
-     $           /,2X,'       for',I3,' passive scalars.  This run'
-     $           /,2X,'       requires that LDIMT be set to',I3,'.')
+         if(nid.eq.0) then
+           WRITE(6,21) LDIMT,NPSCL1
+   21      FORMAT(//,2X,'Error: This NEKTON Solver has been compiled'
+     $             /,2X,'       for',I3,' passive scalars.  This run'
+     $             /,2X,'       requires that LDIMT be set to',I3,'.')
+         endif
          call exitt
       ENDIF
    
@@ -245,51 +193,104 @@ c
             READ(9,*,ERR=500)
    25       CONTINUE
       ENDIF
+
+C
+C     Read logical equation type descriptors....
+C
+      do i=1,NPSCL2
+         IFTMSH(i) = .false.
+         IFADVC(i) = .false. 
+      enddo      
+      IFFLOW    = .false.
+      IFHEAT    = .false.
+      IFTRAN    = .false.
+      IFAXIS    = .false.
+      IFSTRS    = .false.
+      IFLOMACH  = .false.
+      IFMGRID   = .false.
+      IFMODEL   = .false.
+      IFKEPS    = .false.
+      IFMVBD    = .false.
+      IFCHAR    = .false.
+      IFANLS    = .false.
+      IFMOAB    = .false.
+      IFMHD     = .false.
+      IFESSR    = .false.
+      IFTMSH(0) = .false.
+
+      READ(9,*,ERR=500) NLOGIC
+      do i = 1,NLOGIC
+         read(9,'(A80)',ERR=500) string
+
+         if (indx1(string,'IFTMSH' ,6).gt.0) then 
+             read(string,*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
+         elseif (indx1(string,'IFNAV'  ,5).gt.0 .and.
+     &           indx1(string,'IFADVC' ,6).gt.0) then 
+              read(string,*,ERR=490) (IFADVC(II),II=1,NPSCL2)
+         elseif (indx1(string,'IFADVC' ,6).gt.0) then
+              read(string,*,ERR=490) (IFADVC(II),II=1,NPSCL2)
+         elseif (indx1(string,'IFFLOW' ,6).gt.0) then
+              read(string,*) IFFLOW
+         elseif (indx1(string,'IFHEAT' ,6).gt.0) then 
+              read(string,*) IFHEAT
+         elseif (indx1(string,'IFTRAN' ,6).gt.0) then 
+              read(string,*) IFTRAN
+         elseif (indx1(string,'IFAXIS' ,6).gt.0) then 
+              read(string,*) IFAXIS
+         elseif (indx1(string,'IFSTRS' ,6).gt.0) then 
+              read(string,*) IFSTRS
+         elseif (indx1(string,'IFLO'   ,4).gt.0) then 
+              read(string,*) IFLOMACH
+         elseif (indx1(string,'IFMGRID',7).gt.0) then 
+              read(string,*) IFMGRID
+         elseif (indx1(string,'IFKEPS' ,6).gt.0) then 
+              read(string,*) IFKEPS
+         elseif (indx1(string,'IFMVBD' ,6).gt.0) then 
+              read(string,*) IFMVBD
+         elseif (indx1(string,'IFCHAR' ,6).gt.0) then 
+              read(string,*) IFCHAR
+         elseif (indx1(string,'IFANLS' ,6).gt.0) then 
+              read(string,*) IFANLS
+         elseif (indx1(string,'IFMOAB' ,6).gt.0) then 
+              read(string,*) IFMOAB
+         elseif (indx1(string,'IFMHD'  ,5).gt.0) then 
+              read(string,*) IFMHD
+         elseif (indx1(string,'IFNAV'  ,5).gt.0) then 
+              read(string,*) IFNAV
+         else
+              if(nid.eq.0) then
+                write(6,'(1X,2A)') 'ABORT: Unkown logical flag', string
+                write(6,'(30(A,/))') 
+     &           ' Available logical flags:',
+     &           '   IFTMSH'   ,
+     &           '   IFADVC'   ,  
+     &           '   IFFLOW'   ,
+     &           '   IFHEAT'   ,
+     &           '   IFTRAN'   ,
+     &           '   IFAXIS'   ,
+     &           '   IFSTRS'   ,
+     &           '   IFLOMACH' ,
+     &           '   IFMGRID'  ,
+     &           '   IFKEPS'   ,
+     &           '   IFMVBD'   ,
+     &           '   IFCHAR'   ,
+     &           '   IFANLS'   ,
+     &           '   IFMOAB'            
+              endif
+              call exitt
+         endif
+ 490  continue
+      enddo
+
+      if (param(29).ne.0.) ifmhd  = .true.
+      if (ifmhd)           ifessr = .true.
+
       ifldmhd = npscal + 3
       if (ifmhd) then
          cpfld(ifldmhd,1) = param(29)  ! magnetic viscosity
          cpfld(ifldmhd,2) = param( 1)  ! magnetic rho same as for fluid
       endif
-C
-C     Read logical equation type descriptors....
-C
-      READ(9,*,ERR=500) NLOGIC
-      READ(9,*,ERR=500) IFFLOW
-      READ(9,*,ERR=500) IFHEAT
-      READ(9,*,ERR=500) IFTRAN
-C     IFADVC(1) is IFNAV; IFADVC(2) istemperature; rest are 9 passive scalars
-      READ(9,*,ERR=500) (IFADVC(I),I=1,NPSCL2)
-      READ(9,*,ERR=500) (IFTMSH(I),I=0,NPSCL2)
-c
-      IFAXIS   = .false.
-      IFSTRS   = .false.
-      IFLOMACH = .false.
-      IFMGRID  = .false.
-      IFMODEL  = .false.
-      IFKEPS   = .false.
-      IFMVBD   = .false.
-      IFCHAR   = .false.
-      ifanls   = .FALSE.
-      ifanl2   = .FALSE.
-c
-      IF (NLOGIC.GE.6 ) READ(9,*,ERR=500) IFAXIS
-      if (if3d) ifaxis = .false.
-c
-      IF (NLOGIC.GE.7 ) READ(9,*,ERR=500) IFSTRS
-      IF (NLOGIC.GE.8 ) READ(9,*,ERR=500) IFLOMACH
-      IF (NLOGIC.GE.9 ) READ(9,*,ERR=500) IFMGRID
-      IF (NLOGIC.GE.10) READ(9,*,ERR=500) IFMODEL
-      IF (NLOGIC.GE.11) READ(9,*,ERR=500) IFKEPS
-      IF (NLOGIC.GE.12) READ(9,*,ERR=500) IFMVBD
-      IF (NLOGIC.GE.13) READ(9,*,ERR=500) IFCHAR
-      IF (NLOGIC.GE.14) READ(9,*,ERR=500) ifanls
-      IF (NLOGIC.GE.15) READ(9,*,ERR=500) ifanl2
-      MAXLOG=15
-      IF(NLOGIC.GT.MAXLOG)THEN
-         DO 30 IL=1,NLOGIC-MAXLOG
-            READ(9,*,ERR=500)
-   30    CONTINUE
-      ENDIF
+
 C
 C     Set up default time dependent coefficients - NSTEPS,DT.
 C
@@ -298,17 +299,13 @@ C
          PARAM(12) = 1.0
          PARAM(19) = 0.0
       ENDIF
-c     IF (PARAM(22).EQ.0.0) PARAM(22)=1.0E-5
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
 c     This is here because it influence the mesh read, which follows.
-c
-c
       nelx   = abs(param(116))   ! check for global tensor-product structure
       nely   = abs(param(117))
       nelz   = abs(param(118))
       n_o    = 0
-c     n_o    = abs(param(90))
 c
       if (n_o.eq.0) then
          ifzper=.false.
@@ -318,16 +315,77 @@ c
          if (nelx.gt.0) ifzper=.false.
       endif
 
+C
+C     Do some checks
+C
+      IF(NDIM.NE.LDIM)THEN
+         WRITE(6,10) LDIM,NDIM
+   10       FORMAT(//,2X,'ERROR: This NEKTON Solver has been compiled'
+     $              /,2X,'       for spatial dimension equal to',I2,'.'
+     $              /,2X,'       The data file has dimension',I2,'.')
+         call exitt
+      ENDIF
+      IF (NDIM.EQ.3) IF3D=.TRUE.
+      IF (NDIM.NE.3) IF3D=.FALSE.
+
+      if (if3d) then
+         if (ly1.ne.lx1.or.lz1.ne.lx1) then
+            if (nid.eq.0) write(6,13) lx1,ly1,lz1
+   13       format('ERROR: lx1,ly1,lz1:',3i5,' must be equal for 3D')
+            call exitt
+         endif
+      else
+         if (ly1.ne.lx1.or.lz1.ne.1) then
+            if (nid.eq.0) write(6,12) lx1,ly1,lz1
+   12       format('ERROR: ',3i5,' must have lx1=ly1; lz1=1, for 2D')
+            call exitt
+         endif
+      endif
+
+      if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
+         if(nid.eq.0) write(6,*)
+     $   'ABORT: For GFDM or GTP, number of processors need to be 2^k'
+         call exitt
+      endif
+
+      if (ifmvbd .and. ifsplit) then
+         write(6,*) 
+     $   'ABORT: Moving boundary in Pn-Pn is not supported'
+         call exitt
+      endif
+
+      if (ifsplit .and. ifstrs) then
+         write(6,*) 
+     $   'ABORT: Stress formulation in Pn-Pn is not supported'
+         call exitt
+      endif
+
+      if (ifmhd .and. lbx1.ne.lx1) then
+         write(6,*) 
+     $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZEu'
+         call exitt
+      endif
+
+      ifpert = .false.
+      if (param(31).ne.0.) ifpert = .true.
+      npert = abs(param(31)) 
+c
+      if (ifpert .and. lpx1.ne.lx1) then
+         write(6,*) 
+     $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZEu'
+      endif
+
+      if (if3d) ifaxis = .false.
 
       if (iflomach .and. .not.ifsplit) then
          write(6,*) 
-     $   'For low Mach, need lx2=lx1, etc.; Change SIZEu & recompile'
+     $   'ABORT: For lowMach, need lx2=lx1, etc.; Change SIZEu'
          call exitt
       endif
 
       if (iflomach .and. .not.ifheat) then
          write(6,*) 
-     $   'Low Mach requires ifheat=true; Set IFHEAT true in .rea file'
+     $   'ABORT For lowMach, need ifheat=true; Change IFHEAT'
          call exitt
       endif
 
@@ -344,10 +402,9 @@ c     dealiasing handling
 
       if (param(99).gt.-1 .and. lxd.le.lx1) then
           if(nid.eq.0) write(6,*)
-     &    'ABORT: LXD=<LX1, change LXD and recompile!'
+     &    'ABORT: Dealiasing space too small (LXD=<LX1); Change SIZEu'
           call exitt
       endif
-
 
 c     I/O format handling
       if (param(67).lt.0) then
@@ -370,13 +427,13 @@ C
 C     Error handling:
 C
   400 CONTINUE
-      WRITE(6,401)
+      if(nid.eq.0) WRITE(6,401)
   401 FORMAT(2X,'ERROR READING PARAMETER DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDPARAM.')
       call exitt
 C
   500 CONTINUE
-      WRITE(6,501)
+      if(nid.eq.0) WRITE(6,501)
   501 FORMAT(2X,'ERROR READING LOGICAL DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDPARAM.')
       call exitt
@@ -451,13 +508,13 @@ C
 C     Error handling:
 C
   400 CONTINUE
-      WRITE(6,401) 
+      if(nid.eq.0) WRITE(6,401) 
   401 FORMAT(2X,'ERROR READING SCALE FACTORS, CHECK READ FILE'
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
 C
   500 CONTINUE
-      WRITE(6,501) IEG
+      if(nid.eq.0) WRITE(6,501) IEG
   501 FORMAT(2X,'ERROR READING MESH DATA NEAR ELEMENT',I7
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
@@ -517,7 +574,7 @@ C
 C     Error handling:
 C
   500 CONTINUE
-      WRITE(6,501)
+      if(nid.eq.0) WRITE(6,501)
   501 FORMAT(2X,'ERROR READING CURVE SIDE DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDCURVE.')
       call exitt
@@ -549,7 +606,7 @@ C
 C     Error handling:
 C
  1500 CONTINUE
-      WRITE(6,1501)
+      if(nid.eq.0) WRITE(6,1501)
  1501 FORMAT(2X,'ERROR READING unformatted CURVE SIDE DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDCURVE.')
       call exitt
@@ -674,7 +731,7 @@ C
 C     Error handling:
 C
   500 CONTINUE
-      WRITE(6,501) IFIELD,IEG
+      if(nid.eq.0) WRITE(6,501) IFIELD,IEG
   501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I6
      $    ,/,2X,'ABORTING IN ROUTINE RDBDRY.')
       call exitt
@@ -721,7 +778,7 @@ C
 C     Error handling:
 C
  1500 CONTINUE
-      WRITE(6,1501) IFIELD,IEG
+      if(nid.eq.0) WRITE(6,1501) IFIELD,IEG
  1501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I6
      $    ,/,2X,'(unformatted) ABORTING IN ROUTINE RDBDRY.')
       call exitt
@@ -769,7 +826,7 @@ C
 C     Error handling:
 C
   200 CONTINUE
-      WRITE(6,201)
+      if(nid.eq.0) WRITE(6,201)
   201 FORMAT(2X,'ERROR READING INITIAL CONDITION/DRIVE FORCE DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDICDF.')
       call exitt
@@ -811,7 +868,7 @@ C
 C     Error handling:
 C
   200 CONTINUE
-      WRITE(6,201)
+      if(nid.eq.0) WRITE(6,201)
   201 FORMAT(2X,'ERROR READING MATERIAL PROPERTIES DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDMATP.')
       call exitt
@@ -875,7 +932,7 @@ C
 C     Error handling:
 C
   200 CONTINUE
-      WRITE(6,201)
+      if(nid.eq.0) WRITE(6,201)
   201 FORMAT(2X,'ERROR READING HISTORY DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDHIST.')
       call exitt
@@ -1737,36 +1794,6 @@ C
       WORK(2)=NL2
       CALL IGOP(WORK,WRK2,'+  ',2)
       IF (ABS(WORK(1)-WORK(2)).GT.1) IFOK=.FALSE.
-C
-      return
-      END
-c-----------------------------------------------------------------------
-      subroutine gray(ipg,ipg1,itmp,n)
-      DIMENSION IPG(1),IPG1(1),ITMP(1)
-      INTEGER CD
-C
-      CD=LOG2(N)
-      NPR = 1
-      IPG(1) = 1
-      DO 100 I=1,CD
-         N1  = NPR+1
-         N2  = NPR*2
-         CALL ICOPY(IPG(N1),IPG(1),NPR)
-         CALL IADD (IPG(N1),NPR,NPR)
-         CALL IFLIP(IPG(N1),NPR)
-         NPR = 2*NPR
-  100 CONTINUE
-      N1=NPR+1
-c     IPG(0)=IPG(NPR)
-c     IPG(N1)=IPG(1)
-C
-C     Compute the inverse of the gray code mapping.  In other words,
-C     given the ith entry on the gray code list, IPG(i) returns the
-C     appropriate Node number (=nid+1).  Given a node number, NODE,
-C     IPG1(NODE) returns the location in the gray code (i.e. ring) map.
-C
-      CALL ICOPY(ITMP,IPG ,NPR)
-      CALL ISORT(ITMP,IPG1,NPR)
 C
       return
       END

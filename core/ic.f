@@ -728,9 +728,9 @@ C              Bounds checking on mapped data.
                IF (NXR.GT.LXR) THEN
                   WRITE(6,20) NXR,NX1
    20             FORMAT(//,2X,
-     $            'WARNING:  Attempt to map from',I3,
+     $            'ABORT:  Attempt to map from',I3,
      $            ' to N=',I3,'.',/,2X,
-     $            'NEKTON currently supports mapping from N+2 or less.'
+     $            'NEK5000 currently supports mapping from N+6 or less.'
      $            ,/,2X,'Increase N or LXR in IC.FOR.')
                   CALL EMERXIT
                ENDIF
@@ -2397,6 +2397,16 @@ c
 
       call mfi_get_hdr0(hdr,fname)
       call parse_hdr   (hdr)
+
+C     Bounds checking on mapped data.
+      IF (NXR.GT.LX1+6) THEN
+         if(nid.eq.0) WRITE(6,20) NXR,NX1
+   20    FORMAT(//,2X,
+     $   'ABORT:  Attempt to map from',I3,
+     $   ' to N=',I3,'.',/,2X,
+     $   'NEK5000 currently supports mapping from N+6 or less.')
+         CALL EXITT
+      ENDIF
 
       call set_pid(fname)! determine reader nodes; open files
 

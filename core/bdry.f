@@ -143,6 +143,7 @@ C
          WRITE (6,*) 'IFWCNO  =',IFWCNO
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
+            WRITE (6,*) 'IFTMSH for field',IFIELD,'   = ',IFTMSH(IFIELD)
             WRITE (6,*) 'IFADVC for field',IFIELD,'   = ',IFADVC(IFIELD)
             WRITE (6,*) 'IFNONL for field',IFIELD,'   = ',IFNONL(IFIELD)
  500     CONTINUE
