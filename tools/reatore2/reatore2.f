@@ -79,7 +79,7 @@ c     an ascii rea file for just the parameters
 C MESH
       igroup = 0
       do ie=1,nel      
-         read(10,*) !read (10,'(43X,i5)') igroup
+         read(10,*) ! for now skip igroup (not used at the moment)
          call byte_write(igroup, 1)
 
          if (ndim.eq.3) then
@@ -118,7 +118,8 @@ c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             elseif (nel.lt.1000000) then
                read(10,61) f,e,(buf(k),k=1,5),ccurve(1)
             else
-               read(10,62) f,e,(buf(k),k=1,5),ccurve(1)
+                write(6,*) 'ABORT: No support for nel>1M !'
+                call exitt
             endif
             call byte_write(e     ,1)
             call byte_write(f     ,1)
@@ -147,15 +148,16 @@ C BOUNDARY CONDITIONS
                if(kpass.eq.2) nelb=nel     ! only ifield2 is a T mesh 
                do e=1,nelb
                do f=1,nface
-                  if (nel.lt. 100000 ) then
+                  if (nel.lt.1000000) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
-                     read(10,*) cbc(f,e),idum1,idum2,(bc(k,f,e),k=1,5)
+                     write(6,*) 'ABORT: No support for nel>1M !'
+                     call exitt
                   endif
                   if (cbc(f,e).ne.'E  ') nbc = nbc+1
                enddo
                enddo
-   20          format(1x,a3,6x,5g14.6)  ! works for any # elements (?)
+   20          format(1x,a3,6x,5g14.6)  
 
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)
