@@ -108,6 +108,8 @@ case $F77comp in
                ;;
   ifort)       P="-r8 -fpp"
                ;;
+  pathf*)      P="-r8 -cpp"
+               ;;
   *xlf*)       P="-qrealsize=8 -qsuffix=cpp=f"
                PPPO="-WF,"
                ;;
