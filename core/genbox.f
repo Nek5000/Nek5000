@@ -68,9 +68,9 @@ c
       nptsy = nely + 1
       nptsz = nelz + 1
 c
-      call iint(indx,nptsx)
-      call iint(indy,nptsy)
-      call iint(indz,nptsz)
+      call jjnt(indx,nptsx)
+      call jjnt(indy,nptsy)
+      call jjnt(indz,nptsz)
 c
       ifld = 2
       if (ifflow) ifld = 1
@@ -877,7 +877,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine iint(x,n)
+      subroutine jjnt(x,n)
       integer x(1)
       do i=1,n
          x(i) = i
