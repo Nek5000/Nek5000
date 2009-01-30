@@ -111,8 +111,7 @@ c     if (.not.(ifgtp.or.ifgfdm)) then
 c
 c        rsb element to processor mapping 
 c
-         inc = 2**ndim 
-         call get_map(gllnid,nelgv,inc)
+         call get_map
       endif
 
       if (ifzper.or.ifgfdm.or.ifgtp) then ! special processor map
