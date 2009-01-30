@@ -245,6 +245,8 @@ C
               read(string,*) IFMGRID
          elseif (indx1(string,'IFKEPS' ,6).gt.0) then 
               read(string,*) IFKEPS
+         elseif (indx1(string,'IFMODEL',7).gt.0) then 
+              read(string,*) IFMODEL
          elseif (indx1(string,'IFMVBD' ,6).gt.0) then 
               read(string,*) IFMVBD
          elseif (indx1(string,'IFCHAR' ,6).gt.0) then 
