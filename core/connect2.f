@@ -179,7 +179,7 @@ c
 c     passive scalars
 c
       READ(9,*,ERR=400) NSKIP
-      IF (NPSCAL.GE.1 .AND. .NOT.IFUSERVP) THEN
+      IF (NSKIP.GT.0 .AND. NPSCAL.GT.0 .AND. .NOT.IFUSERVP) THEN
          READ(9,*,ERR=400)(CPFLD(I,1),I=3,NPSCL2)
          IF(NPSCL2.LT.9)READ(9,*)
          READ(9,*,ERR=400)(CPFLD(I,2),I=3,NPSCL2)
@@ -197,6 +197,7 @@ c
 C
 C     Read logical equation type descriptors....
 C
+      IFTMSH(0) = .false.
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
@@ -217,10 +218,14 @@ C
       IFMHD     = .false.
       IFESSR    = .false.
       IFTMSH(0) = .false.
+      IFUSERVP  = .false.
+      IFCYCLIC  = .false.
+
 
       READ(9,*,ERR=500) NLOGIC
       do i = 1,NLOGIC
          read(9,'(A80)',ERR=500) string
+         call capit(string,80)
 
          if (indx1(string,'IFTMSH' ,6).gt.0) then 
              read(string,*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
@@ -257,8 +262,10 @@ C
               read(string,*) IFMOAB
          elseif (indx1(string,'IFMHD'  ,5).gt.0) then 
               read(string,*) IFMHD
-         elseif (indx1(string,'IFNAV'  ,5).gt.0) then 
-              read(string,*) IFNAV
+         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
+              read(string,*) IFUSERVP
+         elseif (indx1(string,'IFCYCLIC',8).gt.0) then 
+              read(string,*) IFCYCLIC
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unkown logical flag', string
@@ -270,6 +277,7 @@ C
      &           '   IFHEAT'   ,
      &           '   IFTRAN'   ,
      &           '   IFAXIS'   ,
+     &           '   IFCYCLIC' ,
      &           '   IFSTRS'   ,
      &           '   IFLOMACH' ,
      &           '   IFMGRID'  ,
@@ -277,12 +285,15 @@ C
      &           '   IFMVBD'   ,
      &           '   IFCHAR'   ,
      &           '   IFANLS'   ,
+     &           '   IFUSERVP' ,
      &           '   IFMOAB'            
               endif
               call exitt
          endif
  490  continue
       enddo
+
+      if (param(30).gt.0) ifuservp = .true.
 
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.

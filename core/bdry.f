@@ -42,7 +42,7 @@ C
 C
       IF (IFFLOW) THEN
 
-         call check_cyclic  ! check for cyclic bcs
+csk         call check_cyclic  ! fow now; set in .rea file 
 
          IFIELD = 1
          DO 100 IEL=1,NELV
@@ -120,27 +120,28 @@ C
   400 CONTINUE
 C
       IF (NID.EQ.0) THEN
-         WRITE (6,*) 'IFTRAN  =',IFTRAN
-         WRITE (6,*) 'IFFLOW  =',IFFLOW
-         WRITE (6,*) 'IFHEAT  =',IFHEAT
-         WRITE (6,*) 'IFSPLIT =',IFSPLIT
-         WRITE (6,*) 'IFLOMACH=',IFLOMACH
-         WRITE (6,*) 'IFSTRS  =',IFSTRS
-         WRITE (6,*) 'IFCHAR  =',IFCHAR
-         WRITE (6,*) 'IFCYCLIC=',IFCYCLIC
-         WRITE (6,*) 'IFAXIS  =',IFAXIS
-         WRITE (6,*) 'IFMVBD  =',IFMVBD
-         WRITE (6,*) 'IFMELT  =',IFMELT
-         WRITE (6,*) 'IFMODEL =',IFMODEL
-         WRITE (6,*) 'IFKEPS  =',IFKEPS
+         WRITE (6,*) 'IFTRAN   =',IFTRAN
+         WRITE (6,*) 'IFFLOW   =',IFFLOW
+         WRITE (6,*) 'IFHEAT   =',IFHEAT
+         WRITE (6,*) 'IFSPLIT  =',IFSPLIT
+         WRITE (6,*) 'IFLOMACH =',IFLOMACH
+         WRITE (6,*) 'IFUSERVP =',IFUSERVP
+         WRITE (6,*) 'IFSTRS   =',IFSTRS
+         WRITE (6,*) 'IFCHAR   =',IFCHAR
+         WRITE (6,*) 'IFCYCLIC =',IFCYCLIC
+         WRITE (6,*) 'IFAXIS   =',IFAXIS
+         WRITE (6,*) 'IFMVBD   =',IFMVBD
+         WRITE (6,*) 'IFMELT   =',IFMELT
+         WRITE (6,*) 'IFMODEL  =',IFMODEL
+         WRITE (6,*) 'IFKEPS   =',IFKEPS
          WRITE (6,*) '  '
-         WRITE (6,*) 'IFVCOR  =',IFVCOR
-         WRITE (6,*) 'IFINTQ  =',IFINTQ
-         WRITE (6,*) 'IFCWUZ  =',IFCWUZ
-         WRITE (6,*) 'IFSWALL =',IFSWALL
-         WRITE (6,*) 'IFGEOM  =',IFGEOM
-         WRITE (6,*) 'IFSURT  =',IFSURT
-         WRITE (6,*) 'IFWCNO  =',IFWCNO
+         WRITE (6,*) 'IFVCOR   =',IFVCOR
+         WRITE (6,*) 'IFINTQ   =',IFINTQ
+         WRITE (6,*) 'IFCWUZ   =',IFCWUZ
+         WRITE (6,*) 'IFSWALL  =',IFSWALL
+         WRITE (6,*) 'IFGEOM   =',IFGEOM
+         WRITE (6,*) 'IFSURT   =',IFSURT
+         WRITE (6,*) 'IFWCNO   =',IFWCNO
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
             WRITE (6,*) 'IFTMSH for field',IFIELD,'   = ',IFTMSH(IFIELD)
@@ -1976,13 +1977,10 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
-csk 
-      ifcyclic = .false.
-csk
-
       itest = 0
       if (ifcyclic) itest = 1
       itest = iglmax(itest,1)
+
       if (itest.gt.0) ifcyclic = .true.
 
       return

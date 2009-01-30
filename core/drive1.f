@@ -196,8 +196,8 @@ C--------------------------------------------------------------------------
 
       DO ISTEP=1,NSTEPS
          call nek_advance
-         call prepost (.false.,'his')
          call userchk
+         call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001
       ENDDO
 

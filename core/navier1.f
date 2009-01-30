@@ -4941,12 +4941,22 @@ C----------------------------------------------------------------------
 C
 C     construct viscous term:
 c
-c     DEL*[ DEL V + (DEL V)^T - 2/3*DEL*V *I ] 
+c     DEL*[mue*(DEL V + (DEL V)^T - 2/3*DEL*V *I)]
 c                 =  
-c     DEL*[ 2*mue(S-1/3*tr(S)I) ]
+c     2*DEL*[mue*(S - 1/3*QTL*I)]
 c
 c     where mue is the viscosity, S the strain rate tensor,
-c     tr(S) the trace of S and I the indentitiy matrix.  
+c     tr(S) the trace of S and I the indentitiy matrix. 
+c
+c     NOTE: for now only for incompressible flows
+c           In the compressible case we need to compute S using 
+c           a kth-order extrapolation scheme because we cannot 
+c           use the existing MAKEABF extrapolater and we need
+c           to use mue/QTL from the thermo-chemical subsystem.
+c           CAUTION: we cannot use BFX,BFY,BFZ anymore. Some 
+c                    extra handling in plan4 is needed to add the
+c                    viscous term to the RHS!   
+ 
 C----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
@@ -4969,12 +4979,13 @@ C----------------------------------------------------------------------
 
       NTOT = NX1*NY1*NZ1*NELV
 
-      ! CONSTRUCT strain rate tensor S
-      CALL CALC_SIJ(VX,VY,VZ) 
+      ! CONSTRUCT strain rate tensor S (SXX, ..., SZZ)
+      ! CALL MAKEABS
+      CALL COMP_SIEJ(VX,VY,VZ) 
 
       ! substract trace of S
-      CALL ADD4  (W1,SXX,SYY,SZZ,NTOT)
-c      call copy(W1,QTL,ntot)  
+c      CALL ADD4  (W1,SXX,SYY,SZZ,NTOT)
+      CALL COPY  (W1,QTL,ntot)  
       fac = -1./3. 
       CALL CMULT (W1,fac,NTOT)
       CALL ADD2  (SXX,W1,NTOT)
@@ -4992,9 +5003,6 @@ c      call copy(W1,QTL,ntot)
       CALL OPCOLV (SXX,SYY,SZZ,BINVM1)
       CALL OPCOLV (SXY,SXZ,SYZ,BINVM1)
 
-      ! we need to devide by the density because
-      ! in makeabf we multiply by the density
-!      CALL INVERS2(W2,VTRANS,NTOT)
       CALL RONE(W2,NTOT)
       fac = 2.0
       CALL CMULT  (W2,fac,NTOT)
@@ -5019,7 +5027,7 @@ c add to RHS (BFX,BFY,BFZ)
       END
 c-----------------------------------------------------------------------
 
-      SUBROUTINE CALC_SIJ (U1,U2,U3)
+      SUBROUTINE COMP_SIEJ (U1,U2,U3)
 C
 C     Compute strainrates
 C
@@ -5040,11 +5048,24 @@ C
       DIMENSION U1(LX1,LY1,LZ1,1)
      $        , U2(LX1,LY1,LZ1,1)
      $        , U3(LX1,LY1,LZ1,1)
+
+      COMMON /DUDXYJ/ JACMI(LX1,LY1,LZ1,LELT)
+      REAL JACMI
 C
+      INTEGER ICALLD
+      SAVE    ICALLD
+      DATA    ICALLD /-1/
+
       REAL fac
+
 
       NEL = NELV
       NTOT1 = NX1*NY1*NZ1*NEL
+
+      if (icalld.eq.1) then
+         call invers2(jacmi,jacm1,ntot1)
+         icalld=1
+      endif
 
       CALL RZERO3 (EXX,EYY,EZZ,NTOT1)
       CALL RZERO3 (EXY,EXZ,EYZ,NTOT1)
@@ -5053,16 +5074,16 @@ C
       CALL UXYZ  (U2,EXY,EYY,EYZ,NEL)
       IF (NDIM.EQ.3) CALL UXYZ   (U3,EXZ,EYZ,EZZ,NEL)
 C
-      CALL INVCOL2 (EXX,JACM1,NTOT1)
-      CALL INVCOL2 (EXY,JACM1,NTOT1)
-      CALL INVCOL2 (EYY,JACM1,NTOT1)
+      CALL COL2 (EXX,JACMi,NTOT1)
+      CALL COL2 (EXY,JACMi,NTOT1)
+      CALL COL2 (EYY,JACMi,NTOT1)
 C
       IF (IFAXIS) CALL AXIEZZ (U2,EYY,EZZ,NEL)
 C
       IF (NDIM.EQ.3) THEN
-         CALL INVCOL2 (EXZ,JACM1,NTOT1)
-         CALL INVCOL2 (EYZ,JACM1,NTOT1)
-         CALL INVCOL2 (EZZ,JACM1,NTOT1)
+         CALL COL2 (EXZ,JACMi,NTOT1)
+         CALL COL2 (EYZ,JACMi,NTOT1)
+         CALL COL2 (EZZ,JACMi,NTOT1)
       ENDIF
 C
       fac = 0.5
