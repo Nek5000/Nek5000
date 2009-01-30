@@ -119,7 +119,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'ZPER'
 
-      character(80) string
+      character*80 string
       
 C
       READ(9,*,ERR=400)
