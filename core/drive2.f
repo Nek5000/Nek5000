@@ -48,7 +48,6 @@ C
       ifxxt     = .false.
       IFCVODE   = .false.
       IFEXPLVIS = .false.
-      IFUSERVP  = .false.
       ifsync    = .false.   ! gsync() for timing info
       ifcyclic  = .false.   ! cyclic bcs ?
 
@@ -241,7 +240,6 @@ C
 
       if(abs(PARAM(16)).ge.2) IFCVODE = .true.
 
-      if(PARAM(30).ne.0) IFUSERVP = .true.
 C
 C     Check accuracy requested.
 C
