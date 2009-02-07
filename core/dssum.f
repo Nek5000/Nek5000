@@ -65,6 +65,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'INPUT'
       include 'TSTEP'
+      include 'CTIMER'
       real u(1)
       character*3 op
       character*10 s1,s2
@@ -95,6 +96,8 @@ c
 
 c     if (nid.eq.0) 
 c    $   write(6,*) istep,' dsop: ',op,ifield,ifldt,gsh_fld(ifldt)
+
+      if (ifsync) call gsync()
 
       if (op.eq.'+  ') call gs_op(gsh_fld(ifldt),u,1,1,0)
       if (op.eq.'sum') call gs_op(gsh_fld(ifldt),u,1,1,0)
@@ -144,6 +147,7 @@ c
       if (icalld.eq.0) tdadd=0.0d0
       icalld=icalld+1
       nvdss=icalld
+      if (ifsync) call gsync()
       etime1=dnekclock()
 c
 c============================================================================
@@ -191,6 +195,7 @@ c============================================================================
       if (ifldt.eq.ifldmhd) ifldt = 1
 
 c     write(6,*) 'opdsop: ',op,ifldt,ifield
+      if (ifsync) call gsync()
 
       if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
      $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
@@ -218,10 +223,12 @@ c-----------------------------------------------------------------------
 c     Direct stiffness summation of the array u for n fields
 c
       include 'SIZE'
+      include 'CTIMER'
 
       real u(1)
       integer n,stride,gs_handle
 
+      if (ifsync) call gsync()
       call gs_op_fields(gs_handle,u,stride,n,1,1,0)
 
       return
@@ -528,6 +535,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
+      if (ifsync) call gsync()
       etime1=dnekclock()
 c
 c                        ~  ~T  
@@ -583,6 +591,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
+      if (ifsync) call gsync()
       etime1=dnekclock()
 c
 c                    T           ~  ~T  T
@@ -641,6 +650,7 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 c
+      if (ifsync) call gsync()
       etime1=dnekclock()
 c
 c                    T           ~  ~T  T
