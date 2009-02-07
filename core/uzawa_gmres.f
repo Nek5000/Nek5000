@@ -99,8 +99,8 @@ c           call copy(r,res,ntot2)
      
                                                   !      -1
             call col2(w,ml,ntot2)                 ! w = L   w
-            !modified Gram-Schmidt
 
+c           !modified Gram-Schmidt
 c           do i=1,j
 c              h(i,j)=glsc2(w,v(1,i),ntot2)       ! h    = (w,v )
 c                                                 !  i,j       i
@@ -133,6 +133,7 @@ c           do i=1,j
 c              call add2s2(w,v(1,i),-wk1(i),ntot2)! w = w - h    v
 c              h(i,j) = h(i,j) + wk1(i)           !          i,j  i
 c           enddo
+
 
             !apply Givens rotations to new column
             do i=1,j-1
@@ -299,6 +300,7 @@ c     GMRES iteration.
       common /scrcg/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
 
       common /cgmres1/ y(lgmres)
+      common /ctmp0/   wk1(lgmres),wk2(lgmres)
       real alpha, l, temp
       integer j,m
 
@@ -389,14 +391,42 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
      
                                                   !      -1
             call col2(w,ml,n)                     ! w = L   w
-            !modified Gram-Schmidt
+
+c           !modified Gram-Schmidt
+
+c           do i=1,j
+c              h(i,j)=glsc3(w,v(1,i),wt,n)        ! h    = (w,v )
+c                                                 !  i,j       i
+
+c              call add2s2(w,v(1,i),-h(i,j),n)    ! w = w - h    v
+c           enddo                                 !          i,j  i
+
+c           2-PASS GS, 1st pass:
+
             do i=1,j
-               h(i,j)=glsc3(w,v(1,i),wt,n)        ! h    = (w,v )
-                                                  !  i,j       i
-                                               
+               h(i,j)=vlsc3(w,v(1,i),wt,n)        ! h    = (w,v )
+            enddo                                 !  i,j       i
+
+            call gop(h(1,j),wk1,'+  ',j)          ! sum over P procs
+
+            do i=1,j
                call add2s2(w,v(1,i),-h(i,j),n)    ! w = w - h    v
-                                                  !          i,j  i
-            enddo
+            enddo                                 !          i,j  i
+
+
+c           2-PASS GS, 2nd pass:
+c
+c           do i=1,j
+c              wk1(i)=vlsc3(w,v(1,i),wt,n)        ! h    = (w,v )
+c           enddo                                 !  i,j       i
+c                                                 !
+c           call gop(wk1,wk2,'+  ',j)             ! sum over P procs
+c
+c           do i=1,j
+c              call add2s2(w,v(1,i),-wk1(i),n)    ! w = w - h    v
+c              h(i,j) = h(i,j) + wk1(i)           !          i,j  i
+c           enddo
+
             !apply Givens rotations to new column
             do i=1,j-1
                temp = h(i,j)                   

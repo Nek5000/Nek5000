@@ -288,13 +288,10 @@ c----------------------------------------------------------------------
       include 'HSMG'
 
       include 'CTIMER'
-
       if (ifsync) call gsync()
 
       etime1=dnekclock()
-
       call gs_op(mg_gsh_handle(l),u,1,1,0)
-
       tdadd =tdadd + dnekclock()-etime1
 
       return
@@ -303,6 +300,10 @@ c----------------------------------------------------------------------
       subroutine hsmg_dsprod(u,l)
       include 'SIZE'
       include 'HSMG'
+      include 'CTIMER'
+
+      if (ifsync) call gsync()
+
       call gs_op(mg_gsh_handle(l),u,1,2,0)
       return
       end
@@ -310,7 +311,11 @@ c----------------------------------------------------------------------
       subroutine hsmg_schwarz_dssum(u,l)
       include 'SIZE'
       include 'HSMG'
+      include 'CTIMER'
+      if (ifsync) call gsync()
+      etime1=dnekclock()
       call gs_op(mg_gsh_schwarz_handle(l),u,1,1,0)
+      tdadd =tdadd + dnekclock()-etime1
       return
       end
 c----------------------------------------------------------------------
