@@ -116,10 +116,12 @@ C
       NXYZ=NX1*NY1*NZ1
       NTOT=NXYZ*NEL
 C
+#ifdef TIMER
       if (icalld.eq.0) taxhm=0.0
       icalld=icalld+1
       naxhm=icalld
       etime1=dnekclock()
+#endif
 C
       IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
       CALL RZERO (AU,NTOT)
@@ -254,7 +256,9 @@ C
   200    CONTINUE
       ENDIF
 C
+#ifdef TIMER
       taxhm=taxhm+(dnekclock()-etime1)
+#endif
       return
       END
 C

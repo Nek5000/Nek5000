@@ -23,9 +23,11 @@ C--------------------------------------------------------------------
       COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
       logical ifprjp
 C
+#ifdef TIMER
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
       npres=icalld
+#endif
 c
       NTOT1  = NX1*NY1*NZ1*NELV
       NTOT2  = NX2*NY2*NZ2*NELV
@@ -57,7 +59,9 @@ C******************************************************************
       IF (IFPRJP)   CALL SETRHS(RESPR,H1,H2,H2INV)
                     CALL ESOLVER (RESPR,H1,H2,H2INV,INTYPE)
       IF (IFPRJP)   CALL GENSOLN(RESPR,H1,H2,H2INV)
+#ifdef TIMER
       tpres=tpres+(dnekclock()-etime1)
+#endif
 C******************************************************************
 c
       CALL OPGRADT (W1 ,W2 ,W3 ,RESPR)

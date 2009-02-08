@@ -240,13 +240,7 @@ c
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
 
-c      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
-   16 format(' uvwpt max',5g13.5)
-      if (npscal.gt.0) then
-         if (nid.eq.0) write(6,17) (psmax(i),i=1,NPSCAL)
-   17    format('PS max',50g13.5)
-      endif
-c
+c 
       small=1.0E-20
       ifldsave = ifield
       if (vxmax.eq.0.0) call perturb(vx,1,small)
@@ -317,55 +311,71 @@ c           note... must be updated for addl pass. scal's. pff 4/26/04
       jp = 0
 
 C print min values
-      vxmax = glamin(vx,ntotv)
-      vymax = glamin(vy,ntotv)
-      vzmax = glamin(vz,ntotv)
-      prmax = glamin(pr,ntot2)
+      xxmax = glmin(xm1,ntott)
+      yymax = glmin(ym1,ntott)
+      zzmax = glmin(zm1,ntott)
+
+      vxmax = glmin(vx,ntotv)
+      vymax = glmin(vy,ntotv)
+      vzmax = glmin(vz,ntotv)
+      prmax = glmin(pr,ntot2)
 
       ntot = nxyz1*nelfld(2)
-      ttmax = glamin(t ,ntott)
+      ttmax = glmin(t ,ntott)
 
       do i=1,NPSCAL
          ntot = nxyz1*nelfld(i+2)
-         psmax(i) = glamin(T(1,1,1,1,i+1),ntot)
+         psmax(i) = glmin(T(1,1,1,1,i+1),ntot)
       enddo
 
-      if (nid.eq.0) write(6,19) vxmax,vymax,vzmax,prmax,ttmax
-   19 format(' uvwpt min',5g13.5)
+      if (nid.eq.0) then
+         write(6,19) xxmax,yymax,zzmax
+   19    format(' xyz min  ',5g13.5)
+      endif
+      if (nid.eq.0) then
+         write(6,20) vxmax,vymax,vzmax,prmax,ttmax
+   20    format(' uvwpt min',5g13.5)
+      endif
       if (npscal.gt.0) then
-         if (nid.eq.0) write(6,20) (psmax(i),i=1,NPSCAL)
-   20    format('PS min',50g13.5)
+         if (nid.eq.0) write(6,21) (psmax(i),i=1,NPSCAL)
+   21    format(' PS min   ',50g13.5)
       endif
 
 c print max values
-      vxmax = glamax(vx,ntotv)
-      vymax = glamax(vy,ntotv)
-      vzmax = glamax(vz,ntotv)
-      prmax = glamax(pr,ntot2)
-
-      ntot = nxyz1*nelfld(2)
-      ttmax = glamax(t ,ntott)
-
-      do i=1,NPSCAL
-         ntot = nxyz1*nelfld(i+2)
-         psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
-      enddo
-
-      if (nid.eq.0) write(6,16) vxmax,vymax,vzmax,prmax,ttmax
-      if (npscal.gt.0) then
-         if (nid.eq.0) write(6,17) (psmax(i),i=1,NPSCAL)
-      endif
-c
-c
-c
-      xxmin = glmin(xm1,ntott)
-      yymin = glmin(ym1,ntott)
-      zzmin = glmin(zm1,ntott)
       xxmax = glmax(xm1,ntott)
       yymax = glmax(ym1,ntott)
       zzmax = glmax(zm1,ntott)
-c      if (nid.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
-c    7 format('xyz minmx:',6g13.5)
+
+      vxmax = glmax(vx,ntotv)
+      vymax = glmax(vy,ntotv)
+      vzmax = glmax(vz,ntotv)
+      prmax = glmax(pr,ntot2)
+
+      ntot = nxyz1*nelfld(2)
+      ttmax = glmax(t ,ntott)
+
+      do i=1,NPSCAL
+         ntot = nxyz1*nelfld(i+2)
+         psmax(i) = glmax(T(1,1,1,1,i+1),ntot)
+      enddo
+
+      if (nid.eq.0) then
+         write(6,16) xxmax,yymax,zzmax
+   16    format(' xyz max  ',5g13.5)
+      endif
+
+      if (nid.eq.0) then
+         write(6,17) vxmax,vymax,vzmax,prmax,ttmax
+   17    format(' uvwpt max',5g13.5)
+      endif
+
+      if (npscal.gt.0) then
+         if (nid.eq.0)  then
+            write(6,18) (psmax(i),i=1,NPSCAL)
+   18       format(' PS max   ',50g13.5)
+         endif
+      endif
+c
 c
       if (ifrest(0,jp)) then
 c        mesh has been read in.  recompute geometric factors

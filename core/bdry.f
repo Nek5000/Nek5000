@@ -8,6 +8,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       INCLUDE 'TURBO'
+      INCLUDE 'CTIMER'
       COMMON  /CPRINT/ IFPRINT
 C
       common  /nekcb/ cb
@@ -134,6 +135,8 @@ C
          WRITE (6,*) 'IFMELT   =',IFMELT
          WRITE (6,*) 'IFMODEL  =',IFMODEL
          WRITE (6,*) 'IFKEPS   =',IFKEPS
+         WRITE (6,*) 'IFMOAB   =',IFMOAB
+         WRITE (6,*) 'IFSYNC   =',IFSYNC
          WRITE (6,*) '  '
          WRITE (6,*) 'IFVCOR   =',IFVCOR
          WRITE (6,*) 'IFINTQ   =',IFINTQ

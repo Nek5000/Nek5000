@@ -15,6 +15,7 @@ c
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
       INCLUDE 'ORTHOP'
+      INCLUDE 'CTIMER'
 C
       COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
      $ ,             RES2  (LX1,LY1,LZ1,LELV)
@@ -45,6 +46,13 @@ c
 
 C     first, compute pressure
 
+#ifdef TIMER
+      if (icalld.eq.0) tpres=0.0
+      icalld=icalld+1
+      npres=icalld
+      etime1=dnekclock()
+#endif
+
       call crespsp  (respr)
 C
       call invers2  (h1,vtrans,ntot1)
@@ -57,6 +65,10 @@ C
      $                     ,approx,napprox,binvm1)
       CALL ADD2    (PR,DPR,NTOT1)
       CALL ZAVER1  (PR)
+#ifdef TIMER
+      tpres=tpres+(dnekclock()-etime1)
+#endif
+
 C
 C     Compute velocity
 C

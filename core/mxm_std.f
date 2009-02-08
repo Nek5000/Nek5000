@@ -12,7 +12,9 @@ c
       include 'SIZE'
       include 'OPCTR'
       include 'TOTAL'
+      include 'CTIMER'
 c
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -23,10 +25,16 @@ c
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-c
+      etime1=dnekclock()
+      tcopy=tcopy+(dnekclock()-etime1)
+#endif
 c
       call mxmf2(a,n1,b,n2,c,n3)  ! In some cases, this is faster.
 c
+#ifdef TIMER
+      tmxmf = tmxmf + (dnekclock()-etime1)
+#endif
+
       return
       end
 c-----------------------------------------------------------------------
