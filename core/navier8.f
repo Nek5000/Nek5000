@@ -744,7 +744,6 @@ c        NOTE: a(),h1,...,w2() must all be large enough
       null_space=0
       if (ifvcor) null_space=1
 
-      ifxxt = .true.
       nz=ncr*ncr*nelv
       call crs_setup(xxth,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
@@ -2172,9 +2171,13 @@ c
 
       call map_f_to_c_h1_bilin(vc,uf)   ! additive Schwarz
 
+#ifdef TIMER
       etime1=dnekclock()
+#endif
       call crs_solve(xxth,uc,vc)
+#ifdef TIMER
       tcrsl=tcrsl+dnekclock()-etime1
+#endif
 
       call map_c_to_f_h1_bilin(uf,uc)
 

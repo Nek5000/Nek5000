@@ -33,5 +33,3 @@ C     xxt handle
 C
       common/xxt_handles/ xxth, flag_xxt_init
       integer flag_xxt_init,xxth
-      common/xxt_handlel/ ifxxt
-      logical ifxxt

@@ -145,6 +145,11 @@ if [ "$IFMOAB" == "true" -o "IFMOAB" == "yes" ]; then
 fi
 export IFMOAB
 
+# set preprocssor symbol for timing
+if [ "$IFTIMING" != "false" -a "$IFTIMING" != "no" ]; then
+    P="$P $PPPO-DTIMER"
+fi
+
 # set logical flags
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
   IFMPI=false
@@ -189,6 +194,7 @@ fi
 # the specified parameters in makenek
 
 echo "try to generate makefile ..."
+rm -rf makefile 2>/dev/null
 
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \

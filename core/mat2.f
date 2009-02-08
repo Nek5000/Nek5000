@@ -2,6 +2,8 @@ c-----------------------------------------------------------------------
       subroutine col2(a,b,n)
       real a(1),b(1)
       include 'OPCTR'
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -12,6 +14,7 @@ c-----------------------------------------------------------------------
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 
 
 !xbm* unroll (10)
@@ -24,6 +27,8 @@ c-----------------------------------------------------------------------
       subroutine col3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -34,7 +39,7 @@ c-----------------------------------------------------------------------
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-
+#endif
 
 !xbm* unroll (10)
       do i=1,n
@@ -46,6 +51,8 @@ c-----------------------------------------------------------------------
       subroutine add2(a,b,n)
       real a(1),b(1)
       include 'OPCTR'
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -56,7 +63,7 @@ c-----------------------------------------------------------------------
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-
+#endif
 
 !xbm* unroll (10)
       do i=1,n
@@ -68,6 +75,8 @@ c-----------------------------------------------------------------------
       subroutine add3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -78,7 +87,7 @@ c-----------------------------------------------------------------------
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-
+#endif
 
 !xbm* unroll (10)
       do i=1,n
@@ -90,6 +99,8 @@ c-----------------------------------------------------------------------
       subroutine addcol3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -100,7 +111,7 @@ c-----------------------------------------------------------------------
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-
+#endif
 
 !xbm* unroll (10)
       do i=1,n
@@ -114,6 +125,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -124,6 +136,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       DO 100 I=1,N
         A(I)=C1*A(I)+B(I)
@@ -137,6 +150,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -147,6 +161,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       DO 100 I=1,N
         A(I)=A(I)+C1*B(I)
@@ -160,6 +175,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -170,6 +186,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       DO 100 I=1,N
         A(I)=C1*B(I)+C2*C(I)
@@ -183,6 +200,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -193,6 +211,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       DO 100 I=1,N
          A(I)=B(I)+C(I)+D(I)
@@ -205,6 +224,7 @@ C
       include 'OPCTR'
       include 'PARALLEL'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -215,6 +235,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       s = 0.
       do i=1,n
@@ -230,6 +251,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'PARALLEL'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -240,6 +262,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       s = 0.
       do i=1,n
@@ -258,6 +281,7 @@ C
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -268,6 +292,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       TMP = 0.0
       DO 10 I=1,N
@@ -288,6 +313,7 @@ C
 C
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -298,6 +324,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
 
       tmp=0.0
@@ -315,8 +342,6 @@ C     Perform inner-product  x*x*y*z
 c
       real x(1), y(1),z(1)
       real tmp,work(1)
-
-
 
       ds = 0.0
       do 10 i=1,n

@@ -385,10 +385,12 @@ c
 
       integer e
 C
+#ifdef TIMER
       if (icalld.eq.0) tcdtp=0.0
       icalld=icalld+1
       ncdtp=icalld
       etime1=dnekclock()
+#endif
 
       nxyz1 = nx1*ny1*nz1
       nxyz2 = nx2*ny2*nz2
@@ -551,7 +553,9 @@ C
 
       enddo
 C
+#ifdef TIMER
       tcdtp=tcdtp+(dnekclock()-etime1)
+#endif
       return
       end
 C
@@ -595,10 +599,12 @@ C---------------------------------------------------------------------
 
       integer e
 C
+#ifdef TIMER
       if (icalld.eq.0) tmltd=0.0
       icalld=icalld+1
       nmltd=icalld
       etime1=dnekclock()
+#endif
 
       nyz1  = ny1*nz1
       nxy2  = nx2*ny2
@@ -751,7 +757,9 @@ c        NOTE: NZ1=NZ2=1
 C
       enddo
 C
+#ifdef TIMER
       tmltd=tmltd+(dnekclock()-etime1)
+#endif
       return
       END
 C
@@ -2787,6 +2795,7 @@ C-------------------------------------------------------------------
       REAL  Y(1),X(1),XMASK(1)
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2797,6 +2806,7 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       DO 100 I=1,N
          Y(I) = X(I)*(1.-XMASK(I))
@@ -2916,6 +2926,9 @@ C
       REAL C (1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2923,11 +2936,11 @@ C
           rname(myrout) = 'opcolv'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*ndim
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -2949,6 +2962,9 @@ C
       REAL A1(1),A2(1),A3(1),C(1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2956,11 +2972,11 @@ C
           rname(myrout) = 'opcolv'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*ndim
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -3193,6 +3209,9 @@ c-----------------------------------------------------------------------
       REAL B1(1),B2(1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3200,11 +3219,11 @@ C
           rname(myrout) = 'opcv2c'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*(ndim+2)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -3229,6 +3248,9 @@ c-----------------------------------------------------------------------
       REAL B1(1),B2(1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3236,11 +3258,11 @@ C
           rname(myrout) = 'opclv2'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*(ndim+1)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -3265,6 +3287,9 @@ c-----------------------------------------------------------------------
       REAL B1(1),B2(1),B3(1),C(1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3272,11 +3297,11 @@ C
           rname(myrout) = 'opa2cl'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*(ndim*2)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -3300,6 +3325,9 @@ c-----------------------------------------------------------------------
       REAL C (1)
       include 'OPCTR'
 C
+      NTOT1=NX1*NY1*NZ1*NELV
+
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3307,11 +3335,11 @@ C
           rname(myrout) = 'opcv3c'
       endif
 C
-      NTOT1=NX1*NY1*NZ1*NELV
       isbcnt = ntot1*ndim*2
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (NDIM.EQ.3) THEN
          DO 100 I=1,NTOT1
@@ -3489,6 +3517,7 @@ C
       include 'CTIMER'
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3504,6 +3533,7 @@ C
       icalld=icalld+1
       nslvb=nslvb+1
       etime1=dnekclock()
+#endif
 c
 c     solve trans(r)*y = b
 c

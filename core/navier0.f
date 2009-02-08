@@ -18,10 +18,12 @@ C
 c
       include 'CTIMER'
 c
+#ifdef TIMER
       if (icalld.eq.0) teslv=0.0
       icalld=icalld+1
       neslv=icalld
       etime1=dnekclock()
+#endif
 C
 c     write(6,*) solver_type,' solver type',iesolv
       IF (IESOLV.EQ.1) THEN
@@ -41,7 +43,9 @@ c     write(6,*) solver_type,' solver type',iesolv
          WRITE(6,*) 'Stop in ESOLVER'
          CALL EXITT
       ENDIF
+#ifdef TIMER
       teslv=teslv+(dnekclock()-etime1)
+#endif
       RETURN
       END
       SUBROUTINE ESTRAT

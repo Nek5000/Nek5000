@@ -286,13 +286,16 @@ c----------------------------------------------------------------------
       subroutine hsmg_dssum(u,l)
       include 'SIZE'
       include 'HSMG'
-
       include 'CTIMER'
-      if (ifsync) call gsync()
 
+      if (ifsync) call gsync()
+#ifdef TIMER
       etime1=dnekclock()
+#endif
       call gs_op(mg_gsh_handle(l),u,1,1,0)
+#ifdef TIMER
       tdadd =tdadd + dnekclock()-etime1
+#endif
 
       return
       end
@@ -312,10 +315,15 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       include 'CTIMER'
+
       if (ifsync) call gsync()
+#ifdef TIMER
       etime1=dnekclock()
+#endif
       call gs_op(mg_gsh_schwarz_handle(l),u,1,1,0)
+#ifdef TIMER
       tdadd =tdadd + dnekclock()-etime1
+#endif
       return
       end
 c----------------------------------------------------------------------
@@ -1359,11 +1367,15 @@ c
       if (ifsync) call gsync()
 
       ncrsl  = ncrsl  + 1
+#ifdef TIMER
       etime1=dnekclock()
+#endif
 
       call crs_solve(xxth,e,r)
 
+#ifdef TIMER
       tcrsl=tcrsl+dnekclock()-etime1
+#endif
 
       return
       end
@@ -1441,7 +1453,9 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       endif
 
       nddsl  = nddsl  + 1
+#ifdef TIMER
       etime1 = dnekclock()
+#endif
       
 c     n = nx2*ny2*nz2*nelv
 c     rmax = glmax(r,n)
@@ -1600,7 +1614,9 @@ c         xaver = glsc2(bm2,e,ntot2)/volvm2
           call cadd(e,-xaver,ntot2)
        endif
 
+#ifdef TIMER
       tddsl  = tddsl + ( dnekclock()-etime1 )
+#endif
 
       return
       end

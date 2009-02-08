@@ -335,6 +335,10 @@ c-----------------------------------------------------------------------
 c
       call gsync()
 
+      tstop = dnekclock()
+      ttotal= tstop-etimes
+      tttstp= tstop-etims0
+
       if (nid.eq.0) then
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'

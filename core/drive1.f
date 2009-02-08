@@ -165,8 +165,9 @@ C
 
       IF (NID.EQ.0) THEN
         WRITE (6,*) ' '
-        IF (TIME.NE.0.0) WRITE (6,*) 'Initial time:',TIME
-        WRITE (6,*) 'Initialization successfully completed ',
+        IF (TIME.NE.0.0) WRITE (6,'(A,E14.7)') ' Initial time:',TIME
+        WRITE (6,'(A,g13.5,A)') 
+     &              ' Initialization successfully completed ',
      &              dnekclock()-etimes, ' seconds'
       ENDIF
 
@@ -179,6 +180,7 @@ C--------------------------------------------------------------------------
 
       include 'SIZE'
       include 'TSTEP'
+      include 'INPUT'
 
       IF (NSTEPS.EQ.0) then
           if (nid.eq.0) then
@@ -196,6 +198,7 @@ C--------------------------------------------------------------------------
 
       DO ISTEP=1,NSTEPS
          call nek_advance
+         if(istep.gt.iostep .and. .not. ifmgrid) ifxyo = .false. 
          call userchk
          call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001
@@ -293,9 +296,11 @@ c     check for zero steps
          nsteps=0
          call userchk
       else
+#ifdef TIMER
          if(nid.eq.0) write(6,*) 'runtime statistics:'
-csk        call opcount(3)
+         call opcount(3)
          call timeout
+#endif
          CALL COMMENT
          CALL DIAGNOS
          if(xxth.gt.0) call crs_stats(xxth)

@@ -17,15 +17,17 @@ c-----------------------------------------------------------------------
 c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
 
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
+      etime1=dnekclock()
+#endif
 
       if (ifsync) call gsync()
 
-      etime1=dnekclock()
 c
 c                 T         ~  ~T  T
 c     Implement QQ   :=   J Q  Q  J
@@ -50,12 +52,13 @@ c
 c      call apply_J(u,nx,ny,nz,nel)
 c
 c
+#ifdef TIMER
       timee=(dnekclock()-etime1)
-c
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
+#endif
 c
       return
       end
@@ -65,7 +68,8 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'INPUT'
       include 'TSTEP'
-      include 'CTIMER'
+      include  'CTIMER'
+
       real u(1)
       character*3 op
       character*10 s1,s2
@@ -97,7 +101,7 @@ c
 c     if (nid.eq.0) 
 c    $   write(6,*) istep,' dsop: ',op,ifield,ifldt,gsh_fld(ifldt)
 
-      if (ifsync) call gsync()
+      if(ifsync) call gsync()
 
       if (op.eq.'+  ') call gs_op(gsh_fld(ifldt),u,1,1,0)
       if (op.eq.'sum') call gs_op(gsh_fld(ifldt),u,1,1,0)
@@ -138,7 +142,7 @@ c
 
       REAL U(1),V(1),W(1)
 
-
+#ifdef TIMER
       if (icalld.eq.0) tvdss=0.0d0
       if (icalld.eq.0) tgsum=0.0d0
       if (icalld.eq.0) tgsmx=0.0d0
@@ -147,8 +151,10 @@ c
       if (icalld.eq.0) tdadd=0.0d0
       icalld=icalld+1
       nvdss=icalld
-      if (ifsync) call gsync()
       etime1=dnekclock()
+#endif
+
+      if(ifsync) call gsync()
 c
 c============================================================================
 c     execution phase
@@ -160,10 +166,12 @@ c
 
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tvdss=tvdss+timee
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
+#endif
 
       return
       end
@@ -195,7 +203,7 @@ c============================================================================
       if (ifldt.eq.ifldmhd) ifldt = 1
 
 c     write(6,*) 'opdsop: ',op,ifldt,ifield
-      if (ifsync) call gsync()
+      if(ifsync) call gsync()
 
       if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
      $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
@@ -228,7 +236,7 @@ c
       real u(1)
       integer n,stride,gs_handle
 
-      if (ifsync) call gsync()
+      if(ifsync) call gsync()
       call gs_op_fields(gs_handle,u,stride,n,1,1,0)
 
       return
@@ -523,20 +531,24 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
+      etime1=dnekclock()
+#endif
 c
       ifldt = ifield
       if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
+
+      if(ifsync) call gsync()
+
 c
-      if (ifsync) call gsync()
-      etime1=dnekclock()
 c
 c                        ~  ~T  
 c     Implement   :=   J Q  Q  Mu
@@ -557,12 +569,13 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
+#ifdef TIMER
       timee=(dnekclock()-etime1)
-c
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
+#endif
 c
       return
       end
@@ -579,20 +592,23 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
+      etime1=dnekclock()
+#endif
 c
       ifldt = ifield
       if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
-c
-      if (ifsync) call gsync()
-      etime1=dnekclock()
+
+      if(ifsync) call gsync()
+
 c
 c                    T           ~  ~T  T
 c     Implement Q M Q   :=   J M Q  Q  J
@@ -617,11 +633,13 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
+#endif
 c
       return
       end
@@ -638,20 +656,25 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
+      etime1=dnekclock()
+#endif
+
 c
       ifldt = ifield
       if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
+
+      if(ifsync) call gsync()
+
 c
-      if (ifsync) call gsync()
-      etime1=dnekclock()
 c
 c                    T           ~  ~T  T
 c     Implement Q M Q   :=   J M Q  Q  J
@@ -676,11 +699,13 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
       tdsmx=max(timee,tdsmx)
       tdsmn=min(timee,tdsmn)
+#endif
 c
       return
       end

@@ -117,6 +117,7 @@ C     .Broadcast run parameters to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
 
       character*80 string
@@ -144,7 +145,6 @@ C
 c
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
-      if (ifmhd) npscl1 = npscl1 + 1
       NPSCL2=NPSCAL+2
 
       IF (NPSCL1.GT.LDIMT) THEN
@@ -220,6 +220,8 @@ C
       IFTMSH(0) = .false.
       IFUSERVP  = .false.
       IFCYCLIC  = .false.
+      IFSYNC    = .false.
+c      IFSPLIT   = .false.
 
 
       READ(9,*,ERR=500) NLOGIC
@@ -266,6 +268,10 @@ C
               read(string,*) IFUSERVP
          elseif (indx1(string,'IFCYCLIC',8).gt.0) then 
               read(string,*) IFCYCLIC
+         elseif (indx1(string,'IFSYNC'  ,6).gt.0) then 
+              read(string,*) IFSYNC
+         elseif (indx1(string,'IFSPLIT' ,7).gt.0) then 
+c              read(string,*) IFSPLIT
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unkown logical flag', string
@@ -286,6 +292,9 @@ C
      &           '   IFCHAR'   ,
      &           '   IFANLS'   ,
      &           '   IFUSERVP' ,
+     &           '   IFSYNC'   ,
+     &           '   IFCYCLIC' ,
+     &           '   IFSPLIT'  ,
      &           '   IFMOAB'            
               endif
               call exitt
@@ -297,6 +306,17 @@ C
 
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.
+      if (ifmhd)           npscl1 = npscl1 + 1
+
+      IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
+         if(nid.eq.0) then
+           WRITE(6,22) LDIMT,NPSCL1
+   22      FORMAT(/s,2X,'Error: This NEKTON Solver has been compiled'
+     $             /,2X,'       for',I3,' passive scalars.  A MHD run'
+     $             /,2X,'       requires that LDIMT be set to',I3,'.')
+         endif
+         call exitt
+      ENDIF
 
       ifldmhd = npscal + 3
       if (ifmhd) then
@@ -351,6 +371,26 @@ C
          if (ly1.ne.lx1.or.lz1.ne.1) then
             if (nid.eq.0) write(6,12) lx1,ly1,lz1
    12       format('ERROR: ',3i5,' must have lx1=ly1; lz1=1, for 2D')
+            call exitt
+         endif
+      endif
+
+      if (lgmres.lt.5 .and. param(42).eq.0) then
+         write(6,*) 
+     $   'ABORT: lgmres too small (min 5), Change SIZEu'
+         call exitt
+      endif
+
+      if (ifsplit) then
+         if (lx1.ne.lx2) then
+            if (nid.eq.0) write(6,*) lx1,lx2
+c   43       format('ERROR: lx1,lx2:',2i4,' must be equal for IFSPLIT=T')
+            call exitt
+         endif
+      else
+         if (lx2.lt.lx1-2) then
+            if (nid.eq.0) write(6,*) lx1,lx2
+c   44       format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
             call exitt
          endif
       endif

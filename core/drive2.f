@@ -40,17 +40,11 @@ C--------------------------------------------------------------------
 C
 C     Set default logicals
 C
-      IFFLOW    = .FALSE.
-      IFMVBD    = .FALSE.
-      IFHEAT    = .TRUE.
-      IFSPLIT   = .FALSE.
       IFDOIT    = .FALSE.
-      ifxxt     = .false.
       IFCVODE   = .false.
       IFEXPLVIS = .false.
-      ifsync    = .false.   ! gsync() for timing info
-      ifcyclic  = .false.   ! cyclic bcs ?
 
+      ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
 C     Turn off (on) diagnostics for communication
@@ -1162,9 +1156,6 @@ C
 c
       real dhc, dwork
 C
-      tstop=dnekclock()
-      ttotal=tstop-etimes
-      tttstp=tstop-etims0
 c
 c
       min_vdss = tvdss
@@ -1205,8 +1196,6 @@ c
          write(6,*) 'copy time',ncopy,tcopy,pcopy
          pmxmf=tmxmf/tttstp
          write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
-         pmxms=tmxms/tttstp
-         write(6,*) 'mxms time',nmxms,tmxms,pmxms
          pinv3=tinv3/tttstp
          write(6,*) 'inv3 time',ninv3,tinv3,pinv3
          pinvc=tinvc/tttstp
