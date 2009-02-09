@@ -2820,8 +2820,8 @@ c
             i  =   i + ninseg(iseg)
          enddo
 c
-         q=0.2
-         q=0.0010   ! Smaller is better
+c        q=0.0010   ! Smaller is better
+         q=0.2      ! But generous is more forgiving for bad meshes!
          do i=2,n
            if ((dx(j,i)-dx(j,i-1))**2.gt.q*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
