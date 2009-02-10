@@ -375,15 +375,11 @@ c print max values
    18       format(' PS max   ',50g13.5)
          endif
       endif
-c
-c
-      if (ifrest(0,jp)) then
-c        mesh has been read in.  recompute geometric factors
-         if (nid.eq.0) write(6,*) 'New geometry -- remapping.'
-c        call dsavg(xm1) ! doesn't work for periodic !
-c        call dsavg(ym1) ! doesn't work for periodic !
-c        call dsavg(zm1) ! doesn't work for periodic !
-         call geom_reset(1)
+
+
+      if (ifrest(0,jp)) then !  mesh has been read in.
+         if (nid.eq.0) write(6,*) 'Restart: recompute geom. factors.'
+         call geom_reset(1)  !  recompute geometric factors
       endif
 
 c     ! save velocity on fine mesh for dealiasing
@@ -1291,7 +1287,7 @@ C
             CALL COPY4r(SDUMP(1,IEG),TDUMP,NXYZ)
          ELSE
 C           do the map    (assumes that NX=NY=NZ, or NX=NY, NZ=1)
-            CALL MAPAB4r(SDUMP(1,IEG),TDUMP,NXR,1)
+            call mapab4r(sdump(1,ieg),tdump,nxr,1)
          ENDIF
 C
        ELSE
@@ -1323,7 +1319,7 @@ C
             IF (NXR.EQ.NX1.AND.NYR.EQ.NY1.AND.NZR.EQ.NZ1) THEN
                CALL COPY4r(SDUMP(1,IE),TDUMP,NXYZ)
             ELSE
-               CALL MAPAB4r(SDUMP(1,IE),TDUMP,NXR,1)
+               call mapab4r(sdump(1,ie),tdump,nxr,1)
             ENDIF
          ENDIF
 C
@@ -1351,15 +1347,15 @@ C
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
       DIMENSION X(NX1,NY1,NZ1,NEL)
       DIMENSION Y(NXR,NXR,NXR,NEL)
-C
-      COMMON /CTMP0/ XA(LXYZR)      ,XB(LX1,LY1,LZR)
-     $              ,IRES(LXR,LXR)  ,ITRES(LXR,LXR)
-     $              ,ZGMR(20)       ,WGTR(20)
-      REAL XA,XB,IRES,ITRES,ZGMR,WGTR
-C
-      INTEGER NOLD,ICALLD
-      SAVE    NOLD,ICALLD
-      DATA    NOLD,ICALLD /0,0/
+
+      common /ctmpab/ xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
+     $              , ires(lxr,lxr)  ,itres(lxr,lxr)
+     $              , zgmr(lxr)      ,wgtr(lxr)
+      real ires,itres
+
+      INTEGER NOLD
+      SAVE    NOLD
+      DATA    NOLD /0/
 C
       NZR = NXR
       IF(NZ1.EQ.1) NZR=1
@@ -1412,16 +1408,16 @@ C
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
       REAL*4 X(NX1,NY1,NZ1,NEL)
       REAL   Y(NXR,NXR,NXR,NEL)
-C
-      COMMON /CTMP0/ XA(LXYZR)      ,XB(LX1,LY1,LZR) ,XC(LXYZR)      
-     $              ,IRES(LXR,LXR)  ,ITRES(LXR,LXR)
-     $              ,ZGMR(20)       ,WGTR(20)
-      REAL XA,XB,IRES,ITRES,ZGMR,WGTR
-C
-      INTEGER NOLD,ICALLD
-      SAVE    NOLD,ICALLD
-      DATA    NOLD,ICALLD /0,0/
-C
+
+      common /ctmpab/ xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
+     $              , ires(lxr,lxr)  ,itres(lxr,lxr)
+     $              , zgmr(lxr)      ,wgtr(lxr)
+      real ires,itres
+
+      INTEGER NOLD
+      SAVE    NOLD
+      DATA    NOLD /0/
+
       NZR = NXR
       IF(NZ1.EQ.1) NZR=1
       NYZR = NXR*NZR
@@ -1965,7 +1961,7 @@ c
      $ ,             ZM3 (LX1,LY1,LZ1,LELT)
 C
 c
-      if(nid.eq.0) write(6,*) 'regenerate geomerty data'
+      if(nid.eq.0) write(6,*) 'regenerate geomerty data',icall
 
       ntot = nx1*ny1*nz1*nelt
 c
@@ -1988,7 +1984,7 @@ c
       CALL SFASTAX
 c
       if(nid.eq.0) then
-        write(6,*) 'done :: regenerate geomerty data'
+        write(6,*) 'done :: regenerate geomerty data',icall
         write(6,*) ' '
       endif
 
