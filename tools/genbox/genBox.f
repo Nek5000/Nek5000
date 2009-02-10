@@ -824,7 +824,7 @@ c
       enddo
  
       if(icounter.lt.n) then
-        write(*,*) icounter,n
+        write(*,*) 'error:', icounter,n
         call scannocom(iend,io)
         istart=icounter+1
         goto 222

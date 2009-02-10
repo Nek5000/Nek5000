@@ -1,5 +1,5 @@
-FLAGS = 
-LFLAGS = 
+FLAGS =  $(FFLAGS_IN)
+LFLAGS = $(LFLAGS_IN) 
 prefix = $(bin_nek_tools)
 
 OBJS = n2to3.o 
