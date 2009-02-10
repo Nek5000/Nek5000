@@ -1,5 +1,5 @@
 FLAGS =  $(FFLAGS_IN)
-LFLAGS = $(LFLAGS_IN)
+LFLAGS = 
 prefix = $(bin_nek_tools)
 
 OBJS = genbox.o 
@@ -7,7 +7,7 @@ OBJS = genbox.o
 all: genbox
 
 
-genBox:	$(OBJS)
+genbox:	$(OBJS)
 	$(F77) $(FLAGS) -o $(prefix)/genbox $(OBJS) $(LFLAGS) 
 
 clean:
