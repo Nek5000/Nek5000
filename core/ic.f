@@ -875,7 +875,7 @@ C
             do 200 ieg=1,nelrr
                ifok = .false.
                IF (NID.EQ.0) THEN
-                 IF (MOD(IEG,100).EQ.1) WRITE(6,*) 'Reading',IEG
+                 IF (MOD(IEG,1000).EQ.1) WRITE(6,*) 'Reading',IEG
                  IF (iffmat) THEN
                     READ(91,*,ERR=1500,END=1500)
      $              ((tdump(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
