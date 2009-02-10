@@ -142,6 +142,7 @@ C
          READ(9,*,ERR=400)PARAM(I)
    20 CONTINUE
 
+      if (param(30).gt.0) ifuservp = .true.
 c
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
@@ -218,7 +219,7 @@ C
       IFMHD     = .false.
       IFESSR    = .false.
       IFTMSH(0) = .false.
-      IFUSERVP  = .false.
+c      IFUSERVP  = .false.
       IFCYCLIC  = .false.
       IFSYNC    = .false.
 c      IFSPLIT   = .false.
@@ -264,8 +265,8 @@ c      IFSPLIT   = .false.
               read(string,*) IFMOAB
          elseif (indx1(string,'IFMHD'  ,5).gt.0) then 
               read(string,*) IFMHD
-         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
-              read(string,*) IFUSERVP
+c         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
+c              read(string,*) IFUSERVP
          elseif (indx1(string,'IFCYCLIC',8).gt.0) then 
               read(string,*) IFCYCLIC
          elseif (indx1(string,'IFSYNC'  ,6).gt.0) then 
@@ -291,7 +292,7 @@ c              read(string,*) IFSPLIT
      &           '   IFMVBD'   ,
      &           '   IFCHAR'   ,
      &           '   IFANLS'   ,
-     &           '   IFUSERVP' ,
+c     &           '   IFUSERVP' ,
      &           '   IFSYNC'   ,
      &           '   IFCYCLIC' ,
      &           '   IFSPLIT'  ,
@@ -302,7 +303,6 @@ c              read(string,*) IFSPLIT
  490  continue
       enddo
 
-      if (param(30).gt.0) ifuservp = .true.
 
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.

@@ -34,7 +34,7 @@ hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 subuser.o \
-isosurf.o byte.o \
+isosurf.o byte.o postpro.o \
 cvode_driver.o setprop.o qthermal.o makeq.o \
 ssygv.o dsygv.o
 #
@@ -129,6 +129,7 @@ ssygv.o     	:$S/ssygv.f;     		$(F77) -c $(FL0i4) $S/ssygv.f
 blas.o	   	:$S/blas.f;			$(F77) -c $(FL0i4) $S/blas.f
 ################################################################################
 prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
+postpro.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/postpro.f
 connect1.o	:$S/connect1.f;			$(F77) -c $(FL2) $S/connect1.f
 connect2.o	:$S/connect2.f;			$(F77) -c $(FL2) $S/connect2.f
 edgec.o		:$S/edgec.f;			$(F77) -c $(FL2) $S/edgec.f
