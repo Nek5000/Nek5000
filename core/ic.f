@@ -1409,7 +1409,7 @@ C
       REAL*4 X(NX1,NY1,NZ1,NEL)
       REAL   Y(NXR,NXR,NXR,NEL)
 
-      common /ctmpab/ xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
+      common /ctmpa4/ xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
      $              , ires(lxr,lxr)  ,itres(lxr,lxr)
      $              , zgmr(lxr)      ,wgtr(lxr)
       real ires,itres
