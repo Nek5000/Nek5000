@@ -9,7 +9,7 @@ all:
         cd $${i} ;                          \
         export FFLAGS_IN=  ;                \
         export CFLAGS_IN=${US} ;            \
-        if [ "$$i" == "genMap" ]; then      \
+        if [ "$$i" == "genmap" ]; then      \
            export FFLAGS_IN=${R8} ;         \
         fi ;                                \
         if [ "$$i" == "prenek" ]; then      \
@@ -36,9 +36,8 @@ clean:
         cd .. ;                      \
       fi ;                           \
     done ;                           \
-	 rm -f $(bin_nek_tools)/nekk      \
-			 $(bin_nek_tools)/neks      \
  			 $(bin_nek_tools)/prex      \
+ 			 $(bin_nek_tools)/postnek   \
  			 $(bin_nek_tools)/nekmerge  \
  			 $(bin_nek_tools)/reatore2  \
  			 $(bin_nek_tools)/genbox    \

@@ -4,8 +4,8 @@
 bin_nek_tools="$HOME/bin"
 
 # compilers
-CC=pgcc
-F77=pgf77
+CC=icc
+F77=ifort
 
 
 
@@ -94,7 +94,8 @@ export MODULES
 MODULES="genbox genmap n2to3 nekmerge postnek prenek reatore2"
 
 if [ $# -eq 0 ]; then
-   echo "Usage: maketools [clean] [module(s)]" 
+   echo "Usage: maketools [clean] [tool ...]"
+   echo "       e.g. maketools genmap reatore2" 
    exit 1
 else
    if [ "$1" == "clean" ]; then
