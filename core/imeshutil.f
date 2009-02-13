@@ -1,16 +1,16 @@
-!random utilities to help with iMesh
-!called by MYASSERT macro
+c random utilities to help with iMesh
+c called by MYASSERT macro
 #define NULLSTRIP(s) s(:index(s, char(0))-1)
 
-!building without imesh for now
+c building without imesh for now
 
       subroutine imesh_err(ierr, imesh, file, line)
 #if 0
   implicit none
   integer ierr, line
   integer*8 imesh
-  character(*) :: file
-  character(1024) :: errmsg
+  character file(*)
+  character*1024 errmsg
 
   print *, "ASSERT ERROR: ", ierr, 'in ', file, ' line', line
 
@@ -21,6 +21,7 @@
 
 !  call exit
 #endif
-      end subroutine imesh_err
+      return
+      end 
 
 
