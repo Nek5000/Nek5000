@@ -137,17 +137,18 @@ if [ "$IFMOAB" == "true" -o "IFMOAB" == "yes" ]; then
      echo "ABORT: Please specify path to MOAB in MOAB_DIR!" 
      exit 1
    else
-     if [ -d $MOAB_DIR ]; then
+     if [ ! -d $MOAB_DIR ]; then
        echo "ABORT: Cannot find " $MOAB_DIR 
        exit 1
      fi 
    fi
+else
+   IFMOAB=false
 fi
-export IFMOAB
 
 # set preprocssor symbol for timing
-if [ "$IFTIMING" != "false" -a "$IFTIMING" != "no" ]; then
-    P="$P $PPPO-DTIMER"
+if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
+    P="$P $PPPO-DNOTIMER"
 fi
 
 # set logical flags
@@ -207,6 +208,8 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^L4[ ]*=.*/L4=$L4/" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
+-e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
+-e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
 -e "s/^IFUNDERSCORE[ ]*=.*/IFUNDERSCORE:=$IFUNDERSCORE/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LIB[ ]*=.*:USR_LIB\:=$USR_LIB:" \

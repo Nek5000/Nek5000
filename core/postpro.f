@@ -1,5 +1,5 @@
-      subroutine load_fld(string,in)
-      
+      subroutine load_fld(string)
+
       include 'SIZE'
       include 'INPUT'
 
@@ -17,22 +17,12 @@
   200 CONTINUE
       LEN=L1
 
-      if(param(67).eq.6) then
-        write(ext,1) in
-   1    format('.f', i4.4)
-      else
-        write(ext,2) in
-   2    format('.fld', i2.2)
-      endif
-
-      call chcopy (fout,string,len)
-      call chcopy (fout(len+1),ext,6)
-
-      call chcopy (initc(1),fout,len+6)
+      call chcopy (initc(1),string,len)
       call setics
 
       return
       end
+
 
 c-----------------------------------------------------------------------
       subroutine lambda2(l2)

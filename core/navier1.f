@@ -385,7 +385,7 @@ c
 
       integer e
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tcdtp=0.0
       icalld=icalld+1
       ncdtp=icalld
@@ -553,7 +553,7 @@ C
 
       enddo
 C
-#ifdef TIMER
+#ifndef NOTIMER
       tcdtp=tcdtp+(dnekclock()-etime1)
 #endif
       return
@@ -599,7 +599,7 @@ C---------------------------------------------------------------------
 
       integer e
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tmltd=0.0
       icalld=icalld+1
       nmltd=icalld
@@ -757,7 +757,7 @@ c        NOTE: NZ1=NZ2=1
 C
       enddo
 C
-#ifdef TIMER
+#ifndef NOTIMER
       tmltd=tmltd+(dnekclock()-etime1)
 #endif
       return
@@ -2795,7 +2795,7 @@ C-------------------------------------------------------------------
       REAL  Y(1),X(1),XMASK(1)
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2928,7 +2928,7 @@ C
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2964,7 +2964,7 @@ C
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3211,7 +3211,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3250,7 +3250,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3289,7 +3289,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3327,7 +3327,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3517,7 +3517,7 @@ C
       include 'CTIMER'
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1

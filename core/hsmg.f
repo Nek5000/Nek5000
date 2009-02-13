@@ -289,11 +289,11 @@ c----------------------------------------------------------------------
       include 'CTIMER'
 
       if (ifsync) call gsync()
-#ifdef TIMER
+#ifndef NOTIMER
       etime1=dnekclock()
 #endif
       call gs_op(mg_gsh_handle(l),u,1,1,0)
-#ifdef TIMER
+#ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
 #endif
 
@@ -317,11 +317,11 @@ c----------------------------------------------------------------------
       include 'CTIMER'
 
       if (ifsync) call gsync()
-#ifdef TIMER
+#ifndef NOTIMER
       etime1=dnekclock()
 #endif
       call gs_op(mg_gsh_schwarz_handle(l),u,1,1,0)
-#ifdef TIMER
+#ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
 #endif
       return
@@ -1367,13 +1367,13 @@ c
       if (ifsync) call gsync()
 
       ncrsl  = ncrsl  + 1
-#ifdef TIMER
+#ifndef NOTIMER
       etime1=dnekclock()
 #endif
 
       call crs_solve(xxth,e,r)
 
-#ifdef TIMER
+#ifndef NOTIMER
       tcrsl=tcrsl+dnekclock()-etime1
 #endif
 
@@ -1453,7 +1453,7 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       endif
 
       nddsl  = nddsl  + 1
-#ifdef TIMER
+#ifndef NOTIMER
       etime1 = dnekclock()
 #endif
       
@@ -1614,7 +1614,7 @@ c         xaver = glsc2(bm2,e,ntot2)/volvm2
           call cadd(e,-xaver,ntot2)
        endif
 
-#ifdef TIMER
+#ifndef NOTIMER
       tddsl  = tddsl + ( dnekclock()-etime1 )
 #endif
 

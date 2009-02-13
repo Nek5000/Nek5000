@@ -18,7 +18,7 @@ C
 c
       include 'CTIMER'
 c
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) teslv=0.0
       icalld=icalld+1
       neslv=icalld
@@ -43,7 +43,7 @@ c     write(6,*) solver_type,' solver type',iesolv
          WRITE(6,*) 'Stop in ESOLVER'
          CALL EXITT
       ENDIF
-#ifdef TIMER
+#ifndef NOTIMER
       teslv=teslv+(dnekclock()-etime1)
 #endif
       RETURN

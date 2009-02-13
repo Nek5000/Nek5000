@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -52,7 +52,7 @@ c
 c      call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifdef TIMER
+#ifndef NOTIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -142,7 +142,7 @@ c
 
       REAL U(1),V(1),W(1)
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tvdss=0.0d0
       if (icalld.eq.0) tgsum=0.0d0
       if (icalld.eq.0) tgsmx=0.0d0
@@ -166,7 +166,7 @@ c
 
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
-#ifdef TIMER
+#ifndef NOTIMER
       timee=(dnekclock()-etime1)
       tvdss=tvdss+timee
       tdsmx=max(timee,tdsmx)
@@ -531,7 +531,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -569,7 +569,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifdef TIMER
+#ifndef NOTIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -592,7 +592,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -633,7 +633,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifdef TIMER
+#ifndef NOTIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -656,7 +656,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 c
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -699,7 +699,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifdef TIMER
+#ifndef NOTIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
