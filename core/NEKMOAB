@@ -1,6 +1,7 @@
-!Data common to functions in moab.f. Do #include instead of include or it won't work (because we're using preproc macros here)
+c Data common to functions in moab.f. Do #include instead of include or 
+c it won't work (because we're using preproc macros here)
 
-      IMESH_HANDLE :: imesh
+      IMESH_HANDLE imesh
 
       IMESH_HANDLE hexHandles(*)
       pointer (hexHandlesPointer, hexHandles)

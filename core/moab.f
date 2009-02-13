@@ -1,46 +1,90 @@
 c-----------------------------------------------------------------------
-!Some convenience macros. Maybe they can end up in the iBase_f.h later on
+c Some convenience macros. Maybe they can end up in the iBase_f.h later on
 
-
-#define IMESH_HANDLE integer*8
+#define IMESH_HANDLE integer*8   
 #define IMESH_NULL 0
-#define IMESH_ASSERT(ierr, imesh) if (ierr .ne. 0) call imesh_err(ierr, imesh, __FILE__, __LINE__)
+#define IMESH_ASSERT(ierr, imesh) if (ierr .ne. 0) call imesh_err(ierr, imesh, 0,__LINE__)
 #define IMESH_NULLSTRIP(s) s(:index(s, char(0))-1)
 
-c
 c    Data shared between functions in this file is stored in 
-c   /nekmoab/ common block, in file NEKMOAB
+c    /nekmoab/ common block, in file NEKMOAB
 c
-c    We are targeting hex27 meshes coming from cubit. 
-c    Sample case is in data/framework/testmeshes/2bricks/8hex.jou
-
-
+c    We are targeting hex27 meshes coming from cubit.
+c    By default we read the cubit mesh from 'input.cub'
+c
 c    fun stuff: 
 c    "imesh" is already used in TSTEP
 c    can't use implicit none because [A-Z]* includes 
 c    depend on it -- watch out for typos!
 c
 c    remember to free things... 
-c           currently using the fortran free to free memory malloced 
-c           in c++. who knows what that does.
-
-c    used igop instead of direct call to mpi_allreduce + copy, 
-c    but no equivalent for allgather. Should use nek comm 
-c    instead of worldcomm
-
-
+c          * currently using the fortran free to free memory malloced 
+c            in c++. who knows what that does.
+c          * pointer size (integer*4 or integer*8) may vary!
+c          * explicit declaration of all ptr is missing, that's not 
+c            portable because default int size can differ from ptr size!  
+c-----------------------------------------------------------------------
 
 
-      subroutine nekMOAB_load(filename)
+      subroutine moab_dat
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /mbc/ moabbc(6,lelt)
+      integer moabbc
+
+      call nekMOAB_load
+      call nekMOAB_proc_map()
+
+      nelgt = nelgv
+      call mapelpr()
+
+c     Read .rea file
+      open (unit=9,file=reafle,status='old')
+      call rdparam !     Parameters
+
+      call moab_geometry   (xm1,ym1,zm1)  ! fill xm1,ym1,zm1
+      call xml2xc                         ! fill xc,yc,zc
+
+      call ifill(moabbc,1,6*lelt)          ! set default to 'E  '
+      call nekMOAB_BC      (moabbc)  
+      call moab_to_nek_bc  (moabbc)        ! fill cbc
+
+c      call nekMOAB_loadMaterialSets
+
+#if 0
+      do i=1,6
+         call outface(xm1,1,i,nx1,ny1,nz1,'xface ')
+         call outface(ym1,1,i,nx1,ny1,nz1,'yface ')
+         call outface(zm1,1,i,nx1,ny1,nz1,'zface ')
+      enddo
+      call exitt
+#endif
+
+c     remaining nek stuff
+      call rdicdf  !     Initial Conditions / Drive Force
+      call rdmatp  !     Materials property data
+      call rdhist  !     History data
+      call rdout   !     Output specs
+      call rdobj   !     Objects
+      close(9)     !     End of input data, close read file.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_load
+
 c     Load "filename" into imesh/moab, store imesh handle 
 c     in /nekmoab/ common block
       implicit none
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      character(*), intent(in)       :: filename
-      
-      character(*) loadOpt
+      character*80 filename
+      parameter(filename='input.cub')
+      integer ierr
+
+      character*132 loadOpt
 
 #if 0
       parameter(loadOpt="PARALLEL=BCAST_DELETE;
@@ -65,7 +109,6 @@ c     in /nekmoab/ common block
       parameter(loadOpt="")
 #endif      
 
-      integer       :: ierr
 
       !Initialize imesh and load file
       imesh = IMESH_NULL
@@ -77,20 +120,22 @@ c     in /nekmoab/ common block
      $     ierr)
       IMESH_ASSERT(ierr, imesh)
 
-      end subroutine 
-
+      return
+      end  
+c-----------------------------------------------------------------------
       subroutine nekMOAB_proc_map()
-!     Fills the following common-block data from a previously-loaded 
-!     imesh (handle stored in /nekmoab/ common block
-!     GLLNID : (int array)  Maps global element id to the processor 
-!     that it's on.
-!     NELGV  : (int) global number of elements
 
-!     Gotcha: Out of GLLNID, map2.f "computes" GLLEL (map from global 
-!     element number to local element number). To do this, it assumes 
-!     that if A has a lower global element number than B, it also
-!     has a lower local element number. 
-!     Who knows if this will be true with data coming from imesh.
+c     Fills the following common-block data from a previously-loaded 
+c     imesh (handle stored in /nekmoab/ common block
+c     GLLNID : (int array)  Maps global element id to the processor 
+c     that it's on.
+c     NELGV  : (int) global number of elements
+c
+c     Gotcha: Out of GLLNID, map2.f "computes" GLLEL (map from global 
+c     element number to local element number). To do this, it assumes 
+c     that if A has a lower global element number than B, it also
+c     has a lower local element number. 
+c     Who knows if this will be true with data coming from imesh.
 
       include 'SIZE'
       include 'INPUT'
@@ -104,9 +149,6 @@ c     in /nekmoab/ common block
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      integer ierr
-      integer fooAlloc, i
-
       integer globalId, lastGlobalId
 
       call iMesh_getTagHandle(%VAL(imesh),
@@ -115,13 +157,13 @@ c     in /nekmoab/ common block
      $     ierr)
       IMESH_ASSERT(ierr, imesh)
  
-      fooAlloc = 0
+      ifooAlloc = 0
       hexHandlesPointer = IMESH_NULL
       call iMesh_getEntities(%VAL(imesh), 
      $     %VAL(IMESH_NULL), 
      $     %VAL(iBase_REGION), 
      $     %VAL(iMesh_ALL_TOPOLOGIES), 
-     $     hexHandlesPointer, fooAlloc, hexSize, ierr)
+     $     hexHandlesPointer, ifooAlloc, hexSize, ierr)
       IMESH_ASSERT(ierr, imesh)
 
       NELGV = hexSize
@@ -163,12 +205,12 @@ c     in /nekmoab/ common block
       call igop(GLLNID, LELGWORK, '+  ', NELGV)
 
 
-!      print *, 'NELGV:', NELGV
-!      print *, 'GLLNID:'
-!      print *,  GLLNID(:NELGV)
+c      print *, 'NELGV:', NELGV
+c      print *, 'GLLNID:'
+c      print *,  GLLNID(:NELGV)
 
-
-      end subroutine nekMOAB_proc_map
+      return
+      end 
 c-----------------------------------------------------------------------
       subroutine nekMOAB_loadMaterialSets
       include 'SIZE'
@@ -176,19 +218,20 @@ c-----------------------------------------------------------------------
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      integer matl(lelt) !store material properties here
-      common /cmatl/ matl
+      !store material properties here
+      common /cmatl/ matl(lelt)
+      integer matl
       
-!very similar to the bc-loading code
+c very similar to the bc-loading code
 
       IMESH_HANDLE entSetHandles(*)
       pointer (entSetHandlesPointer, entSetHandles)
-      integer :: entSetAllocated, entSetSize
+      integer entSetAllocated, entSetSize
 
       IMESH_HANDLE matSetTag
-      integer:: ierr, i, tagIntData
+      integer ierr, i, tagIntData
 
-      matl = -1
+c      matl = -1
 
       call iMesh_getTagHandle(%VAL(imesh),
      $     "MATERIAL_SET", !/*in*/ const char* tag_name,
@@ -222,16 +265,15 @@ c-----------------------------------------------------------------------
 
       call free(entSetHandlesPointer)
 
-!      print *, 'matl'
-!      print *, matl
+c      print *, 'matl'
+c      print *, matl
 
-      end subroutine nekMOAB_loadMaterialSets
-
-
-
-
+      return
+      end 
+c-----------------------------------------------------------------------
       subroutine nekMOAB_matSet2(matl, lelt, setHandle, setId)
-      !Internal function, don't call directly
+
+c     Internal function, don't call directly
       implicit none
 
 #include "iMesh_f.h"
@@ -240,13 +282,14 @@ c-----------------------------------------------------------------------
       integer lelt
       integer matl(lelt)
 
-      IMESH_HANDLE :: setHandle
-      integer :: setId !coming from cubit
+      IMESH_HANDLE setHandle
+      integer setId !coming from cubit
 
       IMESH_HANDLE hexes(*)
       pointer (hexesPointer, hexes)
       integer hexesSize, hexesAlloc
       integer ierr, i, elno
+
 
       !what hexes are in this set?
       hexesAlloc = 0
@@ -266,17 +309,16 @@ c-----------------------------------------------------------------------
 
       call free(hexesPointer)
 
-      end subroutine nekMOAB_matSet2
-
-
-
+      return
+      end 
 c-----------------------------------------------------------------------
       subroutine nekMOAB_loadConn(vertex, nelgt, ncrnr)
-      !Fill the vertex array with connectivity data from imesh
 
-      !vertex(ncrnr, nelgt): int array, global id of a vertex
-      !nelgt: int, global number of elements
-      !ncrnr: int, number of corner vertices per element (should be 8)
+c     Fill the vertex array with connectivity data from imesh
+c
+c     vertex(ncrnr, nelgt): int array, global id of a vertex
+c     nelgt: int, global number of elements
+c     ncrnr: int, number of corner vertices per element (should be 8)
       implicit none
 
 #include "iMesh_f.h"
@@ -284,7 +326,6 @@ c-----------------------------------------------------------------------
 
       integer nelgt, ncrnr
       integer vertex(ncrnr, nelgt)
-
 
       integer lwrk
       parameter (lwrk=1000)
@@ -303,12 +344,9 @@ c-----------------------------------------------------------------------
       integer vtxHandlesSize, vtxHandlesAlloc
       integer vtxHandlesData(TWENTYSEVEN)
 
-
       integer l2c(27),j
       common /cccc/ l2c
        
-
-
       vtxIdPointer = %LOC(vtxIdData)
       vtxIdAlloc = TWENTYSEVEN
 
@@ -374,20 +412,18 @@ c           write(6,*)  i,j,k,globalid,vertex(k,globalid),' id'
       write(6,*) ivmin,ivmax,' ivmin ',nelgt
 c     call exitt
 
-
-      end subroutine nekMOAB_loadConn
+      return
+      end 
 c-----------------------------------------------------------------------------
-
-
       subroutine nekMOAB_loadCoord(x27, y27, z27)
-      !stuff the xyz coords of the 27 verts of each local element -- 
-      !shared vertex coords are stored redundantly
+
+c     stuff the xyz coords of the 27 verts of each local element -- 
+c     shared vertex coords are stored redundantly
       implicit none
 
 #include "iMesh_f.h"
 #include "NEKMOAB"
-      double precision, dimension(TWENTYSEVEN, hexSize) :: x27, y27, z27
-
+      real x27(27,1), y27(27,1), z27(27,1)
 
       IMESH_HANDLE vtxHandles(TWENTYSEVEN)
       pointer (vtxHandlesPointer, vtxHandles)
@@ -396,11 +432,8 @@ c-----------------------------------------------------------------------------
 
       integer i, j, ierr
 
-      !!!!!!!!!!!!!!!
       vtxHandlesPointer = %LOC(vtxHandlesData)
       vtxHandlesAlloc = TWENTYSEVEN
-
-
 
       do i=1, hexSize         
          !slight cut and paste from above
@@ -426,34 +459,32 @@ c-----------------------------------------------------------------------------
             IMESH_ASSERT(ierr, imesh)
          enddo
 
-!         print *, i, 'coords: ' 
-!         print *, x27
-!         print *, y27
-!         print *, z27
+c         print *, i, 'coords: ' 
+c         print *, x27
+c         print *, y27
+c         print *, z27
       enddo
 
+      return
+      end 
+c-----------------------------------------------------------------------------
+      subroutine nekMOAB_BC(moabbc)
 
-
-      end subroutine nekMOAB_loadCoord
-     
-      subroutine nekMOAB_BC(bcdata)
-      !Copy the boundary condition information into bcdata array
-      !bcdata(s,e) is the bc value of side s of local element e -- default value is 0
+c     Copy the boundary condition information into bcdata array
       implicit none
 
 #include "iMesh_f.h"
-#include 'NEKMOAB'
+#include "NEKMOAB"
 
-      integer bcdata(SIX, hexSize)
+      integer moabbc(6,1)
 
       IMESH_HANDLE entSetHandles(*)
       pointer (entSetHandlesPointer, entSetHandles)
-      integer :: entSetAllocated, entSetSize
+      integer entSetAllocated, entSetSize
 
       IMESH_HANDLE neuSetTag
-      integer:: ierr, i, tagIntData
+      integer ierr, i, tagIntData
 
-      bcdata = 0
 
       !Sidesets in cubit come in as entity sets with the NEUMANN_SET -- see sample file
       call iMesh_getTagHandle(%VAL(imesh),
@@ -482,30 +513,27 @@ c-----------------------------------------------------------------------------
      $        ierr)             !/*out*/ int *err);
 
          if (ierr .eq. 0) then !tag was defined
-            call nekMOAB_intBC(bcdata, entSetHandles(i), tagIntData)
+            call nekMOAB_intBC(moabbc, entSetHandles(i), tagIntData)
          endif
       enddo
 
       call free(entSetHandlesPointer)
-      
 
-!      print *, 'bcdata'
-!      print *, bcdata
-
-      end subroutine nekMOAB_BC
-
-
+      return
+      end 
+c-----------------------------------------------------------------------
       subroutine nekMOAB_intBC(bcdata, setHandle, setId)
-      !Internal function, don't call directly
+
+c     Internal function, don't call directly
       implicit none
 
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      integer bcdata(SIX, hexSize)
+      integer bcdata(6,1)
 
-      IMESH_HANDLE :: setHandle
-      integer :: setId !coming from cubit
+      IMESH_HANDLE setHandle
+      integer setId !coming from cubit
 
       IMESH_HANDLE faces(*)
       pointer (facesPointer, faces)
@@ -608,14 +636,14 @@ c-----------------------------------------------------------------------------
 
       call free(facesPointer)
 
-      end subroutine nekMOAB_intBC
-
-
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine nekMOAB_getElNo(handle, elno)
-      !Given the imesh handle of an element (hex), 
-      !   return its local nek element number in elno
 
-      !Cannot be used until the GLLEL array has been set (in map2.f)
+c     Given the imesh handle of an element (hex), 
+c     return its local nek element number in elno
+c     Cannot be used until the GLLEL array has been set (in map2.f)
 
       include 'SIZE'
       include 'PARALLEL'
@@ -641,148 +669,6 @@ c-----------------------------------------------------------------------------
       !then convert to local id
       elno = GLLEL(elno)
 
-      end subroutine nekMOAB_getElNo
-
- 
-!code below is not used
-!!!!!!!!!!!!!!!!!!!
-#if 0
-      subroutine printTags(imesh, entHandle)
-      implicit none
-
-#include "iMesh_f.h"
-      IMESH_HANDLE :: imesh, entHandle
-      IMESH_HANDLE tagHandles(*)
-      pointer (tagHandlesPointer, tagHandles)
-      integer :: tagsAllocated, tagsSize
-      integer :: j, ierr
-      integer tagintdata
-      character(80) :: tempString
-
-      tagHandlesPointer = IMESH_NULL
-      tagsAllocated = 0
-      call iMesh_getAllTags(%VAL(imesh), 
-     $     %VAL(entHandle), !/*in*/ const iBase_EntityHandle entity_handle,                                                        
-     $     tagHandlesPointer,   !/*inout*/ iBase_TagHandle** tag_handles,                                                                    
-     $     tagsAllocated,       !/*inout*/ int* tag_handles_allocated,                                                                              
-     $     tagsSize,            !/*out*/ int* tag_handles_size,                                                                                     
-     $     ierr)
-      IMESH_ASSERT(ierr, imesh)
-         
-      print *,  tagsAllocated, "Tags"
-
-
-      do j=1, tagsSize
-         call iMesh_getTagName(%VAL(imesh), !iMesh_Instance instance,
-     $        %VAL(tagHandles(j)), !/*in*/ const iBase_TagHandle tag_handle,                                                                   
-     $        tempstring,       !char *name,                                                                                                        
-     $        ierr)
-         IMESH_ASSERT(ierr, imesh)
-         print *, 'tag number', j, tagHandles(j)
-         print *, 'tag name ', IMESH_NULLSTRIP(tempstring)
-
-
-         call iMesh_getIntData(%VAL(imesh), !iMesh_Instance instance,
-     $        %VAL(entHandle), !/*in*/ const iBase_EntityHandle entity_handle,
-     $        %VAL(tagHandles(j)), !/*in*/ const iBase_TagHandle tag_handle,
-     $        tagIntData,       !/*out*/ int *out_data,
-     $        ierr)             !/*out*/ int *err);                                                                                                                              
-         IMESH_ASSERT(ierr, imesh)
-         print *, 'tag value', tagIntData
-
-      enddo
-
-
-      end subroutine printTags
-
-
-#endif     
-
-#if 0
-      !snippets
-      call iMesh_getNumOfType(%VAL(imesh), 
-     $     %VAL(IMESH_NULL),    !/*in*/ const iBase_EntitySetHandle entity_set_handle,                                                            
-     $     %VAL(iBase_VERTEX),  !/*in*/ const int entity_type,                                                                                  
-     $     numEls,           !/*out*/ int *num_type,                                                                                                  
-     $     ierr)
-
-      IMESH_ASSERT(ierr, imesh)
-      print *, 'Num of verts: ', numEls
-
-      call iMesh_getNumEntSets(%VAL(imesh),
-     $     %VAL(IMESH_NULL), !/*in*/ const iBase_EntitySetHandle entity_set_handle,
-     $     %VAL(1), !/*in*/ const int num_hops,
-     $     numSets, !/*out*/ int *num_sets,
-     $     ierr)
-
-      IMESH_ASSERT(ierr, imesh)
-      print *, 'Num of sets: ', numSets
-
-#endif
-
-c-----------------------------------------------------------------------
-      subroutine moab_dat
-c
-      include 'SIZE'
-      include 'TOTAL'
-
-      common /cmoab/ moabbc(2*ldim,lelt)
-
-      integer f
-
-
-c     Use MOAB for :
-c
-c     .get element to processor map
-c     .get vertices
-c     .get 27-pt. hex mesh
-c     .get bcs
-
-c     call nekMOAB_load(cubfle)
-c     call nekMOAB_load('pin217.h5m')
-      call nekMOAB_load('input.cub')
-
-
-      call nekMOAB_proc_map()
-
-      nelgt = nelgv
-      call mapelpr()
-c
-c     Read std nek stuff
-c
-
-      open (unit=9,file=reafle,status='old')
-      call rdparam !     Parameters
-
-      call moab_geometry (xm1,ym1,zm1,nx1,ny1,nz1)  ! fill xm1
-      call xml2xc        (xm1,ym1,zm1,nx1,ny1,nz1)  ! fill xc
-
-      call nekMOAB_BC(moabbc)
-      call moab_to_nek_bc       ! fill the cbc arrays
-
-
-      call nekMOAB_loadMaterialSets
-
-
-#if 0
-      do f=1,6
-         call outface(xm1,1,f,nx1,ny1,nz1,'xface ')
-         call outface(ym1,1,f,nx1,ny1,nz1,'yface ')
-         call outface(zm1,1,f,nx1,ny1,nz1,'zface ')
-      enddo
-      call exitt
-#endif
-
-c     remaining nek stuff
-c
-
-      call rdicdf  !     Initial Conditions / Drive Force
-      call rdmatp  !     Materials property data
-      call rdhist  !     History data
-      call rdout   !     Output specs
-      call rdobj   !     Objects
-      close(9)     !     End of input data, close read file.
-
       return
       end
 c-----------------------------------------------------------------------
@@ -791,54 +677,53 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      character*3 cbi(0:100)
+      character*3 cbi(*)
 
       if (ifld.eq.1) then
-         cbi(0) = 'E  '
-         cbi(1) = 'V  '
-         cbi(2) = 'v  '
-         cbi(3) = 'W  '
-         cbi(4) = 'SYM'
+         cbi(1) = 'E  '
+         cbi(2) = 'V  '
+         cbi(3) = 'v  '
+         cbi(4) = 'W  '
+         cbi(5) = 'SYM'
+         cbi(6) = 'O  '
+         cbi(7) = 'o  '
+      elseif (ifld.eq.2) then
+         cbi(1) = 'E  '
+         cbi(2) = 'T  '
+         cbi(3) = 't  '
+         cbi(4) = 'I  '
          cbi(5) = 'O  '
          cbi(6) = 'o  '
-      elseif (ifld.eq.2) then
-         cbi(0) = 'E  '
-         cbi(1) = 'T  '
-         cbi(2) = 't  '
-         cbi(3) = 'I  '
-         cbi(4) = 'O  '
-         cbi(5) = 'o  '
-         cbi(6) = 'F  '
-         cbi(7) = 'f  '
-         cbi(8) = 'C  '
-         cbi(9) = 'c  '
+         cbi(7) = 'F  '
+         cbi(8) = 'f  '
+         cbi(9) = 'C  '
+         cbi(10) = 'c  '
       endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine moab_to_nek_bc  ! fill the nek cbc arrays
+      subroutine moab_to_nek_bc(moabbc)  ! fill the nek cbc arrays
 c
       include 'SIZE'
       include 'TOTAL'
 
-      common /cmoab/ moabbc(2*ldim,lelt)
+      integer moabbc(6,1)
 
       integer e,f
-      character*3 cbi(0:100,0:ldimt1)
+      character*3 cbi(100,0:ldimt1)
 
       ifld = 1  ! fluid only, for now
-      ifld = 2  ! heat only, for now
 
       call set_char_bc(cbi(1,ifld),ifld)
 
-      call rzero(bc,30*lelt*(ldimt+1))
+c      call rzero(bc,30*lelt*(ldimt+1))
 
       nface = 2*ndim
       do e=1,nelt
       do f=1,nface
          cbc(f,e,ifld) = cbi(moabbc(f,e),ifld)
-!         write(6,1) e,f,moabbc(f,e),cbc(f,e,ifld)
+         write(6,1) e,f,moabbc(f,e),cbc(f,e,ifld)
       enddo
       enddo
    1  format(3i8,2x,a3,'  moab cbc')
@@ -846,15 +731,16 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine moab_geometry (xml,yml,zml,nxl,nyl,nzl)
+      subroutine moab_geometry (xml,yml,zml)
 
       include 'SIZE'
       include 'TOTAL'
 
-      real xml(nxl*nyl*nzl,nelt)
-     $   , yml(nxl*nyl*nzl,nelt)
-     $   , zml(nxl*nyl*nzl,nelt)
-      integer e
+      parameter(lxyz=lx1*ly1*lz1)
+      real      xml(lxyz,1)
+     $        , yml(lxyz,1)
+     $        , zml(lxyz,1)
+      integer   e
 
       common /tcrmg/ x27(27,lelt), y27(27,lelt), z27(27,lelt)
 
@@ -868,8 +754,8 @@ c     call outmat(z27,27,8,'z27dat',nelt)
 
       do e=1,nelt   !  Interpolate for each element
          call permute_and_map(xml(1,e),x27(1,e),nx1,nmoab,e)
-         call permute_and_map(yml(1,e),y27(1,e),nx1,nmoab,e)
-         if (if3d) call permute_and_map(zml(1,e),z27(1,e),nx1,nmoab,e)
+         call permute_and_map(yml(1,e),y27(1,e),ny1,nmoab,e)
+         if (if3d) call permute_and_map(zml(1,e),z27(1,e),nz1,nmoab,e)
       enddo
 
 c     param(66) = 0
@@ -882,14 +768,11 @@ c     call exitt
       return
       end
 c-----------------------------------------------------------------------
-      subroutine xml2xc (xml,yml,zml,nxl,nyl,nzl)
+      subroutine xml2xc
 
       include 'SIZE'
+      include 'GEOM'
       include 'INPUT'
-
-      real xml(nxl,nyl,nzl,nelt)
-     $   , yml(nxl,nyl,nzl,nelt)
-     $   , zml(nxl,nyl,nzl,nelt)
 
       integer e
 
@@ -900,9 +783,9 @@ c-----------------------------------------------------------------------
          do j=1,ny1,ny1-1
          do i=1,nx1,nx1-1
             l = l+1
-            xc(l,1) = xml(i,j,k,e)
-            yc(l,1) = yml(i,j,k,e)
-            zc(l,1) = zml(i,j,k,e)
+            xc(l,1) = xm1(i,j,k,e)
+            yc(l,1) = ym1(i,j,k,e)
+            zc(l,1) = zm1(i,j,k,e)
          enddo
          enddo
          enddo
@@ -912,8 +795,8 @@ c-----------------------------------------------------------------------
          do j=1,ny1,ny1-1
          do i=1,nx1,nx1-1
             l = l+1
-            xc(l,1) = xml(i,j,1,e)
-            yc(l,1) = yml(i,j,1,e)
+            xc(l,1) = xm1(i,j,1,e)
+            yc(l,1) = ym1(i,j,1,e)
          enddo
          enddo
          enddo
@@ -964,7 +847,6 @@ c
          xt(i,1,1) = x27(j)
       enddo
 
-
       gh_type = 1 ! vertex only extension
       gh_type = 2 ! edge extension
       call gh_face_extend(xt,zgh,3,gh_type,gh_edge,gh_vtx)
@@ -990,3 +872,56 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+
+c  code below is not used !!!
+#if 0
+      subroutine printTags(imesh, entHandle)
+      implicit none
+
+#include "iMesh_f.h"
+      IMESH_HANDLE imesh, entHandle
+      IMESH_HANDLE tagHandles(*)
+      pointer (tagHandlesPointer, tagHandles)
+      integer tagsAllocated, tagsSize
+      integer j, ierr
+      integer tagintdata
+      character*80 tempString
+
+      tagHandlesPointer = IMESH_NULL
+      tagsAllocated = 0
+      call iMesh_getAllTags(%VAL(imesh), 
+     $     %VAL(entHandle), !/*in*/ const iBase_EntityHandle entity_handle,                                                        
+     $     tagHandlesPointer,   !/*inout*/ iBase_TagHandle** tag_handles,                                                                    
+     $     tagsAllocated,       !/*inout*/ int* tag_handles_allocated,                                                                              
+     $     tagsSize,            !/*out*/ int* tag_handles_size,                                                                                     
+     $     ierr)
+      IMESH_ASSERT(ierr, imesh)
+         
+      print *,  tagsAllocated, "Tags"
+
+
+      do j=1, tagsSize
+         call iMesh_getTagName(%VAL(imesh), !iMesh_Instance instance,
+     $        %VAL(tagHandles(j)), !/*in*/ const iBase_TagHandle tag_handle,                                                                   
+     $        tempstring,       !char *name,                                                                                                        
+     $        ierr)
+         IMESH_ASSERT(ierr, imesh)
+         print *, 'tag number', j, tagHandles(j)
+         print *, 'tag name ', IMESH_NULLSTRIP(tempstring)
+
+
+         call iMesh_getIntData(%VAL(imesh), !iMesh_Instance instance,
+     $        %VAL(entHandle), !/*in*/ const iBase_EntityHandle entity_handle,
+     $        %VAL(tagHandles(j)), !/*in*/ const iBase_TagHandle tag_handle,
+     $        tagIntData,       !/*out*/ int *out_data,
+     $        ierr)             !/*out*/ int *err);                                                                                                                              
+         IMESH_ASSERT(ierr, imesh)
+         print *, 'tag value', tagIntData
+
+      enddo
+
+
+      end subroutine printTags
+
+#endif    
+
