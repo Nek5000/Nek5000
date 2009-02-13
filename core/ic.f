@@ -2489,7 +2489,7 @@ c
 
       character*6  six,fmt,s6
       save         six
-      data         six / "??????" /
+      data         six / '\?\?\?\?\?\?' /
 
       character*80 fname
       character*1  fname1(80)

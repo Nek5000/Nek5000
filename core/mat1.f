@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -65,7 +65,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -89,7 +89,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -114,7 +114,7 @@ C
       include 'CTIMER'
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tinvc=0.0
       icalld=icalld+1
       ninvc=icalld
@@ -137,7 +137,7 @@ C
       DO 100 I=1,N
          A(I)=A(I)/B(I)
  100  CONTINUE
-#ifdef TIMER
+#ifndef NOTIMER
       tinvc=tinvc+(dnekclock()-etime1)
 #endif
       return
@@ -149,7 +149,7 @@ C
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tinv3=0.0
       icalld=icalld+1
       ninv3=icalld
@@ -171,7 +171,7 @@ C
       DO 100 I=1,N
          A(I)=B(I)/C(I)
  100  CONTINUE
-#ifdef TIMER
+#ifndef NOTIMER
       tinv3=tinv3+(dnekclock()-etime1)
 #endif
       return
@@ -182,7 +182,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -206,7 +206,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -230,7 +230,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -254,7 +254,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -278,7 +278,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -302,7 +302,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -326,7 +326,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -350,7 +350,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -418,7 +418,7 @@ C
       REAL A(1), B(1)
       include 'CTIMER'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tcopy=0.0
       icalld=icalld+1
       ncopy=icalld
@@ -428,7 +428,7 @@ C
 C
       DO 100 I = 1, N
  100     A(I) = B(I)
-#ifdef TIMER
+#ifndef NOTIMER
       tcopy=tcopy+(dnekclock()-etime1)
 #endif
       return
@@ -464,7 +464,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -488,7 +488,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -520,7 +520,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -604,7 +604,7 @@ C
       REAL VEC(1)
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1

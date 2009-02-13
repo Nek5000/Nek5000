@@ -1416,7 +1416,7 @@ c-----------------------------------------------------------------------
 
       character*6  six,str
       save         six
-      data         six / "??????" /
+      data         six / "\?\?\?\?\?\?" /
 
 
       character*1 slash,dot

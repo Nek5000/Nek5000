@@ -296,7 +296,7 @@ c     check for zero steps
          nsteps=0
          call userchk
       else
-#ifdef TIMER
+#ifndef NOTIMER
          if(nid.eq.0) write(6,*) 'runtime statistics:'
          call opcount(3)
          call timeout

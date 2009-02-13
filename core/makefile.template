@@ -3,6 +3,8 @@ J:=$S/jl
 J2:=$J/../jl2
 IFMPI= 
 IFAMG= 
+IFMOAB=
+MOAB_DIR=
 F77=
 CC=
 P=
@@ -19,7 +21,7 @@ else
 endif
 
 ifeq ($(IFMOAB),true)
-include $(IMESH_DIR)/lib/iMesh-Defs.inc
+include $(MOAB_DIR)/lib/iMesh-Defs.inc
 endif
 ################################################################################
 #
@@ -129,7 +131,7 @@ ssygv.o     	:$S/ssygv.f;     		$(F77) -c $(FL0i4) $S/ssygv.f
 blas.o	   	:$S/blas.f;			$(F77) -c $(FL0i4) $S/blas.f
 ################################################################################
 prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
-postpro.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/postpro.f
+postpro.o	:$S/postpro.f;			$(F77) -c $(FL2) $S/postpro.f
 connect1.o	:$S/connect1.f;			$(F77) -c $(FL2) $S/connect1.f
 connect2.o	:$S/connect2.f;			$(F77) -c $(FL2) $S/connect2.f
 edgec.o		:$S/edgec.f;			$(F77) -c $(FL2) $S/edgec.f
@@ -191,8 +193,8 @@ mat2.o		:$S/mat2.f;			$(F77) -c $(FL4) $S/mat2.f
 ################################################################################
 #moab stuff
 ################################################################################
-moab.o          :$S/moab.f;       $(F77) -c $(FL2) $(IMESH_FCFLAGS) $(IMESH_INCLUDES) $< -o $@
-imeshutil.o     :$S/imeshutil.f;  $(F77) -c $(FL2) $(IMESH_FCFLAGS) $(IMESH_INCLUDES) $< -o $@
+moab.o          :$S/moab.f;       $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
+imeshutil.o     :$S/imeshutil.f;  $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 
 ################################################################################
 #dual mode modules

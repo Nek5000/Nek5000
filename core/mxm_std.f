@@ -14,7 +14,7 @@ c
       include 'TOTAL'
       include 'CTIMER'
 c
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -31,7 +31,7 @@ c
 c
       call mxmf2(a,n1,b,n2,c,n3)  ! In some cases, this is faster.
 c
-#ifdef TIMER
+#ifndef NOTIMER
       tmxmf = tmxmf + (dnekclock()-etime1)
 #endif
 

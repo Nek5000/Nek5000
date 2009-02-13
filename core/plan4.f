@@ -46,7 +46,7 @@ c
 
 C     first, compute pressure
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
       npres=icalld
@@ -65,7 +65,7 @@ C
      $                     ,approx,napprox,binvm1)
       CALL ADD2    (PR,DPR,NTOT1)
       CALL ZAVER1  (PR)
-#ifdef TIMER
+#ifndef NOTIMER
       tpres=tpres+(dnekclock()-etime1)
 #endif
 

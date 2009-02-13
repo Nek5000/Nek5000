@@ -3,7 +3,7 @@ c-----------------------------------------------------------------------
       real a(1),b(1)
       include 'OPCTR'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       real a(1),b(1),c(1)
       include 'OPCTR'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
       real a(1),b(1)
       include 'OPCTR'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -76,7 +76,7 @@ c-----------------------------------------------------------------------
       real a(1),b(1),c(1)
       include 'OPCTR'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
       real a(1),b(1),c(1)
       include 'OPCTR'
 
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -150,7 +150,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -175,7 +175,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -200,7 +200,7 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -224,7 +224,7 @@ C
       include 'OPCTR'
       include 'PARALLEL'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -251,7 +251,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'PARALLEL'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -281,7 +281,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -313,7 +313,7 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
