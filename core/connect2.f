@@ -23,61 +23,65 @@ C     Read parameters and logical flags
 C     Read Mesh Data and Group ID
       read(9,*)  ! xfac,yfac,xzero,yzero
       read(9,*)
-      read(9,*)  nelgs,ndim,nelgv
-      nelgt = abs(nelgs)
-
-      if (nid.eq.0) then
-         write(6,22) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,22) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 22      format(1X,A,4I9)
-         write(6,*) ' '
+      if (ifmoab) then
+         read(9,*) 
+      else
+         read(9,*)  nelgs,ndim,nelgv
+         nelgt = abs(nelgs)
       endif
 
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
 c
-      call chk_nel  ! make certain sufficient array sizes
-
-      if(nid.eq.0) write(6,*) 'read .map file'
-      call mapelpr  ! read .map file, est. gllnid, etc.
-      if(nid.eq.0) then
-        write(6,*) 'done :: read .map file'
-        write(6,*) ' '
-      endif
-
-      if (nelgs.lt.0) then
-
-         ! new binary reader (nid.eq.0 reads the re2 file)
-         ! and sends the data to the other processors
-         call bin_rd1
-
+      if (ifmoab) then
+#ifdef MOAB
+        call moab_dat
+#else
+        if(nid.eq.0) write(6,*)
+     &     'ABORT: this version was not compiled with moab support!'
+        call exitt
+#endif
       else
+        call chk_nel  ! make certain sufficient array sizes
+        if(nid.eq.0) write(6,*) 'read .map file'
+        call mapelpr  ! read .map file, est. gllnid, etc.i
+        if(nid.eq.0) then
+          write(6,*) 'done :: read .map file'
+          write(6,*) ' '
+        endif
+
+        if (nelgs.lt.0) then
+           ! new binary reader (nid.eq.0 reads the re2 file)
+           ! and sends the data to the other processors
+           call bin_rd1
+        else
 
 #ifndef DEBUG
-         if(nid.eq.0) write(6,*) 
-     &      'ABORT: ASCII no longer supported, use .re2 file!'
-         call exitt
+           if(nid.eq.0) write(6,*) 
+     &        'ABORT: ASCII no longer supported, use .re2 file!'
+           call exitt
 #endif
 
-         maxrd = 32               ! max # procs to read at once
-         mread = (np-1)/maxrd+1   ! mod param
-         iread = 0                ! mod param
-         x     = 0
-         do i=0,np-1,maxrd
-            call gsync()
-            if (mod(nid,mread).eq.iread) then
-               if (ifgtp) then
-                  call genbox
-               else
-                  call rdmesh
-                  call rdcurve !  Curved side data
-                  call rdbdry  !  Boundary Conditions
-               endif
-            endif
-            iread = iread + 1
-         enddo
+           maxrd = 32               ! max # procs to read at once
+           mread = (np-1)/maxrd+1   ! mod param
+           iread = 0                ! mod param
+           x     = 0
+           do i=0,np-1,maxrd
+              call gsync()
+              if (mod(nid,mread).eq.iread) then
+                 if (ifgtp) then
+                    call genbox
+                 else
+                    call rdmesh
+                    call rdcurve !  Curved side data
+                    call rdbdry  !  Boundary Conditions
+                 endif
+              endif
+              iread = iread + 1
+           enddo
 
+        endif
       endif
 
 C     Read Initial Conditions / Drive Force
@@ -104,7 +108,14 @@ C
         write(6,*) 'done :: read .rea file'
         write(6,*) ' '
       endif
-C
+
+      if (nid.eq.0) then
+         write(6,22) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,22) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+ 22      format(1X,A,4I9)
+         write(6,*) ' '
+      endif
+
       return
       END
 c-----------------------------------------------------------------------
@@ -142,6 +153,7 @@ C
          READ(9,*,ERR=400)PARAM(I)
    20 CONTINUE
 
+      ifuservp = .false.
       if (param(30).gt.0) ifuservp = .true.
 c
       NPSCAL=INT(PARAM(23))
