@@ -246,7 +246,7 @@ c
       if (vxmax.eq.0.0) call perturb(vx,1,small)
       if (vymax.eq.0.0) call perturb(vy,1,small)
       if (vzmax.eq.0.0) call perturb(vz,1,small)
-      if (prmax.eq.0.0) call perturb(pr,1,small)
+      if (prmax.eq.0.0.and.ifsplit) call perturb(pr,1,small)
       if (ttmax.eq.0.0) call perturb(t ,2,small)
 c
       do i=1,NPSCAL
@@ -258,25 +258,16 @@ c
       if(ifflow) then
          ifield = 1
          call opdssum(vx,vy,vz)
-         call col2 (vx,vmult,ntotv)
-         call col2 (vy,vmult,ntotv)
-         call col2 (vz,vmult,ntotv)
+         call opcolv (vx,vy,vz,vmult)
          if (ifsplit) call dsavg(pr)  ! continuous pressure
       endif
 
       if (ifmhd) then
          ifield = ifldmhd
          call opdssum(bx,by,bz)
-         call col2 (bx,vmult,ntotv)
-         call col2 (by,vmult,ntotv)
-         call col2 (bz,vmult,ntotv)
+         call opcolv (bx,by,bz,vmult)
       endif
-c
-      if (ifsplit) then
-         call dssum(pr,nx1,ny1,nz1)
-         call col2 (pr,vmult,ntotv)
-      endif
-c
+
       if (ifheat) then
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
@@ -295,9 +286,7 @@ c
          do jp=1,npert
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
-            call col2 (vxp(1,jp),vmult,ntotv)
-            call col2 (vyp(1,jp),vmult,ntotv)
-            call col2 (vzp(1,jp),vmult,ntotv)
+            call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
             ifield = 2
             call dssum(tp(1,1,jp),nx1,ny1,nz1)
             call col2 (tp(1,1,jp),tmult,ntotv)
@@ -875,7 +864,7 @@ C
             do 200 ieg=1,nelrr
                ifok = .false.
                IF (NID.EQ.0) THEN
-                 IF (MOD(IEG,1000).EQ.1) WRITE(6,*) 'Reading',IEG
+                 IF (MOD(IEG,10000).EQ.1) WRITE(6,*) 'Reading',IEG
                  IF (iffmat) THEN
                     READ(91,*,ERR=1500,END=1500)
      $              ((tdump(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
@@ -1235,10 +1224,8 @@ C
 C     If no fields were explicitly specified, assume getting all fields. 
 C
       IF (IFDEFT) THEN
-         IF (IFXYO) THEN
-            IFGETX=.TRUE.
-            IF (IF3D) IFGETZ=.TRUE.
-         ENDIF
+         IFGETX=.TRUE.
+         IF (IF3D) IFGETZ=.TRUE.
          IFANYC=.FALSE.
          DO 400 I=1,NFIELD
             IF (IFADVC(I)) IFANYC=.TRUE.
