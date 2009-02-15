@@ -50,21 +50,8 @@ C
 C
 C     Read .rea file (preprocssor data)
 C
-      ifmoab = .false.   ! for now, at least.
-
-      if (ifmoab) then
-#ifdef MOAB
-         call moab_dat
-#else
-         if(nid.eq.0) write(6,*) 
-     &     'ABORT: this version was not compiled with moab support!'
-         call exitt
-#endif
-      else
-         call readat  ! Read reaprocessor map, followed by data.
-      endif
+      call readat  ! Read reaprocessor map, followed by data.
       if (nid.eq.0) write(6,*) 'readat time',dnekclock()-t0,' seconds'
-
 
       call setvar  ! initialize some variables
 
@@ -198,7 +185,6 @@ C--------------------------------------------------------------------------
 
       DO ISTEP=1,NSTEPS
          call nek_advance
-         if(istep.gt.iostep .and. .not. ifmgrid) ifxyo = .false. 
          call userchk
          call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001

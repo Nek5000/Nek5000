@@ -37,11 +37,9 @@ c-----------------------------------------------------------------------
       call nekMOAB_proc_map()
 
       nelgt = nelgv
-      call mapelpr()
+      call chk_nel()
 
-c     Read .rea file
-      open (unit=9,file=reafle,status='old')
-      call rdparam !     Parameters
+      call mapelpr()
 
       call moab_geometry   (xm1,ym1,zm1)  ! fill xm1,ym1,zm1
       call xml2xc                         ! fill xc,yc,zc
@@ -60,14 +58,6 @@ c      call nekMOAB_loadMaterialSets
       enddo
       call exitt
 #endif
-
-c     remaining nek stuff
-      call rdicdf  !     Initial Conditions / Drive Force
-      call rdmatp  !     Materials property data
-      call rdhist  !     History data
-      call rdout   !     Output specs
-      call rdobj   !     Objects
-      close(9)     !     End of input data, close read file.
 
       return
       end
@@ -167,7 +157,6 @@ c     Who knows if this will be true with data coming from imesh.
       IMESH_ASSERT(ierr, imesh)
 
       NELGV = hexSize
-      write(6,*) nid,' hexsize:',hexsize,imesh
 
       if(nelgv .eq. 0) then
          write(6,*) 'nelgv is zero in nekmoab_proc_map'
@@ -203,11 +192,6 @@ c     Who knows if this will be true with data coming from imesh.
       end do
 
       call igop(GLLNID, LELGWORK, '+  ', NELGV)
-
-
-c      print *, 'NELGV:', NELGV
-c      print *, 'GLLNID:'
-c      print *,  GLLNID(:NELGV)
 
       return
       end 
@@ -396,7 +380,7 @@ c           write(6,*)  i,j,k,globalid,vertex(k,globalid),' id'
       n     = nelgt*ncrnr
       ivmin = iglmin(vertex,n)
       ivmax = iglmax(vertex,n)
-      write(6,*) ivmin,ivmax,' ivminA ',nelgt
+c      write(6,*) ivmin,ivmax,' ivminA ',nelgt
 
       npass = n/lwrk + 1
       k     = 1
@@ -409,7 +393,7 @@ c           write(6,*)  i,j,k,globalid,vertex(k,globalid),' id'
    10 continue
       ivmin = iglmin(vertex,n)
       ivmax = iglmax(vertex,n)
-      write(6,*) ivmin,ivmax,' ivmin ',nelgt
+c      write(6,*) ivmin,ivmax,' ivmin ',nelgt
 c     call exitt
 
       return
@@ -723,7 +707,7 @@ c      call rzero(bc,30*lelt*(ldimt+1))
       do e=1,nelt
       do f=1,nface
          cbc(f,e,ifld) = cbi(moabbc(f,e),ifld)
-         write(6,1) e,f,moabbc(f,e),cbc(f,e,ifld)
+c         write(6,1) e,f,moabbc(f,e),cbc(f,e,ifld)
       enddo
       enddo
    1  format(3i8,2x,a3,'  moab cbc')
