@@ -4,8 +4,11 @@
 bin_nek_tools="$HOME/bin"
 
 # compilers
-CC=icc
-F77=ifort
+CC="pgcc"
+F77="pgf77"
+
+
+
 
 
 
@@ -33,6 +36,11 @@ F77=ifort
 
 
 ##################################
+
+if [ $# -eq 0 ]; then
+   echo "Usage: maketools [clean|all|tool(s)]"
+   exit 1
+fi
 
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
@@ -88,20 +96,18 @@ export CC
 export bin_nek_tools
 export US
 export R8
+
+LIST=`ls -Cd */ | sed 's:\/::g'`
+MODULES=`echo $LIST`
 export MODULES
 
-
-MODULES="genbox genmap n2to3 nekmerge postnek prenek reatore2"
-
-if [ $# -eq 0 ]; then
-   echo "Usage: maketools [clean] [tool ...]"
-   echo "       e.g. maketools genmap reatore2" 
-   exit 1
+if [ "$1" == "clean" ]; then
+   make clean
 else
-   if [ "$1" == "clean" ]; then
-      make clean
-   else
+   if [ "$1" != "all" ]; then
       MODULES=$*
-      make -f makefile
    fi
+   export MODULES
+   make 
 fi
+

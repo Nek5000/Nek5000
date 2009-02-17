@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 all:
 	 @for i in $(MODULES) ; do               \
-      if test -d $${i} ; then               \
+      if test -f $${i}/makefile ; then      \
         echo "----------------------";      \
         echo "Make $${i}..." ;              \
         echo "----------------------";      \
@@ -24,22 +24,12 @@ all:
         echo "" ;                           \
       fi ;                                  \
     done ;									        \
-	echo "##############################################################";\
-	echo "  TOOLS were installed in ${bin_nek_tools}                    ";\
-	echo "##############################################################";
 
 clean:
-	@for i in $(MODULES) ; do         \
-      if test -d $${i} ;  then       \
+	@for i in $(MODULES) ; do                \
+      if test -f $${i}/makefile ;  then     \
         cd $${i} ;                   \
         ${MAKE} clean ;              \
         cd .. ;                      \
       fi ;                           \
-    done ;                           \
- 			 $(bin_nek_tools)/prex      \
- 			 $(bin_nek_tools)/postnek   \
- 			 $(bin_nek_tools)/nekmerge  \
- 			 $(bin_nek_tools)/reatore2  \
- 			 $(bin_nek_tools)/genbox    \
-  			 $(bin_nek_tools)/genmap    \
-			 $(bin_nek_tools)/n2to3;    \
+    done ;                           

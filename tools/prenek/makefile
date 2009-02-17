@@ -23,7 +23,6 @@ prex:	$(NOBJS)
 
 clean:
 	'rm' *.o
-	'rm' prex
 
 plot.o		: plot.f 	basics.inc	; $(F77) -c $(FLAGS) plot.f
 blas.o		: blas.f 	basics.inc	; $(F77) -c $(FLAGS) blas.f
