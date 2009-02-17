@@ -13,6 +13,8 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'ZPER'
+ 
+      logical ifbswap,ifre2
 C
       if(nid.eq.0) write(6,*) 'read .rea file'
       OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
@@ -30,6 +32,9 @@ C     Read Mesh Data and Group ID
          nelgt = abs(nelgs)
       endif
 
+      ifre2 = .false.
+      if(nelgs.lt.0) ifre2 = .true.
+
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
@@ -43,6 +48,7 @@ c
         call exitt
 #endif
       else
+        if(ifre2) call open_bin_file(ifbswap)
         call chk_nel  ! make certain sufficient array sizes
         if(nid.eq.0) write(6,*) 'read .map file'
         call mapelpr  ! read .map file, est. gllnid, etc.i
@@ -51,10 +57,10 @@ c
           write(6,*) ' '
         endif
 
-        if (nelgs.lt.0) then
+        if (ifre2) then
            ! new binary reader (nid.eq.0 reads the re2 file)
            ! and sends the data to the other processors
-           call bin_rd1
+           call bin_rd1(ifbswap)
         else
 
 c#ifndef DEBUG
@@ -389,8 +395,7 @@ C
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
          write(6,*) 
-     $   'ABORT: lgmres too small (min 5), Change SIZEu'
-         call exitt
+     $   'WARNING: lgmres seems to be quite low!'
       endif
 
       if (ifsplit) then
@@ -1870,7 +1875,7 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine bin_rd1  ! read mesh, curve, and bc info
+      subroutine bin_rd1(ifbswap)  ! read mesh, curve, and bc info
 
       include 'SIZE'
       include 'TOTAL'
@@ -1894,11 +1899,8 @@ c     If p32 = 0.1, there will be no bcs read in
 c
       if (param(32).gt.0) nfldt = ibc + param(32)-1
 
-
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
-
-      call open_bin_file (ifbswap)
 
       if (nid.eq.0) write(6,*)    '  read mesh '
       call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader

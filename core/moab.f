@@ -30,8 +30,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      common /mbc/ moabbc(6,lelt)
+      common /mbc/ moabbc(6,lelg)
       integer moabbc
+
+      if(np.gt.1) then
+        write(6,*) 'ABORT: no parallel support for MOAB!'
+        call exitt
+      endif
 
       call nekMOAB_load
       call nekMOAB_proc_map()
@@ -196,64 +201,64 @@ c     Who knows if this will be true with data coming from imesh.
       return
       end 
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_loadMaterialSets
-      include 'SIZE'
-
-#include "iMesh_f.h"
-#include "NEKMOAB"
-
-      !store material properties here
-      common /cmatl/ matl(lelt)
-      integer matl
-      
-c very similar to the bc-loading code
-
-      IMESH_HANDLE entSetHandles(*)
-      pointer (entSetHandlesPointer, entSetHandles)
-      integer entSetAllocated, entSetSize
-
-      IMESH_HANDLE matSetTag
-      integer ierr, i, tagIntData
-
-c      matl = -1
-
-      call iMesh_getTagHandle(%VAL(imesh),
-     $     "MATERIAL_SET", !/*in*/ const char* tag_name,
-     $     matSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
-     $     ierr)
-      IMESH_ASSERT(ierr, imesh)
-
-      entSetHandlesPointer = IMESH_NULL
-      entSetAllocated      = 0
-      call iMesh_getEntSets(%VAL(imesh),
-     $     %VAL(IMESH_NULL),     !/*in*/ const iBase_EntitySetHandle entity_set_handle,
-     $     %VAL(1),              !/*in*/ const int num_hops,
-     $     entSetHandlesPointer, !/*out*/ iBase_EntitySetHandle** contained_set_handles,
-     $     entSetAllocated,      !/*out*/ int* contained_set_handles_allocated,
-     $     entSetSize,           !/*out*/ int* contained_set_handles_size,
-     $     ierr)                 !/*out*/ int *err);
-      IMESH_ASSERT(ierr, imesh)
-
-      do i=1, entSetSize
-         call iMesh_getIntData(%VAL(imesh), !iMesh_Instance instance,
-     $        %VAL(entSetHandles(i)), !/*in*/ const iBase_EntityHandle entity_handle,
-     $        %VAL(matSetTag), !/*in*/ const iBase_TagHandle tag_handle,
-     $        tagIntData,       !/*out*/ int *out_data,
-     $        ierr)             !/*out*/ int *err);
-
-         if (ierr .eq. 0) then !tag was defined
-            call nekMOAB_matSet2(matl, lelt, 
-     $           entSetHandles(i), tagIntData)
-         endif
-      enddo
-
-      call free(entSetHandlesPointer)
-
-c      print *, 'matl'
-c      print *, matl
-
-      return
-      end 
+c      subroutine nekMOAB_loadMaterialSets
+c      include 'SIZE'
+c
+c#include "iMesh_f.h"
+c#include "NEKMOAB"
+c
+c      !store material properties here
+c      common /cmatl/ matl(lelg)
+c      integer matl
+c      
+cc very similar to the bc-loading code
+c
+c      IMESH_HANDLE entSetHandles(*)
+c      pointer (entSetHandlesPointer, entSetHandles)
+c      integer entSetAllocated, entSetSize
+c
+c      IMESH_HANDLE matSetTag
+c      integer ierr, i, tagIntData
+c
+cc      matl = -1
+c
+c      call iMesh_getTagHandle(%VAL(imesh),
+c     $     "MATERIAL_SET", !/*in*/ const char* tag_name,
+c     $     matSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
+c     $     ierr)
+c      IMESH_ASSERT(ierr, imesh)
+c
+c      entSetHandlesPointer = IMESH_NULL
+c      entSetAllocated      = 0
+c      call iMesh_getEntSets(%VAL(imesh),
+c     $     %VAL(IMESH_NULL),     !/*in*/ const iBase_EntitySetHandle entity_set_handle,
+c     $     %VAL(1),              !/*in*/ const int num_hops,
+c     $     entSetHandlesPointer, !/*out*/ iBase_EntitySetHandle** contained_set_handles,
+c     $     entSetAllocated,      !/*out*/ int* contained_set_handles_allocated,
+c     $     entSetSize,           !/*out*/ int* contained_set_handles_size,
+c     $     ierr)                 !/*out*/ int *err);
+c      IMESH_ASSERT(ierr, imesh)
+c
+c      do i=1, entSetSize
+c         call iMesh_getIntData(%VAL(imesh), !iMesh_Instance instance,
+c     $        %VAL(entSetHandles(i)), !/*in*/ const iBase_EntityHandle entity_handle,
+c     $        %VAL(matSetTag), !/*in*/ const iBase_TagHandle tag_handle,
+c     $        tagIntData,       !/*out*/ int *out_data,
+c     $        ierr)             !/*out*/ int *err);
+c
+c         if (ierr .eq. 0) then !tag was defined
+c            call nekMOAB_matSet2(matl, lelt, 
+c     $           entSetHandles(i), tagIntData)
+c         endif
+c      enddo
+c
+c      call free(entSetHandlesPointer)
+c
+cc      print *, 'matl'
+cc      print *, matl
+c
+c      return
+c      end 
 c-----------------------------------------------------------------------
       subroutine nekMOAB_matSet2(matl, lelt, setHandle, setId)
 
@@ -264,7 +269,7 @@ c     Internal function, don't call directly
 #include "NEKMOAB"
 
       integer lelt
-      integer matl(lelt)
+      integer matl(1)
 
       IMESH_HANDLE setHandle
       integer setId !coming from cubit
@@ -336,7 +341,6 @@ c     ncrnr: int, number of corner vertices per element (should be 8)
 
       vtxHandlesPointer = %LOC(vtxHandlesData)
       vtxHandlesAlloc = TWENTYSEVEN
-
 
       call get_l2c_8(l2c)  ! get cubit-to-lexicographical ordering
 
@@ -701,7 +705,7 @@ c
 
       call set_char_bc(cbi(1,ifld),ifld)
 
-c      call rzero(bc,30*lelt*(ldimt+1))
+      call rzero(bc,5*6*lelt*(ldimt1+1))
 
       nface = 2*ndim
       do e=1,nelt
@@ -774,6 +778,8 @@ c-----------------------------------------------------------------------
          enddo
          enddo
          enddo
+
+
       else  ! 2D
          do e=1,nelt
          do j=1,ny1,ny1-1
@@ -785,6 +791,30 @@ c-----------------------------------------------------------------------
          enddo
          enddo
       endif
+
+      do e=1,nelt ! flip corners back to pre-proc notation
+         dtmp = xc(3,e)
+         xc(3,e) = xc(4,e)
+         xc(4,e) = dtmp
+         dtmp = yc(3,e)
+         yc(3,e) = yc(4,e)
+         yc(4,e) = dtmp
+         dtmp = zc(3,e)
+         zc(3,e) = zc(4,e)
+         zc(4,e) = dtmp
+
+         if(if3d) then
+           dtmp = xc(7,e)
+           xc(7,e) = xc(8,e)
+           xc(8,e) = dtmp
+           dtmp = yc(7,e)
+           yc(7,e) = yc(8,e)
+           yc(8,e) = dtmp
+           dtmp = zc(7,e)
+           zc(7,e) = zc(8,e)
+           zc(8,e) = dtmp
+         endif
+      enddo
 
       return
       end
