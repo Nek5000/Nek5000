@@ -1060,11 +1060,16 @@ c
          matmod = 0
          call hmhzsf  ('NOMG',o1,o2,o3,i1,i2,i3,h1,h2,
      $                  m1,m2,m3,vmult,tolh,nmxh,matmod)
-      else
+      elseif (ifield.eq.1) then
          call hmholtz ('VELX',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxh,1)
          call hmholtz ('VELY',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxh,2)
          if (ndim.eq.3) 
      $   call hmholtz ('VELZ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxh,3)
+      elseif (ifield.eq.ifldmhd) then
+         call hmholtz (' BX ',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxh,1)
+         call hmholtz (' BY ',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxh,2)
+         if (ndim.eq.3) 
+     $   call hmholtz (' BZ ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxh,3)
       endif
 c
       return
