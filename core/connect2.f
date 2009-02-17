@@ -57,11 +57,11 @@ c
            call bin_rd1
         else
 
-#ifndef DEBUG
-           if(nid.eq.0) write(6,*) 
-     &        'ABORT: ASCII no longer supported, use .re2 file!'
-           call exitt
-#endif
+c#ifndef DEBUG
+c           if(nid.eq.0) write(6,*) 
+c     &        'ABORT: ASCII no longer supported, use .re2 file!'
+c           call exitt
+c#endif
 
            maxrd = 32               ! max # procs to read at once
            mread = (np-1)/maxrd+1   ! mod param
