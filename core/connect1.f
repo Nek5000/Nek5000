@@ -789,7 +789,6 @@ C
       include 'INPUT'
       include 'SCRCT'
  
-      if (ifmoab) return
       call verrhe
 
       return

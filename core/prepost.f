@@ -284,8 +284,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       p66 = abs(param(66))
       if (p66.eq.6) then
          call mfo_outfld(prefix)
-         if (param(66).gt.0) return
-         p66 = 4
+         call gsync()
+         return
       endif
 
       iprefix = i_find_prefix(prefix,99)
@@ -1416,7 +1416,7 @@ c-----------------------------------------------------------------------
 
       character*6  six,str
       save         six
-      data         six / "\?\?\?\?\?\?" /
+      data         six / "??????" /
 
 
       character*1 slash,dot
