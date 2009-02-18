@@ -1155,9 +1155,11 @@ C
       real min_crsl, max_crsl, avg_crsl
 c
       real dhc, dwork
-C
-c
-c
+
+      tstop=dnekclock()
+      ttotal=tstop-etimes
+      tttstp=tstop-etims0
+
       min_vdss = tvdss
       call gop(min_vdss,wwork,'m  ',1)
       max_vdss = tvdss
@@ -1192,6 +1194,7 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nid.eq.0) then
+         write(6,*) 'total time',ttotal,tttstp
          pcopy=tcopy/tttstp
          write(6,*) 'copy time',ncopy,tcopy,pcopy
          pmxmf=tmxmf/tttstp
