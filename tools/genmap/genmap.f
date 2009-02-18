@@ -42,7 +42,7 @@ c     read nekton .rea file and make a .map file
      $               , order(lpts) , elist(lpts)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
-     $               , w5   (lpts)
+     $               , w5   (lpts) , w6   (lelm)
       integer     w13(3*lpts)
       equivalence (w1,w13)
 
@@ -85,7 +85,7 @@ c     call exitt(1)
 
 c     Recursive bisection of element graph; reverse-order interface points
       call rec_bisect (elist,pmap,order,mo,cell,nv,nelv,ndim
-     $                                              ,w1,w2,w3,w4,w5)
+     $                                           ,w1,w2,w3,w4,w5)
 
 c     Clean up 
       call isort     (elist,w1,nelv)
@@ -97,7 +97,7 @@ c     Clean up
          call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
 
          call greedy  (elist,pmap,cell,nv,nelv,nelt,ndim
-     $                                              ,w1,w2,w3,w4,w5)
+     $                                          ,w1,w2,w3,w4,w5,w6)
 
 c        Clean up 
          call isort     (elist,w1,nelt)
@@ -3304,7 +3304,7 @@ c     enddo
       end
 c-----------------------------------------------------------------------
       subroutine greedy (elist,pmap,cell,nv,nelv,nelt,ndim
-     $                                              ,ip,ep,ic,jc,ne)
+     $                                           ,ip,ep,ic,jc,ne,pb)
 c
 c     Distribute elements e > nelv to processors p \in [1,pmax]
 c
@@ -3326,11 +3326,12 @@ c
      $      , ip(0:1),ep(1)          ! These are 
      $      , ic(1),jc(1)            ! work arrays 
      $      , ne(0:nelv)             ! upon input 
+     $      , pb(1) 
 
-      integer e,p,pnext,pmax
+      integer e,pp,p,pnext,pmax
 
 
-      pmax = iglmax(pmap,nelv)  ! pmap is sorted by e
+      pmax = iglmax(pmap,nelv)  ! pmap is sorted by e, pmap is 1's based
       call izero(ne,pmax+1)
       do e=1,nelv
          ne(pmap(e)) = ne(pmap(e)) + 1
@@ -3355,7 +3356,9 @@ c
 c     First loop, use greedy to fill underloaded processors
 c
       call izero(ne,pmax+1)
-      do p=1,pmax
+      call breadth_first_fill(pb,pmax)
+      do pp=1,pmax
+       p = pb(pp)+1
        if (ne(p).lt.nepf_max) then  !  [ip,ep: csr proc-el list]
           j0=ip(p)
           j1=ip(p+1)-1
@@ -3383,7 +3386,8 @@ c
 c     Repeat first loop, using _anything_ to fill underloaded processors
 c
       ke_min = nelv
-      do p=1,pmax
+      do pp=1,pmax
+       p = pb(pp)+1
        if (ne(p).lt.nepf_max) then
           do ke=ke_min+1,nelt
              if (pmap(ke).le.0) then
@@ -3408,8 +3412,9 @@ c
          if (pmap(e).le.0) then
             pnext = pnext+1
             if (pnext.gt.pmax) pnext = 1
-            pmap(e) = pnext
-            ne  (pnext) = ne(pnext) + 1
+            p = pb(pnext)+1
+            pmap(e) = p
+            ne  (p) = ne(p) + 1
          endif
       enddo
 
@@ -3629,6 +3634,30 @@ c-----------------------------------------------------------------------
       enddo
       enddo
     1 format(i8,i4,2x,a3,5f8.3,1x,a6)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine breadth_first_fill(p,np)
+      integer p(0:1)
+      integer start,stride,count
+
+      kmax     = log2(np) + 1
+      count    = 0
+      p(count) = 0
+      stride   = np
+
+      do k=1,kmax
+         next = stride/2
+         do i=1,np
+            count    = count+1
+            p(count) = next
+            next     = next + stride
+            if (next.ge.np) goto 10
+         enddo
+   10    continue
+         stride = stride/2
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
