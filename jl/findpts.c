@@ -105,6 +105,8 @@
 #define findpts          FORTRAN_NAME(findpts,FINDPTS)
 #define findpts_weights  FORTRAN_NAME(findpts_weights,FINDPTS_WEIGHTS)
 #define findpts_eval     FORTRAN_NAME(findpts_eval,FINDPTS_EVAL)
+#define ftuple_list_sort FORTRAN_NAME(ftuple_list_sort,FTUPLE_LIST_SORT)
+
 
 static pfindpt_data **handle=0;
 static unsigned n=0, max=0;
@@ -152,6 +154,18 @@ void findpts_transfer(const sint *h, sint *n, const sint *max, sint vi[],
   pfindpt_transfer(findpts_handle(*h),&tl,0);
   *n = tl.n;
 }
+
+
+void ftuple_list_sort(sint *n, const uint *k, sint vi[], 
+                      const sint *mi,real vr[], const sint *mr)
+{
+  unsigned key = *k-1;   // 0-based in C
+  buffer buf;
+  buffer_init(&buf,65536);   /* will be increased automatically if needed */
+  tuple_list tl = {*mi,0,*mr,*n,0,vi,0,vr};
+  tuple_list_sort(&tl,key,&buf);
+}
+
 
 #define I_EL   1
 void findpts(const sint *h, const sint *n, sint vi[], const sint *mi,

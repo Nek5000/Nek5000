@@ -127,8 +127,10 @@ static void hash_size_calc(hash_data *h, unsigned ndim, const real *bnd,
 
   h->n = iceil(pow(crystal->num,1./ndim));
   for(d=0;d<ndim;++d) h->fac[d] = h->n/(h->bnd[d*2+1] - h->bnd[d*2]);
+/* 
   h->fac[1] = h->n/(h->bnd[3] - h->bnd[2]);
   h->fac[2] = h->n/(h->bnd[5] - h->bnd[4]);
+*/  
   nn=(uint)h->n*h->n; if(ndim==3) nn*=h->n;
   h->ncell = (nn-1)/crystal->num+1;
   if(crystal->id+(h->ncell-1)*crystal->num>=nn) --h->ncell;

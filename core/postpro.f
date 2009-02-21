@@ -22,8 +22,6 @@
 
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine lambda2(l2)
 c
@@ -80,8 +78,6 @@ c           eigenvalues in ascending order.
 
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine find_lam3(lam2,lam,aa,w,ndim,ierr)
       real aa(3,3),lam(3),w(3,3),lam2
@@ -153,8 +149,6 @@ c
 c
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine quadratic(x1,x2,a,b,c,ierr)
 c
@@ -203,8 +197,6 @@ c
 c
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine cubic(xo,ai1,ai2,ai3,ierr)
       real xo(3),ai1,ai2,ai3
@@ -264,8 +256,6 @@ c
 
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine comp_gije(gije,u,v,w,e)
 c
@@ -347,8 +337,6 @@ c
 
       return
       end
-
-
 c-----------------------------------------------------------------------
       subroutine filter_s(scalar,wght,ncut,name5) ! filter scalar field 
 
@@ -392,5 +380,132 @@ c-----------------------------------------------------------------------
 
       return
       end
-
 c-----------------------------------------------------------------------
+      subroutine intpts_setup(bb_t)
+c IN:
+c bb_t ... bounding box tolerance (relative to the element size)
+
+      INCLUDE 'SIZE'
+      INCLUDE 'GEOM'
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+      common /intp/   icrh,ipth,noff,lxyz,idim
+
+      lxyz = lx1*ly1*lz1
+      noff = lxyz*lelt 
+      idim = ndim
+c
+      call crystal_new(icrh,nekcomm,npp)
+      call findpts_new(ipth,icrh,ndim,xm1,ym1,zm1,nx1,ny1,nz1,nelt,bb_t)
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine intpts(field,nfld,iTupleList,mi,rTupleList,mr,n,nmax)
+c IN:
+c field   ... field(s) to interpolate
+c nfld    ... number of fields
+c n       ... local number of interpolation points
+c nmax    ... maximum number of local points
+c             (nmax=[n,gsum(n)])
+c
+c IN/OUT:
+c Each interpolation point i (i=1,...,n) comes with a tuple list 
+c TYPE: integer iTupleList(4,nmax), real rTupleList(1+2*ndim+nfld)
+c
+c iTupleList  ... integer tuple list
+c    output   vi(1,i) = processor number (0 to np-1)   
+c    output   vi(2,i) = local element number (1 to nelt)
+c    output   vi(3,i) = return code (-1, 0, 1)
+c    output   vi(4,i) = local point id (only internally used)
+c rTupleList  ... real tuple list  
+c    output   vr(1,i)      = distance (from located point to given point)
+c    input    vr(2,i)      = x  
+c    input    vr(3,i)      = y  
+c    input    vr(4,i)      = z  (only when ndim=3)
+c    output   vr(ndim+2,i) = r   
+c    output   vr(ndim+3,i) = s   
+c    output   vr(ndim+4,i) = t  (only when ndim=3)
+c    output   vr(1+2*ndim+ifld,i) = interpolated field value
+c                                   (ifld=1,nfld)
+c
+      real    field (*)
+      integer iTupleList (mi,1)
+      real    rTupleList (mr,1)
+
+      common /intp/ icrh,ipth,noff,lxyz,idim
+
+      if(mi.lt.4 .or. mr.lt.1+2*idim+nfld) then
+        write(6,*) 'ABORT: intpts() invalid tuple size mi/mir', mi, mr
+        call exitt
+      endif
+
+      ! locate points (iel,iproc,r,s,t)
+      iguess = 0 ! no guess
+      call findpts(ipth,n,iTupleList,mi,rTupleList,mr,iguess)
+
+      do in=1,n
+         ! store local id to preserve ordering
+         iTupleList(4,in) = in 
+         ! check return code 
+         if(iTupleList(3,in).eq.1) then
+           dist = rTupleList(1,in)
+           write(6,'(A,4E15.7)') 
+     &       'WARNING: point on boundary or outside the mesh xy[z]d: ',
+     &       (rTupleList(1+k,in),k=1,idim),dist
+         elseif(iTupleList(3,in).eq.-1) then
+           write(6,'(A,3E15.7)') 
+     &       'WARNING: point not within mesh xy[z]: !',
+     &       (rTupleList(1+k,in),k=1,idim)
+         endif
+      enddo
+
+      ! transfer point (tuple list) to the target proc that owns it
+      nin = n 
+      call findpts_transfer(ipth,nin,nmax,iTupleList,mi,rTupleList,mr)
+
+      if(nin.eq.nmax+1) then ! check for error condition
+        write(6,*) 'ABORT: intpts() more local points than nmax.'
+        call exitt
+      endif
+
+      ! every point is local now, do interpolation ...
+      do ifld = 1,nfld
+         do in   = 1,nin
+            iel  = iTupleList(2,in)
+            ioff = (ifld-1)*noff + (iel-1)*lxyz 
+            r    = rTupleList(idim+2,in)
+            s    = rTupleList(idim+3,in)
+            t    = rTupleList(idim+4,in) 
+            call findpts_weights(ipth,r,s,t)
+            call findpts_eval(ipth,rTupleList(1+2*idim+ifld,in),
+     &                        field(ioff+1))
+         enddo
+      enddo
+
+      ! tranfer points back to the source proc
+      ! NOTE: iTupleList(1,:) has the source proc after findpts_transfer()
+      call findpts_transfer(ipth,nin,nmax,iTupleList,mi,rTupleList,mr)
+
+      if(nin.eq.nmax+1) then
+        write(6,*) 'ABORT: intpts() more incoming points than nmax.'
+        call exitt
+      endif
+
+      ! Restore initial tuple list ordering
+      ikey = 4 ! sort index is local point id  
+      call ftuple_list_sort(nin,ikey,iTupleList,mi,rTupleList,mr)
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine intpts_done()
+
+      common /intp/ icrh,ipth,noff,lxyz,idim
+
+      call findpts_done(ipth)
+      call crystal_done(icrh)
+
+      return
+      end
