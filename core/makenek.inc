@@ -4,7 +4,7 @@
 
 # first do some checks ...
 if [ $# -ne 1 ]; then
-  echo "usage: makenek <.usr filename | clean>"
+  echo "usage: makenek [.usr filename|clean]"
   exit 1
 fi
 
@@ -212,7 +212,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
 -e "s/^IFUNDERSCORE[ ]*=.*/IFUNDERSCORE:=$IFUNDERSCORE/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
--e "s:^USR_LIB[ ]*=.*:USR_LIB\:=$USR_LIB:" \
+-e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" $SOURCE_ROOT/makefile.template >.makefile
 
 echo $G | grep '\-g' 1>/dev/null

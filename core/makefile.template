@@ -11,8 +11,11 @@ P=
 G=
 OPT_FLAGS_STD=
 USR=
-USR_LIB=
+USR_LFLAGS=
 IFUNDERSCORE=
+
+JO2 = jl2_
+JO  = jl_
 
 ifeq ($(IFMPI),false)
 	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
@@ -43,18 +46,18 @@ ssygv.o dsygv.o
 # MXM 
 MXM = mxm_std.o 
 #
-# new gather-scatter (Lottes)
-JO2 = jl2_
-GS = $(JO2)gs.o $(JO2)gs_local.o $(JO2)sarray_sort.o $(JO2)sarray_transfer.o \
-$(JO2)crystal.o $(JO2)comm.o $(JO2)sort.o $(JO2)errmem.o
-#
-#
+# JL-core
+JLCORE = $(JO2)gs.o $(JO2)gs_local.o $(JO2)sarray_sort.o \
+$(JO2)sarray_transfer.o \
+$(JO2)crystal.o $(JO2)comm.o $(JO2)sort.o $(JO2)errmem.o \
+$(JO)findpts.o $(JO)pfindpt.o $(JO)findpt.o $(JO)poly.o $(JO)tensor.o \
+$(JO)transfer.o $(JO)errmem.o $(JO)crystal.o $(JO)fcrystal.o $(JO)tuple_list.o \
+$(JO)sort.o
+# coarse grid solver
 ifeq ($(IFAMG),true)
-JO = jl_
-XXT = $(JO)errmem.o $(JO)sort.o $(JO)crystal.o $(JO)fcrystal.o \
-$(JO)tuple_list.o $(JO)transfer.o $(JO)gs.o $(JO)amg.o
+CGS := $(JO)gs.o $(JO)amg.o
 else
-XXT = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
+CGS = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 endif
 #
 COMM_MPI = comm_mpi.o
@@ -70,7 +73,7 @@ ifeq ($(IFMOAB),true)
   MOABO := moab.o imeshutil.o
 endif
 #
-NOBJS = $(CORE) $(MXM) $(GS) $(XXT) $(USR) $(MOABO) $(COMM_MPI) blas.o
+NOBJS = $(CORE) $(MXM) $(JLCORE) $(CGS) $(USR) $(MOABO) $(COMM_MPI) blas.o
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
@@ -94,7 +97,7 @@ cFL2   = $(L2)
 cFL3   = $(L3) 
 cFL4   = $(L4) 
 
-lFLAGS = $(USR_LIB)
+lFLAGS = $(USR_LFLAGS)
 
 ifeq ($(IFMOAB),true)
   lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
@@ -102,13 +105,20 @@ endif
 
 
 ################################################################################
+T = nek5000
 
 all : nek5000
 
 nek5000:	 $(NOBJS) 
 	$(F77) -o nek5000 $G $(NOBJS) $(lFLAGS)
-	size nek5000	
-	echo "I am done"
+	@if test -f "nek5000"; then \
+	size nek5000; \
+	echo -en "\033[1;32;40m" "nek5000 compilation successful!"; \
+	echo -e "\033[0m"; \
+	else \
+	echo -e "\033[1;31;38m" "nek5000 compilation failed!"; \
+	echo -e "\033[0m"; \
+	fi
 ifeq ($(IFMPI),false) 
 	rm -rf $S/mpif.h
 endif

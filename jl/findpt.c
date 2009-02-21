@@ -1597,7 +1597,7 @@ static double opt_findpt_3(opt_data_3 *p, const real *const elx[3],
         dr[d] -= r[d]-1, r[d] = 1, cc[d]=2;
     }
     c = opt_constr_pack_3(cc);
-  } while(r1norm_3(dr[0],dr[1],dr[2]) > 3*EPS);
+  } while(r1norm_3(dr[0],dr[1],dr[2]) > 30*EPS);
   *constr = c;
 # if 0
   printf("opt_findpt_3 converged in %u iterations\n", step);
@@ -1878,7 +1878,7 @@ static double opt_findpt_2(opt_data_2 *p, const real *const elx[2],
         dr[d] -= r[d]-1, r[d] = 1, cc[d]=2;
     }
     c = opt_constr_pack_2(cc);
-  } while(r1norm_2(dr[0],dr[1]) > 2*EPS);
+  } while(r1norm_2(dr[0],dr[1]) > 30*EPS);
   *constr = c;
   return r2norm_2(resid[0],resid[1]);
 }
