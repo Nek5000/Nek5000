@@ -36,7 +36,7 @@ c
 c
       if(.not.iflag) then
          iflag=.true.
-         call uzawa_gmres_split(ml,mu,bm2,bm2inv,nx2*ny2*nz2*nelv)
+         call uzawa_gmres_split0(ml,mu,bm2,bm2inv,nx2*ny2*nz2*nelv)
          norm_fac = 1./sqrt(volvm2)
       endif
 c
@@ -223,6 +223,20 @@ c     call flush_hack
 19999 format(4X,I7,'    U-Pres 1.e-5: ',I6,1p4E13.4)
 c
 c
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine uzawa_gmres_split0(l,u,b,binv,n)
+      integer n
+      real l(n),u(n),b(n),binv(n)
+      integer i
+      do i=1,n
+         l(i)=sqrt(binv(i))
+         u(i)=sqrt(b(i))
+         if(abs(u(i)*l(i)-1.0).gt.1e-13) print *, i, u(i)*l(i)
+      enddo
       return
       end
 
