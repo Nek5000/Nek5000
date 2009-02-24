@@ -2,17 +2,12 @@ c-----------------------------------------------------------------------
       subroutine mxm(a,n1,b,n2,c,n3)
 C
 C     Compute  C = A*B , for contiguously packed matrices A,B, and C.
-C
-C
-C     Compile with -r8 option for 64-bit arithmetic, or convert real
-c     to real*8
 c
       real a(n1,n2),b(n2,n3),c(n1,n3)
 c
       include 'SIZE'
       include 'OPCTR'
       include 'TOTAL'
-      include 'CTIMER'
 c
 #ifndef NOTIMER
       if (isclld.eq.0) then
@@ -25,16 +20,10 @@ c
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-      etime1=dnekclock()
-      tcopy=tcopy+(dnekclock()-etime1)
 #endif
 c
       call mxmf2(a,n1,b,n2,c,n3)  ! In some cases, this is faster.
 c
-#ifndef NOTIMER
-      tmxmf = tmxmf + (dnekclock()-etime1)
-#endif
-
       return
       end
 c-----------------------------------------------------------------------
