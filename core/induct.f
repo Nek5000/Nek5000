@@ -1043,13 +1043,14 @@ C
       return
       end
 c--------------------------------------------------------------------
-      subroutine ophinvm(o1,o2,o3,i1,i2,i3,m1,m2,m3,h1,h2,tolh,nmxh)
+      subroutine ophinvm(o1,o2,o3,i1,i2,i3,m1,m2,m3,h1,h2,tolh,nmxhi)
 c
 c     Ok  = (H1*A+H2*B)-1 * Ik   (implicit)
 c
       include 'SIZE'
       include 'INPUT'
       include 'SOLN'
+      include 'TSTEP'
       real o1(lx1,ly1,lz1,1), o2(lx1,ly1,lz1,1), o3(lx1,ly1,lz1,1)
       real i1(lx1,ly1,lz1,1), i2(lx1,ly1,lz1,1), i3(lx1,ly1,lz1,1)
       real m1(lx1,ly1,lz1,1), m2(lx1,ly1,lz1,1), m3(lx1,ly1,lz1,1)
@@ -1060,19 +1061,19 @@ c
       if (ifstrs) then
          matmod = 0
          call hmhzsf  ('NOMG',o1,o2,o3,i1,i2,i3,h1,h2,
-     $                  m1,m2,m3,vmult,tolh,nmxh,matmod)
+     $                  m1,m2,m3,vmult,tolh,nmxhi,matmod)
       elseif (ifield.eq.1) then
-         call hmholtz ('VELX',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxh,1)
-         call hmholtz ('VELY',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxh,2)
+         call hmholtz ('VELX',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxhi,1)
+         call hmholtz ('VELY',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxhi,2)
          if (ndim.eq.3) 
-     $   call hmholtz ('VELZ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxh,3)
+     $   call hmholtz ('VELZ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxhi,3)
       elseif (ifield.eq.ifldmhd) then
-         call hmholtz (' BX ',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxh,1)
-         call hmholtz (' BY ',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxh,2)
+         call hmholtz (' BX ',o1,i1,h1,h2,m1,vmult,imesh,tolh,nmxhi,1)
+         call hmholtz (' BY ',o2,i2,h1,h2,m2,vmult,imesh,tolh,nmxhi,2)
          if (ndim.eq.3) 
-     $   call hmholtz (' BZ ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxh,3)
+     $   call hmholtz (' BZ ',o3,i3,h1,h2,m3,vmult,imesh,tolh,nmxhi,3)
       endif
-c
+
       return
       end
 c--------------------------------------------------------------------
