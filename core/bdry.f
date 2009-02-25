@@ -576,6 +576,8 @@ C
 c
       common  /nekcb/ cb
       character cb*3
+      character*1 cb1(3)
+      equivalence (cb1,cb)
 c
       logical ifonbc
 c
@@ -609,6 +611,7 @@ c     write(6,*) 'BCDIRV: ifield',ifield
             BC1 = BC(1,IFACE,IE,IFIELD)
             BC2 = BC(2,IFACE,IE,IFIELD)
             BC3 = BC(3,IFACE,IE,IFIELD)
+
             IF (CB.EQ.'V  ' .OR. CB.EQ.'VL '  .OR.
      $          CB.EQ.'WS ' .OR. CB.EQ.'WSL') THEN
                CALL FACEV (TMP1,IE,IFACE,BC1,NX1,NY1,NZ1)
@@ -618,20 +621,26 @@ c     write(6,*) 'BCDIRV: ifield',ifield
      $         CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
      $                       TMP3(1,1,1,IE),IE,IFACE)
             ENDIF
+
             IF (CB.EQ.'v  ' .OR. CB.EQ.'vl ' .OR. 
      $          CB.EQ.'ws ' .OR. CB.EQ.'wsl' .OR.
-     $          CB.EQ.'mv ' .OR. CB.EQ.'mvn') THEN
-                CALL FACEIV (CB,TMP1(1,1,1,IE),TMP2(1,1,1,IE),
-     $                       TMP3(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
+     $          CB.EQ.'mv ' .OR. CB.EQ.'mvn' .OR.
+     $          cb1(1).eq.'d'.or.cb1(2).eq.'d'.or.cb1(3).eq.'d') then
+
+                call faceiv (cb,tmp1(1,1,1,ie),tmp2(1,1,1,ie),
+     $                       tmp3(1,1,1,ie),ie,iface,nx1,ny1,nz1)
+
                 IF ( IFQINP(IFACE,IE) )
      $          CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
      $                        TMP3(1,1,1,IE),IE,IFACE)
             ENDIF
+
             IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') then   ! 5/21/01 pff
                 ifonbc =.true.
                 CALL FACEIV ('v  ',TMP1(1,1,1,IE),TMP2(1,1,1,IE),
      $                       TMP3(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
             ENDIF
+
  2000    CONTINUE
          DO 2010 IE=1,NEL
          DO 2010 IFACE=1,NFACES

@@ -20,31 +20,32 @@ c
       include 'SOLN'
       include 'TSTEP'
       include 'MASS'
-C
-      COMMON /SCRNS/  RESV1 (LX1,LY1,LZ1,LELV)
-     $ ,              RESV2 (LX1,LY1,LZ1,LELV)
-     $ ,              RESV3 (LX1,LY1,LZ1,LELV)
-     $ ,              DV1   (LX1,LY1,LZ1,LELV)
-     $ ,              DV2   (LX1,LY1,LZ1,LELV)
-     $ ,              DV3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
-     $ ,              H2    (LX1,LY1,LZ1,LELV)
-c
+
+      common /scrns/  resv1 (lx1,ly1,lz1,lelv)
+     $ ,              resv2 (lx1,ly1,lz1,lelv)
+     $ ,              resv3 (lx1,ly1,lz1,lelv)
+     $ ,              dv1   (lx1,ly1,lz1,lelv)
+     $ ,              dv2   (lx1,ly1,lz1,lelv)
+     $ ,              dv3   (lx1,ly1,lz1,lelv)
+      common /scrvh/  h1    (lx1,ly1,lz1,lelv)
+     $ ,              h2    (lx1,ly1,lz1,lelv)
+
       ifield = ifldmhd
-c
-      if (igeom.eq.1) then
-c
-c        Old geometry, old velocity
-c
+
+      if (igeom.eq.1) then  ! old geometry, old velocity
+
          call makebsource_mhd
-c
+
       else
-c
+
          call lagbfield
          call lagvel
-c
+
          call elsasserh(igeom)
-c
+
+         call vol_flow        ! check for fixed flow rate
+
+
       endif
 c
       return
