@@ -32,6 +32,10 @@ CC="mpicc"
 #OPT_FLAGS_STD="-qarch=450 -qtune=450"
 #OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
 
+# enable timing (default true)
+# ----------------------------
+#IFTIMING="false"
+
 # enable AMG coarse grid solver (default XXT)
 # -------------------------------------------
 #IFAMG="true"
@@ -58,12 +62,16 @@ CC="mpicc"
 
 # Optional linking flags
 # ----------------------
-#USR_LFLAGS="-lexample_lib"
+#USR_LFLAGS="-L/usr/lib -lexample"
 
 ###############################################################################
 # User Settings End
 ###############################################################################
 
+if [ ! -d $SOURCE_ROOT ]; then
+  echo "FATAL ERROR: Cannot find $SOURCE_ROOT"
+  exit 1
+fi
 
 # do some checks and create makefile
 source $SOURCE_ROOT/makenek.inc

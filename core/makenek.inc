@@ -190,6 +190,9 @@ if [ "$OPT_FLAGS_MAG" != "" ]; then
     L4="\$(G) $OPT_FLAGS_MAG"
 fi
 
+if [ "$USR_LIB" != "" ]; then
+    USR_LFLAGS="${USR_LFLAGS} $USR_LIB"
+fi
 
 # Generate makefile from using the makefile template and 
 # the specified parameters in makenek
