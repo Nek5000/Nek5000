@@ -850,6 +850,8 @@ c
       ifield = 1
       call sethlm   (h1,h2,intype)
       call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+
+
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
       if (param(103).gt.0) alpha_filt=param(103)      ! Optional Filtering
@@ -862,7 +864,7 @@ c
       call ophinv_pr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
 
-      if (param(103).gt.0) call q_filter(alpha_filt)
+c     if (param(103).gt.0) call q_filter(alpha_filt)
 
       iftcor = ifvcor
       ifvcor = ifbcor
@@ -1426,13 +1428,13 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
             call grad_rst(zr,zs,zt,zp(1,1),nx1,nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
-               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
+               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(fx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
             call grad_rst(zr,zs,zt,zp(1,2),nx1,nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
-               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
+               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(fy,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
@@ -1445,13 +1447,13 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
             call grad_rst(zr,zs,zt,zm(1,1),nx1,nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
-               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
+               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(gx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
             call grad_rst(zr,zs,zt,zm(1,2),nx1,nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
-               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
+               wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(gy,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
@@ -1572,8 +1574,8 @@ c
 
       courno = max(cflp,cflm)
 
-c     if (nid.eq.0) write(6,1) istep,time,dt,cflp,cflm
-c   1 format(i9,1p4e15.7,' CFL')
+      if (nid.eq.0) write(6,1) istep,time,dt,cflp,cflm
+    1 format(i9,1p4e15.7,' CFL')
 
       return
       end
