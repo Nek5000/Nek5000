@@ -1340,19 +1340,19 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             enddo
 
 
-            call grad_rst(zr,zs,zt,zp(1,1),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,1),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
             call intp_rstd(fx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,2),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,2),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
             call intp_rstd(fy,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,3),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,3),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
@@ -1369,19 +1369,19 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             enddo
 
 
-            call grad_rst(zr,zs,zt,zm(1,1),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,1),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
             call intp_rstd(gx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,2),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,2),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
             call intp_rstd(gy,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,3),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,3),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
@@ -1426,13 +1426,13 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
      $            rx(i,2,e)*zm(i,1)+rx(i,3,e)*zm(i,2)
             enddo
 
-            call grad_rst(zr,zs,zt,zp(1,1),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,1),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(fx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,2),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,2),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
@@ -1445,13 +1445,13 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
      $            rx(i,2,e)*zp(i,1)+rx(i,3,e)*zp(i,2)
             enddo
 
-            call grad_rst(zr,zs,zt,zm(1,1),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,1),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
             call intp_rstd(gx,wk,nx1,nxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,2),nx1,nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,2),nxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
