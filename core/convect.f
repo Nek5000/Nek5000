@@ -806,7 +806,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine grad_rst(ur,us,ut,u,mx,md,if3d)
+      subroutine grad_rst(ur,us,ut,u,md,if3d)
 c
       include 'SIZE'
       include 'DXYZ'
@@ -901,10 +901,10 @@ C
          endif
 
          if (ifuf) then
-            call grad_rst(ur,us,ut,u(iu),nx1,nxd,if3d)
+            call grad_rst(ur,us,ut,u(iu),nxd,if3d)
          else
             call intp_rstd(uf,u(iu),nx1,nxd,if3d,0) ! 0 --> forward
-            call grad_rst(ur,us,ut,uf,nx1,nxd,if3d)
+            call grad_rst(ur,us,ut,uf,nxd,if3d)
          endif
 
          if (if3d) then
@@ -987,7 +987,7 @@ c     conservative form
 
            call col2(cf,uf,nxyzd)   !  collocate C and u on fine mesh
 
-           call grad_rst(cr,cs,ct,cf,nx1,nxd,if3d)  ! d/dr (C_i*u)
+           call grad_rst(cr,cs,ct,cf,nxd,if3d)  ! d/dr (C_i*u)
 
            if (if3d) then
 
