@@ -1423,7 +1423,7 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
                tr(i,1)=
      $            rx(i,1,e)*zm(i,1)+rx(i,2,e)*zm(i,2)
                tr(i,2)=
-     $            rx(i,2,e)*zm(i,1)+rx(i,3,e)*zm(i,2)
+     $            rx(i,3,e)*zm(i,1)+rx(i,4,e)*zm(i,2)
             enddo
 
             call grad_rst(zr,zs,zt,zp(1,1),nxd,if3d)
@@ -1442,7 +1442,7 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
                tr(i,1)=
      $            rx(i,1,e)*zp(i,1)+rx(i,2,e)*zp(i,2)
                tr(i,2)=
-     $            rx(i,2,e)*zp(i,1)+rx(i,3,e)*zp(i,2)
+     $            rx(i,3,e)*zp(i,1)+rx(i,4,e)*zp(i,2)
             enddo
 
             call grad_rst(zr,zs,zt,zm(1,1),nxd,if3d)
