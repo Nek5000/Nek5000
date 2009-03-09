@@ -49,6 +49,7 @@ c     read nekton .rea file and make a .map file
       common /arrayr/  dx(4*lpts)
 
       common /carrayr/ bc(5*6*lelm)
+      real*8 bc
       common /carrayc/ cbc(6,lelm)
       character*3      cbc
 
@@ -78,14 +79,19 @@ c     call out_cell(cell,nv,nelt)
 
 
 c     Find all periodic connections, based on cbc info.
+      write(6,*) 'call periodic vtx:',nelt,irnk
       call periodic_vtx
      $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
+      write(6,*) 'done periodic vtx:',nelt,irnk
+
 c     call out_cell(cell,nv,nelt)
 c     call exitt(1)
 
 c     Recursive bisection of element graph; reverse-order interface points
+      write(6,*) 'call rec_bisect:',nelt,irnk
       call rec_bisect (elist,pmap,order,mo,cell,nv,nelv,ndim
      $                                           ,w1,w2,w3,w4,w5)
+      write(6,*) 'done rec_bisect:',nelt,irnk
 
 c     Clean up 
       call isort     (elist,w1,nelv)
@@ -221,8 +227,8 @@ c-----------------------------------------------------------------------
       subroutine exitt(ie)
       write(6,*)
       write(6,*) ie,' quit'
-      ke = 2*ie
-      ff = 1./(ke-ie-ie)
+c     ke = 2*ie
+c     ff = 1./(ke-ie-ie)
       stop
       end
 c-----------------------------------------------------------------------
@@ -393,7 +399,7 @@ c-----------------------------------------------------------------------
 c     .Read Boundary Conditions (and connectivity data)
 
       character*3 cbc(6,nel)
-      real        bc(5,6,nel)
+      real*8      bc(5,6,nel)
       integer e,f
 C
       nbcrea = 5
@@ -401,19 +407,24 @@ C
       do e=1,nel
       do f=1,nface
          if (nel.lt.1000) then
-            read(io,50,err=500,end=500)    
+            read(io,50,err=500,end=600)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
    50       format(a1,a3,2i3,5g14.7)
          elseif (nel.lt.100 000) then
-            read(io,51,err=500,end=500)    
+            read(io,51,err=500,end=600)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
    51       format(a1,a3,i5,i1,5g14.7)
+         elseif (nel.lt.10 000 000) then
+            read(io,52,err=500,end=600)    
+     $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
+c  52       format(1x,a3,i7,5g14.6)
+   52       format(1x,a3,i7,5e20.12)
          else
-            read(io,*,err=500,end=500)    
+            read(io,*,err=500,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
          endif
 c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
@@ -425,12 +436,19 @@ C
 C     Error handling:
 C
   500 continue
-      write(6,501) ifield,e
-  501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I6
-     $    ,/,2X,'ABORTING IN ROUTINE RDBDRY.')
+      write(6,501) ifield,e,nel
+  501 FORMAT(2X,'ERROR: error reading ',i4,2i11,
+     $    ,/,2X,'ABORTING 500 IN ROUTINE RDBDRY.')
       call exitt(ifield)
       return
-C
+
+  600 continue
+      write(6,601) ifield,e,nel
+  601 FORMAT(2X,'ERROR: end of file',i4,2i11,
+     $    ,/,2X,'ABORTING 600 IN ROUTINE RDBDRY.')
+      call exitt(ifield)
+      return
+
       end
 c-----------------------------------------------------------------------
       subroutine blank(s,n)
@@ -968,9 +986,9 @@ c
       common /arrayr1/ f(lelm),r(lelm),p(lelm),w(lelm),rr(lelm,mm)
      $               , ev(mm*mm),d(mm),u(mm)
 
-      common /arrayi2/ jdual(lpts) , vdual(lpts)
+      common /arrayi2/ jdual(4*lpts) , vdual(4*lpts)
      $               , idual(lelm) 
-      common /arrayi3/ iv2c (lpts) , jv2c (lpts)
+      common /arrayi3/ iv2c (lpts) , jv2c (2*lpts)
       common /arrayi4/ wk(lpts+2*lelm)
       integer jdual,vdual,idual,wk
       integer list(lpts)
@@ -1061,7 +1079,10 @@ c-----------------------------------------------------------------------
          j0 = ia(l-1)
          j1 = ia(l)-1
          n  = ia(l) - ia(l-1)
-c        write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
+
+         if (i.le.100)
+     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
+
          if (da(l-1).lt.max_depth.and.l.gt.0) then
 
             da(l-1) = da(l-1) + 1
@@ -1071,7 +1092,7 @@ c        write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
             call bipart_sort
      $        (n1,n2,pmap(j0),order,mo,elist(j0),n,cell,nv,p,w1,w2,w3)
             write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' DEPTH'
-    8       format(i9,2i5,6i8,a6)
+    8       format(i9,2i5,6i10,a6)
 
 c           write(6,18) 'A',(pmap(k),k=1,nel) 
 c 18        format(a1,'pmap:',32i3)
@@ -1148,7 +1169,7 @@ c--- diagnostic use only -----------------
       parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
       common /arrayr/  dx(0:3,8,lelm)    !
                                          !
-      integer icalld,kj(10000),ke(10000) !
+      integer icalld,kj(lelm),ke(lelm)   !
       save    icalld                     !
       data    icalld /0/                 !
                                          !
@@ -1186,13 +1207,15 @@ c--- diagnostic use only -----------------
 c     write(6,6) nsep,mo,mod,icalld
 c   6 format(4i11,' nsep')
 
-      do i=1,nsep
-         x=dx(1,kj(i),ke(i))
-         y=dx(2,kj(i),ke(i))
-         z=dx(3,kj(i),ke(i))
-         write(9,4) x,y,z,icalld
-      enddo
-    4 format(1p3e12.4,i9)
+c     if (nv.eq.8) then ! 3d
+c        do i=1,nsep
+c           x=dx(1,kj(i),ke(i))
+c           y=dx(2,kj(i),ke(i))
+c           z=dx(3,kj(i),ke(i))
+c           write(9,4) x,y,z,icalld
+c   4       format(1p3e12.4,i9)
+c        enddo
+c     endif
 
       do k=1,n1         ! Unset flags
          e = elist(k)
@@ -1202,7 +1225,7 @@ c   6 format(4i11,' nsep')
          enddo
       enddo
 
-      call out_order(order,mo,elist,cell,nv,n1,n2)
+c     call out_order(order,mo,elist,cell,nv,n1,n2)
 c     call exitt(5)
 
 
@@ -1310,9 +1333,13 @@ c
 
       npts = nv*nel
       call iranku   (c,irnk,npts,w1)
+c     write(6,*) 'call self_chk',nel
       call self_chk (c,nv,nel,4)       ! check for not self-ptg.
+c     write(6,*) 'done self_chk',nel
 
+c     write(6,*) 'call part_dual',nel
       call part_dual(pmap,w1,c,nv,nel,irnk)  ! pmap contains processor map
+c     write(6,*) 'done part_dual',nel
 
       k = 1
       do i=1,nel
@@ -1381,9 +1408,10 @@ c    $         write(6,*) ndif,n1,n2,mcount,' Sep count',nsep
       call ifill(pmap(j0),2,n1)   ! Since n1 > n2, let's lightly load node 0
       call ifill(pmap(j1),1,n2)   ! by assigning node 0 to shorter stack.
       call icadd(pmap,p,nel)
-c     maxp = iglmax(pmap,nel)
-c     write(6,7) maxp,n1,n2,nel
-c   7 format('bipart sort: ',4i12)
+
+c     maxp = iglmax(pmap,nel)          ! diagnostics, comment out
+c     write(6,7) maxp,n1,n2,nel        ! diagnostics
+c   7 format('bipart sort: ',4i12)     ! diagnostics
 
 
       call part_clean( order, nsep, elist, cell, nv, n1, n2, w1, w2)
@@ -1394,6 +1422,7 @@ c   7 format('bipart sort: ',4i12)
 c     write(6,*) n1,n2,mcount,' sepsep',nsep
 
       call ident_sep( order, mo, elist, cell, nv, n1, n2 )
+c     write(6,*) 'done ident_sep'
 
       return
       end
@@ -1481,7 +1510,7 @@ c        write(6,12) e,(o(c(k,e)),k=1,nv)
 c     enddo
 
    10 format(/,2i9,a6)
-   12 format(i9,'e:',8i7)
+   12 format(i9,'e:',8i10)
 
       return
       end
@@ -1508,7 +1537,7 @@ c     read (5,*) xx
 
    10 format(/,2i9,' CELL')
    11 format(8i9)
-   12 format(i9,'e:',8i7)
+   12 format(i9,'e:',8i10)
       close(11)
 
       return
@@ -1523,21 +1552,23 @@ c     return
 c
 c     Print out copies of a global matrix
 c
+      n200 = min(n,200)
       if (m.gt.1) then
          write(6,1) nid,m,n,name6
    1     format(3i6,'  Matrix:',2x,a6)
          do i=1,m
-            write(6,2) i,name6,(u(i,j),j=1,n)
+            write(6,2) i,name6,(u(i,j),j=1,n200)
          enddo
    2     format(i8,1x,a6,20(10i9,/,10x))
       else
-         write(6,3) nid,n,name6,(u(1,j),j=1,n)
+         write(6,3) nid,n,name6,(u(1,j),j=1,n200)
    3     format(2i8,1x,a6,20(10i9,/,10x))
       endif
       if (ic.eq.0) then
          write(6,*) 'cont: ',name6,nid,'  ??'
 c        read (5,*) adum
       endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1557,6 +1588,7 @@ c
       enddo
    2  format(i3,1x,a6,1p8e12.4)
 c  2  format(i3,1x,a6,20(1p8e12.4,/,10x))
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1595,7 +1627,7 @@ c-----------------------------------------------------------------------
       open (unit=29,file=fname)
 
       write(29,1) nel,nactive,depth,d2,npts,nrnk,noutflow
-    1 format(9i9)
+    1 format(9i11)
 
       do e=1,nel
          p0 = pmap(e)-1
@@ -2010,7 +2042,7 @@ c        write(6,*) cb,e,f,' cb'
               endif
 
               call find_connctd_pairs
-     $                 (jmin,nvf,e,f,je,jf,cell,nv,dx,ndim)
+     $                 (jmin,nvf,e,f,je,jf,cell,nv,dx,ndim,nel)
             
 
 c             bc(1, f, e) = -bc(1, f, e) ! indicate that 
@@ -2053,7 +2085,8 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine find_connctd_pairs(jmin,nvf,e,f,je,jf,cell,nv,dx,ndim)
+      subroutine find_connctd_pairs
+     $   (jmin,nvf,e,f,je,jf,cell,nv,dx,ndim,nel)
 
 
       integer jmin(1),cell(nv,1)
@@ -2073,6 +2106,11 @@ c-----------------------------------------------------------------------
       data    wface / 3,1,0,0 , 2,4,0,0 , 1,2,0,0 , 4,3,0,0
      $              , 0,0,0,0 , 0,0,0,0 /
 
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      icalld = icalld+1
 
       if (ndim.eq.2) call icopy(vface,wface,24)
 
@@ -2145,12 +2183,13 @@ c   5          format(4i4,1p3e12.4,'  d2')
          call outmat(z1,4,4,'  z1  ',je)
          write(6,6) e , f,shift,eps,x0m
          write(6,6) je,jf,    i,tol,d2min
-   6     format(i8,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
+    6    format(i8,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
          call exitt(0)
       endif
 
-      write(6,7) e,f,i,shift,d2min
-   7  format(i8,i2,2i3,1p1e16.8,' shift')
+      if (nel.le.100000.or.mod(icalld,1000).eq.0)
+     $   write(6,7) e,f,i,shift,d2min,icalld
+    7    format(i10,i2,2i3,1p1e16.8,i9,' shift')
 
       do i=1,nvf
 
@@ -2196,7 +2235,6 @@ c     Output orders for an 8x8 array of elements
       save    h2s
       data    h2s / 1,2,4,3,5,6,8,7 /
 
-      return
 
       call set_a(a)
 
@@ -3163,6 +3201,8 @@ c-----------------------------------------------------------------------
 
       call byte_open(fname)
       call byte_read(hdr,20)
+      write(6,80) hdr
+   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
     1 format(a5,i9,i3,i9)
@@ -3528,6 +3568,7 @@ c
          if (ii.eq.0) then
             write(6,*) 'c2c graph, did not find self?',e,j0,j1
             call outmati(jc2c(j0),1,nj,'c2cslf',e,1)
+            call exitt(nj)
          endif
 
       enddo
@@ -3623,7 +3664,7 @@ c     call outmati(nee,1,ne,'nee  1',ne,1)
 c-----------------------------------------------------------------------
       subroutine outbc(cbc,bc,nel,ndim,name6)
       character*3 cbc(6,1)
-      real         bc(5,6,1)
+      real*8       bc(5,6,1)
       character*6 name6
       integer e,f
 
