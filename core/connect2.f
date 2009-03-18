@@ -412,11 +412,11 @@ c   44       format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
          endif
       endif
 
-      if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
-         if(nid.eq.0) write(6,*)
-     $   'ABORT: For GFDM or GTP, number of processors need to be 2^k'
-         call exitt
-      endif
+c     if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
+c        if(nid.eq.0) write(6,*)
+c    $   'ABORT: For GFDM or GTP, number of processors need to be 2^k'
+c        call exitt
+c     endif
 
       if (ifmvbd .and. ifsplit) then
          write(6,*) 
