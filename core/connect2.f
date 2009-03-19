@@ -467,7 +467,8 @@ c     dealiasing handling
          param(99) = -1       ! No  dealiasing
       else
          param(99) = 4        ! default
-         if(ifaxis) param(99) = 3             ! For now, at least.
+         if (ifaxis) param(99) = 3             ! For now, at least.
+         if (ifmvbd) param(99) = 3             ! For now, at least.
       endif
 
       if (param(99).gt.-1 .and. lxd.le.lx1) then

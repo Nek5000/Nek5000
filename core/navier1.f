@@ -891,8 +891,8 @@ C
           rname(myrout) = 'opbinv'
       endif
 C
-      CALL OPMASK  (INP1,INP2,INP3)
-      CALL OPDSSUM (INP1,INP2,INP3)
+      call opmask  (inp1,inp2,inp3)
+      call opdssum (inp1,inp2,inp3)
 C
       NTOT=NX1*NY1*NZ1*NELV
 C
@@ -900,24 +900,26 @@ C
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
-C
-      IF (IF3D) THEN
-         DO 100 I=1,NTOT
-            TMP    =BINVM1(I,1,1,1)*H2INV(I)
-            OUT1(I)=INP1(I)*TMP
-            OUT2(I)=INP2(I)*TMP
-            OUT3(I)=INP3(I)*TMP
-  100    CONTINUE
-      ELSE
-         DO 200 I=1,NTOT
-            TMP    =BINVM1(I,1,1,1)*H2INV(I)
-            OUT1(I)=INP1(I)*TMP
-            OUT2(I)=INP2(I)*TMP
-  200    CONTINUE
-      ENDIF
-C
+
+      call invcol3 (out1,bm1,h2inv,ntot)  ! this is expensive and should
+      call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
+      if (if3d) then
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+            out3(i)=inp3(i)*tmp
+         enddo
+      else
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+         enddo
+      endif
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine opbinv1(out1,out2,out3,inp1,inp2,inp3,SCALE)
 C--------------------------------------------------------------------
@@ -1266,16 +1268,7 @@ C
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
 C
-C     Store the inverse jacobian to speed this operation up
-C
-      COMMON /DUDXYJ/ JACMI(LX1,LY1,LZ1,LELT)
-      REAL JACMI
-C
       REAL  DRST(LX1,LY1,LZ1)
-C
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /-1/
 C
       IF (imsh.EQ.1) NEL = NELV
       IF (imsh.EQ.2) NEL = NELT
@@ -1283,13 +1276,7 @@ C
       NYZ1  = NY1*NZ1
       NXYZ1 = NX1*NY1*NZ1
       NTOT  = NXYZ1*NEL
-C
-      if (istep.ne.icalld) then
-         ntott = nxyz1*nelt
-         call invers2(jacmi,jm1,ntott)
-         icalld=istep
-      endif
-C
+
       DO 1000 IEL=1,NEL
 C
       IF (IFAXIS) CALL SETAXDY (IFRZER(IEL) )
@@ -3876,7 +3863,10 @@ C
          call convopo(conv,fi)
          return
       endif
-c
+
+c     write(6,*) istep,param(99),' CONVOP'
+c     if (istep.gt.5) call exitt
+
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
@@ -3969,16 +3959,9 @@ c
 C
 C     Store the inverse jacobian to speed this operation up
 C
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi
-C
       common /ctmp0/ dudr(lx1,ly1,lz1)
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
-C
-      integer icalld
-      save    icalld
-      data    icalld /-9/
 C
       if (imesh.eq.1) nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -3986,12 +3969,6 @@ C
       nyz1  = ny1*nz1
       nxyz1 = nx1*ny1*nz1
       ntot  = nxyz1*nel
-C
-      if (istep.ne.icalld) then
-         ntott = nxyz1*nelt
-         call invers2(jacmi,jacm1,ntott)
-         icalld=istep
-      endif
 C
 C     Compute vel.grad(u)
 C
@@ -4103,16 +4080,10 @@ c
 C
 C     Store the inverse jacobian to speed this operation up
 C
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi
 C
       common /ctmp0/ dudr(lx1,ly1,lz1)
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
-C
-      integer icalld
-      save    icalld
-      data    icalld /-9/
 C
       if (imesh.eq.1) nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -4120,12 +4091,6 @@ C
       nyz1  = ny1*nz1
       nxyz1 = nx1*ny1*nz1
       ntot  = nxyz1*nel
-C
-      if (istep.ne.icalld) then
-         ntott = nxyz1*nelt
-         call invers2(jacmi,jacm1,ntott)
-         icalld=istep
-      endif
 C
 C     Compute vel.grad(u)
 C
@@ -4273,18 +4238,10 @@ c
       include 'TSTEP'
       real vxn(1),vyn(1),vzn(1)
 c
-      common /dudxyj/ jacmi(lx1*ly1*lz1*lelt)
-      real jacmi
-c
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-c
       include 'OPCTR'
       integer opct
-c
+
 c     Operation count
-c
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -4293,13 +4250,7 @@ c
       endif
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
-c
-      if (istep.ne.icalld) then
-         ntott = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,ntott)
-         icalld=istep
-      endif
-c
+
       call velchar (vx,vxn,vxlag,nbd,tau,dtlag)
       call velchar (vy,vyn,vylag,nbd,tau,dtlag)
       if (ndim.eq.3) 
@@ -4309,9 +4260,9 @@ c
       if (ndim.eq.3) then
          do i=1,ntot
 c
-            tx = vx(i,1,1,1)*bm1(i,1,1,1)*jacmi(i)
-            ty = vy(i,1,1,1)*bm1(i,1,1,1)*jacmi(i)
-            tz = vz(i,1,1,1)*bm1(i,1,1,1)*jacmi(i)
+            tx = vx(i,1,1,1)*bm1(i,1,1,1)*jacmi(i,1)
+            ty = vy(i,1,1,1)*bm1(i,1,1,1)*jacmi(i,1)
+            tz = vz(i,1,1,1)*bm1(i,1,1,1)*jacmi(i,1)
 c
             vx(i,1,1,1) = tx*rxm1(i,1,1,1)
      $                  + ty*rym1(i,1,1,1)
@@ -4327,8 +4278,8 @@ c
       else
          do i=1,ntot
 c
-            tx = vx(i,1,1,1)*bm1(i,1,1,1)*jacmi(i)
-            ty = vy(i,1,1,1)*bm1(i,1,1,1)*jacmi(i)
+            tx = vx(i,1,1,1)*bm1(i,1,1,1)*jacmi(i,1)
+            ty = vy(i,1,1,1)*bm1(i,1,1,1)*jacmi(i,1)
 c
             vx(i,1,1,1) = tx*rxm1(i,1,1,1)
      $                  + ty*rym1(i,1,1,1)
@@ -5079,23 +5030,9 @@ C
      $        , U2(LX1,LY1,LZ1,1)
      $        , U3(LX1,LY1,LZ1,1)
 
-      COMMON /DUDXYJ/ JACMI(LX1,LY1,LZ1,LELT)
-      REAL JACMI
-C
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /-1/
-
-      REAL fac
-
 
       NEL = NELV
       NTOT1 = NX1*NY1*NZ1*NEL
-
-      if (icalld.eq.1) then
-         call invers2(jacmi,jacm1,ntot1)
-         icalld=1
-      endif
 
       CALL RZERO3 (EXX,EYY,EZZ,NTOT1)
       CALL RZERO3 (EXY,EXZ,EYZ,NTOT1)

@@ -189,21 +189,7 @@ c
 c
       common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
 c
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi
-c
       integer e
-c
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-C
-C
-      if (istep.ne.icalld) then
-         ntot = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,ntot)
-         icalld=istep
-      endif
 
 c
       N = nx1-1
@@ -247,20 +233,6 @@ c
 c
       parameter (lxyz=lx1*ly1*lz1)
       common /ctmp1/ v(lxyz),w(lxyz)
-c
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi
-c
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-C
-C
-      if (istep.ne.icalld) then
-         ntot = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,ntot)
-         icalld=istep
-      endif
 c
       if (if3d) then
          call col3    (w,ux,rxm1(1,1,1,e),lxyz)

@@ -728,27 +728,14 @@ c
 c
       parameter (lxyz=lx1*ly1*lz1)
       real ux(lxyz,1),uy(lxyz,1),uz(lxyz,1),u(lxyz,1)
-c
+
       common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
-c
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi
-c
+
       integer e
-c
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-C
+
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelt
-C
-      if (istep.ne.icalld) then
-         call invers2(jacmi,jacm1,ntot)
-         icalld=istep
-      endif
 
-c
       N = nx1-1
       do e=1,nelt
          if (if3d) then
@@ -2295,19 +2282,6 @@ c
       real ur (1) , us (1) , ut (1)
      $   , vr (1) , vs (1) , vt (1)
      $   , wr (1) , ws (1) , wt (1)
-
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi,j
-
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-
-      if (istep.ne.icalld) then
-         n = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,n)
-         icalld=istep
-      endif
 
 
       n    = nx1-1      ! Polynomial degree

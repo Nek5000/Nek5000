@@ -277,19 +277,6 @@ c
 
       integer e
 
-      common /dudxyj/ jacmi(lx1*ly1*lz1,lelt)
-      real jacmi,j
-
-      integer icalld
-      save    icalld
-      data    icalld /-9/
-
-      if (istep.ne.icalld) then
-         n = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,n)
-         icalld=istep
-      endif
-
       n    = nx1-1      ! Polynomial degree
       nxyz = nx1*ny1*nz1
 
