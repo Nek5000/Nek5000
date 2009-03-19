@@ -887,8 +887,6 @@ c
 c
 c     Store the inverse jacobian to speed up this operation
 c
-      common /dudxyj/ jacmi(lx1,ly1,lz1,lelt)
-      real jacmi
       common /cfldx/ dri(lx1),dsi(ly1),dti(lz1)
 c
       integer e
@@ -899,32 +897,30 @@ c
 c
       if (icalld.eq.0) then
          icalld=1
-         ntott = nx1*ny1*nz1*nelt
-         call invers2(jacmi,jacm1,ntott)
-c
          call getdr(dri,zgm1(1,1),nx1)
          call getdr(dsi,zgm1(1,2),ny1)
          if (if3d) call getdr(dti,zgm1(1,3),nz1)
-c
       endif
-c
+
       cfl = 0.
-c
+      l   = 0
+
       if (if3d) then
          nxyz = nx1*ny1*nz1
          do e=1,nelv
             do k=1,nz1
             do j=1,ny1
             do i=1,nx1
+               l = l+1
                ur = ( u(i,j,k,e)*rxm1(i,j,k,e)
      $            +   v(i,j,k,e)*rym1(i,j,k,e)
-     $            +   w(i,j,k,e)*rzm1(i,j,k,e) ) * jacmi(i,j,k,e)
+     $            +   w(i,j,k,e)*rzm1(i,j,k,e) ) * jacmi(l,1)
                us = ( u(i,j,k,e)*sxm1(i,j,k,e)
      $            +   v(i,j,k,e)*sym1(i,j,k,e)
-     $            +   w(i,j,k,e)*szm1(i,j,k,e) ) * jacmi(i,j,k,e)
+     $            +   w(i,j,k,e)*szm1(i,j,k,e) ) * jacmi(l,1)
                ut = ( u(i,j,k,e)*txm1(i,j,k,e)
      $            +   v(i,j,k,e)*tym1(i,j,k,e)
-     $            +   w(i,j,k,e)*tzm1(i,j,k,e) ) * jacmi(i,j,k,e)
+     $            +   w(i,j,k,e)*tzm1(i,j,k,e) ) * jacmi(l,1)
 c
                cflr = abs(dt*ur*dri(i))
                cfls = abs(dt*us*dsi(j))
@@ -943,16 +939,16 @@ c
             do j=1,ny1
             do i=1,nx1
                ur = ( u(i,j,1,e)*rxm1(i,j,1,e)
-     $            +   v(i,j,1,e)*rym1(i,j,1,e) ) * jacmi(i,j,1,e)
+     $            +   v(i,j,1,e)*rym1(i,j,1,e) ) * jacmi(l,1)
                us = ( u(i,j,1,e)*sxm1(i,j,1,e)
-     $            +   v(i,j,1,e)*sym1(i,j,1,e) ) * jacmi(i,j,1,e)
-c
+     $            +   v(i,j,1,e)*sym1(i,j,1,e) ) * jacmi(l,1)
+
                cflr = abs(dt*ur*dri(i))
                cfls = abs(dt*us*dsi(j))
-c
+
                cflm = cflr + cfls
                cfl  = max(cfl,cflm)
-c
+
             enddo
             enddo
          enddo
@@ -1479,10 +1475,18 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'GEOM'
-c
-      common /dealias1/ zd(lxd),wd(lxd)
+      include 'TSTEP' ! for istep
 
+      common /dealias1/ zd(lxd),wd(lxd)
       integer e
+
+      integer ilstep
+      save    ilstep
+      data    ilstep /-1/
+
+      if (.not.ifgeom.and.ilstep.gt.1) return  ! already computed
+      if (ifgeom.and.ilstep.eq.istep)  return  ! already computed
+      ilstep = istep
 
       nxyz1 = nx1*ny1*nz1
       nxyzd = nxd*nyd*nzd

@@ -20,7 +20,8 @@ C
      $             ,SZM1  (LX1,LY1,LZ1,LELT)
      $             ,TZM1  (LX1,LY1,LZ1,LELT)
      $             ,JACM1 (LX1,LY1,LZ1,LELT)
-      REAL          JACM1
+     $             ,jacmi (lx1*ly1*lz1,lelt)
+      real          jacm1,jacmi
 C
       COMMON /GISO2/
      $              RXM2  (LX2,LY2,LZ2,LELV)

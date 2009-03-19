@@ -846,12 +846,8 @@ C
      $             , tr(ltd,3),uf(ltd)
 
       integer e
-      integer icalld
-      save    icalld
-      data    icalld /0/
 
-      if (icalld.eq.0) call set_dealias_rx
-      icalld = icalld + 1
+      call set_dealias_rx
 
       nxyz1 = nx1*ny1*nz1
       nxyzd = nxd*nyd*nzd
@@ -947,13 +943,8 @@ c     conservative form
 
 
       integer e
-      integer icalld
-      save    icalld
-      data    icalld /0/
 
-
-      if (icalld.eq.0) call set_dealias_rx
-      icalld = icalld + 1
+      call set_dealias_rx
 
       nxyz1 = nx1*ny1*nz1
       nxyzd = nxd*nyd*nzd
@@ -1036,18 +1027,12 @@ C
      $             , tr(ltd,3),uf(ltd)
 
       integer e
-      integer icalld
-      save    icalld
-      data    icalld /0/
 
-      if (icalld.eq.0) call set_dealias_rx
-      icalld = icalld + 1
+      call set_dealias_rx
 
       nxyz1 = nx1*ny1*nz1
       nxyzd = nxd*nyd*nzd
 
-
-      ic = 1    ! pointer to vector field C
       ic = 1    ! pointer to vector field C
 
       do e=1,nelv 

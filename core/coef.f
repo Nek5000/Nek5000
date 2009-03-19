@@ -565,7 +565,9 @@ c        call outxm3j(xm3,ym3,jacm3)
          if (nid.eq.0) write(6,*) 'Jac error 3, setting p66=4, ifxyo=t'
          call exitt
       endif
-C
+
+      call invers2(jacmi,jacm1,ntot1)
+
       RETURN
       END
       subroutine glmapm1
@@ -656,7 +658,9 @@ C
          if (nid.eq.0) write(6,*) 'Jac error 1, setting p66=4, ifxyo=t'
          call exitt
       endif
-C
+
+      call invers2(jacmi,jacm1,ntot1)
+
       RETURN
       END
       subroutine geodat1
