@@ -159,7 +159,7 @@ void findpts_transfer(const sint *h, sint *n, const sint *max, sint vi[],
 void ftuple_list_sort(sint *n, const uint *k, sint vi[], 
                       const sint *mi,real vr[], const sint *mr)
 {
-  unsigned key = *k-1; /* 0-based in C */
+  const uint key = *k-1; /* switch to 0-based index */
   buffer buf;
   tuple_list tl = {*mi,0,*mr,*n,0,vi,0,vr};
   buffer_init(&buf,65536);  /* will be increased automatically if needed */
