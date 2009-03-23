@@ -93,12 +93,13 @@ void crystal_transfer(const sint *h, sint *n, const sint *max,
                       sint  vi[], const sint *mi,
                       slong vl[], const sint *ml,
                       real  vr[], const sint *mr,
-                      const sint *p)
+                      const sint *pp)
 {
 #ifdef MPI
   crystal_data *crystal = fcrystal_handle(*h);
   tuple_list tl = { *mi, *ml, *mr, *n, *max, vi, vl, vr };
-  transfer(0,&tl,*p,crystal);
+  const sint p = *pp-1;      /* switch to 0-based index */
+  transfer(0,&tl,p,crystal);
   *n = tl.n;
 #endif
 }
