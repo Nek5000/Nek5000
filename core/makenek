@@ -51,7 +51,7 @@ CC="mpicc"
 
 # user specified MXM routines
 # ---------------------------
-#MXM_USER="mxm_bgp.o mxm44.o tworking11.rts.o vernon.rts.o"
+#MXM_USER="mxm_bgp.o aligned3.o mxm3.o mxm44.o mxm44_uneven.o"
 
 # Optional files to compile
 # -------------------------
