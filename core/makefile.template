@@ -192,10 +192,11 @@ cvode_driver.o	:$S/cvode_driver.f;		$(F77) -c $(FL2) $S/cvode_driver.f
 makeq.o	      	:$S/makeq.f;			$(F77) -c $(FL2) $S/makeq.f
 ################################################################################
 mxm_std.o	:$S/mxm_std.f;			$(F77) -c $(FL4) $S/mxm_std.f
-mxm_bgp.o	:$S/mxm_bgp.f;			$(F77) -c $(FL4) $S/mxm_bgp.f
-mxm44.o         :$S/mxm44.o;   		        cp $S/mxm44.o ./
-tworking11.rts.o :$S/tworking11.rts.o;  	cp $S/tworking11.rts.o ./
-vernon.rts.o    :$S/vernon.rts.o;       	cp $S/vernon.rts.o ./
+mxm_bgp.o	:$S/mxm_bgp.f;			$(F77) -c $(FL4) $S/mxm_bgp.f 
+aligned3.o	:$S/aligned3.s;			$(CC) -c $< -o $@
+mxm3.o		:$S/mxm3.s;			$(CC) -c $< -o $@
+mxm44.o		:$S/mxm44.s;			$(CC) -c $< -o $@
+mxm44_uneven.o	:$S/mxm44_uneven.s;		$(CC) -c $< -o $@
 mat1.o		:$S/mat1.f;			$(F77) -c $(FL4) $S/mat1.f
 mat2.o		:$S/mat2.f;			$(F77) -c $(FL4) $S/mat2.f
 ################################################################################
