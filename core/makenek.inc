@@ -115,6 +115,8 @@ case $F77comp in
                ;;
   ftn)         P="-r8 -Mpreprocess"
                ;;
+  sun*)        P="-r8const -xtypemap=real:64 -fpp"
+               ;;
   *)  echo "WARNING: Cannot detect compiler specfic flags
       echo "          - to promote REAL to 8 bytes"
       echo "          - to invoke preprocessor first

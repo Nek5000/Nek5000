@@ -87,10 +87,10 @@ endif
 JL2   := ${JL2} -DPREFIX=jl_
 
 FL0i4 = $(L0) -I $S
-FL0   = $(L0) $(P) -I $S
-FL2   = $(L2) $(P) -I $S
-FL3   = $(L3) $(P) -I $S
-FL4   = $(L4) $(P) -I $S
+FL0   = $(L0) $(P) -I$S
+FL2   = $(L2) $(P) -I$S
+FL3   = $(L3) $(P) -I$S
+FL4   = $(L4) $(P) -I$S
 
 cFL0   = $(L0) 
 cFL2   = $(L2) 
