@@ -339,7 +339,7 @@ C     Figure out what goes in EXCODE
            i = i + 1
          ENDIF
          IF(NPSCAL.GT.0)then
-            DO IIP=1,NPSCAL
+            DO IIP=1,LDIMT-1
                IF(IFPSCO(IIP)) THEN
                  WRITE(EXCODE(IIP+i)  ,'(I1)') IIP
                  WRITE(EXCODE(IIP+i+1),'(A1)') ' '
@@ -1230,7 +1230,7 @@ c
       ENDIF
 C     PASSIVE SCALARS
       IF(NPSCAL.GT.0)then
-         DO IIP=1,NPSCAL
+         DO IIP=1,LDIMT-1
             IF(IFPSCO(IIP))then
                ID=ID+1
                CALL COPYx4(TDUMP(1,ID),T(1,1,1,IE,IIP+1),NXYZ)
@@ -1268,7 +1268,7 @@ c
       IF(IFTO) ID=ID+1
 C     PASSIVE SCALARS
       IF(NPSCAL.GT.0)then
-         DO IIP=1,NPSCAL
+         DO IIP=1,LDIMT-1
             IF(IFPSCO(IIP))then
                ID=ID+1
            ENDIF             
@@ -1362,7 +1362,7 @@ c-----------------------------------------------------------------------
       if (ifvo ) call mfo_outv(vx,vy,vz,nout)  ! B-field handled thru outpost
       if (ifpo ) call mfo_outs(pm1,nout)
       if (ifto ) call mfo_outs(t,nout)
-      do k=1,npscal
+      do k=1,ldimt-1
          if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
@@ -1372,7 +1372,7 @@ c-----------------------------------------------------------------------
          if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
          if (ifpo ) call mfo_mdatas(pm1,nout)
          if (ifto ) call mfo_mdatas(t,nout)
-         do k=1,npscal
+         do k=1,ldimt-1
             if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
          enddo
       endif
@@ -2016,7 +2016,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (NPSCAL.GT.0) THEN
          NPSCALO = 0
-         do k = 1,npscal
+         do k = 1,ldimt-1
            if(ifpsco(k)) NPSCALO = NPSCALO + 1
          enddo
          rdcode1(i) = 'S'
