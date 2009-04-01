@@ -74,6 +74,7 @@ case $F77 in
   ftn)         R8="-r8"
                ;;
   *)           exit 1
+               echo "Error: Unkown compiler!"
                ;;
 esac
 
@@ -105,7 +106,8 @@ if [ "$1" == "clean" ]; then
    make clean
 else
    if [ "$1" != "all" ]; then
-      MODULES=$*
+      LIST=`echo $* | sed 's:\/::g'`
+      MODULES=$LIST
    fi
    export MODULES
    make 

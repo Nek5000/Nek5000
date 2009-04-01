@@ -9,7 +9,7 @@ OBJS = genmap.o byte.o
 all: genmap
 
 genmap:	$(OBJS)
-	$(F77) $(FFLAGS) -o $(prefix)/genmap $(OBJS)
+	$(F77) $(FLAGS) -o $(prefix)/genmap $(OBJS) $(LFLAGS)
 
 clean:
 	'rm' *.o

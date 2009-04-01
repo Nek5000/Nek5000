@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -154,7 +154,7 @@ c     read nekton .rea file and make a mesh
       character*3 cbt(6)
       real        bt(5,6)
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
@@ -234,7 +234,7 @@ c     ff = 1./(ke-ie-ie)
 c-----------------------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
 
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
@@ -979,7 +979,7 @@ c
       integer pmap(1),nmap(1),c(nv,nel)
       integer etype,edgecut,e
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       parameter(mm  =50)
 
@@ -1166,7 +1166,7 @@ c
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
       common /arrayr/  dx(0:3,8,lelm)    !
                                          !
       integer icalld,kj(lelm),ke(lelm)   !
@@ -1874,7 +1874,7 @@ c
 
       integer ic(i0:i1),jc(1)
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
       integer face,elist
@@ -2950,7 +2950,7 @@ c-----------------------------------------------------------------------
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
@@ -3046,7 +3046,7 @@ c-----------------------------------------------------------------------
       subroutine checker(in_elist,in_pmap,nel,ndim,ii)
       integer in_elist(1),in_pmap(1)
 
-      parameter(lelm=1 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=900 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /qarrayi/ pmap (lpts) , elist(lpts) , w1(lpts)
@@ -3080,7 +3080,7 @@ c-----------------------------------------------------------------------
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      parameter (lelm=1 000 000)
+      parameter (lelm=900 000)
 
       character*3 cbc(6,lelm)
       real        bc (5,6,lelm)
@@ -3119,7 +3119,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-      parameter(lelm=1 000 000)
+      parameter(lelm=900 000)
 
       character*3 cbl(6,lelm)
       real        bl(5,6,lelm)

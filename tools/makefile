@@ -7,13 +7,12 @@ all:
         echo "Make $${i}..." ;              \
         echo "----------------------";      \
         cd $${i} ;                          \
-        export FFLAGS_IN=  ;                \
+        export FFLAGS_IN=" ";               \
         export CFLAGS_IN=${US} ;            \
         if [ "$$i" == "genmap" ]; then      \
            export FFLAGS_IN=${R8} ;         \
         fi ;                                \
         if [ "$$i" == "prenek" ]; then      \
-           export FFLAGS_IN=${R8} ;         \
            export CFLAGS_IN="$(US) -Dr8";   \
         fi ;                                \
         ${MAKE} ;                           \
