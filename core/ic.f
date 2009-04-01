@@ -2262,7 +2262,7 @@ c                 For now, what you see in file is what you get.
       ifgetur = .false.
       ifgetpr = .false.
       ifgettr = .false.
-      do k=1,npscal
+      do k=1,ldimt-1
          ifgtpsr(k) = .false.
       enddo
 
@@ -2279,10 +2279,11 @@ c                 For now, what you see in file is what you get.
             read(rdcode1(i+2),'(I1)') NPS0
             NPS = 10*NPS1+NPS0
             do k=1,NPS
+               if(k.gt.ldimt-1) goto 50
                ifgtpsr(k) = .true.
             enddo
             ! nothing will follow
-            GOTO 50
+            goto 50
          endif
       enddo
   

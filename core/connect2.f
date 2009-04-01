@@ -1037,7 +1037,7 @@ C     Read output specs
       READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
       READ(9,*,ERR=200,END=200) IPSCO
       IF (IPSCO.GT.0) THEN
-         IF (IPSCO.GT.NPSCAL) GOTO 200
+         IF (IPSCO.GT.LDIMT-1) GOTO 200
          DO 120 I=1,IPSCO
             READ(9,*,ERR=200,END=200) IFPSCO(I)
   120    CONTINUE
