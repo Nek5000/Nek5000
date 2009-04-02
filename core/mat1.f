@@ -416,21 +416,10 @@ C
 C
       subroutine copy(a,b,n)
       REAL A(1), B(1)
-      include 'CTIMER'
-C
-#ifndef NOTIMER
-      if (icalld.eq.0) tcopy=0.0
-      icalld=icalld+1
-      ncopy=icalld
-      etime1=dnekclock()
-#endif
-C
 C
       DO 100 I = 1, N
  100     A(I) = B(I)
-#ifndef NOTIMER
-      tcopy=tcopy+(dnekclock()-etime1)
-#endif
+
       return
       END
 C
