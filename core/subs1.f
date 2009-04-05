@@ -1111,7 +1111,7 @@ C------------------------------------------------------------------
       INCLUDE 'TSTEP'
       INCLUDE 'PARALLEL'
       INCLUDE 'NEKUSE'
-      IELG = LGLEL(IEL,NODE)
+      ielg = lglel(iel)
 c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
       DO 10 K=1,NZ1
       DO 10 J=1,NY1

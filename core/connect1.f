@@ -29,7 +29,7 @@ c
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
-      common /ivrtx/ vertex ((2**ldim)*lelg)
+      common /ivrtx/ vertex ((2**ldim)*lelt)
       integer glo_num,vertex
 
       if(nid.eq.0) write(6,*) 'setup domain topology'
@@ -108,7 +108,7 @@ c        call outmati(vertex,4,nelt,'vrtx T')
 
 c        check if there is a least one fluid element on each processor
          do iel = 1,nelt
-            ieg = lglel(iel,node)
+            ieg = lglel(iel)
             if (ieg.le.nelgv) goto 101 
          enddo
          if(nid.eq.0) write(6,*) 
@@ -125,6 +125,9 @@ c        check if there is a least one fluid element on each processor
          ifield = 1
          call rone    (vmult,ntotv)
          call dssum   (vmult,nx1,ny1,nz1)
+         vmltmax=glmax(vmult,ntotv)
+         ivmltmax=vmltmax
+         if (nid.eq.0) write(6,*) ivmltmax,' max multiplicity'
          call invcol1 (vmult,ntotv)
       endif
       if (ifheat) then
@@ -894,7 +897,7 @@ C
          IF (C1.LE.0.0.OR.C2.LE.0.0.OR.
      $       C3.LE.0.0.OR.C4.LE.0.0 ) THEN
 C
-            IEG=LGLEL(IE,NODE)
+            ieg=lglel(ie)
             WRITE(6,800) IEG,C1,C2,C3,C4
             call exitt
   800       FORMAT(/,2X,'WARNINGa: Detected non-right-handed element.',
@@ -926,7 +929,7 @@ C
      $       V5.LE.0.0.OR.V6.LE.0.0.OR.
      $       V7.LE.0.0.OR.V8.LE.0.0    ) THEN
 C
-            IEG=LGLEL(IE,NODE)
+            ieg=lglel(ie)
             WRITE(6,1800) IEG,V1,V2,V3,V4,V5,V6,V7,V8
             call exitt
  1800       FORMAT(/,2X,'WARNINGb: Detected non-right-handed element.',
@@ -1437,7 +1440,7 @@ c-----------------------------------------------------------------------
          do j=1,ny1
          do i=1,nx1
            if (glo_num(i,j,k,e).eq.iquick) then
-            eg = lglel(e,node)
+            eg = lglel(e)
             write(6,1) nid,i,j,k,e,eg,iquick,ipass
      $      ,xm1(i,j,k,e),ym1(i,j,k,e),zm1(i,j,k,e)
   1         format(i6,3i4,2i6,i9,i2,1p3e12.4,' iquick')

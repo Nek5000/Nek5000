@@ -54,7 +54,7 @@ c
       include 'TOTAL'
       include 'ZPER'
 c
-      common /fastdr/ lx(lelg),ly(lelg),lz(lelg)
+      common /fastdr/ lx(lelg_sm),ly(lelg_sm),lz(lelg_sm)
       real            lx,      ly,      lz
 c
       parameter (lbw=7*lx1*ly1*lz1*lelv-1)
@@ -65,9 +65,9 @@ c
 c     Set up array of element pointers
 c
       nelq = nelx*nely*nelz
-      if (nelq.ne.nelgv) then
-         write(6,1) nid,nelq,nelv,nelx,nely,nelz
-    1    format(i8,' problem in set_fast_eprec, nelv?',5i8)
+      if (nelq.ne.nelgv.or.nelgv.gt.lelg_sm) then
+         write(6,1) nid,nelq,nelv,nelx,nely,nelz,nelgv,lelg_sm
+    1    format(i8,' problem in set_fast_eprec, nelv?',7i8)
          call exitt
       endif
 c
@@ -399,7 +399,7 @@ c
       include 'ZPER'
       real work(nelx,nely,nelz)
 c
-      common /fastdr/ lx(lelg),ly(lelg),lz(lelg)
+      common /fastdr/ lx(lelg_sm),ly(lelg_sm),lz(lelg_sm)
       real            lx,      ly,      lz
       integer e,ex,ey,ez,eg
 c
@@ -407,7 +407,7 @@ c
       call rzero(ly,nelgt)
       call rzero(lz,nelgt)
       do e=1,nelv
-         eg = lglel(e,node)
+         eg = lglel(e)
          lx(eg) = xm1(nx1,1,1,e) - xm1(1,1,1,e)
          ly(eg) = ym1(1,ny1,1,e) - ym1(1,1,1,e)
          lz(eg) = zm1(1,1,nz1,e) - zm1(1,1,1,e)

@@ -64,7 +64,9 @@ c
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
       endif
 
-      RETURN
+      call crystal_new(cr_h,nekcomm,np)  ! set cr handle to new instance
+
+      return
       end
 c-----------------------------------------------------------------------
       subroutine init_nek_comm
@@ -357,6 +359,7 @@ c     a = 1./y
 c     b = 1./y
 c     write(6,*) 'quittin3',z,b
 
+c     call crystal_done (cr_h)  ! release instance
       call mpi_finalize (ierr)
       call exit
 

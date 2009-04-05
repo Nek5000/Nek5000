@@ -556,7 +556,6 @@ c
       REAL SDMP2(LXYZT,LDIMT)
 c
 c     cdump comes in via PARALLEL (->TOTAL)
-c     COMMON /CBLELG/ CDUMP(LELG)
 c
       CHARACTER*30 EXCODER
       CHARACTER*1  EXCODER1(30)
@@ -1720,7 +1719,7 @@ C
       IF (IFMODEL .AND. IFKEPS .AND. IFIELD.EQ.IFLDK) THEN
 C
       DO 100 IEL=1,NEL
-         IEG = LGLEL(IEL,NODE)
+         ieg = lglel(iel)
          DO 100 K=1,NZ1
          DO 100 J=1,NY1
          DO 100 I=1,NX1
@@ -1732,7 +1731,7 @@ C
       ELSEIF (IFMODEL .AND. IFKEPS .AND. IFIELD.EQ.IFLDE) THEN
 C
       DO 200 IEL=1,NEL
-         IEG = LGLEL(IEL,NODE)
+         ieg = lglel(iel)
          DO 200 K=1,NZ1
          DO 200 J=1,NY1
          DO 200 I=1,NX1
@@ -1744,7 +1743,7 @@ C
       ELSE
 C
       DO 300 IEL=1,NEL
-         IEG = LGLEL(IEL,NODE)
+         ieg = lglel(iel)
          DO 300 K=1,NZ1
          DO 300 J=1,NY1
          DO 300 I=1,NX1
@@ -2073,7 +2072,7 @@ c-----------------------------------------------------------------------
       l = 1
       if (np.gt.1) then
          do e=1,nelt
-            eg = lglel(e,node)
+            eg = lglel(e)
             msg_id(e) = irecv(eg,wk(l),len)
             l = l+nxyzw
          enddo
@@ -2155,7 +2154,7 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-            eg = lglel(e,node)
+            eg = lglel(e)
             msg_id(e) = irecv(eg,wk(l),len)
             l = l+nxyzr
          enddo
@@ -2256,13 +2255,19 @@ c-----------------------------------------------------------------------
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
 
+      if (nelr.gt.lelr) then
+        write(6,*)nid,nelr,lelr,'parse_std_hdr: inc. lelr in RESTART'
+        call exitt
+      endif
+
+
 c          NOTE:  This will be extended to general case in future.
 c                 For now, what you see in file is what you get.
       ifgetxr = .false.
       ifgetur = .false.
       ifgetpr = .false.
       ifgettr = .false.
-      do k=1,ldimt-1
+      do k=1,ldimt1
          ifgtpsr(k) = .false.
       enddo
 
@@ -2279,11 +2284,10 @@ c                 For now, what you see in file is what you get.
             read(rdcode1(i+2),'(I1)') NPS0
             NPS = 10*NPS1+NPS0
             do k=1,NPS
-               if(k.gt.ldimt-1) goto 50
                ifgtpsr(k) = .true.
             enddo
             ! nothing will follow
-            goto 50
+            GOTO 50
          endif
       enddo
   
@@ -2320,6 +2324,11 @@ c                4  7  10  13   23    33    53    62     68     74
      $         , ifiler,nfiler
      $         , (rlcode(k),k=1,20)                   ! 74+20=94
     1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
+
+      if (nelr.gt.lelr) then
+        write(6,*)nid,nelr,lelr,'parse_std_hdr06: inc. lelr in RESTART'
+        call exitt
+      endif
 
 c     Assign read conditions, according to rdcode
 c          NOTE:  This will be extended to general case in future.

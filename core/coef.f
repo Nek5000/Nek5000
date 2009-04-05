@@ -967,7 +967,7 @@ c
       SIGN = JAC(1)
       DO 100 I=2,N
          IF (SIGN*JAC(I).LE.0.0) THEN
-            ieg = lglel(iel,node)
+            ieg = lglel(iel)
             WRITE(6,101) nid,I,ieg
             write(6,*) jac(i-1),jac(i)
             if (ndim.eq.3) then

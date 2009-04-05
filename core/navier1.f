@@ -1567,7 +1567,7 @@ C
       REAL F3 (LX1,LY1,LZ1,LELV)
       CALL OPRZERO (F1,F2,F3)
       DO 100 IEL=1,NELV
-         IELG = LGLEL(IEL,NODE)
+         ielg = lglel(iel)
          DO 100 K=1,NZ1
          DO 100 J=1,NY1
          DO 100 I=1,NX1

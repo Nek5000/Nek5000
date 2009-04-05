@@ -1037,7 +1037,7 @@ C     Read output specs
       READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
       READ(9,*,ERR=200,END=200) IPSCO
       IF (IPSCO.GT.0) THEN
-         IF (IPSCO.GT.LDIMT-1) GOTO 200
+         IF (IPSCO.GT.LDIMT1) GOTO 200
          DO 120 I=1,IPSCO
             READ(9,*,ERR=200,END=200) IFPSCO(I)
   120    CONTINUE
@@ -1148,18 +1148,18 @@ C
       ENDIF
 c
 c     write(6,1) 
-c    $(nid,'tab4',lglel(ie,node),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
 c   1 format(i3,a4,i3,16f5.2)
 c
       CALL DSSUM(TA,NX1,NY1,NZ1)
 c
 c     write(6,1) 
-c    $(nid,'taaf',lglel(ie,node),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
 c
       CALL RONE (TB,NTOT)
       CALL SUB2 (TB,TA,NTOT)
       DO 1000 IE=1,NELT
-      IEG=LGLEL(IE,NODE)
+      ieg=lglel(ie)
       DO 1000 IZ=1,NZ1
       DO 1000 IY=1,NY1
       DO 1000 IX=1,NX1
@@ -1219,7 +1219,7 @@ C
          SCAL1=MAX(SCAL1,SCAL2)
          SCAL1=MAX(SCAL1,SCAL3)
          XSCALE = 1./SCAL1
-         IEG=LGLEL(IE,NODE)
+         ieg=lglel(ie)
          DO 1100 IZ=1,NZ1
          DO 1100 IY=1,NY1
          DO 1100 IX=1,NX1
@@ -1255,7 +1255,7 @@ C
          SCAL1=MAX(SCAL1,SCAL2)
          SCAL1=MAX(SCAL1,SCAL3)
          YSCALE = 1./SCAL1
-         IEG=LGLEL(IE,NODE)
+         ieg=lglel(ie)
          DO 1200 IZ=1,NZ1
          DO 1200 IY=1,NY1
          DO 1200 IX=1,NX1
@@ -1292,7 +1292,7 @@ C
           SCAL1=MAX(SCAL1,SCAL2)
           SCAL1=MAX(SCAL1,SCAL3)
           ZSCALE = 1./SCAL1
-          IEG=LGLEL(IE,NODE)
+          ieg=lglel(ie)
           DO 1300 IZ=1,NZ1
           DO 1300 IY=1,NY1
           DO 1300 IX=1,NX1
@@ -1377,18 +1377,18 @@ C
       ENDIF
 c
 c     write(6,1) 
-c    $(nid,'tab4',lglel(ie,node),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
 c   1 format(i3,a4,i3,16f5.2)
 c
       CALL DSSUM(TA,NX1,NY1,NZ1)
 c
 c     write(6,1) 
-c    $(nid,'taaf',lglel(ie,node),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
 c
       CALL RONE (TB,NTOT)
       CALL SUB2 (TB,TA,NTOT)
       DO 1000 IE=1,NELT
-      IEG=LGLEL(IE,NODE)
+      ieg=lglel(ie)
       DO 1000 IZ=1,NZ1
       DO 1000 IY=1,NY1
       DO 1000 IX=1,NX1
@@ -1482,7 +1482,7 @@ C
          SCAL1=MAX(SCAL1,SCAL2)
          SCAL1=MAX(SCAL1,SCAL3)
          XSCALE = 1./SCAL1
-         IEG=LGLEL(IE,NODE)
+         ieg=lglel(ie)
          DO 1100 IZ=1,NZ1
          DO 1100 IY=1,NY1
          DO 1100 IX=1,NX1
@@ -2011,12 +2011,19 @@ c-----------------------------------------------------------------------
 
       call gsync()
 
+      nio = 10
+      do k=1,8
+         if (nelgt/nio .lt. 100) goto 10
+         nio = nio*10
+      enddo
+   10 continue
+
       do eg=1,nelgt             ! sync NOT needed here
 
          mid = gllnid(eg)
          e   = gllel (eg)
 
-         if (nid.eq.0.and.mod(eg,1000).eq.0) write(6,*) eg,' mesh read'
+         if (nid.eq.0.and.mod(eg,nio).eq.0) write(6,*) eg,' mesh read'
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 
             call byte_read  (buf,nwds)
@@ -2271,7 +2278,7 @@ c-----------------------------------------------------------------------
       integer e,f,eg
 
       do e=1,nelt
-         eg = lglel(e,node)
+         eg = lglel(e)
          write(6,1) nid,eg,e,(cbc(f,e,1),f=1,6)
       enddo
     1 format(3i8,6(1x,a3),'  cbc')

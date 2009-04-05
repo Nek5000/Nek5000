@@ -13,11 +13,6 @@ C     COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
 C     COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 C     COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 C
-C     global arrarys
-C
-      PARAMETER (LGLOB=( 4*(3-LDIM) + 20*(LDIM-2) )*LELG)
-      COMMON /SCRSF/ WORK(LGLOB)
-      INTEGER        WORK
 C
 C     ring pass arrays
 C

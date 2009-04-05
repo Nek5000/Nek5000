@@ -413,16 +413,17 @@ C
  100     IA(I) = IB
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine copy(a,b,n)
-      REAL A(1), B(1)
-C
-      DO 100 I = 1, N
- 100     A(I) = B(I)
+      real a(1),b(1)
+
+      do i=1,n
+         a(i)=b(i)
+      enddo
 
       return
-      END
-C
+      end
+c-----------------------------------------------------------------------
       subroutine chcopy(a,b,n)
       CHARACTER*1 A(1), B(1)
 C
