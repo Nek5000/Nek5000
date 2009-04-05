@@ -1,6 +1,6 @@
 
-c     parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
-      parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
+c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
+      parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
 
       common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
      $              , wdsizr,wdsizo
