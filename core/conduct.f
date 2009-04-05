@@ -177,7 +177,7 @@ C------------------------------------------------------------------
 c
       real bql(lx1,ly1,lz1,lelt)
 c
-      ielg = lglel(iel,node)
+      ielg = lglel(iel)
       do 10 k=1,nz1
       do 10 j=1,ny1
       do 10 i=1,nx1

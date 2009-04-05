@@ -1557,58 +1557,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-ccc       subroutine err_est(u,name8,ifverb)
-ccc 
-ccc c     NO ERROR ESTIMATES IN THIS FORM... too much memory required
-ccc c
-ccc c     Local error estimates for u_e
-ccc c
-ccc       include 'SIZE'
-ccc       include 'TOTAL'
-ccc c
-ccc       real u(nx1*ny1*nz1,nelt)
-ccc       character*8 name8
-ccc       logical ifverb
-ccc c
-ccc       common /ctmp1/ uh(lx1,ly1,lz1),w(lx1,ly1,lz1)
-ccc       common /ctmp0/ errg(10,lelg),wg(10*lelg)
-ccc c
-ccc       common /errcmn/ Lj(lx1*lx1),Ljt(lx1*lx1)
-ccc       real Lj,Ljt
-ccc c
-ccc       integer e,eg
-ccc c
-ccc       integer icalld
-ccc       save    icalld
-ccc       data    icalld  /0/
-ccc c
-ccc       if (icalld.eq.0) then
-ccc          icalld = 1
-ccc          call build_legend_transform(Lj,Ljt,zgm1,nx1)
-ccc       endif
-ccc c
-ccc       call rzero(errg,10*nelgt)
-ccc c
-ccc       nel = nelfld(ifield)
-ccc       do e=1,nel
-ccc          eg = lglel(e,node)
-ccc          call local_err_est(errg(1,eg),u(1,e),nx1,Lj,Ljt,uh,w,if3d)
-ccc       enddo
-ccc c
-ccc       call gop(errg,wg,'+  ',10*nelgt)
-ccc c
-ccc       if (ifverb.and.nid.eq.0) then
-ccc          write(6,1) istep,time,name8
-ccc          do eg=1,nelgt
-ccc             write(6,2) name8,eg,(errg(k,eg),k=1,10)
-ccc          enddo
-ccc       endif
-ccc     1 format(i8,2x,1pe14.7,' Error: ',a8)
-ccc     2 format(a8,i6,1p10e9.2)
-ccc c
-ccc       return
-ccc       end
-ccc c-----------------------------------------------------------------------
       subroutine transpose1(a,n)
       real a(n,n)
 c
@@ -1877,7 +1825,7 @@ c
 c
       do e=1,nelt
 c
-         eg = lglel(e,node)
+         eg = lglel(e)
          ez = 1 + (eg-1)/melxy
 c
          do k=1,nz1
@@ -2645,7 +2593,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'       ! need nid
       include 'PARALLEL'   ! need np
 
-      common /cscrg/ nnodes(0:lp),nwork(0:lp)
+      parameter(lp_small=256)
+      common /cscrg/ nnodes(0:lp_small),nwork(0:lp_small)
 
       real*4  txyz(3*nxyz),t2(2*nxyz)
       integer tri (3*ntri)
@@ -2658,6 +2607,11 @@ c-----------------------------------------------------------------------
 
       write(6,1) nid,istep,icalld,nxyz,lxyz,ntri,ltri
     1 format(7i9,' triangles')
+
+      if (np.gt.lp_small) then
+         write(6,*) nid,' increase lp_small in output_tri:',lp_small,np
+         call exitt
+      endif
 
       if (nid.eq.0) call open_surf_file(icalld)
 c     if (nid.eq.0) open(unit=59,file='surf.a',status='unknown')
@@ -2721,7 +2675,7 @@ c
 c
       do e=1,nelt
 c
-         eg = lglel(e,node)
+         eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
          j = 1
@@ -2759,7 +2713,7 @@ c
 c
       do e=1,nelt
 c
-         eg = lglel(e,node)
+         eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
          k = 1
@@ -2798,7 +2752,7 @@ c
 c
       do e=1,nelt
 c
-         eg = lglel(e,node)
+         eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 c
          do k=1,nz1
@@ -2844,7 +2798,7 @@ c
 c
       do e=1,nelt
 c
-         eg = lglel(e,node)
+         eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 c
          do j=1,ny1

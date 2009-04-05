@@ -506,7 +506,7 @@ c
       do jp=1,npert
          l = 0
          do iel=1,nelv
-            ielg = lglel(iel,node)     ! Global element number
+            ielg = lglel(iel)     ! Global element number
             do k=1,nz1
             do j=1,ny1
             do i=1,nx1

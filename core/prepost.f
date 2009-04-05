@@ -339,7 +339,7 @@ C     Figure out what goes in EXCODE
            i = i + 1
          ENDIF
          IF(NPSCAL.GT.0)then
-            DO IIP=1,LDIMT-1
+            DO IIP=1,ldimt1
                IF(IFPSCO(IIP)) THEN
                  WRITE(EXCODE(IIP+i)  ,'(I1)') IIP
                  WRITE(EXCODE(IIP+i+1),'(A1)') ' '
@@ -1230,7 +1230,7 @@ c
       ENDIF
 C     PASSIVE SCALARS
       IF(NPSCAL.GT.0)then
-         DO IIP=1,LDIMT-1
+         DO IIP=1,ldimt1
             IF(IFPSCO(IIP))then
                ID=ID+1
                CALL COPYx4(TDUMP(1,ID),T(1,1,1,IE,IIP+1),NXYZ)
@@ -1268,7 +1268,7 @@ c
       IF(IFTO) ID=ID+1
 C     PASSIVE SCALARS
       IF(NPSCAL.GT.0)then
-         DO IIP=1,LDIMT-1
+         DO IIP=1,ldimt1
             IF(IFPSCO(IIP))then
                ID=ID+1
            ENDIF             
@@ -1362,7 +1362,7 @@ c-----------------------------------------------------------------------
       if (ifvo ) call mfo_outv(vx,vy,vz,nout)  ! B-field handled thru outpost
       if (ifpo ) call mfo_outs(pm1,nout)
       if (ifto ) call mfo_outs(t,nout)
-      do k=1,ldimt-1
+      do k=1,ldimt1
          if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
       enddo
 
@@ -1372,7 +1372,7 @@ c-----------------------------------------------------------------------
          if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
          if (ifpo ) call mfo_mdatas(pm1,nout)
          if (ifto ) call mfo_mdatas(t,nout)
-         do k=1,ldimt-1
+         do k=1,ldimt1
             if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
          enddo
       endif
@@ -1967,6 +1967,7 @@ c-----------------------------------------------------------------------
       include 'RESTART'
       include 'TSTEP'
       real*4 test_pattern
+      common /ctmp0/ lglist(0:lelt)
 
       character*132 hdr
 
@@ -1993,6 +1994,8 @@ c-----------------------------------------------------------------------
         call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
       endif 
 
+      call gsync()
+
       if(nid.eq.pid0) then
 
       call blank(hdr,132)              ! write header
@@ -2016,7 +2019,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (NPSCAL.GT.0) THEN
          NPSCALO = 0
-         do k = 1,ldimt-1
+         do k = 1,ldimt1
            if(ifpsco(k)) NPSCALO = NPSCALO + 1
          enddo
          rdcode1(i) = 'S'
@@ -2040,17 +2043,23 @@ c-----------------------------------------------------------------------
 
       ! write global element numbering for this group
       if(nid.eq.pid0) then
-        call byte_write(lglel(1,nid+1),nelt)
+        call byte_write(lglel,nelt)
         do j = pid0+1,pid1
            mtype = j
            call csend(mtype,idum,4,j,0)   ! handshake
-           call crecv(mtype,inelp,4)
-           call byte_write(lglel(1,j+1),inelp)
+           len = 4*(lelt+1)
+           call crecv(mtype,lglist,len)
+           call byte_write(lglist(1),lglist(0))
         enddo
       else
         mtype = nid
         call crecv(mtype,idum,4)          ! hand-shake
-        call csend(mtype,nelt,4,pid0,0)  
+        
+        lglist(0) = nelt
+        call icopy(lglist(1),lglel,nelt)
+
+        len = 4*(nelt+1)
+        call csend(mtype,lglist,len,pid0,0)  
       endif 
 
       return

@@ -50,16 +50,16 @@ C
         idum = 1
         if(nid.eq.0) then
            N8 = min(8,nelt)
-           WRITE(6 ,1310) NODE,(LGLEL(IE,NODE),IE=1,N8)
-           IF (nelt.gt.8) WRITE(6 ,1315) (LGLEL(IE,NODE),IE=9,nelt)
+           write(6 ,1310) node,(lglel(ie),ie=1,n8)
+           if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
            DO inid=1,NP-1
               mtype = inid
               call csend(mtype,idum,4,inid,0)            ! handshake
               call crecv(mtype,inelt,4)               ! nelt of other cpus
               N8 = min(8,inelt)
-              WRITE(6 ,1310) inid+1,(LGLEL(IE,inid+1),IE=1,N8)
-              IF (inelt.gt.8) 
-     &           WRITE(6 ,1315) (LGLEL(IE,inid+1),IE=9,inelt)
+c             write(6 ,1310) inid+1,(lglel(ie,inid+1),ie=1,n8)
+c             IF (inelt.gt.8) 
+c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            ENDDO
  1310      FORMAT('IP',I6,' IEG',8I8)
  1315      FORMAT('  ',6X,'    ',8I8)
@@ -102,6 +102,7 @@ C
       include 'SCRCT'
       include 'TSTEP'
       include 'ZPER'
+      common /ctmp0/ iwork(lelt)
 c
       REAL*8 dnekclock,t0
 c
@@ -134,16 +135,23 @@ c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
 c
 c     dist. global to local map to all processors
 c
-      CALL IGOP (GLLEL ,LELGWORK,'+  ',NELGT)
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
+         k = k+m
+      enddo
 c
 c     compute local to global map
 c     (i.e. returns global element number given local index and proc id)
 c
-      DO IEG=1,NELGT
-         NODE1=GLLNID(IEG)+1
-         IE   =GLLEL (IEG)
-         LGLEL(IE,NODE1)=IEG
-      ENDDO
+      do ieg=1,nelgt
+         mid  =gllnid(ieg)
+         ie   =gllel (ieg)
+         if (mid.eq.nid) lglel(ie)=ieg
+      enddo
 c
 c     All Done.
 c
@@ -156,10 +164,10 @@ c
       include 'SIZE'
       include 'ZPER'
 c
-      integer gllnid(lelg)
+      integer gllnid(1)
 c
-      common /ctmp1/ map_st(lelg)
-      common /ctmp0/ iwork(0:lp)
+      common /ctmp1/  map_st(lelg_sm)
+      common /vptsol/ iwork(0:lp)
       integer nelbox(3),nstride_box(3)
 c
       call gfdm_set_pst(ip,is,it,nelbox,nstride_box,nx2,ny2,nz2)
@@ -325,12 +333,19 @@ c-----------------------------------------------------------------------
 c
 c     Print out copies of a global matrix
 c
-      write(6,1) nid,m,n,name6
-   1  format(//,3i6,'  Matrix:',2x,a6,/)
-      do i=1,m
-         write(6,2) nid,name6,(u(i,j),j=1,n)
+      do mid=0,np-1
+        call gsync
+        if (mid.eq.nid) then
+         n20 = min(n,20)
+         write(6,1) nid,m,n,name6
+   1     format(//,3i6,'  Matrix:',2x,a6,/)
+         do i=1,m
+            write(6,2) nid,name6,(u(i,j),j=1,n20)
+         enddo
+   2     format(i3,1x,a6,20i6)
+        endif
+        call gsync
       enddo
-   2  format(i3,1x,a6,15i6)
       return
       end
 c-----------------------------------------------------------------------

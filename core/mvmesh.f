@@ -961,7 +961,7 @@ C
       IFLD = 0
       DO 110 IEL=1,NEL
       DO 110 IFC=1,NFACE
-         IEG = LGLEL(IEL,NODE)
+         ieg = lglel(iel)
          CB  = CBC(IFC,IEL,IFLD)
       IF (CB.EQ.'M' .OR. CB.EQ.'m') THEN
          CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX1,NY1,NZ1,IFC)

@@ -116,7 +116,7 @@ c----------------------------------------------------------------------
       include 'PARALLEL'
       include 'HSMG'
       common /c_is1/ glo_num(lx1*ly1*lz1*lelv)
-      common /ivrtx/ vertex ((2**ldim)*lelg)
+      common /ivrtx/ vertex ((2**ldim)*lelt)
 
       integer glo_num,vertex
       integer nx,ny,nz

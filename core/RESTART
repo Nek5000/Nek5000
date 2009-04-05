@@ -1,7 +1,11 @@
+
+c     parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
+      parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
+
       common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
      $              , wdsizr,wdsizo
      $              , nfileo,nproc_o
-     $              , er(lelg)
+     $              , er(lelr)
       integer wdsizr,wdsizo,er
 
       common /cmfi_r/ timer

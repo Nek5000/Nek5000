@@ -98,15 +98,12 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      common /ivrtx/ vertex ((2**ldim)*lelg)
+      common /ivrtx/ vertex ((2**ldim)*lelt)
       common /scruz/ xbar(ldim,lelt),ibar(lelt)
       integer vertex
-      integer imap(lelg)
+      integer imap(nelgt)
 
       integer e,eg
-
-      ncrnr = 2**ndim
-      call get_vert_map(imap, vertex, ncrnr, nelgt, '.map')
 
       nxb = (nx1+1)/2
       nyb = (ny1+1)/2
@@ -116,7 +113,7 @@ c
          xbar(ndim,e) = zm1(nxb,nyb,nzb,e)
          xbar(1   ,e) = xm1(nxb,nyb,nzb,e)
          xbar(2   ,e) = ym1(nxb,nyb,nzb,e)
-         eg           = lglel(e,node)
+         eg           = lglel(e)
          ibar(e)      = imap(eg)
       enddo
       call p_outvec_ir(ibar,xbar,ndim,'mpxyz.dat')

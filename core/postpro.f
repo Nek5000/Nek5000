@@ -35,8 +35,8 @@ c
       parameter (lxyz=lx1*ly1*lz1)
 
       real gije(lxyz,3,3)
-      real vv(ldim,ldim),ss(ldim,ldim),oo(ldim,ldim),w(ldim,ldim)
-      real lam(ldim)
+      real vv(ldim,ldim),ss(ldim,ldim),oo(ldim,ldim),lam(ldim)
+
 
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
@@ -65,22 +65,22 @@ c
 
 c           Solve eigenvalue problemand sort 
 c           eigenvalues in ascending order.
-            call find_lam3(lam,vv,w,ndim,ierr)
+            call find_lam3(xl2,lam,vv,w,ndim,ierr)
 
             l2(l,1,1,ie) = lam(2)
          enddo
       enddo
 
       ! smooth field
-      wght = 0.5 
+      wght = 0.3 
       ncut = 1
-      call filter_s0(l2,wght,ncut,'vortx') 
+      call filter_s(l2,wght,ncut,'vortx') 
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine find_lam3(lam,aa,w,ndim,ierr)
-      real aa(ndim,ndim),lam(ndim),w(ndim,ndim),lam2
+      subroutine find_lam3(lam2,lam,aa,w,ndim,ierr)
+      real aa(3,3),lam(3),w(3,3),lam2
 c
 c     Use cubic eqn. to compute roots
 c
@@ -107,8 +107,7 @@ c
 c
          call quadratic(x1,x2,aq,bq,cq,ierr)
 c 
-         lam(1) = min(x1,x2)
-         lam(2) = max(x1,x2)
+         lam2 = min(x1,x2)
 c
          return
       endif
@@ -145,7 +144,8 @@ c
       a3 =  a*f*f + b*e*e + c*d*d - a*b*c - 2*d*e*f
 c
       call cubic  (lam,a1,a2,a3,ierr)
-      call sort   (lam,w,3)
+      call sort (lam,w,3)
+      lam2 = lam(2)
 c
       return
       end
@@ -266,7 +266,7 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      real gije(lx1*ly1*lz1,ldim,ldim)
+      real gije(lx1*ly1*lz1,ndim,ndim)
       real u   (lx1*ly1*lz1)
       real v   (lx1*ly1*lz1)
       real w   (lx1*ly1*lz1)
@@ -325,29 +325,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine filter_s1(scalar,tf,nx,nel) ! filter scalar field 
-
-      include 'SIZE'
-
-      parameter(lxyz=lx1*ly1*lz1) 
-      real scalar(lxyz,1)
-      real fh(nx*nx),fht(nx*nx),tf(nx)
-
-      real w1(lxyz,lelt)
-
-c     Build 1D-filter based on the transfer function (tf)
-      call build_1d_filt(fh,fht,tf,nx,nid)
-
-c     Filter scalar
-      call copy(w1,scalar,lxyz*nel)
-      do ie=1,nel
-         call tens3d1(scalar(1,ie),w1(1,ie),fh,fht,nx1,nx1)  ! fh x fh x fh x scalar
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine filter_s0(scalar,wght,ncut,name5) ! filter scalar field 
+      subroutine filter_s(scalar,wght,ncut,name5) ! filter scalar field 
 
       include 'SIZE'
       include 'TOTAL'
@@ -378,10 +356,7 @@ c-----------------------------------------------------------------------
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
-
-c      if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
-      call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
-
+      if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
       icall = 1
 
       call filterq(scalar,intv,nx1,nz1,wk1,wk2,intt,if3d,fmax)
@@ -518,263 +493,6 @@ c-----------------------------------------------------------------------
 
       call findpts_done(ipth)
       call crystal_done(icrh)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine tens3d1(v,u,f,ft,nv,nu)  ! v = F x F x F x u
-
-c     Note: this routine assumes that nx1=ny1=nz1
-c
-      include 'SIZE'
-      include 'INPUT'
-
-      parameter (lw=4*lx1*lx1*lz1)
-      common /ctensor/ w1(lw),w2(lw)
-
-      real v(nv,nv,nv),u(nu,nu,nu)
-      real f(1),ft(1)
-
-      if (nu*nu*nv.gt.lw) then
-         write(6,*) nid,nu,nv,lw,' ERROR in tens3d1. Increase lw.'
-         call exitt
-      endif
-
-      if (if3d) then
-         nuv = nu*nv
-         nvv = nv*nv
-         call mxm(f,nv,u,nu,w1,nu*nu)
-         k=1
-         l=1
-         do iz=1,nu
-            call mxm(w1(k),nv,ft,nu,w2(l),nv)
-            k=k+nuv
-            l=l+nvv
-         enddo
-         call mxm(w2,nvv,ft,nu,v,nv)
-      else
-         call mxm(f ,nv,u,nu,w1,nu)
-         call mxm(w1,nv,ft,nu,v,nv)
-      endif
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine build_1d_filt(fh,fht,trnsfr,nx,nid)
-c
-c     This routing builds a 1D filter with transfer function diag()
-c
-c     Here, nx = number of points
-c
-      real fh(nx,nx),fht(nx,nx),trnsfr(nx)
-c
-      parameter (lm=40)
-      parameter (lm2=lm*lm)
-      common /cfiltr/ phi(lm2),pht(lm2),diag(lm2),rmult(lm),Lj(lm)
-     $              , zpts(lm)
-      real Lj
-
-      common /cfilti/ indr(lm),indc(lm),ipiv(lm)
-c
-      if (nx.gt.lm) then
-         write(6,*) 'ABORT in set_filt:',nx,lm
-         call exitt
-      endif
-
-      call zwgll(zpts,rmult,nx)
-
-      kj = 0
-      n  = nx-1
-      do j=1,nx
-         z = zpts(j)
-         call legendre_poly(Lj,z,n)
-         kj = kj+1
-         pht(kj) = Lj(1)
-         kj = kj+1
-         pht(kj) = Lj(2)
-         do k=3,nx
-            kj = kj+1
-            pht(kj) = Lj(k)-Lj(k-2)
-         enddo
-      enddo
-      call transpose (phi,nx,pht,nx)
-      call copy      (pht,phi,nx*nx)
-      call gaujordf  (pht,nx,nx,indr,indc,ipiv,ierr,rmult)
-
-      call rzero(diag,nx*nx)
-      k=1 
-      do i=1,nx
-         diag(k) = trnsfr(i)
-         k = k+(nx+1)
-      enddo
-
-      call mxm  (diag,nx,pht,nx,fh,nx)      !          -1
-      call mxm  (phi ,nx,fh,nx,pht,nx)      !     V D V
-
-      call copy      (fh,pht,nx*nx)
-      call transpose (fht,nx,fh,nx)
-
-      do k=1,nx*nx
-         pht(k) = 1.-diag(k)
-      enddo
-      np1 = nx+1
-      if (nid.eq.0) then
-         write(6,6) 'flt amp',(pht (k),k=1,nx*nx,np1)
-         write(6,6) 'flt trn',(diag(k),k=1,nx*nx,np1)
-   6     format(a8,16f7.4,6(/,8x,16f7.4))
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mag_tensor_e(mag,aije)
-c
-c     Compute magnitude of tensor A_e for element e
-c
-c     mag(A_e) = sqrt( 0.5 (A:A) )
-c
-      include 'SIZE'
-      REAL mag (lx1*ly1*lz1)
-      REAL aije(lx1*ly1*lz1,ldim,ldim)
-
-      nxyz = nx1*ny1*nz1
-
-      call rzero(mag,nxyz)
- 
-      do 100 j=1,ndim
-      do 100 i=1,ndim
-      do 100 l=1,nxyz 
-         mag(l) = mag(l) + 0.5*aije(l,i,j)*aije(l,i,j)
- 100  continue
-
-      call vsqrt(mag,nxyz)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine comp_sije(gije)
-c
-c     Compute symmetric part of a tensor G_ij for element e
-c
-      include 'SIZE'
-      include 'TOTAL'
-
-      real gije(lx1*ly1*lz1,ldim,ldim)
-
-      nxyz = nx1*ny1*nz1
-
-      k = 1
-
-      do j=1,ndim
-      do i=k,ndim
-         do l=1,nxyz
-            gije(l,i,j) = 0.5*(gije(l,i,j)+gije(l,j,i))
-            gije(l,j,i) = gije(l,i,j)
-         enddo
-      enddo
-         k = k + 1
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine wlapl(out1,out2,out3,out4,u,h1,nel)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      REAL           out1  (LX1,LY1,LZ1,1)
-     $ ,             out2  (LX1,LY1,LZ1,1)
-     $ ,             out3  (LX1,LY1,LZ1,1)
-     $ ,             out4  (LX1,LY1,LZ1,1)
-     $ ,             u     (LX1,LY1,LZ1,1)
-     $ ,             h1    (LX1,LY1,LZ1,1)
-      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
-     $ ,             DUDS  (LX1,LY1,LZ1)
-     $ ,             DUDT  (LX1,LY1,LZ1)
-     $ ,             TMP1  (LX1,LY1,LZ1)
-     $ ,             TMP2  (LX1,LY1,LZ1)
-     $ ,             TMP3  (LX1,LY1,LZ1)
-
-      REAL           TM1   (LX1,LY1,LZ1)
-      REAL           TM2   (LX1,LY1,LZ1)
-      REAL           TM3   (LX1,LY1,LZ1)
-      REAL           DUAX  (LX1)
-      REAL           YSM1  (LX1)
-      EQUIVALENCE    (DUDR,TM1),(DUDS,TM2),(DUDT,TM3)
-C
-      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-
-
-      NXY=NX1*NY1
-      NYZ=NY1*NZ1
-      NXZ=NX1*NZ1
-      NXYZ=NX1*NY1*NZ1
-      NTOT=NXYZ*NEL
-
-      CALL RZERO (out1,NTOT)
-      CALL RZERO (out2,NTOT)
-      CALL RZERO (out3,NTOT)
-      CALL RZERO (out4,NTOT)
-
-      DO 100 IEL=1,NEL
-        IF (IFAXIS) CALL SETAXDY ( IFRZER(IEL) )
-C
-        IF (NDIM.EQ.2) THEN
-C       2-d case ...............
-C       General case, speed-up for undeformed elements
-C
-           CALL MXM  (DXM1,NX1,U(1,1,1,IEL),NX1,DUDR,NYZ)
-           CALL MXM  (U(1,1,1,IEL),NX1,DYTM1,NY1,DUDS,NY1)
-           CALL COL3 (TMP1,DUDR,G1M1(1,1,1,IEL),NXYZ)
-           CALL COL3 (TMP2,DUDS,G2M1(1,1,1,IEL),NXYZ)
-           IF (IFDFRM(IEL)) THEN
-              CALL ADDCOL3 (TMP1,DUDS,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDR,G4M1(1,1,1,IEL),NXYZ)
-           ENDIF
-           CALL COL2 (TMP1,H1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP2,H1(1,1,1,IEL),NXYZ)
-           CALL MXM  (DXTM1,NX1,TMP1,NX1,TM1,NYZ)
-           CALL MXM  (TMP2,NX1,DYM1,NY1,TM2,NY1)
-           CALL ADD2 (OUT1(1,1,1,IEL),TM1,NXYZ)
-           CALL ADD2 (OUT2(1,1,1,IEL),TM2,NXYZ)
-           CALL ADD3 (OUT4(1,1,1,IEL),TM1,TM2,NXYZ)
-        ELSE
-C       3-d case ...............
-C       General case, speed-up for undeformed elements
-C
-           CALL MXM(DXM1,NX1,U(1,1,1,IEL),NX1,DUDR,NYZ)
-           DO 10 IZ=1,NZ1
-              CALL MXM(U(1,1,IZ,IEL),NX1,DYTM1,NY1,DUDS(1,1,IZ),NY1)
-   10      CONTINUE
-           CALL MXM     (U(1,1,1,IEL),NXY,DZTM1,NZ1,DUDT,NZ1)
-           CALL COL3    (TMP1,DUDR,G1M1(1,1,1,IEL),NXYZ)
-           CALL COL3    (TMP2,DUDS,G2M1(1,1,1,IEL),NXYZ)
-           CALL COL3    (TMP3,DUDT,G3M1(1,1,1,IEL),NXYZ)
-           IF (IFDFRM(IEL)) THEN
-              CALL ADDCOL3 (TMP1,DUDS,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP1,DUDT,G5M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDR,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDT,G6M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP3,DUDR,G5M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP3,DUDS,G6M1(1,1,1,IEL),NXYZ)
-           ENDIF
-           CALL COL2 (TMP1,H1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP2,H1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP3,H1(1,1,1,IEL),NXYZ)
-           CALL MXM  (DXTM1,NX1,TMP1,NX1,TM1,NYZ)
-           DO 20 IZ=1,NZ1
-              CALL MXM(TMP2(1,1,IZ),NX1,DYM1,NY1,TM2(1,1,IZ),NY1)
-   20      CONTINUE
-           CALL MXM  (TMP3,NXY,DZM1,NZ1,TM3,NZ1)
-           CALL ADD2 (OUT1(1,1,1,IEL),TM1,NXYZ)
-           CALL ADD2 (OUT2(1,1,1,IEL),TM2,NXYZ)
-           CALL ADD2 (OUT3(1,1,1,IEL),TM3,NXYZ)
-           CALL ADD4 (OUT4(1,1,1,IEL),TM1,TM2,TM3,NXYZ)
-        ENDIF
-C
- 100  CONTINUE
-      
 
       return
       end

@@ -34,15 +34,40 @@ c
       include 'SIZE'
       include 'PARALLEL'
       include 'ZPER'
-c
+
+      call gfdm_check_array_sizes
+
       call gfdm_mappings
 c     write(6,*) 'done ops1'
-c
+
       call gfdm_ops
 c     write(6,*) 'done ops2'
-c
 c     call exitt
-c
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gfdm_check_array_sizes
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'ZPER'
+
+      if (lelg_sm.lt.lelg.or.ltfdm2.lt.2*lx2*ly2*lz2*lelt) then
+         if (nid.eq.0) then
+            write(6,*) 'gfdm_array_check fail A:',lelg_sm,ltfdm2,lelg
+            write(6,*) 'modify lelg_sm,ltfdm2 in ZPER; makenek clean'
+         endif
+         call exitt
+      endif
+
+      if (lp_small.lt.np) then
+         if (nid.eq.0) then
+            write(6,*) 'gfdm_array_check fail B:',lp_small,np
+            write(6,*) 'modify lp_small > np in ZPER; makenek clean'
+         endif
+         call exitt
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -101,7 +126,7 @@ c     each pressure degree-of-freedom, based on an (nelx by nely by nelz)
 c     (lexicographical) ordering of the elements.
 c
       call assign_tp_numbering_pres(tpn1,nelx,nely,nelz,nx2,ny2,nz2
-     $                                    ,lglel(1,node),nelv)
+     $                                    ,lglel(1),nelv)
 c
       ntot = nelv*nx2*ny2*nz2
       ni   = nelx*nx2
