@@ -2323,6 +2323,10 @@ c     First two slots in tuple(:,i) assumed empty
       ky=1  ! Assumes crystal_new already called
       call crystal_transfer(cr_h,ni,nmax,tuple,m,vl,ml,vr,mr,ky)
 
+      nimx = iglmax(ni,1)
+      if (ni.gt.nmax)   write(6,*) ni,nmax,n,'cr_xfer problem, A'
+      if (nimx.gt.nmax) call exitt
+
       nkey = m-2
       do k=1,nkey
          key(k) = k+2
@@ -2364,11 +2368,11 @@ c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
       logical ifcenter
 
       integer  edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
-      common  /scrmg/ edge,enum
-      equivalence  (enum,fnum)
+      common  /scrmg/ edge,enum,fnum
+c     equivalence  (enum,fnum)
 
-      integer etuple(4,12*lelt),ftuple(5,6,lelt)
-      integer ind(12*lelt)
+      integer etuple(4,2*12*lelt),ftuple(5,6,2*lelt)
+      integer ind(2*12*lelt)
       common  /scrns/ ind,etuple
       equivalence  (etuple,ftuple)
 
@@ -2434,7 +2438,7 @@ c     Sort edges by bounding vertices.
 c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 12*nel
-      nmax = 12*lelt
+      nmax = 12*lelt*2  ! 2x for crystal router factor of safety
       call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,12*nel
          enum(i,1) = etuple(3,i)
@@ -2546,7 +2550,7 @@ c
 c     Assign a number (rank) to each unique face
       m    = 5
       n    = 6*nel
-      nmax = 6*lelt
+      nmax = 6*lelt*2  ! 2x for crystal router factor of safety
       call gbtuple_rank(ftuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,6*nel
          fnum(i,1) = ftuple(3,i,1)
@@ -2723,8 +2727,8 @@ c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
       integer  edge(0:1,0:1,2,lelt),enum(4,lelt)
       common  /scrmg/ edge,enum
 
-      integer etuple(4,4*lelt)
-      integer ind(4*lelt)
+      integer etuple(4,4*lelt*2)
+      integer ind(4*lelt*2)
       common  /scrns/ ind,etuple
 
       integer gvf(4),aa(3),key(3),e,eg
@@ -2784,7 +2788,7 @@ c     Sort edges by bounding vertices.
 c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 4*nel
-      nmax = 4*lelt
+      nmax = 4*lelt*2  ! 2x for crystal router factor of safety
 
       call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,4*nel
