@@ -938,6 +938,7 @@ c
          do e=1,nelv
             do j=1,ny1
             do i=1,nx1
+               l = l+1
                ur = ( u(i,j,1,e)*rxm1(i,j,1,e)
      $            +   v(i,j,1,e)*rym1(i,j,1,e) ) * jacmi(l,1)
                us = ( u(i,j,1,e)*sxm1(i,j,1,e)

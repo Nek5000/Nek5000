@@ -113,7 +113,7 @@ C
       COURNO = DT*UMAX
 c
       if (iffxdt.and.abs(courno).gt.10.*abs(ctarg)) then
-         if (nid.eq.0) write(6,*) CFL, Ctarg!',courno,ctarg
+         if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg
          call emerxit
       endif
       RETURN
