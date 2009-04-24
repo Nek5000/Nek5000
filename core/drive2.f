@@ -200,7 +200,7 @@ C
  100  CONTINUE
 C
       NMXH   = 100 !  1000
-      NMXP   = 100 !  2000
+      NMXP   = 1000 !  (for testing) 100 !  2000
       NMXE   = 100 !  1000
       NMXNL  = 10  !  100
 C
@@ -1306,7 +1306,8 @@ c
 c     If either dt or the backwards difference coefficient change,
 c     then recompute base flow solution corresponding to unit forcing:
 c
-      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.ifuservp)
+      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow  .or. 
+     $   ifuservp .or. ifmvbd )
      $   call compute_vol_soln(vxc,vyc,vzc,prc)
       dt_vflow = dt
       bd_vflow = bd(1)
