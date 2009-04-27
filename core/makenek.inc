@@ -94,7 +94,7 @@ fi
 
 # assign compiler flag to promote REAL to 8 bytes 
 F77comp=$F77
-echo $F77comp | grep -i mpi
+echo $F77comp | grep -i mpi >/dev/null
 if [ $? -eq 0 ]; then
  F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
 else
@@ -148,7 +148,17 @@ else
    IFMOAB=false
 fi
 
-# set preprocssor symbol for timing
+
+# set preprocessor symbol to print AMG files
+if [ "$IFAMG_DUMP" == "true" -o "$IFTIMING" == "yes" ]; then
+    if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
+      echo "ABORT: Cannot dump AMG files if AMG is disabled!"
+      exit 1
+    fi
+    P="$P -DAMG_DUMP"
+fi
+
+# set preprocessor symbol for timing
 if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
     P="$P $PPPO-DNOTIMER"
 fi
@@ -193,7 +203,7 @@ if [ "$OPT_FLAGS_MAG" != "" ]; then
 fi
 
 if [ "$USR_LIB" != "" ]; then
-    USR_LFLAGS="${USR_LFLAGS} $USR_LIB"
+    USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
 fi
 
 # Generate makefile from using the makefile template and 

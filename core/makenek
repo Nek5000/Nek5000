@@ -39,6 +39,7 @@ CC="mpicc"
 # enable AMG coarse grid solver (default XXT)
 # -------------------------------------------
 #IFAMG="true"
+#IFAMG_DUMP="true"
 
 # enable coupled nek (default false)
 # ----------------------------------
