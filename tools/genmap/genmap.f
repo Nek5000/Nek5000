@@ -59,6 +59,7 @@ c     read nekton .rea file and make a .map file
 
       call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim)
 c                                    irnk is # unique points
+      
 
 
       nfc = 2*ndim
@@ -168,6 +169,15 @@ c     read nekton .rea file and make a mesh
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       call getfile2('Input (.rea) file name:$','.rea$',10)
+      q = 0.2
+      write(6,'(A)') 'Input mesh tolerance (default 0.2):'
+      write(6,'(A,A)') 'NOTE: smaller is better, but generous is more',
+     &                 'forgiving for bad mashes.'
+      read(5,*) qin
+      if(qin.gt.0) then
+        q = qin
+      endif
+
       call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
       if (ifbinary) then
@@ -214,7 +224,7 @@ c     call outbc(cbc,bc,nelt,ndim,' CBC 2')
 
 
 c     Compress vertices based on coordinates
-      call unique_vertex2(cell,dx,ndim,nelt,i_n,j_n,j_o)
+      call unique_vertex2(cell,dx,ndim,nelt,i_n,j_n,j_o,q)
 
       nv   = 2**ndim
       npts = nelt*nv
@@ -2822,7 +2832,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine unique_vertex2(cell,dx,ndim,nel,ind,ninseg,ifseg)
+      subroutine unique_vertex2(cell,dx,ndim,nel,ind,ninseg,ifseg,q)
 c
       integer cell(1),ind(1),ninseg(1)
       logical ifseg(1)
@@ -2859,7 +2869,7 @@ c
          enddo
 c
 c        q=0.0010   ! Smaller is better
-         q=0.2      ! But generous is more forgiving for bad meshes!
+c         q=0.2      ! But generous is more forgiving for bad meshes!
          do i=2,n
            if ((dx(j,i)-dx(j,i-1))**2.gt.q*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
