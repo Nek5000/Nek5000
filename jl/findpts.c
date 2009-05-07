@@ -164,6 +164,7 @@ void ftuple_list_sort(sint *n, const uint *k, sint vi[],
   tuple_list tl = {*mi,0,*mr,*n,0,vi,0,vr};
   buffer_init(&buf,65536);  /* will be increased automatically if needed */
   tuple_list_sort(&tl,key,&buf);
+  buffer_free(&buf);
 }
 
 
