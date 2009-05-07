@@ -241,7 +241,7 @@ c
 c     Construct mesh
 c
       write(9,10) nel,ndim,nel
-   10 format(3i6,'           NEL,NDIM,NELV')
+   10 format(3i10,'           NEL,NDIM,NELV')
 c
       ncurv = 0
       call rzero(curve,8*nel)
