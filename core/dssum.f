@@ -18,15 +18,18 @@ c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
 
 #ifndef NOTIMER
+
+      if (ifsync) call gsync()
+
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
       etime1=dnekclock()
+
 #endif
 
-      if (ifsync) call gsync()
 
 c
 c                 T         ~  ~T  T
