@@ -3,6 +3,7 @@ J:=$S/jl
 J2:=$J/../jl2
 IFMPI= 
 IFAMG= 
+IFAMG_DUMP=
 IFMOAB=
 MOAB_DIR=
 F77=
@@ -63,6 +64,10 @@ endif
 COMM_MPI = comm_mpi.o
 JL := -DMPI
 JL2 := -DMPI
+ifeq ($(IFAMG_DUMP),true)
+   JL := ${JL} -DAMG_DUMP
+   JL2 := ${JL2} -DAMG_DUMP
+endif
 ifeq ($(IFMPI),false)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
   JL := 
