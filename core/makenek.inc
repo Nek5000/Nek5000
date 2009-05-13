@@ -150,13 +150,16 @@ fi
 
 
 # set preprocessor symbol to print AMG files
-if [ "$IFAMG_DUMP" == "true" -o "$IFTIMING" == "yes" ]; then
+if [ "$IFAMG_DUMP" == "true" ]; then
     if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
       echo "ABORT: Cannot dump AMG files if AMG is disabled!"
       exit 1
     fi
-    P="$P -DAMG_DUMP"
+    IFAMG_DUMP=true
+else
+    IFAMG_DUMP=false
 fi
+export IFAMG_DUMP
 
 # set preprocessor symbol for timing
 if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
@@ -222,6 +225,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^L3[ ]*=.*/L3=$L3/" \
 -e "s/^L4[ ]*=.*/L4=$L4/" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
+-e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
 -e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
