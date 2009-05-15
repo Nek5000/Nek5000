@@ -37,7 +37,7 @@ static crs_data **handle_array = 0;
 static int handle_max = 0;
 static int handle_n = 0;
 
-void fcrs_setup(sint *handle, const comm_ext_t *comm, const sint *np,
+void fcrs_setup(sint *handle, const MPI_Fint *comm, const sint *np,
                 const sint *n, const slong id[], const sint *nz,
                 const sint Ai[], const sint Aj[], const double A[],
                 const sint *null_space)

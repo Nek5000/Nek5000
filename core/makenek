@@ -78,7 +78,7 @@ fi
 source $SOURCE_ROOT/makenek.inc
 
 # compile source using multiple threads
-make -j -f makefile 2>&1 | tee compiler.out
+make -j 8 -f makefile 2>&1 | tee compiler.out
 
 # clean up
 mkdir obj 2>/dev/null

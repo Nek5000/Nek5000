@@ -12,6 +12,7 @@ typedef MPI_Request comm_req_t;
 #else
 typedef int comm_ext_t;
 typedef int comm_req_t;
+typedef int MPI_Fint;
 #endif
 
 #ifdef PREFIX
@@ -28,6 +29,7 @@ static void comm_init(comm_t *c, comm_ext_t comm)
 {
 #ifdef MPI
   int i;
+
   MPI_Comm_dup(comm, &c->comm);
   MPI_Comm_rank(c->comm,&i), c->id=i;
   MPI_Comm_size(c->comm,&i), c->np=i;
@@ -36,17 +38,18 @@ static void comm_init(comm_t *c, comm_ext_t comm)
 #endif
 }
 
-static void comm_init_check(comm_t *c, comm_ext_t comm, uint np)
+static void comm_init_check(comm_t *c, MPI_Fint comm, uint np)
 {
-  comm_init(c,comm);
-  if(c->np != np) {
 #ifdef MPI
+  comm_init(c,MPI_Comm_f2c(comm));
+  if(c->np != np) 
     fail("comm_init_check: passed P=%u, but MPI_Comm_size gives P=%u\n",
          np,c->np);
 #else
+  comm_init(c,1);
+  if(np != 1) 
     fail("comm_init_check: passed P=%u, but not compiled with -DMPI\n",np);
 #endif
-  }
 }
 
 static void comm_dup_(comm_t *d, const comm_t *s, const char *file)
