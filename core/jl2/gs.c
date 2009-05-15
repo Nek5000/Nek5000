@@ -1041,7 +1041,7 @@ static int fgs_max = 0;
 static int fgs_n = 0;
 
 void fgs_setup(sint *handle, const slong id[], const sint *n,
-               const comm_ext_t *comm, const sint *np)
+               const MPI_Fint *comm, const sint *np)
 {
   gs_data *gs;
   if(fgs_n==fgs_max) fgs_max+=fgs_max/2+1,

@@ -92,10 +92,10 @@ static int handle_n = 0;
 #ifdef MPI
 typedef MPI_Comm comm_ext_t;
 #else
-typedef int comm_ext_t;
+typedef int MPI_Fint;
 #endif
 
-void xxtsetup(sint *handle, const comm_ext_t *comm, const sint *np,
+void xxtsetup(sint *handle, const MPI_Fint *comm, const sint *np,
               const sint *n, const slong id[],
               const sint *nz, const sint Ai[], const sint Aj[], const real A[],
               const sint *null_space)
@@ -104,7 +104,7 @@ void xxtsetup(sint *handle, const comm_ext_t *comm, const sint *np,
   int crystal = 0;
 #else
   crystal_data crystal;
-  crystal_init(&crystal,*comm);
+  crystal_init(&crystal,MPI_Comm_f2c(*comm));
   if(crystal.num!=*np)
     fail("amg_setup: passed P=%d, but MPI_Comm_size gives P=%d\n",
          *np,crystal.num);

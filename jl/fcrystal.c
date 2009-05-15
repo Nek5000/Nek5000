@@ -42,22 +42,26 @@
    typedef void MPI_Comm;
 #endif
 
-#define crystal_new      FORTRAN_NAME(crystal_new,CRYSTAL_NEW)
-#define crystal_done     FORTRAN_NAME(crystal_done,CRYSTAL_DONE)
-#define crystal_transfer FORTRAN_NAME(crystal_transfer,CRYSTAL_TRANSFER)
+#define fcrystal_init     FORTRAN_NAME(crystal_new,CRYSTAL_NEW)
+#define fcrystal_free     FORTRAN_NAME(crystal_done,CRYSTAL_DONE)
+#define fcrystal_transfer FORTRAN_NAME(crystal_transfer,CRYSTAL_TRANSFER)
 
 #ifdef MPI
-static crystal_data **handle=0;
-static int n=0, max=0;
+  static crystal_data **handle=0;
+  static int n=0, max=0;
+#else
+  typedef int MPI_Fint;
 #endif
 
-void crystal_new(sint *h, const MPI_Comm *comm, const sint *np)
+void fcrystal_init(sint *h, const MPI_Fint *comm, const sint *np)
 {
 #ifdef MPI
   MPI_Comm local_com;
   if(n==max) max+=max/2+1,handle=trealloc(crystal_data*,handle,max);
   handle[n] = tmalloc(crystal_data,1);
-  MPI_Comm_dup(*comm,&local_com);
+
+  MPI_Comm_dup(MPI_Comm_f2c(*comm),&local_com);
+
   crystal_init(handle[n],local_com);
   if(*np!=(sint)handle[n]->num)
     fail("crystal_new: passed P=%d, but MPI_Comm_size gives P=%d\n",
@@ -78,7 +82,7 @@ crystal_data *fcrystal_handle(sint h)
 }
 #endif
 
-void crystal_done(sint *h)
+void fcrystal_free(sint *h)
 {
 #ifdef MPI
   crystal_data *p = fcrystal_handle(*h);
@@ -89,11 +93,11 @@ void crystal_done(sint *h)
 #endif  
 }
 
-void crystal_transfer(const sint *h, sint *n, const sint *max,
-                      sint  vi[], const sint *mi,
-                      slong vl[], const sint *ml,
-                      real  vr[], const sint *mr,
-                      const sint *pp)
+void fcrystal_transfer(const sint *h, sint *n, const sint *max,
+                       sint  vi[], const sint *mi,
+                       slong vl[], const sint *ml,
+                       real  vr[], const sint *mr,
+                       const sint *pp)
 {
 #ifdef MPI
   crystal_data *crystal = fcrystal_handle(*h);
