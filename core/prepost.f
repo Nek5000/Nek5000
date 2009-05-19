@@ -55,6 +55,8 @@ c
       save    maxstep
       data    maxstep /999999999/
 
+      if (iostep.lt.0 .or. timeio.lt.0) return
+
       etime1=dnekclock()
 c
 c     Trigger history output only if prefix = 'his'   pff 8/18/05
