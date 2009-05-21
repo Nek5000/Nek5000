@@ -92,7 +92,7 @@ c
 
       iiidmp=0
       ! check for io request in file 'ioinfo'
-      if (nid.eq.0 .and. mod(istep,10).eq.0) then 
+      if (nid.eq.0 .and. (mod(istep,10).eq.0.or.istep.le.200)) then 
          open(unit=87,file='ioinfo',status='old',err=88)
          read(87,*,end=87,err=87) idummy
          if (iiidmp.eq.0) iiidmp=idummy
