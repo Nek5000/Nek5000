@@ -1272,7 +1272,7 @@ c
 
       if (nid.eq.0)  ! header for timing
      $   write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop'
-    1 format(3x,'nid',6(7x,a5),4x,'qqq')
+    1 format('#',2x,'nid',6(7x,a5),4x,'qqq')
 
       call blank(s132,132)
       write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
