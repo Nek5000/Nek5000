@@ -1072,6 +1072,7 @@ c
 c
       call exitt
       end
+c-----------------------------------------------------------------------
       subroutine time00
 c
       include 'SIZE'
@@ -1141,12 +1142,188 @@ C
       return
       end
 C
+c-----------------------------------------------------------------------
       subroutine timeout
+
+#ifndef NOTIMER
+
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
+
+      real min_dsum, max_dsum, avg_dsum
+      real min_vdss, max_vdss, avg_vdss
+      real min_gop,  max_gop,  avg_gop
+      real min_crsl, max_crsl, avg_crsl
+      character*132 s132
+
+      tstop=dnekclock()
+      ttotal=tstop-etimes
+      tttstp=tstop-etims0
+
+      min_vdss = tvdss
+      call gop(min_vdss,wwork,'m  ',1)
+      max_vdss = tvdss
+      call gop(max_vdss,wwork,'M  ',1)
+      avg_vdss = tvdss
+      call gop(avg_vdss,wwork,'+  ',1)
+      avg_vdss = avg_vdss/np
+c
+      min_dsum = tdsum
+      call gop(min_dsum,wwork,'m  ',1)
+      max_dsum = tdsum
+      call gop(max_dsum,wwork,'M  ',1)
+      avg_dsum = tdsum
+      call gop(avg_dsum,wwork,'+  ',1)
+      avg_dsum = avg_dsum/np
+c
+      min_gop = tgop
+      call gop(min_gop,wwork,'m  ',1)
+      max_gop = tgop
+      call gop(max_gop,wwork,'M  ',1)
+      avg_gop = tgop
+      call gop(avg_gop,wwork,'+  ',1)
+      avg_gop = avg_gop/np
+c
+      min_crsl = tcrsl
+      call gop(min_crsl,wwork,'m  ',1)
+      max_crsl = tcrsl
+      call gop(max_crsl,wwork,'M  ',1)
+      avg_crsl = tcrsl
+      call gop(avg_crsl,wwork,'+  ',1)
+      avg_crsl = avg_crsl/np
+c
+      tttstp = tttstp + 1e-7
+      if (nid.eq.0) then
+         write(6,*) 'total time',ttotal,tttstp
+         pcopy=tcopy/tttstp
+         write(6,*) 'copy time',ncopy,tcopy,pcopy
+         pmxmf=tmxmf/tttstp
+         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
+         pinv3=tinv3/tttstp
+         write(6,*) 'inv3 time',ninv3,tinv3,pinv3
+         pinvc=tinvc/tttstp
+         write(6,*) 'invc time',ninvc,tinvc,pinvc
+         pmltd=tmltd/tttstp
+         write(6,*) 'mltd time',nmltd,tmltd,pmltd
+         pcdtp=tcdtp/tttstp
+         write(6,*) 'cdtp time',ncdtp,tcdtp,pcdtp
+         peslv=teslv/tttstp 
+         write(6,*) 'eslv time',neslv,teslv,peslv
+         ppres=tpres/tttstp
+         write(6,*) 'pres time',npres,tpres,ppres
+         phmhz=thmhz/tttstp
+         write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
+         pusbc=tusbc/tttstp
+         write(6,*) 'usbc time',nusbc,tusbc,pusbc
+         paxhm=taxhm/tttstp
+         write(6,*) 'axhm time',naxhm,taxhm,paxhm
+c
+         pgop =tgop /tttstp
+         write(6,*) 'gop  time',ngop ,tgop ,pgop 
+         write(6,*) 'gop  min ',min_gop 
+         write(6,*) 'gop  max ',max_gop 
+         write(6,*) 'gop  avg ',avg_gop 
+c
+         pvdss=tvdss/tttstp
+         write(6,*) 'vdss time',nvdss,tvdss,pvdss
+         write(6,*) 'vdss min ',min_vdss
+         write(6,*) 'vdss max ',max_vdss
+         write(6,*) 'vdss avg ',avg_vdss
+c
+         pdsum=tdsum/tttstp
+         write(6,*) 'dsum time',ndsum,tdsum,pdsum
+         write(6,*) 'dsum min ',min_dsum
+         write(6,*) 'dsum max ',max_dsum
+         write(6,*) 'dsum avg ',avg_dsum
+c
+         pgsum=tgsum/tttstp
+         write(6,*) 'gsum time',ngsum,tgsum,pgsum
+         pdsnd=tdsnd/tttstp
+         write(6,*) 'dsnd time',ndsnd,tdsnd,pdsnd
+         pdadd=tdadd/tttstp
+         write(6,*) 'dadd time',ndadd,tdadd,pdadd
+         pdsmx=tdsmx/tttstp
+         write(6,*) 'dsmx time',ndsmx,tdsmx,pdsmx
+         pdsmn=tdsmn/tttstp
+         write(6,*) 'dsmn time',ndsmn,tdsmn,pdsmn
+         pslvb=tslvb/tttstp
+         write(6,*) 'slvb time',nslvb,tslvb,pslvb
+         pddsl=tddsl/tttstp
+         write(6,*) 'ddsl time',nddsl,tddsl,pddsl
+c
+         pcrsl=tcrsl/tttstp
+         write(6,*) 'crsl time',ncrsl,tcrsl,pcrsl
+         write(6,*) 'crsl min ',min_crsl
+         write(6,*) 'crsl max ',max_crsl
+         write(6,*) 'crsl avg ',avg_crsl
+c
+         psolv=tsolv/tttstp
+         write(6,*) 'solv time',nsolv,tsolv,psolv
+         psett=tsett/tttstp
+         write(6,*) 'sett time',nsett,tsett,psett
+         pprep=tprep/tttstp
+         write(6,*) 'prep time',nprep,tprep,pprep
+         pbsol=tbsol/tttstp
+         write(6,*) 'bsol time',nbsol,tbsol,pbsol
+         pbso2=tbso2/tttstp
+         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
+      endif
+
+      if (nid.eq.0)  ! header for timing
+     $   write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop'
+    1 format(3x,'nid',6(7x,a5),4x,'qqq')
+
+      call blank(s132,132)
+      write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
+  132 format(i9,1p6e12.4,' qqq')
+      call pprint_all(s132,132,6)
+
+#endif
+
       return
       end
+c-----------------------------------------------------------------------
+      subroutine pprint_all(s,n_in,io)
+      character*1 s(n_in)
+      character*1 w(132)
+
+      include 'SIZE'
+      include 'PARALLEL'
+
+      n = min(132,n_in)
+
+      mtag = 999
+      m    = 1
+      call gsync()
+
+      if (nid.eq.0) then
+         l = ltrunc(s,n)
+         write(io,1) (s(k),k=1,l)
+   1     format(132a1)
+
+         do i=1,np-1
+            call csend(mtag,s,1,i,0)    ! send handshake
+            m = 132
+            call blank(w,m)
+            call crecv(i,w,m)
+            if (m.le.132) then
+               l = ltrunc(w,m)
+               write(io,1) (w(k),k=1,l)
+            else
+               write(io,*) 'pprint long message: ',i,m
+               l = ltrunc(w,132)
+               write(io,1) (w(k),k=1,l)
+            endif
+         enddo
+      else
+         call crecv(mtag,w,m)          ! wait for handshake
+         l = ltrunc(s,n)
+         call csend(nid,s,l,0,0)       ! send data to node 0
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
 
       subroutine opcount(ICALL)
 C
@@ -1205,6 +1382,7 @@ C
       return
       end
 C
+c-----------------------------------------------------------------------
       subroutine dofcnt
       include 'SIZE'
       include 'TOTAL'
