@@ -145,19 +145,16 @@ c
 
       REAL U(1),V(1),W(1)
 
+      if(ifsync) call gsync()
+
 #ifndef NOTIMER
       if (icalld.eq.0) tvdss=0.0d0
       if (icalld.eq.0) tgsum=0.0d0
-      if (icalld.eq.0) tgsmx=0.0d0
-      if (icalld.eq.0) tgsmn=9.9d9
-      if (icalld.eq.0) tdsnd=0.0d0
-      if (icalld.eq.0) tdadd=0.0d0
       icalld=icalld+1
       nvdss=icalld
       etime1=dnekclock()
 #endif
 
-      if(ifsync) call gsync()
 c
 c============================================================================
 c     execution phase
@@ -240,7 +237,19 @@ c
       integer n,stride,gs_handle
 
       if(ifsync) call gsync()
+#ifndef NOTIMER
+      icalld=icalld+1
+      nvdss=icalld
+      etime1=dnekclock()
+#endif
       call gs_op_fields(gs_handle,u,stride,n,1,1,0)
+
+#ifndef NOTIMER
+      timee=(dnekclock()-etime1)
+      tvdss=tvdss+timee
+      tdsmx=max(timee,tdsmx)
+      tdsmn=min(timee,tdsmn)
+#endif
 
       return
       end
@@ -533,7 +542,9 @@ c-----------------------------------------------------------------------
 c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
-c
+
+      if(ifsync) call gsync()
+
 #ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
@@ -549,7 +560,6 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 
-      if(ifsync) call gsync()
 
 c
 c
@@ -594,7 +604,9 @@ c-----------------------------------------------------------------------
 c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
-c
+
+      if(ifsync) call gsync()
+
 #ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
@@ -610,7 +622,6 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 
-      if(ifsync) call gsync()
 
 c
 c                    T           ~  ~T  T
@@ -658,7 +669,9 @@ c-----------------------------------------------------------------------
 c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
-c
+
+      if(ifsync) call gsync()
+
 #ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
@@ -675,7 +688,6 @@ c
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
 
-      if(ifsync) call gsync()
 
 c
 c
