@@ -35,6 +35,7 @@ c
       include 'DOMAIN'
       include 'ESOLV'
       include 'INPUT'
+      include 'TSTEP'
 c
       REAL*8 dnekclock,t0
 c
@@ -56,6 +57,7 @@ c
       common /scrmg/ ddmask  (4*ltotd)
       common /ctmp1/ mask    (4*ltotd)
 
+      ifield = 1
       if (param(44).eq.1) then !  Set up local overlapping solves 
          call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
       else
