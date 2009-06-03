@@ -3864,14 +3864,18 @@ C
          return
       endif
 
-c     write(6,*) istep,param(99),' CONVOP'
-c     if (istep.gt.5) call exitt
+c     write(6,*) istep,param(99),' CONVOP',ifpert
+c     ip99 = param(99)
+c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
 
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
-c        call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
-         call convect_new (conv,fi,.false.,vxd,vyd,vzd,.true.)
+         if (ifpert) then
+           call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
+         else
+           call convect_new (conv,fi,.false.,vxd,vyd,vzd,.true.)
+         endif
          call invcol2     (conv,bm1,ntot1)  ! local mass inverse
       elseif (param(99).eq.5) then
          call convect_cons(conv,fi,.false.,vx,vy,vz,.false.)

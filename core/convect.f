@@ -841,7 +841,7 @@ C
       logical ifuf,ifcf            ! u and/or c already on fine mesh?
 
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrns/ fx(ltd),fy(ltd),fz(ltd)
+      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
      $             , ur(ltd),us(ltd),ut(ltd)
      $             , tr(ltd,3),uf(ltd)
 
@@ -938,7 +938,7 @@ c     conservative form
       logical ifuf,ifcf            ! u and/or c already on fine mesh?
 
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrns/ uf(ltd),cf(ltd),cu(ltd)
+      common /scrcv/ uf(ltd),cf(ltd),cu(ltd)
      $             , cr(ltd),cs(ltd),ct(ltd)
 
 
@@ -1022,7 +1022,7 @@ C
 
       real cr(ltd,1),cs(ltd,1),ct(ltd,1)
 
-      common /scrns/ fx(ltd),fy(ltd),fz(ltd)
+      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
      $             , ur(ltd),us(ltd),ut(ltd)
      $             , tr(ltd,3),uf(ltd)
 
