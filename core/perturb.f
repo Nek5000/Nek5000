@@ -8,13 +8,18 @@ c
       include 'TSTEP'
       include 'TURBO'
       include 'SOLN'
-c
+
       do jp=1,npert
+
+         if (nid.eq.0) write(6,1) istep,time,jp
+   1     format(i9,1pe14.7,' Perturbation Solve:',i5)
+
          call perturbv (igeom)
+
       enddo
-c
+
       jp=0   ! set jp to zero, for baseline flow
-c
+
       return
       end
 c-----------------------------------------------------------------------

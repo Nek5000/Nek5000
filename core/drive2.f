@@ -757,8 +757,10 @@ c             - Velocity/stress formulation.
       endif
 
 
-c     ! save velocity on fine mesh for dealiasing
-      if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
+      if (.not.ifpert) then
+c        ! save velocity on fine mesh for dealiasing
+         if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
+      endif
 
 
       if(nid.eq.0 .and. igeom.eq.2) 

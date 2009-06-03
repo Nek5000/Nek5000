@@ -333,6 +333,26 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exitti(string,idata)
+      character*1 string(80)
+      character*11 s11
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+
+      len = indx1(string,'$',1)
+      write(s11,11) idata
+   11 format(1x,i10)
+      call chcopy(string(len),s11,11)
+
+      if (nid.eq.0) write(6,1) (string(k),k=1,len+10)
+    1 format('EXIT: ',80a1)
+
+      call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine exitt
       include 'SIZE'
       include 'TOTAL'
@@ -355,6 +375,10 @@ c
       endif
       call flush_io
 
+c     call crystal_done (cr_h)  ! release instance
+      call mpi_finalize (ierr)
+      call exit
+
 c     z = -nx1
 c     z = sqrt(z)
 c     y = 1./(nx1-lx1)
@@ -362,10 +386,8 @@ c     y = 0.*y
 c     a = 1./y
 c     b = 1./y
 c     write(6,*) 'quittin3',z,b
-
-c     call crystal_done (cr_h)  ! release instance
-      call mpi_finalize (ierr)
       call exit
+
 
       return
       end
@@ -378,6 +400,4 @@ c-----------------------------------------------------------------------
       return
       end
 
-
-
- 
+c-----------------------------------------------------------------------

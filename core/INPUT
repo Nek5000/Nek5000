@@ -31,7 +31,7 @@ C
      $               ,IFINTQ
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
      $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
      $               ,IFMOAB
       LOGICAL         IF3D
@@ -43,7 +43,7 @@ C
      $               ,IFINTQ
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
      $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
      $               ,IFMOAB
       LOGICAL         IFNAV

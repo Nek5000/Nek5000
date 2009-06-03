@@ -159,7 +159,6 @@ C
          READ(9,*,ERR=400)PARAM(I)
    20 CONTINUE
 
-      ifuservp = .false.
       if (param(30).gt.0) ifuservp = .true.
 c
       NPSCAL=INT(PARAM(23))
@@ -237,10 +236,13 @@ C
       IFMHD     = .false.
       IFESSR    = .false.
       IFTMSH(0) = .false.
-c      IFUSERVP  = .false.
+      IFUSERVP  = .false.
       IFCYCLIC  = .false.
       IFSYNC    = .false.
-c      IFSPLIT   = .false.
+c     IFSPLIT   = .false.
+
+      ifbase = .true.
+      ifpert = .false.
 
 
       READ(9,*,ERR=500) NLOGIC
@@ -283,10 +285,14 @@ c      IFSPLIT   = .false.
               read(string,*) IFMOAB
          elseif (indx1(string,'IFMHD'  ,5).gt.0) then 
               read(string,*) IFMHD
-c         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
-c              read(string,*) IFUSERVP
+         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
+              read(string,*) IFUSERVP
          elseif (indx1(string,'IFCYCLIC',8).gt.0) then 
               read(string,*) IFCYCLIC
+         elseif (indx1(string,'IFPERT'  ,6).gt.0) then 
+              read(string,*) IFPERT
+         elseif (indx1(string,'IFBASE'  ,6).gt.0) then 
+              read(string,*) IFBASE
          elseif (indx1(string,'IFSYNC'  ,6).gt.0) then 
               read(string,*) IFSYNC
          elseif (indx1(string,'IFSPLIT' ,7).gt.0) then 
@@ -310,7 +316,7 @@ c              read(string,*) IFSPLIT
      &           '   IFMVBD'   ,
      &           '   IFCHAR'   ,
      &           '   IFANLS'   ,
-c     &           '   IFUSERVP' ,
+     &           '   IFUSERVP' ,
      &           '   IFSYNC'   ,
      &           '   IFCYCLIC' ,
      &           '   IFSPLIT'  ,
@@ -335,6 +341,11 @@ c     &           '   IFUSERVP' ,
          endif
          call exitt
       ENDIF
+
+      if (ifmvbd) then
+         if (lx1.ne.lx1m.or.ly1.ne.ly1m.or.lz1.ne.lz1m) 
+     $      call exitti('Need lx1m=lx1 etc. in SIZEu. $',lx1m)
+      endif
 
       ifldmhd = npscal + 3
       if (ifmhd) then
@@ -436,10 +447,10 @@ c     endif
          call exitt
       endif
 
-      ifpert = .false.
       if (param(31).ne.0.) ifpert = .true.
+      if (param(31).lt.0.) ifbase = .false.   ! don't time adv base flow
       npert = abs(param(31)) 
-c
+
       if (ifpert .and. lpx1.ne.lx1) then
          write(6,*) 
      $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZEu'

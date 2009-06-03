@@ -237,17 +237,17 @@ c
             if (ifmhd) then
                call induct   (igeom)
                if (ifheat)      call heat     (igeom)
-            else
+            elseif (ifpert) then
+               if (ifbase.and.ifheat)      call heat     (igeom)
+               if (ifbase.and.ifflow)      call fluid    (igeom)
+               if (ifflow)                 call fluidp   (igeom)
+               if (ifheat)                 call heatp    (igeom)
+            else  ! std. nek case
                if (ifheat)      call heat     (igeom)
                if (ifflow)      call fluid    (igeom)
                if (ifmvbd)      call meshv    (igeom)
             endif
-            
-            if (ifpert) then
-               if (ifflow) call fluidp   (igeom)
-               if (ifheat) call heatp    (igeom)
-            endif
-            
+
          enddo
          
       endif
