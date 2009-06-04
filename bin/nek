@@ -1,0 +1,11 @@
+echo $1        >  SESSION.NAME
+echo `pwd`'/' >>  SESSION.NAME
+touch $1.rea
+rm ioinfo
+rm *.lgl
+cp $1.gph nekgraph
+rm xxt_map.rea
+#cp $1.map xxt_map.rea
+mv $1.log $1.log1
+mv $1.sch $1.sch1
+time nek5000

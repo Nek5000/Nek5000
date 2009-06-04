@@ -1,0 +1,17 @@
+echo $1        >  SESSION.NAME
+echo `pwd`'/' >>  SESSION.NAME
+touch $1.rea
+rm ioinfo
+mv $1.log.$2 $1.log1.$2
+mv $1.his $1.his1
+mv $1.sch $1.sch1
+rm $1.output
+rm *.output
+rm *.error
+rm logfile
+rm xxt_map.rea
+rm logfile
+touch $1.log.$2
+ln $1.log.$2 $1.output
+ln $1.log.$2 logfile
+qsub -n $2 -t 1:00:00 -O `pwd`'/'$1 nek5000 &
