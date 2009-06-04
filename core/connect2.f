@@ -159,7 +159,6 @@ C
          READ(9,*,ERR=400)PARAM(I)
    20 CONTINUE
 
-      if (param(30).gt.0) ifuservp = .true.
 c
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
@@ -331,6 +330,11 @@ c              read(string,*) IFSPLIT
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.
       if (ifmhd)           npscl1 = npscl1 + 1
+      if (param(30).gt.0)  ifuservp = .true.
+      if (param(31).ne.0.) ifpert = .true.
+      if (param(31).lt.0.) ifbase = .false.   ! don't time adv base flow
+      npert = abs(param(31)) 
+
 
       IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
@@ -446,10 +450,6 @@ c     endif
      $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZEu'
          call exitt
       endif
-
-      if (param(31).ne.0.) ifpert = .true.
-      if (param(31).lt.0.) ifbase = .false.   ! don't time adv base flow
-      npert = abs(param(31)) 
 
       if (ifpert .and. lpx1.ne.lx1) then
          write(6,*) 
