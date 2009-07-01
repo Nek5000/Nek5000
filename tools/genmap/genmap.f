@@ -447,15 +447,15 @@ C     Error handling:
 C
   500 continue
       write(6,501) ifield,e,nel
-  501 FORMAT(2X,'ERROR: error reading ',i4,2i11,
-     $    ,/,2X,'ABORTING 500 IN ROUTINE RDBDRY.')
+  501 FORMAT(2X,'ERROR: error reading ',i4,2i11,/,
+     $       2X,'ABORTING 500 IN ROUTINE RDBDRY.')
       call exitt(ifield)
       return
 
   600 continue
       write(6,601) ifield,e,nel
-  601 FORMAT(2X,'ERROR: end of file',i4,2i11,
-     $    ,/,2X,'ABORTING 600 IN ROUTINE RDBDRY.')
+  601 FORMAT(2X,'ERROR: end of file',i4,2i11,/,
+     $       2X,'ABORTING 600 IN ROUTINE RDBDRY.')
       call exitt(ifield)
       return
 
