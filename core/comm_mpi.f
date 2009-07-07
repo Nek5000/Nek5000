@@ -93,6 +93,7 @@ c
       real x(n), w(n)
       character*3 op
 c
+      if (ifsync) call gsync()
 #ifndef NOTIMER
       if (icalld.eq.0) then
         tgop =0.0d0
@@ -102,7 +103,6 @@ c
       ngop = ngop + 1
       etime1=dnekclock()
 #endif
-      if (ifsync) call gsync()
 c
       if (op.eq.'+  ') then
          call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
