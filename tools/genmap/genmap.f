@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
 c     read nekton .rea file and make a .map file
 
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -190,7 +190,7 @@ c     read nekton .rea file and make a mesh
       character*3 cbt(6)
       real        bt(5,6)
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
@@ -204,6 +204,14 @@ c     read nekton .rea file and make a mesh
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       call getfile2('Input (.rea) file name:$','.rea$',10)
+
+      write(6,'(A)') 'Input mesh tolerance (default 0.2):'
+      write(6,'(A,A)') 'NOTE: smaller is better, but generous is more',
+     &                 'forgiving for bad mashes.'
+      read(5,*) qin
+      q = 0.2
+      if(qin.gt.0) q = qin
+
       call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
       if (ifbinary) then
@@ -250,7 +258,7 @@ c     call outbc(cbc,bc,nelt,ndim,' CBC 2')
 
 
 c     Compress vertices based on coordinates
-      call unique_vertex2(cell,dx,ndim,nelt,i_n,j_n,j_o,wk)
+      call unique_vertex2(cell,dx,ndim,nelt,q,i_n,j_n,j_o,wk)
 
       nv   = 2**ndim
       npts = nelt*nv
@@ -270,7 +278,7 @@ c     ff = 1./(ke-ie-ie)
 c----------------c------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
 
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
@@ -1203,7 +1211,7 @@ c     w2    - nv*nel
 c
 
       common /arrayr/  dx(1)    !ADDED to PLOT
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       integer pmap(nel),order(1),elist(nel),cell(nv,1),part,c(nv,1)
@@ -1348,7 +1356,7 @@ c
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
       common /arrayr/  dx(0:3,8,lelm)    !
                                          !
       integer icalld,kj(lelm),ke(lelm)   !
@@ -1744,7 +1752,7 @@ c
 
       integer ic(i0:i1),jc(1)
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
       integer face,elist
@@ -2683,7 +2691,7 @@ c
       end
 
 c-----------------------------------------------------------------------
-      subroutine unique_vertex2(cell,dx,ndim,nel,ind,ninseg,ifseg,wk)
+      subroutine unique_vertex2(cell,dx,ndim,nel,q,ind,ninseg,ifseg,wk)
  
       integer cell(1),ind(1),ninseg(1)
       logical ifseg(1)
@@ -2718,8 +2726,9 @@ c
             i  =   i + ninseg(iseg)
          enddo
  
-         q=0.0010   ! Smaller is better
+c        q=0.0010   ! Smaller is better
 c        q=0.2      ! But generous is more forgiving for bad meshes!
+
          do i=2,n
            if ((dx(j,i)-dx(j,i-1))**2.gt.q*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
@@ -2828,7 +2837,7 @@ c-----------------------------------------------------------------------
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /carrayw/ w1   (lpts) , w2   (lpts)
@@ -2861,7 +2870,7 @@ c-----------------------------------------------------------------------
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
@@ -2962,7 +2971,7 @@ c-----------------------------------------------------------------------
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      parameter (lelm=3 000 000)
+      parameter (lelm=400 000)
 
       character*3 cbc(6,lelm)
       real        bc (5,6,lelm)
@@ -3001,7 +3010,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-      parameter(lelm=3 000 000)
+      parameter(lelm=400 000)
 
       character*3 cbl(6,lelm)
       real        bl(5,6,lelm)
@@ -3637,7 +3646,7 @@ c
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
       integer cell(nv,1),c(nv,nel)      
       real dx(0:ndim,1)
-      parameter(lelm=3 000 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
+      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       parameter(mm=50)
 
@@ -3999,4 +4008,3 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-
