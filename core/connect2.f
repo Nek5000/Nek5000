@@ -2250,7 +2250,7 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.0) then
          call izero(fnami,33)
-         m = indx132(re2fle,' ',1)-1
+         m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
    
          call byte_open(fname)
