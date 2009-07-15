@@ -447,12 +447,12 @@ C
                IF (NID.EQ.0) WRITE(6,810) (LINE1(L),L=1,LL)
   810          FORMAT(/,2X,'Presolve options: ',80A1)
 C
-               IF (INDX2(LINE,'U',1).NE.0) THEN
+               IF (INDX_CUT(LINE,'U',1).NE.0) THEN
                   ifprsl(1,jp) = .true.
                   iffort(1,jp) = .false.
                ENDIF
 C
-               IF (INDX2(LINE,'T',1).NE.0) THEN
+               IF (INDX_CUT(LINE,'T',1).NE.0) THEN
                   ifprsl(2,jp) = .true.
                   iffort(2,jp) = .false.
                ENDIF
@@ -460,7 +460,7 @@ C
                DO 900 IFIELD=3,NPSCAL+2
                   IP=IFIELD-2
                   WRITE(S2,901) IP
-                  IF (INDX2(LINE,S2,2).NE.0) THEN
+                  IF (INDX_CUT(LINE,S2,2).NE.0) THEN
                      ifprsl(ifield,jp) = .true.
                      iffort(ifield,jp) = .false.
                   ENDIF
@@ -743,9 +743,9 @@ C
                IPOSW=0
                IPOSP=0
                IPOST=0
-               DO 40 I=1,NPSCAL
-                  IPSPS(I)=0
-   40          CONTINUE
+               do i=1,ldimt1
+                  ipsps(i)=0
+               enddo
 
                IPS = 0
                NPS = 0
@@ -778,24 +778,18 @@ C
                      NOUTS=NOUTS + 1
                      IPOST=NOUTS
                   ENDIF
-                  IF(mod(param(67),1.0).eq.0.0) THEN
-                    IF (EXCODER1(I).EQ.'1') THEN
-                       NOUTS=NOUTS + 1
-                       IPSPS(1)=NOUTS
-                    ENDIF
-                    IF (EXCODER1(I).EQ.'2') THEN
-                       NOUTS=NOUTS + 1
-                       IPSPS(2)=NOUTS
-                    ENDIF
-                    IF (EXCODER1(I).EQ.'3') THEN
-                       NOUTS=NOUTS + 1
-                       IPSPS(3)=NOUTS
-                    ENDIF
-                    IF (EXCODER1(I).EQ.'4') THEN
-                       NOUTS=NOUTS + 1
-                       IPSPS(4)=NOUTS
-                    ENDIF
-                  ELSE
+                  if (mod(param(67),1.0).eq.0.0) then
+                    i1 = i1_from_char(excoder1(i))
+                    if (0.lt.i1.and.i1.lt.10) then
+                       if (i1.le.ldimt1) then
+                          nouts=nouts + 1
+                          ipsps(i)=nouts
+                       else
+                          if (nid.eq.0) write(6,2) i1,i,excoder1(i)
+   2                      format(2i4,a1,' PROBLEM W/ RESTART DATA')
+                       endif
+                    endif
+                  else
                     IF(EXCODER1(I).EQ.'S') THEN
                        READ(EXCODER1(I+1),'(I1)') NPS1
                        READ(EXCODER1(I+2),'(I1)') NPS0
@@ -1158,11 +1152,11 @@ C
 C
 C        Check for explicit specification of restart TIME.
 C
-         ITO=INDX2(RSOPT,'TIME',4)
+         ITO=INDX_CUT(RSOPT,'TIME',4)
          IFGTIM=.TRUE.
          IF (ITO.NE.0) THEN
 C           user has specified the time explicitly.
-            IT1=INDX2(RSOPT,'=',1)
+            IT1=INDX_CUT(RSOPT,'=',1)
             IT8=80-IT1
             CALL BLANK(LINE,80)
             CALL CHCOPY(LINE,RSOPT1(IT1),IT8)
@@ -1181,27 +1175,27 @@ C           remove the user specified time from the RS options line.
 C
 C        Parse field specifications.
 C
-         IXO=INDX2(RSOPT,'X',1)
+         IXO=INDX_CUT(RSOPT,'X',1)
          IF (IXO.NE.0) THEN
             IFDEFT=.FALSE.
             IFGETX=.TRUE.
             IF (IF3D) IFGETZ=.TRUE.
          ENDIF
 C
-         IVO=INDX2(RSOPT,'U',1)
+         IVO=INDX_CUT(RSOPT,'U',1)
          IF (IVO.NE.0) THEN
             IFDEFT=.FALSE.
             IFGETU=.TRUE.
             IF (IF3D) IFGETW=.TRUE.
          ENDIF
 C
-         IPO=INDX2(RSOPT,'P',1)
+         IPO=INDX_CUT(RSOPT,'P',1)
          IF (IPO.NE.0) THEN
             IFDEFT=.FALSE.
             IFGETP=.TRUE.
          ENDIF
 C
-         ITO=INDX2(RSOPT,'T',1)
+         ITO=INDX_CUT(RSOPT,'T',1)
          IF (ITO.NE.0) THEN
             IFDEFT=.FALSE.
             IFGETT=.TRUE.
@@ -1209,7 +1203,7 @@ C
 C
          DO 300 I=2,NPSCAL
             WRITE (S2,301) I
-            IPO=INDX2(RSOPT,S2,2)
+            IPO=INDX_CUT(RSOPT,S2,2)
             IF (IPO.NE.0) THEN
                IFDEFT=.FALSE.
                IFGTPS(I)=.TRUE.
@@ -1438,23 +1432,35 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      INTEGER FUNCTION INDX132(S1,S2,L2)
-      CHARACTER*132 S1,S2
-C
-      N1=80-L2+1
-      INDX132=0
-      IF (N1.LT.1) return
-C
-      DO 100 I=1,N1
-         I2=I+L2-1
-         IF (S1(I:I2).EQ.S2(1:L2)) THEN
-            INDX132=I
-            return
-         ENDIF
-  100 CONTINUE
-C
+      function i1_from_char(s1)
+      character*1 s1
+
+      character*10 n10 
+      save         n10
+      data         n10 / '0123456789' /
+
+      i1_from_char = indx2(n10,10,s1,1)-1
+
       return
-      END
+      end
+c-----------------------------------------------------------------------
+      integer function indx2(s1,l1,s2,l2)
+      character*132 s1,s2
+
+      n1=l1-l2+1
+      indx2=0
+      if (n1.lt.1) return
+
+      do i=1,n1
+         i2=i+l2-1
+         if (s1(i:i2).eq.s2(1:l2)) then
+            indx2=i
+            return
+         endif
+      enddo
+
+      return
+      end
 c-----------------------------------------------------------------------
       INTEGER FUNCTION INDX1(S1,S2,L2)
       CHARACTER*80 S1,S2
@@ -1474,9 +1480,9 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      INTEGER FUNCTION INDX2(S1,S2,L2)
+      INTEGER FUNCTION INDX_CUT(S1,S2,L2)
 C
-C     INDX2 is returned with the location of S2 in S1 (0 if not found)
+C     INDX_CUT is returned with the location of S2 in S1 (0 if not found)
 C     S1     is returned with 1st occurance of S2 removed.
 C
       CHARACTER*1 S1(80),S2(80)
@@ -1497,7 +1503,7 @@ C           remove the 1st occurance of S2 from S1.
   200    CONTINUE
       ENDIF
 C
-      INDX2=I1
+      INDX_CUT=I1
       return
       END
 c-----------------------------------------------------------------------
@@ -1505,7 +1511,7 @@ c-----------------------------------------------------------------------
       CHARACTER*80 S0,S1,S2
 C     split string S1 into two parts, delimited by S2.
 C
-      I2=INDX2(S1,S2,L0)
+      I2=INDX_CUT(S1,S2,L0)
       IF (I2.EQ.0) return
 C
       I1=I2-1
@@ -2229,7 +2235,7 @@ c-----------------------------------------------------------------------
 
       character*132 hdr
 
-      if (indx1(hdr,'#std',4).eq.1) then
+      if (indx2(hdr,132,'#std',4).eq.1) then
           call parse_std_hdr(hdr)
       else
          if (nid.eq.0) write(6,80) hdr
