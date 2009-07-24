@@ -304,8 +304,9 @@ c
        
       if (nelt.lt.0) then
          ifbinary = .true.
-         nelt = abs(nelt)
-         call open_bin_file(ifbswap)
+         call open_bin_file(ifbswap,nelgtr,nelgvr)
+         nelt = nelgtr
+         nelv = nelgvr
          nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
       endif
 
@@ -3057,7 +3058,7 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
-      subroutine open_bin_file(ifbswap) ! open file & chk for byteswap
+      subroutine open_bin_file(ifbswap,nelgt,nelgv) ! open file & chk for byteswap
 
       logical ifbswap,if_byte_swap_test
 
