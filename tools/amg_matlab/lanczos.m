@@ -10,6 +10,10 @@ function lambda = lanczos(A)
 	else
   	change = 1;
 	end
+	if n==1
+	  l = [A(1,1) A(1,1)]; y=[0 0]; k=2;
+	  change = 0;
+	end
 	while k<300 & (change > 0.00001 | y(1) > 0.001 | y(k) > 0.001)
 		qkm1 = qk; qk = r/beta; k=k+1;
 		Aqk = A*qk;

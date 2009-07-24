@@ -49,9 +49,11 @@ function W = intp_new(A,C,F,u,tol)
 	while 1
 		Rd = Aff*W + Afc;
 		fprintf(1,'.');
-		Ac = W'*Rd + Afc'*W + Acc;
-		fprintf(1,'.');
-		Dc = diag(sparse(1./sqrt(diag(Ac))));
+		%Ac = W'*Rd + Afc'*W + Acc;
+		%fprintf(1,'.');
+		%Dc = diag(sparse(1./sqrt(diag(Ac))));
+		Dc = diagmm(W,Rd) + diagmm(Afc,W) + diag(Acc);
+		Dc = diag(sparse(1./sqrt(Dc)));
 		fprintf(1,'.');
 		R = Dff*Rd*Dc;
 		fprintf(1,'.');
@@ -138,7 +140,8 @@ function W = intp_new(A,C,F,u,tol)
 	T = cinterp_lmop(Aff,u,W_skel,T_skel);
 
 	fprintf(1,' done.\nCG to obtain Lagrange multipliers ...');
-	d = diag(T*Aff); di = 0*d; di(nzf)=1./d(nzf); D=diag(sparse(di));
+	%d = diag(T*Aff); di = 0*d; di(nzf)=1./d(nzf); D=diag(sparse(di));
+	d = diagmm(T,Aff); di = 0*d; di(nzf)=1./d(nzf); D=diag(sparse(di));
 	lambda = pcg(.5*(Aff*D+D*Aff),T,uf-W*u,zeros(nf,1),1e-11);
 
 	fprintf(1,'Computing interpolation weights (C code) ...');

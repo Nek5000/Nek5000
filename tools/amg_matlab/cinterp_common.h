@@ -47,7 +47,12 @@ typedef struct {
     mxFree(p);
   }
 #else
-  static void *mem_alloc(size_t n) { return mxMalloc(n); }
+  static void *mem_alloc(size_t n)
+  {
+    void *ptr = mxMalloc(n);
+    if(!ptr) mexPrintf("Failed to allocate %lu bytes\n",(unsigned long)n);
+    return ptr;
+  }
   static void *mem_realloc(void *p, size_t n) { return mxRealloc(p,n); }
   static void mem_free(void *p) { mxFree(p); }
 #endif

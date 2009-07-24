@@ -1,0 +1,40 @@
+/homes/fischer/nek5_svn/trunk/tools
+< amg_matlab
+> amg_matlab/bckup1
+Only in amg_matlab: .svn
+Only in amg_matlab/bckup1: amg.dat
+Only in amg_matlab/bckup1: amg_AfP.dat
+Only in amg_matlab/bckup1: amg_Aff.dat
+Only in amg_matlab/bckup1: amg_W.dat
+Only in amg_matlab/bckup1: amgdmp_i.dat
+Only in amg_matlab/bckup1: amgdmp_j.dat
+Only in amg_matlab/bckup1: amgdmp_p.dat
+Only in amg_matlab: bckup1
+diff -i amg_matlab/intp_new.m amg_matlab/bckup1/intp_new.m
+77c77
+< 		[y i] = max(Ra);   % i(j) = row index of largest entry in Ra(:,j)
+---
+> 		[y i] = max(Ra);
+79,80c79
+< 		p = find(c>(.99*tol));   % p    = set of deficient cols
+<                 p2 = find(c>tol);
+---
+> 		p = find(c>tol);
+83,84c82,83
+< 			nnz(W_skel),length(p2),tol,max(c));
+< 		if length(p2)==0; break;	end
+---
+> 			nnz(W_skel),length(p),tol,max(c));
+> 		if length(p)==0; break;	end
+86c85
+< 		W_new = sparse(i(p),p,0*p+1,nf,nc);   % W_new := largest entries in deficient cols
+---
+> 		W_new = sparse(i(p),p,0*p+1,nf,nc);
+91c90
+< 		p = union(i,[]); % p := set of rows where largest entry not new
+---
+> 		p = union(i,[]);
+93c92
+< 		Ra = Ra .* xor(Ra,W_skel); % mask Ra where W currently has an entry
+---
+> 		Ra = Ra .* xor(Ra,W_skel);

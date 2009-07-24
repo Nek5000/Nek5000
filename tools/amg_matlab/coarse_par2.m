@@ -11,30 +11,32 @@ function [C,F]=coarse_par(A,tol)
 	while 1
 		nc = ones(n,1)'*vc;
 		vf = 1 - vc;
-		g1 = vf.*(S*(vf.*(S*vf)));
-		g2 = vf.*(S*(vf.*(S*g1)));
-		g = vf.*sqrt(g2./(g1+vc));
-		%pause; plot(g1); pause; plot(g2); pause;
-		%plot(sqrt(g2 ./ (g1+vc))); pause;
-		gd = vf .* (S*vf);
-		[mg,mi] = max(g);
-		fprintf(1,'  ratio = %g, n = %d, max Gershgorin radius = %g\n', ...
-		  nc/n, nc, mg);
-	  if(mg<=tol)
+		g = vf .* (S*vf);
+		h = diag(sparse(1./(vc + vf.*max(S*diag(sparse(vf)),[],2))))*(g);
+		%vplot(vc); pause;
+		vtol=h.^(-tol);
+		%vplot(vtol); pause;
+		%g=h;
+		%[mg,mi] = max(g);
+		%fprintf(1,'  ratio = %g, n = %d, max Gershgorin radius = %g\n', ...
+		%  nc/n, nc, mg);
+	  %if(mg<=tol)
+		%	if nc==0; vc(mi)=1; end
+		%	break;
+		%end
+		mask = g>vtol;
+		fprintf(1,'  ratio = %g, bad points = %g\n', nc/n, sum(mask));
+		if sum(mask)==0
 			if nc==0; vc(mi)=1; end
 			break;
 		end
-		%[mg,mi] = max(gd);
-		vc(mi)=1;
-		vplot(vc); pause;
-		%mask = g>tol;
 		%ga = mask .* (g + .5*(S*(S*vc)));
-		%ga = mask .* gd;
-		%m = mxv_max(S,ga);
-		%mask = mask & (ga-m>=0);
-		%m = mxv_max(S,mask.*id);
-		%mask = mask & (id-m>0);
-    %vc = vc + mask;
+		ga = mask .* g;
+		m = mxv_max(S,ga);
+		mask = mask & (ga-m>=0);
+		m = mxv_max(S,mask.*id);
+		mask = mask & (id-m>0);
+    vc = vc + mask;
 	end
 	C = find(vc);
 	F = setdiff(id,C);

@@ -26,7 +26,7 @@ static void sp_add(mwSize yn, const mwIndex *yi, double *y, double alpha,
   }
 }
 
-static void interp_lmop(const sp_mat *T, const sp_mat_c *A, const double *u,
+static int interp_lmop(const sp_mat *T, const sp_mat_c *A, const double *u,
                         const sp_log_mat_c *X_skel)
 {
   mwSize nf = X_skel->m, nc = X_skel->n;
@@ -42,10 +42,11 @@ static void interp_lmop(const sp_mat *T, const sp_mat_c *A, const double *u,
   }
   max_Q = (max_nz*(max_nz+1))/2;
   
-  sqv1 = mem_alloc((2*max_nz + max_Q + max_nz*max_nz)*sizeof(double));
+  if(!(sqv1=mem_alloc((2*max_nz + max_Q + max_nz*max_nz)*sizeof(double))))
+    return 0;
   sqv2 = sqv1+max_nz, Q = sqv2+max_nz, QQt = Q+max_Q;
 
-  { mwIndex nz=T->jc[nc]; for(j=0;j<nz;++j) T->pr[j]=0; }
+  { mwIndex nz=T->jc[nf]; for(j=0;j<nz;++j) T->pr[j]=0; }
   for(j=0;j<nc;++j) {
     const mwIndex *Qi = &X_skel->ir[X_skel->jc[j]];
     mwSize nz = X_skel->jc[j+1]-X_skel->jc[j];
@@ -84,6 +85,7 @@ static void interp_lmop(const sp_mat *T, const sp_mat_c *A, const double *u,
     }
   }
   mem_free(sqv1);
+  return 1;
 }
 
 /* A, u, X_skel, T_skel */
@@ -121,7 +123,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if(mxGetM(prhs[1])!=X_skel.n || mxGetN(prhs[1])!=1) {
     mexWarnMsgTxt("u not a column vector, or rows(u) != cols(X_skel)"); return;
   }
-  plhs[0] = mxCreateSparse(T_skel.m,T_skel.n,T_skel.jc[T_skel.n],mxREAL);
+  if(!(plhs[0]=mxCreateSparse(T_skel.m,T_skel.n,T_skel.jc[T_skel.n],mxREAL)))
+    { mexWarnMsgTxt("Out of memory."); return; }
   T.m=T_skel.m, T.n=T_skel.n;
   T.ir = mxGetIr(plhs[0]), T.jc = mxGetJc(plhs[0]), T.pr = mxGetPr(plhs[0]);
   memcpy(T.ir,T_skel.ir,T_skel.jc[T.n]*sizeof(mwIndex));
