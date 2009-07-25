@@ -15,6 +15,16 @@ C
       INCLUDE 'ZPER'
  
       logical ifbswap,ifre2
+
+      edif = 0.0
+      do i = 1,10
+         e1 = dnekclock()
+         e2 = dnekclock()
+         edif = edif + e2-e1
+      enddo
+      edif = edif/10.
+      if(nid.eq.0) write(6,'(A,1pE15.7,A,/)') 
+     /              ' timer accuracy: ', edif, ' sec'
 C
       if(nid.eq.0) write(6,*) 'read .rea file'
       OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
@@ -196,7 +206,7 @@ c
 c     passive scalars
 c
       READ(9,*,ERR=400) NSKIP
-      IF (NSKIP.GT.0 .AND. NPSCAL.GT.0 .AND. .NOT.IFUSERVP) THEN
+      IF (NSKIP.GT.0 .AND. NPSCAL.GT.0) THEN
          READ(9,*,ERR=400)(CPFLD(I,1),I=3,NPSCL2)
          IF(NPSCL2.LT.9)READ(9,*)
          READ(9,*,ERR=400)(CPFLD(I,2),I=3,NPSCL2)
@@ -482,10 +492,11 @@ c     dealiasing handling
          if (ifmvbd) param(99) = 3             ! For now, at least.
       endif
 
-      if (param(99).gt.-1 .and. lxd.le.lx1) then
-          if(nid.eq.0) write(6,*)
-     &    'ABORT: Dealiasing space too small (LXD=<LX1); Change SIZEu'
-          call exitt
+      if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
+     &   lzd.lt.lz1)) then
+         if(nid.eq.0) write(6,*)
+     &   'ABORT: Dealiasing space too small; Check lxd,lyd,lzd in SIZEu'
+         call exitt
       endif
 
 c     I/O format handling

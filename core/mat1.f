@@ -754,6 +754,21 @@ C     appropriate routines which take into account the specific architecture.
 C
 C----------------------------------------------------------------------------
 C
+      real function gl2norm(a,n)
+
+      include 'SIZE'
+      include 'MASS'
+
+      real a(1)
+
+      common /scrsf/ w1 (lx1,ly1,lz1,lelt)
+
+      call col3 (w1,a,a,n)
+      call col2 (w1,bm1,n)
+      gl2norm = sqrt(glsum (w1,n)/volvm1)
+
+      return
+      end
 c-----------------------------------------------------------------------
       function glsum (x,n)
       DIMENSION X(1)

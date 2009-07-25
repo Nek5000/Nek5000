@@ -68,15 +68,12 @@ c
 c
       if (nid.eq.0.and.icalld.eq.0) then
          write(6,*) 'schfile:',schfle
-         open(unit=26,file=schfle,form='formatted',status='new')
+         open(unit=26,file=schfle,err=44,form='formatted',status='new')
       endif
-
 
       call prepost_map(0) ! map pr and axisymm. arrays
 
-
       if(istep .ge. nsteps) lastep=1
-
 
       timdump=0
       if(timeio.ne.0.0)then
@@ -92,7 +89,7 @@ c
 
       iiidmp=0
       ! check for io request in file 'ioinfo'
-      if (nid.eq.0 .and. (mod(istep,10).eq.0.or.istep.le.200)) then 
+      if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then 
          open(unit=87,file='ioinfo',status='old',err=88)
          read(87,*,end=87,err=87) idummy
          if (iiidmp.eq.0) iiidmp=idummy
@@ -132,6 +129,9 @@ C
       tprep=tprep+dnekclock()-etime1
       ifdoit=.false.
       return
+
+ 44   if(nid.eq.0) write(6,*) 'ABORT: .sch file already exists'
+      call exitt
       end
 c-----------------------------------------------------------------------
       subroutine prepost_map(isave) ! isave=0-->fwd, isave=1-->bkwd
@@ -280,13 +280,13 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       if(nid.eq.0) then 
         WRITE(6,1001) istep,time
- 1001   FORMAT(/,i9,1pe12.4,' Writing to fld file:')
+ 1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
       endif
+      call gsync()      
 
       p66 = abs(param(66))
       if (p66.eq.6) then
          call mfo_outfld(prefix)
-         call gsync()
          return
       endif
 
@@ -410,8 +410,6 @@ c
       enddo
 
       if (nid.eq.0) call close_fld(p66)
-
-      call gsync()
 
       return
       end
@@ -1341,7 +1339,205 @@ c-----------------------------------------------------------------------
       include 'RESTART'
       common /scrcg/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
 
-      call mfo_set_pido                      ! determine i/o nodes
+      integer*8 offs0,offs,nbyte,stride,strideB
+
+      common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
+     &              , ur2(lxo*lxo*lxo*lelt)
+     &              , ur3(lxo*lxo*lxo*lelt)
+
+      tiostart=dnekclock()
+
+      nout = nelt
+      nxo  = nx1
+      nyo  = ny1
+      nzo  = nz1
+      if (ifreguo) then ! dump on regular (uniform) mesh
+         nxo  = nrg
+         nyo  = nrg
+         nzo  = nrg
+      endif
+      offs0 = iHeaderSize + 4 + isize*nelgt
+
+      if (nid.eq.pid0) then
+         call mfo_open_files(prefix)         ! open files on i/o nodes
+      endif
+      call mfo_write_hdr                     ! create element mapping +
+                                             ! write hdr 
+      strideB = nelB * nxo*nyo*nzo*wdsizo
+      stride  = nelgt* nxo*nyo*nzo*wdsizo
+
+      ioflds = 0
+      ! dump all fields based on the t-mesh to avoid different
+      ! topologies in the post-processor
+      if (ifxyo) then
+c stefan: we need to change fldstideB to the number of elements
+         offs = offs0 + ndim*strideB
+         call byte_set_view(offs)
+         if (ifreguo) then
+            call map2reg(ur1,nrg,xm1,nout)
+            call map2reg(ur2,nrg,ym1,nout)
+            if (if3d) call map2reg(ur3,nrg,zm1,nout)
+            call mfo_outv(ur1,ur2,ur3,nout,nxo,nyo,nzo)
+         else
+            call mfo_outv(xm1,ym1,zm1,nout,nxo,nyo,nzo)
+         endif
+         ioflds = ioflds + ndim
+      endif
+      if (ifvo ) then
+         offs = offs0 + ioflds*stride + ndim*strideB
+         call byte_set_view(offs)
+         if (ifreguo) then
+             call map2reg(ur1,nrg,vx,nout)
+             call map2reg(ur2,nrg,vy,nout)
+             if (if3d) call map2reg(ur3,nrg,vz,nout)
+             call mfo_outv(ur1,ur2,ur3,nout,nxo,nyo,nzo) 
+         else
+            call mfo_outv(vx,vy,vz,nout,nxo,nyo,nzo)  ! B-field handled thru outpost
+         endif
+         ioflds = ioflds + ndim
+      endif
+      if (ifpo ) then
+         offs = offs0 + ioflds*stride + strideB
+         call byte_set_view(offs)
+         if (ifreguo) then
+            call map2reg(ur1,nrg,pm1,nout)
+            call mfo_outs(ur1,nout,nxo,nyo,nzo)
+         else
+            call mfo_outs(pm1,nout,nxo,nyo,nzo)
+         endif
+         ioflds = ioflds + 1
+      endif
+      if (ifto ) then
+         offs = offs0 + ioflds*stride + strideB
+         call byte_set_view(offs)
+         if (ifreguo) then
+            call map2reg(ur1,nrg,t,nout)
+            call mfo_outs(ur1,nout,nxo,nyo,nzo)
+         else
+            call mfo_outs(t,nout,nxo,nyo,nzo)
+         endif
+         ioflds = ioflds + 1
+      endif
+      do k=1,ldimt1
+         if(ifpsco(k)) then
+           offs = offs0 + ioflds*stride + strideB
+           call byte_set_view(offs)
+           if (ifreguo) then
+              call map2reg(ur1,nrg,t(1,1,1,1,k+1),nout)
+              call mfo_outs(ur1,nout,nxo,nyo,nzo)
+           else
+              call mfo_outs(t(1,1,1,1,k+1),nout,nxo,nyo,nzo)
+           endif
+           ioflds = ioflds + 1
+         endif
+      enddo
+      nbyte = ioflds*nout*wdsizo*nxo*nyo*nzo
+
+      if (if3d) then
+         offs0   = offs0 + ioflds*stride
+         strideB = nelB *2*4   ! min/max single precision
+         stride  = nelgt*2*4
+         ioflds  = 0
+         ! add meta data to the end of the file
+         if (ifxyo) then
+            offs = offs0 + ndim*strideB
+            call byte_set_view(offs)
+            call mfo_mdatav(xm1,ym1,zm1,nout)
+            ioflds = ioflds + ndim
+         endif
+         if (ifvo ) then
+            offs = offs0 + ioflds*stride + ndim*strideB
+            call byte_set_view(offs)
+            call mfo_mdatav(vx,vy,vz,nout)
+            ioflds = ioflds + ndim
+         endif
+         if (ifpo ) then
+            offs = offs0 + ioflds*stride + strideB
+            call byte_set_view(offs)
+            call mfo_mdatas(pm1,nout)
+            ioflds = ioflds + 1
+         endif
+         if (ifto ) then
+            offs = offs0 + ioflds*stride + strideB
+            call byte_set_view(offs)
+            call mfo_mdatas(t,nout)
+            ioflds = ioflds + 1
+         endif
+         do k=1,ldimt1
+            offs = offs0 + ioflds*stride + strideB
+            call byte_set_view(offs)
+            if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
+            ioflds = ioflds + 1
+         enddo
+         nbyte = nbyte + 2*ioflds*nout*wdsizo
+      endif
+
+      if (nid.eq.pid0) 
+#ifdef MPIIO
+     &   call byte_close_mpi()
+#else
+     &   call byte_close()
+#endif
+      call gsync()
+      tio = dnekclock()-tiostart
+
+      dnbyte = nbyte
+      nbyte = glsum(dnbyte,1)
+      nbyte = nbyte + iHeaderSize + 4 + isize*nelgt
+      if(nid.eq.0) write(6,7) istep,time,
+     &             nbyte/tio/1024/1024/10,
+     &             nfileo
+    7 format(/,i9,1pe12.4,' done :: Write checkpoint',/,
+     &       30X,'avg data-throughput = ',f7.1,'MBps',/,
+     &       30X,'io-nodes = ',i5,/)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine io_init ! determine which nodes will output
+      character*80 hname
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'RESTART'
+
+      integer sum
+      common /scrns/ iwork(0:lp-1,2)
+
+      ifdiro = .false.
+
+#ifdef MPIIO
+
+c#ifdef MPIIO_NOCOL
+c      nfileo  = abs(param(65))
+c      if(nfileo.eq.0) nfileo = 1
+c      if(np.lt.nfileo) nfileo=np   
+c      nproc_o = np / nfileo              !  # processors pointing to pid0
+c      fid0    = nid/nproc_o              !  file id
+c      pid0    = nproc_o*fid0             !  my parent i/o node
+c      pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
+c      fid0    = 0 
+c#else
+      nfileo  = np
+      nproc_o = 1
+      fid0    = 0
+      pid0    = nid
+      pid1    = 0
+c#endif
+
+#else
+      if(param(65).lt.0) ifdiro = .true. !  p65 < 0 --> multi subdirectories
+      nfileo  = abs(param(65))
+      if(nfileo.eq.0) nfileo = 1
+      if(np.lt.nfileo) nfileo=np   
+      nproc_o = np / nfileo              !  # processors pointing to pid0
+      fid0    = nid/nproc_o              !  file id
+      pid0    = nproc_o*fid0             !  my parent i/o node
+      pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
+#endif
+
+      call nek_comm_io(nfileo)
 
       wdsizo = 4                             ! every proc needs this
       if (param(63).gt.0) wdsizo = 8         ! 64-bit .fld file
@@ -1350,55 +1546,23 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      if (nid.eq.pid0) then
-         call mfo_open_files(prefix)         ! open files
+      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
+      nrg = -1
+
+      ! how many elements are present up to rank nid
+      ! could be improved in the future to save memory
+      call izero(iwork,np)
+      iwork(nid,1) = nelt
+      call igop(iwork,iwork(0,2),'+  ',np) 
+      if(nid.eq.pid0) then
+        sum = 0
+        do i = nid-1,0,-1
+           sum  = sum + iwork(i,1)
+        enddo
+        nelB = sum  
       endif
 
-      call mfo_write_hdr                     ! write hdr, byte key, els.
-
-      nout = nelt
-
-      ! dump all fields based on the t-mesh to avoid different
-      ! topologies in the post-processor
-      if (ifxyo) call mfo_outv(xm1,ym1,zm1,nout)
-      if (ifvo ) call mfo_outv(vx,vy,vz,nout)  ! B-field handled thru outpost
-      if (ifpo ) call mfo_outs(pm1,nout)
-      if (ifto ) call mfo_outs(t,nout)
-      do k=1,ldimt1
-         if(ifpsco(k)) call mfo_outs(t(1,1,1,1,k+1),nout)
-      enddo
-
-      if (if3d) then
-         ! add meta data to the end of the file
-         if (ifxyo) call mfo_mdatav(xm1,ym1,zm1,nout)
-         if (ifvo ) call mfo_mdatav(vx,vy,vz,nout)
-         if (ifpo ) call mfo_mdatas(pm1,nout)
-         if (ifto ) call mfo_mdatas(t,nout)
-         do k=1,ldimt1
-            if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
-         enddo
-      endif
-
-      if (nid.eq.pid0) call byte_close()
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mfo_set_pido  ! determine which nodes will output
-      character*80 hname
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'RESTART'
-
-      nfileo  = abs(param(65))           !  p65 < 0 --> multi subdirectories
-      if(nfileo.eq.0) nfileo = 1
-      if(np.lt.nfileo) nfileo=np   
-      nproc_o = np / nfileo              !  number of processors pointing to pid0
-      fid0    = nid/nproc_o              !  file id
-      pid0    = nproc_o*fid0             !  my parent i/o node
-      pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
+      pid00 = glmin(pid0,1)
 
       return
       end
@@ -1437,13 +1601,15 @@ c-----------------------------------------------------------------------
       nfld           = nopen(iprefix)
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
 
-      nfileo  = abs(param(65))
-      if(nfileo.eq.0) nfileo = 1
-      rfileo  = nfileo
-      ndigit  = log10(rfileo) + 1
+#ifdef MPIIO
+      rfileo = 1
+#else
+      rfileo = nfileo
+#endif
+      ndigit = log10(rfileo) + 1
       
       k = 1
-      if (param(65).lt.0) then                          !  Add directory
+      if (ifdiro) then                                  !  Add directory
          call chcopy(fnam1(1),'A',1)
          call chcopy(fnam1(2),six,ndigit)  ! put ???? in string
          k = 2 + ndigit
@@ -1473,7 +1639,7 @@ c-----------------------------------------------------------------------
       call chcopy(fnam1(k),str,4)
       k = k + 4
 
-c     write(6,*) nid,fid0,' FILE:',fname
+c      write(6,*) nid,fid0,' FILE:',fname
       call mbyte_open(fname,fid0)                       !  Open blah000.fnnnn
 
       return
@@ -1686,7 +1852,11 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
+#ifdef MPIIO
+         call byte_write_mpi(buffer,nout,-1)
+#else
          call byte_write(buffer,nout)
+#endif
 
          ! write out the data of my childs
          idum  = 1
@@ -1695,8 +1865,12 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
-            nout  = n*inelp 
+            nout  = n*inelp
+#ifdef MPIIO
+            call byte_write_mpi(buffer(2),nout,-1)
+#else
             call byte_write(buffer(2),nout)
+#endif
          enddo
       else
          j = 1
@@ -1757,8 +1931,11 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
+#ifdef MPIIO
+         call byte_write_mpi(buffer,nout,-1)
+#else
          call byte_write(buffer,nout)
-
+#endif
          ! write out the data of my childs
          idum  = 1
          do k=pid0+1,pid1
@@ -1766,8 +1943,12 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
-            nout  = n*inelp 
+            nout  = n*inelp
+#ifdef MPIIO
+            call byte_write_mpi(buffer(2),nout,-1)
+#else
             call byte_write(buffer(2),nout)
+#endif
          enddo
       else
          j = 1
@@ -1787,27 +1968,30 @@ c-----------------------------------------------------------------------
 
       return
       end
-
-
-      subroutine mfo_outs(u,nel)   ! output a scalar field
+c-----------------------------------------------------------------------
+      subroutine mfo_outs(u,nel,mx,my,mz)   ! output a scalar field
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
 
-      real u(lx1*ly1*lz1,1)
+      real u(mx,my,mz,1)
 
-      common /SCRNS/ u4(2+lx1*ly1*lz1*2*lelt)
+      common /SCRNS/ u4(2+lxo*lxo*lxo*2*lelt)
       real*4         u4
-      real*8         u8(1+lx1*ly1*lz1*1*lelt)
+      real*8         u8(1+lxo*lxo*lxo*1*lelt)
       equivalence    (u4,u8)
 
       integer e
 
       call gsync() ! clear outstanding message queues.
+      if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
+        if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
+        call exitt
+      endif
 
-      nxyz = nx1*ny1*nz1
+      nxyz = mx*my*mz
       len  = 8 + 8*(lelt*nxyz)  ! recv buffer size
       leo  = 8 + wdsizo*(nel*nxyz)
       ntot = nxyz*nel
@@ -1815,14 +1999,18 @@ c-----------------------------------------------------------------------
       idum = 1
 
       if (nid.eq.pid0) then
- 
+
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4,u,ntot) 
+             call copyx4 (u4,u,ntot)
          else
-             call copy   (u8,u,ntot) 
+             call copy   (u8,u,ntot)
          endif
          nout = wdsizo/4 * ntot
+#ifdef MPIIO
+         call byte_write_mpi(u4,nout,-1)
+#else
          call byte_write(u4,nout)          ! u4 :=: u8
+#endif
 
          ! write out the data of my childs
          idum  = 1
@@ -1832,9 +2020,17 @@ c-----------------------------------------------------------------------
             call crecv(mtype,u4,len)
             nout  = wdsizo/4 * nxyz * u8(1)
             if (wdsizo.eq.4) then
+#ifdef MPIIO
+               call byte_write_mpi(u4(3),nout,-1)
+#else
                call byte_write(u4(3),nout)
+#endif
             else
+#ifdef MPIIO
+               call byte_write_mpi(u8(2),nout,-1)
+#else
                call byte_write(u8(2),nout)
+#endif
             endif
          enddo
 
@@ -1842,9 +2038,9 @@ c-----------------------------------------------------------------------
 
          u8(1)= nel
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4(3),u,ntot) 
+             call copyx4 (u4(3),u,ntot)
          else
-             call copy   (u8(2),u,ntot) 
+             call copy   (u8(2),u,ntot)
          endif
 
          mtype = nid
@@ -1853,29 +2049,34 @@ c-----------------------------------------------------------------------
 
       endif
 
+
       return
       end
 c-----------------------------------------------------------------------
 
-      subroutine mfo_outv(u,v,w,nel)   ! output a vector field
+      subroutine mfo_outv(u,v,w,nel,mx,my,mz)   ! output a vector field
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
 
-      real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
+      real u(mx*my*mz,1),v(mx*my*mz,1),w(mx*my*mz,1)
 
-      common /SCRNS/ u4(2+lx1*ly1*lz1*6*lelt)
+      common /SCRNS/ u4(2+lxo*lxo*lxo*6*lelt)
       real*4         u4
-      real*8         u8(1+lx1*ly1*lz1*3*lelt)
+      real*8         u8(1+lxo*lxo*lxo*3*lelt)
       equivalence    (u4,u8)
 
       integer e
 
       call gsync() ! clear outstanding message queues.
+      if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
+        if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
+        call exitt
+      endif
 
-      nxyz = nx1*ny1*nz1
+      nxyz = mx*my*mz
       len  = 8 + 8*(lelt*nxyz*ndim)   ! recv buffer size (u4)
       leo  = 8 + wdsizo*(nel*nxyz*ndim)
       idum = 1
@@ -1907,7 +2108,12 @@ c-----------------------------------------------------------------------
              enddo
          endif
          nout = wdsizo/4 * ndim*nel * nxyz
+#ifdef MPIIO
+         call byte_write_mpi(u4,nout,-1)
+#else
          call byte_write(u4,nout)          ! u4 :=: u8
+#endif
+
 
          ! write out the data of my childs
          do k=pid0+1,pid1
@@ -1915,13 +2121,21 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)           ! handshake
             call crecv(mtype,u4,len)
             nout  = wdsizo/4 * ndim*nxyz * u8(1)
+
             if (wdsizo.eq.4) then
+#ifdef MPIIO
+               call byte_write_mpi(u4(3),nout,-1)
+#else
                call byte_write(u4(3),nout)
+#endif
             else
+#ifdef MPIIO
+               call byte_write_mpi(u8(2),nout,-1)
+#else
                call byte_write(u8(2),nout)
+#endif
             endif
          enddo
-
       else
 
          u8(1) = nel
@@ -1972,17 +2186,17 @@ c-----------------------------------------------------------------------
       common /ctmp0/ lglist(0:lelt)
 
       character*132 hdr
+      integer*8 ioff
 
       call gsync()
-
-      ! if we want to switch the bytes for output
-      ! switch it again because the hdr is in ASCII
-      call get_bytesw_write(ibsw_out)
-      if (ibsw_out.ne.0) call set_bytesw_write(0)  
-
       idum = 1
 
-      if(nid.eq.pid0) then
+#ifdef MPIIO
+      nfileoo = 1   ! all data into one file
+      nelo = nelgt
+#else
+      nfileoo = nfileo
+      if(nid.eq.pid0) then                ! how many elements to dump
         nelo = nelt
         do j = pid0+1,pid1
            mtype = j
@@ -1995,8 +2209,7 @@ c-----------------------------------------------------------------------
         call crecv(mtype,idum,4)          ! hand-shake
         call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
       endif 
-
-      call gsync()
+#endif
 
       if(nid.eq.pid0) then
 
@@ -2029,29 +2242,49 @@ c-----------------------------------------------------------------------
          WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
       ENDIF
  
-      write(hdr,1) wdsizo,nx1,ny1,nz1,nelo,nelgt,time,istep,fid0,nfileo
+      write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
      $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a)
 
-      call byte_write(hdr,33)
-
-      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
+      ! if we want to switch the bytes for output
+      ! switch it again because the hdr is in ASCII
+      call get_bytesw_write(ibsw_out)
+c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
+      if (ibsw_out.ne.0) call set_bytesw_write(0)  
 
       test_pattern = 6.54321           ! write test pattern for byte swap
+
+#ifdef MPIIO
+      ! only rank0 (pid00) will write hdr + test_pattern
+      call byte_write_mpi(hdr,iHeaderSize/4,pid00)
+      call byte_write_mpi(test_pattern,1,pid00)
+#else
+      call byte_write(hdr,iHeaderSize/4)
       call byte_write(test_pattern,1)
+#endif
 
       endif
 
       ! write global element numbering for this group
       if(nid.eq.pid0) then
-        call byte_write(lglel,nelt)
+#ifdef MPIIO
+      ioff = iHeaderSize + 4 + nelB*isize
+      call byte_set_view (ioff)
+      call byte_write_mpi(lglel,nelt,-1)
+#else
+      call byte_write(lglel,nelt)
+#endif
         do j = pid0+1,pid1
            mtype = j
            call csend(mtype,idum,4,j,0)   ! handshake
            len = 4*(lelt+1)
            call crecv(mtype,lglist,len)
-           call byte_write(lglist(1),lglist(0))
+#ifdef MPIIO
+      call byte_write_mpi(lglist(1),lglist(0),-1)
+#else
+      call byte_write(lglist(1),lglist(0))
+#endif
         enddo
       else
         mtype = nid
@@ -2066,5 +2299,3 @@ c-----------------------------------------------------------------------
 
       return
       end
-
-c-----------------------------------------------------------------------

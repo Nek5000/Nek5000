@@ -8,7 +8,6 @@ C--------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-      common /cusrdiv/ usrdiv(lx2,ly2,lz2,lelv) ! User-defined divergence
 
       COMMON /SCRNS/ W1    (LX1,LY1,LZ1,LELV)
      $ ,             W2    (LX1,LY1,LZ1,LELV)

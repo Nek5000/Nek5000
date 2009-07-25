@@ -144,6 +144,8 @@ c     Who knows if this will be true with data coming from imesh.
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
+      common /SCRNS/ iwork(lp)
+
       integer globalId, lastGlobalId
 
       call iMesh_getTagHandle(%VAL(imesh),
@@ -168,7 +170,7 @@ c     Who knows if this will be true with data coming from imesh.
          call exitt
       endif
 
-      call igop(NELGV, LELGWORK, '+  ', 1)
+      call igop(NELGV, iwork, '+  ', 1)
 
       if (NELGV .gt. LELG) then
          print *, 'increase lelg ',nelgv,lelg
@@ -196,7 +198,7 @@ c     Who knows if this will be true with data coming from imesh.
          GLLNID(globalId) = nid
       end do
 
-      call igop(GLLNID, LELGWORK, '+  ', NELGV)
+      call igop(GLLNID, iwork, '+  ', NELGV)
 
       return
       end 

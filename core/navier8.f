@@ -1595,14 +1595,15 @@ c
       common /scrpr2/ vc(lcr*lelt)
       common /scrxxt/ cmlt(lcr,lelv),mask(lcr,lelv)
 
-      integer n_crs_tot
-      save    n_crs_tot
-      data    n_crs_tot /0/
+      integer icalld1
+      save    icalld1
+      data    icalld1 /0/
 
       
-      if (icalld.eq.0) then ! timer info
+      if (icalld1.eq.0) then ! timer info
          ncrsl=0
          tcrsl=0.0
+         icalld1=1
       endif
       ncrsl  = ncrsl  + 1
 

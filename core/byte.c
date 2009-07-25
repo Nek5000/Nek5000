@@ -8,14 +8,44 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifndef FNAME_H
+#define FNAME_H
+
+/*
+   FORTRAN naming convention
+     default      cpgs_setup, etc.
+     -DUPCASE     CPGS_SETUP, etc.
+     -DUNDERSCORE cpgs_setup_, etc.
+*/
+
+#ifdef UPCASE
+#  define FORTRAN_NAME(low,up) up
+#else
+#ifdef UNDERSCORE
+#  define FORTRAN_NAME(low,up) low##_
+#else
+#  define FORTRAN_NAME(low,up) low
+#endif
+#endif
+
+#endif
+
+#define byte_reverse FORTRAN_NAME(byte_reverse, BYTE_REVERSE)
+#define byte_open    FORTRAN_NAME(byte_open,    BYTE_OPEN   )
+#define byte_close   FORTRAN_NAME(byte_close,   BYTE_CLOSE  )
+#define byte_rewind  FORTRAN_NAME(byte_rewind,  BYTE_REWIND )
+#define byte_read    FORTRAN_NAME(byte_read,    BYTE_READ   )
+#define byte_write   FORTRAN_NAME(byte_write,   BYTE_WRITE  )
+#define set_bytesw_write FORTRAN_NAME(set_bytesw_write,SET_BYTESW_WRITE)
+#define set_bytesw_read  FORTRAN_NAME(set_bytesw_read ,SET_BYTESW_READ )
+#define get_bytesw_write FORTRAN_NAME(get_bytesw_write,GET_BYTESW_WRITE)
+#define get_bytesw_read  FORTRAN_NAME(get_bytesw_read ,GET_BYTESW_READ )
 
 #define READ     1
 #define WRITE    2
 #define MAX_NAME 80
 
-
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
-
 
 static FILE *fp=NULL;
 static int  flag=0;
@@ -26,6 +56,12 @@ int bytesw_read=0;
 
 /*************************************byte.c***********************************/
 
+#ifdef UNDERSCORE
+  void exitt_();
+#else
+  void exitt();
+#endif
+
 void cexitt()
 {
 #ifdef UNDERSCORE
@@ -33,17 +69,9 @@ void cexitt()
 #else
   exitt();
 #endif
-
 }
 
-void
-#ifdef UPCASE
-BYTE_REVERSE (float *buf, int *nn)
-#elif  UNDERSCORE
-byte_reverse_(float *buf, int *nn)
-#else
-byte_reverse(float *buf, int *nn)
-#endif
+void byte_reverse(float *buf, int *nn)
 {
   int n;
   char temp, *ptr;
@@ -62,14 +90,7 @@ byte_reverse(float *buf, int *nn)
 }
 
 
-void
-#ifdef UPCASE
-BYTE_OPEN (char *n)
-#elif  UNDERSCORE
-byte_open_(char *n)
-#else
-byte_open(char *n)
-#endif
+void byte_open(char *n)
 {
   int  i,len,istat;
   char slash;
@@ -103,15 +124,7 @@ byte_open(char *n)
   }
 }
 
-
-void
-#ifdef UPCASE
-BYTE_CLOSE ()
-#elif  UNDERSCORE
-byte_close_()
-#else
-byte_close()
-#endif
+void byte_close()
 {
   if (!fp) return;
 
@@ -124,15 +137,7 @@ byte_close()
   fp=NULL;
 }
 
-
-void
-#ifdef UPCASE
-BYTE_REWIND ()
-#elif  UNDERSCORE
-byte_rewind_()
-#else
-byte_rewind()
-#endif
+void byte_rewind()
 {
   if (!fp) return;
 
@@ -140,14 +145,7 @@ byte_rewind()
 }
 
 
-void
-#ifdef UPCASE
-BYTE_WRITE (float *buf, int *n)
-#elif  UNDERSCORE
-byte_write_(float *buf, int *n)
-#else
-byte_write(float *buf, int *n)
-#endif
+void byte_write(float *buf, int *n)
 {
   int flags;
   mode_t mode;
@@ -171,13 +169,7 @@ byte_write(float *buf, int *n)
   if (flag==WRITE)
     {
       if (bytesw_write == 1)
-#ifdef UPCASE
-        BYTE_REVERSE (buf,n);
-#elif  UNDERSCORE
-        byte_reverse_(buf,n);
-#else
         byte_reverse (buf,n);
-#endif
       fwrite(buf,sizeof(float),*n,fp);
     }
   else
@@ -188,14 +180,7 @@ byte_write(float *buf, int *n)
 }
 
 
-void
-#ifdef UPCASE
-BYTE_READ (float *buf, int *n)
-#elif  UNDERSCORE
-byte_read_(float *buf, int *n)
-#else
-byte_read(float *buf, int *n)
-#endif
+void byte_read(float *buf, int *n)
 {
   int flags;
   mode_t mode;
@@ -216,13 +201,7 @@ byte_read(float *buf, int *n)
   if (flag==READ)
   {
      if (bytesw_read == 1)
-#ifdef UPCASE
-        BYTE_REVERSE (buf,n);
-#elif  UNDERSCORE
-        byte_reverse_(buf,n);
-#else
         byte_reverse (buf,n);
-#endif
      fread(buf,sizeof(float),*n,fp);
      if (ferror(fp))
      {
@@ -243,15 +222,7 @@ byte_read(float *buf, int *n)
   }
 }
 
-
-void
-#ifdef UPCASE
-SET_BYTESW_WRITE (int *pa)
-#elif  UNDERSCORE
-set_bytesw_write_(int *pa)
-#else
-set_bytesw_write (int *pa)
-#endif
+void set_bytesw_write (int *pa)
 {
     if (*pa != 0)
        bytesw_write = 1;
@@ -259,15 +230,7 @@ set_bytesw_write (int *pa)
        bytesw_write = 0;
 }
 
-
-void
-#ifdef UPCASE
-SET_BYTESW_READ (int *pa)
-#elif  UNDERSCORE
-set_bytesw_read_(int *pa)
-#else
-set_bytesw_read (int *pa)
-#endif
+void set_bytesw_read (int *pa)
 {
     if (*pa != 0)
        bytesw_read = 1;
@@ -275,28 +238,12 @@ set_bytesw_read (int *pa)
        bytesw_read = 0;
 }
 
-
-void
-#ifdef UPCASE
-GET_BYTESW_WRITE (int *pa)
-#elif  UNDERSCORE
-get_bytesw_write_(int *pa)
-#else
-get_bytesw_write (int *pa)
-#endif
+void get_bytesw_write (int *pa)
 {
     *pa = bytesw_write;
 }
 
-
-void
-#ifdef UPCASE
-GET_BYTESW_READ (int *pa)
-#elif  UNDERSCORE
-get_bytesw_read_(int *pa)
-#else
-get_bytesw_read (int *pa)
-#endif
+void get_bytesw_read (int *pa)
 {
     *pa = bytesw_read;
 }

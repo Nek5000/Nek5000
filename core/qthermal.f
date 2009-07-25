@@ -27,7 +27,8 @@ C     energy equation expressed in terms of temperature.
       ifld_save = ifield
 
       if (.not.iflomach) then
-         call rzero(qtl,ntot)
+         call copy(qtl,usrdiv,ntot)
+         call col2(qtl,bm1,ntot)
          return
       endif
 

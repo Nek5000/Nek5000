@@ -1,4 +1,3 @@
-      program NEKTON
 C------------------------------------------------------------------------
 C NEK5000: The Open Source Spectral Element Solver
 C COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC
@@ -25,6 +24,10 @@ C    along with NEK5000.  If not, see <http://www.gnu.org/licenses/>.
 C
 C--------------------------------------------------------------------------
 
+      program NEKTON
+c
+c     top level driver
+c
       call nek_init()
       call nek_solve()
       call nek_end()
@@ -32,4 +35,3 @@ C--------------------------------------------------------------------------
       call exitt()
 
       end
-

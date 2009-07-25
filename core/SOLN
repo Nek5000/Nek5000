@@ -28,7 +28,6 @@ C
      $               , BFX    (LX1,LY1,LZ1,LELV)
      $               , BFY    (LX1,LY1,LZ1,LELV)
      $               , BFZ    (LX1,LY1,LZ1,LELV)
-     $               , QTL    (LX1,LY1,LZ1,LELV)
      $               , VXLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
      $               , VYLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
      $               , VZLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
@@ -61,6 +60,9 @@ c     Solution and data for magnetic field
      $               , BBY2   (LBX1,LBY1,LBZ1,LBELV)
      $               , BBZ2   (LBX1,LBY1,LBZ1,LBELV)
 c
+      COMMON /DIVERG/  QTL    (LX2,LY2,LZ2,LELT)
+     $               , USRDIV (LX2,LY2,LZ2,LELT)
+
       COMMON /VPTMSK/  V1MASK (LX1,LY1,LZ1,LELV)
      $               , V2MASK (LX1,LY1,LZ1,LELV)
      $               , V3MASK (LX1,LY1,LZ1,LELV)

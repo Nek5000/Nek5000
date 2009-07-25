@@ -68,7 +68,13 @@ rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 
 \mv ./obj/*.o . 2>/dev/null
 if [ -f SIZEu ]; then 
-  cp SIZEu    $SOURCE_ROOT/SIZE
+  cat SIZEu | grep -i 'lxo' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZEu
+     echo 'c automatically added by makenek' >>SIZEu
+     echo '      parameter(lxo=lx1)' >>SIZEu
+  fi
+  cp SIZEu -v $SOURCE_ROOT/SIZE
 else
   echo "FATAL ERROR: Cannot find SIZEu"
   exit 1
@@ -106,11 +112,11 @@ case $F77comp in
                ;;
   gfortran)    P="-fdefault-real-8 -x f77-cpp-input"
                ;;
-  ifort)       P="-r8 -fpp"
+  ifort)       P="-r8 -fpconstant -fpp"
                ;;
   pathf*)      P="-r8 -cpp -fno-second-underscore"
                ;;
-  *xlf*)       P="-qrealsize=8 -qsuffix=cpp=f"
+  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                ;;
   ftn)         P="-r8 -Mpreprocess"
