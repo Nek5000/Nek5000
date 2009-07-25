@@ -21,8 +21,17 @@ c
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
 #endif
-c
+
+#ifdef BLAS_MXM
+      if (n2.lt.3) then
+         call mxf2(a,n1,b,n2,c,n3)
+      else
+         call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
+      endif
+#else
       call mxmf2(a,n1,b,n2,c,n3)  ! In some cases, this is faster.
+#endif
+
 c
       return
       end

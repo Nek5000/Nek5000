@@ -3,10 +3,13 @@ c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSI
       parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
 
       common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
+     $              , nxo,nyo,nzo,nrg
      $              , wdsizr,wdsizo
-     $              , nfileo,nproc_o
-     $              , er(lelr)
+     $              , nfileo,nproc_o,nfldr
+     $              , er(lelr),nelB,nelBr
       integer wdsizr,wdsizo,er
+
+      parameter(iHeaderSize=132)
 
       common /cmfi_r/ timer
 
@@ -23,12 +26,16 @@ c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSI
      $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr(ldimt1),ifgtimr
      $       ,if_byte_sw
      $       ,ifgetz,ifgetw
+     $       ,ifdiro,ifreguo
       logical
      $        ifgetx ,ifgetu ,ifgetp ,ifgett ,ifgtps         ,ifgtim
      $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr        ,ifgtimr
      $       ,if_byte_sw
      $       ,ifgetz,ifgetw
+     $       ,ifdiro,ifreguo
 
+      common /cmfi_p/ fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00 
+      integer         fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00
 
-      common /cmfi_p/ fid0,pid0,pid1  ! file #, parent & next id
-      integer fid0,pid0,pid1
+      integer          nekcomm_io,mpi_fh
+      common /i4mpiio/ nekcomm_io,mpi_fh

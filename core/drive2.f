@@ -74,6 +74,8 @@ C
       CALL RZERO(VGRADT1,NTOT)
       CALL RZERO(VGRADT2,NTOT)
 
+      NTOT=NX2*NY2*NZ2*LELT
+      CALL RZERO(USRDIV,NTOT)
 
       RETURN
       END
@@ -88,26 +90,24 @@ C---------------------------------------------------------------------
       include 'INPUT'
       include 'GEOM'
       include 'TSTEP'
+      include 'CTIMER'
+
       LOGICAL  IFCOUR
       SAVE     IFCOUR
       COMMON  /CPRINT/ IFPRINT
       LOGICAL          IFPRINT
-      REAL*8 ETIME0,ETIME1,ETIME2
-      SAVE   ETIME0,ETIME1,ETIME2
-      DATA   ETIME0,ETIME1,ETIME2 /0.0, 0.0, 0.0/
-      REAL*8 DNEKCLOCK
-
-      COMMON /CTIME3/ etimes,ttotal,tttstp,etims0
-      real*8          etimes,ttotal,tttstp,etims0
+      REAL*8 EETIME0,EETIME1,EETIME2
+      SAVE   EETIME0,EETIME1,EETIME2
+      DATA   EETIME0,EETIME1,EETIME2 /0.0, 0.0, 0.0/
 
 C
 C     Only node zero makes comments.
       IF (NID.NE.0) RETURN
 C
 C
-      IF (ETIME0.EQ.0.0) ETIME0=DNEKCLOCK()
-      ETIME1=ETIME2
-      ETIME2=DNEKCLOCK()
+      IF (EETIME0.EQ.0.0) EETIME0=DNEKCLOCK()
+      EETIME1=EETIME2
+      EETIME2=DNEKCLOCK()
 C
       IF (ISTEP.EQ.0) THEN
          IFCOUR  = .FALSE.
@@ -116,10 +116,10 @@ C
  10      CONTINUE
          IF (IFWCNO) IFCOUR = .TRUE.
       ELSEIF (ISTEP.GT.0 .AND. LASTEP.EQ.0 .AND. IFTRAN) THEN
-         ETIME=ETIME2-ETIME1
-         TTIME=ETIME2-ETIME0
+         TTIME_STP=EETIME2-EETIME1
+         TTIME=EETIME2-EETIME0
          IF (     IFCOUR) 
-     $      WRITE (6,100) ISTEP,TIME,DT,COURNO/10,TTIME,ETIME
+     $      WRITE (6,100) ISTEP,TIME,DT,COURNO/10,TTIME,TTIME_STP
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
       ELSEIF (LASTEP.EQ.1) THEN
          WRITE (6,*) ' '
@@ -128,7 +128,7 @@ C
  100  FORMAT('Step',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',F7.3,2(1pE11.4))
  101  FORMAT('Step',I7,', time=',1pE12.5,', DT=',1pE11.3)
-C      call flush_io()
+
       RETURN
       END
 C
@@ -191,7 +191,7 @@ c
       MFIELD = 1
       IF (IFMVBD) MFIELD = 0
 C
-      DO 100 IFIELD=MFIELD,nfldt
+      DO 100 IFIELD=MFIELD,nfldt+(LDIMT-1 - NPSCAL)
          IF (IFTMSH(IFIELD)) THEN
              NELFLD(IFIELD) = NELT
          ELSE
@@ -1139,7 +1139,7 @@ c
       tdott=0.0
       tbsol=0.0
       tbso2=0.0
-      etims0= dnekclock()
+      ttime=0.0
 C
       return
       end
@@ -1214,6 +1214,12 @@ c
          write(6,*) 'eslv time',neslv,teslv,peslv
          ppres=tpres/tttstp
          write(6,*) 'pres time',npres,tpres,ppres
+         pcrsl=tcrsl/tttstp
+         write(6,*) 'crsl time',ncrsl,tcrsl,pcrsl
+         write(6,*) 'crsl min ',min_crsl
+         write(6,*) 'crsl max ',max_crsl
+         write(6,*) 'crsl avg ',avg_crsl
+c
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
          pusbc=tusbc/tttstp
@@ -1254,12 +1260,7 @@ c
          pddsl=tddsl/tttstp
          write(6,*) 'ddsl time',nddsl,tddsl,pddsl
 c
-         pcrsl=tcrsl/tttstp
-         write(6,*) 'crsl time',ncrsl,tcrsl,pcrsl
-         write(6,*) 'crsl min ',min_crsl
-         write(6,*) 'crsl max ',max_crsl
-         write(6,*) 'crsl avg ',avg_crsl
-c
+
          psolv=tsolv/tttstp
          write(6,*) 'solv time',nsolv,tsolv,psolv
          psett=tsett/tttstp

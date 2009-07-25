@@ -2,6 +2,7 @@
 
       include 'SIZE'
       include 'INPUT'
+      include 'RESTART'
 
       character*1 string(80),fout(80),BLNK
       character*6 ext
@@ -673,6 +674,133 @@ c
       enddo
          k = k + 1
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map2reg(ur,n,u,nel)
+c
+c     Map scalar field u() to regular n x n x n array ur 
+c
+      include 'SIZE'
+      real ur(1),u(lx1*ly1*lz1,1)
+
+      integer e
+
+      ldr = n**ndim
+
+      k=1
+      do e=1,nel
+         if (ndim.eq.2) call map2reg_2di_e(ur(k),n,u(1,e),nx1) 
+         if (ndim.eq.3) call map2reg_3di_e(ur(k),n,u(1,e),nx1) 
+         k = k + ldr
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map2reg_2di_e(uf,n,uc,m) ! Fine, uniform pt
+
+      real uf(n,n),uc(m,m)
+
+      parameter (l=50)
+      common /cmap2d/ j(l*l),jt(l*l),w(l*l),z(l)
+
+      integer mo,no
+      save    mo,no
+      data    mo,no / 0,0 /
+
+      if (m.gt.l) call exitti('map2reg_2di_e memory 1$',m)
+      if (n.gt.l) call exitti('map2reg_2di_e memory 2$',n)
+
+      if (m.ne.mo .or. n.ne.no ) then
+
+          call zwgll (z,w,m)
+          call zuni  (w,n)
+
+          call gen_int_gz(j,jt,w,n,z,m)
+
+      endif
+
+      call mxm(j,n,uc,m,w ,m)
+      call mxm(w,n,jt,m,uf,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map2reg_3di_e(uf,n,uc,m) ! Fine, uniform pt
+
+      real uf(n,n,n),uc(m,m,m)
+
+      parameter (l=50)
+      common /cmap3d/ j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
+
+      integer mo,no
+      save    mo,no
+      data    mo,no / 0,0 /
+
+      if (m.gt.l) call exitti('map2reg_3di_e memory 1$',m)
+      if (n.gt.l) call exitti('map2reg_3di_e memory 2$',n)
+
+      if (m.ne.mo .or. n.ne.no ) then
+
+          call zwgll (z,w,m)
+          call zuni  (w,n)
+
+          call gen_int_gz(j,jt,w,n,z,m)
+
+      endif
+
+      mm = m*m
+      mn = m*n
+      nn = n*n
+
+      call mxm(j,n,uc,m,v ,mm)
+      iv=1
+      iw=1
+      do k=1,m
+         call mxm(v(iv),n,jt,m,w(iw),n)
+         iv = iv+mn
+         iw = iw+nn
+      enddo
+      call mxm(w,nn,jt,m,uf,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_int_gz(j,jt,g,n,z,m)
+
+c     Generate interpolater from m z points to n g points
+
+c        j   = interpolation matrix, mapping from z to g
+c        jt  = transpose of interpolation matrix
+c        m   = number of points on z grid
+c        n   = number of points on g grid
+
+      real j(n,m),jt(m,n),g(n),z(m)
+
+      mpoly  = m-1
+      do i=1,n
+         call fd_weights_full(g(i),z,mpoly,0,jt(1,i))
+      enddo
+
+      call transpose(j,n,jt,m)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine zuni(z,np)
+c
+c     Generate equaly spaced np points on the interval [-1:1]
+c
+      real z(1)
+
+      dz = 2./(np-1)
+      z(1) = -1.
+      do i = 2,np-1
+         z(i) = z(i-1) + dz
+      enddo
+      z(np) = 1.
 
       return
       end

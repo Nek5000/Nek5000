@@ -37,8 +37,8 @@ C
       REAL*8 etime1,etime2,etime0,gtime1,tscrtch
       REAL*8 dnekclock
 C
-      COMMON /CTIME3/ etimes,ttotal,tttstp,etims0
-      real*8          etimes,ttotal,tttstp,etims0
+      COMMON /CTIME3/ etimes,ttotal,tttstp,etims0,ttime
+      real*8          etimes,ttotal,tttstp,etims0,ttime
 C
       integer icalld
       save    icalld

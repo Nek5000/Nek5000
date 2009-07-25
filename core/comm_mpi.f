@@ -41,7 +41,13 @@ c-----------------------------------------------------------------------
       wdsize=4
       eps=1.0e-12
       oneeps = 1.0+eps
-      if (oneeps.ne.1.0) wdsize=8
+      if (oneeps.ne.1.0) then
+         wdsize=8
+      else
+         if(nid.eq.0) 
+     &     write(6,*) 'ABORT: single precision mode not supported!'
+         call exitt
+      endif
       nekreal = mpi_real
       if (wdsize.eq.8) nekreal = mpi_double_precision
 
@@ -94,6 +100,7 @@ c
       character*3 op
 c
       if (ifsync) call gsync()
+
 #ifndef NOTIMER
       if (icalld.eq.0) then
         tgop =0.0d0
@@ -180,8 +187,10 @@ C
       call mpi_recv (buf,len,mpi_byte
      $              ,jnid,mtype,nekcomm,status,ierr)
 c
-      if (len.gt.lenm) 
-     $    write(6,*) nid,'long message in mpi_crecv:',len,lenm
+      if (len.gt.lenm) then 
+          write(6,*) nid,'long message in mpi_crecv:',len,lenm
+          call exitt
+      endif
 c
       return
       end
@@ -199,8 +208,10 @@ C
      $            ,jnid,mtype,nekcomm,status,ierr)
       call mpi_get_count (status,mpi_byte,len,ierr)
 c
-      if (len.gt.lenm) 
-     $    write(6,*) nid,'long message in mpi_crecv:',len,lenm
+      if (len.gt.lenm) then 
+          write(6,*) nid,'long message in mpi_crecv:',len,lenm
+          call exit
+      endif
 c
       return
       end
@@ -307,6 +318,7 @@ C
       irecv = imsg
 c     write(6,*) nid,' irecv:',imsg,msgtag,len
 c
+c
       return
       end
 c-----------------------------------------------------------------------
@@ -363,19 +375,20 @@ c
 
       tstop = dnekclock()
       ttotal= tstop-etimes
-      tttstp= tstop-etims0
 
       if (nid.eq.0) then
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '
-         write(6,'(A,3g13.5,A)') 'total elapsed time: ',
-     &                           ttotal,tttstp,tttstp/max(istep,1),
-     &                           ' seconds' 
-      endif
+         call print_stack()
+         write(6,*) ' '
+         write(6,'(3(A,1g13.5,A,/)') 
+     &      'total elapsed time         : ',ttotal, ' sec',
+     &      'total solve time incl. I/O : ',ttime , ' sec',
+     &      'time/timestep              : ',ttime/max(istep,1), ' sec'
+      endif 
       call flush_io
 
-c     call crystal_done (cr_h)  ! release instance
       call mpi_finalize (ierr)
       call exit
 

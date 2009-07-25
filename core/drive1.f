@@ -12,7 +12,7 @@ c
 
 C     used scratch arrays
 C     NOTE: no initial declaration needed. Linker will take 
-c           care about the size of the CBs
+c           care about the size of the CBs automatically
 c
 c      COMMON /CTMP1/ DUMMY1(LCTMP1)
 c      COMMON /CTMP0/ DUMMY0(LCTMP0)
@@ -30,42 +30,38 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       REAL*8 t0, tpp
       common /drive1f/ e, oe, t0, tpp
       
+C     Initalize Nek (MPI stuff, word sizes, ...)
+      call iniproc
 
-      call iniproc !  processor initialization 
-
-      TIME0  = dnekclock()
       etimes = dnekclock()
-      ISTEP  = 0
+      istep  = 0
       tpp    = 0.0
 
       call opcount(1)
 
-C
 C     Initialize and set default values.
-C
       call initdim
       call initdat
       call files
 
-C
-C     Read .rea file (preprocssor data)
-C
-      call readat  ! Read reaprocessor map, followed by data.
-      if (nid.eq.0) write(6,*) 'readat time',dnekclock()-t0,' seconds'
+C     Read .rea +map file
+      etime1 = dnekclock()
+      call readat
+      if (nid.eq.0) write(6,*) 'readat time',dnekclock()-etime1,' sec'
 
-      call setvar  ! initialize some variables
+C     Initialize some variables
+      call setvar  
 
 c     Check for zero steps
       instep=1
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
 
-C
 C     Geometry initialization
-C
       igeom = 2
       call connect
       call genwz
 
+C     USRDAT
       if(nid.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nid.eq.0) then 
@@ -73,8 +69,10 @@ C
         write(6,*) ' '
       endif
 
+C     Reinitalize geometry (in case it was changed in usrdat)
       call gengeom (igeom)
 
+C     USRDAT2
       if(nid.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nid.eq.0) then 
@@ -83,25 +81,19 @@ C
       endif
 
       call geom_reset(1)    ! recompute Jacobians, etc.
-      call vrdsmsh  ! verify mesh topology
+      call vrdsmsh          ! verify mesh topology
 
       call echopar ! echo back the parameter stack
       call setlog  ! Initalize logical flags
 
-C
 C     Zero out masks corresponding to Dirichlet boundary points.
-C
       call bcmask
 
-C
 C     Need eigenvalues to set tolerances in presolve (SETICS)
-C
       if (fintim.ne.0.0.or.nsteps.ne.0) call geneig (igeom)
       call vrdsmsh
 
-C
-C     Solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
-C
+C     Pressure solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
       if (ifflow.and.nsteps.gt.0) then
          if (ifsplit) then
             call set_up_h1_crs
@@ -121,6 +113,7 @@ C
          endif
       endif
 
+C     USRDAT3
       if(nid.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
       if(nid.eq.0) then 
@@ -128,12 +121,14 @@ C
         write(6,*) ' '
       endif
 
-C     The properties are set if PRESOLVE is used in SETICS,
-C     otherwise they are set in the beginning of the time stepping loop
-C
+C     Initalize io unit
+      call io_init
+
+C     Set initial conditions + compute field properties
       call SETICS
       CALL SETPROP
 
+C     USRCHK
       if(nid.eq.0) write(6,*) 'call userchk'
       CALL USERCHK
       if(nid.eq.0) then 
@@ -144,30 +139,33 @@ C
       CALL COMMENT
       CALL SSTEST (ISSS) 
 
+C     Initalize timers to ZERO
       CALL TIME00
       CALL opcount(2)
       CALL dofcnt
 
       jp = 0  ! Set perturbation field count to 0 for baseline flow
 
+      call gsync()
+
+      etims0 = dnekclock()
       IF (NID.EQ.0) THEN
         WRITE (6,*) ' '
         IF (TIME.NE.0.0) WRITE (6,'(A,E14.7)') ' Initial time:',TIME
         WRITE (6,'(A,g13.5,A)') 
      &              ' Initialization successfully completed ',
-     &              dnekclock()-etimes, ' seconds'
+     &              etims0-etimes, ' sec'
       ENDIF
 
       return
       end
-
-
-      subroutine nek_solve
 C--------------------------------------------------------------------------
+      subroutine nek_solve
 
       include 'SIZE'
       include 'TSTEP'
       include 'INPUT'
+      include 'CTIMER'
 
       IF (NSTEPS.EQ.0) then
           if (nid.eq.0) then
@@ -192,48 +190,32 @@ C--------------------------------------------------------------------------
 
  1001 RETURN
       END
-
-
-      subroutine nek_advance
 C--------------------------------------------------------------------------
+      subroutine nek_advance
 
       include 'SIZE'
       include 'TOTAL'
-      include 'DEALIAS'
-      include 'DOMAIN'
-      include 'ZPER'
-c
-      include 'OPCTR'
       include 'CTIMER'
-  
 
       IF (IFTRAN) CALL SETTIME
       if (ifmhd ) call cfl_check
-         
       CALL SETSOLV
-
       CALL COMMENT
          
       if (ifsplit) then   ! PN/PN formulation
-            
          igeom = 1
          if (ifheat)      call heat     (igeom)
-
          call setprop
          call qthermal
          igeom = 1
          if (ifflow)      call fluid    (igeom)
-
       else                ! PN-2/PN-2 formulation
-
          call setprop
          do igeom=1,2
-
             if (ifgeom) then
                call gengeom (igeom)
                call geneig  (igeom)
             endif
-
             if (ifmhd) then
                call induct   (igeom)
                if (ifheat)      call heat     (igeom)
@@ -247,9 +229,7 @@ c
                if (ifflow)      call fluid    (igeom)
                if (ifmvbd)      call meshv    (igeom)
             endif
-
          enddo
-         
       endif
       
       if (.not.ifmhd) then      ! (filter in induct.f for ifmhd)
@@ -259,15 +239,15 @@ c
 
       return
       end
-      
-
-      subroutine nek_end
 C--------------------------------------------------------------------------
+      subroutine nek_end
 
       include 'SIZE'
       include 'TSTEP'
       include 'PARALLEL'
       include 'OPCTR'
+
+c      write(6,*) nid,etimes
 
       if (nid.eq.0) then
          write(6,*) ' '
@@ -285,6 +265,7 @@ c     check for zero steps
 #ifndef NOTIMER
          if(nid.eq.0) write(6,*) 'runtime statistics:'
          call opcount(3)
+    
          call timeout
 #endif
          CALL COMMENT
@@ -294,4 +275,3 @@ c     check for zero steps
    
       return
       end
-      

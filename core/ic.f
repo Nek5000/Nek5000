@@ -36,8 +36,6 @@ c
 C
 C     Initialize all fields:
 C
-
-
       nxyz2=nx2*ny2*nz2
       ntot2=nxyz2*nelv
       nxyz1=nx1*ny1*nz1
@@ -314,7 +312,7 @@ C print min values
       ntot = nxyz1*nelfld(2)
       ttmax = glmin(t ,ntott)
 
-      do i=1,NPSCAL
+      do i=1,LDIMT-1
          ntot = nxyz1*nelfld(i+2)
          psmax(i) = glmin(T(1,1,1,1,i+1),ntot)
       enddo
@@ -327,8 +325,8 @@ C print min values
          write(6,20) vxmax,vymax,vzmax,prmax,ttmax
    20    format(' uvwpt min',5g13.5)
       endif
-      if (npscal.gt.0) then
-         if (nid.eq.0) write(6,21) (psmax(i),i=1,NPSCAL)
+      if (LDIMT-1.gt.0) then
+         if (nid.eq.0) write(6,21) (psmax(i),i=1,LDIMT-1)
    21    format(' PS min   ',50g13.5)
       endif
 
@@ -345,7 +343,7 @@ c print max values
       ntot = nxyz1*nelfld(2)
       ttmax = glmax(t ,ntott)
 
-      do i=1,NPSCAL
+      do i=1,LDIMT-1
          ntot = nxyz1*nelfld(i+2)
          psmax(i) = glmax(T(1,1,1,1,i+1),ntot)
       enddo
@@ -360,9 +358,9 @@ c print max values
    17    format(' uvwpt max',5g13.5)
       endif
 
-      if (npscal.gt.0) then
+      if (LDIMT-1.gt.0) then
          if (nid.eq.0)  then
-            write(6,18) (psmax(i),i=1,NPSCAL)
+            write(6,18) (psmax(i),i=1,LDIMT-1)
    18       format(' PS max   ',50g13.5)
          endif
       endif
@@ -503,7 +501,7 @@ C           Parse restart options
                ifrest(2,jp) = .true.
             ENDIF
             DO 1900 IFIELD=3,nfldt
-c              write(6,*) 'ifgetps:',(ifgtps(k),k=1,nfield)
+c              write(6,*) 'ifgetps:',(ifgtps(k),k=1,ldimt-1)
                IF (IFGTPS(IFIELD-2)) THEN
                   iffort(ifield,jp) = .false.
                   ifprsl(ifield,jp) = .false.
@@ -589,33 +587,26 @@ c
       ifbytsw = .false.
 
       if(nfiles.lt.1) return
-      if(nid.eq.0) write(6,*) 'Reading restart data'
+      if(nid.eq.0) write(6,*) 'Reading checkpoint data'
 
-      if (param(67).lt.1.0) then
-         ! ascii 
-         iffmat=.true.
-      else
-         ! binary
-         iffmat=.false.
-      endif
-
+c use new reader (only binary support)
       if (param(67).eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
-            call  mlti_file_input(fname)
+            call mfi(fname)
          enddo
          return
       endif
-c
+
+c use old reader (for ASCII + old binary support)
+      if (param(67).lt.1.0) then
+         iffmat=.true.  ! ascii
+      else
+         iffmat=.false. ! binary
+      endif
+
       DO 6000 IFILE=1,NFILES
-C
-C        Loop over the requested restart files
-C
-         call sioflag(ndumps,fname,initc(ifile))
-C
-C
-C       Standard Case:   Requested inputs are in the file.
-C
+        call sioflag(ndumps,fname,initc(ifile))
         if (nid.eq.0) then
 
           if (iffmat) then
@@ -743,9 +734,9 @@ C
                IPOSW=0
                IPOSP=0
                IPOST=0
-               do i=1,ldimt1
-                  ipsps(i)=0
-               enddo
+               DO 40 I=1,NPSCAL
+                  IPSPS(I)=0
+   40          CONTINUE
 
                IPS = 0
                NPS = 0
@@ -778,7 +769,7 @@ C
                      NOUTS=NOUTS + 1
                      IPOST=NOUTS
                   ENDIF
-                  if (mod(param(67),1.0).eq.0.0) then
+                  IF(mod(param(67),1.0).eq.0.0) THEN
                     i1 = i1_from_char(excoder1(i))
                     if (0.lt.i1.and.i1.lt.10) then
                        if (i1.le.ldimt1) then
@@ -789,7 +780,7 @@ C
    2                      format(2i4,a1,' PROBLEM W/ RESTART DATA')
                        endif
                     endif
-                  else
+                  ELSE
                     IF(EXCODER1(I).EQ.'S') THEN
                        READ(EXCODER1(I+1),'(I1)') NPS1
                        READ(EXCODER1(I+2),'(I1)') NPS0
@@ -1133,7 +1124,7 @@ C
       IFGETW=.FALSE.
       IFGETP=.FALSE.
       IFGETT=.FALSE.
-      DO 100 I=1,LDIMT1
+      DO 100 I=1,LDIMT-1
          IFGTPS(I)=.FALSE.
   100 CONTINUE
       IFGTIM=.TRUE.
@@ -1201,7 +1192,7 @@ C
             IFGETT=.TRUE.
          ENDIF
 C
-         DO 300 I=2,NPSCAL
+         DO 300 I=2,LDIMT-1
             WRITE (S2,301) I
             IPO=INDX_CUT(RSOPT,S2,2)
             IF (IPO.NE.0) THEN
@@ -1231,7 +1222,7 @@ C
          ENDIF
          IF (IFFLOW) IFGETP=.TRUE.
          IF (IFHEAT) IFGETT=.TRUE.
-         DO 410 I=1,NPSCAL
+         DO 410 I=1,LDIMT-1
             IFGTPS(I)=.TRUE.
   410    CONTINUE
       ENDIF
@@ -1435,7 +1426,7 @@ c-----------------------------------------------------------------------
       function i1_from_char(s1)
       character*1 s1
 
-      character*10 n10 
+      character*10 n10
       save         n10
       data         n10 / '0123456789' /
 
@@ -2030,23 +2021,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-
-c     Parallel file i/o reader  (param(66) = 6)
-c
-c     6/14/2006  pff
-c
-c     File format:
-
-c     132 byte header  (containing nel_block, etc.)
-c     4-byte swap test
-c     nel_block 4-byte integers, indicating elements contained in file
-c     nxyz . nel_block vec data
-c     nxyz . nel_block vec data
-c     nxyz . nel_block scalar data
-
-
-c-----------------------------------------------------------------------
-      subroutine mfi_gets(u,wk,lwk,idummy)
+      subroutine mfi_gets(u,wk,lwk,iskip)
 
       include 'SIZE'
       include 'INPUT'
@@ -2054,82 +2029,114 @@ c-----------------------------------------------------------------------
       include 'RESTART'
 
       real u(lx1*ly1*lz1,1)
-      real*4 wk(lwk)
-      integer e,eg,msg_id(lelt)
-      logical idummy
 
-      common /scruz/ w2(4*lx1*ly1*lz1*lelt)
+      real*4 wk(lwk) ! message buffer
+      common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
+      real*4 w2
+
+      integer e,eg,msg_id(lelt)
+      logical iskip
 
       call gsync() ! clear outstanding message queues.
 
-      num_recv  = nxr*nyr*nzr*nelv
-      num_avail = lwk*wdsize/wdsizr
+      nxyzr = nxr*nyr*nzr   
+      len   = nxyzr*wdsizr  ! message length
+      if (wdsizr.eq.8) nxyzr = 2*nxyzr
+
+      ! check message buffer
+      num_recv  = len
+      num_avail = lwk*wdsize
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
-      num_read  = nxr*nyr*nzr
-      num_avail = 4*lx1*ly1*lz1*lelv*wdsize/wdsizr
-      call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets b')
+      ! setup read buffer
+      if(nid.eq.pid0r) then
+         nread = nxyzr*nelr/(10.*lx1*ly1*lz1*lelt) + 1
+c         nread = nelr
+         if(nread.lt.1) nread=1 
+         nelrr     = nelr/nread
+         num_read  = nxyzr*nelrr
+         num_avail = 10*lx1*ly1*lz1*lelt
+         call lim_chk(num_read,num_avail,'     ','     ','mfi_gets b')
+      endif
 
-      len   = nxr*nyr*nzr*wdsizr
+      ! pre-post recieves
+      if (np.gt.1) then
+         l = 1
+         do e=1,nelt
+            eg = lglel(e)
+            msg_id(e) = irecv(eg,wk(l),len)
+            l = l+nxyzr
+         enddo
+      endif
+
+      if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
+         ! read blocks of size nelrr
+         k = 0
+ 30      do i = 1,nread
+#ifdef MPIIO 
+            call byte_read_mpi(w2,nxyzr*nelrr,-1)
+#else
+            call byte_read (w2,nxyzr*nelrr)
+#endif
+            ! distribute data across target processors
+            l = 1
+            do e = k+1,k+nelrr
+               jnid = gllnid(er(e))                ! where is er(e) now?
+               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               l = l+nxyzr
+            enddo
+            k  = k + nelrr
+         enddo
+         ! clean-up
+         nread = 1
+         nelrr = nelr - k
+         if(nelrr.gt.0) goto 30
+      elseif (np.eq.1) then
+         call byte_read(wk,nxyzr*nelr)
+      endif
+
+      if (if_byte_sw.and.wdsizr.eq.8) then
+         if(nid.eq.0) 
+     &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
+     &                'not supported'
+         call exitt
+      endif
+
+      if (iskip) then
+         call gsync() ! clear outstanding message queues.
+         goto 100     ! don't use the data
+      endif
+
       nxyzr = nxr*nyr*nzr
+      nxyzv = nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
       l = 1
-      if (np.gt.1) then
-         do e=1,nelt
-            eg = lglel(e)
-            msg_id(e) = irecv(eg,wk(l),len)
-            l = l+nxyzw
-         enddo
-      endif
-
-      if (nid.eq.pid0.and.np.gt.1) then ! open file fid0
-         do e=1,nelr
-            jnid = gllnid(er(e))
-            call byte_read(w2,nxyzw)
-            call csend(er(e),w2,len,jnid,0)  ! blocking send
-         enddo
-      elseif (np.eq.1) then
-         l = 1
-         do e=1,nelr
-            call byte_read(wk(l),nxyzw)
-            l = l+nxyzw
-         enddo
-      endif
-
-      if (if_byte_sw.and.wdsizr.eq.8) 
-     &   write(6,*) 'ABORT: no support for 64-bit and byte_swap'
-      if (if_byte_sw.and.wdsizr.eq.8) call exitt
-
-      if (idummy) goto 100
-
-      l = 1
       do e=1,nelt
          if (np.gt.1) call msgwait(msg_id(e))
-         if (if_byte_sw) call byte_reverse(wk(l),nxyzr)
+         if (if_byte_sw) call byte_reverse(wk(l),nxyzv)
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
-               call copy4r(u(1,e),wk(l),nxyzr)
+               call copy4r(u(1,e),wk(l        ),nxyzr)
             else
-               call copy  (u(1,e),wk(l),nxyzr)
+               call copy  (u(1,e),wk(l        ),nxyzr)
             endif
          else                             ! INTERPOLATE
             if (wdsizr.eq.4) then
-               call mapab4r(u(1,e),wk(l),nxr,1)
+               call mapab4r(u(1,e),wk(l        ),nxr,1)
             else
-               call mapab  (u(1,e),wk(l),nxr,1)
+               call mapab  (u(1,e),wk(l        ),nxr,1)
             endif
          endif
          l = l+nxyzw
       enddo
 
- 100  call gsync() ! clear outstanding message queues.
 
-      return
+ 100  return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi_getv(u,v,w,wk,lwk,idummy)
+      subroutine mfi_getv(u,v,w,wk,lwk,iskip)
 
       include 'SIZE'
       include 'INPUT'
@@ -2137,26 +2144,38 @@ c-----------------------------------------------------------------------
       include 'RESTART'
 
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
-      real*4 wk(lwk)
-      integer e,eg,msg_id(lelt)
-      logical idummy
+      logical iskip
 
-      common /scruz/ w2(4*lx1*ly1*lz1*lelt)
+      real*4 wk(lwk) ! message buffer
+      common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
+      real*4 w2
+
+      integer e,eg,msg_id(lelt)
+
 
       call gsync() ! clear outstanding message queues.
 
-      num_recv  = ndim*nxr*nyr*nzr*nelv
-      num_avail = lwk*wdsize/wdsizr
-      call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
-
-      num_read  = ndim*nxr*nyr*nzr
-      num_avail = 4*lx1*ly1*lz1*lelv*wdsize/wdsizr
-      call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv b')
-
-      len   = ndim*nxr*nyr*nzr*wdsizr
       nxyzr = ndim*nxr*nyr*nzr
+      len   = nxyzr*wdsizr             ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
+      ! check message buffer
+      num_recv  = len
+      num_avail = lwk*wdsize
+      call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
+
+      ! setup read buffer
+      if(nid.eq.pid0r) then
+         nread = nxyzr*nelr/(10.*lx1*ly1*lz1*lelt) + 1
+c         nread = nelr
+         if(nread.lt.1) nread=1 
+         nelrr     = nelr/nread
+         num_read  = nxyzr*nelrr
+         num_avail = 10*lx1*ly1*lz1*lelt
+         call lim_chk(num_read,num_avail,'     ','     ','mfi_gets b')
+      endif
+
+      ! pre-post recieves
       if (np.gt.1) then
          l = 1
          do e=1,nelt
@@ -2166,29 +2185,48 @@ c-----------------------------------------------------------------------
          enddo
       endif
 
-      if (nid.eq.pid0.and.np.gt.1) then ! open file fid0
-         do e=1,nelr
-            jnid = gllnid(er(e))
-            call byte_read(w2,nxyzr)
-            call csend(er(e),w2,len,jnid,0)  ! blocking send
+      if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
+         ! read blocks of size nelrr
+         k = 0
+ 30      do i = 1,nread
+#ifdef MPIIO 
+            call byte_read_mpi(w2,nxyzr*nelrr,-1)
+#else
+            call byte_read (w2,nxyzr*nelrr)
+#endif
+            ! distribute data across target processors
+            l = 1
+            do e = k+1,k+nelrr
+               jnid = gllnid(er(e))                ! where is er(e) now?
+               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               l = l+nxyzr
+            enddo
+            k  = k + nelrr
          enddo
+         ! clean-up
+         nread = 1
+         nelrr = nelr - k
+         if(nelrr.gt.0) goto 30
       elseif (np.eq.1) then
-         l = 1
-         do e=1,nelr
-            call byte_read(wk(l),nxyzr)
-            l = l+nxyzr
-         enddo
+         call byte_read(wk,nxyzr*nelr)
       endif
 
-      if (if_byte_sw.and.wdsizr.eq.8) write(6,*) 'ERROR mfi_getv a'
-      if (if_byte_sw.and.wdsizr.eq.8) call exitt
+      if (if_byte_sw.and.wdsizr.eq.8) then
+         if(nid.eq.0) 
+     &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
+     &                'not supported'
+         call exitt
+      endif
+
+      if (iskip) then
+         call gsync() ! clear outstanding message queues.
+         goto 100     ! don't use the data
+      endif
 
       nxyzr = nxr*nyr*nzr
       nxyzv = ndim*nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
-
-      if (idummy) goto 100
 
       l = 1
       do e=1,nelt
@@ -2225,12 +2263,10 @@ c-----------------------------------------------------------------------
          l = l+ndim*nxyzw
       enddo
 
- 100  call gsync() ! clear outstanding message queues.
-
-      return
+ 100  return
       end
 c-----------------------------------------------------------------------
-      subroutine parse_hdr(hdr)
+      subroutine mfi_parse_hdr(hdr)
       include 'SIZE'
 
       character*132 hdr
@@ -2250,10 +2286,10 @@ c-----------------------------------------------------------------------
       subroutine parse_std_hdr(hdr)
       include 'SIZE'
       include 'INPUT'
+      include 'PARALLEL'
       include 'RESTART'
 
       character*132 hdr
-
       character*4 dummy
 
       read(hdr,*,err=99) dummy
@@ -2261,34 +2297,39 @@ c-----------------------------------------------------------------------
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
 
-      if (nelr.gt.lelr) then
-        write(6,*)nid,nelr,lelr,'parse_std_hdr: inc. lelr in RESTART'
+#ifdef MPIIO
+      if ((nelr/np + np).gt.lelr) then
+        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
         call exitt
       endif
+#else
+      if (nelr.gt.lelr) then
+        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
+        call exitt
+      endif
+#endif
 
-
-c          NOTE:  This will be extended to general case in future.
-c                 For now, what you see in file is what you get.
+      ifgtim  = .true.  ! always get time
       ifgetxr = .false.
       ifgetur = .false.
       ifgetpr = .false.
       ifgettr = .false.
-      do k=1,ldimt1
+      do k=1,ldimt-1
          ifgtpsr(k) = .false.
       enddo
 
-      ifgtim = .true.  ! this is the default
-
-      NPS=0
+      NPSR = 0
       do i=1,10 
          if (rdcode1(i).eq.'X') ifgetxr = .true.
          if (rdcode1(i).eq.'U') ifgetur = .true.
          if (rdcode1(i).eq.'P') ifgetpr = .true.
          if (rdcode1(i).eq.'T') ifgettr = .true.
-         if (npscal.gt.0 .and. rdcode1(i).eq.'S') then
+         if (rdcode1(i).eq.'S') then
             read(rdcode1(i+1),'(I1)') NPS1
             read(rdcode1(i+2),'(I1)') NPS0
-            NPS = 10*NPS1+NPS0
+            NPSR = 10*NPS1+NPS0
+            NPS  = NPSR
+            if(NPSR.gt.ldimt-1) NPS=ldimt-1
             do k=1,NPS
                ifgtpsr(k) = .true.
             enddo
@@ -2296,15 +2337,13 @@ c                 For now, what you see in file is what you get.
             GOTO 50
          endif
       enddo
-  
- 50   if (nps.gt.(ldimt-1)) then
+
+  50  if (NPS.lt.NPSR) then
          if (nid.eq.0) then 
-           write(*,'(A)') 
-     &      'ERROR: restart file has a NSPCAL > LDIMT'
-           write(*,'(A,I2)') 
-     &      'Change LDIMT in SIZE'
+           write(*,'(A,/,A)') 
+     &      'WARNING: restart file has a NSPCAL > LDIMT!',
+     &      'Not all data of the fld-file has been read.'
          endif
-         call exitt
       endif
 
       return
@@ -2331,15 +2370,17 @@ c                4  7  10  13   23    33    53    62     68     74
      $         , (rlcode(k),k=1,20)                   ! 74+20=94
     1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
 
+
+      if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
+
       if (nelr.gt.lelr) then
         write(6,*)nid,nelr,lelr,'parse_std_hdr06: inc. lelr in RESTART'
         call exitt
       endif
 
 c     Assign read conditions, according to rdcode
-c          NOTE:  This will be extended to general case in future.
-c                 For now, what you see in file is what you get.
-
+c     NOTE: In the old hdr format: what you see in file is what you get.
+      ifgtim  = .true.  ! always get time
       ifgetxr = .false.
       ifgetur = .false.
       ifgetpr = .false.
@@ -2347,8 +2388,6 @@ c                 For now, what you see in file is what you get.
       do k=1,npscal
          ifgtpsr(k) = .false.
       enddo
-
-      ifgtim = .true.  ! this is the default
 
       if (rlcode(1).eq.'X') ifgetxr = .true.
       if (rlcode(2).eq.'U') ifgetur = .true.
@@ -2358,28 +2397,11 @@ c                 For now, what you see in file is what you get.
          if (rlcode(4+k).ne.' ') ifgtpsr(k) = .true.
       enddo
 
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mfi_get_hdr0(hdr,fname)
-c
-      include 'SIZE'
-      include 'PARALLEL'
-      character*132 hdr
-      character*80  fname
-
-      if (nid.eq.0) then
-         call mbyte_open(fname,0) ! open  blah000.fldnn
-         call blank     (hdr,132)
-         call byte_read (hdr, 33) ! 4 x 33 = 132
-         call byte_close()
-      endif
-      call bcast(hdr,132)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mlti_file_input(fname)
+      subroutine mfi(fname)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2400,49 +2422,57 @@ c
       character*132 hdr
       character*80  fname
 
-
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
       integer e
 
-      call mfi_get_hdr0(hdr,fname)
-      call parse_hdr   (hdr)
+      integer*8 offs0,offs,nbyte,stride,strideB
 
-C     Bounds checking on mapped data.
-      IF (NXR.GT.LX1+6) THEN
-         if(nid.eq.0) WRITE(6,20) NXR,NX1
-   20    FORMAT(//,2X,
-     $   'ABORT:  Attempt to map from',I3,
-     $   ' to N=',I3,'.',/,2X,
-     $   'NEK5000 currently supports mapping from N+6 or less.')
-         CALL EXITT
-      ENDIF
+      tiostart=dnekclock()
 
-      call set_pid(fname)! determine reader nodes; open files
+      call mfi_prepare(fname)       ! determine reader nodes +
+                                    ! read hdr + element mapping 
 
+      offs0 = iHeadersize + 4 + isize*nelgr
+      strideB = nelBr* nxr*nyr*nzr*wdsizr
+      stride  = nelgr* nxr*nyr*nzr*wdsizr
+
+      iofldsr = 0
       if (ifgetxr) then      ! if available
+         offs = offs0 + ndim*strideB
+         call byte_set_view(offs)
          if (ifgetx) then
+c            if(nid.eq.0) write(6,*) 'Reading mesh'
             call mfi_getv(xm1,ym1,zm1,wk,lwk,.false.)
-         else                ! skip
+         else                ! skip the data
             call mfi_getv(xm1,ym1,zm1,wk,lwk,.true.)
          endif
+         iofldsr = iofldsr + ndim
       endif
 
       if (ifgetur) then
+         offs = offs0 + iofldsr*stride + ndim*strideB
+         call byte_set_view(offs)
          if (ifgetu) then
             if (ifmhd.and.ifile.eq.2) then
+c               if(nid.eq.0) write(6,*) 'Reading B field'
                call mfi_getv(bx,by,bz,wk,lwk,.false.)
             else
+c               if(nid.eq.0) write(6,*) 'Reading velocity field'
                call mfi_getv(vx,vy,vz,wk,lwk,.false.)
             endif
          else
             call mfi_getv(vx,vy,vz,wk,lwk,.true.)
          endif
+         iofldsr = iofldsr + ndim
       endif
 
       if (ifgetpr) then
+         offs = offs0 + iofldsr*stride + strideB
+         call byte_set_view(offs)
          if (ifgetp) then
+c            if(nid.eq.0) write(6,*) 'Reading pressure field'
             call mfi_gets(pm1,wk,lwk,.false.)
             if (ifmhd.and.ifile.eq.2) then
                do e=1,nelv
@@ -2458,29 +2488,58 @@ C     Bounds checking on mapped data.
          else
             call mfi_gets(pm1,wk,lwk,.true.)
          endif
+         iofldsr = iofldsr + 1
       endif
 
       if (ifgettr) then
+         offs = offs0 + iofldsr*stride + strideB
+         call byte_set_view(offs)
          if (ifgett) then
+c            if(nid.eq.0) write(6,*) 'Reading temperature field'
             call mfi_gets(t,wk,lwk,.false.)
          else
             call mfi_gets(t,wk,lwk,.true.)
          endif
+         iofldsr = iofldsr + 1
       endif
 
-      do k=1,npscal
+      do k=1,ldimt-1
          if (ifgtpsr(k)) then
+            offs = offs0 + iofldsr*stride + strideB
+            call byte_set_view(offs)
             if (ifgtps(k)) then
+c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
                call mfi_gets(t(1,1,1,1,k+1),wk,lwk,.false.)
             else
                call mfi_gets(t(1,1,1,1,k+1),wk,lwk,.true.)
             endif
+            iofldsr = iofldsr + 1
          endif
       enddo
+      nbyte = 0
+      if(nid.eq.pid0r) nbyte = iofldsr*nelr*wdsizr*nxr*nyr*nzr
 
       if (ifgtim) time = timer
 
-      if (nid.eq.pid0) call byte_close()
+      if (nid.eq.pid0r) 
+#ifdef MPIIO
+     &   call byte_close_mpi()
+#else
+     &   call byte_close()
+#endif
+      call gsync
+      tio = dnekclock()-tiostart
+
+      dnbyte = nbyte
+      nbyte = glsum(dnbyte,1)
+      nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
+
+      if(nid.eq.0) write(6,7) istep,time,
+     &             nbyte/tio/1024/1024/10,
+     &             nfiler
+    7 format(/,i9,1pe12.4,' done :: Read checkpoint data',/,
+     &       30X,'avg data-throughput = ',f7.1,'MBps',/,
+     &       30X,'io-nodes = ',i5,/)
 
       return
       end
@@ -2503,7 +2562,7 @@ c
       integer      iname(20)
       equivalence (iname,fname)
 
-      call  izero (iname,20)
+      call izero  (iname,20)
       len = ltrunc(hname,80)
       call chcopy (fname,hname,len)
 
@@ -2521,15 +2580,20 @@ c
    10    continue
       enddo
       
+#ifdef MPIIO
+      call byte_open_mpi(fname)
+      if(nid.eq.0) write(6,6) istep,(fname1(k),k=1,len)
+    6 format(1i8,' OPEN: ',80a1)
+#else
+      call byte_open(fname)
       write(6,6) nid,istep,(fname1(k),k=1,len)
     6 format(2i8,' OPEN: ',80a1)
-
-      call byte_open(fname)
+#endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_pid(hname)  ! determine which nodes are readers
+      subroutine mfi_prepare(hname)  ! determine which nodes are readers
       character*80 hname
 
       include 'SIZE'
@@ -2541,34 +2605,86 @@ c-----------------------------------------------------------------------
       logical if_byte_swap_test
       real*4 bytetest
 
-      stride = np / nfiler
-c      write(6,*) nid,' STRIDE:',stride,np,nfiler
+      integer*8 offs0,offs
 
+      integer sum
+      common /scrns/ iwork(0:lp-1,2)
+
+
+#ifndef MPIIO
+      ! rank0 (i/o master) will do a pre-read to get some infos 
+      ! we need to have in advance
+      if (nid.eq.0) then
+         call mbyte_open(hname,0) ! open  blah000.fldnn
+         call blank     (hdr,iHeaderSize)
+         call byte_read (hdr, iHeaderSize/4)
+         call byte_read (bytetest,1)
+         call mfi_parse_hdr(hdr)
+      endif
+      call bcast(hdr,iHeaderSize)  
+      if(nid.ne.0) call mfi_parse_hdr(hdr)
+
+      stride = np / nfiler
       if (stride.lt.1) then
-         write(6,*) nfiler,np,'  TOO MANY FILES, set_pid abort'
+         write(6,*) nfiler,np,'  TOO MANY FILES, mfi_prepare'
          call exitt
       endif
 
-      if (mod(nid,stride).eq.0) then
-         pid0 = nid
-         pid1 = nid + stride
-         fid0 = nid / stride
-
-         call mbyte_open(hname,fid0) ! open  blah000.fldnn
-
-         call blank     (hdr,132)
-         call byte_read (hdr, 33) ! 4 x 33 = 132
-         call parse_hdr (hdr)     ! Re-parse hdr, for nelr info
-
-         call byte_read (bytetest,1)
-         if_byte_sw = if_byte_swap_test(bytetest)
-
-         call byte_read (er,nelr) ! Get list of elements to be read
+      if (mod(nid,stride).eq.0) then ! i/o clients
+         pid0r = nid
+         pid1r = nid + stride
+         fid0r = nid / stride
+         if (nid.ne.0) then
+            call blank     (hdr,iHeaderSize)
+            call mbyte_open(hname,fid0r) ! open  blah000.fldnn
+            call byte_read (hdr, iHeaderSize/4)  
+            call byte_read (bytetest,1) 
+            call mfi_parse_hdr (hdr)     ! replace hdr with correct one 
+         endif
+         if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
+         call byte_read (er,nelr)     ! get element mapping
          if (if_byte_sw) call byte_reverse(er,nelr)
+      endif
+#else
+      pid0r = nid
+      pid1r = nid
+      offs0 = iHeaderSize + 4
+      call mbyte_open(hname,0)
+      call byte_read_mpi(hdr,iHeaderSize/4,pid00)
+      call byte_read_mpi(bytetest,1,pid00)
 
+      call bcast(hdr,iHeaderSize) 
+      call bcast(bytetest,4) 
+
+      if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
+      call mfi_parse_hdr(hdr)
+      if(nfiler.ne.1) then
+        if(nid.eq.0) write(6,*) 'ABORT: too many restart files!'
+        call exitt
+      endif
+      nfiler = np
+
+      nelr = nelgr/np 
+      offs = offs0 + nid*nelr*isize
+      if(nid.eq.np-1) then ! last processor will take whatever remains
+        offs = offs0 + (np-1)*nelr*isize
+        nelr = nelgr - (np-1)*nelr
       endif
 
-      call lbcast(if_byte_sw)     ! broadcast byte swap from node 0
+      call byte_set_view(offs)
+      call byte_read_mpi(er,nelr,-1)
+      if (if_byte_sw) call byte_reverse(er,nelr)
+
+      ! how many elements do we read up to rank nid
+      call izero(iwork,np)
+      iwork(nid,1) = nelr
+      call igop(iwork,iwork(0,2),'+  ',np) 
+      sum = 0
+      do i = nid-1,0,-1
+         sum  = sum + iwork(i,1)
+      enddo
+      nelBr = sum
+#endif
 
       return
       end

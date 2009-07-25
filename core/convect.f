@@ -439,9 +439,8 @@ c-----------------------------------------------------------------------
       character*10 sub_name10
 c
       if (n.gt.m) then
-         write(6,*) nid,n,m
-c        write(6,*) nid,n,m,avar5,lvar5,sub_name10
-c        write(6,1) nid,n,m,avar5,lvar5,sub_name10
+c         write(6,*) nid,n,m
+         write(6,1) nid,n,m,avar5,lvar5,sub_name10
     1    format(i8,' ERROR: :',2i9,2(1x,a5),1x,a10)
          call exitt
       endif
