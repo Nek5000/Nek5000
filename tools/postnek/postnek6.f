@@ -60,6 +60,12 @@ C
       EPSM = 1.0E-10
       NEL5=120*NELM
       CALL RZERO(XYZQ,NEL5)
+
+c     if (nel.gt.20000) then
+c        call prsi('Will not set quad for nel > 20K. NEL=$',nel)
+c        return
+c     endif
+
 C     Define quadpoints:
       DO 100 IE=1,NEL
          CALL MAPXC(XYZ,IE)

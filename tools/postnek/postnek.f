@@ -160,24 +160,27 @@ c        if (if3d.and.ifflow) ITEM(NCHOIC)='V.W'
 c
          NCHOIC=NCHOIC+1
          ITEM(NCHOIC)='Linear Combination'
-         NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='rms-avg'
-         NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='rms-uvw'
-c
-         NNOPS=NCHOIC
-         write(6,*) 'npscal',npscal,nchoic,param(23)
-         IF(NPSCAL.GT.0)THEN
-            DO 1221 I=1,NPSCAL
-               IF(IFPSCO(I))THEN
-C                 We dumped this passive scalar
-                  NCHOIC=NCHOIC+1
-                  LINE=psname(i)
-c                  WRITE(LINE(16:16),'(I1)')IPSCO
-                  ITEM(NCHOIC)=LINE
-               ENDIF
-1221        CONTINUE
-         ENDIF
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='rms-avg'
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='rms-uvw'
+
+         nnops=nchoic
+
+         write(6,*)
+     $     'npscal',npscal,nchoic,param(23),(ifpsco(k),k=1,npscal)
+
+         if(npscal.gt.0)then
+            do 1221 i=1,npscal
+               write(6,*)
+     $         'npsca2',npscal,nchoic,param(23),ifpsco(i),psname(i)
+               if (ifpsco(i)) then ! we dumped this passive scalar
+                  nchoic=nchoic+1
+                  item(nchoic)=psname(i)
+               endif
+1221        continue
+         endif
+
 c        NCHOIC=NCHOIC+1
 c        IF(.NOT.IFERROR)ITEM(NCHOIC)='ERROR NO'
 c        IF(     IFERROR)ITEM(NCHOIC)='ERROR YES'
@@ -1169,7 +1172,7 @@ c
       goto 13
       END
 c-----------------------------------------------------------------------
-      subroutine SETLOC
+      subroutine setloc
       INCLUDE 'basics.inc'
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
@@ -1764,9 +1767,9 @@ C     Make small letters in filename
 c
       do 9 i=1,lastch
           int=ichar(sesion(i:i))
-          if(int.ge.65 .and. int.le.90) int=int+32
+c         if(int.ge.65 .and. int.le.90) int=int+32
           filenm(i:i)=char(int)
-9     continue
+   9  continue
       m=lastch+1
       n=m+3
 c
@@ -1812,6 +1815,7 @@ C     Read in Parameters
       DO 1051 IP=1,NPARAM
          READ(9,*,ERR=59) PARAM(IP)
 1051  CONTINUE
+      param(20) = 5    ! default from .rea file
       NPSCAL=PARAM(23)
       READ(9,*,ERR=59)NSKIP
       READ(9,*,ERR=59) (PCOND (I),I=3,11)
@@ -1833,7 +1837,8 @@ C     Put if statements in case preprocessed version is out of date
 C
       NFLDS=1
       IF(IFHEAT)NFLDS=2+NPSCAL
-      NX=PARAM(20)
+c     NX=PARAM(20)
+      NX=4                  ! this is a better default,pff 8/28/08
       PARAM(20) = NX
       NY=NX
       IF(NDIM.EQ.3)NZ=NX
@@ -1872,13 +1877,22 @@ C     Preserve original coordinates for 2D case
       YZEROO=YZERO
 C     Read Elemental Mesh data
       READ(9,*,ERR=41,end=41)
-      READ(9,*,ERR=41,END=41)NEL,NDIM
+
+      read(9,*,err=41,end=41)nelr,ndim
+      nel = nelr
+      ifsubset = .false.
+      if (nelr.gt.nelm) then
+         call prsii('Num. elems > nelm:$',nelr,nelm)
+         ifsubset = .true.
+         nel = nelm-1
+         call get_subset_list
+      endif
                     IFFMTIN=.TRUE.
       IF (NEL.LT.0) IFFMTIN=.FALSE.
       if (.not.iffmtin) 
      $  open(unit=8,file=filenm,form='unformatted',status='old',err=512)
-      NEL = abs(nel)
-      IF(NX*NY*NZ*NEL.GE.MAXPTS)THEN
+      nelr = abs(nelr)
+      IF(NX*NY*NZ*NELr.GE.MAXPTS)THEN
          CALL PRSIS(
      $   'Your simulation has more than the current maximum of$'
      $   ,MAXPTS,' allowed.$')
@@ -1894,23 +1908,23 @@ C     Read Elemental Mesh data
      $   'this maximum increased.'
 c        STOP
       ENDIF
-      IF(NEL.GE.NELM)THEN
-         CALL PRS
-     $   ('ERROR: This postprocessor has arrays dimensioned for$')
-         CALL PRSIS('a maximum of $',NELM-1,' Elements.$')
-         CALL PRS('Please notify your NEKTONICS representative to get '
-     $   //'this maximum increased.$')
-         WRITE(6,*)
-     $   'ERROR: This postprocessor has arrays dimensioned for'
-         NELM1=NELM-1
-         WRITE(6,*)
-     $   'a maximum of ',NELM1,' Elements.'
-         WRITE(6,*)
-     $   'Please notify your NEKTONICS representative to get '
-         WRITE(6,*)
-     $   'this maximum increased.'
-         STOP
-      ENDIF
+c     IF(NEL.GE.NELM)THEN
+c        CALL PRS
+c    $   ('ERROR: This postprocessor has arrays dimensioned for$')
+c        CALL PRSIS('a maximum of $',NELM-1,' Elements.$')
+c        CALL PRS('Please notify your NEKTONICS representative to get '
+c    $   //'this maximum increased.$')
+c        WRITE(6,*)
+c    $   'ERROR: This postprocessor has arrays dimensioned for'
+c        NELM1=NELM-1
+c        WRITE(6,*)
+c    $   'a maximum of ',NELM1,' Elements.'
+c        WRITE(6,*)
+c    $   'Please notify your NEKTONICS representative to get '
+c        WRITE(6,*)
+c    $   'this maximum increased.'
+c        STOP
+c     ENDIF
       NSIDES=NDIM*2
       NEDGES=4
       IF(IF3D)NEDGES=8
@@ -1919,17 +1933,19 @@ c        STOP
       IF(.NOT.IF3D.AND.NDIM.EQ.3)
      $CALL PRS('ERROR: PARAMETER SET TO 3-D BUT MESH DATA IS FOR 2-D$')
       CALL PRS(' Reading geometry from '//sesion//' .rea$')
-      DO 98 IEL=1,NEL
+      DO 98 IER=1,NELR
+         IEL = min(ier,nelm)
 C        READ(9,*,ERR=42,END=42) IDUM,NUMAPT(IEL)
          if (iffmtin) then
-c           READ(9,'(20X,I4,4X,I3,A1)',ERR=42,END=42)
-c    $         IDUM,NUMAPT(IEL),LETAPT(IEL)
-            READ(9,'(27X,I4,A1)',ERR=422,END=422)NUMAPT(IEL),LETAPT(IEL)
-            goto 423
-  422       continue
+            read(9,*)        ! dummy read
             numapt(iel) = 1
             letapt(iel) = 'A'
-  423       continue
+c           READ(9,'(27X,I4,A1)',ERR=422,END=422)NUMAPT(IEL),LETAPT(IEL)
+c           goto 423
+c 422       continue
+c           numapt(iel) = 1
+c           letapt(iel) = 'A'
+c 423       continue
          else
             READ(8) NUMAPT(IEL)
          endif
@@ -2009,11 +2025,16 @@ C     Read curved side data
                READ(9,'(2I3,5G14.6,1X,A1)',ERR=45,END=45)
      $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             ELSEIF (iffmtin) then
-               READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=45,END=45)
+               READ(9,*,ERR=451,END=451)
      $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+               goto 452
+  451          READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=45,END=45)
+     $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+  452          continue
             ELSE
                READ(8,ERR=45,END=45) IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             ENDIF
+            IEL=min(iel,nelm)
             CALL DDUMMY(IEDGE,IEL)
             CURVE(1,IEDGE,IEL)=R1
             CURVE(2,IEDGE,IEL)=R2
@@ -2033,15 +2054,22 @@ C        !!?? NELF DIFFERENT FROM NEL??
          if (iffmtin) READ(9,*,ERR=44,END=44)
          IF( (IFLD.EQ.1.AND.IFFLOW) .OR. IFLD.GT.1)THEN
 C           FIX UP FOR WHICH OF FIELDS TO BE USED
-            DO 88 IEL=1,NEL
+
+            write(6,*) iside,iel,ifld,' TRYING TO READ BC'
+
+            DO 88 IER=1,NELR
+            iel = min(ier,nelm)
             DO 88 ISIDE=1,NSIDES
 C              !Fix to a4,i2 when you make cbc character*4
+               NBCREA = 5
                IF(VNEKOLD .LE. 2.5) NBCREA = 3
-               IF(VNEKOLD .GE. 2.6) NBCREA = 5
                IF (NEL.LT.1000.and.iffmtin) THEN
                   READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+                  jse=bc(1,iside,iel,ifld)
+                  jsi=bc(2,iside,iel,ifld)
+c               write(6,*) cbc(iside,iel,ifld),iside,iel,jse,jsi,' cbc'
                ELSEIF (iffmtin) then
                   READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
@@ -2073,8 +2101,12 @@ C                    Special storage for internal boundaries
                     LOCLIN=LOCLIN+1
 86                CONTINUE
                ENDIF
+
+c     write(6,*) iside,iel,ifld,' ',cbc(iside,iel,ifld),' cbc2'
+
 88          CONTINUE
-            DO 89 IEL=1,NEL
+            do 89 ier=1,nelr
+              iel = min(ier,nelm)
               IF(IFMOVB)ICRV(IEL)=1+4+9+16
               DO 89 IEDGE=1,8
                  IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
@@ -2180,7 +2212,8 @@ C     Read output specs
       IF(NOUTS.GT.5)READ(9,*,ERR=51,END=51)IPSCO
       IF(IPSCO .GT.0)THEN
          DO 1221 I=1,IPSCO
-            READ(9,'(1X,L1,1X,A5)',ERR=51,END=51) IFPSCO(I),PSNAME(I)
+c           READ(9,'(1X,L1,1X,A5)',ERR=51,END=51) IFPSCO(I),PSNAME(I)
+c           READ(9,*) IFPSCO(I)
 1221     CONTINUE
       ENDIF
 C     OBJECT SPECIFICATION DATA
@@ -2286,7 +2319,7 @@ C
 1111  CONTINUE
 C
 C     READ IN FIRST DUMP
-      do i=1,99
+      do i=1,1 
          call getfld(i,ierr,.true.,.true.)
          if (ierr.eq.0) goto 1112
       enddo
@@ -2300,6 +2333,7 @@ c     Reset nx to be a small number... just to ease viewing...
       ny=4
       nz=4
       if (ndim.eq.2) nz=1
+      param(20) = nx
  1112 continue
 C
 c
@@ -2457,7 +2491,7 @@ c
       return
       END
 c-----------------------------------------------------------------------
-      subroutine TEM
+      subroutine tem
       INCLUDE 'basics.inc'
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
@@ -3153,7 +3187,7 @@ C      Draw only if draw mesh is .TRUE.
       return
       END
 c-----------------------------------------------------------------------
-      subroutine PLERR
+      subroutine plerr
       INCLUDE 'basics.inc'
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
@@ -3161,6 +3195,9 @@ c-----------------------------------------------------------------------
       DATA IFIRST /0/
       SAVE IFIRST
 C     Turn on bar
+
+      return  ! don't plot error (broken, 12/8/08, pff)
+
       IF(IFIRST.NE.1)THEN
          IFIRST=1
 C        DRBAR Draws the color bar onto segment 12
@@ -4432,4 +4469,27 @@ c-----------------------------------------------------------------------
 c     subroutine rename
 c     return
 c     end
+c-----------------------------------------------------------------------
+      subroutine get_subset_list
+      include 'basics.inc'
+      include 'basicsp.inc'
+      integer e,e0,e1,es
+
+      call izero(isubset,mxel)
+
+      call prsi ('Input start,stop,skip for elements: (nel:)$',nel)
+      call reiii(e0,e1,es)
+      nelq = 0
+      do e=e0,e1,es
+         nelq = nelq+1
+         isubset(e) = nelq
+      enddo
+      nel = nelq
+
+      do e=1,mxel
+         if (isubset(e).eq.0) isubset(e)=nelm
+      enddo
+
+      return
+      end
 c-----------------------------------------------------------------------

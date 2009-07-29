@@ -160,6 +160,7 @@ C
       IPSCO=1
       DO 18 IPSCAL=1,9
          IFPSCO(IPSCAL)=.TRUE.
+         ifpsco(ipscal)=.false.
          WRITE(PSNAME(IPSCAL),'(''PS'',1X,I1,1X)')IPSCAL
 18    CONTINUE
       XFAC=1
@@ -1063,10 +1064,12 @@ C     Draw colorbar first time around
 C     Draw Numbers
       DO 2 L=1,NTX
           YY=L/27.0 + YB-0.05
-          WRITE(C,'(F6.3,''$'')')TX(L)
+          WRITE(C,'(F10.3,''$'')')TX(L)
           XX=XL-.11
-C          WRITE(C,'(G10.3,''$'')')TX(L)
-C          XX=XL+.05
+
+C         WRITE(C,'(G10.3,''$'')')TX(L)
+C         XX=XL+.05
+
           CALL GWRITE(xphy(XX),yphy(YY),1.0,C)
 2     CONTINUE
       CALL CLSSEG

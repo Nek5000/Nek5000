@@ -4,7 +4,7 @@ c     Default window size
 c
 c     call set_ww_wh(ww,wh)
 c     call set_ww_wh(850,800)
-      call set_ww_wh(950,920)
+      call set_ww_wh(950,920)  ! std
 c     call set_ww_wh(850,825)
 c     call set_ww_wh(730,710)
 c
@@ -494,10 +494,12 @@ c     lrevbk = ifrevbk
       LSTCLR=InCOLOR
 C
       ICOLOR = Incolor
+      NCOLOR = 15
+      icolor = max(icolor,0)
+      icolor = min(icolor,ncolor)
       ICDUM  = ICOLOR
       INDEX=ICOLOR
       IF(IFBWGKS .AND. ICOLOR .NE.0) INDEX=1
-      NCOLOR=15
 C
       if (ifrevbk) then
 c
@@ -540,6 +542,7 @@ C
 1     CONTINUE
 
       CALL XSETPEN(INDEX)
+c     write(6,*) index,incolor,' color'
       RETURN
       END
 c-----------------------------------------------------------------------

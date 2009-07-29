@@ -1,7 +1,7 @@
 c     Beginning of basicsp.inc**********
 c
 c     MAXIMUM # OF History values (per point) and max particles
-      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=2 000 000)
+      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=1 800 000)
 c     PARAMETER (lvrt=maxpts)
       PARAMETER (lvrt=1)
 c
@@ -66,8 +66,8 @@ c     PARAMETER (NSTOR=40*NPRT)
      $              ,YBMIN(NELM),YBMAX(NELM),ZBMIN(NELM),ZBMAX(NELM)
      $              ,RR(3,NPRT),XLG(4,NPRT),IELGR(NPRT),ILOST(NPRT)
      $              ,NLP,TOLLG,SCALLG(5,NPRT)
-      COMMON /LGRLOG/ IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR
-      LOGICAL         IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR
+      COMMON /LGRLOG/ IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR,ifsubset
+      LOGICAL         IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR,ifsubset
       COMMON /PLTLOG/ ifportrait,ifwkclobber
       LOGICAL         ifportrait,ifwkclobber
       COMMON /LGRINT/ NPLEL,LEVMIN,LEVMAX
@@ -93,7 +93,8 @@ C     nfacemx ~>=  (nelm)**(2/3)
 c
       INTEGER nhemi
       INTEGER bttm_elist(nfacemx,2)
-      INTEGER  IXV(NVEMX),IYV(NVEMX),IZV(NVEMX),IEV(NELM)
+      parameter (mxel=400 000)
+      INTEGER  IXV(NVEMX),IYV(NVEMX),IZV(NVEMX),IEV(NELM),isubset(mxel)
       INTEGER  CCOLOR(NELM),JCC(NELM+1),CORE_COLOR(NELM)
       INTEGER  ieminl2(NELM)
 c

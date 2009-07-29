@@ -365,6 +365,8 @@ c     4 vertices, 4 edges, 1 center
 c
 c
       integer gvf(6),facet(6),aa(6),key(3),key2(0:3)
+
+      ndim = 2
 c
 c     do i=1,nel
 c        write(6,1) (vertex(k,0,i),k=0,3),i,nel

@@ -965,7 +965,10 @@ C
          ELSE
             ZGB = ZGB+(TGB+SHIFT) * HFISH
          ENDIF
-         CALL FINDL(TGB,LEVB,TMIN,TMAX)
+
+         call findl_new(tgb,levb,tmin,tmax)
+c        write(6,*) levb,tgb,tmin,tmax,' levb'
+
          CALL COLOR(LEVB+1)
          IF (J.EQ.1) THEN
             CALL MOVE3(XGB,YGB,ZGB)
@@ -2527,6 +2530,15 @@ c
 c
       call map_tnsr(ugl,mx,ugll,nx,i,it,w(1,1),w(1,2),if3d)
 c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine findl_new(txy,level,tmin,tmax)
+
+      level = 14*txy
+      level = min(level,14)
+      level = max(level,1)
+
       return
       end
 c-----------------------------------------------------------------------

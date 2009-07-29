@@ -74,7 +74,7 @@ c
       call dssum(mult,wkv2)
       do i=1,ntot
          rmax2 = max(rmax2,abs(mult(i)))
-         mult(i) = abs(jacm1(i))/mult(i)
+         if (mult(i).ne.0) mult(i) = abs(jacm1(i))/mult(i)
          rmax3 = max(rmax3,abs(mult(i)))
       enddo
       write(6,*) 'THIS IS MULT MAX',rmax1,rmax2,rmax3,ntot

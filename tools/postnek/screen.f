@@ -986,6 +986,7 @@ c
          CALL PRS('Input all zeros to restore screen.$')
          CALL PRS('Input 1 1 * * to cancel operation.$')
          CALL PRS('Input 2 2 s * to to set scale zoom by s.$')
+         CALL PRS('Input 2 -2 s * to to set scale y zoom by s.$')
          CALL PRS('Input 3 3 sx sy to to scale x by sx, y by sy.$')
          CALL RERRRR(x1,y1,x2,y2)
 c  
@@ -1006,6 +1007,24 @@ c           Scale current coordinates by scale
             yzero=yzero + yfac/2 - delt/2
             xfac =delt
             yfac =xfac
+            write(6,*) 'z:xfyf',xfac,yfac
+c
+c           reset clipping window
+            WFR=1.3
+            WT = YPHY(.995)
+            WB = YPHY(.005)
+            WL = XPHY(.005)
+            WR = XPHY(.995)
+            IF (IFPOST.AND.IFFULL) THEN
+               WR = XPHY(WFR)
+            ENDIF
+         else if (x1.eq.2. .and. y1.eq.-2.) then
+c           Scale current y coordinates by scale
+            scale = 1./x2
+            IFZOOM=.TRUE.
+            delt =yfac*scale
+            yzero=yzero + yfac/2 - delt/2
+            yfac =delt
             write(6,*) 'z:xfyf',xfac,yfac
 c
 c           reset clipping window

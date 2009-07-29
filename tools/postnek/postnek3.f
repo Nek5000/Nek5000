@@ -1719,6 +1719,7 @@ c           Solve eigenvalue problem using LAPACK ssyev; eigenvalues
 c           returned in ascending order.
 c
 c           write(6,*) iel,l,ialg,' vortex?'
+            ialg = 0
             if (ialg.eq.0) then
                call ssyev('N','U',3,vv,3,lam,ss,9,info)
             elseif (ialg.eq.1) then
@@ -1860,7 +1861,11 @@ c        write(6,11) x1,a,b,c
       endif
 c
       d = b*b - 4.*a*c
-      if (d.lt.0) then
+      if (d.eq.0) then
+         x1 = -b/(2*a)
+         x2 = -b/(2*a)
+         return
+      elseif (d.lt.0) then
          ierr = 1
 c        write(6,12) a,b,c,d
          return
@@ -1874,6 +1879,7 @@ c
          x1 =  ( d-b ) / (2.*a)
          x2 = -2.*c / ( d-b )
       endif
+         x1 = -b/2*a
 c
    10 format('ERROR: Both a & b zero in routine quadratic NO ROOTS.'
      $      ,1p5e12.4)

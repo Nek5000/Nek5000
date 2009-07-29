@@ -989,9 +989,12 @@ C
      $(' 0 - return, 1 - Read file, 2 - New Line, 3 - Set Parameters$')
          CALL PRS('(negative for reflect about y-plane)$')
       ELSE
-         MSEL=4
+c        MSEL=4
+c        CALL PRS(' 0 - return, 1 - Read file,'//
+c    $   ' 2 - New Line, 3 - Set Parameters, 4 - Replot$')
+         MSEL=3
          CALL PRS(' 0 - return, 1 - Read file,'//
-     $   ' 2 - New Line, 3 - Set Parameters, 4 - Replot$')
+     $   ' 2 - New Line, 3 - Set Parameters$')
          CALL PRS('(negative for reflect about y-plane)$')
       ENDIF
       CALL PRS(' Enter selection: $')
@@ -1039,11 +1042,15 @@ c              WRITE(6,*) 'xyz:',(XLG(J,IS),j=1,3),is
                READ(18,*,END=1001,ERR=1002)
      $         (XLG(J,IS),J=1,2),DPT(IS),NSTPPS,IOSTP(IS),ICLR
             ENDIF
-C
+            IFILE=1
+
             INTDIR=1
             IF (DPT(ISTR).lt.0.or.NSTPPS.LT.0) INTDIR=-INTDIR
-c
-            IFILE=1
+
+            if (iclr.eq.-8.and.iline.eq.1) open(unit=88,file='str.out')
+            if (iclr.eq.-8) write(88,*)
+            if (iclr.eq.-8) ifile = 2
+
             ISTR=IS
             NSTR=NSTR+1
             NSTR=MIN(NPRT,NSTR)
@@ -1081,11 +1088,13 @@ c
 c
  1000   CONTINUE
         ISCND = 1
+
  1001   CONTINUE
         IF (IFILE.EQ.0) THEN
            CALL PRS('** ERROR **  Empty file for streamline data.$')
         ENDIF
         CLOSE(UNIT=18)
+        if (ifile.eq.2) close(88)
         GOTO 10
  1002   CONTINUE
         CALL PRS('** ERROR **  Error reading for streamline data.$')
@@ -1907,12 +1916,14 @@ C
          IF (FLAG(IE).EQ.1.) THEN
          DO 800 ISIDE=1,4
             IF (CBC(ISIDE,IE,1).EQ.'E') THEN
-               IEN=IFIX(BC(1,ISIDE,IE,1))
+c              IEN=IFIX(BC(1,ISIDE,IE,1))
+               ien=bc(1,iside,ie,1)+0.25   ! just round up, slightly, + floor
                IF (FLAG(IEN).EQ.0.) THEN
 C
 C                 Adjust neighboring element.
 C
-                  ISN=IFIX(BC(2,ISIDE,IE,1))
+c                 ISN=IFIX(BC(2,ISIDE,IE,1))
+                  isn=bc(2,iside,ie,1)+0.25   ! round up, slightly, + floor
                   I1=II1(ISIDE)
                   J1=JJ1(ISIDE)
                   I2=II2(ISN)
@@ -2656,7 +2667,10 @@ c
       yyis=yisom(xpos(1),xpos(2),xpos(3))
       if (i.eq.1) call movec(xxis,yyis)
       call drawc(xxis,yyis)
-c
+
+      if (iclr.eq.-8) write(88,8) (xpos(k),k=1,ndim),val
+    8 format(1p4e16.6)
+
       return
       end
 c-----------------------------------------------------------------------

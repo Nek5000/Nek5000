@@ -182,7 +182,7 @@ c
          fname1(len+1) = '$'
          call prs('WARNING:  Could not open file.$')
          call prs(fname)
-         ierr = 1
+         jerr = 1
          return
    10 continue
 c
@@ -250,9 +250,11 @@ c
          endif
 c
          if (ndim.eq.3) nz = nxr
-         neltm=maxpts/(nx*ny*nz)
-         neltr=min(neltr,neltm)
-         nel  =min(neltr,nel)
+         if (.not. ifsubset) then
+            neltm=maxpts/(nx*ny*nz)
+            neltr=min(neltr,neltm)
+            nel = min(neltr,nel)
+         endif
          write(6,*) neltm,maxpts,nxr,nel,' NELTM '
          IF (JDUMP.EQ.1) THEN
 C
@@ -327,6 +329,7 @@ c
                   NOUTS=NOUTS + 1
                   IPSPS(ii) = nouts
                   IFGTPS(ii)=.true.
+                  ifpsco(ii)=.true.
                ENDIF
          write(6,*) 
      $  'IFGNGM,IFGETX bbb',ifgngm,ifgetx,i,excoder(i),iposx,iposy
@@ -352,6 +355,7 @@ C           Make sure the requested data is present in this file....
                IF (IPSPS(I).EQ.0) IFGTPS(I)=.FALSE.
    65       CONTINUE
             write(6,*) 'IFGNGM,IFGETX ddd',ifgngm,ifgetx,iposx,iposy
+            write(6,*) 'IFGNGM,IFGETX 333',rdsize,' rdsize'
 C
 C           End of restart file header evaluation.
 C
@@ -397,7 +401,9 @@ C
          if (neltr/i100.gt.100) i100 = i100*10
          if (neltr/i100.gt.100) i100 = i100*10
 
-         do 200 ieg=1,neltr
+         do 200 ier=1,neltr
+            ieg = ier
+            if (ifsubset) ieg = isubset(ier) ! point to last element if not in
             IF (NID.EQ.0) THEN
 c
               IF (MOD(IEG,i100).EQ.0 .or. ieg.eq.1 ) 
@@ -858,16 +864,23 @@ c
 c-----------------------------------------------------------------------
       logical function if_byte_swap_test(bytetest)
 c
-      real*4 bytetest
+      real*4 bytetest,zzz
       real*4 test_pattern
       save   test_pattern
 c
       test_pattern = 6.54321
-      eps          = 0.0001
+      eps          = 0.0005
       if_byte_swap_test = .true.
       if (abs(bytetest-test_pattern).lt.eps) if_byte_swap_test = .false.
-c
-      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest
+
+      zzz = bytetest
+      call byte_reverse(zzz,1)
+
+
+      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,zzz
+
+c     if_byte_swap_test = .false.
+
       return
       end
 c-----------------------------------------------------------------------
@@ -971,6 +984,7 @@ c
                x(ie,ied(l)) = xp(m)
                y(ie,ied(l)) = yp(m)
                z(ie,ied(l)) = zp(m)
+c     write(6,*)ie,ied(l),m,x(ie,ied(l)),y(ie,ied(l)),z(ie,ied(l)),'xyz'
             enddo
             enddo
             enddo
