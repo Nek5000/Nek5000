@@ -461,12 +461,12 @@ C
 C     Try to Round X to fractional integer - eg .05 .1 .15 - if it's within 10-6
 C
       DO 100 I=1,N
-         EPS=1.0E-5
+         EPS=1.0E-4
          XTMP=20.0*X(I)
          XTMP2=XTMP+0.5
          ITMP=INT(XTMP2)
          XTMP2=FLOAT(ITMP)
-         IF (ABS(XTMP-XTMP2).LT.EPS) X(I)=XTMP2/20.0
+         IF (ABS(XTMP-XTMP2).LT.EPS) X(I)=.05*itmp
   100 CONTINUE
       RETURN
       END

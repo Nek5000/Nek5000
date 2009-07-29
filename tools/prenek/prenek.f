@@ -113,6 +113,7 @@ C       Read in Parameters
           IF(CPARAM(IP).EQ.'VISCOS '.AND.VNEKOLD .LE.2.5)
      $    PARAM(IP)=PARAM(IP)*PARAM(1)
 1051    CONTINUE
+        if (param(18).lt.0) param(18)=-1./param(18)
 C
         rewind(9)
 C
@@ -349,8 +350,8 @@ C        Exit Prenek
          call prexit
 c        call rsb_xxt_set(2,nel)
          call session_exit
-      ELSEIF(CHOICE.EQ.'RSB')THEN
-         call rsb_xxt_set(1,nel)
+c     ELSEIF(CHOICE.EQ.'RSB')THEN
+c        call rsb_xxt_set(1,nel)
       ELSE IF(CHOICE.EQ.'HISTORY')THEN
          CALL HISTRY
       ELSE IF(CHOICE.EQ.'INTEGRAL QUANTITY')THEN
@@ -578,11 +579,13 @@ C
       WRITE(10,*,err=60)NDIM,   ' DIMENSIONAL RUN'
       WRITE(10,*,err=60)NPARAM, ' PARAMETERS FOLLOW'
 C     Print Out Parameters
+      param(18) = -1./param(18)
       DO 1050 IP=1,NPARAM
          call chcopy(s401,cparam(ip),40)
          l=ltrunc(s401,40)
          WRITE(10,'(G14.6,5X,40A1)',ERR=60) PARAM(IP),(s401(j),j=1,l)
 1050  CONTINUE
+      param(18) = -1./param(18)
       WRITE(10,*)'     4  Lines of passive scalar data follows',
      $'2 CONDUCT; 2RHOCP'
       write(10,'(5g14.6)',ERR=60)(PCOND (I),I=3,11)
@@ -1070,15 +1073,11 @@ C     Based on EQTYPE and  and IF3D, Prompt for Parameters to be set
 C     4107 Tends to send <cr> when you disable gin.  This reads it.
       IF(IF4107)CALL RES(LINE,70)
       IF(IF4107)THEN
-      IF(IFLEARN)WRITE(3,'(A70)') LINE
-      CALL PRS
-     $('SET PARAMETER menu.  TYPE in with KEYBOARD (drop mouse)$')
-      CALL PRS
-     $('Type in new value or <cr> to keep current (default) value$')
-      ELSE IF(IFSUN) THEN
-         CALL PRS('SET PARAMETER menu.  KEY in new value with KEYPAD$')
-         CALL PRS('KEY "R" (Return) with no number '//
-     $   'to keep current (default) value$')
+         IF(IFLEARN)WRITE(3,'(A70)') LINE
+         CALL PRS
+     $   ('SET PARAMETER menu.  TYPE in with KEYBOARD (drop mouse)$')
+         CALL PRS
+     $   ('Type in new value or <cr> to keep current (default) value$')
       ENDIF
 C     First Set Required Parameters
 C!!?? Make option to add custom parameters.  Make nparam=nparam+1... Back door?
@@ -1177,8 +1176,8 @@ C                 Change Values
 301               continue
                   IF(IF4107.OR.IFXWIN) CALL RES(LINE,70)
                   IF(IFLEARN)WRITE(3,'(A70)') LINE
-                  IF(IFSUN) CALL KEYPAD(VAL)
-                  IF(IFGKS) CALL KEYPAD(VAL)
+                  IF(IFSUN) CALL RER(VAL)
+                  IF(IFGKS) CALL RER(VAL)
                   IF(LINE.EQ.'      ') THEN
 C                    Do nothing
                   ELSE
@@ -1497,9 +1496,9 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CBC(ISIDE,IEL,IFLD),IEL,ISIDE,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
                   ELSEIF (IFFMTIN) THEN
-                     WRITE(10,'(A1,A3,I5,I1,5G14.6)',ERR=60)
+                     WRITE(10,'(A1,A3,I6,5G14.6)',ERR=60)
      $               CHTEMP,
-     $               CBC(ISIDE,IEL,IFLD),IEL,ISIDE,
+     $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
                   ELSE
                      WRITE(11,ERR=60)
@@ -1507,25 +1506,25 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CBC(ISIDE,IEL,IFLD),IEL,ISIDE,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
                   ENDIF
-                  ICBC=ICHAR(CBC(ISIDE,IEL,IFLD))
-                  IF(ICBC.GE.97 .AND. ICBC.LE.122 )THEN
+c                 ICBC=ICHAR(CBC(ISIDE,IEL,IFLD))
+c                 IF(ICBC.GE.97 .AND. ICBC.LE.122 )THEN
 C                    Small letter for fortran b.c.'s
 C                    Extra line(s) for Inflow.  BC(1) has # of lines; BC(2) addr
-                     CBC3=CBC(ISIDE,IEL,IFLD)
-                     IF(CBC3(3:3) .EQ. 'i') THEN
+c                    CBC3=CBC(ISIDE,IEL,IFLD)
+c                    IF(CBC3(3:3) .EQ. 'i') THEN
 C                       Special storage of pointers in Internal boundaries
-                        NLINES=BC(4,ISIDE,IEL,IFLD)
-                        LINE1 =BC(5,ISIDE,IEL,IFLD)
-                     ELSE
-                        NLINES=BC(1,ISIDE,IEL,IFLD)
-                        LINE1 =BC(2,ISIDE,IEL,IFLD)
-                     ENDIF
-                     IF (IFFMTIN) THEN
-                        DO 82 I=1,NLINES
-                           WRITE(10,'(A70)',ERR=60)INBC(LINE1+I-1)
-82                      CONTINUE
-                     ENDIF
-                  ENDIF
+c                       NLINES=BC(4,ISIDE,IEL,IFLD)
+c                       LINE1 =BC(5,ISIDE,IEL,IFLD)
+c                    ELSE
+c                       NLINES=BC(1,ISIDE,IEL,IFLD)
+c                       LINE1 =BC(2,ISIDE,IEL,IFLD)
+c                    ENDIF
+c                    IF (IFFMTIN) THEN
+c                       DO 82 I=1,NLINES
+c                          WRITE(10,'(A70)',ERR=60)INBC(LINE1+I-1)
+c 82                    CONTINUE
+c                    ENDIF
+c                 ENDIF
 85          CONTINUE
          ELSE
 C           NO B.C.'s for this field
@@ -1758,8 +1757,6 @@ C
       CALL CLSSEG
       CALL OPNSEG(10)
 C     WRITE ON SCREEN
-C     Draw Keypad
-      CALL DRKEY
 C     KEYPAD OFF; COVER ON
       CALL SGVIS(12,0)
       CALL SGVIS(11,1)
@@ -2210,15 +2207,13 @@ C       How do you enter 3-d points from preprocessor?
         CALL PRS(' Enter x,y coordinates with mouse:$')
         CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
         IF(XSCR(XMOUSE).GT.1.0 .AND. YSCR(YMOUSE).GT.0.62) THEN
-C          He apparently is trying to use the keypad
-           Call Prs(' Enter X-coordinate with keypad:$')
-           CALL KEYPAD(XMOUSE)
-           Call Prs(' Now enter Y-coordinate with keypad:$')
-           CALL KEYPAD(YMOUSE)
+C          apparently trying to enter
+           call prs(' Type in X and Y-coordinates:$')
+           call rerr(xmouse,ymouse)
         ENDIF
         IF(IF3D)THEN
-           CALL PRS(' Enter z coordinate.  Use keypad.$')
-           CALL KEYPAD(ZMOUSE)
+           CALL PRS(' Type Z coordinate:$')
+           CALL RER(ZMOUSE)
         ENDIF
 C       Now that we have everything, put it in arrays.
         NHIS=NHIS+1
@@ -2513,11 +2508,9 @@ C     ISOBJ??
       CALL PRS(' Enter element side with mouse:$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       IF(XSCR(XMOUSE).GT.1.0 .AND. YSCR(YMOUSE).GT.0.62) THEN
-C          He apparently is trying to use the keypad
-           Call Prs(' Enter X-coordinate with keypad:$')
-           CALL KEYPAD(XMOUSE)
-           Call Prs(' Now enter Y-coordinate with keypad:$')
-           CALL KEYPAD(YMOUSE)
+C          apparently is trying to type in
+           call prs(' Type X and Y coordinates:$')
+           call rerr(xmouse,ymouse)
       ENDIF
 C       Use closest side
         RMIN=1.0E6

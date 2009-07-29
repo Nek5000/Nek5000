@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -28,16 +29,6 @@ static Cursor cursorPen;
 static XFontStruct *textFontInfo=NULL;
 static GC colorPenGC, fillGC, fountainPenGC, calligPenGC;
 static XGCValues gcv;
-/* int windowh = 600,windoww = 650;   small */
-/* int windowh = 896,windoww = 952; */ /*  PAUL's DEFAULT !!!*/
-/* int windowh = 800,windoww = 850; */
-/* int windowh = 1075,windoww = 1173; */
-/* int windowh = 1075,windoww = 1323; */
-
-
-/* int windowh = 896,windoww = 952; */  /* PAUL's DEFAULT !!!*/
-/* int windowh = 700,windoww = 750; */ /* small2  */
-int windowh = 740,windoww = 850;  /* medium */
 
 /* hmt's default */
 /* int windowh = 950,windoww = 1300; */
@@ -46,8 +37,10 @@ int windowh = 740,windoww = 850;  /* medium */
 /* int vfx = 0, vfy = 1097;  */
 
 
-/* int windowh = 696, windoww = 752; */  /* small */
-/*   int windowh = 896,windoww = 952;*/  /*  PAUL's DEFAULT !!!*/
+   int windowh = 896,windoww = 952;      /*  PAUL's DEFAULT !!!*/
+/* int windowh = 716,windoww = 662;  */  /* small */
+/* int windowh = 696,windoww = 662;  */  /* small */
+/* int windowh = 726,windoww = 690;  */  /* small */
 
 int vfx = 0, vfy = 0;
 
@@ -880,7 +873,7 @@ void error (mesg)
 #endif
   {
     /* Trap ctrl c */
-    /* signal (SIGINT,signal_handler); /*
+    signal (SIGINT,signal_handler);
     /* Pop up XWindows */
     SetUpEnv ();
 

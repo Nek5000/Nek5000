@@ -51,7 +51,7 @@ C
       WRITE(CGRIDR, 8) GRIDR
       WRITE(CGRDX , 9) GRIDXP
       WRITE(CGRDY ,10) GRIDYP
-      IF (IFOBJS) WRITE(COBJCT,11) (IFOBJG(I),I=1,NOBJS)
+      if (ifobjs) write(cobjct,11) (ifobjg(i),i=1,nobjs)
     2 FORMAT('CARTESIAN',L4)
     3 FORMAT('HEXAGONAL',L4)
     4 FORMAT('POLAR    ',L4)
@@ -96,7 +96,7 @@ C
       IF (IFGRDP.AND.NGRID.EQ.0) THEN
          WRITE(S,401)
          CALL PRS(S//'$')
-         CALL KEYPAD(RGRID)
+         call rer(RGRID)
          NGRID = IFIX(RGRID)
          NGRID = MAX(NGRID,3)
          GRIDA = 2.0*PI/FLOAT(NGRID)
@@ -104,13 +104,13 @@ C
       IF (IFGRDP.AND.GRIDR.EQ.0.0) THEN
          WRITE(S,501)
          CALL PRS(S//'$')
-         CALL KEYPAD(GRIDR)
+         call rer(GRIDR)
       ENDIF
       IF (CHOICE.EQ.CGRIDX) THEN
          WRITE(S,301)
          CALL PRS(S//'$')
-  301    FORMAT(2X,'Input new value of DX. (use keypad)')
-         CALL KEYPAD(GRIDDX)
+  301    FORMAT(2X,'Type new value of DX:')
+         call rer(GRIDDX)
 C        Don't change GRID !
          GRIDT =GRIDDX/XFAC
 C        GRIDDX=XFAC*GRIDT  kludge for now
@@ -120,8 +120,8 @@ C        GRIDDX=XFAC*GRIDT  kludge for now
       IF (CHOICE.EQ.CGRIDY) THEN
          WRITE(S,302)
          CALL PRS(S//'$')
-  302    FORMAT(2X,'Input new value of DY. (use keypad)')
-         CALL KEYPAD(GRIDDY)
+  302    FORMAT(2X,'Type new value of DY:')
+         call rer(GRIDDY)
 C        Don't change GRID !
          GRIDT =GRIDDY/XFAC
          GRIDDX=GRIDDY
@@ -132,7 +132,7 @@ C        GRIDDY=YFAC*GRIDT  kludge for now
          WRITE(S,401)
          CALL PRS(S//'$')
   401    FORMAT(2X,'Input number of radial divisions for polar grid.')
-         CALL KEYPAD(RGRID)
+         call rer(RGRID)
          NGRID = IFIX(RGRID)
          NGRID = MAX(NGRID,3)
          GRIDA = PI/FLOAT(NGRID)
@@ -141,29 +141,29 @@ C        GRIDDY=YFAC*GRIDT  kludge for now
   500    WRITE(S,501)
          CALL PRS(S//'$')
   501    FORMAT(2X,'Input value of dR for polar grid.')
-         CALL KEYPAD(GRIDR)
+         call rer(GRIDR)
          IF (GRIDR.LE.0.0) GOTO 500
       ENDIF
       IF (CHOICE.EQ.CGRDX) THEN
          WRITE(S,601)
          CALL PRS(S//'$')
   601    FORMAT(2X,'Input X-ordinate for center of polar grid.')
-         CALL KEYPAD(GRIDXP)
+         call rer(GRIDXP)
       ENDIF
       IF (CHOICE.EQ.CGRDY) THEN
          WRITE(S,602)
          CALL PRS(S//'$')
   602    FORMAT(2X,'Input Y-ordinate for center of polar grid.')
-         CALL KEYPAD(GRIDYP)
+         call rer(GRIDYP)
       ENDIF
       IF (CHOICE.EQ.COBJCT) THEN
-         IF (NOBJS.GT.1) THEN
+         if (nobjs.gt.1) then
             WRITE(S,701)
             CALL PRS(S//'$')
   701       FORMAT(2X,'Input object number you wish to change.')
-            CALL KEYPAD(OBJECT)
+            call rer(OBJECT)
             I=INT(OBJECT)
-            IF (1.LE.I.AND.I.LE.NOBJS) IFOBJG(I)=.NOT.IFOBJG(I)
+            if (1.le.i.and.i.le.nobjs) ifobjg(i)=.not.ifobjg(i)
          ELSE
             IFOBJG(1)=.NOT.IFOBJG(1)
          ENDIF
@@ -359,9 +359,9 @@ C               Draw Axis
       ENDIF
 C
       write(6,*) 'nobjs',nobjs
-      DO 400 I=1,NOBJS
-         IF (IFOBJG(I)) CALL DRWOBJ(I)
-  400 CONTINUE
+      do 400 i=1,nobjs
+         if (ifobjg(i)) call drwobj(i)
+  400 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -391,7 +391,7 @@ C
       CALL OPNSEG(10)
 C     WRITE ON SCREEN
 C     Draw Keypad
-      CALL DRKEY
+c     CALL DRKEY
 C     KEYPAD OFF; COVER ON
       CALL SGVIS(12,0)
       CALL SGVIS(11,1)
@@ -582,21 +582,21 @@ c     default return values
 c
 c     Check objects first, then background grids.
 c
-      IOBJCT = 0
-      TOLOBJ = (GRIDDX**2+GRIDDY**2)/10.0
-      DO 10 IOBJ=1,NOBJS
-         IF (IFOBJG(IOBJ)) THEN
+      iobjct = 0
+      tolobj = (griddx**2+griddy**2)/10.0
+      do 10 iobj=1,nobjs
+         if (ifobjg(iobj)) then
 C           grab object?
-            call latchob(xmse0,ymse0,zmse0,dist2,k,i,iobj)
-            IF (DIST2.LT.TOLOBJ) THEN
-               IOBJCT=IOBJ
-               XMOUSE=XMSE0
-               YMOUSE=YMSE0
-               ZMOUSE=ZMSE0
-               return
-            ENDIF
-         ENDIF
-   10 CONTINUE
+            call latchob(xms1,yms1,xmse0,ymse0,zmse0,dist2,k,i,iobj)
+            if (dist2.lt.tolobj) then
+               iobjct=iobj
+               xmouse=xms1
+               ymouse=yms1
+               zmouse=zmse0
+            endif
+         endif
+   10 continue
+      if (iobjct.gt.0) return
 c
       if (ifgrdh) then
 c
@@ -715,34 +715,34 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine latchob(x0,y0,z0,dist2,k,i,iobj)
+      subroutine latchob(x1,y1,x0,y0,z0,dist2,k,i,iobj)
       include 'basics.inc'
-C
-      IF (.NOT.IFOBJS) return
-C
-      DSTMIN=10.0E08
-      IOFF=1
-      DO 100 I=1,IOBJ-1
-         IOFF=IOFF+NPTS(I)
-  100 CONTINUE
-C
+
+
+      dist2 =1.e23
+      x1 = x0
+      y1 = y0
+
+      if (.not.ifobjs) RETURN
+
+      ioff=1
+      do i=1,iobj-1
+         ioff=ioff+npts(i)
+      enddo
+
       k = 0
-      DO 200 I=IOFF,IOFF+NPTS(IOBJ)
+      do i=ioff,ioff+npts(iobj)
          k = k+1
-         DIST=(X0-XOBJ(I))**2+(Y0-YOBJ(I))**2
-         IF (DIST.LT.DSTMIN) THEN
-            X1=XOBJ(I)
-            Y1=YOBJ(I)
-            DSTMIN=DIST
-         ENDIF
-  200 CONTINUE
-      IF (DSTMIN.LT.9.9E08) THEN
-         DIST2 = DSTMIN
-         X0=X1
-         Y0=Y1
-      ENDIF
+         dist=(x0-xobj(i))**2+(y0-yobj(i))**2
+         if (dist.lt.dist2) then
+            x1=xobj(i)
+            y1=yobj(i)
+            dist2=dist
+         endif
+      enddo
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine setobj
       include 'basics.inc'
@@ -752,28 +752,28 @@ C     Set up object, first pass, just get an object from a file.
 C     Later, we allow functions, repositioning, sizing, rotations.
 C
 C
-      IOFF=1
-      DO 200 I=1,NOBJS
-         IOFF=IOFF+NPTS(I)
-  200 CONTINUE
+      ioff=1
+      do 200 i=1,nobjs
+         ioff=ioff+npts(i)
+  200 continue
 c
       write(6,*) 'call ellgen',nobjs,ioff,npts(nobjs)
       call ellgen(xobj(ioff),yobj(ioff),n,a,b)
       if (a.gt.0.and.b.gt.0) then
          nobjs=nobjs+1
          npts(nobjs)=n
-         IFOBJG(NOBJS)  = .TRUE.
-         IFOBJS         = .TRUE.
+         ifobjg(nobjs)  = .true.
+         ifobjs         = .true.
          write(6,*) 'this is nobjs'
          ccobjs(nobjs)  = 'O'
          cobjs(1,nobjs) =  nobjs
          cobjs(2,nobjs) =  a
          cobjs(3,nobjs) =  b
          call rzero(cobjs(4,nobjs),2)
-         CALL DRWOBJ(NOBJS)
+         call drwobj(nobjs)
       endif
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine setzoom
       include 'basics.inc'

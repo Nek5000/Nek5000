@@ -79,7 +79,7 @@ c-----------------------------------------------------------------------
       integer e,ein(nin)
       real ddom(npdom-1,nin),xdom(2,npdom)
 
-      call prs('Select domain vertex to move$.')
+      call prsi('Select domain vertex to move.  nin=$',nin)
       call mouse2(xmouse,ymouse,button,.true.)
 
       call prs('Select new vertex position (rt attch to el.)$.')
@@ -96,13 +96,13 @@ c-----------------------------------------------------------------------
 
       dx = xmove-xdom(1,imin)   ! displacement
       dy = ymove-xdom(2,imin) 
-c     write(6,*) 'this is dx:',dx,dy,imin
+      write(6,*) 'this is dx:',dx,dy,imin
 
       do k=1,nin
          i = mod(ein(k),5)
          e = 1 + ein(k)/5
-c        write(6,9) 'i,e:',i,e,k,ein(k),x(e,i),y(e,i),dx,dy,ddom(imin,k)
-c 9      format(a4,4i4,5f11.4)
+         write(6,9) 'i,e:',i,e,k,ein(k),x(e,i),y(e,i),dx,dy,ddom(imin,k)
+  9      format(a4,4i4,5f11.4)
          if (i.gt.0) then ! move vtx (e,i)
             x(e,i) = x(e,i) + ddom(imin,k)*dx
             y(e,i) = y(e,i) + ddom(imin,k)*dy

@@ -69,7 +69,7 @@ c
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='CLIP DOMAIN'
            NCHOIC=NCHOIC+1
-      ITEM(NCHOIC)='J''ADOUBE'
+      ITEM(NCHOIC)='Clean up vertices'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'GLOBAL REFINE')
 C     Update sides array
       CALL MKSIDE
@@ -82,11 +82,12 @@ C     UPDATE MAXLET (which could have been changed in the refine operation)
       ENDIF
 C
       IF(CHOICE.EQ.'END GLOBAL REFINE')THEN
-         IFGRID=IFTMP
-         RETURN
+         call redraw_mesh
+         ifgrid=iftmp
+         return
       ELSE IF(CHOICE.EQ.'SPIDER WEB')THEN
          CALL PARKER(ISPLIT)
-      ELSE IF(CHOICE.EQ.'J''ADOUBE')THEN
+      ELSE IF(CHOICE.EQ.'Clean up vertices')THEN
          CALL VERTADJ
       ELSE IF(CHOICE.EQ.'CLIP DOMAIN')THEN
          CALL CLPDOM
@@ -231,8 +232,8 @@ C                               Set overlaps, we found a common side.
      $('Enter the Shrink factor for the new elements.  (0<s<1).$')
       CALL PRS
      $('I recommend that these new elements be shrunk to about .3$')
-      CALL PRS('<0 to abort.    USE KEYPAD$')
-      CALL KEYPAD(fac)
+      CALL PRS('<0 to abort. $')
+      call rer(fac)
       IF(FAC.LE.0.0)THEN
          CALL PRS('Aborting Picture Frame mesh refinement.$')
          RETURN
@@ -425,7 +426,7 @@ c-----------------------------------------------------------------------
 C     Splits floor in mesh
       include 'basics.inc'
       CALL PRS('Which floor do you wish to split?$')
-      CALL KEYPAD(floor)
+      call rer(floor)
       ISPLIT=FLOOR
       IF(ISPLIT.GT.NLEVEL) THEN
          CALL PRS
@@ -435,7 +436,7 @@ C     Splits floor in mesh
       CALL PRS('At what height in this floor do you want the crack?$')
       CALL PRS('0<h<1; 0 is at floor, 1 is at ceiling.'//
      $'  negative to abort.$')
-      CALL KEYPAD(fac)
+      call rer(fac)
       IF(FAC.GE.1.0)THEN
          CALL PRS('ERROR- Split cant be above ceiling$')
          RETURN
@@ -510,12 +511,9 @@ C
       CALL PRS('Push left button to enter element to be split:$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       IF(XSCR(XMOUSE).GT.1.0 .AND. YSCR(YMOUSE).GT.0.62) THEN
-C        He apparently is trying to use the keypad
-         CALL PRS('** Entering Coordinates of element. **$')
-         CALL PRS('Enter X-coordinate with keypad:$')
-         CALL KEYPAD(XMOUSE)
-         CALL PRS('Now enter Y-coordinate with keypad:$')
-         CALL KEYPAD(YMOUSE)
+C        apparently is trying to type
+         CALL PRS('Type X and Y coordinates:$')
+         call rerr(XMOUSE,YMOUSE)
       ENDIF
       RMIN=1.0E10
       DO 100 IEL=1,NEL
@@ -642,12 +640,9 @@ C     FIND CLOSEST ELEMENT AND CORNER
       CALL PRS('Push left button to enter element to be split:$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       IF(XSCR(XMOUSE).GT.1.0 .AND. YSCR(YMOUSE).GT.0.62) THEN
-C        He apparently is trying to use the keypad
-         CALL PRS('** Entering Coordinates of element. **$')
-         CALL PRS('Enter X-coordinate with keypad:$')
-         CALL KEYPAD(XMOUSE)
-         CALL PRS('Now enter Y-coordinate with keypad:$')
-         CALL KEYPAD(YMOUSE)
+C        apparently trying to enter
+         CALL PRS('Type X-Y coordinates:$')
+         call rerr(XMOUSE,YMOUSE)
       ENDIF
       RMIN=1.0E10
       DO 100 IEL=1,NEL
@@ -661,11 +656,9 @@ C        Only look at elements on this floor
       CALL PRS('Enter a side of this element that is to be split$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       IF(XSCR(XMOUSE).GT.1.0 .AND. YSCR(YMOUSE).GT.0.62) THEN
-C        He apparently is trying to use the keypad
-         CALL PRS('Enter X-coordinate with keypad:$')
-         CALL KEYPAD(XMOUSE)
-         CALL PRS('Now enter Y-coordinate with keypad:$')
-         CALL KEYPAD(YMOUSE)
+C        apparently trying to enter
+         CALL PRS('Type X-Y coordinates:$')
+         call rerr(XMOUSE,YMOUSE)
       ENDIF
       RMIN=1.0E10
       DO 2 IS=1,4
@@ -689,8 +682,8 @@ C     Find adjacent sides
 c
       CALL PRS('Enter S, the location of split.  0<S<1 .  S < 0.5 is $')
       CALL PRS(
-     $'Closer to a; S > 0.5 is closer to b. <0 to abort. USE KEYPAD$')
-      CALL KEYPAD(sfrac)
+     $'Closer to a; S > 0.5 is closer to b. <0 to abort.$')
+      call rer(sfrac)
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -782,11 +775,20 @@ C                            Make sure old split element doesn't conflict
                              IF(ISPLIT(IEL).NE.NSPLIT)THEN
                                CALL PRSIS('ERROR: ELEMENT$',IEL,
      $                         'WOULD NEED TO BE SPLIT TWICE.  '//
-     $                         'ABORTING SPLIT OPERATION.$')
-                               DO 50 I=1,NELM
-                                 ISPLIT(I)=0
-50                             CONTINUE
-                               GO TO 301
+     $                         'ABORTING SPLIT.$')
+                               call prsii('isplit,nsplit$'
+     $                             ,isplit(iel),nsplit)
+
+                               call prs('Continue splitting?$')
+                               call res(ans,1)
+
+                               if (ans.eq.'n'.or.ans.eq.'N') then
+                                 do i=1,nelm
+                                   ISPLIT(I)=0
+                                 enddo
+                                 goto 301
+                               endif
+
                              ENDIF
                           ENDIF
                         ENDIF
@@ -984,8 +986,9 @@ C
    10 FORMAT(2X,'RMIN:',g13.6,'$')
       CALL PRS(S)
 C
-      CALL PRS('Input tolerance, relative to el. size (e.g., 0.5:)$')
-      CALL RER(EPS)
+c     CALL PRS('Input tolerance, relative to el. size (e.g., 0.5:)$')
+c     CALL RER(EPS)
+      eps = 0.05
 C
       WRITE(S,20) EPS,RMIN
    20 FORMAT(2X,'EPS,RMIN:',2E13.6,'$')

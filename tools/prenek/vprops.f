@@ -39,9 +39,9 @@ C
       OLDCHOICE=CHOICE
       IF(CHOICE(1:11).EQ.'SELECT MATL')THEN
          CALL PRSI('CURRENT MATERIAL:$',IGRP)
-         CALL PRS('Please SELECT MATERIAL with mouse on keypad$')
-111      CALL PRS(' Enter Material Group Number:$')
-         CALL KEYPAD(RDUMMY)
+         CALL PRS('Please SELECT MATERIAL.$')
+111      CALL PRS(' Type Material Group Number:$')
+         call rer(RDUMMY)
          IGRPx=RDUMMY
          IF(IGRPx.LE.0)THEN
             CALL PRS(' Fluid elements$')
@@ -118,18 +118,18 @@ C              Make sure Fortran functions get turned off
                VPROP(IGRP,IF,3)='C'
                IF(IF.EQ.1)THEN
                   CALL PRS(' Enter Dynamic Viscosity $')
-                  CALL KEYPAD(CPROP(IGRP,IF,1))
+                  call rer(CPROP(IGRP,IF,1))
                   CALL PRS(' Enter Density $')
-                  CALL KEYPAD(CPROP(IGRP,IF,2))
+                  call rer(CPROP(IGRP,IF,2))
                ELSE
                   CALL PRS(' Enter CONDUCT $')
                   IF(IF.GT.2)CALL PRSI
      $            ('FOR PASSIVE SCALAR FIELD$',IPSCAL)
-                  CALL KEYPAD(CPROP(IGRP,IF,1))
+                  call rer(CPROP(IGRP,IF,1))
                   CALL PRS(' Now enter RHOCP $')
-                  CALL KEYPAD(CPROP(IGRP,IF,2))
+                  call rer(CPROP(IGRP,IF,2))
                   CALL PRS(' Now enter QVOL $')
-                  CALL KEYPAD(CPROP(IGRP,IF,3))
+                  call rer(CPROP(IGRP,IF,3))
                ENDIF
             ELSE IF(CHOICE.EQ.'FORTRAN FUNCTION')THEN
                MATYPE(IGRP,IF) = 2

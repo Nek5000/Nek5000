@@ -623,42 +623,43 @@ C                          Can only have constant
                          CBC(ISIDE,IEL,IF)=CBC3
                          BCLAB(1)          = CBC3(1:1)
                          CALL INFLOW(IEL,ISIDE,IF,CBC(ISIDE,IEL,IF))
+                         call rzero(bc(1,iside,iel,if),5)
                         ELSE IF(CHOICE.EQ.'CONSTANT')THEN
                            IF(BCCHOICE.EQ.'SHEAR    (LOCAL)')THEN
                              IF(IF3D)THEN
                                CALL PRS
-     $                         (' Enter #1-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+     $                         (' Type #1-comp of Shear:$')
+                               call rer(BC(2,ISIDE,IEL,IF))
                                CALL PRS
-     $                         (' Enter #2-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(3,ISIDE,IEL,IF))
+     $                         (' Type #2-comp of Shear:$')
+                               call rer(BC(3,ISIDE,IEL,IF))
                              ELSE
                                CALL PRS
-     $                         (' Enter Shear via keypad>$')
-                               CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+     $                         (' Type Shear:$')
+                               call rer(BC(2,ISIDE,IEL,IF))
                              ENDIF
                            ELSE IF(BCCHOICE(10:16).EQ.'(LOCAL)')THEN
-                              CALL PRS(' Enter with keypad:$')
+                              CALL PRS(' Type:$')
                               CALL PRS(' NORMAL-'//BCCHOICE//'$')
-                              CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                              call rer(BC(1,ISIDE,IEL,IF))
                               IF(IF3D)THEN
                                  CALL PRS
      $                           (' #1 TANGENTIAL '//BCCHOICE//'$')
-                                 CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                                 call rer(BC(2,ISIDE,IEL,IF))
                                  CALL PRS
      $                           (' #2 TANGENTIAL '//BCCHOICE//'$')
-                                 CALL KEYPAD(BC(3,ISIDE,IEL,IF))
+                                 call rer(BC(3,ISIDE,IEL,IF))
                               ELSE
                                  CALL PRS
      $                           (' TANGENTIAL '//BCCHOICE//'$')
-                                 CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                                 call rer(BC(2,ISIDE,IEL,IF))
                               ENDIF
                            ELSE IF(BCCHOICE.EQ.'TEMP')THEN
-                              CALL PRS('Enter TEMP with keypad>$')
-                              CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                              CALL PRS('Type TEMP:$')
+                              call rer(BC(1,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'FLUX')THEN
-                              CALL PRS('Enter FLUX with keypad>$')
-                              CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                              CALL PRS('Type FLUX:$')
+                              call rer(BC(1,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'OUTFLOW/N' .OR.
      $                             BCCHOICE.EQ.'OUTFLOW')THEN
                               IF(.NOT.IFSTRS)THEN
@@ -666,78 +667,78 @@ C                          Can only have constant
                                  BC(1,ISIDE,IEL,IF) = 0.0
                               ELSE
                                  CALL PRS(
-     $                           ' Enter Exit Pressure via keypad>$')
-                                 CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+     $                           ' Type Exit Pressure:$')
+                                 call rer(BC(1,ISIDE,IEL,IF))
                               ENDIF
                            ELSE IF(BCCHOICE.EQ.'FLUID LAYERS')THEN
                               WRITE(S,
-     $                      '('' Enter Surface Tension with keypad>'')')
+     $                      '('' Type Surface Tension:'')')
                             CALL PRS(S//'$')
-                            CALL KEYPAD(BC(4,ISIDE,IEL,IF))
+                            call rer(BC(4,ISIDE,IEL,IF))
                             CALL OVERLAP(IEL,ISIDE,IELO,ISIDEO)
                             CBC(  ISIDEO,IELO,IF) = 'MPI'
                             BC(4,ISIDEO,IELO,IF)=BC(4,ISIDE,IEL,IF)
                            ELSE IF(BCCHOICE.EQ.'SHEAR')THEN
                              IF(IF3D)THEN
                                CALL PRS
-     $                         (' Enter X-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+     $                         (' Type X-comp of Shear:$')
+                               call rer(BC(1,ISIDE,IEL,IF))
                                CALL PRS
-     $                         (' Enter Y-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+     $                         (' Type Y-comp of Shear:$')
+                               call rer(BC(2,ISIDE,IEL,IF))
                                CALL PRS
-     $                         (' Enter Z-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(3,ISIDE,IEL,IF))
+     $                         (' Type Z-comp of Shear:$')
+                               call rer(BC(3,ISIDE,IEL,IF))
                              ELSE
                                CALL PRS
-     $                         (' Enter X-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+     $                         (' Type X-comp of Shear:$')
+                               call rer(BC(1,ISIDE,IEL,IF))
                                CALL PRS
-     $                         (' Enter Y-comp of Shear via keypad>$')
-                               CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+     $                         (' Type Y-comp of Shear:$')
+                               call rer(BC(2,ISIDE,IEL,IF))
                              ENDIF
                            ELSE IF(BCCHOICE.EQ.'CONVECTION') THEN
                              CALL PRS
      $                       (' Heat Transfer Coefficient (h)>$')
 C                            2nd storage Contains h
-                             CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                             call rer(BC(2,ISIDE,IEL,IF))
                              CALL PRS
      $                       (' Temperature at Infinity (Tinf)>$')
-                             CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                             call rer(BC(1,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'FREE SURFACE') THEN
                              CALL PRS
      $                       (' Pressure of Gas (Normal Traction)>$')
-                             CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                             call rer(BC(1,ISIDE,IEL,IF))
                              CALL PRS
      $                       (' Shear (Tangential Traction)>$')
-                             CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                             call rer(BC(2,ISIDE,IEL,IF))
                              IF(IF3D)THEN
                              CALL PRS
      $                       (' #2 Component of Shear '//
      $                       '(Tangential Traction)>$')
-                             CALL KEYPAD(BC(3,ISIDE,IEL,IF))
+                             call rer(BC(3,ISIDE,IEL,IF))
                              ENDIF
                              CALL PRS(' Surface tension Coefficient>$')
-                             CALL KEYPAD(BC(4,ISIDE,IEL,IF))
+                             call rer(BC(4,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'RADIATION') THEN
                              CALL PRS
      $                       (' Temperature at Infinity (Tinf)>$')
-                             CALL KEYPAD(BC(1,ISIDE,IEL,IF))
-                             CALL PRS(' Enter Product of Emissivity$')
+                             call rer(BC(1,ISIDE,IEL,IF))
+                             CALL PRS(' Type Product of Emissivity$')
                              CALL PRS(' and Boltzmanns Constant >$')
-                             CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                             call rer(BC(2,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'SOLID FRONT'
      $                     .OR.    BCCHOICE.EQ.'LIQUID FRONT')THEN
                              CALL PRS(' Freezing Temperature>$')
-                             CALL KEYPAD(BC(4,ISIDE,IEL,IF))
+                             call rer(BC(4,ISIDE,IEL,IF))
                              CALL PRS(' Rho * Latent Heat>$')
-                             CALL KEYPAD(BC(5,ISIDE,IEL,IF))
+                             call rer(BC(5,ISIDE,IEL,IF))
                            ELSE IF(BCCHOICE.EQ.'MELTING FRONT')THEN
 C                            Fill up both sides of TEMPERATURE B.C.
                              CALL PRS(' Freezing Temperature>$')
-                             CALL KEYPAD(BC(4,ISIDE,IEL,2))
+                             call rer(BC(4,ISIDE,IEL,2))
                              CALL PRS(' Rho * Latent Heat>$')
-                             CALL KEYPAD(BC(5,ISIDE,IEL,2))
+                             call rer(BC(5,ISIDE,IEL,2))
 C                            Export to overlapping edge
                              CALL OVERLAP(IEL,ISIDE,IELO,ISIDEO)
                              BC (4,ISIDEO,IELO,2)=BC (4,ISIDE,IEL,2)
@@ -751,18 +752,18 @@ C                            Export to overlapping edge
                              ENDIF
                            ELSE
 C                             B.C. requiring 3 x,y,z components
-                              WRITE(S,'('' Enter with keypad:'')')
+                              WRITE(S,'('' Type:'')')
                               CALL PRS(S//'$')
                               WRITE(S,'('' X-'',A26)')BCCHOICE
                               CALL PRS(S//'$')
-                              CALL KEYPAD(BC(1,ISIDE,IEL,IF))
+                              call rer(BC(1,ISIDE,IEL,IF))
                               WRITE(S,'('' Y-'',A26)')BCCHOICE
                               CALL PRS(S//'$')
-                              CALL KEYPAD(BC(2,ISIDE,IEL,IF))
+                              call rer(BC(2,ISIDE,IEL,IF))
                               IF(IF3D)THEN
                                  WRITE(S,'('' Z-'',A26)')BCCHOICE
                                  CALL PRS(S//'$')
-                                 CALL KEYPAD(BC(3,ISIDE,IEL,IF))
+                                 call rer(BC(3,ISIDE,IEL,IF))
                               ENDIF
                            ENDIF
                         ENDIF
@@ -808,14 +809,14 @@ C                    Look for mouse input for periodic side
                      IOTHER = 0
                      IF(XSCR(XMOUSE).GT.1.0)THEN
                         IOTHER = 1
-                        CALL PRS('Enter Level:$')
+                        CALL PRS('Type Level:$')
                         CALL REI(IPLEV)
                         IF(IFLEARN)WRITE(3,*) IPLEV
                         CALL PRS(
-     $                  'Enter Apartment letter (with correct case):$')
+     $                  'Type Apartment letter (with correct case):$')
                         CALL RES(IPAPT,1)
                         IF(IFLEARN)WRITE(3,*) IPAPT
-                        CALL PRS('Enter Side number:$')
+                        CALL PRS('Type Side number:$')
                         CALL REI(IPSIDE)
                         IF(IFLEARN)WRITE(3,*) IPSIDE
 C                       Find Closest Side

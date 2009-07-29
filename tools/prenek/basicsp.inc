@@ -1,5 +1,5 @@
 C     Beginning of basicsp.inc**********
-      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=4000000)
+      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=4000)
 c
 c     Maximum resolution for contour plots
       PARAMETER (NXXM=10)

@@ -36,14 +36,14 @@ C
       ITEM(1)='BUILD MENU'
       ITEM(2)='STRAIGHTEN CURVE'
       ITEM(3)='MAKE CIRCLE'
-      ITEM(4)='J''ADOUBE'
+      ITEM(4)='Clean up vertices'
       ITEM(5)='Tile with hexagons'
 c     ITEM(6)='TRANSITION HEXAGONS'
       ITEM(6)='Refine hexagons'
-c     ITEM(4)='MAKE SPLINE'
+      ITEM(7)='MAKE SPLINE'
 c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
-      NCHOIC=6
+      NCHOIC=7
       if (if3d) then
          nchoic=nchoic+1
          ITEM(nchoic)='SPHERICAL MESH'
@@ -90,7 +90,7 @@ C         Export copies curve ICURVE to all overlapping sides
       ELSE IF(CHOICE.EQ.'GEN TEST MESH') THEN
            CALL GENMESH
            GOTO 1
-      ELSE IF(CHOICE.EQ.'J''ADOUBE')THEN
+      ELSE IF(CHOICE.EQ.'Clean up vertices') THEN
            CALL VERTADJ
            GOTO 1
       ELSE IF(CHOICE.EQ.'Refine hexagons') THEN
@@ -132,12 +132,13 @@ C         Export copies curve ICURVE to all overlapping sides
             CALL GWRITE(XCENT,YCENT,1.0,'*$')
             CALL PRS(' Enter Circle Radius for side of element *$')
             CALL PRS(' >0 for convex element, <0 for concave$')
-            CALL KEYPADm(RADIUS,button,xmouse,ymouse)
-            if (button.eq.'RIGHT') then
+            call rer(radius)
+c           CALL KEYPADm(RADIUS,button,xmouse,ymouse)
+c           if (button.eq.'RIGHT') then
 c              clicking near an element 
-               call getside(jel,jside,xmouse,ymouse)
-               RADIUS =  -CURVE(1,jside,jel)
-            endif
+c              call getside(jel,jside,xmouse,ymouse)
+c              RADIUS =  -CURVE(1,jside,jel)
+c           endif
             CALL DRAWEL(-IELS)
             CURVE(1,ISID,IELS)=RADIUS
             CCURVE(ISID,IELS)='C'
@@ -155,12 +156,12 @@ C
             CALL PRS('It must be of the form:   Y=Yo + A*sin(alpha x)$')
             CALL PRS
      $      ('First Enter the amplitude  A: (Negative to abort)$')
-            CALL KEYPAD(CURVE(1,ISID,IELS))
+            call rer(CURVE(1,ISID,IELS))
             IF(CURVE(1,ISID,IELS).LE.0.0)GO TO 1
             CALL PRS('Enter the wave number  alpha:$')
-            CALL KEYPAD(CURVE(2,ISID,IELS))
+            call rer(CURVE(2,ISID,IELS))
             CALL PRS('Enter the Y-offset Yo:$')
-            CALL KEYPAD(CURVE(3,ISID,IELS))
+            call rer(CURVE(3,ISID,IELS))
             CALL DRAWEL(-IELS)
             CCURVE(ISID,IELS)='W'
 C
@@ -305,7 +306,8 @@ C
         CALL HARD
         IFHARD=.TRUE.
         call color(8)
-        DO 112 IEL = 1,NEL
+        if (nel.lt.1000) then
+         DO 112 IEL = 1,NEL
 C         Draw only those on this floor
           IF(NUMAPT(IEL).EQ.ILEVEL)THEN
             IF(ICRV(IEL).EQ.0)THEN
@@ -344,7 +346,8 @@ C              Draw curved sides for hardcopy
 130            CONTINUE
             ENDIF
           ENDIF
-112      continue
+112       continue
+         ENDIF
          CALL NOHARD
         IFHARD=.FALSE.
          NCURVE=0

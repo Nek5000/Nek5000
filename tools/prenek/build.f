@@ -102,6 +102,10 @@ C     Display Elevator 1st floor hilighted
          CALL GNABLE
          ITEM(1)='ACCEPT MESH'
          ITEM(2)='REVIEW/MODIFY'
+
+         goto 331  ! quick hack
+
+
 c        ITEM(3)='Edit Mesh'
          NCHOIC =  2
          CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')
@@ -113,6 +117,10 @@ c        ITEM(3)='Edit Mesh'
          ELSE IF(CHOICE.EQ.'REVIEW/MODIFY')THEN
 c           prepare to modify floor by floor
          ENDIF
+
+  331    continue   ! quick hack
+
+
       ELSE
 C     Interactive Input
          CALL SCROLL(5)
@@ -136,7 +144,7 @@ C     Put in bogus height of first level
          ELSE
 C     For interactive sesion, Demand Height of First Level
             CALL PRSI('Please Enter Height of Level$',ILEVEL)
- 50         CALL KEYPAD(HEIGHT(ILEVEL))
+ 50         call rer(HEIGHT(ILEVEL))
             IF(HEIGHT(ILEVEL).LE.0.0)THEN
                CALL PRS('HEIGHT must be a positive number!$')
                GOTO 50
@@ -236,8 +244,6 @@ c        nchoic = nchoic+1
          nchoic = nchoic+1
          ITEM(nchoic)       =             'IMPORT vtx MESH'
          nchoic = nchoic+1
-         ITEM(nchoic)       =             'RSB'
-         nchoic = nchoic+1
          ITEM(nchoic)       =             'REFLECT MESH '
       ENDIF
 C     
@@ -255,8 +261,8 @@ C
          NUMAPT(NEL)=ILEVEL
          IF(ILETAP.LE.122)LETAPT(NEL)=CHAR(ILETAP)
          IF(ILETAP.GT.122)LETAPT(NEL)=' '
-         CALL PRS('Enter element corners. Use mouse or$')
-         CALL PRS('use keypad for x then y coordinate$')
+         CALL PRS('Enter element corners. Use mouse,$')
+         CALL PRS('or click menu area to type x-y coordinate$')
 C     Turn on Keypad
          CALL NEWEL(NEL,XMOUSE,YMOUSE,BUTTON,IERR)
          IF (IERR.EQ.1) THEN
@@ -493,9 +499,6 @@ c
             CALL DRAWEL(IEL)
  175     CONTINUE
          GOTO 1000
-      ELSE IF(CHOICE.EQ.'RSB')THEN
-         call rsb_xxt_set(0,nel)
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'SET GRID')THEN
          CALL SETGRD
          GOTO 1000
@@ -537,7 +540,7 @@ C     !!?? maybe 96-32??  also, sometimes up gives wrong ele
          IF(NNEXTL.EQ.0)THEN
             CALL PRS('** New Level **  Enter Height:$')
             CALL PRS('Negative to Abort start of new level$')
-            CALL KEYPAD(HEIGHT(ILEVEL+1))
+            call rer(HEIGHT(ILEVEL+1))
 C     !!?? HOW TO MODIFY HEIGHT ONCE IT'S IN?
             IF(HEIGHT(ILEVEL+1) .LE. 0.0) THEN
 C     Abort level change
@@ -1210,11 +1213,11 @@ C     Mark Zero
             IF(I.EQ.3)THEN
                CALL PRS('Enter corresponding x length$')
                CALL GINGRD(0.0)
-               CALL KEYPAD(XLEN)
+               call rer(XLEN)
                CALL GINGRD(GRID)
                CALL PRS('Push left button with mouse at 2'//
      $              ' different y (vertical) locations$')
-               CALL PRS('or hit keypad for equal X-Y scaling.$')
+               CALL PRS('or click in menu area for equal X-Y scaling.$')
             ENDIF
             CALL MOUSE(XSC(I),YSC(I),BUTTON)
 C     
@@ -1242,7 +1245,7 @@ C
  18      CONTINUE
          CALL PRS('Enter in corresponding y length$')
          CALL GINGRD(0.0)
-         CALL KEYPAD(YLEN)
+         call rer(YLEN)
          CALL GINGRD(GRID)
  19      CONTINUE
          IF(XSC(2).EQ.XSC(1) .OR. YSC(4).EQ.YSC(3))THEN
@@ -1280,9 +1283,9 @@ C
 C     
          CALL PRS('Enter X coordinate of point:$')
          CALL GINGRD(0.0)
-         CALL KEYPAD(XPHYS)
+         call rer(XPHYS)
          CALL PRS('Enter Y coordinate of point:$')
-         CALL KEYPAD(YPHYS)
+         call rer(YPHYS)
          CALL GINGRD(GRID)
 C     
          XFAC  = ABS(XLEN/(XSC(2)-XSC(1)))
@@ -1321,391 +1324,6 @@ C
       return
       end
 
-C
-C-----------------------------------------------------------------------
-C
-C     
-C     HMT END RSB MENU HACK
-C     
-C
-C-----------------------------------------------------------------------
-C
-      subroutine rsb_xxt_set(itype,nelin)
-C
-      integer itype
-C
-      include 'basics.inc'
-      DIMENSION ICRVS(4)
-C     ELEMENT,CORNER,COOORDINATE#,LEVEL (OLD OR CURRENT)
-      CHARACTER KEY,STRING*6,LETO,CHAR1
-      LOGICAL IFTMP
-      COMMON /SPLITT/ ENEW(NELM),IND(NELM)
-      COMMON /file_pref/ file_prefix
-      character*80 file_prefix
-c
-      logical if_been_there
-c
-c     Get session name for rsb files
-c
-      length = indx1(file_prefix,'.',1)-1
-      if (length.le.0) length = indx1(file_prefix,' ',1)-1
-      write(6,*) itype,nelin,nel,nelf,' rsb_xxt_set:',length
-      write(6,*) itype,nelin,nel,nelf,' rsb_xxt_set:',file_prefix
-c     call prsn(file_prefix,length)
-c
-c
-c     pff hack to force rsb calculation whenever "EXIT" is clicked in prenek  3/12/98
-      if (itype.eq.2) then
-         nelr = nelf
-         if (.not.ifflow) nelr=nel
-         call set_rsb(nelr)           ! Fluid problem:  fluid 
-         call prs_rsb_defaults
-c        call clear_rsb()
-         ierr = irsb()
-         write(6,*) ierr,nelr,nelf,nel,' RSB 1A',itype
-         if (ierr.eq.0) then
-            call prs('dumping rsb info$')
-            call dump_xxt(file_prefix,length,1)
-c
-c           Re-read rsb file, and dump corresponding points.        pff 6/5/99
-            ncrnr = 2**ndim               !     WON'T WORK FOR PERIODIC YET
-            call new_out(file_prefix,length,wkv1,ncrnr,rxm1,work)
-c
-            if (nelf.ne.nel) then  ! Full problem:  fluid + conduction
-               call prs('dumping rsb info$')
-               call set_rsb(nel)
-               call prs_rsb_defaults
-               ierr = irsb()
-c
-               call dump_xxt(file_prefix,length,2)
-            endif
-            return
-c
-         endif
-      endif
-C
-C     need to call this after BC's set
-C
-      call set_rsb(nel)
-C     
-      call prs_rsb_defaults
-C
-      if_been_there = .false.
-10101 nchoic = 1
-      ITEM(nchoic)        =       'END RSB'
-      nchoic = nchoic+1
-      ITEM(nchoic)        =       'SET LANCZOS TOLERANCE'
-      nchoic = nchoic+1
-      ITEM(nchoic)        =       'SET MAX REPEATS'
-      nchoic = nchoic+1
-C     ITEM(nchoic)        =       'SET SEED FUNCTION'
-C     nchoic = nchoic+1
-      ITEM(nchoic)        =       'SET LEVEL'
-      nchoic = nchoic+1
-      ITEM(nchoic)        =       'DUMP CG SOLVE INFO'
-      nchoic = nchoic+1
-      ITEM(nchoic)        =       'DO IT'
-C     
-C     Menu's all set, prompt for user input:
-C     
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-C     
-      IF(CHOICE.EQ.'END RSB')THEN
-c
-         if (if_been_there) call prs('dumping rsb info$')
-         if (if_been_there) call dump_xxt(file_prefix,length,1)
-c
-         call reset_rsb
-         CALL REFRESH
-         CALL DRGRID
-         DO 1707 IEL=1,NEL
-            CALL DRAWEL(IEL)
- 1707    CONTINUE
-         return
-      ELSE IF(CHOICE.EQ.'SET SEED FUNCTION')THEN
-         call set_seed
-         call prs_rsb_defaults
-         GOTO 10101
-      ELSE IF(CHOICE.EQ.'SET LANCZOS TOLERANCE')THEN
-         call set_tolerance
-         call prs_rsb_defaults
-         GOTO 10101
-      ELSE IF(CHOICE.EQ.'SET MAX REPEATS')THEN
-         call set_max_repeats
-         call prs_rsb_defaults
-         goto 10101
-      ELSE IF(CHOICE.EQ.'SET LEVEL')THEN
-         call set_level
-         call prs_rsb_defaults
-         goto 10101
-      ELSE IF(CHOICE.EQ.'DUMP CG SOLVE INFO')THEN
-         call dump_xxt(file_prefix,length,1)
-         goto 10101
-      ELSE IF(CHOICE.EQ.'DO IT')THEN
-         call prs_rsb_defaults
-C        call clear_rsb()
-         call rsb
-         if_been_there = .true.
-         goto 1010
-      ELSE
-         CALL PRS('CHOICE:'//CHOICE//'NOT IN MENU$')
-         goto 10101
-      ENDIF
-C     
- 1010 call flush_io()
-      nchoic = 1
-      IF(IF3D)THEN
-         ITEM(nchoic)        =             'END VIEW RSB'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =          
-     $        'SHOW PROCESSOR MAP (NLN)'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'SHOW PROCESSOR MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW SEPARATOR MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW SEPARATOR MAP (NLN)'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW PROC/SEP  MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW PROC/SEP  MAP (NLN)'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'UP   LEVEL'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'DOWN LEVEL'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'ZOOM'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'SPECIAL'
-C
-      ELSE
-         ITEM(nchoic)        =             'END VIEW RSB'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =  
-     $        'SHOW PROCESSOR MAP (NLN)'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'SHOW PROCESSOR MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW SEPARATOR MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW SEPARATOR MAP (NLN)'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW PROC/SEP  MAP'
-C     nchoic = nchoic+1
-C     ITEM(nchoic)        =             'SHOW PROC/SEP  MAP (NLN)'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'ZOOM'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'SPECIAL'
-      ENDIF
-C     
-C     Menu's all set, prompt for user input:
-C     
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-C     
-      IF(CHOICE.EQ.'END VIEW RSB')THEN
-         call clear_rsb_peep()
-         goto 10101
-      ELSE IF(CHOICE.EQ.'ZOOM')THEN
-         call setzoom
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SPECIAL')THEN
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         call rsb_peep()
-         GOTO 1010
-      ELSE IF(CHOICE.EQ.'SHOW PROCESSOR MAP')THEN
-c        call refresh
-         CALL DRMENU('NOCOVER')
-c        call drgrid
-         call proc_map(0,nel)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SHOW PROCESSOR MAP (NLN)')THEN
-c        call refresh
-         CALL DRMENU('NOCOVER')
-c        call drgrid
-         call proc_map(1,nel)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SHOW SEPARATOR MAP')THEN
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         call sep_map(0)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SHOW SEPARATOR MAP (NLN)')THEN
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         call sep_map(1)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SHOW PROC/SEP  MAP')THEN
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         call sep_proc_map(0,nel)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'SHOW PROC/SEP  MAP (NLN)')THEN
-         call refresh
-         CALL DRMENU('NOCOVER')
-         call drgrid
-         call sep_proc_map(1,nel)
-         goto 1010
-      ELSE IF(CHOICE.EQ.'UP   LEVEL') THEN
-         CALL PRSI('Current Level$', ILEVEL)
-C     Make Checks
-         NTHISL=0
-         NNEXTL=0
-C     !!?? maybe 96-32??  also, sometimes up gives wrong ele
-         MAXLET=0
-         DO 1190 I=1,NEL
-            IF(NUMAPT(I).EQ.ILEVEL  )NTHISL=NTHISL+1
-            IF(NUMAPT(I).EQ.ILEVEL+1)NNEXTL=NNEXTL+1
-            IF(NUMAPT(I).EQ.ILEVEL  )MAXLET=
-     $           MAX(MAXLET,ICHAR(LETAPT(I)))
- 1190    CONTINUE
-         IF(NTHISL.EQ.0)THEN
-            CALL PRSI('*** ERROR *** No elements on level$', ILEVEL)
-            CALL PRS('Try again!!!$')
-            GOTO 1010
-         ENDIF
-         IF(NNEXTL.EQ.0)THEN
-            CALL PRSI('*** ERROR *** No elements on level$', ILEVEL)
-            CALL PRS('Try again!!!$')
-            GOTO 1010
-c           CALL PRS('** New Level **  Enter Height:$')
-c           CALL PRS('Negative to Abort start of new level$')
-c           CALL KEYPAD(HEIGHT(ILEVEL+1))
-C     !!?? HOW TO MODIFY HEIGHT ONCE IT'S IN?
-            IF(HEIGHT(ILEVEL+1) .LE. 0.0) THEN
-C     Abort level change
-               CALL PRSI(
-     $              'Aborting level change. Still on $', ilevel)
-               HEIGHT(ILEVEL+1)=0
-               GOTO 1010
-            ELSE IF(HEIGHT(ILEVEL+1) .GT. 0.0) THEN
-C     Really go up one
-               CALL PRSIS(
-     $              'Using Ceiling of Level$',ILEVEL,
-     $              '  Mesh as default$')
-C     Erase old mesh
-               DO 2100 I=1,NEL
-                  IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
- 2100          CONTINUE
-               ILEVEL=ILEVEL+1
-               CALL DRELEV(ILEVEL,ILEVEL-1,'     ')
-               ILETAP=MAXLET
-               NLEVEL=NLEVEL+1
-            ENDIF
-            IELNOW=NEL
-            DO 2150 I=1,IELNOW
-               IF(NUMAPT(I).EQ.ILEVEL-1)THEN
-                  NEL=NEL+1
-                  CALL COPYEL(I,NEL)
-                  NUMAPT(NEL)=ILEVEL
-C     Correct Stuff affected if walls are not vertical
-                  XCEN(NEL)=0.0
-                  YCEN(NEL)=0.0
-C     Remove periodic b.c.'s
-                  DO 2110 IF=1,NFLDS
-                     DO 21110 ISIDE=1,NSIDES
-                        IF(  CBC( ISIDE, NEL,IF).EQ.'P  ')THEN
-                           CBC(   ISIDE, NEL,IF)=' '
-                           BC (1, ISIDE, NEL,IF)= 0
-                           BC (2, ISIDE, NEL,IF)= 0
-                           BC (3, ISIDE, NEL,IF)= 0
-                        ENDIF
-21110                CONTINUE
- 2110             CONTINUE
-
-                  DO 1230 IC=1,4
-                     X(NEL,IC)=X(I,IC+4)
-                     Y(NEL,IC)=Y(I,IC+4)
-                     Z(NEL,IC)=Z(I,IC+4)
-                     SIDES(NEL,IC,3)=SIDES(NEL,IC,3)+
-     $                    (HEIGHT(ILEVEL-1)+HEIGHT(ILEVEL))/2.
-                     XCEN(NEL)=XCEN(NEL)+X(NEL,IC)/4.0
-                     YCEN(NEL)=YCEN(NEL)+Y(NEL,IC)/4.0
-C     Curved side stuff
-                     CCURVE(IC,NEL)=CCURVE(IC+4,I)
-                     DO 2220 II=1,6
-                        CURVE(II,IC,NEL)=CURVE(II,IC+4,I)
- 2220                CONTINUE
- 1230             CONTINUE
-C     RAISE Z OF CEILING OF NEW ELEMENTS
-                  DO 11240 IC=5,8
-                     Z(NEL,IC)=Z(NEL,IC)+HEIGHT(ILEVEL)
-11240             CONTINUE
-                  SIDES(NEL,5,3)=SIDES(NEL,5,3)+HEIGHT
-     $                 (ILEVEL-1)
-                  SIDES(NEL,6,3)=SIDES(NEL,6,3)+HEIGHT(ILEVEL)
-C     HMT hack                     
-C     CALL DRAWEL(NEL)
-                  CALL rsb_DRAWEL(NEL)
-               ENDIF
- 2150       CONTINUE
-C     Sort out the elements so that they will be drawn correctly
-            CALL SORTEL
-            DO 2260 I=1,NEL
-               IF(NUMAPT(ISRT(I)).EQ.ILEVEL)CALL DRAWIS(ISRT(I))
- 2260       CONTINUE
-            GOTO 1010
-         ELSE
-C     Already have elements on next level. Erase old mesh& draw new
-            CALL DRELEV(ILEVEL+1,ILEVEL,'     ')
-            DO 2270 I=1,NEL
-               IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
- 2270       CONTINUE
-            ILEVEL=ILEVEL+1
-            DO 2280 I=1,NEL
-C     HMT hack
-C     IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL( I)
-               IF(NUMAPT(I).EQ.ILEVEL) THEN
-                  CALL rsb_DRAWEL( I)
-               ENDIF
- 2280       CONTINUE
-            GOTO 1010
-         ENDIF
-      ELSE IF(CHOICE.EQ.'DOWN LEVEL')THEN
-         CALL PRSI('Current Level$', ILEVEL)
-C     Make Checks
-         IF(ILEVEL.EQ.1)THEN
-            CALL PRS('You already are on Level 1.$')
-            CALL PRS('You can''t go down any further.$')
-            CALL PRS('Choose something else.$')
-            GOTO 1010
-         ENDIF
-         NTHISL=0
-         NDOWNL=0
-         MAXLET=0
-         DO 1290 I=1,NEL
-            IF(NUMAPT(I).EQ.ILEVEL  )NTHISL=NTHISL+1
-            IF(NUMAPT(I).EQ.ILEVEL-1)NDOWNL=NDOWNL+1
-            IF(NUMAPT(I).EQ.ILEVEL-1)MAXLET=
-     $           MAX(MAXLET,ICHAR(LETAPT(I)))
- 1290    CONTINUE
-C     Go down one level.  Erase old mesh& draw new
-         CALL DRELEV(ILEVEL-1,ILEVEL,'     ')
-         DO 1300 I=1,NEL
-            IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
- 1300    CONTINUE
-         ILEVEL=ILEVEL-1
-         DO 1310 I=1,NEL
-C     HMT hack
-C     IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL( I)
-            IF(NUMAPT(I).EQ.ILEVEL) CALL rsb_DRAWEL( I)
- 1310    CONTINUE
-         GOTO 1010
-      ELSE
-         CALL PRS('CHOICE:'//CHOICE//'NOT IN MENU$')
-         GOTO  1010 
- 1    ENDIF
-
-      return
-      end
 c-----------------------------------------------------------------------
       subroutine imp_mesh
 c
@@ -2245,8 +1863,8 @@ c
 c
       if (if3d) then
         do i=1,nvtx
-         read(47,*) vnum(i),xp(i),yp(i),zp(i)
-c        read(47,*) xp(i),yp(i),zp(i)
+c        read(47,*) vnum(i),xp(i),yp(i),zp(i)
+         read(47,*) xp(i),yp(i),zp(i)
          vnum(i) = i
         enddo
       else
@@ -2270,6 +1888,7 @@ c
       read(47,*) ncell
 c
       if (ncell+nel.gt.nelm) then
+         write(6,*) ncell,nel,nelm,' ncell,nel,nelm'
          ncell = ncell+nel
          call prsi('Too many elements. Increase nelm to:$',ncell)
          close(47)
@@ -2278,7 +1897,8 @@ c
 c
       npt=2**ndim
       do ie=1,ncell
-         read(47,*) ii1,ii2,ii3,(kcell(k),k=1,npt)
+c        read(47,*) ii1,ii2,ii3,(kcell(k),k=1,npt)
+         read(47,*) (kcell(k),k=1,npt)
          do k=1,npt
 c           kcell(k) = kcell(k) + 1   ! no need to add 1
             vv(k,ie) = i_findu(vnum,kcell(k),nvtx)

@@ -28,15 +28,11 @@ C !!?? Do we want a cover on keypad now?
           IF (XMOUSE.GT.XPHY(1.0)) THEN
 C               look for a keypad input
 C               BUG IN KEYOLD IF OLD KEY WAS OFF KEYPAD: IT WONT LET YOU REPAIR!
-                CALL PRS('SWITCHING TO KEYPAD INPUTS$')
+                CALL PRS('SWITCHING TO KEYBOARD INPUTS$')
                 CALL SGVIS(11,0)
                 CALL SGVIS(12,1)
-                CALL PRS('ENTER X:$')
-                CALL KEYPAD(XXX)
-                CALL PRS('NOW ENTER Y:$')
-                CALL KEYPAD(YYY)
-                XMOUSE=XXX
-                YMOUSE=YYY
+                CALL PRS('ENTER X and Y:$')
+                call rerr(xmouse,ymouse)
                 BUTTON='LEFT'
 C               TURN OFF KEYPAD HILITE
                 CALL SGVIS(12,0)
@@ -366,6 +362,8 @@ C
       DO 100 IFLD=0,MAXFLD
       DO 100 I=1,6
          CBC(I,IDES,IFLD) = CBC(I,ISRC,IFLD)
+         if (cbc(i,ides,ifld).eq.'P  ')call prsii('Reset P BC:$',i,ides)
+         if (cbc(i,ides,ifld).eq.'P  ') cbc(i,ides,ifld)='   '
          DO 100 J=1,5
             BC(J,I,IDES,IFLD) = BC(J,I,ISRC,IFLD)
   100 CONTINUE
@@ -441,12 +439,9 @@ c
       IFTMP =IFGRID
       IFGRID=.FALSE.
 1     CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-      IF(XSCR(XMOUSE).GT.1.0) THEN
-C        He apparently is trying to use the keypad
-         CALL PRS('Enter X-coordinate with keypad:$')
-         CALL KEYPAD(XMOUSE)
-         CALL PRS('Now enter Y-coordinate with keypad:$')
-         CALL KEYPAD(YMOUSE)
+      IF(XSCR(XMOUSE).GT.1.0) THEN ! apparently trying to enter
+         call prs('Type X-Y coordinates:$')
+         call rerr(xmouse,ymouse)
       ELSE IF(BUTTON.EQ.'RIGHT')THEN
 C        Latch to closest element vertex
          CALL BLATCH(XMOUSE,YMOUSE)
@@ -509,11 +504,9 @@ c
      $('Enter new point to which element corner is to be moved:$')
       CALL MOUSE(XMOVED,YMOVED,BUTTON)
       IF(XSCR(XMoved).GT.1.0) THEN
-C        He apparently is trying to use the keypad
-         CALL PRS('Enter X-coordinate with keypad:$')
-         CALL KEYPAD(XMoved)
-         CALL PRS('Now enter Y-coordinate with keypad:$')
-         CALL KEYPAD(YMoved)
+C        apparently trying to enter
+         call prs('Type X-Y coordinates:$')
+         call rerr(xmoved,ymoved)
       ELSEIF (BUTTON.EQ.'RIGHT') THEN
 C        Latch to closest element vertex
          CALL BLATCH(XMOVED,YMOVED)
@@ -782,7 +775,6 @@ C     Now, draw new elements for elements that were modified
       IIEL=IABS(IEL)
 C
 
-C HMT TRACE
 C      write (6,*) 'DRAWEL :: iel = ',IEL
 
       IFSPHR=.FALSE.
@@ -1027,22 +1019,40 @@ C
 C
       RETURN
       END
-      FUNCTION ROUND(X)
-C
+      function round(x)
+
 C     Try to Round X to fractional integer - eg .05 .1 .15 - if it's within 10-6
-C
-      EPS=1.0E-4
-      XTMP=20.0*X
-      XTMP2=XTMP+0.5
-      ITMP=INT(XTMP2)
-      XTMP2=FLOAT(ITMP)
-      IF (ABS(XTMP-XTMP2).LT.EPS) THEN
-         ROUND=XTMP2/20.0
-      ELSE
-         ROUND=X
-      ENDIF
-      RETURN
-      END
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      round = x
+
+      ax = abs(x)
+      if (ax.lt.0.0499) return
+   
+      eps=1.0e-4
+      eps=max(eps,ax*5.e-6)
+
+      xtmp  = 20.0*ax + 0.5
+      itmp  = xtmp
+      round = .05*itmp
+      if (x.lt.0) round = -round
+      diff  = abs(round-x)
+
+      if (diff.gt.eps) then
+         round=x
+      elseif (diff.gt.0) then
+         icalld = icalld+1
+c        write(6 ,*) icalld,round,x,diff,' round'
+c        write(88,*) icalld,round,x,diff
+         if (mod(icalld,50).eq.0)write(6,*) icalld,round,x,diff,' round'
+      endif
+
+      return
+      end
+
       SUBROUTINE BLATCH(XMOUSE,YMOUSE)
 C     Latch to closest element vertex
       INCLUDE 'basics.inc'

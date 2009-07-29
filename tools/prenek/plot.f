@@ -1016,208 +1016,11 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE KEYPADm(TEMP,button,xmouse,ymouse)
-      INCLUDE 'basics.inc'
-C     Toggle Segment Visibility (Keypad on, Cover off)
-C     Cover off
-      CALL SGVIS(11,0)
-C     Keypad on
-      CALL SGVIS(12,1)
-      IF(IFNOSEG) CALL DRKEY
-C
-      NCHAR=0
-      CALL PRS(' $')
-1     CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-C      BACKSPACE(10)
-      IF(BUTTON.eq.'RIGHT') RETURN
-      IF(BUTTON.eq.'MIDDLE') goto 1
-      CALL RDKEY(XMOUSE,YMOUSE,NCHAR,TEMP,IERR)
-      IF(IERR.EQ.1) GO TO 1
-      RETURN
-      END
-c-----------------------------------------------------------------------
       SUBROUTINE KEYPAD(TEMP)
-      INCLUDE 'basics.inc'
-C     Toggle Segment Visibility (Keypad on, Cover off)
-C     Cover off
-      CALL SGVIS(11,0)
-C     Keypad on
-      CALL SGVIS(12,1)
-      IF(IFNOSEG) CALL DRKEY
-C
-      NCHAR=0
-      CALL PRS(' $')
-1     CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-C      BACKSPACE(10)
-      IF(BUTTON.NE.'LEFT') THEN
-         CALL PRS('Use left mouse button on keypad$')
-         GO TO 1
-      ENDIF
-      CALL RDKEY(XMOUSE,YMOUSE,NCHAR,TEMP,IERR)
-      IF(IERR.EQ.1) GO TO 1
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE RDKEY(XMOUSE,YMOUSE,NCHAR,TEMP,IERR)
-      INCLUDE 'basics.inc'
-      CHARACTER KEY,STRING*5,KEYCHR(4,4),KEY2(2)
-      EQUIVALENCE (STRING,LINES(2))
-      EQUIVALENCE (KEY,KEY2)
-      CHARACTER*1  TMPCHR(20)
-      CHARACTER*20 TMPCH0
-      EQUIVALENCE (TMPCHR,TMPCH0)
-      save tmpchr
-      save KEYCHR
-      DATA KEYCHR /    '0','0','.','R',
-     $                 '1','2','3','E',
-     $                 '4','5','6','D',
-     $                 '7','8','9','-'/
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /0/
-      IF(NCHAR.EQ.0) CALL BLANK(TMPCHR,20)
-      IERR=0
-      J=0
-      YBkey = YPHY(0.7 + J*3./40.)
-      XSC=XSCR(XMOUSE)
-      YSC=YSCR(YMOUSE)
-      I=INT((XSC-     1     )*10*4./3.+1)
-      J=INT((YSC-YSCR(YBKEY))*10*4./3.+1)
-      IF(I.LT.1.OR.I.GT.4.OR.J.LT.1.OR.J.GT.4) THEN
-C!ERROR
-          CALL PRS('Try to hit the keypad this time.$')
-          CALL BEEP
-          IERR=1
-          RETURN
-      ENDIF
-c     if (icalld.lt.10) write(6,*)((keychr(ii,jj),ii=1,4),jj=1,4)
-c     icalld=icalld+1
-      KEY=KEYCHR(I,J)
-c     write(6,*) 'ij',i,j,nchar,key,(tmpchr(jj),jj=1,20)
-      IF(KEY.EQ.'D')THEN
-          TMPCHR(NCHAR)=' '
-          NCHAR = NCHAR -1
-          IF(NCHAR.LT.0)NCHAR=0
-          CALL PRS(' '//TMPCH0//'$')
-      ELSE IF(KEY.EQ.'R')THEN
-          NCHAR=NCHAR+1
-          WRITE(LINE,'(A2,20A1)')'  ',TMPCHR
-          CALL BLANK(TMPCHR,20)
-          CALL PRS('  '//TMPCH0//' <return>$')
-C          READ(TMPCHR,*)TEMP
-          CALL READER(TEMP,IERR)
-          IF(IERR.NE.0)GO TO 113
-C          WRITE(10,1170) TEMP
-1170      FORMAT(G16.7)
-C         KEYPAD OFF; COVER ON
-          CALL SGVIS(12,0)
-          CALL SGVIS(11,1)
-          RETURN
-113           CALL PRS('Error interpreting Input. Enter Again:$')
-              NCHAR=0
-              IERR=1
-              RETURN
-      ELSE
-          NCHAR=NCHAR+1
-          TMPCHR(NCHAR) = KEY
-c     write(6,*) 'ij',i,j,nchar,key,(tmpchr(jj),jj=1,20)
-          CALL PRS(' '//TMPCH0//'$')
-      ENDIF
-      IERR=1
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE DRKEY
-      INCLUDE 'basics.inc'
-      CHARACTER KEY,STRING*5,KEYCHR(4,4),KEY2(2)
-      EQUIVALENCE (STRING,LINES(2))
-      EQUIVALENCE (KEY,KEY2)
-      save KEYCHR
-      DATA KEYCHR / '0','0','.','R',
-     $              '1','2','3','E',
-     $              '4','5','6','D',
-     $              '7','8','9','-'/
+      include 'basics.inc'
 
-C               Keypad goes from X=1 1.3 ; Y=0 0.3
-      J=0
-      YBkey = YPHY(0.7 + J*3./40.)
-      J=4
-      YTkey = YPHY(0.7 + J*3./40.)
-      I=0
-      XLkey = XPHY(1.0 + I*3./40.)
-      I=4
-      XRkey = XPHY(1.0 + I*3./40.)
-      CALL CLSSEG
-C     Put keypad Cover in segment 11, Keypad in 12
-C
-      CALL OPNSEG(12)
-      CALL COLOR(1)
-      CALL MOVE   (XLKEY,YBKEY)
-      CALL DRAW   (XRKEY,YBKEY)
-      CALL DRAW   (XRKEY,YTKEY)
-      CALL DRAW   (XLKEY,YTKEY)
-      CALL DRAW   (XLKEY,YBKEY)
-      PIXEL=1.0/500.0
-      CALL DRAW   (XRKEY+XFAC*PIXEL  ,YBKEY-YFAC*PIXEL)
-      CALL DRAW   (XRKEY+XFAC*PIXEL  ,YTKEY-YFAC*PIXEL)
-      CALL DRAW   (XLKEY-XFAC*PIXEL  ,YTKEY-YFAC*PIXEL)
-      CALL DRAW   (XLKEY-XFAC*PIXEL  ,YBKEY-YFAC*PIXEL)
-      CALL DRAW   (XRKEY+XFAC*PIXEL*2,YBKEY-YFAC*PIXEL*2)
-      CALL DRAW   (XRKEY+XFAC*PIXEL*2,YTKEY-YFAC*PIXEL*2)
-      CALL DRAW   (XLKEY-XFAC*PIXEL*2,YTKEY-YFAC*PIXEL*2)
-      CALL DRAW   (XLKEY-XFAC*PIXEL*2,YBKEY-YFAC*PIXEL*2)
-      CALL DRAW   (XRKEY+XFAC*PIXEL*2,YBKEY-YFAC*PIXEL*2)
-      CALL CLSSEG
-C
-C     8 is new nonvolitile segment
-      CALL OPNSEG(8)
-      CALL COLOR(1)
-C     Gray
-      CALL FILLP(-15)
-      CALL BEGINB (XLKEY,YBKEY)
-      CALL DRAW   (XLKEY,YBKEY)
-      CALL DRAW   (XRKEY,YBKEY)
-      CALL DRAW   (XRKEY,YTKEY)
-      CALL DRAW   (XLKEY,YTKEY)
-      CALL DRAW   (XLKEY,YBKEY)
-      CALL ENDP
-C
-      DO 20 I=0,4
-         XX = XPHY(1.0 + I*3./40.)
-         IF(I.NE.1)CALL MOVE (XX,YBKEY)
-         IF(I.EQ.1)CALL MOVE (XX,YPHY( YSCR(YBKEY)+3./40.) )
-         CALL DRAW (XX,YTKEY)
-20    CONTINUE
-      DO 30 J=0,4
-         YY = YPHY( YSCR(ybKEY) + J*3./40.)
-         CALL MOVE (XLKEY,YY)
-         CALL DRAW (XRKEY,YY)
-30    CONTINUE
-C
-      KEY2(2)='$'
-      DO 42 I=1,4
-         DO 40 J=1,4
-            KEY=KEYCHR(I,J)
-            XX = XPHY(1.0 + I*3./40. - 2./40)
-            YY = YPHY(YSCR(YBKEY) + J*3./40. - 2./40)
-            IF(I.GT.2.OR.J.GT.1)CALL GWRITE(XX,YY,1.0,KEY2)
-40       CONTINUE
-42    CONTINUE
-      KEY='0'
-      CALL GWRITE
-     $(XPHY(1.+2.5/40.),YPHY(YSCR(YBKEY)+1./40.),1.0,KEY2)
-      CALL CLSSEG
-C
-      CALL OPNSEG(11)
-C     Draw Keypad Cover/Keypad
-      CALL COLOR(0)
-      CALL MOVE   (XLKEY,YBKEY)
-      CALL DRAW   (XRKEY,YBKEY)
-      CALL DRAW   (XRKEY,YTKEY)
-      CALL DRAW   (XLKEY,YTKEY)
-      CALL DRAW   (XLKEY,YBKEY)
-      CALL CLSSEG
-      CALL OPNSEG(10)
+      call rer(temp)
+
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -1292,10 +1095,10 @@ C
               CALL PRS('              =1 Original Circle$')
               CALL PRS('              >1 Wider Than Original Circle$')
               CALL PRS('              <1 Thinner Than Original Circle$')
-              CALL KEYPAD(ECCENT)
+              call rer(ECCENT)
               CALL PRS(
      $        'Enter rotation angle (CCW) in degrees (-45<Rot<45):$')
-              CALL KEYPAD(rot)
+              call rer(rot)
          ENDIF
          DO 20 IX=1,NPOINT
             R=CSPACE(IX)*2.0-1.0
@@ -1357,13 +1160,16 @@ C        O - object defined by points
 C        o - object defined by function
 C
 C        Find points closeto straight line
-         IOBJ   = INT(CURVE(1,ISID,IELS))
+         IOBJ   = CURVE(1,ISID,IELS)
 C zero -- 2D kludge
          ZCRV=ZPLANE
          DO 90 IX=1,NPOINT
             XCRVED(IX) = PT1X + (PT2X-PT1X)* CSPACE(IX)
             YCRVED(IX) = PT1Y + (PT2Y-PT1Y)* CSPACE(IX)
-            call latchob(xcrved(ix),ycrved(ix),zcrv,dist2,ko,io,iobj)
+            call latchob(xt,yt,xcrved(ix),ycrved(ix),zcrv
+     $                                     ,dist2,ko,io,iobj)
+            XCRVED(IX) = xt
+            YCRVED(IX) = yt
    90    CONTINUE
       ENDIF
       RETURN
@@ -1925,111 +1731,6 @@ C        Kludge to get arrowhead on vertical arrow
       END
 c    End of PLOT subroutines, common to preprocessor and postprocessor*******
 c
-c-----------------------------------------------------------------------
-      SUBROUTINE KEYPAD_def(TEMP,default)
-c
-c     If click in menu area, defualt valure returned  4/30/97 pff
-c
-      INCLUDE 'basics.inc'
-C     Toggle Segment Visibility (Keypad on, Cover off)
-C     Cover off
-      CALL SGVIS(11,0)
-C     Keypad on
-      CALL SGVIS(12,1)
-      IF(IFNOSEG) CALL DRKEY
-C
-      NCHAR=0
-      CALL PRS(' $')
-1     CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-C      BACKSPACE(10)
-      IF(BUTTON.NE.'LEFT') THEN
-         CALL PRS('Use left mouse button on keypad$')
-         GO TO 1
-      ENDIF
-      CALL RDKEY_nice(XMOUSE,YMOUSE,NCHAR,TEMP,IERR)
-      IF (IERR.EQ.1) then
-        write(s,2) default
-    2   format('Using default value:',f12.5,'$')
-        call prs(s)
-        TEMP = default
-      elseif (ierr.eq.-1) then
-        goto 1
-      endif
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE RDKEY_nice(XMOUSE,YMOUSE,NCHAR,TEMP,IERR)
-      INCLUDE 'basics.inc'
-      CHARACTER KEY,STRING*5,KEYCHR(4,4),KEY2(2)
-      EQUIVALENCE (STRING,LINES(2))
-      EQUIVALENCE (KEY,KEY2)
-      CHARACTER*1  TMPCHR(20)
-      CHARACTER*20 TMPCH0
-      EQUIVALENCE (TMPCHR,TMPCH0)
-      save tmpchr
-      save KEYCHR
-      DATA KEYCHR /    '0','0','.','R',
-     $                 '1','2','3','E',
-     $                 '4','5','6','D',
-     $                 '7','8','9','-'/
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /0/
-      IF(NCHAR.EQ.0) CALL BLANK(TMPCHR,20)
-      IERR=0
-      J=0
-      YBkey = YPHY(0.7 + J*3./40.)
-      XSC=XSCR(XMOUSE)
-      YSC=YSCR(YMOUSE)
-      I=INT((XSC-     1     )*10*4./3.+1)
-      J=INT((YSC-YSCR(YBKEY))*10*4./3.+1)
-c
-c
-c
-c     Check if they're not clicking in menu area.
-c
-      IF (I.LT.1.OR.I.GT.4.OR.J.LT.1.OR.J.GT.4) THEN
-         IERR = 1
-         RETURN
-      ENDIF
-c
-c
-c     if (icalld.lt.10) write(6,*)((keychr(ii,jj),ii=1,4),jj=1,4)
-c     icalld=icalld+1
-      KEY=KEYCHR(I,J)
-c     write(6,*) 'ij',i,j,nchar,key,(tmpchr(jj),jj=1,20)
-      IF(KEY.EQ.'D')THEN
-          TMPCHR(NCHAR)=' '
-          NCHAR = NCHAR -1
-          IF(NCHAR.LT.0)NCHAR=0
-          CALL PRS(' '//TMPCH0//'$')
-      ELSE IF(KEY.EQ.'R')THEN
-          NCHAR=NCHAR+1
-          WRITE(LINE,'(A2,20A1)')'  ',TMPCHR
-          CALL BLANK(TMPCHR,20)
-          CALL PRS('  '//TMPCH0//' <return>$')
-C          READ(TMPCHR,*)TEMP
-          CALL READER(TEMP,IERR)
-          IF(IERR.NE.0)GO TO 113
-C          WRITE(10,1170) TEMP
-1170      FORMAT(G16.7)
-C         KEYPAD OFF; COVER ON
-          CALL SGVIS(12,0)
-          CALL SGVIS(11,1)
-          RETURN
-113           CALL PRS('Error interpreting Input. Enter Again:$')
-              NCHAR=0
-              IERR=1
-              RETURN
-      ELSE
-          NCHAR=NCHAR+1
-          TMPCHR(NCHAR) = KEY
-c         write(6,*) 'ij',i,j,nchar,key,(tmpchr(jj),jj=1,20)
-          CALL PRS(' '//TMPCH0//'$')
-      ENDIF
-      IERR=-1
-      RETURN
-      END
 c-----------------------------------------------------------------------
       subroutine draw_circ(x3,y3,z3,r)
 c     draws a circle around XX,YY,ZZ
