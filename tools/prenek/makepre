@@ -1,3 +1,0 @@
-rm prex
-rm t.t
-make -f makefile > t.t 2>&1 &

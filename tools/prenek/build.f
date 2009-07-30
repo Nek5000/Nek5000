@@ -2658,4 +2658,53 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+      subroutine irank(a,ind,n)
+C
+C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C
+      integer a(1),ind(1),q
+C
+      if (n.le.1) return
+      do 10 j=1,n
+         ind(j)=j
+   10 continue
+C
+      if (n.eq.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         IF (l.gt.1) THEN
+            l=l-1
+            indx=ind(l)
+            q=a(indx)
+         ELSE
+            indx=ind(ir)
+            q=a(indx)
+            ind(ir)=ind(1)
+            ir=ir-1
+            if (ir.eq.1) then
+               ind(1)=indx
+               return
+            endif
+         ENDIF
+         i=l
+         j=l+l
+  200    CONTINUE
+         IF (J.le.IR) THEN
+            IF (J.lt.IR) THEN
+               IF ( a(ind(j)).lt.a(ind(j+1)) ) j=j+1
+            ENDIF
+            IF (q.lt.a(ind(j))) THEN
+               ind(i)=ind(j)
+               I=J
+               J=J+J
+            ELSE
+               J=IR+1
+            ENDIF
+         GOTO 200
+         ENDIF
+         IND(I)=INDX
+      GOTO 100
+      end
+C-----------------------------------------------------------------------

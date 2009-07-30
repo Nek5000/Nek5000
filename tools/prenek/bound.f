@@ -2218,4 +2218,85 @@ c        IF (DIST2.LE.EPS2.AND.DISTP.GT.DSTMAX) THEN
   100 CONTINUE
       return
       end
+c--------------------------------------------------------------------
+      subroutine period_check(ifld)
+c
+c     Adjust adjacency arrays and vertex to acct for
+c     periodic bcs.
+c
+      include 'basics.inc'
+      include 'basicsp.inc'
+c
+      nc       = 2**ndim
+      nfaces   = 2*ndim
+      ncf      = 2**(ndim-1)
+c
+c     March over all elements, looking for periodic face.
+c     Also, check for consistency of P-P bcs.
+c
+      do ie=1,nel
+         do iface = 1,nfaces
+            if (cbc(iface,ie,ifld).eq.'P  ') then
+               je = bc(1,iface,ie,ifld)
+               jf = bc(2,iface,ie,ifld)
+c
+               icons = 0
+               if (cbc(jf,je,ifld).ne.'P  '  ) icons = 1
+               if ( bc(1,jf,je,ifld).ne.ie   ) icons = 2
+               if ( bc(2,jf,je,ifld).ne.iface) icons = 3
+               if (icons.ne.0) then
+                  call blank(line,70)
+                  write(line,1) icons,cbc(jf,je,ifld)
+                  call prs(line)
+                  write(line,2) ie,iface,ifld
+                  call prs(line)
+                  write(line,2) je,jf,ifld
+                  call prs(line)
+    1             format('WARNING: inconsistent per. BCs:',i2,1x,a3,'$')
+    2             format('Reset el/face1:',i6,2i3,' to "p"$')
+                  cbc(iface,ie,ifld) = 'p  '
+                  call rzero(bc(1,iface,ie,ifld),5)
+c
+               endif
+c
+            endif
+         enddo
+      enddo
+c
+      return
+      end
+C-----------------------------------------------------------------------
+      subroutine period_bc_check(if_any_per)
+c
+c     Adjust adjacency arrays and vertex to acct for
+c     periodic bcs.
+c
+      include 'basics.inc'
+      include 'basicsp.inc'
+c
+      logical if_any_per
+C
+      nc       = 2**ndim
+      nfaces   = 2*ndim
+      ncf      = 2**(ndim-1)
+c
+c     March over all elements, looking for periodic face.
+c     Also, check for consistency of P-P bcs.
+c
+      ifld0=2
+      ifld1=1
+      if (ifflow) ifld0=1
+      if (ifheat) ifld1=2+npscal
+c
+      if_any_per = .false.
+      do ifld = ifld0,ifld1
+      do ie=1,nel
+         do iface = 1,nfaces
+            if (cbc(iface,ie,ifld).eq.'P  ') if_any_per = .true.
+         enddo
+      enddo
+      enddo
+c
+      return
+      end
 c-----------------------------------------------------------------------

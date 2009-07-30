@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -873,7 +872,7 @@ void error (mesg)
 #endif
   {
     /* Trap ctrl c */
-    signal (SIGINT,signal_handler);
+//    signal (SIGINT,signal_handler);
     /* Pop up XWindows */
     SetUpEnv ();
 

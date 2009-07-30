@@ -1,1 +1,0 @@
-tar -zcvf tarfile.gz README* make* *.f *.h *.c *.inc *.F icon code mktar
