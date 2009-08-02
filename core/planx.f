@@ -66,8 +66,10 @@ C--------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-C
-      IF (NBDINP.EQ.3) THEN
+
+      common /cgeom/ igeom
+
+      IF (NBDINP.EQ.3.and.igeom.le.2) THEN
          NTOT2 = NX2*NY2*NZ2*NELV
          CALL COPY (PRLAG,PR,NTOT2)
       ENDIF
@@ -91,10 +93,12 @@ C---------------------------------------------------------------------
      $ ,             W2    (LX1,LY1,LZ1,LELV)
      $ ,             W3    (LX1,LY1,LZ1,LELV)
      $ ,             PREXTR(LX2,LY2,LZ2,LELV)
-C
+
+      common /cgeom/ igeom
+
       NTOT1 = NX1*NY1*NZ1*NELV
       NTOT2 = NX2*NY2*NZ2*NELV
-      CALL LAGVEL 
+      if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       IF (IFSTRS)  CALL BCNEUTR
 C
@@ -118,9 +122,12 @@ C--------------------------------------------------------------------
       INCLUDE 'TSTEP'
       COMMON /CTMP0/ DPR (LX2,LY2,LZ2,LELV)
       REAL        PREXTR (LX2,LY2,LZ2,LELV)
-C
+
+      common /cgeom/ igeom
+
       NTOT2 = NX2*NY2*NZ2*NELV
-      IF (NBD.EQ.1.OR.NBD.EQ.2) THEN
+
+      IF (NBD.EQ.1.OR.NBD.EQ.2.or.igeom.gt.2) THEN
          CALL COPY (PREXTR,PR,NTOT2)
       ELSEIF (NBD.EQ.3) THEN
          CONST = DTLAG(1)/DTLAG(2)

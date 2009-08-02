@@ -3,7 +3,6 @@ C--------------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      include 'DEALIAS'
       include 'DOMAIN'
       include 'ZPER'
 c
@@ -125,24 +124,24 @@ C     Initalize io unit
       call io_init
 
 C     Set initial conditions + compute field properties
-      call SETICS
-      CALL SETPROP
+      call setics
+      call setprop
 
 C     USRCHK
       if(nid.eq.0) write(6,*) 'call userchk'
-      CALL USERCHK
+      call userchk
       if(nid.eq.0) then 
         write(6,*) 'done :: userchk'
         write(6,*) ' '
       endif
 
-      CALL COMMENT
-      CALL SSTEST (ISSS) 
+      call comment
+      call sstest (isss) 
 
 C     Initalize timers to ZERO
-      CALL TIME00
-      CALL opcount(2)
-      CALL dofcnt
+      call time00
+      call opcount(2)
+      call dofcnt
 
       jp = 0  ! Set perturbation field count to 0 for baseline flow
 
@@ -197,6 +196,8 @@ C--------------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
 
+      common /cgeom/ igeom
+
       IF (IFTRAN) CALL SETTIME
       if (ifmhd ) call cfl_check
       CALL SETSOLV
@@ -212,22 +213,29 @@ C--------------------------------------------------------------------------
       else                ! PN-2/PN-2 formulation
          call setprop
          do igeom=1,2
+
             if (ifgeom) then
                call gengeom (igeom)
                call geneig  (igeom)
             endif
+
             if (ifmhd) then
-               call induct   (igeom)
+                                call induct   (igeom)
                if (ifheat)      call heat     (igeom)
+
             elseif (ifpert) then
-               if (ifbase.and.ifheat)      call heat     (igeom)
-               if (ifbase.and.ifflow)      call fluid    (igeom)
-               if (ifflow)                 call fluidp   (igeom)
-               if (ifheat)                 call heatp    (igeom)
+
+               if (ifbase.and.ifheat)  call heat          (igeom)
+               if (ifbase.and.ifflow)  call fluid         (igeom)
+               if (ifflow)             call fluidp        (igeom)
+               if (ifheat)             call heatp         (igeom)
+                                       call setup_convect (igeom)
             else  ! std. nek case
-               if (ifheat)      call heat     (igeom)
-               if (ifflow)      call fluid    (igeom)
-               if (ifmvbd)      call meshv    (igeom)
+
+               if (ifheat)             call heat          (igeom)
+               if (ifflow)             call fluid         (igeom)
+               if (ifmvbd)             call meshv         (igeom)
+                                       call setup_convect (igeom)
             endif
          enddo
       endif

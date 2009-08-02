@@ -581,7 +581,7 @@ c-----------------------------------------------------------------------
           ntotk = nx1*ny1*nz1*nelfld(k+2)
           call add2s2(tp(1,k1,i),tp(1,k1,j),scale,ntotk)
           do l=1,lorder-1
-            call add2s2(tlagp(1,k1,l,i),tlagp(1,k1,l,j),scale,ntotk)
+            call add2s2(tlagp(1,l,k1,i),tlagp(1,l,k1,j),scale,ntotk)
           enddo
           call add2s2(vgradt1p(1,k1,i),vgradt1p(1,k1,j),scale,ntotk)
           call add2s2(vgradt2p(1,k1,i),vgradt2p(1,k1,j),scale,ntotk)

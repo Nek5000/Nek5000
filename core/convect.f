@@ -13,6 +13,38 @@ c                     <  1.20 for N=16
 c                     ~  1.16 for N=256
 c
 c-----------------------------------------------------------------------
+      subroutine setup_convect(igeom)
+      include 'SIZE'
+      include 'TOTAL'
+      logical ifnew
+
+      common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
+
+      if (igeom.eq.1) return
+
+      if (ifchar) then
+
+         nelc = nelv
+         if (ifmhd) nelc = max(nelv,nelfld(ifldmhd))
+         if (ifmhd) call exitti('no characteristics for mhd yet$',istep)
+
+         ifnew = .true.
+         if (igeom.gt.2) ifnew = .false.
+
+         call set_conv_char(ct_vx,c_vx,vx,vy,vz,nelc,time,ifnew)
+
+      else
+
+         if (.not.ifpert) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+
+      endif
+
+c     write(6,*) istep,' conv',ifnew,igeom,' continu? ',time
+c     read(5,*) dum
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine char_conv(p0,u,ulag,msk,c,cs,gsl)
 c
 c
@@ -40,7 +72,8 @@ c
 c
       nelc = nelv            ! number of elements in convecting field
       if (ifield.eq.ifldmhd) nelc = nelfld(ifield)
-      nc  = cs(0)                 ! Number of stored convecting fields
+
+      nc  = cs(0)            ! number of stored convecting fields
 
       ln  = lx1*ly1*lz1*lelt
       n   = nx1*ny1*nz1*nelfld(ifield)
@@ -92,24 +125,28 @@ c-----------------------------------------------------------------------
 !     dt
 
 
-
-
-      tau = time-vlsum(dtlag,nbd) ! initialize time for u^n-k
-
+      tau = time-vlsum(dtlag,nbd)         ! initialize time for u^n-k
       call int_vel (ct,tau,c,m,nc,cs,nid) ! ct(t) = sum w_k c(.,k)
+
       call rzero(p0,n)
-c
+
       do ilag = nbd,1,-1
 
+         um = 0
          if (ilag.eq.1) then
             do i=1,n
                p0(i) = p0(i)+bd(ilag+1)*u(i)
+               um=max(um,u(i))
             enddo
          else
             do i=1,n
                p0(i) = p0(i)+bd(ilag+1)*ulag(i,ilag-1)
+               um=max(um,ulag(i,ilag-1))
             enddo
          endif
+
+c        write(6,1) istep,ilag,bd(ilag),bd(ilag+1),um
+c 1      format(i5,i4,1p3e14.5,' bdf')
 
          dtau = dtlag(ilag)/ntaubd
          do itau = 1,ntaubd ! ntaubd=number of RK4 substeps (typ. 1 or 2)
@@ -142,7 +179,7 @@ c
             tau = tau1
          enddo
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -167,16 +204,14 @@ c
 c
       no = nc-1
       call fd_weights_full(t0,ct(0),no,0,wt)  ! interpolation weights
-c
+
       call rzero(c_t,n)
-      k = 0
+      do j=1,n
       do i=0,no
-         do j=1,n
-            c_t(j) = c_t(j) + wt(k)*c(j,i)
-         enddo
-         k = k+1
+         c_t(j) = c_t(j) + wt(i)*c(j,i)
       enddo
-c
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -437,14 +472,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'            ! need nid
       character*5  avar5,lvar5
       character*10 sub_name10
-c
+
       if (n.gt.m) then
-c         write(6,*) nid,n,m
          write(6,1) nid,n,m,avar5,lvar5,sub_name10
     1    format(i8,' ERROR: :',2i9,2(1x,a5),1x,a10)
-         call exitt
+         call exitti('lim_chk problem. $',n)
       endif
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -498,16 +532,16 @@ c
       real jgl,jgt
 c
       parameter (ld=2*lxd)
-      common /igrad/ pd    (0:ld*ld)
+      common /jgrad/ pd    (0:ld*ld)
      $             , pdg   (0:ld*ld)
      $             , pjgl  (0:ld*ld)
       integer pd , pdg , pjgl
 c
       ij = md + ld*(mx-1)
       ip = pdg (ij)
-c
+
       if (ip.eq.0) then
-c
+
          nstore   = pdg (0)
          pdg (ij) = nstore+1
          nstore   = nstore + md*mx
@@ -524,13 +558,15 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_conv(c,ux,uy,uz,nelc,ct,tau)
+      subroutine set_conv_char(ct,c,ux,uy,uz,nelc,tau,ifnew)
       include 'SIZE'
       include 'TSTEP'
-c
-      real c(1)
-      real ct(0:1)
-      real ux(1),uy(1),uz(1)
+
+      real ct(0:1)               ! time stamps for saved field (0=#flds)
+      real c(1)                  ! saved vel. fields, dealiased etc.
+      real ux(1),uy(1),uz(1)     ! input vel. field
+      integer nelc               ! number of elements in conv. field
+      logical ifnew              ! =true if shifting stack of fields
 
       numr      = lxd*lyd*lzd*lelv*ldim*(lorder-1)
       denr      = nxd*nyd*nzd*nelv*ndim
@@ -538,270 +574,51 @@ c
       nconv_max = min(nconv_max,nbdinp+1)
 
       nc = ct(0)
+
       m  = nxd*nyd*nzd*nelc*ndim
 
-      call set_conv_tau
-     $    (c,m,ux,uy,uz,ct(1),tau,nc,nconv_max,nx1,nxd,nelc)
+      write(6,*) nelc,ifnew,' set conv_char',istep,nc,nconv_max
+      call set_ct_cvx
+     $    (ct,c,m,ux,uy,uz,tau,nc,nconv_max,nelc,ifnew)
 
       nc = min (nc,nbdinp)
       ct(0) = nc  ! store current count
-c
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_conv_tau(c,m,u,v,w,ct,tau,nc,mc,mx,md,nelc)
-c
-      real c(m,1),ct(1)
+      subroutine set_ct_cvx(ct,c,m,u,v,w,tau,nc,mc,nelc,ifnew)
+      include 'SIZE'
+
+      real ct(0:1),c(m,1)
       real u(1),v(1),w(1)
-c
-c     First, shift existing convecting fields
-c
-c     Note:  "1" entry is most recent
-c
-      nc = nc+1
-      nc = min(nc,mc)
-c
-      do i=nc,2,-1
-         call copy(c(1,i),c(1,i-1),m)
-         ct(i) = ct(i-1)
-      enddo
-c
-c     Next, save time and map the current velocity to rst coordinates.
-c
-      call set_conv_fld(c(1,1),u,v,w,md,mx,nelc)
+      logical ifnew
+
+      if (ifnew) then
+
+c        Shift existing convecting fields
+c        Note:  "1" entry is most recent
+
+         nc = nc+1
+         nc = min(nc,mc)
+         ct(0) = nc
+
+         do i=nc,2,-1
+            call copy(c(1,i),c(1,i-1),m)
+            ct(i) = ct(i-1)
+         enddo
+      endif
+
+c     Save time and map the current velocity to rst coordinates.
+
+      ix = 1
+      iy = ix + nxd*nyd*nzd*nelc
+      iz = iy + nxd*nyd*nzd*nelc
+
+      call set_convect_new(c(ix,1),c(iy,1),c(iz,1),u,v,w)
+
       ct(1) = tau
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_conv_fld(c,u,v,w,md,mx,nel)
-c
-c     Set up convecting field C
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-      include 'MASS'
-c
-      real c(1),u(1),v(1),w(1)
-c
-      if (mx.eq.md) then
-         n = nel*mx**ndim
-         call set_conv_fld_alias(c,u,v,w,n)
-      else
-         if (if3d) then
-            call set_conv_fld_dealias_3d(c,u,v,w,md,mx,nel)
-         else
-            call set_conv_fld_dealias_2d(c,u,v,md,mx,nel)
-         endif
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_conv_fld_alias(c,u,v,w,n)
-c
-c     Set up convecting field c, no dealias
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-      include 'MASS'
-c
-      real c(n,3),u(n),v(n),w(n)
-c
-      write(6,*) '... rx * mass matrix ???  ERROR! '
-      call exitt
-      if (if3d) then
-         do i=1,n
-            c(i,1) = ( rxm1(i,1,1,1)*u(i) + rym1(i,1,1,1)*v(i)
-     $             +   rzm1(i,1,1,1)*w(i))* bm1 (i,1,1,1)
-            c(i,2) = ( sxm1(i,1,1,1)*u(i) + sym1(i,1,1,1)*v(i)
-     $             +   szm1(i,1,1,1)*w(i))* bm1 (i,1,1,1)
-            c(i,3) = ( txm1(i,1,1,1)*u(i) + tym1(i,1,1,1)*v(i)
-     $             +   tzm1(i,1,1,1)*w(i))* bm1 (i,1,1,1)
-         enddo
-      elseif (ifaxis) then
-         write(6,*) 'no axis in set_conv_fld'
-         call exitt
-      else
-         do i=1,n
-            c(i,1) = (rxm1(i,1,1,1)*u(i)+rym1(i,1,1,1)*v(i))
-     $             *   bm1(i,1,1,1)      !     *0  !DEBUG
-            c(i,2) = (sxm1(i,1,1,1)*u(i)+sym1(i,1,1,1)*v(i))
-     $             *   bm1(i,1,1,1)      !     *0  !DEBUG
-         enddo
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_conv_fld_dealias_3d(c,u,v,w,md,mx,nel)
-c
-c     Set up convecting field c, dealias
-c
-c     Currently, we're using the poor man's version of dealiasing,
-c     where we cheat on the Jacobian and metric term.   That is,
-c     our variational form reads:
-c
-c                   T
-c     (v,Cu) := (Jv)  B J(C . X ) D  Ju                    (1)
-c                              r   r
-c               
-c     as opposed to:
-c
-c                   T
-c     (v,Cu) := (Jv)  B JC . JX D Ju                       (2)
-c                              r r
-c               
-c
-c     In form (1), which is coded below, we are collocating the convecting 
-c     field C with the Jacobian-metric product, Xr, prior to interpolating 
-c     onto the dealiasing mesh.   Form (2) is more correct, but would require
-c     either storage or recompuation of the interpolated tensor JXr.
-c
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-c
-      real c(md*md*md,nel,3)
-      real u(mx*mx*mx,nel),v(mx*mx*mx,nel),w(mx*mx*mx,nel)
-c
-      integer mo,e
-      save    mo
-      data    mo / 0 /
-c
-      common /wdealias/ wgld(lxd),wwwd(lxd*lxd*lxd)
-c
-      parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ cc(ldd)
-c
-      if (md.ne.mo) then
-         call zwgl(c,wgld,md)
-         mo = md
-c
-         l = 0
-         do k=1,md
-         do j=1,md
-         do i=1,md
-            l=l+1
-            wwwd(l) = wgld(i)*wgld(j)*wgld(k)
-         enddo
-         enddo
-         enddo
-      endif
-c
-      nxyd = md**ndim
-      nxyz = mx**ndim
-      do e=1,nel
-c
-         do i=1,nxyz
-            cc(i) = rxm1(i,1,1,e)*u(i,e) + rym1(i,1,1,e)*v(i,e)
-     $            + rzm1(i,1,1,e)*w(i,e)
-         enddo
-         call intp_rstd(c(1,e,1),cc,mx,md,if3d,0) ! 0 --> forward
-         do i=1,nxyd
-            c(i,e,1) = wwwd(i)*c(i,e,1)
-         enddo
-c
-         do i=1,nxyz
-            cc(i) = sxm1(i,1,1,e)*u(i,e) + sym1(i,1,1,e)*v(i,e)
-     $            + szm1(i,1,1,e)*w(i,e)
-         enddo
-         call intp_rstd(c(1,e,2),cc,mx,md,if3d,0) ! 0 --> forward
-         do i=1,nxyd
-            c(i,e,2) = wwwd(i)*c(i,e,2)
-         enddo
-c
-         do i=1,nxyz
-            cc(i) = txm1(i,1,1,e)*u(i,e) + tym1(i,1,1,e)*v(i,e)
-     $            + tzm1(i,1,1,e)*w(i,e)
-         enddo
-         call intp_rstd(c(1,e,3),cc,mx,md,if3d,0) ! 0 --> forward
-         do i=1,nxyd
-            c(i,e,3) = wwwd(i)*c(i,e,3)
-         enddo
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_conv_fld_dealias_2d(c,u,v,md,mx,nel)
-c
-c     Set up convecting field c, dealias
-c
-c     Currently, we're using the poor man's version of dealiasing,
-c     where we cheat on the Jacobian and metric term.   That is,
-c     our variational form reads:
-c
-c                   T
-c     (v,Cu) := (Jv)  B J(C . X ) D  Ju                    (1)
-c                              r   r
-c               
-c     as opposed to:
-c
-c                   T
-c     (v,Cu) := (Jv)  B JC . JX D Ju                       (2)
-c                              r r
-c               
-c
-c     In form (1), which is coded below, we are collocating the convecting 
-c     field C with the Jacobian-metric product, Xr, prior to interpolating 
-c     onto the dealiasing mesh.   Form (2) is more correct, but would require
-c     either storage or recompuation of the interpolated tensor JXr.
-c
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-c
-      real c(md*md,nel,2)
-      real u(mx*mx,nel),v(mx*mx,nel)
-c
-      integer mo,e
-      save    mo
-      data    mo / 0 /
-c
-      common /wdealias/ wgld(lxd),wwwd(lxd*lxd*lxd)
-c
-      parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ cc(ldd)
-c
-      if (md.ne.mo) then
-         call zwgl(c,wgld,md)
-         mo = md
-c
-         l = 0
-         do j=1,md
-         do i=1,md
-            l=l+1
-            wwwd(l) = wgld(i)*wgld(j)
-         enddo
-         enddo
-      endif
-c
-      nxyd = md**ndim
-      nxyz = mx**ndim
-      do e=1,nel
-c
-         do i=1,nxyz
-            cc(i) = rxm1(i,1,1,e)*u(i,e) + rym1(i,1,1,e)*v(i,e)
-         enddo
-         call intp_rstd(c(1,e,1),cc,mx,md,if3d,0) ! 0 --> forward
-         do i=1,nxyd
-            c(i,e,1) = wwwd(i)*c(i,e,1)
-         enddo
-c
-         do i=1,nxyz
-            cc(i) = sxm1(i,1,1,e)*u(i,e) + sym1(i,1,1,e)*v(i,e)
-         enddo
-         call intp_rstd(c(1,e,2),cc,mx,md,if3d,0) ! 0 --> forward
-         do i=1,nxyd
-            c(i,e,2) = wwwd(i)*c(i,e,2)
-         enddo
-      enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -830,7 +647,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine convect_new(bdu,u,ifuf,cx,cy,cz,ifcf)
-C
+
 C     Compute dealiased form:  J^T Bf *JC .grad Ju w/ correct Jacobians
 C
       include 'SIZE'
@@ -1008,7 +825,7 @@ c     conservative form
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_convect_new(cr,cs,ct)
+      subroutine set_convect_new(cr,cs,ct,ux,uy,uz)
 C
 C     Put vxd,vyd,vzd into rst form on fine mesh
 C
@@ -1020,6 +837,7 @@ C
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
 
       real cr(ltd,1),cs(ltd,1),ct(ltd,1)
+      real ux(lxy,1),uy(lxy,1),uz(lxy,1)
 
       common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
      $             , ur(ltd),us(ltd),ut(ltd)
@@ -1038,9 +856,9 @@ C
 
 c        Map coarse velocity to fine mesh (C-->F)
 
-         call intp_rstd(fx,vx(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
-         call intp_rstd(fy,vy(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
-         if (if3d) call intp_rstd(fz,vz(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         call intp_rstd(fx,ux(1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         call intp_rstd(fy,uy(1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         if (if3d) call intp_rstd(fz,uz(1,e),nx1,nxd,if3d,0) ! 0 --> forward
 
 c        Convert convector F to r-s-t coordinates
 
@@ -1061,6 +879,159 @@ c        Convert convector F to r-s-t coordinates
 
          endif
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_char_mask(mask,u,v,w) ! mask for hyperbolic system 
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'SOLN'
+      include 'TSTEP'
+      integer msk(0:1)
+      character      cb*3
+      parameter (lxyz1=lx1*ly1*lz1)
+      common /ctmp1/ work(lxyz1,lelt)
+
+      real mask(lxyz1,1),u(lxyz1,1),v(lxyz1,1),w(lxyz1,1)
+
+      integer e,f
+
+      nfaces= 2*ndim
+      ntot1 = nx1*ny1*nz1*nelv
+      call rzero (work,ntot1)
+      call rone  (mask,NTOT1)
+
+      ifldv = 1
+      do 100 e=1,nelv
+      do 100 f=1,nfaces
+         cb=cbc(f,e,ifldv)
+         if (cb(1:1).eq.'v' .or. cb(1:1).eq.'V') then
+
+           call faccl3 (work(1,e),u(1,e),unx(1,1,f,e),f)
+           call faddcl3(work(1,e),v(1,e),uny(1,1,f,e),f)
+           if (if3d) 
+     $     call faddcl3(work(1,e),w(1,e),unz(1,1,f,e),f)
+
+           call fcaver (vaver,work,e,f)
+
+           if (vaver.lt.0) call facev (mask,e,f,0.0,nx1,ny1,nz1)
+         endif
+         if (cb(1:2).eq.'ws' .or. cb(1:2).eq.'WS') 
+     $   call facev (mask,e,f,0.0,nx1,ny1,nz1)
+ 100  continue
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine advchar
+c
+c     Compute convective contribution using 
+c     operator-integrator-factor method (characteristics).
+c
+      include 'SIZE'
+      include 'MASS'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      include 'CTIMER'
+
+      common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
+
+      common /scruz/ phx  (lx1*ly1*lz1*lelt)
+     $ ,             phy  (lx1*ly1*lz1*lelt)
+     $ ,             phz  (lx1*ly1*lz1*lelt)
+     $ ,             hmsk (lx1*ly1*lz1*lelt)
+
+      if (icalld.eq.0) tadvc=0.0
+      icalld=icalld+1
+      nadvc=icalld
+      etime1=dnekclock()
+
+
+      dti = 1./dt
+      n   = nx1*ny1*nz1*nelv
+
+      call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
+
+      call char_conv(phx,vx,vxlag,hmsk,c_vx,ct_vx,gsh_fld(1))
+      call char_conv(phy,vy,vylag,hmsk,c_vx,ct_vx,gsh_fld(1))
+
+      if (if3d) then
+
+        call char_conv(phz,vz,vzlag,hmsk,c_vx,ct_vx,gsh_fld(1))
+
+        do i=1,n
+           h2i = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti
+           bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
+           bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
+           bfz(i,1,1,1) = bfz(i,1,1,1)+phz(i)*h2i
+        enddo
+
+      else
+
+        do i=1,n
+           h2i = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti
+           bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
+           bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
+        enddo
+
+      endif
+
+      tadvc=tadvc+(dnekclock()-etime1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convch
+
+c     Compute convective contribution using 
+c     operator-integrator-factor method (characteristics).
+
+      include 'SIZE'
+      include 'MASS'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'PARALLEL'
+      include 'CTIMER'
+
+      common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
+
+      common /scruz/ phi  (lx1*ly1*lz1*lelt)
+     $ ,             hmsk (lx1*ly1*lz1*lelt)
+
+      if (icalld.eq.0) tadvc=0.0
+      icalld=icalld+1
+      nadvc=icalld
+      etime1=dnekclock()
+
+      n   = nx1*ny1*nz1*nelv
+      dti = 1./dt
+
+      if (ifield.eq.2) then  ! set convecting velocity and mask
+c        call setup_convect(1)
+         call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
+      endif
+
+
+      call char_conv(phi,t(1,1,1,1,ifield-1),tlag(1,1,1,1,1,ifield-1)
+     $        ,hmsk,c_vx,ct_vx,gsh_fld(1))
+
+      pmax = glamax(phi,n)
+      qmax = glamax(vtrans(1,1,1,1,2),n)
+      write(6,*) istep,dti,pmax,' pmax'
+
+      do i=1,n
+         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
+     $          + phi(i)*bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)*dti
+      enddo
+
+      tadvc=tadvc+(dnekclock()-etime1)
 
       return
       end

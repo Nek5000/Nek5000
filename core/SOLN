@@ -41,6 +41,7 @@ C
      $               , ABZ2   (LX1,LY1,LZ1,LELV)
      $               , VGRADT1(LX1,LY1,LZ1,LELT,LDIMT)
      $               , VGRADT2(LX1,LY1,LZ1,LELT,LDIMT)
+     $               , c_vx   (lxd*lyd*lzd*lelv*ldim,lorder) ! characteristics
 c     Solution and data for magnetic field
      $               , BX     (LBX1,LBY1,LBZ1,LBELV)
      $               , BY     (LBX1,LBY1,LBZ1,LBELV)

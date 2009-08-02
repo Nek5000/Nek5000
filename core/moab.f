@@ -144,7 +144,7 @@ c     Who knows if this will be true with data coming from imesh.
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      common /SCRNS/ iwork(lp)
+      common /SCRNS/ iwork(lelg)
 
       integer globalId, lastGlobalId
 

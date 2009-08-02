@@ -1949,7 +1949,7 @@ C
       return
       END
 C
-      subroutine advchar
+      subroutine advchar_old
 C----------------------------------------------------------------------
 C
 C     Compute convective contribution using 
@@ -3837,7 +3837,6 @@ C     since there is no direct stiffness summation or Helmholtz-solves.
 C
       include 'SIZE'
       include 'TOTAL'
-      include 'DEALIAS'
 C
 C     Use the common blocks CTMP0 and CTMP1 as work space.
 C
@@ -3896,7 +3895,6 @@ C
 C--------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
-      include 'DEALIAS'
       REAL           DFI (LX1,LY1,LZ1,1) 
       REAL           FI  (LX1,LY1,LZ1,1) 
 c
