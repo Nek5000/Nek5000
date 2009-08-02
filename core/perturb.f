@@ -576,10 +576,10 @@ C
       DO 100 ILAG=2,NBD
          IF (IFGEOM) THEN
             CALL COL3 (TA,BM1LAG(1,1,1,1,ILAG-1),
-     $                    TLAGP (1,IFIELD-1,ILAG-1,jp),NTOT1)
+     $                    TLAGP (1,ILAG-1,IFIELD-1,jp),NTOT1)
          ELSE
             CALL COL3 (TA,BM1,
-     $                    TLAGP (1,IFIELD-1,ILAG-1,jp),NTOT1)
+     $                    TLAGP (1,ILAG-1,IFIELD-1,jp),NTOT1)
          ENDIF
          CALL ADD2S2(TB,TA,BD(ilag+1),NTOT1)
  100  CONTINUE
@@ -604,11 +604,11 @@ C
       NTOT1 = NX1*NY1*NZ1*NELFLD(IFIELD)
 C
       DO 100 ILAG=NBDINP-1,2,-1
-         CALL COPY (TLAGP(1,IFIELD-1,ILAG  ,jp),
-     $              TLAGP(1,IFIELD-1,ILAG-1,jp),NTOT1)
+         CALL COPY (TLAGP(1,ILAG  ,IFIELD-1,jp),
+     $              TLAGP(1,ILAG-1,IFIELD-1,jp),NTOT1)
  100  CONTINUE
 C
-      CALL COPY (TLAGP(1,IFIELD-1,1,jp),TP(1,IFIELD-1,jp),NTOT1)
+      CALL COPY (TLAGP(1,1,IFIELD-1,jp),TP(1,IFIELD-1,jp),NTOT1)
 C
       return
       end
@@ -822,7 +822,7 @@ c-----------------------------------------------------------------------
           ntotk = nx1*ny1*nz1*nelfld(k+2)
           call add2s2(tp(1,k1,i),tp(1,k1,j),scale,ntotk)
           do l=1,lorder-1
-            call add2s2(tlagp(1,k1,l,i),tlagp(1,k1,l,j),scale,ntotk)
+            call add2s2(tlagp(1,l,k1,i),tlagp(1,l,k1,j),scale,ntotk)
           enddo
           call add2s2(vgradt1p(1,k1,i),vgradt1p(1,k1,j),scale,ntotk)
           call add2s2(vgradt2p(1,k1,i),vgradt2p(1,k1,j),scale,ntotk)

@@ -19,6 +19,11 @@ C
       NY3=LY3
       NZ3=LZ3
 C
+      NXD=LXD
+      NYD=LYD
+      NZD=LZD
+
+C
       NELT=LELT
       NELV=LELV
       NDIM=LDIM
@@ -742,8 +747,8 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
          endif
 
          if (ifmodel)    call twalluz (igeom) ! Turbulence model
-         if (igeom.eq.2) call chkptol         ! check pressure tolerance
-         if (igeom.eq.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.ge.2) call chkptol         ! check pressure tolerance
+         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
       else   !  steady Stokes, non-split
 
@@ -756,18 +761,9 @@ c             - Velocity/stress formulation.
 
       endif
 
-
-      if (.not.ifpert) then
-c        ! save velocity on fine mesh for dealiasing
-         if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
-      endif
-
-
-      if(nid.eq.0 .and. igeom.eq.2) 
+      if(nid.eq.0 .and. igeom.ge.2) 
      &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
      &   istep,time,dnekclock()-ts,' Fluid done'
-
-
 
       return
       end
@@ -829,7 +825,7 @@ C
 
       endif
 
-      if (nid.eq.0 .and. igeom.eq.2)
+      if (nid.eq.0 .and. igeom.ge.2)
      &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
      &   istep,time,dnekclock()-ts,' Heat done'
 
@@ -1214,18 +1210,21 @@ c
          write(6,*) 'eslv time',neslv,teslv,peslv
          ppres=tpres/tttstp
          write(6,*) 'pres time',npres,tpres,ppres
+
          pcrsl=tcrsl/tttstp
          write(6,*) 'crsl time',ncrsl,tcrsl,pcrsl
          write(6,*) 'crsl min ',min_crsl
          write(6,*) 'crsl max ',max_crsl
          write(6,*) 'crsl avg ',avg_crsl
-c
+
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
          pusbc=tusbc/tttstp
          write(6,*) 'usbc time',nusbc,tusbc,pusbc
          paxhm=taxhm/tttstp
          write(6,*) 'axhm time',naxhm,taxhm,paxhm
+         padvc=tadvc/tttstp
+         write(6,*) 'advc time',nadvc,tadvc,padvc
 c
          pgop =tgop /tttstp
          write(6,*) 'gop  time',ngop ,tgop ,pgop 

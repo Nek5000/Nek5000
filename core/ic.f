@@ -54,10 +54,7 @@ c
       jp = 0                  ! set counter for perturbation analysis
 
       irst = param(46)        ! for lee's restart (rarely used)
-      if (irst.gt.0) then
-         if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
-         return
-      endif
+      if (irst.gt.0)  call setup_convect(2)
 
 
 c     If moving geometry then add a perturbation to the
@@ -372,7 +369,7 @@ c print max values
       endif
 
 c     ! save velocity on fine mesh for dealiasing
-      if (param(99).eq.4) call set_convect_new(vxd,vyd,vzd)
+      call setup_convect(2)
 
       if(nid.eq.0) then
         write(6,*) 'done :: set initial conditions'

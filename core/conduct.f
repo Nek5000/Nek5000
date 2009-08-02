@@ -109,33 +109,32 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
 
 c-----------------------------------------------------------------------
       subroutine makeuq
-C
-C     Fill up user defined forcing function and collocate will the
-C     mass matrix on the Gauss-Lobatto mesh.
-C
+
+c     Fill up user defined forcing function and collocate will the
+c     mass matrix on the Gauss-Lobatto mesh.
+
       include 'SIZE'
       include 'MASS'
       include 'SOLN'
       include 'TSTEP'
-C
-      NTOT = NX1*NY1*NZ1*NELFLD(IFIELD)
-C
-      time = time-dt                           ! time is tn
-c
+
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+
+      time = time-dt        ! Set time to t^n-1 for user function
+
+      call rzero   ( bq(1,1,1,1,ifield-1) ,    ntot)
       call setqvol ( bq(1,1,1,1,ifield-1)          )
       call col2    ( bq(1,1,1,1,ifield-1) ,bm1,ntot)
-c
-      time = time+dt                           ! restore time
-C
+
+      time = time+dt        ! Restore time
+
       return
       end
-C
+c-----------------------------------------------------------------------
       subroutine setqvol(bql)
-C-----------------------------------------------------------------------
-C
-C     Set user specified volumetric forcing function (e.g. heat source).
-C
-C-----------------------------------------------------------------------
+
+c     Set user specified volumetric forcing function (e.g. heat source).
+
       include 'SIZE'
       include 'INPUT'
       include 'SOLN'
@@ -269,10 +268,10 @@ C
       DO 100 ILAG=2,NBD
          IF (IFGEOM) THEN
             CALL COL3 (TA,BM1LAG(1,1,1,1,ILAG-1),
-     $                    TLAG  (1,1,1,1,IFIELD-1,ILAG-1),NTOT1)
+     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
          ELSE
             CALL COL3 (TA,BM1,
-     $                    TLAG  (1,1,1,1,IFIELD-1,ILAG-1),NTOT1)
+     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
          ENDIF
          CALL CMULT (TA,BD(ILAG+1),NTOT1)
          CALL ADD2  (TB,TA,NTOT1)
@@ -284,7 +283,7 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      subroutine convch
+      subroutine convch_old
 C
 C     Compute convective contribution using 
 C     operator-integrator-factor method (characteristics).
@@ -529,7 +528,7 @@ C
       IF (ILAG.EQ.1) THEN
          CALL COPY (TCH,T(1,1,1,1,IFIELD-1),NTOT1)
       ELSE
-         CALL COPY (TCH,TLAG(1,1,1,1,IFIELD-1,ILAG-1),NTOT1)
+         CALL COPY (TCH,TLAG(1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
       ENDIF
       return
       end
@@ -549,11 +548,11 @@ C
       NTOT1 = NX1*NY1*NZ1*NELFLD(IFIELD)
 C
       DO 100 ILAG=NBDINP-1,2,-1
-         CALL COPY (TLAG(1,1,1,1,IFIELD-1,ILAG),
-     $              TLAG(1,1,1,1,IFIELD-1,ILAG-1),NTOT1)
+         CALL COPY (TLAG(1,1,1,1,ILAG  ,IFIELD-1),
+     $              TLAG(1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
  100  CONTINUE
 C
-      CALL COPY (TLAG(1,1,1,1,IFIELD-1,1),T(1,1,1,1,IFIELD-1),NTOT1)
+      CALL COPY (TLAG(1,1,1,1,1,IFIELD-1),T(1,1,1,1,IFIELD-1),NTOT1)
 C
       return
       end

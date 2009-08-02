@@ -596,7 +596,7 @@ C----------------------------------------------------------------------
 C
       NTOT = NX1*NY1*NZ1*NELT
       CALL SUB3 (DELTAT(1,1,1,1),T(1,1,1,1,IFIELD-1),
-     $                           TLAG(1,1,1,1,IFIELD-1,1),NTOT)
+     $                           TLAG(1,1,1,1,1,IFIELD-1),NTOT)
       CALL NORMSC (DVNNH1,DVNNSM,DVNNL2,DVNNL8,DELTAT,IMESH)
       INTYPE = -1
       ISD    = 1
