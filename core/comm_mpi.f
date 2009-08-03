@@ -382,7 +382,7 @@ c
          write(6,*) ' '
          call print_stack()
          write(6,*) ' '
-         write(6,'(3(A,1g13.5,A,/)') 
+         write(6,'(3(A,1g13.5,A,/))') 
      &      'total elapsed time         : ',ttotal, ' sec',
      &      'total solve time incl. I/O : ',ttime , ' sec',
      &      'time/timestep              : ',ttime/max(istep,1), ' sec'
