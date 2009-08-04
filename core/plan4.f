@@ -36,16 +36,21 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
+      ! add user defined divergence to qtl 
+      call col3 (h1,usrdiv,bm1,ntot1)
+      call add2 (qtl,h1,ntot1)
 
+      ! split viscosity into explicit/implicit part
       if (ifexplvis) call split_vis
 
-      CALL MAKEF     ! nonlinear contributions, bfx, bfy, bfz
+      ! compute explicit contributions bfx,bfy,bfz 
+      CALL MAKEF 
       CALL LAGVEL
 
-      CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask)
+      ! mask Dirichlet boundaries
+      CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask) 
 
 C     first, compute pressure
-
 #ifndef NOTIMER
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
@@ -54,7 +59,6 @@ C     first, compute pressure
 #endif
 
       call crespsp  (respr)
-C
       call invers2  (h1,vtrans,ntot1)
       call rzero    (h2,ntot1)
       call ctolspl  (tolspl,respr)
@@ -69,19 +73,16 @@ C
       tpres=tpres+(dnekclock()-etime1)
 #endif
 
-C
 C     Compute velocity
-C
       call cresvsp (res1,res2,res3,h1,h2)
       call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
       call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
       if (ifexplvis) call redo_split_vis
 
-c
-c     Below is just for diagnostics...
-c
-c calculate Divergence norms of new VX,VY,VZ
+c Below is just for diagnostics...
+
+c     Calculate Divergence norms of new VX,VY,VZ
       CALL OPDIV   (DVC,VX,VY,VZ)
       CALL DSSUM   (DVC,NX1,NY1,NZ1)
       CALL COL2    (DVC,BINVM1,NTOT1)
@@ -93,9 +94,7 @@ c calculate Divergence norms of new VX,VY,VZ
       CALL COL2    (DV2,BM1   ,NTOT1)
       DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
       DIV2 = SQRT  (DIV2)
-c
-c calculate Divergence difference norms
-
+c     Calculate Divergence difference norms
       CALL SUB3    (DFC,DVC,QTL,NTOT1)
       CALL COL3    (DV1,DFC,BM1,NTOT1)
       DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
@@ -113,17 +112,14 @@ c calculate Divergence difference norms
       QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
       QTL2 = SQRT  (QTL2)
 
-
-      IF (NID .EQ. 0) WRITE(6,'(15X,A,1p2e13.4)')
-     &                      'L1/L2 DIV(V)    :',DIV1,DIV2
-
-      IF (NID .EQ. 0) WRITE(6,'(15X,A,1p2e13.4)') 
-     &                      'L1/L2 QTL       :',QTL1,QTL2
-
-      IF (NID .EQ. 0) THEN
-          WRITE(6,'(15X,A,1p2e13.4)')
-     &          'L1/L2 DIV(V)-QTL:',DIF1,DIF2
-          IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
+      IF (NID.EQ.0) THEN
+         WRITE(6,'(15X,A,1p2e13.4)')
+     &      'L1/L2 DIV(V)    :',DIV1,DIV2
+         WRITE(6,'(15X,A,1p2e13.4)') 
+     &      'L1/L2 QTL       :',QTL1,QTL2
+         WRITE(6,'(15X,A,1p2e13.4)')
+     &      'L1/L2 DIV(V)-QTL:',DIF1,DIF2
+         IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
      &          'WARNING: DIV(V)-QTL too large!'
       ENDIF
  
@@ -149,16 +145,35 @@ c
      $ ,             WA3   (LX1*LY1*LZ1*LELV)
       COMMON /SCRMG/ W1    (LX1*LY1*LZ1*LELV)
      $ ,             W2    (LX1*LY1*LZ1*LELV)
-c
+      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELT,3)
+
       CHARACTER CB*3
-C
+      
       NXYZ1  = NX1*NY1*NZ1
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
 
+c     extrapolate velocity
+      AB0 = AB(1)
+      AB1 = AB(2)
+      AB2 = AB(3)
+      do i = 1,ntot1
+         vext(i,1) =             ab0*vx(i,1,1,1)
+         vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
+         vext(i,1) = vext(i,1) + ab2*vxlag(i,1,1,1,2)
+
+         vext(i,2) =             ab0*vy(i,1,1,1)
+         vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
+         vext(i,2) = vext(i,2) + ab2*vylag(i,1,1,1,2)
+
+         vext(i,3) =             ab0*vz(i,1,1,1)
+         vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
+         vext(i,3) = vext(i,3) + ab2*vzlag(i,1,1,1,2)
+      enddo
 
 c     -mu*curl(curl(v))
-      call op_curl  (ta1,ta2,ta3,vx ,vy ,vz ,.true. ,w1,w2)
+      call op_curl (ta1,ta2,ta3,vext(1,1),vext(1,2),vext(1,3),
+     &              .true.,w1,w2)
       if(IFAXIS) then  
          CALL COL2 (TA2, OMASK,NTOT1)
          CALL COL2 (TA3, OMASK,NTOT1)
@@ -180,19 +195,13 @@ c
       call invcol3  (w1,vdiff,vtrans,ntot1)
       call opcolv   (wa1,wa2,wa3,w1)
 
-c
-c     *** PRESSURE TERM ***
-c
-C                                                  solve for delta PP
+c     add old pressure term because we solve for delta p 
       CALL INVERS2 (TA1,VTRANS,NTOT1)
       CALL RZERO   (TA2,NTOT1)
       CALL AXHELM  (RESPR,PR,TA1,TA2,IMESH,1)
       CALL CHSIGN  (RESPR,NTOT1)
-c
-c     *** NONLINEAR TERMS ***
-C                                                  x-component
 
-      call invcol3 (TA1,bfx,vtrans,ntot1)        ! x-component
+c     add explicit (NONLINEAR) terms 
       n = nx1*ny1*nz1*nelv
       do i=1,n
          ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
@@ -219,11 +228,12 @@ C                                                  x-component
             respr(i) = respr(i)+wa1(i)+wa2(i)
          enddo
       endif
-C                                        add thermal divergence
+
+C     add thermal divergence
       dtbd = BD(1)/DT
       call admcol3(respr,QTL,bm1,dtbd,ntot1)
  
-C                                                 surface terms
+C     surface terms
       DO 300 IFC=1,NFACES
          CALL RZERO  (TA1,NTOT1)
          CALL RZERO  (TA2,NTOT1)
@@ -251,10 +261,8 @@ C                                                 surface terms
 
 C     Assure that the residual is orthogonal to (1,1,...,1)T 
 C     (only if all Dirichlet b.c.)
-C
       CALL ORTHO (RESPR)
 
-C
       return
       END
 c----------------------------------------------------------------------

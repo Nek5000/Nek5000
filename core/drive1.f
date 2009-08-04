@@ -210,6 +210,7 @@ C--------------------------------------------------------------------------
          call qthermal
          igeom = 1
          if (ifflow)      call fluid    (igeom)
+                          call setup_convect (2)
       else                ! PN-2/PN-2 formulation
          call setprop
          do igeom=1,2
