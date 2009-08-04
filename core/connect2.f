@@ -480,7 +480,6 @@ c     endif
          call exitt
       endif
 
-      if (ifsplit)         ifchar = .false.   ! For now, at least.
       if (ifmhd)           ifchar = .false.   ! For now, at least.
 
 c     dealiasing handling

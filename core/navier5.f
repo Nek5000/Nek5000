@@ -3716,3 +3716,21 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine rescale_x (x,x0,x1)
+      include 'SIZE'
+      real x(1)
+
+      n = nx1*ny1*nz1*nelv
+      xmin = glmin(x,n)
+      xmax = glmax(x,n)
+
+      if (xmax.le.xmin) return
+
+      scale = (x1-x0)/(xmax-xmin)
+      do i=1,n
+         x(i) = x0 + scale*(x(i)-xmin)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
