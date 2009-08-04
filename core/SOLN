@@ -32,7 +32,7 @@ C
      $               , VYLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
      $               , VZLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
      $               , PRLAG  (LX2,LY2,LZ2,LELV,LORDER2)
-     $               , TLAG   (LX1,LY1,LZ1,LELT,LDIMT,LORDER-1)
+     $               , TLAG   (LX1,LY1,LZ1,LELT,LORDER-1,LDIMT)
      $               , ABX1   (LX1,LY1,LZ1,LELV)
      $               , ABY1   (LX1,LY1,LZ1,LELV)
      $               , ABZ1   (LX1,LY1,LZ1,LELV)
