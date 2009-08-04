@@ -577,7 +577,7 @@ c-----------------------------------------------------------------------
 
       m  = nxd*nyd*nzd*nelc*ndim
 
-      write(6,*) nelc,ifnew,' set conv_char',istep,nc,nconv_max
+c     write(6,*) nelc,ifnew,' set conv_char',istep,nc,nconv_max
       call set_ct_cvx
      $    (ct,c,m,ux,uy,uz,tau,nc,nconv_max,nelc,ifnew)
 
@@ -1022,9 +1022,9 @@ c        call setup_convect(1)
       call char_conv(phi,t(1,1,1,1,ifield-1),tlag(1,1,1,1,1,ifield-1)
      $        ,hmsk,c_vx,ct_vx,gsh_fld(1))
 
-      pmax = glamax(phi,n)
-      qmax = glamax(vtrans(1,1,1,1,2),n)
-      write(6,*) istep,dti,pmax,' pmax'
+c     pmax = glamax(phi,n)
+c     qmax = glamax(vtrans(1,1,1,1,2),n)
+c     write(6,*) istep,dti,pmax,' pmax'
 
       do i=1,n
          bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
