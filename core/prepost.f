@@ -1353,7 +1353,8 @@ c-----------------------------------------------------------------------
       if (ifreguo) then ! dump on regular (uniform) mesh
          nxo  = nrg
          nyo  = nrg
-         nzo  = nrg
+         nzo  = 1
+         if(if3d) nzo = nrg
       endif
       offs0 = iHeaderSize + 4 + isize*nelgt
 
