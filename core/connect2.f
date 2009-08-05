@@ -395,10 +395,12 @@ C
 C     Do some checks
 C
       IF(NDIM.NE.LDIM)THEN
-         WRITE(6,10) LDIM,NDIM
-   10       FORMAT(//,2X,'ERROR: This NEKTON Solver has been compiled'
-     $              /,2X,'       for spatial dimension equal to',I2,'.'
-     $              /,2X,'       The data file has dimension',I2,'.')
+         IF(NID.EQ.0) THEN
+           WRITE(6,10) LDIM,NDIM
+   10      FORMAT(//,2X,'ERROR: This NEKTON Solver has been compiled'
+     $             /,2X,'       for spatial dimension equal to',I2,'.'
+     $             /,2X,'       The data file has dimension',I2,'.')
+         ENDIF
          call exitt
       ENDIF
       IF (NDIM.EQ.3) IF3D=.TRUE.
@@ -2318,22 +2320,26 @@ c-----------------------------------------------------------------------
       nelvmx=min(nelvmx,lelg)
 
       if (nelgt.gt.neltmx.or.nelgv.gt.nelvmx) then
-        if (nid.eq.0) write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-        if (nid.eq.0) write(6,*)'help:',lelt,lelv,lelgv
-        if (np.eq.1) write(6,11) lelt,lelg,nelgv,nelgt
-        if (np.gt.1) write(6,12) lelt,lelg,nelgv,nelgt
-   11       format(//,2X,'Error: This NEKTON Solver has been compiled'
-     $             ,/,2X,'       for',2i9,' elements.'
-     $             ,/,2X,'       The data file has dimensions',2i9,'.')
-   12       format(//,2X,'Error: This NEKTON Solver has been compiled'
-     $             ,/,2X,'       for',2i9,' elements per processor.'
-     $             ,/,2X,'       The data file has dimensions',2i9,'.'
-     $             ,/,6X,'   Rerun with more processors or recompile.')
+         if (nid.eq.0) then
+           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
+           write(6,*)'help:',lelt,lelv,lelgv
+           write(6,12) nelt,nelgt,(nelgt/np + 3),nelgt
+ 12         format(//,2X,'ABORT: Problem size too large!'
+     $             ,/,2X,
+     $             ,/,2X,'This solver is compiled for:'
+     $             ,/,2X,'   number of elements/proc  (lelt):',i9
+     $             ,/,2X,'   total number of elements (lelg):',i9
+     $             ,/,2X,
+     $             ,/,2X,'Rerun with more processors or recompile'
+     $             ,/,2X,'with the following SIZEu parameters:'
+     $             ,/,2X,'   lelt >= ',i9
+     $             ,/,2X,'   lelg >= ',i9)
+         endif
          call exitt
       endif
 
       if (nelt.gt.lelt) then
-        write(6,'(A,3I9)') 'Error: nelt>lelt!', nid, nelt, lelt
+        write(6,'(A,3I9)') 'ABORT: nelt>lelt!', nid, nelt, lelt
         call exitt
       endif
 
