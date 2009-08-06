@@ -55,6 +55,7 @@ spchol_test.o: spchol_test.c name.h types.h errmem.h sparse_cholesky.h
 xxt.o: xxt.c name.h types.h errmem.h sarray_sort.h gs.h comm.h gs_defs.h sparse_cholesky.h
 XXT=sparse_cholesky.o xxt.o
 
+fcrystal.o: fcrystal.c name.h types.h errmem.h comm.h crystal.h sarray_sort.h sarray_transfer.h
 fcrs.o: fcrs.c name.h types.h errmem.h comm.h crs.h
 xxt_test.o: xxt_test.c name.h types.h errmem.h comm.h xxt.h
 xxt_test2.o: xxt_test2.c name.h types.h errmem.h comm.h xxt.h

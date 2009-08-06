@@ -47,7 +47,8 @@ static void pack(const char *input, uint n, crystal_data *cr,
   cr->n = cn;
 }
 
-static void unpack(array *A, crystal_data *cr, size_t off, size_t size)
+static void unpack(array *A, int fixed,
+                   crystal_data *cr, size_t off, size_t size)
 {
   const size_t row_size = ((size-sizeof(uint))+sizeof(uint)-1)/sizeof(uint);
   const size_t after = off + sizeof(uint), after_len = size-after;
@@ -55,9 +56,21 @@ static void unpack(array *A, crystal_data *cr, size_t off, size_t size)
   const uint *in = cr->data.ptr, *in_end = in + cr->n;
   char *out;
   uint n=0;
-  while(in!=in_end) { uint len = in[2]; n+=len, in+=len+3; }
+  if(!fixed)
+    while(in!=in_end) { uint len = in[2]; n+=len, in+=len+3; }
+  else {
+    const uint *original_in_end=in_end;
+    const uint maxn = A->max * row_size;
+    uint *in = cr->data.ptr;
+    while(in!=original_in_end) {
+      uint len = in[2]; n+=len;
+      if(n<maxn) in+=len+3;
+      else { in[2]-=(maxn-n); in_end=in+in[2]+3; in+=len+3; break; }
+    }
+    while(in!=original_in_end) { uint len = in[2]; n+=len, in+=len+3; }
+  }
   n /= row_size;
-  array_reserve_(A,n,size,__FILE__);
+  if(!fixed) array_reserve_(A,n,size,__FILE__);
   A->n = n;
   out = A->ptr;
   in = cr->data.ptr;
@@ -74,10 +87,11 @@ static void unpack(array *A, crystal_data *cr, size_t off, size_t size)
   }
 }
 
-void sarray_transfer_(array *A, crystal_data *cr, size_t off, size_t size)
+void sarray_transfer_(array *A, int fixed,
+                      crystal_data *cr, size_t off, size_t size)
 {
   pack(A->ptr,A->n,cr,off,size);
   crystal_router(cr);
-  unpack(A,cr,off,size);
+  unpack(A,fixed,cr,off,size);
 }
 
