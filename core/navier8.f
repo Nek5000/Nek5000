@@ -2148,20 +2148,12 @@ c     NOW: crystal route vertex by processor id
          wk(2,i)=gllnid(eg)        ! processor id for element eg
       enddo
 
-c     From fcrystal.c:
-c        integer*? vi(mi,max)         ! these integer and real types
-c        integer*? vl(ml,max)         !   better match up with what is
-c        real      vr(mr,max)         !   in "types.h"
-      vl=0
-      ml=0
-      vr=0
-      mr=0
       key = 2  ! processor id is in wk(2,:)
-
-      call crystal_transfer(cr_h,ntuple,ndw,wk,mdw,vl,ml,vr,mr,key)
+      call crystal_ituple_transfer(cr_h, wk,mdw,ntuple,ndw, key)
 
       key = 1  ! Sort tuple list by eg := wk(1,:)
-      call ftuple_list_sort(nelt,key,wk,mdw,vr,mr)
+      nkey = 1
+      call crystal_ituple_sort(cr_h, wk,mdw,nelt, key,nkey)
 
       iflag = 0
       if (ntuple.ne.nelt) then
@@ -2317,12 +2309,8 @@ c     First two slots in tuple(:,i) assumed empty
       enddo
 
       ni= n
-      vl=0
-      ml=0
-      vr=0
-      mr=0
       ky=1  ! Assumes crystal_new already called
-      call crystal_transfer(cr_h,ni,nmax,tuple,m,vl,ml,vr,mr,ky)
+      call crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
 
       nimx = iglmax(ni,1)
       if (ni.gt.nmax)   write(6,*) ni,nmax,n,'cr_xfer problem, A'
@@ -2343,7 +2331,7 @@ c     First two slots in tuple(:,i) assumed empty
          tuple(3,i) = ind(i) + nu_prior  ! global ranking
       enddo
 
-      call crystal_transfer(cr_h,ni,nmax,tuple,m,vl,ml,vr,mr,ky)
+      call crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
 
       nk = 1  ! restore to original order, local rank: 2; global: 3
       ky = 2

@@ -70,7 +70,7 @@ c
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
       endif
 
-      call crystal_new(cr_h,nekcomm,np)  ! set cr handle to new instance
+      call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
 
       return
       end
