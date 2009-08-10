@@ -332,6 +332,7 @@ c
 c
       NFACES=2*NDIM
       NXYZ  =NX1*NY1*NZ1
+
 C
 C     Masks for moving mesh
 C

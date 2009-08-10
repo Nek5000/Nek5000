@@ -2178,7 +2178,6 @@ c     NOW: crystal route vertex by processor id
          call exitt
       endif
 
-      if (nid.eq.0) write(6,*) 'done get_vert_map'
       return
 
   999 continue
@@ -2261,20 +2260,38 @@ c
          call exitt
       endif
 
+c      do l=1,lim
+c         mtype = l
+c         jid   = 2**(l-1)
+c         jid   = xor(nid,jid)   ! Butterfly, not recursive double
+c
+c         call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
+c     $                                            ,nekcomm,msg,ierr)
+c         call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
+c         call mpi_wait  (msg,status,ierr)
+c         w = w+r
+c         if (nid.gt.jid) x = x+r
+cc        write(6,1) l,nid,jid,r,w,x,'summer'
+cc   1    format(2i6,'nid',4i6,1x,a6)
+c      enddo
+
       do l=1,lim
          mtype = l
          jid   = 2**(l-1)
          jid   = xor(nid,jid)   ! Butterfly, not recursive double
 
-         call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
+         if (jid.lt.np) then
+            call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
      $                                            ,nekcomm,msg,ierr)
-         call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
-         call mpi_wait  (msg,status,ierr)
-         w = w+r
-         if (nid.gt.jid) x = x+r
+            call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
+            call mpi_wait  (msg,status,ierr)
+            w = w+r
+            if (nid.gt.jid) x = x+r
+         endif
 c        write(6,1) l,nid,jid,r,w,x,'summer'
 c   1    format(2i6,'nid',4i6,1x,a6)
       enddo
+
 
       igl_running_sum = x
 

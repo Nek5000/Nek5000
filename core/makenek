@@ -27,6 +27,10 @@ CC="mpicc"
 # ----------------------- 
 #G="-g"
 
+# Optional preprocessor list
+# --------------------------
+#PPLIST="SYMB1 SYMB2"
+
 # Optional optimization flags
 # ---------------------------
 #OPT_FLAGS_STD="-qarch=450 -qtune=450"
@@ -65,6 +69,7 @@ CC="mpicc"
 # ----------------------
 #USR_LFLAGS="-L/usr/lib -lexample"
 
+
 ###############################################################################
 # User Settings End
 ###############################################################################
@@ -83,3 +88,5 @@ make -j 8 -f makefile 2>&1 | tee compiler.out
 # clean up
 mkdir obj 2>/dev/null
 \mv *.o ./obj 2>/dev/null
+
+exit 0

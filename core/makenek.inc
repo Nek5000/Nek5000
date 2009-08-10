@@ -67,19 +67,27 @@ rm -f $SOURCE_ROOT/SIZE 2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 
 \mv ./obj/*.o . 2>/dev/null
+
 if [ -f SIZEu ]; then 
   cat SIZEu | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZEu
      echo 'c automatically added by makenek' >>SIZEu
-     echo '      parameter(lxo=lx1)' >>SIZEu
+     echo '      parameter(lxo   = lx1) ! defines regular grid size' >>SIZEu
+  fi
+  cat SIZEu | grep -i 'lpart' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZEu
+     echo 'c automatically added by makenek' >>SIZEu
+     echo '      parameter(lpart = 1  ) ! number of particles'       >>SIZEu
   fi
   cp SIZEu -v $SOURCE_ROOT/SIZE
 else
   echo "FATAL ERROR: Cannot find SIZEu"
   exit 1
 fi
-cp $1.usr   $SOURCE_ROOT/subuser.f
+echo "c Original file name: `pwd`/$1.usr" >$SOURCE_ROOT/subuser.f
+cat $1.usr >>$SOURCE_ROOT/subuser.f
 
 
 # Check if the compiler adds an underscore to external functions
@@ -101,8 +109,13 @@ fi
 # assign compiler flag to promote REAL to 8 bytes 
 F77comp=$F77
 echo $F77comp | grep -i mpi >/dev/null
-if [ $? -eq 0 ]; then
- F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
+if [ $? -eq 0 ]; then   
+ $F77 -showme  &>/dev/null
+ if [ $? -eq 0 ]; then
+    F77comp=`$F77 -showme | awk '{print $1}' | awk -F/ '{print $NF}'`
+ else
+    F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
+ fi
 else
  F77comp=`echo $F77 | awk '{print $1}'`
 fi
@@ -151,11 +164,16 @@ if [ "$IFMOAB" == "true" -o "IFMOAB" == "yes" ]; then
        echo "ABORT: Cannot find " $MOAB_DIR 
        exit 1
      fi 
-   fi
+			  fi
 else
    IFMOAB=false
 fi
 
+# add user defined preprocessor symbols
+for i in $PPLIST
+do
+   P="$P $PPPO-D$i"
+done
 
 # set preprocessor symbol to print AMG files
 if [ "$IFAMG_DUMP" == "true" ]; then

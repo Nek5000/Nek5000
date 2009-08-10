@@ -1339,7 +1339,8 @@ c-----------------------------------------------------------------------
       common /scrcg/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
 
       integer*8 offs0,offs,nbyte,stride,strideB
-
+      character*3 prefix
+ 
       common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
      &              , ur2(lxo*lxo*lxo*lelt)
      &              , ur3(lxo*lxo*lxo*lelt)
@@ -1593,7 +1594,6 @@ c-----------------------------------------------------------------------
       save    nopen
       data    nopen  / 99*0 /
 
-
       call blank(fname,80)      !  zero out for byte_open()
 
       iprefix        = i_find_prefix(prefix,99)
@@ -1639,9 +1639,9 @@ c-----------------------------------------------------------------------
       call chcopy(fnam1(k),str,4)
       k = k + 4
 
-c      write(6,*) nid,fid0,' FILE:',fname
       call mbyte_open(fname,fid0)                       !  Open blah000.fnnnn
-
+c      write(6,*) nid,fid0,' FILE:',fname
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -2082,7 +2082,6 @@ c-----------------------------------------------------------------------
       idum = 1
 
       if (nid.eq.pid0) then
-
          j = 0 
          if (wdsizo.eq.4) then             ! 32-bit output
              do iel = 1,nel
@@ -2113,8 +2112,6 @@ c-----------------------------------------------------------------------
 #else
          call byte_write(u4,nout)          ! u4 :=: u8
 #endif
-
-
          ! write out the data of my childs
          do k=pid0+1,pid1
             mtype = k
@@ -2174,7 +2171,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-
       subroutine mfo_write_hdr          ! write hdr, byte key, els.
 
       include 'SIZE'

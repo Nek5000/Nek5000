@@ -17,9 +17,9 @@ C
 C
       COMMON /DIAGL/  IFGPRNT
       LOGICAL IFGPRNT
-      COMMON/PRECSN/ WDSIZE,ISIZE
+      COMMON/PRECSN/ WDSIZE,ISIZE,LSIZE,CSIZE
       COMMON/PRECSL/ IFDBLAS
-      INTEGER WDSIZE,ISIZE
+      INTEGER WDSIZE,ISIZE,LSIZE,CSIZE
       LOGICAL IFDBLAS
 C
 C     crystal-router, gather-scatter, and xxt handles (xxt=csr grid solve)
