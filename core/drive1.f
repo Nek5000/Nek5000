@@ -46,7 +46,6 @@ C     Initialize and set default values.
 C     Read .rea +map file
       etime1 = dnekclock()
       call readat
-      if (nid.eq.0) write(6,*) 'readat time',dnekclock()-etime1,' sec'
 
 C     Initialize some variables
       call setvar  

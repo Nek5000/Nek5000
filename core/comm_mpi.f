@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      ! check word size for REAL
+      ! set word size for REAL
       wdsize=4
       eps=1.0e-12
       oneeps = 1.0+eps
@@ -57,6 +57,12 @@ c-----------------------------------------------------------------------
       ! set word size for INTEGER
       ! HARDCODED since there is no secure way to detect an int overflow
       isize = 4
+
+      ! set word size for LOGICAL
+      lsize = 4
+
+      ! set word size for CHARACTER
+      csize = 1
 c
 c
       PID = 0

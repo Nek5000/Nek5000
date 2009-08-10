@@ -507,12 +507,16 @@ C     Find out the session name:
 C
       CALL BLANK(SESSION,132)
       CALL BLANK(PATH   ,132)
-      OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD')
-      READ(8,10) SESSION
-      READ(8,10) PATH
-      CLOSE(UNIT=8)
-   10 FORMAT(A132)
 
+      IF(NID.EQ.0) THEN
+        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=22)
+        READ(8,10) SESSION
+        READ(8,10) PATH
+  10      FORMAT(A132)
+        CLOSE(UNIT=8)
+      ENDIF
+      call bcast(SESSION,132*CSIZE)
+      call bcast(PATH,132*CSIZE)
 
       CALL BLANK(REAFLE,132)
       CALL BLANK(RE2FLE,132)
@@ -581,6 +585,9 @@ C
       ENDIF
 C
       RETURN
+
+  22  write(6,*) 'ABORT: Cannot open SESSION.NAME!'
+      call exitt 
       END
 C
       subroutine settime

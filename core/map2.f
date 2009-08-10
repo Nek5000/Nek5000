@@ -9,27 +9,26 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
 c
+      if(nid.eq.0) write(6,'(/,A)') ' mapping elements to processors'
+
       MFIELD=2
       IF (IFFLOW) MFIELD=1
       IF (IFMVBD) MFIELD=0
-c
+
 c     Set up TEMPORARY value for NFIELD - NFLDT
-c
       NFLDT = 1
       IF (IFHEAT) NFLDT = 2 + NPSCAL
 c
 c     Distributed memory processor mapping
-c
       IF (NP.GT.NELGT) THEN
          IF(NID.EQ.0) THEN
            WRITE(6,1000) NP,NELGT
- 1000      FORMAT(2X,'ERROR: Too many processors (',I8
+ 1000      FORMAT(2X,'ABORT: Too many processors (',I8
      $          ,') for to few elements (',I8,').'
      $          ,/,2X,'ABORTING IN MAPELPR.')
          ENDIF
          call exitt
       ENDIF
-c
       call set_proc_map()
 c
       DO 1200 IFIELD=MFIELD,NFLDT
@@ -39,10 +38,8 @@ c
             NELG(IFIELD)      = NELGV
          ENDIF
  1200 CONTINUE
-c
-C
+
 C     Output the processor-element map:
-C
       ifverbm=.true.
       if (np.gt.2050.or.nelgt.gt.40000) ifverbm=.false.
 
@@ -50,7 +47,7 @@ C
         idum = 1
         if(nid.eq.0) then
            N8 = min(8,nelt)
-           write(6 ,1310) node,(lglel(ie),ie=1,n8)
+           write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
            if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
            DO inid=1,NP-1
               mtype = inid
@@ -61,8 +58,8 @@ c             write(6 ,1310) inid+1,(lglel(ie,inid+1),ie=1,n8)
 c             IF (inelt.gt.8) 
 c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            ENDDO
- 1310      FORMAT('IP',I6,' IEG',8I8)
- 1315      FORMAT('  ',6X,'    ',8I8)
+ 1310      FORMAT(' RANK',I6,' IEG',8I8)
+ 1315      FORMAT('     ',6X,'    ',8I8)
         else
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
@@ -70,8 +67,6 @@ c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
         endif
       endif
 
-c
-C
 C     Check elemental distribution
 C
 C      IF (IPASS.EQ.2.AND.PARAM(156).eq.9) THEN
@@ -85,7 +80,12 @@ C            CALL CFILL(T(1,1,1,IE,1),VTMP1,NXYZ)
 C 1400    CONTINUE
 C         call prepost(.true.,'   ')
 C      ENDIF
-C
+
+      if(nid.eq.0) then
+        write(6,*) 'done :: mapping elements to processors'
+        write(6,*) ' '
+      endif
+
       return
       end
 c-----------------------------------------------------------------------

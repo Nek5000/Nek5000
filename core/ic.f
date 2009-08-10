@@ -716,7 +716,7 @@ C              Bounds checking on mapped data.
      $            ' to N=',I3,'.',/,2X,
      $            'NEK5000 currently supports mapping from N+6 or less.'
      $            ,/,2X,'Increase N or LXR in IC.FOR.')
-                  CALL EMERXIT
+                  CALL EXITT
                ENDIF
 C
 C
@@ -2338,8 +2338,16 @@ c-----------------------------------------------------------------------
   50  if (NPS.lt.NPSR) then
          if (nid.eq.0) then 
            write(*,'(A,/,A)') 
-     &      'WARNING: restart file has a NSPCAL > LDIMT!',
-     &      'Not all data of the fld-file has been read.'
+     &      'WARNING: restart file has a NSPCAL > LDIMT',
+     &      'Not all data of the fld-file has been read!'
+         endif
+      endif
+
+      if (NPS.lt.NPSCAL) then
+         if (nid.eq.0) then 
+           write(*,'(A,/,A)') 
+     &      'WARNING: NPSCAL read from restart file differs from ',
+     &      'currently used NPSCAL!'
          endif
       endif
 

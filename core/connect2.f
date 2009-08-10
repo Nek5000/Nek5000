@@ -1,13 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine readat
 C
-C     Read in data supplied by preprocessor and
-C     (eventually) echo check.
-C
-C     NOTE:  This routine has been broken up into several submodules
-C            for ease of comprehension and in anticipation of future
-C            restructuring of the NEKTON input.
-C
+C     Read in data from preprocessor input file (.rea)
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
@@ -15,7 +9,10 @@ C
       INCLUDE 'ZPER'
  
       logical ifbswap,ifre2
+      character*80 string
+      real*8 etime_tmp
 
+C     Test timer accuracy
       edif = 0.0
       do i = 1,10
          e1 = dnekclock()
@@ -24,113 +21,111 @@ C
       enddo
       edif = edif/10.
       if(nid.eq.0) write(6,'(A,1pE15.7,A,/)') 
-     /              ' timer accuracy: ', edif, ' sec'
-C
-      if(nid.eq.0) write(6,*) 'read .rea file'
-      OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
+     &              ' timer accuracy: ', edif, ' sec'
+
+      etime_tmp = dnekclock()
+
+C     Open .rea file
+      if(nid.eq.0) then
+        write(6,*) 'read .rea file'
+        OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
+      endif
 
 C     Read parameters and logical flags
       CALL RDPARAM
 
-C     Read Mesh Data and Group ID
-      read(9,*)  ! xfac,yfac,xzero,yzero
-      read(9,*)
-      if (ifmoab) then
-         read(9,*) 
-      else
-         read(9,*)  nelgs,ndim,nelgv
-         nelgt = abs(nelgs)
+C     Read Mesh Info 
+      if(nid.eq.0) then
+        read(9,*)    ! xfac,yfac,xzero,yzero
+        read(9,*)    ! dummy
+        if (ifmoab) then
+           read(9,*) ! dummy 
+        else
+           read(9,*)  nelgs,ndim,nelgv
+           nelgt = abs(nelgs)
+        endif
       endif
+      call bcast(nelgs,ISIZE)
+      call bcast(ndim ,ISIZE)
+      call bcast(nelgv,ISIZE)
+      call bcast(nelgt,ISIZE)
 
       ifre2 = .false.
-      if(nelgs.lt.0) ifre2 = .true.
+      if(nelgs.lt.0) ifre2 = .true.     ! use new .re2 reader
 
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
-c
       if (ifmoab) then
 #ifdef MOAB
         call moab_dat
 #else
         if(nid.eq.0) write(6,*)
-     &     'ABORT: this version was not compiled with moab support!'
+     &    'ABORT: This version has not been compiled with moab support!'
         call exitt
 #endif
       else
-        if(ifre2) call open_bin_file(ifbswap)
-        call chk_nel  ! make certain sufficient array sizes
-        if(nid.eq.0) write(6,*) 'read .map file'
-        call mapelpr  ! read .map file, est. gllnid, etc.i
+        if(ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
         if(nid.eq.0) then
-          write(6,*) 'done :: read .map file'
-          write(6,*) ' '
+          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+ 12       format(1X,A,4I9,/,/)
         endif
-
-        if (ifre2) then
-           ! new binary reader (nid.eq.0 reads the re2 file)
-           ! and sends the data to the other processors
-           call bin_rd1(ifbswap)
+        call chk_nel  ! make certain sufficient array sizes
+        call mapelpr  ! read .map file, est. gllnid, etc.
+        if(ifre2) then
+          call bin_rd1(ifbswap) ! rank0 will read mesh data + distribute
         else
-
-c#ifndef DEBUG
+#ifndef DEBUG
 c           if(nid.eq.0) write(6,*) 
-c     &        'ABORT: ASCII no longer supported, use .re2 file!'
+c     &     'ABORT: ASCII mesh data no longer supported, use .re2 file!'
 c           call exitt
-c#endif
-
-           maxrd = 32               ! max # procs to read at once
-           mread = (np-1)/maxrd+1   ! mod param
-           iread = 0                ! mod param
-           x     = 0
-           do i=0,np-1,maxrd
-              call gsync()
-              if (mod(nid,mread).eq.iread) then
-                 if (ifgtp) then
-                    call genbox
-                 else
-                    call rdmesh
-                    call rdcurve !  Curved side data
-                    call rdbdry  !  Boundary Conditions
-                 endif
-              endif
-              iread = iread + 1
-           enddo
-
+#endif
+          maxrd = 32               ! max # procs to read at once
+          mread = (np-1)/maxrd+1   ! mod param
+          iread = 0                ! mod param
+          x     = 0
+          do i=0,np-1,maxrd
+             call gsync()
+             if (mod(nid,mread).eq.iread) then
+                if(nid.ne.0) then
+                  open(UNIT=9,FILE=REAFLE,STATUS='OLD')
+                  call cscan(string,'MESH DATA',9)
+                  read(9,*) string
+                endif 
+                if (ifgtp) then
+                   call genbox
+                else
+                   call rdmesh
+                   call rdcurve !  Curved side data
+                   call rdbdry  !  Boundary Conditions
+                endif
+                if(nid.ne.0) close(unit=9)
+             endif
+             iread = iread + 1
+          enddo
         endif
       endif
 
-C     Read Initial Conditions / Drive Force
+C     Read Restart options / Initial Conditions / Drive Force
       CALL RDICDF
-
 C     Read materials property data
       CALL RDMATP
-
 C     Read history data
       CALL RDHIST
-
 C     Read output specs
       CALL RDOUT
-
 C     Read objects
       CALL RDOBJ
-C
+
+      call gsync()
+
 C     End of input data, close read file.
-C
-      CLOSE(UNIT=9)
-      if (.not.IFFMTIN) CLOSE(UNIT=8)
-
-      if(nid.eq.0) then
-        write(6,*) 'done :: read .rea file'
-        write(6,*) ' '
-      endif
-
-      if (nid.eq.0) then
-         write(6,22) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,22) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 22      format(1X,A,4I9)
-         write(6,*) ' '
-      endif
+      IF(NID.EQ.0) THEN
+        CLOSE(UNIT=9)
+        write(6,*) 'readat time',dnekclock()-etime_tmp,' sec'
+        write(6,'(A,/)')  ' done :: read .rea file'
+      ENDIF
 
       return
       END
@@ -144,32 +139,27 @@ C     .Broadcast run parameters to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
 
-      character*80 string
-      
-C
-      READ(9,*,ERR=400)
-      READ(9,*,ERR=400) VNEKTON
-      NKTONV=(VNEKTON+0.5)
-      VNEKMIN=2.5
-      IF(VNEKTON.LT.VNEKMIN)THEN
-         if(nid.eq.0) then
-           PRINT*,' Error: This NEKTON Solver Requires a .rea file'
-           PRINT*,' from prenek version ',VNEKMIN,' or higher'
-           PRINT*,' Please run the session through the preprocessor'
-           PRINT*,' to bring the .rea file up to date.'
-         endif
-         call exitt
-      ENDIF
-      READ(9,*,ERR=400) NDIM
-      READ(9,*,ERR=400) NPARAM
-      DO 20 I=1,NPARAM
-         READ(9,*,ERR=400)PARAM(I)
-   20 CONTINUE
+      character*80 string(100)
 
-c
+      VNEKTON = 3 ! dummy not really used anymore
+      
+      IF(NID.EQ.0) THEN
+        READ(9,*,ERR=400)
+        READ(9,*,ERR=400)
+        READ(9,*,ERR=400) NDIM
+        READ(9,*,ERR=400) NPARAM
+        DO 20 I=1,NPARAM
+           READ(9,*,ERR=400) PARAM(I)
+   20   CONTINUE
+      ENDIF
+      call bcast(NDIM  ,ISIZE)
+      call bcast(NPARAM,ISIZE)
+      call bcast(PARAM ,200*WDSIZE)
+
       NPSCAL=INT(PARAM(23))
       NPSCL1=NPSCAL+1
       NPSCL2=NPSCAL+2
@@ -205,21 +195,24 @@ C     temperature
 c
 c     passive scalars
 c
-      READ(9,*,ERR=400) NSKIP
-      IF (NSKIP.GT.0 .AND. NPSCAL.GT.0) THEN
-         READ(9,*,ERR=400)(CPFLD(I,1),I=3,NPSCL2)
-         IF(NPSCL2.LT.9)READ(9,*)
-         READ(9,*,ERR=400)(CPFLD(I,2),I=3,NPSCL2)
-         IF(NPSCL2.LT.9)READ(9,*)
-         do i=3,npscl2
-            if (cpfld(i,1).lt.0) cpfld(i,1) = -1./cpfld(i,1)
-            if (cpfld(i,2).lt.0) cpfld(i,2) = -1./cpfld(i,2)
-         enddo
-      ELSE
-         DO 25 I=1,NSKIP
-            READ(9,*,ERR=500)
-   25       CONTINUE
+      IF(NID.EQ.0) THEN
+        READ(9,*,ERR=400) NSKIP
+        IF (NSKIP.GT.0 .AND. NPSCAL.GT.0) THEN
+           READ(9,*,ERR=400)(CPFLD(I,1),I=3,NPSCL2)
+           IF(NPSCL2.LT.9)READ(9,*)
+           READ(9,*,ERR=400)(CPFLD(I,2),I=3,NPSCL2)
+           IF(NPSCL2.LT.9)READ(9,*)
+           do i=3,npscl2
+              if (cpfld(i,1).lt.0) cpfld(i,1) = -1./cpfld(i,1)
+              if (cpfld(i,2).lt.0) cpfld(i,2) = -1./cpfld(i,2)
+           enddo
+        ELSE
+           DO 25 I=1,NSKIP
+              READ(9,*,ERR=500)
+   25         CONTINUE
+        ENDIF
       ENDIF
+      call bcast(cpfld,WDSIZE*LDIMT1*3)
 
 C
 C     Read logical equation type descriptors....
@@ -254,57 +247,65 @@ c     IFSPLIT   = .false.
       ifpert = .false.
 
 
-      READ(9,*,ERR=500) NLOGIC
-      do i = 1,NLOGIC
-         read(9,'(A80)',ERR=500) string
-         call capit(string,80)
+      IF(NID.EQ.0) THEN
+        READ(9,*,ERR=500) NLOGIC
+        IF(NLOGIC.GT.100) THEN
+          write(6,*) 'ABORT: Too many logical switches', NLOGIC
+          call exitt
+        ENDIF
+        READ(9,'(A80)',ERR=500) (string(i),i=1,NLOGIC)
+      ENDIF
+      call bcast(NLOGIC,ISIZE)
+      call bcast(string,100*80*CSIZE)
 
-         if (indx1(string,'IFTMSH' ,6).gt.0) then 
-             read(string,*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
-         elseif (indx1(string,'IFNAV'  ,5).gt.0 .and.
-     &           indx1(string,'IFADVC' ,6).gt.0) then 
-              read(string,*,ERR=490) (IFADVC(II),II=1,NPSCL2)
-         elseif (indx1(string,'IFADVC' ,6).gt.0) then
-              read(string,*,ERR=490) (IFADVC(II),II=1,NPSCL2)
-         elseif (indx1(string,'IFFLOW' ,6).gt.0) then
-              read(string,*) IFFLOW
-         elseif (indx1(string,'IFHEAT' ,6).gt.0) then 
-              read(string,*) IFHEAT
-         elseif (indx1(string,'IFTRAN' ,6).gt.0) then 
-              read(string,*) IFTRAN
-         elseif (indx1(string,'IFAXIS' ,6).gt.0) then 
-              read(string,*) IFAXIS
-         elseif (indx1(string,'IFSTRS' ,6).gt.0) then 
-              read(string,*) IFSTRS
-         elseif (indx1(string,'IFLO'   ,4).gt.0) then 
-              read(string,*) IFLOMACH
-         elseif (indx1(string,'IFMGRID',7).gt.0) then 
-              read(string,*) IFMGRID
-         elseif (indx1(string,'IFKEPS' ,6).gt.0) then 
-              read(string,*) IFKEPS
-         elseif (indx1(string,'IFMODEL',7).gt.0) then 
-              read(string,*) IFMODEL
-         elseif (indx1(string,'IFMVBD' ,6).gt.0) then 
-              read(string,*) IFMVBD
-         elseif (indx1(string,'IFCHAR' ,6).gt.0) then 
-              read(string,*) IFCHAR
-         elseif (indx1(string,'IFANLS' ,6).gt.0) then 
-              read(string,*) IFANLS
-         elseif (indx1(string,'IFMOAB' ,6).gt.0) then 
-              read(string,*) IFMOAB
-         elseif (indx1(string,'IFMHD'  ,5).gt.0) then 
-              read(string,*) IFMHD
-         elseif (indx1(string,'IFUSERVP',8).gt.0) then 
-              read(string,*) IFUSERVP
-         elseif (indx1(string,'IFCYCLIC',8).gt.0) then 
-              read(string,*) IFCYCLIC
-         elseif (indx1(string,'IFPERT'  ,6).gt.0) then 
-              read(string,*) IFPERT
-         elseif (indx1(string,'IFBASE'  ,6).gt.0) then 
-              read(string,*) IFBASE
-         elseif (indx1(string,'IFSYNC'  ,6).gt.0) then 
-              read(string,*) IFSYNC
-         elseif (indx1(string,'IFSPLIT' ,7).gt.0) then 
+      do i = 1,NLOGIC
+         call capit(string(i),80)
+         if (indx1(string(i),'IFTMSH' ,6).gt.0) then 
+             read(string(i),*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
+         elseif (indx1(string(i),'IFNAV'  ,5).gt.0 .and.
+     &           indx1(string(i),'IFADVC' ,6).gt.0) then 
+              read(string(i),*,ERR=490) (IFADVC(II),II=1,NPSCL2)
+         elseif (indx1(string(i),'IFADVC' ,6).gt.0) then
+              read(string(i),*,ERR=490) (IFADVC(II),II=1,NPSCL2)
+         elseif (indx1(string(i),'IFFLOW' ,6).gt.0) then
+              read(string(i),*) IFFLOW
+         elseif (indx1(string(i),'IFHEAT' ,6).gt.0) then 
+              read(string(i),*) IFHEAT
+         elseif (indx1(string(i),'IFTRAN' ,6).gt.0) then 
+              read(string(i),*) IFTRAN
+         elseif (indx1(string(i),'IFAXIS' ,6).gt.0) then 
+              read(string(i),*) IFAXIS
+         elseif (indx1(string(i),'IFSTRS' ,6).gt.0) then 
+              read(string(i),*) IFSTRS
+         elseif (indx1(string(i),'IFLO'   ,4).gt.0) then 
+              read(string(i),*) IFLOMACH
+         elseif (indx1(string(i),'IFMGRID',7).gt.0) then 
+              read(string(i),*) IFMGRID
+         elseif (indx1(string(i),'IFKEPS' ,6).gt.0) then 
+              read(string(i),*) IFKEPS
+         elseif (indx1(string(i),'IFMODEL',7).gt.0) then 
+              read(string(i),*) IFMODEL
+         elseif (indx1(string(i),'IFMVBD' ,6).gt.0) then 
+              read(string(i),*) IFMVBD
+         elseif (indx1(string(i),'IFCHAR' ,6).gt.0) then 
+              read(string(i),*) IFCHAR
+         elseif (indx1(string(i),'IFANLS' ,6).gt.0) then 
+              read(string(i),*) IFANLS
+         elseif (indx1(string(i),'IFMOAB' ,6).gt.0) then 
+              read(string(i),*) IFMOAB
+         elseif (indx1(string(i),'IFMHD'  ,5).gt.0) then 
+              read(string(i),*) IFMHD
+         elseif (indx1(string(i),'IFUSERVP',8).gt.0) then 
+              read(string(i),*) IFUSERVP
+         elseif (indx1(string(i),'IFCYCLIC',8).gt.0) then 
+              read(string(i),*) IFCYCLIC
+         elseif (indx1(string(i),'IFPERT'  ,6).gt.0) then 
+              read(string(i),*) IFPERT
+         elseif (indx1(string(i),'IFBASE'  ,6).gt.0) then 
+              read(string(i),*) IFBASE
+         elseif (indx1(string(i),'IFSYNC'  ,6).gt.0) then 
+              read(string(i),*) IFSYNC
+         elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
          else
               if(nid.eq.0) then
@@ -336,7 +337,6 @@ c              read(string,*) IFSPLIT
  490  continue
       enddo
 
-
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.
       if (ifmhd)           npscl1 = npscl1 + 1
@@ -344,7 +344,6 @@ c              read(string,*) IFSPLIT
       if (param(31).ne.0.) ifpert = .true.
       if (param(31).lt.0.) ifbase = .false.   ! don't time adv base flow
       npert = abs(param(31)) 
-
 
       IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
@@ -366,7 +365,6 @@ c              read(string,*) IFSPLIT
          cpfld(ifldmhd,1) = param(29)  ! magnetic viscosity
          cpfld(ifldmhd,2) = param( 1)  ! magnetic rho same as for fluid
       endif
-
 C
 C     Set up default time dependent coefficients - NSTEPS,DT.
 C
@@ -390,7 +388,6 @@ c
          if (nelx.gt.0) ifgfdm=.true.
          if (nelx.gt.0) ifzper=.false.
       endif
-
 C
 C     Do some checks
 C
@@ -421,70 +418,64 @@ C
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         write(6,*) 
-     $   'WARNING: lgmres seems to be quite low!'
+         if(nid.eq.0) write(6,*)
+     $   'WARNING: lgmres might be too low!'
       endif
 
       if (ifsplit) then
          if (lx1.ne.lx2) then
-            if (nid.eq.0) write(6,*) lx1,lx2
-c   43       format('ERROR: lx1,lx2:',2i4,' must be equal for IFSPLIT=T')
+            if (nid.eq.0) write(6,43) lx1,lx2
+   43    format('ERROR: lx1,lx2:',2i4,' must be equal for IFSPLIT=T')
             call exitt
          endif
       else
          if (lx2.lt.lx1-2) then
-            if (nid.eq.0) write(6,*) lx1,lx2
-c   44       format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
-            call exitt
+            if (nid.eq.0) write(6,44) lx1,lx2
+   44    format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
+           call exitt
          endif
       endif
 
-c     if ((ifgfdm .or. ifgtp) .and. iand(np,np-1).ne.0) then
-c        if(nid.eq.0) write(6,*)
-c    $   'ABORT: For GFDM or GTP, number of processors need to be 2^k'
-c        call exitt
-c     endif
-
       if (ifmvbd .and. ifsplit) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT: Moving boundary in Pn-Pn is not supported'
          call exitt
       endif
 
       if (ifsplit .and. ifstrs) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT: Stress formulation in Pn-Pn is not supported'
          call exitt
       endif
 
       if (ifmhd .and. lbx1.ne.lx1) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZEu'
          call exitt
       endif
 
       if (ifpert .and. lpx1.ne.lx1) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZEu'
       endif
 
       if (if3d) ifaxis = .false.
 
       if (iflomach .and. .not.ifsplit) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT: For lowMach, need lx2=lx1, etc.; Change SIZEu'
          call exitt
       endif
 
       if (iflomach .and. .not.ifheat) then
-         write(6,*) 
+         if(nid.eq.0) write(6,*) 
      $   'ABORT For lowMach, need ifheat=true; Change IFHEAT'
          call exitt
       endif
 
       if (ifmhd)           ifchar = .false.   ! For now, at least.
 
-c     dealiasing handling
+c     set dealiasing handling
       if (param(99).lt.0) then
          param(99) = -1       ! No  dealiasing
       else
@@ -500,7 +491,7 @@ c     dealiasing handling
          call exitt
       endif
 
-c     I/O format handling
+c     set I/O format handling
       if (param(67).lt.0) then
          param(67) = 0        ! ASCII
       else
@@ -513,9 +504,6 @@ c     I/O format handling
          param(66) = 6        ! binary is default
       endif
 
-C
-C     End of PARAMETER read for all processors.
-C
       return
 C
 C     Error handling:
@@ -896,32 +884,42 @@ C     .Broadcast ICFILE to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+
       CHARACTER*80 LINE
       LOGICAL      IFGTIL
-C
-C     Read Initial Conditions/Restart Files
-      CALL BLANK(INITC,1200)
-      READ(9,80,ERR=200,END=200) LINE
-      IF (INDX1(LINE,'RESTART',7).NE.0) THEN
-         IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
-c        READ(LINE,*,ERR=200,END=200) NSKIP
-         DO 50 I=1,NSKIP
-            READ(9,80,ERR=200,END=200) INITC(I)
-   50    CONTINUE
-         READ(9,80,ERR=200,END=200) LINE
-      ENDIF
-   80 FORMAT(A80)
-      IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
-c     READ(LINE,*,ERR=200,END=200)NSKIP
-      DO 100 I=1,NSKIP
-         READ(9,80,ERR=200,END=200) LINE
-  100 CONTINUE
-C     Read drive force data
-      READ(9,*,ERR=200,END=200)
-      READ(9,*,ERR=200,END=200) NSKIP
-      DO 110 I=1,NSKIP
+
+      IF(NID.EQ.0) THEN
+C       Read Restart Files
+        CALL BLANK(INITC,15*80)
         READ(9,80,ERR=200,END=200) LINE
-  110 CONTINUE
+        IF (INDX1(LINE,'RESTART',7).NE.0) THEN
+           IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
+c          READ(LINE,*,ERR=200,END=200) NSKIP
+           DO 50 I=1,NSKIP
+              READ(9,80,ERR=200,END=200) INITC(I)
+   50      CONTINUE
+           READ(9,80,ERR=200,END=200) LINE
+        ENDIF
+   80   FORMAT(A80)
+
+        IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
+
+C       Read initial conditions
+        DO 100 I=1,NSKIP
+           READ(9,80,ERR=200,END=200) LINE
+  100   CONTINUE
+
+C       Read drive force data
+        READ(9,*,ERR=200,END=200)
+        READ(9,*,ERR=200,END=200) NSKIP
+        DO 110 I=1,NSKIP
+          READ(9,80,ERR=200,END=200) LINE
+  110   CONTINUE
+      ENDIF
+
+      CALL BCAST(INITC,15*80*CSIZE)
+
       return
 C
 C     Error handling:
@@ -944,6 +942,8 @@ C      to sequential partition scheme
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+
       CHARACTER*80 LINE
 C
       CALL IZERO(MATYPE,16*LDIMT1)
@@ -951,19 +951,24 @@ C
 C
 C     Read material property data
 C
-      READ(9,*,ERR=200,END=200)
-      READ(9,*,ERR=200,END=200) NSKIP
-      READ(9,*,ERR=200,END=200) NPACKS
-      DO 100 IIG=1,NPACKS
-         IFVPS=.TRUE.
-         READ(9,*)IGRP,IFLD,ITYPE
-         MATYPE(IGRP,IFLD)=ITYPE
-         DO 100 IPROP=1,3
-            IF(ITYPE.EQ.1) READ(9,* ) CPGRP(IGRP,IFLD,IPROP)
-            IF(ITYPE.EQ.2) READ(9,80) LINE
-   80 FORMAT(A80)
-  100 CONTINUE
-C
+      IF(NID.EQ.0) THEN
+        READ(9,*,ERR=200,END=200)
+        READ(9,*,ERR=200,END=200) NSKIP
+        READ(9,*,ERR=200,END=200) NPACKS
+        DO 100 IIG=1,NPACKS
+           IFVPS=.TRUE.
+           READ(9,*)IGRP,IFLD,ITYPE
+           MATYPE(IGRP,IFLD)=ITYPE
+           DO 100 IPROP=1,3
+              IF(ITYPE.EQ.1) READ(9,* ) CPGRP(IGRP,IFLD,IPROP)
+              IF(ITYPE.EQ.2) READ(9,80) LINE
+   80   FORMAT(A80)
+  100   CONTINUE
+      ENDIF
+
+      CALL BCAST(MATYPE,16*LDIMT1*ISIZE)
+      CALL BCAST(CPGRP ,48*LDIMT1*WDSIZE)
+
       return
 C
 C     Error handling:
@@ -989,45 +994,51 @@ C
 C
       CALL BLANK (HCODE ,11*lhis)
       CALL IZERO (LOCHIS, 4*lhis)
-C
-C     Read history data
-      READ (9,*)
-      READ (9,*,ERR=200,END=200) NHIS
-      if (nhis.gt.lhis) then
-         write(6,*) nid,' Too many history pts. RESET LHIS.',nhis,lhis
-         call exitt
-      endif
+
+      IF(NID.EQ.0) THEN
+C       Read history data
+        READ (9,*)
+        READ (9,*,ERR=200,END=200) NHIS
+        if (nhis.gt.lhis) then
+           write(6,*) nid,' Too many history pts. RESET LHIS.',nhis,lhis
+           call exitt
+        endif
 c
-C     HCODE(10) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
-      if (nhis.gt.0) then
-         do i=1,nhis
-            if (nelgt.lt.100000) then
-               read(9,130,err=200,end=200)
-     $         (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
-  130          format(1x,11a1,1x,4i5)
-            else
-               read(9,131,err=200,end=200)
-     $         (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
-  131          format(1x,11a1,1x,3i5,i10)
-            endif
+C       HCODE(10) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
+        if (nhis.gt.0) then
+           do i=1,nhis
+              if (nelgt.lt.100000) then
+                 read(9,130,err=200,end=200)
+     $           (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
+  130            format(1x,11a1,1x,4i5)
+              else
+                 read(9,131,err=200,end=200)
+     $           (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
+  131            format(1x,11a1,1x,3i5,i10)
+              endif
 c
 c           threshold lochis locations to allow easy specification of "NX,NY,NZ"
 c           pff 1/7/97
 c
-            if (hcode(10,i).eq.'H') then
-               lochis(1,i) = min(lochis(1,i),nx1)
-               lochis(2,i) = min(lochis(2,i),ny1)
-               lochis(3,i) = min(lochis(3,i),nz1)
+              if (hcode(10,i).eq.'H') then
+                 lochis(1,i) = min(lochis(1,i),nx1)
+                 lochis(2,i) = min(lochis(2,i),ny1)
+                 lochis(3,i) = min(lochis(3,i),nz1)
 c
 c              if lochis_k = -1, set it to nxk/2   pff 8/21/03
 c
-               if (lochis(1,i).eq.-1) lochis(1,i) = (nx1+1)/2
-               if (lochis(2,i).eq.-1) lochis(2,i) = (ny1+1)/2
-               if (lochis(3,i).eq.-1) lochis(3,i) = (nz1+1)/2
-            endif
-         enddo
-      endif
-C
+                 if (lochis(1,i).eq.-1) lochis(1,i) = (nx1+1)/2
+                 if (lochis(2,i).eq.-1) lochis(2,i) = (ny1+1)/2
+                 if (lochis(3,i).eq.-1) lochis(3,i) = (nz1+1)/2
+              endif
+           enddo
+        endif
+      ENDIF
+
+      call bcast(NHIS  ,ISIZE)
+      call bcast(HCODE ,11*LHIS*CSIZE)
+      call bcast(LOCHIS,4*LHIS*ISIZE)
+
       return
 C
 C     Error handling:
@@ -1049,23 +1060,44 @@ C     .Broadcast to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+
+      logical lbuf(10)  
 C
 C     Read output specs
-      READ(9,*,ERR=200,END=200)
-      READ(9,*,ERR=200,END=200) NOUTS
-      READ(9,*,ERR=200,END=200) IFXYO
-      READ(9,*,ERR=200,END=200) IFVO
-      READ(9,*,ERR=200,END=200) IFPO
-      READ(9,*,ERR=200,END=200) IFTO
-      READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
-      READ(9,*,ERR=200,END=200) IPSCO
-      IF (IPSCO.GT.0) THEN
-         IF (IPSCO.GT.LDIMT1) GOTO 200
-         DO 120 I=1,IPSCO
-            READ(9,*,ERR=200,END=200) IFPSCO(I)
-  120    CONTINUE
+      IF(NID.EQ.0) THEN
+        READ(9,*,ERR=200,END=200)
+        READ(9,*,ERR=200,END=200) NOUTS
+        READ(9,*,ERR=200,END=200) IFXYO
+        lbuf(1) = IFXYO
+        READ(9,*,ERR=200,END=200) IFVO
+        lbuf(2) = IFVO
+        READ(9,*,ERR=200,END=200) IFPO
+        lbuf(3) = IFPO
+        READ(9,*,ERR=200,END=200) IFTO
+        lbuf(4) = IFTO
+        READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
+        lbuf(5) = IFBO
+        READ(9,*,ERR=200,END=200) IPSCO
+        lbuf(6) = IPSCO
+ 
+        IF (IPSCO.GT.0) THEN
+           IF (IPSCO.GT.LDIMT1) GOTO 200
+           DO 120 I=1,IPSCO
+              READ(9,*,ERR=200,END=200) IFPSCO(I)
+  120      CONTINUE
+        ENDIF
       ENDIF
 C
+      call bcast(lbuf,LSIZE*6)
+      IFXYO = lbuf(1)  
+      IFVO  = lbuf(2) 
+      IFPO  = lbuf(3) 
+      IFTO  = lbuf(4) 
+      IFBO  = lbuf(5) 
+      IPSCO = lbuf(6) 
+      call bcast(IFPSCO,LSIZE*LDIMT1)
+
       return
 C
 C     Error handling:
@@ -1087,32 +1119,39 @@ C     .Broadcast to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
 C
 C     Default if no data is read No Objects
 C
-      NOBJ=0
-
-      READ(9,*,ERR=200,END=200)
-      READ(9,*,ERR=200,END=200) NOBJ
+      IF(NID.EQ.0) THEN
+        NOBJ=0
+        READ(9,*,ERR=200,END=200)
+        READ(9,*,ERR=200,END=200) NOBJ
 C
-      IF(NOBJ.GT.MAXOBJ)THEN
-         write(6,*) nid,'ERROR, too many objects:',nobj,maxobj
-         call exitt
+        IF(NOBJ.GT.MAXOBJ)THEN
+           write(6,*) nid,'ERROR, too many objects:',nobj,maxobj
+           call exitt
+        ENDIF
+C
+        DO 10 IOBJ = 1,NOBJ
+           READ(9,*,ERR=200,END=200) NMEMBER(IOBJ)
+           IF(NMEMBER(IOBJ).GT.MAXMBR)THEN
+              PRINT*,'ERROR: Too many members in object ',IOBJ
+              call exitt
+           ENDIF
+           DO 5 MEMBER=1,NMEMBER(IOBJ)
+              READ(9,*,ERR=200,END=200) OBJECT(IOBJ,MEMBER,1),
+     $                                  OBJECT(IOBJ,MEMBER,2)
+    5      CONTINUE
+   10   CONTINUE
+        write(6,*) nobj,' objects found'
+     $            ,(nmember(k),k=1,nobj)
       ENDIF
-C
-      DO 10 IOBJ = 1,NOBJ
-         READ(9,*,ERR=200,END=200) NMEMBER(IOBJ)
-         IF(NMEMBER(IOBJ).GT.MAXMBR)THEN
-            PRINT*,'ERROR: Too many members in object ',IOBJ
-            call exitt
-         ENDIF
-         DO 5 MEMBER=1,NMEMBER(IOBJ)
-            READ(9,*,ERR=200,END=200) OBJECT(IOBJ,MEMBER,1),
-     $                                OBJECT(IOBJ,MEMBER,2)
-    5    CONTINUE
-   10 CONTINUE
-      if (nid.eq.0) write(6,*) nobj,' objects found,'
-     $                             ,(nmember(k),k=1,nobj)
+ 
+      call bcast(NOBJ   ,ISIZE)
+      call bcast(NMEMBER,MAXOBJ*ISIZE)
+      call bcast(OBJECT ,MAXOBJ*MAXMBR*2*ISIZE)
+
 C
       return
 C
@@ -1907,8 +1946,7 @@ c-----------------------------------------------------------------------
 
       logical ifbswap
 
-      if(nid.eq.0) write(6,*) 'read .re2 file'
-   
+  
       etime1 = dnekclock()
 
                   ibc = 2
@@ -1926,19 +1964,18 @@ c
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
-      if (nid.eq.0) write(6,*)    '  read mesh '
+      if (nid.eq.0) write(6,*)    '  reading mesh '
       call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader
-      if (nid.eq.0) write(6,*) '  read curved sides '
+      if (nid.eq.0) write(6,*) '  reading curved sides '
       call bin_rd1_curve (ifbswap)
 
       do ifield = ibc,nfldt
-         if (nid.eq.0) write(6,*) '  read bc ifld',ifield
+         if (nid.eq.0) write(6,*) '  reading bc for ifld',ifield
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
-      call close_bin_file
-
       if(nid.eq.0) then
+        call byte_close()
         write(6,*) 'done :: read .re2 file'
         write(6,*) ' '
       endif
@@ -2045,8 +2082,9 @@ c-----------------------------------------------------------------------
 
          mid = gllnid(eg)
          e   = gllel (eg)
-
+#ifdef DEBUG
          if (nid.eq.0.and.mod(eg,nio).eq.0) write(6,*) eg,' mesh read'
+#endif
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 
             call byte_read  (buf,nwds)
@@ -2260,6 +2298,8 @@ c-----------------------------------------------------------------------
       character*5 version
       real*4      test
 
+      if(nid.eq.0) write(6,*) 'read .re2 file'
+
       if (nid.eq.0) then
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
@@ -2276,21 +2316,9 @@ c-----------------------------------------------------------------------
 
       endif
 
-
-      call lbcast(ifbswap)     ! broadcast byte swap from node 0
-
-      nelgv = iglmax(nelgv,1)
-      nelgt = iglmax(nelgt,1)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine close_bin_file
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      if (nid.eq.0) call byte_close()
+      call bcast(ifbswap,LSIZE)
+      call bcast(nelgv  ,ISIZE)
+      call bcast(nelgt  ,ISIZE)
 
       return
       end
@@ -2321,19 +2349,19 @@ c-----------------------------------------------------------------------
 
       if (nelgt.gt.neltmx.or.nelgv.gt.nelvmx) then
          if (nid.eq.0) then
-           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-           write(6,*)'help:',lelt,lelv,lelgv
-           write(6,12) nelt,nelgt,(nelgt/np + 3),nelgt
+          write(6,12) nelt,nelgt,(nelgt/np + 3),nelgt
  12         format(//,2X,'ABORT: Problem size too large!'
      $             ,/,2X,
-     $             ,/,2X,'This solver is compiled for:'
+     $             ,/,2X,'This solver has been compiled for:'
      $             ,/,2X,'   number of elements/proc  (lelt):',i9
      $             ,/,2X,'   total number of elements (lelg):',i9
      $             ,/,2X,
      $             ,/,2X,'Rerun with more processors or recompile'
      $             ,/,2X,'with the following SIZEu parameters:'
      $             ,/,2X,'   lelt >= ',i9
-     $             ,/,2X,'   lelg >= ',i9)
+     $             ,/,2X,'   lelg >= ',i9,/)
+           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
+           write(6,*)'help:',lelt,lelv,lelgv
          endif
          call exitt
       endif
@@ -2346,3 +2374,23 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine cscan(sout,key,nk)
+
+      character*80 sout,key
+      character*80 string
+      character*1  string1(80)
+      equivalence (string1,string)
+c
+      do i=1,100000000
+         call blank(string,80)
+         read (nk,80,end=100,err=100) string
+         call chcopy(sout,string,80)
+c        write (6,*) string
+         if (indx1(string,key,nk).ne.0) return
+      enddo
+  100 continue
+c
+   80 format(a80)
+      return
+
+      end

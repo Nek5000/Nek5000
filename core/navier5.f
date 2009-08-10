@@ -171,7 +171,7 @@ c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
             else
                write(6,1) istep,ifield,umax,vmax
             endif
-    1       format(i8,i3,' qfilt:',1p3e12.4)
+    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
             if(ifheat .and. .not.ifcvode) 
      &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
          endif
