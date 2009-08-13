@@ -1062,43 +1062,57 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
 
-      logical lbuf(10)  
+      logical lbuf(5+ldimt1)  
 C
 C     Read output specs
       IF(NID.EQ.0) THEN
+
         READ(9,*,ERR=200,END=200)
         READ(9,*,ERR=200,END=200) NOUTS
         READ(9,*,ERR=200,END=200) IFXYO
-        lbuf(1) = IFXYO
         READ(9,*,ERR=200,END=200) IFVO
-        lbuf(2) = IFVO
         READ(9,*,ERR=200,END=200) IFPO
-        lbuf(3) = IFPO
         READ(9,*,ERR=200,END=200) IFTO
-        lbuf(4) = IFTO
         READ(9,*,ERR=200,END=200) IFBO   !  IFTGO
+
+        lbuf(1) = IFXYO
+        lbuf(2) = IFVO
+        lbuf(3) = IFPO
+        lbuf(4) = IFTO
         lbuf(5) = IFBO
+
+        k = 5
+
         READ(9,*,ERR=200,END=200) IPSCO
-        lbuf(6) = IPSCO
- 
         IF (IPSCO.GT.0) THEN
            IF (IPSCO.GT.LDIMT1) GOTO 200
            DO 120 I=1,IPSCO
               READ(9,*,ERR=200,END=200) IFPSCO(I)
+              k = k+1
+              lbuf(k) = ifpsco(i)
   120      CONTINUE
         ENDIF
+
       ENDIF
 C
-      call bcast(lbuf,LSIZE*6)
-      IFXYO = lbuf(1)  
-      IFVO  = lbuf(2) 
-      IFPO  = lbuf(3) 
-      IFTO  = lbuf(4) 
-      IFBO  = lbuf(5) 
-      IPSCO = lbuf(6) 
-      call bcast(IFPSCO,LSIZE*LDIMT1)
+      k = 5+ldimt1
+      call bcast(lbuf ,LSIZE*k)
+      call bcast(IPSCO,ISIZE  )
+
+      ifxyo = lbuf(1)  
+      ifvo  = lbuf(2) 
+      ifpo  = lbuf(3) 
+      ifto  = lbuf(4) 
+      ifbo  = lbuf(5) 
+
+      k = 5
+      do i=1,ipsco
+         k = k+1
+         ifpsco(i) = lbuf(k)
+      enddo
 
       return
+
 C
 C     Error handling:
 C
@@ -2351,11 +2365,11 @@ c-----------------------------------------------------------------------
          if (nid.eq.0) then
           write(6,12) nelt,nelgt,(nelgt/np + 3),nelgt
  12         format(//,2X,'ABORT: Problem size too large!'
-     $             ,/,2X,
+     $             ,/,2X
      $             ,/,2X,'This solver has been compiled for:'
      $             ,/,2X,'   number of elements/proc  (lelt):',i9
      $             ,/,2X,'   total number of elements (lelg):',i9
-     $             ,/,2X,
+     $             ,/,2X
      $             ,/,2X,'Rerun with more processors or recompile'
      $             ,/,2X,'with the following SIZEu parameters:'
      $             ,/,2X,'   lelt >= ',i9
