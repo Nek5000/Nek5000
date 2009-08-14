@@ -50,6 +50,9 @@ C     Read .rea +map file
 C     Initialize some variables
       call setvar  
 
+C     Initalize io unit
+      call io_init
+
 c     Check for zero steps
       instep=1
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
@@ -118,9 +121,6 @@ C     USRDAT3
         write(6,*) 'done :: usrdat3'
         write(6,*) ' '
       endif
-
-C     Initalize io unit
-      call io_init
 
 C     Set initial conditions + compute field properties
       call setics

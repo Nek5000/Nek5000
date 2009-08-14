@@ -216,7 +216,7 @@ C
 c
       if (len.gt.lenm) then 
           write(6,*) nid,'long message in mpi_crecv:',len,lenm
-          call exit
+          call exitt
       endif
 c
       return
@@ -396,7 +396,7 @@ c
       call flush_io
 
       call mpi_finalize (ierr)
-      call exit
+      call exit(0)
 
 c     z = -nx1
 c     z = sqrt(z)
