@@ -761,7 +761,7 @@ c
          if (nelxyz(id).gt.m) then
             write(6,*) 'NEL too large:',nelxyz(id),m,id
             write(6,*) 'Abort in get_multi_seg.'
-            call exit
+            call exitt
          endif
 c
          k = 0

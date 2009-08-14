@@ -442,7 +442,7 @@ c    output   vr(ndim+4,i) = t  (only when ndim=3)
 c    output   vr(1+2*ndim+ifld,i) = interpolated field value
 c                                   (ifld=1,nfld)
 c
-      real    field (*)
+      real    field (1)
       integer iTupleList (mi,1)
       real    rTupleList (mr,1)
 

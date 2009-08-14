@@ -2031,7 +2031,7 @@ c-----------------------------------------------------------------------
       common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
       real*4 w2
 
-      integer e,eg,msg_id(lelt)
+      integer e,ei,eg,msg_id(lelt)
       logical iskip
 
       call gsync() ! clear outstanding message queues.
@@ -2111,19 +2111,24 @@ c         nread = nelr
 
       l = 1
       do e=1,nelt
-         if (np.gt.1) call msgwait(msg_id(e))
+         if (np.gt.1) then
+            call msgwait(msg_id(e))
+            ei = e
+         elseif(np.eq.1) then
+            ei = er(e)
+         endif
          if (if_byte_sw) call byte_reverse(wk(l),nxyzv)
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
-               call copy4r(u(1,e),wk(l        ),nxyzr)
+               call copy4r(u(1,ei),wk(l        ),nxyzr)
             else
-               call copy  (u(1,e),wk(l        ),nxyzr)
+               call copy  (u(1,ei),wk(l        ),nxyzr)
             endif
          else                             ! INTERPOLATE
             if (wdsizr.eq.4) then
-               call mapab4r(u(1,e),wk(l        ),nxr,1)
+               call mapab4r(u(1,ei),wk(l        ),nxr,1)
             else
-               call mapab  (u(1,e),wk(l        ),nxr,1)
+               call mapab  (u(1,ei),wk(l        ),nxr,1)
             endif
          endif
          l = l+nxyzw
@@ -2147,7 +2152,7 @@ c-----------------------------------------------------------------------
       common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
       real*4 w2
 
-      integer e,eg,msg_id(lelt)
+      integer e,ei,eg,msg_id(lelt)
 
 
       call gsync() ! clear outstanding message queues.
@@ -2227,34 +2232,36 @@ c         nread = nelr
 
       l = 1
       do e=1,nelt
-
-         if (np.gt.1) call msgwait(msg_id(e))
-
+         if (np.gt.1) then
+            call msgwait(msg_id(e))
+            ei = e
+         else if(np.eq.1) then
+            ei = er(e) 
+         endif
          if (if_byte_sw) call byte_reverse(wk(l),nxyzv)
-
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
-               call copy4r(u(1,e),wk(l        ),nxyzr)
-               call copy4r(v(1,e),wk(l+  nxyzw),nxyzr)
+               call copy4r(u(1,ei),wk(l        ),nxyzr)
+               call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
                if (if3d) 
-     $         call copy4r(w(1,e),wk(l+2*nxyzw),nxyzr)
+     $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
             else
-               call copy  (u(1,e),wk(l        ),nxyzr)
-               call copy  (v(1,e),wk(l+  nxyzw),nxyzr)
+               call copy  (u(1,ei),wk(l        ),nxyzr)
+               call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
                if (if3d) 
-     $         call copy  (w(1,e),wk(l+2*nxyzw),nxyzr)
+     $         call copy  (w(1,ei),wk(l+2*nxyzw),nxyzr)
             endif
          else                             ! INTERPOLATE
             if (wdsizr.eq.4) then
-               call mapab4r(u(1,e),wk(l        ),nxr,1)
-               call mapab4r(v(1,e),wk(l+  nxyzw),nxr,1)
+               call mapab4r(u(1,ei),wk(l        ),nxr,1)
+               call mapab4r(v(1,ei),wk(l+  nxyzw),nxr,1)
                if (if3d) 
      $         call mapab4r(w(1,e),wk(l+2*nxyzw),nxr,1)
             else
-               call mapab  (u(1,e),wk(l        ),nxr,1)
-               call mapab  (v(1,e),wk(l+  nxyzw),nxr,1)
+               call mapab  (u(1,ei),wk(l        ),nxr,1)
+               call mapab  (v(1,ei),wk(l+  nxyzw),nxr,1)
                if (if3d) 
-     $         call mapab  (w(1,e),wk(l+2*nxyzw),nxr,1)
+     $         call mapab  (w(1,ei),wk(l+2*nxyzw),nxr,1)
             endif
          endif
          l = l+ndim*nxyzw

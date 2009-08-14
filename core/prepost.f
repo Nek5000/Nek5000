@@ -130,7 +130,9 @@ C
       ifdoit=.false.
       return
 
- 44   call exitti('ABORT: .sch file already exists. $',istep)
+  44  write(6,*) 'ABORT: .sch file already exists.'
+      call exitt
+    
       end
 c-----------------------------------------------------------------------
       subroutine prepost_map(isave) ! isave=0-->fwd, isave=1-->bkwd
