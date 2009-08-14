@@ -42,8 +42,8 @@
    typedef void MPI_Comm;
 #endif
 
-#define fcrystal_init     FORTRAN_NAME(crystal_new,CRYSTAL_NEW)
-#define fcrystal_free     FORTRAN_NAME(crystal_done,CRYSTAL_DONE)
+#define fcrystal_new      FORTRAN_NAME(crystal_new,CRYSTAL_NEW)
+#define fcrystal_done     FORTRAN_NAME(crystal_done,CRYSTAL_DONE)
 #define fcrystal_transfer FORTRAN_NAME(crystal_transfer,CRYSTAL_TRANSFER)
 
 #ifdef MPI
@@ -53,7 +53,7 @@
   typedef int MPI_Fint;
 #endif
 
-void fcrystal_init(sint *h, const MPI_Fint *comm, const sint *np)
+void fcrystal_new(sint *h, const MPI_Fint *comm, const sint *np)
 {
 #ifdef MPI
   MPI_Comm local_com;
@@ -82,7 +82,7 @@ crystal_data *fcrystal_handle(sint h)
 }
 #endif
 
-void fcrystal_free(sint *h)
+void fcrystal_done(sint *h)
 {
 #ifdef MPI
   crystal_data *p = fcrystal_handle(*h);
