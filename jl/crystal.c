@@ -62,6 +62,8 @@ typedef struct {
   uint num, id;
 } crystal_data;
 
+#define crystal_free crystal_old_free
+
 void crystal_init(crystal_data *p, MPI_Comm comm)
 {
   int num,id;
