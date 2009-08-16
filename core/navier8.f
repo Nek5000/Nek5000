@@ -2238,8 +2238,6 @@ c-----------------------------------------------------------------------
 c
 c     Global vector commutative operation using spanning tree.
 c
-c     Still need to fix for non-power-of-2 processor count
-c
 
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
@@ -2251,29 +2249,10 @@ c
       w = in  ! working buff
       r = 0   ! recv buff
 
-      log2P = log2(np)
+      log2p = log2(np)
       mp    = 2**log2p
       lim   = log2P
       if (mp.ne.np) lim = log2P+1
-      if (mp.ne.np) then  ! not yet fixed (3/23/09) pff
-         write(6,*) nid,mp,np,'igl_running_sum fail, shoot pff'
-         call exitt
-      endif
-
-c      do l=1,lim
-c         mtype = l
-c         jid   = 2**(l-1)
-c         jid   = xor(nid,jid)   ! Butterfly, not recursive double
-c
-c         call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
-c     $                                            ,nekcomm,msg,ierr)
-c         call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
-c         call mpi_wait  (msg,status,ierr)
-c         w = w+r
-c         if (nid.gt.jid) x = x+r
-cc        write(6,1) l,nid,jid,r,w,x,'summer'
-cc   1    format(2i6,'nid',4i6,1x,a6)
-c      enddo
 
       do l=1,lim
          mtype = l
@@ -2292,8 +2271,9 @@ c        write(6,1) l,nid,jid,r,w,x,'summer'
 c   1    format(2i6,'nid',4i6,1x,a6)
       enddo
 
-
       igl_running_sum = x
+      write(6,2) nid,in,x,'running sum'
+    2 format(3i9,1x,a6)
 
       return
       end
