@@ -2272,8 +2272,8 @@ c   1    format(2i6,'nid',4i6,1x,a6)
       enddo
 
       igl_running_sum = x
-      write(6,2) nid,in,x,'running sum'
-    2 format(3i9,1x,a6)
+c     write(6,2) nid,in,x,'running sum'
+c   2 format(3i9,1x,a6)
 
       return
       end
