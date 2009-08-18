@@ -1,32 +1,27 @@
-C------------------------------------------------------------------------
-C NEK5000: The Open Source Spectral Element Solver
-C COPYRIGHT (c) 2008 UCHICAGO ARGONNE, LLC
-C
-C The UChicago Argonne, LLC as Operator of Argonne National
-C Laboratory holds copyright in the Software. The copyright holder
-C reserves all rights except those expressly granted to licensees,
-C and U.S. Government license rights.
-C
-C License
-C
-C    NEK5000 is free software: you can redistribute it and/or modify
-C    it under the terms of the GNU General Public License as published by
-C    the Free Software Foundation, either version 3 of the License, or
-C    (at your option) any later version.
-C
-C    NEK5000 is distributed in the hope that it will be useful,
-C    but WITHOUT ANY WARRANTY; without even the implied warranty of
-C    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-C    GNU General Public License for more details.
-C
-C    You should have received a copy of the GNU General Public License
-C    along with NEK5000.  If not, see <http://www.gnu.org/licenses/>.
-C
-C--------------------------------------------------------------------------
-
       program NEKTON
 c
-c     top level driver
+c NEK5000: Spectral Element Computational Fluid Dynamics Solver
+c COPYRIGHT (c) 2006-2009 UCHICAGO ARGONNE, LLC
+c
+c The UChicago Argonne, LLC as Operator of Argonne National 
+c Laboratory holds copyright in the Software. The copyright holder 
+c reserves all rights except those expressly granted to licensees,
+c and U.S. Government license rights.
+c 
+c License
+c 
+c    NEK5000 is free software: you can redistribute it and/or modify
+c    it under the terms of the GNU General Public License as published by
+c    the Free Software Foundation, either version 3 of the License, or
+c    (at your option) any later version.
+c
+c    NEK5000 is distributed in the hope that it will be useful,
+c    but WITHOUT ANY WARRANTY; without even the implied warranty of
+c    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+c    GNU General Public License for more details.
+c
+c    You should have received a copy of the GNU General Public License
+c    along with NEK5000.  If not, see <http://www.gnu.org/licenses/>.
 c
       call nek_init()
       call nek_solve()

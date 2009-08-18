@@ -1505,9 +1505,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
 
-      integer sum
-      common /scrns/ iwork(0:lp-1,2)
-
       ifdiro = .false.
 
 #ifdef MPIIO
@@ -1553,17 +1550,8 @@ c#endif
       nrg = -1
 
       ! how many elements are present up to rank nid
-      ! could be improved in the future to save memory
-      call izero(iwork,np)
-      iwork(nid,1) = nelt
-      call igop(iwork,iwork(0,2),'+  ',np) 
-      if(nid.eq.pid0) then
-        sum = 0
-        do i = nid-1,0,-1
-           sum  = sum + iwork(i,1)
-        enddo
-        nelB = sum  
-      endif
+      nelB = nelt
+      call igl_running_sum(nelB) 
 
       pid00 = glmin(pid0,1)
 
