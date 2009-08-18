@@ -1959,60 +1959,43 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-
-      subroutine split_gllnid(iunsort)
-
-c  Split the sorted gllnid array (read from .map file) in NP contiguous
-c  partitions. NP is an arbitrary number and denotes the numbers of CPUs
-c  used to run NEK. 
-c  To load balance the partitions in case of mod(nelgt,np)>0
-c  add 1 contiguous entry (out of the sorted list) to every RANK_i where 
-c  i = 1,mod(nelgt,np)+1
+      subroutine assign_gllnid(gllnid,iunsort,nelgt,np)
 c
-      include 'SIZE'
-      include 'TOTAL'
+c  split the sorted gllnid array (read from .map file) into np contiguous
+c  partitions. 
+c  To load balance the partitions in case of mod(nelgt,np)>0
+c  add 1 contiguous entry out of the sorted list to NODE_i where 
+c  i = np-mod(nelgt,np) ... np
+c
+      integer gllnid(1),iunsort(1),nelgt,np 
+
+      nel   = nelgt/np       ! number of elements per processor
+      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
+      npp   = np - nmod      ! how many paritions of size nel 
  
-      integer iunsort(lelg)
-
-      if(nid.eq.0) then
-        write(6,*) 'Number of processors not 2^k'
-        write(6,*)  
-     &   'split gllnid array into contiguous partitions'
-      endif
-
-      le    = nelgt/np
-      nmod  = mod(nelgt,np)
-
-      ! sort gllnid to do the paritioning
+      ! sort gllnid  
       call isort(gllnid,iunsort,nelgt)
 
-      ip = -1
-      do iel = 1,le
-         ip = ip + 1
-         gllnid(iel) = iel-1
-      enddo
-      iel0 = le
-      
-      do inode = 1,nmod
-         do iel = 1,le
-            ip = ip + 1
-            ieln = (inode-1)*(le+1)
-            gllnid(iel0+ieln+iel) = ip
-         enddo
-         gllnid(iel0+ieln+le+1) = ip
-      enddo
-
-      iel0 = iel0 + nmod*(le+1)
-       
-      do inode = nmod+1,np
-         do iel = 1,le
-            ip = ip + 1
-            ieln = (inode-nmod-1)*le
-            gllnid(iel0+ieln+iel) = ip
+      ! setup partitions of size nel 
+      k   = 0
+      do ip = 0,npp-1
+         do iel = 1,nel  
+            k = k + 1 
+            gllnid(k) = ip
          enddo
       enddo
+      ! setup partitions of size nel+1
+      if(nmod.gt.0) then 
+        do ip = npp,np-1
+           do iel = 1,nel+1  
+              k = k + 1 
+              gllnid(k) = ip
+           enddo
+        enddo 
+      endif
 
-      ! unddo sorting
+      ! unddo sorting to restore initial ordering by
+      ! global element number
       call iswapt_ip(gllnid,iunsort,nelgt)
 
       return
@@ -2115,22 +2098,15 @@ c-----------------------------------------------------------------------
          ntuple = 0
       endif
 
-c     Distribute and compute gllnid
-      lng = 4*neli
+c     Distribute and assign partitions
+      lng = isize*neli
       call bcast(gllnid,lng)
+      call assign_gllnid(gllnid,gllel,nelgt,np) ! gllel is used as scratch
 
-      log2p = log2(np)
-      np2   = 2**log2p
-      if (np2.ne.np) then
-         call split_gllnid(gllel) ! no CPU=2^k restriction
-      else
-         npstar = ivlmax(gllnid,neli)+1
-         nnpstr = npstar/np
-         do eg=1,neli
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
+      if(nid.eq.0) then
+        write(99,*) (gllnid(i),i=1,nelgt)
       endif
-
+      call exitt
 
       nelt=0 !     Count number of elements on this processor
       nelv=0
@@ -2149,11 +2125,11 @@ c     NOW: crystal route vertex by processor id
       enddo
 
       key = 2  ! processor id is in wk(2,:)
-      call crystal_ituple_transfer(cr_h, wk,mdw,ntuple,ndw, key)
+      call crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
       key = 1  ! Sort tuple list by eg := wk(1,:)
       nkey = 1
-      call crystal_ituple_sort(cr_h, wk,mdw,nelt, key,nkey)
+      call crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
 
       iflag = 0
       if (ntuple.ne.nelt) then
@@ -2181,7 +2157,7 @@ c     NOW: crystal route vertex by processor id
       return
 
   999 continue
-      if (nid.eq.0) write(6,*) 'Could not find map file',mapfle
+      if (nid.eq.0) write(6,*) 'ABORT: Could not find map file ',mapfle
       call exitt
 
   998 continue
@@ -2234,52 +2210,8 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      function igl_running_sum(in)
-c
-c     Global vector commutative operation using spanning tree.
-c
-
-      include 'mpif.h'
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-      integer status(mpi_status_size)
-      integer x,w,r
-
-
-      x = in  ! running sum
-      w = in  ! working buff
-      r = 0   ! recv buff
-
-      log2p = log2(np)
-      mp    = 2**log2p
-      lim   = log2P
-      if (mp.ne.np) lim = log2P+1
-
-      do l=1,lim
-         mtype = l
-         jid   = 2**(l-1)
-         jid   = xor(nid,jid)   ! Butterfly, not recursive double
-
-         if (jid.lt.np) then
-            call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
-     $                                            ,nekcomm,msg,ierr)
-            call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
-            call mpi_wait  (msg,status,ierr)
-            w = w+r
-            if (nid.gt.jid) x = x+r
-         endif
-c        write(6,1) l,nid,jid,r,w,x,'summer'
-c   1    format(2i6,'nid',4i6,1x,a6)
-      enddo
-
-      igl_running_sum = x
-c     write(6,2) nid,in,x,'running sum'
-c   2 format(3i9,1x,a6)
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine gbtuple_rank(tuple,m,n,nmax,cr_h,nid,np,ind)
-
+c
 c     Return a unique rank for each matched tuple set. Global.  Balanced.
 c
 c     tuple is destroyed.
@@ -2289,7 +2221,7 @@ c     be much more uniquely populated than any other, so that any of
 c     the tuples can serve as an initial (parallel) sort key
 c
 c     First two slots in tuple(:,i) assumed empty
-
+c
       integer ind(nmax),tuple(m,nmax),cr_h
 
       parameter (mmax=40)
@@ -2339,11 +2271,10 @@ c     First two slots in tuple(:,i) assumed empty
       end
 c-----------------------------------------------------------------------
       subroutine setvert3d(glo_num,ngv,nx,nel,vertex,ifcenter)
-
+c
 c     set up gsexch interfaces for direct stiffness summation.  
 c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
-
-
+c
       include 'SIZE'
       include 'CTIMER'
       include 'PARALLEL'

@@ -1,4 +1,3 @@
-c-----------------------------------------------------------------------
       subroutine iniproc
       include 'SIZE'
       include 'PARALLEL'
@@ -407,16 +406,62 @@ c     b = 1./y
 c     write(6,*) 'quittin3',z,b
       call exit
 
-
       return
       end
 c-----------------------------------------------------------------------
-
       subroutine printHeader
 
       INCLUDE 'HEADER'
 
       return
       end
-
 c-----------------------------------------------------------------------
+      function igl_running_sum(in)
+c
+c     Global vector commutative operation using spanning tree.
+c
+
+      include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      integer status(mpi_status_size)
+      integer x,w,r
+
+
+      x = in  ! running sum
+      w = in  ! working buff
+      r = 0   ! recv buff
+
+#ifndef USERMPICOLL
+      call mpi_scan(x,r,1,mpi_integer,mpi_sum,nekcomm,ierr)
+      igl_running_sum = r
+#else
+      log2p = log2(np)
+      mp    = 2**log2p
+      lim   = log2P
+      if (mp.ne.np) lim = log2P+1
+
+      do l=1,lim
+         mtype = l
+         jid   = 2**(l-1)
+         jid   = xor(nid,jid)   ! Butterfly, not recursive double
+
+         if (jid.lt.np) then
+            call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
+     $                                            ,nekcomm,msg,ierr)
+            call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
+            call mpi_wait  (msg,status,ierr)
+            w = w+r
+            if (nid.gt.jid) x = x+r
+         endif
+c        write(6,1) l,nid,jid,r,w,x,'summer'
+c   1    format(2i6,'nid',4i6,1x,a6)
+      enddo
+
+      igl_running_sum = x
+c     write(6,2) nid,in,x,'running sum'
+c   2 format(3i9,1x,a6)
+#endif
+
+      return
+      end
+
