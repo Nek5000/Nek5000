@@ -2103,10 +2103,10 @@ c     Distribute and assign partitions
       call bcast(gllnid,lng)
       call assign_gllnid(gllnid,gllel,nelgt,np) ! gllel is used as scratch
 
-      if(nid.eq.0) then
-        write(99,*) (gllnid(i),i=1,nelgt)
-      endif
-      call exitt
+c      if(nid.eq.0) then
+c        write(99,*) (gllnid(i),i=1,nelgt)
+c      endif
+c      call exitt
 
       nelt=0 !     Count number of elements on this processor
       nelv=0
