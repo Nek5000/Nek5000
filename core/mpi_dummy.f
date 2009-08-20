@@ -2,6 +2,8 @@ c*********************************************************************72
       subroutine mpi_scan(data1, data2, n, datatype,
      &  operation, comm, ierror )
 
+      integer data1,data2  ! currently hardwired only for integer
+
       data2 = data1
 
       return
@@ -149,6 +151,7 @@ c
 
       return
       end
+
       subroutine mpi_barrier ( comm, ierror )
 
 c*********************************************************************72
@@ -1011,3 +1014,4 @@ c
  
       return
       end
+c-----------------------------------------------------------------------
