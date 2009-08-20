@@ -33,7 +33,7 @@ C
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFMOAB
+     $               ,IFMOAB,IFUSERMV
       LOGICAL         IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC,IFTMSH
@@ -45,7 +45,7 @@ C
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFMOAB
+     $               ,IFMOAB,IFUSERMV
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))
 C

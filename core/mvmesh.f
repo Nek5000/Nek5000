@@ -717,8 +717,9 @@ c        ifield = ifldx
 c        return
 c     endif
 c
-      call quickmv
-      return
+c     call quickmv
+
+      if (ifusermv) return  ! Compute wx,wy,wz in userchk.
 c
       NTOT1  = NX1*NY1*NZ1*NEL
       MAXIT  = 1000

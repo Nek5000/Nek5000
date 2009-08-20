@@ -239,6 +239,7 @@ C
       IFESSR    = .false.
       IFTMSH(0) = .false.
       IFUSERVP  = .false.
+      IFUSERMV  = .false.
       IFCYCLIC  = .false.
       IFSYNC    = .false.
 c     IFSPLIT   = .false.
@@ -297,6 +298,8 @@ c     IFSPLIT   = .false.
               read(string(i),*) IFMHD
          elseif (indx1(string(i),'IFUSERVP',8).gt.0) then 
               read(string(i),*) IFUSERVP
+         elseif (indx1(string(i),'IFUSERMV',8).gt.0) then 
+              read(string(i),*) IFUSERMV
          elseif (indx1(string(i),'IFCYCLIC',8).gt.0) then 
               read(string(i),*) IFCYCLIC
          elseif (indx1(string(i),'IFPERT'  ,6).gt.0) then 
@@ -327,6 +330,7 @@ c              read(string,*) IFSPLIT
      &           '   IFCHAR'   ,
      &           '   IFANLS'   ,
      &           '   IFUSERVP' ,
+     &           '   IFUSERMV' ,
      &           '   IFSYNC'   ,
      &           '   IFCYCLIC' ,
      &           '   IFSPLIT'  ,

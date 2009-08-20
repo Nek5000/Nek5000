@@ -127,6 +127,7 @@ C
          WRITE (6,*) 'IFSPLIT  =',IFSPLIT
          WRITE (6,*) 'IFLOMACH =',IFLOMACH
          WRITE (6,*) 'IFUSERVP =',IFUSERVP
+         WRITE (6,*) 'IFUSERMV =',IFUSERMV
          WRITE (6,*) 'IFSTRS   =',IFSTRS
          WRITE (6,*) 'IFCHAR   =',IFCHAR
          WRITE (6,*) 'IFCYCLIC =',IFCYCLIC
