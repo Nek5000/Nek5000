@@ -1365,7 +1365,8 @@ c-----------------------------------------------------------------------
          call mfo_open_files(prefix)         ! open files on i/o nodes
       endif
       call mfo_write_hdr                     ! create element mapping +
-                                             ! write hdr 
+     
+                                        ! write hdr 
       strideB = nelB * nxo*nyo*nzo*wdsizo
       stride  = nelgt* nxo*nyo*nzo*wdsizo
 
@@ -1550,9 +1551,10 @@ c#endif
       nrg = -1
 
       ! how many elements are present up to rank nid
-      nelB = nelt
-      call igl_running_sum(nelB) 
-
+      nn = nelt
+      nelB = igl_running_sum(nn)
+      nelB = nelB - nelt
+     
       pid00 = glmin(pid0,1)
 
       return
