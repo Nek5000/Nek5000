@@ -50,9 +50,6 @@ C     Read .rea +map file
 C     Initialize some variables
       call setvar  
 
-C     Initalize io unit
-      call io_init
-
 c     Check for zero steps
       instep=1
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
@@ -61,6 +58,9 @@ C     Geometry initialization
       igeom = 2
       call connect
       call genwz
+
+C     Initalize io unit
+      call io_init
 
 C     USRDAT
       if(nid.eq.0) write(6,*) 'call usrdat'
