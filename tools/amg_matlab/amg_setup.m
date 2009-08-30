@@ -27,7 +27,7 @@ function data = amg_setup(A,nv,tolc,tol)
 		if data.n(level) <= 1; break; end
 
 		%[C F] = coarsefast(A);
-		[C F] = coarse_par2(A,tolc);
+		[C F] = coarse_par(A,tolc);
 		data.C{level} = C; data.F{level} = F;
 		data.C_id{level} = id(C); data.F_id{level} = id(F);
 		id = data.C_id{level};

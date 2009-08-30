@@ -3,7 +3,7 @@ if length(tol) == 0; tol = 0.5; end
 fprintf(1,'tol = %g\n',tol);
 
 ctol = input('coarsening aggressiveness [0.9]: ');
-if length(ctol) == 0; ctol = 0.5; end
+if length(ctol) == 0; ctol = 0.9; end
 fprintf(1,'ctol = %g\n',ctol);
 
 [id A] = amg_import();
