@@ -71,8 +71,8 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a .map file
 
+      include 'SIZE' 
 
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
      $               , order(lpts) , elist(lpts)
@@ -180,6 +180,8 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a mesh
 
+      include 'SIZE'
+
       integer      cell(1)
       character*3  cbc (6,1)
       real         bc  (5,6,1)
@@ -190,7 +192,6 @@ c     read nekton .rea file and make a mesh
       character*3 cbt(6)
       real        bt(5,6)
 
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
@@ -277,12 +278,11 @@ c     ff = 1./(ke-ie-ie)
       end
 c----------------c------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
-
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
-
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
+      include 'SIZE'
+     
       character*80 string
 c
       real dx(1)
@@ -483,8 +483,8 @@ c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
 C
 C     Error handling:
 C
-  500 format(2x,'ERROR: error reading ',i4,2i11,
-     $    ,/,2x,'aborting ',a3,' in routine rdbdry.')
+  500 format(2x,'ERROR: error reading ',i4,2i11,/,
+     $       2x,'aborting ',a3,' in routine rdbdry.')
   510 write(6,500) ifield,e,nel,'510'
       call exitt(ifield)
       return
@@ -507,8 +507,8 @@ C
 
   600 continue
       write(6,601) ifield,e,nel
-  601 FORMAT(2X,'ERROR: end of file',i4,2i11,
-     $    ,/,2X,'ABORTING 600 IN ROUTINE RDBDRY.')
+  601 FORMAT(2X,'ERROR: end of file',i4,2i11,/,
+     $       2X,'ABORTING 600 IN ROUTINE RDBDRY.')
       call exitt(ifield)
       return
 
@@ -1210,9 +1210,9 @@ c     c     - nv*nel
 c     w1    - nv*nel
 c     w2    - nv*nel
 c
-
+      include 'SIZE'
+ 
       common /arrayr/  dx(1)    !ADDED to PLOT
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       integer pmap(nel),order(1),elist(nel),cell(nv,1),part,c(nv,1)
@@ -1351,13 +1351,13 @@ c     elist - list of active elements
 c     cell  - list of vertices for each element (in global addr. space)
 c     mo    - current max(order)
 c
-
+      include 'SIZE'
+ 
       integer elist(1),cell(nv,1),order(1)
       integer e,v
 
 c--- diagnostic use only -----------------
                                          !
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE
       common /arrayr/  dx(0:3,8,lelm)    !
                                          !
       integer icalld,kj(lelm),ke(lelm)   !
@@ -1748,12 +1748,13 @@ c-----------------------------------------------------------------------
 c
 c     Order outflow nodes last
 c
+      include 'SIZE'
+ 
       integer cell(nv,nel),order(1)
       character*3      cbc(6,nel)
 
       integer ic(i0:i1),jc(1)
 
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
       integer face,elist
@@ -2824,7 +2825,8 @@ c-----------------------------------------------------------------------
                write(6,*)
                call outmati(cell(1,e),2,4,'SELF!!',e,flag)
                write(6,*)
-               write(6,*) 'ABORT SELF-CHK:',i,j,e,flag
+               write(6,*) 'ABORT: SELF-CHK ',i,j,e,flag
+               write(6,*) 'Try to tighten the mesh tolerance!' 
                call exitt(flag)
             endif
          enddo
@@ -2835,10 +2837,12 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine mult_chk(dx,ndim,nv,nel,cell,nrnk)
+
+      include 'SIZE'
+
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
 
       common /carrayw/ w1   (lpts) , w2   (lpts)
@@ -2868,10 +2872,12 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
+
+      include 'SIZE'
+ 
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
 
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
@@ -3011,7 +3017,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-      parameter(lelm=400 000)
+      include 'SIZE'
 
       character*3 cbl(6,lelm)
       real        bl(5,6,lelm)
@@ -3643,11 +3649,12 @@ c Calls Lanczos algorithm, if that fails, do
 c geometric bisection if that fails do  non-geometric bisection
 c
 c Ensures that all graphs are connected(unless infinite loop occurred)
-c    
+c
+      include 'SIZE'
+    
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
       integer cell(nv,1),c(nv,nel)      
       real dx(0:ndim,1)
-      parameter(lelm=400 000)  ! DO GLOBAL REPLACE FOR THIS EVERYWHERE !
       parameter(lpts=8*lelm)
       parameter(mm=50)
 

@@ -1,0 +1,3 @@
+       ! max number of elements
+       parameter(lelm=500 000) 
+c       parameter(lelm=2 000 000)  ! compile with -mcmodel=medium 
