@@ -855,10 +855,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine usrdat2x
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine surface_int(sint,sarea,a,ie,iface1)
 C
       include 'SIZE'
@@ -3441,16 +3437,16 @@ c-----------------------------------------------------------------------
       n      = nx1*ny1*nz1*nelt
       nxyz   = nx1*ny1*nz1
       nfaces = 2*ndim
-      ifield = 1                        ! velocity field
-      if (.not.ifflow) ifield = 2       ! velocity field
+      ifield = 1                   ! velocity field
+      if (ifheat) ifield = 2       ! temperature field
 
 
       call rone  (tmlt,n)
       call dssum (tmlt,nx1,ny1,nz1)  ! denominator
 
       call rone  (tmsk,n)
-      do e=1,nelv      ! fill mask where bc is periodic
-      do f=1,nfaces    ! so we don't translate periodic bcs (z only)
+      do e=1,nelfld(ifield)      ! fill mask where bc is periodic
+      do f=1,nfaces              ! so we don't translate periodic bcs (z only)
          cb =cbc(f,e,ifield)
          if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
       enddo
@@ -3459,14 +3455,20 @@ c-----------------------------------------------------------------------
       do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
                             ! Extra pass is just to test convergence
 
-         call opcopy (xb,yb,zb,xm1,ym1,zm1)
-         call opdssum(xb,yb,zb)
+c        call opcopy (xb,yb,zb,xm1,ym1,zm1)
+c        call opdssum(xb,yb,zb)
+         call copy   (xb,xm1,n)
+         call copy   (yb,ym1,n)
+         call copy   (zb,zm1,n)
+         call dssum  (xb,nx1,ny1,nz1)
+         call dssum  (yb,nx1,ny1,nz1)
+         call dssum  (zb,nx1,ny1,nz1)
 
          xm = 0.
          ym = 0.
          zm = 0.
 
-         do e=1,nelt
+         do e=1,nelfld(ifield)
             do i=1,nxyz                       ! compute averages of geometry
                s     = 1./tmlt(i,e)
                xb(i,e) = s*xb(i,e)
