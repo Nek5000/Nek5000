@@ -184,6 +184,8 @@ c        NOTE: a(),h1,...,w2() must all be large enough
       null_space=0
       if (ifvcor) null_space=1
 
+      call exitti('h1 crs stop$',1)
+
       nz=ncr*ncr*nelv
       call crs_setup(xxth,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
@@ -1968,6 +1970,23 @@ c  add 1 contiguous entry out of the sorted list to NODE_i where
 c  i = np-mod(nelgt,np) ... np
 c
       integer gllnid(1),iunsort(1),nelgt,np 
+      integer e,eg
+
+
+      log2p = log2(np)
+      np2   = 2**log2p
+      if (np2.eq.np) then                      ! std power of 2 case
+         npstar = ivlmax(gllnid,nelgt)+1
+         nnpstr = npstar/np
+         do eg=1,nelgt
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+         return
+      elseif (nelgv.ne.nelgt) then
+         call exitti
+     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+      endif
+
 
       nel   = nelgt/np       ! number of elements per processor
       nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
@@ -1979,7 +1998,7 @@ c
       ! setup partitions of size nel 
       k   = 0
       do ip = 0,npp-1
-         do iel = 1,nel  
+         do e = 1,nel  
             k = k + 1 
             gllnid(k) = ip
          enddo
@@ -1987,7 +2006,7 @@ c
       ! setup partitions of size nel+1
       if(nmod.gt.0) then 
         do ip = npp,np-1
-           do iel = 1,nel+1  
+           do e = 1,nel+1  
               k = k + 1 
               gllnid(k) = ip
            enddo
@@ -2116,6 +2135,7 @@ c      call exitt
             if (eg.le.nelgt) nelt=nelt+1
          endif
       enddo
+      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
 
 c     NOW: crystal route vertex by processor id
 
