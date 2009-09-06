@@ -112,7 +112,7 @@ c                                    irnk is # unique points
 c     Determine number of outflow points and order them last
       call izero (order,irnk)
       call set_outflow
-     $     (no,order,mo,cell,nv,nelt,irnk,cbc,nfc,w1,i0,i1,w2)
+     $     (no,order,mo,cell,nv,nelv,irnk,cbc,nfc,w1,i0,i1,w2)
 
 c     Find all periodic connections, based on cbc info.
       write(6,*) 'call periodic vtx:',nelt,irnk
@@ -132,19 +132,16 @@ c     Clean up
 
 
       if (nelt.gt.nelv) then
+         call reverse_p  (pmap,nelv)         ! lightly load node 0
+         write(6,*) 'Starting greedy:  nelv/nelt = ',nelv,nelt
+
          itype = 2   ! return structured vertex (not cell) pointer
          call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
 
-         call greedy  (elist,pmap,cell,nv,nelv,nelt,ndim
+         call greedy  (pmap,cell,nv,nelv,nelt,ndim
      $                                          ,w1,w2,w3,w4,w5,w6)
 
-c        Clean up 
-         call isort     (elist,w1,nelt)
-         call iswap_ip  (pmap ,w1,nelt)
-
       endif
-
-
 
       npts = nv*nelt
       call iranku       (cell,nrnk,npts,w1)
@@ -156,10 +153,11 @@ c        Clean up
 
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
       call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
-      call reverse_p    (pmap,nelt)         ! lightly load node 0
+      if (nelv.eq.nelt) call reverse_p (pmap,nelt) ! lightly load node 0
 
 c     Output to .map file:
-      noutflow    = no    ! for now - no outflow bcs
+c     noutflow    = no    ! for now - no outflow bcs
+      noutflow    = 0     ! for now - no outflow bcs  (handled in nek?)
       call out_mapfile (pmap,nelt,cell,nv,nrnk,noutflow)
 
       call mult_chk(dx,ndim,nv,nelt,cell,nrnk)
@@ -3243,7 +3241,7 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
-      subroutine greedy (elist,pmap,cell,nv,nelv,nelt,ndim
+      subroutine greedy (pmap,cell,nv,nelv,nelt,ndim
      $                                           ,ip,ep,ic,jc,ne,pb)
 c
 c     Distribute elements e > nelv to processors p \in [1,pmax]
@@ -3261,7 +3259,7 @@ c
 c     ne(p), p(e), pmax, nep_max
 c
 
-      integer elist(1),pmap(1)
+      integer pmap(1)
      $      , cell (nv,1)
      $      , ip(0:1),ep(1)          ! These are 
      $      , ic(1),jc(1)            ! work arrays 
@@ -3276,9 +3274,9 @@ c
       do e=1,nelv
          ne(pmap(e)) = ne(pmap(e)) + 1
       enddo
+
       nepf_min = iglmin(ne(1),pmax)   ! min number of elem/proc, fluid
       nepf_max = iglmax(ne(1),pmax)   ! max number of elem/proc, fluid
-
       if (nepf_max-nepf_min.gt.1) then
          write(6,*) 'ERROR: nepfmax/min:',nepf_max,nepf_min,nelv,nelt
          call exitt(11)
@@ -3292,13 +3290,22 @@ c     Build processor-to-element map
 c
       call build_proc_el(ip,ep,ne,pmap,pmax,nelv)
 
+      nepf_min = iglmin(ne(1),pmax)   ! min number of elem/proc, fluid
+      nepf_max = iglmax(ne(1),pmax)   ! max number of elem/proc, fluid
+      if (nepf_max-nepf_min.gt.1) then
+         write(6,*) 'ERROR2: nepfmax/min:',nepf_max,nepf_min,nelv,nelt
+         call exitt(11)
+      endif
+
+      nep_max = nelt/pmax
+
 c
 c     First loop, use greedy to fill underloaded processors
 c
-      call izero(ne,pmax+1)
       call breadth_first_fill(pb,pmax)
       do pp=1,pmax
        p = pb(pp)+1
+       nep0 = ne(p)
        if (ne(p).lt.nepf_max) then  !  [ip,ep: csr proc-el list]
           j0=ip(p)
           j1=ip(p+1)-1
@@ -3321,6 +3328,7 @@ c
           enddo
        endif
    10  continue  ! next processor
+       write(6,8) pp,p,nep0,ne(p),nepf_max,' p1st'
       enddo
 c
 c     Repeat first loop, using _anything_ to fill underloaded processors
@@ -3328,6 +3336,7 @@ c
       ke_min = nelv
       do pp=1,pmax
        p = pb(pp)+1
+       nep0 = ne(p)
        if (ne(p).lt.nepf_max) then
           do ke=ke_min+1,nelt
              if (pmap(ke).le.0) then
@@ -3339,6 +3348,8 @@ c
           enddo
        endif
    20  continue
+       write(6,8) pp,p,nep0,ne(p),nepf_max,' p2nd'
+  8    format(5i9,a5)
       enddo
 
 c
