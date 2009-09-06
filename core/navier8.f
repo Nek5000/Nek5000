@@ -184,8 +184,6 @@ c        NOTE: a(),h1,...,w2() must all be large enough
       null_space=0
       if (ifvcor) null_space=1
 
-      call exitti('h1 crs stop$',1)
-
       nz=ncr*ncr*nelv
       call crs_setup(xxth,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
