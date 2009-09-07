@@ -1959,13 +1959,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine assign_gllnid(gllnid,iunsort,nelgt,np)
-c
-c  split the sorted gllnid array (read from .map file) into np contiguous
-c  partitions. 
-c  To load balance the partitions in case of mod(nelgt,np)>0
-c  add 1 contiguous entry out of the sorted list to NODE_i where 
-c  i = np-mod(nelgt,np) ... np
+      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
 c
       integer gllnid(1),iunsort(1),nelgt,np 
       integer e,eg
@@ -1973,17 +1967,49 @@ c
 
       log2p = log2(np)
       np2   = 2**log2p
-      if (np2.eq.np) then                      ! std power of 2 case
+      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+
          npstar = ivlmax(gllnid,nelgt)+1
          nnpstr = npstar/np
          do eg=1,nelgt
             gllnid(eg) = gllnid(eg)/nnpstr
          enddo
+
          return
+
+      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
+
+c        Assign fluid elements
+         npstar = max(np,ivlmax(gllnid,nelgv)+1)
+         nnpstr = npstar/np
+         do eg=1,nelgv
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+c        Assign solid elements
+         nelgs  = nelgt-nelgv  ! number of solid elements
+         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
+         nnpstr = npstar/np
+         do eg=nelgv+1,nelgt
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         return
+
       elseif (nelgv.ne.nelgt) then
          call exitti
      $       ('Conjugate heat transfer requires P=power of 2.$',np)
       endif
+
+
+c  Below is the code for P a non-power of two:
+
+c  Split the sorted gllnid array (read from .map file) 
+c  into np contiguous partitions. 
+
+c  To load balance the partitions in case of mod(nelgt,np)>0 
+c  add 1 contiguous entry out of the sorted list to NODE_i 
+c  where i = np-mod(nelgt,np) ... np
 
 
       nel   = nelgt/np       ! number of elements per processor
@@ -2118,7 +2144,7 @@ c-----------------------------------------------------------------------
 c     Distribute and assign partitions
       lng = isize*neli
       call bcast(gllnid,lng)
-      call assign_gllnid(gllnid,gllel,nelgt,np) ! gllel is used as scratch
+      call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
 
 c      if(nid.eq.0) then
 c        write(99,*) (gllnid(i),i=1,nelgt)
