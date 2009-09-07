@@ -1,5 +1,7 @@
 c-----------------------------------------------------------------------
-cVERSION WITH SIMPLE BISECTION AND GROWTH OF CONN SET, COMBO
+c
+c   VERSION WITH SIMPLE BISECTION AND GROWTH OF CONN SET, COMBO (klh 07/09)
+c
 c   genmap.f performs the following operations:
 c   
 c   1)  Read a nek5k .rea or (.rea/.re2) file describing problem geometry - 2D or 3D.
@@ -96,6 +98,7 @@ c     read nekton .rea file and make a .map file
       logical ifconn,is_connected
 
       integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
+      integer     e1,c1
 
       call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim,w14)
 c                                    irnk is # unique points
@@ -115,16 +118,13 @@ c     Determine number of outflow points and order them last
      $     (no,order,mo,cell,nv,nelv,irnk,cbc,nfc,w1,i0,i1,w2)
 
 c     Find all periodic connections, based on cbc info.
-      write(6,*) 'call periodic vtx:',nelt,irnk
       call periodic_vtx
      $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
-      write(6,*) 'done periodic vtx:',nelt,irnk
       
+
 c     Recursive bisection of element graph; reverse-order interface points
-      write(6,*) 'call rec_bisect:',nelt,irnk
       call rec_bisect (elist,pmap,order,mo,cell,nv,nelv,ndim
      $                                           ,w1,w2,w3,w4,w5)
-      write(6,*) 'done rec_bisect:',nelt,irnk
 
 c     Clean up 
       call isort     (elist,w1,nelv)
@@ -132,14 +132,24 @@ c     Clean up
 
 
       if (nelt.gt.nelv) then
-         call reverse_p  (pmap,nelv)         ! lightly load node 0
-         write(6,*) 'Starting greedy:  nelv/nelt = ',nelv,nelt
+         nels = nelt-nelv ! number of elements in solid
+         e1 = 1 + nelv
+         c1 = 1 + nelv*nv
 
-         itype = 2   ! return structured vertex (not cell) pointer
-         call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
+         write(6,*) 'Starting rec_bisect2: nels = ',nels
+         write(6,*) 
+         write(6,*) 
+     $     'NOTE: rec_bisect works only when solid is contiguous'
+     $     'We could fix this with a connected graph test.'
+         write(6,*) 
 
-         call greedy  (pmap,cell,nv,nelv,nelt,ndim
-     $                                          ,w1,w2,w3,w4,w5,w6)
+         call rec_bisect 
+     $        (elist,pmap(e1),order,mo,cell(c1),nv,nels,ndim
+     $                                           ,w1,w2,w3,w4,w5)
+         call isort     (elist   ,w1,nels)
+         call iswap_ip  (pmap(e1),w1,nels)
+
+         call maptest   (pmap,nelv,nelt,'map test A',w1,w2)
 
       endif
 
@@ -150,15 +160,16 @@ c     Clean up
       call fill_order   (order,mo,cell,nv,nelt)
       call assign_order (cell,nv,nelt,order)
 
-
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
       call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
       if (nelv.eq.nelt) call reverse_p (pmap,nelt) ! lightly load node 0
+      call maptest      (pmap,nelv,nelt,'map test B',w1,w2)
 
 c     Output to .map file:
 c     noutflow    = no    ! for now - no outflow bcs
       noutflow    = 0     ! for now - no outflow bcs  (handled in nek?)
       call out_mapfile (pmap,nelt,cell,nv,nrnk,noutflow)
+      call maptest     (pmap,nelv,nelt,'map test C',w1,w2)
 
       call mult_chk(dx,ndim,nv,nelt,cell,nrnk)
 
@@ -267,6 +278,15 @@ c     Compress vertices based on coordinates
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exitti(name,ie)
+      character*40 name
+      write(6,*) name
+      write(6,*) ie,' quit'
+c     ke = 2*ie
+c     ff = 1./(ke-ie-ie)
+      stop
+      end
+c----------------c------------------------------------------------------
       subroutine exitt(ie)
       write(6,*)
       write(6,*) ie,' quit'
@@ -629,6 +649,16 @@ c-----------------------------------------------------------------------
          tmin=min(tmin,a(i))
   100 continue
       iglmin=tmin
+      return
+      end
+c-----------------------------------------------------------------------
+      function ivlmax(a,n)
+      integer a(1),tmax
+      tmax=-999999999
+      do 100 i=1,n
+         tmax=max(tmax,a(i))
+  100 continue
+      ivlmax=tmax
       return
       end
 c-----------------------------------------------------------------------
@@ -1041,6 +1071,7 @@ c-----------------------------------------------------------------------
       integer e,p,v,depth
       integer pmaps(100),elists(100),n2
 
+      write(6,*) 'start rec_bisect:',nel
       do e=1,nel
          elist(e) = e
       enddo
@@ -1089,6 +1120,7 @@ c 18        format(a1,'pmap:',32i3)
 
       enddo
 
+      write(6,*) 'done rec_bisect:',nel
       return
       end
 c-----------------------------------------------------------------------
@@ -1885,11 +1917,12 @@ c
       save    efaci
       data    efaci / 3 , 2 , 4 , 1 , 5 , 6 /
 
-      nvf = nv/2                   ! # vertices/face = 1/2 # vertices/cell
+
+      write(6,*) 'start periodic vtx:',nel,irnk
 
       call izero(iper,ndim*irnk)   ! Zero out periodic indicator flag
-
       call jjnt (jmin,irnk)        ! Initial permutation = identity
+      nvf = nv/2                   ! # vertices/face = 1/2 # vertices/cell
 
       nmn = irnk
       nmx = 0
@@ -1960,6 +1993,7 @@ c
       enddo
       enddo
 
+      write(6,*) 'done periodic vtx:',nel,irnk
       return
       end
 c-----------------------------------------------------------------------
@@ -3241,8 +3275,7 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
-      subroutine greedy (pmap,cell,nv,nelv,nelt,ndim
-     $                                           ,ip,ep,ic,jc,ne,pb)
+      subroutine greedy (pmap,cell,nv,nelv,nelt,ndim,ic,jc,ip,ep,ne,pb)
 c
 c     Distribute elements e > nelv to processors p \in [1,pmax]
 c
@@ -3299,10 +3332,11 @@ c
 
       nep_max = nelt/pmax
 
-c
-c     First loop, use greedy to fill underloaded processors
-c
       call breadth_first_fill(pb,pmax)
+      goto 11
+
+c     First loop, use greedy to fill underloaded processors
+
       do pp=1,pmax
        p = pb(pp)+1
        nep0 = ne(p)
@@ -3315,9 +3349,13 @@ c
                 iv=cell(i,e)   ! Find elements ke attached to e
                 k0 = ic(iv)
                 k1 = ic(iv+1)-1
+c     write(6,7) pp,p,j0,j1,i,k0,k1,iv,' j0j1 '
+c   7 format(8i8,a6)
                 do k=k0,k1
                    kv = jc(k)  !   This is the structured vertex pointer
                    ke = 1 + (kv-1)/nv      !  = neighboring element
+c       write(6,9) e,ke,pmap(ke),pp,p,j,i,k,' pmpke'
+c   9   format(8i8,a6)
                    if (pmap(ke).le.0) then ! Found an unattached element
                       pmap(ke) = p
                       ne  (p ) = ne(p)+1
@@ -3328,11 +3366,15 @@ c
           enddo
        endif
    10  continue  ! next processor
-       write(6,8) pp,p,nep0,ne(p),nepf_max,' p1st'
+       if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p1st'
       enddo
+
+      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
+      call exitt(nelt)
 c
 c     Repeat first loop, using _anything_ to fill underloaded processors
 c
+   11 continue
       ke_min = nelv
       do pp=1,pmax
        p = pb(pp)+1
@@ -3348,16 +3390,27 @@ c
           enddo
        endif
    20  continue
+c      if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p2nd'
        write(6,8) pp,p,nep0,ne(p),nepf_max,' p2nd'
   8    format(5i9,a5)
+      enddo
+
+      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
+      call exitt(nelt)
+
+c     Diagnostic - any underloaded left ? 
+      do pp=1,pmax
+       p = pb(pp)+1
+       if (ne(p).lt.nepf_max) write(6,*) pp,p,ne(p),nepf_max,' under'
       enddo
 
 c
 c     Now, use greedy to distribute remaining elements
 c
-c     (First version of this code, we revert ot round robin...)
+c     (First version of this code, we revert to round robin...)
 c
 
+      n_new = 0
       pnext = 0
       do e=nelv+1,nelt
          if (pmap(e).le.0) then
@@ -3366,8 +3419,10 @@ c
             p = pb(pnext)+1
             pmap(e) = p
             ne  (p) = ne(p) + 1
+            n_new = n_new + 1
          endif
       enddo
+      write(6,*) n_new,nelv,nelt,' n remaining'
 
       return
       end
@@ -4023,6 +4078,117 @@ c-----------------------------------------------------------------------
       enddo
    10 continue
       n2 = nel - n1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
+c
+      integer gllnid(1),iunsort(1),nelgt,np 
+      integer e,eg
+
+
+      log2p = log2(np)
+      np2   = 2**log2p
+      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+         npstar = ivlmax(gllnid,nelgt)+1
+         nnpstr = npstar/np
+         do eg=1,nelgt
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+         return
+      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
+         npstar = max(np,ivlmax(gllnid,nelgv)+1)
+         nnpstr = npstar/np
+         do eg=1,nelgv
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         nelgs  = nelgt-nelgv  ! number of solid elements
+         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
+         nnpstr = npstar/np
+         do eg=nelgv+1,nelgt
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         return
+      else
+         call exitti
+     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+      endif
+
+
+c  Below is the code for P a non-power of two:
+
+c  Split the sorted gllnid array (read from .map file) 
+c  into np contiguous partitions. 
+
+c  To load balance the partitions in case of mod(nelgt,np)>0 
+c  add 1 contiguous entry out of the sorted list to NODE_i 
+c  where i = np-mod(nelgt,np) ... np
+
+
+      nel   = nelgt/np       ! number of elements per processor
+      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
+      npp   = np - nmod      ! how many paritions of size nel 
+ 
+      ! sort gllnid  
+      call isort(gllnid,iunsort,nelgt)
+
+      ! setup partitions of size nel 
+      k   = 0
+      do ip = 0,npp-1
+         do e = 1,nel  
+            k = k + 1 
+            gllnid(k) = ip
+         enddo
+      enddo
+      ! setup partitions of size nel+1
+      if(nmod.gt.0) then 
+        do ip = npp,np-1
+           do e = 1,nel+1  
+              k = k + 1 
+              gllnid(k) = ip
+           enddo
+        enddo 
+      endif
+
+      ! unddo sorting to restore initial ordering by
+      ! global element number
+      call iswapt_ip(gllnid,iunsort,nelgt)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine maptest (pmap,nelgv,nelgt,name10,gllnid,wk)
+      integer pmap(1),gllnid(1),wk(2,0:1)
+      character*10 name10
+      integer e
+
+      np = 32  ! default test value for np
+
+      do e=1,nelgt
+         gllnid(e) = pmap(e)-1
+      enddo
+      call assign_gllnid(gllnid,wk,nelgt,nelgv,np)
+
+      call izero(wk,2*np)
+      do e=1,nelgt
+         mid = gllnid(e)
+         if (mid.ge.0) then
+           wk (2,mid) = wk(2,mid) + 1
+           if (e.le.nelgv) wk (1,mid) = wk(1,mid) + 1
+         endif
+c        write(6,2)e,mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
+c   2    format(4i8,2i9,' mid ',a10,' np =',i8)
+      enddo
+      do mid=0,np-1
+         write(6,1) mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
+    1    format(3i8,2i11,' NEL ',a10,' np =',i8)
+      enddo
 
       return
       end
