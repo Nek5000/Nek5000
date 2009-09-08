@@ -170,6 +170,38 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine i8gop( x, w, op, n)
+c
+c     Global vector commutative operation
+c
+      include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      common /ctimel/ ifsync
+      logical ifsync
+
+      integer*8 x(n), w(n)
+      character*3 op
+
+      if (ifsync) call gsync()
+
+      if     (op.eq.'+  ') then
+        call mpi_allreduce (x,w,n,mpi_integer8,mpi_sum ,nekcomm,ierr)
+      elseif (op.EQ.'M  ') then
+        call mpi_allreduce (x,w,n,mpi_integer8,mpi_max ,nekcomm,ierr)
+      elseif (op.EQ.'m  ') then
+        call mpi_allreduce (x,w,n,mpi_integer8,mpi_min ,nekcomm,ierr)
+      elseif (op.EQ.'*  ') then
+        call mpi_allreduce (x,w,n,mpi_integer8,mpi_prod,nekcomm,ierr)
+      else
+        write(6,*) nid,' OP ',op,' not supported.  ABORT in igop.'
+        call exitt
+      endif
+
+      call i8copy(x,w,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine csend(mtype,buf,len,jnid,jpid)
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
