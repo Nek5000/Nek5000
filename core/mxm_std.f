@@ -1,46 +1,6 @@
-c-----------------------------------------------------------------------
-      subroutine mxm(a,n1,b,n2,c,n3)
-C
-C     Compute  C = A*B , for contiguously packed matrices A,B, and C.
-c
-      real a(n1,n2),b(n2,n3),c(n1,n3)
-c
-      include 'SIZE'
-      include 'OPCTR'
-      include 'TOTAL'
-c
-#ifndef NOTIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'mxm   '
-      endif
-      isbcnt = n1*n3*(2*n2-1)
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-
-#ifdef BLAS_MXM
-      if (n2.lt.3) then
-         call mxf2(a,n1,b,n2,c,n3)
-      else
-         call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
-      endif
-#else
-      call mxmf2(a,n1,b,n2,c,n3)  ! In some cases, this is faster.
-#endif
-
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine mxmf2(A,N1,B,N2,C,N3)
-c      subroutine mxm(A,N1,B,N2,C,N3)
-
 c
-c     unrolled loop routine written by paul fischer
+c     unrolled loop version 
 c
       real a(n1,n2),b(n2,n3),c(n1,n3)
 
@@ -673,17 +633,11 @@ c
 c-----------------------------------------------------------------------
       subroutine mxm44_0(a, m, b, k, c, n)
 c
-c     routine written by Bruce Curtiss
-c
-c     subroutine matmul44(m, n, k, a, lda, b, ldb, c, ldc)
-c     real a(lda,k), b(ldb,n), c(ldc,n)
+c matrix multiply with a 4x4 pencil 
 c
       real a(m,k), b(k,n), c(m,n)
       real s11, s12, s13, s14, s21, s22, s23, s24
       real s31, s32, s33, s34, s41, s42, s43, s44
-c
-c matrix multiply with a 4x4 pencil 
-c
 
       mresid = iand(m,3) 
       nresid = iand(n,3) 

@@ -13,16 +13,16 @@
 .set f25,25; .set f26,26; .set f27,27; .set f28,28; .set f29,29
 .set f30,30; .set f31,31
 
-.file "mxm44_uneven.s"
+.file "bg_mxm44_uneven.s"
 
-.globl mxm44_uneven
-.type  mxm44_uneven, @function
-.size  mxm44_uneven, 220
+.globl bg_mxm44_uneven
+.type  bg_mxm44_uneven, @function
+.size  bg_mxm44_uneven, 220
 
 .section ".text"
 .align 2
 
-mxm44_uneven:
+bg_mxm44_uneven:
   stwu     r1,-64(r1)
   mflr     r0
   stw      r0,68(r1)
@@ -50,7 +50,7 @@ mxm44_uneven:
   mr       r25,r3
   lwz      r29,0(r6)
   crclr    4*cr1+eq
-  bl       mxm44
+  bl       bg_mxm44
   addi     r8,r1,12
   lwz      r0,8(r1)
   mr       r3,r25
