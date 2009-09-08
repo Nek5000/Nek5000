@@ -251,7 +251,7 @@ $(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L0) $(JL2) $< -o $@
+$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)fcrystal.o        :$(J2)/fcrystal.c;        $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@

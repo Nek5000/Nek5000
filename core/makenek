@@ -1,12 +1,14 @@
 #!/bin/bash
-# compilation script for NEK5000
-# (c) 2008 UCHICAGO ARGONNE, LLC
-###############################################################################
-# User Settings
-###############################################################################
+#
+# nek5000 build script
+# (c) 2008,2009 UCHICAGO ARGONNE, LLC
+#
 
 # source path 
 SOURCE_ROOT="$HOME/nek5_svn/trunk/nek"
+
+# plug-in list
+PLUGIN_LIST=""
 
 # Fortran compiler
 F77="mpif77"
@@ -15,58 +17,46 @@ F77="mpif77"
 CC="mpicc"
 
 
-# *****************
-# OPTIONAL SWITCHES
-# *****************
+# OPTIONAL SWITCHES WILL FOLLOW
+# -----------------------------
 
 # enable MPI (default true)
-# -------------------------
 #IFMPI="false"
 
-# Optional compiler flags
-# ----------------------- 
+# compiler flags
 #G="-g"
 
-# Optional preprocessor list
-# --------------------------
+# Pre-processor symbol list
 #PPLIST="SYMB1 SYMB2"
 
-# Optional optimization flags
-# ---------------------------
+# optimization flags
 #OPT_FLAGS_STD="-qarch=450 -qtune=450"
 #OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
 
 # enable timing (default true)
-# ----------------------------
 #IFTIMING="false"
 
 # enable AMG coarse grid solver (default XXT)
-# -------------------------------------------
 #IFAMG="true"
 #IFAMG_DUMP="true"
 
 # enable coupled nek (default false)
-# ----------------------------------
 #IFNEKNEK="true"
  
 # enable MOAB/IMESH (default false)
-# ---------------------------------
 #IFMOAB="true"
 #MOAB_DIR="$HOME/moab"
 
 # user specified MXM routines
-# ---------------------------
 #MXM_USER="mxm_bgp.o aligned3.o mxm3.o mxm44.o mxm44_uneven.o"
 
 # Optional files to compile
-# -------------------------
-#NOTE: files have to located in the same directory as makenek
-#      and a makefile_usr.inc has to be provided containing the
-#      compiling instructions. 
+# NOTE: files have to located in the same directory as makenek
+#       and a makefile_usr.inc has to be provided containing the
+#       compiling instructions. 
 #USR="example.o"
 
 # Optional linking flags
-# ----------------------
 #USR_LFLAGS="-L/usr/lib -lexample"
 
 
@@ -83,7 +73,7 @@ fi
 source $SOURCE_ROOT/makenek.inc
 
 # compile source using multiple threads
-make -j 8 -f makefile 2>&1 | tee compiler.out
+make -j8 -f makefile 2>&1 | tee compiler.out
 
 # clean up
 mkdir obj 2>/dev/null

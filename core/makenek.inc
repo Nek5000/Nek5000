@@ -238,7 +238,7 @@ fi
 # Generate makefile from using the makefile template and 
 # the specified parameters in makenek
 
-echo "try to generate makefile ..."
+echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
@@ -281,9 +281,9 @@ fi
 if [ -f .makefile ]; then
   sed "1i\### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###\n" \
       .makefile > makefile
-  echo "makefile created"
 else
-  echo "FATAL ERROR: Makefile could not be created!" 
+  echo "ERROR: Nek Makefile could not be created!"
+  exit 1 
 fi
 \rm .makefile 2>/dev/null
 
@@ -300,3 +300,29 @@ else
     $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
 fi
 rm -rf $SOURCE_ROOT/.HEADER >/dev/null 2>&1
+
+# add plugins
+for i in $PLUGIN_LIST
+do
+  if [ ! -f makenek_plugin_$i ]; then
+     echo "ABORT: cannot find plug-in config file" makenek_plugin_$i
+     exit 1
+  fi
+  source makenek_plugin_$i
+
+  plugindir="SOURCE_ROOT_$i"
+  plugindir=`echo ${!plugindir}`
+
+  if [ ! -f $plugindir/makenek.inc ]; then
+     echo "ABORT: Cannot find plug-in include file file" $plugindir/makenek.inc
+     exit 1
+  fi
+  source $plugindir/makenek.inc
+  if [ "$ierr" != 0 ]; then
+     echo "ABORT: plug-in config failed!"
+     exit 1
+  fi
+  echo "found plug-in" $i
+done
+
+

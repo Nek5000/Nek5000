@@ -440,6 +440,14 @@ C
       return
       END
 C
+      subroutine i8copy(a,b,n)
+      INTEGER*8 A(1), B(1)
+C
+      DO 100 I = 1, N
+ 100     A(I) = B(I)
+      return
+      END
+C
       subroutine chsign(a,n)
       REAL A(1)
 C
@@ -847,6 +855,19 @@ c-----------------------------------------------------------------------
       tmp(1)=tsum
       call igop(tmp,work,'+  ',1)
       iglsum=tmp(1)
+      return
+      end
+C-----------------------------------------------------------------------
+      integer*8 function i8glsum(a,n)
+      integer*8 a(1),tsum
+      integer*8 tmp(1),work(1)
+      tsum= 0
+      do i=1,n
+         tsum=tsum+a(i)
+      enddo
+      tmp(1)=tsum
+      call i8gop(tmp,work,'+  ',1)
+      i8glsum=tmp(1)
       return
       end
 C-----------------------------------------------------------------------
