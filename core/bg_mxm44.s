@@ -13,11 +13,11 @@
 .set f25,25; .set f26,26; .set f27,27; .set f28,28; .set f29,29
 .set f30,30; .set f31,31
 
-.file "mxm44.s"
+.file "bg_mxm44.s"
 
-.globl mxm44
-.type  mxm44, @function
-.size  mxm44, 1756
+.globl bg_mxm44
+.type  bg_mxm44, @function
+.size  bg_mxm44, 1756
 
 
 
@@ -25,7 +25,7 @@
 .align 2
 
 
-mxm44:
+bg_mxm44:
   stwu     r1,-576(r1)
   stw      r14,360(r1)
   mr       r12,r1

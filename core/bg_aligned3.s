@@ -13,16 +13,16 @@
 .set f25,25; .set f26,26; .set f27,27; .set f28,28; .set f29,29
 .set f30,30; .set f31,31
 
-.file "aligned3.s"
+.file "bg_aligned3.s"
 
-.globl aligned3
-.type  aligned3, @function
-.size  aligned3, 48
+.globl bg_aligned3
+.type  bg_aligned3, @function
+.size  bg_aligned3, 48
 
 .section ".text"
 .align 2
 
-aligned3:
+bg_aligned3:
   andi.    r0,r3,15
   clrlwi   r9,r4,28
   cmpwi    cr7,r9,0

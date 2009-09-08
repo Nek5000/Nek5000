@@ -241,6 +241,22 @@ fi
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
+# MXM-handling
+if [ "$MXM_USER" != "" ]; then
+    echo "ABORT: makenek version is too old! Update with latest from source!"
+    exit 1 
+fi
+MXM_USER="mxm_std.o"
+echo $PPLIST | grep 'BG_MXM' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o" 
+fi
+echo $PPLIST | grep 'K10_MXM' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o k10_mxm.o" 
+   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT}/libk10_mxm.a"
+fi
+
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
@@ -250,6 +266,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^L2[ ]*=.*/L2=$L2/" \
 -e "s/^L3[ ]*=.*/L3=$L3/" \
 -e "s/^L4[ ]*=.*/L4=$L4/" \
+-e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
@@ -270,12 +287,6 @@ fi
 if [ "$USR" != "" ]; then
   echo "###########################################################" >> makefile
   echo "include makefile_usr.inc" >> .makefile
-fi
-
-
-if [ "$MXM_USER" != "" ]; then
-  mv .makefile .makefile.tmp
-  sed -e "s:^MXM.*:MXM=$MXM_USER:" .makefile.tmp > .makefile 
 fi
 
 if [ -f .makefile ]; then
@@ -324,5 +335,3 @@ do
   fi
   echo "found plug-in" $i
 done
-
-

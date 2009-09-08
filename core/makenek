@@ -10,6 +10,9 @@ SOURCE_ROOT="$HOME/nek5_svn/trunk/nek"
 # plug-in list
 PLUGIN_LIST=""
 
+# pre-processor symbol list
+PPLIST="" # MPIIO BLAS_MXM BG_MXM K10_MXM
+
 # Fortran compiler
 F77="mpif77"
 
@@ -25,9 +28,6 @@ CC="mpicc"
 
 # compiler flags
 #G="-g"
-
-# Pre-processor symbol list
-#PPLIST="SYMB1 SYMB2"
 
 # optimization flags
 #OPT_FLAGS_STD="-qarch=450 -qtune=450"
@@ -47,17 +47,13 @@ CC="mpicc"
 #IFMOAB="true"
 #MOAB_DIR="$HOME/moab"
 
-# user specified MXM routines
-#MXM_USER="mxm_bgp.o aligned3.o mxm3.o mxm44.o mxm44_uneven.o"
+# auxilliary files to compile
+# NOTE: source files have to located in the same directory as makenek
+#       a makefile_usr.inc has to be provided containing the build rules 
+#USR="foo.o"
 
-# Optional files to compile
-# NOTE: files have to located in the same directory as makenek
-#       and a makefile_usr.inc has to be provided containing the
-#       compiling instructions. 
-#USR="example.o"
-
-# Optional linking flags
-#USR_LFLAGS="-L/usr/lib -lexample"
+# linking flags
+#USR_LFLAGS="-L/usr/lib -lfoo"
 
 
 ###############################################################################

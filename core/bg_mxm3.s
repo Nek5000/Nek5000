@@ -13,16 +13,16 @@
 .set f25,25; .set f26,26; .set f27,27; .set f28,28; .set f29,29
 .set f30,30; .set f31,31
 
-.file "mxm3.s"
+.file "bg_mxm3.s"
 
-.globl mxm3
-.type  mxm3, @function
-.size  mxm3, 1412
+.globl bg_mxm3
+.type  bg_mxm3, @function
+.size  bg_mxm3, 1412
 
 .section ".text"
 .align 2
 
-mxm3:
+bg_mxm3:
   stwu     r1,-96(r1)
   mflr     r0
   stw      r0,100(r1)
