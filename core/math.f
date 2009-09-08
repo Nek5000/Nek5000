@@ -10,7 +10,6 @@ C
    10 CONTINUE
       RETURN
       END
-C
 c-----------------------------------------------------------------------
       SUBROUTINE VSQ (A,N)
       DIMENSION  A(1)
@@ -34,7 +33,6 @@ C
  100     A(I) = A(I)**2
       RETURN
       END
-C
 c-----------------------------------------------------------------------
       SUBROUTINE VSQRT(A,N)
       DIMENSION  A(1)
@@ -58,7 +56,6 @@ C
  100     A(I) = SQRT(A(I))
       RETURN
       END
-C
 c-----------------------------------------------------------------------
       subroutine invers2(a,b,n)
       REAL A(1),B(1)
@@ -83,7 +80,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine invcol1(a,n)
       REAL A(1)
 C
@@ -107,7 +104,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine invcol2(a,b,n)
 C
       REAL A(1),B(1)
@@ -142,7 +139,7 @@ C
 #endif
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine invcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
 C
@@ -176,7 +173,7 @@ C
 #endif
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine col4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
 C
@@ -200,7 +197,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine Xaddcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
 C
@@ -224,7 +221,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine addcol4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
 C
@@ -248,7 +245,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine ascol5 (a,b,c,d,e,n)
       REAL A(1),B(1),C(1),D(1),E(1)
 C
@@ -272,7 +269,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine sub2(a,b,n)
       REAL A(1),B(1)
 C
@@ -296,7 +293,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine sub3(a,b,c,n)
       REAL A(1),B(1),C(1)
 C
@@ -320,7 +317,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine subcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
 C
@@ -344,7 +341,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine subcol4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
 C
@@ -368,14 +365,14 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine rzero(a,n)
       DIMENSION  A(1)
       DO 100 I = 1, N
  100     A(I ) = 0.0
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine izero(a,n)
       INTEGER A(1)
 C
@@ -383,21 +380,21 @@ C
  100     A(I ) = 0
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine ione(a,n)
       INTEGER   A(1)
       DO 100 I = 1, N
  100     A(I ) = 1
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine rone(a,n)
       DIMENSION  A(1)
       DO 100 I = 1, N
  100     A(I ) = 1.0
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine cfill(a,b,n)
       DIMENSION  A(1)
 C
@@ -405,7 +402,7 @@ C
  100     A(I) = B
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine ifill(ia,ib,n)
       DIMENSION IA(1)
 C
@@ -439,7 +436,7 @@ C
  100     A(I) = B(I)
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine i8copy(a,b,n)
       INTEGER*8 A(1), B(1)
 C
@@ -447,7 +444,7 @@ C
  100     A(I) = B(I)
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine chsign(a,n)
       REAL A(1)
 C
@@ -457,6 +454,7 @@ C
       return
       END
 C
+c-----------------------------------------------------------------------
       subroutine cmult(a,const,n)
       REAL A(1)
 C
@@ -480,7 +478,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine cadd(a,const,n)
       REAL A(1)
 C
@@ -504,6 +502,7 @@ C
  100  CONTINUE
       return
       END
+c-----------------------------------------------------------------------
       subroutine iadd(i1,iscal,n)
       DIMENSION I1(1)
 C
@@ -512,7 +511,7 @@ C
    10 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine cadd2(a,b,const,n)
       REAL A(1),B(1)
 C
@@ -536,7 +535,7 @@ C
  100  CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       real function vlmin(vec,n)
       REAL VEC(1)
       TMIN = 99.0E20
@@ -547,8 +546,7 @@ C
       VLMIN = TMIN
       return
       END
-c
-C
+c-----------------------------------------------------------------------
       integer function ivlmin(vec,n)
       integer vec(1),tmin
       if (n.eq.0) then
@@ -562,7 +560,7 @@ C
       ivlmin = tmin
       return
       end
-C
+c-----------------------------------------------------------------------
       integer function ivlmax(vec,n)
       integer vec(1),tmax
       if (n.eq.0) then
@@ -576,7 +574,7 @@ C
       Ivlmax = tmax
       return
       end
-C
+c-----------------------------------------------------------------------
       real function vlmax(vec,n)
       REAL VEC(1)
       TMAX =-99.0E20
@@ -586,7 +584,7 @@ C
       VLMAX = TMAX
       return
       END
-C
+c-----------------------------------------------------------------------
       real function vlamax(vec,n)
       REAL VEC(1)
       TAMAX = 0.0
@@ -597,7 +595,7 @@ C
       VLAMAX = TAMAX
       return
       END
-C
+c-----------------------------------------------------------------------
       real function vlsum(vec,n)
       REAL VEC(1)
       include 'OPCTR'
@@ -623,7 +621,7 @@ C
       VLSUM = SUM
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine vcross (u1,u2,u3,v1,v2,v3,w1,w2,w3,n)
 C
 C     Compute a Cartesian vector cross product.
@@ -640,7 +638,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine vdot2 (dot,u1,u2,v1,v2,n)
 C
 C     Compute a Cartesian vector dot product. 2-d version
@@ -655,7 +653,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine vdot3 (dot,u1,u2,u3,v1,v2,v3,n)
 C
 C     Compute a Cartesian vector dot product. 3-d version
@@ -670,7 +668,7 @@ C
   100 CONTINUE
       return
       END
-C
+c-----------------------------------------------------------------------
       subroutine addtnsr(s,h1,h2,h3,nx,ny,nz)
 C
 C     Map and add to S a tensor product form of the three functions H1,H2,H3.
@@ -702,6 +700,7 @@ C
       LTRUNC=L1
       return
       END
+c-----------------------------------------------------------------------
       function mod1(i,n)
 C
 C     Yields MOD(I,N) with the exception that if I=K*N, result is N.
@@ -719,6 +718,7 @@ C
       MOD1 = MOD(II,N)+1
       return
       END
+c-----------------------------------------------------------------------
       integer function log2(k)
       RK=(K)
       RLOG=LOG10(RK)
@@ -727,6 +727,7 @@ C
       LOG2=INT(RLOG)
       return
       END
+c-----------------------------------------------------------------------
       subroutine iflip(i1,n)
       DIMENSION I1(1)
       N1=N+1
@@ -739,6 +740,7 @@ C
    10 CONTINUE
       return
       END
+c-----------------------------------------------------------------------
       subroutine iswap(b,ind,n,temp)
       INTEGER B(1),IND(1),TEMP(1)
 C***
@@ -753,7 +755,291 @@ C***
    30 B(I)=TEMP(I)
       return
       END
+c-----------------------------------------------------------------------
+      subroutine col2(a,b,n)
+      real a(1),b(1)
+      include 'OPCTR'
+
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'col2  '
+      endif
+      isbcnt = N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+      do i=1,n
+         a(i)=a(i)*b(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine col2c(a,b,c,n)
+      real a(1),b(1),c
+
+      do i=1,n
+         a(i)=a(i)*b(i)*c
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine col3(a,b,c,n)
+      real a(1),b(1),c(1)
+      include 'OPCTR'
+
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'col3  '
+      endif
+      isbcnt = N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+      do i=1,n
+         a(i)=b(i)*c(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2(a,b,n)
+      real a(1),b(1)
+      include 'OPCTR'
+
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'ADD2  '
+      endif
+      isbcnt = N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+      do i=1,n
+         a(i)=a(i)+b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add3(a,b,c,n)
+      real a(1),b(1),c(1)
+      include 'OPCTR'
+
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'ADD3  '
+      endif
+      isbcnt = N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+      do i=1,n
+         a(i)=b(i)+c(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine addcol3(a,b,c,n)
+      real a(1),b(1),c(1)
+      include 'OPCTR'
+
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'addcl3'
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+      do i=1,n
+         a(i)=a(i)+b(i)*c(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2s1(a,b,c1,n)
+      real a(1),b(1)
 C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'add2s1'
+      endif
+      isbcnt = 2*N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      DO 100 I=1,N
+        A(I)=C1*A(I)+B(I)
+  100 CONTINUE
+      return
+      END
+C
+c-----------------------------------------------------------------------
+      subroutine add2s2(a,b,c1,n)
+      real a(1),b(1)
+C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'add2s2'
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      DO 100 I=1,N
+        A(I)=A(I)+C1*B(I)
+  100 CONTINUE
+      return
+      END
+C
+c-----------------------------------------------------------------------
+      subroutine add3s2(a,b,c,c1,c2,n)
+      real a(1),b(1),c(1)
+C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'add3s2'
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      DO 100 I=1,N
+        A(I)=C1*B(I)+C2*C(I)
+  100 CONTINUE
+      return
+      END
+C
+c-----------------------------------------------------------------------
+      subroutine add4(a,b,c,d,n)
+      REAL A(1),B(1),C(1),D(1)
+C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'add4  '
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      DO 100 I=1,N
+         A(I)=B(I)+C(I)+D(I)
+ 100  CONTINUE
+      return
+      END
+      real function vlsc2(x,y,n)
+      REAL X(1),Y(1)
+      include 'SIZE'
+      include 'OPCTR'
+      include 'PARALLEL'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC2 '
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      s = 0.
+      do i=1,n
+         s = s + x(i)*y(i)
+      enddo
+      vlsc2=s
+      return
+      end
+c-----------------------------------------------------------------------
+      real function vlsc21(x,y,n)
+      real x(1),y(1)
+      include 'SIZE'
+      include 'OPCTR'
+      include 'PARALLEL'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC21'
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      s = 0.
+      do i=1,n
+         s = s + x(i)*x(i)*y(i)
+      enddo
+      vlsc21=s
+      return
+      end
+
+
 C----------------------------------------------------------------------------
 C
 C     Vector reduction routines which require communication 
@@ -761,7 +1047,87 @@ C     on a parallel machine. These routines must be substituted with
 C     appropriate routines which take into account the specific architecture.
 C
 C----------------------------------------------------------------------------
+
+
+      function glsc3(a,b,mult,n)
 C
+C     Perform inner-product in double precision
+C
+      REAL A(1),B(1),MULT(1)
+      REAL TMP,WORK(1)
+C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'glsc3 '
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      TMP = 0.0
+      DO 10 I=1,N
+         TMP = TMP + A(I)*B(I)*MULT(I)
+ 10   CONTINUE
+      CALL GOP(TMP,WORK,'+  ',1)
+      GLSC3 = TMP
+      return
+      END
+c-----------------------------------------------------------------------
+      function glsc2(x,y,n)
+C
+C     Perform inner-product in double precision
+C
+      real x(1), y(1)
+      real tmp,work(1)
+C
+      include 'OPCTR'
+C
+#ifndef NOTIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'glsc2 '
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+      tmp=0.0
+      do 10 i=1,n
+         tmp = tmp+ x(i)*y(i)
+   10 continue
+      CALL GOP(TMP,WORK,'+  ',1)
+      GLSC2 = TMP
+      return
+      END
+c-----------------------------------------------------------------------
+      function glsc23(x,y,z,n)
+c
+C     Perform inner-product  x*x*y*z
+c
+      real x(1), y(1),z(1)
+      real tmp,work(1)
+
+      ds = 0.0
+      do 10 i=1,n
+         ds=ds+x(i)*x(i)*y(i)*z(i)
+   10 continue
+      tmp=ds
+      call gop(tmp,work,'+  ',1)
+      glsc23 = tmp
+      return
+      end
+c-----------------------------------------------------------------------
       real function gl2norm(a,n)
 
       include 'SIZE'
@@ -1087,11 +1453,11 @@ C
    15 CONTINUE
       call exitt
       END
-C
+
 C========================================================================
 C     Double precision matrix and vector routines
 C========================================================================
-C
+
 c-----------------------------------------------------------------------
       subroutine dcadd(a,const,n)
       real*8 A(1),CONST
@@ -1101,7 +1467,6 @@ C
  100  CONTINUE
       return
       END
-C
 c-----------------------------------------------------------------------
       subroutine dsub2(a,b,n)
       real*8 A(1), B(1)
@@ -1168,7 +1533,6 @@ c-----------------------------------------------------------------------
       IVLSUM=TSUM
       return
       END
-C
 c-----------------------------------------------------------------------
       subroutine icadd(a,c,n)
       INTEGER A(1),C
@@ -1280,7 +1644,6 @@ C
          ind(i) = ii
       GOTO 100
       end
-C
 c-----------------------------------------------------------------------
       subroutine iswap_ip(x,p,n)
       integer x(1),xstart
