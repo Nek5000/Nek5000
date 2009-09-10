@@ -73,13 +73,13 @@ if [ -f SIZEu ]; then
   if [ $? -ne 0 ]; then
      echo >>SIZEu
      echo 'c automatically added by makenek' >>SIZEu
-     echo '      parameter(lxo   = lx1) ! defines regular grid size' >>SIZEu
+     echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZEu
   fi
   cat SIZEu | grep -i 'lpart' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZEu
      echo 'c automatically added by makenek' >>SIZEu
-     echo '      parameter(lpart = 1  ) ! number of particles'       >>SIZEu
+     echo '      parameter(lpart = 1  ) ! max number of particles'       >>SIZEu
   fi
   cat SIZEu | grep -i 'ax1' >/dev/null
   if [ $? -ne 0 ]; then

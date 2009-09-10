@@ -1354,6 +1354,11 @@ c-----------------------------------------------------------------------
       nyo  = ny1
       nzo  = nz1
       if (ifreguo) then ! dump on regular (uniform) mesh
+         if (nrg.gt.lxo) then
+            if (nid.eq.0) write(6,*) 
+     &         'WARNING: nrg too large, reset to lxo!'
+            nrg = lxo
+         endif
          nxo  = nrg
          nyo  = nrg
          nzo  = 1
@@ -1548,7 +1553,7 @@ c#endif
       endif
 
       ifreguo = .false.   ! by default we dump the data based on the GLL mesh
-      nrg = -1
+      nrg = lxo
 
       ! how many elements are present up to rank nid
       nn = nelt
@@ -1582,15 +1587,20 @@ c-----------------------------------------------------------------------
       save        slash,dot
       data        slash,dot  / '/' , '.' /
 
-      integer nopen(99)
+      integer nopen(99,2)
       save    nopen
-      data    nopen  / 99*0 /
+      data    nopen  / 198*0 /
 
       call blank(fname,80)      !  zero out for byte_open()
 
       iprefix        = i_find_prefix(prefix,99)
-      nopen(iprefix) = nopen(iprefix)+1
-      nfld           = nopen(iprefix)
+      if (ifreguo) then
+         nopen(iprefix,2) = nopen(iprefix,2)+1
+         nfld             = nopen(iprefix,2)
+      else
+         nopen(iprefix,1) = nopen(iprefix,1)+1
+         nfld             = nopen(iprefix,1)
+      endif
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
 
 #ifdef MPIIO
@@ -1618,6 +1628,12 @@ c-----------------------------------------------------------------------
       len=ltrunc(session,132)                           !  Add SESSION
       call chcopy(fnam1(k),session,len)
       k = k+len
+     
+      if (ifreguo) then
+         len=4
+         call chcopy(fnam1(k),'_reg',len)
+         k = k+len
+      endif
 
       call chcopy(fnam1(k),six,ndigit)                  !  Add file-id holder
       k = k + ndigit
