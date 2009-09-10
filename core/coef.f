@@ -561,7 +561,7 @@ c        call outxm3j(xm3,ym3,jacm3)
          ifpo  = .false.
          ifto  = .false.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
+         call outpost(vx,vy,vz,pr,t,0,'xyz')
          if (nid.eq.0) write(6,*) 'Jac error 3, setting p66=4, ifxyo=t'
          call exitt
       endif
@@ -654,7 +654,7 @@ C
          ifpo  = .false.
          ifto  = .false.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
+         call outpost(vx,vy,vz,pr,t,0,'xyz')
          if (nid.eq.0) write(6,*) 'Jac error 1, setting p66=4, ifxyo=t'
          call exitt
       endif

@@ -1422,7 +1422,7 @@ c stefan: we need to change fldstideB to the number of elements
          endif
          ioflds = ioflds + 1
       endif
-      do k=1,ldimt1
+      do k=1,ldimt-1
          if(ifpsco(k)) then
            offs = offs0 + ioflds*stride + strideB
            call byte_set_view(offs)
@@ -1467,7 +1467,7 @@ c stefan: we need to change fldstideB to the number of elements
             call mfo_mdatas(t,nout)
             ioflds = ioflds + 1
          endif
-         do k=1,ldimt1
+         do k=1,ldimt-1
             offs = offs0 + ioflds*stride + strideB
             call byte_set_view(offs)
             if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
@@ -1793,8 +1793,8 @@ c                                      ! is the only form used for restart
          if (save_size.eq.8) param(63) = 8   ! output precision
          param(66) = 6                       ! force multi-file out
 
-         if (ifmhd) call outpost(bx,by,bz,pm,t,prefix)  ! first B
-                    call outpost(vx,vy,vz,pr,t,prefix)  ! then  U
+         if (ifmhd) call outpost(bx,by,bz,pm,t,1,prefix)  ! first B
+                    call outpost(vx,vy,vz,pr,t,1,prefix)  ! then  U
 
          param(63) = p63  ! restore p63, p66
          param(66) = p66
@@ -2220,14 +2220,16 @@ c-----------------------------------------------------------------------
          rdcode1(i)='T'
          i = i + 1
       ENDIF
-      IF (NPSCAL.GT.0) THEN
+      IF (LDIMT.GT.1) THEN
          NPSCALO = 0
-         do k = 1,ldimt1
+         do k = 1,ldimt-1
            if(ifpsco(k)) NPSCALO = NPSCALO + 1
          enddo
          rdcode1(i) = 'S'
-         WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
-         WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
+         IF (NPSCALO.GT.0) THEN
+            WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
+            WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
+         ENDIF
       ENDIF
  
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo

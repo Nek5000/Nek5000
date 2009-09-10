@@ -751,7 +751,7 @@ c     call outmat(z27,27,8,'z27dat',nelt)
 c     param(66) = 0
 c     ifxyo = .true.
 c     ifvo  = .true.
-c     call outpost(xm1,ym1,zm1,pr,t,'   ')
+c     call outpost(xm1,ym1,zm1,pr,t,1,'   ')
 c     write(6,*) 'DONE PERMUTE; ABORT'
 c     call exitt
 

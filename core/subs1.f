@@ -1425,8 +1425,8 @@ C
  9999 CONTINUE
       IFSOLV = .FALSE.
 C
-c     call outpost(u1,u2,u3,u3,u3,'   ')
-c     call outpost(h1,h2,u3,u3,u3,'   ')
+c     call outpost(u1,u2,u3,u3,u3,1,'   ')
+c     call outpost(h1,h2,u3,u3,u3,1,'   ')
 c     call exitt
 c
       return

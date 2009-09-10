@@ -682,7 +682,7 @@ C
 c     call user_srf(xml,yml,zml,nxl,nyl,nzl)
 
 c     call opcopy(xm1,ym1,zm1,xml,yml,zml)
-c     call outpost(xml,yml,zml,xml,yml,'   ')
+c     call outpost(xml,yml,zml,xml,yml,1,'   ')
 c     call exitt
 C
       RETURN
