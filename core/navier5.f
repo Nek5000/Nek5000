@@ -189,7 +189,7 @@ c
          call copy  (wk1,pr,ntot2)
          if (ifheat) call sub2(wt,t,ntot1)
 c
-         call outpost(w1,w2,w3,wk1,wt,'flt')
+         call outpost(w1,w2,w3,wk1,wt,1,'flt')
       endif
 c - - - - - - - - - - - - - - - - - - - - - -
 c     write(6,*) 'this is wght:',wght,param(103)
@@ -766,43 +766,75 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outpost(v1,v2,v3,vp,vt,name3)
+      subroutine outpost(v1,v2,v3,vp,vt,nfldt,name3)
 c
       include 'SIZE'
       include 'SOLN'
+      include 'INPUT'
+
       parameter(ltot1=lx1*ly1*lz1*lelt)
       parameter(ltot2=lx2*ly2*lz2*lelv)
-      common /xcrmg/ w1(ltot1),w2(ltot1),w3(ltot1),wp(ltot2)
-      common /xcrsf/ wt(ltot1)
+      common /outtmp/  w1(ltot1),w2(ltot1),w3(ltot1),wp(ltot2)
+     &                ,wt(ltot1,ldimt)
 c
-      real v1(1),v2(1),v3(1),vp(1),vt(1)
+      real v1(1),v2(1),v3(1),vp(1),vt(ltot1,1)
       character*3 name3
+      logical if_save(ldimt)
 c
       ntot1  = nx1*ny1*nz1*nelv
       ntot1t = nx1*ny1*nz1*nelt
       ntot2  = nx2*ny2*nz2*nelv
-c
+
+      if(nfldt.gt.ldimt) then
+        write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
+        call exitt
+      endif
+
+c store solution
       call copy(w1,vx,ntot1)
       call copy(w2,vy,ntot1)
       call copy(w3,vz,ntot1)
       call copy(wp,pr,ntot2)
-      call copy(wt,t ,ntot1t)
-c
+      do i = 1,nfldt
+         call copy(wt(1,i),t(1,1,1,1,i),ntot1t)
+      enddo
+
+c swap with data to dump
       call copy(vx,v1,ntot1)
       call copy(vy,v2,ntot1)
       call copy(vz,v3,ntot1)
       call copy(pr,vp,ntot2)
-      call copy(t ,vt,ntot1t)
-c
-      if (nid.eq.0) write(6,*) 'calling prepost ',name3
+      do i = 1,nfldt
+         call copy(t(1,1,1,1,i),vt(1,i),ntot1t)
+      enddo
+
+c dump data
+      if_save(1) = ifto
+      ifto = .false.
+      if(nfldt.gt.0) ifto = .true. 
+      do i = 1,ldimt-1
+         if_save(i+1) = ifpsco(i)
+         ifpsco(i) = .false.   
+         if(i+1.le.nfldt) ifpsco(i) = .true.
+      enddo
+
+      if (nid.eq.0) write(6,*) 'calling prepost ',name3, nfldt
       call prepost(.true.,name3)
-c
+
+      ifto = if_save(1)
+      do i = 1,ldimt-1
+         ifpsco(i) = if_save(i+1) 
+      enddo
+
+c restore solution data
       call copy(vx,w1,ntot1)
       call copy(vy,w2,ntot1)
       call copy(vz,w3,ntot1)
       call copy(pr,wp,ntot2)
-      call copy(t ,wt,ntot1t)
-c
+      do i = 1,nfldt
+         call copy(t(1,1,1,1,i),wt(1,i),ntot1t)
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1200,119 +1232,141 @@ c
 c-----------------------------------------------------------------------
       subroutine avg_all
 c
-c     This routine computes running means, rms, etc. and outputs to 
-c     avg*.fld*, rms*.fld*, and rm2*.fld*.
+c     This routine computes running averages E(X),E(X^2),E(X*Y)
+c     and outputs to avg*.fld*, rms*.fld*, and rm2*.fld* for all
+c     fields.
 c
-c     You must uncomment the first parameter stmt. below to allocate
-c     the space for the averages, and comment out the second one.
+c     E denotes the expected value operator and X,Y two
+c     real valued random variables.
+c
+c     X_rms and XY_rms have to be computed in a post-processing step:
+c
+c        X_rms   := sqrt[ E(X^X) - E(X)*E(X) ]
+c        XY_cov  := sqrt[ E(X*Y) - E(X)*E(Y) ] 
+c
+c     Note: The E-operator is linear, in the sense that the expected
+c           value is given by E(X) = 1/N * sum[ E(X)_i ], where E(X)_i
+c           is the expected value of the sub-ensemble i (i=1...N).
 c
       include 'SIZE'  
       include 'TOTAL' 
-c
-c
-      parameter (kx1=lx1,ky1=ly1,kz1=ly1,kx2=lx2,ky2=ly2,kz2=ly2)
-c     parameter (kx1=  1,ky1=  1,kz1=  1,kx2=  1,ky2=  1,kz2=  1)
-c
+
       common /avgcmnr/ atime,timel
-c
-c
-      common /chkavg/  uavg(kx1,ky1,kz1,lelt)
-     $               , vavg(kx1,ky1,kz1,lelt)
-     $               , wavg(kx1,ky1,kz1,lelt)
-     $               , tavg(kx1,ky1,kz1,lelt)
-     $               , pavg(kx2,ky2,kz2,lelt)
 
-      common /chkrms/  urms(kx1,ky1,kz1,lelt)
-     $               , vrms(kx1,ky1,kz1,lelt)
-     $               , wrms(kx1,ky1,kz1,lelt)
-     $               , trms(kx1,ky1,kz1,lelt)
-     $               , prms(kx2,ky2,kz2,lelt)
-     $               , vwms(kx1,ky1,kz1,lelt)
-     $               , wums(kx1,ky1,kz1,lelt)
-     $               , uvms(kx1,ky1,kz1,lelt)
-     $               , wtms(kx1,ky1,kz1,lelt)
+      common /chkavg/  uavg(ax1,ay1,az1,lelt)
+     $               , vavg(ax1,ay1,az1,lelt)
+     $               , wavg(ax1,ay1,az1,lelt)
+     $               , tavg(ax1,ay1,az1,lelt)
+     $               , pavg(ax2,ay2,az2,lelt)
 
-c     common /chkps1/  avg1(kx1,ky1,kz1,lelt)  ! for ps1 ... not fully coded yet
-c    $               , rms1(kx1,ky1,kz1,lelt)  !   pff, may 13 2007
+      common /chkrms/  urms(ax1,ay1,az1,lelt)
+     $               , vrms(ax1,ay1,az1,lelt)
+     $               , wrms(ax1,ay1,az1,lelt)
+     $               , trms(ax1,ay1,az1,lelt)
+     $               , prms(ax2,ay2,az2,lelt)
+     $               , vwms(ax1,ay1,az1,lelt)
+     $               , wums(ax1,ay1,az1,lelt)
+     $               , uvms(ax1,ay1,az1,lelt)
+
+      common /chkps1/  psavg(ax1,ay1,az1,lelt,ldimt-1)
+     $               , psrms(ax1,ay1,az1,lelt,ldimt-1)
 
       logical ifverbose
       integer icalld
       save    icalld
       data    icalld  /0/
-c
-      if (kx1.eq.1) then
-         write(6,*) nid,
-     $     'Error. Uncomment kx1 param. stmt. in avg_all, navier5.f'
-         return
+
+      if (ax1.ne.lx1 .or. ay1.ne.ly1 .or. az1.ne.lz1) then
+         if(nid.eq.0) write(6,*)
+     $     'ABORT: Size of ax1,ay1,az1 does not match, check SIZEu!'
+         call exitt
       endif
-c
-      ntot = nx1*ny1*nz1*nelv
-      nto2 = nx2*ny2*nz2*nelv
+      if (ax2.ne.lx2 .or. ay2.ne.ay2 .or. az2.ne.lz2) then
+         if(nid.eq.0) write(6,*)
+     $     'ABORT: Size of ax2,ay2,az2 does not match, check SIZEu!'
+         call exitt
+      endif
+
+      ntot  = nx1*ny1*nz1*nelv
+      ntott = nx1*ny1*nz1*nelt
+      nto2  = nx2*ny2*nz2*nelv
+
+      ! initialization
       if (icalld.eq.0) then
          icalld = icalld + 1
          atime  = 0.
          timel  = time
-c
+
          call rzero(uavg,ntot)
          call rzero(vavg,ntot)
          call rzero(wavg,ntot)
          call rzero(tavg,ntot)
-c
+         call rzero(pavg,nto2)
+
          call rzero(urms,ntot)
          call rzero(vrms,ntot)
          call rzero(wrms,ntot)
-         call rzero(trms,ntot)
-c
+         call rzero(trms,ntott)
+         call rzero(prms,nto2)
+
          call rzero(vwms,ntot)
          call rzero(wums,ntot)
          call rzero(uvms,ntot)
-         call rzero(wtms,ntot)
-c
-         call rzero(pavg,nto2)
-         call rzero(prms,nto2)
-c
+
+         do i = 1,ldimt-1
+           call rzero(psavg(1,1,1,1,i),ntott)
+           call rzero(psrms(1,1,1,1,i),ntott)
+         enddo
       endif
-c
-c
+
       dtime = time  - timel
       atime = atime + dtime
-c
-c
-      iastep = param(68) 
+
+      ! dump freq
+      iastep = param(68)
       if  (iastep.eq.0) iastep=param(15)   ! same as iostep
       if  (iastep.eq.0) iastep=500
-c
+
       ifverbose=.false.
       if (istep.le.10) ifverbose=.true.
       if  (mod(istep,iastep).eq.0) ifverbose=.true.
-c
+
       if (atime.ne.0..and.dtime.ne.0.) then
          beta  = dtime/atime
          alpha = 1.-beta
-         call avg1    (uavg,vx,alpha,beta,ntot,'velx',ifverbose)
-         call avg1    (vavg,vy,alpha,beta,ntot,'vely',ifverbose)
-         call avg1    (wavg,vz,alpha,beta,ntot,'velz',ifverbose)
-         call avg1    (tavg,t ,alpha,beta,ntot,'temp',ifverbose)
-         call avg1    (pavg,pr,alpha,beta,nto2,'pres',ifverbose)
- 
-         call avg2    (urms,vx,alpha,beta,ntot,'urms',ifverbose)
-         call avg2    (vrms,vy,alpha,beta,ntot,'vrms',ifverbose)
-         call avg2    (wrms,vz,alpha,beta,ntot,'wrms',ifverbose)
-         call avg2    (trms,t ,alpha,beta,ntot,'trms',ifverbose)
-         call avg2    (prms,pr,alpha,beta,nto2,'prms',ifverbose)
- 
-         call avg3    (uvms,vx,vy,alpha,beta,ntot,'uvrm',ifverbose)
-         call avg3    (vwms,vy,vz,alpha,beta,ntot,'vwrm',ifverbose)
-         call avg3    (wums,vz,vx,alpha,beta,ntot,'wurm',ifverbose)
-         call avg3    (wtms,vz,t ,alpha,beta,ntot,'wtrm',ifverbose)
- 
+         ! compute averages E(X)
+         call avg1    (uavg,vx,alpha,beta,ntot ,'um  ',ifverbose)
+         call avg1    (vavg,vy,alpha,beta,ntot ,'vm  ',ifverbose)
+         call avg1    (wavg,vz,alpha,beta,ntot ,'wm  ',ifverbose)
+         call avg1    (tavg,t ,alpha,beta,ntott,'tm  ',ifverbose)
+         call avg1    (pavg,pr,alpha,beta,nto2 ,'prm ',ifverbose)
+         do i = 1,ldimt-1
+            call avg1 (psavg(1,1,1,1,i),T(1,1,1,1,i+1),alpha,beta,
+     &                 ntott,'psav',ifverbose)
+         enddo
+
+         ! compute averages E(X^2) 
+         call avg2    (urms,vx,alpha,beta,ntot ,'ums ',ifverbose)
+         call avg2    (vrms,vy,alpha,beta,ntot ,'vms ',ifverbose)
+         call avg2    (wrms,vz,alpha,beta,ntot ,'wms ',ifverbose)
+         call avg2    (trms,t ,alpha,beta,ntott,'tms ',ifverbose)
+         call avg2    (prms,pr,alpha,beta,nto2 ,'prms',ifverbose)
+         do i = 1,ldimt-1
+            call avg2 (psrms(1,1,1,1,i),T(1,1,1,1,i+1),alpha,beta,
+     &                 ntott,'psms',ifverbose)
+         enddo
+
+         ! compute averages E(X*Y) (for now just for the velocities)
+         call avg3    (uvms,vx,vy,alpha,beta,ntot,'uvm ',ifverbose)
+         call avg3    (vwms,vy,vz,alpha,beta,ntot,'vwm ',ifverbose)
+         call avg3    (wums,vz,vx,alpha,beta,ntot,'wum ',ifverbose)
       endif
 c
 c-----------------------------------------------------------------------
       if ( (mod(istep,iastep).eq.0.and.istep.gt.1) .or.lastep.eq.1) then
-         call outpost(uavg,vavg,wavg,pavg,tavg,'avg')
-         call outpost(urms,vrms,wrms,prms,trms,'rms')
-         call outpost(uvms,vwms,wums,prms,wtms,'rm2')
+         call outpost(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
+         call outpost(urms,vrms,wrms,prms,trms,ldimt,'rms')
+         call outpost(uvms,vwms,wums,prms,wtms,ldimt,'rm2')
          atime = 0.
       endif
 c

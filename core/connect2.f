@@ -1089,7 +1089,7 @@ C     Read output specs
 
         READ(9,*,ERR=200,END=200) IPSCO
         IF (IPSCO.GT.0) THEN
-           IF (IPSCO.GT.LDIMT1) GOTO 200
+           IF (IPSCO.GT.LDIMT-1) GOTO 200
            DO 120 I=1,IPSCO
               READ(9,*,ERR=200,END=200) IFPSCO(I)
               k = k+1
@@ -1593,7 +1593,7 @@ c1105       format(i4.4,1x,'ie:',3i3,i6,1p9e11.3)
 c     ifvo = .true.
 c     ifpo = .false.
 c     ifto = .true.
-c     call outpost(xm1,ta,tb,pr,qmask,'   ')
+c     call outpost(xm1,ta,tb,pr,qmask,1,'   ')
 c     call exitt
 
       return

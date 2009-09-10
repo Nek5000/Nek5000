@@ -81,6 +81,13 @@ if [ -f SIZEu ]; then
      echo 'c automatically added by makenek' >>SIZEu
      echo '      parameter(lpart = 1  ) ! number of particles'       >>SIZEu
   fi
+  cat SIZEu | grep -i 'ax1' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZEu
+     echo 'c automatically added by makenek' >>SIZEu
+     echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZEu
+     echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZEu
+  fi
   cp SIZEu -v $SOURCE_ROOT/SIZE
 else
   echo "FATAL ERROR: Cannot find SIZEu"
