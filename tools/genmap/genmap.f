@@ -137,9 +137,9 @@ c     Clean up
          c1 = 1 + nelv*nv
 
          write(6,*) 'Starting rec_bisect2: nels = ',nels
+         write(6,*)  
          write(6,*) 
-         write(6,*) 
-     $     'NOTE: rec_bisect works only when solid is contiguous'
+     $     'NOTE: rec_bisect works only when solid is contiguous',
      $     'We could fix this with a connected graph test.'
          write(6,*) 
 
