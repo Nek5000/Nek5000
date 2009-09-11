@@ -197,9 +197,9 @@ setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $S/setprop.f
 cvode_driver.o	:$S/cvode_driver.f;		$(F77) -c $(FL2) $S/cvode_driver.f
 makeq.o	      	:$S/makeq.f;			$(F77) -c $(FL2) $S/makeq.f
 ################################################################################
-mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL4) $< -o $@ 
+mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
 mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $S/mxm_std.f
-k10_mxm.o	  :$S/k10_mxm.c;		$(F77) -c $(cFL2) $(JL) $< -o $@
+k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
 bg_aligned3.o	  :$S/bg_aligned3.s;		$(CC) -c $< -o $@
 bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
 bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@

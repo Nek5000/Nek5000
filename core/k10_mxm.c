@@ -1,8 +1,3 @@
-/*
-  mxm-wrapper.c 
-  July. 7. 2009
- */
-
 #ifndef FNAME_H
 #define FNAME_H
 
@@ -31,6 +26,9 @@ int k10_mxm(double* a, int* sz1, double* b, int* sz2, double* c, int* sz3)
     m = *sz1;
     k = *sz2;
     n = *sz3;
+
+    if ((unsigned)a%16 != 0 || (unsigned)b%16 != 0 || (unsigned)c%16 != 0){
+       return 1;}
 
     // 8,8,8  8,8,64  64,8,8
     if (k == 8){
