@@ -84,7 +84,7 @@ c-----------------------------------------------------------------------
       include 'mpif.h'
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 C
-      call nek_comm   ! set up nekton specific communicator
+      call create_comm(nekcomm) ! set up nekton specific communicator
 c
       nid_  = mynode()
       np_   = numnodes()
@@ -312,13 +312,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nek_comm
+      subroutine create_comm(icomm)
       include 'mpif.h'
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
-      call mpi_comm_group (mpi_comm_world,nekgroup,ierr)
-      call mpi_comm_create (mpi_comm_world,nekgroup,nekcomm,ierr)
-      call mpi_group_free (nekgroup,ierr)
+      call mpi_comm_group (mpi_comm_world,itmp,ierr)
+      call mpi_comm_create (mpi_comm_world,itmp,icomm,ierr)
+      call mpi_group_free (itmp,ierr)
 c     write(6,*) 'nekcomm:',nekcomm
 
       return
