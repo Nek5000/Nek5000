@@ -1,0 +1,12 @@
+base.rea
+-3                        spatial dimension (if negative dump .re2 file)
+1                         number of fields
+#
+#=======================================================================
+#
+box_1
+-2  -2  -2                nelx,nely,nelz (negative uniform spacing)
+-0.5   0.5  1.            x_0  x_1 ....  x_Nelx .or. x_0 x_Nelx
+-0.5   0.5  1.              
+-0.5   0.5  1.              
+W  ,W  ,W  ,W  ,W  ,W     bc's  ! west,east,south,north,buttom,top 

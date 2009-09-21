@@ -80,15 +80,21 @@ c
       equivalence (apt52,apt)
       data apt52/'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'/
 c
-      parameter (mbox  = 10)
-      parameter (maxx  = 250)
+      parameter (mbox  = 300)
+      parameter (maxx  = 300)
       parameter (maxel = mbox*maxx*maxx)
       integer nlx(mbox),nly(mbox),nlz(mbox)
       real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
       real xc(mbox),yc(mbox),zc(mbox)
       real curve(8,maxel)
-      character*3 cbc(6,mbox,50)
+      character*3 cbc(6,mbox,20)
       character*1 boxcirc(mbox)
+
+      real*4 buf(30)
+      character*80 hdr
+      real*4 test
+      data   test  / 6.54321 /
+      logical iffo
 c
 c
 c     Get the input file, which specifies the base .rea file
@@ -105,21 +111,25 @@ C
 c
       open (unit=8,file=string,status='old')
       open (unit=9,file='box.rea')
-      call scanout(string,'NEL,NDIM,NELV',13,8,9)
-c
+      call scanout(string,'MESH DATA',9,8,9)
+      read(8,*) i,i,i
+      write(9,*) ' *** MESH DATA ***'
+      
 c-----------------------------------------------------------------------
 c     here is where the 2d/3d determination is made....
-c
       if3d = .false.
+      iffo = .false.
       call geti1(ndim,iend,7)
-      if (ndim.eq.3) if3d=.true.
-c
+      if(ndim.lt.0) then
+        iffo = .false.
+        call byte_open('box.re2\0')
+      endif
+      ndim = abs(ndim)
+      if (ndim.eq.3) if3d = .true.
 c-----------------------------------------------------------------------
 c     here is where the fluid, fluid+heat determination is made....
-c
       call geti1(nfld,iend,7)
 c-----------------------------------------------------------------------
-C
       nel  = 0
       nbox = 0
       do ibox=1,mbox
@@ -142,6 +152,11 @@ c
             nelx = abs(nelx)
             nely = abs(nely)
             nelz = abs(nelz)
+
+            if(nelx*nely.gt.maxel) then
+              write(6,*) 'ABORT: increase maxel and recompile!'
+              call exitt
+            endif
 c
             nery = nely
             if (boxcirc(ibox).eq.'C') nery = 1
@@ -190,6 +205,11 @@ c
             if (nely.lt.0) ifeveny = .true.
             nelx = abs(nelx)
             nely = abs(nely)
+
+            if(nelx*nely.gt.maxel) then
+              write(6,*) 'ABORT: increase maxel and recompile!'
+              call exitt
+            endif
 c
             nery = nely
             if (boxcirc(ibox).eq.'C') nery = 1
@@ -231,17 +251,30 @@ c
          nel = nel + nelx*nely*nelz
          nbox = nbox+1
       enddo
-    6 format('Reading',i6,' =',3i6,' elements for box',i3,'.')
+    6 format('Reading',i8,' =',3i8,' elements for box',i4,'.')
    99 continue
 c
-      write(6,*) 'Beginning construction of new .rea file to box.rea'
-      write(6,*) nel,' elements will be created for',nbox,' boxes.'
+      if(iffo) then
+        write(6,*) 'Beginning construction of box.rea'
+      else
+        write(6,*) 'Beginning construction of box.rea/box.re2'
+      endif
+      write(6,*) nel,' elements will be created for ',nbox,' boxes.'
       write(6,*) 
 c
 c     Construct mesh
 c
-      write(9,10) nel,ndim,nel
-   10 format(3i10,'           NEL,NDIM,NELV')
+      if(iffo) then
+        write(9,10) nel,ndim,nel
+   10   format(3i10,'           NEL,NDIM,NELV')
+      else
+        write(9,10) -nel,ndim,nel
+        call blank(hdr,80)
+        write(hdr,111) nel,ndim,nel
+  111   format('#v001',i9,i3,i9,' this is the hdr')
+        call byte_write(hdr,20)   ! assumes byte_open() already issued
+        call byte_write(test,1)   ! write the endian discriminator
+      endif
 c
       ncurv = 0
       call rzero(curve,8*nel)
@@ -268,15 +301,45 @@ c
                   ie = ie+1
                   ia = ia+1
                   ia = mod1(ia,52)
-                  write(9,11) ie,ilev,apt(ia),'0'
+                  if(iffo) then
+                    write(9,11) ie,ilev,apt(ia),'0'
 c
-                  write(9,12) x1,x2,x2,x1
-                  write(9,12) y1,y1,y2,y2
-                  write(9,12) z1,z1,z1,z1
+                    write(9,12) x1,x2,x2,x1
+                    write(9,12) y1,y1,y2,y2
+                    write(9,12) z1,z1,z1,z1
 c
-                  write(9,12) x1,x2,x2,x1
-                  write(9,12) y1,y1,y2,y2
-                  write(9,12) z2,z2,z2,z2
+                    write(9,12) x1,x2,x2,x1
+                    write(9,12) y1,y1,y2,y2
+                    write(9,12) z2,z2,z2,z2
+                  else
+                    igroup = 0
+                    call byte_write(igroup, 1)
+                    buf(1)  = x1
+                    buf(2)  = x2
+                    buf(3)  = x2
+                    buf(4)  = x1
+                    buf(5)  = x1
+                    buf(6)  = x2
+                    buf(7)  = x2
+                    buf(8)  = x1
+                    buf(9)  = y1
+                    buf(10) = y1
+                    buf(11) = y2
+                    buf(12) = y2
+                    buf(13) = y1
+                    buf(14) = y1
+                    buf(15) = y2
+                    buf(16) = y2
+                    buf(17) = z1
+                    buf(18) = z1
+                    buf(19) = z1
+                    buf(20) = z1
+                    buf(21) = z2
+                    buf(22) = z2
+                    buf(23) = z2
+                    buf(24) = z2
+                    call byte_write(buf,24)
+                  endif
                enddo
             enddo
           enddo
@@ -313,9 +376,23 @@ c             CIRCLE (x = r, y = theta) .... specified in std. "box" way...
                     y4 = yc(ibox) + r1*sin(t2)
                     curve(2,ie) =  r2
                     curve(4,ie) = -r1
-                    write(9,11) ie,ilev,apt(ia),'0'
-                    write(9,12) x1,x2,x3,x4
-                    write(9,12) y1,y2,y3,y4
+                    if(iffo) then
+                      write(9,11) ie,ilev,apt(ia),'0'
+                      write(9,12) x1,x2,x3,x4
+                      write(9,12) y1,y2,y3,y4
+                    else
+                      igroup = 0
+                      call byte_write(igroup, 1)
+                      buf(1) = x1
+                      buf(2) = x2
+                      buf(3) = x3
+                      buf(4) = x4
+                      buf(5) = y1
+                      buf(6) = y2
+                      buf(7) = y3
+                      buf(8) = y4
+                      call byte_write(buf,8)
+                    endif
                     ncurv = ncurv+2
                  enddo
               enddo
@@ -345,9 +422,23 @@ c             CIRCLE (x = r, y = theta) .... specified in Cool fast way...
                     y4 = yc(ibox) + r1*sin(p2)
                     curve(2,ie) =  r2
                     curve(4,ie) = -r1
-                    write(9,11) ie,ilev,apt(ia),'0'
-                    write(9,12) x1,x2,x3,x4
-                    write(9,12) y1,y2,y3,y4
+                    if(iffo) then
+                      write(9,11) ie,ilev,apt(ia),'0'
+                      write(9,12) x1,x2,x3,x4
+                      write(9,12) y1,y2,y3,y4
+                    else
+                      igroup = 0
+                      call byte_write(igroup, 1)
+                      buf(1) = x1
+                      buf(2) = x2
+                      buf(3) = x3
+                      buf(4) = x4
+                      buf(5) = y1
+                      buf(6) = y2
+                      buf(7) = y3
+                      buf(8) = y4
+                      call byte_write(buf,8)
+                    endif
                     ncurv = ncurv+2
                  enddo
               enddo
@@ -362,9 +453,23 @@ c             BOX
                     ie = ie+1
                     ia = ia+1
                     ia = mod1(ia,52)
-                    write(9,11) ie,ilev,apt(ia),'0'
-                    write(9,12) x1,x2,x2,x1
-                    write(9,12) y1,y1,y2,y2
+                    if(iffo) then
+                      write(9,11) ie,ilev,apt(ia),'0'
+                      write(9,12) x1,x2,x3,x4
+                      write(9,12) y1,y2,y3,y4
+                    else
+                      igroup = 0
+                      call byte_write(igroup, 1)
+                      buf(1) = x1
+                      buf(2) = x2
+                      buf(3) = x3
+                      buf(4) = x4
+                      buf(5) = y1
+                      buf(6) = y2
+                      buf(7) = y3
+                      buf(8) = y4
+                      call byte_write(buf,8)
+                    endif
                  enddo
               enddo
            endif
@@ -372,46 +477,79 @@ c             BOX
       endif
 c
 c     output curve stuff and Boundary conditions
-      write(9,28) ncurv
-   28 format(
-     $ '  ***** CURVED SIDE DATA *****',/,
-     $    i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
-c
-      zero = 0.
-      if (nel.lt.1000) then
+      if(iffo) then
+        write(9,28) ncurv
+   28   format(
+     $   '  ***** CURVED SIDE DATA *****',/,
+     $      i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+
+        zero = 0.
+        if (nel.lt.1000) then
+           do ie=1,nel
+              do iedge = 2,4,2
+                 if (curve(iedge,ie).ne.0) write(9,290) 
+     $            iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
+              enddo
+           enddo
+  290      format(i3,i3,5g14.6,1x,a1)
+         else
+           do ie=1,nel
+              do iedge = 2,4,2
+                 if (curve(iedge,ie).ne.0) write(9,291) 
+     $              iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
+              enddo
+           enddo
+  291      format(i2,i6,5g14.6,1x,a1)
+         endif
+      else
+         call byte_write(ncurv,1)  
          do ie=1,nel
             do iedge = 2,4,2
-               if (curve(iedge,ie).ne.0) write(9,290) 
-     $            iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
+               if (curve(iedge,ie).ne.0) then
+                  if(iffo) then
+                    write(9,291) 
+     $                iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
+                  else
+                      buf(1) = ie
+                      buf(2) = iedge
+                      buf(3) = curve(iedge,ie)
+                      buf(4) = zero
+                      buf(5) = zero
+                      buf(6) = zero
+                      buf(7) = zero
+                      buf(8) = 'C'
+                      call byte_write(buf,8)
+                  endif
+               endif
             enddo
          enddo
-  290    format(i3,i3,5g14.6,1x,a1)
-       else
-         do ie=1,nel
-            do iedge = 2,4,2
-               if (curve(iedge,ie).ne.0) write(9,291) 
-     $            iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
-            enddo
-         enddo
-  291    format(i2,i6,5g14.6,1x,a1)
-       endif
+      endif
+
 c
-      write(9,31) 
-   31 format('  ***** BOUNDARY CONDITIONS *****')
+      if(iffo) 
+     &   write(9,31) 
+   31    format('  ***** BOUNDARY CONDITIONS *****')
 c
       do ifld=1,nfld
 c
          if2 = ifld-2
-         if (ifld.eq.1) write(9,41)
-         if (ifld.eq.2) write(9,42)
-         if (ifld.ge.3) write(9,43) if2
-   41    format('  ***** FLUID   BOUNDARY CONDITIONS *****')
-   42    format('  ***** THERMAL BOUNDARY CONDITIONS *****')
-   43    format('  ***** PASSIVE SCALAR',i2
-     $                       ,'  BOUNDARY CONDITIONS *****')
+         if(iffo) then
+           if (ifld.eq.1) write(9,41)
+           if (ifld.eq.2) write(9,42)
+           if (ifld.ge.3) write(9,43) if2
+   41      format('  ***** FLUID   BOUNDARY CONDITIONS *****')
+   42      format('  ***** THERMAL BOUNDARY CONDITIONS *****')
+   43      format('  ***** PASSIVE SCALAR',i2
+     $                         ,'  BOUNDARY CONDITIONS *****')
+         endif
 c
-         ie = 0
+         nbc = 0
          if (if3d) then
+            do ipass=1,2
+               ie = 0
+               if(ipass.eq.2 .and. .not. iffo) then
+                 call byte_write(nbc,1)
+               endif
             do ibx=1,nbox
             do iez=1,nlz(ibx)
             do iey=1,nly(ibx)
@@ -443,7 +581,8 @@ c
 c
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
-                  if (cbc1.ne.'P  ') call rzero(rbc1,5)
+                  if (cbc1.ne.'P  ')  call rzero(rbc1,5)
+                  nbc = nbc + 1
                else
                   cbc1='E  '
                endif
@@ -451,6 +590,7 @@ c
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
+                  nbc = nbc + 1
                else
                   cbc2='E  '
                endif
@@ -458,6 +598,7 @@ c
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
+                  nbc = nbc + 1
                else
                   cbc3='E  '
                endif
@@ -465,6 +606,7 @@ c
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
+                  nbc = nbc + 1
                else
                   cbc4='E  '
                endif
@@ -472,6 +614,7 @@ c
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
                   if (cbc5.ne.'P  ') call rzero(rbc5,5)
+                  nbc = nbc + 1
                else
                   cbc5='E  '
                endif
@@ -479,6 +622,7 @@ c
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
                   if (cbc6.ne.'P  ') call rzero(rbc6,5)
+                  nbc = nbc + 1
                else
                   cbc6='E  '
                endif
@@ -486,36 +630,92 @@ c
 c              output bc's in preproc. notation
 c
                ie = ie+1
-               if (nel.lt.1000) then
-                  write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                  write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                  write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                  write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                  write(9,20) cbc5,ie,eface(5),(rbc5(j),j=1,5)
-                  write(9,20) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-               elseif (nel.lt.100000) then
-                  write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                  write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                  write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                  write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                  write(9,21) cbc5,ie,eface(5),(rbc5(j),j=1,5)
-                  write(9,21) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-               elseif (nel.lt.10000000) then
-                  write(9,22) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                  write(9,22) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                  write(9,22) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                  write(9,22) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                  write(9,22) cbc5,ie,eface(5),(rbc5(j),j=1,5)
-                  write(9,22) cbc6,ie,eface(6),(rbc6(j),j=1,5)
+               if(iffo .and. ipass.eq.1) then
+                 if (nel.lt.1000) then
+                    write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
+                    write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
+                    write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
+                    write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                    write(9,20) cbc5,ie,eface(5),(rbc5(j),j=1,5)
+                    write(9,20) cbc6,ie,eface(6),(rbc6(j),j=1,5)
+                 elseif (nel.lt.100000) then
+                    write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
+                    write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
+                    write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
+                    write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                    write(9,21) cbc5,ie,eface(5),(rbc5(j),j=1,5)
+                    write(9,21) cbc6,ie,eface(6),(rbc6(j),j=1,5)
+                 elseif (nel.lt.10000000) then
+                    write(9,22) cbc3,ie,eface(3),(rbc3(j),j=1,5)
+                    write(9,22) cbc2,ie,eface(2),(rbc2(j),j=1,5)
+                    write(9,22) cbc4,ie,eface(4),(rbc4(j),j=1,5)
+                    write(9,22) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                    write(9,22) cbc5,ie,eface(5),(rbc5(j),j=1,5)
+                    write(9,22) cbc6,ie,eface(6),(rbc6(j),j=1,5)
+                 endif
+   20            format(1x,a3,2i3,5g14.7)
+   21            format(1x,a3,i5,i1,5g14.7)
+   22            format(1x,a3,i6,i1,5g14.7)
+               elseif (.not. iffo) then
+                 if(ipass.eq.2) then
+                   call blank(buf(1),30*4)
+                   call icopy(buf(1),ie,1)
+c                   call blank(buf(8),4)
+ 
+                   if(cbc3.ne.'E  ') then 
+                     call icopy(buf(2),eface(3),1)
+                     call copy(buf(3),rbc3,5)
+                     call chcopy(buf(8),cbc3,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc2.ne.'E  ') then 
+                     call icopy(buf(2),eface(2),1)
+                     call copy(buf(3),rbc2,5)
+                     call chcopy(buf(8),cbc2,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc4.ne.'E  ') then 
+                     call icopy(buf(2),eface(4),1)
+                     call copy(buf(3),rbc4,5)
+                     call chcopy(buf(8),cbc4,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc1.ne.'E  ') then 
+                     call icopy(buf(2),eface(1),1)
+                     call copy(buf(3),rbc1,5)
+                     call chcopy(buf(8),cbc1,3)
+                     call byte_write(buf,8)
+                   endif 
+ 
+                   if(cbc5.ne.'E  ') then 
+                     call icopy(buf(2),eface(5),1)
+                     call copy(buf(3),rbc5,5)
+                     call chcopy(buf(8),cbc5,3)
+                     call byte_write(buf,8)
+                   endif
+
+                   if(cbc6.ne.'E  ') then 
+                     call icopy(buf(2),eface(6),1)
+                     call copy(buf(3),rbc6,5)
+                     call chcopy(buf(8),cbc6,3)
+                     call byte_write(buf,8)
+                   endif
+                 endif
                endif
-   20          format(1x,a3,2i3,5g14.7)
-   21          format(1x,a3,i5,i1,5g14.7)
-   22          format(1x,a3,i6,i1,5g14.7)
+            enddo
             enddo
             enddo
             enddo
             enddo
          else
+            do ipass=1,2
+               ie = 0
+               if(ipass.eq.2 .and. .not. iffo) then
+                 call byte_write(nbc,1)
+               endif
             do ibx=1,nbox
             do iey=1,nly(ibx)
             do iex=1,nlx(ibx)
@@ -539,6 +739,7 @@ c
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
                   if (cbc1.ne.'P  ') call rzero(rbc1,5)
+                  nbc = nbc + 1
                else
                   cbc1='E  '
                endif
@@ -546,6 +747,7 @@ c
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
+                  nbc = nbc + 1
                else
                   cbc2='E  '
                endif
@@ -553,6 +755,7 @@ c
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
+                  nbc = nbc + 1
                else
                   cbc3='E  '
                endif
@@ -560,6 +763,7 @@ c
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
+                  nbc = nbc + 1
                else
                   cbc4='E  '
                endif
@@ -567,17 +771,53 @@ c
 c              output bc's in preproc. notation
 c
                ie = ie+1
-               if (nel.lt.1000) then
-                  write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                  write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                  write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                  write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-               else
-                  write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                  write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                  write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                  write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+               if(iffo .and. ipass.eq.1) then
+                 if (nel.lt.1000) then
+                    write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
+                    write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
+                    write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
+                    write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                 else
+                    write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
+                    write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
+                    write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
+                    write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                 endif
+               elseif (.not. iffo) then
+                 if(ipass.eq.2) then
+                   call icopy(buf(1),ie,1)
+                   call blank(buf(8),4)
+ 
+                   if(cbc3.ne.'E  ') then 
+                     call icopy(buf(2),eface(3),1)
+                     call copy(buf(3),rbc3,5)
+                     call chcopy(buf(8),cbc3,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc2.ne.'E  ') then 
+                     call icopy(buf(2),eface(2),1)
+                     call copy(buf(3),rbc2,5)
+                     call chcopy(buf(8),cbc2,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc4.ne.'E  ') then 
+                     call icopy(buf(2),eface(4),1)
+                     call copy(buf(3),rbc4,5)
+                     call chcopy(buf(8),cbc4,3)
+                     call byte_write(buf,8)
+                   endif
+ 
+                   if(cbc1.ne.'E  ') then 
+                     call icopy(buf(2),eface(1),1)
+                     call copy(buf(3),rbc1,5)
+                     call chcopy(buf(8),cbc1,3)
+                     call byte_write(buf,8)
+                   endif 
+                 endif
                endif
+            enddo
             enddo
             enddo
             enddo
@@ -586,11 +826,15 @@ c
 c
 c     Scan through .rea file until end of bcs
 c
-      if (nfld.eq.1) call scan(string,'THERMAL BOUNDARY',16,8)
-      if (nfld.ge.2) call scan(string,'PRESOLVE',8,8)
-      lout = ltrunc(string1,80)
-      write (9,81) (string1(j),j=1,lout)
-   81 format(80a1)
+      if(iffo) then
+        if (nfld.eq.1) call scan(string,'THERMAL BOUNDARY',16,8)
+        if (nfld.ge.2) call scan(string,'PRESOLVE',8,8)
+        lout = ltrunc(string1,80)
+        write (9,81) (string1(j),j=1,lout)
+   81   format(80a1)
+      else
+        call byte_close()
+      endif
 c
 c     Scan through and output .rea file until end of file
 c
@@ -893,4 +1137,31 @@ C
       
       return
       end
+c-----------------------------------------------------------------------
+      subroutine icopy(a,b,n)
+      integer a(1), b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chcopy(a,b,n)
+      character*1 a(1), b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy(a,b,n)
+      real a(1), b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine exitt
 
+      stop 
+ 
+      return
+      end
