@@ -73,11 +73,17 @@ c     an ascii rea file for just the parameters
          nel  = nelt
          e    = nelo + 1
 
+         if(nelt_all.gt.lelt) then
+           write(6,*) 
+     &      'ABORT: Too many elements, increase LELT and recompile'
+           call exitt 
+         endif
+
          call rd_xyz (x(1,e),y(1,e),z(1,e),nel,ndim)
 
          call rd_curve(ncurvn,ccurve(1,e),curve(1,1,e),nel,ndim)
          ncurve = ncurve + ncurvn
-         write(6,*) ncurve,ncurvn,e,' NCURVE'
+c         write(6,*) ncurve,ncurvn,e,' NCURVE'
 
          call rd_bdry(cbc(1,e,1),bc(1,1,e,1),string
      $               ,nel,nelo,ndim,nfld,lelt)
@@ -104,7 +110,8 @@ c-----------------------------------------------------------------------
       equivalence (string,string1)
 
 
-      write(6,*) 'Input old (source) file name:'      
+      write(6,*) 
+     &  'Input source .rea file name or press enter to continue:'  
       call blank(file,80)
       read(5,80,err=99,end=99) file
       len = indx1(file,' ',1)-1
@@ -119,7 +126,7 @@ c-----------------------------------------------------------------------
       call chcopy(file1(len+1),'.rea',4)
 
       len = ltrunc(file,80)
-      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
+c      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
 
       open(unit=10, file=file)
       iend = 0
@@ -156,7 +163,7 @@ c-----------------------------------------------------------------------
       call chcopy(fout1(lou+1),'.rea',4)
 
       len = ltrunc(fout,80)
-      write(6,*) 'Opening output file: ',(fout1(k),k=1,len)
+c      write(6,*) 'Opening output file: ',(fout1(k),k=1,len)
 
       open(unit=11, file=fout)
 
@@ -164,7 +171,7 @@ c-----------------------------------------------------------------------
          call chcopy(fbout1(lou+1),'.re2\0',5)
 
          len = ltrunc(fbout,80)
-         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
+c         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
 
          call byte_open(fbout)
 
@@ -420,31 +427,31 @@ c     output remainder of mesh: .rea/.re2 format
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 
-      call strg_write(hdr,20)   ! assumes byte_open() already issued
-      call strg_write(test,1)   ! write the endian discriminator
+c      call strg_write(hdr,20)   ! assumes byte_open() already issued
+c      call strg_write(test,1)   ! write the endian discriminator
 
       do e=1,nel      
          if (mod(e,10000).eq.0) write(6,*) e,nel,' mesh'
 
          igroup = 0
          call byte_write(igroup, 1)
-         call  int_write(igroup, 1)
+c         call  int_write(igroup, 1)
 
          if (ndim.eq.3) then
             call byte_write(x(1,e),8)
             call byte_write(y(1,e),8)
             call byte_write(z(1,e),8)
 
-            call real_write(x(1,e),8)
-            call real_write(y(1,e),8)
-            call real_write(z(1,e),8)
+c            call real_write(x(1,e),8)
+c            call real_write(y(1,e),8)
+c            call real_write(z(1,e),8)
 
          else
             call byte_write(x(1,e),4)
             call byte_write(y(1,e),4)
 
-            call real_write(x(1,e),4)
-            call real_write(y(1,e),4)
+c            call real_write(x(1,e),4)
+c            call real_write(y(1,e),4)
          endif
 
       enddo
@@ -461,10 +468,10 @@ c     output remainder of mesh: .rea/.re2 format
                call byte_write(curve(1,f,e),5)
                call byte_write(ccurve(f,e),1) ! writing 4 bytes, but ok
             
-               call  int_write(e     ,1)
-               call  int_write(f     ,1)
-               call real_write(curve(1,f,e),5)
-               call strg_write(ccurve(f,e),1) ! writing 4 bytes, but ok
+c               call  int_write(e     ,1)
+c               call  int_write(f     ,1)
+c               call real_write(curve(1,f,e),5)
+c               call strg_write(ccurve(f,e),1) ! writing 4 bytes, but ok
             endif
          enddo
          enddo
@@ -482,7 +489,7 @@ c     output remainder of mesh: .rea/.re2 format
 
          write(6,*) ifld,nbc,' Number of bcs'
          call byte_write(nbc,1)
-         call  int_write(nbc,1)
+c         call  int_write(nbc,1)
 
          do e=1,nel
          do f=1,nface
@@ -493,7 +500,7 @@ c     output remainder of mesh: .rea/.re2 format
                call blank      (buf(8),4)
                call chcopy     (buf(8),cbc(f,e,ifld),3)
                call byte_write (buf,8)
-               call bdry_write (buf,8)
+c               call bdry_write (buf,8)
             endif
          enddo
          enddo
@@ -524,6 +531,11 @@ c     output remainder of mesh: ascii format
 
       write(11,11) nelt, ndim, nelv
    11 format(i14,i3,i14,1x,'NEL,NDIM,NELV')
+
+      if(nelt.ge.1000000) then
+        write(6,*) 'ABORT: No ascii support for more than 1M elm!'
+        call exitt
+      endif 
 
       call out_xyz_ascii
       call out_curve_ascii
@@ -606,8 +618,6 @@ c     .Ouput curve side data in ascii to unit 11
                   write(11,60) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
                elseif (nelt.lt.1000000) then
                   write(11,61) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
-               else
-                  write(11,62) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
                endif
             endif
          enddo
@@ -615,7 +625,6 @@ c     .Ouput curve side data in ascii to unit 11
    50    continue
    60    format(i3,i3,1p5g14.6,1x,a1)
    61    format(i2,i6,1p5g14.6,1x,a1)
-   62    format(i2,i10,1p5e14.6,1x,a1)
       endif
 
       return
