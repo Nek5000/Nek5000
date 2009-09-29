@@ -118,7 +118,7 @@ c
 c-----------------------------------------------------------------------
 c     here is where the 2d/3d determination is made....
       if3d = .false.
-      iffo = .false.
+      iffo = .true.
       call geti1(ndim,iend,7)
       if(ndim.lt.0) then
         iffo = .false.
@@ -840,7 +840,6 @@ c     Scan through and output .rea file until end of file
 c
       call scanout(string,'xxxx',4,8,9)
 c
-      stop
       end
 c-----------------------------------------------------------------------
       subroutine scanout(string,input,len,infile,outfile)
@@ -1161,7 +1160,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine exitt
 
-      stop 
+      call exit 
  
       return
       end
