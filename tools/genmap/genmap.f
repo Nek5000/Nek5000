@@ -1088,6 +1088,8 @@ c-----------------------------------------------------------------------
       l  = 1
       d  = 0
       depth = 0
+      itmp = nel/100
+      itmp = max(1,itmp)
       do i=1,nel
          j0 = ia(l-1)
          j1 = ia(l)-1
@@ -1096,8 +1098,8 @@ c-----------------------------------------------------------------------
 c         if (i.le.100)
 c     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
 
-            if(mod(i,min(1,nel/100)).lt.0 .or. i.eq.1)
-     &          write(6,'(A,f6.1,A)') ' done: ', 100*float(i)/nel, '%'
+            if(mod(i,itmp).eq.0 .or. i.eq.1)
+     &          write(6,'(A,f6.1,A)') ' done: ', 100.*i/nel, '%'
 
          if (da(l-1).lt.max_depth.and.l.gt.0) then
             da(l-1) = da(l-1) + 1
