@@ -182,7 +182,6 @@ c     write(22,1) (pmap(k),k=1,nelt)
 c   1 format(i9)
 c     close(unit=22)
 
-      stop
       end
 c-----------------------------------------------------------------------
       subroutine makemesh(cell,nelv,nelt,irnk,dx,cbc,bc,ndim,wk)
@@ -219,7 +218,6 @@ c     read nekton .rea file and make a mesh
       write(6,'(A,A)') 'NOTE: smaller is better, but generous is more',
      &                 'forgiving for bad mashes.'
       read(5,*) qin
-      q = 0.2
       if(qin.gt.0) q = qin
 
       call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
@@ -317,22 +315,24 @@ c
       ifbinary = .false.
       ifbswap  = .false.
 
+      write(6,*) 'reading .rea file data ...'
       call cscan(string,'MESH DATA',9)
       read (10,*) nelt,ndim,nelv
        
       if (nelt.lt.0) then
          ifbinary = .true.
+         write(6,*) 'reading .re2 file data ...'
          call open_bin_file(ifbswap,nelgtr,nelgvr)
          nelt = nelgtr
          nelv = nelgvr
          nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
       endif
 
-      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
+c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
 
       if (nelt.gt.lelm) then 
-         write(6,*) 'ABORT: NELT>LELM, modify LELM and recompile'
-         call exitt(1)
+        write(6,*) 'ABORT: NELT>LELM, modify LELM in SIZE and recompile'
+        call exitt(1)
       endif
 
       b = 1.e22
@@ -1093,8 +1093,11 @@ c-----------------------------------------------------------------------
          j1 = ia(l)-1
          n  = ia(l) - ia(l-1)
 
-         if (i.le.100)
-     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
+c         if (i.le.100)
+c     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
+
+            if(mod(i,nel/100).eq.0 .or. i.eq.1)
+     &          write(6,'(A,f6.1,A)') ' done: ', 100*float(i)/nel, '%'
 
          if (da(l-1).lt.max_depth.and.l.gt.0) then
             da(l-1) = da(l-1) + 1
@@ -1102,8 +1105,10 @@ c-----------------------------------------------------------------------
             depth   = da(l-1)
             call bipart_sort
      $        (n1,n2,pmap(j0),order,mo,elist(j0),n,cell,nv,p,w1,w2,w3)
-            write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' DEPTH'
-    8       format(i9,2i5,6i10,a6)
+
+ 
+c     &        write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' DEPTH'
+c    8       format(i9,2i5,6i10,a6)
 c           write(6,18) 'A',(pmap(k),k=1,nel) 
 c 18        format(a1,'pmap:',32i3)
 
@@ -1120,7 +1125,8 @@ c 18        format(a1,'pmap:',32i3)
 
       enddo
 
-      write(6,*) 'done rec_bisect:',nel
+      write(6,*) ' '
+      write(6,*) 'done rec_bisect'
       return
       end
 c-----------------------------------------------------------------------
@@ -1526,7 +1532,7 @@ c-----------------------------------------------------------------------
 
       d2 = 2**depth
 
-      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
+c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
 
       nactive = nrnk - noutflow
 
@@ -1534,6 +1540,8 @@ c-----------------------------------------------------------------------
       call chcopy(fname,session,80)
       call chcopy(fnam1(len+1),'.map',4)
       open (unit=29,file=fname)
+
+      write(6,'(A,A)') 'writing ', fname
 
       write(29,1) nel,nactive,depth,d2,npts,nrnk,noutflow
     1 format(9i11)
@@ -1799,7 +1807,7 @@ c
      $              , 1,2,3,4 , 5,6,7,8 /
 
       ifoutflow = .false.
-
+c
       nvf  = nv/2
       mvtx = nel*nv
 
@@ -1810,7 +1818,7 @@ c        write(6,*) cb,e,f,' cb'
          if (cb.eq.'O  ') then
             do i=1,nvf
                j = vface(i,f)
-               cell(j,e) = cell(j,e) + mvtx
+               if(cell(j,e).le.mvtx) cell(j,e) = cell(j,e) + mvtx
             enddo
             ifoutflow = .true.
          endif
@@ -1821,8 +1829,9 @@ c     Make cells consistent if you have an 'O  ' next to 'W  ' (say)
       do j=1,nv*nel
          i = cell(j,1)
          if (i.gt.mvtx) then  ! Outflow node, make attached nodes same
-            k0 = ic(i)
-            k1 = ic(i+1)-1
+            ii = i - mvtx
+            k0 = ic(ii)
+            k1 = ic(ii+1)-1
             do k=k0,k1
                jj = jc(k)
                cell(jj,1) = i
@@ -1832,7 +1841,7 @@ c     Make cells consistent if you have an 'O  ' next to 'W  ' (say)
 
       mo = 0
       no = 0
-      write(6,*) no,mo,out_vtm,ifoutflow,' OUTFLOW'
+c      write(6,*) no,mo,out_vtm,ifoutflow,' OUTFLOW'
       if (.not. ifoutflow) return
 
       npts             = nel*nv
@@ -1993,7 +2002,7 @@ c
       enddo
       enddo
 
-      write(6,*) 'done periodic vtx:',nel,irnk
+      write(6,*) 'done periodic vtx'
       return
       end
 c-----------------------------------------------------------------------
@@ -2482,7 +2491,7 @@ c        Generate tridiagonal matrix for Lanczos scheme
  1001 continue
 c
       niter = iter
-      write(6,6) iter,n,rnorm,rtol
+c      write(6,6) iter,n,rnorm,rtol
     6 format(i4,i10,' cg:',1p6e12.4)
 c
       return
@@ -2716,7 +2725,7 @@ c
       do i=1,n
          pmax = max(pmax,p(i))
       enddo
-      write(6,*) 'pmax:',pmax,n
+c      write(6,*) 'pmax:',pmax,n
 
       do i=1,n
          p(i) = pmax+1 - p(i)  ! range of p is [1:pmax]
@@ -2733,6 +2742,8 @@ c-----------------------------------------------------------------------
 
       integer e
       real dxt(4),t1(4),t2(4),wk(0:ndim,1)
+
+      write(6,*) 'start locglob_lexico:'
 
       nvtx = 2**ndim
       n = nvtx*nel
@@ -2751,7 +2762,7 @@ c
 
       do ipass=1,ndim   ! Multiple passes eliminates false positives
       do j=1,ndim       ! Sort within each segment
-         write(6,*) 'locglob:',j,nseg,n
+c         write(6,*) 'locglob:',j,nseg,n
          i =1
          j1=j+1
          do iseg=1,nseg
@@ -2818,7 +2829,7 @@ c           call copy(dx(0,ig),wk(0,i),lda) ! lda = ndim+1 values ->global vtx
 c        endif
 c     enddo
       write(6,6) nseg,nglb,n,icm
-    6 format('done locglob_lexico:',4i10)
+    6 format(' done locglob_lexico:',4i10)
       return
       end
 c-----------------------------------------------------------------------
@@ -2898,7 +2909,7 @@ c-----------------------------------------------------------------------
          endif
       enddo
       enddo
-      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
+c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
 
       return
       end
@@ -3010,7 +3021,7 @@ c-----------------------------------------------------------------------
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      parameter (lelm=400 000)
+      include 'SIZE'
 
       character*3 cbc(6,lelm)
       real        bc (5,6,lelm)
@@ -3131,8 +3142,8 @@ c-----------------------------------------------------------------------
 
       call byte_open(fname)
       call byte_read(hdr,20)
-      write(6,80) hdr
-   80 format(a80)
+c      write(6,80) hdr
+c   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
     1 format(a5,i9,i3,i9)
@@ -3157,7 +3168,7 @@ c
 c
       test2 = bytetest
       call byte_reverse(test2,1)
-      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
+c      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
 
       return
       end
@@ -4185,10 +4196,10 @@ c-----------------------------------------------------------------------
 c        write(6,2)e,mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
 c   2    format(4i8,2i9,' mid ',a10,' np =',i8)
       enddo
-      do mid=0,np-1
-         write(6,1) mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
-    1    format(3i8,2i11,' NEL ',a10,' np =',i8)
-      enddo
+c      do mid=0,np-1
+c         write(6,1) mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
+c    1    format(3i8,2i11,' NEL ',a10,' np =',i8)
+c      enddo
 
       return
       end
