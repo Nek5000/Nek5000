@@ -149,7 +149,7 @@ c     Clean up
          call isort     (elist   ,w1,nels)
          call iswap_ip  (pmap(e1),w1,nels)
 
-         call maptest   (pmap,nelv,nelt,'map test A',w1,w2)
+c         call maptest   (pmap,nelv,nelt,'map test A',w1,w2)
 
       endif
 
@@ -163,13 +163,13 @@ c     Clean up
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
       call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
       if (nelv.eq.nelt) call reverse_p (pmap,nelt) ! lightly load node 0
-      call maptest      (pmap,nelv,nelt,'map test B',w1,w2)
+c      call maptest      (pmap,nelv,nelt,'map test B',w1,w2)
 
 c     Output to .map file:
 c     noutflow    = no    ! for now - no outflow bcs
       noutflow    = 0     ! for now - no outflow bcs  (handled in nek?)
       call out_mapfile (pmap,nelt,cell,nv,nrnk,noutflow)
-      call maptest     (pmap,nelv,nelt,'map test C',w1,w2)
+c      call maptest     (pmap,nelv,nelt,'map test C',w1,w2)
 
       call mult_chk(dx,ndim,nv,nelt,cell,nrnk)
 
@@ -1096,7 +1096,7 @@ c-----------------------------------------------------------------------
 c         if (i.le.100)
 c     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
 
-            if(mod(i,nel/100).eq.0 .or. i.eq.1)
+            if(mod(i,min(1,nel/100)).lt.0 .or. i.eq.1)
      &          write(6,'(A,f6.1,A)') ' done: ', 100*float(i)/nel, '%'
 
          if (da(l-1).lt.max_depth.and.l.gt.0) then
@@ -3380,7 +3380,7 @@ c   9   format(8i8,a6)
        if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p1st'
       enddo
 
-      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
+c      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
       call exitt(nelt)
 c
 c     Repeat first loop, using _anything_ to fill underloaded processors
@@ -3406,7 +3406,7 @@ c      if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p2nd'
   8    format(5i9,a5)
       enddo
 
-      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
+c      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
       call exitt(nelt)
 
 c     Diagnostic - any underloaded left ? 
