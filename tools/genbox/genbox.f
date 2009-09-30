@@ -118,10 +118,11 @@ c
 c-----------------------------------------------------------------------
 c     here is where the 2d/3d determination is made....
       if3d = .false.
-      iffo = .true.
+      iffo = .false.
       call geti1(ndim,iend,7)
-      if(ndim.lt.0) then
-        iffo = .false.
+      if(ndim.lt.0) then  ! default is binary
+        iffo = .true.
+      else
         call byte_open('box.re2\0')
       endif
       ndim = abs(ndim)
@@ -832,14 +833,20 @@ c
         lout = ltrunc(string1,80)
         write (9,81) (string1(j),j=1,lout)
    81   format(80a1)
+        call scanout(string,'xxxx',4,8,9)
       else
+        call scan(string,'RESTART',7,8)
+        lout = ltrunc(string1,80)
+        write (9,81) (string1(j),j=1,lout)
+        call scanout(string,'xxxx',4,8,9)
         call byte_close()
       endif
 c
 c     Scan through and output .rea file until end of file
 c
-      call scanout(string,'xxxx',4,8,9)
-c
+      close(8)
+      close(9)
+
       end
 c-----------------------------------------------------------------------
       subroutine scanout(string,input,len,infile,outfile)

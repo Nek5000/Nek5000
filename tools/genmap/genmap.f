@@ -215,8 +215,8 @@ c     read nekton .rea file and make a mesh
       call getfile2('Input (.rea) file name:$','.rea$',10)
 
       write(6,'(A)') 'Input mesh tolerance (default 0.2):'
-      write(6,'(A,A)') 'NOTE: smaller is better, but generous is more',
-     &                 'forgiving for bad mashes.'
+      write(6,'(A,A)') 'NOTE: smaller is better, but generous is more ',
+     &                 'forgiving for bad meshes.'
       read(5,*) qin
       if(qin.gt.0) q = qin
 
