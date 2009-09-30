@@ -406,22 +406,39 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
       include 'mpif.h'
+
+      real*4 papi_mflops
+      integer*8 papi_flops
 c
       call gsync()
 
-      tstop = dnekclock()
-      ttotal= tstop-etimes
+#ifdef PAPI
+      call nek_flops(papi_flops,papi_mflops)
+#endif
+      tstop  = dnekclock()
+      ttotal = tstop-etimes
+      nxyz   = nx1*ny1*nz1
 
       if (nid.eq.0) then
+         dtmp1 = np*ttime/(nelgt*nxyz)
+         dtmp2 = ttime/max(istep,1)
+         dtmp3 = 1.*papi_flops/1e6 
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '
          call print_stack()
          write(6,*) ' '
-         write(6,'(3(A,1g13.5,A,/))') 
-     &      'total elapsed time         : ',ttotal, ' sec',
-     &      'total solve time incl. I/O : ',ttime , ' sec',
-     &      'time/timestep              : ',ttime/max(istep,1), ' sec'
+         write(6,'(4(A,1g13.5,A,/))') 
+     &       'total elapsed time             : ',ttotal, ' sec'
+     &      ,'total solver time incl. I/O    : ',ttime , ' sec'
+     &      ,'CPU seconds/timestep/DOF       : ',dtmp1 , ' sec'
+     &      ,'time/timestep                  : ',dtmp2 , ' sec'
+#ifdef PAPI
+         write(6,'(2(A,1g13.5,/))') 
+     &      ,'Mflops                         : ',dtmp3
+     &      ,'Mflops/s                       : ',papi_mflops
+#endif
+ 
       endif 
       call flush_io
 
