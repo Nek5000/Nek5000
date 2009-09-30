@@ -165,6 +165,9 @@ C--------------------------------------------------------------------------
       include 'INPUT'
       include 'CTIMER'
 
+      real*4 papi_mflops
+      integer*8 papi_flops
+
       IF (NSTEPS.EQ.0) then
           if (nid.eq.0) then
              write(6,*) ' '
@@ -178,6 +181,12 @@ C--------------------------------------------------------------------------
         WRITE (6,*) 'Starting time loop ...'
         WRITE (6,*) ' '
       ENDIF
+
+      call gsync()
+
+#ifdef PAPI
+      call nek_flops(papi_flops,papi_mflops)
+#endif
 
       DO ISTEP=1,NSTEPS
          call nek_advance

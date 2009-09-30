@@ -42,7 +42,7 @@ navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 subuser.o \
 isosurf.o byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o setprop.o qthermal.o makeq.o \
-ssygv.o dsygv.o
+papi.o ssygv.o dsygv.o
 #
 # MXM 
 MXM = mxm_std.o 
@@ -78,7 +78,7 @@ ifeq ($(IFMOAB),true)
   MOABO := moab.o imeshutil.o
 endif
 #
-NOBJS = $(CORE) $(MXM) $(JLCORE) $(CGS) $(USR) $(MOABO) $(COMM_MPI) blas.o
+NOBJS = $(CORE) $(MXM) $(JLCORE) $(CGS) $(USR) $(MOABO) $(COMM_MPI)
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
@@ -91,8 +91,8 @@ JL2 := ${JL2} -DUNDERSCORE
 endif
 JL2   := ${JL2} -DPREFIX=jl_
 
-FL0i4 = $(L0) -I $S
 FL0   = $(L0) $(P) -I$S
+FL2i4 = $(L0) -I$S
 FL2   = $(L2) $(P) -I$S
 FL3   = $(L3) $(P) -I$S
 FL4   = $(L4) $(P) -I$S
@@ -141,9 +141,9 @@ drive.o		:$S/drive.f;			$(F77) -c $(FL2)  $S/drive.f
 drive1.o	:$S/drive1.f;			$(F77) -c $(FL2)  $S/drive1.f
 drive2.o	:$S/drive2.f;			$(F77) -c $(FL2)  $S/drive2.f
 ################################################################################
-dsygv.o     	:$S/dsygv.f;     		$(F77) -c $(FL0i4) $S/dsygv.f
-ssygv.o     	:$S/ssygv.f;     		$(F77) -c $(FL0i4) $S/ssygv.f
-blas.o	   	:$S/blas.f;			$(F77) -c $(FL0i4) $S/blas.f
+dsygv.o     	:$S/dsygv.f;     		$(F77) -c $(FL2i4) $S/dsygv.f
+ssygv.o     	:$S/ssygv.f;     		$(F77) -c $(FL2i4) $S/ssygv.f
+blas.o	   	:$S/blas.f;			$(F77) -c $(FL2i4) $S/blas.f
 ################################################################################
 prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
 byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $S/byte_mpi.f
@@ -164,6 +164,7 @@ genbox.o	:$S/genbox.f;			$(F77) -c $(FL2) $S/genbox.f
 hsmg.o		:$S/hsmg.f;			$(F77) -c $(FL2) $S/hsmg.f
 gmres.o		:$S/gmres.f;			$(F77) -c $(FL2) $S/gmres.f
 ################################################################################
+papi.o		:$S/papi.f;			$(F77) -c $(FL2) $S/papi.f
 mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $S/mpi_dummy.f
 bdry.o		:$S/bdry.f;			$(F77) -c $(FL2) $S/bdry.f
 comm_mpi.o	:$S/comm_mpi.f;			$(F77) -c $(FL2) $S/comm_mpi.f

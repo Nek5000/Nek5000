@@ -1268,8 +1268,8 @@ c
      $               , wums(ax1,ay1,az1,lelt)
      $               , uvms(ax1,ay1,az1,lelt)
 
-      common /chkps1/  psavg(ax1,ay1,az1,lelt,ldimt-1)
-     $               , psrms(ax1,ay1,az1,lelt,ldimt-1)
+      common /chkps1/  psavg(ax1,ay1,az1,lelt,ldimt)
+     $               , psrms(ax1,ay1,az1,lelt,ldimt)
 
       logical ifverbose
       integer icalld

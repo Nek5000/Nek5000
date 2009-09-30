@@ -26,12 +26,9 @@ c
 #endif
 
 #ifdef BLAS_MXM
-      if (n2.lt.3) then
-         call mxf2(a,n1,b,n2,c,n3)
-      else
-         call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
-      endif
-#else
+      call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
+      return
+#endif
  
 #ifdef BG_MXM
       call bg_aligned3(a,b,c,aligned)
@@ -52,6 +49,7 @@ c
       else
          call mxm44_0(a,n1,b,n2,c,n3)
       endif
+      return
 #endif
 
 #ifdef K10_MXM
@@ -59,13 +57,10 @@ c
       ! tuned for AMD K10
       ierr = K10_mxm(a,n1,b,n2,c,n3) 
       if (ierr.gt.0) call mxmf2(a,n1,b,n2,c,n3)
+      return
 #endif
 
-#if !defined (BG_MXM) && !defined (K10_MXM)
       call mxmf2(a,n1,b,n2,c,n3)
-#endif
- 
-#endif
 
       return
       end
