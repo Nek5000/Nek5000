@@ -2,8 +2,6 @@ echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 touch $1.rea
 rm ioinfo
-cp $1.map xxt_map.rea
 mv $1.log.$2 $1.log1.$2
-mv $1.his $1.his1
 mv $1.sch $1.sch1
 mpirun -np $2 nek5000
