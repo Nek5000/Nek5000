@@ -1593,7 +1593,7 @@ c1105       format(i4.4,1x,'ie:',3i3,i6,1p9e11.3)
 c     ifvo = .true.
 c     ifpo = .false.
 c     ifto = .true.
-c     call outpost(xm1,ta,tb,pr,qmask,1,'   ')
+c     call outpost(xm1,ta,tb,pr,qmask,'   ')
 c     call exitt
 
       return
