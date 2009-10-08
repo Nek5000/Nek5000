@@ -1809,8 +1809,8 @@ c                                      ! is the only form used for restart
          if (save_size.eq.8) param(63) = 8   ! output precision
          param(66) = 6                       ! force multi-file out
 
-         if (ifmhd) call outpost(bx,by,bz,pm,t,1,prefix)  ! first B
-                    call outpost(vx,vy,vz,pr,t,1,prefix)  ! then  U
+         if (ifmhd) call outpost2(bx,by,bz,pm,t,1,prefix)  ! first B
+                    call outpost2(vx,vy,vz,pr,t,1,prefix)  ! then  U
 
          param(63) = p63  ! restore p63, p66
          param(66) = p66

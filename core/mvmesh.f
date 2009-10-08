@@ -329,8 +329,8 @@ C
   210 CONTINUE
 
       if (istep.eq.0) call opcopy(wx,wy,wz,wvx,wvy,wvz)
-c     call outpost(wvx,wvy,wvz,wtx,wtx,1,'   ')
-c     call outpost(wx,wy,wz,wtx,wtx,1,'   ')
+c     call outpost(wvx,wvy,wvz,wtx,wtx,'   ')
+c     call outpost(wx,wy,wz,wtx,wtx,'   ')
 c     write(6,*) 'quit1'
 c     call exitt
 
@@ -467,7 +467,7 @@ C
  1000 CONTINUE
 C
       CALL RMASK (WX,WY,WZ,NEL)
-c     call outpost(wx,wy,wz,wtx,wtx,1,'   ')
+c     call outpost(wx,wy,wz,wtx,wtx,'   ')
 c     write(6,*) 'quit2'
 c     call exitt
 C
@@ -482,7 +482,7 @@ C
          IF (NDIM.EQ.3) CALL ADD2  (WZ,WTZ,NTOT1)
       ENDIF
  
-c     call outpost(wx,wy,wz,wtx,wtx,1,'   ')
+c     call outpost(wx,wy,wz,wtx,wtx,'   ')
 c     call exitt
  
       return
@@ -747,7 +747,7 @@ C
       IF (IMSOLV.EQ.1) return
 C
       CALL AXHMSF  (AW1,AW2,AW3,WX,WY,WZ,H1,H2,MATMOD)
-c     call outpost(wx,wy,wz,h1,h2,1,'   ')
+c     call outpost(wx,wy,wz,h1,h2,'   ')
 c     call exitt
       CALL CHSIGN  (AW1,NTOT1)
       CALL CHSIGN  (AW2,NTOT1)
@@ -1078,7 +1078,7 @@ c
       call dsavg(wy)
 
 c     call opcopy(vx,vy,vz,wx,wy,wz)
-c     call outpost(vx,vy,vz,pr,t,1,'   ')
+c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitt
 
       return

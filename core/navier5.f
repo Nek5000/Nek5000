@@ -189,7 +189,7 @@ c
          call copy  (wk1,pr,ntot2)
          if (ifheat) call sub2(wt,t,ntot1)
 c
-         call outpost(w1,w2,w3,wk1,wt,1,'flt')
+         call outpost2(w1,w2,w3,wk1,wt,1,'flt')
       endif
 c - - - - - - - - - - - - - - - - - - - - - -
 c     write(6,*) 'this is wght:',wght,param(103)
@@ -766,8 +766,17 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outpost(v1,v2,v3,vp,vt,nfldt,name3)
-c
+      subroutine outpost(v1,v2,v3,vp,vt,name3)
+      real v1(1),v2(1),v3(1),vp(1),vt(1)
+      character*3 name3
+
+      call outpost2(v1,v2,v3,vp,vt,1,name3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outpost2(v1,v2,v3,vp,vt,nfldt,name3)
+
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
@@ -785,6 +794,7 @@ c
       ntot1t = nx1*ny1*nz1*nelt
       ntot2  = nx2*ny2*nz2*nelv
 
+      nfldt=npscal
       if(nfldt.gt.ldimt) then
         write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
         call exitt
@@ -1364,9 +1374,9 @@ c
 c
 c-----------------------------------------------------------------------
       if ( (mod(istep,iastep).eq.0.and.istep.gt.1) .or.lastep.eq.1) then
-         call outpost(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
-         call outpost(urms,vrms,wrms,prms,trms,ldimt,'rms')
-         call outpost(uvms,vwms,wums,prms,wtms,ldimt,'rm2')
+         call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
+         call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
+         call outpost2(uvms,vwms,wums,prms,wtms,ldimt,'rm2')
          atime = 0.
       endif
 c

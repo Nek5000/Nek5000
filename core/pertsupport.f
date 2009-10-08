@@ -538,8 +538,9 @@ c
       do jpp=1,npert
          write(s3,3) jpp
  3       format('p',i2.2)
-         call outpost
-     $     (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),prp(1,jpp),tp(1,1,jpp),s3)
+         call outpost2
+     $     (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),prp(1,jpp),tp(1,1,jpp),
+     $     1,s3)
          call writehist
      $     (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),jpp)
       enddo
