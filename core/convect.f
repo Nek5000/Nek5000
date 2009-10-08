@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       logical ifnew
 
-      common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
+      common /cchar/ ct_vx(0:lorder+1) ! time for each slice in c_vx()
 
       if (igeom.eq.1) return
 
@@ -568,10 +568,11 @@ c-----------------------------------------------------------------------
       integer nelc               ! number of elements in conv. field
       logical ifnew              ! =true if shifting stack of fields
 
-      numr      = lxd*lyd*lzd*lelv*ldim*(lorder-1)
+      numr      = lxd*lyd*lzd*lelv*ldim*lorder
       denr      = nxd*nyd*nzd*nelv*ndim
       nconv_max = numr/denr
-      nconv_max = min(nconv_max,nbdinp+1)
+      if (nconv_max.lt.nbdinp+1) 
+     $   call exitti('set_conv_char mem:$',nconv_max)
 
       nc = ct(0)
 
