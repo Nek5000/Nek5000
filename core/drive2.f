@@ -414,7 +414,7 @@ C
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
 
-      if(nid.eq.0) write(6,*) 'generate geomerty data' 
+      if (nid.eq.0.and.istep.le.1) write(6,*) 'generate geomerty data'
 
       IF (IGEOM.EQ.1) THEN
          RETURN
@@ -466,21 +466,19 @@ c
          CALL SFASTAX
          ifield = ifieldo
       ENDIF
-C
-      if(nid.eq.0) then
+
+      if (nid.eq.0.and.istep.le.1) then
         write(6,*) 'done :: generate geomerty data' 
         write(6,*) ' '
       endif
 
-      RETURN
-      END
-C
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine files
-C----------------------------------------------------------------------
 C
 C     Defines machine specific input and output file names.
 C
-C----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'

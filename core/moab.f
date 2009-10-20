@@ -869,7 +869,7 @@ c
 
 c     Interpolate from 3x3x3 to (nx1 x ny1 x nz1) SEM mesh
       ldw = 3*lx1*ly1*lz1
-      call map_to_crs(x,nx1,xt,3,if3d,wk,ldw)
+      call map_m_to_n(x,nx1,xt,3,if3d,wk,ldw)
 
       return
       end
