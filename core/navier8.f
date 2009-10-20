@@ -593,11 +593,11 @@ c
       l = 1
       do ie=1,nelv
 c
-         call map_to_crs(x,nxc,xm1(1,1,1,ie),nx1,if3d,w,ldw)
-         call map_to_crs(y,nxc,ym1(1,1,1,ie),nx1,if3d,w,ldw)
-         if (if3d) call map_to_crs(z,nxc,zm1(1,1,1,ie),nx1,if3d,w,ldw)
-c.later. call map_to_crs(hl1,nxc,h1(1,1,1,ie),nx1,if3d,w,ldw)
-c.later. call map_to_crs(hl2,nxc,h2(1,1,1,ie),nx1,if3d,w,ldw)
+         call map_m_to_n(x,nxc,xm1(1,1,1,ie),nx1,if3d,w,ldw)
+         call map_m_to_n(y,nxc,ym1(1,1,1,ie),nx1,if3d,w,ldw)
+         if (if3d) call map_m_to_n(z,nxc,zm1(1,1,1,ie),nx1,if3d,w,ldw)
+c.later. call map_m_to_n(hl1,nxc,h1(1,1,1,ie),nx1,if3d,w,ldw)
+c.later. call map_m_to_n(hl2,nxc,h2(1,1,1,ie),nx1,if3d,w,ldw)
 c
          call a_crs_enriched(a(l),h1,h2,x,y,z,nxc,if3d,ie)
          l=l+n2
@@ -952,7 +952,7 @@ c
 c
 c-----------------------------------------------------------------------
 c
-      subroutine map_to_crs(a,na,b,nb,if3d,w,ldw)
+      subroutine map_m_to_n(a,na,b,nb,if3d,w,ldw)
 c
 c     Input:   b
 c     Output:  a
@@ -960,7 +960,7 @@ c
       real a(1),b(1),w(1)
       logical if3d
 c
-      parameter(lx=40)
+      parameter(lx=50)
       real za(lx),zb(lx)
 c
       real iba(lx*lx),ibat(lx*lx)
@@ -971,7 +971,7 @@ c
       data    nao,nbo  / -9, -9/
 c
       if (na.gt.lx.or.nb.gt.lx) then
-         write(6,*)'ERROR: increase lx in map_to_crs to max:',na,nb
+         write(6,*)'ERROR: increase lx in map_m_to_n to max:',na,nb
          call exitt
       endif
 c
@@ -1276,7 +1276,7 @@ c
       real a(1),b(1),w(1)
       logical if3d
 c
-      parameter(lx=40)
+      parameter(lx=50)
       real za(lx),zb(lx)
 c
       real iba(lx*lx),ibat(lx*lx)
@@ -1315,7 +1315,7 @@ c
       real a(1),b(1),w(1)
       logical if3d
 c
-      parameter(lx=40)
+      parameter(lx=50)
       real za(lx),zb(lx)
 c
       real iba(lx*lx),ibat(lx*lx)
