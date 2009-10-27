@@ -420,7 +420,7 @@ c
       nxyz   = nx1*ny1*nz1
 
       if (nid.eq.0) then
-         dtmp1 = np*ttime/(nelgt*nxyz)
+         dtmp1 = np*ttime/(nelgt*nxyz)/max(istep,1)
          dtmp2 = ttime/max(istep,1)
          dtmp3 = 1.*papi_flops/1e6 
          write(6,*) ' '
@@ -428,7 +428,7 @@ c
          write(6,*) ' '
          call print_stack()
          write(6,*) ' '
-         write(6,'(4(A,1g13.5,A,/))') 
+         write(6,'(4(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
      &      ,'total solver time incl. I/O    : ',ttime , ' sec'
      &      ,'CPU seconds/timestep/DOF       : ',dtmp1 , ' sec'
