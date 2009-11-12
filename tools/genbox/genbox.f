@@ -828,19 +828,15 @@ c
 c     Scan through .rea file until end of bcs
 c
       if(iffo) then
-        if (nfld.eq.1) call scan(string,'THERMAL BOUNDARY',16,8)
-        if (nfld.ge.2) call scan(string,'PRESOLVE',8,8)
-        lout = ltrunc(string1,80)
-        write (9,81) (string1(j),j=1,lout)
-   81   format(80a1)
-        call scanout(string,'xxxx',4,8,9)
-      else
-        call scan(string,'RESTART',7,8)
-        lout = ltrunc(string1,80)
-        write (9,81) (string1(j),j=1,lout)
-        call scanout(string,'xxxx',4,8,9)
-        call byte_close()
+        if (nfld.eq.1) write(9,*) 
+     &     '***** NO THERMAL BOUNDARY CONDITIONS *****'
       endif
+      call scan(string,'RESTART',7,8)
+      lout = ltrunc(string1,80)
+      write (9,81) (string1(j),j=1,lout)
+   81 format(80a1)
+      call scanout(string,'xxxx',4,8,9)
+      if(.not.iffo)  call byte_close()
 c
 c     Scan through and output .rea file until end of file
 c
