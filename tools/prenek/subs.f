@@ -262,13 +262,23 @@ C     Max 5 Arguments
 60            COMAND(I:I)=ARGS(I,1)
       RETURN
       END
+c-----------------------------------------------------------------------
       SUBROUTINE BLANK(STRING,N)
       CHARACTER*1 STRING(N)
       CHARACTER*1   BLNK
       DATA BLNK/' '/
-C
+
       DO 100 I=1,N
          STRING(I)=BLNK
+  100 CONTINUE
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE CHFILL(STRING,S,N)
+      CHARACTER*1 STRING(N)
+      CHARACTER*1   S
+      DO 100 I=1,N
+         STRING(I)=S
   100 CONTINUE
       RETURN
       END
@@ -586,6 +596,145 @@ c-----------------------------------------------------------------------
             x(i) = s*x(i)
          enddo
       endif
+      return
+      end
+c-----------------------------------------------------------------------
+C
+      subroutine rank(A,IND,N)
+C
+C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C
+      integer ind(1)
+      real      a(1)
+C
+      if (n.le.1) return
+      DO 10 J=1,N
+         IND(j)=j
+   10 continue
+C
+      if (n.eq.1) return
+      L=n/2+1
+      ir=n
+  100 CONTINUE
+         IF (l.gt.1) THEN
+            l=l-1
+            indx=ind(l)
+            q=a(indx)
+         ELSE
+            indx=ind(ir)
+            q=a(indx)
+            ind(ir)=ind(1)
+            ir=ir-1
+            if (ir.eq.1) then
+               ind(1)=indx
+               return
+            endif
+         ENDIF
+         i=l
+         j=l+l
+  200    CONTINUE
+         IF (J.le.IR) THEN
+            IF (J.lt.IR) THEN
+               IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
+            ENDIF
+            IF (q.lt.A(IND(j))) THEN
+               IND(I)=IND(J)
+               I=J
+               J=J+J
+            ELSE
+               J=IR+1
+            ENDIF
+         GOTO 200
+         ENDIF
+         IND(I)=INDX
+      GOTO 100
+      END
+C
+C-----------------------------------------------------------------------
+C
+      subroutine irank(a,ind,n)
+C
+C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C
+      integer a(1),ind(1),q
+C
+      if (n.le.1) return
+      do 10 j=1,n
+         ind(j)=j
+   10 continue
+C
+      if (n.eq.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         IF (l.gt.1) THEN
+            l=l-1
+            indx=ind(l)
+            q=a(indx)
+         ELSE
+            indx=ind(ir)
+            q=a(indx)
+            ind(ir)=ind(1)
+            ir=ir-1
+            if (ir.eq.1) then
+               ind(1)=indx
+               return
+            endif
+         ENDIF
+         i=l
+         j=l+l
+  200    CONTINUE
+         IF (J.le.IR) THEN
+            IF (J.lt.IR) THEN
+               IF ( a(ind(j)).lt.a(ind(j+1)) ) j=j+1
+            ENDIF
+            IF (q.lt.a(ind(j))) THEN
+               ind(i)=ind(j)
+               I=J
+               J=J+J
+            ELSE
+               J=IR+1
+            ENDIF
+         GOTO 200
+         ENDIF
+         IND(I)=INDX
+      GOTO 100
+      end
+C
+C-----------------------------------------------------------------------
+      subroutine iswap_ip(x,p,n)
+      integer x(1),xstart
+      integer p(1)
+c
+c     In-place permutation: x' = x(p)
+c
+      do k=1,n
+         if (p(k).gt.0) then   ! not swapped
+            xstart     = x(k)
+            loop_start = k
+            last       = k
+            do j=k,n
+               next    = p(last)
+               if (next.lt.0) then
+                  write(6,*) 'Hey! iswap_ip problem.',j,k,n,next
+                  call exit
+               elseif (next.eq.loop_start) then
+                  x(last) = xstart
+                  p(last) = -p(last)
+                  goto 10
+               else
+                  x(last) = x(next)
+                  p(last) = -p(last)
+                  last    = next
+               endif
+            enddo
+   10       continue
+         endif
+      enddo
+c
+      do k=1,n
+         p(k) = -p(k)
+      enddo
       return
       end
 c-----------------------------------------------------------------------

@@ -166,7 +166,7 @@ C     Recount the number of curved sides
 C
       NCURVE=0
       DO 9001 IE=1,NEL
-      DO 9001 IEDGE=1,8
+      DO 9001 IEDGE=1,12
          IF (CCURVE(IEDGE,IE).NE.' ') THEN
             NCURVE=NCURVE+1
             WRITE(6,*) 'Curve:',IE,IEDGE,CCURVE(IEDGE,IE)
@@ -1353,10 +1353,12 @@ c-----------------------------------------------------------------------
       real a(m,n)
       character*5 name5
 c
-      write(6,1) name5,k
+      write(6 ,1) name5,k
+      write(66,1) name5,k
       n10 = min(n,10)
       do i=1,m
-         write(6,2) k,name5,(a(i,j),j=1,n10)
+         write(6 ,2) k,name5,(a(i,j),j=1,n10)
+         write(66,2) k,name5,(a(i,j),j=1,n10)
       enddo
     1 format(/,'MATRIX: ',a5,i9)
     2 format(i4,1x,a5,1p10e11.3)

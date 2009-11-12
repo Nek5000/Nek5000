@@ -458,28 +458,39 @@ C
 c-----------------------------------------------------------------------
       subroutine gencen
       include 'basics.inc'
-C
+
+      common /ctmp2/ xp(nxm,nxm,nxm),yp(nxm,nxm,nxm),zp(nxm,nxm,nxm)
+
+      nxh = (nxm+1)/2
+      write(6,*) 'inside gencen ',nel,if3d,nxh
+
 C     Generate the element centers
-C
-      IF (IF3D) THEN
-         DO 100 IEL=1,NEL
-            XCEN(IEL)=( X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4)
-     $               +  X(IEL,5)+X(IEL,6)+X(IEL,7)+X(IEL,8))/8.
-            YCEN(IEL)=( Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4)
-     $               +  Y(IEL,5)+Y(IEL,6)+Y(IEL,7)+Y(IEL,8))/8.
-            ZCEN(IEL)=( Z(IEL,1)+Z(IEL,2)+Z(IEL,3)+Z(IEL,4)
-     $               +  Z(IEL,5)+Z(IEL,6)+Z(IEL,7)+Z(IEL,8))/8.
-  100    CONTINUE
-      ELSE
-         DO 200 IEL=1,NEL
-            XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-            YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
-            ZCEN(IEL)=0.0
-  200    CONTINUE
-      ENDIF
-C
+      do ie=1,nel
+c        call genxyz_e (xp,yp,zp,ie,3,3,3)
+         call genxyz_e (xp,yp,zp,ie,nxm,nxm,nxm)
+         
+         if (if3d) then
+            xcen(ie)=xp(nxh,nxh,nxh)
+            ycen(ie)=yp(nxh,nxh,nxh)
+            zcen(ie)=zp(nxh,nxh,nxh)
+c           call copy(x27(1,ie),xp,27)
+c           call copy(y27(1,ie),yp,27)
+c           call copy(z27(1,ie),zp,27)
+         else
+            xcen(ie)=xp(nxh,nxh,1)
+            ycen(ie)=yp(nxh,nxh,1)
+            zcen(ie)=0
+c           call copy (x27(1,ie),xp,9)
+c           call copy (y27(1,ie),yp,9)
+            call rzero(z27(1,ie)   ,9)
+         endif
+
+c        call out27(x27(1,ie),y27(1,ie),z27(1,ie),ie,'genc')
+
+      enddo
+
 C     Compute the maximum radius from the center
-C
+
       CALL RZERO(RCEN,NEL) 
       IF (IF3D) THEN
          DO 300 IEL=1,NEL
@@ -496,7 +507,9 @@ C
   400    CONTINUE
       ENDIF
       CALL VSQRT(RCEN,NEL)
-c
+
+      write(6,*) 'done gencen ',nel
+
       return
       end
 c-----------------------------------------------------------------------
@@ -533,10 +546,84 @@ C
       enddo
       enddo
 c
-      do ie=1,nel
-         write(6,*) ie,(neighb(j,ie),j=1,4),' neig'
+c     do ie=1,nel
+c        write(6,*) ie,(neighb(j,ie),j=1,4),' neig'
+c     enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine out27(x,y,z,e,name4)
+      real x(3,3,3),y(3,3,3),z(3,3,3)
+      integer e
+      character*4 name4
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      return
+
+      icalld = icalld+1
+
+      do k=1,3
+      do j=1,3
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),i,i,j,k,e,name4,i=1,3)
       enddo
-c
+      enddo
+
+
+      write(6,*)
+      write(6,*) i,j,k,e,icalld,'XYZ27 ',name4,i,ncurve
+   3  format(1p3e12.4,4i3,i7,' xyz27 ',a4)
+
+c     X-lines
+
+      do k=1,3,2
+      do j=1,3
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),i,i,j,k,e,name4,i=1,3)
+      enddo
+      enddo
+
+      do k=2,2
+      do j=1,3,2
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),i,i,j,k,e,name4,i=1,3)
+      enddo
+      enddo
+
+c     Y-lines
+
+      do k=1,3,2
+      do i=1,3
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),j,i,j,k,e,name4,j=1,3)
+      enddo
+      enddo
+
+      do k=2,2
+      do i=1,3,2
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),j,i,j,k,e,name4,j=1,3)
+      enddo
+      enddo
+
+c     Y-lines
+
+      do j=1,3,2
+      do i=1,3
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),k,i,j,k,e,name4,k=1,3)
+      enddo
+      enddo
+
+      do j=2,2
+      do i=1,3,2
+         write(6,*)
+         write(6,3) (x(i,j,k),y(i,j,k),z(i,j,k),k,i,j,k,e,name4,k=1,3)
+      enddo
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------

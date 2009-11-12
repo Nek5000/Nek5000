@@ -1,21 +1,15 @@
 c-----------------------------------------------------------------------
       subroutine octspl
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       COMMON /SPLITT/ ENEW(NELM),IND(NELM)
       DIMENSION XPT(3),VEC(3),LISTE(8)
 c
       logical ifoct,ifhex,ifzsp
-C
-C     This value can be changed later.
-C
-      NX=15
-      NX=MIN(NX,NXM)
-      NY=NX
-      NZ=NX
-      CALL LEGEND(ZPTS,WGHT,NZ)
-C
+
+      call set_zgml (nxm)
+
 C     Check on the number and numbering of the new elements to be generated.
-C
+
       Noct = 4
       ifoct = .true.
       ifhex = .false.
@@ -50,7 +44,7 @@ c
       endif
 c
       NELN=NEL*Noct
-      NELM1=NELM-1
+      nelm1=nelm-2
       IF (NELN.GT.NELM1) THEN
 C
          CALL PRS(
@@ -60,8 +54,8 @@ C
          CALL PRS(S)
          WRITE(S,52) 
          CALL PRS(S)
-   51  FORMAT(2X,'(',I5,') would be greater than the allowed maxium ('
-     $                ,I5,').$')
+   51  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
+     $                ,I9,').$')
    52    FORMAT(2X,'Aborting zipper.$')
          return
       ELSE
@@ -70,7 +64,7 @@ C
      $ 'WARNING: Number of elements after OctSplit operation$')
          WRITE(S,61) NELN
          CALL PRS(S)
-   61  FORMAT(2X,'will be (',I5
+   61  FORMAT(2X,'will be (',I9
      $          ,'). Are you sure you want to split (y/n)?$')
          CALL RES(ANS,1)
          IF (ANS.ne.'y'.and.ANS.ne.'Y') return
@@ -109,40 +103,37 @@ C
 C
 C     Elements are all set. Sort.
 C
-      CALL SORT(ENEW,IND,NEL)
-      CALL SWAPEL(IND,NEL,NELM1)
-      CALL CURCNT
-      CALL VERTADJ
-C
-C     Exit
-C
+      call sort   (enew,ind,nel)
+      call swapel (ind,nel,nelm1)
+      call curcnt
+      call vertadj
+
       WRITE(S,300) Nnew,NEL
-  300 FORMAT(I5,' new elements generated. NEL=',I5,'$')
-      CALL PRS(S)
-C
-      CALL GENCEN
-C
+  300 FORMAT(I9,' new elements generated. NEL=',I9,'$')
+      call prs(s)
+
+      call gencen
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine wind3d
 C
 C     Generate a set of corner window refinements in 3D
 C
-      INCLUDE 'basics.inc'
-      DIMENSION ENEW(NELM),IND(NELM)
+      include 'basics.inc'
+      common /cenewi/ enew(nelm),ind(nelm)
       DIMENSION XPT(3),VEC(3)
-      COMMON /wierd/ LIST1(NELM),LIST2(NELM)
+      common /wierd/ list1(nelm),list2(nelm)
       DIMENSION VEC1(3),VEC2(3),VEC3(3)
       CHARACTER*1 CBCNXT
 C
-C     This value can be changed later.
 C
-      NX=15
-      NX=MIN(NX,NXM)
+      NX=NXM
       NY=NX
       NZ=NX
-      CALL LEGEND(ZPTS,WGHT,NZ)
+      call set_zgml(nxm)
+
       CALL SETQUAD 
 C
 C     Set RST planes will find the set of dividing planes for the zipper.
@@ -309,8 +300,8 @@ C
          WRITE(S,152) 
          CALL PRS(S)
   150  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
-  151  FORMAT(2X,'(',I5,') would be greater than the allowed maxium ('
-     $                ,I5,').$')
+  151  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
+     $                ,I9,').$')
   152    FORMAT(2X,'Aborting corner refine operation.$')
          return
       ENDIF
@@ -347,7 +338,7 @@ C     Third, find the ratio to be split
          CALL PRS(S)
          CALL WIN3D(NELN,IE,I,S0)
   500 CONTINUE
-  502 FORMAT(' Generating window for element',2I5,'.$')
+  502 FORMAT(' Generating window for element',2I9,'.$')
       NEL=NELN+1
 C
 C     Elements are all set. Sort.
@@ -359,26 +350,26 @@ C     Exit
 C
       NLSTP2=NLSTP*2
       WRITE(S,900) NLSTP2,NEL
-  900 FORMAT(I5,' new elements generated. NEL=',I5,'$')
+  900 FORMAT(I9,' new elements generated. NEL=',I9,'$')
       CALL PRS(S)
 C
-      CALL GENCEN
+      call gencen
 C
       return
       END
 c-----------------------------------------------------------------------
       subroutine zip2
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION ENEW(NELM),IND(NELM)
       DIMENSION XPT(3),VEC(3)
 C
 C     This value can be changed later.
 C
-      NX=15
-      NX=MIN(NX,NXM)
+      NX=NXM
       NY=NX
       NZ=NX
-      CALL LEGEND(ZPTS,WGHT,NZ)
+      call set_zgml (nx)
+
       CALL SETQUAD 
 C
 C     Set RSTP planes will find the set of dividing planes for the zipper.
@@ -414,8 +405,8 @@ C
          WRITE(S,52) 
          CALL PRS(S)
    50  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
-   51  FORMAT(2X,'(',I5,') would be greater than the allowed maxium ('
-     $                ,I5,').$')
+   51  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
+     $                ,I9,').$')
    52    FORMAT(2X,'Aborting zipper.$')
          return
       ENDIF
@@ -456,10 +447,10 @@ C
 C     Exit
 C
       WRITE(S,300) NLSTP,NEL
-  300 FORMAT(I5,' new elements generated. NEL=',I5,'$')
+  300 FORMAT(I9,' new elements generated. NEL=',I9,'$')
       CALL PRS(S)
 C
-      CALL GENCEN
+      call gencen
 C
       return
       END
@@ -478,12 +469,9 @@ C
          IE=IND(I)
          IF (IE.NE.I) THEN
 C
-C           Move element I to the end
-            CALL COPYEL(I,NELM1)
-C           Move correct element to Ith location
-            CALL COPYEL(IE,I  )
-C           Copy temporary data to old slot.
-            CALL COPYEL(NELM1,IE)
+            call copyel(i,nelm1)  ! Move element I to the end
+            call copyel(ie,i  )   ! Move correct element to Ith location
+            call copyel(nelm1,ie) ! Copy temporary data to old slot.
 C           Update IND:
             DO 20 J=1,N
                IF (IND(J).EQ.I) THEN
@@ -497,145 +485,67 @@ C           Update IND:
       return
       END
 c-----------------------------------------------------------------------
-      subroutine genxyz (xml,yml,zml,ie,iel,nxl,nyl,nzl)
-C
-      INCLUDE 'basics.inc'
-C
-C     Note : CTMPg is used in this format in several subsequent routines
-C
-      PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
-      COMMON /CTMPg/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-      COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
-C
-      DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
-      DIMENSION XCB(2,2,2),YCB(2,2,2),ZCB(2,2,2)
-      common /ctmp0/ w1(nxm*nym*nzm),w2(nxm*nym*nzm)
-C
-      CHARACTER*1 CCV
-C
-      DIMENSION INDX(8)
-      SAVE      INDX
-      DATA      INDX  / 1, 2, 4, 3, 5, 6, 8, 7 /
-      SAVE      NXO
-      DATA      NXO /0/
-
-      logical ifarcsph
-
-C
-C     Initialize geometry arrays
-C
-      IF (NXL.NE.NXO) THEN
-        NXO = NXL
-C
-C    Preprocessor Corner notation:      Symmetric Corner notation:
-C
-C           4+-----+3    ^ s                    3+-----+4    ^ s
-C           /     /|     |                      /     /|     |
-C          /     / |     |                     /     / |     |
-C        8+-----+7 +2    +----> r            7+-----+8 +2    +----> r
-C         |     | /     /                     |     | /     /
-C         |     |/     /                      |     |/     /
-C        5+-----+6    t                      5+-----+6    t
-C
-         INDX(1)=1
-         INDX(2)=2
-         INDX(3)=4
-         INDX(4)=3
-         INDX(5)=5
-         INDX(6)=6
-         INDX(7)=8
-         INDX(8)=7
-C
-         CALL LEGEND(ZGML,WORK,NXL)
-C
-         DO 10 IX=1,NXL
-            H(IX,1,1)=(1.0-ZGML(IX,1))*0.5
-            H(IX,1,2)=(1.0+ZGML(IX,1))*0.5
-   10    CONTINUE
-         DO 20 IY=1,NYL
-            H(IY,2,1)=(1.0-ZGML(IY,1))*0.5
-            H(IY,2,2)=(1.0+ZGML(IY,1))*0.5
-   20    CONTINUE
-         IF (IF3D) THEN
-            DO 30 IZ=1,NZL
-               H(IZ,3,1)=(1.0-ZGML(IZ,1))*0.5
-               H(IZ,3,2)=(1.0+ZGML(IZ,1))*0.5
-   30       CONTINUE
-         ELSE
-            CALL RONE(H(1,3,1),NZL)
-            CALL RONE(H(1,3,2),NZL)
-         ENDIF
-      ENDIF
-C
-C
-      NXYZ = NXL*NYL*NZL
-      CALL RZERO(XML(1,1,1,IEL),NXYZ)
-      CALL RZERO(YML(1,1,1,IEL),NXYZ)
-      CALL RZERO(ZML(1,1,1,IEL),NXYZ)
-C
-      NDIM2 = 2**NDIM
-      DO 50 IX=1,NDIM2
-         I=INDX(IX)
-         XCB(IX,1,1)=X(IE,I)
-         YCB(IX,1,1)=Y(IE,I)
-         ZCB(IX,1,1)=Z(IE,I)
-c     write(6,*) 'xycb:',xcb(ix,1,1),ycb(ix,1,1),zcb(ix,1,1),ix,ie
-   50 CONTINUE
-C
-C     Map R-S-T space into physical X-Y-Z space.
-C
-      IZTMAX = NDIM-1
-      DO 200 IZT=1,IZTMAX
-      DO 200 IYT=1,2
-      DO 200 IXT=1,2
-C
-      DO 200 IZ=1,NZL
-      DO 200 IY=1,NYL
-         HH = H(IY,2,IYT)*H(IZ,3,IZT)
-         DO 100 IX=1,NXL
-            HHH = H(IX,1,IXT)*HH
-            XML(IX,IY,IZ,IEL)=XML(IX,IY,IZ,IEL)+HHH*XCB(IXT,IYT,IZT)
-            YML(IX,IY,IZ,IEL)=YML(IX,IY,IZ,IEL)+HHH*YCB(IXT,IYT,IZT)
-            ZML(IX,IY,IZ,IEL)=ZML(IX,IY,IZ,IEL)+HHH*ZCB(IXT,IYT,IZT)
-  100    CONTINUE
-  200 CONTINUE
-C
-C     Deform surfaces - general 3D deformations
-C                     - extruded geometry deformations
-C
-      NFACES = 2*NDIM
-      DO 1000 IFACE=1,NFACES
-        CCV = CCURVE(IFACE,IE)
-        IF (CCV.EQ.'s') 
-     $     CALL SPHSRF(XML,YML,ZML,IFACE,IE,IEL,NXL,NYL,NZL,WORK) 
-        IF (CCV.EQ.'p') 
-     $     CALL pSPHSRF(XML,YML,ZML,IFACE,IE,IEL,NXL,NYL,NZL,WORK) 
- 1000 CONTINUE
- 
-      do 2000 isid=1,8
-        ccv = ccurve(isid,ie)
-        if (ccv.eq.'C') 
-     $  call arcsrf(xml,yml,zml,nxl,nyl,nzl,ie,iel,isid)
- 2000 continue
- 
-      ifarcsph = .false.
-      do isid=1,12
-        ccv = ccurve(isid,ie)
-        if (ccv.eq.'a') then
-           ifarcsph = .true.
-           call arcsph(xml,yml,zml,nxl,nyl,nzl,ie,iel,isid)
-        endif
+      subroutine gh_face_extend_2d(x,zg,n,gh_type,e,v)
+c
+c     Extend 2D faces into interior via gordon hall
+c
+c     gh_type:  1 - vertex only
+c               2 - vertex and faces
+c
+c
+      real x(n,n)
+      real zg(n)
+      real e(n,n)
+      real v(n,n)
+      integer gh_type
+c
+c     Build vertex interpolant
+c
+      ntot=n*n
+      call rzero(v,ntot)
+      do jj=1,n,n-1
+      do ii=1,n,n-1
+         do j=1,n
+         do i=1,n
+            si     = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            sj     = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            v(i,j) = v(i,j) + si*sj*x(ii,jj)
+         enddo
+         enddo
       enddo
-      if (ifarcsph) then  ! extend edges to faces and interiors
-         call gh_face_extend(xml(1,1,1,iel),zgml,nxl,2,w1,w2)
-         call gh_face_extend(yml(1,1,1,iel),zgml,nxl,2,w1,w2)
-         call gh_face_extend(zml(1,1,1,iel),zgml,nxl,2,w1,w2)
+      enddo
+      if (gh_type.eq.1) then
+         call copy(x,v,ntot)
+         return
       endif
 
-      do i=1,nxl*nyl*nzl
-         write(77,*) xml(i,1,1,iel),yml(i,1,1,iel),zml(i,1,1,iel)
+
+c     Extend 4 edges
+      call rzero(e,ntot)
+c
+c     x-edges
+c
+      do jj=1,n,n-1
+         do j=1,n
+         do i=1,n
+            hj     = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            e(i,j) = e(i,j) + hj*(x(i,jj)-v(i,jj))
+         enddo
+         enddo
       enddo
+c
+c     y-edges
+c
+      do ii=1,n,n-1
+         do j=1,n
+         do i=1,n
+            hi     = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            e(i,j) = e(i,j) + hi*(x(ii,j)-v(ii,j))
+         enddo
+         enddo
+      enddo
+
+      call add3(x,e,v,ntot)
 
       return
       end
@@ -788,181 +698,143 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sphsrf(xml,yml,zml,ifce,ie,iel,mx,my,mz,xysrf) 
+      subroutine sphsrf_e(xml,yml,zml,ifce,e,mx,my,mz,xysrf) 
 C
 C     5 Aug 1988 19:29:52 
 C
 C     Program to generate spherical shell elements for NEKTON
 C     input.  Paul F. Fischer
 C
-      INCLUDE 'basics.inc'
-      PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
-      DIMENSION XML(MX,MY,MZ,1),YML(MX,MY,MZ,1),ZML(MX,MY,MZ,1)
-      DIMENSION XYSRF(3,MX,MZ)
-C
-      COMMON /CTMPg/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-      COMMON /CTMP0/ XCV(3,2,2),VN1(3),VN2(3)
-     $     ,X1(3),X2(3),X3(3),DX(3),XCC(8),YCC(8),ZCC(8),ZHMT(237)
-C HMT change to make consisteny w/build2.f
-C      COMMON /CTMP0/ XCV(3,2,2),VN1(3),VN2(3)
-C     $              ,X1(3),X2(3),X3(3),DX(3),XCC(8),YCC(8),ZCC(8)
-C
-      DIMENSION IOPP(3),MXX(3)
-C
-C     Stuff which is normally in genxyz
-C
-      DO 11 IX=1,MX
-         H(IX,1,1)=(1.0-ZGML(IX,1))*0.5
-         H(IX,1,2)=(1.0+ZGML(IX,1))*0.5
-   11 CONTINUE
-      DO 21 IY=1,MY
-         H(IY,2,1)=(1.0-ZGML(IY,1))*0.5
-         H(IY,2,2)=(1.0+ZGML(IY,1))*0.5
-   21 CONTINUE
-      IF (IF3D) THEN
-         DO 31 IZ=1,MZ
-            H(IZ,3,1)=(1.0-ZGML(IZ,1))*0.5
-            H(IZ,3,2)=(1.0+ZGML(IZ,1))*0.5
-   31    CONTINUE
-      ELSE
-         CALL RONE(H(1,3,1),MZ)
-         CALL RONE(H(1,3,2),MZ)
-      ENDIF
-C
+      include 'basics.inc'
+      real xml(mx,my,mz),yml(mx,my,mz),zml(mx,my,mz),xysrf(3,mx,mz)
+      integer e
+
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
+      common /ctmp0/ xcv(3,2,2),vn1(3),vn2(3)
+     $     ,x1(3),x2(3),x3(3),dx(3),xcc(8),ycc(8),zcc(8),zhmt(237)
+
+      integer iopp(3),mxx(3)
+
+      call set_hlin(h,mx) ! linear to mx mapping
+
 C     Determine geometric parameters
-C
-      MXM1 = MX-1
-      MYM1 = MY-1
-      MXY  = MX*MZ
-      MXY3 = 3*MX*MZ
-      XCTR   = CURVE(1,IFCE,IE)
-      YCTR   = CURVE(2,IFCE,IE)
-      ZCTR   = CURVE(3,IFCE,IE)
-      RADIUS = CURVE(4,IFCE,IE)
-      IFACE  = EFACE1(IFCE)
-C
+      mxm1 = mx-1
+      mym1 = my-1
+      mxy  = mx*mz
+      mxy3 = 3*mx*mz
+      xctr   = curve(1,ifce,e)
+      yctr   = curve(2,ifce,e)
+      zctr   = curve(3,ifce,e)
+      radius = curve(4,ifce,e)
+      iface  = eface1(ifce)
+
 C     Generate (normalized) corner vectors XCV(1,i,j):
-C
-      DO 10 I=1,8
-         XCC(I)=X(IE,I)
-         YCC(I)=Y(IE,I)
-         ZCC(I)=Z(IE,I)
-   10 CONTINUE
-      CALL CRN3D(XCV,XCC,YCC,ZCC,CURVE(1,IFCE,IE),IFACE,IE)
-C
+      do 10 i=1,8
+         xcc(i)=x(e,i)
+         ycc(i)=y(e,i)
+         zcc(i)=z(e,i)
+   10 continue
+      call crn3d(xcv,xcc,ycc,zcc,curve(1,ifce,e),iface,e)
+
 C     Generate edge vectors on the sphere RR=1.0, 
 C     for (r,s) = (-1,*),(1,*),(*,-1),(*,1)      
-C
-      CALL EDG3D(XYSRF,XCV(1,1,1),XCV(1,1,2), 1, 1, 1,MY,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,2,1),XCV(1,2,2),MX,MX, 1,MY,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,1,1),XCV(1,2,1), 1,MX, 1, 1,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,1,2),XCV(1,2,2), 1,MX,MY,MY,MX,MY)
-C
+      call edg3d(xysrf,xcv(1,1,1),xcv(1,1,2), 1, 1, 1,my,mx,my)
+      call edg3d(xysrf,xcv(1,2,1),xcv(1,2,2),mx,mx, 1,my,mx,my)
+      call edg3d(xysrf,xcv(1,1,1),xcv(1,2,1), 1,mx, 1, 1,mx,my)
+      call edg3d(xysrf,xcv(1,1,2),xcv(1,2,2), 1,mx,my,my,mx,my)
+
 C     Generate intersection vectors for (i,j)
-C
-      DO 200 J=2,MYM1
-         CALL CROSS(VN1,XYSRF(1,1,J),XYSRF(1,MX,J))
+      do 200 j=2,mym1
+         call cross(vn1,xysrf(1,1,j),xysrf(1,mx,j))
          DO 200 I=2,MXM1
-            CALL CROSS(VN2,XYSRF(1,I,1),XYSRF(1,I,MY))
-            IF (IFACE.EQ.1.OR.IFACE.EQ.4.OR.IFACE.EQ.5) THEN
-               CALL CROSS(XYSRF(1,I,J),VN2,VN1)
-            ELSE
-               CALL CROSS(XYSRF(1,I,J),VN1,VN2)
-            ENDIF
-  200 CONTINUE
-C
+            call cross(vn2,xysrf(1,i,1),xysrf(1,i,my))
+            if (iface.eq.1.or.iface.eq.4.or.iface.eq.5) then
+               call cross(xysrf(1,i,j),vn2,vn1)
+            else
+               call cross(xysrf(1,i,j),vn1,vn2)
+            endif
+  200 continue
+
 C     Normalize all vectors to the unit sphere.
-C
-      DO 300 I=1,MXY
-         CALL NORM3D(XYSRF(1,I,1))
-  300 CONTINUE
-C
-C     Scale by actual radius
-C
-      CALL CMULT(XYSRF,RADIUS,MXY3)
+      do 300 i=1,mxy
+         call norm3d(xysrf(1,i,1))
+  300 continue
+
+      call cmult(xysrf,radius,mxy3) ! Scale by actual radius
 C
 C     Add back the sphere center offset
 C
-      DO 400 I=1,MXY
-         XYSRF(1,I,1)=XYSRF(1,I,1)+XCTR
-         XYSRF(2,I,1)=XYSRF(2,I,1)+YCTR
-         XYSRF(3,I,1)=XYSRF(3,I,1)+ZCTR
-  400 CONTINUE
+      do 400 i=1,mxy
+         xysrf(1,i,1)=xysrf(1,i,1)+xctr
+         xysrf(2,i,1)=xysrf(2,i,1)+yctr
+         xysrf(3,i,1)=xysrf(3,i,1)+zctr
+  400 continue
 C
 C
 C     Transpose data, if necessary
 C
-      IF (IFACE.EQ.1.OR.IFACE.EQ.4.OR.IFACE.EQ.5) THEN
-         DO 500 J=1  ,MY
-         DO 500 I=J+1,MX
-            TMP=XYSRF(1,I,J)
-            XYSRF(1,I,J)=XYSRF(1,J,I)
-            XYSRF(1,J,I)=TMP
-            TMP=XYSRF(2,I,J)
-            XYSRF(2,I,J)=XYSRF(2,J,I)
-            XYSRF(2,J,I)=TMP
-            TMP=XYSRF(3,I,J)
-            XYSRF(3,I,J)=XYSRF(3,J,I)
-            XYSRF(3,J,I)=TMP
-  500    CONTINUE
-      ENDIF
+      if (iface.eq.1.or.iface.eq.4.or.iface.eq.5) then
+         do 500 j=1  ,my
+         do 500 i=j+1,mx
+            tmp=xysrf(1,i,j)
+            xysrf(1,i,j)=xysrf(1,j,i)
+            xysrf(1,j,i)=tmp
+            tmp=xysrf(2,i,j)
+            xysrf(2,i,j)=xysrf(2,j,i)
+            xysrf(2,j,i)=tmp
+            tmp=xysrf(3,i,j)
+            xysrf(3,i,j)=xysrf(3,j,i)
+            xysrf(3,j,i)=tmp
+  500    continue
+      endif
 C
 C     Compute surface deflection and perturbation due to face IFACE
-C
-      CALL DSSET(MX,MY,MZ)
-      JS1    = SKPDAT(IFACE,1)
-      JF1    = SKPDAT(IFACE,2)
-      JSKIP1 = SKPDAT(IFACE,3)
-      JS2    = SKPDAT(IFACE,4)
-      JF2    = SKPDAT(IFACE,5)
-      JSKIP2 = SKPDAT(IFACE,6)
-C
-      IOPP(1) = MX-1
-      IOPP(2) = MX*(MY-1)
-      IOPP(3) = MX*MY*(MZ-1)
-      MXX(1)  = MX
-      MXX(2)  = MY
-      MXX(3)  = MZ
-      IDIR    = 2*MOD(IFACE,2) - 1
-      IFC2    = (IFACE+1)/2
-      DELT    = 0.0
-      I=0
-      DO 700 J2=JS2,JF2,JSKIP2
-      DO 700 J1=JS1,JF1,JSKIP1
-         I=I+1
-         JOPP = J1 + IOPP(IFC2)*IDIR
-         X2(1) = XML(J1,J2,1,IEL)
-         X2(2) = YML(J1,J2,1,IEL)
-         X2(3) = ZML(J1,J2,1,IEL)
-C
-         DX(1) = XYSRF(1,I,1)-X2(1)
-         DX(2) = XYSRF(2,I,1)-X2(2)
-         DX(3) = XYSRF(3,I,1)-X2(3)
-C
-         MXS = MXX(IFC2)
-         JOFF = (J1-JOPP)/(MXS-1)
-         DO 600 IX = 2,MXS
-            J = JOPP + JOFF*(IX-1)
-            ZETA = 0.5*(ZGML(IX,IFC2) + 1.0)
-            ZETA = 0.5*(ZGML(IX,1) + 1.0)
-            XML(J,J2,1,IEL) = XML(J,J2,1,IEL)+DX(1)*ZETA
-            YML(J,J2,1,IEL) = YML(J,J2,1,IEL)+DX(2)*ZETA
-            ZML(J,J2,1,IEL) = ZML(J,J2,1,IEL)+DX(3)*ZETA
-  600    CONTINUE
-  700 CONTINUE
-C
+      call dsset2(js1,jf1,jskip1,js2,jf2,jskip2,iface,mx,my,mz)
+
+      iopp(1) = mx-1
+      iopp(2) = mx*(my-1)
+      iopp(3) = mx*my*(mz-1)
+      mxx(1)  = mx
+      mxx(2)  = my
+      mxx(3)  = mz
+      idir    = 2*mod(iface,2) - 1
+      ifc2    = (iface+1)/2
+      delt    = 0.0
+      i=0
+      do 700 j2=js2,jf2,jskip2
+      do 700 j1=js1,jf1,jskip1
+         i=i+1
+         jopp = j1 + iopp(ifc2)*idir
+         x2(1) = xml(j1,j2,1)
+         x2(2) = yml(j1,j2,1)
+         x2(3) = zml(j1,j2,1)
+
+         dx(1) = xysrf(1,i,1)-x2(1)
+         dx(2) = xysrf(2,i,1)-x2(2)
+         dx(3) = xysrf(3,i,1)-x2(3)
+
+         mxs = mxx(ifc2)
+         joff = (j1-jopp)/(mxs-1)
+         do 600 ix = 2,mxs
+            j = jopp + joff*(ix-1)
+            zeta = 0.5*(zgml(ix) + 1.0)
+            xml(j,j2,1) = xml(j,j2,1)+dx(1)*zeta
+            yml(j,j2,1) = yml(j,j2,1)+dx(2)*zeta
+            zml(j,j2,1) = zml(j,j2,1)+dx(3)*zeta
+  600    continue
+  700 continue
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine edg3d(xysrf,x1,x2,i1,i2,j1,j2,mx,my)
 C
 C     Generate XYZ vector along an edge of a surface.
 C
-      INCLUDE 'basics.inc'
-      PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
-      COMMON /CTMPg/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
+      include 'basics.inc'
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
 C
       DIMENSION XYSRF(3,MX,MY)
       DIMENSION X1(3),X2(3)
@@ -989,7 +861,7 @@ C
       DO 200 J=J1,J2
       DO 200 I=I1,I2
          IJ = IJ + 1
-         THETAP = 0.5*THETA*(ZGML(IJ,1)+1.0)
+         THETAP = 0.5*THETA*(ZGML(IJ)+1.0)
          CTP = COS(THETAP)
          STP = SIN(THETAP)
          DO 200 IV = 1,3
@@ -1052,24 +924,61 @@ C
              WRITE(6,30) 
      $       RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
    30        FORMAT(5X,'ERROR: Element vertex not on requested sphere.'
-     $           ,/,5X,'EXITING in CRN3Dd',5F12.7)
+     $           ,/,5X,'REPAIRING in CRN3Dd',5F12.7)
+c    $           ,/,5X,'EXITING in CRN3Dd',5F12.7)
              WRITE(6,31) IE,IFACE,XCTR,YCTR,ZCTR
    31        FORMAT(5X,'IE,IF,XYZCTR:',2I4,3F12.7)
              WRITE(6,32) (xc(j),yc(j),zc(j),j=1,8)
    32        FORMAT(3f12.7)
-             CALL EXITT
-            ENDIF
+
+c            CALL EXITT
+
+             xvec = radius*xcv(1,i,1)/radt
+             yvec = radius*xcv(2,i,1)/radt
+             zvec = radius*xcv(3,i,1)/radt
+
+             j=indvtx(i,iface)
+             k=indx(j)
+             xc(k)=xctr + xvec
+             yc(k)=yctr + yvec
+             zc(k)=zctr + zvec
+
+            endif
+
    40    CONTINUE
       ENDIF
-C
+
+      do I=1,4
+         j=indvtx(i,iface)
+         k=indx(j)
+         xcv(1,i,1)=xc(k)-xctr
+         xcv(2,i,1)=yc(k)-yctr
+         xcv(3,i,1)=zc(k)-zctr
+      enddo
+
       return
-      END
+      end
+c-----------------------------------------------------------------------
+      subroutine dsset2(js1,jf1,jskip1,js2,jf2,jskip2,iface,mx,my,mz)
+      include 'basics.inc'
+
+      call dsset(mx,my,mz)
+
+      js1    = skpdat(iface,1)
+      jf1    = skpdat(iface,2)
+      jskip1 = skpdat(iface,3)
+      js2    = skpdat(iface,4)
+      jf2    = skpdat(iface,5)
+      jskip2 = skpdat(iface,6)
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine dsset(mx,my,mz)
 C
 C     Set up arrays ESKIP,SKPDAT,NEDG,NOFFST for new MX,MY,MZ
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       INTEGER MXO,MYO,MZO
       SAVE    MXO,MYO,MZO
       DATA    MXO,MYO,MZO /3*0/
@@ -1139,112 +1048,108 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine rone(x,n)
-      DIMENSION X(1)
-      DO 10 I=1,N
-         X(I)=1.0
-   10 CONTINUE
+      real x(1)
+      do 10 i=1,n
+         x(i)=1.0
+   10 continue
       return
-      END
+      end
 c-----------------------------------------------------------------------
-      subroutine arcsrf(xml,yml,zml,nxl,nyl,nzl,ie,iel,isid)
-      INCLUDE 'basics.inc'
-C
-C     ....note..... CTMPg is used in this format in several subsequent routines
-C
-      PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
-      COMMON /CTMPg/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-      DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
-      LOGICAL IFGLJ
-C
-      IFGLJ = .FALSE.
-c     IF (IFAXIS .AND. IFRZER(IE) .AND. (ISID.EQ.2 .OR. ISID.EQ.4)) 
-c    $IFGLJ = .TRUE.
-C
-      PT1X  = X(IE,ISID)
-      PT1Y  = Y(IE,ISID)
-      IF(ISID.EQ.4) THEN
-         PT2X = X(IE,1)
-         PT2Y = Y(IE,1)
-      ELSE IF(ISID.EQ.8) THEN
-         PT2X = X(IE,5)
-         PT2Y = Y(IE,5)
-      ELSE
-         PT2X = X(IE,ISID+1)
-         PT2Y = Y(IE,ISID+1)
-      ENDIF
-C
+      subroutine arcsrf_e(xml,yml,zml,nxl,nyl,nzl,e,isid)
+      include 'basics.inc'
+      real xml(nxl,nyl,nzl),yml(nxl,nyl,nzl),zml(nxl,nyl,nzl)
+      integer e
+
+C     ctmpg is used in this format in several subsequent routines
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
+      logical ifglj
+
+      ifglj = .false.
+C     if (ifaxis .and. ifrzer(ie) .and. (isid.eq.2 .or. isid.eq.4)) 
+C    $ifglj = .true.
+
+      pt1x  = x(e,isid)
+      pt1y  = y(e,isid)
+      if(isid.eq.4) then
+         pt2x = x(e,1)
+         pt2y = y(e,1)
+      else if(isid.eq.8) then
+         pt2x = x(e,5)
+         pt2y = y(e,5)
+      else
+         pt2x = x(e,isid+1)
+         pt2y = y(e,isid+1)
+      endif
+
 C     Find slope of perpendicular
-      RADIUS=CURVE(1,ISID,IE)
-      GAP=SQRT( (PT1X-PT2X)**2 + (PT1Y-PT2Y)**2 )
-      IF (ABS(2.0*RADIUS).LE.GAP*1.00001) THEN
-         WRITE(6,10) RADIUS,ISID,IE,GAP
-   10    FORMAT(//,2X,'ERROR: Too small a radius (',G11.3
+      radius=curve(1,isid,e)
+      gap=sqrt( (pt1x-pt2x)**2 + (pt1y-pt2y)**2 )
+      if (abs(2.0*radius).le.gap*1.00001) then
+         write(6,10) radius,isid,e,gap
+   10    format(//,2x,'ERROR: Too small a radius (',g11.3
      $  ,') specified for side',I2,' of element',I4,':  '
-     $  ,G11.3,/,2X,'ABORTING during mesh generation.')
-         CALL EXITT
-      ENDIF
-      XS = PT2Y-PT1Y
-      YS = PT1X-PT2X
+     $  ,g11.3,/,2x,'ABORTING during mesh generation.')
+         call exitt
+      endif
+      xs = pt2y-pt1y
+      ys = pt1x-pt2x
 C     Make length Radius
-      XYS=SQRT(XS**2+YS**2)
-      write(6,977) ie,isid,pt1x,pt2x,pt1y,pt2y,xys,xs,ys
-  977 format('arc',i3,i3,7f10.4)
+      xys=sqrt(xs**2+ys**2)
+c     write(6,977) e,isid,pt1x,pt2x,pt1y,pt2y,xys,xs,ys
+c 977 format('arc',i3,i3,7f10.4)
 C     Find Center
-      DTHETA = ABS(ASIN(0.5*GAP/RADIUS))
-      PT12X  = (PT1X + PT2X)/2.0
-      PT12Y  = (PT1Y + PT2Y)/2.0
-      XCENN  = PT12X - XS/XYS * RADIUS*COS(DTHETA)
-      YCENN  = PT12Y - YS/XYS * RADIUS*COS(DTHETA)
-      THETA0 = ATAN2((PT12Y-YCENN),(PT12X-XCENN))
-      IF (IFGLJ) THEN
-         FAC    = SIGN(1.0,RADIUS)
-         THETA1 = THETA0 - FAC*DTHETA
-         THETA2 = THETA0 + FAC*DTHETA
-      ENDIF
+      dtheta = abs(asin(0.5*gap/radius))
+      pt12x  = (pt1x + pt2x)/2.0
+      pt12y  = (pt1y + pt2y)/2.0
+      xcenn  = pt12x - xs/xys * radius*cos(dtheta)
+      ycenn  = pt12y - ys/xys * radius*cos(dtheta)
+      theta0 = atan2((pt12y-ycenn),(pt12x-xcenn))
+      if (ifglj) then
+         fac    = sign(1.0,radius)
+         theta1 = theta0 - fac*dtheta
+         theta2 = theta0 + fac*dtheta
+      endif
 C     Compute perturbation of geometry
       ISID1 = MOD1(ISID,4)
-      IF (IFGLJ) THEN
-         I1 = ISID/2
-         I2 = 2 - ISID/4
-         DO 15 IY=1,NYL
-           ANG  = H(IY,2,I1)*THETA1 + H(IY,2,I2)*THETA2
-           XCRVED(IY)=XCENN + ABS(RADIUS)*COS(ANG)
-     $                      - (H(IY,2,I1)*PT1X + H(IY,2,I2)*PT2X)
-           YCRVED(IY)=YCENN + ABS(RADIUS) * SIN(ANG)
-     $                      - (H(IY,2,I1)*PT1Y + H(IY,2,I2)*PT2Y)
-   15    CONTINUE
-      ELSE
-         DO 20 IX=1,NXL
-            IXT=IX
-            IF (ISID1.GT.2) IXT=NXL+1-IX
-            R=ZGML(IX,1)
-            IF (RADIUS.LT.0.0) R=-R
-            XCRVED(IXT) = XCENN + ABS(RADIUS) * COS(THETA0 + R*DTHETA)
-     $                          - ( H(IX,1,1)*PT1X + H(IX,1,2)*PT2X )
-            YCRVED(IXT) = YCENN + ABS(RADIUS) * SIN(THETA0 + R*DTHETA)
-     $                          - ( H(IX,1,1)*PT1Y + H(IX,1,2)*PT2Y )
-   20    CONTINUE
-      ENDIF
+      if (ifglj) then
+         i1 = isid/2
+         i2 = 2 - isid/4
+         do 15 iy=1,nyl
+           ang  = h(iy,2,i1)*theta1 + h(iy,2,i2)*theta2
+           xcrved(iy)=xcenn + abs(radius)*cos(ang)
+     $                      - (h(iy,2,i1)*pt1x + h(iy,2,i2)*pt2x)
+           ycrved(iy)=ycenn + abs(radius) * sin(ang)
+     $                      - (h(iy,2,i1)*pt1y + h(iy,2,i2)*pt2y)
+   15    continue
+      else
+         do 20 ix=1,nxl
+            ixt=ix
+            if (isid1.gt.2) ixt=nxl+1-ix
+            r=zgml(ix)
+            if (radius.lt.0.0) r=-r
+            xcrved(ixt) = xcenn + abs(radius) * cos(theta0 + r*dtheta)
+     $                          - ( h(ix,1,1)*pt1x + h(ix,1,2)*pt2x )
+            ycrved(ixt) = ycenn + abs(radius) * sin(theta0 + r*dtheta)
+     $                          - ( h(ix,1,1)*pt1y + h(ix,1,2)*pt2y )
+   20    continue
+      endif
 C     Points all set, add perturbation to current mesh.
-      ISID1 = MOD1(ISID,4)
-      ISID1 = EFACE1(ISID1)
-      IZT = (ISID-1)/4+1
-      IYT = ISID1-2
-      IXT = ISID1
-      IF (ISID1.LE.2) THEN
-         CALL ADDTNSR(XML(1,1,1,IEL),H(1,1,IXT),XCRVED,H(1,3,IZT)
-     $               ,NXL,NYL,NZL)
-         CALL ADDTNSR(YML(1,1,1,IEL),H(1,1,IXT),YCRVED,H(1,3,IZT)
-     $               ,NXL,NYL,NZL)
-      ELSE
-         CALL ADDTNSR(XML(1,1,1,IEL),XCRVED,H(1,2,IYT),H(1,3,IZT)
-     $               ,NXL,NYL,NZL)
-         CALL ADDTNSR(YML(1,1,1,IEL),YCRVED,H(1,2,IYT),H(1,3,IZT)
-     $               ,NXL,NYL,NZL)
-      ENDIF
+      isid1 = mod1(isid,4)
+      isid1 = eface1(isid1)
+      izt = (isid-1)/4+1
+      iyt = isid1-2
+      ixt = isid1
+      if (isid1.le.2) then
+         call addtnsr(xml,h(1,1,ixt),xcrved,h(1,3,izt),nxl,nyl,nzl)
+         call addtnsr(yml,h(1,1,ixt),ycrved,h(1,3,izt),nxl,nyl,nzl)
+      else
+         call addtnsr(xml,xcrved,h(1,2,iyt),h(1,3,izt),nxl,nyl,nzl)
+         call addtnsr(yml,ycrved,h(1,2,iyt),h(1,3,izt),nxl,nyl,nzl)
+      endif
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine addtnsr(s,h1,h2,h3,nx,ny,nz)
 C
@@ -1266,7 +1171,7 @@ C
 c-----------------------------------------------------------------------
       subroutine setrst2(xpt,vec)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3)
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
@@ -1282,7 +1187,7 @@ C======================================================================
 C
 C     Find the element closest to this point
 C
-      CALL FINDE(IE,XPT(1),XPT(2),XPT(3))
+      call finde(ie,xpt(1),xpt(2),xpt(3))
 C
 C     Does this correspond most closely to an R, S, or T plane?
 C
@@ -1380,11 +1285,11 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine finde(ie,xpt1,ypt1,zpt1)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
 C     Find element which is closest to the point xpt1
 C
-      CALL GENCEN
+      call gencen
       DSTMIN=10.0E10
       IF (IF3D) THEN
          DO 100 IEL=1,NEL
@@ -1414,13 +1319,12 @@ c-----------------------------------------------------------------------
 C
 C     Evaluate a scalar, SCAL, at position RRL and return the result in X0.
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION SCAL(1)
       DIMENSION RRL(3)
       COMMON  /qTMP0q/ HR(NXM),HS(NXM),HT(NXM)
      $               ,HHH(NXM,NXM,NXM)
-      common /cevals/ zptc(nxm),wptc(nxm)
-C
+
       integer icalld,nxold
       save    icalld,nxold
       data    icalld /0/
@@ -1430,31 +1334,27 @@ c
       SAVE    RLXOLD,RLYOLD,RLZOLD
       DATA    RLXOLD,RLYOLD,RLZOLD/3*1.e20/
 C
+
+      call set_zgml(nxm)
+      
       SUM = 0.0
-C
-      if (nx.ne.nxold) then
-         nxold = nx
-         call zwgll(zptc,wptc,nx)
-         call copy (zpts,zptc,nx)
-      endif
-c
       IF (RRL(1).NE.RLXOLD.OR.RRL(2).NE.RLYOLD.OR.RRL(3).NE.RLZOLD
      $   .OR.ICALLD.EQ.0) THEN
          ICALLD = 1
          RLXOLD = RRL(1)
          RLYOLD = RRL(2)
          RLZOLD = RRL(3)
-         CALL HLEGN(HR,RRL(1),zptc,NX)
-         CALL HLEGN(HS,RRL(2),zptc,NY)
+         call hlegn(hr,rrl(1),zgml,nx)
+         call hlegn(hs,rrl(2),zgml,ny)
 
 c        write(6,*) 'this is rr1:',rrl(1),nx
-c        call outmat(zptc,1,nx,'zptc ',nx)
+c        call outmat(zgml,1,nx,'zgml ',nx)
 c        call outmat(hr,1,nx,'hr   ',nx)
 c        write(6,*) 'this is rr2:',rrl(2),ny
 c        call outmat(hs,1,ny,'hs   ',ny)
 
          IF (IF3D) THEN
-            CALL HLEGN(HT,RRL(3),zptc,NZ)
+            call hlegn(ht,rrl(3),zgml,nz)
             IJK=0
             DO 100 K=1,NZ
             DO 100 J=1,NY
@@ -1521,7 +1421,7 @@ C
 C     Renumber elements so that the lowest numbered elements are
 C     in the user specified box.
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION IEIN(NELM),IEOUT(NELM) 
       logical iftmp
       NELM1=NELM-1
@@ -1557,7 +1457,7 @@ C        look for a keypad input
 C
 C     We successfully input 2 points in the build area
 C     Generate element centers
-      CALL GENCEN
+      call gencen
       XMAX=MAX(XMOUSE,XMOUS2)
       XMIN=MIN(XMOUSE,XMOUS2)
       YMAX=MAX(YMOUSE,YMOUS2)
@@ -1575,7 +1475,7 @@ C     Count the number which are in
      $       YCEN(IIEL).LE.YMAX )         NUMIN=NUMIN+1
   100 CONTINUE
       WRITE(S,101) NUMIN,NEL
-  101 FORMAT('Renumbering',I5,' out of',I5,' elements.$')
+  101 FORMAT('Renumbering',I9,' out of',I9,' elements.$')
       CALL PRS(S)
       IF (NUMIN.GT.0) THEN
 C        renumber the elements which are inside to be less than NUMIN
@@ -1600,7 +1500,7 @@ C               We've got one which is out, but too low.
              ENDIF
   200    CONTINUE
       WRITE(S,201) J,K
-  201 FORMAT('Found',I5,' elements in, and',I5,' elements out.$')
+  201 FORMAT('Found',I9,' elements in, and',I9,' elements out.$')
       CALL PRS(S)
       IF (J.NE.K) return
 C
@@ -1623,7 +1523,7 @@ C
 c-----------------------------------------------------------------------
       subroutine getpt3(xpt,ie,text)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER*1 YESNO
       CHARACTER*80 TEXT
       DIMENSION XPT(3)
@@ -1634,7 +1534,7 @@ C
 C
 C     Find the element closest to this point
 C
-      CALL FINDE(IE,XPT(1),XPT(2),XPT(3))
+      call finde(ie,xpt(1),xpt(2),xpt(3))
 C
 C     Exception handling:
       IF (IE.EQ.0) THEN
@@ -1647,7 +1547,7 @@ C     Exception handling:
          IF (YESNO.EQ.'Y'.OR.YESNO.EQ.'y') GOTO 10
       ELSE
          WRITE(S,30) IE,XCEN(IE),YCEN(IE),ZCEN(IE)
-   30    FORMAT(2X,'Found element number',I5,3f9.4,'$')
+   30    FORMAT(2X,'Found element number',I9,3f9.4,'$')
          CALL PRS(S)
       ENDIF
 C
@@ -1655,7 +1555,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine fndpln(ijkpln,iplan,vec3,vec,xpt,ie)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       DIMENSION VEC(3) ,VEC3(3),XPT(3)
@@ -1687,29 +1587,29 @@ C
 C
 C     Find the plane corresponding to the chosen point and normal.
 C
-      NXY =NX*NY
-      NXYZ=NX*NY*NZ
-      DMIN=10.0E15
-      CALL GENXYZ(XP,YP,ZP,IE,1,NX,NY,NZ)
-      DO 100 I=1,NXYZ
-         DIST=(XP(I)-XPT(1))**2+(YP(I)-XPT(2))**2+
-     $        (ZP(I)-XPT(3))**2
-         IF (DIST.LT.DMIN) THEN
-            IJKMIN=I
-            DMIN=DIST
-         ENDIF
-  100 CONTINUE
-      CALL DECOD(IXP,IYP,IZP,IDUM,IJKMIN,NX,NY,NZ)
-      IF (IJKPLN.LE.2) IPLAN=IXP
-      IF (IJKPLN.GT.2) IPLAN=IYP
-      IF (IJKPLN.GT.4) IPLAN=IZP
+      nxy =nx*ny
+      nxyz=nx*ny*nz
+      dmin=10.0e15
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
+      do 100 i=1,nxyz
+         dist=(xp(i)-xpt(1))**2+(yp(i)-xpt(2))**2+
+     $        (zp(i)-xpt(3))**2
+         if (dist.lt.dmin) then
+            ijkmin=i
+            dmin=dist
+         endif
+  100 continue
+      call decod(ixp,iyp,izp,idum,ijkmin,nx,ny,nz)
+      if (ijkpln.le.2) iplan=ixp
+      if (ijkpln.gt.2) iplan=iyp
+      if (ijkpln.gt.4) iplan=izp
 C     Set IJKPLN according to actual value of IPLAN
-      NXT=2*IPLAN-1
-      IF (NXT.LT.NX) IJKPLN=2*((IJKPLN-1)/2)+1
-      IF (NXT.GT.NX) IJKPLN=2*((IJKPLN-1)/2)+2
+      nxt=2*iplan-1
+      if (nxt.lt.nx) ijkpln=2*((ijkpln-1)/2)+1
+      if (nxt.gt.nx) ijkpln=2*((ijkpln-1)/2)+2
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine win3d(je,ie,ilist,frac)
 C
@@ -1735,7 +1635,7 @@ C                  |
 C                  splitting plane 2
 C
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       INTEGER   ITRANS(3,6,6)
@@ -1816,8 +1716,8 @@ C
 C
 C     Highlight the element to be split
 C
-      CALL GENXYZ (XP,YP,ZP,IE,1,NX,NY,NZ)
-      CALL HILITE(IE,XP,YP,ZP,5)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
+      call hilite(ie,xp,yp,zp,5)
 C
 C     Begin with copying the essential information
 C
@@ -1838,7 +1738,7 @@ C                                               ie  +----+  je
    10 CONTINUE
 C     Compute XYZ on high definition mesh
 C             (Note, because of this, ROTELM must rotate CURVE data as well.)
-      CALL GENXYZ (XP,YP,ZP,IE,1,NX,NY,NZ)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 C
 C     Generate element IE
 C
@@ -1984,7 +1884,7 @@ c-----------------------------------------------------------------------
 C
 C     Perform a unit rotation about the specified axis.
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER*1 CROT,CCTMP
       DIMENSION TMP(6)
       INTEGER FCRN2 (4,6)
@@ -2052,7 +1952,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw ISOMETRIC view of general 3D object.
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER*1 CB1
       INTEGER ICALLD,NCSOLD,NCSEG1,NCSGM1
       INTEGER ICEDG(3,16),IEDGFC(4,6),ICFACE(4,10)
@@ -2145,7 +2045,7 @@ C           Set up curve line segment evaluation array (exclude endpoints) :
             DR1 = 2.0 / FLOAT(NCSEGS)
             DO 400 K=1,NCSGM1
                RR1 = -1.0 + DR1*FLOAT(K)
-               CALL HLEGN(HIK(1,K),RR1,ZPTS,NX)
+               call hlegn(hik(1,k),rr1,zgml,nx)
   400       CONTINUE
          ENDIF
       ENDIF
@@ -2164,7 +2064,7 @@ C
 C
 C        Check if we can take a short cut in plotting the element bdry.
          IFCURV=.FALSE.
-         DO 500 IEDG = 1,8
+         DO 500 IEDG = 1,12
             IF (CCURVE(IEDG,IE).NE.' ') IFCURV=.TRUE.
   500    CONTINUE
 C
@@ -2201,7 +2101,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine evline(uv,uvp,hik,n1,n1d,npt,nskip)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
 C     Evaluate vector uv <== uvp, @ k=1,npts
 C
@@ -2230,10 +2130,10 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine setebc(ifld)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C     Find Sides' Midpoints
-      CALL MKSIDE
-      CALL GENCEN
+      call mkside
+      call gencen
 C     Find Sides' Overlaps (used for finding boundary sides)
 C!! Check here for Irrational B.c.'s: unrequited connectivities;
 C     Warn if physical boundaries internally.  This check is not exhaustive!!??
@@ -2299,7 +2199,7 @@ C                    Overlapping edges not Internal B.C.'s are elemental b.c.'s
       return
       END
 c-----------------------------------------------------------------------
-      subroutine psphsrf(xml,yml,zml,ifce,ie,iel,mx,my,mz,xysrf) 
+      subroutine psphsrf_e(xml,yml,zml,ifce,e,mx,my,mz,xysrf) 
 C
 C     5 Aug 1988 19:29:52 
 C     Program to generate spherical shell elements for NEKTON
@@ -2307,57 +2207,35 @@ C     input.  Paul F. Fischer
 C
 C     Updated 7/30/92 to compute prolate spheroids
 C
-      INCLUDE 'basics.inc'
-      PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
-      DIMENSION XML(MX,MY,MZ,1),YML(MX,MY,MZ,1),ZML(MX,MY,MZ,1)
-      DIMENSION XYSRF(3,MX,MZ)
-C
-      COMMON /CTMPg/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-      COMMON /CTMP0/ XCV(3,2,2),VN1(3),VN2(3)
-     $     ,X1(3),X2(3),X3(3),DX(3),XCC(8),YCC(8),ZCC(8),ZHMT(237)
-C HMT change to make consisteny w/build2.f
-C      COMMON /CTMP0/ XCV(3,2,2),VN1(3),VN2(3)
-C     $              ,X1(3),X2(3),X3(3),DX(3),XCC(8),YCC(8),ZCC(8)
-      DIMENSION IOPP(3),MXX(3)
-C
-C     Stuff which is normally in genxyz
-C
-      DO 11 IX=1,MX
-         H(IX,1,1)=(1.0-ZGML(IX,1))*0.5
-         H(IX,1,2)=(1.0+ZGML(IX,1))*0.5
-   11 CONTINUE
-      DO 21 IY=1,MY
-         H(IY,2,1)=(1.0-ZGML(IY,1))*0.5
-         H(IY,2,2)=(1.0+ZGML(IY,1))*0.5
-   21 CONTINUE
-      IF (IF3D) THEN
-         DO 31 IZ=1,MZ
-            H(IZ,3,1)=(1.0-ZGML(IZ,1))*0.5
-            H(IZ,3,2)=(1.0+ZGML(IZ,1))*0.5
-   31    CONTINUE
-      ELSE
-         CALL RONE(H(1,3,1),MZ)
-         CALL RONE(H(1,3,2),MZ)
-      ENDIF
-C
+      include 'basics.inc'
+      real xml(mx,my,mz),yml(mx,my,mz),zml(mx,my,mz)
+      real xysrf(3,mx,mz)
+      integer e
+
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
+      common /ctmp0/ xcv(3,2,2),vn1(3),vn2(3)
+     $     ,x1(3),x2(3),x3(3),dx(3),xcc(8),ycc(8),zcc(8),zhmt(237)
+      dimension iopp(3),mxx(3)
+
+      call set_hlin(h,mx) ! linear to mx mapping
+
 C     Determine geometric parameters
-C
       MXM1 = MX-1
       MYM1 = MY-1
       MXY  = MX*MZ
       MXY3 = 3*MX*MZ
-      XCTR   = CURVE(1,IFCE,IE)
-      YCTR   = CURVE(2,IFCE,IE)
-      ZCTR   = CURVE(3,IFCE,IE)
-      RADIUS = CURVE(4,IFCE,IE)
+      xctr   = curve(1,ifce,e)
+      yctr   = curve(2,ifce,e)
+      zctr   = curve(3,ifce,e)
+      radius = curve(4,ifce,e)
 C
 C     For now, we support only stretching in X, for lack of better
 C     interface... the code is general however.
 C
-      pRATIO = CURVE(5,IFCE,IE)
-      pRATIi = 1.0/pRATIO
-      IFACE  = EFACE1(IFCE)
+      Pratio = curve(5,ifce,e)
+      PratiI = 1.0/Pratio
+      iface  = eface1(ifce)
 C
 C     First, we map to unstretched coordinates:
 C
@@ -2378,122 +2256,114 @@ C       |      |                 |              |      |     |
 C       +--->  +-----------------+              +--->  +-----+
 C         x                                      x'
 C
-      DO 10 I=1,8
-         XCC(I)=X(IE,I)*pRATIi
-         YCC(I)=Y(IE,I)
-         ZCC(I)=Z(IE,I)
-   10 CONTINUE
-      CALL CRN3D(XCV,XCC,YCC,ZCC,CURVE(1,IFCE,IE),IFACE,IE)
+      do 10 i=1,8
+         xcc(i)=x(e,i)*PratiI
+         ycc(i)=y(e,i)
+         zcc(i)=z(e,i)
+   10 continue
+      call crn3d(xcv,xcc,ycc,zcc,curve(1,ifce,e),iface,e)
 C
 C     Generate edge vectors on the sphere RR=1.0, 
 C     for (r,s) = (-1,*),(1,*),(*,-1),(*,1)      
 C
-      CALL EDG3D(XYSRF,XCV(1,1,1),XCV(1,1,2), 1, 1, 1,MY,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,2,1),XCV(1,2,2),MX,MX, 1,MY,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,1,1),XCV(1,2,1), 1,MX, 1, 1,MX,MY)
-      CALL EDG3D(XYSRF,XCV(1,1,2),XCV(1,2,2), 1,MX,MY,MY,MX,MY)
+      call edg3d(xysrf,xcv(1,1,1),xcv(1,1,2), 1, 1, 1,my,mx,my)
+      call edg3d(xysrf,xcv(1,2,1),xcv(1,2,2),mx,mx, 1,my,mx,my)
+      call edg3d(xysrf,xcv(1,1,1),xcv(1,2,1), 1,mx, 1, 1,mx,my)
+      call edg3d(xysrf,xcv(1,1,2),xcv(1,2,2), 1,mx,my,my,mx,my)
 C
 C     Generate intersection vectors for (i,j)
 C
-      DO 200 J=2,MYM1
-         CALL CROSS(VN1,XYSRF(1,1,J),XYSRF(1,MX,J))
-         DO 200 I=2,MXM1
-            CALL CROSS(VN2,XYSRF(1,I,1),XYSRF(1,I,MY))
-            IF (IFACE.EQ.1.OR.IFACE.EQ.4.OR.IFACE.EQ.5) THEN
-               CALL CROSS(XYSRF(1,I,J),VN2,VN1)
-            ELSE
-               CALL CROSS(XYSRF(1,I,J),VN1,VN2)
-            ENDIF
-  200 CONTINUE
+      do 200 j=2,mym1
+         call cross(vn1,xysrf(1,1,j),xysrf(1,mx,j))
+         do 200 i=2,mxm1
+            call cross(vn2,xysrf(1,i,1),xysrf(1,i,my))
+            if (iface.eq.1.or.iface.eq.4.or.iface.eq.5) then
+               call cross(xysrf(1,i,j),vn2,vn1)
+            else
+               call cross(xysrf(1,i,j),vn1,vn2)
+            endif
+  200 continue
 C
 C     Normalize all vectors to the unit sphere.
 C
-      DO 300 I=1,MXY
-         CALL NORM3D(XYSRF(1,I,1))
-  300 CONTINUE
+      do 300 i=1,mxy
+         call norm3d(xysrf(1,i,1))
+  300 continue
 C
 C     Scale by actual radius
 C
-      CALL CMULT(XYSRF,RADIUS,MXY3)
+      call cmult(xysrf,radius,mxy3)
 C
 C     Add back the sphere center offset
 C
-      DO 400 I=1,MXY
-         XYSRF(1,I,1)=XYSRF(1,I,1)+XCTR
-         XYSRF(2,I,1)=XYSRF(2,I,1)+YCTR
-         XYSRF(3,I,1)=XYSRF(3,I,1)+ZCTR
-  400 CONTINUE
+      do 400 i=1,mxy
+         xysrf(1,i,1)=xysrf(1,i,1)+xctr
+         xysrf(2,i,1)=xysrf(2,i,1)+yctr
+         xysrf(3,i,1)=xysrf(3,i,1)+zctr
+  400 continue
 C
 C
 C     Transpose data, if necessary
 C
-      IF (IFACE.EQ.1.OR.IFACE.EQ.4.OR.IFACE.EQ.5) THEN
-         DO 500 J=1  ,MY
-         DO 500 I=J+1,MX
-            TMP=XYSRF(1,I,J)
-            XYSRF(1,I,J)=XYSRF(1,J,I)
-            XYSRF(1,J,I)=TMP
-            TMP=XYSRF(2,I,J)
-            XYSRF(2,I,J)=XYSRF(2,J,I)
-            XYSRF(2,J,I)=TMP
-            TMP=XYSRF(3,I,J)
-            XYSRF(3,I,J)=XYSRF(3,J,I)
-            XYSRF(3,J,I)=TMP
-  500    CONTINUE
-      ENDIF
+      if (iface.eq.1.or.iface.eq.4.or.iface.eq.5) then
+         do 500 j=1  ,my
+         do 500 i=j+1,mx
+            tmp=xysrf(1,i,j)
+            xysrf(1,i,j)=xysrf(1,j,i)
+            xysrf(1,j,i)=tmp
+            tmp=xysrf(2,i,j)
+            xysrf(2,i,j)=xysrf(2,j,i)
+            xysrf(2,j,i)=tmp
+            tmp=xysrf(3,i,j)
+            xysrf(3,i,j)=xysrf(3,j,i)
+            xysrf(3,j,i)=tmp
+  500    continue
+      endif
 C
 C     Compute surface deflection and perturbation due to face IFACE
-C
-      CALL DSSET(MX,MY,MZ)
-      JS1    = SKPDAT(IFACE,1)
-      JF1    = SKPDAT(IFACE,2)
-      JSKIP1 = SKPDAT(IFACE,3)
-      JS2    = SKPDAT(IFACE,4)
-      JF2    = SKPDAT(IFACE,5)
-      JSKIP2 = SKPDAT(IFACE,6)
-C
-      IOPP(1) = MX-1
-      IOPP(2) = MX*(MY-1)
-      IOPP(3) = MX*MY*(MZ-1)
-      MXX(1)  = MX
-      MXX(2)  = MY
-      MXX(3)  = MZ
-      IDIR    = 2*MOD(IFACE,2) - 1
-      IFC2    = (IFACE+1)/2
-      DELT    = 0.0
-      I=0
-      DO 700 J2=JS2,JF2,JSKIP2
-      DO 700 J1=JS1,JF1,JSKIP1
-         I=I+1
-         JOPP = J1 + IOPP(IFC2)*IDIR
-         X2(1) = XML(J1,J2,1,IEL)*pRATIi
-         X2(2) = YML(J1,J2,1,IEL)
-         X2(3) = ZML(J1,J2,1,IEL)
-C
-         DX(1) = (XYSRF(1,I,1)-X2(1))*pRATIO
-         DX(2) = XYSRF(2,I,1)-X2(2)
-         DX(3) = XYSRF(3,I,1)-X2(3)
-C
-         MXS = MXX(IFC2)
-         JOFF = (J1-JOPP)/(MXS-1)
-         DO 600 IX = 2,MXS
-            J = JOPP + JOFF*(IX-1)
-            ZETA = 0.5*(ZGML(IX,IFC2) + 1.0)
-            ZETA = 0.5*(ZGML(IX,1) + 1.0)
-            XML(J,J2,1,IEL) = XML(J,J2,1,IEL)+DX(1)*ZETA
-            YML(J,J2,1,IEL) = YML(J,J2,1,IEL)+DX(2)*ZETA
-            ZML(J,J2,1,IEL) = ZML(J,J2,1,IEL)+DX(3)*ZETA
-  600    CONTINUE
-  700 CONTINUE
+      call dsset2(js1,jf1,jskip1,js2,jf2,jskip2,iface,mx,my,mz)
+
+      iopp(1) = mx-1
+      iopp(2) = mx*(my-1)
+      iopp(3) = mx*my*(mz-1)
+      mxx(1)  = mx
+      mxx(2)  = my
+      mxx(3)  = mz
+      idir    = 2*mod(iface,2) - 1
+      ifc2    = (iface+1)/2
+      delt    = 0.0
+      i=0
+      do 700 j2=js2,jf2,jskip2
+      do 700 j1=js1,jf1,jskip1
+         i=i+1
+         jopp = j1 + iopp(ifc2)*idir
+         x2(1) = xml(j1,j2,1)*PratiI
+         x2(2) = yml(j1,j2,1)
+         x2(3) = zml(j1,j2,1)
+c
+         dx(1) = (xysrf(1,i,1)-x2(1))*Pratio
+         dx(2) = xysrf(2,i,1)-x2(2)
+         dx(3) = xysrf(3,i,1)-x2(3)
+c
+         mxs = mxx(ifc2)
+         joff = (j1-jopp)/(mxs-1)
+         do 600 ix = 2,mxs
+            j = jopp + joff*(ix-1)
+            zeta = 0.5*(zgml(ix) + 1.0)
+            xml(j,j2,1) = xml(j,j2,1)+dx(1)*zeta
+            yml(j,j2,1) = yml(j,j2,1)+dx(2)*zeta
+            zml(j,j2,1) = zml(j,j2,1)+dx(3)*zeta
+  600    continue
+  700 continue
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine hilites(ie,iside)
 C
 C     High-light just the side of the element
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
 C     Flash element side
 C     Hilight side with Blinking lights
@@ -2523,7 +2393,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine shift
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
     1 CONTINUE
 c
@@ -2616,7 +2486,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
       END
 c-----------------------------------------------------------------------
       subroutine shifter(Shift,Sep,DIR,pts,coord)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION pts(nelm,8)
       CHARACTER*1 DIR,coord
       LOGICAL IFG,IFL
@@ -2659,6 +2529,13 @@ c           ENDIF
                IF (pts(k,j).ge.sep) pts(k,j)=pts(k,j)+shift
    20       CONTINUE
             if (if3d.and.pmin.ge.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
@@ -2703,6 +2580,13 @@ c           ENDIF
                IF (pts(k,j).le.sep) pts(k,j)=pts(k,j)+shift
   120       CONTINUE
             if (if3d.and.pmax.le.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
@@ -2716,28 +2600,26 @@ c           ENDIF
       ENDIF
 C
       WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I5,' elements.$')
+  500 FORMAT(' Shifted',I9,' elements.$')
       CALL PRS(S)
 C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine curcnt
-      INCLUDE 'basics.inc'
-C
-C     Recount the number of curved sides
-C
-      NCURVE=0
-      DO 9001 IE=1,NEL
-      DO 9001 IEDGE=1,8
-         IF (CCURVE(IEDGE,IE).NE.' ') THEN
-            NCURVE=NCURVE+1
-            WRITE(6,*) 'Curve:',IE,IEDGE,CCURVE(IEDGE,IE)
-         ENDIF
- 9001 CONTINUE
-C
+      subroutine curcnt  !     Recount the number of curved sides
+      include 'basics.inc'
+
+      ncurve=0
+      do 9001 ie=1,nel
+      do 9001 iedge=1,12
+         if (ccurve(iedge,ie).ne.' ') then
+            ncurve=ncurve+1
+C           write(6,*) 'curve:',ie,iedge,ccurve(iedge,ie)
+         endif
+ 9001 continue
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine splite(je,ie,ilist,ipln,frac)
 C
@@ -2746,7 +2628,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       INTEGER INV(8)
@@ -2757,15 +2639,15 @@ c
       save    icalld,ieb1,ieb2
       data    icalld,ieb1,ieb2 /0,0,0/
 C
-      IF (FRAC.LE.0.0.OR.FRAC.GE.1.0) return
+      if (frac.le.0.0.or.frac.ge.1.0) RETURN
 C
 C     Begin with copying the essential information
 C
-      CALL COPYEL(IE,JE)
+      call copyel(ie,je)
 C
 C     Compute XYZ on high definition mesh
 C
-      CALL GENXYZ (XP,YP,ZP,IE,1,NX,NY,NZ)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 C
 C     Are we taking an R, S or T cut?
 C
@@ -2929,7 +2811,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
      $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
@@ -2941,7 +2823,7 @@ C
 C
 C     Compute XYZ on high definition mesh
 C
-      CALL GENXYZ (XP,YP,ZP,IE,1,NX,NY,NZ)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 C
 C     Evaluate x,y,z on 27 pt stencil
 C
@@ -3176,7 +3058,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
      $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
@@ -3188,7 +3070,7 @@ C
 C
 C     Compute XYZ on high definition mesh
 C
-      CALL GENXYZ (XP,YP,ZP,IE,1,NX,NY,NZ)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 C
 C     Evaluate x,y,z on 27 pt stencil
 C
@@ -3420,7 +3302,7 @@ c     are moved a scaled distance, proportional to the distance from
 c     the selected point.
 c
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
     1 CONTINUE
 c
@@ -3491,32 +3373,12 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
       GOTO 1
       END
 c-----------------------------------------------------------------------
-      subroutine redraw_mesh
-      include 'basics.inc'
-c
-      call refresh
-      call drmenu('NOCOVER')
-      call drgrid
-
-      nelcap = min(nel,5000)
-      do ie=1,nelcap
-         call drawel(ie)
-      enddo
-
-C     Now redraw all the isometric elements.
-      call sortel
-      do i=1,nelcap
-         call drawis(isrt(i))
-      enddo
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine shifter2a(pmin,pmax,gain,Shift,Sep,DIR,pts,coord)
 c
 c     In this pass, we just figure out range of geometry in shifted 
 c     section
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION pts(nelm,8)
       CHARACTER*1 DIR,coord
       LOGICAL IFG,IFL
@@ -3547,7 +3409,7 @@ c-----------------------------------------------------------------------
 c
 c     Standard linear stretch -- unity gain.
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION pts(nelm,8)
       CHARACTER*1 DIR,coord
       LOGICAL IFG,IFL
@@ -3575,6 +3437,13 @@ C
                IF (pts(k,j).ge.sep) pts(k,j)=shift*(pts(k,j)-sep) + sep
    20       CONTINUE
             if (if3d.and.pmin.ge.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
@@ -3611,6 +3480,13 @@ c              IF (pts(k,j).le.sep) pts(k,j)=shift*(pts(k,j)-sep) + sep
                endif
   120       CONTINUE
             if (if3d.and.pmax.le.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
@@ -3625,22 +3501,21 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
       ENDIF
 C
       WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I5,' elements.$')
+  500 FORMAT(' Shifted',I9,' elements.$')
       CALL PRS(S)
 C
       return
       END
 c-----------------------------------------------------------------------
       subroutine shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
-c
+
 c     Geometric gain
-c
-      INCLUDE 'basics.inc'
-      DIMENSION pts(nelm,8)
-      CHARACTER*1 DIR,coord
-      LOGICAL IFG,IFL
-C
-c
+
+      include 'basics.inc'
+      real pts(nelm,8)
+      character*1 dir,coord
+      logical ifg,ifl
+
       Nvts = 4
       IF (IF3D) Nvts=8
       Nkshift = 0
@@ -3677,6 +3552,13 @@ c
                endif
    20       CONTINUE
             if (if3d.and.pmin.ge.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
@@ -3713,6 +3595,13 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                endif
   120       CONTINUE
             if (if3d.and.pmax.le.sep) then
+              do l=1,12
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                endif
+              enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
@@ -3727,7 +3616,7 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
       ENDIF
 C
       WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I5,' elements.$')
+  500 FORMAT(' Shifted',I9,' elements.$')
       CALL PRS(S)
 C
       return
@@ -3737,10 +3626,10 @@ c-----------------------------------------------------------------------
 c
 c     Standard linear stretch -- unity gain.
 c
-      INCLUDE 'basics.inc'
-      DIMENSION pts(nelm,8)
-      CHARACTER*1 DIR,coord
-      LOGICAL IFG,IFL
+      include 'basics.inc'
+      real pts(nelm,8)
+      character*1 dir,coord
+      logical ifg,ifl
 c
       call shifter2a(qmin,qmax,gain,Shift,Sep,DIR,pts,coord)
       write(6,*) 'qmnx gn:',qmin,qmax,gain
@@ -3825,7 +3714,7 @@ c
 c
 c     Compute XYZ on high definition mesh
 c
-      call genxyz (xp,yp,zp,ie,1,nx,ny,nz)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 c
       iz1 = 1
       if (if3d) iz1 = 2
@@ -3896,7 +3785,7 @@ c
 c     Compute XYZ on high definition mesh
 c
       call prsiii('This is nxyz:$',nx,ny,nz)
-      call genxyz (xp,yp,zp,ie,1,nx,ny,nz)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
 c
       l=0
       do k=-1,1
@@ -4025,123 +3914,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine msplite(ie,nxspi,nyspi,nzspi,raxi,rayi,razi)
-C
-C     This routine is a hack-copy of octsplite to generate 
-c     multi-element decompositions of the square     (pff 9/28/05)
-c
-C     It simply modifies in the X-Y plane, but doesn't refine in Z.
-C
-C
-      include 'basics.inc'
-
-      real raxi(0:1),rayi(0:1),razi(0:1)
-
-      parameter (nxm3=nxm*nym*nzm)
-      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),
-     $               rrl(3),xval(3,0:1,0:1,0:1)
-      integer inv(8)
-      save    inv
-      data    inv /1,2,4,3,5,6,8,7/
-      integer e,v
-      parameter(maxsp=100)
-      real rrx(maxsp+1),rry(maxsp+1),rrz(maxsp+1)
-
-      call genxyz (xp,yp,zp,ie,1,nx,ny,nz) ! high definition mesh
-
-      nxsp = abs(nxspi)
-      nysp = abs(nyspi)
-      nzsp = abs(nzspi)
-
-
-      call get_ratios(rrx,nxspi,raxi)
-      call get_ratios(rry,nyspi,rayi)
-      call get_ratios(rrz,nzspi,razi)
-
-      call outmat(rrx,1,nxsp+1,'rrx  ',nxspi)
-      call outmat(rry,1,nysp+1,'rry  ',nyspi)
-      call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
-
-      k1 = 0
-      if (if3d) k1=1
-
-      e  = 0
-      do k=1,nzsp
-
-         do j=1,nysp
-
-            do kk=0,k1
-            do jj=0,1
-
-               rrl(1) = -1
-               rrl(2) =  rry(j+jj)
-               rrl(3) =  rrz(k+kk)
-
-               call evalsc(xval(1,1,jj,kk),xp,rrl,1)
-               call evalsc(xval(2,1,jj,kk),yp,rrl,1)
-               if (if3d) call evalsc(xval(3,1,jj,kk),zp,rrl,1)
-
-            enddo
-            enddo
-c
-            do i=1,nxsp
-c
-               do kk=0,k1
-               do jj=0,1
-                  xval(1,0,jj,kk) = xval(1,1,jj,kk)
-                  xval(2,0,jj,kk) = xval(2,1,jj,kk)
-                  xval(3,0,jj,kk) = xval(3,1,jj,kk)
-
-                  rrl(1) =  rrx(i+1 )
-                  rrl(2) =  rry(j+jj)
-                  rrl(3) =  rrz(k+kk)
-                  call outmat(rrl,1,3,'RRL  ',jj)
-
-                  call evalsc(xval(1,1,jj,kk),xp,rrl,1)
-                  call evalsc(xval(2,1,jj,kk),yp,rrl,1)
-                  if (if3d) call evalsc(xval(3,1,jj,kk),zp,rrl,1)
-                  call outmat(xval(1,1,jj,kk),1,3,'xval ',jj)
-
-               enddo
-               enddo
-c
-               e  = e+1
-               je = nel+e
-               call copyel(ie,je)  ! copy ie to je
-C
-C              Eight vertices
-C
-               v = 0
-               do kk=0,k1
-               do jj=0,1
-               do ii=0,1
-                  v = v+1
-                  x(je,inv(v))=xval(1,ii,jj,kk)
-                  y(je,inv(v))=xval(2,ii,jj,kk)
-                  z(je,inv(v))=xval(3,ii,jj,kk)
-      write(6,9) ii,jj,kk,v,inv(v),je
-     $         , x(je,inv(v)),y(je,inv(v)),z(je,inv(v))
-    9 format(5i4,i7,1p3e13.5,' XY')
-               enddo
-               enddo
-               enddo
-
-               call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
-
-               call drawel(je)
- 
-            enddo
-         enddo
-      enddo
-C
-C     Copy last element generated back onto IE
-C
-      call copyel(Je,Ie)
-      nel = nel + (e-1)
- 
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine get_ratios(rrz,nzspi,razi)
 
       real rrz(1),razi(0:1)
@@ -4158,8 +3930,7 @@ c-----------------------------------------------------------------------
             rrz(k) = get_ratio(k,nzsp,razi)
          enddo
       endif
-      call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
-      
+c     call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
  
       return
       end
@@ -4204,12 +3975,22 @@ c     write(6,*) i,n,ratio,get_ratio
       end
 c-----------------------------------------------------------------------
       subroutine fix_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+
+c     Assign / repair curve-side info for edges
+
       include 'basics.inc'
       real rrx(1),rry(1),rrz(1)
       integer e
 
-      call fix_c_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
-      call fix_s_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+      if (ifmid) then
+         call fix_m_curve(e)  ! in curve.f
+c        ifcstd = .false.
+      endif
+
+      if (ifcstd) then
+         call fix_c_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+         call fix_s_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+      endif
 
       return
       end
@@ -4312,8 +4093,9 @@ c     Check "s" curves faces 5 and 6
       r0 = 0.5*(r0+1.) ! ratio on [0,1]
       r1 = 0.5*(r1+1.)
 
-c     write(6,1) r0,ccurve(i0,e),curve(1,i0,e),' r0 b4'
-c     write(6,1) r1,ccurve(i1,e),curve(1,i1,e),' r1 b4'
+c     write(6,1) r0,curve(1,i0,e),ccurve(i0,e),' r0 b4'
+c     write(6,1) r1,curve(1,i1,e),ccurve(i1,e),' r1 b4'
+   1  format(1p2e13.5,1x,a1,1x,a6)
 
       if (c0.eq.'s' .and. c1.eq.'s') then
          do i=1,4  ! average all 4 quantities:  radius, ctr_x, ctr_y, ctr_z
@@ -4357,20 +4139,18 @@ c     Check "a" curve on edge 9
       return
       end
 c-----------------------------------------------------------------------
-      subroutine arcsph(xml,yml,zml,nxl,nyl,nzl,ie,iel,isid)
+      subroutine arcsph_e(xml,yml,zml,nxl,nyl,nzl,e,isid)
       include 'basics.inc'
-c
-c     ....note..... CTMPg is used in this format in several subsequent routines
-c
-      parameter (lx1=nxm,ly1=nym,lz1=nzm)
+      real xml(nxl,nyl,nzl),yml(nxl,nyl,nzl),zml(nxl,nyl,nzl)
+      integer e
+
+c     ctmpg is used in this format in several subsequent routines
       common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
-     $             , zgml(lx1,3),work(3,lx1,lz1)
-      real xml(nxl,nyl,nzl,1),yml(nxl,nyl,nzl,1),zml(nxl,nyl,nzl,1)
+     $             , work(3,lx1,lz1)
 
       real xcrv(3,lx1),osph(3),v1(3),v2(3)
 
 c     Edg2v stores start point for each edge, in hypercube notation
-
       integer edg2v(12)  ! vertices in symm notation, edge in prep not.
       save    edg2v
       data    edg2v / 0,1,2,0, 4,5,6,4, 0,1,3,4 /
@@ -4406,16 +4186,16 @@ c     Edg2v stores start point for each edge, in hypercube notation
       i=istart
       do k=1,nxl   ! this inveighs against nzl^=nxl
          i=i+istrid
-         xcrv(1,k) = xml(i,1,1,iel)
-         xcrv(2,k) = yml(i,1,1,iel)
-         xcrv(3,k) = zml(i,1,1,iel)
-         write(79,1) i,xcrv(1,i),xcrv(2,i),xcrv(3,i)
+         xcrv(1,k) = xml(i,1,1)
+         xcrv(2,k) = yml(i,1,1)
+         xcrv(3,k) = zml(i,1,1)
+c        write(79,1) i,xcrv(1,i),xcrv(2,i),xcrv(3,i)
       enddo
 
-      osph(1) = curve(1,isid,ie)
-      osph(2) = curve(2,isid,ie)
-      osph(3) = curve(3,isid,ie)
-      radius  = curve(4,isid,ie)
+      osph(1) = curve(1,isid,e)
+      osph(2) = curve(2,isid,e)
+      osph(3) = curve(3,isid,e)
+      radius  = curve(4,isid,e)
 
       call sub3  (v1,xcrv(1,1  ),osph,3)
       call sub3  (v2,xcrv(1,nxl),osph,3)
@@ -4427,17 +4207,794 @@ c     Edg2v stores start point for each edge, in hypercube notation
          xcrv(1,i)=xcrv(1,i)+osph(1)
          xcrv(2,i)=xcrv(2,i)+osph(2)
          xcrv(3,i)=xcrv(3,i)+osph(3)
-         write(78,1) i,xcrv(1,i),xcrv(2,i),xcrv(3,i)
-   1     format(i4,1p3e13.5)
+c        write(78,1) i,xcrv(1,i),xcrv(2,i),xcrv(3,i)
+c  1     format(i4,1p3e13.5)
       enddo
 
       i=istart
       do k=1,nxl   ! map back to edge
          i=i+istrid
-         xml(i,1,1,iel) = xcrv(1,k)
-         yml(i,1,1,iel) = xcrv(2,k)
-         zml(i,1,1,iel) = xcrv(3,k)
+         xml(i,1,1) = xcrv(1,k)
+         yml(i,1,1) = xcrv(2,k)
+         zml(i,1,1) = xcrv(3,k)
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine el_swap_ip(p,n,nmax)
+      integer p(1),xstart
+
+      xstart = nmax
+c
+c     In-place permutation: x' = x(p)
+c
+      do k=1,n
+         if (p(k).gt.0) then   ! not swapped
+c           xstart     = x(k)
+            call copyel(k,xstart)  ! k --> xstart
+            loop_start = k
+            last       = k
+            do j=k,n
+               next    = p(last)
+               if (next.lt.0) then
+                  write(6,*) 'Hey! swap_ip problem.',j,k,n,next
+                  return
+c                 call exitt
+               elseif (next.eq.loop_start) then
+                  call copyel(xstart,last)  ! xstart --> last
+c                 x(last) = xstart
+                  p(last) = -p(last)
+                  goto 10
+               else
+                  call copyel(next,last)  ! next --> last
+c                 x(last) = x(next)
+                  p(last) = -p(last)
+                  last    = next
+               endif
+            enddo
+   10       continue
+         endif
+      enddo
+c
+      do k=1,n
+         p(k) = -p(k)
+      enddo
+
+      call el_bc_swap_ip(p,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine el_bc_swap_ip(p,n)
+      integer p(1),xstart
+      include 'basics.inc'
+      common /wierd/ list1(nelm),list2(nelm)
+      integer e,f,e_old,e_new
+      character*3 cb
+
+      nfaces = 2*ndim
+
+      call icopy    (list1,p,n)
+      call iswap_ip (list1,p,n)
+
+      do ifld=1,nflds
+      do e=1,n
+      do f=1,nfaces
+         cb=cbc(f,e,ifld)
+         if (cb.eq.'P  ') then
+            e_old = bc(1,f,e,ifld) ! old element number
+            e_new = list1(e_old)
+            bc(1,f,e,ifld) = e_new
+         endif
+      enddo
+      enddo
+      enddo
+         
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine renum_special
+C
+C     Renumber elements 
+C
+      include 'basics.inc'
+      common /cenewi/ enew(nelm),ind(nelm)
+      integer enew,e,v
+
+      nsolid = 0
+
+      call refresh
+      call drmenu('NOCOVER')
+      call drgrid
+
+
+      eps = -.01
+      do e=1,nel
+         enew(e) = e
+         dmin    = dist_solid(e)
+         if (dmin.lt.eps) then
+            enew(e) = e + 2*nel ! solid element
+            nsolid = nsolid+1
+            call drawel(e)
+            if (mod(nsolid,10).eq.0) then
+               call prsis('Number found =$',nsolid,'. Continue?$')
+c              call res(ans,1)
+            endif
+         endif
+      enddo
+      call prsis('Found $',nsolid,' solid elements.$')
+
+      call irank     (enew,ind,nel)
+      call el_swap_ip(ind ,nel,nelm-1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dist_solid(e) ! distance of element from solid
+
+      include 'basics.inc'
+      integer e,v
+
+      nv = 2**ndim
+
+      dmin = 1.e22
+
+      do v=1,nv
+         dist = dist_special(x(e,v),y(e,v),z(e,v))
+         dmin = min(dmin,dist)
+      enddo
+
+      dist_solid = dmin
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dist_special(x,y,z)
+
+      integer ncyl
+      save    ncyl
+      data    ncyl /0/
+
+      common /cyldata/ cyl(3,100)
+
+      if (ncyl.eq.0) then
+         open(unit=88,file='cyl.in',status='old',err=20)
+         read(88,*) ncyl
+         do i=1,ncyl
+            read(88,*) cyl(1,i),cyl(2,i),cyl(3,i)
+c           write(6,*) cyl(1,i),cyl(2,i),cyl(3,i),' cyl ',i
+         enddo
+         close(88)
+         goto 40
+
+   20    continue
+         call prs('Input number of cylinders (e.g., 2):$')
+         call rei(ncyl)
+         do i=1,ncyl
+            call prsis('x0,y0,rad for cyl $',i,' ?$')
+            call rerrr(cyl(1,i),cyl(2,i),cyl(3,i))
+         enddo
+
+   40    continue
+      endif
+      dmin = 1.e22
+      do i=1,ncyl
+c        write(6,*) cyl(1,i),cyl(2,i),cyl(3,i),' cylb ',i
+         x0  = cyl(1,i)
+         y0  = cyl(2,i)
+         rad = cyl(3,i)
+         dist = dcircle(x,y,x0,y0,rad) ! negative --> inside circle
+         dmin = min(dmin,dist)
+c        write(6,*) cyl(1,i),cyl(2,i),cyl(3,i),' cyld ',dmin
+      enddo
+      dist_special = dmin
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dcircle(x,y,xc,yc,r)
+
+      d=(x-xc)**2+(y-yc)**2
+      if (d.gt.0) d=sqrt(d)
+      dcircle = d-r
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map_m_to_n(a,na,b,nb,if3d,w,ldw)
+c
+c     Input:   b
+c     Output:  a
+c
+      real a(1),b(1),w(1)
+      logical if3d
+c
+      parameter(lx=50)
+      real za(lx),zb(lx)
+c
+      real iba(lx*lx),ibat(lx*lx)
+      save iba,ibat
+c
+      integer nao,nbo
+      save    nao,nbo
+      data    nao,nbo  / -9, -9/
+c
+      if (na.gt.lx.or.nb.gt.lx) then
+         write(6,*)'ERROR: increase lx in map_m_to_n to max:',na,nb
+         call exitt
+      endif
+c
+      if (na.ne.nao  .or.   nb.ne.nbo) then
+         nao = na
+         nbo = nb
+         call zwgll(za,w,na)
+         call zwgll(zb,w,nb)
+         call igllm(iba,ibat,zb,za,nb,na,nb,na)
+      endif
+
+      call specmpn(a,na,b,nb,iba,ibat,if3d,w,ldw)
+
+      return
+      end
+c
+c-----------------------------------------------------------------------
+      subroutine specmpn(b,nb,a,na,ba,ab,if3d,w,ldw)
+
+c     -  Spectral interpolation from A to B via tensor products
+c     -  scratch arrays: w(na*na*nb + nb*nb*na)
+
+c     5/3/00  -- this routine replaces specmp in navier1.f, which
+c                has a potential memory problem
+
+
+
+      real b(nb,nb,nb),a(na,na,na),ba(1),ab(1),w(ldw)
+      logical if3d
+
+      ltest = na*nb
+      if (if3d) ltest = na*na*nb + nb*na*na
+      if (ldw.lt.ltest) then
+         write(6,*) 'ERROR specmp:',ldw,ltest,if3d
+         call exitt
+      endif
+
+      if (if3d) then
+         nab = na*nb
+         nbb = nb*nb
+         call mxm(ba,nb,a,na,w,na*na)
+         k=1
+         l=na*na*nb + 1
+         do iz=1,na
+            call mxm(w(k),nb,ab,na,w(l),nb)
+            k=k+nab
+            l=l+nbb
+         enddo
+         l=na*na*nb + 1
+         call mxm(w(l),nbb,ab,na,b,nb)
+      else
+         call mxm(ba,nb,a,na,w,na)
+         call mxm(w,nb,ab,na,b,nb)
+      endif
+      return
+      end
+c
+c-----------------------------------------------------------------------
+      subroutine tensr3(v,n1,n2,n3,u,m1,m2,m3,A,Bt,Ct,w,ldw,if3d)
+C
+C     -  Tensor product application of v = (C x B x A) u
+C        NOTE -- the transpose of B & C must be input, rather than B & C.
+C
+C     -  scratch arrays: w(ldw)
+
+c     Nominal declarations:
+c        real v(n1,n2,n3),u(m1,m2,m3)
+c        real a(n1,m1),bt(m2,n2),ct(m3,n3)
+
+      real v(1),u(1),a(1),bt(1),ct(1),w(ldw)
+
+      logical if3d
+
+      ndw = n1*m2*m3 + n1*n2*m3
+      if (ndw.gt.ldw) then
+         write(6,*) ndw,ldw,' ERROR in tensr3. Memory problem.'
+         write(6,*) n1,n2,n3
+         write(6,*) m1,m2,m3,if3d
+         call exitt
+      endif
+
+      if (if3d) then
+         call mxm(a,n1,u,m1,w,m2*m3)
+         i=1
+         j=1 + n1*m2*m3
+         do k=1,m3
+            call mxm(w(i),n1,bt,m2,w(j),n2)
+            i=i+n1*m2
+            j=j+n1*n2
+         enddo
+         call mxm(w(i),n1*n2,ct,m3,v,n3)
+      else
+         call mxm(a,n1,u,m1,w,m2)
+         call mxm(w,n1,u,m2,v,n2)
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_int_gz(j,jt,g,n,z,m)
+
+c     Generate interpolater from m z points to n g points
+
+c        j   = interpolation matrix, mapping from z to g
+c        jt  = transpose of interpolation matrix
+c        m   = number of points on z grid
+c        n   = number of points on g grid
+
+      real j(n,m),jt(m,n),g(n),z(m)
+
+      mpoly  = m-1
+      do i=1,n
+         call fd_weights_full(g(i),z,mpoly,0,jt(1,i))
+      enddo
+
+      call transpose_r(j,n,jt,m)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fd_weights_full(xx,x,n,m,c)
+c
+c     This routine evaluates the derivative based on all points
+c     in the stencils.  It is more memory efficient than "fd_weights"
+c
+c     This set of routines comes from the appendix of 
+c     A Practical Guide to Pseudospectral Methods, B. Fornberg
+c     Cambridge Univ. Press, 1996.   (pff)
+c
+c     Input parameters:
+c       xx -- point at wich the approximations are to be accurate
+c       x  -- array of x-ordinates:   x(0:n)
+c       n  -- polynomial degree of interpolant (# of points := n+1)
+c       m  -- highest order of derivative to be approxxmated at xi
+c
+c     Output:
+c       c  -- set of coefficients c(0:n,0:m).
+c             c(j,k) is to be applied at x(j) when
+c             the kth derivative is approxxmated by a 
+c             stencil extending over x(0),x(1),...x(n).
+c
+c
+      real x(0:n),c(0:n,0:m)
+c
+      c1       = 1.
+      c4       = x(0) - xx
+c
+      do k=0,m
+      do j=0,n
+         c(j,k) = 0.
+      enddo
+      enddo
+      c(0,0) = 1.
+c
+      do i=1,n
+         mn = min(i,m)
+         c2 = 1.
+         c5 = c4
+         c4 = x(i)-xx
+         do j=0,i-1
+            c3 = x(i)-x(j)
+            c2 = c2*c3
+            do k=mn,1,-1
+               c(i,k) = c1*(k*c(i-1,k-1)-c5*c(i-1,k))/c2
+            enddo
+            c(i,0) = -c1*c5*c(i-1,0)/c2
+            do k=mn,1,-1
+               c(j,k) = (c4*c(j,k)-k*c(j,k-1))/c3
+            enddo
+            c(j,0) = c4*c(j,0)/c3
+         enddo
+         c1 = c2
+      enddo
+c     call outmat(c,n+1,m+1,'fdw',n)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine transpose_r(a,lda,b,ldb)
+      real a(lda,1),b(ldb,1)
+c
+      do j=1,ldb
+         do i=1,lda
+            a(i,j) = b(j,i)
+         enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_zgml (nxi)
+      include 'basics.inc'
+      integer nxo
+      save    nxo
+      data    nxo / 0 /
+      
+      nxl = min(nxi,nxm)
+
+      if (nxo.ne.nxl) call legend(zgml,wght,nxl)
+      nxo=nxl
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine msplite(ie,nxspi,nyspi,nzspi,raxi,rayi,razi)
+C
+C     This routine is a hack-copy of octsplite to generate 
+c     multi-element decompositions of the square     (pff 9/28/05)
+c
+C     It simply modifies in the X-Y plane, but doesn't refine in Z.
+C
+C
+      include 'basics.inc'
+
+      real raxi(0:1),rayi(0:1),razi(0:1)
+
+      parameter (nxm3=nxm*nym*nzm,ldw=2*nxm3,maxsp=100)
+      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),wk(ldw)
+      common /ctmp0/ jx(nxm*3),jyt(nym*3),jzt(nzm*3)
+     $             , rrx(0:maxsp),rry(0:maxsp),rrz(0:maxsp)
+     $             , rxt(3),ryt(3),rzt(3)
+     $             , xq(27),yq(27),zq(27)
+      real jx,jyt,jzt
+
+      integer eindx(12),e
+      save    eindx
+      data    eindx /  2 ,  6 ,  8 ,  4  ! Index of 12 edges into 3x3x3 tensor.
+     $              , 20 , 24 , 26 , 22  ! Follows preproc. vtx notation
+     $              , 10 , 12 , 18 , 16  /
+
+c     ifmid  = .false.
+c     ifcstd = .true.
+
+      call set_zgml (nx)
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz) ! high definition mesh
+
+      nxsp = abs(nxspi)
+      nysp = abs(nyspi)
+      nzsp = abs(nzspi)
+
+      call get_ratios(rrx,nxspi,raxi)
+      call get_ratios(rry,nyspi,rayi)
+      call get_ratios(rrz,nzspi,razi)
+
+c     call outmat(rrx,1,nxsp+1,'rrx  ',nxspi)
+c     call outmat(rry,1,nysp+1,'rry  ',nyspi)
+c     call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
+      call rzero(zq,27) ! for 2D
+
+      e  = 0
+      do k=1,nzsp
+
+        if (if3d) then
+          rzt(1)=rrz(k-1)
+          rzt(3)=rrz(k  )
+          rzt(2)=(rzt(1)+rzt(3))/2.
+          call gen_int_gz(wk,jzt,rzt,3,zgml,nz)
+        endif
+
+        do j=1,nysp
+
+          ryt(1)=rry(j-1)
+          ryt(3)=rry(j  )
+          ryt(2)=(ryt(1)+ryt(3))/2.
+          call gen_int_gz(wk,jyt,ryt,3,zgml,ny)
+
+          do i=1,nxsp
+
+            rxt(1)=rrx(i-1)
+            rxt(3)=rrx(i  )
+            rxt(2)=(rxt(1)+rxt(3))/2.
+            call gen_int_gz(jx,wk,rxt,3,zgml,nx)
+
+            e  = e+1
+            je = nel+e
+            call copyel(ie,je)  ! copy ie to je
+   
+            if (if3d) then
+              call tensr3(xq,3,3,3,xp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
+              call tensr3(yq,3,3,3,yp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
+              call tensr3(zq,3,3,3,zp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
+            else    ! 2D
+              call tensr3(xq,3,3,3,xp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
+              call tensr3(yq,3,3,3,yp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
+            endif
+
+            call q_to_neklin(x(je,1),nelm,xq,if3d)
+            call q_to_neklin(y(je,1),nelm,yq,if3d)
+            call q_to_neklin(z(je,1),nelm,zq,if3d)
+
+            call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+
+            if (je.lt.500) call drawel(je)
+ 
+          enddo
+        enddo
+      enddo
+C
+C     Copy last element generated back onto IE
+C
+      call copyel(je,ie)
+      nel = nel + (e-1)
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine linquad(xl,yl,zl,nxl,nyl,nzl,e)
+
+      include 'basics.inc'
+
+      real xl(nxl*nyl*nzl),yl(nxl*nyl*nzl),zl(nxl*nyl*nzl)
+      integer e
+
+      logical ifmid_e
+
+      nedge = 4 + 8*(ndim-2)
+
+      ifmid_e = .false.
+      do k=1,nedge
+         if (ccurve(k,e).eq.'m') ifmid_e = .true.
+      enddo
+
+      if (ifmid_e) then
+         call xyzquad(xl,yl,zl,nxl,nyl,nzl,e)
+      else
+         call xyzlin (xl,yl,zl,nxl,nyl,nzl,e)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xyzlin(xl,yl,zl,nxl,nyl,nzl,e)
+c     Generate bi- or trilinear mesh
+
+      include 'basics.inc'
+
+      real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
+      integer e
+
+c   Preprocessor Corner notation:      Symmetric Corner notation:
+c
+c           4+-----+3    ^ s                    3+-----+4    ^ s
+c           /     /|     |                      /     /|     |
+c          /     / |     |                     /     / |     |
+c        8+-----+7 +2    +----> r            7+-----+8 +2    +----> r
+c         |     | /     /                     |     | /     /
+c         |     |/     /                      |     |/     /
+c        5+-----+6    t                      5+-----+6    t
+
+      integer indx(8)
+      save    indx
+      data    indx / 1,2,4,3,5,6,8,7 /
+
+      parameter (ldw=2*lx1*ly1*lz1)
+      common /ctmp0/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
+
+c     Note : ctmpg is used in this format in several subsequent routines
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
+
+
+      ndim2 = 2**ndim
+
+      call set_zgml (nxl)
+
+      do ix=1,nxl
+         h(ix,1,1)=(1.0-zgml(ix))*0.5
+         h(ix,1,2)=(1.0+zgml(ix))*0.5
+      enddo
+      do iy=1,nyl
+         h(iy,2,1)=(1.0-zgml(iy))*0.5
+         h(iy,2,2)=(1.0+zgml(iy))*0.5
+      enddo
+      if (if3d) then
+         do iz=1,nzl
+            h(iz,3,1)=(1.0-zgml(iz))*0.5
+            h(iz,3,2)=(1.0+zgml(iz))*0.5
+         enddo
+      else
+         call rone(h(1,3,1),nzl)
+         call rone(h(1,3,2),nzl)
+      endif
+
+      do ix=1,ndim2
+         i=indx(ix)
+         xcb(ix,1,1)=x(e,i)  !  nek:   xc(i,e)
+         ycb(ix,1,1)=y(e,i)  !  nek:   yc(i,e)
+         zcb(ix,1,1)=z(e,i)  !  nek:   zc(i,e)
+      enddo
+
+c     Map R-S-T space into physical X-Y-Z space.
+
+      ! NOTE:  Assumes nxl=nyl=nzl !
+
+      call map_m_to_n(xl,nxl,xcb,2,if3d,w,ldw)
+      call map_m_to_n(yl,nxl,ycb,2,if3d,w,ldw)
+      call map_m_to_n(zl,nxl,zcb,2,if3d,w,ldw)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xyzquad(xl,yl,zl,nxl,nyl,nzl,e)
+c     Generate bi- or triquadratic mesh
+
+      include 'basics.inc'
+
+      real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
+      real xq(27),yq(27),zq(27)
+      integer e
+
+      parameter (ldw=lx1*ly1*lz1)
+      common /ctmp0/ w(ldw,2),zg(3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
+      call xyzlin(xq,yq,zq,3,3,3,e) ! map bilin to bi- or triquadratic
+
+      nedge = 4 + 8*(ndim-2)
+
+      do k=1,nedge
+         if (ccurve(k,e).eq.'m') then
+            j = eindx(k)
+            xq(j) = curve(1,k,e)
+            yq(j) = curve(2,k,e)
+            zq(j) = curve(3,k,e)
+         endif
+      enddo
+
+      zg(1) = -1
+      zg(2) =  0 
+      zg(3) =  1
+
+      if (if3d) then
+         call gh_face_extend(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
+         call gh_face_extend(yq,zg,3,2,w(1,1),w(1,2))
+         call gh_face_extend(zq,zg,3,2,w(1,1),w(1,2))
+
+c        Map R-S-T space into physical X-Y-Z space.
+         ! NOTE:  Assumes nxl=nyl=nzl !
+         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
+         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
+         call map_m_to_n(zl,nxl,zq,3,if3d,w,ldw)
+
+      else
+
+         call gh_face_extend_2d(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
+         call gh_face_extend_2d(yq,zg,3,2,w(1,1),w(1,2))
+
+         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
+         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine genxyz_e (xl,yl,zl,e,nxl,nyl,nzl)
+
+      include 'basics.inc'
+
+      real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
+
+C     ctmpg is used in this format in several subsequent routines
+      common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , work(3,lx1,lz1)
+
+      character*1 ccv
+
+      integer e
+
+      call set_zgml (nxl)
+
+c     Initialize geometry arrays with bi- triquadratic deformations
+      call linquad(xl,yl,zl,nxl,nyl,nzl,e)
+
+c     Deform surfaces - general 3D deformations
+c                     - extruded geometry deformations
+      nfaces = 2*ndim
+      do iface=1,nfaces
+        ccv = ccurve(iface,e)
+        if (ccv.eq.'s') 
+     $     call sphsrf_e(xl,yl,zl,iface,e,nxl,nyl,nzl,work) 
+      enddo
+
+      do isid=1,8
+        ccv = ccurve(isid,e)
+        if (ccv.eq.'C') call arcsrf_e(xl,yl,zl,nxl,nyl,nzl,e,isid)
+c       write(6,*) ccv,isid,e,nxl,' ccv'
+      enddo
+
+      if (mod(nxl,2).eq.1) then
+         nxh = nxl/2
+         l=0
+         do k=1,nzl,nxh
+         do j=1,nyl,nxh
+         do i=1,nxl,nxh
+            l = l+1
+            x27(l,e) = xl(i,j,k)
+            y27(l,e) = yl(i,j,k)
+            z27(l,e) = zl(i,j,k)
+c           write(6,1) x27(l,e),y27(l,e),z27(l,e),l,i,j,k,e,'x27'
+  1         format(1p3e12.4,4i4,i6,a4)
+         enddo
+         enddo
+         enddo
+      else
+         if (e.eq.1) write(6,*) 'Warning: nxl even in genxyz',nxl
+         if (e.eq.1) call exitt
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_hlin(h,mx) ! linear to mx mapping
+      include 'basics.inc'
+      real h(mx,3,2)
+
+      call set_zgml (mx)
+
+      do 11 ix=1,mx
+         h(ix,1,1)=(1.0-zgml(ix))*0.5
+         h(ix,1,2)=(1.0+zgml(ix))*0.5
+   11 continue
+      do 21 iy=1,mx
+         h(iy,2,1)=(1.0-zgml(iy))*0.5
+         h(iy,2,2)=(1.0+zgml(iy))*0.5
+   21 continue
+      if (if3d) then
+         do 31 iz=1,mx
+            h(iz,3,1)=(1.0-zgml(iz))*0.5
+            h(iz,3,2)=(1.0+zgml(iz))*0.5
+   31    continue
+      else
+         call rone(h(1,3,1),mx)
+         call rone(h(1,3,2),mx)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine q_to_neklin(x,ldx,xq,if3d)
+      real x(ldx,8),xq(27)
+      logical if3d
+      integer inv(8),v
+      save    inv
+      data    inv /1,2,4,3,5,6,8,7/
+
+      if (if3d) then
+
+        v=0
+        do kk=1,3,2
+        do jj=1,3,2
+        do ii=1,3,2
+           v   = v+1
+           ijk = ii + 3*(jj-1) + 9*(kk-1)
+           x(1,inv(v))=xq(ijk)
+        enddo
+        enddo
+        enddo
+
+      else    ! 2D
+
+        v=0
+        do jj=1,3,2
+        do ii=1,3,2
+           v   = v+1
+           ijk = ii + 3*(jj-1)
+           x(1,inv(v))=xq(ijk)
+        enddo
+        enddo
+      endif
 
       return
       end

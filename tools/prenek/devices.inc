@@ -14,8 +14,8 @@ C     Devices.inc
       COMMON/INITDT/ ESC,NULL
       CHARACTER*1    ESC,NULL
 C
-      COMMON/MODES/ IFDEMO,IFLEARN
-      LOGICAL       IFDEMO,IFLEARN
+      COMMON/MODES/ IFDEMO,IFLEARN,ifgraf
+      LOGICAL       IFDEMO,IFLEARN,ifgraf
       COMMON/GRIDS/ GRIDDX,GRIDDY,GRIDR,GRIDA,GRIDXP,GRIDYP
      $             ,XPHY0,YPHY0
      $             ,xhex(6),yhex(6)

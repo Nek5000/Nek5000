@@ -117,6 +117,10 @@ C       FILTER X,Y THRU GRID
 C       Filter Only if building and outside build menu area.
         IF(XSCREEN.LT.1.0 .AND.IFGRID.AND.BUTTON.NE.'RIGHT') THEN
            CALL FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN)
+        ELSEIF (XSCREEN.LT.1.0) THEN
+           CALL FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN) ! to grab obj id
+           XMOUSE=XPHY(XSCREEN)
+           YMOUSE=YPHY(YSCREEN)
         ELSE
            XMOUSE=XPHY(XSCREEN)
            YMOUSE=YPHY(YSCREEN)
@@ -416,8 +420,7 @@ C
 C     Save color for use with IFSAVE DRAW option.
 C
 
-C HMT TRACE
-C      write (6,*) 'COLOR :: ICOLOR = ',ICOLOR
+c     write (6,*) 'COLOR :: ICOLOR = ',ICOLOR
 
       IF (ICOLOR.EQ.LSTCLR) RETURN
       LSTCLR=ICOLOR

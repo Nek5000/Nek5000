@@ -30,7 +30,8 @@ C     ELEMENT,CORNER,COOORDINATE#,LEVEL (OLD OR CURRENT)
       COMMON /SPLITT/ ENEW(NELM),IND(NELM)
 C     
       PI=4.0*ATAN(1.0)
-      NX=PARAM(20)
+c     NX=PARAM(20)
+      nx=nxm
       IF (NX.GT.NXM) THEN
          WRITE(S,104) NX,NXM
  104     FORMAT(' Warning, current N exceeds NXM, resetting from',I3
@@ -206,8 +207,8 @@ c        ITEM(nchoic)        =             'REDRAW ISOMETRIC'
          ITEM(nchoic)        =             'REFLECT MESH '
 c        nchoic = nchoic+1
 c        ITEM(nchoic)        =             'RSB'
-c        nchoic = nchoic+1
-c        ITEM(nchoic)        =             'DEFINE OBJECT'
+         nchoic = nchoic+1
+         ITEM(nchoic)        =             'DEFINE OBJECT'
          IF(IFCEIL)THEN
 C     Restrict choices for person on CEILING
             ITEM(1)='OFF CEILING'
@@ -242,8 +243,8 @@ c        nchoic = nchoic+1
          nchoic = nchoic+1
          ITEM(nchoic)       =             'IMPORT vtk MESH'
          nchoic = nchoic+1
-         ITEM(nchoic)       =             'IMPORT vtx MESH'
-         nchoic = nchoic+1
+c        ITEM(nchoic)       =             'IMPORT vtx MESH'
+c        nchoic = nchoic+1
          ITEM(nchoic)       =             'REFLECT MESH '
       ENDIF
 C     
@@ -294,16 +295,17 @@ C     MODEL and CURVE know about it, too
          CALL DRELEV(ILEVEL,-(ILEVEL+1),'     ')
          GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT MESH')THEN
-         CALL IMP_MESH
+         call imp_mesh(.true.)
+         call redraw_mesh_small
          GOTO 1000
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
          GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT vtk MESH')THEN
-         CALL IMP_MESH_vtk
+         call imp_mesh_vtk
          GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT vtx MESH')THEN
-         CALL IMP_MESH_vtx
+         call imp_mesh_vtx
          GOTO 1000
       ELSE IF(CHOICE.EQ.'CURVE SIDES')THEN
          CALL CURVES
@@ -685,10 +687,19 @@ c    $          CBC( ISIDE, IEL,Ifld).EQ.'J  ') then
 C     
 C     Make internal side comparisons
 C     
-         CALL GENCEN
+
+
+         icount=1
+         do jcount=1,8
+            if (icount*100.gt.nel) goto 345
+            icount = icount*10
+         enddo
+  345    continue
+
+         call gencen
          DO 370 Ifld=1,NFLDS
             DO 365 IEL=1,NEL
-               if (nel.gt.100.and.mod(iel,100).eq.0)
+               if (nel.gt.100.and.mod(iel,icount).eq.0)
      $            write(6,*) 'checking el:',iel
 C     
                   IF (MASKEL(IEL,Ifld).EQ.0) GOTO 365
@@ -994,11 +1005,11 @@ ccc                          LOCLIN=LOCLIN+1
 ccc   86                  CONTINUE
                   ENDIF
  88            CONTINUE
-               DO 89 IEL=1,NEL
-                  IF(IFMOVB)ICRV(IEL)=1+4+9+16
-                  DO 89 IEDGE=1,8
-                     IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
- 89               CONTINUE
+c              DO 89 IEL=1,NEL                       ! NO MORE !
+c                 IF(IFMOVB)ICRV(IEL)=1+4+9+16       ! pff, Aug.15,2009
+c                 DO 89 IEDGE=1,8
+c                    IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
+c89               CONTINUE
                ENDIF
  90         CONTINUE
             IF(NFLDS.EQ.1.and.iffmtin)READ(9,*,err=45,end=45)
@@ -1207,7 +1218,7 @@ C     Mark Zero
  17      CALL PRS('Push left button with mouse at 2 different'//
      $        ' x (horizontal)$')
          CALL PRS('locations$')
-         DO 18 I=1,4
+         DO 18 I=1,3
             IF(I.EQ.2)CALL PRS('2nd x location$')
             IF(I.EQ.4)CALL PRS('2nd y location$')
             IF(I.EQ.3)THEN
@@ -1215,19 +1226,20 @@ C     Mark Zero
                CALL GINGRD(0.0)
                call rer(XLEN)
                CALL GINGRD(GRID)
-               CALL PRS('Push left button with mouse at 2'//
-     $              ' different y (vertical) locations$')
-               CALL PRS('or click in menu area for equal X-Y scaling.$')
+c              CALL PRS('Push left button with mouse at 2'//
+c    $              ' different y (vertical) locations$')
+c              CALL PRS('or click in menu area for equal X-Y scaling.$')
             ENDIF
-            CALL MOUSE(XSC(I),YSC(I),BUTTON)
+            if (i.lt.3) CALL MOUSE(XSC(I),YSC(I),BUTTON)
 C     
 C     Check for keypad entry?
 C     
-            IF (IFMENU(XSC(I),YSC(I)).AND.I.LE.2) THEN
-               CALL PRS('Please enter two points in build area.$')
-               GOTO 17
-            ENDIF
-            IF (IFMENU(XSC(I),YSC(I)).AND.I.GT.2) THEN
+c           IF (IFMENU(XSC(I),YSC(I)).AND.I.LE.2) THEN
+c              CALL PRS('Please enter two points in build area.$')
+c              GOTO 17
+c           ENDIF
+c           IF (IFMENU(XSC(I),YSC(I)).AND.I.GT.2) THEN
+            IF (I.GT.2) THEN
                CALL PRS('Assuming equal scaling in X and Y.$')
                YSC(4)=XSC(2)
                YSC(3)=XSC(1)
@@ -1325,53 +1337,52 @@ C
       end
 
 c-----------------------------------------------------------------------
-      subroutine imp_mesh
-c
+      subroutine imp_mesh(ifquery_displace)
+
       include 'basics.inc'
       character*3 d
       character*1  fnam1(70)
       character*70 fname
       equivalence (fname,fnam1)
-c
-      logical ifdisplace
+
+      logical ifquery_displace,ifdisplace
+
       real    xyzbox(6)
-c
+
       call prs('input name of new .rea file$')
       call blank(fname,70)
       call res  (fname,70)
-c
+
       if (indx1(fname,'base',4).eq.1) then
          call imp_mesh_special
          return
       endif
-c
-      call prs('Would you like to displace existing elements in box?$')
-      call res  (ans,1)
-c
+
       ifdisplace = .false.
-      if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
-c
-c
-c     Append .rea, if not present
-      if (indx1(fname,'.rea',4).eq.0) then
+      if (ifquery_displace) then
+       call prs('Would you like to displace existing elements in box?$')
+       call res  (ans,1)
+       if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
+      endif
+
+      if (indx1(fname,'.rea',4).eq.0) then !  Append .rea, if not present
          len = ltrunc(fname,70)
          call chcopy (fnam1(len+1),'.rea',4)
       endif
       open(unit=47,file=fname,status='old',err=1000)
-c
+
 c     Successfully opened file, scan until 'MESH DATA' is found
-c
       call readscan('MESH DATA',9,47)
       read (47,*) nelin,ndimn
       neln = nelin + nel
-c
+
       if (ndimn.ne.ndim) then
          call prs('Dimension must match dimension of current session.$')
          call prs('Returning.$')
          close(47)
          return
       endif
-c
+
       if (neln.ge.nelm) then
          call prs('Sorry, number of elements would exceed nelm.$')
          call prs('Returning.$')
@@ -1379,12 +1390,12 @@ c
          close(47)
          return
       endif
-c
+
 c     Read geometry
-c
+
       nelo = nel
       nels = nel+1
-c
+
       ierr=imp_geom(x(nels,1),y(nels,1),z(nels,1),nelm
      $             ,numapt(nels),letapt(nels),igroup(nels)
      $             ,ndim,nelin,47)
@@ -2447,19 +2458,19 @@ c-----------------------------------------------------------------------
 c
       integer dflag(nelm),e,emin,ecount
 c
-      open(unit=49,file='sphere.dat',status='old',err=999)
+      open(unit=49,file='cyls.dat',status='old',err=999)
 c
-      read(49,*) nsph,rad
+      read(49,*) ncyl
 c
-c     Delete all elements within sphere radius
+c     Delete all elements within radius
 c
-      r1 = 1.05*rad
-      r1 = r1*r1
 c
       call izero(dflag,nel)
 c
-      do k=1,nsph
-         read(49,*) x0,y0
+      do k=1,ncyl
+         read(49,*) rad,x0,y0
+         r1 = .99*rad
+         r1 = r1*r1
          do e=1,nel
          do i=1,4
             dx = x0-x(e,i)
@@ -2658,53 +2669,4 @@ c-----------------------------------------------------------------------
 
       return
       end
-C-----------------------------------------------------------------------
-      subroutine irank(a,ind,n)
-C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
-C
-      integer a(1),ind(1),q
-C
-      if (n.le.1) return
-      do 10 j=1,n
-         ind(j)=j
-   10 continue
-C
-      if (n.eq.1) return
-      L=n/2+1
-      ir=n
-  100 continue
-         IF (l.gt.1) THEN
-            l=l-1
-            indx=ind(l)
-            q=a(indx)
-         ELSE
-            indx=ind(ir)
-            q=a(indx)
-            ind(ir)=ind(1)
-            ir=ir-1
-            if (ir.eq.1) then
-               ind(1)=indx
-               return
-            endif
-         ENDIF
-         i=l
-         j=l+l
-  200    CONTINUE
-         IF (J.le.IR) THEN
-            IF (J.lt.IR) THEN
-               IF ( a(ind(j)).lt.a(ind(j+1)) ) j=j+1
-            ENDIF
-            IF (q.lt.a(ind(j))) THEN
-               ind(i)=ind(j)
-               I=J
-               J=J+J
-            ELSE
-               J=IR+1
-            ENDIF
-         GOTO 200
-         ENDIF
-         IND(I)=INDX
-      GOTO 100
-      end
-C-----------------------------------------------------------------------
+c-----------------------------------------------------------------------

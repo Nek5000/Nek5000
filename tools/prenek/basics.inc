@@ -1,16 +1,25 @@
 C     Utilities to be included in all subroutines in Preprocessor Program
 C     BASICS.INC
-      PARAMETER (NELM=400 000,NXM=9,NYM=9,NZM=9,MAXFLD=5)
+
+      parameter (nelm=1 000 000,nxm=9,nym=9,nzm=9,maxfld=5)
+c     parameter (nelm=10 000,nxm=9,nym=9,nzm=9,maxfld=5)
+      parameter (lx1=nxm,ly1=nym,lz1=nzm)
+
       PARAMETER ( MAXCRV=4,MAXIBC=4,MAXHIS=2,MPSCAL=4)
       PARAMETER ( MSOBJS=5, MFACES=200)
+
       LOGICAL     IFHEAT,IFFLOW,IFTRAN,IFNAV,IFAXIS,IFCEIL,IFERROR
      $,IFSTRS,IFADVC(11),IFTMSH(0:11),IFPLOT(NELM),IFDRAX,IFPSCO(9)
-     $,IFSPLIT,IFMGRID,IFGRAF,IFMODEL,IFKEPS,IF3BUT
+     $,IFSPLIT,IFMGRID,IFMODEL,IFKEPS,IF3BUT
      $,IFMVBD,IFCHAR,IFNEEDC,IFUNIV,IFEXPT,ifdssum,ifavgupt
+     $,ifmid,ifcstd
+
       COMMON /LOGI/IFHEAT,IFFLOW,IFTRAN,IFAXIS,IFCEIL,IFERROR
      $,IFSTRS,IFADVC,IFTMSH,IFPLOT,IFDRAX,IFPSCO
-     $,IFSPLIT,IFMGRID,IFGRAF,IFMODEL,IFKEPS,IF3BUT
+     $,IFSPLIT,IFMGRID,IFMODEL,IFKEPS,IF3BUT
      $,IFMVBD,IFCHAR,IFNEEDC,IFUNIV,IFEXPT,ifdssum,ifavgupt
+     $,ifmid,ifcstd
+
       COMMON /OBJECT/ NVOBJS,NSOBJS,NEOBJS,NPOBJS,NFACE(MSOBJS),
      $ILSURF(2,MSOBJS,MFACES)
       COMMON /OBJECC/ SOBJ(MSOBJS)
@@ -56,8 +65,9 @@ C
      $,X(NELM,8),Y(NELM,8),z(nelm,8)
      $,XCEN(NELM),YCEN(NELM),ZCEN(NELM),RCEN(NELM)
      $,ZDEPTH(NELM,6),IZDPTH(NELM*6,2)
-     $,SIDES(NELM,6,4),MASKEL(NELM,MAXFLD),EDGES(8,3,NELM)
+     $,SIDES(NELM,6,4),MASKEL(NELM,MAXFLD)
      $,adje(6,NELM),adjf(6,NELM)
+     $,zgml(nxm)
        integer adje,adjf
 c
       COMMON /PARAM/ PARAM(500),NPARAM,NCMD,NHISPT
@@ -101,7 +111,7 @@ C     Stuff that used to be in basicsp.inc
       COMMON /CPOST/ STRFLE,FLDFLE,FILENM,EXCODE(15)
       CHARACTER*2  EXCODE
       CHARACTER*17   STRFLE,FLDFLE,FILENM
-      COMMON /RGEOM/ ZMOUSE,XOBJ(3000),YOBJ(3000),cobjs(6,20)
+      COMMON /RGEOM/ ZMOUSE,XOBJ(9000),YOBJ(9000),cobjs(6,20)
       COMMON /IGEOM/ NOBJS,IOBJCT,NPTS(20)
       COMMON /LGEOM/ IFOBJS,IFOBJG(20)
       COMMON /CGEOM/ ccobjs(20)
@@ -142,6 +152,23 @@ c
 c
       common /hexag/ long_edge(nelm)
      $             , neighb(6,nelm)
-c
+
+      parameter (lxybez=1000,lbez=100)
+      common /cbezr/ xybez(2,lxybez)
+      common /ibezr/ nbez,ibez(lbez)
+
+c     These are hex27 arrays and also template arrays
+
+      common /xyz27/ x27(27,nelm),y27(27,nelm),z27(27,nelm)
+      common /ctemlate_r/ xtmpl_min, xtmpl_max
+     $                  , ytmpl_min, ytmpl_max
+     $                  , ztmpl_min, ztmpl_max
+      common /ctemlate_i/ nel_templ,etemplate0,etemplate1
+     $                  , nel_form ,eform0    ,eform1
+      integer etemplate0,etemplate1,eform0,eform1
+
+
+
+
       include 'devices.inc'
 C     END OF BASICS.INC

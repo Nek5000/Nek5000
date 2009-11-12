@@ -198,11 +198,11 @@ C
 C
       IF (NP.LE.0) THEN
          WRITE (6,*) 'Minimum number of Gauss points is 1'
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-ONE).OR.(BETA.LE.-ONE)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       IF (NP.EQ.1) THEN
@@ -250,7 +250,7 @@ C
          WRITE (6,*) 'Too large polynomial degree in ZWGLJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
          WRITE (6,*) 'Here NP=',NP
-         STOP
+         call exitt
       ENDIF
       ALPHAD = ALPHA
       BETAD  = BETA
@@ -281,11 +281,11 @@ C
 C
       IF (NP.LE.1) THEN
          WRITE (6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-ONE).OR.(BETA.LE.-ONE)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       IF (NM1.GT.0) THEN
@@ -458,7 +458,7 @@ C
 C--------------------------------------------------------------------
       IMPLICIT REAL*8  (A-H,O-Z)
       REAL*8  XJAC(1)
-      DATA KSTOP/10/
+      DATA Kcall exitt/10/
       DATA EPS/1.0e-12/
       N   = NP-1
       one = 1.
@@ -471,7 +471,7 @@ C--------------------------------------------------------------------
             X2 = XLAST
             X  = (X1+X2)/2.
          ENDIF
-         DO 30 K=1,KSTOP
+         DO 30 K=1,Kcall exitt
             CALL JACOBF (P,PD,PM1,PDM1,PM2,PDM2,NP,ALPHA,BETA,X)
             RECSUM = 0.
             JM = J-1
@@ -562,7 +562,7 @@ C---------------------------------------------------------------------
          WRITE (6,*) 'Too large polynomial degree in HGJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
          WRITE (6,*) 'Here NP=',NP
-         STOP
+         call exitt
       ENDIF
       ZD = Z
       DO 100 I=1,NP
@@ -616,7 +616,7 @@ C---------------------------------------------------------------------
          WRITE (6,*) 'Too large polynomial degree in HGLJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
          WRITE (6,*) 'Here NP=',NP
-         STOP
+         call exitt
       ENDIF
       ZD = Z
       DO 100 I=1,NP
@@ -674,17 +674,17 @@ C-----------------------------------------------------------------
 C
       IF (NZ.LE.0) THEN
          WRITE (6,*) 'Minimum number of Gauss points is 1'
-         STOP
+         call exitt
       ENDIF
       IF (NZ .GT. NMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in DGJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
          WRITE (6,*) 'Here Nz=',Nz
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-1.).OR.(BETA.LE.-1.)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
       ALPHAD = ALPHA
       BETAD  = BETA
@@ -719,11 +719,11 @@ C-----------------------------------------------------------------
 C
       IF (NZ.LE.1) THEN
          WRITE (6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-ONE).OR.(BETA.LE.-ONE)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       DO 200 I=1,NZ
@@ -756,17 +756,17 @@ C-----------------------------------------------------------------
 C
       IF (NZ.LE.1) THEN
          WRITE (6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF (NZ .GT. NMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in DGLJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
          WRITE (6,*) 'Here NZ=',NZ
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-1.).OR.(BETA.LE.-1.)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
       ALPHAD = ALPHA
       BETAD  = BETA
@@ -802,11 +802,11 @@ C-----------------------------------------------------------------
 C
       IF (NZ.LE.1) THEN
          WRITE (6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-ONE).OR.(BETA.LE.-ONE)) THEN
          WRITE (6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       DO 200 I=1,NZ
@@ -1019,17 +1019,17 @@ C-----------------------------------------------------------------------
 C
       IF (NPGL.LE.1) THEN
          WRITE(6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF (NPGL.GT.NMAX) THEN
          WRITE(6,*) 'Polynomial degree too high in DGLJGJ'
          WRITE(6,*) 'Maximum polynomial degree is',NMAX
          WRITE(6,*) 'Here NPGL=',NPGL
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-1.).OR.(BETA.LE.-1.)) THEN
          WRITE(6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       ALPHAD = ALPHA
@@ -1070,11 +1070,11 @@ C-----------------------------------------------------------------------
 C
       IF (NPGL.LE.1) THEN
          WRITE(6,*) 'Minimum number of Gauss-Lobatto points is 2'
-         STOP
+         call exitt
       ENDIF
       IF ((ALPHA.LE.-1.).OR.(BETA.LE.-1.)) THEN
          WRITE(6,*) 'Alpha and Beta must be greater than -1'
-         STOP
+         call exitt
       ENDIF
 C
       EPS    = 1.e-6

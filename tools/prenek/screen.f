@@ -27,7 +27,7 @@ C
 C     Set up grids for polar or cartesian based input
 C
       ifobjs = .true.
-      nobjs  = 1
+      nobjs  = max(nobjs,1)
       ONE = 1.0
       PI = 4.0*ATAN(ONE)
       IFCHNG=.FALSE.
@@ -46,7 +46,7 @@ C
       WRITE(CHEX  , 3) IFGRDH ! Hex
       WRITE(CPOLAR, 4) IFGRDP
       WRITE(CGRIDX, 5) GRIDDX
-      WRITE(CGRIDY, 6) GRIDDY
+c     WRITE(CGRIDY, 6) GRIDDY
       WRITE(CGRIDN, 7) NGRID
       WRITE(CGRIDR, 8) GRIDR
       WRITE(CGRDX , 9) GRIDXP
@@ -68,13 +68,13 @@ C
       ITEM(3) =CHEX
       ITEM(4) =CPOLAR
       ITEM(5) =CGRIDX
-      ITEM(6) =CGRIDY
-      ITEM(7) =CGRIDN
-      ITEM(8) =CGRIDR
-      ITEM(9) =CGRDX
-      ITEM(10)=CGRDY
-      ITEM(11)=COBJCT
-      NCHOIC = 11
+c     ITEM(6) =CGRIDY
+      ITEM(6) =CGRIDN
+      ITEM(7) =CGRIDR
+      ITEM(8) =CGRDX
+      ITEM(9) =CGRDY
+      ITEM(10)=COBJCT
+      NCHOIC = 9
       IF (IFOBJS) NCHOIC=NCHOIC+1
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'SET GRID')
 C
@@ -409,7 +409,7 @@ C
 C     put this extra move command in because it doesn't hurt.
       IFTMP=IFHARD
       IFHARD=.FALSE.
-c     CALL MOVE(X1,Y1)
+      CALL MOVE(X1,Y1)
       IFHARD=IFTMP
       XMOVEC = X1
       YMOVEC = Y1
@@ -589,10 +589,13 @@ c
 C           grab object?
             call latchob(xms1,yms1,xmse0,ymse0,zmse0,dist2,k,i,iobj)
             if (dist2.lt.tolobj) then
+               tolobj=dist2
                iobjct=iobj
                xmouse=xms1
                ymouse=yms1
                zmouse=zmse0
+c              write(6,*) xmouse,ymouse,iobjct,' obj'
+c              zmouse = sqrt(-1./(iobj-1))
             endif
          endif
    10 continue
@@ -702,18 +705,53 @@ C     grid filtering complete
       return
       end
 c-----------------------------------------------------------------------
+      subroutine getobjs
+      include 'basics.inc'
+
+      open(unit=39,file='obj.dat')
+
+      nobjs = 0
+      l=1
+      do iobj=1,100
+         read(39,*,end=99,err=99) npts(iobj)
+         n = abs(npts(iobj))  ! < 0 --> closed object
+         do k=1,n
+            read(39,*,end=99,err=99) xobj(l),yobj(l)
+            l=l+1
+         enddo
+         nobjs = nobjs+1
+         ccobjs(nobjs) = 'o'
+      enddo
+      call prsis('Found$',nobjs,' objects in obj.dat file.$')
+      close(39)
+      return
+
+   99 continue
+      close(39)
+      call prsis('Found$',nobjs,' objects in obj.dat file.$')
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine drwobj(iobj)
       include 'basics.inc'
-C
-      IOFF=1
-      DO 100 I=1,IOBJ-1
-         IOFF=IOFF+NPTS(I)
-  100 CONTINUE
-C
-      CALL COLOR(9)
-      CALL VDRAW(XOBJ(IOFF),YOBJ(IOFF),NPTS(IOBJ))
+
+      ioff=1
+      do 100 i=1,iobj-1
+         ioff=ioff+npts(i)
+  100 continue
+
+      iclro = mod1(iobj,7)+3
+      call color(iclro)
+      call vdraw(xobj(ioff),yobj(ioff),npts(iobj))
+
+      if (npts(iobj).le.60) then
+         do i=0,npts(iobj)-1
+            call diam2(xobj(ioff+i),yobj(ioff+i),iclro)
+         enddo
+      endif
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine latchob(x1,y1,x0,y0,z0,dist2,k,i,iobj)
       include 'basics.inc'
@@ -744,39 +782,8 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setobj
-      include 'basics.inc'
-      CHARACTER*80 OBJFLE
-C
-C     Set up object, first pass, just get an object from a file.
-C     Later, we allow functions, repositioning, sizing, rotations.
-C
-C
-      ioff=1
-      do 200 i=1,nobjs
-         ioff=ioff+npts(i)
-  200 continue
-c
-      write(6,*) 'call ellgen',nobjs,ioff,npts(nobjs)
-      call ellgen(xobj(ioff),yobj(ioff),n,a,b)
-      if (a.gt.0.and.b.gt.0) then
-         nobjs=nobjs+1
-         npts(nobjs)=n
-         ifobjg(nobjs)  = .true.
-         ifobjs         = .true.
-         write(6,*) 'this is nobjs'
-         ccobjs(nobjs)  = 'O'
-         cobjs(1,nobjs) =  nobjs
-         cobjs(2,nobjs) =  a
-         cobjs(3,nobjs) =  b
-         call rzero(cobjs(4,nobjs),2)
-         call drwobj(nobjs)
-      endif
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine setzoom
-      include 'basics.inc'
+      INCLUDE 'basics.inc'
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -875,7 +882,10 @@ c
          CALL PRS('Input two X,Y pairs (x1,y1,x2,y2)$')
          CALL PRS(' to bracket zoom area.$')
          CALL PRS('Input all zeros to restore screen.$')
-         CALL PRS('Input 1 1 1 1 to cancel operation.$')
+         CALL PRS('Input 1 1 * * to cancel operation.$')
+         CALL PRS('Input 2 2 s * to to set scale zoom by s.$')
+         CALL PRS('Input 2 -2 s * to to set scale y zoom by s.$')
+         CALL PRS('Input 3 3 sx sy to to scale x by sx, y by sy.$')
          CALL RERRRR(x1,y1,x2,y2)
 c  
          if (x1.eq.x2.and.y1.eq.y2) then
@@ -886,6 +896,66 @@ c             Restore
             elseif (x1.eq.1.0.and.y1.eq.1.0) then
                CALL PRS('Aborting zoom request.$')
             endif
+         else if (x1.eq.2. .and. y1.eq.2.) then
+c           Scale current coordinates by scale
+            scale = 1./x2
+            IFZOOM=.TRUE.
+            delt =xfac*scale
+            xzero=xzero + xfac/2 - delt/2
+            yzero=yzero + yfac/2 - delt/2
+            xfac =delt
+            yfac =xfac
+            write(6,*) 'z:xfyf',xfac,yfac
+c
+c           reset clipping window
+            WFR=1.3
+            WT = YPHY(.995)
+            WB = YPHY(.005)
+            WL = XPHY(.005)
+            WR = XPHY(.995)
+            IF (IFPOST.AND.IFFULL) THEN
+               WR = XPHY(WFR)
+            ENDIF
+         else if (x1.eq.2. .and. y1.eq.-2.) then
+c           Scale current y coordinates by scale
+            scale = 1./x2
+            IFZOOM=.TRUE.
+            delt =yfac*scale
+            yzero=yzero + yfac/2 - delt/2
+            yfac =delt
+            write(6,*) 'z:xfyf',xfac,yfac
+c
+c           reset clipping window
+            WFR=1.3
+            WT = YPHY(.995)
+            WB = YPHY(.005)
+            WL = XPHY(.005)
+            WR = XPHY(.995)
+            IF (IFPOST.AND.IFFULL) THEN
+               WR = XPHY(WFR)
+            ENDIF
+         else if (x1.eq.3. .and. y1.eq.3.) then
+c           Scale x coordinates by x2, y by y2
+            scalx = 1./x2
+            scaly = 1./y2
+            IFZOOM=.TRUE.
+            deltx =xfac*scalx
+            delty =yfac*scaly
+            xzero=xzero + xfac/2 - deltx/2
+            yzero=yzero + yfac/2 - delty/2
+            xfac =deltx
+            yfac =delty
+            write(6,*) 'z:xfyf',xfac,yfac
+c
+c           reset clipping window
+            WFR=1.3
+            WT = YPHY(.995)
+            WB = YPHY(.005)
+            WL = XPHY(.005)
+            WR = XPHY(.995)
+            IF (IFPOST.AND.IFFULL) THEN
+               WR = XPHY(WFR)
+            ENDIF
          else
 c
 c        Got two (x,y) pairs
@@ -1226,7 +1296,211 @@ c     write(60,*) 'd,e',d,e,ab2
       xt = -abs(xt)
       ynew(1) = abs(d*xt+e)
 c     write(60,*) 'x,t',xt,ynew(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine redraw_mesh
+      include 'basics.inc'
 c
+      call refresh
+      call drmenu('NOCOVER')
+      call drgrid
+
+      nelcap = min(nel,5000)
+      do ie=1,nelcap
+         call drawel(ie)
+      enddo
+
+C     Now redraw all the isometric elements.
+      call sortel
+      do i=1,nelcap
+         call drawis(isrt(i))
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine redraw_mesh_small
+      include 'basics.inc'
+c
+      call refresh
+      call drmenu('NOCOVER')
+      call drgrid
+
+      nelcap = min(nel,500)
+      do ie=1,nelcap
+         call drawel(ie)
+      enddo
+
+C     Now redraw all the isometric elements.
+      call sortel
+      do i=1,nelcap
+         call drawis(isrt(i))
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setobj
+      include 'basics.inc'
+
+      call getobjs
+      return
+
+    1 item(1) = 'MAIN MENU'
+      item(2) = 'BEZIER SET'
+      nchoic  = 2
+      call menu(xmouse,ymouse,button,'SET OBJECT')
+ 
+
+      if (choice.eq.'MAIN MENU') then
+         call redraw_mesh
+         return
+      endif
+
+      if (choice.eq.'BEZIER SET') call bezier
+
+      goto 1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine color_test
+      include 'basics.inc'
+
+      parameter (mm=100)
+      common /ctmp0/ xbz(0:mm),ybz(0:mm)
+
+      do iclr=0,15
+         write(6,*) iclr,' iclr before'
+         call mouse_diam(xmouse,ymouse,button,iclr)
+         write(6,*) iclr,' iclr after'
+      enddo
+
+c     0=black
+c     1=white
+c     2=red
+c     3=yellow
+c     4=blank?
+c     5=blue
+c     6=red
+c     7=yellow
+c     8=pale green
+c     9=bright green
+c     0=light blue
+c    11=dark blue
+c    12=magenta
+c    13=red
+c    14=gray
+c    15= ???
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bezier
+      include 'basics.inc'
+
+      i0   = 1
+      nbez = nbez+1 
+      if (nbez.gt.1) i0=ibez(nbez-1)
+
+      call prs('Click 4 control points or menu area to end.$')
+
+      ib = i0
+      call mouse_diam(xybez(1,ib),xybez(2,ib),button,10) ! light blue
+      if (xybez(1,ib).gt.xphy(1.0)) then  ! menu area
+         nbez = nbez-1
+         return
+      endif
+
+      do i=1,lbez
+         i0 = ib
+
+         do j=1,3  ! Get next 3 Bezier points
+
+            ib = ib+1
+            call mouse_diam(xybez(1,ib),xybez(2,ib),button,10) ! light blue
+
+            if (xybez(1,ib).gt.xphy(1.0)) then  ! menu area
+               ibez(nbez) = i0+1
+               if (i.eq.1) nbez = nbez-1        ! aborting
+               return
+            endif
+
+            if (ib.gt.lxybez) then
+               call prsii
+     $         ('Exceeded max Bezier points.  Returning.$',ib,lxybez)
+               nbez = nbez-1
+               return
+            endif
+
+         enddo
+
+         j1 = ib
+         j0 = ib-3
+         call dr_bezier(j0,j1)
+
+         call prs('Click 3 more points to continue, menu to end.$')
+
+      enddo
+
+c   1 item(1) = 'UP MENU'
+c     item(2) = 'DELETE SPLINE'
+c     nchoic  = 2
+c     call menu(xmouse,ymouse,button,'BEZIER')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine mouse_diam(xmouse,ymouse,button,iclr)
+      include 'basics.inc'
+
+      call mouse(xmouse,ymouse,button)
+      if (xmouse.lt.xphy(1.0)) call diam2(xmouse,ymouse,iclr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine dr_bezier(j0,j1)
+      include 'basics.inc'
+
+      parameter (mm=50)
+      common /ctmp0/ xbz(0:mm),ybz(0:mm)
+
+      ds = 1./mm
+
+      do i0=j0,j1-1,3
+
+         x0 = xybez(1,i0  )
+         x1 = xybez(1,i0+1)
+         x2 = xybez(1,i0+2)
+         x3 = xybez(1,i0+3)
+
+         y0 = xybez(2,i0  )
+         y1 = xybez(2,i0+1)
+         y2 = xybez(2,i0+2)
+         y3 = xybez(2,i0+3)
+
+         do i=0,mm
+            s1 = i*ds
+            t1 = (mm-i)*ds
+            c0 = t1*t1*t1
+            c1 = 3*t1*t1*s1
+            c2 = 3*t1*s1*s1
+            c3 = s1*s1*s1
+            xbz(i) = c0*x0+c1*x1+c2*x2+c3*x3
+            ybz(i) = c0*y0+c1*y1+c2*y2+c3*y3
+         enddo
+
+         call color(8)                 ! pale green line
+         call vdraw (xbz,ybz,mm+1)
+         call diam2(x0,y0,7)           ! yellow endpoints
+         call diam2(x3,y3,7)
+
+         write(6,*) j0,x0,y0,' x0'
+         write(6,*) j1,x3,y3,' x3'
+
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------

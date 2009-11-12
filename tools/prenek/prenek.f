@@ -40,8 +40,8 @@ C
 1     CONTINUE
       IFCEN=.TRUE.
       nchoic =  2
-      ITEM(1)='TYPE IN  NEW  PARAMETERS'
-      ITEM(2)='READ PREVIOUS PARAMETERS'
+      ITEM(1)='READ PREVIOUS PARAMETERS'
+      ITEM(2)='TYPE IN  NEW  PARAMETERS'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'READ PARAMETER')
       IF(CHOICE.EQ.'TYPE IN  NEW  PARAMETERS')THEN
 C        Interactive session
@@ -170,13 +170,13 @@ C       If something missing, then go to 300
 C     Do this interactively independently of whether we read in parameters
       NZ=PARAM(20)
       CALL LEGEND(ZPTS,WGHT,NZ)
-310   NCHOIC =  6
-      ITEM(1)='ALTER PARAMETERS'
-      ITEM(2)='SHOW PARAMETERS'
-      ITEM(3)='BUILD INTERACTIVELY'
-      ITEM(4)='BUILD FROM FILE'
-      ITEM(5)='IMPORT UNIVERSAL FILE'
-      ITEM(6)='ABORT (SAVING PARAMETERS)'
+310   NCHOIC =  4
+      ITEM(1)='BUILD FROM FILE'
+      ITEM(2)='ALTER PARAMETERS'
+      ITEM(3)='SHOW PARAMETERS'
+      ITEM(4)='BUILD INTERACTIVELY'
+c     ITEM(5)='IMPORT UNIVERSAL FILE'
+c     ITEM(6)='ABORT (SAVING PARAMETERS)'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'CENTRAL')
       IF(CHOICE.EQ.'SHOW PARAMETERS') THEN
 C        Print Out Parameters
@@ -1396,7 +1396,7 @@ C
       ENDIF
       NELsgn=NEL
       IF (.not.IFFMTIN) NELsgn = -NEL
-      WRITE(10,'(3I9,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
+      WRITE(10,'(3I10,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
 C
       DO 98 IEL=1,NEL
          IF (IEL.GT.52) LETAPT(IEL) = 'A'
@@ -1435,22 +1435,25 @@ C
 98    CONTINUE
       IF (IFFMTIN) THEN
          WRITE(10,*)' ***** CURVED SIDE DATA *****'
-         WRITE(10,'(I6,A20,A33)')NCURVE,' Curved sides follow',
+         WRITE(10,'(I10,A20,A33)')NCURVE,' Curved sides follow',
      $   ' IEDGE,IEL,CURVE(I),I=1,5, CCURVE'
-         IF(NCURVE.GT.0)THEN
-            DO 19 IEL=1,NEL
-            DO 19 IEDGE=1,8
-               IF(CCURVE(IEDGE,IEL).NE.' ')THEN
-                  IF (NEL.LT.1000) THEN
-                     WRITE(10,'(I3,I3,5G14.6,1X,A1)')IEDGE,IEL,
-     $               (CURVE(I,IEDGE,IEL),I=1,5),CCURVE(IEDGE,IEL)
-                  ELSE
-                     WRITE(10,'(I2,I6,5G14.6,1X,A1)')IEDGE,IEL,
-     $               (CURVE(I,IEDGE,IEL),I=1,5),CCURVE(IEDGE,IEL)
-                  ENDIF
-               ENDIF
-19          CONTINUE
-         ENDIF
+         if(ncurve.gt.0)then
+            do 19 iel=1,nel
+            do 19 iedge=1,12
+               if(ccurve(iedge,iel).ne.' ')then
+                  if (nel.lt.1000) then
+                     write(10,'(i3,i3,5g14.6,1x,a1)')iedge,iel,
+     $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
+                  elseif (nel.lt.1000000) then
+                     write(10,'(i2,i6,5g14.6,1x,a1)')iedge,iel,
+     $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
+                  else
+                     write(10,'(i2,i10,5g14.6,1x,a1)')iedge,iel,
+     $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
+                  endif
+               endif
+19          continue
+         endif
 C
       ELSE
 C
@@ -1459,7 +1462,7 @@ C
          WRITE(11) NCURVE
          IF(NCURVE.GT.0)THEN
             DO 119 IEL=1,NEL
-            DO 119 IEDGE=1,8
+            DO 119 IEDGE=1,12
                IF(CCURVE(IEDGE,IEL).NE.' ')THEN
                   WRITE(11) IEDGE,IEL,
      $            (CURVE(I,IEDGE,IEL),I=1,5),CCURVE(IEDGE,IEL)
@@ -1495,8 +1498,13 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,ISIDE,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
-                  ELSEIF (IFFMTIN) THEN
+                  elseif (nel.lt.1000000.and.iffmtin) then
                      WRITE(10,'(A1,A3,I6,5G14.6)',ERR=60)
+     $               CHTEMP,
+     $               CBC(ISIDE,IEL,IFLD),IEL,
+     $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
+                  elseif (iffmtin) then
+                     WRITE(10,'(A1,A3,I10,5G14.6)',ERR=60)
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
@@ -3081,7 +3089,12 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine exitt
+      include 'basics.inc'
       write(6,*) 'stopping in exitt'
+      zzz = -nel
+      zzz = sqrt(zzz)
+      write(6,*) zzz
+      
       stop
       end
 c-----------------------------------------------------------------------

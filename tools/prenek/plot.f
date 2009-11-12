@@ -133,6 +133,11 @@ C     Equation types
       IFVMS  = .FALSE.
       ifrevbk  = .FALSE.
       if_lattice  = .FALSE.
+
+      ifmid  = .false.   ! Allow 'm' ccurve
+      ifcstd = .true.    ! Use std ccurve options
+
+
       DO 2 I=1,11
          IFADVC(I) = .FALSE.
          IFTMSH(I) = .TRUE.
@@ -187,7 +192,7 @@ C     Objects
          PARAM(I)=0.0
 30    CONTINUE
       DO 40 IEL=1,NELM
-         DO 40 IEDGE=1,8
+         DO 40 IEDGE=1,12
             CCURVE(IEDGE,IEL)=' '
             DO 40 I=1,6
                CURVE(I,IEDGE,IEL)=0.0
@@ -237,7 +242,8 @@ C     Stuff to be written out in fortran statements
          DRIVC(I)='C'
 39    CONTINUE
 
-      IFGRAF=.TRUE.
+      call setgraph(ifgraf)
+
 C     Data that used to be initialized in postnek and postnek2
       SARROW=1.0
       DARROW='HIGH'
@@ -352,41 +358,6 @@ c     draws a dashed line from pt 1 to pt2, N dashes.
          XX2=XX2+DELTX2
          YY2=YY2+DELTY2
    10 CONTINUE
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE XDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
-c     draws a diamond around XX,YY
-      CALL MOVEC(XX+.0025*XFAC ,YY+.0025*YFAC)
-      CALL DRAWC(XX-.0025*XFAC ,YY+.0025*YFAC)
-      CALL DRAWC(XX-.0025*XFAC ,YY-.0025*YFAC)
-      CALL DRAWC(XX+.0025*XFAC ,YY-.0025*YFAC)
-      CALL DRAWC(XX+.0025*XFAC ,YY+.0025*YFAC)
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE SDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
-c     draws a diamond around XX,YY
-      CALL MOVESC(XX+.0025*XFAC ,YY+.0025*YFAC)
-      CALL DRAWSC(XX-.0025*XFAC ,YY+.0025*YFAC)
-      CALL DRAWSC(XX-.0025*XFAC ,YY-.0025*YFAC)
-      CALL DRAWSC(XX+.0025*XFAC ,YY-.0025*YFAC)
-      CALL DRAWSC(XX+.0025*XFAC ,YY+.0025*YFAC)
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      SUBROUTINE RDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
-c     draws a diamond around XX,YY
-      XLFAC=1.0
-      YLFAC=1.0
-      CALL MOVESC(XX+.0025*XLFAC ,YY+.0025*YLFAC)
-      CALL DRAWSC(XX-.0025*XLFAC ,YY+.0025*YLFAC)
-      CALL DRAWSC(XX-.0025*XLFAC ,YY-.0025*YLFAC)
-      CALL DRAWSC(XX+.0025*XLFAC ,YY-.0025*YLFAC)
-      CALL DRAWSC(XX+.0025*XLFAC ,YY+.0025*YLFAC)
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -790,21 +761,31 @@ C         Here we have a point outside the menu area.  Redraw menu.
           CALL PRS('Choose one of the items in the menu$')
           GO TO 130
 C
-      ELSE
+      ELSE  ! ifgraf turned off
 C
 C        NON-GRAPHICS DEVICE INPUT
 C
-         DO 1135 IBOX = 1,NCHOIC
-            CALL PRS(ITEM(IBOX)//'$')
+ 1130    DO 1135 IBOX = 1,NCHOIC
+            CALL PRIS(ibox,ITEM(IBOX)//'$')
  1135    CONTINUE
-         CALL PRS('Input choice: $')
-         CALL RES(CHOICE,26)
-         CH = CHOICE
-                      ifgrid = ifgrdt
-         RETURN
-       ENDIF
-       END
-C
+         call prs('Choose item:$')
+         call rei(ichoice)
+         if (ichoice.lt.1.or.ichoice.gt.nchoic) then
+            call prs('Choose one of the items in the menu$')
+            goto 1130
+         else
+            choice = item(ichoice)
+            ch     = choice
+            button = 'LEFT'
+            xmouse = 1.04
+            ymouse = 0.00
+         endif
+       endif
+
+       ifgrid = ifgrdt
+       return
+
+       end
 c-----------------------------------------------------------------------
        SUBROUTINE DRMENU(mtitle)
        INCLUDE 'basics.inc'
@@ -876,8 +857,10 @@ C
            YCH=(YBS(IBOX)+YTS(IBOX))/2 - 0.005
            BOXLAB=ITEM(IBOX)
            BOXLAB(26:26)='$'
-           IF(IBOX.LE.NCHOIC)CALL GSWRIT(XCH,YCH,1.0,BOXLAB)
-           IF(IBOX.LE.NCHOIC)write(6,'(i2,2x,A26)') ibox,item(ibox)
+           if (ifgraf) then
+             IF(IBOX.LE.NCHOIC)CALL GSWRIT(XCH,YCH,1.0,BOXLAB)
+             IF(IBOX.LE.NCHOIC)write(6,'(i2,2x,A26)') ibox,item(ibox)
+           endif
 10    CONTINUE
 C     Draw menu title
       CALL FILLP(-0)
@@ -1363,13 +1346,14 @@ C
 c-----------------------------------------------------------------------
       SUBROUTINE VDRAW(XXIS,YYIS,N)
       DIMENSION XXIS(N),YYIS(N)
-      CALL MOVEC(XXIS,YYIS)
+      write(6,*) 'move it A',n
+      CALL MOVEC(XXIS(1),YYIS(1))
+      write(6,*) 'move it B',n
       DO 100 I=2,N
          CALL DRAWC(XXIS(I),YYIS(I))
   100 CONTINUE
       RETURN
       END
-c    End of PLOT subroutines, common to preprocessor and postprocessor*******
 c-----------------------------------------------------------------------
       SUBROUTINE TRNGL1(XY1,XY2,XY3)
 C
@@ -1833,4 +1817,62 @@ C     Rescale screen-world factors so it fits on screen
       IF (.NOT.IFZOOM)CALL RESCAL
       RETURN
       END
+c-----------------------------------------------------------------------
+      SUBROUTINE XDIAMD(XX,YY)
+      INCLUDE 'basics.inc'
+c     draws a diamond around XX,YY
+      CALL MOVEC(XX+.0025*XFAC ,YY+.0025*YFAC)
+      CALL DRAWC(XX-.0025*XFAC ,YY+.0025*YFAC)
+      CALL DRAWC(XX-.0025*XFAC ,YY-.0025*YFAC)
+      CALL DRAWC(XX+.0025*XFAC ,YY-.0025*YFAC)
+      CALL DRAWC(XX+.0025*XFAC ,YY+.0025*YFAC)
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE SDIAMD(XX,YY)
+      INCLUDE 'basics.inc'
+c     draws a diamond around XX,YY
+      CALL MOVESC(XX+.0025*XFAC ,YY+.0025*YFAC)
+      CALL DRAWSC(XX-.0025*XFAC ,YY+.0025*YFAC)
+      CALL DRAWSC(XX-.0025*XFAC ,YY-.0025*YFAC)
+      CALL DRAWSC(XX+.0025*XFAC ,YY-.0025*YFAC)
+      CALL DRAWSC(XX+.0025*XFAC ,YY+.0025*YFAC)
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE RDIAMD(XX,YY)
+      INCLUDE 'basics.inc'
+c     draws a diamond around XX,YY
+      XLFAC=1.0
+      YLFAC=1.0
+      CALL MOVESC(XX+.0025*XLFAC ,YY+.0025*YLFAC)
+      CALL DRAWSC(XX-.0025*XLFAC ,YY+.0025*YLFAC)
+      CALL DRAWSC(XX-.0025*XLFAC ,YY-.0025*YLFAC)
+      CALL DRAWSC(XX+.0025*XLFAC ,YY-.0025*YLFAC)
+      CALL DRAWSC(XX+.0025*XLFAC ,YY+.0025*YLFAC)
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      subroutine diam2(xmouse,ymouse,iclr)
+      include 'basics.inc'
+c     draws a diamond around xmouse,ymouse
+      call color(iclr)
+      call movesc(xscr(xmouse)-.015,yscr(ymouse))
+      call drawsc(xscr(xmouse),yscr(ymouse)-.015)
+      call drawsc(xscr(xmouse)+.015,yscr(ymouse))
+      call drawsc(xscr(xmouse),yscr(ymouse)+.015)
+      call drawsc(xscr(xmouse)-.015,yscr(ymouse))
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xdiam2(xmouse,ymouse,iclr)
+      include 'basics.inc'
+c     draws a plus around xmouse,ymouse
+      call color(iclr)
+      call movesc(xscr(xmouse)-.015,yscr(ymouse))
+      call drawsc(xscr(xmouse)+.015,yscr(ymouse))
+      call movesc(xscr(xmouse),yscr(ymouse)-.015)
+      call drawsc(xscr(xmouse),yscr(ymouse)+.015)
+      return
+      end
 c-----------------------------------------------------------------------

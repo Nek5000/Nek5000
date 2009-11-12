@@ -1,10 +1,12 @@
-      SUBROUTINE NEWEL(IEL,XMOUSE,YMOUSE,BUTTON,IERR)
+c-----------------------------------------------------------------------
+      subroutine newel(iel,xmouse,ymouse,button,ierr)
 C     Adds new element to mesh
-      INCLUDE 'basics.inc'
-      DIMENSION XYZ(2,4)
-      LOGICAL IFCURV
-      CHARACTER KEY,STRING*6
-      DIMENSION IOBJS(8)
+      include 'basics.inc'
+      dimension xyz(2,4)
+      logical ifcurv
+      character key,string*6
+      dimension iobjs(8)
+      integer e
 C
 C
       DO 500 ICORN=1,4
@@ -38,63 +40,67 @@ C               TURN OFF KEYPAD HILITE
                 CALL SGVIS(12,0)
                 CALL SGVIS(11,1)
           ENDIF
-          IF(BUTTON.EQ.'LEFT') THEN
-c           new unique corner
-C
-C           Round New Unique Corners - 7-25-90 pff
-C
-            XMOUSE=ROUND(XMOUSE) 
-            YMOUSE=ROUND(YMOUSE)
-            X(IEL,ICORN)=XMOUSE
-            Y(IEL,ICORN)=YMOUSE
-            IOBJS(ICORN)=IOBJCT
-          ELSE IF(BUTTON.EQ.'RIGHT')THEN
-C           Latch to closest point
-            XC=XMOUSE
-            YC=YMOUSE
-C           Find Closest Corner (NOT IN SAME ELEMENT)
-            RMIN = 1.0E8
-            DO 150 IIEL=1,IEL-1
-               IF(IF3D .AND. NUMAPT(IIEL).NE.NUMAPT(IEL)) GO TO 140
-               DO 130 IICORN=1,4
-                  XT=X(IIEL,IICORN)
-                  YT=Y(IIEL,IICORN)
-                  R=(XT-XC)**2+(YT-YC)**2
-                  IF(R.LT.RMIN) THEN
-                     RMIN  = R
-                     IELMIN= IIEL
-                     ICMIN = IICORN
-                  ENDIF
-  130           CONTINUE
-  140         CONTINUE
-  150       CONTINUE
-            X(IEL,ICORN)=X(IELMIN,ICMIN)
-            Y(IEL,ICORN)=Y(IELMIN,ICMIN)
+          if(button.eq.'LEFT') then ! std. input:  new unique corner
+
+            if (iobjct.eq.0) then ! round new unique corners - 7-25-90 pff
+               xmouse=round(xmouse) 
+               ymouse=round(ymouse)
+            endif
+            x(iel,icorn)=xmouse
+            y(iel,icorn)=ymouse
+            iobjs(icorn)=iobjct
+
+          elseif (button.eq.'RIGHT') then ! latch to closest vertex
+
+            xc=xmouse
+            yc=ymouse
+            rmin = 1.0e8
+            do iiel=1,iel-1 ! find closest corner not in same element
+               if (if3d.and.numapt(iiel).ne.numapt(iel)) goto 140
+               do iicorn=1,4
+                  xt=x(iiel,iicorn)
+                  yt=y(iiel,iicorn)
+                  r=(xt-xc)**2+(yt-yc)**2
+                  if(r.lt.rmin) then
+                     rmin  = r
+                     ielmin= iiel
+                     icmin = iicorn
+                  endif
+               enddo
+  140          continue
+            enddo
+            x(iel,icorn)=x(ielmin,icmin)
+            y(iel,icorn)=y(ielmin,icmin)
+            iobjs(icorn)=iobjct
 C...if its attached to an object, define it as so.
             IEDG1 = ICMIN-1
             IEDG2 = ICMIN
             IF (IEDG1.EQ.0) IEDG1=4
 C  NOTE: a bug in the logic here, one pt. CAN be a member of two objects..!
 C        a SIDE can be a member of only ONE object, must make distinction.
-            IOBJS(ICORN)=0
-            IF (CCURVE(IEDG1,IELMIN).EQ.'O')
-     $         IOBJS(ICORN)=INT(CURVE(1,IEDG1,IELMIN))
-            IF (CCURVE(IEDG2,IELMIN).EQ.'O')
-     $         IOBJS(ICORN)=INT(CURVE(1,IEDG2,IELMIN))
+c           iobjs(icorn)=0
+c           IF (CCURVE(IEDG1,IELMIN).EQ.'O')
+c    $         IOBJS(ICORN)=INT(CURVE(1,IEDG1,IELMIN))
+c           IF (CCURVE(IEDG2,IELMIN).EQ.'O')
+c    $         IOBJS(ICORN)=INT(CURVE(1,IEDG2,IELMIN))
           ELSE
             CALL PRS('Error reading mouse input$')
             CALL BEEP
             GOTO 90
           ENDIF
-          IF(IF3D)THEN
-             X(IEL,ICORN+4)=X(IEL,ICORN)
-             Y(IEL,ICORN+4)=Y(IEL,ICORN)
-          ENDIF
-          CALL color(3)
-          CALL fillp(-15)
-          XS=X(IEL,ICORN)
-          YS=Y(IEL,ICORN)
-C
+
+          if (if3d) x(iel,icorn+4)=x(iel,icorn)
+          if (if3d) y(iel,icorn+4)=y(iel,icorn)
+
+          call color(3)
+          call fillp(-15)
+
+          xs=x(iel,icorn)
+          ys=y(iel,icorn)
+          call prsrr('xs,ys:$',xs,ys)
+          call prsrr('xs1ys1$',xs1,ys1)
+          call prsiii('e,crn:$',iel,icorn,in)
+ 
           IF(ICORN.EQ.1) THEN
             CALL BEGINB(XS,YS)
             XS1=XS
@@ -140,7 +146,7 @@ C               cyclic permutation (counter clock-wise):  reverse
      $              C3.LE.0.0.OR.C4.LE.0.0 ) THEN
                 CALL PRSI('ERROR in entering element.  Re-enter.$',iel)
                 IERR=1
-                RETURN
+                return
             ENDIF
           ENDIF
   500 CONTINUE
@@ -170,27 +176,43 @@ C
          IC1 = IC+1
          IC1 = MOD1(IC1,4)
          IF (IOBJS(IC).EQ.IOBJS(IC1).AND.IOBJS(IC).NE.0) IFCURV=.TRUE.
+         iobjc=iobjs(ic)
+         write(6,*) 'iobj1:',ic,iobjc,iobjs(ic1),ccobjs(iobjc),ifcurv
   700 CONTINUE
-      IF (IFCURV) THEN
-         CALL DRAWEL(-IEL)
-         DO 710 IC=1,4
-            IC1 = IC+1
-            IC1 = MOD1(IC1,4)
-            IF (IOBJS(IC).EQ.IOBJS(IC1).AND.IOBJS(IC).NE.0) THEN
-               iobjc=iobjs(ic)
-               CCURVE(IC,IEL)=ccobjs(iobjc)
-               call copy(CURVE(1,IC,IEL),cobjs(1,iobjc),6)
-               IF (IF3D) THEN
-                  IC4 = IC+4
-                  CCURVE(IC4,IEL)=CCURVE(IC,IEL)
-                  call copy(CURVE(1,IC4,IEL),CURVE(1,IC,IEL),6)
-               ENDIF
-            ENDIF
-  710    CONTINUE
-c     end of object element check
-      ENDIF
-      IF (IFGRDP) THEN
-c     beginning of polar grid check
+      if (ifcurv) then
+         call drawel(-iel)
+         do 710 ic=1,4
+            ic1 = ic+1
+            ic1 = mod1(ic1,4)
+            iobjc=iobjs(ic)
+            write(6,*) 'iobjs:',ic,iobjc,iobjs(ic1),ccobjs(iobjc)
+            if (iobjc.eq.iobjs(ic1).and.iobjc.ne.0) then
+               if (ccobjs(iobjc).eq.'o') then ! fit a circle
+                  xm=.5*(x(iel,ic)+x(iel,ic1))
+                  ym=.5*(y(iel,ic)+y(iel,ic1))
+                  call latchob(x1,y1,xm,ym,0.,dist2,k,i,iobjc)
+                  e=iel
+                  i=ic
+                  i1=ic1
+                  rad=rad_circ(x(e,i),x1,x(e,i1),y(e,i),y1,y(e,i1))
+                  call rzero(curve(1,ic,iel),6)
+                  curve(1,ic,iel)=rad
+                  ccurve(ic,iel)=' '
+                  if (abs(rad).gt.0) ccurve(ic,iel)='C'
+               else
+                  ccurve(ic,iel)=ccobjs(iobjc)
+                  call copy(curve(1,ic,iel),cobjs(1,iobjc),6)
+                  if (if3d) then
+                     ic4 = ic+4
+                     ccurve(ic4,iel)=ccurve(ic,iel)
+                     call copy(curve(1,ic4,iel),curve(1,ic,iel),6)
+                  endif
+               endif
+            endif
+  710    continue
+      endif ! end of object element check
+
+      if (ifgrdp) then ! beginning of polar grid check
          RADUSC = 0.0
          DO 800 IC=1,4
             DX = X(IEL,IC)-GRIDXP
@@ -243,7 +265,7 @@ c
             endif
   819    continue
 C
-         IF (IFCURV) THEN
+         if (ifcurv) then
             CALL DRAWEL(-IEL)
 C           Now curve side and update element image.
             DO 802 IC=1,4
@@ -268,9 +290,8 @@ C                 curve side
                   ENDIF
                ENDIF
   802       CONTINUE
-         ENDIF
-C     End of polar grid check
-      ENDIF
+         endif
+      endif !  end of polar grid check
 C
 C     Element all set , draw it.
 C
@@ -284,13 +305,20 @@ C     Figure out which to draw
       DO 1050 I=IBEGIN,NEL
          CALL DRAWIS(ISRT(I))
  1050 CONTINUE
-      RETURN
-      END
+      do ie=1,nel
+      do ic=1,4
+         call prsrr('xy_e$',x(ie,ic),y(ie,ic))
+         write(6,*) 'curve: ',ccurve(ic,ie),curve(1,ic,ie),ie,ic
+      enddo
+      enddo
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine delelq(idel)
 C     Deletes element from mesh.  But really, it copies a null element to
 C     the one to be deleted.
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
 c     CALL BLANK(S,80)
 c     WRITE(S,10,ERR=20) IDEL,NEL
@@ -309,17 +337,17 @@ C     Recount the number of curved sides
 C
       NCURVE=0
       DO 100 IE=1,NEL
-      DO 100 IEDGE=1,8
+      DO 100 IEDGE=1,12
          IF(CCURVE(IEDGE,IE).NE.' ') NCURVE=NCURVE+1
   100 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine delel(idel)
 C     Deletes element from mesh.  But really, it copies a null element to
 C     the one to be deleted.
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
       CALL BLANK(S,80)
       WRITE(S,10,ERR=20) IDEL,NEL
@@ -338,36 +366,80 @@ C     Recount the number of curved sides
 C
       NCURVE=0
       DO 100 IE=1,NEL
-      DO 100 IEDGE=1,8
+      DO 100 IEDGE=1,12
          IF(CCURVE(IEDGE,IE).NE.' ') NCURVE=NCURVE+1
   100 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      subroutine copyel(isrc,ides)
-      INCLUDE 'basics.inc'
-      CHARACTER KEY,STRING*6
-C
-C     Copies everything vaguely related to element
-      IF(IDES.EQ.NELM-2)CALL PRS
-     $('***WARNING*** NO ADDITIONAL ELEMENTS ALLOWED: ARRAYS FULL$')
-      IF(IDES.EQ.NELM  )THEN
-        CALL PRS
-     $('***ERROR*** TOO MANY ELEMENTS!  SEE YOUR NEKTONICS REP.$')
-        write(6,*) 'ides,nelm:',IDES,NELM
-        RETURN
-      ENDIF
-C
-      DO 100 IFLD=0,MAXFLD
-      DO 100 I=1,6
-         CBC(I,IDES,IFLD) = CBC(I,ISRC,IFLD)
-         if (cbc(i,ides,ifld).eq.'P  ')call prsii('Reset P BC:$',i,ides)
-         if (cbc(i,ides,ifld).eq.'P  ') cbc(i,ides,ifld)='   '
-         DO 100 J=1,5
-            BC(J,I,IDES,IFLD) = BC(J,I,ISRC,IFLD)
-  100 CONTINUE
-C
+      subroutine copyel(isrc,ides) ! Copy everything related to element
+
+      call copyel0   (isrc,ides)
+      call copyelbc  (isrc,ides)
+      call copyel2   (isrc,ides)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyel_p(isrc,ides) ! Copy & preserve periodic bc
+
+      call copyel0   (isrc,ides)
+      call copyelbc_p(isrc,ides)
+      call copyel2   (isrc,ides)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyelbc_p(isrc,ides) ! Copies everything related to element
+      include 'basics.inc'
+      character key,string*6
+
+      nshift = ides-isrc
+
+      do 100 ifld=0,maxfld
+      do 100 i=1,6
+         cbc(i,ides,ifld) = cbc(i,isrc,ifld)
+         call copy(bc(1,i,ides,ifld),bc(1,i,isrc,ifld),6)
+         if (cbc(i,ides,ifld).eq.'P  ') 
+     $       bc(1,i,ides,ifld) = bc(1,i,ides,ifld)+nshift
+  100 continue
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyelbc(isrc,ides) ! Copies everything related to element
+      include 'basics.inc'
+      character key,string*6
+
+      do 100 ifld=0,maxfld
+      do 100 i=1,6
+         cbc(i,ides,ifld) = cbc(i,isrc,ifld)
+c        if (cbc(i,ides,ifld).eq.'P  ')call prsii('Reset P BC:$',i,ides)
+c        if (cbc(i,ides,ifld).eq.'P  ') cbc(i,ides,ifld)='   '
+         do 100 j=1,5
+            bc(j,i,ides,ifld) = bc(j,i,isrc,ifld)
+  100 continue
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyel0(isrc,ides) ! Copies everything related to element
+      include 'basics.inc'
+      character key,string*6
+
+c     if (ides.ge.nelm-2) then
+      if (ides.ge.nelm-1) then
+        call prs
+     $  ('***warning*** no additional elements allowed: arrays full$')
+        write(6,*) 'ides,nelm:',ides,nelm
+        return
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyel2(isrc,ides) ! Copies everything related to element
+      include 'basics.inc'
+      character key,string*6
       DO 200 I =1,6
       DO 200 II=1,4
             SIDES(IDES,I,II)=SIDES(ISRC,I,II)
@@ -395,17 +467,15 @@ C
       RCEN  (IDES) = RCEN (ISRC)
       NUMAPT(IDES) =NUMAPT(ISRC)
       LETAPT(IDES) =LETAPT(ISRC)
-      DO 600 IEDGE=1,8
-         CCURVE(IEDGE,IDES) = CCURVE(IEDGE,ISRC)
-         DO 550 IDIR=1,3
-            EDGES(IEDGE,IDIR,IDES)=EDGES(IEDGE,IDIR,ISRC)
-  550    CONTINUE
-  600 CONTINUE
-      DO 610 IEDGE=1,8
-      DO 610 I=1,6
-         CURVE(I,IEDGE,IDES) = CURVE(I,IEDGE,ISRC)
-  610 CONTINUE
-  611 FORMAT(' curve',4I5,2E14.5)
+
+      call copy  (x27(1,ides),x27(1,isrc),27)
+      call copy  (y27(1,ides),y27(1,isrc),27)
+      call copy  (z27(1,ides),z27(1,isrc),27)
+
+      call chcopy(ccurve(1,ides),ccurve(1,isrc)  ,12)
+      call copy  (curve(1,1,ides),curve(1,1,isrc),72)
+c     call copy  (edges(1,idir,ides)=edges(iedge,idir,isrc)
+
       IF(NHIS.GT.0)THEN
 C        Delete any integral sides
          IDEL=0
@@ -419,12 +489,13 @@ C        Delete any integral sides
      $   ' YOU MUST REDEFINE SIDES TO GET INTEGRAL FLUX, LIFT,OR DRAG$')
          ENDIF
       ENDIF
-      RETURN
-      END
-      SUBROUTINE MODEL(IEL)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine model(iel)
 C     Modifies element by moving point in mesh
 C     Modified neighbor points iff they had been latched to point in questio
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION IELMOV(NELM)
       REAL XCHECK(8),YCHECK(8)
       CHARACTER KEY,STRING*6
@@ -569,7 +640,7 @@ C                 side pair is positive (angles between 0 and 180 degrees)
                         DO 52 I=1,NEL
 c                           CALL DRAWIS(ISRT (I))
 52                      CONTINUE
-                        RETURN
+                        return
                      ENDIF
 109                 CONTINUE
 C
@@ -659,14 +730,15 @@ C                 Now, draw new elements for elements that were modified
 10    CONTINUE
 C     Draw ISOMETRICALLY ONLY ELEMENT MOVED
       CALL DRAWIS(IELMV)
-      RETURN
-      END
-      SUBROUTINE DRISED(IEL,IEDGE,IFLIP)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drised(iel,iedge,iflip)
 C     DRaws ISometric EDge.  IFLIP CAuses to draw from end to beginning
 C     POSITIVE MEANS CCW; ON VERTICAL STRUTS 9-12, MEANS UPWARD
 C     Draws only.  No move or fill.
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
 
       IF(IEDGE.GT.8)THEN
@@ -716,14 +788,15 @@ C        Draw curved side
             CALL DRAWC(XI,YI)
 118      CONTINUE
       ENDIF
-      RETURN
-      END
-      SUBROUTINE DRAWIS(IEL)
-      INCLUDE 'basics.inc'
-      DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drawis(iel)
+      include 'basics.inc'
+      dimension xisom(8),yisom(8),cspace(100),xcrved(100),ycrved(100)
       IIEL=IABS(IEL)
-      IF(.NOT.IF3D)RETURN
-      IF(nel.gt.1000)RETURN
+      if (.not.if3d)   return
+      if (nel.gt.1000) return
 C        Now draw isometric view  (??! RESCALE??)
          IF(IEL.GT.0)call color(10)
          IF(IEL.le.0)call color(0)
@@ -761,25 +834,32 @@ C        Draw Ceiling panel
            CALL DRISED(IIEL,I, 1)
 9        CONTINUE
          CALL ENDP
-      RETURN
-      END
-      SUBROUTINE DRAWEL(IEL)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drawel(iel)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
+
+      if (nel.gt.1000 .and. iel.eq.401) 
+     $   call prsi('Showing only 400 elements of$',nel)
+      if (nel.gt.1000 .and. iel.gt.400) return
+
+
 C     Now, draw new elements for elements that were modified
       IIEL=IABS(IEL)
 C
 
-C      write (6,*) 'DRAWEL :: iel = ',IEL
+c     write (6,*) 'DRAWEL: iel = ',IEL
 
       IFSPHR=.FALSE.
-      DO 7 IEDGE=1,8
-         IF (CCURVE(IEDGE,IEL).EQ.'s') IFSPHR=.TRUE.
+      DO 7 IFACE=5,6
+         IF (CCURVE(IFACE,IEL).EQ.'s') IFSPHR=.TRUE.
     7 CONTINUE
       IF (IFSPHR) THEN
          IE  =IABS(IEL)
@@ -964,10 +1044,11 @@ C
       ENDIF
 C HMT color TRACE - seems to be the outline
       call color(1)
-      RETURN
-      END
-      SUBROUTINE MKSIDE
-      INCLUDE 'basics.inc'
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine mkside
+      include 'basics.inc'
 C
 C     Find Sides' Midpoints
 C
@@ -1006,8 +1087,8 @@ C        This stuff only relevant for 3d
          SIDES (IEL,ISIDE,2)=YS
          SIDES (IEL,ISIDE,3)=ZS
 25    CONTINUE
-      RETURN
-      END
+      return
+      end
       FUNCTION CRSS2D(XY1,XY2,XY0)
       REAL XY1(2),XY2(2),XY0(2)
 C
@@ -1017,8 +1098,8 @@ C
          V2Y=XY2(2)-XY0(2)
          CRSS2D = V1X*V2Y - V1Y*V2X
 C
-      RETURN
-      END
+      return
+      end
       function round(x)
 
 C     Try to Round X to fractional integer - eg .05 .1 .15 - if it's within 10-6
@@ -1053,9 +1134,10 @@ c        write(88,*) icalld,round,x,diff
       return
       end
 
-      SUBROUTINE BLATCH(XMOUSE,YMOUSE)
+c-----------------------------------------------------------------------
+      subroutine blatch(xmouse,ymouse)
 C     Latch to closest element vertex
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       XC=XMOUSE
       YC=YMOUSE
 C     Find Closest Corner (NOT IN SAME ELEMENT)
@@ -1077,11 +1159,12 @@ C     Find Closest Corner (NOT IN SAME ELEMENT)
   150 CONTINUE
       XMOUSE=X(IELMIN,ICMIN)
       YMOUSE=Y(IELMIN,ICMIN)
-      RETURN
-      END
+      return
+      end
 C     End of BUILD subroutines, preprocessor *****
-      SUBROUTINE SORTEL
-      INCLUDE 'basics.inc'
+c-----------------------------------------------------------------------
+      subroutine sortel
+      include 'basics.inc'
 C     Sorts elements according to their visibility, i.e., ISRT (1) is behind
 C     all the others and gets drawn first; element ISRT (NEL) is in front
 C     and is most visible.
@@ -1099,25 +1182,26 @@ C
       CALL SORT(ZDEPTH,IND,NEL)
       CALL ISWAP(ISRT,ZDEPTH,IND,NEL)
 C
-      RETURN
-      END
-      SUBROUTINE FILLPF(Icolor)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fillpf(iCOLOR)
 C     SELECTS FILL panel
       CHARACTER STRING*5
-      INCLUDE 'devices.inc'
+      include 'devices.inc'
 c
       CALL PRS('Input color:$')
       CALL REI(ic)
       CALL XSETFILL(IC)
 c
-      RETURN
-      END
+      return
+      end
 C
 C----------------------------------------------------------------------
 C
-      SUBROUTINE DRAWEL_color(IEL,icolor)
+      subroutine drawel_COLOR(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1127,8 +1211,8 @@ C     Now, draw new elements for elements that were modified
       IIEL=IABS(IEL)
 C
       IFSPHR=.FALSE.
-      DO 7 IEDGE=1,8
-         IF (CCURVE(IEDGE,IEL).EQ.'s') IFSPHR=.TRUE.
+      DO 7 IFACE=5,6
+         IF (CCURVE(IFACE,IEL).EQ.'s') IFSPHR=.TRUE.
     7 CONTINUE
       IF (IFSPHR) THEN
          IE  =IABS(IEL)
@@ -1313,14 +1397,14 @@ C     End of spherical - regular choice
 C
       ENDIF
       call color(1)
-      RETURN
-      END
+      return
+      end
 C
 C----------------------------------------------------------------------
 C
-      SUBROUTINE HMT_DRAWEL_color(IEL,icolor)
+      subroutine hmt_drawel_COLOR(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1330,8 +1414,8 @@ C     Now, draw new elements for elements that were modified
       IIEL=IABS(IEL)
 C
       IFSPHR=.FALSE.
-      DO 7 IEDGE=1,8
-         IF (CCURVE(IEDGE,IEL).EQ.'s') IFSPHR=.TRUE.
+      DO 7 IFACE=5,6
+         IF (CCURVE(IFACE,IEL).EQ.'s') IFSPHR=.TRUE.
     7 CONTINUE
       IF (IFSPHR) THEN
          IE  =IABS(IEL)
@@ -1518,15 +1602,15 @@ C     End of spherical - regular choice
 C
       ENDIF
       call color(1)
-      RETURN
-      END
+      return
+      end
 C
 C----------------------------------------------------------------------
 C
-      SUBROUTINE HMT_DRAWEL_color_nln(IEL,icolor)
+      subroutine hmt_drawel_COLOR_NLN(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       integer icolor
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1536,7 +1620,7 @@ C     Now, draw new elements for elements that were modified
       IIEL=IABS(IEL)
 C
       IFSPHR=.FALSE.
-      DO 7 IEDGE=1,8
+      DO 7 IEDGE=5,6
          IF (CCURVE(IEDGE,IEL).EQ.'s') IFSPHR=.TRUE.
     7 CONTINUE
       IF (IFSPHR) THEN
@@ -1727,15 +1811,15 @@ C     End of spherical - regular choice
 C
       ENDIF
 C      call color(1)
-      RETURN
-      END
+      return
+      end
 C
 c-----------------------------------------------------------------------
       subroutine flipel(ieg,fplane)
 c
 c     This routine flips about x, y, or z plane
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       character key,string*6
       character*1 fplane
       character*3 cbt
@@ -1911,7 +1995,7 @@ c-----------------------------------------------------------------------
 c
 c     Reflect about x-, y-, or z-plane
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       character*1 fplane
 c
 1     CONTINUE
@@ -1942,7 +2026,7 @@ c
 c-----------------------------------------------------------------------
       subroutine substitute_el(xyzbox,nelold)
 C     Delete elements in xyzbox, provied e < nelold + 1
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       real xyzbox(6)
 c
       common /cdell/ ifkeep(nelm)
@@ -1995,10 +2079,34 @@ C     Recount the number of curved sides
 C
       ncurve=0
       do 100 ie=1,nel
-      do 100 iedge=1,8
+      do 100 iedge=1,12
          if(ccurve(iedge,ie).ne.' ') ncurve=ncurve+1
   100 continue
 C
+      return
+      end
+c-----------------------------------------------------------------------
+      function rad_circ(x0,x1,x2,y0,y1,y2)
+
+      rad_circ = 0
+
+c     Directed arc:
+
+      dx1  = x1-x0
+      dx2  = x2-x0
+      dx3  = x2-x1
+      dy1  = y1-y0
+      dy2  = y2-y0
+      dy3  = y2-y1
+      aaa  = dx1*dx1 + dx2*dx2 + dx3*dx3 + dy1*dy1 + dy2*dy2 + dy3*dy3
+      bbb  = (dx1*dx1+dy1*dy1) * (dx2*dx2+dy2*dy2) * (dx3*dx3+dy3*dy3)
+      area = 0.5*(dx1*dy2 - dx2*dy1)
+      tol  = 1.e-7
+
+      write(6,*) 'area:',area,aaa,bbb
+      if (abs(area).lt.tol*aaa) return  ! nearly colinear
+      if (bbb.gt.0) rad_circ = 0.25*sqrt(bbb)/area
+
       return
       end
 c-----------------------------------------------------------------------

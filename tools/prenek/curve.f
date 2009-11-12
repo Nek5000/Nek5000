@@ -14,29 +14,21 @@ C without prior authorization.
 C
 C------------------------------------------------------------------------------
 C
-      SUBROUTINE CURVES
-      INCLUDE 'basics.inc'
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /0/
-      LOGICAL IFTMP
+      subroutine curves
+      include 'basics.inc'
+      integer icalld,e
+      save    icalld
+      data    icalld /0/
+      logical iftmp
 C
-      IFTMP=IFGRID
-      IFGRID=.FALSE.
-      DO 30 IEL=1,NEL
-         DO 30 IEDGE=1,NEDGES
-            IP1 = IEDGE+1
-            IF(IP1.EQ.5) IP1=1
-            IF(IP1.EQ.9) IP1=5
-            EDGES(IEDGE,1,IEL) = (X(IEL,IEDGE)+X(IEL,IP1))/2.0
-            EDGES(IEDGE,2,IEL) = (Y(IEL,IEDGE)+Y(IEL,IP1))/2.0
-            EDGES(IEDGE,3,IEL) = (Z(IEL,IEDGE)+Z(IEL,IP1))/2.0
-30    CONTINUE
-1     CONTINUE
+      iftmp=ifgrid
+      ifgrid=.false.
+
+1     continue
       ITEM(1)='BUILD MENU'
       ITEM(2)='STRAIGHTEN CURVE'
       ITEM(3)='MAKE CIRCLE'
-      ITEM(4)='Clean up vertices'
+      ITEM(4)='Convert to Midside Nodes'
       ITEM(5)='Tile with hexagons'
 c     ITEM(6)='TRANSITION HEXAGONS'
       ITEM(6)='Refine hexagons'
@@ -85,7 +77,7 @@ C         GET 2 Auxiliary control points
 C         Export copies curve ICURVE to all overlapping sides
           CALL EXPORT(ISID,IELS)
       ELSE IF(CHOICE.EQ.'RENUMBER ELEMENTS') THEN
-           CALL RENUM
+           call renum_special
            GOTO 1
       ELSE IF(CHOICE.EQ.'GEN TEST MESH') THEN
            CALL GENMESH
@@ -125,6 +117,14 @@ c          GOTO 1
           CALL PRS(S//'$')
 C         Export copies curve ICURVE to all overlapping sides
           CALL EXPORT(ISID,IELS)
+      ELSE IF(CHOICE.EQ.'Convert to Midside Nodes') THEN
+          call gencen
+          do e=1,nel
+             call fix_m_curve(e)
+          enddo
+          ifmid  = .true.
+          ifcstd = .true.
+          goto 1
       ELSE IF(CHOICE.EQ.'MAKE CIRCLE')THEN
             CALL GETEDG(ISID,IELS)
             XCENT=(X(IELS,1)+X(IELS,2)+X(IELS,3)+X(IELS,4))/4.0
@@ -169,7 +169,7 @@ C
       ELSE IF(CHOICE.EQ.'BUILD MENU')THEN
             NCURVE=0
             DO 114 IE=1,NEL
-            DO 114 IEDGE=1,8
+            DO 114 IEDGE=1,12
                IF (CCURVE(IEDGE,IE).NE.' ') THEN
                   NCURVE=NCURVE+1
                ENDIF
@@ -199,7 +199,7 @@ C         Export copies curve ICURVE to all overlapping sides
       GO TO 1
       END
       SUBROUTINE MESGEN
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       DIMENSION DXCHEB(20),DYCHEB(20),XCHEB(20),YCHEB(20)
       REAL CSPACE(100),XCRVED(100),YCRVED(100),XFRAC(20)
       REAL XPTSEL(NXM,NYM),YPTSEL(NXM,NYM)
@@ -352,14 +352,22 @@ C              Draw curved sides for hardcopy
         IFHARD=.FALSE.
          NCURVE=0
          DO 114 IEL=1,NEL
-            DO 114 IEDGE=1,8
+            DO 114 IEDGE=1,12
                IF(CCURVE(IEDGE,IEL).NE.' ') NCURVE=NCURVE+1
 114      CONTINUE
          RETURN
       END
-      SUBROUTINE GETEDG(ISID,IELS)
-      INCLUDE 'basics.inc'
-C
+c-----------------------------------------------------------------------
+      subroutine getedg(isid,iels)
+      include 'basics.inc'
+
+      integer eindx(12),v  ! index of 12 edges into 3x3x3 tensor
+      save    eindx        ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
 1     CALL PRS(' Enter element side.$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       XH=XMOUSE
@@ -387,12 +395,12 @@ C     Here IF(IFCEIL) we are on the ceiling;else on the bottom of a given floor.
             II1=1
             II2=4
          ENDIF
-         DO 40 IEDGE=II1,II2
-C         DO 40 IEDGE=1,nedges
-            DXH=XH-EDGES(IEDGE,1,IEL)
-            DYH=YH-EDGES(IEDGE,2,IEL)
-            DZH=ZH-EDGES(IEDGE,3,IEL)
-            R=SQRT(DXH**2+DYH**2+DZH**2)
+         do 40 iedge=ii1,ii2
+            v=eindx(iedge)
+            dxh=xh-x27(v,iel)
+            dyh=yh-y27(v,iel)
+            dzh=zh-z27(v,iel)
+            r=sqrt(dxh**2+dyh**2+dzh**2)
             IF(R.LT.RMIN) THEN
                RMIN=R
                IELS=IEL
@@ -402,9 +410,16 @@ C         DO 40 IEDGE=1,nedges
 50    CONTINUE
       RETURN
       END
-      SUBROUTINE EXPORT(IEDGE,IEL)
-      INCLUDE 'basics.inc'
-      DIMENSION IOVER(2,20)
+c-----------------------------------------------------------------------
+      subroutine export(iedge,iel)
+      include 'basics.inc'
+      integer iover(2,20),v1,v2,v3,v4,vi,vj
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
 C     Takes characteristics of curve ICURVE and copies it to any overlapping
 C     edges
 C
@@ -417,30 +432,50 @@ C     Put original side in IOVER 1
       NOVER = 1
       IOVER(1,NOVER)=IEDGE
       IOVER(2,NOVER)=IEL
-      EPSI=(EDGES(1,1,IEL)-EDGES(3,1,IEL))**2
-     $    +(EDGES(1,2,IEL)-EDGES(3,2,IEL))**2
-     $    +(EDGES(1,3,IEL)-EDGES(3,3,IEL))**2
-      DO 10 IELS=1,NEL
-         EPSJ=(EDGES(1,1,IELS)-EDGES(3,1,IELS))**2
-     $       +(EDGES(1,2,IELS)-EDGES(3,2,IELS))**2
-     $       +(EDGES(1,3,IELS)-EDGES(3,3,IELS))**2
-         DO 10 IEDG=1,NEDGES
-            DXH=EDGES(IEDGE,1,IEL)-EDGES(IEDG,1,IELS)
-            DYH=EDGES(IEDGE,2,IEL)-EDGES(IEDG,2,IELS)
-            DZH=EDGES(IEDGE,3,IEL)-EDGES(IEDG,3,IELS)
-            R=DXH**2+DYH**2+DZH**2
-            EPS=0.001*MIN(EPSI,EPSJ)
-            IF(R.LT.EPS) THEN
-               IF(IEDG.NE.IEDGE .OR. IEL.NE.IELS)THEN
-                  NOVER = NOVER+1
-                  IOVER(1,NOVER)=IEDG
-                  IOVER(2,NOVER)=IELS
-      write(s,11) nover,iedg,iels,iedge,iel,r,eps,epsi,epsj
-11    format('jiedgel,r,epsij:',5i3,4e10.3,'$')
-      call prs(s)
-               ENDIF
-            ENDIF
-10    CONTINUE
+
+      v1=eindx(1)
+      v2=eindx(3)
+      v3=eindx(2)
+      v4=eindx(4)
+      vi=eindx(iedge)
+
+      eps1=(x27(v2,iel)-x27(v1,iel))**2
+     $    +(y27(v2,iel)-y27(v1,iel))**2
+     $    +(z27(v2,iel)-z27(v1,iel))**2
+
+      eps2=(x27(v4,iel)-x27(v3,iel))**2
+     $    +(y27(v4,iel)-y27(v3,iel))**2
+     $    +(z27(v4,iel)-z27(v3,iel))**2
+      epsi = min(eps1,eps2)
+
+      do 10 jel=1,nel
+
+         eps1=(x27(v2,jel)-x27(v1,jel))**2
+     $       +(y27(v2,jel)-y27(v1,jel))**2
+     $       +(z27(v2,jel)-z27(v1,jel))**2
+
+         eps2=(x27(v4,jel)-x27(v3,jel))**2
+     $       +(y27(v4,jel)-y27(v3,jel))**2
+     $       +(z27(v4,jel)-z27(v3,jel))**2
+         epsj = min(eps1,eps2)
+         eps  = 0.001*min(epsi,epsj)
+
+         do 10 iedg=1,nedges
+            vj=eindx(iedg)
+            r = (x27(vi,iel)-x27(vj,jel))**2
+     $        + (y27(vi,iel)-y27(vj,jel))**2
+     $        + (z27(vi,iel)-z27(vj,jel))**2
+            if(r.lt.eps) then
+               if(iedg.ne.iedge .or. iel.ne.jel)then
+                  nover = nover+1
+                  iover(1,nover)=iedg
+                  iover(2,nover)=jel
+c     write(s,11) nover,iedg,jel,iedge,iel,r,eps,epsi,epsj
+c     call prs(s)
+   11 format('jiedgel,r,epsij:',5i3,4e10.3,'$')
+               endif
+            endif
+10    continue
       IF(NOVER.GE.2)THEN
 C        Do this only for overlapping elements on this level, not original
          DO 20 I=2,NOVER
@@ -477,8 +512,9 @@ C              Spline on same level switch auxiliary points
 40    CONTINUE
       RETURN
       END
+c-----------------------------------------------------------------------
       subroutine getside(jel,jside,xp,yp)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C     Find closest element, side that we want to duplicate
       RMIN=1.e22
       DO 133 IIEL=1,NEL
@@ -502,7 +538,7 @@ c-----------------------------------------------------------------------
 c
 c     Stretch all points in spherical shell
 c
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 C
       call prs(' Input sphere center (x,y,z):$')
       call rerrr(x0,y0,z0)
@@ -561,7 +597,7 @@ C     Take care of curved sides
 C
       eps = .01*r1
       do ie = 1,nel
-      do is = 1,8
+      do is = 1,12
 c
          if (ccurve(is,ie).eq.'s') then
 c           spherical side, x0  = curve(1,is,ie)
@@ -786,7 +822,7 @@ c
       nx = nxm
       ny = nym
       nz = nzm
-      call genxyz (xp,yp,zp,el,1,nx,ny,nz)
+      call genxyz_e (xp,yp,zp,el,nx,ny,nz)
 c
       rrl(3) = 0 
       do k=1,5    ! 5 new elements
@@ -904,7 +940,7 @@ c
       nx = nxm
       ny = nym
       nz = 1
-      call genxyz (xp,yp,zp,e,1,nx,ny,nz)
+      call genxyz_e (xp,yp,zp,e,nx,ny,nz)
 c
       rrl(3) = 0.
       do k=1,4     ! 4 new elements
@@ -1038,9 +1074,6 @@ c
          ccurve(i+4,e) = ccurve(it+4,et)
          call copy(curve(1,i+4,e),curve(1,it+4,et),5)
 
-         edges (i,1,e) = edges (it,1,et)
-         edges (i,2,e) = edges (it,2,et)
-         edges (i,3,e) = edges (it,3,et)
       enddo
 
       do k=5,6
@@ -1177,6 +1210,36 @@ c
    10    continue
       enddo
 c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fix_m_curve(e)
+
+c     Assign / repair curve-side info for edges
+
+      include 'basics.inc'
+      real rrx(1),rry(1),rrz(1)
+      integer e
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
+      nedge = 4 + 8*(ndim-2)
+      do ic=1,nedge
+         ccurve (ic,e) = 'm'   ! Midside node (now default??)
+         curve(1,ic,e) = x27(eindx(ic),e)
+         curve(2,ic,e) = y27(eindx(ic),e)
+         curve(3,ic,e) = z27(eindx(ic),e)
+      enddo
+
+c     if (e.eq.2) call out27(x27(1,e),y27(1,e),z27(1,e),e,'fixm')
+c     if (e.eq.2) write(6,*) 'stop in fix_m_curve',e
+c     if (e.eq.2) call exitt
+
       return
       end
 c-----------------------------------------------------------------------

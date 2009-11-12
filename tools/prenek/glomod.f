@@ -102,7 +102,7 @@ C
       ELSE IF(CHOICE.EQ.'NEW SPLIT')THEN
          CALL ZIP2
       ELSE IF(CHOICE.EQ.'REPLICATE/ROTATE')THEN
-         CALL rep_rot
+         call rep_rot
       ELSE IF(CHOICE.EQ.'Hex transition')THEN
          call hex_transition_3d 
       ELSE IF(CHOICE.EQ.'Refine Hexagons')THEN
@@ -321,7 +321,7 @@ C          IFEL=ELEMENT#, ICIN=INSIDE CORNER #, IOVER=OVERLAPPING SIDE #
            IF(ICP2.GT.4) ICP2=ICP2-4
            IF(ICP3.GT.4) ICP3=ICP3-4
 C          Straighten out element to be split
-           DO 160 IEDGE=1,8
+           DO 160 IEDGE=1,12
               CCURVE(IEDGE,IFEL(IIEL))=' '
 160        CONTINUE
            CALL COPYEL(IFEL(IIEL),NEL+1)
@@ -570,7 +570,7 @@ C                 Check neighbors of this marked element for splits
             ENDIF
             DO 200 IP=1,4
 C              Straighten internal curved sides
-               DO 160 IEDGE=1,8
+               DO 160 IEDGE=1,12
                   CCURVE(IEDGE,IELCRK)=' '
                   IF(IEDGE.NE.IP .AND. IEDGE.NE.IP+4)
      $            CCURVE(IEDGE,NEL+IP)=' '
@@ -840,7 +840,7 @@ C     Set up stuff for letter of daughter element
       DO 100 IEL=1,NELOLD
          IF(ISPLIT(IEL).NE.0)THEN
 C           First make copy
-            WRITE(S,'(1X,A18,I5,A6,I5,I5)')
+            WRITE(S,'(1X,A18,i9,A6,i9,i9)')
      $      'SPLITTING ELEMENT ',IEL,'  SIDE',ISPLIT(I),NEL
             CALL PRS(S//'$')
             NEL=NEL+1
@@ -999,6 +999,8 @@ C
       ncrnr=2**ndim
       ichk=10
       if (nel.gt.200) ichk=50
+      if (nel.gt.2000) ichk=500
+      if (nel.gt.20000) ichk=5000
       iadj=0
 C
       if (nelold.ne.nel) then
@@ -1105,7 +1107,7 @@ C
             ENDIF
   800    CONTINUE
  1000 CONTINUE
- 1001 FORMAT('  Checking',I5)
+ 1001 FORMAT('  Checking',i9)
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -2701,7 +2703,7 @@ C
 C     Take care of curved sides
 C
       do 200 ie = 1,nel
-      do 200 is = 1,8
+      do 200 is = 1,12
          if (ccurve(is,ie).eq.'s') then
 C           spherical side, rad = curve(4,is,ie)
 c           if (curve(4,is,ie).gt.re)
@@ -2741,14 +2743,16 @@ c-----------------------------------------------------------------------
       subroutine rep_rot  !  replication (translation) rotation option
       include 'basics.inc'
 c
-      call prs('Rep. (1), Rot. (2), Rep/Rot (3) ? (0=abort)$')
+      call prs
+     $ ('Rep. (1), Rot. (2), Rep/Rot (3) Template (4)? (0=abort)$')
       call res(ans,1)
-c
+
       if (ans.eq.'1') call replicate_mesh
       if (ans.eq.'2'.and.ndim.eq.2) call rotate_mesh_2d
       if (ans.eq.'2'.and.ndim.eq.3) call rotate_mesh_3d
       if (ans.eq.'3') call rep_rotate_mesh
-c
+      if (ans.eq.'4') call template_mesh
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2816,10 +2820,12 @@ c        call rotate_submesh_2d(ie2,ie3,angle_deg)
 c-----------------------------------------------------------------------
       subroutine copy_sub_mesh(ie0,ie1,inew)
       include 'basics.inc'
-c
+
+c     Map (ie0:ie1) to (inew:inew+nie)
+
       je = inew
       do ie=ie0,ie1
-         call copyel(ie,je)
+         call copyel_p(ie,je) ! ie --> je; preserve 'P  ' bc w/ shift
          je = je+1
       enddo
 c
@@ -2862,19 +2868,30 @@ c
       close (10)
 c
       do e=1,nel
-      do i=1,2**ndim
-         xt = x(e,i)
-         yt = y(e,i)
-         zt = z(e,i)
-         x(e,i) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
-         y(e,i) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
-         z(e,i) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
-      enddo
+
+        do i=1,2**ndim
+           xt = x(e,i)
+           yt = y(e,i)
+           zt = z(e,i)
+           x(e,i) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+           y(e,i) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+           z(e,i) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+        enddo
+
+        do i=1,27
+           xt = x27(i,e)
+           yt = y27(i,e)
+           zt = z27(i,e)
+           x27(i,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+           y27(i,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+           z27(i,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+        enddo
+
       enddo
 c
       do e=1,nel
-      do f=1,6
-         if (ccurve(f,e).eq.'s') then
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
             xt = curve(1,f,e)
             yt = curve(2,f,e)
             zt = curve(3,f,e)
@@ -2971,6 +2988,224 @@ c-----------------------------------------------------------------------
          endif
       enddo
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine template_to_forms
+
+      include 'basics.inc'
+      integer e,ef,et,e0
+
+c     Form each element within Template into each element within a 
+c     2D or 3D block comprising elements in the subset "Form"
+c
+c       . Template is stored in etemplate0:etemplate1
+c       . Form is stored in     eform0:eform1
+c
+c     Typically, these are stored at the end of the allocated arrays, 
+c     so the upper bound on number of elements is
+c
+c     nel < nelm - (eform1-eform0) - (etemplate1-etemplate0)
+c
+c
+c     Process:  nel_tmpl = number of elements in template
+c               nel_form = number of elements in form
+c
+c     Result:   nel_form x nel_tmpl elements
+
+      ifmid=.true.
+
+      e0=nel
+      do et=etemplate0,etemplate1
+         e0 = e0+1
+         e  = e0 ! mold a copy of et into ef counterpart, put in e
+         do ef=eform0,eform1 
+            call template_shape(e,et,ef) 
+            e=e+nel_templ
+         enddo
+      enddo
+
+      nel = nel + nel_templ*nel_form
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine template_shape(e,et,ef) ! Transform et to ef; Store in e
+      include 'basics.inc'
+      integer e,ef,et
+
+      real jr(27*3),js(27*3),jt(27*3)
+      save jr,js,jt
+      integer etl
+      save etl
+      data etl /0/
+
+      call copyel_p(et,e) ! preserve periodic bcs, with (e-et) shift
+
+c     We assume that standard curved boundaries are lost through
+c     the transformation and that only midside node definitions are
+c     preserved.
+c
+c     The template and form, however, may be defined by their original
+c     curvature information - but only a 27 x 27 transformation matrix
+c     is used.
+c
+      call blank    (ccurve(1,e) ,12)
+      call rzero    (curve(1,1,e),72)
+c
+c     Because The transformation matrix is expensive to generate, we
+c     precompute it on the first call.
+
+      if (et.ne.etl) call gen_jrst(jr,js,jt,et)
+      etl = et
+
+      if (if3d) then
+         call apply_form_3d(x27(1,e),x27(1,ef),jr,js,jt) ! generate 27-noded bricks
+         call apply_form_3d(y27(1,e),y27(1,ef),jr,js,jt)
+         call apply_form_3d(z27(1,e),z27(1,ef),jr,js,jt)
+      else
+         call apply_form_2d(x27(1,e),x27(1,ef),jr,js)
+         call apply_form_2d(y27(1,e),y27(1,ef),jr,js)
+      endif
+
+      call q_to_neklin  (x(e,1),nelm,x27(1,e),if3d)
+      call q_to_neklin  (y(e,1),nelm,y27(1,e),if3d)
+      call q_to_neklin  (z(e,1),nelm,z27(1,e),if3d)
+
+      call fix_m_curve(e)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine apply_form_3d(xo,xi,jr,js,jt) ! generate 27-noded bricks
+
+      real xo(27),xi(3,3,3),jr(27,3),js(27,3),jt(27,3)
+
+      do l=1,27      ! this could probably be slightly improved...but..
+         xo(l) = 0
+         do k=1,3
+         do j=1,3
+         do i=1,3
+           xo(l) = xo(l) + jr(l,i)*js(l,j)*jt(l,k)*xi(i,j,k)
+         enddo
+         enddo
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine apply_form_2d(xo,xi,jr,js) ! generate 9-noded bricks
+
+      real xo(9),xi(3,3),jr(9,3),js(9,3)
+
+      do l=1,9      ! this could probably be slightly improved...but..
+         xo(l) = 0
+         do j=1,3
+         do i=1,3
+           xo(l) = xo(l) + jr(l,i)*js(l,j)*xi(i,j)
+         enddo
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_jrst(jr,js,jt,et)
+      include 'basics.inc'
+
+      real jr(27*3),js(27*3),jt(27*3)
+      integer et
+
+      common /ctmp0/ rt(27),st(27),tt(27),rr(3),wk(27*3)
+
+      if (if3d) then
+         do i=1,27
+            rt(i) = 2*(x27(i,et)-xtmpl_min)/(xtmpl_max-xtmpl_min) - 1.
+            st(i) = 2*(y27(i,et)-ytmpl_min)/(ytmpl_max-ytmpl_min) - 1.
+            tt(i) = 2*(z27(i,et)-ztmpl_min)/(ztmpl_max-ztmpl_min) - 1.
+         enddo
+      else
+         do i=1,9
+            rt(i) = 2*(x27(i,et)-xtmpl_min)/(xtmpl_max-xtmpl_min) - 1.
+            st(i) = 2*(y27(i,et)-ytmpl_min)/(ytmpl_max-ytmpl_min) - 1.
+         enddo
+      endif
+
+      rr(1) = -1
+      rr(2) =  0
+      rr(3) =  1
+
+      n = 3**ndim
+      call gen_int_gz(jr,wk,rt,n,rr,3)
+      call gen_int_gz(js,wk,st,n,rr,3)
+      call gen_int_gz(jt,wk,tt,n,rr,3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_template
+      include 'basics.inc'
+
+      nelo = nel
+      call imp_mesh(.false.)     ! Get template as imported mesh
+
+      nel_templ  = nel-nelo
+      etemplate1 = nelm-3
+      etemplate0 = etemplate1  - (nel_templ-1)
+      call copy_sub_mesh(nelo+1,nel,etemplate0)
+
+c     write(6 ,*) etemplate0,etemplate1,nel_templ,nelo,nel,' etm'
+
+      nel = nelo
+      
+      xtmpl_min = glmin(x27(1,etemplate0),27*nel_templ)
+      xtmpl_max = glmax(x27(1,etemplate0),27*nel_templ)
+      ytmpl_min = glmin(y27(1,etemplate0),27*nel_templ)
+      ytmpl_max = glmax(y27(1,etemplate0),27*nel_templ)
+      ztmpl_min = glmin(z27(1,etemplate0),27*nel_templ)
+      ztmpl_max = glmax(z27(1,etemplate0),27*nel_templ)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine template_mesh
+      include 'basics.inc'
+c
+c     Form each element within Template into each element within a 2D/3D 
+c     block comprising elements in the subset "Form"
+c
+c       . Template is stored in etemplate0:etemplate1
+c       . Form is stored in     eform0:eform1
+c
+c     Typically, these are stored at the end of the allocated arrays, 
+c     so the upper bound on number of elements is
+c
+c     nel < nelm - (eform1-eform0) - (etemplate1-etemplate0)
+c
+c
+c     Process:  nel_tmpl = number of elements in template
+c               nel_form = number of elements in form
+c
+c     Result:   nel_form x nel_tmpl elements
+
+      call get_template
+
+
+c     Move forms (for now, assumed to be whole existant mesh)
+
+      iform0 = 1
+      iform1 = nel
+
+      nel_form = 1 + iform1-iform0 
+      eform1   = etemplate0-1
+      eform0   = eform1 - (nel_form-1)
+      call copy_sub_mesh(iform0,iform1,eform0)
+
+      nel = 0                 ! Nothing left after form-shift
+
+      call template_to_forms  ! Map template to forms
 
       return
       end

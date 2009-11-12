@@ -488,8 +488,9 @@ C                         CHECK IF IT'S ABOVE OR BELOW CENTER
                        ENDIF
                      ENDIF
                      IF (CBC(ISIDUP,IELDUP,IF).EQ.' ') THEN
-                        CALL PRSI('B.C. not yet set for side$',isidup)
-                        CALL PRSI('of element$',IELDUP)
+                        call prsi (
+     $                      'B.C. not set for isidup$',isidup,
+     $                      'of element$',ieldup)
                         go to 113
                      ENDIF
                      CBC3=CBC(ISIDUP,IELDUP,IF)
@@ -1993,7 +1994,10 @@ c
 c     Set any remaining candidate bcs to P
 c
       if (.not.if_lattice) call get_lattice_per_bc
-c
+
+      call mkside   ! moved, 9/1/09 pff
+      call gencen
+
       nsides = 2*ndim
       do if=1,nflds
       do ie=1,nel
@@ -2036,8 +2040,15 @@ C           check for consistency
             ke = bc(1,js,je,if)
             ks = bc(2,js,je,if)
             ck = cbc(js,je,if)
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) cbc(is,ie,if)='p  '
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) nfail = nfail + 1
+            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) then
+               write(6,*) ie,is,je,js,ke,ks,ck,' fail',nfail
+               cbc(is,ie,if)='p  '
+               nfail = nfail + 1
+               write(6,11) (sides(ie,is,k),k=1,3),ie,is,' side i'
+               write(6,11) (sides(je,js,k),k=1,3),je,js,' side j'
+               write(6,11) (sides(ke,ks,k),k=1,3),ke,ks,' side k'
+            endif
+  11        format(1p3e14.5,i8,i3,a7)
          endif
       enddo
       enddo
@@ -2053,7 +2064,10 @@ c
 c     Set any remaining candidate bcs to P
 c
       if (.not.if_lattice) call get_lattice_per_bc
-c
+
+      call mkside   ! moved, 9/1/09 pff
+      call gencen
+
       nsides = 2*ndim
       do if=1,nflds
       do ie=1,nel
@@ -2108,7 +2122,15 @@ c
 c-----------------------------------------------------------------------
       subroutine fndsidb(kside,ke,iside,ie,if,tol)
       include 'basics.inc'
-      real vec1(3),vec2(3),vec3(3)
+      real vec1(3),vec2(3),vec3(3),vecj(3)
+      integer icrn(4,6)
+      save    icrn
+      data    icrn / 1 , 2 , 6 , 5 
+     $             , 2 , 3 , 7 , 6 
+     $             , 3 , 4 , 8 , 7 
+     $             , 4 , 1 , 5 , 8 
+     $             , 1 , 2 , 3 , 4 
+     $             , 5 , 6 , 7 , 8 /
 C
 C     Find a side JSIDE,JEL which corresponds to ISIDE,IE and doesn't
 C     have BC's set already
@@ -2118,50 +2140,42 @@ C
 C     Define Normal to this plane (side), and find the element
 C     center which also lies on this line, and is farthest from
 C     the current element.
-      CALL MKSIDE
-      CALL GENCEN
+c
+c     CALL MKSIDE   ! moved, 9/1/09 pff
+c     CALL GENCEN
 C
 C     Find Sides' Normal Vector at midpoint
-C
-      IC1=ISIDE
-      IC2=ISIDE+1
-      IF(ISIDE.EQ.4)IC2=1
-C     This stuff only relevant for 3d
-      IC3=IC2+4
-      IC4=IC1+4
-      IF (ISIDE.EQ.5) THEN
-         IC1=1
-         IC2=2
-         IC3=3
-         IC4=4
-      ELSE IF(ISIDE.EQ.6) THEN
-         IC1=1+4
-         IC2=2+4
-         IC3=3+4
-         IC4=4+4
-      ENDIF
-      write(s,9) ie,iside,ic1,ic2,ic3,ic4
-    9 format(' iesc14:',6i5,'$')
-      if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+
+      ic1 = icrn(1,iside)
+      ic2 = icrn(2,iside)
+      ic3 = icrn(3,iside)
+      ic4 = icrn(4,iside)
+
+c     write(s,9) ie,iside,ic1,ic2,ic3,ic4
+c   9 format(' iesc14:',6i5,'$')
+c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+
       IF (IF3D) THEN
          VEC1(1)=X(IE,IC3)-X(IE,IC1)
          VEC1(2)=Y(IE,IC3)-Y(IE,IC1)
          VEC1(3)=Z(IE,IC3)-Z(IE,IC1)
-C
+
          VEC2(1)=X(IE,IC4)-X(IE,IC2)
          VEC2(2)=Y(IE,IC4)-Y(IE,IC2)
          VEC2(3)=Z(IE,IC4)-Z(IE,IC2)
-C
+
          CALL CROSS(VEC3,VEC1,VEC2)
+         CALL NORM3D(VEC3)
       ELSE
+
          VEC1(1)=X(IE,IC2)-X(IE,IC1)
          VEC1(2)=Y(IE,IC2)-Y(IE,IC1)
 C
          VEC3(1)= VEC1(2)
          VEC3(2)=-VEC1(1)
          VEC3(3)=0.0
+         CALL NORM3D(VEC3)
       ENDIF
-      CALL NORM3D(VEC3)
 c
       if (if_lattice) then          ! Make vector point in lattice direction
          d1 = dotprod(vec3,ulat1)
@@ -2176,9 +2190,9 @@ c
          endif
       endif
 c
-      write(s,19) vec3(1),vec3(2),vec3(3)
-   19 format(' vec3:',3e13.5,'$')
-      if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+c     write(s,19) vec3(1),vec3(2),vec3(3)
+c  19 format(' vec3:',3e13.5,'$')
+c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
 c
 c     EPS2=(EPSM*RCEN(IE))**2
       EPSM=tol
@@ -2196,7 +2210,28 @@ C        Don't find yourself.
          IF (JE.EQ.IE.AND.JSIDE.EQ.ISIDE) GOTO 100
 C
 C        Don't find a bc which is already defined. (to be 'E')
-         IF (CBC(JSIDE,JE,IF).EQ.'E') GOTO 100
+         IF (CBC(JSIDE,JE,IF).EQ.'E  ') GOTO 100
+c
+c        Check if dot product of surface normals are O(1)
+c
+
+         ic1 = icrn(1,jside)
+         ic2 = icrn(2,jside)
+         ic3 = icrn(3,jside)
+         ic4 = icrn(4,jside)
+
+         vec1(1)=x(je,ic3)-x(je,ic1)
+         vec1(2)=y(je,ic3)-y(je,ic1)
+         vec1(3)=z(je,ic3)-z(je,ic1)
+
+         vec2(1)=x(je,ic4)-x(je,ic2)
+         vec2(2)=y(je,ic4)-y(je,ic2)
+         vec2(3)=z(je,ic4)-z(je,ic2)
+
+         call cross (vecj,vec1,vec2)
+         call norm3d(vecj)
+         dotnorm = dotprod(vec3,vecj)
+         if (abs(dotnorm).lt.0.9) goto 100
 C
 C        OK, is the center of this element side close to the line?
 C
@@ -2204,7 +2239,8 @@ C
          VEC1(2)=SIDES(IE,ISIDE,2)-SIDES(JE,JSIDE,2)
          VEC1(3)=SIDES(IE,ISIDE,3)-SIDES(JE,JSIDE,3)
          DISTP=DOTPROD(VEC1,VEC1)
-         DIST2=DISTP-(DOTPROD(VEC1,VEC3))**2
+         dis13=(dotprod(vec1,vec3))**2
+         dist2=distp-dis13
          if (distp.gt.0) DIST2=DIST2/DISTP
 c        write(6,11) dist2,distp,eps2,dstmax,je,jside
 c  11    format(1p4e12.4,2i6,' dist2')
@@ -2213,90 +2249,18 @@ c        IF (DIST2.LE.EPS2.AND.DISTP.GT.DSTMAX) THEN
             KE    = JE
             KSIDE = JSIDE
             DSTMAX= DISTP
+c     if ((69.le.ie.and.ie.le.76).or.(9114.le.ie.and.ie.le.9120)) then
+c     write(6,12) distp,dist2,(sides(ie,iside,k),k=1,3),ie,iside,' si'
+c     write(6,12) dis13,d2mn ,(sides(je,jside,k),k=1,3),je,jside,' sj'
+c     write(6,12) dis13,d2mn ,(vec1(k),k=1,3),je,jside,'vc1'
+c     write(6,12) dis13,dotnorm ,(vecj(k),k=1,3),je,jside,'vcj'
+c  12 format(1p5e14.5,i8,i3,1x,a3)
+c     endif
+
             D2MN  = DIST2
+
          ENDIF
   100 CONTINUE
-      return
-      end
-c--------------------------------------------------------------------
-      subroutine period_check(ifld)
-c
-c     Adjust adjacency arrays and vertex to acct for
-c     periodic bcs.
-c
-      include 'basics.inc'
-      include 'basicsp.inc'
-c
-      nc       = 2**ndim
-      nfaces   = 2*ndim
-      ncf      = 2**(ndim-1)
-c
-c     March over all elements, looking for periodic face.
-c     Also, check for consistency of P-P bcs.
-c
-      do ie=1,nel
-         do iface = 1,nfaces
-            if (cbc(iface,ie,ifld).eq.'P  ') then
-               je = bc(1,iface,ie,ifld)
-               jf = bc(2,iface,ie,ifld)
-c
-               icons = 0
-               if (cbc(jf,je,ifld).ne.'P  '  ) icons = 1
-               if ( bc(1,jf,je,ifld).ne.ie   ) icons = 2
-               if ( bc(2,jf,je,ifld).ne.iface) icons = 3
-               if (icons.ne.0) then
-                  call blank(line,70)
-                  write(line,1) icons,cbc(jf,je,ifld)
-                  call prs(line)
-                  write(line,2) ie,iface,ifld
-                  call prs(line)
-                  write(line,2) je,jf,ifld
-                  call prs(line)
-    1             format('WARNING: inconsistent per. BCs:',i2,1x,a3,'$')
-    2             format('Reset el/face1:',i6,2i3,' to "p"$')
-                  cbc(iface,ie,ifld) = 'p  '
-                  call rzero(bc(1,iface,ie,ifld),5)
-c
-               endif
-c
-            endif
-         enddo
-      enddo
-c
-      return
-      end
-C-----------------------------------------------------------------------
-      subroutine period_bc_check(if_any_per)
-c
-c     Adjust adjacency arrays and vertex to acct for
-c     periodic bcs.
-c
-      include 'basics.inc'
-      include 'basicsp.inc'
-c
-      logical if_any_per
-C
-      nc       = 2**ndim
-      nfaces   = 2*ndim
-      ncf      = 2**(ndim-1)
-c
-c     March over all elements, looking for periodic face.
-c     Also, check for consistency of P-P bcs.
-c
-      ifld0=2
-      ifld1=1
-      if (ifflow) ifld0=1
-      if (ifheat) ifld1=2+npscal
-c
-      if_any_per = .false.
-      do ifld = ifld0,ifld1
-      do ie=1,nel
-         do iface = 1,nfaces
-            if (cbc(iface,ie,ifld).eq.'P  ') if_any_per = .true.
-         enddo
-      enddo
-      enddo
-c
       return
       end
 c-----------------------------------------------------------------------

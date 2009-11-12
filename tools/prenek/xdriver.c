@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -36,10 +37,10 @@ static XGCValues gcv;
 /* int vfx = 0, vfy = 1097;  */
 
 
-   int windowh = 896,windoww = 952;      /*  PAUL's DEFAULT !!!*/
-/* int windowh = 716,windoww = 662;  */  /* small */
-/* int windowh = 696,windoww = 662;  */  /* small */
-/* int windowh = 726,windoww = 690;  */  /* small */
+/* int windowh = 896,windoww = 952;  */  /*  PAUL's DEFAULT !!!*/
+/* int windowh = 706,windoww = 690;  */  /* small */
+/* int windowh = 826,windoww = 890;  */
+   int windowh = 950,windoww =1022;
 
 int vfx = 0, vfy = 0;
 
@@ -872,7 +873,7 @@ void error (mesg)
 #endif
   {
     /* Trap ctrl c */
-//    signal (SIGINT,signal_handler);
+    signal (SIGINT,signal_handler);
     /* Pop up XWindows */
     SetUpEnv ();
 
