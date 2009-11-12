@@ -112,7 +112,7 @@ c
       open (unit=8,file=string,status='old')
       open (unit=9,file='box.rea')
       call scanout(string,'MESH DATA',9,8,9)
-      read(8,*) i,i,i
+c      read(8,*) i,i,i
       write(9,*) ' *** MESH DATA ***'
       
 c-----------------------------------------------------------------------
@@ -456,19 +456,19 @@ c             BOX
                     ia = mod1(ia,52)
                     if(iffo) then
                       write(9,11) ie,ilev,apt(ia),'0'
-                      write(9,12) x1,x2,x3,x4
-                      write(9,12) y1,y2,y3,y4
+                      write(9,12) x1,x2,x2,x1
+                      write(9,12) y1,y1,y2,y2
                     else
                       igroup = 0
                       call byte_write(igroup, 1)
                       buf(1) = x1
                       buf(2) = x2
-                      buf(3) = x3
-                      buf(4) = x4
+                      buf(3) = x2
+                      buf(4) = x1
                       buf(5) = y1
-                      buf(6) = y2
-                      buf(7) = y3
-                      buf(8) = y4
+                      buf(6) = y1
+                      buf(7) = y2
+                      buf(8) = y2
                       call byte_write(buf,8)
                     endif
                  enddo
