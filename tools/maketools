@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# install path
+# binary path
 bin_nek_tools="$HOME/bin"
 
-# compilers
-CC="pgcc"
-F77="pgf77"
+# specify your compilers here
+F77=""
+CC=""
 
 
 
@@ -42,6 +42,16 @@ if [ $# -eq 0 ]; then
    exit 1
 fi
 
+if [ "$F77" == "" ]; then
+  echo "FATAL ERROR: Specify your Fortran compiler in maketools!"
+  exit 1
+fi
+
+if [ "$CC" == "" ]; then
+  echo "FATAL ERROR: Specify your C compiler in maketools!"
+  exit 1
+fi
+
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
@@ -62,16 +72,21 @@ fi
 
 case $F77 in
   pgf*)        R8="-r8"
+               BIGMEM="-mcmodel=medium"
                ;;
   gfortran)    R8="-fdefault-real-8"
+               BIGMEM="-mcmodel=medium"
                ;;
   ifort)       R8="-r8"
+               BIGMEM="-mcmodel=medium"
                ;;
   pathf*)      R8="-r8"
                ;;
   *xlf*)       R8="-qrealsize=8"
+               BIGMEM="-q64"
                ;;
   ftn)         R8="-r8"
+               BIGMEM="-mcmodel=medium"
                ;;
   *)           exit 1
                echo "Error: Unkown compiler!"
@@ -92,6 +107,9 @@ if [ $? -eq 0 ]; then
 fi
 \rm test_underscore.* 2>/dev/null
 
+
+F77="$F77 $BIGMEM" 
+CC="$CC $BIGMEM" 
 export F77
 export CC
 export bin_nek_tools

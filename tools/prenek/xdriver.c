@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -68,7 +67,7 @@ static int scroll=0;
 static char input_line[81];
 static int input_line_idx=0;
 
-extern int xmainloop();
+extern void xmainloop();
 extern int Quit();
 extern void error();
 
@@ -770,7 +769,7 @@ void TypeChar(c)
 
 
 
-xmainloop (code)
+void xmainloop (code)
      int code;
   {
     Window wind;
@@ -849,12 +848,6 @@ void closew_()
     Quit();
   }
 
-void signal_handler (int sig)
-  {
-    redraw_mesh_() ;
-  }
-
-
 void error (mesg)
      char *mesg;
   {
@@ -872,8 +865,6 @@ void error (mesg)
     void mainc_()
 #endif
   {
-    /* Trap ctrl c */
-    signal (SIGINT,signal_handler);
     /* Pop up XWindows */
     SetUpEnv ();
 
