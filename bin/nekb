@@ -1,12 +1,10 @@
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
+rm -f ioinfo
+mv -f $1.log $1.log1
+mv -f $1.sch $1.sch1
 touch $1.rea
-rm ioinfo
-rm *.lgl
-rm xxt_map.rea
-mv $1.log $1.log1
-mv $1.sch $1.sch1
 nohup time nek5000 > $1.log &
 sleep 2
-rm logfile
+rm -f logfile
 ln $1.log logfile

@@ -1,8 +1,7 @@
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
+rm -f ioinfo
+mv -f $1.log $1.log1
+mv -f $1.sch $1.sch1
 touch $1.rea
-rm ioinfo
-rm *.lgl
-mv $1.log $1.log1
-mv $1.sch $1.sch1
 gdb nek5000
