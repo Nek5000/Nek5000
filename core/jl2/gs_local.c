@@ -4,22 +4,20 @@
 #include "name.h"
 #include "types.h"
 
-#ifdef PREFIX
-#  define gs_gather_array        TOKEN_PASTE(PREFIX,gs_gather_array       )
-#  define gs_init_array          TOKEN_PASTE(PREFIX,gs_init_array         )
-#  define gs_gather              TOKEN_PASTE(PREFIX,gs_gather             )
-#  define gs_scatter             TOKEN_PASTE(PREFIX,gs_scatter            )
-#  define gs_init                TOKEN_PASTE(PREFIX,gs_init               )
-#  define gs_gather_vec          TOKEN_PASTE(PREFIX,gs_gather_vec         )
-#  define gs_scatter_vec         TOKEN_PASTE(PREFIX,gs_scatter_vec        )
-#  define gs_init_vec            TOKEN_PASTE(PREFIX,gs_init_vec           )
-#  define gs_gather_many         TOKEN_PASTE(PREFIX,gs_gather_many        )
-#  define gs_scatter_many        TOKEN_PASTE(PREFIX,gs_scatter_many       )
-#  define gs_init_many           TOKEN_PASTE(PREFIX,gs_init_many          )
-#  define gs_gather_vec_to_many  TOKEN_PASTE(PREFIX,gs_gather_vec_to_many )
-#  define gs_scatter_many_to_vec TOKEN_PASTE(PREFIX,gs_scatter_many_to_vec)
-#  define gs_scatter_vec_to_many TOKEN_PASTE(PREFIX,gs_scatter_vec_to_many)
-#endif
+#define gs_gather_array        PREFIXED_NAME(gs_gather_array       )
+#define gs_init_array          PREFIXED_NAME(gs_init_array         )
+#define gs_gather              PREFIXED_NAME(gs_gather             )
+#define gs_scatter             PREFIXED_NAME(gs_scatter            )
+#define gs_init                PREFIXED_NAME(gs_init               )
+#define gs_gather_vec          PREFIXED_NAME(gs_gather_vec         )
+#define gs_scatter_vec         PREFIXED_NAME(gs_scatter_vec        )
+#define gs_init_vec            PREFIXED_NAME(gs_init_vec           )
+#define gs_gather_many         PREFIXED_NAME(gs_gather_many        )
+#define gs_scatter_many        PREFIXED_NAME(gs_scatter_many       )
+#define gs_init_many           PREFIXED_NAME(gs_init_many          )
+#define gs_gather_vec_to_many  PREFIXED_NAME(gs_gather_vec_to_many )
+#define gs_scatter_many_to_vec PREFIXED_NAME(gs_scatter_many_to_vec)
+#define gs_scatter_vec_to_many PREFIXED_NAME(gs_scatter_vec_to_many)
 
 #include "gs_defs.h"
 GS_DEFINE_IDENTITIES()
@@ -31,17 +29,17 @@ GS_DEFINE_DOM_SIZES()
 #define DEFINE_GATHER(T,OP) \
 static void gather_array_##T##_##OP(T *out, const T *in, uint n) \
 {                                                                \
-  for(;n;--n) { T q = *in++, *p = out++; GS_DO_##OP(*p,q); }     \
+  for(;n;--n) { T q = *in++, *p = out++; GS_DO_##OP(*p,q); }      \
 }
 
 /*------------------------------------------------------------------------------
   The array initialization kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
-static void init_array_##T(T *out, uint n, gs_op_t op) \
-{                                                      \
-  const T e = gs_identity_##T[op];                     \
-  for(;n;--n) *out++=e;                                \
+static void init_array_##T(T *out, uint n, gs_op op) \
+{                                                    \
+  const T e = gs_identity_##T[op];                   \
+  for(;n;--n) *out++=e;                              \
 }
 
 #define DEFINE_PROCS(T) \
@@ -88,10 +86,10 @@ static void scatter_##T(T *out, const unsigned out_stride,         \
   The basic initialization kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
-static void init_##T(T *out, const uint *map, gs_op_t op) \
-{                                                         \
-  uint i; const T e = gs_identity_##T[op];                \
-  while((i=*map++)!=-(uint)1) out[i]=e;                   \
+static void init_##T(T *out, const uint *map, gs_op op) \
+{                                                       \
+  uint i; const T e = gs_identity_##T[op];              \
+  while((i=*map++)!=-(uint)1) out[i]=e;                 \
 }
 
 #define DEFINE_PROCS(T) \
@@ -127,7 +125,7 @@ static void gather_vec_##T##_##OP(T *out, const T *in, const unsigned vn, \
   The vector scatter kernel
 ------------------------------------------------------------------------------*/
 void gs_scatter_vec(void *out, const void *in, const unsigned vn,
-                    const uint *map, gs_dom_t dom)
+                    const uint *map, gs_dom dom)
 {
   unsigned unit_size = vn*gs_dom_size[dom];
   uint i,j;
@@ -144,7 +142,7 @@ void gs_scatter_vec(void *out, const void *in, const unsigned vn,
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
 static void init_vec_##T(T *out, const unsigned vn, \
-                       const uint *map, gs_op_t op) \
+                       const uint *map, gs_op op)   \
 {                                                   \
   uint i; const T e = gs_identity_##T[op];          \
   while((i=*map++)!=-(uint)1) {                     \
@@ -180,8 +178,7 @@ GS_FOR_EACH_DOMAIN(DEFINE_PROCS)
 /*------------------------------------------------------------------------------
   Array kernels
 ------------------------------------------------------------------------------*/
-void gs_gather_array(void *out, const void *in, uint n,
-                     gs_dom_t dom, gs_op_t op)
+void gs_gather_array(void *out, const void *in, uint n, gs_dom dom, gs_op op)
 {
 #define WITH_OP(T,OP) gather_array_##T##_##OP(out,in,n)
 #define WITH_DOMAIN(T) SWITCH_OP(T,op)
@@ -190,7 +187,7 @@ void gs_gather_array(void *out, const void *in, uint n,
 #undef  WITH_OP
 }
 
-void gs_init_array(void *out, uint n, gs_dom_t dom, gs_op_t op)
+void gs_init_array(void *out, uint n, gs_dom dom, gs_op op)
 {
 #define WITH_DOMAIN(T) init_array_##T(out,n,op)
   SWITCH_DOMAIN(dom);
@@ -201,7 +198,7 @@ void gs_init_array(void *out, uint n, gs_dom_t dom, gs_op_t op)
   Plain kernels; vn parameter ignored but present for consistent signatures
 ------------------------------------------------------------------------------*/
 void gs_gather(void *out, const void *in, const unsigned vn,
-               const uint *map, gs_dom_t dom, gs_op_t op)
+               const uint *map, gs_dom dom, gs_op op)
 {
 #define WITH_OP(T,OP) gather_##T##_##OP(out,in,1,map)
 #define WITH_DOMAIN(T) SWITCH_OP(T,op)
@@ -211,7 +208,7 @@ void gs_gather(void *out, const void *in, const unsigned vn,
 }
 
 void gs_scatter(void *out, const void *in, const unsigned vn,
-                const uint *map, gs_dom_t dom)
+                const uint *map, gs_dom dom)
 {
 #define WITH_DOMAIN(T) scatter_##T(out,1,in,1,map)
   SWITCH_DOMAIN(dom);
@@ -219,7 +216,7 @@ void gs_scatter(void *out, const void *in, const unsigned vn,
 }
 
 void gs_init(void *out, const unsigned vn, const uint *map,
-             gs_dom_t dom, gs_op_t op)
+             gs_dom dom, gs_op op)
 {
 #define WITH_DOMAIN(T) init_##T(out,map,op)
   SWITCH_DOMAIN(dom);
@@ -230,7 +227,7 @@ void gs_init(void *out, const unsigned vn, const uint *map,
   Vector kernels
 ------------------------------------------------------------------------------*/
 void gs_gather_vec(void *out, const void *in, const unsigned vn,
-                   const uint *map, gs_dom_t dom, gs_op_t op)
+                   const uint *map, gs_dom dom, gs_op op)
 {
 #define WITH_OP(T,OP) gather_vec_##T##_##OP(out,in,vn,map)
 #define WITH_DOMAIN(T) SWITCH_OP(T,op)
@@ -240,7 +237,7 @@ void gs_gather_vec(void *out, const void *in, const unsigned vn,
 }
 
 void gs_init_vec(void *out, const unsigned vn, const uint *map,
-                 gs_dom_t dom, gs_op_t op)
+                 gs_dom dom, gs_op op)
 {
 #define WITH_DOMAIN(T) init_vec_##T(out,vn,map,op)
   SWITCH_DOMAIN(dom);
@@ -251,7 +248,7 @@ void gs_init_vec(void *out, const unsigned vn, const uint *map,
   Multiple array kernels
 ------------------------------------------------------------------------------*/
 void gs_gather_many(void *out, const void *in, const unsigned vn,
-                    const uint *map, gs_dom_t dom, gs_op_t op)
+                    const uint *map, gs_dom dom, gs_op op)
 {
   uint k;
   typedef void *ptr_to_void; typedef const void *ptr_to_const_void;
@@ -264,7 +261,7 @@ void gs_gather_many(void *out, const void *in, const unsigned vn,
 }
 
 void gs_scatter_many(void *out, const void *in, const unsigned vn,
-                     const uint *map, gs_dom_t dom)
+                     const uint *map, gs_dom dom)
 {
   uint k;
   typedef void *ptr_to_void; typedef const void *ptr_to_const_void;
@@ -275,7 +272,7 @@ void gs_scatter_many(void *out, const void *in, const unsigned vn,
 }
 
 void gs_init_many(void *out, const unsigned vn, const uint *map,
-                  gs_dom_t dom, gs_op_t op)
+                  gs_dom dom, gs_op op)
 {
   uint k;
   typedef void *ptr_to_void; const ptr_to_void *p = out;
@@ -290,7 +287,7 @@ void gs_init_many(void *out, const unsigned vn, const uint *map,
   Scatter from strided array -> multiple arrays,
 ------------------------------------------------------------------------------*/
 void gs_gather_vec_to_many(void *out, const void *in, const unsigned vn,
-                           const uint *map, gs_dom_t dom, gs_op_t op)
+                           const uint *map, gs_dom dom, gs_op op)
 {
   unsigned i; const unsigned unit_size = gs_dom_size[dom];
   typedef void *ptr_to_void;
@@ -304,7 +301,7 @@ void gs_gather_vec_to_many(void *out, const void *in, const unsigned vn,
 }
 
 void gs_scatter_many_to_vec(void *out, const void *in, const unsigned vn,
-                            const uint *map, gs_dom_t dom)
+                            const uint *map, gs_dom dom)
 {
   unsigned i; const unsigned unit_size = gs_dom_size[dom];
   typedef const void *ptr_to_const_void;
@@ -316,7 +313,7 @@ void gs_scatter_many_to_vec(void *out, const void *in, const unsigned vn,
 }
 
 void gs_scatter_vec_to_many(void *out, const void *in, const unsigned vn,
-                            const uint *map, gs_dom_t dom)
+                            const uint *map, gs_dom dom)
 {
   unsigned i; const unsigned unit_size = gs_dom_size[dom];
   typedef void *ptr_to_void;

@@ -1,27 +1,25 @@
-#include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
 #include <float.h>
 #include <string.h>
 #include <math.h>
-
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
+#include "gs_defs.h"
+#include "comm.h"
+#include "mem.h"
 #include "sort.h"
 #include "sarray_sort.h"
 #include "sparse_cholesky.h"
-#include "gs_defs.h"
-#include "comm.h"
 #include "gs.h"
 
-#ifdef PREFIX
-#  define crs_setup TOKEN_PASTE(PREFIX,crs_setup)
-#  define crs_solve TOKEN_PASTE(PREFIX,crs_solve)
-#  define crs_stats TOKEN_PASTE(PREFIX,crs_stats)
-#  define crs_free  TOKEN_PASTE(PREFIX,crs_free )
-#endif
+#define crs_setup PREFIXED_NAME(crs_setup)
+#define crs_solve PREFIXED_NAME(crs_solve)
+#define crs_stats PREFIXED_NAME(crs_stats)
+#define crs_free  PREFIXED_NAME(crs_free )
 
 /*
   portable log base 2
@@ -59,7 +57,7 @@ typedef struct {
 
   /* communication */
 
-  comm_t comm;
+  struct comm comm;
   uint pcoord;   /* coordinate in communication tree */ 
   unsigned plevels; /* # of stages of communication */
   sint *pother;     /* let p = pother[i], then during stage i of fan-in,
@@ -68,7 +66,7 @@ typedef struct {
                        fan-out is just the reverse ...
                        on proc 0, pother is never negative
                        on others, pother is negative for the last stage only */
-  comm_req_t *req;
+  comm_req *req;
   
   /* separators */
 
@@ -160,7 +158,7 @@ static void locate_proc(xxt_data *data)
   data->nsep = level+1;
   data->plevels = data->nsep-1;
   data->pother = tmalloc(sint,data->plevels);
-  data->req = tmalloc(comm_req_t,data->plevels);
+  data->req = tmalloc(comm_req,data->plevels);
   for(level=0;level<data->plevels;++level) {
     if((c&1)==1) {
       uint targ = id - (n-(odd&1));
@@ -176,7 +174,7 @@ static void locate_proc(xxt_data *data)
 
 /* the tuple list describing the condensed dofs:
    [(separator level, share count, global id)] */
-typedef struct { ulong id; uint level, count; } dof_t;
+typedef struct { ulong id; uint level, count; } s_dof;
 
 /* determine the size of each separator;
    sums the separator sizes following the fan-in, fan-out comm. pattern
@@ -188,7 +186,7 @@ static void discover_sep_sizes(xxt_data *data, array *dofa, buffer *buf)
   const uint n = dofa->n;
   float *v, *recv;
   unsigned i,lvl; uint j;
-  const dof_t *dof = dofa->ptr;
+  const s_dof *dof = dofa->ptr;
 
   buffer_reserve(buf,2*ns*sizeof(float));
   v=buf->ptr, recv=v+ns;
@@ -250,7 +248,7 @@ static ulong *unique_nonzero(ulong *A, ulong *Aend)
 }
 
 static void merge_sep_ids(xxt_data *data, ulong *sep_id, ulong *other,
-                          ulong *work, unsigned s0)
+                          ulong *work, unsigned s0, buffer *buf)
 {
   const unsigned ns = data->nsep;
   unsigned s;
@@ -258,10 +256,9 @@ static void merge_sep_ids(xxt_data *data, ulong *sep_id, ulong *other,
   for(s=s0;s<ns;++s) {
     ulong *end;
     uint size = data->sep_size[s];
-    buffer buf = { work+4*size, 0, 2*size*sizeof(ulong) };
-    memcpy(work+2*size,p,size*sizeof(ulong));
-    memcpy(work+3*size,q,size*sizeof(ulong));
-    sortv_long(work, work+2*size,2*size,sizeof(ulong), &buf,0);
+    memcpy(work     ,p,size*sizeof(ulong));
+    memcpy(work+size,q,size*sizeof(ulong));
+    sortv_long(work, work,2*size,sizeof(ulong), buf);
     end = unique_nonzero(work,work+2*size);
     memcpy(p,work,(end-work)*sizeof(ulong));
     p+=size, q+=size;
@@ -274,7 +271,7 @@ static void init_sep_ids(xxt_data *data, array *dofa, ulong *xid)
   const uint n=data->cn, *sep_size=data->sep_size;
   unsigned s=1;
   uint i, size;
-  const dof_t *dof = dofa->ptr;
+  const s_dof *dof = dofa->ptr;
   if(ns==1) return;
   size=sep_size[s];
   for(i=data->ln;i<n;++i) {
@@ -296,7 +293,7 @@ static void init_sep_ids(xxt_data *data, array *dofa, ulong *xid)
 static void find_perm_x2c(uint ln, uint cn, const array *dofc,
                           uint xn, const ulong *xid, sint *perm)
 {
-  const dof_t *dof = dofc->ptr, *dof_end = dof+cn;
+  const s_dof *dof = dofc->ptr, *dof_end = dof+cn;
   const ulong *xid_end = xid+xn; uint i=ln;
   dof+=ln;
   while(dof!=dof_end) {
@@ -308,7 +305,7 @@ static void find_perm_x2c(uint ln, uint cn, const array *dofc,
 }
 
 /* sets: perm_x2c */
-static sint* discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
+static sint *discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
 {
   const unsigned ns=data->nsep, nl=data->plevels;
   const uint xn=data->xn, *sep_size=data->sep_size;
@@ -318,8 +315,7 @@ static sint* discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
   sint *perm_x2c;
   
   size=0; for(lvl=1;lvl<ns;++lvl) if(sep_size[lvl]>size) size=sep_size[lvl];
-  buffer_reserve(buf,(2*xn+6*size)*sizeof(ulong));
-  xid=buf->ptr, recv=xid+xn, work=recv+xn;
+  xid=tmalloc(ulong,2*xn+2*size), recv=xid+xn, work=recv+xn;
   
   init_sep_ids(data,dofa,xid);
 
@@ -332,7 +328,7 @@ static sint* discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
         comm_send(&data->comm,p   ,size*sizeof(ulong),-other-1,size);
       } else {
         comm_recv(&data->comm,recv,size*sizeof(ulong),other,size);
-        merge_sep_ids(data,p,recv,work,lvl+1);
+        merge_sep_ids(data,p,recv,work,lvl+1,buf);
       }
       ss=data->sep_size[lvl+1];
       if(ss>=size || lvl==nl-1) break;
@@ -353,7 +349,8 @@ static sint* discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
  
   perm_x2c=tmalloc(sint,xn);
   find_perm_x2c(data->ln,data->cn,dofa, xn,xid, perm_x2c);
-
+  free(xid);
+  
   return perm_x2c;
 }
 
@@ -441,9 +438,7 @@ static double sum(xxt_data *data, double v, uint n, uint tag)
 static uint unique_ids(uint n, const ulong *id, sint *perm, buffer *buf)
 {
   uint *p, i, un=0; ulong last=0;
-  buffer_reserve(buf,sortp_worksize(n,n*sizeof(uint)));
-  p = buf->ptr; buf->n=n*sizeof(uint);
-  sortp_long(p,0, id,n,sizeof(ulong), buf,0);
+  p = sortp_long(buf,0, id,n,sizeof(ulong));
   for(i=0;i<n;++i) {
     uint j = p[i]; ulong v = id[j];
     if(v==0) perm[j]=-1;
@@ -463,43 +458,42 @@ static uint unique_ids(uint n, const ulong *id, sint *perm, buffer *buf)
            as well as the permutation to get there from the user's list */
 /* sets: un, cn, perm_u2c */
 static void discover_dofs(xxt_data *data, uint n, const ulong *id,
-                          array *dofa, buffer *buf, const comm_t *comm)
+                          array *dofa, buffer *buf, const struct comm *comm)
 {
   const uint pcoord = data->pcoord, ns=data->nsep;
   sint *perm;
   uint i, cn, *p, *pi;
   ulong *bid;
-  gs_data *gs; long *v;
-  dof_t *dof;
+  gs_data *gsh; sint *v;
+  s_dof *dof;
   
   data->un = n;
   data->perm_u2c = perm = tmalloc(sint,n);
   data->cn = cn = unique_ids(n,id,perm,buf);
-  array_init(dof_t,dofa,cn), dofa->n=cn, dof=dofa->ptr;
+  array_init(s_dof,dofa,cn), dofa->n=cn, dof=dofa->ptr;
   buffer_reserve(buf,cn*sizeof(ulong)), bid=buf->ptr;
   for(i=0;i<n;++i) if(perm[i]>=0) bid[perm[i]]=dof[perm[i]].id=id[i];
 
-  gs = gs_setup((const slong*)bid,cn,comm);
-  
-  buffer_reserve(buf,cn*sizeof(long));
-  v = buf->ptr;
+  gsh = gs_setup((const slong*)bid,cn,comm);
+  v = tmalloc(sint,cn);
 
   for(i=0;i<cn;++i) v[i]=pcoord;
-  gs_op(v,gs_long,gs_bpr,0,gs,0);
+  gs(v,gs_sint,gs_bpr,0,gsh,buf);
   for(i=0;i<cn;++i) dof[i].level=ns-1-lg((uint)v[i]);
   
   for(i=0;i<cn;++i) v[i]=1;
-  gs_op(v,gs_long,gs_add,0,gs,0);
+  gs(v,gs_sint,gs_add,0,gsh,buf);
   for(i=0;i<cn;++i) dof[i].count=v[i];
   
-  gs_free(gs);
+  free(v);
+  gs_free(gsh);
 
-  buf->n=0;
-  sarray_sort(dof_t,dof,cn, level,0, buf);
-  p=buf->ptr;
+  if(!cn) return;
+  buffer_reserve(buf,2*cn*sizeof(uint));
+  p = sortp(buf,0, &dof[0].level,cn,sizeof(s_dof));
   pi = p+cn; for(i=0;i<cn;++i) pi[p[i]]=i;
   for(i=0;i<n;++i) if(perm[i]>=0) perm[i]=pi[perm[i]];
-
+  sarray_permute(s_dof,dof,cn, buf);
 }
 
 static double inner(const double *u, const double *v, unsigned n)
@@ -651,14 +645,14 @@ static void orthogonalize(xxt_data *data, csr_mat *A_ss, sint *perm_x2c,
   }
 }
 
-typedef struct { uint i,j; double v; } yale_mat_t;
+typedef struct { uint i,j; double v; } yale_mat;
 
 /* produces CSR matrix from Yale-like format, summing duplicates */
 static void condense_matrix(array *mat, uint nr, csr_mat *out, buffer *buf)
 {
   uint k, nz=mat->n;
-  yale_mat_t *p, *q;
-  sarray_sort_two(yale_mat_t,mat->ptr,mat->n, i,0, j,0, buf);
+  yale_mat *p, *q;
+  sarray_sort_two(yale_mat,mat->ptr,mat->n, i,0, j,0, buf);
   
   p = mat->ptr;
   for(k=0;k+1<nz;++k,++p) if(p[0].i==p[1].i && p[0].j==p[1].j) break;
@@ -691,10 +685,10 @@ static void separate_matrix(
 {
   uint k,n;
   array mat_ll, mat_sl, mat_ss;
-  yale_mat_t *mll, *msl, *mss;
-  array_init(yale_mat_t,&mat_ll,2*nz), mll=mat_ll.ptr;
-  array_init(yale_mat_t,&mat_sl,2*nz), msl=mat_sl.ptr;
-  array_init(yale_mat_t,&mat_ss,2*nz), mss=mat_ss.ptr;
+  yale_mat *mll, *msl, *mss;
+  array_init(yale_mat,&mat_ll,2*nz), mll=mat_ll.ptr;
+  array_init(yale_mat,&mat_sl,2*nz), msl=mat_sl.ptr;
+  array_init(yale_mat,&mat_ss,2*nz), mss=mat_ss.ptr;
   for(k=0;k<nz;++k) {
     sint i=perm[Ai[k]], j=perm[Aj[k]];
     if(i<0 || j<0 || Aj[k]<Ai[k] || A[k]==0) continue;
@@ -722,7 +716,7 @@ static void separate_matrix(
 
 xxt_data *crs_setup(uint n, const ulong *id,
                     uint nz, const uint *Ai, const uint *Aj, const double *A,
-                    uint null_space, const comm_t *comm)
+                    uint null_space, const struct comm *comm)
 {
   xxt_data *data = tmalloc(xxt_data,1);
   sint *perm_x2c;
@@ -743,7 +737,7 @@ xxt_data *crs_setup(uint n, const ulong *id,
 
   perm_x2c = discover_sep_ids(data,&dofa,&buf);
   if(data->null_space) {
-    uint i; double count = 0; dof_t *dof = dofa.ptr;
+    uint i; double count = 0; s_dof *dof = dofa.ptr;
     for(i=0;i<data->cn;++i) count+=1/(double)dof[i].count;
     count=1/sum(data,count,data->xn,0);
     data->share_weight=tmalloc(double,data->cn);
@@ -832,17 +826,17 @@ void crs_stats(xxt_data *data)
     printf("xxt: shared dofs on %d = %d\n",(int)data->comm.id,(int)data->sn);
   }
   a=data->ln;
-  comm_allreduce(&a,&b,1,&data->comm,gs_int,gs_max);
+  comm_allreduce(&data->comm,gs_int,gs_max, &a,1, &b);
   if(data->comm.id==0) printf("xxt: max non-shared dofs = %d\n",a);
   a=data->sn;
-  comm_allreduce(&a,&b,1,&data->comm,gs_int,gs_max);
+  comm_allreduce(&data->comm,gs_int,gs_max, &a,1, &b);
   if(data->comm.id==0) printf("xxt: max shared dofs = %d\n",a);
   xcol=data->xn; if(xcol&&data->null_space) --xcol;
   a=xcol;
-  comm_allreduce(&a,&b,1,&data->comm,gs_int,gs_max);
+  comm_allreduce(&data->comm,gs_int,gs_max, &a,1, &b);
   if(data->comm.id==0) printf("xxt: max X cols = %d\n",a);
   a=data->Xp[xcol]*sizeof(double);
-  comm_allreduce(&a,&b,1,&data->comm,gs_int,gs_max);
+  comm_allreduce(&data->comm,gs_int,gs_max, &a,1, &b);
   if(data->comm.id==0) printf("xxt: max X size = %d bytes\n",a);
 }
 

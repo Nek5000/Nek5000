@@ -3,10 +3,12 @@
 #include <stdlib.h>
 
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
+#include "mem.h"
 #include "comm.h"
 #include "crystal.h"
+#include "sort.h"
 #include "sarray_sort.h"
 #include "sarray_transfer.h"
 
@@ -40,12 +42,8 @@
 
   --------------------------------------------------------------------------*/
 
-#ifdef PREFIX
-#  undef   crystal_free
-#  define ccrystal_free  TOKEN_PASTE(PREFIX,crystal_free)
-#else
-#  define ccrystal_free  crystal_free
-#endif
+#undef   crystal_free
+#define ccrystal_free  PREFIXED_NAME(crystal_free)
 
 #define fcrystal_setup           \
   FORTRAN_NAME(crystal_setup          ,CRYSTAL_SETUP          )
@@ -82,14 +80,13 @@ void fcrystal_ituple_sort(const sint *handle,
   sint nk = *nkey;
   buffer *buf;
   if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    failwith("invalid handle to crystal_ituple_sort");
+    fail(1,"invalid handle to crystal_ituple_sort");
   buf = &handle_array[*handle]->data;
   if(--nk>=0) {
-    sarray_sort_begin_(A,*n, 0,buf,
-                       ALIGNOF(sint),(keys[nk]-1)*sizeof(sint),size);
+    sortp(buf,0, (uint*)&A[keys[nk]-1],*n,size);
     while(--nk>=0)
-      sarray_sort_cont_(A,*n, 0,buf, (keys[nk]-1)*sizeof(sint),size);
-    sarray_sort_end_(A,*n,buf,ALIGNOF(sint),size);
+      sortp(buf,1, (uint*)&A[keys[nk]-1],*n,size);
+    sarray_permute_(ALIGNOF(sint),size,A,*n, buf);
   }
 }
 
@@ -99,17 +96,17 @@ void fcrystal_ituple_transfer(const sint *handle,
 {
   array ar;
   if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    failwith("invalid handle to crystal_ituple_transfer");
+    fail(1,"invalid handle to crystal_ituple_transfer");
   ar.ptr=A, ar.n=*n, ar.max=*nmax;
-  sarray_transfer_(&ar,1,handle_array[*handle],
-                   (*proc_key-1)*sizeof(sint),(*m)*sizeof(sint));
+  sarray_transfer_(&ar,(*m)*sizeof(sint),(*proc_key-1)*sizeof(sint),
+                   1,handle_array[*handle]);
   *n=ar.n;
 }
 
 void fcrystal_free(sint *handle)
 {
   if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    failwith("invalid handle to crystal_free");
+    fail(1,"invalid handle to crystal_free");
   ccrystal_free(handle_array[*handle]);
   free(handle_array[*handle]);
   handle_array[*handle] = 0;

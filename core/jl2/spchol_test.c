@@ -1,8 +1,10 @@
-#include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "name.h"
+#include "fail.h"
 #include "types.h"
-#include "errmem.h"
+#include "mem.h"
 #include "sparse_cholesky.h"
 
 int main()

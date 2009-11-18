@@ -1,0 +1,27 @@
+comm.o: comm.c comm.h gs_local.h gs_defs.h tensor.h types.h fail.h name.h
+comm_test.o: comm_test.c comm.h gs_defs.h types.h fail.h name.h
+crystal.o: crystal.c mem.h comm.h types.h fail.h name.h
+crystal_test.o: crystal_test.c crystal.h mem.h comm.h types.h fail.h name.h
+fail.o: fail.c comm.h types.h fail.h name.h
+fcrs.o: fcrs.c crs.h comm.h mem.h types.h fail.h name.h
+fcrystal.o: fcrystal.c sarray_transfer.h sarray_sort.h sort.h crystal.h comm.h mem.h types.h fail.h name.h
+gs.o: gs.c sarray_transfer.h sarray_sort.h crystal.h sort.h mem.h comm.h gs_local.h gs_defs.h types.h fail.h name.h
+gs_local.o: gs_local.c gs_defs.h types.h name.h
+gs_test.o: gs_test.c gs.h gs_defs.h mem.h comm.h types.h fail.h name.h
+gs_test_old.o: gs_test_old.c types.h name.h
+gs_unique_test.o: gs_unique_test.c gs.h gs_defs.h mem.h comm.h types.h fail.h name.h
+sarray_sort.o: sarray_sort.c sort.h mem.h fail.h types.h name.h
+sarray_sort_test.o: sarray_sort_test.c sarray_sort.h sort.h mem.h types.h fail.h name.h
+sarray_transfer.o: sarray_transfer.c sort.h crystal.h mem.h comm.h types.h fail.h name.h
+sarray_transfer_test.o: sarray_transfer_test.c sarray_transfer.h crystal.h mem.h comm.h types.h fail.h name.h
+sort.o: sort.c sort_imp.h sort_imp.h sort_imp.h mem.h types.h fail.h name.h
+sort_test2.o: sort_test2.c sort.h mem.h types.h fail.h name.h
+sort_test.o: sort_test.c sort.h mem.h types.h fail.h name.h
+sparse_cholesky.o: sparse_cholesky.c sort.h mem.h types.h fail.h name.h
+spchol_test.o: spchol_test.c sparse_cholesky.h mem.h types.h fail.h name.h
+tensor.o: tensor.c types.h name.h
+xxt.o: xxt.c gs.h sparse_cholesky.h sarray_sort.h sort.h mem.h comm.h gs_defs.h types.h fail.h name.h
+xxt_test2.o: xxt_test2.c crs.h mem.h comm.h types.h fail.h name.h
+xxt_test.o: xxt_test.c crs.h comm.h types.h fail.h name.h
+
+OBJECTS= comm.o comm_test.o crystal.o crystal_test.o fail.o fcrs.o fcrystal.o gs.o gs_local.o gs_test.o gs_test_old.o gs_unique_test.o sarray_sort.o sarray_sort_test.o sarray_transfer.o sarray_transfer_test.o sort.o sort_test2.o sort_test.o sparse_cholesky.o spchol_test.o tensor.o xxt.o xxt_test2.o xxt_test.o

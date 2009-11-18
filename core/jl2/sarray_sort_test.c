@@ -1,41 +1,44 @@
-#include <stdio.h>
-#include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <limits.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
+#include "mem.h"
+#include "sort.h"
 #include "sarray_sort.h"
 
 int main()
 {
-  typedef struct { double d; slong l; sint i; float f; } rec_t;
+  struct rec { double d; slong l; sint i; float f; };
   buffer buf = {0,0,0};
-  rec_t recs[500];
+  struct rec rec[500];
   uint i;
   
   for(i=0;i<500;++i) {
     sint num1 = rand() & 0xff;
     slong num2 = rand();
-    /*num2<<=(CHAR_BIT)*sizeof(int)-1;
+    num2<<=(CHAR_BIT)*sizeof(int)-1;
     num2|=rand();
     num2<<=(CHAR_BIT)*sizeof(int)-1;
-    num2|=rand();*/
-    recs[i].d = num2;
-    recs[i].f = num2;
-    recs[i].l = num2;
-    recs[i].i = num1;
+    num2|=rand();
+    num2= num2<0?-num2:num2;
+    rec[i].d = num2;
+    rec[i].f = num2;
+    rec[i].l = num2;
+    rec[i].i = num1;
   }
-  sarray_sort_two(rec_t,recs,500, i,0, l,1, &buf);
+  sarray_sort_two(struct rec,rec,500, i,0, l,1, &buf);
   for(i=0;i<500;++i)
     printf("%g\t%g\t%ld\t%d\n",
-      recs[i].d,recs[i].f,(long)recs[i].l,(int)recs[i].i);
+      rec[i].d,rec[i].f,(long)rec[i].l,(int)rec[i].i);
 
   printf("\n");
-  sarray_sort(rec_t,recs,500, l,1, &buf);
+  sarray_sort(struct rec,rec,500, l,1, &buf);
   for(i=0;i<500;++i)
     printf("%g\t%g\t%ld\t%d\n",
-      recs[i].d,recs[i].f,(long)recs[i].l,(int)recs[i].i);
+      rec[i].d,rec[i].f,(long)rec[i].l,(int)rec[i].i);
   buffer_free(&buf);
   return 0;
 }

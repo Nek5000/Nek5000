@@ -1,5 +1,5 @@
 #if !defined(T) || !defined(SORT_SUFFIX)
-#error sort_imp.c not meant to be compiled by itself
+#error sort_imp.h not meant to be compiled by itself
 #endif
 
 #define sort_data       TOKEN_PASTE(sort_data      ,SORT_SUFFIX)
@@ -16,16 +16,13 @@
 #define radix_passp_be  TOKEN_PASTE(radix_passp_be, SORT_SUFFIX)
 #define radix_sortp     TOKEN_PASTE(radix_sortp    ,SORT_SUFFIX)
 #define merge_sortv     TOKEN_PASTE(merge_sortv    ,SORT_SUFFIX)
+#define merge_copy_perm TOKEN_PASTE(merge_copy_perm,SORT_SUFFIX)
 #define merge_sortp0    TOKEN_PASTE(merge_sortp0   ,SORT_SUFFIX)
 #define merge_sortp     TOKEN_PASTE(merge_sortp    ,SORT_SUFFIX)
+#define heap_sortv      TOKEN_PASTE(heap_sortv     ,SORT_SUFFIX)
 
-#ifdef PREFIX
-#  define sortv TOKEN_PASTE(TOKEN_PASTE(PREFIX,sortv),SORT_SUFFIX)
-#  define sortp TOKEN_PASTE(TOKEN_PASTE(PREFIX,sortp),SORT_SUFFIX)
-#else
-#  define sortv TOKEN_PASTE(sortv,SORT_SUFFIX)
-#  define sortp TOKEN_PASTE(sortp,SORT_SUFFIX)
-#endif
+#define sortv PREFIXED_NAME(TOKEN_PASTE(sortv,SORT_SUFFIX))
+#define sortp PREFIXED_NAME(TOKEN_PASTE(sortp,SORT_SUFFIX))
 
 typedef struct { T v; uint i; } sort_data;
 
@@ -52,6 +49,8 @@ typedef struct { T v; uint i; } sort_data;
       which is used to skip digit positions for which all inputs have zeros
 
   ----------------------------------------------------------------------------*/
+
+#define STATIC_DIGIT_BUCKETS 1
 
 #define DIGIT_BITS   8
 #define DIGIT_VALUES (1<<DIGIT_BITS)
@@ -100,8 +99,15 @@ static T radix_count(uint count[DIGITS][DIGIT_VALUES],
 
 static void radix_offsets(uint *c)
 {
-  uint sum=0, t, *ce=c+DIGIT_VALUES;
-  do t=*c, *c++ = sum, sum+=t; while(c!=ce);
+  uint *ce = c+DIGIT_VALUES;
+  uint sum = 0;
+  do {
+    uint c0=c[0], c1=c[1], c2=c[2], c3=c[3]; 
+    uint o1=sum+c0, o2=o1+c1, o3=o2+c2;
+    c[0]=sum, c[1]=o1, c[2]=o2, c[3]=o3;
+    sum = o3+c3;
+    c+=4;
+  } while(c!=ce);
 }
 
 static unsigned radix_zeros(T bitorkey, uint count[DIGITS][DIGIT_VALUES],
@@ -122,9 +128,8 @@ static void radix_passv(const T *A, const T *end, const unsigned stride,
 }
 
 static void radix_sortv(T *out, const T *A, uint n, const unsigned stride,
-                        T *work)
+                        T *work, uint count[DIGITS][DIGIT_VALUES])
 {
-  uint count[DIGITS][DIGIT_VALUES];
   const T *end = &INDEX_PTR(A,stride,n);
   T bitorkey = radix_count(count, A,end,stride);
   unsigned shift[DIGITS]; uint *offsets[DIGITS];
@@ -133,14 +138,15 @@ static void radix_sortv(T *out, const T *A, uint n, const unsigned stride,
     memset(out,0,n*sizeof(T));
   } else {
     T *src, *dst; unsigned d;
-    if((digits&1)==1) src=out,dst=work;
-                 else dst=out,src=work;
+    if(out==A || (digits&1)==0) dst=out,src=work;
+                           else src=out,dst=work;
     radix_passv(A,end,stride,shift[0],offsets[0],src);
     for(d=1;d!=digits;++d) {
       T *t;
       radix_passv(src,src+n,sizeof(T),shift[d],offsets[d],dst);
       t=src,src=dst,dst=t;
     }
+    if(src!=out) memcpy(out,src,n*sizeof(T));
   }
 }
 
@@ -201,19 +207,19 @@ static void radix_passp_be(uint *p,
                            sort_data *work)
 {
   uint *q = p, *qe = p+n;
+  uint *w = &work[0].i;
   do {
     uint j = *q++;
     T v = INDEX_PTR(A,stride,j);
-    work[off[(v>>sh)&DIGIT_MASK]++].i=j;
+    w[off[(v>>sh)&DIGIT_MASK]++]=j;
   } while(q!=qe);
-  q=p,qe=p+n; do *q++ = (work++)->i; while(q!=qe);
+  memcpy(p,w,n*sizeof(uint));
 }
 
 static void radix_sortp(uint *idx, uint perm_start,
                         const T *A, uint n, const unsigned stride,
-                        sort_data *work)
+                        sort_data *work, uint count[DIGITS][DIGIT_VALUES])
 {
-  uint count[DIGITS][DIGIT_VALUES];
   T bitorkey = radix_count(count, A,&INDEX_PTR(A,stride,n),stride);
   unsigned shift[DIGITS]; uint *offsets[DIGITS];
   unsigned digits = radix_zeros(bitorkey,count,shift,offsets);
@@ -310,6 +316,24 @@ static void merge_sortv(T *out, const T *A, uint An, const unsigned stride,
 #undef DATA
 }
 
+static void merge_copy_perm(uint *idx, const sort_data *p, uint n)
+{
+  /*const sort_data *pe = p+n;
+  do *idx++ = (p++)->i; while(p!=pe);*/
+  uint n_by_8 = (n+7)/8;
+  switch(n%8) {
+    case 0: do { *idx++ = (p++)->i;
+    case 7:      *idx++ = (p++)->i;
+    case 6:      *idx++ = (p++)->i;
+    case 5:      *idx++ = (p++)->i;
+    case 4:      *idx++ = (p++)->i;
+    case 3:      *idx++ = (p++)->i;
+    case 2:      *idx++ = (p++)->i;
+    case 1:      *idx++ = (p++)->i;
+    } while (--n_by_8 > 0);
+  }
+}
+
 static void merge_sortp0(uint *idx, const T *A, uint An, const unsigned stride,
                          sort_data *work)
 {
@@ -321,10 +345,7 @@ static void merge_sortp0(uint *idx, const T *A, uint An, const unsigned stride,
 #undef SETVAL
 #undef VAL
 #undef DATA
-  {
-    const sort_data *p = buf[0], *pe = p+An;
-    do *idx++ = (p++)->i; while(p!=pe);
-  }
+  merge_copy_perm(idx,buf[0],An);
 }
 
 static void merge_sortp(uint *idx, const T *A, uint An, const unsigned stride,
@@ -338,15 +359,46 @@ static void merge_sortp(uint *idx, const T *A, uint An, const unsigned stride,
 #undef SETVAL
 #undef VAL
 #undef DATA
-  {
-    const sort_data *p = buf[0], *pe = p+An;
-    do *idx++ = (p++)->i; while(p!=pe);
-  }
+  merge_copy_perm(idx,buf[0],An);
 }
 
 #undef MERGE_SORT
 #undef MERGE_3
 #undef MERGE_2
+
+/*------------------------------------------------------------------------------
+  
+  Heap Sort
+  
+  in-place, stability unobservable; O(n log n) time
+
+  ----------------------------------------------------------------------------*/
+static void heap_sortv(T *A, uint n)
+{
+  unsigned i;
+  /* build heap */
+  for(i=1;i<n;++i) {
+    T item = A[i];
+    unsigned h=i, p = (h-1)>>1;
+    if(A[p] >= item) continue;
+    do A[h]=A[p], h=p, p=(p-1)>>1; while(h && A[p] < item);
+    A[h] = item;
+  }
+  /* extract */
+  for(i=n-1;i;--i) {
+    T item = A[i];
+    unsigned h = 0;
+    A[i] = A[0];
+    for(;;) {
+      unsigned ch = 1+(h<<1), r = ch+1;
+      if(r<i && A[ch] < A[r]) ch=r;
+      if(ch>=i || item >= A[ch]) break;
+      A[h]=A[ch], h=ch;
+    }
+    A[h] = item;
+  }
+}
+
 
 /*------------------------------------------------------------------------------
   
@@ -358,48 +410,85 @@ static void merge_sortp(uint *idx, const T *A, uint An, const unsigned stride,
   result = O(n) sort with good performance for all n
   
   A, n, stride : specifices the input, stride in bytes
-  out : the sorted values or indices on output
+  out : the sorted values on output
+
+  For the value sort,
+    A and out may alias (A == out) exactly when stride == sizeof(T),
+      in which case heap sort is used for small sizes
+
+  For the permutation sort,
+    the permutation can be both input (when start_perm!=0) and output,
+    following the convention that it is always at the start of the buffer buf;
+    the buffer will be expanded as necessary to accomodate the permutation
+    and the required scratch space
 
   ----------------------------------------------------------------------------*/
 
-void sortv(T *out, const T *A, uint n, unsigned stride,
-           buffer *buf, int resize)
+void sortv(T *out, const T *A, uint n, unsigned stride, buffer *buf)
 {
-  if(n<2) {
-    if(n==0) return;
-    *out = *A;
+  if(n<DIGIT_VALUES) {
+    if(n<2) {
+      if(n==0) return;
+      *out = *A;
+    } else {
+      if(out==A) {
+        if(stride!=sizeof(T))
+          fail(1,"%s: in-place sort with non-unit stride",__FILE__);
+        heap_sortv(out,n);
+      } else {
+        buffer_reserve(buf,n*sizeof(T));
+        merge_sortv(out, A,n,stride, (T*)buf->ptr);
+      }
+    }
+  } else if(STATIC_DIGIT_BUCKETS) {
+    static uint count[DIGITS][DIGIT_VALUES];
+    buffer_reserve(buf,n*sizeof(T));
+    radix_sortv(out, A,n,stride, (T*)buf->ptr,count);
   } else {
-    T *w;
-    uint work_size = align_as(T,buf->n+n*sizeof(T));
-    if(resize) buffer_reserve(buf,work_size);
-    else if(buf->max<work_size)
-      failwith(__FILE__ ": sortv() not given enough workspace");
-    w = align_ptr(T,buf->ptr,buf->n);
-    if(n<DIGIT_VALUES) merge_sortv(out, A,n,stride, w);
-    else               radix_sortv(out, A,n,stride, w);
+    T *work;
+    uint (*count)[DIGIT_VALUES];
+    size_t count_off=align_as(uint,n*sizeof(T));
+    buffer_reserve(buf,count_off+sizeof(uint[DIGITS][DIGIT_VALUES]));
+    work = buf->ptr;
+    count = (uint(*)[DIGIT_VALUES])((char*)buf->ptr+count_off);
+    radix_sortv(out, A,n,stride, work,count);
   }
 }
 
-void sortp(uint *out, int start_perm, const T *A, uint n, unsigned stride,
-           buffer *buf, int resize)
+uint *sortp(buffer *buf, int start_perm, const T *A, uint n, unsigned stride)
 {
-  if(n<2) {
-    if(n==0) return;
-    *out = 0;
+  uint *perm;
+  sort_data *work;
+  size_t work_off=align_as(sort_data,n*sizeof(uint));
+  if(n<DIGIT_VALUES) {
+    buffer_reserve(buf,work_off+2*n*sizeof(sort_data));
+    perm = buf->ptr;
+    work = (sort_data*)((char*)buf->ptr+work_off);
+    if(n<2) {
+      if(n==1) *perm=0;
+    } else {
+      if(start_perm) merge_sortp (perm, A,n,stride, work);
+      else           merge_sortp0(perm, A,n,stride, work);
+    }
+  } else if(STATIC_DIGIT_BUCKETS){
+    static uint count[DIGITS][DIGIT_VALUES];
+    buffer_reserve(buf,work_off+2*n*sizeof(sort_data));
+    perm = buf->ptr;
+    work = (sort_data*)((char*)buf->ptr+work_off);
+    radix_sortp(perm,start_perm, A,n,stride, work,count);
   } else {
-    sort_data *w;
-    uint work_size = align_as(sort_data,buf->n+n*2*sizeof(sort_data));
-    if(resize) buffer_reserve(buf,work_size);
-    else if(buf->max<work_size)
-      failwith(__FILE__ ": sortp() not given enough workspace");
-    w = align_ptr(sort_data,buf->ptr,buf->n);
-    if(n<DIGIT_VALUES)
-      if(start_perm) merge_sortp (out, A,n,stride, w);
-      else           merge_sortp0(out, A,n,stride, w);
-    else
-      radix_sortp(out,start_perm, A,n,stride, w);
-  }
+    uint (*count)[DIGIT_VALUES];
+    size_t count_off=align_as(uint,work_off+2*n*sizeof(sort_data));
+    buffer_reserve(buf,count_off+sizeof(uint[DIGITS][DIGIT_VALUES]));
+    perm = buf->ptr;
+    work = (sort_data*)((char*)buf->ptr+work_off);
+    count = (uint(*)[DIGIT_VALUES])((char*)buf->ptr+count_off);
+    radix_sortp(perm,start_perm, A,n,stride, work,count);
+  }  
+  return perm;
 }
+
+#undef STATIC_DIGIT_BUCKETS
 
 #undef DIGIT_BITS
 #undef DIGIT_VALUES

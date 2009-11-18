@@ -1,54 +1,56 @@
 #include <stdio.h>
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <float.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
+
+#define gs_op gs_op_t   /* fix conflict with fortran */
+
 #include "gs_defs.h"
 #include "gs_local.h"
 #include "comm.h"
+#include "mem.h"
+#include "sort.h"
 #include "crystal.h"
 #include "sarray_sort.h"
 #include "sarray_transfer.h"
 
-#ifdef PREFIX
-#  define gs_op      TOKEN_PASTE(PREFIX,gs_op     )
-#  define gs_op_vec  TOKEN_PASTE(PREFIX,gs_op_vec )
-#  define gs_op_many TOKEN_PASTE(PREFIX,gs_op_many)
-#  define gs_setup   TOKEN_PASTE(PREFIX,gs_setup  )
-#  define gs_free    TOKEN_PASTE(PREFIX,gs_free   )
-#  define gs_unique  TOKEN_PASTE(PREFIX,gs_unique )
-#endif
+#define gs               PREFIXED_NAME(gs              )
+#define gs_vec           PREFIXED_NAME(gs_vec          )
+#define gs_many          PREFIXED_NAME(gs_many         )
+#define gs_setup         PREFIXED_NAME(gs_setup        )
+#define gs_setup_crystal PREFIXED_NAME(gs_setup_crystal)
+#define gs_free          PREFIXED_NAME(gs_free         )
+#define gs_unique        PREFIXED_NAME(gs_unique       )
 
 GS_DEFINE_DOM_SIZES()
 
 typedef enum { mode_plain, mode_vec, mode_many,
-               mode_dry_run } gs_mode_t;
+               mode_dry_run } gs_mode;
 
-static buffer static_buffer = {0,0,0};
+static buffer static_buffer = null_buffer;
 
 static void gather_noop(
   void *out, const void *in, const unsigned vn,
-  const uint *map, gs_dom_t dom, gs_op_t op)
+  const uint *map, gs_dom dom, gs_op op)
 {}
 
 static void scatter_noop(
   void *out, const void *in, const unsigned vn,
-  const uint *map, gs_dom_t dom)
+  const uint *map, gs_dom dom)
 {}
 
 static void init_noop(
   void *out, const unsigned vn,
-  const uint *map, gs_dom_t dom, gs_op_t op)
+  const uint *map, gs_dom dom, gs_op op)
 {}
 
-typedef void exec_func_t(
-  void *data, gs_mode_t mode, unsigned vn, gs_dom_t dom, gs_op_t op,
-  unsigned transpose, const void *execdata, const comm_t *comm, char *buf);
+typedef void exec_fun(
+  void *data, gs_mode mode, unsigned vn, gs_dom dom, gs_op op,
+  unsigned transpose, const void *execdata, const struct comm *comm, char *buf);
 
 /*------------------------------------------------------------------------------
   Topology Discovery
@@ -56,7 +58,7 @@ typedef void exec_func_t(
 
 /* nonzero_ids    (local part)
 
-   Creates an array of nonzero_ts, one per nonzero in user id array. The
+   Creates an array of s_nonzeros, one per nonzero in user id array. The
    output array is grouped by id. Within each group, non-flagged entries come
    first; otherwise the entries within the group are sorted by the index into
    the user id array. The first index in each group is the primary index, and
@@ -66,14 +68,14 @@ typedef void exec_func_t(
 
 typedef struct {
   ulong id; uint i, flag, primary;
-} nonzero_t;
+} s_nonzero;
 
 static void nonzero_ids(array *nz, const slong *id, const uint n, buffer *buf)
 {
   ulong last_id = -(ulong)1;
   uint i, primary = -(uint)1;
-  nonzero_t *row, *end;
-  array_init(nonzero_t,nz,n), end=row=nz->ptr;
+  s_nonzero *row, *end;
+  array_init(s_nonzero,nz,n), end=row=nz->ptr;
   for(i=0;i<n;++i) {
     slong id_i = id[i], abs_id = iabsl(id_i);
     if(id_i==0) continue;
@@ -83,32 +85,31 @@ static void nonzero_ids(array *nz, const slong *id, const uint n, buffer *buf)
     ++end;
   }
   nz->n = end-row;
-  array_resize(nonzero_t,nz,nz->n);
-  sarray_sort_two(nonzero_t,nz->ptr,nz->n, id,1, flag,0, buf);
+  array_resize(s_nonzero,nz,nz->n);
+  sarray_sort_two(s_nonzero,nz->ptr,nz->n, id,1, flag,0, buf);
   for(row=nz->ptr,end=row+nz->n;row!=end;++row) {
     ulong this_id = row->id;
     if(this_id!=last_id) primary = row->i;
     row->primary = primary;
     last_id = this_id;
   }
-  sarray_sort(nonzero_t,nz->ptr,nz->n, primary,0, buf);
+  sarray_sort(s_nonzero,nz->ptr,nz->n, primary,0, buf);
 }
 
 /* shared_ids    (global part)
 
-   Creates an array of shared_ts from an array of nonzero_ts. Each entry in the
+   Creates an array of s_shareds from an array of s_nonzeros. Each entry in the
    output identifies one id shared with one other processor rp. The primary
    index is i locally and ri remotely. Bit 1 of flags indicates the local flag,
    bit 2 indicates the remote flag. The output has no particular ordering. */
 
-
 /* construct list of all unique id's on this proc */
-typedef struct { ulong id; uint work_proc, src_if; } unique_t;
+typedef struct { ulong id; uint work_proc, src_if; } s_unique;
 static void unique_ids(array *un, const array *nz, const uint np)
 {
-  unique_t *un_row;
-  const nonzero_t *nz_row, *nz_end;
-  array_init(unique_t,un,nz->n), un_row=un->ptr;
+  s_unique *un_row;
+  const s_nonzero *nz_row, *nz_end;
+  array_init(s_unique,un,nz->n), un_row=un->ptr;
   for(nz_row=nz->ptr,nz_end=nz_row+nz->n;nz_row!=nz_end;++nz_row) {
     if(nz_row->i != nz_row->primary) continue;
     un_row->id = nz_row->id;
@@ -116,7 +117,7 @@ static void unique_ids(array *un, const array *nz, const uint np)
     un_row->src_if = nz_row->flag ? ~nz_row->i : nz_row->i;
     ++un_row;
   }
-  un->n = un_row - (unique_t*)un->ptr;
+  un->n = un_row - (s_unique*)un->ptr;
 }
 
 #define FLAGS_LOCAL  1
@@ -124,25 +125,25 @@ static void unique_ids(array *un, const array *nz, const uint np)
 
 typedef struct {
   ulong id; uint i, p, ri, bi; unsigned flags;
-} shared_t;
+} s_shared;
 
 typedef struct {
   ulong id, ord; uint i; unsigned flag;
-} primary_t;
+} s_primary;
 
-typedef struct { ulong id,ord; uint p1, p2, i1f, i2f; } shared_work_t;
+typedef struct { ulong id,ord; uint p1, p2, i1f, i2f; } s_shared_work;
 
 static void shared_ids_aux(array *sh, array *pr, uint pr_n,
                            array *wa, buffer *buf)
 {
-  const shared_work_t *w, *we;
-  shared_t *s;
-  primary_t *p;
+  const s_shared_work *w, *we;
+  s_shared *s;
+  s_primary *p;
   ulong last_id = -(ulong)1;
   /* translate work array to output arrays */
-  sarray_sort(shared_work_t,wa->ptr,wa->n, id,1, buf);
-  array_init(shared_t,sh,wa->n), sh->n=wa->n, s=sh->ptr;
-  array_init(primary_t,pr,pr_n), p=pr->ptr;
+  sarray_sort(s_shared_work,wa->ptr,wa->n, id,1, buf);
+  array_init(s_shared,sh,wa->n), sh->n=wa->n, s=sh->ptr;
+  array_init(s_primary,pr,pr_n), p=pr->ptr;
   for(w=wa->ptr,we=w+wa->n;w!=we;++w) {
     uint i1f = w->i1f, i2f = w->i2f;
     uint i1 = ~i1f<i1f?~i1f:i1f, i2 = ~i2f<i2f?~i2f:i2f;
@@ -155,36 +156,36 @@ static void shared_ids_aux(array *sh, array *pr, uint pr_n,
       ++p;
     }
   }
-  pr->n = p-(primary_t*)pr->ptr;
-  sarray_sort(primary_t,pr->ptr,pr->n, i,0, buf);
+  pr->n = p-(s_primary*)pr->ptr;
+  sarray_sort(s_primary,pr->ptr,pr->n, i,0, buf);
 }
 
 static ulong shared_ids(array *sh, array *pr, const array *nz, crystal_data *cr)
 {
-  array un; unique_t *un_row, *un_end, *other;
+  array un; s_unique *un_row, *un_end, *other;
   ulong last_id = -(ulong)1;
-  ulong ordinal[2]={0,0};
-  array wa; shared_work_t *w;
+  ulong ordinal[2], n_shared=0, scan_buf[2];
+  array wa; s_shared_work *w;
   uint n_unique;
   /* construct list of all unique id's on this proc */
   unique_ids(&un,nz,cr->comm.np);
   n_unique = un.n;
   /* transfer list to work procs */
-  sarray_transfer(unique_t,&un, work_proc, cr);
+  sarray_transfer(s_unique,&un, work_proc, cr);
   /* group by id, put flagged entries after unflagged (within each group) */
-  sarray_sort_two(unique_t,un.ptr,un.n, id,1, src_if,0, &cr->data);
+  sarray_sort_two(s_unique,un.ptr,un.n, id,1, src_if,0, &cr->data);
   /* count shared id's */
   for(un_row=un.ptr,un_end=un_row+un.n;un_row!=un_end;++un_row) {
     ulong id = un_row->id;
     if(~un_row->src_if<un_row->src_if) continue;
     if(id==last_id) continue;
     other=un_row+1;
-    if(other!=un_end&&other->id==id) last_id=id, ++ordinal[1];
+    if(other!=un_end&&other->id==id) last_id=id, ++n_shared;
   }
-  comm_partial_sum_ul(ordinal,&cr->comm,ordinal[1]);
+  comm_scan(ordinal, &cr->comm,gs_slong,gs_add, &n_shared,1, scan_buf);
   /* construct list of shared ids */
   last_id = -(ulong)1;
-  array_init(shared_work_t,&wa,un.n), wa.n=0, w=wa.ptr;
+  array_init(s_shared_work,&wa,un.n), wa.n=0, w=wa.ptr;
   for(un_row=un.ptr,un_end=un_row+un.n;un_row!=un_end;++un_row) {
     ulong id = un_row->id;
     uint p1 = un_row->work_proc, i1f = un_row->src_if;
@@ -195,14 +196,14 @@ static ulong shared_ids(array *sh, array *pr, const array *nz, crystal_data *cr)
       if(id!=last_id) last_id=id, ++ordinal[0];
       ord=ordinal[0]-1;
       if(wa.n+2>wa.max)
-        array_reserve(shared_work_t,&wa,wa.n+2), w=(shared_work_t*)wa.ptr+wa.n;
+        array_reserve(s_shared_work,&wa,wa.n+2), w=(s_shared_work*)wa.ptr+wa.n;
       w->id=id, w->ord=ord, w->p1=p1, w->p2=p2, w->i1f=i1f, w->i2f=i2f, ++w;
       w->id=id, w->ord=ord, w->p1=p2, w->p2=p1, w->i1f=i2f, w->i2f=i1f, ++w;
       wa.n+=2;
     }
   }
   /* transfer shared list to source procs */
-  sarray_transfer(shared_work_t,&wa, p1, cr);
+  sarray_transfer(s_shared_work,&wa, p1, cr);
   /* fill output arrays from work array */
   shared_ids_aux(sh,pr,n_unique,&wa,&cr->data);
   array_free(&un);
@@ -220,23 +221,23 @@ static ulong gs_topology(array *nz, array *sh, array *pr,
 
 static void make_nz_unique(array *nz, slong *id, buffer *buf)
 {
-  nonzero_t *p,*e;
-  sarray_sort(nonzero_t,nz->ptr,nz->n, i,0, buf);
+  s_nonzero *p,*e;
+  sarray_sort(s_nonzero,nz->ptr,nz->n, i,0, buf);
   for(p=nz->ptr,e=p+nz->n;p!=e;++p)
     if(p->i != p->primary) id[p->i] = -(slong)p->id;
-  sarray_sort(nonzero_t,nz->ptr,nz->n, primary,0, buf);
+  sarray_sort(s_nonzero,nz->ptr,nz->n, primary,0, buf);
 }
 
 static void make_sh_unique(array *sh, slong *id, uint pid, buffer *buf)
 {
-  shared_t *pb, *pm, *pe, *e;
+  s_shared *pb, *pm, *pe, *e;
   /* create sentinel with i = -1 */
-  array_reserve(shared_t,sh,sh->n+1);
-  ((shared_t*)sh->ptr)[sh->n].i = -(uint)1;
+  array_reserve(s_shared,sh,sh->n+1);
+  ((s_shared*)sh->ptr)[sh->n].i = -(uint)1;
   /* in the sorted list of procs sharing a given id,
      the owner is chosen to be the j^th proc,
      where j = id mod (length of list) */
-  sarray_sort_two(shared_t,sh->ptr,sh->n, i,0, p,0, buf);
+  sarray_sort_two(s_shared,sh->ptr,sh->n, i,0, p,0, buf);
   for(pb=sh->ptr,e=pb+sh->n;pb!=e;pb=pe) {
     uint i = pb->i;
     /* note: current proc not in list */
@@ -256,7 +257,7 @@ static void make_sh_unique(array *sh, slong *id, uint pid, buffer *buf)
 static const uint *local_map(const array *nz, const int ignore_flagged)
 {
   uint *map, *p, count = 1;
-  const nonzero_t *row, *other, *end;
+  const s_nonzero *row, *other, *end;
 #define DO_COUNT(cond) do \
     for(row=nz->ptr,end=row+nz->n;row!=end;) {                     \
       ulong row_id = row->id; int any=0;                           \
@@ -285,7 +286,7 @@ static const uint *local_map(const array *nz, const int ignore_flagged)
 static const uint *flagged_primaries_map(const array *nz)
 {
   uint *map, *p, count=1;
-  const nonzero_t *row, *end;
+  const s_nonzero *row, *end;
   for(row=nz->ptr,end=row+nz->n;row!=end;++row)
     if(row->i==row->primary && row->flag==1) ++count;
   p = map = tmalloc(uint,count);
@@ -308,13 +309,13 @@ typedef struct {
 typedef struct {
   pw_comm_data comm[2];
   const uint *map[2];
-  comm_req_t *req;
+  comm_req *req;
   uint buffer_size;
 } pw_data;
 
 static char *pw_exec_recvs(char *buf, const unsigned unit_size,
-                           const comm_t *comm, const pw_comm_data *c,
-                           comm_req_t *req)
+                           const struct comm *comm, const pw_comm_data *c,
+                           comm_req *req)
 {
   const uint *p, *pe, *size=c->size;
   for(p=c->p,pe=p+c->n;p!=pe;++p) {
@@ -326,8 +327,8 @@ static char *pw_exec_recvs(char *buf, const unsigned unit_size,
 }
 
 static char *pw_exec_sends(char *buf, const unsigned unit_size,
-                           const comm_t *comm, const pw_comm_data *c,
-                           comm_req_t *req)
+                           const struct comm *comm, const pw_comm_data *c,
+                           comm_req *req)
 {
   const uint *p, *pe, *size=c->size;
   for(p=c->p,pe=p+c->n;p!=pe;++p) {
@@ -339,13 +340,13 @@ static char *pw_exec_sends(char *buf, const unsigned unit_size,
 }
 
 static void pw_exec(
-  void *data, gs_mode_t mode, unsigned vn, gs_dom_t dom, gs_op_t op,
-  unsigned transpose, const void *execdata, const comm_t *comm, char *buf)
+  void *data, gs_mode mode, unsigned vn, gs_dom dom, gs_op op,
+  unsigned transpose, const void *execdata, const struct comm *comm, char *buf)
 {
   const pw_data *pwd = execdata;
-  static gs_scatter_func_t *const scatter_to_buf[] =
+  static gs_scatter_fun *const scatter_to_buf[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_many_to_vec, &scatter_noop };
-  static gs_gather_func_t *const gather_from_buf[] =
+  static gs_gather_fun *const gather_from_buf[] =
     { &gs_gather, &gs_gather_vec, &gs_gather_vec_to_many, &gather_noop };
   const unsigned recv = 0^transpose, send = 1^transpose;
   unsigned unit_size = vn*gs_dom_size[dom];
@@ -369,9 +370,9 @@ static void pw_comm_setup(pw_comm_data *data, array *sh,
                           const unsigned flags_mask, buffer *buf)
 {
   uint n=0,count=0, lp=-(uint)1;
-  shared_t *s, *se;
+  s_shared *s, *se;
   /* sort by remote processor and id (a globally consistent ordering) */
-  sarray_sort_two(shared_t,sh->ptr,sh->n, p,0, id,1, buf);
+  sarray_sort_two(s_shared,sh->ptr,sh->n, p,0, id,1, buf);
   /* assign index into buffer */
   for(s=sh->ptr,se=s+sh->n;s!=se;++s) {
     if(s->flags&flags_mask) { s->bi = -(uint)1; continue; }
@@ -401,8 +402,8 @@ static void pw_comm_free(pw_comm_data *data) { free(data->p); }
 static const uint *pw_map_setup(array *sh, buffer *buf)
 {
   uint count=0, *map, *p;
-  shared_t *s, *se;
-  sarray_sort(shared_t,sh->ptr,sh->n, i,0, buf);
+  s_shared *s, *se;
+  sarray_sort(s_shared,sh->ptr,sh->n, i,0, buf);
   /* calculate map size */
   count=1;
   for(s=sh->ptr,se=s+sh->n;s!=se;) {
@@ -436,7 +437,7 @@ static pw_data *pw_setup(array *sh, buffer *buf)
   pw_comm_setup(&pwd->comm[1],sh, FLAGS_LOCAL, buf);
   pwd->map[1] = pw_map_setup(sh, buf);
   
-  pwd->req = tmalloc(comm_req_t,pwd->comm[0].n+pwd->comm[1].n);
+  pwd->req = tmalloc(comm_req,pwd->comm[0].n+pwd->comm[1].n);
   pwd->buffer_size = pwd->comm[0].total + pwd->comm[1].total;
   return pwd;
 }
@@ -463,26 +464,25 @@ typedef struct {
 } cr_stage_data;
 
 typedef struct {
-  comm_req_t *req;
   cr_stage_data *stage[2];
   unsigned nstages;
   uint buffer_size, stage_buffer_size;
 } cr_data;
 
 static void cr_exec(
-  void *data, gs_mode_t mode, unsigned vn, gs_dom_t dom, gs_op_t op,
-  unsigned transpose, const void *execdata, const comm_t *comm, char *buf)
+  void *data, gs_mode mode, unsigned vn, gs_dom dom, gs_op op,
+  unsigned transpose, const void *execdata, const struct comm *comm, char *buf)
 {
   const cr_data *crd = execdata;
-  static gs_scatter_func_t *const scatter_user_to_buf[] =
+  static gs_scatter_fun *const scatter_user_to_buf[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_many_to_vec, &scatter_noop };
-  static gs_scatter_func_t *const scatter_buf_to_buf[] =
+  static gs_scatter_fun *const scatter_buf_to_buf[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_vec, &gs_scatter };
-  static gs_scatter_func_t *const scatter_buf_to_user[] =
+  static gs_scatter_fun *const scatter_buf_to_user[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_vec_to_many, &scatter_noop };
-  static gs_gather_func_t *const gather_buf_to_user[] =
+  static gs_gather_fun *const gather_buf_to_user[] =
     { &gs_gather, &gs_gather_vec, &gs_gather_vec_to_many, &gather_noop };
-  static gs_gather_func_t *const gather_buf_to_buf[] =
+  static gs_gather_fun *const gather_buf_to_buf[] =
     { &gs_gather, &gs_gather_vec, &gs_gather_vec, &gs_gather };
   const unsigned unit_size = vn*gs_dom_size[dom], nstages=crd->nstages;
   unsigned k;
@@ -492,11 +492,12 @@ static void cr_exec(
   buf_new = buf_old + unit_size*crd->stage_buffer_size;
   /* crystal router */
   for(k=0;k<nstages;++k) {
+    comm_req req[3];
     if(stage[k].nrecvn)
-      comm_irecv(&crd->req[1],comm,buf_new,unit_size*stage[k].size_r1,
+      comm_irecv(&req[1],comm,buf_new,unit_size*stage[k].size_r1,
                stage[k].p1, comm->np+k);
     if(stage[k].nrecvn==2)
-      comm_irecv(&crd->req[2],comm,buf_new+unit_size*stage[k].size_r1,
+      comm_irecv(&req[2],comm,buf_new+unit_size*stage[k].size_r1,
                unit_size*stage[k].size_r2, stage[k].p2, comm->np+k);
     sendbuf = buf_new+unit_size*stage[k].size_r;
     if(k==0)
@@ -505,9 +506,9 @@ static void cr_exec(
       scatter_buf_to_buf[mode](sendbuf,buf_old,vn,stage[k].scatter_map,dom),
       gather_buf_to_buf [mode](sendbuf,buf_old,vn,stage[k].gather_map ,dom,op);
 
-    comm_isend(&crd->req[0],comm,sendbuf,unit_size*stage[k].size_s,
+    comm_isend(&req[0],comm,sendbuf,unit_size*stage[k].size_s,
                stage[k].p1, comm->np+k);
-    comm_wait(&crd->req[0],1+stage[k].nrecvn);
+    comm_wait(&req[0],1+stage[k].nrecvn);
     { char *t = buf_old; buf_old=buf_new; buf_new=t; }
   }
   scatter_buf_to_user[mode](data,buf_old,vn,stage[k].scatter_map,dom);
@@ -517,7 +518,7 @@ static void cr_exec(
 /*------------------------------------------------------------------------------
   Crystal-Router setup
 ------------------------------------------------------------------------------*/
-static void cr_schedule(cr_data *data, const comm_t *comm)
+static void cr_schedule(cr_data *data, const struct comm *comm)
 {
   const uint id = comm->id;
   uint bl=0, n=comm->np;
@@ -547,7 +548,7 @@ static void cr_schedule(cr_data *data, const comm_t *comm)
 
 typedef struct {
   ulong id; uint p, ri, si, bi, send;
-} crl_work_t;
+} s_crl_work;
 
 /* assumes sh is grouped by i (e.g., sorted by i or by id) */
 static void crl_work_init(array *cw, array *sh, const unsigned send_mask,
@@ -556,13 +557,13 @@ static void crl_work_init(array *cw, array *sh, const unsigned send_mask,
   const unsigned recv_mask = send_mask^(FLAGS_REMOTE|FLAGS_LOCAL);
   uint last_i=-(uint)1; int added_myself;
   uint cw_n = 0, cw_max = cw->max;
-  crl_work_t *w = cw->ptr;
-  shared_t *s, *se;
+  s_crl_work *w = cw->ptr;
+  s_shared *s, *se;
 
 #define CW_ADD(aid,ap,ari,asi) do { \
     if(cw_n==cw_max)                                      \
-      array_reserve(crl_work_t,cw,cw_n+1),cw_max=cw->max, \
-      w=(crl_work_t*)cw->ptr+cw_n;                        \
+      array_reserve(s_crl_work,cw,cw_n+1),cw_max=cw->max, \
+      w=(s_crl_work*)cw->ptr+cw_n;                        \
     w->id=aid, w->p=ap, w->ri=ari, w->si=asi;             \
     ++w, ++cw_n;                                          \
   } while(0)
@@ -583,9 +584,9 @@ static void crl_work_init(array *cw, array *sh, const unsigned send_mask,
 
 static void crl_maps(cr_stage_data *stage, array *cw, buffer *buf)
 {
-  crl_work_t *w, *we, *other;
+  s_crl_work *w, *we, *other;
   uint scount=1, gcount=1, *sp, *gp;
-  sarray_sort_two(crl_work_t,cw->ptr,cw->n, bi,0, si,0, buf);
+  sarray_sort_two(s_crl_work,cw->ptr,cw->n, bi,0, si,0, buf);
   for(w=cw->ptr,we=w+cw->n;w!=we;w=other) {
     uint bi=w->bi,any=0,si=w->si;
     scount+=3;
@@ -610,12 +611,12 @@ static void crl_maps(cr_stage_data *stage, array *cw, buffer *buf)
 static uint crl_work_label(array *cw, cr_stage_data *stage,
                            uint cutoff, int send_hi, buffer *buf)
 {
-  crl_work_t *w, *we, *start;
+  s_crl_work *w, *we, *start;
   uint nsend, nkeep = 0, nks = 0, bi=0;
   /* here w->send has a reverse meaning */
   if(send_hi) for(w=cw->ptr,we=w+cw->n;w!=we;++w) w->send = w->p< cutoff;
          else for(w=cw->ptr,we=w+cw->n;w!=we;++w) w->send = w->p>=cutoff;
-  sarray_sort_two(crl_work_t,cw->ptr,cw->n, id,1, send,0, buf);
+  sarray_sort_two(s_crl_work,cw->ptr,cw->n, id,1, send,0, buf);
   for(start=cw->ptr,w=start,we=w+cw->n;w!=we;++w) {
     nkeep += w->send;
     if(w->id!=start->id) start=w;
@@ -623,14 +624,14 @@ static uint crl_work_label(array *cw, cr_stage_data *stage,
   }
   nsend = cw->n-nkeep;
   /* assign indices; sent ids have priority (hence w->send is reversed) */
-  sarray_sort(crl_work_t,cw->ptr,cw->n, send,0, buf);
+  sarray_sort(s_crl_work,cw->ptr,cw->n, send,0, buf);
   for(start=cw->ptr,w=start,we=w+nsend+nks;w!=we;++w) {
     if(w->id!=start->id) start=w, ++bi;
     if(w->bi!=1) w->send=1;   /* switch back to the usual semantics */
     w->bi = bi;
   }
   stage->size_s = nsend+nks==0 ? 0 : bi+1;
-  for(we=(crl_work_t*)cw->ptr+cw->n;w!=we;++w) {
+  for(we=(s_crl_work*)cw->ptr+cw->n;w!=we;++w) {
     if(w->id!=start->id) start=w, ++bi;
     w->send = 0;              /* switch back to the usual semantics */
     w->bi = bi;
@@ -640,18 +641,18 @@ static uint crl_work_label(array *cw, cr_stage_data *stage,
   return nsend;
 }
 
-static void crl_bi_to_si(crl_work_t *w, uint n, uint v) {
+static void crl_bi_to_si(s_crl_work *w, uint n, uint v) {
   for(;n;--n) w->si=w->bi+v, ++w;
 }
 
-static void crl_ri_to_bi(crl_work_t *w, uint n) {
+static void crl_ri_to_bi(s_crl_work *w, uint n) {
   for(;n;--n) w->bi=w->ri, ++w;
 }
 
-static uint cr_learn(array *cw, cr_stage_data *stage, const comm_t *comm,
+static uint cr_learn(array *cw, cr_stage_data *stage, const struct comm *comm,
                      buffer *buf)
 {
-  comm_req_t req[3];
+  comm_req req[3];
   const uint id = comm->id;
   uint bl=0, n=comm->np;
   uint size_max=0;
@@ -659,7 +660,7 @@ static uint cr_learn(array *cw, cr_stage_data *stage, const comm_t *comm,
   while(n>1) {
     uint nl = (n+1)/2, bh = bl+nl;
     uint nkeep, nsend[2], nrecv[2][2] = {{0,0},{0,0}};
-    crl_work_t *wrecv[2], *wsend;
+    s_crl_work *wrecv[2], *wsend;
     nsend[0] = crl_work_label(cw,stage,bh,id<bh,buf);
     nsend[1] = stage->size_s;
     nkeep = cw->n - nsend[0];
@@ -676,23 +677,23 @@ static uint cr_learn(array *cw, cr_stage_data *stage, const comm_t *comm,
     stage->size_total = stage->size_r + stage->size_sk;
     if(stage->size_total>size_max) size_max=stage->size_total;
     
-    array_reserve(crl_work_t,cw,cw->n+nrecv[0][0]+nrecv[1][0]);
+    array_reserve(s_crl_work,cw,cw->n+nrecv[0][0]+nrecv[1][0]);
     wrecv[0] = cw->ptr, wrecv[0] += cw->n, wrecv[1] = wrecv[0]+nrecv[0][0];
     wsend = cw->ptr, wsend += nkeep;
     if(stage->nrecvn   )
-      comm_irecv(&req[1],comm,wrecv[0],nrecv[0][0]*sizeof(crl_work_t),
+      comm_irecv(&req[1],comm,wrecv[0],nrecv[0][0]*sizeof(s_crl_work),
                  stage->p1,tag);
     if(stage->nrecvn==2)
-      comm_irecv(&req[2],comm,wrecv[1],nrecv[1][0]*sizeof(crl_work_t),
+      comm_irecv(&req[2],comm,wrecv[1],nrecv[1][0]*sizeof(s_crl_work),
                  stage->p2,tag);
-    sarray_sort_two(crl_work_t,cw->ptr,cw->n, send,0, bi,0, buf);
-    comm_isend(&req[0],comm,wsend,nsend[0]*sizeof(crl_work_t),stage->p1,tag);
+    sarray_sort_two(s_crl_work,cw->ptr,cw->n, send,0, bi,0, buf);
+    comm_isend(&req[0],comm,wsend,nsend[0]*sizeof(s_crl_work),stage->p1,tag);
     comm_wait(req,1+stage->nrecvn),++tag;
 
     crl_bi_to_si(cw->ptr,nkeep,stage->size_r);
     if(stage->nrecvn)    crl_bi_to_si(wrecv[0],nrecv[0][0],0);
     if(stage->nrecvn==2) crl_bi_to_si(wrecv[1],nrecv[1][0],stage->size_r1);
-    memmove(wsend,wrecv[0],(nrecv[0][0]+nrecv[1][0])*sizeof(crl_work_t));
+    memmove(wsend,wrecv[0],(nrecv[0][0]+nrecv[1][0])*sizeof(s_crl_work));
     cw->n += nrecv[0][0] + nrecv[1][0];
     cw->n -= nsend[0];
     
@@ -704,10 +705,10 @@ static uint cr_learn(array *cw, cr_stage_data *stage, const comm_t *comm,
   return size_max;
 }
 
-static cr_data *cr_setup(array *sh, const comm_t *comm, buffer *buf)
+static cr_data *cr_setup(array *sh, const struct comm *comm, buffer *buf)
 {
   uint size_max[2];
-  array cw = {0,0,0};
+  array cw = null_array;
   cr_data *crd = tmalloc(cr_data,1);
   
   /* default behavior: receive only remotely unflagged data */
@@ -715,7 +716,7 @@ static cr_data *cr_setup(array *sh, const comm_t *comm, buffer *buf)
   
   cr_schedule(crd,comm);
 
-  sarray_sort(shared_t,sh->ptr,sh->n, i,0, buf);
+  sarray_sort(s_shared,sh->ptr,sh->n, i,0, buf);
   crl_work_init(&cw,sh, FLAGS_LOCAL , comm->id);
   size_max[0]=cr_learn(&cw,crd->stage[0],comm,buf);
   crl_work_init(&cw,sh, FLAGS_REMOTE, comm->id);
@@ -725,7 +726,6 @@ static cr_data *cr_setup(array *sh, const comm_t *comm, buffer *buf)
 
   array_free(&cw);
   
-  crd->req = tmalloc(comm_req_t,3);
   crd->buffer_size = 2*crd->stage_buffer_size;
   return crd;
 }
@@ -745,7 +745,6 @@ static void cr_free(cr_data *data)
   cr_free_stage_maps(data->stage[0],data->nstages);
   cr_free_stage_maps(data->stage[1],data->nstages);
   free(data->stage[0]);
-  free(data->req);
   free(data);
 }
 
@@ -758,13 +757,13 @@ typedef struct {
 } allreduce_data;
 
 static void allreduce_exec(
-  void *data, gs_mode_t mode, unsigned vn, gs_dom_t dom, gs_op_t op,
-  unsigned transpose, const void *execdata, const comm_t *comm, char *buf)
+  void *data, gs_mode mode, unsigned vn, gs_dom dom, gs_op op,
+  unsigned transpose, const void *execdata, const struct comm *comm, char *buf)
 {
   const allreduce_data *ard = execdata;
-  static gs_scatter_func_t *const scatter_to_buf[] =
+  static gs_scatter_fun *const scatter_to_buf[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_many_to_vec, &scatter_noop };
-  static gs_scatter_func_t *const scatter_from_buf[] =
+  static gs_scatter_fun *const scatter_from_buf[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_vec_to_many, &scatter_noop };
   uint gvn = vn*(ard->buffer_size/2);
   unsigned unit_size = gs_dom_size[dom];
@@ -774,7 +773,7 @@ static void allreduce_exec(
   gs_init_array(buf,gvn,dom,op);
   scatter_to_buf[mode](buf,data,vn,ard->map_to_buf[transpose],dom);
   /* all reduce */
-  comm_allreduce(buf,ardbuf,gvn,comm,dom,op);
+  comm_allreduce(comm,dom,op, buf,gvn, ardbuf);
   /* buffer -> user array */
   scatter_from_buf[mode](data,buf,vn,ard->map_from_buf[transpose],dom);
 }
@@ -785,7 +784,7 @@ static void allreduce_exec(
 static const uint *allreduce_map_setup(array *pr, const unsigned flags_mask,
                                        int to_buf)
 {
-  primary_t *p, *pe;
+  s_primary *p, *pe;
   uint count=1, *map, *m;
   for(p=pr->ptr,pe=p+pr->n;p!=pe;++p)
     if((p->flag&flags_mask)==0) count+=3;
@@ -832,7 +831,7 @@ static void allreduce_free(allreduce_data *ard)
   Main Execution
 ------------------------------------------------------------------------------*/
 typedef struct {
-  comm_t comm;
+  struct comm comm;
   const uint *map_local[2]; /* 0=unflagged, 1=all */
   const uint *flagged_primaries;
   pw_data *pwd;
@@ -840,52 +839,50 @@ typedef struct {
   allreduce_data *ard;
   uint buffer_size;
   void *execdata;
-  exec_func_t *exec;
+  exec_fun *exec;
 } gs_data;
 
-static void gs_op_aux(
-  void *u, gs_mode_t mode, unsigned vn, int dom, int op, unsigned transpose,
-  gs_data *gs, void *buf)
+static void gs_aux(
+  void *u, gs_mode mode, unsigned vn, gs_dom dom, gs_op op, unsigned transpose,
+  gs_data *gsh, buffer *buf)
 {
-  static gs_scatter_func_t *const local_scatter[] =
+  static gs_scatter_fun *const local_scatter[] =
     { &gs_scatter, &gs_scatter_vec, &gs_scatter_many, &scatter_noop };
-  static gs_gather_func_t  *const local_gather [] =
+  static gs_gather_fun  *const local_gather [] =
     { &gs_gather,  &gs_gather_vec,  &gs_gather_many, &gather_noop  };
-  static gs_init_func_t *const init[] =
+  static gs_init_fun *const init[] =
     { &gs_init, &gs_init_vec, &gs_init_many, &init_noop };
-  if(!buf) {
-    buffer_reserve(&static_buffer,vn*gs_dom_size[dom]*gs->buffer_size);
-    buf = static_buffer.ptr;
-  }
-  local_gather [mode](u,u,vn,gs->map_local[0^transpose],dom,op);
-  if(transpose==0) init[mode](u,vn,gs->flagged_primaries,dom,op);
-  gs->exec(u,mode,vn,dom,op,transpose,gs->execdata,&gs->comm,buf);
-  local_scatter[mode](u,u,vn,gs->map_local[1^transpose],dom);
+  if(!buf) buf = &static_buffer;
+  buffer_reserve(buf,vn*gs_dom_size[dom]*gsh->buffer_size);
+  local_gather [mode](u,u,vn,gsh->map_local[0^transpose],dom,op);
+  if(transpose==0) init[mode](u,vn,gsh->flagged_primaries,dom,op);
+  gsh->exec(u,mode,vn,dom,op,transpose,gsh->execdata,&gsh->comm,buf->ptr);
+  local_scatter[mode](u,u,vn,gsh->map_local[1^transpose],dom);
 }
 
-void gs_op(void *u, gs_dom_t dom, gs_op_t op, unsigned transpose,
-           gs_data *gs, void *buf)
+void gs(void *u, gs_dom dom, gs_op op, unsigned transpose,
+        gs_data *gsh, buffer *buf)
 {
-  gs_op_aux(u,mode_plain,1,dom,op,transpose,gs,buf);
+  gs_aux(u,mode_plain,1,dom,op,transpose,gsh,buf);
 }
 
-void gs_op_vec(void *u, unsigned vn, gs_dom_t dom, gs_op_t op,
-               unsigned transpose, gs_data *gs, void *buf)
+void gs_vec(void *u, unsigned vn, gs_dom dom, gs_op op,
+            unsigned transpose, gs_data *gsh, buffer *buf)
 {
-  gs_op_aux(u,mode_vec,vn,dom,op,transpose,gs,buf);
+  gs_aux(u,mode_vec,vn,dom,op,transpose,gsh,buf);
 }
 
-void gs_op_many(void *const*u, unsigned vn, gs_dom_t dom, gs_op_t op,
-                unsigned transpose, gs_data *gs, void *buf)
+void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,
+             unsigned transpose, gs_data *gsh, buffer *buf)
 {
-  gs_op_aux((void*)u,mode_many,vn,dom,op,transpose,gs,buf);
+  gs_aux((void*)u,mode_many,vn,dom,op,transpose,gsh,buf);
 }
 
 /*------------------------------------------------------------------------------
   Main Setup
 ------------------------------------------------------------------------------*/
-static void dry_run_time(double *times, exec_func_t *exec, void *data,
-                         const comm_t* comm, buffer *buf, uint buf_size)
+static void dry_run_time(double *times, exec_fun *exec, void *data,
+                         const struct comm* comm, buffer *buf, uint buf_size)
 {
   int i; double t;
   buffer_reserve(buf,gs_dom_size[gs_double]*buf_size);
@@ -895,75 +892,75 @@ static void dry_run_time(double *times, exec_func_t *exec, void *data,
   for(i=10;i;--i) exec(0,mode_dry_run,1,gs_double,gs_add,0,data,comm,buf->ptr);
   t = (comm_time() - t)/10;
   times[0] = t/comm->np, times[1] = t, times[2] = t;
-  comm_allreduce(&times[0],&t,1,comm,gs_double,gs_add);
-  comm_allreduce(&times[1],&t,1,comm,gs_double,gs_min);
-  comm_allreduce(&times[2],&t,1,comm,gs_double,gs_max);
+  comm_allreduce(comm,gs_double,gs_add, &times[0],1, &t);
+  comm_allreduce(comm,gs_double,gs_min, &times[1],1, &t);
+  comm_allreduce(comm,gs_double,gs_max, &times[2],1, &t);
 }
 
-static void gs_setup_aux(gs_data *gs, const slong *id, uint n)
+static void gs_setup_aux(gs_data *gsh, const slong *id, uint n)
 {
   array nz, sh, pr;
   ulong total_shared;
   crystal_data cr;
-  crystal_init(&cr,&gs->comm);
+  crystal_init(&cr,&gsh->comm);
   total_shared = gs_topology(&nz,&sh,&pr, id,n, &cr);
-  gs->map_local[0] = local_map(&nz,1);
-  gs->map_local[1] = local_map(&nz,0);
-  gs->flagged_primaries = flagged_primaries_map(&nz);
+  gsh->map_local[0] = local_map(&nz,1);
+  gsh->map_local[1] = local_map(&nz,0);
+  gsh->flagged_primaries = flagged_primaries_map(&nz);
   array_free(&nz);
 
-  if(gs->comm.id==0)
-    printf("   gs_setup: %ld unique labels shared\n",(long)total_shared);
+  if(gsh->comm.id==0)
+    printf("gs_setup: %ld unique labels shared\n",(long)total_shared);
 
-  gs->pwd = pw_setup(&sh,&cr.data);
-  gs->buffer_size = gs->pwd->buffer_size;
-  gs->execdata = gs->pwd;
-  gs->exec = &pw_exec;
+  gsh->pwd = pw_setup(&sh,&cr.data);
+  gsh->buffer_size = gsh->pwd->buffer_size;
+  gsh->execdata = gsh->pwd;
+  gsh->exec = &pw_exec;
   
-  gs->crd = 0; gs->ard = 0;
+  gsh->crd = 0; gsh->ard = 0;
   
-  if(gs->comm.np>1) {
+  if(gsh->comm.np>1) {
     double time[2][3];
 
-    gs->crd = cr_setup(&sh,&gs->comm,&cr.data);
+    gsh->crd = cr_setup(&sh,&gsh->comm,&cr.data);
       
-    if(gs->comm.id==0) printf("   pairwise times (avg, min, max): ");
-    dry_run_time(time[0],&pw_exec,gs->pwd,&gs->comm,
-                 &cr.data,gs->pwd->buffer_size);
-    if(gs->comm.id==0) printf("%g %g %g\n",time[0][0],time[0][1],time[0][2]);
+    if(gsh->comm.id==0) printf("   pairwise times (avg, min, max): ");
+    dry_run_time(time[0],&pw_exec,gsh->pwd,&gsh->comm,
+                 &cr.data,gsh->pwd->buffer_size);
+    if(gsh->comm.id==0) printf("%g %g %g\n",time[0][0],time[0][1],time[0][2]);
 
-    if(gs->comm.id==0) printf("   crystal router                : ");
-    dry_run_time(time[1],&cr_exec,gs->crd,&gs->comm,
-                 &cr.data,gs->crd->buffer_size);
-    if(gs->comm.id==0) printf("%g %g %g\n",time[1][0],time[1][1],time[1][2]);
+    if(gsh->comm.id==0) printf("   crystal router                : ");
+    dry_run_time(time[1],&cr_exec,gsh->crd,&gsh->comm,
+                 &cr.data,gsh->crd->buffer_size);
+    if(gsh->comm.id==0) printf("%g %g %g\n",time[1][0],time[1][1],time[1][2]);
     if(time[1][2]<time[0][2]) {
       time[0][2] = time[1][2];
-      pw_free(gs->pwd), gs->pwd=0;
-      gs->buffer_size = gs->crd->buffer_size;
-      gs->execdata = gs->crd, gs->exec = &cr_exec;
+      pw_free(gsh->pwd), gsh->pwd=0;
+      gsh->buffer_size = gsh->crd->buffer_size;
+      gsh->execdata = gsh->crd, gsh->exec = &cr_exec;
     } else
-      cr_free(gs->crd), gs->crd=0;
+      cr_free(gsh->crd), gsh->crd=0;
     
     if(total_shared<100000) {
-      gs->ard = allreduce_setup(&pr,total_shared);
-      if(gs->comm.id==0) printf("   all reduce                    : ");
-      dry_run_time(time[1],&allreduce_exec,gs->ard,&gs->comm,
-                   &cr.data,gs->ard->buffer_size);
-      if(gs->comm.id==0)
+      gsh->ard = allreduce_setup(&pr,total_shared);
+      if(gsh->comm.id==0) printf("   all reduce                    : ");
+      dry_run_time(time[1],&allreduce_exec,gsh->ard,&gsh->comm,
+                   &cr.data,gsh->ard->buffer_size);
+      if(gsh->comm.id==0)
          printf("%g %g %g\n",time[1][0],time[1][1],time[1][2]);
       if(time[1][2]<time[0][2]) {
-        if(gs->pwd) pw_free(gs->pwd), gs->pwd=0;
-        if(gs->crd) cr_free(gs->crd), gs->crd=0;
-        gs->buffer_size = gs->ard->buffer_size;
-        gs->execdata = gs->ard, gs->exec = &allreduce_exec;
+        if(gsh->pwd) pw_free(gsh->pwd), gsh->pwd=0;
+        if(gsh->crd) cr_free(gsh->crd), gsh->crd=0;
+        gsh->buffer_size = gsh->ard->buffer_size;
+        gsh->execdata = gsh->ard, gsh->exec = &allreduce_exec;
       } else
-        allreduce_free(gs->ard), gs->ard=0;
+        allreduce_free(gsh->ard), gsh->ard=0;
     }
 
-    if(gs->comm.id==0) {
-      if(gs->pwd) printf("   used all_to_all method: pairwise\n");
-      if(gs->crd) printf("   used all_to_all method: crystal router\n");
-      if(gs->ard) printf("   used all_to_all method: allreduce\n");
+    if(gsh->comm.id==0) {
+      if(gsh->pwd) printf("   used all_to_all method: pairwise\n");
+      if(gsh->crd) printf("   used all_to_all method: crystal router\n");
+      if(gsh->ard) printf("   used all_to_all method: allreduce\n");
     }
 
   }
@@ -973,26 +970,51 @@ static void gs_setup_aux(gs_data *gs, const slong *id, uint n)
   crystal_free(&cr);
 }
 
-gs_data *gs_setup(const slong *id, uint n, const comm_t *comm)
+gs_data *gs_setup(const slong *id, uint n, const struct comm *comm)
 {
-  gs_data *gs = tmalloc(gs_data,1);
-  comm_dup(&gs->comm,comm);
-  gs_setup_aux(gs,id,n);
-  return gs;
+  gs_data *gsh = tmalloc(gs_data,1);
+  comm_dup(&gsh->comm,comm);
+  gs_setup_aux(gsh,id,n);
+  return gsh;
 }
 
-void gs_free(gs_data *gs)
+gs_data *gs_setup_crystal(const slong *id, uint n, const struct comm *comm)
 {
-  comm_free(&gs->comm);
-  free((uint*)gs->map_local[0]), free((uint*)gs->map_local[1]);
-  free((uint*)gs->flagged_primaries);
-  if(gs->pwd) pw_free(gs->pwd);
-  if(gs->crd) cr_free(gs->crd);
-  if(gs->ard) allreduce_free(gs->ard);
-  free(gs);
+  gs_data *gsh = tmalloc(gs_data,1);
+  array nz, sh, pr;
+  ulong total_shared;
+  crystal_data cr;
+  comm_dup(&gsh->comm,comm);
+  crystal_init(&cr,&gsh->comm);
+  total_shared = gs_topology(&nz,&sh,&pr, id,n, &cr);
+  gsh->map_local[0] = local_map(&nz,1);
+  gsh->map_local[1] = local_map(&nz,0);
+  gsh->flagged_primaries = flagged_primaries_map(&nz);
+  array_free(&nz);
+  
+  gsh->pwd = 0; gsh->ard = 0;
+  gsh->crd = cr_setup(&sh,&gsh->comm,&cr.data);
+  gsh->buffer_size = gsh->crd->buffer_size;
+  gsh->execdata = gsh->crd, gsh->exec = &cr_exec;
+
+  array_free(&pr);
+  array_free(&sh);
+  crystal_free(&cr);
+  return gsh;
 }
 
-void gs_unique(slong *id, uint n, const comm_t *comm)
+void gs_free(gs_data *gsh)
+{
+  comm_free(&gsh->comm);
+  free((uint*)gsh->map_local[0]), free((uint*)gsh->map_local[1]);
+  free((uint*)gsh->flagged_primaries);
+  if(gsh->pwd) pw_free(gsh->pwd);
+  if(gsh->crd) cr_free(gsh->crd);
+  if(gsh->ard) allreduce_free(gsh->ard);
+  free(gsh);
+}
+
+void gs_unique(slong *id, uint n, const struct comm *comm)
 {
   array nz, sh, pr;
   crystal_data cr;
@@ -1010,31 +1032,25 @@ void gs_unique(slong *id, uint n, const comm_t *comm)
   FORTRAN interface
 ------------------------------------------------------------------------------*/
 
-#ifdef PREFIX
-#  undef gs_free
-#  undef gs_setup
-#  undef gs_op_many
-#  undef gs_op_vec
-#  undef gs_op
-#  define cgs_op      TOKEN_PASTE(PREFIX,gs_op     )
-#  define cgs_op_vec  TOKEN_PASTE(PREFIX,gs_op_vec )
-#  define cgs_op_many TOKEN_PASTE(PREFIX,gs_op_many)
-#  define cgs_setup   TOKEN_PASTE(PREFIX,gs_setup  )
-#  define cgs_free    TOKEN_PASTE(PREFIX,gs_free   )
-#else
-#  define cgs_op      gs_op
-#  define cgs_op_vec  gs_op_vec
-#  define cgs_op_many gs_op_many
-#  define cgs_setup   gs_setup
-#  define cgs_free    gs_free
-#endif
+#undef gs_op
 
-#define fgs_setup     FORTRAN_NAME(gs_setup    ,GS_SETUP    )
-#define fgs_op        FORTRAN_NAME(gs_op       ,GS_OP       )
-#define fgs_op_vec    FORTRAN_NAME(gs_op_vec   ,GS_OP_VEC   )
-#define fgs_op_many   FORTRAN_NAME(gs_op_many  ,GS_OP_MANY  )
-#define fgs_op_fields FORTRAN_NAME(gs_op_fields,GS_OP_FIELDS)
-#define fgs_free      FORTRAN_NAME(gs_free     ,GS_FREE     )
+#undef gs_free
+#undef gs_setup
+#undef gs_many
+#undef gs_vec
+#undef gs
+#define cgs       PREFIXED_NAME(gs      )
+#define cgs_vec   PREFIXED_NAME(gs_vec  )
+#define cgs_many  PREFIXED_NAME(gs_many )
+#define cgs_setup PREFIXED_NAME(gs_setup)
+#define cgs_free  PREFIXED_NAME(gs_free )
+
+#define fgs_setup  FORTRAN_NAME(gs_setup    ,GS_SETUP    )
+#define fgs        FORTRAN_NAME(gs_op       ,GS_OP       )
+#define fgs_vec    FORTRAN_NAME(gs_op_vec   ,GS_OP_VEC   )
+#define fgs_many   FORTRAN_NAME(gs_op_many  ,GS_OP_MANY  )
+#define fgs_fields FORTRAN_NAME(gs_op_fields,GS_OP_FIELDS)
+#define fgs_free   FORTRAN_NAME(gs_free     ,GS_FREE     )
 
 static gs_data **fgs_info = 0;
 static int fgs_max = 0;
@@ -1043,85 +1059,81 @@ static int fgs_n = 0;
 void fgs_setup(sint *handle, const slong id[], const sint *n,
                const MPI_Fint *comm, const sint *np)
 {
-  gs_data *gs;
+  gs_data *gsh;
   if(fgs_n==fgs_max) fgs_max+=fgs_max/2+1,
                      fgs_info=trealloc(gs_data*,fgs_info,fgs_max);
-  gs=fgs_info[fgs_n]=tmalloc(gs_data,1);
-  comm_init_check(&gs->comm,*comm,*np);
-  gs_setup_aux(gs,id,*n);
+  gsh=fgs_info[fgs_n]=tmalloc(gs_data,1);
+  comm_init_check(&gsh->comm,*comm,*np);
+  gs_setup_aux(gsh,id,*n);
   *handle = fgs_n++;
 }
 
-void fgs_op(const sint *handle, void *u, const sint *dom, const sint *op,
-            const sint *transpose)
+static void fgs_check_handle(const char *proc, sint handle)
 {
-  if(*dom<1 || *dom>4)
-    fail("fgs_op: datatype %d not in valid range 1-4\n",*dom);
-  if(*op <1 || *op >4)
-    fail("fgs_op: op %d not in valid range 1-4\n",*op);
-  if(*handle<0 || *handle>=fgs_n || !fgs_info[*handle])
-    failwith("fgs_op: invalid handle");
-  cgs_op(u,*dom-1,*op-1,*transpose!=0,fgs_info[*handle],0);
+  if(handle<0 || handle>=fgs_n || !fgs_info[handle])
+    fail(1,"%s: invalid handle", proc);
 }
 
-void fgs_op_vec(const sint *handle, void *u, const sint *n,
-                const sint *dom, const sint *op, const sint *transpose)
+static void fgs_check_parms(const char *proc, sint handle, sint dom, sint op)
 {
-  if(*dom<1 || *dom>4)
-    fail("fgs_op_vec: datatype %d not in valid range 1-4\n",*dom);
-  if(*op <1 || *op >4)
-    fail("fgs_op_vec: op %d not in valid range 1-4\n",*op);
-  if(*handle<0 || *handle>=fgs_n || !fgs_info[*handle])
-    failwith("fgs_op_vec: invalid handle");
-  cgs_op_vec(u,*n,*dom-1,*op-1,*transpose!=0,fgs_info[*handle],0);
+  if(dom<1 || dom>4)
+    fail(1,"%s: datatype %d not in valid range 1-4",proc,dom);
+  if(op <1 || op >4)
+    fail(1,"%s: op %d not in valid range 1-4",proc,op);
+  fgs_check_handle(proc,handle);
 }
 
-void fgs_op_many(const sint *handle, void *u1, void *u2, void *u3,
-                 void *u4, void *u5, void *u6, const sint *n,
-                 const sint *dom, const sint *op, const sint *transpose)
+void fgs(const sint *handle, void *u, const sint *dom, const sint *op,
+         const sint *transpose)
+{
+  fgs_check_parms("fgs",*handle,*dom,*op);
+  cgs(u,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,fgs_info[*handle],0);
+}
+
+void fgs_vec(const sint *handle, void *u, const sint *n,
+             const sint *dom, const sint *op, const sint *transpose)
+{
+  fgs_check_parms("fgs_vec",*handle,*dom,*op);
+  cgs_vec(u,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
+          fgs_info[*handle],0);
+}
+
+void fgs_many(const sint *handle, void *u1, void *u2, void *u3,
+              void *u4, void *u5, void *u6, const sint *n,
+              const sint *dom, const sint *op, const sint *transpose)
 {
   void *const uu[6]={u1,u2,u3,u4,u5,u6};
-  if(*dom<1 || *dom>4)
-    fail("fgs_op_many: datatype %d not in valid range 1-4\n",*dom);
-  if(*op <1 || *op >4)
-    fail("fgs_op_many: op %d not in valid range 1-4\n",*op);
-  if(*handle<0 || *handle>=fgs_n || !fgs_info[*handle])
-    failwith("fgs_op_many: invalid handle");
-  cgs_op_many((void *const*)uu,*n,*dom-1,*op-1,*transpose!=0,
-              fgs_info[*handle],0);
+  fgs_check_parms("fgs_many",*handle,*dom,*op);
+  cgs_many((void *const*)uu,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
+           fgs_info[*handle],0);
 }
 
-static array fgs_op_fields_array = {0,0,0};
+static array fgs_fields_array = null_array;
 
-void fgs_op_fields(const sint *handle,
-                   void *u, const sint *stride, const sint *n,
-                   const sint *dom, const sint *op, const sint *transpose)
+void fgs_fields(const sint *handle,
+                void *u, const sint *stride, const sint *n,
+                const sint *dom, const sint *op, const sint *transpose)
 {
   size_t offset;
   void **p;
   uint i;
   
-  if(*dom<1 || *dom>4)
-    fail("fgs_op_many: datatype %d not in valid range 1-4\n",*dom);
-  if(*op <1 || *op >4)
-    fail("fgs_op_many: op %d not in valid range 1-4\n",*op);
-  if(*handle<0 || *handle>=fgs_n || !fgs_info[*handle])
-    failwith("fgs_op_many: invalid handle");
+  fgs_check_parms("fgs_fields",*handle,*dom,*op);
   if(*n<0) return;
 
-  array_reserve(void*,&fgs_op_fields_array,*n);
-  p = fgs_op_fields_array.ptr;
+  array_reserve(void*,&fgs_fields_array,*n);
+  p = fgs_fields_array.ptr;
   offset = *stride * gs_dom_size[*dom-1];
   for(i=*n;i;--i) *p++ = u, u = (char*)u + offset;
 
-  cgs_op_many((void *const*)fgs_op_fields_array.ptr,*n,
-              *dom-1,*op-1,*transpose!=0, fgs_info[*handle],0);
+  cgs_many((void *const*)fgs_fields_array.ptr,*n,
+           (gs_dom)(*dom-1),(gs_op_t)(*op-1),
+           *transpose!=0, fgs_info[*handle],0);
 }
 
 void fgs_free(const sint *handle)
 {
-  if(*handle<0 || *handle>=fgs_n || !fgs_info[*handle])
-    failwith("fgs_free: invalid handle");
+  fgs_check_handle("fgs_free",*handle);
   cgs_free(fgs_info[*handle]);
   fgs_info[*handle] = 0;
 }
