@@ -1,18 +1,16 @@
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
-
 #include "name.h"
+#include "fail.h"
 #include "types.h"
-#include "errmem.h"
+#include "mem.h"
 #include "sort.h"
 
-#ifdef PREFIX
-#  define sparse_cholesky_factor TOKEN_PASTE(PREFIX,sparse_cholesky_factor)
-#  define sparse_cholesky_solve  TOKEN_PASTE(PREFIX,sparse_cholesky_solve )
-#  define sparse_cholesky_free   TOKEN_PASTE(PREFIX,sparse_cholesky_free  )
-#endif
+#define sparse_cholesky_factor PREFIXED_NAME(sparse_cholesky_factor)
+#define sparse_cholesky_solve  PREFIXED_NAME(sparse_cholesky_solve )
+#define sparse_cholesky_free   PREFIXED_NAME(sparse_cholesky_free  )
 
 /* factors: L is in CSR format
             D is a diagonal matrix stored as a vector
@@ -47,15 +45,11 @@ typedef struct {
 static void factor_symbolic(uint n, const uint *Arp, const uint *Aj,
                             sparse_cholesky_data *out, buffer *buf)
 {
-  uint *visit, *parent, *sorted;
+  uint *visit = tmalloc(uint,2*n), *parent = visit+n;
   uint *Lrp, *Lj;
   uint i,nz=0;
-
-  out->n=n;
   
-  buffer_reserve(buf,sortv_worksize(n,3*n*sizeof(uint)));
-  visit = buf->ptr, parent = visit+n, sorted=parent+n;
-  buf->n = (char*)(sorted+n)-(char*)buf->ptr;
+  out->n=n;
 
   for(i=0;i<n;++i) {
     uint p=Arp[i], pe=Arp[i+1];
@@ -80,11 +74,10 @@ static void factor_symbolic(uint n, const uint *Arp, const uint *Aj,
       uint j=Aj[p]; if(j>=i) break;
       for(;visit[j]!=i;j=parent[j]) Ljr[count++]=j, visit[j]=i;
     }
-    sortv(sorted, Ljr,count,sizeof(uint), buf,0);
-    memcpy(Ljr,sorted,count*sizeof(uint));
+    sortv(Ljr, Ljr,count,sizeof(uint), buf);
     Lrp[i+1]=Lrp[i]+count;
   }
-  buf->n=0;
+  free(visit);
 }
 
 /*

@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
 #include "comm.h"
 #include "crs.h"
@@ -95,8 +95,8 @@ double Ar[3][32] = { { 4,-1,-1,-2, -1,4,-2,-1, -1,-2,4,-1, -2,-1,-1,4,
 int main(int narg, char* arg[])
 {
   crs_data *crs;
-  comm_ext_t world; int id,np;
-  comm_t comm;
+  comm_ext world; int id,np;
+  struct comm comm;
 #ifdef MPI
   MPI_Init(&narg,&arg);
   world = MPI_COMM_WORLD;

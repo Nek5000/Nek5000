@@ -1,15 +1,13 @@
 #ifndef SPARSE_CHOLESKY_H
 #define SPARSE_CHOLESKY_H
 
-#if !defined(TYPES_H) || !defined(ERRMEM_H)
-#warning "sparse_cholesky.h" requires "types.h" and "errmem.h"
+#if !defined(TYPES_H) || !defined(MEM_H)
+#warning "sparse_cholesky.h" requires "types.h" and "mem.h"
 #endif
 
-#ifdef PREFIX
-#  define sparse_cholesky_factor TOKEN_PASTE(PREFIX,sparse_cholesky_factor)
-#  define sparse_cholesky_solve  TOKEN_PASTE(PREFIX,sparse_cholesky_solve )
-#  define sparse_cholesky_free   TOKEN_PASTE(PREFIX,sparse_cholesky_free  )
-#endif
+#define sparse_cholesky_factor PREFIXED_NAME(sparse_cholesky_factor)
+#define sparse_cholesky_solve  PREFIXED_NAME(sparse_cholesky_solve )
+#define sparse_cholesky_free   PREFIXED_NAME(sparse_cholesky_free  )
 
 typedef struct {
   uint n, *Lrp, *Lj;

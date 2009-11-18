@@ -1,16 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
 #include "comm.h"
+#include "mem.h"
 #include "crystal.h"
 
 int main(int narg, char *arg[])
 {
-  comm_ext_t world; int np;
-  comm_t comm;
+  comm_ext world; int np;
+  struct comm comm;
   crystal_data crystal;
   uint i,sum, *data, *end;
 #ifdef MPI
@@ -57,16 +58,16 @@ int main(int narg, char *arg[])
   }
 #endif
   
-  if(crystal.n != comm.np*4 + (comm.np/2)) fail("failure on %u\n",comm.id);
+  if(crystal.n != comm.np*4 + (comm.np/2)) fail(1,"failure on %u",comm.id);
   sum = 0;
   data = crystal.data.ptr, end = data + crystal.n;
   for(;data!=end; data+=3+data[2]) {
     sum+=data[1];
-    if(data[3]!=data[1]*2) fail("failure on %u\n",comm.id);
+    if(data[3]!=data[1]*2) fail(1,"failure on %u",comm.id);
     if(data[1]&1 && (data[2]!=2 || data[4]!=data[3]+1))
-      fail("failure on %u\n",comm.id);
+      fail(1,"failure on %u",comm.id);
   }
-  if(sum != comm.np*(comm.np-1)/2) fail("failure on %u\n",comm.id);
+  if(sum != comm.np*(comm.np-1)/2) fail(1,"failure on %u",comm.id);
 
   crystal_free(&crystal);
   comm_free(&comm);

@@ -17,22 +17,24 @@
 #define TOKEN_PASTE_(a,b) a##b
 #define TOKEN_PASTE(a,b) TOKEN_PASTE_(a,b)
 
-#if defined(FPREFIX)
-#  if defined(UPCASE)
-#    define FORTRAN_NAME(low,up) TOKEN_PASTE(FPREFIX,up)
-#  elif defined(UNDERSCORE)
-#    define FORTRAN_NAME(low,up) TOKEN_PASTE(TOKEN_PASTE(FPREFIX,low),_)
-#  else
-#    define FORTRAN_NAME(low,up) TOKEN_PASTE(FPREFIX,low)
-#  endif
+#ifdef PREFIX
+#  define PREFIXED_NAME(x) TOKEN_PASTE(PREFIX,x)
 #else
-#  if defined(UPCASE)
-#    define FORTRAN_NAME(low,up) up
-#  elif defined(UNDERSCORE)
-#    define FORTRAN_NAME(low,up) TOKEN_PASTE(low,_)
-#  else
-#    define FORTRAN_NAME(low,up) low
-#  endif
+#  define PREFIXED_NAME(x) x
+#endif
+
+#ifdef FPREFIX
+#  define FPREFIXED_NAME(x) TOKEN_PASTE(FPREFIX,x)
+#else
+#  define FPREFIXED_NAME(x) x
+#endif
+
+#if defined(UPCASE)
+#  define FORTRAN_NAME(low,up) FPREFIXED_NAME(up)
+#elif defined(UNDERSCORE)
+#  define FORTRAN_NAME(low,up) FPREFIXED_NAME(TOKEN_PASTE(low,_))
+#else
+#  define FORTRAN_NAME(low,up) FPREFIXED_NAME(low)
 #endif
 
 #endif

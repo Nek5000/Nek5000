@@ -1,16 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
+#include "gs_defs.h"
 #include "comm.h"
 
 int main(int narg, char *arg[])
 {
-  comm_ext_t world; int np;
-  comm_t comm;
-  ulong sum[2];
+  comm_ext world; int np;
+  struct comm comm;
+  ulong sum[2],r[2],v, test;
 #ifdef MPI
   MPI_Init(&narg,&arg);
   world = MPI_COMM_WORLD;
@@ -19,10 +20,12 @@ int main(int narg, char *arg[])
   world=0, np=1;
 #endif
 
-  comm_init_check(&comm,world,np);
+  comm_init(&comm,world);
   
-  comm_partial_sum_ul(sum,&comm,comm.id+1);
-  printf("%02d: %d %d\n",(int)comm.id,(int)sum[0],(int)sum[1]);
+  v = comm.id+1;
+  test = comm_reduce_slong(&comm,gs_add,(slong*)&v,1);
+  comm_scan(sum, &comm,gs_slong,gs_add, &v,1, r);
+  printf("%02d: %d %d %d\n",(int)comm.id,(int)sum[0],(int)sum[1],(int)test);
 
   comm_free(&comm);
   

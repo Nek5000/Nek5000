@@ -50,9 +50,9 @@ static double apply_Q(real *ve, const amg_Q *Q, const real *v, mpicomm_t comm)
 # endif
   /*gs_op(ve,GS_OP_ADD,Q->gs);*/
 #if !defined(USE_FLOAT)
-  jl_gs_op(ve,gs_double,gs_add,0,Q->jgs,0);
+  jl_gs(ve,gs_double,gs_add,0,Q->jgs,0);
 #else
-  jl_gs_op(ve,gs_float,gs_add,0,Q->jgs,0);
+  jl_gs(ve,gs_float,gs_add,0,Q->jgs,0);
 #endif
 
 # ifdef GS_TIMING
@@ -79,9 +79,9 @@ static double apply_Qt(real *z, real alpha, const real *y,
 # endif
   /*gs_op(x,GS_OP_ADD,Q->gs);*/
 #if !defined(USE_FLOAT)
-  jl_gs_op(x,gs_double,gs_add,1,Q->jgs,0);
+  jl_gs(x,gs_double,gs_add,1,Q->jgs,0);
 #else
-  jl_gs_op(x,gs_float,gs_add,1,Q->jgs,0);
+  jl_gs(x,gs_float,gs_add,1,Q->jgs,0);
 #endif
 # ifdef GS_TIMING
   t1 = MPI_Wtime() - t0;
@@ -380,7 +380,7 @@ void amg_solve(real *x, amg_data *data, const real *b)
     sint p = data->perm[i];
     if(p!=-1) cb[p] += b[i];
   }
-  jl_gs_op(cb,gs_double,gs_add,0,data->gs_top,0);
+  jl_gs(cb,gs_double,gs_add,0,data->gs_top,0);
   amg_exec(data);
   if(data->null_space) {
     real avg = 0, sum;
@@ -392,7 +392,7 @@ void amg_solve(real *x, amg_data *data, const real *b)
     for(i=0;i<ln;++i) cx[i] -= avg;
   }
   for(i=ln;i<cn;++i) cx[i]=0;
-  jl_gs_op(cx,gs_double,gs_add,0,data->gs_top,0);
+  jl_gs(cx,gs_double,gs_add,0,data->gs_top,0);
   for(i=0;i<un;++i) {
     sint p = data->perm[i];
     x[i] = (p == -1 ? 0 : cx[p]);

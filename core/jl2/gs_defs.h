@@ -1,6 +1,11 @@
 #ifndef GS_DEFS_H
 #define GS_DEFS_H
 
+/* requires:
+     <limits.h>, <float.h>   for GS_DEFINE_IDENTITIES()
+     "types.h"               for gs_sint, gs_slong
+*/
+   
 /*------------------------------------------------------------------------------
   Monoid Definitions
   
@@ -14,7 +19,8 @@
   macro(double) \
   macro(float ) \
   macro(int   ) \
-  macro(long  )
+  macro(long  ) \
+  WHEN_LONG_LONG(macro(long_long))
   
 /* the supported ops */
 #define GS_FOR_EACH_OP(T,macro) \
@@ -29,19 +35,21 @@
 #define GS_DO_min(a,b) if(b<a) a=b
 #define GS_DO_max(a,b) if(b>a) a=b
 #define GS_DO_bpr(a,b) \
-  do { uint a_ = a; uint b_ = b; \
+  do if(b!=0) { uint a_ = a; uint b_ = b; \
+       if(a_==0) { a=b_; break; } \
        for(;;) { if(a_<b_) b_>>=1; else if(b_<a_) a_>>=1; else break; } \
        a = a_; \
      } while(0)
 
 /* the monoid identity elements */
 #define GS_DEFINE_MONOID_ID(T,min,max) \
-  static const T gs_identity_##T[] = { 0, 1, max, min, 1 };
+  static const T gs_identity_##T[] = { 0, 1, max, min, 0 };
 #define GS_DEFINE_IDENTITIES() \
   GS_DEFINE_MONOID_ID(double, -DBL_MAX,  DBL_MAX) \
   GS_DEFINE_MONOID_ID(float , -FLT_MAX,  FLT_MAX) \
   GS_DEFINE_MONOID_ID(int   ,  INT_MIN,  INT_MAX) \
-  GS_DEFINE_MONOID_ID(long  , LONG_MIN, LONG_MAX)
+  GS_DEFINE_MONOID_ID(long  , LONG_MIN, LONG_MAX) \
+  WHEN_LONG_LONG(GS_DEFINE_MONOID_ID(long_long,LLONG_MIN,LLONG_MAX))
 
 /*------------------------------------------------------------------------------
   Enums and constants
@@ -50,9 +58,12 @@
 /* domain enum */
 #define LIST GS_FOR_EACH_DOMAIN(ITEM) gs_dom_n
 #define ITEM(T) gs_##T,
-typedef enum { LIST } gs_dom_t;
+typedef enum { LIST } gs_dom;
 #undef ITEM
 #undef LIST
+
+#define gs_sint   TYPE_LOCAL(gs_int,gs_long,gs_long_long)
+#define gs_slong TYPE_GLOBAL(gs_int,gs_long,gs_long_long)
 
 /* domain type size array */
 #define GS_DOM_SIZE_ITEM(T) sizeof(T),
@@ -63,7 +74,7 @@ typedef enum { LIST } gs_dom_t;
 /* operation enum */
 #define LIST GS_FOR_EACH_OP(T,ITEM) gs_op_n
 #define ITEM(T,op) gs_##op,
-typedef enum { LIST } gs_op_t;
+typedef enum { LIST } gs_op;
 #undef ITEM
 #undef LIST
 

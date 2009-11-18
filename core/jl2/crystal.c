@@ -33,27 +33,26 @@
     
   ----------------------------------------------------------------------------*/
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
 #include "comm.h"
+#include "mem.h"
 
-#ifdef PREFIX
-#  define crystal_init   TOKEN_PASTE(PREFIX,crystal_init)
-#  define crystal_free   TOKEN_PASTE(PREFIX,crystal_free)
-#  define crystal_router TOKEN_PASTE(PREFIX,crystal_router)
-#endif
+#define crystal_init   PREFIXED_NAME(crystal_init  )
+#define crystal_free   PREFIXED_NAME(crystal_free  )
+#define crystal_router PREFIXED_NAME(crystal_router)
 
 typedef struct {
-  comm_t comm;
+  struct comm comm;
   buffer data, work;
   uint n;
 } crystal_data;
 
-void crystal_init(crystal_data *p, const comm_t *comm)
+void crystal_init(crystal_data *p, const struct comm *comm)
 {
   comm_dup(&p->comm, comm);
   buffer_init(&p->data,1000);
@@ -99,7 +98,7 @@ static uint crystal_move(crystal_data *p, uint cutoff, int send_hi)
 static void crystal_exchange(crystal_data *p, uint send_n, uint targ,
                              int recvn, int tag)
 {
-  comm_req_t req[3];
+  comm_req req[3];
   uint count[2] = {0,0}, sum, *recv[2];
 
   if(recvn)   

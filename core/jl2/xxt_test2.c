@@ -1,11 +1,12 @@
+#include <stddef.h>
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
 #include "comm.h"
+#include "mem.h"
 #include "crs.h"
 
 #define M 3
@@ -18,8 +19,8 @@ int main(int narg, char* arg[])
   double *x, *b, *x2;
 
   crs_data *crs;
-  comm_ext_t world; int id,np;
-  comm_t comm;
+  comm_ext world; int id,np;
+  struct comm comm;
 #ifdef MPI
   MPI_Init(&narg,&arg);
   world = MPI_COMM_WORLD;

@@ -1,36 +1,15 @@
-#ifndef ERRMEM_H
-#define ERRMEM_H
+#ifndef MEM_H
+#define MEM_H
 
 /* requires:
+     <stddef.h> for size_t, offsetof
      <stdlib.h> for malloc, calloc, realloc, free
-     <stddef.h> for offsetof
+     "fail.h"
 */
 
-#ifndef NAME_H
-#warning "errmem.h" requires "name.h"
+#ifndef FAIL_H
+#warning "mem.h" requires "fail.h"
 #endif
-
-/*--------------------------------------------------------------------------
-   Error Reporting
-  --------------------------------------------------------------------------*/
-
-#ifdef PREFIX
-#  define fail TOKEN_PASTE(PREFIX,fail)
-#endif
-
-#ifdef __GNUC__
-#  define FAILDEF() \
-   void fail(const char *fmt, ...) __attribute__ ((noreturn));
-   FAILDEF()
-#  undef FAILDEF
-#else
-   void fail(const char *fmt, ...);
-#endif
-
-static void failwith(const char *string)
-{
-  fail("%s\n",string);
-}
 
 /*--------------------------------------------------------------------------
    Memory Allocation Wrappers to Catch Out-of-memory
@@ -39,7 +18,8 @@ static void failwith(const char *string)
 static void *smalloc(size_t size, const char *file)
 {
   void *res = malloc(size);
-  if(!res && size) fail("%s: allocation of %d bytes failed\n",file,(int)size);
+  if(!res && size)
+    fail(1,"%s: allocation of %ld bytes failed\n",file,(long)size);
   return res;
 }
 
@@ -47,14 +27,15 @@ static void *scalloc(size_t nmemb, size_t size, const char *file)
 {
   void *res = calloc(nmemb, size);
   if(!res && nmemb)
-    fail("%s: allocation of %d bytes failed\n",file,(int)size*nmemb);
+    fail(1,"%s: allocation of %ld bytes failed\n",file,(long)size*nmemb);
   return res;
 }
 
 static void *srealloc(void *ptr, size_t size, const char *file)
 {
   void *res = realloc(ptr, size);
-  if(!res && size) fail("%s: allocation of %d bytes failed\n",file,(int)size);
+  if(!res && size)
+    fail(1,"%s: allocation of %ld bytes failed\n",file,(long)size);
   return res;
 }
 
@@ -69,6 +50,7 @@ static void *srealloc(void *ptr, size_t size, const char *file)
    A dynamic array
   --------------------------------------------------------------------------*/
 typedef struct { void *ptr; size_t n,max; } array;
+#define null_array {0,0,0}
 static void array_init_(array *a, size_t max, size_t size, const char *file)
 {
   a->n=0, a->max=max, a->ptr=smalloc(max*size,file);
@@ -77,7 +59,7 @@ static void array_resize_(array *a, size_t max, size_t size, const char *file)
 {
   a->max=max, a->ptr=srealloc(a->ptr,max*size,file);
 }
-static void array_reserve_(array *a, size_t min, size_t size, const char *file)
+static void *array_reserve_(array *a, size_t min, size_t size, const char *file)
 {
   size_t max = a->max;
   if(max<min) {
@@ -85,7 +67,9 @@ static void array_reserve_(array *a, size_t min, size_t size, const char *file)
     if(max<min) max=min;
     array_resize_(a,max,size,file);
   }
+  return a->ptr;
 }
+
 static void array_free(array *a) { free(a->ptr); }
 #define array_init(T,a,max) array_init_(a,max,sizeof(T),__FILE__)
 #define array_resize(T,a,max) array_resize_(a,max,sizeof(T),__FILE__)
@@ -95,12 +79,15 @@ static void array_free(array *a) { free(a->ptr); }
    Buffer = char array
   --------------------------------------------------------------------------*/
 typedef array buffer;
+#define null_buffer null_array
 #define buffer_init(b,max) array_init(char,b,max)
 #define buffer_resize(b,max) array_resize(char,b,max)
 #define buffer_reserve(b,max) array_reserve(char,b,max)
 #define buffer_free(b) array_free(b)
 
-/* alignment */
+/*--------------------------------------------------------------------------
+   Alignment routines
+  --------------------------------------------------------------------------*/
 #define ALIGNOF(T) offsetof(struct { char c; T x; }, x)
 static size_t align_as_(size_t a, size_t n) { return (n+a-1)/a*a; }
 #define align_as(T,n) align_as_(ALIGNOF(T),n)

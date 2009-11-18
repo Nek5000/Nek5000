@@ -1,13 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "name.h"
-#include "errmem.h"
+#include "fail.h"
 #include "types.h"
 #include "comm.h"
+#include "mem.h"
+#include "gs_defs.h"
 #include "gs.h"
 
-static void test(const comm_t *comm)
+static void test(const struct comm *comm)
 {
   uint i,np=comm->np;
   slong *glindex = tmalloc(slong,np*2);
@@ -31,8 +33,8 @@ static void test(const comm_t *comm)
 
 int main(int narg, char *arg[])
 {
-  comm_ext_t world; int np;
-  comm_t comm;
+  comm_ext world; int np;
+  struct comm comm;
   
 #ifdef MPI
   MPI_Init(&narg,&arg);

@@ -22,17 +22,18 @@
 #else
    typedef void MPI_Comm;
 #endif
-#include "types.h"
 #include "name.h"
+#include "types.h"
 
 typedef long real;
 sint datatype = 4;
 
-#define fgs_setup   FORTRAN_NAME(gs_setup  ,GS_SETUP  )
-#define fgs_op      FORTRAN_NAME(gs_op     ,GS_OP     )
-#define fgs_op_vec  FORTRAN_NAME(gs_op_vec ,GS_OP_VEC )
-#define fgs_op_many FORTRAN_NAME(gs_op_many,GS_OP_MANY)
-#define fgs_free    FORTRAN_NAME(gs_free   ,GS_FREE   )
+#define fgs_setup     FORTRAN_NAME(gs_setup    ,GS_SETUP    )
+#define fgs_op        FORTRAN_NAME(gs_op       ,GS_OP       )
+#define fgs_op_vec    FORTRAN_NAME(gs_op_vec   ,GS_OP_VEC   )
+#define fgs_op_many   FORTRAN_NAME(gs_op_many  ,GS_OP_MANY  )
+#define fgs_op_fields FORTRAN_NAME(gs_op_fields,GS_OP_FIELDS)
+#define fgs_free      FORTRAN_NAME(gs_free     ,GS_FREE     )
 
 void fgs_setup(sint *handle, const slong id[], const sint *n,
                const MPI_Comm *comm, const sint *np);
