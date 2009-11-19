@@ -2,11 +2,18 @@
 # to create a makefile using a makefile template 
 # ------------------------------------------------
 
+
 # first do some checks ...
-if [ $# -ne 1 ]; then
-  echo "usage: makenek [.usr filename|clean]"
+if [ $# -ne 1 ] && [ $# -ne 2 ]; then
+  echo "usage: makenek <.usr filename | clean> [source path]"
   exit 1
 fi
+
+# overwrite source path
+if [ $# -eq 2 ]; then
+  SOURCE_ROOT=$2
+fi
+
 
 if [ $# -eq 1 ]; then
   if [ $1 = "clean" ]; then
