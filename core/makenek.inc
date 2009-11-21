@@ -9,21 +9,13 @@ if [ $# -ne 1 ] && [ $# -ne 2 ]; then
   exit 1
 fi
 
-# overwrite source path
-if [ $# -eq 2 ]; then
-  SOURCE_ROOT=$2
+if [ $1 = "clean" ]; then
+  make -f $SOURCE_ROOT/makefile.template clean
+  exit 0
 fi
-
-
-if [ $# -eq 1 ]; then
-  if [ $1 = "clean" ]; then
-    make -f $SOURCE_ROOT/makefile.template clean
-    exit 0
-  fi
-  if [ ! -f ${1}'.usr' ]; then
-     echo "FATAL ERROR: Cannot find $1.usr!"
-     exit 1
-  fi
+if [ ! -f ${1}'.usr' ]; then
+   echo "FATAL ERROR: Cannot find $1.usr!"
+   exit 1
 fi
 
 if [ ! -f $SOURCE_ROOT/makefile.template ]; then
