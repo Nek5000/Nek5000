@@ -5,7 +5,7 @@
 #
 
 # source path 
-SOURCE_ROOT="$HOME/nek5_svn/trunk/nek"
+SOURCE_ROOT="$HOME/nek5_svn/trunk/nek" 
 
 # plug-in list
 PLUGIN_LIST=""
@@ -59,6 +59,11 @@ CC="mpicc"
 ###############################################################################
 # User Settings End
 ###############################################################################
+
+# overwrite source path with optional 2nd argument
+if [ $# -eq 2 ]; then
+  SOURCE_ROOT="$2"
+fi
 
 if [ ! -d $SOURCE_ROOT ]; then
   echo "FATAL ERROR: Cannot find $SOURCE_ROOT"
