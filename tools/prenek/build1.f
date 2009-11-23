@@ -305,12 +305,12 @@ C     Figure out which to draw
       DO 1050 I=IBEGIN,NEL
          CALL DRAWIS(ISRT(I))
  1050 CONTINUE
-      do ie=1,nel
-      do ic=1,4
-         call prsrr('xy_e$',x(ie,ic),y(ie,ic))
-         write(6,*) 'curve: ',ccurve(ic,ie),curve(1,ic,ie),ie,ic
-      enddo
-      enddo
+c     do ie=1,nel
+c     do ic=1,4
+c        call prsrr('xy_e$',x(ie,ic),y(ie,ic))
+c        write(6,*) 'curve: ',ccurve(ic,ie),curve(1,ic,ie),ie,ic
+c     enddo
+c     enddo
 
       return
       end

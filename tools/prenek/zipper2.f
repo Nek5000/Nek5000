@@ -4514,8 +4514,8 @@ c        real a(n1,m1),bt(m2,n2),ct(m3,n3)
          enddo
          call mxm(w(i),n1*n2,ct,m3,v,n3)
       else
-         call mxm(a,n1,u,m1,w,m2)
-         call mxm(w,n1,u,m2,v,n2)
+         call mxm(a,n1,u ,m1,w,m2)
+         call mxm(w,n1,bt,m2,v,n2)
       endif
       return
       end
