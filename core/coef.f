@@ -1743,7 +1743,10 @@ C
         DO 11 J=1,N
           IF (ABS(A(I,J)).GT.AAMAX) AAMAX=ABS(A(I,J))
 11      CONTINUE
-        IF (AAMAX.EQ.0.0) PAUSE 'Singular matrix.'
+        IF (AAMAX.EQ.0.0) THEN
+           write(6,*) 'Singular matrix.'
+           call exitt
+        ENDIF
         VV(I)=1.0/AAMAX
 12    CONTINUE
       DO 19 J=1,N

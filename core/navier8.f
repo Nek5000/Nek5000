@@ -2133,6 +2133,7 @@ c-----------------------------------------------------------------------
             if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
             eg0 = eg1
          enddo
+         close(80)
          ntuple = m
       elseif (nid.lt.npass) then
          call msgwait(msg_id)

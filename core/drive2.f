@@ -513,6 +513,12 @@ C
   10      FORMAT(A132)
         CLOSE(UNIT=8)
       ENDIF
+
+      len = ltrunc(path,132)
+      if(indx1(path1(len),'/',1).lt.1) then
+         call chcopy(path1(len+1),'/',1)
+      endif
+
       call bcast(SESSION,132*CSIZE)
       call bcast(PATH,132*CSIZE)
 

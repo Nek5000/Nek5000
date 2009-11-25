@@ -54,9 +54,11 @@ c     Check for zero steps
       instep=1
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
 
-C     Geometry initialization
+C     Setup domain topology  
       igeom = 2
-      call connect
+      call setup_topo
+
+C     Compute GLL stuff (points, weights, derivate op, ...)
       call genwz
 
 C     Initalize io unit
@@ -70,7 +72,7 @@ C     USRDAT
         write(6,*) ' '
       endif
 
-C     Reinitalize geometry (in case it was changed in usrdat)
+C     generate geometry (called after usrdat in case something changed)
       call gengeom (igeom)
 
 C     USRDAT2
@@ -92,6 +94,8 @@ C     Zero out masks corresponding to Dirichlet boundary points.
 
 C     Need eigenvalues to set tolerances in presolve (SETICS)
       if (fintim.ne.0.0.or.nsteps.ne.0) call geneig (igeom)
+
+C     Verify mesh topology
       call vrdsmsh
 
 C     Pressure solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
