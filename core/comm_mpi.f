@@ -419,10 +419,15 @@ c
       ttotal = tstop-etimes
       nxyz   = nx1*ny1*nz1
 
-      if (nid.eq.0) then
-         dtmp1 = np*ttime/(nelgt*nxyz)/max(istep,1)
-         dtmp2 = ttime/max(istep,1)
-         dtmp3 = 1.*papi_flops/1e6 
+      if (nid.eq.0) then 
+         dtmp1 = 0
+         dtmp2 = 0
+         dtmp3 = 0
+         if(istep.gt.0) then
+           dtmp1 = np*ttime/(nelgt*nxyz)/max(istep,1)
+           dtmp2 = ttime/max(istep,1)
+           dtmp3 = 1.*papi_flops/1e6
+         endif 
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '

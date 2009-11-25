@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine connect
+      subroutine setup_topo
 C
 C     Parallel compatible routine to find 
 C     connectivity of element structure.
@@ -32,7 +32,7 @@ C
       common /ivrtx/ vertex ((2**ldim)*lelt)
       integer glo_num,vertex
 
-      if(nid.eq.0) write(6,*) 'setup domain topology'
+      if(nid.eq.0) write(6,*) 'setup mesh topology'
 C
 C     Initialize key arrays for Direct Stiffness SUM.
 C
@@ -64,10 +64,9 @@ C     .Construct the element to processor map and
       IF (IFMVBD            ) CALL CBCMESH
       IF (IFMODEL.AND.IFKEPS) CALL CBCTURB
       CALL CHKAXCB
-
 C
 C========================================================================
-C     Set up multiplicity and direct stiffness arrays for each IFIELD
+C     Set up element-processor mapping and establish global numbering
 C========================================================================
 C
       mfield=2
@@ -117,7 +116,11 @@ c        check if there is a least one fluid element on each processor
  101  continue
 
       endif
-
+C
+C========================================================================
+C     Set up multiplicity and direct stiffness arrays for each IFIELD
+C========================================================================
+C
       ntotv = nx1*ny1*nz1*nelv
       ntott = nx1*ny1*nz1*nelt
 
@@ -149,7 +152,7 @@ c        check if there is a least one fluid element on each processor
       enddo
 
       if(nid.eq.0) then
-        write(6,*) 'done :: setup domain topology'
+        write(6,*) 'done :: setup mesh topology'
         write(6,*) ' '
       endif
 
