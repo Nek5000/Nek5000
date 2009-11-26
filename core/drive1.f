@@ -100,20 +100,14 @@ C     Verify mesh topology
 
 C     Pressure solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
       if (ifflow.and.nsteps.gt.0) then
-         if (ifsplit) then
-            call set_up_h1_crs
-         else
-            call estrat
-            if (nid.eq.0) 
-     $         write(6,*) nid,'estrat',iesolv,nsteps,fintim,solver_type
-            if (fintim.ne.0.0.or.nsteps.ne.0) then
-               if (iftran.and.solver_type.eq.'itr') then
-                  call set_overlap
-               elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
-                  call gfdm_init
-               elseif (solver_type.eq.'25D') then
-                  call g25d_init
-               endif
+         call estrat
+         if (fintim.ne.0.0.or.nsteps.ne.0) then
+            if (iftran.and.solver_type.eq.'itr') then
+               call set_overlap
+            elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
+               call gfdm_init
+            elseif (solver_type.eq.'25D') then
+               call g25d_init
             endif
          endif
       endif
