@@ -918,7 +918,7 @@ c
          call copy(rr,r,ntot)
 c        call col2(rr,mult,ntot)
       endif
-      if (nid.eq.0.and.icalld.eq.0) write(6,*) 'In fdm_h1',nel
+c      if (nid.eq.0.and.icalld.eq.0) write(6,*) 'In fdm_h1',nel
       icalld = icalld+1
 c
 c

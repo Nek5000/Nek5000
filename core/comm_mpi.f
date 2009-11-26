@@ -440,7 +440,7 @@ c
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 
-     &      ,'Mflops                         : ',dtmp3
+     &       'Mflops                         : ',dtmp3
      &      ,'Mflops/s                       : ',papi_mflops
 #endif
  
@@ -449,15 +449,6 @@ c
 
       call mpi_finalize (ierr)
       call exit(0)
-
-c     z = -nx1
-c     z = sqrt(z)
-c     y = 1./(nx1-lx1)
-c     y = 0.*y
-c     a = 1./y
-c     b = 1./y
-c     write(6,*) 'quittin3',z,b
-      call exit
 
       return
       end

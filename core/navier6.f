@@ -57,16 +57,18 @@ c
       common /scrmg/ ddmask  (4*ltotd)
       common /ctmp1/ mask    (4*ltotd)
 
-      ifield = 1
-      if (param(44).eq.1) then !  Set up local overlapping solves 
-         call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
-      else
-         call swap_lengths
+      if(.not.ifsplit) then
+        ifield = 1
+        if (param(44).eq.1) then !  Set up local overlapping solves 
+           call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
+        else
+           call swap_lengths
+        endif
+ 
+        call gen_fast(x,y,z)
+        call init_weight_op
+        if(param(43).eq.0) call hsmg_setup
       endif
-
-      call gen_fast(x,y,z)
-      call init_weight_op
-      if(param(43).eq.0) call hsmg_setup
 
       call set_up_h1_crs
  

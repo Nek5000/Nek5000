@@ -157,19 +157,33 @@ c     extrapolate velocity
       AB0 = AB(1)
       AB1 = AB(2)
       AB2 = AB(3)
-      do i = 1,ntot1
-         vext(i,1) =             ab0*vx(i,1,1,1)
-         vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
-         vext(i,1) = vext(i,1) + ab2*vxlag(i,1,1,1,2)
 
-         vext(i,2) =             ab0*vy(i,1,1,1)
-         vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
-         vext(i,2) = vext(i,2) + ab2*vylag(i,1,1,1,2)
-
-         vext(i,3) =             ab0*vz(i,1,1,1)
-         vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
-         vext(i,3) = vext(i,3) + ab2*vzlag(i,1,1,1,2)
-      enddo
+      if(NBDINP.EQ.3) then
+        do i = 1,ntot1
+           vext(i,1) =             ab0*vx(i,1,1,1)
+           vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
+           vext(i,1) = vext(i,1) + ab2*vxlag(i,1,1,1,2)
+ 
+           vext(i,2) =             ab0*vy(i,1,1,1)
+           vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
+           vext(i,2) = vext(i,2) + ab2*vylag(i,1,1,1,2)
+ 
+           vext(i,3) =             ab0*vz(i,1,1,1)
+           vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
+           vext(i,3) = vext(i,3) + ab2*vzlag(i,1,1,1,2)
+        enddo
+      else
+        do i = 1,ntot1
+           vext(i,1) =             ab0*vx(i,1,1,1)
+           vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
+ 
+           vext(i,2) =             ab0*vy(i,1,1,1)
+           vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
+ 
+           vext(i,3) =             ab0*vz(i,1,1,1)
+           vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
+        enddo
+      endif
 
 c     -mu*curl(curl(v))
       call op_curl (ta1,ta2,ta3,vext(1,1),vext(1,2),vext(1,3),

@@ -59,9 +59,6 @@ C---------------------------------------------------------------------------
 C
       IESOLV = 1
       if (ifsplit) iesolv=0
-      IF (ISTEP.LT.2.AND.NID.EQ.0) WRITE(6,10) IESOLV
-   10 FORMAT(2X,'E-solver strategy:',I2)
-
 c
       solver_type='itr'
       if (param(116).ne.0) solver_type='fdm'
@@ -71,6 +68,12 @@ c     The following change recognizes that geometry is logically
 c     tensor-product, but deformed:  pdm = Preconditioner is fdm
 c
       if (param(59).ne.0.and.solver_type.eq.'fdm') solver_type='pdm'
+
+      IF (ISTEP.LT.2.AND.NID.EQ.0) WRITE(6,10) IESOLV,solver_type
+   10 FORMAT(2X,'E-solver strategy: ',I2,1X,A)
+
+
+
 C
       RETURN
       END

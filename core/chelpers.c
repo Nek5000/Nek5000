@@ -1,12 +1,12 @@
-#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "jl/fname.h"
 
-
-
 #define print_stack FORTRAN_NAME(print_stack, PRINT_STACK)
 
+#if defined __GLIBC__
+
+#include <execinfo.h>
 /* Obtain a backtrace and print it to stdout. */
 void print_stack(void)
 {
@@ -19,3 +19,6 @@ void print_stack(void)
   for (i=0; i<bt_size; i++) printf("%s\n", symbols[i]);
   free (symbols);
 }
+#else
+void print_stack(){};
+#endif
