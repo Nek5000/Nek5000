@@ -794,7 +794,6 @@ c
       ntot1t = nx1*ny1*nz1*nelt
       ntot2  = nx2*ny2*nz2*nelv
 
-      nfldt=npscal
       if(nfldt.gt.ldimt) then
         write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
         call exitt
@@ -1249,10 +1248,10 @@ c
 c     E denotes the expected value operator and X,Y two
 c     real valued random variables.
 c
-c     X_rms and XY_rms have to be computed in a post-processing step:
+c     variances and covariances can be computed in a post-processing step:
 c
-c        X_rms   := sqrt[ E(X^X) - E(X)*E(X) ]
-c        XY_cov  := sqrt[ E(X*Y) - E(X)*E(Y) ] 
+c        var(X)   := E(X^X) - E(X)*E(X) 
+c        cov(X,Y) := E(X*Y) - E(X)*E(Y)  
 c
 c     Note: The E-operator is linear, in the sense that the expected
 c           value is given by E(X) = 1/N * sum[ E(X)_i ], where E(X)_i
@@ -1260,26 +1259,7 @@ c           is the expected value of the sub-ensemble i (i=1...N).
 c
       include 'SIZE'  
       include 'TOTAL' 
-
-      common /avgcmnr/ atime,timel
-
-      common /chkavg/  uavg(ax1,ay1,az1,lelt)
-     $               , vavg(ax1,ay1,az1,lelt)
-     $               , wavg(ax1,ay1,az1,lelt)
-     $               , tavg(ax1,ay1,az1,lelt)
-     $               , pavg(ax2,ay2,az2,lelt)
-
-      common /chkrms/  urms(ax1,ay1,az1,lelt)
-     $               , vrms(ax1,ay1,az1,lelt)
-     $               , wrms(ax1,ay1,az1,lelt)
-     $               , trms(ax1,ay1,az1,lelt)
-     $               , prms(ax2,ay2,az2,lelt)
-     $               , vwms(ax1,ay1,az1,lelt)
-     $               , wums(ax1,ay1,az1,lelt)
-     $               , uvms(ax1,ay1,az1,lelt)
-
-      common /chkps1/  psavg(ax1,ay1,az1,lelt,ldimt)
-     $               , psrms(ax1,ay1,az1,lelt,ldimt)
+      include 'AVG'
 
       logical ifverbose
       integer icalld
@@ -1310,23 +1290,22 @@ c
          call rzero(uavg,ntot)
          call rzero(vavg,ntot)
          call rzero(wavg,ntot)
-         call rzero(tavg,ntot)
          call rzero(pavg,nto2)
+         do i = 1,ldimt
+            call rzero(tavg(1,1,1,1,i),ntott)
+         enddo
 
          call rzero(urms,ntot)
          call rzero(vrms,ntot)
          call rzero(wrms,ntot)
-         call rzero(trms,ntott)
          call rzero(prms,nto2)
+         do i = 1,ldimt
+            call rzero(trms(1,1,1,1,i),ntott)
+         enddo
 
          call rzero(vwms,ntot)
          call rzero(wums,ntot)
          call rzero(uvms,ntot)
-
-         do i = 1,ldimt-1
-           call rzero(psavg(1,1,1,1,i),ntott)
-           call rzero(psrms(1,1,1,1,i),ntott)
-         enddo
       endif
 
       dtime = time  - timel
@@ -1342,16 +1321,17 @@ c
       if  (mod(istep,iastep).eq.0) ifverbose=.true.
 
       if (atime.ne.0..and.dtime.ne.0.) then
+         if(nid.eq.0) write(6,*) 'Compute statistics ...'
          beta  = dtime/atime
          alpha = 1.-beta
          ! compute averages E(X)
          call avg1    (uavg,vx,alpha,beta,ntot ,'um  ',ifverbose)
          call avg1    (vavg,vy,alpha,beta,ntot ,'vm  ',ifverbose)
          call avg1    (wavg,vz,alpha,beta,ntot ,'wm  ',ifverbose)
-         call avg1    (tavg,t ,alpha,beta,ntott,'tm  ',ifverbose)
          call avg1    (pavg,pr,alpha,beta,nto2 ,'prm ',ifverbose)
-         do i = 1,ldimt-1
-            call avg1 (psavg(1,1,1,1,i),T(1,1,1,1,i+1),alpha,beta,
+         call avg1    (tavg,t ,alpha,beta,ntott,'tm  ',ifverbose)
+         do i = 2,ldimt
+            call avg1 (tavg(1,1,1,1,i),t(1,1,1,1,i),alpha,beta,
      &                 ntott,'psav',ifverbose)
          enddo
 
@@ -1359,10 +1339,10 @@ c
          call avg2    (urms,vx,alpha,beta,ntot ,'ums ',ifverbose)
          call avg2    (vrms,vy,alpha,beta,ntot ,'vms ',ifverbose)
          call avg2    (wrms,vz,alpha,beta,ntot ,'wms ',ifverbose)
-         call avg2    (trms,t ,alpha,beta,ntott,'tms ',ifverbose)
          call avg2    (prms,pr,alpha,beta,nto2 ,'prms',ifverbose)
-         do i = 1,ldimt-1
-            call avg2 (psrms(1,1,1,1,i),T(1,1,1,1,i+1),alpha,beta,
+         call avg2    (trms,t ,alpha,beta,ntott,'tms ',ifverbose)
+         do i = 2,ldimt
+            call avg2 (trms(1,1,1,1,i),t(1,1,1,1,i),alpha,beta,
      &                 ntott,'psms',ifverbose)
          enddo
 
@@ -1376,7 +1356,7 @@ c-----------------------------------------------------------------------
       if ( (mod(istep,iastep).eq.0.and.istep.gt.1) .or.lastep.eq.1) then
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
-         call outpost2(uvms,vwms,wums,prms,wtms,ldimt,'rm2')
+         call outpost2(uvms,vwms,wums,prms,wtms,0    ,'rm2')
          atime = 0.
       endif
 c
