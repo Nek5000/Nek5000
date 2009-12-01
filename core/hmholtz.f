@@ -33,10 +33,10 @@ c
       icalld=icalld+1
       nhmhz=icalld
       etime1=dnekclock()
-      IF (IMESH.EQ.1) NTOT = NX1*NY1*NZ1*NELV
-      IF (IMESH.EQ.2) NTOT = NX1*NY1*NZ1*NELT
-C
-C
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+      if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
+      if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
+
 C     Determine which field is being computed for FDM based preconditioner bc's
 c
       call chcopy(nam3,name,3)
