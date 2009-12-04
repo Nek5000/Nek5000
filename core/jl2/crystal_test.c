@@ -22,7 +22,7 @@ int main(int narg, char *arg[])
   world=0, np=1;
 #endif
 
-  comm_init_check(&comm,world,np);
+  comm_init(&comm,world);
   
   crystal_init(&crystal,&comm);
 
