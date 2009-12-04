@@ -105,7 +105,7 @@ int main(int narg, char* arg[])
   world=0, np=1;
 #endif
 
-  comm_init_check(&comm,world,np);
+  comm_init(&comm,world);
   if(np!=3) { puts("run with 3 procs"); exit(1); }
   id = comm.id;
 

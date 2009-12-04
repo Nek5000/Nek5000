@@ -31,7 +31,7 @@ int main(int narg, char *arg[])
   world=0, np=1;
 #endif
 
-  comm_init_check(&comm,world,np);
+  comm_init(&comm,world);
   crystal_init(&crystal,&comm);
 
   array_init(r_work,&A,np*3), A.n=np*3, row=A.ptr;
