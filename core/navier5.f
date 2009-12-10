@@ -1268,12 +1268,12 @@ c
 
       if (ax1.ne.lx1 .or. ay1.ne.ly1 .or. az1.ne.lz1) then
          if(nid.eq.0) write(6,*)
-     $     'ABORT: Size of ax1,ay1,az1 does not match, check SIZEu!'
+     $     'ABORT: wrong size of ax1,ay1,az1 in avg_all(), check SIZEu!'
          call exitt
       endif
       if (ax2.ne.lx2 .or. ay2.ne.ay2 .or. az2.ne.lz2) then
          if(nid.eq.0) write(6,*)
-     $     'ABORT: Size of ax2,ay2,az2 does not match, check SIZEu!'
+     $     'ABORT: wrong size of ax2,ay2,az2 in avg_all(), check SIZEu!'
          call exitt
       endif
 

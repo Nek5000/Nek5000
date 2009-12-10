@@ -2367,7 +2367,7 @@ c-----------------------------------------------------------------------
 
       if (nelgt.gt.neltmx.or.nelgv.gt.nelvmx) then
          if (nid.eq.0) then
-          write(6,12) nelt,nelgt,(nelgt/np + 3),nelgt
+          write(6,12) lelt,lelgv,(nelgt/np + 3),nelgt
  12         format(//,2X,'ABORT: Problem size too large!'
      $             ,/,2X
      $             ,/,2X,'This solver has been compiled for:'
