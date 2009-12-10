@@ -4,16 +4,14 @@
 bin_nek_tools="$HOME/bin"
 
 # specify your compilers here
-F77="pgf77 -Ktrap=fp -mcmodel=medium"
-CC="pgcc"
+F77=""
+CC=""
 
 # overwrite source path with optional 2nd argument
 if [ $# -eq 2 ]; then
   bin_nek_tools="$2"
 fi
 
-#echo $bin_nek_tools
-#echo this is my bin nek tools
 
 
 
