@@ -2631,8 +2631,10 @@ c-----------------------------------------------------------------------
          call blank     (hdr,iHeaderSize)
          call byte_read (hdr, iHeaderSize/4)
          call byte_read (bytetest,1)
+         if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
          call mfi_parse_hdr(hdr)
       endif
+      call bcast(if_byte_sw,lsize) 
       call bcast(hdr,iHeaderSize)  
       if(nid.ne.0) call mfi_parse_hdr(hdr)
 
@@ -2646,14 +2648,13 @@ c-----------------------------------------------------------------------
          pid0r = nid
          pid1r = nid + stride
          fid0r = nid / stride
-         if (nid.ne.0) then
+         if (nid.ne.0) then ! don't do it again for rank0
             call blank     (hdr,iHeaderSize)
             call mbyte_open(hname,fid0r) ! open  blah000.fldnn
             call byte_read (hdr, iHeaderSize/4)  
             call byte_read (bytetest,1) 
             call mfi_parse_hdr (hdr)     ! replace hdr with correct one 
          endif
-         if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
          call byte_read (er,nelr)     ! get element mapping
          if (if_byte_sw) call byte_reverse(er,nelr)
       endif
