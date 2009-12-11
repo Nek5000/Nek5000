@@ -572,8 +572,9 @@ c----------------------------------------------------------------------
       integer lbr,rbr,lbs,rbs,lbt,rbt
       real eps,diag
       
+      ierr = 0
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          nr=nl
          ns=nl
          nt=nl
@@ -621,6 +622,13 @@ c    $                         ,eps,diag,lr(i),ls(j),lt(k)
             enddo
          endif
       enddo
+
+      ierrmx = iglmax(ierr,1)
+      if (ierrmx.gt.0) then
+         if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
+         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+      endif
+
       return
       end
 c----------------------------------------------------------------------
@@ -917,9 +925,11 @@ c     init everything to 1
       enddo
       enddo
       enddo
+
 c     set dirichlet nodes to zero
+      ierr = 0
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          if(lbr.eq.1) then
             do k=1,nz
             do j=1,ny
@@ -1001,6 +1011,13 @@ c     store weight
             enddo
          enddo
       endif
+
+      ierrmx = iglmax(ierr,1)
+      if (ierrmx.gt.0) then
+         if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
+         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+      endif
+
 c     write(6,*) nid,' EXIT hsmg_setup_mask'
       return
       end
@@ -1044,6 +1061,7 @@ c----------------------------------------------------------------------
       
       integer ie,i,j
       integer lbr,rbr,lbs,rbs,lbt,rbt
+      ierr = 0
       do ie=1,nelv
          call rzero(work,n*n)
          do j=1,n
@@ -1058,7 +1076,7 @@ c----------------------------------------------------------------------
             work(i,n-1)=1.0
             work(i,n)=1.0
          enddo
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          if(lbr.eq.0) then
             do j=1,n
                work(1,j)=work(1,j)+1.0
@@ -1105,6 +1123,13 @@ c----------------------------------------------------------------------
             enddo
          endif
       enddo
+
+      ierrmx = iglmax(ierr,1)
+      if (ierrmx.gt.0) then
+         if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
+         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+      endif
+
       return
       end
 c----------------------------------------------------------------------
@@ -1117,6 +1142,8 @@ c----------------------------------------------------------------------
       
       integer ie,i,j,k
       integer lbr,rbr,lbs,rbs,lbt,rbt
+
+      ierr = 0
       do ie=1,nelv
          do k=1,n
          do j=1,n
@@ -1142,7 +1169,7 @@ c----------------------------------------------------------------------
             work(i,j,n)=1.0
          enddo
          enddo
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          if(lbr.eq.0) then
             do k=1,n
             do j=1,n
@@ -1227,6 +1254,13 @@ c----------------------------------------------------------------------
             enddo
          endif
       enddo
+
+      ierrmx = iglmax(ierr,1)
+      if (ierrmx.gt.0) then
+         if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
+         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+      endif
+
       return
       end
 c----------------------------------------------------------------------

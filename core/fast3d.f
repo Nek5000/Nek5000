@@ -29,6 +29,8 @@ c
       real z(nx1,ny1,nz1,nelv)
       real axwt(lx2)
 
+      ierr = 0
+
       if (param(44).eq.1) then
 c                                    __ __ __
 c        Now, for each element, compute lr,ls,lt between specified planes
@@ -60,9 +62,9 @@ c
       do ie=1,nelv
 c
          if (param(44).eq.1) then
-           call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+           call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          else
-           call get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+           call get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          endif
 c
 c        Set up matrices for each element.
@@ -155,7 +157,14 @@ c
 c        Next element ....
 c
       enddo
-c
+
+      ierrmx = iglmax(ierr,1)
+      if (ierrmx.gt.0) then
+         if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
+         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+      endif
+
+
       return
       end
 c-----------------------------------------------------------------------
@@ -758,7 +767,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+      subroutine get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
       integer                lbr,rbr,lbs,rbs,lbt,rbt
 c
       include 'SIZE'
@@ -770,10 +779,12 @@ c
 c     ibc = 0  <==>  Dirichlet
 c     ibc = 1  <==>  Dirichlet, outflow (no extension)
 c     ibc = 2  <==>  Neumann,   
-c
-      ibc = 0
+
+
       do iface=1,2*ndim
          ied = eface(iface)
+         ibc = -1
+         if (cbc(ied,ie,1).eq.'   ') ibc = 0
          if (cbc(ied,ie,1).eq.'E  ') ibc = 0
          if (cbc(ied,ie,1).eq.'P  ') ibc = 0
          if (cbc(ied,ie,1).eq.'O  ') ibc = 1
@@ -790,21 +801,24 @@ c
          if (cbc(ied,ie,1).eq.'s  ') ibc = 2
          if (cbc(ied,ie,1).eq.'J  ') ibc = 0
          if (cbc(ied,ie,1).eq.'SP ') ibc = 0
-C
+
          fbc(iface) = ibc
       enddo
-c
+
       lbr = fbc(1)
       rbr = fbc(2)
       lbs = fbc(3)
       rbs = fbc(4)
       lbt = fbc(5)
       rbt = fbc(6)
-c
+
+      ierr = 0 
+      if (ibc.lt.0) ierr = lglel(ie)
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie)
+      subroutine get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
       integer                 lbr,rbr,lbs,rbs,lbt,rbt
 c
       include 'SIZE'
@@ -817,11 +831,11 @@ c     ibc = 0  <==>  Dirichlet
 c     ibc = 1  <==>  Dirichlet, outflow (no extension)
 c     ibc = 2  <==>  Neumann,   
 c
-      ibc = 0
       do iface=1,2*ndim
          ied = eface(iface)
 c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
          ibc = -1
+         if (cbc(ied,ie,1).eq.'   ') ibc = 0
          if (cbc(ied,ie,1).eq.'E  ') ibc = 0
          if (cbc(ied,ie,1).eq.'P  ') ibc = 0
          if (cbc(ied,ie,1).eq.'O  ') ibc = 1
@@ -838,18 +852,21 @@ c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
          if (cbc(ied,ie,1).eq.'s  ') ibc = 2
          if (cbc(ied,ie,1).eq.'J  ') ibc = 0
          if (cbc(ied,ie,1).eq.'SP ') ibc = 0
-c
+
          fbc(iface) = ibc
       enddo
-c
+
       lbr = fbc(1)
       rbr = fbc(2)
       lbs = fbc(3)
       rbs = fbc(4)
       lbt = fbc(5)
       rbt = fbc(6)
-c      write(6,*) ie,(fbc(k),k=1,6),' BOUNDARY'
-c
+c     write(6,*) ie,(fbc(k),k=1,6),' BOUNDARY'
+
+      ierr = 0 
+      if (ibc.lt.0) ierr = lglel(ie)
+
       return
       end
 c-----------------------------------------------------------------------
