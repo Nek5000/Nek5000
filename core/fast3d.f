@@ -772,6 +772,7 @@ c-----------------------------------------------------------------------
 c
       include 'SIZE'
       include 'INPUT'
+      include 'PARALLEL'
       include 'TOPOL'
 c
       integer fbc(6)
@@ -823,6 +824,7 @@ c-----------------------------------------------------------------------
 c
       include 'SIZE'
       include 'INPUT'
+      include 'PARALLEL'
       include 'TOPOL'
 c
       integer fbc(6)
