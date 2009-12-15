@@ -702,6 +702,9 @@ C
       CALL CMULT (E1,XNORM,NTOT1)
       CALL CMULT (E2,XNORM,NTOT1)
       IF (NDIM.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
+
+c     call exitti   ('quit in stx1sf$,',nel)
+
 C
       RETURN
       END
@@ -1036,7 +1039,8 @@ C
       DO 110 IEL=1,NEL
       DO 110 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
-         IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') THEN
+         IF (CB.EQ.'ON ' .OR. CB.EQ.'on ' .or.
+     $       CB.EQ.'MM ' .OR. CB.EQ.'mm ' ) THEN
              CALL FACEV (HVMASK,IEL,IFC,3.0,NX1,NY1,NZ1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),3.0,NXZ1)
          ENDIF
@@ -2085,6 +2089,9 @@ C
          return
       endif
 
+c     call outfldro (v1mask,'v1mask rmk',0)
+c     call outfldro (v2mask,'v2mask rmk',1)
+
       IF (IFIELD.EQ.1) THEN
          CALL QMASK (R1,R2,R3,V1MASK,V2MASK,V3MASK,NEL)
       ELSEIF (ifield.eq.ifldmhd) then
@@ -2092,7 +2099,11 @@ C
       ELSE
          CALL QMASK (R1,R2,R3,W1MASK,W2MASK,W3MASK,NEL)
       ENDIF
-C
+
+c     call outfldro (r1,'r1   rmask',0)
+c     call outfldro (r2,'r2   rmask',1)
+c     call exitti   ('quit in rmask$,',nel)
+
       RETURN
       END
       SUBROUTINE QMASK (R1,R2,R3,R1MASK,R2MASK,R3MASK,NEL)

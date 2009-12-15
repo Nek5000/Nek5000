@@ -790,6 +790,9 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,ie,1).eq.'P  ') ibc = 0
          if (cbc(ied,ie,1).eq.'O  ') ibc = 1
          if (cbc(ied,ie,1).eq.'MS ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ms ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MM ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mm ') ibc = 1
          if (cbc(ied,ie,1).eq.'mv ') ibc = 2
          if (cbc(ied,ie,1).eq.'mvn') ibc = 2
          if (cbc(ied,ie,1).eq.'v  ') ibc = 2
@@ -842,6 +845,9 @@ c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
          if (cbc(ied,ie,1).eq.'P  ') ibc = 0
          if (cbc(ied,ie,1).eq.'O  ') ibc = 1
          if (cbc(ied,ie,1).eq.'MS ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ms ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MM ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mm ') ibc = 1
          if (cbc(ied,ie,1).eq.'mv ') ibc = 2
          if (cbc(ied,ie,1).eq.'mvn') ibc = 2
          if (cbc(ied,ie,1).eq.'v  ') ibc = 2

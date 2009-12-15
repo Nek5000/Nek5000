@@ -151,6 +151,9 @@ c     Set mask
          cb=cbc(iface,ie,ifield)
          if (cb.eq.'O  '  .or.
      $       cb.eq.'ON '  .or.
+     $       cb.eq.'MM '  .or.
+     $       cb.eq.'mm '  .or.
+     $       cb.eq.'ms '  .or.
      $       cb.eq.'MS ') call facev(mask,ie,iface,z,nxc,nxc,nzc)
       enddo
       enddo
@@ -1160,6 +1163,9 @@ C
          cb=cbc(iface,ie,ifield)
          if (cb.eq.'O  '  .or.
      $       cb.eq.'ON '  .or.
+     $       cb.eq.'MM '  .or.
+     $       cb.eq.'mm '  .or.
+     $       cb.eq.'ms '  .or.
      $       cb.eq.'MS ') call ifacev(w,ie,iface,0,nxc,nxc,nzc)
       enddo
       enddo

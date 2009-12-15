@@ -283,6 +283,7 @@ C
          CB = CBC(IFC,IEL,IFIELD)
          IF (CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR. 
      $       CB.EQ.'MSI' .OR. CB.EQ.'msi' .OR. 
+     $       CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR. 
      $       CB.EQ.'mv ' .OR. CB.EQ.'mvn' .OR.
      $       CB.EQ.'MLI') THEN
              CALL FACEXV (UNX(1,1,IFC,IEL),UNY(1,1,IFC,IEL),
@@ -313,6 +314,7 @@ C
       DO 210 IFC=1,NFACE
          CB = CBC(IFC,IEL,IFIELD)
          IF (CB.EQ.'mv ' .OR. CB.EQ.'mvn'  .OR.
+     $       CB.EQ.'MM ' .OR. CB.EQ.'mm '  .OR.
      $       CB.EQ.'MS ' .OR. CB.EQ.'ms ') THEN
             IFREGW = .TRUE.
             CALL FACEC3 (WVX(1,1,1,IEL),WVY(1,1,1,IEL),WVZ(1,1,1,IEL),
