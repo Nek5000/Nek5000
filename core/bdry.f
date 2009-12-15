@@ -55,6 +55,7 @@ csk         call check_cyclic  ! fow now; set in .rea file
      $           CB.EQ.'ON ' .OR. CB.EQ.'on ' .OR.
      $           CB.EQ.'S  ' .OR. CB.EQ.'s  ' .OR.
      $           CB.EQ.'SL ' .OR. CB.EQ.'sl ' .OR.
+     $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MS ' .OR. CB.EQ.'ms ')  THEN
                                               IFVCOR          = .FALSE.
                                               IFEPPM(IFC,IEL) = .TRUE.
@@ -63,12 +64,14 @@ csk         call check_cyclic  ! fow now; set in .rea file
      $           CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR.
      $           CB.EQ.'SL ' .OR. CB.EQ.'sl ' .OR.
      $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR.
+     $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR.
      $           CB.EQ.'O  ' .OR. CB.EQ.'o  ' .OR.
      $           CB.EQ.'ON ' .OR. CB.EQ.'on ')  THEN
                                               IFQINP(IFC,IEL) = .TRUE.
             ENDIF
             IF  (CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR.
+     $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MSI' .OR. CB.EQ.'msi' ) THEN
                                               IFSURT          = .TRUE.
             ENDIF
@@ -299,6 +302,7 @@ C
      $     CB.EQ.'SHL' .OR.  CB.EQ.'shl' .OR.
      $     CB.EQ.'S  ' .OR.  CB.EQ.'s  ' .OR.
      $     CB.EQ.'SL ' .OR.  CB.EQ.'sl ' .OR.
+     $     CB.EQ.'MM ' .OR.  CB.EQ.'mm ' .OR.
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
       IF ( .NOT.IFALGN .AND.
@@ -1207,13 +1211,14 @@ C
 C     Surface-tension
 C
          IF (CB.EQ.'MS ' .OR. CB.EQ.'MSI' .OR.
+     $       CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $       CB.EQ.'ms ' .OR. CB.EQ.'msi') THEN
-             IF (CB.EQ.'MS ') THEN
+             IF (CB.EQ.'MS '.or.cb.eq.'MM ') THEN
                 BCN = -BC1
                 CALL TRCON   (TRX,TRY,TRZ,BCN,BC2,BC3,IEL,IFC)
                 CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
              ENDIF
-             IF (CB.EQ.'ms ') THEN
+             IF (CB.EQ.'ms '.or.cb.eq.'mm ') THEN
                 CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,NX1,NY1,NZ1)
                 CALL FACCVS  (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
                 CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
