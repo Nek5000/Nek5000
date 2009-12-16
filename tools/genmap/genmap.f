@@ -270,8 +270,9 @@ c     Compress vertices based on coordinates
 
       nv   = 2**ndim
       npts = nelt*nv
+
       call iranku    (cell,irnk,npts,i_n)
-      call self_chk  (cell,nv,nelt,3)       ! check for not self-ptg.
+      call self_chk  (cell,nv,nelt,32)       ! check for not self-ptg.
 
       return
       end
@@ -1261,6 +1262,8 @@ c
       do k = 1,nel           ! extract cell sublist
          e = elist(k)
          call icopy(c(1,k),cell(1,e),nv)
+c        write(6,6) k,e,(c(j,k),j=1,8)
+c 6      format(2i6,2x,8i8,' bp_cell')
       enddo
       npts  =  nv*nel
 
@@ -1456,6 +1459,25 @@ c     endif
 c     call out_order(order,mo,elist,cell,nv,n1,n2)
 c     call exitt(5)
 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmatti(u,m,n,name6,nid,ic)
+      integer u(m,n)
+      character*6 name6
+      character*1 adum
+c
+c     Print out copies of a global matrix, transpose
+c
+         write(6,1) nid,m,n,name6,nid,ic
+   1     format(3i6,'  Matrix T:',2x,a6,2i9)
+
+         m8 = min(m,10)
+         do j=1,n
+            write(6,2) j,name6,(u(i,j),i=1,m8)
+         enddo
+   2     format(i8,1x,a6,10i9)
 
       return
       end
@@ -2745,18 +2767,21 @@ c-----------------------------------------------------------------------
       integer e
       real dxt(4),t1(4),t2(4),wk(0:ndim,1)
 
-      write(6,*) 'start locglob_lexico:'
 
       nvtx = 2**ndim
       n = nvtx*nel
+
+      write(6,*) 'start locglob_lexico:',nvtx,nel,n,q
+
+      qq = q*q  ! Square of relative tolerance
 
       do i=1,n
          cell(i)   = i
          ifseg (i) = .false.
       enddo
-c
+
 c     Sort by directions
-c
+
       lda         = 1+ndim
       nseg        = 1
       ifseg(1)    = .true.
@@ -2764,7 +2789,7 @@ c
 
       do ipass=1,ndim   ! Multiple passes eliminates false positives
       do j=1,ndim       ! Sort within each segment
-c         write(6,*) 'locglob:',j,nseg,n
+         write(6,*) 'locglob:',j,nseg,n
          i =1
          j1=j+1
          do iseg=1,nseg
@@ -2777,7 +2802,7 @@ c        q=0.0010   ! Smaller is better
 c        q=0.2      ! But generous is more forgiving for bad meshes!
 
          do i=2,n
-           if ((dx(j,i)-dx(j,i-1))**2.gt.q*min(dx(0,i),dx(0,i-1)))
+           if ((dx(j,i)-dx(j,i-1))**2.gt.qq*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
          enddo
 
@@ -2814,7 +2839,11 @@ c     Unshuffle geometry:
        call tuple_swapt_ip(dx,lda,n,cell,t1,t2)
 
 c     Reassign cell to hold global index numbering
-      call icopy(cell,ind,n)
+
+      call icopy     (cell,ind,n)
+      call self_chk  (cell,nvtx,nel,0)       ! check for not self-ptg.
+
+
 c     Reassign geometry to match global index numbering
 c     Retain the geometry that is associated with the smallest bounding radius
 
@@ -2832,6 +2861,8 @@ c        endif
 c     enddo
       write(6,6) nseg,nglb,n,icm
     6 format(' done locglob_lexico:',4i10)
+
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2863,16 +2894,23 @@ c-----------------------------------------------------------------------
       integer cell(nv,nel),flag
       integer e
 
+
       do e=1,nel
       do i=1,nv
          do j=i+1,nv
             if (cell(i,e).eq.cell(j,e)) then
+
                write(6,*)
                call outmati(cell(1,e),2,4,'SELF!!',e,flag)
+
                write(6,*)
                write(6,*) 'ABORT: SELF-CHK ',i,j,e,flag
                write(6,*) 'Try to tighten the mesh tolerance!' 
+
+c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
+
                call exitt(flag)
+
             endif
          enddo
       enddo
