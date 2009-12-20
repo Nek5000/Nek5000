@@ -33,6 +33,8 @@ c  data types and sizes
 c
       integer mpi_integer
       parameter ( mpi_integer = 1 )
+      integer mpi_integer8
+      parameter ( mpi_integer8 = 6 )
       integer mpi_real
       parameter ( mpi_real = 2 )
       integer mpi_double_precision
