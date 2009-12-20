@@ -357,7 +357,7 @@ c
 c     Read and write boundary conditions
 c
       do ibc=1,nbc
-c
+
          read (10,80) string
          len = ltrunc(string,80)
          write(11,81) (string1(k),k=1,len)
@@ -372,24 +372,21 @@ c
                   read (10,21) cbc(k,ie),id,jd,(bc(j,k,ie),j=1,5)
                enddo
             endif
-c
+
+            call rzero(bc(1,5,ie),5)
             if     (ifper) then
                bc(1,5,ie) = ie+(nlev-1)*nel
                bc(2,5,ie) = 6
                cbc(5,ie) = 'P  '
             else
-c              (not so) quick hack..
                cbc(5,ie) = cb5
-               call rzero(bc(1,5,ie),5)
-               cbc(6,ie) = 'E  '
-               call rzero(bc(1,6,ie),5)
-               bc(1,6,ie) = ie+nel
-               bc(2,6,ie) = 5
             endif
-c
+
+            call rzero(bc(1,6,ie),5)
             bc(1,6,ie) = ie+nel
             bc(2,6,ie) = 5
             cbc(6,ie)  = 'E  '
+
             if (nlev.eq.1) then
                if     (ifper) then
                   bc(1,6,ie) = ie
@@ -399,7 +396,7 @@ c
                   call rzero(bc(1,6,ie),5)
                endif
             endif
-c
+
             do k=1,6
                if (neln.lt.1000) then
                   write(11,20) cbc(k,ie),ie,k,(bc(j,k,ie),j=1,5)
@@ -413,7 +410,7 @@ c
             bc (1,5,ie) = ie   !  -nel
 c
          enddo
-c
+
          do ilev = 2,nlev
             do ie = 1,nel
                id = ie + nel*(ilev-1)
@@ -422,7 +419,7 @@ c              Periodic bc's on Z plane
                  ! bcs for final level
                  if     (ifper) then
                    cbc(6,ie) = 'P  '
-                   bc(1,6,ie) = ie-nel
+                   bc(1,6,ie) = ie
                  else
                    cbc(6,ie) = cb6
                    call rzero(bc(1,6,ie),5)
