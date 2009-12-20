@@ -138,6 +138,11 @@ c
         call mpi_reduce_integer ( 
      &    data1, data2, n, operation, ierror )
 
+      else if ( datatype .eq. mpi_integer8 ) then
+
+        call mpi_reduce_integer8( 
+     &    data1, data2, n, operation, ierror )
+
       else if ( datatype .eq. mpi_real ) then
 
         call mpi_reduce_real ( 
@@ -721,6 +726,34 @@ c
       return
       end
 
+      subroutine mpi_reduce_integer8 ( 
+     &  data1, data2, n, operation, ierror )
+
+c*********************************************************************72
+c
+      implicit none
+
+      include "mpi_dummy.h"
+
+      integer n
+
+      integer*8 data1(n)
+      integer*8 data2(n)
+      integer i
+      integer ierror
+      integer operation
+
+      ierror = MPI_SUCCESS
+
+      do i = 1, n
+         data2(i) = data1(i)
+      end do
+
+      ierror = MPI_FAILURE
+
+      return
+      end
+ 
       subroutine mpi_reduce_integer ( 
      &  data1, data2, n, operation, ierror )
 
@@ -748,6 +781,7 @@ c
 
       return
       end
+
       subroutine mpi_reduce_real ( 
      &  data1, data2, n, operation, ierror )
 
