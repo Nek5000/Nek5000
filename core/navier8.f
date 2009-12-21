@@ -2814,9 +2814,11 @@ c
 c     Finally,  number interiors  
 c     ngvs := number of global vertices on surface of subdomains
 c
+
       ngve  = ngv
+      ngv   = ngv + n_unique_edges*n_on_edge
       ngvs  = ngv
-c
+
       n_in_interior = (nx-2)*(ny-2)
       if (ifcenter) then
          do e=1,nel
@@ -2842,13 +2844,13 @@ c
       endif
 
       ngv = ngv + n_in_interior*melg
-c
+
 c     Quick check on maximum #dofs:
       m    = nxyz*nelt
       ngvm = iglmax(glo_num,m)
       if (nid.eq.0) write(6,1) nx,ngvv,ngve,ngvs,ngv,ngvm
     1 format('   setupds2d:',6i11)
-c
+
       return
       end
 c-----------------------------------------------------------------------
