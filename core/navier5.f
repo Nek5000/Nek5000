@@ -3563,6 +3563,86 @@ c        call opdssum(xb,yb,zb)
       end
 c-----------------------------------------------------------------------
       subroutine gh_face_extend(x,zg,n,gh_type,e,v)
+      include 'SIZE'
+
+      real x(1),zg(1),e(1),v(1)
+      integer gh_type
+
+      if (ndim.eq.2) then
+         call gh_face_extend_2d(x,zg,n,gh_type,e,v)
+      else
+         call gh_face_extend_3d(x,zg,n,gh_type,e,v)
+      endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gh_face_extend_2d(x,zg,n,gh_type,e,v)
+c
+c     Extend 2D faces into interior via gordon hall
+c
+c     gh_type:  1 - vertex only
+c               2 - vertex and faces
+c
+c
+      real x(n,n)
+      real zg(n)
+      real e(n,n)
+      real v(n,n)
+      integer gh_type
+c
+c     Build vertex interpolant
+c
+      ntot=n*n
+      call rzero(v,ntot)
+      do jj=1,n,n-1
+      do ii=1,n,n-1
+         do j=1,n
+         do i=1,n
+            si     = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            sj     = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            v(i,j) = v(i,j) + si*sj*x(ii,jj)
+         enddo
+         enddo
+      enddo
+      enddo
+      if (gh_type.eq.1) then
+         call copy(x,v,ntot)
+         return
+      endif
+
+
+c     Extend 4 edges
+      call rzero(e,ntot)
+c
+c     x-edges
+c
+      do jj=1,n,n-1
+         do j=1,n
+         do i=1,n
+            hj     = 0.5*((n-jj)*(1-zg(j))+(jj-1)*(1+zg(j)))/(n-1)
+            e(i,j) = e(i,j) + hj*(x(i,jj)-v(i,jj))
+         enddo
+         enddo
+      enddo
+c
+c     y-edges
+c
+      do ii=1,n,n-1
+         do j=1,n
+         do i=1,n
+            hi     = 0.5*((n-ii)*(1-zg(i))+(ii-1)*(1+zg(i)))/(n-1)
+            e(i,j) = e(i,j) + hi*(x(ii,j)-v(ii,j))
+         enddo
+         enddo
+      enddo
+
+      call add3(x,e,v,ntot)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gh_face_extend_3d(x,zg,n,gh_type,e,v)
 c
 c     Extend faces into interior via gordon hall
 c
