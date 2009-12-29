@@ -64,6 +64,7 @@ fi
 rm -f nek5000 2>/dev/null
 rm -f $SOURCE_ROOT/SIZE 2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
+rm -f ./obj/subuser.o 2>/dev/null
 
 \mv ./obj/*.o . 2>/dev/null
 
