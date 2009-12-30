@@ -645,7 +645,7 @@ c     output curve stuff and Boundary conditions
                       buf(5) = zero
                       buf(6) = zero
                       buf(7) = zero
-                      buf(8) = 'C'
+                      call chcopy(buf(8),'C',1)
                       call byte_write(buf,8)
                   endif
                endif
