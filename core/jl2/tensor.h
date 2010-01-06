@@ -5,7 +5,7 @@
 #warning "tensor.h" requires "types.h" and "name.h"
 #endif
 
-#ifdef USE_CBLAS
+#if defined(USE_CBLAS)
 #  include <cblas.h>
 #  define tensor_dot(a,b,n) cblas_ddot((int)(n),a,1,b,1)
 #  define tensor_mxv(y,ny,A,x,nx) \
@@ -24,12 +24,16 @@
                  A,(int)na,B,(int)na,0.0,C,(int)nc)
 #else
 #  define tensor_dot  PREFIXED_NAME(tensor_dot )
-#  define tensor_mxv  PREFIXED_NAME(tensor_mxv )
-#  define tensor_mtxv PREFIXED_NAME(tensor_mtxv)
-#  define tensor_mxm  PREFIXED_NAME(tensor_mxm )
 #  define tensor_mtxm PREFIXED_NAME(tensor_mtxm)
 double tensor_dot(const double *a, const double *b, uint n);
 
+/* C (nc x nb) = [A (na x nc)]^T * B (na x nb); all column-major */
+void tensor_mtxm(double *C, uint nc,
+                 const double *A, uint na, const double *B, uint nb);
+#  if defined(USE_NAIVE_BLAS)
+#    define tensor_mxv  PREFIXED_NAME(tensor_mxv )
+#    define tensor_mtxv PREFIXED_NAME(tensor_mtxv)
+#    define tensor_mxm  PREFIXED_NAME(tensor_mxm )
 /* y = A x */
 void tensor_mxv(double *y, uint ny, const double *A, const double *x, uint nx);
 
@@ -39,9 +43,28 @@ void tensor_mtxv(double *y, uint ny, const double *A, const double *x, uint nx);
 /* C (nc x nb) = A (nc x na) * B (na x nb); all column-major */
 void tensor_mxm(double *C, uint nc,
                 const double *A, uint na, const double *B, uint nb);
-/* C (nc x nb) = [A (na x nc)]^T * B (na x nb); all column-major */
-void tensor_mtxm(double *C, uint nc,
-                 const double *A, uint na, const double *B, uint nb);
+#  else
+#    define nek_mxm FORTRAN_UNPREFIXED(mxm,MXM)
+/* C (na x nc) = A (na x nb) * B (nb x nc); all column-major */
+void nek_mxm(const double *A, const uint *na,
+             const double *B, const uint *nb,
+             double *C, const uint *nc);
+/* C (nc x nb) = A (nc x na) * B (na x nb); all column-major */
+static void tensor_mxm(double *C, uint nc,
+                       const double *A, uint na, const double *B, uint nb)
+{ nek_mxm(A,&nc,B,&na,C,&nb); }
+
+/* y = A x */
+static void tensor_mxv(double *y, uint ny,
+                       const double *A, const double *x, uint nx)
+{ uint one=1; nek_mxm(A,&ny,x,&nx,y,&one); }
+
+/* y = A^T x */
+static void tensor_mtxv(double *y, uint ny,
+                        const double *A, const double *x, uint nx)
+{ uint one=1; nek_mxm(x,&one,A,&nx,y,&ny); }
+
+#  endif
 #endif
 
 /*--------------------------------------------------------------------------

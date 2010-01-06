@@ -1,31 +1,9 @@
 #include "name.h"
 #include "types.h"
 
-#ifdef USE_CBLAS
-
-#include <cblas.h>
-#define tensor_dot(a,b,n) cblas_ddot((int)(n),a,1,b,1)
-#define tensor_mxv(y,ny,A,x,nx) \
-   cblas_dgemv(CblasColMajor,CblasNoTrans,(int)ny,(int)nx, \
-               1.0,A,(int)ny,x,1,0.0,y,1)
-#define tensor_mtxv(y,ny,A,x,nx) \
-   cblas_dgemv(CblasColMajor,CblasTrans,(int)nx,(int)ny, \
-               1.0,A,(int)nx,x,1,0.0,y,1)
-#define tensor_mxm(C,nc,A,na,B,nb) \
-   cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans, \
-               (int)nc,(int)nb,(int)na,1.0, \
-               A,(int)nc,B,(int)na,0.0,C,(int)nc)
-#define tensor_mtxm(C,nc,A,na,B,nb) \
-   cblas_dgemm(CblasColMajor,CblasTrans,CblasNoTrans, \
-               (int)nc,(int)nb,(int)na,1.0, \
-               A,(int)na,B,(int)na,0.0,C,(int)nc)
-
-#else
+#if !defined(USE_CBLAS)
 
 #define tensor_dot  PREFIXED_NAME(tensor_dot )
-#define tensor_mxv  PREFIXED_NAME(tensor_mxv )
-#define tensor_mtxv PREFIXED_NAME(tensor_mtxv)
-#define tensor_mxm  PREFIXED_NAME(tensor_mxm )
 #define tensor_mtxm PREFIXED_NAME(tensor_mtxm)
 
 /* Matrices are always column-major (FORTRAN style) */
@@ -36,6 +14,11 @@ double tensor_dot(const double *a, const double *b, uint n)
   for(;n;--n) sum += *a++ * *b++;
   return sum;
 }
+
+#  if defined(USE_NAIVE_BLAS)
+#    define tensor_mxv  PREFIXED_NAME(tensor_mxv )
+#    define tensor_mtxv PREFIXED_NAME(tensor_mtxv)
+#    define tensor_mxm  PREFIXED_NAME(tensor_mxm )
 
 /* y = A x */
 void tensor_mxv(double *y, uint ny, const double *A, const double *x, uint nx)
@@ -74,6 +57,8 @@ void tensor_mxm(double *C, uint nc,
     }
   }
 }
+
+#  endif
 
 /* C = A^T * B */
 void tensor_mtxm(double *C, uint nc,
