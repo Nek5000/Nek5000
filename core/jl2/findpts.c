@@ -138,7 +138,9 @@ static uint count_bits(unsigned char *p, uint n)
                     el_base,    el_stride,
                      r_base,     r_stride,
                  dist2_base, dist2_stride,
-                     x_base,     x_stride, npt)
+                     x_base,     x_stride,
+                     y_base,     y_stride,
+                     z_base,     z_stride, npt)
 
     conceptually, locates npt points;
       data for each point is:
@@ -152,13 +154,13 @@ static uint count_bits(unsigned char *p, uint n)
           r(ndim): parametric coordinates for point
           dist2: distance squared from found to sought point (in xyz space)
         input:
-          x(ndim): coordinates of sought point
+          x, y, z: coordinates of sought point
     
     the *_base arguments point to the data for the first point,
       each is advanced by the corresponding *_stride argument for the next point
     this allows fairly arbitrary data layout,
-      but note the coordinates for each point must be packed together
-      (consequently, r_stride and x_stride must both be at least ndim)
+      but note the r,s,t coordinates for each point must be packed together
+      (consequently, r_stride must be at least ndim)
 
 
   --------------------------------------------------------------------------
@@ -250,27 +252,37 @@ void ffindpts(const sint *const handle,
         double *const     r_base, const sint *const     r_stride,
         double *const dist2_base, const sint *const dist2_stride,
   const double *const     x_base, const sint *const     x_stride,
+  const double *const     y_base, const sint *const     y_stride,
+  const double *const     z_base, const sint *const     z_stride,
   const sint *const npt)
 {
   CHECK_HANDLE("findpts");
-  if(h->ndim==2)
+  if(h->ndim==2) {
+    const double *const xv_base[2] = {x_base,y_base};
+    const unsigned xv_stride[2] = {*x_stride*sizeof(double),
+                                   *y_stride*sizeof(double)};
     PREFIXED_NAME(findpts_2)(
       (uint*)code_base,(* code_stride)*sizeof(sint  ),
       (uint*)proc_base,(* proc_stride)*sizeof(sint  ),
       (uint*)  el_base,(*   el_stride)*sizeof(sint  ),
                 r_base,(*    r_stride)*sizeof(double),
             dist2_base,(*dist2_stride)*sizeof(double),
-                x_base,(*    x_stride)*sizeof(double),
+               xv_base,     xv_stride,
       *npt, h->data);
-  else
+  } else {
+    const double *const xv_base[3] = {x_base,y_base,z_base};
+    const unsigned xv_stride[3] = {*x_stride*sizeof(double),
+                                   *y_stride*sizeof(double),
+                                   *z_stride*sizeof(double)};
     PREFIXED_NAME(findpts_3)(
       (uint*)code_base,(* code_stride)*sizeof(sint  ),
       (uint*)proc_base,(* proc_stride)*sizeof(sint  ),
       (uint*)  el_base,(*   el_stride)*sizeof(sint  ),
                 r_base,(*    r_stride)*sizeof(double),
             dist2_base,(*dist2_stride)*sizeof(double),
-                x_base,(*    x_stride)*sizeof(double),
+               xv_base,     xv_stride,
       *npt, h->data);
+  }
 }
 
 void ffindpts_eval(const sint *const handle,

@@ -226,32 +226,37 @@ void findpts_local_free(struct findpts_local_data *const fd)
   free(fd->obb);
 }
 
-static void map_points_to_els(array *const map,
-                         uint   *const  code_base, const unsigned  code_stride,
-                   const double *const     x_base, const unsigned     x_stride,
-                   const uint npt, const struct findpts_local_data *const fd,
-                   buffer *buf)
+static void map_points_to_els(
+  array *const map,
+        uint   *const  code_base   , const unsigned  code_stride   ,
+  const double *const     x_base[D], const unsigned     x_stride[D],
+  const uint npt, const struct findpts_local_data *const fd,
+  buffer *buf)
 {
   uint index;
-  const double *x; uint *code;
+  const double *xp[D]; uint *code=code_base;
+  unsigned d; for(d=0;d<D;++d) xp[d]=x_base[d];
   array_init(struct index_el,map,npt+(npt>>2)+1);
-  for(index=0,x=x_base,code=code_base;index<npt;++index) {
-    const uint hi = hash_index(&fd->hd,x);
-    const uint       *elp = fd->hd.offset + fd->hd.offset[hi  ],
-               *const ele = fd->hd.offset + fd->hd.offset[hi+1];
-    *code = CODE_NOT_FOUND;
-    for(; elp!=ele; ++elp) {
-      const uint el = *elp;
-      if(obbox_test(&fd->obb[el],x)>=0) {
-        struct index_el *const p =
-          array_reserve(struct index_el,map,map->n+1);
-        p[map->n].index = index;
-        p[map->n].el = el;
-        ++map->n;
+  for(index=0;index<npt;++index) {
+    double x[D]; for(d=0;d<D;++d) x[d]=*xp[d];
+    { const uint hi = hash_index(&fd->hd,x);
+      const uint       *elp = fd->hd.offset + fd->hd.offset[hi  ],
+                 *const ele = fd->hd.offset + fd->hd.offset[hi+1];
+      *code = CODE_NOT_FOUND;
+      for(; elp!=ele; ++elp) {
+        const uint el = *elp;
+        if(obbox_test(&fd->obb[el],x)>=0) {
+          struct index_el *const p =
+            array_reserve(struct index_el,map,map->n+1);
+          p[map->n].index = index;
+          p[map->n].el = el;
+          ++map->n;
+        }
       }
     }
-    x    = (const double*)((const char*)x   +   x_stride);
-    code =         (uint*)(      (char*)code+code_stride);
+    for(d=0;d<D;++d)
+    xp[d] = (const double*)((const char*)xp[d]+   x_stride[d]);
+    code  =         (uint*)(      (char*)code +code_stride   );
   }
   /* group by element */
   sarray_sort(struct index_el,map->ptr,map->n, el,0, buf);
@@ -263,16 +268,21 @@ static void map_points_to_els(array *const map,
   }
 }
 
-#define  AT(T,var,i)       (T*)(      (char*)var##_base+(i)*var##_stride)
-#define CAT(T,var,i) (const T*)((const char*)var##_base+(i)*var##_stride)
+#define   AT(T,var,i)   \
+        (T*)(      (char*)var##_base   +(i)*var##_stride   )
+#define  CAT(T,var,i) \
+  (const T*)((const char*)var##_base   +(i)*var##_stride   )
+#define CATD(T,var,i,d) \
+  (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])
 
-void findpts_local(      uint   *const  code_base, const unsigned  code_stride,
-                         uint   *const    el_base, const unsigned    el_stride,
-                         double *const     r_base, const unsigned     r_stride,
-                         double *const dist2_base, const unsigned dist2_stride,
-                   const double *const     x_base, const unsigned     x_stride,
-                   const uint npt, struct findpts_local_data *const fd,
-                   buffer *buf)
+void findpts_local(
+        uint   *const  code_base   , const unsigned  code_stride   ,
+        uint   *const    el_base   , const unsigned    el_stride   ,
+        double *const     r_base   , const unsigned     r_stride   ,
+        double *const dist2_base   , const unsigned dist2_stride   ,
+  const double *const     x_base[D], const unsigned     x_stride[D],
+  const uint npt, struct findpts_local_data *const fd,
+  buffer *buf)
 {
   struct findpts_el_data *const fed = &fd->fed;
   struct findpts_el_pt *const fpt = findpts_el_points(fed);
@@ -292,9 +302,8 @@ void findpts_local(      uint   *const  code_base, const unsigned  code_stride,
         unsigned i;
         for(i=0,q=p;i<npt_max && q->el==el;++q) {
           uint *code = AT(uint,code,q->index);
-          const double *x = CAT(double,x,q->index);
           if(*code==CODE_INTERNAL) continue;
-          for(d=0;d<D;++d) fpt[i].x[d]=x[d];
+          for(d=0;d<D;++d) fpt[i].x[d]=*CATD(double,x,q->index,d);
           ++i;
         }
         findpts_el(fed,i,fd->tol);
@@ -347,6 +356,7 @@ void findpts_local_eval(
   }
 }
 
+#undef CATD
 #undef CAT
 #undef AT
 

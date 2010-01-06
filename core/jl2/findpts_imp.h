@@ -239,12 +239,12 @@ void findpts_free(struct findpts_data *fd)
 struct src_pt { double x[D]; uint index, proc; };
 struct out_pt { double r[D], dist2; uint index, code, el, proc; };
 
-void findpts(      uint   *const  code_base, const unsigned  code_stride,
-                   uint   *const  proc_base, const unsigned  proc_stride,
-                   uint   *const    el_base, const unsigned    el_stride,
-                   double *const     r_base, const unsigned     r_stride,
-                   double *const dist2_base, const unsigned dist2_stride,
-             const double *const     x_base, const unsigned     x_stride,
+void findpts(      uint   *const  code_base   , const unsigned  code_stride   ,
+                   uint   *const  proc_base   , const unsigned  proc_stride   ,
+                   uint   *const    el_base   , const unsigned    el_stride   ,
+                   double *const     r_base   , const unsigned     r_stride   ,
+                   double *const dist2_base   , const unsigned dist2_stride   ,
+             const double *const     x_base[D], const unsigned     x_stride[D],
              const uint npt, struct findpts_data *const fd)
 {
   const uint np = fd->cr.comm.np, id=fd->cr.comm.id;
@@ -259,10 +259,13 @@ void findpts(      uint   *const  code_base, const unsigned  code_stride,
   /* send unfound and border points to global hash cells */
   {
     uint index;
-    const double *x; uint *code, *proc;
+    uint *code=code_base, *proc=proc_base;
+    const double *xp[D];
     struct src_pt *pt;
+    unsigned d; for(d=0;d<D;++d) xp[d]=x_base[d];
     array_init(struct src_pt, &hash_pt, npt), pt=hash_pt.ptr;
-    for(index=0,x=x_base,code=code_base,proc=proc_base;index<npt;++index) {
+    for(index=0;index<npt;++index) {
+      double x[D]; for(d=0;d<D;++d) x[d]=*xp[d];
       *proc = id;
       if(*code!=CODE_INTERNAL) {
         const uint hi = hash_index(&fd->hash,x);
@@ -272,9 +275,10 @@ void findpts(      uint   *const  code_base, const unsigned  code_stride,
         pt->proc=hi%np;
         ++pt;
       }
-      x    = (const double*)((const char*)x   +   x_stride);
-      code =         (uint*)(      (char*)code+code_stride);
-      proc =         (uint*)(      (char*)proc+proc_stride);
+      for(d=0;d<D;++d)
+      xp[d] = (const double*)((const char*)xp[d]+   x_stride[d]);
+      code  =         (uint*)(      (char*)code +code_stride   );
+      proc  =         (uint*)(      (char*)proc +proc_stride   );
     }
     hash_pt.n = pt - (struct src_pt*)hash_pt.ptr;
     sarray_transfer(struct src_pt,&hash_pt,proc,&fd->cr);
@@ -319,12 +323,17 @@ void findpts(      uint   *const  code_base, const unsigned  code_stride,
     spt=src_pt.ptr, opt=out_pt.ptr;
     for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
     spt=src_pt.ptr, opt=out_pt.ptr;
-    if(src_pt.n) findpts_local(&opt[0].code ,sizeof(struct out_pt),
-                               &opt[0].el   ,sizeof(struct out_pt),
-                                opt[0].r    ,sizeof(struct out_pt),
-                               &opt[0].dist2,sizeof(struct out_pt),
-                                spt[0].x    ,sizeof(struct src_pt),
-                               src_pt.n,&fd->local,&fd->cr.data);
+    if(src_pt.n) {
+      const double *spt_x_base[D]; unsigned spt_x_stride[D];
+      unsigned d; for(d=0;d<D;++d) spt_x_base[d] = spt[0].x+d,
+                                   spt_x_stride[d] = sizeof(struct src_pt);
+      findpts_local(&opt[0].code ,sizeof(struct out_pt),
+                    &opt[0].el   ,sizeof(struct out_pt),
+                     opt[0].r    ,sizeof(struct out_pt),
+                    &opt[0].dist2,sizeof(struct out_pt),
+                     spt_x_base  ,spt_x_stride,
+                    src_pt.n,&fd->local,&fd->cr.data);
+    }
     array_free(&src_pt);
     /* group by code to eliminate unfound points */
     sarray_sort(struct out_pt,opt,out_pt.n, code,0, &fd->cr.data);
