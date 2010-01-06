@@ -5,8 +5,8 @@
 #warning "obbox.h" requires "types.h" and "name.h"
 #endif
 
-#define obbox_2_calc  PREFIXED_NAME(obbox_2_calc)
-#define obbox_3_calc  PREFIXED_NAME(obbox_3_calc)
+#define obbox_calc_2  PREFIXED_NAME(obbox_calc_2)
+#define obbox_calc_3  PREFIXED_NAME(obbox_calc_3)
 
 /*--------------------------------------------------------------------------
    Oriented and axis-aligned bounding box computation for spectral elements
@@ -49,21 +49,65 @@
 struct dbl_range { double min, max; };
 #endif
 
-typedef struct { double c0[2], A[4];
-                 struct dbl_range x,y; } obbox_2;
+struct obbox_2 { double c0[2], A[4];
+                 struct dbl_range x[2]; };
 
-typedef struct { double c0[3], A[9];
-                 struct dbl_range x,y,z; } obbox_3;
+struct obbox_3 { double c0[3], A[9];
+                 struct dbl_range x[3]; };
 
-void obbox_2_calc(obbox_2 *out,
-  const double *x, const double *y,
-  unsigned nr, unsigned ns, uint n,
-  unsigned mr, unsigned ms, double tol);
+void obbox_calc_2(struct obbox_2 *out,
+                  const double *const elx[2],
+                  const unsigned n[2], uint nel,
+                  const unsigned m[2], const double tol);
 
-void obbox_3_calc(obbox_3 *out,
-  const double *x, const double *y, const double *z,
-  unsigned nr, unsigned ns, unsigned nt, uint n,
-  unsigned mr, unsigned ms, unsigned mt, double tol);
+void obbox_calc_3(struct obbox_3 *out,
+                  const double *const elx[3],
+                  const unsigned n[3], uint nel,
+                  const unsigned m[3], const double tol);
+
+/* positive when possibly inside */
+static double obbox_axis_test_2(const struct obbox_2 *const b,
+                                const double x[2])
+{
+  const double bx =  (x[0]-b->x[0].min)*(b->x[0].max-x[0]);
+  return bx<0 ? bx : (x[1]-b->x[1].min)*(b->x[1].max-x[1]);
+}
+
+/* positive when possibly inside */
+static double obbox_test_2(const struct obbox_2 *const b, const double x[2])
+{
+  const double bxy = obbox_axis_test_2(b,x);
+  if(bxy<0) return bxy; else {
+    const double dx = x[0]-b->c0[0], dy = x[1]-b->c0[1];
+    const double r = b->A[0]*dx + b->A[1]*dy,
+                 s = b->A[2]*dx + b->A[3]*dy;
+    const double br = (r+1)*(1-r);
+    return br<0 ? br : (s+1)*(1-s);
+  }
+}
+
+/* positive when possibly inside */
+static double obbox_axis_test_3(const struct obbox_3 *const b,
+                                const double x[3])
+{
+  const double               bx = (x[0]-b->x[0].min)*(b->x[0].max-x[0]);
+  const double               by = (x[1]-b->x[1].min)*(b->x[1].max-x[1]);
+  return bx<0 ? bx : (by<0 ? by : (x[2]-b->x[2].min)*(b->x[2].max-x[2]));
+}
+
+/* positive when possibly inside */
+static double obbox_test_3(const struct obbox_3 *const b, const double x[3])
+{
+  const double bxyz = obbox_axis_test_3(b,x);
+  if(bxyz<0) return bxyz; else {
+    const double dx = x[0]-b->c0[0], dy = x[1]-b->c0[1], dz = x[2]-b->c0[2];
+    const double r = b->A[0]*dx + b->A[1]*dy + b->A[2]*dz,
+                 s = b->A[3]*dx + b->A[4]*dy + b->A[5]*dz,
+                 t = b->A[6]*dx + b->A[7]*dy + b->A[8]*dz;
+    const double br = (r+1)*(1-r), bs = (s+1)*(1-s);
+    return br<0 ? br : (bs<0 ? bs : (t+1)*(1-t));
+  }
+}
 
 #endif
 

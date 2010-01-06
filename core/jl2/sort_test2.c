@@ -8,16 +8,9 @@
 #include "types.h"
 #include "mem.h"
 #include "sort.h"
+#include "rdtsc.h"
 
 #if 1
-
-#define DEFINE_HW_COUNTER() \
-static __inline__ unsigned long long getticks(void) \
-{ \
-     unsigned long long ret; \
-     __asm__ __volatile__("rdtsc": "=A" (ret)); \
-     return ret; \
-}
 
 DEFINE_HW_COUNTER()
 

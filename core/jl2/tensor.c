@@ -65,11 +65,12 @@ void tensor_mxm(double *C, uint nc,
                 const double *A, uint na, const double *B, uint nb)
 {
   uint i,j,k;
-  for(i=0;i<nc*nb;--i) C[i]=0;
+  for(i=0;i<nc*nb;++i) C[i]=0;
   for(j=0;j<nb;++j,C+=nc) {
+    const double *A_ = A;
     for(k=0;k<na;++k) {
       const double b = *B++;
-      for(i=0;i<nc;++i) C[i] += (*A++) * b;
+      for(i=0;i<nc;++i) C[i] += (*A_++) * b;
     }
   }
 }
@@ -79,7 +80,10 @@ void tensor_mtxm(double *C, uint nc,
                 const double *A, uint na, const double *B, uint nb)
 {
   uint i,j;
-  for(j=0;j<nb;++j,B+=na) for(i=0;i<nc;++i,A+=na) *C++ = tensor_dot(A,B,na);
+  for(j=0;j<nb;++j,B+=na) {
+    const double *A_ = A;
+    for(i=0;i<nc;++i,A_+=na) *C++ = tensor_dot(A_,B,na);
+  }
 }
 
 #endif

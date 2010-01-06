@@ -77,7 +77,7 @@ static uint crystal_move(crystal_data *p, uint cutoff, int send_hi)
 {
   uint len, *src, *end;
   uint *keep = p->data.ptr, *send;
-  buffer_reserve(&p->work,p->n*sizeof(uint)), send = p->work.ptr;
+  send = buffer_reserve(&p->work,p->n*sizeof(uint));
   if(send_hi) { /* send hi, keep lo */
     for(src=keep,end=keep+p->n; src<end; src+=len) {
       len = 3 + src[2];
