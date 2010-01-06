@@ -36,20 +36,20 @@ struct findpts_data_3 *findpts_setup_3(
 void findpts_free_2(struct findpts_data_2 *fd);
 void findpts_free_3(struct findpts_data_3 *fd);
 
-void findpts_2(    uint   *const  code_base, const unsigned  code_stride,
-                   uint   *const  proc_base, const unsigned  proc_stride,
-                   uint   *const    el_base, const unsigned    el_stride,
-                   double *const     r_base, const unsigned     r_stride,
-                   double *const dist2_base, const unsigned dist2_stride,
-             const double *const     x_base, const unsigned     x_stride,
+void findpts_2(    uint   *const  code_base   , const unsigned  code_stride   ,
+                   uint   *const  proc_base   , const unsigned  proc_stride   ,
+                   uint   *const    el_base   , const unsigned    el_stride   ,
+                   double *const     r_base   , const unsigned     r_stride   ,
+                   double *const dist2_base   , const unsigned dist2_stride   ,
+             const double *const     x_base[2], const unsigned     x_stride[2],
              const uint npt, struct findpts_data_2 *const fd);
 
-void findpts_3(    uint   *const  code_base, const unsigned  code_stride,
-                   uint   *const  proc_base, const unsigned  proc_stride,
-                   uint   *const    el_base, const unsigned    el_stride,
-                   double *const     r_base, const unsigned     r_stride,
-                   double *const dist2_base, const unsigned dist2_stride,
-             const double *const     x_base, const unsigned     x_stride,
+void findpts_3(    uint   *const  code_base   , const unsigned  code_stride   ,
+                   uint   *const  proc_base   , const unsigned  proc_stride   ,
+                   uint   *const    el_base   , const unsigned    el_stride   ,
+                   double *const     r_base   , const unsigned     r_stride   ,
+                   double *const dist2_base   , const unsigned dist2_stride   ,
+             const double *const     x_base[3], const unsigned     x_stride[3],
              const uint npt, struct findpts_data_3 *const fd);
 
 void findpts_eval_2(
@@ -60,7 +60,7 @@ void findpts_eval_2(
   const double *const    r_base, const unsigned    r_stride,
   const uint npt,
   const double *const in, struct findpts_data_2 *const fd);
-  
+ 
 void findpts_eval_3(
         double *const  out_base, const unsigned  out_stride,
   const uint   *const code_base, const unsigned code_stride,

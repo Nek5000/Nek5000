@@ -168,6 +168,10 @@ static void print_ptdata(const struct comm *const comm)
 
 static void test(const struct comm *const comm)
 {
+  const double *x_base[3];
+  const unsigned x_stride[3] = {sizeof(struct pt_data),
+                                sizeof(struct pt_data),
+                                sizeof(struct pt_data)};
   struct findpts_data_3 *fd;
   struct pt_data *pt;
   unsigned d;
@@ -180,12 +184,13 @@ static void test(const struct comm *const comm)
                      LOC_HASH_SIZE,GBL_HASH_SIZE,
                      NPT_MAX,NEWT_TOL);
   if(id==0) printf("calling findpts\n");
+  x_base[0]=pt->x, x_base[1]=pt->x+1, x_base[2]=pt->x+2;
   findpts_3(&pt->code , sizeof(struct pt_data),
             &pt->proc , sizeof(struct pt_data),
             &pt->el   , sizeof(struct pt_data),
              pt->r    , sizeof(struct pt_data),
             &pt->dist2, sizeof(struct pt_data),
-             pt->x    , sizeof(struct pt_data), testp.n, fd);
+             x_base   , x_stride, testp.n, fd);
   for(d=0;d<3;++d) {
     if(id==0) printf("calling findpts_eval (%u)\n",d);
     findpts_eval_3(&pt->ex[d], sizeof(struct pt_data),
