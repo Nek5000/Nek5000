@@ -10,7 +10,7 @@ G = -O0 -g
 GCC_WARN=-W -Wall -Wno-unused-function -Wno-unused-parameter
 CEXTRA = $(GCC_WARN) $(JAMES_FLAGS)
 #CEXTRA=-Minform=warn $(JAMES_FLAGS)
-CBLAS=
+CBLAS=-DUSE_NAIVE_BLAS
 LBLAS=
 #CBLAS=-DUSE_CBLAS
 #LBLAS=-lcblas
