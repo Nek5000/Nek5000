@@ -8,20 +8,12 @@
 #include "fail.h"
 #include "mem.h"
 #include "poly.h"
-
+#include "rdtsc.h"
 
 #define N 32
 #define REPEAT 1000000
 
 #define USE_HW_COUNTER 1
-
-#define DEFINE_HW_COUNTER() \
-static __inline__ unsigned long long getticks(void) \
-{ \
-     unsigned long long ret; \
-     __asm__ __volatile__("rdtsc": "=A" (ret)); \
-     return ret; \
-}
 
 #if USE_HW_COUNTER
 DEFINE_HW_COUNTER()

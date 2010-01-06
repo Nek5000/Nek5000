@@ -136,4 +136,26 @@ static double tensor_ig3(double g[3],
   return tensor_dot(b   , wtr   , nr);
 }
 
+/*
+  out - nr x ns x nt
+  u   - mr x ms x mt
+  Jrt - mr x nr, Jst - ms x ns, Jtt - mt x nt
+  work - nr*ms*mt + nr*ns*mt = nr*(ms+ns)*mt
+*/
+static void tensor_3t(double *out,
+                      const double *Jrt, uint nr, uint mr,
+                      const double *Jst, uint ns, uint ms,
+                      const double *Jtt, uint nt, uint mt,
+                      const double *u, double *work)
+{
+  const uint nrs=nr*ns, mst=ms*mt, nrms=nr*ms;
+  uint k;
+  double *work2 = work+nr*mst;
+  double *p; const double *q;
+  tensor_mtxm(work,nr, Jrt,mr, u,mst);
+  for(k=0,p=work2,q=work;k<mt;++k,p+=nrs,q+=nrms)
+    tensor_mxm(p,nr, q,ms, Jst,ns);
+  tensor_mxm(out,nrs, work2,mt, Jtt,nt);
+}
+
 #endif

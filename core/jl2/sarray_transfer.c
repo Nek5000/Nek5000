@@ -77,7 +77,7 @@ static void unpack(array *A, size_t size, size_t off,
     while(in!=original_in_end) { uint len = in[2]; n+=len, in+=len+3; }
   }
   n /= row_size;
-  if(!fixed) array_reserve_(A,n,size,__FILE__);
+  if(!fixed) array_reserve_(A,n,size,__FILE__,__LINE__);
   A->n = n;
   out = A->ptr;
   in = cr->data.ptr;
@@ -149,7 +149,7 @@ static void unpack_ext(array *A, size_t size, crystal_data *cr)
   uint n=0;
   while(in!=in_end) { uint len = in[2]; n+=len, in+=len+3; }
   n /= row_size;
-  array_reserve_(A,n,size,__FILE__);
+  array_reserve_(A,n,size,__FILE__,__LINE__);
   A->n = n;
   out = A->ptr;
   in = cr->data.ptr;
