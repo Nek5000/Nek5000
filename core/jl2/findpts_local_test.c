@@ -115,6 +115,9 @@ static void print_ptdata(void)
 
 static void test(buffer *buf)
 {
+  const double *const x_base[3]={testx,testx+1,testx+2};
+  const unsigned x_stride[3]=
+    {3*sizeof(double),3*sizeof(double),3*sizeof(double)};
   struct findpts_local_data_3 fld;
   rand_mesh();
   test_mesh();
@@ -124,7 +127,7 @@ static void test(buffer *buf)
                   &testp[0].el   , sizeof(struct pt_data),
                    testp[0].r    , sizeof(struct pt_data),
                   &testp[0].dist2, sizeof(struct pt_data),
-                  testx, 3*sizeof(double),
+                  x_base, x_stride,
                   NEL*TN*TN*TN, &fld, buf);
   findpts_local_free_3(&fld);
   print_ptdata();
