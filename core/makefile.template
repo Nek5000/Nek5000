@@ -51,9 +51,13 @@ MXM = mxm_std.o
 JLCORE = $(JO2)gs.o $(JO2)sort.o $(JO2)sarray_transfer.o $(JO2)sarray_sort.o \
 $(JO2)gs_local.o $(JO2)crystal.o $(JO2)comm.o $(JO2)tensor.o $(JO2)fail.o \
 $(JO2)fcrystal.o \
-$(JO)findpts.o $(JO)pfindpt.o $(JO)findpt.o $(JO)poly.o $(JO)tensor.o \
-$(JO)transfer.o $(JO)errmem.o $(JO)crystal.o $(JO)fcrystal.o $(JO)tuple_list.o \
-$(JO)sort.o
+$(JO)tuple_list.o $(JO)transfer.o $(JO)sort.o $(JO)fcrystal.o $(JO)errmem.o \
+$(JO)crystal.o
+# interpolation
+JLINTP = $(JO)findpts.o $(JO)pfindpt.o $(JO)tensor.o $(JO)findpt.o $(JO)poly.o
+#JLINTP = $(JO2)findpts.o $(JO2)findpts_local.o \
+$(JO2)obbox.o $(JO2)poly.o $(JO2)lob_bnd.o \
+$(JO2)findpts_el_3.o $(JO2)findpts_el_2.o
 # coarse grid solver
 ifeq ($(IFAMG),true)
 CGS := $(JO)gs.o $(JO)amg.o
@@ -78,7 +82,7 @@ ifeq ($(IFMOAB),true)
   MOABO := moab.o imeshutil.o
 endif
 #
-NOBJS = $(CORE) $(MXM) $(JLCORE) $(CGS) $(USR) $(MOABO) $(COMM_MPI)
+NOBJS = $(CORE) $(MXM) $(JLCORE) $(JLINTP) $(CGS) $(USR) $(MOABO) $(COMM_MPI)
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
@@ -260,4 +264,11 @@ $(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)poly.o            :$(J2)/poly.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)lob_bnd.o         :$(J2)/lob_bnd.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)findpts_el_3.o    :$(J2)/findpts_el_3.c;    $(CC) -c $(L2) $(JL2) $< -o $@
+$(JO2)findpts_el_2.o    :$(J2)/findpts_el_2.c;    $(CC) -c $(L2) $(JL2) $< -o $@
 #
