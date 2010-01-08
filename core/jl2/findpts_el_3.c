@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +19,11 @@
 #define DIAGNOSTICS_2
 */
 #define DIAGNOSTICS_ITERATIONS 0
+
+#if defined(DIAGNOSTICS_1) || defined(DIAGNOSTICS_2) \
+    || DIAGNOSTICS_ITERATIONS > 0
+#include <stdio.h>
+#endif
 
 /* A is row-major */
 static void lin_solve_3(double x[3], const double A[9], const double y[3])
@@ -195,7 +198,7 @@ static unsigned work_size(
   return wsize;
 }
 
-void findpts_el_setup_3(struct findpts_el_data_3 *fd,
+void findpts_el_setup_3(struct findpts_el_data_3 *const fd,
                         const unsigned n[3],
                         const unsigned npt_max)
 {
@@ -276,7 +279,7 @@ void findpts_el_setup_3(struct findpts_el_data_3 *fd,
   #undef SET_EDGE1
 }
 
-void findpts_el_free_3(struct findpts_el_data_3 *fd)
+void findpts_el_free_3(struct findpts_el_data_3 *const fd)
 {
   free(fd->p);
   free(fd->z[0]);
@@ -343,7 +346,7 @@ static void compute_face_data_tr(struct findpts_el_data_3 *fd)
 static const struct findpts_el_gface_3 *get_face(
   struct findpts_el_data_3 *fd, unsigned fi)
 {
-  const unsigned mask = 1<<(fi/2);
+  const unsigned mask = 1u<<(fi/2);
   if((fd->side_init&mask)==0) {
     compute_face_data_fun *const fun[3] = {
       compute_face_data_st,
@@ -400,7 +403,7 @@ static void compute_edge_data(struct findpts_el_data_3 *fd, unsigned d)
 static const struct findpts_el_gedge_3 *get_edge(
   struct findpts_el_data_3 *fd, unsigned ei)
 {
-  const unsigned mask = 8<<(ei/4);
+  const unsigned mask = 8u<<(ei/4);
   if((fd->side_init&mask)==0)
     compute_edge_data(fd,ei/4), fd->side_init |= mask;
   return &fd->edge[ei];
@@ -460,13 +463,14 @@ static const struct findpts_el_gpt_3 *get_pt(
   return &fd->pt[pi];
 }
 
-/* ensure the prior step got us closer ( returns 0 )
-   otherwise just halve the prior step ( returns 1, sets out, done ) ;
-   sets out->dist2, out->index, out->x in any event,
+/* check reduction in objective against prediction, and adjust
+   trust region radius (p->tr) accordingly;
+   may reject the prior step, returning 1; otherwise returns 0
+   sets out->dist2, out->index, out->x, out->oldr in any event,
    leaving out->r, out->dr, out->flags to be set when returning 0 */
-static int reject_prior_step_q(struct findpts_el_pt_3 *out,
-                               const double *resid,
-                               const struct findpts_el_pt_3 *p,
+static int reject_prior_step_q(struct findpts_el_pt_3 *const out,
+                               const double resid[3],
+                               const struct findpts_el_pt_3 *const p,
                                const double tol)
 {
   const double old_dist2 = p->dist2;
@@ -504,6 +508,10 @@ static int reject_prior_step_q(struct findpts_el_pt_3 *out,
     }
     return 0;
   } else {
+    /* reject step; note: the point will pass through this routine
+       again, and we set things up here so it gets classed as a
+       "very good iteration" --- this doubles the trust radius,
+       which is why we divide by 4 below */
     double v0 = fabs(p->r[0]-p->oldr[0]),
            v1 = fabs(p->r[1]-p->oldr[1]),
            v2 = fabs(p->r[2]-p->oldr[2]);
@@ -522,9 +530,9 @@ static int reject_prior_step_q(struct findpts_el_pt_3 *out,
 
 /* minimize ||resid - jac * dr||_2, with |dr| <= tr, |r0+dr|<=1
    (exact solution of trust region problem) */
-static void newton_vol(struct findpts_el_pt_3 *out,
+static void newton_vol(struct findpts_el_pt_3 *const out,
                        const double jac[9], const double resid[3],
-                       const struct findpts_el_pt_3 *p, double tol)
+                       const struct findpts_el_pt_3 *const p, const double tol)
 {
   const double tr = p->tr;
   double bnd[6] = { -1,1, -1,1, -1,1 };
@@ -730,12 +738,12 @@ newton_vol_fin:
   out->flags = flags | (p->flags<<7);
 }
 
-static void newton_face(struct findpts_el_pt_3 *out,
+static void newton_face(struct findpts_el_pt_3 *const out,
                         const double jac[9], const double rhes[3],
                         const double resid[3],
                         const unsigned d1, const unsigned d2, const unsigned dn,
                         const unsigned flags,
-                        const struct findpts_el_pt_3 *p, double tol)
+                        const struct findpts_el_pt_3 *const p, const double tol)
 {
   const double tr = p->tr;
   double bnd[4];
@@ -841,11 +849,11 @@ newton_face_fin:
   out->flags = new_flags | (p->flags<<7);
 }
 
-static void newton_edge(struct findpts_el_pt_3 *out,
+static void newton_edge(struct findpts_el_pt_3 *const out,
   const double jac[9], const double rhes, const double resid[3],
   const unsigned de, const unsigned dn1, const unsigned dn2,
   unsigned flags,
-  const struct findpts_el_pt_3 *p, double tol)
+  const struct findpts_el_pt_3 *const p, const double tol)
 {
   const double tr = p->tr;
   /* A = J^T J - resid_d H_d */
@@ -900,21 +908,21 @@ newton_edge_fin:
 }
 
 typedef void findpt_fun(
-  struct findpts_el_pt_3 *out,
-  struct findpts_el_data_3 *fd,
-  const struct findpts_el_pt_3 *p, unsigned pn, double tol);
+  struct findpts_el_pt_3 *const out,
+  struct findpts_el_data_3 *const fd,
+  const struct findpts_el_pt_3 *const p, const unsigned pn, const double tol);
 
 /* work[(3+9+2*(nr+ns+nt+nrs))*pn + max(2*nr,ns) ] */
 static void findpt_vol(
-  struct findpts_el_pt_3 *out,
-  struct findpts_el_data_3 *fd,
-  const struct findpts_el_pt_3 *p, unsigned pn, double tol)
+  struct findpts_el_pt_3 *const out,
+  struct findpts_el_data_3 *const fd,
+  const struct findpts_el_pt_3 *const p, const unsigned pn, const double tol)
 {
   const unsigned nr=fd->n[0],ns=fd->n[1],nt=fd->n[2],
                  nrs=nr*ns;
-  double *resid = fd->work, *jac = resid + 3*pn,
-         *wtrs = jac+9*pn, *wtt = wtrs+2*(nr+ns)*pn,
-         *slice = wtt+2*nt*pn, *temp = slice + 2*pn*nrs;
+  double *const resid = fd->work, *const jac = resid + 3*pn,
+         *const wtrs = jac+9*pn, *const wtt = wtrs+2*(nr+ns)*pn,
+         *const slice = wtt+2*nt*pn, *const temp = slice + 2*pn*nrs;
   unsigned i; unsigned d;
   /* evaluate x(r) and jacobian */
   for(i=0;i<pn;++i)
@@ -926,8 +934,9 @@ static void findpt_vol(
   for(d=0;d<3;++d) {
     tensor_mxm(slice,nrs, fd->x[d],nt, wtt,2*pn);
     for(i=0;i<pn;++i) {
-      const double *wtrs_i = wtrs+2*i*(nr+ns), *slice_i = slice+2*i*nrs;
-      double *jac_i = jac+9*i+3*d;
+      const double *const wtrs_i = wtrs+2*i*(nr+ns),
+                   *const slice_i = slice+2*i*nrs;
+      double *const jac_i = jac+9*i+3*d;
       resid[3*i+d] = p[i].x[d] - tensor_ig2(jac_i,
         wtrs_i,nr, wtrs_i+2*nr,ns, slice_i, temp);
       jac_i[2] = tensor_i2(wtrs_i,nr, wtrs_i+2*nr,ns, slice_i+nrs, temp);
@@ -942,18 +951,18 @@ static void findpt_vol(
 
 /* work[(3+9+3+3*(n1+n2+n1))*pn ] */
 static void findpt_face(
-  struct findpts_el_pt_3 *out,
-  struct findpts_el_data_3 *fd,
-  const struct findpts_el_pt_3 *p, unsigned pn, double tol)
+  struct findpts_el_pt_3 *const out,
+  struct findpts_el_data_3 *const fd,
+  const struct findpts_el_pt_3 *const p, const unsigned pn, const double tol)
 {
   const unsigned pflag = p->flags & FLAG_MASK;
   const unsigned fi = face_index(pflag);
   const unsigned dn = fi>>1, d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
   const unsigned n1 = fd->n[d1], n2 = fd->n[d2];
-  double *resid = fd->work, *jac = resid+3*pn, *hes = jac+9*pn,
-         *wt1 = hes+3*pn, *wt2 = wt1+3*n1*pn,
-         *slice = wt2+3*n2*pn;
-  const struct findpts_el_gface_3 *face = get_face(fd,fi);
+  double *const resid=fd->work, *const jac=resid+3*pn, *const hes=jac+9*pn,
+         *const wt1 = hes+3*pn, *const wt2 = wt1+3*n1*pn,
+         *const slice = wt2+3*n2*pn;
+  const struct findpts_el_gface_3 *const face = get_face(fd,fi);
   unsigned i; unsigned d;
 
 #ifdef DIAGNOSTICS_1
@@ -973,7 +982,7 @@ static void findpt_face(
   for(d=0;d<3;++d) {
     tensor_mxm(slice,n1, face->x[d],n2, wt2,3*pn);
     for(i=0;i<pn;++i) {
-      const double *wt1_i = wt1+3*i*n1, *slice_i = slice+3*i*n1;
+      const double *const wt1_i = wt1+3*i*n1, *const slice_i = slice+3*i*n1;
       double v[9], r;
       tensor_mtxm(v,3, wt1_i,n1, slice_i,3);
       /* v[3*j + i] = d^i/dr1^i d^j/dr2^j x_d */
@@ -993,13 +1002,13 @@ static void findpt_face(
   }
   /* perform Newton step */
   for(i=0;i<pn;++i) {
-    double *resid_i = resid+3*i, *jac_i = jac+9*i, *hes_i = hes+3*i;
+    double *const resid_i=resid+3*i, *const jac_i=jac+9*i, *const hes_i=hes+3*i;
     /* check prior step */
     if(!reject_prior_step_q(out+i,resid_i,p+i,tol)) {
       /* check constraint */
-      double steep = resid_i[0] * jac_i[  dn]
-                    +resid_i[1] * jac_i[3+dn]
-                    +resid_i[2] * jac_i[6+dn];
+      const double steep = resid_i[0] * jac_i[  dn]
+                          +resid_i[1] * jac_i[3+dn]
+                          +resid_i[2] * jac_i[6+dn];
 #ifdef DIAGNOSTICS_1
       printf("jacobian = %g\t%g\t%g\n"
              "           %g\t%g\t%g\n"
@@ -1018,9 +1027,9 @@ static void findpt_face(
 
 /* work[ 3*n ] */
 static void findpt_edge(
-  struct findpts_el_pt_3 *out,
-  struct findpts_el_data_3 *fd,
-  const struct findpts_el_pt_3 *p, unsigned pn, double tol)
+  struct findpts_el_pt_3 *const out,
+  struct findpts_el_data_3 *const fd,
+  const struct findpts_el_pt_3 *const p, const unsigned pn, const double tol)
 {
   const unsigned pflag = p->flags & FLAG_MASK;
   const unsigned ei = edge_index(pflag);
@@ -1099,14 +1108,14 @@ static void findpt_edge(
 }
 
 static void findpt_pt(
-  struct findpts_el_pt_3 *out,
-  struct findpts_el_data_3 *fd,
-  const struct findpts_el_pt_3 *p, unsigned pn, double tol)
+  struct findpts_el_pt_3 *const out,
+  struct findpts_el_data_3 *const fd,
+  const struct findpts_el_pt_3 *const p, const unsigned pn, const double tol)
 {
   const unsigned pflag = p->flags & FLAG_MASK;
   const unsigned pi = point_index(pflag);
   const struct findpts_el_gpt_3 *gpt = get_pt(fd,pi);
-  const double *x = gpt->x, *jac = gpt->jac, *hes = gpt->hes;
+  const double *const x = gpt->x, *const jac = gpt->jac, *const hes = gpt->hes;
   unsigned i;
 
 #ifdef DIAGNOSTICS_1
@@ -1167,8 +1176,8 @@ static void findpt_pt(
   }
 }
 
-static void seed(struct findpts_el_data_3 *fd,
-                 struct findpts_el_pt_3 *pt, unsigned npt)
+static void seed(struct findpts_el_data_3 *const fd,
+                 struct findpts_el_pt_3 *const pt, const unsigned npt)
 {
   struct findpts_el_pt_3 *p, *const pe = pt+npt;
   const unsigned nr=fd->n[0], ns=fd->n[1], nt=fd->n[2];
@@ -1194,7 +1203,8 @@ static void seed(struct findpts_el_data_3 *fd,
   }
 }
 
-void findpts_el_3(struct findpts_el_data_3 *fd, unsigned npt, const double tol)
+void findpts_el_3(struct findpts_el_data_3 *const fd, const unsigned npt,
+                  const double tol)
 {
   findpt_fun *const fun[4] = 
     { &findpt_vol, &findpt_face, &findpt_edge, &findpt_pt };
@@ -1278,12 +1288,12 @@ void findpts_el_3(struct findpts_el_data_3 *fd, unsigned npt, const double tol)
 void findpts_el_eval_3(
         double *const out_base, const unsigned out_stride,
   const double *const   r_base, const unsigned   r_stride, const unsigned pn,
-  const double *const in, struct findpts_el_data_3 *fd)
+  const double *const in, struct findpts_el_data_3 *const fd)
 {
   const unsigned nr=fd->n[0],ns=fd->n[1],nt=fd->n[2],
                  nrs=nr*ns;
-  double *wtrs = fd->work, *wtt = wtrs+(nr+ns)*pn,
-         *slice = wtt+nt*pn, *temp = slice + pn*nrs;
+  double *const wtrs = fd->work, *const wtt = wtrs+(nr+ns)*pn,
+         *const slice = wtt+nt*pn, *const temp = slice + pn*nrs;
   unsigned i; const double *r; double *out;
   for(i=0,r=r_base;i<pn;++i) {
     fd->lag[0](wtrs+i*(nr+ns)   , fd->lag_data[0], nr, 0, r[0]);
@@ -1294,7 +1304,7 @@ void findpts_el_eval_3(
   
   tensor_mxm(slice,nrs, in,nt, wtt,pn);
   for(i=0,out=out_base;i<pn;++i) {
-    const double *wtrs_i = wtrs+i*(nr+ns), *slice_i = slice+i*nrs;
+    const double *const wtrs_i = wtrs+i*(nr+ns), *const slice_i = slice+i*nrs;
     *out = tensor_i2(wtrs_i,nr, wtrs_i+nr,ns, slice_i, temp);
     out = (double*)((char*)out + out_stride);
   }

@@ -24,6 +24,7 @@ TESTS=sort_test sort_test2 sarray_sort_test spchol_test \
       gs_test gs_test_old gs_unique_test \
       xxt_test xxt_test2 \
       poly_test poly_test2 lob_bnd_test obbox_test \
+      findpts_el_2_test findpts_el_2_test2 \
       findpts_el_3_test findpts_el_3_test2 \
       findpts_local_test findpts_test
 
@@ -76,7 +77,9 @@ poly_test: poly.o fail.o poly_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 poly_test2: poly.o fail.o poly_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 lob_bnd_test: tensor.o poly.o lob_bnd.o fail.o lob_bnd_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 obbox_test: rand_elt_test.o poly.o obbox.o tensor.o lob_bnd.o fail.o obbox_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_2_test: poly.o fail.o findpts_el_2.o tensor.o findpts_el_2_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 findpts_el_3_test: poly.o fail.o findpts_el_3.o tensor.o findpts_el_3_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_2_test2: rand_elt_test.o lob_bnd.o fail.o poly.o obbox.o tensor.o findpts_el_2.o findpts_el_2_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 findpts_el_3_test2: rand_elt_test.o lob_bnd.o fail.o poly.o obbox.o tensor.o findpts_el_3.o findpts_el_3_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 findpts_local_test: tensor.o rand_elt_test.o lob_bnd.o fail.o poly.o findpts_local.o sort.o sarray_sort.o obbox.o findpts_el_3.o findpts_el_2.o findpts_local_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 findpts_test: tensor.o rand_elt_test.o lob_bnd.o poly.o findpts.o sort.o sarray_transfer.o sarray_sort.o findpts_local.o obbox.o findpts_el_3.o findpts_el_2.o crystal.o comm.o gs_local.o fail.o findpts_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@

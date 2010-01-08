@@ -88,10 +88,12 @@ static uint count_bits(unsigned char *p, uint n)
   call findpts_setup(h, comm,np, ndim, xm,ym,zm, nr,ns,nt,nel,
                      mr,ms,mt, bbox_tol, loc_hash_size, gbl_hash_size,
                      npt_max, newt_tol)
+
+    (zm,nt,mt all ignored when ndim==2)
                      
     h: (output) handle
     comm,np: MPI communicator and # of procs (checked against MPI_Comm_size)
-    ndim: currently must be 3  (2d newton iteration code unfinished)
+    ndim: 2 or 3
     xm,ym,zm: element geometry (nodal x,y,z values)
     nr,ns,nt,nel: element dimensions --- e.g., xm(nr,ns,nt,nel)
   
@@ -141,6 +143,8 @@ static uint count_bits(unsigned char *p, uint n)
                      x_base,     x_stride,
                      y_base,     y_stride,
                      z_base,     z_stride, npt)
+
+    (z_base, z_stride ignored when ndim==2)
 
     conceptually, locates npt points;
       data for each point is:
@@ -213,7 +217,16 @@ void ffindpts_setup(sint *const handle,
   h = &handle_array[handle_n];
   h->ndim = *ndim;
   if(h->ndim==2) {
-    fail(1, "findpts_setup: ndim=2 not yet supported");
+    const double *const elx[2] = {xm,ym};
+    const uint n[2] = {*nr,*ns}, m[2]={*mr,*ms};
+    struct findpts_data_2 *const fd = tmalloc(struct findpts_data_2,1);
+    h->data = fd;
+    comm_init_check(&fd->cr.comm, *comm, *np);
+    buffer_init(&fd->cr.data,1000);
+    buffer_init(&fd->cr.work,1000);
+    fd->cr.n=0;
+    setup_aux_2(fd, elx,n,*nel,m,*bbox_tol,
+                *loc_hash_size,*gbl_hash_size, *npt_max, *newt_tol);
   } else if(h->ndim==3) {
     const double *const elx[3] = {xm,ym,zm};
     const uint n[3] = {*nr,*ns,*nt}, m[3]={*mr,*ms,*mt};
