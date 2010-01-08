@@ -160,6 +160,21 @@ static double tensor_ig3(double g[3],
 }
 
 /*
+  out - nr x ns
+  u   - mr x ms
+  Jrt - mr x nr, Jst - ms x ns
+  work - nr x ms
+*/
+static void tensor_2t(double *out,
+                      const double *Jrt, uint nr, uint mr,
+                      const double *Jst, uint ns, uint ms,
+                      const double *u, double *work)
+{
+  tensor_mtxm(work,nr, Jrt,mr, u,ms);
+  tensor_mxm(out,nr, work,ms, Jst,ns);
+}
+
+/*
   out - nr x ns x nt
   u   - mr x ms x mt
   Jrt - mr x nr, Jst - ms x ns, Jtt - mt x nt

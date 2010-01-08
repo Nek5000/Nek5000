@@ -16,7 +16,7 @@ struct findpts_el_pt_2 {
 };
 
 struct findpts_el_gedge_2 { const double *x[2], *dxdn[2]; };
-struct findpts_el_gpt_2   { double x[2], jac[4], hes[6]; };
+struct findpts_el_gpt_2   { double x[2], jac[4], hes[4]; };
 
 struct findpts_el_data_2 {
   unsigned npt_max;
@@ -38,23 +38,24 @@ struct findpts_el_data_2 {
   double *work;
 };
 
-void findpts_el_setup_2(struct findpts_el_data_2 *fd,
+void findpts_el_setup_2(struct findpts_el_data_2 *const fd,
                         const unsigned n[2],
                         const unsigned npt_max);
-void findpts_el_free_2(struct findpts_el_data_2 *fd);
+void findpts_el_free_2(struct findpts_el_data_2 *const fd);
 void findpts_el_2(struct findpts_el_data_2 *fd, unsigned npt, const double tol);
 void findpts_el_eval_2(
         double *const out_base, const unsigned out_stride,
   const double *const   r_base, const unsigned   r_stride, const unsigned pn,
-  const double *const in, struct findpts_el_data_2 *fd);
+  const double *const in, struct findpts_el_data_2 *const fd);
 
-static void findpts_el_start_2(struct findpts_el_data_2 *fd,
+static void findpts_el_start_2(struct findpts_el_data_2 *const fd,
                                const double *const x[2])
 {
   fd->side_init=0,fd->x[0]=x[0],fd->x[1]=x[1];
 }
 
-static struct findpts_el_pt_2 *findpts_el_points_2(struct findpts_el_data_2 *fd)
+static struct findpts_el_pt_2 *findpts_el_points_2(
+  struct findpts_el_data_2 *const fd)
 {
   return fd->p;
 }
@@ -95,23 +96,25 @@ struct findpts_el_data_3 {
   double *work;
 };
 
-void findpts_el_setup_3(struct findpts_el_data_3 *fd,
+void findpts_el_setup_3(struct findpts_el_data_3 *const fd,
                         const unsigned n[3],
                         const unsigned npt_max);
-void findpts_el_free_3(struct findpts_el_data_3 *fd);
-void findpts_el_3(struct findpts_el_data_3 *fd, unsigned npt, const double tol);
+void findpts_el_free_3(struct findpts_el_data_3 *const fd);
+void findpts_el_3(struct findpts_el_data_3 *const fd, const unsigned npt,
+                  const double tol);
 void findpts_el_eval_3(
         double *const out_base, const unsigned out_stride,
   const double *const   r_base, const unsigned   r_stride, const unsigned pn,
-  const double *const in, struct findpts_el_data_3 *fd);
+  const double *const in, struct findpts_el_data_3 *const fd);
 
-static void findpts_el_start_3(struct findpts_el_data_3 *fd,
+static void findpts_el_start_3(struct findpts_el_data_3 *const fd,
                                const double *const x[3])
 {
   fd->side_init=0,fd->x[0]=x[0],fd->x[1]=x[1],fd->x[2]=x[2];
 }
 
-static struct findpts_el_pt_3 *findpts_el_points_3(struct findpts_el_data_3 *fd)
+static struct findpts_el_pt_3 *findpts_el_points_3(
+  struct findpts_el_data_3 *const fd)
 {
   return fd->p;
 }

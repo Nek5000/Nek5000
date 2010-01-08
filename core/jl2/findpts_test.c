@@ -16,18 +16,40 @@
 #include "crystal.h"
 #include "sarray_transfer.h"
 
+#define D 2
+
+#if D==3
+#define INITD(a,b,c) {a,b,c}
+#define MULD(a,b,c) ((a)*(b)*(c))
+#define INDEXD(a,na, b,nb, c) (((c)*(nb)+(b))*(na)+(a))
+#define findpts_data  findpts_data_3
+#define findpts_setup findpts_setup_3
+#define findpts_free  findpts_free_3
+#define findpts       findpts_3
+#define findpts_eval  findpts_eval_3
+#elif D==2
+#define INITD(a,b,c) {a,b}
+#define MULD(a,b,c) ((a)*(b))
+#define INDEXD(a,na, b,nb, c) ((b)*(na)+(a))
+#define findpts_data  findpts_data_2
+#define findpts_setup findpts_setup_2
+#define findpts_free  findpts_free_2
+#define findpts       findpts_2
+#define findpts_eval  findpts_eval_2
+#endif
+
 #define NR 5
 #define NS 7
 #define NT 6
 #define K 4
-#define NEL (K*K*K)
+#define NEL MULD(K,K,K)
 #define TN 4
 
 #define NPT_MAX 256
 #define BBOX_TOL 0.01
 #define NEWT_TOL 1024*DBL_EPSILON
-#define LOC_HASH_SIZE NEL*NR*NS*NT
-#define GBL_HASH_SIZE NEL*NR*NS*NT
+#define LOC_HASH_SIZE NEL*MULD(NR,NS,NT)
+#define GBL_HASH_SIZE NEL*MULD(NR,NS,NT)
 
 /*
 #define NPT_MAX 256
@@ -39,86 +61,130 @@
 
 static uint np, id;
 
-static const unsigned nr[3] = {NR,NS,NT};
-static const unsigned mr[3] = {2*NR,2*NS,2*NT};
+static const unsigned nr[D] = INITD(NR,NS,NT);
+static const unsigned mr[D] = INITD(2*NR,2*NS,2*NT);
 static double zr[NR], zs[NS], zt[NT];
-static double x3[3][27];
-static double mesh[3][NEL*NR*NS*NT];
-static const double *const elx[3] = {mesh[0],mesh[1],mesh[2]};
+static double x3[D][MULD(3,3,3)];
+static double mesh[D][NEL*MULD(NR,NS,NT)];
+static const double *const elx[D] = INITD(mesh[0],mesh[1],mesh[2]);
 
-struct pt_data { double x[3], r[3], dist2, ex[3]; uint code, proc, el; };
+struct pt_data { double x[D], r[D], dist2, ex[D]; uint code, proc, el; };
 static array testp;
 
 static crystal_data cr;
 
-static double quad_eval(const double coef[27],
-                        const double r, const double s, const double t)
+static double quad_eval(const double coef[MULD(3,3,3)], const double r[D])
 {
-  const double lr0=r*(r-1)/2, lr1=(1+r)*(1-r), lr2=r*(r+1)/2;
-  const double ls0=s*(s-1)/2, ls1=(1+s)*(1-s), ls2=s*(s+1)/2;
-  const double lt0=t*(t-1)/2, lt1=(1+t)*(1-t), lt2=t*(t+1)/2;
-  return ( (coef[ 0]*lr0+coef[ 1]*lr1+coef[ 2]*lr2)*ls0
-          +(coef[ 3]*lr0+coef[ 4]*lr1+coef[ 5]*lr2)*ls1
-          +(coef[ 6]*lr0+coef[ 7]*lr1+coef[ 8]*lr2)*ls2)*lt0
-        +( (coef[ 9]*lr0+coef[10]*lr1+coef[11]*lr2)*ls0
-          +(coef[12]*lr0+coef[13]*lr1+coef[14]*lr2)*ls1
-          +(coef[15]*lr0+coef[16]*lr1+coef[17]*lr2)*ls2)*lt1
-        +( (coef[18]*lr0+coef[19]*lr1+coef[20]*lr2)*ls0
-          +(coef[21]*lr0+coef[22]*lr1+coef[23]*lr2)*ls1
-          +(coef[24]*lr0+coef[25]*lr1+coef[26]*lr2)*ls2)*lt2;
+  double lr0[D], lr1[D], lr2[D];
+  unsigned d;
+  for(d=0;d<D;++d) lr0[d]=r[d]*(r[d]-1)/2,
+                   lr1[d]=(1+r[d])*(1-r[d]),
+                   lr2[d]=r[d]*(r[d]+1)/2;
+  #define EVALR(base) ( coef [base   ]*lr0[0] \
+                       +coef [base+ 1]*lr1[0] \
+                       +coef [base+ 2]*lr2[0] )
+  #define EVALS(base) ( EVALR(base   )*lr0[1] \
+                       +EVALR(base+ 3)*lr1[1] \
+                       +EVALR(base+ 6)*lr2[1] )
+  #define EVALT(base) ( EVALS(base   )*lr0[2] \
+                       +EVALS(base+ 9)*lr1[2] \
+                       +EVALS(base+18)*lr2[2] )
+  #if D==2
+  #  define EVAL() EVALS(0)
+  #elif D==3
+  #  define EVAL() EVALT(0)
+  #endif
+  
+  return EVAL();
+  
+  #undef EVAL
+  #undef EVALT
+  #undef EVALS
+  #undef EVALR
 }
 
 static void rand_mesh(void)
 {
-  const uint pn = ceil(pow(np,1/3.0));
-  const uint pi=id%pn, pj=(id/pn)%pn, pk=(id/pn)/pn;
+  const uint pn = ceil(pow(np,1.0/D));
+  const uint pi=id%pn, pj=(id/pn)%pn;
+  #if D==3
+  const uint pk=(id/pn)/pn;
+  #endif
   const double pfac = 1.0/pn;
-  const double pbase[3] = {-1+2*pfac*pi, -1+2*pfac*pj, -1+2*pfac*pk};
+  const double pbase[D] = INITD(-1+2*pfac*pi, -1+2*pfac*pj, -1+2*pfac*pk);
   const double fac = 1.0/K;
   const double z3[3] = {-1,0,1};
-  unsigned ki,kj,kk;
-  if(id==0) printf("Global division: %u^3\n",(unsigned)pn);
-  if(0)
-  printf("  proc %u at (%u,%u,%u) - (%g,%g,%g)\n",
-         id,pi,pj,pk,pbase[0],pbase[1],pbase[2]);
+  unsigned ki,kj;
+  #if D==3
+  unsigned kk;
   rand_elt_3(x3[0],x3[1],x3[2], z3,3,z3,3,z3,3);
-  for(kk=0;kk<K;++kk) for(kj=0;kj<K;++kj) for(ki=0;ki<K;++ki) {
-    unsigned off = ((kk*K+kj)*K+ki)*NR*NS*NT;
-    unsigned i,j,k;
-    double base[3] = {-1+2*fac*ki,-1+2*fac*kj,-1+2*fac*kk};
-    for(k=0;k<NT;++k) { const double t=pbase[2]+pfac*(1+base[2]+fac*(1+zt[k]));
-    for(j=0;j<NS;++j) { const double s=pbase[1]+pfac*(1+base[1]+fac*(1+zs[j]));
-    for(i=0;i<NR;++i) { const double r=pbase[0]+pfac*(1+base[0]+fac*(1+zr[i]));
-      mesh[0][off+(k*NS+j)*NR+i] = quad_eval(x3[0],r,s,t);
-      mesh[1][off+(k*NS+j)*NR+i] = quad_eval(x3[1],r,s,t);
-      mesh[2][off+(k*NS+j)*NR+i] = quad_eval(x3[2],r,s,t);
-    }}}
+  #elif D==2
+  rand_elt_2(x3[0],x3[1],       z3,3,z3,3);
+  #endif
+  if(id==0) printf("Global division: %u^%d\n",(unsigned)pn,D);
+  #if D==3
+  for(kk=0;kk<K;++kk)
+  #endif
+  for(kj=0;kj<K;++kj) for(ki=0;ki<K;++ki) {
+    unsigned off = INDEXD(ki,K, kj,K, kk)*MULD(NR,NS,NT);
+    unsigned i,j;
+    double r[D], base[D] = INITD(-1+2*fac*ki,-1+2*fac*kj,-1+2*fac*kk);
+    #if D==3
+    unsigned k;
+    for(k=0;k<NT;++k) { r[2]=pbase[2]+pfac*(1+base[2]+fac*(1+zt[k]));
+    #endif
+    for(j=0;j<NS;++j) { r[1]=pbase[1]+pfac*(1+base[1]+fac*(1+zs[j]));
+    for(i=0;i<NR;++i) { r[0]=pbase[0]+pfac*(1+base[0]+fac*(1+zr[i]));
+      mesh[0][off+INDEXD(i,NR, j,NS, k)] = quad_eval(x3[0],r);
+      mesh[1][off+INDEXD(i,NR, j,NS, k)] = quad_eval(x3[1],r);
+      #if D==3
+      mesh[2][off+INDEXD(i,NR, j,NS, k)] = quad_eval(x3[2],r);
+    }
+    #endif
+    }}
   }
 }
 
 static void test_mesh(void)
 {
-  const uint pn = ceil(pow(np,1/3.0));
-  const uint pi=id%pn, pj=(id/pn)%pn, pk=(id/pn)/pn;
+  const uint pn = ceil(pow(np,1.0/D));
+  const uint pi=id%pn, pj=(id/pn)%pn;
+  #if D==3
+  const uint pk=(id/pn)/pn;
+  #endif
   const double pfac = 1.0/pn;
-  const double pbase[3] = {-1+2*pfac*pi, -1+2*pfac*pj, -1+2*pfac*pk};
+  const double pbase[D] = INITD(-1+2*pfac*pi, -1+2*pfac*pj, -1+2*pfac*pk);
   const double fac = 1.0/K, step = 2.0/(K*(TN-1));
-  unsigned ki,kj,kk;
+  unsigned ki,kj;
+  #if D==3
+  unsigned kk;
+  #endif
   struct pt_data *out = testp.ptr;
-  testp.n = NEL*TN*TN*TN;
+  testp.n = NEL*MULD(TN,TN,TN);
   memset(testp.ptr,0,testp.n*sizeof(struct pt_data));
-  for(kk=0;kk<K;++kk) for(kj=0;kj<K;++kj) for(ki=0;ki<K;++ki) {
-    unsigned i,j,k;
-    double base[3] = {-1+2*fac*ki,-1+2*fac*kj,-1+2*fac*kk};
-    for(k=0;k<TN;++k) { const double t = pbase[2]+pfac*(1+base[2]+step*k);
-    for(j=0;j<TN;++j) { const double s = pbase[1]+pfac*(1+base[1]+step*j);
-    for(i=0;i<TN;++i) { const double r = pbase[0]+pfac*(1+base[0]+step*i);
-      out->x[0] = quad_eval(x3[0],r,s,t);
-      out->x[1] = quad_eval(x3[1],r,s,t);
-      out->x[2] = quad_eval(x3[2],r,s,t);
+  #if D==3
+  for(kk=0;kk<K;++kk)
+  #endif
+  for(kj=0;kj<K;++kj) for(ki=0;ki<K;++ki) {
+    unsigned i,j;
+    double r[D], base[D] = INITD(-1+2*fac*ki,-1+2*fac*kj,-1+2*fac*kk);
+    #if D==3
+    unsigned k;
+    for(k=0;k<TN;++k) { r[2] = pbase[2]+pfac*(1+base[2]+step*k);
+    #endif
+    for(j=0;j<TN;++j) { r[1] = pbase[1]+pfac*(1+base[1]+step*j);
+    for(i=0;i<TN;++i) { r[0] = pbase[0]+pfac*(1+base[0]+step*i);
       out->proc = rand()%np;
+      out->x[0] = quad_eval(x3[0],r);
+      out->x[1] = quad_eval(x3[1],r);
+      #if D==3
+      out->x[2] = quad_eval(x3[2],r);
+      #endif
       ++out;
-    }}}
+    }}
+    #if D==3
+    }
+    #endif
   }
   sarray_transfer(struct pt_data,&testp,proc,&cr);
   if(0)
@@ -132,16 +198,38 @@ static void print_ptdata(const struct comm *const comm)
   const struct pt_data *pt = testp.ptr, *const end = pt+testp.n;
   for(;pt!=end;++pt) {
     if(0&&id==0)
-    printf("code=%u, proc=%u, el=%u, dist2=%g, r=(%.17g,%.17g,%.17g), "
-           "x=(%.17g,%.17g,%.17g), ex=(%.17g,%.17g,%.17g)\n",
+    printf("code=%u, proc=%u, el=%u, dist2=%g, r=(%.17g,%.17g"
+           #if D==3
+           ",%.17g"
+           #endif
+           "), "
+           "x=(%.17g,%.17g"
+           #if D==3
+           ",%.17g"
+           #endif
+           "), ex=(%.17g,%.17g"
+           #if D==3
+           ",%.17g"
+           #endif
+           ")\n",
       pt->code,pt->proc,pt->el,pt->dist2,
-      pt->r[0],pt->r[1],pt->r[2],
-      pt->x[0],pt->x[1],pt->x[2],
-      pt->ex[0],pt->ex[1],pt->ex[2]);
+      pt->r[0],pt->r[1],
+      #if D==3
+      pt->r[2],
+      #endif
+      pt->x[0],pt->x[1],
+      #if D==3
+      pt->x[2],
+      #endif
+      pt->ex[0],pt->ex[1]
+      #if D==3
+      ,pt->ex[2]
+      #endif
+      );
     if(pt->code==2) ++notfound;
     else {
       double ed2=0, dx;
-      unsigned d; for(d=0;d<3;++d) dx=pt->x[d]-pt->ex[d], ed2+=dx*dx;
+      unsigned d; for(d=0;d<D;++d) dx=pt->x[d]-pt->ex[d], ed2+=dx*dx;
       dist2max=pt->dist2>dist2max?pt->dist2:dist2max;
       ed2max=ed2>ed2max?ed2:ed2max;
     }
@@ -168,11 +256,11 @@ static void print_ptdata(const struct comm *const comm)
 
 static void test(const struct comm *const comm)
 {
-  const double *x_base[3];
-  const unsigned x_stride[3] = {sizeof(struct pt_data),
-                                sizeof(struct pt_data),
-                                sizeof(struct pt_data)};
-  struct findpts_data_3 *fd;
+  const double *x_base[D];
+  const unsigned x_stride[D] = INITD(sizeof(struct pt_data),
+                                     sizeof(struct pt_data),
+                                     sizeof(struct pt_data));
+  struct findpts_data *fd;
   struct pt_data *pt;
   unsigned d;
   if(id==0) printf("Initializing mesh\n");
@@ -180,27 +268,30 @@ static void test(const struct comm *const comm)
   test_mesh();
   pt = testp.ptr;
   if(id==0) printf("calling findpts_setup\n");
-  fd=findpts_setup_3(comm,elx,nr,NEL,mr,BBOX_TOL,
-                     LOC_HASH_SIZE,GBL_HASH_SIZE,
-                     NPT_MAX,NEWT_TOL);
+  fd=findpts_setup(comm,elx,nr,NEL,mr,BBOX_TOL,
+                   LOC_HASH_SIZE,GBL_HASH_SIZE,
+                   NPT_MAX,NEWT_TOL);
   if(id==0) printf("calling findpts\n");
-  x_base[0]=pt->x, x_base[1]=pt->x+1, x_base[2]=pt->x+2;
-  findpts_3(&pt->code , sizeof(struct pt_data),
-            &pt->proc , sizeof(struct pt_data),
-            &pt->el   , sizeof(struct pt_data),
-             pt->r    , sizeof(struct pt_data),
-            &pt->dist2, sizeof(struct pt_data),
-             x_base   , x_stride, testp.n, fd);
-  for(d=0;d<3;++d) {
+  x_base[0]=pt->x, x_base[1]=pt->x+1;
+  #if D==3
+  x_base[2]=pt->x+2;
+  #endif
+  findpts(&pt->code , sizeof(struct pt_data),
+          &pt->proc , sizeof(struct pt_data),
+          &pt->el   , sizeof(struct pt_data),
+           pt->r    , sizeof(struct pt_data),
+          &pt->dist2, sizeof(struct pt_data),
+           x_base   , x_stride, testp.n, fd);
+  for(d=0;d<D;++d) {
     if(id==0) printf("calling findpts_eval (%u)\n",d);
-    findpts_eval_3(&pt->ex[d], sizeof(struct pt_data),
-                   &pt->code , sizeof(struct pt_data),
-                   &pt->proc , sizeof(struct pt_data),
-                   &pt->el   , sizeof(struct pt_data),
-                    pt->r    , sizeof(struct pt_data),
-                    testp.n, mesh[d], fd);
+    findpts_eval(&pt->ex[d], sizeof(struct pt_data),
+                 &pt->code , sizeof(struct pt_data),
+                 &pt->proc , sizeof(struct pt_data),
+                 &pt->el   , sizeof(struct pt_data),
+                  pt->r    , sizeof(struct pt_data),
+                  testp.n, mesh[d], fd);
   }
-  findpts_free_3(fd);
+  findpts_free(fd);
   print_ptdata(comm);
 }
 
@@ -220,7 +311,7 @@ int main(int narg, char *arg[])
   id=comm.id, np=comm.np;
 
   lobatto_nodes(zr,NR),lobatto_nodes(zs,NS),lobatto_nodes(zt,NT);
-  array_init(struct pt_data,&testp,NEL*TN*TN*TN);
+  array_init(struct pt_data,&testp,NEL*MULD(TN,TN,TN));
   crystal_init(&cr,&comm);
   test(&comm);
   crystal_free(&cr);
