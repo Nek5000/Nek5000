@@ -5,7 +5,7 @@ function x = amg_apply(data,level,ns,r)
 		if ns
 			x = zeros(1,1);
 		else
-			x = full(1/data.A{level})*x;
+			x = full(1/data.A{level})*r;
 		end
 	else
 		W = data.Wt{level}';

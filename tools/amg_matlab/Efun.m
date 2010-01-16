@@ -1,4 +1,5 @@
 function y = Efun(x)
-	global lvl data ns
-	y = x - amg_apply(data,lvl,ns,data.A{lvl}*x);
+	global data nullspace A
+	y = x - amg_apply(data,1,nullspace,A*x);
+	fprintf(1,'.');
 end

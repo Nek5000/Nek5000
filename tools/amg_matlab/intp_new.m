@@ -1,4 +1,4 @@
-function W = intp_new(A,C,F,u,tol)
+function W = intp_new(A,C,F,u,tol,wtol)
 	nc = length(C);
 	nf = length(F);
 	Aff = sparse(A(F,F));
@@ -78,7 +78,7 @@ function W = intp_new(A,C,F,u,tol)
 		fprintf(1,'.');
 		[y i] = max(Ra);   % i(j) = row index of largest entry in Ra(:,j)
 		fprintf(1,'.');
-		p = find(c>(.99*tol));   % p    = set of deficient cols
+		p = find(c>(wtol*tol));   % p    = set of deficient cols
                 p2 = find(c>tol);
 		fprintf(1,'.');
 		fprintf(1,'  nnz = %d; %d cols above %g; max = %g\n', ...

@@ -1,4 +1,4 @@
-function data = amg_setup(A,nv,tolc,tol)
+function data = amg_setup(A,nv,tolc,tol,stol,wtol)
   %gamma ~ tol
 	%rho_f ~ gamma / (1 + gamma)
 	%rho_f * (1-gamma^2) + gamma^2 ~ gamma
@@ -18,8 +18,8 @@ function data = amg_setup(A,nv,tolc,tol)
 	id = [1:length(A(:,1))];
 	u = nv;
 	while 1
-		data.A{level} = A;
 		[m,n] = size(A);
+		if(m==1 & n==1)	data.A{level} = A; end;
 		data.id{level} = id;
 		data.n = [data.n; n];
 		data.nnz = [data.nnz; nnz(A)];
@@ -70,7 +70,7 @@ function data = amg_setup(A,nv,tolc,tol)
 		data.nnzff = [data.nnzff; nnz(data.Aff{level})];
 		
 		%W = intp_fast(Aff, -Afc, u, tol);
-		W = intp_new(A,C,F,u,gamma);
+		W = intp_new(A,C,F,u,gamma,wtol);
 		data.Wt{level} = W';
 		AfP = Aff*W+Afc;
 		
@@ -82,7 +82,7 @@ function data = amg_setup(A,nv,tolc,tol)
 		fprintf(1,'compression = %g\n',nnz(data.AfPt{level})/nnz(AfP));
 		data.nnzfp = [data.nnzfp; nnz(data.AfPt{level})];
 		
-		A = W'*AfP + Afc'*W + Acc;
+		A = simple_sparsify(W'*AfP + Afc'*W + Acc,stol,u);
 		level = level + 1;
 	end
 end
