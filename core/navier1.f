@@ -2356,7 +2356,8 @@ C-----------------------------------------------------------------------
 C
       NTOT1 = NX1*NY1*NZ1*NELV
 C
-      DO 100 ILAG=NBDINP-1,2,-1
+c      DO 100 ILAG=NBDINP-1,2,-1
+      DO 100 ILAG=3-1,2,-1
          CALL COPY (VXLAG (1,1,1,1,ILAG),VXLAG (1,1,1,1,ILAG-1),NTOT1)
          CALL COPY (VYLAG (1,1,1,1,ILAG),VYLAG (1,1,1,1,ILAG-1),NTOT1)
          IF (NDIM.EQ.3)

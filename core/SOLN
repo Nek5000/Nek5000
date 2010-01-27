@@ -19,9 +19,9 @@ C
 
       COMMON /VPTSOL/  
 c     Can be used for post-processing runs (SIZE .gt. 10+3*LDIMT flds)
-     $                 VXLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
-     $               , VYLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
-     $               , VZLAG  (LX1,LY1,LZ1,LELV,LORDER-1)
+     $                 VXLAG  (LX1,LY1,LZ1,LELV,2)
+     $               , VYLAG  (LX1,LY1,LZ1,LELV,2)
+     $               , VZLAG  (LX1,LY1,LZ1,LELV,2)
      $               , TLAG   (LX1,LY1,LZ1,LELT,LORDER-1,LDIMT)
      $               , ABX1   (LX1,LY1,LZ1,LELV)
      $               , ABY1   (LX1,LY1,LZ1,LELV)

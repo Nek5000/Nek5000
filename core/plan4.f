@@ -26,6 +26,7 @@ C
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
+      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
       REAL           DPR   (LX2,LY2,LZ2,LELV)
       EQUIVALENCE   (DPR,DV1)
       LOGICAL        IFSTSP
@@ -42,6 +43,9 @@ c
 
       ! split viscosity into explicit/implicit part
       if (ifexplvis) call split_vis
+
+      ! extrapolate velocity
+      CALL V_EXTRAP(vext)
 
       ! compute explicit contributions bfx,bfy,bfz 
       CALL MAKEF 
@@ -145,45 +149,13 @@ c
      $ ,             WA3   (LX1*LY1*LZ1*LELV)
       COMMON /SCRMG/ W1    (LX1*LY1*LZ1*LELV)
      $ ,             W2    (LX1*LY1*LZ1*LELV)
-      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELT,3)
+      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
 
       CHARACTER CB*3
       
       NXYZ1  = NX1*NY1*NZ1
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
-
-c     extrapolate velocity
-      AB0 = AB(1)
-      AB1 = AB(2)
-      AB2 = AB(3)
-
-      if(NBDINP.EQ.3) then
-        do i = 1,ntot1
-           vext(i,1) =             ab0*vx(i,1,1,1)
-           vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
-           vext(i,1) = vext(i,1) + ab2*vxlag(i,1,1,1,2)
- 
-           vext(i,2) =             ab0*vy(i,1,1,1)
-           vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
-           vext(i,2) = vext(i,2) + ab2*vylag(i,1,1,1,2)
- 
-           vext(i,3) =             ab0*vz(i,1,1,1)
-           vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
-           vext(i,3) = vext(i,3) + ab2*vzlag(i,1,1,1,2)
-        enddo
-      else
-        do i = 1,ntot1
-           vext(i,1) =             ab0*vx(i,1,1,1)
-           vext(i,1) = vext(i,1) + ab1*vxlag(i,1,1,1,1)
- 
-           vext(i,2) =             ab0*vy(i,1,1,1)
-           vext(i,2) = vext(i,2) + ab1*vylag(i,1,1,1,1)
- 
-           vext(i,3) =             ab0*vz(i,1,1,1)
-           vext(i,3) = vext(i,3) + ab1*vzlag(i,1,1,1,1)
-        enddo
-      endif
 
 c     -mu*curl(curl(v))
       call op_curl (ta1,ta2,ta3,vext(1,1),vext(1,2),vext(1,3),
@@ -485,4 +457,32 @@ C     Redo split viscosity
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine v_extrap(vext)
+c
+c     extrapolate velocity
+c
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+   
+      real vext(lx1*ly1*lz1*lelv,1) 
+
+      NTOT = NX1*NY1*NZ1*NELV
+
+      AB0 = AB(1)
+      AB1 = AB(2)
+      AB2 = AB(3)
+
+      call add3s2(vext(1,1),vx,vxlag,ab0,ab1,ntot)
+      call add3s2(vext(1,2),vy,vylag,ab0,ab1,ntot)
+      if(if3d) call add3s2(vext(1,3),vz,vzlag,ab0,ab1,ntot)
+
+      if(nab.eq.3) then
+        call add2s2(vext(1,1),vxlag(1,1,1,1,2),ab2,ntot)
+        call add2s2(vext(1,2),vylag(1,1,1,1,2),ab2,ntot)
+        if(if3d) call add2s2(vext(1,3),vzlag(1,1,1,1,2),ab2,ntot)
+      endif
+
+      return
+      end  
 c-----------------------------------------------------------------------
