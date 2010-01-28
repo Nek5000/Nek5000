@@ -9,7 +9,7 @@ C
       INCLUDE 'ZPER'
  
       logical ifbswap,ifre2
-      character*80 string
+      character*132 string
       real*8 etime_tmp
 
 C     Test timer accuracy
@@ -143,7 +143,7 @@ C
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
 
-      character*80 string(100)
+      character*132 string(100)
 
       VNEKTON = 3 ! dummy not really used anymore
       
@@ -254,13 +254,13 @@ c     IFSPLIT   = .false.
           write(6,*) 'ABORT: Too many logical switches', NLOGIC
           call exitt
         ENDIF
-        READ(9,'(A80)',ERR=500) (string(i),i=1,NLOGIC)
+        READ(9,'(A132)',ERR=500) (string(i),i=1,NLOGIC)
       ENDIF
       call bcast(NLOGIC,ISIZE)
-      call bcast(string,100*80*CSIZE)
+      call bcast(string,100*132*CSIZE)
 
       do i = 1,NLOGIC
-         call capit(string(i),80)
+         call capit(string(i),132)
          if (indx1(string(i),'IFTMSH' ,6).gt.0) then 
              read(string(i),*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
          elseif (indx1(string(i),'IFNAV'  ,5).gt.0 .and.
@@ -716,7 +716,7 @@ C
       INCLUDE 'SCRCT'
       CHARACTER CBC1*1,CBC3*3,CHTEMP*1,CHTMP3*3
       EQUIVALENCE (CHTEMP,CHTMP3)
-      character*80 string
+      character*132 string
 C
 C     Set up TEMPORARY value for NFIELD - NFLDT
 C
@@ -748,7 +748,7 @@ C
         if (.not.iftmsh(ifield)) nel = nelgv
 C       Fluid and/or thermal
         read(9,81) string        !  ***** FLUID   BOUNDARY CONDITIONS *****
-        call capit(string,80)
+        call capit(string,132)
 
 c       write(6,*) 'reading BC:',ifield,ibcs,nbcs
 c       write(6,81) string
@@ -811,7 +811,7 @@ C              check for fortran function as denoted by lower case bc's:
             ENDIF
    80    CONTINUE
         endif
-   81   format(a80)
+   81   format(a132)
   100 CONTINUE
 C
 C     END OF BC READ
@@ -890,12 +890,12 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
 
-      CHARACTER*80 LINE
+      CHARACTER*132 LINE
       LOGICAL      IFGTIL
 
       IF(NID.EQ.0) THEN
 C       Read Restart Files
-        CALL BLANK(INITC,15*80)
+        CALL BLANK(INITC,15*132)
         READ(9,80,ERR=200,END=200) LINE
         IF (INDX1(LINE,'RESTART',7).NE.0) THEN
            IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
@@ -905,7 +905,7 @@ c          READ(LINE,*,ERR=200,END=200) NSKIP
    50      CONTINUE
            READ(9,80,ERR=200,END=200) LINE
         ENDIF
-   80   FORMAT(A80)
+   80   FORMAT(A132)
 
         IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
 
@@ -922,7 +922,7 @@ C       Read drive force data
   110   CONTINUE
       ENDIF
 
-      CALL BCAST(INITC,15*80*CSIZE)
+      CALL BCAST(INITC,15*132*CSIZE)
 
       return
 C
@@ -948,7 +948,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
 
-      CHARACTER*80 LINE
+      CHARACTER*132 LINE
 C
       CALL IZERO(MATYPE,16*LDIMT1)
       CALL RZERO(CPGRP ,48*LDIMT1)
@@ -966,7 +966,7 @@ C
            DO 100 IPROP=1,3
               IF(ITYPE.EQ.1) READ(9,* ) CPGRP(IGRP,IFLD,IPROP)
               IF(ITYPE.EQ.2) READ(9,80) LINE
-   80   FORMAT(A80)
+   80   FORMAT(A132)
   100   CONTINUE
       ENDIF
 
@@ -2312,7 +2312,7 @@ c-----------------------------------------------------------------------
       character*132 fname
       equivalence (fname,fnami)
 
-      character*80 hdr
+      character*132 hdr
       character*5 version
       real*4      test
 
@@ -2394,21 +2394,21 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine cscan(sout,key,nk)
 
-      character*80 sout,key
-      character*80 string
-      character*1  string1(80)
+      character*132 sout,key
+      character*132 string
+      character*1  string1(132)
       equivalence (string1,string)
 c
       do i=1,100000000
-         call blank(string,80)
+         call blank(string,132)
          read (nk,80,end=100,err=100) string
-         call chcopy(sout,string,80)
+         call chcopy(sout,string,132)
 c        write (6,*) string
          if (indx1(string,key,nk).ne.0) return
       enddo
   100 continue
 c
-   80 format(a80)
+   80 format(a132)
       return
 
       end

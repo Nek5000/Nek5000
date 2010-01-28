@@ -5,15 +5,15 @@ c
       include 'INPUT'
       include 'ZPER'
 c
-      character*80 string
-      character*1  string1(80)
+      character*132 string
+      character*1  string1(132)
       equivalence (string,string1)
 C
 c
-      call blank (string,80)
-c     call gets  (string,80,iend,9) ! read name of "box" file from .rea file
-      read (9,80) string
-   80 format(a80)
+      call blank (string,132)
+c     call gets  (string,132,iend,9) ! read name of "box" file from .rea file
+      read (9,132) string
+  132 format(a132)
 c
       if (nid.eq.0) then
 c
@@ -23,7 +23,7 @@ c
          write(6,*) 'opening file:'
          write(6,*) string
          open (unit=7,file=string,status='old')
-         call gets(string,80,iend,7)  ! This is a dummy read, for compatibility
+         call gets(string,132,iend,7)  ! This is a dummy read, for compatibility
 c
 c        here is where the 2d/3d determination is made....
 c
@@ -643,15 +643,15 @@ c
 c-----------------------------------------------------------------------
       subroutine getcv0(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(80)
+      character*1 adum(132)
 c
 c     Get character strings, with no seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,80)
-    1 format(80a1)
+      read(99,1,end=2) (adum(k),k=1,132)
+    1 format(132a1)
     2 continue
 c
       i = 0
@@ -663,7 +663,7 @@ c
       enddo
       do j=1,n
          write(6,3) m,n,(c(i,j),i=1,m)
-    3    format(2i4,'getcv0:',80a1)
+    3    format(2i4,'getcv0:',132a1)
       enddo
 c
       close(unit=99)
@@ -672,15 +672,15 @@ c
 c-----------------------------------------------------------------------
       subroutine getcv(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(80)
+      character*1 adum(132)
 c
 c     Get character strings, with single seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,80)
-    1 format(80a1)
+      read(99,1,end=2) (adum(k),k=1,132)
+    1 format(132a1)
     2 continue
 c
       i = 0
@@ -695,7 +695,7 @@ c        bump pointer for "," in input string
       enddo
       do j=1,n
          write(6,3) m,n,(c(i,j),i=1,m)
-    3    format(2i4,'getcv:',80a1)
+    3    format(2i4,'getcv:',132a1)
       enddo
 c
       close(unit=99)
@@ -711,7 +711,7 @@ c
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
       read(99,1) (c(k),k=1,n)
-    1 format(80a1)
+    1 format(132a1)
       close(unit=99)
       return
       end
@@ -834,8 +834,8 @@ c-----------------------------------------------------------------------
 c
 c     scan through infile until "no comment" is found
 c
-      character*80 string
-      character*1  string1(80)
+      character*132 string
+      character*1  string1(132)
       equivalence (string1,string)
 c
       character*1 comment
@@ -844,13 +844,13 @@ c
 c
       iend = 0
       do line=1,100000
-         call blank(string,80)
+         call blank(string,132)
          read (infile ,80,end=100,err=100) string
 c
          write(6,80) string
          if   (indx1(string,comment,1).ne.1) then
               open(unit=99,file='box.tmp')
-              len = ltrunc(string,80)
+              len = ltrunc(string,132)
               write(99,81) (string1(k),k=1,len)
               close(unit=99)
               return
@@ -860,8 +860,8 @@ c             write(6,*) i1,' i1', comment
          endif
 c
       enddo
-   80 format(a80)
-   81 format(80a1)
+   80 format(a132)
+   81 format(132a1)
 c
   100 continue
       iend = 1

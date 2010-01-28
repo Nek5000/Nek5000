@@ -6,7 +6,7 @@
 #ifdef MPIIO
       include 'mpif.h'
 
-      character*80 fname
+      character*132 fname
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
 c        write(*,*) nid, 'call MPI_file_open',fname

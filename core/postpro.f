@@ -4,14 +4,14 @@
       include 'INPUT'
       include 'RESTART'
 
-      character*1 string(80),fout(80),BLNK
+      character*1 string(132),fout(132),BLNK
       character*6 ext
       DATA BLNK/' '/
 
-      call blank  (initc(1),80)
+      call blank  (initc(1),132)
 
       L1=0
-      DO 100 I=1,80
+      DO 100 I=1,132
          IF (STRING(I).EQ.BLNK) GOTO 200
          L1=I
   100 CONTINUE

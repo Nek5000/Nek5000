@@ -1632,8 +1632,8 @@ c
 c
       real*4         test_pattern
 c
-      character*1 fhdfle1(80)
-      character*80 fhdfle
+      character*1 fhdfle1(132)
+      character*132 fhdfle
       equivalence (fhdfle,fhdfle1)
 c
       jstep = istep
@@ -2389,12 +2389,12 @@ c
 c-----------------------------------------------------------------------
       subroutine open_surf_file(i)
 c
-      character*80 fname
-      character*1  fnami(80)
+      character*132 fname
+      character*1  fnami(132)
 
       integer      hnami (20)
-      character*80 hname
-      character*1  hname1(80)
+      character*132 hname
+      character*1  hname1(132)
       equivalence (hname,hname1)
       equivalence (hname,hnami )
 
@@ -2402,12 +2402,12 @@ c
       call izero (hnami,20)
 
 c
-      call blank(fname,80)
+      call blank(fname,132)
       write(fname,1) i
     1 format('surf.',i6.6)
 c
       call izero (hnami,20)
-      len= ltrunc(fname,80)
+      len= ltrunc(fname,132)
       call chcopy(hname1,fname,len)
 
       call byte_open(hname)

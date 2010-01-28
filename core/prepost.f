@@ -27,8 +27,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       real*4         test_pattern
 c
       character*3    prefin,prefix
-      character*1    fhdfle1(80)
-      character*80   fhdfle
+      character*1    fhdfle1(132)
+      character*132   fhdfle
       equivalence   (fhdfle,fhdfle1)
       character*1    fldfile2(120)
       integer        fldfilei( 60)
@@ -264,8 +264,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       real*4         test_pattern
 
       character*3    prefix
-      character*1    fhdfle1(80)
-      character*80   fhdfle
+      character*1    fhdfle1(132)
+      character*132   fhdfle
       equivalence   (fhdfle,fhdfle1)
       character*1    fldfile2(120)
       integer        fldfilei( 60)
@@ -305,7 +305,7 @@ c       Open new file for each dump on /cfs
            call chcopy    (fldfile2,fldfle,len)
            call byte_open (fldfile2)
 c             write header as character string
-           call blank(fhdfle,80)
+           call blank(fhdfle,132)
         endif
       endif
 
@@ -1112,8 +1112,8 @@ c
 c
       real*4         test_pattern
 c
-      character*1 fhdfle1(80)
-      character*80 fhdfle
+      character*1 fhdfle1(132)
+      character*132 fhdfle
       equivalence (fhdfle,fhdfle1)
 
       write(excode,'(A30)') excodein
@@ -1123,7 +1123,7 @@ c
          if (ikstep.gt.99999) ikstep = ikstep/10
       enddo
 
-      call blank(fhdfle,80)
+      call blank(fhdfle,132)
 
 c       write(6,111)               !       print on screen
 c     $     nelgt,nx1,ny1,nz1,time,istep,excode
@@ -1504,7 +1504,7 @@ c stefan: we need to change fldstideB to the number of elements
       end
 c-----------------------------------------------------------------------
       subroutine io_init ! determine which nodes will output
-      character*80 hname
+      character*132 hname
 
       include 'SIZE'
       include 'INPUT'
@@ -1574,8 +1574,8 @@ c-----------------------------------------------------------------------
 
       character*1 prefix(3)
 
-      character*80  fname
-      character*1   fnam1(80)
+      character*132  fname
+      character*1   fnam1(132)
       equivalence  (fnam1,fname)
 
       character*6  six,str
@@ -1591,7 +1591,7 @@ c-----------------------------------------------------------------------
       save    nopen
       data    nopen  / 198*0 /
 
-      call blank(fname,80)      !  zero out for byte_open()
+      call blank(fname,132)      !  zero out for byte_open()
 
       iprefix        = i_find_prefix(prefix,99)
       if (ifreguo) then
