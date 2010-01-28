@@ -382,7 +382,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine exitti(string,idata)
-      character*1 string(80)
+      character*1 string(132)
       character*11 s11
       include 'SIZE'
       include 'TOTAL'
@@ -394,7 +394,7 @@ c-----------------------------------------------------------------------
       call chcopy(string(len),s11,11)
 
       if (nid.eq.0) write(6,1) (string(k),k=1,len+10)
-    1 format('EXIT: ',80a1)
+    1 format('EXIT: ',132a1)
 
       call exitt
 

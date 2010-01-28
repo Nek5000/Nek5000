@@ -394,9 +394,9 @@ c
      $       , ifrest(0:ldimt1,0:lpert)
      $       , ifprsl(  ldimt1,0:lpert)
 c
-      character*80 line,fname,cdum
+      character*132 line,fname,cdum
       character*2  s2
-      character*1  line1(80)
+      character*1  line1(132)
       equivalence (line1,line)
 C
 C     Default is user specified fortran function (=0 if not specified)
@@ -420,14 +420,14 @@ C     Check for Presolve options
 C
       DO 1000 ILINE=1,15 
          LINE=INITC(ILINE)
-         CALL CAPIT(LINE,80)
+         CALL CAPIT(LINE,132)
          IF (INDX1(LINE,'PRESOLV',7).NE.0) THEN
 C           found a presolve request
-            CALL BLANK(INITC(ILINE),80)
+            CALL BLANK(INITC(ILINE),132)
             CALL LJUST(LINE)
             CALL CSPLIT(CDUM,LINE,' ',1)
 C
-            IF (LTRUNC(LINE,80).EQ.0) THEN
+            IF (LTRUNC(LINE,132).EQ.0) THEN
                IF (NID.EQ.0) WRITE(6,700)
   700          FORMAT(/,2X,'Presolve options: ALL')
 C              default - all fields are presolved.
@@ -438,9 +438,9 @@ C              default - all fields are presolved.
             ELSE
 C           check line for arguments
 C
-               LL=LTRUNC(LINE,80)
+               LL=LTRUNC(LINE,132)
                IF (NID.EQ.0) WRITE(6,810) (LINE1(L),L=1,LL)
-  810          FORMAT(/,2X,'Presolve options: ',80A1)
+  810          FORMAT(/,2X,'Presolve options: ',132A1)
 C
                IF (INDX_CUT(LINE,'U',1).NE.0) THEN
                   ifprsl(1,jp) = .true.
@@ -471,14 +471,14 @@ C
       DO 2000 ILINE=1,15
          if (ifpert) jp=iline-1
          LINE=INITC(ILINE)
-         IF (LTRUNC(LINE,80).NE.0) THEN
+         IF (LTRUNC(LINE,132).NE.0) THEN
 C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
             IF (NID.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
- 1010       FORMAT(1X,'Checking restart options: ',A80)
-c            IF (NID.EQ.0) WRITE(6,'(A80)') LINE
+ 1010       FORMAT(1X,'Checking restart options: ',A132)
+c            IF (NID.EQ.0) WRITE(6,'(A132)') LINE
 C
 C           Parse restart options
  
@@ -557,17 +557,17 @@ c
       EQUIVALENCE (EXCODER,EXCODER1)
 
 
-      CHARACTER*80 FNAME
-      CHARACTER*1  FNAME1(80)
+      CHARACTER*132 FNAME
+      CHARACTER*1  FNAME1(132)
       EQUIVALENCE (FNAME1,FNAME)
 C
-      INTEGER      HNAMI (30)
-      CHARACTER*80 HNAME
-      CHARACTER*1  HNAME1(80)
-      EQUIVALENCE (HNAME,HNAME1)
-      EQUIVALENCE (HNAME,HNAMI )
+      INTEGER       HNAMI (30)
+      CHARACTER*132 HNAME
+      CHARACTER*1   HNAME1(132)
+      EQUIVALENCE  (HNAME,HNAME1)
+      EQUIVALENCE  (HNAME,HNAMI )
 
-      CHARACTER*80 header
+      CHARACTER*132 header
 C
 C     Local logical flags to determine whether to copy data or not.
 C
@@ -646,7 +646,7 @@ C
    92                format(i10,3i4,1P1e18.9,i9,1x,30a1)
                    endif
                  else                          ! new head format
-                   read(91,'(A80)',err=1500,end=1500) header
+                   read(91,'(A132)',err=1500,end=1500) header
                    read(header,*)
      &                  neltr,nxr,nyr,nzr,rstime,istepr,excoder
                  endif
@@ -801,11 +801,11 @@ C
                   CALL EXITT
                ENDIF
 
-               LNAME=LTRUNC(FNAME,80)
+               LNAME=LTRUNC(FNAME,132)
                IF (NID.EQ.0) WRITE(6,61) (FNAME1(I),I=1,LNAME)
                IF (NID.EQ.0) WRITE(6,62) 
      $             IPOSU,IPOSV,IPOSW,IPOSP,IPOST,NPS,NOUTS
-   61          FORMAT(/,2X,'Restarting from file ',80A1)
+   61          FORMAT(/,2X,'Restarting from file ',132A1)
    62          FORMAT(2X,'Columns for restart data U,V,W,P,T,S,N: ',7I4)
 C
 C              Make sure the requested data is present in this file....
@@ -1033,7 +1033,7 @@ C
             WRITE(6,1701) IEG,IXYZ
             WRITE(6,1702) 
      $            ((TDUMP(JXYZ,II),II=1,NOUTS),JXYZ=IXYZ-1,IXYZ)
- 1700       FORMAT(5X,'WARNING:  No data read in for file ',A80)
+ 1700       FORMAT(5X,'WARNING:  No data read in for file ',A132)
  1701       FORMAT(5X,'Failed on  element',I4,',  point',I5,'.')
  1702       FORMAT(5X,'Last read dump:',/,5G15.7)
             write(6,*) nid,'call exitt 1702a',idump
@@ -1059,7 +1059,7 @@ C        Can't open file...
  5001    FORMAT(2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   Could not open restart file:'
-     $       ,/,A80
+     $       ,/,A132
      $      ,//,2X,'Quitting in routine RESTART.')
          CLOSE(UNIT=91)
          call exitt
@@ -1084,14 +1084,14 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'TSTEP'
 C
-      CHARACTER*80 RSOPTS,FNAME
+      CHARACTER*132 RSOPTS,FNAME
       CHARACTER*2  S2
       LOGICAL IFGTRL
 C
 C     Scratch variables..
       LOGICAL IFDEFT,IFANYC
-      CHARACTER*80 RSOPT     ,LINE
-      CHARACTER*1  RSOPT1(80),LINE1(80)
+      CHARACTER*132 RSOPT     ,LINE
+      CHARACTER*1  RSOPT1(132),LINE1(132)
       EQUIVALENCE (RSOPT1,RSOPT)
       EQUIVALENCE (LINE1,LINE)
 C
@@ -1105,7 +1105,7 @@ C
       CALL CSPLIT(FNAME,RSOPT,' ',1)
 C     check fname for user supplied extension.
       IF (INDX1(FNAME,'.',1).EQ.0) THEN
-         LEN=LTRUNC(FNAME,80)
+         LEN=LTRUNC(FNAME,132)
          LEN1=LEN+1
          LEN4=LEN+4
          FNAME(LEN1:LEN4)='.fld'
@@ -1133,10 +1133,10 @@ C
 C
 C     Parse file for i/o options and/or dump number
 C
-      CALL CAPIT(RSOPT,80)
+      CALL CAPIT(RSOPT,132)
 
 
-      IF (LTRUNC(RSOPT,80).NE.0) THEN
+      IF (LTRUNC(RSOPT,132).NE.0) THEN
 C
 C        Check for explicit specification of restart TIME.
 C
@@ -1145,19 +1145,19 @@ C
          IF (ITO.NE.0) THEN
 C           user has specified the time explicitly.
             IT1=INDX_CUT(RSOPT,'=',1)
-            IT8=80-IT1
-            CALL BLANK(LINE,80)
+            IT8=132-IT1
+            CALL BLANK(LINE,132)
             CALL CHCOPY(LINE,RSOPT1(IT1),IT8)
             IF (IFGTRL(TTIME,LINE)) THEN
                IFGTIM=.FALSE.
                TIME=TTIME
             ENDIF
 C           remove the user specified time from the RS options line.
-            ITA=80-ITO+1
+            ITA=132-ITO+1
             CALL BLANK(RSOPT1(ITO),ITA)
             CALL LJUST(LINE)
             IT1=INDX1(LINE,' ',1)
-            ITB=80-IT1+1
+            ITB=132-IT1+1
             CALL CHCOPY(RSOPT1(ITO),LINE1(IT1),ITB)
          ENDIF
 C
@@ -1451,9 +1451,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       INTEGER FUNCTION INDX1(S1,S2,L2)
-      CHARACTER*80 S1,S2
+      CHARACTER*132 S1,S2
 C
-      N1=80-L2+1
+      N1=132-L2+1
       INDX1=0
       IF (N1.LT.1) return
 C
@@ -1473,20 +1473,20 @@ C
 C     INDX_CUT is returned with the location of S2 in S1 (0 if not found)
 C     S1     is returned with 1st occurance of S2 removed.
 C
-      CHARACTER*1 S1(80),S2(80)
+      CHARACTER*1 S1(132),S2(132)
 C
       I1=INDX1(S1,S2,L2)
 C
       IF (I1.NE.0) THEN
 C
-         N1=80-L2
+         N1=132-L2
          DO 100 I=I1,N1
             I2=I+L2
 C           remove the 1st occurance of S2 from S1.
             S1(I)=S1(I2)
   100    CONTINUE
          N2=N1+1
-         DO 200 I=N2,80
+         DO 200 I=N2,132
             S1(I)=' '
   200    CONTINUE
       ENDIF
@@ -1496,14 +1496,14 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine csplit(s0,s1,s2,l0)
-      CHARACTER*80 S0,S1,S2
+      CHARACTER*132 S0,S1,S2
 C     split string S1 into two parts, delimited by S2.
 C
       I2=INDX_CUT(S1,S2,L0)
       IF (I2.EQ.0) return
 C
       I1=I2-1
-      CALL BLANK(S0,80)
+      CALL BLANK(S0,132)
       S0(1:I1)=S1(1:I1)
       CALL LSHFT(S1,I2)
 C
@@ -1514,13 +1514,13 @@ c-----------------------------------------------------------------------
 C     shift string from IPT to the left
 C     INPUT : "abcde......    test    "
 C     OUTPUT: "e......    test        "     if ipt.eq.5
-      CHARACTER*1 STRING(80)
+      CHARACTER*1 STRING(132)
 C
-      DO 20 J=1,81-IPT
+      DO 20 J=1,133-IPT
          IJ=IPT+J-1
          STRING(J)=STRING(IJ)
    20 CONTINUE
-      DO 30 J=82-IPT,80
+      DO 30 J=134-IPT,132
          STRING(J)=' '
    30 CONTINUE
       return
@@ -1528,18 +1528,18 @@ C
 c-----------------------------------------------------------------------
       subroutine ljust(string)
 C     left justify string
-      CHARACTER*1 STRING(80)
+      CHARACTER*1 STRING(132)
 C
       IF (STRING(1).NE.' ') return
 C
-      DO 100 I=2,80
+      DO 100 I=2,132
 C
          IF (STRING(I).NE.' ') THEN
-            DO 20 J=1,81-I
+            DO 20 J=1,133-I
                IJ=I+J-1
                STRING(J)=STRING(IJ)
    20       CONTINUE
-            DO 30 J=82-I,80
+            DO 30 J=134-I,132
                STRING(J)=' '
    30       CONTINUE
             return
@@ -1795,8 +1795,8 @@ C
 C     This complicated function is necessary thanks to the Ardent,
 C     which won't allow free formatted reads (*) from internal strings!
 C
-      CHARACTER*80 LINE
-      CHARACTER*80 WORK
+      CHARACTER*132 LINE
+      CHARACTER*132 WORK
       CHARACTER*8  FMAT
 C
 C     Note that the format Fn.0 is appropriate for fields of type:
@@ -1832,8 +1832,8 @@ C
 C     This complicated function is necessary thanks to the Ardent,
 C     which won't allow free formatted reads (*) from internal strings!
 C
-      CHARACTER*80 LINE
-      CHARACTER*80 WORK
+      CHARACTER*132 LINE
+      CHARACTER*132 WORK
       CHARACTER*8  FMAT
 C
       IFGTIL=.FALSE.
@@ -2432,7 +2432,7 @@ c
       include 'TOTAL'
       include 'RESTART'
       character*132 hdr
-      character*80  fname
+      character*132  fname
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2561,21 +2561,21 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
 c
       integer fid
-      character*80 hname
+      character*132 hname
 
       character*6  six,fmt,s6
       save         six
       data         six / "??????" /
 
-      character*80 fname
-      character*1  fname1(80)
+      character*132 fname
+      character*1  fname1(132)
       equivalence (fname1,fname)
 
       integer      iname(20)
       equivalence (iname,fname)
 
       call izero  (iname,20)
-      len = ltrunc(hname,80)
+      len = ltrunc(hname,132)
       call chcopy (fname,hname,len)
 
       do ipass=1,2      ! 2nd pass, in case 1 file/directory
@@ -2595,18 +2595,18 @@ c
 #ifdef MPIIO
       call byte_open_mpi(fname)
       if(nid.eq.0) write(6,6) istep,(fname1(k),k=1,len)
-    6 format(1i8,' OPEN: ',80a1)
+    6 format(1i8,' OPEN: ',132a1)
 #else
       call byte_open(fname)
       write(6,6) nid,istep,(fname1(k),k=1,len)
-    6 format(2i8,' OPEN: ',80a1)
+    6 format(2i8,' OPEN: ',132a1)
 #endif
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine mfi_prepare(hname)  ! determine which nodes are readers
-      character*80 hname
+      character*132 hname
 
       include 'SIZE'
       include 'PARALLEL'

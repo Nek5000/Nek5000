@@ -317,8 +317,8 @@ C     Echo the nonzero parameters from the readfile to the logfile
 C
       include 'SIZE'
       include 'INPUT'
-      CHARACTER*80 STRING
-      CHARACTER*1  STRING1(80)
+      CHARACTER*132 STRING
+      CHARACTER*1  STRING1(132)
       EQUIVALENCE (STRING,STRING1)
 C
       IF (nid.ne.0) RETURN
@@ -348,21 +348,21 @@ c     error check
          CALL exitt
       ENDIF
 C
-      CALL BLANK(STRING,80)
-      CALL CHCOPY(STRING,REAFLE,80)
-      Ls=LTRUNC(STRING,80)
+      CALL BLANK(STRING,132)
+      CALL CHCOPY(STRING,REAFLE,132)
+      Ls=LTRUNC(STRING,132)
       READ(9,*,ERR=400) NPARAM
       WRITE(6,82) NPARAM,(STRING1(j),j=1,Ls)
 C
       DO 20 I=1,NPARAM
-         CALL BLANK(STRING,80)
+         CALL BLANK(STRING,132)
          READ(9,80,ERR=400) STRING
-         Ls=LTRUNC(STRING,80)
+         Ls=LTRUNC(STRING,132)
          IF (PARAM(i).ne.0.0) WRITE(6,81) I,(STRING1(j),j=1,Ls)
    20 CONTINUE
-   80 FORMAT(A80) 
-   81 FORMAT(I4,3X,80A1)
-   82 FORMAT(I4,3X,'Parameters from file:',80A1)
+   80 FORMAT(A132) 
+   81 FORMAT(I4,3X,132A1)
+   82 FORMAT(I4,3X,'Parameters from file:',132A1)
       CLOSE (UNIT=9)
       write(6,*) ' '
 

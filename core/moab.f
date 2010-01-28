@@ -75,7 +75,7 @@ c     in /nekmoab/ common block
 #include "iMesh_f.h"
 #include "NEKMOAB"
 
-      character*80 filename
+      character*132 filename
       parameter(filename='input.cub')
       integer ierr
 
@@ -901,7 +901,7 @@ c  code below is not used !!!
       integer tagsAllocated, tagsSize
       integer j, ierr
       integer tagintdata
-      character*80 tempString
+      character*132 tempString
 
       tagHandlesPointer = IMESH_NULL
       tagsAllocated = 0

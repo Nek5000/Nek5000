@@ -43,7 +43,7 @@
 
 #define READ     1
 #define WRITE    2
-#define MAX_NAME 80
+#define MAX_NAME 132
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
