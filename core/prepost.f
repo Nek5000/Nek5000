@@ -288,6 +288,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       p66 = abs(param(66))
       if (p66.eq.6) then
          call mfo_outfld(prefix)
+         call gsync                ! avoid race condition w/ outfld
          return
       endif
 
@@ -412,6 +413,7 @@ c
 
       if (nid.eq.0) call close_fld(p66)
 
+      call gsync                ! avoid race condition w/ outfld
       return
       end
 c-----------------------------------------------------------------------
@@ -435,7 +437,6 @@ c-----------------------------------------------------------------------
       if (param(52).ge.1) iohis=param(52)
       if (mod(istep,iohis).eq.0.and.ifhis) then
        if (nhis.gt.0) then
-         call gsync                ! avoid race condition w/ outfld
          IPART=0
          DO 2100 I=1,NHIS
           IF(HCODE(10,I).EQ.'P')then       
