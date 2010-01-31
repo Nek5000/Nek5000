@@ -434,7 +434,8 @@ c-----------------------------------------------------------------------
       iohis=1
       if (param(52).ge.1) iohis=param(52)
       if (mod(istep,iohis).eq.0.and.ifhis) then
-       IF (NHIS.GT.0) then
+       if (nhis.gt.0) then
+         call gsync                ! avoid race condition w/ outfld
          IPART=0
          DO 2100 I=1,NHIS
           IF(HCODE(10,I).EQ.'P')then       
