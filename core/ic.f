@@ -771,7 +771,7 @@ C
                     if (0.lt.i1.and.i1.lt.10) then
                        if (i1.le.ldimt1) then
                           nouts=nouts + 1
-                          ipsps(i)=nouts
+                          ipsps(i1)=nouts
                        else
                           if (nid.eq.0) write(6,2) i1,i,excoder1(i)
    2                      format(2i4,a1,' PROBLEM W/ RESTART DATA')
@@ -817,7 +817,7 @@ C              Make sure the requested data is present in this file....
                IF (IPOSW.EQ.0) IFGETW=.FALSE.
                IF (IPOSP.EQ.0) IFGETP=.FALSE.
                IF (IPOST.EQ.0) IFGETT=.FALSE.
-               DO 65 I=2,NPSCAL
+               DO 65 I=1,NPSCAL
                   IF (IPSPS(I).EQ.0) IFGTPS(I)=.FALSE.
    65          CONTINUE
 C
@@ -1189,7 +1189,7 @@ C
             IFGETT=.TRUE.
          ENDIF
 C
-         DO 300 I=2,LDIMT-1
+         DO 300 I=1,LDIMT-1
             WRITE (S2,301) I
             IPO=INDX_CUT(RSOPT,S2,2)
             IF (IPO.NE.0) THEN
