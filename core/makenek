@@ -11,7 +11,7 @@ SOURCE_ROOT="$HOME/nek5_svn/trunk/nek"
 PLUGIN_LIST=""
 
 # pre-processor symbol list
-PPLIST="" # MPIIO BLAS_MXM BG_MXM K10_MXM
+PPLIST="" # MPIIO BLAS_MXM BG_MXM K10_MXM MOAB CVODE
 
 # Fortran compiler
 F77="mpif77"
@@ -42,9 +42,11 @@ CC="mpicc"
 
 # enable coupled nek (default false)
 #IFNEKNEK="true"
+
+# CVODE path
+#CVODE_DIR=$HOME/cvode-2.5/lib
  
-# enable MOAB/IMESH (default false)
-#IFMOAB="true"
+# MOAB/IMESH path
 #MOAB_DIR="$HOME/moab"
 
 # auxilliary files to compile

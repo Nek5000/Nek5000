@@ -41,7 +41,8 @@ genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 subuser.o \
 isosurf.o byte.o chelpers.o byte_mpi.o postpro.o \
-cvode_driver.o setprop.o qthermal.o makeq.o \
+cvode_driver.o cvode_aux.o \
+setprop.o qthermal.o makeq.o \
 papi.o ssygv.o dsygv.o
 #
 # MXM 
@@ -200,6 +201,7 @@ plan4.o		:$S/plan4.f;			$(F77) -c $(FL2) $S/plan4.f
 qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $S/qthermal.f
 setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $S/setprop.f
 cvode_driver.o	:$S/cvode_driver.f;		$(F77) -c $(FL2) $S/cvode_driver.f
+cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $S/cvode_aux.f
 makeq.o	      	:$S/makeq.f;			$(F77) -c $(FL2) $S/makeq.f
 ################################################################################
 mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
