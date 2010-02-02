@@ -64,6 +64,9 @@ C     Compute GLL stuff (points, weights, derivate op, ...)
 C     Initalize io unit
       call io_init
 
+C     Set size for CVODE solver
+      if(ifcvode) call cv_setsize(0,nfield)
+
 C     USRDAT
       if(nid.eq.0) write(6,*) 'call usrdat'
       call usrdat
