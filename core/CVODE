@@ -8,7 +8,7 @@
       COMMON /LCVODE/ ifcvodeinit
 
       real atol,rtol
-      COMMON /RCVODE/ atol,rtol
+      COMMON /RCVODE/ cv_atol,cv_rtol
 
       INTEGER IGSTYPE,METH,ITMETH,IATOL,ITASK
 
