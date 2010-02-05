@@ -65,18 +65,15 @@ rm -f nek5000 2>/dev/null
 rm -f $SOURCE_ROOT/SIZE 2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 rm -f ./obj/subuser.o 2>/dev/null
-
 \mv ./obj/*.o . 2>/dev/null
 
-
 # Check if the compiler adds an underscore to external functions
+IFUNDERSCORE=false
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
         call byte_write
       end
 _ACEOF
-
-IFUNDERSCORE=false
 $F77 -c test_underscore.f 2>&1 >/dev/null 
 nm test_underscore.o | grep byte_write_ 1>/dev/null
 if [ $? -eq 0 ] 
@@ -138,8 +135,6 @@ else
 fi
 export IFMPI
 
-IFMOAB=false
-
 # Check size of long int
 cat > tmp.c << _ACEOF
 #include <stdlib.h>
@@ -158,6 +153,8 @@ if [ "$longIntTest" == "8" ]
 then
   PPLIST="${PPLIST} LONGINT8"
 fi
+
+IFMOAB=false
 
 # add user defined preprocessor symbols
 for i in $PPLIST
@@ -179,30 +176,30 @@ do
     if [ "$CVODE_DIR" == "" ]; then
        echo "ABORT: Please specify path to CVODE in CVODE_DIR!" 
        exit 1
-     else
+    else
        if [ ! -d $CVODE_DIR ]; then
          echo "ABORT: Cannot find " $CVODE_DIR 
          exit 1
-       fi 
-     fi
-     USR_LFLAGS="${USR_LFLAGS} -L$CVODE_DIR -lsundials_fcvode -lsundials_cvode"
-     if [ "$IFMPI" == "true"  ]; then
-        USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecparallel -lsundials_nvecparallel"
-     else
+       fi
+    fi
+    USR_LFLAGS="${USR_LFLAGS} -L$CVODE_DIR -lsundials_fcvode -lsundials_cvode"
+    if [ "$IFMPI" == "true"  ]; then
+      USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecparallel -lsundials_nvecparallel"
+    else
         USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecserial -lsundials_nvecserial"
-     fi
-     cat SIZEu | grep -i 'cv_maxl' >/dev/null
-     if [ $? -ne 0 ]; then
-        cp SIZEu .SIZEu
-        echo >>.SIZEu
-        echo 'c LAV-plugin settings automatically added by makenek' >>.SIZEu
-        echo '      integer cv_maxl' >> .SIZEu
-        echo '      real cv_delt,cv_sigs' >> .SIZEu
-        echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZEu
-        echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZEu
-        echo '      parameter(cv_sigs = 0.05) ! Jacobian DQ perturbation scaling factor'  >>.SIZEu
-        mv .SIZEu SIZEu
-     fi
+    fi
+    cat SIZEu | grep -i 'cv_maxl' >/dev/null
+    if [ $? -ne 0 ]; then
+      cp SIZEu .SIZEu
+      echo >>.SIZEu
+      echo 'c LAV-plugin settings automatically added by makenek' >>.SIZEu
+      echo '      integer cv_maxl' >> .SIZEu
+      echo '      real cv_delt,cv_sigs' >> .SIZEu
+      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZEu
+      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZEu
+      echo '      parameter(cv_sigs = 0.05) ! Jacobian DQ perturbation scaling factor'  >>.SIZEu
+      mv .SIZEu SIZEu
+    fi
    fi
 done
 
@@ -229,7 +226,6 @@ else
   # default
   IFAMG=false
 fi
-
 
 # set optimization flags
 L0="\$(G) -O0"
