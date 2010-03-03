@@ -473,6 +473,11 @@ c
       AB1 = AB(2)
       AB2 = AB(3)
 
+c      call copy(vext(1,1),vx,ntot)
+c      call copy(vext(1,2),vy,ntot)
+c      call copy(vext(1,3),vz,ntot)
+c      return
+
       call add3s2(vext(1,1),vx,vxlag,ab0,ab1,ntot)
       call add3s2(vext(1,2),vy,vylag,ab0,ab1,ntot)
       if(if3d) call add3s2(vext(1,3),vz,vzlag,ab0,ab1,ntot)
@@ -485,4 +490,3 @@ c
 
       return
       end  
-c-----------------------------------------------------------------------

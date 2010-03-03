@@ -697,7 +697,8 @@ C
       krylov = 0
       rtz1=1.0
       niterhm = 0
-      do 1000 iter=1,niter
+
+      do iter=1,niter
 C
          if (param(100).gt.0.or.kfldfdm.lt.0) then  ! Jacobi Preconditioner
 c           call copy(z,r,n)
@@ -734,7 +735,11 @@ c
 
 
 c        Always take at least one iteration   (for projection) pff 11/23/98
+#ifndef TST_WSCAL
          IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.5)) THEN
+#else
+         IF (iter.gt.max(5,param(150))) THEN
+#endif
 c        IF (rbn2.LE.TOL) THEN
             NITER = ITER-1
 c           IF(NID.EQ.0.AND.((.NOT.IFHZPC).OR.IFPRINT))
@@ -766,7 +771,7 @@ c        Generate tridiagonal matrix for Lanczos scheme
             diagt(iter)    = (beta**2 * rho0 + rho ) / rtz1
             upper(iter-1)  = -beta * rho0 / sqrt(rtz2 * rtz1)
          endif
- 1000 continue
+ 1000 enddo
       niter = iter-1
 c
       if (nid.eq.0) write (6,3001) istep,niter,name,rbn2,rbn0,tol

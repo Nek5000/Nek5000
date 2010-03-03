@@ -424,7 +424,7 @@ c
          dtmp2 = 0
          dtmp3 = 0
          if(istep.gt.0) then
-           dtmp1 = np*ttime/(nelgt*nxyz)/max(istep,1)
+           dtmp1 = np*ttime/(nvtot)/max(istep-1,1)
            dtmp2 = ttime/max(istep,1)
            dtmp3 = 1.*papi_flops/1e6
          endif 
@@ -436,8 +436,8 @@ c
          write(6,'(4(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
      &      ,'total solver time incl. I/O    : ',ttime , ' sec'
-     &      ,'CPU seconds/timestep/DOF       : ',dtmp1 , ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
+     &      ,'CPU seconds/timestep/DOF       : ',dtmp1 , ' sec'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 
      &       'Mflops                         : ',dtmp3

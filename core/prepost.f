@@ -65,10 +65,22 @@ c
       prefix = prefin
       if (prefin.eq.'his') ifhis  = .true.
       if (prefix.eq.'his') prefix = '   '
+
 c
-      if (nid.eq.0.and.icalld.eq.0) then
-         write(6,*) 'schfile:',schfle
-         open(unit=26,file=schfle,err=44,form='formatted',status='new')
+       
+      if(icalld.eq.0) then
+        ierr = 0
+        if (nid.eq.0) then
+           write(6,*) 'schfile:',schfle
+         
+           open(unit=26,file=schfle,err=44,form='formatted',
+     &          status='new')
+           goto 45
+  44       write(6,*) 'ABORT: .sch file already exists.'
+           ierr = 1
+  45    endif
+        ierr = iglsum(ierr,1)
+        if(ierr.gt.0) call exitt
       endif
 
       call prepost_map(0) ! map pr and axisymm. arrays
@@ -130,9 +142,6 @@ C
       ifdoit=.false.
       return
 
-  44  write(6,*) 'ABORT: .sch file already exists.'
-      call exitt
-    
       end
 c-----------------------------------------------------------------------
       subroutine prepost_map(isave) ! isave=0-->fwd, isave=1-->bkwd

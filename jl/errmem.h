@@ -1,3 +1,5 @@
+#include "fname.h"
+
 #ifndef ERRMEM_H
 #define ERRMEM_H
 
@@ -72,3 +74,6 @@ static void buffer_free(buffer *b) { free(b->ptr); }
 
 #endif
 
+#define nek_exitt FORTRAN_NAME(exitt,EXITT)
+void nek_exitt(void);
+void eexit(void);

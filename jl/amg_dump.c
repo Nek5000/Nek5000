@@ -135,7 +135,7 @@ amg_data *amg_setup(uint n, const ulong *id,
 #ifdef MPI
   MPI_Barrier(comm);
 #endif
-  exit(0);
+  eexit();
   
   return 0;
 }

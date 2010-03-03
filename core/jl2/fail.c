@@ -7,6 +7,8 @@
 #include "types.h"
 #include "comm.h"
 
+void eexit(void) { nek_exitt(); } /* exit wrapper */
+
 void fail(int status, const char *fmt, ...)
 {
   int le, lf;
@@ -31,9 +33,5 @@ void fail(int status, const char *fmt, ...)
     vfprintf(stderr, extfmt, ap);
     va_end(ap);
   }
-#ifdef MPI
-  MPI_Finalize();
-#endif
-  exit(status);
+  eexit();
 }
-

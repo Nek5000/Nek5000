@@ -7,7 +7,7 @@
 
       return
       end
- 
+c----------------------------------------------------------------------
       subroutine cv_init
 
       include 'SIZE'
@@ -16,7 +16,7 @@
 
       return
       end
-
+c----------------------------------------------------------------------
       subroutine cdscal_cvode(igeom)
 
       include 'SIZE'
@@ -25,7 +25,9 @@
 
       return
       end
+
 #else
+
       subroutine cv_setsize(n_in,nfld_last)
 
       include 'SIZE'
@@ -60,21 +62,21 @@
 
       return
       end
-
+c----------------------------------------------------------------------
       subroutine cv_init
 c
-c     Initialize CVODE solver
+c     Initialize CVODE
 c
-c     Note:  In contrast to the original CVODE version we
-c            define cv_nglobal as 'long long int'
+c     Note:  In contrast to the default CVODE version
+c            cv_nglobal is defined as 'long long int'
 c            (on most platforms 8bytes)
-c            YOU HAVE TO USE A PATCHED CVODE VERSION
+c            YOU HAVE TO USE A PATCHED VERSION of CVODE
 c 
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
 
-      ! use TLAG as scratch space
+      ! use TLAG as scratch space (be careful!)
       common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
      &                ,y0(lx1*ly1*lz1*lelt*ldimt)
 #ifdef LONGINT8
@@ -140,8 +142,15 @@ c
         call exitt
       endif
 
+c      ! limit time integration order
+c      call fcvsetiin('MAX_ORD',3,ier)
+c      if (ier .ne. 0) then
+c        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetiin ier=', ier
+c        call exitt
+c      endif
+
       ! check for user-supplied Jacobian routine
-      if(abs(PARAM(16)).eq.3) then 
+      if(abs(PARAM(16)).ge.3) then 
         call FCVSPILSSETJAC(1, ier)
         if(nid.eq.0) then 
           write(6,*) '  user-supplied Jacobian enabled'
@@ -158,7 +167,7 @@ c
      &                         cv_nglobal
         write(6,'(A,7x,i4)')   '   krylov dimension              : ',
      &                         cv_maxl
-        write(6,'(A,7x,f4.1)') '   linear convergence factor     : ',
+        write(6,'(A,7x,f5.2)') '   linear convergence factor     : ',
      &                         cv_delt
         write(6,*) 'done :: initializing ODE integrator'
       endif
@@ -168,15 +177,18 @@ c
 c----------------------------------------------------------------------
       subroutine cdscal_cvode(igeom)
 c
-c     Top level driver for CVODE 
-c     Integrate the IVP d/dt Y = f(y(t)) using BDF.
-c     f denotes the RHS vector and is computed in fcvfun().
+c     Top level driver for the ODE integrator CVODE
+c     webpage: https://computation.llnl.gov/casc/sundials 
+c
+c     Integrate the IVP d/dt[y] = f(y(t),t); y(t=t0) := f0
+c     using BDF(stiff) or AM(non-stiff).
+c     f denotes the RHS function and is evaluated in fcvfun().
 c
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
 
-      ! use TLAG as scratch space (this can get tricky!)
+      ! use TLAG as scratch space (be careful!)
       common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
      &                ,y   (lx1*ly1*lz1*lelt*ldimt)
      &                ,vx_ (lx1,ly1,lz1,lelv)
@@ -193,10 +205,17 @@ c
 #endif
       common /cv_iout/ iout(21),iout_old(21),ipar(1)
 
-      real nfe_avg,nli_nni_avg,nli_nni
+      real nfe_avg,nli_nni_avg
       save nfe_avg,nli_nni_avg
+
       data nfe_avg / 0 /
       data nli_nni_avg / 0 /
+
+      real nni_sum,nli_sum,nfe_sum
+      save nni_sum,nli_sum,nfe_sum
+      data nni_sum / 0 /
+      data nli_sum / 0 / 
+      data nfe_sum / 0 /
 
       nxyz = nx1*ny1*nz1
 
@@ -207,43 +226,45 @@ c
         call exitt
       endif 
 
-      ! save old solver output
+      ! save old output values
       do i=1,21
          iout_old(i) = iout(i)
       enddo
 
-      ! recompute fine grid velocities 
+      ! recompute fine grid velocities
       if(ifchar) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
 
-      ! calling cvode solver
       cv_time=0.0
       call store_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
       call fcvode(time,cv_time,y,itask,ier)
       call restore_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
  
-      ! copy the cvode solution (y) back to the internal nek array (t)
+      ! copy the cvode solution (y) back into internal array (t)
       call cv_unpack_sol(y)
 
-      ! print some solver statistics 
+      ! print solver statistics 
       if (nid.eq.0) then
+         nsteps      = iout(3)-iout_old(3) 
          nfe         = iout(4)-iout_old(4)+iout(20)-iout_old(20)
+         nni         = iout(7)-iout_old(7)  
+         nli         = iout(20)-iout_old(20)
+         nfe_sum     = nfe_sum + nfe
          nfe_avg     = (1.-1./istep)*nfe_avg + nfe/float(istep)
-         nli_nni     = real(iout(20)-iout_old(20))
-         nli_nni     = nli_nni / (real(iout(7)-iout_old(7)) + 1e-50)
-         nli_nni_avg = (1.-1./istep)*nli_nni_avg + 
-     &                 nli_nni/float(istep)
+         nli_sum     = nli_sum + nli
+         nni_sum     = nni_sum + nni
+         nli_nni_avg = real(nli_sum)/max(1.,nni_sum) 
          write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
-     &    'nsteps: ',iout(3)-iout_old(3) ,
-     &    'nfe:    ', nfe                ,
+     &    'nsteps: ',   nsteps   ,
+     &    'nfe:    ',   nfe      ,
      &    '<nfe>:    ', nfe_avg
          write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
-     &    'nni:    ',iout(7)-iout_old(7)  ,
-     &    'nli:    ',iout(20)-iout_old(20),
+     &    'nni:    ',   nni      ,
+     &    'nli:    ',   nli      ,
      &    '<nli/nni>:', nli_nni_avg
          write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,i5)') 
-     &    'ncfn:   ',iout(6)-iout_old(6)  ,
-     &    'ncfl:   ',iout(21)-iout_old(21),  
-     &    'netf:     ',iout(5)-iout_old(5)  
+     &    'ncfn:   '  ,iout(6)-iout_old(6),
+     &    'ncfl:   '  ,iout(21)-iout_old(21),  
+     &    'netf:     ',iout(5)-iout_old(5) 
       endif
 
       if (time.ne.cv_time .or. ier.lt.0) then
@@ -257,7 +278,6 @@ c
       return
       end
 c----------------------------------------------------------------------
-c----------------------------------------------------------------------
       SUBROUTINE FCVJTIMES (V,FJV,TT,Y,FY,H,IPAR,RPAR,WORK,IER)
 c
 c     Compute Jacobian Vetor product FJV
@@ -265,6 +285,7 @@ c
       REAL V(1), FJV(1), TT, Y(1), FY(1), H, RPAR(1), WORK(1)
 
       INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
       INCLUDE 'CVODE'
 
 #ifdef LONGINT8
@@ -272,6 +293,14 @@ c
 #else
       integer*4 ipar(1),neql
 #endif
+      logical ifcdjv
+      data jfcdjv / .false. /
+
+      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
+     &                ,FJV_(lx1*ly1*lz1*lelt*ldimt)
+
+
+      if(abs(PARAM(16)).eq.3.1) ifcdjv = .true.
 
       ! set local size
       neql = ipar(1)
@@ -297,11 +326,25 @@ c
       enddo
       call FCVFUN(TT,WORK,FJV,IPAR,RPAR,IER)
 
-      ! approximate Jacobian by a finite difference quotient 
-      siginv = 1./sig
-      do i = 1,NEQL
-         FJV(i) = (FJV(i) - FY(i))*siginv
-      enddo
+      if(ifcdjv) then
+        do i = 1,NEQL
+           WORK(i) = Y(i) - sig*V(i)
+        enddo
+        call FCVFUN(TT,WORK,FJV_,IPAR,RPAR,IER)
+        ! approximate Jacobian by 2nd-order fd quotient
+         siginv = 1./(2*sig)
+        do i = 1,NEQL
+c           FJV(i) = FJV(i)*siginv - FJV_(i)*siginv
+           FJV(i) = (FJV(i) - FJV_(i))*siginv
+        enddo
+      else
+        ! approximate Jacobian by 1st-order fd quotient 
+        siginv = 1./sig
+        do i = 1,NEQL
+c           FJV(i) = (FJV(i) - FY(i))*siginv
+           FJV(i) = FJV(i)*siginv - FY(i)*siginv
+        enddo
+      endif
 
       ier = 0
 
@@ -372,14 +415,13 @@ c
       real dtlag_(3),ab_(3)
       real timel
       save timel
-      data timel /0.0/
+      data timel /-1.0/
       real tmp(lx1,ly1,lz1,lelt)
 
-      if (abs(time_-timel).gt.1e-14) then
-        timel = time_
-      else ! in cache, don't need to evaluate again 
-        return
-      endif
+      if (time_ .eq. timel) return
+
+c      if(nid.eq.0) write(6,*) 'recompute extrapolated velocity'
+      timel = time_
 
       ntot = nx1*ny1*nz1*nelv
       ! restore velocities from previous time step 
@@ -408,145 +450,83 @@ c
          call add2s1(vz,tmp,ab0,ntot)
       endif
  
-      ! compute dealiased velocity
+      ! update fine grid velocity
       if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       return
       end
-
+c----------------------------------------------------------------------
       subroutine fcvfun (cv_time, y, ydot, ipar, rpar, ier)
 c
-c     Compute RHS vector ydot (allocated within cvode)
+c     Compute RHS function f (allocated within cvode)
 c     NOTE: working array is bq, do not change! 
 c
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
-c      include 'CHEMISTRY'
 
-      real           cv_time,y(1),ydot(1),rpar(1)
-      real           h2(lx1,ly1,lz1,lelt)
-      common /scrns/ ta(lx1,ly1,lz1,lelt)
-     $              ,tb(lx1,ly1,lz1,lelt)
+      real cv_time,y(1),ydot(1),rpar(1)
 #ifdef LONGINT8
       integer*8 ipar(1)
 #else
       integer*4 ipar(1)
 #endif
-      save etime_rhs,etime_makeq,etime_dssum,etime_axhelm,etime_setprop
+      logical ifuservpv
+      data timel / -1 /
       save timel
-      data timel /0.0/
 
-      if (abs(cv_time-timel).gt.1e-13 .or. timel.eq.0.0) then
+      ifuservpv = .true.  ! for now we support only vector uservp
+      nxyz = nx1*ny1*nz1
+
+      if (cv_time.ne.timel) then
         timel = cv_time
         icalld = 1
         if(nid.eq.0) write(6,10) cv_time
   10                 format(14X,'substepping t=',1pE14.7)
       endif
 
-#ifdef RHS_TIMING
-      etime_rhs0 = dnekclock()
-      etime_rhs    = 0.0
-      etime_makeq  = 0.0
-      etime_setprop= 0.0
-      etime_dssum  = 0.0
-      etime_axhelm = 0.0
-#endif
-
-      nxyz = nx1*ny1*nz1
-      isd = 1
-
       call cv_unpack_sol(y)
 
-#ifdef RHS_TIMING
-      etime_tmp = dnekclock()
-#endif
-      ! calculate thermodynamic and transport properties
-      ! including kinetics 
-      call setprop
-#ifdef RHS_TIMING
-      etime_setprop = etime_setprop + dnekclock() - etime_tmp
-#endif
- 
+      if(ifuservpv) call setprop
+
+      ! extrapolate velocity using CVODE's internal time
+      ncv_mode = abs(PARAM(16))
+      if(ncv_mode.eq.3)  call update_vel(cv_time)
+
       ntot = nxyz*nelt
-      call rzero (h2,ntot)
-
-      if(abs(PARAM(16)).eq.3)  call update_vel(cv_time)
-
+      ntflds = 0
       j = 0
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
-         if (.not.iftmsh(ifield)) imesh = 1
-         if (     iftmsh(ifield)) imesh = 2
-#ifdef RHS_TIMING
-         etime_tmp = dnekclock()
-#endif
+         if(.not.ifuservpv) call setprop
          call makeq
-#ifdef RHS_TIMING
-         etime_makeq = etime_makeq + dnekclock() - etime_tmp
-#endif
-
-#ifdef RHS_TIMING
-         etime_tmp = dnekclock()
-#endif
-         call axhelm  (ta,t(1,1,1,1,ifield-1),vdiff(1,1,1,1,ifield),
-     &                 h2,imesh,isd)
-#ifdef RHS_TIMING
-         etime_axhelm = etime_axhelm + dnekclock()-etime_tmp
-#endif
-         ! apply Neumann boundary conditions
-         call bcneusc (tb,1)                  
-
          if (iftmsh(ifield)) then
+            ntflds = ntflds + 1
             do i=1,ntot
-               ydot(i+j) = ( bq(i,1,1,1,ifield-1)
-     $                   -   ta(i,1,1,1) + tb(i,1,1,1) )
+               ydot(i+j) = bq(i,1,1,1,ifield-1)
      $                   * bintm1(i,1,1,1)*tmask(i,1,1,1,ifield-1)
-     $                   / vtrans(i,1,1,1,ifield)
             enddo
          else
             do i=1,ntot
-               ydot(i+j) = ( bq(i,1,1,1,ifield-1)
-     $                   -   ta(i,1,1,1) + tb(i,1,1,1) )
+               ydot(i+j) = bq(i,1,1,1,ifield-1)
      $                   * binvm1(i,1,1,1)*tmask(i,1,1,1,ifield-1)
-     $                   / vtrans(i,1,1,1,ifield)
             enddo
          endif
          j = j + ntot
       enddo
 
-#ifdef RHS_TIMING
-      etime_tmp = dnekclock()
-#endif
-      if(nelfld(2).ne.nelfld(1)) then
-        ifield = 2 ! set right gs-handle
-        call dssum (ydot,nx1,ny1,nz1)
-        ntott = nxyz*nelt
-        ntot  = nxyz*nelv
-        if(cv_nfld-2.gt.0) 
-     &    call nvec_dssum (ydot(ntott+1),ntot,cv_nfld-2,gsh_fld(1))
-#ifdef RHS_TIMING
-        etime_dssum = etime_dssum + dnekclock()-etime_tmp
-#endif
-      else
+      ! project ydot onto H1 space
+      if(ntflds.gt.0) then
+        j = 1
+        do ifield = 2,cv_nfld
+           call dssum (ydot(j),nx1,ny1,nz1)
+           j = j + nxyz*nelfld(ifield)
+        enddo
+      else ! gs fluid handle for all fields use vector dssum
         ntot = nxyz*nelv
         if(cv_nfld-1.gt.0) 
      &    call nvec_dssum (ydot,ntot,cv_nfld-1,gsh_fld(1))
-#ifdef RHS_TIMING
-        etime_dssum = etime_dssum + dnekclock()-etime_tmp
-#endif
       endif 
-
-#ifdef RHS_TIMING
-      if(nid.eq.0) then
-         write(*,*) 'etime_setprop = ',etime_setprop
-         write(*,*) 'etime_makeq   = ',etime_makeq
-         write(*,*) 'etime_axhelm  = ',etime_axhelm
-         write(*,*) 'etime_dssum   = ',etime_dssum
-         etime_rhs = etime_rhs + dnekclock()- etime_rhs0
-         write(*,*) 'etime_rhs     = ',etime_rhs
-      endif
-#endif
 
       ier = 0
 

@@ -9,9 +9,9 @@ C     HCUBE Direct stiffness array information
 C
       COMMON /HCGLB/ NELG(0:LDIMT1)
      $              ,LGLEL(LELT)
-     $              ,NELGV,NELGT
      $              ,GLLEL(LELG)
      $              ,GLLNID(LELG)
+     $              ,NELGV,NELGT,NVTOT,NPTOT
 
       INTEGER        GLLEL,GLLNID,LGLEL
 C

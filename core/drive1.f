@@ -267,11 +267,8 @@ C--------------------------------------------------------------------------
 
 c      write(6,*) nid,etimes
 
-      if (nid.eq.0) then
-         write(6,*) ' '
-         write(6,*) 'call nek_end'
-         write(6,*) ' '
-      endif
+      if (nid.eq.0) write(6,'(/,A,/)') 
+     $  'end of time-step loop -> calling nek_end'
 
 c     check for zero steps
       if (instep.eq.0) then
@@ -286,8 +283,8 @@ c     check for zero steps
     
          call timeout
 #endif
-         CALL COMMENT
-         CALL DIAGNOS
+c         CALL COMMENT
+c         CALL DIAGNOS
          if(xxth.gt.0) call crs_stats(xxth)
       endif
    

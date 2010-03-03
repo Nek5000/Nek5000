@@ -5063,3 +5063,34 @@ C
 
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine wlaplacian(out,a,diff,ifld)
+c
+c     compute weak form of the laplacian operator including the boundary
+c     contribution
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      real out(1),a(1),diff(1)
+      real wrk(lx1,ly1,lz1,lelt)
+      real h2(lx1,ly1,lz1,lelt)
+
+      ntot = nx1*ny1*nz1*nelfld(ifld)
+      if (.not.iftmsh(ifld)) imesh = 1
+      if (     iftmsh(ifld)) imesh = 2
+
+      call rzero(h2,ntot)
+
+      ifield_ = ifield
+      ifield = ifld
+
+      call bcneusc(out,1)
+      call axhelm(wrk,a,diff,h2,imesh,1)
+      call sub2 (out,wrk,ntot)  
+ 
+      ifield = ifield_ 
+
+      return
+      end
+c
