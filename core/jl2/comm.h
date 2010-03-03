@@ -138,10 +138,7 @@ static void comm_barrier(const struct comm *c)
 static void comm_exit(const struct comm *c, int status)
 {
   comm_barrier(c);
-#ifdef MPI
-  MPI_Finalize();
-#endif
-  exit(status);
+  eexit();
 }
 
 

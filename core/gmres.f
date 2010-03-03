@@ -56,7 +56,9 @@ c
 c
       iconv = 0
       call rzero(x,ntot2)
+
       do while(iconv.eq.0.and.iter.lt.100)
+
          if(iter.eq.0) then
                                                   !      -1
             call col3(r,ml,res,ntot2)             ! r = L  res
@@ -161,9 +163,13 @@ c            call outmat(h,m,j,' h    ',j)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
+#ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
             if (j.eq.m) goto 1000 !not converged, restart
-            
+#else
+            if (iter.gt.max(20,param(151))) goto 900
+#endif
+ 
             temp = 1./alpha
             call cmult2(v(1,j+1),w,temp,ntot2)   ! v    = w / alpha
                                                  !  j+1            
@@ -351,7 +357,9 @@ c     GMRES iteration.
 c
       iconv = 0
       call rzero(x,n)
+
       do while(iconv.eq.0.and.iter.lt.500)
+
          if(iter.eq.0) then               !      -1
             call col3(r,ml,res,n)         ! r = L  res
 c           call copy(r,res,n)
@@ -465,8 +473,12 @@ c           enddo
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
+#ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
             if (j.eq.m) goto 1000 !not converged, restart
+#else
+            if (iter.gt.max(20,param(151))) goto 900
+#endif
             
             temp = 1./alpha
             call cmult2(v(1,j+1),w,temp,n)   ! v    = w / alpha

@@ -197,7 +197,7 @@ do
       echo '      real cv_delt,cv_sigs' >> .SIZEu
       echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZEu
       echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZEu
-      echo '      parameter(cv_sigs = 0.05) ! Jacobian DQ perturbation scaling factor'  >>.SIZEu
+      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>.SIZEu
       mv .SIZEu SIZEu
     fi
    fi

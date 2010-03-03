@@ -110,7 +110,7 @@ C     Only node zero makes comments.
       IF (NID.NE.0) RETURN
 C
 C
-      IF (EETIME0.EQ.0.0) EETIME0=DNEKCLOCK()
+      IF (EETIME0.EQ.0.0 .AND. ISTEP.EQ.1) EETIME0=DNEKCLOCK()
       EETIME1=EETIME2
       EETIME2=DNEKCLOCK()
 C
@@ -121,8 +121,12 @@ C
  10      CONTINUE
          IF (IFWCNO) IFCOUR = .TRUE.
       ELSEIF (ISTEP.GT.0 .AND. LASTEP.EQ.0 .AND. IFTRAN) THEN
-         TTIME_STP=EETIME2-EETIME1
-         TTIME=EETIME2-EETIME0
+         TTIME_STP = EETIME2-EETIME1   ! time per timestep
+         TTIME     = EETIME2-EETIME0   ! sum of all timesteps
+         IF(ISTEP.EQ.1) THEN
+           TTIME_STP = 0
+           TTIME     = 0
+         ENDIF
          IF (     IFCOUR) 
      $      WRITE (6,100) ISTEP,TIME,DT,COURNO/10,TTIME,TTIME_STP
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
@@ -795,7 +799,8 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO'
+      include 'TURBO' 
+      include 'DEALIAS'
 
       real*8 ts, dnekclock
 
