@@ -165,11 +165,11 @@ c            call outmat(h,m,j,' h    ',j)
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
-            if (j.eq.m) goto 1000 !not converged, restart
 #else
-            if (iter.gt.max(20,param(151))) goto 900
+            if (iter.gt.param(151)-1) goto 900
 #endif
- 
+            if (j.eq.m) goto 1000 !not converged, restart
+
             temp = 1./alpha
             call cmult2(v(1,j+1),w,temp,ntot2)   ! v    = w / alpha
                                                  !  j+1            
@@ -475,11 +475,11 @@ c           enddo
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
-            if (j.eq.m) goto 1000 !not converged, restart
 #else
-            if (iter.gt.max(20,param(151))) goto 900
+            if (iter.gt.param(151)-1) goto 900
 #endif
-            
+            if (j.eq.m) goto 1000 !not converged, restart
+
             temp = 1./alpha
             call cmult2(v(1,j+1),w,temp,n)   ! v    = w / alpha
                                              !  j+1            
