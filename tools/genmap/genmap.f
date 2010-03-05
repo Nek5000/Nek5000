@@ -112,10 +112,13 @@ c                                    irnk is # unique points
       itype = 2   ! return structured vertex (not cell)pointer 
       call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
 
-c     Determine number of outflow points and order them last
       call izero (order,irnk)
-      call set_outflow
-     $     (no,order,mo,cell,nv,nelv,irnk,cbc,nfc,w1,i0,i1,w2)
+
+c     3/3/2010:  NO MORE SPECIAL OUTFLOW TREATMENT (fails w/ conj. ht.  transfer)
+
+c     Determine number of outflow points and order them last
+c     call set_outflow
+c    $     (no,order,mo,cell,nv,nelv,irnk,cbc,nfc,w1,i0,i1,w2)
 
 c     Find all periodic connections, based on cbc info.
       call periodic_vtx
