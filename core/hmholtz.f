@@ -738,7 +738,9 @@ c        Always take at least one iteration   (for projection) pff 11/23/98
 #ifndef TST_WSCAL
          IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.5)) THEN
 #else
-         IF (iter.gt.max(5,param(150))) THEN
+         iter_max = param(150)
+         if (name.eq.'PRES') iter_max = param(151)
+         if (iter.gt.iter_max) then
 #endif
 c        IF (rbn2.LE.TOL) THEN
             NITER = ITER-1
