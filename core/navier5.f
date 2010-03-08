@@ -3846,7 +3846,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       real x(1)
 
-      n = nx1*ny1*nz1*nelv
+      n = nx1*ny1*nz1*nelt
       xmin = glmin(x,n)
       xmax = glmax(x,n)
 
