@@ -51,8 +51,7 @@ c----------------------------------------------------------------------
 
       ! set local ODE size
       ipar(1) = n_in
-      ipar(1) = ipar(1) + nxyz*nelfld(2)
-      do i=3,cv_nfld
+      do i=2,cv_nfld
          ntot = nxyz*nelfld(i)
          ipar(1) = ipar(1) + ntot
       enddo
@@ -85,6 +84,7 @@ c
       integer*4 iout,iout_old,ipar
 #endif
       ! cvode will not allocate these arrays
+      integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
       common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
 
@@ -95,9 +95,15 @@ c
 
       if(nid.eq.0) write(*,*) 'initializing ODE integrator ...'
 
-      if(cv_nfld.lt.1) then
+      if(cv_nfld.lt.2) then
         if(nid.eq.0) write(6,*)
-     &  'ABORT cv_init(): cv_nfld<1!'
+     &  'ABORT cv_init(): invalid cv_nfld index!', cv_nfld
+        call exitt
+      endif
+
+      if(ldimt.lt.2) then
+        if(nid.eq.0) write(6,*)
+     &  'ABORT cv_init(): ldimt has to be >= 2!', ldimt
         call exitt
       endif
 
@@ -167,8 +173,10 @@ c      endif
      &                         cv_nglobal
         write(6,'(A,7x,i4)')   '   krylov dimension              : ',
      &                         cv_maxl
-        write(6,'(A,7x,f5.2)') '   linear convergence factor     : ',
+        write(6,'(A,6x,f5.2)') '   linear convergence factor     : ',
      &                         cv_delt
+        write(6,'(A,7x,i4)')   '   last field index to integrate : ',
+     &                         cv_nfld
         write(6,*) 'done :: initializing ODE integrator'
       endif
 
@@ -194,9 +202,6 @@ c
      &                ,vx_ (lx1,ly1,lz1,lelv)
      &                ,vy_ (lx1,ly1,lz1,lelv)
      &                ,vz_ (lx1,ly1,lz1,lelv)
-     &                ,vxd_(lxd,lyd,lzd,lelv)
-     &                ,vyd_(lxd,lyd,lzd,lelv)
-     &                ,vzd_(lxd,lyd,lzd,lelv)
 
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
@@ -205,7 +210,7 @@ c
 #endif
       common /cv_iout/ iout(21),iout_old(21),ipar(1)
 
-      real nfe_avg,nli_nni_avg
+      real nfe_avg,nli_nni_avg,nli_nni
       save nfe_avg,nli_nni_avg
 
       data nfe_avg / 0 /
@@ -235,26 +240,29 @@ c
       if(ifchar) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
 
       cv_time=0.0
-      call store_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
+      call store_vel(vx_,vy_,vz_)
       call fcvode(time,cv_time,y,itask,ier)
-      call restore_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
+      call set_vel(vx_,vy_,vz_)
+      call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       ! copy the cvode solution (y) back into internal array (t)
       call cv_unpack_sol(y)
 
       ! print solver statistics 
       if (nid.eq.0) then
-         nsteps      = iout(3)-iout_old(3) 
+         nstp        = iout(3)-iout_old(3) 
          nfe         = iout(4)-iout_old(4)+iout(20)-iout_old(20)
          nni         = iout(7)-iout_old(7)  
          nli         = iout(20)-iout_old(20)
          nfe_sum     = nfe_sum + nfe
-         nfe_avg     = (1.-1./istep)*nfe_avg + nfe/float(istep)
+         nfe_avg     = (1.-1./istep)*nfe_avg + float(nfe)/istep
          nli_sum     = nli_sum + nli
          nni_sum     = nni_sum + nni
-         nli_nni_avg = real(nli_sum)/max(1.,nni_sum) 
+         nli_nni     = float(nli)/max(1,nni)
+         nli_nni_avg = (1.-1./istep)*nli_nni_avg + nli_nni/istep
+         
          write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
-     &    'nsteps: ',   nsteps   ,
+     &    'nsteps: ',   nstp     ,
      &    'nfe:    ',   nfe      ,
      &    '<nfe>:    ', nfe_avg
          write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
@@ -294,11 +302,10 @@ c
       integer*4 ipar(1),neql
 #endif
       logical ifcdjv
-      data jfcdjv / .false. /
+      data    ifcdjv / .false. /
 
       common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
      &                ,FJV_(lx1*ly1*lz1*lelt*ldimt)
-
 
       if(abs(PARAM(16)).eq.3.1) ifcdjv = .true.
 
@@ -307,7 +314,7 @@ c
 
       ! compute weighted rms norm ||v||
       sum = 0.0
-      do i = 1,NEQL
+      do i = 1,neql
          EWT = 1./(cv_rtol*abs(Y(i)) + cv_atol)   
          dnorm = V(i)*EWT
          sum = sum + dnorm*dnorm
@@ -326,19 +333,17 @@ c
       enddo
       call FCVFUN(TT,WORK,FJV,IPAR,RPAR,IER)
 
-      if(ifcdjv) then
+      if(ifcdjv) then ! approximate Jacobian by 2nd-order fd quotient
         do i = 1,NEQL
            WORK(i) = Y(i) - sig*V(i)
         enddo
         call FCVFUN(TT,WORK,FJV_,IPAR,RPAR,IER)
-        ! approximate Jacobian by 2nd-order fd quotient
          siginv = 1./(2*sig)
         do i = 1,NEQL
 c           FJV(i) = FJV(i)*siginv - FJV_(i)*siginv
            FJV(i) = (FJV(i) - FJV_(i))*siginv
         enddo
-      else
-        ! approximate Jacobian by 1st-order fd quotient 
+      else ! approximate Jacobian by 1st-order fd quotient 
         siginv = 1./sig
         do i = 1,NEQL
 c           FJV(i) = (FJV(i) - FY(i))*siginv
@@ -351,50 +356,36 @@ c           FJV(i) = (FJV(i) - FY(i))*siginv
       return
       end
 c----------------------------------------------------------------------
-      subroutine store_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
+      subroutine store_vel(vx_,vy_,vz_)
  
       include 'SIZE'
       include 'TOTAL'
  
       real vx_(1),vy_(1),vz_(1)
-      real vxd_(1),vyd_(1),vzd_(1)
  
       ntot  = nx1*ny1*nz1*nelv
-      ntotd = nxd*nyd*nzd*nelv
  
       ! save velocities
       call copy(vx_,vx,ntot)
       call copy(vy_,vy,ntot)
       if (if3d) call copy(vz_,vz,ntot)
-      if(param(99).gt.0) then
-        call copy(vxd_,vxd,ntotd)
-        call copy(vyd_,vyd,ntotd)
-        if (if3d) call copy(vzd_,vzd,ntotd)
-      endif
  
       return
       end
 c----------------------------------------------------------------------
-      subroutine restore_vel(vx_,vy_,vz_,vxd_,vyd_,vzd_)
+      subroutine set_vel(vx_,vy_,vz_)
  
       include 'SIZE'
       include 'TOTAL'
  
       real vx_(1),vy_(1),vz_(1)
-      real vxd_(1),vyd_(1),vzd_(1)
  
       ntot  = nx1*ny1*nz1*nelv
-      ntotd = nxd*nyd*nzd*nelv
  
       ! save velocities
       call copy(vx,vx_,ntot)
       call copy(vy,vy_,ntot)
       if (if3d) call copy(vz,vz_,ntot)
-      if(param(99).gt.0) then
-        call copy(vxd,vxd_,ntotd)
-        call copy(vyd,vyd_,ntotd)
-        if (if3d) call copy(vzd,vzd_,ntotd)
-      endif
  
       return
       end
@@ -471,11 +462,26 @@ c
 #else
       integer*4 ipar(1)
 #endif
-      logical ifuservpv
       data timel / -1 /
       save timel
 
-      ifuservpv = .true.  ! for now we support only vector uservp
+c      integer icalld
+c      save    icalld
+c      data    icalld /0/
+c
+c      common /ctmp0/ intv,intt
+c      real intv(lx1,lx1)
+c      real intt(lx1,lx1)
+c      real wk1  (lx1,lx1,lx1,lelt)
+c      real wk2  (lx1,lx1,lx1)
+c
+c      if (icalld.eq.0) then
+c         icalld = 1
+c         ncut = param(101)+1
+c         wght = 0.01
+c         call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
+c      endif
+
       nxyz = nx1*ny1*nz1
 
       if (cv_time.ne.timel) then
@@ -487,18 +493,17 @@ c
 
       call cv_unpack_sol(y)
 
-      if(ifuservpv) call setprop
-
       ! extrapolate velocity using CVODE's internal time
       ncv_mode = abs(PARAM(16))
       if(ncv_mode.eq.3)  call update_vel(cv_time)
+
+      call setprop
 
       ntot = nxyz*nelt
       ntflds = 0
       j = 0
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
-         if(.not.ifuservpv) call setprop
          call makeq
          if (iftmsh(ifield)) then
             ntflds = ntflds + 1
@@ -512,6 +517,7 @@ c
      $                   * binvm1(i,1,1,1)*tmask(i,1,1,1,ifield-1)
             enddo
          endif
+c         call filterq(ydot(j+1),intv,nx1,nz1,wk1,wk2,intt,if3d,tmax)
          j = j + ntot
       enddo
 
