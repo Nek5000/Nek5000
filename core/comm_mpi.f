@@ -415,6 +415,12 @@ c
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
 #endif
+#ifdef HPM
+      call HPM_Stop("nek_advance")
+      call HPM_Print_Flops_Agg()
+c      call HPM_Print()
+#endif
+
       tstop  = dnekclock()
       ttotal = tstop-etimes
       nxyz   = nx1*ny1*nz1

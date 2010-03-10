@@ -188,6 +188,10 @@ C--------------------------------------------------------------------------
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
 #endif
+#ifdef HPM
+      call hpm_init()
+      call hpm_start("nek_advance")
+#endif
 
       DO ISTEP=1,NSTEPS
          call nek_advance
