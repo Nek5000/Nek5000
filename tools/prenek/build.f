@@ -243,8 +243,8 @@ c        nchoic = nchoic+1
          nchoic = nchoic+1
          ITEM(nchoic)       =             'IMPORT vtk MESH'
          nchoic = nchoic+1
-c        ITEM(nchoic)       =             'IMPORT vtx MESH'
-c        nchoic = nchoic+1
+         ITEM(nchoic)       =             'IMPORT vtx MESH'
+         nchoic = nchoic+1
          ITEM(nchoic)       =             'REFLECT MESH '
       ENDIF
 C     
