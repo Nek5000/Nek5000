@@ -1351,7 +1351,7 @@ c-----------------------------------------------------------------------
       include 'RESTART'
       common /scrcg/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
 
-      integer*8 offs0,offs,nbyte,stride,strideB
+      integer*8 offs0,offs,nbyte,stride,strideB,nxyzo8
       character*3 prefix
  
       common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
@@ -1381,10 +1381,11 @@ c-----------------------------------------------------------------------
          call mfo_open_files(prefix)         ! open files on i/o nodes
       endif
       call mfo_write_hdr                     ! create element mapping +
-     
-                                        ! write hdr 
-      strideB = nelB * nxo*nyo*nzo*wdsizo
-      stride  = nelgt* nxo*nyo*nzo*wdsizo
+                                             ! write hdr
+
+      nxyzo8  = nxo*nyo*nzo
+      strideB = nelB * nxyzo8*wdsizo
+      stride  = nelgt* nxyzo8*wdsizo
 
       ioflds = 0
       ! dump all fields based on the t-mesh to avoid different
