@@ -2439,16 +2439,17 @@ c
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
       integer e
 
-      integer*8 offs0,offs,nbyte,stride,strideB
+      integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
 
       tiostart=dnekclock()
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
 
-      offs0 = iHeadersize + 4 + isize*nelgr
-      strideB = nelBr* nxr*nyr*nzr*wdsizr
-      stride  = nelgr* nxr*nyr*nzr*wdsizr
+      offs0   = iHeadersize + 4 + isize*nelgr
+      nxyzr8  = nxr*nyr*nzr
+      strideB = nelBr* nxyzr8*wdsizr
+      stride  = nelgr* nxyzr8*wdsizr
 
       iofldsr = 0
       if (ifgetxr) then      ! if available
