@@ -76,11 +76,9 @@ c
            open(unit=26,file=schfle,err=44,form='formatted',
      &          status='new')
            goto 45
-  44       write(6,*) 'ABORT: .sch file already exists.'
-           ierr = 1
+  44       ierr = 1
   45    endif
-        ierr = iglsum(ierr,1)
-        if(ierr.gt.0) call exitt
+        call err_chk(ierr,'.sch file already exists.$')
       endif
 
       call prepost_map(0) ! map pr and axisymm. arrays

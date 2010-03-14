@@ -14,9 +14,8 @@ c
       parameter(lxc=2)
       parameter(lcr=lxc**ldim)
       common /h1_crsi/ se_to_gcrs(lcr,lelt)
-     $               , se_to_lcrs(lcr,lelt)
      $               , n_crs,m_crs, nx_crs, nxyz_c
-      integer se_to_gcrs,se_to_lcrs
+      integer*8 se_to_gcrs
 c
       common /h1_crs/  h1_basis(lx1*lxc),h1_basist(lxc*lx1)
       real             l2_basis(lx2*lxc),l2_basist(lxc*lx2)

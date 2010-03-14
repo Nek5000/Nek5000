@@ -67,8 +67,8 @@ CGS = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 endif
 #
 COMM_MPI = comm_mpi.o
-JL := -DMPI
-JL2 := -DMPI
+JL := -DMPI -DUSE_GLOBAL_LONG_LONG
+JL2 := -DMPI -DGLOBAL_LONG_LONG
 ifeq ($(IFAMG_DUMP),true)
    JL := ${JL} -DAMG_DUMP
    JL2 := ${JL2} -DAMG_DUMP

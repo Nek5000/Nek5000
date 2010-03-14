@@ -401,6 +401,32 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine err_chk(ierr,string)
+      character*1 string(132)
+      character*11 s11
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+
+      ierr = iglsum(ierr,1)
+      if(ierr.eq.0) return 
+
+      len = indx1(string,'$',1)
+      write(s11,11) idata
+   11 format(1x,i10)
+      call chcopy(string(len),s11,11)
+
+      if (nid.eq.0) write(6,1) (string(k),k=1,len+10)
+    1 format('ERROR: ',132a1)
+
+      call exitt
+
+      return
+      end
+c
+
+
+c-----------------------------------------------------------------------
       subroutine exitt
       include 'SIZE'
       include 'TOTAL'
@@ -514,4 +540,6 @@ c   2 format(3i9,1x,a6)
 
       return
       end
+
+   
 

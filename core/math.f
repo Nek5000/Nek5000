@@ -1809,3 +1809,17 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      integer*8 function i8glmax(a,n)
+      integer*8 a(1),tmax
+      integer*8 tmp(1),work(1)
+      tmax= -999999
+      do i=1,n
+         tmax=max(tmax,a(i))
+      enddo
+      tmp(1)=tmax
+      call i8gop(tmp,work,'M  ',1)
+      i8glmax=tmp(1)
+      if (i8glmax .eq. -999999) i8glmax=0
+      return
+      end
+c-----------------------------------------------------------------------

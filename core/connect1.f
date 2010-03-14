@@ -30,7 +30,8 @@ c
 C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer glo_num,vertex
+      integer*8 glo_num
+      integer vertex
 
       if(nid.eq.0) write(6,*) 'setup mesh topology'
 C
@@ -1108,38 +1109,6 @@ C
   100 CONTINUE
       RETURN
       END
-c-----------------------------------------------------------------------
-      subroutine setupds(gs_handle,nx,ny,nz,nel,melg,vertex,glo_num)
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'NONCON'
-      integer gs_handle
-      integer vertex(1),glo_num(1)
-
-      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-
-      call set_vert(glo_num,ngv,nx,nel,melg,vertex,.false.)
-
-c     Initialize gather-scatter code
-
-      t0 = dnekclock()
-      ntot      = nx*ny*nz*nel
-
-      call gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
-
-c     call gs_chkr(glo_num)
-
-      t1 = dnekclock()
-      et = t1-t0
-c
-      if (nid.eq.0) then
-         write(6,1) et,nx,nel,ntot,ngv,gs_handle
-    1    format('   gs_init time',1pe11.4,' seconds ',i3,4i10)
-      endif
-c
-      return
-      end
 c-----------------------------------------------------------------------
       subroutine combin2(glnm1,glnm2,nglob)
 c
