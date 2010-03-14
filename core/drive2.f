@@ -510,13 +510,17 @@ C
       CALL BLANK(SESSION,132)
       CALL BLANK(PATH   ,132)
 
+      ierr = 0
       IF(NID.EQ.0) THEN
-        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=22)
+        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=24)
         READ(8,10) SESSION
         READ(8,10) PATH
   10      FORMAT(A132)
         CLOSE(UNIT=8)
-      ENDIF
+        GOTO 23
+  24    ierr = 1
+  23  ENDIF
+      call err_chk(ierr,' Cannot open SESSION.NAME!$')
 
       len = ltrunc(path,132)
       if(indx1(path1(len),'/',1).lt.1) then
@@ -594,8 +598,6 @@ C
 C
       RETURN
 
-  22  write(6,*) 'ABORT: Cannot open SESSION.NAME!'
-      call exitt 
       END
 C
       subroutine settime

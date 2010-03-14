@@ -1,3 +1,33 @@
+      subroutine setupds(gs_handle,nx,ny,nz,nel,melg,vertex,glo_num)
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'NONCON'
+      integer gs_handle
+      integer vertex(1)
+      integer*8 glo_num(1),ngv
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      t0 = dnekclock()
+
+      call set_vert(glo_num,ngv,nx,nel,vertex,.false.)
+c     Initialize gather-scatter code
+      ntot      = nx*ny*nz*nel
+      call gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
+
+c     call gs_chkr(glo_num)
+
+      t1 = dnekclock()
+      et = t1-t0
+c
+      if (nid.eq.0) then
+         write(6,1) et,gs_handle,nx,ngv,melg
+    1    format('   setupds time',1pe11.4,' seconds ',2i3,2i12)
+      endif
+c
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine dssum(u,nx,ny,nz)
       include 'SIZE'

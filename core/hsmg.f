@@ -118,7 +118,8 @@ c----------------------------------------------------------------------
       common /c_is1/ glo_num(lx1*ly1*lz1*lelv)
       common /ivrtx/ vertex ((2**ldim)*lelt)
 
-      integer glo_num,vertex
+      integer*8 glo_num
+      integer vertex
       integer nx,ny,nz
       integer l
       
@@ -1332,46 +1333,6 @@ c----------------------------------------------------------------------
             e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
          enddo
          enddo
-      enddo
-      return
-      end
-c----------------------------------------------------------------------
-c     map from coarse tensor product form to reduced coarse form
-      subroutine hsmg_map_to_rcf(uc_out,uc)
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'GEOM'
-      real uc_out(1),uc(1)
-      call rzero(uc_out,n_crs)
-      do i=1,lcr*nelv
-         j = se_to_lcrs(i,1)
-         if (1.le.j.and.j.le.n_crs) then
-            uc_out(j) = uc_out(j) + uc(i)
-         endif
-      enddo
-      return
-      end
-c----------------------------------------------------------------------
-c     map from reduced coarse form to coarse tensor product
-      subroutine hsmg_map_from_rcf(uc,uc_in)
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'GEOM'
-      real uc(1),uc_in(1)
-      integer nn
-c     Assuming a coarse dimension of 2!????
-c     using lcr*nelv may lead to zeroing beyond end of uc ...
-      nn = (param(82)**ndim)*nelv !(nxc**ndim)*nelv
-c      print *, 'map_from_rcf:',nn
-      do i=1,nn
-         j = se_to_lcrs(i,1)
-         if (1.le.j.and.j.le.n_crs) then
-            uc(i) = uc_in(j)
-         else
-            uc(i) = 0.0
-         endif
       enddo
       return
       end

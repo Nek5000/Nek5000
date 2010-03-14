@@ -1,25 +1,15 @@
 c-----------------------------------------------------------------------
 c
-      subroutine set_vert(glo_num,ngv,nx,nel,melg,vertex,ifcenter)
-c
+      subroutine set_vert(glo_num,ngv,nx,nel,vertex,ifcenter)
 c
 c     Given global array, vertex, pointing to hex vertices, set up
 c     a new array of global pointers for an nx^ndim set of elements.
 c
-c     No communication required, because vertex has all the data.
-c
-c     The output can go straight into gs_init:
-c
-c         call        gs_init_vec_sz(ndim)
-c         gs_handle = gs_init(glo_num,n,NP)
-c
-c     where n := nx^ndim * nel.
-c
-c
       include 'SIZE'
       include 'INPUT'
 c
-      integer glo_num(1),vertex(1),ngv,nx
+      integer*8 glo_num(1),ngv
+      integer vertex(1),nx
       logical ifcenter
 
       if (if3d) then
@@ -113,8 +103,6 @@ c
       common /scrvhx/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
-      if(nid.eq.0) write(6,*) 'setup h1 coarse grid'
-
       t0 = dnekclock()
 
 c     nxc is order of coarse grid space + 1, nxc=2, linear, 3=quad,etc.
@@ -128,13 +116,15 @@ c     if (nxc.lt.2) nxc=2
       nxc     = 2
       nx_crs  = nxc
 
+      if(nid.eq.0) write(6,*) 'setup h1 coarse grid, nx_crs=', nx_crs
+
       ncr     = nxc**ndim
       nxyz_c  = ncr
 c
 c     Set SEM_to_GLOB
 c
       call get_vertex
-      call set_vert(se_to_gcrs,ngv,nxc,nelv,nelgv,vertex,.true.)
+      call set_vert(se_to_gcrs,ngv,nxc,nelv,vertex,.true.)
 
 c     Set mask
       z=0
@@ -170,18 +160,18 @@ c     Set global index of dirichlet nodes to zero; xxt will ignore them
 
 c     Setup local SEM-based Neumann operators (for now, just full...)
 
-      if (param(51).eq.1) then     ! old coarse grid
-         nxyz1=nx1*ny1*nz1
-         lda = 27*nxyz1*lelt
-         ldw =  7*nxyz1*lelt
-         call get_local_crs(a,lda,nxc,h1,h2,w,ldw)
-      else
+c      if (param(51).eq.1) then     ! old coarse grid
+c         nxyz1=nx1*ny1*nz1
+c         lda = 27*nxyz1*lelt
+c         ldw =  7*nxyz1*lelt
+c         call get_local_crs(a,lda,nxc,h1,h2,w,ldw)
+c      else
 c        NOTE: a(),h1,...,w2() must all be large enough
          n = nx1*ny1*nz1*nelv
          call rone (h1,n)
          call rzero(h2,n)
          call get_local_crs_galerkin(a,ncr,nxc,h1,h2,w1,w2)
-      endif
+c      endif
 
       call set_mat_ij(ia,ja,ncr,nelv)
       null_space=0
@@ -194,8 +184,7 @@ c     call crs_stats(xxth)
 
       t0 = dnekclock()-t0
       if (nid.eq.0) then
-         write(6,*) '  set_up_h1_crs time:',t0,' seconds'
-         write(6,*) 'done :: setup h1 coarse grid'
+         write(6,*) 'done :: setup h1 coarse grid ',t0, ' sec'
          write(6,*) ' '
       endif
 
@@ -204,9 +193,8 @@ c     call crs_stats(xxth)
 c
 c-----------------------------------------------------------------------
       subroutine set_jl_crs_mask(n, mask, se_to_gcrs)
-      integer n
-      real mask(n)
-      integer se_to_gcrs(n)
+      real mask(1)
+      integer*8 se_to_gcrs(1)
       do i=1,n
          if(mask(i).lt.0.1) se_to_gcrs(i)=0
       enddo
@@ -229,92 +217,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-c
-      subroutine set_up_enriched_crs
-c
-c     Build:
-c
-c     se_to_lcrs
-c     se_to_gcrs
-c     mask 
-c     sem_crs_A_mat   (a)
-c     tensor-product prolongation/restriction
-c
-c
-      include 'SIZE'
-      include 'DOMAIN'
-      include 'INPUT'
-      include 'PARALLEL'
-
-      common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
-
-      integer key(2),aa(2)
-      common /scrch/ iwork(2,lx1*ly1*lz1*lelv)
-      common /scrns/ w(7*lx1*ly1*lz1*lelv)
-      common /vptsol/ a(27*lx1*ly1*lz1*lelv)
-      integer w
-
-      real wr(1)
-      equivalence (wr,w)
-c
-      real h1(1),h2(1)
-c
-c     nxc is order of coarse grid space + 1, nxc=2, linear, 3=quad,etc.
-c
-      nxc=param(82)
-      if (nxc.gt.lxc) then
-         nxc=lxc
-         write(6,*) 'WARNING :: coarse grid space too large',nxc,lxc 
-      endif
-      if (nxc.lt.2) nxc=2
-      nx_crs = nxc
-c
-      ncr  =nxc**ndim
-      nxyz_c  = ncr
-c
-c     Set SEM_to_GLOB
-c
-      call get_vertex
-      call set_vert(se_to_gcrs,ngv,nxc,nelv,nelgv,vertex,.true.)
-c
-c     Set SEM_to_LOC
-c
-      ntot=nelv*nxyz_c
-      do i=1,ntot
-         iwork(1,i) = se_to_gcrs(i,1)
-         iwork(2,i) = 0
-      enddo
-      key(1)=1
-      key(2)=2
-      call irank_vec(se_to_lcrs,ndofs,iwork,2,ntot,key,2,aa)
-c
-c     call out_se(se_to_lcrs,nxc,'lb4m')
-c     call out_se(se_to_gcrs,nxc,'gb4m')
-c     call exitt
-c
-c     Set masks
-      call set_crs_mask(se_to_lcrs,ngvm,mask_offset,nxc,ndofs,w)
-c      write(6,*) 'this is ngvm',ngvm,ndofs,mask_offset,ngv
-      n_crs=ngvm
-c
-c
-c     Set loc_to_glob, accounting for mask
-      call set_loc2glob_crs(w,nxc,n_crs)
-c
-c     Setup local SEM-based Neumann operators (for now, just full...)
-      nxyz1=nx1*ny1*nz1
-      lda = 27*nxyz1*lelt
-      ldw =  7*nxyz1*lelt
-      call get_local_crs(a,lda,nxc,h1,h2,w,ldw)
-c      write(6,*) 'this is ngv:',ngv
-c
-c
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine irank_vec(ind,nn,a,m,n,key,nkey,aa)
 c
 c     Compute rank of each unique entry a(1,i) 
@@ -1084,9 +986,56 @@ C
          IND(I)=INDX
       GOTO 100
       END
-c
 c-----------------------------------------------------------------------
-c
+      subroutine i8rank(A,IND,N)
+C
+C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C
+      integer*8 A(1),IND(1)
+C
+      if (n.le.1) return
+      DO 10 J=1,N
+         IND(j)=j
+   10 continue
+C
+      if (n.eq.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         IF (l.gt.1) THEN
+            l=l-1
+            indx=ind(l)
+            q=a(indx)
+         ELSE
+            indx=ind(ir)
+            q=a(indx)
+            ind(ir)=ind(1)
+            ir=ir-1
+            if (ir.eq.1) then
+               ind(1)=indx
+               return
+            endif
+         ENDIF
+         i=l
+         j=l+l
+  200    continue
+         IF (J.le.IR) THEN
+            IF (J.lt.IR) THEN
+               IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
+            ENDIF
+            IF (q.lt.A(IND(j))) THEN
+               IND(I)=IND(J)
+               I=J
+               J=J+J
+            ELSE
+               J=IR+1
+            ENDIF
+         GOTO 200
+         ENDIF
+         IND(I)=INDX
+      GOTO 100
+      END
+c-----------------------------------------------------------------------
       subroutine iranku(r,input,n,w,ind)
 c
 c     Return the rank of each input value, and the maximum rank.
@@ -1134,99 +1083,6 @@ C
       end
 c
 c-----------------------------------------------------------------------
-c
-      subroutine set_crs_mask(se2lcrs,ngvm,mask_offset,nxc,ndof,w)
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'PARALLEL'
-c
-c     Generate masks, and order se_to_lcrs accordingly
-c
-      integer se2lcrs(1),w(1)
-      character*3 cb
-c
-c
-C
-C     Pressure mask
-C
-      nzc=1
-      if (if3d) nzc=nxc
-      nxyz=nxc**ndim
-      ntot=nxyz*nelv
-      call ione(w,ntot)
-      nfaces=2*ndim
-      ifield=1
-      do ie=1,nelv
-      do iface=1,nfaces
-         cb=cbc(iface,ie,ifield)
-         if (cb.eq.'O  '  .or.
-     $       cb.eq.'ON '  .or.
-     $       cb.eq.'MM '  .or.
-     $       cb.eq.'mm '  .or.
-     $       cb.eq.'ms '  .or.
-     $       cb.eq.'MS ') call ifacev(w,ie,iface,0,nxc,nxc,nzc)
-      enddo
-      enddo
-c     Zero out mask at Neumann-Dirichlet interfaces
-c     call dsop(pmask,'MUL',nxc,nxc,nzc)         !!! DONT FORGET THIS
-c     write(6,*) 'WARNING - DSOP not yet called in set_crs_mask!',nid
-c
-c
-c     Increase each masked entry by mask_offset
-c
-      mask_offset=ndof+1
-      do i=1,ntot
-         if (w(i).eq.0) se2lcrs(i)=se2lcrs(i)+mask_offset
-      enddo
-c
-c     unique rank, such that w(1) gives rank of element i
-      call iranku(w,se2lcrs,ntot,w(1+ntot),w(1+2*ntot))
-c     
-      ngvm=0
-      do i=1,ntot
-         if (se2lcrs(i).lt.mask_offset) then
-            ngvm=max(ngvm,w(i))
-            se2lcrs(i) = w(i)
-         else
-            se2lcrs(i) = -w(i)
-         endif
-      enddo
-c
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
-      subroutine set_loc2glob_crs(w,nxc,ngv)
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'PARALLEL'
-c
-c     Generate loc2glob
-c
-      integer w(1)
-c
-      nxyz=nxc**ndim
-      ntot=nxyz*nelv
-c
-      do i=1,ntot
-         il = abs(se_to_lcrs(i,1))
-         ig =     se_to_gcrs(i,1)
-         w(il)=ig
-      enddo
-c
-c     Store loc-2-glob in se_to_gcrs, since we don't need se_to_gcrs
-c
-      call copy(se_to_gcrs,w,ngv)
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine map_c_to_f_l2_bilin(uf,uc,w)
 c
 c     H1 Iterpolation operator:  linear --> spectral GLL mesh
@@ -1351,65 +1207,6 @@ c
       end
 c
 c-----------------------------------------------------------------------
-c
-      subroutine map_c_to_f_l2(uf,uc_in)
-c
-c     L2 Iterpolation operator:  H1-linear --> spectral GL mesh
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'SOLN'
-c
-      parameter (lxyz = lx2*ly2*lz2)
-      real uc_in(1),uf(lxyz,lelt)
-      common /screc/ uc(lcr*lelt),w(2*lx2*ly2*lz2)
-c
-c
-c     Map to coarse tensor product form
-c
-      do i=1,nxyz_c*nelv
-         j = se_to_lcrs(i,1)
-         if (j.gt.0) then
-            uc(i) = uc_in(j)
-         else
-            uc(i) = 0.
-         endif
-      enddo
-      call map_c_to_f_l2_bilin(uf,uc,w)
-c
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
-      subroutine map_f_to_c_l2(uc_out,uf)
-c
-c     TRANSPOSE of L2 Iterpolation operator:                    T
-c                                 (linear --> spectral GL mesh)
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'GEOM'
-      real uc_out(1),uf(1)
-c
-      parameter (lxyz = lx2*ly2*lz2)
-      common /screc/ uc(lcr*lelt),w(2*lxyz)
-c
-      call map_f_to_c_l2_bilin(uc,uf,w)
-c
-c     Map from coarse tensor product form to reduced coarse form
-      call rzero(uc_out,n_crs)
-      do i=1,nxyz_c*nelv
-         j = se_to_lcrs(i,1)
-         if (j.gt.0) uc_out(j) = uc_out(j) + uc(i)
-      enddo
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine irank_vec_tally(ind,nn,a,m,n,key,nkey,key2,aa)
 c
 c     Compute rank of each unique entry a(1,i) 
@@ -1632,76 +1429,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-c
-      subroutine map_c_to_f_h1(uf,uc_in)
-c
-c     L2 Iterpolation operator:  H1-linear --> spectral GL mesh
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'SOLN'
-c
-      parameter (lxyz = lx1*ly1*lz1)
-      real uc_in(1),uf(lxyz,lelt)
-      common /screc/ w(lx1,lx1,2),v(lx1,2,ldim-1,lelt)
-     $             , uc(2,2,ldim-1,lelt)
-c
-c
-c     Map to coarse tensor product form
-c
-      do i=1,lcr*nelv
-         j = se_to_lcrs(i,1)
-         if (1.le.j.and.j.le.n_crs) then
-            uc(i,1,1,1) = uc_in(j)
-         else
-            uc(i,1,1,1) = 0.
-         endif
-      enddo
-      call map_c_to_f_h1_bilin(uf,uc)
-c
-c     ntot = nx1*ny1*nz1*nelv
-c     call copy(pr,uf,ntot)
-c     call prepost(.true.,'   ')
-c     write(6,*) 'quit in map_c_to_f_h1'
-c     call exitt
-c
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
-      subroutine map_f_to_c_h1(uc_out,uf)
-c
-c     TRANSPOSE of H1 Iterpolation operator:                    T
-c                                 (linear --> spectral GL mesh)
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'DOMAIN'
-      include 'GEOM'
-      real uc_out(1),uf(1)
-c
-      common /screc/ w(2,2,lx1),v(2,ly1,lz1,lelt)
-     $             , uc(2,2,ldim-1,lelt)
-c
-c
-      call map_f_to_c_h1_bilin(uc,uf)
-c
-c     Map from coarse tensor product form to reduced coarse form
-c
-      call rzero(uc_out,n_crs)
-      do i=1,lcr*nelv
-         j = se_to_lcrs(i,1)
-         if (1.le.j.and.j.le.n_crs) then
-            uc_out(j) = uc_out(j) + uc(i,1,1,1)
-         endif
-      enddo
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine set_h1_basis_bilin
 c
       include 'SIZE'
@@ -2323,8 +2050,11 @@ c
 c-----------------------------------------------------------------------
       subroutine setvert3d(glo_num,ngv,nx,nel,vertex,ifcenter)
 c
-c     set up gsexch interfaces for direct stiffness summation.  
-c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
+c     setup unique ids for dssum  
+c     note:
+c     total number of unique vertices, edges and faces has to be smaller 
+c     than 2**31 (integer-4 limit).
+c     if nelgt < 2**31/12 we're ok for sure (independent of N)! 
 c
       include 'SIZE'
       include 'CTIMER'
@@ -2332,39 +2062,41 @@ c
       include 'TOPOL'
       include 'GEOM'
 
-      integer glo_num(1),vertex(0:1,0:1,0:1,1),ngv,nx
+      integer*8 glo_num(1),ngv
+      integer vertex(0:1,0:1,0:1,1),nx
       logical ifcenter
 
       integer  edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
       common  /scrmg/ edge,enum,fnum
-c     equivalence  (enum,fnum)
 
       integer etuple(4,2*12*lelt),ftuple(5,6,2*lelt)
-      integer ind(2*12*lelt)
+      integer*8 ind(2*12*lelt)
       common  /scrns/ ind,etuple
       equivalence  (etuple,ftuple)
 
-      integer gvf(4),facet(4),aa(3),key(3),e,eg
+      integer facet(4),aa(3),key(3),e
       logical ifij
-c
-c     memory check...
+      
+      integer*8 gvf(4),igv,ig0
+      integer*8 ngvv,ngve,ngvs,ngvi,ngvm
+      integer*8 n_on_edge,n_on_face,n_in_interior
+      integer*8 i8glmax
 c
       ny   = nx
       nz   = nx
       nxyz = nx*ny*nz
 c
-      if (nid.eq.0) write(6,*) '  setvert3d:',nx,ny,nz
-
-c
       key(1)=1
       key(2)=2
       key(3)=3
 c
+c     Assign hypercube ordering of vertices
+c     -------------------------------------
+c
 c     Count number of unique vertices
       nlv  = 2**ndim
-      ngv  = iglmax(vertex,nlv*nel)
+      ngvv = iglmax(vertex,nlv*nel)
 c
-c     Assign hypercube ordering of vertices.
       do e=1,nel
          do k=0,1
          do j=0,1
@@ -2377,7 +2109,12 @@ c           Local to global node number (vertex)
          enddo
          enddo
       enddo
+      ngv  = ngvv
+c
       if (nx.eq.2) return
+c
+c     Assign global vertex numbers to SEM nodes on each edge
+c     ------------------------------------------------------
 c
 c     Assign edge labels by bounding vertices.  
       do e=1,nel
@@ -2391,7 +2128,7 @@ c     Assign edge labels by bounding vertices.
          enddo
          enddo
       enddo
-
+c
 c     Sort edges by bounding vertices.
       do i=0,12*nel-1
          if (edge(0,i,0,1,1).gt.edge(1,i,0,1,1)) then
@@ -2402,7 +2139,7 @@ c     Sort edges by bounding vertices.
          etuple(3,i+1) = edge(0,i,0,1,1)
          etuple(4,i+1) = edge(1,i,0,1,1)
       enddo
-
+c
 c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 12*nel
@@ -2412,15 +2149,12 @@ c     Assign a number (rank) to each unique edge
          enum(i,1) = etuple(3,i)
       enddo
       n_unique_edges = iglmax(enum,12*nel)
-
 c
-c= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-c     Assign global vertex numbers to SEM nodes on each edge
       n_on_edge = nx-2
+      ngve      = n_unique_edges*n_on_edge
       do e=1,nel
-
          iedg_loc = 0
-
+c
 c        Edges 1-4
          do k=0,1
          do j=0,1
@@ -2478,11 +2212,10 @@ c        Edges 9-12
          enddo
          enddo
       enddo
+      ngv   = ngv + ngve
 c
-c     Currently assigned number of vertices
-      ngvv  = ngv
-      ngv   = ngv + n_unique_edges*n_on_edge
-c
+c     Asign global node numbers on the interior of each face
+c     ------------------------------------------------------ 
 c
 c     Assign faces by 3-tuples 
 c
@@ -2500,7 +2233,6 @@ c       1 to 2.        |  4  | /     /
 c                      |     |/     /
 c                     5+-----+6    Z
 c                         3
-c
 c
       nfaces=ndim*2
       ncrnr =2**(ndim-1)
@@ -2524,9 +2256,6 @@ c     Assign a number (rank) to each unique face
          fnum(i,1) = ftuple(3,i,1)
       enddo
       n_unique_faces = iglmax(fnum,6*nel)
-
-c
-c     Now assign global node numbers on the interior of each face
 c
       call dsset (nx,ny,nz)
       do e=1,nel
@@ -2557,7 +2286,7 @@ c
          gvf(3) = glo_num(i0+nx*(j1-1)+nxyz*(e-1))
          gvf(4) = glo_num(i1+nx*(j1-1)+nxyz*(e-1))
 c
-         call irank(gvf,ind,4)
+         call i8rank(gvf,ind,4)
 c
 c        ind(1) tells which element of gvf() is smallest.
 c
@@ -2596,6 +2325,7 @@ c
 c
          nxx = nx*nx
          n_on_face = (nx-2)*(ny-2)
+         ngvs  = n_unique_faces*n_on_face
          ig0 = ngv + n_on_face*(fnum(iface,e)-1)
          if (ifij) then
             k=0
@@ -2630,15 +2360,13 @@ c                 interior
          endif
        enddo
       enddo
+      ngv   = ngv + ngvs
 c
-c     Finally,  number interiors  
-c     ngvs := number of global vertices on surface of subdomains
-c
-      ngve  = ngv
-      ngv   = ngv + n_unique_faces*n_on_face
-      ngvs  = ngv
+c     Finally,  number interiors (only ifcenter=.true.)
+c     -------------------------------------------------
 c
       n_in_interior = (nx-2)*(ny-2)*(nz-2)
+      ngvi = n_in_interior*nelgt
       if (ifcenter) then
          do e=1,nel
             ig0 = ngv + n_in_interior*(lglel(e)-1)
@@ -2652,6 +2380,7 @@ c
             enddo
             enddo
          enddo
+         ngv = ngv + ngvi
       else
          do e=1,nel
             l = 0
@@ -2665,31 +2394,30 @@ c
             enddo
          enddo
       endif
-
-      ngv = ngv + n_in_interior*melg
 c
 c     Quick check on maximum #dofs:
       m    = nxyz*nelt
-      ngvm = iglmax(glo_num,m)
-      if (nid.eq.0) write(6,1) nx,ngvv,ngve,ngvs,ngv,ngvm
-    1 format('   setupds3d:',6i11)
+      ngvm = i8glmax(glo_num,m)
+      ngvv = ngvv + ngve + ngvs  ! number of unique ids w/o interior 
+      ngvi = ngvi + ngvv         ! total number of unique ids 
+      if (nid.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
+    1 format('   setvert3d:',i4,4i12)
 c
       return
       end
 c-----------------------------------------------------------------------
       subroutine setvert2d(glo_num,ngv,nx,nel,vertex,ifcenter)
-
-c     set up gsexch interfaces for direct stiffness summation.  
-c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
-
-
+c
+c     setup unique ids for dssum  
+c
       include 'SIZE'
       include 'CTIMER'
       include 'PARALLEL'
       include 'TOPOL'
       include 'GEOM'
 
-      integer glo_num(1),vertex(0:1,0:1,1),ngv,nx
+      integer*8 glo_num(1),ngv
+      integer vertex(0:1,0:1,1),nx
       logical ifcenter
 
       integer  edge(0:1,0:1,2,lelt),enum(4,lelt)
@@ -2699,8 +2427,14 @@ c     pff 2/3/98;  hmt revisited 12/10/01; pff (scalable) 3/22/09
       integer ind(4*lelt*2)
       common  /scrns/ ind,etuple
 
-      integer gvf(4),aa(3),key(3),e,eg
+      integer aa(3),key(3),e,eg
       logical ifij
+
+      integer*8 gvf(4),igv,ig0
+      integer*8 ngvv,ngve,ngvs,ngvi,ngvm
+      integer*8 n_on_edge,n_on_face,n_in_interior
+      integer*8 i8glmax
+c
 c
 c     memory check...
 c
@@ -2708,16 +2442,15 @@ c
       nz   = 1
       nxyz = nx*ny*nz
 c
-      if (nid.eq.0) write(6,*) '  setvert2d:',nx,ny,nz
-
-c
       key(1)=1
       key(2)=2
       key(3)=3
 c
 c     Count number of unique vertices
       nlv  = 2**ndim
-      ngv  = iglmax(vertex,nlv*nel)
+      ngvv = iglmax(vertex,nlv*nel)
+      ngv  = ngvv
+
 c
 c     Assign hypercube ordering of vertices.
       do e=1,nel
@@ -2764,7 +2497,6 @@ c     Assign a number (rank) to each unique edge
       enddo
       n_unique_edges = iglmax(enum,4*nel)
 
-c
 c= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 c     Assign global vertex numbers to SEM nodes on each edge
       n_on_edge = nx-2
@@ -2806,20 +2538,14 @@ c        Edges 3-4
             iedg_loc = iedg_loc + 1
          enddo
       enddo
-c
-c     Now assign global node numbers on the interior of each face
-c
-      nfaces=ndim*2
+ 
+      ngve = n_unique_edges*n_on_edge
+      ngv  = ngv + ngve    
 c
 c     Finally,  number interiors  
-c     ngvs := number of global vertices on surface of subdomains
 c
-
-      ngve  = ngv
-      ngv   = ngv + n_unique_edges*n_on_edge
-      ngvs  = ngv
-
       n_in_interior = (nx-2)*(ny-2)
+      ngvi          = n_in_interior*nelgt
       if (ifcenter) then
          do e=1,nel
             ig0 = ngv + n_in_interior*(lglel(e)-1)
@@ -2831,6 +2557,7 @@ c
             enddo
             enddo
          enddo
+         ngv = ngv + ngvi
       else
          do e=1,nel
             l = 0
@@ -2843,14 +2570,15 @@ c
          enddo
       endif
 
-      ngv = ngv + n_in_interior*melg
-
+c
 c     Quick check on maximum #dofs:
       m    = nxyz*nelt
-      ngvm = iglmax(glo_num,m)
-      if (nid.eq.0) write(6,1) nx,ngvv,ngve,ngvs,ngv,ngvm
-    1 format('   setupds2d:',6i11)
-
+      ngvm = i8glmax(glo_num,m)
+      ngvv = ngvv + ngve         ! number of unique ids w/o interior 
+      ngvi = ngvi + ngvv         ! total number of unique ids 
+      if (nid.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
+    1 format('   setvert2d:',i4,4i12)
+c
       return
       end
 c-----------------------------------------------------------------------

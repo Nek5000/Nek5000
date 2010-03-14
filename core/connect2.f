@@ -2367,21 +2367,29 @@ c-----------------------------------------------------------------------
 
       if (nelgt.gt.neltmx.or.nelgv.gt.nelvmx) then
          if (nid.eq.0) then
-          write(6,12) lelt,lelgv,(nelgt/np + 3),nelgt
+          lelt_needed = nelgt/np
+          if (mod(nelgt,np).ne.0) lelt_needed = lelt_needed + 1 
+          write(6,12) lelt,lelg,lelt_needed,np,nelgt
  12         format(//,2X,'ABORT: Problem size too large!'
-     $             ,/,2X
-     $             ,/,2X,'This solver has been compiled for:'
-     $             ,/,2X,'   number of elements/proc  (lelt):',i9
-     $             ,/,2X,'   total number of elements (lelg):',i9
-     $             ,/,2X
-     $             ,/,2X,'Rerun with more processors or recompile'
-     $             ,/,2X,'with the following SIZEu parameters:'
-     $             ,/,2X,'   lelt >= ',i9
-     $             ,/,2X,'   lelg >= ',i9,/)
-           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-           write(6,*)'help:',lelt,lelv,lelgv
+     $         ,/,2X
+     $         ,/,2X,'This solver has been compiled for:'
+     $         ,/,2X,'   number of elements/proc  (lelt):',i9
+     $         ,/,2X,'   total number of elements (lelg):',i9
+     $         ,/,2X
+     $         ,/,2X,'Recompile with the following SIZEu parameters:'
+     $         ,/,2X,'   lelt >= ',i9,'  for np = ',i6,
+     $         ,/,2X,'   lelg >= ',i9,/)
+c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
+c           write(6,*)'help:',lelt,lelv,lelgv
          endif
          call exitt
+      endif
+
+      if(nelgt.gt.nelgt_max) then
+        if(nid.eq.0) write(6,*)
+     $               'ABORT: Total number of elements too large!',
+     $               '       nel_max = ', nelgt_max 
+        call exitt
       endif
 
       if (nelt.gt.lelt) then
