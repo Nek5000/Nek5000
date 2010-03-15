@@ -28,6 +28,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       REAL e, oe
       REAL*8 t0, tpp
       common /drive1f/ e, oe, t0, tpp
+
+      logical ifsync_
       
 C     Initalize Nek (MPI stuff, word sizes, ...)
       call iniproc
@@ -46,6 +48,9 @@ C     Initialize and set default values.
 C     Read .rea +map file
       etime1 = dnekclock()
       call readat
+
+      ifsync_ = ifsync
+      ifsync = .true.
 
 C     Initialize some variables
       call setvar  
@@ -155,6 +160,8 @@ C     Initalize timers to ZERO
      &              ' Initialization successfully completed ',
      &              etims0-etimes, ' sec'
       ENDIF
+
+      ifsync = ifsync_
 
       return
       end

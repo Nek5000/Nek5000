@@ -1424,6 +1424,7 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       data    rhoavg,copt1,copt2 /3*1./  ! Default copt = 1 for additive
 
       integer l,nt
+      integer*8 ntotg,nxyz2
 
       logical if_hybrid
 
@@ -1603,9 +1604,10 @@ c
 c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
        if (ifvcor) then
-          ntot2 = nx2*ny2*nz2*nelv
+          ntot2 = nxyz2*nelv
+          ntotg = nxyz2*nelgv
 c         xaver = glsc2(bm2,e,ntot2)/volvm2
-          xaver = glsum(e,ntot2)/(nx2*ny2*nz2*nelgv)
+          xaver = glsum(e,ntot2)/ntotg
           call cadd(e,-xaver,ntot2)
        endif
 

@@ -240,10 +240,13 @@ C
       include 'PARALLEL'
       include 'SOLN'
       REAL RESPR (LX2,LY2,LZ2,LELV)
+      integer*8 ntotg,nxyz2
+
+      nxyz2 = NX2*NY2*NZ2
 C
       IF (IFVCOR) THEN
-         NTOT = NX2*NY2*NZ2*NELV
-         NTOTG= NX2*NY2*NZ2*NELGV
+         NTOT = NXYZ2*NELV
+         NTOTG= NXYZ2*NELGV
          IF (IFSPLIT) THEN
             RNDOF = GLSUM (VMULT,NTOT)
             RLAM  = GLSUM (RESPR,NTOT)/RNDOF
@@ -1002,6 +1005,9 @@ C
       save    kstep
       data    kstep/-1/
 c
+      integer*8 ntotg,nxyz2
+c
+c
       if (solver_type.eq.'pdm') then
          call gfdm_pres_solv(rpcg,rcg,h1m2,h2m2)
          return
@@ -1038,9 +1044,11 @@ c           CALL COL2        (RPCG,H2M2,NTOT2)
          CALL COPY        (RPCG,RCG,NTOT2)
       ENDIF
 c
+      nxyz2 = nx2*ny2*nz2
+      ntotg = nxyz2*nelgv
       IF (IFVCOR) THEN
 c        AVEM = -GLSC2 (RPCG,BM2 ,NTOT2)/VOLVM2          pff  3/24/99
-         AVEM = -glsum (RPCG,NTOT2)/(nx2*ny2*nz2*nelgv)
+         AVEM = -glsum (RPCG,NTOT2)/ntotg
          CALL     CADD (RPCG,AVEM,NTOT2)
       ENDIF
 c
@@ -1075,9 +1083,12 @@ C----------------------------------------------------------------
       REAL    MASK
       COMMON /CPRINT/ IFPRINT, IFHZPC
       LOGICAL         IFPRINT, IFHZPC
+      integer*8 ntotg,nxyz
+ 
+      nxyz = NX1*NY1*NZ1
 C
-      NTOTG  = NX1*NY1*NZ1*NELGV
-      NTOT1  = NX1*NY1*NZ1*NELV
+      NTOTG  = NXYZ*NELGV
+      NTOT1  = NXYZ*NELV
       NTOT2  = NX2*NY2*NZ2*NELV
       NFACES = 2*NDIM
 C
@@ -1627,14 +1638,18 @@ C----------------------------------------------------------------
 C
       CHARACTER CB*1
       DIMENSION TEMP(2)
+c
+      integer*8 ntotg,nxyz
+C
+      nxyz = NX1*NY1*NZ1
 C
       IF (BETAG.EQ.0.0) return
 C
       TBAR   = 0.
       NNOUT  = 0
       NFACES = 2*NDIM
-      NTOT1  = NX1*NY1*NZ1*NELV
-      NTOTG  = NX1*NY1*NZ1*NELGV
+      NTOT1  = NXYZ*NELV
+      NTOTG  = NXYZ*NELGV
       DO 100 IEL=1,NELV
       DO 100 IFACE=1,NFACES
          CB = CBC(IFACE,IEL,IFIELD)
@@ -3372,6 +3387,9 @@ c
       logical ifsavep
 C
       real*8 etime1,dnekclock
+      integer*8 ntotg,nxyz2
+c
+      nxyz2 = NX2*NY2*NZ2
 C
       etime1 = dnekclock()
       DIVEX = 0.
@@ -3386,8 +3404,8 @@ c         IF (NID.EQ.0) WRITE(6,9999) ITER,DIVEX,TOLPS
 c         return
 c      ENDIF
 C
-      NTOT2  = NX2*NY2*NZ2*NELV
-      NTOTG  = NX2*NY2*NZ2*NELGV
+      NTOT2  = NXYZ2*NELV
+      NTOTG  = NXYZ2*NELGV
 c
       CALL UZPREC  (RPCG,RCG,H1,H2,INTYPE,WP)
       RRP1 = GLSC2 (RPCG,RCG,NTOT2)

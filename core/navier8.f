@@ -1314,43 +1314,6 @@ c
 c
 c-----------------------------------------------------------------------
 c
-      subroutine out_se(se2crs,nx,name)
-c
-      include 'SIZE'
-      include 'PARALLEL'
-      common  /ctmp0/ iw(lx1*ly1*lz1*lelv)
-     $              , jw(lx1*ly1*lz1*lelv)
-c
-      integer se2crs(nx,nx,1)
-      character*4 name
-c
-c     if (np.eq.1) then
-c        call out_se1(se2crs,nx,name)
-c        return
-c     endif
-c
-      nxyz =nx**ndim
-      ntotg=nxyz*nelgt 
-      call izero(iw,ntotg)
-      do ie=1,nelv
-         ieg=lglel(ie)
-         iel=nxyz*(ieg-1)
-         do i=1,nxyz
-            iw(i+iel) = se2crs(i,1,ie)
-         enddo
-      enddo
-c     call igop(iw,jw,'+  ',ntotg)
-c     if (nid.eq.0) call out_se0(iw,nx,nelgt,name)
-      call igop(iw,jw,'+  ',1)
-      if (nid.eq.0) call out_se0(iw,nx,nelgt,name)
-      call igop(iw,jw,'+  ',1)
-      if (nid.eq.1) call out_se0(iw,nx,nelgt,name)
-c
-      return
-      end
-c
-c-----------------------------------------------------------------------
-c
       subroutine out_se0(se2crs,nx,nel,name)
 c
       include 'SIZE'

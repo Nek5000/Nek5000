@@ -123,8 +123,8 @@ C     Read objects
 C     End of input data, close read file.
       IF(NID.EQ.0) THEN
         CLOSE(UNIT=9)
-        write(6,*) 'readat time',dnekclock()-etime_tmp,' sec'
-        write(6,'(A,/)')  ' done :: read .rea file'
+        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     &                            dnekclock()-etime_tmp,' sec'
       ENDIF
 
       return
@@ -2377,7 +2377,7 @@ c-----------------------------------------------------------------------
      $         ,/,2X,'   total number of elements (lelg):',i9
      $         ,/,2X
      $         ,/,2X,'Recompile with the following SIZEu parameters:'
-     $         ,/,2X,'   lelt >= ',i9,'  for np = ',i6,
+     $         ,/,2X,'   lelt >= ',i9,'  for np = ',i6
      $         ,/,2X,'   lelg >= ',i9,/)
 c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
 c           write(6,*)'help:',lelt,lelv,lelgv
