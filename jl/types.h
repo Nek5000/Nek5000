@@ -21,6 +21,8 @@
 /* when defined, use the given type for global indices instead of INTEGER */
 #if   defined(USE_GLOBAL_LONG_LONG)
 #  define GLOBAL_INT long long
+#  define SLONG_MPI MPI_LONG_LONG
+#  define ULONG_MPI MPI_UNSIGNED_LONG_LONG
 #elif defined(USE_GLOBAL_LONG)
 #  define GLOBAL_INT long
 #  define SLONG_MPI MPI_LONG
