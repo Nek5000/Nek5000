@@ -3026,7 +3026,7 @@ c
             if (ifwkpf) call ctr_intp5(wkp(i))
             itst(i) = -itst(i)
 c
-            write(6,*) i,' clean up:',xpt(i),ypt(i),zpt(k),itst(i)
+            write(6,*) i,' clean up:',xpt(i),ypt(i),zpt(i),itst(i)
             do k=i-2,i+2
                write(6,*) k,xpt(k),ypt(k),zpt(k),itst(k),wkp(k)
             enddo
