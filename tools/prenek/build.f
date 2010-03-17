@@ -816,15 +816,14 @@ C
 c-----------------------------------------------------------------------
       subroutine readat
       include 'basics.inc'
-C     Paul's stuff
-C     REAL PARAM(100)
       logical iffold,ifhold
-      CHARACTER CHTEMP*3
-C     NPARAM=20
+      character chtemp*3
+      character*80 string
+
       NLINF=0
       NLINP=0
       NLINR=0
-C     
+     
 C     Read in all the build,bound,curve,history,output,initcond data
 C     Read Dummy Parameters
       READ(9,*,ERR=33)
@@ -877,8 +876,17 @@ c
       nel50=nel/50
       if (nel.lt.100) nel50=500
       DO 98 IEL=1,NEL
-         READ(9,'(20X,I4,4X,I3,A1,11x,i5)',ERR=33,END=33)
-     $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
+
+c        READ(9,'(20X,I4,4X,I3,A1,11x,i5)',ERR=33,END=33)
+c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
+
+         call blank(string,80)
+         read(9,80,err=33,end=33) string
+   80    format(a80)
+
+         call parse_e_hdr(numapt(iel),letapt(iel),igroup(iel),string)
+
+
          IF(IGROUP(IEL).GT.0) NCOND=NCOND+1
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
             WRITE(S,'(A20,I4,A4,I3,A1,A1)',ERR=33)
@@ -1867,7 +1875,7 @@ c
 c
       if (nvtx.gt.maxv) then
          nvtx = nvtx+1
-         call prsi('Too many pts. Inc. maxv to:$',nvtx)
+         call prsii('Too many pts. Inc. maxv to:$',nvtx,nelm)
          close(47)
          return
       endif
@@ -1890,8 +1898,8 @@ c        read(47,*) vnum(i),xp(i),yp(i)
       xmax = glmax(xp,nvtx)
       ymin = glmin(yp,nvtx)
       ymax = glmax(yp,nvtx)
-      call prsrr('xmin xmax:',xmin,xmax)
-      call prsrr('ymin ymax:',ymin,ymax)
+      call prsrr('xmin xmax:$',xmin,xmax)
+      call prsrr('ymin ymax:$',ymin,ymax)
 c
 c
 c     Read cell data
@@ -1901,7 +1909,7 @@ c
       if (ncell+nel.gt.nelm) then
          write(6,*) ncell,nel,nelm,' ncell,nel,nelm'
          ncell = ncell+nel
-         call prsi('Too many elements. Increase nelm to:$',ncell)
+         call prsii('Too many elements. Increase nelm to:$',ncell,nelm)
          close(47)
          return
       endif
@@ -2026,7 +2034,7 @@ c
 c
       if (nvtx.gt.maxv) then
          nvtx = nvtx+1
-         call prsi('Too many pts. Inc. maxv to:$',nvtx)
+         call prsii('Too many pts. Inc. maxv to:$',nvtx,nelm)
          close(47)
          return
       endif
@@ -2061,7 +2069,7 @@ c
 c
       if (ncell+nel.gt.nelm) then
          ncell = ncell+nel
-         call prsi('Too many elements. Increase nelm to:$',ncell)
+         call prsii('Too many elements. Increase nelm to:$',ncell,nelm)
          close(47)
          return
       endif
@@ -2666,6 +2674,40 @@ c-----------------------------------------------------------------------
          numapt(e) = 1
          letapt(e) = 'A'
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine parse_e_hdr(numapt,letapt,igroup,string)
+c
+c     Replaces:
+c
+c        READ(9,'(20X,I4,4X,I3,A1,11x,i5)',ERR=33,END=33)
+c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
+c
+c
+c     A "typical" format (but this sometimes changes, hence this routine):
+c
+c           ELEMENT    1 [    1a]    GROUP     0
+c
+
+      character*1  letapt
+      character*80 string
+
+      character*160 s
+      character*1   s1(160)
+      equivalence  (s1,s)
+
+
+      numapt = 1     ! Std. defaults
+      letapt = 'A'
+      igroup = 0
+
+      call blank (s1,160)
+      call chcopy(s1,string,80)
+      i1 = nindx1(s1    ,' ',1)  ! 1st non-blank location
+      i2 =  indx1(s1(i1),' ',1)  ! 1st non-blank location
+
 
       return
       end
