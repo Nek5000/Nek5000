@@ -31,7 +31,6 @@ struct comm {
   comm_ext c;
 };
 
-static void comm_exit(const struct comm *c, int status);
 static void comm_init(struct comm *c, comm_ext ce);
 static void comm_init_check(struct comm *c, MPI_Fint ce, uint np);
 /* (macro) static void comm_dup(struct comm *d, const struct comm *s); */
@@ -134,13 +133,6 @@ static void comm_barrier(const struct comm *c)
   MPI_Barrier(c->c);
 #endif
 }
-
-static void comm_exit(const struct comm *c, int status)
-{
-  comm_barrier(c);
-  eexit();
-}
-
 
 static void comm_recv(const struct comm *c, void *p, size_t n,
                       uint src, int tag)

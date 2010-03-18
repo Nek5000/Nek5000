@@ -7,7 +7,7 @@
 #include "types.h"
 #include "comm.h"
 
-void eexit(void) { nek_exitt(); } /* exit wrapper */
+#define nek_exitt FORTRAN_UNPREFIXED(exitt,EXITT)
 
 void fail(int status, const char *fmt, ...)
 {
@@ -33,5 +33,9 @@ void fail(int status, const char *fmt, ...)
     vfprintf(stderr, extfmt, ap);
     va_end(ap);
   }
-  eexit();
+#ifdef NO_NEK_EXITT
+  exit(status);
+#else
+  nek_exitt();
+#endif  
 }
