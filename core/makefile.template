@@ -75,8 +75,8 @@ ifeq ($(IFAMG_DUMP),true)
 endif
 ifeq ($(IFMPI),false)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
-  JL := 
-  JL2 := 
+  JL := -DUSE_GLOBAL_LONG_LONG
+  JL2 := -DGLOBAL_LONG_LONG
 endif
 #
 ifeq ($(IFMOAB),true)
