@@ -1881,19 +1881,19 @@ c
 c
 c     Get current vertex map info
 c
-      open(unit=10,file=string,err=999)
-      read(10,*) ncell
+      open(unit=20,file=string,err=999)
+      read(20,*) ncell
       do ie=1,ncell
-c        read(10,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
+c        read(20,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
 c
 c        HMT's data (.map) is in the good h-cube ordering
-         read(10,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
+         read(20,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
          do k=1,nvc
             j=ecrnr(k)
             cell(k,ie) = kcell(j)
          enddo
       enddo
-      close(unit=10)
+      close(unit=20)
 c
 c
 c     Sort data and gridpoints by global vertex number
@@ -2863,9 +2863,9 @@ c-----------------------------------------------------------------------
 c
       call rzero(a,9)
       call prs('Opening file rot.mat$')
-      open  (unit=10,file='rot.mat',status='old',err=999)
-      read  (10,*) ((a(i,j),j=1,ndim),i=1,ndim)
-      close (10)
+      open  (unit=20,file='rot.mat',status='old',err=999)
+      read  (20,*) ((a(i,j),j=1,ndim),i=1,ndim)
+      close (20)
 c
       do e=1,nel
 

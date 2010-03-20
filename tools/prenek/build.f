@@ -15,23 +15,54 @@ C
 C     
 c-----------------------------------------------------------------------
       subroutine build
-C     
-C     Menu-based module that prompts the user to input corners.
-C     It then establishes connectivity, sets global node numbers, and
-C     constructs elemental mesh. Calls routines that set boundary
-C     conditions.
-C     234567890123456789012345678901234567890123456789012345678901234567890123
-C     
+
       include 'basics.inc'
-      DIMENSION ICRVS(4)
-C     ELEMENT,CORNER,COOORDINATE#,LEVEL (OLD OR CURRENT)
-      CHARACTER KEY,STRING*6,LETO,CHAR1
-      LOGICAL IFTMP
-      COMMON /SPLITT/ ENEW(NELM),IND(NELM)
-C     
-      PI=4.0*ATAN(1.0)
-c     NX=PARAM(20)
+
+      if (ifconj_merge) then
+
+         call build0             ! Read in fluid mesh
+         nelv = nel
+         nelf = nel
+
+         call imp_mesh(.false.)  ! Get thermal mesh
+         nelt  = nel
+         ncond = nelt-nelv
+
+         call build2             ! Set bcs
+
+         nelt  = nel
+         ncond = nelt-nelv
+
+      else          ! Std. menu-driven mesh construction
+
+         call build0
+         call build1
+
+         nelt = nel
+         nelv = nel
+         call build2
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build0
+
+c     Menu-based module that prompts the user to input corners.
+     
+      include 'basics.inc'
+      dimension icrvs(4)
+      character key,string*6,leto,char1
+      logical iftmp
+      common /splitt/ enew(nelm),ind(nelm)
+
+      if (ifnoseg) call drcovr(13)
+     
+      pi=4.0*atan(1.0)
       nx=nxm
+      call legend(zpts,wght,nx)
+
       IF (NX.GT.NXM) THEN
          WRITE(S,104) NX,NXM
  104     FORMAT(' Warning, current N exceeds NXM, resetting from',I3
@@ -55,9 +86,10 @@ C     Need legendre points for mesh drawn on screen
       NSIDES=4
       IFCEN=.FALSE.
       IF(IF3D)NSIDES=6
+
       IF(CHOICE.EQ.'BUILD FROM FILE'.OR.
      $     CHOICE.EQ.'IMPORT UNIVERSAL FILE')THEN
-         IF(CHOICE.EQ.'BUILD FROM FILE') then
+         if (choice.eq.'BUILD FROM FILE') then
            call readat
            close(unit=9)
            if (.not.if3d) call chk_right_hand(nel)
@@ -104,22 +136,19 @@ C     Display Elevator 1st floor hilighted
          ITEM(1)='ACCEPT MESH'
          ITEM(2)='REVIEW/MODIFY'
 
-         goto 331  ! quick hack
-
-
-c        ITEM(3)='Edit Mesh'
-         NCHOIC =  2
-         CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')
-         IF(IFNOSEG)CALL DRCOVR(13)
-         IF(CHOICE.EQ.'ACCEPT MESH')THEN
-            GOTO 330
-         ELSE IF(CHOICE.EQ.'Edit Mesh')THEN
-            call mesh_edit
-         ELSE IF(CHOICE.EQ.'REVIEW/MODIFY')THEN
-c           prepare to modify floor by floor
-         ENDIF
-
-  331    continue   ! quick hack
+c        goto 331  ! quick hack       <---------------------------!
+c        ITEM(3)='Edit Mesh'                                      !
+c        NCHOIC =  2                                              !
+c        CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')          !
+c        IF(IFNOSEG)CALL DRCOVR(13)                               !
+c        IF(CHOICE.EQ.'ACCEPT MESH')THEN                          !
+c           GOTO 330                                              !
+c        ELSE IF(CHOICE.EQ.'Edit Mesh')THEN                       !
+c           call mesh_edit                                        !
+c        ELSE IF(CHOICE.EQ.'REVIEW/MODIFY')THEN                   !
+c           prepare to modify floor by floor                      !
+c        ENDIF                                                    !
+c 331    continue   ! quick hack       <--------------------------!
 
 
       ELSE
@@ -128,6 +157,23 @@ C     Interactive Input
          CALL GNABLE
          CALL SETSCL
       ENDIF
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build1
+
+c     Menu-based module that prompts the user to input corners.
+     
+      include 'basics.inc'
+      dimension icrvs(4)
+      character key,string*6,leto,char1
+      logical iftmp
+      common /splitt/ enew(nelm),ind(nelm)
+
+
+      if (ifmerge) return
+
 C     Just in case it didn't get set in setscl
       IFGRID=.TRUE.
       IF(NLEVEL.EQ.0)NLEVEL=1
@@ -511,7 +557,7 @@ c
          CALL SETOBJ
          GOTO 1000
       ELSE IF(CHOICE.EQ.'END    ELEMENTS')THEN
-C     WHAT ELSE TO DO WHEN 2-D PROBLEM?
+C      WHAT ELSE TO DO WHEN 2-D PROBLEM?
          IF(NEL.EQ.0) THEN
             CALL PRS('ERROR: Can''t "END ELEMENTS" when no elements$')
             CALL PRS('are input. ^C if you want to give up$')
@@ -653,6 +699,25 @@ C     Go down one level.  Erase old mesh& draw new
          ENDIF
          GOTO 1000
  320     CONTINUE
+ 330     CONTINUE
+
+      return   ! End of menu-driven query
+      end
+c-----------------------------------------------------------------------
+      subroutine build2
+     
+c     Establish connectivity, set global node numbers, and
+c         construct elemental mesh. 
+
+c     Call routines that set boundary conditions.
+     
+      include 'basics.inc'
+      dimension icrvs(4)
+      character key,string*6,leto,char1
+      logical iftmp
+      common /splitt/ enew(nelm),ind(nelm)
+
+
 C     Now, cover menu
          CALL SGVIS(13,0)
          CALL SGVIS(13,1)
@@ -669,41 +734,47 @@ C     Find Sides' Midpoints
 C     Find Sides' Overlaps (used for finding boundary sides)
 C!!   Check here for Irrational B.c.'s: unrequited connectivities;
 C     Warn if physical boundaries internally.  This check is not exhaustive!!??
-C     ZERO OUT OLD ELEMENTAL CONNECTIVITY
-         DO 335 Ifld=1,NFLDS
-         DO 335 IEL=1,NEL
-         DO 335 ISIDE=1,NSIDES
-            IF (CBC( ISIDE, IEL,Ifld).EQ.'E  ') then
-c           IF (CBC( ISIDE, IEL,Ifld).EQ.'E  ' .or.
-c    $          CBC( ISIDE, IEL,Ifld).EQ.'P  ' .or.
-c    $          CBC( ISIDE, IEL,Ifld).EQ.'SP ' .or.
-c    $          CBC( ISIDE, IEL,Ifld).EQ.'J  ') then
-               CBC(   ISIDE, IEL,Ifld)=' '
-               BC (1, ISIDE, IEL,Ifld)= 0
-               BC (2, ISIDE, IEL,Ifld)= 0
-               BC (3, ISIDE, IEL,Ifld)= 0
-            ENDIF
- 335     CONTINUE
+
+      ifld0=1
+      ifld1=nflds
+
+      if (ifconj_merge) then  ! Update THERMAL BCS  ONLY
+         ifld0=2
+         ifld1=2
+      endif
+
+      do 335 ifld=ifld0,ifld1 !  ZERO OUT OLD ELEMENTAL CONNECTIVITY
+      do 335 iel=1,nel
+      do 335 iside=1,nsides
+         IF (CBC( ISIDE, IEL,Ifld).EQ.'E  ') then
+c        IF (CBC( ISIDE, IEL,Ifld).EQ.'E  ' .or.
+c    $       CBC( ISIDE, IEL,Ifld).EQ.'P  ' .or.
+c    $       CBC( ISIDE, IEL,Ifld).EQ.'SP ' .or.
+c    $       CBC( ISIDE, IEL,Ifld).EQ.'J  ') then
+            CBC(   ISIDE, IEL,Ifld)=' '
+            BC (1, ISIDE, IEL,Ifld)= 0
+            BC (2, ISIDE, IEL,Ifld)= 0
+            BC (3, ISIDE, IEL,Ifld)= 0
+         endif
+ 335  continue
 C     
 C     Make internal side comparisons
 C     
+      icount=1
+      do jcount=1,8
+         if (icount*100.gt.nel) goto 345
+         icount = icount*10
+      enddo
+  345 continue
 
-
-         icount=1
-         do jcount=1,8
-            if (icount*100.gt.nel) goto 345
-            icount = icount*10
-         enddo
-  345    continue
-
-         call gencen
-         DO 370 Ifld=1,NFLDS
-            DO 365 IEL=1,NEL
+      call gencen
+      do 370 ifld=ifld0,ifld1
+         do 365 IEL=1,NEL
                if (nel.gt.100.and.mod(iel,icount).eq.0)
      $            write(6,*) 'checking el:',iel
 C     
                   IF (MASKEL(IEL,Ifld).EQ.0) GOTO 365
-                  DO 360 JEL=1,IEL-1
+                  do 360 JEL=1,IEL-1
                      IF (MASKEL(JEL,Ifld).EQ.0) GOTO 360
 C     
                      D2 = SQRT( ( xcen(iel)-xcen(jel) )**2 +
@@ -713,13 +784,13 @@ C
 C     
                      DELTA = .001 * MIN(rcen(iel),rcen(jel))
 C     
-                     DO 350 ISIDE=1,NSIDES
+                     do 350 ISIDE=1,NSIDES
                         IF (CBC(Iside,Iel,Ifld).eq.'E') GOTO 350
                         IF (CBC(Iside,Iel,Ifld).eq.'SP') GOTO 350
                         IF (CBC(Iside,Iel,Ifld).eq.'J') GOTO 350
                         INTERN=0
 C     
-                        DO 340 JSIDE=1,NSIDES
+                        do 340 JSIDE=1,NSIDES
                            IF (CBC(Jside,Jel,Ifld).eq.'E') GOTO 340
                            DELTAX = ABS(SIDES(IEL,ISIDE,1)-
      $                             SIDES(JEL,JSIDE,1))
@@ -778,12 +849,17 @@ C     ??!! MUST PUT P IN OTHER PERIODIC B.C. IF NEK2.  MUST ACCOUNT FOR
 C     CONDUCTION ELEMENTS-- THEY DON'T NEED B.C'S FOR THEIR FLUID
       NSIDES=4
       IF(IF3D)NSIDES=6
-      DO 380 Ifld=1,NFLDS
-      DO 380 IEL=1,NEL
-      DO 380 ISIDE=1,NSIDES
+
+      do 380 Ifld=1,NFLDS
+
+      nel = nelv
+      if (ifld.eq.2) nel = nelt
+
+      do 380 IEL=1,NEL
+      do 380 ISIDE=1,NSIDES
          IF (CBC(ISIDE,IEL,Ifld).EQ.' ') then
             NEEDBC=1
-            write(6,*) 'bc:',iel,iside,enew(iel)
+c           write(6,*) 'bc:',iel,iside,enew(iel)
          ENDIF
  380  CONTINUE
 c
@@ -798,19 +874,18 @@ c
       CALL BOUND
 C     
       IFMVBD=.FALSE.
-      DO 381 Ifld=1,NFLDS
-      DO 381 IEL=1,NEL
-      DO 381 ISIDE=1,NSIDES
-                              CHAR1 = CBC(ISIDE,IEL,Ifld)
-                              IF(CHAR1.EQ.'M'.OR.CHAR1.EQ.'m') 
-     $                             IFMVBD=.TRUE.
+      do 381 Ifld=1,NFLDS
+      do 381 IEL=1,NEL
+      do 381 ISIDE=1,NSIDES
+         CHAR1 = CBC(ISIDE,IEL,Ifld)
+         IF(CHAR1.EQ.'M'.OR.CHAR1.EQ.'m') IFMVBD=.TRUE.
  381  CONTINUE
 C     Force a dump of mesh location, unless the user specifiaclly turn it
 C     off in the output menu
       IF(IFMVBD) IFXYO = .TRUE.
-C     
-      CALL MESGEN
-C     
+     
+      if (.not.ifmerge) call mesgen
+     
       return
       end
 c-----------------------------------------------------------------------
@@ -831,21 +906,21 @@ C     Read Dummy Parameters
       nktold=VNEKOLD
       READ(9,*,ERR=33)
       READ(9,*,ERR=33)NDUM
-      DO 188 IDUM=1,NDUM
+      do 188 IDUM=1,NDUM
          read(9,*,err=33)xxx
          if(idum.eq.23)npsold=xxx
  188  CONTINUE
 C     Read Passive scalar data
       read(9,*,err=33)NSKIP
       IF(NSKIP.GT.0) THEN
-         DO 177 I=1,NSKIP
+         do 177 I=1,NSKIP
             read(9,*,err=33)
  177     CONTINUE
       endif
 C     
 C     READ DUMMY LOGICALS
       READ(9,*,ERR=33)NLOGIC
-      DO 189 I=1,NLOGIC
+      do 189 I=1,NLOGIC
          if(i.eq.1)read(9,*,err=33)iffold
          if(i.eq.2)read(9,*,err=33)ifhold
          if(I.ne.1.and.i.ne.2)READ(9,*,ERR=33)
@@ -875,7 +950,7 @@ c
       NCOND=0
       nel50=nel/50
       if (nel.lt.100) nel50=500
-      DO 98 IEL=1,NEL
+      do 98 IEL=1,NEL
 
 c        READ(9,'(20X,I4,4X,I3,A1,11x,i5)',ERR=33,END=33)
 c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
@@ -883,6 +958,7 @@ c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
          call blank(string,80)
          read(9,80,err=33,end=33) string
    80    format(a80)
+c        write(6,*) iel,' ',string
 
          call parse_e_hdr(numapt(iel),letapt(iel),igroup(iel),string)
 
@@ -891,14 +967,14 @@ c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
             WRITE(S,'(A20,I4,A4,I3,A1,A1)',ERR=33)
      $           ' Reading Element',
-     $           IDUM,' [',NUMAPT(IEL),LETAPT(IEL),']'
+     $           iel,' [',NUMAPT(IEL),LETAPT(IEL),']'
             CALL PRS(S//'$')
          ENDIF
          IF(NDIM.EQ.2)THEN
             READ(9,*,ERR=33,END=33)(X(IEL,IC),IC=1,4)
             READ(9,*,ERR=33,END=33)(Y(IEL,IC),IC=1,4)
             IF (IF3D) THEN
-               DO 197 IC=1,4
+               do 197 IC=1,4
                   I4 = IC+4
                   Z(IEL,IC) = 0.0
                   X(IEL,I4) = X(IEL,IC)
@@ -921,7 +997,7 @@ C     Read curved side data
       READ(9,*,ERR=57,END=57)
       READ(9,*,ERR=57,END=57)NCURVE
       IF(NCURVE.GT.0)THEN
-         DO 19 I=1,NCURVE
+         do 19 I=1,NCURVE
             if (nel.lt.1000) then
                READ(9,'(I3,I3,5G14.6,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
@@ -960,14 +1036,14 @@ c...  skip, pff           return
 c...  skip, pff        ENDIF
 C     Read Boundary Conditions (and connectivity data)
       if (iffmtin) READ(9,*,ERR=44,END=44)
-      DO 90 IFLD=1,NoLDS
+      do 90 IFLD=1,NoLDS
 C     Fluid and/or thermal
 C     !!?? NELF DIFFERENT FROM NEL??
          if (iffmtin) READ(9,*,ERR=44,END=44)
          IF( (IFLD.EQ.1.AND.IFFOLD) .OR. IFLD.GT.1)THEN
 C     FIX UP FOR WHICH OF FIELDS TO BE USED
-            DO 88 IEL=1,NEL
-               DO 88 ISIDE=1,NSIDES
+            do 88 IEL=1,NEL
+               do 88 ISIDE=1,NSIDES
 C     !Fix to a4,i2 when you make cbc character*4
                   IF(VNEKOLD .LE. 2.5) NBCREA = 3
                   IF(VNEKOLD .GE. 2.6) NBCREA = 5
@@ -1007,15 +1083,15 @@ ccc                       ELSE
 ccc                          NLINES=BC(1,ISIDE,IEL,IFLD)
 ccc                          BC(2,ISIDE,IEL,IFLD)=LOCLIN
 ccc                       ENDIF
-ccc                       DO 86 I=1,NLINES
+ccc                       do 86 I=1,NLINES
 ccc                          READ(9,'(A70)',ERR=44,END=44)INBC(LOCLIN)
 ccc                          LOCLIN=LOCLIN+1
 ccc   86                  CONTINUE
                   ENDIF
  88            CONTINUE
-c              DO 89 IEL=1,NEL                       ! NO MORE !
+c              do 89 IEL=1,NEL                       ! NO MORE !
 c                 IF(IFMOVB)ICRV(IEL)=1+4+9+16       ! pff, Aug.15,2009
-c                 DO 89 IEDGE=1,8
+c                 do 89 IEDGE=1,8
 c                    IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
 c89               CONTINUE
                ENDIF
@@ -1028,7 +1104,7 @@ C           Read Initial Conditions
                CALL PRS(
      $              'Please Re-enter IC''s from the options menu$')
                READ(9,*,ERR=50,END=50)
-               DO 21 I=1,7
+               do 21 I=1,7
  21               READ(9,'(A80)',ERR=50,END=50)
                ELSE
 C     Check for 2.6 style read file - separate restart/fortran sections.
@@ -1040,7 +1116,7 @@ C     Check for 2.6 style read file - separate restart/fortran sections.
                      READ (13,*,ERR=50,END=50) NLINR
                      REWIND(13)
                      NSKIP=NLINR
-                     DO 201 I=1,NSKIP
+                     do 201 I=1,NSKIP
                         READ(9,'(A80)')INITP(I)
                         LINE=INITP(I)
                         CALL CAPIT(LINE,70)
@@ -1057,7 +1133,7 @@ C     Read fortran initial condition data.
                   REWIND(13)
                   READ(13,*,ERR=50,END=50)NLINF
                   REWIND(13)
-                  DO 22 I=1,NLINF
+                  do 22 I=1,NLINF
                      READ(9,'(A80)')INITC(I)
  22               CONTINUE
                ENDIF
@@ -1069,16 +1145,16 @@ C     Read drive force data
 C     READ CONDUCTION ELEMENT DATA
                   READ(9,*,ERR=60,END=60)
                   NFLDSC=0
-                  DO 117 IFLD=1,NFLDS
+                  do 117 IFLD=1,NFLDS
                      IF(IFTMSH(IFLD))NFLDSC=NFLDSC+1
  117              CONTINUE
                   READ(9,*,ERR=60,END=60)NSKIP
                   READ(9,*,ERR=60,END=60)NPACKS
                   IF(NPACKS.GT.0)THEN
-                     DO 218 IIG=1,NPACKS
+                     do 218 IIG=1,NPACKS
                         READ(9,*)IGRP,IF,ITYPE
                         MATYPE(IGRP,IF)=ITYPE
-                        DO 218 IPROP=1,3
+                        do 218 IPROP=1,3
                            IF(ITYPE.EQ.1) READ(9,*      ) 
      $                          CPROP(IGRP,IF,IPROP)
                            IF(ITYPE.EQ.2) READ(9,'(A80)') 
@@ -1091,7 +1167,7 @@ C     Read history data
                      READ(9,*,ERR=50,END=50)NHIS
 C     HCODE(11) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
                      IF(NHIS.GT.0)THEN
-                        DO 51 I=1,NHIS
+                        do 51 I=1,NHIS
                            READ(9,'(1X,11A1,1X,4I5)',ERR=50,END=50)
      $                          (HCODE(II,I),II=1,11),
      $                          (LOCHIS(II,I),II=1,4)
@@ -1107,7 +1183,7 @@ C     Read output specs
                      READ(9,*,ERR=50,END=50)IFTGO
                      READ(9,*,ERR=50,END=50)IPSCO
                      IF(IPSCO .GT.0)THEN
-                        DO 1221 I=1,IPSCO
+                        do 1221 I=1,IPSCO
                            READ(9,'(1X,L1,1X,A5)',ERR=50,END=50) 
      $                          IFPSCO(I),PSNAME(I)
  1221                   CONTINUE
@@ -1116,10 +1192,10 @@ C     OBJECT SPECIFICATION DATA
                      READ(9,*,ERR=50,END=50)
                      READ(9,*,ERR=50,END=50)NSOBJS
                      IF(NSOBJS .GT. 0)THEN
-                        DO 62 IOBJ=1,NSOBJS
+                        do 62 IOBJ=1,NSOBJS
                            READ(9,'(4X,I4,35X,A20)',ERR=50,END=50)
      $                          NFACE(IOBJ),SOBJ(IOBJ)
-                           DO 63 IFACE=1,NFACE(IOBJ)
+                           do 63 IFACE=1,NFACE(IOBJ)
                               READ(9,*,ERR=50,END=50)
      $                             ILSURF(1,IOBJ,IFACE),
      $                             ILSURF(2,IOBJ,IFACE)
@@ -1226,7 +1302,7 @@ C     Mark Zero
  17      CALL PRS('Push left button with mouse at 2 different'//
      $        ' x (horizontal)$')
          CALL PRS('locations$')
-         DO 18 I=1,3
+         do 18 I=1,3
             IF(I.EQ.2)CALL PRS('2nd x location$')
             IF(I.EQ.4)CALL PRS('2nd y location$')
             IF(I.EQ.3)THEN
@@ -1283,7 +1359,7 @@ C
             GO TO 3
          ENDIF
 C     
-         DO 20 I=1,ICOUNT
+         do 20 I=1,ICOUNT
 C     Erase markers
             CALL COLOR(0)
             CALL MOVEC(XSC(I)-.02,YSC(I))
@@ -1643,7 +1719,7 @@ c
       write(6,80) a80
 c
       i1 = indx1(a80,'NO',2)
-      write(6,*) i1,' indx1 '
+c     write(6,*) i1,' indx1 '
       if (i1.ne.0) return
 c     if (indx1(a80,'NO',2).ne.0) return
 c
@@ -1706,12 +1782,12 @@ c
 c
 c     Get current vertex map info
 c
-      open(unit=10,file=string,err=999)
-      read(10,*) neln
+      open(unit=20,file=string,err=999)
+      read(20,*) neln
       do ie=1,neln
-         read(10,*,end=998,err=998) idum,(gv(k,ie),k=1,ncrnr)
+         read(20,*,end=998,err=998) idum,(gv(k,ie),k=1,ncrnr)
       enddo
-      close(unit=10)
+      close(unit=20)
 c
 c
 c     Sort data and gridpoints by global vertex number
@@ -2154,9 +2230,19 @@ c
 c     Currently designed only for 2D, NO CURVE nonconf.
 c
       if (ndim.eq.3) return
-c
+
+
+      ifld0=1
+      ifld1=nflds
+
+      if (ifconj_merge) then  ! Update THERMAL BCS  ONLY
+         ifld0=2
+         ifld1=2
+      endif
+
+
       nsides = 2*ndim
-      do kf=1,nflds
+      do kf=ifld0,ifld1
       do ie=1,nel
        if (maskel(ie,kf).gt.0) then
         do is=1,nsides
@@ -2424,7 +2510,7 @@ c
       real xyz(2,4)
 c
       do iel=1,nl
-         DO 210 I=1,4
+         do 210 I=1,4
             XYZ(1,I)= x(iel,i)
             XYZ(2,I)= y(iel,i)
   210    CONTINUE
@@ -2447,7 +2533,7 @@ C            cyclic permutation (counter clock-wise):  reverse
              x(iel,4) = xyz(1,2)
              y(iel,4) = xyz(2,2)
              IF (IF3D) THEN
-                DO 400 I=1,4
+                do 400 I=1,4
                    x(iel,i+4)=x(iel,i)
                    y(iel,i+4)=y(iel,i)
   400           CONTINUE

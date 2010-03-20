@@ -29,27 +29,32 @@ C     NULL out local filename character strings
       DO 5 I=1,30
          LFILE  (I:I) = NULL
          NEWFILE(I:I) = NULL
-5     CONTINUE
+   5  CONTINUE
 C
       LFILE = FILE
-      IF(STATUS.EQ.'NEW' .OR. STATUS.EQ.'new') THEN
-           NEWFILE=FILE
-           do 10 i=30,1,-1
-              if(ichar(newfile(I:I)).ne.0.and.newfile(I:I).ne.' ') then
-                 newfile(I+1:I+1) = '~'
-                 GO TO 20
-              endif
- 10           continue
- 20           continue
-c           print*,'renaming ',file,' ',newfile
-c          MVERR=RENAME(FILE,NEWFILE)
-        ENDIF
-        OPEN(UNIT=IUNIT,FILE=LFILE,STATUS=STATUS,ERR=1)
-        IERR=0
-        RETURN
-1       IERR=1
-        RETURN
-        END
+      if (status.eq.'new' .or. status.eq.'NEW') then
+         newfile=file
+         do 10 i=30,1,-1
+            if (ichar(newfile(I:I)).ne.0.and.newfile(I:I).ne.' ') then
+               newfile(I+1:I+1) = '~'
+               goto 20
+            endif
+ 10      continue
+ 20      continue
+c        print*,'renaming ',file,' ',newfile
+c        mverr=rename(file,newfile)
+         open(unit=iunit,file=lfile,status='unknown',err=1)
+      else
+         open(unit=iunit,file=lfile,status=status,err=1)
+      endif
+
+        ierr=0
+        return
+
+1       ierr=1
+        return
+
+        end
 
         SUBROUTINE FINDFL(SESION,OLDVER)
         RETURN

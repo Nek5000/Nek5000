@@ -34,7 +34,11 @@ C
       ITEM(4)='SET  MATL PROPS,Q'
       ITEM(5)='SHOW MATL PROPS,Q'
       ITEM(6)='ZOOM'
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'VARIABLE PROPERTY')
+      if (ifconj_merge) then
+         choice=item(1)
+      else
+         call menu(xmouse,ymouse,button,'VARIABLE PROPERTY')
+      endif
 C
       OLDCHOICE=CHOICE
       IF(CHOICE(1:11).EQ.'SELECT MATL')THEN

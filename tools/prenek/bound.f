@@ -17,7 +17,7 @@ C
 c-----------------------------------------------------------------------
       subroutine BOUND
 C     Sets boundary conditions
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER heatbc,velbc,KEY,STRING*5,ELE(4),BCLAB(2),REPLY,QUES(2)
      $,REPLY2,IPAPT,BCCHOICE*26,MODE*15,CMENU*15
       INTEGER FCORNS (4,6),ICALLD
@@ -59,7 +59,13 @@ C     the .rea file to make overlapping sides have branch-cut b.c.'s??
       NEEDBC=0
       MAXLEV=0
 C     Make sure B.C.'s for nonexistent elements are blanked out.
-      DO 28 IF=IF1,NFLDS
+      ifld0=if1
+      ifld1=nflds
+      if (ifconj_merge) then
+         ifld0=2
+         ifld1=2
+      endif
+      do 28 if=ifld0,ifld1
         IF(NELF.NE.NEL)THEN
            DO 27 IEL=NELF+1,NEL
               DO 27 ISIDE=1,NSIDES
@@ -68,8 +74,9 @@ C     $           PRINT*,'iel,iside,if',iel,iside,if
                  IF(.NOT.IFTMSH(IF))CBC(ISIDE,IEL,IF)=' '
 27         CONTINUE
         ENDIF
-28    CONTINUE
-      DO 29 IF=IF1,NFLDS
+28    continue
+
+      do 29 if=ifld0,ifld1
         IF(     IFTMSH(IF))NNEL=NEL
         IF(.NOT.IFTMSH(IF))NNEL=NELF
         DO 29 IEL=1,NNEL
@@ -79,15 +86,14 @@ C     $           PRINT*,'iel,iside,if',iel,iside,if
 29    CONTINUE
 C     Display B.C.'s already here (for 2-d case)
 C
-      IF(NLEVEL.EQ.1) THEN
-        DO 30 IF=IF1,NFLDS
-         DO 30 IEL=1,NEL
-            DO 20 ISIDE=1,NSIDES
-               IF(CBC(ISIDE,IEL,IF).NE.' ')
+      if(nlevel.eq.1) then
+        do 30 if=ifld0,ifld1
+        do 30 iel=1,nel
+        do 30 iside=1,nsides
+           IF(CBC(ISIDE,IEL,IF).NE.' ')
      $         CALL LETBC(ISIDE,IEL,IF,CBC(ISIDE,IEL,IF))
-20          CONTINUE
-30       CONTINUE
-      ENDIF
+30      continue
+      endif
 C
 c
 c
@@ -112,7 +118,11 @@ C         Ya gotta have b.c.'s
          ITEM(1)='ACCEPT B.C.''s'
          ITEM(2)='REVIEW/MODIFY'
          nchoic = 2
-         CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')
+         if (ifconj_merge) then
+            choice = item(1)
+         else
+            CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')
+         endif
          IF(CHOICE.EQ.'ACCEPT B.C.''s')THEN
 C           Where do you jump if he/she wants to accept??
             CALL CHKBCS
@@ -1133,9 +1143,9 @@ c
       END
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine OVERLAP(IEL,ISIDE,IELO,ISIDEO)
+      subroutine overlap(iel,iside,ielo,isideo)
 C
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
 
 C     Find closest element, side we want to duplicate, If there is no overlap,
 C     returns original element and side
@@ -1178,7 +1188,7 @@ C
 c-----------------------------------------------------------------------
       subroutine INFLOW(IEL,ISIDE,IF,CBCI)
 C! REAL KLUDGE USED NOT TO CORRUPT LINE  !!??DO THE POINTERS GET READ IN RIGHT?
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER*3 CBCI
 C
 C     Don't read inline stuff anymore... pff 8/30/93.
@@ -1379,7 +1389,7 @@ C        EXPORT B.C. FOR INTERNAL Boundary
 C
 c-----------------------------------------------------------------------
       subroutine LETBC(ISIDE,IEL,IF,BCLAB)
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER BCLAB,BCLAB2*2
       BCLAB2(1:1)=BCLAB
       BCLAB2(2:2)='$'
@@ -1410,7 +1420,7 @@ C        Normal Write
       END
 c-----------------------------------------------------------------------
       subroutine CHKBCS
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
       CHARACTER*3 CBCTMP
       CHARACTER*1 YESNO
       LOGICAL IFFAIL
@@ -1794,6 +1804,8 @@ c
 c     Dump element centroids, w/ element numbers for positional sorting
 c                                   pff 4/8/99
 c
+      return
+
       call gencen
 c
       open(unit=53,file='elcent.dat')
