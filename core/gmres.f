@@ -41,6 +41,7 @@ c
       endif
 c
       etime1 = dnekclock()
+      etime_p = 0.
       divex = 0.
       iter  = 0
       m = lgmres
@@ -90,11 +91,14 @@ c           call copy(r,res,ntot2)
                                                   !       -1
             call col3(w,mu,v(1,j),ntot2)          ! w  = U   v
                                                   !           j
+            
+            etime2 = dnekclock()-etime1
             if(param(43).eq.1) then
                call uzprec(z(1,j),w,h1,h2,intype,wp)
             else                                  !       -1
                call hsmg_solve(z(1,j),w)          ! z  = M   w
-            endif                                 !  j        
+            endif     
+            etime_p = etime_p + dnekclock()-etime2
      
             call cdabdtp(w,z(1,j),                ! w = A z
      $                   h1,h2,h2inv,intype)      !        j
@@ -223,10 +227,10 @@ c
       endif
 c
       etime1 = dnekclock()-etime1
-      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime1
+      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
+     &                            etime1
 c     call flush_hack
- 9999 format(4X,I7,'    U-Pres gmres:   ',I6,1p4E13.4)
-19999 format(4X,I7,'    U-Pres 1.e-5: ',I6,1p4E13.4)
+ 9999 format(4X,I7,'    U-Pres gmres:   ',I6,1p5E13.4)
 c
 c
       return
@@ -336,6 +340,7 @@ c     GMRES iteration.
       n = nx1*ny1*nz1*nelv
 
       etime1 = dnekclock()
+      etime_p = 0.
       divex = 0.
       iter  = 0
       m     = lgmres
@@ -390,21 +395,22 @@ c           call copy(r,res,n)
                                                   !       -1
             call col3(w,mu,v(1,j),n)              ! w  = U   v
                                                   !           j
-                                                  !       -1
-c           call hsmg_solve(z(1,j),w)             ! z  = M   w
-                                                  !  j        
-
 
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
+
+            etime2 = dnekclock()
             kfldfdm = ndim+1
             call fdm_h1
      $           (z(1,j),w,d,pmask,vmult,nelv,ktype(1,1,kfldfdm),wk)
-            call crs_solve_h1 (wk,w)  ! Currently, crs grd only for P
+            call crs_solve_h1 (wk,w)               
+c           call hsmg_solve(z(1,j),w)             ! z  = M   w
+                                                  !  j        
             call add2         (z(1,j),wk,n)
             if (ifvcor) then
                rmean = smean*glsc2(z(1,j),vmult,n)
                call cadd(z(1,j),rmean,n)
             endif
+            etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
      
@@ -513,10 +519,10 @@ c
       endif
 c
       etime1 = dnekclock()-etime1
-      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime1
+      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
+     &                            etime1
 c     call flush_hack
- 9999 format(4X,I7,'    PRES gmres:   ',I6,1p4E13.4)
-19999 format(4X,I7,'    PRES 1.e-5: ',I6,1p4E13.4)
+ 9999 format(4X,I7,'    PRES gmres:   ',I6,1p5E13.4)
 
       return
       end
