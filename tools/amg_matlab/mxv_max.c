@@ -52,7 +52,7 @@ static void mxv_max(double *y, const sp_mat_c *A, const double *x, double tol)
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-  double tol = 0.01;
+  double tol = 128*DBL_EPSILON;
   vec_c x;
   sp_mat_c mat;
   if(nrhs<2) { mexWarnMsgTxt("Two inputs required."); return; }
