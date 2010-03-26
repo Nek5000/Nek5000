@@ -228,49 +228,48 @@ C
       ENDIF
       return
       end
-C------------------------------------------------------------------------
+c------------------------------------------------------------------------
       subroutine ortho (respr)
-C
+
 C     Orthogonalize the residual in the pressure solver with respect 
 C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
-C
+
       include 'SIZE'
       include 'GEOM'
       include 'INPUT'
       include 'PARALLEL'
       include 'SOLN'
-      REAL RESPR (LX2,LY2,LZ2,LELV)
-      integer*8 ntotg,nxyz2
+      real respr (lx2,ly2,lz2,lelv)
+      integer*8 ntotg
 
-      nxyz2 = NX2*NY2*NZ2
-C
-      IF (IFVCOR) THEN
-         NTOT = NXYZ2*NELV
-         NTOTG= NXYZ2*NELGV
-         IF (IFSPLIT) THEN
-            RNDOF = GLSUM (VMULT,NTOT)
-            RLAM  = GLSUM (RESPR,NTOT)/RNDOF
-         ELSE
-            RLAM  = GLSUM (RESPR,NTOT)/NTOTG
-         ENDIF
-         CALL CADD (RESPR,-RLAM,NTOT)
-      ENDIF
-C
+      if (ifvcor) then
+
+         nxyz2 = nx2*ny2*nz2
+         ntot  = nxyz2*nelv
+         ntotg = nxyz2*nelgv
+
+         if (ifsplit) then
+            rndof = glsum (vmult,ntot)
+            rlam  = glsum (respr,ntot)/rndof
+         else
+            rlam  = glsum (respr,ntot)/ntotg
+         endif
+         call cadd (respr,-rlam,ntot)
+      endif
+
       return
-      END
-C
+      end
+c------------------------------------------------------------------------
       subroutine zaver1 (pm1)
-C------------------------------------------------------------------------
-C
+
 C     Assure that the pressure has zero average if all Dirichlet vel b.c.
-C
-C------------------------------------------------------------------------
+
       include 'SIZE'
       include 'GEOM'
       include 'MASS'
       REAL PM1 (LX1,LY1,LZ1,LELV)
       COMMON /CTMP0/ BP (LX1,LY1,LZ1,LELV)
-C
+
       NTOT1 = NX1*NY1*NZ1*NELV
       IF (IFVCOR) THEN
          CALL COL3 (BP,BM1,PM1,NTOT1)
@@ -1005,7 +1004,7 @@ C
       save    kstep
       data    kstep/-1/
 c
-      integer*8 ntotg,nxyz2
+      integer*8 ntotg
 c
 c
       if (solver_type.eq.'pdm') then
@@ -1043,7 +1042,7 @@ c           CALL COL2        (RPCG,H2M2,NTOT2)
       ELSE
          CALL COPY        (RPCG,RCG,NTOT2)
       ENDIF
-c
+
       nxyz2 = nx2*ny2*nz2
       ntotg = nxyz2*nelgv
       IF (IFVCOR) THEN
@@ -1083,14 +1082,13 @@ C----------------------------------------------------------------
       REAL    MASK
       COMMON /CPRINT/ IFPRINT, IFHZPC
       LOGICAL         IFPRINT, IFHZPC
-      integer*8 ntotg,nxyz
+      integer*8 ntotg
  
-      nxyz = NX1*NY1*NZ1
-C
-      NTOTG  = NXYZ*NELGV
-      NTOT1  = NXYZ*NELV
-      NTOT2  = NX2*NY2*NZ2*NELV
-      NFACES = 2*NDIM
+      nxyz   = nx1*ny1*nz1
+      ntotg  = nxyz*nelgv
+      ntot1  = nxyz*nelv
+      ntot2  = nx2*ny2*nz2*nelv
+      nfaces = 2*ndim
 C
 C     Set the tolerance for the preconditioner
 C
@@ -1105,11 +1103,11 @@ C
          CALL MAP21E (R1(1,1,1,IEL),R2(1,1,1,IEL),IEL)
  100  CONTINUE
 C
-      IF (IFVCOR) THEN
-         OTR1 = GLSUM (R1,NTOT1)
-         CALL RONE  (X1,NTOT1)
-         C2   = -OTR1/NTOTG
-         CALL ADD2S2 (R1,X1,C2,NTOT1)
+      if (ifvcor) then
+         otr1 = glsum (r1,ntot1)
+         call rone  (x1,ntot1)
+         c2   = -otr1/ntotg
+         call add2s2 (r1,x1,c2,ntot1)
 C
          OTR1 = GLSUM (R1,NTOT1)
          TOLMIN = 10.*ABS(OTR1)
@@ -1638,18 +1636,19 @@ C----------------------------------------------------------------
 C
       CHARACTER CB*1
       DIMENSION TEMP(2)
-c
-      integer*8 ntotg,nxyz
-C
-      nxyz = NX1*NY1*NZ1
-C
+
+      integer*8 ntotg
+
       IF (BETAG.EQ.0.0) return
-C
+
       TBAR   = 0.
       NNOUT  = 0
       NFACES = 2*NDIM
-      NTOT1  = NXYZ*NELV
-      NTOTG  = NXYZ*NELGV
+
+      nxyz   = nx1*ny1*nz1
+      ntot1  = nxyz*nelv
+      ntotg  = nxyz*nelgv
+
       DO 100 IEL=1,NELV
       DO 100 IFACE=1,NFACES
          CB = CBC(IFACE,IEL,IFIELD)
@@ -1670,7 +1669,7 @@ C
       IF (NNOUT.GT.0) THEN
          TBAR = TBAR/(NNOUT)
       ELSE
-         TBAR = GLSUM(T,NTOT1)/NTOTG
+         tbar = glsum(t,ntot1)/ntotg
       ENDIF
 C
       return
@@ -3387,10 +3386,9 @@ c
       logical ifsavep
 C
       real*8 etime1,dnekclock
-      integer*8 ntotg,nxyz2
-c
-      nxyz2 = NX2*NY2*NZ2
-C
+      integer*8 ntotg
+
+
       etime1 = dnekclock()
       DIVEX = 0.
       ITER  = 0
@@ -3403,10 +3401,11 @@ c      IF (ICONV.EQ.1) THEN
 c         IF (NID.EQ.0) WRITE(6,9999) ITER,DIVEX,TOLPS
 c         return
 c      ENDIF
-C
-      NTOT2  = NXYZ2*NELV
-      NTOTG  = NXYZ2*NELGV
-c
+
+      nxyz2 = nx2*ny2*nz2
+      ntot2 = nxyz2*nelv
+      ntotg = nxyz2*nelgv
+
       CALL UZPREC  (RPCG,RCG,H1,H2,INTYPE,WP)
       RRP1 = GLSC2 (RPCG,RCG,NTOT2)
       CALL COPY    (PCG,RPCG,NTOT2)
@@ -3475,15 +3474,15 @@ c
             endif
          endif
 c
-         IF (IFVCOR) THEN
-            OTR = GLSUM (RCG,NTOT2)
-            RAVER  = -OTR/NTOTG
-            CALL CADD (RCG,RAVER,NTOT2)
-         ENDIF
+         if (ifvcor) then
+            otr = glsum (rcg,ntot2)
+            raver  = -otr/ntotg
+            call cadd (rcg,raver,ntot2)
+         endif
          RRP2 = RRP1
          CALL UZPREC  (RPCG,RCG,H1,H2,INTYPE,WP)
 c        RRP1 = GLSC2 (RPCG,RCG,NTOT2)
-C
+
  1000 CONTINUE
       if (nid.eq.0) WRITE (6,3001) ITER,RNORM,tolpss
       if (istep.gt.20) CALL EMERXIT

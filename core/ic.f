@@ -26,7 +26,7 @@ c
       common /ctmp1/ work(lx1,ly1,lz1,lelv)
      $ ,             ta1 (lx2,ly1,lz1)
      $ ,             ta2 (lx2,ly2,lz1)
-      integer*8 ntotg,nxyz1
+      integer*8 ntotg
 
       real psmax(LDIMT)
 
@@ -203,10 +203,10 @@ C
 C
 C     Ensure that initial field is continuous!
 C
-      NXYZ1=NX1*NY1*NZ1
-      NTOTT=NELT*NXYZ1
-      NTOTV=NELV*NXYZ1
-      NTOTG=NELGV*NXYZ1
+      nxyz1=nx1*ny1*nz1
+      ntott=nelt*nxyz1
+      ntotv=nelv*nxyz1
+      ntotg=nelgv*nxyz1
 c
       if(nid.eq.0) write(6,*) 'perform dssum test ...'
       ifield = 2
