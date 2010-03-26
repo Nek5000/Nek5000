@@ -403,7 +403,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine err_chk(ierr,string)
       character*1 string(132)
-      character*11 s11
+      character*1 ostring(132)
+      character*10 s10
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
@@ -412,11 +413,14 @@ c-----------------------------------------------------------------------
       if(ierr.eq.0) return 
 
       len = indx1(string,'$',1)
-      write(s11,11) idata
-   11 format(1x,i10)
-      call chcopy(string(len),s11,11)
+      call blank(ostring,132)
+      write(s10,11) ierr
+   11 format(1x,' ierr=',i3)
 
-      if (nid.eq.0) write(6,1) (string(k),k=1,len+10)
+      call chcopy(ostring,string,len-1)
+      call chcopy(ostring(len),s10,10)
+
+      if (nid.eq.0) write(6,1) (ostring(k),k=1,len+10)
     1 format('ERROR: ',132a1)
 
       call exitt

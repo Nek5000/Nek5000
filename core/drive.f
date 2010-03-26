@@ -1,7 +1,7 @@
       program NEKTON
 c
 c NEK5000: Spectral Element Computational Fluid Dynamics Solver
-c COPYRIGHT (c) 2006-2009 UCHICAGO ARGONNE, LLC
+c COPYRIGHT (c) 2008-2010 UCHICAGO ARGONNE, LLC
 c
 c The UChicago Argonne, LLC as Operator of Argonne National 
 c Laboratory holds copyright in the Software. The copyright holder 

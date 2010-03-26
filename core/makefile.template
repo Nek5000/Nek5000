@@ -1,3 +1,4 @@
+CASE=
 S=
 J:=$S/jl
 J2:=$J/../jl2
@@ -15,6 +16,8 @@ USR=
 USR_LFLAGS=
 IFUNDERSCORE=
 
+lFLAGS = $(USR_LFLAGS)
+
 JO2 = jl2_
 JO  = jl_
 
@@ -24,13 +27,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-ifeq ($(IFMOAB),true)
-include $(MOAB_DIR)/lib/iMesh-Defs.inc
-endif
-################################################################################
-#
-# core nekton files ...
-#
+# CORE##########################################################################
 CORE = drive.o drive1.o drive2.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o \
@@ -40,79 +37,80 @@ hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 subuser.o \
-isosurf.o byte.o chelpers.o byte_mpi.o postpro.o \
+byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o cvode_aux.o \
 setprop.o qthermal.o makeq.o \
 papi.o ssygv.o dsygv.o
-#
+################################################################################
 # MXM 
 MXM = mxm_std.o 
-#
-# JL-core
+
+# C Routines ###################################################################
 JLCORE = $(JO2)gs.o $(JO2)sort.o $(JO2)sarray_transfer.o $(JO2)sarray_sort.o \
 $(JO2)gs_local.o $(JO2)crystal.o $(JO2)comm.o $(JO2)tensor.o $(JO2)fail.o \
 $(JO2)fcrystal.o \
 $(JO)tuple_list.o $(JO)transfer.o $(JO)sort.o $(JO)fcrystal.o $(JO)errmem.o \
 $(JO)crystal.o
-# interpolation
+
+# JL INTERPOLATION
 JLINTP = $(JO)findpts.o $(JO)pfindpt.o $(JO)tensor.o $(JO)findpt.o $(JO)poly.o
 #JLINTP = $(JO2)findpts.o $(JO2)findpts_local.o \
 $(JO2)obbox.o $(JO2)poly.o $(JO2)lob_bnd.o \
 $(JO2)findpts_el_3.o $(JO2)findpts_el_2.o
-# coarse grid solver
+
+# JL CRS GRID SOLVER
 ifeq ($(IFAMG),true)
 CGS := $(JO)gs.o $(JO)amg.o
 else
 CGS = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 endif
-#
-COMM_MPI = comm_mpi.o
-JL := -DMPI -DUSE_GLOBAL_LONG_LONG
-JL2 := -DMPI -DGLOBAL_LONG_LONG
+
+JL2 := -DPREFIX=jl_
+ifeq ($(IFUNDERSCORE),true)
+JL  := -DUNDERSCORE
+JL2 := ${JL2} -DUNDERSCORE
+endif
+JL  := ${JL}  -DUSE_GLOBAL_LONG_LONG
+JL2 := ${JL2} -DGLOBAL_LONG_LONG
 ifeq ($(IFAMG_DUMP),true)
-   JL := ${JL} -DAMG_DUMP
-   JL2 := ${JL2} -DAMG_DUMP
+   JL  := ${JL}  -DAMG_DUMP
 endif
-ifeq ($(IFMPI),false)
+
+COMM_MPI := comm_mpi.o
+ifeq ($(IFMPI),true)
+  JL  := ${JL}  -DMPI
+  JL2 := ${JL2} -DMPI
+else
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
-  JL := -DUSE_GLOBAL_LONG_LONG
-  JL2 := -DGLOBAL_LONG_LONG
 endif
-#
+
+# MOAB #########################################################################
 ifeq ($(IFMOAB),true)
+  include $(MOAB_DIR)/lib/iMesh-Defs.inc
   MOABO := moab.o imeshutil.o
+  lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
 endif
-#
-NOBJS = $(CORE) $(MXM) $(JLCORE) $(JLINTP) $(CGS) $(USR) $(MOABO) $(COMM_MPI)
+################################################################################
+
+NOBJS_F = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI)
+NOBJS_C = $(JLCORE) $(JLINTP) $(CGS)
+NOBJS   = $(NOBJS_F) $(NOBJS_C)
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
 L3 = $(G) $(OPT_FLAGS_STD)
 L4 = $(L3)
 
-ifeq ($(IFUNDERSCORE),true)
-JL := ${JL} -DUNDERSCORE
-JL2 := ${JL2} -DUNDERSCORE
-endif
-JL2   := ${JL2} -DPREFIX=jl_
-
-FL0   = $(L0) $(P) -I$S
-FL2i4 = $(L0) -I$S
-FL2   = $(L2) $(P) -I$S
-FL3   = $(L3) $(P) -I$S
-FL4   = $(L4) $(P) -I$S
+FL0   = $(L0) $(P) -I$S -I$(CASE)
+FL2i4 = $(L0)      -I$S -I$(CASE)
+FL2   = $(L2) $(P) -I$S -I$(CASE)
+FL3   = $(L3) $(P) -I$S -I$(CASE)
+FL4   = $(L4) $(P) -I$S -I$(CASE)
 
 cFL0   = $(L0) 
 cFL2   = $(L2) 
 cFL3   = $(L3) 
 cFL4   = $(L4) 
-
-lFLAGS = $(USR_LFLAGS)
-
-ifeq ($(IFMOAB),true)
-  lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
-endif
-
 
 ################################################################################
 T = nek5000
@@ -122,22 +120,25 @@ all : nek5000
 nek5000:	 $(NOBJS) 
 	$(F77) -o nek5000 $G $(NOBJS) $(lFLAGS)
 	@if test -f "nek5000"; then \
-	size nek5000; \
-	echo -en "\033[1;32;40m" "nek5000 compilation successful!"; \
-	echo -e "\033[0m"; \
+	echo "#############################################################"; \
+	echo "#                  Compilation successful!                  #"; \
+	echo "#############################################################"; \
+        size nek5000; \
 	else \
-	echo -e "\033[1;31;38m" "nek5000 compilation failed!"; \
+	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
 	echo -e "\033[0m"; \
 	fi
 ifeq ($(IFMPI),false) 
-	rm -rf $S/mpif.h
+	@rm -rf $S/mpif.h
 endif
 
 clean:
 	rm -rf ./obj nek5000
 ifeq ($(IFMPI),false) 
-	rm -rf $S/mpif.h
+	$rm -rf $S/mpif.h
 endif
+
+$(NOBJS_F) : SIZE
 
 ################################################################################
 # fortran source files
@@ -145,11 +146,9 @@ endif
 drive.o		:$S/drive.f;			$(F77) -c $(FL2)  $S/drive.f
 drive1.o	:$S/drive1.f;			$(F77) -c $(FL2)  $S/drive1.f
 drive2.o	:$S/drive2.f;			$(F77) -c $(FL2)  $S/drive2.f
-################################################################################
 dsygv.o     	:$S/dsygv.f;     		$(F77) -c $(FL2i4) $S/dsygv.f
 ssygv.o     	:$S/ssygv.f;     		$(F77) -c $(FL2i4) $S/ssygv.f
 blas.o	   	:$S/blas.f;			$(F77) -c $(FL2i4) $S/blas.f
-################################################################################
 prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
 byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $S/byte_mpi.f
 postpro.o	:$S/postpro.f;			$(F77) -c $(FL2) $S/postpro.f
@@ -168,10 +167,9 @@ perturb.o	:$S/perturb.f;	      		$(F77) -c $(FL2) $S/perturb.f
 genbox.o	:$S/genbox.f;			$(F77) -c $(FL2) $S/genbox.f
 hsmg.o		:$S/hsmg.f;			$(F77) -c $(FL2) $S/hsmg.f
 gmres.o		:$S/gmres.f;			$(F77) -c $(FL2) $S/gmres.f
-################################################################################
 papi.o		:$S/papi.f;			$(F77) -c $(FL2) $S/papi.f
-mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $S/mpi_dummy.f
 bdry.o		:$S/bdry.f;			$(F77) -c $(FL2) $S/bdry.f
+mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $S/mpi_dummy.f
 comm_mpi.o	:$S/comm_mpi.f;			$(F77) -c $(FL2) $S/comm_mpi.f
 ic.o		:$S/ic.f;			$(F77) -c $(FL2) $S/ic.f
 conduct.o	:$S/conduct.f;			$(F77) -c $(FL2) $S/conduct.f
@@ -186,7 +184,6 @@ navier8.o	:$S/navier8.f;			$(F77) -c $(FL2) $S/navier8.f
 speclib.o	:$S/speclib.f;			$(F77) -c $(FL2) $S/speclib.f
 calcz.o		:$S/calcz.f;			$(F77) -c $(FL2) $S/calcz.f
 fast3d.o	:$S/fast3d.f;			$(F77) -c $(FL2) $S/fast3d.f
-################################################################################
 dssum.o		:$S/dssum.f;			$(F77) -c $(FL2) $S/dssum.f
 eigsolv.o	:$S/eigsolv.f;			$(F77) -c $(FL2) $S/eigsolv.f
 gauss.o		:$S/gauss.f;			$(F77) -c $(FL2) $S/gauss.f
@@ -196,14 +193,12 @@ gfdm_par.o	:$S/gfdm_par.f;			$(F77) -c $(FL2) $S/gfdm_par.f
 gfdm_solve.o	:$S/gfdm_solve.f;		$(F77) -c $(FL2) $S/gfdm_solve.f
 gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL2) $S/gfdm_op.f
 coef.o		:$S/coef.f;			$(F77) -c $(FL2) $S/coef.f
-################################################################################
 plan4.o		:$S/plan4.f;			$(F77) -c $(FL2) $S/plan4.f
 qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $S/qthermal.f
 setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $S/setprop.f
 cvode_driver.o	:$S/cvode_driver.f;		$(F77) -c $(FL2) $S/cvode_driver.f
 cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $S/cvode_aux.f
 makeq.o	      	:$S/makeq.f;			$(F77) -c $(FL2) $S/makeq.f
-################################################################################
 mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
 mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $S/mxm_std.f
 k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
@@ -212,31 +207,18 @@ bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
 bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@
 bg_mxm44_uneven.o :$S/bg_mxm44_uneven.s;	$(CC) -c $< -o $@
 math.o		  :$S/math.f;			$(F77) -c $(FL4) $S/math.f
-################################################################################
+hmholtz.o	  :$S/hmholtz.f;		$(F77) -c $(FL2) $S/hmholtz.f
+navier1.o	  :$S/navier1.f;		$(F77) -c $(FL2) $S/navier1.f
+fasts.o		  :$S/fasts.f;		        $(F77) -c $(FL4) $S/fasts.f
+subuser.o	  :$(CASE)/subuser.f;		$(F77) -c $(FL2) $< -o $@
 
-################################################################################
-#moab stuff
-################################################################################
+# MOAB #########################################################################
 moab.o          :$S/moab.f;       $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 imeshutil.o     :$S/imeshutil.f;  $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 
-################################################################################
-#dual mode modules
-################################################################################
-hmholtz.o	:$S/hmholtz.f;		$(F77) -c $(FL2) $S/hmholtz.f
-navier1.o	:$S/navier1.f;		$(F77) -c $(FL2) $S/navier1.f
-fasts.o		:$S/fasts.f;		$(F77) -c $(FL4) $S/fasts.f
-subuser.o	:$S/subuser.f;		$(F77) -c $(FL2) $S/subuser.f
-################################################################################
-################################################################################
-# c source files
-################################################################################
-################################################################################
-isosurf.o       :$S/isosurf.c;          $(CC)  -c $(cFL2) $(JL) $S/isosurf.c
-byte.o          :$S/byte.c;             $(CC)  -c $(cFL2) $(JL) $S/byte.c
-chelpers.o      :$S/chelpers.c;         $(CC)  -c $(cFL2) $(JL) $S/chelpers.c
-################################################################################
-#             -L2 required here for BGP
+# C Files ######################################################################
+byte.o                 :$S/byte.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
+chelpers.o             :$S/chelpers.c;        $(CC) -c $(cFL2) $(JL) $< -o $@
 $(JO)errmem.o          :$J/errmem.c;          $(CC) -c $(L2) $(JL) $< -o $@
 $(JO)sort.o            :$J/sort.c;            $(CC) -c $(L2) $(JL) $< -o $@
 $(JO)crystal.o         :$J/crystal.c;         $(CC) -c $(L2) $(JL) $< -o $@
@@ -252,7 +234,6 @@ $(JO)findpt.o          :$J/findpt.c;          $(CC) -c $(L2) $(JL) $< -o $@
 $(JO)pfindpt.o         :$J/pfindpt.c;         $(CC) -c $(L2) $(JL) $< -o $@
 $(JO)findpts.o         :$J/findpts.c;         $(CC) -c $(L2) $(JL) $< -o $@
 $(JO)amg.o             :$J/amg.c;             $(CC) -c $(L2) $(JL) $< -o $@
-################################################################################
 $(JO2)fail.o            :$(J2)/fail.c;            $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)tensor.o          :$(J2)/tensor.c;          $(CC) -c $(L2) $(JL2) $< -o $@
 $(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
