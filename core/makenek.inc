@@ -15,6 +15,7 @@ if [ $1 = "clean" ]; then
 fi
 if [ ! -f ${1}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
+   cp ${1}.usr subuser.f
    exit 1
 fi
 
@@ -61,11 +62,12 @@ if [ ! -f test_cc.o ]; then
 fi
 \rm test_cc.* 2>/dev/null
 
+# initial clean-up
 rm -f nek5000 2>/dev/null
-rm -f $SOURCE_ROOT/SIZE 2>/dev/null
+rm -f $SOURCE_ROOT/SIZE      2>/dev/null
 rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
-rm -f ./obj/subuser.o 2>/dev/null
-\mv ./obj/*.o . 2>/dev/null
+rm -f ./obj/subuser.o        2>/dev/null
+\mv ./obj/*.o .              2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
 IFUNDERSCORE=false
@@ -203,6 +205,7 @@ do
    fi
 done
 
+
 # set preprocessor symbol to print AMG files
 if [ "$IFAMG_DUMP" == "true" ]; then
     if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
@@ -279,6 +282,8 @@ if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o" 
 fi
 
+CASE_PATH=`pwd`
+
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
@@ -303,7 +308,7 @@ echo $G | grep '\-g' 1>/dev/null
 if [ $? -eq 0 ]; then
   sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
   mv .makefile.tmp .makefile
-  echo "DEBUG mode activated - press return to continue"
+  echo "Activate DEBUG mode"
 fi
 
 if [ "$USR" != "" ]; then
@@ -313,26 +318,27 @@ fi
 
 if [ -f .makefile ]; then
   sed -e "1i\\
-### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" .makefile > makefile
+### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
+-e "s:^CASE[ ]*=.*:CASE\:=${CASE_PATH}:" .makefile > makefile 
 else
   echo "ERROR: Nek Makefile could not be created!"
   exit 1 
 fi
 \rm .makefile 2>/dev/null
 
-mv $SOURCE_ROOT/HEADER $SOURCE_ROOT/.HEADER 
-which svnversion >/dev/null 2>&1 
-status=`echo $?`
-if [ "$status" == "0" ]; then
-  rev_number=$( svnversion ${SOURCE_ROOT} )
-  rev_number=$( printf %-11s ${rev_number} )
-  sed "s/SVN r.........../SVN r$rev_number/" \
-    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
-else
-  sed "s/SVN r.........../SVN r\?\?\?\?/" \
-    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
-fi
-rm -rf $SOURCE_ROOT/.HEADER >/dev/null 2>&1
+#mv $SOURCE_ROOT/HEADER $SOURCE_ROOT/.HEADER 
+#which svnversion >/dev/null 2>&1 
+#status=`echo $?`
+#if [ "$status" == "0" ]; then
+#  rev_number=$( svnversion ${SOURCE_ROOT} )
+#  rev_number=$( printf %-11s ${rev_number} )
+#  sed "s/SVN r.........../SVN r$rev_number/" \
+#    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
+#else
+#  sed "s/SVN r.........../SVN r\?\?\?\?/" \
+#    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
+#fi
+#rm -rf $SOURCE_ROOT/.HEADER >/dev/null 2>&1
 
 # add plugins
 for i in $PLUGIN_LIST
@@ -378,11 +384,10 @@ if [ -f SIZEu ]; then
      echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZEu
      echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZEu
   fi
-  cp -v SIZEu $SOURCE_ROOT/SIZE
+  ln -sf SIZEu SIZE
 else
   echo "FATAL ERROR: Cannot find SIZEu"
   exit 1
 fi
 
-echo "c Original file name: `pwd`/$1.usr" >$SOURCE_ROOT/subuser.f
-cat $1.usr >>$SOURCE_ROOT/subuser.f
+ln -sf ${1}.usr subuser.f
