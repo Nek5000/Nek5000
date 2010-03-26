@@ -92,7 +92,7 @@ c           call copy(r,res,ntot2)
             call col3(w,mu,v(1,j),ntot2)          ! w  = U   v
                                                   !           j
             
-            etime2 = dnekclock()-etime1
+            etime2 = dnekclock()
             if(param(43).eq.1) then
                call uzprec(z(1,j),w,h1,h2,intype,wp)
             else                                  !       -1

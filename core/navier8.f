@@ -103,6 +103,8 @@ c
       common /scrvhx/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
+      integer*8 ngv
+
       t0 = dnekclock()
 
 c     nxc is order of coarse grid space + 1, nxc=2, linear, 3=quad,etc.
@@ -943,55 +945,6 @@ C
 C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       integer A(1),IND(1)
-C
-      if (n.le.1) return
-      DO 10 J=1,N
-         IND(j)=j
-   10 continue
-C
-      if (n.eq.1) return
-      L=n/2+1
-      ir=n
-  100 continue
-         IF (l.gt.1) THEN
-            l=l-1
-            indx=ind(l)
-            q=a(indx)
-         ELSE
-            indx=ind(ir)
-            q=a(indx)
-            ind(ir)=ind(1)
-            ir=ir-1
-            if (ir.eq.1) then
-               ind(1)=indx
-               return
-            endif
-         ENDIF
-         i=l
-         j=l+l
-  200    continue
-         IF (J.le.IR) THEN
-            IF (J.lt.IR) THEN
-               IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
-            ENDIF
-            IF (q.lt.A(IND(j))) THEN
-               IND(I)=IND(J)
-               I=J
-               J=J+J
-            ELSE
-               J=IR+1
-            ENDIF
-         GOTO 200
-         ENDIF
-         IND(I)=INDX
-      GOTO 100
-      END
-c-----------------------------------------------------------------------
-      subroutine i8rank(A,IND,N)
-C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
-C
-      integer*8 A(1),IND(1)
 C
       if (n.le.1) return
       DO 10 J=1,N
@@ -2033,14 +1986,14 @@ c
       common  /scrmg/ edge,enum,fnum
 
       integer etuple(4,2*12*lelt),ftuple(5,6,2*lelt)
-      integer*8 ind(2*12*lelt)
+      integer ind(2*12*lelt)
       common  /scrns/ ind,etuple
       equivalence  (etuple,ftuple)
 
-      integer facet(4),aa(3),key(3),e
+      integer gvf(4),facet(4),aa(3),key(3),e
       logical ifij
       
-      integer*8 gvf(4),igv,ig0
+      integer*8 igv,ig0
       integer*8 ngvv,ngve,ngvs,ngvi,ngvm
       integer*8 n_on_edge,n_on_face,n_in_interior
       integer*8 i8glmax
@@ -2249,7 +2202,7 @@ c
          gvf(3) = glo_num(i0+nx*(j1-1)+nxyz*(e-1))
          gvf(4) = glo_num(i1+nx*(j1-1)+nxyz*(e-1))
 c
-         call i8rank(gvf,ind,4)
+         call irank(gvf,ind,4)
 c
 c        ind(1) tells which element of gvf() is smallest.
 c
@@ -2390,10 +2343,10 @@ c
       integer ind(4*lelt*2)
       common  /scrns/ ind,etuple
 
-      integer aa(3),key(3),e,eg
+      integer gvf(4),aa(3),key(3),e,eg
       logical ifij
 
-      integer*8 gvf(4),igv,ig0
+      integer*8 igv,ig0
       integer*8 ngvv,ngve,ngvs,ngvi,ngvm
       integer*8 n_on_edge,n_on_face,n_in_interior
       integer*8 i8glmax
