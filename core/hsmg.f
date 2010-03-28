@@ -1424,7 +1424,7 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       data    rhoavg,copt1,copt2 /3*1./  ! Default copt = 1 for additive
 
       integer l,nt
-      integer*8 ntotg
+      integer*8 ntotg,nxyz2
 
       logical if_hybrid
 
