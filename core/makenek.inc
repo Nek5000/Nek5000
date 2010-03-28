@@ -2,22 +2,37 @@
 # to create a makefile using a makefile template 
 # ------------------------------------------------
 
-
 # first do some checks ...
-if [ $# -ne 1 ] && [ $# -ne 2 ]; then
-  echo "usage: makenek <.usr filename | clean> [source path]"
+if [ $# -eq 0 ]; then
+  echo ""
+  echo "makenek - automatic build tool for nek5000"
+  echo "usage: makenek [.usr filename | clean]"
+  echo ""
   exit 1
 fi
 
+CASENAME=$1
+CASEDIR=`pwd`
+
 if [ $1 = "clean" ]; then
-  make -f $SOURCE_ROOT/makefile.template clean
+  make clean
   exit 0
 fi
-if [ ! -f ${1}'.usr' ]; then
+
+if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
-   cp ${1}.usr subuser.f
    exit 1
 fi
+
+if [ ! -f SIZE ]; then
+   if [ -f SIZEu ]; then
+      echo "FATAL ERROR: SIZEu is depcreated, please rename to SIZE."
+      exit 1
+   fi
+   echo "FATAL ERROR: Cannot find SIZE!"
+   exit 1
+fi
+
 
 if [ ! -f $SOURCE_ROOT/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $SOURCE_ROOT/makefile.template!"
@@ -190,17 +205,17 @@ do
     else
         USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecserial -lsundials_nvecserial"
     fi
-    cat SIZEu | grep -i 'cv_maxl' >/dev/null
+    cat SIZE | grep -i 'cv_maxl' >/dev/null
     if [ $? -ne 0 ]; then
-      cp SIZEu .SIZEu
-      echo >>.SIZEu
-      echo 'c LAV-plugin settings automatically added by makenek' >>.SIZEu
-      echo '      integer cv_maxl' >> .SIZEu
-      echo '      real cv_delt,cv_sigs' >> .SIZEu
-      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZEu
-      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZEu
-      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>.SIZEu
-      mv .SIZEu SIZEu
+      cp SIZE .SIZE
+      echo >>.SIZE
+      echo 'c LAV-plugin settings automatically added by makenek' >>.SIZE
+      echo '      integer cv_maxl' >> .SIZE
+      echo '      real cv_delt,cv_sigs' >> .SIZE
+      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZE
+      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZE
+      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>.SIZE
+      mv .SIZE SIZE
     fi
    fi
 done
@@ -282,7 +297,6 @@ if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o" 
 fi
 
-CASE_PATH=`pwd`
 
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
@@ -319,7 +333,8 @@ fi
 if [ -f .makefile ]; then
   sed -e "1i\\
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
--e "s:^CASE[ ]*=.*:CASE\:=${CASE_PATH}:" .makefile > makefile 
+-e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
+-e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
 else
   echo "ERROR: Nek Makefile could not be created!"
   exit 1 
@@ -364,30 +379,27 @@ do
   echo "found plug-in" $i
 done
 
-if [ -f SIZEu ]; then 
-  cat SIZEu | grep -i 'lxo' >/dev/null
+if [ -f SIZE ]; then 
+  cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
-     echo >>SIZEu
-     echo 'c automatically added by makenek' >>SIZEu
-     echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZEu
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
-  cat SIZEu | grep -i 'lpart' >/dev/null
+  cat SIZE | grep -i 'lpart' >/dev/null
   if [ $? -ne 0 ]; then
-     echo >>SIZEu
-     echo 'c automatically added by makenek' >>SIZEu
-     echo '      parameter(lpart = 1  ) ! max number of particles'       >>SIZEu
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter(lpart = 1  ) ! max number of particles' >>SIZE
   fi
-  cat SIZEu | grep -i 'ax1' >/dev/null
+  cat SIZE | grep -i 'ax1' >/dev/null
   if [ $? -ne 0 ]; then
-     echo >>SIZEu
-     echo 'c automatically added by makenek' >>SIZEu
-     echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZEu
-     echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZEu
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZE
+     echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZE
   fi
-  ln -sf SIZEu SIZE
 else
-  echo "FATAL ERROR: Cannot find SIZEu"
+  echo "FATAL ERROR: Cannot find SIZE"
   exit 1
 fi
-
-ln -sf ${1}.usr subuser.f
