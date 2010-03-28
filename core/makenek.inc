@@ -26,7 +26,7 @@ fi
 
 if [ ! -f SIZE ]; then
    if [ -f SIZEu ]; then
-      echo "FATAL ERROR: SIZEu is depcreated, please rename to SIZE."
+      echo "FATAL ERROR: SIZEu is obsolete, please rename to SIZE."
       exit 1
    fi
    echo "FATAL ERROR: Cannot find SIZE!"
