@@ -24,11 +24,17 @@ if [ ! -f ${CASENAME}'.usr' ]; then
    exit 1
 fi
 
-if [ ! -f SIZE ]; then
-   if [ -f SIZEu ]; then
-      echo "FATAL ERROR: SIZEu is obsolete, please rename to SIZE."
+if [ -f SIZEu ]; then
+   if [ -f SIZE ]; then
+      echo "FATAL ERROR: found SIZEu and SIZE!"
       exit 1
    fi
+   NEK_WARN="WARNING: SIZEu will be deprecated in a future release.\n         Please rename to SIZE!\n"
+   export NEK_WARN 
+   mv -v SIZEu SIZE
+fi
+
+if [ ! -f SIZE ]; then
    echo "FATAL ERROR: Cannot find SIZE!"
    exit 1
 fi
