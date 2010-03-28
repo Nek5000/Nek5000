@@ -240,7 +240,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       include 'PARALLEL'
       include 'SOLN'
       real respr (lx2,ly2,lz2,lelv)
-      integer*8 ntotg
+      integer*8 ntotg,nxyz2
 
       if (ifvcor) then
 
@@ -1004,7 +1004,7 @@ C
       save    kstep
       data    kstep/-1/
 c
-      integer*8 ntotg
+      integer*8 ntotg,nxyz2
 c
 c
       if (solver_type.eq.'pdm') then
@@ -1082,7 +1082,7 @@ C----------------------------------------------------------------
       REAL    MASK
       COMMON /CPRINT/ IFPRINT, IFHZPC
       LOGICAL         IFPRINT, IFHZPC
-      integer*8 ntotg
+      integer*8 ntotg,nxyz
  
       nxyz   = nx1*ny1*nz1
       ntotg  = nxyz*nelgv
@@ -1637,7 +1637,7 @@ C
       CHARACTER CB*1
       DIMENSION TEMP(2)
 
-      integer*8 ntotg
+      integer*8 ntotg,nxyz
 
       IF (BETAG.EQ.0.0) return
 
@@ -3386,7 +3386,7 @@ c
       logical ifsavep
 C
       real*8 etime1,dnekclock
-      integer*8 ntotg
+      integer*8 ntotg,nxyz2
 
 
       etime1 = dnekclock()
