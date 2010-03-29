@@ -29,7 +29,7 @@ if [ -f SIZEu ]; then
       echo "FATAL ERROR: found SIZEu and SIZE!"
       exit 1
    fi
-   NEK_WARN="WARNING: SIZEu will be deprecated in a future release.\n         Please rename to SIZE!\n"
+   NEK_WARN="WARNING: SIZEu will be deprecated in a future release. Please rename to SIZE!"
    export NEK_WARN 
    mv -v SIZEu SIZE
 fi

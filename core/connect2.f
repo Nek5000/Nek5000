@@ -1162,8 +1162,8 @@ C
      $                                  OBJECT(IOBJ,MEMBER,2)
     5      CONTINUE
    10   CONTINUE
-        write(6,*) nobj,' objects found'
-     $            ,(nmember(k),k=1,nobj)
+        if(nobj.gt.0) write(6,*) nobj,' objects found'
+     $                           ,(nmember(k),k=1,nobj)
       ENDIF
  
       call bcast(NOBJ   ,ISIZE)
