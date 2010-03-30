@@ -11,6 +11,7 @@ typedef uint Index;
 typedef struct { Value v; Index i; } Data;
 #include "sort_imp.c"
 
+#undef sort
 #undef Value
 #undef Data
 
