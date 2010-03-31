@@ -13,10 +13,17 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
+APATH_SRC=`pwd $SOURCE_ROOT`
+SOURCE_ROOT=$APATH_SRC
 
 if [ $1 = "clean" ]; then
   make clean
   exit 0
+fi
+
+if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
+   echo "FATAL ERROR: Working directory has to be different from the source!"
+   exit 1
 fi
 
 if [ ! -f ${CASENAME}'.usr' ]; then
