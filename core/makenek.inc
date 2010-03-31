@@ -13,7 +13,7 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
-APATH_SRC=`pwd $SOURCE_ROOT`
+APATH_SRC=`cd $SOURCE_ROOT; pwd`
 SOURCE_ROOT=$APATH_SRC
 
 if [ $1 = "clean" ]; then
