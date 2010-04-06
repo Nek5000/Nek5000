@@ -35,7 +35,13 @@ c-----------------------------------------------------------------------
 
       else
 
-         if (.not.ifpert) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+         if (.not.ifpert) then
+            if (ifcons) then
+               call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
+            else
+               call set_convect_new  (vxd,vyd,vzd,vx,vy,vz)
+            endif
+         endif
 
       endif
 
@@ -233,12 +239,17 @@ c
       n = nx1*ny1*nz1*nelv
 c
       if (ifconv) then
-         if (if3d) then
-            call convop_fst_3d (du,u,c,nx1,nxd,nelv)
+
+         if (ifcons) then
+           if (if3d     ) call convop_cons_3d (du,u,c,nx1,nxd,nelv)
+           if (.not.if3d) call convop_cons_2d (du,u,c,nx1,nxd,nelv)
          else
-            call convop_fst_2d (du,u,c,nx1,nxd,nelv)
+           if (if3d     ) call convop_fst_3d  (du,u,c,nx1,nxd,nelv)
+           if (.not.if3d) call convop_fst_2d  (du,u,c,nx1,nxd,nelv)
          endif
-         call gs_op(gsl,du,1,1,0)
+
+         call gs_op(gsl,du,1,1,0)  !  +
+
       else
          call rzero   (du,n)
          return
@@ -348,9 +359,9 @@ c
      $             , wkd(lwkd)
       real jgl,jgt
 
-      m0 = md-1
       call intp_rstd(ju,u,mx,md,if3d,0) ! 0 = forward
 
+      m0 = md-1
       call get_dgl_ptr (ip,md,md)
       if (if3d) then
          call local_grad3(ur,us,ut,ju,m0,1,dg(ip),dgt(ip))
@@ -590,6 +601,7 @@ c     write(6,*) nelc,ifnew,' set conv_char',istep,nc,nconv_max
 c-----------------------------------------------------------------------
       subroutine set_ct_cvx(ct,c,m,u,v,w,tau,nc,mc,nelc,ifnew)
       include 'SIZE'
+      include 'INPUT'  ! ifcons
 
       real ct(0:1),c(m,1)
       real u(1),v(1),w(1)
@@ -616,7 +628,11 @@ c     Save time and map the current velocity to rst coordinates.
       iy = ix + nxd*nyd*nzd*nelc
       iz = iy + nxd*nyd*nzd*nelc
 
-      call set_convect_new(c(ix,1),c(iy,1),c(iz,1),u,v,w)
+      if (ifcons) then
+         call set_convect_cons(c(ix,1),c(iy,1),c(iz,1),u,v,w)
+      else
+         call set_convect_new (c(ix,1),c(iy,1),c(iz,1),u,v,w)
+      endif
 
       ct(1) = tau
 
@@ -820,6 +836,34 @@ c     conservative form
         ic = ic + nxyzc
         iu = iu + nxyzu
         ib = ib + nxyz1
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_convect_cons(cx,cy,cz,ux,uy,uz)
+
+c     Put vx,vy,vz on fine mesh (for conservation form)
+
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
+
+      real cx(ltd,1),cy(ltd,1),cz(ltd,1)
+      real ux(lxy,1),uy(lxy,1),uz(lxy,1)
+
+      integer e
+
+      call set_dealias_rx
+
+      do e=1,nelv    ! Map coarse velocity to fine mesh (C-->F)
+
+         call intp_rstd(cx(1,e),ux(1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         call intp_rstd(cy(1,e),uy(1,e),nx1,nxd,if3d,0) ! 0 --> forward
+         if (if3d) call intp_rstd(cz(1,e),uz(1,e),nx1,nxd,if3d,0) ! 0 --> forward
 
       enddo
 
@@ -1033,6 +1077,122 @@ c     write(6,*) istep,dti,pmax,' pmax'
       enddo
 
       tadvc=tadvc+(dnekclock()-etime1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convop_cons_3d(du,u,c,mx,md,nel) ! Conservation form
+
+c     Apply convecting field c to scalar field u, conservation form d/dxj cj phi
+
+c     Assumes that current convecting field is on dealias mesh, in c()
+
+      include 'SIZE'
+      include 'DEALIAS'
+      include 'GEOM'
+
+      real du(mx*mx*mx,nel)
+      real  u(mx*mx*mx,nel)
+      real  c(md*md*md,nel,3)
+      parameter (ldd=lxd*lyd*lzd)
+      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real ju
+
+      logical if3d,ifd
+      integer e
+
+      if3d = .true.
+      ifd  = .false.
+      if (md.ne.mx) ifd=.true.
+      ifd=.true.
+
+      nrstd = md**3
+      call lim_chk(nrstd,ldd,'urus ','ldd  ','convp_cons')
+
+      do e=1,nel
+
+         call intp_rstd (ju,u(1,e),mx,md,if3d,0) ! 0 = forward; on Gauss points!
+         call rzero     (ud,nrstd)
+
+         do j=1,ndim
+            do i=1,nrstd
+               tu(i)=c(i,e,j)*ju(i)   ! C_j*T
+            enddo
+            call grad_rst(ur,us,ut,tu,md,if3d)  ! Already on fine (Gauss) mesh
+
+            j0 = j+0
+            j3 = j+3
+            j6 = j+6
+            do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
+               ud(i)=ud(i)
+     $              +rx(i,j0,e)*ur(i)+rx(i,j3,e)*us(i)+rx(i,j6,e)*ut(i)
+            enddo
+         enddo
+
+         call intp_rstd(du(1,e),ud,mx,md,if3d,1) ! 1 --> transpose
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convop_cons_2d(du,u,c,mx,md,nel) ! Conservation form
+
+c     Apply convecting field c to scalar field u, conservation form d/dxj cj phi
+
+c     Assumes that current convecting field is on dealias mesh, in c()
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'TSTEP'
+
+
+      real du(mx*mx,nel)
+      real  u(mx*mx,nel)
+      real  c(md*md,nel,2)
+      parameter (ldd=lxd*lyd*lzd)
+      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real ju
+
+      logical if3d,ifd
+      integer e
+
+      if3d = .false.
+      ifd  = .false.
+      if (md.ne.mx) ifd=.true.
+
+      nrstd = md**2
+      call lim_chk(nrstd,ldd,'urus ','ldd  ','convp_cons')
+
+      if (nid.eq.0.and.istep.lt.3) write(6,*) 'convp_cons',istep
+
+      do e=1,nel
+
+         call intp_rstd (ju,u(1,e),mx,md,if3d,0) ! 0 = forward; on Gauss points!
+         call rzero     (ud,nrstd)
+
+c        call outmat(c(1,e,1),md,md,'fine u',e)
+c        call outmat(c(1,e,2),md,md,'fine v',e)
+c        call outmat(ju      ,md,md,'fine T',e)
+
+         do j=1,ndim
+            do i=1,nrstd
+               tu(i)=c(i,e,j)*ju(i)   ! C_j*T
+            enddo
+            call grad_rst(ur,us,ut,tu,md,if3d)  ! Already on fine (Gauss) mesh
+
+            j0 = j+0
+            j2 = j+2
+            do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
+               ud(i)=ud(i)+rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i)
+            enddo
+         enddo
+
+         call intp_rstd(du(1,e),ud,mx,md,if3d,1) ! 1 --> transpose
+
+      enddo
+
+c     call exitti('convop_cons_2d$',istep)
 
       return
       end

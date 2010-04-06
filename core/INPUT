@@ -28,7 +28,7 @@ C
      $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
      $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
      $               ,IFMODEL,IFKEPS
-     $               ,IFINTQ
+     $               ,IFINTQ,IFCONS
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
@@ -40,7 +40,7 @@ C
      $               ,IFMVBD,IFNATC,IFCHAR,IFNONL
      $               ,IFVARP,IFPSCO,IFVPS
      $               ,IFMODEL,IFKEPS
-     $               ,IFINTQ
+     $               ,IFINTQ,IFCONS
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
