@@ -1,10 +1,10 @@
 c-----------------------------------------------------------------------
-      SUBROUTINE ARCSRF(XML,YML,ZML,NXL,NYL,NZL,IE,ISID)
-      INCLUDE 'SIZE'
-      INCLUDE 'GEOM'
-      INCLUDE 'INPUT'
-      INCLUDE 'TOPOL'
-      INCLUDE 'WZ'
+      subroutine arcsrf(xml,yml,zml,nxl,nyl,nzl,ie,isid)
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TOPOL'
+      include 'WZ'
 C
 C     ....note..... CTMP1 is used in this format in several subsequent routines
 C
@@ -97,14 +97,14 @@ C     Points all set, add perturbation to current mesh.
          CALL ADDTNSR(YML(1,1,1,IE),YCRVED,H(1,2,IYT),H(1,3,IZT)
      $               ,NXL,NYL,NZL)
       ENDIF
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE DEFSRF(XML,YML,ZML,NXL,NYL,NZL,IE,IFACE1,CCV)
-      INCLUDE 'SIZE'
-      INCLUDE 'TOPOL'
-      INCLUDE 'GEOM'
-      INCLUDE 'WZ'
+      subroutine defsrf(xml,yml,zml,nxl,nyl,nzl,ie,iface1,ccv)
+      include 'SIZE'
+      include 'TOPOL'
+      include 'GEOM'
+      include 'WZ'
       COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
 C
@@ -161,10 +161,10 @@ C
   100    CONTINUE
   200 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE INTRSC(X3,X2,X1,DELT,IE,IFACE)
+      subroutine intrsc(x3,x2,x1,delt,ie,iface)
 C
       DIMENSION X1(3),X2(3),X3(3)
       COMMON /SRFCEI/ IEL,IFCE
@@ -200,10 +200,10 @@ C
       X3(2) = X0(2) + DX(2)*ETA3
       X3(3) = X0(3) + DX(3)*ETA3
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE ZBRAC(X1,X2,SUCCES)
+      subroutine zbrac(x1,x2,succes)
 C
 C     Given a function FNC and an initial guess (X1,X2), the routine
 C     expands the range geometrically until a root is bracketed by the
@@ -222,7 +222,7 @@ C
       F1 = FNC(X1)
       F2 = FNC(X2)
       DO 100 J=1,NTRY
-         IF (F1*F2.LT.0.0) RETURN
+         IF (F1*F2.LT.0.0) return
          IF (ABS(F1).LT.ABS(F2)) THEN
             X1 = X1 + FACTOR*(X1-X2)
             F1 = FNC(X1)
@@ -232,8 +232,8 @@ C
          ENDIF
   100 CONTINUE
       SUCCES = .FALSE.
-      RETURN
-      END
+      return
+      end
       FUNCTION ZBRENT(X1,X2,TOL)
 C
 C     Using the Van Wijngaarden-Dekker-Brent Method, find the root
@@ -268,7 +268,7 @@ C
          XM = 0.5*(C-B)
          IF (ABS(XM).LE.TOL1.OR.FB.EQ.0.0) THEN
             ZBRENT = B
-            RETURN
+            return
          ENDIF
          IF (ABS(E).GT.TOL1.AND. ABS(FA).GT.ABS(FB)) THEN
 C
@@ -319,11 +319,11 @@ C
       WRITE(6 ,*) 'Exceeding maximum number of iterations.'
 C      WRITE(21,*) 'Exceeding maximum number of iterations.'
       ZBRENT=B
-      RETURN
-      END
+      return
+      end
       FUNCTION FNC(ETA)
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       COMMON /SRFCEI/ IEL,IFCE
       COMMON /SRFCER/ X0(3),DX(3)
       COMMON /SRFCEL/ SUCCES
@@ -345,17 +345,17 @@ C
 C
       ENDIF
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE SETDEF
+      subroutine setdef
 C-------------------------------------------------------------------
 C
 C     Set up deformed element logical switches
 C
 C-------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XCC(8),YCC(8),ZCC(8)
       DIMENSION INDX(8)
       REAL VEC(3,12)
@@ -379,13 +379,13 @@ C
          IFDFRM(IE)=.TRUE.
    10 CONTINUE
 C
-      IF (IFMVBD) RETURN
+      IF (IFMVBD) return
 c
 c     Force IFDFRM=.true. for all elements (for timing purposes only)
 c
       IF (param(59).ne.0.and.nid.eq.0) 
      $   write(6,*) 'NOTE: All elements deformed , param(59) ^=0'
-      IF (param(59).ne.0) RETURN
+      IF (param(59).ne.0) return
 C
 C     Check against cases which won't allow for savings in HMHOLTZ
 C
@@ -504,8 +504,8 @@ C
          IF (  IFVCHK(VEC,2,4,5)  ) IFDFRM(IE)=.TRUE.
        ENDIF
   500 CONTINUE
-      RETURN
-      END
+      return
+      end
       LOGICAL FUNCTION IFVCHK(VEC,I1,I2,I3)
 C
 C     Take the dot product of the three components of VEC to see if it's zero.
@@ -527,10 +527,10 @@ C
       IF (DOT.GT.EPSM) IFTMP=.TRUE.
 C
       IFVCHK=IFTMP
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE GENCOOR (XM3,YM3,ZM3)
+      subroutine gencoor (xm3,ym3,zm3)
 C-----------------------------------------------------------------------
 C
 C     Generate xyz coordinates  for all elements.
@@ -538,9 +538,9 @@ C        Velocity formulation : mesh 3 is used
 C        Stress   formulation : mesh 1 is used
 C
 C-----------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'GEOM'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
       DIMENSION XM3(LX3,LY3,LZ3,1),YM3(LX3,LY3,LZ3,1),ZM3(LX3,LY3,LZ3,1)
 C
 C     Select appropriate mesh
@@ -551,27 +551,28 @@ C
          CALL GENXYZ (XM1,YM1,ZM1,NX1,NY1,NZ1)
       ENDIF
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE GENXYZ (XML,YML,ZML,NXL,NYL,NZL)
+      subroutine genxyz (xml,yml,zml,nxl,nyl,nzl)
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'WZ'
-      INCLUDE 'GEOM'
-      INCLUDE 'TOPOL'
-      INCLUDE 'INPUT'
-      INCLUDE 'PARALLEL'
-C
+      include 'SIZE'
+      include 'WZ'
+      include 'GEOM'
+      include 'TOPOL'
+      include 'INPUT'
+      include 'PARALLEL'
+
+      real xml(nxl,nyl,nzl,1),yml(nxl,nyl,nzl,1),zml(nxl,nyl,nzl,1)
+
 C     Note : CTMP1 is used in this format in several subsequent routines
-C
-      COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
-     $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-C
-      DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
-      DIMENSION XCB(2,2,2),YCB(2,2,2),ZCB(2,2,2)
-C
-      CHARACTER*1 CCV
+      common /ctmp1/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , zgml(lx1,3),work(3,lx1,lz1)
+
+      parameter (ldw=2*lx1*ly1*lz1)
+      common /ctmp0/ w(ldw)
+
+      character*1 ccv
 
 #ifdef MOAB
       if (ifmoab) then
@@ -580,119 +581,42 @@ C
       endif
 #endif
 
-C
-C     Initialize geometry arrays
-C
-      NTOTL = NELT*NXL*NYL*NZL
-      CALL RZERO(XML,NTOTL)
-      CALL RZERO(YML,NTOTL)
-      CALL RZERO(ZML,NTOTL)
-C
-C   Preprocessor Corner notation:      Symmetric Corner notation:
-C
-C           4+-----+3    ^ s                    3+-----+4    ^ s
-C           /     /|     |                      /     /|     |
-C          /     / |     |                     /     / |     |
-C        8+-----+7 +2    +----> r            7+-----+8 +2    +----> r
-C         |     | /     /                     |     | /     /
-C         |     |/     /                      |     |/     /
-C        5+-----+6    t                      5+-----+6    t
-C
-      INDX(1)=1
-      INDX(2)=2
-      INDX(3)=4
-      INDX(4)=3
-      INDX(5)=5
-      INDX(6)=6
-      INDX(7)=8
-      INDX(8)=7
-      NDIM2 = 2**NDIM
-C
-C     Loop over all elements:
-C
-      DO 6000 IE=1,NELT
-C
-      CALL SETZGML (ZGML,IE,NXL,NYL,NZL,IFAXIS)
-C
-      DO 10 IX=1,NXL
-         H(IX,1,1)=(1.0-ZGML(IX,1))*0.5
-         H(IX,1,2)=(1.0+ZGML(IX,1))*0.5
-   10 CONTINUE
-      DO 20 IY=1,NYL
-         H(IY,2,1)=(1.0-ZGML(IY,2))*0.5
-         H(IY,2,2)=(1.0+ZGML(IY,2))*0.5
-   20 CONTINUE
-      IF (IF3D) THEN
-         DO 30 IZ=1,NZL
-            H(IZ,3,1)=(1.0-ZGML(IZ,3))*0.5
-            H(IZ,3,2)=(1.0+ZGML(IZ,3))*0.5
-   30    CONTINUE
-      ELSE
-         CALL RONE(H(1,3,1),NZL)
-         CALL RONE(H(1,3,2),NZL)
-      ENDIF
-C
-      DO 50 IX=1,NDIM2
-         I=INDX(IX)
-         XCB(IX,1,1)=XC(I,IE)
-         YCB(IX,1,1)=YC(I,IE)
-         ZCB(IX,1,1)=ZC(I,IE)
-   50 CONTINUE
-C
-C     Map R-S-T space into physical X-Y-Z space.
-C
-      IZTMAX = NDIM-1
-      DO 200 IZT=1,IZTMAX
-      DO 200 IYT=1,2
-      DO 200 IXT=1,2
-C
-      DO 200 IZ=1,NZL
-      DO 200 IY=1,NYL
-         HH = H(IY,2,IYT)*H(IZ,3,IZT)
-         DO 100 IX=1,NXL
-            HHH = H(IX,1,IXT)*HH
-            XML(IX,IY,IZ,IE)=XML(IX,IY,IZ,IE)+HHH*XCB(IXT,IYT,IZT)
-            YML(IX,IY,IZ,IE)=YML(IX,IY,IZ,IE)+HHH*YCB(IXT,IYT,IZT)
-            ZML(IX,IY,IZ,IE)=ZML(IX,IY,IZ,IE)+HHH*ZCB(IXT,IYT,IZT)
-  100    CONTINUE
-  200 CONTINUE
-C
-C     Deform surfaces - general 3D deformations
-C                     - extruded geometry deformations
-C
-      NFACES = 2*NDIM
-      DO 1000 IFACE=1,NFACES
-        CCV = CCURVE(IFACE,IE)
-        IF (CCV.EQ.'s') 
-     $     CALL SPHSRF(XML,YML,ZML,IFACE,IE,NXL,NYL,NZL,WORK) 
-        IF (CCV.EQ.'e') 
-     $     CALL gensrf(XML,YML,ZML,IFACE,IE,NXL,NYL,NZL,ZGML) 
- 1000 CONTINUE
-C
-      DO 2000 ISID=1,8
-        CCV = CCURVE(ISID,IE)
-        IF (CCV.EQ.'C') 
-     $  CALL ARCSRF(XML,YML,ZML,NXL,NYL,NZL,IE,ISID)
-C        IF (CCV.EQ.'W')
- 2000 CONTINUE
-C
-C
- 6000 CONTINUE
+c     Initialize geometry arrays with bi- triquadratic deformations
+      call linquad(xml,yml,zml,nxl,nyl,nzl)
+
+      do ie=1,nelt
+
+c        Deform surfaces - general 3D deformations
+c                        - extruded geometry deformations
+         nfaces = 2*ndim
+         do iface=1,nfaces
+           ccv = ccurve(iface,ie)
+           if (ccv.eq.'s') 
+     $        call sphsrf(xml,yml,zml,iface,ie,nxl,nyl,nzl,work) 
+           if (ccv.eq.'e') 
+     $        call gensrf(xml,yml,zml,iface,ie,nxl,nyl,nzl,zgml) 
+         enddo
+
+         do isid=1,8
+           ccv = ccurve(isid,ie)
+           if (ccv.eq.'C') call arcsrf(xml,yml,zml,nxl,nyl,nzl,ie,isid)
+         enddo
+
+      enddo
 
 c     call user_srf(xml,yml,zml,nxl,nyl,nzl)
-
 c     call opcopy(xm1,ym1,zm1,xml,yml,zml)
 c     call outpost(xml,yml,zml,xml,yml,'   ')
 c     call exitt
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE SETZGML (ZGML,IEL,NXL,NYL,NZL,IFAXIS)
+      subroutine setzgml (zgml,iel,nxl,nyl,nzl,ifaxis)
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'WZ'
-      INCLUDE 'GEOM'
+      include 'SIZE'
+      include 'WZ'
+      include 'GEOM'
 C
       DIMENSION ZGML(LX1,3)
       LOGICAL IFAXIS
@@ -737,20 +661,20 @@ C
 C
       ENDIF
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE SPHSRF(XML,YML,ZML,IFCE,IE,NX,NY,NZ,XYSRF) 
+      subroutine sphsrf(xml,yml,zml,ifce,ie,nx,ny,nz,xysrf) 
 C
 C     5 Aug 1988 19:29:52 
 C
 C     Program to generate spherical shell elements for NEKTON
 C     input.  Paul F. Fischer
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'WZ'
-      INCLUDE 'TOPOL'
+      include 'SIZE'
+      include 'INPUT'
+      include 'WZ'
+      include 'TOPOL'
       DIMENSION XML(NX,NY,NZ,1),YML(NX,NY,NZ,1),ZML(NX,NY,NZ,1)
       DIMENSION XYSRF(3,NX,NZ)
 C
@@ -904,14 +828,14 @@ C
   600    CONTINUE
   700 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE EDG3D(XYSRF,X1,X2,I1,I2,J1,J2,NX,NY)
+      subroutine edg3d(xysrf,x1,x2,i1,i2,j1,j2,nx,ny)
 C
 C     Generate XYZ vector along an edge of a surface.
 C
-      INCLUDE 'SIZE'
+      include 'SIZE'
       COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
 C
@@ -946,8 +870,8 @@ C
          DO 200 IV = 1,3
             XYSRF(IV,I,J) = CTP*U1(IV) + STP*B(IV)
   200 CONTINUE
-      RETURN
-      END
+      return
+      end
       REAL FUNCTION DOT(V1,V2,N)
 C
 C     Compute Cartesian vector dot product.
@@ -959,10 +883,10 @@ C
          SUM = SUM + V1(I)*V2(I)
   100 CONTINUE
       DOT = SUM
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE CROSS(V1,V2,V3)
+      subroutine cross(v1,v2,v3)
 C
 C     Compute Cartesian vector dot product.
 C
@@ -972,10 +896,10 @@ C
       V1(2) = V2(3)*V3(1) - V2(1)*V3(3)
       V1(3) = V2(1)*V3(2) - V2(2)*V3(1)
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE NORM3D(V1)
+      subroutine norm3d(v1)
 C
 C     Compute Cartesian vector dot product.
 C
@@ -989,12 +913,12 @@ C
          V1(3) = V1(3) / VLNGTH
       endif
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE CRN3D(XCV,XC,YC,ZC,CURVE,IFACE)
-      INCLUDE 'SIZE'
-      INCLUDE 'TOPOL'
+      subroutine crn3d(xcv,xc,yc,zc,curve,iface)
+      include 'SIZE'
+      include 'TOPOL'
       DIMENSION XCV(3,2,2),XC(8),YC(8),ZC(8),CURVE(4)
       DIMENSION INDVTX(4,6)
       SAVE      INDVTX
@@ -1037,10 +961,10 @@ C
    40    CONTINUE
       ENDIF
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE ROTXYZ 
+      subroutine rotxyz 
 C-----------------------------------------------------------------------
 C
 C     Establish rotation of undeformed elements.
@@ -1048,15 +972,15 @@ C     Used for fast evaluation of D*x and DT*x.
 C     Currently used for 2-d problems.
 C
 C-----------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'GEOM'
-      INCLUDE 'ESOLV'
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'ESOLV'
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
 C
-      IF (IFMVBD)    RETURN
-      IF (NDIM.EQ.3) RETURN
+      IF (IFMVBD)    return
+      IF (NDIM.EQ.3) return
 C
       EPS    = 1.E-6
       EPSINV = 1./EPS
@@ -1083,8 +1007,8 @@ C
             ENDIF
          ENDIF
  100  CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine gensrf(XML,YML,ZML,IFCE,IE,MX,MY,MZ,zgml)
 C
@@ -1093,11 +1017,11 @@ C
 C     Program to generate surface deformations for NEKTON
 C     input.  Paul F. Fischer
 C
-c     INCLUDE 'basics.inc'
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'WZ'
-      INCLUDE 'TOPOL'
+c     include 'basics.inc'
+      include 'SIZE'
+      include 'INPUT'
+      include 'WZ'
+      include 'TOPOL'
 C
       DIMENSION XML(MX,MY,MZ,1),YML(MX,MY,MZ,1),ZML(MX,MY,MZ,1)
      $             ,ZGML(MX,3)
@@ -1178,8 +1102,8 @@ C
   200    CONTINUE
   300 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine prjects(x0,dxc,c,cc)
 c
@@ -1281,6 +1205,7 @@ c     write(6,*) 'cc  ',x0,cc,c(2),c(3)
 c     write(6,*) ' r1',r1,r0,a1
       return
       end
+c-----------------------------------------------------------------------
       function ressrf(x,c,cc)
       real x(3) 
       real c(5)
@@ -1294,6 +1219,173 @@ c
          return
       endif
 c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine linquad(xl,yl,zl,nxl,nyl,nzl)
+
+      include 'SIZE'
+      include 'WZ'
+      include 'GEOM'
+      include 'TOPOL'
+      include 'INPUT'
+      include 'PARALLEL'
+
+      real xl(nxl*nyl*nzl,1),yl(nxl*nyl*nzl,1),zl(nxl*nyl*nzl,1)
+
+      integer e
+      logical ifmid
+
+      nedge = 4 + 8*(ndim-2)
+
+      do e=1,nelt ! Loop over all elements
+
+         ifmid = .false.
+         do k=1,nedge
+            if (ccurve(k,e).eq.'m') ifmid = .true.
+         enddo
+
+         if (ifmid) then
+            call xyzquad(xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e)
+         else
+            call xyzlin (xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xyzlin(xl,yl,zl,nxl,nyl,nzl,e)
+c     Generate bi- or trilinear mesh
+
+      include 'SIZE'
+      include 'INPUT'
+
+      real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
+      integer e
+
+c   Preprocessor Corner notation:      Symmetric Corner notation:
+c
+c           4+-----+3    ^ s                    3+-----+4    ^ s
+c           /     /|     |                      /     /|     |
+c          /     / |     |                     /     / |     |
+c        8+-----+7 +2    +----> r            7+-----+8 +2    +----> r
+c         |     | /     /                     |     | /     /
+c         |     |/     /                      |     |/     /
+c        5+-----+6    t                      5+-----+6    t
+
+      integer indx(8)
+      save    indx
+      data    indx / 1,2,4,3,5,6,8,7 /
+
+      parameter (ldw=2*lx1*ly1*lz1)
+      common /ctmp0/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
+
+c     Note : CTMP1 is used in this format in several subsequent routines
+      common /ctmp1/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+     $             , zgml(lx1,3),work(3,lx1,lz1)
+
+
+      ndim2 = 2**ndim
+
+      call setzgml (zgml,e,nxl,nyl,nzl,ifaxis)
+
+      do ix=1,nxl
+         h(ix,1,1)=(1.0-zgml(ix,1))*0.5
+         h(ix,1,2)=(1.0+zgml(ix,1))*0.5
+      enddo
+      do iy=1,nyl
+         h(iy,2,1)=(1.0-zgml(iy,2))*0.5
+         h(iy,2,2)=(1.0+zgml(iy,2))*0.5
+      enddo
+      if (if3d) then
+         do iz=1,nzl
+            h(iz,3,1)=(1.0-zgml(iz,3))*0.5
+            h(iz,3,2)=(1.0+zgml(iz,3))*0.5
+         enddo
+      else
+         call rone(h(1,3,1),nzl)
+         call rone(h(1,3,2),nzl)
+      endif
+
+      do ix=1,ndim2
+         i=indx(ix)
+         xcb(ix,1,1)=xc(i,e)
+         ycb(ix,1,1)=yc(i,e)
+         zcb(ix,1,1)=zc(i,e)
+      enddo
+
+c     Map R-S-T space into physical X-Y-Z space.
+
+      ! NOTE:  Assumes nxl=nyl=nzl !
+
+      call map_m_to_n(xl,nxl,xcb,2,if3d,w,ldw)
+      call map_m_to_n(yl,nxl,ycb,2,if3d,w,ldw)
+      call map_m_to_n(zl,nxl,zcb,2,if3d,w,ldw)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xyzquad(xl,yl,zl,nxl,nyl,nzl,e)
+c     Generate bi- or trilinear mesh
+
+      include 'SIZE'
+      include 'INPUT'
+
+      real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
+      real xq(27),yq(27),zq(27)
+      integer e
+
+      parameter (ldw=lx1*ly1*lz1)
+      common /ctmp0/ w(ldw,2),zg(3)
+
+c     Note : CTMP1 is used in this format in several subsequent routines
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
+      call xyzlin(xq,yq,zq,3,3,3,e) ! map bilin to bi- or triquadratic
+
+      nedge = 4 + 8*(ndim-2)
+
+      do k=1,nedge
+         if (ccurve(k,e).eq.'m') then
+            j = eindx(k)
+            xq(j) = curve(1,k,e)
+            yq(j) = curve(2,k,e)
+            zq(j) = curve(3,k,e)
+         endif
+      enddo
+
+      zg(1) = -1
+      zg(2) =  0 
+      zg(3) =  1
+
+      if (if3d) then
+         call gh_face_extend(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
+         call gh_face_extend(yq,zg,3,2,w(1,1),w(1,2))
+         call gh_face_extend(zq,zg,3,2,w(1,1),w(1,2))
+
+c        Map R-S-T space into physical X-Y-Z space.
+         ! NOTE:  Assumes nxl=nyl=nzl !
+         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
+         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
+         call map_m_to_n(zl,nxl,zq,3,if3d,w,ldw)
+
+      else
+
+         call gh_face_extend_2d(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
+         call gh_face_extend_2d(yq,zg,3,2,w(1,1),w(1,2))
+
+         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
+         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
+
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
