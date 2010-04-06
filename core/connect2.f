@@ -239,6 +239,7 @@ C
       IFESSR    = .false.
       IFTMSH(0) = .false.
       IFUSERVP  = .false.
+      IFCONS    = .false.    ! Use conservation form?
       IFUSERMV  = .false.
       IFCYCLIC  = .false.
       IFSYNC    = .false.
@@ -296,6 +297,8 @@ c     IFSPLIT   = .false.
               read(string(i),*) IFMOAB
          elseif (indx1(string(i),'IFMHD'  ,5).gt.0) then 
               read(string(i),*) IFMHD
+         elseif (indx1(string(i),'IFCONS' ,6).gt.0) then 
+              read(string(i),*) IFCONS
          elseif (indx1(string(i),'IFUSERVP',8).gt.0) then 
               read(string(i),*) IFUSERVP
          elseif (indx1(string(i),'IFUSERMV',8).gt.0) then 
@@ -334,6 +337,7 @@ c              read(string,*) IFSPLIT
      &           '   IFSYNC'   ,
      &           '   IFCYCLIC' ,
      &           '   IFSPLIT'  ,
+     &           '   IFCONS'   ,
      &           '   IFMOAB'            
               endif
               call exitt
@@ -800,12 +804,12 @@ C              check for fortran function as denoted by lower case bc's:
                CBC1=CBC(ISIDE,IEL,IFIELD)
                CBC3=CBC(ISIDE,IEL,IFIELD)
                ICBC1=ICHAR(CBC1)
-               IF (ICBC1.GE.97.AND.ICBC1.LE.122) THEN
-                  IF(CBC3(3:3).NE.'i')NLINES=BC(1,ISIDE,IEL,IFIELD)
-                  IF(CBC3(3:3).EQ.'i')NLINES=BC(4,ISIDE,IEL,IFIELD)
-                  DO 60 I=1,NLINES
-   60             READ(9,*,ERR=500,END=500)
-               ENDIF
+c              IF (ICBC1.GE.97.AND.ICBC1.LE.122) THEN
+c                 IF(CBC3(3:3).NE.'i')NLINES=BC(1,ISIDE,IEL,IFIELD)
+c                 IF(CBC3(3:3).EQ.'i')NLINES=BC(4,ISIDE,IEL,IFIELD)
+c                 DO 60 I=1,NLINES
+c  60             READ(9,*,ERR=500,END=500)
+c              ENDIF
             ELSE
                READ(9,*,ERR=500,END=500)   cbc1  ! dummy read, pff 4/28/05
             ENDIF
@@ -1162,8 +1166,8 @@ C
      $                                  OBJECT(IOBJ,MEMBER,2)
     5      CONTINUE
    10   CONTINUE
-        if(nobj.gt.0) write(6,*) nobj,' objects found'
-     $                           ,(nmember(k),k=1,nobj)
+        write(6,*) nobj,' objects found'
+     $            ,(nmember(k),k=1,nobj)
       ENDIF
  
       call bcast(NOBJ   ,ISIZE)
