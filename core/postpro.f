@@ -805,3 +805,379 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gen_rea  ! Generate and output essential parts of .rea
+                          ! Clobbers ccurve()
+      include 'SIZE'
+      include 'TOTAL'
+
+      imid = 0  ! No midside node defs
+      imid = 1  ! Midside defs where current curve sides don't exist
+      imid = 2  ! All nontrivial midside node defs
+
+      imid = 0  ! No midside node defs
+
+      if (nid.eq.0) open(unit=10,file='newrea.out',status='unknown') ! clobbers existing file
+
+      call gen_rea_xyz
+
+      call gen_rea_curve(imid)  ! Clobbers ccurve()
+
+      if (nid.eq.0) write(10,*)' ***** BOUNDARY CONDITIONS *****'
+      do ifld=1,nfield
+         call gen_rea_bc   (ifld)
+      enddo
+
+      if (nid.eq.0) close(10)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_xyz
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lv=2**ldim,lblock=1000)
+      common /scrns/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
+      common /scruz/ igr(lblock)
+
+      integer e,eb,eg
+      character*1 letapt
+
+      integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
+      save    isym2pre
+      data    isym2pre / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
+
+      letapt = 'a'
+      numapt = 1
+
+      nxs = nx1-1
+      nys = ny1-1
+      nzs = nz1-1
+      nblock = lv*ldim*lblock
+
+      letapt = 'a'
+      numapt = 1
+
+      nxs = nx1-1
+      nys = ny1-1
+      nzs = nz1-1
+      nblock = lv*ldim*lblock
+
+      if (nid.eq.0) 
+     $  write(10,'(3i10,'' NEL,NDIM,NELV'')') nelgt,ndim,nelgv
+
+      do eb=1,nelgt,lblock
+         nemax = min(eb+lblock-1,nelgt)
+         call rzero(xyz,nblock)
+         call izero(igr,lblock)
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            l   = 0
+            if (mid.eq.nid.and.if3d) then ! fill owning processor
+               igr(kb) = igroup(e)
+               do k=0,1
+               do j=0,1
+               do i=0,1
+                  l=l+1
+                  li=isym2pre(l)
+                  xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,3,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+               enddo
+               enddo
+               enddo
+            elseif (mid.eq.nid) then    ! 2D
+               igr(kb) = igroup(e)
+               do j=0,1
+               do i=0,1
+                  l =l+1
+                  li=isym2pre(l)
+                  xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1,e)
+                  xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1,e)
+               enddo
+               enddo
+            endif
+         enddo
+         call  gop(xyz,wk,'+  ',nblock)  ! Sum across all processors
+         call igop(igr,wk,'+  ',nblock)  ! Sum across all processors
+
+         if (nid.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               write(10,'(a15,i9,a2,i5,a1,a10,i6)')
+     $   '      ELEMENT  ',eg,' [',numapt,letapt,']    GROUP',igr(kb)
+
+               if (if3d) then 
+
+                  write(10,'(4g15.7)')(xyz(ic,1,kb),ic=1,4)
+                  write(10,'(4g15.7)')(xyz(ic,2,kb),ic=1,4)
+                  write(10,'(4g15.7)')(xyz(ic,3,kb),ic=1,4)
+
+                  write(10,'(4g15.7)')(xyz(ic,1,kb),ic=5,8)
+                  write(10,'(4g15.7)')(xyz(ic,2,kb),ic=5,8)
+                  write(10,'(4g15.7)')(xyz(ic,3,kb),ic=5,8)
+
+               else ! 2D
+
+                  write(10,'(4g15.7)')(xyz(ic,1,kb),ic=1,4)
+                  write(10,'(4g15.7)')(xyz(ic,2,kb),ic=1,4)
+
+               endif
+
+            enddo
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_curve(imid)
+
+c     This routine is complex because we must first count number of 
+c     nontrivial curved sides.
+
+c     A two pass strategy is used:  first count, then write
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eb,eg
+
+      parameter (lblock=500)
+      common /scrns/ vcurve(5,12,lblock),wk(5*12*lblock)
+      common /scruz/ icurve(12,lblock)
+
+      character*1 s4(4)
+      integer     i4
+      equivalence(i4,s4)
+
+      if (imid.gt.0) then
+
+c        imid = 0  ! No midside node defs
+c        imid = 1  ! Midside defs where current curve sides don't exist
+c        imid = 2  ! All nontrivial midside node defs
+
+         if (imid.eq.2) call blank(ccurve,12*lelt)
+
+c        do e=1,nelt
+c           call gen_rea_midside_e(e)
+c        enddo
+
+      endif
+
+      nedge = 4 + 8*(ndim-2)
+
+      ncurvn = 0
+      do e=1,nelt
+      do i=1,nedge
+         if (ccurve(i,e).ne.' ') ncurvn = ncurvn+1
+      enddo
+      enddo
+      ncurvn = iglsum(ncurvn,1)
+
+      if (nid.eq.0) then
+         WRITE(10,*)' ***** CURVED SIDE DATA *****'
+         WRITE(10,'(I10,A20,A33)') ncurvn,' Curved sides follow',
+     $   ' IEDGE,IEL,CURVE(I),I=1,5, CCURVE'
+      endif
+
+      do eb=1,nelgt,lblock
+         nemax = min(eb+lblock-1,nelgt)
+         call izero(icurve,12*lblock)
+         call rzero(vcurve,60*lblock)
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            if (mid.eq.nid) then ! fill owning processor
+               do i=1,nedge
+                  i4 = 0
+                  if (ccurve(i,e).ne.' ') s4(1)=ccurve(i,e)
+                  icurve(i,kb) = i4
+                  call copy(vcurve(1,i,kb),curve(1,i,e),5)
+               enddo
+            endif
+         enddo
+         call igop(icurve,wk,'+  ',12*lblock)  ! Sum across all processors
+         call  gop(vcurve,wk,'+  ',60*lblock)  ! Sum across all processors
+
+         if (nid.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               do i=1,nedge
+                  i4 = icurve(i,kb)   ! equivalenced to s4
+                  if (i4.ne.0) then
+                     if (nelgt.lt.1000) then
+                        write(10,'(i3,i3,5g14.6,1x,a1)') i,eg,
+     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+                     elseif (nelgt.lt.1000000) then
+                        write(10,'(i2,i6,5g14.6,1x,a1)') i,eg,
+     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+                     else
+                        write(10,'(i2,i10,5g14.6,1x,a1)') i,eg,
+     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+                     endif
+                  endif
+               enddo
+            enddo
+         endif
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_bc (ifld)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eb,eg
+
+      parameter (lblock=500)
+      common /scrns/ vbc(5,6,lblock),wk(5*6*lblock)
+      common /scruz/ ibc(6,lblock)
+
+      character*1 s4(4)
+      character*3 s3
+      integer     i4
+      equivalence(i4,s4)
+      equivalence(s3,s4)
+
+      character*1 chtemp
+      save        chtemp
+      data        chtemp /' '/   ! For mesh bcs
+
+      nface = 2*ndim
+
+      nlg = nelg(ifld)
+
+      if (ifld.eq.1.and..not.ifflow) then ! NO B.C.'s for this field
+         if (nid.eq.0) write(10,*)
+     $      ' ***** NO FLUID   BOUNDARY CONDITIONS *****'
+         return
+      elseif (ifld.eq.1.and.nid.eq.0) then ! NO B.C.'s for this field
+         write(10,*) ' *****    FLUID   BOUNDARY CONDITIONS *****'
+      elseif (ifld.ge.2.and.nid.eq.0) then ! NO B.C.'s for this field
+         write(10,*) ' *****    THERMAL BOUNDARY CONDITIONS *****'
+      endif
+
+      do eb=1,nlg,lblock
+         nemax = min(eb+lblock-1,nlg)
+         call izero(ibc, 6*lblock)
+         call rzero(vbc,30*lblock)
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            if (mid.eq.nid) then ! fill owning processor
+               do i=1,nface
+                  i4 = 0
+                  call chcopy(s4,cbc(i,e,ifld),3)
+                  ibc(i,kb) = i4
+                  call copy(vbc(1,i,kb),bc(1,i,e,ifld),5)
+               enddo
+            endif
+         enddo
+         call igop(ibc,wk,'+  ', 6*lblock)  ! Sum across all processors
+         call  gop(vbc,wk,'+  ',30*lblock)  ! Sum across all processors
+
+         if (nid.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               do i=1,nface
+                  i4 = ibc(i,kb)   ! equivalenced to s4
+
+c                 chtemp='   '
+c                 if (ifld.eq.1 .or. (ifld.eq.2 .and. .not. ifflow))
+c    $               chtemp = cbc(i,kb,0)
+
+                  if (nlg.lt.1000) then
+                     write(10,'(a1,a3,2i3,5g14.6)')
+     $               chtemp,s3,eg,i,(vbc(ii,i,kb),ii=1,5)
+                  elseif (nlg.lt.1000000) then
+                     write(10,'(a1,a3,i6,5g14.6)')
+     $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
+                  else
+                     write(10,'(a1,a3,i10,5g14.6)')
+     $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
+                  endif
+               enddo
+            enddo
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_midside_e(e)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /scrns/ x3(27),y3(27),z3(27),xyz(3,3),xmid(3)
+      character*1 ccrve(12)
+      integer e,edge
+
+      integer e3(3,12)
+      save    e3
+      data    e3 /  1, 2, 3,    3, 6, 9,    9, 8, 7,    7, 4, 1
+     $           , 19,20,21,   21,24,27,   27,26,25,   25,22,19
+     $           ,  1,10,19,    3,12,21,    9,18,27,    7,16,25 /
+
+      real len
+
+      call chcopy(ccrve,ccurve(1,e),12)
+
+      call map2reg(x3,3,xm1(1,1,1,e),1)  ! Map to 3x3x3 array
+      call map2reg(y3,3,ym1(1,1,1,e),1)
+      if (if3d) call map2reg(z3,3,zm1(1,1,1,e),1)
+
+
+
+c     Take care of spherical curved face defn
+      if (ccurve(5,e).eq.'s') then
+         call chcopy(ccrve(1),'ssss',4) ! face 5
+         call chcopy(ccrve(5),' ',1)    ! face 5
+      endif
+      if (ccurve(6,e).eq.'s') then
+         call chcopy(ccrve(5),'ssss',4) ! face 6
+      endif
+
+      tol   = 1.e-4
+      tol2  = tol**2
+      nedge = 4 + 8*(ndim-2)
+
+      do i=1,nedge
+         if (ccrve(i).ne.' ') then
+            do j=1,3
+               xyz(1,j)=x3(e3(j,i))
+               xyz(2,j)=y3(e3(j,i))
+               xyz(3,j)=z3(e3(j,i))
+            enddo
+            len = 0.
+            h   = 0.
+            do j=1,ndim
+               xmid(j) = .5*(xyz(j,1)+xyz(j,3))
+               h       = h   + (xyz(j,2)-xmid(j))**2
+               len     = len + (xyz(j,3)-xyz(j,1))**2
+            enddo
+            if (h.gt.tol2*len) ccurve(i,e) = 'm'
+            if (h.gt.tol2*len) call copy(curve(1,i,e),xmid,ndim)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
