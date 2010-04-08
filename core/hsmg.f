@@ -627,7 +627,7 @@ c    $                         ,eps,diag,lr(i),ls(j),lt(k)
       ierrmx = iglmax(ierr,1)
       if (ierrmx.gt.0) then
          if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
-         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+         call exitti('A INVALID BC FOUND in genfast$',ierrmx)
       endif
 
       return
@@ -1016,7 +1016,7 @@ c     store weight
       ierrmx = iglmax(ierr,1)
       if (ierrmx.gt.0) then
          if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
-         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+         call exitti('B INVALID BC FOUND in genfast$',ierrmx)
       endif
 
 c     write(6,*) nid,' EXIT hsmg_setup_mask'
@@ -1128,7 +1128,7 @@ c----------------------------------------------------------------------
       ierrmx = iglmax(ierr,1)
       if (ierrmx.gt.0) then
          if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
-         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+         call exitti('C INVALID BC FOUND in genfast$',ierrmx)
       endif
 
       return
@@ -1259,7 +1259,7 @@ c----------------------------------------------------------------------
       ierrmx = iglmax(ierr,1)
       if (ierrmx.gt.0) then
          if (ierr.gt.0) write(6,*) nid,ierr,' BC FAIL'
-         call exitti('INVALID BC FOUND in genfast$',ierrmx)
+         call exitti('D INVALID BC FOUND in genfast$',ierrmx)
       endif
 
       return
