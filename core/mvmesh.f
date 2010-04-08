@@ -772,6 +772,7 @@ C
       call dsavg(wx)
       call dsavg(wy)
       call dsavg(wz)
+      ifield = ifldt
 
 c     if (istep.gt.1) then
 c        ifldx = ifield
