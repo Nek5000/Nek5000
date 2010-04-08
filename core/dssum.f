@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 
       ifldt = ifield
-      if (ifldt.eq.0)       ifldt = 1
+c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
@@ -128,7 +128,7 @@ c             o level = 1,...num_nodes-2 ==> mix tree/pairwise.
 c      
 c
       ifldt = ifield
-      if (ifldt.eq.0)       ifldt = 1
+c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
 c     if (nid.eq.0) 
@@ -191,7 +191,7 @@ c     execution phase
 c============================================================================
 c
       ifldt = ifield
-      if (ifldt.eq.0)       ifldt = 1
+c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
@@ -229,7 +229,7 @@ c     execution phase
 c============================================================================
 
       ifldt = ifield
-      if (ifldt.eq.0)       ifldt = 1
+c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
 c     write(6,*) 'opdsop: ',op,ifldt,ifield
@@ -585,7 +585,7 @@ c
 #endif
 c
       ifldt = ifield
-      if (ifldt.eq.0) ifldt = 1
+c     if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
@@ -647,7 +647,7 @@ c
 #endif
 c
       ifldt = ifield
-      if (ifldt.eq.0) ifldt = 1
+c     if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel
@@ -713,7 +713,7 @@ c
 
 c
       ifldt = ifield
-      if (ifldt.eq.0) ifldt = 1
+c     if (ifldt.eq.0) ifldt = 1
       nel = nelv
       if (ifield.ge.2) nel=nelt
       ntot = nx*ny*nz*nel

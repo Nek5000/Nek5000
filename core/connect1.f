@@ -18,19 +18,19 @@ C
 C     .Disperse/Receive BC and MULT temporary data read from preprocessor.
 C
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-      INCLUDE 'NONCON'
-      INCLUDE 'ZPER'
-      INCLUDE 'SCRCT'
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NONCON'
+      include 'ZPER'
+      include 'SCRCT'
 c
       COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
-      common /ivrtx/ vertex ((2**ldim)*lelt)
       integer*8 glo_num
+      common /ivrtx/ vertex ((2**ldim)*lelt)
       integer vertex
 
       if(nid.eq.0) write(6,*) 'setup mesh topology'
@@ -117,13 +117,19 @@ c        check if there is a least one fluid element on each processor
  101  continue
 
       endif
-C
+
+
+c     if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh
+
+
 C========================================================================
 C     Set up multiplicity and direct stiffness arrays for each IFIELD
 C========================================================================
-C
+
       ntotv = nx1*ny1*nz1*nelv
       ntott = nx1*ny1*nz1*nelt
+
+
 
       if (ifflow) then
          ifield = 1
@@ -1270,29 +1276,24 @@ C
       if (nx1.gt.8.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
-c
-      nell = nelt
-      rnel = nell
-      snel = sqrt(rnel)+.1
-      ne   = snel
-      ne1  = nell-ne+1
-      do ie=1,2
-         ne = 0
+
+      do ie=1,1
+         ne = 1
          do k=1,1
             write(6,116) txt10,k,ie,xmin,xmax,istep,time
             write(6,117) 
             do j=ny1,1,-1
-              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
-              if (nx1.eq.8) write(6,118) ((x(i,j,k,e+l),i=1,nx1),e=0,ne)
+              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+              if (nx1.eq.8) write(6,118) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
             enddo
          enddo
       enddo
-C
+
   102 FORMAT(4(2f9.5,2x))
   103 FORMAT(4(3f9.5,2x))
   104 FORMAT(4(4f7.3,2x))
@@ -1601,6 +1602,122 @@ c-----------------------------------------------------------------------
          a = i
          x(i) = tiny*sin(a)
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setup_mesh_dssum ! Set up dssum for mesh
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NONCON'
+      include 'ZPER'
+
+      common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
+      integer*8 glo_num
+      common /ivrtx/ vertex ((2**ldim)*lelt)
+      integer vertex
+
+      parameter(lxyz=lx1*ly1*lz1)
+      common /scrns/ enum(lxyz,lelt)
+     $             ,  rnx(lxyz,lelt) , rny(lxyz,lelt) , rnz(lxyz,lelt)
+     $             ,  tnx(lxyz,lelt) , tny(lxyz,lelt) , tnz(lxyz,lelt)
+      common /scruz/  snx(lxz) , sny(lxz) , snz(lxz) ,  efc(lxz)
+      common /scrsf/  jvrtex((2**ldim),lelt)
+
+      integer e,f,eg
+
+
+      gsh_fld(0)=gsh_fld(1)
+      if (iftmsh(0)) gsh_fld(0)=gsh_fld(2)
+
+      ifield = 0
+      nel    = nelfld(0)
+      nxyz   = nx1*ny1*nz1
+      nxz    = nx1*nz1
+      n      = nel*nxyz
+      nface  = 2*ndim
+
+
+      iflag=0
+      do e=1,nel
+      do f=1,nface
+         if (cbc(f,e,1).eq.'msi'.or.cbc(f,e,1).eq.'MSI') iflag=1
+      enddo
+      enddo
+      iflag = iglmax(iflag,1)
+      if (iflag.eq.0) return
+
+
+c     We need to differentiate elements according to unit normal on msi face.
+
+c     NOTE that this code assumes we do not have two adjacent faces on a given
+c     element that both have cbc = msi!
+
+      call rzero(rnx,n)
+      call rzero(rny,n)
+      call rzero(rnz,n)
+      call rzero(tnx,n)
+      call rzero(tny,n)
+      call rzero(tnz,n)
+
+      do e=1,nel
+         re = lglel(e)
+         call cfill(enum(1,e),re,nxyz)
+      enddo
+
+      call dsop(enum,'min')
+
+
+      do e=1,nel
+         eg = lglel(e)
+         do f=1,nface
+           if (cbc(f,e,1).eq.'msi'.or.cbc(f,e,1).eq.'MSI') then
+             call facexs (efc,enum(1,e),f,0) ! enum-->efc
+             do i=1,nxz
+               jg = efc(i)+0.1
+               if (jg.eq.eg) then         ! this is the controlling face
+                  snx(i) = unx(i,1,f,e)
+                  sny(i) = uny(i,1,f,e)
+                  snz(i) = unz(i,1,f,e)
+               endif
+             enddo
+             call facexv (snx,sny,snz,rnx(1,e),rny(1,e),rnz(1,e),f,1) ! s-->r
+             call facexv (unx(1,1,f,e),uny(1,1,f,e),unz(1,1,f,e) ! Control
+     $                   ,tnx(1,e),tny(1,e),tnz(1,e),f,1)        ! u-->r
+           endif
+         enddo
+      enddo
+
+      call opdssum(rnx,rny,rnz)
+
+      nv = nel*(2**ndim)
+      call icopy(jvrtex,vertex,nv)  ! Save vertex
+      mvertx=iglmax(jvrtex,nv)
+
+
+c     Now, check to see if normal is aligned with incoming normal
+
+      nsx=nx1-1
+      nsy=ny1-1
+      nsz=max(1,nz1-1)
+
+      do e=1,nel
+         l=0
+         do k=1,nz1,nsz
+         do j=1,ny1,nsy
+         do i=1,nx1,nsx
+            l=l+1
+            m=i + nx1*(j-1) + nx1*ny1*(k-1)
+            dot = tnx(m,e)*rnx(m,e)+tny(m,e)*rny(m,e)+tnz(m,e)*rnz(m,e)
+            if (dot.lt.-.5) jvrtex(l,e)=jvrtex(l,e)+mvertx
+         enddo
+         enddo
+         enddo
+      enddo
+
+
+      call setupds(gsh_fld(0),nx1,ny1,nz1,nelv,nelgv,jvrtex,glo_num)
 
       return
       end
