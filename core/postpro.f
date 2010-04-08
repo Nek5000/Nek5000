@@ -805,16 +805,14 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gen_rea  ! Generate and output essential parts of .rea
-                          ! Clobbers ccurve()
+      subroutine gen_rea(imid)  ! Generate and output essential parts of .rea
+                                ! Clobbers ccurve()
       include 'SIZE'
       include 'TOTAL'
 
-      imid = 0  ! No midside node defs
-      imid = 1  ! Midside defs where current curve sides don't exist
-      imid = 2  ! All nontrivial midside node defs
-
-      imid = 0  ! No midside node defs
+c     imid = 0  ! No midside node defs
+c     imid = 1  ! Midside defs where current curve sides don't exist
+c     imid = 2  ! All nontrivial midside node defs
 
       if (nid.eq.0) open(unit=10,file='newrea.out',status='unknown') ! clobbers existing file
 
@@ -964,9 +962,9 @@ c        imid = 2  ! All nontrivial midside node defs
 
          if (imid.eq.2) call blank(ccurve,12*lelt)
 
-c        do e=1,nelt
-c           call gen_rea_midside_e(e)
-c        enddo
+         do e=1,nelt
+            call gen_rea_midside_e(e)
+         enddo
 
       endif
 
@@ -1126,7 +1124,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      common /scrns/ x3(27),y3(27),z3(27),xyz(3,3),xmid(3)
+      common /scrns/ x3(27),y3(27),z3(27),xyz(3,3)
       character*1 ccrve(12)
       integer e,edge
 
@@ -1160,7 +1158,7 @@ c     Take care of spherical curved face defn
       nedge = 4 + 8*(ndim-2)
 
       do i=1,nedge
-         if (ccrve(i).ne.' ') then
+         if (ccrve(i).eq.' ') then
             do j=1,3
                xyz(1,j)=x3(e3(j,i))
                xyz(2,j)=y3(e3(j,i))
@@ -1169,12 +1167,12 @@ c     Take care of spherical curved face defn
             len = 0.
             h   = 0.
             do j=1,ndim
-               xmid(j) = .5*(xyz(j,1)+xyz(j,3))
-               h       = h   + (xyz(j,2)-xmid(j))**2
-               len     = len + (xyz(j,3)-xyz(j,1))**2
+               xmid = .5*(xyz(j,1)+xyz(j,3))
+               h    = h   + (xyz(j,2)-xmid)**2
+               len  = len + (xyz(j,3)-xyz(j,1))**2
             enddo
             if (h.gt.tol2*len) ccurve(i,e) = 'm'
-            if (h.gt.tol2*len) call copy(curve(1,i,e),xmid,ndim)
+            if (h.gt.tol2*len) call copy(curve(1,i,e),xyz(1,2),ndim)
          endif
       enddo
 
