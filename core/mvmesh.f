@@ -360,11 +360,13 @@ C
      $                SMT(1,1,1,IEL),IFC) 
          ENDIF
   215 CONTINUE
+
          CALL DSSUM (WTX,NX1,NY1,NZ1)
          CALL DSSUM (WTY,NX1,NY1,NZ1)
          IF (NDIM.EQ.3) CALL DSSUM (WTZ,NX1,NY1,NZ1)
+
       ENDIF
-C
+
       ENDIF
 C
       IF (IFMELT .AND. ISTEP.GT.0) THEN
@@ -763,6 +765,13 @@ C
       CALL ADD2 (WX,DW1,NTOT1)
       CALL ADD2 (WY,DW2,NTOT1)
       IF (NDIM.EQ.3) CALL ADD2 (WZ,DW3,NTOT1)
+
+      ifldt = ifield
+      ifield=1
+      if (ifheat) ifield=2
+      call dsavg(wx)
+      call dsavg(wy)
+      call dsavg(wz)
 
 c     if (istep.gt.1) then
 c        ifldx = ifield

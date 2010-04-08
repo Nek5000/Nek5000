@@ -1332,6 +1332,7 @@ C
       tol=tin
       if (param(22).ne.0) tol=abs(param(22))
       if (matmod.lt.0) tol = 1.e-4
+c     if (matmod.lt.0) tol = tin
 c
       NEL   = NELFLD(IFIELD)
       NTOT1 = NX1*NY1*NZ1*NEL
@@ -1349,7 +1350,7 @@ C
 C         IF ( .NOT.IFPRINT )  GOTO 9999
           IF (MATMOD.GE.0.AND.NID.EQ.0) WRITE (6,2000) RBNORM
           IF (MATMOD.LT.0.AND.NID.EQ.0) WRITE (6,2010) RBNORM
-c         GOTO 9999
+          GOTO 9999
       ENDIF
 C
 C     Evaluate diagional pre-conidtioner for fluid solve

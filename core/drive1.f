@@ -83,6 +83,8 @@ C     USRDAT
 C     generate geometry (called after usrdat in case something changed)
       call gengeom (igeom)
 
+      if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
+
 C     USRDAT2
       if(nid.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
