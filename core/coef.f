@@ -850,7 +850,11 @@ C
          CALL COPY (TZM2,TZM1,NTOT2)
          CALL COPY (JACM2,JACM1,NTOT2)
          CALL COPY (BM2,BM1,NTOT2)
-C
+
+         CALL COPY (XM2,XM1,NTOT2)
+         CALL COPY (YM2,YM1,NTOT2)
+         CALL COPY (ZM2,ZM1,NTOT2)
+
       ELSE
 C
 C     Consistent approximation spaces (UZAWA)
