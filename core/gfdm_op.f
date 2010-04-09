@@ -719,16 +719,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine col2s2(x,y,s,n)
-      real x(n),y(n)
-c
-      do i=1,n
-         x(i)=s*x(i)*y(i)
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine gfdm_chk_size
 c
 c     Check arrays for fast tensor product solver

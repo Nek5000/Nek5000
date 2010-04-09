@@ -381,19 +381,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine exitti(string,idata)
-      character*1 string(132)
+      subroutine exitti(stringi,idata)
+      character*1 stringi(132)
+      character*1 stringo(132)
       character*11 s11
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
 
-      len = indx1(string,'$',1)
+      call blank(stringo,132)
+      call chcopy(stringo,stringi,132)
+      len = indx1(stringo,'$',1)
       write(s11,11) idata
    11 format(1x,i10)
-      call chcopy(string(len),s11,11)
+      call chcopy(stringo(len),s11,11)
 
-      if (nid.eq.0) write(6,1) (string(k),k=1,len+10)
+      if (nid.eq.0) write(6,1) (stringo(k),k=1,len+10)
     1 format('EXIT: ',132a1)
 
       call exitt
