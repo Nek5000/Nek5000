@@ -583,7 +583,9 @@ c-----------------------------------------------------------------------
       denr      = nxd*nyd*nzd*nelv*ndim
       nconv_max = numr/denr
       if (nconv_max.lt.nbdinp+1) 
-     $   call exitti('set_conv_char mem:$',nconv_max)
+     $   call exitti(
+     $     'ABORT: not enough memory for characteristics scheme!$',
+     $     nconv_max)
 
       nc = ct(0)
 

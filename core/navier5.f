@@ -273,16 +273,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine add2sxy(x,a,y,b,n)
-      real x(1),y(1)
-c
-      do i=1,n
-         x(i) = a*x(i) + b*y(i)
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine drag_calc(scale)
 c
       INCLUDE 'SIZE'  

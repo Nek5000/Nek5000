@@ -572,9 +572,9 @@ C
       DO 10 ICY=0,1
       DO 10 ICX=0,1
 C       Supress vectorization to 
-        IF(ICX.EQ.0)DUMMY=0        
-        IF(ICX.EQ.1)DUMMY=1
-        DUMMY2=DUMMY2+DUMMY
+c        IF(ICX.EQ.0)DUMMY=0        
+c        IF(ICX.EQ.1)DUMMY=1
+c        DUMMY2=DUMMY2+DUMMY
         IC=IC+1
         IXCN(IC)= 1 + (NX-1)*ICX + NX*(NY-1)*ICY + NX*NY*(NZ-1)*ICZ
    10   CONTINUE

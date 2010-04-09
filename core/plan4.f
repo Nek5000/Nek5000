@@ -38,8 +38,7 @@ c
       NTOT1  = NX1*NY1*NZ1*NELV
 
       ! add user defined divergence to qtl 
-      call col3 (h1,usrdiv,bm1,ntot1)
-      call add2 (qtl,h1,ntot1)
+      call add2 (qtl,usrdiv,ntot1)
 
       ! split viscosity into explicit/implicit part
       if (ifexplvis) call split_vis
@@ -379,28 +378,6 @@ c
             a2(i) = a2(i) + b2(i)*c
          enddo
       endif
-      return
-      END
-
-      subroutine admcol3(a,b,c,d,n)
-      REAL A(1),B(1),C(1),D
-C
-      include 'OPCTR'
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'admcol3'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-C
-      DO 100 I=1,N
-         A(I)=A(I)+B(I)*C(I)*D
-  100 CONTINUE
       return
       END
 

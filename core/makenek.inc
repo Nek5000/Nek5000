@@ -222,7 +222,7 @@ do
     if [ $? -ne 0 ]; then
       cp SIZE .SIZE
       echo >>.SIZE
-      echo 'c LAV-plugin settings automatically added by makenek' >>.SIZE
+      echo 'c CVODE settings automatically added by makenek' >>.SIZE
       echo '      integer cv_maxl' >> .SIZE
       echo '      real cv_delt,cv_sigs' >> .SIZE
       echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZE
