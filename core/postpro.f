@@ -945,14 +945,11 @@ c     A two pass strategy is used:  first count, then write
       include 'TOTAL'
 
       integer e,eb,eg
+      character*1 cc
 
       parameter (lblock=500)
       common /scrns/ vcurve(5,12,lblock),wk(5*12*lblock)
       common /scruz/ icurve(12,lblock)
-
-      character*1 s4(4)
-      integer     i4
-      equivalence(i4,s4)
 
       if (imid.gt.0) then
 
@@ -985,9 +982,11 @@ c        imid = 2  ! All nontrivial midside node defs
       endif
 
       do eb=1,nelgt,lblock
+
          nemax = min(eb+lblock-1,nelgt)
          call izero(icurve,12*lblock)
          call rzero(vcurve,60*lblock)
+
          kb = 0
          do eg=eb,nemax
             mid = gllnid(eg)
@@ -995,9 +994,10 @@ c        imid = 2  ! All nontrivial midside node defs
             kb  = kb+1
             if (mid.eq.nid) then ! fill owning processor
                do i=1,nedge
-                  i4 = 0
-                  if (ccurve(i,e).ne.' ') s4(1)=ccurve(i,e)
-                  icurve(i,kb) = i4
+                  icurve(i,kb) = 0
+                  if (ccurve(i,e).eq.'C') icurve(i,kb) = 1
+                  if (ccurve(i,e).eq.'s') icurve(i,kb) = 2
+                  if (ccurve(i,e).eq.'m') icurve(i,kb) = 3
                   call copy(vcurve(1,i,kb),curve(1,i,e),5)
                enddo
             endif
@@ -1011,17 +1011,20 @@ c        imid = 2  ! All nontrivial midside node defs
                kb  = kb+1
 
                do i=1,nedge
-                  i4 = icurve(i,kb)   ! equivalenced to s4
-                  if (i4.ne.0) then
+                  ii = icurve(i,kb)   ! equivalenced to s4
+                  if (ii.ne.0) then
+                     if (ii.eq.1) cc='C'
+                     if (ii.eq.2) cc='s'
+                     if (ii.eq.3) cc='m'
                      if (nelgt.lt.1000) then
                         write(10,'(i3,i3,5g14.6,1x,a1)') i,eg,
-     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+     $                  (vcurve(k,i,kb),k=1,5),cc
                      elseif (nelgt.lt.1000000) then
                         write(10,'(i2,i6,5g14.6,1x,a1)') i,eg,
-     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+     $                  (vcurve(k,i,kb),k=1,5),cc
                      else
                         write(10,'(i2,i10,5g14.6,1x,a1)') i,eg,
-     $                  (vcurve(k,i,kb),k=1,5),s4(1)
+     $                  (vcurve(k,i,kb),k=1,5),cc
                      endif
                   endif
                enddo

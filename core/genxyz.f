@@ -1278,7 +1278,7 @@ c        5+-----+6    t                      5+-----+6    t
       save    indx
       data    indx / 1,2,4,3,5,6,8,7 /
 
-      parameter (ldw=2*lx1*ly1*lz1)
+      parameter (ldw=4*lx1*ly1*lz1)
       common /ctmp0/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
 
 c     Note : CTMP1 is used in this format in several subsequent routines
@@ -1336,7 +1336,7 @@ c     Generate bi- or trilinear mesh
       real xq(27),yq(27),zq(27)
       integer e
 
-      parameter (ldw=lx1*ly1*lz1)
+      parameter (ldw=4*lx1*ly1*lz1)
       common /ctmp0/ w(ldw,2),zg(3)
 
 c     Note : CTMP1 is used in this format in several subsequent routines
