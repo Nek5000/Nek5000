@@ -7,10 +7,8 @@ bin_nek_tools="$HOME/bin"
 F77=""
 CC=""
 
-# overwrite source path with optional 2nd argument
-if [ $# -eq 2 ]; then
-  bin_nek_tools="$2"
-fi
+# enable BIG MEMORY suuport
+#BIGMEM="true"
 
 
 
@@ -40,7 +38,8 @@ fi
 
 
 
-##################################
+
+### don't touch this section ###############################
 
 if [ $# -eq 0 ]; then
    echo "Usage: maketools [clean|all|tool(s)]"
@@ -56,6 +55,14 @@ if [ "$CC" == "" ]; then
   echo "FATAL ERROR: Specify your C compiler in maketools!"
   exit 1
 fi
+
+# overwrite source path with optional 2nd argument
+if [ $# -eq 2 ]; then
+  bin_nek_tools="$2"
+fi
+
+
+
 
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
@@ -77,21 +84,21 @@ fi
 
 case $F77 in
   pgf*)        R8="-r8"
-               BIGMEM="-mcmodel=medium"
+               BIGMEM_FLAG="-mcmodel=medium"
                ;;
   gfortran)    R8="-fdefault-real-8"
-               BIGMEM="-mcmodel=medium"
+               BIGMEM_FLAG="-mcmodel=medium"
                ;;
   ifort)       R8="-r8"
-               BIGMEM="-mcmodel=medium"
+               BIGMEM_FLAG="-mcmodel=medium"
                ;;
   pathf*)      R8="-r8"
                ;;
   *xlf*)       R8="-qrealsize=8"
-               BIGMEM="-q64"
+               BIGMEM_FLAG="-q64"
                ;;
   ftn)         R8="-r8"
-               BIGMEM="-mcmodel=medium"
+               BIGMEM_FLAG="-mcmodel=medium"
                ;;
   *)           exit 1
                echo "Error: Unkown compiler!"
@@ -113,8 +120,13 @@ fi
 \rm test_underscore.* 2>/dev/null
 
 
-F77="$F77 $BIGMEM" 
-CC="$CC $BIGMEM" 
+F77="$F77" 
+CC="$CC" 
+if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
+  F77="$F77 $BIGMEM_FLAG" 
+  CC="$CC $BIGMEM_FLAG" 
+fi
+
 export F77
 export CC
 export bin_nek_tools
