@@ -579,7 +579,7 @@ c-----------------------------------------------------------------------
       integer nelc               ! number of elements in conv. field
       logical ifnew              ! =true if shifting stack of fields
 
-      numr      = lxd*lyd*lzd*lelv*ldim*lorder
+      numr      = lxd*lyd*lzd*lelv*ldim*(lorder+1)
       denr      = nxd*nyd*nzd*nelv*ndim
       nconv_max = numr/denr
       if (nconv_max.lt.nbdinp+1) 
