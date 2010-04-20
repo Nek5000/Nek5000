@@ -557,35 +557,40 @@ c     Read elemental mesh data, formatted
       DO 40 IEG=1,NELGT
          IF (GLLNID(IEG).EQ.NID) THEN
             IEL=GLLEL(IEG)
-            READ(9,30,ERR=500,END=500) IGROUP(IEL)
-   30       FORMAT(43X,I5)
+
+C           read(9,30,err=31,end=600) igroup(iel)
+            igroup(iel) = 0
+            read(9,30,err=31,end=600) adum
+   30       format(43x,i5)
+   31       continue
+
 C           Read Corner data
             IF(NDIM.EQ.2)THEN
-               READ(9,*,ERR=500,END=500) (XC(IC,IEL),IC=1,4)
-               READ(9,*,ERR=500,END=500) (YC(IC,IEL),IC=1,4)
+               READ(9,*,ERR=500,END=600) (XC(IC,IEL),IC=1,4)
+               READ(9,*,ERR=500,END=600) (YC(IC,IEL),IC=1,4)
                               call rzero (zc(1 ,iel)     ,4)
             ELSE IF(NDIM.EQ.3)THEN
-               READ(9,*,ERR=500,END=500) (XC(IC,IEL),IC=1,4)
-               READ(9,*,ERR=500,END=500) (YC(IC,IEL),IC=1,4)
-               READ(9,*,ERR=500,END=500) (ZC(IC,IEL),IC=1,4)
-               READ(9,*,ERR=500,END=500) (XC(IC,IEL),IC=5,8)
-               READ(9,*,ERR=500,END=500) (YC(IC,IEL),IC=5,8)
-               READ(9,*,ERR=500,END=500) (ZC(IC,IEL),IC=5,8)
+               READ(9,*,ERR=500,END=600) (XC(IC,IEL),IC=1,4)
+               READ(9,*,ERR=500,END=600) (YC(IC,IEL),IC=1,4)
+               READ(9,*,ERR=500,END=600) (ZC(IC,IEL),IC=1,4)
+               READ(9,*,ERR=500,END=600) (XC(IC,IEL),IC=5,8)
+               READ(9,*,ERR=500,END=600) (YC(IC,IEL),IC=5,8)
+               READ(9,*,ERR=500,END=600) (ZC(IC,IEL),IC=5,8)
             ENDIF
          ELSE
 C           Skip over this data for element NOT on this processor
-            READ(9,41,ERR=500,END=500) ADUM
+            READ(9,41,ERR=500,END=600) ADUM
 C           Read Corner data
             IF(NDIM.EQ.2)THEN
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
             ELSE IF(NDIM.EQ.3)THEN
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
-               READ(9,41,ERR=500,END=500) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
+               READ(9,41,ERR=500,END=600) ADUM
             ENDIF
          ENDIF
    40 CONTINUE
@@ -602,10 +607,16 @@ C
   401 FORMAT(2X,'ERROR READING SCALE FACTORS, CHECK READ FILE'
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
-C
+
   500 CONTINUE
       if(nid.eq.0) WRITE(6,501) IEG
   501 FORMAT(2X,'ERROR READING MESH DATA NEAR ELEMENT',I7
+     $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
+      call exitt
+
+  600 CONTINUE
+      if(nid.eq.0) WRITE(6,601) IEG
+  601 FORMAT(2X,'ERROR 2 READING MESH DATA NEAR ELEMENT',I7
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
 
