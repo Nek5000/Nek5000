@@ -803,6 +803,9 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,ie,1).eq.'SYM') ibc = 2
          if (cbc(ied,ie,1).eq.'SL ') ibc = 2
          if (cbc(ied,ie,1).eq.'sl ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SHL') ibc = 2
+         if (cbc(ied,ie,1).eq.'shl') ibc = 2
+         if (cbc(ied,ie,1).eq.'A  ') ibc = 2
          if (cbc(ied,ie,1).eq.'S  ') ibc = 2
          if (cbc(ied,ie,1).eq.'s  ') ibc = 2
          if (cbc(ied,ie,1).eq.'J  ') ibc = 0
@@ -860,6 +863,9 @@ c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
          if (cbc(ied,ie,1).eq.'SYM') ibc = 3
          if (cbc(ied,ie,1).eq.'SL ') ibc = 2
          if (cbc(ied,ie,1).eq.'sl ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SHL') ibc = 2
+         if (cbc(ied,ie,1).eq.'shl') ibc = 2
+         if (cbc(ied,ie,1).eq.'A  ') ibc = 2
          if (cbc(ied,ie,1).eq.'S  ') ibc = 2
          if (cbc(ied,ie,1).eq.'s  ') ibc = 2
          if (cbc(ied,ie,1).eq.'J  ') ibc = 0
