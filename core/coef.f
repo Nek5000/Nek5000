@@ -588,6 +588,7 @@ C-----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
+      INCLUDE 'SOLN'
 C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
