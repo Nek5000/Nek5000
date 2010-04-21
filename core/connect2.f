@@ -450,6 +450,13 @@ C
          call exitt
       endif
 
+      ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
+      if (ifstrs.and.ktest.ne.0) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Stress formulation requires lx1m=lx1, etc. in SIZE'
+         call exitt
+      endif
+
       if (ifsplit .and. ifstrs) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: Stress formulation in Pn-Pn is not supported'
