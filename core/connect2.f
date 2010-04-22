@@ -565,10 +565,10 @@ c     Read elemental mesh data, formatted
          IF (GLLNID(IEG).EQ.NID) THEN
             IEL=GLLEL(IEG)
 
-C           read(9,30,err=31,end=600) igroup(iel)
             igroup(iel) = 0
-            read(9,30,err=31,end=600) adum
+            read(9,30,err=31,end=600) igroup(iel)
    30       format(43x,i5)
+c           read(9,*,err=31,end=600) adum
    31       continue
 
 C           Read Corner data
