@@ -293,7 +293,7 @@ c
                   call prs(line)
     1             format('WARNING: inconsistent per. BCs:',i2,1x,a3,'$')
     2             format('Reset el/face1:',i6,2i3,' to "p"$')
-                  cbc(iface,ie,ifld) = 'p  '
+                  cbc(iface,ie,ifld) = '   '
                   call rzero(bc(1,iface,ie,ifld),5)
 c
                endif

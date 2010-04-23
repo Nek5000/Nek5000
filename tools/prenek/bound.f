@@ -2054,7 +2054,7 @@ C           check for consistency
             ck = cbc(js,je,if)
             if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) then
                write(6,*) ie,is,je,js,ke,ks,ck,' fail',nfail
-               cbc(is,ie,if)='p  '
+               cbc(is,ie,if)='   '
                nfail = nfail + 1
                write(6,11) (sides(ie,is,k),k=1,3),ie,is,' side i'
                write(6,11) (sides(je,js,k),k=1,3),je,js,' side j'
@@ -2085,7 +2085,7 @@ c
       do ie=1,nel
       do is=1,nsides
          cb = cbc(is,ie,if)
-         if (cb.eq.'p  '.or.cb.eq.'P  ') then
+         if (cb.eq.'   '.or.cb.eq.'P  ') then
 C           Automatic selection of Periodic bc
             call fndsidb(js,je,is,ie,if,tol)
             if (js.ne.0) then
@@ -2122,7 +2122,7 @@ C           check for consistency
             ke = bc(1,js,je,if)
             ks = bc(2,js,je,if)
             ck = cbc(js,je,if)
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) cbc(is,ie,if)='p  '
+            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) cbc(is,ie,if)='   '
             if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) nfail = nfail + 1
          endif
       enddo
