@@ -59,7 +59,7 @@ c
       character*1 ccurve(8,nelm)
       character*1 ca(nelm)
       logical ifflow,ifheat
-      real dz(nelm)
+      common /arraz/ zmin,zmax,dz(nelm)
 c
       write(6,*)
       write(6,*) 'This is the code that establishes proper'
@@ -717,6 +717,7 @@ c-----------------------------------------------------------------------
       subroutine out_curve
 C
       parameter(nelm=9999)
+      common /arraz/ zmin,zmax,dz(nelm)
       common /array/ x(6,nelm),y(6,nelm),bc(5,6,nelm),curve(6,8,nelm)
       common /arrai/ nlev,nel,ncurve
       common /arrac/ cbc,ccurve,ca
@@ -734,10 +735,16 @@ C
    11 format(' ***** CURVED SIDE DATA *****')
    12 format(i8
      $ ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+
+      ilev = 0
+      r31 = zmin
+      r30 = r31
+      r31 = r31 + dz(ilev+1)
+
       IF (NCURVE.GT.0) THEN
-         DO 50 ilev=1,nlev
-         DO 50 ieg=1,nel
-         DO 50 iedg=1,8
+         DO 55 ilev=1,nlev
+           DO 50 ieg=1,nel
+           DO 50 iedg=1,8
             r1=CURVE (1,IEDG,IEG)
             r2=CURVE (2,IEDG,IEG)
             r3=CURVE (3,IEDG,IEG)
@@ -759,8 +766,25 @@ C
                   ied4 = iedg+4
                   write(11,62) IED4,IE,R1,R2,R3,R4,R5,ANS
                ENDIF
+            elseif (ans.eq.'m') then
+               IF (neln.LT.1000) THEN
+                  write(11,60) IEDG,IE,R1,R2,R30,R4,R5,ANS
+                  ied4 = iedg+4
+                  write(11,60) IED4,IE,R1,R2,R31,R4,R5,ANS
+               ELSEIF (neln.lt.1000000) then
+                  write(11,61) IEDG,IE,R1,R2,R30,R4,R5,ANS
+                  ied4 = iedg+4
+                  write(11,61) IED4,IE,R1,R2,R31,R4,R5,ANS
+               ELSE
+                  write(11,62) IEDG,IE,R1,R2,R30,R4,R5,ANS
+                  ied4 = iedg+4
+                  write(11,62) IED4,IE,R1,R2,R31,R4,R5,ANS
+               ENDIF
             endif
-   50    CONTINUE
+   50      CONTINUE
+           r30 = r31
+           r31 = r31 + dz(ilev+1)
+   55    CONTINUE
    60    FORMAT(I3,I3,5G14.6,1X,A1)
    61    FORMAT(I2,I6,5G14.6,1X,A1)
    62    FORMAT(I1,I7,5G14.6,1X,A1)
