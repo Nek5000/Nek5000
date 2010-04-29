@@ -142,22 +142,24 @@ echo $F77comp | grep -i mp >/dev/null
 if [ $? -eq 0 ]; then   
 # trying to figure out which compiler we're using 
   F77ok=0
-  F77comp=`$F77 -showme | awk '{print $1}' | awk -F/ '{print $NF}'`
-  if [ -f `which $F77comp` ]; then
+  F77comp_=`$F77 -showme 2>/dev/null 1>.tmp` 
+  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+  if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   else
-    F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
-    if [ -f `which $F77comp` ]; then
+    F77comp_=`$F77 -show 2>/dev/null 1>.tmp`
+    F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+    if [ -f "`which $F77comp 2>/dev/null`" ]; then
       F77ok=1
     fi
   fi
 else
   F77comp=`echo $F77 | awk '{print $1}'`
-  if [ -f `which $F77comp` ]; then
+  if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   fi
 fi
-
+\rm -f .tmp
 if [ $F77ok -eq 0 ]; then
   F77comp="unknown"
 fi
