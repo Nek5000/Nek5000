@@ -1,23 +1,22 @@
 #!/bin/bash
-#
-# nek5000 build script
+# Nek5000 build config file
 # (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
-#
 
 # source path 
 SOURCE_ROOT="$HOME/nek5_svn/trunk/nek" 
-
-# plug-in list
-PLUGIN_LIST=""
-
-# pre-processor symbol list
-PPLIST="" # MPIIO BLAS_MXM BG_MXM K10_MXM MOAB CVODE
 
 # Fortran compiler
 F77="mpif77"
 
 # C compiler
 CC="mpicc"
+
+# pre-processor symbol list 
+# (set PPLIST=? to get a list of available symbols)
+#PPLIST="?" 
+
+# plug-in list
+PLUGIN_LIST=""
 
 
 # OPTIONAL SWITCHES WILL FOLLOW
@@ -26,12 +25,12 @@ CC="mpicc"
 # enable MPI (default true)
 #IFMPI="false"
 
-# compiler flags
+# generic compiler flags
 #G="-g"
 
 # optimization flags
-#OPT_FLAGS_STD="-qarch=450 -qtune=450"
-#OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
+#OPT_FLAGS_STD=""
+#OPT_FLAGS_MAG=""
 
 # enable timing (default true)
 #IFTIMING="false"
@@ -40,13 +39,10 @@ CC="mpicc"
 #IFAMG="true"
 #IFAMG_DUMP="true"
 
-# enable coupled nek (default false)
-#IFNEKNEK="true"
-
 # CVODE path
 #CVODE_DIR=$HOME/cvode/lib
  
-# MOAB/IMESH path
+# MOAB/iMESH path
 #MOAB_DIR="$HOME/moab"
 
 # auxilliary files to compile
@@ -59,27 +55,17 @@ CC="mpicc"
 
 
 ###############################################################################
-# User Settings End
+# DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
-
+# assign version tag
+mver=1
 # overwrite source path with optional 2nd argument
-if [ $# -eq 2 ]; then
+if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT="$2"
+  echo "change source code directory to: ", $SOURCE_ROOT
 fi
-
-if [ ! -d $SOURCE_ROOT ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT"
-  exit 1
-fi
-
 # do some checks and create makefile
 source $SOURCE_ROOT/makenek.inc
-
-# compile source using multiple threads
+# compile
 make -j4 -f makefile 2>&1 | tee compiler.out
-
-# clean up
-mkdir obj 2>/dev/null
-\mv *.o ./obj 2>/dev/null
-
 exit 0

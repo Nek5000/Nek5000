@@ -1,15 +1,44 @@
 # This include file is used by the makenek script
-# to create a makefile using a makefile template 
+# to automatically create a makefile for Nek5000 
+# (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
 # ------------------------------------------------
+
+echo "makenek - automatic build tool for Nek5000"
 
 # first do some checks ...
 if [ $# -eq 0 ]; then
   echo ""
-  echo "makenek - automatic build tool for nek5000"
-  echo "usage: makenek [.usr filename | clean]"
+  echo "usage: makenek [.usr filename | clean] < -nocompile >"
   echo ""
   exit 1
 fi
+
+if [ "$mver" == "" ]; then
+  echo "ERROR: Your makenek is too old!"
+  echo "Please upgrade to last version shipped with the Nek source."
+  exit 1
+else
+  if [ $mver -lt 1 ]; then
+    echo "ERROR: Your makenek is too old!"
+    echo "Please upgrade to last version shipped with the Nek source."
+    exit 1
+  fi
+fi
+
+if [ "$PPLIST" == "?" ]; then
+  echo "available pre-processor symbols:" 
+  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
+  echo "  BG        enable Blue Gene optimizations"
+  echo "  K10_MXM   use AMD K10 optimized MxM kernel"
+  echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
+  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
+  exit 1
+fi
+
+NOCOMPILE=0
+if [ "$2" == "-nocompile" ]; then
+  NOCOMPILE=1
+fi 
 
 CASENAME=$1
 CASEDIR=`pwd`
@@ -21,6 +50,7 @@ if [ $1 = "clean" ]; then
   exit 0
 fi
 
+# do some basic checks
 if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
    echo "FATAL ERROR: Working directory has to be different from the source!"
    exit 1
@@ -46,25 +76,23 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-
 if [ ! -f $SOURCE_ROOT/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $SOURCE_ROOT/makefile.template!"
   exit 1
 fi
 
+# test F77 compiler
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
   exit 1
 fi
-
 \rm test_f77.o 2>/dev/null
 # basic compiler test
 cat > test_f77.f << _ACEOF
       subroutine test
       end
 _ACEOF
-
 $F77 -c test_f77.f >/dev/null
 if [ ! -f test_f77.o ]; then
   echo "FATAL ERROR: Basic compiler test for $F77 failed!"
@@ -72,14 +100,13 @@ if [ ! -f test_f77.o ]; then
 fi
 \rm test_f77.* 2>/dev/null
 
+# test C compiler
 which `echo $CC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $CC!"
   exit 1
 fi
-
 \rm test_cc.o 2>/dev/null
-# basic compiler test
 cat > test_cc.c << _ACEOF
       void function(){}
 _ACEOF
@@ -92,10 +119,7 @@ fi
 
 # initial clean-up
 rm -f nek5000 2>/dev/null
-rm -f $SOURCE_ROOT/SIZE      2>/dev/null
-rm -f $SOURCE_ROOT/subuser.f 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
-\mv ./obj/*.o .              2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
 IFUNDERSCORE=false
@@ -112,20 +136,33 @@ then
 fi
 \rm test_underscore.* 2>/dev/null
 
-# assign compiler flag to promote REAL to 8 bytes 
 F77comp=$F77
-echo $F77comp | grep -i mpi >/dev/null
+# mpi-wrappers?
+echo $F77comp | grep -i mp >/dev/null
 if [ $? -eq 0 ]; then   
- $F77 -showme  &>/dev/null
- if [ $? -eq 0 ]; then
-    F77comp=`$F77 -showme | awk '{print $1}' | awk -F/ '{print $NF}'`
- else
+# trying to figure out which compiler we're using 
+  F77ok=0
+  F77comp=`$F77 -showme | awk '{print $1}' | awk -F/ '{print $NF}'`
+  if [ -f `which $F77comp` ]; then
+    F77ok=1
+  else
     F77comp=`$F77 -show | awk '{print $1}' | awk -F/ '{print $NF}'`
- fi
+    if [ -f `which $F77comp` ]; then
+      F77ok=1
+    fi
+  fi
 else
- F77comp=`echo $F77 | awk '{print $1}'`
+  F77comp=`echo $F77 | awk '{print $1}'`
+  if [ -f `which $F77comp` ]; then
+    F77ok=1
+  fi
 fi
 
+if [ $F77ok -eq 0 ]; then
+  F77comp="unknown"
+fi
+
+# assign F77 compiler specific flags
 case $F77comp in
   pgf*)        P="-r8 -Mpreprocess"
                ;;
@@ -140,17 +177,17 @@ case $F77comp in
                ;;
   ftn)         P="-r8 -Mpreprocess"
                ;;
-  sun*)        P="-r8const -xtypemap=real:64 -fpp"
+  sunf*)       P="-r8const -xtypemap=real:64 -fpp"
                ;;
-  open*)       P="-r8 -cpp -fno-second-underscore"
+  open*)      P="-r8 -cpp -fno-second-underscore"
                ;;
-  *)  echo "WARNING: Cannot detect compiler specfic flags
-      echo "          - to promote REAL to 8 bytes"
-      echo "          - to invoke preprocessor first
-      echo "Please edit the makefile and specify the requested compiler flags in the P variable!"
+  *)  echo "ERROR: Unknown compiler detected!"
+      echo "        - don't know how to promote datatype REAL to 8 bytes"
+      echo "        - don't know how to invoke the C pre-processor (CPP) before compilation"
+      echo "       Please edit the makefile and specify the requested compiler flags using the P variable."
       echo ""
-      P=""
-      echo "Press return to finish the makefile generation ..."
+      P="<specify your compiler flags here>"
+      NOCOMPILE=1
       read;;
 esac
 export PPPO
@@ -233,7 +270,6 @@ do
    fi
 done
 
-
 # set preprocessor symbol to print AMG files
 if [ "$IFAMG_DUMP" == "true" ]; then
     if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
@@ -256,6 +292,28 @@ if [ "$IFAMG" == "true" -o "$IFAMG" == "yes" ]; then
 else
   # default
   IFAMG=false
+fi
+
+# MXM-handling
+if [ "$MXM_USER" != "" ]; then
+    echo "ABORT: makenek version is too old! Update with latest from source!"
+    exit 1 
+fi
+MXM_USER="mxm_std.o blas.o"
+echo $PPLIST | grep 'BG' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o blas.o" 
+   OPT_FLAGS_STD="-qarch=450 -qtune=450"
+   OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
+fi
+echo $PPLIST | grep 'K10_MXM' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o k10_mxm.o blas.o" 
+   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT}/libk10_mxm.a"
+fi
+echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o" 
 fi
 
 # set optimization flags
@@ -284,32 +342,9 @@ if [ "$USR_LIB" != "" ]; then
     USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
 fi
 
-# Generate makefile from using the makefile template and 
-# the specified parameters in makenek
-
+# tweak makefile template 
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
-
-# MXM-handling
-if [ "$MXM_USER" != "" ]; then
-    echo "ABORT: makenek version is too old! Update with latest from source!"
-    exit 1 
-fi
-MXM_USER="mxm_std.o blas.o"
-echo $PPLIST | grep 'BG_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o blas.o" 
-fi
-echo $PPLIST | grep 'K10_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o k10_mxm.o blas.o" 
-   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT}/libk10_mxm.a"
-fi
-echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o" 
-fi
-
 
 sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
@@ -354,20 +389,6 @@ else
 fi
 \rm .makefile 2>/dev/null
 
-#mv $SOURCE_ROOT/HEADER $SOURCE_ROOT/.HEADER 
-#which svnversion >/dev/null 2>&1 
-#status=`echo $?`
-#if [ "$status" == "0" ]; then
-#  rev_number=$( svnversion ${SOURCE_ROOT} )
-#  rev_number=$( printf %-11s ${rev_number} )
-#  sed "s/SVN r.........../SVN r$rev_number/" \
-#    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
-#else
-#  sed "s/SVN r.........../SVN r\?\?\?\?/" \
-#    $SOURCE_ROOT/.HEADER > $SOURCE_ROOT/HEADER
-#fi
-#rm -rf $SOURCE_ROOT/.HEADER >/dev/null 2>&1
-
 # add plugins
 for i in $PLUGIN_LIST
 do
@@ -377,7 +398,7 @@ do
   fi
   source makenek_plugin_$i
 
-  plugindir="SOURCE_ROOT_$i"
+  plugindir="SRC_PLUGIN"
   plugindir=`echo ${!plugindir}`
 
   if [ ! -f $plugindir/makenek.inc ]; then
@@ -389,9 +410,10 @@ do
      echo "ABORT: plug-in config failed!"
      exit 1
   fi
-  echo "found plug-in" $i
+  echo "found plug-in" $i in $plugindir
 done
 
+# tweak SIZE file
 if [ -f SIZE ]; then 
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
@@ -416,3 +438,7 @@ else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
 fi
+
+if [[ $NOCOMPILE -eq 1 && "$PLUGIN_LIST" == "" ]]; then
+  exit 0
+fi 

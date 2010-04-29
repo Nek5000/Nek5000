@@ -1,8 +1,11 @@
+BINNAME=nek5000
 CASENAME=
 CASEDIR=
 S=
 J:=$S/jl
 J2:=$J/../jl2
+OPT_INCDIR:=./
+OBJDIR=obj
 IFMPI= 
 IFAMG= 
 IFAMG_DUMP=
@@ -94,18 +97,19 @@ endif
 
 NOBJS_F = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI)
 NOBJS_C = $(JLCORE) $(JLINTP) $(CGS)
-NOBJS   = $(NOBJS_F) $(NOBJS_C)
+_NOBJS  = $(NOBJS_F) $(NOBJS_C)
+NOBJS   = $(patsubst %,$(OBJDIR)/%,$(_NOBJS))
 
 L0 = $(G) -O0
 L2 = $(G) $(OPT_FLAGS_STD)
 L3 = $(G) $(OPT_FLAGS_STD)
 L4 = $(L3)
 
-FL0   = $(L0) $(P) -I$S -I$(CASEDIR)
-FL2i4 = $(L0)      -I$S -I$(CASEDIR)
-FL2   = $(L2) $(P) -I$S -I$(CASEDIR)
-FL3   = $(L3) $(P) -I$S -I$(CASEDIR)
-FL4   = $(L4) $(P) -I$S -I$(CASEDIR)
+FL0   = $(L0) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL2i4 = $(L0)      -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL2   = $(L2) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL3   = $(L3) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL4   = $(L4) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
 cFL0   = $(L0) 
 cFL2   = $(L2) 
@@ -113,20 +117,21 @@ cFL3   = $(L3)
 cFL4   = $(L4) 
 
 ################################################################################
-T = nek5000
-
 all : nek5000
 
-nek5000:	$(NOBJS)
+objdir: 
+	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
+
+nek5000:	objdir $(NOBJS)
 	@ln -sf $(CASEDIR)/${CASENAME}.usr $(CASEDIR)/${CASENAME}.f
-	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f -o ${CASENAME}.o 
-	@rm -f $(CASEDIR)/${CASENAME}.f
-	$(F77) -o nek5000 $G ${CASENAME}.o $(NOBJS) $(lFLAGS)
-	@if test -f "nek5000"; then \
+	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f -o ${OBJDIR}/${CASENAME}.o 
+	#@rm -f $(CASEDIR)/${CASENAME}.f
+	$(F77) -o ${BINNAME} $G ${OBJDIR}/${CASENAME}.o $(NOBJS) $(lFLAGS)
+	@if test -f ${BINNAME}; then \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
-        size nek5000; \
+        size ${BINNAME}; \
         echo ""; \
         echo "$(NEK_WARN)"; \
 	else \
@@ -138,124 +143,124 @@ ifeq ($(IFMPI),false)
 endif
 
 clean:
-	rm -rf ./obj nek5000
+	rm -rf ./obj ${BINNAME}
 ifeq ($(IFMPI),false) 
 	@rm -rf $S/mpif.h
 endif
 
 $(NOBJS_F) : SIZE
 
-################################################################################
-# fortran source files
-################################################################################
-drive.o		:$S/drive.f;			$(F77) -c $(FL2)  $S/drive.f
-drive1.o	:$S/drive1.f;			$(F77) -c $(FL2)  $S/drive1.f
-drive2.o	:$S/drive2.f;			$(F77) -c $(FL2)  $S/drive2.f
-prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $S/prepost.f
-byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $S/byte_mpi.f
-postpro.o	:$S/postpro.f;			$(F77) -c $(FL2) $S/postpro.f
-connect1.o	:$S/connect1.f;			$(F77) -c $(FL2) $S/connect1.f
-connect2.o	:$S/connect2.f;			$(F77) -c $(FL2) $S/connect2.f
-edgec.o		:$S/edgec.f;			$(F77) -c $(FL2) $S/edgec.f
-genxyz.o	:$S/genxyz.f;			$(F77) -c $(FL2) $S/genxyz.f
-subs1.o		:$S/subs1.f;			$(F77) -c $(FL2) $S/subs1.f
-subs2.o		:$S/subs2.f;			$(F77) -c $(FL2) $S/subs2.f
-turb.o		:$S/turb.f;			$(F77) -c $(FL2) $S/turb.f
-map2.o		:$S/map2.f;			$(F77) -c $(FL2) $S/map2.f
-mvmesh.o	:$S/mvmesh.f;			$(F77) -c $(FL2) $S/mvmesh.f
-induct.o	:$S/induct.f;	      		$(F77) -c $(FL2) $S/induct.f
-convect.o	:$S/convect.f;	      		$(F77) -c $(FL2) $S/convect.f
-perturb.o	:$S/perturb.f;	      		$(F77) -c $(FL2) $S/perturb.f
-genbox.o	:$S/genbox.f;			$(F77) -c $(FL2) $S/genbox.f
-hsmg.o		:$S/hsmg.f;			$(F77) -c $(FL2) $S/hsmg.f
-gmres.o		:$S/gmres.f;			$(F77) -c $(FL2) $S/gmres.f
-papi.o		:$S/papi.f;			$(F77) -c $(FL2) $S/papi.f
-bdry.o		:$S/bdry.f;			$(F77) -c $(FL2) $S/bdry.f
-mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $S/mpi_dummy.f
-comm_mpi.o	:$S/comm_mpi.f;			$(F77) -c $(FL2) $S/comm_mpi.f
-ic.o		:$S/ic.f;			$(F77) -c $(FL2) $S/ic.f
-conduct.o	:$S/conduct.f;			$(F77) -c $(FL2) $S/conduct.f
-navier0.o	:$S/navier0.f;			$(F77) -c $(FL2) $S/navier0.f
-navier2.o	:$S/navier2.f;			$(F77) -c $(FL2) $S/navier2.f
-navier3.o	:$S/navier3.f;			$(F77) -c $(FL2) $S/navier3.f
-navier4.o	:$S/navier4.f;			$(F77) -c $(FL2) $S/navier4.f
-navier5.o	:$S/navier5.f;			$(F77) -c $(FL2) $S/navier5.f
-navier6.o	:$S/navier6.f;			$(F77) -c $(FL2) $S/navier6.f
-navier7.o	:$S/navier7.f;			$(F77) -c $(FL2) $S/navier7.f
-navier8.o	:$S/navier8.f;			$(F77) -c $(FL2) $S/navier8.f
-speclib.o	:$S/speclib.f;			$(F77) -c $(FL2) $S/speclib.f
-calcz.o		:$S/calcz.f;			$(F77) -c $(FL2) $S/calcz.f
-fast3d.o	:$S/fast3d.f;			$(F77) -c $(FL2) $S/fast3d.f
-dssum.o		:$S/dssum.f;			$(F77) -c $(FL2) $S/dssum.f
-eigsolv.o	:$S/eigsolv.f;			$(F77) -c $(FL2) $S/eigsolv.f
-gauss.o		:$S/gauss.f;			$(F77) -c $(FL2) $S/gauss.f
-planx.o		:$S/planx.f;			$(F77) -c $(FL2) $S/planx.f
-ssolv.o		:$S/ssolv.f;			$(F77) -c $(FL2) $S/ssolv.f
-gfdm_par.o	:$S/gfdm_par.f;			$(F77) -c $(FL2) $S/gfdm_par.f
-gfdm_solve.o	:$S/gfdm_solve.f;		$(F77) -c $(FL2) $S/gfdm_solve.f
-gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL2) $S/gfdm_op.f
-coef.o		:$S/coef.f;			$(F77) -c $(FL2) $S/coef.f
-plan4.o		:$S/plan4.f;			$(F77) -c $(FL2) $S/plan4.f
-qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $S/qthermal.f
-setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $S/setprop.f
-cvode_driver.o	:$S/cvode_driver.f;		$(F77) -c $(FL2) $S/cvode_driver.f
-cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $S/cvode_aux.f
-makeq.o	      	:$S/makeq.f;			$(F77) -c $(FL2) $S/makeq.f
-mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
-mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $S/mxm_std.f
-k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
-bg_aligned3.o	  :$S/bg_aligned3.s;		$(CC) -c $< -o $@
-bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
-bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@
-bg_mxm44_uneven.o :$S/bg_mxm44_uneven.s;	$(CC) -c $< -o $@
-math.o		  :$S/math.f;			$(F77) -c $(FL4) $S/math.f
-hmholtz.o	  :$S/hmholtz.f;		$(F77) -c $(FL2) $S/hmholtz.f
-navier1.o	  :$S/navier1.f;		$(F77) -c $(FL2) $S/navier1.f
-fasts.o		  :$S/fasts.f;		        $(F77) -c $(FL4) $S/fasts.f
+# NEK CORE     ##################################################################
+$(OBJDIR)/drive.o	:$S/drive.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/drive1.o	:$S/drive1.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/drive2.o	:$S/drive2.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/prepost.o	:$S/prepost.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/postpro.o	:$S/postpro.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/connect1.o	:$S/connect1.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/connect2.o	:$S/connect2.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/edgec.o	:$S/edgec.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/genxyz.o	:$S/genxyz.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/subs1.o	:$S/subs1.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/subs2.o	:$S/subs2.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/turb.o	:$S/turb.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/map2.o	:$S/map2.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/induct.o	:$S/induct.f;	      		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/convect.o	:$S/convect.f;	      		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/perturb.o	:$S/perturb.f;	      		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/genbox.o	:$S/genbox.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/hsmg.o	:$S/hsmg.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/gmres.o	:$S/gmres.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/papi.o	:$S/papi.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/bdry.o	:$S/bdry.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/ic.o		:$S/ic.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/conduct.o	:$S/conduct.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier0.o	:$S/navier0.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier2.o	:$S/navier2.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier3.o	:$S/navier3.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier4.o	:$S/navier4.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier5.o	:$S/navier5.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier6.o	:$S/navier6.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier7.o	:$S/navier7.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier8.o	:$S/navier8.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/speclib.o	:$S/speclib.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/calcz.o	:$S/calcz.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/fast3d.o	:$S/fast3d.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/dssum.o	:$S/dssum.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/eigsolv.o	:$S/eigsolv.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/gauss.o	:$S/gauss.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/planx.o	:$S/planx.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/ssolv.o	:$S/ssolv.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/gfdm_par.o	:$S/gfdm_par.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/gfdm_solve.o	:$S/gfdm_solve.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/coef.o	:$S/coef.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/plan4.o	:$S/plan4.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/cvode_driver.o :$S/cvode_driver.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/makeq.o      	:$S/makeq.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/hmholtz.o	:$S/hmholtz.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/navier1.o	:$S/navier1.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/fasts.o	:$S/fasts.f;		        $(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/comm_mpi.o	:$S/comm_mpi.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
+
+# MXM       ####################################################################
+$(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
+$(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $< -o $@
+$(OBJDIR)/k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/bg_aligned3.o	  :$S/bg_aligned3.s;		$(CC) -c $< -o $@
+$(OBJDIR)/bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
+$(OBJDIR)/bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@
+$(OBJDIR)/bg_mxm44_uneven.o :$S/bg_mxm44_uneven.s;	$(CC) -c $< -o $@
 
 # 3rd party ####################################################################
-dsygv.o     	:$S/3rd_party/dsygv.f;  	$(F77) -c $(FL2i4) $< -o $@
-ssygv.o     	:$S/3rd_party/ssygv.f;  	$(F77) -c $(FL2i4) $< -o $@
-blas.o	   	:$S/3rd_party/blas.f;		$(F77) -c $(FL2i4) $< -o $@
-moab.o          :$S/3rd_party/moab.f;           $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
-imeshutil.o     :$S/3rd_party/imeshutil.f;  	$(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
+$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(F77) -c $(FL2i4) $< -o $@
+$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(F77) -c $(FL2i4) $< -o $@
+$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(F77) -c $(FL2i4) $< -o $@
+$(OBJDIR)/moab.o        :$S/3rd_party/moab.f;           $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
+$(OBJDIR)/imeshutil.o   :$S/3rd_party/imeshutil.f;  	$(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 
-# C Files ######################################################################
-byte.o                 :$S/byte.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-chelpers.o             :$S/chelpers.c;        $(CC) -c $(cFL2) $(JL) $< -o $@
-$(JO)errmem.o          :$J/errmem.c;          $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)sort.o            :$J/sort.c;            $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)crystal.o         :$J/crystal.c;         $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)tuple_list.o      :$J/tuple_list.c;      $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)transfer.o        :$J/transfer.c;        $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)fcrystal.o        :$J/fcrystal.c;        $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)gs.o              :$J/gs.c;              $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)sparse_cholesky.o :$J/sparse_cholesky.c; $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)xxt.o             :$J/xxt.c;             $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)poly.o            :$J/poly.c;            $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)tensor.o          :$J/tensor.c;          $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)findpt.o          :$J/findpt.c;          $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)pfindpt.o         :$J/pfindpt.c;         $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)findpts.o         :$J/findpts.c;         $(CC) -c $(L2) $(JL) $< -o $@
-$(JO)amg.o             :$J/amg.c;             $(CC) -c $(L2) $(JL) $< -o $@
-$(JO2)fail.o            :$(J2)/fail.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)tensor.o          :$(J2)/tensor.c;          $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)fcrystal.o        :$(J2)/fcrystal.c;        $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)poly.o            :$(J2)/poly.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)lob_bnd.o         :$(J2)/lob_bnd.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)findpts_el_3.o    :$(J2)/findpts_el_3.c;    $(CC) -c $(L2) $(JL2) $< -o $@
-$(JO2)findpts_el_2.o    :$(J2)/findpts_el_2.c;    $(CC) -c $(L2) $(JL2) $< -o $@
+# C Files #################################################################################
+$(OBJDIR)/byte.o                  :$S/byte.c;          	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/chelpers.o              :$S/chelpers.c;      	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)errmem.o           :$J/errmem.c;             $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)sort.o             :$J/sort.c;         	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)crystal.o          :$J/crystal.c;       	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)tuple_list.o       :$J/tuple_list.c;    	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)transfer.o         :$J/transfer.c;      	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)fcrystal.o         :$J/fcrystal.c;      	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)gs.o               :$J/gs.c;            	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)sparse_cholesky.o  :$J/sparse_cholesky.c;    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)xxt.o              :$J/xxt.c;           	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)poly.o             :$J/poly.c;          	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)tensor.o           :$J/tensor.c;        	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)findpt.o           :$J/findpt.c;        	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)pfindpt.o          :$J/pfindpt.c;       	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)findpts.o          :$J/findpts.c;            $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)amg.o              :$J/amg.c;           	    $(CC) -c $(L2) $(JL) $< -o $@
+$(OBJDIR)/$(JO2)fail.o            :$(J2)/fail.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)tensor.o          :$(J2)/tensor.c;          $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)fcrystal.o        :$(J2)/fcrystal.c;        $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)poly.o            :$(J2)/poly.c;            $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)lob_bnd.o         :$(J2)/lob_bnd.c;         $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_el_3.o    :$(J2)/findpts_el_3.c;    $(CC) -c $(L2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_el_2.o    :$(J2)/findpts_el_2.c;    $(CC) -c $(L2) $(JL2) $< -o $@
 #
