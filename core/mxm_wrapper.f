@@ -30,7 +30,7 @@ c
       return
 #endif
  
-#ifdef BG_MXM
+#ifdef BG
       call bg_aligned3(a,b,c,aligned)
       if (n2.eq.2) then
          call mxm44_2(a,n1,b,n2,c,n3)
