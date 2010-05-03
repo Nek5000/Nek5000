@@ -28,8 +28,8 @@ fi
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BG        enable Blue Gene optimizations"
-  echo "  K10_MXM   use AMD K10 optimized MxM kernel"
+  echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
   echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
   exit 1
@@ -168,16 +168,16 @@ fi
 case $F77comp in
   pgf*)        P="-r8 -Mpreprocess"
                ;;
-  gfortran)    P="-fdefault-real-8 -x f77-cpp-input"
+  gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
                ;;
-  ifort)       P="-r8 -fpconstant -fpp"
+  ifort*)      P="-r8 -fpconstant -fpp"
                ;;
   pathf*)      P="-r8 -cpp -fno-second-underscore"
                ;;
-  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
                ;;
-  ftn)         P="-r8 -Mpreprocess"
+  ftn*)        P="-r8 -Mpreprocess"
                ;;
   sunf*)       P="-r8const -xtypemap=real:64 -fpp"
                ;;
@@ -256,18 +256,6 @@ do
       USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecparallel -lsundials_nvecparallel"
     else
         USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecserial -lsundials_nvecserial"
-    fi
-    cat SIZE | grep -i 'cv_maxl' >/dev/null
-    if [ $? -ne 0 ]; then
-      cp SIZE .SIZE
-      echo >>.SIZE
-      echo 'c CVODE settings automatically added by makenek' >>.SIZE
-      echo '      integer cv_maxl' >> .SIZE
-      echo '      real cv_delt,cv_sigs' >> .SIZE
-      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>.SIZE
-      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor '  >>.SIZE
-      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>.SIZE
-      mv .SIZE SIZE
     fi
    fi
 done
@@ -408,15 +396,17 @@ do
      exit 1
   fi
   source $plugindir/makenek.inc
-  if [ "$ierr" != 0 ]; then
+  if [ $ierr -ne 0 ]; then
      echo "ABORT: plug-in config failed!"
      exit 1
+  else
+    echo "found plug-in" $i in $plugindir
   fi
-  echo "found plug-in" $i in $plugindir
 done
 
 # tweak SIZE file
-if [ -f SIZE ]; then 
+if [ -f "./SIZE" ]; then
+  echo hh 
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -436,11 +426,38 @@ if [ -f SIZE ]; then
      echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZE
      echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZE
   fi
+
+  echo $PPLIST | grep 'CVODE' >/dev/null
+  if [ $? -eq 0 ]; then
+  cat SIZE | grep -i 'cv_maxl' >/dev/null
+  if [ $? -ne 0 ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer cv_maxl' >> SIZE
+      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>SIZE
+  fi
+  cat SIZE | grep -i 'cv_delt' >/dev/null
+  if [ $? -ne 0 ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      real cv_delt' >> SIZE
+      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor ' >>SIZE
+  fi
+  cat SIZE | grep -i 'cv_sigs' >/dev/null
+  if [ $? -ne 0 ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      real cv_sigs' >> SIZE
+      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>SIZE
+  fi
+  fi
 else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
 fi
 
-if [[ $NOCOMPILE -eq 1 && "$PLUGIN_LIST" == "" ]]; then
+exit 1 
+
+if [ $NOCOMPILE -eq 1 ]; then
   exit 0
 fi 

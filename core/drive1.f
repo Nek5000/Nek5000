@@ -197,8 +197,8 @@ C--------------------------------------------------------------------------
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
 #endif
-#ifdef HPM
-      call hpm_init()
+#ifdef HPCT
+      call summary_start()
       call hpm_start("nek_advance")
 #endif
 
@@ -208,6 +208,11 @@ C--------------------------------------------------------------------------
          call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001
       ENDDO
+
+#ifdef HPCT
+      call hpm_stop("nek_advance")
+      call summary_stop()
+#endif
 
  1001 RETURN
       END
