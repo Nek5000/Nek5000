@@ -448,11 +448,6 @@ c
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
 #endif
-#ifdef HPM
-      call HPM_Stop("nek_advance")
-      call HPM_Print_Flops_Agg()
-c      call HPM_Print()
-#endif
 
       tstop  = dnekclock()
       ttotal = tstop-etimes
@@ -476,7 +471,7 @@ c      call HPM_Print()
      &       'total elapsed time             : ',ttotal, ' sec'
      &      ,'total solver time incl. I/O    : ',ttime , ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
-     &      ,'CPU seconds/timestep/DOF       : ',dtmp1 , ' sec'
+     &      ,'CPU seconds/timestep/gridpt    : ',dtmp1 , ' sec'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 
      &       'Mflops                         : ',dtmp3
