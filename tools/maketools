@@ -90,7 +90,7 @@ case $F77 in
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
   ifort*)      R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               BIGMEM_FLAG="-mcmodel=medium -shared-intel"
                ;;
   pathf*)      R8="-r8"
                ;;
