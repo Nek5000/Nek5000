@@ -174,14 +174,15 @@ case $F77comp in
                ;;
   pathf*)      P="-r8 -cpp -fno-second-underscore"
                ;;
-  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
+  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
+               F77="${F77} -qsuppress=cmpmsg"
                ;;
   ftn*)        P="-r8 -Mpreprocess"
                ;;
   sunf*)       P="-r8const -xtypemap=real:64 -fpp"
                ;;
-  open*)      P="-r8 -cpp -fno-second-underscore"
+  open*)       P="-r8 -cpp -fno-second-underscore"
                ;;
   *)  echo "ERROR: Unknown compiler detected!"
       echo "        - don't know how to promote datatype REAL to 8 bytes"
@@ -406,7 +407,6 @@ done
 
 # tweak SIZE file
 if [ -f "./SIZE" ]; then
-  echo hh 
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -455,8 +455,6 @@ else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
 fi
-
-exit 1 
 
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0
