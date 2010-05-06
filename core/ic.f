@@ -26,7 +26,7 @@ c
       common /ctmp1/ work(lx1,ly1,lz1,lelv)
      $ ,             ta1 (lx2,ly1,lz1)
      $ ,             ta2 (lx2,ly2,lz1)
-      integer*8 ntotg
+      integer*8 ntotg,nxyz1
 
       real psmax(LDIMT)
 
