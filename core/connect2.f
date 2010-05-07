@@ -127,6 +127,12 @@ C     End of input data, close read file.
      &                            dnekclock()-etime_tmp,' sec'
       ENDIF
 
+c     This is not an excellent place for this check, but will
+c     suffice for now.   5/6/10
+      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
+     $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
+
+
       return
       END
 c-----------------------------------------------------------------------
@@ -2442,3 +2448,4 @@ c
       return
 
       end
+c-----------------------------------------------------------------------
