@@ -134,22 +134,22 @@ static void table_from_hash(struct hash_data *const p,
 {
   const ulong hn = p->hash_n;
   ulong hnd;
-  uint ncell, *offset, i, last_cell;
+  uint ncell, *offset, i, next_cell;
   const struct proc_index *const hp = hash->ptr;
   const uint n = hash->n;
   hnd = hn*hn; WHEN_3D(hnd*=hn);
   ncell = (hnd-1)/np+1;
   p->offset = offset = tmalloc(uint,ncell+1+n);
   sarray_sort(struct proc_index,hash->ptr,n, index,0, buf);
-  last_cell = -(uint)1;
+  next_cell = 0;
   for(i=0;i<n;++i) {
     const uint cell = hp[i].index;
     const uint off = ncell+1+i;
     offset[off]=hp[i].proc;
-    while(last_cell!=cell) offset[++last_cell]=off;
+    while(next_cell<=cell ) offset[next_cell++]=off;
   }
   { const uint off = ncell+1+i;
-    while(last_cell!=ncell) offset[++last_cell]=off;
+    while(next_cell<=ncell) offset[next_cell++]=off;
   }
 }
 
