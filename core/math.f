@@ -1084,10 +1084,10 @@ c-----------------------------------------------------------------------
 C
 C     Perform inner-product in double precision
 C
+      include 'OPCTR'
+c
       real x(1), y(1)
       real tmp,work(1)
-C
-      include 'OPCTR'
 C
 #ifndef NOTIMER
       if (isclld.eq.0) then

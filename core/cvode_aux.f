@@ -16,12 +16,11 @@ c
       real y(1)
 
       nxyz = nx1*ny1*nz1
-      ntot = nxyz*nelfld(2)
-      call copy(t,y,ntot)
-      j = ntot
-      do i=3,cv_nfld
+
+      j = 1
+      do i=2,cv_nfld
          ntot = nxyz*nelfld(i)
-         call copy(t(1,1,1,1,i-1),y(j+1),ntot)
+         call copy(t(1,1,1,1,i-1),y(j),ntot)
          j = j + ntot
       enddo
 
@@ -39,12 +38,11 @@ c
       real y(1)
 
       nxyz = nx1*ny1*nz1
-      ntot = nxyz*nelfld(2)
-      call copy(y,t,ntot)
-      j = ntot
-      do i=3,cv_nfld
+
+      j = 1
+      do i=2,cv_nfld
          ntot = nxyz*nelfld(i)
-         call copy (y(j+1),t(1,1,1,1,i-1),ntot)
+         call copy (y(j),t(1,1,1,1,i-1),ntot)
          j = j + ntot
       enddo
 

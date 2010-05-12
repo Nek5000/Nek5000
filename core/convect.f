@@ -994,11 +994,12 @@ c
      $ ,             phz  (lx1*ly1*lz1*lelt)
      $ ,             hmsk (lx1*ly1*lz1*lelt)
 
+#ifndef NOTIMER
       if (icalld.eq.0) tadvc=0.0
       icalld=icalld+1
       nadvc=icalld
       etime1=dnekclock()
-
+#endif
 
       dti = 1./dt
       n   = nx1*ny1*nz1*nelv
@@ -1029,8 +1030,9 @@ c
 
       endif
 
+#ifndef NOTIMER
       tadvc=tadvc+(dnekclock()-etime1)
-
+#endif
       return
       end
 c-----------------------------------------------------------------------

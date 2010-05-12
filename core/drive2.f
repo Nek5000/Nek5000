@@ -128,22 +128,17 @@ C
            TTIME     = 0
          ENDIF
          IF (     IFCOUR) 
-     $      WRITE (6,100) ISTEP,TIME,DT,COURNO/10,TTIME,TTIME_STP
+     $      WRITE (6,100) ISTEP,TIME,DT,COURNO,TTIME,TTIME_STP
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
       ELSEIF (LASTEP.EQ.1) THEN
-         WRITE (6,*) ' '
-         WRITE (6,'(A)') 'Simulation successfully completed'
+         TTIME_STP = EETIME2-EETIME1   ! time per timestep
+         TTIME     = EETIME2-EETIME0   ! sum of all timesteps
       ENDIF
  100  FORMAT('Step',I7,', t=',1pE14.7,', DT=',1pE14.7
-     $,', C=',F7.3,2(1pE11.4))
+     $,', C=',0pF7.3,2(1pE11.4))
  101  FORMAT('Step',I7,', time=',1pE12.5,', DT=',1pE11.3)
 
       RETURN
-      END
-C
-      subroutine exit2
-C     This is here because calling Sun-4 Fortran's EXIT causes a core dump (!)
-      call exitt
       END
 C
       subroutine setvar
@@ -649,6 +644,7 @@ C
          CALL RZERO   (ABMSH,10)
          CALL SETABBD (ABMSH,DTLAG,NABMSH,NBDMSH)
       ENDIF
+
 C
 C     Set logical for printout to screen/log-file
 C
@@ -1120,6 +1116,8 @@ C
       ncrsl=0
       ndott=0
       nbsol=0
+      nadvc=0
+      nspro=0
 c
       tmxmf=0.0
       tmxms=0.0
@@ -1153,13 +1151,15 @@ c
       tdott=0.0
       tbsol=0.0
       tbso2=0.0
+      tspro=0.0
+      tadvc=0.0
       ttime=0.0
 C
       return
       end
 C
 c-----------------------------------------------------------------------
-      subroutine timeout
+      subroutine runstat
 
 #ifndef NOTIMER
 
@@ -1171,11 +1171,13 @@ c-----------------------------------------------------------------------
       real min_vdss, max_vdss, avg_vdss
       real min_gop,  max_gop,  avg_gop
       real min_crsl, max_crsl, avg_crsl
+      real min_usbc, max_usbc, avg_usbc
       character*132 s132
 
       tstop=dnekclock()
-      ttotal=tstop-etimes
-      tttstp=tstop-etims0
+      tttstp=ttime         ! sum over all timesteps
+
+c      call opcount(3)      ! print op-counters
 
       min_vdss = tvdss
       call gop(min_vdss,wwork,'m  ',1)
@@ -1209,9 +1211,18 @@ c
       call gop(avg_crsl,wwork,'+  ',1)
       avg_crsl = avg_crsl/np
 c
+      min_usbc = tusbc
+      call gop(min_usbc,wwork,'m  ',1)
+      max_usbc = tusbc
+      call gop(max_usbc,wwork,'M  ',1)
+      avg_usbc = tusbc
+      call gop(avg_usbc,wwork,'+  ',1)
+      avg_usbc = avg_usbc/np
+c
       tttstp = tttstp + 1e-7
       if (nid.eq.0) then
-         write(6,*) 'total time',ttotal,tttstp
+         write(6,*) 'runtime statistics:'
+         write(6,*) 'total time',tttstp
          pcopy=tcopy/tttstp
          write(6,*) 'copy time',ncopy,tcopy,pcopy
          pmxmf=tmxmf/tttstp
@@ -1237,10 +1248,19 @@ c
 
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
+
+         pspro=tspro/tttstp
+         write(6,*) 'spro time',nspro,tspro,pspro
+
          pusbc=tusbc/tttstp
          write(6,*) 'usbc time',nusbc,tusbc,pusbc
+         write(6,*) 'usbc min ',min_usbc 
+         write(6,*) 'usbc max ',max_usbc 
+         write(6,*) 'usb  avg ',avg_usbc 
+c
          paxhm=taxhm/tttstp
          write(6,*) 'axhm time',naxhm,taxhm,paxhm
+
          padvc=tadvc/tttstp
          write(6,*) 'advc time',nadvc,tadvc,padvc
 c
@@ -1430,7 +1450,7 @@ C
    10 continue
       epts = glsum(work,1) + .1
       netot=epts
-      if (nid.eq.0) write(6,*) ' dofs:',nvtot,nptot,netot
+      if (nid.eq.0) write(6,*) 'dofs:',nvtot,nptot,netot
       return
       end
 c-----------------------------------------------------------------------

@@ -611,9 +611,7 @@ C
          WRITE (6,*) ' *** STOP ***'
       ENDIF
 C
-c
-      call opcount(3)
-      call timeout
+      call runstat
 c
       call exitt
       RETURN

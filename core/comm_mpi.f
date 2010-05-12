@@ -276,7 +276,16 @@ c-----------------------------------------------------------------------
       real*8 function dnekclock()
       include 'mpif.h'
 c
-      dnekclock=mpi_wtime ()
+      dnekclock=mpi_wtime()
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      real*8 function dnekclock_sync()
+      include 'mpif.h'
+c
+      call gsync()
+      dnekclock_sync=mpi_wtime()
 c
       return
       end
@@ -458,7 +467,7 @@ c
          dtmp2 = 0
          dtmp3 = 0
          if(istep.gt.0) then
-           dtmp1 = np*ttime/(nvtot)/max(istep-1,1)
+           dtmp1 = np*ttime/(nvtot)/max(istep,1)
            dtmp2 = ttime/max(istep,1)
            dtmp3 = 1.*papi_flops/1e6
          endif 
@@ -474,10 +483,9 @@ c
      &      ,'CPU seconds/timestep/gridpt    : ',dtmp1 , ' sec'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 
-     &       'Mflops                         : ',dtmp3
-     &      ,'Mflops/s                       : ',papi_mflops
+     &       'Gflops                         : ',dtmp3/1000.
+     &      ,'Gflops/s                       : ',papi_mflops/1000.
 #endif
- 
       endif 
       call flush_io
 

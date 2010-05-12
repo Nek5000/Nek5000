@@ -3,21 +3,18 @@ c-----------------------------------------------------------------------
 
 C     Generate forcing function for the solution of a passive scalar.
 C     !! NOTE: Do not change the content of the array BQ until the current
-C              time step is completed. BQ will be zeroed in makeuq! 
 
       include 'SIZE'
       include 'TOTAL'
 
-      logical  ifturb,if_conv_std
+      logical  if_conv_std
       common /SCRUZ/ w1(lx1,ly1,lz1,lelt)
 
       if_conv_std = .true.
       if (ifmhd.and.ifaxis) if_conv_std = .false. ! conv. treated in induct.f
 
-      call whatfld (ifturb)
+      call makeq_aux ! nekuq, etc.
 
-      if (ifturb)                                          call maketq
-      if (.not.ifturb                   .and.if_conv_std)  call makeuq
       if (ifadvc(ifield).and..not.ifchar.and.if_conv_std)  call convab
 
       if (iftran) then
@@ -27,6 +24,8 @@ C              time step is completed. BQ will be zeroed in makeuq!
      &                     ifield)
             call add2   (bq(1,1,1,1,ifield-1),w1,ntot)
             call invcol2(bq(1,1,1,1,ifield-1),vtrans(1,1,1,1,ifield),
+     &                   ntot)
+            call col2   (bq(1,1,1,1,ifield-1),tmask(1,1,1,1,ifield-1),
      &                   ntot)
          else
            if (ifmvbd) then       ! ifchar is false
@@ -45,4 +44,3 @@ C              time step is completed. BQ will be zeroed in makeuq!
 
       return
       end
-
