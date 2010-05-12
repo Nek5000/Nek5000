@@ -25,9 +25,7 @@ c----------------------------------------------------------------------
 
       return
       end
-
 #else
-
       subroutine cv_setsize(n_in,nfld_last)
 
       include 'SIZE'
@@ -88,9 +86,12 @@ c
       common /cv_rout/ rout(6),rpar(1)
       common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
 
+      real*8 etime1
+
+      etime1=dnekclock_sync()
+
       nxyz = nx1*ny1*nz1
       ifcvodeinit   = .false.
-      time          = time - dt 
       cv_time       = time
 
       if(nid.eq.0) write(*,*) 'initializing ODE integrator ...'
@@ -148,10 +149,17 @@ c
         call exitt
       endif
 
-c      ! limit time integration order
-c      call fcvsetiin('MAX_ORD',3,ier)
+      ! limit time integration order
+      call fcvsetiin('MAX_ORD',3,ier)
+      if (ier .ne. 0) then
+        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetiin ier=', ier
+        call exitt
+      endif
+
+       ! limit maximum integration step size
+c      call fcvsetrin('MAX_STEP',dt,ier)
 c      if (ier .ne. 0) then
-c        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetiin ier=', ier
+c        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetrin ier=', ier
 c        call exitt
 c      endif
 
@@ -165,9 +173,7 @@ c      endif
         endif
       endif
 
-      time        = time + dt
-      ifcvodeinit = .true.
-
+      etime1 = dnekclock_sync() - etime1
       if(nid.eq.0) then
         write(6,'(A,i11)')     '   degrees of freedom            : ',
      &                         cv_nglobal
@@ -177,8 +183,11 @@ c      endif
      &                         cv_delt
         write(6,'(A,7x,i4)')   '   last field index to integrate : ',
      &                         cv_nfld
-        write(6,*) 'done :: initializing ODE integrator'
+        write(6,'(A,g15.3,A,/)') ' done :: initializing ODE integrator',
+     &                         etime1, ' sec'
       endif
+
+      ifcvodeinit = .true.
 
       return
       end
@@ -223,8 +232,6 @@ c
       data nfe_sum / 0 /
 
       nxyz = nx1*ny1*nz1
-
-      if(istep.eq.1 .or. .not.ifcvodeinit) call cv_init
 
       if (.not.ifcvodeinit) then
         write(6,*) 'ABORT: cv_init() was not called!'
@@ -486,7 +493,7 @@ c      endif
 
       if (cv_time.ne.timel) then
         timel = cv_time
-        icalld = 1
+c        icalld = 1
         if(nid.eq.0) write(6,10) cv_time
   10                 format(14X,'substepping t=',1pE14.7)
       endif
@@ -497,41 +504,34 @@ c      endif
       ncv_mode = abs(PARAM(16))
       if(ncv_mode.eq.3)  call update_vel(cv_time)
 
-      call setprop
-
-      ntot = nxyz*nelt
       ntflds = 0
-      j = 0
+      j = 1
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
          call makeq
          if (iftmsh(ifield)) then
             ntflds = ntflds + 1
-            do i=1,ntot
-               ydot(i+j) = bq(i,1,1,1,ifield-1)
-     $                   * bintm1(i,1,1,1)*tmask(i,1,1,1,ifield-1)
-            enddo
+            call col3(ydot(j),bq(1,1,1,1,ifield-1),bintm1,ntot)
          else
-            do i=1,ntot
-               ydot(i+j) = bq(i,1,1,1,ifield-1)
-     $                   * binvm1(i,1,1,1)*tmask(i,1,1,1,ifield-1)
-            enddo
+            call col3(ydot(j),bq(1,1,1,1,ifield-1),binvm1,ntot)
          endif
 c         call filterq(ydot(j+1),intv,nx1,nz1,wk1,wk2,intt,if3d,tmax)
          j = j + ntot
       enddo
 
-      ! project ydot onto H1 space
       if(ntflds.gt.0) then
         j = 1
         do ifield = 2,cv_nfld
            call dssum (ydot(j),nx1,ny1,nz1)
            j = j + nxyz*nelfld(ifield)
         enddo
-      else ! gs fluid handle for all fields use vector dssum
+        call add_fcvfun_usr(ydot(j))
+      else ! same gs handle; use vector dssum
         ntot = nxyz*nelv
         if(cv_nfld-1.gt.0) 
      &    call nvec_dssum (ydot,ntot,cv_nfld-1,gsh_fld(1))
+        j = (cv_nfld-1)*ntot + 1
+        call add_fcvfun_usr(ydot(j))
       endif 
 
       ier = 0

@@ -591,6 +591,7 @@ c
 c
       ifonbc = .false.
 c
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -598,6 +599,7 @@ c
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
+#endif
 C
 C
       NFACES=2*NDIM
@@ -693,7 +695,11 @@ C
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
 C
+
+#ifndef NOTIMER
       tusbc=tusbc+(dnekclock()-etime1)
+#endif
+
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -707,6 +713,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'SOLN'
       INCLUDE 'TOPOL'
+      INCLUDE 'CTIMER'
 C
       DIMENSION S(LX1,LY1,LZ1,LELT)
       COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
@@ -714,6 +721,16 @@ C
      $             , SMU(LX1,LY1,LZ1,LELT)
       common  /nekcb/ cb
       CHARACTER CB*3
+
+#ifndef NOTIMER
+      if (icalld.eq.0) then
+         tusbc=0.0
+         nusbc=0
+         icalld=icalld+1
+      endif
+      nusbc=nusbc+1
+      etime1=dnekclock()
+#endif
 C
       IFLD   = 1
       NFACES = 2*NDIM
@@ -759,6 +776,11 @@ C     Copy temporary array to temperature array.
 C
       CALL COL2(S,TMASK(1,1,1,1,IFIELD-1),NTOT)
       CALL ADD2(S,TMP,NTOT)
+
+#ifndef NOTIMER
+      tusbc=tusbc+(dnekclock()-etime1)
+#endif
+
       RETURN
       END
 C
@@ -777,11 +799,22 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
+      INCLUDE 'CTIMER'
       INCLUDE 'NEKUSE'
 C
       DIMENSION S(LX1,LY1,LZ1,LELT)
       common  /nekcb/ cb
       CHARACTER CB*3
+C
+#ifndef NOTIMER
+      if (icalld.eq.0) then
+         tusbc=0.0
+         nusbc=0
+         icalld=icalld+1
+      endif
+      nusbc=nusbc+1
+      etime1=dnekclock()
+#endif
 C
       NFACES=2*NDIM
       NXYZ  =NX1*NY1*NZ1
@@ -881,6 +914,10 @@ C
             ENDIF
  2000    CONTINUE
       ENDIF
+C
+#ifndef NOTIMER
+      tusbc=tusbc+(dnekclock()-etime1)
+#endif
 C
       RETURN
       END

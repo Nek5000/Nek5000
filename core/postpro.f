@@ -394,131 +394,132 @@ c      if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts_setup(bb_t)
-c IN:
-c bb_t ... bounding box tolerance (relative to the element size)
-
+      subroutine intpts_setup(tolin)
+c
+c setup routine for interpolation tool
+c tolin ... stop point seach interation if 1-norm of the step in (r,s,t) 
+c           is smaller than tolin 
+c
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-      common /intp/   icrh,ipth,noff,lxyz,idim
+      common /intp/   ipth,loff,nndim,nmax
 
-      lxyz = lx1*ly1*lz1
-      noff = lxyz*lelt 
-      idim = ndim
+      tol = tolin
+      if (tolin.lt.0) tol = 1e-13 
+
+      nmax    = lpart            ! max. number of points
+      loff    = lx1*ly1*lz1*lelt ! input field offset
+      n       = nx1*ny1*nz1*nelt 
+      nndim   = ndim
+      npt_max = 256
+      nxf     = 2*nx1            ! fine mesh for bb-test
+      nyf     = nxf
+      nzf     = nxf
+      bb_t    = 0.01 ! relative size to expand bounding boxes by
 c
-      call crystal_new(icrh,nekcomm,npp)
-      call findpts_new(ipth,icrh,ndim,xm1,ym1,zm1,nx1,ny1,nz1,nelt,bb_t)
+      call findpts_setup(ipth,nekcomm,npp,nndim,
+     &                   xm1,ym1,zm1,nx1,ny1,nz1,
+     &                   nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                   npt_max,tol)
 c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(field,nfld,iTupleList,mi,rTupleList,mr,n,nmax)
-c IN:
-c field   ... field(s) to interpolate
+      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n)
+c
+c interpolate input field at given points 
+c
+c in:
+c fieldin ... input field(s) to interpolate
 c nfld    ... number of fields
-c n       ... local number of interpolation points
-c nmax    ... maximum number of local points
-c             (nmax=[n,gsum(n)])
+c mi      ... stride size of iTl (at least 4)
+c mr      ... stride size of rTl (at least 2*nndim+nfld)
+c n       ... local number of interpolation points 
+c in/out:
+c interpolation points (i=1,...,n) are organized list of tuples 
+c iTl  ... integer tuple list (4,n)
+c    output   (1,i) = processor number (0 to np-1)   
+c    output   (2,i) = local element number (1 to nelt)
+c    output   (3,i) = return code (-1, 0, 1)
+c    output   (4,i) = local point id (only internally used)
+c rTl  ... real tuple list (1+2*n+nfld)
+c    output   (1,i)      = distance (from located point to given point)
+c    input    (2,i)      = x  
+c    input    (3,i)      = y  
+c    input    (4,i)      = z  (only when ndim=3)
+c    output   (ndim+2,i) = r   
+c    output   (ndim+3,i) = s   
+c    output   (ndim+4,i) = t  (only when ndim=3)
+c    output   (1+2*ndim+ifld,i) = interpolated field value (ifld=1,nfld)
 c
-c IN/OUT:
-c Each interpolation point i (i=1,...,n) comes with a tuple list 
-c TYPE: integer iTupleList(4,nmax), real rTupleList(1+2*ndim+nfld)
-c
-c iTupleList  ... integer tuple list
-c    output   vi(1,i) = processor number (0 to np-1)   
-c    output   vi(2,i) = local element number (1 to nelt)
-c    output   vi(3,i) = return code (-1, 0, 1)
-c    output   vi(4,i) = local point id (only internally used)
-c rTupleList  ... real tuple list  
-c    output   vr(1,i)      = distance (from located point to given point)
-c    input    vr(2,i)      = x  
-c    input    vr(3,i)      = y  
-c    input    vr(4,i)      = z  (only when ndim=3)
-c    output   vr(ndim+2,i) = r   
-c    output   vr(ndim+3,i) = s   
-c    output   vr(ndim+4,i) = t  (only when ndim=3)
-c    output   vr(1+2*ndim+ifld,i) = interpolated field value
-c                                   (ifld=1,nfld)
-c
-      real    field (1)
-      integer iTupleList (mi,1)
-      real    rTupleList (mr,1)
+      real    fieldin (1)
+      integer iTl (mi,1)
+      real    rTl (mr,1)
+      integer iTlS,rTlS
 
-      common /intp/ icrh,ipth,noff,lxyz,idim
+      common /intp/ ipth,loff,nndim,nmax
 
-      if(mi.lt.4 .or. mr.lt.1+2*idim+nfld) then
+      ! do some checks
+      if(mi.lt.4 .or. mr.lt.1+2*nndim+nfld) then
         write(6,*) 'ABORT: intpts() invalid tuple size mi/mir', mi, mr
         call exitt
       endif
+      if(n.gt.nmax) then
+        write(6,*) 
+     &   'ABORT: intpts() n>lpart, increase lpartin SIZE ', n, nmax
+        call exitt
+      endif
+
+      ! set stride size for tuple lists
+      iTlS = mi
+      rTlS = mr 
 
       ! locate points (iel,iproc,r,s,t)
-      iguess = 0 ! no guess
-      call findpts(ipth,n,iTupleList,mi,rTupleList,mr,iguess)
-
+      call findpts(ipth,iTl(3,1),iTlS,
+     &             iTl(1,1),iTlS,
+     %             iTL(2,1),iTlS,
+     &             rTl(nndim+2,1),rTlS,
+     &             rTl(1,1),rTlS,
+     &             rTl(2,1),rTlS,
+     &             rTl(3,1),rTlS,
+     &             rTl(4,1),rTlS,n)
+ 
       do in=1,n
-         ! store local id to preserve ordering
-         iTupleList(4,in) = in 
+         iTl(4,in) = in ! store local id
          ! check return code 
-         if(iTupleList(3,in).eq.1) then
-           dist = rTupleList(1,in)
+         if(iTl(3,in).eq.1) then
+           dist = rTl(1,in)
            write(6,'(A,4E15.7)') 
-     &       'WARNING: point on boundary or outside the mesh xy[z]d: ',
-     &       (rTupleList(1+k,in),k=1,idim),dist
-         elseif(iTupleList(3,in).eq.-1) then
+     &      'WARNING: point on boundary or outside the mesh xy[z]d: ',
+     &      (rTl(1+k,in),k=1,nndim),dist
+         elseif(iTl(3,in).eq.2) then
            write(6,'(A,3E15.7)') 
-     &       'WARNING: point not within mesh xy[z]: !',
-     &       (rTupleList(1+k,in),k=1,idim)
+     &      'WARNING: point not within mesh xy[z]: !',
+     &      (rTl(1+k,in),k=1,nndim)
          endif
       enddo
 
-      ! transfer point (tuple list) to the target proc that owns it
-      nin = n 
-      call findpts_transfer(ipth,nin,nmax,iTupleList,mi,rTupleList,mr)
-
-      if(nin.eq.nmax+1) then ! check for error condition
-        write(6,*) 'ABORT: intpts() more local points than nmax.'
-        call exitt
-      endif
-
-      ! every point is local now, do interpolation ...
+      ! evaluate inut field at given points
       do ifld = 1,nfld
-         do in   = 1,nin
-            iel  = iTupleList(2,in)
-            ioff = (ifld-1)*noff + (iel-1)*lxyz 
-            r    = rTupleList(idim+2,in)
-            s    = rTupleList(idim+3,in)
-            t    = rTupleList(idim+4,in) 
-            call findpts_weights(ipth,r,s,t)
-            call findpts_eval(ipth,rTupleList(1+2*idim+ifld,in),
-     &                        field(ioff+1))
-         enddo
+         ioff = (ifld-1)*loff
+         call findpts_eval(ipth,rTl(1+2*nndim+ifld,1),rTlS,
+     &                     iTl(3,1),iTlS,
+     &                     iTl(1,1),iTlS,
+     &                     iTl(2,1),iTlS,
+     &                     rTl(nndim+2,1),rTlS,n,
+     &                     fieldin(ioff+1))
       enddo
-
-      ! tranfer points back to the source proc
-      ! NOTE: iTupleList(1,:) has the source proc after findpts_transfer()
-      call findpts_transfer(ipth,nin,nmax,iTupleList,mi,rTupleList,mr)
-
-      if(nin.eq.nmax+1) then
-        write(6,*) 'ABORT: intpts() more incoming points than nmax.'
-        call exitt
-      endif
-
-      ! Restore initial tuple list ordering
-      ikey = 4 ! sort index is local point id  
-      call ftuple_list_sort(nin,ikey,iTupleList,mi,rTupleList,mr)
-
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine intpts_done()
 
-      common /intp/ icrh,ipth,noff,lxyz,idim
+      common /intp/ ipth,loff,nndim,nmax
 
-      call findpts_done(ipth)
-      call crystal_done(icrh)
+      call findpts_free(ipth)
 
       return
       end
@@ -1182,3 +1183,78 @@ c     Take care of spherical curved face defn
       return
       end
 c-----------------------------------------------------------------------
+      subroutine hpts
+c
+c     evaluate velocity, temperature and ps-scalars for list of points
+c     (read from file hpts.in) and write the results 
+c     into a file (hpts.out)
+c     note: read/write on rank0 only 
+c
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      parameter(nmax=lpart,nfldmax=ldim+ldimt) 
+      parameter(mi=4,mr=1+2*ldim+nfldmax)
+      real    rTL(mr,nmax)
+      integer iTL(mi,nmax)
+      common /itlcb/ iTL
+      common /rtlcb/ rTL
+
+      common /outtmp / wrk(lx1,ly1,lz1,lelt,nfldmax)
+
+      integer icalld,npoints
+      save    icalld,npoints
+      data    icalld  /0/
+      data    npoints /0/
+
+      nxyz  = nx1*ny1*nz1
+      ntot  = nxyz*nelt
+
+      if(nelgt.ne.nelgv) then
+        if(nid.eq.0) write(6,*) 
+     &    'ABORT: hpts() no support for nelgt.ne.nelgv!'
+        call exitt        
+      endif
+
+      if(icalld.eq.0) then
+        icalld = 1
+
+        if(nid.eq.0) then
+          write(6,*) 'reading hpts.in'
+          open(50,file='hpts.in',status='old')
+          read(50,*) npoints
+          write(6,*) 'found ', npoints, ' points'
+          do i = 1,npoints
+             read(50,*) (rTL(1+j,i),j=1,ndim)
+          enddo
+          close(50)
+          open(50,file='hpts.out',status='new')
+          write(50,'(A)') '# time  vx  vy  [vz]  T  PS1   PS2 ...'
+        endif 
+
+        call intpts_setup(-1.0)
+      endif
+
+      nflds  = nfield + ndim-1 ! number of fields you want to interpolate
+
+      ! pack working array
+      call copy(wrk(1,1,1,1,1),vx,ntot)
+      call copy(wrk(1,1,1,1,2),vy,ntot)
+      if(if3d) call copy(wrk(1,1,1,1,2),vz,ntot)
+      do i = 1,nfield-1
+         call copy(wrk(1,1,1,1,ndim+i),T(1,1,1,1,i),ntot)
+      enddo
+      
+      ! interpolate
+      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints)
+
+      ! write interpolation results to file
+      if(nid.eq.0) then
+        do ip = 1,npoints
+           write(50,'(1p20E15.7)') time,
+     &      (rTL(1+2*ndim+ifld,ip), ifld=1,nflds)
+        enddo
+      endif
+
+      return
+      end

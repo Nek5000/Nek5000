@@ -18,6 +18,10 @@ c
          call setvert2d(glo_num,ngv,nx,nel,vertex,ifcenter)
       endif
 
+      if(nid.eq.0) write(6,*) 'call usrsetvert'
+      call usrsetvert(glo_num,nel,nx,nx,nx)
+      if(nid.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
+
       return
       end
 c

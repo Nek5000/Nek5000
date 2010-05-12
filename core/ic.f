@@ -26,7 +26,7 @@ c
       common /ctmp1/ work(lx1,ly1,lz1,lelv)
      $ ,             ta1 (lx2,ly1,lz1)
      $ ,             ta2 (lx2,ly2,lz1)
-      integer*8 ntotg,nxyz1
+      integer*8 ntotg,nn
 
       real psmax(LDIMT)
 
@@ -206,9 +206,9 @@ C
       nxyz1=nx1*ny1*nz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
-      ntotg=nelgv*nxyz1
+      nn = nxyz1
+      ntotg=nelgv*nn
 c
-      if(nid.eq.0) write(6,*) 'perform dssum test ...'
       ifield = 2
       if (ifflow) ifield = 1
       call rone(work,ntotv)
@@ -216,7 +216,6 @@ c
       CALL DSSUM(work,NX1,NY1,NZ1)
       CALL COL2(work,VMULT,NTOTV)
       rdif = glsum(work,ntotv)
-c      if(nid.eq.0) write(6,*) 'dssum chk:', rdif,ntotg
       rtotg = ntotg
       rdif = (rdif-rtotg)/rtotg
       if (abs(rdif).gt.1e-14) then

@@ -4,6 +4,7 @@ c
 c     Set the new time step. All cases covered.
 c
       INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       COMMON /CPRINT/ IFPRINT
@@ -21,10 +22,11 @@ c
 C
       if (param(12).lt.0.or.iffxdt) then
          iffxdt    = .true.
-         dtopf     = abs(param(12))
          param(12) = abs(param(12))
-         dtopf     = abs(param(12))
-         ctarg     = max(abs(param(26)),ctarg)
+         dt        = param(12)
+         dtopf     = dt 
+         call compute_cfl(umax,vx,vy,vz,1.0)
+         goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
             dt   =param(84)
@@ -83,7 +85,7 @@ C
 C
 C     Check if final time (user specified) has been reached.
 C
-      IF (TIME+DT .GE. FINTIM .AND. FINTIM.NE.0.0) THEN
+ 200  IF (TIME+DT .GE. FINTIM .AND. FINTIM.NE.0.0) THEN
 C        Last step
          LASTEP = 1
          DT = FINTIM-TIME
@@ -104,11 +106,12 @@ C
          DT = MAX(DTMIN,DT)
       ENDIF
       DTOLD=DT
-C
-      IF (PARAM(84).NE.0.0) THEN
-            dt=dtopf*param(85)
-            dt=min(dt,param(12))
-      ENDIF
+
+C      IF (PARAM(84).NE.0.0) THEN
+C            dt=dtopf*param(85)
+C            dt=min(dt,param(12))
+C      ENDIF
+
       if (iffxdt) dt=dtopf
       COURNO = DT*UMAX
 c

@@ -75,10 +75,7 @@ C     Set size for CVODE solver
 C     USRDAT
       if(nid.eq.0) write(6,*) 'call usrdat'
       call usrdat
-      if(nid.eq.0) then 
-        write(6,*) 'done :: usrdat'
-        write(6,*) ' '
-      endif
+      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat' 
 
 C     generate geometry (called after usrdat in case something changed)
       call gengeom (igeom)
@@ -88,10 +85,7 @@ C     generate geometry (called after usrdat in case something changed)
 C     USRDAT2
       if(nid.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
-      if(nid.eq.0) then 
-        write(6,*) 'done :: usrdat2'
-        write(6,*) ' '
-      endif
+      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -108,7 +102,7 @@ C     Need eigenvalues to set tolerances in presolve (SETICS)
 C     Verify mesh topology
       call vrdsmsh
 
-C     Pressure solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
+C     Pressure solver initialization (uses "SOLN" space as scratch)
       if (ifflow.and.nsteps.gt.0) then
          call estrat
          if (fintim.ne.0.0.or.nsteps.ne.0) then
@@ -122,39 +116,40 @@ C     Pressure solver initialization  (NOTE:  Uses "SOLN" space as scratch...)
          endif
       endif
 
+C     Initialize optional plugin
+      call init_plugin
+
 C     USRDAT3
       if(nid.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
-      if(nid.eq.0) then 
-        write(6,*) 'done :: usrdat3'
-        write(6,*) ' '
-      endif
+      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
 C     Set initial conditions + compute field properties
       call setics
       call setprop
 
 C     USRCHK
-      if(nid.eq.0) write(6,*) 'call userchk'
-      call userchk
-      if(nid.eq.0) then 
-        write(6,*) 'done :: userchk'
-        write(6,*) ' '
+      if(instep.ne.0) then
+        if(nid.eq.0) write(6,*) 'call userchk'
+        call userchk
+        if(nid.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
+
+C     Initialize CVODE
+      if(ifcvode) call cv_init
 
       call comment
       call sstest (isss) 
 
-C     Initalize timers to ZERO
-      call time00
-      call opcount(2)
       call dofcnt
 
       jp = 0  ! Set perturbation field count to 0 for baseline flow
 
-      call gsync()
+C     Initalize timers to ZERO
+      call time00
+      call opcount(2)
 
-      etims0 = dnekclock()
+      etims0 = dnekclock_sync()
       IF (NID.EQ.0) THEN
         WRITE (6,*) ' '
         IF (TIME.NE.0.0) WRITE (6,'(A,E14.7)') ' Initial time:',TIME
@@ -163,7 +158,7 @@ C     Initalize timers to ZERO
      &              etims0-etimes, ' sec'
       ENDIF
 
-      ifsync = ifsync_
+      ifsync = ifsync_ ! restore initial value
 
       return
       end
@@ -178,21 +173,15 @@ C--------------------------------------------------------------------------
       real*4 papi_mflops
       integer*8 papi_flops
 
-      IF (NSTEPS.EQ.0) then
-          if (nid.eq.0) then
-             write(6,*) ' '
-             write(6,*) '0 time steps -> skip time loop'
-          endif
-          RETURN
-      ENDIF
-
-      IF (NID.EQ.0) THEN
-        WRITE (6,*) ' '
-        WRITE (6,*) 'Starting time loop ...'
-        WRITE (6,*) ' '
-      ENDIF
-
       call gsync()
+
+      if (instep.eq.0) then
+        if(nid.eq.0) write(6,'(/,A,/,A,/)') 
+     &     ' nsteps=0 -> skip time loop',
+     &     ' running solver in post processing mode'
+      else
+        if(nid.eq.0) write(6,'(/,A,/)') 'Starting time loop ...'
+      endif
 
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
@@ -201,20 +190,34 @@ C--------------------------------------------------------------------------
       call summary_start()
       call hpm_start("nek_advance")
 #endif
-
       DO ISTEP=1,NSTEPS
          call nek_advance
          call userchk
          call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001
       ENDDO
+ 1001 lastep=1
+
+      call comment
+
+c     check for post-processing mode
+      if (instep.eq.0) then
+         nsteps=0
+         if(nid.eq.0) write(6,*) 'call userchk'
+         call userchk
+         if(nid.eq.0) write(6,*) 'done :: userchk'
+         call prepost (.true.,'his')
+      else
+         if (nid.eq.0) write(6,'(/,A,/)') 
+     $      'end of time-step loop' 
+      endif
 
 #ifdef HPCT
       call hpm_stop("nek_advance")
       call summary_stop()
 #endif
 
- 1001 RETURN
+      RETURN
       END
 C--------------------------------------------------------------------------
       subroutine nek_advance
@@ -225,11 +228,12 @@ C--------------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+      call gsync
       IF (IFTRAN) CALL SETTIME
       if (ifmhd ) call cfl_check
       CALL SETSOLV
       CALL COMMENT
-         
+
       if (ifsplit) then   ! PN/PN formulation
          igeom = 1
          if (ifheat)      call heat     (igeom)
@@ -283,28 +287,8 @@ C--------------------------------------------------------------------------
       include 'PARALLEL'
       include 'OPCTR'
 
-c      write(6,*) nid,etimes
-
-      if (nid.eq.0) write(6,'(/,A,/)') 
-     $  'end of time-step loop -> calling nek_end'
-
-c     check for zero steps
-      if (instep.eq.0) then
-         lastep=1
-         call prepost (.true.,'his')
-         nsteps=0
-         call userchk
-      else
-#ifndef NOTIMER
-         if(nid.eq.0) write(6,*) 'runtime statistics:'
-         call opcount(3)
-    
-         call timeout
-#endif
-c         CALL COMMENT
-c         CALL DIAGNOS
-         if(xxth.gt.0) call crs_stats(xxth)
-      endif
+      if(instep.ne.0) call runstat
+      if(xxth.gt.0) call crs_stats(xxth)
    
       return
       end

@@ -3,6 +3,7 @@
       include 'INPUT'
       include 'PARALLEL'
       include 'NONCON'
+
       integer gs_handle
       integer vertex(1)
       integer*8 glo_num(1),ngv
@@ -11,18 +12,18 @@
 
       t0 = dnekclock()
 
+c     Global-to-local mapping for gs
       call set_vert(glo_num,ngv,nx,nel,vertex,.false.)
+
 c     Initialize gather-scatter code
       ntot      = nx*ny*nz*nel
       call gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
 
 c     call gs_chkr(glo_num)
 
-      t1 = dnekclock()
-      et = t1-t0
-c
+      t1 = dnekclock() - t0
       if (nid.eq.0) then
-         write(6,1) et,gs_handle,nx,ngv,melg
+         write(6,1) t1,gs_handle,nx,ngv,melg
     1    format('   setupds time',1pe11.4,' seconds ',2i3,2i12)
       endif
 c
@@ -46,20 +47,16 @@ c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
-
-#ifndef NOTIMER
-
       if (ifsync) call gsync()
 
+#ifndef NOTIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
       endif
       icalld=icalld+1
       etime1=dnekclock()
-
 #endif
-
 
 c
 c                 T         ~  ~T  T
@@ -267,6 +264,7 @@ c
       integer n,stride,gs_handle
 
       if(ifsync) call gsync()
+
 #ifndef NOTIMER
       icalld=icalld+1
       nvdss=icalld

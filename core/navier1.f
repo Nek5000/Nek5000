@@ -1346,6 +1346,7 @@ C
       REAL    CONV (LX1,LY1,LZ1,1) 
       REAL    FI   (LX1,LY1,LZ1,1)
 C
+C
       NXYZ1 = NX1*NY1*NZ1
       NTOT1 = NX1*NY1*NZ1*NELV
       NTOTZ = NX1*NY1*NZ1*NELT
@@ -3855,6 +3856,7 @@ C     since there is no direct stiffness summation or Helmholtz-solves.
 C
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
 C
 C     Use the common blocks CTMP0 and CTMP1 as work space.
 C
@@ -3869,6 +3871,13 @@ C     Arrays in parameter list
 C
       REAL    CONV (LX1,LY1,LZ1,1) 
       REAL    FI   (LX1,LY1,LZ1,1)
+
+#ifndef NOTIMER
+      if (icalld.eq.0) tadvc=0.0
+      icalld=icalld+1
+      nadvc=icalld
+      etime1=dnekclock()
+#endif
 C
       NXYZ1 = NX1*NY1*NZ1
       NTOT1 = NX1*NY1*NZ1*NELV
@@ -3878,7 +3887,7 @@ C
 C
       if (param(86).ne.0.0) then  ! skew-symmetric form
          call convopo(conv,fi)
-         return
+         goto 100
       endif
 
 c     write(6,*) istep,param(99),' CONVOP',ifpert
@@ -3900,6 +3909,12 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
       else
          call conv1 (conv,fi)  !    use the convective form
       endif
+
+ 100  continue
+
+#ifndef NOTIMER
+      tadvc=tadvc+(dnekclock()-etime1)
+#endif
 
       return
       END

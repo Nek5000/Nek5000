@@ -25,6 +25,11 @@ else
   fi
 fi
 
+if [ $1 = "clean" ]; then
+  make clean
+  exit 0
+fi
+
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
@@ -44,11 +49,6 @@ CASENAME=$1
 CASEDIR=`pwd`
 APATH_SRC=`cd $SOURCE_ROOT; pwd`
 SOURCE_ROOT=$APATH_SRC
-
-if [ $1 = "clean" ]; then
-  make clean
-  exit 0
-fi
 
 # do some basic checks
 if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
@@ -166,23 +166,23 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  pgf*)        P="-r8 -Mpreprocess"
+  *pgf*)        P="-r8 -Mpreprocess"
                ;;
-  gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
+  *gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
                ;;
-  ifort*)      P="-r8 -fpconstant -fpp"
+  *ifort*)      P="-r8 -fpconstant -fpp"
                ;;
-  pathf*)      P="-r8 -cpp -fno-second-underscore"
+  *pathf*)      P="-r8 -cpp -fno-second-underscore"
                ;;
   *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
-  ftn*)        P="-r8 -Mpreprocess"
+  *ftn*)        P="-r8 -Mpreprocess"
                ;;
-  sunf*)       P="-r8const -xtypemap=real:64 -fpp"
+  *sunf*)       P="-r8const -xtypemap=real:64 -fpp"
                ;;
-  open*)       P="-r8 -cpp -fno-second-underscore"
+  *open*)       P="-r8 -cpp -fno-second-underscore"
                ;;
   *)  echo "ERROR: Unknown compiler detected!"
       echo "        - don't know how to promote datatype REAL to 8 bytes"
@@ -454,6 +454,19 @@ if [ -f "./SIZE" ]; then
 else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
+fi
+
+# tweak .usr file
+cat $CASENAME.usr | grep -i "subroutine.*usrsetvert" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.usr << _ACEOF
+c
+c automatically added by makenek
+      subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
+      integer*8 glo_num(1)
+      return
+      end
+_ACEOF
 fi
 
 if [ $NOCOMPILE -eq 1 ]; then
