@@ -8,7 +8,7 @@ F77=""
 CC=""
 
 # enable BIG MEMORY suuport
-#BIGMEM="true"
+BIGMEM="true"
 
 
 
@@ -83,25 +83,25 @@ fi
 
 
 case $F77 in
-  pgf*)        R8="-r8"
+  *pgf*)       R8="-r8"
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
-  gfortran*)   R8="-fdefault-real-8"
+  *gfortran*)  R8="-fdefault-real-8"
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
-  ifort*)      R8="-r8"
+  *ifort*)     R8="-r8"
                BIGMEM_FLAG="-mcmodel=medium -shared-intel"
                ;;
-  pathf*)      R8="-r8"
+  *pathf*)     R8="-r8"
                ;;
   *xlf*)       R8="-qrealsize=8"
                BIGMEM_FLAG="-q64"
                ;;
-  ftn*)        R8="-r8"
+  *ftn*)       R8="-r8"
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
-  *)           exit 1
-               echo "Error: Unkown compiler!"
+  *)           echo "Error: Unable to detect compiler!"
+               exit 1
                ;;
 esac
 
