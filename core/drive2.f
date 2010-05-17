@@ -1392,6 +1392,7 @@ c         write(6,*) 'bsol time',nbsol,tbsol,pbsol
 c         pbso2=tbso2/tttstp
 c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
 
+#ifdef MPI
          write(6,'(/,A)') 'MPI timings'
 c        MPI timings         
          write(6,*) 'total comm time',tcomm, max_comm/ttime
@@ -1426,6 +1427,7 @@ c        MPI_Allreduce(sync) timings
          write(6,*) 'allreduce_sync  min ',min_gop_sync 
          write(6,*) 'allreduce_sync  max ',max_gop_sync 
          write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
+#endif
       endif
 
       if (nid.eq.0)  ! header for timing

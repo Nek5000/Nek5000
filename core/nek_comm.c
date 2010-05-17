@@ -13,7 +13,9 @@
  *
  */
 #include <stdio.h>
+#ifdef MPI
 #include <mpi.h>
+#endif
 #include <math.h>
 
 #define NTIMER 8
