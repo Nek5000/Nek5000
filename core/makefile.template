@@ -14,22 +14,19 @@ MOAB_DIR=
 F77=
 CC=
 P=
+PPPO=
+PPS=
 G=
 OPT_FLAGS_STD=
 USR=
 USR_LFLAGS=
-IFUNDERSCORE=
+
+################################################################################
 
 lFLAGS = $(USR_LFLAGS)
 
-JO2 = jl2_
-JO  = jl_
-
-ifeq ($(IFMPI),false)
-	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
-else
-	DUMMY:= $(shell rm -rf $S/mpif.h) 
-endif
+PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
+PPS_C = $(patsubst %,-D%,$(PPS))
 
 # CORE##########################################################################
 CORE = drive.o drive1.o drive2.o \
@@ -41,14 +38,17 @@ hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
-cvode_driver.o \
+cvode_driver.o nek_comm.o \
 init_plugin.o setprop.o qthermal.o cvode_aux.o makeq_aux.o \
 papi.o ssygv.o dsygv.o
 ################################################################################
 # MXM 
 MXM = mxm_std.o 
 
-# C Routines ###################################################################
+# JL Routines ###################################################################
+JO2 = jl2_
+JO  = jl_
+
 JLCORE = $(JO2)gs.o $(JO2)sort.o $(JO2)sarray_transfer.o $(JO2)sarray_sort.o \
 $(JO2)gs_local.o $(JO2)crystal.o $(JO2)comm.o $(JO2)tensor.o $(JO2)fail.o \
 $(JO2)fcrystal.o \
@@ -69,21 +69,12 @@ CGS = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 endif
 
 JL2 := -DPREFIX=jl_
-ifeq ($(IFUNDERSCORE),true)
-JL  := -DUNDERSCORE
-JL2 := ${JL2} -DUNDERSCORE
-endif
-JL  := ${JL}  -DUSE_GLOBAL_LONG_LONG
-JL2 := ${JL2} -DGLOBAL_LONG_LONG
 ifeq ($(IFAMG_DUMP),true)
-   JL  := ${JL}  -DAMG_DUMP
+   JL  := ${JL} -DAMG_DUMP
 endif
 
 COMM_MPI := comm_mpi.o
-ifeq ($(IFMPI),true)
-  JL  := ${JL}  -DMPI
-  JL2 := ${JL2} -DMPI
-else
+ifeq ($(IFMPI),false)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
@@ -93,7 +84,12 @@ ifeq ($(IFMOAB),true)
   MOABO := moab.o imeshutil.o
   lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
 endif
-################################################################################
+
+ifeq ($(IFMPI),false)
+	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
+else
+	DUMMY:= $(shell rm -rf $S/mpif.h) 
+endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI)
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -106,16 +102,16 @@ L2 = $(G) $(OPT_FLAGS_STD)
 L3 = $(G) $(OPT_FLAGS_STD)
 L4 = $(L3)
 
-FL0   = $(L0) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
-FL2i4 = $(L0)      -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
-FL2   = $(L2) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
-FL3   = $(L3) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
-FL4   = $(L4) $(P) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL0   = $(L0) $(P) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL2i4 = $(L0)      $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL2   = $(L2) $(P) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL3   = $(L3) $(P) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
+FL4   = $(L4) $(P) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) 
-cFL2   = $(L2) 
-cFL3   = $(L3) 
-cFL4   = $(L4) 
+cFL0   = $(L0) $(PPS_C) 
+cFL2   = $(L2) $(PPS_C) 
+cFL3   = $(L3) $(PPS_C) 
+cFL4   = $(L4) $(PPS_C) 
 
 ################################################################################
 all : nek5000
@@ -211,7 +207,7 @@ $(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
 
-# MXM       ####################################################################
+# MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
 $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $< -o $@
 $(OBJDIR)/k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
@@ -220,49 +216,50 @@ $(OBJDIR)/bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
 $(OBJDIR)/bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@
 $(OBJDIR)/bg_mxm44_uneven.o :$S/bg_mxm44_uneven.s;	$(CC) -c $< -o $@
 
-# 3rd party ####################################################################
+# C Files ##################################################################################
+$(OBJDIR)/nek_comm.o              :$S/nek_comm.c;           $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/byte.o                  :$S/byte.c;          	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/chelpers.o              :$S/chelpers.c;      	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)errmem.o           :$J/errmem.c;             $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)sort.o             :$J/sort.c;         	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)crystal.o          :$J/crystal.c;       	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)tuple_list.o       :$J/tuple_list.c;    	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)transfer.o         :$J/transfer.c;      	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)fcrystal.o         :$J/fcrystal.c;      	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)gs.o               :$J/gs.c;            	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)sparse_cholesky.o  :$J/sparse_cholesky.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)xxt.o              :$J/xxt.c;           	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)poly.o             :$J/poly.c;          	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)tensor.o           :$J/tensor.c;        	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)findpt.o           :$J/findpt.c;        	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)pfindpt.o          :$J/pfindpt.c;       	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)findpts.o          :$J/findpts.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO)amg.o              :$J/amg.c;           	    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/$(JO2)fail.o            :$(J2)/fail.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)tensor.o          :$(J2)/tensor.c;          $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)fcrystal.o        :$(J2)/fcrystal.c;        $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)poly.o            :$(J2)/poly.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)lob_bnd.o         :$(J2)/lob_bnd.c;         $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_el_3.o    :$(J2)/findpts_el_3.c;    $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)findpts_el_2.o    :$(J2)/findpts_el_2.c;    $(CC) -c $(cFL2) $(JL2) $< -o $@
+
+# 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/moab.o        :$S/3rd_party/moab.f;           $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 $(OBJDIR)/imeshutil.o   :$S/3rd_party/imeshutil.f;  	$(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 
-# C Files #################################################################################
-$(OBJDIR)/byte.o                  :$S/byte.c;          	    $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/chelpers.o              :$S/chelpers.c;      	    $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)errmem.o           :$J/errmem.c;             $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sort.o             :$J/sort.c;         	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)crystal.o          :$J/crystal.c;       	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)tuple_list.o       :$J/tuple_list.c;    	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)transfer.o         :$J/transfer.c;      	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)fcrystal.o         :$J/fcrystal.c;      	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)gs.o               :$J/gs.c;            	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sparse_cholesky.o  :$J/sparse_cholesky.c;    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)xxt.o              :$J/xxt.c;           	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)poly.o             :$J/poly.c;          	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)tensor.o           :$J/tensor.c;        	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpt.o           :$J/findpt.c;        	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)pfindpt.o          :$J/pfindpt.c;       	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpts.o          :$J/findpts.c;            $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)amg.o              :$J/amg.c;           	    $(CC) -c $(L2) $(JL) $< -o $@
-$(OBJDIR)/$(JO2)fail.o            :$(J2)/fail.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)tensor.o          :$(J2)/tensor.c;          $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)sort.o            :$(J2)/sort.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)sarray_sort.o     :$(J2)/sarray_sort.c;     $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)comm.o            :$(J2)/comm.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)crystal.o         :$(J2)/crystal.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)sarray_transfer.o :$(J2)/sarray_transfer.c; $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)fcrystal.o        :$(J2)/fcrystal.c;        $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)gs.o              :$(J2)/gs.c;              $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)poly.o            :$(J2)/poly.c;            $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)lob_bnd.o         :$(J2)/lob_bnd.c;         $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)findpts_el_3.o    :$(J2)/findpts_el_3.c;    $(CC) -c $(L2) $(JL2) $< -o $@
-$(OBJDIR)/$(JO2)findpts_el_2.o    :$(J2)/findpts_el_2.c;    $(CC) -c $(L2) $(JL2) $< -o $@
-#

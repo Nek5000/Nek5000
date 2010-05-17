@@ -57,17 +57,18 @@ c
 
       if (iostep.lt.0 .or. timeio.lt.0) return
 
+#ifndef NOTIMER
+      icalld=icalld+1
+      nprep=icalld
       etime1=dnekclock()
-c
+#endif
+
 c     Trigger history output only if prefix = 'his'   pff 8/18/05
-c
       ifhis  = .false.
       prefix = prefin
       if (prefin.eq.'his') ifhis  = .true.
       if (prefix.eq.'his') prefix = '   '
 
-c
-       
       if(icalld.eq.0) then
         ierr = 0
         if (nid.eq.0) then
@@ -97,8 +98,9 @@ c
          if(mod(istep,iostep) .eq. 0) ifdoit=.true.
       endif
 
-      iiidmp=0
+
       ! check for io request in file 'ioinfo'
+      iiidmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then 
          open(unit=87,file='ioinfo',status='old',err=88)
          read(87,*,end=87,err=87) idummy
@@ -122,7 +124,6 @@ c
       if (iiidmp.eq.-2) return
       if (iiidmp.lt.0) iiidmp = 0
 
-
       if (ifdoin) ifdoit=.true.
       if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
 
@@ -133,10 +134,11 @@ c
       call prepost_map(1) ! map back axisymm. arrays
 
       if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
-C
-      icalld = icalld+1
-      nprep=icalld
+
+#ifndef NOTIMER
       tprep=tprep+dnekclock()-etime1
+#endif
+
       ifdoit=.false.
       return
 

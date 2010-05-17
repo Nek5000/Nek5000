@@ -1170,8 +1170,17 @@ c-----------------------------------------------------------------------
       real min_dsum, max_dsum, avg_dsum
       real min_vdss, max_vdss, avg_vdss
       real min_gop,  max_gop,  avg_gop
+      real min_gop_sync,  max_gop_sync,  avg_gop_sync
       real min_crsl, max_crsl, avg_crsl
       real min_usbc, max_usbc, avg_usbc
+      real min_syc, max_syc, avg_syc
+      real min_wal, max_wal, avg_wal
+      real min_irc, max_irc, avg_irc
+      real min_isd, max_isd, avg_isd
+      real min_comm, max_comm, avg_comm
+
+      real comm_timers(8)
+      integer comm_counters(8)
       character*132 s132
 
       tstop=dnekclock()
@@ -1179,6 +1188,78 @@ c-----------------------------------------------------------------------
 
 c      call opcount(3)      ! print op-counters
 
+      call nek_comm_getstat(comm_timers,comm_counters)
+      tgop      = comm_timers(1)
+      tgop_sync = comm_timers(2)
+      twal      = comm_timers(3)
+      tsyc      = comm_timers(4)
+      tirc      = comm_timers(5)
+      tisd      = comm_timers(6)       
+      trc       = comm_timers(7)
+      tsd       = comm_timers(8)
+      ngop      = comm_counters(1)
+      nwal      = comm_counters(3)
+      nsyc      = comm_counters(4)
+      nirc      = comm_counters(5)
+      nisd      = comm_counters(6)
+
+      tcomm  = tisd + tirc + tsyc + tgop + twal + trc + tsd
+      min_comm = tcomm
+      call gop(min_comm,wwork,'m  ',1)
+      max_comm = tcomm
+      call gop(max_comm,wwork,'M  ',1)
+      avg_comm = tcomm
+      call gop(avg_comm,wwork,'+  ',1)
+      avg_comm = avg_comm/np
+c
+      min_isd = tisd
+      call gop(min_isd,wwork,'m  ',1)
+      max_isd = tisd
+      call gop(max_isd,wwork,'M  ',1)
+      avg_isd = tisd
+      call gop(avg_isd,wwork,'+  ',1)
+      avg_isd = avg_isd/np
+c
+      min_irc = tirc
+      call gop(min_irc,wwork,'m  ',1)
+      max_irc = tirc
+      call gop(max_irc,wwork,'M  ',1)
+      avg_irc = tirc
+      call gop(avg_irc,wwork,'+  ',1)
+      avg_irc = avg_irc/np
+c
+      min_syc = tsyc
+      call gop(min_syc,wwork,'m  ',1)
+      max_syc = tsyc
+      call gop(max_syc,wwork,'M  ',1)
+      avg_syc = tsyc
+      call gop(avg_syc,wwork,'+  ',1)
+      avg_syc = avg_syc/np
+c
+      min_wal = twal
+      call gop(min_wal,wwork,'m  ',1)
+      max_wal = twal
+      call gop(max_wal,wwork,'M  ',1)
+      avg_wal = twal
+      call gop(avg_wal,wwork,'+  ',1)
+      avg_wal = avg_wal/np
+c
+      min_gop = tgop
+      call gop(min_gop,wwork,'m  ',1)
+      max_gop = tgop
+      call gop(max_gop,wwork,'M  ',1)
+      avg_gop = tgop
+      call gop(avg_gop,wwork,'+  ',1)
+      avg_gop = avg_gop/np
+c
+      min_gop_sync = tgop_sync
+      call gop(min_gop_sync,wwork,'m  ',1)
+      max_gop_sync = tgop_sync
+      call gop(max_gop_sync,wwork,'M  ',1)
+      avg_gop_sync = tgop_sync
+      call gop(avg_gop_sync,wwork,'+  ',1)
+      avg_gop_sync = avg_gop_sync/np
+c
       min_vdss = tvdss
       call gop(min_vdss,wwork,'m  ',1)
       max_vdss = tvdss
@@ -1195,14 +1276,7 @@ c
       call gop(avg_dsum,wwork,'+  ',1)
       avg_dsum = avg_dsum/np
 c
-      min_gop = tgop
-      call gop(min_gop,wwork,'m  ',1)
-      max_gop = tgop
-      call gop(max_gop,wwork,'M  ',1)
-      avg_gop = tgop
-      call gop(avg_gop,wwork,'+  ',1)
-      avg_gop = avg_gop/np
-c
+
       min_crsl = tcrsl
       call gop(min_crsl,wwork,'m  ',1)
       max_crsl = tcrsl
@@ -1221,12 +1295,14 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nid.eq.0) then
-         write(6,*) 'runtime statistics:'
+         write(6,'(A)') 'runtime statistics:'
          write(6,*) 'total time',tttstp
-         pcopy=tcopy/tttstp
-         write(6,*) 'copy time',ncopy,tcopy,pcopy
-         pmxmf=tmxmf/tttstp
-         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
+
+c         pcopy=tcopy/tttstp
+c         write(6,*) 'copy time',ncopy,tcopy,pcopy
+c         pmxmf=tmxmf/tttstp
+c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
+
          pinv3=tinv3/tttstp
          write(6,*) 'inv3 time',ninv3,tinv3,pinv3
          pinvc=tinvc/tttstp
@@ -1237,82 +1313,124 @@ c
          write(6,*) 'cdtp time',ncdtp,tcdtp,pcdtp
          peslv=teslv/tttstp 
          write(6,*) 'eslv time',neslv,teslv,peslv
+
+c        Pressure solver timings
          ppres=tpres/tttstp
          write(6,*) 'pres time',npres,tpres,ppres
 
+c        Coarse grid solver timings
          pcrsl=tcrsl/tttstp
          write(6,*) 'crsl time',ncrsl,tcrsl,pcrsl
          write(6,*) 'crsl min ',min_crsl
          write(6,*) 'crsl max ',max_crsl
          write(6,*) 'crsl avg ',avg_crsl
 
+c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
          pspro=tspro/tttstp
          write(6,*) 'spro time',nspro,tspro,pspro
 
+c        USERBC timings
          pusbc=tusbc/tttstp
          write(6,*) 'usbc time',nusbc,tusbc,pusbc
          write(6,*) 'usbc min ',min_usbc 
          write(6,*) 'usbc max ',max_usbc 
          write(6,*) 'usb  avg ',avg_usbc 
-c
+
+c        Axhelm timings 
          paxhm=taxhm/tttstp
          write(6,*) 'axhm time',naxhm,taxhm,paxhm
 
+c        Convection timings
          padvc=tadvc/tttstp
          write(6,*) 'advc time',nadvc,tadvc,padvc
-c
-         pgop =tgop /tttstp
-         write(6,*) 'gop  time',ngop ,tgop ,pgop 
-         write(6,*) 'gop  min ',min_gop 
-         write(6,*) 'gop  max ',max_gop 
-         write(6,*) 'gop  avg ',avg_gop 
-c
+
+c        Vector direct stiffness summuation timings
          pvdss=tvdss/tttstp
          write(6,*) 'vdss time',nvdss,tvdss,pvdss
          write(6,*) 'vdss min ',min_vdss
          write(6,*) 'vdss max ',max_vdss
          write(6,*) 'vdss avg ',avg_vdss
-c
+
+c        Direct stiffness summuation timings
          pdsum=tdsum/tttstp
          write(6,*) 'dsum time',ndsum,tdsum,pdsum
          write(6,*) 'dsum min ',min_dsum
          write(6,*) 'dsum max ',max_dsum
          write(6,*) 'dsum avg ',avg_dsum
-c
-         pgsum=tgsum/tttstp
-         write(6,*) 'gsum time',ngsum,tgsum,pgsum
-         pdsnd=tdsnd/tttstp
-         write(6,*) 'dsnd time',ndsnd,tdsnd,pdsnd
+
+c         pgsum=tgsum/tttstp
+c         write(6,*) 'gsum time',ngsum,tgsum,pgsum
+
+c         pdsnd=tdsnd/tttstp
+c         write(6,*) 'dsnd time',ndsnd,tdsnd,pdsnd
+
          pdadd=tdadd/tttstp
          write(6,*) 'dadd time',ndadd,tdadd,pdadd
-         pdsmx=tdsmx/tttstp
-         write(6,*) 'dsmx time',ndsmx,tdsmx,pdsmx
-         pdsmn=tdsmn/tttstp
-         write(6,*) 'dsmn time',ndsmn,tdsmn,pdsmn
-         pslvb=tslvb/tttstp
-         write(6,*) 'slvb time',nslvb,tslvb,pslvb
+
+c         pdsmx=tdsmx/tttstp
+c         write(6,*) 'dsmx time',ndsmx,tdsmx,pdsmx
+c         pdsmn=tdsmn/tttstp
+c         write(6,*) 'dsmn time',ndsmn,tdsmn,pdsmn
+c         pslvb=tslvb/tttstp
+c         write(6,*) 'slvb time',nslvb,tslvb,pslvb
          pddsl=tddsl/tttstp
          write(6,*) 'ddsl time',nddsl,tddsl,pddsl
 c
-
          psolv=tsolv/tttstp
          write(6,*) 'solv time',nsolv,tsolv,psolv
-         psett=tsett/tttstp
-         write(6,*) 'sett time',nsett,tsett,psett
+
+c         psett=tsett/tttstp
+c         write(6,*) 'sett time',nsett,tsett,psett
+
          pprep=tprep/tttstp
          write(6,*) 'prep time',nprep,tprep,pprep
-         pbsol=tbsol/tttstp
-         write(6,*) 'bsol time',nbsol,tbsol,pbsol
-         pbso2=tbso2/tttstp
-         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
+c         pbsol=tbsol/tttstp
+c         write(6,*) 'bsol time',nbsol,tbsol,pbsol
+c         pbso2=tbso2/tttstp
+c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
+
+         write(6,'(/,A)') 'MPI timings'
+c        MPI timings         
+         write(6,*) 'total comm time',tcomm, max_comm/ttime
+         write(6,*) 'comm min ',min_comm
+         write(6,*) 'comm max ',max_comm 
+         write(6,*) 'comm avg ',avg_comm 
+
+c        MPI_Barrier timings
+         psyc=tsyc/tcomm
+         write(6,*) 'barrier time',nsyc,tsyc,psyc 
+         write(6,*) 'barrier min ',min_syc 
+         write(6,*) 'barrier max ',max_syc 
+         write(6,*) 'barrier avg ',avg_syc 
+
+c        MPI_Waitall timings
+         pwal=twal/tcomm
+         write(6,*) 'waitall time',nwal,twal,pwal 
+         write(6,*) 'waitall min ',min_wal 
+         write(6,*) 'waitall max ',max_wal 
+         write(6,*) 'waitall avg ',avg_wal 
+
+c        MPI_Allreduce timings
+         pgop=tgop/tcomm
+         write(6,*) 'allreduce  time',ngop,tgop,pgop 
+         write(6,*) 'allreduce  min ',min_gop 
+         write(6,*) 'allreduce  max ',max_gop 
+         write(6,*) 'allreduce  avg ',avg_gop 
+
+c        MPI_Allreduce(sync) timings
+         pgop_sync=tgop_sync/tcomm
+         write(6,*) 'allreduce_sync  time',tgop_sync,pgop_sync 
+         write(6,*) 'allreduce_sync  min ',min_gop_sync 
+         write(6,*) 'allreduce_sync  max ',max_gop_sync 
+         write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
       endif
 
       if (nid.eq.0)  ! header for timing
      $   write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop'
-    1 format('#',2x,'nid',6(7x,a5),4x,'qqq')
+    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq')
 
       call blank(s132,132)
       write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
@@ -1426,31 +1544,28 @@ c-----------------------------------------------------------------------
       subroutine dofcnt
       include 'SIZE'
       include 'TOTAL'
-      COMMON /CTMP0/ DUMMY0(LCTMP0)
-      COMMON /CTMP1/ DUMMY1(LCTMP1)
       COMMON /SCRNS/ WORK(LCTMP1)
 C
-      ntot1=nx1*ny1*nz1*nelv
-      ntot2=nx2*ny2*nz2*nelv
+      integer*8 ntot
 C
+      nxyz  = nx1*ny1*nz1
+      nel   = nelv
+
+      ! unique points on v-mesh
       if (ifflow) then
-         call col3 (work,vmult,v1mask,ntot1)
-      else
-         call col3 (work,tmult,tmask,ntot1)
+         nel = nelv
+         call copy (work,vmult,nel*nxyz)
       endif
-      vpts = glsum(work,ntot1) + .1
+      vpts = glsum(work,nel*nxyz) + .1
       nvtot=vpts
-      work(1)=ntot2
+
+      ! unique points on pressure mesh
+      work(1)=nel*nxyz
       ppts = glsum(work,1) + .1
-      nptot=ppts
+      ntot=ppts
 C
-      work(1)=0.0
-      do 10 i=1,ntot1
-         if (vmult(i,1,1,1).lt.0.5) work(1)=work(1)+vmult(i,1,1,1)
-   10 continue
-      epts = glsum(work,1) + .1
-      netot=epts
-      if (nid.eq.0) write(6,*) 'dofs:',nvtot,nptot,netot
+      if (nid.eq.0) write(6,'(A,2i13)') 
+     &   'gridpoints unique/tot: ',nvtot,ntot
       return
       end
 c-----------------------------------------------------------------------

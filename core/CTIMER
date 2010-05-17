@@ -4,35 +4,37 @@ C
      $               ,tpres,thmhz,tgop ,tgop1,tdott,tbsol,tbso2
      $               ,tsett,tslvb,tusbc,tddsl,tcrsl,tdsmx,tdsmn
      $               ,tgsmn,tgsmx,teslv,tbbbb,tcccc,tdddd,teeee
-     $               ,tvdss,tschw,tadvc,tspro
+     $               ,tvdss,tschw,tadvc,tspro,tgop_sync,tsyc
+     $               ,twal
 C
       REAL*8          tmxmf,tmxms,tdsum,taxhm,tcopy,tinvc,tinv3
       REAL*8          tsolv,tgsum,tdsnd,tdadd,tcdtp,tmltd,tprep
      $               ,tpres,thmhz,tgop ,tgop1,tdott,tbsol,tbso2
      $               ,tsett,tslvb,tusbc,tddsl,tcrsl,tdsmx,tdsmn
      $               ,tgsmn,tgsmx,teslv,tbbbb,tcccc,tdddd,teeee
-     $               ,tvdss,tschw,tadvc,tspro
+     $               ,tvdss,tschw,tadvc,tspro,tgop_sync,tsyc
+     $               ,twal
 C
       COMMON /ITIMER/ nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3
       COMMON /ITIME2/ nsolv,ngsum,ndsnd,ndadd,ncdtp,nmltd,nprep
      $               ,npres,nhmhz,ngop ,ngop1,ndott,nbsol,nbso2
      $               ,nsett,nslvb,nusbc,nddsl,ncrsl,ndsmx,ndsmn
      $               ,ngsmn,ngsmx,neslv,nbbbb,ncccc,ndddd,neeee
-     $               ,nvdss,nadvc,nspro
+     $               ,nvdss,nadvc,nspro,ngop_sync,nsyc,nwal
 C
       COMMON /PTIMER/ pmxmf,pmxms,pdsum,paxhm,pcopy,pinvc,pinv3
      $               ,psolv,pgsum,pdsnd,pdadd,pcdtp,pmltd,pprep
      $               ,ppres,phmhz,pgop ,pgop1,pdott,pbsol,pbso2
      $               ,psett,pslvb,pusbc,pddsl,pcrsl,pdsmx,pdsmn
      $               ,pgsmn,pgsmx,peslv,pbbbb,pcccc,pdddd,peeee
-     $               ,pvdss,pspro
+     $               ,pvdss,pspro,pgop_sync,psyc,pwal
 C
       REAL*8          pmxmf,pmxms,pdsum,paxhm,pcopy,pinvc,pinv3
       REAL*8          psolv,pgsum,pdsnd,pdadd,pcdtp,pmltd,pprep
      $               ,ppres,phmhz,pgop ,pgop1,pdott,pbsol,pbso2
      $               ,psett,pslvb,pusbc,pddsl,pcrsl,pdsmx,pdsmn
      $               ,pgsmn,pgsmx,peslv,pbbbb,pcccc,pdddd,peeee
-     $               ,pvdss,pspro
+     $               ,pvdss,pspro,pgop_sync,psyc,pwal
 C
       REAL*8 etime1,etime2,etime0,gtime1,tscrtch
       REAL*8 dnekclock,dnekclock_sync

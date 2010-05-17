@@ -5,6 +5,17 @@
 
 echo "makenek - automatic build tool for Nek5000"
 
+if [ "$PPLIST" == "?" ]; then
+  echo "available pre-processor symbols:" 
+  echo "  NOTIMER   disable runtime statistics"
+  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
+  echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
+  echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
+  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
+  exit 1
+fi
+
 # first do some checks ...
 if [ $# -eq 0 ]; then
   echo ""
@@ -30,16 +41,6 @@ if [ $1 = "clean" ]; then
   exit 0
 fi
 
-if [ "$PPLIST" == "?" ]; then
-  echo "available pre-processor symbols:" 
-  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
-  echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
-  echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
-  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
-  exit 1
-fi
-
 NOCOMPILE=0
 if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
@@ -49,6 +50,8 @@ CASENAME=$1
 CASEDIR=`pwd`
 APATH_SRC=`cd $SOURCE_ROOT; pwd`
 SOURCE_ROOT=$APATH_SRC
+
+IFMOAB=false
 
 # do some basic checks
 if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
@@ -122,7 +125,7 @@ rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
-IFUNDERSCORE=false
+UNDERSCORE=false
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
         call byte_write
@@ -132,7 +135,7 @@ $F77 -c test_underscore.f 2>&1 >/dev/null
 nm test_underscore.o | grep byte_write_ 1>/dev/null
 if [ $? -eq 0 ] 
 then
-  IFUNDERSCORE=true
+  UNDERSCORE=true
 fi
 \rm test_underscore.* 2>/dev/null
 
@@ -184,7 +187,7 @@ case $F77comp in
                ;;
   *open*)       P="-r8 -cpp -fno-second-underscore"
                ;;
-  *)  echo "ERROR: Unknown compiler detected!"
+  *)  echo "ERROR: Unable to detect compiler!"
       echo "        - don't know how to promote datatype REAL to 8 bytes"
       echo "        - don't know how to invoke the C pre-processor (CPP) before compilation"
       echo "       Please edit the makefile and specify the requested compiler flags using the P variable."
@@ -195,7 +198,7 @@ case $F77comp in
 esac
 export PPPO
 
-# set logical flags
+# set preprocessor symbols
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
   IFMPI=false
 else
@@ -224,12 +227,19 @@ then
   PPLIST="${PPLIST} LONGINT8"
 fi
 
-IFMOAB=false
+if [ "$UNDERSCORE" == "true" ]; then
+  PPLIST="${PPLIST} UNDERSCORE"
+fi 
+
+if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
+    PPLIST="${PPLIST} NOTIMER"
+fi
+
+PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 
 # add user defined preprocessor symbols
 for i in $PPLIST
 do
-   P="$P $PPPO-D$i"
    if [ "$i" == "MOAB" ]; then
      IFMOAB=true
      if [ "$MOAB_DIR" == "" ]; then
@@ -261,7 +271,7 @@ do
    fi
 done
 
-# set preprocessor symbol to print AMG files
+# AMG setup
 if [ "$IFAMG_DUMP" == "true" ]; then
     if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
       echo "ABORT: Cannot dump AMG files if AMG is disabled!"
@@ -272,11 +282,6 @@ else
     IFAMG_DUMP=false
 fi
 export IFAMG_DUMP
-
-# set preprocessor symbol for timing
-if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
-    P="$P $PPPO-DNOTIMER"
-fi
 
 if [ "$IFAMG" == "true" -o "$IFAMG" == "yes" ]; then
   IFAMG=true
@@ -346,13 +351,14 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^L2[ ]*=.*/L2=$L2/" \
 -e "s/^L3[ ]*=.*/L3=$L3/" \
 -e "s/^L4[ ]*=.*/L4=$L4/" \
+-e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
+-e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
 -e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
--e "s/^IFUNDERSCORE[ ]*=.*/IFUNDERSCORE:=$IFUNDERSCORE/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" $SOURCE_ROOT/makefile.template >.makefile

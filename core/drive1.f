@@ -190,6 +190,15 @@ C--------------------------------------------------------------------------
       call summary_start()
       call hpm_start("nek_advance")
 #endif
+      isyc  = 0
+      itime = 0
+      if(ifsync) isyc=1
+#ifndef NOTIMER
+      itime = 1
+#endif
+      call nek_comm_settings(isyc,itime)
+
+      call nek_comm_startstat()
       DO ISTEP=1,NSTEPS
          call nek_advance
          call userchk
@@ -197,6 +206,8 @@ C--------------------------------------------------------------------------
          if (lastep .eq. 1) goto 1001
       ENDDO
  1001 lastep=1
+
+      call nek_comm_settings(isyc,0)
 
       call comment
 

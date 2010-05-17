@@ -8,13 +8,14 @@ C
 C     Maximum number of elements (limited to 2**31/12, at least for now)
       PARAMETER(NELGT_MAX = 178956970)
 C
-      COMMON /HCGLB/ NELG(0:LDIMT1)
+      COMMON /HCGLB/ NVTOT,NELG(0:LDIMT1)
      $              ,LGLEL(LELT)
      $              ,GLLEL(LELG)
      $              ,GLLNID(LELG)
-     $              ,NELGV,NELGT,NVTOT,NPTOT
+     $              ,NELGV,NELGT
 
       INTEGER        GLLEL,GLLNID,LGLEL
+      INTEGER*8      NVTOT
 C
       COMMON /DIAGL/  IFGPRNT
       LOGICAL IFGPRNT
