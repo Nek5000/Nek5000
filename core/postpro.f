@@ -427,7 +427,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n)
+      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffind)
 c
 c interpolate input field at given points 
 c
@@ -461,6 +461,12 @@ c
 
       common /intp/ ipth,loff,nndim,nmax
 
+      logical iffind
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
       ! do some checks
       if(mi.lt.4 .or. mr.lt.1+2*nndim+nfld) then
         write(6,*) 'ABORT: intpts() invalid tuple size mi/mir', mi, mr
@@ -476,15 +482,19 @@ c
       iTlS = mi
       rTlS = mr 
 
+
       ! locate points (iel,iproc,r,s,t)
-      call findpts(ipth,iTl(3,1),iTlS,
-     &             iTl(1,1),iTlS,
-     %             iTL(2,1),iTlS,
-     &             rTl(nndim+2,1),rTlS,
-     &             rTl(1,1),rTlS,
-     &             rTl(2,1),rTlS,
-     &             rTl(3,1),rTlS,
-     &             rTl(4,1),rTlS,n)
+      if(icalld.eq.0 .or. iffind) then
+        call findpts(ipth,iTl(3,1),iTlS,
+     &               iTl(1,1),iTlS,
+     &               iTL(2,1),iTlS,
+     &               rTl(nndim+2,1),rTlS,
+     &               rTl(1,1),rTlS,
+     &               rTl(2,1),rTlS,
+     &               rTl(3,1),rTlS,
+     &               rTl(4,1),rTlS,n)
+        icalld = 1
+      endif
  
       do in=1,n
          iTl(4,in) = in ! store local id
@@ -1232,7 +1242,7 @@ c
           write(50,'(A)') '# time  vx  vy  [vz]  T  PS1   PS2 ...'
         endif 
 
-        call intpts_setup(-1.0)
+        call intpts_setup(-1.0) ! use default tolerance
       endif
 
       nflds  = nfield + ndim-1 ! number of fields you want to interpolate
@@ -1246,7 +1256,7 @@ c
       enddo
       
       ! interpolate
-      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints)
+      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,.false.)
 
       ! write interpolation results to file
       if(nid.eq.0) then

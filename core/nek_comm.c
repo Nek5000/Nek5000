@@ -19,17 +19,20 @@
 #define NTIMER 8
 #define NCOUNTER NTIMER
 
-#pragma weak NEK_COMM_SETTINGS   = nek_comm_settings
-#pragma weak nek_comm_settings_  = nek_comm_settings
-#pragma weak nek_comm_settings__ = nek_comm_settings
+#ifdef UPCASE
+#  define FORTRAN_NAME(low,up) up
+#else
+#ifdef UNDERSCORE
+#  define FORTRAN_NAME(low,up) low##_
+#else
+#  define FORTRAN_NAME(low,up) low
+#endif
+#endif
 
-#pragma weak NEK_COMM_GETSTAT   = nek_comm_getstat
-#pragma weak nek_comm_getstat_  = nek_comm_getstat
-#pragma weak nek_comm_getstat__ = nek_comm_getstat
+#define nek_comm_settings  FORTRAN_NAME(nek_comm_settings, NEK_COMM_SETTINGS)
+#define nek_comm_getstat   FORTRAN_NAME(nek_comm_getstat, NEK_COMM_GETSTAT)
+#define nek_comm_startstat FORTRAN_NAME(nek_comm_startstat, NEK_COMM_STARTSTAT)
 
-#pragma weak NEK_COMM_STARTSTAT   = nek_comm_startstat
-#pragma weak nek_comm_startstat_  = nek_comm_startstat
-#pragma weak nek_comm_startstat__ = nek_comm_startstat
 
 int SYNC = 0;
 int TIMING = 1;
