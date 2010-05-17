@@ -406,8 +406,12 @@ c
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
       common /intp/   ipth,loff,nndim,nmax
 
+      integer ih
+      save    ih
+      data    ih /-1/
+
       tol = tolin
-      if (tolin.lt.0) tol = 1e-13 
+      if (tolin.lt.0) tol = 1e-13 ! default tolerance 
 
       nmax    = lpart            ! max. number of points
       loff    = lx1*ly1*lz1*lelt ! input field offset
@@ -423,11 +427,13 @@ c
      &                   xm1,ym1,zm1,nx1,ny1,nz1,
      &                   nelt,nxf,nyf,nzf,bb_t,n,n,
      &                   npt_max,tol)
+
+      ih = ih + 1
 c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffind)
+      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffind,ih)
 c
 c interpolate input field at given points 
 c
@@ -463,11 +469,16 @@ c
 
       logical iffind
 
-      integer icalld
-      save    icalld
-      data    icalld /0/
+      integer nh(0:99)
+      save    nh
+      data    nh /100*0/
 
       ! do some checks
+      if (ih.lt.0 .or. ih.gt.99) then
+        if(nidd.eq.0) write(6,*) 'ABORT: intpts invalid handle', ih 
+        call exitt
+      endif
+
       if(mi.lt.4 .or. mr.lt.1+2*nndim+nfld) then
         write(6,*) 'ABORT: intpts() invalid tuple size mi/mir', mi, mr
         call exitt
@@ -482,9 +493,8 @@ c
       iTlS = mi
       rTlS = mr 
 
-
       ! locate points (iel,iproc,r,s,t)
-      if(icalld.eq.0 .or. iffind) then
+      if(n.ne.nh(ih) .or. iffind) then
         call findpts(ipth,iTl(3,1),iTlS,
      &               iTl(1,1),iTlS,
      &               iTL(2,1),iTlS,
@@ -494,6 +504,7 @@ c
      &               rTl(3,1),rTlS,
      &               rTl(4,1),rTlS,n)
         icalld = 1
+        nh(ih) = n ! store number of points for a given handle
       endif
  
       do in=1,n
@@ -1233,6 +1244,10 @@ c
           write(6,*) 'reading hpts.in'
           open(50,file='hpts.in',status='old')
           read(50,*) npoints
+          if(npoints.gt.lpart) then
+            write(6,*) 'ABORT: lpart too small!'
+            call exitt
+          endif
           write(6,*) 'found ', npoints, ' points'
           do i = 1,npoints
              read(50,*) (rTL(1+j,i),j=1,ndim)
@@ -1256,7 +1271,7 @@ c
       enddo
       
       ! interpolate
-      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,.false.)
+      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,.false.,0)
 
       ! write interpolation results to file
       if(nid.eq.0) then
