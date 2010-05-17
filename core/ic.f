@@ -2345,7 +2345,7 @@ c-----------------------------------------------------------------------
          if (nid.eq.0) then 
            write(*,'(A,/,A)') 
      &      'WARNING: restart file has a NSPCAL > LDIMT',
-     &      'Not all data of the fld-file has been read!'
+     &      'read only part of the fld-data!'
          endif
       endif
 

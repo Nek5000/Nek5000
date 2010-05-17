@@ -63,7 +63,6 @@
       ! set word size for CHARACTER
       csize = 1
 c
-c
       PID = 0
       NULLPID=0
       NODE0=0
@@ -96,25 +95,11 @@ c-----------------------------------------------------------------------
 c
 c     Global vector commutative operation
 c
-      include 'CTIMER'
-c
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 c
       real x(n), w(n)
       character*3 op
-c
-      if (ifsync) call gsync()
-
-#ifndef NOTIMER
-      if (icalld.eq.0) then
-        tgop =0.0d0
-        ngop =0
-        icalld=1
-      endif
-      ngop = ngop + 1
-      etime1=dnekclock()
-#endif
 c
       if (op.eq.'+  ') then
          call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
@@ -131,10 +116,6 @@ c
 
       call copy(x,w,n)
 
-#ifndef NOTIMER
-      tgop =tgop +(dnekclock()-etime1)
-#endif
-
       return
       end
 c-----------------------------------------------------------------------
@@ -144,13 +125,9 @@ c     Global vector commutative operation
 c
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-      common /ctimel/ ifsync
-      logical ifsync
 
       integer x(n), w(n)
       character*3 op
-
-      if (ifsync) call gsync()
 
       if     (op.eq.'+  ') then
         call mpi_allreduce (x,w,n,mpi_integer,mpi_sum ,nekcomm,ierr)
@@ -176,13 +153,9 @@ c     Global vector commutative operation
 c
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-      common /ctimel/ ifsync
-      logical ifsync
 
       integer*8 x(n), w(n)
       character*3 op
-
-      if (ifsync) call gsync()
 
       if     (op.eq.'+  ') then
         call mpi_allreduce (x,w,n,mpi_integer8,mpi_sum ,nekcomm,ierr)
@@ -467,7 +440,8 @@ c
          dtmp2 = 0
          dtmp3 = 0
          if(istep.gt.0) then
-           dtmp1 = np*ttime/(nvtot)/max(istep,1)
+           dgp   = nvtot
+           dtmp1 = np*ttime/dgp/max(istep,1)
            dtmp2 = ttime/max(istep,1)
            dtmp3 = 1.*papi_flops/1e6
          endif 
@@ -504,49 +478,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       function igl_running_sum(in)
 c
-c     Global vector commutative operation using spanning tree.
-c
-
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
       integer status(mpi_status_size)
       integer x,w,r
 
-
       x = in  ! running sum
       w = in  ! working buff
       r = 0   ! recv buff
 
-#ifndef USERMPICOLL
       call mpi_scan(x,r,1,mpi_integer,mpi_sum,nekcomm,ierr)
       igl_running_sum = r
-#else
-      log2p = log2(np)
-      mp    = 2**log2p
-      lim   = log2P
-      if (mp.ne.np) lim = log2P+1
-
-      do l=1,lim
-         mtype = l
-         jid   = 2**(l-1)
-         jid   = xor(nid,jid)   ! Butterfly, not recursive double
-
-         if (jid.lt.np) then
-            call mpi_irecv (r,1,mpi_integer,mpi_any_source,mtype
-     $                                            ,nekcomm,msg,ierr)
-            call mpi_send  (w,1,mpi_integer,jid,mtype,nekcomm,ierr)
-            call mpi_wait  (msg,status,ierr)
-            w = w+r
-            if (nid.gt.jid) x = x+r
-         endif
-c        write(6,1) l,nid,jid,r,w,x,'summer'
-c   1    format(2i6,'nid',4i6,1x,a6)
-      enddo
-
-      igl_running_sum = x
-c     write(6,2) nid,in,x,'running sum'
-c   2 format(3i9,1x,a6)
-#endif
 
       return
       end
