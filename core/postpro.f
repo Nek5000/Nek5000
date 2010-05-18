@@ -1214,19 +1214,25 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      parameter(nmax=lpart,nfldmax=ldim+ldimt) 
+      parameter(nmax=lpart,nfldmax=ldim+ldimt+1) 
       parameter(mi=4,mr=1+2*ldim+nfldmax)
       real    rTL(mr,nmax)
       integer iTL(mi,nmax)
       common /itlcb/ iTL
       common /rtlcb/ rTL
 
-      common /outtmp / wrk(lx1,ly1,lz1,lelt,nfldmax)
+      common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
+      common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldmax)
+
+      logical iffind
 
       integer icalld,npoints
       save    icalld,npoints
       data    icalld  /0/
       data    npoints /0/
+
+      iffind = .false. ! interpolation points are fixed 
+      ihandle = 0      ! handle for history points
 
       nxyz  = nx1*ny1*nz1
       ntot  = nxyz*nelt
@@ -1254,24 +1260,26 @@ c
           enddo
           close(50)
           open(50,file='hpts.out',status='new')
-          write(50,'(A)') '# time  vx  vy  [vz]  T  PS1   PS2 ...'
+          write(50,'(A)') 
+     &      '# time  vx  vy  [vz]  pr  T  PS1   PS2 ...'
         endif 
 
         call intpts_setup(-1.0) ! use default tolerance
       endif
 
-      nflds  = nfield + ndim-1 ! number of fields you want to interpolate
+      nflds  = nfield + ndim-1 + 1  ! number of fields to interpolate
 
       ! pack working array
-      call copy(wrk(1,1,1,1,1),vx,ntot)
-      call copy(wrk(1,1,1,1,2),vy,ntot)
-      if(if3d) call copy(wrk(1,1,1,1,2),vz,ntot)
+      call copy(wrk(1,1),vx,ntot)
+      call copy(wrk(1,2),vy,ntot)
+      if(if3d) call copy(wrk(1,3),vz,ntot)
+      call copy(wrk(1,ndim+1),pm1,ntot)
       do i = 1,nfield-1
-         call copy(wrk(1,1,1,1,ndim+i),T(1,1,1,1,i),ntot)
+         call copy(wrk(1,ndim+1+i),T(1,1,1,1,i),ntot)
       enddo
       
       ! interpolate
-      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,.false.,0)
+      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,iffind,ihandle)
 
       ! write interpolation results to file
       if(nid.eq.0) then
