@@ -406,34 +406,40 @@ c
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
       common /intp/   ipth,loff,nndim,nmax
 
-      integer ih
-      save    ih
-      data    ih /-1/
+      integer icalld
+      save    icalld
+      data    icalld /0/
 
-      tol = tolin
-      if (tolin.lt.0) tol = 1e-13 ! default tolerance 
-
-      nmax    = lpart            ! max. number of points
-      loff    = lx1*ly1*lz1*lelt ! input field offset
-      n       = nx1*ny1*nz1*nelt 
-      nndim   = ndim
-      npt_max = 256
-      nxf     = 2*nx1            ! fine mesh for bb-test
-      nyf     = nxf
-      nzf     = nxf
-      bb_t    = 0.01 ! relative size to expand bounding boxes by
+      if(icalld.eq.0) then
+        tol = tolin
+        if (tolin.lt.0) tol = 1e-13 ! default tolerance 
+ 
+        nmax    = lpart            ! max. number of points
+        loff    = lx1*ly1*lz1*lelt ! input field offset
+        n       = nx1*ny1*nz1*nelt 
+        nndim   = ndim
+        npt_max = 256
+        nxf     = 2*nx1            ! fine mesh for bb-test
+        nyf     = nxf
+        nzf     = nxf
+        bb_t    = 0.01 ! relative size to expand bounding boxes by
 c
-      call findpts_setup(ipth,nekcomm,npp,nndim,
-     &                   xm1,ym1,zm1,nx1,ny1,nz1,
-     &                   nelt,nxf,nyf,nzf,bb_t,n,n,
-     &                   npt_max,tol)
+        if(nidd.eq.0) write(6,*) 'initializing intpts(), tol=', tol
+        call findpts_setup(ipth,nekcomm,npp,nndim,
+     &                     xm1,ym1,zm1,nx1,ny1,nz1,
+     &                     nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                     npt_max,tol)
 
-      ih = ih + 1
-c
+        icalld = 1
+      else
+        if(nidd.eq.0) write(6,*) 
+     &    'intpts already initialized, skip call to intpts_setup()'
+      endif
+c       
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffind,ih)
+      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffindin,ih)
 c
 c interpolate input field at given points 
 c
@@ -467,7 +473,7 @@ c
 
       common /intp/ ipth,loff,nndim,nmax
 
-      logical iffind
+      logical iffindin,iffind
 
       integer nh(0:99)
       save    nh
@@ -493,8 +499,15 @@ c
       iTlS = mi
       rTlS = mr 
 
+      iffind = iffindin
+      ! did the number of points on a proc change
+      ii = 0
+      if(n.ne.nh(ih)) ii = 1
+      ii = iglsum(ii,1)        
+      if(ii.gt.0) iffind = .true.
+
       ! locate points (iel,iproc,r,s,t)
-      if(n.ne.nh(ih) .or. iffind) then
+      if(iffind) then
         call findpts(ipth,iTl(3,1),iTlS,
      &               iTl(1,1),iTlS,
      &               iTL(2,1),iTlS,
@@ -503,7 +516,6 @@ c
      &               rTl(2,1),rTlS,
      &               rTl(3,1),rTlS,
      &               rTl(4,1),rTlS,n)
-        icalld = 1
         nh(ih) = n ! store number of points for a given handle
       endif
  
@@ -539,6 +551,9 @@ c-----------------------------------------------------------------------
       subroutine intpts_done()
 
       common /intp/ ipth,loff,nndim,nmax
+
+      return ! for now don't free because we can have multiple
+             ! calls to intpts using the same handle ipth
 
       call findpts_free(ipth)
 
@@ -1206,9 +1221,9 @@ c     Take care of spherical curved face defn
 c-----------------------------------------------------------------------
       subroutine hpts
 c
-c     evaluate velocity, temperature and ps-scalars for list of points
-c     (read from file hpts.in) and write the results 
-c     into a file (hpts.out)
+c     evaluate velocity, temperature, pressure and ps-scalars 
+c     for list of points (read from hpts.in) and dump results
+c     into a file (hpts.out).
 c     note: read/write on rank0 only 
 c
       INCLUDE 'SIZE'
@@ -1231,8 +1246,9 @@ c
       data    icalld  /0/
       data    npoints /0/
 
-      iffind = .false. ! interpolation points are fixed 
       ihandle = 0      ! handle for history points
+      iffind = .false. ! interpolation points do not change
+                       ! between intpts() calls 
 
       nxyz  = nx1*ny1*nz1
       ntot  = nxyz*nelt
@@ -1280,7 +1296,6 @@ c
       
       ! interpolate
       call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,iffind,ihandle)
-
       ! write interpolation results to file
       if(nid.eq.0) then
         do ip = 1,npoints
