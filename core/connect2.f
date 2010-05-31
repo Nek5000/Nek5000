@@ -2193,7 +2193,7 @@ c-----------------------------------------------------------------------
 
       else               ! wait for data from node 0
 
-         ncurve_mx = 8*nelt
+         ncurve_mx = 12*nelt
          do k=1,ncurve_mx
 
             call crecv(nid,buf,len)
