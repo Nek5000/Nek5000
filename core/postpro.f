@@ -510,7 +510,7 @@ c
       if(iffind) then
         call findpts(ipth,iTl(3,1),iTlS,
      &               iTl(1,1),iTlS,
-     &               iTL(2,1),iTlS,
+     &               iTl(2,1),iTlS,
      &               rTl(nndim+2,1),rTlS,
      &               rTl(1,1),rTlS,
      &               rTl(2,1),rTlS,

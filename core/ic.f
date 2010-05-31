@@ -2563,9 +2563,9 @@ c
       integer fid
       character*132 hname
 
-      character*6  six,fmt,s6
-      save         six
-      data         six / "??????" /
+      character*8  eight,fmt,s8
+      save         eight
+      data         eight / "????????" /
 
       character*132 fname
       character*1  fname1(132)
@@ -2579,13 +2579,13 @@ c
       call chcopy (fname,hname,len)
 
       do ipass=1,2      ! 2nd pass, in case 1 file/directory
-         do k=6,1,-1
-            i1 = indx1(fname,six,k)
-            if (i1.ne.0) then
+         do k=8,1,-1
+            i1 = indx1(fname,eight,k)
+            if (i1.ne.0) then ! found k??? string
                write(fmt,1) k,k
     1          format('(i',i1,'.',i1,')')
-               write(s6,fmt) fid
-               call chcopy(fname1(i1),s6,k)
+               write(s8,fmt) fid
+               call chcopy(fname1(i1),s8,k)
                goto 10
             endif
          enddo
