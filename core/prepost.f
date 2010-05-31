@@ -1353,6 +1353,7 @@ c-----------------------------------------------------------------------
 
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzo8
       character*3 prefix
+      logical ifxyo_s
  
       common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
      &              , ur2(lxo*lxo*lxo*lelt)
@@ -1360,6 +1361,8 @@ c-----------------------------------------------------------------------
 
       tiostart=dnekclock()
 
+      ifxyo_s = ifxyo 
+      ifxyo_  = ifxyo
       nout = nelt
       nxo  = nx1
       nyo  = ny1
@@ -1380,9 +1383,10 @@ c-----------------------------------------------------------------------
       if (nid.eq.pid0) then
          call mfo_open_files(prefix)         ! open files on i/o nodes
       endif
+      call bcast(ifxyo_,lsize)
+      ifxyo = ifxyo_
       call mfo_write_hdr                     ! create element mapping +
                                              ! write hdr
-
       nxyzo8  = nxo*nyo*nzo
       strideB = nelB * nxyzo8*wdsizo
       stride  = nelgt* nxyzo8*wdsizo
@@ -1512,6 +1516,8 @@ c stefan: we need to change fldstideB to the number of elements
      &       30X,'avg data-throughput = ',f7.1,'MBps',/,
      &       30X,'io-nodes = ',i5,/)
 
+      ifxyo = ifxyo_s ! restore old value
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1615,13 +1621,15 @@ c-----------------------------------------------------------------------
       endif
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
 
+      if (nfld.eq.1) ifxyo_ = .true.
+
 #ifdef MPIIO
       rfileo = 1
 #else
       rfileo = nfileo
 #endif
       ndigit = log10(rfileo) + 1
-      
+     
       k = 1
       if (ifdiro) then                                  !  Add directory
          call chcopy(fnam1(1),'A',1)
@@ -1655,9 +1663,9 @@ c-----------------------------------------------------------------------
       k = k + 2
 
       write(str,4) nfld                                 !  Add nfld number
-    4 format(i4.4)
-      call chcopy(fnam1(k),str,4)
-      k = k + 4
+    4 format(i5.5)
+      call chcopy(fnam1(k),str,5)
+      k = k + 5
 
       call mbyte_open(fname,fid0)                       !  Open blah000.fnnnn
 c      write(6,*) nid,fid0,' FILE:',fname

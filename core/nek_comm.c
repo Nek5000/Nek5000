@@ -42,7 +42,7 @@ double TIMER[NTIMER] = {(double)0.0};
 int COUNTER[NCOUNTER] = {0};
 
 
-#if defined(MPI) && !defined(NOTIMER)
+#if defined(MPITIMER)
 
 void nek_comm_settings(int *sync,int *timing)
 {

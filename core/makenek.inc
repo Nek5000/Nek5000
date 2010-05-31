@@ -8,6 +8,7 @@ echo "makenek - automatic build tool for Nek5000"
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
   echo "  NOTIMER   disable runtime statistics"
+  echo "  MPITIMER  enable MPI runtime statistics"
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
   echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
   echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
