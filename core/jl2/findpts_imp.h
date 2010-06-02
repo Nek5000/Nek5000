@@ -63,9 +63,9 @@ static struct ulong_range hash_range(const struct hash_data *p, unsigned d,
 }
 
 static void hash_bb(struct hash_data *p, const struct local_hash_data *lp,
-                    const struct comm *comm)
+                    const struct comm *comm, uint hash_size)
 {
-  double x[D], buf[D];
+  double x[D], buf[D], ghs;
   unsigned d;
   for(d=0;d<D;++d) x[d]=lp->bnd[d].min;
   comm_allreduce(comm,gs_double,gs_min,x,D,buf);
@@ -74,10 +74,13 @@ static void hash_bb(struct hash_data *p, const struct local_hash_data *lp,
   for(d=0;d<D;++d) x[d]=lp->bnd[d].max;
   comm_allreduce(comm,gs_double,gs_max,x,D,buf);
   for(d=0;d<D;++d) p->bnd[d].max=x[d];
+
+  ghs = hash_size; comm_allreduce(comm,gs_double,gs_add,&ghs,1,buf);
+  hash_setfac(p,lceil(pow(ghs,1./D)));
   
   #ifdef DIAGNOSTICS
   if(comm->id==0) {
-    printf("global bounding box:\n");
+    printf("global bounding box (%g^%u):\n",(double)p->hash_n,D);
     for(d=0;d<D;++d) printf("  [%.17g, %.17g]\n",p->bnd[d].min,p->bnd[d].max);
   }
   #endif
@@ -163,8 +166,7 @@ static void hash_build(struct hash_data *const p,
   unsigned char *local_mask;
   array hash; uint nc;
   unsigned d;
-  hash_bb(p,lp,&cr->comm);
-  hash_setfac(p,lceil(pow(hash_size*(double)cr->comm.np,1./D)));
+  hash_bb(p,lp,&cr->comm,hash_size);
   for(d=0;d<D;++d) {
     struct ulong_range rng=hash_range(p,d,lp->bnd[d]);
     local_base[d]=rng.min;
