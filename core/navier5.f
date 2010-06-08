@@ -1344,10 +1344,17 @@ c
 c
 c-----------------------------------------------------------------------
       if ( (mod(istep,iastep).eq.0.and.istep.gt.1) .or.lastep.eq.1) then
+
+         time_temp = time
+         time      = atime   ! Output the duration of this avg
+
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
          call outpost2(uvms,vwms,wums,prms,wtms,0    ,'rm2')
+
          atime = 0.
+         time  = time_temp  ! Restore clock
+
       endif
 c
       timel = time
