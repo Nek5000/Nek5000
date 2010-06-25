@@ -363,6 +363,29 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exittr(stringi,rdata,idata)
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*25 s25
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+
+      call blank(stringo,132)
+      call chcopy(stringo,stringi,132)
+      len = indx1(stringo,'$',1)
+      write(s25,25) rdata,idata
+   25 format(1x,1p1e14.6,i10)
+      call chcopy(stringo(len),s25,25)
+
+      if (nid.eq.0) write(6,1) (stringo(k),k=1,len+24)
+    1 format('EXIT: ',132a1)
+
+      call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine exitti(stringi,idata)
       character*1 stringi(132)
       character*1 stringo(132)
@@ -494,4 +517,3 @@ c
       end
 
    
-
