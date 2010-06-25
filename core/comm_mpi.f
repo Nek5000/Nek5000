@@ -440,8 +440,8 @@ c
          dtmp2 = 0
          dtmp3 = 0
          if(istep.gt.0) then
-           dgp   = nvtot
-           dtmp1 = np*ttime/dgp/max(istep,1)
+           dgp   = max(nvtot,1)
+           dtmp1 = np*ttime/(dgp*max(istep,1))
            dtmp2 = ttime/max(istep,1)
            dtmp3 = 1.*papi_flops/1e6
          endif 
