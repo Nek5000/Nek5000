@@ -1171,43 +1171,41 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       real function glamin(a,n)
-      REAL A(1)
-      DIMENSION TMP(1),WORK(1)
-      TMIN = 0.0
-      DO 100 I=1,N
-         TMIN = MIN(TMIN,ABS(A(I)))
- 100  CONTINUE
-      TMP(1)=TMIN
-      CALL GOP(TMP,WORK,'m  ',1)
-      GLAMIN=ABS(TMP(1))
+      real a(1)
+      dimension tmp(1),work(1)
+      tmin = 9.e28
+      do 100 i=1,n
+         tmin = min(tmin,abs(a(i)))
+ 100  continue
+      tmp(1)=tmin
+      call gop(tmp,work,'m  ',1)
+      glamin=abs(tmp(1))
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function iglmin(a,n)
       integer a(1),tmin
       integer tmp(1),work(1)
-      tmin=  7777777
+      tmin=  999999999
       do i=1,n
          tmin=min(tmin,a(i))
       enddo
       tmp(1)=tmin
       call igop(tmp,work,'m  ',1)
       iglmin=tmp(1)
-      if (iglmin .eq. 7777777) iglmin=0
       return
       end
 c-----------------------------------------------------------------------
       function iglmax(a,n)
       integer a(1),tmax
       integer tmp(1),work(1)
-      tmax= -999999
+      tmax= -999999999
       do i=1,n
          tmax=max(tmax,a(i))
       enddo
       tmp(1)=tmax
       call igop(tmp,work,'M  ',1)
       iglmax=tmp(1)
-      if (iglmax .eq. -999999) iglmax=0
       return
       end
 c-----------------------------------------------------------------------
