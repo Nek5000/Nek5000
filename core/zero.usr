@@ -10,7 +10,7 @@ C     - userq  : local source term for scalars
 C     - userchk: general purpose routine for checking errors etc.
 C
 C-----------------------------------------------------------------------
-      subroutine uservp (ix,iy,iz,eg)
+      subroutine uservp(ix,iy,iz,eg) ! set variable properties
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -24,7 +24,7 @@ c     e = gllel(eg)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userf  (ix,iy,iz,eg)
+      subroutine userf(ix,iy,iz,eg) ! set acceleration term
 c
 c     Note: this is an acceleration term, NOT a force!
 c     Thus, ffx will subsequently be multiplied by rho(x,t).
@@ -43,7 +43,7 @@ c     e = gllel(eg)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userq  (ix,iy,iz,eg)
+      subroutine userq(ix,iy,iz,eg) ! set source term
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -57,14 +57,22 @@ c     e = gllel(eg)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userchk
+      subroutine userbc(ix,iy,iz,iside,ieg) ! set up boundary conditions
       include 'SIZE'
       include 'TOTAL'
+      include 'NEKUSE'
+
+c      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userbc (ix,iy,iz,iside,ieg)
+      subroutine useric(ix,iy,iz,ieg) ! set up initial conditions
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -77,37 +85,30 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine useric (ix,iy,iz,ieg)
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-
-      ux   = 0.0
-      uy   = 0.0
-      uz   = 0.0
-      temp = 0.0
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine usrdat   ! This routine to modify element vertices
+      subroutine userchk()
       include 'SIZE'
       include 'TOTAL'
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine usrdat2  ! This routine to modify mesh coordinates
+      subroutine usrdat()   ! This routine to modify element vertices
       include 'SIZE'
       include 'TOTAL'
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine usrdat3
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
       include 'SIZE'
       include 'TOTAL'
 
       return
       end
 c-----------------------------------------------------------------------
+      subroutine usrdat3()
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end

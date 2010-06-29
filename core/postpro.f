@@ -4,7 +4,7 @@
       include 'INPUT'
       include 'RESTART'
 
-      character*1 string(132),fout(132),BLNK
+      character*1 string(1),fout(132),BLNK
       character*6 ext
       DATA BLNK/' '/
 
@@ -114,11 +114,7 @@ c
          return
       endif
 c
-c
-c
-c
 c     Else ...  3D case....
-c
 c                                    a d e
 c     Get symmetric 3x3 matrix       d b f
 c                                    e f c
@@ -394,7 +390,7 @@ c      if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts_setup(tolin)
+      subroutine intpts_setup(tolin,ih)
 c
 c setup routine for interpolation tool
 c tolin ... stop point seach interation if 1-norm of the step in (r,s,t) 
@@ -404,158 +400,125 @@ c
       INCLUDE 'GEOM'
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-      common /intp/   ipth,loff,nndim,nmax
 
-      integer icalld
-      save    icalld
-      data    icalld /0/
+      tol = tolin
+      if (tolin.lt.0) tol = 1e-13 ! default tolerance 
 
-      if(icalld.eq.0) then
-        tol = tolin
-        if (tolin.lt.0) tol = 1e-13 ! default tolerance 
- 
-        nmax    = lpart            ! max. number of points
-        loff    = lx1*ly1*lz1*lelt ! input field offset
-        n       = nx1*ny1*nz1*nelt 
-        nndim   = ndim
-        npt_max = 256
-        nxf     = 2*nx1            ! fine mesh for bb-test
-        nyf     = nxf
-        nzf     = nxf
-        bb_t    = 0.01 ! relative size to expand bounding boxes by
+      n       = lx1*ly1*lz1*lelt 
+      npt_max = 256
+      nxf     = 2*nx1 ! fine mesh for bb-test
+      nyf     = 2*ny1
+      nzf     = 2*nz1
+      bb_t    = 0.05 ! relative size to expand bounding boxes by
 c
-        if(nidd.eq.0) write(6,*) 'initializing intpts(), tol=', tol
-        call findpts_setup(ipth,nekcomm,npp,nndim,
+      if(nidd.eq.0) write(6,*) 'initializing intpts(), tol=', tol
+      call findpts_setup(ih,nekcomm,npp,ndim,
      &                     xm1,ym1,zm1,nx1,ny1,nz1,
      &                     nelt,nxf,nyf,nzf,bb_t,n,n,
      &                     npt_max,tol)
-
-        icalld = 1
-      else
-        if(nidd.eq.0) write(6,*) 
-     &    'intpts already initialized, skip call to intpts_setup()'
-      endif
 c       
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(fieldin,nfld,iTl,mi,rTl,mr,n,iffindin,ih)
+      subroutine intpts(fieldin,nfld,pts,n,fieldout,ifot,ih)
 c
-c interpolate input field at given points 
+c simple wrapper to interpolate input field at given points 
 c
 c in:
-c fieldin ... input field(s) to interpolate
-c nfld    ... number of fields
-c mi      ... stride size of iTl (at least 4)
-c mr      ... stride size of rTl (at least 2*nndim+nfld)
-c n       ... local number of interpolation points 
-c in/out:
-c interpolation points (i=1,...,n) are organized list of tuples 
-c iTl  ... integer tuple list (4,n)
-c    output   (1,i) = processor number (0 to np-1)   
-c    output   (2,i) = local element number (1 to nelt)
-c    output   (3,i) = return code (-1, 0, 1)
-c    output   (4,i) = local point id (only internally used)
-c rTl  ... real tuple list (1+2*n+nfld)
-c    output   (1,i)      = distance (from located point to given point)
-c    input    (2,i)      = x  
-c    input    (3,i)      = y  
-c    input    (4,i)      = z  (only when ndim=3)
-c    output   (ndim+2,i) = r   
-c    output   (ndim+3,i) = s   
-c    output   (ndim+4,i) = t  (only when ndim=3)
-c    output   (1+2*ndim+ifld,i) = interpolated field value (ifld=1,nfld)
+c fieldin ... input field(s) to interpolate (lelt*lxyz,nfld)
+c nfld    ... number of fields in fieldin
+c pts     ... packed list of interpolation points
+c             pts:=(x(n),y(n),z(n))
+c n       ... local number of interpolation points
+c ifto    ... transpose output (n,nfld)^T = (nfld,n)  
+c ih      ... interpolation handle
 c
-      real    fieldin (1)
-      integer iTl (mi,1)
-      real    rTl (mr,1)
-      integer iTlS,rTlS
+c out:
+c fieldout ... packed list of interpolated values (n,nfld)
+c
+      include 'SIZE'
 
-      common /intp/ ipth,loff,nndim,nmax
+      real    fieldin(1),fieldout(1)
+      real    pts(1)
 
-      logical iffindin,iffind
+      real    dist(lpart) ! squared distance
+      real    rst(lpart*ldim)
+      integer rcode(lpart),elid(lpart),proc(lpart)
 
-      integer nh(0:99)
-      save    nh
-      data    nh /100*0/
+      common /intp_r/ rst,dist
+      common /intp_i/ rcode,elid,proc
 
-      ! do some checks
-      if (ih.lt.0 .or. ih.gt.99) then
-        if(nidd.eq.0) write(6,*) 'ABORT: intpts invalid handle', ih 
-        call exitt
-      endif
+      integer nn(2)
+      logical ifot
 
-      if(mi.lt.4 .or. mr.lt.1+2*nndim+nfld) then
-        write(6,*) 'ABORT: intpts() invalid tuple size mi/mir', mi, mr
-        call exitt
-      endif
-      if(n.gt.nmax) then
+      if(nid.eq.0) write(6,*) 'call intpts'
+
+      if(n.gt.lpart) then
         write(6,*) 
-     &   'ABORT: intpts() n>lpart, increase lpartin SIZE ', n, nmax
+     &   'ABORT: intpts() n>lpart, increase lpart in SIZE', n, lpart
         call exitt
       endif
-
-      ! set stride size for tuple lists
-      iTlS = mi
-      rTlS = mr 
-
-      iffind = iffindin
-      ! did the number of points on a proc change
-      ii = 0
-      if(n.ne.nh(ih)) ii = 1
-      ii = iglsum(ii,1)        
-      if(ii.gt.0) iffind = .true.
 
       ! locate points (iel,iproc,r,s,t)
-      if(iffind) then
-        call findpts(ipth,iTl(3,1),iTlS,
-     &               iTl(1,1),iTlS,
-     &               iTl(2,1),iTlS,
-     &               rTl(nndim+2,1),rTlS,
-     &               rTl(1,1),rTlS,
-     &               rTl(2,1),rTlS,
-     &               rTl(3,1),rTlS,
-     &               rTl(4,1),rTlS,n)
-        nh(ih) = n ! store number of points for a given handle
-      endif
- 
+      call findpts(ih,rcode,1,
+     &               proc,1,
+     &               elid,1,
+     &               rst,ndim,
+     &               dist,1,
+     &               pts(1),1,
+     &               pts(n+1),1,
+     &               pts(2*n+1),1,n)
+
+      nfail = 0 
       do in=1,n
-         iTl(4,in) = in ! store local id
          ! check return code 
-         if(iTl(3,in).eq.1) then
-           dist = rTl(1,in)
-           write(6,'(A,4E15.7)') 
-     &      'WARNING: point on boundary or outside the mesh xy[z]d: ',
-     &      (rTl(1+k,in),k=1,nndim),dist
-         elseif(iTl(3,in).eq.2) then
+         if(rcode(in).eq.1) then
+           if(dist(in).gt.1e-12) then 
+             write(6,'(A,4E15.7)') 
+     &   ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
+     &   (pts(k*n + in),k=0,ndim-1),dist(in)
+             nfail = nfail + 1
+           endif   
+         elseif(rcode(in).eq.2) then
+           nfail = nfail + 1
            write(6,'(A,3E15.7)') 
-     &      'WARNING: point not within mesh xy[z]: !',
-     &      (rTl(1+k,in),k=1,nndim)
+     &      ' WARNING: point not within mesh xy[z]: !',
+     &      (pts(k*ndim + in),k=0,ndim-1)
          endif
       enddo
 
       ! evaluate inut field at given points
+      ltot = lelt*lx1*ly1*lz1
       do ifld = 1,nfld
-         ioff = (ifld-1)*loff
-         call findpts_eval(ipth,rTl(1+2*nndim+ifld,1),rTlS,
-     &                     iTl(3,1),iTlS,
-     &                     iTl(1,1),iTlS,
-     &                     iTl(2,1),iTlS,
-     &                     rTl(nndim+2,1),rTlS,n,
-     &                     fieldin(ioff+1))
+         iin    = (ifld-1)*ltot + 1
+         iout   = (ifld-1)*n + 1
+         is_out = 1
+         if(ifot) then ! transpose output 
+           iout   = ifld
+           is_out = nfld 
+         endif
+         call findpts_eval(ih,fieldout(iout),is_out,
+     &                     rcode,1,
+     &                     proc,1,
+     &                     elid,1,
+     &                     rst,ndim,n,
+     &                     fieldin(iin))
       enddo
+
+      nn(1) = iglsum(n,1)
+      nn(2) = iglsum(nfail,1)
+      if(nid.eq.0) then
+        write(6,1) nn(1),nn(2)
+  1     format('   total number of points = ',i12,/,'   failed = '
+     &         ,i12,/,' done :: intpts')
+      endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts_done()
+      subroutine intpts_done(ih)
 
-      common /intp/ ipth,loff,nndim,nmax
-
-      return ! for now don't free because we can have multiple
-             ! calls to intpts using the same handle ipth
-
-      call findpts_free(ipth)
+      call findpts_free(ih)
 
       return
       end
@@ -1182,8 +1145,6 @@ c-----------------------------------------------------------------------
       call map2reg(y3,3,ym1(1,1,1,e),1)
       if (if3d) call map2reg(z3,3,zm1(1,1,1,e),1)
 
-
-
 c     Take care of spherical curved face defn
       if (ccurve(5,e).eq.'s') then
          call chcopy(ccrve(1),'ssss',4) ! face 5
@@ -1229,15 +1190,18 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      parameter(nmax=lpart,nfldmax=ldim+ldimt+1) 
-      parameter(mi=4,mr=1+2*ldim+nfldmax)
-      real    rTL(mr,nmax)
-      integer iTL(mi,nmax)
-      common /itlcb/ iTL
-      common /rtlcb/ rTL
+      real    pts(ldim,lhis)
+      real    fieldout(ldim+ldimt+1,lhis)
+
+      real    dist(lhis)
+
+      real    rst(lhis*ldim)
+      integer rcode(lhis),elid(lhis),proc(lhis)
+      common /hpts_r/ rst
+      common /hpts_i/ rcode,elid,proc
 
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
-      common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldmax)
+      common /outtmp/ wrk(lx1*ly1*lz1*lelt,ldim+ldimt+1)
 
       logical iffind
 
@@ -1246,12 +1210,12 @@ c
       data    icalld  /0/
       data    npoints /0/
 
-      ihandle = 0      ! handle for history points
-      iffind = .false. ! interpolation points do not change
-                       ! between intpts() calls 
+      save    inth_hpts
 
       nxyz  = nx1*ny1*nz1
       ntot  = nxyz*nelt
+
+      if(nid.eq.0) write(6,*) 'dump history points'
 
       if(nelgt.ne.nelgv) then
         if(nid.eq.0) write(6,*) 
@@ -1260,8 +1224,6 @@ c
       endif
 
       if(icalld.eq.0) then
-        icalld = 1
-
         if(nid.eq.0) then
           write(6,*) 'reading hpts.in'
           open(50,file='hpts.in',status='old')
@@ -1272,19 +1234,23 @@ c
           endif
           write(6,*) 'found ', npoints, ' points'
           do i = 1,npoints
-             read(50,*) (rTL(1+j,i),j=1,ndim)
+             read(50,*) (pts(j,i),j=1,ndim)
           enddo
           close(50)
           open(50,file='hpts.out',status='new')
           write(50,'(A)') 
-     &      '# time  vx  vy  [vz]  pr  T  PS1   PS2 ...'
+     &      '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
         endif 
-
-        call intpts_setup(-1.0) ! use default tolerance
+        call intpts_setup(-1.0,inth_hpts) ! use default tolerance
       endif
 
-      nflds  = nfield + ndim-1 + 1  ! number of fields to interpolate
+      if(npoints.gt.lhis) then
+        if(nid.eq.0) write(6,*) 
+     &   'ABORT: lhis too low, increase in SIZE', npoints, lhis
+        call exitt
+      endif
 
+      nflds  = nfield + ndim ! for now, all fields
       ! pack working array
       call copy(wrk(1,1),vx,ntot)
       call copy(wrk(1,2),vy,ntot)
@@ -1295,14 +1261,268 @@ c
       enddo
       
       ! interpolate
-      call intpts(wrk,nflds,iTL,mi,rTL,mr,npoints,iffind,ihandle)
-      ! write interpolation results to file
+      if(icalld.eq.0) then
+        call findpts(inth_hpts,rcode,1,
+     &                 proc,1,
+     &                 elid,1,
+     &                 rst,ndim,
+     &                 dist,1,
+     &                 pts(1,1),ndim,
+     &                 pts(2,1),ndim,
+     &                 pts(3,1),ndim,npoints)
+       
+        do i=1,npoints
+           ! check return code 
+           if(rcode(i).eq.1) then
+             if(dist(i).gt.1e-12) then
+               write(6,'(A,4E15.7)') 
+     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
+     &     ,(pts(k,i),k=1,ndim),dist(i)
+             endif   
+           elseif(rcode(i).eq.2) then
+             nfail = nfail + 1
+             write(6,'(A,3E15.7)') 
+     &        ' WARNING: point not within mesh xy[z]: !',
+     &        (pts(k,i),k=1,ndim)
+           endif
+        enddo
+        icalld = 1
+      endif
+
+      ! evaluate inut field at given points
+      ltot = lelt*lx1*ly1*lz1
+      do ifld = 1,nflds
+         call findpts_eval(inth_hpts,fieldout(ifld,1),nflds,
+     &                     rcode,1,
+     &                     proc,1,
+     &                     elid,1,
+     &                     rst,ndim,npoints,
+     &                     wrk(1,ifld))
+      enddo
+
+      ! write interpolation results to hpts.out
       if(nid.eq.0) then
         do ip = 1,npoints
            write(50,'(1p20E15.7)') time,
-     &      (rTL(1+2*ndim+ifld,ip), ifld=1,nflds)
+     &      (fieldout(ifld,ip), ifld=1,nflds)
         enddo
       endif
+
+      if(nid.eq.0) write(6,*) 'done :: dump history points'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine g2gi(outfld,infld,geofld)
+c
+c     grid-to-grid interpolation
+c     
+c     input:
+c     outfld   ... name of new fld file
+c     infld    ... input fld file (containing the fields to interpolate)
+c     geofld   ... name of fld file containg the new geometry 
+c
+c     note: 8-byte fld files are currently not supported!
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+
+      character*132 geofld,outfld,infld
+
+      character*132 hdr
+      character*1 hdr1(132)
+      equivalence(hdr1,hdr)
+      character*10 rdcode_save
+
+      parameter(lbuf=lpart)
+      parameter(nfldm=ldim+ldimt+1)
+      real*4   buf(lbuf) ! read/write buffer
+      real     pts(lbuf),fieldout(lbuf*nfldm)
+      common   /SCRUZ/ pts,fieldout,buf
+
+      common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldm)
+      common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
+
+      integer*8 ioff,ioff0,wds,ifldoff
+
+      etime = dnekclock_sync()
+      if(nid.eq.0) write(6,*) 'grid-to-grid interpolation'
+
+      wds = 4 ! word size, fixed for now
+
+      ! open geofld
+      ierr = 0
+      if(nid.eq.0) then
+        open(111,file=geofld,err=100)
+        close(111)
+        goto 101
+ 100    ierr = 1
+ 101  endif
+      call err_chk(ierr,' Cannot open geometry file!$')
+      call byte_open_mpi(geofld,igh)
+      call byte_read_mpi(hdr,iHeaderSize/4,0,igh)
+      call bcast(hdr,iHeaderSize)
+      call mfi_parse_hdr(hdr)
+      if(indx2(rdcode,10,'X',1).le.0) then
+        if(nid.eq.0) write(6,*) 'ABORT: No geometry found in ', geofld
+        call exitt
+      endif
+
+      nelgrr = nelgr
+      nxrr = nxr
+      nyrr = nyr 
+      nzrr = nzr 
+      nxyzr = nxrr*nyrr*nzrr
+      nec   = lbuf/ndim/nxyzr ! number of elements per chunk
+      nc    = nelgrr/nec      ! number of chunks
+      if(mod(nelgrr,nec).ne.0) nc = nc + 1
+      ioff0 = iHeaderSize + iSize + iSize*nelgrr 
+      ifldoff = nelgrr*nxyzr*wds
+
+      ! read field file of old geometry
+      call load_fld(infld)
+      call chcopy(rdcode_save,rdcode,10)
+
+      ! create new fld file
+      call byte_open_mpi(outfld,ifh)
+      if(indx2(rdcode,10,'X',1).le.0) then 
+        rdcode1(1) = 'X'
+        call chcopy(rdcode1(2),rdcode_save,9)
+      endif
+      write(hdr,1) wds,nxrr,nyrr,nzrr,nelgrr,nelgrr,time,istep
+     &            ,0,1,(rdcode1(i),i=1,10)    
+    1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
+     &       1x,i9,1x,i6,1x,i6,1x,10a)
+      call byte_write_mpi(hdr,iHeaderSize/4,0,ifh)
+      call byte_read_mpi (buf,1,0,igh) ! copy endian flag
+      call byte_write_mpi(buf,1,0,ifh)
+      do ic = 1,nc ! copy mapping
+         nbuf = nec
+         if(ic.eq.nc) nbuf = nelgrr - (nc-1)*nec       
+         call byte_read_mpi (buf,nbuf,0,igh)
+         call byte_write_mpi(buf,nbuf,0,ifh)
+      enddo
+
+      ! pack working array
+      ntot = nx1*ny1*nz1*nelt
+      nfld = 0
+      if(ifgetur) then 
+        call copy(wrk(1,1),vx,ntot)
+        call copy(wrk(1,2),vy,ntot)
+        if(if3d) call copy(wrk(1,3),vz,ntot)
+        nfld = nfld + ndim
+      endif
+      if(ifgetpr) then
+        nfld = nfld + 1
+        call copy(wrk(1,nfld),pm1,ntot)
+      endif
+      if(ifgettr) then
+        nfld = nfld + 1
+        call copy(wrk(1,nfld),t,ntot)
+      endif
+      do i = 1,ldimt-1
+         if(ifgtpsr(i)) then
+           nfld = nfld + 1
+           call copy(wrk(1,nfld),T(1,1,1,1,i+1),ntot)
+         endif  
+      enddo
+
+      if(nfld.gt.nfldm) then
+        if(nid.eq.0) write(6,*) 'ABORT: nfld too large!'
+        call exitt
+      endif
+
+      call intpts_setup(-1.0,ih)
+      necrw = nec
+      do ic = 1,nc
+         if(ic.eq.nc) necrw = nelgrr - (nc-1)*necrw ! clean-up
+         if(nid.eq.0) write(6,*) 'chunk',ic,nc
+         
+         ! read coord. 
+         call byte_read_mpi(buf,ndim*nxyzr*necrw,0,igh)
+         call g2gi_buf2v(pts,buf,ndim,necrw,nxyzr)
+
+         ! write coord.
+         ioff = ioff0 + (ic-1)*ndim*nxyzr*nec*wds
+         call byte_set_view(ioff,ifh)
+         call byte_write_mpi(buf,ndim*nxyzr*necrw,0,ifh)  
+
+         ! interpolate fields
+         npts = necrw*nxyzr
+         if(nid.ne.0) npts = 0 ! only rank0, for now
+         call intpts(wrk,nfld,pts,npts,fieldout,.false.,ih)
+
+         ! write fields
+         jj = 1
+         ni = ndim
+         if(ifgetur) then ! velocity
+           call g2gi_v2buf(buf,fieldout(jj),ndim,necrw,nxyzr)
+           jj = jj + ndim*nxyzr*necrw
+           ioff = ioff0 + ni*ifldoff + (ic-1)*ndim*nxyzr*nec*wds
+           call byte_set_view(ioff,ifh)
+           call byte_write_mpi(buf,ndim*nxyzr*necrw,0,ifh)
+           ni = ni + ndim
+         endif
+         if(ifgetpr) then ! pressure
+           call copyx4(buf,fieldout(jj),necrw*nxyzr)
+           jj = jj + nxyzr*necrw
+           ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+           call byte_set_view(ioff,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+           ni = ni + 1
+         endif
+         if(ifgettr) then ! temperature
+           call copyx4(buf,fieldout(1),necrw*nxyzr)
+           jj = jj + nxyzr*necrw
+           ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+           call byte_set_view(ioff,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+           ni = ni + 1
+         endif
+      enddo
+
+      call byte_close(igh)
+      call byte_close(ifh)
+
+
+      etime = dnekclock_sync() - etime
+      if(nid.eq.0) write(6,*) 'done :: grid-to-grid interpolation',
+     &                        etime
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine g2gi_buf2v(v,buf,ndim,nel,nxyz)
+
+      real*4 buf(1)
+      real v(nel*nxyz,1)
+
+      do i = 1,nel
+         k = (i-1) * ndim*nxyz
+         jj = (i-1)*nxyz 
+         do j = 1,ndim
+            call copy4r(v(jj+1,j),buf(k+1),nxyz)
+            k = k + nxyz
+         enddo
+      enddo 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine g2gi_v2buf(buf,v,ndim,nel,nxyz)
+
+      real*4 buf(1)
+      real v(nel*nxyz,1)
+
+      do i = 1,nel
+         k = (i-1) * ndim*nxyz
+         jj = (i-1)*nxyz 
+         do j = 1,ndim
+            call copyx4(buf(k+1),v(jj+1,j),nxyz)
+            k = k + nxyz
+         enddo
+      enddo 
 
       return
       end

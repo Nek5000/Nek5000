@@ -37,5 +37,5 @@ c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSI
       common /cmfi_p/ fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00 
       integer         fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00
 
-      integer          nekcomm_io,mpi_fh
-      common /i4mpiio/ nekcomm_io,mpi_fh
+      integer          nekcomm_io,ifh_mbyte
+      common /i4mpiio/ nekcomm_io,ifh_mbyte

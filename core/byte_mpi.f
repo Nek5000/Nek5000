@@ -1,4 +1,4 @@
-      subroutine byte_open_mpi(fname)
+      subroutine byte_open_mpi(fname,mpi_fh)
 
       include 'SIZE'
       include 'RESTART'
@@ -25,7 +25,7 @@ c        write(*,*) nid, 'call MPI_file_open',fname
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_read_mpi(buf,icount,iorank)
+      subroutine byte_read_mpi(buf,icount,iorank,mpi_fh)
 
       include 'SIZE'
       include 'RESTART'
@@ -59,7 +59,7 @@ c        write(*,*) 'byte_read_mpi', nid, iout/4
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_write_mpi(buf,icount,iorank)
+      subroutine byte_write_mpi(buf,icount,iorank,mpi_fh)
 
       include 'SIZE'
       include 'RESTART'
@@ -93,7 +93,7 @@ c        write(*,*) 'byte_write', nid, iout/4
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_close_mpi
+      subroutine byte_close_mpi(mpi_fh)
 
       include 'SIZE'
       include 'RESTART'
@@ -111,7 +111,7 @@ C--------------------------------------------------------------------------
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_set_view(ioff_in)
+      subroutine byte_set_view(ioff_in,mpi_fh)
 
       include 'SIZE'
       include 'RESTART'
