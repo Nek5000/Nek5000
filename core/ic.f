@@ -2070,7 +2070,7 @@ c         nread = nelr
          k = 0
  30      do i = 1,nread
 #ifdef MPIIO 
-            call byte_read_mpi(w2,nxyzr*nelrr,-1)
+            call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
 #else
             call byte_read (w2,nxyzr*nelrr)
 #endif
@@ -2088,7 +2088,11 @@ c         nread = nelr
          nelrr = nelr - k
          if(nelrr.gt.0) goto 30
       elseif (np.eq.1) then
+#ifdef MPIIO 
+         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
+#else
          call byte_read(wk,nxyzr*nelr)
+#endif
       endif
 
       if (if_byte_sw.and.wdsizr.eq.8) then
@@ -2191,7 +2195,7 @@ c         nread = nelr
          k = 0
  30      do i = 1,nread
 #ifdef MPIIO 
-            call byte_read_mpi(w2,nxyzr*nelrr,-1)
+            call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
 #else
             call byte_read (w2,nxyzr*nelrr)
 #endif
@@ -2209,7 +2213,11 @@ c         nread = nelr
          nelrr = nelr - k
          if(nelrr.gt.0) goto 30
       elseif (np.eq.1) then
+#ifdef MPIIO 
+         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
+#else
          call byte_read(wk,nxyzr*nelr)
+#endif
       endif
 
       if (if_byte_sw.and.wdsizr.eq.8) then
@@ -2453,7 +2461,7 @@ c
       iofldsr = 0
       if (ifgetxr) then      ! if available
          offs = offs0 + ndim*strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifgetx) then
 c            if(nid.eq.0) write(6,*) 'Reading mesh'
             call mfi_getv(xm1,ym1,zm1,wk,lwk,.false.)
@@ -2465,7 +2473,7 @@ c            if(nid.eq.0) write(6,*) 'Reading mesh'
 
       if (ifgetur) then
          offs = offs0 + iofldsr*stride + ndim*strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifgetu) then
             if (ifmhd.and.ifile.eq.2) then
 c               if(nid.eq.0) write(6,*) 'Reading B field'
@@ -2482,7 +2490,7 @@ c               if(nid.eq.0) write(6,*) 'Reading velocity field'
 
       if (ifgetpr) then
          offs = offs0 + iofldsr*stride + strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifgetp) then
 c            if(nid.eq.0) write(6,*) 'Reading pressure field'
             call mfi_gets(pm1,wk,lwk,.false.)
@@ -2505,7 +2513,7 @@ c            if(nid.eq.0) write(6,*) 'Reading pressure field'
 
       if (ifgettr) then
          offs = offs0 + iofldsr*stride + strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifgett) then
 c            if(nid.eq.0) write(6,*) 'Reading temperature field'
             call mfi_gets(t,wk,lwk,.false.)
@@ -2518,7 +2526,7 @@ c            if(nid.eq.0) write(6,*) 'Reading temperature field'
       do k=1,ldimt-1
          if (ifgtpsr(k)) then
             offs = offs0 + iofldsr*stride + strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             if (ifgtps(k)) then
 c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
                call mfi_gets(t(1,1,1,1,k+1),wk,lwk,.false.)
@@ -2535,7 +2543,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 
       if (nid.eq.pid0r) 
 #ifdef MPIIO
-     &   call byte_close_mpi()
+     &   call byte_close_mpi(ifh_mbyte)
 #else
      &   call byte_close()
 #endif
@@ -2559,6 +2567,7 @@ c-----------------------------------------------------------------------
       subroutine mbyte_open(hname,fid) ! open  blah000.fldnn
       include 'SIZE'
       include 'TSTEP'
+      include 'RESTART'
 c
       integer fid
       character*132 hname
@@ -2593,7 +2602,7 @@ c
       enddo
       
 #ifdef MPIIO
-      call byte_open_mpi(fname)
+      call byte_open_mpi(fname,ifh_mbyte)
       if(nid.eq.0) write(6,6) istep,(fname1(k),k=1,len)
     6 format(1i8,' OPEN: ',132a1)
 #else
@@ -2663,8 +2672,8 @@ c-----------------------------------------------------------------------
       pid1r = nid
       offs0 = iHeaderSize + 4
       call mbyte_open(hname,0)
-      call byte_read_mpi(hdr,iHeaderSize/4,pid00)
-      call byte_read_mpi(bytetest,1,pid00)
+      call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte)
+      call byte_read_mpi(bytetest,1,pid00,ifh_mbyte)
 
       call bcast(hdr,iHeaderSize) 
       call bcast(bytetest,4) 
@@ -2684,8 +2693,8 @@ c-----------------------------------------------------------------------
         nelr = nelgr - (np-1)*nelr
       endif
 
-      call byte_set_view(offs)
-      call byte_read_mpi(er,nelr,-1)
+      call byte_set_view(offs,ifh_mbyte)
+      call byte_read_mpi(er,nelr,-1,ifh_mbyte)
       if (if_byte_sw) call byte_reverse(er,nelr)
 
       ! how many elements do we read up to rank nid

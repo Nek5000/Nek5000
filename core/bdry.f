@@ -868,7 +868,7 @@ C
          DO 2000 IFACE=1,NFACES
             ieg=lglel(ie)
             CB =CBC(IFACE,IE,IFIELD)
-            IF (CB.EQ.'F  ' .OR. CB.EQ.'f  ' .OR. 
+            IF (CB.EQ.'F  ' .OR. CB.EQ.'f  ' .OR.
      $          CB.EQ.'C  ' .OR. CB.EQ.'c  ' .OR. 
      $          CB.EQ.'R  ' .OR. CB.EQ.'r  ' ) THEN
 C

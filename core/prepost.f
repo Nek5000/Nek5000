@@ -1359,7 +1359,7 @@ c-----------------------------------------------------------------------
      &              , ur2(lxo*lxo*lxo*lelt)
      &              , ur3(lxo*lxo*lxo*lelt)
 
-      tiostart=dnekclock()
+      tiostart=dnekclock_sync()
 
       ifxyo_s = ifxyo 
       ifxyo_  = ifxyo
@@ -1395,9 +1395,8 @@ c-----------------------------------------------------------------------
       ! dump all fields based on the t-mesh to avoid different
       ! topologies in the post-processor
       if (ifxyo) then
-c stefan: we need to change fldstideB to the number of elements
          offs = offs0 + ndim*strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifreguo) then
             call map2reg(ur1,nrg,xm1,nout)
             call map2reg(ur2,nrg,ym1,nout)
@@ -1410,7 +1409,7 @@ c stefan: we need to change fldstideB to the number of elements
       endif
       if (ifvo ) then
          offs = offs0 + ioflds*stride + ndim*strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifreguo) then
              call map2reg(ur1,nrg,vx,nout)
              call map2reg(ur2,nrg,vy,nout)
@@ -1423,7 +1422,7 @@ c stefan: we need to change fldstideB to the number of elements
       endif
       if (ifpo ) then
          offs = offs0 + ioflds*stride + strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifreguo) then
             call map2reg(ur1,nrg,pm1,nout)
             call mfo_outs(ur1,nout,nxo,nyo,nzo)
@@ -1434,7 +1433,7 @@ c stefan: we need to change fldstideB to the number of elements
       endif
       if (ifto ) then
          offs = offs0 + ioflds*stride + strideB
-         call byte_set_view(offs)
+         call byte_set_view(offs,ifh_mbyte)
          if (ifreguo) then
             call map2reg(ur1,nrg,t,nout)
             call mfo_outs(ur1,nout,nxo,nyo,nzo)
@@ -1446,7 +1445,7 @@ c stefan: we need to change fldstideB to the number of elements
       do k=1,ldimt-1
          if(ifpsco(k)) then
            offs = offs0 + ioflds*stride + strideB
-           call byte_set_view(offs)
+           call byte_set_view(offs,ifh_mbyte)
            if (ifreguo) then
               call map2reg(ur1,nrg,t(1,1,1,1,k+1),nout)
               call mfo_outs(ur1,nout,nxo,nyo,nzo)
@@ -1456,7 +1455,7 @@ c stefan: we need to change fldstideB to the number of elements
            ioflds = ioflds + 1
          endif
       enddo
-      nbyte = ioflds*nout*wdsizo*nxo*nyo*nzo
+      dnbyte = 1.*ioflds*nout*wdsizo*nxo*nyo*nzo
 
       if (if3d) then
          offs0   = offs0 + ioflds*stride
@@ -1466,54 +1465,52 @@ c stefan: we need to change fldstideB to the number of elements
          ! add meta data to the end of the file
          if (ifxyo) then
             offs = offs0 + ndim*strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             call mfo_mdatav(xm1,ym1,zm1,nout)
             ioflds = ioflds + ndim
          endif
          if (ifvo ) then
             offs = offs0 + ioflds*stride + ndim*strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             call mfo_mdatav(vx,vy,vz,nout)
             ioflds = ioflds + ndim
          endif
          if (ifpo ) then
             offs = offs0 + ioflds*stride + strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             call mfo_mdatas(pm1,nout)
             ioflds = ioflds + 1
          endif
          if (ifto ) then
             offs = offs0 + ioflds*stride + strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             call mfo_mdatas(t,nout)
             ioflds = ioflds + 1
          endif
          do k=1,ldimt-1
             offs = offs0 + ioflds*stride + strideB
-            call byte_set_view(offs)
+            call byte_set_view(offs,ifh_mbyte)
             if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
             ioflds = ioflds + 1
          enddo
-         nbyte = nbyte + 2*ioflds*nout*wdsizo
+         dnbyte = dnbyte + 2.*ioflds*nout*wdsizo
       endif
 
       if (nid.eq.pid0) 
 #ifdef MPIIO
-     &   call byte_close_mpi()
+     &   call byte_close_mpi(ifh_mbyte)
 #else
      &   call byte_close()
 #endif
-      call gsync()
-      tio = dnekclock()-tiostart
-
-      dnbyte = nbyte
-      nbyte = glsum(dnbyte,1)
-      nbyte = nbyte + iHeaderSize + 4 + isize*nelgt
-      if(nid.eq.0) write(6,7) istep,time,
-     &             nbyte/tio/1024/1024/10,
+      tio = dnekclock_sync()-tiostart
+      dnbyte = glsum(dnbyte,1)
+      dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
+      dnbyte = dnbyte/1024/1024
+      if(nid.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
      &             nfileo
     7 format(/,i9,1pe12.4,' done :: Write checkpoint',/,
-     &       30X,'avg data-throughput = ',f7.1,'MBps',/,
+     &       30X,'file size = ',3pG12.2,'MB',/,
+     &       30X,'avg data-throughput = ',0pf7.1,'MB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
       ifxyo = ifxyo_s ! restore old value
@@ -1881,7 +1878,7 @@ c-----------------------------------------------------------------------
          ! write out my data
          nout = n*nel
 #ifdef MPIIO
-         call byte_write_mpi(buffer,nout,-1)
+         call byte_write_mpi(buffer,nout,-1,ifh_mbyte)
 #else
          call byte_write(buffer,nout)
 #endif
@@ -1895,7 +1892,7 @@ c-----------------------------------------------------------------------
             inelp = buffer(1)
             nout  = n*inelp
 #ifdef MPIIO
-            call byte_write_mpi(buffer(2),nout,-1)
+            call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte)
 #else
             call byte_write(buffer(2),nout)
 #endif
@@ -1960,7 +1957,7 @@ c-----------------------------------------------------------------------
          ! write out my data
          nout = n*nel
 #ifdef MPIIO
-         call byte_write_mpi(buffer,nout,-1)
+         call byte_write_mpi(buffer,nout,-1,ifh_mbyte)
 #else
          call byte_write(buffer,nout)
 #endif
@@ -1973,7 +1970,7 @@ c-----------------------------------------------------------------------
             inelp = buffer(1)
             nout  = n*inelp
 #ifdef MPIIO
-            call byte_write_mpi(buffer(2),nout,-1)
+            call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte)
 #else
             call byte_write(buffer(2),nout)
 #endif
@@ -2035,7 +2032,7 @@ c-----------------------------------------------------------------------
          endif
          nout = wdsizo/4 * ntot
 #ifdef MPIIO
-         call byte_write_mpi(u4,nout,-1)
+         call byte_write_mpi(u4,nout,-1,ifh_mbyte)
 #else
          call byte_write(u4,nout)          ! u4 :=: u8
 #endif
@@ -2049,13 +2046,13 @@ c-----------------------------------------------------------------------
             nout  = wdsizo/4 * nxyz * u8(1)
             if (wdsizo.eq.4) then
 #ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1)
+               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte)
 #else
                call byte_write(u4(3),nout)
 #endif
             else
 #ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1)
+               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte)
 #else
                call byte_write(u8(2),nout)
 #endif
@@ -2136,7 +2133,7 @@ c-----------------------------------------------------------------------
          endif
          nout = wdsizo/4 * ndim*nel * nxyz
 #ifdef MPIIO
-         call byte_write_mpi(u4,nout,-1)
+         call byte_write_mpi(u4,nout,-1,ifh_mbyte)
 #else
          call byte_write(u4,nout)          ! u4 :=: u8
 #endif
@@ -2149,13 +2146,13 @@ c-----------------------------------------------------------------------
 
             if (wdsizo.eq.4) then
 #ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1)
+               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte)
 #else
                call byte_write(u4(3),nout)
 #endif
             else
 #ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1)
+               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte)
 #else
                call byte_write(u8(2),nout)
 #endif
@@ -2283,8 +2280,8 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
 #ifdef MPIIO
       ! only rank0 (pid00) will write hdr + test_pattern
-      call byte_write_mpi(hdr,iHeaderSize/4,pid00)
-      call byte_write_mpi(test_pattern,1,pid00)
+      call byte_write_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte)
+      call byte_write_mpi(test_pattern,1,pid00,ifh_mbyte)
 #else
       call byte_write(hdr,iHeaderSize/4)
       call byte_write(test_pattern,1)
@@ -2296,8 +2293,8 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
       if(nid.eq.pid0) then
 #ifdef MPIIO
       ioff = iHeaderSize + 4 + nelB*isize
-      call byte_set_view (ioff)
-      call byte_write_mpi(lglel,nelt,-1)
+      call byte_set_view (ioff,ifh_mbyte)
+      call byte_write_mpi(lglel,nelt,-1,ifh_mbyte)
 #else
       call byte_write(lglel,nelt)
 #endif
@@ -2307,7 +2304,7 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
            len = 4*(lelt+1)
            call crecv(mtype,lglist,len)
 #ifdef MPIIO
-      call byte_write_mpi(lglist(1),lglist(0),-1)
+      call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte)
 #else
       call byte_write(lglist(1),lglist(0))
 #endif
