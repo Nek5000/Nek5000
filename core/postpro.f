@@ -1473,13 +1473,23 @@ c
            ni = ni + 1
          endif
          if(ifgettr) then ! temperature
-           call copyx4(buf,fieldout(1),necrw*nxyzr)
+           call copyx4(buf,fieldout(jj),necrw*nxyzr)
            jj = jj + nxyzr*necrw
            ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
            call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
            ni = ni + 1
          endif
+         do i = 1,ldimt-1
+           if(ifgtpsr(i)) then
+             call copyx4(buf,fieldout(jj),necrw*nxyzr)
+             ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+             call byte_set_view(ioff,ifh)
+             call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+             ni = ni + 1
+           endif  
+           jj = jj + nxyzr*necrw
+         enddo
       enddo
 
       call byte_close(igh)
