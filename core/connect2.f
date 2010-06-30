@@ -494,6 +494,13 @@ C
          call exitt
       endif
 
+      if (ifsplit .and. param(55).ne.0) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Fixed mass flux not supported for Pn-Pn'
+         call exitt
+      endif
+
+
       if (ifmhd)           ifchar = .false.   ! For now, at least.
 
 c     set dealiasing handling
