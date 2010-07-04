@@ -1,3 +1,13 @@
+      subroutine byte_sync_mpi(mpi_fh)
+
+#ifdef MPIIO
+      include 'mpif.h'
+      call MPI_file_sync(mpi_fh,ierr)
+#endif
+
+      return
+      end
+C--------------------------------------------------------------------------
       subroutine byte_open_mpi(fname,mpi_fh)
 
       include 'SIZE'

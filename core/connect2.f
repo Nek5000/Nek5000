@@ -512,6 +512,12 @@ c     set dealiasing handling
          if (ifmvbd) param(99) = 3             ! For now, at least.
       endif
 
+      if (ifchar .and. param(99).lt.0) then
+        if (nid.eq.0) write(6,*) 
+     &     'ABORT: Characteristic scheme needs dealiasing!'
+        call exitt
+      endif
+
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then
          if(nid.eq.0) write(6,*)

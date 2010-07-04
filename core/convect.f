@@ -21,6 +21,7 @@ c-----------------------------------------------------------------------
       common /cchar/ ct_vx(0:lorder+1) ! time for each slice in c_vx()
 
       if (igeom.eq.1) return
+      if (param(99).lt.0) return ! no dealiasing
 
       if (ifchar) then
 

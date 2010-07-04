@@ -409,7 +409,7 @@ c
       nxf     = 2*nx1 ! fine mesh for bb-test
       nyf     = 2*ny1
       nzf     = 2*nz1
-      bb_t    = 0.05 ! relative size to expand bounding boxes by
+      bb_t    = 0.1 ! relative size to expand bounding boxes by
 c
       if(nidd.eq.0) write(6,*) 'initializing intpts(), tol=', tol
       call findpts_setup(ih,nekcomm,npp,ndim,
@@ -1344,14 +1344,14 @@ c
       common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldm)
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
 
-      integer*8 ioff,ioff0,wds,ifldoff
+      integer*8 ioff,ioff0,wds,ifldoff,nelrr_b
 
-      etime = dnekclock_sync()
+      etime_t = dnekclock_sync()
       if(nid.eq.0) write(6,*) 'grid-to-grid interpolation'
 
       wds = 4 ! word size, fixed for now
 
-      ! open geofld
+      ! open file containing new geometry
       ierr = 0
       if(nid.eq.0) then
         open(111,file=geofld,err=100)
@@ -1369,16 +1369,30 @@ c
         call exitt
       endif
 
-      nelgrr = nelgr
-      nxrr = nxr
-      nyrr = nyr 
-      nzrr = nzr 
-      nxyzr = nxrr*nyrr*nzrr
-      nec   = lbuf/ndim/nxyzr ! number of elements per chunk
-      nc    = nelgrr/nec      ! number of chunks
-      if(mod(nelgrr,nec).ne.0) nc = nc + 1
-      ioff0 = iHeaderSize + iSize + iSize*nelgrr 
-      ifldoff = nelgrr*nxyzr*wds
+      nelgrr  = nelgr
+      nxrr    = nxr
+      nyrr    = nyr 
+      nzrr    = nzr 
+      nxyzr   = nxrr*nyrr*nzrr
+      ioff0   = iHeaderSize + iSize + iSize*nelgrr 
+      ifldoff = nelgrr*nxyzr*wds ! field offset
+      nec     = lbuf/(ndim*nxyzr) ! number of elements fit into buffer 
+      if(nec.eq.0) then
+        if(nid.eq.0) write(6,*) 'ABORT: lbuf to small, increase lpart'
+        call exitt
+      endif
+      nelrr = nelgrr/np
+
+      ! local chunk size (elements)
+      do i = 0,mod(nelgrr,np)-1 ! distribute remainder
+         if(i.eq.nid) nelrr = nelrr + 1
+      enddo
+      nn = nelrr
+      nelrr_b = igl_running_sum(nn) - nelrr
+
+      nc = nelrr/nec ! number of local chunks
+      if(mod(nelrr,nec).ne.0) nc = nc + 1
+      ncg = iglmax(nc,1)
 
       ! read field file of old geometry
       call load_fld(infld)
@@ -1397,9 +1411,11 @@ c
       call byte_write_mpi(hdr,iHeaderSize/4,0,ifh)
       call byte_read_mpi (buf,1,0,igh) ! copy endian flag
       call byte_write_mpi(buf,1,0,ifh)
-      do ic = 1,nc ! copy mapping
-         nbuf = nec
-         if(ic.eq.nc) nbuf = nelgrr - (nc-1)*nec       
+      ncc = nelgrr/lbuf
+      if(mod(nelgrr,lbuf).ne.0) ncc = ncc + 1
+      do ic = 1,ncc ! copy mapping
+         nbuf = lbuf
+         if(ic.eq.ncc) nbuf = nelgrr - (ncc-1)*lbuf
          call byte_read_mpi (buf,nbuf,0,igh)
          call byte_write_mpi(buf,nbuf,0,ifh)
       enddo
@@ -1435,23 +1451,32 @@ c
 
       call intpts_setup(-1.0,ih)
       necrw = nec
-      do ic = 1,nc
-         if(ic.eq.nc) necrw = nelgrr - (nc-1)*necrw ! clean-up
-         if(nid.eq.0) write(6,*) 'chunk',ic,nc
-         
+      do ic = 1,ncg
+         if(nid.eq.0) write(6,*) 'chunk',ic,ncg
+         call byte_sync_mpi(ifh) ! free buffer
+         if(ic.eq.nc) necrw = nelrr - (nc-1)*necrw ! remainder
+         if(ic.gt.nc) then
+           necrw = 0
+           nec = 0
+         endif 
+
          ! read coord. 
-         call byte_read_mpi(buf,ndim*nxyzr*necrw,0,igh)
+         ioff = ioff0 + ndim*nxyzr*nelrr_b*wds
+c         write(6,'(9i12)') nid,nelrr_b,ioff,ioff0,ncg,ndim,nxyzr,wds,ic
+         ioff = ioff + (ic-1)*ndim*nxyzr*nec*wds
+         call byte_set_view(ioff,igh)
+         call byte_read_mpi(buf,ndim*nxyzr*necrw,-1,igh)
          call g2gi_buf2v(pts,buf,ndim,necrw,nxyzr)
 
          ! write coord.
-         ioff = ioff0 + (ic-1)*ndim*nxyzr*nec*wds
          call byte_set_view(ioff,ifh)
-         call byte_write_mpi(buf,ndim*nxyzr*necrw,0,ifh)  
+         call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)  
 
          ! interpolate fields
          npts = necrw*nxyzr
-         if(nid.ne.0) npts = 0 ! only rank0, for now
+         etime_i = dnekclock_sync()
          call intpts(wrk,nfld,pts,npts,fieldout,.false.,ih)
+         etime_i = dnekclock_sync() - etime_i
 
          ! write fields
          jj = 1
@@ -1459,46 +1484,50 @@ c
          if(ifgetur) then ! velocity
            call g2gi_v2buf(buf,fieldout(jj),ndim,necrw,nxyzr)
            jj = jj + ndim*nxyzr*necrw
-           ioff = ioff0 + ni*ifldoff + (ic-1)*ndim*nxyzr*nec*wds
+           ioff = ioff0 + ni*ifldoff + ndim*nxyzr*nelrr_b*wds
+           ioff = ioff + (ic-1)*ndim*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,ndim*nxyzr*necrw,0,ifh)
+           call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)
            ni = ni + ndim
          endif
          if(ifgetpr) then ! pressure
            call copyx4(buf,fieldout(jj),necrw*nxyzr)
            jj = jj + nxyzr*necrw
-           ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+           ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
+           ioff = ioff + (ic-1)*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
            ni = ni + 1
          endif
          if(ifgettr) then ! temperature
            call copyx4(buf,fieldout(jj),necrw*nxyzr)
            jj = jj + nxyzr*necrw
-           ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+           ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
+           ioff = ioff + (ic-1)*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
            ni = ni + 1
          endif
          do i = 1,ldimt-1
            if(ifgtpsr(i)) then
              call copyx4(buf,fieldout(jj),necrw*nxyzr)
-             ioff = ioff0 + ni*ifldoff + (ic-1)*nxyzr*nec*wds
+             jj = jj + nxyzr*necrw
+             ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
+             ioff = ioff + (ic-1)*nxyzr*nec*wds
              call byte_set_view(ioff,ifh)
-             call byte_write_mpi(buf,nxyzr*necrw,0,ifh)
+             call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
              ni = ni + 1
            endif  
-           jj = jj + nxyzr*necrw
          enddo
       enddo
 
       call byte_close(igh)
       call byte_close(ifh)
 
-
-      etime = dnekclock_sync() - etime
-      if(nid.eq.0) write(6,*) 'done :: grid-to-grid interpolation',
-     &                        etime
+      etime_t = dnekclock_sync() - etime_t
+      if(nid.eq.0) write(6,'(A,2(1g8.2),A)') 
+     &                        'done :: grid-to-grid interpolation   ',
+     &                        etime_t,etime_i, ' sec'
 
       return
       end

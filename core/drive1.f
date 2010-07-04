@@ -70,7 +70,7 @@ C     Initalize io unit
       call io_init
 
 C     Set size for CVODE solver
-      if(ifcvode) call cv_setsize(0,nfield)
+      if(ifcvode .and. nsteps.gt.0) call cv_setsize(0,nfield)
 
 C     USRDAT
       if(nid.eq.0) write(6,*) 'call usrdat'
@@ -136,7 +136,7 @@ C     USRCHK
       endif
 
 C     Initialize CVODE
-      if(ifcvode) call cv_init
+      if(ifcvode .and. nsteps.gt.0) call cv_init
 
       call comment
       call sstest (isss) 
