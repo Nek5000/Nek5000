@@ -220,19 +220,18 @@ c                                               !      1
 c      print *, 'GMRES end resid:',gamma(1)
 c     END DIAGNOSTICS
       call copy(res,x,ntot2)
-c
+
       if (ifvcor) then
          xaver = glsc2(bm2,res,ntot2)/volvm2
          call cadd(res,-xaver,ntot2)
       endif
-c
+
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
      &                            etime1
 c     call flush_hack
- 9999 format(4X,I7,'    U-Pres gmres:   ',I6,1p5E13.4)
-c
-c
+ 9999 format(i10,' U-PRES gmres:',I7,1p5e12.4)
+
       return
       end
 
@@ -509,20 +508,20 @@ c           enddo
 c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       enddo
  9000 continue
-c
+
       divex = rnorm
       call copy(res,x,n)
-c
+
       if (ifvcor) then
          xaver = glsc2(bm1,res,n)/volvm1
          call cadd(res,-xaver,n)
       endif
-c
+
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
      &                            etime1
 c     call flush_hack
- 9999 format(4X,I7,'    PRES gmres:   ',I6,1p5E13.4)
+ 9999 format(i10,' PRES gmres:',I7,1p5e12.4)
 
       return
       end
