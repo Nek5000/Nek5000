@@ -57,9 +57,10 @@ c
 
       if (iostep.lt.0 .or. timeio.lt.0) return
 
-#ifndef NOTIMER
       icalld=icalld+1
       nprep=icalld
+
+#ifndef NOTIMER
       etime1=dnekclock()
 #endif
 
@@ -69,12 +70,12 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if (prefin.eq.'his') ifhis  = .true.
       if (prefix.eq.'his') prefix = '   '
 
-      if(icalld.eq.0) then
+      if(icalld.eq.1) then
         ierr = 0
         if (nid.eq.0) then
-           write(6,*) 'schfile:',schfle
+           write(6,*) 'hisfile:',hisfle
          
-           open(unit=26,file=schfle,err=44,form='formatted',
+           open(unit=26,file=hisfle,err=44,form='formatted',
      &          status='new')
            goto 45
   44       ierr = 1

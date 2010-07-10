@@ -1547,18 +1547,14 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
-C
-      integer*8 ntot
-C
+
+      integer*8 ntot,nvtot,nptot
+
       nxyz  = nx1*ny1*nz1
       nel   = nelv
 
       ! unique points on v-mesh
-      if (ifflow) then
-         nel = nelv
-         call copy (work,vmult,nel*nxyz)
-      endif
-      vpts = glsum(work,nel*nxyz) + .1
+      vpts = glsum(vmult,nel*nxyz) + .1
       nvtot=vpts
 
       ! unique points on pressure mesh
@@ -1568,6 +1564,17 @@ C
 C
       if (nid.eq.0) write(6,'(A,2i13)') 
      &   'gridpoints unique/tot: ',nvtot,ntot
+
+      ntot1=nx1*ny1*nz1*nelv
+      ntot2=nx2*ny2*nz2*nelv
+
+      nvtot = glsc2(tmult,tmask,ntot1)
+      nptot = i8glsum(ntot2,1)
+
+      if (ifflow)  nvtot = glsc2(vmult,v1mask,ntot1)
+      if (ifsplit) nptot = glsc2(vmult,pmask ,ntot1)
+      if (nid.eq.0) write(6,*) ' dofs:',nvtot,nptot
+
       return
       end
 c-----------------------------------------------------------------------
