@@ -1548,7 +1548,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 ntot,nvtot,nptot
+      integer*8 ntot,ntotp,ntotv
 
       nxyz  = nx1*ny1*nz1
       nel   = nelv
@@ -1568,12 +1568,12 @@ C
       ntot1=nx1*ny1*nz1*nelv
       ntot2=nx2*ny2*nz2*nelv
 
-      nvtot = glsc2(tmult,tmask,ntot1)
-      nptot = i8glsum(ntot2,1)
+      ntotv = glsc2(tmult,tmask,ntot1)
+      ntotp = i8glsum(ntot2,1)
 
-      if (ifflow)  nvtot = glsc2(vmult,v1mask,ntot1)
-      if (ifsplit) nptot = glsc2(vmult,pmask ,ntot1)
-      if (nid.eq.0) write(6,*) ' dofs:',nvtot,nptot
+      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
+      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
+      if (nid.eq.0) write(6,*) ' dofs:',ntotv,ntotp
 
       return
       end
