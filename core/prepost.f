@@ -73,9 +73,9 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if(icalld.eq.1) then
         ierr = 0
         if (nid.eq.0) then
-           write(6,*) 'hisfile:',hisfle
+           write(6,*) 'schfile:',schfle
          
-           open(unit=26,file=hisfle,err=44,form='formatted',
+           open(unit=26,file=schfle,err=44,form='formatted',
      &          status='new')
            goto 45
   44       ierr = 1
