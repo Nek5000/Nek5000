@@ -1190,8 +1190,10 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
+      parameter (nfldm = ldim+ldim+1)
+
       real    pts(ldim,lhis)
-      real    fieldout(ldim+ldimt+1,lhis)
+      real    fieldout(nfldm,lhis)
 
       real    dist(lhis)
 
@@ -1201,7 +1203,7 @@ c
       common /hpts_i/ rcode,elid,proc
 
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
-      common /outtmp/ wrk(lx1*ly1*lz1*lelt,ldim+ldimt+1)
+      common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldm)
 
       logical iffind
 
@@ -1228,8 +1230,8 @@ c
           write(6,*) 'reading hpts.in'
           open(50,file='hpts.in',status='old')
           read(50,*) npoints
-          if(npoints.gt.lpart) then
-            write(6,*) 'ABORT: lpart too small!'
+          if(npoints.gt.lhis) then
+            write(6,*) 'ABORT: lhis too small!'
             call exitt
           endif
           write(6,*) 'found ', npoints, ' points'
@@ -1270,7 +1272,7 @@ c
      &                 pts(1,1),ndim,
      &                 pts(2,1),ndim,
      &                 pts(3,1),ndim,npoints)
-       
+      
         do i=1,npoints
            ! check return code 
            if(rcode(i).eq.1) then
@@ -1292,7 +1294,7 @@ c
       ! evaluate inut field at given points
       ltot = lelt*lx1*ly1*lz1
       do ifld = 1,nflds
-         call findpts_eval(inth_hpts,fieldout(ifld,1),nflds,
+         call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
      &                     rcode,1,
      &                     proc,1,
      &                     elid,1,
@@ -1304,7 +1306,7 @@ c
       if(nid.eq.0) then
         do ip = 1,npoints
            write(50,'(1p20E15.7)') time,
-     &      (fieldout(ifld,ip), ifld=1,nflds)
+     &      (fieldout(i,ip), i=1,nflds)
         enddo
       endif
 
