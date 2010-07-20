@@ -60,20 +60,20 @@ C     Read Mesh Info
 #ifdef MOAB
         call moab_dat
 #else
-        if(nid.eq.0) write(6,*)
+        if (nid.eq.0) write(6,*)
      &    'ABORT: This version has not been compiled with moab support!'
         call exitt
 #endif
       else
-        if(ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
-        if(nid.eq.0) then
+        if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
+        if (nid.eq.0) then
           write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
           write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12       format(1X,A,4I9,/,/)
         endif
         call chk_nel  ! make certain sufficient array sizes
-        call mapelpr  ! read .map file, est. gllnid, etc.
-        if(ifre2) then
+        if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+        if (ifre2) then
           call bin_rd1(ifbswap) ! rank0 will read mesh data + distribute
         else
 #ifndef DEBUG
@@ -88,7 +88,7 @@ c           call exitt
           do i=0,np-1,maxrd
              call gsync()
              if (mod(nid,mread).eq.iread) then
-                if(nid.ne.0) then
+                if (nid.ne.0) then
                   open(UNIT=9,FILE=REAFLE,STATUS='OLD')
                   call cscan(string,'MESH DATA',9)
                   read(9,*) string
@@ -100,7 +100,7 @@ c           call exitt
                    call rdcurve !  Curved side data
                    call rdbdry  !  Boundary Conditions
                 endif
-                if(nid.ne.0) close(unit=9)
+                if (nid.ne.0) close(unit=9)
              endif
              iread = iread + 1
           enddo

@@ -112,12 +112,13 @@ c     if (.not.(ifgtp.or.ifgfdm)) then
 c
 c        rsb element to processor mapping 
 c
+         if (ifgfdm)       call gfdm_elm_to_proc(gllnid,np) ! gfdm w/ .map
+
          call get_map
+
       endif
 
-      if (ifzper.or.ifgfdm.or.ifgtp) then ! special processor map
-         call gfdm_elm_to_proc(gllnid,np)
-      endif
+      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(gllnid,np) ! special processor map
 
 c     compute global to local map (no processor info)
 c
