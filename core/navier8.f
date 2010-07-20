@@ -1726,16 +1726,17 @@ c        call nekMOAB_loadConn (vertex, nelgt, ncrnr)
          call exitt
 #endif
       else
-         call get_vert_map(vertex, ncrnr, nelgt, '.map')
+         call get_vert_map(vertex, ncrnr, nelgt, '.map', ifgfdm)
       endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex, nlv, nel, suffix)
+      subroutine get_vert_map(vertex, nlv, nel, suffix, ifgfdm)
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
+      logical ifgfdm
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
       integer vertex(nlv,1)
       character*4 suffix
@@ -1780,7 +1781,7 @@ c-----------------------------------------------------------------------
             do eg=eg0+1,eg1
                m = m+1
                read(80,*,end=998) (wk(k,m),k=2,mdw)
-               gllnid(eg) = wk(2,m)  !proc map,  must still be divided
+               if(.not.ifgfdm)  gllnid(eg) = wk(2,m)  !proc map,  must still be divided
                wk(1,m)    = eg
             enddo
             if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
@@ -1796,14 +1797,16 @@ c-----------------------------------------------------------------------
       endif
 
 c     Distribute and assign partitions
-      lng = isize*neli
-      call bcast(gllnid,lng)
-      call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
+      if (.not.ifgfdm) then             ! gllnid is already assigned for gfdm
+        lng = isize*neli
+        call bcast(gllnid,lng)
+        call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
 
-c      if(nid.eq.0) then
-c        write(99,*) (gllnid(i),i=1,nelgt)
-c      endif
-c      call exitt
+c       if(nid.eq.0) then
+c         write(99,*) (gllnid(i),i=1,nelgt)
+c       endif
+c       call exitt
+      endif
 
       nelt=0 !     Count number of elements on this processor
       nelv=0
@@ -1825,9 +1828,11 @@ c     NOW: crystal route vertex by processor id
       key = 2  ! processor id is in wk(2,:)
       call crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
-      key = 1  ! Sort tuple list by eg := wk(1,:)
-      nkey = 1
-      call crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
+      if (.not.ifgfdm) then            ! no sorting for gfdm?
+         key = 1  ! Sort tuple list by eg := wk(1,:)
+         nkey = 1
+         call crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
+      endif
 
       iflag = 0
       if (ntuple.ne.nelt) then
@@ -1865,6 +1870,7 @@ c     NOW: crystal route vertex by processor id
 
       return
       end
+c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine irank_vecn(ind,nn,a,m,n,key,nkey,aa)
 c
@@ -2370,7 +2376,6 @@ c     Count number of unique vertices
       nlv  = 2**ndim
       ngvv = iglmax(vertex,nlv*nel)
       ngv  = ngvv
-
 c
 c     Assign hypercube ordering of vertices.
       do e=1,nel
