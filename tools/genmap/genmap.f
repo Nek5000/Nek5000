@@ -1329,7 +1329,7 @@ c     call cell_plot(dx,c,nv,ndim,nel,0)
 c       call part_clean( order, nsep, elist, cell, nv, n1, n2, w1, w2)
 c       call count_sep( w1, order, nsep, elist, cell, nv, n1, n2 )
         mcount = iglmax(w1,nel)
-c       call ident_sep( order, mo, elist, cell, nv, n1, n2 )
+        call ident_sep( order, mo, elist, cell, nv, n1, n2 )
 
       return
       end
