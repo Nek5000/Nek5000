@@ -1219,11 +1219,11 @@ c
 
       if(nid.eq.0) write(6,*) 'dump history points'
 
-      if(nelgt.ne.nelgv) then
-        if(nid.eq.0) write(6,*) 
-     &    'ABORT: hpts() no support for nelgt.ne.nelgv!'
-        call exitt        
-      endif
+c     if(nelgt.ne.nelgv) then
+c       if(nid.eq.0) write(6,*) 
+c    &    'ABORT: hpts() no support for nelgt.ne.nelgv!'
+c       call exitt        
+c     endif
 
       if(icalld.eq.0) then
         if(nid.eq.0) then
