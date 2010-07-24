@@ -2027,7 +2027,8 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1)
 
       real*4 wk(lwk) ! message buffer
-      common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
+      parameter(lrbs=20*lx1*ly1*lz1*lelt)
+      common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
 
       integer e,ei,eg,msg_id(lelt)
@@ -2046,13 +2047,13 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         nread = nxyzr*nelr/(10.*lx1*ly1*lz1*lelt) + 1
-c         nread = nelr
-         if(nread.lt.1) nread=1 
-         nelrr     = nelr/nread
-         num_read  = nxyzr*nelrr
-         num_avail = 10*lx1*ly1*lz1*lelt
-         call lim_chk(num_read,num_avail,'     ','     ','mfi_gets b')
+         nread = nxyzr*nelr/lrbs
+         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
+#ifdef MPIIO 
+         nread = iglmax(nread,1) ! needed because of collective read
+#endif
+         nelrr = nelr/nread
+         call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
       endif
 
       ! pre-post recieves
@@ -2068,7 +2069,11 @@ c         nread = nelr
       if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
          ! read blocks of size nelrr
          k = 0
- 30      do i = 1,nread
+         do i = 1,nread
+            if(i.eq.nread) then ! clean-up 
+              nelrr = nelr - (nread-1)*nelrr
+              if(nelrr.lt.0) nelrr = 0
+            endif
 #ifdef MPIIO 
             call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
 #else
@@ -2083,10 +2088,6 @@ c         nread = nelr
             enddo
             k  = k + nelrr
          enddo
-         ! clean-up
-         nread = 1
-         nelrr = nelr - k
-         if(nelrr.gt.0) goto 30
       elseif (np.eq.1) then
 #ifdef MPIIO 
          call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
@@ -2152,16 +2153,16 @@ c-----------------------------------------------------------------------
       logical iskip
 
       real*4 wk(lwk) ! message buffer
-      common /gmre1/ w2(10*lx1*ly1*lz1*lelt) ! read buffer
+      parameter(lrbs=20*lx1*ly1*lz1*lelt)
+      common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
 
       integer e,ei,eg,msg_id(lelt)
 
-
       call gsync() ! clear outstanding message queues.
 
       nxyzr = ndim*nxr*nyr*nzr
-      len   = nxyzr*wdsizr             ! message length
+      len   = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
@@ -2171,13 +2172,13 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         nread = nxyzr*nelr/(10.*lx1*ly1*lz1*lelt) + 1
-c         nread = nelr
-         if(nread.lt.1) nread=1 
-         nelrr     = nelr/nread
-         num_read  = nxyzr*nelrr
-         num_avail = 10*lx1*ly1*lz1*lelt
-         call lim_chk(num_read,num_avail,'     ','     ','mfi_gets b')
+         nread = nxyzr*nelr/lrbs
+         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
+#ifdef MPIIO 
+         nread = iglmax(nread,1) ! needed because of collective read
+#endif
+         nelrr = nelr/nread
+         call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
       endif
 
       ! pre-post recieves
@@ -2190,16 +2191,19 @@ c         nread = nelr
          enddo
       endif
 
-      if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
-         ! read blocks of size nelrr
+      if (nid.eq.pid0r .and. np.gt.1) then ! only i/o nodes
          k = 0
- 30      do i = 1,nread
+         do i = 1,nread
+            if(i.eq.nread) then ! clean-up 
+              nelrr = nelr - (nread-1)*nelrr
+              if(nelrr.lt.0) nelrr = 0
+            endif
 #ifdef MPIIO 
             call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
 #else
             call byte_read (w2,nxyzr*nelrr)
 #endif
-            ! distribute data across target processors
+            ! redistribute data based on the current el-proc map
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
@@ -2208,10 +2212,6 @@ c         nread = nelr
             enddo
             k  = k + nelrr
          enddo
-         ! clean-up
-         nread = 1
-         nelrr = nelr - k
-         if(nelrr.gt.0) goto 30
       elseif (np.eq.1) then
 #ifdef MPIIO 
          call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
@@ -2229,7 +2229,7 @@ c         nread = nelr
 
       if (iskip) then
          call gsync() ! clear outstanding message queues.
-         goto 100     ! don't use the data
+         goto 100     ! don't assign the data we just read
       endif
 
       nxyzr = nxr*nyr*nzr
@@ -2629,8 +2629,6 @@ c-----------------------------------------------------------------------
       integer*8 offs0,offs
 
       integer sum
-      common /scrns/ iwork(0:lp-1,2)
-
 
 #ifndef MPIIO
       ! rank0 (i/o master) will do a pre-read to get some infos 
@@ -2686,26 +2684,17 @@ c-----------------------------------------------------------------------
       endif
       nfiler = np
 
-      nelr = nelgr/np 
-      offs = offs0 + nid*nelr*isize
-      if(nid.eq.np-1) then ! last processor will take whatever remains
-        offs = offs0 + (np-1)*nelr*isize
-        nelr = nelgr - (np-1)*nelr
-      endif
+      ! number of elements to read 
+      nelr = nelgr/np
+      do i = 0,mod(nelgr,np)-1
+         if(i.eq.nid) nelr = nelr + 1
+      enddo
+      nelBr = igl_running_sum(nelr) - nelr 
+      offs = offs0 + nelBr*isize
 
       call byte_set_view(offs,ifh_mbyte)
       call byte_read_mpi(er,nelr,-1,ifh_mbyte)
       if (if_byte_sw) call byte_reverse(er,nelr)
-
-      ! how many elements do we read up to rank nid
-      call izero(iwork,np)
-      iwork(nid,1) = nelr
-      call igop(iwork,iwork(0,2),'+  ',np) 
-      sum = 0
-      do i = nid-1,0,-1
-         sum  = sum + iwork(i,1)
-      enddo
-      nelBr = sum
 #endif
 
       return
