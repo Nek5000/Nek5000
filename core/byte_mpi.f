@@ -43,18 +43,18 @@ C--------------------------------------------------------------------------
 #ifdef MPIIO
       include 'mpif.h'
 
-      real*4 buf(icount)          ! buffer
+      real*4 buf(1)          ! buffer
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = 4*icount           ! icount is in 4-byte words
+        iout = 4*icount ! icount is in 4-byte words
         if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
 c        write(*,*) 'byte_read_mpi', nid, iout/4
 #ifdef MPIIO_NOCOL
         call MPI_file_read(mpi_fh,buf,iout,MPI_BYTE,
-     &                      MPI_STATUS_IGNORE,ierr)
+     &                     MPI_STATUS_IGNORE,ierr)
 #else
         call MPI_file_read_all(mpi_fh,buf,iout,MPI_BYTE,
-     &                          MPI_STATUS_IGNORE,ierr)
+     &                         MPI_STATUS_IGNORE,ierr)
 #endif
         if(ierr.ne.0) then
           write(6,*) 'ABORT: Error in byte_read_mpi ', ierr
@@ -77,10 +77,10 @@ C--------------------------------------------------------------------------
 #ifdef MPIIO
       include 'mpif.h'
 
-      real*4 buf(icount)          ! buffer
+      real*4 buf(1)          ! buffer
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = 4*icount           ! icount is in 4-byte words
+        iout = 4*icount ! icount is in 4-byte words
         if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
 c        write(*,*) 'byte_write', nid, iout/4
 #ifdef MPIIO_NOCOL

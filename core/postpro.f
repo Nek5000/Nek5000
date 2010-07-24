@@ -1219,12 +1219,6 @@ c
 
       if(nid.eq.0) write(6,*) 'dump history points'
 
-c     if(nelgt.ne.nelgv) then
-c       if(nid.eq.0) write(6,*) 
-c    &    'ABORT: hpts() no support for nelgt.ne.nelgv!'
-c       call exitt        
-c     endif
-
       if(icalld.eq.0) then
         if(nid.eq.0) then
           write(6,*) 'reading hpts.in'
@@ -1252,14 +1246,27 @@ c     endif
         call exitt
       endif
 
-      nflds  = nfield + ndim ! for now, all fields
       ! pack working array
-      call copy(wrk(1,1),vx,ntot)
-      call copy(wrk(1,2),vy,ntot)
-      if(if3d) call copy(wrk(1,3),vz,ntot)
-      call copy(wrk(1,ndim+1),pm1,ntot)
-      do i = 1,nfield-1
-         call copy(wrk(1,ndim+1+i),T(1,1,1,1,i),ntot)
+      nflds = 0
+      if(ifvo) then
+        call copy(wrk(1,1),vx,ntot)
+        call copy(wrk(1,2),vy,ntot)
+        if(if3d) call copy(wrk(1,3),vz,ntot)
+        nflds = ndim
+      endif
+      if(ifpo) then
+        nflds = nflds + 1
+        call copy(wrk(1,nflds),pm1,ntot)
+      endif
+      if(ifto) then
+        nflds = nflds + 1
+        call copy(wrk(1,nflds),t,ntot)
+      endif
+      do i = 1,ldimt
+         if(ifpsco(i)) then
+           nflds = nflds + 1
+           call copy(wrk(1,nflds),T(1,1,1,1,i+1),ntot)
+         endif
       enddo
       
       ! interpolate
@@ -1292,7 +1299,6 @@ c     endif
       endif
 
       ! evaluate inut field at given points
-      ltot = lelt*lx1*ly1*lz1
       do ifld = 1,nflds
          call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
      &                     rcode,1,
@@ -1350,6 +1356,11 @@ c
 
       etime_t = dnekclock_sync()
       if(nid.eq.0) write(6,*) 'grid-to-grid interpolation'
+
+#ifndef MPIIO
+      if(nid.eq.0) write(6,*) 'ABORT: compile with MPIIO support!'
+      call exitt
+#endif
 
       wds = 4 ! word size, fixed for now
 
@@ -1464,7 +1475,6 @@ c
 
          ! read coord. 
          ioff = ioff0 + ndim*nxyzr*nelrr_b*wds
-c         write(6,'(9i12)') nid,nelrr_b,ioff,ioff0,ncg,ndim,nxyzr,wds,ic
          ioff = ioff + (ic-1)*ndim*nxyzr*nec*wds
          call byte_set_view(ioff,igh)
          call byte_read_mpi(buf,ndim*nxyzr*necrw,-1,igh)
