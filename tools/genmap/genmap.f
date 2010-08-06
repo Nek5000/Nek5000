@@ -73,7 +73,8 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a .map file
 
-      include 'SIZE' 
+c     include 'SIZE' 
+      parameter(lelm=200 000)
 
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
@@ -191,7 +192,9 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a mesh
 
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
 
       integer      cell(1)
       character*3  cbc (6,1)
@@ -215,7 +218,13 @@ c     read nekton .rea file and make a mesh
       save    eface
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
-      call getfile2('Input (.rea) file name:$','.rea$',10)
+      io = 10
+      call getfile2('Input (.rea) file name:$','.rea$',io)
+      if (io.lt.0.0) then
+         call linearmsh(cell,nelv,nelt,ndim)
+         return
+      endif
+      
 
       write(6,'(A)') 'Input mesh tolerance (default 0.2):'
       write(6,'(A,A)') 'NOTE: smaller is better, but generous is more ',
@@ -231,6 +240,7 @@ c     read nekton .rea file and make a mesh
          if (ifbswap) call byte_reverse(ncurve,1)
          do k = 1,ncurve
             call byte_read(buf,8)
+
          enddo
 
 c        For current version of genmap, only need the fluid bcs.
@@ -280,6 +290,28 @@ c     Compress vertices based on coordinates
       return
       end
 c-----------------------------------------------------------------------
+      subroutine linearmsh(cell,nelv,nelt,ndim)
+      
+      integer      cell(2,1)
+      integer e
+
+      ndim = 1
+
+      write(6,*) 'Input number of linear finite elements:'
+      read (5,*) nelt
+
+      do e = 1,nelt
+         cell(1,e) = e
+         cell(2,e) = e+1
+      enddo
+
+      nelv=nelt
+
+
+      
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine exitti(name,ie)
       character*40 name
       write(6,*) name
@@ -301,7 +333,9 @@ c----------------c------------------------------------------------------
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
      
       character*80 string
 c
@@ -815,13 +849,17 @@ c     Get file name
       call blank(session,80)
       read(5,80) session
    80 format(a80)
-      call chcopy(file,session,80)
-      len = ltrunc(file,80)
-      lsf = indx1 (suffix,'$',1) - 1
-      call chcopy(file1(len+1),suffix,lsf)
+      if (session.eq.'-1') then
+         io = -1
+         return
+      else
+         call chcopy(file,session,80)
+         len = ltrunc(file,80)
+         lsf = indx1 (suffix,'$',1) - 1
+         call chcopy(file1(len+1),suffix,lsf)
 
-      open(unit=io, file=file)
-
+         open(unit=io, file=file)
+      endif
       return
       end
 c-----------------------------------------------------------------------
@@ -1252,7 +1290,9 @@ c     c     - nv*nel
 c     w1    - nv*nel
 c     w2    - nv*nel
 c
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
  
       common /arrayr/  dx(1)    !ADDED to PLOT
       parameter(lpts=8*lelm)
@@ -1272,7 +1312,9 @@ c 6      format(2i6,2x,8i8,' bp_cell')
 
       call self_chk (c,nv,nel,4)       ! check for not self-ptg.
 
-      if (nv.eq.4) then   ! 2D
+      if (nv.eq.2) then   ! 1D
+         ndim  = 1
+      elseif (nv.eq.4) then   ! 2D
          ndim  = 2
          etype = 4      ! Quadrilateral
       else
@@ -1395,7 +1437,9 @@ c     elist - list of active elements
 c     cell  - list of vertices for each element (in global addr. space)
 c     mo    - current max(order)
 c
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
  
       integer elist(1),cell(nv,1),order(1)
       integer e,v
@@ -1566,9 +1610,10 @@ c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
       len = ltrunc(session,80)
       call chcopy(fname,session,80)
       call chcopy(fnam1(len+1),'.map',4)
-      open (unit=29,file=fname)
-
-      write(6,'(A,A)') 'writing ', fname
+      if (nv.ne.2)  then 
+         open (unit=29,file=fname)
+         write(6,'(A,A)') 'writing ', fname
+      endif
 
       write(29,1) nel,nactive,depth,d2,npts,nrnk,noutflow
     1 format(9i11)
@@ -1813,7 +1858,9 @@ c-----------------------------------------------------------------------
 c
 c     Order outflow nodes last
 c
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
  
       integer cell(nv,nel),order(1)
       character*3      cbc(6,nel)
@@ -2427,13 +2474,13 @@ c----------------------------------------------------------------------
       real f(n)
       integer pmap(n),p(n),w(n)
 
-      if (n.gt.2) then
+c     if (n.gt.2) then
          call sort     (f,w,n)
          call jjnt     (p,n)
          call iswap_ip (p,w,n)
-      else
-         call jjnt     (p,n)
-      endif
+c     else
+c        call jjnt     (p,n)
+c     endif
 
       n2 = n/2
       if (n.eq.1) n2 = 1
@@ -2924,7 +2971,9 @@ c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
 c-----------------------------------------------------------------------
       subroutine mult_chk(dx,ndim,nv,nel,cell,nrnk)
 
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
 
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
@@ -2959,7 +3008,9 @@ c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
 c-----------------------------------------------------------------------
       subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
 
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
  
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
@@ -3064,7 +3115,9 @@ c-----------------------------------------------------------------------
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
 
       character*3 cbc(6,lelm)
       real        bc (5,6,lelm)
@@ -3103,7 +3156,9 @@ c           write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
 
       character*3 cbl(6,lelm)
       real        bl(5,6,lelm)
@@ -3770,7 +3825,9 @@ c geometric bisection if that fails do  non-geometric bisection
 c
 c Ensures that all graphs are connected(unless infinite loop occurred)
 c
-      include 'SIZE'
+c     include 'SIZE'
+      parameter(lelm=200 000)
+
     
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
       integer cell(nv,1),c(nv,nel)      
