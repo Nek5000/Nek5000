@@ -73,8 +73,7 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a .map file
 
-c     include 'SIZE' 
-      parameter(lelm=200 000)
+      include 'SIZE' 
 
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
@@ -192,8 +191,7 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a mesh
 
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
 
       integer      cell(1)
@@ -333,8 +331,7 @@ c----------------c------------------------------------------------------
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
      
       character*80 string
@@ -1290,8 +1287,7 @@ c     c     - nv*nel
 c     w1    - nv*nel
 c     w2    - nv*nel
 c
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
  
       common /arrayr/  dx(1)    !ADDED to PLOT
@@ -1437,8 +1433,7 @@ c     elist - list of active elements
 c     cell  - list of vertices for each element (in global addr. space)
 c     mo    - current max(order)
 c
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
  
       integer elist(1),cell(nv,1),order(1)
@@ -1858,8 +1853,7 @@ c-----------------------------------------------------------------------
 c
 c     Order outflow nodes last
 c
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
  
       integer cell(nv,nel),order(1)
@@ -2971,8 +2965,7 @@ c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
 c-----------------------------------------------------------------------
       subroutine mult_chk(dx,ndim,nv,nel,cell,nrnk)
 
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
 
       real dx(0:ndim,nv,nel)
@@ -3008,8 +3001,7 @@ c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
 c-----------------------------------------------------------------------
       subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
 
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
  
       real dx(0:ndim,nv,nel)
@@ -3115,8 +3107,7 @@ c-----------------------------------------------------------------------
 
 c     .Read Boundary Conditions (and connectivity data)
 
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
 
       character*3 cbc(6,lelm)
@@ -3156,8 +3147,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
 
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
 
       character*3 cbl(6,lelm)
@@ -3825,8 +3815,7 @@ c geometric bisection if that fails do  non-geometric bisection
 c
 c Ensures that all graphs are connected(unless infinite loop occurred)
 c
-c     include 'SIZE'
-      parameter(lelm=200 000)
+      include 'SIZE'
 
     
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
