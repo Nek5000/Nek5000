@@ -133,7 +133,7 @@ c     here is where the 2d/3d determination is made....
       if(ndim.lt.0) then  ! default is binary
         iffo = .true.
       else
-        call byte_open('box.re2\0')
+        call byte_open('box.re2' // char(0))
       endif
       ndim = abs(ndim)
       if (ndim.eq.3) if3d = .true.
