@@ -2,6 +2,8 @@
 c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
       parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
 
+      common /crst_i/ max_rst            ! for full restart
+
       common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
      $              , nxo,nyo,nzo,nrg
      $              , wdsizr,wdsizo

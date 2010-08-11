@@ -258,6 +258,7 @@ c     output .fld file
 
       include 'SIZE'
       include 'TOTAL'
+      include 'RESTART'
 C
 C     Work arrays and temporary arrays
 C
@@ -305,8 +306,13 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       iprefix = i_find_prefix(prefix,99)
 
       if (nid.eq.0) then
+
 c       Open new file for each dump on /cfs
-        NOPEN(iprefix)=NOPEN(iprefix)+1
+        nopen(iprefix)=nopen(iprefix)+1
+
+        if (prefix.eq.'rst'.and.max_rst.gt.0) 
+     $         nopen(iprefix) = mod1(nopen(iprefix),max_rst) ! restart
+
         call file2(nopen(iprefix),prefix)
         if (p66.lt.1.0) then
            open(unit=24,file=fldfle,form='formatted',status='unknown')
@@ -1589,6 +1595,7 @@ c-----------------------------------------------------------------------
       include 'RESTART'
 
       character*1 prefix(3)
+      character*3 prefx
 
       character*132  fname
       character*1   fnam1(132)
@@ -1617,6 +1624,10 @@ c-----------------------------------------------------------------------
          nopen(iprefix,1) = nopen(iprefix,1)+1
          nfld             = nopen(iprefix,1)
       endif
+
+      call chcopy(prefx,prefix,3)        ! check for full-restart request
+      if (prefx.eq.'rst'.and.max_rst.gt.0) nfld = mod1(nfld,max_rst)
+
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
 
       if (nfld.eq.1) ifxyo_ = .true.
