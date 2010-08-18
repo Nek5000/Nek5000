@@ -4,5 +4,5 @@ touch $1.rea
 rm -f ioinfo logfile
 mv -f $1.log.$2 $1.log1.$2
 mv -f $1.sch $1.sch1
-mpiexec -np $2 nek5000 > $1.log.$2
+mpiexec -np $2 ./nek5000 > $1.log.$2
 ln $1.log.$2 logfile
