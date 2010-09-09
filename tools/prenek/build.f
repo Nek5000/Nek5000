@@ -1995,8 +1995,8 @@ c
 c        read(47,*) ii1,ii2,ii3,(kcell(k),k=1,npt)
          read(47,*) (kcell(k),k=1,npt)
          do k=1,npt
-c           kcell(k) = kcell(k) + 1   ! no need to add 1
-            vv(k,ie) = i_findu(vnum,kcell(k),nvtx)
+            kcell(k) = kcell(k) + 1   ! no need to add 1
+c           vv(k,ie) = i_findu(vnum,kcell(k),nvtx)
 c           write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
 c           vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
          enddo
@@ -2013,11 +2013,12 @@ c
 c     4/17/01 -- first, try to figure out the local vertex ordering
 c
 c
-      call prs('Flip for Gambit? (Yes=Gambit, No=Seung)$')
-      call res(ans,1)
+c     call prs('Flip for Gambit? (Yes=Gambit, No=Seung)$')
+c     call res(ans,1)
+      ans='y'
 c
 c
-      if (ans.eq.'n'.or.ans.eq.'N') then
+      if (ans.eq.'y'.or.ans.eq.'Y') then
          do ie=1,ncell
             nel = nel+1
             do k=1,npt
@@ -2027,7 +2028,7 @@ c
                z(nel,k)=zp(l)
             enddo
          enddo
-      else                     ! flip
+      else                     ! don't flip
          do ie=1,ncell
             nel = nel+1
             do k=1,npt
@@ -2798,3 +2799,4 @@ c
       return
       end
 c-----------------------------------------------------------------------
+uuuu
