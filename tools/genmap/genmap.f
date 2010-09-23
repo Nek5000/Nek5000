@@ -2130,8 +2130,8 @@ c   4 format(i9,i3,i9,i3,3i3,a5)
             x1a = x1a + x1(k,i)
          enddo
          do i=1,nvf
-            x0m = max(x0m,x0(k,i))
-            x0m = max(x0m,x0(1,i))
+            x0m = max(x0m,abs(x0(k,i)))
+            x0m = max(x0m,abs(x1(k,i)))
             x0(k,i) = x0(k,i) - x0a/nvf
             x1(k,i) = x1(k,i) - x1a/nvf
          enddo
