@@ -1719,7 +1719,8 @@ c
       endif
 c
       if (ifsplit) then
-         call plan2_vol(vxc,vyc,vzc,prc)
+c        call plan2_vol(vxc,vyc,vzc,prc)
+         call plan4_vol(vxc,vyc,vzc,prc)
       else
          call plan3_vol(vxc,vyc,vzc,prc)
       endif
@@ -1779,7 +1780,7 @@ c
       call rone     (h1,ntot1)
       call rzero    (h2,ntot1)
 c
-      call hmholtz  ('pres',prc,respr,h1,h2,pmask,vmult,
+      call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
      $                             imesh,tolspl,nmxh,1)
       call zaver1   (prc)
 C
@@ -1873,6 +1874,64 @@ c
 c
       call cmult2  (prc,respr,bd(1),ntot2)
 c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine plan4_vol(vxc,vyc,vzc,prc)
+
+c     Compute pressure and velocity using fractional step method.
+c     (Tombo splitting scheme).
+
+
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real vxc(lx1,ly1,lz1,lelv)
+     $   , vyc(lx1,ly1,lz1,lelv)
+     $   , vzc(lx1,ly1,lz1,lelv)
+     $   , prc(lx1,ly1,lz1,lelv)
+
+      common /scrns/ resv1 (lx1,ly1,lz1,lelv)
+     $ ,             resv2 (lx1,ly1,lz1,lelv)
+     $ ,             resv3 (lx1,ly1,lz1,lelv)
+     $ ,             respr (lx1,ly1,lz1,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
+
+      common /cvflow_i/ icvflow,iavflow
+
+      n = nx1*ny1*nz1*nelv
+      call invers2  (h1,vtrans,n)
+      call rzero    (h2,       n)
+
+c     Compute pressure 
+
+      if (icvflow.eq.1) call cdtp(respr,h1,rxm2,sxm2,txm2,1)
+      if (icvflow.eq.2) call cdtp(respr,h1,rym2,sym2,tym2,1)
+      if (icvflow.eq.3) call cdtp(respr,h1,rzm2,szm2,tzm2,1)
+
+      call ortho    (respr)
+      call ctolspl  (tolspl,respr)
+
+      call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
+     $                             imesh,tolspl,nmxh,1)
+      call zaver1   (prc)
+
+C     Compute velocity
+
+      call opgrad   (resv1,resv2,resv3,prc)
+      if (ifaxis) call col2 (resv2,omask,n)
+      call opchsgn  (resv1,resv2,resv3)
+
+      if (icvflow.eq.1) call add2col2(resv1,v1mask,bm1,n) ! add forcing
+      if (icvflow.eq.2) call add2col2(resv2,v2mask,bm1,n)
+      if (icvflow.eq.3) call add2col2(resv3,v3mask,bm1,n)
+
+      intype = -1
+      call sethlm   (h1,h2,intype)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+
       return
       end
 c-----------------------------------------------------------------------
