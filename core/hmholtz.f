@@ -688,7 +688,9 @@ c
       skmin = glmin(mask,n)
       if (skmin.gt.0.and.h2max.eq.0) ifmcor = .true.
 C
-      if (ifmcor) then
+      if (name.eq.'PRES') then
+         call ortho (r)
+      elseif (ifmcor) then
          smean = -1./glsum(mult,n)
          rmean = smean*glsc2(r,mult,n)
          call cadd(r,rmean,n)
@@ -711,7 +713,9 @@ c           call copy(z,r,n)
             endif
          endif
 c
-         if (ifmcor) then
+         if (name.eq.'PRES') then
+            call ortho (z)
+         elseif (ifmcor) then
             rmean = smean*glsc2(z,mult,n)
             call cadd(z,rmean,n)
          endif

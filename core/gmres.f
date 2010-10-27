@@ -203,11 +203,8 @@ c
 c     iter = iter - 1
 c
 c     DIAGNOSTICS
-c      call copy(w,x,ntot2)
-c      if (ifvcor) then
-c         xaver = glsc2(bm2,w,ntot2)/volvm2
-c         call cadd(w,-xaver,ntot2)
-c      endif
+c      call copy   (w,x,ntot2)
+       call ortho  (w) ! Orthogonalize wrt null space, if present
 c      call copy(r,res,ntot2) !r = res
 c      call cdabdtp(r,w,h1,h2,h2inv,intype)  ! r = A w
 c      do i=1,ntot2
@@ -221,10 +218,7 @@ c      print *, 'GMRES end resid:',gamma(1)
 c     END DIAGNOSTICS
       call copy(res,x,ntot2)
 
-      if (ifvcor) then
-         xaver = glsc2(bm2,res,ntot2)/volvm2
-         call cadd(res,-xaver,ntot2)
-      endif
+      call ortho (res)  ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
@@ -351,7 +345,6 @@ c     GMRES iteration.
       endif
 
       call set_fdm_prec_h1b(d,h1,h2,nelv)
-      if (ifvcor) smean = -1./glsum(vmult,n)
 
       call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
       if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
@@ -405,10 +398,7 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 c           call hsmg_solve(z(1,j),w)             ! z  = M   w
                                                   !  j        
             call add2         (z(1,j),wk,n)
-            if (ifvcor) then
-               rmean = smean*glsc2(z(1,j),vmult,n)
-               call cadd(z(1,j),rmean,n)
-            endif
+            call ortho        (z(1,j)) ! Orthogonalize wrt null space, if present
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -512,10 +502,7 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       divex = rnorm
       call copy(res,x,n)
 
-      if (ifvcor) then
-         xaver = glsc2(bm1,res,n)/volvm1
-         call cadd(res,-xaver,n)
-      endif
+      call ortho   (res) ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,

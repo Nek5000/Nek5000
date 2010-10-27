@@ -1603,14 +1603,7 @@ c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
 c
 c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
-       if (ifvcor) then
-          nxyz2 = nx2*ny2*nz2
-          ntot2 = nxyz2*nelv
-          ntotg = nxyz2*nelgv
-c         xaver = glsc2(bm2,e,ntot2)/volvm2
-          xaver = glsum(e,ntot2)/ntotg
-          call cadd(e,-xaver,ntot2)
-       endif
+       call ortho (e)
 
 #ifndef NOTIMER
       tddsl  = tddsl + ( dnekclock()-etime1 )

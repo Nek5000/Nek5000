@@ -1782,7 +1782,7 @@ c
 c
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
      $                             imesh,tolspl,nmxh,1)
-      call zaver1   (prc)
+      call ortho    (prc)
 C
 C     Compute velocity
 C
@@ -1916,7 +1916,7 @@ c     Compute pressure
 
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
      $                             imesh,tolspl,nmxh,1)
-      call zaver1   (prc)
+      call ortho    (prc)
 
 C     Compute velocity
 

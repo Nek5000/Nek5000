@@ -260,33 +260,12 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       return
       end
 c------------------------------------------------------------------------
-      subroutine zaver1 (pm1)
-
-C     Assure that the pressure has zero average if all Dirichlet vel b.c.
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'MASS'
-      REAL PM1 (LX1,LY1,LZ1,LELV)
-      COMMON /CTMP0/ BP (LX1,LY1,LZ1,LELV)
-
-      NTOT1 = NX1*NY1*NZ1*NELV
-      IF (IFVCOR) THEN
-         CALL COL3 (BP,BM1,PM1,NTOT1)
-         PAVER = GLSUM (BP,NTOT1)/VOLVM1
-         CALL CADD (PM1,-PAVER,NTOT1)
-      ENDIF
-      return
-      END
-C
       subroutine cdabdtp (ap,wp,h1,h2,h2inv,intype)
-C---------------------------------------------------------------------
-C
+
 C     INTYPE= 0  Compute the matrix-vector product    DA(-1)DT*p
 C     INTYPE= 1  Compute the matrix-vector product    D(B/DT)(-1)DT*p
 C     INTYPE=-1  Compute the matrix-vector product    D(A+B/DT)(-1)DT*p
-C
-C---------------------------------------------------------------------
+
       include 'SIZE'
       include 'TOTAL'
       REAL           AP    (LX2,LY2,LZ2,1)
@@ -1043,16 +1022,10 @@ c           CALL COL2        (RPCG,H2M2,NTOT2)
          CALL COPY        (RPCG,RCG,NTOT2)
       ENDIF
 
-      nxyz2 = nx2*ny2*nz2
-      ntotg = nxyz2*nelgv
-      IF (IFVCOR) THEN
-c        AVEM = -GLSC2 (RPCG,BM2 ,NTOT2)/VOLVM2          pff  3/24/99
-         AVEM = -glsum (RPCG,NTOT2)/ntotg
-         CALL     CADD (RPCG,AVEM,NTOT2)
-      ENDIF
-c
+      call ortho (rpcg)
+
       return
-      END
+      end
 C
       subroutine eprec (z2,r2)
 C----------------------------------------------------------------
@@ -3421,10 +3394,10 @@ C
 C
 C        CALL CONVPR  (RCG,tolpss,ICONV,RNORM)
          call convprn (iconv,rnorm,rrp1,rcg,rpcg,tolpss)
-c
+
          if (iter.eq.1)      div0   = rnorm
          if (param(21).lt.0) tolpss = abs(param(21))*div0
-c
+
          ratio = rnorm/div0
          IF (IFPRINT.AND.NID.EQ.0) 
      $   WRITE (6,66) iter,tolpss,rnorm,div0,ratio,istep
@@ -3440,15 +3413,15 @@ c        Save current solution into projection space
             ifsavep=.true.
             if (param(105).gt.0) call savep(xcg,h1,h2,h2inv)
          endif
-C
+
          IF (ITER .NE. 1) THEN
             BETA = RRP1/RRP2
             CALL ADD2S1 (PCG,RPCG,BETA,NTOT2)
          ENDIF
-C
+
          CALL CDABDTP  (WP,PCG,H1,H2,H2INV,INTYPE)
          PAP   = GLSC2 (PCG,WP,NTOT2)
-C
+
          IF (PAP.NE.0.) THEN
             ALPHA = RRP1/PAP
          ELSE
@@ -3463,7 +3436,7 @@ C
          ENDIF
          CALL ADD2S2 (XCG,PCG,ALPHA,NTOT2)
          CALL ADD2S2 (RCG,WP,-ALPHA,NTOT2)
-c
+
          if (iter.eq.-1) then
             call convprn (iconv,rnrm1,rrpx,rcg,rpcg,tolpss)
             if (iconv.eq.1) then
@@ -3474,12 +3447,9 @@ c
                goto 9000
             endif
          endif
-c
-         if (ifvcor) then
-            otr = glsum (rcg,ntot2)
-            raver  = -otr/ntotg
-            call cadd (rcg,raver,ntot2)
-         endif
+
+         call ortho(rcg)
+
          RRP2 = RRP1
          CALL UZPREC  (RPCG,RCG,H1,H2,INTYPE,WP)
 c        RRP1 = GLSC2 (RPCG,RCG,NTOT2)
@@ -3489,17 +3459,13 @@ c        RRP1 = GLSC2 (RPCG,RCG,NTOT2)
       if (istep.gt.20) CALL EMERXIT
  3001 FORMAT(I6,' **ERROR**: Failed to converge in UZAWA:',6E13.4)
  9000 CONTINUE
-C
-      DIVEX = RNORM
-      ITER  = ITER-1
-c
-      if (ITER.GT.0) CALL COPY (RCG,XCG,NTOT2)
-c
-      IF (IFVCOR) THEN
-         XAVER = GLSC2 (BM2,RCG,NTOT2)/VOLVM2
-         CALL CADD (RCG,-XAVER,NTOT2)
-      ENDIF
-C
+
+      divex = rnorm
+      iter  = iter-1
+
+      if (iter.gt.0) call copy (rcg,xcg,ntot2)
+      call ortho(rcg)
+
       etime1 = dnekclock()-etime1
       IF (NID.EQ.0) WRITE(6,9999) ISTEP,ITER,DIVEX,tolpss,div0,etime1
  9999 FORMAT(I10,' U-Press std. : ',I6,1p4E13.4)

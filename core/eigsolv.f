@@ -449,9 +449,7 @@ C
          CALL COPY (X2,BM2,NTOT2)
       ENDIF
 C
-      XX     = GLSC2 (BM2,X2,NTOT2)
-      XAVER  = XX/VOLVM2
-      CALL CADD (X2,-XAVER,NTOT2)
+      call ortho (x2)
       CALL COL3 (Y2,BM2,X2,NTOT2)
       XX     = GLSC2 (X2,Y2,NTOT2)
       XNORM  = 1./SQRT(XX)

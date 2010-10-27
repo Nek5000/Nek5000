@@ -70,8 +70,8 @@ C     first, compute pressure
      $                     ,pmask,vmult
      $                     ,imesh,tolspl,nmxh,1
      $                     ,approx,napprox,binvm1)
-      CALL ADD2    (PR,DPR,NTOT1)
-      CALL ZAVER1  (PR)
+      call add2    (pr,dpr,ntot1)
+      call ortho   (pr)
 #ifndef NOTIMER
       tpres=tpres+(dnekclock()-etime1)
 #endif
