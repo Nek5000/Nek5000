@@ -4,9 +4,7 @@ c     unrolled loop version
 c
       real a(n1,n2),b(n2,n3),c(n1,n3)
 
-      if (n2.ge.4) then
-         call mxm44_0(a,n1,b,n2,c,n3)
-      elseif (n2.le.8) then
+      if (n2.le.8) then
          if (n2.eq.1) then
             call mxf1(a,n1,b,n2,c,n3)
          elseif (n2.eq.2) then
