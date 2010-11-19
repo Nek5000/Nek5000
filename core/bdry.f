@@ -930,6 +930,8 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'PARALLEL'
       INCLUDE 'NEKUSE'
+      INCLUDE 'TSTEP'     ! ifield    11/19/2010
+      INCLUDE 'SOLN'      ! tmask()   11/19/2010
 C
       DIMENSION S(LX1,LY1,LZ1)
       CHARACTER CB*3
@@ -937,21 +939,25 @@ c
       common  /nekcb/ cb3
       character*3 cb3
       cb3 = cb
-c
-C
+
+      ifld1 = ifield-1
+
+
 C     Passive scalar term
-C
+
       ieg = lglel(iel)
       CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX,NY,NZ,IFACE)
-C
+
       IF (CB.EQ.'t  ') THEN
-C
-         DO 100 IZ=KZ1,KZ2
-         DO 100 IY=KY1,KY2
-         DO 100 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
-            CALL USERBC  (IX,IY,IZ,IFACE,IEG)
-            S(IX,IY,IZ) = TEMP
+
+         DO 100 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
+         DO 100 IY=KY1,KY2                           !  added here so users can leave
+         DO 100 IX=KX1,KX2                           !  certain points to be Neumann,
+            if (tmask(ix,iy,iz,iel,ifld1).eq.0) then !  if desired.
+               CALL NEKASGN (IX,IY,IZ,IEL)
+               CALL USERBC  (IX,IY,IZ,IFACE,IEG)
+               S(IX,IY,IZ) = TEMP
+            endif
   100    CONTINUE
          RETURN
 C
