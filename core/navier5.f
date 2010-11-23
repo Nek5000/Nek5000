@@ -45,8 +45,7 @@ c     outpost arrays
       save    icalld
       data    icalld /0/
 
-      logical ifdmpflt
-C
+
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
@@ -85,21 +84,6 @@ c        if (nid.eq.0) call outmatx(intv,nx1,nx1,11,'flt1')
 c        if (nid.eq.0) call outmatx(zgm1 ,nx1,1  ,12,'zgm1')
 c
       endif
-c
-c - - - - - - - - - - - - - - - - - - - - - -
-c     Check to see if we should dump U-F(U)
-      ifdmpflt = .false.
-      if (param(106).ne.0) then
-         i106 = param(106)
-         if (mod(istep,i106).eq.0) ifdmpflt = .true.
-      endif
-c
-      if (ifdmpflt) then
-         call opcopy(w1,w2,w3,vx,vy,vz)
-         ntot = nx1*ny1*nz1*nelt
-         if (ifheat) call copy(wt,t,ntot)
-      endif
-c - - - - - - - - - - - - - - - - - - - - - -
 
       ifldt  = ifield
 c     ifield = 1
@@ -177,24 +161,6 @@ c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
          endif
       endif
 
-
-c
-c - - - - - - - - - - - - - - - - - - - - - -
-c     Check to see if we should dump U-F(U)
-      if (ifdmpflt) then
-         ntot1 = nx1*ny1*nz1*nelv
-         ntot2 = nx2*ny2*nz2*nelv
-c
-         call opsub2(w1,w2,w3,vx,vy,vz)
-         call copy  (wk1,pr,ntot2)
-         if (ifheat) call sub2(wt,t,ntot1)
-c
-         call outpost2(w1,w2,w3,wk1,wt,1,'flt')
-      endif
-c - - - - - - - - - - - - - - - - - - - - - -
-c     write(6,*) 'this is wght:',wght,param(103)
-c     call exitt
-c
 
       ifield = ifldt   ! RESTORE ifield
 
@@ -760,7 +726,9 @@ c-----------------------------------------------------------------------
       real v1(1),v2(1),v3(1),vp(1),vt(1)
       character*3 name3
 
-      call outpost2(v1,v2,v3,vp,vt,1,name3)
+      itmp=0
+      if (ifto) itmp=1
+      call outpost2(v1,v2,v3,vp,vt,itmp,name3)
 
       return
       end
