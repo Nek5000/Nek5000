@@ -420,7 +420,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intpts(fieldin,nfld,pts,n,fieldout,ifot,ih)
+      subroutine intpts(fieldin,nfld,pts,n,fieldout,ifot,ifpts,ih)
 c
 c simple wrapper to interpolate input field at given points 
 c
@@ -428,9 +428,10 @@ c in:
 c fieldin ... input field(s) to interpolate (lelt*lxyz,nfld)
 c nfld    ... number of fields in fieldin
 c pts     ... packed list of interpolation points
-c             pts:=(x(n),y(n),z(n))
+c             pts:=[x(1)...x(n),y(1)...y(n),z(1)...z(n)]
 c n       ... local number of interpolation points
-c ifto    ... transpose output (n,nfld)^T = (nfld,n)  
+c ifto    ... transpose output (n,nfld)^T = (nfld,n) 
+c itpts   ... find interpolation points 
 c ih      ... interpolation handle
 c
 c out:
@@ -449,7 +450,7 @@ c
       common /intp_i/ rcode,elid,proc
 
       integer nn(2)
-      logical ifot
+      logical ifot,ifpts
 
       if(nid.eq.0) write(6,*) 'call intpts'
 
@@ -460,7 +461,9 @@ c
       endif
 
       ! locate points (iel,iproc,r,s,t)
-      call findpts(ih,rcode,1,
+      if(ifpts) then
+        if(nid.eq.0) write(6,*) 'call findpts'
+        call findpts(ih,rcode,1,
      &               proc,1,
      &               elid,1,
      &               rst,ndim,
@@ -468,24 +471,24 @@ c
      &               pts(1),1,
      &               pts(n+1),1,
      &               pts(2*n+1),1,n)
-
-      nfail = 0 
-      do in=1,n
-         ! check return code 
-         if(rcode(in).eq.1) then
-           if(dist(in).gt.1e-12) then 
-             write(6,'(A,4E15.7)') 
-     &   ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
-     &   (pts(k*n + in),k=0,ndim-1),dist(in)
+        nfail = 0 
+        do in=1,n
+           ! check return code 
+           if(rcode(in).eq.1) then
+             if(dist(in).gt.1e-12) then 
+               write(6,'(A,4E15.7)') 
+     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
+     &     (pts(k*n + in),k=0,ndim-1),dist(in)
+               nfail = nfail + 1
+             endif   
+           elseif(rcode(in).eq.2) then
              nfail = nfail + 1
-           endif   
-         elseif(rcode(in).eq.2) then
-           nfail = nfail + 1
-           write(6,'(A,3E15.7)') 
-     &      ' WARNING: point not within mesh xy[z]: !',
-     &      (pts(k*ndim + in),k=0,ndim-1)
-         endif
-      enddo
+             write(6,'(A,3E15.7)') 
+     &        ' WARNING: point not within mesh xy[z]: !',
+     &        (pts(k*ndim + in),k=0,ndim-1)
+           endif
+        enddo
+      endif
 
       ! evaluate inut field at given points
       ltot = lelt*lx1*ly1*lz1
@@ -1487,7 +1490,7 @@ c
          ! interpolate fields
          npts = necrw*nxyzr
          etime_i = dnekclock_sync()
-         call intpts(wrk,nfld,pts,npts,fieldout,.false.,ih)
+         call intpts(wrk,nfld,pts,npts,fieldout,.false.,.true.,ih)
          etime_i = dnekclock_sync() - etime_i
 
          ! write fields

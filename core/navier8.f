@@ -1717,9 +1717,7 @@ c-----------------------------------------------------------------------
 
       if (ifmoab) then
 #ifdef MOAB
-c        call nekMOAB_loadConn (vertex, nelgt, ncrnr)
-         write(6,*) 'need new moab loadconn interface cuz of vertex'
-         call exitt
+         call nekMOAB_loadConn (vertex, nelgt, nelt, ncrnr)
 #else
          if(nid.eq.0) write(6,*)
      &     'ABORT: this version was not compiled with moab support!'
@@ -2507,3 +2505,41 @@ c
       return
       end
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c
+      subroutine map_to_crs(a,na,b,nb,if3d,w,ldw)
+c
+c     Input:   b
+c     Output:  a
+c
+      real a(1),b(1),w(1)
+      logical if3d
+c
+      parameter(lx=40)
+      real za(lx),zb(lx)
+c
+      real iba(lx*lx),ibat(lx*lx)
+      save iba,ibat
+c
+      integer nao,nbo
+      save    nao,nbo
+      data    nao,nbo  / -9, -9/
+c
+      if (na.gt.lx.or.nb.gt.lx) then
+         write(6,*)'ERROR: increase lx in map_to_crs to max:',na,nb
+         call exitt
+      endif
+c
+      if (na.ne.nao  .or.   nb.ne.nbo) then
+         nao = na
+         nbo = nb
+         call zwgll(za,w,na)
+         call zwgll(zb,w,nb)
+         call igllm(iba,ibat,zb,za,nb,na,nb,na)
+      endif
+c
+      call specmpn(a,na,b,nb,iba,ibat,if3d,w,ldw)
+c
+      return
+      end
+

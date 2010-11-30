@@ -5,6 +5,9 @@ c called by MYASSERT macro
 c building without imesh for now
 
       subroutine imesh_err(ierr, imesh, file, line)
+
+      print *, "ASSERT ERROR: ", ierr, 'in ', file, ' line', line
+
 #if 0
   implicit none
   integer ierr, line
@@ -12,7 +15,7 @@ c building without imesh for now
   character file(*)
   character*1024 errmsg
 
-  print *, "ASSERT ERROR: ", ierr, 'in ', file, ' line', line
+
 
   call iMesh_getDescription(imesh, &!iMesh_Instance instance,
                             errmsg, & !/*inout*/ char *descr,
