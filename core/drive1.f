@@ -55,6 +55,17 @@ C     Read .rea +map file
 C     Initialize some variables
       call setvar  
 
+c     Map BCs
+      if (ifmoab) then
+#ifdef MOAB
+        call moab_to_nek_bc
+#else
+        if (nid.eq.0) write(6,*)
+     &   'ABORT: This version has not been compiled with moab support!'
+        call exitt
+#endif
+      endif
+
 c     Check for zero steps
       instep=1
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
@@ -199,6 +210,7 @@ C--------------------------------------------------------------------------
       call nek_comm_settings(isyc,itime)
 
       call nek_comm_startstat()
+
       DO ISTEP=1,NSTEPS
          call nek_advance
          call userchk
@@ -207,6 +219,7 @@ C--------------------------------------------------------------------------
       ENDDO
  1001 lastep=1
 
+
       call nek_comm_settings(isyc,0)
 
       call comment
@@ -214,6 +227,7 @@ C--------------------------------------------------------------------------
 c     check for post-processing mode
       if (instep.eq.0) then
          nsteps=0
+         istep=0
          if(nid.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nid.eq.0) write(6,*) 'done :: userchk'

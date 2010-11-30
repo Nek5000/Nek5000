@@ -81,6 +81,10 @@ C 1400    CONTINUE
 C         call prepost(.true.,'   ')
 C      ENDIF
 
+      nn = iglmin(nelt,1)
+      nm = iglmax(nelt,1)
+      if(nid.eq.0) write(6,*) 'element load imbalance: ',nm-nn,nn,nm
+
       if(nid.eq.0) then
         write(6,*) 'done :: mapping elements to processors'
         write(6,*) ' '

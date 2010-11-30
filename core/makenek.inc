@@ -125,6 +125,23 @@ fi
 rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
 
+# Check ptr size
+cat > tmp.c << _ACEOF
+#include <stdlib.h>
+#include <stdio.h>
+int main()
+{
+  int *p;printf("%li\n",sizeof(p));
+}
+_ACEOF
+$CC tmp.c 2>&1>/dev/null
+ptrSize=`./a.out`
+rm tmp.c a.out
+if [ "$ptrSize" == "8" ]
+then
+  PPLIST="${PPLIST} PTRSIZE8"
+fi
+
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=false
 cat > test_underscore.f << _ACEOF
@@ -172,7 +189,7 @@ fi
 case $F77comp in
   *pgf*)        P="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
+  *gfortran*)   P="-fcray-pointer -fdefault-real-8 -x f77-cpp-input"
                ;;
   *ifort*)      P="-r8 -fpconstant -fpp"
                ;;
