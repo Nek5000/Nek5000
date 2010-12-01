@@ -81,10 +81,15 @@ C
       character*52 apt52
       equivalence (apt52,apt)
       data apt52/'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'/
-c
-      parameter (mbox  = 300)
-      parameter (maxx  = 300)
-      parameter (maxel = mbox*maxx*maxx)
+
+c     parameter (mbox  = 300)              ! Std. but arbitrary 
+c     parameter (maxx  = 300)              ! default values
+c     parameter (maxel = mbox*maxx*maxx)   !
+
+      parameter (mbox  = 10)
+      parameter (maxx  = 900)
+      parameter (maxel = mbox*maxx*30)
+
       integer nlx(mbox),nly(mbox),nlz(mbox)
       real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
       real xc(mbox),yc(mbox),zc(mbox)
@@ -130,7 +135,7 @@ c     here is where the 2d/3d determination is made....
       if3d = .false.
       iffo = .false.
       call geti1(ndim,iend,7)
-      if(ndim.lt.0) then  ! default is binary
+      if(ndim.gt.0) then  ! default is ascii
         iffo = .true.
       else
         call byte_open('box.re2' // char(0))
@@ -1588,10 +1593,11 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine cyl(if3d,nfld)
-c
-      parameter (mbox  = 60)
-      parameter (maxx  = 260)
-      parameter (maxel = mbox*maxx*maxx)
+
+      parameter (mbox  = 10)
+      parameter (maxx  = 900)
+      parameter (maxel = mbox*maxx*30)
+
       integer nlx(mbox),nly(mbox),nlz(mbox)
       real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
       real xc(mbox),yc(mbox),zc(mbox)
