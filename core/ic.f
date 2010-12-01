@@ -30,26 +30,24 @@ c
 
       real psmax(LDIMT)
 
-      if(nid.eq.0) then
-        write(6,*) 'set initial conditions'
-      endif
-C
+      if(nid.eq.0) write(6,*) 'set initial conditions'
+
 C     Initialize all fields:
-C
+
       nxyz2=nx2*ny2*nz2
       ntot2=nxyz2*nelv
       nxyz1=nx1*ny1*nz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
-c
-c
-      CALL RZERO(VX,NTOTT)
-      CALL RZERO(VY,NTOTT)
-      CALL RZERO(VZ,NTOTT)
-      CALL RZERO(PR,nxyz2*nelt)
-      DO 10 IFLD=1,LDIMT
-         CALL RZERO(T(1,1,1,1,IFLD),NTOTT)
-   10 CONTINUE
+
+
+      call rzero(vx,ntott)
+      call rzero(vy,ntott)
+      call rzero(vz,ntott)
+      call rzero(pr,nxyz2*nelt)
+      do 10 ifld=1,ldimt
+         call rzero(t(1,1,1,1,ifld),ntott)
+   10 continue
 
       jp = 0                  ! set counter for perturbation analysis
 
@@ -60,8 +58,8 @@ c
 c     If moving geometry then add a perturbation to the
 c     mesh coordinates (see Subroutine INIGEOM)
 
-      IF (IFMVBD) CALL PTBGEOM      
-C
+      if (ifmvbd) call ptbgeom
+
 C     Find out what type of i.c. is requested
 C     Current options: 
 C
@@ -71,17 +69,16 @@ C     (3) - Activate pre-solver => steady diffusion / steady Stokes
 C
 C     If option (2) is requested, also return with the name of the
 C     restart file(s) together with the associated dump number
-C
+
       call slogic (iffort,ifrest,ifprsl,nfiles)
-C
+
 C     Set up proper initial values for turbulence model arrays
-C
       IF (IFMODEL) CALL PRETMIC
-C
+
 C      ***** TEMPERATURE AND PASSIVE SCALARS ******
 C
 C     Check if any pre-solv necessary for temperature/passive scalars
-C
+
       IFANYP = .FALSE.
       DO 100 IFIELD=2,NFIELD
          IF (IFPRSL(IFIELD,jp)) THEN
@@ -90,26 +87,24 @@ C
          ENDIF
   100 CONTINUE
   101 FORMAT(2X,'Using PRESOLVE option for field',I2,'.')
-C
-C
+
+
 C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
-C
-      IF (IFANYP) CALL PRSOLVT
-C
+      if (ifanyp) call prsolvt
+
 C     Fortran function initial conditions for temp/pass. scalars.
-C
       MAXFLD = NFIELD
       IF (IFMODEL.AND.IFKEPS) MAXFLD = NFIELD-2
       if (ifmhd) maxfld = npscal+3
-c
-      jp = 0
+
+      jp = 0 ! jp=0 --> base field, not perturbation field
       do 200 ifield=2,maxfld
          if (iffort(ifield,jp)) then
          if (nid.eq.0) write(6,*) 'call nekuic for ifld ', ifield
             call nekuic
          endif
  200  continue
-c
+
       if (ifpert) then
          ifield=2
          do jp=1,npert
@@ -118,26 +113,22 @@ c
          enddo
       endif
       jp = 0
-C     
-C
-C     Restart files
-C
+     
+
       call gsync()
-      call restart(nfiles)
+      call restart(nfiles) !  Check restart files
       call gsync()
-C
-C
+
+
 C      ***** VELOCITY ******
-C
 C     (If restarting for V, we're done,
 C     ...else, do pre-solv for fluid if requested.)
-C
-      IFIELD = 1
-      IF (IFPRSL(IFIELD,jp)) CALL PRSOLVV
-C
-C
+
+      ifield = 1
+      if (ifprsl(ifield,jp)) call prsolvv
+
+
 C     Fortran function initial conditions for velocity.
-C
       ifield = 1
       if (iffort(ifield,jp)) then
          if (nid.eq.0) write(6,*) 'call nekuic for vel  '
@@ -152,33 +143,30 @@ c
          enddo
       endif
       jp = 0
-c
+
       ntotv = nx1*ny1*nz1*nelv
-C
+
 C     Fortran function initial conditions for turbulence k-e model
-C
       if (ifmodel .and. ifkeps) then
          mfldt = nfield - 1
          do 300 ifield=mfldt,nfield
             if (iffort(ifield,jp)) call nekuic
  300     continue
       endif
-C
+
 C     Initial mesh velocities
-C
-      IF (IFMVBD) CALL OPCOPY (WX,WY,WZ,VX,VY,VZ)
-      IF (IFMVBD.AND..NOT.IFREST(0,jp)) CALL MESHV (2)
-C
+      if (ifmvbd) call opcopy (wx,wy,wz,vx,vy,vz)
+      if (ifmvbd.and..not.ifrest(0,jp)) call meshv (2)
+
 C     Compute additional initial values for turbulence model arrays
 C     based on I.C.
-C
-      IF (IFMODEL) CALL POSTMIC
-C
+      if (ifmodel) call postmic
+
 C     If convection-diffusion of a passive scalar with a fixed velocity field,
 C     make sure to fill up lagged arrays since this will not be done in
 C     the time-stepping procedure (no flow calculation) (01/18/91 -EMR).
-C
-      IF (.NOT.IFFLOW.AND.IFHEAT) THEN
+
+      if (.not.ifflow.and.ifheat) then
          ITEST=0
          DO 400 IFIELD=2,NFIELD
             IF (IFADVC(IFIELD)) ITEST=1
@@ -193,28 +181,27 @@ C
             NBDINP = NBDSAV
          ENDIF
       ENDIF
-C     
+     
 C     Ensure that all processors have the same time as node 0.
-C
-      IF (NID.NE.0) TIME=0.0
-      TIME=GLSUM(TIME,1)
-      NTDUMP=0
-      IF (TIMEIO.NE.0.0) NTDUMP = INT( TIME/TIMEIO )
-C
+      if (nid.ne.0) time=0.0
+      time=glsum(time,1)
+      ntdump=0
+      if (timeio.ne.0.0) ntdump = int( time/timeio )
+
 C     Ensure that initial field is continuous!
-C
+
       nxyz1=nx1*ny1*nz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       nn = nxyz1
       ntotg=nelgv*nn
-c
+
       ifield = 2
       if (ifflow) ifield = 1
       call rone(work,ntotv)
       ifield = 1
-      CALL DSSUM(work,NX1,NY1,NZ1)
-      CALL COL2(work,VMULT,NTOTV)
+      call dssum(work,nx1,ny1,nz1)
+      call col2(work,vmult,ntotv)
       rdif = glsum(work,ntotv)
       rtotg = ntotg
       rdif = (rdif-rtotg)/rtotg
@@ -236,7 +223,6 @@ c
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
 
-c 
       small=1.0E-20
       ifldsave = ifield
       if (vxmax.eq.0.0) call perturb(vx,1,small)
@@ -244,8 +230,8 @@ c
       if (vzmax.eq.0.0) call perturb(vz,1,small)
       if (prmax.eq.0.0.and.ifsplit) call perturb(pr,1,small)
       if (ttmax.eq.0.0) call perturb(t ,2,small)
-c
-      do i=1,NPSCAL
+
+      do i=1,npscal
          ntot = nxyz1*nelfld(i+2)
          if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
       enddo
@@ -308,7 +294,7 @@ C print min values
       ntot = nxyz1*nelfld(2)
       ttmax = glmin(t ,ntott)
 
-      do i=1,LDIMT-1
+      do i=1,ldimt-1
          ntot = nxyz1*nelfld(i+2)
          psmax(i) = glmin(T(1,1,1,1,i+1),ntot)
       enddo
@@ -321,7 +307,7 @@ C print min values
          write(6,20) vxmax,vymax,vzmax,prmax,ttmax
    20    format(' uvwpt min',5g13.5)
       endif
-      if (LDIMT-1.gt.0) then
+      if (ldimt-1.gt.0) then
          if (nid.eq.0) write(6,21) (psmax(i),i=1,LDIMT-1)
    21    format(' PS min   ',50g13.5)
       endif
@@ -339,7 +325,7 @@ c print max values
       ntot = nxyz1*nelfld(2)
       ttmax = glmax(t ,ntott)
 
-      do i=1,LDIMT-1
+      do i=1,ldimt-1
          ntot = nxyz1*nelfld(i+2)
          psmax(i) = glmax(T(1,1,1,1,i+1),ntot)
       enddo
@@ -354,9 +340,9 @@ c print max values
    17    format(' uvwpt max',5g13.5)
       endif
 
-      if (LDIMT-1.gt.0) then
+      if (ldimt-1.gt.0) then
          if (nid.eq.0)  then
-            write(6,18) (psmax(i),i=1,LDIMT-1)
+            write(6,18) (psmax(i),i=1,ldimt-1)
    18       format(' PS max   ',50g13.5)
          endif
       endif
@@ -369,6 +355,9 @@ c print max values
 
 c     ! save velocity on fine mesh for dealiasing
       call setup_convect(2)
+
+c     call outpost(vx,vy,vz,pr,t,'   ')
+c     call exitti('setic exit$',nelv)
 
       if(nid.eq.0) then
         write(6,*) 'done :: set initial conditions'
@@ -414,9 +403,9 @@ C
 
       jp = 0
       nfiles=0
-C
-C     Check for Presolve options     
-C
+
+c     Check for Presolve options     
+
       DO 1000 ILINE=1,15 
          LINE=INITC(ILINE)
          CALL CAPIT(LINE,132)
@@ -483,30 +472,30 @@ C           Parse restart options
  
             call sioflag(ndumps,fname,line)
 
-            IF (IFGETX) THEN
-               IFREST(0,jp) = .TRUE.
-            ENDIF
-            IF (IFGETU) THEN
+            if (ifgetx) then
+               ifrest(0,jp) = .true.
+            endif
+            if (ifgetu) then
                iffort(1,jp) = .false.
                ifprsl(1,jp) = .false.
                ifrest(1,jp) = .true.
-            ENDIF
-            IF (IFGETT) THEN
+            endif
+            if (ifgett) then
                iffort(2,jp) = .false.
                ifprsl(2,jp) = .false.
                ifrest(2,jp) = .true.
-            ENDIF
-            DO 1900 IFIELD=3,nfldt
-c              write(6,*) 'ifgetps:',(ifgtps(k),k=1,ldimt-1)
-               IF (IFGTPS(IFIELD-2)) THEN
+            endif
+            do 1900 ifield=3,nfldt
+               write(6,*) 'ifgetps:',(ifgtps(k),k=1,ldimt-1)
+               if (ifgtps(ifield-2)) then
                   iffort(ifield,jp) = .false.
                   ifprsl(ifield,jp) = .false.
                   ifrest(ifield,jp) = .true.
-               ENDIF
- 1900       CONTINUE
-         ENDIF
- 2000 CONTINUE
-C
+               endif
+ 1900       continue
+         endif
+ 2000 continue
+
       return
       end
 c-----------------------------------------------------------------------
@@ -548,34 +537,33 @@ C     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 9.
       real*4         tdump
 c
       REAL SDMP2(LXYZT,LDIMT)
-c
+
 c     cdump comes in via PARALLEL (->TOTAL)
-c
-      CHARACTER*30 EXCODER
-      CHARACTER*1  EXCODER1(30)
-      EQUIVALENCE (EXCODER,EXCODER1)
+
+      character*30 excoder
+      character*1  excoder1(30)
+      equivalence (excoder,excoder1)
 
 
-      CHARACTER*132 FNAME
-      CHARACTER*1  FNAME1(132)
-      EQUIVALENCE (FNAME1,FNAME)
-C
-      INTEGER       HNAMI (30)
-      CHARACTER*132 HNAME
-      CHARACTER*1   HNAME1(132)
-      EQUIVALENCE  (HNAME,HNAME1)
-      EQUIVALENCE  (HNAME,HNAMI )
+      character*132 fname
+      character*1  fname1(132)
+      equivalence (fname1,fname)
+
+      integer       hnami (30)
+      character*132 hname
+      character*1   hname1(132)
+      equivalence  (hname,hname1)
+      equivalence  (hname,hnami )
 
       CHARACTER*132 header
-C
+
 C     Local logical flags to determine whether to copy data or not.
-C
       logical ifok,iffmat
       integer iposx,iposz,iposu,iposw,iposp,ipost,ipsps(ldimt1)
-C
+
       logical ifbytsw, if_byte_swap_test
       real*4   bytetest
-c
+
       REAL AXISM1 (LX1,LY1)
       REAL AXISM2 (LX2,LY2)
 c
@@ -601,7 +589,7 @@ c use old reader (for ASCII + old binary support)
          iffmat=.false. ! binary
       endif
 
-      DO 6000 IFILE=1,NFILES
+      do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
         if (nid.eq.0) then
 
@@ -614,7 +602,7 @@ c use old reader (for ASCII + old binary support)
 c           test for presence of file
             open (unit=91,file=hname
      $           ,form='unformatted',status='old',err=500)
-            close(UNIT=91)
+            close(unit=91)
             call byte_open(hname)
           ENDIF
           ifok = .true.
@@ -737,7 +725,7 @@ C
                IPS = 0
                NPS = 0
                DO 50 I=1, 30
-                  IF (EXCODER1(I).EQ.'X') THEN
+                  IF (excoder1(i).EQ.'X') THEN
                      NOUTS=NOUTS + 1
                      IPOSX=NOUTS
                      NOUTS=NOUTS+1
@@ -747,7 +735,7 @@ C
                         IPOSZ=NOUTS
                      ENDIF
                   ENDIF
-                  IF (EXCODER1(I).EQ.'U') THEN
+                  IF (excoder1(i).EQ.'U') THEN
                      NOUTS=NOUTS + 1
                      IPOSU=NOUTS
                      NOUTS=NOUTS+1
@@ -757,11 +745,11 @@ C
                         IPOSW=NOUTS
                      ENDIF
                   ENDIF
-                  IF (EXCODER1(I).EQ.'P') THEN
+                  IF (excoder1(i).EQ.'P') THEN
                      NOUTS=NOUTS + 1
                      IPOSP=NOUTS
                   ENDIF
-                  IF (EXCODER1(I).EQ.'T') THEN
+                  IF (excoder1(i).EQ.'T') THEN
                      NOUTS=NOUTS + 1
                      IPOST=NOUTS
                   ENDIF
@@ -777,9 +765,9 @@ C
                        endif
                     endif
                   ELSE
-                    IF(EXCODER1(I).EQ.'S') THEN
-                       READ(EXCODER1(I+1),'(I1)') NPS1
-                       READ(EXCODER1(I+2),'(I1)') NPS0
+                    IF(excoder1(i).EQ.'S') THEN
+                       READ(excoder1(i+1),'(I1)') NPS1
+                       READ(excoder1(i+2),'(I1)') NPS0
                        NPS=10*NPS1 + NPS0 
                        DO IS = 1, NPS
                          NOUTS=NOUTS + 1
@@ -800,28 +788,28 @@ C
                   CALL EXITT
                ENDIF
 
-               LNAME=LTRUNC(FNAME,132)
-               IF (NID.EQ.0) WRITE(6,61) (FNAME1(I),I=1,LNAME)
-               IF (NID.EQ.0) WRITE(6,62) 
-     $             IPOSU,IPOSV,IPOSW,IPOSP,IPOST,NPS,NOUTS
+               lname=ltrunc(fname,132)
+               if (nid.eq.0) write(6,61) (fname1(i),i=1,lname)
+               if (nid.eq.0) write(6,62) 
+     $             iposu,iposv,iposw,iposp,ipost,nps,nouts
    61          FORMAT(/,2X,'Restarting from file ',132A1)
    62          FORMAT(2X,'Columns for restart data U,V,W,P,T,S,N: ',7I4)
-C
+
 C              Make sure the requested data is present in this file....
-               IF (IPOSX.EQ.0) IFGETX=.FALSE.
-               IF (IPOSY.EQ.0) IFGETX=.FALSE.
-               IF (IPOSZ.EQ.0) IFGETZ=.FALSE.
-               IF (IPOSU.EQ.0) IFGETU=.FALSE.
-               IF (IPOSV.EQ.0) IFGETU=.FALSE.
-               IF (IPOSW.EQ.0) IFGETW=.FALSE.
-               IF (IPOSP.EQ.0) IFGETP=.FALSE.
-               IF (IPOST.EQ.0) IFGETT=.FALSE.
-               DO 65 I=1,NPSCAL
-                  IF (IPSPS(I).EQ.0) IFGTPS(I)=.FALSE.
-   65          CONTINUE
-C
+               if (iposx.eq.0) ifgetx=.false.
+               if (iposy.eq.0) ifgetx=.false.
+               if (iposz.eq.0) ifgetz=.false.
+               if (iposu.eq.0) ifgetu=.false.
+               if (iposv.eq.0) ifgetu=.false.
+               if (iposw.eq.0) ifgetw=.false.
+               if (iposp.eq.0) ifgetp=.false.
+               if (ipost.eq.0) ifgett=.false.
+               do 65 i=1,npscal
+                  if (ipsps(i).eq.0) ifgtps(i)=.false.
+   65          continue
+
 C              End of restart file header evaluation.
-C
+
             ENDIF
 C
 C           Read the error estimators
@@ -888,12 +876,12 @@ C
      $         (SDMP2(1,1),TDUMP(1,IPOST),IEG,NXR,NYR,NZR,ifbytsw)
 
 C              passive scalars
-               DO 100 IPS=1,NPSCAL
-                  IF (IFGTPS(IPS)) CALL MAPDMP(SDMP2(1,IPS+1)
-     $               ,TDUMP(1,IPSPS(IPS)),IEG,NXR,NYR,NZR,ifbytsw)
-  100          CONTINUE
+               do 100 ips=1,npscal
+                  if (ifgtps(ips)) call mapdmp(sdmp2(1,ips+1)
+     $               ,tdump(1,ipsps(ips)),ieg,nxr,nyr,nzr,IFBYTSW)
+  100          continue
  
-  200       CONTINUE               
+  200       continue
 C
 C           Successfully read a complete field, store it.
 C
@@ -1005,10 +993,10 @@ c
                  ENDIF
                  DO IPS=1,NPSCAL
                   IS1 = IPS + 1
-                  IF(IFGTPS(IPS)) THEN
-                   CALL MXM (T(1,1,1,IEL,IS1),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY(T(1,1,1,IEL,IS1),AXISM1,NX1*NY1)
-                  ENDIF
+                  if(ifgtps(ips)) then
+                   call mxm (t(1,1,1,iel,is1),nx1,iatlj1,ny1,axism1,ny1)
+                   call copy(t(1,1,1,iel,is1),axism1,nx1*ny1)
+                  endif
                  ENDDO
                ENDIF
                ENDDO
@@ -1028,10 +1016,10 @@ C
  1600    CONTINUE
 C
          IF (IDUMP.EQ.1.AND.NID.EQ.0) THEN
-            WRITE(6,1700) FNAME
-            WRITE(6,1701) IEG,IXYZ
-            WRITE(6,1702) 
-     $            ((TDUMP(JXYZ,II),II=1,NOUTS),JXYZ=IXYZ-1,IXYZ)
+            write(6,1700) fname
+            write(6,1701) ieg,ixyz
+            write(6,1702) 
+     $            ((tdump(jxyz,ii),ii=1,nouts),jxyz=ixyz-1,ixyz)
  1700       FORMAT(5X,'WARNING:  No data read in for file ',A132)
  1701       FORMAT(5X,'Failed on  element',I4,',  point',I5,'.')
  1702       FORMAT(5X,'Last read dump:',/,5G15.7)
@@ -1054,7 +1042,7 @@ C
 C
 C        Can't open file...
  5000    CONTINUE
-         IF (NID.EQ.0) WRITE(6,5001) FNAME 
+         if (nid.eq.0) write(6,5001) fname 
  5001    FORMAT(2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   Could not open restart file:'
@@ -1082,13 +1070,13 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'RESTART'
       INCLUDE 'TSTEP'
-C
-      CHARACTER*132 RSOPTS,FNAME
-      CHARACTER*2  S2
-      LOGICAL IFGTRL
-C
+
+      character*132 rsopts,fname
+      character*2  s2
+      logical ifgtrl
+
 C     Scratch variables..
-      LOGICAL IFDEFT,IFANYC
+      logical ifdeft,ifanyc
       CHARACTER*132 RSOPT     ,LINE
       CHARACTER*1  RSOPT1(132),LINE1(132)
       EQUIVALENCE (RSOPT1,RSOPT)
@@ -1099,41 +1087,40 @@ C
 C        CSPLIT splits S1 into two parts, delimited by S2.  
 C        S1 returns with 2nd part of S1.  CSPLIT returns 1st part.
 C
-      RSOPT=RSOPTS
-      CALL LJUST(RSOPT)
-      CALL CSPLIT(FNAME,RSOPT,' ',1)
+      rsopt=rsopts
+      call ljust(rsopt)
+      call csplit(fname,rsopt,' ',1)
 C     check fname for user supplied extension.
-      IF (INDX1(FNAME,'.',1).EQ.0) THEN
-         LEN=LTRUNC(FNAME,132)
-         LEN1=LEN+1
-         LEN4=LEN+4
-         FNAME(LEN1:LEN4)='.fld'
-      ENDIF
+      if (indx1(fname,'.',1).eq.0) then
+         len=ltrunc(fname,132)
+         len1=len+1
+         len4=len+4
+         fname(len1:len4)='.fld'
+      endif
 C
 C     Parse restart options
 C
-C        set default flags
+C     set default flags
 C
-      IFGETX=.FALSE.
-      IFGETZ=.FALSE.
-      IFGETU=.FALSE.
-      IFGETW=.FALSE.
-      IFGETP=.FALSE.
-      IFGETT=.FALSE.
-      DO 100 I=1,LDIMT-1
-         IFGTPS(I)=.FALSE.
-  100 CONTINUE
-      IFGTIM=.TRUE.
-      NDUMPS=0
+      ifgetx=.false.
+      ifgetz=.false.
+      ifgetu=.false.
+      ifgetw=.false.
+      ifgetp=.false.
+      ifgett=.false.
+      do 100 i=1,ldimt-1
+         ifgtps(i)=.false.
+  100 continue
+      ifgtim=.true.
+      ndumps=0
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
-      IFDEFT=.TRUE.
+      ifdeft=.true.
 C
 C     Parse file for i/o options and/or dump number
 C
       CALL CAPIT(RSOPT,132)
-
 
       IF (LTRUNC(RSOPT,132).NE.0) THEN
 C
@@ -1159,53 +1146,51 @@ C           remove the user specified time from the RS options line.
             ITB=132-IT1+1
             CALL CHCOPY(RSOPT1(ITO),LINE1(IT1),ITB)
          ENDIF
-C
+
 C        Parse field specifications.
-C
+
          IXO=INDX_CUT(RSOPT,'X',1)
          IF (IXO.NE.0) THEN
-            IFDEFT=.FALSE.
+            ifdeft=.false.
             IFGETX=.TRUE.
             IF (IF3D) IFGETZ=.TRUE.
          ENDIF
-C
+
          IVO=INDX_CUT(RSOPT,'U',1)
          IF (IVO.NE.0) THEN
-            IFDEFT=.FALSE.
+            ifdeft=.false.
             IFGETU=.TRUE.
             IF (IF3D) IFGETW=.TRUE.
          ENDIF
-C
+
          IPO=INDX_CUT(RSOPT,'P',1)
          IF (IPO.NE.0) THEN
-            IFDEFT=.FALSE.
+            ifdeft=.false.
             IFGETP=.TRUE.
          ENDIF
-C
+
          ITO=INDX_CUT(RSOPT,'T',1)
          IF (ITO.NE.0) THEN
-            IFDEFT=.FALSE.
+            ifdeft=.false.
             IFGETT=.TRUE.
          ENDIF
-C
-         DO 300 I=1,LDIMT-1
-            WRITE (S2,301) I
-            IPO=INDX_CUT(RSOPT,S2,2)
-            IF (IPO.NE.0) THEN
-               IFDEFT=.FALSE.
-               IFGTPS(I)=.TRUE.
-            ENDIF
-  300    CONTINUE
-  301    FORMAT('P',I1)
-C
+
+         do 300 i=1,ldimt-1
+            write (s2,301) i
+            ipo=indx_cut(rsopt,s2,2)
+            if (ipo.ne.0) then
+               ifdeft=.false.
+               ifgtps(i)=.true.
+            endif
+  300    continue
+  301    format('P',i1)
+
 C        Get number of dumps from remainder of user supplied line.
-C
-         IF (IFGTRL(TDUMPS,RSOPT)) NDUMPS=INT(TDUMPS)
-      ENDIF
-C
+         if (ifgtrl(tdumps,rsopt)) ndumps=int(tdumps)
+      endif
+
 C     If no fields were explicitly specified, assume getting all fields. 
-C
-      IF (IFDEFT) THEN
+      if (ifdeft) then
          IFGETX=.TRUE.
          IF (IF3D) IFGETZ=.TRUE.
          IFANYC=.FALSE.
@@ -1218,9 +1203,9 @@ C
          ENDIF
          IF (IFFLOW) IFGETP=.TRUE.
          IF (IFHEAT) IFGETT=.TRUE.
-         DO 410 I=1,LDIMT-1
-            IFGTPS(I)=.TRUE.
-  410    CONTINUE
+         do 410 i=1,ldimt-1
+            ifgtps(i)=.TRUE.
+  410    continue
       ENDIF
 C
       return

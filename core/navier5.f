@@ -723,11 +723,13 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine outpost(v1,v2,v3,vp,vt,name3)
-      real v1(1),v2(1),v3(1),vp(1),vt(1)
-      character*3 name3
 
       include 'SIZE'
       include 'INPUT'
+
+      real v1(1),v2(1),v3(1),vp(1),vt(1)
+      character*3 name3
+
 
       itmp=0
       if (ifto) itmp=1

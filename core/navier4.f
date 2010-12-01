@@ -527,51 +527,6 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      subroutine savep(P,H1,H2,H2INV)
-C
-C     update the solution set
-C
-c     Update the set of rhs's and the corresponding p-set:
-C
-C        . Standard case is to add P_new, and RHS_new = E*P_new
-C
-C        . However, when Nprev=Mprev (max. allowed), we throw out
-C          the old set, and set P_1 = P, RHS_1=E*P_1
-C
-C
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      PARAMETER (LTOT2=LX2*LY2*LZ2*LELV)
-      COMMON /ORTHOV/ RHS(LTOT2,MXPREV)
-      COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
-      COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
-      COMMON /ORTHOI/ Nprev,Mprev
-C
-      REAL ALPHA,WORK
-C
-      REAL             P    (LX2,LY2,LZ2,LELV)
-      REAL             H1   (LX1,LY1,LZ1,LELV)
-      REAL             H2   (LX1,LY1,LZ1,LELV)
-      REAL             H2INV(LX1,LY1,LZ1,LELV)
-C
-      NTOT2=NX2*NY2*NZ2*NELV
-C
-      IF (Nprev.EQ.Mprev .or. Nprev.eq.0) RETURN
-C
-C     Increment solution set
-      Nprev = Nprev+1
-      CALL COPY   (RHS(1,Nprev),P,NTOT2)
-C
-C     Orthogonalize rhs against previous rhs and normalize
-      CALL ECONJ (Nprev,H1,H2,H2INV,ierr)
-      if (ierr.eq.1) Nprev=0
-C
-      RETURN
-      END
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
 c     THE ROUTINES BELOW ARE THE NEW Helmholtz projectors
 c-----------------------------------------------------------------------
       subroutine projh(r,h1,h2,bi,vml,vmk,approx,napprox,wl,ws,name4)

@@ -1069,8 +1069,8 @@ C
       RINIT  = SQRT(GLSC2(W2,R2,NTOT2)/VOLVM2)
       EPS    = 0.02
       TOL    = EPS*RINIT
-      if (param(91).gt.0) tol=param(91)*rinit
-      if (param(91).lt.0) tol=-param(91)
+c     if (param(91).gt.0) tol=param(91)*rinit
+c     if (param(91).lt.0) tol=-param(91)
 C
       DO 100 IEL=1,NELV
          CALL MAP21E (R1(1,1,1,IEL),R2(1,1,1,IEL),IEL)
@@ -3356,9 +3356,7 @@ C-----------------------------------------------------------------------
      $ ,               XCG  (LX2,LY2,LZ2,LELV)
      $ ,               PCG  (LX2,LY2,LZ2,LELV) 
      $ ,               RPCG (LX2,LY2,LZ2,LELV)
-c
-      logical ifsavep
-C
+ 
       real*8 etime1,dnekclock
       integer*8 ntotg,nxyz2
 
@@ -3389,7 +3387,6 @@ c      ENDIF
       div0=0.
 C
       tolpss = tolps
-      ifsavep=.false.
       DO 1000 ITER=1,NMXP
 C
 C        CALL CONVPR  (RCG,tolpss,ICONV,RNORM)
@@ -3407,12 +3404,7 @@ c
 c        IF (ICONV.EQ.1.and.(iter.gt.1.or.istep.le.2)) GOTO 9000
 c        IF (ICONV.EQ.1) GOTO 9000
 c        if (ratio.le.1.e-5) goto 9000
-c
-c        Save current solution into projection space
-         if ((.not.ifsavep).and.rnorm*rnorm.lt.div0*tolpss) then
-            ifsavep=.true.
-            if (param(105).gt.0) call savep(xcg,h1,h2,h2inv)
-         endif
+
 
          IF (ITER .NE. 1) THEN
             BETA = RRP1/RRP2
@@ -3943,7 +3935,7 @@ c
       return
       END
 C------------------------------------------------------------------------
-      subroutine conv1n(du,u)
+      subroutine conv1(du,u)  ! used to be conv1n
 c
       include 'SIZE'
       include 'DXYZ'
@@ -4019,50 +4011,6 @@ c           2D
 c
        return
        end
-c-----------------------------------------------------------------------
-      subroutine conv1o(dfi,fi)
-C--------------------------------------------------------------------
-C
-C     Compute D*FI (part of the convection operator)
-C
-C--------------------------------------------------------------------
-      include 'SIZE'
-      include 'TOTAL'
-      REAL           DFI (LX1,LY1,LZ1,1) 
-      REAL           FI  (LX1,LY1,LZ1,1)
-      COMMON /CTMP0/ TA1 (LX1,LY1,LZ1,LELV)
-C
-      NTOT1 = NX1*NY1*NZ1*NELV
-      CALL DUDXYZ (TA1,FI,RXM1,SXM1,TXM1,JACM1,IMESH,1)
-      CALL COL3   (DFI,TA1,VX,NTOT1)
-      CALL DUDXYZ (TA1,FI,RYM1,SYM1,TYM1,JACM1,IMESH,2)
-      CALL ADDCOL3 (DFI,TA1,VY,NTOT1)
-      IF (NDIM.EQ.3) THEN
-         CALL DUDXYZ (TA1,FI,RZM1,SZM1,TZM1,JACM1,IMESH,3)
-         CALL ADDCOL3 (DFI,TA1,VZ,NTOT1)
-      ENDIF
-      return
-      END
-c-----------------------------------------------------------------------
-      subroutine conv1 (dfi,fi)
-C--------------------------------------------------------------------
-C
-C     Compute D*FI (part of the convection operator)
-C
-C--------------------------------------------------------------------
-      include 'SIZE'
-      include 'TOTAL'
-      REAL           DFI (LX1,LY1,LZ1,1) 
-      REAL           FI  (LX1,LY1,LZ1,1)
-c 
-      if (param(87).eq.1.) then
-         call conv1o(dfi,fi)
-      else
-         call conv1n(dfi,fi)
-      endif
-c
-      return
-      END
 c-----------------------------------------------------------------------
       subroutine conv1no(du,u)
 c

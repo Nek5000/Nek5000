@@ -1,5 +1,9 @@
 c Some relevant parameters
 c
+c param(41):
+c     0 - use additive SEMG
+c     1 - use hybrid SEMG (not yet working... but coming soon!)
+c
 c param(42):   navier0.f, fasts.f
 c     0 - use GMRES for iterative solver, use non-symmetric weighting
 c     1 - use PCG for iterative solver, do not use weighting
@@ -1467,8 +1471,8 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
       call local_solves_fdm(e,r)
       time_1 = dnekclock()
 
+c     if (param(41).eq.1) if_hybrid = .true.
       if_hybrid = .false.
-      if (param(80).eq.1) if_hybrid = .true.
 
       if (if_hybrid) then
          ! w := E e
