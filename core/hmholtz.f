@@ -26,7 +26,6 @@ c=======================================================================
       iffdm = .false.
 c     iffdm = .true.
       if (ifsplit) iffdm = .true.
-      if (param(100).gt.0) iffdm = .false.
 c
       if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
 c
@@ -393,22 +392,20 @@ C-------------------------------------------------------------------
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
       REAL YSM1(LY1)
-C
+
       IF(IMESH.EQ.1) NEL=NELV
       IF(IMESH.EQ.2) NEL=NELT
       NTOT = NEL*NX1*NY1*NZ1
-C
-C     The following 4 lines provide a convenient debugging option
-       IF (PARAM( 104 ).NE.0) THEN
-          CALL RONE(DPCM1,NTOT)
-          return
-       ENDIF
-C
+
+c     The following lines provide a convenient debugging option
+c     call rone(dpcm1,ntot)
+c     return
+
       CALL RZERO(DPCM1,NTOT)
       DO 1000 IE=1,NEL
-C
+
         IF (IFAXIS) CALL SETAXDY ( IFRZER(IE) )
-C
+
         DO 320 IQ=1,NX1
         DO 320 IZ=1,NZ1
         DO 320 IY=1,NY1
@@ -671,7 +668,7 @@ C     Speed-up for undeformed elements and constant properties.
 C
 C     Set up diag preconditioner.
 C
-      if (param(100).gt.0.or.kfldfdm.lt.0) then
+      if (kfldfdm.lt.0) then
          call setprec(D,h1,h2,imsh,isd)
       else
          call set_fdm_prec_h1b(d,h1,h2,nel)
@@ -702,12 +699,12 @@ C
 
       do iter=1,niter
 C
-         if (param(100).gt.0.or.kfldfdm.lt.0) then  ! Jacobi Preconditioner
+         if (kfldfdm.lt.0) then  ! Jacobi Preconditioner
 c           call copy(z,r,n)
             call col3(z,r,d,n)
          else                                       ! Schwarz Preconditioner
             call fdm_h1(z,r,d,mask,mult,nel,ktype(1,1,kfldfdm),w)
-            if (name.eq.'PRES'.and.param(100).eq.0) then 
+            if (name.eq.'PRES') then 
                call crs_solve_h1 (w,r)  ! Currently, crs grd only for P
                call add2         (z,w,n)
             endif
@@ -1058,8 +1055,9 @@ c           Dirichlet
 c
 c        Scale out mass matrix, so we can precondition w/ binvhf.
 c
+c        ifbhalf = .true.
+
          ifbhalf = .false.
-         if (param(199).ne.0) ifbhalf = .true.
          if (ifbhalf) call rescale_abhalf (aa,bb,w,n)
 c
 c        Now, compute eigenvectors/eigenvalues

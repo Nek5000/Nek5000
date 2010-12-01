@@ -768,11 +768,11 @@ C
          DCT    = CTARG-RICT
          IF (DCT.EQ.0.) NTAUBD = ICT
          IF (DCT.GT.0.) NTAUBD = ICT+1
-         if (param(78).ne.0) then
-              ntaupf=int(param(78))
-              if (nid.eq.0) write(6,*) ' new ntaubd:',ntaubd,ntaupf
-              ntaubd=max(ntaubd,ntaupf)
-         endif
+c        if (param(78).ne.0) then
+c             ntaupf=int(param(78))
+c             if (nid.eq.0) write(6,*) ' new ntaubd:',ntaubd,ntaupf
+c             ntaubd=max(ntaubd,ntaupf)
+c        endif
       ELSE
          NTAUBD = 0
          IF (CTARG.GT.0.5) THEN

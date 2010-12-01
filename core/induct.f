@@ -1236,7 +1236,7 @@ C
 C     Gram Schmidt, w re-orthogonalization
 C
       npass=1
-      if (abs(param(105)).eq.2) npass=2
+c     if (abs(param(105)).eq.2) npass=2
       do ipass=1,npass
 
          intetype=1

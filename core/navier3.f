@@ -31,11 +31,7 @@ c
       icalld=icalld+1
 c
       ntot2  = nx2*ny2*nz2*nelv
-      if (param(88).eq.1.) then
-         call copy(z2,r2,ntot2)
-         return
-      endif
-      call rzero      (z2,ntot2)
+      call rzero(z2,ntot2)
 c
 c
 c
@@ -74,22 +70,22 @@ c
       icalld = icalld + 1
       nddsl  = nddsl  + 1
       ncrsl  = ncrsl  + 1
-c
+
       ntot  = nx2*ny2*nz2*nelv
       call rzero(u,ntot)
-c
+
       etime1=dnekclock()
       call local_solves_fdm    (u,v)
       tddsl=tddsl+dnekclock()-etime1
-c
+
       etime1=dnekclock()
       call crs_solve_l2 (uc,v)
       tcrsl=tcrsl+dnekclock()-etime1
-c
+
       alpha = 10.
-      if (param(89).ne.0.) alpha = abs(param(89))
+c     if (param(89).ne.0.) alpha = abs(param(89))
       call add2s2(u,uc,alpha,ntot)
-c
+
       return
       end
 c-----------------------------------------------------------------------

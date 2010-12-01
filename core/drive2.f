@@ -208,10 +208,10 @@ C
       NMXE   = 100 !  1000
       NMXNL  = 10  !  100
 C
-      PARAM(86) = 0
+      PARAM(86) = 0 ! No skew-symm. convection for now
 C
-      BETAG  = PARAM(3)
-      GTHETA = PARAM(4)
+      BETAG  = 0 ! PARAM(3)
+      GTHETA = 0 ! PARAM(4)
       DT     = abs(PARAM(12))
       DTINIT = DT
       FINTIM = PARAM(10)
@@ -278,7 +278,7 @@ C
 C     Set default for mixing length factor
 C
       TLFAC = 0.14
-      IF (PARAM(49) .LE. 0.0) PARAM(49) = TLFAC
+c     IF (PARAM(49) .LE. 0.0) PARAM(49) = TLFAC
 C
 C     Courant number only applicable if convection in ANY field.
 C
@@ -753,11 +753,10 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
       elseif (iftran) then
 
-         if (param(181).eq.0) then   !  Same as PLAN 1 w/o nested iteration
-            call plan3 (igeom)       !  Std. NEKTON time stepper  !
-         else
-            call plan1 (igeom)
-         endif
+c        call plan1 (igeom)       !  Orig. NEKTON time stepper
+
+         call plan3 (igeom)       !  Same as PLAN 1 w/o nested iteration
+                                  !  Std. NEKTON time stepper  !
 
          if (ifmodel)    call twalluz (igeom) ! Turbulence model
          if (igeom.ge.2) call chkptol         ! check pressure tolerance

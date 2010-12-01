@@ -59,6 +59,10 @@ C     Read Mesh Info
       if (ifmoab) then
 #ifdef MOAB
         call moab_dat
+        if (nid.eq.0) then
+          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+        endif
 #else
         if (nid.eq.0) write(6,*)
      &    'ABORT: This version has not been compiled with moab support!'
@@ -66,6 +70,11 @@ C     Read Mesh Info
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
+        if (nid.eq.0) then
+          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+ 12       format(1X,A,4I9,/,/)
+        endif
         call chk_nel  ! make certain sufficient array sizes
         if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
         if (ifre2) then
@@ -489,11 +498,11 @@ C
          call exitt
       endif
 
-c      if (ifsplit .and. param(55).ne.0) then
-c         if(nid.eq.0) write(6,*) 
-c     $   'ABORT: Fixed mass flux not supported for Pn-Pn'
-c         call exitt
-c      endif
+c     if (ifsplit .and. param(55).ne.0) then
+c        if(nid.eq.0) write(6,*) 
+c    $   'ABORT: Fixed mass flux not supported for Pn-Pn'
+c        call exitt
+c     endif
 
 
       if (ifmhd)           ifchar = .false.   ! For now, at least.
@@ -523,13 +532,13 @@ c     set dealiasing handling
 c     set I/O format handling
       if (param(67).lt.0) then
          param(67) = 0        ! ASCII
-      else
+      else ! elseif (param(67).ne.4) then
          param(67) = 6        ! binary is default
       endif
 
       if (param(66).lt.0) then
          param(66) = 0        ! ASCII
-      else
+      else ! elseif (param(66).ne.4) then
          param(66) = 6        ! binary is default
       endif
 
@@ -2432,12 +2441,6 @@ c           write(6,*)'help:',lelt,lelv,lelgv
         write(6,'(A,3I9)') 'ABORT: nelt>lelt!', nid, nelt, lelt
         call exitt
       endif
-
-       if (nid.eq.0) then
-          write(6,14) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-          write(6,14) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 14       format(1X,A,4I9,/,/)
-        endif
 
       return
       end
