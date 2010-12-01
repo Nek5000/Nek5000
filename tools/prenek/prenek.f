@@ -119,10 +119,9 @@ C       Read in Parameters
           IF(CPARAM(IP).EQ.'VISCOS '.AND.VNEKOLD .LE.2.5)
      $    PARAM(IP)=PARAM(IP)*PARAM(1)
 1051    CONTINUE
-        if (param(18).lt.0) param(18)=-1./param(18)
-C
+
         rewind(9)
-C
+
         READ(9,'(a1)',ERR=59) cdum
         READ(9,*,ERR=59) dum
         READ(9,*,ERR=59) dum
@@ -378,10 +377,6 @@ c     ITEM(NCHOIC)='RSB'
          call menu(xmouse,ymouse,button,'OPTIONS')
       endif
 
-      IF(choice.eq.'HISTORY'.OR.CHOICE.EQ.'OUTPUT') then
-C        Find out which fields to save
-         CALL SETFLD
-      endif
       IF(choice.eq.'EXIT') then
 C        Exit Prenek
          call prexit
@@ -622,13 +617,11 @@ C
       WRITE(10,*,err=60)NDIM,   ' DIMENSIONAL RUN'
       WRITE(10,*,err=60)NPARAM, ' PARAMETERS FOLLOW'
 C     Print Out Parameters
-      param(18) = -1./param(18)
       DO 1050 IP=1,NPARAM
          call chcopy(s401,cparam(ip),40)
          l=ltrunc(s401,40)
          WRITE(10,'(G14.6,5X,40A1)',ERR=60) PARAM(IP),(s401(j),j=1,l)
 1050  CONTINUE
-      param(18) = -1./param(18)
       WRITE(10,*)'     4  Lines of passive scalar data follows',
      $'2 CONDUCT; 2RHOCP'
       write(10,'(5g14.6)',ERR=60)(PCOND (I),I=3,11)
@@ -980,16 +973,6 @@ C
       GO TO 1
       end
 c-----------------------------------------------------------------------
-      subroutine chkpar(ierr)
-      include 'basics.inc'
-      IERR=0
-      IF(IFMGRID) then
-         CALL PRS('Automatically setting multigrid parameters$')
-         CALL GENNMG(PARAM)
-      endif
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine chkeqt(ierr)
       include 'basics.inc'
 C
@@ -1008,33 +991,6 @@ C     Checks for illegal equation settings.  IERR=1 if any were found.
          CALL BEEP
          IERR=1
       endif
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine setfld
-      include 'basics.inc'
-C     Default OUTPUTs
-C     Sets up which quantities to be dumped
-C     Boxes with XX, etc inside change color when specified.
-      CALL PRS(' Use mouse to toggle Output fields off and on$')
-C     Draw Boxes
-CC      DO 1 I=1,5
-C         YB=0.05
-C         YT=0.15
-C         XL=1.0+(I-1)/20.0
-C         XR=1.0+I    /20.0
-C         CALL BEGINB(XPHY(XL),YPHY(YB))
-C         CALL DRAWSC(XR,YB)
-C         CALL DRAWSC(XR,YT)
-C         CALL DRAWSC(XL,YT)
-C         CALL ENDP
-CC         CALL GWRITE()
-C1     CONTINUE
-C      IF(choice.eq.'OUTPUT') then
-CC        Put in output array
-C      else
-CC        Put in History array
-C      endif
       return
       end
 c-----------------------------------------------------------------------
@@ -1316,7 +1272,6 @@ C                 Now Re-do box with new (or default) Value
          IF(LOOP.EQ.1)CALL DRMENU('SET PARAMETER')
          IF(LOOP.EQ.3.AND.IFNOSEG)CALL DRCOVR(13)
 40    CONTINUE
-      CALL CHKPAR(IERR)
       IF(IERR.NE.0) GO TO 1
       CALL GNABLE
 C     Now get rid (permanently) of the stuff in segment 10 (the gwrited stuff)
@@ -1865,100 +1820,11 @@ c      sesion(11:14)='$'
       CALL GWRITE(XPHY(0.51),YPHY(0.95),1.5,'NEKTON 2.6$')
       CALL GWRITE(XPHY(0.71),YPHY(.95),1.5,DATE(5:16)//DATE(24:28)//'$')
       call nohard
-C                                      Parameters
-      DO 917  IJKLMN=1,500
-         CALL BLANK(CPARAM(IJKLMN),40)
-  917 CONTINUE
-C
-      CPARAM( 1)='DENSITY'
-      CPARAM( 2)='VISCOS'
-      CPARAM( 3)='BETAG'
-      CPARAM( 4)='GTHETA'
-      CPARAM( 5)='PGRADX'
-      CPARAM( 6)='FLOWRATE'
-      CPARAM( 7)='RHOCP'
-      CPARAM( 8)='CONDUCT'
-      CPARAM( 9)='QVOL'
-      CPARAM(10)='FINTIME'
-      CPARAM(11)='NSTEPS'
-      CPARAM(12)='DT'
-      CPARAM(13)='IOCOMM'
-      CPARAM(14)='IOTIME'
-      CPARAM(15)='IOSTEP'
-C! INTERVAL BETWEEN STEPS
-      CPARAM(16)='EQTYPE'
-C! 1=N.S; 2=NS NO HEAT 3=STOKES NO HEAT 4=FORCED
-C                             CONV W STEADY VEL; 5=TRANSIENT COND; 6=SSCOND
-      CPARAM(17)='AXIS'
-C! 0=CART; 1=AXISYMMETRIC   Y=R X=X
-      CPARAM(18)='GRID'
-      CPARAM(19)='INTYPE'
-      CPARAM(20)='NORDER'
-      CPARAM(21)='DIVERGENCE'
-      CPARAM(22)='HELMHOLTZ'
-      CPARAM(23)='NPSCAL'
-C
-      CPARAM(24)='TOLREL'
-      CPARAM(25)='TOLABS'
-      CPARAM(26)='COURANT'
-      CPARAM(27)='TORDER'
-C
-      CPARAM(36)='XMAGNET'
-      CPARAM(37)='NGRIDS'
-      CPARAM(38)='NORDER2'
-      CPARAM(39)='NORDER3'
-      CPARAM(40)='NORDER4'
-      CPARAM(41)='NORDER5'
-      CPARAM(52)='HISTEP'
-      CPARAM(53)='HISTIME'
-C
-      NPARAM=53
-      DO 10 I=1,NPARAM
-C          DEFAULTS
-           PARAM(I)=0.0
-C
-           call chcopy(s10,cparam(i),10)
-           IF( s10 .EQ.'RHOCP     ')PARAM(I) = 1
-           IF( s10 .EQ.'CONDUCT   ')PARAM(I) = 1
-           IF( s10 .EQ.'VISCOS    ')PARAM(I) = 1
-           IF( s10 .EQ.'NSTEPS    ')PARAM(I) = 1
-           IF( s10 .EQ.'TORDER    ')PARAM(I) = 2
-           IF( s10 .EQ.'COURANT   ')PARAM(I) = 0.25
-           IF( s10 .EQ.'DENSITY   ')PARAM(I) = 1
-           IF( s10 .EQ.'IOCOMM    ')PARAM(I) = 20
-           IF( s10 .EQ.'INTYPE    '.AND.NKTONV.EQ.1)PARAM(I) = 1
-           IF( s10 .EQ.'INTYPE    '.AND.NKTONV.EQ.2)PARAM(I) =-1
-           IF( s10 .EQ.'NORDER    ')PARAM(I) = 5
-           IF( s10 .EQ.'GRID      ')PARAM(I) = 0.05
-           IF( s10 .EQ.'DIVERGENCE')PARAM(I) = 1.0E-2
-           IF( s10 .EQ.'HELMHOLTZ ')PARAM(I) = 1.0E-4
-           IF( s10 .EQ.'DT        ')PARAM(I) = 1.0
-           IF( s10 .EQ.'TOLREL    ')PARAM(I) = 0.01
-           IF( s10 .EQ.'TOLABS    ')PARAM(I) = 0.01
-10    CONTINUE
-      DO 20 I=1,11
-         PCOND (I)=1.0
-         PRHOCP(I)=1.0
-20    CONTINUE
+
+      call init_param ! Default parameters
+
       CWRITE = 1
-C
-C                                       Commands IS THIS NECESSARY?
-      CMD( 1)='  '
-      CMD( 2)='SET'
-      CMD( 3)='SHOW'
-      CMD( 4)='EXIT'
-      CMD( 5)='QUIT'
-      CMD( 6)='READ'
-      CMD( 7)='HELP'
-      CMD( 8)='BUILD'
-      CMD( 9)='HISTORY'
-      CMD(10)='FAMILY'
-      CMD(11)='ABORT'
-      CMD(12)='INITCOND'
-      CMD(13)='DRIVFORC'
-      CMD(14)='OUTPUT'
-      NCMD=14
-C
+
 C     Initialize transformation matrix
       THETAr=THETA*PI/180.0
       PHIr  =PHI  *PI/180.0
@@ -2745,39 +2611,6 @@ C        Read 2 more lines for forcing function
       end
 C     End of PRENEK ****************************************
 c-----------------------------------------------------------------------
-      subroutine gennmg(param)
-      REAL PARAM(100)
-      integer n(5)
-      CHARACTER*80 SLOC
-c
-       JMAX = 5
-       DO 10 J=1,JMAX
-          N(J) = 0
- 10    CONTINUE
-       NORDER=PARAM(20)
-       N(1) = NORDER
-       DO 100 J=2,JMAX
-          NPLOLD = N(J-1) - 1
-          NPLNEW = NPLOLD/2
-          if (NPLNEW*2 .NE. NPLOLD) NPLNEW = NPLNEW+1
-          if (NPLNEW .EQ. 1) THEN
-             NGRIDS = J-1
-             GO TO 200
-          endif
-          N(J) = NPLNEW+1
- 100   CONTINUE
- 200   CONTINUE
-c
-       PARAM(37)=NGRIDS
-       DO 300 J=2,NGRIDS
-          NPOLY = N(J)-1
-          PARAM(36+J)=N(J)
-          WRITE(SLOC,'(3i3)') J,NPOLY,N(J)
-          CALL PRS(SLOC//'$')
- 300   CONTINUE
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine intcnd
       include 'basics.inc'
 C
@@ -3175,5 +3008,229 @@ c-----------------------------------------------------------------------
       subroutine exit
       write(6,*) 'stopping in exit'
       stop
+      end
+c-----------------------------------------------------------------------
+      subroutine init_param ! Initialize parameters
+      include 'basics.inc'
+
+      call init_cparam ! Initialize parameter names
+      call init_vparam ! Initialize parameter values
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine init_cparam ! Initialize parameters
+      include 'basics.inc'
+
+      do i=1,500
+         call blank(cparam(i),40)
+      enddo
+
+      cparam( 1)='DENSITY'
+      cparam( 2)='VISCOS'
+c     cparam( 3)='BETAG'
+c     cparam( 4)='GTHETA'     ! Unused params commented out, 11/19/2010
+c     cparam( 5)='PGRADX'
+c     cparam( 6)='FLOWRATE'
+      cparam( 7)='RHOCP'
+      cparam( 8)='CONDUCT'
+c     cparam( 9)='QVOL'
+      cparam(10)='FINTIME'
+      cparam(11)='NSTEPS'
+      cparam(12)='DT'
+      cparam(13)='IOCOMM'
+      cparam(14)='IOTIME'
+      cparam(15)='IOSTEP'
+      cparam(16)='PSSOLVER: 0=default'
+c     cparam(17)='AXIS'
+      cparam(18)='GRID < 0 --> # cells on screen'
+      cparam(19)='INTYPE'
+      cparam(20)='NORDER'
+      cparam(21)='DIVERGENCE'
+      cparam(22)='HELMHOLTZ'
+      cparam(23)='NPSCAL'
+
+      cparam(24)='TOLREL'
+      cparam(25)='TOLABS'
+      cparam(26)='COURANT/NTAU'
+      cparam(27)='TORDER'
+      cparam(28)='TORDER: mesh velocity (0: p28=p27)'
+
+      cparam(29)='= magnetic visc if > 0, = -1/Rm if < 0'
+      cparam(30)='> 0 ==> properties set in uservp()'
+      cparam(31)='NPERT: #perturbation modes'
+      cparam(32)='#BCs in re2 file, if > 0'
+
+
+      cparam(41)='1-->multiplicative SEMG'
+      cparam(42)='0=gmres/1=pcg'
+      cparam(43)='0=semg/1=schwarz'
+      cparam(44)='0=E-based/1=A-based prec.'
+      cparam(45)='Relaxation factor for DTFS'
+      cparam(46)='reserved'
+      cparam(47)='vnu: mesh matieral prop.'
+c     cparam(49)='reserved'
+      cparam(52)='IOHIS'
+
+      cparam(54)='|p54|=1,2,3-->fixed flow rate dir=x,y,z'
+      cparam(54)='fixed flow rate dir: |p54|=1,2,3=x,y,z'
+      cparam(55)='vol.flow rate (p54>0) or Ubar (p54<0)'
+
+      cparam(59)='!=0 --> full Jac. eval. for each el.'
+      cparam(60)='!=0 --> init. velocity to small nonzero'
+
+      cparam(62)='>0 --> force byte_swap for output'
+      cparam(63)='=8 --> force 8-byte output'
+      cparam(64)='=1 --> perturbation restart'
+
+      cparam(65)='#iofiles (eg, 0 or 64); <0 --> sep. dirs'
+      cparam(66)='output : <0=ascii, else binary'
+      cparam(67)='restart: <0=ascii, else binary'
+      cparam(68)='iastep: freq for avg_all'
+      cparam(68)='iastep: freq for avg_all (0=iostep)'
+
+      cparam(74)='verbose Helmholtz'
+
+
+      cparam(84)='!=0 --> sets initial timestep if p12>0'
+      cparam(85)='dt ratio if p84 !=0, for timesteps>0'
+      cparam(86)='reserved' !=0 --> use skew-symm form (convection)'
+
+      cparam(93)='Number of previous pressure solns saved'
+      cparam(94)='start projecting velocity after p94 step'
+      cparam(95)='start projecting pressure after p95 step'
+
+      cparam(99)='dealiasing: <0--> off/3--> old/4--> new'
+      cparam(101)='Number of additional modes to filter'
+      cparam(102)='Dump out divergence at each time step'
+      cparam(103)='weight of stabilizing filter (.01)'
+
+      cparam(107)='!=0 --> add to h2 array in hlmhotz eqn'
+
+      cparam(116)='!=0: x elements for fast tensor product'
+      cparam(117)='!=0: y elements for fast tensor product'
+      cparam(118)='!=0: z elements for fast tensor product'
+
+c
+c     Check these following ones
+c
+c     125,126,128 for perturbation code
+c
+c
+c     150 - maxiter
+c     151 - maxiter
+c
+c
+c
+
+      nparam=118
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine init_vparam ! Initialize parameters
+      include 'basics.inc'
+
+      call rzero(param,500)
+
+      param( 1)= 1.0  ! 'DENSITY'
+      param( 2)= .01  ! 'VISCOS'
+      param( 3)=  0   ! 'BETAG'
+c     param( 4)=  0   ! 'GTHETA'     ! Unused params commented out, 11/19/2010
+c     param( 5)=  0   ! 'PGRADX'
+c     param( 6)=  0   ! 'FLOWRATE'
+      param( 7)=  1   ! 'RHOCP'
+      param( 8)=  .01 ! 'CONDUCT'
+c     param( 9)=  0   ! 'QVOL'
+      param(10)=  0   ! 'FINTIME'
+      param(11)=  1   ! 'NSTEPS'
+      param(12)=  .01 ! 'DT'
+      param(13)=  0   ! 'IOCOMM'
+      param(14)=  0   ! 'IOTIME'
+      param(15)=  100 ! 'IOSTEP'
+      param(16)=  0   ! 'PSSOLVER: 0=default'
+c     param(17)=  0   ! 'AXIS'
+      param(18)=  -20 ! 'GRID'
+      param(19)=  -1  ! 'INTYPE'
+      param(20)=  4   ! 'NORDER'
+      param(21)=  1.e-6 ! 'DIVERGENCE'
+      param(22)=  1.e-8 ! 'HELMHOLTZ'
+      param(23)=  0     ! 'NPSCAL'
+
+      param(24)=  .01   ! 'TOLREL'
+      param(25)=  .01   ! 'TOLABS'
+      param(26)=  0.5   ! 'COURANT/NTAU'
+      param(27)=  2     ! 'TORDER'
+      param(28)=  1     ! 'TORDER: mesh velocity (0: p28=p27)'
+
+      param(29)=  0     ! '= magnetic visc if > 0, = -1/Rm if < 0'
+      param(30)=  0     ! '> 0 ==> properties set in uservp()'
+      param(31)=  0     ! 'NPERT: #perturbation modes'
+      param(32)=  0     ! '#BCs in re2 file, if > 0'
+
+
+      param(41)=  0     ! '1-->multiplicative SEMG'
+      param(42)=  0     ! '0=gmres/1=pcg'
+      param(43)=  0     ! '0=semg/1=schwarz'
+      param(44)=  0     ! '0=E-based/1=A-based prec.'
+      param(45)=  0     ! 'Relaxation factor for DTFS'
+      param(46)=  0     ! 'reserved'
+      param(47)=  0     ! 'vnu: mesh matieral prop.'
+      param(49)=  0     ! 'reserved'
+      param(52)=  0     ! 'IOHIS'
+
+      param(54)=  0     ! '|p54|=1,2,3-->fixed flow rate dir=x,y,z'
+      param(54)=  0     ! 'fixed flow rate dir: |p54|=1,2,3=x,y,z'
+      param(55)=  0     ! 'vol.flow rate (p54>0) or Ubar (p54<0)'
+
+      param(59)=  0     ! '!=0 --> full Jac. eval. for each el.'
+      param(60)=  0     ! '!=0 --> init. velocity to small nonzero'
+
+      param(62)=  0     ! '>0 --> force byte_swap for output'
+      param(63)=  0     ! '=8 --> force 8-byte output'
+      param(64)=  0     ! '=1 --> perturbation restart'
+
+      param(65)=  0     ! '#iofiles (eg, 0 or 64); <0 --> sep. dirs'
+      param(66)=  0     ! 'output : <0=ascii, else binary'
+      param(67)=  0     ! 'restart: <0=ascii, else binary'
+      param(68)=  0     ! 'iastep: freq for avg_all'
+      param(68)=  0     ! 'iastep: freq for avg_all (0=iostep)'
+
+      param(74)=  0     ! 'verbose Helmholtz'
+
+
+      param(84)=  0     ! '!=0 --> sets initial timestep if p12>0'
+      param(85)=  0     ! 'updates dt if p84 !=0, for timesteps>0'
+      param(86)=  0     ! '!=0 --> use skew-symm form (convection)'
+
+c     param(87)=  0     ! '=1 --> use old convection operator'
+c     param(88)=  0     ! '=1 --> skips pressure precond solver'
+c     param(89)=  0     ! '!=0 --> set alpha for pressure precond'
+c     param(91)=  0     ! '!=0 --> set tol for preconditioner'
+
+      param(93)=  20    ! 'Number of previous pressure solns saved'
+      param(94)=  0     ! 'start projecting velocity after p94 step'
+      param(95)=  5     ! 'start projecting pressure after p95 step'
+
+      param(99) =  3     ! 'dealiasing: <0--> off/3--> old/4--> new'
+      param(100)=  0     ! 'CG pressure precond:0=Jacobi/>0=Schwarz'
+      param(101)=  0     ! 'Number of additional modes to filter'
+      param(102)=  1     ! 'Dump out divergence at each time step'
+      param(103)=  .01   ! 'weight of stabilizing filter'
+      param(104)=  0     ! 'debugging option in Jacobi precond'
+      param(105)=  0     ! '=2 --> an extra orthogonalization iter'
+      param(106)=  0     ! '!=0 --> dump Unfiltered-Filtered vars'
+      param(107)=  0     ! '!=0 --> add to h2 array in hlmhotz eqn'
+
+      param(116)=  0     ! '!=0: x elements for fast tensor product'
+      param(117)=  0     ! '!=0: y elements for fast tensor product'
+      param(118)=  0     ! '!=0: z elements for fast tensor product'
+
+      nparam=118
+
+      call rzero(pcond ,11)
+      call rzero(prhocp,11)
+
+      return
       end
 c-----------------------------------------------------------------------

@@ -116,9 +116,12 @@ C        YSCREEN=((YM-12)/1000.0*WINDOW) + 0.015
      $          'and re-enter$')
            GO TO 97
         ENDIF
-C       FILTER X,Y THRU GRID
-        GRID=PARAM(18)
-        IF (GRID.LT. .0099) IFGRDC=.FALSE.
+
+c       filter x,y thru grid
+        grid=param(18)
+        if (grid.lt.0) grid=-1./grid
+        if (grid.lt. .0099) ifgrdc=.false.
+
 C       Filter Only if building and outside build menu area.
         IF(XSCREEN.LT.1.0 .AND.IFGRID.AND.BUTTON.NE.'RIGHT') THEN
            CALL FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN)
@@ -298,7 +301,7 @@ C
       SUBROUTINE SCROLL(ILINES)
       RETURN
       END
-      
+
       SUBROUTINE RUBBER
       RETURN
       END
@@ -771,7 +774,9 @@ c     yscreen=((ym-12)/1000.0*window) + 0.015
 
 c     filter x,y thru grid
       grid=param(18)
+      if (grid.lt.0) grid=-1./grid
       if (grid.lt. .0099) ifgrdc=.false.
+
 
       xmouse=xphy(xscreen)
       ymouse=yphy(yscreen)

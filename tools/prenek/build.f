@@ -960,14 +960,15 @@ c    $        IDUM,NUMAPT(IEL),LETAPT(IEL),IGROUP(IEL)
    80    format(a80)
 c        write(6,*) iel,' ',string
 
-         call parse_e_hdr(numapt(iel),letapt(iel),igroup(iel),string)
+         call parse_e_hdr
+     $       (idum,numapt(iel),letapt(iel),igroup(iel),string)
 
 
          IF(IGROUP(IEL).GT.0) NCOND=NCOND+1
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
-            WRITE(S,'(A20,I4,A4,I3,A1,A1)',ERR=33)
+            WRITE(S,'(A20,I8,A4,I5,A1,A1)',ERR=33)
      $           ' Reading Element',
-     $           iel,' [',NUMAPT(IEL),LETAPT(IEL),']'
+     $           idum,' [',NUMAPT(IEL),LETAPT(IEL),']'
             CALL PRS(S//'$')
          ENDIF
          IF(NDIM.EQ.2)THEN
@@ -1989,20 +1990,29 @@ c
          close(47)
          return
       endif
-c
+
       npt=2**ndim
+      mcell = 0
       do ie=1,ncell
-c        read(47,*) ii1,ii2,ii3,(kcell(k),k=1,npt)
          read(47,*) (kcell(k),k=1,npt)
+         mcell = mcell+1
          do k=1,npt
             kcell(k) = kcell(k) + 1   ! no need to add 1
+            vv(k,ie) = kcell(k)
 c           vv(k,ie) = i_findu(vnum,kcell(k),nvtx)
+            rrr = .05
+            ii = vv(k,ie)
+c           call draw_circ(xp(ii),yp(ii),zp(ii),rrr)
 c           write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
 c           vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
          enddo
-         NUMAPT(IE)=1
-         LETAPT(IE)='A'
+c        call prsi('continue? $',ie)
+c        call res(ans,1)
+         numapt(ie)=1
+         letapt(ie)='A'
       enddo
+  444 ncell = mcell
+
       call prs('continue?$')
       call res(ans,1)
 c
@@ -2028,7 +2038,7 @@ c
                z(nel,k)=zp(l)
             enddo
          enddo
-      else                     ! don't flip
+      else                     ! flip
          do ie=1,ncell
             nel = nel+1
             do k=1,npt
@@ -2040,11 +2050,11 @@ c
             enddo
          enddo
       endif
-c        do ie=1,ncell
-c           do k=1,npt
-c              write(6,*) ie,k,x(ie,k),y(ie,k)
-c           enddo
-c        enddo
+c     do ie=1,ncell
+c     do k=1,npt
+c        write(6,*) ie,k,x(ie,k),y(ie,k)
+c     enddo
+c     enddo
       if_unstructure=.true.
       return
 c
@@ -2176,7 +2186,7 @@ c     call res(ans,1)
       ans = 'y'
 c
 c
-      if (ans.eq.'n'.or.ans.eq.'N') then
+      if (ans.eq.'y'.or.ans.eq.'Y') then
          do ie=1,ncell
             nel = nel+1
             do k=1,npt
@@ -2186,7 +2196,7 @@ c
                z(nel,k)=zp(l)
             enddo
          enddo
-      else                     ! flip
+      else                     ! don't flip
          do ie=1,ncell
             nel = nel+1
             do k=1,npt
@@ -2765,7 +2775,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine parse_e_hdr(numapt,letapt,igroup,string)
+      subroutine parse_e_hdr(iel,numapt,letapt,igroup,string)
 c
 c     Replaces:
 c
@@ -2781,20 +2791,49 @@ c
       character*1  letapt
       character*80 string
 
-      character*160 s
-      character*1   s1(160)
-      equivalence  (s1,s)
+      character*80 s,t
+      character*1   s1(80),t1(80)
+      equivalence  (s1,s),(t1,t)
 
 
       numapt = 1     ! Std. defaults
       letapt = 'A'
       igroup = 0
 
-      call blank (s1,160)
+      i0 = 1
+      call blank (s1,80)
       call chcopy(s1,string,80)
-      i1 = nindx1(s1    ,' ',1)  ! 1st non-blank location
-      i2 =  indx1(s1(i1),' ',1)  ! 1st non-blank location
 
+c     4 items: iel, numapt, letapt, igroup
+
+      i1 = nindx1(s1(i0),' ',1)+i0-1  ! 1st non-blank location
+      i2 =  indx1(s1(i1),' ',1)+i1-1  ! 2nd blank location
+      i1 = nindx1(s1(i2),' ',1)+i2-1  ! 2nd non-blank location
+      i2 =  indx1(s1(i1),' ',1)+i1-1  ! 3rd blank location
+      n2 =  i2-i1
+      call blank (t1,80)
+      call chcopy(t,s1(i1),n2)
+      read(t,*) iel
+
+c           ELEMENT    1 [    1a]    GROUP     0
+
+      i1 = indx1(s1(i0),'[',1)+1  ! Locate "["
+      i2 = indx1(s1(i0),']',1)-1  ! Locate "]"
+      n2 =  i2-i1
+      call blank (t1,80)
+      call chcopy(t,s1(i1),n2)
+      read(t,*) numapt
+      letapt = s1(i2)
+
+      len = ltrunc(s,80)         ! Get last integer in the string
+      do i1=len,1,-1
+         if (s1(i1).eq.' ') goto 10
+      enddo
+   10 continue
+
+      call blank (t1,80)
+      call chcopy(t,s1(i1),n2)
+      read(t,*) igroup
 
       return
       end

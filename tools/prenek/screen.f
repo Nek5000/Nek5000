@@ -31,7 +31,15 @@ C
       ONE = 1.0
       PI = 4.0*ATAN(ONE)
       IFCHNG=.FALSE.
+
+      if (ngrid.eq.0) then   ! Set defaults for polar grid
+         ngrid =8
+         grida = 2.0*pi/float(ngrid)
+         gridr = griddx
+      endif
+
  1000 CONTINUE
+
       CCART  = BLNK
       CHEX   = BLNK
       CPOLAR = BLNK

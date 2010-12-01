@@ -30,12 +30,12 @@ C
       ITEM(NCHOIC)='Non-conf SPLIT'
 c
 c     if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SPIDER WEB'
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='PICTURE FRAME'
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='CORNER FRAME'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='SPIDER WEB'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='PICTURE FRAME'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='CORNER FRAME'
 c           NCHOIC=NCHOIC+1
 c        ITEM(NCHOIC)='SMOOTH'
 c     endif
@@ -51,14 +51,15 @@ c        ITEM(NCHOIC)='3D CORNER'
 c
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='REPLICATE/ROTATE'
+c     if (ndim.eq.2) then
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Refine Hexagons'
+c     else
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Hex transition'
+c     endif
+
            NCHOIC=NCHOIC+1
-      if (ndim.eq.2) then
-         ITEM(NCHOIC)='Refine Hexagons'
-              NCHOIC=NCHOIC+1
-      else
-         ITEM(NCHOIC)='Hex transition'
-              NCHOIC=NCHOIC+1
-      endif
       ITEM(NCHOIC)='OCT/Multi-SPLIT'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Mesh Edit'
@@ -70,7 +71,10 @@ c
       ITEM(NCHOIC)='CLIP DOMAIN'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Clean up vertices'
+
+      if (ndim.eq.2) call redraw_mesh
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'GLOBAL REFINE')
+
 C     Update sides array
       CALL MKSIDE
 C     UPDATE MAXLET (which could have been changed in the refine operation)
@@ -1881,19 +1885,19 @@ c
 c
 c     Get current vertex map info
 c
-      open(unit=20,file=string,err=999)
-      read(20,*) ncell
+      open(unit=10,file=string,err=999)
+      read(10,*) ncell
       do ie=1,ncell
-c        read(20,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
+c        read(10,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
 c
 c        HMT's data (.map) is in the good h-cube ordering
-         read(20,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
+         read(10,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
          do k=1,nvc
             j=ecrnr(k)
             cell(k,ie) = kcell(j)
          enddo
       enddo
-      close(unit=20)
+      close(unit=10)
 c
 c
 c     Sort data and gridpoints by global vertex number
@@ -2721,6 +2725,34 @@ C           cylindrical side, rad = curve(1,is,ie)
       return
       end
 c-----------------------------------------------------------------------
+      subroutine stretch_theta
+      include 'basics.inc'
+c
+      logical if_sph_str
+C
+      call prs(' Input expansion factor ( =< 0 to abort):$')
+      call rer(sfact)
+      if (sfact.le.0) return
+
+C
+C     Take care of pts first
+C
+      nvts=8
+
+      do 100 ie=1,nel
+      do 100 i=1,nvts
+
+         rad_o   = y(ie,i)**2 + x(ie,i)**2
+         if (rad_o.gt.0) rad_o = sqrt(rad_o)
+         theta_o = atan2(y(ie,i),x(ie,i))
+         theta_n = sfact*theta_o
+         x(ie,i) = rad_o*cos(theta_n)
+         y(ie,i) = rad_o*sin(theta_n)
+
+  100 continue
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine clean_spheres
       include 'basics.inc'
       integer e,f
@@ -2863,9 +2895,9 @@ c-----------------------------------------------------------------------
 c
       call rzero(a,9)
       call prs('Opening file rot.mat$')
-      open  (unit=20,file='rot.mat',status='old',err=999)
-      read  (20,*) ((a(i,j),j=1,ndim),i=1,ndim)
-      close (20)
+      open  (unit=10,file='rot.mat',status='old',err=999)
+      read  (10,*) ((a(i,j),j=1,ndim),i=1,ndim)
+      close (10)
 c
       do e=1,nel
 

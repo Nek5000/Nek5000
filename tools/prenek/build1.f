@@ -846,9 +846,9 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
 
-      if (nel.gt.1000 .and. iel.eq.401) 
-     $   call prsi('Showing only 400 elements of$',nel)
-      if (nel.gt.1000 .and. iel.gt.400) return
+      if (nel.gt.2000 .and. iel.eq.901) 
+     $   call prsi('Showing only 900 elements of$',nel)
+      if (nel.gt.2000 .and. iel.gt.900) return
 
 
 C     Now, draw new elements for elements that were modified

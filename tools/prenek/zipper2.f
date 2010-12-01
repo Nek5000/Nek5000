@@ -3321,6 +3321,8 @@ c
       ENDIF
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch R'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch theta'
 c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
@@ -3329,6 +3331,8 @@ C
       IF (CHOICE.EQ.'UP MENU') return
       IF (CHOICE.EQ.'Redraw mesh') then
          call redraw_mesh
+      ELSEIF (CHOICE.EQ.'Stretch theta') THEN
+         call stretch_theta
       ELSEIF (CHOICE.EQ.'Stretch R') THEN
          call stretch_rad
       ELSEIF (CHOICE.EQ.'Stretch X') THEN

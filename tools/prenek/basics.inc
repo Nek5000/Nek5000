@@ -70,10 +70,11 @@ C
      $,adje(6,NELM),adjf(6,NELM)
      $,zgml(nxm)
        integer adje,adjf
-c
-      COMMON /PARAM/ PARAM(500),NPARAM,NCMD,NHISPT
-     $,IRSTT,IRSTV,RSTIM,IRSTIM,ISEGDUM,SARROW,HFISH
-c
+
+      common /crparam/ param(500),sarrow,hfish
+      common /ciparam/ nparam,ncmd,nhispt
+     $,irstt,irstv,rstim,irstim,isegdum
+
 C     MASK = 1 FOR NORMAL ELEMENT, = 0 FOR NO ELEMENT
 C     IPER ARGUMENTS ARE IEL, ISIDE, III ,IFIELD. III=1 FOR IELP; =2 ISIDEP
 C
