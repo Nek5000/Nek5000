@@ -620,8 +620,9 @@ C     Print Out Parameters
       DO 1050 IP=1,NPARAM
          call chcopy(s401,cparam(ip),40)
          l=ltrunc(s401,40)
-         WRITE(10,'(G14.6,5X,40A1)',ERR=60) PARAM(IP),(s401(j),j=1,l)
-1050  CONTINUE
+         write(10,1049) param(ip),ip,(s401(j),j=1,l)
+ 1049 format(g14.6,1X,'P',i3.3,': ',40a1)
+ 1050 CONTINUE
       WRITE(10,*)'     4  Lines of passive scalar data follows',
      $'2 CONDUCT; 2RHOCP'
       write(10,'(5g14.6)',ERR=60)(PCOND (I),I=3,11)
