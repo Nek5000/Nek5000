@@ -540,7 +540,10 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
 
       call gop_test(ivb)   ! added, Jan. 8, 2008
-      call gp2_test(ivb)   ! added, Jan. 8, 2008
+
+      log_np=log2(np)
+      np2 = 2**log_np
+      if (np2.eq.np) call gp2_test(ivb)   ! added, Jan. 8, 2008
 
       io = 6
       n512 = min(512,np-1)
