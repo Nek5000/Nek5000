@@ -437,8 +437,26 @@ c-----------------------------------------------------------------------
       return
       end
 c
+c-----------------------------------------------------------------------
+      subroutine exitt0
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+      include 'mpif.h'
 
+      real*4 papi_mflops
+      integer*8 papi_flops
 
+      write(6,*) 'Emergency exit'
+
+      call print_stack()
+      call flush_io
+
+      call mpi_finalize (ierr)
+      call exit(0)
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine exitt
       include 'SIZE'

@@ -480,10 +480,12 @@ else
   exit 1
 fi
 
-# tweak .usr file
-cat $CASENAME.usr | grep -i "subroutine.*usrsetvert" >/dev/null
+# tweak .usr (actually, .f ) file
+rm -f $CASENAME.f
+cp -p $CASENAME.usr $CASENAME.f
+cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
 if [ $? -ne 0 ]; then
-cat >> $CASENAME.usr << _ACEOF
+cat >> $CASENAME.f << _ACEOF
 c
 c automatically added by makenek
       subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
