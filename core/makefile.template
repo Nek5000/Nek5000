@@ -120,7 +120,6 @@ objdir:
 	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
 
 nek5000:	objdir $(NOBJS)
-	@ln -sf $(CASEDIR)/${CASENAME}.usr $(CASEDIR)/${CASENAME}.f
 	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f -o ${OBJDIR}/${CASENAME}.o 
 	$(F77) -o ${BINNAME} $G ${OBJDIR}/${CASENAME}.o $(NOBJS) $(lFLAGS)
 	@if test -f ${BINNAME}; then \
