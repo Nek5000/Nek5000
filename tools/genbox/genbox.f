@@ -86,7 +86,7 @@ c     parameter (mbox  = 300)              ! Std. but arbitrary
 c     parameter (maxx  = 300)              ! default values
 c     parameter (maxel = mbox*maxx*maxx)   !
 
-      parameter (mbox  = 10)
+      parameter (mbox  = 20)
       parameter (maxx  = 900)
       parameter (maxel = mbox*maxx*30)
 
@@ -154,8 +154,15 @@ c     here is where the fluid, fluid+heat determination is made....
 c-----------------------------------------------------------------------
       nel  = 0
       nbox = 0
-      do ibox=1,mbox
-c
+      do ibox=1,mbox+1
+
+         if (ibox.gt.mbox) then
+            write(6,*) 'Error: number of boxes >',mbox
+            write(6,*) 'Increase mbox in genbox.f and'
+            write(6,*) 'remake nek5_svn/trunk/tools/genbox'
+            call exitt
+         endif
+
          ifevenx = .false.
          ifeveny = .false.
          ifevenz = .false.
