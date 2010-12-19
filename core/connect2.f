@@ -287,6 +287,8 @@ c     IFSPLIT   = .false.
               read(string(i),*) IFTRAN
          elseif (indx1(string(i),'IFAXIS' ,6).gt.0) then 
               read(string(i),*) IFAXIS
+         elseif (indx1(string(i),'IFAZIV' ,6).gt.0) then 
+              read(string(i),*) IFAZIV
          elseif (indx1(string(i),'IFSTRS' ,6).gt.0) then 
               read(string(i),*) IFSTRS
          elseif (indx1(string(i),'IFLO'   ,4).gt.0) then 
@@ -321,6 +323,8 @@ c     IFSPLIT   = .false.
               read(string(i),*) IFBASE
          elseif (indx1(string(i),'IFSYNC'  ,6).gt.0) then 
               read(string(i),*) IFSYNC
+         elseif (indx1(string(i),'IFEXPLVIS',9).gt.0) then 
+              read(string(i),*) IFEXPLVIS
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
          else
@@ -347,6 +351,7 @@ c              read(string,*) IFSPLIT
      &           '   IFSYNC'   ,
      &           '   IFCYCLIC' ,
      &           '   IFSPLIT'  ,
+     &           '   IFEXPLVIS',
      &           '   IFCONS'   ,
      &           '   IFMOAB'            
               endif
