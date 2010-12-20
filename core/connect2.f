@@ -236,6 +236,7 @@ C
       IFHEAT    = .false.
       IFTRAN    = .false.
       IFAXIS    = .false.
+      IFAZIV    = .false.
       IFSTRS    = .false.
       IFLOMACH  = .false.
       IFMGRID   = .false.
@@ -253,6 +254,7 @@ C
       IFUSERMV  = .false.
       IFCYCLIC  = .false.
       IFSYNC    = .false.
+      IFEXPLVIS = .false.
 c     IFSPLIT   = .false.
 
       ifbase = .true.
