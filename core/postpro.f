@@ -1193,7 +1193,7 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      parameter (nfldm = ldim+ldim+1)
+      parameter(nfldm=ldim+ldimt+1)
 
       real    pts(ldim,lhis)
       real    fieldout(nfldm,lhis)
