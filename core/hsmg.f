@@ -1631,13 +1631,14 @@ c----------------------------------------------------------------------
       data    mgn2 / 1, 2, 2, 2, 2, 3, 3, 5, 5, 5/
 c     data    mgn2 / 1, 2, 3, 4, 5, 6, 7, 8, 9, 0
 
-      if (param(82).eq.0) param(82)=2  ! nek default
-      if (np.eq.1)        param(82)=2  ! single proc. too slow
+c     if (param(82).eq.0) param(82)=2  ! nek default
+c     if (np.eq.1)        param(82)=2  ! single proc. too slow
+      p82 = 2                          ! potentially variable nxc
       mg_lmax = 3
 c     mg_lmax = 4
       if (lx1.eq.4) mg_lmax = 2
 c     if (param(79).ne.0) mg_lmax = param(79)
-      mgnx1    = param(82)-1 !1
+      mgnx1    = p82-1 !1
       mg_nx(1) = mgnx1
       mg_ny(1) = mgnx1
       mg_nz(1) = mgnx1
