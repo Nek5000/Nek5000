@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # binary path
+mkdir -p $HOME/bin
 bin_nek_tools="$HOME/bin"
 
 # specify your compilers here
-F77=""
-CC=""
+F77="gfortran"
+CC="gcc"
 
 # enable BIG MEMORY suuport
 BIGMEM="true"
