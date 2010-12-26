@@ -27,7 +27,7 @@ c
 
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -164,7 +164,7 @@ c-----------------------------------------------------------------------
 c     Nekton stuff
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -243,15 +243,18 @@ c
       call readwrite(string,'NEKTON',6)
       read(10,80) string
       write(11,'(2x,a18)') ' 3 DIMENSIONAL RUN'
-c
+
+      call readwrite(string,'NPSCAL',6)
+      read (string,*) npscal
+
       ifflow = .false.
       call readwrite(string,'IFFLOW',6)
       if (indx1(string,' T ',3).ne.0) ifflow = .true.
-c
+
       ifheat = .false.
       call readwrite(string,'IFHEAT',6)
       if (indx1(string,' T ',3).ne.0) ifheat = .true.
-c
+
       call readwrite(string,'XFAC,YFAC',9)
       read(10,80) string
       write(11,10)
@@ -342,9 +345,12 @@ c
       nbc = 0
       if (ifflow) nbc=nbc+1
       if (ifheat) nbc=nbc+1
-c
+                  nbc=nbc+npscal
+
+      write(6,*) ifheat,npscal,nbc,' ifheat'
+
 c     Read and write boundary conditions
-c
+
       do ibc=1,nbc
 
          read (10,80) string
@@ -498,23 +504,33 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine readwrite(sout,key,nk)
-c
+
       character*80 sout,key
-c
+
       character*80 string
       character*1  string1(80)
       equivalence (string1,string)
-c
+      character*1 skey(80)
+
    80 format(a80)
    81 format(80a1)
-c
+
+      call blank (skey,80)
+      call chcopy(skey,key,nk)
+
       do i=1,90000      
          call blank(string,80)
          read (10,80,end=100,err=100) string
          len = ltrunc(string,80)
          write(11,81) (string1(k),k=1,len)
+
+c        write(6,*) string,(skey(j),j=1,nk)
+
          call chcopy  (sout,string,80)
-         if (indx1(string,key,nk).ne.0) return
+         call capit(sout,80)
+         call capit(skey,nk)
+         if (indx1(sout,skey,nk).ne.0) return
+
       enddo
   100 continue
       return
@@ -576,7 +592,7 @@ c-----------------------------------------------------------------------
 C
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -627,7 +643,7 @@ C
       parameter(nelm=9999)
       common /arraz/ zmin,zmax,dz(nelm)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -771,7 +787,7 @@ c-----------------------------------------------------------------------
 
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -885,7 +901,7 @@ c-----------------------------------------------------------------------
 
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve
+      common /arrai/ nlev,nel,ncurve,npscal
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
@@ -934,6 +950,19 @@ c-----------------------------------------------------------------------
 
       endif
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine capit(lettrs,n)  ! capitalizes string of length n
+      character lettrs(n)
+
+      do i=1,n
+         int=ichar(lettrs(i))
+         if(int.ge.97 .and. int.le.122) then
+            int=int-32
+            lettrs(i)=char(int)
+         endif
+      enddo
       return
       end
 c-----------------------------------------------------------------------
