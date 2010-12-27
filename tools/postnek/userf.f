@@ -5416,7 +5416,7 @@ c
 c     6-way average of hex-fuel pin flow variables
 c
       real u(nx*nx*nx,nelx,nely,nelz)
-      integer ex,ey,ez,eys,ezs
+      integer ex,ey,ez,eys,ezs,ei
 
 
       n3  = nx**3
