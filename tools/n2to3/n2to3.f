@@ -245,7 +245,8 @@ c
       write(11,'(2x,a18)') ' 3 DIMENSIONAL RUN'
 
       call readwrite(string,'NPSCAL',6)
-      read (string,*) npscal
+      read (string,*) rpscal
+      npscal = (rpscal + 0.01)
 
       ifflow = .false.
       call readwrite(string,'IFFLOW',6)
