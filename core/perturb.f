@@ -641,6 +641,7 @@ c
      $ ,             h2    (lx1,ly1,lz1,lelv)
       common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
       COMMON /SCRCH/ PREXTR(LX2,LY2,LZ2,LELV)
+      logical ifprjp
 
 c
       if (icalld.eq.0) tpres=0.0
