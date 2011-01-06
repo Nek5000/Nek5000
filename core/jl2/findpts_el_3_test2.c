@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include "c99.h"
 #include "types.h"
 #include "name.h"
 #include "fail.h"
@@ -36,9 +37,9 @@ DEFINE_HW_COUNTER()
 
 static const unsigned nr[3] = {NR,NS,NT};
 
-//#define NPT 1
+/* #define NPT 1 */
 #define NPT 256
-//#define NPT TNR*TNS*TNT
+/* #define NPT TNR*TNS*TNT */
 
 #define TOL 1024*DBL_EPSILON
 

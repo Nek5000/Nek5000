@@ -23,11 +23,11 @@
    the _quad functions compute both nodes and weights
   --------------------------------------------------------------------------*/
 
-void   gauss_nodes(double *z, int n); /* n nodes (order = 2n-1) */
-void lobatto_nodes(double *z, int n); /* n nodes (order = 2n-3) */
+void   gauss_nodes(double *restrict z, int n); /* n nodes (order = 2n-1) */
+void lobatto_nodes(double *restrict z, int n); /* n nodes (order = 2n-3) */
 
-void   gauss_quad(double *z, double *w, int n);
-void lobatto_quad(double *z, double *w, int n);
+void   gauss_quad(double *restrict z, double *restrict w, int n);
+void lobatto_quad(double *restrict z, double *restrict w, int n);
 
 /*--------------------------------------------------------------------------
    Lagrangian basis function evaluation
@@ -50,13 +50,15 @@ void lobatto_quad(double *z, double *w, int n);
    and also don't need to be given the nodal locations
   --------------------------------------------------------------------------*/
 
-typedef void lagrange_fun(double *p, double *data, unsigned n, int d, double x);
+typedef void lagrange_fun(double *restrict p,
+  double *restrict data, unsigned n, int d, double x);
 
 unsigned lagrange_size(unsigned n);
-lagrange_fun *lagrange_setup(double *data, const double *z, unsigned n);
+lagrange_fun *lagrange_setup(
+  double *restrict data, const double *restrict z, unsigned n);
 
 unsigned gll_lag_size(unsigned n);
-lagrange_fun *gll_lag_setup(double *data, int n);
+lagrange_fun *gll_lag_setup(double *restrict data, int n);
 
 
 #endif

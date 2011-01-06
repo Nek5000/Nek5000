@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -1102,7 +1103,8 @@ void fgs_many(const sint *handle, void *u1, void *u2, void *u3,
               void *u4, void *u5, void *u6, const sint *n,
               const sint *dom, const sint *op, const sint *transpose)
 {
-  void *const uu[6]={u1,u2,u3,u4,u5,u6};
+  void *uu[6];
+  uu[0]=u1,uu[1]=u2,uu[2]=u3,uu[3]=u4,uu[4]=u5,uu[5]=u6;
   fgs_check_parms("fgs_many",*handle,*dom,*op);
   cgs_many((void *const*)uu,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
            fgs_info[*handle],0);

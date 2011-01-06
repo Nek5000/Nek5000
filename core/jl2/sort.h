@@ -44,20 +44,20 @@
 #define sortp_long TYPE_GLOBAL(sortp_ui,sortp_ul,sortp_ull)
 
 void sortv_ui(unsigned *out, const unsigned *A, uint n, unsigned stride,
-              buffer *buf);
+              buffer *restrict buf);
 void sortv_ul(unsigned long *out,
               const unsigned long *A, uint n, unsigned stride,
-              buffer *buf);
-uint *sortp_ui(buffer *buf, int start_perm,
-               const unsigned *A, uint n, unsigned stride);
-uint *sortp_ul(buffer *buf, int start_perm,
-               const unsigned long *A, uint n, unsigned stride);
+              buffer *restrict buf);
+uint *sortp_ui(buffer *restrict buf, int start_perm,
+               const unsigned *restrict A, uint n, unsigned stride);
+uint *sortp_ul(buffer *restrict buf, int start_perm,
+               const unsigned long *restrict A, uint n, unsigned stride);
 #if defined(USE_LONG_LONG) || defined(GLOBAL_LONG_LONG)
 void sortv_ull(unsigned long long *out,
                const unsigned long long *A, uint n, unsigned stride,
-               buffer *buf);
-uint *sortp_ull(buffer* buf, int start_perm,
-                const unsigned long long *A, uint n, unsigned stride);
+               buffer *restrict buf);
+uint *sortp_ull(buffer *restrict buf, int start_perm,
+                const unsigned long long *restrict A, uint n, unsigned stride);
 #endif
 
 #endif

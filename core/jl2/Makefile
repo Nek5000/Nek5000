@@ -1,12 +1,13 @@
-DATA_TYPES = -std=c99 -DGLOBAL_LONG_LONG
+#DATA_TYPES = -std=c99 -DGLOBAL_LONG_LONG
+DATA_TYPES = -DGLOBAL_LONG
 #JAMES_FLAGS=-DPREFIX=jl_ -DFPREFIX=jlf_ -DMPI -DUNDERSCORE $(DATA_TYPES)
 JAMES_FLAGS=-DPREFIX=jl_ -DMPI -DNO_NEK_EXITT $(DATA_TYPES)
-#JAMES_FLAGS=-DPREFIX=jl_ $(DATA_TYPES)
+#JAMES_FLAGS=-DPREFIX=jl_ -DNO_NEK_EXITT $(DATA_TYPES)
 SHELL=/bin/sh
-CC=mpicc
+CC=mpicc -std=c99 --pedantic
 LIBS=-lm
-G = -O0 -g
-#G = -O3 -march=nocona
+#G = -O0 -g
+G = -O3 -march=native
 GCC_WARN=-W -Wall -Wno-unused-function -Wno-unused-parameter
 CEXTRA = $(GCC_WARN) $(JAMES_FLAGS)
 #CEXTRA=-Minform=warn $(JAMES_FLAGS)

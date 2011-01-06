@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>    /* for cos, fabs */
 #include <float.h>
+#include "c99.h"
 #include "name.h"
 #include "types.h"
 #include "fail.h"
@@ -69,14 +70,15 @@ struct dbl_range { double min,max; };
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923
 
-void lob_bnd_setup(double *data, unsigned n, unsigned m)
+void lob_bnd_setup(double *restrict data, unsigned n, unsigned m)
 {
   unsigned nm = n*m, i,j;
-  double *z=data,
-         *Q=z+n, *h=Q+2*n,
-         *lb=h+m, *lbnp=lb+2*nm;
-  double *pl = tmalloc(double,5*n + gll_lag_size(n)),
-         *dl = pl+n, *pr=dl+n, *dr=pr+n, *p=dr+n, *gll_data=p+n;
+  double *restrict z=data,
+         *restrict Q=z+n, *restrict h=Q+2*n,
+         *restrict lb=h+m, *restrict lbnp=lb+2*nm;
+  double *restrict pl = tmalloc(double,5*n + gll_lag_size(n)),
+         *restrict dl = pl+n, *restrict pr=dl+n, *restrict dr=pr+n,
+         *restrict p=dr+n, *restrict gll_data=p+n;
   lagrange_fun *lag = gll_lag_setup(gll_data,n);
   
   /* set z and Q to Lobatto nodes, weights */
@@ -122,10 +124,11 @@ void lob_bnd_setup(double *data, unsigned n, unsigned m)
   free(pl);
 }
 
-static void lob_bnd_fst(double *b,
-                        const double *z, const double *Q, const double *h,
-                        const double *lb, unsigned n, unsigned m,
-                        const double *u)
+static void lob_bnd_fst(
+  double *restrict b,
+  const double *restrict z, const double *restrict Q, const double *restrict h,
+  const double *restrict lb, unsigned n, unsigned m,
+  const double *restrict u)
 {
   unsigned i,j;
   double a0=0, a1=0;
@@ -140,14 +143,15 @@ static void lob_bnd_fst(double *b,
   }
 }
 
-static void lob_bnd_ext(double *b_,
-                        const double *z, const double *Q, const double *h,
-                        const double *lbnp, unsigned n, unsigned m,
-                        const double *br_, unsigned mr,
-                        double *a)
+static void lob_bnd_ext(
+  double *restrict b_,
+  const double *restrict z, const double *restrict Q, const double *restrict h,
+  const double *restrict lbnp, unsigned n, unsigned m,
+  const double *restrict br_, unsigned mr,
+  double *restrict a)
 {
-  const double *br = br_;
-  double *b = b_;
+  const double *restrict br = br_;
+  double *restrict b = b_;
   unsigned i,j,k;
   for(i=0;i<mr;++i) a[2*i+1]=a[2*i+0]=0;
   for(j=0;j<n;++j) {
@@ -182,19 +186,20 @@ static void lob_bnd_ext(double *b_,
   }
 }
 
-void lob_bnd_lin_1(double *b,
-                   const double *lob_bnd_data, unsigned n, unsigned m,
-                   const double *u, uint un)
+void lob_bnd_lin_1(double *restrict b,
+                   const double *restrict lob_bnd_data, unsigned n, unsigned m,
+                   const double *restrict u, uint un)
 {
   const double *z=lob_bnd_data, *Q=z+n, *h=Q+2*n, *lb=h+m;
   for(;un;--un, u+=n, b+=2*m) lob_bnd_fst(b, z,Q,h,lb,n,m, u);
 }
 
 /* work holds 2*mr + 2*ns*mr doubles */
-void lob_bnd_lin_2(double *b,
-                   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
-                   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-                   const double *u, uint un, double *work)
+void lob_bnd_lin_2(
+  double *restrict b,
+  const double *lob_bnd_data_r, unsigned nr, unsigned mr,
+  const double *lob_bnd_data_s, unsigned ns, unsigned ms,
+  const double *restrict u, uint un, double *restrict work)
 {
   unsigned mrs = mr*ms;
   const double *zr=lob_bnd_data_r,*Qr=zr+nr,*hr=Qr+2*nr,*lb_r=hr+mr;
@@ -209,11 +214,12 @@ void lob_bnd_lin_2(double *b,
 }
 
 /* work holds 2*mr*ms + 2*nt*ms*mr doubles */
-void lob_bnd_lin_3(double *b,
-                   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
-                   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-                   const double *lob_bnd_data_t, unsigned nt, unsigned mt,
-                   const double *u, uint un, double *work)
+void lob_bnd_lin_3(
+  double *restrict b,
+  const double *lob_bnd_data_r, unsigned nr, unsigned mr,
+  const double *lob_bnd_data_s, unsigned ns, unsigned ms,
+  const double *lob_bnd_data_t, unsigned nt, unsigned mt,
+  const double *restrict u, uint un, double *restrict work)
 {
   unsigned nst=ns*nt, mrst=mr*ms*mt, mrs=mr*ms, mr_ns=mr*ns;
   const double *zr=lob_bnd_data_r,*Qr=zr+nr,*hr=Qr+2*nr,*lb_r=hr+mr;
@@ -230,9 +236,10 @@ void lob_bnd_lin_3(double *b,
   }
 }
 
-static struct dbl_range minmax(const double *b, unsigned m)
+static struct dbl_range minmax(const double *restrict b, unsigned m)
 {
-  struct dbl_range bnd = { b[0], b[1] };
+  struct dbl_range bnd;
+  bnd.min = b[0], bnd.max = b[1];
   for(--m,b+=2;m;--m,b+=2)
     bnd.min = b[0]<bnd.min?b[0]:bnd.min,
     bnd.max = b[1]>bnd.max?b[1]:bnd.max;
@@ -241,8 +248,8 @@ static struct dbl_range minmax(const double *b, unsigned m)
 
 /* work holds 2*m doubles */
 struct dbl_range lob_bnd_1(
-  const double *lob_bnd_data, unsigned n, unsigned m,
-  const double *u, double *work)
+  const double *restrict lob_bnd_data, unsigned n, unsigned m,
+  const double *restrict u, double *restrict work)
 {
   lob_bnd_lin_1(work, lob_bnd_data,n,m, u,1);
   return minmax(work,m);
@@ -253,7 +260,7 @@ struct dbl_range lob_bnd_1(
 struct dbl_range lob_bnd_2(
   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-  const double *u, double *work)
+  const double *restrict u, double *restrict work)
 {
   unsigned m = mr*ms;
   lob_bnd_lin_2(work, lob_bnd_data_r,nr,mr,
@@ -267,7 +274,7 @@ struct dbl_range lob_bnd_3(
   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
   const double *lob_bnd_data_t, unsigned nt, unsigned mt,
-  const double *u, double *work)
+  const double *restrict u, double *restrict work)
 {
   unsigned m = mr*ms*mt;
   lob_bnd_lin_3(work, lob_bnd_data_r,nr,mr,

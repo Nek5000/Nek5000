@@ -64,38 +64,40 @@
 static unsigned lob_bnd_size(unsigned n, unsigned m)
 { return m+3*n*(2*m+1); }
 
-void lob_bnd_setup(double* data, unsigned n, unsigned m);
+void lob_bnd_setup(double *restrict data, unsigned n, unsigned m);
 
-void lob_bnd_lin_1(double *b,
-                   const double *lob_bnd_data, unsigned n, unsigned m,
-                   const double *u, uint un);
+void lob_bnd_lin_1(double *restrict b,
+                   const double *restrict lob_bnd_data, unsigned n, unsigned m,
+                   const double *restrict u, uint un);
 
 /* work holds 2*mr + 2*ns*mr doubles */
-void lob_bnd_lin_2(double *b_,
-                   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
-                   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-                   const double *u, uint un, double *work);
+void lob_bnd_lin_2(
+  double *restrict b,
+  const double *lob_bnd_data_r, unsigned nr, unsigned mr,
+  const double *lob_bnd_data_s, unsigned ns, unsigned ms,
+  const double *restrict u, uint un, double *restrict work);
 
 /* work holds 2*mr*ms + 2*nt*ms*mr doubles */
-void lob_bnd_lin_3(double *b,
-                   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
-                   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-                   const double *lob_bnd_data_t, unsigned nt, unsigned mt,
-                   const double *u, uint un, double *work);
+void lob_bnd_lin_3(
+  double *restrict b,
+  const double *lob_bnd_data_r, unsigned nr, unsigned mr,
+  const double *lob_bnd_data_s, unsigned ns, unsigned ms,
+  const double *lob_bnd_data_t, unsigned nt, unsigned mt,
+  const double *restrict u, uint un, double *restrict work);
 
 struct dbl_range { double min, max; };
 
 /* work holds 2*m doubles */
 struct dbl_range lob_bnd_1(
-  const double *lob_bnd_data, unsigned n, unsigned m,
-  const double *u, double *work);
+  const double *restrict lob_bnd_data, unsigned n, unsigned m,
+  const double *restrict u, double *restrict work);
 
 /* work holds 2*mr*ms + 2*mr + 2*mr*ns
              =2*mr*(ns+ms+1) doubles */
 struct dbl_range lob_bnd_2(
   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
-  const double *u, double *work);
+  const double *restrict u, double *restrict work);
 
 /* work holds 2*mr*ms*mt + 2*mr*ms + 2*nt*ms*mr
              =2*mr*ms*(nt+mt+1) doubles */
@@ -103,7 +105,7 @@ struct dbl_range lob_bnd_3(
   const double *lob_bnd_data_r, unsigned nr, unsigned mr,
   const double *lob_bnd_data_s, unsigned ns, unsigned ms,
   const double *lob_bnd_data_t, unsigned nt, unsigned mt,
-  const double *u, double *work);
+  const double *restrict u, double *restrict work);
 
 #endif
 

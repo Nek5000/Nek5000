@@ -4,6 +4,7 @@
 #include <string.h>
 #include <float.h>
 #include <math.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"

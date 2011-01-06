@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <float.h>
+#include "c99.h"
 #include "types.h"
 #include "name.h"
 #include "fail.h"
@@ -36,7 +37,8 @@ static struct obbox_3 ob3[N];
 static struct dbl_range dbl_range_expand(struct dbl_range b, double tol)
 {
   double a = (b.min+b.max)/2, l = (b.max-b.min)*(1+tol)/2;
-  struct dbl_range m = { a-l,a+l };
+  struct dbl_range m;
+  m.min = a-l, m.max = a+l;
   return m;
 }
 
