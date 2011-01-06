@@ -658,7 +658,7 @@ c
       if (param(22).ne.0) tol=abs(param(22))
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
       if (tin.lt.0)       tol=abs(tin)
-      niter = 5000 !min(maxit,maxcg)
+      niter = min(maxit,maxcg)
 
 C     Speed-up for undeformed elements and constant properties.
       if (.not.ifsolv) then
