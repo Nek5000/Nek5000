@@ -108,13 +108,13 @@ c
       if (ifpert) then
         do j=1,npert
 
-         ifield = 2
+         ifield = 1
          call filterq(vxp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
          call filterq(vyp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
      $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
-         ifield = 1
+         ifield = 2
          if (ifheat .and. .not.ifcvode) 
      $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
@@ -160,7 +160,6 @@ c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
      &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
          endif
       endif
-
 
       ifield = ifldt   ! RESTORE ifield
 

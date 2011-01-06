@@ -651,18 +651,34 @@ c
       ntot2  = nx2*ny2*nz2*nelv
       intype = 1
       dtbd   = bd(1)/dt
-c
+
       call rzero   (h1,ntot1)
-c      call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
+c     call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call cmult2  (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
       call invers2 (h2inv,h2,ntot1)
-c
+
       call opdiv   (dp,ux,uy,uz)
       call chsign  (dp,ntot2)
       call ortho   (dp)
-c
-      call esolver  (dp,h1,h2,h2inv,intype)
-c
+
+
+C******************************************************************
+
+
+      ifprjp=.false.    ! project out previous pressure solutions?
+      istart=param(95)  
+      if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
+
+      ! Most likely, the following can be commented out. (pff, 1/6/2010)
+      if (npert.gt.1.or.ifbase)            ifprjp=.false.
+
+      if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
+                    call esolver (dp,h1,h2,h2inv,intype)
+      if (ifprjp)   call gensoln (dp,h1,h2,h2inv)
+
+
+C******************************************************************
+
       call opgradt (w1 ,w2 ,w3 ,dp)
       call opbinv  (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
       call opadd2  (ux ,uy ,uz ,dv1,dv2,dv3)
