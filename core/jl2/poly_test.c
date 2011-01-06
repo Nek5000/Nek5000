@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <float.h>
+#include "c99.h"
 #include "name.h"
 #include "types.h"
 #include "poly.h"

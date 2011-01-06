@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -346,9 +347,11 @@ static void newton_area(struct findpts_el_pt_2 *const out,
 {
   const double tr = p->tr;
   double bnd[4] = { -1,1, -1,1 };
-  const double r0[2] = {p->r[0],p->r[1]};
+  double r0[2];
   double dr[2], fac;
   unsigned d, mask, flags;
+  
+  r0[0] = p->r[0], r0[1] = p->r[1];
   
 #ifdef DIAGNOSTICS_1
   printf("newton_area:\n");
@@ -396,10 +399,10 @@ static void newton_area(struct findpts_el_pt_2 *const out,
   newton_area_edge: {
     const unsigned ei = edge_index(flags);
     const unsigned dn = ei>>1, de = plus_1_mod_2(dn);
-    const double res[2]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                          resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]) };
+    const double res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
+                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
     /* y = J_u^T res */
-    const double y = jac[de]*res[0]+jac[2+de]*res[1];
+    const double y = jac[de]*res0+jac[2+de]*res1;
     /* JtJ = J_u^T J_u */
     const double JtJ = jac[  de]*jac[  de]
                       +jac[2+de]*jac[2+de];
@@ -409,7 +412,7 @@ static void newton_area(struct findpts_el_pt_2 *const out,
 #ifdef DIAGNOSTICS_1
     printf("  edge %u, de=%u\n",ei,de);
     printf("    r=(%.17g,%.17g)\n", r0[0]+dr[0],r0[1]+dr[1]);
-    printf("    resid = (%g,%g); r^T r / 2 = %g\n",res[0],res[1],
+    printf("    resid = (%g,%g); r^T r / 2 = %g\n",res0,res1,
            (res[0]*res[0]+res[1]*res[1])/2);
     printf("    min at %.17g\n", r0[de]+dr[de]+drc);
 #endif
@@ -436,13 +439,13 @@ static void newton_area(struct findpts_el_pt_2 *const out,
 
   /* check and possibly relax constraints */
   newton_area_relax: {
-    /* res := res_0 - J dr */
-    const double res[2]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                          resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]) };
-    /* y := J^T res */
-    const double y[2] = { jac[0]*res[0]+jac[2]*res[1],
-                          jac[1]*res[0]+jac[3]*res[1] };
     const unsigned old_flags = flags;
+    /* res := res_0 - J dr */
+    const double res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
+                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
+    /* y := J^T res */
+    double y[2]; y[0] = jac[0]*res0+jac[2]*res1,
+                 y[1] = jac[1]*res0+jac[3]*res1;
     #define SETDR(d) do { \
       unsigned f = flags>>(2*d) & 3u; \
       if(f) dr[d] = bnd[2*d+(f-1)] - r0[d]; \
@@ -484,10 +487,10 @@ newton_area_fin:
   flags &= mask;
   if(fabs(dr[0])+fabs(dr[1]) < tol) flags |= CONVERGED_FLAG;
   {
-    const double res[2]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                          resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]) };
+    const double res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
+                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
     out->dist2p=resid[0]*resid[0]+resid[1]*resid[1]
-                -(res[0]*res[0]+res[1]*res[1]);
+                -(res0*res0+res1*res1);
   }
   #define SETR(d) do { \
     unsigned f = flags>>(2*d) & 3u; \
@@ -673,14 +676,14 @@ static void findpt_pt(
 #endif
 
   for(i=0;i<pn;++i) {
-    const double resid[2] = { p[i].x[0]-x[0],
-                              p[i].x[1]-x[1] };
-    const double steep[2] = {
-      jac[0]*resid[0] + jac[2]*resid[1],
-      jac[1]*resid[0] + jac[3]*resid[1] };
-    const double sr[2] = { steep[0]*p[i].r[0],
-                           steep[1]*p[i].r[1] };
+    double resid[2], steep[2], sr[2];
     unsigned dn,de;
+    resid[0] = p[i].x[0]-x[0],
+    resid[1] = p[i].x[1]-x[1];
+    steep[0] = jac[0]*resid[0] + jac[2]*resid[1],
+    steep[1] = jac[1]*resid[0] + jac[3]*resid[1];
+    sr[0] = steep[0]*p[i].r[0],
+    sr[1] = steep[1]*p[i].r[1];
     /* check prior step */
     if(reject_prior_step_q(out+i,resid,p+i,tol)) continue;
     /* check constraints */
@@ -736,7 +739,8 @@ void findpts_el_2(struct findpts_el_data_2 *const fd, const unsigned npt,
   struct findpts_el_pt_2 *const pbuf = fd->p, *const pstart = fd->p + npt;
   unsigned nconv = npt;
   unsigned step = 0;
-  unsigned count[9] = { npt,0,0, 0,0,0, 0,0,0 } ;
+  unsigned count[9] = { 0,0,0, 0,0,0, 0,0,0 } ;
+  count[0]=npt;
   seed(fd,pbuf,npt);
   { unsigned i;
     for(i=0;i<npt;++i) {

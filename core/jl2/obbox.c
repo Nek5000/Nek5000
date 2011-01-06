@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -57,15 +58,17 @@ static void mat_inv_3(double inv[9], const double A[9])
 
 static struct dbl_range dbl_range_merge(struct dbl_range a, struct dbl_range b)
 {
-  struct dbl_range m = { b.min<a.min?b.min:a.min,
-                         a.max>b.max?a.max:b.max };
+  struct dbl_range m;
+  m.min = b.min<a.min?b.min:a.min,
+  m.max = a.max>b.max?a.max:b.max;
   return m;
 }
 
 static struct dbl_range dbl_range_expand(struct dbl_range b, double tol)
 {
   double a = (b.min+b.max)/2, l = (b.max-b.min)*(1+tol)/2;
-  struct dbl_range m = { a-l,a+l };
+  struct dbl_range m;
+  m.min = a-l, m.max = a+l;
   return m;
 }
 
@@ -132,26 +135,27 @@ void obbox_calc_2(struct obbox_2 *out,
 
   const unsigned nrs = nr*ns;
   double *data;
-  const unsigned lbsize[2] = {lob_bnd_size(nr,mr), lob_bnd_size(ns,ms)};
+  const unsigned lbsize0 = lob_bnd_size(nr,mr),
+                 lbsize1 = lob_bnd_size(ns,ms);
   unsigned wsize = 4*ns+2*ms;
   DO_MAX(wsize,2*nr+2*mr);
   DO_MAX(wsize,gll_lag_size(nr));
   DO_MAX(wsize,gll_lag_size(ns));
-  data = tmalloc(double, 2*(nr+ns)+lbsize[0]+lbsize[1]+wsize);
+  data = tmalloc(double, 2*(nr+ns)+lbsize0+lbsize1+wsize);
 
   {
-    double *const I0[2] = { data, data+2*nr };
+    double *const I0r = data, *const I0s = data+2*nr;
     double *const lob_bnd_data_r = data+2*(nr+ns),
-           *const lob_bnd_data_s = data+2*(nr+ns)+lbsize[0];
-    double *const work = data+2*(nr+ns)+lbsize[0]+lbsize[1];
+           *const lob_bnd_data_s = data+2*(nr+ns)+lbsize0;
+    double *const work = data+2*(nr+ns)+lbsize0+lbsize1;
 
-    #define SETUP_DIR(i,r) do { \
+    #define SETUP_DIR(r) do { \
       lagrange_fun *const lag = gll_lag_setup(work, n##r); \
-      lag(I0[i], work,n##r,1, 0); \
+      lag(I0##r, work,n##r,1, 0); \
       lob_bnd_setup(lob_bnd_data_##r, n##r,m##r); \
     } while(0)
     
-    SETUP_DIR(0,r); SETUP_DIR(1,s);
+    SETUP_DIR(r); SETUP_DIR(s);
     
     #undef SETUP_DIR
     
@@ -160,8 +164,8 @@ void obbox_calc_2(struct obbox_2 *out,
       struct dbl_range ab[2], tb[2];
   
       /* double work[2*nr] */
-      x0[0] = tensor_ig2(J  , I0[0],nr, I0[1],ns, x, work);
-      x0[1] = tensor_ig2(J+2, I0[0],nr, I0[1],ns, y, work);
+      x0[0] = tensor_ig2(J  , I0r,nr, I0s,ns, x, work);
+      x0[1] = tensor_ig2(J+2, I0r,nr, I0s,ns, y, work);
       mat_inv_2(Ji, J);
 
       /* double work[2*m##r] */
@@ -201,15 +205,15 @@ void obbox_calc_2(struct obbox_2 *out,
       out->x[1] = dbl_range_expand(ab[1],tol);
   
       {
-        const double av[2] = {(tb[0].min+tb[0].max)/2,(tb[1].min+tb[1].max)/2};
-        out->c0[0] = x0[0] + J[0]*av[0] + J[1]*av[1];
-        out->c0[1] = x0[1] + J[2]*av[0] + J[3]*av[1];
+        const double av0=(tb[0].min+tb[0].max)/2, av1=(tb[1].min+tb[1].max)/2;
+        out->c0[0] = x0[0] + J[0]*av0 + J[1]*av1;
+        out->c0[1] = x0[1] + J[2]*av0 + J[3]*av1;
       }
       {
-        const double di[2] = {2/((1+tol)*(tb[0].max-tb[0].min)),
-                              2/((1+tol)*(tb[1].max-tb[1].min))};
-        out->A[0]=di[0]*Ji[0], out->A[1]=di[0]*Ji[1];
-        out->A[2]=di[1]*Ji[2], out->A[3]=di[1]*Ji[3];
+        const double di0 = 2/((1+tol)*(tb[0].max-tb[0].min)),
+                     di1 = 2/((1+tol)*(tb[1].max-tb[1].min));
+        out->A[0]=di0*Ji[0], out->A[1]=di0*Ji[1];
+        out->A[2]=di1*Ji[2], out->A[3]=di1*Ji[3];
       }
 
     }
@@ -229,8 +233,9 @@ void obbox_calc_3(struct obbox_3 *out,
 
   const unsigned nrs = nr*ns, nrst = nr*ns*nt;
   double *data;
-  const unsigned lbsize[3] = 
-    {lob_bnd_size(nr,mr), lob_bnd_size(ns,ms), lob_bnd_size(nt,mt)};
+  const unsigned lbsize0 = lob_bnd_size(nr,mr),
+                 lbsize1 = lob_bnd_size(ns,ms),
+                 lbsize2 = lob_bnd_size(nt,mt);
   unsigned wsize = 3*nr*ns+2*mr*(ns+ms+1);
   DO_MAX(wsize,6*nr*nt+2*mr*(nt+mt+1));
   DO_MAX(wsize,6*ns*nt+2*ms*(nt+mt+1));
@@ -238,22 +243,22 @@ void obbox_calc_3(struct obbox_3 *out,
   DO_MAX(wsize,gll_lag_size(nr));
   DO_MAX(wsize,gll_lag_size(ns));
   DO_MAX(wsize,gll_lag_size(nt));
-  data = tmalloc(double, 2*(nr+ns+nt)+lbsize[0]+lbsize[1]+lbsize[2]+wsize);
+  data = tmalloc(double, 2*(nr+ns+nt)+lbsize0+lbsize1+lbsize2+wsize);
 
   {
-    double *const I0[3] = { data, data+2*nr, data+2*(nr+ns) };
+    double *const I0r = data, *const I0s = I0r+2*nr, *const I0t = I0s+2*ns;
     double *const lob_bnd_data_r = data+2*(nr+ns+nt),
-           *const lob_bnd_data_s = data+2*(nr+ns+nt)+lbsize[0],
-           *const lob_bnd_data_t = data+2*(nr+ns+nt)+lbsize[0]+lbsize[1];
-    double *const work = data+2*(nr+ns+nt)+lbsize[0]+lbsize[1]+lbsize[2];
+           *const lob_bnd_data_s = data+2*(nr+ns+nt)+lbsize0,
+           *const lob_bnd_data_t = data+2*(nr+ns+nt)+lbsize0+lbsize1;
+    double *const work = data+2*(nr+ns+nt)+lbsize0+lbsize1+lbsize2;
     
-    #define SETUP_DIR(i,r) do { \
+    #define SETUP_DIR(r) do { \
       lagrange_fun *const lag = gll_lag_setup(work, n##r); \
-      lag(I0[i], work,n##r,1, 0); \
+      lag(I0##r, work,n##r,1, 0); \
       lob_bnd_setup(lob_bnd_data_##r, n##r,m##r); \
     } while(0)
     
-    SETUP_DIR(0,r); SETUP_DIR(1,s); SETUP_DIR(2,t);
+    SETUP_DIR(r); SETUP_DIR(s); SETUP_DIR(t);
     
     #undef SETUP_DIR
     
@@ -263,7 +268,7 @@ void obbox_calc_3(struct obbox_3 *out,
   
       /* double work[2*nrs+3*nr] */
       #define EVAL_AT_0(d,x) \
-        x0[d] = tensor_ig3(J+3*d, I0[0],nr, I0[1],ns, I0[2],nt, x, work)
+        x0[d] = tensor_ig3(J+3*d, I0r,nr, I0s,ns, I0t,nt, x, work)
       EVAL_AT_0(0,x); EVAL_AT_0(1,y); EVAL_AT_0(2,z);                          
       mat_inv_3(Ji, J);
       #undef EVAL_AT_0
@@ -312,20 +317,20 @@ void obbox_calc_3(struct obbox_3 *out,
       out->x[2] = dbl_range_expand(ab[2],tol);
   
       {
-        const double av[3] = {(tb[0].min+tb[0].max)/2,
-                              (tb[1].min+tb[1].max)/2,
-                              (tb[2].min+tb[2].max)/2};
-        out->c0[0] = x0[0] + J[0]*av[0] + J[1]*av[1] + J[2]*av[2];
-        out->c0[1] = x0[1] + J[3]*av[0] + J[4]*av[1] + J[5]*av[2];
-        out->c0[2] = x0[2] + J[6]*av[0] + J[7]*av[1] + J[8]*av[2];
+        const double av0 = (tb[0].min+tb[0].max)/2,
+                     av1 = (tb[1].min+tb[1].max)/2,
+                     av2 = (tb[2].min+tb[2].max)/2;
+        out->c0[0] = x0[0] + J[0]*av0 + J[1]*av1 + J[2]*av2;
+        out->c0[1] = x0[1] + J[3]*av0 + J[4]*av1 + J[5]*av2;
+        out->c0[2] = x0[2] + J[6]*av0 + J[7]*av1 + J[8]*av2;
       }
       {
-        const double di[3] = {2/((1+tol)*(tb[0].max-tb[0].min)),
-                              2/((1+tol)*(tb[1].max-tb[1].min)),
-                              2/((1+tol)*(tb[2].max-tb[2].min))};
-        out->A[0]=di[0]*Ji[0], out->A[1]=di[0]*Ji[1], out->A[2]=di[0]*Ji[2];
-        out->A[3]=di[1]*Ji[3], out->A[4]=di[1]*Ji[4], out->A[5]=di[1]*Ji[5];
-        out->A[6]=di[2]*Ji[6], out->A[7]=di[2]*Ji[7], out->A[8]=di[2]*Ji[8];
+        const double di0 = 2/((1+tol)*(tb[0].max-tb[0].min)),
+                     di1 = 2/((1+tol)*(tb[1].max-tb[1].min)),
+                     di2 = 2/((1+tol)*(tb[2].max-tb[2].min));
+        out->A[0]=di0*Ji[0], out->A[1]=di0*Ji[1], out->A[2]=di0*Ji[2];
+        out->A[3]=di1*Ji[3], out->A[4]=di1*Ji[4], out->A[5]=di1*Ji[5];
+        out->A[6]=di2*Ji[6], out->A[7]=di2*Ji[7], out->A[8]=di2*Ji[8];
       }
 
     }

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"

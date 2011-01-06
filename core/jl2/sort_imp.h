@@ -70,8 +70,9 @@ typedef struct { T v; uint i; } sort_data;
 #define COUNT_DIGIT_32(n,i) COUNT_DIGIT_16(n,i); COUNT_DIGIT_16(n,i+16)
 #define COUNT_DIGIT_64(n,i) COUNT_DIGIT_32(n,i); COUNT_DIGIT_32(n,i+32)
 
-static T radix_count(uint count[DIGITS][DIGIT_VALUES],
-                     const T *A, const T *end, const unsigned stride)
+static T radix_count(
+  uint count[restrict DIGITS][DIGIT_VALUES],
+  const T *restrict A, const T *const end, const unsigned stride)
 {
   T bitorkey = 0;
   memset(count,0,COUNT_SIZE*sizeof(uint));
@@ -97,21 +98,22 @@ static T radix_count(uint count[DIGITS][DIGIT_VALUES],
 #undef COUNT_DIGIT_32
 #undef COUNT_DIGIT_64
 
-static void radix_offsets(uint *c)
+static void radix_offsets(uint *restrict c)
 {
-  uint *ce = c+DIGIT_VALUES;
+  uint *const ce = c+DIGIT_VALUES;
   uint sum = 0;
   do {
-    uint c0=c[0], c1=c[1], c2=c[2], c3=c[3]; 
-    uint o1=sum+c0, o2=o1+c1, o3=o2+c2;
+    const uint c0=c[0], c1=c[1], c2=c[2], c3=c[3]; 
+    const uint o1=sum+c0, o2=o1+c1, o3=o2+c2;
     c[0]=sum, c[1]=o1, c[2]=o2, c[3]=o3;
     sum = o3+c3;
     c+=4;
   } while(c!=ce);
 }
 
-static unsigned radix_zeros(T bitorkey, uint count[DIGITS][DIGIT_VALUES],
-                            unsigned *shift, uint **offsets)
+static unsigned radix_zeros(
+  T bitorkey, uint count[restrict DIGITS][DIGIT_VALUES],
+  unsigned *restrict shift, uint **restrict offsets)
 {
   unsigned digits=0, sh=0; uint *c = &count[0][0];
   do {
@@ -121,19 +123,21 @@ static unsigned radix_zeros(T bitorkey, uint count[DIGITS][DIGIT_VALUES],
   return digits;
 }
 
-static void radix_passv(const T *A, const T *end, const unsigned stride,
-                        const unsigned sh, uint *off, T *const out)
+static void radix_passv(
+  const T *restrict A, const T *const end, const unsigned stride,
+  const unsigned sh, uint *const restrict off, T *const restrict out)
 {
   do out[off[(*A>>sh)&DIGIT_MASK]++] = *A; while(INC_PTR(A,stride),A!=end);
 }
 
-static void radix_sortv(T *out, const T *A, uint n, const unsigned stride,
-                        T *work, uint count[DIGITS][DIGIT_VALUES])
+static void radix_sortv(
+  T *out, const T *A, const uint n, const unsigned stride,
+  T *work, uint count[restrict DIGITS][DIGIT_VALUES])
 {
-  const T *end = &INDEX_PTR(A,stride,n);
+  const T *const end = &INDEX_PTR(A,stride,n);
   T bitorkey = radix_count(count, A,end,stride);
   unsigned shift[DIGITS]; uint *offsets[DIGITS];
-  unsigned digits = radix_zeros(bitorkey,count,shift,offsets);
+  const unsigned digits = radix_zeros(bitorkey,count,shift,offsets);
   if(digits==0) {
     memset(out,0,n*sizeof(T));
   } else {
@@ -150,9 +154,10 @@ static void radix_sortv(T *out, const T *A, uint n, const unsigned stride,
   }
 }
 
-static void radix_passp0_b(const T *A, uint n, const unsigned stride,
-                           const unsigned sh, uint *const off,
-                           sort_data *const out)
+static void radix_passp0_b(
+  const T *restrict A, const uint n, const unsigned stride,
+  const unsigned sh, uint *const restrict off,
+  sort_data *const restrict out)
 {
   uint i=0;
   do {
@@ -162,12 +167,13 @@ static void radix_passp0_b(const T *A, uint n, const unsigned stride,
   } while(INC_PTR(A,stride),i!=n);
 }
 
-static void radix_passp_b(const uint *p,
-                          const T *A, uint n, const unsigned stride,
-                          const unsigned sh, uint *const off,
-                          sort_data *const out)
+static void radix_passp_b(
+  const uint *restrict p,
+  const T *const restrict A, const uint n, const unsigned stride,
+  const unsigned sh, uint *const restrict off,
+  sort_data *const out)
 {
-  const uint *pe = p+n;
+  const uint *const pe = p+n;
   do {
     uint j = *p++;
     T v = INDEX_PTR(A,stride,j);
@@ -176,9 +182,10 @@ static void radix_passp_b(const uint *p,
   } while(p!=pe);
 }
 
-static void radix_passp_m(const sort_data *src, const sort_data *end,
-                          const unsigned sh, uint *const off,
-                          sort_data *const out)
+static void radix_passp_m(
+  const sort_data *restrict src, const sort_data *const end,
+  const unsigned sh, uint *const restrict off,
+  sort_data *const restrict out)
 {
   do {
     sort_data *d = &out[off[(src->v>>sh)&DIGIT_MASK]++];
@@ -186,27 +193,30 @@ static void radix_passp_m(const sort_data *src, const sort_data *end,
   } while(++src!=end);
 }
 
-static void radix_passp_e(const sort_data *src, const sort_data *end,
-                          const unsigned sh, uint *const off,
-                          uint *const out)
+static void radix_passp_e(
+  const sort_data *restrict src, const sort_data *const end,
+  const unsigned sh, uint *const restrict off,
+  uint *const restrict out)
 {
   do out[off[(src->v>>sh)&DIGIT_MASK]++]=src->i; while(++src!=end);
 }
 
-static void radix_passp0_be(uint *const out,
-                            const T *A, uint n, const unsigned stride,
-                            const unsigned sh, uint *const off)
+static void radix_passp0_be(
+  uint *const restrict out,
+  const T *restrict A, const uint n, const unsigned stride,
+  const unsigned sh, uint *const restrict off)
 {
   uint i=0;
   do out[off[(*A>>sh)&DIGIT_MASK]++]=i++; while(INC_PTR(A,stride),i!=n);
 }
 
-static void radix_passp_be(uint *p,
-                           const T *A, uint n, const unsigned stride,
-                           const unsigned sh, uint *const off,
-                           sort_data *work)
+static void radix_passp_be(
+  uint *restrict p,
+  const T *restrict A, const uint n, const unsigned stride,
+  const unsigned sh, uint *const restrict off,
+  sort_data *restrict work)
 {
-  uint *q = p, *qe = p+n;
+  uint *q = p, *const qe = p+n;
   uint *w = &work[0].i;
   do {
     uint j = *q++;
@@ -216,9 +226,11 @@ static void radix_passp_be(uint *p,
   memcpy(p,w,n*sizeof(uint));
 }
 
-static void radix_sortp(uint *idx, uint perm_start,
-                        const T *A, uint n, const unsigned stride,
-                        sort_data *work, uint count[DIGITS][DIGIT_VALUES])
+static void radix_sortp(
+  uint *restrict idx, uint perm_start,
+  const T *restrict A, const uint n, const unsigned stride,
+  sort_data *restrict work,
+  uint count[restrict DIGITS][DIGIT_VALUES])
 {
   T bitorkey = radix_count(count, A,&INDEX_PTR(A,stride,n),stride);
   unsigned shift[DIGITS]; uint *offsets[DIGITS];
@@ -268,7 +280,7 @@ static void radix_sortp(uint *idx, uint perm_start,
   do {                                                                 \
     uint i=0, n=An, base=-n, odd=0, c=0, b=1;                          \
     for(;;) {                                                          \
-      DATA *p;                                                         \
+      DATA *restrict p;                                                \
       if((c&1)==0) {                                                   \
         base+=n, n+=(odd&1), c|=1, b^=1;                               \
         while(n>3) odd<<=1,odd|=(n&1),n>>=1,c<<=1,b^=1;                \
@@ -286,8 +298,8 @@ static void radix_sortp(uint *idx, uint perm_start,
         i+=3;                                                          \
       } else {                                                         \
         const uint na = n>>1, nb = (n+1)>>1;                           \
-        const DATA *ap = buf[b^1]+base, *ae = ap+na;                   \
-        DATA *bp = p+na, *be = bp+nb;                                  \
+        const DATA *restrict ap = buf[b^1]+base, *const ae = ap+na;    \
+        DATA *restrict bp = p+na, *const be = bp+nb;                   \
         for(;;) {                                                      \
           if(VAL((*bp))<VAL((*ap))) {                                  \
             *p++=*bp++;                                                \
@@ -303,10 +315,12 @@ static void radix_sortp(uint *idx, uint perm_start,
     }                                                                  \
   } while(0)
 
-static void merge_sortv(T *out, const T *A, uint An, const unsigned stride,
-                        T *work)
+static void merge_sortv(
+  T *restrict out,
+  const T *restrict A, const uint An, const unsigned stride,
+  T *restrict work)
 {
-  T *buf[2]={out,work};
+  T *buf[2]; buf[0]=out, buf[1]=work;
 #define DATA T
 #define VAL(x) x
 #define SETVAL(x,ai) x=*A,INC_PTR(A,stride)
@@ -316,7 +330,8 @@ static void merge_sortv(T *out, const T *A, uint An, const unsigned stride,
 #undef DATA
 }
 
-static void merge_copy_perm(uint *idx, const sort_data *p, uint n)
+static void merge_copy_perm(
+  uint *restrict idx, const sort_data *restrict p, uint n)
 {
   /*const sort_data *pe = p+n;
   do *idx++ = (p++)->i; while(p!=pe);*/
@@ -334,10 +349,12 @@ static void merge_copy_perm(uint *idx, const sort_data *p, uint n)
   }
 }
 
-static void merge_sortp0(uint *idx, const T *A, uint An, const unsigned stride,
-                         sort_data *work)
+static void merge_sortp0(
+  uint *restrict idx,
+  const T *restrict A, const uint An, const unsigned stride,
+  sort_data *restrict work)
 {
-  sort_data *buf[2]={work+An,work};
+  sort_data *buf[2]; buf[0]=work+An,buf[1]=work;
 #define DATA sort_data
 #define VAL(x) x.v
 #define SETVAL(x,ai) x.v=*A,INC_PTR(A,stride),x.i=ai
@@ -348,10 +365,12 @@ static void merge_sortp0(uint *idx, const T *A, uint An, const unsigned stride,
   merge_copy_perm(idx,buf[0],An);
 }
 
-static void merge_sortp(uint *idx, const T *A, uint An, const unsigned stride,
-                        sort_data *work)
+static void merge_sortp(
+  uint *restrict idx,
+  const T *const restrict A, const uint An, const unsigned stride,
+  sort_data *restrict work)
 {
-  sort_data *buf[2]={work+An,work};
+  sort_data *buf[2]; buf[0]=work+An,buf[1]=work;
 #define DATA sort_data
 #define VAL(x) x.v
 #define SETVAL(x,ai) x.i=idx[ai],x.v=INDEX_PTR(A,stride,x.i)
@@ -373,7 +392,7 @@ static void merge_sortp(uint *idx, const T *A, uint An, const unsigned stride,
   in-place, stability unobservable; O(n log n) time
 
   ----------------------------------------------------------------------------*/
-static void heap_sortv(T *A, uint n)
+static void heap_sortv(T *const restrict A, unsigned n)
 {
   unsigned i;
   /* build heap */
@@ -424,7 +443,7 @@ static void heap_sortv(T *A, uint n)
 
   ----------------------------------------------------------------------------*/
 
-void sortv(T *out, const T *A, uint n, unsigned stride, buffer *buf)
+void sortv(T *out, const T *A, uint n, unsigned stride, buffer *restrict buf)
 {
   if(n<DIGIT_VALUES) {
     if(n<2) {
@@ -445,9 +464,9 @@ void sortv(T *out, const T *A, uint n, unsigned stride, buffer *buf)
     buffer_reserve(buf,n*sizeof(T));
     radix_sortv(out, A,n,stride, (T*)buf->ptr,count);
   } else {
-    T *work;
-    uint (*count)[DIGIT_VALUES];
-    size_t count_off=align_as(uint,n*sizeof(T));
+    T *restrict work;
+    uint (*restrict count)[DIGIT_VALUES];
+    const size_t count_off=align_as(uint,n*sizeof(T));
     buffer_reserve(buf,count_off+sizeof(uint[DIGITS][DIGIT_VALUES]));
     work = buf->ptr;
     count = (uint(*)[DIGIT_VALUES])((char*)buf->ptr+count_off);
@@ -455,10 +474,11 @@ void sortv(T *out, const T *A, uint n, unsigned stride, buffer *buf)
   }
 }
 
-uint *sortp(buffer *buf, int start_perm, const T *A, uint n, unsigned stride)
+uint *sortp(buffer *restrict buf, int start_perm,
+            const T *restrict A, uint n, unsigned stride)
 {
-  uint *perm;
-  sort_data *work;
+  uint *restrict perm;
+  sort_data *restrict work;
   size_t work_off=align_as(sort_data,n*sizeof(uint));
   if(n<DIGIT_VALUES) {
     buffer_reserve(buf,work_off+2*n*sizeof(sort_data));
@@ -477,8 +497,8 @@ uint *sortp(buffer *buf, int start_perm, const T *A, uint n, unsigned stride)
     work = (sort_data*)((char*)buf->ptr+work_off);
     radix_sortp(perm,start_perm, A,n,stride, work,count);
   } else {
-    uint (*count)[DIGIT_VALUES];
-    size_t count_off=align_as(uint,work_off+2*n*sizeof(sort_data));
+    uint (*restrict count)[DIGIT_VALUES];
+    const size_t count_off=align_as(uint,work_off+2*n*sizeof(sort_data));
     buffer_reserve(buf,count_off+sizeof(uint[DIGITS][DIGIT_VALUES]));
     perm = buf->ptr;
     work = (sort_data*)((char*)buf->ptr+work_off);

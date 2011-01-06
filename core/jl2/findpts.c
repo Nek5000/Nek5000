@@ -3,6 +3,7 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include "c99.h"
 #include "name.h"
 #include "types.h"
 #include "fail.h"
@@ -217,9 +218,12 @@ void ffindpts_setup(sint *const handle,
   h = &handle_array[handle_n];
   h->ndim = *ndim;
   if(h->ndim==2) {
-    const double *const elx[2] = {xm,ym};
-    const uint n[2] = {*nr,*ns}, m[2]={*mr,*ms};
     struct findpts_data_2 *const fd = tmalloc(struct findpts_data_2,1);
+    const double *elx[2];
+    uint n[2], m[2];
+    elx[0]=xm,elx[1]=ym;
+    n[0]=*nr,n[1]=*ns;
+    m[0]=*mr,m[1]=*ms;
     h->data = fd;
     comm_init_check(&fd->cr.comm, *comm, *np);
     buffer_init(&fd->cr.data,1000);
@@ -228,9 +232,12 @@ void ffindpts_setup(sint *const handle,
     setup_aux_2(fd, elx,n,*nel,m,*bbox_tol,
                 *loc_hash_size,*gbl_hash_size, *npt_max, *newt_tol);
   } else if(h->ndim==3) {
-    const double *const elx[3] = {xm,ym,zm};
-    const uint n[3] = {*nr,*ns,*nt}, m[3]={*mr,*ms,*mt};
     struct findpts_data_3 *const fd = tmalloc(struct findpts_data_3,1);
+    const double *elx[3];
+    uint n[3], m[3];
+    elx[0]=xm,elx[1]=ym,elx[2]=zm;
+    n[0]=*nr,n[1]=*ns,n[2]=*nt;
+    m[0]=*mr,m[1]=*ms,m[2]=*mt;
     h->data = fd;
     comm_init_check(&fd->cr.comm, *comm, *np);
     buffer_init(&fd->cr.data,1000);
@@ -271,9 +278,11 @@ void ffindpts(const sint *const handle,
 {
   CHECK_HANDLE("findpts");
   if(h->ndim==2) {
-    const double *const xv_base[2] = {x_base,y_base};
-    const unsigned xv_stride[2] = {*x_stride*sizeof(double),
-                                   *y_stride*sizeof(double)};
+    const double *xv_base[2];
+    unsigned xv_stride[2];
+    xv_base[0]=x_base, xv_base[1]=y_base;
+    xv_stride[0] = *x_stride*sizeof(double),
+    xv_stride[1] = *y_stride*sizeof(double);
     PREFIXED_NAME(findpts_2)(
       (uint*)code_base,(* code_stride)*sizeof(sint  ),
       (uint*)proc_base,(* proc_stride)*sizeof(sint  ),
@@ -283,10 +292,12 @@ void ffindpts(const sint *const handle,
                xv_base,     xv_stride,
       *npt, h->data);
   } else {
-    const double *const xv_base[3] = {x_base,y_base,z_base};
-    const unsigned xv_stride[3] = {*x_stride*sizeof(double),
-                                   *y_stride*sizeof(double),
-                                   *z_stride*sizeof(double)};
+    const double *xv_base[3];
+    unsigned xv_stride[3];
+    xv_base[0]=x_base, xv_base[1]=y_base, xv_base[2]=z_base;
+    xv_stride[0] = *x_stride*sizeof(double),
+    xv_stride[1] = *y_stride*sizeof(double),
+    xv_stride[2] = *z_stride*sizeof(double);
     PREFIXED_NAME(findpts_3)(
       (uint*)code_base,(* code_stride)*sizeof(sint  ),
       (uint*)proc_base,(* proc_stride)*sizeof(sint  ),

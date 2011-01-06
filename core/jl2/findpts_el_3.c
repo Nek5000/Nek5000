@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -536,10 +537,10 @@ static void newton_vol(struct findpts_el_pt_3 *const out,
 {
   const double tr = p->tr;
   double bnd[6] = { -1,1, -1,1, -1,1 };
-  const double r0[3] = {p->r[0],p->r[1],p->r[2]};
+  double r0[3];
   double dr[3], fac;
   unsigned d, mask, flags;
-
+  r0[0]=p->r[0],r0[1]=p->r[1],r0[2]=p->r[2];
 #ifdef DIAGNOSTICS_1
   printf("newton_vol:\n");
   printf("  resid = (%g,%g,%g); r^T r / 2 = %g\n",resid[0],resid[1],resid[2],
@@ -588,24 +589,25 @@ static void newton_vol(struct findpts_el_pt_3 *const out,
   newton_vol_face: {
     const unsigned fi = face_index(flags);
     const unsigned dn = fi>>1, d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
-    const double res[3]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
-                          resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
-                          resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]) };
-    /* y = J_u^T res */
-    const double y[2] = { jac[d1]*res[0]+jac[3+d1]*res[1]+jac[6+d1]*res[2],
-                          jac[d2]*res[0]+jac[3+d2]*res[1]+jac[6+d2]*res[2] };
-    /* JtJ = J_u^T J_u */
-    const double JtJ[3] = { jac[  d1]*jac[  d1]
-                           +jac[3+d1]*jac[3+d1]
-                           +jac[6+d1]*jac[6+d1],
-                            jac[  d1]*jac[  d2]
-                           +jac[3+d1]*jac[3+d2]
-                           +jac[6+d1]*jac[6+d2],
-                            jac[  d2]*jac[  d2]
-                           +jac[3+d2]*jac[3+d2]
-                           +jac[6+d2]*jac[6+d2] };
     double drc[2], fac=1;
     unsigned new_flags=0;
+    double res[3], y[2], JtJ[3];
+    res[0] = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
+    res[1] = resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
+    res[2] = resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]);
+    /* y = J_u^T res */
+    y[0] = jac[d1]*res[0]+jac[3+d1]*res[1]+jac[6+d1]*res[2],
+    y[1] = jac[d2]*res[0]+jac[3+d2]*res[1]+jac[6+d2]*res[2];
+    /* JtJ = J_u^T J_u */
+    JtJ[0] = jac[  d1]*jac[  d1]
+            +jac[3+d1]*jac[3+d1]
+            +jac[6+d1]*jac[6+d1],
+    JtJ[1] = jac[  d1]*jac[  d2]
+            +jac[3+d1]*jac[3+d2]
+            +jac[6+d1]*jac[6+d2],
+    JtJ[2] = jac[  d2]*jac[  d2]
+            +jac[3+d2]*jac[3+d2]
+            +jac[6+d2]*jac[6+d2];
     lin_solve_sym_2(drc, JtJ,y);
 #ifdef DIAGNOSTICS_1
     printf("  face %u, dn=%u, (d1,d2)=(%u,%u)\n",fi,dn,d1,d2);
@@ -640,18 +642,19 @@ static void newton_vol(struct findpts_el_pt_3 *const out,
   newton_vol_edge: {
     const unsigned ei = edge_index(flags);
     const unsigned de = ei>>2;
-    const double res[3]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
-                          resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
-                          resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]) };
-    /* y = J_u^T res */
-    const double y = jac[de]*res[0]+jac[3+de]*res[1]+jac[6+de]*res[2];
-    /* JtJ = J_u^T J_u */
-    const double JtJ = jac[  de]*jac[  de]
-                      +jac[3+de]*jac[3+de]
-                      +jac[6+de]*jac[6+de];
-    const double drc = y/JtJ;
     double fac = 1;
     unsigned new_flags = 0;
+    double res[3],y,JtJ,drc;
+    res[0] = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
+    res[1] = resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
+    res[2] = resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]);
+    /* y = J_u^T res */
+    y = jac[de]*res[0]+jac[3+de]*res[1]+jac[6+de]*res[2];
+    /* JtJ = J_u^T J_u */
+    JtJ = jac[  de]*jac[  de]
+         +jac[3+de]*jac[3+de]
+         +jac[6+de]*jac[6+de];
+    drc = y/JtJ;
 #ifdef DIAGNOSTICS_1
     printf("  edge %u, de=%u\n",ei,de);
     printf("    r=(%.17g,%.17g,%.17g)\n", r0[0]+dr[0],r0[1]+dr[1],r0[2]+dr[2]);
@@ -671,15 +674,16 @@ static void newton_vol(struct findpts_el_pt_3 *const out,
 
   /* check and possibly relax constraints */
   newton_vol_relax: {
-    /* res := res_0 - J dr */
-    const double res[3]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
-                          resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
-                          resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]) };
-    /* y := J^T res */
-    const double y[3] = { jac[0]*res[0]+jac[3]*res[1]+jac[6]*res[2],
-                          jac[1]*res[0]+jac[4]*res[1]+jac[7]*res[2],
-                          jac[2]*res[0]+jac[5]*res[1]+jac[8]*res[2] };
     const unsigned old_flags = flags;
+    double res[3], y[3];
+    /* res := res_0 - J dr */
+    res[0] = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
+    res[1] = resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
+    res[2] = resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]);
+    /* y := J^T res */
+    y[0] = jac[0]*res[0]+jac[3]*res[1]+jac[6]*res[2],
+    y[1] = jac[1]*res[0]+jac[4]*res[1]+jac[7]*res[2],
+    y[2] = jac[2]*res[0]+jac[5]*res[1]+jac[8]*res[2];
     #define SETDR(d) do { \
       unsigned f = flags>>(2*d) & 3u; \
       if(f) dr[d] = bnd[2*d+(f-1)] - r0[d]; \
@@ -723,11 +727,11 @@ newton_vol_fin:
   flags &= mask;
   if(fabs(dr[0])+fabs(dr[1])+fabs(dr[2]) < tol) flags |= CONVERGED_FLAG;
   {
-    const double res[3]={ resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
-                          resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
-                          resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]) };
+    const double res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]+jac[2]*dr[2]),
+                 res1 = resid[1]-(jac[3]*dr[0]+jac[4]*dr[1]+jac[5]*dr[2]),
+                 res2 = resid[2]-(jac[6]*dr[0]+jac[7]*dr[1]+jac[8]*dr[2]);
     out->dist2p=resid[0]*resid[0]+resid[1]*resid[1]+resid[2]*resid[2]
-                -(res[0]*res[0]+res[1]*res[1]+res[2]*res[2]);
+                -(res0*res0+res1*res1+res2*res2);
   }
   #define SETR(d) do { \
     unsigned f = flags>>(2*d) & 3u; \
@@ -747,27 +751,28 @@ static void newton_face(struct findpts_el_pt_3 *const out,
 {
   const double tr = p->tr;
   double bnd[4];
-  /* A = J^T J - resid_d H_d */
-  const double A[3] = { jac[  d1]*jac[  d1]
-                       +jac[3+d1]*jac[3+d1]
-                       +jac[6+d1]*jac[6+d1] - rhes[0],
-                        jac[  d1]*jac[  d2]
-                       +jac[3+d1]*jac[3+d2]
-                       +jac[6+d1]*jac[6+d2] - rhes[1],
-                        jac[  d2]*jac[  d2]
-                       +jac[3+d2]*jac[3+d2]
-                       +jac[6+d2]*jac[6+d2] - rhes[2] };
-  /* y = J^T r */
-  const double y[2] = { jac[  d1]*resid[0]
-                       +jac[3+d1]*resid[1]
-                       +jac[6+d1]*resid[2],
-                        jac[  d2]*resid[0]
-                       +jac[3+d2]*resid[1]
-                       +jac[6+d2]*resid[2] };
-  const double r0[2] = {p->r[d1], p->r[d2]};
   double r[2], dr[2];
   unsigned mask, new_flags;
   double v, tv; unsigned i;
+  double A[3], y[2], r0[2];
+  /* A = J^T J - resid_d H_d */
+  A[0] = jac[  d1]*jac[  d1]
+        +jac[3+d1]*jac[3+d1]
+        +jac[6+d1]*jac[6+d1] - rhes[0],
+  A[1] = jac[  d1]*jac[  d2]
+        +jac[3+d1]*jac[3+d2]
+        +jac[6+d1]*jac[6+d2] - rhes[1],
+  A[2] = jac[  d2]*jac[  d2]
+        +jac[3+d2]*jac[3+d2]
+        +jac[6+d2]*jac[6+d2] - rhes[2];
+  /* y = J^T r */
+  y[0] = jac[  d1]*resid[0]
+        +jac[3+d1]*resid[1]
+        +jac[6+d1]*resid[2],
+  y[1] = jac[  d2]*resid[0]
+        +jac[3+d2]*resid[1]
+        +jac[6+d2]*resid[2];
+  r0[0] = p->r[d1], r0[1] = p->r[d2];
 
 #ifdef DIAGNOSTICS_1
   printf("newton_face, dn=%u, (d1,d2)=%u,%u:\n", dn,d1,d2);
@@ -1071,12 +1076,12 @@ static void findpt_edge(
     if(reject_prior_step_q(out+i,resid,p+i,tol)) continue;
     /* check constraint */
     {
-      const double steep[3] = {
-        jac[0]*resid[0] + jac[3]*resid[1] + jac[6]*resid[2],
-        jac[1]*resid[0] + jac[4]*resid[1] + jac[7]*resid[2],
-        jac[2]*resid[0] + jac[5]*resid[1] + jac[8]*resid[2] };
-      const double sr1 = steep[dn1]*p[i].r[dn1],
-                   sr2 = steep[dn2]*p[i].r[dn2];
+      double steep[3], sr1, sr2;
+      steep[0] = jac[0]*resid[0] + jac[3]*resid[1] + jac[6]*resid[2],
+      steep[1] = jac[1]*resid[0] + jac[4]*resid[1] + jac[7]*resid[2],
+      steep[2] = jac[2]*resid[0] + jac[5]*resid[1] + jac[8]*resid[2];
+      sr1 = steep[dn1]*p[i].r[dn1],
+      sr2 = steep[dn2]*p[i].r[dn2];
 #ifdef DIAGNOSTICS_1
     printf("jacobian = %g\t%g\t%g\n"
            "           %g\t%g\t%g\n"
@@ -1093,12 +1098,12 @@ static void findpt_edge(
         if(sr2<0)
           newton_vol(out+i, jac,resid, p+i, tol);
         else {
-          const double rh[3] = { hes[0], hes[1], hes[3] };
+          double rh[3]; rh[0]=hes[0], rh[1]=hes[1], rh[2]=hes[3];
           newton_face(out+i, jac,rh,resid, de,dn1,dn2,
                       pflag & (3u<<(dn2*2)), p+i, tol);
         }
       } else if(sr2<0) {
-          const double rh[3] = { hes[4], hes[2], hes[0] };
+          double rh[3]; rh[0]=hes[4], rh[1]=hes[2], rh[2]=hes[0];
           newton_face(out+i, jac,rh,resid, dn2,de,dn1,
                       pflag & (3u<<(dn1*2)), p+i, tol);
       } else
@@ -1125,17 +1130,17 @@ static void findpt_pt(
 #endif
 
   for(i=0;i<pn;++i) {
-    const double resid[3] = { p[i].x[0]-x[0],
-                              p[i].x[1]-x[1],
-                              p[i].x[2]-x[2] };
-    const double steep[3] = {
-      jac[0]*resid[0] + jac[3]*resid[1] + jac[6]*resid[2],
-      jac[1]*resid[0] + jac[4]*resid[1] + jac[7]*resid[2],
-      jac[2]*resid[0] + jac[5]*resid[1] + jac[8]*resid[2] };
-    const double sr[3] = { steep[0]*p[i].r[0],
-                           steep[1]*p[i].r[1], 
-                           steep[2]*p[i].r[2] };
     unsigned d1,d2,dn, de,dn1,dn2, hi0,hi1,hi2;
+    double resid[3], steep[3], sr[3];
+    resid[0] = p[i].x[0]-x[0],
+    resid[1] = p[i].x[1]-x[1],
+    resid[2] = p[i].x[2]-x[2];
+    steep[0] = jac[0]*resid[0] + jac[3]*resid[1] + jac[6]*resid[2],
+    steep[1] = jac[1]*resid[0] + jac[4]*resid[1] + jac[7]*resid[2],
+    steep[2] = jac[2]*resid[0] + jac[5]*resid[1] + jac[8]*resid[2];
+    sr[0] = steep[0]*p[i].r[0],
+    sr[1] = steep[1]*p[i].r[1], 
+    sr[2] = steep[2]*p[i].r[2];
     /* check prior step */
     if(reject_prior_step_q(out+i,resid,p+i,tol)) continue;
     /* check constraints */
@@ -1160,10 +1165,10 @@ static void findpt_pt(
       newton_vol(out+i, jac,resid, p+i, tol);
       continue;
     findpt_pt_face: {
-      const double rh[3] = {
-        resid[0]*hes[hi0]+resid[1]*hes[6+hi0]+resid[2]*hes[12+hi0],
-        resid[0]*hes[hi1]+resid[1]*hes[6+hi1]+resid[2]*hes[12+hi1],
-        resid[0]*hes[hi2]+resid[1]*hes[6+hi2]+resid[2]*hes[12+hi2] };
+      double rh[3];
+      rh[0] = resid[0]*hes[hi0]+resid[1]*hes[6+hi0]+resid[2]*hes[12+hi0],
+      rh[1] = resid[0]*hes[hi1]+resid[1]*hes[6+hi1]+resid[2]*hes[12+hi1],
+      rh[2] = resid[0]*hes[hi2]+resid[1]*hes[6+hi2]+resid[2]*hes[12+hi2];
       newton_face(out+i, jac,rh,resid, d1,d2,dn,
                   pflag&(3u<<(2*dn)), p+i, tol);
     } continue;
@@ -1211,9 +1216,10 @@ void findpts_el_3(struct findpts_el_data_3 *const fd, const unsigned npt,
   struct findpts_el_pt_3 *const pbuf = fd->p, *const pstart = fd->p + npt;
   unsigned nconv = npt;
   unsigned step = 0;
-  unsigned count[27] = { npt,0,0, 0,0,0, 0,0,0,
-                           0,0,0, 0,0,0, 0,0,0,
-                           0,0,0, 0,0,0, 0,0,0 } ;
+  unsigned count[27] = { 0,0,0, 0,0,0, 0,0,0,
+                         0,0,0, 0,0,0, 0,0,0,
+                         0,0,0, 0,0,0, 0,0,0 } ;
+  count[0] = npt;
   seed(fd,pbuf,npt);
   { unsigned i;
     for(i=0;i<npt;++i) {

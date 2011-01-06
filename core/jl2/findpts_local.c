@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
+#include "c99.h"
 #include "types.h"
 #include "name.h"
 #include "fail.h"
@@ -18,8 +19,9 @@ struct index_el { uint index, el; };
 
 static struct dbl_range dbl_range_merge(struct dbl_range a, struct dbl_range b)
 {
-  struct dbl_range m = { b.min<a.min?b.min:a.min,
-                         a.max>b.max?a.max:b.max };
+  struct dbl_range m;
+  m.min = b.min<a.min?b.min:a.min,
+  m.max = a.max>b.max?a.max:b.max;
   return m;
 }
 
