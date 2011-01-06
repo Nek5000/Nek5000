@@ -382,7 +382,7 @@ c              read(string,*) IFSPLIT
 
       if (ifmvbd) then
          if (lx1.ne.lx1m.or.ly1.ne.ly1m.or.lz1.ne.lz1m) 
-     $      call exitti('Need lx1m=lx1 etc. in SIZEu. $',lx1m)
+     $      call exitti('Need lx1m=lx1 etc. in SIZE . $',lx1m)
       endif
 
       ifldmhd = npscal + 3
@@ -434,10 +434,20 @@ C
    13       format('ERROR: lx1,ly1,lz1:',3i5,' must be equal for 3D')
             call exitt
          endif
+         if (ly2.ne.lx2.or.lz2.ne.lx2) then
+            if (nid.eq.0) write(6,14) lx2,ly2,lz2
+   14       format('ERROR: lx2,ly2,lz2:',3i5,' must be equal for 3D')
+            call exitt
+         endif
       else
          if (ly1.ne.lx1.or.lz1.ne.1) then
             if (nid.eq.0) write(6,12) lx1,ly1,lz1
    12       format('ERROR: ',3i5,' must have lx1=ly1; lz1=1, for 2D')
+            call exitt
+         endif
+         if (ly2.ne.lx2.or.lz2.ne.1) then
+            if (nid.eq.0) write(6,11) lx2,ly2,lz2
+   11       format('ERROR: ',3i5,' must have lx2=ly2; lz2=1, for 2D')
             call exitt
          endif
       endif
@@ -480,22 +490,28 @@ C
          call exitt
       endif
 
+      if (ifsplit .and. ifmhd) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: MHD in Pn-Pn is not supported'
+         call exitt
+      endif
+
       if (ifmhd .and. lbx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZEu'
+     $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZE '
          call exitt
       endif
 
       if (ifpert .and. lpx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZEu'
+     $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZE '
       endif
 
       if (if3d) ifaxis = .false.
 
       if (iflomach .and. .not.ifsplit) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: For lowMach, need lx2=lx1, etc.; Change SIZEu'
+     $   'ABORT: For lowMach, need lx2=lx1, etc.; Change SIZE '
          call exitt
       endif
 
@@ -532,7 +548,7 @@ c     set dealiasing handling
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then
          if(nid.eq.0) write(6,*)
-     &   'ABORT: Dealiasing space too small; Check lxd,lyd,lzd in SIZEu'
+     &   'ABORT: Dealiasing space too small; Check lxd,lyd,lzd in SIZE '
          call exitt
       endif
 
@@ -2428,7 +2444,7 @@ c-----------------------------------------------------------------------
      $         ,/,2X,'   number of elements/proc  (lelt):',i9
      $         ,/,2X,'   total number of elements (lelg):',i9
      $         ,/,2X
-     $         ,/,2X,'Recompile with the following SIZEu parameters:'
+     $         ,/,2X,'Recompile with the following SIZE  parameters:'
      $         ,/,2X,'   lelt >= ',i9,'  for np = ',i6
      $         ,/,2X,'   lelg >= ',i9,/)
 c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
