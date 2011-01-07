@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
-
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -72,6 +72,11 @@ void fcrystal_setup(sint *handle, const MPI_Fint *comm, const sint *np)
   *handle = handle_n++;
 }
 
+#define CHECK_HANDLE(func) do \
+  if(*handle<0 || *handle>=handle_n || !handle_array[*handle]) \
+    fail(1,__FILE__,__LINE__,func ": invalid handle"); \
+while(0)
+
 void fcrystal_ituple_sort(const sint *handle,
                           sint A[], const sint *m, const sint *n,
                           const sint keys[], const sint *nkey)
@@ -79,8 +84,7 @@ void fcrystal_ituple_sort(const sint *handle,
   const size_t size = (*m)*sizeof(sint);
   sint nk = *nkey;
   buffer *buf;
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crystal_ituple_sort");
+  CHECK_HANDLE("crystal_ituple_sort");
   buf = &handle_array[*handle]->data;
   if(--nk>=0) {
     sortp(buf,0, (uint*)&A[keys[nk]-1],*n,size);
@@ -95,8 +99,7 @@ void fcrystal_ituple_transfer(const sint *handle,
                               const sint *nmax, const sint *proc_key)
 {
   array ar;
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crystal_ituple_transfer");
+  CHECK_HANDLE("crystal_ituple_transfer");
   ar.ptr=A, ar.n=*n, ar.max=*nmax;
   sarray_transfer_(&ar,(*m)*sizeof(sint),(*proc_key-1)*sizeof(sint),
                    1,handle_array[*handle]);
@@ -105,8 +108,7 @@ void fcrystal_ituple_transfer(const sint *handle,
 
 void fcrystal_free(sint *handle)
 {
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crystal_free");
+  CHECK_HANDLE("crystal_free");
   ccrystal_free(handle_array[*handle]);
   free(handle_array[*handle]);
   handle_array[*handle] = 0;

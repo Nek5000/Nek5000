@@ -1,6 +1,7 @@
 #include <string.h>
 #include <limits.h>
 #include <float.h>
+#include "c99.h"
 #include "name.h"
 #include "types.h"
 
@@ -27,7 +28,8 @@ GS_DEFINE_DOM_SIZES()
   The array gather kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_GATHER(T,OP) \
-static void gather_array_##T##_##OP(T *out, const T *in, uint n) \
+static void gather_array_##T##_##OP( \
+  T *restrict out, const T *restrict in, uint n) \
 {                                                                \
   for(;n;--n) { T q = *in++, *p = out++; GS_DO_##OP(*p,q); }      \
 }
@@ -36,10 +38,10 @@ static void gather_array_##T##_##OP(T *out, const T *in, uint n) \
   The array initialization kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
-static void init_array_##T(T *out, uint n, gs_op op) \
-{                                                    \
-  const T e = gs_identity_##T[op];                   \
-  for(;n;--n) *out++=e;                              \
+static void init_array_##T(T *restrict out, uint n, gs_op op) \
+{                                                             \
+  const T e = gs_identity_##T[op];                            \
+  for(;n;--n) *out++=e;                                       \
 }
 
 #define DEFINE_PROCS(T) \
@@ -56,8 +58,9 @@ GS_FOR_EACH_DOMAIN(DEFINE_PROCS)
   The basic gather kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_GATHER(T,OP) \
-static void gather_##T##_##OP(T *out, const T *in, const unsigned in_stride, \
-                              const uint *map)                               \
+static void gather_##T##_##OP( \
+  T *restrict out, const T *restrict in, const unsigned in_stride,           \
+  const uint *restrict map)                                                  \
 {                                                                            \
   uint i,j;                                                                  \
   while((i=*map++)!=-(uint)1) {                                              \
@@ -71,9 +74,10 @@ static void gather_##T##_##OP(T *out, const T *in, const unsigned in_stride, \
   The basic scatter kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_SCATTER(T) \
-static void scatter_##T(T *out, const unsigned out_stride,         \
-                        const T *in, const unsigned in_stride,     \
-                        const uint *map)                           \
+static void scatter_##T( \
+  T *restrict out, const unsigned out_stride,                      \
+  const T *restrict in, const unsigned in_stride,                  \
+  const uint *restrict map)                                        \
 {                                                                  \
   uint i,j;                                                        \
   while((i=*map++)!=-(uint)1) {                                    \
@@ -86,7 +90,7 @@ static void scatter_##T(T *out, const unsigned out_stride,         \
   The basic initialization kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
-static void init_##T(T *out, const uint *map, gs_op op) \
+static void init_##T(T *restrict out, const uint *restrict map, gs_op op) \
 {                                                       \
   uint i; const T e = gs_identity_##T[op];              \
   while((i=*map++)!=-(uint)1) out[i]=e;                 \
@@ -108,24 +112,26 @@ GS_FOR_EACH_DOMAIN(DEFINE_PROCS)
   The vector gather kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_GATHER(T,OP) \
-static void gather_vec_##T##_##OP(T *out, const T *in, const unsigned vn, \
-                                  const uint *map)                        \
-{                                                                         \
-  uint i,j;                                                               \
-  while((i=*map++)!=-(uint)1) {                                           \
-    T *p = &out[i*vn], *pe = p+vn;                                        \
-    j=*map++; do {                                                        \
-      const T *q = &in[j*vn];                                             \
-      T *pk=p; do { GS_DO_##OP(*pk,*q); ++pk, ++q; } while(pk!=pe);       \
-    } while((j=*map++)!=-(uint)1);                                        \
-  }                                                                       \
+static void gather_vec_##T##_##OP( \
+  T *restrict out, const T *restrict in, const unsigned vn,                  \
+  const uint *restrict map)                                                  \
+{                                                                            \
+  uint i,j;                                                                  \
+  while((i=*map++)!=-(uint)1) {                                              \
+    T *restrict p = &out[i*vn], *pe = p+vn;                                  \
+    j=*map++; do {                                                           \
+      const T *restrict q = &in[j*vn];                                       \
+      T *restrict pk=p; do { GS_DO_##OP(*pk,*q); ++pk, ++q; } while(pk!=pe); \
+    } while((j=*map++)!=-(uint)1);                                           \
+  }                                                                          \
 }
 
 /*------------------------------------------------------------------------------
   The vector scatter kernel
 ------------------------------------------------------------------------------*/
-void gs_scatter_vec(void *out, const void *in, const unsigned vn,
-                    const uint *map, gs_dom dom)
+void gs_scatter_vec(
+  void *restrict out, const void *restrict in, const unsigned vn,
+  const uint *restrict map, gs_dom dom)
 {
   unsigned unit_size = vn*gs_dom_size[dom];
   uint i,j;
@@ -141,14 +147,14 @@ void gs_scatter_vec(void *out, const void *in, const unsigned vn,
   The vector initialization kernel
 ------------------------------------------------------------------------------*/
 #define DEFINE_INIT(T) \
-static void init_vec_##T(T *out, const unsigned vn, \
-                       const uint *map, gs_op op)   \
-{                                                   \
-  uint i; const T e = gs_identity_##T[op];          \
-  while((i=*map++)!=-(uint)1) {                     \
-    T *u = (T*)out + vn*i, *ue = u+vn;              \
-    do *u++ = e; while(u!=ue);                      \
-  }                                                 \
+static void init_vec_##T(T *restrict out, const unsigned vn, \
+                         const uint *restrict map, gs_op op) \
+{                                                            \
+  uint i; const T e = gs_identity_##T[op];                   \
+  while((i=*map++)!=-(uint)1) {                              \
+    T *restrict u = (T*)out + vn*i, *ue = u+vn;              \
+    do *u++ = e; while(u!=ue);                               \
+  }                                                          \
 }
 
 #define DEFINE_PROCS(T) \

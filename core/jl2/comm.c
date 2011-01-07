@@ -11,6 +11,8 @@
 #include "gs_local.h"
 #include "comm.h"
 
+uint comm_gbl_id=0, comm_gbl_np=1;
+
 GS_DEFINE_IDENTITIES()
 GS_DEFINE_DOM_SIZES()
 

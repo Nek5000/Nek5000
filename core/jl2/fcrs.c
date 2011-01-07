@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
-
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -48,24 +48,26 @@ void fcrs_setup(sint *handle, const MPI_Fint *comm, const sint *np,
   *handle = handle_n++;
 }
 
+#define CHECK_HANDLE(func) do \
+  if(*handle<0 || *handle>=handle_n || !handle_array[*handle]) \
+    fail(1,__FILE__,__LINE__,func ": invalid handle"); \
+while(0)
+
 void fcrs_solve(const sint *handle, double x[], const double b[])
 {
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crs_solve");
+  CHECK_HANDLE("crs_solve");
   ccrs_solve(x,handle_array[*handle],b);
 }
 
 void fcrs_stats(const sint *handle)
 {
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crs_stats");
+  CHECK_HANDLE("crs_stats");
   ccrs_stats(handle_array[*handle]);
 }
 
 void fcrs_free(sint *handle)
 {
-  if(*handle<0 || *handle>=handle_n || !handle_array[*handle])
-    fail(1,"invalid handle to crs_free");
+  CHECK_HANDLE("crs_free");
   ccrs_free(handle_array[*handle]);
   handle_array[*handle] = 0;
 }

@@ -4,39 +4,74 @@
 /* requires:
      <stddef.h> for size_t, offsetof
      <stdlib.h> for malloc, calloc, realloc, free
+     <string.h> for memcpy
+     "c99.h"
      "fail.h"
 */
 
-#ifndef FAIL_H
-#warning "mem.h" requires "fail.h"
+#if !defined(C99_H) || !defined(FAIL_H)
+#error "mem.h" requires "c99.h" and "fail.h"
+#endif
+
+#ifndef PRINT_MALLOCS
+#  define PRINT_MALLOCS 0
+#else
+#  include <stdio.h>
+#  ifndef comm_gbl_id
+#    define comm_gbl_id PREFIXED_NAME(comm_gbl_id)
+#    define comm_gbl_np PREFIXED_NAME(comm_gbl_np)
+#    include "types.h"
+     extern uint comm_gbl_id, comm_gbl_np;
+#  endif
 #endif
 
 /*--------------------------------------------------------------------------
    Memory Allocation Wrappers to Catch Out-of-memory
   --------------------------------------------------------------------------*/
 
-static void *smalloc(size_t size, const char *file, unsigned line)
+static inline void *smalloc(size_t size, const char *file, unsigned line)
 {
-  void *res = malloc(size);
+  void *restrict res = malloc(size);
+  #if PRINT_MALLOCS
+  fprintf(stderr,"MEM: proc %04d: %p = malloc(%ld) @ %s(%u)\n",
+          (int)comm_gbl_id,res,(long)size,file,line), fflush(stderr);
+  #endif
   if(!res && size)
-    fail(1,"%s(%u): allocation of %ld bytes failed\n",file,line,(long)size);
+    fail(1,file,line,"allocation of %ld bytes failed\n",(long)size);
   return res;
 }
 
-static void *scalloc(size_t nmemb, size_t size, const char *file, unsigned line)
+static inline void *scalloc(
+  size_t nmemb, size_t size, const char *file, unsigned line)
 {
-  void *res = calloc(nmemb, size);
+  void *restrict res = calloc(nmemb, size);
+  #if PRINT_MALLOCS
+  fprintf(stderr,"MEM: proc %04d: %p = calloc(%ld) @ %s(%u)\n",
+          (int)comm_gbl_id,res,(long)size*nmemb,file,line), fflush(stderr);
+  #endif
   if(!res && nmemb)
-    fail(1,"%s(%u): allocation of %ld bytes failed\n",file,line,
+    fail(1,file,line,"allocation of %ld bytes failed\n",
            (long)size*nmemb);
   return res;
 }
 
-static void *srealloc(void *ptr, size_t size, const char *file, unsigned line)
+static inline void *srealloc(
+  void *restrict ptr, size_t size, const char *file, unsigned line)
 {
-  void *res = realloc(ptr, size);
+  void *restrict res = realloc(ptr, size);
+  #if PRINT_MALLOCS
+  if(res!=ptr) {
+    if(ptr)
+      fprintf(stderr,"MEM: proc %04d: %p freed by realloc @ %s(%u)\n",
+              (int)comm_gbl_id,ptr,file,line), fflush(stderr);
+    fprintf(stderr,"MEM: proc %04d: %p = realloc of %p to %lu @ %s(%u)\n",
+            (int)comm_gbl_id,res,ptr,(long)size,file,line), fflush(stderr);
+  } else
+    fprintf(stderr,"MEM: proc %04d: %p realloc'd to %lu @ %s(%u)\n",
+            (int)comm_gbl_id,res,(long)size,file,line), fflush(stderr);
+  #endif
   if(!res && size)
-    fail(1,"%s(%u): allocation of %ld bytes failed\n",file,line,(long)size);
+    fail(1,file,line,"allocation of %ld bytes failed\n",(long)size);
   return res;
 }
 
@@ -46,6 +81,16 @@ static void *srealloc(void *ptr, size_t size, const char *file, unsigned line)
   ((type*) scalloc((count),sizeof(type),__FILE__,__LINE__) )
 #define trealloc(type, ptr, count) \
   ((type*) srealloc((ptr),(count)*sizeof(type),__FILE__,__LINE__) )
+
+#if PRINT_MALLOCS
+static inline void sfree(void *restrict ptr, const char *file, unsigned line)
+{
+  free(ptr);
+  fprintf(stderr,"MEM: proc %04d: %p freed @ %s(%u)\n",
+          (int)comm_gbl_id,ptr,file,line), fflush(stderr);
+}
+#define free(x) sfree(x,__FILE__,__LINE__)
+#endif
 
 /*--------------------------------------------------------------------------
    A dynamic array
@@ -74,7 +119,7 @@ static void *array_reserve_(array *a, size_t min, size_t size,
   return a->ptr;
 }
 
-static void array_free(array *a) { free(a->ptr); }
+#define array_free(a) (free((a)->ptr))
 #define array_init(T,a,max) array_init_(a,max,sizeof(T),__FILE__,__LINE__)
 #define array_resize(T,a,max) array_resize_(a,max,sizeof(T),__FILE__,__LINE__)
 #define array_reserve(T,a,min) array_reserve_(a,min,sizeof(T),__FILE__,__LINE__)

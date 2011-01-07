@@ -1,22 +1,24 @@
-#DATA_TYPES = -std=c99 -DGLOBAL_LONG_LONG
-DATA_TYPES = -DGLOBAL_LONG
-#JAMES_FLAGS=-DPREFIX=jl_ -DFPREFIX=jlf_ -DMPI -DUNDERSCORE $(DATA_TYPES)
-JAMES_FLAGS=-DPREFIX=jl_ -DMPI -DNO_NEK_EXITT $(DATA_TYPES)
-#JAMES_FLAGS=-DPREFIX=jl_ -DNO_NEK_EXITT $(DATA_TYPES)
-SHELL=/bin/sh
-CC=mpicc -std=c99 --pedantic
-LIBS=-lm
-#G = -O0 -g
-G = -O3 -march=native
-GCC_WARN=-W -Wall -Wno-unused-function -Wno-unused-parameter
-CEXTRA = $(GCC_WARN) $(JAMES_FLAGS)
-#CEXTRA=-Minform=warn $(JAMES_FLAGS)
-CBLAS=-DUSE_NAIVE_BLAS
-LBLAS=
-#CBLAS=-DUSE_CBLAS
-#LBLAS=-lcblas
-CCCMD=$(CC) $(G) $(CFLAGS) $(CBLAS) $(CEXTRA)
-LINKCMD=$(CC) $(G) $(LDFLAGS) $(LBLAS) $(LIBS)
+CC=mpicc -std=c89 --pedantic
+CFLAGS+=-DMPI
+CFLAGS+=-DPREFIX=jl_
+CFLAGS+=-DNO_NEK_EXITT
+CFLAGS+=-DGLOBAL_LONG
+LDFLAGS+=-lm
+
+CFLAGS+=-DPRINT_MALLOCS=1
+
+CFLAGS+=-DUSE_NAIVE_BLAS
+#CFLAGS+=-DUSE_CBLAS
+#LDFLAGS+=-lcblas
+
+#CFLAGS+=-O0 -g
+CFLAGS+=-O3 -march=native
+
+CFLAGS+=-W -Wall -Wno-unused-function -Wno-unused-parameter
+#CFLAGS+=-Minform=warn
+
+CCCMD=$(CC) $(G) $(CFLAGS)
+LINKCMD=$(CC) $(G) $(LDFLAGS)
 #RLINKCMD = $(LD) -r
 .PHONY: cmds deps tests clean objects odepinfo
 
@@ -60,13 +62,13 @@ XXT=sparse_cholesky.o xxt.o
 #AMG_DUMP=amg_dump.o
 #AMG=amg.o
 
-sort_test: sort.o fail.o sort_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-sort_test2: sort.o fail.o sort_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-sarray_sort_test: sort.o fail.o sarray_sort.o sarray_sort_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-spchol_test: sparse_cholesky.o sort.o fail.o spchol_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-comm_test: fail.o comm.o tensor.o gs_local.o comm_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-crystal_test: fail.o crystal.o crystal_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-sarray_transfer_test: sarray_transfer.o sort.o fail.o crystal.o sarray_transfer_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+sort_test: sort.o fail.o comm.o tensor.o gs_local.o sort_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+sort_test2: sort.o fail.o comm.o tensor.o gs_local.o sort_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+sarray_sort_test: sort.o fail.o comm.o tensor.o gs_local.o sarray_sort.o sarray_sort_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+spchol_test: sparse_cholesky.o sort.o fail.o comm.o tensor.o gs_local.o spchol_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+comm_test: comm.o tensor.o gs_local.o comm_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+crystal_test: fail.o crystal.o comm.o tensor.o gs_local.o crystal_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+sarray_transfer_test: sarray_transfer.o sort.o fail.o crystal.o comm.o tensor.o gs_local.o sarray_transfer_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 
 gs_test: gs_test.o $(GS_OBJECTS);		@echo LINK $@; $(LINKCMD) $^ -o $@
 gs_test_old: gs_test_old.o $(GS_OBJECTS);	@echo LINK $@; $(LINKCMD) $^ -o $@
@@ -74,13 +76,14 @@ gs_unique_test: gs_unique_test.o $(GS_OBJECTS);	@echo LINK $@; $(LINKCMD) $^ -o 
 xxt_test: xxt_test.o $(CRS) $(GS_OBJECTS);	@echo LINK $@; $(LINKCMD) $^ -o $@
 xxt_test2: xxt_test2.o $(CRS) $(GS_OBJECTS);	@echo LINK $@; $(LINKCMD) $^ -o $@
 
-poly_test: poly.o fail.o poly_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-poly_test2: poly.o fail.o poly_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-lob_bnd_test: tensor.o poly.o lob_bnd.o fail.o lob_bnd_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-obbox_test: rand_elt_test.o poly.o obbox.o tensor.o lob_bnd.o fail.o obbox_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_el_2_test: poly.o fail.o findpts_el_2.o tensor.o findpts_el_2_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_el_3_test: poly.o fail.o findpts_el_3.o tensor.o findpts_el_3_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_el_2_test2: rand_elt_test.o lob_bnd.o fail.o poly.o obbox.o tensor.o findpts_el_2.o findpts_el_2_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_el_3_test2: rand_elt_test.o lob_bnd.o fail.o poly.o obbox.o tensor.o findpts_el_3.o findpts_el_3_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_local_test: tensor.o rand_elt_test.o lob_bnd.o fail.o poly.o findpts_local.o sort.o sarray_sort.o obbox.o findpts_el_3.o findpts_el_2.o findpts_local_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-findpts_test: tensor.o rand_elt_test.o lob_bnd.o poly.o findpts.o sort.o sarray_transfer.o sarray_sort.o findpts_local.o obbox.o findpts_el_3.o findpts_el_2.o crystal.o comm.o gs_local.o fail.o findpts_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+poly_test2: poly.o fail.o comm.o tensor.o gs_local.o poly_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+poly_test: poly.o fail.o comm.o tensor.o gs_local.o poly_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+lob_bnd_test: tensor.o poly.o lob_bnd.o fail.o comm.o gs_local.o lob_bnd_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+obbox_test: rand_elt_test.o poly.o obbox.o tensor.o lob_bnd.o fail.o comm.o gs_local.o obbox_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_2_test2: tensor.o rand_elt_test.o lob_bnd.o fail.o comm.o gs_local.o poly.o findpts_el_2.o findpts_el_2_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_2_test: poly.o fail.o comm.o tensor.o gs_local.o findpts_el_2.o findpts_el_2_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_3_test2: tensor.o rand_elt_test.o lob_bnd.o fail.o comm.o gs_local.o poly.o findpts_el_3.o findpts_el_3_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_el_3_test: poly.o fail.o comm.o tensor.o gs_local.o findpts_el_3.o findpts_el_3_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_local_test: rand_elt_test.o lob_bnd.o fail.o comm.o tensor.o gs_local.o poly.o findpts_local.o sort.o sarray_sort.o obbox.o findpts_el_3.o findpts_el_2.o findpts_local_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+findpts_test: sarray_transfer.o sort.o rand_elt_test.o lob_bnd.o poly.o findpts.o sarray_sort.o findpts_local.o obbox.o tensor.o findpts_el_3.o findpts_el_2.o fail.o crystal.o comm.o gs_local.o findpts_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+
