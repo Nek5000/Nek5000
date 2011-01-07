@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "c99.h"
 #include "name.h"
 #include "fail.h"
 #include "types.h"
@@ -58,21 +59,25 @@ int main(int narg, char *arg[])
   }
 #endif
   
-  if(crystal.n != comm.np*4 + (comm.np/2)) fail(1,"failure on %u",comm.id);
+  if(crystal.n != comm.np*4 + (comm.np/2))
+    fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
   sum = 0;
   data = crystal.data.ptr, end = data + crystal.n;
   for(;data!=end; data+=3+data[2]) {
     sum+=data[1];
-    if(data[3]!=data[1]*2) fail(1,"failure on %u",comm.id);
+    if(data[3]!=data[1]*2)
+      fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
     if(data[1]&1 && (data[2]!=2 || data[4]!=data[3]+1))
-      fail(1,"failure on %u",comm.id);
+      fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
   }
-  if(sum != comm.np*(comm.np-1)/2) fail(1,"failure on %u",comm.id);
+  if(sum != comm.np*(comm.np-1)/2)
+    fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
 
   crystal_free(&crystal);
   comm_free(&comm);
 
-  printf("test successful %u/%u\n",(unsigned)comm.id,(unsigned)comm.np);
+  diagnostic("",__FILE__,__LINE__,
+    "test successful %u/%u",(unsigned)comm.id,(unsigned)comm.np);
   
 #ifdef MPI
   MPI_Finalize();

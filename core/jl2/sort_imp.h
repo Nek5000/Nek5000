@@ -71,7 +71,7 @@ typedef struct { T v; uint i; } sort_data;
 #define COUNT_DIGIT_64(n,i) COUNT_DIGIT_32(n,i); COUNT_DIGIT_32(n,i+32)
 
 static T radix_count(
-  uint count[restrict DIGITS][DIGIT_VALUES],
+  uint (*restrict count)[DIGIT_VALUES],
   const T *restrict A, const T *const end, const unsigned stride)
 {
   T bitorkey = 0;
@@ -112,7 +112,7 @@ static void radix_offsets(uint *restrict c)
 }
 
 static unsigned radix_zeros(
-  T bitorkey, uint count[restrict DIGITS][DIGIT_VALUES],
+  T bitorkey, uint (*restrict count)[DIGIT_VALUES],
   unsigned *restrict shift, uint **restrict offsets)
 {
   unsigned digits=0, sh=0; uint *c = &count[0][0];
@@ -132,7 +132,7 @@ static void radix_passv(
 
 static void radix_sortv(
   T *out, const T *A, const uint n, const unsigned stride,
-  T *work, uint count[restrict DIGITS][DIGIT_VALUES])
+  T *work, uint (*restrict count)[DIGIT_VALUES])
 {
   const T *const end = &INDEX_PTR(A,stride,n);
   T bitorkey = radix_count(count, A,end,stride);
@@ -230,7 +230,7 @@ static void radix_sortp(
   uint *restrict idx, uint perm_start,
   const T *restrict A, const uint n, const unsigned stride,
   sort_data *restrict work,
-  uint count[restrict DIGITS][DIGIT_VALUES])
+  uint (*restrict count)[DIGIT_VALUES])
 {
   T bitorkey = radix_count(count, A,&INDEX_PTR(A,stride,n),stride);
   unsigned shift[DIGITS]; uint *offsets[DIGITS];
@@ -452,7 +452,7 @@ void sortv(T *out, const T *A, uint n, unsigned stride, buffer *restrict buf)
     } else {
       if(out==A) {
         if(stride!=sizeof(T))
-          fail(1,"%s: in-place sort with non-unit stride",__FILE__);
+          fail(1,__FILE__,__LINE__,"in-place sort with non-unit stride");
         heap_sortv(out,n);
       } else {
         buffer_reserve(buf,n*sizeof(T));

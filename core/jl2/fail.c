@@ -9,33 +9,40 @@
 
 #define nek_exitt FORTRAN_UNPREFIXED(exitt,EXITT)
 
-void fail(int status, const char *fmt, ...)
+void vdiagnostic(const char *prefix, const char *file, unsigned line,
+                 const char *fmt, va_list ap)
 {
-  int le, lf;
-  static char extfmt[1024];
-#ifdef MPI
-  int p;
-  MPI_Comm_rank(MPI_COMM_WORLD,&p);
-  sprintf(extfmt, "ERROR (proc %d): ",(int)p);
-#else
-  strcpy(extfmt, "ERROR: ");
-#endif
-  le = strlen(extfmt), lf = strlen(fmt);
-  if(le+lf+1>1000)
-    memcpy(extfmt+le,fmt,lf-(le+lf+1-1000)),
-    extfmt[le+lf-(le+lf+1-1000)]='\0';
-  else
-    strcat(extfmt,fmt);
-  strcat(extfmt,"\n");
-  {
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, extfmt, ap);
-    va_end(ap);
-  }
+  static char buf[2048];
+  sprintf(buf,"%s(proc %04d, %s:%d): ",prefix,(int)comm_gbl_id,file,line);
+  vsprintf(buf+strlen(buf),fmt,ap);
+  strcat(buf,"\n");
+  fwrite(buf,1,strlen(buf),stderr);
+  fflush(stderr);
+}
+
+void diagnostic(const char *prefix, const char *file, unsigned line,
+                const char *fmt, ...)
+{
+  va_list ap; va_start(ap,fmt);
+  vdiagnostic(prefix,file,line,fmt,ap);
+  va_end(ap);
+}
+
+void vfail(int status, const char *file, unsigned line,
+           const char *fmt, va_list ap)
+{
+  vdiagnostic("ERROR ",file,line,fmt,ap);
 #ifdef NO_NEK_EXITT
   exit(status);
 #else
   nek_exitt();
 #endif  
+}
+
+void fail(int status, const char *file, unsigned line,
+          const char *fmt, ...)
+{
+  va_list ap; va_start(ap,fmt);
+  vfail(status,file,line,fmt,ap);
+  va_end(ap);
 }

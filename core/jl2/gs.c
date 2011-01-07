@@ -1069,32 +1069,33 @@ void fgs_setup(sint *handle, const slong id[], const sint *n,
   *handle = fgs_n++;
 }
 
-static void fgs_check_handle(const char *proc, sint handle)
+static void fgs_check_handle(sint handle, const char *func, unsigned line)
 {
   if(handle<0 || handle>=fgs_n || !fgs_info[handle])
-    fail(1,"%s: invalid handle", proc);
+    fail(1,__FILE__,line,"%s: invalid handle", func);
 }
 
-static void fgs_check_parms(const char *proc, sint handle, sint dom, sint op)
+static void fgs_check_parms(sint handle, sint dom, sint op,
+                            const char *func, unsigned line)
 {
   if(dom<1 || dom>4)
-    fail(1,"%s: datatype %d not in valid range 1-4",proc,dom);
+    fail(1,__FILE__,line,"%s: datatype %d not in valid range 1-4",func,dom);
   if(op <1 || op >4)
-    fail(1,"%s: op %d not in valid range 1-4",proc,op);
-  fgs_check_handle(proc,handle);
+    fail(1,__FILE__,line,"%s: op %d not in valid range 1-4",func,op);
+  fgs_check_handle(handle,func,line);
 }
 
 void fgs(const sint *handle, void *u, const sint *dom, const sint *op,
          const sint *transpose)
 {
-  fgs_check_parms("fgs",*handle,*dom,*op);
+  fgs_check_parms(*handle,*dom,*op,"gs_op",__LINE__);
   cgs(u,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,fgs_info[*handle],0);
 }
 
 void fgs_vec(const sint *handle, void *u, const sint *n,
              const sint *dom, const sint *op, const sint *transpose)
 {
-  fgs_check_parms("fgs_vec",*handle,*dom,*op);
+  fgs_check_parms(*handle,*dom,*op,"gs_op_vec",__LINE__);
   cgs_vec(u,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
           fgs_info[*handle],0);
 }
@@ -1105,7 +1106,7 @@ void fgs_many(const sint *handle, void *u1, void *u2, void *u3,
 {
   void *uu[6];
   uu[0]=u1,uu[1]=u2,uu[2]=u3,uu[3]=u4,uu[4]=u5,uu[5]=u6;
-  fgs_check_parms("fgs_many",*handle,*dom,*op);
+  fgs_check_parms(*handle,*dom,*op,"gs_op_many",__LINE__);
   cgs_many((void *const*)uu,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
            fgs_info[*handle],0);
 }
@@ -1120,7 +1121,7 @@ void fgs_fields(const sint *handle,
   void **p;
   uint i;
   
-  fgs_check_parms("fgs_fields",*handle,*dom,*op);
+  fgs_check_parms(*handle,*dom,*op,"gs_op_fields",__LINE__);
   if(*n<0) return;
 
   array_reserve(void*,&fgs_fields_array,*n);
@@ -1135,7 +1136,7 @@ void fgs_fields(const sint *handle,
 
 void fgs_free(const sint *handle)
 {
-  fgs_check_handle("fgs_free",*handle);
+  fgs_check_handle(*handle,"gs_free",__LINE__);
   cgs_free(fgs_info[*handle]);
   fgs_info[*handle] = 0;
 }

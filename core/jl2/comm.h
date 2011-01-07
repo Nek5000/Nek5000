@@ -26,13 +26,20 @@ typedef int MPI_Fint;
 #define comm_scan      PREFIXED_NAME(comm_scan     )
 #define comm_dot       PREFIXED_NAME(comm_dot      )
 
+/* global id, np vars strictly for diagnostic messages (fail.c) */
+#ifndef comm_gbl_id
+#define comm_gbl_id PREFIXED_NAME(comm_gbl_id)
+#define comm_gbl_np PREFIXED_NAME(comm_gbl_np)
+extern uint comm_gbl_id, comm_gbl_np;
+#endif
+
 struct comm {
   uint id, np;
   comm_ext c;
 };
 
 static void comm_init(struct comm *c, comm_ext ce);
-static void comm_init_check(struct comm *c, MPI_Fint ce, uint np);
+/* (macro) static void comm_init_check(struct comm *c, MPI_Fint ce, uint np); */
 /* (macro) static void comm_dup(struct comm *d, const struct comm *s); */
 static void comm_free(struct comm *c);
 static double comm_time(void);
@@ -79,37 +86,42 @@ static void comm_init(struct comm *c, comm_ext ce)
 #ifdef MPI
   int i;
   MPI_Comm_dup(ce, &c->c);
-  MPI_Comm_rank(c->c,&i), c->id=i;
-  MPI_Comm_size(c->c,&i), c->np=i;
+  MPI_Comm_rank(c->c,&i), comm_gbl_id=c->id=i;
+  MPI_Comm_size(c->c,&i), comm_gbl_np=c->np=i;
 #else
   c->id = 0, c->np = 1;
 #endif
 }
 
-static void comm_init_check(struct comm *c, MPI_Fint ce, uint np)
+static void comm_init_check_(struct comm *c, MPI_Fint ce, uint np,
+                             const char *file, unsigned line)
 {
 #ifdef MPI
   comm_init(c,MPI_Comm_f2c(ce));
   if(c->np != np)
-    fail(1,"comm_init_check: passed P=%u, but MPI_Comm_size gives P=%u",
-         np,c->np);
+    fail(1,file,line,"comm_init_check: passed P=%u, "
+                     "but MPI_Comm_size gives P=%u",np,c->np);
 #else
   comm_init(c,0);
   if(np != 1)
-    fail(1,"comm_init_check: passed P=%u, but not compiled with -DMPI",np);
+    fail(1,file,line,"comm_init_check: passed P=%u, "
+                     "but not compiled with -DMPI",np);
 #endif
 }
+#define comm_init_check(c,ce,np) comm_init_check_(c,ce,np,__FILE__,__LINE__)
 
-static void comm_dup_(struct comm *d, const struct comm *s, const char *file)
+
+static void comm_dup_(struct comm *d, const struct comm *s,
+                      const char *file, unsigned line)
 {
   d->id = s->id, d->np = s->np;
 #ifdef MPI
   MPI_Comm_dup(s->c,&d->c);
 #else
-  if(s->np!=1) fail(1,"%s not compiled with -DMPI\n",file);
+  if(s->np!=1) fail(1,file,line,"%s not compiled with -DMPI\n",file);
 #endif
 }
-#define comm_dup(d,s) comm_dup_(d,s,__FILE__)
+#define comm_dup(d,s) comm_dup_(d,s,__FILE__,__LINE__)
 
 static void comm_free(struct comm *c)
 {
