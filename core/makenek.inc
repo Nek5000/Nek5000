@@ -450,6 +450,12 @@ if [ -f "./SIZE" ]; then
      echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZE
      echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZE
   fi
+  cat SIZE | grep -i 'lxs' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (lxs=lx1+2,lys=ly1+2,lzs=lz1+2*(ldim-2)) !New Pressure Preconditioner' >> SIZE
+  fi
 
   echo $PPLIST | grep 'CVODE' >/dev/null
   if [ $? -eq 0 ]; then
