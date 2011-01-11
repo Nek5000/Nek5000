@@ -843,7 +843,7 @@ c     ibc = 2  <==>  Neumann,
 c
       do iface=1,2*ndim
          ied = eface(iface)
-c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
+c        write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
          ibc = -1
          if (cbc(ied,ie,1).eq.'   ') ibc = 0
          if (cbc(ied,ie,1).eq.'E  ') ibc = 0
@@ -873,6 +873,7 @@ c         write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
 
          fbc(iface) = ibc
       enddo
+       
 
       lbr = fbc(1)
       rbr = fbc(2)
@@ -1565,14 +1566,15 @@ c-----------------------------------------------------------------------
 
       real l,l2d
 
-      n2 = nx2+1
+      n2 = nx1-1
       nz0 = 1
       nzn = 1
+      nx = nx1-2
       if (if3d) then
          nz0 = 0
          nzn = n2
       endif
-      call plane_space(lmr,lms,lmt,0,n2,wxm1,xm1,ym1,zm1,nx2,n2,nz0,nzn)
+      call plane_space(lmr,lms,lmt,0,n2,wxm1,xm1,ym1,zm1,nx,n2,nz0,nzn)
 
       n=n2+1
       if (if3d) then

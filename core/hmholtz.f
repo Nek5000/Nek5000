@@ -615,6 +615,7 @@ C------------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
       include 'FDMH1'
+      include 'GEOM'
 c
       COMMON  /CPRINT/ IFPRINT, IFHZPC
       LOGICAL          IFPRINT, IFHZPC
@@ -658,7 +659,7 @@ c
       if (param(22).ne.0) tol=abs(param(22))
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
       if (tin.lt.0)       tol=abs(tin)
-      niter = min(maxit,maxcg)
+      niter = 5000 !min(maxit,maxcg)
 
 C     Speed-up for undeformed elements and constant properties.
       if (.not.ifsolv) then
@@ -670,7 +671,7 @@ C     Set up diag preconditioner.
 C
       if (kfldfdm.lt.0) then
          call setprec(D,h1,h2,imsh,isd)
-      else
+      elseif(param(100).ne.2) then
          call set_fdm_prec_h1b(d,h1,h2,nel)
       endif
 c
@@ -699,14 +700,20 @@ C
 
       do iter=1,niter
 C
-         if (kfldfdm.lt.0) then  ! Jacobi Preconditioner
+         if (param(100).ne.2.or.kfldfdm.lt.0) then  ! Jacobi Preconditioner
 c           call copy(z,r,n)
             call col3(z,r,d,n)
          else                                       ! Schwarz Preconditioner
-            call fdm_h1(z,r,d,mask,mult,nel,ktype(1,1,kfldfdm),w)
-            if (name.eq.'PRES') then 
+            if (name.eq.'PRES'.and.param(100).eq.2) then
+               call h1_overlap_2(z,r,mask)
                call crs_solve_h1 (w,r)  ! Currently, crs grd only for P
                call add2         (z,w,n)
+            else   
+               call fdm_h1(z,r,d,mask,mult,nel,ktype(1,1,kfldfdm),w)
+               if (name.eq.'PRES') then 
+                 call crs_solve_h1 (w,r)  ! Currently, crs grd only for P
+                 call add2         (z,w,n)
+               endif
             endif
          endif
 c
