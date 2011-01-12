@@ -700,7 +700,7 @@ C
 
       do iter=1,niter
 C
-         if (param(100).ne.2.and.kfldfdm.lt.0) then  ! Jacobi Preconditioner
+         if (kfldfdm.lt.0) then  ! Jacobi Preconditioner
 c           call copy(z,r,n)
             call col3(z,r,d,n)
          else                                       ! Schwarz Preconditioner
