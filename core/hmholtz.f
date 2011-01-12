@@ -659,7 +659,7 @@ c
       if (param(22).ne.0) tol=abs(param(22))
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
       if (tin.lt.0)       tol=abs(tin)
-      niter = 5000 !min(maxit,maxcg)
+      niter = min(maxit,maxcg)
 
 C     Speed-up for undeformed elements and constant properties.
       if (.not.ifsolv) then
@@ -700,7 +700,7 @@ C
 
       do iter=1,niter
 C
-         if (param(100).ne.2.or.kfldfdm.lt.0) then  ! Jacobi Preconditioner
+         if (param(100).ne.2.and.kfldfdm.lt.0) then  ! Jacobi Preconditioner
 c           call copy(z,r,n)
             call col3(z,r,d,n)
          else                                       ! Schwarz Preconditioner
