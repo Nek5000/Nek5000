@@ -455,12 +455,10 @@ c-----------------------------------------------------------------------
        if (nhis.gt.0) then
          IPART=0
          DO 2100 I=1,NHIS
-          IF(HCODE(10,I).EQ.'P')then       
-C            Do particle paths
-             IF(IPART.LE.10)IPART=IPART+1
-             IF(ISTEP.EQ.0)then
-C               Particle has original coordinates
-C               Restarts?
+          IF(HCODE(10,I).EQ.'P')then       ! Do particle paths
+             if (ipart.le.10) ipart=ipart+1
+             if (istep.eq.0) then          ! Particle has original coordinates
+c               Restarts?
                 XPART(IPART)=
      $          XM1(LOCHIS(1,I),LOCHIS(2,I),LOCHIS(3,I),LOCHIS(4,I))
                 YPART(IPART)=
@@ -468,7 +466,7 @@ C               Restarts?
                 ZPART(IPART)=
      $          ZM1(LOCHIS(1,I),LOCHIS(2,I),LOCHIS(3,I),LOCHIS(4,I))
              ELSE
-C               Kludge: Find Closest point
+c               Kludge: Find Closest point
                 RMIN=1.0E7
                 DO 20 IEL=1,NELV
                 DO 20 K=1,NZ1
@@ -1138,7 +1136,7 @@ c
 c
       ikstep = istep
       do ik=1,10
-         if (ikstep.gt.99999) ikstep = ikstep/10
+         if (ikstep.gt.9999) ikstep = ikstep/10
       enddo
 
       call blank(fhdfle,132)
