@@ -2455,7 +2455,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in X-direction$')
          CALL RER(Xshift)
-         CALL Shifter(Xshift,Xsep,ANS,X,'X')
+         call shifter(Xshift,Xsep,ANS,X,'X')
       ELSEIF (CHOICE.EQ.'Shift Y') THEN
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
@@ -2468,7 +2468,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in Y-direction$')
          CALL RER(Yshift)
-         CALL Shifter(Yshift,Ysep,ANS,Y,'Y')
+         call shifter(Yshift,Ysep,ANS,Y,'Y')
       ELSEIF (CHOICE.EQ.'Shift Z') THEN
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
@@ -2480,12 +2480,12 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in Z-direction$')
          CALL RER(Zshift)
-         CALL Shifter(Zshift,Zsep,ANS,Z,'Z')
+         call shifter(Zshift,Zsep,ANS,Z,'Z')
       ENDIF
       GOTO 1
       END
 c-----------------------------------------------------------------------
-      subroutine shifter(Shift,Sep,DIR,pts,coord)
+      subroutine shifter(shift,Sep,DIR,pts,coord)
       include 'basics.inc'
       DIMENSION pts(nelm,8)
       CHARACTER*1 DIR,coord
@@ -2510,7 +2510,7 @@ C
                   pmax=max(pmax,pts(k,j))
                ENDIF
    10       CONTINUE
-c           IF ((IFG.AND.IFL).and.Shift.lt.0.0) THEN ! cmt out; 9/29/05
+c           IF ((IFG.AND.IFL).and.shift.lt.0.0) THEN ! cmt out; 9/29/05
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
@@ -2520,7 +2520,7 @@ c              IF (pmin+shift.le.pmax) THEN
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,Shift)
+c                 CALL PRRR(pmax,pmin,shift)
 c                 CALL PRS('Aborting shift operation$')
 c                 return
 c              ENDIF
@@ -2561,7 +2561,7 @@ c           ENDIF
                   pmax=max(pmax,pts(k,j))
                ENDIF
   110       CONTINUE
-c           IF ((IFG.AND.IFL).and.Shift.gt.0.0) THEN
+c           IF ((IFG.AND.IFL).and.shift.gt.0.0) THEN
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
@@ -2571,7 +2571,7 @@ c              IF (pmax+shift.le.pmin) THEN
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,Shift)
+c                 CALL PRRR(pmax,pmin,shift)
 c                 CALL PRS('Aborting shift operation$')
 c                 return
 c              ENDIF
@@ -3347,7 +3347,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in X-direction$')
          CALL RER(Xshift)
-         CALL Shifter2(Xshift,Xsep,ANS,X,'X')
+         call shifter2(Xshift,Xsep,ANS,X,'X')
       ELSEIF (CHOICE.EQ.'Stretch Y') THEN
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
@@ -3360,7 +3360,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Y-direction$')
          CALL RER(Yshift)
-         CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
+         call shifter2(Yshift,Ysep,ANS,Y,'Y')
       ELSEIF (CHOICE.EQ.'Stretch Z') THEN
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
@@ -3372,12 +3372,12 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Z-direction$')
          CALL RER(Zshift)
-         CALL Shifter2(Zshift,Zsep,ANS,Z,'Z')
+         call shifter2(Zshift,Zsep,ANS,Z,'Z')
       ENDIF
       GOTO 1
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2a(pmin,pmax,gain,Shift,Sep,DIR,pts,coord)
+      subroutine shifter2a(pmin,pmax,gain,shift,Sep,DIR,pts,coord)
 c
 c     In this pass, we just figure out range of geometry in shifted 
 c     section
@@ -3409,7 +3409,7 @@ c
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2b(Shift,Sep,DIR,pts,coord)
+      subroutine shifter2b(stretch,Sep,DIR,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
@@ -3420,7 +3420,7 @@ c
 c
       Nvts = 4
       IF (IF3D) Nvts=8
-      Nkshift = 0
+      nkstretch = 0
 C
       IF (DIR.eq.'>') THEN
          DO 100 K=1,NEL
@@ -3438,26 +3438,24 @@ C
                ENDIF
    10       CONTINUE
             DO 20 j=1,Nvts
-               IF (pts(k,j).ge.sep) pts(k,j)=shift*(pts(k,j)-sep) + sep
+               IF (pts(k,j).ge.sep) pts(k,j)=stretch*(pts(k,j)-sep)+sep
    20       CONTINUE
             if (if3d.and.pmin.ge.sep) then
+              if (coord.eq.'X') j=1
+              if (coord.eq.'Y') j=2
+              if (coord.eq.'Z') j=3
               do l=1,12
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                  curve(j,l,k)=stretch*(curve(j,l,k)-sep) + sep
                 endif
               enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
-c                 if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-c                 if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
             endif
-            Nkshift=Nkshift+1
+            nkstretch=nkstretch+1
   100   CONTINUE
       ELSE
          DO 200 K=1,NEL
@@ -3475,43 +3473,41 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                ENDIF
   110       CONTINUE
             DO 120 j=1,Nvts
-c              IF (pts(k,j).le.sep) pts(k,j)=shift*(pts(k,j)-sep) + sep
-               IF (pts(k,j).le.sep) then
-                   pold = pts(k,j)
-                   pts(k,j)=shift*(pts(k,j)-sep) + sep
-                   pnew = pts(k,j)
-                   write(6,*) 'stretch',pold,pnew,sep,shift,j,dir,coord
-               endif
+               if (pts(k,j).le.sep) pts(k,j)=stretch*(pts(k,j)-sep)+sep
+c              if (pts(k,j).le.sep) then
+c                  pold = pts(k,j)
+c                  pts(k,j)=stretch*(pts(k,j)-sep) + sep
+c                  pnew = pts(k,j)
+c                  write(6,*) 'stretch',pold,pnew,sep,stretch,j,dir,coord
+c              endif
   120       CONTINUE
             if (if3d.and.pmax.le.sep) then
+              if (coord.eq.'X') j=1
+              if (coord.eq.'Y') j=2
+              if (coord.eq.'Z') j=3
               do l=1,12
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                  curve(j,l,k)=stretch*(curve(j,l,k)-sep) + sep
                 endif
               enddo
               do l=1,6
                 if (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
-c                 if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-c                 if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
             endif
-            Nkshift=Nkshift+1
+            nkstretch=nkstretch+1
   200    CONTINUE
       ENDIF
 C
-      WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I9,' elements.$')
+      WRITE(S,500) nkstretch
+  500 FORMAT(' Stretched',I9,' elements.$')
       CALL PRS(S)
 C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+      subroutine shifter2c(shift,Sep,DIR,pts,coord,gain,qmax,qmin)
 
 c     Geometric gain
 
@@ -3620,13 +3616,13 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
       ENDIF
 C
       WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I9,' elements.$')
+  500 FORMAT(' shifted',I9,' elements.$')
       CALL PRS(S)
 C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2(Shift,Sep,DIR,pts,coord)
+      subroutine shifter2(shift,Sep,DIR,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
@@ -3635,13 +3631,13 @@ c
       character*1 dir,coord
       logical ifg,ifl
 c
-      call shifter2a(qmin,qmax,gain,Shift,Sep,DIR,pts,coord)
+      call shifter2a(qmin,qmax,gain,shift,Sep,DIR,pts,coord)
       write(6,*) 'qmnx gn:',qmin,qmax,gain
 c
       if (abs(gain-1.) .gt. 1.e-5) then
-         call shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+         call shifter2c(shift,Sep,DIR,pts,coord,gain,qmax,qmin)
       else
-         call shifter2b(Shift,Sep,DIR,pts,coord)
+         call shifter2b(shift,Sep,DIR,pts,coord)
       endif
 c
       return
