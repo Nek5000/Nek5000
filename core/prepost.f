@@ -290,6 +290,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       common /rdump/ ntdump
       data ndumps / 0 /
 
+      logical ifxyo_s
+
       if(nid.eq.0) then 
         WRITE(6,1001) istep,time
  1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
@@ -303,12 +305,16 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
          return
       endif
 
+      ifxyo_s = ifxyo              ! Save ifxyo
+
       iprefix = i_find_prefix(prefix,99)
 
       if (nid.eq.0) then
 
 c       Open new file for each dump on /cfs
         nopen(iprefix)=nopen(iprefix)+1
+
+        if (prefix.eq.'   '.and.nopen(iprefix).eq.1) ifxyo = .true. ! 1st file
 
         if (prefix.eq.'rst'.and.max_rst.gt.0) 
      $         nopen(iprefix) = mod1(nopen(iprefix),max_rst) ! restart
@@ -325,6 +331,7 @@ c             write header as character string
            call blank(fhdfle,132)
         endif
       endif
+      call bcast(ifxyo,lsize)
 
 C     Figure out what goes in EXCODE
       CALL BLANK(EXCODE,30)
@@ -429,7 +436,10 @@ c
 
       if (nid.eq.0) call close_fld(p66)
 
+      ifxyo = ifxyo_s           ! restore ifxyo
+
       call gsync                ! avoid race condition w/ outfld
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2332,3 +2342,4 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
       return
       end
+c-----------------------------------------------------------------------
