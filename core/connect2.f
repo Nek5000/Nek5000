@@ -1135,6 +1135,8 @@ C
       INCLUDE 'PARALLEL'
 
       logical lbuf(5+ldimt1)  
+
+      call lfalse(lbuf,5+ldimt1)
 C
 C     Read output specs
       IF(NID.EQ.0) THEN
@@ -1155,15 +1157,16 @@ C     Read output specs
 
         k = 5
 
-        READ(9,*,ERR=200,END=200) IPSCO
-        IF (IPSCO.GT.0) THEN
-           IF (IPSCO.GT.LDIMT-1) GOTO 200
-           DO 120 I=1,IPSCO
-              READ(9,*,ERR=200,END=200) IFPSCO(I)
+        call lfalse(ifpsco,ldimt1)
+        read(9,*,err=200,end=200) ipsco
+        if (ipsco.gt.0) then
+           if (ipsco.gt.ldimt-1) goto 200
+           do i=1,ipsco
+              read(9,*,err=200,end=200) ifpsco(i)
               k = k+1
               lbuf(k) = ifpsco(i)
-  120      CONTINUE
-        ENDIF
+           enddo
+        endif
 
       ENDIF
 C

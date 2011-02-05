@@ -6,26 +6,26 @@ c
 c     Recent updates:
 c
 c     p65 now indicates the number of parallel i/o files; iff p66 >= 6
-c
+
 
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-C
+
 C     Work arrays and temporary arrays
-C
+
       common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
-c
+
 c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       parameter (lxyz=lx1*ly1*lz1)
-      parameter (lpsc9=ldimt+9)
+      parameter (lpsc9=ldimt1+9)
       common /ctmp1/ tdump(lxyz,lpsc9)
       real*4         tdump
       real           tdmp(4)
       equivalence   (tdump,tdmp)
 
       real*4         test_pattern
-c
+
       character*3    prefin,prefix
       character*1    fhdfle1(132)
       character*132   fhdfle
@@ -33,13 +33,11 @@ c
       character*1    fldfile2(120)
       integer        fldfilei( 60)
       equivalence   (fldfilei,fldfile2)
-c
-c
+
       common /doit/ ifdoit
       logical       ifdoit
       logical       ifdoin
-C     
-C
+
       real hdump(25)
       real xpart(10),ypart(10),zpart(10)
       character*10 frmat
@@ -48,9 +46,9 @@ C
       data    nopen /99*0/
       common /rdump/ ntdump
       data ndumps / 0 /
-c
+
       logical ifhis
-c
+
       integer maxstep
       save    maxstep
       data    maxstep /999999999/
@@ -128,6 +126,8 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if (ifdoin) ifdoit=.true.
       if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
 
+
+      if (ifdoit.and.nid.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
       if (ifdoit) call outfld(prefix)
 
       call outhis(ifhis)
@@ -266,7 +266,7 @@ C
 c
 c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       parameter (lxyz=lx1*ly1*lz1)
-      parameter (lpsc9=ldimt+9)
+      parameter (lpsc9=ldimt1+9)
       common /ctmp1/ tdump(lxyz,lpsc9)
       real*4         tdump
       real           tdmp(4)
@@ -327,7 +327,7 @@ c       Open new file for each dump on /cfs
            len = ltrunc   (fldfle,131)
            call chcopy    (fldfile2,fldfle,len)
            call byte_open (fldfile2)
-c             write header as character string
+c          write header as character string
            call blank(fhdfle,132)
         endif
       endif
@@ -365,15 +365,13 @@ C     Figure out what goes in EXCODE
            EXCODE(i+1)=' '
            i = i + 1
          ENDIF
-         IF(NPSCAL.GT.0)then
-            DO IIP=1,ldimt1
-               IF(IFPSCO(IIP)) THEN
-                 WRITE(EXCODE(IIP+i)  ,'(I1)') IIP
-                 WRITE(EXCODE(IIP+i+1),'(A1)') ' '
-                 i = i + 1 
-               ENDIF
-            ENDDO
-         ENDIF
+         do iip=1,ldimt1
+            if (ifpsco(iip)) then
+              write(excode(iip+I)  ,'(i1)') iip
+              write(excode(iip+I+1),'(a1)') ' '
+              i = i + 1 
+            endif
+         enddo
       else
          !new header format
          IF (IFXYO) THEN
@@ -392,10 +390,16 @@ C     Figure out what goes in EXCODE
             EXCODE(i)='T'
             i = i + 1
          ENDIF
-         IF (NPSCAL.GT.0) THEN
-            EXCODE(i) = 'S'
-            WRITE(EXCODE(i+1),'(I1)') NPSCAL/10
-            WRITE(EXCODE(i+2),'(I1)') NPSCAL-(NPSCAL/10)*10
+         IF (LDIMT.GT.1) THEN
+            NPSCALO = 0
+            do k = 1,ldimt-1
+              if(ifpsco(k)) NPSCALO = NPSCALO + 1
+            enddo
+            IF (NPSCALO.GT.0) THEN
+               EXCODE(i) = 'S'
+               WRITE(EXCODE(i+1),'(I1)') NPSCALO/10
+               WRITE(EXCODE(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
+            ENDIF
          ENDIF
       endif
      
@@ -406,12 +410,12 @@ c
       call get_id(id)
 
       nxyz  = nx1*ny1*nz1
-c
+
       do ieg=1,nelgt
-c
+
          jnid = gllnid(ieg)
          ie   = gllel (ieg)
-c
+
          if (nid.eq.0) then
             if (jnid.eq.0) then
                call fill_tmp(tdump,id,ie)
@@ -426,7 +430,7 @@ c
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
-c
+
             mtype=2000+ieg
             len=4*id*nxyz
             call crecv (mtype,dum1,wdsize)
@@ -1203,8 +1207,8 @@ c
 C
 C     Fill work array
 C
-      PARAMETER (LXYZ=LX1*LY1*LZ1)
-      PARAMETER (LPSC9=LDIMT+9)
+      parameter (lxyz=lx1*ly1*lz1)
+      parameter (lpsc9=ldimt1+9)
       real*4 tdump(lxyz,lpsc9)
 C
       nxyz = nx1*ny1*nz1
@@ -1256,52 +1260,32 @@ c
          CALL COPYx4(TDUMP(1,ID),T(1,1,1,IE,1),NXYZ)
       ENDIF
 C     PASSIVE SCALARS
-      IF(NPSCAL.GT.0)then
-         DO IIP=1,ldimt1
-            IF(IFPSCO(IIP))then
-               ID=ID+1
-               CALL COPYx4(TDUMP(1,ID),T(1,1,1,IE,IIP+1),NXYZ)
-           ENDIF             
-         ENDDO
-      ENDIF             
+      do iip=1,ldimt1
+         if (ifpsco(iip)) then
+            id=id+1
+            call copyX4(tdump(1,id),t(1,1,1,ie,iip+1),nxyz)
+        endif
+      enddo
 c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_id(id)
-C
+      subroutine get_id(id) !  Count amount of data to be shipped
+
       include 'SIZE'
       include 'TOTAL'
-C
-C     Count up amount of data to be shipped
-C
-      ID=0
-      IF(IFXYO)then
-         ID=ID+1
-         ID=ID+1
-         IF(IF3D) then
-            ID=ID+1
-         ENDIF
-      ENDIF
-c
-      IF(IFVO)then
-         ID=ID+1
-         ID=ID+1
-         IF(IF3D)then
-            ID=ID+1
-         ENDIF
-      ENDIF
-      IF(IFPO) ID=ID+1
-      IF(IFTO) ID=ID+1
-C     PASSIVE SCALARS
-      IF(NPSCAL.GT.0)then
-         DO IIP=1,ldimt1
-            IF(IFPSCO(IIP))then
-               ID=ID+1
-           ENDIF             
-         ENDDO
-      ENDIF             
-c
+
+      id=0
+
+      if (ifxyo) id=id+ndim
+      if (ifvo)  id=id+ndim
+      if (ifpo)  id=id+1
+      if (ifto)  id=id+1
+
+      do iip=1,ldimt1
+         if (ifpsco(iip)) id=id+1     !     Passive scalars
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1322,20 +1306,20 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine out_tmp(id,p66)
-c
+
       include 'SIZE'
       include 'TOTAL'
-c
-      PARAMETER (LXYZ=LX1*LY1*LZ1)
-      PARAMETER (LPSC9=LDIMT+9)
-c
+
+      parameter (lxyz=lx1*ly1*lz1)
+      parameter (lpsc9=ldimt1+9)
+
       common /ctmp1/ tdump(lxyz,lpsc9)
       real*4         tdump
-c
-      CHARACTER*11 FRMAT
-c
+
+      character*11 frmat
+
       nxyz = nx1*ny1*nz1
-c
+
       call blank(frmat,11)
       if (id.le.9) then
          WRITE(FRMAT,1801) ID
