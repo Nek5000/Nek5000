@@ -3183,6 +3183,8 @@ c        call opdssum(xb,yb,zb)
                xb(i,e) = xb(i,e) - xm1(i,1,1,e)   ! local displacements
                yb(i,e) = yb(i,e) - ym1(i,1,1,e)
                zb(i,e) = zb(i,e) - zm1(i,1,1,e)
+               xb(i,e) = xb(i,e)*tmsk(i,e)
+               yb(i,e) = yb(i,e)*tmsk(i,e)
                zb(i,e) = zb(i,e)*tmsk(i,e)
 
                xm = max(xm,abs(xb(i,e)))
