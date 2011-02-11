@@ -1543,15 +1543,20 @@ c     $        mg_solve_e(mg_solve_index(l)+1)*alpha
       enddo
       call hsmg_rstr_no_dssum(
      $   mg_solve_r(mg_solve_index(1)),mg_work2,1)
+
+c     nzw = 1       ! old
+c     nzw = 3-ndim  ! mistake
+      nzw = ndim-2  ! just right...
+
       call hsmg_do_wt(mg_solve_r(mg_solve_index(1)),
-     $                mg_mask(mg_mask_index(1)),2,2,1)
+     $                mg_mask(mg_mask_index(1)),2,2,nzw)
       !        -1
       ! e  := A   r
       !  1         1
       call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1)),
      $                       mg_solve_r(mg_solve_index(1)))
       call hsmg_do_wt(mg_solve_e(mg_solve_index(1)),
-     $                mg_mask(mg_mask_index(1)),2,2,1)
+     $                mg_mask(mg_mask_index(1)),2,2,nzw)
       time_3 = dnekclock()
       do l = 2,mg_lmax-1
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
