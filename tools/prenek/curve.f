@@ -1213,12 +1213,11 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine fix_m_curve(e)
+      subroutine fix_m_curve_old(e)
 
 c     Assign / repair curve-side info for edges
 
       include 'basics.inc'
-      real rrx(1),rry(1),rrz(1)
       integer e
 
       integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
@@ -1234,6 +1233,56 @@ c     Assign / repair curve-side info for edges
          curve(1,ic,e) = x27(eindx(ic),e)
          curve(2,ic,e) = y27(eindx(ic),e)
          curve(3,ic,e) = z27(eindx(ic),e)
+      enddo
+
+c     if (e.eq.2) call out27(x27(1,e),y27(1,e),z27(1,e),e,'fixm')
+c     if (e.eq.2) write(6,*) 'stop in fix_m_curve',e
+c     if (e.eq.2) call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fix_m_curve(e)
+
+c     Assign / repair curve-side info for edges
+
+      include 'basics.inc'
+      integer e
+
+      real xyz(3,3)
+
+      integer e3(3,12)
+      save    e3
+      data    e3 /  1, 2, 3,    3, 6, 9,    9, 8, 7,    7, 4, 1
+     $           , 19,20,21,   21,24,27,   27,26,25,   25,22,19
+     $           ,  1,10,19,    3,12,21,    9,18,27,    7,16,25 /
+      real len
+      integer e,edge
+
+      tol   = 1.e-4
+      tol2  = tol**2
+      nedge = 4 + 8*(ndim-2)
+
+      do i=1,nedge
+         do j=1,3
+            xyz(1,j)=x27(e3(j,i),e)
+            xyz(2,j)=y27(e3(j,i),e)
+            xyz(3,j)=z27(e3(j,i),e)
+         enddo
+         len = 0.
+         h   = 0.
+         do j=1,ndim
+            xmid = .5*(xyz(j,1)+xyz(j,3))
+            h    = h   + (xyz(j,2)-xmid)**2
+            len  = len + (xyz(j,3)-xyz(j,1))**2
+         enddo
+         if (h.gt.tol2*len) then
+            ccurve(i,e) = 'm'
+            call copy(curve(1,i,e),xyz(1,2),ndim)
+         else
+            ccurve(i,e) = ' '
+            call rzero(curve(1,i,e),ndim)
+         endif
       enddo
 
 c     if (e.eq.2) call out27(x27(1,e),y27(1,e),z27(1,e),e,'fixm')

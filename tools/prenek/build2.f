@@ -2,6 +2,7 @@ c-----------------------------------------------------------------------
       subroutine sphmesh
       include 'basics.inc'
       common /ctmp0/ sphctr(3),xcs(4,24),ycs(4,24),zcs(4,24)
+      common /ctmpr/ radii(100)
       character*1 SHELL,HEMI,YESNO
       character*1 alphabet(52)
       character*26 alpha(2)
@@ -26,12 +27,22 @@ c        return
 c
       MESH = 24
 C
-      CALL PRS
-     $('H/W sph/hex-pkd hemi/tet/dia/lat/fcc/r12? (H/W/X/T/D/L/F/R):$')
-      CALL RES(HEMI,1)
-      CALL CAPIT(HEMI,1)
+      call prs('H/W sph/hex-pkd hemi/tet/dia/lat/fcc/r12/cap:$')
+      call prs('(H/W/X/T/D/L/F/R/C)?$')
+      call res(hemi,1)
+      call capit(hemi,1)
 c
-      if (hemi.eq.'t'.or.hemi.eq.'T') then
+      if (hemi.eq.'C'.or.hemi.eq.'c') then
+         radii(1)=1.0
+         radii(2)=1.5
+         radii(3)=2.0
+         radii(4)=0.5  ! thickness of pipe
+         radii(5)=0.25 ! 4x reduction factor
+         nr       = 3
+         call sc_make_sphere_cap(radii,nr)
+         return
+c
+      elseif (hemi.eq.'t'.or.hemi.eq.'T') then
          call get_lattice_0  (dlat,sphrad,xlat0)
          call saddle_tet     (dlat,sphrad,xlat0,if_lat_sph_cent)
          return
@@ -2614,6 +2625,712 @@ c     write(6,1) (xf(k),k=1,3)
 c   1 format(6f11.3)
 
       call sph_combine_d(xu,r0,x0,xf,x1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine permute_xyz (x,y,z,n)
+      real x(n),y(n),z(n)
+
+      do i=1,n
+
+         tx=x(i)
+         ty=y(i)
+         tz=z(i)
+
+         y(i) = tx
+         z(i) = ty
+         x(i) = tz
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine el_convert (e,xr,yr,zr)
+      include 'basics.inc'
+      integer e
+      real xr(8),yr(8),zr(8)
+
+      write(6,*)
+      do i=1,8
+         x(e,i) = xr(i)
+         y(e,i) = yr(i)
+         z(e,i) = zr(i)
+c        write(6,1) e,xr(i),yr(i),zr(i),i
+c  1     format(i8,3f9.4,i3,' ec')
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine el_convert_2to3(e,xr,yr,zr)
+      include 'basics.inc'
+      integer e
+      real xr(8),yr(8),zr(8)
+
+      write(6,*)
+      do i=1,8
+         i2d = mod1(i,4)
+         x(e,i) = xr(i2d)
+         y(e,i) = yr(i2d)
+         z(e,i) = zr(i)
+c        write(6,1) e,xr(i),yr(i),zr(i),i
+c  1     format(i8,3f9.4,i3,' ec2')
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_central_shell(r1,r2,e)
+
+      include 'basics.inc'
+      integer e
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      rr = sqrt(r1*r2) ! geometric mean
+      rr = .5*(sqrt(r1*r2)+r1)
+      x1 = r1
+      x2 = rr/s2
+      x3 = rr/s3
+
+      xr(2)=x1
+      xr(3)=x2
+      xr(6)=x2
+      xr(7)=x3
+      yr(3)=x2
+      yr(4)=x1
+      yr(7)=x3
+      yr(8)=x2
+      zr(5)=x1
+      zr(6)=x2
+      zr(7)=x3
+      zr(8)=x2
+
+      call el_convert(e,xr,yr,zr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_transition_shell(r1,r2,e) ! build 3 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1,e2
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      rr = sqrt(r1*r2) ! geometric mean
+      rr = .5*(sqrt(r1*r2)+r1)
+      p1 = r1
+      p2 = rr/s2
+      p3 = rr/s3
+
+      q1 = r2
+      q2 = r2/s2
+      q3 = r2/s3
+
+
+      zr(1)=p1
+      zr(2)=p2
+      zr(3)=p3
+      zr(4)=p2
+      zr(5)=q1
+      zr(6)=q2
+      zr(7)=q3
+      zr(8)=q2
+
+      xr(2)=p2
+      xr(3)=p3
+      xr(6)=q2
+      xr(7)=q3
+
+      yr(3)=p3
+      yr(4)=p2
+      yr(7)=q3
+      yr(8)=q2
+
+      call el_convert  (e,xr,yr,zr)
+
+      e1 = e+1
+      e2 = e+2
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e1,xr,yr,zr)
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e2,xr,yr,zr)
+
+      ccurve(6,e ) = 's'
+      ccurve(6,e1) = 's'
+      ccurve(6,e2) = 's'
+
+      call rzero(curve(1,1,e),3*4*6)
+      curve(4,6,e ) = r2
+      curve(4,6,e1) = r2
+      curve(4,6,e2) = r2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_std_shell(r1,r2,e) ! build 3 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1,e2
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      p1 = r1
+      p2 = r1/s2
+      p3 = r1/s3
+
+      q1 = r2
+      q2 = r2/s2
+      q3 = r2/s3
+
+      zr(1)=p1
+      zr(2)=p2
+      zr(3)=p3
+      zr(4)=p2
+      zr(5)=q1
+      zr(6)=q2
+      zr(7)=q3
+      zr(8)=q2
+
+      xr(2)=p2
+      xr(3)=p3
+      xr(6)=q2
+      xr(7)=q3
+
+      yr(3)=p3
+      yr(4)=p2
+      yr(7)=q3
+      yr(8)=q2
+
+      call el_convert  (e,xr,yr,zr)
+
+      e1 = e+1
+      e2 = e+2
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e1,xr,yr,zr)
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e2,xr,yr,zr)
+
+      ccurve(5,e ) = 's'
+      ccurve(5,e1) = 's'
+      ccurve(5,e2) = 's'
+      ccurve(6,e ) = 's'
+      ccurve(6,e1) = 's'
+      ccurve(6,e2) = 's'
+
+      call rzero(curve(1,1,e),3*4*6)
+      curve(4,5,e ) = r1
+      curve(4,5,e1) = r1
+      curve(4,5,e2) = r1
+      curve(4,6,e ) = r2
+      curve(4,6,e1) = r2
+      curve(4,6,e2) = r2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_cartesian_shell(r1,r2,e) ! build 7 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1
+
+      call sc_cartesian_shell_a(r1,r2,e)
+      e1 = e+3
+
+      call sc_cartesian_shell_b(r1,r2,e1)
+      e1 = e1+3
+
+      call sc_cartesian_shell_c(r1,r2,e1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_cartesian_shell_a(r1,r2,e) ! build 3 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1,e2
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      p1 = r1
+      p2 = r1/s2
+      p3 = r1/s3
+
+      x1 = r2
+      x2 = r2/2   ! by fiat
+
+      zr(1)=p1
+      zr(2)=p2
+      zr(3)=p3
+      zr(4)=p2
+      zr(5)=r2
+      zr(6)=r2
+      zr(7)=r2
+      zr(8)=r2
+
+      xr(2)=p2
+      xr(3)=p3
+      xr(6)=x2
+      xr(7)=x2
+
+      yr(3)=p3
+      yr(4)=p2
+      yr(7)=x2
+      yr(8)=x2
+
+      call el_convert  (e,xr,yr,zr)
+
+      e1 = e+1
+      e2 = e+2
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e1,xr,yr,zr)
+
+      call permute_xyz    (xr,yr,zr,8)
+      call el_convert     (e2,xr,yr,zr)
+
+      ccurve(5,e ) = 's'
+      ccurve(5,e1) = 's'
+      ccurve(5,e2) = 's'
+
+      call rzero(curve(1,1,e),3*4*6)
+      curve(4,5,e ) = r1
+      curve(4,5,e1) = r1
+      curve(4,5,e2) = r1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_cartesian_shell_b(r1,r2,e) ! build 3 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1,e2
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+c---------- the stuff below for midside node extraction -----------------
+      parameter      (nxm3=nxm*nym*nzm)
+      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
+
+      e2 = e-2  ! 2nd element in sc_cartesian_shell_a, below fiducial element
+      ie = 3    ! edge number for elment "below" fiducial element
+
+      call genxyz_e (xp,yp,zp,e2,nxm,nym,nzm) ! fill x27(.,e2)
+      xm = x27(eindx(ie),e2)
+      ym = y27(eindx(ie),e2)
+      zm = z27(eindx(ie),e2)
+
+c---------- the stuff above for midside node extraction -----------------
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      p1 = r1
+      p2 = r1/s2
+      p3 = r1/s3
+
+      x1 = r2
+      x2 = r2/2   ! by fiat
+
+      xr(1)=p2    !             ^
+      xr(2)=x1    !             |            |                          
+      xr(3)=x1    !             |\           |                         
+      xr(4)=p3    !             |  \         |                    
+      xr(5)=x2    !             |    p3------+                    
+      xr(6)=x1    !             |     \      |                      
+      xr(7)=x1    !             |      \     |                       
+      xr(8)=x2    !             O------------+---------------> x        
+                  !                    p2    x1
+      yr(3)=x2
+      yr(4)=p3
+      yr(7)=x2
+      yr(8)=x2
+
+      zr(1)=p2
+      zr(2)=x2
+      zr(3)=x2
+      zr(4)=p3
+      zr(5)=x1
+      zr(6)=x1
+      zr(7)=x1
+      zr(8)=x1
+
+      xr(9)=xm ! midside node, edge 1
+      yr(9)=ym
+      zr(9)=zm
+
+c     do k=1,9
+c        write(6,*) xr(k),yr(k),zr(k),'  MIDSIDE ?'
+c     enddo
+c     stop
+
+      call rzero(curve(1,1,e),3*6*12)
+      do e1=e,e+2
+         call el_convert  (e1,xr,yr,zr)
+         ccurve(4,e1) = 'm'
+         curve (1,4,e1) = xr(9)
+         curve (2,4,e1) = yr(9)
+         curve (3,4,e1) = zr(9)
+         call permute_xyz    (xr,yr,zr,9)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_cartesian_shell_c(r1,r2,e) ! build 1 elements, use rotation
+
+      include 'basics.inc'
+      integer e,e1
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+      call rzero(zr,8)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      p1 = r1
+      p2 = r1/s2
+      p3 = r1/s3
+
+      x1 = r2
+      x2 = r2/2   ! by fiat
+
+      xr(1)=p3
+      xr(2)=x1
+      xr(3)=x1
+      xr(4)=x2
+      xr(5)=x2
+      xr(6)=x1
+      xr(7)=x1
+      xr(8)=x2
+
+      yr(1)=p3
+      yr(2)=x2
+      yr(3)=x1
+      yr(4)=x1
+      yr(5)=x2
+      yr(6)=x2
+      yr(7)=x1
+      yr(8)=x1
+
+      zr(1)=p3
+      zr(2)=x2
+      zr(3)=x2
+      zr(4)=x2
+      zr(5)=x1
+      zr(6)=x1
+      zr(7)=x1
+      zr(8)=x1
+
+      call rzero(curve(1,1,e),4*6)
+      do e1=e,e+2
+         call el_convert     (e1,xr,yr,zr)
+         call permute_xyz    (xr,yr,zr,8)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_pipe_section (radii,nr,e) 
+
+      include 'basics.inc'
+
+      integer e,e1,e2
+      real radii(nr)
+
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      e1 = e
+
+      call rzero(xr,8)
+      call rzero(yr,8)
+
+      z0 = -radii(nr+1)
+      z1 = 0
+      call cfill(zr(1),z0,4)
+      call cfill(zr(5),z1,4)
+
+      s2=sqrt(2.0)
+      s3=sqrt(3.0)
+
+      r1 = radii(1)
+      r2 = radii(2)
+
+      rr = sqrt(r1*r2) ! geometric mean
+      rr = .5*(sqrt(r1*r2)+r1)
+      x1 = r1
+      x2 = rr/s2
+
+      xr(2) = x1
+      xr(3) = x2
+      yr(3) = x2
+      yr(4) = x1
+
+      call el_convert_2to3(e1,xr,yr,zr)
+      e1 = e1+1
+
+      do i=2,nr-1  ! work from inner to outer radii: 1st & last are special
+
+         r1 = radii(i-1)
+         r2 = radii(i)
+         rr = r1
+         if (i.eq.2) rr=.5*(sqrt(r1*r2)+r1)
+
+         p1 = r1
+         p2 = rr/s2
+         q1 = r2
+         q2 = r2/s2
+
+         xr(1) = p1
+         xr(2) = q1
+         xr(3) = q2
+         xr(4) = p2
+
+         yr(1) =  0
+         yr(2) =  0
+         yr(3) = q2
+         yr(4) = p2
+
+         call el_convert_2to3(e1,xr,yr,zr)
+
+         if (i.gt.2) then
+            ccurve(  4,e1) = 'C'
+            curve (1,4,e1) = -r1
+            ccurve(  8,e1) = 'C'
+            curve (1,8,e1) = -r1
+         endif
+         ccurve(  2,e1) = 'C'
+         curve (1,2,e1) = r2
+         ccurve(  6,e1) = 'C'
+         curve (1,6,e1) = r2
+
+         call convert_top_to_mid(e1)
+
+         e1 = e1+1
+
+         xr(1) = p2
+         xr(2) = q2
+         xr(3) =  0
+         xr(4) =  0
+
+         yr(1) = p2
+         yr(2) = q2
+         yr(3) = q1
+         yr(4) = p1
+
+         call el_convert_2to3(e1,xr,yr,zr)
+
+         if (i.gt.2) then
+            ccurve(  4,e1) = 'C'
+            curve (1,4,e1) = -r1
+            ccurve(  8,e1) = 'C'
+            curve (1,8,e1) = -r1
+         endif
+         ccurve(  2,e1) = 'C'
+         curve (1,2,e1) = r2
+         ccurve(  6,e1) = 'C'
+         curve (1,6,e1) = r2
+
+         call convert_top_to_mid(e1)
+
+         e1 = e1+1
+
+      enddo
+
+      i  = nr
+      r1 = radii(i-1)
+      r2 = radii(i)
+      x1 = r2
+      x2 = r2/2   ! by fiat
+
+      p1 = r1
+      p2 = r1/s2
+
+      xr(1) = r1
+      xr(2) = r2
+      xr(3) = r2
+      xr(4) = p2
+      yr(1) =  0
+      yr(2) =  0
+      yr(3) = x2
+      yr(4) = p2
+      call el_convert_2to3(e1,xr,yr,zr)
+      ccurve(  4,e1) = 'C'
+      curve (1,4,e1) = -r1
+      ccurve(  8,e1) = 'C'
+      curve (1,8,e1) = -r1
+      call convert_top_to_mid(e1)
+      e1 = e1+1
+
+      xr(1) = p2
+      xr(2) = x2
+      xr(3) =  0
+      xr(4) =  0
+      yr(1) = p2
+      yr(2) = r2
+      yr(3) = r2
+      yr(4) = r1
+      call el_convert_2to3(e1,xr,yr,zr)
+      ccurve(  4,e1) = 'C'
+      curve (1,4,e1) = -r1
+      ccurve(  8,e1) = 'C'
+      curve (1,8,e1) = -r1
+      call convert_top_to_mid(e1)
+      e1 = e1+1
+
+      xr(1) = p2
+      xr(2) = x1
+      xr(3) = x1
+      xr(4) = x2
+      yr(1) = p2
+      yr(2) = x2
+      yr(3) = x1
+      yr(4) = x1
+      call el_convert_2to3(e1,xr,yr,zr)
+      e1 = e1+1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convert_top_to_mid(e)
+
+      include 'basics.inc'
+      integer e,e1,e2
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      parameter      (nxm3=nxm*nym*nzm)
+      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      call genxyz_e (xp,yp,zp,e,nxm,nym,nzm) ! fill x27(.,e2)
+
+      do ie=5,8
+         if (ccurve(ie,e).eq.'C') then
+            ccurve(  ie,e) = 'm'
+            curve (1,ie,e) = x27(eindx(ie),e)
+            curve (2,ie,e) = y27(eindx(ie),e)
+            curve (3,ie,e) = z27(eindx(ie),e)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_make_sphere_cap(radii,nr)
+      real radii(nr)
+
+      include 'basics.inc'
+      integer e,e0,e1,f
+
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      parameter      (nxm3=nxm*nym*nzm)
+      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3) ! for genxyze_e
+
+      e0 = nel
+      e  = e0 + 1
+
+      call sc_central_shell    (radii(1),radii(2),e)
+      e = e+1
+
+      call sc_transition_shell (radii(1),radii(2),e)
+      e = e+3
+
+      do i=3,nr-1  ! work from inner to outer radii: 1st & last are special
+         call sc_std_shell     (radii(i-1),radii(i),e)
+         e = e+3
+      enddo
+      do e1=e0+1,e
+      do f=1,6
+         cbc(f,e1,1) = 'v  '
+         cbc(f,e1,2) = 't  '
+      enddo
+      enddo
+
+
+      call sc_cartesian_shell  (radii(nr-1),radii(nr),e)
+      do e1=e+1,e+7
+      do f=1,6
+         cbc(f,e1,1) = 'W  '
+         cbc(f,e1,2) = 'I  '
+      enddo
+      enddo
+
+      e = e+7
+
+      call prs('WARNING: Geometry inconsistent!!$')
+      call prs('You must call fix_geom from usrdat2!!$')
+
+c     do i=nel+1,e-1
+c        call genxyz_e (xp,yp,zp,i,nxm,nym,nzm) ! fill x27(.,e2)
+c        call fix_m_curve(i) ! convert cap to midside nodes
+c     enddo
+
+c     call sc_pipe_section     (radii,nr,e) !
+c     e = e+6
+
+      nel = e-1
+
+c     do e=1,nel
+c     do f=1,6
+c        cbc(f,e,1) = 'v  '
+c        cbc(f,e,2) = 't  '
+c     enddo
+c     enddo
+
+      do e=1,nel
+         numapt(e) = e
+         letapt(e) = 'A'
+      enddo
 
       return
       end

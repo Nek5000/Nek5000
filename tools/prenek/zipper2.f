@@ -923,12 +923,15 @@ C
             IF (TEST.GT.EPS) THEN
              WRITE(6,30) 
      $       RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
-   30        FORMAT(5X,'ERROR: Element vertex not on requested sphere.'
+   30        FORMAT(5X,'ERROR: vertex not on requested sphere A.'
      $           ,/,5X,'REPAIRING in CRN3Dd',5F12.7)
 c    $           ,/,5X,'EXITING in CRN3Dd',5F12.7)
-             WRITE(6,31) IE,IFACE,XCTR,YCTR,ZCTR
-   31        FORMAT(5X,'IE,IF,XYZCTR:',2I4,3F12.7)
+             WRITE(6,31) i,IE,IFACE,XCTR,YCTR,ZCTR
+   31        FORMAT(5X,'i,IE,IF,XYZCTR:',3I4,3F12.7)
+             WRITE(6,*) 'xc'
              WRITE(6,32) (xc(j),yc(j),zc(j),j=1,8)
+             WRITE(6,*) 'xcv'
+             WRITE(6,32) ((xcv(k,j,1),k=1,3),j=1,4)
    32        FORMAT(3f12.7)
 
 c            CALL EXITT
@@ -2416,15 +2419,7 @@ c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 c
-      n  = nel*(2**ndim)
-      xmean = glsum(x,8*nelm)/n
-      ymean = glsum(y,8*nelm)/n
-      zmean = glsum(z,8*nelm)/n
-      if (if3d) then
-         call prsrrr('XYZ mean:$',xmean,ymean,zmean)
-      else
-         call prsrr ('XY  mean:$',xmean,ymean)
-      endif
+      call getxyzstat
 c
       IF (CHOICE.EQ.'UP MENU') return
       IF (CHOICE.EQ.'Redraw mesh') then
@@ -4994,6 +4989,53 @@ c-----------------------------------------------------------------------
            x(1,inv(v))=xq(ijk)
         enddo
         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine getxyzstat
+      include 'basics.inc'
+      integer e
+      common /xyzzst/ xyzs(3,3)
+
+      big =  1.e22
+      bgm = -1.e22
+      call rzero(xyzs(1,1),3)
+      call cfill(xyzs(1,2),big,3)
+      call cfill(xyzs(1,3),bgm,3)
+
+      nv = 2**ndim
+      do i=1,nv
+      do e=1,nel
+
+         xyzs(1,1) = xyzs(1,1) + x(e,i)
+         xyzs(2,1) = xyzs(2,1) + y(e,i)
+         xyzs(3,1) = xyzs(3,1) + z(e,i)
+         
+         xyzs(1,2) = min(xyzs(1,1) , x(e,i) )
+         xyzs(2,2) = min(xyzs(2,1) , y(e,i) )
+         xyzs(3,2) = min(xyzs(3,1) , z(e,i) )
+         
+         xyzs(1,3) = max(xyzs(1,1) , x(e,i) )
+         xyzs(2,3) = max(xyzs(2,1) , y(e,i) )
+         xyzs(3,3) = max(xyzs(3,1) , z(e,i) )
+         
+      enddo
+      enddo
+
+      xyzs(1,1) = xyzs(1,1)/(nel*nv)
+      xyzs(2,1) = xyzs(2,1)/(nel*nv)
+      xyzs(3,1) = xyzs(3,1)/(nel*nv)
+    
+      if (if3d) then
+         call prsrrr('XYZ mean:$',xyzs(1,1),xyzs(2,1),xyzs(3,1))
+         call prsrrr('XYZ min :$',xyzs(1,2),xyzs(2,2),xyzs(3,2))
+         call prsrrr('XYZ max :$',xyzs(1,3),xyzs(2,3),xyzs(3,3))
+      else
+         call prsrr ('XY  mean:$',xyzs(1,1),xyzs(2,1))
+         call prsrr ('XY  min :$',xyzs(1,2),xyzs(2,2))
+         call prsrr ('XY  max :$',xyzs(1,3),xyzs(2,3))
       endif
 
       return

@@ -2708,18 +2708,19 @@ C     Take care of curved sides
 C
       do 200 ie = 1,nel
       do 200 is = 1,12
-         if (ccurve(is,ie).eq.'s') then
-C           spherical side, rad = curve(4,is,ie)
+         if (ccurve(is,ie).eq.'s') then ! sphere rad=curve(4,is,ie)
 c           if (curve(4,is,ie).gt.re)
 c    $         curve(4,is,ie) = sfact*curve(4,is,ie)
             do i=1,4
                curve(i,is,ie) = sfact*curve(i,is,ie)
             enddo
-         endif
-         if (ccurve(is,ie).eq.'C') then
-C           cylindrical side, rad = curve(1,is,ie)
+         elseif (ccurve(is,ie).eq.'C') then ! cylinder rad=curve(1,is,ie)
             if (abs(curve(1,is,ie)).gt.re)
      $         curve(1,is,ie) = sfact*curve(1,is,ie)
+         elseif (ccurve(is,ie).eq.'m') then ! midside node
+            do i=1,3
+               curve(i,is,ie) = sfact*curve(i,is,ie)
+            enddo
          endif
   200 continue
       return
@@ -2876,8 +2877,8 @@ c
             z(e,i) = z(e,i) + zt
          enddo
 c
-         do f=1,6
-            if (ccurve(f,e).eq.'s') then
+         do f=1,12
+            if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
                curve(1,f,e) = curve(1,f,e) + xt
                curve(2,f,e) = curve(2,f,e) + yt
                curve(3,f,e) = curve(3,f,e) + zt
@@ -2968,8 +2969,8 @@ c
       a(3,3) =  1.
 
       do e=1,nel
-      do f=1,6
-         if (ccurve(f,e).eq.'s') then
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
             xt = curve(1,f,e)
             yt = curve(2,f,e)
             zt = curve(3,f,e)
@@ -3009,8 +3010,8 @@ c-----------------------------------------------------------------------
       enddo
 
       do e=e0,e1
-      do f=1,6
-         if (ccurve(f,e).eq.'s') then
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
             xt = curve(1,f,e)
             yt = curve(2,f,e)
             zt = curve(3,f,e)

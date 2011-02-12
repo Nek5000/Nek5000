@@ -609,7 +609,7 @@ C
             IF (TEST.GT.EPS) THEN
              WRITE(6,30) 
      $       RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
-   30        FORMAT(5X,'ERROR: Element vertex not on requested sphere.'
+   30        FORMAT(5X,'ERROR: vertex not on requested sphere B.'
      $           ,/,5X,'EXITING in CRN3Df',5F12.7)
              WRITE(6,31) IE,IFACE,XCTR,YCTR,ZCTR
    31        FORMAT(5X,'IE,IF,XYZCTR:',2I4,3F12.7)
