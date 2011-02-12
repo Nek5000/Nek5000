@@ -1544,9 +1544,7 @@ c     $        mg_solve_e(mg_solve_index(l)+1)*alpha
       call hsmg_rstr_no_dssum(
      $   mg_solve_r(mg_solve_index(1)),mg_work2,1)
 
-c     nzw = 1       ! old
-c     nzw = 3-ndim  ! mistake
-      nzw = ndim-2  ! just right...
+      nzw = ndim-1  ! just right...
 
       call hsmg_do_wt(mg_solve_r(mg_solve_index(1)),
      $                mg_mask(mg_mask_index(1)),2,2,nzw)
