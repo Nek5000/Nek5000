@@ -1137,9 +1137,9 @@ C
       logical lbuf(5+ldimt1)  
 
       call lfalse(lbuf,5+ldimt1)
-C
-C     Read output specs
-      IF(NID.EQ.0) THEN
+      iflag = 0                           ! Check for valid ipsco read
+
+      IF(NID.EQ.0) THEN                   ! Read output specs
 
         READ(9,*,ERR=200,END=200)
         READ(9,*,ERR=200,END=200) NOUTS
@@ -1160,16 +1160,25 @@ C     Read output specs
         call lfalse(ifpsco,ldimt1)
         read(9,*,err=200,end=200) ipsco
         if (ipsco.gt.0) then
-           if (ipsco.gt.ldimt-1) goto 200
-           do i=1,ipsco
-              read(9,*,err=200,end=200) ifpsco(i)
-              k = k+1
-              lbuf(k) = ifpsco(i)
-           enddo
+           if (ipsco.gt.ldimt1) then    ! Invalid ifpsco read
+              iflag = 1
+           else
+              do i=1,ipsco
+                 read(9,*,err=200,end=200) ifpsco(i)
+                 k = k+1
+                 lbuf(k) = ifpsco(i)
+              enddo
+           endif
         endif
 
-      ENDIF
-C
+      endif
+
+
+      iflag = iglmax(iflag,1)                       ! Check for valid ipsco read
+      write(6,*) nid,ldimt1,ipsco,iflag,' ipsco??'
+      if (iflag.gt.0) call exitti                   ! Invalid ifpsco read
+     $   ('Error in rdout.  Increase ldimt1 in SIZE to$',ipsco)
+
       k = 5+ldimt1
       call bcast(lbuf ,LSIZE*k)
       call bcast(IPSCO,ISIZE  )
