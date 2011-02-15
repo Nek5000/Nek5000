@@ -584,7 +584,10 @@ C     Note : CTMP1 is used in this format in several subsequent routines
 c     Initialize geometry arrays with bi- triquadratic deformations
       call linquad(xml,yml,zml,nxl,nyl,nzl)
 
+
       do ie=1,nelt
+
+         call setzgml (zgml,ie,nxl,nyl,nzl,ifaxis)
 
 c        Deform surfaces - general 3D deformations
 c                        - extruded geometry deformations
@@ -622,9 +625,18 @@ C
       LOGICAL IFAXIS
 C
       CALL RZERO (ZGML,3*NX1)
-C
+
+      if (nxl.eq.3) then
+         do k=1,3
+            zgml(1,k) = -1
+            zgml(2,k) =  0
+            zgml(3,k) =  1
+         enddo
+         return
+      endif
+
       IF ( IFGMSH3 ) THEN
-C
+
          DO 5 IX=1,NXL
             ZGML(IX,1)=ZGM3(IX,1)
     5    CONTINUE

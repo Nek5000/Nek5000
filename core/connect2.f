@@ -75,16 +75,13 @@ C     Read Mesh Info
           write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12       format(1X,A,4I9,/,/)
         endif
+
         call chk_nel  ! make certain sufficient array sizes
+
         if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
         if (ifre2) then
           call bin_rd1(ifbswap) ! rank0 will read mesh data + distribute
         else
-#ifndef DEBUG
-c           if(nid.eq.0) write(6,*) 
-c     &     'ABORT: ASCII mesh data no longer supported, use .re2 file!'
-c           call exitt
-#endif
           maxrd = 32               ! max # procs to read at once
           mread = (np-1)/maxrd+1   ! mod param
           iread = 0                ! mod param
@@ -604,8 +601,6 @@ C
 c     Read elemental mesh data, formatted
       iffmtin = .true.
 
-      call chk_nel
-
       NSIDES=NDIM*2
       DO 40 IEG=1,NELGT
          IF (GLLNID(IEG).EQ.NID) THEN
@@ -697,8 +692,8 @@ C     Read formatted curve side data
 C
       READ(9,*)
       READ(9,*)NCURVE
-      CALL RZERO(CURVE ,48*LELT)
-      CALL BLANK(CCURVE, 8*LELT)
+      CALL RZERO(CURVE ,72*LELT)
+      CALL BLANK(CCURVE,12*LELT)
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
             IF (NELGT.LT.1000) THEN
@@ -741,8 +736,8 @@ C
 C     Read unformatted curve side data 
 C
       READ(8) NCURVE
-      CALL RZERO(CURVE ,48*LELT)
-      CALL BLANK(CCURVE, 8*LELT)
+      CALL RZERO(CURVE ,72*LELT)
+      CALL BLANK(CCURVE,12*LELT)
       IF (NCURVE.GT.0) THEN
          DO 1050 ICURVE=1,NCURVE
             READ(8,ERR=1500,END=1500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
@@ -1175,7 +1170,6 @@ C
 
 
       iflag = iglmax(iflag,1)                       ! Check for valid ipsco read
-      write(6,*) nid,ldimt1,ipsco,iflag,' ipsco??'
       if (iflag.gt.0) call exitti                   ! Invalid ifpsco read
      $   ('Error in rdout.  Increase ldimt1 in SIZE to$',ipsco)
 
@@ -2444,6 +2438,11 @@ c-----------------------------------------------------------------------
 
       neltmx=min(neltmx,lelg)
       nelvmx=min(nelvmx,lelg)
+
+      nelgt = iglmax(nelgt,1)
+      nelgv = iglmax(nelgv,1)
+
+c     write(6,*) nid,' inside chk_nel',nelgt,neltmx,nelvmx
 
       if (nelgt.gt.neltmx.or.nelgv.gt.nelvmx) then
          if (nid.eq.0) then
