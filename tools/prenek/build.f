@@ -248,8 +248,8 @@ c        ITEM(nchoic)        =             'REDRAW ISOMETRIC'
          nchoic = nchoic+1
          ITEM(nchoic)        =             'IMPORT vtx MESH'
          nchoic = nchoic+1
-         ITEM(nchoic)        =             'IMPORT vtk MESH'
-         nchoic = nchoic+1
+c        ITEM(nchoic)        =             'IMPORT vtk MESH'
+c        nchoic = nchoic+1
          ITEM(nchoic)        =             'REFLECT MESH '
 c        nchoic = nchoic+1
 c        ITEM(nchoic)        =             'RSB'
@@ -286,8 +286,8 @@ c        nchoic = nchoic+1
          ITEM(nchoic)       =             'REDRAW MESH'
          nchoic = nchoic+1
          ITEM(nchoic)       =             'IMPORT MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'IMPORT vtk MESH'
+c        nchoic = nchoic+1
+c        ITEM(nchoic)       =             'IMPORT vtk MESH'
          nchoic = nchoic+1
          ITEM(nchoic)       =             'IMPORT vtx MESH'
          nchoic = nchoic+1
@@ -1993,28 +1993,39 @@ c
 
       npt=2**ndim
       mcell = 0
+      kcmin = 99999999
       do ie=1,ncell
-         read(47,*) (kcell(k),k=1,npt)
+         read(47,*,end=444) (kcell(k),k=1,npt)
          mcell = mcell+1
          do k=1,npt
-            kcell(k) = kcell(k) + 1   ! no need to add 1
             vv(k,ie) = kcell(k)
-c           vv(k,ie) = i_findu(vnum,kcell(k),nvtx)
-            rrr = .05
-            ii = vv(k,ie)
+            kcmin    = min(kcmin,kcell(k)) ! Check for 0 or 1-based indexing
+
+c           rrr = .05
+c           ii = vv(k,ie)
 c           call draw_circ(xp(ii),yp(ii),zp(ii),rrr)
 c           write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
 c           vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
+
          enddo
 c        call prsi('continue? $',ie)
 c        call res(ans,1)
          numapt(ie)=1
          letapt(ie)='A'
       enddo
+
   444 ncell = mcell
 
-      call prs('continue?$')
-      call res(ans,1)
+      if (kcmin.eq.0) then  ! Shift to 1-based indexing
+         do ie=1,ncell
+         do k=1,npt
+            vv(k,ie) = vv(k,ie) + 1
+         enddo
+         enddo
+      endif
+
+      call prsii('Number of vertices and elements:$',nvtx,ncell)
+
 c
 c     At this point, we have the cell data in the "new" format.
 c
@@ -2066,7 +2077,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine imp_mesh_vtk
+      subroutine imp_mesh_vtk  ! NO LONGER ACTIVE  (2/16/2011, pff)
 c
 c     Read vtk-like unstructured mesh format
 c
