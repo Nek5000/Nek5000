@@ -49,7 +49,7 @@ c
 
       return
       end
-c
+ 
 c-----------------------------------------------------------------------
 c      subroutine test_h1_crs
 c      include 'SIZE'
@@ -68,7 +68,7 @@ c         else
 c            if(i.le.8) b(i)=1
 c         endif
 c         call hsmg_coarse_solve(x,b)
-c         print *, 'Column ',i,':',(x(j),j=1,ntot)
+c         write(13,*) 'Column ',i,':',(x(j),j=1,ntot)
 c      enddo
 c      return
 c      end
@@ -1843,6 +1843,7 @@ c     NOW: crystal route vertex by processor id
       iflag = 0
       if (ntuple.ne.nelt) then
          write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FAIL'
+         write(6,*) 'Check that .map file and .rea file agree'
          iflag=1
       else
          nv = 2**ndim
