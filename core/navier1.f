@@ -1508,17 +1508,17 @@ C----------------------------------------------------------------------
       include 'INPUT'
       include 'TSTEP'
 
-                                                CALL MAKEUF
-      IF (IFNATC)                               CALL NATCONV
-      IF (IFEXPLVIS.AND.IFSPLIT)                CALL MAKEVIS
-      IF (IFNAV.AND.(.NOT.IFCHAR))              CALL ADVAB
-      IF (IFMVBD)                               CALL ADMESHV
-      IF (IFTRAN)                               CALL MAKEABF
-      IF ((IFTRAN.AND..NOT.IFCHAR).OR.
-     $    (IFTRAN.AND..NOT.IFNAV.AND.IFCHAR))   CALL MAKEBDF
-      IF (IFNAV.AND.IFCHAR.AND.(.NOT.IFMVBD))   CALL ADVCHAR
-      IF (IFMODEL)                              CALL TWALLSH
-C
+                                                call makeuf
+      if (ifnatc)                               call natconv
+      if (ifexplvis.and.ifsplit)                call explstrs
+      if (ifnav.and.(.not.ifchar))              call advab
+      if (ifmvbd)                               call admeshv
+      if (iftran)                               call makeabf
+      if ((iftran.and..not.ifchar).or.
+     $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
+      if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
+      if (ifmodel)                              call twallsh
+
       return
       END
 C
@@ -5039,4 +5039,389 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine explstrs ! Explicit stress tensor w/ variable viscosity
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /scruz/ u(lx1*ly1*lz1),v(lx1*ly1*lz1),w(lx1*ly1*lz1)
+
+      integer e
+
+      nxyz = nx1*ny1*nz1
+
+
+      do e=1,nelv
+
+        call expl_strs_e(u,v,w,vx(1,1,1,e),vy(1,1,1,e),vz(1,1,1,e),e)
+
+        do i=1,nxyz
+           bfx(i,1,1,e) = bfx(i,1,1,e) - u(i)
+           bfy(i,1,1,e) = bfy(i,1,1,e) - v(i)
+           bfz(i,1,1,e) = bfz(i,1,1,e) - w(i)
+        enddo
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine expl_strs(w1,w2,w3,u1,u2,u3)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real w1(1),w2(1),w3(1),u1(1),u2(1),u3(1)
+
+      integer e
+
+      nxyz = nx1*ny1*nz1
+      k = 1
+      do e=1,nelv
+
+         call expl_strs_e(w1(k),w2(k),w3(k),u1(k),u2(k),u3(k),e)
+         k = k+nxyz
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine expl_strs_e(w1,w2,w3,u1,u2,u3,e)
+      include 'SIZE'
+      include 'SOLN'
+
+      real w1(1),w2(1),w3(1),u1(1),u2(1),u3(1)
+      integer e
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      if (nid.eq.0.and.icalld.eq.0) write(6,*) 'nu_star:',nu_star
+      icalld=1
+
+      if (if3d) then
+         call expl_strs_e_3d (w1,w2,w3,u1,u2,u3,e)
+      else
+         call expl_strs_e_2d (w1,w2,u1,u2,e)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine expl_strs_e_3d(w1,w2,w3,u1,u2,u3,e)
+
+c     Evaluate, for element e,
+c     
+c     /dvi\T  /     dui       duj \
+c     |---|   | dnu ---  + nu --- |    (no boundary terms at present)
+c     \dxj/   \     dxj       dxi /
+
+
+      real w1(1),w2(1),w3(1),u1(1),u2(1),u3(1)
+      integer e
+
+      include 'SIZE'
+      include 'GEOM'    ! jacmi,rxm1, etc.
+      include 'INPUT'   ! if3d
+      include 'MASS'    ! bm1
+      include 'SOLN'    ! vtrans,vdiff,nu_star
+      include 'TSTEP'   ! dt
+      include 'WZ'      ! w3m1
+
+      real nu
+
+      parameter (lxyz=lx1*ly1*lz1)
+      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+     $             , vr(lxyz),vs(lxyz),vt(lxyz)
+     $             , wr(lxyz),ws(lxyz),wt(lxyz)
+
+      call gradl_rst(ur,us,ut,u1,nx1,if3d) ! Grad on GLL
+      call gradl_rst(vr,vs,vt,u2,nx1,if3d)
+      call gradl_rst(wr,ws,wt,u3,nx1,if3d)
+
+      do i=1,lxyz
+
+         nu  = vdiff(i,1,1,e,1)
+         dnu = nu - nu_star  ! nu_star is the constant implicit part
+
+c        uij := jac*( du_i / dx_j )
+
+         u11=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)+ut(i)*txm1(i,1,1,e)
+         u21=vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e)
+         u31=wr(i)*rxm1(i,1,1,e)+ws(i)*sxm1(i,1,1,e)+wt(i)*txm1(i,1,1,e)
+         u12=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e)
+         u22=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
+         u32=wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e)+wt(i)*tym1(i,1,1,e)
+         u13=ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e)
+         u23=vr(i)*rzm1(i,1,1,e)+vs(i)*szm1(i,1,1,e)+vt(i)*tzm1(i,1,1,e)
+         u33=wr(i)*rzm1(i,1,1,e)+ws(i)*szm1(i,1,1,e)+wt(i)*tzm1(i,1,1,e)
+
+         w11 = dnu*u11 + nu*u11
+         w12 = dnu*u12 + nu*u21
+         w13 = dnu*u13 + nu*u31
+         w21 = dnu*u21 + nu*u12
+         w22 = dnu*u22 + nu*u22
+         w23 = dnu*u23 + nu*u32
+         w31 = dnu*u31 + nu*u13
+         w32 = dnu*u32 + nu*u23
+         w33 = dnu*u33 + nu*u33
+
+         w   = w3m1(i,1,1)*jacmi(i,e)  ! note, ry has jac in it.
+
+         ur(i)=(w11*rxm1(i,1,1,e)+w12*rym1(i,1,1,e)+w13*rzm1(i,1,1,e))*w
+         us(i)=(w11*sxm1(i,1,1,e)+w12*sym1(i,1,1,e)+w13*szm1(i,1,1,e))*w
+         ut(i)=(w11*txm1(i,1,1,e)+w12*tym1(i,1,1,e)+w13*tzm1(i,1,1,e))*w
+         vr(i)=(w21*rxm1(i,1,1,e)+w22*rym1(i,1,1,e)+w23*rzm1(i,1,1,e))*w
+         vs(i)=(w21*sxm1(i,1,1,e)+w22*sym1(i,1,1,e)+w23*szm1(i,1,1,e))*w
+         vt(i)=(w21*txm1(i,1,1,e)+w22*tym1(i,1,1,e)+w23*tzm1(i,1,1,e))*w
+         wr(i)=(w31*rxm1(i,1,1,e)+w32*rym1(i,1,1,e)+w33*rzm1(i,1,1,e))*w
+         ws(i)=(w31*sxm1(i,1,1,e)+w32*sym1(i,1,1,e)+w33*szm1(i,1,1,e))*w
+         wt(i)=(w31*txm1(i,1,1,e)+w32*tym1(i,1,1,e)+w33*tzm1(i,1,1,e))*w
+
+      enddo
+
+      call gradl_rst_t(w1,ur,us,ut,nx1,if3d)
+      call gradl_rst_t(w2,vr,vs,vt,nx1,if3d)
+      call gradl_rst_t(w3,wr,ws,wt,nx1,if3d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine expl_strs_e_2d(w1,w2,u1,u2,e)
+
 c
+c     Evaluate, for element e,
+c     
+c     /dvi\T  /     dui       duj \
+c     |---|   | dnu ---  + nu --- |    (no boundary terms at present)
+c     \dxj/   \     dxj       dxi /
+c
+
+
+      real w1(1),w2(1),u1(1),u2(1)
+      integer e
+
+      include 'SIZE'
+      include 'GEOM'    ! jacmi,rxm1, etc.
+      include 'INPUT'   ! if3d
+      include 'MASS'    ! bm1
+      include 'SOLN'    ! vtrans,vdiff,nu_star
+      include 'TSTEP'   ! dt
+      include 'WZ'      ! w3m1
+
+      real nu
+
+      parameter (lxyz=lx1*ly1*lz1)
+      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+     $             , vr(lxyz),vs(lxyz),vt(lxyz)
+     $             , wr(lxyz),ws(lxyz),wt(lxyz)
+
+      call gradl_rst(ur,us,ut,u1,nx1,if3d) ! Grad on GLL
+      call gradl_rst(vr,vs,vt,u2,nx1,if3d)
+
+      do i=1,lxyz
+
+         nu  = vdiff(i,1,1,e,1)
+         dnu = nu - nu_star  ! nu_star is the constant implicit part
+
+c        uij := jac*( du_i / dx_j )
+
+         u11=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)
+         u21=vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)
+         u12=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)
+         u22=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)
+
+         w11 = dnu*u11 + nu*u11
+         w12 = dnu*u12 + nu*u21
+         w21 = dnu*u21 + nu*u12
+         w22 = dnu*u22 + nu*u22
+
+         w   = w3m1(i,1,1)*jacmi(i,e)  ! note, ry has jac in it.
+
+         ur(i)=(w11*rxm1(i,1,1,e)+w12*rym1(i,1,1,e))*w
+         us(i)=(w11*sxm1(i,1,1,e)+w12*sym1(i,1,1,e))*w
+         vr(i)=(w21*rxm1(i,1,1,e)+w22*rym1(i,1,1,e))*w
+         vs(i)=(w21*sxm1(i,1,1,e)+w22*sym1(i,1,1,e))*w
+
+      enddo
+
+      call gradl_rst_t(w1,ur,us,ut,nx1,if3d)
+      call gradl_rst_t(w2,vr,vs,vt,nx1,if3d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradl_rst_t(u,ur,us,ut,md,if3d)
+c
+c     Thus routine originally from fsi file: u5.usr (May 2010)
+c
+      include 'SIZE'
+      include 'DXYZ'
+
+      real    u(1),ur(1),us(1),ut(1)
+      logical if3d
+
+      parameter (ldg=lxd**3,lwkd=2*ldg)
+      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
+
+      m0 = md-1
+      call get_dgll_ptr (ip,md,md)
+      if (if3d) then
+         call local_grad3_t(u,ur,us,ut,m0,1,d(ip),dt(ip),wkd)
+      else
+         call local_grad2_t(u,ur,us   ,m0,1,d(ip),dt(ip),wkd)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradl_rst(ur,us,ut,u,md,if3d)
+c
+      include 'SIZE'
+      include 'DXYZ'
+
+      real    ur(1),us(1),ut(1),u(1)
+      logical if3d
+
+      parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
+      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
+
+      m0 = md-1
+      call get_dgll_ptr (ip,md,md)
+      if (if3d) then
+         call local_grad3(ur,us,ut,u,m0,1,d(ip),dt(ip))
+      else
+         call local_grad2(ur,us   ,u,m0,1,d(ip),dt(ip))
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine local_grad3_t(u,ur,us,ut,N,e,D,Dt,w)
+c     Output: ur,us,ut         Input:u,N,e,D,Dt
+      real u (0:N,0:N,0:N,1)
+      real ur(0:N,0:N,0:N),us(0:N,0:N,0:N),ut(0:N,0:N,0:N)
+      real D (0:N,0:N),Dt(0:N,0:N)
+      real w (0:N,0:N,0:N)
+      integer e
+
+      m1 = N+1
+      m2 = m1*m1
+      m3 = m1*m1*m1
+
+      call mxm(Dt,m1,ur,m1,u(0,0,0,e),m2)
+
+      do k=0,N
+         call mxm(us(0,0,k),m1,D ,m1,w(0,0,k),m1)
+      enddo
+      call add2(u(0,0,0,e),w,m3)
+
+      call mxm(ut,m2,D ,m1,w,m1)
+      call add2(u(0,0,0,e),w,m3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine local_grad2_t(u,ur,us,N,e,D,Dt,w)
+c     Output: ur,us         Input:u,N,e,D,Dt
+      real u (0:N,0:N,1)
+      real ur(0:N,0:N),us(0:N,0:N),ut(0:N,0:N)
+      real D (0:N,0:N),Dt(0:N,0:N)
+      real w (0:N,0:N)
+      integer e
+
+      m1 = N+1
+      m2 = m1*m1
+
+      call mxm(Dt,m1,ur,m1,u(0,0,e),m1)
+      call mxm(us,m1,D ,m1,w         ,m1)
+      call add2(u(0,0,e),w,m2)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_dgll_ptr (ip,mx,md)
+c
+c     Get pointer to GL-GL interpolation dgl() for pair (mx,md)
+c
+      include 'SIZE'
+c
+      parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
+      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
+c
+      parameter (ld=2*lxd)
+      common /jgrad/ pd    (0:ld*ld)
+     $             , pdg   (0:ld*ld)
+     $             , pjgl  (0:ld*ld)
+      integer pd , pdg , pjgl
+c
+      ij = md + ld*(mx-1)
+      ip = pdg (ij)
+
+      if (ip.eq.0) then
+
+         nstore   = pdg (0)
+         pdg (ij) = nstore+1
+         nstore   = nstore + md*mx
+         pdg (0)  = nstore
+         ip       = pdg (ij)
+
+        if (nid.eq.985) write(6,*) nstore,ldg,ij,md,mx,ip,' NSTOR'
+c
+         nwrkd = mx + md
+         call lim_chk(nstore,ldg ,'dg   ','ldg  ','get_dgl_pt')
+         call lim_chk(nwrkd ,lwkd,'wkd  ','lwkd ','get_dgl_pt')
+c
+         call gen_dgll(d (ip),dt(ip),md,mx,wkd)
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_dgll(dgl,dgt,mp,np,w)
+c
+c     Generate derivative from np GL points onto mp GL points
+c
+c        dgl  = derivative matrix, mapping from velocity nodes to pressure
+c        dgt  = transpose of derivative matrix
+c        w    = work array of size (3*np+mp)
+c
+c        np   = number of points on GLL grid
+c        mp   = number of points on GL  grid
+c
+c
+c
+      real dgl(mp,np),dgt(np*mp),w(1)
+c
+c
+      iz = 1
+      id = iz + np
+c
+      call zwgll (w(iz),dgt,np)  ! GL points
+      call zwgll (w(id),dgt,mp)  ! GL points
+c
+      ndgt = 2*np
+      ldgt = mp*np
+      call lim_chk(ndgt,ldgt,'ldgt ','dgt  ','gen_dgl   ')
+c
+      n  = np-1
+      do i=1,mp
+         call fd_weights_full(w(id+i-1),w(iz),n,1,dgt) ! 1=1st deriv.
+         do j=1,np
+            dgl(i,j) = dgt(np+j)                       ! Derivative matrix
+         enddo
+      enddo
+c
+      call transpose(dgt,np,dgl,mp)
+c
+      return
+      end
+c-----------------------------------------------------------------------

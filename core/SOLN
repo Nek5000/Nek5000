@@ -61,7 +61,10 @@ c     Solution data for magnetic field
      $               , BYLAG  (LBX1*LBY1*LBZ1*LBELV,LORDER-1)
      $               , BZLAG  (LBX1*LBY1*LBZ1*LBELV,LORDER-1)
      $               , PMLAG  (LBX2*LBY2*LBZ2*LBELV,LORDER2)
-c
+
+      common /expvis/  nu_star
+      real             nu_star
+
       COMMON /CBM2/  
      $                 PR     (LX2,LY2,LZ2,LELV)
      $               , PRLAG  (LX2,LY2,LZ2,LELV,LORDER2)
