@@ -553,6 +553,7 @@ c-----------------------------------------------------------------------
       subroutine comm_test(ivb) ! measure message-passing and all-reduce times
                                 ! ivb = 0 --> minimal verbosity
                                 ! ivb = 1 --> fully verbose
+                                ! ivb = 2 --> smaller sample set(shorter)
 
       include 'SIZE'
       include 'PARALLEL'
@@ -576,6 +577,81 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine pingpong(alphas,betas,nodea,nodeb,dt,io,ivb)
+
+      include 'SIZE'
+      common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
+
+      parameter  (lt=lx1*ly1*lz1*lelt)
+      parameter (mwd = 3*lt)
+      common /scrns/ x(mwd),y(mwd)
+
+      include 'mpif.h'
+      integer status(mpi_status_size)
+
+      character*10 fname
+
+      if (nid.eq.nodea) then
+         write(fname,3) np,nodeb
+    3    format('t',i4.4,'.',i4.4)
+         if (io.ne.6) open (unit=io,file=fname)
+      endif
+
+      call gsync
+      call get_msg_vol(msg_vol,dt,nodea,nodeb) ! Est. msg vol for dt s
+
+      nwds = 0
+      if (nid.eq.nodea.and.ivb.gt.0) write(io,*)
+
+      betas = 0  ! Reported inverse bandwidth
+      count = 0
+
+      do itest = 1,500
+
+         nloop = msg_vol/(nwds+2)
+         nloop = min(nloop,1000)
+         nloop = max(nloop,1)
+
+         len   = 8*nwds
+     
+         call ping_loop(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+
+         if (nid.eq.nodea) then
+            tmsg = (t1-t0)/(2*nloop)   ! 2*nloop--> Double Buffer
+            tmsg = tmsg / 2.           ! one-way cost = 1/2 round-trip
+            tpwd = tmsg                ! time-per-word
+            if (nwds.gt.0) tpwd = tmsg/nwds
+            if (ivb.gt.0) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd
+    1       format(3i6,i12,1p2e16.8,' pg')
+
+            if (nwds.eq.1) then
+               alphas = tmsg
+            elseif (nwds.gt.10000) then   ! "average" beta
+               betas = (betas*count + tpwd)/(count+1)
+               count = count + 1
+            endif
+         endif
+
+         if (ivb.eq.2) then
+            nwds = (nwds+1)*1.25
+         else
+            nwds = (nwds+1)*1.016
+         endif
+         if (nwds.gt.mwd) then
+c        if (nwds.gt.1024) then
+            if (nid.eq.nodea.and.io.ne.6) close(unit=io)
+            call gsync
+            return
+         endif
+
+      enddo
+
+      if (nid.eq.nodea.and.io.ne.6) close(unit=io)
+      call gsync
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pingpongo(alphas,betas,nodea,nodeb,dt,io,ivb)
 
       include 'SIZE'
       common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
@@ -631,7 +707,7 @@ c-----------------------------------------------------------------------
             tmsg = tmsg / 2.       ! Round-trip message time = twice one-way
             tpwd = tmsg
             if (nwds.gt.0) tpwd = tmsg/nwds
-            if (ivb.eq.1) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd
+            if (ivb.gt.0) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd
     1       format(3i6,i12,1p2e16.8,' pg')
 
             if (nwds.eq.1) then
@@ -767,7 +843,7 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then
          nwds = 1
          do itest=1,500
-            if (ivb.eq.1.or.itest.eq.1) 
+            if (ivb.gt.0.or.itest.eq.1) 
      $         write(6,1) np,nwds,(times(k,itest),k=1,2)
     1       format(i9,i12,1p2e16.8,' gop')
             nwds = (nwds+1)*1.016
@@ -820,7 +896,7 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then
          nwds = 1
          do itest=1,500
-            if (ivb.eq.1.or.itest.eq.1) 
+            if (ivb.gt.0.or.itest.eq.1) 
      $         write(6,1) np,nwds,(times(k,itest),k=1,2)
     1       format(i9,i12,1p2e16.8,' gp2')
             nwds = (nwds+1)*1.016
@@ -933,6 +1009,155 @@ c     Await final answer from node 0 via log_2 fan out
         endif
         level=level/2
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
+
+      common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
+
+      real x(1),y(1)
+
+      include 'mpif.h'
+      integer status(mpi_status_size)
+
+      i=0
+      if (nid.eq.nodea) then
+         call gsync
+         call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr)    ! 1b
+         call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
+c        call mpi_rsend(x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
+         call msgwait(msg)                                          ! 1b
+
+         t0 = mpi_wtime ()
+         do i=1,nloop
+            call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr) ! 2b
+            call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)     ! 2a
+c           call mpi_rsend(x,len,mpi_byte,nodeb,i,nekcomm,ierr)     ! 2a
+            call mpi_wait (msg,status,ierr)                         ! 2b
+         enddo
+         t1 = mpi_wtime ()
+
+      elseif (nid.eq.nodeb) then
+
+         call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr)    ! 1a
+         call gsync
+         call mpi_wait (msg,status,ierr)                            ! 1a
+
+         j=i
+         do i=1,nloop
+            call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr) ! 2a
+c           call mpi_rsend(x,len,mpi_byte,nodea,j,nekcomm,ierr)     ! 1b
+            call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)     ! 1b
+            call mpi_wait (msg,status,ierr)                         ! 2a
+            j=i
+         enddo
+c        call mpi_rsend(x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
+         call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
+
+      else
+         call gsync
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
+
+      common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
+
+      real x(1),y(1)
+
+      include 'mpif.h'
+      integer status(mpi_status_size)
+
+      i=0
+      if (nid.eq.nodea) then
+         call gsync
+         call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr)    ! 1b
+         call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
+         call msgwait(msg)                                          ! 1b
+
+         t0 = mpi_wtime ()
+         do i=1,nloop
+            call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)     ! 2a
+            call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr) ! 2b
+            call mpi_wait (msg,status,ierr)                         ! 2b
+         enddo
+         t1 = mpi_wtime ()
+
+      elseif (nid.eq.nodeb) then
+
+         call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr)    ! 1a
+         call gsync
+         call mpi_wait (msg,status,ierr)                            ! 1a
+
+         j=i
+         do i=1,nloop
+            call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)     ! 1b
+            call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr) ! 2a
+            call mpi_wait (msg,status,ierr)                         ! 2a
+            j=i
+         enddo
+         call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
+
+      else
+         call gsync
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ping_loop(t1,t0,len,nloop,nodea,nodeb,nid,x1,y1,x2,y2)
+c     Double Buffer : does 2*nloop timings
+
+      common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
+
+      real x1(1),y1(1),x2(1),y2(1)
+
+      include 'mpif.h'
+      integer status(mpi_status_size)
+
+      itag=1
+      if (nid.eq.nodea) then
+         call mpi_irecv(y1,len,mpi_byte,nodeb,itag,nekcomm,msg1,ierr)   ! 1b 
+         call gsync
+
+
+         t0 = mpi_wtime ()
+         do i=1,nloop
+            call mpi_send (x1,len,mpi_byte,nodeb,itag,nekcomm,ierr)     ! 1a 
+            call mpi_irecv(y2,len,mpi_byte,nodeb,itag,nekcomm,msg2,ierr)! 2b 
+            call mpi_wait (msg1,status,ierr)                            ! 1b
+            call mpi_send (x2,len,mpi_byte,nodeb,itag,nekcomm,ierr)     ! 2a 
+            call mpi_irecv(y1,len,mpi_byte,nodeb,itag,nekcomm,msg1,ierr)! 3b 
+            call mpi_wait (msg2,status,ierr)                            ! 2b
+         enddo
+         t1 = mpi_wtime ()
+         call mpi_send (x1,len,mpi_byte,nodeb,itag,nekcomm,ierr)        ! nb
+         call mpi_wait (msg1,status,ierr)                              ! nb
+
+      elseif (nid.eq.nodeb) then
+
+         call mpi_irecv(y1,len,mpi_byte,nodea,itag,nekcomm,msg1,ierr)   ! nb 
+         call gsync
+
+
+         do i=1,nloop
+            call mpi_wait (msg1,status,ierr)                            ! 1a
+            call mpi_send (x1,len,mpi_byte,nodea,itag,nekcomm,ierr)     ! 1b
+            call mpi_irecv(y2,len,mpi_byte,nodea,itag,nekcomm,msg2,ierr)! 2a
+            call mpi_wait (msg2,status,ierr)                            ! 2a 
+            call mpi_send (x2,len,mpi_byte,nodea,itag,nekcomm,ierr)     ! 2b
+            call mpi_irecv(y1,len,mpi_byte,nodea,itag,nekcomm,msg1,ierr)! 3a
+         enddo
+         call mpi_wait (msg1,status,ierr)                            ! 2a 
+         call mpi_send (x1,len,mpi_byte,nodea,itag,nekcomm,ierr)        ! nb
+
+      else
+         call gsync
+      endif
 
       return
       end
