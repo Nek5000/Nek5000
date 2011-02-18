@@ -40,15 +40,16 @@ c
       ! add user defined divergence to qtl 
       call add2 (qtl,usrdiv,ntot1)
 
-      ! split viscosity into explicit/implicit part
-      if (ifexplvis) call split_vis
-
-      ! extrapolate velocity
       CALL V_EXTRAP(vext)
 
       ! compute explicit contributions bfx,bfy,bfz 
       CALL MAKEF 
       CALL LAGVEL
+
+      ! split viscosity into explicit/implicit part
+      if (ifexplvis) call split_vis
+
+      ! extrapolate velocity
 
       ! mask Dirichlet boundaries
       CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask) 
@@ -362,6 +363,7 @@ c
       return
       end
 
+c-----------------------------------------------------------------------
       subroutine opadd2cm (a1,a2,a3,b1,b2,b3,c)
       INCLUDE 'SIZE'
       REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1),C
@@ -381,66 +383,13 @@ c
       return
       END
 
-      subroutine split_vis
-C---------------------------------------------------------------------
-C
-C     Split viscosity into a constant implicit (VDIFF) and variable 
-C     explicit (VDIFF_E) part.
-C
-C---------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-
-      real alpha
-      parameter(alpha=1.25)
-
-      ntot = nx1*ny1*nz1*nelv
-
-      ! save total viscosity
-      call copy(vdiff_e,vdiff,ntot)
-
-
-      ! set implicit part
-      vis_max = alpha * glmax(vdiff,ntot)
-      call cfill(vdiff,vis_max,ntot)
-
-      ! set explicit part
-      call sub2(vdiff_e,vdiff,ntot)
-
-c testing
-c      dmue = 0.025
-c      dmue_imp = 1.5 * dmue
-c      fac = dmue_imp
-c      call cfill(vdiff,fac,ntot)
-c      fac = dmue - dmue_imp
-c      call cfill(vdiff_e,fac,ntot)
-c testing
-
-      return
-      end
-
-c-----------------------------------------------------------------------
-      subroutine redo_split_vis
-
-C     Redo split viscosity
-
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-
-      ntot = nx1*ny1*nz1*nelv
-
-      ! sum up explicit and implicit part
-      call add2(vdiff,vdiff_e,ntot)
-
-      return
-      end
 c-----------------------------------------------------------------------
       subroutine v_extrap(vext)
 c
 c     extrapolate velocity
 c
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
    
       real vext(lx1*ly1*lz1*lelv,1) 
 
@@ -450,10 +399,10 @@ c
       AB1 = AB(2)
       AB2 = AB(3)
 
-c      call copy(vext(1,1),vx,ntot)
-c      call copy(vext(1,2),vy,ntot)
-c      call copy(vext(1,3),vz,ntot)
-c      return
+c     call copy(vext(1,1),vx,ntot)
+c     call copy(vext(1,2),vy,ntot)
+c     call copy(vext(1,3),vz,ntot)
+c     return
 
       call add3s2(vext(1,1),vx,vxlag,ab0,ab1,ntot)
       call add3s2(vext(1,2),vy,vylag,ab0,ab1,ntot)
@@ -467,3 +416,33 @@ c      return
 
       return
       end  
+c-----------------------------------------------------------------------
+      subroutine split_vis
+
+c     Split viscosity into a constant implicit (VDIFF) and variable 
+c     explicit (VDIFF_E) part.
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      n = nx1*ny1*nz1*nelv
+
+      dnu_star = -nu_star
+      call cadd2 (vdiff_e,vdiff,dnu_star,n)   ! set explicit part
+
+      call cfill (vdiff,nu_star,n)            ! set implicit part
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine redo_split_vis     !     Redo split viscosity
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      n = nx1*ny1*nz1*nelv
+      call add2(vdiff,vdiff_e,n) ! sum up explicit and implicit part
+
+      return
+      end
+c-----------------------------------------------------------------------
