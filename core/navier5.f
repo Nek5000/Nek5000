@@ -2478,51 +2478,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine z_average(ua,u,w1,w2)
-c
-c     Compute the z average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-c
-      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
-      integer e,eg,ex,ey,ez
-      real dy2
-c
-      mxy = nelx*nely*nx1*ny1
-      call rzero(ua,mxy)
-      call rzero(w1,mxy)
-c
-      do e=1,nelt
-c
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-c
-         do j=1,ny1
-         do i=1,nx1
-            dz2 = 1.0  !  Assuming uniform in "z" direction
-            do k=1,nz1
-               ua(i,j,ex,ey) = ua(i,j,ex,ey)+dz2*wzm1(k)*u(i,j,k,e)
-               w1(i,j,ex,ey) = w1(i,j,ex,ey)+dz2*wzm1(k) ! redundant but clear
-            enddo
-         enddo
-         enddo
-      enddo
-c
-      call gop(ua,w2,'+  ',mxy)
-      call gop(w1,w2,'+  ',mxy)
-c
-      do i=1,mxy
-         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine y_avg_buff(ux,uy,uz,c2,name,icount)
 c
 c     Compute the y average of quantity u() - assumes global tens.prod.
@@ -3518,6 +3473,111 @@ c-----------------------------------------------------------------------
       scale = (x1-x0)/(xmax-xmin)
       do i=1,n
          x(i) = x0 + scale*(x(i)-xmin)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine z_distribute(u)
+c
+c     Compute the z average of quantity u() and redistribute
+c
+c     Assumes you have nelx*nely elements, in the same order,
+c     within each z plane
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      real ux(1),uy(1),uz(1)
+      character*2 c2,name
+
+      parameter (lyavg = lx1*ly1*lelx*lely)
+      common /scravg/ ua(lyavg)
+     $              , w1(lyavg)
+     $              , w2(lyavg)
+
+      call z_average          (ua,u,w1,w2)
+      call z_average_transpose(u,ua) ! distribute ua to each z-plane
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine z_average(ua,u,w1,w2)
+c
+c     Compute the z average of quantity u() - assumes global tens.prod.
+c
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
+     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
+      integer e,eg,ex,ey,ez
+      real dy2
+
+      nelxy = nelx*nely
+      if (nelxy.gt.lelx*lely) call exitti
+     $  ('ABORT IN z_average. Increase lelx*lely in SIZE:$',nelxy)
+
+      mxy = nelx*nely*nx1*ny1
+      call rzero(ua,mxy)
+      call rzero(w1,mxy)
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do j=1,ny1
+         do i=1,nx1
+            dz2 = 1.0  !  Assuming uniform in "z" direction
+            do k=1,nz1
+               ua(i,j,ex,ey) = ua(i,j,ex,ey)+dz2*wzm1(k)*u(i,j,k,e)
+               w1(i,j,ex,ey) = w1(i,j,ex,ey)+dz2*wzm1(k) ! redundant but clear
+            enddo
+         enddo
+         enddo
+      enddo
+
+      call gop(ua,w2,'+  ',mxy)
+      call gop(w1,w2,'+  ',mxy)
+
+      do i=1,mxy
+         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine z_average_transpose(u,ua) ! distribute ua to each z-plane
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real u(nx1,ny1,nz1,nelv),ua(nx1,ny1,nelx,nely)
+
+      integer e,eg,ex,ey,ez
+
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do j=1,ny1
+         do i=1,nx1
+            do k=1,nz1
+               u(i,j,k,e) = ua(i,j,ex,ey)
+            enddo
+         enddo
+         enddo
       enddo
 
       return
