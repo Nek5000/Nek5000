@@ -5089,7 +5089,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine expl_strs_e(w1,w2,w3,u1,u2,u3,e)
       include 'SIZE'
-      include 'SOLN'
+      include 'INPUT'  ! if3d
+      include 'SOLN'   ! nu_star
 
       real w1(1),w2(1),w3(1),u1(1),u2(1),u3(1)
       integer e
