@@ -1638,8 +1638,8 @@ c
 c     If either dt or the backwards difference coefficient change,
 c     then recompute base flow solution corresponding to unit forcing:
 c
-      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow  .or. 
-     $   ifuservp .or. ifmvbd )
+      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.ifmvbd.or.
+     $                     (ifuservp .and. .not. ifexplvis) )
      $   call compute_vol_soln(vxc,vyc,vzc,prc)
       dt_vflow = dt
       bd_vflow = bd(1)
@@ -1927,11 +1927,15 @@ C     Compute velocity
       if (icvflow.eq.2) call add2col2(resv2,v2mask,bm1,n)
       if (icvflow.eq.3) call add2col2(resv3,v3mask,bm1,n)
 
+
+      if (ifexplvis) call split_vis ! split viscosity into exp/imp part
+
       intype = -1
       call sethlm   (h1,h2,intype)
       call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 
-      return
+      if (ifexplvis) call redo_split_vis ! restore vdiff
+
       end
 c-----------------------------------------------------------------------
       subroutine a_dmp

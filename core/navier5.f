@@ -1322,7 +1322,7 @@ c-----------------------------------------------------------------------
 
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
-         call outpost2(uvms,vwms,wums,prms,wtms,0    ,'rm2')
+         call outpost2(uvms,vwms,wums,prms,trms,0    ,'rm2')
 
          atime = 0.
          time  = time_temp  ! Restore clock
