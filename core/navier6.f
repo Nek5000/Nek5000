@@ -57,20 +57,35 @@ c
       common /scrmg/ ddmask  (4*ltotd)
       common /ctmp1/ mask    (4*ltotd)
 
-      if(.not.ifsplit) then
-        ifield = 1
-        if (param(44).eq.1) then !  Set up local overlapping solves 
-           call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
-        else
-           call swap_lengths
-        endif
- 
-        call gen_fast(x,y,z)
-        call init_weight_op
-        if(param(43).eq.0) call hsmg_setup
-      endif
+      parameter(lxx=lx1*lx1, levb=lelv+lbelv)
+      common /fastd/  df(lx1*ly1*lz1,levb)
+     $             ,  sr(lxx*2,levb),ss(lxx*2,levb),st(lxx*2,levb)
 
-      call set_up_h1_crs
+
+      integer e
+
+      npass = 1
+      if (ifmhd) npass = 2
+      do ipass=1,npass
+         if (.not.ifsplit) then
+            ifield = 1
+            if (ipass.gt.1) ifield = ifldmhd
+
+            if (param(44).eq.1) then !  Set up local overlapping solves 
+               call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
+            else
+               call swap_lengths
+            endif
+ 
+            e = 1
+            if (ifield.gt.1) e = nelv+1
+            call gen_fast(df(1,e),sr(1,e),ss(1,e),st(1,e),x,y,z)
+            call init_weight_op
+            if(param(43).eq.0) call hsmg_setup
+         endif
+
+         call set_up_h1_crs
+      enddo
  
       return
       end
@@ -183,7 +198,7 @@ c
          call faces(y,scale,ce,cf,nx1,ny1,nz1)
          if (if3d) call faces(z,scale,ce,cf,nx1,ny1,nz1)
       enddo
-      call gs_op_many(gsh_fld(1), x,y,z,x,x,x,ndim, 1,1,0)
+      call gs_op_many(gsh_fld(ifield), x,y,z,x,x,x,ndim, 1,1,0)
 c
       ifield = ifielt
 c

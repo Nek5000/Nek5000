@@ -23,23 +23,44 @@ c----------------------------------------------------------------------
       include 'PARALLEL'
       include 'HSMG'
       include 'SEMHAT'
+      include 'TSTEP'
 
       integer nf,nc,nr
       integer nx,ny,nz
+
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
+      if (ifield.eq.1) call hsmg_index_0 ! initialize index sets
 
 c     set up the nx values for each level of multigrid
       call hsmg_setup_mg_nx
 
 c     set up the spectral element hat matrices
       call hsmg_setup_semhat
+
+      write(6,*) 'A mg_nhz:',(mg_nhz(k),k=1,4)
+      write(6,*) 'A mg_nh:',(mg_nh(k),k=1,4)
+
       call hsmg_setup_intp
+
+      write(6,*) 'b mg_nhz:',(mg_nhz(k),k=1,4)
+      write(6,*) 'b mg_nh:',(mg_nh(k),k=1,4)
+
 
 c     set up the direct stiffness summation handles
       call hsmg_setup_dssum
 
+
+      write(6,*) 'c mg_nhz:',(mg_nhz(k),k=1,4)
+      write(6,*) 'c mg_nh:',(mg_nh(k),k=1,4)
+
 c     set up restriction weight matrices
 c     and the boundary condition masks
       call hsmg_setup_wtmask
+
+      write(6,*) 'd mg_nhz:',(mg_nhz(k),k=1,4)
+      write(6,*) 'd mg_nh:',(mg_nh(k),k=1,4)
+
 
 c     set up the fast diagonalization method
       call hsmg_setup_fdm
@@ -131,17 +152,19 @@ c     set up direct stiffness summation for each level
       ncrnr = 2**ndim
       call get_vert
 
+      write(6,*) mg_fld,' mgfld in hsmg_setup_dssum'
+
       do l=1,mg_lmax-1
          nx=mg_nh(l)
          ny=mg_nh(l)
          nz=mg_nhz(l)
-         call setupds(mg_gsh_handle(l),nx,ny,nz
+         call setupds(mg_gsh_handle(l,mg_fld),nx,ny,nz
      $                ,nelv,nelgv,vertex,glo_num)
          nx=nx+2
          ny=ny+2
          nz=nz+2
          if(.not.if3d) nz=1
-         call setupds(mg_gsh_schwarz_handle(l),nx,ny,nz
+         call setupds(mg_gsh_schwarz_handle(l,mg_fld),nx,ny,nz
      $                ,nelv,nelgv,vertex,glo_num)
       enddo
       end
@@ -150,23 +173,24 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       integer i,l
-      i = 0
+      i = mg_mask_index(mg_lmax,mg_fld-1)
       do l=1,mg_lmax-1
-         mg_rstr_wt_index(l)=i
-         mg_mask_index(l)=i
+         mg_rstr_wt_index(l,mg_fld)=i
+         mg_mask_index   (l,mg_fld)=i
          i=i+mg_nh(l)*mg_nhz(l)*2*ndim*nelv
-         if(i .gt. lmg_rwt*2*ldim*lelv) then
+         if(i .gt. lmgs*lmg_rwt*2*ldim*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'parameter lmg_rwt too small',i,itmp,lmg_rwt
             call exitt
          endif
          call hsmg_setup_rstr_wt(
-     $           mg_rstr_wt(mg_rstr_wt_index(l))
+     $           mg_rstr_wt(mg_rstr_wt_index(l,mg_fld))
      $          ,mg_nh(l),mg_nh(l),mg_nhz(l),l,mg_work)
          call hsmg_setup_mask(
-     $           mg_mask(mg_mask_index(l))
+     $           mg_mask(mg_mask_index(l,mg_fld))
      $          ,mg_nh(l),mg_nh(l),mg_nhz(l),l,mg_work)
       enddo
+      mg_mask_index(l,mg_fld)=i
       end
 c----------------------------------------------------------------------
       subroutine hsmg_intp(uf,uc,l) ! l is coarse level
@@ -184,7 +208,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       if(l.ne.mg_lmax-1)
-     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1))
+     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
       call hsmg_tnsr(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
       call hsmg_dssum(uc,l)
@@ -197,7 +221,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       if(l.ne.mg_lmax-1)
-     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1))
+     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
       call hsmg_tnsr(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
       return
@@ -297,7 +321,7 @@ c----------------------------------------------------------------------
 #ifndef NOTIMER
       etime1=dnekclock()
 #endif
-      call gs_op(mg_gsh_handle(l),u,1,1,0)
+      call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
 #ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
 #endif
@@ -312,7 +336,7 @@ c----------------------------------------------------------------------
 
       if (ifsync) call gsync()
 
-      call gs_op(mg_gsh_handle(l),u,1,2,0)
+      call gs_op(mg_gsh_handle(l,mg_fld),u,1,2,0)
       return
       end
 c----------------------------------------------------------------------
@@ -325,7 +349,7 @@ c----------------------------------------------------------------------
 #ifndef NOTIMER
       etime1=dnekclock()
 #endif
-      call gs_op(mg_gsh_schwarz_handle(l),u,1,1,0)
+      call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
 #ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
 #endif
@@ -405,7 +429,7 @@ c----------------------------------------------------------------------
 
 c     apply mask (zeros Dirichlet nodes)
       !!!!! uncommenting
-      call hsmg_do_wt(r,mg_mask(mg_mask_index(l)),
+      call hsmg_do_wt(r,mg_mask(mg_mask_index(l,mg_fld)),
      $                mg_nh(l),mg_nh(l),mg_nhz(l))
       
 c     go to extended size array (room for overlap)      
@@ -442,7 +466,7 @@ c     sum border nodes
       call hsmg_dssum(e,l)
 c     apply mask (zeros Dirichlet nodes)
       !!!!!! changing r to e
-      call hsmg_do_wt(e,mg_mask(mg_mask_index(l)),
+      call hsmg_do_wt(e,mg_mask(mg_mask_index(l,mg_fld)),
      $                mg_nh(l),mg_nh(l),mg_nhz(l))
       return
       end
@@ -531,10 +555,10 @@ c----------------------------------------------------------------------
       include 'HSMG'
       
       integer l,i,j,nl
-      i = 0
-      j = 0
+      i = mg_fast_s_index(mg_lmax,mg_fld-1)
+      j = mg_fast_d_index(mg_lmax,mg_fld-1)
       do l=2,mg_lmax-1
-         mg_fast_s_index(l)=i
+         mg_fast_s_index(l,mg_fld)=i
          nl = mg_nh(l)+2
          i=i+nl*nl*2*ndim*nelv
          if(i .gt. lmg_fasts*2*ldim*lelv) then
@@ -542,7 +566,7 @@ c----------------------------------------------------------------------
             write(6,*) 'lmg_fasts too small',i,itmp,lmg_fasts,l
             call exitt
          endif
-         mg_fast_d_index(l)=j
+         mg_fast_d_index(l,mg_fld)=j
          j=j+(nl**ndim)*nelv
          if(j .gt. lmg_fastd*lelv) then
             itmp = i/(2*ldim*lelv)
@@ -550,10 +574,12 @@ c----------------------------------------------------------------------
             call exitt
          endif
          call hsmg_setup_fast(
-     $             mg_fast_s(mg_fast_s_index(l))
-     $            ,mg_fast_d(mg_fast_d_index(l))
+     $             mg_fast_s(mg_fast_s_index(l,mg_fld))
+     $            ,mg_fast_d(mg_fast_d_index(l,mg_fld))
      $            ,mg_nh(l)+2,mg_ah(1,l),mg_bh(1,l),mg_nx(l))
       enddo
+      mg_fast_s_index(l,mg_fld)=i
+      mg_fast_d_index(l,mg_fld)=j
       end
 c----------------------------------------------------------------------
       subroutine hsmg_setup_fast(s,d,nl,ah,bh,n)
@@ -579,7 +605,7 @@ c----------------------------------------------------------------------
       
       ierr = 0
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
          nr=nl
          ns=nl
          nt=nl
@@ -743,8 +769,8 @@ c     clobbers r
       include 'INPUT'
       include 'HSMG'
       call hsmg_do_fast(e,r,
-     $      mg_fast_s(mg_fast_s_index(l)),
-     $      mg_fast_d(mg_fast_d_index(l)),
+     $      mg_fast_s(mg_fast_s_index(l,mg_fld)),
+     $      mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $      mg_nh(l)+2)
       return
       end
@@ -934,7 +960,7 @@ c     init everything to 1
 c     set dirichlet nodes to zero
       ierr = 0
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
          if(lbr.eq.1) then
             do k=1,nz
             do j=1,ny
@@ -981,7 +1007,10 @@ c     set dirichlet nodes to zero
          endif
       enddo
 c     do direct stiffness multiply
+
       call hsmg_dsprod(w,l)
+
+
 c     store weight
       if (.not. if3d) then
          do ie=1,nelv
@@ -1023,7 +1052,6 @@ c     store weight
          call exitti('B INVALID BC FOUND in genfast$',ierrmx)
       endif
 
-c     write(6,*) nid,' EXIT hsmg_setup_mask'
       return
       end
 c----------------------------------------------------------------------
@@ -1034,9 +1062,10 @@ c----------------------------------------------------------------------
       include 'HSMG'
       
       integer l,i,nl,nlz
-      i = 0
+
+      i = mg_schwarz_wt_index(mg_lmax,mg_fld-1)
       do l=2,mg_lmax-1
-         mg_schwarz_wt_index(l)=i
+         mg_schwarz_wt_index(l,mg_fld)=i
          nl = mg_nh(l)
          nlz = mg_nh(l)
          if(.not.if3d) nlz=1
@@ -1047,13 +1076,15 @@ c----------------------------------------------------------------------
             call exitt
          endif
          if(.not.if3d) call hsmg_setup_schwarz_wt2d(
-     $       mg_schwarz_wt(mg_schwarz_wt_index(l))
+     $       mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
      $      ,nl,mg_worke,ifsqrt)
-c        if(if3d) write(6,*) mg_schwarz_wt_index(l),l,'SCHWARZ'
+c        if(if3d) write(6,*) mg_schwarz_wt_index(l,mg_fld),l,'SCHWARZ'
          if(if3d) call hsmg_setup_schwarz_wt3d(
-     $       mg_schwarz_wt(mg_schwarz_wt_index(l))
+     $       mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
      $      ,nl,mg_worke,ifsqrt)
       enddo
+      mg_schwarz_wt_index(l,mg_fld)=i
+
       return
       end
 c----------------------------------------------------------------------
@@ -1081,7 +1112,7 @@ c----------------------------------------------------------------------
             work(i,n-1)=1.0
             work(i,n)=1.0
          enddo
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
          if(lbr.eq.0) then
             do j=1,n
                work(1,j)=work(1,j)+1.0
@@ -1174,7 +1205,7 @@ c----------------------------------------------------------------------
             work(i,j,n)=1.0
          enddo
          enddo
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
          if(lbr.eq.0) then
             do k=1,n
             do j=1,n
@@ -1275,9 +1306,9 @@ c----------------------------------------------------------------------
       include 'HSMG'
       
       if(.not.if3d) call hsmg_schwarz_wt2d(
-     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l)),mg_nh(l))
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
       if(if3d) call hsmg_schwarz_wt3d(
-     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l)),mg_nh(l))
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
       return
       end
 c----------------------------------------------------------------------
@@ -1351,6 +1382,7 @@ c----------------------------------------------------------------------
       include 'HSMG'
       include 'CTIMER'
       include 'INPUT'
+      include 'TSTEP'
       real e(1),r(1)
 c
       integer n_crs_tot
@@ -1370,7 +1402,7 @@ c
       etime1=dnekclock()
 #endif
 
-      call crs_solve(xxth,e,r)
+      call crs_solve(xxth(ifield),e,r)
 
 #ifndef NOTIMER
       tcrsl=tcrsl+dnekclock()-etime1
@@ -1384,9 +1416,9 @@ c----------------------------------------------------------------------
       include 'HSMG'
       
       integer l,i,nl,nlz
-      i = 0
+      i = mg_solve_index(mg_lmax+1,mg_fld-1)
       do l=1,mg_lmax
-         mg_solve_index(l)=i
+         mg_solve_index(l,mg_fld)=i
          i=i+mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          if(i .gt. lmg_solve*lelv) then
             itmp = i/lelv
@@ -1394,7 +1426,8 @@ c----------------------------------------------------------------------
             call exitt
          endif
       enddo
-c     print *, 'mg_solve_index:',(mg_solve_index(l),l=1,mg_lmax)
+      mg_solve_index(l,mg_fld)=i
+
       return
       end
 c----------------------------------------------------------------------
@@ -1432,12 +1465,18 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
 
       logical if_hybrid
 
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
+
       if (istep.ne.ilstep) then
          ilstep = istep
          ntot1  = nx1*ny1*nz1*nelv
          rhoavg = glsc2(vtrans,bm1,ntot1)/volvm1
       endif
 
+      n = nx2*ny2*nz2*nelv
+c     call copy(e,r,n)
+c     return
  
       if (icalld.eq.0) then
 
@@ -1469,6 +1508,7 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
       !         Schwarz
       time_0 = dnekclock()
       call local_solves_fdm(e,r)
+
       time_1 = dnekclock()
 
 c     if (param(41).eq.1) if_hybrid = .true.
@@ -1515,69 +1555,69 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
          !          T
          ! r   :=  J w
          !  l         
-         call hsmg_rstr(mg_solve_r(mg_solve_index(l)),mg_work2,l)
+         call hsmg_rstr(mg_solve_r(mg_solve_index(l,mg_fld)),mg_work2,l)
+
          ! w  := r
          !        l
-         call copy(mg_work2,mg_solve_r(mg_solve_index(l)),nt)
+         call copy(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
          ! e  := M        w
          !  l     Schwarz  
          call hsmg_schwarz(
-     $          mg_solve_e(mg_solve_index(l)),mg_work2,l)
+     $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
+
          ! e  := W e
          !  l       l
-         call hsmg_schwarz_wt(mg_solve_e(mg_solve_index(l)),l)
-         ! w  := A e
-         !          l
-c         call hsmg_opA(mg_work2,mg_solve_e(mg_solve_index(l)),l)
-c         alpha = glsc2(mg_work2,mg_solve_r(mg_solve_index(l)),nt)
-c     $          /glsc2(mg_work2,mg_work2)
-c         if(nid.eq.0) print *, 'alpha=',alpha
+         call hsmg_schwarz_wt(mg_solve_e(mg_solve_index(l,mg_fld)),l)
+
+c        call exitti('quit in mg$',l)
+
          ! w  := r  - w
          !        l
          do i = 0,nt-1
-c            mg_solve_e(mg_solve_index(l)+i)=
-c     $        mg_solve_e(mg_solve_index(l)+1)*alpha
-            mg_work2(i+1) = 
-     $         mg_solve_r(mg_solve_index(l)+i)!-alpha*mg_work2(i+1)
+            mg_work2(i+1) = mg_solve_r(mg_solve_index(l,mg_fld)+i)
+     $         !-alpha*mg_work2(i+1)
          enddo
       enddo
+
       call hsmg_rstr_no_dssum(
-     $   mg_solve_r(mg_solve_index(1)),mg_work2,1)
+     $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
 
-      nzw = ndim-1  ! just right...
+      nzw = ndim-1
 
-      call hsmg_do_wt(mg_solve_r(mg_solve_index(1)),
-     $                mg_mask(mg_mask_index(1)),2,2,nzw)
+      call hsmg_do_wt(mg_solve_r(mg_solve_index(1,mg_fld)),
+     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+
       !        -1
       ! e  := A   r
       !  1         1
-      call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1)),
-     $                       mg_solve_r(mg_solve_index(1)))
-      call hsmg_do_wt(mg_solve_e(mg_solve_index(1)),
-     $                mg_mask(mg_mask_index(1)),2,2,nzw)
+      call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                       mg_solve_r(mg_solve_index(1,mg_fld)))
+
+      call hsmg_do_wt(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()
       do l = 2,mg_lmax-1
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          ! w   :=  J e
          !            l-1
-         call hsmg_intp(mg_work2,mg_solve_e(mg_solve_index(l-1)),l-1)
-
-c        rmax = glmax(mg_work2,nt)
-c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax3'
+         call hsmg_intp
+     $      (mg_work2,mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
 
          ! e   :=  e  + w
          !  l       l
          do i = 0,nt-1
-            mg_solve_e(mg_solve_index(l)+i) =
-     $        + mg_solve_e(mg_solve_index(l)+i) + mg_work2(i+1)
+            mg_solve_e(mg_solve_index(l,mg_fld)+i) =
+     $        + mg_solve_e(mg_solve_index(l,mg_fld)+i) + mg_work2(i+1)
          enddo
       enddo
       l = mg_lmax
       nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
       ! w   :=  J e
       !            m-1
+
       call hsmg_intp(mg_work2,
-     $   mg_solve_e(mg_solve_index(l-1)),l-1)
+     $   mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
+
       if (if_hybrid.and.istep.eq.1) then
          ! ecrs := E e_c
          call cdabdtp(ecrs,mg_work2,h1,h2,h2inv,1)
@@ -1592,6 +1632,7 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax3'
          if(nid.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt2,'cpt2'
       endif
       ! e := e + w
+
       do i = 1,nt
          e(i) = e(i) + copt2*mg_work2(i)
       enddo
@@ -1610,11 +1651,12 @@ c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
 c
 c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
-       call ortho (e)
+      call ortho (e)
 
 #ifndef NOTIMER
       tddsl  = tddsl + ( dnekclock()-etime1 )
 #endif
+
 
       return
       end
@@ -1672,3 +1714,195 @@ c     if (lx1.eq.6) mgnx2 = 3
       return
       end
 c----------------------------------------------------------------------
+      subroutine hsmg_index_0 ! initialize index sets
+      include 'SIZE'
+      include 'HSMG'
+
+      n = lmgn*(lmgs+1)
+
+      call izero( mg_rstr_wt_index      , n )
+      call izero( mg_mask_index         , n )
+      call izero( mg_solve_index        , n )
+      call izero( mg_fast_s_index       , n )
+      call izero( mg_fast_d_index       , n )
+      call izero( mg_schwarz_wt_index   , n )
+      
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine outfldn (x,n,txt10,ichk) ! writes into unit=40+ifiled
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      real x(n,n,1,lelt)
+      character*10 txt10
+c
+      integer idum,e
+      save    idum
+      data    idum /3/
+      if (idum.lt.0)   return
+      m = 40 + ifield                 ! unit #
+c
+C
+      mtot = n*n*nelv
+      if (n.gt.7.or.nelv.gt.16) return
+      xmin = glmin(x,mtot)
+      xmax = glmax(x,mtot)
+c
+      rnel = nelv
+      snel = sqrt(rnel)+.1
+      ne   = snel
+      ne1  = nelv-ne+1
+      do ie=ne1,1,-ne
+         l=ie-1
+         do k=1,1
+            if (ie.eq.ne1) write(m,116) txt10,k,ie,xmin,xmax,ichk,time
+            write(m,117) 
+            do j=n,1,-1
+              if (n.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+            enddo
+         enddo
+      enddo
+
+C
+  102 FORMAT(4(2f9.5,2x))
+  103 FORMAT(4(3f9.5,2x))
+  104 FORMAT(4(4f7.3,2x))
+  105 FORMAT(5f9.5,10x,5f9.5)
+  106 FORMAT(6f9.5,5x,6f9.5)
+  107 FORMAT(7f8.4,5x,7f8.4)
+  108 FORMAT(8f8.4,4x,8f8.4)
+c
+  116 FORMAT(  /,5X,'     ^              ',/,
+     $    5X,'   Y |              ',/,
+     $    5X,'     |              ',A10,/,
+     $    5X,'     +---->         ','Plane = ',I2,'/',I2,2x,2e12.4,/,
+     $    5X,'       X            ','Step  =',I9,f15.5)
+  117 FORMAT(' ')
+c
+c     if (ichk.eq.1.and.idum.gt.0) call checkit(idum)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldn0 (x,n,txt10,ichk)
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      real x(n,n,1,lelt)
+      character*10 txt10
+c
+      integer idum,e
+      save idum
+      data idum /3/
+      if (idum.lt.0) return
+c
+C
+      mtot = n*n*nelv
+      if (n.gt.7.or.nelv.gt.16) return
+      xmin = glmin(x,mtot)
+      xmax = glmax(x,mtot)
+c
+      rnel = nelv
+      snel = sqrt(rnel)+.1
+      ne   = snel
+      ne1  = nelv-ne+1
+      do ie=ne1,1,-ne
+         l=ie-1
+         do k=1,1
+            if (ie.eq.ne1) write(6,116) txt10,k,ie,xmin,xmax,ichk,time
+            write(6,117) 
+            do j=n,1,-1
+              if (n.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+              if (n.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,n),e=1,ne)
+            enddo
+         enddo
+      enddo
+
+C
+  102 FORMAT(4(2f9.5,2x))
+  103 FORMAT(4(3f9.5,2x))
+  104 FORMAT(4(4f7.3,2x))
+  105 FORMAT(5f9.5,10x,5f9.5)
+  106 FORMAT(6f9.5,5x,6f9.5)
+  107 FORMAT(7f8.4,5x,7f8.4)
+  108 FORMAT(8f8.4,4x,8f8.4)
+c
+  116 FORMAT(  /,5X,'     ^              ',/,
+     $    5X,'   Y |              ',/,
+     $    5X,'     |              ',A10,/,
+     $    5X,'     +---->         ','Plane = ',I2,'/',I2,2x,2e12.4,/,
+     $    5X,'       X            ','Step  =',I9,f15.5)
+  117 FORMAT(' ')
+c
+c     if (ichk.eq.1.and.idum.gt.0) call checkit(idum)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outflda (x,n,txt10,ichk) ! writes into unit=p130+ifiled
+      INCLUDE 'SIZE'                      ! or into std. output for p130<9
+      INCLUDE 'TSTEP'                     ! truncated below eps=p131
+      INCLUDE 'INPUT'                     ! param(130)
+      real x(1)
+      character*10 txt10                  ! note: n is not used
+c     parameter (eps=1.e-7)
+C
+      p130 = param(130)
+      eps  = param(131)
+      if (p130.le.0)    return
+      m    = 6
+      if (p130.gt.9)  m = p130 + ifield
+
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+
+      xmin = glmin(x,ntot)
+      xmax = glmax(x,ntot)
+      xavg = glsum(x,ntot)/ntot
+
+      if (abs(xavg).lt.eps) xavg = 0.     ! truncation
+
+      if (nid.eq.0) write(m,10) txt10,ichk,ntot,xavg,xmin,xmax
+
+   10 format(3X,a10,2i8,' pts, avg,min,max = ',1p3g14.6)
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldan(x,n,txt10,ichk) ! writes x(1:n) into unit=p130+ifiled
+      INCLUDE 'SIZE'                      ! or into std. output for 0<p130<9
+      INCLUDE 'TSTEP'                     ! truncated below eps=p131
+      INCLUDE 'INPUT'
+      real x(1)
+      character*10 txt10
+c     parameter (eps=1.e-7)
+C
+      p130 = param(130)
+      eps  = param(131)
+      if (p130.le.0)    return
+      m    = 6
+      if (p130.gt.9)  m = p130 + ifield
+
+      ntot = n
+
+      xmin = glmin(x,ntot)
+      xmax = glmax(x,ntot)
+      xavg = glsum(x,ntot)/ntot
+
+      if (abs(xavg).lt.eps) xavg = 0.     ! truncation
+
+      if (nid.eq.0) write(m,10) txt10,ichk,ntot,xavg,xmin,xmax
+
+   10 format(3X,a10,2i8,' pts, avg,min,max = ',1p3g11.3)
+c  10 format(3X,a10,2i8,' pts, avg,min,max = ',1p3g14.6)
+c
+      return
+      end
+c-----------------------------------------------------------------------
