@@ -26,5 +26,5 @@ C
 C
 C     crystal-router, gather-scatter, and xxt handles (xxt=csr grid solve)
 C
-      common /comm_handles/ cr_h, gsh, gsh_fld(0:ldimt3), xxth
+      common /comm_handles/ cr_h, gsh, gsh_fld(0:ldimt3), xxth(ldimt3)
       integer               cr_h, gsh, gsh_fld          , xxth

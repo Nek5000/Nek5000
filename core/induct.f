@@ -92,7 +92,8 @@ c
       ifield = ifldmhd
                                       call makeufb
       if (ifaxis) then
-         do ifield = 2,3
+c        do ifield = 2,3
+         do ifield = 2,npscal+1
                                       call makeuq  ! nonlinear terms
          enddo
          ifield = ifldmhd
@@ -234,10 +235,10 @@ c
       common /scruz/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
-     $ ,             prextr(lx2,ly2,lz2,lelv)
 c
 c
       call bcdirvc (bx,by,bz,b1mask,b2mask,b3mask)
+      call extrapp (pm,pmlag)
       call opgradt (resv1,resv2,resv3,pm)
       call opadd2  (resv1,resv2,resv3,bmx,bmy,bmz)
 c     call opcopy  (resv1,resv2,resv3,bmx,bmy,bmz)
@@ -250,7 +251,7 @@ c--------------------------------------------------------------------
       subroutine cresvibp(resv1,resv2,resv3,h1,h2)
 c
 c     Account for inhomogeneous Dirichlet boundary contributions 
-c     in rhs of induction eqn.
+c     in rhs of momentum eqn.
 c                                               n
 c     Also, subtract off best estimate of grad p
 c
@@ -264,12 +265,10 @@ c
       common /scruz/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
-     $ ,             prextr(lx2,ly2,lz2,lelv)
-c
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv
 c
       call bcdirvc (vx,vy,vz,v1mask,v2mask,v3mask)
+      if (ifstrs)  call bcneutr
+      call extrapp (pr,prlag)
       call opgradt (resv1,resv2,resv3,pr)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
 c     call opcopy  (resv1,resv2,resv3,bfx,bfy,bfz)
@@ -336,7 +335,10 @@ c
       call invers2 (h2inv,h2,ntot1)
 
       call opdiv   (dp,ux,uy,uz)
-      call chsign  (dp,ntot2)
+
+      bdti = -bd(1)/dt
+      call cmult   (dp,bdti,ntot2)
+
       call ortho   (dp)
 
       i = 1 + ifield/ifldmhd
@@ -344,15 +346,51 @@ c
                     call esolver  (dp,h1,h2,h2inv,intype)
       if (ifprjp)   call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
 
-      call opgradt (w1 ,w2 ,w3 ,dp)
-      call opbinv  (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
-      call opadd2  (ux ,uy ,uz ,dv1,dv2,dv3)
+      call add2(up,dp,ntot2)
 
-      call add2(up,dp,ntot2)  ! Only up to 2nd-order accurate
+      call opgradt  (w1 ,w2 ,w3 ,dp)
+      call opbinv   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
+      dtb  = dt/bd(1)
+      call opadd2cm (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+
       call chkptol
 
       tpres=tpres+(dnekclock()-etime1)
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine extrapp(p,plag)
+C
+C     Pressure extrapolation
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
+      INCLUDE 'TSTEP'
+
+      real  p    (lx2,ly2,lz2,1)
+     $     ,plag (lx2,ly2,lz2,1)                ! 5th dimension is 1?
+
+      common /cgeom/ igeom
+
+      ntot2 = nx2*ny2*nz2*nelv
+
+      if (nbd.eq.3.and.igeom.le.2) then
+
+         const = dtlag(1)/dtlag(2)
+
+         do i=1,ntot2
+            pnm1          = p   (i,1,1,1)
+            pnm2          = plag(i,1,1,1)
+            p   (i,1,1,1) = pnm1 + const*(pnm1-pnm2)
+            plag(i,1,1,1) = pnm1
+         enddo
+
+      elseif (nbd.gt.3) then
+         WRITE (6,*) 'Pressure extrapolation cannot be completed'
+         WRITE (6,*) 'Try a lower-order temporal scheme'
+         call exitt
+      endif
       return
       end
 c-----------------------------------------------------------------------
@@ -849,8 +887,8 @@ c
 c
       ifield = 1
       call sethlm   (h1,h2,intype)
-      call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 
+      call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
@@ -861,13 +899,16 @@ c
 
       ifield = ifldmhd
       call sethlm   (h1,h2,intype)
+
       call ophinv_pr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
+
 
 c     if (param(103).gt.0) call q_filter(alpha_filt)
 
       iftcor = ifvcor
       ifvcor = ifbcor
+
       call incomprn (bx,by,bz,pm) ! project B onto div-free space
       ifvcor = iftcor
 

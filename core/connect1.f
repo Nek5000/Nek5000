@@ -1314,7 +1314,124 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outfldrp (x,txt10,ichk)
+      subroutine outfldrv (x,txt10,ichk) ! writes to unit=40+ifield
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      real x(nx1,ny1,nz1,lelt)
+      character*10 txt10
+c
+      integer idum,e
+      save idum
+      data idum /3/
+      if (idum.lt.0) return
+      m = 40 + ifield
+c
+C
+      mtot = nx1*ny1*nz1*nelv
+      if (nx1.gt.7.or.nelv.gt.16) return
+      xmin = glmin(x,mtot)
+      xmax = glmax(x,mtot)
+c
+      rnel = nelv
+      snel = sqrt(rnel)+.1
+      ne   = snel
+      ne1  = nelv-ne+1
+      do ie=ne1,1,-ne
+         l=ie-1
+         do k=1,1
+            if (ie.eq.ne1) write(m,116) txt10,k,ie,xmin,xmax,istep,time
+            write(m,117) 
+            do j=ny1,1,-1
+              if (nx1.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+            enddo
+         enddo
+      enddo
+
+C
+  102 FORMAT(4(2f9.5,2x))
+  103 FORMAT(4(3f9.5,2x))
+  104 FORMAT(4(4f7.3,2x))
+  105 FORMAT(5f9.5,10x,5f9.5)
+  106 FORMAT(6f9.5,5x,6f9.5)
+  107 FORMAT(7f8.4,5x,7f8.4)
+  108 FORMAT(8f8.4,4x,8f8.4)
+c
+  116 FORMAT(  /,5X,'     ^              ',/,
+     $    5X,'   Y |              ',/,
+     $    5X,'     |              ',A10,/,
+     $    5X,'     +---->         ','Plane = ',I2,'/',I2,2x,2e12.4,/,
+     $    5X,'       X            ','Step  =',I9,f15.5)
+  117 FORMAT(' ')
+c
+      if (ichk.eq.1.and.idum.gt.0) call checkit(idum)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldrv0 (x,txt10,ichk)
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      real x(nx1,ny1,nz1,lelt)
+      character*10 txt10
+c
+      integer idum,e
+      save idum
+      data idum /3/
+      if (idum.lt.0) return
+c
+C
+      mtot = nx1*ny1*nz1*nelv
+      if (nx1.gt.7.or.nelv.gt.16) return
+      xmin = glmin(x,mtot)
+      xmax = glmax(x,mtot)
+c
+      rnel = nelv
+      snel = sqrt(rnel)+.1
+      ne   = snel
+      ne1  = nelv-ne+1
+      do ie=ne1,1,-ne
+         l=ie-1
+         do k=1,1
+            if (ie.eq.ne1) write(6,116) txt10,k,ie,xmin,xmax,istep,time
+            write(6,117) 
+            do j=ny1,1,-1
+              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+              if (nx1.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+            enddo
+         enddo
+      enddo
+
+C
+  102 FORMAT(4(2f9.5,2x))
+  103 FORMAT(4(3f9.5,2x))
+  104 FORMAT(4(4f7.3,2x))
+  105 FORMAT(5f9.5,10x,5f9.5)
+  106 FORMAT(6f9.5,5x,6f9.5)
+  107 FORMAT(7f8.4,5x,7f8.4)
+  108 FORMAT(8f8.4,4x,8f8.4)
+c
+  116 FORMAT(  /,5X,'     ^              ',/,
+     $    5X,'   Y |              ',/,
+     $    5X,'     |              ',A10,/,
+     $    5X,'     +---->         ','Plane = ',I2,'/',I2,2x,2e12.4,/,
+     $    5X,'       X            ','Step  =',I9,f15.5)
+  117 FORMAT(' ')
+c
+      if (ichk.eq.1.and.idum.gt.0) call checkit(idum)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldrp0 (x,txt10,ichk)
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
       real x(nx2,ny2,nz2,lelt)
@@ -1351,6 +1468,67 @@ c
             enddo
          enddo
       enddo
+
+C
+  102 FORMAT(4(2f9.5,2x))
+  103 FORMAT(4(3f9.5,2x))
+  104 FORMAT(4(4f7.3,2x))
+  105 FORMAT(5f9.5,10x,5f9.5)
+  106 FORMAT(6f9.5,5x,6f9.5)
+  107 FORMAT(7f8.4,5x,7f8.4)
+  108 FORMAT(8f8.4,4x,8f8.4)
+c
+  116 FORMAT(  /,5X,'     ^              ',/,
+     $    5X,'   Y |              ',/,
+     $    5X,'     |              ',A10,/,
+     $    5X,'     +---->         ','Plane = ',I2,'/',I2,2x,2e12.4,/,
+     $    5X,'       X            ','Step  =',I9,f15.5)
+  117 FORMAT(' ')
+c
+      if (ichk.eq.1.and.idum.gt.0) call checkit(idum)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldrp (x,txt10,ichk) ! writes out into unit = 40+ifield 
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      real x(nx2,ny2,nz2,lelt)
+      character*10 txt10
+c
+      integer idum,e
+      save    idum
+      data    idum /3/
+      if (idum.lt.0)   return
+      m = 40 + ifield             ! unit #
+c
+c
+C
+      mtot = nx2*ny2*nz2*nelv
+      if (nx2.gt.7.or.nelv.gt.16) return
+      xmin = glmin(x,mtot)
+      xmax = glmax(x,mtot)
+c
+      rnel = nelv
+      snel = sqrt(rnel)+.1
+      ne   = snel
+      ne1  = nelv-ne+1
+      do ie=ne1,1,-ne
+         l=ie-1
+         do k=1,1
+            if (ie.eq.ne1) write(m,116) txt10,k,ie,xmin,xmax,istep,time
+            write(6,117) 
+            do j=ny2,1,-1
+              if (nx2.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+              if (nx2.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+            enddo
+         enddo
+      enddo
+
 C
   102 FORMAT(4(2f9.5,2x))
   103 FORMAT(4(3f9.5,2x))
