@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine gen_fast(df,sr,ss,st,x,y,z)
+      subroutine gen_fast(x,y,z)
 c
 c     Generate fast diagonalization matrices for each element
 c
@@ -9,8 +9,9 @@ c
       include 'SOLN'
       include 'WZ'
 c
-      parameter(lxx=lx1*lx1)
-      real df(lx1*ly1*lz1,1),sr(lxx*2,1),ss(lxx*2,1),st(lxx*2,1)
+      parameter (lxx=lx1*lx1)
+      common /fastd/  sr(lxx,2,lelv),ss(lxx,2,lelv),st(lxx,2,lelv)
+     $             ,  df(lx1*ly1*lz1,lelv)
 c
       common /ctmpf/  lr(2*lx1),ls(2*lx1),lt(2*lx1)
      $              , llr(lelt),lls(lelt),llt(lelt)
@@ -21,7 +22,7 @@ c
       real lmr,lms,lmt
       real lrr,lrs,lrt
 c
-      integer lbr,rbr,lbs,rbs,lbt,rbt,e
+      integer lbr,rbr,lbs,rbs,lbt,rbt
 c
       real x(nx1,ny1,nz1,nelv)
       real y(nx1,ny1,nz1,nelv)
@@ -58,57 +59,57 @@ c
          call load_semhat_weighted    !   Fills the SEMHAT arrays
       endif
 c
-      do e=1,nelv
+      do ie=1,nelv
 c
          if (param(44).eq.1) then
-           call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,e,2,ierr)
+           call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          else
-           call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,e,3,ierr)
+           call get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
          endif
 c
 c        Set up matrices for each element.
 c
          if (param(44).eq.1) then
-           call set_up_fast_1D_fem( sr(1,e),lr,nr ,lbr,rbr
-     $                      ,llr(e),lmr(e),lrr(e),zgm2(1,1),nx2,e)
+           call set_up_fast_1D_fem( sr(1,1,ie),lr,nr ,lbr,rbr
+     $                      ,llr(ie),lmr(ie),lrr(ie),zgm2(1,1),nx2,ie)
          else
-           call set_up_fast_1D_sem( sr(1,e),lr,nr ,lbr,rbr
-     $                      ,llr(e),lmr(e),lrr(e),e)
+           call set_up_fast_1D_sem( sr(1,1,ie),lr,nr ,lbr,rbr
+     $                      ,llr(ie),lmr(ie),lrr(ie),ie)
          endif
          if (ifaxis) then
             xsum = vlsum(wxm2,nx2)
             do i=1,ny2
-               yavg = vlsc2(y(1,i,1,e),wxm2,nx2)/xsum
+               yavg = vlsc2(y(1,i,1,ie),wxm2,nx2)/xsum
                axwt(i) = yavg
             enddo
-            call set_up_fast_1D_fem_ax( ss(1,e),ls,ns ,lbs,rbs
-     $                 ,lls(e),lms(e),lrs(e),zgm2(1,2),axwt,ny2,e)
+            call set_up_fast_1D_fem_ax( ss(1,1,ie),ls,ns ,lbs,rbs
+     $                 ,lls(ie),lms(ie),lrs(ie),zgm2(1,2),axwt,ny2,ie)
          else
             if (param(44).eq.1) then
-               call set_up_fast_1D_fem( ss(1,e),ls,ns ,lbs,rbs
-     $                      ,lls(e),lms(e),lrs(e),zgm2(1,2),ny2,e)
+               call set_up_fast_1D_fem( ss(1,1,ie),ls,ns ,lbs,rbs
+     $                      ,lls(ie),lms(ie),lrs(ie),zgm2(1,2),ny2,ie)
             else
-               call set_up_fast_1D_sem( ss(1,e),ls,ns ,lbs,rbs
-     $                      ,lls(e),lms(e),lrs(e),e)
+               call set_up_fast_1D_sem( ss(1,1,ie),ls,ns ,lbs,rbs
+     $                      ,lls(ie),lms(ie),lrs(ie),ie)
             endif
          endif
          if (if3d) then
             if (param(44).eq.1) then
-               call set_up_fast_1D_fem( st(1,e),lt,nt ,lbt,rbt
-     $                      ,llt(e),lmt(e),lrt(e),zgm2(1,3),nz2,e)
+               call set_up_fast_1D_fem( st(1,1,ie),lt,nt ,lbt,rbt
+     $                      ,llt(ie),lmt(ie),lrt(ie),zgm2(1,3),nz2,ie)
             else
-               call set_up_fast_1D_sem( st(1,e),lt,nt ,lbt,rbt
-     $                      ,llt(e),lmt(e),lrt(e),e)
+               call set_up_fast_1D_sem( st(1,1,ie),lt,nt ,lbt,rbt
+     $                      ,llt(ie),lmt(ie),lrt(ie),ie)
             endif
          endif
 c
 c        DIAGNOSTICS
 c
 c        n12 = min(9,nr)
-c        write(6,1) e,'1D lr',llr(e),lmr(e),lrr(e),(lr(k),k=1,n12)
-c        write(6,1) e,'1D ls',lls(e),lms(e),lrs(e),(ls(k),k=1,n12)
+c        write(6,1) ie,'1D lr',llr(ie),lmr(ie),lrr(ie),(lr(k),k=1,n12)
+c        write(6,1) ie,'1D ls',lls(ie),lms(ie),lrs(ie),(ls(k),k=1,n12)
 c        if (if3d) 
-c    $   write(6,1) e,'1D lt',llt(e),lmt(e),lrt(e),(lt(k),k=1,n12)
+c    $   write(6,1) ie,'1D lt',llt(ie),lmt(ie),lrt(ie),(lt(k),k=1,n12)
 c   1    format(i6,1x,a5,1p12e12.4)
 c
 c
@@ -123,12 +124,12 @@ c
             do i=1,nr
                diag = lr(i) + ls(j) + lt(k)
                if (diag.gt.eps) then
-                  df(l,e) = 1.0/diag
+                  df(l,ie) = 1.0/diag
                else
-c                 write(6,3) e,'Reset Eig in gen fast:',i,j,k,l
+c                 write(6,3) ie,'Reset Eig in gen fast:',i,j,k,l
 c    $                         ,eps,diag,lr(i),ls(j),lt(k)
 c   3             format(i6,1x,a21,4i5,1p5e12.4)
-                  df(l,e) = 0.0
+                  df(l,ie) = 0.0
                endif
                l = l+1
             enddo
@@ -141,12 +142,12 @@ c   3             format(i6,1x,a21,4i5,1p5e12.4)
             do i=1,nr
                diag = lr(i) + ls(j)
                if (diag.gt.eps) then
-                  df(l,e) = 1.0/diag
+                  df(l,ie) = 1.0/diag
                else
-c                 write(6,2) e,'Reset Eig in gen fast:',i,j,l
+c                 write(6,2) ie,'Reset Eig in gen fast:',i,j,l
 c    $                         ,eps,diag,lr(i),ls(j)
 c   2             format(i6,1x,a21,3i5,1p4e12.4)
-                  df(l,e) = 0.0
+                  df(l,ie) = 0.0
                endif
                l = l+1
             enddo
@@ -491,9 +492,9 @@ c           write(6,*) 'lrls',ie,lr(ie),ls(ie),lt(ie)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_up_fast_1D_fem(s,lam,n,lbc,rbc,ll,lm,lr,z,nz,e)
+      subroutine set_up_fast_1D_fem(s,lam,n,lbc,rbc,ll,lm,lr,z,nz,ie)
       real s(1),lam(1),ll,lm,lr,z(1)
-      integer lbc,rbc,e
+      integer lbc,rbc
 c
       parameter (m=100)
       real dx(0:m)
@@ -766,14 +767,13 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,e,bsym,ierr)
-      integer                lbr,rbr,lbs,rbs,lbt,rbt,e,bsym
+      subroutine get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+      integer                lbr,rbr,lbs,rbs,lbt,rbt
 c
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
       include 'TOPOL'
-      include 'TSTEP'
 c
       integer fbc(6)
 c
@@ -785,37 +785,34 @@ c     ibc = 2  <==>  Neumann,
       do iface=1,2*ndim
          ied = eface(iface)
          ibc = -1
-
-         if (ifmhd) call mhd_bc_dn(ibc,iface,e) ! can be overwritten by 'mvn'
-
-         if (cbc(ied,e,ifield).eq.'   ') ibc = 0
-         if (cbc(ied,e,ifield).eq.'E  ') ibc = 0
-         if (cbc(ied,e,ifield).eq.'msi') ibc = 0
-         if (cbc(ied,e,ifield).eq.'MSI') ibc = 0
-         if (cbc(ied,e,ifield).eq.'P  ') ibc = 0
-         if (cbc(ied,e,ifield).eq.'O  ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'ON ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'o  ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'on ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'MS ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'ms ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'MM ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'mm ') ibc = 1
-         if (cbc(ied,e,ifield).eq.'mv ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'mvn') ibc = 2
-         if (cbc(ied,e,ifield).eq.'v  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'V  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'W  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'SYM') ibc = bsym
-         if (cbc(ied,e,ifield).eq.'SL ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'sl ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'SHL') ibc = 2
-         if (cbc(ied,e,ifield).eq.'shl') ibc = 2
-         if (cbc(ied,e,ifield).eq.'A  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'S  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'s  ') ibc = 2
-         if (cbc(ied,e,ifield).eq.'J  ') ibc = 0
-         if (cbc(ied,e,ifield).eq.'SP ') ibc = 0
+         if (cbc(ied,ie,1).eq.'   ') ibc = 0
+         if (cbc(ied,ie,1).eq.'E  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'msi') ibc = 0
+         if (cbc(ied,ie,1).eq.'MSI') ibc = 0
+         if (cbc(ied,ie,1).eq.'P  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'O  ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ON ') ibc = 1
+         if (cbc(ied,ie,1).eq.'o  ') ibc = 1
+         if (cbc(ied,ie,1).eq.'on ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MS ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ms ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MM ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mm ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mv ') ibc = 2
+         if (cbc(ied,ie,1).eq.'mvn') ibc = 2
+         if (cbc(ied,ie,1).eq.'v  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'V  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'W  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SYM') ibc = 2
+         if (cbc(ied,ie,1).eq.'SL ') ibc = 2
+         if (cbc(ied,ie,1).eq.'sl ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SHL') ibc = 2
+         if (cbc(ied,ie,1).eq.'shl') ibc = 2
+         if (cbc(ied,ie,1).eq.'A  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'S  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'s  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'J  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'SP ') ibc = 0
 
          fbc(iface) = ibc
       enddo
@@ -828,7 +825,72 @@ c     ibc = 2  <==>  Neumann,
       rbt = fbc(6)
 
       ierr = 0 
-      if (ibc.lt.0) ierr = lglel(e)
+      if (ibc.lt.0) ierr = lglel(ie)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
+      integer                 lbr,rbr,lbs,rbs,lbt,rbt
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TOPOL'
+c
+      integer fbc(6)
+c
+c     ibc = 0  <==>  Dirichlet
+c     ibc = 1  <==>  Dirichlet, outflow (no extension)
+c     ibc = 2  <==>  Neumann,   
+c
+      do iface=1,2*ndim
+         ied = eface(iface)
+c        write(6,*) ie,iface,ied,cbc(ied,ie,1),' Boundary'
+         ibc = -1
+         if (cbc(ied,ie,1).eq.'   ') ibc = 0
+         if (cbc(ied,ie,1).eq.'E  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'P  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'msi') ibc = 0
+         if (cbc(ied,ie,1).eq.'MSI') ibc = 0
+         if (cbc(ied,ie,1).eq.'O  ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ON ') ibc = 1
+         if (cbc(ied,ie,1).eq.'o  ') ibc = 1
+         if (cbc(ied,ie,1).eq.'on ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MS ') ibc = 1
+         if (cbc(ied,ie,1).eq.'ms ') ibc = 1
+         if (cbc(ied,ie,1).eq.'MM ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mm ') ibc = 1
+         if (cbc(ied,ie,1).eq.'mv ') ibc = 2
+         if (cbc(ied,ie,1).eq.'mvn') ibc = 2
+         if (cbc(ied,ie,1).eq.'v  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'V  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'W  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SYM') ibc = 3
+         if (cbc(ied,ie,1).eq.'SL ') ibc = 2
+         if (cbc(ied,ie,1).eq.'sl ') ibc = 2
+         if (cbc(ied,ie,1).eq.'SHL') ibc = 2
+         if (cbc(ied,ie,1).eq.'shl') ibc = 2
+         if (cbc(ied,ie,1).eq.'A  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'S  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'s  ') ibc = 2
+         if (cbc(ied,ie,1).eq.'J  ') ibc = 0
+         if (cbc(ied,ie,1).eq.'SP ') ibc = 0
+
+         fbc(iface) = ibc
+      enddo
+       
+
+      lbr = fbc(1)
+      rbr = fbc(2)
+      lbs = fbc(3)
+      rbs = fbc(4)
+      lbt = fbc(5)
+      rbt = fbc(6)
+c     write(6,*) ie,(fbc(k),k=1,6),' BOUNDARY'
+
+      ierr = 0 
+      if (ibc.lt.0) ierr = lglel(ie)
 
       return
       end
@@ -1509,12 +1571,11 @@ c-----------------------------------------------------------------------
       real lrr,lrs,lrt
 
       real l,l2d
-      integer e
 
       n2 = nx1-1
       nz0 = 1
       nzn = 1
-      nx  = nx1-2
+      nx = nx1-2
       if (if3d) then
          nz0 = 0
          nzn = n2
@@ -1523,82 +1584,57 @@ c-----------------------------------------------------------------------
 
       n=n2+1
       if (if3d) then
-         do e=1,nelv
-         do j=2,n2
-         do k=2,n2
-            l(1,k,j,e) = lmr(e)
-            l(n,k,j,e) = lmr(e)
-            l(k,1,j,e) = lms(e)
-            l(k,n,j,e) = lms(e)
-            l(k,j,1,e) = lmt(e)
-            l(k,j,n,e) = lmt(e)
+         do i=1,nelv
+         do j=2,n
+         do k=2,n
+            l(1,k,j,i) = lmr(i)
+            l(n,k,j,i) = lmr(i)
+            l(k,1,j,i) = lms(i)
+            l(k,n,j,i) = lms(i)
+            l(k,j,1,i) = lmt(i)
+            l(k,j,n,i) = lmt(i)
          enddo
          enddo
          enddo
          call dssum(l,n,n,n)
-         do e=1,nelv
-            llr(e) = l(1,2,2,e)-lmr(e)
-            lrr(e) = l(n,2,2,e)-lmr(e)
-            lls(e) = l(2,1,2,e)-lms(e)
-            lrs(e) = l(2,n,2,e)-lms(e)
-            llt(e) = l(2,2,1,e)-lmt(e)
-            lrt(e) = l(2,2,n,e)-lmt(e)
+         do i=1,nelv
+            llr(i) = l(1,2,2,i)-lmr(i)
+            lrr(i) = l(n,2,2,i)-lmr(i)
+            lls(i) = l(2,1,2,i)-lms(i)
+            lrs(i) = l(2,n,2,i)-lms(i)
+            llt(i) = l(2,2,1,i)-lmt(i)
+            lrt(i) = l(2,2,n,i)-lmt(i)
          enddo
       else
-         do e=1,nelv
+         do i=1,nelv
          do j=2,n2
-            l(1,j,1,e) = lmr(e)
-            l(n,j,1,e) = lmr(e)
-            l(j,1,1,e) = lms(e)
-            l(j,n,1,e) = lms(e)
-c           call outmat(l(1,1,1,e),n,n,' L    ',e)
+            l(1,j,1,i) = lmr(i)
+            l(n,j,1,i) = lmr(i)
+            l(j,1,1,i) = lms(i)
+            l(j,n,1,i) = lms(i)
+c           call outmat(l(1,1,1,i),n,n,' L    ',i)
          enddo
          enddo
 c        call outmat(l(1,1,1,25),n,n,' L    ',25)
          call dssum(l,n,n,1)
 c        call outmat(l(1,1,1,25),n,n,' L    ',25)
-         do e=1,nelv
-c           call outmat(l(1,1,1,e),n,n,' L    ',e)
-            llr(e) = l(1,2,1,e)-lmr(e)
-            lrr(e) = l(n,2,1,e)-lmr(e)
-            lls(e) = l(2,1,1,e)-lms(e)
-            lrs(e) = l(2,n,1,e)-lms(e)
+         do i=1,nelv
+c           call outmat(l(1,1,1,i),n,n,' L    ',i)
+            llr(i) = l(1,2,1,i)-lmr(i)
+            lrr(i) = l(n,2,1,i)-lmr(i)
+            lls(i) = l(2,1,1,i)-lms(i)
+            lrs(i) = l(2,n,1,i)-lms(i)
          enddo
       endif
       return
       end
 c----------------------------------------------------------------------
-      subroutine row_zero(a,m,n,e)
-      integer m,n,e
+      subroutine row_zero(a,m,n,i)
+      integer m,n,i
       real a(m,n)
       do j=1,n
-         a(e,j)=0.
+         a(i,j)=0.
       enddo
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mhd_bc_dn(ibc,face,e)
-      integer                  face,e
-c
-c     sets Neumann BC on pressure (ibc=2) for face and e(lement) except
-c     when ifield normal component has (homogeneous) Neumann
-c     boundary condition setting ibc=1 (i.e. Direchlet BC on pressure)
-c
-c     Note: 'SYM' on a plane with r,s,t-normal is 'dnn','ndn','nnd'? bsym?
-c
-      include 'SIZE'
-      include 'TOPOL'
-      include 'INPUT'
-      include 'TSTEP'
-
-      ied = eface(face)	! symmetric -> preprocessor notation
-      nfc = face+1
-      nfc = nfc/2	! = 1,2,3 for face 1 & 2,3 & 4,5 & 6
-
-      if (indx1(cbc(ied,e,ifield),'d',1).gt.0)   ibc=2
-
-      if (indx1(cbc(ied,e,ifield),'n',1).gt.nfc) ibc=1 ! 'n' for V_n
-
       return
       end
 c-----------------------------------------------------------------------
