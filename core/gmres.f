@@ -97,7 +97,6 @@ c           call copy(r,res,ntot2)
                call uzprec(z(1,j),w,h1,h2,intype,wp)
             else                                  !       -1
                call hsmg_solve(z(1,j),w)          ! z  = M   w
-c              call copy(z(1,j),w,ntot2)          ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
      
@@ -390,7 +389,6 @@ c           call copy(r,res,n)
                                                   !           j
 
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
-
             etime2 = dnekclock()
             kfldfdm = ndim+1
             if (param(100).eq.2) then
@@ -408,7 +406,6 @@ c           call hsmg_solve(z(1,j),w)             ! z  = M   w
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
-     
             call ax  (w,z(1,j),h1,h2,n)           ! w = A z
                                                   !        j
      
@@ -470,6 +467,7 @@ c           enddo
 
             rnorm = abs(gamma(j+1))*norm_fac
             ratio = rnorm/div0
+
             if (ifprint.and.nid.eq.0) 
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
@@ -518,6 +516,7 @@ c     call flush_hack
 
       return
       end
+c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine set_overlap2
 c
@@ -663,7 +662,7 @@ c
       ierr = 0
       do ie=1,nelv
 
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,3,ierr)
+         call get_fast_bc2(lbr,rbr,lbs,rbs,lbt,rbt,ie,ierr)
 c
 c        Set up matrices for each element.
 c

@@ -277,9 +277,8 @@ C--------------------------------------------------------------------------
             endif
 
             if (ifmhd) then
-               if (ifheat)      call heat     (igeom)
                                 call induct   (igeom)
-                                call setup_convect (igeom) ! dealising in induct?
+               if (ifheat)      call heat     (igeom)
 
             elseif (ifpert) then
 
@@ -314,7 +313,7 @@ C--------------------------------------------------------------------------
       include 'OPCTR'
 
       if(instep.ne.0) call runstat
-      if(xxth(1).gt.0) call crs_stats(xxth(1))
+      if(xxth.gt.0) call crs_stats(xxth)
    
       return
       end
