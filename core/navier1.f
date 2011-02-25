@@ -250,7 +250,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
 
          if (ifsplit) then
             rndof = glsum (vmult,ntot)
-            rlam  = glsum (respr,ntot)/rndof
+            rlam  = glsc2 (respr,vmult,ntot)/rndof
          else
             rlam  = glsum (respr,ntot)/ntotg
          endif
