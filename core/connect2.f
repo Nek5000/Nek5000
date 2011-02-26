@@ -402,7 +402,7 @@ c     This is here because it influence the mesh read, which follows.
       nely   = abs(param(117))
       nelz   = abs(param(118))
       n_o    = 0
-c
+
       if (n_o.eq.0) then
          ifzper=.false.
          ifgfdm=.false.
@@ -410,6 +410,8 @@ c
          if (nelx.gt.0) ifgfdm=.true.
          if (nelx.gt.0) ifzper=.false.
       endif
+
+
 C
 C     Do some checks
 C
@@ -480,6 +482,9 @@ C
      $   'ABORT: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
+
+      if (ifgfdm.and.ifsplit) call exitti
+     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
 
       if (ifsplit .and. ifstrs) then
          if(nid.eq.0) write(6,*) 
