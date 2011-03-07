@@ -239,7 +239,8 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       include 'INPUT'
       include 'PARALLEL'
       include 'SOLN'
-      real respr (lx2,ly2,lz2,lelv)
+
+      real respr (lx1,ly2,lz2,lelv)
       integer*8 ntotg,nxyz2
 
       if (ifvcor) then
@@ -248,12 +249,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
          ntot  = nxyz2*nelv
          ntotg = nxyz2*nelgv
 
-         if (ifsplit) then
-            rndof = glsum (vmult,ntot)
-            rlam  = glsum (respr,ntot)/rndof
-         else
-            rlam  = glsum (respr,ntot)/ntotg
-         endif
+         rlam  = glsum (respr,ntot)/ntotg
          call cadd (respr,-rlam,ntot)
       endif
 
@@ -1022,7 +1018,7 @@ c           CALL COL2        (RPCG,H2M2,NTOT2)
          CALL COPY        (RPCG,RCG,NTOT2)
       ENDIF
 
-      call ortho (rpcg)
+      call ortho(rpcg)
 
       return
       end
