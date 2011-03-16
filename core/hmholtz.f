@@ -687,7 +687,7 @@ c
       if (skmin.gt.0.and.h2max.eq.0) ifmcor = .true.
 C
       if (name.eq.'PRES') then
-         call ortho (r)
+c        call ortho (r)           ! Commented out March 15, 2011,pff
       elseif (ifmcor) then
          smean = -1./glsum(mult,n)
          rmean = smean*glsc2(r,mult,n)
