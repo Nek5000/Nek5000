@@ -588,6 +588,7 @@ c     Initialize geometry arrays with bi- triquadratic deformations
       do ie=1,nelt
 
          call setzgml (zgml,ie,nxl,nyl,nzl,ifaxis)
+         call sethmat (h,zgml,nxl,nyl,nzl)
 
 c        Deform surfaces - general 3D deformations
 c                        - extruded geometry deformations
@@ -615,64 +616,67 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setzgml (zgml,iel,nxl,nyl,nzl,ifaxis)
-C
+      subroutine sethmat(h,zgml,nxl,nyl,nzl)
+
+      include 'SIZE'
+      include 'INPUT'  ! if3d
+
+      real h(lx1,3,2),zgml(lx1,3)
+
+      do 10 ix=1,nxl
+         h(ix,1,1)=(1.0-zgml(ix,1))*0.5
+         h(ix,1,2)=(1.0+zgml(ix,1))*0.5
+   10 continue
+      do 20 iy=1,nyl
+         h(iy,2,1)=(1.0-zgml(iy,2))*0.5
+         h(iy,2,2)=(1.0+zgml(iy,2))*0.5
+   20 continue
+      if (if3d) then
+         do 30 iz=1,nzl
+            h(iz,3,1)=(1.0-zgml(iz,3))*0.5
+            h(iz,3,2)=(1.0+zgml(iz,3))*0.5
+   30    continue
+      else
+         call rone(h(1,3,1),nzl)
+         call rone(h(1,3,2),nzl)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setzgml (zgml,e,nxl,nyl,nzl,ifaxl)
+
       include 'SIZE'
       include 'WZ'
       include 'GEOM'
-C
-      DIMENSION ZGML(LX1,3)
-      LOGICAL IFAXIS
-C
-      CALL RZERO (ZGML,3*NX1)
 
-      if (nxl.eq.3) then
+      real zgml(lx1,3)
+      integer e
+      logical ifaxl
+
+      call rzero (zgml,3*nx1)
+
+
+      if (nxl.eq.3 .and. .not. ifaxl) then
          do k=1,3
             zgml(1,k) = -1
             zgml(2,k) =  0
             zgml(3,k) =  1
          enddo
-         return
+      elseif (ifgmsh3.and.nxl.eq.nx3) then
+         call copy(zgml(1,1),zgm3(1,1),nx3)
+         call copy(zgml(1,2),zgm3(1,2),ny3)
+         call copy(zgml(1,3),zgm3(1,3),nz3)
+         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam3,ny3)
+      elseif (nxl.eq.nx1) then
+         call copy(zgml(1,1),zgm1(1,1),nx1)
+         call copy(zgml(1,2),zgm1(1,2),ny1)
+         call copy(zgml(1,3),zgm1(1,3),nz1)
+         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam1,ny1)
+      else
+         call exitti('ABORT setzgml! $',nxl)
       endif
 
-      IF ( IFGMSH3 ) THEN
-
-         DO 5 IX=1,NXL
-            ZGML(IX,1)=ZGM3(IX,1)
-    5    CONTINUE
-         IF (IFAXIS .AND. IFRZER(IEL)) THEN
-            DO 15 IY=1,NYL
-               ZGML(IY,2)=ZAM3(IY)
-   15       CONTINUE
-         ELSE
-            DO 25 IY=1,NYL
-               ZGML(IY,2)=ZGM3(IY,2)
-   25       CONTINUE
-         ENDIF
-         DO 35 IZ=1,NZL
-            ZGML(IZ,3)=ZGM3(IZ,3)
-   35    CONTINUE
-C
-      ELSE
-C
-         DO 40 IX=1,NXL
-            ZGML(IX,1)=ZGM1(IX,1)
-   40    CONTINUE
-         IF (IFAXIS .AND. IFRZER(IEL)) THEN
-            DO 50 IY=1,NYL
-               ZGML(IY,2)=ZAM1(IY)
-   50       CONTINUE
-         ELSE
-            DO 60 IY=1,NYL
-               ZGML(IY,2)=ZGM1(IY,2)
-   60       CONTINUE
-         ENDIF
-         DO 70 IZ=1,NZL
-            ZGML(IZ,3)=ZGM1(IZ,3)
-   70    CONTINUE
-C
-      ENDIF
-C
       return
       end
 c-----------------------------------------------------------------------
@@ -1260,14 +1264,14 @@ c-----------------------------------------------------------------------
          if (ifmid) then
             call xyzquad(xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e)
          else
-            call xyzlin (xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e)
+            call xyzlin (xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e,ifaxis)
          endif
       enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine xyzlin(xl,yl,zl,nxl,nyl,nzl,e)
+      subroutine xyzlin(xl,yl,zl,nxl,nyl,nzl,e,ifaxl)
 c     Generate bi- or trilinear mesh
 
       include 'SIZE'
@@ -1275,6 +1279,7 @@ c     Generate bi- or trilinear mesh
 
       real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
       integer e
+      logical ifaxl ! local ifaxis specification
 
 c   Preprocessor Corner notation:      Symmetric Corner notation:
 c
@@ -1293,34 +1298,27 @@ c        5+-----+6    t                      5+-----+6    t
       parameter (ldw=4*lx1*ly1*lz1)
       common /ctmp0/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
 
-c     Note : CTMP1 is used in this format in several subsequent routines
-      common /ctmp1/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
-     $             , zgml(lx1,3),work(3,lx1,lz1)
+      common /cxyzl/ zgml(lx1,3),jx (lx1*2),jy (lx1*2),jz (lx1*2)
+     $                          ,jxt(lx1*2),jyt(lx1*2),jzt(lx1*2)
+     $                          ,zlin(2)
+      real jx,jy,jz,jxt,jyt,jzt
 
+      call setzgml (zgml,e,nxl,nyl,nzl,ifaxl)
+
+      zlin(1) = -1
+      zlin(2) =  1
+
+      k = 1
+      do i=1,nxl
+         call fd_weights_full(zgml(i,1),zlin,1,0,jxt(k))
+         call fd_weights_full(zgml(i,2),zlin,1,0,jyt(k))
+         call fd_weights_full(zgml(i,3),zlin,1,0,jzt(k))
+         k=k+2
+      enddo
+      call transpose(jx,nxl,jxt,2)
 
       ndim2 = 2**ndim
-
-      call setzgml (zgml,e,nxl,nyl,nzl,ifaxis)
-
-      do ix=1,nxl
-         h(ix,1,1)=(1.0-zgml(ix,1))*0.5
-         h(ix,1,2)=(1.0+zgml(ix,1))*0.5
-      enddo
-      do iy=1,nyl
-         h(iy,2,1)=(1.0-zgml(iy,2))*0.5
-         h(iy,2,2)=(1.0+zgml(iy,2))*0.5
-      enddo
-      if (if3d) then
-         do iz=1,nzl
-            h(iz,3,1)=(1.0-zgml(iz,3))*0.5
-            h(iz,3,2)=(1.0+zgml(iz,3))*0.5
-         enddo
-      else
-         call rone(h(1,3,1),nzl)
-         call rone(h(1,3,2),nzl)
-      endif
-
-      do ix=1,ndim2
+      do ix=1,ndim2          ! Convert prex notation to lexicographical
          i=indx(ix)
          xcb(ix,1,1)=xc(i,e)
          ycb(ix,1,1)=yc(i,e)
@@ -1331,9 +1329,9 @@ c     Map R-S-T space into physical X-Y-Z space.
 
       ! NOTE:  Assumes nxl=nyl=nzl !
 
-      call map_m_to_n(xl,nxl,xcb,2,if3d,w,ldw)
-      call map_m_to_n(yl,nxl,ycb,2,if3d,w,ldw)
-      call map_m_to_n(zl,nxl,zcb,2,if3d,w,ldw)
+      call tensr3(xl,nxl,xcb,2,jx,jyt,jzt,w)
+      call tensr3(yl,nxl,ycb,2,jx,jyt,jzt,w)
+      call tensr3(zl,nxl,zcb,2,jx,jyt,jzt,w)
 
       return
       end
@@ -1359,8 +1357,12 @@ c     Note : CTMP1 is used in this format in several subsequent routines
      $              , 20 , 24 , 26 , 22
      $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
 
+      common /cxyzl/ zgml(lx1,3),jx (lx1*3),jy (lx1*3),jz (lx1*3)
+     $                          ,jxt(lx1*3),jyt(lx1*3),jzt(lx1*3)
+     $                          ,zquad(3)
+      real jx,jy,jz,jxt,jyt,jzt
 
-      call xyzlin(xq,yq,zq,3,3,3,e) ! map bilin to bi- or triquadratic
+      call xyzlin(xq,yq,zq,3,3,3,e,.false.) ! map bilin to 3x3x3
 
       nedge = 4 + 8*(ndim-2)
 
@@ -1381,22 +1383,58 @@ c     Note : CTMP1 is used in this format in several subsequent routines
          call gh_face_extend(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
          call gh_face_extend(yq,zg,3,2,w(1,1),w(1,2))
          call gh_face_extend(zq,zg,3,2,w(1,1),w(1,2))
-
-c        Map R-S-T space into physical X-Y-Z space.
-         ! NOTE:  Assumes nxl=nyl=nzl !
-         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
-         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
-         call map_m_to_n(zl,nxl,zq,3,if3d,w,ldw)
-
       else
-
          call gh_face_extend_2d(xq,zg,3,2,w(1,1),w(1,2)) ! 2 --> edge extend
          call gh_face_extend_2d(yq,zg,3,2,w(1,1),w(1,2))
-
-         call map_m_to_n(xl,nxl,xq,3,if3d,w,ldw)
-         call map_m_to_n(yl,nxl,yq,3,if3d,w,ldw)
-
       endif
+      call clean_xyzq(xq,yq,zq,if3d) ! verify that midside node is in "middle"
+
+
+c     Map R-S-T space into physical X-Y-Z space.
+      ! NOTE:  Assumes nxl=nyl=nzl !
+
+      zquad(1) = -1
+      zquad(2) =  0
+      zquad(3) =  1
+
+      call setzgml (zgml,e,nxl,nyl,nzl,ifaxis)  ! Here we address axisymm.
+
+      k = 1
+      do i=1,nxl
+         call fd_weights_full(zgml(i,1),zquad,2,0,jxt(k))
+         call fd_weights_full(zgml(i,2),zquad,2,0,jyt(k))
+         call fd_weights_full(zgml(i,3),zquad,2,0,jzt(k))
+         k=k+3
+      enddo
+      call transpose(jx,nxl,jxt,3)
+
+      call tensr3(xl,nxl,xq,3,jx,jyt,jzt,w)
+      call tensr3(yl,nxl,yq,3,jx,jyt,jzt,w)
+      call tensr3(zl,nxl,zq,3,jx,jyt,jzt,w)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine clean_xyzq(x,y,z,if3d) ! verify that midside node is in "middle"
+
+      real x(3,3,3),y(3,3,3),z(3,3,3)
+      logical if3d
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+
+c     if (if3d) then ! 12 edges
+c     else
+c     endif
+
+c     Here - see routine "fix_m_curve" in prenek for indexing strategy
+c
+c     Note that "fix_m_curve" does not yet perform the actual fix, and
+c     it too should be updated.
 
       return
       end

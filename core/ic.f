@@ -528,10 +528,11 @@ C----------------------------------------------------------------------
       PARAMETER (LXYZR=LXR*LYR*LZR)
       PARAMETER (LXYZT=LX1*LY1*LZ1*LELT)
       PARAMETER (LPSC9=LDIMT+9)
-c
+
+      common /scrcg/ pm1(lx1*ly1*lz1,lelv)
       COMMON /SCRNS/ SDUMP(LXYZT,7)
       integer mesg(40)
-c
+
 C     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 9.
       COMMON /CTMP1/ TDUMP(LXYZR,LPSC9)
       real*4         tdump
@@ -564,8 +565,6 @@ C     Local logical flags to determine whether to copy data or not.
       logical ifbytsw, if_byte_swap_test
       real*4   bytetest
 
-      REAL AXISM1 (LX1,LY1)
-      REAL AXISM2 (LX2,LY2)
 c
       ifok=.false.
       ifbytsw = .false.
@@ -577,7 +576,7 @@ c use new reader (only binary support)
       if (param(67).eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
-            call mfi(fname)
+            call mfi(fname,ifile)
          enddo
          return
       endif
@@ -945,63 +944,17 @@ c
                if (ifgetu) call copy(vx ,sdump(1,4),ntotv)
                if (ifgetu) call copy(vy ,sdump(1,5),ntotv)
                if (ifgetw) call copy(vz ,sdump(1,6),ntotv)
-               if (ifgetp) then
-                  if (nid.eq.0) write(6,*) 'getting restart pressure'
-                  if (ifsplit) then
-                     call copy(pr,sdump(1,7),ntotv)
-                  else
-                     do iel=1,nelv
-                        iiel = (iel-1)*nxyz1+1
-                        call map12 (pr(1,1,1,iel),sdump(iiel,7),iel)
-                     enddo
-                  endif
-               endif
+               if (ifgetp) call copy(pm1,sdump(1,7),ntotv)
                if (ifgett) call copy(t,sdmp2(1,1),ntott)
 C              passive scalars
                do i=1,NPSCAL
                   if (ifgtps(i))
      $            call copy(t(1,1,1,1,i+1),sdmp2(1,i+1),ntott)
                enddo
-c
-               IF (IFAXIS) THEN
 
-               DO IEL=1,NELV
-               IF(IFRZER(IEL)) THEN
-                 IF(IFGETX) THEN
-                   CALL MXM   (XM1(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY  (XM1(1,1,1,IEL),AXISM1,NX1*NY1)
-                   CALL MXM   (YM1(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY  (YM1(1,1,1,IEL),AXISM1,NX1*NY1)
-                 ENDIF
-                 IF(IFGETU) THEN
-                   CALL MXM    (VX(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY   (VX(1,1,1,IEL),AXISM1,NX1*NY1)
-                   CALL MXM    (VY(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY   (VY(1,1,1,IEL),AXISM1,NX1*NY1)
-                 ENDIF
-                 IF(IFGETW) THEN
-                   CALL MXM    (VZ(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY   (VZ(1,1,1,IEL),AXISM1,NX1*NY1)
-                 ENDIF
-                 IF(IFGETP) THEN
-                   CALL MXM    (PR(1,1,1,IEL),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY   (PR(1,1,1,IEL),AXISM1,NX1*NY1)
-                 ENDIF
-                 IF(IFGETT) THEN
-                   CALL MXM  (T (1,1,1,IEL,1),NX1,IATLJ1,NY1,AXISM1,NY1)
-                   CALL COPY (T (1,1,1,IEL,1),AXISM1,NX1*NY1)
-                 ENDIF
-                 DO IPS=1,NPSCAL
-                  IS1 = IPS + 1
-                  if(ifgtps(ips)) then
-                   call mxm (t(1,1,1,iel,is1),nx1,iatlj1,ny1,axism1,ny1)
-                   call copy(t(1,1,1,iel,is1),axism1,nx1*ny1)
-                  endif
-                 ENDDO
-               ENDIF
-               ENDDO
-               ENDIF
-c
+               if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
+               if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
+
                if (ifgtim) time=rstime
             endif
 
@@ -2405,7 +2358,7 @@ c     NOTE: In the old hdr format: what you see in file is what you get.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi(fname)
+      subroutine mfi(fname,ifile)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2477,19 +2430,8 @@ c               if(nid.eq.0) write(6,*) 'Reading velocity field'
          offs = offs0 + iofldsr*stride + strideB
          call byte_set_view(offs,ifh_mbyte)
          if (ifgetp) then
-c            if(nid.eq.0) write(6,*) 'Reading pressure field'
+c           if(nid.eq.0) write(6,*) 'Reading pressure field'
             call mfi_gets(pm1,wk,lwk,.false.)
-            if (ifmhd.and.ifile.eq.2) then
-               do e=1,nelv
-                  call map12 (pm(1,1,1,e),pm1(1,e),e)
-               enddo
-            elseif (ifsplit) then
-               call copy (pr,pm1,nx2*ny2*nz2*nelv)
-            else
-               do e=1,nelv
-                  call map12 (pr(1,1,1,e),pm1(1,e),e)
-               enddo
-            endif
          else
             call mfi_gets(pm1,wk,lwk,.true.)
          endif
@@ -2545,6 +2487,9 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
     7 format(/,i9,1pe12.4,' done :: Read checkpoint data',/,
      &       30X,'avg data-throughput = ',f7.1,'MBps',/,
      &       30X,'io-nodes = ',i5,/)
+
+      if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
+      if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
       return
       end
@@ -2682,6 +2627,82 @@ c-----------------------------------------------------------------------
       if (if_byte_sw) call byte_reverse(er,nelr)
 #endif
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine axis_interp_ic(pm1)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+
+      real pm1(lx1,ly1,lz1,lelv)
+
+      common /ctmp0/ axism1 (lx1,ly1)
+      integer e
+
+      if (.not.ifaxis) return
+
+      do e=1,nelv
+         if (ifrzer(e)) then
+           if (ifgetx) then
+             call mxm   (xm1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy  (xm1(1,1,1,e),axism1,nx1*ny1)
+             call mxm   (ym1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy  (ym1(1,1,1,e),axism1,nx1*ny1)
+           endif
+           if (ifgetu) then
+             call mxm    (vx(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy   (vx(1,1,1,e),axism1,nx1*ny1)
+             call mxm    (vy(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy   (vy(1,1,1,e),axism1,nx1*ny1)
+           endif
+           if (ifgetw) then
+             call mxm    (vz(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy   (vz(1,1,1,e),axism1,nx1*ny1)
+           endif
+           if (ifgetp) then
+             call mxm    (pm1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
+             call copy   (pm1(1,1,1,e),axism1,nx1*ny1)
+           endif
+           if (ifgett) then
+             call mxm  (t (1,1,1,e,1),nx1,iatlj1,ny1,axism1,ny1)
+             call copy (t (1,1,1,e,1),axism1,nx1*ny1)
+           endif
+           do ips=1,npscal
+            is1 = ips + 1
+            if (ifgtps(ips)) then
+             call mxm (t(1,1,1,e,is1),nx1,iatlj1,ny1,axism1,ny1)
+             call copy(t(1,1,1,e,is1),axism1,nx1*ny1)
+            endif
+           enddo
+         endif
+      enddo
+   
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map_pm1_to_pr(pm1,ifile)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+
+      real pm1(lx1*ly1*lz1,lelv)
+      integer e
+
+      if (ifmhd.and.ifile.eq.2) then
+         do e=1,nelv
+            call map12 (pm(1,1,1,e),pm1(1,e),e)
+         enddo
+      elseif (ifsplit) then
+         call copy (pr,pm1,nx2*ny2*nz2*nelv)
+      else
+         do e=1,nelv
+            call map12 (pr(1,1,1,e),pm1(1,e),e)
+         enddo
+      endif
+   
       return
       end
 c-----------------------------------------------------------------------
