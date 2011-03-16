@@ -1184,12 +1184,12 @@ c              write(*,*) line
 c              write(6,80) string
               open(unit=99,file='box.tmp')
               len = ltrunc(string,80)
-              write(99,81) (string1(k),k=1,len)
+c             write(99,81) (string1(k),k=1,len)
               close(unit=99)
               return
          else
               i1 = indx1(string,comment,1)
-c              write(6,*) i1,' i1', comment
+c             write(6,*) i1,' i1', comment
          endif
 c
       enddo
