@@ -1247,7 +1247,6 @@ c-----------------------------------------------------------------------
 c     Assign / repair curve-side info for edges
 
       include 'basics.inc'
-      integer e
 
       real xyz(3,3)
 
