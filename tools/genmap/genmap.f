@@ -91,7 +91,7 @@ c     read nekton .rea file and make a .map file
       common /arrayr/  dx(4*lpts)
 
       common /carrayr/ bc(5*6*lelm)
-      real*8 bc
+      real bc
       common /carrayc/ cbc(6,lelm)
       character*3      cbc
 
@@ -497,7 +497,7 @@ c-----------------------------------------------------------------------
 c     .Read Boundary Conditions (and connectivity data)
 
       character*3 cbc(6,nel)
-      real*8      bc(5,6,nel)
+      real        bc(5,6,nel)
       integer e,f
 C
       nbcrea = 5
@@ -3726,7 +3726,7 @@ c     call outmati(nee,1,ne,'nee  1',ne,1)
 c-----------------------------------------------------------------------
       subroutine outbc(cbc,bc,nel,ndim,name6)
       character*3 cbc(6,1)
-      real*8       bc(5,6,1)
+      real        bc(5,6,1)
       character*6 name6
       integer e,f
 
