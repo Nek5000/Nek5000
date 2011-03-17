@@ -65,8 +65,8 @@ c
 c
 c------------------------------------------------------------------------------
       program genbox
-      character*80 string
-      character*1  string1(80)
+      character*132 string
+      character*1  string1(132)
       equivalence (string,string1)
 C
       logical     if3d,ifevenx,ifeveny,ifevenz,ifflow,iffo,if_multi_seg
@@ -102,7 +102,7 @@ c     parameter (maxel = mbox*maxx*maxx)   !
       common /genbc/ cbc
 
       real*4 buf(30)
-      character*80 hdr
+      character*132 hdr
       real*4 test
       data   test  / 6.54321 /
 
@@ -113,16 +113,16 @@ c     parameter (maxel = mbox*maxx*maxx)   !
 
 
 c     Get the input file, which specifies the base .rea file
-      call blank(string,80)
+      call blank(string,132)
       write(6,*) 'input file name:'
-      read (5,80) string
-   80 format(a80)
+      read (5,132) string
+  132 format(a132)
       open (unit=7,file=string,status='old')
 c
 C     Read in name of previously generated NEKTON data set.
 C     (Must have same dimension and number of fields as current run)
 C
-      call gets(string,80,iend,7)
+      call gets(string,132,iend,7)
 c
       open (unit=8,file=string,status='old')
       open (unit=9,file='box.rea')
@@ -364,7 +364,7 @@ c
    10   format(3i10,'           NEL,NDIM,NELV')
       else
         write(9,10) -nel,ndim,nel
-        call blank(hdr,80)
+        call blank(hdr,132)
         write(hdr,111) nel,ndim,nel
   111   format('#v001',i9,i3,i9,' this is the hdr')
         call byte_write(hdr,20)   ! assumes byte_open() already issued
@@ -1018,9 +1018,9 @@ c     Scan through .rea file until end of bcs
          call nekscan(string,'PRESOLVE',8,8)
       endif
 
-      lout = ltrunc(string1,80)
+      lout = ltrunc(string1,132)
       write (9,81) (string1(j),j=1,lout)
-   81 format(80a1)
+   81 format(132a1)
 c
 
 c     if(iffo) then
@@ -1031,9 +1031,9 @@ c
 c     Scan through .rea file until end of bcs
 c
 c     call scan(string,'RESTART',7,8)
-c     lout = ltrunc(string1,80)
+c     lout = ltrunc(string1,132)
 c     write (9,81) (string1(j),j=1,lout)
-c  81 format(80a1)
+c  81 format(132a1)
 
       call scanout(string,'xxxx',4,8,9)
       if(.not.iffo)  call byte_close()
@@ -1050,22 +1050,22 @@ c
 c     scan through infile until input is found and output
 c     all lines save that containing input to "outfile"
 c
-      character*80 string
+      character*132 string
       character*1 input(1)
       integer infile,outfile
 c
-      character*1 string1(80)
+      character*1 string1(132)
 c
       do line=1,10000000
-         call blank(string,80)
-         read (infile ,80,end=100,err=100) string
+         call blank(string,132)
+         read (infile ,132,end=100,err=100) string
          if (indx1(string,input,len).ne.0) return
-         call ccopy(string1,string,80)
-         lout = ltrunc(string1,80)
+         call ccopy(string1,string,132)
+         lout = ltrunc(string1,132)
          write (outfile,81) (string1(j),j=1,lout)
       enddo
-   80 format(a80)
-   81 format(80a1)
+  132 format(a132)
+   81 format(132a1)
 c
   100 continue
       return
@@ -1075,16 +1075,16 @@ c-----------------------------------------------------------------------
 c
 c     scan through infile until input is found 
 c
-      character*80 string
+      character*132 string
       character*1 input(1)
       integer infile,outfile
 c
       do line=1,10000000
-         call blank(string,80)
-         read (infile ,80,end=100,err=100) string
+         call blank(string,132)
+         read (infile ,132,end=100,err=100) string
          if (indx1(string,input,len).ne.0) return
       enddo
-   80 format(a80)
+  132 format(a132)
 c
   100 continue
       return
@@ -1116,9 +1116,9 @@ C
       RETURN
       END
       INTEGER FUNCTION INDX1(S1,S2,L2)
-      CHARACTER*80 S1,S2
+      CHARACTER*132 S1,S2
 C
-      N1=80-L2+1
+      N1=132-L2+1
       INDX1=0
       IF (N1.LT.1) RETURN
 C
@@ -1166,8 +1166,8 @@ c-----------------------------------------------------------------------
 c
 c     scan through infile until "no comment" is found
 c
-      character*80 string
-      character*1  string1(80)
+      character*132 string
+      character*1  string1(132)
       equivalence (string1,string)
 c
       character*1 comment
@@ -1176,25 +1176,26 @@ c
 c
       iend = 0
       do line=1,10000000
-         call blank(string,80)
-         read (infile ,80,end=100,err=100) string
+         call blank(string,132)
+         read (infile ,132,end=100,err=100) string
 c
          if   (indx1(string,comment,1).ne.1) then
 c              write(*,*) line
-c              write(6,80) string
+c              write(6,132) string
               open(unit=99,file='box.tmp')
-              len = ltrunc(string,80)
-c             write(99,81) (string1(k),k=1,len)
+              len = ltrunc(string,132)
+              write(99,81) (string1(k),k=1,len)
+              write(6,81) (string1(k),k=1,len)
               close(unit=99)
               return
          else
               i1 = indx1(string,comment,1)
-c             write(6,*) i1,' i1', comment
+              write(6,*) i1,' i1', comment
          endif
 c
       enddo
-   80 format(a80)
-   81 format(80a1)
+  132 format(a132)
+   81 format(132a1)
 c
   100 continue
       iend = 1
@@ -1266,30 +1267,33 @@ c-----------------------------------------------------------------------
 c
 c     Get reals from first uncommented line
 c
-      istart=1
       call scannocom(iend,io)
       if (iend.ne.0) return
 
       call cfill(r,1e+30,n)
- 222  open(unit=99,file='box.tmp')
-      read(99,*,end=1,iostat=istat) (r(k),k=istart,n)
-   1  close(unit=99)
 
-      ! check how many points we have already read
-      icounter = 0
-      do i=1,n
-         if(r(i).ne.1e+30) icounter = icounter + 1
-      enddo
+      istart=1
+      do ipass=1,n
+         open(unit=99,file='box.tmp')
+         read(99,*,end=1,iostat=istat) (r(k),k=istart,n)
+   1     close(unit=99)
+
+         icounter = 0  !  check how many points we have already read
+         do i=1,n
+            if(r(i).ne.1e+30) icounter = icounter + 1
+         enddo
  
-      if(icounter.lt.n) then
-        write(*,*) 'error:', icounter,n
-        call scannocom(iend,io)
-        istart=icounter+1
-        goto 222
-      endif
+         if (icounter.lt.n) then
+            call scannocom(iend,io)
+            istart=icounter+1
+         else
+            return
+         endif
+      enddo
 
-
+      write(6,*) 'error in getrv:', icounter,n
       return
+
 c    1 continue
 c      close(unit=99)
 c      write(6,*) 'this is k:',k,n
@@ -1302,15 +1306,15 @@ c      return
 c-----------------------------------------------------------------------
       subroutine getcv0(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(80)
+      character*1 adum(132)
 c
 c     Get character strings, with no seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,80)
-    1 format(80a1)
+      read(99,1,end=2) (adum(k),k=1,132)
+    1 format(132a1)
     2 continue
 c
       i = 0
@@ -1322,7 +1326,7 @@ c
       enddo
       do j=1,n
          write(6,3) m,n,(c(i,j),i=1,m)
-    3    format(2i4,'getcv0:',80a1)
+    3    format(2i4,'getcv0:',132a1)
       enddo
 c
       close(unit=99)
@@ -1331,15 +1335,15 @@ c
 c-----------------------------------------------------------------------
       subroutine getcv(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(80)
+      character*1 adum(132)
 c
 c     Get character strings, with single seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,80)
-    1 format(80a1)
+      read(99,1,end=2) (adum(k),k=1,132)
+    1 format(132a1)
     2 continue
 c
       i = 0
@@ -1366,7 +1370,7 @@ c
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
       read(99,1) (c(k),k=1,n)
-    1 format(80a1)
+    1 format(132a1)
       close(unit=99)
       return
       end
