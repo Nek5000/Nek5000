@@ -140,10 +140,18 @@ c              call getside(jel,jside,xmouse,ymouse)
 c              RADIUS =  -CURVE(1,jside,jel)
 c           endif
             CALL DRAWEL(-IELS)
-            CURVE(1,ISID,IELS)=RADIUS
-            CCURVE(ISID,IELS)='C'
-C
-            CALL EXPORT(ISID,IELS)
+
+            curve(1,isid,iels)=radius
+            ccurve(isid,iels)='C'
+            call export(isid,iels)
+
+            if (if3d.and.isid.le.4) then
+               isd4 = isid + 4
+               curve       (1,isd4,iels)=radius
+               ccurve      (isd4,iels)='C'
+               call export (isd4,iels)
+            endif
+
       ELSE IF(CHOICE.EQ.'FORTRAN FUNCTION')THEN
             CALL GETEDG(ISID,IELS)
             CALL DRAWEL(-IELS)
@@ -1247,6 +1255,7 @@ c-----------------------------------------------------------------------
 c     Assign / repair curve-side info for edges
 
       include 'basics.inc'
+      integer e
 
       real xyz(3,3)
 

@@ -1438,7 +1438,7 @@ c-----------------------------------------------------------------------
       call blank(fname,70)
       call res  (fname,70)
 
-      if (indx1(fname,'base',4).eq.1) then
+      if (indx1(fname,'base_spec',9).eq.1) then
          call imp_mesh_special
          return
       endif
@@ -2755,8 +2755,8 @@ c
       read(84,*) nsph 
 c
       call blank(iname,70)
-      write(iname,10) 'base'
-   10 format(a4)
+      write(iname,10) 'base_spec'
+   10 format(a9)
 c
       ztr = 0.
       do i=1,nsph

@@ -193,11 +193,11 @@ c-----------------------------------------------------------------------
          return
       endif
 
-310   NCHOIC =  4
+310   NCHOIC =  2
       ITEM(1)='BUILD FROM FILE'
-      ITEM(2)='ALTER PARAMETERS'
-      ITEM(3)='SHOW PARAMETERS'
-      ITEM(4)='BUILD INTERACTIVELY'
+      ITEM(2)='BUILD INTERACTIVELY'
+c     ITEM(3)='ALTER PARAMETERS'
+c     ITEM(4)='SHOW PARAMETERS'
 c     ITEM(5)='IMPORT UNIVERSAL FILE'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'CENTRAL')
 
@@ -621,7 +621,7 @@ C     Print Out Parameters
          call chcopy(s401,cparam(ip),40)
          l=ltrunc(s401,40)
          write(10,1049) param(ip),ip,(s401(j),j=1,l)
- 1049 format(g14.6,1X,'P',i3.3,': ',40a1)
+ 1049    format(g14.6,1X,'p',i3.3,' ',40a1)
  1050 CONTINUE
       WRITE(10,*)'     4  Lines of passive scalar data follows',
      $'2 CONDUCT; 2RHOCP'
@@ -1075,6 +1075,10 @@ c-----------------------------------------------------------------------
 C     Based on EQTYPE and  and IF3D, Prompt for Parameters to be set
       include 'basics.inc'
       CHARACTER*19 BOXLAB
+
+      return   !  edit file to set params
+
+
       CALL GINDIS
 C     4107 Tends to send <cr> when you disable gin.  This reads it.
       IF(IF4107)CALL RES(LINE,70)
@@ -1238,22 +1242,22 @@ C                 ??!! Make more extensive tests
      $               (' Grid > 0.5 gives only 4 possible points.$')
                      GO TO 301
                   endif
-                  NORDER=PARAM(20)
-                  if (NORDER.GT.NXM) THEN
-                     WRITE(S,104) NX,NXM
-  104                FORMAT(' Warning, current NORDER exceeds NXM'
-     $                     ,' resetting from',I3,' to',I3,'.$')
-                     CALL PRS(S)
-                     NORDER=NXM
-                     PARAM(20)=NORDER
-                  endif
-                  IF(CPARAM(I).EQ.'NORDER'.AND.NORDER.GE.NXM) then
-                     CALL PRSI(' ERROR: Maximum NORDER set to $',NXM)
-                     CALL PRS(' Please contact your NEKTONICS '//
-     $               'representative to increase it.$')
-                     CALL BEEP
-                     GO TO 301
-                  endif
+c                 NORDER=PARAM(20)
+c                 if (NORDER.GT.NXM) THEN
+c                    WRITE(S,104) NX,NXM
+c 104                FORMAT(' Warning, current NORDER exceeds NXM'
+c    $                     ,' resetting from',I3,' to',I3,'.$')
+c                    CALL PRS(S)
+c                    NORDER=NXM
+c                    PARAM(20)=NORDER
+c                 endif
+c                 IF(CPARAM(I).EQ.'NORDER'.AND.NORDER.GE.NXM) then
+c                    CALL PRSI(' ERROR: Maximum NORDER set to $',NXM)
+c                    CALL PRS(' Please contact your NEKTONICS '//
+c    $               'representative to increase it.$')
+c                    CALL BEEP
+c                    GO TO 301
+c                 endif
 C                 UN-Blink Current box
                   CALL COLOR(1)
                   CALL MOVESC(XLMEN,YBS(IBOX))
