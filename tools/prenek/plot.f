@@ -300,15 +300,25 @@ c-----------------------------------------------------------------------
       YPHY = YZERO + YSCREN  * YFAC
       RETURN
       END
-      subroutine ginGRD(X1)
+c-----------------------------------------------------------------------
+      subroutine ginGRD(X1i)
 C     Sets Coarseness of Grid on tablet and screen. 0 < x1 < 1
       INCLUDE 'devices.inc'
+
+      x1 = x1i
+      if (x1i.lt.0) x1 = 1./x1i
+
       IF(X1.LT.0.0 .OR. X1.GT.1.0) THEN
          CALL PRS('Error: Grid must be between 0 and 1 (fraction of$')
          CALL PRS
      $   ('Screen height).  Screen gridding couldnt be changed$')
+
+c        if (x1.lt.0) x1=sqrt(x1)
+c        if (x1.gt.0) x1=sqrt(-x1)
+
          RETURN
       ENDIF
+
       RETURN
       END
 c-----------------------------------------------------------------------

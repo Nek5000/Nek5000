@@ -396,12 +396,11 @@ C     Find out which element to delete
 C     look for a keypad input
                ifgrid=iftmp 
                call beep
-               call prs(
-     $              'Abort DELETE? (y/s=special):$')
-c    $              'Select item, or DELETE ELEMENT to try again.$')
+               call prs('Abort DELETE? (y/l=list):$')
                call res(ans,1)
                if (ans.eq.'y'.or.ans.eq.'Y') goto 1000
-               if (ans.eq.'s'.or.ans.eq.'S') call special_delete
+               if (ans.eq.'l'.or.ans.eq.'L') call list_delete
+               if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
                goto 1000
             ELSE
                CALL PRS('Enter 2nd point:$')
@@ -409,12 +408,11 @@ c    $              'Select item, or DELETE ELEMENT to try again.$')
                IF (XMOUS2.GT.XPHY(1.0)) THEN
                   ifgrid=iftmp 
                   call beep
-                  call prs(
-     $                 'Abort DELETE? (y/s=special):$')
-c    $                 'Select item, or DELETE ELEMENT to try again.$')
+                  call prs('Abort DELETE? (y/l=list):$')
                   call res(ans,1)
                   if (ans.eq.'y'.or.ans.eq.'Y') goto 1000
-                  if (ans.eq.'s'.or.ans.eq.'S') call special_delete
+                  if (ans.eq.'l'.or.ans.eq.'L') call list_delete
+                  if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
                   goto 1000
                ENDIF
             ENDIF
@@ -767,27 +765,37 @@ C
       enddo
   345 continue
 
+      dscale_fac = .001
+      open(unit=39,file='dscale.fac',status='old',err=339)
+      read(39,*,err=39,end=39) dscale_fac_in
+      dscale_fac = dscale_fac_in
+   39 continue
+      close(39)
+  339 continue
+
       call gencen
       do 370 ifld=ifld0,ifld1
          do 365 IEL=1,NEL
                if (nel.gt.100.and.mod(iel,icount).eq.0)
      $            write(6,*) 'checking el:',iel
-C     
+     
                   IF (MASKEL(IEL,Ifld).EQ.0) GOTO 365
                   do 360 JEL=1,IEL-1
                      IF (MASKEL(JEL,Ifld).EQ.0) GOTO 360
-C     
+     
                      D2 = SQRT( ( xcen(iel)-xcen(jel) )**2 +
      $                  ( ycen(iel)-ycen(jel) )**2 +
      $                  ( zcen(iel)-zcen(jel) )**2 )
                      IF (D2.GT.(RCEN(IEL)+RCEN(JEL))) GOTO 360
-C     
-                     DELTA = .001 * MIN(rcen(iel),rcen(jel))
-C     
+     
+                     DELTA = dscale_fac * MIN(rcen(iel),rcen(jel))
+     
                      do 350 ISIDE=1,NSIDES
-                        IF (CBC(Iside,Iel,Ifld).eq.'E') GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'SP') GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'J') GOTO 350
+                        IF (CBC(Iside,Iel,Ifld).eq.'E'  ) GOTO 350
+                        IF (CBC(Iside,Iel,Ifld).eq.'SP' ) GOTO 350
+                        IF (CBC(Iside,Iel,Ifld).eq.'J'  ) GOTO 350
+                        IF (CBC(Iside,Iel,Ifld).eq.'msi') GOTO 350
+                        IF (CBC(Iside,Iel,Ifld).eq.'MSI') GOTO 350
                         INTERN=0
 C     
                         do 340 JSIDE=1,NSIDES
@@ -823,6 +831,7 @@ C                             BC (3, ISIDE, IEL, Ifld) = IORIEN
                               BC (1, JSIDE, JEL, Ifld) = IEL
                               BC (2, JSIDE, JEL, Ifld) = ISIDE
 C                             BC (3, JSIDE, JEL, Ifld) = IORIEN
+                              call match_face_vtx(iside,iel,jside,jel)
                               GOTO 350
                            ENDIF
                            INTERN=1
@@ -966,7 +975,7 @@ c        write(6,*) iel,' ',string
 
          IF(IGROUP(IEL).GT.0) NCOND=NCOND+1
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
-            WRITE(S,'(A20,I8,A4,I5,A1,A1)',ERR=33)
+            WRITE(S,'(A20,I9,A4,I5,A1,A1)',ERR=33)
      $           ' Reading Element',
      $           idum,' [',NUMAPT(IEL),LETAPT(IEL),']'
             CALL PRS(S//'$')
@@ -1258,7 +1267,10 @@ C
       include 'basics.inc'
       LOGICAL IFMENU
       REAL XSC(4),YSC(4)
-      GRID=PARAM(18)
+
+      grid=param(18)
+      if (grid.lt.0) grid = -1./grid
+
  3    CONTINUE
       CALL CLEAR
       CALL REFRESH
@@ -1568,9 +1580,10 @@ c
       return
 c
  1000 continue
-      call prs('Unable to open file.  Returning.$')
+      call prs('Unable to open file.  Exiting.$')
       close(47)
-c
+      call exit
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2569,7 +2582,49 @@ C            cyclic permutation (counter clock-wise):  reverse
       return
       end
 c-----------------------------------------------------------------------
-      subroutine special_delete
+      subroutine list_delete
+      include 'basics.inc'
+      character*80 dname
+
+      common /idelt/ dflag(nelm)
+      integer dflag,e,emin,ecount
+
+      call prs('Enter name of file with elements to delete:$')
+      call blank(dname,80)
+      call res(dname,80)
+      open(unit=49,file=dname,status='old',err=999)
+
+
+      call izero(dflag,nel)
+
+      emin = nel+1
+      do e=1,nel
+         read(49,*,end=10) i_delete
+         if (i_delete.gt.0.and.i_delete.le.nel) then
+            dflag(i_delete) = 1         ! Mark for deletion
+            emin = min(emin,i_delete)
+         endif
+      enddo
+   10 continue
+
+      close(49)
+
+      ecount = emin-1
+      do e=emin+1,nel
+         if (dflag(e).eq.0) then
+            ecount = ecount + 1
+            call copyel(e,ecount)
+         endif
+      enddo
+      ndel = nel - ecount
+      call prsis('List delete of$',ndel,' elements.$')
+      nel  = ecount
+
+  999 continue
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine special_delete_cyls
       include 'basics.inc'
 c
       integer dflag(nelm),e,emin,ecount
@@ -2845,6 +2900,14 @@ c           ELEMENT    1 [    1a]    GROUP     0
       call blank (t1,80)
       call chcopy(t,s1(i1),n2)
       read(t,*) igroup
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine match_face_vtx(iside,iel,jside,jel)
+      include 'basics.inc'
+
+      integer efac
 
       return
       end

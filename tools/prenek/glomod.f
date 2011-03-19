@@ -12,8 +12,6 @@ C not to be disclosed to others, copied, distributed, or displayed
 C without prior authorization.
 C
 C------------------------------------------------------------------------------
-C
-c-----------------------------------------------------------------------
       subroutine glomod
       include 'basics.inc'
       include 'basicsp.inc'
@@ -1140,8 +1138,9 @@ C     Menu's all set, prompt for user input:
 C
       IF (CHOICE.EQ.'UP MENU') RETURN
       IF (CHOICE.EQ.'Clip X') THEN
-         CALL PRS(
-     $   'Input location of X-clipping plane.$')
+         call get_xminmax(xmin,xmax,x)
+         call prsrr(
+     $   'Input location of X-clipping plane:  Xrange=$',xmin,xmax)
          CALL RER(Xclip)
 c        CALL DRAWLINE(Xclip,Ymax,Xclip,Ymin)
          CALL PRS(
@@ -1149,10 +1148,11 @@ c        CALL DRAWLINE(Xclip,Ymax,Xclip,Ymin)
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
          IF (ANS.eq.'=') RETURN
-         CALL Clipper(Xclip,ANS,X)
+         call clipper(Xclip,ANS,X)
       ELSEIF (CHOICE.EQ.'Clip Y') THEN
-         CALL PRS(
-     $   'Input location of Y-clipping plane.$')
+         call get_xminmax(ymin,ymax,y)
+         call prsrr(
+     $   'Input location of Y-clipping plane:  Yrange=$',ymin,ymax)
          CALL RER(Yclip)
 c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
          CALL PRS(
@@ -1160,17 +1160,18 @@ c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
          IF (ANS.eq.'=') RETURN
-         CALL Clipper(Yclip,ANS,Y)
+         call clipper(Yclip,ANS,Y)
       ELSEIF (CHOICE.EQ.'Clip Z') THEN
-         CALL PRS(
-     $   'Input location of Z-clipping plane.$')
+         call get_xminmax(zmin,zmax,z)
+         call prsrr(
+     $   'Input location of Z-clipping plane:  Zrange=$',zmin,zmax)
          CALL RER(Zclip)
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
          IF (ANS.eq.'=') RETURN
-         CALL Clipper(Zclip,ANS,Z)
+         call clipper(Zclip,ANS,Z)
       ELSEIF (CHOICE.EQ.'Clip N') THEN
          CALL PRS('Allows to clip below/above arbitrary plane.$')
          if (if3d) then
@@ -1202,7 +1203,7 @@ c
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
          IF (ANS.eq.'=') RETURN
-         CALL ClipperN(xyzclip,xyznorm,ANS,x,y,z,del_list)
+         call clippern(xyzclip,xyznorm,ANS,x,y,z,del_list)
       ELSEIF (CHOICE.EQ.'Input DEL list') THEN
          call mult_del(del_list)
       ENDIF
@@ -1230,7 +1231,7 @@ C        Count number
   100       CONTINUE
   101    CONTINUE
          write(s,102) numdel,nel
-  102    format(' You will be eliminating',i5,' of ',i5,
+  102    format(' You will be eliminating',i8,' of ',i8,
      $   ' elements ABOVE clipping plane.$')
          call prs(s)
          call prs(' OK? (Y/N)$')
@@ -1280,7 +1281,7 @@ C        Count number
   200       CONTINUE
   201    CONTINUE
          write(s,202) numdel,nel
-  202    format(' You will be eliminating',i5,' of ',i5,
+  202    format(' You will be eliminating',i8,' of ',i8,
      $   ' elements BELOW clipping plane.$')
          call prs(s)
          call prs(' OK? (Y/N)$')
@@ -1885,19 +1886,19 @@ c
 c
 c     Get current vertex map info
 c
-      open(unit=10,file=string,err=999)
-      read(10,*) ncell
+      open(unit=28,file=string,err=999)
+      read(28,*) ncell
       do ie=1,ncell
-c        read(10,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
+c        read(28,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
 c
 c        HMT's data (.map) is in the good h-cube ordering
-         read(10,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
+         read(28,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
          do k=1,nvc
             j=ecrnr(k)
             cell(k,ie) = kcell(j)
          enddo
       enddo
-      close(unit=10)
+      close(unit=28)
 c
 c
 c     Sort data and gridpoints by global vertex number
@@ -2180,7 +2181,7 @@ c
                write(6,4) ie,zm3(i,1,1),zp(cell(inv(i),ie)),jacm3(i,1,1)
                   write(6,4) 
                enddo
-4              format(i5,1p4e14.6)
+4              format(i9,1p4e14.6)
                write(6,*) ie,nebad
                call prs('continue?$')
                call res(string,1)
@@ -2260,7 +2261,7 @@ C     Count number
   101 continue
 c
       write(s,102) numdel,nel
-  102 format('You will be eliminating',i6,' of ',i6,
+  102 format('You will be eliminating',i9,' of ',i9,
      $' elements. OK? (Y/N)$')
       call prs(s)
       call res(yesno,1)
@@ -2582,11 +2583,11 @@ C     Count number
 c
       if (dir.eq.'>') then
          write(s,102) numdel,nel
-  102    format(' You will be eliminating',i5,' of ',i5,
+  102    format(' You will be eliminating',i9,' of ',i9,
      $   ' elements ABOVE clipping plane.$')
       else
          write(s,103) numdel,nel
-  103    format(' You will be eliminating',i5,' of ',i5,
+  103    format(' You will be eliminating',i9,' of ',i9,
      $   ' elements BELOW clipping plane.$')
       endif
       call prs(s)
@@ -2893,13 +2894,30 @@ c-----------------------------------------------------------------------
       include 'basics.inc'
       real a(3,3)
       integer e,f
-c
-      call rzero(a,9)
-      call prs('Opening file rot.mat$')
-      open  (unit=10,file='rot.mat',status='old',err=999)
-      read  (10,*) ((a(i,j),j=1,ndim),i=1,ndim)
-      close (10)
-c
+      character*132 sname
+      character*80 fname
+      character*1  fname1(80)
+      equivalence (fname1,fname)
+
+      call prs('Input file name for 3x3 rotation matrix:$')
+      call rzero (fname,80)
+      call res   (fname,80)
+
+      open  (unit=20,file=fname,status='old',err=999)
+
+      call blank(sname,132)
+      len = ltrunc(fname,80)
+      write(sname,1) (fname1(k),k=1,len),'$'
+    1 format('Opening file ',80a1)
+      call prs(sname)
+
+      read  (20,*) ((a(i,j),j=1,ndim),i=1,ndim)
+      close (20)
+
+      do i=1,ndim
+         call prsrrr('rot mat: $',a(i,1),a(i,2),a(i,3))
+      enddo
+
       do e=1,nel
 
         do i=1,2**ndim
@@ -2937,7 +2955,12 @@ c
 c
       return
 c
-  999 call prs('File "rot.mat" not found...$')
+  999 call blank(sname,132)
+      len = ltrunc(fname,80)
+      write(sname,2) (fname1(k),k=1,len),'$'
+    2 format('File not found: ',80a1)
+      call prs(sname)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -3239,6 +3262,26 @@ c     Move forms (for now, assumed to be whole existant mesh)
       nel = 0                 ! Nothing left after form-shift
 
       call template_to_forms  ! Map template to forms
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_xminmax(xmin,xmax,xx)
+      include 'basics.inc'
+      real xx(nelm,8)
+      integer e
+
+      nv   = 2**ndim
+
+      xmin = 1.e20
+      xmax = -1.e20
+
+      do i=1,nv
+      do e=1,nel
+         xmin=min(xmin,xx(e,i))
+         xmax=max(xmax,xx(e,i))
+      enddo
+      enddo
 
       return
       end
