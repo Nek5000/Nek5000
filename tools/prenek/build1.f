@@ -796,6 +796,7 @@ c-----------------------------------------------------------------------
       dimension xisom(8),yisom(8),cspace(100),xcrved(100),ycrved(100)
       IIEL=IABS(IEL)
       if (.not.if3d)   return
+      if (.not.ifgraf)   return
       if (nel.gt.1000) return
 C        Now draw isometric view  (??! RESCALE??)
          IF(IEL.GT.0)call color(10)
