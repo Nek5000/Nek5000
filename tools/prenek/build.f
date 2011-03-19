@@ -619,7 +619,7 @@ C     Remove periodic b.c.'s
                   DO 210 IF=1,NFLDS
                      DO 210 ISIDE=1,NSIDES
                         IF(  CBC( ISIDE, NEL,IF).EQ.'P  ')THEN
-                           CBC(   ISIDE, NEL,IF)=' '
+                           CBC(   ISIDE, NEL,IF)='   '
                            BC (1, ISIDE, NEL,IF)= 0
                            BC (2, ISIDE, NEL,IF)= 0
                            BC (3, ISIDE, NEL,IF)= 0
@@ -741,6 +741,7 @@ C     Warn if physical boundaries internally.  This check is not exhaustive!!??
          ifld1=2
       endif
 
+      nsides = 2*ndim
       do 335 ifld=ifld0,ifld1 !  ZERO OUT OLD ELEMENTAL CONNECTIVITY
       do 335 iel=1,nel
       do 335 iside=1,nsides
@@ -749,7 +750,7 @@ c        IF (CBC( ISIDE, IEL,Ifld).EQ.'E  ' .or.
 c    $       CBC( ISIDE, IEL,Ifld).EQ.'P  ' .or.
 c    $       CBC( ISIDE, IEL,Ifld).EQ.'SP ' .or.
 c    $       CBC( ISIDE, IEL,Ifld).EQ.'J  ') then
-            CBC(   ISIDE, IEL,Ifld)=' '
+            CBC(   ISIDE, IEL,Ifld)='   '
             BC (1, ISIDE, IEL,Ifld)= 0
             BC (2, ISIDE, IEL,Ifld)= 0
             BC (3, ISIDE, IEL,Ifld)= 0
@@ -792,8 +793,8 @@ C
      
                      do 350 ISIDE=1,NSIDES
                         IF (CBC(Iside,Iel,Ifld).eq.'E'  ) GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'SP' ) GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'J'  ) GOTO 350
+c                       IF (CBC(Iside,Iel,Ifld).eq.'SP' ) GOTO 350
+c                       IF (CBC(Iside,Iel,Ifld).eq.'J'  ) GOTO 350
                         IF (CBC(Iside,Iel,Ifld).eq.'msi') GOTO 350
                         IF (CBC(Iside,Iel,Ifld).eq.'MSI') GOTO 350
                         INTERN=0
@@ -806,17 +807,9 @@ C
      $                             SIDES(JEL,JSIDE,2))
                            DELTAZ = ABS(SIDES(IEL,ISIDE,3)-
      $                             SIDES(JEL,JSIDE,3))
-                           IF  (DELTAX .LT. DELTA .AND.
-     $                          DELTAY .LT. DELTA .AND.
-     $                          DELTAZ .LT. DELTA ) THEN
-C     BC Array used to define neighboring elements
-C     For want of better notation, 'E' means 
-C     elemental (internal) bdry
-C     1st two reals are element & side of neighbor; 
-C     3rd is orientation
-C     
-C     Re-do internal connectivity
-C     "Normal" internal side.
+                           IF (DELTAX .LT. DELTA .AND.
+     $                        DELTAY .LT. DELTA .AND.
+     $                        DELTAZ .LT. DELTA ) THEN
                               CBC3=CBC( ISIDE, IEL, Ifld)
                               IF(CBC3(3:3) .NE. 'I' .AND. CBC3(3:3) 
      $                                .NE. 'i')THEN
@@ -837,12 +830,11 @@ C                             BC (3, JSIDE, JEL, Ifld) = IORIEN
                            INTERN=1
  340                    CONTINUE
 C     If the side is not internal but has an internal B.C., zero it out
-                        CBC3 = CBC(   ISIDE, IEL,Ifld)
+                        CBC3 = CBC(ISIDE, IEL,Ifld)
                         IF (INTERN.EQ.0 .AND.
      $                     (CBC3.EQ.'E' .OR. CBC3(3:3).EQ.'I'.OR. 
-     $                      CBC3(3:3).EQ.'i')
-     $                          )THEN
-                            CBC(   ISIDE, IEL,Ifld)=' '
+     $                      CBC3(3:3).EQ.'i') ) THEN
+                            CBC(   ISIDE, IEL,Ifld)='   '
                             BC (1, ISIDE, IEL,Ifld)= 0
                             BC (2, ISIDE, IEL,Ifld)= 0
 C                           BC (3, ISIDE, IEL,Ifld)= 0
@@ -856,8 +848,8 @@ C     TURN OFF GRIDDING
       CALL SCROLL(7)
 C     ??!! MUST PUT P IN OTHER PERIODIC B.C. IF NEK2.  MUST ACCOUNT FOR
 C     CONDUCTION ELEMENTS-- THEY DON'T NEED B.C'S FOR THEIR FLUID
-      NSIDES=4
-      IF(IF3D)NSIDES=6
+
+      nsides = 2*ndim
 
       do 380 Ifld=1,NFLDS
 
@@ -866,10 +858,10 @@ C     CONDUCTION ELEMENTS-- THEY DON'T NEED B.C'S FOR THEIR FLUID
 
       do 380 IEL=1,NEL
       do 380 ISIDE=1,NSIDES
-         IF (CBC(ISIDE,IEL,Ifld).EQ.' ') then
+         IF (CBC(ISIDE,IEL,Ifld).EQ.'   ') then
             NEEDBC=1
-c           write(6,*) 'bc:',iel,iside,enew(iel)
          ENDIF
+c        write(77,*) 'bc:',iel,iside,cbc(iside,iel,ifld),enew(iel)
  380  CONTINUE
 c
 c     All 'E-E' boundaries are set.  Check for nonconforming (SP-J)

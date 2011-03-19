@@ -27,7 +27,7 @@ C
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Non-conf SPLIT'
 c
-c     if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
+      if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
               NCHOIC=NCHOIC+1
          ITEM(NCHOIC)='SPIDER WEB'
               NCHOIC=NCHOIC+1
@@ -36,7 +36,7 @@ c     if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
          ITEM(NCHOIC)='CORNER FRAME'
 c           NCHOIC=NCHOIC+1
 c        ITEM(NCHOIC)='SMOOTH'
-c     endif
+      endif
 c
       IF(IF3D)THEN
 c        NCHOIC=NCHOIC+1
