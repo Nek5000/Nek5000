@@ -12,6 +12,55 @@
 #warning "comm.h" requires "fail.h" and "types.h"
 #endif
 
+/*
+  When the preprocessor macro MPI is defined, defines (very) thin wrappers
+  for the handful of used MPI routines. Alternatively, when MPI is not defined,
+  these wrappers become dummy routines suitable for a single process run.
+  No code outside of "comm.h" and "comm.c" makes use of MPI at all.
+
+  Basic usage:
+  
+    struct comm c;
+  
+    comm_init(&c, MPI_COMM_WORLD);  // initializes c using MPI_Comm_dup
+
+    comm_free(&c);
+  
+  Very thin MPI wrappers: (see below for implementation)
+
+    comm_send,_recv,_isend,_irecv,_time,_barrier
+    
+  Additionally, some reduction and scan routines are provided making use
+    of the definitions in "gs_defs.h" (provided this has been included first).
+
+  Example comm_allreduce usage:
+    
+    double v[5], buf[5];
+    comm_allreduce(&c, gs_double,gs_add, v,5,buf);
+      // Computes the vector sum of v across all procs, using
+      // buf as a scratch area. Delegates to MPI_Allreduce if possible.
+    
+  Example comm_scan usage:
+    
+    long in[5], out[2][5], buf[2][5];
+    comm_scan(out, &c,gs_long,gs_add, in,5,buf);
+      // out[0] will be the vector sum of "in" across procs with ids
+           *strictly* less than this one (exclusive behavior),
+         and out[1] will be the vector sum across all procs, as would
+           be computed with comm_allreduce.
+         Note: differs from MPI_Scan which has inclusive behavior
+  
+  Example comm_reduce_double, etc. usage:
+  
+    T out, in[10];
+    out = comm_reduce_T(&c, gs_max, in, 10);
+      // out will equal the largest element of "in",
+         across all processors
+      // T can be "double", "float", "int", "long", "slong", "sint", etc.
+         as defined in "gs_defs.h"
+         
+*/
+
 #ifdef MPI
 #include <mpi.h>
 typedef MPI_Comm comm_ext;

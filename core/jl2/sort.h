@@ -3,6 +3,8 @@
 
 #if !defined(TYPES_H) || !defined(MEM_H)
 #warning "sort.h" requires "types.h" and "mem.h"
+/* types.h defines uint, ulong
+   mem.h   defines buffer */
 #endif
 
 /*------------------------------------------------------------------------------
@@ -20,14 +22,25 @@
   A, n, stride : specifices the input (stride is in bytes!)
   out : the sorted values on output
 
-  For the value sort,
+  For the value sort, (sortv*)
     A and out may alias (A == out) exactly when stride == sizeof(T)
 
-  For the permutation sort,
-    the permutation can be both input (when start_perm!=0) and output,
-    following the convention that it is always at the start of the buffer buf;
-    the buffer will be expanded as necessary to accomodate the permutation
-    and the required scratch space
+  For the permutation sort, (sortp*)
+    The permutation can be both input (when start_perm!=0) and output,
+    following the convention that it is always at the start of the buffer buf:
+      uint *perm = buf->ptr;
+    The permutation denotes the ordering
+      A[perm[0]], A[perm[1]], ..., A[perm[n-1]]
+    (assuming stride == sizeof(uint) or sizeof(ulong) as appropriate)
+    and is re-arranged stably to give a sorted ordering.
+    Specifying start_perm==0 is equivalent to specifying
+      perm[i] = i,   i=0,...,n-1
+    for an initial permutation (but may be faster).
+    The buffer will be expanded as necessary to accomodate the permutation
+    and the required scratch space.
+  
+  Most code calls these routines indirectly via the higher-level routine
+    sarray_sort for sorting arrays of structs (see "sarray_sort.h").
 
   ----------------------------------------------------------------------------*/
 

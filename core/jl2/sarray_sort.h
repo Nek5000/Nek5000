@@ -17,12 +17,13 @@
     - sort A according to the struct field "field_name",
       which is a ulong/uint field according as is_long is true/false
 
-  sarray_sort(T,A,n, field1,is_long1, field2,is_long2, buf)
+  sarray_sort_two(T,A,n, field1,is_long1, field2,is_long2, buf)
     - sort A by field1 then field2
 
   sarray_permute(T,A,n, buf);
     - permute A according to the permutation in buf
       A[0] <- A[perm[0]], etc.
+      where uint *perm = buf->ptr   (see "sort.h")
 
   ----------------------------------------------------------------------------*/
 
