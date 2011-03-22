@@ -1,6 +1,33 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+/* 
+  Define the integer types used throughout the code,
+  controlled by preprocessor macros.
+  
+  The integer type sint/uint (signed/unsigned) is used
+  most frequently, e.g., for indexing into local arrays,
+  and for processor ids. It can be one of
+  
+    macro             sint/uint type
+    
+    (default)         int
+    USE_LONG          long
+    USE_LONG_LONG     long long
+    
+  The slong/ulong type is used in relatively few places
+  for global identifiers and indices. It can be one of
+
+    macro             slong/ulong type
+    
+    (default)         int
+    GLOBAL_LONG       long
+    GLOBAL_LONG_LONG  long long
+
+  Since the long long type is not ISO C90, it is never
+  used unless explicitly asked for.
+*/
+
 #if defined(USE_LONG_LONG) || defined(GLOBAL_LONG_LONG)
 typedef long long long_long;
 #  define WHEN_LONG_LONG(x) x
