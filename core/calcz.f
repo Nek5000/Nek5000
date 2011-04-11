@@ -1,4 +1,3 @@
-
 c-----------------------------------------------------------------------
       subroutine calcz(d,e,n,dmax,dmin,z,ierr)
 c
@@ -32,6 +31,8 @@ c
       enddo
    10 continue
       small = 10.*small
+      small = max(small,1e-99)
+      
 c     write(6,*) 'this is small:',small
 c
       do 15 l=1,n
