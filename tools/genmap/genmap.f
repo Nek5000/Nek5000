@@ -91,7 +91,7 @@ c     read nekton .rea file and make a .map file
       common /arrayr/  dx(4*lpts)
 
       common /carrayr/ bc(5*6*lelm)
-      real bc
+      real*8 bc
       common /carrayc/ cbc(6,lelm)
       character*3      cbc
 
@@ -196,13 +196,13 @@ c     read nekton .rea file and make a mesh
 
       integer      cell(1)
       character*3  cbc (6,1)
-      real         bc  (5,6,1)
+      real*8       bc  (5,6,1)
       real         dx  (1)
       real         wk  (1)
       integer e,f
 
       character*3 cbt(6)
-      real        bt(5,6)
+      real*8      bt(5,6)
 
       parameter(lpts=8*lelm)
 
@@ -462,7 +462,7 @@ c
 c     Scan for cbc data and read it
 c
       character*3  cbc(6,nelt)
-      real         bc (5,6,nelt)
+      real*8       bc (5,6,nelt)
       character*80 string
 
       integer e
@@ -497,7 +497,7 @@ c-----------------------------------------------------------------------
 c     .Read Boundary Conditions (and connectivity data)
 
       character*3 cbc(6,nel)
-      real        bc(5,6,nel)
+      real*8      bc(5,6,nel)
       integer e,f
 C
       nbcrea = 5
@@ -1976,7 +1976,7 @@ c
       real dx(0:ndim,nv,nel)
 
       character*3      cbc(  6,nel)
-      real             bc (5,6,nel)
+      real*8           bc (5,6,nel)
 
       character*3      cb,cj
       integer e,f,v
@@ -3111,7 +3111,7 @@ c     .Read Boundary Conditions (and connectivity data)
 
 
       character*3 cbc(6,lelm)
-      real        bc (5,6,lelm)
+      real*8      bc (5,6,lelm)
       logical     ifbswap
       
       integer e,f,buf(30)
@@ -3149,9 +3149,8 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
 
-
       character*3 cbl(6,lelm)
-      real        bl(5,6,lelm)
+      real*8      bl(5,6,lelm)
       integer     buf(30)
 
       integer e,eg,f
@@ -3726,7 +3725,7 @@ c     call outmati(nee,1,ne,'nee  1',ne,1)
 c-----------------------------------------------------------------------
       subroutine outbc(cbc,bc,nel,ndim,name6)
       character*3 cbc(6,1)
-      real        bc(5,6,1)
+      real*8       bc(5,6,1)
       character*6 name6
       integer e,f
 
