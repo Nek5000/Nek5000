@@ -267,9 +267,9 @@ c     call outbc(cbc,bc,nelt,ndim,' CBC 1')
       nface = 2*ndim
       do e=1,nelt !  SWAP TO PREPROCESSOR NOTATION
          call chcopy(cbt,cbc(1,e)  ,nface*3)
-         call copy  ( bt, bc(1,1,e),nface*5)
+         call copy8 ( bt, bc(1,1,e),nface*5)
          do f=1,nface
-            call copy  ( bc(1,f,e), bt(1,eface(f)),5)
+            call copy8 ( bc(1,f,e), bt(1,eface(f)),5)
             call chcopy(cbc(  f,e),cbt(  eface(f)),3)
          enddo
       enddo
@@ -745,6 +745,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine copy(x,y,n)
       real x(1),y(1)
+      do i=1,n
+         x(i) = y(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy8(x,y,n)
+      real*8 x(1),y(1)
       do i=1,n
          x(i) = y(i)
       enddo
@@ -3158,8 +3166,8 @@ c-----------------------------------------------------------------------
       e  = buf(1)
       f  = buf(2)
 
-      call copy4r ( bl(1,f,e),buf(3),5)
-      call chcopy (cbl(  f,e),buf(8),3)
+      call copy48r ( bl(1,f,e),buf(3),5)
+      call chcopy  (cbl(  f,e),buf(8),3)
 
 c      write(6,1) e,f,cbl(f,e),(bl(k,f,e),k=1,5),' CBC'
 c  1   format(i8,i4,2x,a3,5f8.3,1x,a4)
@@ -3263,6 +3271,15 @@ c      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
 c-----------------------------------------------------------------------
       subroutine copy4r(a,b,n)
       real   a(1)
+      real*4 b(1)
+      do i = 1, n
+         a(i) = b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy48r(a,b,n)
+      real*8 a(1)
       real*4 b(1)
       do i = 1, n
          a(i) = b(i)
