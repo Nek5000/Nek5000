@@ -166,6 +166,8 @@ C
       IF ( IFSTRS )           IFGMSH3 = .FALSE.
       IF (.NOT.IFFLOW)        IFGMSH3 = .FALSE.
       IF ( IFSPLIT )          IFGMSH3 = .FALSE.
+
+      NGEOM  = 2
 C
       NFIELD = 1
       IF (IFHEAT) THEN
@@ -502,28 +504,28 @@ C
 C
 C     Find out the session name:
 C
-      CALL BLANK(SESSION,132)
-      CALL BLANK(PATH   ,132)
+c      CALL BLANK(SESSION,132)
+c      CALL BLANK(PATH   ,132)
 
-      ierr = 0
-      IF(NID.EQ.0) THEN
-        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=24)
-        READ(8,10) SESSION
-        READ(8,10) PATH
-  10      FORMAT(A132)
-        CLOSE(UNIT=8)
-        GOTO 23
-  24    ierr = 1
-  23  ENDIF
-      call err_chk(ierr,' Cannot open SESSION.NAME!$')
+c      ierr = 0
+c      IF(NID.EQ.0) THEN
+c        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=24)
+c        READ(8,10) SESSION
+c        READ(8,10) PATH
+c  10      FORMAT(A132)
+c        CLOSE(UNIT=8)
+c        GOTO 23
+c  24    ierr = 1
+c  23  ENDIF
+c      call err_chk(ierr,' Cannot open SESSION.NAME!$')
 
       len = ltrunc(path,132)
       if(indx1(path1(len),'/',1).lt.1) then
          call chcopy(path1(len+1),'/',1)
       endif
 
-      call bcast(SESSION,132*CSIZE)
-      call bcast(PATH,132*CSIZE)
+c      call bcast(SESSION,132*CSIZE)
+c      call bcast(PATH,132*CSIZE)
 
       CALL BLANK(REAFLE,132)
       CALL BLANK(RE2FLE,132)

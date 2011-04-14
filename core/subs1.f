@@ -119,6 +119,15 @@ c
          if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg
          call emerxit
       endif
+
+c     Synchronize time step for multiple sessions
+      if (IFNEKNEK) then 
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+         DT=glmin(DT,1)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+       end if  
+
+
       RETURN
       END
 C
@@ -1191,9 +1200,10 @@ C     Current version uses only conjugate gradient iteration
 C
 C     IF ( .NOT.IFMGRID .OR. NAME.EQ.'NOMG') THEN
 C
-      CALL RMASK   (R1,R2,R3,NEL)
 
+      CALL RMASK   (R1,R2,R3,NEL)
       CALL OPDSSUM (R1,R2,R3)
+
       CALL RZERO3  (U1,U2,U3,NTOT1)
 C
       IF (IMESH.EQ.1) THEN
