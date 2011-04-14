@@ -23,7 +23,7 @@ c
 c    You should have received a copy of the GNU General Public License
 c    along with NEK5000.  If not, see <http://www.gnu.org/licenses/>.
 c
-      call nek_init()
+      call nek_init(intracomm)
       call nek_solve()
       call nek_end()
 

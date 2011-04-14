@@ -9,6 +9,7 @@ OBJDIR=obj
 IFMPI= 
 IFAMG= 
 IFAMG_DUMP=
+IFNEKNEK=
 IFMOAB=
 MOAB_DIR=
 F77=
@@ -61,6 +62,13 @@ JLINTP = $(JO2)findpts.o $(JO2)findpts_local.o \
 $(JO2)obbox.o $(JO2)poly.o $(JO2)lob_bnd.o \
 $(JO2)findpts_el_3.o $(JO2)findpts_el_2.o
 
+# YP NEKNEK SOLVER
+ifeq ($(IFNEKNEK),true)
+NEKNEKO := multimesh.o
+else
+NEKNEKO := singlmesh.o
+endif
+
 # JL CRS GRID SOLVER
 ifeq ($(IFAMG),true)
 CGS := $(JO)gs.o $(JO)amg.o
@@ -91,9 +99,9 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO)
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
-TMP2 = $(JLCORE) $(JLINTP) $(CGS)
+TMP2 = $(JLCORE) $(JLINTP) $(CGS) 
 NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
 NOBJS  = $(NOBJS_F) $(NOBJS_C)
 
@@ -205,6 +213,8 @@ $(OBJDIR)/comm_mpi.o	:$S/comm_mpi.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
+$(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 

@@ -10,8 +10,8 @@
 C
       COMMON /ISTEP2/ IFIELD,IMESH,ISTEP,NSTEPS,IOSTEP,LASTEP,IOCOMM
      $               ,INSTEP
-     $               ,NAB,NBD,NBDINP,NTAUBD
-     $               ,NMXH,NMXP,NMXE,NMXNL
+     $               ,NAB,NBD,NBDINP,NTAUBD 
+     $               ,NMXH,NMXP,NMXE,NMXNL,NINTER
      $               ,NELFLD(0:LDIMT1)
      $               ,nconv,nconv_max
 C

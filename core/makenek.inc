@@ -14,6 +14,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
   echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
+  echo "  NEKNEK    enable multidomain support (experimental)"
   exit 1
 fi
 
@@ -53,6 +54,7 @@ APATH_SRC=`cd $SOURCE_ROOT; pwd`
 SOURCE_ROOT=$APATH_SRC
 
 IFMOAB=false
+IFNEKNEK=false
 
 # do some basic checks
 if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
@@ -270,6 +272,11 @@ do
        fi 
      fi
    fi
+
+if [ "$i" == "NEKNEK" ]; then
+     IFNEKNEK=true
+fi
+
    if [ "$i" == "CVODE" ]; then
     if [ "$CVODE_DIR" == "" ]; then
        echo "ABORT: Please specify path to CVODE in CVODE_DIR!" 
@@ -377,6 +384,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
 -e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
+-e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" $SOURCE_ROOT/makefile.template >.makefile

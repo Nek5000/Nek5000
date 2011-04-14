@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine iniproc
+      subroutine iniproc(intracomm)
       include 'SIZE'
       include 'PARALLEL'
       include 'mpif.h'
@@ -8,13 +8,13 @@ c-----------------------------------------------------------------------
 
       logical flag
 
-      call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
-      if ( mpi_is_initialized .eq. 0 ) then
-         call mpi_init (ierr)
-      endif
+c      call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
+c      if ( mpi_is_initialized .eq. 0 ) then
+c         call mpi_init (ierr)
+c      endif
 
       ! create communicator
-      call init_nek_comm
+      call init_nek_comm(intracomm)
       np  = np_
       nid = nid_
 
@@ -80,11 +80,11 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine init_nek_comm
+      subroutine init_nek_comm(intracomm)
       include 'mpif.h'
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 C
-      call create_comm(nekcomm) ! set up nekton specific communicator
+      call create_comm(intracomm) ! set up nekton specific communicator
 c
       nid_  = mynode()
       np_   = numnodes()
@@ -295,12 +295,16 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine create_comm(icomm)
+      subroutine create_comm(intracomm)
       include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
-      call mpi_comm_group (mpi_comm_world,itmp,ierr)
-      call mpi_comm_create (mpi_comm_world,itmp,icomm,ierr)
-      call mpi_group_free (itmp,ierr)
+c      call mpi_comm_group (mpi_comm_world,itmp,ierr)
+c      call mpi_comm_create (mpi_comm_world,itmp,icomm,ierr)
+c      call mpi_group_free (itmp,ierr)
+
+      call mpi_comm_dup(intracomm,nekcomm,ierr)
+
 c     write(6,*) 'nekcomm:',nekcomm
 
       return
@@ -1161,4 +1165,5 @@ c     Double Buffer : does 2*nloop timings
 
       return
       end
-c-----------------------------------------------------------------------
+
+

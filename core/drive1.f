@@ -1,4 +1,4 @@
-      subroutine nek_init
+      subroutine nek_init(intracomm)
 C--------------------------------------------------------------------------
 
       include 'SIZE'
@@ -30,9 +30,11 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /drive1f/ e, oe, t0, tpp
 
       logical ifsync_
+
+      call get_session_info(intracomm)
       
 C     Initalize Nek (MPI stuff, word sizes, ...)
-      call iniproc
+c     call iniproc (initalized in get_session_info)
 
       etimes = dnekclock()
       istep  = 0
@@ -269,7 +271,11 @@ C--------------------------------------------------------------------------
                           call setup_convect (2)
       else                ! PN-2/PN-2 formulation
          call setprop
-         do igeom=1,2
+         do igeom=1,ngeom
+
+           if (igeom.gt.2) then
+              call userchk_set_xfer
+           end if
 
             if (ifgeom) then
                call gengeom (igeom)

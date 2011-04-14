@@ -140,6 +140,7 @@ C
          WRITE (6,*) 'IFMODEL  =',IFMODEL
          WRITE (6,*) 'IFKEPS   =',IFKEPS
          WRITE (6,*) 'IFMOAB   =',IFMOAB
+         WRITE (6,*) 'IFNEKNEK =',IFNEKNEK
          WRITE (6,*) 'IFSYNC   =',IFSYNC
          WRITE (6,*) '  '
          WRITE (6,*) 'IFVCOR   =',IFVCOR
@@ -354,6 +355,7 @@ C
          IFIELD = 1
          NEL    = NELFLD(IFIELD)
          NTOT   = NXYZ*NEL
+
 C
 C        Pressure mask
 C
@@ -374,7 +376,8 @@ C
 c        write(6,*) 'MASK ifstrs',ifstrs,ifield
 c        call exitt
          IF (IFSTRS) THEN
-           CALL STSMASK (V1MASK,V2MASK,V3MASK)
+           CALL STSMASK (V1MASK,V2MASK,V3MASK)           
+    
          ELSE
 C
            CALL RONE(V1MASK,NTOT)
@@ -930,8 +933,6 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'PARALLEL'
       INCLUDE 'NEKUSE'
-      INCLUDE 'TSTEP'     ! ifield    11/19/2010
-      INCLUDE 'SOLN'      ! tmask()   11/19/2010
 C
       DIMENSION S(LX1,LY1,LZ1)
       CHARACTER CB*3
@@ -939,25 +940,21 @@ c
       common  /nekcb/ cb3
       character*3 cb3
       cb3 = cb
-
-      ifld1 = ifield-1
-
-
+c
+C
 C     Passive scalar term
-
+C
       ieg = lglel(iel)
       CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX,NY,NZ,IFACE)
-
+C
       IF (CB.EQ.'t  ') THEN
-
-         DO 100 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
-         DO 100 IY=KY1,KY2                           !  added here so users can leave
-         DO 100 IX=KX1,KX2                           !  certain points to be Neumann,
-            if (tmask(ix,iy,iz,iel,ifld1).eq.0) then !  if desired.
-               CALL NEKASGN (IX,IY,IZ,IEL)
-               CALL USERBC  (IX,IY,IZ,IFACE,IEG)
-               S(IX,IY,IZ) = TEMP
-            endif
+C
+         DO 100 IZ=KZ1,KZ2
+         DO 100 IY=KY1,KY2
+         DO 100 IX=KX1,KX2
+            CALL NEKASGN (IX,IY,IZ,IEL)
+            CALL USERBC  (IX,IY,IZ,IFACE,IEG)
+            S(IX,IY,IZ) = TEMP
   100    CONTINUE
          RETURN
 C
@@ -1373,7 +1370,7 @@ C
       JF2    = SKPDAT(5,IFACE)
       JSKIP2 = SKPDAT(6,IFACE)
       I = 0
-C
+
       DO 200 J2=JS2,JF2,JSKIP2
       DO 200 J1=JS1,JF1,JSKIP1
          I = I + 1
@@ -1670,6 +1667,17 @@ C         TRY(IX,IY,IZ)=TRY(IX,IY,IZ) + RR*SIGST*SIN( ANG )
 C      ENDIF
 C
       CALL FACSUB2 (TRX,TRY,TRZ,S1X,S1Y,S1Z,IFC)
+
+      do i=1,lx1
+         do j=1,ly1
+         DO K=1,LZ1
+            if (TRX(I,j,k).ne.0) 
+     $  WRITE(6,3) I,J,K,TRX(I,J,K),TRY(I,J,K),TRZ(I,J,K),'HERE'      
+            TRZ(i,j,k)=0.
+            END DO
+         END DO
+      END DO
+ 3    FORMAT(3I8,3E16.5,A7)
 C
       RETURN
 C
