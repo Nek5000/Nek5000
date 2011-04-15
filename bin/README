@@ -1,5 +1,4 @@
 
-
 This directory contains some short scripts for running
 or manipulating nek5000 data files.   A brief description
 follows.   Below, "blah" and "blah2" are just example 
@@ -50,4 +49,19 @@ nekmpi -- run nek5000 interactively using mpirun
 nekbmpi -- run nek5000 in background using mpirun
 
 nekqsub -- create a nek5000 command script and submit using qsub
+
+nekpbs -- run nek5000 in a batch script environment 
+
+===============================================
+Scripts for running NekNek 
+==============================================
+neknek -- runs neknek code, redirecting the output into logfile
+       -- np1 and np2 refer to the number of processors to be 
+              specified for blah1 and blah2.
+         
+              Usage:     neknek blah1 blah2 np1 np2  
+
+neknekb -- runs neknek code in the background
+
+              Usage:     neknekb blah1 blah2 np1 np2
 

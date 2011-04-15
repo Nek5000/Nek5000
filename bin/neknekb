@@ -17,7 +17,7 @@ mv $2.sch $2.sch1
 NP1=$3
 NP2=$4
 NP=$(($NP1+$NP2))
-mpiexec -np $NP nek5000 > $1.log 
+nohup mpiexec -np $NP nek5000 > $1.log &
 ##nohup mpiexec -l -np $NP nek5000 > $1.log &
 sleep 1
 rm logfile
