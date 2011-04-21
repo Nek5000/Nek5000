@@ -3,8 +3,7 @@ c-----------------------------------------------------------------------
       include 'mpif.h'
       include 'SIZE'
       include 'PARALLEL'
-      COMMON /CFILE2/ SESSION,PATH,RE2FLE
-      character*132 SESSION, PATH, RE2FILE
+      include 'INPUT'
 
 C     Find out the session name:
 C
