@@ -564,9 +564,7 @@ c     iList:ix,iy,iz,iel.
 
       call mpi_barrier(intercomm, ierr)
 
- 
-! Yulia, I don't understand the construction here?
-! It's non-blocking communicaton to receive nbp_recb(id) from each processor
+! Non-blocking communicaton to receive nbp_recb(id) from each processor
 ! and send nbp_send(id) of each processor of the remote session 
 
       do id=0,np_neighbor-1  
@@ -803,8 +801,6 @@ c-----------------------------------------------------------------------
 c     nfld is the number of fields to interpolate.
 c     nfld = 3 for just veliocities, nfld = 4 for velocities + temperature
 
-      nfld = 3
-
       which_field(1)='vx'
       which_field(2)='vy'
       which_field(3)='vz'
@@ -845,9 +841,6 @@ c     If you want to use higher-order interface extrapolation schemes, you need 
          c1=-3
          c2=1
       endif
-
-      print*,'here',ninter,istep,c0
-
      
       do k=1,nfld
       do i=1,n
