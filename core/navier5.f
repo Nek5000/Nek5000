@@ -2240,6 +2240,7 @@ c
      $   , vr (1) , vs (1) , vt (1)
      $   , wr (1) , ws (1) , wt (1)
 
+      real j ! Inverse Jacobian
 
       n    = nx1-1      ! Polynomial degree
       nxyz = nx1*ny1*nz1
