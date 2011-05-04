@@ -240,7 +240,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       include 'PARALLEL'
       include 'SOLN'
 
-      real respr (lx1,ly2,lz2,lelv)
+      real respr (lx2,ly2,lz2,lelv)
       integer*8 ntotg,nxyz2
 
       if (ifvcor) then

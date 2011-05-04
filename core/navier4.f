@@ -899,6 +899,8 @@ c
          ifstdh = .false.
       endif
 
+      if (param(93).eq.0) ifstdh = .true.
+
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
       else
