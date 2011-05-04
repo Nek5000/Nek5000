@@ -38,18 +38,19 @@ c
       include 'PARALLEL'
       include 'SOLN'
       include 'INPUT'
+      include 'TSTEP'
       real uf(1),vf(1)
       common /scrpre/ uc(lcr*lelt),w(2*lx1*ly1*lz1)
 
 
 
       call map_f_to_c_l2_bilin(uf,vf,w)
-      call crs_solve(xxth,uc,uf)
+      call crs_solve(xxth(ifield),uc,uf)
       call map_c_to_f_l2_bilin(uf,uc,w)
 
       return
       end
- 
+c
 c-----------------------------------------------------------------------
 c      subroutine test_h1_crs
 c      include 'SIZE'
@@ -68,7 +69,7 @@ c         else
 c            if(i.le.8) b(i)=1
 c         endif
 c         call hsmg_coarse_solve(x,b)
-c         write(13,*) 'Column ',i,':',(x(j),j=1,ntot)
+c         print *, 'Column ',i,':',(x(j),j=1,ntot)
 c      enddo
 c      return
 c      end
@@ -81,6 +82,7 @@ c
       include 'DOMAIN'
       include 'INPUT'
       include 'PARALLEL'
+      include 'TSTEP'
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
@@ -140,19 +142,26 @@ c     Set mask
       call rone(mask,ntot)
       call rone(cmlt,ntot)
       nfaces=2*ndim
-      ifield=1
+c     ifield=1			!c? avo: set in set_overlap through 'TSTEP'?
 
-      do ie=1,nelv
-      do iface=1,nfaces
-         cb=cbc(iface,ie,ifield)
-         if (cb.eq.'O  '  .or.
-     $       cb.eq.'ON '  .or.
-     $       cb.eq.'MM '  .or.
-     $       cb.eq.'mm '  .or.
-     $       cb.eq.'ms '  .or.
-     $       cb.eq.'MS ') call facev(mask,ie,iface,z,nxc,nxc,nzc)
-      enddo
-      enddo
+      if (ifield.eq.1) then
+         do ie=1,nelv
+         do iface=1,nfaces
+            cb=cbc(iface,ie,ifield)
+            if (cb.eq.'O  '  .or.  cb.eq.'ON '  .or.  cb.eq.'MM '  .or.
+     $          cb.eq.'mm '  .or.  cb.eq.'ms '  .or.  cb.eq.'MS ')
+     $          call facev(mask,ie,iface,z,nxc,nxc,nzc) ! 'S* ' & 's* ' ?avo?
+         enddo
+         enddo
+      elseif (ifield.eq.ifldmhd) then   ! no ifmhd ?avo?
+         do ie=1,nelv
+         do iface=1,nfaces
+            cb=cbc(iface,ie,ifield)
+            if (cb.eq.'ndd'  .or.  cb.eq.'dnd'  .or.  cb.eq.'ddn')
+     $          call facev(mask,ie,iface,z,nxc,nxc,nzc)
+         enddo
+         enddo
+      endif
 
 c     Set global index of dirichlet nodes to zero; xxt will ignore them
 
@@ -181,12 +190,16 @@ c      endif
 
       call set_mat_ij(ia,ja,ncr,nelv)
       null_space=0
-      if (ifvcor) null_space=1
+      if (ifield.eq.1) then
+         if (ifvcor)  null_space=1
+      elseif (ifield.eq.ifldmhd) then
+         if (ifbcor)  null_space=1
+      endif
 
       nz=ncr*ncr*nelv
-      call crs_setup(xxth,nekcomm,mp, ntot,se_to_gcrs,
+      call crs_setup(xxth(ifield),nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
-c     call crs_stats(xxth)
+c     call crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
       if (nid.eq.0) then
@@ -1312,6 +1325,7 @@ c
       include 'SOLN'
       include 'PARALLEL'
       include 'CTIMER'
+      include 'TSTEP'
 
       real uf(1),vf(1)
       common /scrpre/ uc(lcr*lelt)
@@ -1338,7 +1352,7 @@ c
 #ifndef NOTIMER
       etime1=dnekclock()
 #endif
-      call crs_solve(xxth,uc,vc)
+      call crs_solve(xxth(ifield),uc,vc)
 #ifndef NOTIMER
       tcrsl=tcrsl+dnekclock()-etime1
 #endif

@@ -359,7 +359,11 @@ C
       if (param(102).ne.0.0) five=param(102)
 C
       NTOT2 = NX2*NY2*NZ2*NELV
-      CALL OPDIV (BDIVV,VX,VY,VZ)
+      if (ifield.eq.1) then     ! avo: sub arguments?
+         CALL OPDIV (BDIVV,VX,VY,VZ)
+      else
+         CALL OPDIV (BDIVV,BX,BY,BZ)
+      endif
       CALL COL3 (DIVV,BDIVV,BM2INV,NTOT2)
       DNORM = SQRT(GLSC2(DIVV,BDIVV,NTOT2)/VOLVM2) 
 C

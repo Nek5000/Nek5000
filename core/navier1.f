@@ -239,18 +239,26 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       include 'INPUT'
       include 'PARALLEL'
       include 'SOLN'
-
+      include 'TSTEP'
       real respr (lx2,ly2,lz2,lelv)
       integer*8 ntotg,nxyz2
 
-      if (ifvcor) then
+      nxyz2 = nx2*ny2*nz2
+      ntot  = nxyz2*nelv
+      ntotg = nxyz2*nelgv
 
-         nxyz2 = nx2*ny2*nz2
-         ntot  = nxyz2*nelv
-         ntotg = nxyz2*nelgv
-
-         rlam  = glsum (respr,ntot)/ntotg
-         call cadd (respr,-rlam,ntot)
+      if (ifield.eq.1) then
+         if (ifvcor) then
+            rlam  = glsum (respr,ntot)/ntotg
+            call cadd (respr,-rlam,ntot)
+         endif
+       elseif (ifield.eq.ifldmhd) then
+         if (ifbcor) then
+            rlam = glsum (respr,ntot)/ntotg
+            call cadd (respr,-rlam,ntot)
+         endif
+       else
+         call exitti('ortho: unaccounted ifield = $',ifield)
       endif
 
       return
@@ -1018,7 +1026,7 @@ c           CALL COL2        (RPCG,H2M2,NTOT2)
          CALL COPY        (RPCG,RCG,NTOT2)
       ENDIF
 
-      call ortho(rpcg)
+      call ortho (rpcg)
 
       return
       end

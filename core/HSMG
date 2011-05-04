@@ -1,6 +1,7 @@
       parameter (lxm=lx2+2,lym=lxm,lzm=lz2+2*(ldim-2)) ! mgrid sizes
       parameter (lmgs=2)                   ! max number of multigrid solvers
       parameter (lmgn=4)                   ! max number of multigrid levels
+      parameter (lmgx=lmgn+1)              ! max number of mg index levels
       parameter (lmg_rwt=lxm*lzm*2)        ! restriction weight max size
       parameter (lmg_fasts=2*lxm*lxm)      ! FDM S max size
       parameter (lmg_fastd=2*lxm*lym*lzm)  ! FDM D max size
@@ -12,15 +13,16 @@ c
      $            , mg_nx(lmgn)                 !level poly. order (for GLL pts)
      $            , mg_ny(lmgn), mg_nz (lmgn)
      $            , mg_nh(lmgn), mg_nhz(lmgn)   !number of 1d nodes
-     $            , mg_g_index(lmgn)
-     $            , mg_gsh_handle(lmgn)         !dssum handle
-     $            , mg_rstr_wt_index(lmgn)
-     $            , mg_mask_index(lmgn)
-     $            , mg_gsh_schwarz_handle(lmgn) !dssum schwarz handles
-     $            , mg_solve_index (lmgn)
-     $            , mg_fast_s_index(lmgn)
-     $            , mg_fast_d_index(lmgn)
-     $            , mg_schwarz_wt_index(lmgn)
+     $            , mg_gsh_schwarz_handle(lmgn,lmgs) !dssum schwarz handles
+     $            , mg_gsh_handle        (lmgn,lmgs) !dssum handle
+     $            , mg_rstr_wt_index     (lmgx,0:lmgs)
+     $            , mg_mask_index        (lmgx,0:lmgs)
+     $            , mg_solve_index       (lmgx,0:lmgs)
+     $            , mg_fast_s_index      (lmgx,0:lmgs)
+     $            , mg_fast_d_index      (lmgx,0:lmgs)
+     $            , mg_schwarz_wt_index  (lmgx,0:lmgs)
+     $            , mg_g_index           (lmgx,0:lmgs)
+     $            , mg_fld                           !active mg field
 c
       integer mg_lmax,mg_nx,mg_ny,mg_nz,mg_nh
       integer mg_gsh_handle
@@ -37,18 +39,18 @@ c
      $            , mg_dht(lxm*lxm,lmgn)   !D hat transpose matrices
      $            , mg_zh(lxm,lmgn)        !Nodal coordinates
 c
-     $            , mg_g(0:lmg_g*((ldim-1)*3)*lelv-1)      !metrics matrices
-     $            , mg_rstr_wt(0:lmg_rwt*2*ldim*lelv-1)    !restriction weight
-     $            , mg_mask(0:2*lmg_rwt*2*ldim*lelv)       !b.c. mask
-     $            , mg_fast_s(0:lmg_fasts*2*ldim*lelv-1)
-     $            , mg_fast_d(0:lmg_fastd*lelv-1)
-     $            , mg_schwarz_wt(0:lmg_swt*4*ldim*lelv-1)
-     $            , mg_work(2*lxm*lym*lzm*lelv) !must be able to hold two lower
-                                                !level extended schwarz arrays
-     $            , mg_work2(lxm*lym*lzm*lelv)
-     $            , mg_worke(lxm*lym*lzm,6)
-     $            , mg_solve_e(0:lmg_solve*lelv-1)
-     $            , mg_solve_r(0:lmg_solve*lelv-1)
+     $            , mg_rstr_wt   (0:lmgs*lmg_rwt*2*ldim*lelv-1)   !restriction weight
+     $            , mg_mask      (0:lmgs*lmg_rwt*4*ldim*lelv)     !b.c. mask
+     $            , mg_fast_s    (0:lmgs*lmg_fasts*2*ldim*lelv-1)
+     $            , mg_fast_d    (0:lmgs*lmg_fastd*lelv-1)
+     $            , mg_schwarz_wt(0:lmgs*lmg_swt*4*ldim*lelv-1)
+     $            , mg_solve_e   (0:lmg_solve*lelv-1)
+     $            , mg_solve_r   (0:lmg_solve*lelv-1)
+     $            , mg_work      (2*lxm*lym*lzm*lelv) !must be able to hold two lower level extended schwarz arrays
+     $            , mg_work2     (lxm*lym*lzm*lelv)
+     $            , mg_worke     (lxm*lym*lzm,6)
+c
+c    $            , mg_g         (0:lmg_g*((ldim-1)*3)*lelv-1) !metrics matrices
 c
       real mg_jh,mg_jht,mg_ah,mg_bh,mg_dh,mg_dht,mg_zh
       real mg_rstr_wt, mg_mask

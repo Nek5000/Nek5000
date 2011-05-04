@@ -33,6 +33,7 @@ C
          INTYPE = -1
          CALL SETHLM  (H1,H2,INTYPE)
          CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
+
          mstep = abs(param(94))
          if (param(94).ne.0. .and. istep.ge.mstep) then
            CALL OPHINVpr(DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
@@ -50,7 +51,7 @@ c        call q_filter(alpha_filt)
 c
 c        CALL SSNORMD (DV1,DV2,DV3)
 c
-         CALL INCOMPR
+         call incomprn(vx,vy,vz,pr)
 C
       ENDIF
 C
@@ -76,7 +77,7 @@ C--------------------------------------------------------------------
       RETURN
       END
 C
-      SUBROUTINE CRESVIF (RESV1,RESV2,RESV3,H1,H2)
+      subroutine cresvif (resv1,resv2,resv3,h1,h2)
 C---------------------------------------------------------------------
 C
 C     Compute startresidual/right-hand-side in the velocity solver
@@ -92,7 +93,6 @@ C---------------------------------------------------------------------
       COMMON /SCRUZ/ W1    (LX1,LY1,LZ1,LELV)
      $ ,             W2    (LX1,LY1,LZ1,LELV)
      $ ,             W3    (LX1,LY1,LZ1,LELV)
-     $ ,             PREXTR(LX2,LY2,LZ2,LELV)
 
       common /cgeom/ igeom
 
@@ -102,8 +102,8 @@ C---------------------------------------------------------------------
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       IF (IFSTRS)  CALL BCNEUTR
 C
-      CALL EXTRAPP (PREXTR)
-      CALL OPGRADT (RESV1,RESV2,RESV3,PREXTR)
+      call extrapp (pr,prlag)
+      call opgradt (resv1,resv2,resv3,pr)
       CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
       CALL OPHX    (W1,W2,W3,VX,VY,VZ,H1,H2)
       CALL OPSUB2  (RESV1,RESV2,RESV3,W1,W2,W3)
@@ -111,7 +111,7 @@ C
       RETURN
       END
 C
-      SUBROUTINE EXTRAPP (PREXTR)
+      SUBROUTINE EXTRAPP_old (PREXTR)
 C--------------------------------------------------------------------
 C
 C     Pressure extrapolation

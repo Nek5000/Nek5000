@@ -77,8 +77,10 @@ C
      $       ,IFMSEG(12,LELT,0:1)
      $       ,IFMSCR(8,LELT,0:1)
      $       ,IFNSKP(8,LELT)
+     $       ,IFBCOR
       LOGICAL IFGEOM,IFGMSH3,IFVCOR,IFSURT,IFMELT,IFWCNO
      $       ,IFRZER,IFQINP,IFEPPM
      $       ,IFLMSF,IFLMSE,IFLMSC,IFMSFC
      $       ,IFMSEG,IFMSCR,IFNSKP
+     $       ,IFBCOR
 C
