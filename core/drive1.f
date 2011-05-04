@@ -283,8 +283,9 @@ C--------------------------------------------------------------------------
             endif
 
             if (ifmhd) then
-                                call induct   (igeom)
                if (ifheat)      call heat     (igeom)
+                                call induct   (igeom)
+                                call setup_convect (igeom) ! avo: dealising in induct?
 
             elseif (ifpert) then
 
@@ -318,8 +319,9 @@ C--------------------------------------------------------------------------
       include 'PARALLEL'
       include 'OPCTR'
 
-      if(instep.ne.0) call runstat
-      if(xxth.gt.0) call crs_stats(xxth)
+      if(instep.ne.0)  call runstat
+      if(xxth(1).gt.0) call crs_stats(xxth(1))
+
    
       return
       end

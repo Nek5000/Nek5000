@@ -95,6 +95,8 @@ C
   250    CONTINUE
 C
       ENDIF
+
+      if (ifmhd) call set_ifbcor
 C
       IF (NHIS.GT.0) THEN
          IQ = 0
@@ -140,6 +142,7 @@ C
          WRITE (6,*) 'IFMODEL  =',IFMODEL
          WRITE (6,*) 'IFKEPS   =',IFKEPS
          WRITE (6,*) 'IFMOAB   =',IFMOAB
+         WRITE (6,*) 'IFNEKNEK =',IFNEKNEK
          WRITE (6,*) 'IFSYNC   =',IFSYNC
          WRITE (6,*) '  '
          WRITE (6,*) 'IFVCOR   =',IFVCOR
