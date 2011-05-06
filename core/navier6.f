@@ -67,8 +67,8 @@ c
       npass = 1
       if (ifmhd) npass = 2
       do ipass=1,npass
+         ifield = 1
          if (.not.ifsplit) then
-            ifield = 1
             if (ipass.gt.1) ifield = ifldmhd
 
             if (param(44).eq.1) then !  Set up local overlapping solves 
