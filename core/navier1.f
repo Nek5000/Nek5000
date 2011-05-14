@@ -3872,6 +3872,13 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
          call conv1 (conv,fi)  !    use the convective form
       endif
 
+      umm = glamax(fi  ,ntotz)
+      dmm = glamax(conv,ntotz)
+      write(6,*) umm,dmm,' glmx2',ip99
+      umm = glamax(vx  ,ntotz)
+      dmm = glamax(vy  ,ntotz)
+      write(6,*) umm,dmm,' glmx3',ip99
+
  100  continue
 
 #ifndef NOTIMER
@@ -3959,8 +3966,8 @@ C
       common /ctmp0/ dudr(lx1,ly1,lz1)
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
-C
-      if (imesh.eq.1) nel = nelv
+
+      nel = nelv
       if (imesh.eq.2) nel = nelt
       nxy1  = nx1*ny1
       nyz1  = ny1*nz1
@@ -4038,7 +4045,7 @@ C
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
 C
-      if (imesh.eq.1) nel = nelv
+      nel = nelv
       if (imesh.eq.2) nel = nelt
       nxy1  = nx1*ny1
       nyz1  = ny1*nz1
@@ -4113,12 +4120,11 @@ C
      $             , dvds(lx1,ly1,lz1)
      $             , dwds(lx1,ly1,lz1)
 C
-      if (imesh.eq.1) nel = nelv
+      nel = nelv
       if (imesh.eq.2) nel = nelt
       nxy1  = nx1*ny1
       nyz1  = ny1*nz1
       nxyz1 = nx1*ny1*nz1
-      dumm = glsum(u,1)
 C
 C     Compute vel.grad(u)
 C
@@ -4352,7 +4358,7 @@ c
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
 c
-      if (imesh.eq.1) nel = nelv
+      nel = nelv
       if (imesh.eq.2) nel = nelt
       nxy1  = nx1*ny1
       nyz1  = ny1*nz1
