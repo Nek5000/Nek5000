@@ -3872,13 +3872,6 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
          call conv1 (conv,fi)  !    use the convective form
       endif
 
-      umm = glamax(fi  ,ntotz)
-      dmm = glamax(conv,ntotz)
-      write(6,*) umm,dmm,' glmx2',ip99
-      umm = glamax(vx  ,ntotz)
-      dmm = glamax(vy  ,ntotz)
-      write(6,*) umm,dmm,' glmx3',ip99
-
  100  continue
 
 #ifndef NOTIMER
