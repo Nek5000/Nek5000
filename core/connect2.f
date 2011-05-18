@@ -486,6 +486,9 @@ C
       if (ifgfdm.and.ifsplit) call exitti
      $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
 
+      if (ifgfdm.and.lfdm.eq.0) call exitti
+     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
+
       if (ifsplit .and. ifstrs) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: Stress formulation in Pn-Pn is not supported'
