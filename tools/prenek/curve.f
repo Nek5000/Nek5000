@@ -36,6 +36,8 @@ c     ITEM(6)='TRANSITION HEXAGONS'
 c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
       NCHOIC=7
+      nchoic=nchoic+1
+      ITEM(nchoic)='RENUMBER ELEMENTS'
       if (if3d) then
          nchoic=nchoic+1
          ITEM(nchoic)='SPHERICAL MESH'
@@ -48,8 +50,6 @@ c     else
 c        nchoic=nchoic+1
 c        item(nchoic)='CIRC MESH'
       endif
-      nchoic=nchoic+1
-      ITEM(nchoic)='RENUMBER ELEMENTS'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'CURVE SIDES')
 3013  CONTINUE
       IF(CHOICE.EQ.'MAKE SPLINE')THEN

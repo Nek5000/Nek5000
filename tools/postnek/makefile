@@ -12,14 +12,14 @@ NOBJS = postnek.o postnek2.o postnek3.o postnek5.o postnek6.o tsort.o \
 	locglob.o postnek5a.o blas.o \
 	xdriver.o scrdmp.o coef.o postnek7.o speclib.o mxm.o byte.o ssyev.o
 
-all: postx
-
-
-## posty:	$(NOBJS) iolib_no_graph.o
-## 	$(F77) -o  $(prefix)/posty $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm 
+all: postx postex
 
 postx:	$(NOBJS) iolib.o
 	$(F77) -o  $(prefix)/postx $(NOBJS) iolib.o -L$(X) -lX11 -lm
+
+postex:	$(NOBJS) iolib_no_graph.o
+	$(F77) -o  $(prefix)/postex $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm
+
 
 print:
 	size postx

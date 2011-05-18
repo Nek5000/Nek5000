@@ -3307,6 +3307,10 @@ c
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Redraw mesh'
       nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch R'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch theta'
+      nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch X'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch Y'
@@ -3314,10 +3318,6 @@ c
          nchoic = nchoic+1
          ITEM(nchoic)    =             'Stretch Z'
       ENDIF
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch R'
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch theta'
 c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')

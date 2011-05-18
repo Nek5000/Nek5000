@@ -10,10 +10,6 @@ c
 c
       nchoic = 1
       item(nchoic) = 'UP MENU'
-      if (ndim.eq.2) then
-         nchoic   = nchoic+1
-         item(nchoic) = 'view .map file'
-      endif
       nchoic   = nchoic+1
       item(nchoic) = 'Scale vector component'
       nchoic   = nchoic+1
@@ -26,6 +22,7 @@ c     nchoic   = nchoic+1
       item(nchoic) = 'Read fields from file'
       nchoic   = nchoic+1
       item(nchoic) = 'COORDINATE'
+      nchoic   = nchoic+1
       item(nchoic) = 'Error Distribution'
       nchoic   = nchoic+1
       item(nchoic) = 'x-z average'
@@ -55,6 +52,10 @@ c     nchoic   = nchoic+1
       item(nchoic) = 'Cluster BC'
       nchoic   = nchoic+1
       item(nchoic) = 'add constant'
+      if (ndim.eq.2) then
+         nchoic   = nchoic+1
+         item(nchoic) = 'view .map file'
+      endif
 c
       nchoic   = 9 
 c
@@ -1466,15 +1467,15 @@ c
       include 'basicsp.inc'
 c
       CALL PRS(' ENTER COMPONENT (For scalar plots)$')
-      ITEM(1)='X'
-      ITEM(2)='Y'
-      NCHOIC=2
+      NCHOIC=1
+      ITEM(NCHOIC)='Magnitude'
+      ITEM(2)='X'
+      ITEM(3)='Y'
+      NCHOIC=3
       IF(IF3D)THEN
-         ITEM(3)='Z'
+         ITEM(4)='Z'
          NCHOIC=NCHOIC+1
       ENDIF
-      NCHOIC=NCHOIC+1
-      ITEM(NCHOIC)='Magnitude'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'SET COMPONENT')
       COMPON=CHOICE(1:1)
 c

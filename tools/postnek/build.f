@@ -161,23 +161,21 @@ C     Draw menu
          nchoic = nchoic+1
          ITEM(nchoic)        =             'GLOBAL REFINE'
          nchoic = nchoic+1
-         ITEM(nchoic)        =             'UP   LEVEL'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'DOWN LEVEL'
-         nchoic = nchoic+1
          ITEM(nchoic)        =             'CURVE SIDES'
          nchoic = nchoic+1
          ITEM(nchoic)        =             'DELETE ELEMENT'
          nchoic = nchoic+1
-         ITEM(nchoic)        =             'CEILING'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'REDRAW ISOMETRIC'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'REDRAW MESH'
+         ITEM(nchoic)        =             'ZOOM'
          nchoic = nchoic+1
          ITEM(nchoic)        =             'SET GRID'
          nchoic = nchoic+1
-         ITEM(nchoic)        =             'ZOOM'
+         ITEM(nchoic)        =             'UP   LEVEL'
+         nchoic = nchoic+1
+         ITEM(nchoic)        =             'DOWN LEVEL'
+         nchoic = nchoic+1
+         ITEM(nchoic)        =             'CEILING'
+         nchoic = nchoic+1
+         ITEM(nchoic)        =             'REDRAW ISOMETRIC'
 c        nchoic = nchoic+1
 c        ITEM(nchoic)        =             'DEFINE OBJECT'
          IF(IFCEIL)THEN
@@ -204,9 +202,9 @@ C        2-D
          nchoic = nchoic+1
          ITEM(nchoic)       =             'SET GRID'
          nchoic = nchoic+1
-         ITEM(nchoic)       =             'DEFINE OBJECT'
-         nchoic = nchoic+1
          ITEM(nchoic)       =             'REDRAW MESH'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =             'DEFINE OBJECT'
       ENDIF
 C
 C     Menu's all set, prompt for user input:

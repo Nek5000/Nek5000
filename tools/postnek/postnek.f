@@ -112,18 +112,18 @@ c
             ITEM(NCHOIC)='VELOCITY'
             NCHOIC=NCHOIC+1
             ITEM(NCHOIC)='VORTICITY'
-            if (if3d) then
-               NCHOIC=NCHOIC+1
-               ITEM(NCHOIC)='STRESS VEC'
-               NCHOIC=NCHOIC+1
-               ITEM(NCHOIC)='NORMAL VEC'
-            endif
             NCHOIC=NCHOIC+1
             ITEM(NCHOIC)='PRESSURE'
             NCHOIC=NCHOIC+1
             ITEM(NCHOIC)='TOTAL PRESSURE'
             NCHOIC=NCHOIC+1
             ITEM(NCHOIC)='DIVERGENCE'
+            if (if3d) then
+               NCHOIC=NCHOIC+1
+               ITEM(NCHOIC)='STRESS VEC'
+               NCHOIC=NCHOIC+1
+               ITEM(NCHOIC)='NORMAL VEC'
+            endif
             IF(NSOBJS.GT.0)THEN
                NCHOIC=NCHOIC+1
                ITEM(NCHOIC)='FORCE'
@@ -361,12 +361,12 @@ c                                                    nchoic = nchoic+1
 c        ITEM(nchoic)='ANIMATE'
 c                                                    nchoic = nchoic+1
 c        ITEM(nchoic)='SURFACE ONLY'
-         if (ndim.eq.2)                              nchoic = nchoic+1
-         if (ndim.eq.2) ITEM(nchoic)='DRAW MESH'
                                                      nchoic = nchoic+1
          ITEM(nchoic)='DRAW MESH NODES'
                                                      nchoic = nchoic+1
          ITEM(nchoic)='LABEL MESH NODES'
+         if (ndim.eq.2)                              nchoic = nchoic+1
+         if (ndim.eq.2) ITEM(nchoic)='DRAW MESH'
 c
          CALL MENU(XMOUSE,YMOUSE,BUTTON,'SET PLOT FORMAT')
          PLFORM=CHOICE

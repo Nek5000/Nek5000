@@ -303,6 +303,8 @@ c                    nchoic=nchoic+1
 C                    Convection IS now ready for v2
                      nchoic=nchoic+1
                      ITEM(NCHOIC)='CONVECTION'
+                     nchoic=nchoic+1
+                     ITEM(NCHOIC)='RADIATION'
                      IF(IFFLOW.OR.IFADVC(IF))THEN
                         nchoic=nchoic+1
                         ITEM(NCHOIC)='OUTFLOW'
@@ -311,8 +313,6 @@ C                    Convection IS now ready for v2
                         nchoic=nchoic+1
                         ITEM(NCHOIC)='AXIS'
                      ENDIF
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='RADIATION'
                   ENDIF
                   nchoic=nchoic+1
                   ITEM(NCHOIC)='SET ENTIRE LEVEL'

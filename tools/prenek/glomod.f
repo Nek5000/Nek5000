@@ -26,37 +26,8 @@ C
       ITEM(NCHOIC)='ZIPPER'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Non-conf SPLIT'
-c
-      if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='SPIDER WEB'
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='PICTURE FRAME'
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='CORNER FRAME'
-c           NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SMOOTH'
-      endif
-c
-      IF(IF3D)THEN
-c        NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SPLIT FLOOR'
-         NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='NEW SPLIT'
-c        NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='3D CORNER'
-      ENDIF
-c
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='REPLICATE/ROTATE'
-c     if (ndim.eq.2) then
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='Refine Hexagons'
-c     else
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='Hex transition'
-c     endif
-
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='OCT/Multi-SPLIT'
            NCHOIC=NCHOIC+1
@@ -69,6 +40,35 @@ c     endif
       ITEM(NCHOIC)='CLIP DOMAIN'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Clean up vertices'
+ 
+      if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='SPIDER WEB'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='PICTURE FRAME'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='CORNER FRAME'
+c           NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='SMOOTH'
+      endif
+ 
+      IF(IF3D)THEN
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='SPLIT FLOOR'
+         NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='NEW SPLIT'
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='3D CORNER'
+      ENDIF
+ 
+c     if (ndim.eq.2) then
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Refine Hexagons'
+c     else
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Hex transition'
+c     endif
+
 
       if (ndim.eq.2) call redraw_mesh
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'GLOBAL REFINE')
@@ -1122,6 +1122,10 @@ C
       nchoic = 1
       ITEM(nchoic)       =             'UP MENU'
       nchoic = nchoic+1
+      ITEM(nchoic)       =             'Clip N'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Input DEL list'
+      nchoic = nchoic+1
       ITEM(nchoic)       =             'Clip X'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Clip Y'
@@ -1129,10 +1133,6 @@ C
          nchoic = nchoic+1
          ITEM(nchoic)    =             'Clip Z'
       ENDIF
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Clip N'
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Input DEL list'
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 C

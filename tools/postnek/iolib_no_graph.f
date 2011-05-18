@@ -61,15 +61,16 @@ C
             GO TO 2
          ENDIF
  1    CONTINUE
-c
+
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRS',43)
       write(6,*) 'I/O Error: No String Terminator sent to PRS'
       write(66,*) 'I/O Error: No String Terminator sent to PRS'
-c
+
       nchars = 80
+      
       CALL CHCOPY (S1,S,NCHARS)
       WRITE(66,3) (S1(J),J=1,NCHARS)
-c
+
  2    CONTINUE
       CALL PUTSOLD  (S   ,NCHARS)
       CALL CHCOPY(S1,S,NCHARS)
@@ -156,6 +157,7 @@ C
       SUBROUTINE PRIS(I,S)
       CHARACTER S(*),SS*80
 C
+      call blank(ss,80)
       WRITE(SS(1:8),'(I8)',ERR=13)I
       DO 1 J=1,70
          IF(S(J).EQ.'$')THEN
@@ -545,6 +547,31 @@ C
       CALL PRS(SS)
       RETURN
  13   CALL PUTS('I/O Error: cant write to string in PRSii',39)
+      RETURN
+      END
+C-----------------------------------------------------------------------
+      subroutine prsiv(s,i1,i2,i3,i4)
+      CHARACTER S(*),SS*80
+C
+c      write(6,*) (s(k),k=1,40)
+c      write(6,*) i1,i2,i3,i4
+c      NC=20
+      DO 1 k=1,60
+         IF(S(k).EQ.'$')THEN
+            NC=k-1
+            GO TO 2
+         ENDIF
+         SS(k:k)=S(k)
+ 1    CONTINUE
+      CALL PUTS('I/O Error: No String Terminator sent to PRSiv ',44)
+      CALL PUTS(S,80)
+c     RETURN
+ 2    CONTINUE
+      WRITE(SS(NC+1:NC+32),'(4I8)',ERR=13)i1,i2,i3,i4
+      SS(NC+33:NC+33)='$'
+      CALL PRS(SS)
+      RETURN
+ 13   CALL PUTS('I/O Error: cant write to string in PRSiv ',39)
       RETURN
       END
 C-----------------------------------------------------------------------
