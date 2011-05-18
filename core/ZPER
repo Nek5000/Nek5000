@@ -1,14 +1,19 @@
 c
 c     Eigenvalue arrays and pointers for Global Tensor Product 
-c
-      parameter (lelg_sm=2)
-      parameter (ltfdm2 =2)
-
+c     parameter (lelg_sm=2)
+c     parameter (ltfdm2 =2)
 c     parameter (lelg_sm=lelg)
 c     parameter (ltfdm2=2*lx2*ly2*lz2*lelt)
+c     parameter (leig2=2*lx2*lx2*(lelx*lelx+lely*lely+lelz*lelz))
+c     parameter (leig =2*lx2*(lelx+lely+lelz))
 
-      parameter (leig2=2*lx2*lx2*(lelx*lelx+lely*lely+lelz*lelz))
-      parameter (leig =2*lx2*(lelx+lely+lelz))
+      parameter (lfdm0 = 1-lfdm)
+      parameter (lelg_sm=lfdm0+lfdm*lelg)
+      parameter (ltfdm2 =lfdm0+lfdm*2*lx2*ly2*lz2*lelt)
+      parameter (leig2  =lfdm0+lfdm*2*lx2*lx2
+     $                             *(lelx*lelx+lely*lely+lelz*lelz))
+      parameter (leig   =lfdm0+lfdm*2*lx2*(lelx+lely+lelz))
+
 c
       common /peigi/ neigx ,neigy ,neigz
      $             , pvalx ,pvaly ,pvalz 

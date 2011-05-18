@@ -466,6 +466,12 @@ if [ -f "./SIZE" ]; then
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
+  cat SIZE | grep -i 'lfdm' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
+  fi
 
   echo $PPLIST | grep 'CVODE' >/dev/null
   if [ $? -eq 0 ]; then
