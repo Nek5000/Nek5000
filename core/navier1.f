@@ -5257,9 +5257,10 @@ c        uij := jac*( du_i / dx_j )
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gradl_rst_t(u,ur,us,ut,md,if3d)
+      subroutine gradl_rst_t(u,ur,us,ut,md,if3d)  ! GLL grad-transpose
 c
 c     Thus routine originally from fsi file: u5.usr (May 2010)
+c
 c
       include 'SIZE'
       include 'DXYZ'
@@ -5267,8 +5268,10 @@ c
       real    u(1),ur(1),us(1),ut(1)
       logical if3d
 
+c     dgradl holds GLL-based derivative / interpolation operators
+
       parameter (ldg=lxd**3,lwkd=2*ldg)
-      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+      common /dgradl/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
       real jgl,jgt
 
@@ -5283,7 +5286,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gradl_rst(ur,us,ut,u,md,if3d)
+      subroutine gradl_rst(ur,us,ut,u,md,if3d)  ! GLL-based gradient
 c
       include 'SIZE'
       include 'DXYZ'
@@ -5291,8 +5294,10 @@ c
       real    ur(1),us(1),ut(1),u(1)
       logical if3d
 
+c     dgradl holds GLL-based derivative / interpolation operators
+
       parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
-      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+      common /dgradl/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
       real jgl,jgt
 
@@ -5352,21 +5357,25 @@ c     Output: ur,us         Input:u,N,e,D,Dt
 c-----------------------------------------------------------------------
       subroutine get_dgll_ptr (ip,mx,md)
 c
-c     Get pointer to GL-GL interpolation dgl() for pair (mx,md)
+c     Get pointer to GLL-GLL interpolation dgl() for pair (mx,md)
 c
       include 'SIZE'
-c
+
+c     dgradl holds GLL-based derivative / interpolation operators
+
       parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
-      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+      common /dgradl/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
       real jgl,jgt
-c
+ 
+c     Pointers into GLL-based derivative / interpolation operators
+
       parameter (ld=2*lxd)
-      common /jgrad/ pd    (0:ld*ld)
-     $             , pdg   (0:ld*ld)
-     $             , pjgl  (0:ld*ld)
+      common /jgradl/ pd    (0:ld*ld)
+     $              , pdg   (0:ld*ld)
+     $              , pjgl  (0:ld*ld)
       integer pd , pdg , pjgl
-c
+
       ij = md + ld*(mx-1)
       ip = pdg (ij)
 
