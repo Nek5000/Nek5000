@@ -3116,8 +3116,8 @@ c-----------------------------------------------------------------------
       do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
                             ! Extra pass is just to test convergence
 
-c        call opcopy (xb,yb,zb,xm1,ym1,zm1)
-c        call opdssum(xb,yb,zb)
+c        call opcopy (xb,yb,zb,xm1,ym1,zm1) ! Must use WHOLE field,
+c        call opdssum(xb,yb,zb)             ! not just fluid domain.
          call copy   (xb,xm1,n)
          call copy   (yb,ym1,n)
          call copy   (zb,zm1,n)

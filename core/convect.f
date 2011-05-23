@@ -347,14 +347,14 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine grad_rstd(ur,us,ut,u,mx,md,if3d,ju)
-c
+      subroutine grad_rstd(ur,us,ut,u,mx,md,if3d,ju) ! GLL->GL grad
+
       include 'SIZE'
       include 'DXYZ'
-c
+
       real    ur(1),us(1),ut(1),u(1),ju(1)
       logical if3d
-c
+
       parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
       common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
@@ -373,30 +373,30 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_rstd(ju,u,mx,md,if3d,idir)
-c
+      subroutine intp_rstd(ju,u,mx,md,if3d,idir) ! GLL->GL interpolation
+
 c     GLL interpolation from mx to md.
-c
+
 c     If idir ^= 0, then apply transpose operator  (md to mx)
-c
+
       include 'SIZE'
-c
+
       real    ju(1),u(1)
       logical if3d
-c
+
       parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
       common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
       real jgl,jgt
-c
+
       parameter (ld=2*lxd)
       common /ctmp0/ w(ld**ldim,2)
-c
+
       call lim_chk(md,ld,'md   ','ld   ','grad_rstd ')
       call lim_chk(mx,ld,'mx   ','ld   ','grad_rstd ')
-c
+
       ldw = 2*(ld**ldim)
-c
+
       call get_int_ptr (i,mx,md)
 c
       if (idir.eq.0) then
@@ -494,12 +494,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_int_ptr (ip,mx,md)
-c
+      subroutine get_int_ptr (ip,mx,md) ! GLL-->GL pointer
+
 c     Get pointer to jgl() for interpolation pair (mx,md)
-c
+
       include 'SIZE'
-c
+
       parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
       common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
      $             , wkd(lwkd)
@@ -642,8 +642,8 @@ c     Save time and map the current velocity to rst coordinates.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine grad_rst(ur,us,ut,u,md,if3d)
-c
+      subroutine grad_rst(ur,us,ut,u,md,if3d) ! Gauss-->Gauss grad
+
       include 'SIZE'
       include 'DXYZ'
 
