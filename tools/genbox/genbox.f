@@ -158,7 +158,7 @@ c-----------------------------------------------------------------------
  
       call scanout(string,'MESH DATA',9,8,9)
 c      read(8,*) i,i,i
-      write(9,*) ' *** MESH DATA ***'
+c     write(9,*) ' *** MESH DATA ***'
 c-----------------------------------------------------------------------
       
       nel  = 0
@@ -1066,10 +1066,10 @@ c
       do line=1,10000000
          call blank(string,132)
          read (infile ,132,end=100,err=100) string
-         if (indx1(string,input,len).ne.0) return
          call ccopy(string1,string,132)
          lout = ltrunc(string1,132)
          write (outfile,81) (string1(j),j=1,lout)
+         if (indx1(string,input,len).ne.0) return
       enddo
   132 format(a132)
    81 format(132a1)
@@ -2322,13 +2322,13 @@ c-----------------------------------------------------------------------
       integer inf,outf
       character*132 temps
     
-      write(outf,*) '          13  LOGICAL SWITCHES FOLLOW'
       if (     ifflow) write(outf,*) ' T     IFFLOW' 
       if (.not.ifflow) write(outf,*) ' F     IFFLOW' 
       if (     ifheat) write(outf,*) ' T     IFHEAT' 
       if (.not.ifheat) write(outf,*) ' F     IFHEAT' 
-      read (inf,'132a') temps
-      read (inf,'132a') temps
+      read (inf,81) temps
+      read (inf,81) temps
+  81  format(132a)
 
       return
       end
