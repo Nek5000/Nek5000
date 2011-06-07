@@ -68,8 +68,10 @@ c------------------------------------------------------------------------------
       character*132 string
       character*1  string1(132)
       equivalence (string,string1)
-C
-      logical     if3d,ifevenx,ifeveny,ifevenz,ifflow,iffo,if_multi_seg
+ 
+      logical     if3d,  ifevenx,ifeveny,ifevenz
+     $           ,ifflow,ifheat, iffo,   if_multi_seg
+
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
       real        rbc1(5),rbc2(5),rbc3(5),rbc4(5),rbc5(5),rbc6(5)
       integer eface(6)
@@ -123,13 +125,9 @@ C     Read in name of previously generated NEKTON data set.
 C     (Must have same dimension and number of fields as current run)
 C
       call gets(string,132,iend,7)
-c
+ 
       open (unit=8,file=string,status='old')
       open (unit=9,file='box.rea')
-      call scanout(string,'MESH DATA',9,8,9)
-c      read(8,*) i,i,i
-      write(9,*) ' *** MESH DATA ***'
-      
 c-----------------------------------------------------------------------
 c     here is where the 2d/3d determination is made....
       if3d = .false.
@@ -145,13 +143,24 @@ c     here is where the 2d/3d determination is made....
 c-----------------------------------------------------------------------
 c     here is where the fluid, fluid+heat determination is made....
       call geti1(nfld,iend,7)
+      ifheat = .false.
       if (nfld.gt.0) then
-         ifflow = .true.
+         ifflow = .true.    
+         if (nfld.gt.1) ifheat = .true.  ! fluid and heat
       else
-         ifflow = .false.   ! heat only
+         ifflow = .false.                ! heat only
+         ifheat = .true.
          nfld = abs(nfld)
       endif
 c-----------------------------------------------------------------------
+      call scanout(string,'LOGICAL SWITCHES',16,8,9)
+      call set_logical(ifflow,ifheat,8,9)
+ 
+      call scanout(string,'MESH DATA',9,8,9)
+c      read(8,*) i,i,i
+      write(9,*) ' *** MESH DATA ***'
+c-----------------------------------------------------------------------
+      
       nel  = 0
       nbox = 0
       do ibox=1,mbox+1
@@ -166,7 +175,7 @@ c-----------------------------------------------------------------------
          ifevenx = .false.
          ifeveny = .false.
          ifevenz = .false.
-c
+ 
          call gets(boxcirc(ibox),1,iend,7)
          if (iend.eq.1) goto 99
          if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') 
@@ -176,7 +185,7 @@ c
          if_multi_seg = .false.
          if (boxcirc(ibox).eq.'m'.or.boxcirc(ibox).eq.'M') 
      $      if_multi_seg = .true.
-c
+ 
          if (boxcirc(ibox).eq.'y'.or.boxcirc(ibox).eq.'Y') then
             call cyl(if3d,nfld)
             call exit
@@ -196,7 +205,7 @@ c
          elseif (if3d) then
 
             call geti3(nelx,nely,nelz,iend,7)
-c
+ 
             if (nelx.lt.0) ifevenx = .true.
             if (nely.lt.0) ifeveny = .true.
             if (nelz.lt.0) ifevenz = .true.
@@ -213,13 +222,13 @@ c
      $                       nelx,nely,nelz,maxx
               call exitt
             endif
-c
+ 
             nery = nely
             if (boxcirc(ibox).eq.'C') nery = 1
             if (iend.eq.1) goto 99
             ninbox = nelx*nely*nelz
             write(6,6) ninbox,nelx,nely,nelz,ibox,nfld
-c
+ 
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
                if (ratio.le.0) ratio=1.
@@ -236,7 +245,7 @@ c
             else
                call getrv(x(0,ibox),nelx+1,iend,7)
             endif
-c
+ 
             if (ifeveny) then
                call getr3(y0,y1,ratio,iend,7)
                if (ratio.le.0) ratio=1.
@@ -253,7 +262,7 @@ c
             else
                call getrv(y(0,ibox),nely+1,iend,7)
             endif
-c
+ 
             if (ifevenz) then
                call getr3(z0,z1,ratio,iend,7)
                if (ratio.le.0) ratio=1.
@@ -270,7 +279,7 @@ c
             else
                call getrv(z(0,ibox),nelz+1,iend,7)
             endif
-c
+ 
             do ifld=1,nfld
                call getcv(cbc(1,ibox,ifld),3,6,iend,7)
 c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
@@ -278,7 +287,7 @@ c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
          else
             nelz = 1
             call geti2(nelx,nely,iend,7)
-c
+ 
             if (nelx.lt.0) ifevenx = .true.
             if (nely.lt.0) ifeveny = .true.
             nelx = abs(nelx)
@@ -292,13 +301,13 @@ c
      $                       nelx,nely,nelz,maxx
               call exitt
             endif
-c
+ 
             nery = nely
             if (boxcirc(ibox).eq.'C') nery = 1
             if (iend.eq.1) goto 99
             ninbox = nelx*nely*nelz
             write(6,6) ninbox,nelx,nely,nery,ibox,nfld
-c
+ 
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
                if (ratio.le.0) ratio=1.
@@ -335,7 +344,7 @@ c           write(999,*) (x(i,1),i=0,nelx)
             endif
 c           write(998,*) (y(i,1),i=0,nely)
 
-c
+ 
             do ifld=1,nfld
                call getcv(cbc(1,ibox,ifld),3,4,iend,7)
             enddo
@@ -348,7 +357,7 @@ c
       enddo
     6 format('Reading',i8,' =',3i8,' elements for box',i4,'.')
    99 continue
-c
+ 
       if(iffo) then
         write(6,*) 'Beginning construction of box.rea'
       else
@@ -370,10 +379,10 @@ c
         call byte_write(hdr,20)   ! assumes byte_open() already issued
         call byte_write(test,1)   ! write the endian discriminator
       endif
-c
+ 
       ncurv = 0
       call rzero(curve,8*nel)
-c
+ 
       if (if3d) then
         ie   = 0
         ilev = 0
@@ -425,28 +434,28 @@ c                  write(9,11) ie,ilev,apt(ia),'0'
            do k=1,nlz(ibox)
             z1 = z(k-1,ibox)
             z2 = z(k  ,ibox)
-c
+ 
             ia   = 0
 c           ilev = ilev+1
             ilev = k
             do j=1,nly(ibox)
                y1 = y(j-1,ibox)
                y2 = y(j  ,ibox)
-c
+ 
                do i=1,nlx(ibox)
                   x1 = x(i-1,ibox)
                   x2 = x(i  ,ibox)
-c
+ 
                   ie = ie+1
                   ia = ia+1
                   ia = mod1(ia,52)
                   if(iffo) then
                     write(9,11) ie,ilev,apt(ia),'0'
-c
+ 
                     write(9,12) x1,x2,x2,x1
                     write(9,12) y1,y1,y2,y2
                     write(9,12) z1,z1,z1,z1
-c
+ 
                     write(9,12) x1,x2,x2,x1
                     write(9,12) y1,y1,y2,y2
                     write(9,12) z2,z2,z2,z2
@@ -615,7 +624,7 @@ c             BOX
            endif
         enddo
       endif
-c
+ 
 c     output curve stuff and Boundary conditions
       if(iffo) then
         write(9,28) ncurv
@@ -665,11 +674,11 @@ c     output curve stuff and Boundary conditions
          enddo
       endif
 
-c
+ 
       if(iffo) 
      &   write(9,31) 
    31    format('  ***** BOUNDARY CONDITIONS *****')
-c
+ 
       do ifld=1,nfld
 
          if (iffo) then
@@ -747,7 +756,7 @@ c
                else
                   cbc1='E  '
                endif
-c
+ 
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
@@ -755,7 +764,7 @@ c
                else
                   cbc2='E  '
                endif
-c
+ 
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
@@ -763,7 +772,7 @@ c
                else
                   cbc3='E  '
                endif
-c
+ 
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
@@ -771,7 +780,7 @@ c
                else
                   cbc4='E  '
                endif
-c
+ 
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
                   if (cbc5.ne.'P  ') call rzero(rbc5,5)
@@ -779,7 +788,7 @@ c
                else
                   cbc5='E  '
                endif
-c
+ 
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
                   if (cbc6.ne.'P  ') call rzero(rbc6,5)
@@ -926,7 +935,7 @@ c                  call blank(buf(8),4)
                else
                   cbc1='E  '
                endif
-c
+ 
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
@@ -934,7 +943,7 @@ c
                else
                   cbc2='E  '
                endif
-c
+ 
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
@@ -942,7 +951,7 @@ c
                else
                   cbc3='E  '
                endif
-c
+ 
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
@@ -1009,31 +1018,29 @@ c
       enddo
 c
 c     Scan through .rea file until end of bcs
-
-
-      if (ifflow) then
-         if (nfld.eq.1) call nekscan(string,'THERMAL BOUNDARY',16,8)
-         if (nfld.ge.2) call nekscan(string,'PRESOLVE',8,8)
-      else !  heat only
-         call nekscan(string,'PRESOLVE',8,8)
-      endif
-
-      lout = ltrunc(string1,132)
-      write (9,81) (string1(j),j=1,lout)
-   81 format(132a1)
 c
-
-c     if(iffo) then
-c       if (nfld.eq.1) write(9,*) 
-c    &     ' ***** NO THERMAL BOUNDARY CONDITIONS *****'
+c     if (ifflow) then
+c        if (nfld.eq.1) call nekscan(string,'THERMAL BOUNDARY',16,8)
+c        if (nfld.ge.2) call nekscan(string,'PRESOLVE',8,8)
+c     else !  heat only
+c        call nekscan(string,'PRESOLVE',8,8)
 c     endif
-c
-c     Scan through .rea file until end of bcs
-c
-c     call scan(string,'RESTART',7,8)
+
 c     lout = ltrunc(string1,132)
 c     write (9,81) (string1(j),j=1,lout)
 c  81 format(132a1)
+
+      if(iffo.and.ifflow) then
+        if (nfld.eq.1) write(9,*) 
+     &     ' ***** NO THERMAL BOUNDARY CONDITIONS *****'
+      endif
+ 
+c     Scan through .rea file until end of bcs
+ 
+      call nekscan(string,'RESTART',7,8)
+      lout = ltrunc(string1,132)
+      write (9,81) (string1(j),j=1,lout)
+   81 format(132a1)
 
       call scanout(string,'xxxx',4,8,9)
       if(.not.iffo)  call byte_close()
@@ -1046,16 +1053,16 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine scanout(string,input,len,infile,outfile)
-c
+ 
 c     scan through infile until input is found and output
 c     all lines save that containing input to "outfile"
 c
       character*132 string
       character*1 input(1)
       integer infile,outfile
-c
+ 
       character*1 string1(132)
-c
+ 
       do line=1,10000000
          call blank(string,132)
          read (infile ,132,end=100,err=100) string
@@ -1066,7 +1073,7 @@ c
       enddo
   132 format(a132)
    81 format(132a1)
-c
+ 
   100 continue
       return
       end
@@ -1078,14 +1085,14 @@ c
       character*132 string
       character*1 input(1)
       integer infile,outfile
-c
+ 
       do line=1,10000000
          call blank(string,132)
          read (infile ,132,end=100,err=100) string
          if (indx1(string,input,len).ne.0) return
       enddo
   132 format(a132)
-c
+ 
   100 continue
       return
       end
@@ -1105,7 +1112,7 @@ c-----------------------------------------------------------------------
       CHARACTER*1 STRING(L)
       CHARACTER*1   BLNK
       DATA BLNK/' '/
-C
+ 
       DO 100 I=L,1,-1
          L1=I
          IF (STRING(I).NE.BLNK) GOTO 200
@@ -1117,11 +1124,11 @@ C
       END
       INTEGER FUNCTION INDX1(S1,S2,L2)
       CHARACTER*132 S1,S2
-C
+ 
       N1=132-L2+1
       INDX1=0
       IF (N1.LT.1) RETURN
-C
+ 
       DO 100 I=1,N1
          I2=I+L2-1
          IF (S1(I:I2).EQ.S2(1:L2)) THEN
@@ -1129,7 +1136,7 @@ C
             RETURN
          ENDIF
   100 CONTINUE
-C
+ 
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -1169,16 +1176,16 @@ c
       character*132 string
       character*1  string1(132)
       equivalence (string1,string)
-c
+ 
       character*1 comment
       save        comment
       data        comment /'#'/
-c
+ 
       iend = 0
       do line=1,10000000
          call blank(string,132)
          read (infile ,132,end=100,err=100) string
-c
+ 
          if   (indx1(string,comment,1).ne.1) then
 c              write(*,*) line
 c              write(6,132) string
@@ -1192,11 +1199,11 @@ c              write(6,132) string
               i1 = indx1(string,comment,1)
               write(6,*) i1,' i1', comment
          endif
-c
+ 
       enddo
   132 format(a132)
    81 format(132a1)
-c
+ 
   100 continue
       iend = 1
       return
@@ -1316,7 +1323,7 @@ c
       read(99,1,end=2) (adum(k),k=1,132)
     1 format(132a1)
     2 continue
-c
+ 
       i = 0
       do l=1,n
          do k=1,m
@@ -1328,7 +1335,7 @@ c
          write(6,3) m,n,(c(i,j),i=1,m)
     3    format(2i4,'getcv0:',132a1)
       enddo
-c
+ 
       close(unit=99)
       return
       end
@@ -1345,18 +1352,18 @@ c
       read(99,1,end=2) (adum(k),k=1,132)
     1 format(132a1)
     2 continue
-c
+ 
       i = 0
       do l=1,n
          do k=1,m
             i = i+1
             c(k,l) = adum(i)
          enddo
-c
+ 
 c        bump pointer for "," in input string
          i = i+1
       enddo
-c
+ 
       close(unit=99)
       return
       end
@@ -1377,7 +1384,7 @@ c
 c-----------------------------------------------------------------------
       subroutine cfill(a,b,n)
       DIMENSION  A(1)
-C
+ 
       DO I = 1, N
         A(I) = B
       ENDDO
@@ -1444,11 +1451,11 @@ c     serious hack for f90
       end
 c-----------------------------------------------------------------------
       subroutine get_multi_seg(nelxyz,x,y,z,m,if3d)
-c
+ 
       integer nelxyz(3)
       real x(0:m),y(0:m),z(0:m)
       logical if3d
-c
+ 
       integer nels (1000)
       real    gains(1000)
       real    xs   (0:1000)
@@ -1475,22 +1482,22 @@ c     is generated, with dx_i+1 = dx_i * gain_e
 c
       ndim = 2
       if (if3d) ndim=3
-c
+ 
       do id=1,ndim
-c
+ 
          call geti1(nseg,iend,7)
          call getiv(nels ,nseg  ,iend,7)
          call getrv(xs   ,nseg+1,iend,7)
          call getrv(gains,nseg  ,iend,7)
          write(6,*) 'NSEG: ',id,nseg,(nels(k),k=1,nseg)
-c
+ 
          nelxyz(id) = ilsum(nels,nseg)
          if (nelxyz(id).gt.m) then
             write(6,*) 'NEL too large:',nelxyz(id),m,id
             write(6,*) 'Abort in get_multi_seg.'
             call exit
          endif
-c
+ 
          k = 0
          do is=1,nseg
             nel = nels(is)
@@ -1502,26 +1509,26 @@ c
             k = k + nel
          enddo
       enddo
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
       subroutine geometric_x(x,n,x0,x1,gain)
-c
+ 
       real x(0:n)
-c
+ 
       x(0) = 0.
       dx = (x1-x0)/n
       do i=1,n
          x(i) = x(i-1) + dx
          dx   = dx*gain
       enddo
-c
+ 
       scale = (x1-x0)/(x(n)-x(0))
       do i=0,n
          x(i) = x0 + scale*x(i)
       enddo
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1531,7 +1538,7 @@ c     Check for buffer overflow
 c
       character*3 var
       character*6 sub
-c
+ 
       if (n_req.gt.n_avail) then
          write(6,9) n_req,n_avail,var,sub
     9    format(' ERROR: requested array space (',i9
@@ -1561,12 +1568,12 @@ c-----------------------------------------------------------------------
       subroutine get_xyz_distribution (x,nelx)
       real x(0:1)
       if (nelx.ge.0) return ! else, uniform or geometric spacing
-c
+ 
       x0 = x(0)
       x1 = x(1)
       r  = x(2)
       write(6,*) 'x0:',x0,x1,r,nelx
-c
+ 
       nelx = abs(nelx)
       if (r.eq.1.0) then
          dx = (x1-x0)/nelx
@@ -1586,20 +1593,20 @@ c
          call cadd (x,x0   ,nelx+1)
          x(nelx) = x1
       endif
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
       subroutine outmat6(a,m,n,name6,ilabel)
       real a(m,n)
       character*6 name6
-c
+ 
       n10=min(n,10)
       do i=1,m
          write(6,6) ilabel,name6,(a(i,j),j=1,n10)
     6    format(i5,1x,a6,1p10e11.4)
       enddo
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1615,33 +1622,33 @@ c-----------------------------------------------------------------------
       real curve(8,maxel)
       character*3 cbc(6,mbox,3)
       character*1 boxcirc(mbox)
-c
+ 
       common /genbr/ x,y,z,xc,yc,zc,curve
       common /genbc/ cbc
-c
+ 
       integer nels(3)
       real rad(0:maxx),tht(0:maxx)
       character*1 cob(0:maxx),ccurve(8,maxx)
-c
+ 
       logical if3d
       integer e
-c
+ 
       call cyl_box(x,y,z,nels,cob,rad,tht,cbc,curve,ccurve
      $                  ,maxx,if3d,nfld)
-c
+ 
       nelx = abs(nels(1))
       nely = abs(nels(2))
       nelz = abs(nels(3))
       nel  = nelx*nely
       if (if3d) nel  = nelx*nely*nelz
-c
+ 
       call out_xy_box    (x,y,z,nels,maxx,if3d)
       call out_xy_curves (curve,ccurve,nels,if3d)
       call out_tens_bcs  (cbc,nelx,nely,nelz,1,nfld,if3d)
 c     call out_tens_bcs  (cbc,nlx,nly,nlz,nbox,nfld,if3d) ! > 1 box, later
-c
+ 
       close(unit=9)
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1659,35 +1666,35 @@ c .5 .75 1.0     r0, r1, r2.
 c 0  1.0         -- fraction of circular arc (result is multiplied by 2pi)
 c 0  2.5  1.5    -- z0, z1, geometric ratio
 c bcx,bcx,bcy,bcy,bcz,bcz   Usual bcs
-c
+ 
       integer nels(3)
       real x(4,maxx*maxx),y(4,maxx*maxx)
       real rad(0:maxx),tht(0:maxx),z(0:maxx),curve(5,8,maxx)
       character*3 cbc(6,nfld)
       character*1 cob(0:maxx),ccurve(8,maxx)
       logical if3d
-c
+ 
       real xy0(2)
       integer e
-c
+ 
       integer ipf2e(4)
       save    ipf2e
       data    ipf2e / 1,2,4,3 /
-c
+ 
       call get_cyl_box(xy0,nels,cob,rad,tht,z,cbc,maxx,if3d,nfld)
-c
+ 
       nelx = nels(1)
       nely = nels(2)
       nelz = nels(3)
-c
+ 
       call get_xyz_distribution (rad,nelx) ! Get distribution if nelx < 0, etc.
       call get_xyz_distribution (tht,nely)
       call get_xyz_distribution (z  ,nelz)
-c
+ 
       nelx = abs(nelx)
       nely = abs(nely)
       nelz = abs(nelz)
-c
+ 
       one    = 1.
       twopi  = 8.*atan(one)
 c     call outmat6(rad,1,nelx+1,'radius',1)
@@ -1695,7 +1702,7 @@ c     call outmat6(tht,1,nely+1,'theta ',1)
 c
       neln = nelx*nely
       if (if3d) neln = nelx*nely*nelz
-c
+ 
       write(6,*) 'Beginning construction of cylinder box'
       write(6,*) neln,' elements will be created for',nbox,' boxes.'
       write(6,*) nelx,nely
@@ -1717,7 +1724,7 @@ c
                curve (1,8,e) = -rad(ix-1)
             endif
          endif
-c
+ 
          if (cob(ix).eq.'c'.or.cob(ix).eq.'C') then
             ccurve(2,e)   = 'C'                  ! EB notation
             curve (1,2,e) = rad(ix)
@@ -1726,7 +1733,7 @@ c
                curve (1,6,e) = rad(ix)
             endif
          endif
-c
+ 
          do i=0,1
             ix1 = ix-1 + i
             if (cob(ix1).eq.'c'.or.cob(ix1).eq.'C' .or. 
@@ -1788,11 +1795,11 @@ c
          enddo
       enddo
       enddo
-c
+ 
       n = 4*nelx*nely
       call cadd(x,xy0(1),n)
       call cadd(y,xy0(2),n)
-c
+ 
       epsm = 1.e-6
       do e=1,nelx*nely
          do ij=1,4
@@ -1807,7 +1814,7 @@ c
          write(11,6)
       enddo
     6 format(1p2e15.7)
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1832,7 +1839,7 @@ c
       character*1 cob(0:maxx)
       character*3 cbc(6,nfld)
       logical if3d
-c
+ 
       if (if3d) then
          call geti3(nelx,nely,nelz,iend,7)
          call overflow_chk(nelx,maxx,'nlx','cylbox')
@@ -1847,34 +1854,34 @@ c
       nels(1) = nelx
       nels(2) = nely
       nels(3) = nelz
-c
+ 
       call getr2 (xy0(1),xy0(2),iend,7)  ! Coordinates of cyl. ctr.
-c
+ 
       call getcv0(cob,1,nelx+1,iend,7)   ! Cylinder type: c,o,b,p, etc.
-c
+ 
       if (nelx.gt.0) then
          call getrv(rad,nelx+1,iend,7)
       else
          call getrv(rad,3,iend,7)           ! r0,  r1 , ratio
       endif
-c
+ 
       if (nely.gt.0) then
          call getrv(tht,nely+1,iend,7)
       else
          call getrv(tht,3,iend,7)           ! th0, th1 , ratio
       endif
-c
+ 
       if (nelz.gt.0) then
          call getrv(z,nelz+1,iend,7)
       elseif (nelz.lt.0) then
          call getrv(z  ,3,iend,7)           ! z0,  z1 , ratio
       endif
-c
+ 
       do ifld=1,nfld
          call getcv(cbc(1,ifld),3,6,iend,7)
          write(6,*) 'CBC:',(cbc(k,ifld),k=1,6),ifld,ibox
       enddo
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1885,32 +1892,32 @@ c
       integer nels(3)
       real    x(4,1),y(4,1),z(0:maxx)
       logical if3d
-c
+ 
       integer e
       integer ipf2e(4)
       save    ipf2e
       data    ipf2e / 1,2,4,3 /
-c
+ 
       character*1  apt(52)
       character*52 apt52
       equivalence (apt52,apt)
       data apt52/'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'/
-c
-c
+ 
+ 
       nelx = abs(nels(1))
       nely = abs(nels(2))
       nelz = abs(nels(3))
-c
+ 
       nel  = nelx*nely
       ndim = 2
       if (if3d) then
          nel  = nelx*nely*nelz
          ndim = 3
       endif
-c
+ 
       write(9,10) nel,ndim,nel
    10 format(3i6,'           NEL,NDIM,NELV')
-c
+ 
       if (if3d) then
          e = 0
          do ke=1,nelz
@@ -1922,17 +1929,17 @@ c
                ie = ie+1
                ia = ia+1
                ia = mod1(ia,52)
-c
+ 
                write(9,11) e,ke,apt(ia),'0'
-c
+ 
                write(9,12) (x(ipf2e(k),ie),k=1,4)!convert to prenek numbering
                write(9,12) (y(ipf2e(k),ie),k=1,4)
                write(9,12) z(ke-1),z(ke-1),z(ke-1),z(ke-1)
-c
+ 
                write(9,12) (x(ipf2e(k),ie),k=1,4)!convert to prenek numbering
                write(9,12) (y(ipf2e(k),ie),k=1,4)
                write(9,12) z(ke),z(ke),z(ke),z(ke)
-c
+ 
             enddo
             enddo
          enddo
@@ -1945,21 +1952,21 @@ c
             e  =  e+1
             ia = ia+1
             ia = mod1(ia,52)
-c
+ 
             write(9,11) e,ke,apt(ia),'0'
-c
+ 
             write(9,12) (x(ipf2e(k),e),k=1,4)!convert to prenek numbering
             write(9,12) (y(ipf2e(k),e),k=1,4)
-c
+ 
          enddo
          enddo
       endif
-c
+ 
    11 format(
      $'            ELEMENT',i11,' [',i5,a1,']    GROUP     ',a1)
 c    $'            ELEMENT',i5,' [',i5,a1,']    GROUP     ',a1)
    12 format(1p4e15.7)
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1984,7 +1991,7 @@ c
    28 format(
      $ '  ***** CURVED SIDE DATA *****',/,
      $    i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
-c
+ 
       z=0
       do e=1,nel
       do i=1,8
@@ -1999,7 +2006,7 @@ c
       enddo
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -2013,7 +2020,7 @@ c
       integer nels(3)
       logical if3d
       integer e
-c
+ 
       nelx = abs(nels(1))
       nely = abs(nels(2))
       nelz = abs(nels(3))
@@ -2033,7 +2040,7 @@ c
    28 format(
      $ '  ***** CURVED SIDE DATA *****',/,
      $    i11,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
-c
+ 
       e = 0
       do ke=1,nelz
       do ie=1,nel2
@@ -2054,7 +2061,7 @@ c
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
   292 format(i2,i10,5g14.6,1x,a1)
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -2065,19 +2072,19 @@ c
       character*3 cbc(6,nbox,nfld)
       integer     nlx(nbox),nly(nbox),nlz(nbox)
       logical     if3d
-c
+ 
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
       real        rbc1(5),rbc2(5),rbc3(5),rbc4(5),rbc5(5),rbc6(5)
-c
+ 
       integer eface(6)
       save    eface
       data    eface  / 4,2,1,3,5,6 /
-c
-c
+ 
+ 
       write(9,31) 
    31 format('  ***** BOUNDARY CONDITIONS *****')
-c
-c
+ 
+ 
       do ifld=1,nfld
          if2 = ifld-2
          if (ifld.eq.1) write(9,41)
@@ -2087,21 +2094,21 @@ c
    42    format('  ***** THERMAL BOUNDARY CONDITIONS *****')
    43    format('  ***** PASSIVE SCALAR',i2
      $                       ,'  BOUNDARY CONDITIONS *****')
-c
+ 
          ie = 0
          if (if3d) then
             do ibx=1,nbox
             do iez=1,nlz(ibx)
             do iey=1,nly(ibx)
             do iex=1,nlx(ibx)
-c
+ 
                call rzero(rbc1,5)
                call rzero(rbc2,5)
                call rzero(rbc3,5)
                call rzero(rbc4,5)
                call rzero(rbc5,5)
                call rzero(rbc6,5)
-c
+ 
                nelx = nlx(ibx)
                nely = nly(ibx)
                nelz = nlz(ibx)
@@ -2111,57 +2118,57 @@ c
                irgty = mod1(iey+1+nely,nely)
                ilftx = mod1(iex-1+nelx,nelx)
                irgtx = mod1(iex+1+nelx,nelx)
-c
+ 
                rbc1(1) = nely*nelx*(iez-1)+nelx*(iey-1) + ilftx
                rbc1(2) = eface(2)
                rbc2(1) = nely*nelx*(iez-1)+nelx*(iey-1) + irgtx
                rbc2(2) = eface(1)
-c
+ 
                rbc3(1) = nely*nelx*(iez-1)+nelx*(ilfty-1) + iex
                rbc3(2) = eface(4)
                rbc4(1) = nely*nelx*(iez-1)+nelx*(irgty-1) + iex
                rbc4(2) = eface(3)
-c
+ 
                rbc5(1) = nely*nelx*(ilftz-1)+nelx*(iey-1) + iex
                rbc5(2) = eface(6)
                rbc6(1) = nely*nelx*(irgtz-1)+nelx*(iey-1) + iex
                rbc6(2) = eface(5)
-c
+ 
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
                   if (cbc1.ne.'P  '.and.cbc1.ne.'E  ')call rzero(rbc1,5)
                else
                   cbc1='E  '
                endif
-c
+ 
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  '.and.cbc2.ne.'E  ')call rzero(rbc2,5)
                else
                   cbc2='E  '
                endif
-c
+ 
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  '.and.cbc3.ne.'E  ')call rzero(rbc3,5)
                else
                   cbc3='E  '
                endif
-c
+ 
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  '.and.cbc4.ne.'E  ')call rzero(rbc4,5)
                else
                   cbc4='E  '
                endif
-c
+ 
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
                   if (cbc5.ne.'P  '.and.cbc5.ne.'E  ')call rzero(rbc5,5)
                else
                   cbc5='E  '
                endif
-c
+ 
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
                   if (cbc6.ne.'P  '.and.cbc6.ne.'E  ')call rzero(rbc6,5)
@@ -2209,50 +2216,50 @@ c
             do ibx=1,nbox
             do iey=1,nly(ibx)
             do iex=1,nlx(ibx)
-c
+ 
                call rzero(rbc1,5)
                call rzero(rbc2,5)
                call rzero(rbc3,5)
                call rzero(rbc4,5)
-c
+ 
                nelx = nlx(ibx)
                nely = nly(ibx)
                ilfty = mod1(iey-1+nely,nely)
                irgty = mod1(iey+1+nely,nely)
                ilftx = mod1(iex-1+nelx,nelx)
                irgtx = mod1(iex+1+nelx,nelx)
-c
+ 
                rbc1(1) = nelx*(iey-1) + ilftx
                rbc1(2) = eface(2)
                rbc2(1) = nelx*(iey-1) + irgtx
                rbc2(2) = eface(1)
-c
+ 
                rbc3(1) = nelx*(ilfty-1) + iex
                rbc3(2) = eface(4)
                rbc4(1) = nelx*(irgty-1) + iex
                rbc4(2) = eface(3)
-c
+ 
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
                   if (cbc1.ne.'P  '.and.cbc1.ne.'E  ')call rzero(rbc1,5)
                else
                   cbc1='E  '
                endif
-c
+ 
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  '.and.cbc2.ne.'E  ')call rzero(rbc2,5)
                else
                   cbc2='E  '
                endif
-c
+ 
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  '.and.cbc3.ne.'E  ')call rzero(rbc3,5)
                else
                   cbc3='E  '
                endif
-c
+ 
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  '.and.cbc4.ne.'E  ')call rzero(rbc4,5)
@@ -2288,7 +2295,7 @@ c
             enddo
          endif
       enddo
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -2306,6 +2313,23 @@ c-----------------------------------------------------------------------
       do i=1,n
          ilsum = ilsum + x(i)
       enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_logical(ifflow,ifheat,inf,outf)
+ 
+      logical ifflow, ifheat
+      integer inf,outf
+      character*132 temps
+    
+      write(outf,*) '          13  LOGICAL SWITCHES FOLLOW'
+      if (     ifflow) write(outf,*) ' T     IFFLOW' 
+      if (.not.ifflow) write(outf,*) ' F     IFFLOW' 
+      if (     ifheat) write(outf,*) ' T     IFHEAT' 
+      if (.not.ifheat) write(outf,*) ' F     IFHEAT' 
+      read (inf,'132a') temps
+      read (inf,'132a') temps
+
       return
       end
 c-----------------------------------------------------------------------

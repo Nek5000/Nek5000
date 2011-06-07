@@ -1,4 +1,4 @@
-c-----------------------------------------------------------------------
+c----------------------------------------------------------------------
       subroutine getfld(newdump,jerr,if_call_setw,if_call_coef)
 C----------------------------------------------------------------------
 C
@@ -8,115 +8,155 @@ C     (2) Check previous spatial discretization
 C     (3) Map (K1,N1) => (K2,N2) if necessary
 C
 C----------------------------------------------------------------------
-      INCLUDE 'basics.inc'
-      INCLUDE 'basicsp.inc'
-c
+      include 'basics.inc'
+      include 'basicsp.inc'
+ 
       common /regularize/ regdir
       character*1  regdir
-c
-      PARAMETER (LXR=NXM)
-      PARAMETER (LYR=NYM)
-      PARAMETER (LZR=NZM)
-      PARAMETER (LXYZR=LXR*LYR*LZR)
+ 
+      parameter (lxr=nxm)
+      parameter (lyr=nym)
+      parameter (lzr=nzm)
+      parameter (lxyzr=lxr*lyr*lzr)
 C     note, this usage of CTMP1 will be less than elsewhere if nelt ~> 9.
-      PARAMETER (LPSC9=MAXFLD+3)
-      COMMON /CTMP1/ XDUMP(LXYZR,LPSC9)
-      CHARACTER*4    CDUMP(LXYZR,LPSC9)
-      EQUIVALENCE   (CDUMP,XDUMP)
-      CHARACTER*2  EXCODER(15)
-      CHARACTER*80 FNAME
-      CHARACTER*1  FNAME1(80)
-      EQUIVALENCE (FNAME1,FNAME)
-c
+      parameter (lpsc9=maxfld+3)
+      common /ctmp1/ xdump(lxyzr,lpsc9)
+      character*4    cdump(lxyzr,lpsc9)
+      equivalence   (cdump,xdump)
+      character*2   excoder(15)
+      character*10  rdcode 
+      character*1   rdcode1(10) 
+      equivalence (rdcode,rdcode1)
+      character*80 fname
+      character*1  fname1(80)
+      equivalence (fname1,fname)
+ 
       logical if_call_setw
       logical if_call_coef
-c
-      CHARACTER*80 hname
-      CHARACTER*1  hname1(80)
-      EQUIVALENCE (hname1,hname)
-c
+ 
+      character*132 hname
+      character*1   hname1(132)
+      equivalence (hname1,hname)
+ 
       real*4 bytetest
       real*8 bytetest8
-c
+ 
       character*1  fname_c(80)
       integer      fname_i(20)
       equivalence (fname_i,fname_c)
       character*2 s2
       character*3 s3
       character*4 s4
-c
-      INTEGER IDUMP
-c
+ 
+      integer idump
+ 
       integer icalld,nelhdr
       save    icalld,nelhdr
       data    icalld /0/
-c
-c     For "SETWRK":                  pff 2/28/98
+ 
+c     for "setwrk":                  pff 2/28/98
       common /sfldwrk/ odumpw,odump
       integer odumpw,odump
-c
+ 
       logical if_byte_sw, if_byte_swap_test, if_byte_swap_test8
-C
-C     Local logical flags to determine whether to copy data or not.
-C
-      LOGICAL IFGETX,IFGETZ,IFGETU,IFGETW,IFGETP,IFGETT,IFGTPS(MAXFLD)
-     $       ,IFGTIM,IFOK,IFFMAT
-      INTEGER IPOSX,IPOSZ,IPOSU,IPOSW,IPOSP,IPOST,IPSPS(MAXFLD)
-      INTEGER rdsize
-C
+c
+c     local logical flags to determine whether to copy data or not.
+c
+      logical ifgetx,ifgetz,ifgetu,ifgetw,ifgetp,ifgett,ifgtps(maxfld)
+     $       ,ifgtim,ifok,iffmat
+      integer iposx,iposz,iposu,iposw,iposp,ipost,ipsps(maxfld)
+      integer rdsize
+ 
+      common /fformwrk/ wk
+      real wk(maxpts)
+      logical iffform   ! .f00000 format flag
+      character*4 dummy ! .f00000 hdr read 
+      integer er(1)     ! .f00000 element mapping 
+      integer e
+
       jerr = 0
       close(unit=24,err=1)
     1 continue
       close(unit=27,err=11)
    11 continue
-c
+ 
       if (icalld.eq.0) then
          nelhdr = nel
          odump  = -99
       endif
       icalld = icalld+1
-c
+
 c     if (newdump.eq.odump) return
       odump  = newdump
       odumpw = newdump
       newdumps=newdump
-      NID=0
-      nelv=nel
-      nelt=nel
+      nid=0
+      nelv =nel
+      nelt =nel
       nelgt=nel
-      IFOK=.FALSE.
-      IFFMAT=.TRUE.
-      IF (PARAM(66).EQ.1.0.or.param(66).eq.3) IFFMAT=.FALSE.
-      IF (PARAM(66).EQ.4.0.or.param(66).eq.5) IFFMAT=.FALSE.
-c
+      ifok   =.false.
+      iffmat =.true.
+      iffform=.false.
+      if (param(66).eq.1.0.or.param(66).eq.3) iffmat =.false.
+      if (param(66).eq.4.0.or.param(66).eq.5) iffmat =.false.
+      if (param(66).eq.6.0) then
+         iffform =.true.
+         iffmat  =.false.
+      endif
+
       len = ltrunc(session_name,80)
       call blank(fname,80)
       call chcopy(fname,session_name,len)
-      call chcopy(fname1(len+1),'.fld',4)
-c
-      call blank(hname,80)
-      call chcopy(hname,session_name,len)
-      call chcopy(hname1(len+1),'.fhd',4)
+
+      if (iffform) then
+         if (newdump.ne.0) then
+            if (newdump.le.99) then
+               call chcopy(fname1(len+1),'0.f000',6)
+               len = ltrunc(fname,80)
+               write(s2,82) newdump
+   82          format(i2.2)
+               call chcopy(fname1(len+1),s2,2)
+            elseif (newdump.le.999) then
+               call chcopy(fname1(len+1),'0.f00',5)
+               len = ltrunc(fname,80)
+               write(s3,83) newdump
+   83          format(i3.3)
+               call chcopy(fname1(len+1),s3,3)
+            else
+               call chcopy(fname1(len+1),'0.f0',4)
+               len = ltrunc(fname,80)
+               write(s4,84) newdump
+   84          format(i4.4)
+               call chcopy(fname1(len+1),s4,4)
+            endif
+         endif
+      else
+         call chcopy(fname1(len+1),'.fld',4)
+
+         call blank(hname,132)
+         call chcopy(hname,session_name,len)
+         call chcopy(hname1(len+1),'.fhd',4)
 c
 c     Append numerical suffix
 c
-      len = ltrunc(fname,80)
-      if (newdump.ne.0) then
-         if (newdump.le.99) then
-            write(s2,92) newdump
-   92       format(i2.2)
-            call chcopy(fname1(len+1),s2,2)
-            call chcopy(hname1(len+1),s2,2)
-         elseif (newdump.le.999) then
-            write(s3,93) newdump
-   93       format(i3.3)
-            call chcopy(fname1(len+1),s3,3)
-            call chcopy(hname1(len+1),s3,3)
-         else
-            write(s4,94) newdump
-   94       format(i4.4)
-            call chcopy(fname1(len+1),s4,4)
-            call chcopy(hname1(len+1),s4,4)
+         len = ltrunc(fname,80)
+         if (newdump.ne.0) then
+            if (newdump.le.99) then
+               write(s2,92) newdump
+   92          format(i2.2)
+               call chcopy(fname1(len+1),s2,2)
+               call chcopy(hname1(len+1),s2,2)
+            elseif (newdump.le.999) then
+               write(s3,93) newdump
+   93          format(i3.3)
+               call chcopy(fname1(len+1),s3,3)
+               call chcopy(hname1(len+1),s3,3)
+            else
+               write(s4,94) newdump
+   94          format(i4.4)
+               call chcopy(fname1(len+1),s4,4)
+               call chcopy(hname1(len+1),s4,4)
+            endif
          endif
       endif
       len = ltrunc(fname,80)
@@ -127,15 +167,15 @@ c
       call chcopy(fname_c,fname,len)
 
 
-      IFGETX=.TRUE.
-      IFGETZ=.TRUE.
-      IFGETU=.TRUE.
-      IFGETW=.TRUE.
-      IFGETP=.TRUE.
-      IFGETT=.TRUE.
-      DO 8 I=1,MAXFLD-4
-         IFGTPS(I)=.TRUE.
-    8 CONTINUE
+      ifgetx=.true.
+      ifgetz=.true.
+      ifgetu=.true.
+      ifgetw=.true.
+      ifgetp=.true.
+      ifgett=.true.
+      do 8 i=1,maxfld-4
+         ifgtps(i)=.true.
+    8 continue
 
 C     Standard Case:   Requested inputs are in the file.
 
@@ -147,33 +187,38 @@ C     Standard Case:   Requested inputs are in the file.
       write(6,80) fname
    80 format(a80)
       write(6,*) 
-c
-      IF (IFFMAT) THEN
+ 
+      if (iffmat) then
          write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
          write(6,*) 'opening file:',len,' ',fname
-         open (UNIT=24,FILE=FNAME,ERR=9,status='OLD')
+         open (unit=24,file=fname,err=9,status='old')
          write(6,*) 'opened  file:',len,' ',fname
       elseif (param(66).eq.2) then
-         open (UNIT=24,FILE=FNAME
-     $     ,FORM='UNFORMATTED',ERR=9,status='OLD')
+         open (unit=24,file=fname
+     $     ,form='unformatted',err=9,status='old')
       elseif (param(66).eq.3) then
          write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
          write(6,*) 'opening file:',len,' ',(hname1(k),k=1,len)
-         open (UNIT=27,FILE=hname,ERR=9,status='OLD')
-         open (UNIT=24,FILE=FNAME,ERR=9,status='OLD')
+         open (unit=27,file=hname,err=9,status='old')
+         open (unit=24,file=fname,err=9,status='old')
          close(unit=24)
          call byte_open(fname_c)
       elseif (param(66).eq.4.or.param(66).eq.5) then
          write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
-         open (UNIT=24,FILE=FNAME,ERR=9,status='OLD')
+         open (unit=24,file=fname,err=9,status='old')
          close(unit=24)
          call byte_open(fname_c)
-      ENDIF
-      GOTO 10
+      elseif (iffform) then
+         write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
+         open (unit=24,file=fname,err=9,status='old')
+         close(unit=24)
+         call byte_open(fname_c)
+      endif
+      goto 10
 c
 c     Check file
 c
-    9 CONTINUE
+    9 continue
 c
 c        Error condition
 c
@@ -185,29 +230,31 @@ c
          jerr = 1
          return
    10 continue
-c
-C
+ 
+ 
       rdsize = 4
       ndumps_read = newdumps
       if (param(65).ne.0) ndumps_read = 1
       ndumps_read = 1                        !   11/04/02
-c
-      DO 1000 JDUMP=1,ndumps_read
-C
-         IF (NID.EQ.0.OR.JDUMP.EQ.1) THEN
-           call blank(hname,80)
-           IF (IFFMAT) THEN
-            READ(24,80,ERR=1500,END=1500) hname
-           ELSEIF(param(66).eq.1) then
-            READ(24,ERR=1500,END=1500) hname
-           ELSEIF(param(66).eq.3) then
-            READ(27,80,ERR=1500,END=1500) hname
-           ELSEIF(param(66).eq.4.or.param(66).eq.5) then
+ 
+      do 1000 jdump=1,ndumps_read
+ 
+         if (nid.eq.0.or.jdump.eq.1) then
+           call blank(hname,132)
+           if (iffmat) then
+            read(24,80,err=1500,end=1500) hname
+           elseif(param(66).eq.1) then
+            read(24,err=1500,end=1500) hname
+           elseif(param(66).eq.3) then
+            read(27,80,err=1500,end=1500) hname
+           elseif(param(66).eq.4.or.param(66).eq.5) then
             call byte_read(hname,20)
+           elseif(iffform) then
+            call byte_read(hname,33)
            endif
            write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
-           write(6,80) hname
-c
+           write(6,'a132') hname
+ 
            nxr=nx
            nyr=ny
            nzr=nz
@@ -215,11 +262,19 @@ c
            if (indx1(hname,'*',1).ne.0) then
 c              hack to get around overflow in file header...
                read(hname,'(16x,1X,G13.4,5x,1X,10A2)',ERR=1501,END=1501)
-     $         RSTIME,(EXCODER(I),I=1,10)
+     $         rstime,(excoder(i),i=1,10)
+           elseif(iffform) then
+               read(hname,*,ERR=1509) dummy
+     $         ,  rdsize,nxr,nyr,nzr,neltr,nelgr,rstime,istepr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! copied from ic.f:parse_std_hdr
+               do i =1,10
+                  excoder(i)=rdcode1(i)
+               enddo
            else
             if (nelhdr.le.9999) then
             READ(hname,'(4I4,1X,G13.4,I5,1X,10A2,i2)',ERR=1502,END=1502)
-     $        neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10),RDSIZE
+     $        neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10),rdsize
             else
               read
      $        (hname,'(i10,3i4,1P1e18.9,i9,1x,10a2)',ERR=1503,END=1503)
@@ -227,15 +282,15 @@ c              hack to get around overflow in file header...
               rdsize = 4
             endif
            endif
-           IF (PARAM(68).EQ.2.0) 
+           if (param(68).eq.2.0) 
      $      WRITE(29,'(4I4,1X,G13.4,I5,1X,10A2)')
      $      neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10)
-           write(6,*) ' done read from hname',nxr,nyr,nzr
-c
-           time=rstime
-           if (rdsize.eq.0) rdsize=4
-           write(6,*) 'this is rdsize:',rdsize
-         ENDIF
+            write(6,*) ' done read from hname',nxr,nyr,nzr
+ 
+            time=rstime
+            if (rdsize.eq.0) rdsize=4
+            write(6,*) 'this is rdsize:',rdsize
+         endif
 c
 c        Reset spatial dimension according to contents of .fld file
 c
@@ -248,15 +303,15 @@ c
             write(6,*) 'Increase in basics.inc and recompile:',nx,ny,nz
             call exitt
          endif
-c
+ 
          if (ndim.eq.3) nz = nxr
          if (.not. ifsubset) then
             neltm=maxpts/(nx*ny*nz)
             neltr=min(neltr,neltm)
             nel = min(neltr,nel)
          endif
-         write(6,*) neltm,maxpts,nxr,nel,' NELTM '
-         IF (JDUMP.EQ.1) THEN
+         write(6,*) neltm,maxpts,nxr,nel,neltr,' NELTM '
+         if (jdump.eq.1) then
 C
 C           Find out the position of the data via the header info.
 C
@@ -269,125 +324,145 @@ C
 C
 C           Figure out position of data in file "IFILE"
 C
-            NOUTS=0
-            IPOSX=0
-            IPOSY=0
-            IPOSZ=0
-            IPOSU=0
-            IPOSV=0
-            IPOSW=0
-            IPOSP=0
-            IPOST=0
-            DO 40 I=1,NPSCAL
-               IPSPS(I)=0
-   40       CONTINUE
-C
+            nouts=0
+            iposx=0
+            iposy=0
+            iposz=0
+            iposu=0
+            iposv=0
+            iposw=0
+            iposp=0
+            ipost=0
+            do 40 i=1,npscal
+               ipsps(i)=0
+   40       continue
+ 
 c           if (idump.eq.1) write(6,41) (excoder(j),j=1,10),idump
             write(6,41) (excoder(j),j=1,10),idump
    41       format(' excoder:',2x,10a2,i4)
-            DO 50 I=1,10
-               IF (EXCODER(I).EQ.'X') THEN
-                  NOUTS=NOUTS + 1
-                  IPOSX=NOUTS
-                  IFGETX = .TRUE.
-               elseif (EXCODER(I).EQ.'Y') THEN
-                  NOUTS=NOUTS+1
-                  IPOSY=NOUTS
-                  IFGETX = .TRUE.
-               elseif (EXCODER(I).EQ.'Z') THEN
-                  NOUTS=NOUTS + 1
-                  IPOSZ=NOUTS
-                  IFGETZ = .TRUE.
-               elseif (EXCODER(I).EQ.'U') THEN
-                  NOUTS=NOUTS + 1
-                  IPOSU=NOUTS
-                  NOUTS=NOUTS+1
-                  IPOSV=NOUTS
-                  IFGETU = .TRUE.
-                  IF (IF3D) THEN
-                     NOUTS=NOUTS + 1
-                     IPOSW=NOUTS
-                     IFGETW = .TRUE.
-                  ENDIF
-                  IFFLOW=.TRUE.
-               elseif (EXCODER(I).EQ.'P') THEN
-                  NOUTS=NOUTS + 1
-                  IPOSP=NOUTS
-                  IFGETP=.TRUE.
-               elseif (EXCODER(I).EQ.'T') THEN
-                  NOUTS=NOUTS + 1
-                  IPOST=NOUTS
-                  IFGETT=.TRUE.
-                  IFHEAT=.TRUE.
-               elseif (EXCODER(I).EQ.'V') THEN
-                  IFFLOW=.TRUE.
-               elseif (EXCODER(I).NE.' ') THEN
+            do 50 i=1,10
+               if (excoder(i).eq.'X') then
+                  nouts=nouts + 1
+                  iposx=nouts
+                  ifgetx = .true.
+                  if(iffform) then
+                    nouts=nouts +1
+                    iposy=nouts
+                    ifgety=.true.
+                    if(if3d) then
+                      nouts=nouts + 1
+                      iposz=nouts
+                      ifgetz = .true.
+                    endif
+                  endif
+               elseif (excoder(i).eq.'Y') then
+                  nouts=nouts+1
+                  iposy=nouts
+                  ifgetx = .true.
+               elseif (excoder(i).eq.'Z') then
+                  nouts=nouts + 1
+                  iposz=nouts
+                  ifgetz = .true.
+               elseif (excoder(i).eq.'U') then
+                  nouts=nouts + 1
+                  iposu=nouts
+                  nouts=nouts+1
+                  iposv=nouts
+                  ifgetu = .true.
+                  if (if3d) then
+                     nouts=nouts + 1
+                     iposw=nouts
+                     ifgetw = .true.
+                  endif
+                  ifflow=.true.
+               elseif (excoder(i).eq.'P') then
+                  nouts=nouts + 1
+                  iposp=nouts
+                  ifgetp=.true.
+               elseif (excoder(i).eq.'T') then
+                  nouts=nouts + 1
+                  ipost=nouts
+                  ifgett=.true.
+                  ifheat=.true.
+               elseif (excoder(i).eq.'V') then
+                  ifflow=.true.
+               elseif (excoder(i).eq.'S') then
+                  read(excoder(i+1),'(i1)') nps1
+                  read(excoder(i+2),'(i1)') nps0
+                  npsr= 10*nps1+nps0
+                  nps  = npsr
+                  if(npsr.gt.ndim-1) nps=ndim-1
+                  do k=1,nps
+                     nouts=nouts+1
+                     ipsps(k)=nouts
+                     ifgtps(k)=.true.
+                     ifpsco(k)=.true.
+                  enddo
+               elseif (excoder(i).ne.' ') then
                   write(6,*) 'Excoder:', i,excoder(i),nouts
                   read(excoder(i),111) ii
   111             format(i1)
-c
-                  NOUTS=NOUTS + 1
-                  IPSPS(ii) = nouts
-                  IFGTPS(ii)=.true.
+ 
+                  nouts=nouts + 1
+                  ipsps(ii) = nouts
+                  ifgtps(ii)=.true.
                   ifpsco(ii)=.true.
-               ENDIF
+               endif
          write(6,*) 
      $  'IFGNGM,IFGETX bbb',ifgngm,ifgetx,i,excoder(i),iposx,iposy
-   50       CONTINUE
-C
-            LNAME=LTRUNC(FNAME,80)
-            IF (NID.EQ.0) WRITE(6,61) (FNAME1(I),I=1,LNAME)
-            IF (NID.EQ.0) WRITE(6,62) IPOSU,IPOSV,IPOSW,IPOST,NOUTS
+   50       continue
+ 
+            lname=ltrunc(fname,80)
+            if (nid.eq.0) write(6,61) (fname1(i),i=1,lname)
+            if (nid.eq.0) write(6,62) iposu,iposv,iposw,ipost,nouts
    61       FORMAT(/,2X,'Reading from file ',80A1)
    62       FORMAT(2X,'Columns for data, U,V,W,T,N: ',5I4)
             write(6,*) 'IFGNGM,IFGETX ccc',ifgngm,ifgetx,iposx,iposy
-C
+ 
 C           Make sure the requested data is present in this file....
-            IF (IPOSX.EQ.0) IFGETX=.FALSE.
-            IF (IPOSY.EQ.0) IFGETX=.FALSE.
-            IF (IPOSZ.EQ.0) IFGETZ=.FALSE.
-            IF (IPOSU.EQ.0) IFGETU=.FALSE.
-            IF (IPOSW.EQ.0) IFGETW=.FALSE.
-            IF (IPOSP.EQ.0) IFGETP=.FALSE.
-            IF (IPOST.EQ.0) IFGETT=.FALSE.
-                            IFGTIM=.TRUE.
-            DO 65 I=2,NPSCAL
-               IF (IPSPS(I).EQ.0) IFGTPS(I)=.FALSE.
-   65       CONTINUE
+            if (iposx.eq.0) ifgetx=.false.
+            if (iposy.eq.0) ifgetx=.false.
+            if (iposz.eq.0) ifgetz=.false.
+            if (iposu.eq.0) ifgetu=.false.
+            if (iposw.eq.0) ifgetw=.false.
+            if (iposp.eq.0) ifgetp=.false.
+            if (ipost.eq.0) ifgett=.false.
+                            ifgtim=.true.
+            do 65 i=2,npscal
+               if (ipsps(i).eq.0) ifgtps(i)=.false.
+   65       continue
             write(6,*) 'IFGNGM,IFGETX ddd',ifgngm,ifgetx,iposx,iposy
             write(6,*) 'IFGNGM,IFGETX 333',rdsize,' rdsize'
-C
 C           End of restart file header evaluation.
-C
-         ENDIF
+         endif
 C
 C        Read the error estimators
 C
          if_byte_sw = .false.
-         IF(NID.EQ.0)THEN
-            IF (IFFMAT) THEN
+         if(nid.eq.0)then
+            if (iffmat) then
              read(24,'(6g11.4)',end=1504)(cerror(1,i),i=1,neltr)
-             IF (PARAM(68).EQ.2.0) 
+             if (param(68).eq.2.0) 
      $       write(29,'(6g11.4)')(cerror(1,i),i=1,neltr)
-            ELSEIF(param(66).eq.1) then
+            elseif(param(66).eq.1) then
              read(24,end=1505)(cerror(1,i),i=1,neltr)
-            ELSEIF(rdsize.eq.4) then
+            elseif(rdsize.eq.4) then
 c            read test pattern to determine if byte-swapping is req'd
              call byte_read(bytetest,1)
              if_byte_sw = if_byte_swap_test(bytetest)
-            ELSEIF(rdsize.eq.8) then
+            elseif(rdsize.eq.8) then
              call byte_read(bytetest8,2)
              if_byte_sw = if_byte_swap_test8(bytetest8)
-            ENDIF
-         ENDIF
-            write(6,*) 'IFGNGM,IFGETX 1dd',ifgngm,ifgetx,iposx,iposy
+            endif
+         endif
+         write(6,*) 'IFGNGM,IFGETX 1dd',ifgngm,ifgetx,iposx,iposy
 C
 C        Read the current dump, double buffer so that we can
 C        fit the data on a distributed memory machine,
 C        and so we won't have to read the restart file twice
 C        in case of an incomplete data file.
 C
-         NXYZR = NXR*NYR*NZR
+         nxyzr = nxr*nyr*nzr
 C
 C        Read the data
 C
@@ -401,59 +476,157 @@ C
          if (neltr/i100.gt.100) i100 = i100*10
          if (neltr/i100.gt.100) i100 = i100*10
 
+         if(iffform) then
+           if(rdsize.eq.8) then
+              call prs('8 byte reads not yet supported in getfld')
+              call exitt
+           endif
+             
+           call byte_read(er,neltr)
+           if (if_byte_sw) call byte_reverse(er,neltr)
+
+           if (ifgetx) then
+              call byte_read(wk,nxyzr*neltr*ndim)
+              l=1
+              do e=1,neltr
+                ieg = er(e)
+                if (if_byte_sw) call byte_reverse(wk(l),ndim*nxyzr)
+                call copy4r(xdump(1,iposx),wk(l      ),nxyzr)
+                call copy4r(xdump(1,iposy),wk(l+nxyzr),nxyzr)
+                if(ndim.eq.3)
+     $            call copy4r(xdump(1,iposz),wk(l+2*nxyzr),nxyzr)
+                l=l+ndim*nxyzr
+
+                call mapdmp
+     $            (sdump(1,1),xdump(1,iposx),ieg,nxr,nyr,nzr,if_byte_sw)
+                call mapdmp
+     $            (sdump(1,2),xdump(1,iposy),ieg,nxr,nyr,nzr,if_byte_sw)
+                if (ndim.eq.3) call mapdmp
+     $            (sdump(1,3),xdump(1,iposz),ieg,nxr,nyr,nzr,if_byte_sw)
+              enddo
+           endif
+           if (ifgetu) then
+              call byte_read(wk,nxyzr*neltr*ndim)
+              l=1
+              do e=1,neltr
+                ieg = er(e)
+                if (if_byte_sw) call byte_reverse(wk(l),ndim*nxyzr)
+                call copy4r(xdump(1,iposu),wk(l),nxyzr)
+                call copy4r(xdump(1,iposv),wk(l+nxyzr),nxyzr)
+                if(ndim.eq.3)
+     $            call copy4r(xdump(1,iposw),wk(l+2*nxyzr),nxyzr)
+                l=l+ndim*nxyzr
+
+                call mapdmp
+     $            (sdump(1,4),xdump(1,iposu),ieg,nxr,nyr,nzr,if_byte_sw)
+                call mapdmp
+     $            (sdump(1,5),xdump(1,iposv),ieg,nxr,nyr,nzr,if_byte_sw)
+                if (ndim.eq.3) call mapdmp
+     $            (sdump(1,6),xdump(1,iposw),ieg,nxr,nyr,nzr,if_byte_sw)
+              enddo
+           endif
+           if (ifgetp) then
+              call byte_read(wk,nxyzr*neltr)
+              l=1
+              do e=1,neltr
+                 ieg = er(e)
+                 if (if_byte_sw) call byte_reverse(wk(l),nxyzr)
+                 call copy4r(xdump(1,iposp),wk(l),nxyzr)
+                 l=l+nxyzr
+
+                call mapdmp
+     $            (sdump(1,7),xdump(1,iposp),ieg,nxr,nyr,nzr,if_byte_sw)
+              enddo
+           endif
+          if (ifgett) then
+              call byte_read(wk,nxyzr*neltr)
+              l=1
+              do e=1,neltr
+                 ieg = er(e)
+                 if (if_byte_sw) call byte_reverse(wk(l),nxyzr)
+                 call copy4r(xdump(1,ipost),wk(l),nxyzr)
+                 l=l+nxyzr
+
+                 call mapdmp
+     $            (sdump(1,8),xdump(1,ipost),ieg,nxr,nyr,nzr,if_byte_sw)
+              enddo
+           endif
+           do k=1,npscal 
+              if (ifgtps(k)) then
+               call byte_read(wk,nxyzr*neltr)
+               l=1
+               do e=1,neltr
+                  ieg = er(e)
+                  if (if_byte_sw) call byte_reverse(wk(l),nxyzr)
+                  k8 = k+8
+                  call copy4r(xdump(1,ipsps(k)),wk(l),nxyzr)
+                  l=l+nxyzr
+                  call mapdmp
+     $              (sdump(1,k8),xdump(1,ipsps(k))
+     $              ,ieg,nxr,nyr,nzr,if_byte_sw)
+               enddo
+              endif
+           enddo
+           np4=min(npscal,4)
+           np4=npscal-4
+           np4=min(np4,4)
+           call byte_close()
+         goto 199
+         endif
+          
          do 200 ier=1,neltr
             ieg = ier
             if (ifsubset) ieg = isubset(ier) ! point to last element if not in
-            IF (NID.EQ.0) THEN
-c
-              IF (MOD(IEG,i100).EQ.0 .or. ieg.eq.1 ) 
+            if (nid.eq.0) then
+ 
+              if (mod(ieg,i100).eq.0 .or. ieg.eq.1 ) 
      $        WRITE(6,*) 'Reading',IEG,nouts,nxyzr,neltr
-c
-              IF (PARAM(66).EQ.0.0) THEN
+ 
+              if (param(66).eq.0.0) then
                  READ(24,*,ERR=1506,END=1506)
-     $           ((XDUMP(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
-              ELSEIF (PARAM(66).EQ.2.0) THEN
+     $           ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
+              elseif (param(66).eq.2.0) then
                  READ(24,201,ERR=1507,END=1507)
-     $           ((CDUMP(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
-  201            FORMAT(20A4)
-C
-C
-                 DO 202 II=1,NOUTS
-                    IF (PARAM(68).EQ.2.0) THEN
+     $           ((cdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
+  201            format(20a4)
+ 
+ 
+                 do 202 ii=1,nouts
+                    if (param(68).eq.2.0) then
 C                   .... fix up for Delta
-                       CALL VRNVERTq(XDUMP(1,II),NXYZR)
-                    ELSE
-                       CALL VRNVERT(XDUMP(1,II),NXYZR)
-                    ENDIF
-  202            CONTINUE
-C
-                 IF (PARAM(68).EQ.2.0) THEN
-C                   .... fix up for Delta
-                    DO 2021 II=1,NOUTS
- 2021               CALL VCNVERT(XDUMP(1,II),NXYZR)
-                    WRITE(29,201)
-     $             ((XDUMP(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
-                 ENDIF
-              ELSEIF(param(66).ge.3.and.rdsize.eq.4) then
+                       call vrnvertq(xdump(1,ii),nxyzr)
+                    else
+                       call vrnvert(xdump(1,ii),nxyzr)
+                    endif
+  202            continue
+ 
+                 if (param(68).eq.2.0) then
+c                   .... fix up for Delta
+                    do 2021 ii=1,nouts
+ 2021               call vcnvert(xdump(1,ii),nxyzr)
+                    write(29,201)
+     $             ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
+                 endif
+              elseif(param(66).ge.3.and.rdsize.eq.4) then
                  do ii=1,nouts
                     call byte_read(xdump(1,ii),nxyzr)
                  enddo
-              ELSEIF(param(66).ge.3.and.rdsize.eq.8) then
+              elseif(param(66).ge.3.and.rdsize.eq.8) then
                  call prs('8 byte reads not yet supported in getfld')
 c                do ii=1,nouts
 c                   call byte_read(xdump(1,ii),nxyzr)
 c                enddo
-              ELSE
-                 READ(24,ERR=1508,END=1508)
-     $           ((XDUMP(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
-              ENDIF
-              IFOK=.TRUE.
-            ENDIF
+              else
+                 read(24,err=1508,end=1508)
+     $           ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
+              endif
+              ifok=.true.
+            endif
 C
 C           Notify other processors that we've read the data OK.
 C
 c           CALL LBCAST(IFOK)
-            IF (.NOT.IFOK) GOTO 1600
+            if (.not.ifok) goto 1600
 C
 C           MAPDMP maps data from NXR to NX
 C           (and sends data to the appropriate processor.)
@@ -465,50 +638,50 @@ C
 c     write(6,*) ieg,ifgetx,ifgetz,iposx,iposz
 c    $        ,xdump(1,iposx),xdump(1,iposy),xdump(1,iposz)
             if (ieg.le.nelt) then
-              IF (IFGETX) CALL MAPDMP
-     $        (SDUMP(1,1),XDUMP(1,IPOSX),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETX) CALL MAPDMP
-     $        (SDUMP(1,2),XDUMP(1,IPOSY),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETZ) CALL MAPDMP
-     $        (SDUMP(1,3),XDUMP(1,IPOSZ),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETU) CALL MAPDMP
-     $        (SDUMP(1,4),XDUMP(1,IPOSU),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETU) CALL MAPDMP
-     $        (SDUMP(1,5),XDUMP(1,IPOSV),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETW) CALL MAPDMP
-     $        (SDUMP(1,6),XDUMP(1,IPOSW),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETP) CALL MAPDMP
-     $        (SDUMP(1,7),XDUMP(1,IPOSP),IEG,NXR,NYR,NZR,if_byte_sw)
-              IF (IFGETT) CALL MAPDMP
-     $        (SDUMP(1,8),XDUMP(1,IPOST),IEG,NXR,NYR,NZR,if_byte_sw)
+              if (ifgetx) call mapdmp
+     $        (sdump(1,1),xdump(1,iposx),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetx) call mapdmp
+     $        (sdump(1,2),xdump(1,iposy),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetz) call mapdmp
+     $        (sdump(1,3),xdump(1,iposz),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetu) call mapdmp
+     $        (sdump(1,4),xdump(1,iposu),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetu) call mapdmp
+     $        (sdump(1,5),xdump(1,iposv),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetw) call mapdmp
+     $        (sdump(1,6),xdump(1,iposw),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgetp) call mapdmp
+     $        (sdump(1,7),xdump(1,iposp),ieg,nxr,nyr,nzr,if_byte_sw)
+              if (ifgett) call mapdmp
+     $        (sdump(1,8),xdump(1,ipost),ieg,nxr,nyr,nzr,if_byte_sw)
               do i=1,npscal
                  i8 = i+8
-                 IF (ifgtps(i)) CALL MAPDMP
-     $              (SDUMP(1,i8),XDUMP(1,ipsps(i))
-     $              ,IEG,NXR,NYR,NZR,if_byte_sw)
+                 if (ifgtps(i)) call mapdmp
+     $              (sdump(1,i8),xdump(1,ipsps(i))
+     $              ,ieg,nxr,nyr,nzr,if_byte_sw)
               enddo
 C             passive scalars
-              NP4=MIN(NPSCAL,4)
-              NP4=NPSCAL-4
-              NP4=MIN(NP4,4)
-            ENDIF
-  200      CONTINUE               
+              np4=min(npscal,4)
+              np4=npscal-4
+              np4=min(np4,4)
+            endif
+  200      continue               
             write(6,*) 'IFGNGM,IFGETX 2dd',ifgngm,ifgetx,iposx,iposy
 C
 C        Successfully read a complete field, store it.
 C
 C        General geometry?
-         IF (IFGETX) IFGNGM=.TRUE.
+         if (ifgetx) ifgngm=.true.
          write(6,*) 'IFGNGM,IFGETX aaa',ifgngm,ifgetx
 C        passive scalars
-         NP4=MIN(4,NPSCAL)
-         NP4=NPSCAL-4
-         NP4=MIN(NP4,4)
-         TIME=RSTIME
-         ISTEP = ISTEPR
- 1000 CONTINUE
-      GOTO 1600
-C
+         np4=min(4,npscal)
+         np4=npscal-4
+         np4=min(np4,4)
+         time=rstime
+         istep = istepr
+ 1000 continue
+      goto 1600
+ 
 C     Else, end of file found - notify other processors.
  1500    write(s,1591) jdump,ieg,'A'
          goto 1599
@@ -528,38 +701,39 @@ C     Else, end of file found - notify other processors.
          goto 1599
  1508    write(s,1591) jdump,ieg,'I'
          goto 1599
+ 1509    write(s,1591) jdump,ieg,'J'
+         goto 1599
  1591    format
      $('Unable to read dump',I4,' near element',I8,1x,a1,'$')
 
  1599    ifok=.false.
          call prs(s)
 
- 1600 CONTINUE
-C
+ 1600 continue
       write(6,*) 'IFGNGM,IFGETX 3dd',ifgngm,ifgetx,iposx,iposy
       write(6,*) 'IFGNGM,IFGETX 3de',nel,neltr
-      IF (JDUMP.EQ.1.AND.NID.EQ.0) THEN
-         WRITE(6,1700) FNAME
-         WRITE(6,1701) IEG,IXYZ
-         WRITE(6,1702) 
-     $         ((XDUMP(JXYZ,II),II=1,NOUTS),JXYZ=IXYZ-1,IXYZ)
+      if (jdump.eq.1.and.nid.eq.0) then
+         write(6,1700) fname
+         write(6,1701) ieg,ixyz
+         write(6,1702) 
+     $         ((xdump(jxyz,ii),ii=1,nouts),jxyz=ixyz-1,ixyz)
  1700    FORMAT(5X,'WARNING:  No data read in for file ',A80)
  1701    FORMAT(5X,'Failed on  element',I4,',  point',I5,'.')
  1702    FORMAT(5X,'Last read dump:',/,5G15.7)
-      ELSE
-         IDUMP=JDUMP-1
-         NDUMPS=IDUMP
+      else
+         idump=jdump-1
+         ndumps=idump
          if (newdump.ne.1) idump=newdump
-C
-         IF (NID.EQ.0) WRITE(6,1800) IDUMP
+ 
+         if (nid.eq.0) write(6,1800) idump
  1800    FORMAT(2X,'Successfully read data from dump number',I3,'.')
-         TIME=RSTIME
-         ISTEP = ISTEPR
-         IDSTEP(IDUMP)=ISTEP
-         DMPTIM(IDUMP)=TIME
-      ENDIF
-c
-      IF (param(66).eq.3.) then
+         time=rstime
+         istep = istepr
+         idstep(idump)=istep
+         dmptim(idump)=time
+      endif
+ 
+      if (param(66).eq.3.) then
          close(unit=27)
          call byte_close()
       elseif (param(66).eq.4 .or. param(66).eq.5) then
@@ -568,20 +742,20 @@ c
          close(unit=24)
       endif
             write(6,*) 'IFGNGM,IFGETX 4dd',ifgngm,ifgetx,iposx,iposy
-c
-      GOTO 6000
-C
+ 
+      goto 6000
+ 
 C     Can't open file...
- 5000 CONTINUE
-      IF (NID.EQ.0) WRITE(6,5001) FNAME 
+ 5000 continue
+      if (nid.eq.0) write(6,5001) fname 
  5001 FORMAT(2X,'   *******   WARNING   *******    '
      $    ,/,2X,'   *******   WARNING   *******    '
      $    ,/,2X,'   Could not open fld file:'
      $    ,/,A80
      $   ,//,2X,'ASSUMING DEFAULT INITIAL CONDITIONS.')
 c     call exitt
-c
-      IF (param(66).eq.3.) then
+
+      if (param(66).eq.3.) then
          close(unit=27)
          call byte_close()
       elseif (param(66).eq.4 .or. param(66).eq.5) then
@@ -589,14 +763,14 @@ c
       else
          close(unit=24,err=5009)
       endif
-c
+ 
  5009 CONTINUE
-C
-C
+ 
+ 
 C     End of IFILE loop
  6000 CONTINUE
-C
-c
+  199 CONTINUE
+ 
       if (ifregz) then
          call prs('regularize$')
          write(6,*) 'call mapz: ',regdir
@@ -606,12 +780,12 @@ c
          call mapz(p,regdir)
          call mapz(t,regdir)
       endif
-C
-            write(6,*) 'IFGNGM,IFGETX 5dd',ifgngm,ifgetx,iposx,iposy
+ 
+      write(6,*) 'IFGNGM,IFGETX 5dd',ifgngm,ifgetx,iposx,iposy
       write(6,66) 
      $  ifavgupt,if_call_setw,if_call_coef,ifgetx,ifgngm,ifregz
    66 format('ifavgupt,call_setw,call_coef,ifgetx,ifgngm',7l4)
-c
+ 
       if (ifavgupt)                      call avg_uvwpt_regular
             write(6,*) 'IFGNGM,IFGETX 6dd',ifgngm,ifgetx,iposx,iposy
       if (ifgetx)                        call reset_xc
@@ -1009,3 +1183,12 @@ C
       return
       end
 c-----------------------------------------------------------------------
+      subroutine copy4r(a,b,n)
+      real   a(1)
+      real*4 b(1)
+      do i = 1, n
+         a(i) = b(i)
+      enddo
+      return
+      end
+C--------------------------------------------------------------------------
