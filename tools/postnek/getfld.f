@@ -252,8 +252,8 @@ c
            elseif(iffform) then
             call byte_read(hname,33)
            endif
-           write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
-           write(6,'a132') hname
+c          write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
+c          write(6,('a132')) hname
  
            nxr=nx
            nyr=ny
@@ -348,7 +348,7 @@ c           if (idump.eq.1) write(6,41) (excoder(j),j=1,10),idump
                   if(iffform) then
                     nouts=nouts +1
                     iposy=nouts
-                    ifgety=.true.
+c                   ifgety=.true.
                     if(if3d) then
                       nouts=nouts + 1
                       iposz=nouts
