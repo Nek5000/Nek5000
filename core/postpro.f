@@ -1249,6 +1249,8 @@ c
         call exitt
       endif
 
+      call prepost_map(0)  ! maps axisymm and pressure
+
       ! pack working array
       nflds = 0
       if(ifvo) then
@@ -1318,6 +1320,8 @@ c
      &      (fieldout(i,ip), i=1,nflds)
         enddo
       endif
+
+      call prepost_map(1)  ! maps back axisymm arrays
 
       if(nid.eq.0) write(6,*) 'done :: dump history points'
 
