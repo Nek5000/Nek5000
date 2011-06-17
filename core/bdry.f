@@ -1543,7 +1543,7 @@ C
          ISN(I)  = 1
          CANG(I) = 0.0
          SANG(I) = 0.0
-         IF (CBN.EQ.'E  '    .OR. CBN.EQ.'P  '    .OR. 
+         IF (CBN.EQ.'E  '.OR.CBN.EQ.'P  '.OR.cbn.eq.'p  '.or.
      $       CBN(1:1).EQ.'M' .OR. CBN(1:1).EQ.'m') GOTO 100
          NC = IFC
          IF (I.EQ.2) NC=IFCN
@@ -1998,7 +1998,7 @@ c-----------------------------------------------------------------------
       do e=1,nelt   ! possibly U or B field
       do f=1,nface
 
-         if (cbc(f,e,ifield).eq.'P  ') then
+         if (cbc(f,e,ifield).eq.'P  '.or.cbc(f,e,ifield).eq.'p  ') then
             call facind2 (js1,jf1,jskip1,js2,jf2,jskip2,f)
             k = 0
             do j2=js2,jf2,jskip2
@@ -2023,7 +2023,7 @@ c-----------------------------------------------------------------------
       do e=1,nelt   ! Check for turning angle
       do f=1,nface
 
-         if (cbc(f,e,ifield).eq.'P  ') then
+         if (cbc(f,e,ifield).eq.'P  '.or.cbc(f,e,ifield).eq.'p  ') then
 
             call facindr(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f) ! restricted indx
             snorm = 0.

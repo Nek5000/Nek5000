@@ -1155,7 +1155,7 @@ c
 c              "left" bc
 c
                cb = cbc(iface,ie,ifld)
-               if (cb.eq.'E  '.or.cb.eq.'P  ') then
+               if (cb.eq.'E  '.or.cb.eq.'P  '.or.cb.eq.'p  ') then
 c                 Internal
                   ic1 = 1
                elseif (mask(k1,1,1,ie).eq.0) then
@@ -1170,7 +1170,7 @@ c
 c              "right" bc
 c
                cb = cbc(jface,ie,ifld)
-               if (cb.eq.'E  '.or.cb.eq.'P  ') then
+               if (cb.eq.'E  '.or.cb.eq.'P  '.or.cb.eq.'p  ') then
 c                 Internal
                   jc1 = 1
                elseif (mask(k2,1,1,ie).eq.0) then

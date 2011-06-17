@@ -3027,7 +3027,7 @@ c     (1) Face n-t transformation
       do e=1,nelfld(ifield)
       do f=1,nface
 
-         if (cbc(f,e,ifield) .eq. 'P  ') then
+         if(cbc(f,e,ifield) .eq. 'P  '.or.cbc(f,e,ifield).eq.'p  ')then
 
             call facind2 (js1,jf1,jskip1,js2,jf2,jskip2,f)
             if (idir.eq.1) then

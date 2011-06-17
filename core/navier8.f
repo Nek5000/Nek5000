@@ -18,6 +18,11 @@ c
          call setvert2d(glo_num,ngv,nx,nel,vertex,ifcenter)
       endif
 
+c     Check for single-element periodicity 'p' bc
+      nz = 1
+      if (if3d) nz = nx
+      call check_p_bc(glo_num,nx,nx,nz,nel)
+
       if(nid.eq.0) write(6,*) 'call usrsetvert'
       call usrsetvert(glo_num,nel,nx,nx,nx)
       if(nid.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
@@ -2526,7 +2531,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
 c
       subroutine map_to_crs(a,na,b,nb,if3d,w,ldw)
 c
@@ -2560,7 +2564,62 @@ c
       endif
 c
       call specmpn(a,na,b,nb,iba,ibat,if3d,w,ldw)
-c
+
       return
       end
+c-----------------------------------------------------------------------
+      subroutine check_p_bc(glo_num,nx,ny,nz,nel)
 
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer*8 glo_num(nx,ny,nz,nel)
+      integer*8 gmn
+
+      integer e,f,fo,ef,efo
+      integer eface0(6)
+      save    eface0
+      data    eface0 / 4,2,1,3,5,6 /
+
+      ifld = 2
+      if (ifflow) ifld = 1
+
+      nface=2*ndim
+      do e=1,nelt
+      do f=1,nface,2
+         fo  = f+1
+         ef  = eface0(f)
+         efo = eface0(fo)
+         if (cbc(ef,e,ifld).eq.'p  '.and.cbc(efo,e,ifld).eq.'p  ') then
+            if (f.eq.1) then  ! r=-/+1
+               do k=1,nz
+               do j=1,ny
+                  gmn = min(glo_num(1,j,k,e),glo_num(nx,j,k,e))
+                  glo_num(1 ,j,k,e) = gmn
+                  glo_num(nx,j,k,e) = gmn
+               enddo
+               enddo
+            elseif (f.eq.3) then  ! s=-/+1
+               do k=1,nz
+               do i=1,nx
+                  gmn = min(glo_num(i,1,k,e),glo_num(i,ny,k,e))
+                  glo_num(i,1 ,k,e) = gmn
+                  glo_num(i,ny,k,e) = gmn
+               enddo
+               enddo
+            else
+               do j=1,ny
+               do i=1,nx
+                  gmn = min(glo_num(i,j,1,e),glo_num(i,j,nz,e))
+                  glo_num(i,j,1 ,e) = gmn
+                  glo_num(i,j,nz,e) = gmn
+               enddo
+               enddo
+            endif
+         endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------

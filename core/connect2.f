@@ -1345,7 +1345,7 @@ C
       DO 100 IEL=1,NELT
       DO 100 IFACE=1,NFACES
          CB =CBC(IFACE,IEL,IFIELD)
-         IF (CB.EQ.'P  ') 
+         IF (CB.EQ.'P  '.or.cb.eq.'p  ') 
      $         CALL FACEV(QMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
   100 CONTINUE
       CALL DSOP(QMASK,'MUL',NX1,NY1,NZ1)
@@ -1574,7 +1574,7 @@ C
       DO 100 IEL=1,NELT
       DO 100 IFACE=1,NFACES
          CB =CBC(IFACE,IEL,IFIELD)
-         IF (CB.EQ.'P  ') 
+         IF (CB.EQ.'P  '.or.cb.eq.'p  ') 
      $         CALL FACEV(QMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
   100 CONTINUE
       call dsop(QMASK,'MUL',NX1,NY1,NZ1)
