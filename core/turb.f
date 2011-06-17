@@ -84,7 +84,7 @@ C
          BC2 = BC(2,IFACE,IEL,IFLD)
          BC3 = BC(3,IFACE,IEL,IFLD)
 C
-         IF (CB.EQ.'E  ' .OR. CB.EQ.'P  ') THEN
+         IF (CB.EQ.'E  ' .OR. CB.EQ.'P  '.or.cb.eq.'p  ') THEN
             CBC(  IFACE,IEL,IFLDK) = CB
             BC (1,IFACE,IEL,IFLDK) = BC1
             BC (2,IFACE,IEL,IFLDK) = BC2

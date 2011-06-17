@@ -793,6 +793,7 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,e,ifield).eq.'msi') ibc = 0
          if (cbc(ied,e,ifield).eq.'MSI') ibc = 0
          if (cbc(ied,e,ifield).eq.'P  ') ibc = 0
+         if (cbc(ied,e,ifield).eq.'p  ') ibc = 0
          if (cbc(ied,e,ifield).eq.'O  ') ibc = 1
          if (cbc(ied,e,ifield).eq.'ON ') ibc = 1
          if (cbc(ied,e,ifield).eq.'o  ') ibc = 1
