@@ -100,8 +100,11 @@ c
       include 'MASS'
       include 'INPUT'
       include 'TSTEP'
-                                               call makeufp
-      if (ifnav.and.(.not.ifchar))             call advabp
+      include 'ADJOINT'
+ 
+                                              call makeufp
+      if (ifnav.and.(.not.ifchar).and.(.not.ifadj))call advabp
+      if (ifnav.and.(.not.ifchar).and.(     ifadj))call advabp_adjoint
       if (iftran)                              call makextp
                                                call makebdfp
 c
@@ -198,6 +201,203 @@ c
 c
       endif
 c
+      return
+      end
+c--------------------------------------------------------------------
+      subroutine advabp_adjoint
+C
+C     Eulerian scheme, add convection term to forcing function
+C     at current time step for backward part of adjoint: 
+C     Convective term is now (U.Grad)u - (Grad U)^T .u
+C     instead of (u.Grad)U + (U.Grad)u in above subroutine advabp
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'MASS'
+      include 'TSTEP'
+      include 'GEOM'
+      include 'ADJOINT'
+C
+      COMMON /SCRNS/ TA1 (LX1*LY1*LZ1*LELV)
+     $ ,             TA2 (LX1*LY1*LZ1*LELV)
+     $ ,             TA3 (LX1*LY1*LZ1*LELV)
+     $ ,             TB1 (LX1*LY1*LZ1*LELV)
+     $ ,             TB2 (LX1*LY1*LZ1*LELV)
+     $ ,             TB3 (LX1*LY1*LZ1*LELV)
+
+
+      real fact,factx,facty
+C
+      ntot1 = nx1*ny1*nz1*nelv
+      ntot2 = nx2*ny2*nz2*nelv   !dimensionn arrays 
+      NTOT      = NX1*NY1*NZ1*NELT
+
+c
+      if (if3d) then
+         call opcopy  (tb1,tb2,tb3,vx,vy,vz)                   ! Save velocity
+         call opcopy  (vx,vy,vz,vxp(1,jp),vyp(1,jp),vzp(1,jp)) ! U <-- u
+c     
+         call convop_adj  (ta1,ta2,ta3,tb1,tb2,tb3,vx,vy,vz) ! u.grad U^T
+
+         call opcopy  (vx,vy,vz,tb1,tb2,tb3)  ! Restore velocity
+c
+         do i=1,ntot1
+            tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
+            bfxp(i,jp) = bfxp(i,jp)-tmp*ta1(i)
+            bfyp(i,jp) = bfyp(i,jp)-tmp*ta2(i)
+            bfzp(i,jp) = bfzp(i,jp)-tmp*ta3(i)
+         enddo
+c
+c               
+c
+         call convop  (ta1,vxp(1,jp))       !  U.grad u
+         call convop  (ta2,vyp(1,jp))
+         call convop  (ta3,vzp(1,jp))
+c
+         do i=1,ntot1
+            tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
+            bfxp(i,jp) = bfxp(i,jp)+tmp*ta1(i)
+            bfyp(i,jp) = bfyp(i,jp)+tmp*ta2(i)
+            bfzp(i,jp) = bfzp(i,jp)+tmp*ta3(i)
+         enddo
+c
+      else  ! 2D
+
+         call opcopy  (tb1,tb2,tb3,vx,vy,vz)                   ! Save velocity
+         call opcopy  (vx,vy,vz,vxp(1,jp),vyp(1,jp),vzp(1,jp)) 
+
+         call convop_adj  (ta1,ta2,ta3,tb1,tb2,tb3,vx,vy,vz) ! u.((grad U)^T)
+
+         call opcopy  (vx,vy,vz,tb1,tb2,tb3) ! Restore velocity
+
+         do i=1,ntot1
+            tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
+            bfxp(i,jp) = bfxp(i,jp)-tmp*ta1(i)
+            bfyp(i,jp) = bfyp(i,jp)-tmp*ta2(i)
+         enddo
+
+         call convop  (ta1,vxp(1,jp))       !  U.grad u
+         call convop  (ta2,vyp(1,jp))
+c
+         do i=1,ntot1
+            tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)
+            bfxp(i,jp) = bfxp(i,jp)+tmp*ta1(i)
+            bfyp(i,jp) = bfyp(i,jp)+tmp*ta2(i)
+         enddo
+
+      endif
+c
+      return
+      end
+c--------------------------------------------------------------------
+      subroutine convop_adj  (bdux,bduy,bduz,udx,udy,udz,cx,cy,cz)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
+      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
+     $     , uf1(ltd),uf2(ltd),uf3(ltd),uf4(ltd),uf5(ltd),uf6(ltd)
+      real urx(ltd),usx(ltd),utx(ltd)
+      real ury(ltd),usy(ltd),uty(ltd)
+      real urz(ltd),usz(ltd),utz(ltd)
+      real bdux(1),bduy(1),bduz(1),u(1),cx(1),cy(1),cz(1)
+      real udx(1),udy(1),udz(1)
+      logical ifuf,ifcf            ! u and/or c already on fine mesh?
+      integer e
+      real bdrx(1), bdry(1),bdrz (1)
+
+      call set_dealias_rx
+      nxyz1 = nx1*ny1*nz1
+c     AM DING DING 
+      nxyzd = lxd*lyd*lzd
+      nxyzu = nxyz1
+      nxyzc = nxyz1
+      ntot1=nx1*ny1*nz1*nelv
+      ic = 1                    ! pointer to vector field C
+      iu = 1                    ! pointer to scalar field u
+      ib = 1                    ! pointer to scalar field Bdu
+      if(if3d)then
+         do e=1,nelv
+                                ! map coarse velocity to fine mesh (C-->F)
+            call intp_rstd(fx,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
+            call intp_rstd(fy,cy(ic),nx1,nxd,if3d,0) 
+            call intp_rstd(fz,cz(ic),nx1,nxd,if3d,0) 
+               
+            call intp_rstd(uf1,udx(iu),nx1,nxd,if3d,0) ! 0 --> forward
+            call grad_rst(urx,usx,utx,uf1,nxd,if3d)
+            
+            call intp_rstd(uf2,udy(iu),nx1,nxd,if3d,0) 
+            call grad_rst(ury,usy,uty,uf2,nxd,if3d)
+            
+            call intp_rstd(uf3,udz(iu),nx1,nxd,if3d,0) 
+            call grad_rst(urz,usz,utz,uf3,nxd,if3d)
+            
+            do i=1,nxyzd        ! mass matrix included, per DFM (4.8.5)
+               uf4(i)=fx(i)*(rx(i,1,e)*urx(i)+rx(i,4,e)*usx(i)
+     $              +rx(i,7,e)*utx(i))+
+     $              fy(i)*(rx(i,1,e)*ury(i)+rx(i,4,e)*usy(i)
+     $              +rx(i,7,e)*uty(i))+
+     $              fz(i)*(rx(i,1,e)*urz(i)+rx(i,4,e)*usz(i)
+     $              +rx(i,7,e)*utz(i))
+               uf5(i)=fx(i)*(rx(i,2,e)*urx(i)+rx(i,5,e)*usx(i)
+     $              +rx(i,8,e)*utx(i))+
+     $              fy(i)*(rx(i,2,e)*ury(i)+rx(i,5,e)*usy(i)
+     $              +rx(i,8,e)*uty(i))+
+     $              fz(i)*(rx(i,2,e)*urz(i)+rx(i,5,e)*usz(i)
+     $              +rx(i,8,e)*utz(i))
+               uf6(i)=fx(i)*(rx(i,3,e)*urx(i)+rx(i,6,e)*usx(i)
+     $              +rx(i,9,e)*utx(i))+
+     $              fy(i)*(rx(i,3,e)*ury(i)+rx(i,6,e)*usy(i)
+     $              +rx(i,9,e)*uty(i))+
+     $              fz(i)*(rx(i,3,e)*urz(i)+rx(i,6,e)*usz(i)
+     $              +rx(i,9,e)*utz(i))
+            enddo
+
+            call intp_rstd(bdux(ib),uf4,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(bduy(ib),uf5,nx1,nxd,if3d,1)
+            call intp_rstd(bduz(ib),uf6,nx1,nxd,if3d,1)
+
+            ic = ic + nxyzc
+            iu = iu + nxyzu
+            ib = ib + nxyz1
+         enddo
+         call invcol2     (bdux,bm1,ntot1) ! local mass inverse
+         call invcol2     (bduy,bm1,ntot1) ! local mass inverse
+         call invcol2     (bduz,bm1,ntot1) ! local mass inverse
+      else
+         do e=1,nelv
+
+                               ! map coarse velocity to fine mesh (C-->F)
+            call intp_rstd(fx,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
+            call intp_rstd(fy,cy(ic),nx1,nxd,if3d,0) 
+
+            call intp_rstd(uf1,udx(iu),nx1,nxd,if3d,0) 
+            call grad_rst(urx,usx,utx,uf1,nxd,if3d)
+
+            call intp_rstd(uf2,udy(iu),nx1,nxd,if3d,0) 
+            call grad_rst(ury,usy,uty,uf2,nxd,if3d)
+
+            do i=1,nxyzd       
+               uf4(i) = fx(i)*(rx(i,1,e)*urx(i)+rx(i,3,e)*usx(i))+
+     $              fy(i)*(rx(i,1,e)*ury(i)+rx(i,3,e)*usy(i))
+               uf5(i) = fx(i)*(rx(i,2,e)*urx(i)+rx(i,4,e)*usx(i))+
+     $              fy(i)*(rx(i,2,e)*ury(i)+rx(i,4,e)*usy(i))
+            enddo
+
+            call intp_rstd(bdux(ib),uf4,nx1,nxd,if3d,1)
+            call intp_rstd(bduy(ib),uf5,nx1,nxd,if3d,1)
+
+            ic = ic + nxyzc
+            iu = iu + nxyzu
+            ib = ib + nxyz1
+         end do
+         call invcol2     (bdux,bm1,ntot1) ! local mass inverse
+         call invcol2     (bduy,bm1,ntot1) ! local mass inverse
+      end if
+
+
       return
       end
 c--------------------------------------------------------------------

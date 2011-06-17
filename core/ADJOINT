@@ -1,0 +1,25 @@
+C
+C	ADJOINT VARIABLES
+C
+C
+      COMMON /ADJ_REAL/ VXADJ     (LX1,LY1,LZ1,LELV)
+     $               , VYADJ     (LX1,LY1,LZ1,LELV)
+     $               , VZADJ     (LX1,LY1,LZ1,LELV)
+     $               , VXADJOLD     (LX1,LY1,LZ1,LELV)
+     $               , VYADJOLD     (LX1,LY1,LZ1,LELV)
+     $               , VZADJOLD     (LX1,LY1,LZ1,LELV)
+     $               , ENDTIME, ADJTOL
+
+      REAL        ENDTIME,ADJTOL
+
+      COMMON /ADJ_INTEGER/ NPASSADJ, MAXPASSADJ
+      INTEGER  NPASSADJ, MAXPASSADJ
+
+      COMMON /ADJ_LOGICAL/ IFADJ
+      LOGICAL IFADJ
+
+
+
+
+
+
