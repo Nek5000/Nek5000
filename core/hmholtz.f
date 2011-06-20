@@ -638,6 +638,7 @@ c
          n = nx1*ny1*nz1*nelv
          call copy      (x,f,n)
          call hmh_gmres (x,h1,h2,mult,iter)
+         niterhm = iter
          return
       endif
 c      write(6,*) ifsplit,name,param(44),' P44 C'
