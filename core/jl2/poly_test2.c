@@ -37,8 +37,9 @@ typedef double real;
 /* precondition: n >= 0 */
 static real legendre(int n, real x)
 {
-  real p[2] = {1, x};
+  real p[2];
   int i;
+  p[0]=1, p[1]=x;
   for(i=1; i<n; i+=2) {
     p[0] = ((2*i+1)*x*p[1]- i   *p[0])/(i+1);
     p[1] = ((2*i+3)*x*p[0]-(i+1)*p[1])/(i+2);
@@ -49,8 +50,9 @@ static real legendre(int n, real x)
 /* precondition: n > 0 */
 static real legendre_d1(int n, real x)
 {
-  real p[2] = {3*x, 1};
+  real p[2];
   int i;
+  p[0]=3*x, p[1]=1;
   for(i=2; i<n; i+=2) {
     p[1] = ((2*i+1)*x*p[0]-(i+1)*p[1])/i;
     p[0] = ((2*i+3)*x*p[1]-(i+2)*p[0])/(i+1);
@@ -61,8 +63,9 @@ static real legendre_d1(int n, real x)
 /* precondition: n > 1 */
 static real legendre_d2(int n, real x)
 {
-  real p[2] = {3, 15*x};
+  real p[2];
   int i;
+  p[0]=3, p[1]=15*x;
   for(i=3; i<n; i+=2) {
     p[0] = ((2*i+1)*x*p[1]-(i+2)*p[0])/(i-1);
     p[1] = ((2*i+3)*x*p[0]-(i+3)*p[1])/i;

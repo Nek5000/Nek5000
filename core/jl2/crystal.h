@@ -9,14 +9,14 @@
 #define crystal_free   PREFIXED_NAME(crystal_free  )
 #define crystal_router PREFIXED_NAME(crystal_router)
 
-typedef struct {
+struct crystal {
   struct comm comm;
   buffer data, work;
   uint n;
-} crystal_data;
+};
 
-void crystal_init(crystal_data *p, const struct comm *comm);
-void crystal_free(crystal_data *p);
-void crystal_router(crystal_data *p);
+void crystal_init(struct crystal *cr, const struct comm *comm);
+void crystal_free(struct crystal *cr);
+void crystal_router(struct crystal *cr);
 
 #endif

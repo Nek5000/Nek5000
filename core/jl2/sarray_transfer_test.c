@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -21,8 +22,8 @@ int main(int narg, char *arg[])
 {
   comm_ext world; int np;
   struct comm comm;
-  crystal_data crystal;
-  array A; r_work *row;
+  struct crystal crystal;
+  struct array A; r_work *row;
   uint i;
 #ifdef MPI
   MPI_Init(&narg,&arg);
@@ -45,7 +46,7 @@ int main(int narg, char *arg[])
       (int)comm.id,(int)row[i].i,(int)row[i].l,(int)row[i].p,row[i].d);
   }
   
-  sarray_transfer(r_work,&A, p, &crystal);
+  sarray_transfer(r_work,&A, p,1, &crystal);
 
   row=A.ptr;
   for(i=0;i<A.n;++i)

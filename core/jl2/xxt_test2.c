@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -19,7 +20,7 @@ int main(int narg, char* arg[])
   uint i;
   double *x, *b, *x2;
 
-  crs_data *crs;
+  struct crs_data *crs;
   comm_ext world; int id,np;
   struct comm comm;
 #ifdef MPI

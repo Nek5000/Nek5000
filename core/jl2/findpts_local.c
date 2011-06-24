@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "c99.h"
 #include "types.h"
 #include "name.h"

@@ -245,4 +245,11 @@ static void comm_wait(comm_req *req, int n)
 #endif
 }
 
+static void comm_bcast(const struct comm *c, void *p, size_t n, uint root)
+{
+#ifdef MPI
+  MPI_Bcast(p,n,MPI_UNSIGNED_CHAR,root,c->c);
+#endif
+}
+
 #endif

@@ -20,16 +20,16 @@
   
   Example Usage:
   
-    crystal_data crystal;
+    struct crystal cr;
     
-    crystal_init(&crystal, &comm);  // makes an internal copy of comm
+    crystal_init(&cr, &comm);  // makes an internal copy of comm
     
     crystal.n = ... ;  // total number of integers
-    buffer_reserve(&crystal.data, crystal.n * sizeof(uint));
-    ... // fill crystal.data.ptr with messages
-    crystal_router(&crystal);
+    buffer_reserve(&cr.data, crystal.n * sizeof(uint));
+    ... // fill cr.data.ptr with messages
+    crystal_router(&cr);
     
-    crystal_free(&crystal);
+    crystal_free(&cr);
     
   ----------------------------------------------------------------------------*/
 
@@ -47,13 +47,13 @@
 #define crystal_free   PREFIXED_NAME(crystal_free  )
 #define crystal_router PREFIXED_NAME(crystal_router)
 
-typedef struct {
+struct crystal {
   struct comm comm;
   buffer data, work;
   uint n;
-} crystal_data;
+};
 
-void crystal_init(crystal_data *p, const struct comm *comm)
+void crystal_init(struct crystal *p, const struct comm *comm)
 {
   comm_dup(&p->comm, comm);
   buffer_init(&p->data,1000);
@@ -61,7 +61,7 @@ void crystal_init(crystal_data *p, const struct comm *comm)
   p->n=0;
 }
 
-void crystal_free(crystal_data *p)
+void crystal_free(struct crystal *p)
 {
   comm_free(&p->comm);
   buffer_free(&p->data);
@@ -74,7 +74,7 @@ static void uintcpy(uint *dst, const uint *src, uint n)
   else if(dst!=src) memmove(dst,src,n*sizeof(uint));
 }
 
-static uint crystal_move(crystal_data *p, uint cutoff, int send_hi)
+static uint crystal_move(struct crystal *p, uint cutoff, int send_hi)
 {
   uint len, *src, *end;
   uint *keep = p->data.ptr, *send;
@@ -96,7 +96,7 @@ static uint crystal_move(crystal_data *p, uint cutoff, int send_hi)
   return send - (uint*)p->work.ptr;
 }
 
-static void crystal_exchange(crystal_data *p, uint send_n, uint targ,
+static void crystal_exchange(struct crystal *p, uint send_n, uint targ,
                              int recvn, int tag)
 {
   comm_req req[3];
@@ -122,7 +122,7 @@ static void crystal_exchange(crystal_data *p, uint send_n, uint targ,
   comm_wait(req,recvn+1);
 }
 
-void crystal_router(crystal_data *p)
+void crystal_router(struct crystal *p)
 {
   uint bl=0, bh, nl;
   uint id = p->comm.id, n=p->comm.np;

@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -27,7 +28,7 @@ int main()
   uint Arp[] = {0,     3,     6,     9,     12,      16,    19,    22,        27,      31,    36};
   real b[] = {1,2,3,4,5, 6,7,8,9,10};
 */
-  sparse_cholesky_data data;
+  struct sparse_cholesky data;
   buffer buf;
   buffer_init(&buf,4);
   sparse_cholesky_factor(n,Arp,Aj,A,&data,&buf);

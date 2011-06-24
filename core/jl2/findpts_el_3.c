@@ -751,7 +751,7 @@ static void newton_face(struct findpts_el_pt_3 *const out,
 {
   const double tr = p->tr;
   double bnd[4];
-  double r[2], dr[2];
+  double r[2], dr[2]={0,0};
   unsigned mask, new_flags;
   double v, tv; unsigned i;
   double A[3], y[2], r0[2];

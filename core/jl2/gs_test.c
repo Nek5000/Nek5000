@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -15,7 +16,7 @@ const gs_dom dom = gs_double;
 
 static void test(const struct comm *comm)
 {
-  gs_data *gsh;
+  struct gs_data *gsh;
   const uint np = comm->np;
   slong *id = tmalloc(slong,np+4);
   T *v = tmalloc(T,np+4);
@@ -25,7 +26,7 @@ static void test(const struct comm *comm)
   id[np+1] = comm->id+1;
   id[np+2] = comm->id+1;
   id[np+3] = np-comm->id;
-  gsh = gs_setup(id,np+4,comm);
+  gsh = gs_setup(id,np+4,comm,0,gs_auto,1);
   free(id);
   
   for(i=0;i<np+4;++i) v[i] = 1;

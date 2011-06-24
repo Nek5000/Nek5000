@@ -2,7 +2,7 @@
 A high-level view of the code in this directory is as follows. See each header
 file listed for more documentation.
 
-The following three headers are fundamental to most of the code.
+The following headers are fundamental to most of the code.
 
   name.h:    a given prefix is added to all external symbols;
              determines how FORTRAN routines are named
@@ -16,9 +16,7 @@ The Gather/Scatter library top-level interface is defined in "gs.h".
 The file "gs_defs.h" defines the datatypes and operations that it supports.
 
 There are two coarse solvers (XXT and AMG), which are not currently very well
-documented. The AMG implementation is missing; it is the only code in ../jl that
-has not been superseded (it has been hacked to use the gs code from this
-directory). The interface is given in "crs.h". 
+documented. The interface is given in "crs.h". 
  
 "findpts" is documented in "findpts.c". The idea is that during a run of an
 SEM code, we have a geometry map
@@ -57,12 +55,15 @@ possibly useful on their own.
 All of the preprocessor macros that affect compilation are:
   name.h:  PREFIX="..."    prefix added to all C external symbols
           FPREFIX="..."    prefix added to all FORTRAN routines
-	  UPCASE, UNDERSCORE   determines FORTRAN naming convention
+    UPCASE, UNDERSCORE   determines FORTRAN naming convention
   types.h: USE_LONG, USE_LONG_LONG, GLOBAL_LONG, GLOBAL_LONG_LONG
            determine the integer types used by all code
-  mem.h: PRINT_MALLOCS=1   (print all mem mngmt to stderr)
+  mem.h: PRINT_MALLOCS=1   (print all mem mngmt to stdout)
   comm.h: MPI  (use MPI when defined;
                 otherwise, use a dummy single-proc implementation)
   tensor.h: USE_CBLAS, USE_NAIVE_BLAS
             (select BLAS implementation; default is Nek's mxm)
   fail.c: NO_NEK_EXITT    when defined, don't call Nek's exitt routine
+  amg.c: AMG_BLOCK_ROWS   number of rows to read at a time (default=1200)
+         GS_TIMING        record timings for the matrix multiplies
+         GS_BARRIER       use a barrier to improve the quality of the timings

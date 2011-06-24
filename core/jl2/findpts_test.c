@@ -17,7 +17,7 @@
 #include "crystal.h"
 #include "sarray_transfer.h"
 
-#define D 2
+#define D 3
 
 #if D==3
 #define INITD(a,b,c) {a,b,c}
@@ -70,9 +70,9 @@ static double mesh[D][NEL*MULD(NR,NS,NT)];
 static const double *const elx[D] = INITD(mesh[0],mesh[1],mesh[2]);
 
 struct pt_data { double x[D], r[D], dist2, ex[D]; uint code, proc, el; };
-static array testp;
+static struct array testp;
 
-static crystal_data cr;
+static struct crystal cr;
 
 static double quad_eval(const double coef[MULD(3,3,3)], const double r[D])
 {
@@ -187,7 +187,7 @@ static void test_mesh(void)
     }
     #endif
   }
-  sarray_transfer(struct pt_data,&testp,proc,&cr);
+  sarray_transfer(struct pt_data,&testp,proc,1,&cr);
   if(0)
     printf("%u: %u shuffled points\n",id,(unsigned)testp.n);
 }

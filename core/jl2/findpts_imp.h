@@ -110,7 +110,8 @@ static void set_local_mask(unsigned char *const local_mask,
   }
 }
 
-static void fill_hash(array *const hash, const unsigned char *const local_mask,
+static void fill_hash(struct array *const hash,
+                      const unsigned char *const local_mask,
                       const ulong local_base[D], const uint local_n[D],
                       const ulong hn, const uint np)
 {
@@ -132,7 +133,7 @@ static void fill_hash(array *const hash, const unsigned char *const local_mask,
 }
 
 static void table_from_hash(struct hash_data *const p,
-                            array *const hash,
+                            struct array *const hash,
                             const uint np, buffer *buf)
 {
   const ulong hn = p->hash_n;
@@ -160,11 +161,11 @@ static void hash_build(struct hash_data *const p,
                        const struct local_hash_data *const lp,
                        const struct obbox *const obb, const uint nel,
                        const uint hash_size,
-                       crystal_data *cr)
+                       struct crystal *cr)
 {
   ulong local_base[D]; uint local_n[D], local_ntot=1;
   unsigned char *local_mask;
-  array hash; uint nc;
+  struct array hash; uint nc;
   unsigned d;
   hash_bb(p,lp,&cr->comm,hash_size);
   for(d=0;d<D;++d) {
@@ -188,7 +189,7 @@ static void hash_build(struct hash_data *const p,
   array_init(struct proc_index,&hash,nc), hash.n=nc;
   fill_hash(&hash,local_mask,local_base,local_n,p->hash_n,cr->comm.np);
   free(local_mask);
-  sarray_transfer(struct proc_index,&hash,proc,cr);
+  sarray_transfer(struct proc_index,&hash,proc,1,cr);
   table_from_hash(p,&hash,cr->comm.np,&cr->data);
   array_free(&hash);
 }
@@ -196,7 +197,7 @@ static void hash_build(struct hash_data *const p,
 static void hash_free(struct hash_data *p) { free(p->offset); }
 
 struct findpts_data {
-  crystal_data cr;
+  struct crystal cr;
   struct findpts_local_data local;
   struct hash_data hash;
 };
@@ -250,7 +251,7 @@ void findpts(      uint   *const  code_base   , const unsigned  code_stride   ,
              const uint npt, struct findpts_data *const fd)
 {
   const uint np = fd->cr.comm.np, id=fd->cr.comm.id;
-  array hash_pt, src_pt, out_pt;
+  struct array hash_pt, src_pt, out_pt;
   /* look locally first */
   if(npt) findpts_local( code_base, code_stride,
                            el_base,   el_stride,
@@ -283,7 +284,7 @@ void findpts(      uint   *const  code_base   , const unsigned  code_stride   ,
       proc  =         (uint*)(      (char*)proc +proc_stride   );
     }
     hash_pt.n = pt - (struct src_pt*)hash_pt.ptr;
-    sarray_transfer(struct src_pt,&hash_pt,proc,&fd->cr);
+    sarray_transfer(struct src_pt,&hash_pt,proc,1,&fd->cr);
   }
   /* look up points in hash cells, route to possible procs */
   {
@@ -313,7 +314,7 @@ void findpts(      uint   *const  code_base   , const unsigned  code_stride   ,
     #ifdef DIAGNOSTICS
     printf("(proc %u) hashed; routing %u/%u\n",id,(unsigned)src_pt.n,count);
     #endif
-    sarray_transfer_ext(struct src_pt,&src_pt,proc,&fd->cr);
+    sarray_transfer_ext(struct src_pt,&src_pt,proc,sizeof(uint),&fd->cr);
     free(proc);
   }
   /* look for other procs' points, send back */
@@ -344,7 +345,7 @@ void findpts(      uint   *const  code_base   , const unsigned  code_stride   ,
     #ifdef DIAGNOSTICS
     printf("(proc %u) sending back %u found points\n",id,(unsigned)out_pt.n);
     #endif
-    sarray_transfer(struct out_pt,&out_pt,proc,&fd->cr);
+    sarray_transfer(struct out_pt,&out_pt,proc,1,&fd->cr);
   }
   /* merge remote results with user data */
   {
@@ -385,7 +386,7 @@ void findpts_eval(
   const uint npt,
   const double *const in, struct findpts_data *const fd)
 {
-  array src, outpt;
+  struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
   {
     uint index;
@@ -408,7 +409,7 @@ void findpts_eval(
       el   = (const   uint*)((const char*)el  +  el_stride);
     }
     src.n = pt - (struct eval_src_pt*)src.ptr;
-    sarray_transfer(struct eval_src_pt,&src,proc,&fd->cr);
+    sarray_transfer(struct eval_src_pt,&src,proc,1,&fd->cr);
   }
   /* evaluate points, send back */
   {
@@ -426,7 +427,7 @@ void findpts_eval(
                         spt->r   ,sizeof(struct eval_src_pt),
                        src.n, in,&fd->local);
     array_free(&src);
-    sarray_transfer(struct eval_out_pt,&outpt,proc,&fd->cr);
+    sarray_transfer(struct eval_out_pt,&outpt,proc,1,&fd->cr);
   }
   /* copy results to user data */
   {

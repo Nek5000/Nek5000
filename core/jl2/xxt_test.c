@@ -48,7 +48,7 @@ const ulong x_id[3][8] = { {0,2,4,5, 4,5,7,8},
                            {2,3,5,6},
                            {5,6,8,9} };
 
-const double bv[3][8][8] = { { {0,1/2.,0,0,0,0,0,0},
+    double bv[3][8][8] = { { {0,1/2.,0,0,0,0,0,0},
                              {0,0,0,0,0,0,0,0},
                              {0,0,1/2.,0,1/2.,0,0,0},
                              {0,0,0,1/4.,0,1/4.,0,0},
@@ -94,7 +94,7 @@ double Ar[3][32] = { { 4,-1,-1,-2, -1,4,-2,-1, -1,-2,4,-1, -2,-1,-1,4,
 
 int main(int narg, char* arg[])
 {
-  crs_data *crs;
+  struct crs_data *crs;
   comm_ext world; int id,np;
   struct comm comm;
 #ifdef MPI

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -27,7 +28,7 @@
 #define fcrs_stats   FORTRAN_NAME(crs_stats,CRS_STATS)
 #define fcrs_free    FORTRAN_NAME(crs_free ,CRS_FREE)
 
-static crs_data **handle_array = 0;
+static struct crs_data **handle_array = 0;
 static int handle_max = 0;
 static int handle_n = 0;
 
@@ -39,7 +40,7 @@ void fcrs_setup(sint *handle, const MPI_Fint *comm, const sint *np,
   struct comm c;
   if(handle_n==handle_max)
     handle_max+=handle_max/2+1,
-    handle_array=trealloc(crs_data*,handle_array,handle_max);
+    handle_array=trealloc(struct crs_data*,handle_array,handle_max);
   comm_init_check(&c, *comm, *np);
   handle_array[handle_n]=ccrs_setup(*n,(const ulong*)id,
                                     *nz,(const uint*)Ai,(const uint*)Aj,A,
@@ -53,7 +54,7 @@ void fcrs_setup(sint *handle, const MPI_Fint *comm, const sint *np,
     fail(1,__FILE__,__LINE__,func ": invalid handle"); \
 while(0)
 
-void fcrs_solve(const sint *handle, double x[], const double b[])
+void fcrs_solve(const sint *handle, double x[], double b[])
 {
   CHECK_HANDLE("crs_solve");
   ccrs_solve(x,handle_array[*handle],b);

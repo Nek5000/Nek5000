@@ -23,8 +23,9 @@
 
 */
 
-static void pack(crystal_data *cr, const char *input, uint n, size_t size,
-                 size_t off)
+static void pack(struct crystal *const cr,
+                 const char *const input, const uint n, const size_t size,
+                 const size_t off)
 {
   const size_t row_size = ((size-sizeof(uint))+sizeof(uint)-1)/sizeof(uint);
   const size_t after = off + sizeof(uint), after_len = size-after;
@@ -55,8 +56,8 @@ static void pack(crystal_data *cr, const char *input, uint n, size_t size,
   cr->n = cn;
 }
 
-static void unpack(array *A, size_t size, size_t off,
-                   int fixed, crystal_data *cr)
+static void unpack(struct array *const A, const size_t size, const size_t off,
+                   const int fixed, const int set_src, struct crystal *const cr)
 {
   const size_t row_size = ((size-sizeof(uint))+sizeof(uint)-1)/sizeof(uint);
   const size_t after = off + sizeof(uint), after_len = size-after;
@@ -82,37 +83,50 @@ static void unpack(array *A, size_t size, size_t off,
   A->n = n;
   out = A->ptr;
   in = cr->data.ptr;
-  while(in!=in_end) {
-    uint p=in[1], len=in[2];
-    in += 3;
-    for(;len;len-=row_size) {
-      memcpy(out,in,off);
-      memcpy(out+off,&p,sizeof(uint));
-      memcpy(out+after,(const char*)in+off,after_len);
-      out += size;
-      in += row_size;
+  #define UNPACK_MESSAGE(p,len) do { \
+    for(;len;len-=row_size) { \
+      memcpy(out,in,off); \
+      memcpy(out+off,&p,sizeof(uint)); \
+      memcpy(out+after,(const char*)in+off,after_len); \
+      out += size; \
+      in += row_size; \
+    } \
+  } while(0)
+  if(set_src) {
+    while(in!=in_end) {
+      uint p=in[1], len=in[2]; in += 3;
+      UNPACK_MESSAGE(p,len);
+    }
+  } else {
+    const uint p = cr->comm.id;
+    while(in!=in_end) {
+      uint          len=in[2]; in += 3;
+      UNPACK_MESSAGE(p,len);
     }
   }
+  #undef UNPACK_MESSAGE
 }
 
-void sarray_transfer_(array *A, size_t size, size_t off,
-                      int fixed, crystal_data *cr)
+void sarray_transfer_(struct array *const A, const size_t size,
+                      const size_t off, const int fixed, const int set_src,
+                      struct crystal *const cr)
 {
   pack(cr, A->ptr,A->n,size,off);
   crystal_router(cr);
-  unpack(A,size,off, fixed, cr);
+  unpack(A,size,off, fixed,set_src, cr);
 }
 
 /* Case 2:
 
   The user supplies the destination of element i in proc[i].
-  Here proc is an external array of uints.
+  Here proc may be an external array of uints, or a field within the input.
   No source information is available on output.
 
 */
 
-static void pack_ext(crystal_data *cr, const char *input, uint n,
-                     size_t size, const uint *proc)
+static void pack_ext(struct crystal *const cr,
+                     const char *const input, const uint n, const size_t size,
+                     const uint *const proc, const unsigned proc_stride)
 {
   const size_t row_size = (size+sizeof(uint)-1)/sizeof(uint);
 
@@ -120,14 +134,14 @@ static void pack_ext(crystal_data *cr, const char *input, uint n,
   uint i, cn, p,lp = -(uint)1;
   
   /* get the permutation that orders by processor */
-  perm = sortp(&cr->work,0, proc,n,sizeof(uint));
+  perm = sortp(&cr->work,0, proc,n,proc_stride);
   
   /* pack into crystal router messages */
   buffer_reserve(&cr->data, n*(row_size+3)*sizeof(uint));
   out = cr->data.ptr; cn=0;
   for(i=0;i<n;++i) {
     const char *row = input + size*perm[i];
-    p = proc[perm[i]];
+    p = *(const uint *)((const char*)proc + proc_stride*perm[i]);
     if(p!=lp) {
       lp = p;
       *out++ = p;           /* target */
@@ -141,7 +155,8 @@ static void pack_ext(crystal_data *cr, const char *input, uint n,
   cr->n = cn;
 }
 
-static void unpack_ext(array *A, size_t size, crystal_data *cr)
+static void unpack_ext(struct array *const A, const size_t size,
+                       struct crystal *const cr)
 {
   const size_t row_size = (size+sizeof(uint)-1)/sizeof(uint);
 
@@ -165,10 +180,11 @@ static void unpack_ext(array *A, size_t size, crystal_data *cr)
   }
 }
 
-void sarray_transfer_ext_(array *A, size_t size, const uint *proc,
-                          crystal_data *cr)
+void sarray_transfer_ext_(struct array *const A, const size_t size,
+                          const uint *const proc, const unsigned proc_stride,
+                          struct crystal *const cr)
 {
-  pack_ext(cr, A->ptr,A->n,size, proc);
+  pack_ext(cr, A->ptr,A->n,size, proc,proc_stride);
   crystal_router(cr);
   unpack_ext(A,size,cr);
 }
