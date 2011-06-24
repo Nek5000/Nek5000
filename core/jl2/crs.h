@@ -10,14 +10,15 @@
 #define crs_stats PREFIXED_NAME(crs_stats)
 #define crs_free  PREFIXED_NAME(crs_free )
 
-typedef struct crs_data_ crs_data;
+struct crs_data;
 
-crs_data *crs_setup(uint n, const ulong *id,
-                    uint nz, const uint *Ai, const uint *Aj, const double *A,
-                    uint null_space, const struct comm *comm);
-void crs_solve(double *x, crs_data *data, const double *b);
-void crs_stats(crs_data *data);
-void crs_free(crs_data *data);
+struct crs_data *crs_setup(
+  uint n, const ulong *id,
+  uint nz, const uint *Ai, const uint *Aj, const double *A,
+  uint null_space, const struct comm *comm);
+void crs_solve(double *x, struct crs_data *data, double *b);
+void crs_stats(struct crs_data *data);
+void crs_free(struct crs_data *data);
 
 #endif
 

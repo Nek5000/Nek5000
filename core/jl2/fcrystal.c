@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -54,17 +55,17 @@
 #define fcrystal_free            \
   FORTRAN_NAME(crystal_free           ,CRYSTAL_FREE           )
 
-static crystal_data **handle_array = 0;
+static struct crystal **handle_array = 0;
 static int handle_max = 0;
 static int handle_n = 0;
 
 void fcrystal_setup(sint *handle, const MPI_Fint *comm, const sint *np)
 {
-  crystal_data *p;
+  struct crystal *p;
   if(handle_n==handle_max)
     handle_max+=handle_max/2+1,
-    handle_array=trealloc(crystal_data*,handle_array,handle_max);
-  handle_array[handle_n]=p=tmalloc(crystal_data,1);
+    handle_array=trealloc(struct crystal*,handle_array,handle_max);
+  handle_array[handle_n]=p=tmalloc(struct crystal,1);
   comm_init_check(&p->comm, *comm, *np);
   buffer_init(&p->data,1000);
   buffer_init(&p->work,1000);
@@ -90,7 +91,7 @@ void fcrystal_ituple_sort(const sint *handle,
     sortp(buf,0, (uint*)&A[keys[nk]-1],*n,size);
     while(--nk>=0)
       sortp(buf,1, (uint*)&A[keys[nk]-1],*n,size);
-    sarray_permute_(ALIGNOF(sint),size,A,*n, buf);
+    sarray_permute_buf_(ALIGNOF(sint),size,A,*n, buf);
   }
 }
 
@@ -98,11 +99,11 @@ void fcrystal_ituple_transfer(const sint *handle,
                               sint A[], const sint *m, sint *n,
                               const sint *nmax, const sint *proc_key)
 {
-  array ar;
+  struct array ar;
   CHECK_HANDLE("crystal_ituple_transfer");
   ar.ptr=A, ar.n=*n, ar.max=*nmax;
   sarray_transfer_(&ar,(*m)*sizeof(sint),(*proc_key-1)*sizeof(sint),
-                   1,handle_array[*handle]);
+                   1,1,handle_array[*handle]);
   *n=ar.n;
 }
 

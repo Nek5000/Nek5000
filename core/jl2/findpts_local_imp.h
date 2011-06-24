@@ -227,7 +227,7 @@ void findpts_local_free(struct findpts_local_data *const fd)
 }
 
 static void map_points_to_els(
-  array *const map,
+  struct array *const map,
         uint   *const  code_base   , const unsigned  code_stride   ,
   const double *const     x_base[D], const unsigned     x_stride[D],
   const uint npt, const struct findpts_local_data *const fd,
@@ -286,7 +286,7 @@ void findpts_local(
 {
   struct findpts_el_data *const fed = &fd->fed;
   struct findpts_el_pt *const fpt = findpts_el_points(fed);
-  array map; /* point -> element map */
+  struct array map; /* point -> element map */
   map_points_to_els(&map, code_base,code_stride, x_base,x_stride, npt, fd, buf);
   {
     const unsigned npt_max = fd->fed.npt_max;

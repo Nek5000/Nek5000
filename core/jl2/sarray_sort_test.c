@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 #include "c99.h"
 #include "name.h"
@@ -30,7 +31,7 @@ int main()
     rec[i].l = num2;
     rec[i].i = num1;
   }
-  sarray_sort_two(struct rec,rec,500, i,0, l,1, &buf);
+  sarray_sort_2(struct rec,rec,500, i,0, l,1, &buf);
   for(i=0;i<500;++i)
     printf("%g\t%g\t%ld\t%d\n",
       rec[i].d,rec[i].f,(long)rec[i].l,(int)rec[i].i);

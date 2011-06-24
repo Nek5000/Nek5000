@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "c99.h"
 #include "name.h"
 #include "fail.h"
@@ -13,7 +14,7 @@ int main(int narg, char *arg[])
 {
   comm_ext world; int np;
   struct comm comm;
-  crystal_data crystal;
+  struct crystal cr;
   uint i,sum, *data, *end;
 #ifdef MPI
   MPI_Init(&narg,&arg);
@@ -25,11 +26,11 @@ int main(int narg, char *arg[])
 
   comm_init(&comm,world);
   
-  crystal_init(&crystal,&comm);
+  crystal_init(&cr,&comm);
 
-  crystal.n = (4+(comm.id&1))*comm.np;
-  buffer_reserve(&crystal.data,crystal.n*sizeof(uint));
-  data = crystal.data.ptr;
+  cr.n = (4+(comm.id&1))*comm.np;
+  buffer_reserve(&cr.data,cr.n*sizeof(uint));
+  data = cr.data.ptr;
   for(i=0;i<comm.np;++i, data+=3+data[2]) {
     data[0] = i, data[1] = comm.id, data[2] = 1;
     data[3] = 2*comm.id;
@@ -37,7 +38,7 @@ int main(int narg, char *arg[])
   }
 
 #if 0
-  data = crystal.data.ptr, end = data + crystal.n;
+  data = cr.data.ptr, end = data + cr.n;
   for(;data!=end; data+=3+data[2]) {
     uint i;
     printf("%u -> %u:",data[1],data[0]);
@@ -46,11 +47,11 @@ int main(int narg, char *arg[])
   }
 #endif
   
-  crystal_router(&crystal);
+  crystal_router(&cr);
 
 #if 0
   printf("\n");
-  data = crystal.data.ptr, end = data + crystal.n;
+  data = cr.data.ptr, end = data + cr.n;
   for(;data!=end; data+=3+data[2]) {
     uint i;
     printf("%u <- %u:",data[0],data[1]);
@@ -59,10 +60,10 @@ int main(int narg, char *arg[])
   }
 #endif
   
-  if(crystal.n != comm.np*4 + (comm.np/2))
+  if(cr.n != comm.np*4 + (comm.np/2))
     fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
   sum = 0;
-  data = crystal.data.ptr, end = data + crystal.n;
+  data = cr.data.ptr, end = data + cr.n;
   for(;data!=end; data+=3+data[2]) {
     sum+=data[1];
     if(data[3]!=data[1]*2)
@@ -73,7 +74,7 @@ int main(int narg, char *arg[])
   if(sum != comm.np*(comm.np-1)/2)
     fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
 
-  crystal_free(&crystal);
+  crystal_free(&cr);
   comm_free(&comm);
 
   diagnostic("",__FILE__,__LINE__,

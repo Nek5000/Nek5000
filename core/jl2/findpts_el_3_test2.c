@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <string.h>
 #include "c99.h"
 #include "types.h"
 #include "name.h"
@@ -53,11 +54,13 @@ static double work[TNR*(NS+TNS)*NT];
 
 int main()
 {
-  int failure=0, unconv=0;
+  int failure=0;
   unsigned n,i,ie;
 
 #if USE_HW_COUNTER
   unsigned long long tic,toc, tot=0;
+#else
+  int unconv=0;
 #endif
 
   struct findpts_el_data_3 fd;

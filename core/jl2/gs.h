@@ -13,7 +13,7 @@
     struct comm c;  // see "comm.h"
     slong id[n];    // the slong type is defined in "types.h"
     ...
-    gs_data *g = gs_setup(id,n, &c);
+    struct gs_data *g = gs_setup(id,n, &c, 0,gs_auto,1);
     
   defines a partition of the set of (processor, local index) pairs,
     (p,i) \in S_j  iff   abs(id[i]) == j  on processor p
@@ -24,13 +24,12 @@
     gather/scatter operation
   If id[i] on proc p is negative then the pair (p,i) is "flagged". This
   determines the non-symmetric behavior. For the simpler, symmetric case,
-  all id's should be positive. "gs_setup" executes a number of "gs"
-  calls using different implementation strategies, timing them to choose
-  the best one. "gs_setup_crystal" is a drop-in replacement for "gs_setup"
-  that does no such auto-tuning, but rather always uses the crystal-router
-  strategy, which is useful if the handle "g" will only be used a couple of
-  times (since the auto-tuning involves, currently, ~10 runs of each 
-  implementation to get the timings).
+  all id's should be positive.
+  
+  The second to last argument to gs_setup is the method to use, one of
+    gs_pairwise, gs_crystal_router, gs_all_reduce, gs_auto
+  The method "gs_auto" tries ~10 runs of each and chooses the fastest.
+  For a single-use handle, it makes more sense to use "gs_crystal_router".
   
   When "g" is no longer needed, free it with
   
@@ -110,30 +109,33 @@
     
   This call modifies id, "flagging" (by negating id[i]) all (p,i) pairs in
   each group except one. The sole "unflagged" member of the group is chosen
-  in an arbitrary but consistent way.
+  in an arbitrary but consistent way. If the "unique" flag is set when
+  calling gs_setup, the behavior is equivalent to first calling gs_unique,
+  except that the id array is left unmodified.
   
 
 */  
 
-#define gs               PREFIXED_NAME(gs              )
-#define gs_vec           PREFIXED_NAME(gs_vec          )
-#define gs_many          PREFIXED_NAME(gs_many         )
-#define gs_setup         PREFIXED_NAME(gs_setup        )
-#define gs_setup_crystal PREFIXED_NAME(gs_setup_crystal)
-#define gs_free          PREFIXED_NAME(gs_free         )
-#define gs_unique        PREFIXED_NAME(gs_unique       )
+#define gs         PREFIXED_NAME(gs       )
+#define gs_vec     PREFIXED_NAME(gs_vec   )
+#define gs_many    PREFIXED_NAME(gs_many  )
+#define gs_setup   PREFIXED_NAME(gs_setup )
+#define gs_free    PREFIXED_NAME(gs_free  )
+#define gs_unique  PREFIXED_NAME(gs_unique)
 
-typedef struct gs_data_ gs_data;
+struct gs_data;
+typedef enum { gs_pairwise, gs_crystal_router, gs_all_reduce,
+               gs_auto } gs_method;
 
 void gs(void *u, gs_dom dom, gs_op op, unsigned transpose,
-        gs_data *gsh, buffer *buf);
+        struct gs_data *gsh, buffer *buf);
 void gs_vec(void *u, unsigned vn, gs_dom dom, gs_op op,
-            unsigned transpose, gs_data *gsh, buffer *buf);
+            unsigned transpose, struct gs_data *gsh, buffer *buf);
 void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,
-             unsigned transpose, gs_data *gsh, buffer *buf);
-gs_data *gs_setup(const slong *id, uint n, const struct comm *comm);
-gs_data *gs_setup_crystal(const slong *id, uint n, const struct comm *comm);
-void gs_free(gs_data *gsh);
+             unsigned transpose, struct gs_data *gsh, buffer *buf);
+struct gs_data *gs_setup(const slong *id, uint n, const struct comm *comm,
+                         int unique, gs_method method, int verbose);
+void gs_free(struct gs_data *gsh);
 void gs_unique(slong *id, uint n, const struct comm *comm);
 
 #endif

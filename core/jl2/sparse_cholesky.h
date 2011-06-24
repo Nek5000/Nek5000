@@ -9,10 +9,10 @@
 #define sparse_cholesky_solve  PREFIXED_NAME(sparse_cholesky_solve )
 #define sparse_cholesky_free   PREFIXED_NAME(sparse_cholesky_free  )
 
-typedef struct {
+struct sparse_cholesky {
   uint n, *Lrp, *Lj;
   double *L, *D;
-} sparse_cholesky_data;
+};
 
 /* input data is the usual CSR
    matrix is n by n
@@ -22,13 +22,13 @@ typedef struct {
 */
 void sparse_cholesky_factor(uint n, const uint *Arp, const uint *Aj,
                             const double *A,
-                            sparse_cholesky_data *out, buffer *buf);
+                            struct sparse_cholesky *out, buffer *buf);
                             
 /* x = A^(-1) b;  works when x and b alias */
 void sparse_cholesky_solve(
-  double *x, const sparse_cholesky_data *fac, double *b);
+  double *x, const struct sparse_cholesky *fac, double *b);
 
-void sparse_cholesky_free(sparse_cholesky_data *fac);
+void sparse_cholesky_free(struct sparse_cholesky *fac);
 
 #endif
 

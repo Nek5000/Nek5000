@@ -9,6 +9,7 @@
 #include "name.h"
 #include "fail.h"
 #include "types.h"
+#include "tensor.h"
 #include "gs_defs.h"
 #include "comm.h"
 #include "mem.h"
@@ -50,11 +51,11 @@ static unsigned lg(uint v)
 #undef CHECK
 }
 
-typedef struct {
+struct csr_mat {
   uint n, *Arp, *Aj; double *A;
-} csr_mat;
+};
 
-typedef struct {
+struct xxt {
 
   /* communication */
 
@@ -99,13 +100,13 @@ typedef struct {
   uint xn;        /* # of columns of x = sum_i(sep_size[i]) - sep_size[0] */
 
   /* data */
-  sparse_cholesky_data fac_A_ll;
-  csr_mat              A_sl;
+  struct sparse_cholesky fac_A_ll;
+  struct csr_mat             A_sl;
   uint *Xp; double *X;   /* column i of X starts at X[Xp[i]] */
   
   /* execution buffers */
   double *vl, *vc, *vx, *combuf;
-} xxt_data;
+};
 
 
 /*
@@ -144,7 +145,7 @@ typedef struct {
 */
 
 /* sets: pcoord, nsep, plevels, pother, req */
-static void locate_proc(xxt_data *data)
+static void locate_proc(struct xxt *data)
 {
   const uint id = data->comm.id;
   uint n = data->comm.np, c=1, odd=0, base=0;
@@ -175,19 +176,20 @@ static void locate_proc(xxt_data *data)
 
 /* the tuple list describing the condensed dofs:
    [(separator level, share count, global id)] */
-typedef struct { ulong id; uint level, count; } s_dof;
+struct dof { ulong id; uint level, count; };
 
 /* determine the size of each separator;
    sums the separator sizes following the fan-in, fan-out comm. pattern
    uses the share-counts to avoid counting dofs more than once */
 /* sets: xn, sep_size, ln, sn */
-static void discover_sep_sizes(xxt_data *data, array *dofa, buffer *buf)
+static void discover_sep_sizes(struct xxt *data,
+                               struct array *dofa, buffer *buf)
 {
   const unsigned ns=data->nsep, nl=data->plevels;
   const uint n = dofa->n;
   float *v, *recv;
   unsigned i,lvl; uint j;
-  const s_dof *dof = dofa->ptr;
+  const struct dof *dof = dofa->ptr;
 
   buffer_reserve(buf,2*ns*sizeof(float));
   v=buf->ptr, recv=v+ns;
@@ -248,7 +250,7 @@ static ulong *unique_nonzero(ulong *A, ulong *Aend)
   }
 }
 
-static void merge_sep_ids(xxt_data *data, ulong *sep_id, ulong *other,
+static void merge_sep_ids(struct xxt *data, ulong *sep_id, ulong *other,
                           ulong *work, unsigned s0, buffer *buf)
 {
   const unsigned ns = data->nsep;
@@ -266,13 +268,13 @@ static void merge_sep_ids(xxt_data *data, ulong *sep_id, ulong *other,
   }
 }
 
-static void init_sep_ids(xxt_data *data, array *dofa, ulong *xid)
+static void init_sep_ids(struct xxt *data, struct array *dofa, ulong *xid)
 {
   const unsigned ns=data->nsep;
   const uint n=data->cn, *sep_size=data->sep_size;
   unsigned s=1;
   uint i, size;
-  const s_dof *dof = dofa->ptr;
+  const struct dof *dof = dofa->ptr;
   if(ns==1) return;
   size=sep_size[s];
   for(i=data->ln;i<n;++i) {
@@ -291,10 +293,10 @@ static void init_sep_ids(xxt_data *data, array *dofa, ulong *xid)
   }
 }
 
-static void find_perm_x2c(uint ln, uint cn, const array *dofc,
+static void find_perm_x2c(uint ln, uint cn, const struct array *dofc,
                           uint xn, const ulong *xid, sint *perm)
 {
-  const s_dof *dof = dofc->ptr, *dof_end = dof+cn;
+  const struct dof *dof = dofc->ptr, *dof_end = dof+cn;
   const ulong *xid_end = xid+xn; uint i=ln;
   dof+=ln;
   while(dof!=dof_end) {
@@ -306,7 +308,7 @@ static void find_perm_x2c(uint ln, uint cn, const array *dofc,
 }
 
 /* sets: perm_x2c */
-static sint *discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
+static sint *discover_sep_ids(struct xxt *data, struct array *dofa, buffer *buf)
 {
   const unsigned ns=data->nsep, nl=data->plevels;
   const uint xn=data->xn, *sep_size=data->sep_size;
@@ -355,7 +357,7 @@ static sint *discover_sep_ids(xxt_data *data, array *dofa, buffer *buf)
   return perm_x2c;
 }
 
-static void apply_QQt(xxt_data *data, double *v, uint n, uint tag)
+static void apply_QQt(struct xxt *data, double *v, uint n, uint tag)
 {
   const unsigned nl=data->plevels;
   double *p=v, *recv=data->combuf;
@@ -395,7 +397,7 @@ static void apply_QQt(xxt_data *data, double *v, uint n, uint tag)
   if(nsend) comm_wait(data->req,nsend);
 }
 
-static double sum(xxt_data *data, double v, uint n, uint tag)
+static double sum(struct xxt *data, double v, uint n, uint tag)
 {
   const unsigned nl=data->plevels;
   double r;
@@ -458,24 +460,25 @@ static uint unique_ids(uint n, const ulong *id, sint *perm, buffer *buf)
                       according to the sep. tree (and without duplicates),
            as well as the permutation to get there from the user's list */
 /* sets: un, cn, perm_u2c */
-static void discover_dofs(xxt_data *data, uint n, const ulong *id,
-                          array *dofa, buffer *buf, const struct comm *comm)
+static void discover_dofs(
+  struct xxt *data, uint n, const ulong *id,
+  struct array *dofa, buffer *buf, const struct comm *comm)
 {
   const uint pcoord = data->pcoord, ns=data->nsep;
   sint *perm;
   uint i, cn, *p, *pi;
   ulong *bid;
-  gs_data *gsh; sint *v;
-  s_dof *dof;
+  struct gs_data *gsh; sint *v;
+  struct dof *dof;
   
   data->un = n;
   data->perm_u2c = perm = tmalloc(sint,n);
   data->cn = cn = unique_ids(n,id,perm,buf);
-  array_init(s_dof,dofa,cn), dofa->n=cn, dof=dofa->ptr;
+  array_init(struct dof,dofa,cn), dofa->n=cn, dof=dofa->ptr;
   buffer_reserve(buf,cn*sizeof(ulong)), bid=buf->ptr;
   for(i=0;i<n;++i) if(perm[i]>=0) bid[perm[i]]=dof[perm[i]].id=id[i];
 
-  gsh = gs_setup((const slong*)bid,cn,comm);
+  gsh = gs_setup((const slong*)bid,cn,comm,0,gs_crystal_router,0);
   v = tmalloc(sint,cn);
 
   for(i=0;i<cn;++i) v[i]=pcoord;
@@ -491,22 +494,14 @@ static void discover_dofs(xxt_data *data, uint n, const ulong *id,
 
   if(!cn) return;
   buffer_reserve(buf,2*cn*sizeof(uint));
-  p = sortp(buf,0, &dof[0].level,cn,sizeof(s_dof));
+  p = sortp(buf,0, &dof[0].level,cn,sizeof(struct dof));
   pi = p+cn; for(i=0;i<cn;++i) pi[p[i]]=i;
   for(i=0;i<n;++i) if(perm[i]>=0) perm[i]=pi[perm[i]];
-  sarray_permute(s_dof,dof,cn, buf);
-}
-
-static double inner(const double *u, const double *v, unsigned n)
-{
-  const double *u_end = u+n;
-  double sum = 0;
-  while(u!=u_end) sum += *u++ * *v++;
-  return sum;
+  sarray_permute_buf(struct dof,dof,cn, buf);
 }
 
 /* vl += A_ls * vs */
-static void apply_p_Als(double *vl, xxt_data *data, const double *vs, uint ns)
+static void apply_p_Als(double *vl, struct xxt *data, const double *vs, uint ns)
 {
   const uint *Arp = data->A_sl.Arp,
              *Aj  = data->A_sl.Aj;
@@ -518,7 +513,7 @@ static void apply_p_Als(double *vl, xxt_data *data, const double *vs, uint ns)
 }
 
 /* vs -= A_sl * vl */
-static void apply_m_Asl(double *vs, uint ns, xxt_data *data, const double *vl)
+static void apply_m_Asl(double *vs, uint ns, struct xxt *data, const double *vl)
 {
   const uint *Arp = data->A_sl.Arp,
              *Aj  = data->A_sl.Aj;
@@ -530,8 +525,8 @@ static void apply_m_Asl(double *vs, uint ns, xxt_data *data, const double *vl)
 }
 
 /* returns a column of S : vs = -S(0:ei-1,ei) */
-static void apply_S_col(double *vs, xxt_data *data, csr_mat *A_ss, uint ei,
-                        double *vl)
+static void apply_S_col(double *vs, struct xxt *data, 
+                        struct csr_mat *A_ss, uint ei, double *vl)
 {
   const uint ln=data->ln;
   const uint *Asl_rp = data->A_sl.Arp, *Ass_rp = A_ss->Arp,
@@ -550,8 +545,8 @@ static void apply_S_col(double *vs, xxt_data *data, csr_mat *A_ss, uint ei,
   apply_m_Asl(vs,ei,data,vl);
 }
 
-static void apply_S(double *Svs, uint ns, xxt_data *data, csr_mat *A_ss,
-                    const double *vs, double *vl)
+static void apply_S(double *Svs, uint ns, struct xxt *data, 
+                    struct csr_mat *A_ss, const double *vs, double *vl)
 {
   const uint ln=data->ln;
   const uint *Ass_rp = A_ss->Arp,
@@ -574,15 +569,15 @@ static void apply_S(double *Svs, uint ns, xxt_data *data, csr_mat *A_ss,
 }
 
 /* vx = X' * vs */
-static void apply_Xt(double *vx, uint nx, const xxt_data *data,
+static void apply_Xt(double *vx, uint nx, const struct xxt *data,
                      const double *vs)
 {
   const double *X = data->X; const uint *Xp = data->Xp;
-  uint i; for(i=0;i<nx;++i) vx[i]=inner(vs,X+Xp[i],Xp[i+1]-Xp[i]);
+  uint i; for(i=0;i<nx;++i) vx[i]=tensor_dot(vs,X+Xp[i],Xp[i+1]-Xp[i]);
 }
 
 /* vs = X * vx */
-static void apply_X(double *vs, uint ns, const xxt_data *data,
+static void apply_X(double *vs, uint ns, const struct xxt *data,
                     const double *vx, uint nx)
 {
   const double *X = data->X; const uint *Xp = data->Xp;
@@ -595,7 +590,7 @@ static void apply_X(double *vs, uint ns, const xxt_data *data,
   }
 }
 
-static void allocate_X(xxt_data *data, sint *perm_x2c)
+static void allocate_X(struct xxt *data, sint *perm_x2c)
 {
   uint xn=data->xn;
   uint i,h=0;
@@ -609,8 +604,8 @@ static void allocate_X(xxt_data *data, sint *perm_x2c)
   data->X = tmalloc(double,data->Xp[xn]);
 }
 
-static void orthogonalize(xxt_data *data, csr_mat *A_ss, sint *perm_x2c,
-                          buffer *buf)
+static void orthogonalize(struct xxt *data, struct csr_mat *A_ss,
+                          sint *perm_x2c, buffer *buf)
 {
   uint ln=data->ln, sn=data->sn, xn=data->xn;
   double *vl, *vs, *vx, *Svs;
@@ -638,7 +633,7 @@ static void orthogonalize(xxt_data *data, csr_mat *A_ss, sint *perm_x2c,
     apply_X(vs,ns, data, vx,i);
     if(ui!=-1) vs[ui]=1;
     apply_S(Svs,ns, data,A_ss, vs, vl);
-    ytsy = inner(vs,Svs,ns);
+    ytsy = tensor_dot(vs,Svs,ns);
     ytsy = sum(data,ytsy,i+1,xn-(i+1));
     if(ytsy<DBL_EPSILON/128) ytsy=0; else ytsy = 1/sqrt(ytsy);
     x=&data->X[data->Xp[i]];
@@ -646,14 +641,15 @@ static void orthogonalize(xxt_data *data, csr_mat *A_ss, sint *perm_x2c,
   }
 }
 
-typedef struct { uint i,j; double v; } yale_mat;
+struct yale_mat { uint i,j; double v; };
 
 /* produces CSR matrix from Yale-like format, summing duplicates */
-static void condense_matrix(array *mat, uint nr, csr_mat *out, buffer *buf)
+static void condense_matrix(struct array *mat, uint nr,
+                            struct csr_mat *out, buffer *buf)
 {
   uint k, nz=mat->n;
-  yale_mat *p, *q;
-  sarray_sort_two(yale_mat,mat->ptr,mat->n, i,0, j,0, buf);
+  struct yale_mat *p, *q;
+  sarray_sort_2(struct yale_mat,mat->ptr,mat->n, i,0, j,0, buf);
   
   p = mat->ptr;
   for(k=0;k+1<nz;++k,++p) if(p[0].i==p[1].i && p[0].j==p[1].j) break;
@@ -680,16 +676,16 @@ static void condense_matrix(array *mat, uint nr, csr_mat *out, buffer *buf)
 static void separate_matrix(
   uint nz, const uint *Ai, const uint *Aj, const double *A,
   const sint *perm, uint ln, uint sn,
-  csr_mat *out_ll, csr_mat *out_sl, csr_mat *out_ss,
+  struct csr_mat *out_ll, struct csr_mat *out_sl, struct csr_mat *out_ss,
   buffer *buf
 )
 {
   uint k,n;
-  array mat_ll, mat_sl, mat_ss;
-  yale_mat *mll, *msl, *mss;
-  array_init(yale_mat,&mat_ll,2*nz), mll=mat_ll.ptr;
-  array_init(yale_mat,&mat_sl,2*nz), msl=mat_sl.ptr;
-  array_init(yale_mat,&mat_ss,2*nz), mss=mat_ss.ptr;
+  struct array mat_ll, mat_sl, mat_ss;
+  struct yale_mat *mll, *msl, *mss;
+  array_init(struct yale_mat,&mat_ll,2*nz), mll=mat_ll.ptr;
+  array_init(struct yale_mat,&mat_sl,2*nz), msl=mat_sl.ptr;
+  array_init(struct yale_mat,&mat_ss,2*nz), mss=mat_ss.ptr;
   for(k=0;k<nz;++k) {
     sint i=perm[Ai[k]], j=perm[Aj[k]];
     if(i<0 || j<0 || Aj[k]<Ai[k] || A[k]==0) continue;
@@ -715,14 +711,15 @@ static void separate_matrix(
   array_free(&mat_ss);
 }
 
-xxt_data *crs_setup(uint n, const ulong *id,
-                    uint nz, const uint *Ai, const uint *Aj, const double *A,
-                    uint null_space, const struct comm *comm)
+struct xxt *crs_setup(
+  uint n, const ulong *id,
+  uint nz, const uint *Ai, const uint *Aj, const double *A,
+  uint null_space, const struct comm *comm)
 {
-  xxt_data *data = tmalloc(xxt_data,1);
+  struct xxt *data = tmalloc(struct xxt,1);
   sint *perm_x2c;
-  array dofa;
-  csr_mat A_ll, A_ss;
+  struct array dofa;
+  struct csr_mat A_ll, A_ss;
   buffer buf;
 
   comm_dup(&data->comm,comm);
@@ -738,7 +735,7 @@ xxt_data *crs_setup(uint n, const ulong *id,
 
   perm_x2c = discover_sep_ids(data,&dofa,&buf);
   if(data->null_space) {
-    uint i; double count = 0; s_dof *dof = dofa.ptr;
+    uint i; double count = 0; struct dof *dof = dofa.ptr;
     for(i=0;i<data->cn;++i) count+=1/(double)dof[i].count;
     count=1/sum(data,count,data->xn,0);
     data->share_weight=tmalloc(double,data->cn);
@@ -776,7 +773,7 @@ xxt_data *crs_setup(uint n, const ulong *id,
   return data;
 }
 
-void crs_solve(double *x, xxt_data *data, const double *b)
+void crs_solve(double *x, struct xxt *data, const double *b)
 {
   uint cn=data->cn, un=data->un, ln=data->ln, sn=data->sn, xn=data->xn;
   double *vl=data->vl, *vc=data->vc, *vx=data->vx;
@@ -816,7 +813,7 @@ void crs_solve(double *x, xxt_data *data, const double *b)
   }
 }
 
-void crs_stats(xxt_data *data)
+void crs_stats(struct xxt *data)
 {
   int a,b; uint xcol;
   if(data->comm.id==0) {
@@ -841,7 +838,7 @@ void crs_stats(xxt_data *data)
   if(data->comm.id==0) printf("xxt: max X size = %d bytes\n",a);
 }
 
-void crs_free(xxt_data *data)
+void crs_free(struct xxt *data)
 {
   comm_free(&data->comm);
   free(data->pother);

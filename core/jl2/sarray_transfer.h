@@ -72,15 +72,17 @@
 #define sarray_transfer_     PREFIXED_NAME(sarray_transfer_    )
 #define sarray_transfer_ext_ PREFIXED_NAME(sarray_transfer_ext_)
 
-void sarray_transfer_(array *A, size_t size, size_t off,
-                      int fixed, crystal_data *cr);
-void sarray_transfer_ext_(array *A, size_t size, const uint *proc,
-                          crystal_data *cr);
+void sarray_transfer_(struct array *const A, const size_t size,
+                      const size_t off, const int fixed, const int set_src,
+                      struct crystal *const cr);
+void sarray_transfer_ext_(struct array *const A, const size_t size,
+                          const uint *const proc, const unsigned proc_stride,
+                          struct crystal *const cr);
 
-#define sarray_transfer(T,A,proc_field,cr) \
-  sarray_transfer_(A,sizeof(T),offsetof(T,proc_field),0,cr)
+#define sarray_transfer(T,A,proc_field,set_src,cr) \
+  sarray_transfer_(A,sizeof(T),offsetof(T,proc_field),0,set_src,cr)
 
-#define sarray_transfer_ext(T,A,proc,cr) \
-  sarray_transfer_ext_(A,sizeof(T),proc,cr)
+#define sarray_transfer_ext(T,A,proc,proc_stride,cr) \
+  sarray_transfer_ext_(A,sizeof(T),proc,proc_stride,cr)
 
 #endif

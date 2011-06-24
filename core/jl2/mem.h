@@ -17,7 +17,7 @@
    All memory management goes through the wrappers defined in this
    header. Diagnostics can be turned on with
      -DPRINT_MALLOCS=1
-   Then all memory management operations will be printed to stderr.
+   Then all memory management operations will be printed to stdout.
    
    Most memory management occurs through use of the "array" type,
    defined below, which defines a generic dynamically-sized array
@@ -46,8 +46,8 @@ static inline void *smalloc(size_t size, const char *file, unsigned line)
 {
   void *restrict res = malloc(size);
   #if PRINT_MALLOCS
-  fprintf(stderr,"MEM: proc %04d: %p = malloc(%ld) @ %s(%u)\n",
-          (int)comm_gbl_id,res,(long)size,file,line), fflush(stderr);
+  fprintf(stdout,"MEM: proc %04d: %p = malloc(%ld) @ %s(%u)\n",
+          (int)comm_gbl_id,res,(long)size,file,line), fflush(stdout);
   #endif
   if(!res && size)
     fail(1,file,line,"allocation of %ld bytes failed\n",(long)size);
@@ -59,8 +59,8 @@ static inline void *scalloc(
 {
   void *restrict res = calloc(nmemb, size);
   #if PRINT_MALLOCS
-  fprintf(stderr,"MEM: proc %04d: %p = calloc(%ld) @ %s(%u)\n",
-          (int)comm_gbl_id,res,(long)size*nmemb,file,line), fflush(stderr);
+  fprintf(stdout,"MEM: proc %04d: %p = calloc(%ld) @ %s(%u)\n",
+          (int)comm_gbl_id,res,(long)size*nmemb,file,line), fflush(stdout);
   #endif
   if(!res && nmemb)
     fail(1,file,line,"allocation of %ld bytes failed\n",
@@ -75,13 +75,13 @@ static inline void *srealloc(
   #if PRINT_MALLOCS
   if(res!=ptr) {
     if(ptr)
-      fprintf(stderr,"MEM: proc %04d: %p freed by realloc @ %s(%u)\n",
-              (int)comm_gbl_id,ptr,file,line), fflush(stderr);
-    fprintf(stderr,"MEM: proc %04d: %p = realloc of %p to %lu @ %s(%u)\n",
-            (int)comm_gbl_id,res,ptr,(long)size,file,line), fflush(stderr);
+      fprintf(stdout,"MEM: proc %04d: %p freed by realloc @ %s(%u)\n",
+              (int)comm_gbl_id,ptr,file,line), fflush(stdout);
+    fprintf(stdout,"MEM: proc %04d: %p = realloc of %p to %lu @ %s(%u)\n",
+            (int)comm_gbl_id,res,ptr,(long)size,file,line), fflush(stdout);
   } else
-    fprintf(stderr,"MEM: proc %04d: %p realloc'd to %lu @ %s(%u)\n",
-            (int)comm_gbl_id,res,(long)size,file,line), fflush(stderr);
+    fprintf(stdout,"MEM: proc %04d: %p realloc'd to %lu @ %s(%u)\n",
+            (int)comm_gbl_id,res,(long)size,file,line), fflush(stdout);
   #endif
   if(!res && size)
     fail(1,file,line,"allocation of %ld bytes failed\n",(long)size);
@@ -99,8 +99,8 @@ static inline void *srealloc(
 static inline void sfree(void *restrict ptr, const char *file, unsigned line)
 {
   free(ptr);
-  fprintf(stderr,"MEM: proc %04d: %p freed @ %s(%u)\n",
-          (int)comm_gbl_id,ptr,file,line), fflush(stderr);
+  fprintf(stdout,"MEM: proc %04d: %p freed @ %s(%u)\n",
+          (int)comm_gbl_id,ptr,file,line), fflush(stdout);
 }
 #define free(x) sfree(x,__FILE__,__LINE__)
 #endif
@@ -108,19 +108,19 @@ static inline void sfree(void *restrict ptr, const char *file, unsigned line)
 /*--------------------------------------------------------------------------
    A dynamic array
   --------------------------------------------------------------------------*/
-typedef struct { void *ptr; size_t n,max; } array;
+struct array { void *ptr; size_t n,max; };
 #define null_array {0,0,0}
-static void array_init_(array *a, size_t max, size_t size,
+static void array_init_(struct array *a, size_t max, size_t size,
                         const char *file, unsigned line)
 {
   a->n=0, a->max=max, a->ptr=smalloc(max*size,file,line);
 }
-static void array_resize_(array *a, size_t max, size_t size,
+static void array_resize_(struct array *a, size_t max, size_t size,
                           const char *file, unsigned line)
 {
   a->max=max, a->ptr=srealloc(a->ptr,max*size,file,line);
 }
-static void *array_reserve_(array *a, size_t min, size_t size,
+static void *array_reserve_(struct array *a, size_t min, size_t size,
                             const char *file, unsigned line)
 {
   size_t max = a->max;
@@ -137,10 +137,20 @@ static void *array_reserve_(array *a, size_t min, size_t size,
 #define array_resize(T,a,max) array_resize_(a,max,sizeof(T),__FILE__,__LINE__)
 #define array_reserve(T,a,min) array_reserve_(a,min,sizeof(T),__FILE__,__LINE__)
 
+static void array_cat_(size_t size, struct array *d, const void *s, size_t n,
+                       const char *file, unsigned line)
+{
+  char *out = array_reserve_(d,d->n+n,size, file,line);
+  memcpy(out+d->n*size, s, n*size);
+  d->n+=n;
+}
+
+#define array_cat(T,d,s,n) array_cat_(sizeof(T),d,s,n,__FILE__,__LINE__)
+
 /*--------------------------------------------------------------------------
    Buffer = char array
   --------------------------------------------------------------------------*/
-typedef array buffer;
+typedef struct array buffer;
 #define null_buffer null_array
 #define buffer_init(b,max) array_init(char,b,max)
 #define buffer_resize(b,max) array_resize(char,b,max)
