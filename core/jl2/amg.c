@@ -447,11 +447,15 @@ static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
   struct crystal cr;
   struct array uid; uint *id_perm;
   struct array ids, mat[3];
-  uint max_e;
+  uint max_e; ulong temp_long;
 
   crystal_init(&cr, &data->comm);
   data->umap = assign_dofs(&uid,0, id,n,data->comm.id,data->gs_top,&cr.data);
   data->un = uid.n;
+  
+  sortp_long(&cr.data,0, uid.ptr,uid.n,sizeof(ulong));
+  sarray_permute(ulong,uid.ptr   ,uid.n, cr.data.ptr, &temp_long);
+  sarray_permute(uint ,data->umap,uid.n, cr.data.ptr, &max_e);
 
   read_data(data, &ids, mat, &cr, uid.ptr,uid.n);
   
