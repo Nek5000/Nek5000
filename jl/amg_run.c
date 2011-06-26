@@ -528,7 +528,7 @@ static void organize_matrix(amg_Q *Q, amg_mat *M,
 #endif
     uint i,ie;
     for(i=cnloc,ie=id->n;i!=ie;++i) id->vl[i] = -id->vl[i];
-    Q->jgs = jl_gs_setup(id->vl,id->n,&comm);
+    Q->jgs = jl_gs_setup(id->vl,id->n,&comm, 0,gs_auto,1);
     for(i=cnloc,ie=id->n;i!=ie;++i) id->vl[i] = -id->vl[i];
   }
 
@@ -902,7 +902,7 @@ amg_data *amg_setup(uint n, const ulong *id,
 #else
     jl_comm_t comm = {0,1,0};
 #endif
-    data->gs_top = jl_gs_setup((const slong*)cdof.vl,cdof.n,&comm);
+    data->gs_top = jl_gs_setup((const slong*)cdof.vl,cdof.n,&comm, 0,gs_auto,1);
   }
   
   bufn = 0, chbn=0;
