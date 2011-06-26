@@ -71,14 +71,16 @@ endif
 
 # JL CRS GRID SOLVER
 ifeq ($(IFAMG),true)
-CGS := $(JO)gs.o $(JO)amg.o
+#CGS := $(JO)gs.o $(JO)amg.o
+CGS := $(JO2)amg.o $(JO2)fcrs.o
 else
 CGS = $(JO2)sparse_cholesky.o $(JO2)xxt.o $(JO2)fcrs.o
 endif
 
 JL2 := -DPREFIX=jl_
 ifeq ($(IFAMG_DUMP),true)
-   JL  := ${JL} -DAMG_DUMP
+#   JL  := ${JL} -DAMG_DUMP
+   JL2  := ${JL2} -DAMG_DUMP
 endif
 
 COMM_MPI := comm_mpi.o
@@ -257,6 +259,7 @@ $(OBJDIR)/$(JO2)gs_local.o        :$(J2)/gs_local.c;        $(CC) -c $(cFL2) $(J
 $(OBJDIR)/$(JO2)fcrs.o            :$(J2)/fcrs.c;            $(CC) -c $(cFL2) $(JL2) $< -o $@
 $(OBJDIR)/$(JO2)xxt.o             :$(J2)/xxt.c;             $(CC) -c $(cFL2) $(JL2) $< -o $@
 $(OBJDIR)/$(JO2)sparse_cholesky.o :$(J2)/sparse_cholesky.c; $(CC) -c $(cFL2) $(JL2) $< -o $@
+$(OBJDIR)/$(JO2)amg.o             :$(J2)/amg.c;             $(CC) -c $(cFL2) $(JL2) $< -o $@
 $(OBJDIR)/$(JO2)findpts.o         :$(J2)/findpts.c;         $(CC) -c $(cFL2) $(JL2) $< -o $@
 $(OBJDIR)/$(JO2)findpts_local.o   :$(J2)/findpts_local.c;   $(CC) -c $(cFL2) $(JL2) $< -o $@
 $(OBJDIR)/$(JO2)obbox.o           :$(J2)/obbox.c;           $(CC) -c $(cFL2) $(JL2) $< -o $@
