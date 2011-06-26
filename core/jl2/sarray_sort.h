@@ -20,7 +20,12 @@
   sarray_sort_2(T,A,n, field1,is_long1, field2,is_long2, buf)
     - sort A by field1 then field2
 
-  sarray_permute(T,A,n, buf);
+  sarray_permute(T,A,n, perm, work)
+    - permute A  (in-place)
+      A[0] <- A[perm[0]], etc.
+      work needs to hold sizeof(T) bytes  (i.e., 1 T)
+
+  sarray_permute_buf(T,A,n, buf);
     - permute A according to the permutation in buf
       A[0] <- A[perm[0]], etc.
       where uint *perm = buf->ptr   (see "sort.h")
