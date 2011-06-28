@@ -34,7 +34,7 @@ rand_elt_test.o: rand_elt_test.c lob_bnd.h poly.h name.h types.h c99.h
 sarray_sort.o: sarray_sort.c sort.h mem.h fail.h types.h name.h c99.h
 sarray_sort_test.o: sarray_sort_test.c sarray_sort.h sort.h mem.h types.h fail.h name.h c99.h
 sarray_transfer.o: sarray_transfer.c sort.h crystal.h mem.h comm.h types.h fail.h name.h c99.h
-sarray_transfer_test.o: sarray_transfer_test.c sarray_transfer.h crystal.h mem.h comm.h types.h fail.h name.h c99.h
+sarray_transfer_test.o: sarray_transfer_test.c sarray_transfer.h crystal.h sarray_sort.h sort.h mem.h comm.h types.h fail.h name.h c99.h
 sort.o: sort.c sort_imp.h sort_imp.h sort_imp.h mem.h types.h fail.h name.h c99.h
 sort_test2.o: sort_test2.c rdtsc.h sort.h mem.h types.h fail.h name.h c99.h
 sort_test.o: sort_test.c sort.h mem.h types.h fail.h name.h c99.h

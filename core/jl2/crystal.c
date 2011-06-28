@@ -24,7 +24,7 @@
     
     crystal_init(&cr, &comm);  // makes an internal copy of comm
     
-    crystal.n = ... ;  // total number of integers
+    crystal.data.n = ... ;  // total number of integers (not bytes!)
     buffer_reserve(&cr.data, crystal.n * sizeof(uint));
     ... // fill cr.data.ptr with messages
     crystal_router(&cr);
@@ -50,7 +50,6 @@
 struct crystal {
   struct comm comm;
   buffer data, work;
-  uint n;
 };
 
 void crystal_init(struct crystal *p, const struct comm *comm)
@@ -58,7 +57,6 @@ void crystal_init(struct crystal *p, const struct comm *comm)
   comm_dup(&p->comm, comm);
   buffer_init(&p->data,1000);
   buffer_init(&p->work,1000);
-  p->n=0;
 }
 
 void crystal_free(struct crystal *p)
@@ -78,22 +76,23 @@ static uint crystal_move(struct crystal *p, uint cutoff, int send_hi)
 {
   uint len, *src, *end;
   uint *keep = p->data.ptr, *send;
-  send = buffer_reserve(&p->work,p->n*sizeof(uint));
+  uint n = p->data.n;
+  send = buffer_reserve(&p->work,n*sizeof(uint));
   if(send_hi) { /* send hi, keep lo */
-    for(src=keep,end=keep+p->n; src<end; src+=len) {
+    for(src=keep,end=keep+n; src<end; src+=len) {
       len = 3 + src[2];
       if(src[0]>=cutoff) memcpy (send,src,len*sizeof(uint)), send+=len;
       else               uintcpy(keep,src,len),              keep+=len;
     }
   } else      { /* send lo, keep hi */
-    for(src=keep,end=keep+p->n; src<end; src+=len) {
+    for(src=keep,end=keep+n; src<end; src+=len) {
       len = 3 + src[2];
       if(src[0]< cutoff) memcpy (send,src,len*sizeof(uint)), send+=len;
       else               uintcpy(keep,src,len),              keep+=len;
     }
   }
-  p->n = keep - (uint*)p->data.ptr;
-  return send - (uint*)p->work.ptr;
+  p->data.n = keep - (uint*)p->data.ptr;
+  return      send - (uint*)p->work.ptr;
 }
 
 static void crystal_exchange(struct crystal *p, uint send_n, uint targ,
@@ -109,10 +108,10 @@ static void crystal_exchange(struct crystal *p, uint send_n, uint targ,
   comm_isend(&req[0],&p->comm, &send_n,sizeof(uint), targ,tag);
   comm_wait(req,recvn+1);
   
-  sum = p->n + count[0] + count[1];
+  sum = p->data.n + count[0] + count[1];
   buffer_reserve(&p->data,sum*sizeof(uint));
-  recv[0] = (uint*)p->data.ptr + p->n, recv[1] = recv[0] + count[0];
-  p->n = sum;
+  recv[0] = (uint*)p->data.ptr + p->data.n, recv[1] = recv[0] + count[0];
+  p->data.n = sum;
   
   if(recvn)    comm_irecv(&req[1],&p->comm,
                           recv[0],count[0]*sizeof(uint), targ        ,tag+1);

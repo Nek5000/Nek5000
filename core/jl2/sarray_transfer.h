@@ -15,7 +15,7 @@
   Requires a "crystal router" object:
   
     struct comm c;
-    crystal_data cr;
+    struct crystal cr;
     
     comm_init(&c, MPI_COMM_WORLD);
     crystal_init(&cr, &c);
@@ -23,7 +23,7 @@
   Example sarray_transfer usage:
   
     struct T { ...; uint proc; ...; };
-    array A = null_array;
+    struct array A = null_array;
     struct T *p, *e;
     
     // resize A to 100 struct T's, fill up with data
@@ -38,16 +38,17 @@
     //   struct T ar[A.n]    where &ar[0] == A.ptr
     // transfer ar[i] to processor ar[i].proc  for each i=0,...,A.n-1:
     
-    sarray_transfer(struct T, A, proc, &cr);
+    sarray_transfer(struct T, A, proc,set_src, &cr);
     
     // now array A represents a different array with a different size
     //   struct T ar[A.n]    where &ar[0] == A.ptr
-    // where now ar[i] came from processor ar[i].proc
     // the ordering is arbitrary
+    // if set_src != 0, ar[i].proc is set to the proc where ar[i] came from
+    // otherwise ar[i].proc is unchanged (and == this proc id)
     
-    sarray_transfer(struct T, A, proc, &cr);
-    // note: this second call should return A to its original state,
-    //       up to ordering
+    // note: two calls of
+    sarray_transfer(struct T, A, proc,1, &cr);
+    // in a row should return A to its original state, up to ordering
  
   Cleanup:
     array_free(&A);
@@ -57,7 +58,7 @@
   Example sarray_transfer_ext usage:
   
     struct T { ... };
-    array A;
+    struct array A;
     uint proc[A.n];
     
     // array A represents the array
@@ -69,18 +70,24 @@
 
 */
 
+#define sarray_transfer_many PREFIXED_NAME(sarray_transfer_many)
 #define sarray_transfer_     PREFIXED_NAME(sarray_transfer_    )
 #define sarray_transfer_ext_ PREFIXED_NAME(sarray_transfer_ext_)
 
-void sarray_transfer_(struct array *const A, const size_t size,
-                      const size_t off, const int fixed, const int set_src,
+uint sarray_transfer_many(
+  struct array *const *const A, const unsigned *const size, const unsigned An,
+  const int fixed, const int ext, const int set_src, const unsigned p_off,
+  const uint *const restrict proc, const unsigned proc_stride,
+  struct crystal *const cr);
+void sarray_transfer_(struct array *const A, const unsigned size,
+                      const unsigned p_off, const int set_src,
                       struct crystal *const cr);
-void sarray_transfer_ext_(struct array *const A, const size_t size,
+void sarray_transfer_ext_(struct array *const A, const unsigned size,
                           const uint *const proc, const unsigned proc_stride,
                           struct crystal *const cr);
 
 #define sarray_transfer(T,A,proc_field,set_src,cr) \
-  sarray_transfer_(A,sizeof(T),offsetof(T,proc_field),0,set_src,cr)
+  sarray_transfer_(A,sizeof(T),offsetof(T,proc_field),set_src,cr)
 
 #define sarray_transfer_ext(T,A,proc,proc_stride,cr) \
   sarray_transfer_ext_(A,sizeof(T),proc,proc_stride,cr)
