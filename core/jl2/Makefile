@@ -69,7 +69,7 @@ sarray_sort_test: sort.o fail.o comm.o tensor.o gs_local.o sarray_sort.o sarray_
 spchol_test: sparse_cholesky.o sort.o fail.o comm.o tensor.o gs_local.o spchol_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 comm_test: fail.o comm.o tensor.o gs_local.o comm_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 crystal_test: fail.o crystal.o comm.o tensor.o gs_local.o crystal_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
-sarray_transfer_test: sarray_transfer.o sort.o fail.o crystal.o comm.o tensor.o gs_local.o sarray_transfer_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
+sarray_transfer_test: sarray_transfer.o sarray_sort.o sort.o fail.o crystal.o comm.o tensor.o gs_local.o sarray_transfer_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 
 gs_test: gs_test.o $(GS_OBJECTS);		@echo LINK $@; $(LINKCMD) $^ -o $@
 gs_test_old: gs_test_old.o $(GS_OBJECTS);	@echo LINK $@; $(LINKCMD) $^ -o $@

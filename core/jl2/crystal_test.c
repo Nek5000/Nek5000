@@ -28,8 +28,8 @@ int main(int narg, char *arg[])
   
   crystal_init(&cr,&comm);
 
-  cr.n = (4+(comm.id&1))*comm.np;
-  buffer_reserve(&cr.data,cr.n*sizeof(uint));
+  cr.data.n = (4+(comm.id&1))*comm.np;
+  buffer_reserve(&cr.data,cr.data.n*sizeof(uint));
   data = cr.data.ptr;
   for(i=0;i<comm.np;++i, data+=3+data[2]) {
     data[0] = i, data[1] = comm.id, data[2] = 1;
@@ -38,7 +38,7 @@ int main(int narg, char *arg[])
   }
 
 #if 0
-  data = cr.data.ptr, end = data + cr.n;
+  data = cr.data.ptr, end = data + cr.data.n;
   for(;data!=end; data+=3+data[2]) {
     uint i;
     printf("%u -> %u:",data[1],data[0]);
@@ -51,7 +51,7 @@ int main(int narg, char *arg[])
 
 #if 0
   printf("\n");
-  data = cr.data.ptr, end = data + cr.n;
+  data = cr.data.ptr, end = data + cr.data.n;
   for(;data!=end; data+=3+data[2]) {
     uint i;
     printf("%u <- %u:",data[0],data[1]);
@@ -60,10 +60,10 @@ int main(int narg, char *arg[])
   }
 #endif
   
-  if(cr.n != comm.np*4 + (comm.np/2))
+  if(cr.data.n != comm.np*4 + (comm.np/2))
     fail(1,__FILE__,__LINE__,"failure on %u",comm.id);
   sum = 0;
-  data = cr.data.ptr, end = data + cr.n;
+  data = cr.data.ptr, end = data + cr.data.n;
   for(;data!=end; data+=3+data[2]) {
     sum+=data[1];
     if(data[3]!=data[1]*2)

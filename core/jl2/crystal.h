@@ -12,7 +12,6 @@
 struct crystal {
   struct comm comm;
   buffer data, work;
-  uint n;
 };
 
 void crystal_init(struct crystal *cr, const struct comm *comm);
