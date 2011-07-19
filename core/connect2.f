@@ -2325,7 +2325,7 @@ c        write(6,*) mid,' bclose ',eg,nbc_max
       else               ! wait for data from node 0
 
          nbc_max = 2*ndim*nelt
-         do k=1,nbc_max
+         do k=1,nbc_max+1  ! Need one extra !
 
 c           write(6,*) nid,' recvbc1',k
             call crecv(nid,buf,len)
