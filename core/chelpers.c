@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "jl/fname.h"
+#include "jl2/name.h"
 
-#define print_stack FORTRAN_NAME(print_stack, PRINT_STACK)
+#define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
 
 #if defined __GLIBC__
 
