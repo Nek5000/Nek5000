@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "jl2/name.h"
+#include "jl/name.h"
 
 #define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
 
