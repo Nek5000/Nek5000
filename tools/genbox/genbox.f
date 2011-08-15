@@ -156,9 +156,7 @@ c-----------------------------------------------------------------------
       call scanout(string,'LOGICAL SWITCHES',16,8,9)
       call set_logical(ifflow,ifheat,8,9)
  
-      call scanout(string,'MESH DATA',9,8,9)
-c      read(8,*) i,i,i
-c     write(9,*) ' *** MESH DATA ***'
+c     call scanout(string,'MESH DATA',9,8,9)
 c-----------------------------------------------------------------------
       
       nel  = 0
@@ -1187,8 +1185,8 @@ c
          read (infile ,132,end=100,err=100) string
  
          if   (indx1(string,comment,1).ne.1) then
-c              write(*,*) line
-c              write(6,132) string
+c             write(*,*) line
+c             write(6,132) string
               open(unit=99,file='box.tmp')
               len = ltrunc(string,132)
               write(99,81) (string1(k),k=1,len)
@@ -2320,16 +2318,55 @@ c-----------------------------------------------------------------------
  
       logical ifflow, ifheat
       integer inf,outf
-      character*132 temps
-    
-      if (     ifflow) write(outf,*) ' T     IFFLOW' 
-      if (.not.ifflow) write(outf,*) ' F     IFFLOW' 
-      if (     ifheat) write(outf,*) ' T     IFHEAT' 
-      if (.not.ifheat) write(outf,*) ' F     IFHEAT' 
-      read (inf,81) temps
-      read (inf,81) temps
-  81  format(132a)
 
+      integer line,lout
+      character*132 temps
+      character*1   temps1(132)
+      logical chk_heat,chk_flow
+
+      chk_flow = .false.
+      chk_heat = .false.
+
+      do line=1,10000000
+         call blank(temps,132)
+         read (inf,132,end=100,err=100) temps
+         call ccopy(temps1,temps,132)             
+         lout = ltrunc(temps1,132)                !len of temps1/temps
+
+         if (indx1(temps,'IFFLOW',6).ne.0) then  
+            chk_flow = .true.
+            if (ifflow) then
+               write(outf,*) ' T     IFFLOW' 
+            else
+               write(outf,*) ' F     IFFLOW' 
+            endif
+         elseif (indx1(temps,'IFHEAT',6).ne.0) then
+            chk_heat = .true.
+            if (ifheat) then 
+               write(outf,*) ' T     IFHEAT'
+            else
+               write(outf,*) ' F     IFHEAT'
+            endif
+         else
+           write (outf,81) (temps1(j),j=1,lout)          
+           if (indx1(temps,'MESH DATA',9).ne.0) then
+              if (chk_flow.and.chk_heat) then
+                 return
+              elseif(.not.chk_flow.and.ifflow) then
+                 write(outf,*) ' T     IFFLOW'
+              elseif(.not.chk_heat.and.ifheat) then
+                 write(outf,*) ' T     IFHEAT'
+              endif
+              return
+           endif
+         endif
+      enddo
+
+  132 format(a132)
+   81 format(132a1)
+
+  100 continue
+      write (6,*) 'In subroutine set_logical'
       return
       end
 c-----------------------------------------------------------------------
