@@ -22,3 +22,4 @@ nohup mpiexec -np $NP ./nek5000 > $1.log &
 sleep 1
 rm logfile
 ln $1.log logfile
+rm -f SESSION.NAME

@@ -8,3 +8,4 @@ touch $1.rea
 nohup time ./nek5000 > $1.log &
 sleep 2
 ln $1.log logfile
+rm -f SESSION.NAME

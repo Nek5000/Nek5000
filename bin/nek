@@ -5,3 +5,4 @@ mv -f $1.log $1.log1
 mv -f $1.sch $1.sch1
 touch $1.rea
 time ./nek5000
+rm -f SESSION.NAME
