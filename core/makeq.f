@@ -22,11 +22,7 @@ C     !! NOTE: Do not change the content of the array BQ until the current
            ntot = nx1*ny1*nz1*nelfld(ifield)
            call wlaplacian(w1,t(1,1,1,1,ifield-1),vdiff(1,1,1,1,ifield),
      &                     ifield)
-            call add2   (bq(1,1,1,1,ifield-1),w1,ntot)
-            call invcol2(bq(1,1,1,1,ifield-1),vtrans(1,1,1,1,ifield),
-     &                   ntot)
-            call col2   (bq(1,1,1,1,ifield-1),tmask(1,1,1,1,ifield-1),
-     &                   ntot)
+           call add2(bq(1,1,1,1,ifield-1),w1,ntot)
          else
            if (ifmvbd) then       ! ifchar is false
               call admesht

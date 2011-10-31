@@ -457,7 +457,7 @@ c----------------------------------------------------------------------
       subroutine fcvfun (cv_time, y, ydot, ipar, rpar, ier)
 c
 c     Compute RHS function f (allocated within cvode)
-c     NOTE: working array is bq, do not change! 
+c     NOTE: working array is ydot, do not change! 
 c
       include 'SIZE'
       include 'TOTAL'
@@ -472,28 +472,10 @@ c
       data timel / -1 /
       save timel
 
-c      integer icalld
-c      save    icalld
-c      data    icalld /0/
-c
-c      common /ctmp0/ intv,intt
-c      real intv(lx1,lx1)
-c      real intt(lx1,lx1)
-c      real wk1  (lx1,lx1,lx1,lelt)
-c      real wk2  (lx1,lx1,lx1)
-c
-c      if (icalld.eq.0) then
-c         icalld = 1
-c         ncut = param(101)+1
-c         wght = 0.01
-c         call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
-c      endif
-
       nxyz = nx1*ny1*nz1
 
       if (cv_time.ne.timel) then
         timel = cv_time
-c        icalld = 1
         if(nid.eq.0) write(6,10) cv_time
   10                 format(14X,'substepping t=',1pE14.7)
       endif
@@ -508,32 +490,40 @@ c        icalld = 1
       j = 1
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
+         if (iftmsh(ifield)) ntflds = ntflds + 1
          call makeq
-         if (iftmsh(ifield)) then
-            ntflds = ntflds + 1
-            call col3(ydot(j),bq(1,1,1,1,ifield-1),bintm1,ntot)
-         else
-            call col3(ydot(j),bq(1,1,1,1,ifield-1),binvm1,ntot)
-         endif
-c         call filterq(ydot(j+1),intv,nx1,nz1,wk1,wk2,intt,if3d,tmax)
+         call copy(ydot(j),bq(1,1,1,1,ifield-1),ntot)
          j = j + ntot
       enddo
 
+      ! project onto H1
+      j = 1
       if(ntflds.gt.0) then
-        j = 1
         do ifield = 2,cv_nfld
            call dssum (ydot(j),nx1,ny1,nz1)
            j = j + nxyz*nelfld(ifield)
         enddo
-        call add_fcvfun_usr(ydot(j))
       else ! same gs handle; use vector dssum
         ntot = nxyz*nelv
         if(cv_nfld-1.gt.0) 
      &    call nvec_dssum (ydot,ntot,cv_nfld-1,gsh_fld(1))
-        j = (cv_nfld-1)*ntot + 1
-        call add_fcvfun_usr(ydot(j))
-      endif 
+      endif
 
+      j = 1
+      do ifield=2,cv_nfld
+         ntot = nxyz*nelfld(ifield)
+         if (iftmsh(ifield)) then
+            call col2(ydot(j),bintm1,ntot)
+         else
+            call col2(ydot(j),binvm1,ntot)
+         endif
+         call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
+         call invcol2(ydot(j),vtrans(1,1,1,1,ifield),ntot)
+         j = j + ntot
+      enddo
+
+      call add_fcvfun_usr(ydot(j))
+      
       ier = 0
 
       return

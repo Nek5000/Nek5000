@@ -2100,8 +2100,8 @@ c-----------------------------------------------------------------------
       call gsync() ! clear outstanding message queues.
 
       nxyzr = ndim*nxr*nyr*nzr
-      len   = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
+      len   = nxyzr*wdsizr             ! message length in bytes
 
       ! check message buffer
       num_recv  = len
@@ -2119,7 +2119,8 @@ c-----------------------------------------------------------------------
          call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
       endif
 
-      ! pre-post recieves
+      ! pre-post recieves (one mesg per element)
+      ! this assumes we never pre post more messages than supported
       if (np.gt.1) then
          l = 1
          do e=1,nelt
