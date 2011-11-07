@@ -492,11 +492,10 @@ c
          ntot = nxyz*nelfld(ifield)
          if (iftmsh(ifield)) ntflds = ntflds + 1
          call makeq
-         call copy(ydot(j),bq(1,1,1,1,ifield-1),ntot)
+         call invcol3(ydot(j),bq(1,1,1,1,ifield-1),vtrans(1,1,1,1,ifield),ntot)
          j = j + ntot
       enddo
 
-      ! project onto H1
       j = 1
       if(ntflds.gt.0) then
         do ifield = 2,cv_nfld
@@ -518,7 +517,6 @@ c
             call col2(ydot(j),binvm1,ntot)
          endif
          call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
-         call invcol2(ydot(j),vtrans(1,1,1,1,ifield),ntot)
          j = j + ntot
       enddo
 
