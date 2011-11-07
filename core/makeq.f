@@ -23,6 +23,11 @@ C     !! NOTE: Do not change the content of the array BQ until the current
            call wlaplacian(w1,t(1,1,1,1,ifield-1),vdiff(1,1,1,1,ifield),
      &                     ifield)
            call add2(bq(1,1,1,1,ifield-1),w1,ntot)
+           if(iftmsh(ifield)) then
+             call dssum(bq,nx1,ny1,nz1)
+             call col2(bq,bintm1,ntot)
+             call col2(bq,bm1,ntot)
+           endif
          else
            if (ifmvbd) then       ! ifchar is false
               call admesht
