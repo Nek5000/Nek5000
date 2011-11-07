@@ -75,7 +75,7 @@ c
 
       ! use TLAG as scratch space (be careful!)
       common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,y0(lx1*ly1*lz1*lelt*ldimt)
+     &                ,y0(lx1*ly1*lz1*lelt*ldimt+1)
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
 #else
@@ -492,7 +492,8 @@ c
          ntot = nxyz*nelfld(ifield)
          if (iftmsh(ifield)) ntflds = ntflds + 1
          call makeq
-         call invcol3(ydot(j),bq(1,1,1,1,ifield-1),vtrans(1,1,1,1,ifield),ntot)
+         call invcol3(ydot(j),bq(1,1,1,1,ifield-1),
+     &               vtrans(1,1,1,1,ifield),ntot)
          j = j + ntot
       enddo
 
@@ -516,12 +517,18 @@ c
          else
             call col2(ydot(j),binvm1,ntot)
          endif
-         call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
          j = j + ntot
       enddo
 
       call add_fcvfun_usr(ydot(j))
-      
+
+      j = 1
+      do ifield=2,cv_nfld
+         ntot = nxyz*nelfld(ifield)
+         call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
+         j = j + ntot
+      enddo
+
       ier = 0
 
       return
