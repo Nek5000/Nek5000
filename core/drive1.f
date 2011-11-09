@@ -262,13 +262,20 @@ C--------------------------------------------------------------------------
       CALL COMMENT
 
       if (ifsplit) then   ! PN/PN formulation
-         igeom = 1
-         if (ifheat)      call heat     (igeom)
-         call setprop
-         call qthermal
-         igeom = 1
-         if (ifflow)      call fluid    (igeom)
-                          call setup_convect (2)
+         do igeom=1,ngeom
+c        
+	 if (ifgeom) then
+               call gengeom (igeom)
+               call geneig  (igeom)
+         endif
+c	 
+	 if (ifheat)            call heat          (igeom)
+         if (igeom.ne.1)	call setprop     
+         if (igeom.ne.1)	call qthermal   
+         if (ifflow)            call fluid         (igeom)
+         if (ifmvbd)            call meshv         (igeom)
+	                        call setup_convect (igeom)
+         enddo 			  
       else                ! PN-2/PN-2 formulation
          call setprop
          do igeom=1,ngeom
