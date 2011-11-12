@@ -13,10 +13,10 @@ c      if ( mpi_is_initialized .eq. 0 ) then
 c         call mpi_init (ierr)
 c      endif
 
-      ! create communicator
+      ! set nek communicator
       call init_nek_comm(intracomm)
-      np  = np_
-      nid = nid_
+      nid  = nid_
+      np   = np_
 
       if(nid.eq.0) call printHeader
 
@@ -82,12 +82,11 @@ c
 c-----------------------------------------------------------------------
       subroutine init_nek_comm(intracomm)
       include 'mpif.h'
-      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 C
-      call create_comm(intracomm) ! set up nekton specific communicator
-c
-      nid_  = mynode()
-      np_   = numnodes()
+      nekcomm = intracomm
+      nid     = mynode()
+      np      = numnodes()
 c
       return
       end
@@ -295,7 +294,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine create_comm(intracomm)
+      subroutine create_comm(inewcomm)
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
@@ -303,9 +302,7 @@ c      call mpi_comm_group (mpi_comm_world,itmp,ierr)
 c      call mpi_comm_create (mpi_comm_world,itmp,icomm,ierr)
 c      call mpi_group_free (itmp,ierr)
 
-      call mpi_comm_dup(intracomm,nekcomm,ierr)
-
-c     write(6,*) 'nekcomm:',nekcomm
+      call mpi_comm_dup(nekcomm,inewcomm,ierr)
 
       return
       end
