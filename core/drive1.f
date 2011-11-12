@@ -213,12 +213,12 @@ C--------------------------------------------------------------------------
 
       call nek_comm_startstat()
 
-      DO ISTEP=1,NSTEPS
+      do istep=1,nsteps
          call nek_advance
          call userchk
          call prepost (.false.,'his')
          if (lastep .eq. 1) goto 1001
-      ENDDO
+      enddo
  1001 lastep=1
 
 
@@ -244,8 +244,8 @@ c     check for post-processing mode
       call summary_stop()
 #endif
 
-      RETURN
-      END
+      return
+      end
 C--------------------------------------------------------------------------
       subroutine nek_advance
 
@@ -256,25 +256,25 @@ C--------------------------------------------------------------------------
       common /cgeom/ igeom
 
       call gsync
-      IF (IFTRAN) CALL SETTIME
+      if (iftran) call settime
       if (ifmhd ) call cfl_check
-      CALL SETSOLV
-      CALL COMMENT
+      call setsolv
+      call comment
 
       if (ifsplit) then   ! PN/PN formulation
          do igeom=1,ngeom
 c        
-	 if (ifgeom) then
-               call gengeom (igeom)
-               call geneig  (igeom)
-         endif
+           if (ifgeom) then
+             call gengeom (igeom)
+             call geneig  (igeom)
+           endif
 c	 
-	 if (ifheat)            call heat          (igeom)
-         if (igeom.ne.1)	call setprop     
-         if (igeom.ne.1)	call qthermal   
-         if (ifflow)            call fluid         (igeom)
-         if (ifmvbd)            call meshv         (igeom)
-	                        call setup_convect (igeom)
+           if (ifheat)       call heat          (igeom)
+           if (igeom.ne.1)   call setprop     
+           if (igeom.ne.1)   call qthermal   
+           if (ifflow)       call fluid         (igeom)
+           if (ifmvbd)       call meshv         (igeom)
+                             call setup_convect (igeom)
          enddo 			  
       else                ! PN-2/PN-2 formulation
          call setprop
