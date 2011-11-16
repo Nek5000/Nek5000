@@ -95,10 +95,10 @@ c     read nekton .rea file and make a .map file
       common /carrayc/ cbc(6,lelm)
       character*3      cbc
 
-      logical ifconn,is_connected
+      logical ifconn,is_connected,face_conn
 
       integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
-      integer     e1,c1
+      integer     e1,c1,f1
 
       call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim,w14)
 c                                    irnk is # unique points
@@ -109,8 +109,22 @@ c                                    irnk is # unique points
 
       nic = lpts
       njc = lpts
-      itype = 2   ! return structured vertex (not cell)pointer 
-      call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
+c     itype = 2   ! return structured vertex (not cell)pointer 
+c     call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
+C     WHY IS THIS CALLED????  WE DONT USE IT.
+      if (ndim.eq.3) then
+         face_conn = .false.
+         do i =1,5
+            if (.not.face_conn) then
+               call face_chk(face_conn,cell,nv,nelt,nic,njc,w1,w2,w3)
+            else
+               goto 15
+            endif
+         enddo 
+         write(6,*) "WARNING:Missing Face Connection Not Resolved"
+         call exit
+      endif
+  15  continue
 
       call izero (order,irnk)
 
@@ -284,7 +298,6 @@ c     Compress vertices based on coordinates
 
       call iranku    (cell,irnk,npts,i_n)
       call self_chk  (cell,nv,nelt,32)       ! check for not self-ptg.
-
       return
       end
 c-----------------------------------------------------------------------
@@ -318,7 +331,7 @@ c     ke = 2*ie
 c     ff = 1./(ke-ie-ie)
       stop
       end
-c----------------c------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine exitt(ie)
       write(6,*)
       write(6,*) ie,' quit'
@@ -326,7 +339,7 @@ c     ke = 2*ie
 c     ff = 1./(ke-ie-ie)
       stop
       end
-c----------------c------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
@@ -509,17 +522,17 @@ C
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-   50       format(a1,a3,2i3,5g14.7)
+   50       format(a1,a3,2i3,5g14.6)
          elseif (nel.lt.100 000) then
             read(io,51,err=520,end=600)    
      $      chtemp,
      $      cbc(f,e),id1,id2,
      $      (bc(ii,f,e),ii=1,nbcrea)
-   51       format(a1,a3,i5,i1,5g14.7)
+   51       format(a1,a3,i5,i1,5g14.6)
          elseif (nel.lt.1 000 000) then
             read(io,52,err=530,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
-   52       format(1x,a3,i7,5g14.6)
+   52       format(1x,a3,i6,5g14.6)
          elseif (nel.lt.10 000 000) then
             read(io,53,err=540,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
@@ -1298,7 +1311,6 @@ c
       include 'SIZE'
 
  
-      common /arrayr/  dx(1)    !ADDED to PLOT
       parameter(lpts=8*lelm)
 
       integer pmap(nel),order(1),elist(nel),cell(nv,1),part,c(nv,1)
@@ -1326,9 +1338,8 @@ c 6      format(2i6,2x,8i8,' bp_cell')
          etype = 3      ! Hexahedral
       endif
 
-c     call cell_plot(dx,c,nv,ndim,nel,0)
       call spec_bis_conn(pmap,n1,n2,c,elist,nv,nel
-     $                          ,cell,ndim,w1,w2,dx)
+     $                          ,cell,ndim,w1,w2)
 
       if (abs(n2-n1).gt.1) then ! rebalance load
          write(6,*) 'LOAD REBALANCE'
@@ -3263,7 +3274,7 @@ c
 c
       test2 = bytetest
       call byte_reverse(test2,1)
-c      write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
+c     write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
 
       return
       end
@@ -3327,6 +3338,11 @@ c
       endif
 
       call cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
+c     do i = 1,nv*ncell
+c        write(6,*) jc(i), cell(i,1), ic(i)
+c     enddo
+c     call exit
+  
 
       return
       end
@@ -3824,7 +3840,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine spec_bis_conn(pmap,n1,n2,c,elist,nv,nel
-     $                                ,cell,ndim,w1,w2,dx)
+     $                                ,cell,ndim,w1,w2)
 c
 c Calls Lanczos algorithm, if that fails, do
 c geometric bisection if that fails do  non-geometric bisection
@@ -3836,7 +3852,6 @@ c
     
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
       integer cell(nv,1),c(nv,nel)      
-      real dx(0:ndim,1)
       parameter(lpts=8*lelm)
       parameter(mm=50)
 
@@ -4113,7 +4128,7 @@ c
 c If there was an infinite loop, just divide it...
 c
   60     continue
-         write(6,*) 'infinite loop'
+c        write(6,*) 'infinite loop'
          do i = 1,n1
             pmap(i) = 1
          enddo
@@ -4309,3 +4324,166 @@ c      enddo
       return
       end
 c-----------------------------------------------------------------------
+      subroutine outcell(cell,dx,n,ndim)
+
+      integer cell(n)
+      real dx(0:ndim,n)
+    
+      do i = 1,n
+      write(6,6) cell(i),i,dx(1,i),dx(2,i)
+      enddo
+   6  format(i8,i3,3g15.6)
+   
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine face_chk(face_conn,cell,
+     $                        nv,ncell,nic,njc,v2cind,v2c,w3)
+c     checks that every face has proper connectivity
+c        i.e. if a 3D face has 3 vertices connected a another, 
+c             it must have a fourth
+c     vc2    : vertex to cell pointer
+c     vc2ind : indicies for the vertex to cell pointer
+c     cell   : global vertex numbering
+
+      integer vface(4,6)  ! symm. vertices ordered on symm. faces
+      save    vface
+      data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
+     $              , 1,2,3,4 , 5,6,7,8 /
+
+      logical face_conn,is_ok
+      integer cell(nv,ncell),v2c(1),v2cind(1)
+      integer f,v,vfail,v2
+      integer w3(ncell)
+
+      ndim = 3
+      itype = 1          ! vertex to cell pointers !
+      call cell2v(i0,i1,v2cind,nic,v2c,njc,cell,nv,ncell,itype,w3) 
+
+      nface = ndim*2     ! number of faces per element
+      nfv   = 2*(ndim-1) ! number of vertices in each face
+
+      face_conn = .true.      
+
+      do i = 1,ncell
+      do f = 1,nface
+         call izero(w3,ncell)            
+         do v = 1,nfv
+            iv1 = cell(vface(v,f),i)   
+            j0  = v2cind(iv1)
+            j1  = v2cind(iv1+1)-1
+            do j=j0,j1
+               w3(v2c(j)) = w3(v2c(j))+1
+            enddo
+         enddo
+
+         do k = 1,ncell                  ! Check for missing connection
+            if(w3(k).eq.3) then
+c              write(6,*) "MISSING FACE CONNECTION!  ",k,i,f 
+               do vfail = 1,nfv          ! Find failed pt on element_i,face_f 
+                  iv1   = cell(vface(vfail,f),i)  
+                  j0    = v2cind(iv1)
+                  j1    = v2cind(iv1+1)-1
+                  is_ok = .false.
+                  do j  = j0,j1          ! Checks that pt_iv1 connects to k 
+                     if (v2c(j).eq.k) is_ok = .true.
+                  enddo
+                  if(.not.is_ok) goto 10 ! Then this pt is our failed one
+               enddo
+            endif
+         enddo
+      enddo
+      enddo
+
+      return             ! All elements are connected correctly
+
+  10  continue
+      vfail = vface(vfail,f)             ! Failed vertex, on element i
+      call find_v2(v2,i,k,cell,ncell,nv,v2cind,v2c)
+      call fix_geom(cell,i,vfail,k,v2,v2cind,v2c,ncell,nv)
+      face_conn = .false.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_v2(v2,e1,e2,cell,nel,nv,ind,jc)
+c
+c     Find the vertex(v2) on e2 that (v1,e1) should be connected to      
+c
+      integer cell(nv,nel),ind(1),jc(1)
+      integer e1,e2,v2
+      integer f,v,vf,ncount
+      logical is_ok
+ 
+      integer vface(4,6)  ! symm. vertices ordered on symm. faces
+      save    vface
+      data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
+     $              , 1,2,3,4 , 5,6,7,8 /
+
+      do f = 1,6
+         ncount = 0
+         do v = 1,4
+            iv2 = cell(vface(v,f),e2)   
+            j0  = ind(iv2)
+            j1  = ind(iv2+1)-1
+            is_ok = .false.
+            do j=j0,j1
+               if(jc(j).eq.e1) then
+                 ncount = ncount +1
+                 is_ok = .true.
+               endif
+            enddo
+            if(.not.is_ok)vf = v
+         enddo
+         if(ncount.eq.3) goto 10
+      enddo
+  10  continue
+      v2 = vface(vf,f)   
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fix_geom(cell,e1,v1,e2,v2,ind,jc,nel,nv)
+c
+c     Changes the wrong point (v1,e1) to the correct point (v2,e2)
+c     Then checks that no other (v1,e1) exist in the geom.
+c
+      integer cell(nv,nel),ind(1),jc(1)
+      integer e1,v1,e2,v2,wrong_cell
+      
+
+      iv1 = cell(v1,e1)
+      iv2 = cell(v2,e2)
+      ivt = min(iv1,iv2)         ! what will now be the "correct" cell
+      ivf = max(iv1,iv2)         ! what will now be the "incorrect" cell
+
+      j0 = ind(ivf)
+      j1 = ind(ivf)
+      do j = j0,j1
+         ke = jc(j)
+         do k = 1,nv
+            if (cell(k,ke).eq.ivf) cell(k,ke)=ivt
+         enddo
+      enddo
+
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      function mod1(i,n)
+C
+C     Yields MOD(I,N) with the exception that if I=K*N, result is N.
+C
+      mod1=0
+      if (i.eq.0) return
+      if (n.eq.0) then
+         write(6,*)
+     $  'WARNING:  Attempt to take MOD(I,0) in FUNCTION MOD1.'
+         return
+      endif
+      ii = i+n-1
+      mod1 = mod(ii,n)+1
+      return
+      end
+c-----------------------------------------------------------------------
+

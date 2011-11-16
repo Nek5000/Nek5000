@@ -153,6 +153,12 @@ c     here is where the fluid, fluid+heat determination is made....
          nfld = abs(nfld)
       endif
 c-----------------------------------------------------------------------
+      call scanout(string,'PARAMETERS FOLLOW',17,8,9)
+      read(string,*) nparam
+      lout = ltrunc(string1,132)
+      write(9,81) (string1(j),j=1,lout)
+      call scanparam(string,string1,nparam,nfld,ifflow,ifheat,8,9)
+
       call scanout(string,'LOGICAL SWITCHES',16,8,9)
       call set_logical(ifflow,ifheat,8,9)
  
@@ -185,8 +191,12 @@ c-----------------------------------------------------------------------
      $      if_multi_seg = .true.
  
          if (boxcirc(ibox).eq.'y'.or.boxcirc(ibox).eq.'Y') then
-            call cyl(if3d,nfld)
-            call exit
+            if (iffo) then
+                call cyl(if3d,ifflow,nfld,string,string1)
+            else
+                write(6,*) "Currently setup for ascii output only"
+            endif
+            call exitt
          endif
        
          if (if_multi_seg) then
@@ -211,12 +221,12 @@ c-----------------------------------------------------------------------
             nely = abs(nely)
             nelz = abs(nelz)
 
-            if(nelx*nely.gt.maxel) then
+            if(nelx*nely*nelz.gt.maxel) then
               write(6,*)
      $           'ABORT: increase maxel and recompile!',nelx,nely
               call exitt
             elseif (nelx.gt.maxx.or.nely.gt.maxx.or.nelz.gt.maxx) then
-               write(6,*) 'Abort, increase maxx and recompile',
+               write(6,*) 'ABORT, increase maxx and recompile',
      $                       nelx,nely,nelz,maxx
               call exitt
             endif
@@ -229,6 +239,12 @@ c-----------------------------------------------------------------------
  
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
+               if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') then
+                   if(x0.le.xc(ibox)) then
+                      write(6,*) 'ABORT, x0 is equal to the center!'
+                      call exitt
+                   endif
+               endif
                if (ratio.le.0) ratio=1.
                dx = (x1-x0)/nelx
                x(0,ibox) = 0.
@@ -242,6 +258,12 @@ c-----------------------------------------------------------------------
                enddo
             else
                call getrv(x(0,ibox),nelx+1,iend,7)
+               if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') then
+                   if(x(0,ibox).le.xc(ibox)) then
+                      write(6,*) 'ABORT, x0 is equal to the center!'
+                      call exitt
+                   endif
+               endif
             endif
  
             if (ifeveny) then
@@ -291,11 +313,11 @@ c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
             nelx = abs(nelx)
             nely = abs(nely)
 
-            if(nelx*nely.gt.maxel) then
+            if(nelx*nely*nelz.gt.maxel) then
               write(6,*) 'ABORT: increase maxel and recompile!'
               call exitt
             elseif (nelx.gt.maxx.or.nely.gt.maxx.or.nelz.gt.maxx) then
-               write(6,*) 'Abort, increase maxx and recompile',
+               write(6,*) 'ABORT, increase maxx and recompile',
      $                       nelx,nely,nelz,maxx
               call exitt
             endif
@@ -308,6 +330,12 @@ c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
  
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
+               if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') then
+                   if(x0.le.xc(ibox)) then
+                      write(6,*) 'ABORT, x0 is equal to the center!'
+                      call exitt
+                   endif
+               endif
                if (ratio.le.0) ratio=1.
                dx = (x1-x0)/nelx
                x(0,ibox) = 0.
@@ -321,6 +349,12 @@ c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
                enddo
             else
                call getrv(x(0,ibox),nelx+1,iend,7)
+               if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') then
+                   if(x(0,ibox).le.xc(ibox)) then
+                      write(6,*) 'ABORT, x0 is equal to the center!'
+                      call exitt
+                   endif
+               endif
             endif
 c           write(999,*) (x(i,1),i=0,nelx)
 
@@ -340,7 +374,7 @@ c           write(999,*) (x(i,1),i=0,nelx)
             else
                call getrv(y(0,ibox),nely+1,iend,7)
             endif
-c           write(998,*) (y(i,1),i=0,nely)
+c           write(998,*) (y(i,1),i=0,nely) 
 
  
             do ifld=1,nfld
@@ -355,6 +389,16 @@ c           write(998,*) (y(i,1),i=0,nely)
       enddo
     6 format('Reading',i8,' =',3i8,' elements for box',i4,'.')
    99 continue
+
+      if(nel.gt.maxel) then
+        write(6,*)
+     $       'ABORT: increase maxel and recompile!',nel,maxel
+             call exitt
+      elseif (nelx.gt.maxx.or.nely.gt.maxx.or.nelz.gt.maxx) then
+        write(6,*) 'ABORT, increase maxx and recompile',
+     $       nelx,nely,nelz,maxx
+        call exitt
+      endif
  
       if(iffo) then
         write(6,*) 'Beginning construction of box.rea'
@@ -379,6 +423,7 @@ c
       endif
  
       ncurv = 0
+
       call rzero(curve,8*nel)
  
       if (if3d) then
@@ -414,15 +459,45 @@ c             ilev = ilev+1
                    curve(4,ie) = -r1
                    curve(6,ie) =  r2
                    curve(8,ie) = -r1
-c                  write(9,11) ie,ilev,apt(ia),'0'
-                   write(9,11) ie,ilev,' ','0'
-                   write(9,12) x1,x2,x3,x4
-                   write(9,12) y1,y2,y3,y4
-                   write(9,12) z1,z1,z1,z1
-                   write(9,12) x1,x2,x3,x4
-                   write(9,12) y1,y2,y3,y4
-                   write(9,12) z2,z2,z2,z2
                    ncurv = ncurv+4
+c                  write(9,11) ie,ilev,apt(ia),'0'
+                   if(iffo) then 
+                      write(9,11) ie,ilev,' ','0'
+                      write(9,12) x1,x2,x3,x4
+                      write(9,12) y1,y2,y3,y4
+                      write(9,12) z1,z1,z1,z1
+                      write(9,12) x1,x2,x3,x4
+                      write(9,12) y1,y2,y3,y4
+                      write(9,12) z2,z2,z2,z2
+                   else 
+                    igroup = 0
+                    call byte_write(igroup, 1)
+                    buf(1)  = x1
+                    buf(2)  = x2
+                    buf(3)  = x3
+                    buf(4)  = x4
+                    buf(5)  = x1
+                    buf(6)  = x2
+                    buf(7)  = x3
+                    buf(8)  = x4
+                    buf(9)  = y1
+                    buf(10) = y2
+                    buf(11) = y3
+                    buf(12) = y4
+                    buf(13) = y1
+                    buf(14) = y2
+                    buf(15) = y3
+                    buf(16) = y4
+                    buf(17) = z1
+                    buf(18) = z1
+                    buf(19) = z1
+                    buf(20) = z1
+                    buf(21) = z2
+                    buf(22) = z2
+                    buf(23) = z2
+                    buf(24) = z2
+                    call byte_write(buf,24)
+                   endif
                 enddo
               enddo
             enddo
@@ -814,28 +889,28 @@ c
                     write(9,21) cbc5,ie,eface(5),(rbc5(j),j=1,5)
                     write(9,21) cbc6,ie,eface(6),(rbc6(j),j=1,5)
                  elseif (nel.lt.1000000) then
-                    write(9,22) cbc3,ie,eface(3),(rbc3(j),j=1,5)
-                    write(9,22) cbc2,ie,eface(2),(rbc2(j),j=1,5)
-                    write(9,22) cbc4,ie,eface(4),(rbc4(j),j=1,5)
-                    write(9,22) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                    write(9,22) cbc5,ie,eface(5),(rbc5(j),j=1,5)
-                    write(9,22) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-                 else
-                    iee = ie
-                    if (iee.gt.1000000) iee=iee/10
-                    if (iee.gt.1000000) iee=iee/10
-                    if (iee.gt.1000000) iee=iee/10
-                    write(9,22) cbc3,iee,(rbc3(j),j=1,5)
-                    write(9,22) cbc2,iee,(rbc2(j),j=1,5)
-                    write(9,22) cbc4,iee,(rbc4(j),j=1,5)
-                    write(9,22) cbc1,iee,(rbc1(j),j=1,5)
-                    write(9,22) cbc5,iee,(rbc5(j),j=1,5)
-                    write(9,22) cbc6,iee,(rbc6(j),j=1,5)
+                    write(9,22) cbc3,ie,(rbc3(j),j=1,5)
+                    write(9,22) cbc2,ie,(rbc2(j),j=1,5)
+                    write(9,22) cbc4,ie,(rbc4(j),j=1,5)
+                    write(9,22) cbc1,ie,(rbc1(j),j=1,5)
+                    write(9,22) cbc5,ie,(rbc5(j),j=1,5)
+                    write(9,22) cbc6,ie,(rbc6(j),j=1,5)
+                 else                                        ! Typically
+                    iee = ie                                 ! nek doesn't
+                    if (iee.gt.1000000) iee=iee/10           ! deal with
+                    if (iee.gt.1000000) iee=iee/10           ! >1M ascii
+                    if (iee.gt.1000000) iee=iee/10           ! elements
+                    write(9,22) cbc3,iee,(rbc3(j),j=1,5)     ! so this 
+                    write(9,22) cbc2,iee,(rbc2(j),j=1,5)     ! format
+                    write(9,22) cbc4,iee,(rbc4(j),j=1,5)     ! shouldn't
+                    write(9,22) cbc1,iee,(rbc1(j),j=1,5)     ! be used
+                    write(9,22) cbc5,iee,(rbc5(j),j=1,5)     !
+                    write(9,22) cbc6,iee,(rbc6(j),j=1,5)     !
                  endif
 
-   20            format(1x,a3,2i3,5g14.7)
-   21            format(1x,a3,i5,i1,5g14.7)
-   22            format(1x,a3,i6,i1,5g14.7)
+   20            format(1x,a3,2i3,5g14.6)
+   21            format(1x,a3,i5,i1,5g14.6)
+   22            format(1x,a3,i6,5g14.6)
 
                elseif (.not. iffo) then
 
@@ -967,11 +1042,20 @@ c
                     write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                 else
+                 elseif (nel.lt.100000) then
                     write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                     write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
+                 elseif (nel.lt.1000000) then
+                    write(9,22) cbc3,ie,(rbc3(j),j=1,5)
+                    write(9,22) cbc2,ie,(rbc2(j),j=1,5)
+                    write(9,22) cbc4,ie,(rbc4(j),j=1,5)
+                    write(9,22) cbc1,ie,(rbc1(j),j=1,5)
+                 else
+                    write(6,*)
+     $                'ASCII format for >1M not supported in nek'
+                    call exitt
                  endif
                elseif (.not. iffo) then
                  if(ipass.eq.2) then
@@ -1492,8 +1576,8 @@ c
          nelxyz(id) = ilsum(nels,nseg)
          if (nelxyz(id).gt.m) then
             write(6,*) 'NEL too large:',nelxyz(id),m,id
-            write(6,*) 'Abort in get_multi_seg.'
-            call exit
+            write(6,*) 'ABORT in get_multi_seg.'
+            call exitt
          endif
  
          k = 0
@@ -1564,7 +1648,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine get_xyz_distribution (x,nelx)
-      real x(0:1)
+      real x(0:2)
       if (nelx.ge.0) return ! else, uniform or geometric spacing
  
       x0 = x(0)
@@ -1608,11 +1692,14 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cyl(if3d,nfld)
+      subroutine cyl(if3d,ifflow,nfld,string,string1)
 
       parameter (mbox  = 10)
       parameter (maxx  = 900)
       parameter (maxel = mbox*maxx*30)
+
+      character*132 string
+      character*1  string1(132)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
       real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
@@ -1628,7 +1715,7 @@ c-----------------------------------------------------------------------
       real rad(0:maxx),tht(0:maxx)
       character*1 cob(0:maxx),ccurve(8,maxx)
  
-      logical if3d
+      logical if3d,ifflow
       integer e
  
       call cyl_box(x,y,z,nels,cob,rad,tht,cbc,curve,ccurve
@@ -1642,9 +1729,17 @@ c-----------------------------------------------------------------------
  
       call out_xy_box    (x,y,z,nels,maxx,if3d)
       call out_xy_curves (curve,ccurve,nels,if3d)
-      call out_tens_bcs  (cbc,nelx,nely,nelz,1,nfld,if3d)
+      call out_tens_bcs  (cbc,nelx,nely,nelz,1,nfld,if3d,ifflow)
 c     call out_tens_bcs  (cbc,nlx,nly,nlz,nbox,nfld,if3d) ! > 1 box, later
  
+      call nekscan(string,'RESTART',7,8)
+      lout = ltrunc(string1,132)
+      write (9,81) (string1(j),j=1,lout)
+   81 format(132a1)
+
+      call scanout(string,'xxxx',4,8,9)
+c      if(.not.iffo)  call byte_close()
+      close(unit=8)
       close(unit=9)
  
       return
@@ -1742,8 +1837,23 @@ c
                   tha = twopi*tht(iy1)
                   x(ij,e) = rad(ix1)*cos(tha)
                   y(ij,e) = rad(ix1)*sin(tha)
+
+                  if(ix1.gt.0.and.
+     $               cob(ix1-1).eq.'b'.or.cob(ix1-1).eq.'B'.or.
+     $               cob(ix1-1).eq.'p'.or.cob(ix1-1).eq.'P') then
+                      if(abs(x(ij,e)).le.abs(x(ij,e-1))) then
+                        write(6,*)x(ij,e),x(ij,e-1),e
+                        write(6,*)"Curve sides must be greater than box"
+                        write(6,*)"Change .box file to proceed"
+                        call exitt()                    
+                      endif
+                  endif
+
                enddo
             elseif (cob(ix1).eq.'p'.or.cob(ix1).eq.'P') then ! L1 projection
+               if(e.eq.1.and.mod(nely,2).ne.0) 
+     $           write(6,*) "WARNING!!!!!!!! ",
+     $           "Box-like geometry works best with even number of nely"
                do j=0,1
                   ij   = 1 + i + 2*j                         ! h-cube ordering
                   iy1  = iy-1 + j
@@ -1764,6 +1874,9 @@ c
                   endif
                enddo
             else                               ! Cartesian box, proporionl
+               if(e.eq.1.and.mod(nely,2).ne.0) 
+     $           write(6,*) "WARNING!!!!!!!! ",
+     $           "Box-like geometry works best with even number of nely"
                do j=0,1
                   ij   = 1 + i + 2*j           ! h-cube ordering
                   iy1  = iy-1 + j
@@ -1786,7 +1899,7 @@ c
                      y(ij,e) = rad(ix1)*(posp-8)
                   else
                      write(6,*) 'theta > 1. ABORT.',e,i,j,ij,tht(iy1)
-                     call exit
+                     call exitt
                   endif
                enddo
             endif
@@ -1855,8 +1968,9 @@ c
  
       call getr2 (xy0(1),xy0(2),iend,7)  ! Coordinates of cyl. ctr.
  
-      call getcv0(cob,1,nelx+1,iend,7)   ! Cylinder type: c,o,b,p, etc.
- 
+      nelx1 = abs(nelx) + 1
+      call getcv0(cob,1,nelx1,iend,7)   ! Cylinder type: c,o,b,p, etc.
+
       if (nelx.gt.0) then
          call getrv(rad,nelx+1,iend,7)
       else
@@ -2063,13 +2177,13 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_tens_bcs(cbc,nlx,nly,nlz,nbox,nfld,if3d)
+      subroutine out_tens_bcs(cbc,nlx,nly,nlz,nbox,nfld,if3d,ifflow)
 c
 c     output bcs for multi-box tensor-product mesh
 c
       character*3 cbc(6,nbox,nfld)
       integer     nlx(nbox),nly(nbox),nlz(nbox)
-      logical     if3d
+      logical     if3d,ifflow
  
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
       real        rbc1(5),rbc2(5),rbc3(5),rbc4(5),rbc5(5),rbc6(5)
@@ -2084,14 +2198,25 @@ c
  
  
       do ifld=1,nfld
-         if2 = ifld-2
-         if (ifld.eq.1) write(9,41)
-         if (ifld.eq.2) write(9,42)
-         if (ifld.ge.3) write(9,43) if2
-   41    format('  ***** FLUID   BOUNDARY CONDITIONS *****')
-   42    format('  ***** THERMAL BOUNDARY CONDITIONS *****')
-   43    format('  ***** PASSIVE SCALAR',i2
+         if (ifflow) then
+            if2 = ifld-2
+            if (ifld.eq.1) write(9,41)
+            if (ifld.eq.2) write(9,42)
+            if (ifld.ge.3) write(9,43) if2
+   41       format('  ***** FLUID   BOUNDARY CONDITIONS *****')
+   42       format('  ***** THERMAL BOUNDARY CONDITIONS *****')
+   43       format('  ***** PASSIVE SCALAR',i2
      $                       ,'  BOUNDARY CONDITIONS *****')
+         else
+            if2 = ifld-1
+            if (ifld.eq.1) write(9,51)
+            if (ifld.eq.1) write(9,52)
+            if (ifld.gt.1) write(9,53) if2
+   51       format('  ***** NO FLUID   BOUNDARY CONDITIONS *****')
+   52       format('  ***** THERMAL BOUNDARY CONDITIONS *****')
+   53       format('  ***** PASSIVE SCALAR',i2
+     $                       ,'  BOUNDARY CONDITIONS *****')
+         endif
  
          ie = 0
          if (if3d) then
@@ -2203,9 +2328,9 @@ c
                   write(9,22) cbc5,iee,(rbc5(j),j=1,5)
                   write(9,22) cbc6,iee,(rbc6(j),j=1,5)
                endif
-   20          format(1x,a3,2i3,5g14.7)
-   21          format(1x,a3,i5,i1,5g14.7)
-   22          format(1x,a3,i6,5g14.7)
+   20          format(1x,a3,2i3,5g14.6)
+   21          format(1x,a3,i5,i1,5g14.6)
+   22          format(1x,a3,i6,5g14.6)
             enddo
             enddo
             enddo
@@ -2293,6 +2418,10 @@ c
             enddo
          endif
       enddo
+      if(ifflow) then
+        if (nfld.eq.1) write(9,*) 
+     &     ' ***** NO THERMAL BOUNDARY CONDITIONS *****'
+      endif
  
       return
       end
@@ -2332,7 +2461,7 @@ c-----------------------------------------------------------------------
          read (inf,132,end=100,err=100) temps
          call ccopy(temps1,temps,132)             
          lout = ltrunc(temps1,132)                !len of temps1/temps
-
+         
          if (indx1(temps,'IFFLOW',6).ne.0) then  
             chk_flow = .true.
             if (ifflow) then
@@ -2367,6 +2496,32 @@ c-----------------------------------------------------------------------
 
   100 continue
       write (6,*) 'In subroutine set_logical'
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine scanparam(str,str1,nparam,nfd,ifflw,ifht,infil,outfil)
+
+      integer infil,outfil
+      character*132 str
+      character*1   str1(132)
+      logical ifflw, ifht
+
+      nps = nfd - 1
+      if (ifflw.and.ifht) nps = nfd-2
+      if (nps.lt.0) nps = 0
+      do i = 1,nparam
+         call blank(str,132)
+         read(infil,'(a132)') str
+         call ccopy(str1,str,132)
+
+         if(i.eq.23) write(outfil,90) nps
+   90    format(' ',i2,'              p23 NPSCAL')
+         
+         lout = ltrunc(str1,132)
+         write (outfil,81) (str1(j),j=1,lout)
+   81    format(132a1)
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------

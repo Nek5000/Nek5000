@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       program nekmerge
 
-c     Merge multiple .rea files together.  Output is in re2 format
+c     Merge multiple .rea files together.  Output is in re2 or rea format
 c
 c     this program will take a nek all-ascii rea file and
 c     extract geometry, bcs, and curve data to a new binary re2 file, plus
@@ -62,6 +62,7 @@ c     an ascii rea file for just the parameters
       do ifile=1,1000
 
 !        .Tacitly assumes that all .rea files have the same ndim
+!        .and the same nfld
 !        .Also, writes out params for ifile=1
 
          call open_file_in  (ifile,iend)
@@ -69,7 +70,7 @@ c     an ascii rea file for just the parameters
 
 
          nelo = nelt_all
-         call rw_param(nelt,nelv,ndim,nelt_all,nelv_all,ifile)
+         call rw_param(nelt,nelv,ndim,nelt_all,nelv_all,nfld,ifile)
          nel  = nelt
          e    = nelo + 1
 
@@ -78,6 +79,7 @@ c     an ascii rea file for just the parameters
      &      'ABORT: Too many elements, increase LELT and recompile'
            call exitt 
          endif
+
 
          call rd_xyz (x(1,e),y(1,e),z(1,e),nel,ndim)
 
@@ -205,7 +207,6 @@ c
       integer face(1),ind(1),ninseg(1)
       logical ifseg(1)
       real dx(0:ndim,1)
-
       integer e
       real dxt(4),t1(4),t2(4)
 
@@ -234,7 +235,7 @@ c     Sort by directions
             call iswap_ip  (face(i),ind,ninseg(iseg)) ! Swap position 
             i  =   i + ninseg(iseg)
          enddo
-c
+ 
          q=0.2
          q=0.0010   ! Smaller is better
          do i=2,n
@@ -267,6 +268,9 @@ c
       enddo
       nglb = ig
       call icopy(face,ind,n)
+c          do ik=1,n
+c             write(15,*) dx(1,ik),dx(2,ik),ik
+c          enddo
 
       write(6,6) nseg,nglb,n
     6 format('done locglob_lexico:',3i9)
@@ -276,7 +280,7 @@ c
 c-----------------------------------------------------------------------
       subroutine get_side   (dx,x,y,z,nel,ndim)
 
-      real dx(0:3,2*ndim,nel),x(8,nel),y(8,nel),z(8,nel)
+      real dx(0:ndim,2*ndim,nel),x(8,nel),y(8,nel),z(8,nel)
 
       integer ivtx(4,6)
       save    ivtx
@@ -356,7 +360,6 @@ c-----------------------------------------------------------------------
       nface = 2*ndim
       n     = nface*nel
       call izero(work,n)
-
       do e=1,nel
       do f=1,nface
          i = face(f,e)
@@ -368,7 +371,7 @@ c-----------------------------------------------------------------------
       do f=1,nface
          i = face(f,e)
 
-c        write(44,4) i,work(i),f,e,cbc(f,e,1)
+c        write(6,4) i,work(i),f,e,cbc(f,e,1)
 c  4     format(4i9,2x,a3)
 
          if (work(i).eq.2) then    ! we have adjoining faces
@@ -507,12 +510,9 @@ c               call bdry_write (buf,8)
 
       enddo
 
-c     len = ltrunc(string,80)
-c     write(11,81) (string1(k),k=1,len)
-c     write(6 ,81) (string1(k),k=1,len)
-c  81 format(80a1)
 
-      call scanout(string,'BOUN',4,10,0) ! clear any remaining BC
+      call scanout(string,'PRESOLVE',8,10,0) ! clear any remaining BC
+      call lineout(11,string,80)
       call scanout(string,'end',3,10,11)
 
       close (unit=10)
@@ -541,14 +541,12 @@ c     output remainder of mesh: ascii format
       call out_curve_ascii
       call out_bdry_ascii
 
-c     len = ltrunc(string,80)
-c     write(11,81) (string1(k),k=1,len)
-c     write(6 ,81) (string1(k),k=1,len)
-   81 format(80a1)
-
+      call scanout(string,'PRESOLVE',8,10,0) ! clear any remaining BC
+      call lineout(11,string,80)
       call scanout(string,'end',3,10,11)
 
       close (unit=10)
+      close (unit=11)
 
       return
       end
@@ -564,9 +562,8 @@ c-----------------------------------------------------------------------
       call blank(string,80)
       write(string,1)
 c             123456789 123456789 123456789 123456789 123456789 
-    1 format('            E:         1 [    1a]    GROUP     0')
+    1 format('        E:         1 [    1a]    GROUP     0')
       len = ltrunc(string,80)
-
 
       do e=1,nelt
 
@@ -665,18 +662,21 @@ c
                write(11,20) cbc(f,e,fld),e,f,(bc(j,f,e,fld),j=1,5)
             elseif (nel.lt.100000) then
                write(11,21) cbc(f,e,fld),e,f,(bc(j,f,e,fld),j=1,5)
-            else
+            elseif (nel.lt.1000000) then
                write(11,22) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
+            else
+               write(6,*) 'ASCII format for >1M not supported in nek'
+               call exitt
             endif
-c  20       format(1x,a3,2i3,1p5e14.6)
-c  21       format(1x,a3,i5,i1,1p5e14.6)
-c  22       format(1x,a3,i10,1p5e14.6)
+
    20       format(1x,a3,2i3,5g14.6)
    21       format(1x,a3,i5,i1,5g14.6)
-   22       format(1x,a3,i10,5g14.6)
+   22       format(1x,a3,i6,5g14.6)
          enddo
          enddo
       enddo
+      if(nfld.eq.1) write(11,44)
+   44    format('  ***** NO THERMAL BOUNDARY CONDITIONS *****')
 
       return
       end

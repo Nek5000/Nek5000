@@ -22,7 +22,7 @@ C     This routine replaces data statements
       include 'basicsp.inc'
       COMMON /TTSCAL/ TX(16)
 C
-      OPEN(UNIT=13,STATUS='SCRATCH')
+      OPEN(UNIT=13)
 C
 C     Initialize Character Strings to blank.
 C

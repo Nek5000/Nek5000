@@ -363,10 +363,17 @@ c
                do  k = 1,4
                   read (10,20) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
                enddo
-            else
+            elseif (nel.lt.100000) then
                do  k = 1,4
                   read (10,21) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
                enddo
+            elseif(nel.lt.1000000) then
+               do  k = 1,4
+                  read (10,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
+               enddo
+            else
+               write(6,*) "ASCII format for >1M not supported in nek"
+               call exit 
             endif
 
             call rzero(bc(1,5,e),5)
@@ -399,7 +406,7 @@ c
                elseif (neln.lt.100000) then
                   write(11,21) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
                else
-                  write(11,22) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
+                  write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
                endif
             enddo
             cbc(5,e) = 'E  '
@@ -443,24 +450,24 @@ c              Periodic bc's on Z plane
                   elseif (neln.lt.100000) then
                      write(11,21) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
                   else
-                     write(11,22) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
+                     write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
                   endif
                enddo
             enddo
          enddo
-c
+ 
          if (cb5.eq.'v  ') cb5='t  '
          if (cb6.eq.'v  ') cb6='t  '
-c
+ 
       enddo
-c
+ 
       call readwrite(string,'endendend',9)
-c
-   20 FORMAT(1x,A3,2I3,5G14.7)
-   21 FORMAT(1x,A3,i5,i1,5G14.7)
-   22 FORMAT(1x,A3,i6,i1,5G14.7)
+ 
+   20 FORMAT(1x,A3,2I3,5G14.6)
+   21 FORMAT(1x,A3,i5,i1,5G14.6)
+   22 FORMAT(1x,A3,i6,5G14.6)
 
-c
+ 
    80 format(a80)
    81 format(80a1)
       return

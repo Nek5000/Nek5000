@@ -21,7 +21,7 @@ C     This subroutine replaces data statements
       INCLUDE 'basics.inc'
       COMMON /TTSCAL/ TX(16)
 C
-      OPEN(UNIT=13,STATUS='SCRATCH')
+      OPEN(UNIT=13)
 C
 C     Initialize Character Strings to blank.
 C
