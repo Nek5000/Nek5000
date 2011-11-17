@@ -70,7 +70,7 @@ c------------------------------------------------------------------------------
       equivalence (string,string1)
  
       logical     if3d,  ifevenx,ifeveny,ifevenz
-     $           ,ifflow,ifheat, iffo,   if_multi_seg
+     $           ,ifflow,ifheat, iffo,   if_multi_seg, ifmhd
 
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
       real        rbc1(5),rbc2(5),rbc3(5),rbc4(5),rbc5(5),rbc6(5)
@@ -141,23 +141,29 @@ c     here is where the 2d/3d determination is made....
       ndim = abs(ndim)
       if (ndim.eq.3) if3d = .true.
 c-----------------------------------------------------------------------
-c     here is where the fluid, fluid+heat determination is made....
-      call geti1(nfld,iend,7)
+c     here is where the fluid, fluid+heat, mhd determination is made....
+      call getr1(rfld,iend,7)
+      nfld = int(rfld)
+
       ifheat = .false.
+      ifmhd  = .false.
       if (nfld.gt.0) then
          ifflow = .true.    
-         if (nfld.gt.1) ifheat = .true.  ! fluid and heat
+         if (nfld.gt.1)   ifheat = .true. ! fluid and heat
+         if (nfld.ne.rfld) then
+             ifmhd  = .true.              ! mhd
+             nfld   = nfld+1
+         endif
       else
-         ifflow = .false.                ! heat only
+         ifflow = .false.                 ! heat only, no mhd
          ifheat = .true.
-         nfld = abs(nfld)
+         nfld   = abs(nfld)
       endif
+      write(6,*) ifflow,ifheat,ifmhd,nfld,rfld
 c-----------------------------------------------------------------------
       call scanout(string,'PARAMETERS FOLLOW',17,8,9)
       read(string,*) nparam
-      lout = ltrunc(string1,132)
-      write(9,81) (string1(j),j=1,lout)
-      call scanparam(string,string1,nparam,nfld,ifflow,ifheat,8,9)
+      call scanparam(string,string1,nparam,nfld,ifflow,ifheat,ifmhd,8,9)
 
       call scanout(string,'LOGICAL SWITCHES',16,8,9)
       call set_logical(ifflow,ifheat,8,9)
@@ -1351,6 +1357,18 @@ c     Get two reals from first uncommented line
       return
       end
 c-----------------------------------------------------------------------
+      subroutine getr1(r1,iend,io)
+
+c     Get two reals from first uncommented line
+
+      call scannocom(iend,io)
+      if (iend.ne.0) return
+      open(unit=99,file='box.tmp')
+      read(99,*) r1
+      close(unit=99)
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine getrv(r,n,iend,io)
       real r(n)
 c
@@ -2499,27 +2517,31 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine scanparam(str,str1,nparam,nfd,ifflw,ifht,infil,outfil)
+      subroutine scanparam(str,str1,nparam,nfd,ifflw,ifht,ifmhd
+     $                                              ,infil,outfil)
 
       integer infil,outfil
       character*132 str
       character*1   str1(132)
-      logical ifflw, ifht
+      logical ifflw, ifht, ifmhd
 
       nps = nfd - 1
       if (ifflw.and.ifht) nps = nfd-2
+      if (ifmhd)          nps = nps-1
       if (nps.lt.0) nps = 0
       do i = 1,nparam
          call blank(str,132)
          read(infil,'(a132)') str
          call ccopy(str1,str,132)
 
-         if(i.eq.23) write(outfil,90) nps
-   90    format(' ',i2,'              p23 NPSCAL')
-         
-         lout = ltrunc(str1,132)
-         write (outfil,81) (str1(j),j=1,lout)
-   81    format(132a1)
+         if(i.eq.23) then 
+           write(outfil,90) nps
+   90      format(' ',i2,'              p23 NPSCAL')
+         else 
+           lout = ltrunc(str1,132)
+           write (outfil,81) (str1(j),j=1,lout)
+   81      format(132a1)
+         endif
       enddo
 
       return
