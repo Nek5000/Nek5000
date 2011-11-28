@@ -2019,8 +2019,9 @@ c
       integer  edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
       common  /scrmg/ edge,enum,fnum
 
-      integer etuple(4,2*12*lelt),ftuple(5,6,2*lelt)
-      integer ind(2*12*lelt)
+      parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
+      integer etuple(4,12*lelt*nsafe),ftuple(5,6,lelt*nsafe)
+      integer ind(12*lelt*nsafe)
       common  /scrns/ ind,etuple
       equivalence  (etuple,ftuple)
 
@@ -2093,7 +2094,7 @@ c
 c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 12*nel
-      nmax = 12*lelt*2  ! 2x for crystal router factor of safety
+      nmax = 12*lelt*nsafe  ! nsafe for crystal router factor of safety
       call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,12*nel
          enum(i,1) = etuple(3,i)
@@ -2200,7 +2201,7 @@ c
 c     Assign a number (rank) to each unique face
       m    = 5
       n    = 6*nel
-      nmax = 6*lelt*2  ! 2x for crystal router factor of safety
+      nmax = 6*lelt*nsafe  ! nsafe for crystal router factor of safety
       call gbtuple_rank(ftuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,6*nel
          fnum(i,1) = ftuple(3,i,1)
@@ -2373,8 +2374,8 @@ c
       integer  edge(0:1,0:1,2,lelt),enum(4,lelt)
       common  /scrmg/ edge,enum
 
-      integer etuple(4,4*lelt*2)
-      integer ind(4*lelt*2)
+      parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
+      integer etuple(4,4*lelt*nsafe),ind(4*lelt*nsafe)
       common  /scrns/ ind,etuple
 
       integer gvf(4),aa(3),key(3),e,eg
@@ -2438,7 +2439,7 @@ c     Sort edges by bounding vertices.
 c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 4*nel
-      nmax = 4*lelt*2  ! 2x for crystal router factor of safety
+      nmax = 4*lelt*nsafe  ! nsafe for crystal router factor of safety
 
       call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,4*nel
