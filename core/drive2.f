@@ -747,10 +747,11 @@ c                - Time-dependent Navier-Stokes calculation (Re>>1).
 c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
  
-         call plan4 (igeom)
-         if (ifmodel) call twalluz (igeom) ! Turbulence model
-         if (igeom.ge.2) call chkptol         ! check pressure tolerance
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         call plan4
+         igeom = 2
+         call twalluz (igeom) ! Turbulence model
+         call chkptol         ! check pressure tolerance
+         call vol_flow        ! check for fixed flow rate
 
       elseif (iftran) then
 

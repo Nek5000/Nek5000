@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine plan4 (igeom)
+      subroutine plan4
 
 C     Splitting scheme A.G. Tomboulides et al.
 c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
@@ -37,28 +37,24 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
-      if (igeom.eq.1) then
+      ! add user defined divergence to qtl 
+      call add2 (qtl,usrdiv,ntot1)
 
-     	 ! add user defined divergence to qtl 
-      	call add2 (qtl,usrdiv,ntot1)
+      CALL V_EXTRAP(vext)
 
-      	CALL V_EXTRAP(vext)
+      ! compute explicit contributions bfx,bfy,bfz 
+      CALL MAKEF 
+      CALL LAGVEL
 
-      	! compute explicit contributions bfx,bfy,bfz 
-      	CALL MAKEF 
-      	CALL LAGVEL
+      ! split viscosity into explicit/implicit part
+      if (ifexplvis) call split_vis
 
-      else 
+      ! extrapolate velocity
 
-      	! split viscosity into explicit/implicit part
-      	if (ifexplvis) call split_vis
+      ! mask Dirichlet boundaries
+      CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask) 
 
-        ! extrapolate velocity
-
-        ! mask Dirichlet boundaries
-        CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask) 
-
-C       first, compute pressure
+C     first, compute pressure
 #ifndef NOTIMER
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
@@ -66,27 +62,27 @@ C       first, compute pressure
       etime1=dnekclock()
 #endif
 
-        call crespsp  (respr)
-        call invers2  (h1,vtrans,ntot1)
-        call rzero    (h2,ntot1)
-        call ctolspl  (tolspl,respr)
-        napprox(1) = laxt
-        call hsolve   ('PRES',dpr,respr,h1,h2 
+      call crespsp  (respr)
+      call invers2  (h1,vtrans,ntot1)
+      call rzero    (h2,ntot1)
+      call ctolspl  (tolspl,respr)
+      napprox(1) = laxt
+      call hsolve   ('PRES',dpr,respr,h1,h2 
      $                     ,pmask,vmult
      $                     ,imesh,tolspl,nmxh,1
      $                     ,approx,napprox,binvm1)
-        call add2    (pr,dpr,ntot1)
-        call ortho   (pr)
+      call add2    (pr,dpr,ntot1)
+      call ortho   (pr)
 #ifndef NOTIMER
       tpres=tpres+(dnekclock()-etime1)
 #endif
 
-C       Compute velocity
-        call cresvsp (res1,res2,res3,h1,h2)
-        call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
-        call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+C     Compute velocity
+      call cresvsp (res1,res2,res3,h1,h2)
+      call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+      call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
-        if (ifexplvis) call redo_split_vis
+      if (ifexplvis) call redo_split_vis
 
 c Below is just for diagnostics...
 
@@ -131,7 +127,7 @@ c     Calculate Divergence difference norms
      &          'WARNING: DIV(V)-QTL too large!'
       ENDIF
  
-      endif
+ 
       return
       END
 

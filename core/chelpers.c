@@ -3,6 +3,7 @@
 #include "jl/name.h"
 
 #define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
+#define sizeOfLongInt FORTRAN_UNPREFIXED(sizeoflongint, SIZEOFLONGINT)
 
 #if defined __GLIBC__
 
@@ -22,3 +23,8 @@ void print_stack(void)
 #else
 void print_stack(){};
 #endif
+
+int sizeOfLongInt()
+{
+  return sizeof(long int);
+}
