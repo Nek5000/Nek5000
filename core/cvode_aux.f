@@ -1,4 +1,4 @@
-      subroutine add_fcvfun_usr(ydot)
+      subroutine add_fcvfun_usr(ydot,j)
 c
       real ydot(1)
 

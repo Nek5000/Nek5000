@@ -470,9 +470,9 @@ C
          endif
       endif
 
-      if (ifmvbd .and. ifsplit .and. iflomach) then
+      if (ifmvbd .and. ifsplit) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Moving boundary for Low Mach number not supported'
+     $   'ABORT: Moving boundary in Pn-Pn is not supported'
          call exitt
       endif
 
