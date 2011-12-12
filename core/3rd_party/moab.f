@@ -11,6 +11,7 @@
 #define MYLOC LOC
 #define MYVAL %val
 
+
 c    We are targeting hex27 meshes coming from MOAB.
 c    By default we read the MOAB mesh from 'input.h5m'
 c
@@ -76,8 +77,8 @@ c     ! only root processor will read and broadcast
 c      parameter(loadOpt=";PARALLEL=READ_PART;PARTITION=PARALLEL_PARTIT
 c     $ION;PARTITION_DISTRIBUTE;")
       ! all processor will read the input file and delete what is not needed
-      parameter(loadOpt="moab:PARALLEL=READ_DELETE  moab:PARTITION=PARAL
-     $LEL_PARTITION moab:PARTITION_DISTRIBUTE")
+      parameter(loadOpt="moab:PARALLEL=READ_PART  moab:PARTITION=PARALLE
+     $L_PARTITION moab:PARALLEL_RESOLVE_SHARED_ENTS")
 
       character*(*) loadMode
       parameter(loadMode="PARALLEL")
