@@ -262,13 +262,14 @@ C--------------------------------------------------------------------------
       CALL COMMENT
 
       if (ifsplit) then   ! PN/PN formulation
+         ngeom = 1
          igeom = 1
          if (ifheat)      call heat     (igeom)
          call setprop
          call qthermal
          igeom = 1
          if (ifflow)      call fluid    (igeom)
-                          call setup_convect (2)
+
       else                ! PN-2/PN-2 formulation
          call setprop
          do igeom=1,ngeom
@@ -299,7 +300,6 @@ C--------------------------------------------------------------------------
                if (ifheat)             call heat          (igeom)
                if (ifflow)             call fluid         (igeom)
                if (ifmvbd)             call meshv         (igeom)
-                                       call setup_convect (igeom)
             endif
          enddo
       endif
@@ -308,6 +308,8 @@ C--------------------------------------------------------------------------
          if (param(103).gt.0) alpha_filt=param(103)
          if (param(103).gt.0) call q_filter(alpha_filt)
       endif
+
+      call setup_convect (ngeom) ! Save convective velocity _after_ filter
 
       return
       end

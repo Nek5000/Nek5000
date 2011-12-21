@@ -721,94 +721,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outpost(v1,v2,v3,vp,vt,name3)
-
-      include 'SIZE'
-      include 'INPUT'
-
-      real v1(1),v2(1),v3(1),vp(1),vt(1)
-      character*3 name3
-
-
-      itmp=0
-      if (ifto) itmp=1
-      call outpost2(v1,v2,v3,vp,vt,itmp,name3)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outpost2(v1,v2,v3,vp,vt,nfldt,name3)
-
-      include 'SIZE'
-      include 'SOLN'
-      include 'INPUT'
-
-      parameter(ltot1=lx1*ly1*lz1*lelt)
-      parameter(ltot2=lx2*ly2*lz2*lelv)
-      common /outtmp/  w1(ltot1),w2(ltot1),w3(ltot1),wp(ltot2)
-     &                ,wt(ltot1,ldimt)
-c
-      real v1(1),v2(1),v3(1),vp(1),vt(ltot1,1)
-      character*3 name3
-      logical if_save(ldimt)
-c
-      ntot1  = nx1*ny1*nz1*nelv
-      ntot1t = nx1*ny1*nz1*nelt
-      ntot2  = nx2*ny2*nz2*nelv
-
-      if(nfldt.gt.ldimt) then
-        write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
-        call exitt
-      endif
-
-c store solution
-      call copy(w1,vx,ntot1)
-      call copy(w2,vy,ntot1)
-      call copy(w3,vz,ntot1)
-      call copy(wp,pr,ntot2)
-      do i = 1,nfldt
-         call copy(wt(1,i),t(1,1,1,1,i),ntot1t)
-      enddo
-
-c swap with data to dump
-      call copy(vx,v1,ntot1)
-      call copy(vy,v2,ntot1)
-      call copy(vz,v3,ntot1)
-      call copy(pr,vp,ntot2)
-      do i = 1,nfldt
-         call copy(t(1,1,1,1,i),vt(1,i),ntot1t)
-      enddo
-
-c dump data
-      if_save(1) = ifto
-      ifto = .false.
-      if(nfldt.gt.0) ifto = .true. 
-      do i = 1,ldimt-1
-         if_save(i+1) = ifpsco(i)
-         ifpsco(i) = .false.   
-         if(i+1.le.nfldt) ifpsco(i) = .true.
-      enddo
-
-      if (nid.eq.0) write(6,*) 'calling prepost ',name3, nfldt
-      call prepost(.true.,name3)
-
-      ifto = if_save(1)
-      do i = 1,ldimt-1
-         ifpsco(i) = if_save(i+1) 
-      enddo
-
-c restore solution data
-      call copy(vx,w1,ntot1)
-      call copy(vy,w2,ntot1)
-      call copy(vz,w3,ntot1)
-      call copy(pr,wp,ntot2)
-      do i = 1,nfldt
-         call copy(t(1,1,1,1,i),wt(1,i),ntot1t)
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine comp_vort3(vort,work1,work2,u,v,w)
 c
       include 'SIZE'
@@ -2216,7 +2128,7 @@ c
            endif
           endif
         endif
-    6   format(i8,1p4e15.7,2x,i5,a5)
+    6   format(i8,1p4e19.11,2x,i5,a5)
       enddo
 c
       return
