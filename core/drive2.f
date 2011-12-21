@@ -42,9 +42,9 @@ C--------------------------------------------------------------------
       include 'CTIMER'
       COMMON /DOIT/ IFDOIT
       LOGICAL       IFDOIT
-C
-C     Set default logicals
-C
+
+c     Set default logicals
+
       IFDOIT    = .FALSE.
       IFCVODE   = .false.
       IFEXPLVIS = .false.
@@ -52,10 +52,11 @@ C
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
-C     Turn off (on) diagnostics for communication
-C
+      if_full_pres = .false.
+
+c     Turn off (on) diagnostics for communication
       IFGPRNT= .FALSE.
-C
+
       CALL RZERO (PARAM,200)
 C
 C     The initialization of CBC is done in READAT

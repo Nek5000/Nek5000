@@ -215,9 +215,15 @@ C
          nyz2  = ny2*nz2
          nxy1  = nx1*ny1
          nxyz  = nx1*ny1*nz1
+         nxyz2 = nx2*ny2*nz2
 C
          if (ifsplit) then
             call copy(pm1,pr,ntot1)
+         elseif (if_full_pres) then
+            call rzero(pm1,ntot1)
+            do e=1,nelv
+               call copy(pm1(1,1,1,e),pr(1,1,1,e),nxyz2)
+            enddo
          else
             do 1000 e=1,nelv
                call mxm (ixm21,nx1,pr(1,1,1,e),nx2,pa(1,1,1),nyz2)        
@@ -1385,6 +1391,8 @@ c-----------------------------------------------------------------------
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_
       call mfo_write_hdr                     ! create element mapping +
+
+c     call exitti('this is wdsizo A:$',wdsizo)
                                              ! write hdr
       nxyzo8  = nxo*nyo*nzo
       strideB = nelB * nxyzo8*wdsizo
@@ -1621,8 +1629,7 @@ c-----------------------------------------------------------------------
       if (prefx.eq.'rst'.and.max_rst.gt.0) nfld = mod1(nfld,max_rst)
 
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
-
-      if (nfld.eq.1) ifxyo_ = .true.
+c     if (nfld.eq.1) ifxyo_ = .true.
 
 #ifdef MPIIO
       rfileo = 1
@@ -1797,14 +1804,17 @@ c
 
       include 'SIZE'
       include 'TOTAL'
+      include 'RESTART'
 
       character*3 prefix
 
-      character*16 kst
+      character*17 kst
       save         kst
-      data         kst / '0123456789abcdef' /
-      character*1  ks1(0:15)
+      data         kst / '0123456789abcdefx' /
+      character*1  ks1(0:16)
       equivalence (ks1,kst)
+
+      logical if_full_pres_tmp
 
       iosav = iosave
 
@@ -1819,24 +1829,130 @@ c                                      ! is the only form used for restart
 
       nfld  = nfldi*2
       nfld2 = nfld/2
+      mfld  = min(17,nfld)
       if (ifmhd) nfld2 = nfld/4
+
+      i2 = iosav/2
+      m1 = istep+iosav-iotest
+      mt = mod(istep+iosav-iotest,iosav)
+      prefix = '   '
+
       if (istep.gt.iosav/2  .and.
      $   mod(istep+iosav-iotest,iosav).lt.nfld2) then ! save
-         write(prefix,3) ks1(nfld)
+         write(prefix,3) ks1(mfld)
     3    format('rs',a1)
 
-         p63 = param(63) ! save existing p63, p66
+         iwdsizo = wdsizo
+         wdsizo  = save_size
          p66 = param(66)
-         if (save_size.eq.8) param(63) = 8   ! output precision
          param(66) = 6                       ! force multi-file out
 
-         if (ifmhd) call outpost2(bx,by,bz,pm,t,1,prefix)  ! first B
-                    call outpost2(vx,vy,vz,pr,t,1,prefix)  ! then  U
+         npscal1 = npscal+1
+         if (.not.ifheat) npscal1 = 0
 
-         param(63) = p63  ! restore p63, p66
+         if_full_pres_tmp = if_full_pres     
+         if (save_size.eq.8) if_full_pres = .true. !Preserve mesh 2 pressure
+
+         if (ifmhd) call outpost2(bx,by,bz,pm,t,0      ,prefix)  ! first B
+                    call outpost2(vx,vy,vz,pr,t,npscal1,prefix)  ! then  U
+
+         wdsizo    = iwdsizo  ! Restore output parameters
+
          param(66) = p66
+         if_full_pres = if_full_pres_tmp
 
       endif
+
+      if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
+   8  format(i8,' prefix ',a3,5i5)
+
+      if_full_pres = .false.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outpost(v1,v2,v3,vp,vt,name3)
+
+      include 'SIZE'
+      include 'INPUT'
+
+      real v1(1),v2(1),v3(1),vp(1),vt(1)
+      character*3 name3
+
+
+      itmp=0
+      if (ifto) itmp=1
+      call outpost2(v1,v2,v3,vp,vt,itmp,name3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outpost2(v1,v2,v3,vp,vt,nfldt,name3)
+
+      include 'SIZE'
+      include 'SOLN'
+      include 'INPUT'
+
+      parameter(ltot1=lx1*ly1*lz1*lelt)
+      parameter(ltot2=lx2*ly2*lz2*lelv)
+      common /outtmp/  w1(ltot1),w2(ltot1),w3(ltot1),wp(ltot2)
+     &                ,wt(ltot1,ldimt)
+c
+      real v1(1),v2(1),v3(1),vp(1),vt(ltot1,1)
+      character*3 name3
+      logical if_save(ldimt)
+c
+      ntot1  = nx1*ny1*nz1*nelv
+      ntot1t = nx1*ny1*nz1*nelt
+      ntot2  = nx2*ny2*nz2*nelv
+
+      if(nfldt.gt.ldimt) then
+        write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
+        call exitt
+      endif
+
+c store solution
+      call copy(w1,vx,ntot1)
+      call copy(w2,vy,ntot1)
+      call copy(w3,vz,ntot1)
+      call copy(wp,pr,ntot2)
+      do i = 1,nfldt
+         call copy(wt(1,i),t(1,1,1,1,i),ntot1t)
+      enddo
+
+c swap with data to dump
+      call copy(vx,v1,ntot1)
+      call copy(vy,v2,ntot1)
+      call copy(vz,v3,ntot1)
+      call copy(pr,vp,ntot2)
+      do i = 1,nfldt
+         call copy(t(1,1,1,1,i),vt(1,i),ntot1t)
+      enddo
+
+c dump data
+      if_save(1) = ifto
+      ifto = .false.
+      if(nfldt.gt.0) ifto = .true. 
+      do i = 1,ldimt-1
+         if_save(i+1) = ifpsco(i)
+         ifpsco(i) = .false.   
+         if(i+1.le.nfldt) ifpsco(i) = .true.
+      enddo
+
+      call prepost(.true.,name3)
+
+      ifto = if_save(1)
+      do i = 1,ldimt-1
+         ifpsco(i) = if_save(i+1) 
+      enddo
+
+c restore solution data
+      call copy(vx,w1,ntot1)
+      call copy(vy,w2,ntot1)
+      call copy(vz,w3,ntot1)
+      call copy(pr,wp,ntot2)
+      do i = 1,nfldt
+         call copy(t(1,1,1,1,i),wt(1,i),ntot1t)
+      enddo
 
       return
       end
@@ -2262,8 +2378,8 @@ c-----------------------------------------------------------------------
          do k = 1,ldimt-1
            if(ifpsco(k)) NPSCALO = NPSCALO + 1
          enddo
-         rdcode1(i) = 'S'
          IF (NPSCALO.GT.0) THEN
+            rdcode1(i) = 'S'
             WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
             WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
          ENDIF

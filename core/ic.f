@@ -88,19 +88,24 @@ C     Check if any pre-solv necessary for temperature/passive scalars
   100 CONTINUE
   101 FORMAT(2X,'Using PRESOLVE option for field',I2,'.')
 
+C     Fortran function initial conditions for temp/pass. scalars.
+      maxfld = nfield
+      if (ifmodel.and.ifkeps) maxfld = nfield-2
+      if (ifmhd) maxfld = npscal+3
+
+c     Always call nekuic (pff, 12/7/11)
+      do ifield=1,maxfld
+         if (nid.eq.0) write(6,*) 'nekuic (1) for ifld ', ifield
+         call nekuic
+      enddo
 
 C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
       if (ifanyp) call prsolvt
 
-C     Fortran function initial conditions for temp/pass. scalars.
-      MAXFLD = NFIELD
-      IF (IFMODEL.AND.IFKEPS) MAXFLD = NFIELD-2
-      if (ifmhd) maxfld = npscal+3
-
       jp = 0 ! jp=0 --> base field, not perturbation field
       do 200 ifield=2,maxfld
          if (iffort(ifield,jp)) then
-         if (nid.eq.0) write(6,*) 'call nekuic for ifld ', ifield
+            if (nid.eq.0) write(6,*) 'call nekuic for ifld ', ifield
             call nekuic
          endif
  200  continue
@@ -578,6 +583,9 @@ c use new reader (only binary support)
             call sioflag(ndumps,fname,initc(ifile))
             call mfi(fname,ifile)
          enddo
+         call setup_convect(3)
+         if (nid.ne.0) time=0
+         time = glmax(time,1) ! Sync time across processors
          return
       endif
 
@@ -1962,6 +1970,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
 
+
       real u(lx1*ly1*lz1,1)
 
       real*4 wk(lwk) ! message buffer
@@ -2380,6 +2389,8 @@ c
       character*132 hdr
       character*132  fname
 
+      logical if_full_pres_tmp
+
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
@@ -2396,6 +2407,9 @@ c
       nxyzr8  = nxr*nyr*nzr
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
+
+      if_full_pres_tmp = if_full_pres
+      if (wdsizr.eq.8) if_full_pres = .true. !Preserve mesh 2 pressure
 
       iofldsr = 0
       if (ifgetxr) then      ! if available
@@ -2489,8 +2503,11 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
      &       30X,'avg data-throughput = ',f7.1,'MBps',/,
      &       30X,'io-nodes = ',i5,/)
 
+
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
+
+      if_full_pres = if_full_pres_tmp
 
       return
       end
@@ -2689,19 +2706,51 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'RESTART'
 
+      logical if_full_pres_tmp
+
       real pm1(lx1*ly1*lz1,lelv)
       integer e
 
+      nxyz2 = nx2*ny2*nz2
+
       if (ifmhd.and.ifile.eq.2) then
          do e=1,nelv
-            call map12 (pm(1,1,1,e),pm1(1,e),e)
+            if (if_full_pres) then
+               call copy  (pm(1,1,1,e),pm1(1,e),nxyz2)
+            else
+               call map12 (pm(1,1,1,e),pm1(1,e),e)
+            endif
          enddo
       elseif (ifsplit) then
-         call copy (pr,pm1,nx2*ny2*nz2*nelv)
+         call copy (pr,pm1,nx1*ny1*nz1*nelv)
       else
          do e=1,nelv
-            call map12 (pr(1,1,1,e),pm1(1,e),e)
+            if (if_full_pres) then
+               call copy  (pr(1,1,1,e),pm1(1,e),nxyz2)
+            else
+               call map12 (pr(1,1,1,e),pm1(1,e),e)
+            endif
          enddo
+      endif
+   
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine full_restart(s80,n_restart)
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*80 s80(n_restart)
+
+      ifile = istep+1  ! istep=0,1,...
+
+      if (ifile.le.n_restart) then
+         p67 = param(67)
+         param(67) = 6.00
+         call chcopy (initc,s80(ifile),80)
+         call bcast  (initc,80)
+         call restart       (1)
+         param(67)=p67
       endif
    
       return
