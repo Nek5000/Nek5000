@@ -1,5 +1,5 @@
+c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
-C--------------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
@@ -175,7 +175,7 @@ C     Initalize timers to ZERO
 
       return
       end
-C--------------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine nek_solve
 
       include 'SIZE'
@@ -246,7 +246,7 @@ c     check for post-processing mode
 
       RETURN
       END
-C--------------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine nek_advance
 
       include 'SIZE'
@@ -262,21 +262,22 @@ C--------------------------------------------------------------------------
       CALL COMMENT
 
       if (ifsplit) then   ! PN/PN formulation
-         ngeom = 1
+
          igeom = 1
-         if (ifheat)      call heat     (igeom)
+         if (ifheat)          call heat     (igeom)
          call setprop
          call qthermal
          igeom = 1
-         if (ifflow)      call fluid    (igeom)
+         if (ifflow)          call fluid    (igeom)
+         if (param(103).gt.0) call q_filter(param(103))
+         call setup_convect (2) ! Save convective velocity _after_ filter
 
       else                ! PN-2/PN-2 formulation
+
          call setprop
          do igeom=1,ngeom
 
-           if (igeom.gt.2) then
-              call userchk_set_xfer
-           end if
+            if (igeom.gt.2) call userchk_set_xfer
 
             if (ifgeom) then
                call gengeom (igeom)
@@ -286,34 +287,28 @@ C--------------------------------------------------------------------------
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
                                 call induct   (igeom)
-                                call setup_convect (igeom) ! avo: dealising in induct?
-
             elseif (ifpert) then
-
                if (ifbase.and.ifheat)  call heat          (igeom)
                if (ifbase.and.ifflow)  call fluid         (igeom)
                if (ifflow)             call fluidp        (igeom)
                if (ifheat)             call heatp         (igeom)
-                                       call setup_convect (igeom)
             else  ! std. nek case
-
                if (ifheat)             call heat          (igeom)
                if (ifflow)             call fluid         (igeom)
                if (ifmvbd)             call meshv         (igeom)
             endif
+
+            if (igeom.eq.ngeom.and.param(103).gt.0) 
+     $          call q_filter(param(103))
+
+            call setup_convect (igeom) ! Save convective velocity _after_ filter
+
          enddo
       endif
-      
-      if (.not.ifmhd) then      ! (filter in induct.f for ifmhd)
-         if (param(103).gt.0) alpha_filt=param(103)
-         if (param(103).gt.0) call q_filter(alpha_filt)
-      endif
-
-      call setup_convect (ngeom) ! Save convective velocity _after_ filter
 
       return
       end
-C--------------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine nek_end
 
       include 'SIZE'
@@ -327,3 +322,4 @@ C--------------------------------------------------------------------------
    
       return
       end
+c-----------------------------------------------------------------------
