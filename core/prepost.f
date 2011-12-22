@@ -1786,9 +1786,22 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine full_restart_save(iosave)
+
+      integer iosave,save_size,nfld_save
+
+
+      nfld_save=4  ! For full restart
+      save_size=8  ! For full restart
+
+      call restart_save(iosave,save_size,nfld_save)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine restart_save(iosave,save_size,nfldi)
 
-      integer iosave,save_size,kfld
+      integer iosave,save_size,nfldi
 
 
 c     Save current fields for later restart.
@@ -1799,7 +1812,7 @@ c       .iosave plays the usual triggering role, like iostep
 c
 c       .save_size = 8 ==> dbl. precision output
 c
-c       .kfld is the number of rs files to save before overwriting
+c       .nfldi is the number of rs files to save before overwriting
 c
 
       include 'SIZE'
