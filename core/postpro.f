@@ -35,7 +35,7 @@ c
 
       parameter (lxyz=lx1*ly1*lz1)
 
-      real gije(lxyz,3,3)
+      real gije(lxyz,ldim,ldim)
       real vv(ldim,ldim),ss(ldim,ldim),oo(ldim,ldim),w(ldim,ldim)
       real lam(ldim)
 
