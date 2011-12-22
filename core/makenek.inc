@@ -270,6 +270,11 @@ do
          echo "ABORT: Cannot find " $MOAB_DIR 
          exit 1
        fi 
+       if [ ! -f $MOAB_DIR/lib/iMesh-Defs.inc ]; then
+         echo "ABORT: Cannot find iMesh-Defs.inc in" $MOAB_DIR"/lib; make sure MOAB is installed."
+	 echo "       (to install, use 'make install' in" $MOAB_DIR")"
+         exit 1
+       fi 
      fi
    fi
 

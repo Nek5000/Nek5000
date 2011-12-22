@@ -39,7 +39,9 @@ C     Read Mesh Info
         read(9,*)    ! xfac,yfac,xzero,yzero
         read(9,*)    ! dummy
         if (ifmoab) then
+           read(9,*) h5mfle
            read(9,*) ! dummy 
+           nelgs = 0
         else
            read(9,*)  nelgs,ndim,nelgv
            nelgt = abs(nelgs)
@@ -49,6 +51,7 @@ C     Read Mesh Info
       call bcast(ndim ,ISIZE)
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
+      call bcast(h5mfle,132)
 
       ifre2 = .false.
       if(nelgs.lt.0) ifre2 = .true.     ! use new .re2 reader
@@ -63,10 +66,6 @@ C     Read Mesh Info
           write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
           write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
         endif
-#else
-        if (nid.eq.0) write(6,*)
-     &    'ABORT: This version has not been compiled with moab support!'
-        call exitt
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
@@ -570,7 +569,16 @@ c     set I/O format handling
          param(66) = 6        ! binary is default
       endif
 
+#ifndef MOAB
+      if (ifmoab) then
+         print *,"ABORT: ifmoab = .true. in input but this ",
+     $ "version of nek not compiled with MOAB."
+         call exitti
+      endif
+#endif
+
       return
+
 C
 C     Error handling:
 C
