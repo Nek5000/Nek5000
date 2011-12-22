@@ -109,9 +109,6 @@ c                                    irnk is # unique points
 
       nic = lpts
       njc = lpts
-c     itype = 2   ! return structured vertex (not cell)pointer 
-c     call cell2v(i0,i1,w1,nic,w2,njc,cell,nv,nelt,itype,w3) 
-C     WHY IS THIS CALLED????  WE DONT USE IT.
       if (ndim.eq.3) then
          face_conn = .false.
          do i =1,5
@@ -4351,10 +4348,9 @@ c     cell   : global vertex numbering
       data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
      $              , 1,2,3,4 , 5,6,7,8 /
 
-      logical face_conn,is_ok
-      integer cell(nv,ncell),v2c(1),v2cind(1)
+      logical face_conn,is_ok,n_is_3
+      integer cell(nv,ncell),v2c(1),v2cind(1),w3(200),share(200)
       integer f,v,vfail,v2
-      integer w3(ncell)
 
       ndim = 3
       itype = 1          ! vertex to cell pointers !
@@ -4367,40 +4363,70 @@ c     cell   : global vertex numbering
 
       do i = 1,ncell
       do f = 1,nface
-         call izero(w3,ncell)            
+         n_shared = 0     
          do v = 1,nfv
             iv1 = cell(vface(v,f),i)   
             j0  = v2cind(iv1)
             j1  = v2cind(iv1+1)-1
             do j=j0,j1
-               w3(v2c(j)) = w3(v2c(j))+1
+               je = v2c(j)
+               if (je.ne.i) then
+                  n_shared = n_shared+1
+                  share(n_shared) = je
+               endif
             enddo
          enddo
 
-         do k = 1,ncell                  ! Check for missing connection
-            if(w3(k).eq.3) then
-c              write(6,*) "MISSING FACE CONNECTION!  ",k,i,f 
-               do vfail = 1,nfv          ! Find failed pt on element_i,face_f 
-                  iv1   = cell(vface(vfail,f),i)  
-                  j0    = v2cind(iv1)
-                  j1    = v2cind(iv1+1)-1
-                  is_ok = .false.
-                  do j  = j0,j1          ! Checks that pt_iv1 connects to k 
-                     if (v2c(j).eq.k) is_ok = .true.
-                  enddo
-                  if(.not.is_ok) goto 10 ! Then this pt is our failed one
-               enddo
+         call isort(share,w3,n_shared)
+
+         ilast = 0
+         icount = 0
+         n_is_3 = .false.
+
+         do k = 1,n_shared
+            if (share(k).eq.ilast) then
+               icount = icount+1
+               if(icount.eq.3) then
+                  n_is_3 = .true.
+               elseif(icount.eq.nfv) then
+                  n_is_3 = .false.
+               endif
+            else
+              icount = 1
+              ilast  = share(k)
+              if(n_is_3) then  !FAIL
+                 n_fail = share(k-1)
+c                write(6,*) "MISSING FACE CONNECTION   ",i,f,n_fail
+                 goto 10
+              endif
             endif
          enddo
+         if (n_is_3) then !FAIL
+            n_fail = share(k-1)
+c           write(6,*) "MISSING FACE CONNECTION   ",i,f,n_fail
+            goto 10
+         endif
       enddo
       enddo
 
-      return             ! All elements are connected correctly
+      return
 
-  10  continue
+   10 continue
+      do vfail = 1,nfv
+         iv1 = cell(vface(vfail,f),i)
+         j0    = v2cind(iv1)
+         j1    = v2cind(iv1+1)-1
+         is_ok = .false.
+         do j  = j0,j1          ! Checks that pt_iv1 connects to k 
+            if (v2c(j).eq.n_fail) is_ok = .true.
+         enddo
+         if(.not.is_ok) goto 20 ! Then this pt is our failed one
+      enddo
+ 
+  20  continue
       vfail = vface(vfail,f)             ! Failed vertex, on element i
-      call find_v2(v2,i,k,cell,ncell,nv,v2cind,v2c)
-      call fix_geom(cell,i,vfail,k,v2,v2cind,v2c,ncell,nv)
+      call find_v2(v2,i,n_fail,cell,ncell,nv,v2cind,v2c)
+      call fix_geom(cell,i,vfail,n_fail,v2,v2cind,v2c,ncell,nv)
       face_conn = .false.
 
       return

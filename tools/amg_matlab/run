@@ -5,4 +5,4 @@ go
 0.5
 1e-4
 exit
-EOF                                   #end of Matlab commands
+EOF
