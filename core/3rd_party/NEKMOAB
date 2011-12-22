@@ -1,20 +1,58 @@
+      INTEGER NELGT_MAX, LFDM0, LP_SMALL, LEIG, IBRNCH, IEACT, IFLDMHD, 
+     $     IGROUP, IND23, LTFDM2, IPSCAL, ngeom
+      REAL BC, BCS, BXYI, CERROR, CG, CPFLD, CPGRP, CURVE, EIGP, xc
+      LOGICAL FLAG
+      integer lelg_sm, leig2, ipsco, irstim, irstt, irstv, list, list1, 
+     $     list2, lochis, matype, mcex, msg_id, msp, nbrnch, neact, 
+     $     neigx, neigy, neigz, nelgt, nelgv, nelx, mlp, nelg, nelxy, 
+     $     nely, nelz, ngfdm_v, nhis, nktonv, nmember, nobj, npscal, 
+     $     ngfdm_p, ncrnr
+      real param, qinteg, rmax, rmxs, rstim, rx2, ry2, side, sp, spt, 
+     $     sx2, sy2, tmp2, w2d, wavep, xcg, xgs, xgtp, xml, xms, xyz,
+     $     xyzl, yc, ycg, ygs, ygtp, yml, yms, zc, zcg, zgs, sides, 
+     $     vnekton, zml, zms, zgtp, area, dlam, dtmp, g1m1, g2m1, 
+     $	   g3m1, g4m1, g5m1, g6m1, rx, rxm1, rxm2, rym1, rym2, rzm1,
+     $	   rzm2, sxm1, sxm2, sym1, sym2, szm1, szm2, t1x, t1y, t1z,
+     $	   t2x, t2y, t2z, txm1, txm2, tym1, tym2, tzm1, tzm2, unx,
+     $	   uny, unz, v1x, v1y, v1z, v2x, v2y, v2z, vnx, vny, vnz,
+     $	   xm1, xm2, ym1, ym2, zm1, zm2
+
+
 c Data common to functions in moab.f. Do #include instead of include or 
 c it won't work (because we're using preproc macros here)
 
-      IMESH_HANDLE imesh
+#include "iMeshP_f.h"
 
-      IMESH_HANDLE hexHandles(*)
-      pointer (hexHandlesPointer, hexHandles)
+      include 'SIZE'
 
-      integer hexSize
+      integer*4 hexesSize, partsSize
 
-      IMESH_HANDLE globalIdTag
+      IBASE_HANDLE_T imeshh, rootset, globalIdTag, rpHexes, hPartn
 
-      common /nekmoab/ imesh, globalIdTag, hexHandlesPointer, hexSize
+      iBase_EntityHandle hHexes(*)
+      pointer (rpHexes, hHexes)
+
+      iBase_EntityHandle hParts(*)
+      pointer (rpParts, hParts)
+
+      common /nekmoab/ imeshh, hPartn, rootset, 
+     1  rpParts, rpHexes, globalIdTag, 
+     1  rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
+     1	partsSize, hexesSize
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)
 
       integer SIX
       parameter (SIX = 6)
+      
+      real prl, tl, vxl, vyl, vzl, xm1l, ym1l, zm1l
+      pointer (rpxm1, xm1l(lx1, ly1, lz1, lelt))
+      pointer (rpym1, ym1l(lx1, ly1, lz1, lelt))
+      pointer (rpzm1, zm1l(lx1, ly1, lz1, lelt))
+      pointer (rpvx, vxl(lx1, ly1, lz1, lelt))
+      pointer (rpvy, vyl(lx1, ly1, lz1, lelt))
+      pointer (rpvz, vzl(lx1, ly1, lz1, lelt))
+      pointer (rpt, tl(lx1, ly1, lz1, lelt, *))
+      pointer (rpp, prl(lx2, ly2, lz2, lelt))
 

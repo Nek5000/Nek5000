@@ -1736,11 +1736,7 @@ c-----------------------------------------------------------------------
 
       if (ifmoab) then
 #ifdef MOAB
-         call nekMOAB_loadConn (vertex, nelgt, nelt, ncrnr)
-#else
-         if(nid.eq.0) write(6,*)
-     &     'ABORT: this version was not compiled with moab support!'
-         call exitt
+         call nekMOAB_loadConn (vertex, nelgt, ncrnr)
 #endif
       else
          call get_vert_map(vertex, ncrnr, nelgt, '.map', ifgfdm)

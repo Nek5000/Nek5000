@@ -112,3 +112,22 @@ c-----------------------------------------------------------------------
 
       return
       end
+C=======================================================================
+#ifdef MOAB
+      subroutine usr_moab2nek(id_nek, id_moab)
+
+      character*3 id_nek(1)
+      integer id_moab
+
+      id_nek(1) = 'E  '
+      if     (id_moab.eq.100) then
+         id_nek(1) = 'v  '
+      else if(id_moab.eq.200) then
+         id_nek(1) = 'O  '
+      else if(id_moab.eq.300) then
+         id_nek(1) = 'W  '
+      endif
+
+      end
+#endif
+c-----------------------------------------------------------------------

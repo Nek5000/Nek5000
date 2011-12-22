@@ -61,10 +61,6 @@ c     Map BCs
       if (ifmoab) then
 #ifdef MOAB
         call moab_to_nek_bc
-#else
-        if (nid.eq.0) write(6,*)
-     &   'ABORT: This version has not been compiled with moab support!'
-        call exitt
 #endif
       endif
 
