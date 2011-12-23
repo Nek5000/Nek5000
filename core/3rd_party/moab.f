@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
 
       call chk_nel
 
-      call nekMOAB_assign_tag_storage             ! set Nek variables to point to MOAB storage
+      call nekMOAB_assign_tag_storage             ! allocate MOAB tags to reflect Nek variables
 
       call mapelpr                        ! create gllel mapping 
       call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
@@ -49,17 +49,6 @@ c-----------------------------------------------------------------------
       call ifill(moabbc, 0, 6*lelt)
       call nekMOAB_BC(moabbc)             ! read MOAB BCs 
       
-c      call nekMOAB_loadMaterialSets
-
-#if 0
-      do i=1,6
-         call outface(xm1,1,i,nx1,ny1,nz1,'xface ')
-         call outface(ym1,1,i,nx1,ny1,nz1,'yface ')
-         call outface(zm1,1,i,nx1,ny1,nz1,'zface ')
-      enddo
-      call exitt
-#endif
-
       return
       end
 c-----------------------------------------------------------------------
@@ -84,18 +73,18 @@ c get an iterator over regions
      1 %VAL(0), iter, ierr) 
       IMESH_ASSERT
 
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "SEM_X", rpxm1)
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "SEM_Y", rpym1)
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "SEM_Z", rpzm1)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "SEM_X", rpxm1)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "SEM_Y", rpym1)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "SEM_Z", rpzm1)
 
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "VEL_X", rpvx)
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "VEL_Y", rpvy)
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "VEL_Z", rpvz)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "VEL_X", rpvx)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "VEL_Y", rpvy)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "VEL_Z", rpvz)
 
-      call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "TEMP", rpt)
+      call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "TEMP", rpt)
 
-      if (lx2.eq.lx1 .and. ly2.eq.ly1 .and. lz2.eq.lz1) then
-         call nekMOAB_get_tag_storage(lx1*ly1*lz1, iter, "PRESS", rpp)
+      if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+         call nekMOAB_get_tag_storage(nx1*ny1*nz1, iter, "PRESS", rpp)
       endif
 
 c get rid of the iterator, since we no longer need it
@@ -103,9 +92,9 @@ c get rid of the iterator, since we no longer need it
       IMESH_ASSERT
 
 c create a tag to store SEM dimensions, and set it on the root set
-      semdim(1) = lx1
-      semdim(2) = ly1
-      semdim(3) = lz1
+      semdim(1) = nx1
+      semdim(2) = ny1
+      semdim(3) = nz1
       call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_DIMS", 
      1     "moab:TAG_STORAGE_TYPE=SPARSE", 
      1     %VAL(3), %VAL(iBase_INTEGER), tagh, ierr)
@@ -719,11 +708,9 @@ c-----------------------------------------------------------------------
 #include "NEKMOAB"      
       include 'INPUT'
 
-      integer lxyz
-      parameter(lxyz=lx1*ly1*lz1)
-      real      xmlo(lxyz,1)
-     $        , ymlo(lxyz,1)
-     $        , zmlo(lxyz,1)
+      real      xmlo(nx1*ny1*nz1,1)
+     $        , ymlo(nx1*ny1*nz1,1)
+     $        , zmlo(nx1*ny1*nz1,1)
       integer   e, nmoab
 
       common /tcrmg/ x27(27,lelt), y27(27,lelt), z27(27,lelt)

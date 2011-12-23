@@ -20,7 +20,11 @@
 
 c Data common to functions in moab.f. Do #include instead of include or 
 c it won't work (because we're using preproc macros here)
-
+#ifdef PTRSIZE8
+#define POINTER_SIZE 8
+#else
+#define POINTER_SIZE 4
+#endif
 #include "iMeshP_f.h"
 
       include 'SIZE'
