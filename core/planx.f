@@ -403,7 +403,7 @@ C
       if (imsh.eq.2) ntot1 = nx1*ny1*nz1*nelt
 
       kprev1 = kprev-1
-      i1     = kprev*ntot1 + 1
+      i1     = kprev1*ntot1 + 1
 
       call axhelm  (vbar(1,isd),sln(i1,isd),h1,h2,1,1)
       call col2    (vbar(1,isd),vmask,ntot1)
