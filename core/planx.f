@@ -305,8 +305,8 @@ C     Diag. ............................................................
       endif
       ratio  = alpha1/alpha2
       n10=min(10,nprev(isd))
-      if (nid.eq.0) write(6,10) istep,alpha1,alpha2,ratio,nprev(isd)
-   10 format(i6,1p3e12.4,i6,' alph1x')
+      if (nid.eq.0) write(6,10) istep,isd,alpha1,alpha2,ratio,nprev(isd)
+   10 format(i8,i3,1p3e12.4,i4,' alph1x')
       if (nid.eq.0) write(6,11) istep,nprev(isd),(alpha(I),I=1,n10)
    11 format(i6,' halpha',i4,10(1p10e12.4,/,17x))
 
@@ -452,7 +452,7 @@ C     First, we have to decide if the E matrix has changed.
 
       if (dt.eq.dtold) return
       dtold = dt
-      nprev(isd) = 0
+      call izero(nprev,ldim)
       return
 
       do iprev=1,nprev(isd) ! Orthogonalize this rhs w.r.t. previous rhs's
