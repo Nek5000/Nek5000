@@ -33,7 +33,9 @@ c        here is where the 2d/3d determination is made....
 c
          call geti1(ndim,iend,7)
          ndim = iabs(ndim)
-         call geti1(nfld,iend,7)           ! Determine number of fields
+         call getrv(rfld,1,iend,7)
+         nfld = int(rfld)                  ! Determine number of fields
+         if(rfld.ne.nfld) nfld = nfld +1
          call getbox(xgtp,ygtp,zgtp,nfld)  ! Read in the .box file
          close (unit=7)
 c
