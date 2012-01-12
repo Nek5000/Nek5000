@@ -339,6 +339,8 @@ c
       bdti = -bd(1)/dt
       call cmult   (dp,bdti,ntot2)
 
+      call add2col2(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
+
       call ortho   (dp)
 
       i = 1 + ifield/ifldmhd
