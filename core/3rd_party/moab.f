@@ -145,7 +145,7 @@ c
       include 'mpif.h'
 c two forms of load options, depending whether we're running serial or parallel      
       character*(*) parLoadOpt, serLoadOpt
-      parameter(parLoadOpt=" moab:PARALLEL=READ_DELETE moab:PARTITION=PA
+      parameter(parLoadOpt=" moab:PARALLEL=READ_PART   moab:PARTITION=PA
      $RALLEL_PARTITION moab:PARALLEL_RESOLVE_SHARED_ENTS moab:PARTITION_
      $DISTRIBUTE ")
       parameter(serLoadOpt = " ")
@@ -177,7 +177,7 @@ c      !Initialize imesh and load file
          rpParts = IMESH_NULL
          call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
      1        rpParts, partsSize, partsSize, ierr)
-         
+
       else
          call iMesh_getRootSet(%VAL(imeshh), rootset, ierr)
 
@@ -213,7 +213,7 @@ c
       include 'mpif.h'
 
 
-      integer globalId, lastGlobalId
+      integer lastGlobalId
       integer pstatus(*), hgid(*), etype(*)
       pointer(rppstatus, pstatus), (rphgid, hgid), (rpetype, etype)
       integer pstatusSize, hgidSize, etypeSize, etypeAlloc, i, ierr, ip, 
@@ -318,7 +318,7 @@ c         print *, nid, 'local hex ', ih, 'has global_id ', pstatus(ih)
          lastGlobalId = pstatus(ih)
 
          if(pstatus(ih) .gt. nelgv) then 
-            write(6,*) 'ABORT: invalid  globalId! ', globalId
+            write(6,*) 'ABORT: invalid  globalId! ', pstatus(ih)
             call exitt
          endif
          GLLNID(pstatus(ih)) = nid
@@ -484,8 +484,8 @@ c
 
       implicit none
 #include "NEKMOAB"
-
-      integer moabbc(6,1)
+      include 'INPUT'
+      integer moabbc(6,lelt)
 
       IBASE_HANDLE_T hentSet(*)
       pointer (rpentSet, hentSet)
@@ -494,6 +494,8 @@ c
       IBASE_HANDLE_T neuSetTag
       integer ierr, i, tagIntData
 
+      integer ibcs(3), e, f
+      data ibcs / 0, 0, 0 /
 
       !Sidesets in cubit come in as entity sets with the NEUMANN_SET -- see sample file
       call iMesh_getTagHandle(%VAL(imeshh),
@@ -521,6 +523,16 @@ c
 
       call free(rpentSet)
 
+      do f=1,6
+      do e=1,lelt
+            if (moabbc(f,e) .eq. 100) ibcs(1) = ibcs(1) + 1
+            if (moabbc(f,e) .eq. 200) ibcs(2) = ibcs(2) + 1
+            if (moabbc(f,e) .eq. 300) ibcs(3) = ibcs(3) + 1
+      enddo
+      enddo
+
+      print *, 'In nekMOAB_BC, ibcs = ', ibcs
+
       return
       end 
 c-----------------------------------------------------------------------
@@ -532,7 +544,7 @@ c
       implicit none
 #include "NEKMOAB"
 
-      integer bcdata(6,1)
+      integer bcdata(6,lelt)
 
       iBase_EntitySetHandle setHandle
 
@@ -560,6 +572,10 @@ c
       integer side_no, side_offset, side_sense
       integer hexMBCNType
       integer num_sides
+      integer elnos(2)
+      integer numids
+
+      numids = 0
 
       call iMesh_MBCNType(%VAL(iMesh_HEXAHEDRON), hexMBCNType)
 
@@ -613,14 +629,20 @@ c
            !print *, 'BLAH', elno, side_no, setId
 
            call nekMOAB_getElNo(ahex(j), elno)
+           if (ahexSize .eq. 2) elnos(j) = elno
 
-           !print *, 'setting', elno, side_no, setId
-
+           if (bcdata(side_no, elno) .ne. 0) 
+     $          print *, 'Warning: resetting BC, bcno, elno, sideno = ', 
+     $            setId, elno, side_no 
            bcdata(side_no, elno) = setId
+           numids = numids + 1
 
            call free(rphvtx)
          enddo
 
+         if (ahexSize .eq. 2) 
+     $        print *, 'Warning: face shared by 2 hexes: ', elnos(1), 
+     $        elnos(2)
 
          call free(rpahex)
          call free(rpfvtx)
@@ -628,6 +650,8 @@ c
       enddo
 
       call free(rpfaces)
+
+      print *, 'Setid, numids = ', setId, numids
 
       return
       end
@@ -685,6 +709,9 @@ c
       integer e,f
       character*3 cbi(ldimt1)
 
+      integer ibcs(3)
+      data ibcs / 0, 0, 0 /
+
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
@@ -693,12 +720,16 @@ c
       do f=1,nface
          call usr_moab2nek(cbi, moabbc(f,e))
          do ifld=1,nfield
+            if (cbi(ifld) .eq. 'v  ') ibcs(1) = ibcs(1) + 1
+            if (cbi(ifld) .eq. 'O  ') ibcs(2) = ibcs(2) + 1
+            if (cbi(ifld) .eq. 'W  ') ibcs(3) = ibcs(3) + 1
             cbc(f,e,ifld) = cbi(ifld)
 c            write(6,*) cbc(f,e,ifld),e
          enddo
       enddo
       enddo
 
+      print *, 'ibcs = ', ibcs
       return
       end
 c-----------------------------------------------------------------------
