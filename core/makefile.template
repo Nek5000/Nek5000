@@ -86,7 +86,7 @@ ifeq ($(IFMOAB),true)
   MOABNEK_INCLUDES:=-I$S/3rd_party
   include $(MOAB_DIR)/lib/iMesh-Defs.inc
   MOABO := moab.o imeshutil.o imeshcutil.o
-  lFLAGS := ${lFLAGS} $(IMESH_LFLAGS) $(IMESH_LIBS)
+  lFLAGS := $(IMESH_LFLAGS) $(IMESH_LIBS) ${lFLAGS} 
 endif
 
 ifeq ($(IFMPI),false)
