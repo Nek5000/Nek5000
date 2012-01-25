@@ -139,7 +139,8 @@ C
   400 CONTINUE
 C
       if (ifmoab) then
-         print *, 'p, ievow = ', nid,ievow(1), ievow(2), ievow(3), ievow(4) 
+         print *, 'p, ievow = ', nid, ievow(1), ievow(2), ievow(3), 
+     *        ievow(4) 
       endif
       IF (NID.EQ.0) THEN
          WRITE (6,*) 'IFTRAN   =',IFTRAN
