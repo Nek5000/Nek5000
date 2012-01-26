@@ -192,8 +192,8 @@ c copy data from nek
 #endif
 
       if(mod(istep,iostep) .eq. 0) then
-         call iMesh_save(%VAL(imeshh),%VAL(rootset),name,options, ierr)
-         IMESH_ASSERT
+c         call iMesh_save(%VAL(imeshh),%VAL(rootset),name,options, ierr)
+c         IMESH_ASSERT
       endif
 
       return
