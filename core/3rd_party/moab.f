@@ -147,7 +147,7 @@ c two forms of load options, depending whether we're running serial or parallel
       character*(*) parLoadOpt, serLoadOpt
       parameter(parLoadOpt=" moab:PARALLEL=READ_PART   moab:PARTITION=PA
      $RALLEL_PARTITION moab:PARALLEL_RESOLVE_SHARED_ENTS moab:PARTITION_
-     $DISTRIBUTE ")
+     $DISTRIBUTE moab:CPUTIME")
       parameter(serLoadOpt = " ")
       common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
       integer nekcomm, nekgroup, nekreal, nid_, np
@@ -494,9 +494,6 @@ c
       IBASE_HANDLE_T neuSetTag
       integer ierr, i, tagIntData
 
-      integer ibcs(3), e, f
-      data ibcs / 0, 0, 0 /
-
       !Sidesets in cubit come in as entity sets with the NEUMANN_SET -- see sample file
       call iMesh_getTagHandle(%VAL(imeshh),
      $     "NEUMANN_SET", neuSetTag, ierr)
@@ -522,16 +519,6 @@ c
       enddo
 
       call free(rpentSet)
-
-      do f=1,6
-      do e=1,lelt
-            if (moabbc(f,e) .eq. 100) ibcs(1) = ibcs(1) + 1
-            if (moabbc(f,e) .eq. 200) ibcs(2) = ibcs(2) + 1
-            if (moabbc(f,e) .eq. 300) ibcs(3) = ibcs(3) + 1
-      enddo
-      enddo
-
-      print *, 'In nekMOAB_BC, ibcs = ', ibcs
 
       return
       end 
