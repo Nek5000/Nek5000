@@ -11,11 +11,9 @@ C
       INCLUDE 'CTIMER'
       COMMON  /CPRINT/ IFPRINT
 C
-      integer ievow(4)
       common  /nekcb/ cb
       CHARACTER CB*3
       LOGICAL IFALGN,IFNORX,IFNORY,IFNORZ,IFPRINT
-      data ievow /4*0/
 C
       NFACE  = 2*NDIM
       NMXV   = NFACE*NELV
@@ -82,17 +80,6 @@ csk         call check_cyclic  ! fow now; set in .rea file
                                               IFSWALL         = .TRUE.
                                               IFCWUZ          = .TRUE.
             ENDIF
-            if (ifmoab) then
-               if (cb .eq. 'e' .or. cb .eq. 'E') then
-                  ievow(1) = ievow(1) + 1
-               elseif (cb .eq. 'v' .or. cb .eq. 'V') then
-                  ievow(2) = ievow(2)+1
-               elseif (cb .eq. 'o' .or. cb .eq. 'O') then
-                  ievow(3) = ievow(3)+1
-               elseif (cb .eq. 'w' .or. cb .eq. 'W') then
-                  ievow(4) = ievow(4)+1
-               endif
-            endif
   100    CONTINUE
       ENDIF
 C
@@ -138,10 +125,6 @@ C
          CALL GLLOG(IFNONL(IFIELD),.TRUE.)
   400 CONTINUE
 C
-      if (ifmoab) then
-         print *, 'p, ievow = ', nid, ievow(1), ievow(2), ievow(3), 
-     *        ievow(4) 
-      endif
       IF (NID.EQ.0) THEN
          WRITE (6,*) 'IFTRAN   =',IFTRAN
          WRITE (6,*) 'IFFLOW   =',IFFLOW
