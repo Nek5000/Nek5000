@@ -34,7 +34,14 @@ PLUGIN_LIST=""
 #USR_LFLAGS="-L/usr/lib -lfoo"
 
 # For linking to MOAB, the following might be needed:
-#USR_LFLAGS="$(USR_LFLAGS) -lmpi_cxx -lstdc++"
+# NOTE: compiler specific, use the appropriate one depending on your compiler
+# GNU:
+# USR_LFLAGS="-lmpi_cxx -lstdc++"
+# Intel:
+# USR_LFLAGS="-cxxlib"
+# PGI:
+# USR_LFLAGS="-pgcpplibs"
+#USR_LFLAGS=" -lmpi_cxx -lstdc++"
 
 # generic compiler flags
 #G="-g"
