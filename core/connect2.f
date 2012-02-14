@@ -86,7 +86,7 @@ C     Read Mesh Info
           iread = 0                ! mod param
           x     = 0
           do i=0,np-1,maxrd
-             call gsync()
+             call nekgsync()
              if (mod(nid,mread).eq.iread) then
                 if (nid.ne.0) then
                   open(UNIT=9,FILE=REAFLE,STATUS='OLD')
@@ -118,7 +118,7 @@ C     Read output specs
 C     Read objects
       CALL RDOBJ
 
-      call gsync()
+      call nekgsync()
 
 C     End of input data, close read file.
       IF(NID.EQ.0) THEN
@@ -2177,7 +2177,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      call gsync()
+      call nekgsync()
 
       nio = 10
       do k=1,8
@@ -2212,7 +2212,7 @@ c-----------------------------------------------------------------------
 
       enddo
 
-      call gsync()
+      call nekgsync()
 
       return
       end
@@ -2233,7 +2233,7 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      call gsync()
+      call nekgsync()
 
       if (nid.eq.0) then  ! read & send/process
 
@@ -2271,7 +2271,7 @@ c-----------------------------------------------------------------------
 
       endif
 
-      call gsync()
+      call nekgsync()
 
       return
       end
@@ -2301,7 +2301,7 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
-      call gsync()
+      call nekgsync()
 
       if (nid.eq.0) then  ! read & send/process
 
@@ -2350,7 +2350,7 @@ c           write(6,*) nid,' recvbc2',k,buf(1)
 
       endif
 
-      call gsync()
+      call nekgsync()
 
       return
       end

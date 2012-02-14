@@ -2722,7 +2722,7 @@ c-----------------------------------------------------------------------
 
       do eg=1,nelgt
          mtype = eg
-         call gsync()          !  belt
+         call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
          if (jnid.eq.0 .and. nid.eq.0) then
@@ -2735,11 +2735,11 @@ c-----------------------------------------------------------------------
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
             call csend(mtype,xt,len,0,0)
          endif
-         call gsync()          !  suspenders
+         call nekgsync()          !  suspenders
       enddo
 
       if (nid.eq.0) close(29)
-      call gsync()
+      call nekgsync()
       call exitt
 
       return

@@ -182,7 +182,7 @@ c-----------------------------------------------------------------------
       real*4 papi_mflops
       integer*8 papi_flops
 
-      call gsync()
+      call nekgsync()
 
       if (instep.eq.0) then
         if(nid.eq.0) write(6,'(/,A,/,A,/)') 
@@ -251,7 +251,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      call gsync
+      call nekgsync
       IF (IFTRAN) CALL SETTIME
       if (ifmhd ) call cfl_check
       CALL SETSOLV

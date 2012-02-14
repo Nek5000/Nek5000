@@ -1675,10 +1675,10 @@ c
       enddo
 
       do mid=0,np-1
-         call gsync()
+         call nekgsync()
          if (mid.eq.nid) write(6,1) nid,n2,no
     1    format(3i12,' dstata')
-         call gsync()
+         call nekgsync()
       enddo
 
       call gs_new_tstr(glo_num,x,c,gsh_std)
@@ -1721,49 +1721,49 @@ c-----------------------------------------------------------------------
       enddo
 
       call xfill(x,c,n)
-      call gsync()
+      call nekgsync()
       t0 = dnekclock()
       do ipass = 1,20
          call gs_op(gsh_std,x,1,1,0)  ! 1 ==> +
       enddo
-      call gsync()
+      call nekgsync()
       t1 = (dnekclock() - t0)/20
 
       call xfill(x,c,n)
-      call gsync()
+      call nekgsync()
       t0 = dnekclock()
       do ipass = 1,20
          call gs_op(gsh_pair,x,1,1,0)  ! 1 ==> +
       enddo
-      call gsync()
+      call nekgsync()
       t2 = (dnekclock() - t0)/20
 
       call xfill(x,c,n)
-      call gsync()
+      call nekgsync()
       t0 = dnekclock()
       do ipass = 1,20
          call gs_op(gsh_mlti,x,1,1,0)  ! 1 ==> +
       enddo
-      call gsync()
+      call nekgsync()
       t3 = (dnekclock() - t0)/20
 
       call xfill(x,c,n)
-      call gsync()
+      call nekgsync()
       t0 = dnekclock()
       do ipass = 1,20
          call gs_op(gsh_mlti,x,1,1,0)  ! 1 ==> +
          call gs_op(gsh_pair,x,1,1,0)  ! 1 ==> +
       enddo
-      call gsync()
+      call nekgsync()
       t4 = (dnekclock() - t0)/20
 
       call xfill(x,c,n)
-      call gsync()
+      call nekgsync()
       t0 = dnekclock()
       do ipass = 1,20
          call gs_op(gsh_std,x,1,1,0)  ! 1 ==> +
       enddo
-      call gsync()
+      call nekgsync()
       t5 = (dnekclock() - t0)/20
 
       if (nid.eq.0) write(6,1) t1,t2,t3,t4,t5

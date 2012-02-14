@@ -1183,151 +1183,6 @@ c     Take care of spherical curved face defn
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hpts
-c
-c     evaluate velocity, temperature, pressure and ps-scalars 
-c     for list of points (read from hpts.in) and dump results
-c     into a file (hpts.out).
-c     note: read/write on rank0 only 
-c
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-
-      parameter(nfldm=ldim+ldimt+1)
-
-      real    pts(ldim,lhis)
-      real    fieldout(nfldm,lhis)
-
-      real    dist(lhis)
-
-      real    rst(lhis*ldim)
-      integer rcode(lhis),elid(lhis),proc(lhis)
-      common /hpts_r/ rst
-      common /hpts_i/ rcode,elid,proc
-
-      common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
-      common /outtmp/ wrk(lx1*ly1*lz1*lelt,nfldm)
-
-      logical iffind
-
-      integer icalld,npoints
-      save    icalld,npoints
-      data    icalld  /0/
-      data    npoints /0/
-
-      save    inth_hpts
-
-      nxyz  = nx1*ny1*nz1
-      ntot  = nxyz*nelt
-
-      if(nid.eq.0) write(6,*) 'dump history points'
-
-      if(icalld.eq.0) then
-        if(nid.eq.0) then
-          write(6,*) 'reading hpts.in'
-          open(50,file='hpts.in',status='old')
-          read(50,*) npoints
-          if(npoints.gt.lhis) then
-            write(6,*) 'ABORT: lhis too small!'
-            call exitt
-          endif
-          write(6,*) 'found ', npoints, ' points'
-          do i = 1,npoints
-             read(50,*) (pts(j,i),j=1,ndim)
-          enddo
-          close(50)
-          open(50,file='hpts.out',status='new')
-          write(50,'(A)') 
-     &      '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
-        endif 
-        call intpts_setup(-1.0,inth_hpts) ! use default tolerance
-      endif
-
-      if(npoints.gt.lhis) then
-        if(nid.eq.0) write(6,*) 
-     &   'ABORT: lhis too low, increase in SIZE', npoints, lhis
-        call exitt
-      endif
-
-      call prepost_map(0)  ! maps axisymm and pressure
-
-      ! pack working array
-      nflds = 0
-      if(ifvo) then
-        call copy(wrk(1,1),vx,ntot)
-        call copy(wrk(1,2),vy,ntot)
-        if(if3d) call copy(wrk(1,3),vz,ntot)
-        nflds = ndim
-      endif
-      if(ifpo) then
-        nflds = nflds + 1
-        call copy(wrk(1,nflds),pm1,ntot)
-      endif
-      if(ifto) then
-        nflds = nflds + 1
-        call copy(wrk(1,nflds),t,ntot)
-      endif
-      do i = 1,ldimt
-         if(ifpsco(i)) then
-           nflds = nflds + 1
-           call copy(wrk(1,nflds),T(1,1,1,1,i+1),ntot)
-         endif
-      enddo
-      
-      ! interpolate
-      if(icalld.eq.0) then
-        call findpts(inth_hpts,rcode,1,
-     &                 proc,1,
-     &                 elid,1,
-     &                 rst,ndim,
-     &                 dist,1,
-     &                 pts(1,1),ndim,
-     &                 pts(2,1),ndim,
-     &                 pts(3,1),ndim,npoints)
-      
-        do i=1,npoints
-           ! check return code 
-           if(rcode(i).eq.1) then
-             if(dist(i).gt.1e-12) then
-               write(6,'(A,4E15.7)') 
-     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
-     &     ,(pts(k,i),k=1,ndim),dist(i)
-             endif   
-           elseif(rcode(i).eq.2) then
-             nfail = nfail + 1
-             write(6,'(A,3E15.7)') 
-     &        ' WARNING: point not within mesh xy[z]: !',
-     &        (pts(k,i),k=1,ndim)
-           endif
-        enddo
-        icalld = 1
-      endif
-
-      ! evaluate inut field at given points
-      do ifld = 1,nflds
-         call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
-     &                     rcode,1,
-     &                     proc,1,
-     &                     elid,1,
-     &                     rst,ndim,npoints,
-     &                     wrk(1,ifld))
-      enddo
-
-      ! write interpolation results to hpts.out
-      if(nid.eq.0) then
-        do ip = 1,npoints
-           write(50,'(1p20E15.7)') time,
-     &      (fieldout(i,ip), i=1,nflds)
-        enddo
-      endif
-
-      call prepost_map(1)  ! maps back axisymm arrays
-
-      if(nid.eq.0) write(6,*) 'done :: dump history points'
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine g2gi(outfld,infld,geofld)
 c
 c     grid-to-grid interpolation
@@ -1391,10 +1246,10 @@ c
 
       nelgrr  = nelgr
       nxrr    = nxr
-      nyrr    = nyr 
-      nzrr    = nzr 
+      nyrr    = nyr
+      nzrr    = nzr
       nxyzr   = nxrr*nyrr*nzrr
-      ioff0   = iHeaderSize + iSize + iSize*nelgrr 
+      ioff0   = iHeaderSize + iSize + iSize*nelgrr
       ifldoff = nelgrr*nxyzr*wds ! field offset
       nec     = lbuf/(ndim*nxyzr) ! number of elements fit into buffer 
       if(nec.eq.0) then
@@ -1417,15 +1272,14 @@ c
       ! read field file of old geometry
       call load_fld(infld)
       call chcopy(rdcode_save,rdcode,10)
-
       ! create new fld file
       call byte_open_mpi(outfld,ifh)
-      if(indx2(rdcode,10,'X',1).le.0) then 
+      if(indx2(rdcode,10,'X',1).le.0) then
         rdcode1(1) = 'X'
         call chcopy(rdcode1(2),rdcode_save,9)
       endif
       write(hdr,1) wds,nxrr,nyrr,nzrr,nelgrr,nelgrr,time,istep
-     &            ,0,1,(rdcode1(i),i=1,10)    
+     &            ,0,1,(rdcode1(i),i=1,10)
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a)
       call byte_write_mpi(hdr,iHeaderSize/4,0,ifh)
@@ -1443,7 +1297,7 @@ c
       ! pack working array
       ntot = nx1*ny1*nz1*nelt
       nfld = 0
-      if(ifgetur) then 
+      if(ifgetur) then
         call copy(wrk(1,1),vx,ntot)
         call copy(wrk(1,2),vy,ntot)
         if(if3d) call copy(wrk(1,3),vz,ntot)
@@ -1461,7 +1315,7 @@ c
          if(ifgtpsr(i)) then
            nfld = nfld + 1
            call copy(wrk(1,nfld),T(1,1,1,1,i+1),ntot)
-         endif  
+         endif
       enddo
 
       if(nfld.gt.nfldm) then
@@ -1478,7 +1332,7 @@ c
          if(ic.gt.nc) then
            necrw = 0
            nec = 0
-         endif 
+         endif
 
          ! read coord. 
          ioff = ioff0 + ndim*nxyzr*nelrr_b*wds
@@ -1489,7 +1343,7 @@ c
 
          ! write coord.
          call byte_set_view(ioff,ifh)
-         call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)  
+         call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)
 
          ! interpolate fields
          npts = necrw*nxyzr
@@ -1536,15 +1390,14 @@ c
              call byte_set_view(ioff,ifh)
              call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
              ni = ni + 1
-           endif  
+           endif
          enddo
       enddo
-
       call byte_close(igh)
       call byte_close(ifh)
 
       etime_t = dnekclock_sync() - etime_t
-      if(nid.eq.0) write(6,'(A,2(1g8.2),A)') 
+      if(nid.eq.0) write(6,'(A,2(1g8.2),A)')
      &                        'done :: grid-to-grid interpolation   ',
      &                        etime_t,etime_i, ' sec'
 
@@ -1558,12 +1411,12 @@ c-----------------------------------------------------------------------
 
       do i = 1,nel
          k = (i-1) * ndim*nxyz
-         jj = (i-1)*nxyz 
+         jj = (i-1)*nxyz
          do j = 1,ndim
             call copy4r(v(jj+1,j),buf(k+1),nxyz)
             k = k + nxyz
          enddo
-      enddo 
+      enddo
 
       return
       end
@@ -1575,12 +1428,306 @@ c-----------------------------------------------------------------------
 
       do i = 1,nel
          k = (i-1) * ndim*nxyz
-         jj = (i-1)*nxyz 
+         jj = (i-1)*nxyz
          do j = 1,ndim
             call copyx4(buf(k+1),v(jj+1,j),nxyz)
             k = k + nxyz
          enddo
-      enddo 
+      enddo
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine hpts
+c
+c     evaluate velocity, temperature, pressure and ps-scalars 
+c     for list of points (read from hpts.in) and dump results
+c     into a file (hpts.out).
+c     note: read/write on rank0 only 
+c
+c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
+
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      parameter(nfldm=ldim+ldimt+1)
+
+      common /c_hptsr/ pts      (ldim,lhis)
+     $               , fieldout (nfldm,lhis)
+     $               , dist     (lhis)
+     $               , rst      (lhis*ldim)
+
+
+      common /c_hptsi/ rcode(lhis),elid(lhis),proc(lhis)
+
+      common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
+      common /outtmp/ wrk (lx1*ly1*lz1*lelt,nfldm)
+
+      logical iffind
+
+      integer icalld,npoints
+      save    icalld,npoints
+      data    icalld  /0/
+      data    npoints /0/
+
+      save    inth_hpts
+
+      nxyz  = nx1*ny1*nz1
+      ntot  = nxyz*nelt
+      npts  = lhis
+      nbuff = npts
+
+      if(nid.eq.0) write(6,*) 'dump history points'
+
+      if(icalld.eq.0) then
+        call hpts_in(pts,npts,npoints)
+        call intpts_setup(-1.0,inth_hpts) ! use default tolerance
+      endif
+
+
+      call prepost_map(0)  ! maps axisymm and pressure
+
+      ! pack working array
+      nflds = 0
+      if(ifvo) then
+        call copy(wrk(1,1),vx,ntot)
+        call copy(wrk(1,2),vy,ntot)
+        if(if3d) call copy(wrk(1,3),vz,ntot)
+        nflds = ndim
+      endif
+      if(ifpo) then
+        nflds = nflds + 1
+        call copy(wrk(1,nflds),pm1,ntot)
+      endif
+      if(ifto) then
+        nflds = nflds + 1
+        call copy(wrk(1,nflds),t,ntot)
+      endif
+      do i = 1,ldimt
+         if(ifpsco(i)) then
+           nflds = nflds + 1
+           call copy(wrk(1,nflds),T(1,1,1,1,i+1),ntot)
+         endif
+      enddo
+      
+      ! interpolate
+      if(icalld.eq.0) then
+        call findpts(inth_hpts,rcode,1,
+     &                 proc,1,
+     &                 elid,1,
+     &                 rst,ndim,
+     &                 dist,1,
+     &                 pts(1,1),ndim,
+     &                 pts(2,1),ndim,
+     &                 pts(3,1),ndim,npts)
+      
+        do i=1,npts
+           ! check return code 
+           if(rcode(i).eq.1) then
+             if(dist(i).gt.1e-12) then
+               write(6,'(A,4E15.7)') 
+     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
+     &     ,(pts(k,i),k=1,ndim),dist(i)
+             endif   
+           elseif(rcode(i).eq.2) then
+             nfail = nfail + 1
+             write(6,'(A,3E15.7)') 
+     &        ' WARNING: point not within mesh xy[z]: !',
+     &        (pts(k,i),k=1,ndim)
+           endif
+        enddo
+        icalld = 1
+      endif
+
+      ! evaluate input field at given points
+      do ifld = 1,nflds
+         call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
+     &                     rcode,1,
+     &                     proc,1,
+     &                     elid,1,
+     &                     rst,ndim,npts,
+     &                     wrk(1,ifld))
+      enddo
+
+      ! write interpolation results to hpts.out
+      call hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
+
+      call prepost_map(1)  ! maps back axisymm arrays
+
+      if(nid.eq.0) write(6,*) 'done :: dump history points'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buffer_in(buffer,npp,npoints,nbuf)
+        
+      INCLUDE 'SIZE'
+      INCLUDE 'PARALLEL'
+
+      real    buffer(ldim,nbuf)
+
+      ierr = 0
+      if(nid.eq.0) then
+        write(6,*) 'reading hpts.in'
+        open(50,file='hpts.in',status='old',err=100)
+        read(50,*,err=100) npoints
+        goto 101
+ 100    ierr = 1
+ 101    continue
+        if(ierr.gt.0) then
+          write(6,*) 'Cannot open hpts.in in subroutine hpts()'
+          call exitt
+        endif
+        if(npoints.gt.nbuf*np) then
+          write(6,*) 'ABORT: Too many pts to read in hpts()!'
+          call exitt
+        endif
+        write(6,*) 'found ', npoints, ' points'
+      endif
+
+
+      call bcast(npoints,1)
+      npass =  npoints/nbuf +1  !number of passes to cover all pts
+      n0    =  mod(npoints,nbuf)!remainder 
+      if(n0.eq.0) then
+         npass = npass-1
+         n0    = nbuf
+      endif
+
+      len = wdsize*ndim*nbuf
+      if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,buffer,len)
+      call nekgsync
+      
+      npp=0  
+      if(nid.eq.0) then
+        i1 = nbuf
+        do ipass = 1,npass
+           if(ipass.eq.npass) i1 = n0
+           do i = 1,i1
+              read(50,*) (buffer(j,i),j=1,ndim) 
+           enddo
+           if(ipass.lt.npass)call csend(ipass,buffer,len,ipass,0)
+        enddo
+        close(50)
+        npp = n0
+        open(50,file='hpts.out',status='new')
+        write(50,'(A)') 
+     &      '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
+      elseif (nid.lt.npass)  then !processors receiving data
+        call msgwait(msg_id)
+        npp=nbuf
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hpts_in(pts,npts,npoints) 
+c                        npts=local count; npoints=total count
+
+      include 'SIZE'
+      include 'PARALLEL'
+
+      parameter (lt2=2*lx1*ly1*lz1*lelt)
+      common /scrns/ xyz(ldim,lt2)
+      common /scruz/ mid(lt2)  ! Target proc id
+      real    pts(ldim,npts)
+
+      if (lt2.gt.npts) then
+
+         call buffer_in(xyz,npp,npoints,lt2)
+         if(npoints.gt.np*npts) then
+           if(nid.eq.0)write(6,*)'ABORT in hpts(): npoints > NP*lhis!!' 
+           if(nid.eq.0)write(6,*)'Change SIZE: ',np,npts,npoints
+           call exitt
+         endif
+
+         npmax = (npoints/npts)
+         if(mod(npoints,npts).eq.0) npmax=npmax+1
+
+         if(nid.gt.0.and.npp.gt.0) then
+          npts_b = lt2*(nid-1)               ! # pts  offset(w/o 0)
+          nprc_b = npts_b/npts               ! # proc offset(w/o 0)
+
+          istart = mod(npts_b,npts)          ! istart-->npts pts left
+          ip     = nprc_b + 1                ! PID offset
+          icount = istart                    ! point offset
+         elseif(nid.eq.0) then
+          npts0   = mod1(npoints,lt2)        ! Node 0 pts
+          npts_b  = npoints - npts0          ! # pts before Node 0
+          nprc_b  = npts_b/npts
+
+          istart  = mod(npts_b,npts)
+          ip      = nprc_b + 1
+          icount  = istart
+         endif
+
+         do i =1,npp
+            icount = icount + 1
+            if(ip.gt.npmax) ip = 0
+            mid(i) = ip
+            if (icount.eq.npts) then
+               ip     = ip+1
+               icount = 0
+            endif
+         enddo
+
+         call crystal_tuple_transfer 
+     &      (cr_h,npp,lt2,mid,1,pts,0,xyz,ldim,1)
+
+         call copy(pts,xyz,ldim*npp)
+      else
+         call buffer_in(pts,npp,npoints,npts)
+      endif
+      npts = npp
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real buf(nfldm,nbuff),fieldout(nfldm,nbuff)
+
+      len = wdsize*nfldm*nbuff
+
+
+      npass = npoints/nbuff + 1
+      il = mod(npoints,nbuff)
+      if(il.eq.0) then
+         il = nbuff
+         npass = npass-1
+      endif
+
+      do ipass = 1,npass
+
+        call nekgsync
+
+        if(ipass.lt.npass) then
+          if(nid.eq.0) then
+            call crecv(ipass,buf,len)
+            do ip = 1,nbuff
+              write(50,'(1p20E15.7)') time,
+     &         (buf(i,ip), i=1,nflds)
+            enddo
+          elseif(nid.eq.ipass) then
+            call csend(ipass,fieldout,len,0,nid)
+          endif
+
+        else  !ipass.eq.npass
+
+          if(nid.eq.0) then
+            do ip = 1,il
+              write(50,'(1p20E15.7)') time,
+     &         (fieldout(i,ip), i=1,nflds)
+            enddo
+          endif
+
+        endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------

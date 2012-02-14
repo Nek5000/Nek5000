@@ -424,7 +424,7 @@ c
       enddo
 c
 c     Synchronize, so we can use forced message types
-c     call gsync()
+c     call nekgsync()
 c
 c     Call csend, using shift
 c
@@ -491,7 +491,7 @@ c
       enddo
 c
 c     Synchronize, so we can use forced message types
-c     call gsync()
+c     call nekgsync()
 c
 c     Call csend, using xor
 c
@@ -558,7 +558,7 @@ c
       enddo
 c
 c     Synchronize, so we can use forced message types
-c     call gsync()
+c     call nekgsync()
 c
 c     Call csend, using xor
 c
@@ -626,7 +626,7 @@ c
       enddo
 c
 c     Synchronize, so we can use forced message types
-c     call gsync()
+c     call nekgsync()
 c
 c     Call csend, using xor
 c
