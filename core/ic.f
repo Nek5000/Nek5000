@@ -120,9 +120,9 @@ C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
       jp = 0
      
 
-      call gsync()
+      call nekgsync()
       call restart(nfiles) !  Check restart files
-      call gsync()
+      call nekgsync()
 
 
 C      ***** VELOCITY ******
@@ -1981,7 +1981,7 @@ c-----------------------------------------------------------------------
       integer e,ei,eg,msg_id(lelt)
       logical iskip
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
 
       nxyzr = nxr*nyr*nzr   
       len   = nxyzr*wdsizr  ! message length
@@ -2051,7 +2051,7 @@ c-----------------------------------------------------------------------
       endif
 
       if (iskip) then
-         call gsync() ! clear outstanding message queues.
+         call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't use the data
       endif
 
@@ -2106,7 +2106,7 @@ c-----------------------------------------------------------------------
 
       integer e,ei,eg,msg_id(lelt)
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
 
       nxyzr = ndim*nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
@@ -2176,7 +2176,7 @@ c-----------------------------------------------------------------------
       endif
 
       if (iskip) then
-         call gsync() ! clear outstanding message queues.
+         call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't assign the data we just read
       endif
 
@@ -2489,7 +2489,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 #else
      &   call byte_close()
 #endif
-      call gsync
+      call nekgsync
       tio = dnekclock()-tiostart
 
       dnbyte = nbyte

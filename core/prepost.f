@@ -302,12 +302,12 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
         WRITE(6,1001) istep,time
  1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
       endif
-      call gsync()      
+      call nekgsync()      
 
       p66 = abs(param(66))
       if (p66.eq.6) then
          call mfo_outfld(prefix)
-         call gsync                ! avoid race condition w/ outfld
+         call nekgsync                ! avoid race condition w/ outfld
          return
       endif
 
@@ -448,7 +448,7 @@ c
 
       ifxyo = ifxyo_s           ! restore ifxyo
 
-      call gsync                ! avoid race condition w/ outfld
+      call nekgsync                ! avoid race condition w/ outfld
 
       return
       end
@@ -1876,8 +1876,8 @@ c                                      ! is the only form used for restart
 
       endif
 
-      if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
-   8  format(i8,' prefix ',a3,5i5)
+c     if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
+c  8  format(i8,' prefix ',a3,5i5)
 
       if_full_pres = .false.
       return
@@ -1984,7 +1984,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
       n    = 2*ndim
@@ -2070,7 +2070,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
 
       nxyz = nx1*ny1*nz1
       n    = 2
@@ -2143,7 +2143,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
         if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
         call exitt
@@ -2228,7 +2228,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      call gsync() ! clear outstanding message queues.
+      call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
         if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
         call exitt
@@ -2342,7 +2342,7 @@ c-----------------------------------------------------------------------
       character*132 hdr
       integer*8 ioff
 
-      call gsync()
+      call nekgsync()
       idum = 1
 
 #ifdef MPIIO

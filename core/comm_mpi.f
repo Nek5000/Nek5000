@@ -1,4 +1,4 @@
-c-----------------------------------------------------------------------
+c---------------------------------------------------------------------
       subroutine iniproc(intracomm)
       include 'SIZE'
       include 'PARALLEL'
@@ -257,7 +257,7 @@ c-----------------------------------------------------------------------
       real*8 function dnekclock_sync()
       include 'mpif.h'
 c
-      call gsync()
+      call nekgsync()
       dnekclock_sync=mpi_wtime()
 c
       return
@@ -355,7 +355,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gsync()
+      subroutine nekgsync()
 
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
@@ -468,7 +468,7 @@ c-----------------------------------------------------------------------
       real*4 papi_mflops
       integer*8 papi_flops
 c
-      call gsync()
+      call nekgsync()
 
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
@@ -597,7 +597,7 @@ c-----------------------------------------------------------------------
          if (io.ne.6) open (unit=io,file=fname)
       endif
 
-      call gsync
+      call nekgsync
       call get_msg_vol(msg_vol,dt,nodea,nodeb) ! Est. msg vol for dt s
 
       nwds = 0
@@ -640,14 +640,14 @@ c-----------------------------------------------------------------------
          if (nwds.gt.mwd) then
 c        if (nwds.gt.1024) then
             if (nid.eq.nodea.and.io.ne.6) close(unit=io)
-            call gsync
+            call nekgsync
             return
          endif
 
       enddo
 
       if (nid.eq.nodea.and.io.ne.6) close(unit=io)
-      call gsync
+      call nekgsync
 
       return
       end
@@ -672,7 +672,7 @@ c-----------------------------------------------------------------------
          if (io.ne.6) open (unit=io,file=fname)
       endif
 
-      call gsync
+      call nekgsync
       call get_msg_vol(msg_vol,dt,nodea,nodeb) ! Est. msg vol for dt s
 
       nwds = 0
@@ -682,7 +682,7 @@ c-----------------------------------------------------------------------
       count = 0
 
       do itest = 1,500
-         call gsync
+         call nekgsync
          nloop = msg_vol/(nwds+2)
          nloop = min(nloop,1000)
          nloop = max(nloop,1)
@@ -737,14 +737,14 @@ c-----------------------------------------------------------------------
          nwds = (nwds+1)*1.016
          if (nwds.gt.mwd) then
             if (nid.eq.nodea.and.io.ne.6) close(unit=io)
-            call gsync
+            call nekgsync
             return
          endif
 
       enddo
 
       if (nid.eq.nodea.and.io.ne.6) close(unit=io)
-      call gsync
+      call nekgsync
 
       return
       end
@@ -820,7 +820,7 @@ c-----------------------------------------------------------------------
 
       nwds = 1
       do itest = 1,500
-         call gsync
+         call nekgsync
 
          t0 = mpi_wtime ()
          call gop(x,y,'+  ',nwds)
@@ -1025,7 +1025,7 @@ c-----------------------------------------------------------------------
 
       i=0
       if (nid.eq.nodea) then
-         call gsync
+         call nekgsync
          call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr)    ! 1b
          call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
 c        call mpi_rsend(x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
@@ -1043,7 +1043,7 @@ c           call mpi_rsend(x,len,mpi_byte,nodeb,i,nekcomm,ierr)     ! 2a
       elseif (nid.eq.nodeb) then
 
          call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr)    ! 1a
-         call gsync
+         call nekgsync
          call mpi_wait (msg,status,ierr)                            ! 1a
 
          j=i
@@ -1058,7 +1058,7 @@ c        call mpi_rsend(x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
          call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
 
       else
-         call gsync
+         call nekgsync
       endif
 
       return
@@ -1075,7 +1075,7 @@ c-----------------------------------------------------------------------
 
       i=0
       if (nid.eq.nodea) then
-         call gsync
+         call nekgsync
          call mpi_irecv(y,len,mpi_byte,nodeb,i,nekcomm,msg,ierr)    ! 1b
          call mpi_send (x,len,mpi_byte,nodeb,i,nekcomm,ierr)        ! 1a
          call msgwait(msg)                                          ! 1b
@@ -1091,7 +1091,7 @@ c-----------------------------------------------------------------------
       elseif (nid.eq.nodeb) then
 
          call mpi_irecv(y,len,mpi_byte,nodea,i,nekcomm,msg,ierr)    ! 1a
-         call gsync
+         call nekgsync
          call mpi_wait (msg,status,ierr)                            ! 1a
 
          j=i
@@ -1104,7 +1104,7 @@ c-----------------------------------------------------------------------
          call mpi_send (x,len,mpi_byte,nodea,j,nekcomm,ierr)        ! nb
 
       else
-         call gsync
+         call nekgsync
       endif
 
       return
@@ -1123,7 +1123,7 @@ c     Double Buffer : does 2*nloop timings
       itag=1
       if (nid.eq.nodea) then
          call mpi_irecv(y1,len,mpi_byte,nodeb,itag,nekcomm,msg1,ierr)   ! 1b 
-         call gsync
+         call nekgsync
 
 
          t0 = mpi_wtime ()
@@ -1142,7 +1142,7 @@ c     Double Buffer : does 2*nloop timings
       elseif (nid.eq.nodeb) then
 
          call mpi_irecv(y1,len,mpi_byte,nodea,itag,nekcomm,msg1,ierr)   ! nb 
-         call gsync
+         call nekgsync
 
 
          do i=1,nloop
@@ -1157,7 +1157,7 @@ c     Double Buffer : does 2*nloop timings
          call mpi_send (x1,len,mpi_byte,nodea,itag,nekcomm,ierr)        ! nb
 
       else
-         call gsync
+         call nekgsync
       endif
 
       return

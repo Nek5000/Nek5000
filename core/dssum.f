@@ -47,7 +47,7 @@ c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
-      if (ifsync) call gsync()
+      if (ifsync) call nekgsync()
 
 #ifndef NOTIMER
       if (icalld.eq.0) then
@@ -131,7 +131,7 @@ c     if (ifldt.eq.0)       ifldt = 1
 c     if (nid.eq.0) 
 c    $   write(6,*) istep,' dsop: ',op,ifield,ifldt,gsh_fld(ifldt)
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
       if (op.eq.'+  ') call gs_op(gsh_fld(ifldt),u,1,1,0)
       if (op.eq.'sum') call gs_op(gsh_fld(ifldt),u,1,1,0)
@@ -172,7 +172,7 @@ c
 
       REAL U(1),V(1),W(1)
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
 #ifndef NOTIMER
       if (icalld.eq.0) tvdss=0.0d0
@@ -230,7 +230,7 @@ c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
 c     write(6,*) 'opdsop: ',op,ifldt,ifield
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
       if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
      $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
@@ -263,7 +263,7 @@ c
       real u(1)
       integer n,stride,gs_handle
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
 #ifndef NOTIMER
       icalld=icalld+1
@@ -571,7 +571,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
 #ifndef NOTIMER
       if (icalld.eq.0) then
@@ -633,7 +633,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
 #ifndef NOTIMER
       if (icalld.eq.0) then
@@ -698,7 +698,7 @@ c
       parameter (lface=lx1*ly1)
       common /nonctmp/ uin(lface,2*ldim),uout(lface)
 
-      if(ifsync) call gsync()
+      if(ifsync) call nekgsync()
 
 #ifndef NOTIMER
       if (icalld.eq.0) then

@@ -1117,7 +1117,7 @@ c
       real        s(nn,2,nt,3)
       real        a(nn,2,nt,3)
 
-      call gsync
+      call nekgsync
 
       do k=1,3   ! 3 tests:  N^2 x N, NxN, NxN^2
          call mxmtest(s(1,1, 1,k),nn,c(k, 1),mxm44 ,'mxm44',k,ivb)
@@ -1133,9 +1133,9 @@ c
          call mxmtest(s(1,1,10,k),nn,c(k,10),mxm   ,'mxm  ',k,ivb)
       enddo
 
-      call gsync
+      call nekgsync
       if (nid.eq.0) call mxm_analyze(s,a,nn,c,nt,ivb)
-      call gsync
+      call nekgsync
 
       return
       end

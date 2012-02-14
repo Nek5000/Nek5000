@@ -339,7 +339,7 @@ c
 c     Print out copies of a global matrix
 c
       do mid=0,np-1
-        call gsync
+        call nekgsync
         if (mid.eq.nid) then
          n20 = min(n,20)
          write(6,1) nid,m,n,name6
@@ -349,7 +349,7 @@ c
          enddo
    2     format(i3,1x,a6,20i6)
         endif
-        call gsync
+        call nekgsync
       enddo
       return
       end

@@ -174,7 +174,7 @@ c-----------------------------------------------------------------------
          write(6,*) 'Done writing to ',name9,' p_outveci.'
       endif
 
-      call gsync()
+      call nekgsync()
 
       return
       end

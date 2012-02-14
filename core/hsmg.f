@@ -302,7 +302,7 @@ c----------------------------------------------------------------------
       include 'HSMG'
       include 'CTIMER'
 
-      if (ifsync) call gsync()
+      if (ifsync) call nekgsync()
 #ifndef NOTIMER
       etime1=dnekclock()
 #endif
@@ -319,7 +319,7 @@ c----------------------------------------------------------------------
       include 'HSMG'
       include 'CTIMER'
 
-      if (ifsync) call gsync()
+      if (ifsync) call nekgsync()
 
       call gs_op(mg_gsh_handle(l,mg_fld),u,1,2,0)
       return
@@ -330,7 +330,7 @@ c----------------------------------------------------------------------
       include 'HSMG'
       include 'CTIMER'
 
-      if (ifsync) call gsync()
+      if (ifsync) call nekgsync()
 #ifndef NOTIMER
       etime1=dnekclock()
 #endif
@@ -1380,7 +1380,7 @@ c
       endif
       icalld = 1
 
-      if (ifsync) call gsync()
+      if (ifsync) call nekgsync()
 
       ncrsl  = ncrsl  + 1
 #ifndef NOTIMER
