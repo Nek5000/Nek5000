@@ -518,7 +518,7 @@ gs_init(register int *elms, int nel, int level)
   gs_print_template(gs,0);
 
 #if   defined NXSRC
-      gsync();
+      nekgsync();
 #elif defined MPISRC
       MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -527,7 +527,7 @@ gs_init(register int *elms, int nel, int level)
     {
       gs_print_stemplate(gs,i);
 #if   defined NXSRC
-      gsync();
+      nekgsync();
 #elif defined MPISRC
       MPI_Barrier(MPI_COMM_WORLD);
 #endif
