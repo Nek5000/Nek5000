@@ -106,15 +106,18 @@ c        call get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
 c        call outmati(vertex,4,nelt,'vrtx T')
          call setupds(gsh_fld(2),nx1,ny1,nz1,nelt,nelgt,vertex,glo_num)
 
+c
+c        Feb 20, 2012:  It appears that we do not need this restriction: (pff)
+c
 c        check if there is a least one fluid element on each processor
-         do iel = 1,nelt
-            ieg = lglel(iel)
-            if (ieg.le.nelgv) goto 101 
-         enddo
-         if(nid.eq.0) write(6,*) 
-     &     'ERROR: each domain must contain at least one fluid element!'
-         call exitt
- 101  continue
+c        do iel = 1,nelt
+c           ieg = lglel(iel)
+c           if (ieg.le.nelgv) goto 101 
+c        enddo
+c        if(nid.eq.0) write(6,*) 
+c    &     'ERROR: each domain must contain at least one fluid element!'
+c        call exitt
+c 101   continue
 
       endif
 
