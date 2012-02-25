@@ -421,14 +421,14 @@ c
 
 c*********************************************************************72
 c
-cc MPI_COPY_DOUBLE copies a double precision vector.
+cc MPI_COPY_DOUBLE copies a real*8 vector.
 c
       implicit none
 
       integer n
 
-      double precision data1(n)
-      double precision data2(n)
+      real*8 data1(n)
+      real*8 data2(n)
       integer i
       integer ierror
       integer MPI_FAILURE
@@ -702,7 +702,7 @@ c
 
 c*********************************************************************72
 c
-cc MPI_REDUCE_DOUBLE_PRECISION carries out a reduction operation on double precision values.
+cc MPI_REDUCE_DOUBLE_PRECISION carries out a reduction operation on real*8 values.
 c
       implicit none
 
@@ -710,8 +710,8 @@ c
 
       integer n
 
-      double precision data1(n)
-      double precision data2(n)
+      real*8 data1(n)
+      real*8 data2(n)
       integer i
       integer ierror
       integer operation
@@ -989,7 +989,7 @@ cc MPI_WTICK returns the time between clock ticks.
 c
       implicit none
       
-      double precision mpi_wtick
+      real*8 mpi_wtick
       
       mpi_wtick = 1.0D+00
       
