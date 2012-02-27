@@ -247,6 +247,7 @@ C     Ensure that initial field is continuous!
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
          if (ifsplit) call dsavg(pr)  ! continuous pressure
+         if (ifvcor)  call ortho(pr)  ! remove any mean
       endif
 
       if (ifmhd) then
