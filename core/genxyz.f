@@ -579,6 +579,8 @@ C     Note : CTMP1 is used in this format in several subsequent routines
          call moab_geometry (xml,yml,zml,nxl,nyl,nzl)
          return
       endif
+c already read/initialized vertex positions
+c      if (ifmoab) return
 #endif
 
 c     Initialize geometry arrays with bi- triquadratic deformations
