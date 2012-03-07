@@ -6,7 +6,10 @@
      $     list2, lochis, matype, mcex, msg_id, msp, nbrnch, neact, 
      $     neigx, neigy, neigz, nelgt, nelgv, nelx, mlp, nelg, nelxy, 
      $     nely, nelz, ngfdm_v, nhis, nktonv, nmember, nobj, npscal, 
-     $     ngfdm_p, ncrnr
+     $     ngfdm_p, ncrnr, lvt1, lvt2, lbt1, lbt2, lptmsk, lptsol, 
+     $     lorder2, jp, ifield, imesh, instep, iocomm, iostep, istep,
+     $     lastep, nab, nbd, nbdinp, nconv, nconv_max, nelfld, ninter, 
+     $     nmxe, nmxh, nmxnl, nmxp, nsteps, ntaubd
       real param, qinteg, rmax, rmxs, rstim, rx2, ry2, side, sp, spt, 
      $     sx2, sy2, tmp2, w2d, wavep, xcg, xgs, xgtp, xml, xms, xyz,
      $     xyzl, yc, ycg, ygs, ygtp, yml, yms, zc, zcg, zgs, sides, 
@@ -15,7 +18,21 @@
      $	   rzm2, sxm1, sxm2, sym1, sym2, szm1, szm2, t1x, t1y, t1z,
      $	   t2x, t2y, t2z, txm1, txm2, tym1, tym2, tzm1, tzm2, unx,
      $	   uny, unz, v1x, v1y, v1z, v2x, v2y, v2z, vnx, vny, vnz,
-     $	   xm1, xm2, ym1, ym2, zm1, zm2
+     $	   xm1, xm2, ym1, ym2, zm1, zm2, abx1, abx2, aby1, aby2, abz1,
+     $     abz2, b1mask, b2mask, b3mask, bbx1, bbx2, bby1, bby2, bbz1, 
+     $     bbz2, bfx, bfxp, bfy, bfyp, bfz, bfzp, bmx, bmy, bmz, bq, 
+     $     bqp, bx, bxlag, by, bylag, bz, bzlag, c_vx, exx1p, exx2p, 
+     $     exy1p, bpmask, exy2p, exz1p, omask, pm, pmask, pmlag, pr, 
+     $     prlag, prlagp, prp, qtl, t, tlag, tlagp, tmask, tmult, tp, 
+     $     usrdiv, v1mask, v2mask, v3mask, vdiff, exz2p, vdiff_e, 
+     $     vgradt1, vgradt1p, vgradt2, vgradt2p, vmult, vtrans, vx, 
+     $     vxlag, vxlagp, vxp, vy, vylag, vylagp, vyp, vz, vzlag, 
+     $     vzlagp, vzp, ab, abm, abmsh, avdiff, avtran, bd, betag, 
+     $     courno, ctarg, dt, dtinit, dtinvm, dtlag, fintim, gtheta, pi, 
+     $     prelax, time, timef, timeio, tmean, tnrmh1, tnrml2, tnrml8, 
+     $     tnrmsm, tolabs, tolev, tolhdf, tolhe, tolhr, tolhs, tolht, 
+     $     tolhv, tolnl, tolpdf, tolps, tolrel, vmean, vnrmh1, vnrml2, 
+     $     vnrml8, vnrmsm, volfld
 
 
 c Data common to functions in moab.f. Do #include instead of include or 
@@ -28,21 +45,29 @@ c it won't work (because we're using preproc macros here)
 #include "iMeshP_f.h"
 
       include 'SIZE'
+      include 'INPUT'
 
       integer*4 hexesSize, partsSize
 
-      IBASE_HANDLE_T imeshh, rootset, globalIdTag, rpHexes, hPartn
+      IBASE_HANDLE_T imeshh, rootset, rpHexes, hPartn
 
-      iBase_EntityHandle hHexes(*)
-      pointer (rpHexes, hHexes)
+      iBase_EntityHandle hHexes(*), hParts(*)
+      pointer (rpHexes, hHexes), (rpParts, hParts)
 
-      iBase_EntityHandle hParts(*)
-      pointer (rpParts, hParts)
+      iBase_EntitySetHandle matsets
+      iBase_EntityArrIterator ieiter
+      iBase_TagHandle xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
+     $     pTag, globalIdTag, matsetTag, neusetTag
+
+      integer iestart, iecount
 
       common /nekmoab/ imeshh, hPartn, rootset, 
-     1  rpParts, rpHexes, globalIdTag, 
-     1  rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
-     1	partsSize, hexesSize
+     $     rpParts, rpHexes, globalIdTag, matsetTag, neusetTag,
+     $     ieiter(numsts), iestart(numsts), iecount(numsts),
+     $     matsets(numsts),
+     $     rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
+     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, pTag,
+     $     partsSize, hexesSize
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)

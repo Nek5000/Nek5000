@@ -117,31 +117,10 @@ c-----------------------------------------------------------------------
       end
 C=======================================================================
 #ifdef MOAB
-      subroutine usr_moab2nek(id_nek, id_moab)
-
-      character*3 id_nek(1)
-      integer id_moab
-
-      id_nek(1) = 'E  '
-      if     (id_moab.eq.100) then
-         id_nek(1) = 'v  '
-      else if(id_moab.eq.200) then
-         id_nek(1) = 'O  '
-      else if(id_moab.eq.300) then
-         id_nek(1) = 'W  '
-      endif
-      return
-      end
-
       subroutine usr_moab_output()
-
-#define IMESH_ASSERT \
-      if (ierr.ne.0) call imesh_err(ierr,imeshh,'pipe.f ',__LINE__)
 
 #include "NEKMOAB"
       include 'TSTEP'
-      include 'SOLN'
-      include 'GEOM'
 
       integer iten, ione, ierr
       CHARACTER*10 NAME
@@ -161,39 +140,20 @@ c name the output files 'zero??.h5m'
 
 c #define MOAB_MEM
 #ifndef MOAB_MEM
-
 c copy data from nek
-      do l = 1, nelv
-         do k = 1, nz1
-            do j = 1, ny1
-               do i = 1, nx1
-                  tl(i,j,k,l,1) = t(i,j,k,l,1)
-                  xm1l(i,j,k,l) = xm1(i,j,k,l)
-                  ym1l(i,j,k,l) = ym1(i,j,k,l)
-                  zm1l(i,j,k,l) = zm1(i,j,k,l)
-                  vxl(i,j,k,l) = vx(i,j,k,l)
-                  vyl(i,j,k,l) = vy(i,j,k,l)
-                  vzl(i,j,k,l) = vz(i,j,k,l)
-               enddo
-            enddo
-         enddo
-      enddo
-      if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-         do l = 1, lelt
-            do k = 1, nz1
-               do j = 1, ny1
-                  do i = 1, nx1
-                     prl(i,j,k,l) = pr(i,j,k,l)
-                  enddo
-               enddo
-            enddo
-         enddo
-      endif
+      call nekMOAB_copy_vars
 #endif
 
       if(mod(istep,iostep) .eq. 0) then
-c         call iMesh_save(%VAL(imeshh),%VAL(rootset),name,options, ierr)
-c         IMESH_ASSERT
+         call iMesh_save(%VAL(imeshh),%VAL(rootset),name,options, ierr)
+c no check for error, just print something and continue
+         if (ierr .ne. 0 .and. nid_ .eq. 0) then
+            write(6, "('      H5M file write failed on step ', i4)") 
+     *           istep
+         else if (nid_ .eq. 0) then
+            write(6, "('      Wrote MOAB H5M file for step ', i4)") 
+     *           istep
+         endif
       endif
 
       return

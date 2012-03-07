@@ -11,6 +11,7 @@ C
       logical ifbswap,ifre2
       character*132 string
       real*8 etime_tmp
+      integer idum(2*numsts+3)
 
 C     Test timer accuracy
       edif = 0.0
@@ -40,8 +41,38 @@ C     Read Mesh Info
         read(9,*)    ! dummy
         if (ifmoab) then
            read(9,*) h5mfle
-           read(9,*) ! dummy 
+           ! read fluid/solid material set ids
+           read(9,*) numflu, numoth
+           if (numflu+numoth .gt. numsts) then
+              write(6,'(A)') 
+     $             'Number of fluid+other material sets too large.'
+              write(6, '(A)') 
+     $             'Need to increase NUMSTS in file INPUT.'
+              call exitt
+           else if (numoth .gt. 0 .and. .not. ifheat) then 
+              call exitt(
+     $       'Error: no. of other sets is non-zero but ifheat = false.')
+           endif
+           read(9,*) (matids(i), i = 1, numflu+numoth)
+           do i = numflu+numoth+1, numsts
+              matids(i) = -1
+           enddo
+           read(9,*) numbcs
+           if (numbcs .gt. numsts) then
+              write(6,'(A)') 
+     $             'Number of BC sets too large.'
+              write(6, '(A)') 
+     $             'Need to increase NUMSTS in file INPUT.'
+              call exitti
+           endif
+           do iset = 1, numbcs
+              read(9,'(I5, A3)') ibcsts(iset), bctyps(iset)
+           enddo
            nelgs = 0
+           do iset = numbcs+1, numsts
+              bctyps(iset) = 'E  '
+              ibcsts(iset) = -1
+           enddo
         else
            read(9,*)  nelgs,ndim,nelgv
            nelgt = abs(nelgs)
@@ -52,7 +83,34 @@ C     Read Mesh Info
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
       call bcast(h5mfle,132)
+      if (ifmoab) then
+c pack into long int array and bcast as that
+         if (nid .eq. 0) then
+            idum(1) = numflu
+            idum(2) = numoth
+            idum(3) = numoth
+            do iset = 1, numsts
+               idum(3+iset) = matids(iset)
+            enddo
+            do iset = 1, numsts
+               idum(3+numflu+numoth+iset) = ibcsts(iset)
+            enddo
+         endif
+         call bcast(idum, ISIZE*(3+2*numsts))
+         call bcast(bctyps, 3*numsts)
 
+         if (nid .ne. 0) then
+            numflu = idum(1)
+            numoth = idum(2)
+            numbcs = idum(3)
+            do iset = 1, numsts
+               matids(iset) = idum(3+iset)
+            enddo
+            do iset = 1, numsts
+               ibcsts(iset) = idum(3+numflu+numoth+iset)
+            enddo
+         endif
+      endif
       ifre2 = .false.
       if(nelgs.lt.0) ifre2 = .true.     ! use new .re2 reader
 
@@ -938,7 +996,7 @@ C              check for fortran function as denoted by lower case bc's:
                IEL=1
                READ(8,ERR=1500,END=1500) CHTMP3,
      $         CBCS(ISIDE,IEL),ID1,ID2,(BCS(II,ISIDE,IEL),II=1,NBCREA)
-C              check for fortran function as denoted by lower case bc's:
+C              check for fortran function as denoted by lower case bcs:
             ENDIF
  1080    CONTINUE
  1100 CONTINUE

@@ -60,7 +60,7 @@ C     Initialize some variables
 c     Map BCs
       if (ifmoab) then
 #ifdef MOAB
-        call moab_to_nek_bc
+        call nekMOAB_bcs
 #endif
       endif
 
