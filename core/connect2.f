@@ -310,11 +310,6 @@ C
       IFEXPLVIS = .false.
 c     IFSPLIT   = .false.
 
-      ifmgrid   = .false.
-      if (ifsplit) ifmgrid   = .true.
-      if (ifaxis ) ifmgrid   = .false.
-      
-
       ifbase = .true.
       ifpert = .false.
 
@@ -354,7 +349,7 @@ c     IFSPLIT   = .false.
          elseif (indx1(string(i),'IFLO'   ,4).gt.0) then 
               read(string(i),*) IFLOMACH
          elseif (indx1(string(i),'IFMGRID',7).gt.0) then 
-              read(string(i),*) IFMGRID
+c             read(string(i),*) IFMGRID
          elseif (indx1(string(i),'IFKEPS' ,6).gt.0) then 
               read(string(i),*) IFKEPS
          elseif (indx1(string(i),'IFMODEL',7).gt.0) then 
@@ -419,6 +414,10 @@ c              read(string,*) IFSPLIT
          endif
  490  continue
       enddo
+
+      ifmgrid   = .false.
+      if (ifsplit) ifmgrid   = .true.
+      if (ifaxis ) ifmgrid   = .false.
 
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.
