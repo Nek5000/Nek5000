@@ -1433,8 +1433,8 @@ c        MPI_Allreduce(sync) timings
       endif
 
       if (nid.eq.0)  ! header for timing
-     $   write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop'
-    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq')
+     $ write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop',ifsync
+    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
       call blank(s132,132)
       write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop

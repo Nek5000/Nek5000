@@ -293,7 +293,6 @@ C
       IFAZIV    = .false.
       IFSTRS    = .false.
       IFLOMACH  = .false.
-      IFMGRID   = .false.
       IFMODEL   = .false.
       IFKEPS    = .false.
       IFMVBD    = .false.
@@ -310,6 +309,11 @@ C
       IFSYNC    = .false.
       IFEXPLVIS = .false.
 c     IFSPLIT   = .false.
+
+      ifmgrid   = .false.
+      if (ifsplit) ifmgrid   = .true.
+      if (ifaxis ) ifmgrid   = .false.
+      
 
       ifbase = .true.
       ifpert = .false.

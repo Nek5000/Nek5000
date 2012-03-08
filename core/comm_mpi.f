@@ -470,6 +470,7 @@ c-----------------------------------------------------------------------
 c
       call nekgsync()
 
+
 #ifdef PAPI
       call nek_flops(papi_flops,papi_mflops)
 #endif

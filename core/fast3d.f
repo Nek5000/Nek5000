@@ -12,7 +12,7 @@ c
       parameter(lxx=lx1*lx1)
       real df(lx1*ly1*lz1,1),sr(lxx*2,1),ss(lxx*2,1),st(lxx*2,1)
 c
-      common /ctmpf/  lr(2*lx1),ls(2*lx1),lt(2*lx1)
+      common /ctmpf/  lr(2*lx1+4),ls(2*lx1+4),lt(2*lx1+4)
      $              , llr(lelt),lls(lelt),llt(lelt)
      $              , lmr(lelt),lms(lelt),lmt(lelt)
      $              , lrr(lelt),lrs(lelt),lrt(lelt)
@@ -30,34 +30,6 @@ c
 
       ierr = 0
 
-      if (param(44).eq.1) then
-c                                    __ __ __
-c        Now, for each element, compute lr,ls,lt between specified planes
-c
-         n1 = nx2
-         n2 = nx2+1
-         nz0 = 1
-         nzn = 1
-         if (if3d) then
-            nz0= 0
-            nzn=n2
-         endif
-         eps = 1.e-7
-         if (wdsize.eq.8)  eps = 1.e-14
-c
-c        Find mean spacing between "left-most" planes
-         call plane_space2(llr,lls,llt, 0,wxm2,x,y,z,n1,n2,nz0,nzn)
-c
-c        Find mean spacing between "middle" planes
-         call plane_space (lmr,lms,lmt, 1,n1,wxm2,x,y,z,n1,n2,nz0,nzn)
-c
-c        Find mean spacing between "right-most" planes
-         call plane_space2(lrr,lrs,lrt,n2,wxm2,x,y,z,n1,n2,nz0,nzn)
-c
-      else
-         call load_semhat_weighted    !   Fills the SEMHAT arrays
-      endif
-c
       do e=1,nelv
 c
          if (param(44).eq.1) then
@@ -163,6 +135,67 @@ c
          call exitti('E INVALID BC FOUND in genfast$',ierrmx)
       endif
 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_fast_spacing(x,y,z)
+c
+c     Generate fast diagonalization matrices for each element
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'WZ'
+c
+      parameter(lxx=lx1*lx1)
+c
+      common /ctmpf/  lr(2*lx1+4),ls(2*lx1+4),lt(2*lx1+4)
+     $              , llr(lelt),lls(lelt),llt(lelt)
+     $              , lmr(lelt),lms(lelt),lmt(lelt)
+     $              , lrr(lelt),lrs(lelt),lrt(lelt)
+      real lr ,ls ,lt 
+      real llr,lls,llt
+      real lmr,lms,lmt
+      real lrr,lrs,lrt
+c
+      integer lbr,rbr,lbs,rbs,lbt,rbt,e
+c
+      real x(nx1,ny1,nz1,nelv)
+      real y(nx1,ny1,nz1,nelv)
+      real z(nx1,ny1,nz1,nelv)
+      real axwt(lx2)
+
+      ierr = 0
+
+      if (param(44).eq.1) then
+c                                    __ __ __
+c        Now, for each element, compute lr,ls,lt between specified planes
+c
+         n1 = nx2
+         n2 = nx2+1
+         nz0 = 1
+         nzn = 1
+         if (if3d) then
+            nz0= 0
+            nzn=n2
+         endif
+         eps = 1.e-7
+         if (wdsize.eq.8)  eps = 1.e-14
+c
+c        Find mean spacing between "left-most" planes
+         call plane_space2(llr,lls,llt, 0,wxm2,x,y,z,n1,n2,nz0,nzn)
+c
+c        Find mean spacing between "middle" planes
+         call plane_space (lmr,lms,lmt, 1,n1,wxm2,x,y,z,n1,n2,nz0,nzn)
+c
+c        Find mean spacing between "right-most" planes
+         call plane_space2(lrr,lrs,lrt,n2,wxm2,x,y,z,n1,n2,nz0,nzn)
+c
+      else
+         call load_semhat_weighted    !   Fills the SEMHAT arrays
+      endif
 
       return
       end
@@ -819,7 +852,13 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,e,ifield).eq.'SP ') ibc = 0
 
          fbc(iface) = ibc
+
+         if (ierr.eq.-1) write(6,1) ibc,ied,e,ifield,cbc(ied,e,ifield)
+  1      format(2i3,i8,i3,2x,a3,'  get_fast_bc_error')
+
       enddo
+
+      if (ierr.eq.-1) call exitti('Error A get_fast_bc$',e)
 
       lbr = fbc(1)
       rbr = fbc(2)
@@ -830,6 +869,9 @@ c     ibc = 2  <==>  Neumann,
 
       ierr = 0 
       if (ibc.lt.0) ierr = lglel(e)
+
+c     write(6,6) e,lbr,rbr,lbs,rbs,(cbc(k,e,ifield),k=1,4)
+c   6 format(i5,2x,4i3,3x,4(1x,a3),'  get_fast_bc')
 
       return
       end
@@ -1213,7 +1255,9 @@ c
             d(i,j) = w(j+np)                   !  Derivative matrix
          enddo
       enddo
-c
+
+      if (n.eq.1) return                       !  No interpolation for n=1
+
       do i=0,n
          call fd_weights_full(z(i),z(1),n2,1,w(1))
          do j=1,nm
@@ -1500,7 +1544,7 @@ c-----------------------------------------------------------------------
       include 'GEOM'
       include 'WZ'
       common /swaplengths/ l(lx1,ly1,lz1,lelv)
-      common /ctmpf/  lr(2*lx1),ls(2*lx1),lt(2*lx1)
+      common /ctmpf/  lr(2*lx1+4),ls(2*lx1+4),lt(2*lx1+4)
      $              , llr(lelt),lls(lelt),llt(lelt)
      $              , lmr(lelt),lms(lelt),lmt(lelt)
      $              , lrr(lelt),lrs(lelt),lrt(lelt)
