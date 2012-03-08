@@ -1018,11 +1018,11 @@ C
       nfldt = nfield
       if (ifmhd) nfldt = nfield+1
 
-      do ifield=mfield,nfldt
-         if (iftmsh(ifield)) then
-             volfld(ifield) = voltm1
+      do ifld=mfield,nfldt
+         if (iftmsh(ifld)) then
+             volfld(ifld) = voltm1
          else
-             volfld(ifield) = volvm1
+             volfld(ifld) = volvm1
          endif
       enddo
 
@@ -1346,34 +1346,36 @@ C--------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       INCLUDE 'WZ'
-C
-      NXYZ1  = NX1*NY1*NZ1
-C
-C     Velocity mass matrix
-C
-      IF (IFFLOW) THEN
+
+      nxyz1  = nx1*ny1*nz1
+
+      ifld = ifield
+
+      IF (IFFLOW) THEN ! Velocity mass matrix
          IFIELD = 1
          NTOT   = NXYZ1*NELV
          CALL COPY    (BINVM1,BM1,NTOT)
          CALL DSSUM   (BINVM1,NX1,NY1,NZ1)
          CALL INVCOL1 (BINVM1,NTOT)
       ENDIF
-C
-C     Temperature mass matrix
-C
-      IF (IFHEAT) THEN
+
+
+      IF (IFHEAT) THEN ! Temperature mass matrix
          IFIELD = 2
          NTOT   = NXYZ1*NELT
          CALL COPY    (BINTM1,BM1,NTOT)
          CALL DSSUM   (BINTM1,NX1,NY1,NZ1)
          CALL INVCOL1 (BINTM1,NTOT)
       ENDIF
-C
-      RETURN
-      END
-C
+
+      ifield = ifld
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+
       subroutine maprs(y,x,xa,nrest,iel)
-C---------------------------------------------------------------
 C
 C     Map the elemental array X from Restart mesh to Y on mesh M1
 C     Conforming elements, i.e. NX1=NY1=NZ1.

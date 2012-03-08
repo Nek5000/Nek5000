@@ -64,11 +64,25 @@ c
 
       integer e
 
+      if (ifaxis) ifmgrid = .false.
+
       npass = 1
       if (ifmhd) npass = 2
       do ipass=1,npass
          ifield = 1
-         if (.not.ifsplit) then
+
+         if (ifsplit.and.ifmgrid) then
+
+            if (ipass.gt.1) ifield = ifldmhd
+
+            call swap_lengths
+            call gen_fast_spacing(x,y,z)
+ 
+            call hsmg_setup
+            call h1mg_setup
+
+         elseif (.not.ifsplit) then ! Pn-Pn-2
+
             if (ipass.gt.1) ifield = ifldmhd
 
             if (param(44).eq.1) then !  Set up local overlapping solves 
@@ -79,12 +93,16 @@ c
  
             e = 1
             if (ifield.gt.1) e = nelv+1
+
+            call gen_fast_spacing(x,y,z)
             call gen_fast(df(1,e),sr(1,e),ss(1,e),st(1,e),x,y,z)
+
             call init_weight_op
-            if(param(43).eq.0) call hsmg_setup
+            if (param(43).eq.0) call hsmg_setup
          endif
 
          call set_up_h1_crs
+
       enddo
  
       return

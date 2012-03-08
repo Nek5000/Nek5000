@@ -320,11 +320,12 @@ c     GMRES iteration.
       common /cgmres1/ y(lgmres)
       common /ctmp0/   wk1(lgmres),wk2(lgmres)
       real alpha, l, temp
-      integer j,m
+      integer outer
 
-      logical iflag
-      save    iflag
-      data    iflag /.false./
+      logical iflag,if_hyb
+      save    iflag,if_hyb
+c     data    iflag,if_hyb  /.false. , .true. /
+      data    iflag,if_hyb  /.false. , .false. /
       real    norm_fac
       save    norm_fac
 
@@ -356,7 +357,9 @@ c
       iconv = 0
       call rzero(x,n)
 
-      do while(iconv.eq.0.and.iter.lt.500)
+      outer = 0
+      do while (iconv.eq.0.and.iter.lt.500)
+         outer = outer+1
 
          if(iter.eq.0) then               !      -1
             call col3(r,ml,res,n)         ! r = L  res
@@ -392,18 +395,23 @@ c           call copy(r,res,n)
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
             etime2 = dnekclock()
-            kfldfdm = ndim+1
-            if (param(100).eq.2) then
-                call h1_overlap_2 (z(1,j),w,pmask)
-            else
-                call fdm_h1
-     $            (z(1,j),w,d,pmask,vmult,nelv,ktype(1,1,kfldfdm),wk)
+
+c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
+            if (ifmgrid) then
+               call h1mg_solve(z(1,j),w,if_hyb)   ! z  = M   w
+            else                                  !  j
+               kfldfdm = ndim+1
+               if (param(100).eq.2) then
+                   call h1_overlap_2 (z(1,j),w,pmask)
+               else
+                   call fdm_h1
+     $               (z(1,j),w,d,pmask,vmult,nelv,ktype(1,1,kfldfdm),wk)
+               endif
+               call crs_solve_h1 (wk,w)           ! z  = M   w
+               call add2         (z(1,j),wk,n)    !  j        
             endif
 
-            call crs_solve_h1 (wk,w)               
-c           call hsmg_solve(z(1,j),w)             ! z  = M   w
-                                                  !  j        
-            call add2         (z(1,j),wk,n)
+
             call ortho        (z(1,j)) ! Orthogonalize wrt null space, if present
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -512,9 +520,11 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
 
       etime1 = dnekclock()-etime1
       if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
-     &                            etime1
+     &                            etime1,if_hyb
 c     call flush_hack
- 9999 format(i10,' PRES gmres:',I7,1p5e12.4)
+ 9999 format(i9,' PRES gmres:',i5,1p5e12.4,1x,l4)
+
+      if (outer.le.2) if_hyb = .false.
 
       return
       end
@@ -645,7 +655,7 @@ c
       common /fastg/  sr(lxss,2,lelv),ss(lxss,2,lelv),st(lxss,2,lelv)
      $             ,  df(lxs*lys*lzs,lelv)
 
-      common /ctmpf/  lr(2*lx1),ls(2*lx1),lt(2*lx1)
+      common /ctmpf/  lr(2*lx1+4),ls(2*lx1+4),lt(2*lx1+4)
      $              , llr(lelt),lls(lelt),llt(lelt)
      $              , lmr(lelt),lms(lelt),lmt(lelt)
      $              , lrr(lelt),lrs(lelt),lrt(lelt)
