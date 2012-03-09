@@ -5,10 +5,17 @@ c-----------------------------------------------------------------------
       include 'GLOBALCOM' 
       include 'TSTEP' 
       include 'INPUT' 
+
       common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
       integer nid_global_root(0:nsessmax-1)
-      character*132 SESSION_MULT(0:nsessmax-1), PATH_MULT(0:nsessmax-1)
-      logical high
+      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
+
+      common /exchr/ rsend(ldim*nmaxl), rrecv(ldim*nmaxl)     
+      common /exchi/ jsend,jrecv,nsend,nrecv,iList_all
+      integer jsend((ldim+2)*nmaxl),jrecv((ldim+2)*nmaxl)
+      integer nsend(0:lp-1), nrecv(0:lp-1), iList_all(ldim+2,nmaxcom)
+
+      logical ifhigh
 
 C     nsessmax = upper limit for number of sessions
 C     npmax = upper limit for number of processors in each session 
@@ -30,21 +37,22 @@ C     and path (PATH_MULT(n-1))
       nekcomm=mpi_comm_world
 
       ierr = 0
-      IF(NID_GLOBAL.EQ.0) THEN
-      OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=24)
-      read(8,*) nsessions
-      do n=0,nsessions-1
-         call blank(session_mult(n),132)
-         call blank(path_mult(n)   ,132)
-         read(8,10) session_mult(n)
-         read(8,10) path_mult(n)
-         read(8,*) npsess(n)
-      end do
- 10   FORMAT(A132)
-      CLOSE(UNIT=8)
-      GOTO 23
- 24   ierr = 1
- 23   END IF
+      if (nid_global.eq.0) then
+         open (unit=8,file='SESSION.NAME',status='old',err=24)
+         read(8,*) nsessions
+         do n=0,nsessions-1
+            call blank(session_mult(n),132)
+            call blank(path_mult(n)   ,132)
+            read(8,10) session_mult(n)
+            read(8,10) path_mult(n)
+            read(8,*)  npsess(n)
+         enddo
+ 10      format(a132)
+         close(unit=8)
+         goto 23
+ 24      ierr = 1
+      endif
+ 23   continue
       
       call err_chk(ierr,' Cannot open SESSION.NAME!$')
 
@@ -54,15 +62,15 @@ C     and path (PATH_MULT(n-1))
      &  call exitti('More than 2 sessions are not supported!$',1)
 
       do n=0,nsessions-1
-      call bcast(npsess(n),4)
-      call bcast(session_mult(n),132)
-      call bcast(path_mult(n),132)
-      end do
+         call bcast(npsess(n),4)
+         call bcast(session_mult(n),132)
+         call bcast(path_mult(n),132)
+      enddo
 
       npall=0
       do n=0,nsessions-1
          npall=npall+npsess(n)
-      end do
+      enddo
      
 C     Check if number of processors in each session is consistent 
 C     with the total number of processors
@@ -79,41 +87,39 @@ C     Assign key for splitting into multiple groups
          if (nid_global.ge.nid_global_root(n).and.
      &   nid_global.lt.nid_global_root_next) 
      &    idsess=n
-      end do
+      enddo
          
       call mpi_comm_split(mpi_comm_world,idsess,nid,intracomm,ierr)
  
-      SESSION = SESSION_MULT(idsess)
-      PATH = PATH_MULT(idsess)
+      session = session_mult(idsess)
+      path    = path_mult   (idsess)
 
 C     Intercommunications set up only for 2 sessions 
 
       if (nsessions.gt.1) then
 
-      if (idsess.eq.0) idsess_neighbor=1
-      if (idsess.eq.1) idsess_neighbor=0
+         if (idsess.eq.0) idsess_neighbor=1
+         if (idsess.eq.1) idsess_neighbor=0
  
-       call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
-     &  nid_global_root(idsess_neighbor), 10,intercomm,ierr)
+         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
+     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
 
-      np_neighbor=npsess(idsess_neighbor)
+         np_neighbor=npsess(idsess_neighbor)
       
-      call iniproc(intracomm)
+         call iniproc(intracomm)
 
-      high=.true.
-      call mpi_intercomm_merge(intercomm, high, iglobalcomm, ierr)
+         ifhigh=.true.
+         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
 
- 11   format(3i20,a7)
       
-      call mpi_allreduce(nid_global,irecv,1,mpi_integer,mpi_min,
-     & iglobalcomm,ierr)
+         call mpi_allreduce(nid_global,jrecv,1,mpi_integer,mpi_min,
+     &    iglobalcomm,ierr)
 
-      IFNEKNEK  = .true.
+         ifneknek  = .true.
 
-c     Initialize order of interface extrapolation to 1. Only used with NEKNEK.
-      NINTER = 1
+         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
 
-      end if 
+      endif 
 
       return
       end
@@ -129,16 +135,17 @@ C-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 
-C     Set interpolation flag: points with boundary condition = 'int' get intflag=1. 
+C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
          call set_intflag
          icalld = icalld + 1
-      end if 
+      endif 
 
-C     Every processor sends all the points with intflag=1 to the processors of remote session
-C     (send_points)
+c     Every processor sends all the points with intflag=1 to the processors 
+c     of remote session
+c     (send_points)
 
 C    Root processor receives all the boundary points from remote session
 C    and redistributes it among its processors for efficient 
@@ -169,7 +176,9 @@ C-------------------------------------------------------------
       include 'NEKNEK'
       CHARACTER CB*3
 
-C     Set interpolation flag: points with boundary condition = 'int' get intflag=1. 
+C     Set interpolation flag: points with boundary condition = 'int' 
+c     get intflag=1. 
+c
 C     Boundary conditions are changed back to 'v' or 't'.
 
       if (ifflow) then
@@ -189,9 +198,9 @@ C     Boundary conditions are changed back to 'v' or 't'.
          cb=cbc(iface,iel,ifield)
          if (cb.eq.'int') then
             intflag(iface,iel)=1
-         if (ifield.eq.1) cbc(iface,iel,ifield)='v'
-         if (ifield.eq.2) cbc(iface,iel,ifield)='t'
-         end if
+            if (ifield.eq.1) cbc(iface,iel,ifield)='v'
+            if (ifield.eq.2) cbc(iface,iel,ifield)='t'
+         endif
  2010 continue
 
       return
@@ -208,8 +217,9 @@ c-------------------------------------------------------------
       integer status(mpi_status_size)
       real    pts(ldim,nmaxcom)
  
-      real rsend(ldim*nmaxl), rrecv(ldim*nmaxl)     
-      integer isend((ldim+2)*nmaxl),irecv((ldim+2)*nmaxl)
+      common /exchr/ rsend(ldim*nmaxl), rrecv(ldim*nmaxl)     
+      common /exchi/ jsend,jrecv,nsend,nrecv
+      integer jsend((ldim+2)*nmaxl),jrecv((ldim+2)*nmaxl)
       integer nsend(0:lp-1), nrecv(0:lp-1), iList_all(ldim+2,nmaxcom)
     
 C     Look for boundary points with Diriclet b.c. (candidates for
@@ -237,24 +247,24 @@ C     interpolation)
                ip=ip+1
 
                if (if3d) then
-               isend((ldim+2)*(ip-1)+1)=ix
-               isend((ldim+2)*(ip-1)+2)=iy
-               isend((ldim+2)*(ip-1)+3)=iz
-               isend((ldim+2)*(ip-1)+4)=iel
-               isend((ldim+2)*(ip-1)+5)=nid
+               jsend((ldim+2)*(ip-1)+1)=ix
+               jsend((ldim+2)*(ip-1)+2)=iy
+               jsend((ldim+2)*(ip-1)+3)=iz
+               jsend((ldim+2)*(ip-1)+4)=iel
+               jsend((ldim+2)*(ip-1)+5)=nid
 
                rsend(ldim*(ip-1)+1)=x
                rsend(ldim*(ip-1)+2)=y
                rsend(ldim*(ip-1)+3)=z
                else
-               isend((ldim+2)*(ip-1)+1)=ix
-               isend((ldim+2)*(ip-1)+2)=iy
-               isend((ldim+2)*(ip-1)+3)=iel
-               isend((ldim+2)*(ip-1)+4)=nid
+               jsend((ldim+2)*(ip-1)+1)=ix
+               jsend((ldim+2)*(ip-1)+2)=iy
+               jsend((ldim+2)*(ip-1)+3)=iel
+               jsend((ldim+2)*(ip-1)+4)=nid
 
                rsend(ldim*(ip-1)+1)=x
                rsend(ldim*(ip-1)+2)=y
-               end if
+               endif
 
 
                if (ip.gt.nmaxl) then
@@ -285,7 +295,7 @@ C     Determine amount of points to send to each processor
             nsend(id) = ndistrib + 1
             else 
             nsend(id) = ndistrib
-         end if
+         endif
          len=isize
          call mpi_irecv (nrecv(id),len,mpi_byte, id, id, 
      &                                    intercomm, msg,ierr)
@@ -306,10 +316,10 @@ C     Determine amount of points to send to each processor
 
       do id=0,np_neighbor-1
          len=(ldim+2)*nrecv(id)*isize
-         call mpi_irecv (irecv, len ,mpi_byte, id, 100+id, 
+         call mpi_irecv (jrecv, len ,mpi_byte, id, 100+id, 
      &                                     intercomm, msg, ierr)
          len=(ldim+2)*nsend(id)*isize
-         call mpi_send (isend(iaddress),len,mpi_byte, id, 100+nid, 
+         call mpi_send (jsend(iaddress),len,mpi_byte, id, 100+nid, 
      &                                           intercomm, ierr)
          iaddress=iaddress+(ldim+2)*nsend(id)
 
@@ -325,7 +335,7 @@ C     Determine amount of points to send to each processor
 
             
            do j=1,ldim+2
-              iList_all(j,ip)=irecv((ldim+2)*(n-1)+j)
+              iList_all(j,ip)=jrecv((ldim+2)*(n-1)+j)
            enddo
 
          enddo ! n
@@ -361,7 +371,7 @@ C     Determine amount of points to send to each processor
             
                do j=1,ldim
                pts(j,ip)=rrecv(ldim*(n-1)+j)
-               end do
+               enddo
 
          enddo ! n
 
@@ -374,12 +384,11 @@ C     Determine amount of points to send to each processor
       return
       end
 C-------------------------------------------------------------------------
-      subroutine intpts_locate
-     $ (pts,iList_all,npoints_all)
+      subroutine intpts_locate (pts,iList_all,npoints_all)
 
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-      INCLUDE 'NEKNEK'
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
 
       real    pts(ldim,nmaxcom)
       real    dist_all(nmaxcom)
@@ -447,18 +456,18 @@ C     Exclude "true" boundary points
      &   ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
      &   (pts(k,i),k=1,ndim),dist_all(i)  
             GOTO 100
-         end if
+         endif
             ip=ip+1
             rcode(ip) = rcode_all(i)
             elid(ip)  = elid_all(i)
             proc(ip)  = proc_all(i)
             do j=1,ndim
             rst(ndim*(ip-1)+j)   = rst_all(ndim*(i-1)+j)
-            end do
+            enddo
             do n=1,ndim+2
             iList(n,ip) = iList_all(n,i)
-            end do   
-          end if
+            enddo   
+          endif
  100   continue
 
       npoints=ip
@@ -474,7 +483,11 @@ C---------------------------------------------------------------------
       include 'TOTAL'  
       include 'NEKNEK' 
       include 'mpif.h'    
-      integer isend((ldim+2)*nmaxl), irecv((ldim+1)*nmaxl)
+
+      common /exchi/ jsend,jrecv,nsend,nrecv,iList_all
+      integer jsend((ldim+2)*nmaxl),jrecv((ldim+2)*nmaxl)
+      integer nsend(0:lp-1), nrecv(0:lp-1), iList_all(ldim+2,nmaxcom)
+
       integer status(mpi_status_size)
 
 c     Sort all the points in the iList serviced by the local 
@@ -525,7 +538,7 @@ C     iden(4,:,:) = iel
          IFIELD = 1
       else if (IFHEAT) then
          IFIELD   = 2
-      end if   
+      endif   
 
       NEL    = NELFLD(IFIELD)
       NXYZ  =NX1*NY1*NZ1
@@ -533,26 +546,29 @@ C     iden(4,:,:) = iel
 
       call izero(imask,ntot)
 
-
 c     Remote processor id which needs each interpolated point i 
 c     (i=1...npoints) serviced by the local processor nid is contained 
 c     in iList(ldim+2,:).  This allows to calculate nbp_send(id) 
 c     and idp(n,id), where n=1...nbp_send(id) 
-c     nbp_send(id) - how many points local processor nid will send to remote processor id,
-c     and idp(n,id) - index of each sent point within the interpolation points serviced by the local processor nid 
+c
+c     nbp_send(id) - how many points local processor nid will send 
+c                    to remote processor id, and 
+
+c     idp(n,id) - index of each sent point within the interpolation 
+c                 points serviced by the local processor nid 
 
       do i=1,npoints
          id=iList(ldim+2,i)
          nbp_send(id)=nbp_send(id)+1
          n=nbp_send(id)
          idp(n,id)=i
-      end do
+      enddo
 
 
 
 c     Local processor nid sends the information about the interpolated 
-c     points to each processor id of the remote session  
-c     telling how many points to expect (nbp_send(id))and their identity contained 
+c     points to each processor id of the remote session telling how many 
+c     points to expect (nbp_send(id))and their identity contained 
 c     in iList:ix,iy,iz,iel. 
 
 c     Local processor nid receives the information about the interpolated 
@@ -576,7 +592,7 @@ c     iList:ix,iy,iz,iel.
      &                                          intercomm, ierr)
 
          call mpi_wait (msg,status,ierr)
-      end do
+      enddo
 
 
       do id=0,np_neighbor-1
@@ -584,54 +600,50 @@ c     iList:ix,iy,iz,iel.
          ifrecv(id)=.false.
          if (nbp_recv(id).gt.0) ifrecv(id)=.true.
          if (nbp_send(id).gt.0) ifsend(id)=.true.
-      end do
+      enddo
 
       call mpi_barrier(intercomm, ierr)
 
       do id=0,np_neighbor-1 
          len=(ldim+1)*nbp_recv(id)*isize
-      call mpi_irecv (irecv,len,mpi_byte, id, 
-     & 100+id,intercomm,msg,ierr)
+         call mpi_irecv(jrecv,len,mpi_byte,id,100+id,intercomm,msg,ierr)
       
          do n=1,nbp_send(id)
             il=idp(n,id)
             do j=1,ldim+1
-               isend((ldim+1)*(n-1)+j)=iList(j,il)
-            end do
-         end do
+               jsend((ldim+1)*(n-1)+j)=iList(j,il)
+            enddo
+         enddo
+
          len=(ldim+1)*nbp_send(id)*isize
-      call mpi_send (isend,len,mpi_byte, id, 100+nid, 
-     & intercomm, ierr)
 
-      call mpi_wait(msg,status,ierr)
+         call mpi_send(jsend,len,mpi_byte,id,100+nid, intercomm,ierr)
+         call mpi_wait(msg,status,ierr)
 
-C     Receiving processor nid masks which points he receives from remote processor id as interpolation points
-C     using the identity information contained in array 'irecv'. Those points are masked with imask=1 
-C     (imask=0 for all other points). 
+c        Receiving processor nid masks which points he receives from 
+c        remote processor id as interpolation points using the identity 
+c        information contained in array 'jrecv'. Those points are masked 
+c        with imask=1 (imask=0 for all other points). 
 
-      do n=1,nbp_recv(id)
-         ix=irecv((ldim+1)*(n-1)+1)
-         iy=irecv((ldim+1)*(n-1)+2)
-         iz = 1
-         if (if3d) iz=irecv((ldim+1)*(n-1)+3)
-         ie=irecv((ldim+1)*(n-1)+ldim+1)
-         iden(1,n,id)=ix
-         iden(2,n,id)=iy
-         if (if3d) iden(3,n,id)=iz
-         iden(ldim+1,n,id)=ie
-         imask(ix,iy,iz,ie)=1
-      end do
+         do n=1,nbp_recv(id)
+            ix=jrecv((ldim+1)*(n-1)+1)
+            iy=jrecv((ldim+1)*(n-1)+2)
+            iz = 1
+            if (if3d) iz=jrecv((ldim+1)*(n-1)+3)
+            ie=jrecv((ldim+1)*(n-1)+ldim+1)
+            iden(1,n,id)=ix
+            iden(2,n,id)=iy
+            if (if3d) iden(3,n,id)=iz
+            iden(ldim+1,n,id)=ie
+            imask(ix,iy,iz,ie)=1
+         enddo
 
-      end do
+      enddo
 
       call mpi_barrier(intercomm, ierr)
 
-
-
       return
       end
-
-
 C----------------------------------------------------------------
       subroutine get_values(which_field)
       include 'SIZE'
@@ -646,36 +658,47 @@ C----------------------------------------------------------------
 
       integer status(mpi_status_size)
 
-C     Information about communication of points is contained in common block /proclist/
+c     Information about communication of points is contained in common 
+c     block /proclist/
 
-C     nbp_send(id), id=0...lp-1 is the number of points sent by each local processor with rank nid to 
-C     the remote processor with rank id. If nbp_send(id)=0, this processor is marked as non-sending 
+c     nbp_send(id), id=0...lp-1 is the number of points sent by each local 
+c     processor with rank nid to the remote processor with rank id. 
+c     If nbp_send(id)=0, this processor is marked as non-sending 
 
-C     nbp_recv(id), id=0...lp-1 is the number of points received by each local processor with rank nid from 
-C     the remote processor with rank id. If nbp_recv(id)=0, this processor is marked as non-receiving 
+c     nbp_recv(id), id=0...lp-1 is the number of points received by each 
+c     local processor with rank nid from the remote processor with rank id. 
+c     If nbp_recv(id)=0, this processor is marked as non-receiving 
 
-C     idp(n,id)=1...nint is the index of each point within the array of all points serviced by the local processor nid
-C     (to be sent to different remote processors)
-C     Here id is the rank of remote processor who needs this point,
-C     n=1...nbp_send(id) is the local point index among the points sent by local processor nid to remote processor id
+c     idp(n,id)=1...nint is the index of each point within the array of 
+c     all points serviced by the local processor nid (to be sent to different 
+c     remote processors). Here, id is the rank of remote processor who needs 
+c     this point, n=1...nbp_send(id) is the local point index among the points 
+c     sent by local processor nid to remote processor id.
 
-C     nprocsend - total number of processors in the remote session to whom local processor nid sends the points (all id's with nbp_send(id)>0,
-C     id=0...lp-1)
+c     nprocsend - total number of processors in the remote session to 
+c     whom local processor nid sends the points (all id's with 
+c     nbp_send(id)>0, id=0...lp-1).
   
-C     idsend(n), n=1...nprocsend is the rank of n'th remote processor to whom local processor nid send the points
-C     (note: n is just the local running number of the receiving processors >=1, explaining that array idsend is from 1 to lp,
-C     not from 0 to lp-1)   
+c     idsend(n), n=1...nprocsend is the rank of n'th remote processor 
+c     to whom local processor nid send the points (note: n is just 
+c     the local running number of the receiving processors >=1, 
+c     explaining that array idsend is from 1 to lp, not from 0 to lp-1).
 
-C     nprocrecv - total number of processors in the remote session from whom local processor nid receives the points (all id's with nbp_recv(id)>0,
-C     id=0...lp-1)
+c     nprocrecv - total number of processors in the remote session from 
+c     whom local processor nid receives the points (all id's with 
+c     nbp_recv(id)>0, id=0...lp-1).
   
-C     idrecv(n), n=1...nprocsend is the rank of n'th remote processor from whom local processor nid receives the points 
-C     (note: n is just the local running number of the sending processors >=1, explaining that array idrecv is from 1 to lp,
-C     not from 0 to lp-1)   
+c     idrecv(n), n=1...nprocsend is the rank of n'th remote processor 
+c     from whom local processor nid receives the points (note: n is just 
+c     the local running number of the sending processors >=1, explaining 
+c     that array idrecv is from 1 to lp, not from 0 to lp-1).
 
-C     iden(4,n,id) is the identity information for the points received by the local processor nid from the remote processor id=0...lp-1
-C     to attach the interpolated value to the corresponding point owned by the local processor nid (in array valint, see subroutine get_values
-C     called at every time step). Here n=1...nbp_recv(id) is the local point index among the points received by local processor nid from remote processor id
+c     iden(4,n,id) is the identity information for the points received by 
+c     the local processor nid from the remote processor id=0...lp-1 to attach 
+c     the interpolated value to the corresponding point owned by the local 
+c     processor nid (in array valint, see subroutine get_values called at 
+c     every time step). Here, n=1...nbp_recv(id) is the local point index 
+c     among the points received by local processor nid from remote processor id.
  
 C     iden(1,:,:) = ix
 C     iden(2,:,:) = iy
@@ -683,8 +706,9 @@ C     iden(3,:,:) = iz
 C     iden(4,:,:) = iel
 
 
-C     Put field values for the field ifld=1,nfld to the working array field (:,:,:,:,nfld) used byt the findpts_value routine
-C     according to the field identificator which_field(ifld) 
+c     Put field values for the field ifld=1,nfld to the working array 
+c     field (:,:,:,:,nfld) used byt the findpts_value routine according 
+c     to the field identificator which_field(ifld) 
 
 
       nv = nx1*ny1*nz1*nelv
@@ -704,7 +728,7 @@ C     Find interpolation values
      &                     rst,ndim,npoints,
      &                     field(1,ifld))
 
-       end do  
+       enddo  
 
 
 C     Send interpolation values to the corresponding processors 
@@ -717,7 +741,7 @@ C     of remote session
          if (ifrecv(id)) then
           len=nfld*nbp_recv(id)*wdsize
           call mpi_irecv (rrecv,len,mpi_byte,id,id,intercomm,msg,ierr)
-       end if
+       endif
 
 
        if (ifsend(id)) then     
@@ -725,11 +749,11 @@ C     of remote session
              il=idp(n,id)
              do ifld=1,nfld
                 rsend(nfld*(n-1)+ifld)=fieldout(ifld,il)
-             end do
-           end do
+             enddo
+           enddo
            len=nfld*nbp_send(id)*wdsize
            call mpi_send (rsend,len,mpi_byte, id, nid, intercomm, ierr)
-       end if
+       endif
   
 
 
@@ -748,49 +772,19 @@ C           extract point identity
 
                do ifld=1,nfld
                   valint(ix,iy,iz,ie,ifld)=rrecv(nfld*(n-1)+ifld)
-               end do
+               enddo
 
-         end do      
+         enddo      
 
-      end if
+      endif
 
-      end do
+      enddo
 
       call mpi_barrier(intercomm,ierr)
 
       return
       end
 C--------------------------------------------------------------------------
-      subroutine value_exchange(value, oper)
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKNEK'
-      include 'mpif.h' 
-      character*4 oper
-      integer status(mpi_status_size)
-
-C     Time step synchronization between different sessions
-
-
-      len=wdsize
-
-      if (oper.eq.'recv') call mpi_irecv (value, len ,mpi_byte, 0, 0, 
-     & intercomm, msg, ierr)
-
-      if (oper.eq.'send') then
-      if (nid.eq.0) then
-         do id=0, np_neighbor-1
-       call mpi_send (value,len,mpi_byte, id, 0, 
-     & intercomm, ierr)
-         end do   
-      end if   
-      end if
-
-      if (oper.eq.'recv') call mpi_wait (msg, status, ierr)
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine userchk_set_xfer
       include 'SIZE'
       include 'TOTAL'
@@ -824,9 +818,11 @@ c------------------------------------------------------------------------
          call copy(bdrylg(1,k,0),valint(1,1,1,1,k),n)
       enddo
 
-c     Order of extrpolation is contolled by the parameter NINTER contained in NEKNEK
-c     First order interface extrapolation, NINTER=1 (time lagging) is activated. It is unconditionally stable.
-c     If you want to use higher-order interface extrapolation schemes, you need to increase ngeom to ngeom=3-5 for scheme to be stable
+c     Order of extrpolation is contolled by the parameter NINTER contained 
+c     in NEKNEK. First order interface extrapolation, NINTER=1 (time lagging) 
+c     is activated. It is unconditionally stable.  If you want to use 
+c     higher-order interface extrapolation schemes, you need to increase 
+c     ngeom to ngeom=3-5 for scheme to be stable.
 
       if (NINTER.eq.1.or.istep.eq.0) then
        c0=1
@@ -854,7 +850,7 @@ c     If you want to use higher-order interface extrapolation schemes, you need 
 C---------------------------------------------------------------------
       subroutine setintercomm(nekcommtrue,nptrue) 
       include 'SIZE' 
-      INCLUDE 'GLOBALCOM'
+      include 'GLOBALCOM'
       common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal 
       
       nekcommtrue=nekcomm
@@ -869,7 +865,7 @@ C---------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine unsetintercomm(nekcommtrue,nptrue)
       include 'SIZE' 
-      INCLUDE 'GLOBALCOM'
+      include 'GLOBALCOM'
       common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal 
 
       nekcomm=nekcommtrue
@@ -878,5 +874,3 @@ c-----------------------------------------------------------------------
       return
       end
 c------------------------------------------------------------------------
-
-
