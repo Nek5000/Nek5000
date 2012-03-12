@@ -7,7 +7,7 @@
       parameter (lmg_fastd=2*lxm*lym*lzm)  ! FDM D max size
       parameter (lmg_swt=2*lxm*lzm)        ! schwarz weight max size
       parameter (lmg_g=2*lx2*ly2*lz2)      ! metrics max size
-      parameter (lmg_solve=2*lx2*ly2*lz2)  ! solver r,e max size
+      parameter (lmg_solve=2*lxm*lym*lzm)  ! solver r,e max size
 c
       common /mghs/ mg_lmax                     !number of multigrid levels
      $            , mg_nx(lmgn)                 !level poly. order (for GLL pts)
