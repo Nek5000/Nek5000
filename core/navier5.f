@@ -3496,3 +3496,199 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine no_z_profile(u)
+
+c     Subtract the z_profile from u for a tensor-product array of elements
+
+c     Assumes you have nelx*nely*nelz elements, in the same order,
+c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
+
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'         ! nelx,nely,nelz
+
+      real u(1)
+
+      parameter (lyavg = ly1*lely)
+      common /scravg/ ua(lyavg)
+     $              , w1(lyavg)
+     $              , w2(lyavg)
+      common /scrmg/  ub(lx1*ly1*lz1*lelt)
+
+      call z_profile          (ua,u,w1,w2)
+      call z_profile_transpose(ub,ua) ! distribute ua to each z-plane
+
+      n = nx1*ny1*nz1*nelv
+      call sub2(u,ub,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine z_profile(ua,u,w1,w2)
+c
+c     Compute the z profile of quantity u() - assumes global tens.prod.
+c
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+     $    ,w1(lz1,lelz),w2(lz1,lelz)
+      integer e,eg,ex,ey,ez
+
+      mz = nz1*nelz
+      call rzero(ua,mz)
+      call rzero(w1,mz)
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do i=1,nx1*ny1
+            ua(k,ez) = ua(k,ez) + area(i,1,5,e)*u(i,1,k,e)
+            w1(k,ez) = w1(k,ez) + area(i,1,5,e)
+         enddo
+         enddo
+
+      enddo
+
+      call gop(ua,w2,'+  ',mz)
+      call gop(w1,w2,'+  ',mz)
+
+      do i=1,mz
+         ua(i,1) = ua(i,1) / w1(i,1)   ! Normalize
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine z_profile_transpose(u,ua) ! distribute ua to each z-plane
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'ZPER'
+
+      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      integer e,eg,ex,ey,ez
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do i=1,nx1*ny1
+            u(i,1,k,e) = ua(k,ez)
+         enddo
+         enddo
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine no_y_profile(u)
+
+c     Subtract the y_profile from u for a tensor-product array of elements
+
+c     Assumes you have nelx*nely*nelz elements, in the same order,
+c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
+
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'         ! nelx,nely,nelz
+
+      real u(1)
+
+      parameter (lyavg = ly1*lely)
+      common /scravg/ ua(lyavg)
+     $              , w1(lyavg)
+     $              , w2(lyavg)
+      common /scrmg/  ub(lx1*ly1*lz1*lelt)
+
+      call y_profile          (ua,u,w1,w2)
+      call y_profile_transpose(ub,ua) ! distribute ua to each y-plane
+
+      n = nx1*ny1*nz1*nelv
+      call sub2(u,ub,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine y_profile(ua,u,w1,w2)
+c
+c     Compute the z profile of quantity u() - assumes global tens.prod.
+c
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+     $    ,w1(lz1,lelz),w2(lz1,lelz)
+      integer e,eg,ex,ey,ez
+
+      my = ny1*nely
+      call rzero(ua,my)
+      call rzero(w1,my)
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            ua(j,ey) = ua(j,ey) + area(i,k,1,e)*u(i,j,k,e)
+            w1(j,ey) = w1(j,ey) + area(i,k,1,e)
+         enddo
+         enddo
+         enddo
+
+      enddo
+
+      call gop(ua,w2,'+  ',my)
+      call gop(w1,w2,'+  ',my)
+
+      do i=1,my
+         ua(i,1) = ua(i,1) / w1(i,1)   ! Normalize
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine y_profile_transpose(u,ua) ! distribute ua to each z-plane
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'ZPER'
+
+      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      integer e,eg,ex,ey,ez
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            u(i,j,k,e) = ua(j,ey)
+         enddo
+         enddo
+         enddo
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
