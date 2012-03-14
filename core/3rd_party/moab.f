@@ -316,7 +316,7 @@ c set the global ids to this proc
             gllnid(gid(j)) = nid
          enddo
 c step the iterator
-         call iMesh_stepIter(%VAL(imeshh), %VAL(iter), %VAL(itmp), 
+         call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(iter), %VAL(itmp), 
      $        atend, ierr)
          IMESH_ASSERT
          i = i + itmp
@@ -862,7 +862,7 @@ c use the same iterator for all variables, since the elems are the same
             endif
 
 c     step the iterator
-            call iMesh_stepIter(%VAL(imeshh), %VAL(ieiter(i)), 
+            call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
      $           %VAL(tmpcount), atend, ierr)
             IMESH_ASSERT
 
