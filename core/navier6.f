@@ -65,6 +65,7 @@ c
       integer e
 
       if (ifaxis) ifmgrid = .false.
+      if (param(43).ne.0) ifmgrid = .false.
 
       npass = 1
       if (ifmhd) npass = 2
