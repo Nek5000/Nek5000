@@ -354,6 +354,29 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine outmati8(u,m,n,name6)
+      integer*8 u(m,n)
+      character*6 name6
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+c
+c     Print out copies of a global matrix
+c
+      do mid=0,np-1
+        call nekgsync
+        if (mid.eq.nid) then
+         n20 = min(n,20)
+         write(6,1) nid,m,n,name6
+   1     format(//,3i6,'  Matrix:',2x,a6,/)
+         do i=1,m
+            write(6,2) nid,name6,(u(i,j),j=1,n20)
+         enddo
+   2     format(i3,1x,a6,20i6)
+        endif
+        call nekgsync
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine get_map
 
       call get_vert

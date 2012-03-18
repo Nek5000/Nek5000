@@ -120,12 +120,11 @@ c
          call emerxit
       endif
 
-c     Synchronize time step for multiple sessions
-      if (IFNEKNEK) then 
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-         DT=glmin(DT,1)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-       end if  
+      if (ifneknek) then ! synchronize time step for multiple sessions
+         call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+         dt=glmin(dt,1)
+         call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+      endif  
 
 
       RETURN
