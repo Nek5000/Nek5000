@@ -114,17 +114,14 @@ C      ENDIF
 
       if (iffxdt) dt=dtopf
       COURNO = DT*UMAX
+
+! synchronize time step for multiple sessions
+      if (ifneknek) dt=uglmin(dt,1)
 c
       if (iffxdt.and.abs(courno).gt.10.*abs(ctarg)) then
          if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg
          call emerxit
       endif
-
-      if (ifneknek) then ! synchronize time step for multiple sessions
-         call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-         dt=glmin(dt,1)
-         call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-      endif  
 
 
       RETURN

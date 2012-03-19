@@ -464,10 +464,15 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'CTIMER'
       include 'mpif.h'
+      common /happycallflag/ icall
 
       real*4 papi_mflops
       integer*8 papi_flops
 c
+
+c     Communicate unhappiness to the other session
+      if (ifneknek.and.icall.eq.0) call happy_check(0)
+
       call nekgsync()
 
 
