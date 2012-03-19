@@ -5,7 +5,8 @@ c-----------------------------------------------------------------------
       include 'GLOBALCOM' 
       include 'TSTEP' 
       include 'INPUT' 
-
+      
+      common /happycallflag/ icall
       common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
       integer nid_global_root(0:nsessmax-1)
       character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
@@ -118,6 +119,8 @@ C     Intercommunications set up only for 2 sessions
          ifneknek  = .true.
 
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
+
+         icall = 0  ! Emergency exit call flag
 
       endif 
 
@@ -307,7 +310,7 @@ C     Determine amount of points to send to each processor
 
       enddo
 
-      call mpi_barrier(intercomm,ierr)
+      call neknekgsync()
 
 
       iaddress=1
@@ -342,7 +345,7 @@ C     Determine amount of points to send to each processor
 
       enddo    ! id
 
-      call mpi_barrier(intercomm,ierr)
+      call neknekgsync()
 
       npoints_all = ip
 
@@ -377,7 +380,7 @@ C     Determine amount of points to send to each processor
 
       enddo ! id
 
-      call mpi_barrier(intercomm,ierr)
+      call neknekgsync()
 
       npoints_all = ip    
 
@@ -578,7 +581,7 @@ c     iList:ix,iy,iz,iel.
          
 
 
-      call mpi_barrier(intercomm, ierr)
+      call neknekgsync()
 
 ! Non-blocking communicaton to receive nbp_recb(id) from each processor
 ! and send nbp_send(id) of each processor of the remote session 
@@ -602,7 +605,7 @@ c     iList:ix,iy,iz,iel.
          if (nbp_send(id).gt.0) ifsend(id)=.true.
       enddo
 
-      call mpi_barrier(intercomm, ierr)
+      call neknekgsync()
 
       do id=0,np_neighbor-1 
          len=(ldim+1)*nbp_recv(id)*isize
@@ -640,7 +643,7 @@ c        with imask=1 (imask=0 for all other points).
 
       enddo
 
-      call mpi_barrier(intercomm, ierr)
+      call neknekgsync()
 
       return
       end
@@ -734,7 +737,7 @@ C     Find interpolation values
 C     Send interpolation values to the corresponding processors 
 C     of remote session
 
-      call mpi_barrier(intercomm, ierr)
+      call neknekgsync()
 
       do id=0, np_neighbor-1
  
@@ -780,7 +783,7 @@ C           extract point identity
 
       enddo
 
-      call mpi_barrier(intercomm,ierr)
+      call neknekgsync()
 
       return
       end
@@ -873,4 +876,63 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+c-----------------------------------------------------------------------
+      function uglmin(a,n)
+      REAL A(1)
+      DIMENSION TMP(1),WORK(1)
+
+      call happy_check(1)
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+      uglmin=glmin(a,n)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+
+      return
+      END
+c-----------------------------------------------------------------------
+      function uglamax(a,n)
+      REAL A(1)
+      DIMENSION TMP(1),WORK(1)
+
+      call happy_check(1)
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+      uglamax=glamax(a,n)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+
+      return
+      END
 c------------------------------------------------------------------------
+      subroutine neknekgsync()
+      include 'SIZE' 
+      include 'GLOBALCOM'
+
+      call happy_check(1)
+      call mpi_barrier(intercomm,ierr)
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine happy_check(ihappy)
+      include 'SIZE'
+      include 'TOTAL'
+      common /happycallflag/ icall
+
+c     Happy check
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+      iglhappy=iglmin(ihappy,1)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+      if (ihappy.eq.1.and.iglhappy.eq.0) then
+         if (nid.eq.0) then
+         WRITE (6,*) '       '
+         WRITE (6,'(A,1i7,A,1e13.5)') 
+     $   ' Emergency exit due to the other session:',
+     $     ISTEP,'   time =',TIME
+         WRITE (6,*)   
+         end if
+         icall=1
+       call exitt
+      end if 
+
+      return
+      end
+      
+c-------------------------------------------------------------------------
