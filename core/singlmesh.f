@@ -62,5 +62,19 @@ c     Dummy for singlmesh
       return
       end
 c------------------------------------------------------------------------
+      subroutine uglmin(a,n)
+
+c     Dummy for singlmesh 
+
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine happy_check(iflag)
+
+c     Dummy for singlmesh 
+
+      return
+      end
+c------------------------------------------------------------------------
 
 
