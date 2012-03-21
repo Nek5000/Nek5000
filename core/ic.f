@@ -1994,7 +1994,7 @@ c-----------------------------------------------------------------------
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
       ! setup read buffer
-      if(nid.eq.pid0r) then
+      if (nid.eq.pid0r) then
          nread = nxyzr*nelr/lrbs
          if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
 #ifdef MPIIO 
@@ -2110,8 +2110,8 @@ c-----------------------------------------------------------------------
       call nekgsync() ! clear outstanding message queues.
 
       nxyzr = ndim*nxr*nyr*nzr
-      if (wdsizr.eq.8) nxyzr = 2*nxyzr
       len   = nxyzr*wdsizr             ! message length in bytes
+      if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
       num_recv  = len
@@ -2484,11 +2484,10 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 
       if (ifgtim) time = timer
 
-      if (nid.eq.pid0r) 
 #ifdef MPIIO
-     &   call byte_close_mpi(ifh_mbyte)
+      if (nid.eq.pid0r) call byte_close_mpi(ifh_mbyte)
 #else
-     &   call byte_close()
+      if (nid.eq.pid0r) call byte_close()
 #endif
       call nekgsync
       tio = dnekclock()-tiostart
