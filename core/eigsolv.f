@@ -393,33 +393,39 @@ C
       RETURN
       END
 C
+c-----------------------------------------------------------------------
       SUBROUTINE STARTX1 (X1,Y1,MASK,MULT,NEL)
-C------------------------------------------------------------------
-C
-C     Compute startvector for finding an eigenvalue on mesh 1.
-C     Normalization: XT*B*X = 1
-C
-C------------------------------------------------------------------
+
+c     Compute startvector for finding an eigenvalue on mesh 1.
+c     Normalization: XT*B*X = 1
+
       INCLUDE 'SIZE'
       INCLUDE 'MASS'
-C
+
       REAL X1   (LX1,LY1,LZ1,1)
       REAL Y1   (LX1,LY1,LZ1,1)
       REAL MASK (LX1,LY1,LZ1,1)
       REAL MULT (LX1,LY1,LZ1,1)
-C
+
       NTOT1 = NX1*NY1*NZ1*NEL
       CALL COPY       (X1,BM1,NTOT1)
+
+
+      call rand_fld_h1(y1)            ! pff 3/21/12
+      small = 0.001*glamax(x1,ntot1)
+      call add2s2(x1,y1,small,ntot1)
+
+
       CALL COL2       (X1,MASK,NTOT1)
       CALL COL3       (Y1,BM1,X1,NTOT1)
       CALL DSSUM      (Y1,NX1,NY1,NZ1)
       XX     = GLSC3 (X1,Y1,MULT,NTOT1)
       XNORM  = 1./SQRT(XX)
       CALL CMULT      (X1,XNORM,NTOT1)
-C
+
       RETURN
       END
-C
+c-----------------------------------------------------------------------
       SUBROUTINE STARTX2 (X2,Y2)
 C------------------------------------------------------------------
 C
