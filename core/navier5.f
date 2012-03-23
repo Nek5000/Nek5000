@@ -1232,9 +1232,9 @@ c-----------------------------------------------------------------------
          time_temp = time
          time      = atime   ! Output the duration of this avg
 
-         call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
-         call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
-         call outpost2(uvms,vwms,wums,prms,trms,0    ,'rm2')
+         call outpost (uavg,vavg,wavg,pavg,tavg,'avg')
+         call outpost (urms,vrms,wrms,prms,trms,'rms')
+         call outpost (uvms,vwms,wums,prms,trms,'rm2')
 
          atime = 0.
          time  = time_temp  ! Restore clock
