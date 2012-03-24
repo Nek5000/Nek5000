@@ -2317,7 +2317,7 @@ c-----------------------------------------------------------------------
       else               ! wait for data from node 0
 
          ncurve_mx = 12*nelt
-         do k=1,ncurve_mx
+         do k=1,ncurve_mx+1   ! +1 to make certain we receive the close-out
 
             call crecv(nid,buf,len)
 
