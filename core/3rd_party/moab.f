@@ -145,6 +145,7 @@ c      !Initialize imesh and load file
       call iMesh_newMesh(" ", imeshh, ierr)
       IMESH_ASSERT
 
+#ifdef MPI
       if (1 .lt. np) then
          call moab_comm_f2c(nekcomm, ccomm)
          call iMeshP_createPartitionAll(%VAL(imeshh), 
@@ -164,12 +165,15 @@ c      !Initialize imesh and load file
      1        rpParts, partsSize, partsSize, ierr)
 
       else
+#endif
          call iMesh_getRootSet(%VAL(imeshh), rootset, ierr)
 
          call iMesh_load(%VAL(imeshh), %VAL(rootset), 
-     $        H5MFLE, parLoadOpt, ierr)
+     $        H5MFLE, serLoadOpt, ierr)
          IMESH_ASSERT
+#ifdef MPI
       endif
+#endif
 
 c initialize tag handles
       globalIdTag = 0

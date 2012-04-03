@@ -42,7 +42,11 @@ c it won't work (because we're using preproc macros here)
 #else
 #define POINTER_SIZE 4
 #endif
+#ifdef MPI
 #include "iMeshP_f.h"
+#else
+#include "iMesh_f.h"
+#endif
 
       include 'SIZE'
       include 'INPUT'
