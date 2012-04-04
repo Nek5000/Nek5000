@@ -8,6 +8,15 @@ function amg_export(data,id,nullspace)
 		dvec(data.F_id{i}) = full(diag(data.D{i}));
   end
 	if nullspace==0; dvec(data.id{nl}) = 1/full(data.A{nl}); end;
+
+
+
+	for i=1:nl-1
+                data.C_id{i}=id(data.C_id{i});
+                data.F_id{i}=id(data.F_id{i});
+                data.id{i}=id(data.id{i});
+  end
+        data.id{nl}=id(data.id{nl});
 	W_len=savemats(lvl,data.C_id,data.Wt,'amg_W.dat');
 	AfP_len=savemats(lvl,data.C_id,data.AfPt,'amg_AfP.dat');
 	Aff_len=savemats(lvl,data.F_id,data.Aff,'amg_Aff.dat');
