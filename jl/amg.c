@@ -263,14 +263,14 @@ static uint *assign_dofs(struct array *const uid,
   struct rid *const rid = rid_map?rid_map:tmalloc(struct rid,n);
   for(i=0;i<n;++i) rid[i].p=p, rid[i].i=i;
   gs_vec(n?&rid[0].p:0,2, gs_sint,gs_add,0, gs_top,buf);
-  for(count=0,i=0;i<n;++i) if(rid[i].p==p&&rid[i].i==i) ++count;
+  for(count=0,i=0;i<n;++i) if(rid[i].i==i && id[i]!=0 && rid[o].p==p) ++count;
   array_init(ulong,uid,count); uid->n=count;
   if(rid_map==0) {
     map=tmalloc(uint,count); 
-    for(count=0,i=0;i<n;++i) if(rid[i].p==p&&rid[i].i==i) map[count++]=i;
+    for(count=0,i=0;i<n;++i) if(rid[i].i==i && id[i]!=0 && rid[o].p==p) map[count++]=i;
   }
   { ulong *const uid_p = uid->ptr;
-    for(count=0,i=0;i<n;++i) if(rid[i].p==p&&rid[i].i==i)
+    for(count=0,i=0;i<n;++i) if(rid[i].i==i && id[i]!=0 && rid[o].p==p)
         uid_p[count]=id[i], rid[i].i=count, ++count;
   }
   if(rid_map) gs_vec(n?&rid[0].p:0,2, gs_sint,gs_add,0, gs_top,buf);
@@ -878,7 +878,7 @@ static void read_data(
     if(pid==0) { /* undo sorting of id_buffer */
       buffer_reserve(&cr->data,sizeof(struct id_data)+sizeof(uint));
       sarray_permute(struct id_data,id_buffer.ptr,nr, id_perm, cr->data.ptr);
-      sarray_permute(uint,id_proc,nr,                 id_perm, cr->data.ptr);
+      sarray_permute(uint,          id_proc,      nr, id_perm, cr->data.ptr);
     }
     /* read matrix data */
     for(m=0;m<3;++m) {
