@@ -64,6 +64,9 @@ c
 
       integer e
 
+      if (lx1.eq.2) param(43)=1.
+      if (lx1.eq.2.and.nid.eq.0) write(6,*) 'No mgrid for lx1=2!'
+
       if (ifaxis) ifmgrid = .false.
       if (param(43).ne.0) ifmgrid = .false.
 
