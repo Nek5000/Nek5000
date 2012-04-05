@@ -781,12 +781,22 @@ static void dclose(const struct file f)
 static ulong read_level_data(struct crs_data *data, struct file f)
 {
   unsigned i,n; ulong tn; double *buf;
+  int updt=1;
   if(data->comm.id==0) {
+//Check header for newest amg_matlab code.
+    double hdr; dread(&hdr,1,f);
+    printf("AMG version %3.2f\n",hdr);
+    if(hdr!=2.01) {
+       printf("Update amg_matlab tool and create new .dat files before re-running\n"); 
+       updt=0;
+    }
     double t; dread(&t,1,f);
     data->levels = t;
     printf("AMG: %u levels\n", data->levels);
   }
   comm_bcast(&data->comm, &data->levels,sizeof(unsigned), 0);
+  comm_bcast(&data->comm, &updt,sizeof(int), 0);
+  if(!updt) die(1);
   n = data->levels-1;
   data->cheb_m   = tmalloc(unsigned,n);
   data->cheb_rho = tmalloc(double  ,n);

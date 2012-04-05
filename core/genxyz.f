@@ -34,7 +34,7 @@ C     Find slope of perpendicular
       RADIUS=CURVE(1,ISID,IE)
       GAP=SQRT( (PT1X-PT2X)**2 + (PT1Y-PT2Y)**2 )
       IF (ABS(2.0*RADIUS).LE.GAP*1.00001) THEN
-         WRITE(6,10) RADIUS,ISID,IE,GAP
+         write(6,10) RADIUS,ISID,IE,GAP
    10    FORMAT(//,2X,'ERROR: Too small a radius (',G11.3
      $  ,') specified for side',I2,' of element',I4,':  '
      $  ,G11.3,/,2X,'ABORTING during mesh generation.')
@@ -316,7 +316,7 @@ C           Evaluate new trial root
 C
 C
  9000 CONTINUE
-      WRITE(6 ,*) 'Exceeding maximum number of iterations.'
+      write(6 ,*) 'Exceeding maximum number of iterations.'
 C      WRITE(21,*) 'Exceeding maximum number of iterations.'
       ZBRENT=B
       return
@@ -960,7 +960,7 @@ C
 C     Check to ensure that these points are indeed on the sphere.
 C
       IF (RADIUS.LE.0.0) THEN
-         WRITE(6,20) NID,XCTR,YCTR,ZCTR,IFACE
+         write(6,20) NID,XCTR,YCTR,ZCTR,IFACE
   20     FORMAT(I5,'ERROR: Sphere of radius zero requested.'
      $       ,/,5X,'EXITING in CRN3D',3E12.4,I3)
          call exitt
@@ -970,7 +970,7 @@ C
             RADT=SQRT(RADT)
             TEST=ABS(RADT-RADIUS)/RADIUS
             IF (TEST.GT.EPS) THEN
-             WRITE(6,30) NID
+             write(6,30) NID
      $      ,RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
    30        FORMAT(I5,'ERROR: Element vertex not on requested sphere.'
      $           ,/,5X,'EXITING in CRN3D',5E12.4)
@@ -1263,6 +1263,7 @@ c-----------------------------------------------------------------------
             if (ccurve(k,e).eq.'m') ifmid = .true.
          enddo
 
+         if (lx1.eq.2) ifmid = .false.
          if (ifmid) then
             call xyzquad(xl(1,e),yl(1,e),zl(1,e),nxl,nyl,nzl,e)
          else
