@@ -403,8 +403,9 @@ c
       IBASE_HANDLE_T connect_ptr
       iBase_EntityHandle connect
       pointer(connect_ptr, connect(0:1))
-      integer i, j, k, ierr, e_in_chunk, e_in_set, v_per_e
+      integer i, j, k, ierr, e_in_chunk, e_in_set, v_per_e, e_tot
 
+      e_tot = 0
       do i = 1, numflu+numoth
          call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
          IMESH_ASSERT
@@ -421,11 +422,12 @@ c     get vertex gids for this e
                do k = 1, TWENTYSEVEN
                   call iMesh_getVtxCoord(%VAL(imeshh),
      $                 %VAL(connect(j*v_per_e+k-1)), 
-     $                 x27(k,j+1), y27(k,j+1), z27(k,j+1), ierr)
+     $                 x27(k,e_tot+j+1), y27(k,e_tot+j+1), 
+     $                 z27(k,e_tot+j+1), ierr)
              IMESH_ASSERT
                enddo
             enddo
-
+            e_tot = e_tot + e_in_chunk
             e_in_set = e_in_set + e_in_chunk
          enddo
       enddo

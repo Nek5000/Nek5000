@@ -144,7 +144,8 @@ c copy data from nek
       call nekMOAB_copy_vars
 #endif
 
-      if(mod(istep,iostep) .eq. 0) then
+      if((istep .eq. 0 .and. iostep .eq. 0) .or. 
+     $     mod(istep,iostep) .eq. 0) then
          call iMesh_save(%VAL(imeshh),%VAL(rootset),name,options, ierr)
 c no check for error, just print something and continue
          if (ierr .ne. 0 .and. nid_ .eq. 0) then
