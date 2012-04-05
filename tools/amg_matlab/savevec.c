@@ -5,8 +5,10 @@
 static void writevec(const char *name, mwSize n, const double *v)
 {
   const double magic = 3.14159;
+  const double stamp = 2.01;
   FILE *f = fopen(name,"w");
   fwrite(&magic,sizeof(double),1,f);
+  fwrite(&stamp,sizeof(double),1,f);
   fwrite(v,sizeof(double),n,f);
   fclose(f);
 }
