@@ -98,6 +98,11 @@ c
      1     %VAL(ntot), %VAL(iBase_DOUBLE), tTag, ierr)
       IMESH_ASSERT
 
+      call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
+     1     "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1     %VAL(ntot), %VAL(iBase_DOUBLE), vtTag, ierr)
+      IMESH_ASSERT
+
       if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
          call iMesh_createTagWithOptions(%VAL(imeshh), "PRESS",
      1        "moab:TAG_STORAGE_TYPE=DENSE ", 
