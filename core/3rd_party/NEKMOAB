@@ -61,7 +61,7 @@ c it won't work (because we're using preproc macros here)
       iBase_EntitySetHandle matsets
       iBase_EntityArrIterator ieiter
       iBase_TagHandle xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
-     $     pTag, vtTag, globalIdTag, matsetTag, neusetTag
+     $     pTag, vtTag, vpTag, globalIdTag, matsetTag, neusetTag
 
       integer iestart, iecount
 
@@ -70,8 +70,8 @@ c it won't work (because we're using preproc macros here)
      $     ieiter(numsts), iestart(numsts), iecount(numsts),
      $     matsets(numsts),
      $     rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
-     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, vtTag, 
-     $     pTag, partsSize, hexesSize
+     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
+     $     pTag, vtTag, vpTag, partsSize, hexesSize
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)

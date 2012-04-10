@@ -100,7 +100,7 @@ c
 
       call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
      1     "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), vtTag, ierr)
+     1     %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
       IMESH_ASSERT
 
       if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
@@ -108,6 +108,11 @@ c
      1        "moab:TAG_STORAGE_TYPE=DENSE ", 
      1        %VAL(ntot), %VAL(iBase_DOUBLE), pTag, ierr)
          IMESH_ASSERT
+         call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
+     1        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1        %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
+         IMESH_ASSERT
+
       endif
 
 c create a tag to store SEM dimensions, and set it on the root set
@@ -870,7 +875,12 @@ c use the same iterator for all variables, since the elems are the same
 
             if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
                call nekMOAB_set_tag(ieiter(i), pTag, ntot, tmpcount, pr)
+               call nekMOAB_set_vertex_tag(ieiter(i), vpTag, nx1, ny1, 
+     $              nz1, tmpcount, pr)
             endif
+
+            call nekMOAB_set_vertex_tag(ieiter(i), vtTag, nx1, ny1, nz1, 
+     $           tmpcount, t)
 
 c     step the iterator
             call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
@@ -908,6 +918,56 @@ c set the tag vals
       ivals = size * count
       do i = 1, ivals
          tag_vals(i) = vals(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_set_vertex_tag(iter, tagh, nx, ny, nz, 
+     $     count, vals)
+      implicit none
+
+#include "NEKMOAB"      
+      iBase_EntityArrIterator iter
+      iBase_TagHandle tagh
+      integer ierr, i, ivals, size, count, vpere, nx, ny, nz,
+     $     ntot
+      real vals(*), tag_vals(27)
+      iBase_EntityHandle connect
+      pointer (connect_ptr, connect(1))
+
+      call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
+     $     connect_ptr, vpere, count, ierr)
+      IMESH_ASSERT
+
+c only works if nx, ny, nz are equal, and if vpere is 27
+      if (nx .ne. ny .or. nx .ne. nz .or. vpere .ne. 27) then
+         ierr = iBase_FAILURE
+         IMESH_ASSERT
+      endif
+
+      ntot = nx * ny * nz
+
+c set the tag vals
+      ivals = 1
+      do i = 1, count
+c        transfer spectral variable to vertex variable
+c        corners only
+#define INDEX(i,j,k) nx*ny*k + nx*j + i
+         tag_vals(1) = vals(1+INDEX(0,0,0))
+         tag_vals(2) = vals(1+INDEX(nx-1,0,0))
+         tag_vals(3) = vals(1+INDEX(nx-1,ny-1,0))
+         tag_vals(4) = vals(1+INDEX(0,ny-1,0))
+         tag_vals(5) = vals(1+INDEX(0,0,nz-1))
+         tag_vals(6) = vals(1+INDEX(nx-1,0,nz-1))
+         tag_vals(7) = vals(1+INDEX(nx-1,ny-1,nz-1))
+         tag_vals(8) = vals(1+INDEX(0,ny-1,nz-1))
+#undef INDEX
+         call iMesh_setDblArrData(%VAL(imeshh), 
+     $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
+     $        %VAL(8), ierr)
+         IMESH_ASSERT
+         ivals = ivals + vpere
       enddo
 
       return
