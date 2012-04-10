@@ -70,8 +70,8 @@ c it won't work (because we're using preproc macros here)
      $     ieiter(numsts), iestart(numsts), iecount(numsts),
      $     matsets(numsts),
      $     rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
-     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, pTag,
-     $     partsSize, hexesSize
+     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, vtTag, 
+     $     pTag, partsSize, hexesSize
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)
