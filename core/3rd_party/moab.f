@@ -296,7 +296,7 @@ c assign GLLNID, map from gid to proc
          call nekMOAB_gllnid(matsets(i), ieiter(i), iecount(i))
       enddo
 
-      call igop(GLLNID, GLLEL, '+  ', NELGV)
+      call igop(GLLNID, GLLEL, '+  ', NELGT)
 
       return
       end 
