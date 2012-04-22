@@ -1,3 +1,70 @@
+c     Nek-MOAB interface notes
+c     ------------------------
+c Files, repo:
+c Most of the Nek-MOAB interface is in the trunk/nek/3rdparty/moab.f source file, which is
+c called into from nek's rdparam, readat, and usrchk subroutines.  From 37k ft, nek's datastructure
+c stores fields on 3d (nxnxn) arrays on elements, corresponding to a (n-1)th order Guass-Lobatto
+c quadrature.  Data is duplicated in those arrays between neighboring elements.
+c 
+c Global-local ids, etc:
+c - in Nek, vertices not really identified as entities, just by coordinates; fields and
+c   vertex coordinates are stored in 3d arrays, in lexicographical order, on elements
+c - corner vertex positions also held, in separate arrays, in fe order
+c - each proc stores global to local processor map (gllnid) and element number (gllel) arrays
+c   for element to processor/local id location
+c - 2 possible materials (fluid, solid), with fluid elements before solid elements locally
+c - side boundary conditions stored in 3d array (elem, side#=6, field), where field is temp or vel
+c
+c Flow:
+c - rdparam (connect2.f): read ifmoab, ifcoup, ifvcoup
+c - readat (connect2.f): 
+c   . read h5mfle, block/sideset info
+c   . bcast h5mfle, block/sideset info
+c   . call moab_dat
+c     - call nekMOAB_load:
+c       . instantiate iMesh, iMeshP, get root set
+c       . load file
+c       . get tag handles for material, neumann sets
+c     - call nekMOAB_get_elems:
+c       . foreach block (fluid + solid), init elem iter, elem counts, starts
+c       . check against hard-set sizes from SIZE
+c       . foreach block (fluid + solid), call nekMOAB_gllnid:
+c         - set gllnid(e), global id to proc index
+c     - call chk_nel(connect2.f): check local sizes against global hard-set sizes from SIZE
+c     - call nekMOAB_create_tags: create results fields tags, set SEM_DIMS on root set
+c     - call mapelpr(map2.f): 
+c       . check #procs against nelgt, exit if too few elems
+c       . call set_proc_map(map2.f)-get_map(map2.f)-get_vert(navier8.f)-nekMOAB_loadConn:
+c         - get connectivity in vertex(8,elem) in lex order in terms of global ids
+c       . compute, distribute gllel (global to local elem map)
+c     - call moab_geometry(xm1,ym1,zm1):
+c       . call nekMOAB_loadCoord: for each block (fluid+solid):
+c         - get connectivity pointer
+c         - get vertex coordinates in blocked-storage array (xxx... yyy... zzz...)
+c       . call permute_and_map for each coord array: permute coords, then compute spectral pts
+c         using high-order (hex27) vertices
+c     - call xml2xc: set corner vertex positions (xc, yc, zc), flip corners from lex to fe ordering
+c
+c     - call ifill: fill bc array moabbc with -1's
+c     - call nekMOAB_BC(moabbc):
+c       . for each sideset:
+c         - get sideset id, field #
+c         - call nekMOAB_intBC(moabbc->bcdata):
+c           . get all faces in set recursively; foreach face:
+c             - get connectivity of face, hexes adj to face; foreach hex:
+c               . get hex connectivity, side # of face wrt hex
+c               . call nekMOAB_getElNo: get local hex #, through global ids, gllel
+c               . set bcdata(side_no, elem_no, field) to sideset id
+c         - end (nekMOAB_intBC)
+c     - end (nekMOAB_BC)
+c   . end (moab_dat)
+c - setlog (bdry.f): print values of ifmoab, ifcoup, ifvcoup
+c (solve)
+c - usrchk (zero.usr, xxx.usr):
+c   . call usr_moab_output (zero.usr, xxx.usr):
+c     - call nekMOAB_export_vars (moab.f): write fields to MOAB tags
+c     - if an io step, call iMesh_save
+c 
 #ifdef PTRSIZE8
 #define IMESH_HANDLE integer*8
 #else
@@ -30,12 +97,12 @@ c-----------------------------------------------------------------------
 #include "NEKMOAB"
       include 'PARALLEL'
       include 'GEOM'
-      common /mbc/ moabbc(6,lelt) 
+      common /mbc/ moabbc(6,lelt,ldimt1) 
       integer moabbc
 
       call nekMOAB_load                   ! read mesh using MOAB
-      call nekMOAB_get_elems              ! read material sets and establish mapping
 
+      call nekMOAB_get_elems              ! read material sets and establish mapping
       call chk_nel
 
       call nekMOAB_create_tags             ! allocate MOAB tags to reflect Nek variables
@@ -44,9 +111,9 @@ c-----------------------------------------------------------------------
       call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
       call xml2xc                         ! fill xc,yc,zc
 
-      call ifill(moabbc, -1, 6*lelt)
+      call ifill(moabbc, -1, 6*lelt*ldimt1)
       call nekMOAB_BC(moabbc)             ! read MOAB BCs 
-      
+
 c      call nekMOAB_compute_diagnostics
 
       return
@@ -171,6 +238,7 @@ c      !Initialize imesh and load file
 
          partsSize = 0
          rpParts = IMESH_NULL
+
          call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
      1        rpParts, partsSize, partsSize, ierr)
 
@@ -225,7 +293,12 @@ c
       integer iglsum, i, ierr
       iBase_EntitySetHandle dumsets(numsts)
       IBASE_HANDLE_T valptr, setsptr
-      integer dumval, dumalloc, dumsize, dumnum, ns, ilast
+      integer dumval, dumalloc, dumsize, dumnum, ns, ilast, atend, 
+     $     count, tmpcount, ietmp1(numsts), ietmp2(numsts), npass, 
+     $     ipass, m, k, iwork
+      common /ctmp0/ iwork(lelt)
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      integer nekcomm, nekgroup, nekreal, nid_, np_
 
 c get fluid, other material sets, and count elements in them
       valptr = loc(dumval)
@@ -241,22 +314,27 @@ c get the set by matset number
      $        setsptr, dumsize, dumsize, ierr)
          if (dumsize .gt. 1) then
             call exitti('More than one material set with id ', dumval)
-         elseif (dumsize .eq. 0) then
-            call exitti('Could not find material set with id ', dumval)
          endif
          IMESH_ASSERT
 c get the number of hexes
-         call iMesh_getNumOfTopoRec(%VAL(imeshh), %VAL(dumsets(1)), 
-     $        %VAL(iMesh_HEXAHEDRON), %VAL(1), dumnum, ierr)
-         IMESH_ASSERT
-         matsets(i) = dumsets(1)
-         iestart(i) = ilast + 1
-         ilast = ilast + dumnum
-         iecount(i) = dumnum
-c get an iterator for this set, used later
-         call iMesh_initEntArrIterRec(%VAL(imeshh), %VAL(dumsets(1)),
-     $        %VAL(iBase_REGION), %VAL(iMesh_HEXAHEDRON),
-     $        %VAL(dumnum), %VAL(0), %VAL(1), ieiter(i), ierr)
+         if (dumsize .gt. 0) then
+            call iMesh_getNumOfTopoRec(%VAL(imeshh), %VAL(dumsets(1)), 
+     $           %VAL(iMesh_HEXAHEDRON), %VAL(1), dumnum, ierr)
+            IMESH_ASSERT
+            matsets(i) = dumsets(1)
+            iestart(i) = ilast + 1
+            ilast = ilast + dumnum
+            iecount(i) = dumnum
+c     get an iterator for this set, used later
+            call iMesh_initEntArrIterRec(%VAL(imeshh), %VAL(dumsets(1)),
+     $           %VAL(iBase_REGION), %VAL(iMesh_HEXAHEDRON),
+     $           %VAL(dumnum), %VAL(0), %VAL(1), ieiter(i), ierr)
+         else
+            matsets(i) = 0
+            iestart(i) = ilast + 1
+            iecount(i) = 0
+         endif
+
 c set total number if nec
          if (i .eq. numflu) then
             nelv = ilast
@@ -276,7 +354,7 @@ c set remaining values to default values
       enddo
 
 c check local size
-      if(nelv .le. 0 .or. nelv .gt. lelv) then
+      if(nelt .le. 0 .or. nelv .gt. lelv) then
          print *, 'ABORT: nelv is invalid in nekmoab_proc_map'
          print *, 'nelv, lelv = ', nelv, lelv
          call exitt
@@ -290,13 +368,71 @@ c reduce to get global numbers of fluid, other elements, and check size
          call exitt
       endif
 
-c assign GLLNID, map from gid to proc
-      call izero(GLLNID, NELGV)
-      do i = 1, numflu+numoth
-         call nekMOAB_gllnid(matsets(i), ieiter(i), iecount(i))
+c do global scan to allow computation of global element ids
+      ietmp1(1) = 0
+      do i = 1, numflu
+         ietmp1(1) = ietmp1(1) + iecount(i)
+      enddo
+      ietmp1(2) = 0
+      do i = numflu+1, numflu+numoth
+         ietmp1(2) = ietmp1(2) + iecount(i)
+      enddo
+      call mpi_scan(ietmp1, ietmp2, numflu+numoth, MPI_INTEGER, MPI_SUM, 
+     $     nekcomm, ierr)
+      if (ierr .ne. MPI_SUCCESS) ierr = iBase_FAILURE
+      IMESH_ASSERT
+c     set returned nums to exclusive start - 1
+      ietmp2(1) = ietmp2(1) - ietmp1(1)
+      ietmp2(2) = ietmp2(2) - ietmp1(2)
+c     set gids for local fluid, other elems
+      call izero(lglel, nelgt)
+      call izero(gllel, nelgt)
+      call izero(gllnid, nelgt)
+      do i = 1, nelv
+         lglel(i) = ietmp2(1)+i
+         gllel(lglel(i)) = i
+         gllnid(lglel(i)) = nid_
+      enddo
+      do i = nelv+1, nelt
+         lglel(i) = nelgv+ietmp2(2)-nelv+i
+         gllel(lglel(i)) = i
+         gllnid(lglel(i)) = nid_
+      enddo
+c     now communicate to other procs (taken from set_proc_map in map2.f)
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
+         k = k+m
       enddo
 
-      call igop(GLLNID, GLLEL, '+  ', NELGT)
+      call igop(GLLNID, iwork, 'M  ', NELGT)
+
+c     set the global id tag on elements
+
+      do i = 1, numflu+numoth
+         atend = 0
+         count = 0
+         if (iecount(i) .ne. 0) then
+            call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           ierr)
+            IMESH_ASSERT
+         else
+            atend = 1
+         endif
+
+         do while (atend .eq. 0)
+c use the same iterator for all variables, since the elems are the same
+            call nekMOAB_set_int_tag(ieiter(i), globalIdTag, 1, 
+     $           tmpcount, lglel(iestart(i)+count))
+            call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           %VAL(tmpcount), atend, ierr)
+            IMESH_ASSERT
+            count = count + tmpcount
+         enddo
+      enddo
 
       return
       end 
@@ -370,12 +506,16 @@ c get corner vertex gids
       data    l2c / 1, 2, 4, 3, 5, 6, 8, 7 /
 
       do i = 1, numflu+numoth
-         call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
-         IMESH_ASSERT
          nv = 8
          e_in_set = 0
          eid = iestart(i)
          do while (e_in_set .lt. iecount(i))
+            if (e_in_set .eq. 0) then
+               call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $              ierr)
+               IMESH_ASSERT
+            endif
+
 c     get ptr to connectivity for this chunk
             call iMesh_connectIterate(%VAL(imeshh), %VAL(ieiter(i)), 
      $           connect_ptr, v_per_e, e_in_chunk, ierr)
@@ -417,10 +557,14 @@ c
 
       e_tot = 0
       do i = 1, numflu+numoth
-         call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
-         IMESH_ASSERT
          e_in_set = 0
          do while (e_in_set .lt. iecount(i))
+            if (e_in_set .eq. 0) then
+               call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $              ierr)
+               IMESH_ASSERT
+            endif
+
 c     get ptr to connectivity for this chunk
             call iMesh_connectIterate(%VAL(imeshh), %VAL(ieiter(i)), 
      $           connect_ptr, v_per_e, e_in_chunk, ierr)
@@ -447,18 +591,18 @@ c     get vertex gids for this e
 c-----------------------------------------------------------------------------
       subroutine nekMOAB_BC(moabbc)
 c
-c     Copy the boundary condition information into bcdata array
+c     Mark the "side" (hex/face) with the index of the corresponding set in ibcsts array
 c
 
       implicit none
 #include "NEKMOAB"
-      integer moabbc(6,lelt)
+      integer moabbc(6,lelt, ldimt1)
 
       IBASE_HANDLE_T hentSet(*)
       pointer (rpentSet, hentSet)
       integer entSetSize
 
-      integer ierr, i, tagIntData
+      integer ierr, i, j, set_idx, set_ids(numsts)
 
       !Sidesets in cubit come in as entity sets with the NEUMANN_SET -- see sample file
       call iMesh_getTagHandle(%VAL(imeshh),
@@ -473,14 +617,29 @@ c
       IMESH_ASSERT
 
       !print *, 'H3', entSetSize
+c     get the set ids
+      if (entSetSize .gt. numsts) then
+c     too many sets, need to bail
+         ierr = iBase_FAILURE
+         IMESH_ASSERT
+      endif
+      do i = 1, entSetSize
+         call iMesh_getEntSetIntData(%VAL(imeshh),
+     $     %VAL(hentSet(i)), %VAL(neuSetTag), set_ids(i), ierr)
+         IMESH_ASSERT
+      enddo
 
+c     loop over local neusets, will be <= numsts
       do i=1, entSetSize
-         call iMesh_getIntData(%VAL(imeshh),
-     $        %VAL(hentSet(i)), %VAL(neuSetTag), tagIntData, ierr)
+c     find the right set
+         set_idx = -1
+         do j = 1, numsts
+            if (set_ids(i) .eq. ibcsts(j)) set_idx = j
+         enddo
 
-         if (ierr .eq. 0) then !tag was defined
-            !print *, 'H32', tagIntData
-            call nekMOAB_intBC(moabbc, hentSet(i), tagIntData)
+         if (set_idx .ne. -1) then
+            call nekMOAB_intBC(moabbc, hentSet(i), set_ids(i), 
+     $           bcf(set_idx))
          endif
       enddo
 
@@ -489,7 +648,7 @@ c
       return
       end 
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_intBC(bcdata, setHandle, setId)
+      subroutine nekMOAB_intBC(bcdata, setHandle, setId, field)
 c
 c     Internal function, don\'t call directly
 c
@@ -497,7 +656,7 @@ c
       implicit none
 #include "NEKMOAB"
 
-      integer bcdata(6,lelt)
+      integer bcdata(6,lelt,ldimt1), field
 
       iBase_EntitySetHandle setHandle
 
@@ -584,10 +743,10 @@ c
            call nekMOAB_getElNo(ahex(j), elno)
            if (ahexSize .eq. 2) elnos(j) = elno
 
-           if (bcdata(side_no, elno) .ne. -1) 
+           if (bcdata(side_no, elno, field) .ne. -1) 
      $          print *, 'Warning: resetting BC, bcno, elno, sideno = ', 
      $            setId, elno, side_no 
-           bcdata(side_no, elno) = setId
+           bcdata(side_no, elno, field) = setId
            numids = numids + 1
 
            call free(rphvtx)
@@ -656,10 +815,10 @@ c-----------------------------------------------------------------------
       implicit none
 c
 #include "NEKMOAB"      
-      common /mbc/ moabbc(6,lelt)
+      common /mbc/ moabbc(6,lelt,ldimt1)
       integer moabbc
 
-      integer e,f
+      integer e,f, l
       character*3 cbi
 
       integer ibcs(3), i, lcbc, nface
@@ -669,24 +828,18 @@ c
       call blank(cbc,lcbc)
 
       nface = 2*ndim
-      do e=1,nelt
-         do f=1,nface
-            cbi = 'E  '
-            if (moabbc(f,e) .ne. -1) then
-               do i = 1, numsts
-                  if (ibcsts(i) .eq. moabbc(f,e)) then
-                     cbi = bctyps(i)
-                     goto 100
-                  endif
-               enddo
- 100           continue
-            endif
-            do i = 1, nfield
-               cbc(f, e, i) = cbi
+      do l=1,nfield
+         do e=1,nelt
+            do f=1,nface
+               if (moabbc(f,e,l) .ne. -1) then
+c     moabbc stores local set index, retrieve the character bc type
+                  cbc(f, e, l) = bctyps(moabbc(f,e,l))
+               else
+                  cbc(f, e, l) = 'E  '
+               endif
             enddo
          enddo
       enddo
-
       return
       end
 c-----------------------------------------------------------------------
@@ -855,12 +1008,16 @@ c-----------------------------------------------------------------------
 
       ntot = nx1*ny1*nz1
       do i = 1, numflu+numoth
-
-         call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
-         IMESH_ASSERT
-
          atend = 0
          count = 0
+         if (iecount(i) .ne. 0) then
+            call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           ierr)
+            IMESH_ASSERT
+         else
+            atend = 1
+         endif
+
          do while (atend .eq. 0)
 c use the same iterator for all variables, since the elems are the same
             call nekMOAB_set_tag(ieiter(i), xm1Tag, ntot, tmpcount, xm1)
@@ -908,6 +1065,29 @@ c-----------------------------------------------------------------------
       iBase_TagHandle tagh
       integer ierr, i, ivals, size, count
       real vals(*), tag_vals
+      pointer(tag_ptr, tag_vals(1))
+
+      call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
+     $     %VAL(iter), tag_ptr, count, ierr)
+      IMESH_ASSERT
+
+c set the tag vals
+      ivals = size * count
+      do i = 1, ivals
+         tag_vals(i) = vals(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_set_int_tag(iter, tagh, size, count, vals)
+      implicit none
+
+#include "NEKMOAB"      
+      iBase_EntityArrIterator iter
+      iBase_TagHandle tagh
+      integer ierr, i, ivals, size, count
+      integer vals(*), tag_vals
       pointer(tag_ptr, tag_vals(1))
 
       call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 

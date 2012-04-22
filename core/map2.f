@@ -126,6 +126,7 @@ c
 
 c     compute global to local map (no processor info)
 c
+      if (.not. ifmoab) then
       IEL=0
       CALL IZERO(GLLEL,NELGT)
       DO IEG=1,NELGT
@@ -148,6 +149,7 @@ c
          if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
          k = k+m
       enddo
+      endif
 c
 c     compute local to global map
 c     (i.e. returns global element number given local index and proc id)

@@ -66,10 +66,12 @@ C     Read Mesh Info
               call exitti
            endif
            do iset = 1, numbcs
-              read(9,'(I5, A3)') ibcsts(iset), bctyps(iset)
+              read(9,'(2I5,A3)') ibcsts(iset), bcf(iset), bctyps(iset)
+
            enddo
            nelgs = 0
            do iset = numbcs+1, numsts
+              bcf(iset) = -1
               bctyps(iset) = 'E  '
               ibcsts(iset) = -1
            enddo
@@ -98,6 +100,7 @@ c pack into long int array and bcast as that
          endif
          call bcast(idum, ISIZE*(3+2*numsts))
          call bcast(bctyps, 3*numsts)
+         call bcast(bcf, ISIZE*numsts)
 
          if (nid .ne. 0) then
             numflu = idum(1)
