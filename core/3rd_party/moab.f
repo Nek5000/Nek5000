@@ -45,7 +45,7 @@ c       . call permute_and_map for each coord array: permute coords, then comput
 c         using high-order (hex27) vertices
 c     - call xml2xc: set corner vertex positions (xc, yc, zc), flip corners from lex to fe ordering
 c
-c     - call ifill: fill bc array moabbc with -1's
+c     - call ifill: fill bc array moabbc with -1s
 c     - call nekMOAB_BC(moabbc):
 c       . for each sideset:
 c         - get sideset id, field #
@@ -79,40 +79,104 @@ c
 
 #define MYLOC LOC
 
-
-c    We are targeting hex27 meshes coming from MOAB.
-c    By default we read the MOAB mesh from 'input.h5m'
-c
-c    fun stuff: 
-c    * "imesh" is already used in TSTEP
-c    * non-standard extensions: %val and loc + Cray pointers
-c
-c    unsupported for now:
-c    * scalable mesh read (every processor will read the mesh)
-c    * conj. heat transfer
-c    * periodic BCs
 c-----------------------------------------------------------------------
-      subroutine moab_dat
+      subroutine nekMOAB_init(comm_f, imesh_instance, partn_handle, 
+     $     ierr)
+
+      implicit none
+#include "NEKMOAB"
+#include "mpif.h"
+      IBASE_HANDLE_T imesh_instance, comm_c
+      iBase_EntityHandle partn_handle
+      integer comm_f, ierr, comm_sz, comm_rk
+
+      if (imesh_instance .eq. 0) then
+c     !Initialize imesh and load file
+         imeshh = IMESH_NULL
+         call iMesh_newMesh(" ", imeshh, ierr)
+         IMESH_ASSERT
+      else
+         imeshh = imesh_instance
+      endif
+
+#ifdef MPI
+      call MPI_Comm_size(comm_f, comm_sz, ierr)
+      if (ierr .ne. MPI_SUCCESS) return
+
+      if (comm_sz .gt. 1 .and. partn_handle .eq. 0) then
+         call moab_comm_f2c(comm_f, comm_c)
+         call iMeshP_createPartitionAll(%VAL(imeshh), 
+     1        %VAL(comm_c), hPartn, ierr)
+         IMESH_ASSERT
+      else
+         hPartn = partn_handle
+      endif
+#endif
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_start
+
+      implicit none
+#include "NEKMOAB"
+      common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
+      integer nekcomm, nekgroup, nekreal, nid_, np
+      iMesh_Instance imesh_inst
+      iBase_EntitySetHandle partn_handle, file_set
+
+      imesh_inst = 0
+      partn_handle = 0
+      file_set = 0
+      call nekMOAB_import(nekcomm, imesh_inst, partn_handle, file_set)
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_import(comm_f, imesh_inst, partn_handle, 
+     $     file_set)
       implicit none
 #include "NEKMOAB"
       include 'PARALLEL'
       include 'GEOM'
-      common /mbc/ moabbc(6,lelt,ldimt1) 
-      integer moabbc
 
-      call nekMOAB_load                   ! read mesh using MOAB
+      iMesh_Instance imesh_inst
+      iBase_EntitySetHandle file_set, partn_handle
+      integer comm_f, ierr
+
+      if (imesh_inst .eq. 0 .or. partn_handle .eq. 0) then
+         call nekMOAB_init(comm_f, imesh_inst, partn_handle, ierr)
+         if (ierr .ne. iBase_SUCCESS) return
+      else
+         imeshh = imesh_inst
+         hPartn = partn_handle
+      endif
+         
+      if (file_set .eq. 0) then
+         call nekMOAB_load   ! read mesh using MOAB
+      else
+         fileset = file_set
+      endif
+
+#ifdef MPI
+      partsSize = 0
+      rpParts = IMESH_NULL
+      call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
+     1     rpParts, partsSize, partsSize, ierr)
+#endif
+
+      call nekMOAB_create_tags             ! allocate MOAB tags to reflect Nek variables
 
       call nekMOAB_get_elems              ! read material sets and establish mapping
       call chk_nel
-
-      call nekMOAB_create_tags             ! allocate MOAB tags to reflect Nek variables
 
       call mapelpr                        ! create gllel mapping 
       call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
       call xml2xc                         ! fill xc,yc,zc
 
-      call ifill(moabbc, -1, 6*lelt*ldimt1)
-      call nekMOAB_BC(moabbc)             ! read MOAB BCs 
+      call nekMOAB_BC             ! read MOAB BCs 
 
 c      call nekMOAB_compute_diagnostics
 
@@ -130,6 +194,41 @@ c
 
       ntot = nx1*ny1*nz1
 
+c tags used for initializing model, should already be there
+      globalIdTag = 0
+      call iMesh_getTagHandle(%VAL(imeshh),
+     $     "GLOBAL_ID",       !/*in*/ const char* tag_name,
+     $     globalIdTag,       !/*out*/ iBase_TagHandle *tag_handle, 
+     $     ierr)
+      IMESH_ASSERT
+      
+      matsetTag = 0
+      call iMesh_getTagHandle(%VAL(imeshh),
+     $     "MATERIAL_SET", !/*in*/ const char* tag_name,
+     $     matSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
+     $     ierr)
+      IMESH_ASSERT
+
+      neusetTag = 0
+      call iMesh_getTagHandle(%VAL(imeshh),
+     $     "NEUMANN_SET", !/*in*/ const char* tag_name,
+     $     neuSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
+     $     ierr)
+      IMESH_ASSERT
+
+c create a tag to store SEM dimensions, and set it on the file set
+      semdim(1) = nx1
+      semdim(2) = ny1
+      semdim(3) = nz1
+      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_DIMS", 
+     1     "moab:TAG_STORAGE_TYPE=SPARSE", 
+     1     %VAL(3), %VAL(iBase_INTEGER), tagh, ierr)
+      IMESH_ASSERT
+      call iMesh_setEntSetData(%VAL(imeshh), %VAL(fileset), %VAL(tagh), 
+     1     semdim, 12, ierr)
+      IMESH_ASSERT
+
+c tags for results variables
       call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_X",
      1     "moab:TAG_STORAGE_TYPE=DENSE ", 
      1     %VAL(ntot), %VAL(iBase_DOUBLE), xm1Tag, ierr)
@@ -182,18 +281,6 @@ c
 
       endif
 
-c create a tag to store SEM dimensions, and set it on the root set
-      semdim(1) = nx1
-      semdim(2) = ny1
-      semdim(3) = nz1
-      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_DIMS", 
-     1     "moab:TAG_STORAGE_TYPE=SPARSE", 
-     1     %VAL(3), %VAL(iBase_INTEGER), tagh, ierr)
-      IMESH_ASSERT
-      call iMesh_setEntSetData(%VAL(imeshh), %VAL(rootset), %VAL(tagh), 
-     1     semdim, 12, ierr)
-      IMESH_ASSERT
-
       return
       end
 c-----------------------------------------------------------------------
@@ -217,63 +304,24 @@ c two forms of load options, depending whether we\'re running serial or parallel
       integer ierr
       IBASE_HANDLE_T ccomm
 
-c      !Initialize imesh and load file
-      imeshh = IMESH_NULL
-      call iMesh_newMesh(" ", imeshh, ierr)
+c     create a file set to load into
+      call iMesh_createEntSet(%VAL(imeshh), %VAL(0), fileset, ierr)
       IMESH_ASSERT
 
 #ifdef MPI
-      if (1 .lt. np) then
-         call moab_comm_f2c(nekcomm, ccomm)
-         call iMeshP_createPartitionAll(%VAL(imeshh), 
-     1        %VAL(ccomm),
-     1        hPartn, ierr)
-         IMESH_ASSERT
-
-         call iMesh_getRootSet(%VAL(imeshh), rootset, ierr)
-
-         call iMeshP_loadAll(%VAL(imeshh), %VAL(hPartn),%VAL(rootset), 
+      if (np .gt. 1) then
+         call iMeshP_loadAll(%VAL(imeshh), %VAL(hPartn),%VAL(fileset), 
      $        H5MFLE, parLoadOpt, ierr)
          IMESH_ASSERT
 
-         partsSize = 0
-         rpParts = IMESH_NULL
-
-         call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
-     1        rpParts, partsSize, partsSize, ierr)
-
       else
 #endif
-         call iMesh_getRootSet(%VAL(imeshh), rootset, ierr)
-
-         call iMesh_load(%VAL(imeshh), %VAL(rootset), 
+         call iMesh_load(%VAL(imeshh), %VAL(fileset), 
      $        H5MFLE, serLoadOpt, ierr)
          IMESH_ASSERT
 #ifdef MPI
       endif
 #endif
-
-c initialize tag handles
-      globalIdTag = 0
-      call iMesh_getTagHandle(%VAL(imeshh),
-     $     "GLOBAL_ID",       !/*in*/ const char* tag_name,
-     $     globalIdTag,       !/*out*/ iBase_TagHandle *tag_handle, 
-     $     ierr)
-      IMESH_ASSERT
-      
-      matsetTag = 0
-      call iMesh_getTagHandle(%VAL(imeshh),
-     $     "MATERIAL_SET", !/*in*/ const char* tag_name,
-     $     matSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
-     $     ierr)
-      IMESH_ASSERT
-
-      neusetTag = 0
-      call iMesh_getTagHandle(%VAL(imeshh),
-     $     "NEUMANN_SET", !/*in*/ const char* tag_name,
-     $     neuSetTag, !/*out*/ iBase_TagHandle *tag_handle, 
-     $     ierr)
-      IMESH_ASSERT
 
       return
       end  
@@ -309,7 +357,7 @@ c get fluid, other material sets, and count elements in them
          dumval = matids(i)
          dumsize = numsts
 c get the set by matset number
-         call iMesh_getEntSetsByTagsRec(%VAL(imeshh), %VAL(rootset),
+         call iMesh_getEntSetsByTagsRec(%VAL(imeshh), %VAL(fileset),
      $        matsetTag, valptr, %VAL(1), %VAL(1), 
      $        setsptr, dumsize, dumsize, ierr)
          if (dumsize .gt. 1) then
@@ -589,20 +637,23 @@ c     get vertex gids for this e
       return
       end 
 c-----------------------------------------------------------------------------
-      subroutine nekMOAB_BC(moabbc)
+      subroutine nekMOAB_BC()
 c
 c     Mark the "side" (hex/face) with the index of the corresponding set in ibcsts array
 c
 
       implicit none
 #include "NEKMOAB"
-      integer moabbc(6,lelt, ldimt1)
+      common /mbc/ moabbc(6,lelt,ldimt1) 
+      integer moabbc
 
       IBASE_HANDLE_T hentSet(*)
       pointer (rpentSet, hentSet)
       integer entSetSize
 
       integer ierr, i, j, set_idx, set_ids(numsts)
+
+      call ifill(moabbc, -1, 6*lelt*ldimt1)
 
       !Sidesets in cubit come in as entity sets with the NEUMANN_SET -- see sample file
       call iMesh_getTagHandle(%VAL(imeshh),
@@ -612,7 +663,7 @@ c
       rpentSet = IMESH_NULL
       entSetSize      = 0
       call iMesh_getEntSetsByTagsRec(%VAL(imeshh),
-     $     %VAL(rootset), neuSetTag, %VAL(IMESH_NULL), %VAL(1), %VAL(0),
+     $     %VAL(fileset), neuSetTag, %VAL(IMESH_NULL), %VAL(1), %VAL(0),
      $     rpentSet, entSetSize, entSetSize, ierr)
       IMESH_ASSERT
 

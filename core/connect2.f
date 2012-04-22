@@ -122,11 +122,7 @@ c pack into long int array and bcast as that
 
       if (ifmoab) then
 #ifdef MOAB
-        call moab_dat
-        if (nid.eq.0) then
-          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
-        endif
+         call nekMOAB_start
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read

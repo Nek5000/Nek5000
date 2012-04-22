@@ -53,7 +53,7 @@ c it won't work (because we're using preproc macros here)
 
       integer*4 hexesSize, partsSize
 
-      IBASE_HANDLE_T imeshh, rootset, rpHexes, rpParts, hPartn
+      IBASE_HANDLE_T imeshh, fileset, rpHexes, rpParts, hPartn
 
       iBase_EntityHandle hHexes(*), hParts(*)
       pointer (rpHexes, hHexes), (rpParts, hParts)
@@ -65,7 +65,7 @@ c it won't work (because we're using preproc macros here)
      $     senseTag
       integer iestart, iecount
 
-      common /nekmoab/ imeshh, hPartn, rootset, 
+      common /nekmoab/ imeshh, hPartn, fileset, 
      $     rpParts, rpHexes, globalIdTag, matsetTag, neusetTag,
      $     ieiter(numsts), iestart(numsts), iecount(numsts),
      $     matsets(numsts),
