@@ -298,6 +298,8 @@ C
       IFCHAR    = .false.
       IFANLS    = .false.
       IFMOAB    = .false.
+      IFCOUP    = .false.
+      IFVCOUP   = .false.
       IFMHD     = .false.
       IFESSR    = .false.
       IFTMSH(0) = .false.
@@ -361,6 +363,10 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFANLS
          elseif (indx1(string(i),'IFMOAB' ,6).gt.0) then 
               read(string(i),*) IFMOAB
+         elseif (indx1(string(i),'IFCOUP' ,6).gt.0) then 
+              read(string(i),*) IFCOUP
+         elseif (indx1(string(i),'IFVCOUP' ,7).gt.0) then 
+              read(string(i),*) IFVCOUP
          elseif (indx1(string(i),'IFMHD'  ,5).gt.0) then 
               read(string(i),*) IFMHD
          elseif (indx1(string(i),'IFCONS' ,6).gt.0) then 
@@ -407,7 +413,9 @@ c              read(string,*) IFSPLIT
      &           '   IFSPLIT'  ,
      &           '   IFEXPLVIS',
      &           '   IFCONS'   ,
-     &           '   IFMOAB'            
+     &           '   IFMOAB'   ,
+     &           '   IFCOUP'   ,
+     &           '   IFVCOUP'
               endif
               call exitt
          endif

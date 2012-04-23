@@ -264,21 +264,74 @@ c tags for results variables
      1     %VAL(ntot), %VAL(iBase_DOUBLE), tTag, ierr)
       IMESH_ASSERT
 
-      call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
-     1     "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1     %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
-      IMESH_ASSERT
-
       if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
          call iMesh_createTagWithOptions(%VAL(imeshh), "PRESS",
      1        "moab:TAG_STORAGE_TYPE=DENSE ", 
      1        %VAL(ntot), %VAL(iBase_DOUBLE), pTag, ierr)
          IMESH_ASSERT
-         call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
+      endif
+
+c initialize these tags to zero since their use depends on user input
+      vtTag = 0
+      vpTag = 0
+      vdTag = 0
+      vpowTag = 0
+      dTag = 0
+      powTag = 0
+      if (ifvcoup) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
      1        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1        %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
+     1        %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
          IMESH_ASSERT
 
+         if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+            call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
+     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1           %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
+            IMESH_ASSERT
+         endif
+
+c may or may not have these tags, depending on coupler state
+         call iMesh_getTagHandle(%VAL(imeshh), "VDENSITY", vdTag, 
+     1        ierr)
+         if (iBase_SUCCESS .ne. ierr) then
+            call iMesh_createTagWithOptions(%VAL(imeshh), "VDENSITY",
+     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1           %VAL(1), %VAL(iBase_DOUBLE), vdTag, ierr)
+            IMESH_ASSERT
+         endif
+
+         call iMesh_getTagHandle(%VAL(imeshh), "VPOWER", vpowTag, 
+     1        ierr)
+         if (iBase_SUCCESS .ne. ierr) then
+            call iMesh_createTagWithOptions(%VAL(imeshh), "VPOWER",
+     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1           %VAL(1), %VAL(iBase_DOUBLE), vpowTag, ierr)
+            IMESH_ASSERT
+         endif
+
+      endif
+
+      if (ifcoup) then
+
+c may or may not have these tags, depending on coupler state
+         call iMesh_getTagHandle(%VAL(imeshh), "DENSITY", dTag, 
+     1        ierr)
+         if (iBase_SUCCESS .ne. ierr) then
+            call iMesh_createTagWithOptions(%VAL(imeshh), "DENSITY",
+     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1           %VAL(ntot), %VAL(iBase_DOUBLE), dTag, ierr)
+            IMESH_ASSERT
+         endif
+
+         call iMesh_getTagHandle(%VAL(imeshh), "POWER", powTag, 
+     1        ierr)
+         if (iBase_SUCCESS .ne. ierr) then
+            call iMesh_createTagWithOptions(%VAL(imeshh), "POWER",
+     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     1           %VAL(ntot), %VAL(iBase_DOUBLE), powTag, ierr)
+            IMESH_ASSERT
+         endif
       endif
 
       return
@@ -1049,7 +1102,7 @@ c     Interpolate from 3x3x3 to (nx1 x ny1 x nz1) SEM mesh
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_copy_vars()
+      subroutine nekMOAB_export_vars
       implicit none
 #include "NEKMOAB"
       include 'GEOM'
@@ -1083,12 +1136,24 @@ c use the same iterator for all variables, since the elems are the same
 
             if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
                call nekMOAB_set_tag(ieiter(i), pTag, ntot, tmpcount, pr)
-               call nekMOAB_set_vertex_tag(ieiter(i), vpTag, nx1, ny1, 
-     $              nz1, tmpcount, pr)
             endif
 
-            call nekMOAB_set_vertex_tag(ieiter(i), vtTag, nx1, ny1, nz1, 
-     $           tmpcount, t)
+            if (ifvcoup) then
+c     vertex-based temperature
+               call nekMOAB_set_vertex_tag(ieiter(i), vtTag, tmpcount, 
+     $              t)
+c     vertex-based density
+               call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount, 
+     $              vtrans)
+c     vertex-based pressure, but only if it's there
+               if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+                  call nekMOAB_set_vertex_tag(ieiter(i), vpTag, nx1, 
+     $                 ny1, nz1, tmpcount, pr)
+               endif
+            elseif (ifcoup) then
+               call nekMOAB_set_tag(ieiter(i), dTag, tmpcount, 
+     $              vtrans)
+            endif
 
 c     step the iterator
             call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
@@ -1096,6 +1161,54 @@ c     step the iterator
             IMESH_ASSERT
 
             count = count + tmpcount
+         enddo
+
+c double-check the total number of elements in this set
+         if (count .ne. iecount(i)) then
+            call exitti('Wrong no of elems iterating over matset ', 
+     $           matids(i))
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_import_vars(tagh, is_v, field)
+      implicit none
+#include "NEKMOAB"
+
+      real field(lx1,ly1,lz1,lelt)
+
+      include 'GEOM'
+      include 'SOLN'
+      integer i, j, ierr, ntot, tmpct, count, atend, is_v
+      iBase_TagHandle tagh
+      real tag_ptr(1)
+
+      ntot = nx1*ny1*nz1
+
+      do i = 1, numflu+numoth
+         call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
+         IMESH_ASSERT
+
+         atend = 0
+         count = 0
+         do while (atend .eq. 0)
+c use the same iterator for all variables, since the elems are the same
+            if (is_v .eq. 1) then
+               call nekMOAB_get_vertex_tag(ieiter(i), tagh, 1, 
+     $              tmpct, field)
+            else
+               call nekMOAB_get_tag(ieiter(i), tagh, ntot, tmpct, 
+     $              field)
+            endif
+
+c     step the iterator
+            call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           %VAL(tmpct), atend, ierr)
+            IMESH_ASSERT
+
+            count = count + tmpct
          enddo
 
 c double-check the total number of elements in this set
@@ -1199,6 +1312,83 @@ c        corners only
      $        %VAL(8), ierr)
          IMESH_ASSERT
          ivals = ivals + vpere
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_tag(iter, tagh, size, count, vals)
+      implicit none
+
+#include "NEKMOAB"      
+      iBase_EntityArrIterator iter
+      iBase_TagHandle tagh
+      integer ierr, i, ivals, size, count
+      real vals(*), tag_vals
+      pointer(tag_ptr, tag_vals(1))
+
+      call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
+     $     %VAL(iter), tag_ptr, count, ierr)
+      IMESH_ASSERT
+
+c set the tag vals
+      ivals = size * count
+      do i = 1, ivals
+         vals(i) = tag_vals(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_vertex_tag(iter, tagh, count, vals)
+      implicit none
+
+#include "NEKMOAB"      
+      iBase_EntityArrIterator iter
+      iBase_TagHandle tagh
+      integer ierr, i, j, ivals, size, count, v_per_e, ntot
+      real vals(*), tag_vals(27)
+      iBase_EntityHandle connect
+      pointer (connect_ptr, connect(1))
+      real avg
+
+      call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
+     $     connect_ptr, v_per_e, count, ierr)
+      IMESH_ASSERT
+
+c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
+      if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
+         ierr = iBase_FAILURE
+         IMESH_ASSERT
+      endif
+
+      ntot = nx1 * ny1 * nz1
+
+c set the tag vals
+      ivals = 1
+      do i = 1, count
+c        transfer spectral variable fromvertex variable
+c        corners only
+         call iMesh_getDblArrData(%VAL(imeshh), 
+     $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
+     $        %VAL(8), ierr)
+         IMESH_ASSERT
+         ivals = ivals + v_per_e
+
+#define INDEX(i,j,k) lx1*ly1*k + lx1*j + i
+         avg = 0.0d0
+         do j = 1, 8
+            avg = avg + tag_vals(j)
+         enddo
+         vals(1+INDEX(0,0,0)) = avg
+         vals(1+INDEX(nx1-1,0,0)) = avg
+         vals(1+INDEX(nx1-1,ny1-1,0)) = avg
+         vals(1+INDEX(0,ny1-1,0)) = avg
+         vals(1+INDEX(0,0,nz1-1)) = avg
+         vals(1+INDEX(nx1-1,0,nz1-1)) = avg
+         vals(1+INDEX(nx1-1,ny1-1,nz1-1)) = avg
+         vals(1+INDEX(0,ny1-1,nz1-1)) = avg
+#undef INDEX
       enddo
 
       return

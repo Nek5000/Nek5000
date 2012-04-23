@@ -174,9 +174,17 @@ C------------------------------------------------------------------
       include 'PARALLEL'
       include 'TSTEP'
       include 'NEKUSE'
+      include 'INPUT'
 c
       real bql(lx1,ly1,lz1,lelt)
 c
+#ifdef MOAB
+      if (ifcoup) then
+         call nekMOAB_import_vars(powTag, 0, bql)
+      elseif (ifvcoup) then
+         call nekMOAB_import_vars(vpowTag, 1, bql)
+      else
+#endif
       ielg = lglel(iel)
       do 10 k=1,nz1
       do 10 j=1,ny1
@@ -187,6 +195,9 @@ c
          bql(i,j,k,iel) = qvol
  10   continue
 
+#ifdef MOAB
+      endif
+#endif
       return
       end
 c-----------------------------------------------------------------------
