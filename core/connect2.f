@@ -389,7 +389,7 @@ c             read(string(i),*) IFMGRID
 c              read(string,*) IFSPLIT
          else
               if(nid.eq.0) then
-                write(6,'(1X,2A)') 'ABORT: Unkown logical flag', string
+                write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
                 write(6,'(30(A,/))') 
      &           ' Available logical flags:',
      &           '   IFTMSH'   ,
