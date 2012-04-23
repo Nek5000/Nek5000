@@ -34,7 +34,7 @@ C
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFMOAB,IFUSERMV,IFREGUO,IFXYO_
+     $               ,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,IFXYO_
      $               ,ifaziv,IFNEKNEK
       LOGICAL         IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
@@ -47,7 +47,7 @@ C
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFMOAB,IFUSERMV,IFREGUO,IFXYO_
+     $               ,IFMOAB, IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,IFXYO_
      $               ,ifaziv,IFNEKNEK
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))

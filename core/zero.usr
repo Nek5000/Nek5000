@@ -141,7 +141,7 @@ c name the output files 'zero??.h5m'
 c #define MOAB_MEM
 #ifndef MOAB_MEM
 c copy data from nek
-      call nekMOAB_copy_vars
+      call nekMOAB_export_vars
 #endif
 
       if((istep .eq. 0 .and. iostep .eq. 0) .or. 
@@ -159,5 +159,6 @@ c no check for error, just print something and continue
 
       return
       end
+
 #endif
-c-----------------------------------------------------------------------
+C=======================================================================
