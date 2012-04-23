@@ -80,14 +80,14 @@ c
 #define MYLOC LOC
 
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_init(comm_f, imesh_instance, partn_handle, 
-     $     ierr)
+      subroutine nekMOAB_init(comm_f, imesh_instance, fileset_handle,
+     $     partn_handle, ierr)
 
       implicit none
 #include "NEKMOAB"
 #include "mpif.h"
       IBASE_HANDLE_T imesh_instance, comm_c
-      iBase_EntityHandle partn_handle
+      iBase_EntitySetHandle fileset_handle, partn_handle
       integer comm_f, ierr, comm_sz, comm_rk
 
       if (imesh_instance .eq. 0) then
@@ -95,8 +95,10 @@ c     !Initialize imesh and load file
          imeshh = IMESH_NULL
          call iMesh_newMesh(" ", imeshh, ierr)
          IMESH_ASSERT
+         iCreatedImesh = 1
       else
          imeshh = imesh_instance
+         iCreatedImesh = 0
       endif
 
 #ifdef MPI
@@ -108,56 +110,38 @@ c     !Initialize imesh and load file
          call iMeshP_createPartitionAll(%VAL(imeshh), 
      1        %VAL(comm_c), hPartn, ierr)
          IMESH_ASSERT
+         iCreatedPartn = 1
       else
          hPartn = partn_handle
+         iCreatedPartn = 0
       endif
 #endif
 
-      return
-      end
-
-c-----------------------------------------------------------------------
-      subroutine nekMOAB_start
-
-      implicit none
-#include "NEKMOAB"
-      common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
-      integer nekcomm, nekgroup, nekreal, nid_, np
-      iMesh_Instance imesh_inst
-      iBase_EntitySetHandle partn_handle, file_set
-
-      imesh_inst = 0
-      partn_handle = 0
-      file_set = 0
-      call nekMOAB_import(nekcomm, imesh_inst, partn_handle, file_set)
+      if (fileset_handle .ne. 0) fileset = fileset_handle
 
       return
       end
 
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_import(comm_f, imesh_inst, partn_handle, 
-     $     file_set)
+      subroutine nekMOAB_import
       implicit none
 #include "NEKMOAB"
       include 'PARALLEL'
       include 'GEOM'
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      integer nekcomm, nekgroup, nekreal, nid_, np_
 
-      iMesh_Instance imesh_inst
-      iBase_EntitySetHandle file_set, partn_handle
-      integer comm_f, ierr
+      integer ierr
 
-      if (imesh_inst .eq. 0 .or. partn_handle .eq. 0) then
-         call nekMOAB_init(comm_f, imesh_inst, partn_handle, ierr)
+      if (imeshh .eq. 0 .or. hPartn .eq. 0 .or.
+     $     fileset .eq. 0) then
+         call nekMOAB_init(nekcomm, imeshh, fileset, hPartn, 
+     $        ierr)
          if (ierr .ne. iBase_SUCCESS) return
-      else
-         imeshh = imesh_inst
-         hPartn = partn_handle
       endif
          
-      if (file_set .eq. 0) then
+      if (fileset .eq. 0) then
          call nekMOAB_load   ! read mesh using MOAB
-      else
-         fileset = file_set
       endif
 
 #ifdef MPI
@@ -182,6 +166,21 @@ c      call nekMOAB_compute_diagnostics
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_instance(imesh_instance, fileset_handle)
+
+      implicit none
+#include "NEKMOAB"
+#include "mpif.h"
+      IBASE_HANDLE_T imesh_instance
+      iBase_EntitySetHandle fileset_handle
+
+      imesh_instance = imeshh
+      fileset_handle = fileset
+
+      return
+      end
+
 c-----------------------------------------------------------------------
       subroutine nekMOAB_create_tags
 c
@@ -1430,4 +1429,21 @@ c-----------------------------------------------------------------------
       enddo
 
       return
+      end
+
+c-----------------------------------------------------------------------
+      block data nekMOABdata
+#include "NEKMOAB"
+      data imeshh/0/, hPartn/0/, fileset/0/, 
+     $     rpParts/0/, rpHexes/0/, rpxm1/0/, rpym1/0/, rpzm1/0/, 
+     $     rpvx/0/, rpvy/0/, rpvz/0/, rpt/0/, rpp/0/,
+     $     globalIdTag/0/, matsetTag/0/, neusetTag/0/,
+     $     matsets/numsts*0/, ieiter/numsts*0/, 
+     $     xm1Tag/0/, ym1Tag/0/, zm1Tag/0/, vxTag/0/, vyTag/0/, 
+     $     vzTag/0/, tTag/0/, 
+     $     pTag/0/, dTag/0/, powTag/0/, vtTag/0/, vpTag/0/, vdTag/0/, 
+     $     vpowTag/0/, senseTag/0/, 
+     $     iCreatedImesh/0/, iCreatedPartn/0/, iCreatedFileset/0/, 
+     $     iestart/numsts*0/, iecount/numsts*0/, 
+     $     partsSize/0/, hexesSize/0/
       end

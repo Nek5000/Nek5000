@@ -54,6 +54,7 @@ c it won't work (because we're using preproc macros here)
       integer*4 hexesSize, partsSize
 
       IBASE_HANDLE_T imeshh, fileset, rpHexes, rpParts, hPartn
+      integer iCreatedImesh, iCreatedPartn, iCreatedFileset
 
       iBase_EntityHandle hHexes(*), hParts(*)
       pointer (rpHexes, hHexes), (rpParts, hParts)
@@ -67,13 +68,16 @@ c it won't work (because we're using preproc macros here)
       integer iestart, iecount
 
       common /nekmoab/ imeshh, hPartn, fileset, 
-     $     rpParts, rpHexes, globalIdTag, matsetTag, neusetTag,
-     $     ieiter(numsts), iestart(numsts), iecount(numsts),
-     $     matsets(numsts),
-     $     rpxm1, rpym1, rpzm1, rpvx, rpvy, rpvz, rpt, rpp,
+     $     rpParts, rpHexes, rpxm1, rpym1, rpzm1, 
+     $     rpvx, rpvy, rpvz, rpt, rpp,
+     $     globalIdTag, matsetTag, neusetTag,
+     $     matsets(numsts), ieiter(numsts), 
      $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
      $     pTag, dTag, powTag, vtTag, vpTag, vdTag, vpowTag,
-     $     senseTag, partsSize, hexesSize
+     $     senseTag, 
+     $     iCreatedImesh, iCreatedPartn, iCreatedFileset, 
+     $     iestart(numsts), iecount(numsts),
+     $     partsSize, hexesSize
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)

@@ -122,7 +122,7 @@ c pack into long int array and bcast as that
 
       if (ifmoab) then
 #ifdef MOAB
-         call nekMOAB_start
+         call nekMOAB_import
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
