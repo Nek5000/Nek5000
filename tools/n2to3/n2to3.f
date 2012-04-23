@@ -24,6 +24,9 @@ c
       character*80 fout
       character*1  fout1(80)
       equivalence (fout1,fout)
+      character*80 fout2
+      character*1  fout21(80)
+      equivalence (fout21,fout2)
 
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
@@ -44,29 +47,33 @@ c
       write(6,*) 'This is the code that establishes proper'
       write(6,*) 'element connectivities, as of Oct., 2006.'
       write(6,*)
-c
-c
+ 
+ 
 c     for workstation:
       in = 5
-c
+ 
 c     for delta:
 c     open(unit=7,file='indat',status='old',err=1999)
 c     in = 7
 c1999 continue
-c
+ 
 c     Get file name
       write(6,*) 'Input old (source) file name:'      
       call blank(file,80)
       read(in,80) file
       len = ltrunc(file,80)
    80 format(a80)
-c
+ 
 c     Get file name
       write(6,*) 'Input new (output) file name:'      
       call blank(fout,80)
       read(in,80) fout
       lou = ltrunc(fout,80)
-c
+
+c     Get file output type
+      write(6,*) 'For ASCII output only: 0; For .rea/.re2: 1'      
+      read(in,*) itype
+ 
       nlev = 1
       write(6,*) 
      $'input number of levels: (1, 2, 3,...; < 0 for circular sweep.):'
@@ -114,33 +121,44 @@ c
 c
 c     stretch .rea data 
 c
+      
       call chcopy(file1(len+1),'.rea',4)
       call chcopy(fout1(lou+1),'.rea',4)
-c
+      if(itype.eq.1) then
+        call blank(fout2,80)
+        fout2 = fout
+        call chcopy(fout21(lou+1),'.re2' // char(0),5)
+        call byte_open(fout2)
+      endif
       open(unit=10, file=file)
       open(unit=11, file=fout)
-      call rea23(dz,zmin,neln)
-c
+ 
+c     write(6,*) lou,(fout1(k),k=1,lou+4)
+c     write(6,*) lou,(fout21(k),k=1,lou+4)
+c     write(6,*) len,(file1(k),k=1,len+4)
+    
+      call rea23(dz,zmin,neln,itype)
+ 
       write(6,*)
-      write(6,6) neln,(fout1(k),k=1,len+4)
+      write(6,6) neln,(fout1(k),k=1,lou+4)
     6 format(i8,' elements written to ',40a1)
-c
+
+      if(itype.eq.1) then
+        write(6,*)
+        write(6,6) neln,(fout21(k),k=1,lou+4)
+      endif
+
       close (unit=10)
       close (unit=11)
-c
-      write(6,*)
-      write(6,6) neln,(fout1(k),k=1,len+4)
-c
-      close (unit=10)
-      close (unit=11)
-  999 continue
+      call byte_close(fout2)
+
       stop
  9999 continue
       write(6,*) 'could not find file "indat". abort.'
       stop
       end
 c-----------------------------------------------------------------------
-      subroutine rea23(dzi,zmin,neln)
+      subroutine rea23(dzi,zmin,neln,itype)
       real dzi(1)
       character*80 string
       character*1  string1(80)
@@ -169,12 +187,17 @@ c     Nekton stuff
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
       character*1 ca(nelm)
-      logical ifflow,ifheat
+      logical ifflow,ifheat,ifmhd
 
       real xc(4),yc(4),zc(4)
 
       common /arral/ ifcirc
       logical ifcirc
+
+c     re2 stuff
+      character*132 hdr
+      real*4 test
+      data   test  / 6.54321 /
 
       integer e,en
 
@@ -196,41 +219,44 @@ c
       if (option.eq.'yes')   ifcem = .true.
 
       if (ifcem) then
-      write(6,*) 'Enter Z (5) boundary condition (P,PEC,PMC,PML):'
-      read (5,1) a1           
-      call blank(cb5,3)
-      write(cb5,3) a1
-    3 format(a3)
+        write(6,*) 'Enter Z (5) boundary condition (P,PEC,PMC,PML):'
+        read (5,1) a1           
+        call blank(cb5,3)
+        write(cb5,3) a1
+    3   format(a3)
       
-      ifper = .false.
-      if (a1.eq.'P  ')   ifper = .true.
-      if (a1.eq.'PEC')   ifpec = .true.
-      if (a1.eq.'PMC')   ifpmc = .true.
-      if (a1.eq.'PML')   ifpml = .true.
+        ifper = .false.
+        if (a1.eq.'P  ')   ifper = .true.
+        if (a1.eq.'PEC')   ifpec = .true.
+        if (a1.eq.'PMC')   ifpmc = .true.
+        if (a1.eq.'PML')   ifpml = .true.
 
-      if (.not.ifper) then
-         write(6,*) 'Enter Z (6) boundary condition (PEC,PMC,PML):'
-         read (5,1) a1
-         call blank(cb6,3)
-         write(cb6,3) a1
-      endif
+        if (.not.ifper) then
+           write(6,*) 'Enter Z (6) boundary condition (PEC,PMC,PML):'
+           read (5,1) a1
+           call blank(cb6,3)
+           write(cb6,3) a1
+        endif
 
       else
 
-      write(6,*) 'Enter Z (5) boundary condition (P,v,O):'
-      read (5,1) a1
-      call blank(cb5,3)
-      write(cb5,3) a1
+        write(6,*) 'Enter Z (5) boundary condition (P,v,O):'
+        read (5,1) a1
+        call blank(cb5,3)
+        write(cb5,3) a1
 
-      ifper = .false.
-      if (a1.eq.'P  ')   ifper = .true.
+        ifper = .false.
+        if (a1.eq.'P  ')  then
+            ifper = .true.
+            write(cb6,3) a1
+        endif
 
-      if (.not.ifper) then
-         write(6,*) 'Enter Z (6) boundary condition (v,O):'
-         read (5,1) a1
-         call blank(cb6,3)
-         write(cb6,3) a1
-      endif
+        if (.not.ifper) then
+           write(6,*) 'Enter Z (6) boundary condition (v,O):'
+           read (5,1) a1
+           call blank(cb6,3)
+           write(cb6,3) a1
+        endif
 
       endif
 
@@ -243,18 +269,41 @@ c
       call readwrite(string,'NEKTON',6)
       read(10,80) string
       write(11,'(2x,a18)') ' 3 DIMENSIONAL RUN'
-
-      call readwrite(string,'NPSCAL',6)
-      read (string,*) rpscal
-      npscal = (rpscal + 0.01)
+    
+      read(10,80) string
+      read(string,*) nparam
+      write(11,80) string
+      do i=1,nparam
+         call blank(string,80)
+         read(10,80) string
+         len = ltrunc(string,80)
+         write(11,81) (string1(k),k=1,len)
+         if(i.eq.23) then 
+           read(string,*) rpscal
+           npscal = (rpscal + 0.01)
+         elseif(i.eq.29) then
+           ifmhd=.false.
+           read (string,*) mhd
+           if(mhd.ne.0) ifmhd = .true.
+         endif
+      enddo
 
       ifflow = .false.
-      call readwrite(string,'IFFLOW',6)
-      if (indx1(string,' T ',3).ne.0) ifflow = .true.
-
       ifheat = .false.
-      call readwrite(string,'IFHEAT',6)
-      if (indx1(string,' T ',3).ne.0) ifheat = .true.
+      call readwrite(string,'LOGICAL',7)
+      read(string,*) nlogic
+      do i=1,nlogic
+         call blank(string,80)
+         read(10,80) string
+         len = ltrunc(string,80)
+         write(11,81) (string1(k),k=1,len)
+
+         if(indx1(string,'IFFLOW',6).ne.0.and.
+     $      indx1(string,' T ',3).ne.0) ifflow=.true.
+         if(indx1(string,'IFHEAT',6).ne.0.and.
+     $      indx1(string,' T ',3).ne.0) ifheat=.true.
+         
+      enddo
 
       call readwrite(string,'XFAC,YFAC',9)
       read(10,80) string
@@ -271,9 +320,26 @@ c
          call exit
       endif
       neln = nlev*nel
-      write(11,11) neln,ndim3,neln
+
+      if(itype.eq.1) then    !re2
+        write(11,11) -neln,ndim3,neln
+
+        call blank(hdr,132)
+        write(hdr,111) neln,ndim3,neln       ! writes out header for .re2
+  111   format('#v001',i9,i3,i9,' this is the hdr')
+        call byte_write(hdr,20)              ! assumes byte_open() already issued
+        call byte_write(test,1)              ! write the endian discriminator
+
+        call rea2re2(dzi,zmin,cb5,cb6,ifflow,ifheat,ifper,ifmhd)
+
+        return
+      else
+        write(11,11) neln,ndim3,neln
+      endif
    11 format(3i10,11x,'NEL,NDIM,NELV')
-c
+
+
+     
 c     Read & write xy data 
       dz = dzi(1)
       z0 = zmin
@@ -298,7 +364,6 @@ c        ca(e) = string1(32)
          z1 = z1+dzi(ilev)
 
          do e=1,nel      
-
             en = e + nel*(ilev-1)
             call out_e_hdr(en,ilev,ca(e),igroup,11)
 
@@ -328,24 +393,26 @@ c     Curve sides (added 3/26/99   pff)
       call rdcurve
 
       if (ifcirc) then
-         call newcurve
+         call newcurve(0)
       else
-         call out_curve
+         call out_curve(0)
       endif
 
       read (10,80) string
       len = ltrunc(string,80)
       write(11,81) (string1(k),k=1,len)
-c
+
       if (.not.ifflow) then
          read (10,80) string
          len = ltrunc(string,80)
          write(11,81) (string1(k),k=1,len)
       endif
-c
+
+      write(6,*) npscal,ifflow,ifheat,ifmhd
       nbc = 0
       if (ifflow) nbc=nbc+1
       if (ifheat) nbc=nbc+1
+      if (ifmhd)  nbc=nbc+1
                   nbc=nbc+npscal
 
       write(6,*) ifheat,npscal,nbc,' ifheat'
@@ -357,7 +424,7 @@ c     Read and write boundary conditions
          read (10,80) string
          len = ltrunc(string,80)
          write(11,81) (string1(k),k=1,len)
-c
+
          do e = 1,nel
             if (nel.lt.1000) then
                do  k = 1,4
@@ -372,8 +439,9 @@ c
                   read (10,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
                enddo
             else
-               write(6,*) "ASCII format for >1M not supported in nek"
-               call exit 
+               do  k = 1,4
+                  read (10,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+               enddo
             endif
 
             call rzero(bc(1,5,e),5)
@@ -405,13 +473,15 @@ c
                   write(11,20) cbc(k,e),e,k,(bc(j,k,e),j=1,5)
                elseif (neln.lt.100000) then
                   write(11,21) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
-               else
+               elseif (neln.lt.1000000) then
                   write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
+               else
+                  write(11,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
                endif
             enddo
             cbc(5,e) = 'E  '
             bc (1,5,e) = e   !  -nel
-c
+
          enddo
 
          do ilev = 2,nlev
@@ -449,8 +519,10 @@ c              Periodic bc's on Z plane
                      write(11,20) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
                   elseif (neln.lt.100000) then
                      write(11,21) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
-                  else
+                  elseif (neln.lt.1000000) then
                      write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  else
+                     write(11,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
                   endif
                enddo
             enddo
@@ -466,10 +538,327 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
+   23 FORMAT(1x,A3,i9,5G20.9)
 
  
    80 format(a80)
    81 format(80a1)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rea2re2(dzi,zmin,cb5,cb6,ifflow,ifheat,ifper,ifmhd)
+
+      parameter(nelm=9999)
+      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
+      common /arrai/ nlev,nel,ncurve,npscal
+      common /arrac/ cbc,ccurve,ca
+      character*3 cbc(6,nelm)
+      character*1 ccurve(12,nelm)
+      character*1 ca(nelm)
+
+      real dzi(1)
+      character*3  cb5,cb6
+      logical ifflow,ifheat,ifmhd
+
+      common /arral/ ifcirc
+      logical ifcirc
+      character*80 string
+
+c     Read & write xy data
+      call re2_xyz(x,y,dzi,zmin,nel,nlev,ifcirc)
+
+c     Curved sides!
+      call re2_curve(ifcirc)
+
+c     Boundary conditions!
+      read (10,80) string    ! ASCII boundary string
+
+      if (.not.ifflow) then
+         read (10,80) string ! ASCII boundary string
+      endif
+
+      nbc = 0
+      if (ifflow) nbc=nbc+1
+      if (ifheat) nbc=nbc+1
+      if (ifmhd)  nbc=nbc+1
+                  nbc=nbc+npscal
+
+      write(6,*) ifheat,npscal,nbc,' ifheat'
+
+      call re2_bc(nbc,bc,cb5,cb6,ifflow,ifheat,ifper)
+
+      call readwrite(string,'endendend',9)
+ 80   format(a80)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine re2_bc(nbc,bc,cb5,cb6,ifflow,ifheat,ifper)
+
+      parameter(nelm=9999)
+      common /arrai/ nlev,nel,ncurve,npscal
+      common /arrac/ cbc,ccurve,ca
+      character*3 cbc(6,nelm)
+      character*1 ccurve(12,nelm)
+      character*1 ca(nelm)
+
+      common /arral/ ifcirc
+      logical ifcirc
+
+      character*80 string
+
+      real bc(5,6,nelm)
+      character*3  cb5,cb6
+      logical ifflow,ifheat,ifper
+      real*4 buf(10)
+      integer e
+      
+
+c     Read bc from .rea
+      nb = 0
+      do ibc=1,nbc
+         read (10,80) string ! ASCII boundary string
+         do e = 1,nel
+            if (nel.lt.1000) then
+               do  k = 1,4
+                  read (10,20) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
+                  if (cbc(k,e).ne.'E  ') nb = nb+1
+               enddo
+            elseif (nel.lt.100000) then
+               do  k = 1,4
+                  read (10,21) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
+                  if (cbc(k,e).ne.'E  ') nb = nb+1
+               enddo
+            elseif(nel.lt.1000000) then
+               do  k = 1,4
+                  read (10,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  if (cbc(k,e).ne.'E  ') nb = nb+1
+               enddo
+            else
+               do  k = 1,4
+                  read (10,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  if (cbc(k,e).ne.'E  ') nb = nb+1
+               enddo
+            endif
+         enddo
+
+         nb = nb*nlev
+         if(cb5.ne.'E  ') nb = nb+nel
+         if(cb6.ne.'E  ') nb = nb+nel
+         write(6,*) nb
+         call byte_write(nb,1)
+
+         do e = 1,nel
+c           Set bc and cbc
+            call rzero(bc(1,5,e),5)
+            if (ifper) then
+               bc(1,5,e) = e+(nlev-1)*nel
+               bc(2,5,e) = 6
+               cbc(5,e) = 'P  '
+            else
+               cbc(5,e) = cb5
+            endif
+
+            call rzero(bc(1,6,e),5)
+            bc(1,6,e) = e+nel
+            bc(2,6,e) = 5
+            cbc(6,e)  = 'E  '
+            if (nlev.eq.1) then
+               if     (ifper) then
+                  bc(1,6,e) = e
+                  cbc(6,e)  = 'P  '
+               else
+                  cbc(6,e) = cb6
+                  call rzero(bc(1,6,e),5)
+               endif
+            endif
+            
+            
+            do k=1,6
+            if(cbc(k,e).ne.'E  ') then
+               call icopy     (buf(1),e,1)
+               call icopy     (buf(2),k,1)
+               call copy      (buf(3),bc(1,k,e),5)
+               call blank     (buf(8),4)
+               call chcopy    (buf(8),cbc(k,e),3)
+               call byte_write(buf,8)
+            endif
+            enddo
+            cbc(5,e) = 'E  '
+            bc (1,5,e) = e   !  -nelc
+         enddo
+
+
+         do ilev = 2,nlev
+            do e = 1,nel
+               id = e + nel*(ilev-1)
+c              Periodic bc's on Z plane
+               if (ilev.eq.nlev) then
+                 ! bcs for final level
+                 if     (ifper) then
+                   cbc(6,e) = 'P  '
+                   bc(1,6,e) = e
+                 else
+                   cbc(6,e) = cb6
+                   call rzero(bc(1,6,e),5)
+                 endif
+               else
+                 ! bcs for intermediate level
+                 cbc(6,e) = 'E  '
+                 call rzero(bc(1,6,e),5)
+                 bc(1,6,e) = id+nel
+                 bc(2,6,e) = 5
+               endif
+
+               cbc(5,e) = 'E  '
+               call rzero(bc(1,5,e),5)
+               bc(1,5,e) = id-nel
+               bc(2,5,e) = 6
+
+               do  k = 1,4
+                 if (cbc(k,e).eq.'P  ') bc(1,k,e) = bc(1,k,e)+nel
+               enddo
+               do  k = 1,6
+                 if(cbc(k,e).ne.'E  ') then
+                 call icopy     (buf(1),id,1)
+                 call icopy     (buf(2),k,1)
+                 call copy      (buf(3),bc(1,k,e),5)
+                 call blank     (buf(8),4)
+                 call chcopy    (buf(8),cbc(k,e),3)
+                 call byte_write(buf,8)
+                 endif
+               enddo
+            enddo
+         enddo
+
+         if (cb5.eq.'v  ') cb5='t  '
+         if (cb6.eq.'v  ') cb6='t  '
+
+      enddo
+      if(.not.ifheat) read(10,80)string
+
+   20 FORMAT(1x,A3,2I3,5G14.6)
+   21 FORMAT(1x,A3,i5,i1,5G14.6)
+   22 FORMAT(1x,A3,i6,5G14.6)
+   23 FORMAT(1x,A3,i9,5G20.9)
+
+   80 format(a80)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine re2_curve(ifcirc)
+     
+      logical ifcirc
+
+      call rdcurve
+
+      if (ifcirc) then
+         call newcurve(1)
+      else
+         call out_curve(1)
+      endif
+     
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine re2_xyz(x,y,dzi,zmin,nel,nlev,ifcirc)
+
+      character*80 string
+      real*4 buf(30)
+
+      real x(4,1),y(4,1)
+      real dzi(1)
+      real xc(4),yc(4),zc(4)
+      logical ifcirc
+
+      integer e
+
+      dz = dzi(1)
+      z0 = zmin
+      z1 = z0+dz
+      do e=1,nel
+         read (10,80) string
+         read (10,*)   (x(k,e),k=1,4)
+         read (10,*)   (y(k,e),k=1,4)
+      enddo
+      
+      igroup = 0       
+
+      z1 = zmin
+      do ilev=1,nlev
+
+         z0 = z1
+         z1 = z1+dzi(ilev)
+
+         do e=1,nel
+            call byte_write(igroup, 1)
+            if (ifcirc) then ! Sweep in circular arc
+
+               call sweep_circ(xc,yc,zc,x(1,e),y(1,e),4,z0)             ! z0=theta
+               buf(1)  = xc(1)
+               buf(2)  = xc(2)
+               buf(3)  = xc(3)
+               buf(4)  = xc(4)
+               buf(9)  = yc(1)
+               buf(10) = yc(2)
+               buf(11) = yc(3)
+               buf(12) = yc(4)
+               buf(17) = zc(1)
+               buf(18) = zc(2)
+               buf(19) = zc(3)
+               buf(20) = zc(4)
+
+               call sweep_circ(xc,yc,zc,x(1,e),y(1,e),4,z1)             ! z1=theta
+               buf(5)  = x(1,e)
+               buf(6)  = x(2,e)
+               buf(7)  = x(3,e)
+               buf(8)  = x(4,e)
+               buf(13) = y(1,e)
+               buf(14) = y(2,e)
+               buf(15) = y(3,e)
+               buf(16) = y(4,e)
+               buf(21) = zc(1)
+               buf(22) = zc(2)
+               buf(23) = zc(3)
+               buf(24) = zc(4)
+
+               call byte_write(buf,24)
+
+            else   ! Translate data in z direction (std n2to3)
+
+               buf(1)  = x(1,e)
+               buf(2)  = x(2,e)
+               buf(3)  = x(3,e)
+               buf(4)  = x(4,e)
+               buf(5)  = x(1,e)
+               buf(6)  = x(2,e)
+               buf(7)  = x(3,e)
+               buf(8)  = x(4,e)
+               buf(9)  = y(1,e)
+               buf(10) = y(2,e)
+               buf(11) = y(3,e)
+               buf(12) = y(4,e)
+               buf(13) = y(1,e)
+               buf(14) = y(2,e)
+               buf(15) = y(3,e)
+               buf(16) = y(4,e)
+               buf(17) = z0
+               buf(18) = z0
+               buf(19) = z0
+               buf(20) = z0
+               buf(21) = z1
+               buf(22) = z1
+               buf(23) = z1
+               buf(24) = z1
+               call byte_write(buf,24)
+
+            endif
+
+         enddo
+      enddo
+ 80   format(a80)
+      
       return
       end
 c-----------------------------------------------------------------------
@@ -493,23 +882,23 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      INTEGER FUNCTION INDX1(S1,S2,L2)
-      CHARACTER*80 S1,S2
-C
-      N1=80-L2+1
-      INDX1=0
-      IF (N1.LT.1) RETURN
-C
-      DO 300 I=1,N1
-         I2=I+L2-1
-         IF (S1(I:I2).EQ.S2(1:L2)) THEN
-            INDX1=I
-            RETURN
-         ENDIF
-300   CONTINUE
-C
-      RETURN
-      END
+      integer function indx1(s1,s2,l2)
+      character*80 s1,s2
+
+      n1=80-l2+1
+      indx1=0
+      if (n1.lt.1) return
+
+      do 300 i=1,n1
+         i2=i+l2-1
+         if (s1(i:i2).eq.s2(1:l2)) then
+            indx1=i
+            return
+         endif
+300   continue
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine readwrite(sout,key,nk)
 
@@ -580,6 +969,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine copy(a,b,n)
+      real a(1), b(1)
+      do i = 1,n
+         a(i) = b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine icopy(a,b,n)
+      integer a(1), b(1)
+      do i = 1,n
+         a(i) = b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine chcopy(x,y,n)
       character*1 x(1),y(1)
       do i=1,n
@@ -620,8 +1025,10 @@ C     .Read formatted curve side data
          DO 50 ICURVE=1,NCURVE
             IF (nel.LT.1000) THEN
                READ(10,60,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
-            ELSE
+            ELSEIF (nel.lt.1000000) then
                READ(10,61,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
+            ELSE
+               READ(10,62,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ENDIF
             CURVE (1,IEDG,IEG)=R1
             CURVE (2,IEDG,IEG)=R2
@@ -632,6 +1039,7 @@ C     .Read formatted curve side data
    50    CONTINUE
    60    FORMAT(I3,I3,5G14.6,1X,A1)
    61    FORMAT(I2,I6,5G14.6,1X,A1)
+   62    FORMAT(I2,I9,5G20.9,1X,A1)
       ENDIF
       RETURN
 C
@@ -643,11 +1051,11 @@ C
      $    ,/,2X,'ABORTING IN ROUTINE RDCURVE.')
       CALL EXIT
       RETURN
-C
+
       END
 c-----------------------------------------------------------------------
-      subroutine out_curve
-C
+      subroutine out_curve(itype)
+
       parameter(nelm=9999)
       common /arraz/ zmin,zmax,dz(nelm)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
@@ -656,101 +1064,149 @@ C
       character*3 cbc(6,nelm)
       character*1 ccurve(12,nelm)
       character*1 ca(nelm)
-      CHARACTER*1 ANS
+      character*1 ans
+      real*4 buf(20)
 c
-C     .Read formatted curve side data 
+C     .write formatted curve side data 
 C
       neln = nlev*nel
       ncun = 2*nlev*ncurve
-      write(11,11)
-      write(11,12) ncun
-   11 format(' ***** CURVED SIDE DATA *****')
-   12 format(i8
-     $ ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+
+      if(itype.eq.0) then
+         write(11,11)
+         write(11,12) ncun
+   11    format(' ***** CURVED SIDE DATA *****')
+   12    format(i8
+     $    ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+      else
+         call byte_write(ncun,1)
+      endif
 
       ilev = 0
       r31 = zmin
       r30 = r31
       r31 = r31 + dz(ilev+1)
 
-      IF (NCURVE.GT.0) THEN
-         DO 55 ilev=1,nlev
-           DO 50 ieg=1,nel
-           DO 50 iedg=1,8
-            r1=CURVE (1,IEDG,IEG)
-            r2=CURVE (2,IEDG,IEG)
-            r3=CURVE (3,IEDG,IEG)
-            r4=CURVE (4,IEDG,IEG)
-            r5=CURVE (5,IEDG,IEG)
-            ans=CCURVE( IEDG,IEG)
+      if (ncurve.gt.0) then
+         do 55   ilev=1,nlev
+           do 50 ieg =1,nel
+           do 50 iedg=1,8
+            r1=curve (1,iedg,ieg)
+            r2=curve (2,iedg,ieg)
+            r3=curve (3,iedg,ieg)
+            r4=curve (4,iedg,ieg)
+            r5=curve (5,iedg,ieg)
+            ans=ccurve( iedg,ieg)
             ie =ieg + nel*(ilev-1)
             if (ans.eq.'C') then
-               IF (neln.LT.1000) THEN
-                  write(11,60) IEDG,IE,R1,R2,R3,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,60) IED4,IE,R1,R2,R3,R4,R5,ANS
-               ELSEIF (neln.lt.1000000) then
-                  write(11,61) IEDG,IE,R1,R2,R3,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,61) IED4,IE,R1,R2,R3,R4,R5,ANS
-               ELSE
-                  write(11,62) IEDG,IE,R1,R2,R3,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,62) IED4,IE,R1,R2,R3,R4,R5,ANS
-               ENDIF
+               if(itype.eq.0) then
+                 if (neln.lt.1000) then
+                   write(11,60) iedg,ie,r1,r2,r3,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,60) ied4,ie,r1,r2,r3,r4,r5,ans
+                 elseif (neln.lt.1000000) then
+                   write(11,61) iedg,ie,r1,r2,r3,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,61) ied4,ie,r1,r2,r3,r4,r5,ans
+                 else
+                   write(11,62) iedg,ie,r1,r2,r3,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,62) ied4,ie,r1,r2,r3,r4,r5,ans
+                 endif
+               else
+                 buf(1) = iedg
+                 buf(2) = ie
+                 buf(3) = r1
+                 buf(4) = r2
+                 buf(5) = r3
+                 buf(6) = r4
+                 buf(7) = r5
+                 call chcopy(buf(8),ans,1)
+                 ied4    = iedg+4
+                 buf(9)  = ied4
+                 buf(10) = ie
+                 buf(11) = r1
+                 buf(12) = r2
+                 buf(13) = r3
+                 buf(14) = r4
+                 buf(15) = r5
+                 call chcopy(buf(16),ans,1)
+                 call byte_write(buf,16)
+               endif
             elseif (ans.eq.'m') then
-               IF (neln.LT.1000) THEN
-                  write(11,60) IEDG,IE,R1,R2,R30,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,60) IED4,IE,R1,R2,R31,R4,R5,ANS
-               ELSEIF (neln.lt.1000000) then
-                  write(11,61) IEDG,IE,R1,R2,R30,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,61) IED4,IE,R1,R2,R31,R4,R5,ANS
-               ELSE
-                  write(11,62) IEDG,IE,R1,R2,R30,R4,R5,ANS
-                  ied4 = iedg+4
-                  write(11,62) IED4,IE,R1,R2,R31,R4,R5,ANS
-               ENDIF
+               if(itype.eq.0) then
+                 if (neln.lt.1000) then
+                   write(11,60) iedg,ie,r1,r2,r30,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,60) ied4,ie,r1,r2,r31,r4,r5,ans
+                 elseif (neln.lt.1000000) then
+                   write(11,61) iedg,ie,r1,r2,r30,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,61) ied4,ie,r1,r2,r31,r4,r5,ans
+                 else
+                   write(11,62) iedg,ie,r1,r2,r30,r4,r5,ans
+                   ied4 = iedg+4
+                   write(11,62) ied4,ie,r1,r2,r31,r4,r5,ans
+                 endif
+               else
+                 buf(1) = iedg
+                 buf(2) = ie
+                 buf(3) = r1
+                 buf(4) = r2
+                 buf(5) = r30
+                 buf(6) = r4
+                 buf(7) = r5
+                 call chcopy(buf(8),ans,1)
+                 ied4    = iedg+4
+                 buf(9)  = ied4
+                 buf(10) = ie
+                 buf(11) = r1
+                 buf(12) = r2
+                 buf(13) = r31
+                 buf(14) = r4
+                 buf(15) = r5
+                 call chcopy(buf(16),ans,1)
+                 call byte_write(buf,16)
+               endif
             endif
-   50      CONTINUE
+   50      continue
            r30 = r31
            r31 = r31 + dz(ilev+1)
-   55    CONTINUE
-   60    FORMAT(I3,I3,5G14.6,1X,A1)
-   61    FORMAT(I2,I6,5G14.6,1X,A1)
-   62    FORMAT(I1,I7,5G14.6,1X,A1)
+   55    continue
+   60    format(i3,i3,5g14.6,1x,a1)
+   61    format(i2,i6,5g14.6,1x,a1)
+   62    format(i1,i7,5g14.6,1x,a1)
 
-      ENDIF
-      RETURN
+      endif
+      return
 C
 C     Error handling:
 C
-  500 CONTINUE
-      WRITE(6,501)
+  500 continue
+      write(6,501)
   501 FORMAT(2X,'ERROR READING CURVE SIDE DATA'
      $    ,/,2X,'ABORTING IN ROUTINE RDCURVE.')
-      CALL EXIT
-      RETURN
-      END
+      call exit
+      return
+      end
 c-----------------------------------------------------------------------
-      FUNCTION MOD1(I,N)
+      function mod1(i,n)
 C
 C     Yields MOD(I,N) with the exception that if I=K*N, result is N.
 C
-      MOD1=0
-      IF (I.EQ.0) THEN
-         RETURN
-      ENDIF
-      IF (N.EQ.0) THEN
-         WRITE(6,*) 
+      mod1=0
+      if (i.eq.0) then
+         return
+      endif
+      if (n.eq.0) then
+         write(6,*) 
      $  'WARNING:  Attempt to take MOD(I,0) in FUNCTION MOD1.'
-         RETURN
-      ENDIF
-      II = I+N-1
-      MOD1 = MOD(II,N)+1
-      RETURN
-      END
+         return
+      endif
+      ii = i+n-1
+      mod1 = mod(ii,n)+1
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine sweep_circ(xc,yc,zc,x,y,n,theta)             ! z0=theta
 
@@ -791,7 +1247,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine newcurve
+      subroutine newcurve(itype)
 
       parameter(nelm=9999)
       common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
@@ -828,7 +1284,7 @@ c-----------------------------------------------------------------------
             if (ccurve(edge,e).ne.' ') then
               call get_midside(xm,ym,edge,e)
               call sweep_circ (xc,yc,zc,xm,ym,1,z0)  ! z0=theta
-              call outcurve(xc,yc,zc,zo,zo,'m',edge,en,neln,ipass)
+              call outcurve(xc,yc,zc,zo,zo,'m',edge,en,neln,ipass,itype)
             endif
           enddo
 
@@ -837,15 +1293,15 @@ c-----------------------------------------------------------------------
             if (ccurve(edg1,e).ne.' ') then
               call get_midside(xm,ym,edg1,e)
               call sweep_circ (xc,yc,zc,xm,ym,1,z1)  ! z1=theta
-              call outcurve(xc,yc,zc,zo,zo,'m',edge,en,neln,ipass)
+              call outcurve(xc,yc,zc,zo,zo,'m',edge,en,neln,ipass,itype)
             endif
           enddo
 
           do edge=9,12
             zh = .5*(z0+z1)
             i  = edge-8
-            call sweep_circ (xc,yc,zc,x(i,e),y(i,e),1,zh)  ! zh=theta
-            call outcurve   (xc,yc,zc,zo,zo,'m',edge,en,neln,ipass)
+            call sweep_circ(xc,yc,zc,x(i,e),y(i,e),1,zh)  ! zh=theta
+            call outcurve  (xc,yc,zc,zo,zo,'m',edge,en,neln,ipass,itype)
           enddo
 
         enddo
@@ -855,16 +1311,16 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outcurve(r1,r2,r3,r4,r5,cc,edge,e,nel,ipass)
+      subroutine outcurve(r1,r2,r3,r4,r5,cc,edge,e,nel,ipass,itype)
       character*1 cc
 
       integer ncurve,ilast
       save    ncurve,ilast
       data    ncurve,ilast  /0,0/
-
+      real*4 buf(10)
       integer edge,e
 
-      if (ilast.eq.1.and.ipass.eq.2) then
+      if (ilast.eq.1.and.ipass.eq.2.and.itype.eq.0) then
 
           write(11,11)
           write(11,12) ncurve
@@ -872,6 +1328,8 @@ c-----------------------------------------------------------------------
    12     format(i8
      $      ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
+      elseif(ilast.eq.1.and.ipass.eq.2.and.itype.eq.1) then
+          call byte_write(ncurve,1)
       endif
 
       ilast = ipass
@@ -880,7 +1338,7 @@ c-----------------------------------------------------------------------
 
          ncurve = ncurve+1
 
-      elseif (ipass.eq.2.and.cc.ne.' ') then
+      elseif (ipass.eq.2.and.cc.ne.' '.and.itype.eq.0) then
 
          if (nel.lt.1000) then
 
@@ -895,10 +1353,19 @@ c-----------------------------------------------------------------------
          else
 
             write(11,62) edge,e,r1,r2,r3,r4,r5,cc
-   62       format(i1,i7,5g14.6,1x,a1)
+   62       format(i1,i9,5g20.9,1x,a1)
 
          endif
-
+      elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then
+          buf(1) = edge
+          buf(2) = e
+          buf(3) = r1
+          buf(4) = r2
+          buf(5) = r3
+          buf(6) = r4
+          buf(7) = r5
+          call chcopy(buf(8),cc,1)
+          call byte_write(buf,8)
       endif
 
       return
@@ -974,3 +1441,11 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exitt
+
+      call exit
+
+      return
+      end
+c-----------------------------------------------------------------------
+
