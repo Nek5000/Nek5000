@@ -492,7 +492,7 @@ C           Parse restart options
                ifrest(2,jp) = .true.
             endif
             do 1900 ifield=3,nfldt
-               write(6,*) 'ifgetps:',(ifgtps(k),k=1,ldimt-1)
+c              write(6,*) 'ifgetps:',(ifgtps(k),k=1,ldimt-1)
                if (ifgtps(ifield-2)) then
                   iffort(ifield,jp) = .false.
                   ifprsl(ifield,jp) = .false.
