@@ -80,8 +80,8 @@ c
 #define MYLOC LOC
 
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_init(comm_f, imesh_instance, fileset_handle,
-     $     partn_handle, ierr)
+      subroutine nekMOAB_init(comm_f, imesh_instance, partn_handle, 
+     $     fileset_handle, ierr)
 
       implicit none
 #include "NEKMOAB"
@@ -135,7 +135,7 @@ c-----------------------------------------------------------------------
 
       if (imeshh .eq. 0 .or. hPartn .eq. 0 .or.
      $     fileset .eq. 0) then
-         call nekMOAB_init(nekcomm, imeshh, fileset, hPartn, 
+         call nekMOAB_init(nekcomm, imeshh, hPartn, fileset, 
      $        ierr)
          if (ierr .ne. iBase_SUCCESS) return
       endif
@@ -167,16 +167,18 @@ c      call nekMOAB_compute_diagnostics
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_get_instance(imesh_instance, fileset_handle)
+      subroutine nekMOAB_get_instance(imesh_instance, partn, 
+     $     fileset_handle)
 
       implicit none
 #include "NEKMOAB"
 #include "mpif.h"
-      IBASE_HANDLE_T imesh_instance
+      IBASE_HANDLE_T imesh_instance, partn
       iBase_EntitySetHandle fileset_handle
 
       imesh_instance = imeshh
       fileset_handle = fileset
+      partn = hPartn
 
       return
       end
