@@ -72,13 +72,17 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
         ierr = 0
         if (nid.eq.0) then
            write(6,*) 'schfile:',schfle
-         
-           open(unit=26,file=schfle,err=44,form='formatted',
-     &          status='new')
+           if (ifschclob) then
+              open(unit=26,file=schfle,err=44,form='formatted')
+           else
+              open(unit=26,file=schfle,err=44,form='formatted',
+     &             status='new')
+           endif
            goto 45
   44       ierr = 1
-  45    endif
-        call err_chk(ierr,'.sch file already exists.$')
+ 45     endif 
+        call err_chk(ierr,'.sch file already exists. Use IFSCHCLOB=F to
+     $disable this check BUT BEWARE!!!!!!$')
       endif
 
       call prepost_map(0) ! map pr and axisymm. arrays

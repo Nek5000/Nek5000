@@ -309,6 +309,7 @@ C
       IFCYCLIC  = .false.
       IFSYNC    = .false.
       IFEXPLVIS = .false.
+      IFSCHCLOBBER = .false.
 c     IFSPLIT   = .false.
 
       ifbase = .true.
@@ -385,6 +386,8 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSYNC
          elseif (indx1(string(i),'IFEXPLVIS',9).gt.0) then 
               read(string(i),*) IFEXPLVIS
+         elseif (indx1(string(i),'IFSCHCLOB',9).gt.0) then 
+              read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
          else

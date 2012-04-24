@@ -25,7 +25,11 @@ C
   10      FORMAT(A132)
         CLOSE(UNIT=8)
         GOTO 23
-  24    ierr = 1
+  24    CONTINUE
+        write(6,*) 'No file SESSION.NAME; using defaults of '
+        write(6,*) 'PATH=. and SESSION=NEK.'
+        PATH='.'
+        SESSION='NEK'
   23    ENDIF
 
       call err_chk(ierr,' Cannot open SESSION.NAME!$')
