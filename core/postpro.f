@@ -903,7 +903,7 @@ c-----------------------------------------------------------------------
             endif
          enddo
          call  gop(xyz,wk,'+  ',nblock)  ! Sum across all processors
-         call igop(igr,wk,'+  ',nblock)  ! Sum across all processors
+         call igop(igr,wk,'+  ',lblock)  ! Sum across all processors
 
          if (nid.eq.0) then
             kb = 0

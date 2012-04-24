@@ -33,9 +33,9 @@ C
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,IFXYO_
-     $               ,ifaziv,IFNEKNEK
+     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP,
+     $               IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,
+     $               IFXYO_,ifaziv,IFNEKNEK
       LOGICAL         IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC,IFTMSH
@@ -47,6 +47,7 @@ C
      $               ,IFBO
      $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
+     $               ,IFSCHCLOB
      $               ,IFMOAB, IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,IFXYO_
      $               ,ifaziv,IFNEKNEK
       LOGICAL         IFNAV
