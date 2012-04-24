@@ -1,4 +1,5 @@
 BINNAME=nek5000
+LIBNAME=libnek5000.a
 CASENAME=
 CASEDIR=
 S=
@@ -140,6 +141,10 @@ nek5000:	objdir $(NOBJS)
 ifeq ($(IFMPI),false) 
 	@rm -rf $S/mpif.h
 endif
+
+lib:	objdir $(NOBJS)
+	$(AR) cru ${LIBNAME} $(NOBJS)
+	ranlib ${LIBNAME}
 
 clean:
 	rm -rf ./obj ${BINNAME}
