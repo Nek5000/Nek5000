@@ -465,7 +465,7 @@ c check local size
 c reduce to get global numbers of fluid, other elements, and check size
       nelgv = iglsum(nelv,1)
       nelgt = iglsum(nelt,1)
-      if (NELGT .gt. LELT) then
+      if (NELGT .gt. LELG) then
          print *, 'ABORT; increase lelg ',nelgv,lelg
          call exitt
       endif
