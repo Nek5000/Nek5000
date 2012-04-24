@@ -739,13 +739,14 @@ c     loop over local neusets, will be <= numsts
 c     find the right set
          set_idx = -1
          do j = 1, numsts
-            if (set_ids(i) .eq. ibcsts(j)) set_idx = j
+            if (set_ids(i) .eq. ibcsts(j)) then
+               set_idx = j
+               if (set_idx .ne. -1) then
+                  call nekMOAB_intBC(moabbc, hentSet(i), set_ids(i), 
+     $                 bcf(set_idx))
+               endif
+            endif
          enddo
-
-         if (set_idx .ne. -1) then
-            call nekMOAB_intBC(moabbc, hentSet(i), set_ids(i), 
-     $           bcf(set_idx))
-         endif
       enddo
 
       call free(rpentSet)
@@ -923,7 +924,7 @@ c
       common /mbc/ moabbc(6,lelt,ldimt1)
       integer moabbc
 
-      integer e,f, l
+      integer e,f,l, j
       character*3 cbi
 
       integer ibcs(3), i, lcbc, nface
@@ -938,7 +939,12 @@ c
             do f=1,nface
                if (moabbc(f,e,l) .ne. -1) then
 c     moabbc stores local set index, retrieve the character bc type
-                  cbc(f, e, l) = bctyps(moabbc(f,e,l))
+                  do j = 1, numsts
+                     if (moabbc(f,e,l) .eq. ibcsts(j)
+     $                    .and. bcf(j) .eq. l) then
+                        cbc(f, e, l) = bctyps(j)
+                     endif
+                  enddo
                else
                   cbc(f, e, l) = 'E  '
                endif
