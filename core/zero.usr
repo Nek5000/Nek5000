@@ -120,16 +120,22 @@ C=======================================================================
       subroutine usr_moab_output()
 
 #include "NEKMOAB"
+      subroutine usr_moab_output()
+
+      implicit none
+#include "NEKMOAB"
       include 'TSTEP'
+      include 'PARALLEL'
 
       integer iten, ione, ierr
       CHARACTER*10 NAME
-      CHARACTER*132 options
+      CHARACTER*132 seroptions, paroptions
       CHARACTER*1   NAM1(10)
       EQUIVALENCE  (NAME,NAM1)
       CHARACTER*1  NUMRL(0:9)
       DATA NUMRL          /'0','1','2','3','4','5','6','7','8','9'/
-      data options /''/
+      data seroptions /''/
+      data paroptions /' moab:PARALLEL=WRITE_PART '/
       data name /'pipe00.h5m'/
 
 c name the output files 'zero??.h5m'      
@@ -140,18 +146,24 @@ c name the output files 'zero??.h5m'
 
 c #define MOAB_MEM
 #ifndef MOAB_MEM
-c copy data from nek
+c copy data from nek to MOAB
       call nekMOAB_export_vars
 #endif
 
-      if((istep .eq. 0 .and. iostep .eq. 0) .or. 
+      if(istep .eq. 0 .or. iostep .eq. 0 .or. 
      $     mod(istep,iostep) .eq. 0) then
-         call iMesh_save(%VAL(imeshh),%VAL(fileset),name,options, ierr)
+         if (np .gt. 1) then
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,paroptions, 
+     $           ierr)
+         else
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,seroptions, 
+     $           ierr)
+         endif
 c no check for error, just print something and continue
-         if (ierr .ne. 0 .and. nid_ .eq. 0) then
+         if (ierr .ne. 0 .and. nid .eq. 0) then
             write(6, "('      H5M file write failed on step ', i4)") 
      *           istep
-         else if (nid_ .eq. 0) then
+         else if (nid .eq. 0) then
             write(6, "('      Wrote MOAB H5M file for step ', i4)") 
      *           istep
          endif
@@ -159,6 +171,5 @@ c no check for error, just print something and continue
 
       return
       end
-
 #endif
 C=======================================================================
