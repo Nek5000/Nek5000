@@ -272,67 +272,61 @@ c tags for results variables
          IMESH_ASSERT
       endif
 
-c initialize these tags to zero since their use depends on user input
+c     initialize these tags to zero since their use depends on user input
       vtTag = 0
       vpTag = 0
       vdTag = 0
       vpowTag = 0
       dTag = 0
       powTag = 0
-      if (ifvcoup) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
-     1        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1        %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
+      call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
+     $     "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
+      IMESH_ASSERT
+
+      if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
+     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
          IMESH_ASSERT
-
-         if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-            call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
-     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1           %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
-            IMESH_ASSERT
-         endif
-
-c may or may not have these tags, depending on coupler state
-         call iMesh_getTagHandle(%VAL(imeshh), "VDENSITY", vdTag, 
-     1        ierr)
-         if (iBase_SUCCESS .ne. ierr) then
-            call iMesh_createTagWithOptions(%VAL(imeshh), "VDENSITY",
-     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1           %VAL(1), %VAL(iBase_DOUBLE), vdTag, ierr)
-            IMESH_ASSERT
-         endif
-
-         call iMesh_getTagHandle(%VAL(imeshh), "VPOWER", vpowTag, 
-     1        ierr)
-         if (iBase_SUCCESS .ne. ierr) then
-            call iMesh_createTagWithOptions(%VAL(imeshh), "VPOWER",
-     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1           %VAL(1), %VAL(iBase_DOUBLE), vpowTag, ierr)
-            IMESH_ASSERT
-         endif
-
       endif
 
-      if (ifcoup) then
+c may or may not have these tags, depending on coupler state
+      call iMesh_getTagHandle(%VAL(imeshh), "VDENSITY", vdTag, 
+     $     ierr)
+      if (iBase_SUCCESS .ne. ierr) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "VDENSITY",
+     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        %VAL(1), %VAL(iBase_DOUBLE), vdTag, ierr)
+         IMESH_ASSERT
+      endif
+
+      call iMesh_getTagHandle(%VAL(imeshh), "VPOWER", vpowTag, 
+     $     ierr)
+      if (iBase_SUCCESS .ne. ierr) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "VPOWER",
+     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        %VAL(1), %VAL(iBase_DOUBLE), vpowTag, ierr)
+         IMESH_ASSERT
+      endif
 
 c may or may not have these tags, depending on coupler state
-         call iMesh_getTagHandle(%VAL(imeshh), "DENSITY", dTag, 
-     1        ierr)
-         if (iBase_SUCCESS .ne. ierr) then
-            call iMesh_createTagWithOptions(%VAL(imeshh), "DENSITY",
-     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1           %VAL(ntot), %VAL(iBase_DOUBLE), dTag, ierr)
-            IMESH_ASSERT
-         endif
+      call iMesh_getTagHandle(%VAL(imeshh), "DENSITY", dTag, 
+     $     ierr)
+      if (iBase_SUCCESS .ne. ierr) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "DENSITY",
+     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        %VAL(ntot), %VAL(iBase_DOUBLE), dTag, ierr)
+         IMESH_ASSERT
+      endif
 
-         call iMesh_getTagHandle(%VAL(imeshh), "POWER", powTag, 
-     1        ierr)
-         if (iBase_SUCCESS .ne. ierr) then
-            call iMesh_createTagWithOptions(%VAL(imeshh), "POWER",
-     1       "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     1           %VAL(ntot), %VAL(iBase_DOUBLE), powTag, ierr)
-            IMESH_ASSERT
-         endif
+      call iMesh_getTagHandle(%VAL(imeshh), "POWER", powTag, 
+     $     ierr)
+      if (iBase_SUCCESS .ne. ierr) then
+         call iMesh_createTagWithOptions(%VAL(imeshh), "POWER",
+     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        %VAL(ntot), %VAL(iBase_DOUBLE), powTag, ierr)
+         IMESH_ASSERT
       endif
 
       return
@@ -1130,7 +1124,7 @@ c-----------------------------------------------------------------------
          endif
 
          do while (atend .eq. 0)
-c use the same iterator for all variables, since the elems are the same
+c     use the same iterator for all variables, since the elems are the same
             call nekMOAB_set_tag(ieiter(i), xm1Tag, ntot, tmpcount, xm1)
             call nekMOAB_set_tag(ieiter(i), ym1Tag, ntot, tmpcount, ym1)
             call nekMOAB_set_tag(ieiter(i), zm1Tag, ntot, tmpcount, zm1)
@@ -1145,22 +1139,19 @@ c use the same iterator for all variables, since the elems are the same
                call nekMOAB_set_tag(ieiter(i), pTag, ntot, tmpcount, pr)
             endif
 
-            if (ifvcoup) then
 c     vertex-based temperature
-               call nekMOAB_set_vertex_tag(ieiter(i), vtTag, tmpcount, 
-     $              t)
+            call nekMOAB_set_vertex_tag(ieiter(i), vtTag, tmpcount, 
+     $           t)
 c     vertex-based density
-               call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount, 
-     $              vtrans)
-c     vertex-based pressure, but only if it's there
-               if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-                  call nekMOAB_set_vertex_tag(ieiter(i), vpTag, nx1, 
-     $                 ny1, nz1, tmpcount, pr)
-               endif
-            elseif (ifcoup) then
-               call nekMOAB_set_tag(ieiter(i), dTag, tmpcount, 
-     $              vtrans)
+            call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount, 
+     $           vtrans)
+c     vertex-based pressure, but only if its there
+            if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+               call nekMOAB_set_vertex_tag(ieiter(i), vpTag, 
+     $              tmpcount, pr)
             endif
+            call nekMOAB_set_tag(ieiter(i), dTag, ntot, tmpcount, 
+     $           vtrans)
 
 c     step the iterator
             call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
@@ -1170,7 +1161,7 @@ c     step the iterator
             count = count + tmpcount
          enddo
 
-c double-check the total number of elements in this set
+c     double-check the total number of elements in this set
          if (count .ne. iecount(i)) then
             call exitti('Wrong no of elems iterating over matset ', 
      $           matids(i))
@@ -1274,51 +1265,49 @@ c set the tag vals
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_set_vertex_tag(iter, tagh, nx, ny, nz, 
-     $     count, vals)
+      subroutine nekMOAB_set_vertex_tag(iter, tagh, count, vals)
       implicit none
 
 #include "NEKMOAB"      
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, i, ivals, size, count, vpere, nx, ny, nz,
-     $     ntot
+      integer ierr, i, ivals, size, count, v_per_e, ntot
       real vals(*), tag_vals(27)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
 
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
-     $     connect_ptr, vpere, count, ierr)
+     $     connect_ptr, v_per_e, count, ierr)
       IMESH_ASSERT
 
 c only works if nx, ny, nz are equal, and if vpere is 27
-      if (nx .ne. ny .or. nx .ne. nz .or. vpere .ne. 27) then
+      if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
          ierr = iBase_FAILURE
          IMESH_ASSERT
       endif
 
-      ntot = nx * ny * nz
+      ntot = nx1 * ny1 * nz1
 
 c set the tag vals
       ivals = 1
       do i = 1, count
 c        transfer spectral variable to vertex variable
 c        corners only
-#define INDEX(i,j,k) nx*ny*k + nx*j + i
+#define INDEX(i,j,k) nx1*ny1*k + nx1*j + i
          tag_vals(1) = vals(1+INDEX(0,0,0))
-         tag_vals(2) = vals(1+INDEX(nx-1,0,0))
-         tag_vals(3) = vals(1+INDEX(nx-1,ny-1,0))
-         tag_vals(4) = vals(1+INDEX(0,ny-1,0))
-         tag_vals(5) = vals(1+INDEX(0,0,nz-1))
-         tag_vals(6) = vals(1+INDEX(nx-1,0,nz-1))
-         tag_vals(7) = vals(1+INDEX(nx-1,ny-1,nz-1))
-         tag_vals(8) = vals(1+INDEX(0,ny-1,nz-1))
+         tag_vals(2) = vals(1+INDEX(nx1-1,0,0))
+         tag_vals(3) = vals(1+INDEX(nx1-1,ny1-1,0))
+         tag_vals(4) = vals(1+INDEX(0,ny1-1,0))
+         tag_vals(5) = vals(1+INDEX(0,0,nz1-1))
+         tag_vals(6) = vals(1+INDEX(nx1-1,0,nz1-1))
+         tag_vals(7) = vals(1+INDEX(nx1-1,ny1-1,nz1-1))
+         tag_vals(8) = vals(1+INDEX(0,ny1-1,nz1-1))
 #undef INDEX
          call iMesh_setDblArrData(%VAL(imeshh), 
      $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
      $        %VAL(8), ierr)
          IMESH_ASSERT
-         ivals = ivals + vpere
+         ivals = ivals + v_per_e
       enddo
 
       return
