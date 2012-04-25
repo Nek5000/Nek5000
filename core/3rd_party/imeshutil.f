@@ -15,7 +15,7 @@ c building without imesh for now
       iup = index(file, " ")
       print *, "ASSERT ERROR: ", ierr, 'in ', file(1:iup), 
      * ' line', line
-      call iMesh_getDescription(imesh, errmsg, ierr)
+      call iMesh_getDescription(%VAL(imesh), errmsg, ierr)
       print *, NULLSTRIP(errmsg)
 
 #ifndef NDEBUG
