@@ -119,9 +119,6 @@ C=======================================================================
 #ifdef MOAB
       subroutine usr_moab_output()
 
-#include "NEKMOAB"
-      subroutine usr_moab_output()
-
       implicit none
 #include "NEKMOAB"
       include 'TSTEP'
