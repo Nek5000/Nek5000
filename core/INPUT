@@ -87,7 +87,7 @@ C
 C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
       INTEGER NUMSTS, NUMFLU, NUMOTH, NUMBCS, MATIDS, IBCSTS, BCF
       CHARACTER*3 BCTYPS
-      PARAMETER (NUMSTS=10)
+      PARAMETER (NUMSTS=50)
       COMMON /INPUTM/ NUMFLU, NUMOTH, NUMBCS, MATIDS(NUMSTS), 
      $     IBCSTS(NUMSTS), BCF(NUMSTS), BCTYPS(NUMSTS)
       
