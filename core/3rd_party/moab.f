@@ -1125,33 +1125,52 @@ c-----------------------------------------------------------------------
 
          do while (atend .eq. 0)
 c     use the same iterator for all variables, since the elems are the same
-            call nekMOAB_set_tag(ieiter(i), xm1Tag, ntot, tmpcount, xm1)
-            call nekMOAB_set_tag(ieiter(i), ym1Tag, ntot, tmpcount, ym1)
-            call nekMOAB_set_tag(ieiter(i), zm1Tag, ntot, tmpcount, zm1)
+            if (xm1Tag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), xm1Tag, ntot, tmpcount, 
+     $           xm1)
+            if (ym1Tag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), ym1Tag, ntot, tmpcount, 
+     $           ym1)
+            if (zm1Tag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), zm1Tag, ntot, tmpcount, 
+     $           zm1)
 
-            call nekMOAB_set_tag(ieiter(i), vxTag, ntot, tmpcount, vx)
-            call nekMOAB_set_tag(ieiter(i), vyTag, ntot, tmpcount, vy)
-            call nekMOAB_set_tag(ieiter(i), vzTag, ntot, tmpcount, vz)
+            if (vxTag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), vxTag, ntot, tmpcount, 
+     $           vx)
+            if (vyTag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), vyTag, ntot, tmpcount, 
+     $           vy)
+            if (vzTag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), vzTag, ntot, tmpcount, 
+     $           vz)
 
-            call nekMOAB_set_tag(ieiter(i), tTag, ntot, tmpcount, t)
+            if (tTag .ne. 0)
+     $           call nekMOAB_set_tag(ieiter(i), tTag, ntot, tmpcount, 
+     $           t)
 
-            if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-               call nekMOAB_set_tag(ieiter(i), pTag, ntot, tmpcount, pr)
-            endif
+            if (tTag .ne. 0 .and. nx2.eq.nx1 .and. ny2.eq.ny1 .and. 
+     $           nz2.eq.nz1) 
+     $           call nekMOAB_set_tag(ieiter(i), pTag, ntot, tmpcount, 
+     $           pr)
+
+            if (dTag .ne. 0) 
+     $           call nekMOAB_set_tag(ieiter(i), dTag, ntot, tmpcount, 
+     $           vtrans)
 
 c     vertex-based temperature
-            call nekMOAB_set_vertex_tag(ieiter(i), vtTag, tmpcount, 
+            if (vtTag .ne. 0)
+     $           call nekMOAB_set_vertex_tag(ieiter(i), vtTag, tmpcount, 
      $           t)
 c     vertex-based density
-            call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount, 
+            if (vdTag .ne. 0)
+     $           call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount, 
      $           vtrans)
 c     vertex-based pressure, but only if its there
-            if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-               call nekMOAB_set_vertex_tag(ieiter(i), vpTag, 
-     $              tmpcount, pr)
-            endif
-            call nekMOAB_set_tag(ieiter(i), dTag, ntot, tmpcount, 
-     $           vtrans)
+            if (vpTag .ne. 0 .and.
+     $           nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) 
+     $           call nekMOAB_set_vertex_tag(ieiter(i), vpTag, 
+     $           tmpcount, pr)
 
 c     step the iterator
             call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
@@ -1185,6 +1204,8 @@ c-----------------------------------------------------------------------
 
       ntot = nx1*ny1*nz1
 
+      if (tagh .eq. 0) return
+
       do i = 1, numflu+numoth
          call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), ierr)
          IMESH_ASSERT
@@ -1195,10 +1216,10 @@ c-----------------------------------------------------------------------
 c use the same iterator for all variables, since the elems are the same
             if (is_v .eq. 1) then
                call nekMOAB_get_vertex_tag(ieiter(i), tagh, 1, 
-     $              tmpct, field)
+     $              tmpct, field, ierr)
             else
                call nekMOAB_get_tag(ieiter(i), tagh, ntot, tmpct, 
-     $              field)
+     $              field, ierr)
             endif
 
 c     step the iterator
@@ -1313,7 +1334,7 @@ c        corners only
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_get_tag(iter, tagh, size, count, vals)
+      subroutine nekMOAB_get_tag(iter, tagh, size, count, vals, ierr)
       implicit none
 
 #include "NEKMOAB"      
@@ -1325,7 +1346,8 @@ c-----------------------------------------------------------------------
 
       call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
      $     %VAL(iter), tag_ptr, count, ierr)
-      IMESH_ASSERT
+c don't assert here, just return
+      if (iBase_SUCCESS .ne. ierr) return
 
 c set the tag vals
       ivals = size * count
@@ -1336,7 +1358,7 @@ c set the tag vals
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekMOAB_get_vertex_tag(iter, tagh, count, vals)
+      subroutine nekMOAB_get_vertex_tag(iter, tagh, count, vals, ierr)
       implicit none
 
 #include "NEKMOAB"      
@@ -1350,12 +1372,13 @@ c-----------------------------------------------------------------------
 
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
      $     connect_ptr, v_per_e, count, ierr)
-      IMESH_ASSERT
+c don't assert here, just return
+      if (iBase_SUCCESS .ne. ierr) return
 
 c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
       if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
          ierr = iBase_FAILURE
-         IMESH_ASSERT
+         return
       endif
 
       ntot = nx1 * ny1 * nz1
@@ -1368,7 +1391,8 @@ c        corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
      $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
      $        %VAL(8), ierr)
-         IMESH_ASSERT
+c don't assert here, just return
+         if (iBase_SUCCESS .ne. ierr) return
          ivals = ivals + v_per_e
 
 #define INDEX(i,j,k) lx1*ly1*k + lx1*j + i
