@@ -112,16 +112,14 @@ C     Verify mesh topology
       call vrdsmsh
 
 C     Pressure solver initialization (uses "SOLN" space as scratch)
-      if (ifflow.and.nsteps.gt.0) then
+      if (ifflow.and.(fintime.ne.0.or.nsteps.ne.0)) then
          call estrat
-         if (fintim.ne.0.0.or.nsteps.ne.0) then
-            if (iftran.and.solver_type.eq.'itr') then
-               call set_overlap
-            elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
-               call gfdm_init
-            elseif (solver_type.eq.'25D') then
-               call g25d_init
-            endif
+         if (iftran.and.solver_type.eq.'itr') then
+            call set_overlap
+         elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
+            call gfdm_init
+         elseif (solver_type.eq.'25D') then
+            call g25d_init
          endif
       endif
 
