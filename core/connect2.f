@@ -309,7 +309,7 @@ C
       IFCYCLIC  = .false.
       IFSYNC    = .false.
       IFEXPLVIS = .false.
-      IFSCHCLOBBER = .false.
+      IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
 
       ifbase = .true.
