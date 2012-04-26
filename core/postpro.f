@@ -468,24 +468,24 @@ c
      &               elid,1,
      &               rst,ndim,
      &               dist,1,
-     &               pts(1),1,
-     &               pts(n+1),1,
+     &               pts(    1),1,
+     &               pts(  n+1),1,
      &               pts(2*n+1),1,n)
         nfail = 0 
         do in=1,n
            ! check return code 
            if(rcode(in).eq.1) then
              if(dist(in).gt.1e-12) then 
-               write(6,'(A,4E15.7)') 
-     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
-     &     (pts(k*n + in),k=0,ndim-1),dist(in)
                nfail = nfail + 1
+               if (nfail.le.5) write(6,'(a,1p4e15.7)') 
+     &     ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
+     &     (pts(in+k*n),k=0,ndim-1),dist(in)
              endif   
            elseif(rcode(in).eq.2) then
              nfail = nfail + 1
-             write(6,'(A,3E15.7)') 
+             if (nfail.le.5) write(6,'(a,1p3e15.7)') 
      &        ' WARNING: point not within mesh xy[z]: !',
-     &        (pts(k*ndim + in),k=0,ndim-1)
+     &        (pts(in+k*n),k=0,ndim-1)
            endif
         enddo
       endif
@@ -847,14 +847,6 @@ c-----------------------------------------------------------------------
       integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
       save    isym2pre
       data    isym2pre / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
-
-      letapt = 'a'
-      numapt = 1
-
-      nxs = nx1-1
-      nys = ny1-1
-      nzs = nz1-1
-      nblock = lv*ldim*lblock
 
       letapt = 'a'
       numapt = 1
@@ -1524,14 +1516,15 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         do i=1,npts
            ! check return code 
            if(rcode(i).eq.1) then
-             if(dist(i).gt.1e-12) then
-               write(6,'(A,4E15.7)') 
+             if (dist(i).gt.1e-12) then
+                nfail = nfail + 1
+                IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
      &     ,(pts(k,i),k=1,ndim),dist(i)
              endif   
            elseif(rcode(i).eq.2) then
              nfail = nfail + 1
-             write(6,'(A,3E15.7)') 
+             if (nfail.le.5) write(6,'(a,1p3e15.7)') 
      &        ' WARNING: point not within mesh xy[z]: !',
      &        (pts(k,i),k=1,ndim)
            endif
