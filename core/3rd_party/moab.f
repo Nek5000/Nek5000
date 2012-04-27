@@ -221,54 +221,50 @@ c create a tag to store SEM dimensions, and set it on the file set
       semdim(1) = nx1
       semdim(2) = ny1
       semdim(3) = nz1
-      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_DIMS", 
-     1     "moab:TAG_STORAGE_TYPE=SPARSE", 
-     1     %VAL(3), %VAL(iBase_INTEGER), tagh, ierr)
+      call nekMOAB_create_find_tag("SEM_DIMS", 
+     $     " moab:TAG_STORAGE_TYPE=SPARSE", 3, iBase_INTEGER, tagh,
+     $     .true., ierr)
       IMESH_ASSERT
       call iMesh_setEntSetData(%VAL(imeshh), %VAL(fileset), %VAL(tagh), 
      1     semdim, 12, ierr)
       IMESH_ASSERT
 
 c tags for results variables
-      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_X",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), xm1Tag, ierr)
+      call nekMOAB_create_find_tag("SEM_X", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, xm1Tag, .true., ierr)
+      IMESH_ASSERT
+      call nekMOAB_create_find_tag("SEM_Y", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, ym1Tag, .true., ierr)
+      IMESH_ASSERT
+      call nekMOAB_create_find_tag("SEM_Z", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, zm1Tag, .true., ierr)
       IMESH_ASSERT
 
-      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_Y",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), ym1Tag, ierr)
+      call nekMOAB_create_find_tag("VX", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, vxTag, .true., ierr)
+      IMESH_ASSERT
+      call nekMOAB_create_find_tag("VY", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, vyTag, .true., ierr)
+      IMESH_ASSERT
+      call nekMOAB_create_find_tag("VZ", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, vzTag, .true., ierr)
       IMESH_ASSERT
 
-      call iMesh_createTagWithOptions(%VAL(imeshh), "SEM_Z",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), zm1Tag, ierr)
-      IMESH_ASSERT
-
-      call iMesh_createTagWithOptions(%VAL(imeshh), "VX",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), vxTag, ierr)
-      IMESH_ASSERT
-
-      call iMesh_createTagWithOptions(%VAL(imeshh), "VY",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), vyTag, ierr)
-      IMESH_ASSERT
-
-      call iMesh_createTagWithOptions(%VAL(imeshh), "VZ",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), vzTag, ierr)
-      IMESH_ASSERT
-
-      call iMesh_createTagWithOptions(%VAL(imeshh), "TEMP",
-     1     "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1     %VAL(ntot), %VAL(iBase_DOUBLE), tTag, ierr)
+      call nekMOAB_create_find_tag("TEMP", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     ntot, iBase_DOUBLE, tTag, .true., ierr)
       IMESH_ASSERT
 
       if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "PRESS",
-     1        "moab:TAG_STORAGE_TYPE=DENSE ", 
-     1        %VAL(ntot), %VAL(iBase_DOUBLE), pTag, ierr)
+         call nekMOAB_create_find_tag("PRESS", 
+     $        " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $        ntot, iBase_DOUBLE, pTag, .true., ierr)
          IMESH_ASSERT
       endif
 
@@ -279,58 +275,83 @@ c     initialize these tags to zero since their use depends on user input
       vpowTag = 0
       dTag = 0
       powTag = 0
-      call iMesh_createTagWithOptions(%VAL(imeshh), "VTEMP",
-     $     "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $     %VAL(1), %VAL(iBase_DOUBLE), vtTag, ierr)
+      call nekMOAB_create_find_tag("VTEMP", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     1, iBase_DOUBLE, vtTag, .true., ierr)
       IMESH_ASSERT
 
       if (nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "VPRESS",
-     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $        %VAL(1), %VAL(iBase_DOUBLE), vpTag, ierr)
+         call nekMOAB_create_find_tag("VPRESS", 
+     $       " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $        1, iBase_DOUBLE, vpTag, .true., ierr)
          IMESH_ASSERT
       endif
 
 c may or may not have these tags, depending on coupler state
-      call iMesh_getTagHandle(%VAL(imeshh), "VDENSITY", vdTag, 
-     $     ierr)
-      if (iBase_SUCCESS .ne. ierr) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "VDENSITY",
-     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $        %VAL(1), %VAL(iBase_DOUBLE), vdTag, ierr)
-         IMESH_ASSERT
-      endif
+      call nekMOAB_create_find_tag("VDENSITY", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     1, iBase_DOUBLE, vdTag, .true., ierr)
+      IMESH_ASSERT
 
-      call iMesh_getTagHandle(%VAL(imeshh), "VPOWER", vpowTag, 
-     $     ierr)
-      if (iBase_SUCCESS .ne. ierr) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "VPOWER",
-     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $        %VAL(1), %VAL(iBase_DOUBLE), vpowTag, ierr)
-         IMESH_ASSERT
-      endif
+      call nekMOAB_create_find_tag("VPOWER", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     1, iBase_DOUBLE, vpowTag, .true., ierr)
+      IMESH_ASSERT
 
 c may or may not have these tags, depending on coupler state
-      call iMesh_getTagHandle(%VAL(imeshh), "DENSITY", dTag, 
-     $     ierr)
-      if (iBase_SUCCESS .ne. ierr) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "DENSITY",
-     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $        %VAL(ntot), %VAL(iBase_DOUBLE), dTag, ierr)
-         IMESH_ASSERT
-      endif
+      call nekMOAB_create_find_tag("DENSITY", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     ntot, iBase_DOUBLE, dTag, .true., ierr)
+      IMESH_ASSERT
 
-      call iMesh_getTagHandle(%VAL(imeshh), "POWER", powTag, 
+      call nekMOAB_create_find_tag("POWER", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     ntot, iBase_DOUBLE, powTag, .true., ierr)
+      IMESH_ASSERT
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_create_find_tag(tag_name, tag_opts, tag_size, 
+     $     tag_datatype, tag_handle, create_if_missing, ierr)
+c attempt to get a tag handle of a specified name; if not found, create one; if found
+c verify tag characteristics
+      implicit none
+#include "NEKMOAB"
+      include 'mpif.h'
+
+      character*(*) tag_name, tag_opts
+      integer tag_size, tag_datatype, ierr, dum_int
+      logical create_if_missing
+      iBase_TagHandle tag_handle
+
+      call iMesh_getTagHandle(%VAL(imeshh), tag_name, tag_handle, 
      $     ierr)
-      if (iBase_SUCCESS .ne. ierr) then
-         call iMesh_createTagWithOptions(%VAL(imeshh), "POWER",
-     $        "moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
-     $        %VAL(ntot), %VAL(iBase_DOUBLE), powTag, ierr)
+      if (iBase_SUCCESS .ne. ierr .and. create_if_missing) then
+c need to create it
+         call iMesh_createTagWithOptions(%VAL(imeshh), tag_name,
+     $        tag_opts, %VAL(tag_size), %VAL(tag_datatype), 
+     $        tag_handle, ierr)
          IMESH_ASSERT
+      else if (create_if_missing) then
+c verify characteristics: size, datatype
+         call iMesh_getTagSizeValues(%VAL(imeshh), %VAL(tag_handle), 
+     $        dum_int, ierr)
+         if (ierr .ne. iBase_SUCCESS .or. dum_int .ne. tag_size) then
+            ierr = iBase_INVALID_TAG_HANDLE
+            return
+         endif
+         call iMesh_getTagType(%VAL(imeshh), %VAL(tag_handle), 
+     $        dum_int, ierr)
+        if (ierr .ne. iBase_SUCCESS .or. dum_int .ne. tag_datatype) then
+           ierr = iBase_INVALID_TAG_HANDLE
+           return
+        endif
       endif
 
       return
       end
+c
 c-----------------------------------------------------------------------
       subroutine nekMOAB_load
 c
