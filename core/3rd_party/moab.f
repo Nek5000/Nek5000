@@ -1236,8 +1236,8 @@ c-----------------------------------------------------------------------
          do while (atend .eq. 0)
 c use the same iterator for all variables, since the elems are the same
             if (is_v .eq. 1) then
-               call nekMOAB_get_vertex_tag(ieiter(i), tagh, 1, 
-     $              tmpct, field, ierr)
+               call nekMOAB_get_vertex_tag(ieiter(i), tagh, tmpct, 
+     $              field, ierr)
             else
                call nekMOAB_get_tag(ieiter(i), tagh, ntot, tmpct, 
      $              field, ierr)
