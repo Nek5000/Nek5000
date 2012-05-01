@@ -414,7 +414,7 @@ c-----------------------------------------------------------------------
            ioffs = ioff+(i-1)*ndim*nxyz
            call copy(u(1,ifld,i),tmp(ioffs),nxyz)
            call copy(u(1,ifld+1,i),tmp(ioffs+nxyz),nxyz)
-           if(if3d) call copy(u(1,ifld+2,i),tmp(ioffs+2*nxyz),nxyz)
+           if(ndim.eq.3) call copy(u(1,ifld+2,i),tmp(ioffs+2*nxyz),nxyz)
         enddo
         ifld = ifld+ndim
         ioff = ioff+ndim*nxyz*nel
@@ -425,7 +425,7 @@ c-----------------------------------------------------------------------
            ioffs = ioff+(i-1)*ndim*nxyz
            call copy(u(1,ifld,i),tmp(ioffs),nxyz)
            call copy(u(1,ifld+1,i),tmp(ioffs+nxyz),nxyz)
-           if(if3d) call copy(u(1,ifld+2,i),tmp(ioffs+2*nxyz),nxyz)
+           if(ndim.eq.3) call copy(u(1,ifld+2,i),tmp(ioffs+2*nxyz),nxyz)
         enddo
         ifld = ifld+ndim
         ioff = ioff+ndim*nxyz*nel
