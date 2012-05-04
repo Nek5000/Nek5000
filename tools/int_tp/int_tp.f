@@ -21,7 +21,6 @@ c     parameter (lmax=10000)            ! max old nel in x,y,z  ! in get*_geo
  
       parameter (mmax=1000)
 c     parameter (mmax=1200)		! max new nel
-c     parameter (mmax=4100)             ! max new nel
       common /gnew/ xm(0:mmax),ym(0:mmax),zm(0:mmax)
  
       character*40 fname
@@ -54,9 +53,7 @@ c
 
          call get_old_data(uin,nx,ny,nz,nel,nfld,if_byte_sw,if3d,fname,
      $                                               iffbin,ifbyte,ierr)
-c        call outu(uin,nx,ny,nz,nel,nfld)
          call xyz_chk(uin,nx,ny,nz,nel,nfld,if3d)
-c        call outmat(uin,nx,ny,'u in A',nfld)
          if (ierr.ne.0) stop
          nfiles = nfiles+1
  
@@ -440,7 +437,6 @@ c-----------------------------------------------------------------------
         enddo
         ioff=ioff+nxyz*nel
       enddo
-      stop
 
       return
       end
@@ -585,7 +581,6 @@ c-----------------------------------------------------------------------
       common /iptr/ px(0:lmax),py(0:lmax),pz(0:lmax)
       integer px,py,pz
  
-c     write(6,*) 'nelxy:',nelx,nely,nelz
       call set_interpolation_ops_1d(jx,nx,px,xe,nelx,xm,mx,.false.)
       call set_interpolation_ops_1d(jy,ny,py,ye,nely,ym,my,.true.)
       if (if3d) 
@@ -614,11 +609,8 @@ c
  
       call izero(pe,nelx+1)
  
-c     write(6,*) nx,' zwgll b'
       call zwgll(z,wk,nx)
  
-c     call outmat(xe,1,nelx+1,'xe arr',mx)
-c     call outmat(xm,1,mx+1  ,'xm arr',mx)
       
       do je=1,nelx-1  ! First, count # in each interval
       do i=0,mx
@@ -672,16 +664,12 @@ c
                call exit
             endif
  
-c           call outmat(z,1,nx,'z arry',e)
-c           call outmat(r,1,nn,'r arry',e)
- 
             call igllm (jx(1,e),wk,z,r,nx,nn,nx,nn)
             if (iftranspose) then  ! transpose for y and z
                call copy(wk,jx(1,e),nx*nn)
                call transpose(jx(1,e),nx,wk,nn)
             endif
          endif
-c        call outmat(jx(1,e),nn,nx,'jx mat',e)
       enddo
  
       return
@@ -876,18 +864,13 @@ c-----------------------------------------------------------------------
       parameter (nmax=20)
       common /znew/ zg(nmax),wg(nmax)
  
-c     call outmat(xe,1,nel+1,'xe 1dA',nel)
  
       if (nx1.gt.nmax) then
          write(6,*) 'Error, nx1 too large:',nx1,nmax,name3
          call exitt
       endif
  
-c     write(6,*) nx1,' zwgll a'
       call zwgll(zg,wg,nx1)
- 
-c     call outmat(zg,1,nx1  ,'zg 1d ',nel)
-c     call outmat(xe,1,nel+1,'xe 1d ',nel)
  
       k=0
       do e=1,nel
@@ -1500,3 +1483,4 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
