@@ -54,6 +54,7 @@ c
 
          call get_old_data(uin,nx,ny,nz,nel,nfld,if_byte_sw,if3d,fname,
      $                                               iffbin,ifbyte,ierr)
+c        call outu(uin,nx,ny,nz,nel,nfld)
          call xyz_chk(uin,nx,ny,nz,nel,nfld,if3d)
 c        call outmat(uin,nx,ny,'u in A',nfld)
          if (ierr.ne.0) stop
@@ -258,6 +259,7 @@ c-----------------------------------------------------------------------
       integer fnamei(10)
       character*1 fnamec(40)
       equivalence (fnamec,fnamei)
+      real x(1)
    
       logical iffbin,ifbyte
 
@@ -395,7 +397,7 @@ c-----------------------------------------------------------------------
       subroutine read_bin_u(u,nx,ny,nz,nel,nfld,ndim,if_byte_sw,ifx,ifu)
 
       real*4 u(nx*ny*nz,nfld,nel)
-      real*4 tmp(1)
+      real*4 tmp(nx*ny*nz*nel*nfld)
       logical if_byte_sw,ifx,ifu
 
       call byte_read(tmp,nel) !dummy read first nel 
@@ -404,7 +406,7 @@ c-----------------------------------------------------------------------
       ntot = nx*ny*nz*nel
       n    = nfld*ntot
 
-      call byte_read(tmp,n) 
+      call byte_read(tmp(1),n) 
       if (if_byte_sw) call byte_reverse(tmp,n)
 
       ifld = 1
@@ -436,7 +438,9 @@ c-----------------------------------------------------------------------
            ioffs = ioff+(i-1)*nxyz
            call copy(u(1,j,i),tmp(ioffs),nxyz)
         enddo
+        ioff=ioff+nxyz*nel
       enddo
+      stop
 
       return
       end
@@ -486,7 +490,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine read_u(u,nx,ny,nz,nel,nfld)
-      real u(nx*ny*nz,nfld,nel)
+      real*4 u(nx*ny*nz,nfld,nel)
 
 c     Dummy read first nel
       read(8,*,end=100) (tmp,i=1,nel)
@@ -1084,16 +1088,16 @@ C
          if (excoder(i).eq.'T') then
             nfld = nfld + 1
          endif
-         if (excoder(i).eq.'1') then
+         if (excoder(i).eq.' 1') then
             nfld = nfld + 1
          endif
-         if (excoder(i).eq.'2') then
+         if (excoder(i).eq.' 2') then
             nfld = nfld + 1
          endif
-         if (excoder(i).eq.'3') then
+         if (excoder(i).eq.' 3') then
             nfld = nfld + 1
          endif
-         if (excoder(i).eq.'4') then
+         if (excoder(i).eq.' 4') then
             nfld = nfld + 1
          endif
       enddo
@@ -1133,34 +1137,47 @@ C
       nfld = 0
       ifx = .false.
       ifu = .false.
+      k   = 1
       do i=1,10
          if (rdcode1(i).eq.'X') then
             nfld = nfld + 2
             if (if3d) nfld = nfld + 1
             ifx = .true.
-         endif
-         if (rdcode1(i).eq.'U') then
+
+            excoder(k  ) = 'X'
+            excoder(k+1) = 'Y'
+            if(if3d)excoder(k+2) = 'Z'
+            k=k+2
+            if(if3d) k=k+1
+         elseif (rdcode1(i).eq.'U') then
             nfld = nfld + 2
             if (if3d) nfld = nfld + 1
             ifu = .true.
-         endif
-         if (rdcode1(i).eq.'P') then
+
+            excoder(k  ) = 'U'
+            k=k+1
+         elseif (rdcode1(i).eq.'P') then
             nfld = nfld + 1
-         endif
-         if (rdcode1(i).eq.'T') then
+            excoder(k  ) = 'P'
+            k=k+1
+         elseif (rdcode1(i).eq.'T') then
             nfld = nfld + 1
-         endif
-         if (rdcode1(i).eq.'1') then
-            nfld = nfld + 1
-         endif
-         if (rdcode1(i).eq.'2') then
-            nfld = nfld + 1
-         endif
-         if (rdcode1(i).eq.'3') then
-            nfld = nfld + 1
-         endif
-         if (rdcode1(i).eq.'4') then
-            nfld = nfld + 1
+            excoder(k  ) = 'T'
+            k=k+1
+         elseif (rdcode1(i).eq.'S') then
+            read(rdcode1(i+1),'(I1)')NPS1
+            read(rdcode1(i+2),'(I1)')NPS0
+            nps = 10*nps1+nps0
+            nfld = nfld + nps
+            do j=1,nps
+               write(excoder(k),'(I2)') j
+               k=k+1
+            enddo
+         else
+            if(k.le.10) then
+              excoder(k)=' '
+              k=k+1
+            endif
          endif
       enddo
 
@@ -1178,15 +1195,6 @@ c----------------------------------------------------------------------
       real u(nx,ny,nz,nfld,nel)
       integer e
 
-c     check read in correct u from file.
-c     do e =1,nel
-c     do i =1,nx
-c       write(15,15) u(i,1,1,1,e),e
-c  15   format(1p1e12.4,i4)
-c     enddo
-c     write(15,*)
-c     enddo
-c     stop
       n = nx*ny*nz
       do k=1,nfld
 
@@ -1470,3 +1478,25 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine outu(u,nx,ny,nz,nel,nfld) 
+      real*4 u(nx*ny*nz,nfld,nel)
+  
+       nxyz = nx*ny*nz
+       do i=1,nel
+       do j = 1,nxyz
+          write(41,*) u(j,1,i)
+          write(42,*) u(j,2,i)
+          write(43,*) u(j,3,i)
+          write(44,*) u(j,4,i)
+          write(45,*) u(j,5,i)
+          write(46,*) u(j,6,i)
+          write(47,*) u(j,7,i)
+          write(48,*) u(j,8,i)
+          write(49,*) u(j,9,i)
+       enddo
+       enddo
+
+       stop
+
+      return
+      end
