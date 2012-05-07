@@ -200,6 +200,7 @@ c     re2 stuff
       data   test  / 6.54321 /
 
       integer e,en
+      real mhd
 
 
       call rzero(x,4*nelm)
@@ -284,7 +285,7 @@ c
          elseif(i.eq.29) then
            ifmhd=.false.
            read (string,*) mhd
-           if(mhd.ne.0) ifmhd = .true.
+           if(mhd.ne.0.0) ifmhd = .true.
          endif
       enddo
 
@@ -408,14 +409,13 @@ c     Curve sides (added 3/26/99   pff)
          write(11,81) (string1(k),k=1,len)
       endif
 
-      write(6,*) npscal,ifflow,ifheat,ifmhd
       nbc = 0
       if (ifflow) nbc=nbc+1
       if (ifheat) nbc=nbc+1
       if (ifmhd)  nbc=nbc+1
                   nbc=nbc+npscal
 
-      write(6,*) ifheat,npscal,nbc,' ifheat'
+      write(6,*) ifheat,ifmhd,npscal,nbc,' ifheat,ifmhd'
 
 c     Read and write boundary conditions
 
