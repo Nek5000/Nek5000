@@ -6,8 +6,10 @@
 
       common /valmask/ valint(lx1,ly1,lz1,lelt,nfldmax)
 
-      common /proclist/ nbp_send(0:lp-1), nbp_recv(0:lp-1), 
-     & idp(nmaxl,0:lp-1),iden(ldim+1,nmaxl,0:lp-1)
+      common /proclist/ npsend, nprecv, 
+     &  infosend(nmaxcom,2),inforecv(nmaxcom,2)
+
+      common /pointiden/ iden(ldim+1,nmaxl)  
 
       common /cgeom/ igeom
 
@@ -15,12 +17,8 @@
 
       common /mybd/ bdrylg(lx1*ly1*lz1*lelt,nfldmax,0:2)
 
-      common /ifsendrecv/ ifsend, ifrecv
-
-      logical ifrecv(0:lp-1), ifsend(0:lp-1)
-
       integer rcode(nmaxcom),elid(nmaxcom),proc(nmaxcom)
-      integer iList(ldim+2,nmaxcom), npoints
+      integer iList(ldim+1,nmaxcom),npoints
       real    rst(nmaxcom*ldim)
 
       common /multipts_r/ rst
