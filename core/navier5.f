@@ -1504,19 +1504,19 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine dump_header2d(excode,nx,ny,nlx,nly)
-c
+      subroutine dump_header2d(excode,nx,ny,nlx,nly,ierr)
+
       include 'SIZE'
       include 'TOTAL'
-c
+
       character*2 excode(15)
-c
+
       real*4         test_pattern
-c
+
       character*1 fhdfle1(132)
       character*132 fhdfle
       equivalence (fhdfle,fhdfle1)
-c
+
       jstep = istep
       if (jstep.gt.10000) jstep = jstep / 10
       if (jstep.gt.10000) jstep = jstep / 10
@@ -1532,6 +1532,7 @@ c    $  nlxy,nx,ny,nzz,TIME,jstep,(excode(i),i=1,15),
 c    $  'NELT,NX,NY,N'
 c
       p66 = 0.
+      ierr= 0
       IF (p66.EQ.1.0) THEN
 C       unformatted i/o
         WRITE(24)
@@ -1546,13 +1547,13 @@ C       formatted i/o to header file
         WRITE(fhdfle,'(4I4,1pe14.7,I5,1X,15A2,1X,A12)')
      $  nlxy,nx,ny,nzz,TIME,jstep,(excode(i),i=1,15),
      $  ' 4 NELT,NX,NY,N'
-        call byte_write(fhdfle,20)
+        call byte_write(fhdfle,20,ierr)
       ELSEIF (p66.eq.5.0) THEN
 C       formatted i/o to header file
         WRITE(fhdfle,'(4I4,1pe14.7,I5,1X,15A2,1X,A12)')
      $  nlxy,nx,ny,nzz,TIME,jstep,(excode(i),i=1,15),
      $  ' 8 NELT,NX,NY,N'
-        call byte_write(fhdfle,20)
+        call byte_write(fhdfle,20,ierr)
       ELSE
 C       formatted i/o
         WRITE(24,'(4I4,1pe14.7,I5,1X,15A2,1X,A12)')
@@ -1567,19 +1568,19 @@ C       unformatted i/o
       ELSEIF (p66.eq.3. .or. p66.eq.4.0) then
 C       write byte-ordering test pattern to byte file...
         test_pattern = 6.54321
-        call byte_write(test_pattern,1)
+        call byte_write(test_pattern,1,ierr)
       ELSEIF (p66.eq.5.) then
         test_pattern8 = 6.54321
-        call byte_write(test_pattern8,2)
+        call byte_write(test_pattern8,2,ierr)
       ELSE
 C       formatted i/o
         WRITE(24,'(6G11.4)')(CDRROR,I=1,nlxy)
       ENDIF
-c
+ 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine outfld2d_p(u,v,w,nx,ny,nlx,nly,name,ifld,jid,npido)
+      subroutine outfld2d_p(u,v,w,nx,ny,nlx,nly,name,ifld,jid,npido,ir)
 
       include 'SIZE'
       include 'TOTAL'
@@ -1608,6 +1609,7 @@ c-----------------------------------------------------------------------
       excode(5) = '  '
       excode(6) = 'T '
       nthings   =  3
+      ir = 0 !error code for dump_header2d
 
       call blank(outfile,20)
       if (npido.lt.100) then
@@ -1648,7 +1650,7 @@ c-----------------------------------------------------------------------
 
       if (icalld.le.4) write(6,*) nid,outfile,' OPEN',nlx,nly
       open(unit=24,file=outfile,status='unknown')
-      call dump_header2d(excode,nx,ny,nlx,nly)
+      call dump_header2d(excode,nx,ny,nlx,nly,ir)
 
       n = nx*ny*nlx*nly
       write(fm,10) nthings
@@ -1660,21 +1662,21 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine outfld2d(u,v,w,nx,ny,nlx,nly,name,ifld)
-c
+
       include 'SIZE'
       include 'TOTAL'
-c
+
       real u(nx*ny*nlx*nly)
       real v(nx*ny*nlx*nly)
       real w(nx*ny*nlx*nly)
       character*3 name
-c
+
       character*2  excode(15)
       character*12 fm
       character*20 outfile
 
 c     if (istep.le.10) write(6,*) nid,' in out2d:',iz
-c
+
       call blank(excode,30)
 c
 c     excode(1) = 'X '
@@ -1688,7 +1690,8 @@ c
       excode(5) = '  '
       excode(6) = 'T '
       nthings   =  3
-c
+
+      ierr = 0 
       if (nid.eq.0) then
          call blank(outfile,20)
          if (ifld.lt.100) then
@@ -1708,8 +1711,8 @@ c
     6       format(a3,'2d.fld',i6)
          endif
          open(unit=24,file=outfile,status='unknown')
-         call dump_header2d(excode,nx,ny,nlx,nly)
-c
+         call dump_header2d(excode,nx,ny,nlx,nly,ierr)
+
          n = nx*ny*nlx*nly
          write(fm,10) nthings
 c        write(6,*) fm
@@ -1721,7 +1724,8 @@ c  10    format(1p7e15.7)
 c
          close(24)
       endif
-c
+      call err_chk(ierr,'Error using byte_write,outfld2d. Abort.$')
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2398,23 +2402,23 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'ZPER'
-c
+
       real ux(1),uy(1),uz(1)
       character*2 c2,name
-c
+
       parameter (lyavg = lx1*lz1*lelx*lelz)
       common /scravg/ u (lyavg)
      $              , v (lyavg)
      $              , w (lyavg)
      $              , w1(lyavg)
      $              , w2(lyavg)
-c
+
       call y_average(u,ux,w1,w2)
       call y_average(v,uy,w1,w2)
       call y_average(w,uz,w1,w2)
-c
+
       call buff_2d_out(u,v,w,nx1,nz1,nelx,nelz,c2,name,icount)
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2543,10 +2547,10 @@ c   1       format(5i7,' buffering: ',2a2,3i7)
          endif
 
          if (jcalld .eq. npido-1) call  ! output buffer
-     $      outfld2d_p(ub,vb,wb,nxf,nyf,nexf,neyf,bname,ibfld,jid,npido)
+     $  outfld2d_p(ub,vb,wb,nxf,nyf,nexf,neyf,bname,ibfld,jid,npido,ir)
 
       endif
-
+      call err_chk(ir,'Error with byte_write, buff_2d_out $')
       icalld = icalld+1
       return
       end

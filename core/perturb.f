@@ -1265,8 +1265,8 @@ c
 
          if(nid.eq.0) then        ! write out results to the .lyp file
  
-            write(6 ,1) istep,time,lyap(1,jpp),lyapsum,pertnorm,jpp
-            write(79,2) time,lyap(1,jpp),lyapsum,pertporm,oldpertnorm,jpp
+           write(6 ,1) istep,time,lyap(1,jpp),lyapsum,pertnorm,jpp
+           write(79,2) time,lyap(1,jpp),lyapsum,pertporm,oldpertnorm,jpp
  1          format(i9,1p4e17.8,i4,'lyap')
  2          format(1p5e17.8,i4,'lyap')
 c           call flushbuffer(79)

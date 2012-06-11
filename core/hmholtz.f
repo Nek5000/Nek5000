@@ -293,8 +293,13 @@ C
          ELSE
            H1MIN  = VLMIN(HELM1(1,1,1,ie),NXYZ)
            H1MAX  = VLMAX(HELM1(1,1,1,ie),NXYZ)
-           TESTH1 = ABS((H1MAX-H1MIN)/(H1MAX+H1MIN))
-           IF (TESTH1.LT.EPSM) IFFAST(ie) = .TRUE.
+           den    = abs(h1max)+abs(h1min)
+           if (den.gt.0) then
+              TESTH1 = ABS((H1MAX-H1MIN)/(H1MAX+H1MIN))
+              IF (TESTH1.LT.EPSM) IFFAST(ie) = .TRUE.
+           else
+              iffast(ie) = .true.
+           endif
          ENDIF
  100  CONTINUE
 c
@@ -375,7 +380,7 @@ C
       END
 C
 c=======================================================================
-      subroutine setprec (dpcm1,helm1,helm2,imesh,isd)
+      subroutine setprec (dpcm1,helm1,helm2,jmesh,isd)
 C-------------------------------------------------------------------
 C
 C     Generate diagonal preconditioner for the Helmholtz operator.
@@ -386,6 +391,7 @@ C-------------------------------------------------------------------
       INCLUDE 'DXYZ'
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
+      INCLUDE 'TSTEP'
       INCLUDE 'MASS'
       REAL            DPCM1 (LX1,LY1,LZ1,1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
@@ -399,6 +405,8 @@ C-------------------------------------------------------------------
 
 c     The following lines provide a convenient debugging option
 c     call rone(dpcm1,ntot)
+c     if (ifield.eq.1) call copy(dpcm1,binvm1,ntot)
+c     if (ifield.eq.2) call copy(dpcm1,bintm1,ntot)
 c     return
 
       CALL RZERO(DPCM1,NTOT)
@@ -690,9 +698,13 @@ C
       if (name.eq.'PRES') then
 c        call ortho (r)           ! Commented out March 15, 2011,pff
       elseif (ifmcor) then
-         smean = -1./glsum(mult,n)
+
+         smean = -1./glsum(bm1,n) ! Modified 5/4/12 pff
          rmean = smean*glsc2(r,mult,n)
-         call cadd(r,rmean,n)
+         call copy(x,bm1,n)
+         call dssum(x,nx1,ny1,nz1)
+         call add2s2(r,x,rmean,n)
+         call rzero(x,n)
       endif
 C
       krylov = 0
@@ -721,9 +733,10 @@ c
          if (name.eq.'PRES') then
             call ortho (z)
          elseif (ifmcor) then
-            rmean = smean*glsc2(z,mult,n)
+            rmean = smean*glsc2(z,bm1,n)
             call cadd(z,rmean,n)
          endif
+c        write(6,*) rmean,ifmcor,' ifmcor'
 c
          rtz2=rtz1
          scalar(1)=vlsc3 (z,r,mult,n)

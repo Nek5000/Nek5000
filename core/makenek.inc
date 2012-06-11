@@ -148,11 +148,11 @@ fi
 UNDERSCORE=false
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
-        call byte_write
+        call byte_rewind
       end
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
-nm test_underscore.o | grep byte_write_ 1>/dev/null
+nm test_underscore.o | grep byte_rewind_ 1>/dev/null
 if [ $? -eq 0 ] 
 then
   UNDERSCORE=true

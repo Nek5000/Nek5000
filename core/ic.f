@@ -599,6 +599,7 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
+        ierr = 0
         if (nid.eq.0) then
 
           if (iffmat) then
@@ -611,7 +612,8 @@ c           test for presence of file
             open (unit=91,file=hname
      $           ,form='unformatted',status='old',err=500)
             close(unit=91)
-            call byte_open(hname)
+            call byte_open(hname,ierr)
+            if(ierr.ne.0) goto 500
           ENDIF
           ifok = .true.
         endif
@@ -620,13 +622,12 @@ c           test for presence of file
         call lbcast(ifok)
         if (.not.ifok) goto 5000
          
-c
          ndumps = 1
 C
 C        Only NODE 0 reads from the disk.
 C
          DO 1000 IDUMP=1,NDUMPS
-C
+
             IF (NID.EQ.0) THEN
                 ! read header
                if (iffmat) then
@@ -647,7 +648,8 @@ C
                  endif
                else
                  if(mod(param(67),1.0).eq.0) then  ! old header format
-                   call byte_read(hnami,20)
+                   call byte_read(hnami,20,ierr)
+                   if(ierr.ne.0) goto 10
                    icase = 2
                    if (nelgt.lt.10000) icase = 1
                    ipass = 0
@@ -674,12 +676,16 @@ C
                    endif
    95              continue
                  else                         ! new head format
-                   call byte_read(header,20)
+                   call byte_read(header,20,ierr)
+                   if(ierr.ne.0) goto 10
                    read(header,*)
      &             neltr,nxr,nyr,nzr,rstime,istepr,excoder
-                  endif
-                  call byte_read(bytetest,1)
-                  ifbytsw = if_byte_swap_test(bytetest)
+                 endif
+                 call byte_read(bytetest,1,ierr)
+c                call byte_read2(bytetest,1,ierr)
+                 if(ierr.ne.0) goto 10
+                 ifbytsw = if_byte_swap_test(bytetest,ierr)
+                 if(ierr.ne.0) goto 10
                endif
                mesg(1) = neltr
                mesg(2) = nxr
@@ -691,7 +697,8 @@ C
                call chcopy(mesg(5),excoder1,20)
                len  = 14*isize
             endif
-c
+   10       call err_chk(ierr,'Error reading restart header. Abort.$')
+
             IF (IDUMP.EQ.1) THEN
                len  = 14*isize
                call bcast(mesg,len)
@@ -700,9 +707,9 @@ c
                nyr   = mesg(3)
                nzr   = mesg(4)
                call   chcopy(excoder1,mesg(5),20)
-c
+
                call lbcast(ifbytsw)
-C
+
 C              Bounds checking on mapped data.
                IF (NXR.GT.LXR) THEN
                   WRITE(6,20) NXR,NX1
@@ -713,7 +720,6 @@ C              Bounds checking on mapped data.
      $            ,/,2X,'Increase N or LXR in IC.FOR.')
                   CALL EXITT
                ENDIF
-C
 C
 C              Figure out position of data in file "IFILE"
 C
@@ -848,7 +854,11 @@ C
      $              ((tdump(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
                  ELSE
                     do ii=1,nouts
-                       call byte_read(tdump(1,II),nxyzr)
+                       call byte_read(tdump(1,II),nxyzr,ierr)
+                       if(ierr.ne.0) then
+                          write(6,*) "Error reading xyz restart data"
+                          goto 70
+                       endif
                     enddo
                  ENDIF
                  IFOK=.TRUE.
@@ -856,6 +866,7 @@ C
 C
 C              Notify other processors that we've read the data OK.
 C
+  70           continue
                call lbcast(ifok)
                IF (.NOT.IFOK) GOTO 1600
 C
@@ -904,7 +915,7 @@ C
             ntott=nerr*nxyz1
             ntotv=nerr*nxyz1   ! Problem for differing Vel. and Temp. counts!
                                ! for now we read nelt dataset
-c
+
             if (ifmhd.and.ifile.eq.2) then
                if (ifgetu) call copy(bx,sdump(1,4),ntott)
                if (ifgetu) call copy(by,sdump(1,5),ntott)
@@ -945,7 +956,7 @@ C              passive scalars
                   if (ifgtps(ips))
      $            call copy(tp(1,ips+1,j),sdmp2(1,ips+1),ntott)
                enddo
-c
+
             else  ! Std. Case
                if (ifgetx) call copy(xm1,sdump(1,1),ntott)
                if (ifgetx) call copy(ym1,sdump(1,2),ntott)
@@ -998,10 +1009,12 @@ C
          if (iffmat) then
             if (nid.eq.0) close(unit=91)
          else
-            if (nid.eq.0) call byte_close()
+            ierr = 0
+            if (nid.eq.0) call byte_close(ierr)
+            call err_chk(ierr,'Error closing restart file in restart$')
          endif
          GOTO 6000
-C
+
 C        Can't open file...
  5000    CONTINUE
          if (nid.eq.0) write(6,5001) fname 
@@ -1193,20 +1206,22 @@ c
 c
       NXYZ=NX1*NY1*NZ1
       NXYR=NXR*NYR*NZR
+      ierr=0
 C
 C     Serial processor code:
 C
       IF (NP.EQ.1) THEN
-C
-         IF (if_byte_sw)           CALL byte_reverse(TDUMP,NXYR)
+
+         IF (if_byte_sw) call byte_reverse(TDUMP,NXYR,ierr)
+         if(ierr.ne.0) call exitti("Error in mapdmp")
          IF (NXR.EQ.NX1.AND.NYR.EQ.NY1.AND.NZR.EQ.NZ1) THEN
             CALL COPY4r(SDUMP(1,IEG),TDUMP,NXYZ)
          ELSE
 C           do the map    (assumes that NX=NY=NZ, or NX=NY, NZ=1)
             call mapab4r(sdump(1,ieg),tdump,nxr,1)
          ENDIF
-C
-       ELSE
+
+      ELSE
 C
 C     Parallel code - send data to appropriate processor and map.
 C
@@ -1231,13 +1246,14 @@ C        to appropriate element.
 C
          IF (JNID.EQ.NID) THEN
             IE=GLLEL(IEG)
-            IF (if_byte_sw)           CALL byte_reverse(TDUMP,NXYR)
+            IF (if_byte_sw) call byte_reverse(TDUMP,NXYR,ierr)
             IF (NXR.EQ.NX1.AND.NYR.EQ.NY1.AND.NZR.EQ.NZ1) THEN
                CALL COPY4r(SDUMP(1,IE),TDUMP,NXYZ)
             ELSE
                call mapab4r(sdump(1,ie),tdump,nxr,1)
             ENDIF
          ENDIF
+         call err_chk(ierr,'Error using byte_reverse in mapdmp.$')
 C
 C        End of parallel distribution/map routine.
 C
@@ -1853,21 +1869,21 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      logical function if_byte_swap_test(bytetest)
+      logical function if_byte_swap_test(bytetest,ierr)
       include 'SIZE'
-c
+ 
       real*4 bytetest,test2
       real*4 test_pattern
       save   test_pattern
-c
+ 
       test_pattern = 6.54321
       eps          = 0.00020
       etest        = abs(test_pattern-bytetest)
       if_byte_swap_test = .true.
       if (etest.le.eps) if_byte_swap_test = .false.
-c
+ 
       test2 = bytetest
-      call byte_reverse(test2,1)
+      call byte_reverse(test2,1,ierr)
       if (nid.eq.0) 
      $   write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
@@ -2014,6 +2030,7 @@ c-----------------------------------------------------------------------
          enddo
       endif
 
+      ierr = 0
       if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
          ! read blocks of size nelrr
          k = 0
@@ -2022,11 +2039,15 @@ c-----------------------------------------------------------------------
               nelrr = nelr - (nread-1)*nelrr
               if(nelrr.lt.0) nelrr = 0
             endif
+            
+            if(ierr.eq.0) then
 #ifdef MPIIO 
-            call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
+              call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
 #else
-            call byte_read (w2,nxyzr*nelrr)
+              call byte_read (w2,nxyzr*nelrr,ierr)
 #endif
+            endif
+
             ! distribute data across target processors
             l = 1
             do e = k+1,k+nelrr
@@ -2038,11 +2059,13 @@ c-----------------------------------------------------------------------
          enddo
       elseif (np.eq.1) then
 #ifdef MPIIO 
-         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
+         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
 #else
-         call byte_read(wk,nxyzr*nelr)
+         call byte_read(wk,nxyzr*nelr,ierr)
 #endif
       endif
+
+      call err_chk(ierr,'Error reading restart data,in gets.$')
 
       if (if_byte_sw.and.wdsizr.eq.8) then
          if(nid.eq.0) 
@@ -2069,7 +2092,10 @@ c-----------------------------------------------------------------------
          elseif(np.eq.1) then
             ei = er(e)
          endif
-         if (if_byte_sw) call byte_reverse(wk(l),nxyzv)
+         if (if_byte_sw) then
+            call byte_reverse(wk(l),nxyzv,ierr)
+            call err_chk(ierr,'Error with byte reverse in mfi_gets.$')
+         endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
@@ -2140,6 +2166,7 @@ c-----------------------------------------------------------------------
          enddo
       endif
 
+      ierr = 0
       if (nid.eq.pid0r .and. np.gt.1) then ! only i/o nodes
          k = 0
          do i = 1,nread
@@ -2147,11 +2174,15 @@ c-----------------------------------------------------------------------
               nelrr = nelr - (nread-1)*nelrr
               if(nelrr.lt.0) nelrr = 0
             endif
+
+            if(ierr.eq.0) then
 #ifdef MPIIO 
-            call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte)
+              call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
 #else
-            call byte_read (w2,nxyzr*nelrr)
+              call byte_read (w2,nxyzr*nelrr,ierr)
 #endif
+            endif
+
             ! redistribute data based on the current el-proc map
             l = 1
             do e = k+1,k+nelrr
@@ -2163,11 +2194,12 @@ c-----------------------------------------------------------------------
          enddo
       elseif (np.eq.1) then
 #ifdef MPIIO 
-         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte)
+         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
 #else
-         call byte_read(wk,nxyzr*nelr)
+         call byte_read(wk,nxyzr*nelr,ierr)
 #endif
       endif
+      call err_chk(ierr,'Error reading restart data, in getv.$')
 
       if (if_byte_sw.and.wdsizr.eq.8) then
          if(nid.eq.0) 
@@ -2194,7 +2226,10 @@ c-----------------------------------------------------------------------
          else if(np.eq.1) then
             ei = er(e) 
          endif
-         if (if_byte_sw) call byte_reverse(wk(l),nxyzv)
+         if (if_byte_sw) then
+            call byte_reverse(wk(l),nxyzv,ierr)
+            call err_chk(ierr,'Error with byte reverse in mfi_getv.$')
+         endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
@@ -2466,6 +2501,7 @@ c            if(nid.eq.0) write(6,*) 'Reading temperature field'
          iofldsr = iofldsr + 1
       endif
 
+      ierr = 0
       do k=1,ldimt-1
          if (ifgtpsr(k)) then
             offs = offs0 + iofldsr*stride + strideB
@@ -2485,11 +2521,11 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       if (ifgtim) time = timer
 
 #ifdef MPIIO
-      if (nid.eq.pid0r) call byte_close_mpi(ifh_mbyte)
+      if (nid.eq.pid0r) call byte_close_mpi(ifh_mbyte,ierr)
 #else
-      if (nid.eq.pid0r) call byte_close()
+      if (nid.eq.pid0r) call byte_close(ierr)
 #endif
-      call nekgsync
+      call err_chk(ierr,'Error closing restart file, in mfi.$')
       tio = dnekclock()-tiostart
 
       dnbyte = nbyte
@@ -2512,11 +2548,11 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mbyte_open(hname,fid) ! open  blah000.fldnn
+      subroutine mbyte_open(hname,fid,ierr) ! open  blah000.fldnn
       include 'SIZE'
       include 'TSTEP'
       include 'RESTART'
-c
+ 
       integer fid
       character*132 hname
 
@@ -2550,11 +2586,11 @@ c
       enddo
       
 #ifdef MPIIO
-      call byte_open_mpi(fname,ifh_mbyte)
+      call byte_open_mpi(fname,ifh_mbyte,ierr)
       if(nid.eq.0) write(6,6) istep,(fname1(k),k=1,len)
     6 format(1i8,' OPEN: ',132a1)
 #else
-      call byte_open(fname)
+      call byte_open(fname,ierr)
       write(6,6) nid,istep,(fname1(k),k=1,len)
     6 format(2i8,' OPEN: ',132a1)
 #endif
@@ -2578,17 +2614,26 @@ c-----------------------------------------------------------------------
 
       integer sum
 
+      ierr = 0
 #ifndef MPIIO
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
-         call mbyte_open(hname,0) ! open  blah000.fldnn
+         call mbyte_open(hname,0,ierr) ! open  blah000.fldnn
+         if(ierr.ne.0) goto 101
          call blank     (hdr,iHeaderSize)
-         call byte_read (hdr, iHeaderSize/4)
-         call byte_read (bytetest,1)
-         if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
+         call byte_read (hdr, iHeaderSize/4,ierr)
+         if(ierr.ne.0) goto 101
+         call byte_read (bytetest,1,ierr)
+         if(ierr.ne.0) goto 101
+         if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
+         if(ierr.ne.0) goto 101
          call mfi_parse_hdr(hdr)
       endif
+
+ 101  continue
+      call err_chk(ierr,'Error reading restart header in mfi_prepare$')
+
       call bcast(if_byte_sw,lsize) 
       call bcast(hdr,iHeaderSize)  
       if(nid.ne.0) call mfi_parse_hdr(hdr)
@@ -2605,26 +2650,33 @@ c-----------------------------------------------------------------------
          fid0r = nid / stride
          if (nid.ne.0) then ! don't do it again for rank0
             call blank     (hdr,iHeaderSize)
-            call mbyte_open(hname,fid0r) ! open  blah000.fldnn
-            call byte_read (hdr, iHeaderSize/4)  
-            call byte_read (bytetest,1) 
+            call mbyte_open(hname,fid0r,ierr) ! open  blah000.fldnn
+            if(ierr.ne.0) goto 102
+            call byte_read (hdr, iHeaderSize/4,ierr)  
+            if(ierr.ne.0) goto 102
+            call byte_read (bytetest,1,ierr) 
+            if(ierr.ne.0) goto 102
             call mfi_parse_hdr (hdr)     ! replace hdr with correct one 
          endif
-         call byte_read (er,nelr)     ! get element mapping
-         if (if_byte_sw) call byte_reverse(er,nelr)
+         call byte_read (er,nelr,ierr)     ! get element mapping
+         if (if_byte_sw) call byte_reverse(er,nelr,ierr)
       endif
 #else
       pid0r = nid
       pid1r = nid
       offs0 = iHeaderSize + 4
-      call mbyte_open(hname,0)
-      call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte)
-      call byte_read_mpi(bytetest,1,pid00,ifh_mbyte)
+      call mbyte_open(hname,0,ierr)
+      if(ierr.ne.0) goto 102
+      call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
+      if(ierr.ne.0) goto 102
+      call byte_read_mpi(bytetest,1,pid00,ifh_mbyte,ierr)
+      if(ierr.ne.0) goto 102
 
       call bcast(hdr,iHeaderSize) 
       call bcast(bytetest,4) 
 
-      if_byte_sw = if_byte_swap_test(bytetest) ! determine endianess
+      if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
+      if(ierr.ne.0) goto 102
       call mfi_parse_hdr(hdr)
       if(nfiler.ne.1) then
         if(nid.eq.0) write(6,*) 'ABORT: too many restart files!'
@@ -2641,9 +2693,11 @@ c-----------------------------------------------------------------------
       offs = offs0 + nelBr*isize
 
       call byte_set_view(offs,ifh_mbyte)
-      call byte_read_mpi(er,nelr,-1,ifh_mbyte)
-      if (if_byte_sw) call byte_reverse(er,nelr)
+      call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
+      if (if_byte_sw) call byte_reverse(er,nelr,ierr)
 #endif
+ 102  continue
+      call err_chk(ierr,'Error reading header/element map.$')
 
       return
       end
