@@ -15,4 +15,4 @@ clean:
 	'rm' *.o
 
 n2to3.o          : n2to3.f		 ;  $(F77) -c $(FLAGS) n2to3.f 
-byte.o           : ../../nek/byte.c      ;  $(CC)  -c $(CFLAGS) ../../nek/byte.c
+byte.o           : byte.c      		 ;  $(CC)  -c $(CFLAGS) byte.c

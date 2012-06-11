@@ -80,10 +80,7 @@ c     read nekton .rea file and make a .map file
      $               , order(lpts) , elist(lpts)
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
-     $               , w5   (lpts) , w6   (lelm)
-
-      integer     w13(3*lpts)
-      equivalence (w1,w13)
+     $               , w5   (lpts)
 
       real        w14(4*lpts)
       equivalence (w1,w14)
@@ -106,6 +103,7 @@ c                                    irnk is # unique points
 
       nfc = 2*ndim
       nv  = 2**ndim
+      mo  = 0   !max order initally zero.
 
       nic = lpts
       njc = lpts
@@ -133,7 +131,7 @@ c    $     (no,order,mo,cell,nv,nelv,irnk,cbc,nfc,w1,i0,i1,w2)
 
 c     Find all periodic connections, based on cbc info.
       call periodic_vtx
-     $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w13,w4)
+     $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w14,w5)
       
 
 c     Recursive bisection of element graph; reverse-order interface points
@@ -218,7 +216,7 @@ c     read nekton .rea file and make a mesh
       parameter(lpts=8*lelm)
 
       common /arrayi/ i_n(lpts) , j_n(4*lpts)
-     $              , i_o(lpts) , j_o(4*lpts)
+     $                          , j_o(4*lpts)
 
       logical ifbinary,ifbswap
       integer buf(30)
@@ -243,13 +241,17 @@ c     read nekton .rea file and make a mesh
 
       call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
+      ierr = 0
       if (ifbinary) then
          ! skip curved side data
-         call byte_read(ncurve,1)
-         if (ifbswap) call byte_reverse(ncurve,1)
+         call byte_read(ncurve,1,ierr)
+         if (ifbswap) call byte_reverse(ncurve,1,ierr)
+         if(ierr.ne.0) call exitti
+     $       ('Error reading ncurve in makemesh $',ierr)
          do k = 1,ncurve
-            call byte_read(buf,8)
-
+            call byte_read(buf,8,ierr)
+            if(ierr.ne.0) call exitti
+     $       ('Error reading curve data in makemesh $',ierr)
          enddo
 
 c        For current version of genmap, only need the fluid bcs.
@@ -268,7 +270,9 @@ c
 
          call rd_bc_bin(cbc,bc,nelv,nelt,ifbswap)
 
-         call byte_close()
+         call byte_close(ierr)
+         if(ierr.ne.0) call exitti
+     $       ('Error closing file in makemesh $',ierr)
       else
          call cscan_bcs   (cbc,bc,nelv,nelt,ndim)
       endif
@@ -382,10 +386,13 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
 
       b = 1.e22
       l = 1
+
+      ierr = 0
       if (ndim.eq.3) then
          do e=1,nelt
             if(ifbinary) then
-              call byte_read(buf,nwds)
+              call byte_read(buf,nwds,ierr)
+              if(ierr.ne.0) goto 100
               call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
             else 
               read (10,80) string
@@ -407,7 +414,8 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
       else
          do e=1,nelt
             if(ifbinary) then
-              call byte_read(buf,nwds)
+              call byte_read(buf,nwds,ierr)
+              if(ierr.ne.0) goto 100
               call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
             else
               read (10,80) string
@@ -423,10 +431,13 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
          enddo
       endif
    80 format(a80)
-c
+ 
       nvrt = 2**ndim
       call set_d2(dx,nvrt,nelt,ndim)
-c
+ 
+      return
+ 100  write(6,*) "Error reading xyz byte data in scan_dxyz. Abort"
+      call exitt(ierr)
       return
       end
 c-----------------------------------------------------------------------
@@ -1192,7 +1203,7 @@ c-----------------------------------------------------------------------
       subroutine fill_order(order,mo,cell,nv,nel)
       integer order(1),cell(nv,nel)
       integer e,v
-
+   
 c     Fill in remaining separator sets
       do e=1,nel
       do v=1,nv
@@ -1210,6 +1221,7 @@ c     Reverse separator set ordering
       do v=1,nv
          i = cell(v,e)
          if (order(i).lt.0) order(i) = mo+1+order(i)
+c        write(6,*) order(i),e,v
       enddo
       enddo
 
@@ -1306,9 +1318,6 @@ c     w1    - nv*nel
 c     w2    - nv*nel
 c
       include 'SIZE'
-
- 
-      parameter(lpts=8*lelm)
 
       integer pmap(nel),order(1),elist(nel),cell(nv,1),part,c(nv,1)
       integer w1(1),w2(1)
@@ -1456,14 +1465,14 @@ c
       integer e,v
 
 c--- diagnostic use only -----------------
-                                         !
-      common /arrayr/  dx(0:3,8,lelm)    !
-                                         !
-      integer icalld,kj(lelm),ke(lelm)   !
-      save    icalld                     !
-      data    icalld /0/                 !
-                                         !
-                                         !
+c                                        !
+c     common /arrayr/  dx(0:3,8,lelm)    !
+c                                        !
+c     integer icalld,kj(lelm),ke(lelm)   !
+c     save    icalld                     !
+c     data    icalld /0/                 !
+c                                        !
+c                                        !
 c--- diagnostic use only -----------------
       mod = mo
 
@@ -1484,8 +1493,8 @@ c--- diagnostic use only -----------------
                 mo = mo+1
                 order(i) = mo
                 m0 = m0+1
-                kj(m0) = j
-                ke(m0) = e
+c               kj(m0) = j
+c               ke(m0) = e
             endif
          enddo
       enddo
@@ -3015,109 +3024,109 @@ c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
+c     subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
 
-      include 'SIZE'
+c     include 'SIZE'
 
  
-      real dx(0:ndim,nv,nel)
-      integer cell(nv,nel)
+c     real dx(0:ndim,nv,nel)
+c     integer cell(nv,nel)
 
-      parameter(lpts=8*lelm)
-      common /carrayw/ w1   (lpts) , w2   (lpts)
-     $               , w3   (lpts) , w4   (lpts)
-     $               , w5   (lpts)
+c     parameter(lpts=8*lelm)
+c     common /carrayw/ w1   (lpts) , w2   (lpts)
+c    $               , w3   (lpts) , w4   (lpts)
+c    $               , w5   (lpts)
 
-      integer e,v,emax,vmax
+c     integer e,v,emax,vmax
 
-      call rzero(w4,nrnk)
-      mult_max = 0
-      do e=1,nel                     ! Get global vertex multiplicities
-      do v=1,nv
-         i = cell(v,e)
-         if (i.gt.nrnk) then
-            write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
-    1       format(i9,i3,2i9,1p3e12.4,' i>nrnk! ERROR!')
-         else
-            w4(i)=w4(i)+1.
-            mult = w4(i)
-            mult_max = max(mult_max,mult)
-         endif
-      enddo
-      enddo
-      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
+c     call rzero(w4,nrnk)
+c     mult_max = 0
+c     do e=1,nel                     ! Get global vertex multiplicities
+c     do v=1,nv
+c        i = cell(v,e)
+c        if (i.gt.nrnk) then
+c           write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
+c   1       format(i9,i3,2i9,1p3e12.4,' i>nrnk! ERROR!')
+c        else
+c           w4(i)=w4(i)+1.
+c           mult = w4(i)
+c           mult_max = max(mult_max,mult)
+c        endif
+c     enddo
+c     enddo
+c     write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
 
-      do i=1,nrnk
-         if (w4(i).gt.0) then
-            w4(i)=1./w4(i)
-         else
-            write(6,*) i,' detected blank index in geofile2'
-         endif
-      enddo
+c     do i=1,nrnk
+c        if (w4(i).gt.0) then
+c           w4(i)=1./w4(i)
+c        else
+c           write(6,*) i,' detected blank index in geofile2'
+c        endif
+c     enddo
 
-      call rzero(w1,nrnk)
-      call rzero(w2,nrnk)
-      call rzero(w3,nrnk)
-      do e=1,nel
-      do v=1,nv
-         i = cell(v,e)
-         if (i.le.nrnk) then           ! average global vertex coords
-            w1(i)=w1(i)+dx(1,v,e)*w4(i)
-            w2(i)=w2(i)+dx(2,v,e)*w4(i)
-            w3(i)=w3(i)+dx(3,v,e)*w4(i)
-         endif
-      enddo
-      enddo
+c     call rzero(w1,nrnk)
+c     call rzero(w2,nrnk)
+c     call rzero(w3,nrnk)
+c     do e=1,nel
+c     do v=1,nv
+c        i = cell(v,e)
+c        if (i.le.nrnk) then           ! average global vertex coords
+c           w1(i)=w1(i)+dx(1,v,e)*w4(i)
+c           w2(i)=w2(i)+dx(2,v,e)*w4(i)
+c           w3(i)=w3(i)+dx(3,v,e)*w4(i)
+c        endif
+c     enddo
+c     enddo
 
-      dmax = 0.
-      do e=1,nel
-      do v=1,nv
-         i = cell(v,e)
-         if (i.le.nrnk) then    ! check for global/local Euclidian variance
-            ddx = dx(1,v,e)-w1(i)
-            ddy = dx(2,v,e)-w2(i)
-            ddz = dx(3,v,e)-w3(i)
-            dd2 = ddx*ddx + ddy*ddy
-            if (ndim.eq.3) dd2 = dd2 + ddz*ddz
-            if (dd2.ge.dmax) then
-               dmax = dd2
-               imax = i
-               emax = e
-               vmax = v
-            endif
-         endif
-      enddo
-      enddo
-      if (dmax.gt.0) dmax = sqrt(dmax)
-      write(6,3) imax,emax,vmax,dmax
-      write(6,4) w1(imax),w2(imax),w3(imax),' global xyz'
-      write(6,4) (dx(k,vmax,emax),k=1,3)   ,' local  xyz'
-    3 format(2i9,i3,1pe12.4,'dmax xyz')
-    4 format(1p3e14.6,1x,a11)
+c     dmax = 0.
+c     do e=1,nel
+c     do v=1,nv
+c        i = cell(v,e)
+c        if (i.le.nrnk) then    ! check for global/local Euclidian variance
+c           ddx = dx(1,v,e)-w1(i)
+c           ddy = dx(2,v,e)-w2(i)
+c           ddz = dx(3,v,e)-w3(i)
+c           dd2 = ddx*ddx + ddy*ddy
+c           if (ndim.eq.3) dd2 = dd2 + ddz*ddz
+c           if (dd2.ge.dmax) then
+c              dmax = dd2
+c              imax = i
+c              emax = e
+c              vmax = v
+c           endif
+c        endif
+c     enddo
+c     enddo
+c     if (dmax.gt.0) dmax = sqrt(dmax)
+c     write(6,3) imax,emax,vmax,dmax
+c     write(6,4) w1(imax),w2(imax),w3(imax),' global xyz'
+c     write(6,4) (dx(k,vmax,emax),k=1,3)   ,' local  xyz'
+c   3 format(2i9,i3,1pe12.4,'dmax xyz')
+c   4 format(1p3e14.6,1x,a11)
 
 c
 c     Write coordinates to a file
 c
-      write(6 ,*) 'Dumping vertex coordinates to unit 12'
-      write(12,*) nrnk
+c     write(6 ,*) 'Dumping vertex coordinates to unit 12'
+c     write(12,*) nrnk
 
-      if (ndim.eq.3) then
-       do i=1,nrnk
-         if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i),w3(i)
-         write(12,5) w1(i),w2(i),w3(i)
-       enddo
-      else
-       do i=1,nrnk
-         if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i)
-         write(12,5) w1(i),w2(i)
-       enddo
-      endif
+c     if (ndim.eq.3) then
+c      do i=1,nrnk
+c        if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i),w3(i)
+c        write(12,5) w1(i),w2(i),w3(i)
+c      enddo
+c     else
+c      do i=1,nrnk
+c        if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i)
+c        write(12,5) w1(i),w2(i)
+c      enddo
+c     endif
 
-    5 format(1p3e14.6)
-    6 format(i9,1x,1p3e14.6)
+c   5 format(1p3e14.6)
+c   6 format(i9,1x,1p3e14.6)
 
-      return
-      end
+c     return
+c     end
 c-----------------------------------------------------------------------
       subroutine rd_bc_bin(cbc,bc,nelv,nelt,ifbswap)
 
@@ -3135,6 +3144,7 @@ c     .Read Boundary Conditions (and connectivity data)
       npass = 1
       if (nelt.gt.nelv) npass = 2   ! default to thermal topology (for now)
 
+      ierr = 0
       do kpass = 1,npass
 
          do e=1,lelm   ! fill up cbc w/ default
@@ -3145,12 +3155,13 @@ c     .Read Boundary Conditions (and connectivity data)
 
          nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
 
-         call byte_read(nbc_max,1)
-         if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
+         call byte_read(nbc_max,1,ierr)
+         if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
          do k=1,nbc_max
 c           write(6,*) k,' dobc1 ',nbc_max
-            call byte_read(buf,nwds)
-            if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
+            call byte_read(buf,nwds,ierr)
+            if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+            if(ierr.ne.0) call exitti('Error reading byte bcs $',ierr)
             call buf_to_bc(cbc,bc,buf)
          enddo
 
@@ -3193,7 +3204,10 @@ c-----------------------------------------------------------------------
 
       nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
 
-      if (ifbswap) call byte_reverse(buf,nwds)
+      ierr = 0
+      if (ifbswap) call byte_reverse(buf,nwds,ierr)
+      if (ierr.ne.0) call exitti
+     $   ('Error byte_reverse in buf_to_xyz$',ierr)
 
       igroup = buf(0)
 
@@ -3243,15 +3257,22 @@ c-----------------------------------------------------------------------
       len = len + 3
       call chcopy (fname,nam1,len)
 
-      call byte_open(fname)
-      call byte_read(hdr,20)
+      ierr=0
+      call byte_open(fname,ierr)
+      if(ierr.ne.0) call exitti
+     $  ('Error opening file in open_bin_file. $',ierr)
+      call byte_read(hdr,20,ierr)
+      if(ierr.ne.0) call exitti
+     $  ('Error reading header in open_bin_file. $',ierr)
 c      write(6,80) hdr
 c   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
     1 format(a5,i9,i3,i9)
 
-      call byte_read(test,1)
+      call byte_read(test,1,ierr)
+      if(ierr.ne.0) call exitti
+     $  ('Error reading test number in open_bin_file. $',ierr)
       ifbswap = if_byte_swap_test(test)
 
       return
@@ -3268,9 +3289,12 @@ c
       etest        = abs(test_pattern-bytetest)
       if_byte_swap_test = .true.
       if (etest.le.eps) if_byte_swap_test = .false.
-c
+
+      ierr  = 0
       test2 = bytetest
-      call byte_reverse(test2,1)
+      call byte_reverse(test2,1,ierr)
+      if(ierr.ne.0) call exitti
+     $  ('Error with byte_reverse in if_byte_swap_test. $',ierr)
 c     write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
 
       return
@@ -3856,8 +3880,8 @@ c
      $               , ev(mm*mm),d(mm),u(mm)
       common /arrayi2/ jdual(32*lelm) , vdual(32*lelm)
      $               , idual(lelm)
-      common /arrayi3/ iv2c (lpts) , jv2c (2*lpts)
-      common /arrayi4/ wk(lpts+2*lelm)
+      common /arrayi3/ wk(lpts+2*lelm)
+      common /arrayi/ iv2c(lpts) , jv2c(2*lpts)
       integer idual,jdual,vdual,wk, iv2c,jv2c
       integer list(lpts)
       equivalence (jv2c,list)

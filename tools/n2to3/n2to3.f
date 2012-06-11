@@ -571,7 +571,7 @@ c     Curved sides!
       call re2_curve(ifcirc)
 
 c     Boundary conditions!
-      read (10,80) string    ! ASCII boundary string
+      read (10,80) string    ! ***** BOUNDARY CONDITIONS *****
 
       if (.not.ifflow) then
          read (10,80) string ! ASCII boundary string
@@ -615,9 +615,9 @@ c-----------------------------------------------------------------------
       
 
 c     Read bc from .rea
-      nb = 0
       do ibc=1,nbc
          read (10,80) string ! ASCII boundary string
+         nb = 0
          do e = 1,nel
             if (nel.lt.1000) then
                do  k = 1,4
@@ -645,7 +645,7 @@ c     Read bc from .rea
          nb = nb*nlev
          if(cb5.ne.'E  ') nb = nb+nel
          if(cb6.ne.'E  ') nb = nb+nel
-         write(6,*) nb
+         
          call byte_write(nb,1)
 
          do e = 1,nel
@@ -672,7 +672,6 @@ c           Set bc and cbc
                   call rzero(bc(1,6,e),5)
                endif
             endif
-            
             
             do k=1,6
             if(cbc(k,e).ne.'E  ') then

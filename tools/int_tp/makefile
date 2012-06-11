@@ -15,7 +15,7 @@ clean:
 	'rm' *.o
 
 int_tp.o  	: int_tp.f	        ; $(F77) -c $(FLAGS)  int_tp.f 
-byte.o          : ../../nek/byte.c      ; $(CC)  -c $(CFLAGS) ../../nek/byte.c
+byte.o          : byte.c                ; $(CC)  -c $(CFLAGS) byte.c
 speclib.o  	: ../../nek/speclib.f	; $(F77) -c $(FLAGS)  ../../nek/speclib.f 
 mxm44f2.o  	: mxm44f2.f	        ; $(F77) -c $(FLAGS)  mxm44f2.f 
 int_tp_gbox.o   : int_tp_gbox.f	        ; $(F77) -c $(FLAGS)  int_tp_gbox.f 

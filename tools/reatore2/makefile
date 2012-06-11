@@ -20,5 +20,5 @@ clean:
 
 reatore2.o  	: reatore2.f		 ; $(F77) -c $(FLAGS)  reatore2.f 
 re2torea.o  	: re2torea.f	 	 ; $(F77) -c $(FLAGS)  re2torea.f 
-strings.o  	   : strings.f			 ; $(F77) -c $(FLAGS)  strings.f 
-byte.o		   : ../../nek/byte.c  ; $(CC)  -c $(CFLAGS) ../../nek/byte.c
+strings.o  	: strings.f		 ; $(F77) -c $(FLAGS)  strings.f 
+byte.o		: byte.c     		 ; $(CC)  -c $(CFLAGS) byte.c

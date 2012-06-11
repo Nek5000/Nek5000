@@ -134,29 +134,85 @@ C       Read in Parameters
      $       call chcopy(cparam(ip),s40,40)
  1052   CONTINUE
  1053   format(19x,a40)
-C
+ 
         NPARAM=MAX(NPARAM,NPARMO)
         NPSCAL=PARAM(23)
         READ(9,*,ERR=59)
         READ(9,*,ERR=59) (PCOND (I),I=3,11)
         READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
 C       IFFLOW,IFHEAT,IFTRAN,IFNAV
+        ifflow    = .false.
+        ifheat    = .false.
+        iftran    = .false.
+        ifaxis    = .false.
+        ifstrs    = .false.
+        ifsplit   = .false.
+        ifmgrid   = .false.
+        ifmodel   = .false.
+        ifkeps    = .false.
+        ifmvbd    = .false.
+        ifchar    = .false.
+        ifadvc(1) = .false.
+        iftmsh(1) = .false.
         READ(9,*,ERR=59)NLOGIC
-        READ(9,*,ERR=59)IFFLOW
-        READ(9,*,ERR=59)IFHEAT
-        READ(9,*,ERR=59)IFTRAN
+        DO IL = 1,NLOGIC
+           call blank(s40,40)
+           READ(9,'(a40)',ERR=59) s40
+           if(indx1(s40,'IFFLOW',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then 
+                  ifflow = .true.
+           elseif(indx1(s40,'IFHEAT',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifheat = .true.
+           elseif(indx1(s40,'IFTRAN',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  iftran = .true.
+           elseif(indx1(s40,'IFADVC',6).ne.0) then
+                  read(s40,*) (IFADVC(I),I=1,NPSCAL+2)
+           elseif(indx1(s40,'IFTMSH',6).ne.0) then
+                  IF(VNEKOLD.LT.2.6)READ(s40,*)(IFTMSH(I),I=1,NPSCAL+2)
+                  IF(VNEKOLD.GE.2.6)READ(s40,*)(IFTMSH(I),I=0,NPSCAL+2)
+           elseif(indx1(s40,'IFAXIS',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifaxis = .true.
+           elseif(indx1(s40,'IFSTRS',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifstrs = .true.
+           elseif(indx1(s40,'IFSPLIT',7).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifsplit = .true.
+           elseif(indx1(s40,'IFMGRID',7).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifmgrid = .true.
+           elseif(indx1(s40,'IFMODEL',7).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0)        then
+                  ifmodel = .true.
+           elseif(indx1(s40,'IFKEPS',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0) then
+                  ifkeps = .true.
+           elseif(indx1(s40,'IFMVBD',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0) then
+                  ifmvbd = .true.
+           elseif(indx1(s40,'IFCHAR',6).ne.0.and.
+     &        indx1(s40,' T ',3).ne.0) then 
+                  ifchar = .true.
+           endif
+        ENDDO
+c       READ(9,*,ERR=59)IFFLOW
+c       READ(9,*,ERR=59)IFHEAT
+c       READ(9,*,ERR=59)IFTRAN
 C       IFADVC(1)=IFNAV
-        READ(9,*,ERR=59)(IFADVC(I),I=1,NPSCAL+2)
-        IF(VNEKOLD.LT.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=1,NPSCAL+2)
-        IF(VNEKOLD.GE.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=0,NPSCAL+2)
-        IF(NLOGIC.GE.6)READ(9,*,ERR=59)IFAXIS
-        IF(NLOGIC.GE.7)READ(9,*,ERR=59)IFSTRS
-        IF(NLOGIC.GE.8)READ(9,*,ERR=59)IFSPLIT
-        IF(NLOGIC.GE.9)READ(9,*,ERR=59)IFMGRID
-        IF(NLOGIC.GE.10)READ(9,*,ERR=59)IFMODEL
-        IF(NLOGIC.GE.11)READ(9,*,ERR=59)IFKEPS
-        IF(NLOGIC.GE.12)READ(9,*,ERR=59)IFMVBD
-        IF(NLOGIC.GE.13)READ(9,*,ERR=59)IFCHAR
+c       READ(9,*,ERR=59)(IFADVC(I),I=1,NPSCAL+2)
+c       IF(VNEKOLD.LT.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=1,NPSCAL+2)
+c       IF(VNEKOLD.GE.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=0,NPSCAL+2)
+c       IF(NLOGIC.GE.6)READ(9,*,ERR=59)IFAXIS
+c       IF(NLOGIC.GE.7)READ(9,*,ERR=59)IFSTRS
+c       IF(NLOGIC.GE.8)READ(9,*,ERR=59)IFSPLIT
+c       IF(NLOGIC.GE.9)READ(9,*,ERR=59)IFMGRID
+c       IF(NLOGIC.GE.10)READ(9,*,ERR=59)IFMODEL
+c       IF(NLOGIC.GE.11)READ(9,*,ERR=59)IFKEPS
+c       IF(NLOGIC.GE.12)READ(9,*,ERR=59)IFMVBD
+c       IF(NLOGIC.GE.13)READ(9,*,ERR=59)IFCHAR
 C        IF(VNEKOLD.GE.2.4) then
 C           READ(9,*,ERR=59)NTEXTSW
 C           DO 143 I=1,NTEXTSW
