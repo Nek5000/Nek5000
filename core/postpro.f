@@ -1176,6 +1176,7 @@ c     Take care of spherical curved face defn
       end
 c-----------------------------------------------------------------------
       subroutine g2gi(outfld,infld,geofld)
+c     CURRENTLY NOT USED...IF USED, ERROR HANDLING SHOULD BE ADJUSTED
 c
 c     grid-to-grid interpolation
 c     
@@ -1226,9 +1227,12 @@ c
         goto 101
  100    ierr = 1
  101  endif
+      call byte_open_mpi(geofld,igh,ierr)
       call err_chk(ierr,' Cannot open geometry file!$')
-      call byte_open_mpi(geofld,igh)
-      call byte_read_mpi(hdr,iHeaderSize/4,0,igh)
+
+      ierr = 0
+      call byte_read_mpi(hdr,iHeaderSize/4,0,igh,ierr)
+      call err_chk(ierr,' Cannot read geometry file!$')
       call bcast(hdr,iHeaderSize)
       call mfi_parse_hdr(hdr)
       if(indx2(rdcode,10,'X',1).le.0) then
@@ -1265,7 +1269,8 @@ c
       call load_fld(infld)
       call chcopy(rdcode_save,rdcode,10)
       ! create new fld file
-      call byte_open_mpi(outfld,ifh)
+      call byte_open_mpi(outfld,ifh,ierr)
+      call err_chk(ierr,' Cannot open new fld file, g2gi!$')
       if(indx2(rdcode,10,'X',1).le.0) then
         rdcode1(1) = 'X'
         call chcopy(rdcode1(2),rdcode_save,9)
@@ -1274,17 +1279,25 @@ c
      &            ,0,1,(rdcode1(i),i=1,10)
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a)
-      call byte_write_mpi(hdr,iHeaderSize/4,0,ifh)
-      call byte_read_mpi (buf,1,0,igh) ! copy endian flag
-      call byte_write_mpi(buf,1,0,ifh)
+      call byte_write_mpi(hdr,iHeaderSize/4,0,ifh,ierr)
+      if(ierr.ne.0) goto 200
+      call byte_read_mpi (buf,1,0,igh,ierr) ! copy endian flag
+      if(ierr.ne.0) goto 200
+      call byte_write_mpi(buf,1,0,ifh,ierr)
+      if(ierr.ne.0) goto 200
       ncc = nelgrr/lbuf
       if(mod(nelgrr,lbuf).ne.0) ncc = ncc + 1
       do ic = 1,ncc ! copy mapping
          nbuf = lbuf
          if(ic.eq.ncc) nbuf = nelgrr - (ncc-1)*lbuf
-         call byte_read_mpi (buf,nbuf,0,igh)
-         call byte_write_mpi(buf,nbuf,0,ifh)
+         call byte_read_mpi (buf,nbuf,0,igh,ierr)
+         if(ierr.ne.0) goto 200
+         call byte_write_mpi(buf,nbuf,0,ifh,ierr)
+         if(ierr.ne.0) goto 200
       enddo
+
+ 200  continue
+      call err_chk(ierr,'Error with mpi byte_read/write in g2gi.$')
 
       ! pack working array
       ntot = nx1*ny1*nz1*nelt
@@ -1330,12 +1343,17 @@ c
          ioff = ioff0 + ndim*nxyzr*nelrr_b*wds
          ioff = ioff + (ic-1)*ndim*nxyzr*nec*wds
          call byte_set_view(ioff,igh)
-         call byte_read_mpi(buf,ndim*nxyzr*necrw,-1,igh)
+         call byte_read_mpi(buf,ndim*nxyzr*necrw,-1,igh,ierr)
+         if(ierr.ne.0) goto 300
          call g2gi_buf2v(pts,buf,ndim,necrw,nxyzr)
 
          ! write coord.
          call byte_set_view(ioff,ifh)
-         call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)
+         call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh,ierr)
+         if(ierr.ne.0) goto 300
+
+ 300     continue
+         call err_chk(ierr,'Error read/write coord. in g2gi.$')
 
          ! interpolate fields
          npts = necrw*nxyzr
@@ -1352,7 +1370,8 @@ c
            ioff = ioff0 + ni*ifldoff + ndim*nxyzr*nelrr_b*wds
            ioff = ioff + (ic-1)*ndim*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh)
+           call byte_write_mpi(buf,ndim*nxyzr*necrw,-1,ifh,ierr)
+           if(ierr.ne.0) goto 400
            ni = ni + ndim
          endif
          if(ifgetpr) then ! pressure
@@ -1361,7 +1380,8 @@ c
            ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
            ioff = ioff + (ic-1)*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh,ierr)
+           if(ierr.ne.0) goto 400
            ni = ni + 1
          endif
          if(ifgettr) then ! temperature
@@ -1370,7 +1390,8 @@ c
            ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
            ioff = ioff + (ic-1)*nxyzr*nec*wds
            call byte_set_view(ioff,ifh)
-           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
+           call byte_write_mpi(buf,nxyzr*necrw,-1,ifh,ierr)
+           if(ierr.ne.0) goto 400
            ni = ni + 1
          endif
          do i = 1,ldimt-1
@@ -1380,13 +1401,17 @@ c
              ioff = ioff0 + ni*ifldoff + nxyzr*nelrr_b*wds
              ioff = ioff + (ic-1)*nxyzr*nec*wds
              call byte_set_view(ioff,ifh)
-             call byte_write_mpi(buf,nxyzr*necrw,-1,ifh)
+             call byte_write_mpi(buf,nxyzr*necrw,-1,ifh,ierr)
+             if(ierr.ne.0) goto 400
              ni = ni + 1
            endif
          enddo
       enddo
-      call byte_close(igh)
-      call byte_close(ifh)
+ 400  continue
+      call err_chk(ierr,'Error writing fields in g2gi. $')
+      call byte_close(igh,ierr)
+      call byte_close(ifh,ierr)
+      call err_chk(ierr,'Error closing files in g2gi. $')
 
       etime_t = dnekclock_sync() - etime_t
       if(nid.eq.0) write(6,'(A,2(1g8.2),A)')

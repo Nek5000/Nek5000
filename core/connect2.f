@@ -2153,16 +2153,19 @@ c
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
+      call nekgsync
+      ierr=0
       if(nid.eq.0) then
-        call byte_close()
+        call byte_close(ierr)
         write(6,*) 'done :: read .re2 file'
         write(6,*) ' '
       endif
+      call err_chk(ierr,'Error closing re2 file. Abort $')
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine buf_to_xyz(buf,e,ifbswap)    ! version 1 of binary reader
+      subroutine buf_to_xyz(buf,e,ifbswap,ierr)! version 1 of binary reader
 
       include 'SIZE'
       include 'TOTAL'
@@ -2172,7 +2175,8 @@ c-----------------------------------------------------------------------
 
       nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
 
-      if (ifbswap) call byte_reverse(buf,nwds)
+      if (ifbswap.and.ierr.eq.0) call byte_reverse(buf,nwds,ierr)
+      if(ierr.ne.0) return
 
 
       igroup(e) = buf(0)
@@ -2257,6 +2261,9 @@ c-----------------------------------------------------------------------
       enddo
    10 continue
 
+      ierr  = 0
+      ierr2 = 0
+      len1  = 4
       do eg=1,nelgt             ! sync NOT needed here
 
          mid = gllnid(eg)
@@ -2266,24 +2273,33 @@ c-----------------------------------------------------------------------
 #endif
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 
-            call byte_read  (buf,nwds)
-            call csend      (eg,buf,len,mid,0)
+            if(ierr.eq.0) then
+              call byte_read  (buf,nwds,ierr)
+              call csend(eg,ierr,len1,mid,0)
+              if(ierr.eq.0) call csend(eg,buf,len,mid,0)
+            else
+              call csend(eg,ierr,len1,mid,0)
+            endif
 
          elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
 
-            call crecv      (eg,buf,len)
-            call buf_to_xyz (buf,e,ifbswap)
-
+            call crecv      (eg,ierr,len1)
+            if(ierr.eq.0) then
+              call crecv      (eg,buf,len)
+              call buf_to_xyz (buf,e,ifbswap,ierr2)
+            endif
+ 
          elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
 
-            call byte_read  (buf,nwds)
-            call buf_to_xyz (buf,e,ifbswap)
-
+            if(ierr.eq.0) then
+              call byte_read  (buf,nwds,ierr)
+              call buf_to_xyz (buf,e,ifbswap,ierr2)
+            endif
          endif
 
       enddo
-
-      call nekgsync()
+      ierr = ierr + ierr2
+      call err_chk(ierr,'Error reading .re2 mesh. Abort. $')
 
       return
       end
@@ -2306,23 +2322,33 @@ c-----------------------------------------------------------------------
 
       call nekgsync()
 
+      ierr = 0
+      len1 = 4
       if (nid.eq.0) then  ! read & send/process
 
-         call byte_read(ncurve,1)
-         if (ifbswap) call byte_reverse(ncurve,1)
+         call byte_read(ncurve,1,ierr)
+         if (ifbswap) call byte_reverse(ncurve,1,ierr)
 
          do k=1,ncurve
-            call byte_read(buf,nwds)
-            if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
-            eg  = buf(1)
-            mid = gllnid(eg)
-            if (mid.eq.0) then
-               call buf_to_curve(buf)
-            else
-               call csend(mid,buf,len,mid,0)
-            endif
+           if(ierr.eq.0) then
+              call byte_read(buf,nwds,ierr)
+              if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+              eg  = buf(1)
+              mid = gllnid(eg)
+              if (mid.eq.0.and.ierr.eq.0) then
+                 call buf_to_curve(buf)
+              else
+                 if(ierr.eq.0) then
+                    call csend(mid,buf,len,mid,0)
+                 else
+                    goto 98
+                 endif
+              endif
+           else
+              goto 98
+           endif
          enddo
-         call buf_close_out  ! notify all procs: no more data
+  98     call buf_close_out  ! notify all procs: no more data
 
       else               ! wait for data from node 0
 
@@ -2330,7 +2356,6 @@ c-----------------------------------------------------------------------
          do k=1,ncurve_mx+1   ! +1 to make certain we receive the close-out
 
             call crecv(nid,buf,len)
-
             if (buf(1).eq.0) then
                goto 99
             else
@@ -2341,8 +2366,8 @@ c-----------------------------------------------------------------------
    99    call buf_close_out
 
       endif
+      call err_chk(ierr,'Error reading .re2 curved data. Abort.$')
 
-      call nekgsync()
 
       return
       end
@@ -2373,33 +2398,43 @@ c-----------------------------------------------------------------------
       enddo
 
       call nekgsync()
-
+      ierr=0
+      len1=4
       if (nid.eq.0) then  ! read & send/process
 
-         call byte_read(nbc_max,1)
-         if (ifbswap) call byte_reverse(nbc_max,1) ! last is char
+         call byte_read(nbc_max,1,ierr)
+         if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
+
          do k=1,nbc_max
 
-c           write(6,*) k,' dobc1 ',nbc_max
-            call byte_read(buf,nwds)
-            if (ifbswap) call byte_reverse(buf,nwds-1) ! last is char
+c          write(6,*) k,' dobc1 ',nbc_max
+           if(ierr.eq.0) then
+             call byte_read(buf,nwds,ierr)
+             if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
 
-            eg  = buf(1)
-            mid = gllnid(eg)
-c           write(6,*) k,' dobc3 ',eg,mid
+             eg  = buf(1)
+             mid = gllnid(eg)
+c            write(6,*) k,' dobc3 ',eg,mid
 
-            if (mid.eq.0) then
-               call buf_to_bc(cbl,bl,buf)
-            else
-c              write(6,*) mid,' sendbc1 ',eg
-               call csend(mid,buf,len,mid,0)
-c              write(6,*) mid,' sendbc2 ',eg
-            endif
+             if (mid.eq.0.and.ierr.eq.0) then
+                call buf_to_bc(cbl,bl,buf)
+             else
+c               write(6,*) mid,' sendbc1 ',eg
+                if(ierr.eq.0) then
+                   call csend(mid,buf,len,mid,0)
+                else
+                   goto 98
+                endif
+c               write(6,*) mid,' sendbc2 ',eg
+             endif
 
-c           write(6,*) k,' dobc2 ',nbc_max,eg
+c            write(6,*) k,' dobc2 ',nbc_max,eg
+           else
+             goto 98
+           endif
          enddo
 c        write(6,*) mid,' bclose ',eg,nbc_max
-         call buf_close_outv ! notify all procs: no more data
+  98     call buf_close_outv ! notify all procs: no more data
 
       else               ! wait for data from node 0
 
@@ -2411,9 +2446,9 @@ c           write(6,*) nid,' recvbc1',k
 c           write(6,*) nid,' recvbc2',k,buf(1)
 
             if (buf(1).eq.0) then
-               goto 99
+                goto 99
             else
-               call buf_to_bc(cbl,bl,buf)
+                call buf_to_bc(cbl,bl,buf)
             endif
             
          enddo
@@ -2421,7 +2456,7 @@ c           write(6,*) nid,' recvbc2',k,buf(1)
 
       endif
 
-      call nekgsync()
+      call err_chk(ierr,'Error reading boundary data for re2. Abort.$')
 
       return
       end
@@ -2479,21 +2514,28 @@ c-----------------------------------------------------------------------
 
       if(nid.eq.0) write(6,*) 'read .re2 file'
 
+      ierr=0
       if (nid.eq.0) then
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
    
-         call byte_open(fname)
-         call byte_read(hdr,20)
+         call byte_open(fname,ierr)
+         if(ierr.ne.0) goto 100
+         call byte_read(hdr,20,ierr)
+         if(ierr.ne.0) goto 100
 
          read (hdr,1) version,nelgt,ndum,nelgv
     1    format(a5,i9,i3,i9)
 
-         call byte_read(test,1)
-         ifbswap = if_byte_swap_test(test)
+         call byte_read(test,1,ierr)
+         if(ierr.ne.0) goto 100
+         ifbswap = if_byte_swap_test(test,ierr)
+         if(ierr.ne.0) goto 100
 
       endif
+ 
+ 100  call err_chk(ierr,'Error opening or reading .re2 header. Abort.$')
 
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)

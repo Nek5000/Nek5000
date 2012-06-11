@@ -319,6 +319,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       iprefix = i_find_prefix(prefix,99)
 
+      ierr = 0
       if (nid.eq.0) then
 
 c       Open new file for each dump on /cfs
@@ -336,12 +337,14 @@ c       Open new file for each dump on /cfs
            call  izero    (fldfilei,33)
            len = ltrunc   (fldfle,131)
            call chcopy    (fldfile2,fldfle,len)
-           call byte_open (fldfile2)
+           call byte_open (fldfile2,ierr)
 c          write header as character string
            call blank(fhdfle,132)
         endif
       endif
       call bcast(ifxyo,lsize)
+      if(p66.ge.1.0)
+     $   call err_chk(ierr,'Error opening file in outfld. Abort. $')
 
 C     Figure out what goes in EXCODE
       CALL BLANK(EXCODE,30)
@@ -413,14 +416,17 @@ C     Figure out what goes in EXCODE
          ENDIF
       endif
      
-c
+
 C     Dump header
-      if (nid.eq.0) call dump_header(excode,p66)
-c
+      ierr = 0
+      if (nid.eq.0) call dump_header(excode,p66,ierr)
+      call err_chk(ierr,'Error dumping header in outfld. Abort. $')
+
       call get_id(id)
 
       nxyz  = nx1*ny1*nz1
 
+      ierr = 0
       do ieg=1,nelgt
 
          jnid = gllnid(ieg)
@@ -436,7 +442,7 @@ c
                call csend (mtype,dum1,wdsize,jnid,nullpid)
                call crecv (mtype,tdump,len)
             endif
-            call out_tmp(id,p66)
+            if(ierr.eq.0) call out_tmp(id,p66,ierr)
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
@@ -447,12 +453,12 @@ c
             call csend (mtype,tdump,len,node0,nullpid)
          endif
       enddo
-
-      if (nid.eq.0) call close_fld(p66)
+      call err_chk(ierr,'Error writing file in outfld. Abort. $')
 
       ifxyo = ifxyo_s           ! restore ifxyo
 
-      call nekgsync                ! avoid race condition w/ outfld
+      if (nid.eq.0) call close_fld(p66,ierr)
+      call err_chk(ierr,'Error closing file in outfld. Abort. $')
 
       return
       end
@@ -1139,25 +1145,25 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine dump_header(excodein,p66)
-c
+      subroutine dump_header(excodein,p66,ierr)
+
       include 'SIZE'
       include 'TOTAL'
 
       character*30  excodein
-c
+
       character*30 excode
       character*1  excode1(30)
       equivalence (excode,excode1) 
-c
+
       real*4         test_pattern
-c
+
       character*1 fhdfle1(132)
       character*132 fhdfle
       equivalence (fhdfle,fhdfle1)
 
       write(excode,'(A30)') excodein
-c
+
       ikstep = istep
       do ik=1,10
          if (ikstep.gt.9999) ikstep = ikstep/10
@@ -1182,7 +1188,7 @@ c
                write(fhdfle,'(i10,3i4,1P1e18.9,i9,1x,30a1)')
      $         nelgt,nx1,ny1,nz1,time,istep,(excode1(i),i=1,30)
             endif
-            call byte_write(fhdfle,20)
+            call byte_write(fhdfle,20,ierr)
          endif
       else                        !       new header format
          if (p66.eq.0.1) then
@@ -1191,10 +1197,12 @@ c
         else       
              write(fhdfle,111)
      $            nelgt,nx1,ny1,nz1,time,istep,excode
-             call byte_write(fhdfle,20)
+             call byte_write(fhdfle,20,ierr)
         endif
  111    FORMAT(i10,1x,i2,1x,i2,1x,i2,1x,1P1e18.9,1x,i9,1x,a)
       endif
+
+      if(ierr.ne.0) return
 
       CDRROR=0.0
       if (p66.LT.1.0) then       !       formatted i/o
@@ -1202,9 +1210,9 @@ c
       else
 C       write byte-ordering test pattern to byte file...
         test_pattern = 6.54321
-        call byte_write(test_pattern,1)
+        call byte_write(test_pattern,1,ierr)
       endif
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1299,7 +1307,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine close_fld(p66)
+      subroutine close_fld(p66,ierr)
 
       include 'SIZE'
       include 'TOTAL'
@@ -1308,14 +1316,14 @@ c-----------------------------------------------------------------------
          if (p66.lt.1) then
             close(unit=24)
          else
-            call byte_close()
+            call byte_close(ierr)
          endif
       endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_tmp(id,p66)
+      subroutine out_tmp(id,p66,ierr)
 
       include 'SIZE'
       include 'TOTAL'
@@ -1344,12 +1352,14 @@ C       formatted i/o
         WRITE(24,FRMAT)
      $      ((TDUMP(I,II),II=1,ID),I=1,NXYZ)
       else
-c        C binary i/o
+C        C binary i/o
          do ii=1,id
-            call byte_write(tdump(1,ii),nxyz)
+            call byte_write(tdump(1,ii),nxyz,ierr)
+            if(ierr.ne.0) goto 101
          enddo
       endif
-c
+ 101  continue
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1389,9 +1399,11 @@ c-----------------------------------------------------------------------
       endif
       offs0 = iHeaderSize + 4 + isize*nelgt
 
+      ierr=0
       if (nid.eq.pid0) then
-         call mfo_open_files(prefix)         ! open files on i/o nodes
+         call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
       endif
+      call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_
       call mfo_write_hdr                     ! create element mapping +
@@ -1507,12 +1519,15 @@ c     call exitti('this is wdsizo A:$',wdsizo)
          dnbyte = dnbyte + 2.*ioflds*nout*wdsizo
       endif
 
+      ierr = 0
       if (nid.eq.pid0) 
 #ifdef MPIIO
-     &   call byte_close_mpi(ifh_mbyte)
+     &   call byte_close_mpi(ifh_mbyte,ierr)
 #else
-     &   call byte_close()
+     &   call byte_close(ierr)
 #endif
+      call err_chk(ierr,'Error closing file in mfo_outfld. Abort. $')
+
       tio = dnekclock_sync()-tiostart
       dnbyte = glsum(dnbyte,1)
       dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
@@ -1591,7 +1606,7 @@ c#endif
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfo_open_files(prefix) ! open files
+      subroutine mfo_open_files(prefix,ierr) ! open files
 
       include 'SIZE'
       include 'INPUT'
@@ -1679,7 +1694,7 @@ c     if (nfld.eq.1) ifxyo_ = .true.
       call chcopy(fnam1(k),str,5)
       k = k + 5
 
-      call mbyte_open(fname,fid0)                       !  Open blah000.fnnnn
+      call mbyte_open(fname,fid0,ierr)                  !  Open blah000.fnnnn
 c      write(6,*) nid,fid0,' FILE:',fname
  
       return
@@ -1974,7 +1989,6 @@ c restore solution data
       return
       end
 c-----------------------------------------------------------------------
-
       subroutine mfo_mdatav(u,v,w,nel)
 
       include 'SIZE'
@@ -1994,7 +2008,7 @@ c-----------------------------------------------------------------------
       n    = 2*ndim
       len  = 4 + 4*(n*lelt)   ! recv buffer size
       leo  = 4 + 4*(n*nelt) 
-
+      ierr = 0
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -2014,10 +2028,11 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
+         if(ierr.eq.0) 
 #ifdef MPIIO
-         call byte_write_mpi(buffer,nout,-1,ifh_mbyte)
+     &    call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
 #else
-         call byte_write(buffer,nout)
+     &    call byte_write(buffer,nout,ierr)
 #endif
 
          ! write out the data of my childs
@@ -2028,10 +2043,11 @@ c-----------------------------------------------------------------------
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
             nout  = n*inelp
+            if(ierr.eq.0) 
 #ifdef MPIIO
-            call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte)
+     &       call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
 #else
-            call byte_write(buffer(2),nout)
+     &       call byte_write(buffer(2),nout,ierr)
 #endif
          enddo
       else
@@ -2057,10 +2073,11 @@ c-----------------------------------------------------------------------
          call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
       endif
 
+      call err_chk(ierr,'Error writing data to .f00 in mfo_mdatav. $')
+
       return
       end
 c-----------------------------------------------------------------------
-
       subroutine mfo_mdatas(u,nel)
 
       include 'SIZE'
@@ -2080,7 +2097,7 @@ c-----------------------------------------------------------------------
       n    = 2
       len  = 4 + 4*(n*lelt)    ! recv buffer size
       leo  = 4 + 4*(n*nelt)
-
+      ierr = 0
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
@@ -2093,10 +2110,11 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
+         if(ierr.eq.0) 
 #ifdef MPIIO
-         call byte_write_mpi(buffer,nout,-1,ifh_mbyte)
+     &     call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
 #else
-         call byte_write(buffer,nout)
+     &     call byte_write(buffer,nout,ierr)
 #endif
          ! write out the data of my childs
          idum  = 1
@@ -2106,10 +2124,11 @@ c-----------------------------------------------------------------------
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
             nout  = n*inelp
+            if(ierr.eq.0) 
 #ifdef MPIIO
-            call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte)
+     &        call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
 #else
-            call byte_write(buffer(2),nout)
+     &        call byte_write(buffer(2),nout,ierr)
 #endif
          enddo
       else
@@ -2127,6 +2146,8 @@ c-----------------------------------------------------------------------
          call crecv(mtype,idum,4)                ! hand-shake
          call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
       endif
+
+      call err_chk(ierr,'Error writing data to .f00 in mfo_mdatas. $')
 
       return
       end
@@ -2159,6 +2180,7 @@ c-----------------------------------------------------------------------
       ntot = nxyz*nel
 
       idum = 1
+      ierr = 0
 
       if (nid.eq.pid0) then
 
@@ -2168,10 +2190,11 @@ c-----------------------------------------------------------------------
              call copy   (u8,u,ntot)
          endif
          nout = wdsizo/4 * ntot
+         if(ierr.eq.0) 
 #ifdef MPIIO
-         call byte_write_mpi(u4,nout,-1,ifh_mbyte)
+     &     call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
 #else
-         call byte_write(u4,nout)          ! u4 :=: u8
+     &     call byte_write(u4,nout,ierr)          ! u4 :=: u8
 #endif
 
          ! write out the data of my childs
@@ -2181,17 +2204,17 @@ c-----------------------------------------------------------------------
             call csend(mtype,idum,4,k,0)       ! handshake
             call crecv(mtype,u4,len)
             nout  = wdsizo/4 * nxyz * u8(1)
-            if (wdsizo.eq.4) then
+            if (wdsizo.eq.4.and.ierr.eq.0) then
 #ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte)
+               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
 #else
-               call byte_write(u4(3),nout)
+               call byte_write(u4(3),nout,ierr)
 #endif
-            else
+            elseif(ierr.eq.0) then
 #ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte)
+               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
 #else
-               call byte_write(u8(2),nout)
+               call byte_write(u8(2),nout,ierr)
 #endif
             endif
          enddo
@@ -2211,6 +2234,7 @@ c-----------------------------------------------------------------------
 
       endif
 
+      call err_chk(ierr,'Error writing data to .f00 in mfo_outs. $')
 
       return
       end
@@ -2242,6 +2266,7 @@ c-----------------------------------------------------------------------
       len  = 8 + 8*(lelt*nxyz*ndim)   ! recv buffer size (u4)
       leo  = 8 + wdsizo*(nel*nxyz*ndim)
       idum = 1
+      ierr = 0
 
       if (nid.eq.pid0) then
          j = 0 
@@ -2269,10 +2294,11 @@ c-----------------------------------------------------------------------
              enddo
          endif
          nout = wdsizo/4 * ndim*nel * nxyz
+         if(ierr.eq.0) 
 #ifdef MPIIO
-         call byte_write_mpi(u4,nout,-1,ifh_mbyte)
+     &     call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
 #else
-         call byte_write(u4,nout)          ! u4 :=: u8
+     &     call byte_write(u4,nout,ierr)          ! u4 :=: u8
 #endif
          ! write out the data of my childs
          do k=pid0+1,pid1
@@ -2281,17 +2307,17 @@ c-----------------------------------------------------------------------
             call crecv(mtype,u4,len)
             nout  = wdsizo/4 * ndim*nxyz * u8(1)
 
-            if (wdsizo.eq.4) then
+            if (wdsizo.eq.4.and.ierr.eq.0) then
 #ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte)
+               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
 #else
-               call byte_write(u4(3),nout)
+               call byte_write(u4(3),nout,ierr)
 #endif
-            else
+            elseif(ierr.eq.0) then
 #ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte)
+               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
 #else
-               call byte_write(u8(2),nout)
+               call byte_write(u8(2),nout,ierr)
 #endif
             endif
          enddo
@@ -2330,6 +2356,7 @@ c-----------------------------------------------------------------------
 
       endif
 
+      call err_chk(ierr,'Error writing data to .f00 in mfo_outv. $')
       return
       end
 c-----------------------------------------------------------------------
@@ -2369,6 +2396,7 @@ c-----------------------------------------------------------------------
       endif 
 #endif
 
+      ierr = 0
       if(nid.eq.pid0) then
 
       call blank(hdr,132)              ! write header
@@ -2417,34 +2445,38 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
 #ifdef MPIIO
       ! only rank0 (pid00) will write hdr + test_pattern
-      call byte_write_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte)
-      call byte_write_mpi(test_pattern,1,pid00,ifh_mbyte)
+      call byte_write_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
+      call byte_write_mpi(test_pattern,1,pid00,ifh_mbyte,ierr)
 #else
-      call byte_write(hdr,iHeaderSize/4)
-      call byte_write(test_pattern,1)
+      call byte_write(hdr,iHeaderSize/4,ierr)
+      call byte_write(test_pattern,1,ierr)
 #endif
 
       endif
+
+      call err_chk(ierr,'Error writing header in mfo_write_hdr. $')
 
       ! write global element numbering for this group
       if(nid.eq.pid0) then
 #ifdef MPIIO
       ioff = iHeaderSize + 4 + nelB*isize
       call byte_set_view (ioff,ifh_mbyte)
-      call byte_write_mpi(lglel,nelt,-1,ifh_mbyte)
+      call byte_write_mpi(lglel,nelt,-1,ifh_mbyte,ierr)
 #else
-      call byte_write(lglel,nelt)
+      call byte_write(lglel,nelt,ierr)
 #endif
         do j = pid0+1,pid1
            mtype = j
            call csend(mtype,idum,4,j,0)   ! handshake
            len = 4*(lelt+1)
            call crecv(mtype,lglist,len)
+           if(ierr.eq.0) then
 #ifdef MPIIO
-      call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte)
+      call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte,ierr)
 #else
-      call byte_write(lglist(1),lglist(0))
+      call byte_write(lglist(1),lglist(0),ierr)
 #endif
+           endif
         enddo
       else
         mtype = nid
@@ -2457,6 +2489,7 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
         call csend(mtype,lglist,len,pid0,0)  
       endif 
 
+      call err_chk(ierr,'Error writing global nums in mfo_write_hdr$')
       return
       end
 c-----------------------------------------------------------------------

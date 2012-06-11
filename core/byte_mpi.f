@@ -8,7 +8,7 @@
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_open_mpi(fname,mpi_fh)
+      subroutine byte_open_mpi(fname,mpi_fh,ierr)
 
       include 'SIZE'
       include 'RESTART'
@@ -25,17 +25,19 @@ c        write(*,*) nid, 'call MPI_file_open',fname
      &                     MPI_INFO_NULL,mpi_fh,ierr)
         if(ierr.ne.0) then
           write(6,*) 'ABORT: Error in byte_open_mpi ', ierr
-          call exitt
+          return
         endif
       endif
 #else
       write(6,*) 'byte_open_mpi: No MPI-IO support!'
-      call exitt
+      ierr=1
+      return
 #endif
+      ierr=0
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_read_mpi(buf,icount,iorank,mpi_fh)
+      subroutine byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
 
       include 'SIZE'
       include 'RESTART'
@@ -58,18 +60,21 @@ c        write(*,*) 'byte_read_mpi', nid, iout/4
 #endif
         if(ierr.ne.0) then
           write(6,*) 'ABORT: Error in byte_read_mpi ', ierr
-          call exitt
+          return
         endif
       endif
 #else
       write(6,*) 'byte_read_mpi: No MPI-IO support!'
-      call exitt
+      ierr=1
+      return
 #endif
+     
+      ierr=0
 
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_write_mpi(buf,icount,iorank,mpi_fh)
+      subroutine byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
 
       include 'SIZE'
       include 'RESTART'
@@ -92,18 +97,19 @@ c        write(*,*) 'byte_write', nid, iout/4
 #endif
         if(ierr.ne.0) then
           write(6,*) 'ABORT: Error in byte_write_mpi ', ierr
-          call exitt
+          return
         endif
       endif
 #else
       write(6,*) 'byte_write_mpi: No MPI-IO support!'
-      call exitt
+      ierr=1
+      return
 #endif
-
+      ierr=0
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_close_mpi(mpi_fh)
+      subroutine byte_close_mpi(mpi_fh,ierr)
 
       include 'SIZE'
       include 'RESTART'
@@ -113,9 +119,14 @@ C--------------------------------------------------------------------------
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
         call MPI_file_close(mpi_fh,ierr)
       endif
+      if(ierr.ne.0) then
+         write(6,*) 'ABORT: Error in byte_close_mpi ', ierr
+         return
+      endif
 #else
       if(nid.eq.0) write(6,*) 'byte_close_mpi: No MPI-IO support!'
-      call exitt
+      ierr=1
+      return
 #endif
 
       return
