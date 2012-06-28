@@ -538,6 +538,62 @@ C
       end
 c
 c-----------------------------------------------------------------------
+      function facint_a(a,area,f,e)
+c     Integrate areal array a() on face f of element e.  27 June, 2012 pff
+
+c     f  is in the preprocessor notation
+
+      include 'SIZE'
+      include 'TOPOL'
+      real a(lx1,lz1,6,lelt),area(lx1,lz1,6,lelt)
+
+      integer e,f
+
+      sum=0.0
+      do i=1,lx1*lz1
+         sum = sum + a(i,1,f,e)*area(i,1,f,e)
+      enddo
+
+      facint_a = sum
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function facint_v(a,area,f,e)
+c     Integrate volumetric array a() on face f of element e
+
+c        f  is in the preprocessor notation
+c        fd  is the dssum notation.
+c        27 June, 2012            PFF
+
+      include 'SIZE'
+      include 'TOPOL'
+      real a(lx1,ly1,lz1,lelt),area(lx1,lz1,6,lelt)
+
+      integer e,f,fd
+
+      call dsset(nx1,ny1,nz1) ! set counters
+      fd     = eface1(f)
+      js1    = skpdat(1,fd)
+      jf1    = skpdat(2,fd)
+      jskip1 = skpdat(3,fd)
+      js2    = skpdat(4,fd)
+      jf2    = skpdat(5,fd)
+      jskip2 = skpdat(6,fd)
+
+      sum=0.0
+      i = 0
+      do 100 j2=js2,jf2,jskip2
+      do 100 j1=js1,jf1,jskip1
+         i = i+1
+         sum = sum + a(j1,j2,1,e)*area(i,1,f,e)
+  100 continue
+
+      facint_v = sum
+
+      return
+      end
+c-----------------------------------------------------------------------
       function facint(a,b,area,ifc,ie)
 c
 C
