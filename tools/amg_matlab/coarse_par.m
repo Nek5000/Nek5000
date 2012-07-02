@@ -34,5 +34,4 @@ function [C,F]=coarse_par(A,tol)
 	S=S(F,F);
 	D=diag(sparse(1./sqrt(max(abs(S)))));
 	fprintf(1,'connectivity = ');
-	fprintf(1,'%g\n',max(lanczos(sparse(D*S*D))));
 end

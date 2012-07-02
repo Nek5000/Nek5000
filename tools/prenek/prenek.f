@@ -137,9 +137,12 @@ C       Read in Parameters
  
         NPARAM=MAX(NPARAM,NPARMO)
         NPSCAL=PARAM(23)
-        READ(9,*,ERR=59)
-        READ(9,*,ERR=59) (PCOND (I),I=3,11)
-        READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
+
+        READ(9,*,ERR=59) nskip
+        if(nskip.ne.0) then
+          READ(9,*,ERR=59) (PCOND (I),I=3,11)
+          READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
+        enddo
 C       IFFLOW,IFHEAT,IFTRAN,IFNAV
         ifflow    = .false.
         ifheat    = .false.
@@ -158,44 +161,33 @@ C       IFFLOW,IFHEAT,IFTRAN,IFNAV
         DO IL = 1,NLOGIC
            call blank(s40,40)
            READ(9,'(a40)',ERR=59) s40
-           if(indx1(s40,'IFFLOW',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then 
-                  ifflow = .true.
-           elseif(indx1(s40,'IFHEAT',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifheat = .true.
-           elseif(indx1(s40,'IFTRAN',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  iftran = .true.
+           if    (indx1(s40,'IFFLOW',6).ne.0) then
+                   read(s40,*) ifflow
+           elseif(indx1(s40,'IFHEAT',6).ne.0) then
+                   read(s40,*) ifheat
+           elseif(indx1(s40,'IFTRAN',6).ne.0) then
+                   read(s40,*) iftran
            elseif(indx1(s40,'IFADVC',6).ne.0) then
-                  read(s40,*) (IFADVC(I),I=1,NPSCAL+2)
+                   read(s40,*) (IFADVC(I),I=1,NPSCAL+2)
            elseif(indx1(s40,'IFTMSH',6).ne.0) then
-                  IF(VNEKOLD.LT.2.6)READ(s40,*)(IFTMSH(I),I=1,NPSCAL+2)
-                  IF(VNEKOLD.GE.2.6)READ(s40,*)(IFTMSH(I),I=0,NPSCAL+2)
-           elseif(indx1(s40,'IFAXIS',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifaxis = .true.
-           elseif(indx1(s40,'IFSTRS',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifstrs = .true.
-           elseif(indx1(s40,'IFSPLIT',7).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifsplit = .true.
-           elseif(indx1(s40,'IFMGRID',7).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifmgrid = .true.
-           elseif(indx1(s40,'IFMODEL',7).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0)        then
-                  ifmodel = .true.
-           elseif(indx1(s40,'IFKEPS',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0) then
-                  ifkeps = .true.
-           elseif(indx1(s40,'IFMVBD',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0) then
-                  ifmvbd = .true.
-           elseif(indx1(s40,'IFCHAR',6).ne.0.and.
-     &        indx1(s40,' T ',3).ne.0) then 
-                  ifchar = .true.
+                   IF(VNEKOLD.LT.2.6)READ(s40,*)(IFTMSH(I),I=1,NPSCAL+2)
+                   IF(VNEKOLD.GE.2.6)READ(s40,*)(IFTMSH(I),I=0,NPSCAL+2)
+           elseif(indx1(s40,'IFAXIS',6).ne.0) then
+                   read(s40,*) ifaxis
+           elseif(indx1(s40,'IFSTRS',6).ne.0) then
+                   read(s40,*) ifstrs
+           elseif(indx1(s40,'IFSPLIT',7).ne.0)then
+                   read(s40,*) ifsplit
+           elseif(indx1(s40,'IFMGRID',7).ne.0)then
+                   read(s40,*) ifmgrid
+           elseif(indx1(s40,'IFMODEL',7).ne.0)then
+                   read(s40,*) ifmodel
+           elseif(indx1(s40,'IFKEPS',6).ne.0.)then
+                   read(s40,*) ifkeps
+           elseif(indx1(s40,'IFMVBD',6).ne.0) then
+                   read(s40,*) ifmvbd
+           elseif(indx1(s40,'IFCHAR',6).ne.0.)then
+                   read(s40,*) ifchar
            endif
         ENDDO
 c       READ(9,*,ERR=59)IFFLOW
