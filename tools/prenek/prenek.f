@@ -142,7 +142,7 @@ C       Read in Parameters
         if(nskip.ne.0) then
           READ(9,*,ERR=59) (PCOND (I),I=3,11)
           READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
-        enddo
+        endif
 C       IFFLOW,IFHEAT,IFTRAN,IFNAV
         ifflow    = .false.
         ifheat    = .false.
