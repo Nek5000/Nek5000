@@ -261,7 +261,15 @@ c
 
       endif
 
+      if (ifper.and.nlev.lt.3) then
+         write(6,*) 'NOTE: nlev < 3 not allowed with periodic bcs'
+         write(6,*) 'nlev =',nlev
+         write(6,*) 'ABORT'
+         stop
+      endif
+
       write(6,*) 'this is cbz: ',cb5, cb6,' <--- '
+
 
 c   
 c
