@@ -181,6 +181,8 @@ c
 c
       nep = nelbox(ip)
       nes = nelbox(is)
+     
+      if(nelbox(it).eq.0) nelbox(it)=1
       net = nelbox(it)
 c
       nst = nes*net
