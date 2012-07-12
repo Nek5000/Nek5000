@@ -1527,8 +1527,9 @@ C        If no file was found, then look to NEKTON directory
          IF(IERR.NE.0)CALL OPENF(12,'NEKTON:DEFAULTS.NEK','old',3,ierr)
       ELSE
 C        Unix
-         CALL SYSTEM('cp $HOME/.nekdefaults tmp.nekdefaults')
-         CALL OPENF(12,'tmp.nekdefaults','old',3,jerr)
+c        CALL SYSTEM('cp $HOME/.nekdefaults tmp.nekdefaults')
+c        CALL OPENF(12,'tmp.nekdefaults','old',3,jerr)
+         jerr=1  !no nekdefaults file
          CALL SYSTEM('date > tmp.date')
          CALL OPENF(14,'tmp.date','old',3,ierr)
          CALL SYSTEM('pwd > tmp.pwd')
@@ -1601,13 +1602,12 @@ c     WRITE(45,*)' %%CreationDate: 02/02/1988 22:53:04 '
     1 format('  %%Creator: ',80a1)
 
 
-c     len = ltrunc (session_name,80)
-c     call chcopy  (lines,session_name,len)
-      len = ltrunc (fld_name,80)
-      call chcopy  (lines,fld_name,len)
+      len = ltrunc (session_name,80)
+      call chcopy  (lines,session_name,len)
+c     len = ltrunc (fld_name,80)
+c     call chcopy  (lines,fld_name,len)
       write(45,2)  (lines(k),k=1,len)
     2 format('  %%Title: ',80a1)
-
 
       len = ltrunc(date,28)
       call chcopy(lines,date,len)

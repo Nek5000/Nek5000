@@ -62,7 +62,7 @@ C
          ENDIF
  1    CONTINUE
 
-      CALL PUTSOLD('I/O Error: No String Terminator sent to PRS',43)
+c     CALL PUTSOLD('I/O Error: No String Terminator sent to PRS',43)
       write(6,*) 'I/O Error: No String Terminator sent to PRS'
       write(66,*) 'I/O Error: No String Terminator sent to PRS'
 
@@ -72,7 +72,7 @@ C
       WRITE(66,3) (S1(J),J=1,NCHARS)
 
  2    CONTINUE
-      CALL PUTSOLD  (S   ,NCHARS)
+c     CALL PUTSOLD  (S   ,NCHARS)
       CALL CHCOPY(S1,S,NCHARS)
       WRITE(6,3) (S1(J),J=1,NCHARS)
 c

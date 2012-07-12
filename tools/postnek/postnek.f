@@ -30,6 +30,10 @@ c
       character*12 menu_hdr
       common /regularize/ regdir
       character*1  regdir
+
+      integer buf(30)
+      logical ifbswap
+      
 c
 C
       CALL INIT0
@@ -1114,7 +1118,7 @@ c
             call sortit(spec_cont,spec_ind,spec_cont_nlev+1)
             goto 104
   103     continue
-            CALL PRS('Trouble finding/reading from file.')
+            CALL PRS('Trouble finding/reading from file.$')
             if_spec_cont = .false.
   104     continue
           close(unit=67)
@@ -1577,6 +1581,7 @@ c-----------------------------------------------------------------------
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
 c
       REAL PN(NXM)
+      CHARACTER*40 s40
       CHARACTER*12 FSESSION
       CHARACTER*1 SRFQAL(20)
       CHARACTER*30 tfile
@@ -1585,8 +1590,21 @@ c
       CHARACTER*3 chtmp3
       EQUIVALENCE (tfile1,tfile)
       LOGICAL IFFMAT
+
+      integer fnamei(10)
+      character*1 file2(40)
+      EQUIVALENCE (file2,fnamei)
+      
+      integer buf(30)
+      character*80 hdr
+      character*5 ver
+      logical ifbswap
+      real*4 test
+
+
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
-C
+ 
+ 
       XPHY0=0.0
       YPHY0=0.0
       ILGRNG=0
@@ -1714,7 +1732,7 @@ C
 C     Default exists
       READ(4,'(A80)',err=13,end=13) sesion
       CLOSE(UNIT=4)
-      CALL PRS('Enter Session Name (Default= '//sesion//')$')
+      CALL PRS('Enter Session Name --Default= '//sesion//'$')
 C     READ(5,819) line
 C 819 FORMAT(A70)
       CALL RES(line,70)
@@ -1763,7 +1781,7 @@ C     Make small letters in filename
       CALL BLANK(FILENM,40)
       CALL BLANK(session_name,80)
       call chcopy(session_name,sesion,lastch)
-      write(6,*) 'Session name:','"',session_name,'"'
+      write(6,*) 'Session name: ',session_name
 c
       do 9 i=1,lastch
           int=ichar(sesion(i:i))
@@ -1810,30 +1828,56 @@ C     Read in stuff
       READ(9,*,ERR=59) NDIM
       IF(NDIM.EQ.3)IF3D=.TRUE.
       IF(NDIM.EQ.2)IF3D=.FALSE.
-      READ(9,*,ERR=59) NPARAM
+
 C     Read in Parameters
+      READ(9,*,ERR=59) NPARAM
       DO 1051 IP=1,NPARAM
          READ(9,*,ERR=59) PARAM(IP)
 1051  CONTINUE
       param(20) = 5    ! default from .rea file
       NPSCAL=PARAM(23)
+
       READ(9,*,ERR=59)NSKIP
-      READ(9,*,ERR=59) (PCOND (I),I=3,11)
-      READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
-      READ(9,*) NLOGIC
-      READ(9,*,ERR=59)IFFLOW
-      READ(9,*,ERR=59)IFHEAT
-      READ(9,*,ERR=59)IFTRAN
-      READ(9,*,ERR=59)IFNAV
-      READ(9,*,ERR=59)
-      READ(9,*,ERR=59)IFAXIS
- 
+      if(NSKIP.ne.0) then
+        READ(9,*,ERR=59) (PCOND (I),I=3,11)
+        READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
+      endif
+
+C     Read in Logicals
+      ifflow    = .false.
+      ifheat    = .false.
+      iftran    = .false.
+      ifnav     = .false.
+      ifaxis    = .false.
+      READ(9,*,ERR=59) NLOGIC
+      DO I = 1,NLOGIC
+         call blank(s40,40)
+         call capit(s40,40)
+         READ(9,'(a40)',ERR=59) s40
+         if    (indx1(s40,'IFFLOW',6).ne.0) then
+                  read(s40,*) ifflow
+         elseif(indx1(s40,'IFHEAT',6).ne.0) then
+                  read(s40,*) ifheat
+         elseif(indx1(s40,'IFTRAN',6).ne.0) then
+                  read(s40,*) iftran
+         elseif(indx1(s40,'IFADVC',6).ne.0) then
+                  read(s40,*) ifnav 
+         elseif(indx1(s40,'IFAXIS',6).ne.0) then
+                  read(s40,*) ifaxis
+         endif
+      ENDDO
+c     READ(9,*,ERR=59)IFFLOW
+c     READ(9,*,ERR=59)IFHEAT
+c     READ(9,*,ERR=59)IFTRAN
+c     READ(9,*,ERR=59)IFNAV
+c     READ(9,*,ERR=59)
+c     READ(9,*,ERR=59)IFAXIS
 C     Put if statements in case preprocessed version is out of date
-      IF(NLOGIC.GT.6)THEN
-         DO 1053 IL=1,NLOGIC-6
-           READ(9,*,ERR=59)
-1053     CONTINUE
-      ENDIF
+c     IF(NLOGIC.GT.6)THEN
+c        DO 1053 IL=1,NLOGIC-6
+c          READ(9,*,ERR=59)
+c053     CONTINUE
+c     ENDIF
 C
       NFLDS=1
       IF(IFHEAT)NFLDS=2+NPSCAL
@@ -1879,18 +1923,30 @@ C     Read Elemental Mesh data
       READ(9,*,ERR=41,end=41)
 
       read(9,*,err=41,end=41)nelr,ndim
-      nel = nelr
+
       ifsubset = .false.
+      IFFMTIN  = .TRUE.
+      IF (NELR.LT.0) IFFMTIN=.FALSE.
+c     OPEN .re2
+      if (.not.iffmtin) then
+         ilen= ltrunc(filenm,40)
+         call izero(fnamei,10)
+         call chcopy(file2,filenm,ilen)
+
+         call byte_open(file2)
+         call byte_read(hdr,20)
+         read(hdr,*) ver,nelr,ndim
+         call byte_read(test,1)
+         ifbswap = if_byte_swap_test(test)
+      endif
+      nel = nelr
       if (nelr.gt.nelm) then
          call prsii('Num. elems > nelm:$',nelr,nelm)
          ifsubset = .true.
          nel = nelm-1
          call get_subset_list
       endif
-                    IFFMTIN=.TRUE.
-      IF (NEL.LT.0) IFFMTIN=.FALSE.
-      if (.not.iffmtin) 
-     $  open(unit=8,file=filenm,form='unformatted',status='old',err=512)
+
       nelr = abs(nelr)
       IF(NX*NY*NZ*NELr.GE.MAXPTS)THEN
          CALL PRSIS(
@@ -1946,16 +2002,18 @@ c 422       continue
 c           numapt(iel) = 1
 c           letapt(iel) = 'A'
 c 423       continue
-         else
-            READ(8) NUMAPT(IEL)
          endif
          IF(NDIM.EQ.2)THEN
             if (iffmtin) then
                READ(9,*,ERR=43,END=43)(X(IEL,IC),IC=1,4)
                READ(9,*,ERR=43,END=43)(Y(IEL,IC),IC=1,4)
             else
-               READ(8,ERR=43,END=43)(X(IEL,IC),IC=1,4)
-               READ(8,ERR=43,END=43)(Y(IEL,IC),IC=1,4)
+               nwds =  1 + ndim*(2**ndim)
+               call byte_read(buf,nwds)
+               if (ifbswap) call byte_reverse(buf,nwds)
+               ig=buf(1)
+               call copy4b(x(iel,1),buf( 2),4,iel,nelm)
+               call copy4b(y(iel,1),buf( 6),4,iel,nelm)
             endif
             DO 96 IC=5,8
                X(IEL,IC)=X(IEL,IC-4)
@@ -1983,12 +2041,14 @@ c 423       continue
                READ(9,*,ERR=43,END=43)(Y(IEL,IC),IC=5,8)
                READ(9,*,ERR=43,END=43)(Z(IEL,IC),IC=5,8)
             else
-               READ(8,ERR=43,END=43)(X(IEL,IC),IC=1,4)
-               READ(8,ERR=43,END=43)(Y(IEL,IC),IC=1,4)
-               READ(8,ERR=43,END=43)(Z(IEL,IC),IC=1,4)
-               READ(8,ERR=43,END=43)(X(IEL,IC),IC=5,8)
-               READ(8,ERR=43,END=43)(Y(IEL,IC),IC=5,8)
-               READ(8,ERR=43,END=43)(Z(IEL,IC),IC=5,8)
+               nwds =  1 + ndim*(2**ndim)
+ 
+               call byte_read(buf,nwds)
+               if(ifbswap) call byte_reverse(buf,nwds)
+               ig=buf(1)
+               call copy4b(x(iel,1),buf( 2),8,iel,nelm)
+               call copy4b(y(iel,1),buf(10),8,iel,nelm)
+               call copy4b(z(iel,1),buf(18),8,iel,nelm)
             endif
             if (iel.eq.1) then
                xxmin = x(iel,1)
@@ -2008,16 +2068,17 @@ c 423       continue
    97       continue
          ENDIF
 98    CONTINUE
-           call prs('XYZ Min,Max:$')
-           call prrr(xxmin,xxmax)
-           call prrr(yymin,yymax)
-           call prrr(ZZmin,ZZmax)
+      call prs('XYZ Min,Max:$')
+      call prrr(xxmin,xxmax)
+      call prrr(yymin,yymax)
+      call prrr(ZZmin,ZZmax)
 C     Read curved side data
       if (iffmtin) then
          READ(9,*,err=45,end=45)
          READ(9,*,ERR=45,END=45)NCURVE
       else
-         READ(8,ERR=45,END=45)NCURVE
+         call byte_read(ncurve,1)
+         if(ifbswap) call byte_reverse(ncurve,1)
       endif
       IF(NCURVE.GT.0)THEN
          DO 19 I=1,NCURVE
@@ -2032,7 +2093,16 @@ C     Read curved side data
      $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
   452          continue
             ELSE
-               READ(8,ERR=45,END=45) IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+               call byte_read(buf,8)
+               if(ifbswap) call byte_reverse(buf,7)
+               iedge = buf(1)
+               iel   = buf(2)
+               call copy4r(r1,buf(3),1)
+               call copy4r(r2,buf(4),1)
+               call copy4r(r3,buf(5),1)
+               call copy4r(r4,buf(6),1)
+               call copy4r(r5,buf(7),1)
+               call chcopy(ans,buf(8),1)
             ENDIF
             IEL=min(iel,nelm)
             CALL DDUMMY(IEDGE,IEL)
@@ -2051,39 +2121,39 @@ C     Read Boundary Conditions (and connectivity data)
       DO 90 IFLD=1,NFLDS
 C        Fluid and/or thermal
 C        !!?? NELF DIFFERENT FROM NEL??
-         if (iffmtin) READ(9,*,ERR=44,END=44)
+         if (iffmtin) then 
+             READ(9,*,ERR=44,END=44)
+         else
+             call byte_read(nbc_max,1)
+             if (ifbswap) call byte_reverse(nbc_max,1)
+         endif
          IF( (IFLD.EQ.1.AND.IFFLOW) .OR. IFLD.GT.1)THEN
-C           FIX UP FOR WHICH OF FIELDS TO BE USED
+C         FIX UP FOR WHICH OF FIELDS TO BE USED
 
-            write(6,*) iside,iel,ifld,' TRYING TO READ BC'
-
+          write(6,*) nelr,iel,ifld,' TRYING TO READ BC'
+          if(iffmtin) then
             DO 88 IER=1,NELR
             iel = min(ier,nelm)
             DO 88 ISIDE=1,NSIDES
 C              !Fix to a4,i2 when you make cbc character*4
                NBCREA = 5
                IF(VNEKOLD .LE. 2.5) NBCREA = 3
-               IF (NEL.LT.1000.and.iffmtin) THEN
+               IF (NEL.LT.1000) THEN
                   READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
                   jse=bc(1,iside,iel,ifld)
                   jsi=bc(2,iside,iel,ifld)
 c               write(6,*) cbc(iside,iel,ifld),iside,iel,jse,jsi,' cbc'
-               ELSEIF (iffmtin) then
-                  READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
-     $            CBC(ISIDE,IEL,IFLD),ID,ID,
-     $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-c                 write(6,*) cbc(iside,iel,ifld),iside,iel,ifld,' cbc'
                ELSE
-                  READ(8,ERR=44,END=44) chtmp3,
+                  READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
                ENDIF
                CBC1=CBC(ISIDE,IEL,IFLD)
                IF(CBC1.EQ.'M'.OR.CBC1.EQ.'m')THEN
-                 IFMOVB=.TRUE.
-                 ifgngm=.TRUE.
+                  IFMOVB=.TRUE.
+                  ifgngm=.TRUE.
                ENDIF
                ICBC1=ICHAR(CBC1)
                IF(ICBC1.GE.97 .AND. ICBC1.LE.122)THEN
@@ -2104,16 +2174,32 @@ C                    Special storage for internal boundaries
 
 c     write(6,*) iside,iel,ifld,' ',cbc(iside,iel,ifld),' cbc2'
 
-88          CONTINUE
-            do 89 ier=1,nelr
-              iel = min(ier,nelm)
-              IF(IFMOVB)ICRV(IEL)=1+4+9+16
-              DO 89 IEDGE=1,8
-                 IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
-89          CONTINUE
+88        CONTINUE
+          else  !re2
+             do  k=1,nbc_max
+               call byte_read(buf,8)
+               if (ifbswap) call byte_reverse(buf,8-1)
+               iel   = buf(1)
+               iside = buf(2)
+               call copy4r ( bc(1,iside,iel,ifld),buf(3),5)
+               call chcopy (cbc(  iside,iel,ifld),buf(8),3)
+             enddo
+             cbc1=cbc(iside,iel,ifld)
+             if(cbc1.eq.'m'.or.cbc1.eq.'m')then
+               ifmovb=.true.
+               ifgngm=.true.
+             endif
+          endif
+          do 89 ier=1,nelr
+             iel = min(ier,nelm)
+             IF(IFMOVB)ICRV(IEL)=1+4+9+16
+             DO 89 IEDGE=1,8
+                IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
+89        CONTINUE
          ENDIF
 90    CONTINUE
       IF(NFLDS.EQ.1.and.iffmtin)READ(9,*,err=45,end=45)
+      if(.not.iffmtin) call byte_close() 
 C     Read initial conditions
       IF(VNEKOLD.GE.2.5)THEN
          READ(9,'(A70)',ERR=45,END=45) LINE
@@ -4493,3 +4579,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine copy4b(a,b,n,iel,nel)
+      real   a(nel,1)
+      real*4 b(1)
+      do i = 1, n
+         a(iel,i) = b(i)
+      enddo
+      return
+      end
+

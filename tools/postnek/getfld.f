@@ -97,11 +97,10 @@ c     if (newdump.eq.odump) return
       ifok   =.false.
       iffmat =.true.
       iffform=.false.
-      if (param(66).eq.1.0.or.param(66).eq.3) iffmat =.false.
-      if (param(66).eq.4.0.or.param(66).eq.5) iffmat =.false.
+      if (param(66).ge.0.0) iffmat =.false.
+c     if (param(66).eq.4.0.or.param(66).eq.5) iffmat =.false.
       if (param(66).eq.6.0) then
          iffform =.true.
-         iffmat  =.false.
       endif
 
       len = ltrunc(session_name,80)
@@ -193,22 +192,12 @@ C     Standard Case:   Requested inputs are in the file.
          write(6,*) 'opening file:',len,' ',fname
          open (unit=24,file=fname,err=9,status='old')
          write(6,*) 'opened  file:',len,' ',fname
-      elseif (param(66).eq.2) then
-         open (unit=24,file=fname
-     $     ,form='unformatted',err=9,status='old')
-      elseif (param(66).eq.3) then
-         write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
-         write(6,*) 'opening file:',len,' ',(hname1(k),k=1,len)
-         open (unit=27,file=hname,err=9,status='old')
-         open (unit=24,file=fname,err=9,status='old')
-         close(unit=24)
-         call byte_open(fname_c)
-      elseif (param(66).eq.4.or.param(66).eq.5) then
-         write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
-         open (unit=24,file=fname,err=9,status='old')
-         close(unit=24)
-         call byte_open(fname_c)
       elseif (iffform) then
+         write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
+         open (unit=24,file=fname,err=9,status='old')
+         close(unit=24)
+         call byte_open(fname_c)
+      elseif (param(66).ge.0.0) then
          write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
          open (unit=24,file=fname,err=9,status='old')
          close(unit=24)
@@ -243,14 +232,10 @@ c
            call blank(hname,132)
            if (iffmat) then
             read(24,80,err=1500,end=1500) hname
-           elseif(param(66).eq.1) then
-            read(24,err=1500,end=1500) hname
-           elseif(param(66).eq.3) then
-            read(27,80,err=1500,end=1500) hname
-           elseif(param(66).eq.4.or.param(66).eq.5) then
-            call byte_read(hname,20)
            elseif(iffform) then
             call byte_read(hname,33)
+           elseif(param(66).ge.0.0) then
+            call byte_read(hname,20)
            endif
 c          write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
 c          write(6,('a132')) hname
@@ -399,7 +384,7 @@ c                   ifgety=.true.
                      ifpsco(k)=.true.
                   enddo
                elseif (excoder(i).ne.' ') then
-                  write(6,*) 'Excoder:', i,excoder(i),nouts
+c                 write(6,*) 'Excoder:', i,excoder(i),nouts
                   read(excoder(i),111) ii
   111             format(i1)
  
@@ -444,8 +429,6 @@ C
              read(24,'(6g11.4)',end=1504)(cerror(1,i),i=1,neltr)
              if (param(68).eq.2.0) 
      $       write(29,'(6g11.4)')(cerror(1,i),i=1,neltr)
-            elseif(param(66).eq.1) then
-             read(24,end=1505)(cerror(1,i),i=1,neltr)
             elseif(rdsize.eq.4) then
 c            read test pattern to determine if byte-swapping is req'd
              call byte_read(bytetest,1)
@@ -582,43 +565,18 @@ C
               if (mod(ieg,i100).eq.0 .or. ieg.eq.1 ) 
      $        WRITE(6,*) 'Reading',IEG,nouts,nxyzr,neltr
  
-              if (param(66).eq.0.0) then
+              if (iffmat) then
                  READ(24,*,ERR=1506,END=1506)
      $           ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
-              elseif (param(66).eq.2.0) then
-                 READ(24,201,ERR=1507,END=1507)
-     $           ((cdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
-  201            format(20a4)
- 
- 
-                 do 202 ii=1,nouts
-                    if (param(68).eq.2.0) then
-C                   .... fix up for Delta
-                       call vrnvertq(xdump(1,ii),nxyzr)
-                    else
-                       call vrnvert(xdump(1,ii),nxyzr)
-                    endif
-  202            continue
- 
-                 if (param(68).eq.2.0) then
-c                   .... fix up for Delta
-                    do 2021 ii=1,nouts
- 2021               call vcnvert(xdump(1,ii),nxyzr)
-                    write(29,201)
-     $             ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
-                 endif
-              elseif(param(66).ge.3.and.rdsize.eq.4) then
-                 do ii=1,nouts
-                    call byte_read(xdump(1,ii),nxyzr)
-                 enddo
-              elseif(param(66).ge.3.and.rdsize.eq.8) then
+              elseif(rdsize.eq.8) then
                  call prs('8 byte reads not yet supported in getfld')
 c                do ii=1,nouts
 c                   call byte_read(xdump(1,ii),nxyzr)
 c                enddo
               else
-                 read(24,err=1508,end=1508)
-     $           ((xdump(ixyz,ii),ii=1,nouts),ixyz=1,nxyzr)
+                 do ii=1,nouts
+                    call byte_read(xdump(1,ii),nxyzr)
+                 enddo
               endif
               ifok=.true.
             endif
@@ -679,6 +637,7 @@ C        passive scalars
          np4=min(np4,4)
          time=rstime
          istep = istepr
+  199 CONTINUE
  1000 continue
       goto 1600
  
@@ -733,10 +692,7 @@ C     Else, end of file found - notify other processors.
          dmptim(idump)=time
       endif
  
-      if (param(66).eq.3.) then
-         close(unit=27)
-         call byte_close()
-      elseif (param(66).eq.4 .or. param(66).eq.5) then
+      if (param(66).ge.0.0.and.param(66).ne.6.0) then
          call byte_close()
       else
          close(unit=24)
@@ -755,10 +711,7 @@ C     Can't open file...
      $   ,//,2X,'ASSUMING DEFAULT INITIAL CONDITIONS.')
 c     call exitt
 
-      if (param(66).eq.3.) then
-         close(unit=27)
-         call byte_close()
-      elseif (param(66).eq.4 .or. param(66).eq.5) then
+      if (param(66).ge.0.0.and.param(66).ne.6.0) then
          call byte_close()
       else
          close(unit=24,err=5009)
@@ -769,7 +722,6 @@ c     call exitt
  
 C     End of IFILE loop
  6000 CONTINUE
-  199 CONTINUE
  
       if (ifregz) then
          call prs('regularize$')

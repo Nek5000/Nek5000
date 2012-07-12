@@ -53,9 +53,9 @@ C     GETS         Reads  String of 80 chars        CALL GETS(S)
 C     PUTS         Prints String of  N chars        CALL PUTS(S,N)
       SUBROUTINE PRS(S)
       CHARACTER S(*)
-      CHARACTER*1 S1(80)
+      CHARACTER*1 S1(132)
 C
-      DO 1 I=1,81
+      DO 1 I=1,133
          IF(S(I).EQ.'$')THEN
             NCHARS=I-1
             GO TO 2
@@ -66,7 +66,7 @@ c
       write(6,*) 'I/O Error: No String Terminator sent to PRS'
       write(66,*) 'I/O Error: No String Terminator sent to PRS'
 c
-      nchars = 80
+      nchars = 132
       CALL CHCOPY (S1,S,NCHARS)
       WRITE(66,3) (S1(J),J=1,NCHARS)
 c
@@ -75,12 +75,12 @@ c
       CALL CHCOPY(S1,S,NCHARS)
       WRITE(6,3) (S1(J),J=1,NCHARS)
 c
- 3    FORMAT(80A1)
+ 3    FORMAT(132A1)
       RETURN
       END
 C
       SUBROUTINE PRI(I)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(I8)',ERR=1)I
@@ -90,7 +90,7 @@ C
       END
 C
       SUBROUTINE PRR(R)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(G14.6)',ERR=1)R
@@ -100,7 +100,7 @@ C
       END
 C
       SUBROUTINE PRII(I1,I2)
-      CHARACTER S*80
+      CHARACTER S*132
       S=' '
       WRITE(S,'(2I8)',ERR=1)I1,I2
       S(17:17)='$'
@@ -109,7 +109,7 @@ C
       END
 C
       SUBROUTINE PRIII(I1,I2,I3)
-      CHARACTER S*80
+      CHARACTER S*132
       S=' '
       WRITE(S,'(3I8)',ERR=1)I1,I2,I3
       S(25:25)='$'
@@ -118,7 +118,7 @@ C
       END
 C
       SUBROUTINE PRRRR(R1,R2,R3)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(3G18.9)',ERR=1)R1,R2,R3
@@ -128,7 +128,7 @@ C
       END
 C
       SUBROUTINE PRRR(R1,R2)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(2G14.6)',ERR=1)R1,R2
@@ -138,7 +138,7 @@ C
       END
 C
       SUBROUTINE PRSI(S,I)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 J=1,70
          IF(S(J).EQ.'$')THEN
@@ -161,7 +161,7 @@ C
       END
 C
       SUBROUTINE PRIS(I,S)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       WRITE(SS(1:8),'(I8)',ERR=13)I
       DO 1 J=1,70
@@ -184,7 +184,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSRRR(S,r1,r2,r3)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -206,7 +206,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSRR(S,r1,r2)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -228,7 +228,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSR(S,R)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -250,7 +250,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSII(S,I,J)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -272,7 +272,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine prsiii(s,i1,i2,i3)
-      character s(*),ss*80
+      character s(*),ss*132
 c
       nc = 10
       write(6,*) (s(k),k=1,40)
@@ -298,7 +298,7 @@ c     RETURN
       END
 C-----------------------------------------------------------------------
       subroutine prsiv(s,i1,i2,i3,i4)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       write(6,*) (s(k),k=1,40)
       write(6,*) i1,i2,i3,i4
@@ -323,7 +323,7 @@ c     RETURN
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSIR(S,I,R)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -345,7 +345,7 @@ C
       END
 C
       SUBROUTINE PRSIS(S1,I,S2)
-      CHARACTER S1(*),S2(*),SS*80
+      CHARACTER S1(*),S2(*),SS*132
 C
       SS = ' '
       DO 1 J=1,70
@@ -385,7 +385,7 @@ C
       END
 C
       SUBROUTINE PRSRS(S1,R,S2)
-      CHARACTER S1(*),S2(*),SS*80
+      CHARACTER S1(*),S2(*),SS*132
 C
       SS = ' '
       DO 1 I=1,60

@@ -36,6 +36,11 @@ cpn --  Copy all the relevant nek5000 data files
         Usage:     cpn blah blah2
 
 
+visnek --  script to create the VISIT metadata file
+
+        Usage:     visnek
+
+
 ===============================================
 More sophisticated scripts for running with MPI
 ===============================================

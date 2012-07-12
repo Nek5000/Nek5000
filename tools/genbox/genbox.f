@@ -166,7 +166,8 @@ c-----------------------------------------------------------------------
       call scanparam(string,string1,nparam,nfld,ifflow,ifheat,ifmhd,8,9)
 
       call scanout(string,'LOGICAL SWITCHES',16,8,9)
-      call set_logical(ifflow,ifheat,8,9)
+      read(string,*) nlogic
+      call set_logical(ifflow,ifheat,8,9,nlogic)
  
 c     call scanout(string,'MESH DATA',9,8,9)
 c-----------------------------------------------------------------------
@@ -2461,7 +2462,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_logical(ifflow,ifheat,inf,outf)
+      subroutine set_logical(ifflow,ifheat,inf,outf,nlogic)
  
       logical ifflow, ifheat
       integer inf,outf
@@ -2474,7 +2475,7 @@ c-----------------------------------------------------------------------
       chk_flow = .false.
       chk_heat = .false.
 
-      do line=1,10000000
+      do line=1,nlogic
          call blank(temps,132)
          read (inf,132,end=100,err=100) temps
          call ccopy(temps1,temps,132)             
@@ -2496,17 +2497,28 @@ c-----------------------------------------------------------------------
             endif
          else
            write (outf,81) (temps1(j),j=1,lout)          
-           if (indx1(temps,'MESH DATA',9).ne.0) then
-              if (chk_flow.and.chk_heat) then
-                 return
-              elseif(.not.chk_flow.and.ifflow) then
-                 write(outf,*) ' T     IFFLOW'
-              elseif(.not.chk_heat.and.ifheat) then
-                 write(outf,*) ' T     IFHEAT'
-              endif
-              return
-           endif
          endif
+      enddo
+
+      if (chk_flow.and.chk_heat) then
+         goto 10
+      elseif(.not.chk_flow.and.ifflow) then
+         write(outf,*) ' T     IFFLOW'
+         write(6,*) "USER NEEDS TO INCREASE NUMBER OF LOGICAL SWITCHES",
+     $    " BY 1 IN .REA FILE!!!!!!!!!!!!!!!!!"
+      elseif(.not.chk_heat.and.ifheat) then
+         write(outf,*) ' T     IFHEAT'
+         write(6,*) "USER NEEDS TO INCREASE NUMBER OF LOGICAL SWITCHES",
+     $    " BY 1 IN .REA FILE!!!!!!!!!!!!!!!!!"
+      endif
+
+ 10   do line = 1,10
+         call blank(temps,132)
+         read (inf,132,end=100,err=100) temps
+         call ccopy(temps1,temps,132)             
+         lout = ltrunc(temps1,132)                !len of temps1/temps
+         write (outf,81) (temps1(j),j=1,lout)          
+         if (indx1(temps,'MESH DATA',9).ne.0) return
       enddo
 
   132 format(a132)
