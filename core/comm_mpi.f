@@ -416,8 +416,8 @@ c-----------------------------------------------------------------------
       character*1 ostring(132)
       character*10 s10
       include 'SIZE'
-      include 'TOTAL'
-      include 'CTIMER'
+c     include 'TOTAL'
+c     include 'CTIMER'
 
       ierr = iglsum(ierr,1)
       if(ierr.eq.0) return 
