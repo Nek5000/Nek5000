@@ -62,7 +62,7 @@ int bytesw_read=0;
   void exitt();
 #endif
 
-void byte_reverse(float *buf, int *nn,int ierr)
+void byte_reverse(float *buf, int *nn,int *ierr)
 {
   int n;
   char temp, *ptr;
@@ -70,7 +70,7 @@ void byte_reverse(float *buf, int *nn,int ierr)
   if (*nn<0)
   {
     printf("byte_reverse() :: n must be positive\n"); 
-    ierr=1;
+    *ierr=1;
     return;
   }
   
@@ -79,11 +79,11 @@ void byte_reverse(float *buf, int *nn,int ierr)
      SWAP(ptr[0],ptr[3])
      SWAP(ptr[1],ptr[2])
   }
-  ierr=0;
+  *ierr=0;
 }
 
 
-void byte_open(char *n,int ierr)
+void byte_open(char *n,int *ierr)
 {
   int  i,len,istat;
   char slash;
@@ -94,14 +94,14 @@ void byte_open(char *n,int ierr)
   if (len<0)
   {
     printf("byte_open() :: file name has negative length!\n"); 
-    ierr=1;
+    *ierr=1;
     return;
   }
 
   if (len>MAX_NAME)
   {
     printf("byte_open() :: file name too long!\n"); 
-    ierr=1;
+    *ierr=1;
     return;
   }
 
@@ -117,22 +117,22 @@ void byte_open(char *n,int ierr)
        istat = mkdir(dirname,0755);
      }
   }
-  ierr=0;
+  *ierr=0;
 }
 
-void byte_close(ierr)
+void byte_close(int *ierr)
 {
   if (!fp) return;
 
   if (fclose(fp))
   {
     printf("byte_close() :: couldn't fclose file!\n");
-    ierr=1;
+    *ierr=1;
     return;
   }
 
   fp=NULL;
-  ierr=0;
+  *ierr=0;
 }
 
 void byte_rewind()
@@ -143,7 +143,7 @@ void byte_rewind()
 }
 
 
-void byte_write(float *buf, int *n,int ierr)
+void byte_write(float *buf, int *n,int *ierr)
 {
   int flags;
   mode_t mode;
@@ -151,7 +151,7 @@ void byte_write(float *buf, int *n,int ierr)
   if (*n<0)
   {
     printf("byte_write() :: n must be positive\n"); 
-    ierr=1;
+    *ierr=1;
     return;
   }
 
@@ -160,7 +160,7 @@ void byte_write(float *buf, int *n,int ierr)
     if (!(fp=fopen(name,"wb")))
     {
       printf("byte_write() :: fopen failure!\n"); 
-      ierr=1;
+      *ierr=1;
       return;
     }
     flag=WRITE;
@@ -175,20 +175,20 @@ void byte_write(float *buf, int *n,int ierr)
   else
   {
       printf("byte_write() :: can't fwrite after freading!\n"); 
-      ierr=1;
+      *ierr=1;
       return;
   }
-  ierr=0;
+  *ierr=0;
 }
 
 
-void byte_read(float *buf, int *n,int ierr)
+void byte_read(float *buf, int *n,int *ierr)
 {
   int flags;
   mode_t mode;
 
   if (*n<0)
-    {printf("byte_read() :: n must be positive\n"); ierr=1; return;}
+    {printf("byte_read() :: n must be positive\n"); *ierr=1; return;}
 
   if (!fp)
   {
@@ -196,7 +196,7 @@ void byte_read(float *buf, int *n,int ierr)
      {
         printf("%s\n",name);
         printf("byte_read() :: fopen failure2!\n"); 
-        ierr=1;
+        *ierr=1;
         return;
      }
      flag=READ;
@@ -210,13 +210,13 @@ void byte_read(float *buf, int *n,int ierr)
      if (ferror(fp))
      {
        printf("ABORT: Error reading %s\n",name);
-       ierr=1;
+       *ierr=1;
        return;
      }
      else if (feof(fp))
      {
        printf("ABORT: EOF found while reading %s\n",name);
-       ierr=1;
+       *ierr=1;
        return;
      }
 
@@ -224,10 +224,10 @@ void byte_read(float *buf, int *n,int ierr)
   else
   {
      printf("byte_read() :: can't fread after fwriting!\n"); 
-     ierr=1;
+     *ierr=1;
      return;
   }
-  ierr=0;
+  *ierr=0;
 }
 
 void set_bytesw_write (int *pa)
