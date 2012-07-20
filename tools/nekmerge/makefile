@@ -17,4 +17,4 @@ nekmerge.o	: nekmerge.f; $(F77) -c $(FLAGS)  nekmerge.f
 reader.o  	: reader.f	; $(F77) -c $(FLAGS)  reader.f 
 tsort.o  	: tsort.f	; $(F77) -c $(FLAGS)  tsort.f 
 strings.o  	: strings.f	; $(F77) -c $(FLAGS)  strings.f 
-byte.o		: ../../nek/byte.c	; $(CC) -c $(CFLAGS)  ../../nek/byte.c
+byte.o		: byte.c	; $(CC) -c $(CFLAGS)  byte.c

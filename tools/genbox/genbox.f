@@ -759,6 +759,7 @@ c     output curve stuff and Boundary conditions
      &   write(9,31) 
    31    format('  ***** BOUNDARY CONDITIONS *****')
  
+      icount = 0
       do ifld=1,nfld
 
          if (iffo) then
@@ -832,7 +833,7 @@ c     output curve stuff and Boundary conditions
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
                   if (cbc1.ne.'P  ')  call rzero(rbc1,5)
-                  nbc = nbc + 1
+                  if (cbc1.ne.'E  ')  nbc = nbc + 1
                else
                   cbc1='E  '
                endif
@@ -840,7 +841,7 @@ c     output curve stuff and Boundary conditions
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
-                  nbc = nbc + 1
+                  if (cbc2.ne.'E  ')  nbc = nbc + 1
                else
                   cbc2='E  '
                endif
@@ -848,7 +849,7 @@ c     output curve stuff and Boundary conditions
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
-                  nbc = nbc + 1
+                  if (cbc3.ne.'E  ')  nbc = nbc + 1
                else
                   cbc3='E  '
                endif
@@ -856,7 +857,7 @@ c     output curve stuff and Boundary conditions
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
-                  nbc = nbc + 1
+                  if (cbc4.ne.'E  ')  nbc = nbc + 1
                else
                   cbc4='E  '
                endif
@@ -864,7 +865,7 @@ c     output curve stuff and Boundary conditions
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
                   if (cbc5.ne.'P  ') call rzero(rbc5,5)
-                  nbc = nbc + 1
+                  if (cbc5.ne.'E  ')  nbc = nbc + 1
                else
                   cbc5='E  '
                endif
@@ -872,7 +873,7 @@ c     output curve stuff and Boundary conditions
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
                   if (cbc6.ne.'P  ') call rzero(rbc6,5)
-                  nbc = nbc + 1
+                  if (cbc6.ne.'E  ')  nbc = nbc + 1
                else
                   cbc6='E  '
                endif
@@ -931,6 +932,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif
  
                    if(cbc2.ne.'E  ') then 
@@ -938,6 +940,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif
  
                    if(cbc4.ne.'E  ') then 
@@ -945,6 +948,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif
  
                    if(cbc1.ne.'E  ') then 
@@ -952,6 +956,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif 
  
                    if(cbc5.ne.'E  ') then 
@@ -959,6 +964,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc5,5)
                      call chcopy(buf(8),cbc5,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif
 
                    if(cbc6.ne.'E  ') then 
@@ -966,6 +972,7 @@ c                  call blank(buf(8),4)
                      call copy(buf(3),rbc6,5)
                      call chcopy(buf(8),cbc6,3)
                      call byte_write(buf,8)
+                     icount = icount+1
                    endif
                  endif
                endif
@@ -1011,7 +1018,7 @@ c                  call blank(buf(8),4)
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
                   if (cbc1.ne.'P  ') call rzero(rbc1,5)
-                  nbc = nbc + 1
+                  if (cbc1.ne.'E  ') nbc = nbc + 1
                else
                   cbc1='E  '
                endif
@@ -1019,7 +1026,7 @@ c                  call blank(buf(8),4)
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
                   if (cbc2.ne.'P  ') call rzero(rbc2,5)
-                  nbc = nbc + 1
+                  if (cbc2.ne.'E  ') nbc = nbc + 1
                else
                   cbc2='E  '
                endif
@@ -1027,7 +1034,7 @@ c                  call blank(buf(8),4)
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
                   if (cbc3.ne.'P  ') call rzero(rbc3,5)
-                  nbc = nbc + 1
+                  if (cbc5.ne.'E  ') nbc = nbc + 1
                else
                   cbc3='E  '
                endif
@@ -1035,7 +1042,7 @@ c                  call blank(buf(8),4)
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
                   if (cbc4.ne.'P  ') call rzero(rbc4,5)
-                  nbc = nbc + 1
+                  if (cbc4.ne.'E  ') nbc = nbc + 1
                else
                   cbc4='E  '
                endif

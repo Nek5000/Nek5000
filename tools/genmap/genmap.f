@@ -247,11 +247,11 @@ c     read nekton .rea file and make a mesh
          call byte_read(ncurve,1,ierr)
          if (ifbswap) call byte_reverse(ncurve,1,ierr)
          if(ierr.ne.0) call exitti
-     $       ('Error reading ncurve in makemesh $',ierr)
+     $       ('Error reading ncurve in makemesh ',ierr)
          do k = 1,ncurve
             call byte_read(buf,8,ierr)
             if(ierr.ne.0) call exitti
-     $       ('Error reading curve data in makemesh $',ierr)
+     $       ('Error reading curve data in makemesh ',ierr)
          enddo
 
 c        For current version of genmap, only need the fluid bcs.
@@ -272,7 +272,7 @@ c
 
          call byte_close(ierr)
          if(ierr.ne.0) call exitti
-     $       ('Error closing file in makemesh $',ierr)
+     $       ('Error closing file in makemesh ',ierr)
       else
          call cscan_bcs   (cbc,bc,nelv,nelt,ndim)
       endif
@@ -3161,7 +3161,8 @@ c     .Read Boundary Conditions (and connectivity data)
 c           write(6,*) k,' dobc1 ',nbc_max
             call byte_read(buf,nwds,ierr)
             if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-            if(ierr.ne.0) call exitti('Error reading byte bcs $',ierr)
+            if(ierr.ne.0) call exitti
+     &              ('Error reading byte bcs ',ierr)
             call buf_to_bc(cbc,bc,buf)
          enddo
 
@@ -3207,7 +3208,7 @@ c-----------------------------------------------------------------------
       ierr = 0
       if (ifbswap) call byte_reverse(buf,nwds,ierr)
       if (ierr.ne.0) call exitti
-     $   ('Error byte_reverse in buf_to_xyz$',ierr)
+     $   ('Error byte_reverse in buf_to_xy ',ierr)
 
       igroup = buf(0)
 
@@ -3260,10 +3261,10 @@ c-----------------------------------------------------------------------
       ierr=0
       call byte_open(fname,ierr)
       if(ierr.ne.0) call exitti
-     $  ('Error opening file in open_bin_file. $',ierr)
+     $  ('Error opening file in open_bin_file ',ierr)
       call byte_read(hdr,20,ierr)
       if(ierr.ne.0) call exitti
-     $  ('Error reading header in open_bin_file. $',ierr)
+     $  ('Error reading header in open_bin_file ',ierr)
 c      write(6,80) hdr
 c   80 format(a80)
 
@@ -3272,7 +3273,7 @@ c   80 format(a80)
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti
-     $  ('Error reading test number in open_bin_file. $',ierr)
+     $  ('Error reading test number in open_bin_file ',ierr)
       ifbswap = if_byte_swap_test(test)
 
       return
@@ -3294,7 +3295,7 @@ c
       test2 = bytetest
       call byte_reverse(test2,1,ierr)
       if(ierr.ne.0) call exitti
-     $  ('Error with byte_reverse in if_byte_swap_test. $',ierr)
+     $  ('Error with byte_reverse in if_byte_swap_test ',ierr)
 c     write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
 
       return
@@ -4269,7 +4270,7 @@ c
          return
       else
          call exitti
-     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+     $      ('Conjugate heat transfer requires P=power of 2 ',np)
       endif
 
 
