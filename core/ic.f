@@ -2052,6 +2052,7 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+               if(ierr.ne.0) call rzero(w2(l),len)
                call csend(er(e),w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
@@ -2065,7 +2066,6 @@ c-----------------------------------------------------------------------
 #endif
       endif
 
-      call err_chk(ierr,'Error reading restart data,in gets.$')
 
       if (if_byte_sw.and.wdsizr.eq.8) then
          if(nid.eq.0) 
@@ -2113,6 +2113,7 @@ c-----------------------------------------------------------------------
       enddo
 
 
+      call err_chk(ierr,'Error reading restart data,in gets.$')
  100  return
       end
 c-----------------------------------------------------------------------
@@ -2187,6 +2188,7 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+               if(ierr.ne.0) call rzero(w2(l),len)
                call csend(er(e),w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
@@ -2199,7 +2201,6 @@ c-----------------------------------------------------------------------
          call byte_read(wk,nxyzr*nelr,ierr)
 #endif
       endif
-      call err_chk(ierr,'Error reading restart data, in getv.$')
 
       if (if_byte_sw.and.wdsizr.eq.8) then
          if(nid.eq.0) 
@@ -2258,6 +2259,7 @@ c-----------------------------------------------------------------------
          l = l+ndim*nxyzw
       enddo
 
+      call err_chk(ierr,'Error reading restart data, in getv.$')
  100  return
       end
 c-----------------------------------------------------------------------
@@ -2666,12 +2668,15 @@ c-----------------------------------------------------------------------
       pid1r = nid
       offs0 = iHeaderSize + 4
       call mbyte_open(hname,0,ierr)
-      if(ierr.ne.0) goto 102
+      if(ierr.ne.0) goto 103
       call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
-      if(ierr.ne.0) goto 102
+      if(ierr.ne.0) goto 103
       call byte_read_mpi(bytetest,1,pid00,ifh_mbyte,ierr)
-      if(ierr.ne.0) goto 102
+      if(ierr.ne.0) goto 103
 
+ 103  continue 
+      call err_chk(ierr,'Error reading header/element map.$')
+      
       call bcast(hdr,iHeaderSize) 
       call bcast(bytetest,4) 
 
