@@ -1331,11 +1331,11 @@ c only works if nx, ny, nz are equal, and if vpere is 27
       ntot = nx1 * ny1 * nz1
 
 c set the tag vals
-      ivals = 1
+      ivals = 0
       do i = 1, count
 c        transfer spectral variable to vertex variable
 c        corners only
-#define INDEX(i,j,k) nx1*ny1*k + nx1*j + i
+#define INDEX(i,j,k) ivals+nx1*ny1*k + nx1*j + i
          tag_vals(1) = vals(1+INDEX(0,0,0))
          tag_vals(2) = vals(1+INDEX(nx1-1,0,0))
          tag_vals(3) = vals(1+INDEX(nx1-1,ny1-1,0))
@@ -1344,12 +1344,13 @@ c        corners only
          tag_vals(6) = vals(1+INDEX(nx1-1,0,nz1-1))
          tag_vals(7) = vals(1+INDEX(nx1-1,ny1-1,nz1-1))
          tag_vals(8) = vals(1+INDEX(0,ny1-1,nz1-1))
+         tag_vals(9:v_per_e) = sum(tag_vals(1:8))/8
 #undef INDEX
          call iMesh_setDblArrData(%VAL(imeshh), 
-     $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
-     $        %VAL(8), ierr)
+     $        connect(ivals), %VAL(v_per_e), %VAL(tagh), tag_vals(1), 
+     $        %VAL(v_per_e), ierr)
          IMESH_ASSERT
-         ivals = ivals + v_per_e
+         ivals = ivals + ntot
       enddo
 
       return
@@ -1405,22 +1406,23 @@ c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
       ntot = nx1 * ny1 * nz1
 
 c set the tag vals
-      ivals = 1
+      ivals = 0
       do i = 1, count
 c        transfer spectral variable fromvertex variable
 c        corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
-     $        connect(ivals), %VAL(8), %VAL(tagh), tag_vals(1), 
-     $        %VAL(8), ierr)
+     $        connect(ivals), %VAL(v_per_e), %VAL(tagh), tag_vals(1), 
+     $        %VAL(v_per_e), ierr)
 c don't assert here, just return
          if (iBase_SUCCESS .ne. ierr) return
          ivals = ivals + v_per_e
 
-#define INDEX(i,j,k) lx1*ly1*k + lx1*j + i
+#define INDEX(i,j,k) ivals+lx1*ly1*k + lx1*j + i
          avg = 0.0d0
-         do j = 1, 8
+         do j = 1, v_per_e
             avg = avg + tag_vals(j)
          enddo
+         avg = avg/v_per_e
          vals(1+INDEX(0,0,0)) = avg
          vals(1+INDEX(nx1-1,0,0)) = avg
          vals(1+INDEX(nx1-1,ny1-1,0)) = avg
@@ -1430,6 +1432,8 @@ c don't assert here, just return
          vals(1+INDEX(nx1-1,ny1-1,nz1-1)) = avg
          vals(1+INDEX(0,ny1-1,nz1-1)) = avg
 #undef INDEX
+c update ivals by the necessary offset to get the next element
+         ivals = ivals + ntot
       enddo
 
       return
