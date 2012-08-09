@@ -1313,7 +1313,7 @@ c-----------------------------------------------------------------------
 #include "NEKMOAB"      
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, i, ivals, size, count, v_per_e, ntot
+      integer ierr, i, ivals, size, count, v_per_e, ntot, tmpind
       real vals(*), tag_vals(27)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
@@ -1329,13 +1329,16 @@ c only works if nx, ny, nz are equal, and if vpere is 27
       endif
 
       ntot = nx1 * ny1 * nz1
+c      write (*,*) 'size of connect ptr', size(connect)
+c      write (*,*) 'size of count', count, v_per_e
 
 c set the tag vals
-      ivals = 0
+      ivals = 1
       do i = 1, count
+        tmpind = (i-1)*ntot;
 c        transfer spectral variable to vertex variable
 c        corners only
-#define INDEX(i,j,k) ivals+nx1*ny1*k + nx1*j + i
+#define INDEX(i,j,k) tmpind+nx1*ny1*k+nx1*j+i
          tag_vals(1) = vals(1+INDEX(0,0,0))
          tag_vals(2) = vals(1+INDEX(nx1-1,0,0))
          tag_vals(3) = vals(1+INDEX(nx1-1,ny1-1,0))
@@ -1346,11 +1349,13 @@ c        corners only
          tag_vals(8) = vals(1+INDEX(0,ny1-1,nz1-1))
          tag_vals(9:v_per_e) = sum(tag_vals(1:8))/8
 #undef INDEX
+c      write (*,*) i, tmpind, 'connect',connect(ivals:ivals+v_per_e)
+c      write(*,*) 'tagvals', tag_vals
          call iMesh_setDblArrData(%VAL(imeshh), 
      $        connect(ivals), %VAL(v_per_e), %VAL(tagh), tag_vals(1), 
      $        %VAL(v_per_e), ierr)
          IMESH_ASSERT
-         ivals = ivals + ntot
+         ivals = ivals + v_per_e
       enddo
 
       return
@@ -1386,7 +1391,7 @@ c-----------------------------------------------------------------------
 #include "NEKMOAB"      
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, i, j, ivals, size, count, v_per_e, ntot
+      integer ierr, i, j, ivals, size, count, v_per_e, ntot, tmpind
       real vals(*), tag_vals(27)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
@@ -1406,8 +1411,9 @@ c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
       ntot = nx1 * ny1 * nz1
 
 c set the tag vals
-      ivals = 0
+      ivals = 1
       do i = 1, count
+        tmpind = (i-1)*ntot;
 c        transfer spectral variable fromvertex variable
 c        corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
@@ -1415,9 +1421,8 @@ c        corners only
      $        %VAL(v_per_e), ierr)
 c don't assert here, just return
          if (iBase_SUCCESS .ne. ierr) return
-         ivals = ivals + v_per_e
 
-#define INDEX(i,j,k) ivals+lx1*ly1*k + lx1*j + i
+#define INDEX(i,j,k) tmpind+nx1*ny1*k+lx1*j+i
          avg = 0.0d0
          do j = 1, v_per_e
             avg = avg + tag_vals(j)
@@ -1433,7 +1438,7 @@ c don't assert here, just return
          vals(1+INDEX(0,ny1-1,nz1-1)) = avg
 #undef INDEX
 c update ivals by the necessary offset to get the next element
-         ivals = ivals + ntot
+         ivals = ivals + v_per_e
       enddo
 
       return
