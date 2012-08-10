@@ -257,7 +257,7 @@ c tags for results variables
       IMESH_ASSERT
 
       call nekMOAB_create_find_tag("TEMP", 
-     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=600.0", 
      $     ntot, iBase_DOUBLE, tTag, .true., ierr)
       IMESH_ASSERT
 
@@ -276,7 +276,7 @@ c     initialize these tags to zero since their use depends on user input
       dTag = 0
       powTag = 0
       call nekMOAB_create_find_tag("VTEMP", 
-     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=600.0", 
      $     1, iBase_DOUBLE, vtTag, .true., ierr)
       IMESH_ASSERT
 
@@ -294,7 +294,7 @@ c may or may not have these tags, depending on coupler state
       IMESH_ASSERT
 
       call nekMOAB_create_find_tag("VPOWER", 
-     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
      $     1, iBase_DOUBLE, vpowTag, .true., ierr)
       IMESH_ASSERT
 
@@ -305,7 +305,7 @@ c may or may not have these tags, depending on coupler state
       IMESH_ASSERT
 
       call nekMOAB_create_find_tag("POWER", 
-     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1.0", 
+     $     " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=0.0", 
      $     ntot, iBase_DOUBLE, powTag, .true., ierr)
       IMESH_ASSERT
 
@@ -1221,7 +1221,6 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       integer i, j, ierr, ntot, tmpct, count, atend, is_v
       iBase_TagHandle tagh
-      real tag_ptr(1)
 
       ntot = nx1*ny1*nz1
 
@@ -1313,8 +1312,9 @@ c-----------------------------------------------------------------------
 #include "NEKMOAB"      
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, i, ivals, size, count, v_per_e, ntot, tmpind
+      integer ierr, i, j, ivals, size, count, v_per_e, ntot, tmpind
       real vals(*), tag_vals(27)
+      real avg_vals
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
 
@@ -1335,7 +1335,7 @@ c      write (*,*) 'size of count', count, v_per_e
 c set the tag vals
       ivals = 1
       do i = 1, count
-        tmpind = (i-1)*ntot;
+        tmpind = (i-1)*ntot
 c        transfer spectral variable to vertex variable
 c        corners only
 #define INDEX(i,j,k) tmpind+nx1*ny1*k+nx1*j+i
@@ -1347,10 +1347,17 @@ c        corners only
          tag_vals(6) = vals(1+INDEX(nx1-1,0,nz1-1))
          tag_vals(7) = vals(1+INDEX(nx1-1,ny1-1,nz1-1))
          tag_vals(8) = vals(1+INDEX(0,ny1-1,nz1-1))
-         tag_vals(9:v_per_e) = sum(tag_vals(1:8))/8
+         avg_vals = 0
+         do j = 1, 8
+            avg_vals = avg_vals + tag_vals(j)
+         enddo
+         avg_vals = avg_vals/8
+         do j = 9, v_per_e
+            tag_vals(j) = avg_vals
+         enddo
 #undef INDEX
 c      write (*,*) i, tmpind, 'connect',connect(ivals:ivals+v_per_e)
-c      write(*,*) 'tagvals', tag_vals
+c      write(*,*) 'tagvals', tag_vals(1:8)
          call iMesh_setDblArrData(%VAL(imeshh), 
      $        connect(ivals), %VAL(v_per_e), %VAL(tagh), tag_vals(1), 
      $        %VAL(v_per_e), ierr)
@@ -1392,7 +1399,9 @@ c-----------------------------------------------------------------------
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
       integer ierr, i, j, ivals, size, count, v_per_e, ntot, tmpind
-      real vals(*), tag_vals(27)
+      real vals(lx1*ly1*lz1*lelt), tag_vals(27)
+c      real tag_vals(27)
+c      real vals(lx1,ly1,lz1,lelt)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
       real avg
@@ -1418,11 +1427,11 @@ c        transfer spectral variable fromvertex variable
 c        corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
      $        connect(ivals), %VAL(v_per_e), %VAL(tagh), tag_vals(1), 
-     $        %VAL(v_per_e), ierr)
+     $        %VAL(v_per_e), %VAL(v_per_e), ierr)
 c don't assert here, just return
          if (iBase_SUCCESS .ne. ierr) return
 
-#define INDEX(i,j,k) tmpind+nx1*ny1*k+lx1*j+i
+#define INDEX(i,j,k) tmpind+lx1*ly1*k+lx1*j+i
          avg = 0.0d0
          do j = 1, v_per_e
             avg = avg + tag_vals(j)

@@ -545,6 +545,11 @@ C
      $   'ABORT: Moving boundary in Pn-Pn is not supported'
          call exitt
       endif
+      if (ifmoab .and..not. ifsplit) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: MOAB in Pn-Pn-2 is not supported'
+         call exitt
+      endif
 
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
