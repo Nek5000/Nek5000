@@ -713,9 +713,11 @@ c     output curve stuff and Boundary conditions
      $      i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
         zero = 0.
+        maxedge = 4
+        if(if3d) maxedge=8
         if (nel.lt.1000) then
            do ie=1,nel
-              do iedge = 2,4,2
+              do iedge = 2,maxedge,2
                  if (curve(iedge,ie).ne.0) write(9,290) 
      $            iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
               enddo
@@ -723,7 +725,7 @@ c     output curve stuff and Boundary conditions
   290      format(i3,i3,5g14.6,1x,a1)
          else
            do ie=1,nel
-              do iedge = 2,4,2
+              do iedge = 2,maxedge,2
                  if (curve(iedge,ie).ne.0) write(9,291) 
      $              iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
               enddo
@@ -733,7 +735,7 @@ c     output curve stuff and Boundary conditions
       else
          call byte_write(ncurv,1)  
          do ie=1,nel
-            do iedge = 2,4,2
+            do iedge = 2,maxedge,2
                if (curve(iedge,ie).ne.0) then
                   if(iffo) then
                     write(9,291) 
