@@ -185,13 +185,17 @@ C
       DIFF  = ABS(X-Y)
       IF (DIFF.EQ.0.) EPS = 1.E-7
       IF (DIFF.GT.0.) EPS = 1.E-14
+      eps1 = 1.e-6 ! for prenek mesh in real*4
 C
       DO 100 IEL=1,NELT
          IFRZER(IEL) = .FALSE.
          IF (IFAXIS) THEN
             NVERT = 0
             DO 10 IC=1,4
-               IF(ABS(YC(IC,IEL)).LT.EPS) NVERT = NVERT+1
+               IF(ABS(YC(IC,IEL)).LT.EPS1) THEN
+                  NVERT = NVERT+1
+                  YC(IC,IEL) = 0.0  ! exactly on the axis
+               ENDIF
  10         CONTINUE
          ENDIF
          IEDGE = 1
@@ -453,6 +457,7 @@ C
 C           Assign mask values.
 C
             IF  (CB.EQ.'T  ' .OR. CB.EQ.'t  ' .OR. 
+     $          (CB.EQ.'A  ' .AND. IFAZIV)    .OR.
      $           CB.EQ.'MCI' .OR. CB.EQ.'MLI' .OR.
      $           CB.EQ.'KD ' .OR. CB.EQ.'kd ' .OR.
      $           CB.EQ.'ED ' .OR. CB.EQ.'ed ' .OR.
