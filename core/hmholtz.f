@@ -240,17 +240,20 @@ C
 C
             DO 190 J=1,NY1
             DO 190 I=1,NX1
-               IF (YM1(I,J,1,IEL).NE.0.) THEN
-                  TERM1 = BM1(I,J,1,IEL)*U(I,J,1,IEL)/YM1(I,J,1,IEL)**2
+c               IF (YM1(I,J,1,IEL).NE.0.) THEN
                   IF (IFRZER(IEL)) THEN
+                     TERM1 = 0.0
+                     if(j.ne.1) 
+     $             TERM1 = BM1(I,J,1,IEL)*U(I,J,1,IEL)/YM1(I,J,1,IEL)**2
                      TERM2 =  WXM1(I)*WAM1(1)*DAM1(1,J)*DUAX(I)
      $                       *JACM1(I,1,1,IEL)/YSM1(I)
                   ELSE
+                   TERM1 = BM1(I,J,1,IEL)*U(I,J,1,IEL)/YM1(I,J,1,IEL)**2
                      TERM2 = 0.
                   ENDIF
                   AU(I,J,1,IEL) = AU(I,J,1,IEL)
      $                          + HELM1(I,J,1,IEL)*(TERM1+TERM2)
-               ENDIF
+c               ENDIF
   190       CONTINUE
   200    CONTINUE
       ENDIF

@@ -971,6 +971,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
+      include 'INPUT'
       COMMON /SCRVH/ HVMASK(LX1,LY1,LZ1,LELT)
       COMMON /SCREV/ HFMASK(LX1,LZ1,6,LELT)
 C
@@ -995,6 +996,8 @@ C
       CALL SETMASK (C1MASK,C2MASK,C3MASK,HVMASK,NEL)
       IF (IFLMSF(IFLD)) CALL SETCSYS (HVMASK,HFMASK,NEL)
       IF (IFLD.EQ.0)    CALL FIXWMSK (C2MASK,C3MASK,HVMASK,HFMASK,NEL)
+
+      if (ifaxis.and.ifld.eq.1)  call fixmska (c1mask,c2mask,c3mask)
 C
       RETURN
       END
@@ -2424,6 +2427,71 @@ c     calculate surface normal
          sn(2) = uny(ix,iy,iside,e)
          sn(3) = unz(ix,iy,iside,e)
       endif
+
+      return
+      end
+
+      subroutine fixmska (c1mask,c2mask,c3mask)
+
+c	fixes masks for A/SYM face corners
+
+      include 'SIZE'
+      include 'INPUT'
+ 
+      dimension   c1mask(lx1,ly1,lz1,1)
+     $           ,c2mask(lx1,ly1,lz1,1)
+     $           ,c3mask(lx1,ly1,lz1,1)
+
+      common /scrvh/ im1(lx1,ly1,lz1,lelv)
+     $              ,im2(lx1,ly1,lz1,lelv)
+
+      integer e,f,val
+      character*3 cb
+
+      ntotv = nx1*ny1*nz1*nelv
+
+      call rzero (im1,ntotv)
+      call rzero (im2,ntotv)
+
+      val = 1
+      do e=1,nelv
+      do f=1,ndim*2
+         cb  = cbc (f,e,1)
+         if (cb.eq.'SYM')  call ifacev(im1,e,f,val,nx1,ny1,nz1)
+      enddo
+      enddo
+
+      val = 2
+      do e=1,nelv
+      do f=1,ndim*2
+         cb  = cbc (f,e,1)
+         if (cb.eq.'A  ')  call ifacev(im2,e,f,val,nx1,ny1,nz1)
+      enddo
+      enddo
+
+      call icol2(im2,im1,ntotv)
+
+      k = 1
+      do e=1,nelv
+      do j=1,ny1,ny1-1
+      do i=1,nx1,nx1-1
+         if  ( im2(i,j,k,e) .eq. 2) then  ! corner of SYM & 'A  ' faces
+            c1mask(i,j,k,e) = 0. 
+            c2mask(i,j,k,e) = 0. 
+         endif
+      enddo
+      enddo
+      enddo
+
+      return
+      end
+
+      subroutine icol2(a,b,n)
+      integer a(1),b(1)
+
+      do i=1,n
+         a(i)=a(i)*b(i)
+      enddo
 
       return
       end
