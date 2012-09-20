@@ -2,9 +2,42 @@ c*********************************************************************72
       subroutine mpi_scan(data1, data2, n, datatype,
      &  operation, comm, ierror )
 
-      integer data1,data2  ! currently hardwired only for integer
+      implicit none
 
-      data2 = data1
+      include "mpi_dummy.h"
+
+      integer n
+
+      integer comm
+      integer data1(n)
+      integer data2(n)
+      integer datatype
+      integer ierror
+      integer operation    ! currently hardwired only for sum only
+
+      ierror = MPI_SUCCESS
+
+      if ( datatype .eq. mpi_double_precision ) then
+
+        call copy  (  data1, data2, n )
+
+      else if ( datatype .eq. mpi_integer ) then
+
+        call icopy (  data1, data2, n )
+
+      else if ( datatype .eq. mpi_integer8 ) then
+
+        call i8copy ( data1, data2, n )
+
+      else if ( datatype .eq. mpi_real ) then
+
+        call rrcopy ( data1, data2, n )
+
+      else
+
+        ierror = MPI_FAILURE
+
+      end if
 
       return
       end

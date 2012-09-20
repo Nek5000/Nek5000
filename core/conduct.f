@@ -143,6 +143,7 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 
       real bql(lx1*ly1*lz1,lelt)
 
+#ifndef MOAB
       nel   = nelfld(ifield)
       nxyz1 = nx1*ny1*nz1
       ntot1 = nxyz1*nel
@@ -156,8 +157,13 @@ c     Set user specified volumetric forcing function (e.g. heat source).
             call nekuq (bql,iel)
          endif
       enddo
-  101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
-     $    ,/,' Aborting in SETQVOL.')
+c
+c 101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
+c    $    ,/,' Aborting in SETQVOL.')
+#else
+c pulling in temperature right now, since we dont have anything else
+      call userq2(bql)
+#endif
 C   
       return
       end
@@ -178,11 +184,6 @@ C------------------------------------------------------------------
 c
       real bql(lx1,ly1,lz1,lelt)
 c
-#ifdef MOAB
-c pulling in temperature right now, since we dont have anything else
-      call userq2(bql)
-      return
-#endif
       ielg = lglel(iel)
       do 10 k=1,nz1
       do 10 j=1,ny1
