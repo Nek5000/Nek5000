@@ -1509,6 +1509,16 @@ c-----------------------------------------------------------------------
    10 continue
       return
       end
+c-----------------------------------------------------------------------
+      subroutine rrcopy(r,d,N)
+      real*4 d(1)
+      real*4 r(1)
+      do 10 i=1,n
+         r(i)=d(i)
+   10 continue
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine sorts(xout,xin,work,n)
       real xout(1),xin(1),work(1)
       call copy(xout,xin,n)
