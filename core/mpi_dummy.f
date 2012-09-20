@@ -19,19 +19,19 @@ c*********************************************************************72
 
       if ( datatype .eq. mpi_double_precision ) then
 
-        call copy  (  data1, data2, n )
+        call copy  (  data2, data1, n )
 
       else if ( datatype .eq. mpi_integer ) then
 
-        call icopy (  data1, data2, n )
+        call icopy (  data2, data1, n )
 
       else if ( datatype .eq. mpi_integer8 ) then
 
-        call i8copy ( data1, data2, n )
+        call i8copy ( data2, data1, n )
 
       else if ( datatype .eq. mpi_real ) then
 
-        call rrcopy ( data1, data2, n )
+        call rrcopy ( data2, data1, n )
 
       else
 
