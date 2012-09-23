@@ -11,7 +11,7 @@ C
       logical ifbswap,ifre2
       character*132 string
       real*8 etime_tmp
-      integer idum(2*numsts+3)
+      integer idum(3*numsts+3)
 
 C     Test timer accuracy
       edif = 0.0
@@ -57,6 +57,13 @@ C     Read Mesh Info
            do i = numflu+numoth+1, numsts
               matids(i) = -1
            enddo
+           read(9,*) (matindx(i), i = 1, numflu+numoth)
+           do i = numflu+numoth+1, numsts
+              matindx(i) = -1
+           enddo
+           do i = 1, lelt
+              imatie(i) = -1
+           enddo
            read(9,*) numbcs
            if (numbcs .gt. numsts) then
               write(6,'(A)') 
@@ -90,15 +97,18 @@ c pack into long int array and bcast as that
          if (nid .eq. 0) then
             idum(1) = numflu
             idum(2) = numoth
-            idum(3) = numoth
+            idum(3) = numbcs
             do iset = 1, numsts
                idum(3+iset) = matids(iset)
             enddo
             do iset = 1, numsts
                idum(3+numflu+numoth+iset) = ibcsts(iset)
             enddo
+            do iset = 1, numsts
+               idum(3+numflu+numoth+numbcs+iset) = matindx(iset)
+            enddo
          endif
-         call bcast(idum, ISIZE*(3+2*numsts))
+         call bcast(idum, ISIZE*(3+3*numsts))
          call bcast(bctyps, 3*numsts)
          call bcast(bcf, ISIZE*numsts)
 
@@ -111,6 +121,10 @@ c pack into long int array and bcast as that
             enddo
             do iset = 1, numsts
                ibcsts(iset) = idum(3+numflu+numoth+iset)
+            enddo
+            do iset = 1, numsts
+               matindx(iset) = idum(3+numflu+numoth+numbcs+iset)
+               print *, 'isetm', matindx(iset)
             enddo
          endif
       endif
