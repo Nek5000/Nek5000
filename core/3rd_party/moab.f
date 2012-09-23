@@ -407,12 +407,12 @@ c
 
       include 'mpif.h'
 
-      integer iglsum, i, ierr
+      integer iglsum, i, p, tmp, ierr
       iBase_EntitySetHandle dumsets(numsts)
       IBASE_HANDLE_T valptr, setsptr
       integer dumval, dumalloc, dumsize, dumnum, ns, ilast, atend, 
      $     count, tmpcount, ietmp1(numsts), ietmp2(numsts), npass, 
-     $     ipass, m, k, iwork
+     $     ipass, m, k, iwork, dumval2
       common /ctmp0/ iwork(lelt)
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
       integer nekcomm, nekgroup, nekreal, nid_, np_
@@ -422,8 +422,10 @@ c get fluid, other material sets, and count elements in them
       setsptr = loc(dumsets(1))
       dumalloc = numsts
       ilast = 0
+      tmp = 1
       do i = 1, numflu+numoth
          dumval = matids(i)
+         dumval2 =matindx(i)
          dumsize = numsts
 c get the set by matset number
          call iMesh_getEntSetsByTagsRec(%VAL(imeshh), %VAL(fileset),
@@ -453,6 +455,10 @@ c     get an iterator for this set, used later
          endif
 
 c set total number if nec
+         do p = tmp, ilast
+            IMATIE(p) = dumval2 
+         enddo
+         tmp = ilast+1
          if (i .eq. numflu) then
             nelv = ilast
          endif
@@ -460,6 +466,7 @@ c this is if, not elseif, to handle numoth=0
          if (i .eq. numflu+numoth) then
             nelt = ilast
          endif
+            
       enddo
 
 c set remaining values to default values
