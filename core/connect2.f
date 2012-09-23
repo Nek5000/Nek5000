@@ -124,7 +124,6 @@ c pack into long int array and bcast as that
             enddo
             do iset = 1, numsts
                matindx(iset) = idum(3+numflu+numoth+numbcs+iset)
-               print *, 'isetm', matindx(iset)
             enddo
          endif
       endif
