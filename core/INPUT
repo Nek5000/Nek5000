@@ -92,3 +92,5 @@ C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
       COMMON /INPUTMR/ BCF    (NUMSTS)
       COMMON /INPUTMC/ BCTYPS (NUMSTS)
       CHARACTER*3 BCTYPS
+      integer     bcf
+

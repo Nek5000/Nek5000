@@ -1,5 +1,7 @@
       INTEGER NELGT_MAX, LFDM0, LP_SMALL, LEIG, IBRNCH, IEACT, IFLDMHD, 
-     $     IGROUP, IND23, LTFDM2, IPSCAL, ngeom
+     $     IGROUP, IND23, LTFDM2, IPSCAL, ngeom,
+     $     NUMSTS, NUMFLU, NUMOTH, NUMBCS,
+     $     MATINDX, MATIDS, IMATIE, IBCSTS
       REAL BC, BCS, BXYI, CERROR, CG, CPFLD, CPGRP, CURVE, EIGP, xc
       LOGICAL FLAG
       integer lelg_sm, leig2, ipsco, irstim, irstt, irstv, list, list1, 
