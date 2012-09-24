@@ -86,7 +86,7 @@ C
 C
 C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
       PARAMETER (NUMSTS=50)
-      COMMON /INPUTMI/ NUMFLU, NUMOTH, NUMBCS, 
+      COMMON /INPUTMI/ NUMFLU, NUMOTH, NUMBCS 
      $	             , MATINDX(NUMSTS),MATIDS(NUMSTS),IMATIE(LELT)
      $ 	             , IBCSTS (NUMSTS) 
       COMMON /INPUTMR/ BCF    (NUMSTS)
