@@ -124,8 +124,7 @@
 #define gs_unique  PREFIXED_NAME(gs_unique)
 
 struct gs_data;
-typedef enum { gs_pairwise, gs_crystal_router, gs_all_reduce,
-               gs_auto } gs_method;
+typedef enum {gs_auto, gs_pairwise, gs_crystal_router, gs_all_reduce} gs_method;
 
 void gs(void *u, gs_dom dom, gs_op op, unsigned transpose,
         struct gs_data *gsh, buffer *buf);

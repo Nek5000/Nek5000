@@ -1063,8 +1063,7 @@ void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,
 /*------------------------------------------------------------------------------
   Main Setup
 ------------------------------------------------------------------------------*/
-typedef enum { gs_pairwise, gs_crystal_router, gs_all_reduce,
-               gs_auto } gs_method;
+typedef enum {gs_auto, gs_pairwise, gs_crystal_router, gs_all_reduce} gs_method;
 
 static void local_setup(struct gs_data *gsh, const struct array *nz)
 {
@@ -1077,7 +1076,7 @@ static void gs_setup_aux(struct gs_data *gsh, const slong *id, uint n,
                          int unique, gs_method method, int verbose)
 {
   static setup_fun *const remote_setup[] =
-    { &pw_setup, &cr_setup, &allreduce_setup, &auto_setup };
+    { &auto_setup, &pw_setup, &cr_setup, &allreduce_setup };
 
   struct gs_topology top;
   struct crystal cr;
@@ -1144,27 +1143,35 @@ void gs_unique(slong *id, uint n, const struct comm *comm)
 #define cgs_setup PREFIXED_NAME(gs_setup)
 #define cgs_free  PREFIXED_NAME(gs_free )
 
-#define fgs_setup  FORTRAN_NAME(gs_setup    ,GS_SETUP    )
-#define fgs        FORTRAN_NAME(gs_op       ,GS_OP       )
-#define fgs_vec    FORTRAN_NAME(gs_op_vec   ,GS_OP_VEC   )
-#define fgs_many   FORTRAN_NAME(gs_op_many  ,GS_OP_MANY  )
-#define fgs_fields FORTRAN_NAME(gs_op_fields,GS_OP_FIELDS)
-#define fgs_free   FORTRAN_NAME(gs_free     ,GS_FREE     )
+#define fgs_setup_pick FORTRAN_NAME(gs_setup_pick,GS_SETUP_PICK)
+#define fgs_setup      FORTRAN_NAME(gs_setup     ,GS_SETUP     )
+#define fgs            FORTRAN_NAME(gs_op        ,GS_OP        )
+#define fgs_vec        FORTRAN_NAME(gs_op_vec    ,GS_OP_VEC    )
+#define fgs_many       FORTRAN_NAME(gs_op_many   ,GS_OP_MANY   )
+#define fgs_fields     FORTRAN_NAME(gs_op_fields ,GS_OP_FIELDS )
+#define fgs_free       FORTRAN_NAME(gs_free      ,GS_FREE      )
 
 static struct gs_data **fgs_info = 0;
 static int fgs_max = 0;
 static int fgs_n = 0;
 
-void fgs_setup(sint *handle, const slong id[], const sint *n,
-               const MPI_Fint *comm, const sint *np)
+void fgs_setup_pick(sint *handle, const slong id[], const sint *n,
+                    const MPI_Fint *comm, const sint *np, const sint *method)
 {
   struct gs_data *gsh;
   if(fgs_n==fgs_max) fgs_max+=fgs_max/2+1,
                      fgs_info=trealloc(struct gs_data*,fgs_info,fgs_max);
   gsh=fgs_info[fgs_n]=tmalloc(struct gs_data,1);
   comm_init_check(&gsh->comm,*comm,*np);
-  gs_setup_aux(gsh,id,*n,0,gs_auto,1);
+  gs_setup_aux(gsh,id,*n,0,*method,1);
   *handle = fgs_n++;
+}
+
+void fgs_setup(sint *handle, const slong id[], const sint *n,
+               const MPI_Fint *comm, const sint *np)
+{
+  const sint method = gs_auto;
+  fgs_setup_pick(handle,id,n,comm,np,&method);
 }
 
 static void fgs_check_handle(sint handle, const char *func, unsigned line)
