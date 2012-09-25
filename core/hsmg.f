@@ -1883,6 +1883,9 @@ c     if (lx1.eq.6)  mgnx2 = 3
       if (lx1.le.10) mgnx2 = mgn2(nx1)
       if (lx1.eq.8)  mgnx2 = 4
       if (lx1.eq.8)  mgnx2 = 3
+
+      mgnx2 = min(3,mgnx2)  ! This choice seems best (9/24/12)
+
       mg_nx(2) = mgnx2
       mg_ny(2) = mgnx2
       mg_nz(2) = mgnx2
@@ -2546,6 +2549,9 @@ c     if (lx1.eq.6)  mgnx2 = 3
       if (lx1.le.10) mgnx2 = mgn2(nx1)
       if (lx1.eq.8)  mgnx2 = 4
       if (lx1.eq.8)  mgnx2 = 3
+
+      mgnx2 = min(3,mgnx2)  ! This choice seems best (9/24/12)
+
       mg_nx(2) = mgnx2
       mg_ny(2) = mgnx2
       mg_nz(2) = mgnx2
