@@ -3897,6 +3897,9 @@ c
 
 c     write(6,*) 'spec_bis: ', nel
       m=mm
+
+      call izero (key,8) ! zero out arrays to avoid
+      call izero (wk2,8) ! potential compiler issues
       
       call c2c(idual,jdual,vdual,c,nv,nel,iv2c,jv2c,lpts,wk)
       ifconn = is_connected(list,n0,idual,jdual,nel,wk)
