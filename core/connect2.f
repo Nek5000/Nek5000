@@ -1054,56 +1054,66 @@ C     .Read Initial Conditions / Drive Force
 C
 C     .Broadcast ICFILE to all processors
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'PARALLEL'
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
 
-      CHARACTER*132 LINE
-      LOGICAL      IFGTIL
+      character*132 line
+      logical      ifgtil
 
-      IF(NID.EQ.0) THEN
-C       Read Restart Files
-        CALL BLANK(INITC,15*132)
-        READ(9,80,ERR=200,END=200) LINE
-        IF (INDX1(LINE,'RESTART',7).NE.0) THEN
-           IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
-c          READ(LINE,*,ERR=200,END=200) NSKIP
-           DO 50 I=1,NSKIP
-              READ(9,80,ERR=200,END=200) INITC(I)
-   50      CONTINUE
-           READ(9,80,ERR=200,END=200) LINE
-        ENDIF
-   80   FORMAT(A132)
+      ierr = 0
 
-        IF (.NOT.IFGTIL(NSKIP,LINE)) GOTO 200
+      if (nid.eq.0) then   !  Read names of restart files
+
+        call blank(initc,15*132)
+        read (9,80,err=200,end=200) line
+        call capit(line,132)
+        if (indx1(line,'RESTART',7).ne.0) then
+           if (.not.ifgtil(nskip,line)) goto 200
+C          read(line,*,err=200,end=200) nskip
+           do 50 i=1,nskip
+              read(9,80,err=200,end=200) initc(i)
+   50      continue
+           read(9,80,err=200,end=200) line
+        endif
+   80   format(a132)
+
+        if (.not.ifgtil(nskip,line)) goto 200
 
 C       Read initial conditions
-        DO 100 I=1,NSKIP
-           READ(9,80,ERR=200,END=200) LINE
-  100   CONTINUE
+        do 100 i=1,nskip
+           read(9,80,err=200,end=200) line
+  100   continue
 
 C       Read drive force data
-        READ(9,*,ERR=200,END=200)
-        READ(9,*,ERR=200,END=200) NSKIP
-        DO 110 I=1,NSKIP
-          READ(9,80,ERR=200,END=200) LINE
-  110   CONTINUE
-      ENDIF
+        read(9,*,err=200,end=200)
+        read(9,*,err=200,end=200) nskip
+        do 110 i=1,nskip
+          read(9,80,err=200,end=200) line
+  110   continue
+      endif
 
-      CALL BCAST(INITC,15*132*CSIZE)
+      ierr = iglmax(ierr,1)
+      if (ierr.eq.0) then
+         call bcast(initc,15*132*csize)
+         return
+      else
+         goto 210
+      endif
+c
+c     Error handling:
+c
+  200 ierr = 1
+      ierr = iglmax(ierr,1)
+      
+  210 continue
+      if (nid.eq.0) write(6,300)
+  300 format(2x,'Error reading initial condition/drive force data'
+     $    ,/,2x,'aborting in routine rdicdf.')
+      call exitti('rdicdf error$',ierr)
 
       return
-C
-C     Error handling:
-C
-  200 CONTINUE
-      if(nid.eq.0) WRITE(6,201)
-  201 FORMAT(2X,'ERROR READING INITIAL CONDITION/DRIVE FORCE DATA'
-     $    ,/,2X,'ABORTING IN ROUTINE RDICDF.')
-      call exitt
-C
-      return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine rdmatp
 C
