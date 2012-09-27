@@ -133,7 +133,7 @@ C
       include 'SIZE'
       include 'INPUT'
       real v(nv,nv,nv),u(nu,nu,nu)
-      real A(1),B(1),C(1)
+      real A(1),Bt(1),Ct(1)
       real w(1)
 
       if (nu.gt.nv) then
