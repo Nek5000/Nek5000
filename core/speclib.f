@@ -527,7 +527,7 @@ C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGJD(NZD)
+      REAL*8  ZD,ZGJD(NZD),HGJD
       REAL Z,ZGJ(1),ALPHA,BETA
       NPMAX = NZD
       IF (NP.GT.NPMAX) THEN
@@ -580,7 +580,7 @@ C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGLJD(NZD)
+      REAL*8  ZD,ZGLJD(NZD),HGLJD
       REAL Z,ZGLJ(1),ALPHA,BETA
       NPMAX = NZD
       IF (NP.GT.NPMAX) THEN
