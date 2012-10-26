@@ -461,6 +461,7 @@ c
       endif
 
       ! locate points (iel,iproc,r,s,t)
+      nfail = 0 
       if(ifpts) then
         if(nid.eq.0) write(6,*) 'call findpts'
         call findpts(ih,rcode,1,
@@ -471,7 +472,6 @@ c
      &               pts(    1),1,
      &               pts(  n+1),1,
      &               pts(2*n+1),1,n)
-        nfail = 0 
         do in=1,n
            ! check return code 
            if(rcode(in).eq.1) then
@@ -1458,6 +1458,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       parameter(nfldm=ldim+ldimt+1)
 
+
       common /c_hptsr/ pts      (ldim,lhis)
      $               , fieldout (nfldm,lhis)
      $               , dist     (lhis)
@@ -1471,21 +1472,21 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       logical iffind
 
-      integer icalld,npoints
-      save    icalld,npoints
+      integer icalld,npoints,npts
+      save    icalld,npoints,npts
       data    icalld  /0/
       data    npoints /0/
 
       save    inth_hpts
 
       nxyz  = nx1*ny1*nz1
-      ntot  = nxyz*nelt
-      npts  = lhis
-      nbuff = npts
+      ntot  = nxyz*nelt 
+      nbuff = lhis      ! point to be read in on 1 proc.
 
       if(nid.eq.0) write(6,*) 'dump history points'
 
       if(icalld.eq.0) then
+        npts  = lhis      ! number of points per proc
         call hpts_in(pts,npts,npoints)
         call intpts_setup(-1.0,inth_hpts) ! use default tolerance
       endif
@@ -1571,7 +1572,7 @@ c-----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'PARALLEL'
 
-      real    buffer(ldim,nbuf)
+      real    buffer(ldim,nbuf)  
 
       ierr = 0
       if(nid.eq.0) then
