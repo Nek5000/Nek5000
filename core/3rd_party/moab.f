@@ -65,19 +65,10 @@ c   . call usr_moab_output (zero.usr, xxx.usr):
 c     - call nekMOAB_export_vars (moab.f): write fields to MOAB tags
 c     - if an io step, call iMesh_save
 c 
-#ifdef PTRSIZE8
-#define IMESH_HANDLE integer*8
-#else
-#define IMESH_HANDLE integer*4
-#endif
 
 #define IMESH_NULL 0
 #define IMESH_ASSERT \
       if (ierr.ne.0) call imesh_err(ierr,imeshh,'moab.f ',__LINE__)
-
-#define IMESH_NULLSTRIP(s) s(:index(s, char(0))-1)
-
-#define MYLOC LOC
 
 c-----------------------------------------------------------------------
       subroutine nekMOAB_init(comm_f, imesh_instance, partn_handle, 
@@ -244,10 +235,10 @@ c-----------------------------------------------------------------------
       endif
 
 #ifdef MPI
-      partsSize = 0
-      rpParts = IMESH_NULL
-      call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
-     $     rpParts, partsSize, partsSize, ierr)
+c      partsSize = 0
+c      rpParts = IMESH_NULL
+c      call iMeshP_getLocalParts(%VAL(imeshh), %VAL(hPartn), 
+c     $     rpParts, partsSize, partsSize, ierr)
 #endif
 
       call nekMOAB_create_tags             ! allocate MOAB tags to reflect Nek variables
@@ -979,7 +970,7 @@ c
            call nekMOAB_getElNo(ahex(j), elno)
            if (ahexSize .eq. 2) elnos(j) = elno
 
-           if (bcdata(side_no, elno, field) .ne. -1) 
+           if (bcdata(side_no, elno, field) .ne. -1)
      $          print *, 'Warning: resetting BC, bcno, elno, sideno = ', 
      $            setId, elno, side_no 
            bcdata(side_no, elno, field) = setId
@@ -988,7 +979,10 @@ c
            call free(rphvtx)
          enddo
 
-         if (ahexSize .eq. 2) 
+c		 Check if we share a side and warn iff not solving a 
+c		 conjugate-heat transfer problem i.e., only if elements of 
+c		 non-fluid type are present.
+         if (ahexSize .eq. 2 .and. numoth .eq. 0 ) 
      $        print *, 'Warning: face shared by 2 hexes: ', elnos(1), 
      $        elnos(2)
 
@@ -1747,10 +1741,12 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
       block data nekMOABdata
-#include "NEKMOAB"
+#include "MOABCORE"
       data imeshh/0/, hPartn/0/, fileset/0/, 
-     $     rpParts/0/, rpHexes/0/, rpxm1/0/, rpym1/0/, rpzm1/0/, 
-     $     rpvx/0/, rpvy/0/, rpvz/0/, rpt/0/, rpp/0/,
+c	  The following variables have been removed from MOABCORE interface
+c     $     rpParts/0/, rpHexes/0/, 
+c     $     rpxm1/0/, rpym1/0/, rpzm1/0/, 
+c     $     rpvx/0/, rpvy/0/, rpvz/0/, rpt/0/, rpp/0/,
      $     globalIdTag/0/, matsetTag/0/, neusetTag/0/,
      $     matsets/numsts*0/, ieiter/numsts*0/, 
      $     xm1Tag/0/, ym1Tag/0/, zm1Tag/0/, vxTag/0/, vyTag/0/, 
@@ -1758,7 +1754,8 @@ c-----------------------------------------------------------------------
      $     pTag/0/, dTag/0/, powTag/0/, vtTag/0/, vpTag/0/, vdTag/0/, 
      $     vpowTag/0/, senseTag/0/, 
      $     iCreatedImesh/0/, iCreatedPartn/0/, iCreatedFileset/0/, 
-     $     iestart/numsts*0/, iecount/numsts*0/, 
-     $     partsSize/0/, hexesSize/0/
+     $     iestart/numsts*0/, iecount/numsts*0/ 
+c	  The following variables have been removed from MOABCORE interface
+c     $     partsSize/0/, hexesSize/0/
       end
 

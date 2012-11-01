@@ -1,99 +1,59 @@
-      INTEGER NELGT_MAX, LFDM0, LP_SMALL, LEIG, IBRNCH, IEACT, IFLDMHD, 
-     $     IGROUP, IND23, LTFDM2, IPSCAL, ngeom,
-     $     NUMSTS, NUMFLU, NUMOTH, NUMBCS,
-     $     MATINDX, MATIDS, IMATIE, IBCSTS
-      REAL BC, BCS, BXYI, CERROR, CG, CPFLD, CPGRP, CURVE, EIGP, xc
-      LOGICAL FLAG
-      integer lelg_sm, leig2, ipsco, irstim, irstt, irstv, list, list1, 
-     $     list2, lochis, matype, mcex, msg_id, msp, nbrnch, neact, 
-     $     neigx, neigy, neigz, nelgt, nelgv, nelx, mlp, nelg, nelxy, 
-     $     nely, nelz, ngfdm_v, nhis, nktonv, nmember, nobj, npscal, 
-     $     ngfdm_p, ncrnr, lvt1, lvt2, lbt1, lbt2, lptmsk, lptsol, 
-     $     lorder2, jp, ifield, imesh, instep, iocomm, iostep, istep,
-     $     lastep, nab, nbd, nbdinp, nconv, nconv_max, nelfld, ninter, 
-     $     nmxe, nmxh, nmxnl, nmxp, nsteps, ntaubd
-      real param, qinteg, rmax, rmxs, rstim, rx2, ry2, side, sp, spt, 
-     $     sx2, sy2, tmp2, w2d, wavep, xcg, xgs, xgtp, xml, xms, xyz,
-     $     xyzl, yc, ycg, ygs, ygtp, yml, yms, zc, zcg, zgs, sides, 
-     $     vnekton, zml, zms, zgtp, area, dlam, dtmp, g1m1, g2m1, 
-     $	   g3m1, g4m1, g5m1, g6m1, rx, rxm1, rxm2, rym1, rym2, rzm1,
-     $	   rzm2, sxm1, sxm2, sym1, sym2, szm1, szm2, t1x, t1y, t1z,
-     $	   t2x, t2y, t2z, txm1, txm2, tym1, tym2, tzm1, tzm2, unx,
-     $	   uny, unz, v1x, v1y, v1z, v2x, v2y, v2z, vnx, vny, vnz,
-     $	   xm1, xm2, ym1, ym2, zm1, zm2, abx1, abx2, aby1, aby2, abz1,
-     $     abz2, b1mask, b2mask, b3mask, bbx1, bbx2, bby1, bby2, bbz1, 
-     $     bbz2, bfx, bfxp, bfy, bfyp, bfz, bfzp, bmx, bmy, bmz, bq, 
-     $     bqp, bx, bxlag, by, bylag, bz, bzlag, c_vx, exx1p, exx2p, 
-     $     exy1p, bpmask, exy2p, exz1p, omask, pm, pmask, pmlag, pr, 
-     $     prlag, prlagp, prp, qtl, t, tlag, tlagp, tmask, tmult, tp, 
-     $     usrdiv, v1mask, v2mask, v3mask, vdiff, exz2p, vdiff_e, 
-     $     vgradt1, vgradt1p, vgradt2, vgradt2p, vmult, vtrans, vx, 
-     $     vxlag, vxlagp, vxp, vy, vylag, vylagp, vyp, vz, vzlag, 
-     $     vzlagp, vzp, ab, abm, abmsh, avdiff, avtran, bd, betag, 
-     $     courno, ctarg, dt, dtinit, dtinvm, dtlag, fintim, gtheta, pi, 
-     $     prelax, time, timef, timeio, tmean, tnrmh1, tnrml2, tnrml8, 
-     $     tnrmsm, tolabs, tolev, tolhdf, tolhe, tolhr, tolhs, tolht, 
-     $     tolhv, tolnl, tolpdf, tolps, tolrel, vmean, vnrmh1, vnrml2, 
-     $     vnrml8, vnrmsm, volfld
 
-
-c Data common to functions in moab.f. Do #include instead of include or 
-c it won't work (because we're using preproc macros here)
-#ifdef PTRSIZE8
-#define POINTER_SIZE 8
-#else
-#define POINTER_SIZE 4
-#endif
-#ifdef MPI
-#include "iMeshP_f.h"
-#else
-#include "iMesh_f.h"
-#endif
-
-      include 'SIZE'
-      include 'INPUT'
-
-      integer*4 hexesSize, partsSize
-
-      IBASE_HANDLE_T imeshh, fileset, rpHexes, rpParts, hPartn
-      integer iCreatedImesh, iCreatedPartn, iCreatedFileset
-
-      iBase_EntityHandle hHexes(*), hParts(*)
-      pointer (rpHexes, hHexes), (rpParts, hParts)
-
-      iBase_EntitySetHandle matsets
-      iBase_EntityArrIterator ieiter
-      iBase_TagHandle xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
-     $     pTag, dTag, powTag, vtTag, vpTag, vdTag, vpowTag,
-     $	   globalIdTag, matsetTag, neusetTag, senseTag
-
-      integer iestart, iecount
-
-      common /nekmoab/ imeshh, hPartn, fileset, 
-     $     rpParts, rpHexes, rpxm1, rpym1, rpzm1, 
-     $     rpvx, rpvy, rpvz, rpt, rpp,
-     $     globalIdTag, matsetTag, neusetTag,
-     $     matsets(numsts), ieiter(numsts), 
-     $     xm1Tag, ym1Tag, zm1Tag, vxTag, vyTag, vzTag, tTag, 
-     $     pTag, dTag, powTag, vtTag, vpTag, vdTag, vpowTag,
-     $     senseTag, 
-     $     iCreatedImesh, iCreatedPartn, iCreatedFileset, 
-     $     iestart(numsts), iecount(numsts),
-     $     partsSize, hexesSize
+	    INTEGER MATYPE, NKTONV, NHIS, LOCHIS, IPSCAL, NPSCAL
+	    INTEGER IPSCO, IFLDMHD, NUMFLU, NUMOTH, NUMBCS
+	    INTEGER NELGT_MAX, IMATIE, NGEOM, IGROUP, IEACT, NEACT
+	    INTEGER NELG, NELGT, NELGV, LFDM0, LELG_SM, LTFDM2, LEIG, LEIG2
+	    INTEGER LP_SMALL, LIST, LIST1, LIST2, NEIGX, NEIGY, NEIGZ
+	    INTEGER NBRNCH, IBRNCH, MSP, MLP, NELX, NELY, NELZ, NELXY
+	    INTEGER NGFDM_P, NGFDM_V, MSG_ID, MCEX, IND23, LORDER2, NCRNR
+	    INTEGER LVT1, LVT2, LBT1, LBT2, LPTMSK, LPTSOL, INSTEP
+	    INTEGER IFIELD, IMESH, ISTEP, NSTEPS, IOSTEP, LASTEP, IOCOMM
+	    INTEGER NCONV, NCONV_MAX, NAB, NBD, NBDINP, NTAUBD
+	    INTEGER NMXH, NMXP, NMXE, NMXNL, NINTER, NELFLD
+	 
+	    REAL PARAM, RSTIM, VNEKTON, CPFLD, CPGRP, QINTEG, IRSTV
+	    REAL BC, IRSTT, IRSTIM, NMEMBER, NOBJ, CURVE, CERROR
+		REAL FLAG, TMP2, BCS, XYZ
+	    REAL XC, YC, ZC, XM1, XM2, YM1, YM2, ZM1, ZM2, RX2, RY2
+	    REAL RX, RXM1, SXM1, TXM1, RXM2, SXM2, TXM2, SX2, SY2
+	    REAL RYM1, SYM1, TYM1, RYM2, SYM2, TYM2
+	    REAL RZM1, SZM1, TZM1, RZM2, SZM2, TZM2
+	    REAL G1M1, G2M1, G3M1, G4M1, G5M1, G6M1
+	    REAL T1X, T1Y, T1Z, T2X, T2Y, T2Z
+	    REAL V1X, V1Y, V1Z, V2X, V2Y, V2Z
+	    REAL UNX, UNY, UNZ, VNX, VNY, VNZ
+	    REAL AREA, DLAM, XYZL, CG, RMXS, RMAX, XMS, YMS, ZMS
+	    REAL XCG, YCG, ZCG, XGS, YGS, ZGS, XML, YML, ZML
+	    REAL SIDE, SIDES, SP, SPT, EIGP, WAVEP, C_VX, W2D
+	    REAL BX, BY, BZ, BMX, BMY, BMZ, BFX, BFY, BFZ, PMLAG, PRLAG
+ 	    REAL XGTP, YGTP, ZGTP, BXYI, DTMP, VXLAG, VYLAG, VZLAG, TLAG
+	    REAL VX, VY, VZ, T, PR, VTRANS
+	    REAL ABX1, ABX2, ABY1, ABY2, ABZ1, ABZ2, BQ, VGRADT1, VGRADT2
+	    REAL VDIFF_E, VDIFF, PM, QTL, V1MASK, V2MASK, PMASK, TMASK, OMASK
+	    REAL VMULT, TMULT, B1MASK, B2MASK, B3MASK, BPMASK
+	    REAL VXP, VYP, VZP, PRP, TP, USRDIV
+	    REAL EXX1P, EXY1P, EXZ1P, EXX2P, EXY2P, EXZ2P
+	    REAL BBX1, BBY1, BBZ1, BBX2, BBY2, BBZ2, BXLAG, BYLAG, BZLAG
+	    REAL BQP, BFXP, BFYP, BFZP, VXLAGP, VYLAGP, VZLAGP, TLAGP, PRLAGP
+	    REAL V3MASK, VGRADT1P, VGRADT2P, JP
+	    REAL TIME, TIMEF, FINTIM, TIMEIO, DT, DTLAG, DTINIT, DTINVM
+	    REAL COURNO, CTARG, AB, BD, ABMSH, AVDIFF, AVTRAN, VOLFLD
+	    REAL TOLREL, TOLABS, TOLHDF, TOLPDF, TOLEV, TOLNL, PRELAX
+	    REAL TOLPS, TOLHS, TOLHR, TOLHV, TOLHT, TOLHE
+	    REAL VNRMH1, VNRMSM, VNRML2, VNRML8, VMEAN, TNRMH1, TNRMSM, TNRML2
+	    REAL TNRML8, TMEAN, PI, BETAG, GTHETA
+	   
+c      include 'SIZE'
+c      include 'INPUT'
+#include 'MOABCORE'
 
       integer TWENTYSEVEN
       parameter (TWENTYSEVEN = 27)
 
       integer SIX
       parameter (SIX = 6)
-      
-      real prl, tl, vxl, vyl, vzl, xm1l, ym1l, zm1l
-      pointer (rpxm1, xm1l(lx1, ly1, lz1, lelt))
-      pointer (rpym1, ym1l(lx1, ly1, lz1, lelt))
-      pointer (rpzm1, zm1l(lx1, ly1, lz1, lelt))
-      pointer (rpvx, vxl(lx1, ly1, lz1, lelt))
-      pointer (rpvy, vyl(lx1, ly1, lz1, lelt))
-      pointer (rpvz, vzl(lx1, ly1, lz1, lelt))
-      pointer (rpt, tl(lx1, ly1, lz1, lelt, *))
-      pointer (rpp, prl(lx2, ly2, lz2, lelt))
+
+c	  Removing the unused variables from NEMOAB interface
+c      iBase_EntityHandle hHexes(*), hParts(*)
+c      real prl, tl, vxl, vyl, vzl, xm1l, ym1l, zm1l
 
