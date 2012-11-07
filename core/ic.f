@@ -2094,7 +2094,6 @@ c-----------------------------------------------------------------------
          endif
          if (if_byte_sw) then
             call byte_reverse(wk(l),nxyzv,ierr)
-            call err_chk(ierr,'Error with byte reverse in mfi_gets.$')
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2113,8 +2112,8 @@ c-----------------------------------------------------------------------
       enddo
 
 
-      call err_chk(ierr,'Error reading restart data,in gets.$')
- 100  return
+ 100  call err_chk(ierr,'Error reading restart data,in gets.$')
+      return
       end
 c-----------------------------------------------------------------------
       subroutine mfi_getv(u,v,w,wk,lwk,iskip)
@@ -2153,8 +2152,8 @@ c-----------------------------------------------------------------------
          nread = iglmax(nread,1) ! needed because of collective read
 #endif
          nelrr = nelr/nread
-         call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
       endif
+      call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
 
       ! pre-post recieves (one mesg per element)
       ! this assumes we never pre post more messages than supported
@@ -2229,7 +2228,6 @@ c-----------------------------------------------------------------------
          endif
          if (if_byte_sw) then
             call byte_reverse(wk(l),nxyzv,ierr)
-            call err_chk(ierr,'Error with byte reverse in mfi_getv.$')
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2237,6 +2235,8 @@ c-----------------------------------------------------------------------
                call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
                if (if3d) 
      $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
+               write(6,*) u(1,ei),v(1,ei),w(1,ei),nid
+               call exitt
             else
                call copy  (u(1,ei),wk(l        ),nxyzr)
                call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
@@ -2259,8 +2259,8 @@ c-----------------------------------------------------------------------
          l = l+ndim*nxyzw
       enddo
 
-      call err_chk(ierr,'Error reading restart data, in getv.$')
- 100  return
+ 100  call err_chk(ierr,'Error reading restart data, in getv.$')
+      return
       end
 c-----------------------------------------------------------------------
       subroutine mfi_parse_hdr(hdr)
@@ -2668,11 +2668,14 @@ c-----------------------------------------------------------------------
       pid1r = nid
       offs0 = iHeaderSize + 4
       call mbyte_open(hname,0,ierr)
+      ierr=iglmax(ierr,1)
       if(ierr.ne.0) goto 103
+
       call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
+      ierr=iglmax(ierr,1)
       if(ierr.ne.0) goto 103
+
       call byte_read_mpi(bytetest,1,pid00,ifh_mbyte,ierr)
-      if(ierr.ne.0) goto 103
 
  103  continue 
       call err_chk(ierr,'Error reading header/element map.$')
@@ -2681,7 +2684,6 @@ c-----------------------------------------------------------------------
       call bcast(bytetest,4) 
 
       if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
-      if(ierr.ne.0) goto 102
       call mfi_parse_hdr(hdr)
       if(nfiler.ne.1) then
         if(nid.eq.0) write(6,*) 'ABORT: too many restart files!'

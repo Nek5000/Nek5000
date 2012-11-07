@@ -132,7 +132,7 @@ C
 C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD(NZD),WD(NZD)
+      REAL*8  ZD(NZD),WD(NZD),APHAD,BETAD
       REAL Z(1),W(1),ALPHA,BETA
 C
       NPMAX = NZD
@@ -215,7 +215,7 @@ C
 C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD(NZD),WD(NZD)
+      REAL*8  ZD(NZD),WD(NZD),ALPHAD,BETAD
       REAL Z(1),W(1),ALPHA,BETA
 C
       NPMAX = NZD
@@ -527,7 +527,7 @@ C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGJD(NZD),HGJD
+      REAL*8  ZD,ZGJD(NZD),HGJD,ALPHAD,BETAD
       REAL Z,ZGJ(1),ALPHA,BETA
       NPMAX = NZD
       IF (NP.GT.NPMAX) THEN
@@ -580,7 +580,7 @@ C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGLJD(NZD),HGLJD
+      REAL*8  ZD,ZGLJD(NZD),HGLJD,ALPHAD,BETAD
       REAL Z,ZGLJ(1),ALPHA,BETA
       NPMAX = NZD
       IF (NP.GT.NPMAX) THEN
@@ -639,7 +639,7 @@ C
 C-----------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZDD = NMAX)
-      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD)
+      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD),ALPHAD,BETAD
       REAL D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
 C
       IF (NZ.LE.0) THEN
@@ -720,7 +720,7 @@ C
 C-----------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZDD = NMAX)
-      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD)
+      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD),ALPHAD,BETAD
       REAL D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
 C
       IF (NZ.LE.1) THEN
