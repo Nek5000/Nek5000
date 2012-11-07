@@ -2235,8 +2235,6 @@ c-----------------------------------------------------------------------
                call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
                if (if3d) 
      $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
-               write(6,*) u(1,ei),v(1,ei),w(1,ei),nid
-               call exitt
             else
                call copy  (u(1,ei),wk(l        ),nxyzr)
                call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
