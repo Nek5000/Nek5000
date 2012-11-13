@@ -2017,8 +2017,9 @@ c-----------------------------------------------------------------------
          nread = iglmax(nread,1) ! needed because of collective read
 #endif
          nelrr = nelr/nread
-         call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
       endif
+      call bcast(nelrr,4)
+      call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
 
       ! pre-post recieves
       if (np.gt.1) then
@@ -2153,6 +2154,7 @@ c-----------------------------------------------------------------------
 #endif
          nelrr = nelr/nread
       endif
+      call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
 
       ! pre-post recieves (one mesg per element)
