@@ -27,6 +27,7 @@ c
       call geti1(nfld,iend,7)                ! Determine number of fields
  
       if3d=.false.
+      ndim=abs(ndim)
       if (ndim.eq.3) if3d=.true.
       call getbox(xe,nelx,ye,nely,ze,nelz,nfld,if3d)  ! Read in the .box file
  
