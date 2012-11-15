@@ -92,14 +92,28 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine gop( x, w, op, n)
-c
+
 c     Global vector commutative operation
-c
+
+      include 'CTIMER'
+
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-c
+
       real x(n), w(n)
       character*3 op
+
+      if (ifsync) call nekgsync()
+
+#ifndef NOTIMER
+      if (icalld.eq.0) then
+        tgop =0.0d0
+        ngop =0
+        icalld=1
+      endif
+      ngop = ngop + 1
+      etime1=dnekclock()
+#endif
 c
       if (op.eq.'+  ') then
          call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
@@ -115,6 +129,10 @@ c
       endif
 
       call copy(x,w,n)
+
+#ifndef NOTIMER
+      tgop =tgop +(dnekclock()-etime1)
+#endif
 
       return
       end
@@ -821,11 +839,24 @@ c-----------------------------------------------------------------------
       parameter (mwd = 3*lt)
       common /scrns/ x(mwd),y(mwd)
       common /scruz/ times(2,500)
+      common /scrcg/ nwd(500)
 
-      call rzero(x,mwd)
+      nwds  = 1
+      mtest = 0
+      do itest = 1,500
+         nwds = (nwds+1)*1.016
+         if (nwds.gt.mwd) goto 100
+         mtest = mtest+1
+         nwd(mtest) = nwds
+      enddo
+  100 continue
 
       nwds = 1
-      do itest = 1,500
+      do itest = mtest,1,-1
+
+         tiny = 1.e-27
+         call cfill(x,tiny,mwd)
+         nwds = nwd(itest)
          call nekgsync
 
          t0 = mpi_wtime ()
@@ -833,16 +864,16 @@ c-----------------------------------------------------------------------
          call gop(x,y,'+  ',nwds)
          call gop(x,y,'+  ',nwds)
          call gop(x,y,'+  ',nwds)
+         call gop(x,y,'+  ',nwds)
+         call gop(x,y,'+  ',nwds)
          t1 = mpi_wtime ()
 
-         tmsg = (t1-t0)/4 ! four calls
+         tmsg = (t1-t0)/6 ! six calls
          tpwd = tmsg
          if (nwds.gt.0) tpwd = tmsg/nwds
          times(1,itest) = tmsg
          times(2,itest) = tpwd
 
-         nwds = (nwds+1)*1.016
-         if (nwds.gt.mwd) goto 101
       enddo
   101 continue
 
@@ -1168,5 +1199,4 @@ c     Double Buffer : does 2*nloop timings
 
       return
       end
-
-
+c-----------------------------------------------------------------------
