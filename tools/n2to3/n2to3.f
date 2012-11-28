@@ -1157,7 +1157,7 @@ C
                  endif
                else
                  call icopy(buf(1),ie,1)
-                 call icopy(buf(2),ied4,1)
+                 call icopy(buf(2),iedg,1)
                  buf(3) = r1
                  buf(4) = r2
                  buf(5) = r30
