@@ -1121,8 +1121,8 @@ C
                    write(11,62) ied4,ie,r1,r2,r3,r4,r5,ans
                  endif
                else
-                 buf(1) = iedg
-                 buf(2) = ie
+                 call icopy(buf(1),ie,1)
+                 call icopy(buf(2),iedg,1)
                  buf(3) = r1
                  buf(4) = r2
                  buf(5) = r3
@@ -1130,8 +1130,8 @@ C
                  buf(7) = r5
                  call chcopy(buf(8),ans,1)
                  ied4    = iedg+4
-                 buf(9)  = ied4
-                 buf(10) = ie
+                 call icopy(buf(9),ie,1)
+                 call icopy(buf(10),ied4,1)
                  buf(11) = r1
                  buf(12) = r2
                  buf(13) = r3
@@ -1156,8 +1156,8 @@ C
                    write(11,62) ied4,ie,r1,r2,r31,r4,r5,ans
                  endif
                else
-                 buf(1) = iedg
-                 buf(2) = ie
+                 call icopy(buf(1),ie,1)
+                 call icopy(buf(2),ied4,1)
                  buf(3) = r1
                  buf(4) = r2
                  buf(5) = r30
@@ -1165,8 +1165,8 @@ C
                  buf(7) = r5
                  call chcopy(buf(8),ans,1)
                  ied4    = iedg+4
-                 buf(9)  = ied4
-                 buf(10) = ie
+                 call icopy(buf(9),ie,1)
+                 call icopy(buf(10),ied4,1)
                  buf(11) = r1
                  buf(12) = r2
                  buf(13) = r31
@@ -1364,7 +1364,8 @@ c-----------------------------------------------------------------------
 
          endif
       elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then
-          buf(1) = edge
+          call icopy(buf(1),e,1)
+          call icopy(buf(2),edge,1)
           buf(2) = e
           buf(3) = r1
           buf(4) = r2
