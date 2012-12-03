@@ -1350,6 +1350,7 @@ c
          if(ierr.eq.0) then
          ! interpolate fields
          npts = necrw*nxyzr
+         call rzero(fieldout,lbuf*nfldm)
          etime_i = dnekclock_sync()
          call intpts(wrk,nfld,pts,npts,fieldout,.false.,.true.,ih)
          etime_i = dnekclock_sync() - etime_i
@@ -1556,7 +1557,6 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
      &                     rst,ndim,npts,
      &                     wrk(1,ifld))
       enddo
-
       ! write interpolation results to hpts.out
       call hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
 
