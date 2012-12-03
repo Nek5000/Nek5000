@@ -48,6 +48,7 @@ c
      $   2 - binary(0.f0000?) ? '
          read (5,*) ib
          ifbyte=.false.
+         iffbin=.false.
          if(ib.ne.0) ifbyte = .true.
          if(ib.eq.2) iffbin = .true.
 
