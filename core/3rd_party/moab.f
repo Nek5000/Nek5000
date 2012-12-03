@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
       integer offset, offset_size, nvals, maxprint, is_v
       real tag_vals
       IBASE_HANDLE_T tagv_ptr, verts_ptr, elems_ptr, offset_ptr, adj_ptr
-      iBase_EntitySetHandle :: tmp_set
+      iBase_EntitySetHandle  tmp_set
       character*(80) tag_name
 
       pointer (tagv_ptr, tag_vals(1))
@@ -189,11 +189,11 @@ c   22   format("Number of elements = ", I8, " Number of vertices=", I8)
 
       maxprint = nvals
       if (is_v .eq. 1) then
-        if (nvals > vert_size)  maxprint = vert_size
+        if (nvals .gt. vert_size)  maxprint = vert_size
         write (*,*) tag_name, " -- Printing values", maxprint, 
      $       ' out of ', vert_size
       else
-        if (nvals > elem_size)  maxprint = elem_size
+        if (nvals .gt. elem_size)  maxprint = elem_size
         write (*,*) tag_name, " -- Printing values", maxprint, 
      $       ' out of ', elem_size
       endif
@@ -1564,6 +1564,8 @@ c-----------------------------------------------------------------------
       integer l2c(8)
       save    l2c
       data    l2c / 1, 2, 4, 3, 5, 6, 8, 7 /
+  
+      integer jj
 
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
      $     connect_ptr, v_per_e, loccount, ierr)
@@ -1580,7 +1582,9 @@ c only works if nx, ny, nz are equal, and if v_per_e is 27
 c set the tag vals
       nv = 8
       do ic = 0, loccount-1
-        tag_vals(1:v_per_e) = 0.0
+        do jj = 1,v_per_e
+           tag_vals(jj) = 0.0
+        enddo
 
 c        write(*,*) '--', ic, '--'
 c     permute into vertex array
@@ -1664,7 +1668,7 @@ c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
 c set the tag vals
       ivals = 1
       do i = 1, loccount
-        tmpind = (i-1+count-1)*ntot;
+        tmpind = (i-1+count-1)*ntot
         tagv_size = 0
 c       transfer spectral variable from vertex variable corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
