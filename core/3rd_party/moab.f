@@ -629,9 +629,6 @@ c     now communicate to other procs (taken from set_proc_map in map2.f)
       call igop(GLLNID, iwork, 'M  ', NELGT)
 
 c     set the global id tag on elements
-
-c      print *, 'Local to global'
-c      print *, lglel(:)
       do i = 1, numflu+numoth
          atend = 0
          count = 0
@@ -644,9 +641,6 @@ c      print *, lglel(:)
          endif
 
          do while (atend .eq. 0)
-c            print *, 'Estart:', iestart(i),
-c     $           'local-to-global:',lglel(iestart(i)+count)
-
 c use the same iterator for all variables, since the elems are the same
             call nekMOAB_set_int_tag(ieiter(i), globalIdTag, 1, 
      $           tmpcount, lglel(iestart(i)+count))
@@ -842,7 +836,6 @@ c
      $     rpentSet, entSetSize, entSetSize, ierr)
       IMESH_ASSERT
 
-      !print *, 'H3', entSetSize
 c     get the set ids
       if (entSetSize .gt. numsts) then
 c     too many sets, need to bail
@@ -965,7 +958,7 @@ c
            num_sides = num_sides + 1
 
            !call nekMOAB_getGlobElNo(ahex(j), elno)
-           !print *, 'BLAH', elno, side_no, setId
+           !print *, 'INFO: ', elno, side_no, setId
 
            call nekMOAB_getElNo(ahex(j), elno)
            if (ahexSize .eq. 2) elnos(j) = elno
@@ -993,6 +986,7 @@ c		 non-fluid type are present.
 
       call free(rpfaces)
 
+c     Should probably print the following only if verbose output needed
       print *, 'Setid, numids = ', setId, numids
 
       return
@@ -1421,7 +1415,6 @@ c      call print_tag_values(tagh, 5, is_v)
       do i = 1, numflu+numoth
 
          atend = 0
-c         print *, 'atend = ', atend
          if (iecount(i) .ne. 0) then
             call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)),
      $           ierr)
@@ -1483,7 +1476,6 @@ c set the tag vals by looping over each element and then updating the average va
           avg_vals = avg_vals + vals(offset+i)
         enddo
         avg_vals = avg_vals/size
-c        print *, 'Element: ', count+j, 'Average = ', avg_vals
         tag_vals(j) = avg_vals
       enddo
 
@@ -1672,8 +1664,6 @@ c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
       endif
 
       ntot = nx1 * ny1 * nz1
-      print *, 'NTOT = ', ntot, ' COUNT=', count
-      print *, 'LX values = ', lx1, ly1, lz1
 
 c set the tag vals
       ivals = 1
