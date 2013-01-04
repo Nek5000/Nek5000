@@ -1650,7 +1650,15 @@ c-----------------------------------------------------------------------
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
       pointer (tagv_ptr, tag_vals(1))
-      real avg
+
+c since v_per_e is required to be 27, use the MOAB transformation
+c map explicitly to set the MOAB tag values appropriately
+      integer moabmap(27)
+      save    moabmap
+      data    moabmap
+     $      /  0,  8,  1, 11, 24,  9,  3, 10,  2  
+     $      , 12, 20, 13, 23, 26, 21, 15, 22, 14 
+     $      ,  4, 16,  5, 19, 25, 17,  7, 18,  6  /
 
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
      $     connect_ptr, v_per_e, loccount, ierr)
@@ -1664,11 +1672,13 @@ c only works if nx1, ny1, nz1 are equal, and if v_per_e is 27
       endif
 
       ntot = nx1 * ny1 * nz1
+      print *, 'NTOT = ', ntot, ' COUNT=', count
+      print *, 'LX values = ', lx1, ly1, lz1
 
 c set the tag vals
       ivals = 1
       do i = 1, loccount
-        tmpind = (i-1+count-1)*ntot
+        tmpind = (i+count-1)*ntot
         tagv_size = 0
 c       transfer spectral variable from vertex variable corners only
          call iMesh_getDblArrData(%VAL(imeshh), 
@@ -1681,26 +1691,16 @@ c don't assert here, just return
            return
          endif
 
-#define INDEX(i,j,k) tmpind+lx1*ly1*k+lx1*j+i
-         avg = 0.0d0
+c        Overwrite values based on indices directly
          do j = 1, v_per_e
-            avg = avg + tag_vals(j)
+            vals(tmpind+j) = tag_vals(moabmap(j)+1)
          enddo
-         avg = avg/v_per_e
-         vals(1+INDEX(0,0,0)) = avg
-         vals(1+INDEX(nx1-1,0,0)) = avg
-         vals(1+INDEX(nx1-1,ny1-1,0)) = avg
-         vals(1+INDEX(0,ny1-1,0)) = avg
-         vals(1+INDEX(0,0,nz1-1)) = avg
-         vals(1+INDEX(nx1-1,0,nz1-1)) = avg
-         vals(1+INDEX(nx1-1,ny1-1,nz1-1)) = avg
-         vals(1+INDEX(0,ny1-1,nz1-1)) = avg
-#undef INDEX
+
 c update ivals by the necessary offset to get the next element
          ivals = ivals + v_per_e
       enddo
-
-	  count = loccount
+      
+      count = loccount
 
       return
       end
