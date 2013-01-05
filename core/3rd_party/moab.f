@@ -1430,7 +1430,7 @@ c use the same iterator for all variables, since the elems are the same
                call nekMOAB_get_vertex_tag(ieiter(i), tagh, tmpct, 
      $              field, ierr)
             else
-               call nekMOAB_get_tag(ieiter(i), tagh, ntot, tmpct, 
+               call nekMOAB_get_tag_avg(ieiter(i), tagh, ntot, tmpct, 
      $              field, ierr)
             endif
             IMESH_ASSERT
@@ -1604,6 +1604,35 @@ c        write(*,*) '--'
       return
       end
 c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_tag_avg(iter,tagh,size,count,vals,ierr)
+      implicit none
+
+#include "NEKMOAB"      
+      iBase_EntityArrIterator iter
+      iBase_TagHandle tagh
+      integer ierr, i, j, size, count, offset, tmpcount
+      real vals(*), tag_vals
+      pointer(tag_ptr, tag_vals(1))
+
+      call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
+     $     %VAL(iter), tag_ptr, tmpcount, ierr)
+c assert and break if there is a problem
+      IMESH_ASSERT
+
+      offset = count*size
+
+c set the tag vals
+      do i = 1, tmpcount
+        do j = 1, size
+          vals(offset+(i-1)*size+j) = tag_vals(i)
+        enddo
+      enddo
+
+      count = tmpcount
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine nekMOAB_get_tag(iter, tagh, size, count, vals, ierr)
       implicit none
 
@@ -1642,6 +1671,7 @@ c-----------------------------------------------------------------------
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(1))
       pointer (tagv_ptr, tag_vals(1))
+      real avg
 
 c since v_per_e is required to be 27, use the MOAB transformation
 c map explicitly to set the MOAB tag values appropriately
@@ -1682,10 +1712,50 @@ c don't assert here, just return
          endif
 
 c        Overwrite values based on indices directly
-         do j = 1, v_per_e
-            vals(tmpind+j) = tag_vals(moabmap(j)+1)
-         enddo
+         if (lx1 .eq. 3) then
+           ! Use the MOABMAP directly only for lx1=3
+           do j = 1, v_per_e
+             vals(tmpind+j) = tag_vals(moabmap(j)+1)
+           enddo
+         else
+           avg = 0.0d0
+           do j = 1, v_per_e
+            avg = avg + tag_vals(j)
+           enddo
+           avg = avg/v_per_e
+           ! set all values to the average computed
+           do j = 1, ntot
+            vals(tmpind+j) = avg
+           enddo
 
+           ! TODO: the optimal and accurate way to perform this 
+           ! operation is to do a local L_2 projection of the 
+           ! quadratic solution defined on MOAB mesh to the 
+           ! NEK's GLL mesh using a proper mass matrix for
+           ! the linear transformation. 
+           ! The hacky way done below is to use injection of
+           ! the corner vertices alone since the rest of the
+           ! unknowns have been provided the average value.
+           ! This will probably not preserve the averages and
+           ! should be removed in the future.
+           ! For coupled runs, it is recommended to use 
+           ! lx1=3 in which case, the 'if' block will be 
+           ! executed.
+
+           vals(tmpind+1) = tag_vals(moabmap(1)+1) ! bottom left
+           vals(tmpind+lx1) = tag_vals(moabmap(3)+1) ! bottom right
+           vals(tmpind+lx1*ly1)=tag_vals(moabmap(9)+1) ! top right
+           vals(tmpind+1+lx1*(ly1-1)) = tag_vals(moabmap(7)+1) ! top left
+
+           vals(tmpind+1+lx1*ly1*(lz1-1)) = tag_vals(moabmap(19)+1)
+           vals(tmpind+lx1+lx1*ly1*(lz1-1)) = tag_vals(moabmap(21)+1)
+           vals(tmpind+lx1+lx1*(ly1-1)+lx1*ly1*(lz1-1))=
+     $          tag_vals(moabmap(27)+1)
+           vals(tmpind+1+lx1*(ly1-1)+lx1*ly1*(lz1-1)) = 
+     $          tag_vals(moabmap(25)+1)
+         endif
+
+         
 c update ivals by the necessary offset to get the next element
          ivals = ivals + v_per_e
       enddo
