@@ -1176,9 +1176,15 @@ c     $     nelgt,nx1,ny1,nz1,time,istep,excode
 c
       if (mod(p66,1.0).eq.0.0) then !       old header format
          if (p66.lt.1.0) then
-            WRITE(24,'(4I4,1pe14.7,I5,1X,30A1,1X,A12)')
+           if(nelgt.lt.10000) then
+            WRITE(24,'(4i4,1pe14.7,I5,1X,30A1,1X,A12)')
      $           NELGT,NX1,NY1,NZ1,TIME,ikstep,(EXCODE1(I),I=1,30),
      $           'NELT,NX,NY,N'
+           else
+            WRITE(24,'(i10,3i4,1pe18.9,I9,1X,30A1,1X,A12)')
+     $           NELGT,NX1,NY1,NZ1,TIME,ikstep,(EXCODE1(I),I=1,30),
+     $           'NELT,NX,NY,N'
+           endif
          else
             if (nelgt.lt.10000) then
                WRITE(fhdfle,'(4I4,1pe14.7,I5,1X,30A1,1X,A12)')
