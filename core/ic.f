@@ -2068,12 +2068,12 @@ c-----------------------------------------------------------------------
       endif
 
 
-      if (if_byte_sw.and.wdsizr.eq.8) then
-         if(nid.eq.0) 
-     &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
-     &                'not supported'
-         call exitt
-      endif
+c     if (if_byte_sw.and.wdsizr.eq.8) then
+c        if(nid.eq.0) 
+c    &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
+c    &                'not supported'
+c        call exitt
+c     endif
 
       if (iskip) then
          call nekgsync() ! clear outstanding message queues.
@@ -2094,7 +2094,11 @@ c-----------------------------------------------------------------------
             ei = er(e)
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzv,ierr)
+            if(wdsizr.eq.8) then
+              call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+              call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2203,12 +2207,12 @@ c-----------------------------------------------------------------------
 #endif
       endif
 
-      if (if_byte_sw.and.wdsizr.eq.8) then
-         if(nid.eq.0) 
-     &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
-     &                'not supported'
-         call exitt
-      endif
+c     if (if_byte_sw.and.wdsizr.eq.8) then
+c        if(nid.eq.0) 
+c    &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
+c    &                'not supported'
+c        call exitt
+c     endif
 
       if (iskip) then
          call nekgsync() ! clear outstanding message queues.
@@ -2229,17 +2233,23 @@ c-----------------------------------------------------------------------
             ei = er(e) 
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzv,ierr)
+            if(wdsizr.eq.8) then
+               call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+               call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
                call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
+       write(6,*) ' test ' , u(1,ei),v(1,ei)
                if (if3d) 
      $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
             else
                call copy  (u(1,ei),wk(l        ),nxyzr)
                call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
+       write(6,*) ' test ' , u(1,ei),v(1,ei)
                if (if3d) 
      $         call copy  (w(1,ei),wk(l+2*nxyzw),nxyzr)
             endif
@@ -2258,6 +2268,7 @@ c-----------------------------------------------------------------------
          endif
          l = l+ndim*nxyzw
       enddo
+        write(6,*) wdsizr,' new com'
 
  100  call err_chk(ierr,'Error reading restart data, in getv.$')
       return
