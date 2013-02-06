@@ -206,7 +206,8 @@ C
          ENDIF
  100  CONTINUE
 C
-      NMXH   = 100 !  1000
+      NMXH   = 1000
+      if (iftran) NMXH   = 100
       NMXP   = 1000 !  (for testing) 100 !  2000
       NMXE   = 100 !  1000
       NMXNL  = 10  !  100
@@ -739,7 +740,7 @@ C-----------------------------------------------------------------------
       ts = dnekclock() 
 
       if(nid.eq.0 .and. igeom.eq.1) 
-     &   write(*,'(13X,A)') 'Solving for fluid'
+     &   write(6,*) 'Solving for fluid',ifsplit,iftran,ifnav
 
       if (ifsplit) then
 
