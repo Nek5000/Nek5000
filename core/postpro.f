@@ -857,7 +857,7 @@ c-----------------------------------------------------------------------
       nblock = lv*ldim*lblock
 
       if (nid.eq.0) 
-     $  write(10,'(3i10,'' NEL,NDIM,NELV'')') nelgt,ndim,nelgv
+     $  write(10,'(i12,i3,i12,'' NEL,NDIM,NELV'')') nelgt,ndim,nelgv
 
       do eb=1,nelgt,lblock
          nemax = min(eb+lblock-1,nelgt)
@@ -902,7 +902,7 @@ c-----------------------------------------------------------------------
             do eg=eb,nemax
                kb  = kb+1
 
-               write(10,'(a15,i9,a2,i5,a1,a10,i6)')
+               write(10,'(a15,i12,a2,i5,a1,a10,i6)')
      $   '      ELEMENT  ',eg,' [',numapt,letapt,']    GROUP',igr(kb)
 
                if (if3d) then 
@@ -1018,7 +1018,7 @@ c        imid = 2  ! All nontrivial midside node defs
                         write(10,'(i2,i6,5g14.6,1x,a1)') i,eg,
      $                  (vcurve(k,i,kb),k=1,5),cc
                      else
-                        write(10,'(i2,i10,5g14.6,1x,a1)') i,eg,
+                        write(10,'(i2,i12,5g18.11,1x,a1)') i,eg,
      $                  (vcurve(k,i,kb),k=1,5),cc
                      endif
                   endif
@@ -1102,11 +1102,14 @@ c    $               chtemp = cbc(i,kb,0)
                   if (nlg.lt.1000) then
                      write(10,'(a1,a3,2i3,5g14.6)')
      $               chtemp,s3,eg,i,(vbc(ii,i,kb),ii=1,5)
+                  elseif (nlg.lt.100000) then
+                     write(10,'(a1,a3,i5,i1,5g14.6)')
+     $               chtemp,s3,eg,i,(vbc(ii,i,kb),ii=1,5)
                   elseif (nlg.lt.1000000) then
                      write(10,'(a1,a3,i6,5g14.6)')
      $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
                   else
-                     write(10,'(a1,a3,i10,5g14.6)')
+                     write(10,'(a1,a3,i12,5g18.11)')
      $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
                   endif
                enddo

@@ -883,7 +883,7 @@ c-----------------------------------------------------------------------
          do itest=1,500
             if (ivb.gt.0.or.itest.eq.1) 
      $         write(6,1) np,nwds,(times(k,itest),k=1,2)
-    1       format(i9,i12,1p2e16.8,' gop')
+    1       format(i12,i12,1p2e16.8,' gop')
             nwds = (nwds+1)*1.016
             if (nwds.gt.mwd) goto 102
          enddo
@@ -936,7 +936,7 @@ c-----------------------------------------------------------------------
          do itest=1,500
             if (ivb.gt.0.or.itest.eq.1) 
      $         write(6,1) np,nwds,(times(k,itest),k=1,2)
-    1       format(i9,i12,1p2e16.8,' gp2')
+    1       format(i12,i12,1p2e16.8,' gp2')
             nwds = (nwds+1)*1.016
             if (nwds.gt.mwd) goto 102
          enddo

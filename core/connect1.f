@@ -1597,7 +1597,7 @@ c-----------------------------------------------------------------------
             eg = lglel(e)
             write(6,1) nid,i,j,k,e,eg,iquick,ipass
      $      ,xm1(i,j,k,e),ym1(i,j,k,e),zm1(i,j,k,e)
-  1         format(i6,3i4,2i6,i9,i2,1p3e12.4,' iquick')
+  1         format(i12,3i4,2i12,i12,i2,1p3e12.4,' iquick')
           endif
          enddo
          enddo

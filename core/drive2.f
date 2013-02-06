@@ -1439,7 +1439,7 @@ c        MPI_Allreduce(sync) timings
 
       call blank(s132,132)
       write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
-  132 format(i9,1p6e12.4,' qqq')
+  132 format(i12,1p6e12.4,' qqq')
       call pprint_all(s132,132,6)
 
 #endif

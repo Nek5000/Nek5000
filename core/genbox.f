@@ -326,7 +326,7 @@ c
          enddo
       endif
       nel = nelx*nely*nelz
-    6 format('Reading',i6,' =',3i6,' elements for box',i3,'.')
+    6 format('Reading',i12,' =',3i6,' elements for box',i3,'.')
    99 continue
 c
       if (nid.eq.0) then
@@ -943,7 +943,7 @@ c
          write(88,2) (yc(k,e),k=5,8)
          write(88,2) (zc(k,e),k=5,8)
       enddo
-    1 format('            ELEMENT',i5,' [    1a]    GROUP     0')
+    1 format('            ELEMENT',i12,' [    1a]    GROUP     0')
     2 format(1p4e15.7)
 c
       return

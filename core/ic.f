@@ -15,11 +15,11 @@ C-----------------------------------------------------------------------
       INCLUDE 'MVGEOM'
       INCLUDE 'PARALLEL'
       INCLUDE 'TSTEP'
-c
+ 
       logical  iffort(  ldimt1,0:lpert)
      $       , ifrest(0:ldimt1,0:lpert)
      $       , ifprsl(  ldimt1,0:lpert)
-c
+ 
       LOGICAL  IFANYP
       common /rdump/ ntdump
       common /inelr/ nelrr
@@ -591,7 +591,8 @@ c use new reader (only binary support)
       endif
 
 c use old reader (for ASCII + old binary support)
-      if (param(67).lt.1.0) then
+      
+      if (param(67).eq.0) then  ! zero only. should be abs.
          iffmat=.true.  ! ascii
       else
          iffmat=.false. ! binary
@@ -693,7 +694,7 @@ c                call byte_read2(bytetest,1,ierr)
                mesg(4) = nzr
                write(6,*)  'Read mode: ', param(67)
                write(6,333)'neltr,nxr,nyr,nzr: ', neltr,nxr,nyr,nzr
-  333          format(A,i8,3i4)
+  333          format(A,i9,3i4)
                call chcopy(mesg(5),excoder1,20)
                len  = 14*isize
             endif
@@ -2268,7 +2269,6 @@ c     endif
          endif
          l = l+ndim*nxyzw
       enddo
-        write(6,*) wdsizr,' new com'
 
  100  call err_chk(ierr,'Error reading restart data, in getv.$')
       return
