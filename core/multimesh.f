@@ -484,7 +484,7 @@ c     Store point counts (infosend(:,2)) instead of pointers
       end do
       infosend(npsend,2)=npoints-infosend(npsend,2)+1
 
-      write(6,'(a7,i7,1x,a10)') 'found', npoints, session
+      write(6,'(a7,i12,1x,a10)') 'found', npoints, session
 
 c     Sending all processors information about the number 
 c     of receiving points, including zero points

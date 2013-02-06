@@ -142,7 +142,7 @@ c pack into long int array and bcast as that
         if (nid.eq.0) then
           write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
           write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 12       format(1X,A,4I9,/,/)
+ 12       format(1X,A,4I12,/,/)
         endif
 
         call chk_nel  ! make certain sufficient array sizes
@@ -244,8 +244,8 @@ C
          if(nid.eq.0) then
            WRITE(6,21) LDIMT,NPSCL1
    21      FORMAT(//,2X,'Error: This NEKTON Solver has been compiled'
-     $             /,2X,'       for',I3,' passive scalars.  This run'
-     $             /,2X,'       requires that LDIMT be set to',I3,'.')
+     $             /,2X,'       for',I4,' passive scalars.  This run'
+     $             /,2X,'       requires that LDIMT be set to',I4,'.')
          endif
          call exitt
       ENDIF
@@ -454,8 +454,8 @@ c              read(string,*) IFSPLIT
          if(nid.eq.0) then
            WRITE(6,22) LDIMT,NPSCL1
    22      FORMAT(/s,2X,'Error: This NEKTON Solver has been compiled'
-     $             /,2X,'       for',I3,' passive scalars.  A MHD run'
-     $             /,2X,'       requires that LDIMT be set to',I3,'.')
+     $             /,2X,'       for',I4,' passive scalars.  A MHD run'
+     $             /,2X,'       requires that LDIMT be set to',I4,'.')
          endif
          call exitt
       ENDIF
@@ -763,13 +763,13 @@ C
 
   500 CONTINUE
       if(nid.eq.0) WRITE(6,501) IEG
-  501 FORMAT(2X,'ERROR READING MESH DATA NEAR ELEMENT',I7
+  501 FORMAT(2X,'ERROR READING MESH DATA NEAR ELEMENT',I12
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
 
   600 CONTINUE
       if(nid.eq.0) WRITE(6,601) IEG
-  601 FORMAT(2X,'ERROR 2 READING MESH DATA NEAR ELEMENT',I7
+  601 FORMAT(2X,'ERROR 2 READING MESH DATA NEAR ELEMENT',I12
      $    ,/,2X,'ABORTING IN ROUTINE RDMESH.')
       call exitt
 
@@ -803,16 +803,14 @@ C
          DO 50 ICURVE=1,NCURVE
             IF (NELGT.LT.1000) THEN
                READ(9,60,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
-            ELSEIF (NELGT.LT.1000000) THEN
+            ELSEIF (NELGT.LT.1 000 000) THEN
                READ(9,61,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ELSE
-               IF(NID.EQ.0) write(6,*)
-     &           'ABORT: no support for >1M elements for ASCII .rea!'
-               call exitt
+               READ(9,62,ERR=500,END=500) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ENDIF
    60       FORMAT(I3,I3 ,5G14.6,1X,A1)
    61       FORMAT(I2,I6 ,5G14.6,1X,A1)
-   62       FORMAT(I2,I10,5G14.6,1X,A1)
+   62       FORMAT(I2,I12,5G18.11,1X,A1)
 
             IF (GLLNID(IEG).EQ.NID) THEN
                IEL=GLLEL(IEG)
@@ -945,22 +943,24 @@ c    $            CHTEMP,
 c    $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
 c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    50             FORMAT(A1,A3,2I3,5G14.6)
-               ELSEIF (NELGT.LT.100000) THEN
+               ELSEIF (NELGT.LT.100 000) THEN
                   READ(9,51,ERR=500,END=500)    
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,ID2,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    51             FORMAT(A1,A3,I5,I1,5G14.6)
-               ELSEIF (NELGT.LT.1000000) THEN
+               ELSEIF (NELGT.LT.1 000 000) THEN
                   READ(9,52,ERR=500,END=500)    
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
    52             FORMAT(A1,A3,I6,5G14.6)
                ELSE
-                  IF(NID.EQ.0) write(6,*)
-     &              'ABORT: no support for >1M elements for ASCII .rea!'
-                  call exitt
+                  READ(9,53,ERR=500,END=500)    
+     $            CHTEMP,
+     $            CBC(ISIDE,IEL,IFIELD),ID1,
+     $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
+   53             FORMAT(A1,A3,I12,5G18.11)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP
@@ -993,7 +993,7 @@ C     Error handling:
 C
   500 CONTINUE
       if(nid.eq.0) WRITE(6,501) IFIELD,IEG
-  501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I6
+  501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I12
      $    ,/,2X,'ABORTING IN ROUTINE RDBDRY.')
       call exitt
       return
@@ -1040,7 +1040,7 @@ C     Error handling:
 C
  1500 CONTINUE
       if(nid.eq.0) WRITE(6,1501) IFIELD,IEG
- 1501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I6
+ 1501 FORMAT(2X,'ERROR READING BOUNDARY CONDITIONS FOR FIELD',I4,I12
      $    ,/,2X,'(unformatted) ABORTING IN ROUTINE RDBDRY.')
       call exitt
       ENDIF
@@ -1440,7 +1440,7 @@ c           WRITE(7,1005) IX,IY,IZ,IEG
 c    $      ,XM1(IX,IY,IZ,IE),TB(IX,IY,IZ,IE),TA(IX,IY,IZ,IE)
 c    $      ,QMASK(IX,IY,IZ,IE)
  1005       FORMAT(2X,'WARNING: DSSUM problem at:',/
-     $            ,1X,'I,J,K,IE:',3I5,i9,/
+     $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,2X,'Near X =',3G16.8,', d:',2G16.8)
             IERR=4
          ENDIF
@@ -1498,7 +1498,7 @@ C
      $      ,xm1(ix,iy,iz,ie),ym1(ix,iy,iz,ie),zm1(ix,iy,iz,ie)
      $      ,tb(ix,iy,iz,ie),ta(ix,iy,iz,ie),XSCALE
  1105       format(1x,'WARNING1 Element mesh mismatch at:',/
-     $            ,1x,'i,j,k,ie:',3i5,I9,/
+     $            ,1x,'i,j,k,ie:',3i5,I12,/
      $            ,1X,'Near X =',3G16.8,', d:',3G16.8)
             ierr=1
             call exitt
@@ -1534,7 +1534,7 @@ C
      $      ,XM1(IX,IY,IZ,IE),YM1(IX,IY,IZ,IE),ZM1(IX,IY,IZ,IE)
      $      ,TB(IX,IY,IZ,IE),TA(IX,IY,IZ,IE),yscale
  1205       FORMAT(1X,'WARNING2 Element mesh mismatch at:',/
-     $            ,1X,'I,J,K,IE:',3I5,i9,/
+     $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,1X,'Near Y =',3G16.8,', d:',3G16.8)
             IERR=2
             call exitt
@@ -1571,7 +1571,7 @@ C
      $      ,XM1(IX,IY,IZ,IE),YM1(IX,IY,IZ,IE),ZM1(IX,IY,IZ,IE)
      $      ,TB(IX,IY,IZ,IE),TA(IX,IY,IZ,IE),zscale
  1305       FORMAT(1X,'WARNING3 Element mesh mismatch at:',/
-     $            ,1X,'I,J,K,IE:',3I5,i9,/
+     $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,1X,'Near Z =',3G16.8,', d:',3G16.8)
             IERR=3
             call exitt
@@ -1669,7 +1669,7 @@ c           WRITE(7,1005) IX,IY,IZ,IEG
 c    $      ,XM1(IX,IY,IZ,IE),TB(IX,IY,IZ,IE),TA(IX,IY,IZ,IE)
 c    $      ,QMASK(IX,IY,IZ,IE)
  1005       FORMAT(2X,'WARNING: DSSUM problem at:',/
-     $            ,1X,'I,J,K,IE:',3I5,i9,/
+     $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,2X,'Near X =',3G16.8,', d:',2G16.8)
             IERR=4
          ENDIF
@@ -1762,7 +1762,7 @@ C
      $      ,ym1(ix,iy,iz,ie),zm1(ix,iy,iz,ie)
      $      ,ta(ix,iy,iz,ie),tb(ix,iy,iz,ie),xscale
      $      ,qmask(ix,iy,iz,ie)
- 1105       format(i4.4,1x,'ie:',3i3,i4,i6,1p9e11.3)
+ 1105       format(i4.4,1x,'ie:',3i3,i10,i10,1p9e11.3)
 c1105       format(i4.4,1x,'ie:',3i3,i6,1p9e11.3)
             ierr=1
             goto 1101
@@ -2077,8 +2077,8 @@ C
          DO 120 IL=1,NL
             WRITE(6,135) NID,IL,XCG(IL),YCG(IL),ZCG(IL)
   120    CONTINUE
-  130    FORMAT(I3,'DIVIDE: NL,XM,YM,ZM',I3,3F12.5)
-  135    FORMAT(I3,'DIVIDE: NID,IL,XC,YC,ZCG',I4,3F12.5)
+  130    FORMAT(I10,'DIVIDE: NL,XM,YM,ZM',I3,3F12.5)
+  135    FORMAT(I10,'DIVIDE: NID,IL,XC,YC,ZCG',I4,3F12.5)
       ENDIF
 C
 C=============================================================
@@ -2105,7 +2105,7 @@ C
 C           More Diagnostics
 C
             IF (.NOT.IFOK) WRITE(6,201) NID,IE,XCG(IE),XM
-  201    FORMAT(I3,'DIVIDE: IE,XCG,XM:',I4,3F12.5)
+  201    FORMAT(I10,'DIVIDE: IE,XCG,XM:',I4,3F12.5)
 C
             IF (YCG(IE).LT.YM) THEN
                NL1=NL1+1
@@ -2554,7 +2554,7 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 100
 
          read (hdr,1) version,nelgt,ndum,nelgv
-    1    format(a5,i9,i3,i9)
+    1    format(a5,i12,i3,i12)
 
          call byte_read(test,1,ierr)
          if(ierr.ne.0) goto 100
@@ -2581,7 +2581,7 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          write(6,1) nid,eg,e,(cbc(f,e,1),f=1,6)
       enddo
-    1 format(3i8,6(1x,a3),'  cbc')
+    1 format(3i12,6(1x,a3),'  cbc')
 
       return
       end
@@ -2609,12 +2609,12 @@ c     write(6,*) nid,' inside chk_nel',nelgt,neltmx,nelvmx
  12         format(//,2X,'ABORT: Problem size too large!'
      $         ,/,2X
      $         ,/,2X,'This solver has been compiled for:'
-     $         ,/,2X,'   number of elements/proc  (lelt):',i9
-     $         ,/,2X,'   total number of elements (lelg):',i9
+     $         ,/,2X,'   number of elements/proc  (lelt):',i12
+     $         ,/,2X,'   total number of elements (lelg):',i12
      $         ,/,2X
      $         ,/,2X,'Recompile with the following SIZE  parameters:'
-     $         ,/,2X,'   lelt >= ',i9,'  for np = ',i6
-     $         ,/,2X,'   lelg >= ',i9,/)
+     $         ,/,2X,'   lelt >= ',i12,'  for np = ',i12
+     $         ,/,2X,'   lelg >= ',i12,/)
 c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
 c           write(6,*)'help:',lelt,lelv,lelgv
          endif
@@ -2629,7 +2629,7 @@ c           write(6,*)'help:',lelt,lelv,lelgv
       endif
 
       if (nelt.gt.lelt) then
-        write(6,'(A,3I9)') 'ABORT: nelt>lelt!', nid, nelt, lelt
+        write(6,'(A,3I12)') 'ABORT: nelt>lelt!', nid, nelt, lelt
         call exitt
       endif
 

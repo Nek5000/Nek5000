@@ -611,9 +611,9 @@ c
 c
       if (n_req.gt.n_avail) then
          write(6,9) nid,n_req,n_avail,nid,var,sub
-    9    format(i7,' ERROR: requested array space (',i9
-     $            ,') exceeds allocated amount (',i9,').'
-     $            ,/,i7,' ABORTING.',3x,a3,2x,a6,' overflow_chk')
+    9    format(i12,' ERROR: requested array space (',i12
+     $            ,') exceeds allocated amount (',i12,').'
+     $            ,/,i12,' ABORTING.',3x,a3,2x,a6,' overflow_chk')
          call exitt
       endif
       return

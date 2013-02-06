@@ -102,7 +102,7 @@ c
             call gen_fast(df(1,e),sr(1,e),ss(1,e),st(1,e),x,y,z)
 
             call init_weight_op
-            if (param(43).eq.0) call hsmg_setup
+            if (ifmgrid) call hsmg_setup
          endif
 
          call set_up_h1_crs
@@ -122,10 +122,10 @@ c
 c
       if (n_req.gt.n_avail) then
          write(6,9) nid,n_req,n_avail,nid,signal
-    9    format(i7,' ERROR: requested array space (',i9
-     $            ,') exceeds allocated amount (',i9,').'
-     $            ,/,i7,' ABORTING.',3x,a11
-     $            ,/,i7,' ABORTING.',3x,'from overflow_ck call.')
+    9    format(i7,' ERROR: requested array space (',i12
+     $            ,') exceeds allocated amount (',i12,').'
+     $            ,/,i12,' ABORTING.',3x,a11
+     $            ,/,i12,' ABORTING.',3x,'from overflow_ck call.')
          call exitt
       endif
       return
