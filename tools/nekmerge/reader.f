@@ -96,17 +96,17 @@ c-----------------------------------------------------------------------
          do icurve=1,ncurve
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),cc
-            elseif (nel.lt.1000000) then
+            elseif (nel.lt.1 000 000) then
                read(10,61) f,e,(buf(k),k=1,5),cc
             else
-               read(10,*) f,e,(buf(k),k=1,5),cc
+               read(10,62) f,e,(buf(k),k=1,5),cc
             endif
             ccurve(f,e) = cc
             call copy(curve(1,f,e),buf,6)
          enddo
    60    format(i3,i3,5g14.6,1x,a1)
    61    format(i2,i6,5g14.6,1x,a1)
-   62    format(i1,i7,5g14.6,1x,a1)
+   62    format(i2,i12,5g18.11,1x,a1)
       endif
 
       call cleanr(curve ,72*nel)  ! clean up small zeros
@@ -132,16 +132,16 @@ c-----------------------------------------------------------------------
                do e=1,nel
                do f=1,nface
 
-                  if (nel.lt.1000) then
+                  if (nel.lt.1 000) then
                      read(10,20) cbc(f,e,j),(bc(k,f,e,j),k=1,5)
-                  elseif (nel.lt.100000) then
+                  elseif (nel.lt.1 000 000) then
                      read(10,21) cbc(f,e,j),(bc(k,f,e,j),k=1,5)
                   else
                      read(10,22) cbc(f,e,j),(bc(k,f,e,j),k=1,5)
                   endif
    20             format(1x,a3,6x,5g14.7)
    21             format(1x,a3,6x,5g14.7)
-   22             format(1x,a3,7x,5g14.7)
+   22             format(1x,a3,12x,5g18.11)
 
 
 c                 Update E-E and P-P pointers:

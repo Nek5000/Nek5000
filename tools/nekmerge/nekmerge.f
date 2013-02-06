@@ -273,7 +273,7 @@ c             write(15,*) dx(1,ik),dx(2,ik),ik
 c          enddo
 
       write(6,6) nseg,nglb,n
-    6 format('done locglob_lexico:',3i9)
+    6 format('done locglob_lexico:',3i12)
 
       return
       end
@@ -422,11 +422,11 @@ c     output remainder of mesh: .rea/.re2 format
       nels = -nelt
       write(11,11) nels, ndim, nelv
       write(6 ,11) nels, ndim, nelv
-   11 format(i14,i3,i14,1x,'NEL,NDIM,NELV')
+   11 format(i12,i3,i12,1x,'NEL,NDIM,NELV')
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
-    1 format('#v001',i9,i3,i9,' this is the hdr')
+    1 format('#v001',i12,i3,i12,' hdr')
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 
@@ -530,12 +530,7 @@ c     output remainder of mesh: ascii format
       include 'INPUT'
 
       write(11,11) nelt, ndim, nelv
-   11 format(i14,i3,i14,1x,'NEL,NDIM,NELV')
-
-      if(nelt.ge.1000000) then
-        write(6,*) 'ABORT: No ascii support for more than 1M elm!'
-        call exitt
-      endif 
+   11 format(i12,i3,i12,1x,'NEL,NDIM,NELV')
 
       call out_xyz_ascii
       call out_curve_ascii
@@ -567,7 +562,7 @@ c             123456789 123456789 123456789 123456789 123456789
 
       do e=1,nelt
 
-         write(string1(15),'(i10)') e
+         write(string1(15),'(i12)') e
          write(11,81) (string1(k),k=1,len)
    81    format(80a1)
 
@@ -603,7 +598,7 @@ c     .Ouput curve side data in ascii to unit 11
       write(11,12) ncurve
       write(6 ,12) ncurve
    11 format(' ***** CURVED SIDE DATA *****')
-   12 format(i8
+   12 format(i12
      $ ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
       if (ncurve.gt.0) then
@@ -613,8 +608,10 @@ c     .Ouput curve side data in ascii to unit 11
                call cleanr(curve(1,k,e),5)
                if (nelt.lt.1000) then
                   write(11,60) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
-               elseif (nelt.lt.1000000) then
+               elseif (nelt.lt.1 000 000) then
                   write(11,61) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
+               else
+                  write(11,62) k,e,(curve(j,k,e),j=1,5),ccurve(k,e)
                endif
             endif
          enddo
@@ -622,6 +619,7 @@ c     .Ouput curve side data in ascii to unit 11
    50    continue
    60    format(i3,i3,1p5g14.6,1x,a1)
    61    format(i2,i6,1p5g14.6,1x,a1)
+   62    format(i2,i12,1p5g18.11,1x,a1)
       endif
 
       return
@@ -665,13 +663,13 @@ c
             elseif (nel.lt.1000000) then
                write(11,22) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
             else
-               write(6,*) 'ASCII format for >1M not supported in nek'
-               call exitt
+               write(11,23) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
             endif
 
    20       format(1x,a3,2i3,5g14.6)
    21       format(1x,a3,i5,i1,5g14.6)
    22       format(1x,a3,i6,5g14.6)
+   23       format(1x,a3,i12,5g18.11)
          enddo
          enddo
       enddo

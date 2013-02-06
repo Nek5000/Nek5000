@@ -99,7 +99,6 @@ c     read nekton .rea file and make a .map file
 
       call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim,w14)
 c                                    irnk is # unique points
-      
 
       nfc = 2*ndim
       nv  = 2**ndim
@@ -541,13 +540,10 @@ C
             read(io,52,err=530,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
    52       format(1x,a3,i6,5g14.6)
-         elseif (nel.lt.10 000 000) then
+         else
             read(io,53,err=540,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
-   53       format(1x,a3,i7,5e20.12)
-         else
-            read(io,*,err=550,end=600)    
-     $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
+   53       format(1x,a3,i12,5g18.11)
          endif
 c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
       enddo
@@ -557,7 +553,7 @@ c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
 C
 C     Error handling:
 C
-  500 format(2x,'ERROR: error reading ',i4,2i11,/,
+  500 format(2x,'ERROR: error reading ',i4,2i12,/,
      $       2x,'aborting ',a3,' in routine rdbdry.')
   510 write(6,500) ifield,e,nel,'510'
       call exitt(ifield)
@@ -575,13 +571,11 @@ C
       call exitt(ifield)
       return
 
-  550 write(6,500) ifield,e,nel,'550'
-      call exitt(ifield)
       return
 
   600 continue
       write(6,601) ifield,e,nel
-  601 FORMAT(2X,'ERROR: end of file',i4,2i11,/,
+  601 FORMAT(2X,'ERROR: end of file',i4,2i12,/,
      $       2X,'ABORTING 600 IN ROUTINE RDBDRY.')
       call exitt(ifield)
       return
@@ -1166,8 +1160,8 @@ c-----------------------------------------------------------------------
 c         if (i.le.100)
 c     $   write(6,8) i,depth,max_depth,l,j0,j1,n1,n2,p,' d2   '
 
-            if(mod(i,itmp).eq.0 .or. i.eq.1)
-     &          write(6,'(A,f6.1,A)') ' done: ', 100.*i/nel, '%'
+             if(mod(i,itmp).eq.0 .or. i.eq.1)
+     &          write(6,'(A,f6.1,A)') ' done: ', 100.*i/nel, '% '
 
          if (da(l-1).lt.max_depth.and.l.gt.0) then
             da(l-1) = da(l-1) + 1
@@ -1208,11 +1202,14 @@ c     Fill in remaining separator sets
       do e=1,nel
       do v=1,nv
          i = cell(v,e)
+c        write(6,*) i,v,e,order(i),mo
          if (order(i).eq.0) then
             mo = mo+1
             order(i) = mo
          endif
          order(i) = -abs(order(i)) ! set flag
+c        write(6,*) i,v,e,order(i),mo
+c        write(6,*) 
       enddo
       enddo
 
@@ -1391,7 +1388,7 @@ c 6      format(2i6,2x,8i8,' bp_cell')
 
 c       call part_clean( order, nsep, elist, cell, nv, n1, n2, w1, w2)
 c       call count_sep( w1, order, nsep, elist, cell, nv, n1, n2 )
-        mcount = iglmax(w1,nel)
+c       mcount = iglmax(w1,nel)
         call ident_sep( order, mo, elist, cell, nv, n1, n2 )
 
       return
@@ -1474,7 +1471,11 @@ c     data    icalld /0/                 !
 c                                        !
 c                                        !
 c--- diagnostic use only -----------------
-      mod = mo
+      mod1 = mo
+c      nelnv=(n1+n2)*nv
+c     do i=1,nelnv
+c        write(6,*) order(i),i, ' id sep called'
+c     enddo
 
       do k=1,n1         ! Set flags
          e = elist(k)
@@ -1499,10 +1500,10 @@ c               ke(m0) = e
          enddo
       enddo
 
-      nsep = mo-mod
+      nsep = mo-mod1
       if (nsep.gt.0) icalld=icalld+1
 
-c     write(6,6) nsep,mo,mod,icalld
+c     write(6,6) nsep,mo,mod1,m0
 c   6 format(4i11,' nsep')
 
 c     if (nv.eq.8) then ! 3d
@@ -1636,7 +1637,7 @@ c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
       endif
 
       write(29,1) nel,nactive,depth,d2,npts,nrnk,noutflow
-    1 format(9i11)
+    1 format(9i12)
 
       do e=1,nel
          p0 = pmap(e)-1
@@ -2050,7 +2051,7 @@ c        write(6,*) cb,e,f,' cb'
                write(6,6) je,jf,cj,' je '
                write(6,6) ke,kf,cj,' ke '
                write(6,*)
-    6          format(i9,i3,1x,a3,1x,a4)
+    6          format(i12,i3,1x,a3,1x,a4)
                call exitt(9)
               endif
 
@@ -2196,13 +2197,13 @@ c   5          format(4i4,1p3e12.4,'  d2')
          call outmat(z1,4,4,'  z1  ',je)
          write(6,6) e , f,shift,eps,x0m
          write(6,6) je,jf,    i,tol,d2min
-    6    format(i8,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
+    6    format(i12,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
          call exitt(0)
       endif
 
       if (nel.le.100000.or.mod(icalld,1000).eq.0)
      $   write(6,7) e,f,i,shift,d2min,icalld
-    7    format(i10,i2,2i3,1p1e16.8,i9,' shift')
+    7    format(i12,i2,2i3,1p1e16.8,i9,' shift')
 
       do i=1,nvf
 
@@ -2585,7 +2586,7 @@ c        Generate tridiagonal matrix for Lanczos scheme
 c
       niter = iter
 c      write(6,6) iter,n,rnorm,rtol
-    6 format(i4,i10,' cg:',1p6e12.4)
+    6 format(i4,i12,' cg:',1p6e12.4)
 c
       return
       end
@@ -2929,7 +2930,7 @@ c           call copy(dx(0,ig),wk(0,i),lda) ! lda = ndim+1 values ->global vtx
 c        endif
 c     enddo
       write(6,6) nseg,nglb,n,icm
-    6 format(' done locglob_lexico:',4i10)
+    6 format(' done locglob_lexico:',4i12)
 
 
       return
@@ -2954,7 +2955,7 @@ c-----------------------------------------------------------------------
          z=z/nv
          write(io,1) p0,x,y,z
       enddo
-    1 format(i9,1p3e12.4)
+    1 format(i12,1p3e12.4)
 
       return
       end
@@ -3011,7 +3012,7 @@ c-----------------------------------------------------------------------
          i = cell(v,e)
          if (i.gt.nrnk) then
             write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
-    1       format(i9,i3,2i9,1p3e12.4,' i>nrnk! ERROR!')
+    1       format(i12,i3,2i12,1p3e12.4,' i>nrnk! ERROR!')
          else
             w4(i)=w4(i)+1.
             mult = w4(i)
@@ -3201,7 +3202,7 @@ c-----------------------------------------------------------------------
       logical ifbswap
       integer e,eg,buf(0:30)
 
-      real xc(8),yc(8),zc(8)
+      real xc(8),yc(8),zc(8)   !these are *8
 
       nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
 
@@ -3269,7 +3270,7 @@ c      write(6,80) hdr
 c   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
-    1 format(a5,i9,i3,i9)
+    1 format(a5,i12,i3,i12)
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti
@@ -3353,7 +3354,7 @@ c
 
       if (i1-i0.gt.nic) then
          write(6,1) i0,i1,nic,nv,ncell,njc
-    1    format(' ERROR: nic too small in cell2v:',6i10)
+    1    format(' ERROR: nic too small in cell2v:',6i12)
          i0 = 0 ! error return code
          i1 = 0 ! error return code
          return
@@ -3790,7 +3791,7 @@ c-----------------------------------------------------------------------
          write(6,1) e,f,cbc(f,e),(bc(k,f,e),k=1,5),name6
       enddo
       enddo
-    1 format(i8,i4,2x,a3,5f8.3,1x,a6)
+    1 format(i12,i4,2x,a3,5g18.11,1x,a6)
       return
       end
 c-----------------------------------------------------------------------
@@ -3937,7 +3938,7 @@ c              write(6,*) 'N2 was not connected-Lanczos', n0,n2,nel
 c           write(6,*) 'N1 was not connected-Lanczos', n0,n1, nel
          endif
 c
-c  Sort cell and bisect
+c  Sort cell and bisect - almost the same as last resort..
 c
          do k  = 1,nel
             e  = elist(k)
@@ -3955,6 +3956,9 @@ c
          do i = n1+1,nel
             pmap(i) = 2
          enddo
+c        call sort_count(pmap,elist,n1,n2,nel,w1,wk)
+c        not needed because elist is already sorted and pmap
+c        is assigned in order.
 c
 c Now Check to see if that worked...
 c
@@ -4054,6 +4058,7 @@ c
 c
 c Transfer separator nodes, checking for connectivity
 c
+         temp=0
   50     if (size1.gt.n1) then
             call count_sep (wk,w2,num,elist,cell,nv,size1,size2)
             if (temp.eq.size1) goto 60     !Prevents Infinite Loop
@@ -4083,12 +4088,12 @@ c
                endif
             enddo
          endif
-         if (size1.lt.n1) then
+         if (size1.lt.n1) then !check set 2 for sep nodes and swap
             call count_sep (wk,w2,num,elist,cell,nv,size1,size2)
             if (temp.eq.size1) goto 60     !Prevents Infinite Loop
             temp = size1
             do i = temp+1,nel
-               if (wk(i).gt.0) then
+               if (wk(i).gt.0) then !this element has sep. node
                   pmap(i) = 1
                   size2   = size2-1
                   size1   = size1+1
@@ -4172,6 +4177,7 @@ c
          n2 = nel - n1
          i1 = 0
          i2 = 0
+         call jjnt(key,nv)
          nkey = nv
          call ituple_sort(c,nv,nel,key,nkey,w1,wk2)
          call iswap_ip   (list,w1,nel)

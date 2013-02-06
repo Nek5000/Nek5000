@@ -235,7 +235,7 @@ c
  
       endif
       nel = nelx*nely*nelz
-    6 format('Reading',i6,' =',3i6,' elements for box',i3,'.')
+    6 format('Reading',i12,' =',3i6,' elements for box',i3,'.')
    99 continue
  
 c     call outmat(x,1,nelx+1,'x genb',nelx)

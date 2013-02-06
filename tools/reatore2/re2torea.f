@@ -79,7 +79,7 @@ c
       write(11,*) abs(nelv),ndim,nel
 
 
- 1    format('#v001',i9,i3,i9,' this is the hdr')
+ 1    format('#v001',i12,i3,i12,' this is the hdr')
 
       call byte_read(test,1)
       write(*,*) 'read: endian test flag ', test
@@ -105,7 +105,7 @@ c mesh
          if(nel.lt.100000) then
            write (11,12) ie, ie, 'a', igroup
          else
-           write (11,'(A,I9,A,I1)') 
+           write (11,'(A,I12,A,I1)') 
      &        '  ELEMENT ', ie, '  GROUP  ', igroup
          endif
          write (11,*)   (x(k),k=1,4)
@@ -131,7 +131,7 @@ c curved sides
       write(11,13)
       write(11,14) ncurve
  13   format(' ***** CURVED SIDE DATA *****')
- 14   format(i8
+ 14   format(i12
      $     ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
       IF (NCURVE.GT.0) THEN
@@ -147,7 +147,7 @@ c curved sides
 
             IF (nel.LT.1000) THEN
                write(11,60) IEDG,IEG,R1,R2,R3,R4,R5,ANS
-            ELSEIF (nel.LT.1000000) then
+            ELSEIF (nel.LT.1 000 000) then
                write(11,61) IEDG,IEG,R1,R2,R3,R4,R5,ANS
             ELSE
                write(11,62) IEDG,IEG,R1,R2,R3,R4,R5,ANS
@@ -155,7 +155,7 @@ c curved sides
  50      CONTINUE
  60      FORMAT(I3,I3 ,5G14.6,1X,A1)
  61      FORMAT(I2,I6 ,5G14.6,1X,A1)
- 62      format(i2,i10,5g14.6,1x,a1)
+ 62      format(i2,i12,5g18.11,1x,a1)
       endif
 
 
@@ -181,18 +181,21 @@ c boundary conditions
             call chcopy(cbc,buf,3)
 
 
-            if (nel.lt.1000) then
+            if (nel.lt.1 000) then
                   write (11,20) cbc,id,jd,(bc(k),j=1,5)
-            elseif(nel.lt.100000) then
+            elseif(nel.lt.100 000) then
                   write (11,21) cbc,id,jd,(bc(k),j=1,5)
+            elseif(nel.lt.1 000 000) then
+                  write (11,22) cbc,id,(bc(k),j=1,5)
             else
-                  write (11,22) cbc,id,jd,(bc(k),j=1,5)
+                  write (11,23) cbc,id,(bc(k),j=1,5)
             endif
          enddo
       enddo
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
-   22 FORMAT(1x,A3,i6,i1,5G14.7)
+   22 FORMAT(1x,A3,i6,5G14.7)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
       rewind(10) 
       call scanout(sstring,'PRESOLVE',8,10,99)

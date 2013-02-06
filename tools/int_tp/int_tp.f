@@ -99,7 +99,7 @@ c           call get_old_geom (xe,nelx,ye,nely,ze,nelz,lmax)        ! SE geometr
          endif
  
       enddo
-   50 format('Writing ',i6,' x ',i6,' x ',i6,'  =  ',i18,' points
+   50 format('Writing ',i12,' x ',i12,' x ',i12,'  =  ',i18,' points
      $ to file ',i6)
       stop
  
@@ -291,23 +291,23 @@ c-----------------------------------------------------------------------
 
       real*4 x(1)
 
-      common /c80/  s80
-      character*80 s80
-      character*1  s81(80)
-      equivalence (s80,s81)
+      common /c132/  s132
+      character*132 s132
+      character*1  s1321(132)
+      equivalence (s132,s1321)
   
       logical if_byte_sw, if_byte_swap_test, if3d
       common /byte_key/ bytetest
 
 c
-c     Get 80 character string 
+c     Get 132 character string 
 c
-      call blank(s80,80)
-      call byte_read(s80,20)
+      call blank(s132,132)
+      call byte_read(s132,33)
  
       open(unit=22,file='tmp')
-      write(22,80) s80
-   80 format(a80)
+      write(22,80) s132
+   80 format(a132)
       rewind(22)
       read (22,*,err=100,end=100) nel,nx,ny,nz
       close(unit=22)
@@ -315,7 +315,7 @@ c
       if3d = .false.
       if (nz.gt.1) if3d = .true.
  
-      call get_nfld(nfld,s80,nel,if3d)
+      call get_nfld(nfld,s132,nel,if3d)
  
       ntot = nel*nx*ny*nz
       write(6,*) 'this is ntot:',nel,nx,ny,nz,nfld
@@ -444,10 +444,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine get_data(x,nx,ny,nz,nel,nfld,if3d)
 
-      common /c80/  s80
-      character*80 s80
-      character*1  s81(80)
-      equivalence (s80,s81)
+      common /c132/  s132
+      character*132 s132
+      character*1  s1321(132)
+      equivalence (s132,s1321)
   
       logical  if3d
       common /byte_key/ bytetest
@@ -455,14 +455,14 @@ c-----------------------------------------------------------------------
       real x(1)
  
 c
-c     Get 80 character string 
+c     Get 132 character string 
 c
-      call blank(s80,80)
-      read(8,80) s80
+      call blank(s132,132)
+      read(8,80) s132
   
       open(unit=22,file='tmp')
-      write(22,80) s80
-   80 format(a80)
+      write(22,80) s132
+   80 format(a132)
       rewind(22)
       read (22,*,err=100,end=100) nel,nx,ny,nz
       close(unit=22)
@@ -470,7 +470,7 @@ c
       if3d = .false.
       if (nz.gt.1) if3d = .true.
  
-      call get_nfld(nfld,s80,nel,if3d)
+      call get_nfld(nfld,s132,nel,if3d)
  
       ntot = nel*nx*ny*nz
       write(6,*) 'this is ntot:',nel,nx,ny,nz,nfld
@@ -509,8 +509,8 @@ c-----------------------------------------------------------------------
  
       real*4 x(1),y(1)
       character*40 fname
-      common /c80/  s80
-      character*80 s80
+      common /c132/  s132
+      character*80 s132
  
       logical if_byte_sw
       common /byte_key/ bytetest
@@ -521,7 +521,7 @@ c
 c
 c     Write original header
 c
-      call byte_write(s80,20)
+      call byte_write(s132,33)
       call byte_write(bytetest,1)
  
       call copy(y,x,n)
@@ -1033,21 +1033,21 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_nfld(nfld,s80,nel,if3d)
+      subroutine get_nfld(nfld,s132,nel,if3d)
  
-      character*80 s80
+      character*132 s132
  
       common /cexcod/ excoder(10)
       character*2     excoder
  
       logical if3d
 
-      if (nel.lt.10000) then
-         read(s80,'(4i4,1x,g13.4,i5,1x,10a2)'
+      if (nel.lt.10 000) then
+         read(s132,'(4i4,1x,g13.4,i5,1x,10a2)'
      $   ,err=1500,end=1500)
      $    neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10)
       else
-         read(s80,'(i10,3i4,1P1e18.9,i9,1x,15a2)'
+         read(s132,'(i10,3i4,1P1e18.9,i9,1x,15a2)'
      $   ,err=1500,end=1500)
      $    neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10)
       endif
@@ -1089,8 +1089,8 @@ C
       return
  
  1500 continue
-      write(6,*) s80
-      write(6,*) 'Error reading s80. Abort.'
+      write(6,*) s132
+      write(6,*) 'Error reading s132. Abort.'
       call exitt
  
       return
@@ -1195,7 +1195,7 @@ c----------------------------------------------------------------------
 
       enddo
 
-    1 format(i2,i9,1p2e12.4,a5,3i3,i6)
+    1 format(i2,i12,1p2e12.4,a5,3i3,i12)
 
       return
       end
@@ -1340,8 +1340,8 @@ c-----------------------------------------------------------------------
       write(6,*) 'nel:',nelt,nelx,nely,nelz
       write(6,*) 'nxy:',nxyz,nx1,ny1,nz1,nfld
  
-      if (nelt.lt.10000) then
-         write(11,'(4i4,1PE14.7,i5,1x,15a2,1x,a12)')
+      if (nelt.lt.10 000) then
+         write(11,'(4i4,1x,1PE13.4,i5,1x,15a2,1x,a12)')
      $   nelt,nx1,ny1,nz1,time,istep,(excoder(i),i=1,10)
       else
          write(11,'(i10,3i4,1P1e18.9,i9,1x,15a2)')
@@ -1376,7 +1376,7 @@ c-----------------------------------------------------------------------
       save   test_pattern
       data   test_pattern /6.54321/
 
-      character*80 s80
+      character*132 s132
 
       integer      fnamei(2)
       character*40 fnamec
@@ -1401,15 +1401,15 @@ c
       nelt = nelx*nely
       if (if3d) nelt = nelx*nely*nelz
 
-      call blank(s80,80)
+      call blank(s132,132)
       if (nelt.lt.10000) then
-         write(s80,'(4i4,1PE14.7,i5,1x,15a2,1x,a12)')
+         write(s132,'(4i4,1x,1PE13.4,i5,1x,15a2,1x,a12)')
      $   nelt,nx1,ny1,nz1,time,istep,(excoder(i),i=1,10)
       else
-         write(s80,'(i10,3i4,1P1e18.9,i9,1x,15a2)')
+         write(s132,'(i10,3i4,1P1e18.9,i9,1x,15a2)')
      $   nelt,nx1,ny1,nz1,time,istep,(excoder(i),i=1,10)
       endif
-      call byte_write(s80,20)
+      call byte_write(s132,33)
       call byte_write(test_pattern,1)
 
 

@@ -89,7 +89,7 @@ c     parameter (maxx  = 300)              ! default values
 c     parameter (maxel = mbox*maxx*maxx)   !
 
       parameter (mbox  = 20)
-      parameter (maxx  = 900)
+      parameter (maxx  = 1000000)
       parameter (maxel = mbox*maxx*30)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
@@ -104,7 +104,7 @@ c     parameter (maxel = mbox*maxx*maxx)   !
       common /genbc/ cbc
 
       real*4 buf(30)
-      character*132 hdr
+      character*80 hdr
       real*4 test
       data   test  / 6.54321 /
 
@@ -394,7 +394,7 @@ c           write(998,*) (y(i,1),i=0,nely)
          nel = nel + nelx*nely*nelz
          nbox = nbox+1
       enddo
-    6 format('Reading',i8,' =',3i8,' elements for box',i4,'.')
+    6 format('Reading',i12,' =',3i9,' elements for box',i4,'.')
    99 continue
 
       if(nel.gt.maxel) then
@@ -419,12 +419,12 @@ c     Construct mesh
 c
       if(iffo) then
         write(9,10) nel,ndim,nel
-   10   format(3i10,'           NEL,NDIM,NELV')
+   10   format(i12,i3,i12,'           NEL,NDIM,NELV')
       else
         write(9,10) -nel,ndim,nel
-        call blank(hdr,132)
+        call blank(hdr,80)
         write(hdr,111) nel,ndim,nel
-  111   format('#v001',i9,i3,i9,' this is the hdr')
+  111   format('#v001',i12,i3,i12,' hdr')
         call byte_write(hdr,20)   ! assumes byte_open() already issued
         call byte_write(test,1)   ! write the endian discriminator
       endif
@@ -575,7 +575,7 @@ c           ilev = ilev+1
         enddo
    12   format(4g14.6)
    11   format(
-     $'            ELEMENT',i8,' [',i5,a1,']  GROUP  ',a1)
+     $'            ELEMENT',i12,' [',i5,a1,']  GROUP  ',a1)
       else
         ilev = 1
         ie=0
@@ -710,7 +710,7 @@ c     output curve stuff and Boundary conditions
         write(9,28) ncurv
    28   format(
      $   '  ***** CURVED SIDE DATA *****',/,
-     $      i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+     $      i12,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
         zero = 0.
         maxedge = 4
@@ -723,7 +723,7 @@ c     output curve stuff and Boundary conditions
               enddo
            enddo
   290      format(i3,i3,5g14.6,1x,a1)
-         else
+         elseif(nel.lt.1 000 000) then
            do ie=1,nel
               do iedge = 2,maxedge,2
                  if (curve(iedge,ie).ne.0) write(9,291) 
@@ -731,6 +731,14 @@ c     output curve stuff and Boundary conditions
               enddo
            enddo
   291      format(i2,i6,5g14.6,1x,a1)
+         else
+           do ie=1,nel
+              do iedge = 2,maxedge,2
+                 if (curve(iedge,ie).ne.0) write(9,292) 
+     $              iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
+              enddo
+           enddo
+  292      format(i2,i12,5g18.11,1x,a1)
          endif
       else
          call byte_write(ncurv,1)  
@@ -738,7 +746,7 @@ c     output curve stuff and Boundary conditions
             do iedge = 2,maxedge,2
                if (curve(iedge,ie).ne.0) then
                   if(iffo) then
-                    write(9,291) 
+                    write(9,292) 
      $                iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
                   else
                       buf(1) = ie
@@ -884,43 +892,40 @@ c              output bc's in preproc. notation
 c
                ie = ie+1
                if(iffo .and. ipass.eq.1) then
-                 if (nel.lt.1000) then
+                 if (nel.lt.1 000) then
                     write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                     write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
                     write(9,20) cbc5,ie,eface(5),(rbc5(j),j=1,5)
                     write(9,20) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-                 elseif (nel.lt.100000) then
+                 elseif (nel.lt.100 000) then
                     write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                     write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
                     write(9,21) cbc5,ie,eface(5),(rbc5(j),j=1,5)
                     write(9,21) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-                 elseif (nel.lt.1000000) then
+                 elseif (nel.lt.1 000 000) then
                     write(9,22) cbc3,ie,(rbc3(j),j=1,5)
                     write(9,22) cbc2,ie,(rbc2(j),j=1,5)
                     write(9,22) cbc4,ie,(rbc4(j),j=1,5)
                     write(9,22) cbc1,ie,(rbc1(j),j=1,5)
                     write(9,22) cbc5,ie,(rbc5(j),j=1,5)
                     write(9,22) cbc6,ie,(rbc6(j),j=1,5)
-                 else                                        ! Typically
-                    iee = ie                                 ! nek doesn't
-                    if (iee.gt.1000000) iee=iee/10           ! deal with
-                    if (iee.gt.1000000) iee=iee/10           ! >1M ascii
-                    if (iee.gt.1000000) iee=iee/10           ! elements
-                    write(9,22) cbc3,iee,(rbc3(j),j=1,5)     ! so this 
-                    write(9,22) cbc2,iee,(rbc2(j),j=1,5)     ! format
-                    write(9,22) cbc4,iee,(rbc4(j),j=1,5)     ! shouldn't
-                    write(9,22) cbc1,iee,(rbc1(j),j=1,5)     ! be used
-                    write(9,22) cbc5,iee,(rbc5(j),j=1,5)     !
-                    write(9,22) cbc6,iee,(rbc6(j),j=1,5)     !
+                 else        
+                    write(9,23) cbc3,ie,(rbc3(j),j=1,5)
+                    write(9,23) cbc2,ie,(rbc2(j),j=1,5)
+                    write(9,23) cbc4,ie,(rbc4(j),j=1,5)
+                    write(9,23) cbc1,ie,(rbc1(j),j=1,5)
+                    write(9,23) cbc5,ie,(rbc5(j),j=1,5) 
+                    write(9,23) cbc6,ie,(rbc6(j),j=1,5) 
                  endif
 
    20            format(1x,a3,2i3,5g14.6)
    21            format(1x,a3,i5,i1,5g14.6)
    22            format(1x,a3,i6,5g14.6)
+   23            format(1x,a3,i12,5g18.11)
 
                elseif (.not. iffo) then
 
@@ -1053,25 +1058,26 @@ c              output bc's in preproc. notation
 c
                ie = ie+1
                if(iffo .and. ipass.eq.1) then
-                 if (nel.lt.1000) then
+                 if (nel.lt.1 000) then
                     write(9,20) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                     write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                 elseif (nel.lt.100000) then
+                 elseif (nel.lt.100 000) then
                     write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                     write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                     write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                     write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-                 elseif (nel.lt.1000000) then
+                 elseif (nel.lt.1 000 000) then
                     write(9,22) cbc3,ie,(rbc3(j),j=1,5)
                     write(9,22) cbc2,ie,(rbc2(j),j=1,5)
                     write(9,22) cbc4,ie,(rbc4(j),j=1,5)
                     write(9,22) cbc1,ie,(rbc1(j),j=1,5)
                  else
-                    write(6,*)
-     $                'ASCII format for >1M not supported in nek'
-                    call exitt
+                    write(9,23) cbc3,ie,(rbc3(j),j=1,5)
+                    write(9,23) cbc2,ie,(rbc2(j),j=1,5)
+                    write(9,23) cbc4,ie,(rbc4(j),j=1,5)
+                    write(9,23) cbc1,ie,(rbc1(j),j=1,5)
                  endif
                elseif (.not. iffo) then
                  if(ipass.eq.2) then
@@ -1651,8 +1657,8 @@ c
  
       if (n_req.gt.n_avail) then
          write(6,9) n_req,n_avail,var,sub
-    9    format(' ERROR: requested array space (',i9
-     $         ,') exceeds allocated amount (',i9,').'
+    9    format(' ERROR: requested array space (',i12
+     $         ,') exceeds allocated amount (',i12,').'
      $         ,/,' ABORTING.',3x,a3,2x,a6,' overflow_chk')
          call exit
       endif
@@ -2056,7 +2062,7 @@ c
       endif
  
       write(9,10) nel,ndim,nel
-   10 format(3i6,'           NEL,NDIM,NELV')
+   10 format(i12,i3,i12,'       NEL,NDIM,NELV')
  
       if (if3d) then
          e = 0
@@ -2103,7 +2109,7 @@ c
       endif
  
    11 format(
-     $'            ELEMENT',i11,' [',i5,a1,']    GROUP     ',a1)
+     $'            ELEMENT',i12,' [',i5,a1,']    GROUP     ',a1)
 c    $'            ELEMENT',i5,' [',i5,a1,']    GROUP     ',a1)
    12 format(1p4e15.7)
  
@@ -2130,7 +2136,7 @@ c
       write(9,28) ncurv
    28 format(
      $ '  ***** CURVED SIDE DATA *****',/,
-     $    i6,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+     $    i12,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
  
       z=0
       do e=1,nel
@@ -2138,14 +2144,17 @@ c
          if (ccurve(i,e).ne.' ') then
             if (nel.lt.1000) then
                write(9,290) i,e,(curve(k,i,e),k=1,5),ccurve(i,e)
-            else
+            elseif (nel.le.1 000 000) then
                write(9,291) i,e,(curve(k,i,e),k=1,5),ccurve(i,e)
+            else
+               write(9,292) i,e,(curve(k,i,e),k=1,5),ccurve(i,e)
             endif
          endif
       enddo
       enddo
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
+  292 format(i2,i12,5g18.11,1x,a1)
  
       return
       end
@@ -2179,7 +2188,7 @@ c
       write(9,28) ncurv
    28 format(
      $ '  ***** CURVED SIDE DATA *****',/,
-     $    i11,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
+     $    i12,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
  
       e = 0
       do ke=1,nelz
@@ -2189,7 +2198,7 @@ c
             if (ccurve(i,ie).ne.' ') then
                if (nel.lt.1000) then
                   write(9,290) i,e,(curve(k,i,ie),k=1,5),ccurve(i,ie)
-               elseif (nel.lt.100 000) then
+               elseif (nel.lt.1 000 000) then
                   write(9,291) i,e,(curve(k,i,ie),k=1,5),ccurve(i,ie)
                else
                   write(9,292) i,e,(curve(k,i,ie),k=1,5),ccurve(i,ie)
@@ -2200,7 +2209,7 @@ c
       enddo
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
-  292 format(i2,i10,5g14.6,1x,a1)
+  292 format(i2,i12,5g18.11,1x,a1)
  
       return
       end
@@ -2337,28 +2346,32 @@ c
                   write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
                   write(9,20) cbc5,ie,eface(5),(rbc5(j),j=1,5)
                   write(9,20) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-               elseif (nel.lt.100000) then
+               elseif (nel.lt.100 000) then
                   write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                   write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                   write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                   write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
                   write(9,21) cbc5,ie,eface(5),(rbc5(j),j=1,5)
                   write(9,21) cbc6,ie,eface(6),(rbc6(j),j=1,5)
-               else 
-                  iee = ie 
-                  if (iee.gt.100 000) iee=iee/10
-                  if (iee.gt.100 000) iee=iee/10
-                  if (iee.gt.100 000) iee=iee/10
-                  write(9,22) cbc3,iee,(rbc3(j),j=1,5)
-                  write(9,22) cbc2,iee,(rbc2(j),j=1,5)
-                  write(9,22) cbc4,iee,(rbc4(j),j=1,5)
-                  write(9,22) cbc1,iee,(rbc1(j),j=1,5)
-                  write(9,22) cbc5,iee,(rbc5(j),j=1,5)
-                  write(9,22) cbc6,iee,(rbc6(j),j=1,5)
+               elseif (nel.lt.1 000 000) then
+                  write(9,22) cbc3,ie,(rbc3(j),j=1,5)
+                  write(9,22) cbc2,ie,(rbc2(j),j=1,5)
+                  write(9,22) cbc4,ie,(rbc4(j),j=1,5)
+                  write(9,22) cbc1,ie,(rbc1(j),j=1,5)
+                  write(9,22) cbc5,ie,(rbc5(j),j=1,5)
+                  write(9,22) cbc6,ie,(rbc6(j),j=1,5)
+               else
+                  write(9,23) cbc3,ie,(rbc3(j),j=1,5)
+                  write(9,23) cbc2,ie,(rbc2(j),j=1,5)
+                  write(9,23) cbc4,ie,(rbc4(j),j=1,5)
+                  write(9,23) cbc1,ie,(rbc1(j),j=1,5)
+                  write(9,23) cbc5,ie,(rbc5(j),j=1,5)
+                  write(9,23) cbc6,ie,(rbc6(j),j=1,5)
                endif
    20          format(1x,a3,2i3,5g14.6)
    21          format(1x,a3,i5,i1,5g14.6)
    22          format(1x,a3,i6,5g14.6)
+   23          format(1x,a3,i12,5g18.11)
             enddo
             enddo
             enddo
@@ -2426,20 +2439,21 @@ c
                   write(9,20) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                   write(9,20) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                   write(9,20) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-               elseif (nel.lt.100000) then
+               elseif (nel.lt.100 000) then
                   write(9,21) cbc3,ie,eface(3),(rbc3(j),j=1,5)
                   write(9,21) cbc2,ie,eface(2),(rbc2(j),j=1,5)
                   write(9,21) cbc4,ie,eface(4),(rbc4(j),j=1,5)
                   write(9,21) cbc1,ie,eface(1),(rbc1(j),j=1,5)
-               else 
-                  iee = ie 
-                  if (iee.gt.100 000) iee=iee/10
-                  if (iee.gt.100 000) iee=iee/10
-                  if (iee.gt.100 000) iee=iee/10
-                  write(9,22) cbc3,iee,(rbc3(j),j=1,5)
-                  write(9,22) cbc2,iee,(rbc2(j),j=1,5)
-                  write(9,22) cbc4,iee,(rbc4(j),j=1,5)
-                  write(9,22) cbc1,iee,(rbc1(j),j=1,5)
+               elseif (nel.lt.1 000 000) then
+                  write(9,22) cbc3,ie,(rbc3(j),j=1,5)
+                  write(9,22) cbc2,ie,(rbc2(j),j=1,5)
+                  write(9,22) cbc4,ie,(rbc4(j),j=1,5)
+                  write(9,22) cbc1,ie,(rbc1(j),j=1,5)
+               else
+                  write(9,23) cbc3,ie,(rbc3(j),j=1,5)
+                  write(9,23) cbc2,ie,(rbc2(j),j=1,5)
+                  write(9,23) cbc4,ie,(rbc4(j),j=1,5)
+                  write(9,23) cbc1,ie,(rbc1(j),j=1,5)
                endif
             enddo
             enddo

@@ -292,6 +292,9 @@ c
          if (ndim.eq.3) nz = nxr
          if (.not. ifsubset) then
             neltm=maxpts/(nx*ny*nz)
+            if(neltr.le.neltm) 
+     $        write(6,*) "NELTM<NELTR. Some elements will not be read.",
+     $                   " Increase maxpts in basicsp.inc ",neltm,neltr
             neltr=min(neltr,neltm)
             nel = min(neltr,nel)
          endif

@@ -141,7 +141,7 @@ c     write(6,*) len,(file1(k),k=1,len+4)
  
       write(6,*)
       write(6,6) neln,(fout1(k),k=1,lou+4)
-    6 format(i8,' elements written to ',40a1)
+    6 format(i12,' elements written to ',40a1)
 
       if(itype.eq.1) then
         write(6,*)
@@ -195,7 +195,7 @@ c     Nekton stuff
       logical ifcirc
 
 c     re2 stuff
-      character*132 hdr
+      character*80 hdr
       real*4 test
       data   test  / 6.54321 /
 
@@ -333,9 +333,9 @@ c
       if(itype.eq.1) then    !re2
         write(11,11) -neln,ndim3,neln
 
-        call blank(hdr,132)
+        call blank(hdr,80)
         write(hdr,111) neln,ndim3,neln       ! writes out header for .re2
-  111   format('#v001',i9,i3,i9,' this is the hdr')
+  111   format('#v001',i12,i3,i12,' hdr')
         call byte_write(hdr,20)              ! assumes byte_open() already issued
         call byte_write(test,1)              ! write the endian discriminator
 
@@ -345,7 +345,7 @@ c
       else
         write(11,11) neln,ndim3,neln
       endif
-   11 format(3i10,11x,'NEL,NDIM,NELV')
+   11 format(i12,i3,i12,11x,'NEL,NDIM,NELV')
 
 
      
@@ -546,7 +546,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i9,5G20.9)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
  
    80 format(a80)
@@ -747,7 +747,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i9,5G20.9)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
    80 format(a80)
 
@@ -1046,7 +1046,7 @@ C     .Read formatted curve side data
    50    CONTINUE
    60    FORMAT(I3,I3,5G14.6,1X,A1)
    61    FORMAT(I2,I6,5G14.6,1X,A1)
-   62    FORMAT(I2,I9,5G20.9,1X,A1)
+   62    FORMAT(I2,I12,5G18.11,1X,A1)
       ENDIF
       RETURN
 C
@@ -1083,7 +1083,7 @@ C
          write(11,11)
          write(11,12) ncun
    11    format(' ***** CURVED SIDE DATA *****')
-   12    format(i8
+   12    format(i12
      $    ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
       else
          call byte_write(ncun,1)
@@ -1182,7 +1182,7 @@ C
    55    continue
    60    format(i3,i3,5g14.6,1x,a1)
    61    format(i2,i6,5g14.6,1x,a1)
-   62    format(i1,i7,5g14.6,1x,a1)
+   62    format(i2,i12,5g18.11,1x,a1)
 
       endif
       return
@@ -1332,7 +1332,7 @@ c-----------------------------------------------------------------------
           write(11,11)
           write(11,12) ncurve
    11     format(' ***** CURVED SIDE DATA *****')
-   12     format(i8
+   12     format(i12
      $      ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
       elseif(ilast.eq.1.and.ipass.eq.2.and.itype.eq.1) then
@@ -1360,7 +1360,7 @@ c-----------------------------------------------------------------------
          else
 
             write(11,62) edge,e,r1,r2,r3,r4,r5,cc
-   62       format(i1,i9,5g20.9,1x,a1)
+   62       format(i2,i12,5g18.11,1x,a1)
 
          endif
       elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then
@@ -1421,7 +1421,7 @@ c-----------------------------------------------------------------------
          if (l.ge.abs(rad)) then
             write(6,1) e,edge,rad
     1       format('Error: invalid curve side radius, el/edge:'
-     $            ,i9,i3,1pe12.5)
+     $            ,i12,i3,1pe12.5)
             return
          endif
 

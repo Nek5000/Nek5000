@@ -63,5 +63,5 @@ blas.o	   : ../../nek/3rd_party/blas.f	; $(F77) -c $(FLAGS)  ../../nek/3rd_party
 revert.o	: revert.c				; $(CC)  -c $(CFLAGS)  revert.c
 byte.o   : byte.c   					; $(CC)  -c $(CFLAGS)  byte.c
 #  xdriver.o	: xdriver.c		; $(CC)  -c -O2  -DLAPTOP xdriver.c
-xdriver.o	: xdriver.c			; $(CC)  -c -O2   xdriver.c
+xdriver.o	: xdriver.c			; $(CC)  -c -O2  $(CFLAGS) xdriver.c
 #  xdriver.o	: xdriver.c		; cp  xdriver.ok xdriver.o
