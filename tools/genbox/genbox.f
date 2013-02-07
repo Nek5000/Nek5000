@@ -89,7 +89,7 @@ c     parameter (maxx  = 300)              ! default values
 c     parameter (maxel = mbox*maxx*maxx)   !
 
       parameter (mbox  = 20)
-      parameter (maxx  = 1000000)
+      parameter (maxx  = 900)
       parameter (maxel = mbox*maxx*30)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
