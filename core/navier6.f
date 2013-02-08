@@ -102,7 +102,7 @@ c
             call gen_fast(df(1,e),sr(1,e),ss(1,e),st(1,e),x,y,z)
 
             call init_weight_op
-            if (ifmgrid) call hsmg_setup
+            if (param(43).eq.0) call hsmg_setup
          endif
 
          call set_up_h1_crs
