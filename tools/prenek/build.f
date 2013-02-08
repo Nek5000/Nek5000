@@ -1752,11 +1752,11 @@ c
             read(io,'(1x,a3,1X,i3,i3,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,
      $      (bc(ii,iside,ie),ii=1,nbcrea)
-         else(neln.lt.100 000) then
+         elseif(neln.lt.100000) then
             read(io,'(1x,a3,i5,i1,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,
      $      (bc(ii,iside,ie),ii=1,nbcrea)
-         else(neln.lt.1 000 000) then
+         elseif(neln.lt.1000000) then
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,
      $      (bc(ii,iside,ie),ii=1,nbcrea)
