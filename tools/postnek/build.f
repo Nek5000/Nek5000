@@ -811,8 +811,11 @@ C     Read curved side data
             if (nel.lt.1000) then
                READ(9,'(I3,I3,5G14.6,1X,A1)',ERR=57,END=57)
      $         IEDGE,IEL,R1,R2,R3,R4,R5,ANS
-            else
+            elseif (nel.lt.1 000 000) then
                READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=57,END=57)
+     $         IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+            else
+               READ(9,'(I2,I12,5G18.11,1X,A1)',ERR=57,END=57)
      $         IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             endif
             CALL DDUMMY(IEDGE,IEL)
@@ -858,12 +861,20 @@ C              !Fix to a4,i2 when you make cbc character*4
                IF(VNEKOLD .LE. 2.5) NBCREA = 3
                IF(VNEKOLD .GE. 2.6) NBCREA = 5
                IF (NEL.LT.1000.and.iffmtin) THEN
-                  READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
+                  READ(9,'(1X,A3,1x,I3,I3,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-               ELSEIF (iffmtin) then
-                  READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
+               ELSEIF (NEL.LT.1000 000.and.iffmtin) THEN
+                  READ(9,'(1X,A3,1x,I5,I1,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
+     $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+               ELSEIF (NEL.LT.1 000 000.and.iffmtin) THEN
+                  READ(9,'(1X,A3,1x,I6,5G14.6)',ERR=44,END=44)
+     $            CBC(ISIDE,IEL,IFLD),ID,
+     $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+               ELSEIF (iffmtin) then
+                  READ(9,'(1X,A3,I12,5G18.11)',ERR=44,END=44)
+     $            CBC(ISIDE,IEL,IFLD),ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
                ELSE
                   READ(8,ERR=44,END=44) chtmp3,

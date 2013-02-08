@@ -1604,7 +1604,6 @@ c
 
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
  
- 
       XPHY0=0.0
       YPHY0=0.0
       ILGRNG=0
@@ -2145,9 +2144,17 @@ C              !Fix to a4,i2 when you make cbc character*4
                   jse=bc(1,iside,iel,ifld)
                   jsi=bc(2,iside,iel,ifld)
 c               write(6,*) cbc(iside,iel,ifld),iside,iel,jse,jsi,' cbc'
-               ELSE
+               ELSEIF (NEL.LT.100 000) then
                   READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
+     $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+               ELSEIF (NEL.LT.1 000 000) then
+                  READ(9,'(1X,A3,I6,5G14.6)',ERR=44,END=44)
+     $            CBC(ISIDE,IEL,IFLD),ID,
+     $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+               ELSE
+                  READ(9,'(1X,A3,I12,5G18.11)',ERR=44,END=44)
+     $            CBC(ISIDE,IEL,IFLD),ID,
      $            (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
                ENDIF
                CBC1=CBC(ISIDE,IEL,IFLD)

@@ -399,11 +399,17 @@ c
             read(8,80) string
             if (nel.lt.1000) then
                write(9,60) (cbc(k,ie,jf),ie,k,bc(j,k,ie,jf),j=1,5)
-            else
+            elseif (nel.lt.100 000) then
                write(9,61) (cbc(k,ie,jf),ie,k,bc(j,k,ie,jf),j=1,5)
+            elseif (nel.lt.1 000 000) then
+               write(9,62) (cbc(k,ie,jf),ie,bc(j,k,ie,jf),j=1,5)
+            else
+               write(9,63) (cbc(k,ie,jf),ie,bc(j,k,ie,jf),j=1,5)
             endif
    60       format(1x,a3,2i3,5g14.7)
    61       format(1x,a3,i5,i1,5g14.7)
+   62       format(1x,a3,i6,5g14.7)
+   63       format(1x,a3,i12,5g18.11)
          enddo
          enddo
       enddo

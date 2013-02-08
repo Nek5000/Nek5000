@@ -60,7 +60,7 @@ c     an ascii rea file for just the parameters
 
       read (10,*)   nel, ndim, nelv
       write(11,11) -nel, ndim, nelv
-   11 format(i9,2x,i1,2x,i9,5x,'NELT,NDIM,NELV')
+   11 format(i12,2x,i1,2x,i12,5x,'NELT,NDIM,NELV')
    
       if(nel.ge.lelt) then
         write(6,*) 'Abort: number of elements too large'
@@ -71,7 +71,7 @@ c     an ascii rea file for just the parameters
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
-    1 format('#v001',i9,i3,i9,' this is the hdr')
+    1 format('#v001',i12,i3,i12,' this is the hdr')
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 
@@ -100,7 +100,7 @@ C MESH
             call byte_write(y,4)
          endif
       enddo
-      write(6,'(i9,1x,i9,1x,i1,A)') nel,nelv,ndim, 
+      write(6,'(i12,1x,i12,1x,i1,A)') nel,nelv,ndim, 
      &     ' nelt/nelv/ndim'
 
 c CURVED SIDES
@@ -115,11 +115,10 @@ c CURVED SIDES
 c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),ccurve(1)
-            elseif (nel.lt.1000000) then
+            elseif (nel.lt.1 000 000) then
                read(10,61) f,e,(buf(k),k=1,5),ccurve(1)
             else
-                write(6,*) 'ABORT: No support for nel>1M !'
-                call exitt
+               read(10,62) f,e,(buf(k),k=1,5),ccurve(1)
             endif
             call byte_write(e     ,1)
             call byte_write(f     ,1)
@@ -128,7 +127,7 @@ c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
          enddo
    60    format(i3,i3 ,5g14.6,1x,a1)
    61    format(i2,i6 ,5g14.6,1x,a1)
-   62    format(i2,i10,5g14.6,1x,a1)
+   62    format(i2,i12,5g18.11,1x,a1)
 
           write(6,*) ncurve,' Number of curved sides'
       endif
@@ -148,16 +147,16 @@ C BOUNDARY CONDITIONS
                if(kpass.eq.2) nelb=nel     ! only ifield2 is a T mesh 
                do e=1,nelb
                do f=1,nface
-                  if (nel.lt.1000000) then
+                  if (nel.lt.1 000 000) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
-                     write(6,*) 'ABORT: No support for nel>1M !'
-                     call exitt
+                     read(10,21) cbc(f,e),(bc(k,f,e),k=1,5)
                   endif
                   if (cbc(f,e).ne.'E  ') nbc = nbc+1
                enddo
                enddo
    20          format(1x,a3,6x,5g14.6)  
+   21          format(1x,a3,12x,5g18.11)  
 
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)

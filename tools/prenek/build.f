@@ -1003,8 +1003,11 @@ C     Read curved side data
             if (nel.lt.1000) then
                READ(9,'(I3,I3,5G14.6,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
-            else
+            elseif (nel.lt.1 000 000) then
                READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=57,END=57)
+     $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+            else
+               READ(9,'(I2,I12,5G18.11,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             endif
             CALL DDUMMY(IEDGE,IEL)
@@ -1050,12 +1053,20 @@ C     !Fix to a4,i2 when you make cbc character*4
                   IF(VNEKOLD .LE. 2.5) NBCREA = 3
                   IF(VNEKOLD .GE. 2.6) NBCREA = 5
                   IF (NEL.LT.1000.and.iffmtin) THEN
-                     READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
+                     READ(9,'(1X,A3,1x,2I3,5G14.6)',ERR=44,END=44)
      $                    CBC(ISIDE,IEL,IFLD),ID,ID,
      $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-                  ELSEIF (iffmtin) then
+                  ELSEIF (NEL.LT.100 000.and.iffmtin) then
                      READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
      $                    CBC(ISIDE,IEL,IFLD),ID,ID,
+     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+                  ELSEIF (NEL.LT.1 000 000.and.iffmtin) then
+                     READ(9,'(1X,A3,I6,5G14.6)',ERR=44,END=44)
+     $                    CBC(ISIDE,IEL,IFLD),ID,
+     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+                  ELSEIF (iffmtin) then
+                     READ(9,'(1X,A3,I12,5G18.11)',ERR=44,END=44)
+     $                    CBC(ISIDE,IEL,IFLD),ID,
      $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
                   ELSE
                      READ(8,ERR=44,END=44) chtmp3,
@@ -1680,8 +1691,11 @@ c
          if (nel.lt.1000.AND.iffmtin) then
             read(io,'(2i3,5g14.6,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
-         elseif (iffmtin) THEN
+         elseif (nel.lt.1 000 000.and.iffmtin) THEN
             read(io,'(i2,i6,5g14.6,1x,a1)',err=9,end=9)
+     $                    iedge,ie,r1,r2,r3,r4,r5,d
+         elseif (iffmtin) THEN
+            read(io,'(i2,i12,5g18.11,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
          else
             read(io,err=9,end=9) iedge,ie,r1,r2,r3,r4,r5,d
@@ -1735,12 +1749,20 @@ c
       do ie=1,neln
       do iside = 1,nsides
          if (neln.lt.1000) then
-            read(io,'(1x,a3,1X,i2,i3,5g14.6)',err=9,end=9)
+            read(io,'(1x,a3,1X,i3,i3,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,
      $      (bc(ii,iside,ie),ii=1,nbcrea)
-         else
+         else(neln.lt.100 000) then
             read(io,'(1x,a3,i5,i1,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,
+     $      (bc(ii,iside,ie),ii=1,nbcrea)
+         else(neln.lt.1 000 000) then
+            read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
+     $      cbc(iside,ie),id,
+     $      (bc(ii,iside,ie),ii=1,nbcrea)
+         else
+            read(io,'(1x,a3,i12,5g18.11)',err=9,end=9)
+     $      cbc(iside,ie),id,
      $      (bc(ii,iside,ie),ii=1,nbcrea)
          endif
 c        Adjust periodic boundary conditions
