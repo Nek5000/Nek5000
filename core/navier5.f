@@ -908,10 +908,10 @@ c
       if (icalld.eq.0) then
          icalld=icalld+1
          if (skpdat(1,2).eq.nx1) then
-            write(6,*) 'In surface_flux, using pf version of skpdat.'
+c           write(6,*) 'In surface_flux, using pf version of skpdat.'
             ifpf = .true.
          else
-            write(6,*) 'In surface_flux, using std version of skpdat.'
+c           write(6,*) 'In surface_flux, using std version of skpdat.'
             ifpf = .false.
          endif
       endif
