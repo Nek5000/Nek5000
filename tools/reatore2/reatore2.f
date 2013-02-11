@@ -71,7 +71,7 @@ c     an ascii rea file for just the parameters
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
-    1 format('#v001',i12,i3,i12,' this is the hdr')
+    1 format('#v001',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 

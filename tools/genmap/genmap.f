@@ -3270,7 +3270,7 @@ c      write(6,80) hdr
 c   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
-    1 format(a5,i12,i3,i12)
+    1 format(a5,i9,i3,i9)
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti

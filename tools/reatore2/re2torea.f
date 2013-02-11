@@ -79,7 +79,7 @@ c
       write(11,*) abs(nelv),ndim,nel
 
 
- 1    format('#v001',i12,i3,i12,' this is the hdr')
+ 1    format('#v001',i9,i3,i9,' this is the hdr')
 
       call byte_read(test,1)
       write(*,*) 'read: endian test flag ', test

@@ -1456,7 +1456,7 @@ C
       endif
       NELsgn=NEL
       if (.not.IFFMTIN) NELsgn = -NEL
-      WRITE(10,'(3I10,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
+      WRITE(10,'(i12,i3,i12,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
 C
       DO 98 IEL=1,NEL
          if (IEL.GT.52) LETAPT(IEL) = 'A'
