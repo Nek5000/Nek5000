@@ -29,15 +29,14 @@ C
       ITEM(2)='STRAIGHTEN CURVE'
       ITEM(3)='MAKE CIRCLE'
       ITEM(4)='Convert to Midside Nodes'
-      ITEM(5)='Tile with hexagons'
+      ITEM(5)='Autosphere'
+c     ITEM(5)='Tile with hexagons'
 c     ITEM(6)='TRANSITION HEXAGONS'
       ITEM(6)='Refine hexagons'
       ITEM(7)='MAKE SPLINE'
 c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
       NCHOIC=7
-      nchoic=nchoic+1
-      ITEM(nchoic)='RENUMBER ELEMENTS'
       if (if3d) then
          nchoic=nchoic+1
          ITEM(nchoic)='SPHERICAL MESH'
@@ -50,13 +49,15 @@ c     else
 c        nchoic=nchoic+1
 c        item(nchoic)='CIRC MESH'
       endif
+      nchoic=nchoic+1
+      ITEM(nchoic)='RENUMBER ELEMENTS'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'CURVE SIDES')
 3013  CONTINUE
       IF(CHOICE.EQ.'MAKE SPLINE')THEN
           CALL GETEDG(ISID,IELS)
 C         GET 2 Auxiliary control points
           CALL COLOR(1)
-          CALL xdot(X(IELS,ISID),Y(IELS,ISID))
+          call XDOT(x(isid,iels),y(isid,iels))
           CALL PRS(
      $    'Enter First Control point (adjacent to hilighted corner):$')
           CALL MOUSE(XMOUS1,YMOUS1,BUTTON)
@@ -107,16 +108,13 @@ c          GOTO 1
            call nw_sphmesh
            goto 1
       ELSE IF(CHOICE.EQ.'STRAIGHTEN CURVE')THEN
-          CALL GETEDG(ISID,IELS)
-          CALL DRAWEL(-IELS)
-          DO 46 I=1,6
-             CURVE(I,ISID,IELS)=0.0
-46        CONTINUE
-          CCURVE (ISID,IELS)=' '
-          WRITE(s,'(1X,A14,I3,I4)')' STRAIGHTENING',ISID,IELS
-          CALL PRS(S//'$')
-C         Export copies curve ICURVE to all overlapping sides
-          CALL EXPORT(ISID,IELS)
+          call getedg(isid,iels)
+          call drawel(-iels)
+          call rzero(curve(1,isid,iels),6)
+          ccurve (isid,iels)=' '
+          write(s,'(1x,a14,i3,i4)')' Straightening',isid,iels
+          call prs(s//'$')
+          call export(isid,iels) ! Export to overlapping sides
       ELSE IF(CHOICE.EQ.'Convert to Midside Nodes') THEN
           call gencen
           do e=1,nel
@@ -125,10 +123,22 @@ C         Export copies curve ICURVE to all overlapping sides
           ifmid  = .true.
           ifcstd = .true.
           goto 1
+
+      elseif (choice.eq.'Autosphere') then
+
+          if (if3d) then
+             call filled_sphere_oct ! Builds sphere or hemisphere of diameter 1
+          else
+             call filled_cyl_quadrant ! Builds filled cylinder quadrant
+          endif
+
+          call redraw_mesh
+          goto 1
+
       ELSE IF(CHOICE.EQ.'MAKE CIRCLE')THEN
             CALL GETEDG(ISID,IELS)
-            XCENT=(X(IELS,1)+X(IELS,2)+X(IELS,3)+X(IELS,4))/4.0
-            YCENT=(Y(IELS,1)+Y(IELS,2)+Y(IELS,3)+Y(IELS,4))/4.0
+            xcent=0.25*vlsum(x(1,iels),4)
+            ycent=0.25*vlsum(y(1,iels),4)
             CALL GWRITE(XCENT,YCENT,1.0,'*$')
             CALL PRS(' Enter Circle Radius for side of element *$')
             CALL PRS(' >0 for convex element, <0 for concave$')
@@ -140,18 +150,10 @@ c              call getside(jel,jside,xmouse,ymouse)
 c              RADIUS =  -CURVE(1,jside,jel)
 c           endif
             CALL DRAWEL(-IELS)
-
-            curve(1,isid,iels)=radius
-            ccurve(isid,iels)='C'
-            call export(isid,iels)
-
-            if (if3d.and.isid.le.4) then
-               isd4 = isid + 4
-               curve       (1,isd4,iels)=radius
-               ccurve      (isd4,iels)='C'
-               call export (isd4,iels)
-            endif
-
+            CURVE(1,ISID,IELS)=RADIUS
+            CCURVE(ISID,IELS)='C'
+C
+            CALL EXPORT(ISID,IELS)
       ELSE IF(CHOICE.EQ.'FORTRAN FUNCTION')THEN
             CALL GETEDG(ISID,IELS)
             CALL DRAWEL(-IELS)
@@ -233,19 +235,19 @@ C     Make mesh and draw on screen
          DO 106 I = 1,NX
            DO 106 J = 1,NY
 C           Calculate original xpts based on straight sides
-            XPTS(I,J,IEL) =  1./4.* (
-     $      X(IEL,1)*(XXPTS(I)-1.0)*(YYPTS(J)-1.0)-
-     $      X(IEL,2)*(XXPTS(I)+1.0)*(YYPTS(J)-1.0)+
-     $      X(IEL,3)*(XXPTS(I)+1.0)*(YYPTS(J)+1.0)-
-     $      X(IEL,4)*(XXPTS(I)-1.0)*(YYPTS(J)+1.0))
-            YPTS(I,J,IEL) =  1./4.* (
-     $      Y(IEL,1)*(XXPTS(I)-1.0)*(YYPTS(J)-1.0)-
-     $      Y(IEL,2)*(XXPTS(I)+1.0)*(YYPTS(J)-1.0)+
-     $      Y(IEL,3)*(XXPTS(I)+1.0)*(YYPTS(J)+1.0)-
-     $      Y(IEL,4)*(XXPTS(I)-1.0)*(YYPTS(J)+1.0))
+            xpts(i,j,iel) =  .25* (
+     $      x(1,iel)*(xxpts(i)-1.0)*(yypts(j)-1.0)-
+     $      x(2,iel)*(xxpts(i)+1.0)*(yypts(j)-1.0)+
+     $      x(3,iel)*(xxpts(i)+1.0)*(yypts(j)+1.0)-
+     $      x(4,iel)*(xxpts(i)-1.0)*(yypts(j)+1.0))
+            ypts(i,j,iel) =  .25* (
+     $      y(1,iel)*(xxpts(i)-1.0)*(yypts(j)-1.0)-
+     $      y(2,iel)*(xxpts(i)+1.0)*(yypts(j)-1.0)+
+     $      y(3,iel)*(xxpts(i)+1.0)*(yypts(j)+1.0)-
+     $      y(4,iel)*(xxpts(i)-1.0)*(yypts(j)+1.0))
 C           Initial values for temporary array
-            XPTSEL(I,J) = XPTS(I,J,IEL)
-            YPTSEL(I,J) = YPTS(I,J,IEL)
+            xptsel(i,j) = xpts(i,j,iel)
+            yptsel(i,j) = ypts(i,j,iel)
 106       CONTINUE
            ICRV(IEL)=0
 C          For 2-d only
@@ -348,7 +350,7 @@ C              Draw it the hard, slow, curvy way
 C              Draw curved sides for hardcopy
                DO 130 IEDGE=1,4
                   IF(CCURVE(IEDGE,IEL).NE.' ')THEN
-                     CALL MOVEC(X(IEL,IEDGE),Y(IEL,IEDGE))
+                     call movec(x(iedge,iel),y(iedge,iel))
                      CALL DRAWED(IEL,IEDGE,1)
                   ENDIF
 130            CONTINUE
@@ -374,53 +376,73 @@ c-----------------------------------------------------------------------
       data    eindx /  2 ,  6 ,  8 ,  4
      $              , 20 , 24 , 26 , 22
      $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+      integer count
 
 
-1     CALL PRS(' Enter element side.$')
-      CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-      XH=XMOUSE
-      YH=YMOUSE
-      IF(XSCR(XMOUSE) .GT.1.0)THEN
-         CALL PRS
+      count=0
+1     count=count+1
+      if (count.gt.5) then
+         call prs('Returning.$')
+         return
+      endif
+
+      call prs(' Enter element side.$')
+      call mouse(xmouse,ymouse,button)
+      xh=xmouse
+      yh=ymouse
+      if (xscr(xmouse).gt.1.0) then
+         call prs
      $   (' **ERROR**: Expecting you to define side.  Define side$')
-         CALL PRS(' by hitting mouse button in mesh area.  Try again.$')
-         go to 1
-      ENDIF
-C     Here IF(IFCEIL) we are on the ceiling;else on the bottom of a given floor.
-      ZH=0.0
-      IF(ILEVEL.GT.1)THEN
-         DO 10 I=1,ILEVEL-1
-            ZH=ZH+HEIGHT(I)
-10       CONTINUE
-      ENDIF
-      IF(IFCEIL)ZH=ZH+HEIGHT(ILEVEL)
-      RMIN=1.0E10
-      DO 50 IEL=1,NEL
-         IF(IFCEIL)THEN
-            II1=5
-            II2=8
-         ELSE
-            II1=1
-            II2=4
-         ENDIF
-         do 40 iedge=ii1,ii2
-            v=eindx(iedge)
-            dxh=xh-x27(v,iel)
-            dyh=yh-y27(v,iel)
-            dzh=zh-z27(v,iel)
-            r=sqrt(dxh**2+dyh**2+dzh**2)
-            IF(R.LT.RMIN) THEN
-               RMIN=R
-               IELS=IEL
-               ISID=IEDGE
-            ENDIF
-40       CONTINUE
-50    CONTINUE
-      RETURN
-      END
+         call prs(' by hitting mouse button in mesh area.  Try again.$')
+         goto 1
+      endif
+
+      zh=0.0
+      if (ilevel.gt.1) then
+         do 10 i=1,ilevel-1
+            zh=zh+height(i)
+10       continue
+      endif
+      if (ifceil) zh=zh+height(ilevel)
+
+      ii1=1
+      ii2=4
+      if (ifceil) ii1=5
+      if (ifceil) ii2=8
+
+      rmin=1.0e10
+      do 50 iel=1,nel
+      do 40 iedge=ii1,ii2
+
+c        v=eindx(iedge)    ! This is problematic if curve is messed up!
+c        dxh=xh-x27(v,iel) ! So, use mean vertex values, as defined 
+c        dyh=yh-y27(v,iel) ! below.
+c        dzh=zh-z27(v,iel)
+
+         iv=mod1(iedge+1,4)
+         xmid=(x(iedge,iel)+x(iv,iel))/2
+         ymid=(y(iedge,iel)+y(iv,iel))/2
+         zmid=(z(iedge,iel)+z(iv,iel))/2
+         dxh=xh-xmid
+         dyh=yh-ymid
+         dzh=zh-zmid
+
+         r=sqrt(dxh**2+dyh**2+dzh**2)
+
+         if(r.lt.rmin) then
+            rmin=r
+            iels=iel
+            isid=iedge
+         endif
+
+   40 continue
+   50 continue
+
+      return
+      end
 c-----------------------------------------------------------------------
-      subroutine export(iedge,iel)
-      include 'basics.inc'
+      subroutine export(iedge,iel) ! Problematic if edges messed up
+      include 'basics.inc'             ! pff 7/7/12
       integer iover(2,20),v1,v2,v3,v4,vi,vj
       integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
       save    eindx      ! Follows preprocessor notation..
@@ -466,7 +488,7 @@ C     Put original side in IOVER 1
      $       +(y27(v4,jel)-y27(v3,jel))**2
      $       +(z27(v4,jel)-z27(v3,jel))**2
          epsj = min(eps1,eps2)
-         eps  = 0.001*min(epsi,epsj)
+         eps  = 0.02*min(epsi,epsj)
 
          do 10 iedg=1,nedges
             vj=eindx(iedg)
@@ -521,27 +543,6 @@ C              Spline on same level switch auxiliary points
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine getside(jel,jside,xp,yp)
-      include 'basics.inc'
-C     Find closest element, side that we want to duplicate
-      RMIN=1.e22
-      DO 133 IIEL=1,NEL
-C        Only try those on same floor
-         IF(NUMAPT(IIEL).EQ.ILEVEL)THEN
-            DO 131 IISIDE=1,NSIDES
-               R=    ((XP-SIDES(IIEL,IISIDE,1))**2
-     $         +      (YP-SIDES(IIEL,IISIDE,2))**2)
-               IF (R.LT.RMIN) THEN
-                  RMIN=R
-                  jside = IISIDE
-                  jel   = IIEL
-               ENDIF
-131         CONTINUE
-         ENDIF
-133   CONTINUE
-      RETURN
-      END
-c-----------------------------------------------------------------------
       subroutine stretch_sphere
 c
 c     Stretch all points in spherical shell
@@ -585,18 +586,18 @@ C
       r12 = r1*r1
       do ie=1,nel
       do i=1,nvts
-         xs = x(ie,i)-x0
-         ys = y(ie,i)-y0
-         zs = z(ie,i)-z0
+         xs = x(i,ie)-x0
+         ys = y(i,ie)-y0
+         zs = z(i,ie)-z0
          r2 = xs*xs + ys*ys + zs*zs
          if (r02.lt.r2 .and. r2 .lt. r12) then
             xs = sfact*xs
             ys = sfact*ys
             zs = sfact*zs
 c
-            x(ie,i) = x0 + xs
-            y(ie,i) = y0 + ys
-            z(ie,i) = z0 + zs
+            x(i,ie) = x0 + xs
+            y(i,ie) = y0 + ys
+            z(i,ie) = z0 + zs
          endif
       enddo
       enddo
@@ -650,14 +651,14 @@ c
       integer e,en,et
 c
 c
-      dx = x(e,1)-x(e,4)
-      dy = y(e,1)-y(e,4)
+      dx = x(1,e)-x(4,e)
+      dy = y(1,e)-y(4,e)
       dm = dx*dx + dy*dy
       long_edge_e = 4
 c
       do i=1,3
-         dx = x(e,i+1)-x(e,i)
-         dy = y(e,i+1)-y(e,i)
+         dx = x(i+1,e)-x(i,e)
+         dy = y(i+1,e)-y(i,e)
          d2 = dx*dx + dy*dy
          if (d2.gt.dm) then
             long_edge_e = i
@@ -755,16 +756,16 @@ c
 c
             e = e + 1
             do iv=1,4
-               x(e,iv) = hexscale(1+iv,1) ! kth hex, lower half
-               y(e,iv) = hexscale(1+iv,2)
+               x(iv,e) = hexscale(1+iv,1) ! kth hex, lower half
+               y(iv,e) = hexscale(1+iv,2)
             enddo
             long_edge(e) = 3
             call drawel(e)
 c
             e = e + 1
             do iv=1,4
-               x(e,iv) = hexscale(4+iv,1) ! kth hex, upper half
-               y(e,iv) = hexscale(4+iv,2)
+               x(iv,e) = hexscale(4+iv,1) ! kth hex, upper half
+               y(iv,e) = hexscale(4+iv,2)
             enddo
             long_edge(e) = 1
             call drawel(e)
@@ -840,9 +841,9 @@ c
           rrl(1) = rsvx(rptrx(i,k))
           rrl(2) = rsvx(rptry(i,k))
           rrl(3) = rsvx(rptrz(i,k))
-          call evalsc (x(et,i),xp,rrl,1)
-          call evalsc (y(et,i),yp,rrl,0)
-          call evalsc (z(et,i),zp,rrl,0)
+          call evalsc (x(i,et),xp,rrl,1)
+          call evalsc (y(i,et),yp,rrl,0)
+          call evalsc (z(i,et),zp,rrl,0)
         enddo
 
         if (k.eq.3) then
@@ -957,9 +958,9 @@ c
          do i=1,4  ! 4 points
             rrl(1) = rsvx(rptr(i,1,k,long_edge(e)))
             rrl(2) = rsvx(rptr(i,2,k,long_edge(e)))
-            call evalsc (x(et,i),xp,rrl,1)
-            call evalsc (y(et,i),yp,rrl,0)
-                        z(et,i) = 0
+            call evalsc (x(i,et),xp,rrl,1)
+            call evalsc (y(i,et),yp,rrl,0)
+                         z(i,et) = 0
          enddo
          call drawel(et)
       enddo
@@ -1061,17 +1062,19 @@ c
 c
          i = it-(kface-1)
          if (i.lt.1) i = i + 4
-         x(e,i  ) = x(et,it)
-         y(e,i  ) = y(et,it)
-         z(e,i  ) = z(et,it)
-         x(e,i+4) = x(et,it+4)
-         y(e,i+4) = y(et,it+4)
-         z(e,i+4) = z(et,it+4)
+         x(i  ,e) = x(it,et)
+         y(i  ,e) = y(it,et)
+         z(i  ,e) = z(it,et)
+         x(i+4,e) = x(it+4,et)
+         y(i+4,e) = y(it+4,et)
+         z(i+4,e) = z(it+4,et)
 c
          do ifld=0,maxfld
             cbc(i,e,ifld) = cbc(it,et,ifld)
             call copy(bc(1,i,e,ifld),bc(1,it,et,ifld),5)
          enddo
+         ibc(i,e,ifld) = ibc(it,et,ifld)
+
          do ii=1,4
             sides(e,i,ii)=sides(et,it,ii)
          enddo
@@ -1242,7 +1245,6 @@ c     Assign / repair curve-side info for edges
          curve(2,ic,e) = y27(eindx(ic),e)
          curve(3,ic,e) = z27(eindx(ic),e)
       enddo
-
 c     if (e.eq.2) call out27(x27(1,e),y27(1,e),z27(1,e),e,'fixm')
 c     if (e.eq.2) write(6,*) 'stop in fix_m_curve',e
 c     if (e.eq.2) call exitt
@@ -1276,6 +1278,12 @@ c     Assign / repair curve-side info for edges
             xyz(2,j)=y27(e3(j,i),e)
             xyz(3,j)=z27(e3(j,i),e)
          enddo
+
+         write(6,*)
+c        write(65,*)
+c        write(6,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
+c        write(65,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
+
          len = 0.
          h   = 0.
          do j=1,ndim
@@ -1283,18 +1291,429 @@ c     Assign / repair curve-side info for edges
             h    = h   + (xyz(j,2)-xmid)**2
             len  = len + (xyz(j,3)-xyz(j,1))**2
          enddo
-         if (h.gt.tol2*len) then
+         ht = tol2*len
+         if (h.gt.ht) then
             ccurve(i,e) = 'm'
             call copy(curve(1,i,e),xyz(1,2),ndim)
          else
             ccurve(i,e) = ' '
             call rzero(curve(1,i,e),ndim)
          endif
+
+c        write(6,*) 'ccurve: ',i,e,' ',ccurve(i,e),' ',h,ht
+c        write(6,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
+
+c        write(66,*)
+c        write(66,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
+c  6     format(i9,i4,1p2e18.7)
+         
+
       enddo
+
+      call drawel(e)
+c     call prs('continue?$')
+c     call res(ans,1)
 
 c     if (e.eq.2) call out27(x27(1,e),y27(1,e),z27(1,e),e,'fixm')
 c     if (e.eq.2) write(6,*) 'stop in fix_m_curve',e
 c     if (e.eq.2) call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine s2vec(x,y,z,u,v,w,r)  ! Project onto r*S2
+
+      x = u
+      y = v
+      z = w
+
+      zl = x*x+y*y+z*z
+
+      if (zl.gt.0) then
+         zl = sqrt(zl)
+         x  = x*r/zl
+         y  = y*r/zl
+         z  = z*r/zl
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine make_top(xl,yl,zl,r)
+      include 'basics.inc'
+
+      real xl(3,3,3),yl(3,3,3),zl(3,3,3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      integer e,f
+
+      e = nel+1
+      call copyel(nel,e)
+
+      call copy (x(1,e),x(5,nel),4)
+      call copy (y(1,e),y(5,nel),4)
+      call copy (z(1,e),z(5,nel),4)
+      call s2vec(x(5,e),y(5,e),z(5,e),0.,0.,1.,r)  ! Project onto r*S2
+      call s2vec(x(6,e),y(6,e),z(6,e),1.,0.,1.,r)
+      call s2vec(x(7,e),y(7,e),z(7,e),1.,1.,1.,r)
+      call s2vec(x(8,e),y(8,e),z(8,e),0.,1.,1.,r)
+
+      call blank (ccurve(1,e),12)
+      call rzero (curve(1,1,e),72)
+
+      call chcopy(ccurve(1,e) ,ccurve(5,nel) , 4)  ! Top 4 edges of nel -->
+      call copy  (curve(1,1,e),curve(1,5,nel),24)  ! bottom 4 of e
+
+      ccurve(6,e)  = 's'   ! sphere
+      curve(4,6,e) = r     ! radius r
+
+c
+c     Clean up a few details
+c
+      letapt(e)='a'
+
+      do ifld=1,maxfld
+      do f=5,6
+         cbc(f,e,ifld) = 'W  '    ! totally arbitrary default
+         if (f.eq.5.or.f.eq.4.or.f.eq.5) cbc(f,e,ifld) = '   '
+         call rzero(bc(1,f,e,ifld),5)
+         ibc(f,e,ifld) = 0
+      enddo
+      enddo
+
+      nel = e
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine make_core(xl,yl,zl,r)
+      include 'basics.inc'
+
+      real xl(3,3,3),yl(3,3,3),zl(3,3,3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      integer e,f
+
+      r = 0.5
+      a = 0.120   ! (1,0,0) radius
+      b = .90*a   ! (1,1,0) radius
+      c = .85*a   ! (1,1,1) radius
+
+      ra = r-a
+      rb = r-2*b+a  ! .5*(rb+ra) = .5*(r+r-2*b+a-a) = r-b
+      rc = r-2*c+a
+
+      e = nel+1
+
+      call rzero(x(1,e),8)
+      call rzero(y(1,e),8)
+      call rzero(z(1,e),8)
+
+      call blank(ccurve(1,e),12)
+      call rzero(curve(1,1,e),72)
+
+      call s2vec(x(1,e),y(1,e),z(1,e),0.,0.,0.,0.)  ! Project onto ra*S2
+      call s2vec(x(2,e),y(2,e),z(2,e),1.,0.,0.,ra)  ! Project onto ra*S2
+      call s2vec(x(3,e),y(3,e),z(3,e),1.,1.,0.,rb)  ! Project onto ra*S2
+      call s2vec(x(4,e),y(4,e),z(4,e),0.,1.,0.,ra)  ! Project onto ra*S2
+      call s2vec(x(5,e),y(5,e),z(5,e),0.,0.,1.,ra)  ! Project onto ra*S2
+      call s2vec(x(6,e),y(6,e),z(6,e),1.,0.,1.,rb)  ! Project onto ra*S2
+      call s2vec(x(7,e),y(7,e),z(7,e),1.,1.,1.,rc)  ! Project onto ra*S2
+      call s2vec(x(8,e),y(8,e),z(8,e),0.,1.,1.,rb)  ! Project onto ra*S2
+
+c     call outmat(x(1,e),2,4,'x(e) ',e)
+c     call outmat(y(1,e),2,4,'y(e) ',e)
+c     call outmat(z(1,e),2,4,'z(e) ',e)
+
+      call xyzlin (xl,yl,zl,3,3,3,e)
+
+c     Curve the interior connector edges
+
+      ccurve( 2,e) = 'm'
+      ccurve( 3,e) = 'm'
+      ccurve( 5,e) = 'm'
+      ccurve( 6,e) = 'm'
+      ccurve( 7,e) = 'm'
+      ccurve( 8,e) = 'm'
+      ccurve(10,e) = 'm'
+      ccurve(11,e) = 'm'
+      ccurve(12,e) = 'm'
+
+      w0 = 1.10 ! weight on curve
+      w1 = 1-w0
+
+      nedge = 12
+      do k=1,nedge
+         if (ccurve(k,e).eq.'m') then
+            j = eindx(k)
+            call s2vec(xs,ys,zs,xl(j,1,1),yl(j,1,1),zl(j,1,1),ra)
+            curve(1,k,e) = w0*xs + w1*xl(j,1,1)
+            curve(2,k,e) = w0*ys + w1*yl(j,1,1)
+            curve(3,k,e) = w0*zs + w1*zl(j,1,1)
+         endif
+      enddo
+
+      call linquad(xl,yl,zl,3,3,3,e)
+
+c
+c     Clean up a few details
+c
+      letapt(e)='a'
+
+      do ifld=1,maxfld
+      do f=1,6
+         cbc(f,e,ifld) = 'W  '    ! totally arbitrary default
+         if (f.eq.1.or.f.eq.4.or.f.eq.5) cbc(f,e,ifld) = 'SYM'
+         call rzero(bc(1,f,e,ifld),5)
+         ibc(f,e,ifld) = 0
+      enddo
+      enddo
+
+      nel = e
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine filled_sphere_oct ! Builds sphere or hemisphere of diameter 1
+      include 'basics.inc'
+
+      common /sphoct/ sphctr(3),normal(3),xl(27),yl(27),zl(27)
+      real normal
+      integer e
+
+      call make_core(xl,yl,zl,r)
+
+      call make_top (xl,yl,zl,r)
+
+c     Copy top and rotate about (1,1,1):
+
+      call rone(normal,3)
+      do k=1,2
+         e = nel+k
+         call copyel(nel,e)
+         angle = 120*k
+         call rotate_el_vec(e,normal,angle)
+      enddo
+      nel = e
+
+c     call prs('Enter number of elements radial direction:$')
+c     call rei(ne_rad)
+c     if (ne_rad.le.2) return
+c     if (ne_rad.le.4) then
+c        nro = 1
+c        nrc = ne_rad - nro
+c     else
+c        nrc = (ne_rad+.1)/1.5
+c        nro = ne_rad-nrc
+c        nro = max(2,nro)
+c        nrc = ne_rad-nro
+c     endif
+c     ro  = .8
+c     ro  = .6
+
+      call prs('Enter number of elements in core and shell:$')
+      call reii(nrc,nro)
+      call prs('Enter ratio in outer shell:$')
+      call rer(ro)
+
+      r1  = 1
+      e   = 1
+      call msplite(e,nrc,nrc,nrc,r1,r1,r1)    ! Uniform refinement of core
+
+      do e=2,4
+         call msplite(e,nrc,nrc,nro,r1,r1,ro) ! Refine outer shell
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine make_top_2d(xl,yl,zl,r)
+      include 'basics.inc'
+
+      real xl(3,3,3),yl(3,3,3),zl(3,3,3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      integer e,f
+
+      do ipass=1,2
+        e = nel+ipass
+        call copyel(nel,e)
+        if (ipass.eq.1) then
+          x(1,e) = x(3,nel)
+          x(2,e) = x(2,nel)
+          y(1,e) = y(3,nel)
+          y(2,e) = y(2,nel)
+          call s2vec(x(3,e),y(3,e),z(3,e),1.,0.,0.,r)  ! Project onto r*S2
+          call s2vec(x(4,e),y(4,e),z(4,e),1.,1.,0.,r)  ! Project onto r*S2
+        else
+          x(1,e) = x(4,nel)
+          x(2,e) = x(3,nel)
+          y(1,e) = y(4,nel)
+          y(2,e) = y(3,nel)
+          call s2vec(x(3,e),y(3,e),z(3,e),1.,1.,0.,r)  ! Project onto r*S2
+          call s2vec(x(4,e),y(4,e),z(4,e),0.,1.,0.,r)  ! Project onto r*S2
+        endif
+
+        call blank (ccurve(1,e),12)
+        call rzero (curve(1,1,e),72)
+
+        ccurve(1,e) = ccurve(1+ipass,nel)
+        call copy  (curve(1,1,e),curve(1,1+ipass,nel),6)
+
+        f=3
+        ccurve(f,e)  = 'C'   ! circle
+        curve(1,f,e) = r     ! radius r
+
+c
+c       Clean up a few details
+c
+        letapt(e)='a'
+
+        do ifld=1,maxfld
+           f=3
+           cbc(f,e,ifld) = 'W  '    ! totally arbitrary default
+           call rzero(bc(1,f,e,ifld),5)
+           ibc(f,e,ifld) = 0
+        enddo
+      enddo
+
+      nel = e
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine make_core_2d(xl,yl,zl,r)
+      include 'basics.inc'
+
+      real xl(3,3,3),yl(3,3,3),zl(3,3,3)
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      integer e,f
+
+      r = 0.5
+      a = 0.120   ! (1,0,0) radius
+      b = .90*a   ! (1,1,0) radius
+      c = .85*a   ! (1,1,1) radius
+
+      ra = r-a
+      rb = r-2*b+a  ! .5*(rb+ra) = .5*(r+r-2*b+a-a) = r-b
+      rc = r-2*c+a
+
+      e = nel+1
+
+      call rzero(x(1,e),8)
+      call rzero(y(1,e),8)
+      call rzero(z(1,e),8)
+
+      call blank(ccurve(1,e),12)
+      call rzero(curve(1,1,e),72)
+
+      call s2vec(x(1,e),y(1,e),z(1,e),0.,0.,0.,0.)  ! Project onto ra*S2
+      call s2vec(x(2,e),y(2,e),z(2,e),1.,0.,0.,ra)  ! Project onto ra*S2
+      call s2vec(x(3,e),y(3,e),z(3,e),1.,1.,0.,rb)  ! Project onto ra*S2
+      call s2vec(x(4,e),y(4,e),z(4,e),0.,1.,0.,ra)  ! Project onto ra*S2
+
+      call xyzlin (xl,yl,zl,3,3,3,e)
+
+c     Curve the interior connector edges
+      ccurve( 2,e) = 'm'
+      ccurve( 3,e) = 'm'
+
+      w0 = 1.10 ! weight on curve
+      w1 = 1-w0
+
+      nedge = 4
+      do k=1,nedge
+         if (ccurve(k,e).eq.'m') then
+            j = eindx(k)
+            call s2vec(xs,ys,zs,xl(j,1,1),yl(j,1,1),zl(j,1,1),ra)
+            curve(1,k,e) = w0*xs + w1*xl(j,1,1)
+            curve(2,k,e) = w0*ys + w1*yl(j,1,1)
+         endif
+      enddo
+
+      call linquad(xl,yl,zl,3,3,3,e)
+
+c
+c     Clean up a few details
+c
+      letapt(e)='a'
+
+      do ifld=1,maxfld
+      do f=1,4
+         cbc(f,e,ifld) = 'W  '    ! totally arbitrary default
+         if (f.eq.1.or.f.eq.4.or.f.eq.5) cbc(f,e,ifld) = 'SYM'
+         call rzero(bc(1,f,e,ifld),5)
+         ibc(f,e,ifld) = 0
+      enddo
+      enddo
+
+      nel = e
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine filled_cyl_quadrant ! Builds filled cylinder quadrant
+      include 'basics.inc'
+
+      common /sphoct/ sphctr(3),normal(3),xl(27),yl(27),zl(27)
+      real normal
+      integer e
+
+      call make_core_2d (xl,yl,zl,r)
+      call make_top_2d  (xl,yl,zl,r)
+
+      call vertadj
+
+c     call prs('Enter number of elements radial direction:$')
+c     call rei(ne_rad)
+c     if (ne_rad.le.2) return
+c     if (ne_rad.le.4) then
+c        nro = 1
+c        nrc = ne_rad - nro
+c     else
+c        nrc = (ne_rad+.1)/1.5
+c        nro = ne_rad-nrc
+c        nro = max(2,nro)
+c        nrc = ne_rad-nro
+c     endif
+c     ro  = .8
+c     ro  = .6
+
+      call prs('Enter number of elements in core and shell:$')
+      call reii(nrc,nro)
+      call prs('Enter ratio in outer shell:$')
+      call rer(ro)
+
+      r1  = 1
+      e   = 1
+      call msplite(e,nrc,nrc,1,r1,r1,0.)    ! Uniform refinement of core
+
+      do e=2,3
+         call msplite(e,nrc,nro,1,r1,ro,0.) ! Refine outer shell
+      enddo
+
+      call vertadj
 
       return
       end

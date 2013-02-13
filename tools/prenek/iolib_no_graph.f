@@ -61,15 +61,12 @@ c-----------------------------------------------------------------------
       data    icalld /0/
       
       character s(*)
-      character*1 s1(80),s2(80),s3(80),s4(80),s5(80)
-      character*80 s81,s82,s83,s84,s85
+      character*1 s1(80),s2(80)
+      character*80 s81,s82
       equivalence (s81,s1)
       equivalence (s82,s2)
-      equivalence (s83,s3)
-      equivalence (s84,s4)
-      equivalence (s85,s5)
-      save s2,s3,s4,s5
-      data s2,s3,s4,s5 /320*' '/
+      save s2
+      data s2 /80*' '/
       integer scount
       save    scount
       data    scount /0/
@@ -97,19 +94,15 @@ c-----------------------------------------------------------------------
       if (ifgraf) call putsold  (s   ,nchars)
       call chcopy (s1,s,nchars)
 
-c     Check for infinite loop
-      if (s81.eq.s82.or.s81.eq.s83.or.s81.eq.s84.or.s81.eq.s85) then
+      if (s81.eq.s82) then  ! Check for infinite loop
          scount = scount+1
-         if (scount.gt.20) then
+         if (scount.gt.10) then
             write(6,*) 'ABORT: too many repeat calls to prs.'
             call exitt
          endif
       else
          scount = 0
       endif
-      call chcopy (s5,s4,80)
-      call chcopy (s4,s3,80)
-      call chcopy (s3,s2,80)
       call chcopy (s2,s1,80)
 
       write(6 ,3) (s1(j),j=1,nchars)

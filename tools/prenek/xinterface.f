@@ -123,16 +123,18 @@ c       filter x,y thru grid
         if (grid.lt. .0099) ifgrdc=.false.
 
 C       Filter Only if building and outside build menu area.
-        IF(XSCREEN.LT.1.0 .AND.IFGRID.AND.BUTTON.NE.'RIGHT') THEN
-           CALL FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN)
-        ELSEIF (XSCREEN.LT.1.0) THEN
-           CALL FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN) ! to grab obj id
-           XMOUSE=XPHY(XSCREEN)
-           YMOUSE=YPHY(YSCREEN)
-        ELSE
-           XMOUSE=XPHY(XSCREEN)
-           YMOUSE=YPHY(YSCREEN)
-        ENDIF
+        iobjct=0
+        if(xscreen.lt.1.0 .and.ifgrid.and.button.ne.'RIGHT') then
+           call filter(xmouse,ymouse,xscreen,yscreen)
+        elseif (xscreen.lt.1.0) then                  ! Button = right
+           call filter(xmouse,ymouse,xscreen,yscreen) ! to latch to element
+           xmouse=xphy(xscreen)
+           ymouse=yphy(yscreen)
+        else
+           xmouse=xphy(xscreen)
+           ymouse=yphy(yscreen)
+        endif
+
         IF(BUTTON.EQ.'MIDDLE')THEN
            CALL PRSR('Cursor Coordinates: x: $',XMOUSE)
            CALL PRSR('Cursor Coordinates: y: $',YMOUSE)
@@ -788,7 +790,7 @@ c     Filter only if outside build menu area.
          rmin = 1.e20
          do e=1,nel
          do i=1,4
-            r=(x(e,i)-xmouse)**2+(y(e,i)-ymouse)**2
+            r=(x(i,e)-xmouse)**2+(y(i,e)-ymouse)**2
             if (r.lt.rmin) then
                rmin  = r
                iemin = e
@@ -796,8 +798,8 @@ c     Filter only if outside build menu area.
             endif
          enddo
          enddo
-         xmouse = x(iemin,icmin)
-         ymouse = y(iemin,icmin)
+         xmouse = x(icmin,iemin)
+         ymouse = y(icmin,iemin)
       else
          xmouse=xphy(xscreen)
          ymouse=yphy(yscreen)

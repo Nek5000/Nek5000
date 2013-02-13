@@ -1,316 +1,418 @@
 c-----------------------------------------------------------------------
-      subroutine newel(iel,xmouse,ymouse,button,ierr)
-C     Adds new element to mesh
+      subroutine newel(xmouse,ymouse,button,ierr) ! add new element
+
       include 'basics.inc'
-      dimension xyz(2,4)
-      logical ifcurv
-      character key,string*6
       dimension iobjs(8)
       integer e
-C
-C
-      DO 500 ICORN=1,4
-          GO TO 100
-   90     CALL PRS('Error reading input.  To input corner, use $')
-          CALL PRS('mouse$')
-  100     IF(ICORN.EQ.1)CALL PRS(' Corner I  >$')
-          IF(ICORN.EQ.2)CALL PRS(' Corner II >$')
-          IF(ICORN.EQ.3)CALL PRS(' Corner III>$')
-          IF(ICORN.EQ.4)CALL PRS(' Corner IV >$')
-          IF(XMOUSE.LE.XPHY(1.0) .AND. ICORN.EQ.1) THEN
-C            Special Kludge for "ADD ELEMENT"
-C            First element corner already input
-          ELSE
-             XOLD=XMOUSE
-             YOLD=YMOUSE
-             CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-             IF (XMOUSE.EQ.XOLD.AND.YMOUSE.EQ.YOLD) GOTO 90
-          ENDIF
-C !!?? Do we want a cover on keypad now?
-          IF (XMOUSE.GT.XPHY(1.0)) THEN
-C               look for a keypad input
-C               BUG IN KEYOLD IF OLD KEY WAS OFF KEYPAD: IT WONT LET YOU REPAIR!
-                CALL PRS('SWITCHING TO KEYBOARD INPUTS$')
-                CALL SGVIS(11,0)
-                CALL SGVIS(12,1)
-                CALL PRS('ENTER X and Y:$')
-                call rerr(xmouse,ymouse)
-                BUTTON='LEFT'
-C               TURN OFF KEYPAD HILITE
-                CALL SGVIS(12,0)
-                CALL SGVIS(11,1)
-          ENDIF
-          if(button.eq.'LEFT') then ! std. input:  new unique corner
 
-            if (iobjct.eq.0) then ! round new unique corners - 7-25-90 pff
-               xmouse=round(xmouse) 
-               ymouse=round(ymouse)
-            endif
-            x(iel,icorn)=xmouse
-            y(iel,icorn)=ymouse
-            iobjs(icorn)=iobjct
+      e = nel+1
 
-          elseif (button.eq.'RIGHT') then ! latch to closest vertex
+      do icorn=1,4
 
-            xc=xmouse
-            yc=ymouse
-            rmin = 1.0e8
-            do iiel=1,iel-1 ! find closest corner not in same element
-               if (if3d.and.numapt(iiel).ne.numapt(iel)) goto 140
-               do iicorn=1,4
-                  xt=x(iiel,iicorn)
-                  yt=y(iiel,iicorn)
-                  r=(xt-xc)**2+(yt-yc)**2
-                  if(r.lt.rmin) then
-                     rmin  = r
-                     ielmin= iiel
-                     icmin = iicorn
-                  endif
-               enddo
-  140          continue
-            enddo
-            x(iel,icorn)=x(ielmin,icmin)
-            y(iel,icorn)=y(ielmin,icmin)
-            iobjs(icorn)=iobjct
-C...if its attached to an object, define it as so.
-            IEDG1 = ICMIN-1
-            IEDG2 = ICMIN
-            IF (IEDG1.EQ.0) IEDG1=4
-C  NOTE: a bug in the logic here, one pt. CAN be a member of two objects..!
-C        a SIDE can be a member of only ONE object, must make distinction.
-c           iobjs(icorn)=0
-c           IF (CCURVE(IEDG1,IELMIN).EQ.'O')
-c    $         IOBJS(ICORN)=INT(CURVE(1,IEDG1,IELMIN))
-c           IF (CCURVE(IEDG2,IELMIN).EQ.'O')
-c    $         IOBJS(ICORN)=INT(CURVE(1,IEDG2,IELMIN))
-          ELSE
-            CALL PRS('Error reading mouse input$')
-            CALL BEEP
-            GOTO 90
-          ENDIF
+         goto 100 ! else, error
+   90       call prs('Error reading input.  To input corner, use $')
+            call prs('mouse$')
+  100    continue
 
-          if (if3d) x(iel,icorn+4)=x(iel,icorn)
-          if (if3d) y(iel,icorn+4)=y(iel,icorn)
+         if (icorn.eq.1) call prs(' Corner I  >$')
+         if (icorn.eq.2) call prs(' Corner II >$')
+         if (icorn.eq.3) call prs(' Corner III>$')
+         if (icorn.eq.4) call prs(' Corner IV >$')
 
-          call color(3)
-          call fillp(-15)
+         if (xmouse.le.xphy(1.0) .and. icorn.eq.1) then
+c           Special Kludge for "ADD ELEMENT"
+c           First element corner already input
+         else
+            xold=xmouse
+            yold=ymouse
+            call mouse(xmouse,ymouse,button)
+            if (xmouse.eq.xold.and.ymouse.eq.yold) goto 90
+         endif
 
-          xs=x(iel,icorn)
-          ys=y(iel,icorn)
-          call prsrr('xs,ys:$',xs,ys)
-          call prsrr('xs1ys1$',xs1,ys1)
-          call prsiii('e,crn:$',iel,icorn,in)
+         if (xmouse.gt.xphy(1.0)) then ! look for a keypad input
+            call prs('Switching to keyboard inputs$')
+            call sgvis(11,0)
+            call sgvis(12,1)
+            call prs('Enter x and y with keyboard:$')
+            call rerr(xmouse,ymouse)
+            button='LEFT'
+            call sgvis(12,0) ! turn off keypad hilite
+            call sgvis(11,1)
+         endif
+
+         write(6,*) icorn,e,iobjct,' IOBJ AAA'
+         if (button.eq.'LEFT') then ! std. input:  new unique corner
+            if (iobjct.eq.0) xmouse=round(xmouse) ! round input value - 7-25-90 pff
+            if (iobjct.eq.0) ymouse=round(ymouse)
+         elseif (button.eq.'RIGHT') then ! latch to closest vertex
+            call blatch(xmouse,ymouse,icmin,iemin)
+            write(6,*) xmouse,ymouse,icmin,iemin,' COOR A'
+            write(6,*) x(icmin,iemin),y(icmin,iemin),e,' COOR B'
+            write(6,*) icorn,e,iobjct,' IOBJ BBB'
+         else
+            call prs('Error reading mouse input$')
+            call beep
+            goto 90     ! Go back to query
+         endif
+         write(6,*) icorn,e,iobjct,' IOBJ CCC'
+
+         x(icorn,e)=xmouse
+         y(icorn,e)=ymouse
+         iobjs(icorn)=iobjct ! identifies if this corner latched to object
+
+         if (if3d) x(icorn+4,e)=x(icorn,e)
+         if (if3d) y(icorn+4,e)=y(icorn,e)
+
+         call color(3)
+         call fillp(-15)
+
+         xs=x(icorn,e)
+         ys=y(icorn,e)
+         call prsrr('xs,ys:$',xs,ys)
+         call prsrr('xs1ys1$',xs1,ys1)
+         call prsiii('e,crn:$',e,icorn,in)
  
-          IF(ICORN.EQ.1) THEN
-            CALL BEGINB(XS,YS)
-            XS1=XS
-            YS1=YS
-            IF(IN.EQ.5)CALL RUBBER
-          ELSE
-            CALL DRAWC(XS,YS)
-          ENDIF
-          IF(ICORN.EQ.4) THEN
-C           Turn off rubberbanding
-            CALL OFFRUB
-            CALL DRAWC(XS1,YS1)
-            CALL ENDP
-C           Check Here for points not entered counter-clockwise
-            DO 210 I=1,4
-               XYZ(1,I)= x(iel,i)
-               XYZ(2,I)= y(iel,i)
-  210       CONTINUE
-C
-C           CRSS2D(A,B,O) = (A-O) X (B-O)
-C                         (note that the notation for corner number here
-C                          differs slightly from that used in NEKTON the code.)
-            C1=CRSS2D(XYZ(1,2),XYZ(1,4),XYZ(1,1))
-            C2=CRSS2D(XYZ(1,3),XYZ(1,1),XYZ(1,2))
-            C3=CRSS2D(XYZ(1,4),XYZ(1,2),XYZ(1,3))
-            C4=CRSS2D(XYZ(1,1),XYZ(1,3),XYZ(1,4))
-C
-            IERR=0
-            IF (C1.LE.0.0.AND.C2.LE.0.0.AND.
-     $          C3.LE.0.0.AND.C4.LE.0.0 ) THEN
-C               cyclic permutation (counter clock-wise):  reverse
-                x(iel,2) = xyz(1,4)
-                y(iel,2) = xyz(2,4)
-                x(iel,4) = xyz(1,2)
-                y(iel,4) = xyz(2,2)
-                IF (IF3D) THEN
-                   DO 400 I=1,4
-                      x(iel,i+4)=x(iel,i)
-                      y(iel,i+4)=y(iel,i)
-  400              CONTINUE
-                ENDIF
-            ELSEIF (C1.LE.0.0.OR.C2.LE.0.0.OR.
-     $              C3.LE.0.0.OR.C4.LE.0.0 ) THEN
-                CALL PRSI('ERROR in entering element.  Re-enter.$',iel)
-                IERR=1
+         if (icorn.eq.1) then
+            call beginb(xs,ys)
+            xs1=xs
+            ys1=ys
+            if (in.eq.5)call rubber
+         else
+            call drawc(xs,ys)
+         endif
+
+         if (icorn.eq.4) then ! CLOSE OUT
+
+            call offrub ! Turn off rubberbanding
+            call drawc(xs1,ys1)
+            call endp
+
+            call clockw_chk(e,ierr) ! counter-clockwise check
+            if (ierr.ne.0) then
+                call prsi('ERROR in entering element.  Re-enter.$',e)
                 return
-            ENDIF
-          ENDIF
-  500 CONTINUE
-c     Label Corners
-      XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-      YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
-      ILETAP=ILETAP+1
-      IF(ILETAP.LE.122)LETAPT(IEL)=CHAR(ILETAP)
-      IF(ILETAP.GT.122)LETAPT(IEL)=' '
-C     New elements have their Z-coordinate put in here
-      IF(NDIM.EQ.3)THEN
-         ZCEIL=0.0
-         DO 620 I=1,NUMAPT(IEL)
-            ZCEIL=ZCEIL+HEIGHT(I)
-  620    CONTINUE
-         ZFLOOR=ZCEIL-HEIGHT(NUMAPT(IEL))
-         DO 630 IC=1,8
-           IF(IC.LE.4)Z(IEL,IC)=ZFLOOR
-           IF(IC.GT.4)Z(IEL,IC)=ZCEIL
-  630    CONTINUE
-      ENDIF
-C
-C     Check for curve sides here if using polar coordinates or objects
-C
-      IFCURV=.FALSE.
-      DO 700 IC=1,4
-         IC1 = IC+1
-         IC1 = MOD1(IC1,4)
-         IF (IOBJS(IC).EQ.IOBJS(IC1).AND.IOBJS(IC).NE.0) IFCURV=.TRUE.
-         iobjc=iobjs(ic)
-         write(6,*) 'iobj1:',ic,iobjc,iobjs(ic1),ccobjs(iobjc),ifcurv
-  700 CONTINUE
+            endif
+
+         endif
+      enddo
+
+      xcen(e)=(x(1,e)+x(2,e)+x(3,e)+x(4,e))/4.  ! Label Corners
+      ycen(e)=(y(1,e)+y(2,e)+y(3,e)+y(4,e))/4.
+      iletap=iletap+1
+      if (iletap.le.122)letapt(e)=char(iletap)
+      if (iletap.gt.122)letapt(e)=' '
+
+      if (if3d) then ! New elements have their Z-coordinate put in here
+         zceil=0.0
+         do 620 i=1,numapt(e)
+            zceil=zceil+height(i)
+  620    continue
+         zfloor=zceil-height(numapt(e))
+         do 630 ic=1,8
+           if (ic.le.4)z(ic,e)=zfloor
+           if (ic.gt.4)z(ic,e)=zceil
+  630    continue
+      endif
+
+      call set_auto_curve(e,iobjs) ! curve sides for polar coords or objects
+
+      call mkside_e(e) ! Define sides' midpoints
+      call drawel(e)   ! Element all set , draw it.
+
+      if (if3d) then
+         call sortel
+         do i=1,e    ! Figure out which to draw
+            if (isrt(i).eq.e) ibegin=i
+         enddo
+         do i=ibegin,e
+            call drawis(isrt(i))
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_auto_curve(e,iobjs) ! set curve sides
+
+      include 'basics.inc'
+      dimension iobjs(8)
+      integer e
+
+
+      call blank(ccurve(1,e)  ,12)
+      call rzero( curve(1,1,e),72)
+
+      call chk_polar    (e)
+      call chk_obj      (e,iobjs)
+      call chk_neighbor (e)
+
+      call drawel(e)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chk_polar (e)
+      include 'basics.inc'
+      logical ifcurv
+      integer e
+
+      if (.not.ifgrdp) return
+
+      radusc = 0.0   ! Characteristic length
+      do 800 ic=1,4
+         dx = x(ic,e)-gridxp
+         dy = y(ic,e)-gridyp
+         radusc = radusc + sqrt(dx**2+dy**2)
+  800 continue
+      radusc = radusc/4.0
+
+c     check for any curve sides, if yes, delete straight sided image.
+c     (two steps required to delete proper shaped element)
+
+      ifcurv=.false.
+      do ic=1,4
+         jc = mod1(ic+1,4)
+         dx0=x(ic,e)-gridxp
+         dy0=y(ic,e)-gridyp
+         dx1=x(jc,e)-gridxp
+         dy1=y(jc,e)-gridyp
+         radus0 = sqrt(dx0**2+dy0**2)
+         radus1 = sqrt(dx1**2+dy1**2)
+         drad = (radus1-radus0)/(radus1+radus0)
+         if (abs(drad).lt.0.0001) ifcurv=.true.
+      enddo
+
       if (ifcurv) then
-         call drawel(-iel)
-         do 710 ic=1,4
-            ic1 = ic+1
-            ic1 = mod1(ic1,4)
-            iobjc=iobjs(ic)
-            write(6,*) 'iobjs:',ic,iobjc,iobjs(ic1),ccobjs(iobjc)
-            if (iobjc.eq.iobjs(ic1).and.iobjc.ne.0) then
-               if (ccobjs(iobjc).eq.'o') then ! fit a circle
-                  xm=.5*(x(iel,ic)+x(iel,ic1))
-                  ym=.5*(y(iel,ic)+y(iel,ic1))
-                  call latchob(x1,y1,xm,ym,0.,dist2,k,i,iobjc)
-                  e=iel
-                  i=ic
-                  i1=ic1
-                  rad=rad_circ(x(e,i),x1,x(e,i1),y(e,i),y1,y(e,i1))
-                  call rzero(curve(1,ic,iel),6)
-                  curve(1,ic,iel)=rad
-                  ccurve(ic,iel)=' '
-                  if (abs(rad).gt.0) ccurve(ic,iel)='C'
-               else
-                  ccurve(ic,iel)=ccobjs(iobjc)
-                  call copy(curve(1,ic,iel),cobjs(1,iobjc),6)
-                  if (if3d) then
-                     ic4 = ic+4
-                     ccurve(ic4,iel)=ccurve(ic,iel)
-                     call copy(curve(1,ic4,iel),curve(1,ic,iel),6)
-                  endif
+         call drawel(-e)
+C        Now curve side and update element image.
+         do ic=1,4
+            jc = mod1(ic+1,4)
+            if (mod(ic,4).eq.0) jc = ic-3
+            dx0=x(ic,e)-gridxp
+            dy0=y(ic,e)-gridyp
+            dx1=x(jc,e)-gridxp
+            dy1=y(jc,e)-gridyp
+            radus0 = sqrt(dx0**2+dy0**2)
+            radus1 = sqrt(dx1**2+dy1**2)
+            drad = (radus1-radus0)/(radus1+radus0)
+
+            if (abs(drad).lt.0.0001) then ! curve side
+               if (radus0.lt.radusc) radus0 = -radus0
+               curve(1,ic,e)=radus0
+               ccurve(ic,e)='C'
+               if (if3d) then
+                  ic4 = ic+4
+                  curve(1,ic4,e)=radus0
+                  ccurve(ic4,e)='C'
                endif
             endif
-  710    continue
-      endif ! end of object element check
 
-      if (ifgrdp) then ! beginning of polar grid check
-         RADUSC = 0.0
-         DO 800 IC=1,4
-            DX = X(IEL,IC)-GRIDXP
-            DY = Y(IEL,IC)-GRIDYP
-            RADUSC = RADUSC + SQRT(DX**2+DY**2)
-  800    CONTINUE
-         RADUSC = RADUSC/4.0
-C
-C        check for any curve sides, if yes, delete straight sided image.
-C        (two steps required to delete proper shaped element)
-         IFCURV=.FALSE.
-         DO 801 IC=1,4
-            IC1 = IC+1
-            IF (MOD(IC,4).EQ.0) IC1 = IC-3
-            DX0=X(IEL,IC )-GRIDXP
-            DY0=Y(IEL,IC )-GRIDYP
-            DX1=X(IEL,IC1)-GRIDXP
-            DY1=Y(IEL,IC1)-GRIDYP
-            RADUS0 = SQRT(DX0**2+DY0**2)
-            RADUS1 = SQRT(DX1**2+DY1**2)
-            DRAD = (RADUS1-RADUS0)/(RADUS1+RADUS0)
-            IF (ABS(DRAD).LT.0.0001) IFCURV=.TRUE.
-  801    CONTINUE
-c
-c        Check for element being adjacent to another which already
-c        has a curved side
-c
-         do 819 ic = 1,4
-            jc = ic+1
-            jc = mod1(jc,4)
-            xm = 0.5*(x(iel,ic)+x(iel,jc))
-            ym = 0.5*(y(iel,ic)+y(iel,jc))
-            delta = (x(iel,ic)-x(iel,jc))**2
-     $            + (y(iel,ic)-y(iel,jc))**2
-            call getside(jel,jic,xm,ym)
-            jjc = jic+1
-            jjc = mod1(jjc,4)
-            xj = 0.5*(x(jel,jic)+x(jel,jjc))
-            yj = 0.5*(y(jel,jic)+y(jel,jjc))
-            delta2 = ((xm-xj)**2 + (ym-yj)**2)/delta
-            if (delta2.lt.0.002) then
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chk_obj (e,iobjs)
+      include 'basics.inc'
+      integer e,iobjs(4)
+      logical ifcurv
+
+      xmn=x(1,e)
+      ymn=y(1,e)
+      xmx=x(1,e)
+      ymx=y(1,e)
+
+      do i=1,4
+         xmn=min(xmn,x(i,e))
+         ymn=min(ymn,y(i,e))
+         xmx=max(xmx,x(i,e))
+         ymx=max(ymx,y(i,e))
+      enddo
+      diam = (xmx-xmn)+(ymx-ymn)
+
+      do i=1,4
+         tol  = 0.01*diam
+         iobjs(i)=0
+         do iobj=1,nobjs
+            if (ifobjg(iobj)) then ! Active object
+               call latchob(xo,yo,x(i,e),y(i,e),0.,dist2,ko,io,iobj)
+               if (dist2.gt.0) dist2=sqrt(dist2)
+               if (dist2.lt.tol) then
+                  iobjs(i)=iobj
+                  tol = dist2
+               endif
+          write(6,8) i,iobj,dist2,xo    ,yo    ,' dist2,xo,yo',iobjs(i)
+          write(6,8) i,iobj,tol  ,x(i,e),y(i,e),' tol  ,xe,ye',iobjs(i)
+   8           format(2i4,1p3e12.4,a12,i4)
+            endif
+         enddo
+      enddo
+
+
+      ifcurv=.false.
+
+      do ic=1,4
+         jc = mod1(ic+1,4)
+         if (iobjs(ic).eq.iobjs(jc).and.iobjs(ic).ne.0) ifcurv=.true.
+         write(6,*) 'IOBJ1:  ',ic,jc,iobjs(ic),iobjs(jc),ifcurv
+      enddo
+      if (.not.ifcurv) return
+
+
+      do ic=1,4
+         jc = mod1(ic+1,4)
+         iobjc=iobjs(ic)
+         write(6,*) 'iobjs:',ic,iobjc,iobjs(jc),' ',ccobjs(iobjc)
+
+         if (iobjc.eq.iobjs(jc).and.iobjc.ne.0) then
+
+            if (ccobjs(iobjc).eq.'o') then   ! Std. object
+               xm=.5*(x(ic,e)+x(jc,e))
+               ym=.5*(y(ic,e)+y(jc,e))
+               zm=0.
+               z1=0.
+               call latchob(x1,y1,xm,ym,zm,dist2,ko,io,iobjc)
+               rad=rad_circ(x(ic,e),x1,x(jc,e),y(ic,e),y1,y(jc,e))
+               if (abs(rad).gt.0) then
+c                 curve(1,ic,e)=rad         ! Fit circle
+c                 ccurve(ic,e)='C'
+                  curve(1,ic,e)=x1          ! Fit midside node
+                  curve(2,ic,e)=y1
+                  curve(3,ic,e)=z1
+                  curve(5,ic,e)=iobjc       ! Save object number
+                  ccurve(ic,e)='m'
+               endif
+
+            else                            ! Special object, like circle
+
+               ccurve(ic,e)=ccobjs(iobjc)
+               call copy(curve(1,ic,e),cobjs(1,iobjc),6)
+               if (if3d) then
+                  ic4 = ic+4
+                  ccurve(ic4,e)=ccurve(ic,e)
+                  call copy(curve(1,ic4,e),curve(1,ic,e),6)
+               endif
+            endif
+         endif
+         write(6,*)ccurve(ic,e),e,ic,(curve(k,ic,e),k=1,2),' chk_obj'
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chk_neighbor(e) ! Check for shared curved sides
+      include 'basics.inc'
+      integer e
+      logical ifcurv
+
+      do ic = 1,4
+         jc = mod1(ic+1,4)
+         xm = 0.5*(x(ic,e)+x(jc,e))
+         ym = 0.5*(y(ic,e)+y(jc,e))
+         delta =  (x(ic,e)-x(jc,e))**2 + (y(ic,e)-y(jc,e))**2
+         call getside(je,js,xm,ym)
+
+         if (je.ne.e.and.je.ne.0) then
+          js1 = mod1(js+1,4)
+          xj = 0.5*(x(js,je)+x(js1,je))
+          yj = 0.5*(y(js,je)+y(js1,je))
+          delta2 = ((xm-xj)**2 + (ym-yj)**2)/delta
+          if (delta2.lt.0.002) then
 c              matched sides, give curve side attributes to new
 c              element.... pff 3/27/94:  only "C" curve sides for now.
-c
-               if (CCURVE(jic,jel).eq.'C') then
-                  CCURVE(ic,iel)='C'
-                  CURVE(1,ic,iel) =  -CURVE(1,jjc,jel)
-                  ifcurv = .true.
-               endif
+            if (ccurve(js,je).eq.'C') then
+               ccurve(ic,e)='C'
+               curve(1,ic,e) =  -curve(1,js,je)
+               ifcurv = .true.
+            elseif (ccurve(js,je).eq.'m') then
+               ccurve(ic,e)='m'
+               call copy(curve(1,ic,e),curve(1,js,je),3)
+               ifcurv = .true.
             endif
-  819    continue
-C
-         if (ifcurv) then
-            CALL DRAWEL(-IEL)
-C           Now curve side and update element image.
-            DO 802 IC=1,4
-               IC1 = IC+1
-               IF (MOD(IC,4).EQ.0) IC1 = IC-3
-               DX0=X(IEL,IC )-GRIDXP
-               DY0=Y(IEL,IC )-GRIDYP
-               DX1=X(IEL,IC1)-GRIDXP
-               DY1=Y(IEL,IC1)-GRIDYP
-               RADUS0 = SQRT(DX0**2+DY0**2)
-               RADUS1 = SQRT(DX1**2+DY1**2)
-               DRAD = (RADUS1-RADUS0)/(RADUS1+RADUS0)
-               IF (ABS(DRAD).LT.0.0001) THEN
-C                 curve side
-                  IF (RADUS0.LT.RADUSC) RADUS0 = -RADUS0
-                  CURVE(1,IC,IEL)=RADUS0
-                  CCURVE(IC,IEL)='C'
-                  IF (IF3D) THEN
-                     IC4 = IC+4
-                     CURVE(1,IC4,IEL)=RADUS0
-                     CCURVE(IC4,IEL)='C'
-                  ENDIF
-               ENDIF
-  802       CONTINUE
+          endif
          endif
-      endif !  end of polar grid check
-C
-C     Element all set , draw it.
-C
- 1000 CONTINUE
-      CALL DRAWEL(IEL)
-      CALL SORTEL
-C     Figure out which to draw
-      DO 1040 I=1,NEL
-         IF(ISRT(I).EQ.NEL) IBEGIN=I
- 1040 CONTINUE
-      DO 1050 I=IBEGIN,NEL
-         CALL DRAWIS(ISRT(I))
- 1050 CONTINUE
-c     do ie=1,nel
-c     do ic=1,4
-c        call prsrr('xy_e$',x(ie,ic),y(ie,ic))
-c        write(6,*) 'curve: ',ccurve(ic,ie),curve(1,ic,ie),ie,ic
-c     enddo
-c     enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine clockw_chk(e,ierr) ! counter-clockwise check
+      include 'basics.inc'
+      integer e
+      logical ifcurv
+      real xyz(2,4)
+
+      do i=1,4
+         xyz(1,i)=x(i,e)
+         xyz(2,i)=y(i,e)
+      enddo
+
+      c1=crss2d(xyz(1,2),xyz(1,4),xyz(1,1)) ! crss2d(a,b,o) := (a-o) x (b-o)
+      c2=crss2d(xyz(1,3),xyz(1,1),xyz(1,2)) ! Note that the notation for corner 
+      c3=crss2d(xyz(1,4),xyz(1,2),xyz(1,3)) ! numbers here differs slightly from 
+      c4=crss2d(xyz(1,1),xyz(1,3),xyz(1,4)) ! that used in NEKTON the code.
+
+      ierr=0
+      if (c1.le.0.0.and.c2.le.0.0.and.
+     $    c3.le.0.0.and.c4.le.0.0 ) then    ! cyclic permutation (cclock-wise):
+          x(2,e) = xyz(1,4)                 ! reverse
+          y(2,e) = xyz(2,4)
+          x(4,e) = xyz(1,2)
+          y(4,e) = xyz(2,2)
+          if (if3d) then
+             do i=1,4
+                x(i+4,e)=x(i,e)
+                y(i+4,e)=y(i,e)
+             enddo
+          endif
+      elseif (c1.le.0.0.or.c2.le.0.0.or.   ! Some, but not all, < 0
+     $        c3.le.0.0.or.c4.le.0.0 ) then
+          ierr=1
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine getside(je,js,xp,yp) ! Find closest element/side to duplicate
+      include 'basics.inc'
+      integer e,f
+
+      rmin=1.e22
+
+      je = 0
+
+      nsides = 2*ndim
+      if (ndim.eq.3) then
+         do e=1,nel
+            if (numapt(e).eq.ilevel) then ! only try those on same floor
+               do f=1,nsides
+                  r=    ((xp-sides(e,f,1))**2
+     $            +      (yp-sides(e,f,2))**2)
+                  if (r.lt.rmin) then
+                     rmin=r
+                     js = f
+                     je = e
+                  endif
+               enddo
+            endif
+         enddo
+      else                 ! 2D
+         do e=1,nel
+         do f=1,nsides
+            r = (xp-sides(e,f,1))**2 + (yp-sides(e,f,2))**2
+            if (r.lt.rmin) then
+               rmin=r
+               js = f
+               je = e
+            endif
+            write(6,1) e,f,r,rmin,(sides(e,f,k),k=1,2),xp,yp
+  1         format(i5,i2,1p6e12.4,' sides')
+         enddo
+         enddo
+      endif
+      write(6,2) je,js,rmin,(sides(je,js,k),k=1,2),xp,yp
+  2   format(i5,i2,1p5e12.4,' sides2')
 
       return
       end
@@ -400,9 +502,12 @@ c-----------------------------------------------------------------------
       do 100 ifld=0,maxfld
       do 100 i=1,6
          cbc(i,ides,ifld) = cbc(i,isrc,ifld)
-         call copy(bc(1,i,ides,ifld),bc(1,i,isrc,ifld),6)
+         call copy(bc(1,i,ides,ifld),bc(1,i,isrc,ifld),5)
+         ibc(i,ides,ifld) = ibc(i,isrc,ifld)
          if (cbc(i,ides,ifld).eq.'P  ') 
      $       bc(1,i,ides,ifld) = bc(1,i,ides,ifld)+nshift
+         if (cbc(i,ides,ifld).eq.'P  ') 
+     $       ibc(i,ides,ifld) = ibc(i,ides,ifld)+nshift
   100 continue
 
       return
@@ -417,8 +522,10 @@ c-----------------------------------------------------------------------
          cbc(i,ides,ifld) = cbc(i,isrc,ifld)
 c        if (cbc(i,ides,ifld).eq.'P  ')call prsii('Reset P BC:$',i,ides)
 c        if (cbc(i,ides,ifld).eq.'P  ') cbc(i,ides,ifld)='   '
-         do 100 j=1,5
+         do j=1,5
             bc(j,i,ides,ifld) = bc(j,i,isrc,ifld)
+         enddo
+         ibc(i,ides,ifld) = ibc(i,isrc,ifld)
   100 continue
       return
       end
@@ -440,15 +547,15 @@ c-----------------------------------------------------------------------
       subroutine copyel2(isrc,ides) ! Copies everything related to element
       include 'basics.inc'
       character key,string*6
-      DO 200 I =1,6
-      DO 200 II=1,4
-            SIDES(IDES,I,II)=SIDES(ISRC,I,II)
-  200 CONTINUE
+      do 200 i =1,6
+      do 200 ii=1,4
+            sides(ides,i,ii)=sides(isrc,i,ii)
+  200 continue
 C
       DO 300 IC=1,8
-         X(IDES,IC)=X(ISRC,IC)
-         Y(IDES,IC)=Y(ISRC,IC)
-         Z(IDES,IC)=Z(ISRC,IC)
+         x(ic,ides)=x(ic,isrc)
+         y(ic,ides)=y(ic,isrc)
+         z(ic,ides)=z(ic,isrc)
   300 CONTINUE
       IGROUP(IDES)=IGROUP(ISRC)
 C
@@ -496,11 +603,17 @@ c-----------------------------------------------------------------------
 C     Modifies element by moving point in mesh
 C     Modified neighbor points iff they had been latched to point in questio
       include 'basics.inc'
-      DIMENSION IELMOV(NELM)
-      REAL XCHECK(8),YCHECK(8)
-      CHARACTER KEY,STRING*6
-      LOGICAL IFTMP
-C
+      dimension ielmov(nelm)
+      real xcheck(8),ycheck(8)
+      character key,string*6
+      logical iftmp
+      integer e
+
+      if (.not.if3d) then
+         call model2d
+         return
+      endif
+
 C
 C     FIND CLOSEST ELEMENT AND CORNER
 C     Erase whole isometric surface
@@ -515,15 +628,16 @@ c
          call rerr(xmouse,ymouse)
       ELSE IF(BUTTON.EQ.'RIGHT')THEN
 C        Latch to closest element vertex
-         CALL BLATCH(XMOUSE,YMOUSE)
+         call blatch(xmouse,ymouse,icmn,iemn)
       ENDIF
       XM=XMOUSE
       YM=YMOUSE
       IFGRID=IFTMP
 C     If the areas from the triangles formed by each side and the mouse point
 C     are all positive (ccw) we must be inside the element!
-      IELMV=0
-      DO 2 I=1,IEL
+      if (button.ne.'RIGHT') then
+       IELMV=0
+       DO 2 I=1,IEL
 C        Skip apartments on other floors
          IF(.NOT. IF3D .OR. NUMAPT(I).EQ.ILEVEL)THEN
             IF(IFCEIL)THEN
@@ -542,15 +656,20 @@ C           We're inside the element
             IF(A1.GE.0.0.AND.A2.GE.0.0.AND.A3.GE.0.0.AND.A4.GE.0.0)
      $      IELMV=I
          ENDIF
-2     CONTINUE
-      IF(IELMV.EQ.0)THEN
-C        If it still = 0 then the point entered must have been outside all
-C        elements.
-         CALL PRS
+2      CONTINUE
+      else
+       ielmv = iemn
+      endif
+      if (ielmv.eq.0) then
+c        If it still = 0 then the point entered must have been outside all
+c        elements.
+         call prs
      $   ('Enter a point INSIDE one of the elements in order to$')
-         CALL PRS('move one of the element''s corners.  Try again.$')
-         GO TO 1
-      ENDIF
+         call prs('move one of the element''s corners.  Try again.$')
+         goto 1
+      else
+         call prsi('Moving element #: ',ielmv)
+      endif
 C
       IF(IFCEIL)THEN
          IC1=5
@@ -560,17 +679,17 @@ C
          IC2=4
       ENDIF
 C     FIND CLOSEST CORNER
-      RMIN=1.0E8
+      rmin=1.0e8
       DO 3 I=IC1,IC2
-         R=SQRT((X(IELMV,I)-XMOUSE)**2+(Y(IELMV,I)-YMOUSE)**2)
+         r=sqrt((x(i,ielmv)-xmouse)**2+(y(i,ielmv)-ymouse)**2)
          IF(R.LT.RMIN) THEN
             RMIN=R
             ICOMV=I
          ENDIF
 3     CONTINUE
-      XPICKED=X(IELMV,ICOMV)
-      YPICKED=Y(IELMV,ICOMV)
-c
+      xpicked=x(icomv,ielmv)
+      ypicked=y(icomv,ielmv)
+
       CALL PRS
      $('Enter new point to which element corner is to be moved:$')
       CALL MOUSE(XMOVED,YMOVED,BUTTON)
@@ -580,37 +699,37 @@ C        apparently trying to enter
          call rerr(xmoved,ymoved)
       ELSEIF (BUTTON.EQ.'RIGHT') THEN
 C        Latch to closest element vertex
-         CALL BLATCH(XMOVED,YMOVED)
+         call blatch(xmoved,ymoved,icmn,iemn)
       ENDIF
 C
 C     HAVE IELMV,ICOMV  , NOW MOVE THE APPROPRIATE POINTS AND REDRAW ELEMENTS
 C
 C     First loop checks legality, second moves and erases, third redraws
       CALL DRAWIS(-IELMV)
-      DO 10 ILOOP=1,3
-       DO 10 IIEL=1,IEL
-         IF(ILOOP.EQ.1) IELMOV(IIEL)=0
+      do 10 iloop=1,3
+       do 10 iiel=1,iel
+         if(iloop.eq.1) ielmov(iiel)=0
          DO 10 IICORN=IC1,IC2
 C           Only move corners on same floor
-            IF(NUMAPT(IIEL).EQ.NUMAPT(IELMV)) THEN
+            if(numapt(iiel).eq.numapt(ielmv)) then
 C              Check floor for same global #'s  NO: Floors automatically
 C              Modify overlapping corners; ceilings move 1 at a time.
 C              Skip this check on 3rd loop; the redraw will know which to do
                IF(ILOOP.NE.3)THEN
 C                    Only move corners close to the one picked
-                     IF (ABS(X(IIEL,IICORN)-XPICKED).GT.XFAC/100.
-     $               .OR.ABS(Y(IIEL,IICORN)-YPICKED).GT.YFAC/100.)
+                     if (abs(x(iicorn,iiel)-xpicked).gt.xfac/100.
+     $               .or.abs(y(iicorn,iiel)-ypicked).gt.yfac/100.)
      $               GO TO 9
-c                     CALL PRSII('MOVING$',IIEL,IICORN)
+C                     call prsii('moving$',iiel,iicorn)
                ENDIF
                IF(ILOOP.EQ.1)THEN
 C
 C                 First check if move is legal (has 4 acute <'s for corners
-                  XTEST=X(IIEL,IICORN)
-                  YTEST=Y(IIEL,IICORN)
+                  xtest=x(iicorn,iiel)
+                  ytest=y(iicorn,iiel)
                   DO 8 I=IC1,IC2
-                     XCHECK(I)=X(IIEL,I)
-                     YCHECK(I)=Y(IIEL,I)
+                     xcheck(i)=x(i,iiel)
+                     ycheck(i)=y(i,iiel)
 8                 CONTINUE
                   XCHECK(IICORN)=XMOVED
                   YCHECK(IICORN)=YMOVED
@@ -620,7 +739,7 @@ C                 side pair is positive (angles between 0 and 180 degrees)
                      I1=MOD(ICC-1,4)+1
                      I2=MOD(ICC  ,4)+1
                      I3=MOD(ICC+1,4)+1
-                     IF(IFCEIL)THEN
+                     IF (IFCEIL) THEN
                         I1=I1+4
                         I2=I2+4
                         I3=I3+4
@@ -632,7 +751,7 @@ C                 side pair is positive (angles between 0 and 180 degrees)
                      AREA=X1*Y2-X2*Y1
                      IF(AREA.LE.0.0) THEN
                         CALL PRSIS(
-     $                  '**ERROR** Element$',IIEL,'Cannot be modified$')
+     $                  '**ERROR** Element$',iiel,'Cannot be modified$')
                         CALL PRSIS(
      $                  'Angle at corner $',I2,' Would have been $')
                         CALL PRS('illegal (>180 degrees)$')
@@ -643,93 +762,291 @@ c                           CALL DRAWIS(ISRT (I))
                         return
                      ENDIF
 109                 CONTINUE
-C
-               ELSE IF(ILOOP.EQ.2)THEN
-C                 Now, erase old element lines
-                  CALL DRAWEL(-IIEL)
-                  CALL DRAWIS(-IIEL)
+
+               else if(iloop.eq.2)then 
+                  call drawel(-iiel)  ! erase old element lines
+                  call drawis(-iiel)
 C                 Move corners
-                  IELMOV(IIEL)=1
-                  IF(IFCEIL)THEN
-C                  First move points on floor of upper level
-                    DO 18 I=1,IEL
-                     MOVEDE=0
-                     DO 16 IC=1,4
-                       IF(NUMAPT(I).EQ.ILEVEL+1)THEN
-                         IF  (ABS(X(I,IC)-X(IIEL,IICORN)).LT.XFAC/100.
-     $                   .AND.ABS(Y(I,IC)-Y(IIEL,IICORN)).LT.YFAC/100.)
-     $                   THEN
-c                            CALL PRS('moving upper$')
-                            MOVEDE=1
-                            X(I,IC)=XMOVED
-                            Y(I,IC)=YMOVED
-                         ENDIF
-                       ENDIF
-16                    CONTINUE
-                      IF(MOVEDE.EQ.1)CALL DRAWIS(-IEL)
-18                    CONTINUE
-                  ELSE IF(.NOT.IFCEIL)THEN
-C                    First move points on ceiling of lower level
-                     IF(ILEVEL.GT.1)THEN
-                      DO 14 I=1,IEL
-                       MOVEDE=0
-                       DO 12 IC=5,8
-                         IF(NUMAPT(I).EQ.ILEVEL-1)THEN
-                           IF(ABS(X(I,IC)-X(IIEL,IICORN)).LT.XFAC/100.
-     $                   .AND.ABS(Y(I,IC)-Y(IIEL,IICORN)).LT.YFAC/100.)
-     $                     THEN
-                              X(I,IC)=XMOVED
-                              Y(I,IC)=YMOVED
-                              MOVEDE=1
-                           ENDIF
-                         ENDIF
-12                      CONTINUE
-                        IF(MOVEDE.EQ.1)CALL DRAWIS(-IEL)
-14                     CONTINUE
-                     ENDIF
+                  ielmov(iiel)=1
+                  if (ifceil) then ! First move points on floor of upper level
+                    do 18 e=1,iel
+                     movede=0
+                     do 16 ic=1,4
+                       if (numapt(e).eq.ilevel+1) then
+                         if  (abs(x(ic,e)-x(iicorn,iiel)).lt.xfac/100.
+     $                   .and.abs(y(ic,e)-y(iicorn,iiel)).lt.yfac/100.)
+     $                   then
+c                           call prs('Moving upper$')
+                            movede=1
+                            x(ic,e)=xmoved
+                            y(ic,e)=ymoved
+                         endif
+                       endif
+16                    continue
+                      if (movede.eq.1) call drawis(-iel)
+18                  continue
+                  elseif (.not.ifceil) then ! move pts on ceiling of lower level
+                     if (ilevel.gt.1) then
+                      do 14 e=1,iel
+                       movede=0
+                       do 12 ic=5,8
+                         if(numapt(e).eq.ilevel-1)then
+                           if(abs(x(ic,e)-x(iicorn,iiel)).lt.xfac/100.
+     $                   .and.abs(y(ic,e)-y(iicorn,iiel)).lt.yfac/100.)
+     $                     then
+                              x(ic,e)=xmoved
+                              y(ic,e)=ymoved
+                              movede=1
+                           endif
+                         endif
+12                      continue
+                        if (movede.eq.1) call drawis(-iel)
+14                     continue
+                     endif
 C                    Here we also move the points on the ceiling of the element,
 C                    But only if there are no elements on any levels above
 C                    the current one. (to avoid complications)
-                     DO 11 I=1,IEL
-                        IF(NUMAPT(I).GT.ILEVEL) THEN
+                     do 11 e=1,iel
+                        if(numapt(e).gt.ilevel) then
                            CALL PRS('Presence of elements on higher '//
      $                     'floors inhibits modifying ceiling also$')
-                           GO TO 15
-                        ENDIF
-11                   CONTINUE
+                           go to 15
+                        endif
+11                   continue
 C                    Since we got here, there must be no elements on upper floo
-                     X(IIEL,IICORN+4)=XMOVED
-                     Y(IIEL,IICORN+4)=YMOVED
+                     x(iicorn+4,iiel)=xmoved
+                     Y(IICORN+4,IIEL)=YMOVED
                   ENDIF
-                  IF(IFCEIL.AND.IICORN.EQ.5)THEN
+                  if(ifceil.and.iicorn.eq.5)then
 C                    Manually erase old ceiling
                      CALL color(0)
-                     CALL MOVEC(X(IIEL,8),Y(IIEL,8))
+                     call movec(x(8,iiel),y(8,iiel))
                      DO 114 IC=5,8
-                        CALL DRAWC(X(IIEL,IC),Y(IIEL,IC))
+                        call drawc(x(ic,iiel),y(ic,iiel))
 114                  CONTINUE
                      CALL color(10)
                   ENDIF
 C                 Now move points on this level
-15                X(IIEL,IICORN)=XMOVED
-                  Y(IIEL,IICORN)=YMOVED
-C                  CALL PRS('IIEL,IICORN,XMOVED$')
-C                  CALL PRS(IIEL,IICORN,XMOVED
+15                x(iicorn,iiel)=xmoved
+                  y(iicorn,iiel)=ymoved
+c                  call prs('iiel,iicorn,xmoved$')
+c                  call prs(iiel,iicorn,xmoved
 C                 Move Center
-                  IF(.NOT.IFCEIL)THEN
-                  XCEN(IIEL)=(X(IIEL,1)+X(IIEL,2)+X(IIEL,3)+X(IIEL,4))/4
-                  YCEN(IIEL)=(Y(IIEL,1)+Y(IIEL,2)+Y(IIEL,3)+Y(IIEL,4))/4
-                  ENDIF
+                  if (.not.ifceil) then
+                     xcen(iiel)=.25*vlsum(x(1,iiel),4)
+                     ycen(iiel)=.25*vlsum(y(1,iiel),4)
+                  endif
                ELSE IF(ILOOP.EQ.3)THEN
 C                 Now, draw new elements for elements that were modified
                   IF(IICORN.NE.IC2)GO TO 9
-                  IF(IELMOV(IIEL).NE.0)CALL DRAWEL(IIEL)
+                  if(ielmov(iiel).ne.0)call drawel(iiel)
                ENDIF
             endif
 9           CONTINUE
 10    CONTINUE
 C     Draw ISOMETRICALLY ONLY ELEMENT MOVED
       CALL DRAWIS(IELMV)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine blatch2(xm,ym,cm,em,ec,vc,nc)! close vertex
+      include 'basics.inc'
+      integer cm,em,ec(nel),vc(nel)
+      integer e,v,v0,v1
+
+      parameter (n3 = nxm*nym*nzm)
+      common /ctmp2/ xp(n3),yp(n3),zp(n3),rrl(3)
+      common /ctmp0/ erad(nelm)
+
+      xc=xm
+      yc=ym
+
+      v0=1
+      v1=4
+      if (ifceil) v0=5
+      if (ifceil) v1=8
+
+      rm = 1.0e15
+
+      do e=1,nel
+
+         exmn = x(1,e)
+         eymn = y(1,e)
+
+         exmx = x(1,e)
+         eymx = y(1,e)
+
+         do v=v0,v1
+            xt=x(v,e)
+            yt=y(v,e)
+            r=(xt-xc)**2+(yt-yc)**2
+   
+            if (r.lt.rm) then
+               rm = r
+               em = e
+               cm = v
+            endif
+
+            exmn = min(x(v,e),exmn)
+            eymn = min(y(v,e),eymn)
+
+            exmx = max(x(v,e),exmx)
+            eymx = max(y(v,e),eymx)
+
+         enddo
+
+         erad(e) = (exmx-exmn)+(eymx-eymn)
+         write(6,1) e,em,cm,xt,yt,xc,yc,rm
+   1     format(2i5,i3,1p5e12.4,' rmin2')
+
+      enddo
+
+      xm=x(cm,em)
+      ym=y(cm,em)
+
+      eps = 1.e-4
+      nc  = 0    ! Count how many elements close to this vertex
+
+      do e=1,nel
+      do v=v0,v1
+         xt=x(v,e)
+         yt=y(v,e)
+         r=(xt-xm)**2+(yt-ym)**2
+         if (r.gt.0) r = sqrt(r)
+
+         if (r.lt.eps*erad(e)) then
+            nc = nc + 1
+            ec(nc) = e
+            vc(nc) = v
+
+c           call genxyz_e (xp,yp,zp,e,nxm,nym,nzm)
+c           call hilite   (e,xp,yp,zp,5)
+
+c           call prsii('CONTINUE ?$',e,nc)
+c           call res(ans,1)
+
+         endif
+
+c        write(6,*) v,e,nc,r,erad(e),' ERAD'
+
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine model2d
+
+C     Modifies element by moving point in mesh
+C     Modified neighbor points iff they had been latched to point in questio
+
+      include 'basics.inc'
+
+      common /ctmps/ ec(nelm),vc(nelm)  ! Vertices close to moved point
+      integer ec,vc,cm,em
+
+      real xcheck(8),ycheck(8)
+      character key,string*6
+      logical iftmp
+      integer e,v
+
+      iftmp =ifgrid
+      ifgrid=.false.
+
+      call prs
+     $('Push button close to the corner you want changed.$')
+
+      call mouse  (xm,ym,button)
+c     write(6,*) xm,ym,'  Corner clicked A'
+      call blatch2(xm,ym,cm,em,ec,vc,nc)! close vertex
+c     write(6,*) xm,ym,'  Corner latched, B'
+
+      x0=xm
+      y0=ym
+      ifgrid=iftmp
+
+      call prs
+     $('Enter point to which vertex is to be moved:$')
+      call mouse(x1,y1,button)
+c     call diam2(x1,y1,4)
+
+      if(xscr(x1).gt.1.0) then ! apparently trying to enter
+         call prs('Type X-Y coordinates:$')
+         call rerr(x1,y1)
+      elseif (button.eq.'RIGHT') then
+         call blatch(x1,y1,icmn,iemn) ! latch to closest vertex
+      endif
+
+c     call diam2(x1,y1,13)
+c     write(6,*) x1,y1,'  TARGET GRID POINT'
+c     call prs('CONTINUE ?$')
+c     call res(ans,1)
+
+      k    = nel+1
+      kerr = 0
+
+      do i=1,nc  ! Check only those elements that are attaced to vertex
+         e = ec(i)
+         v = vc(i)
+         call copyel(e,k)   ! e --> k
+
+c        call diam2(x(v,e),y(v,e),0)
+c        write(6,*) v,e,x(v,e),y(v,e),x1,y1,'  ELEMENT POINT'
+c        call prs('CONTINUE ?$')
+c        call res(ans,1)
+
+         dx = x1 - x(v,k)
+         dy = y1 - y(v,k)
+         dz = 0
+         x(v,k) = x1
+         y(v,k) = y1
+
+         do jside=v-1,v   ! Move midside nodes
+            j = jside
+            if (j.lt.1) j=4
+
+c           write(6,5) j,e,k,ccurve(j,k),(curve(jj,j,k),jj=1,5)
+
+            if (ccurve(j,k).eq.'m') then
+               xm = curve(1,j,k) + 0.5*dx
+               ym = curve(2,j,k) + 0.5*dy
+               zm = curve(3,j,k) + 0.5*dz
+
+               if (curve(5,j,k).ne.0) then   ! Latch to existing obj
+                  iobj=abs(curve(5,j,k))
+                  call latchob(xo,yo,xm,ym,zm,dist2,ko,io,iobj)
+                  xm = xo
+                  ym = yo
+               endif
+
+               curve(1,j,k) = xm
+               curve(2,j,k) = ym
+               curve(3,j,k) = zm
+
+            endif
+         enddo
+
+         call chkjac_e(ierr,k)
+         if (ierr.eq.0) then
+            call copyel(k,e)   ! k --> e
+            call prsii('Moving element/vertex: $',e,v)
+         else
+            kerr = ierr
+            call prsii('Error modifying element:$',e,ierr)
+         endif
+      enddo
+
+      call gencen
+      call redraw_mesh
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chkjac_e(ierr,e)
+      integer e
+
+      ierr = 0
+
       return
       end
 c-----------------------------------------------------------------------
@@ -744,11 +1061,11 @@ C
       IF(IEDGE.GT.8)THEN
 C        Vertical strut
          IC=IEDGE-4
-         XISOM(IC)=XPHY(XSCR(X(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
-         YISOM(IC)=YPHY(YSCR(Y(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
-         IC=IEDGE-8
-         XISOM(IC)=XPHY(XSCR(X(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
-         YISOM(IC)=YPHY(YSCR(Y(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
+         xisom(ic)=xphy(xscr(x(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
+         yisom(ic)=yphy(yscr(y(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
+         ic=iedge-8
+         xisom(ic)=xphy(xscr(x(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
+         yisom(ic)=yphy(yscr(y(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
          IF(IFLIP.EQ.1)THEN
             CALL MOVEC(XISOM(IEDGE-8),YISOM(IEDGE-8))
             CALL DRAWC(XISOM(IEDGE-4),YISOM(IEDGE-4))
@@ -765,9 +1082,9 @@ C        Draw straight side
          ELSE
             IC=IEDGE
          ENDIF
-         XISOM(IC)=XPHY(XSCR(X(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
-         YISOM(IC)=YPHY(YSCR(Y(IEL,IC))/5.0 + 0.8)-Z(IEL,IC)/20.
-         CALL DRAWC(XISOM(IC),YISOM(IC))
+         xisom(ic)=xphy(xscr(x(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
+         yisom(ic)=yphy(yscr(y(ic,iel))/5.0 + 0.8)-z(ic,iel)/20.
+         call drawc(xisom(ic),yisom(ic))
       ELSE
 C        Draw curved side
          NPOINT=10
@@ -783,8 +1100,8 @@ C        Draw curved side
             IEND  =1
          ENDIF
          DO 118 I=IBEGIN,IEND,IFLIP
-            XI=XPHY(XSCR(XCRVED(I))/5.0 + 0.8)-Z(IEL,IEDGE)/20.
-            YI=YPHY(YSCR(YCRVED(I))/5.0 + 0.8)-Z(IEL,IEDGE)/20.
+            xi=xphy(xscr(xcrved(i))/5.0 + 0.8)-z(iedge,iel)/20.
+            yi=yphy(yscr(ycrved(i))/5.0 + 0.8)-z(iedge,iel)/20.
             CALL DRAWC(XI,YI)
 118      CONTINUE
       ENDIF
@@ -794,45 +1111,44 @@ c-----------------------------------------------------------------------
       subroutine drawis(iel)
       include 'basics.inc'
       dimension xisom(8),yisom(8),cspace(100),xcrved(100),ycrved(100)
-      IIEL=IABS(IEL)
+      iiel=iabs(iel)
       if (.not.if3d)   return
-      if (.not.ifgraf)   return
       if (nel.gt.1000) return
 C        Now draw isometric view  (??! RESCALE??)
          IF(IEL.GT.0)call color(10)
          IF(IEL.le.0)call color(0)
          DO 7 IC=1,8
-         XISOM(IC)=XPHY(XSCR(X(IIEL,IC))/5.0 + 0.8)-Z(IIEL,IC)/20.
-         YISOM(IC)=YPHY(YSCR(Y(IIEL,IC))/5.0 + 0.8)-Z(IIEL,IC)/20.
+          xisom(ic)=xphy(xscr(x(ic,iiel))/5.0 + 0.8)-z(ic,iiel)/20.
+          yisom(ic)=yphy(yscr(y(ic,iiel))/5.0 + 0.8)-z(ic,iiel)/20.
 7        CONTINUE
          CALL BEGINB(XISOM(1),YISOM(1))
          DO 8 IEDGE=1,4
-            CALL DRISED(IIEL,IEDGE,1)
+            call drised(iiel,iedge,1)
 8        CONTINUE
          CALL ENDP
 C        Now draw side panels
          IF(IEL.GT.0)CALL fillp(-14)
          IF(IEL.LE.0)CALL fillp(0)
          CALL BEGINB(XISOM(2),YISOM(2))
-         CALL DRISED(IIEL, 2, 1)
-         CALL DRISED(IIEL,11, 1)
-         CALL DRISED(IIEL, 6,-1)
-         CALL DRISED(IIEL,10,-1)
-         CALL ENDP
+         call drised(iiel, 2, 1)
+         call drised(iiel,11, 1)
+         call drised(iiel, 6,-1)
+         call drised(iiel,10,-1)
+         call endp
 C
-         CALL BEGINB(XISOM(4),YISOM(4))
-         CALL DRISED(IIEL,12, 1)
-         CALL DRISED(IIEL, 7,-1)
-         CALL DRISED(IIEL,11,-1)
-         CALL DRISED(IIEL, 3, 1)
-         CALL ENDP
+         call beginb(xisom(4),yisom(4))
+         call drised(iiel,12, 1)
+         call drised(iiel, 7,-1)
+         call drised(iiel,11,-1)
+         call drised(iiel, 3, 1)
+         call endp
 C
 C        Draw Ceiling panel
          IF(IEL.GT.0)CALL fillp(-15)
          IF(IEL.LE.0)CALL fillp(0)
          CALL BEGINB(XISOM(5),YISOM(5))
          DO 9 I=5,8
-           CALL DRISED(IIEL,I, 1)
+           call drised(iiel,i, 1)
 9        CONTINUE
          CALL ENDP
       return
@@ -847,13 +1163,18 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
 
-      if (nel.gt.2000 .and. iel.eq.901) 
-     $   call prsi('Showing only 900 elements of$',nel)
-      if (nel.gt.2000 .and. iel.gt.900) return
+      if (.not.ifgraf) then
+        if (nel.gt.90 .and. iel.eq.91) 
+     $   call prsi('Showing only 90 elements of$',nel)
+        if (nel.gt.90 .and. iel.gt.90) return
+c       if (nel.gt.900 .and. iel.eq.901) 
+c    $   call prsi('Showing only 900 elements of$',nel)
+c       if (nel.gt.900 .and. iel.gt.900) return
+      endif
 
 
 C     Now, draw new elements for elements that were modified
-      IIEL=IABS(IEL)
+      iiel=iabs(iel)
 C
 
 c     write (6,*) 'DRAWEL: iel = ',IEL
@@ -866,25 +1187,25 @@ c     write (6,*) 'DRAWEL: iel = ',IEL
          IE  =IABS(IEL)
 C
 C        Draw spherical mesh
-C
-         XYZCTR(1,1)=X(IE,1)+X(IE,4)+X(IE,5)+X(IE,8)
-         XYZCTR(1,2)=X(IE,2)+X(IE,3)+X(IE,6)+X(IE,7)
-         XYZCTR(1,3)=X(IE,1)+X(IE,2)+X(IE,5)+X(IE,6)
-         XYZCTR(1,4)=X(IE,3)+X(IE,4)+X(IE,7)+X(IE,8)
-         XYZCTR(1,5)=X(IE,1)+X(IE,2)+X(IE,3)+X(IE,4)
-         XYZCTR(1,6)=X(IE,5)+X(IE,6)+X(IE,7)+X(IE,8)
-         XYZCTR(2,1)=Y(IE,1)+Y(IE,4)+Y(IE,5)+Y(IE,8)
-         XYZCTR(2,2)=Y(IE,2)+Y(IE,3)+Y(IE,6)+Y(IE,7)
-         XYZCTR(2,3)=Y(IE,1)+Y(IE,2)+Y(IE,5)+Y(IE,6)
-         XYZCTR(2,4)=Y(IE,3)+Y(IE,4)+Y(IE,7)+Y(IE,8)
-         XYZCTR(2,5)=Y(IE,1)+Y(IE,2)+Y(IE,3)+Y(IE,4)
-         XYZCTR(2,6)=Y(IE,5)+Y(IE,6)+Y(IE,7)+Y(IE,8)
-         XYZCTR(3,1)=Z(IE,1)+Z(IE,4)+Z(IE,5)+Z(IE,8)
-         XYZCTR(3,2)=Z(IE,2)+Z(IE,3)+Z(IE,6)+Z(IE,7)
-         XYZCTR(3,3)=Z(IE,1)+Z(IE,2)+Z(IE,5)+Z(IE,6)
-         XYZCTR(3,4)=Z(IE,3)+Z(IE,4)+Z(IE,7)+Z(IE,8)
-         XYZCTR(3,5)=Z(IE,1)+Z(IE,2)+Z(IE,3)+Z(IE,4)
-         XYZCTR(3,6)=Z(IE,5)+Z(IE,6)+Z(IE,7)+Z(IE,8)
+c
+         xyzctr(1,1)=x(1,ie)+x(4,ie)+x(5,ie)+x(8,ie)
+         xyzctr(1,2)=x(2,ie)+x(3,ie)+x(6,ie)+x(7,ie)
+         xyzctr(1,3)=x(1,ie)+x(2,ie)+x(5,ie)+x(6,ie)
+         xyzctr(1,4)=x(3,ie)+x(4,ie)+x(7,ie)+x(8,ie)
+         xyzctr(1,5)=x(1,ie)+x(2,ie)+x(3,ie)+x(4,ie)
+         xyzctr(1,6)=x(5,ie)+x(6,ie)+x(7,ie)+x(8,ie)
+         xyzctr(2,1)=y(1,ie)+y(4,ie)+y(5,ie)+y(8,ie)
+         xyzctr(2,2)=y(2,ie)+y(3,ie)+y(6,ie)+y(7,ie)
+         xyzctr(2,3)=y(1,ie)+y(2,ie)+y(5,ie)+y(6,ie)
+         xyzctr(2,4)=y(3,ie)+y(4,ie)+y(7,ie)+y(8,ie)
+         xyzctr(2,5)=y(1,ie)+y(2,ie)+y(3,ie)+y(4,ie)
+         xyzctr(2,6)=y(5,ie)+y(6,ie)+y(7,ie)+y(8,ie)
+         xyzctr(3,1)=z(1,ie)+z(4,ie)+z(5,ie)+z(8,ie)
+         xyzctr(3,2)=z(2,ie)+z(3,ie)+z(6,ie)+z(7,ie)
+         xyzctr(3,3)=z(1,ie)+z(2,ie)+z(5,ie)+z(6,ie)
+         xyzctr(3,4)=z(3,ie)+z(4,ie)+z(7,ie)+z(8,ie)
+         xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
+         xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
          CALL CMULT(XYZCTR,TMP,18)
          DO 71 I=1,6
@@ -893,74 +1214,74 @@ C
          CALL SORT(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
-            IF (J.EQ.1) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.2) THEN
-               CALL BEGINB(XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.3) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.4) THEN
-               CALL BEGINB(XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.5) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.6) THEN
-               CALL BEGINB(XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-   72    CONTINUE
-      ELSE
+            if (j.eq.1) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.2) then
+               call beginb(xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call endp
+            endif
+            if (j.eq.3) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call endp
+            endif
+            if (j.eq.4) then
+               call beginb(xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.5) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call endp
+            endif
+            if (j.eq.6) then
+               call beginb(xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+   72    continue
+      else
 C
 C     Std draw:
 C
@@ -996,10 +1317,10 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       IC=4
       IF(IFCEIL)IC=8
       IF(IEL.GT.10000)THEN
-         IIEL=IIEL-10000
-         CALL MOVEC(x(Iiel,IC),y(Iiel,IC))
+         iiel=iiel-10000
+         call movec(x(ic,iiel),y(ic,iiel))
       ELSE
-         CALL BEGINB(x(Iiel,IC),y(Iiel,IC))
+         call beginb(x(ic,iiel),y(ic,iiel))
       ENDIF
       XCENTER=0.0
       YCENTER=0.0
@@ -1011,16 +1332,16 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
          ICEND=4
       ENDIF
       DO 6 IC=ICBEG,ICEND
-          YCENTER=YCENTER+Y(IIEL,IC)/4.
-          XCENTER=XCENTER+X(IIEL,IC)/4.
+          ycenter=ycenter+y(ic,iiel)/4.
+          xcenter=xcenter+x(ic,iiel)/4.
           IEDGE=IC-1
           IF(IC.EQ.1)IEDGE=4
           IF(IC.EQ.5)IEDGE=8
-          IF(CCURVE(IEDGE,IIEL).EQ.' ')THEN
-             CALL DRAWC(X(IIEL,IC),Y(IIEL,IC))
+          if(ccurve(iedge,iiel).eq.' ')then
+             call drawc(x(ic,iiel),y(ic,iiel))
           ELSE
 C            Draw curved side
-             CALL GETPTS(NPOINT,CSPACE,IIEL,IEDGE,XCRVED,YCRVED)
+             call getpts(npoint,cspace,iiel,iedge,xcrved,ycrved)
              DO 118 I=1,NPOINT
                 CALL DRAWC(XCRVED(I),YCRVED(I))
 118          CONTINUE
@@ -1048,6 +1369,51 @@ C HMT color TRACE - seems to be the outline
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mkside_e(e) ! Define sides' midpoints
+      include 'basics.inc'
+      integer e,f
+
+      do f=1,nsides
+         ic1=f
+         ic2=f+1
+         if (f.eq.4) ic2=1
+
+         if (if3d) then ! This stuff only relevant for 3d
+
+            ic3=ic1+4
+            ic4=ic2+4
+            if (f.eq.5) then
+               ic1=1
+               ic2=2
+               ic3=3
+               ic4=4
+            elseif (f.eq.6) then
+               ic1=1+4
+               ic2=2+4
+               ic3=3+4
+               ic4=4+4
+            endif
+            xs =( x(ic1,iel)+x(ic2,iel)
+     $         +  x(ic3,iel)+x(ic4,iel) )/4.
+            ys =( y(ic1,iel)+y(ic2,iel)
+     $         +  y(ic3,iel)+y(ic4,iel) )/4.
+            zs =( z(ic1,iel)+z(ic2,iel)
+     $         +  z(ic3,iel)+z(ic4,iel) )/4.
+         else
+            xs =( x(ic1,iel)+x(ic2,iel) )/2.
+            ys =( y(ic1,iel)+y(ic2,iel) )/2.
+            zs = 0.0
+         endif
+
+         sides (iel,f,1)=xs
+         sides (iel,f,2)=ys
+         sides (iel,f,3)=zs
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine mkside
       include 'basics.inc'
 C
@@ -1072,35 +1438,38 @@ C        This stuff only relevant for 3d
             IC3=3+4
             IC4=4+4
          ENDIF
-         IF (IF3D) THEN
-            XS =( X(IEL,IC1)+X(IEL,IC2)
-     $         +  X(IEL,IC3)+X(IEL,IC4) )/4.
-            YS =( Y(IEL,IC1)+Y(IEL,IC2)
-     $         +  Y(IEL,IC3)+Y(IEL,IC4) )/4.
-            ZS =( Z(IEL,IC1)+Z(IEL,IC2)
-     $         +  Z(IEL,IC3)+Z(IEL,IC4) )/4.
-         ELSE
-            XS =( X(IEL,IC1)+X(IEL,IC2) )/2.
-            YS =( Y(IEL,IC1)+Y(IEL,IC2) )/2.
-            ZS = 0.0
-         ENDIF
-         SIDES (IEL,ISIDE,1)=XS
-         SIDES (IEL,ISIDE,2)=YS
-         SIDES (IEL,ISIDE,3)=ZS
-25    CONTINUE
+         if (if3d) then
+            xs =( x(ic1,iel)+x(ic2,iel)
+     $         +  x(ic3,iel)+x(ic4,iel) )/4.
+            ys =( y(ic1,iel)+y(ic2,iel)
+     $         +  y(ic3,iel)+y(ic4,iel) )/4.
+            zs =( z(ic1,iel)+z(ic2,iel)
+     $         +  z(ic3,iel)+z(ic4,iel) )/4.
+         else
+            xs =( x(ic1,iel)+x(ic2,iel) )/2.
+            ys =( y(ic1,iel)+y(ic2,iel) )/2.
+            zs = 0.0
+         endif
+         sides (iel,iside,1)=xs
+         sides (iel,iside,2)=ys
+         sides (iel,iside,3)=zs
+25    continue
+
       return
       end
-      FUNCTION CRSS2D(XY1,XY2,XY0)
-      REAL XY1(2),XY2(2),XY0(2)
-C
-         V1X=XY1(1)-XY0(1)
-         V2X=XY2(1)-XY0(1)
-         V1Y=XY1(2)-XY0(2)
-         V2Y=XY2(2)-XY0(2)
-         CRSS2D = V1X*V2Y - V1Y*V2X
-C
+c-----------------------------------------------------------------------
+      function crss2d(xy1,xy2,xy0)
+      real xy1(2),xy2(2),xy0(2)
+
+      v1x=xy1(1)-xy0(1)
+      v2x=xy2(1)-xy0(1)
+      v1y=xy1(2)-xy0(2)
+      v2y=xy2(2)-xy0(2)
+      crss2d = v1x*v2y - v1y*v2x
+
       return
       end
+c-----------------------------------------------------------------------
       function round(x)
 
 C     Try to Round X to fractional integer - eg .05 .1 .15 - if it's within 10-6
@@ -1136,33 +1505,36 @@ c        write(88,*) icalld,round,x,diff
       end
 
 c-----------------------------------------------------------------------
-      subroutine blatch(xmouse,ymouse)
-C     Latch to closest element vertex
+      subroutine blatch(xmouse,ymouse,icmin,ielmin) ! Latch to closest vertex
       include 'basics.inc'
-      XC=XMOUSE
-      YC=YMOUSE
-C     Find Closest Corner (NOT IN SAME ELEMENT)
-      RMIN = 1.0E8
-      DO 150 IEL=1,NEL
-         DO 130 IICORN=1,4
-            ICORN=IICORN
-            IF (IFCEIL) ICORN=ICORN+4
-            XT=X(IEL,ICORN)
-            YT=Y(IEL,ICORN)
-            R=(XT-XC)**2+(YT-YC)**2
-            IF (R.LT.RMIN) THEN
-               RMIN  = R
-               IELMIN= IEL
-               ICMIN = ICORN
-            ENDIF
-  130    CONTINUE
-  140    CONTINUE
-  150 CONTINUE
-      XMOUSE=X(IELMIN,ICMIN)
-      YMOUSE=Y(IELMIN,ICMIN)
+      integer e
+
+      xc=xmouse
+      yc=ymouse
+      rmin = 1.e15
+
+      do e=1,nel    !  Find closest corner (NOT IN SAME ELEMENT)
+      do iicorn=1,4
+         icorn=iicorn
+         if (ifceil) icorn=icorn+4
+         xt=x(icorn,e)
+         yt=y(icorn,e)
+         r=(xt-xc)**2+(yt-yc)**2
+         if (r.lt.rmin) then
+            rmin  = r
+            ielmin= e
+            icmin = icorn
+         endif
+c        write(6,1) e,icorn,ielmin,icmin,xt,yt,xc,yc,rmin
+c  1     format(i5,i3,i5,i3,1p5e12.4,' blatch')
+      enddo
+      enddo
+
+      xmouse=x(icmin,ielmin)
+      ymouse=y(icmin,ielmin)
+
       return
       end
-C     End of BUILD subroutines, preprocessor *****
 c-----------------------------------------------------------------------
       subroutine sortel
       include 'basics.inc'
@@ -1209,7 +1581,7 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
 C     Now, draw new elements for elements that were modified
-      IIEL=IABS(IEL)
+      iiel=iabs(iel)
 C
       IFSPHR=.FALSE.
       DO 7 IFACE=5,6
@@ -1220,24 +1592,24 @@ C
 C
 C        Draw spherical mesh
 C
-         XYZCTR(1,1)=X(IE,1)+X(IE,4)+X(IE,5)+X(IE,8)
-         XYZCTR(1,2)=X(IE,2)+X(IE,3)+X(IE,6)+X(IE,7)
-         XYZCTR(1,3)=X(IE,1)+X(IE,2)+X(IE,5)+X(IE,6)
-         XYZCTR(1,4)=X(IE,3)+X(IE,4)+X(IE,7)+X(IE,8)
-         XYZCTR(1,5)=X(IE,1)+X(IE,2)+X(IE,3)+X(IE,4)
-         XYZCTR(1,6)=X(IE,5)+X(IE,6)+X(IE,7)+X(IE,8)
-         XYZCTR(2,1)=Y(IE,1)+Y(IE,4)+Y(IE,5)+Y(IE,8)
-         XYZCTR(2,2)=Y(IE,2)+Y(IE,3)+Y(IE,6)+Y(IE,7)
-         XYZCTR(2,3)=Y(IE,1)+Y(IE,2)+Y(IE,5)+Y(IE,6)
-         XYZCTR(2,4)=Y(IE,3)+Y(IE,4)+Y(IE,7)+Y(IE,8)
-         XYZCTR(2,5)=Y(IE,1)+Y(IE,2)+Y(IE,3)+Y(IE,4)
-         XYZCTR(2,6)=Y(IE,5)+Y(IE,6)+Y(IE,7)+Y(IE,8)
-         XYZCTR(3,1)=Z(IE,1)+Z(IE,4)+Z(IE,5)+Z(IE,8)
-         XYZCTR(3,2)=Z(IE,2)+Z(IE,3)+Z(IE,6)+Z(IE,7)
-         XYZCTR(3,3)=Z(IE,1)+Z(IE,2)+Z(IE,5)+Z(IE,6)
-         XYZCTR(3,4)=Z(IE,3)+Z(IE,4)+Z(IE,7)+Z(IE,8)
-         XYZCTR(3,5)=Z(IE,1)+Z(IE,2)+Z(IE,3)+Z(IE,4)
-         XYZCTR(3,6)=Z(IE,5)+Z(IE,6)+Z(IE,7)+Z(IE,8)
+         xyzctr(1,1)=x(1,ie)+x(4,ie)+x(5,ie)+x(8,ie)
+         xyzctr(1,2)=x(2,ie)+x(3,ie)+x(6,ie)+x(7,ie)
+         xyzctr(1,3)=x(1,ie)+x(2,ie)+x(5,ie)+x(6,ie)
+         xyzctr(1,4)=x(3,ie)+x(4,ie)+x(7,ie)+x(8,ie)
+         xyzctr(1,5)=x(1,ie)+x(2,ie)+x(3,ie)+x(4,ie)
+         xyzctr(1,6)=x(5,ie)+x(6,ie)+x(7,ie)+x(8,ie)
+         xyzctr(2,1)=y(1,ie)+y(4,ie)+y(5,ie)+y(8,ie)
+         xyzctr(2,2)=y(2,ie)+y(3,ie)+y(6,ie)+y(7,ie)
+         xyzctr(2,3)=y(1,ie)+y(2,ie)+y(5,ie)+y(6,ie)
+         xyzctr(2,4)=y(3,ie)+y(4,ie)+y(7,ie)+y(8,ie)
+         xyzctr(2,5)=y(1,ie)+y(2,ie)+y(3,ie)+y(4,ie)
+         xyzctr(2,6)=y(5,ie)+y(6,ie)+y(7,ie)+y(8,ie)
+         xyzctr(3,1)=z(1,ie)+z(4,ie)+z(5,ie)+z(8,ie)
+         xyzctr(3,2)=z(2,ie)+z(3,ie)+z(6,ie)+z(7,ie)
+         xyzctr(3,3)=z(1,ie)+z(2,ie)+z(5,ie)+z(6,ie)
+         xyzctr(3,4)=z(3,ie)+z(4,ie)+z(7,ie)+z(8,ie)
+         xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
+         xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
          CALL CMULT(XYZCTR,TMP,18)
          DO 71 I=1,6
@@ -1246,73 +1618,74 @@ C
          CALL SORT(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
-            IF (J.EQ.1) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.2) THEN
-               CALL BEGINB(XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.3) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.4) THEN
-               CALL BEGINB(XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.5) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.6) THEN
-               CALL BEGINB(XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-   72    CONTINUE
+            if (j.eq.1) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.2) then
+               call beginb(xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call endp
+            endif
+            if (j.eq.3) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call endp
+            endif
+            if (j.eq.4) then
+               call beginb(xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.5) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call endp
+            endif
+            if (j.eq.6) then
+               call beginb(xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+   72    continue
+
       ELSE
 C
 C     Std draw:
@@ -1350,10 +1723,10 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       IC=4
       IF(IFCEIL)IC=8
       IF(IEL.GT.10000)THEN
-         IIEL=IIEL-10000
-         CALL MOVEC(x(Iiel,IC),y(Iiel,IC))
+         iiel=iiel-10000
+         call movec(x(ic,iiel),y(ic,iiel))
       ELSE
-         CALL BEGINB(x(Iiel,IC),y(Iiel,IC))
+         call beginb(x(ic,iiel),y(ic,iiel))
       ENDIF
       XCENTER=0.0
       YCENTER=0.0
@@ -1365,23 +1738,23 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
          ICEND=4
       ENDIF
       DO 6 IC=ICBEG,ICEND
-          YCENTER=YCENTER+Y(IIEL,IC)/4.
-          XCENTER=XCENTER+X(IIEL,IC)/4.
+          ycenter=ycenter+y(ic,iiel)/4.
+          xcenter=xcenter+x(ic,iiel)/4.
           IEDGE=IC-1
           IF(IC.EQ.1)IEDGE=4
           IF(IC.EQ.5)IEDGE=8
-          IF(CCURVE(IEDGE,IIEL).EQ.' ')THEN
-             CALL DRAWC(X(IIEL,IC),Y(IIEL,IC))
+          if(ccurve(iedge,iiel).eq.' ')then
+             call drawc(x(ic,iiel),y(ic,iiel))
           ELSE
 C            Draw curved side
-             CALL GETPTS(NPOINT,CSPACE,IIEL,IEDGE,XCRVED,YCRVED)
-             DO 118 I=1,NPOINT
-                CALL DRAWC(XCRVED(I),YCRVED(I))
-118          CONTINUE
-          ENDIF
-6     CONTINUE
-      IF(IEL.LT.10000)CALL ENDP
-C
+             call getpts(npoint,cspace,iiel,iedge,xcrved,ycrved)
+             do 118 i=1,npoint
+                call drawc(xcrved(i),ycrved(i))
+118          continue
+          endif
+6     continue
+      if (iel.lt.10000) call endp
+
       IF(IEL.GT.0)THEN
 C        LABEL Element Center
 c        IF(IF3D)     WRITE(STRING,'(I3,A1)')NUMAPT(IEL),LETAPT(IEL)
@@ -1412,7 +1785,7 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
 C     Now, draw new elements for elements that were modified
-      IIEL=IABS(IEL)
+      iiel=iabs(iel)
 C
       IFSPHR=.FALSE.
       DO 7 IFACE=5,6
@@ -1423,24 +1796,24 @@ C
 C
 C        Draw spherical mesh
 C
-         XYZCTR(1,1)=X(IE,1)+X(IE,4)+X(IE,5)+X(IE,8)
-         XYZCTR(1,2)=X(IE,2)+X(IE,3)+X(IE,6)+X(IE,7)
-         XYZCTR(1,3)=X(IE,1)+X(IE,2)+X(IE,5)+X(IE,6)
-         XYZCTR(1,4)=X(IE,3)+X(IE,4)+X(IE,7)+X(IE,8)
-         XYZCTR(1,5)=X(IE,1)+X(IE,2)+X(IE,3)+X(IE,4)
-         XYZCTR(1,6)=X(IE,5)+X(IE,6)+X(IE,7)+X(IE,8)
-         XYZCTR(2,1)=Y(IE,1)+Y(IE,4)+Y(IE,5)+Y(IE,8)
-         XYZCTR(2,2)=Y(IE,2)+Y(IE,3)+Y(IE,6)+Y(IE,7)
-         XYZCTR(2,3)=Y(IE,1)+Y(IE,2)+Y(IE,5)+Y(IE,6)
-         XYZCTR(2,4)=Y(IE,3)+Y(IE,4)+Y(IE,7)+Y(IE,8)
-         XYZCTR(2,5)=Y(IE,1)+Y(IE,2)+Y(IE,3)+Y(IE,4)
-         XYZCTR(2,6)=Y(IE,5)+Y(IE,6)+Y(IE,7)+Y(IE,8)
-         XYZCTR(3,1)=Z(IE,1)+Z(IE,4)+Z(IE,5)+Z(IE,8)
-         XYZCTR(3,2)=Z(IE,2)+Z(IE,3)+Z(IE,6)+Z(IE,7)
-         XYZCTR(3,3)=Z(IE,1)+Z(IE,2)+Z(IE,5)+Z(IE,6)
-         XYZCTR(3,4)=Z(IE,3)+Z(IE,4)+Z(IE,7)+Z(IE,8)
-         XYZCTR(3,5)=Z(IE,1)+Z(IE,2)+Z(IE,3)+Z(IE,4)
-         XYZCTR(3,6)=Z(IE,5)+Z(IE,6)+Z(IE,7)+Z(IE,8)
+         xyzctr(1,1)=x(1,ie)+x(4,ie)+x(5,ie)+x(8,ie)
+         xyzctr(1,2)=x(2,ie)+x(3,ie)+x(6,ie)+x(7,ie)
+         xyzctr(1,3)=x(1,ie)+x(2,ie)+x(5,ie)+x(6,ie)
+         xyzctr(1,4)=x(3,ie)+x(4,ie)+x(7,ie)+x(8,ie)
+         xyzctr(1,5)=x(1,ie)+x(2,ie)+x(3,ie)+x(4,ie)
+         xyzctr(1,6)=x(5,ie)+x(6,ie)+x(7,ie)+x(8,ie)
+         xyzctr(2,1)=y(1,ie)+y(4,ie)+y(5,ie)+y(8,ie)
+         xyzctr(2,2)=y(2,ie)+y(3,ie)+y(6,ie)+y(7,ie)
+         xyzctr(2,3)=y(1,ie)+y(2,ie)+y(5,ie)+y(6,ie)
+         xyzctr(2,4)=y(3,ie)+y(4,ie)+y(7,ie)+y(8,ie)
+         xyzctr(2,5)=y(1,ie)+y(2,ie)+y(3,ie)+y(4,ie)
+         xyzctr(2,6)=y(5,ie)+y(6,ie)+y(7,ie)+y(8,ie)
+         xyzctr(3,1)=z(1,ie)+z(4,ie)+z(5,ie)+z(8,ie)
+         xyzctr(3,2)=z(2,ie)+z(3,ie)+z(6,ie)+z(7,ie)
+         xyzctr(3,3)=z(1,ie)+z(2,ie)+z(5,ie)+z(6,ie)
+         xyzctr(3,4)=z(3,ie)+z(4,ie)+z(7,ie)+z(8,ie)
+         xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
+         xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
          CALL CMULT(XYZCTR,TMP,18)
          DO 71 I=1,6
@@ -1449,73 +1822,73 @@ C
          CALL SORT(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
-            IF (J.EQ.1) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.2) THEN
-               CALL BEGINB(XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.3) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.4) THEN
-               CALL BEGINB(XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.5) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.6) THEN
-               CALL BEGINB(XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-   72    CONTINUE
+            if (j.eq.1) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.2) then
+               call beginb(xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call endp
+            endif
+            if (j.eq.3) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call endp
+            endif
+            if (j.eq.4) then
+               call beginb(xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.5) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call endp
+            endif
+            if (j.eq.6) then
+               call beginb(xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+   72    continue
       ELSE
 C
 C     Std draw:
@@ -1553,10 +1926,10 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       IC=4
       IF(IFCEIL)IC=8
       IF(IEL.GT.10000)THEN
-         IIEL=IIEL-10000
-         CALL MOVEC(x(Iiel,IC),y(Iiel,IC))
+         iiel=iiel-10000
+         call movec(X(ic,iiel),Y(ic,iiel))
       ELSE
-         CALL BEGINB(x(Iiel,IC),y(Iiel,IC))
+         call beginb(X(ic,iiel),Y(ic,iiel))
       ENDIF
       XCENTER=0.0
       YCENTER=0.0
@@ -1568,20 +1941,20 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
          ICEND=4
       ENDIF
       DO 6 IC=ICBEG,ICEND
-          YCENTER=YCENTER+Y(IIEL,IC)/4.
-          XCENTER=XCENTER+X(IIEL,IC)/4.
-          IEDGE=IC-1
-          IF(IC.EQ.1)IEDGE=4
-          IF(IC.EQ.5)IEDGE=8
-          IF(CCURVE(IEDGE,IIEL).EQ.' ')THEN
-             CALL DRAWC(X(IIEL,IC),Y(IIEL,IC))
-          ELSE
+          ccenter=xcenter+x(ic,iiel)/4.
+          ycenter=ycenter+y(ic,iiel)/4.
+          iedge=ic-1
+          if(ic.eq.1)iedge=4
+          if(ic.eq.5)iedge=8
+          if(ccurve(iedge,iiel).eq.' ')then
+             call drawc(x(ic,iiel),y(ic,iiel))
+          else
 C            Draw curved side
-             CALL GETPTS(NPOINT,CSPACE,IIEL,IEDGE,XCRVED,YCRVED)
-             DO 118 I=1,NPOINT
-                CALL DRAWC(XCRVED(I),YCRVED(I))
-118          CONTINUE
-          ENDIF
+             call getpts(npoint,cspace,iiel,iedge,xcrved,ycrved)
+             do 118 i=1,npoint
+                call drawc(xcrved(i),ycrved(i))
+118          continue
+          endif
 6     CONTINUE
       IF(IEL.LT.10000)CALL ENDP
 C
@@ -1618,7 +1991,7 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION ZBUFF(6),XYZCTR(3,6)
       DIMENSION IND(6)
 C     Now, draw new elements for elements that were modified
-      IIEL=IABS(IEL)
+      iiel=iabs(iel)
 C
       IFSPHR=.FALSE.
       DO 7 IEDGE=5,6
@@ -1629,24 +2002,24 @@ C
 C
 C        Draw spherical mesh
 C
-         XYZCTR(1,1)=X(IE,1)+X(IE,4)+X(IE,5)+X(IE,8)
-         XYZCTR(1,2)=X(IE,2)+X(IE,3)+X(IE,6)+X(IE,7)
-         XYZCTR(1,3)=X(IE,1)+X(IE,2)+X(IE,5)+X(IE,6)
-         XYZCTR(1,4)=X(IE,3)+X(IE,4)+X(IE,7)+X(IE,8)
-         XYZCTR(1,5)=X(IE,1)+X(IE,2)+X(IE,3)+X(IE,4)
-         XYZCTR(1,6)=X(IE,5)+X(IE,6)+X(IE,7)+X(IE,8)
-         XYZCTR(2,1)=Y(IE,1)+Y(IE,4)+Y(IE,5)+Y(IE,8)
-         XYZCTR(2,2)=Y(IE,2)+Y(IE,3)+Y(IE,6)+Y(IE,7)
-         XYZCTR(2,3)=Y(IE,1)+Y(IE,2)+Y(IE,5)+Y(IE,6)
-         XYZCTR(2,4)=Y(IE,3)+Y(IE,4)+Y(IE,7)+Y(IE,8)
-         XYZCTR(2,5)=Y(IE,1)+Y(IE,2)+Y(IE,3)+Y(IE,4)
-         XYZCTR(2,6)=Y(IE,5)+Y(IE,6)+Y(IE,7)+Y(IE,8)
-         XYZCTR(3,1)=Z(IE,1)+Z(IE,4)+Z(IE,5)+Z(IE,8)
-         XYZCTR(3,2)=Z(IE,2)+Z(IE,3)+Z(IE,6)+Z(IE,7)
-         XYZCTR(3,3)=Z(IE,1)+Z(IE,2)+Z(IE,5)+Z(IE,6)
-         XYZCTR(3,4)=Z(IE,3)+Z(IE,4)+Z(IE,7)+Z(IE,8)
-         XYZCTR(3,5)=Z(IE,1)+Z(IE,2)+Z(IE,3)+Z(IE,4)
-         XYZCTR(3,6)=Z(IE,5)+Z(IE,6)+Z(IE,7)+Z(IE,8)
+         xyzctr(1,1)=x(1,ie)+x(4,ie)+x(5,ie)+x(8,ie)
+         xyzctr(1,2)=x(2,ie)+x(3,ie)+x(6,ie)+x(7,ie)
+         xyzctr(1,3)=x(1,ie)+x(2,ie)+x(5,ie)+x(6,ie)
+         xyzctr(1,4)=x(3,ie)+x(4,ie)+x(7,ie)+x(8,ie)
+         xyzctr(1,5)=x(1,ie)+x(2,ie)+x(3,ie)+x(4,ie)
+         xyzctr(1,6)=x(5,ie)+x(6,ie)+x(7,ie)+x(8,ie)
+         xyzctr(2,1)=y(1,ie)+y(4,ie)+y(5,ie)+y(8,ie)
+         xyzctr(2,2)=y(2,ie)+y(3,ie)+y(6,ie)+y(7,ie)
+         xyzctr(2,3)=y(1,ie)+y(2,ie)+y(5,ie)+y(6,ie)
+         xyzctr(2,4)=y(3,ie)+y(4,ie)+y(7,ie)+y(8,ie)
+         xyzctr(2,5)=y(1,ie)+y(2,ie)+y(3,ie)+y(4,ie)
+         xyzctr(2,6)=y(5,ie)+y(6,ie)+y(7,ie)+y(8,ie)
+         xyzctr(3,1)=z(1,ie)+z(4,ie)+z(5,ie)+z(8,ie)
+         xyzctr(3,2)=z(2,ie)+z(3,ie)+z(6,ie)+z(7,ie)
+         xyzctr(3,3)=z(1,ie)+z(2,ie)+z(5,ie)+z(6,ie)
+         xyzctr(3,4)=z(3,ie)+z(4,ie)+z(7,ie)+z(8,ie)
+         xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
+         xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
          CALL CMULT(XYZCTR,TMP,18)
          DO 71 I=1,6
@@ -1655,73 +2028,73 @@ C
          CALL SORT(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
-            IF (J.EQ.1) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.2) THEN
-               CALL BEGINB(XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.3) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.4) THEN
-               CALL BEGINB(XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.5) THEN
-               CALL BEGINB(XISO(X(IE,1),Y(IE,1),Z(IE,1)) 
-     $                    ,YISO(X(IE,1),Y(IE,1),Z(IE,1)))
-               CALL DRAWC (XISO(X(IE,2),Y(IE,2),Z(IE,2)) 
-     $                    ,YISO(X(IE,2),Y(IE,2),Z(IE,2)))
-               CALL DRAWC (XISO(X(IE,3),Y(IE,3),Z(IE,3)) 
-     $                    ,YISO(X(IE,3),Y(IE,3),Z(IE,3)))
-               CALL DRAWC (XISO(X(IE,4),Y(IE,4),Z(IE,4)) 
-     $                    ,YISO(X(IE,4),Y(IE,4),Z(IE,4)))
-               CALL ENDP
-            ENDIF
-            IF (J.EQ.6) THEN
-               CALL BEGINB(XISO(X(IE,5),Y(IE,5),Z(IE,5)) 
-     $                    ,YISO(X(IE,5),Y(IE,5),Z(IE,5)))
-               CALL DRAWC (XISO(X(IE,6),Y(IE,6),Z(IE,6)) 
-     $                    ,YISO(X(IE,6),Y(IE,6),Z(IE,6)))
-               CALL DRAWC (XISO(X(IE,7),Y(IE,7),Z(IE,7)) 
-     $                    ,YISO(X(IE,7),Y(IE,7),Z(IE,7)))
-               CALL DRAWC (XISO(X(IE,8),Y(IE,8),Z(IE,8)) 
-     $                    ,YISO(X(IE,8),Y(IE,8),Z(IE,8)))
-               CALL ENDP
-            ENDIF
-   72    CONTINUE
+            if (j.eq.1) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.2) then
+               call beginb(xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call endp
+            endif
+            if (j.eq.3) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call endp
+            endif
+            if (j.eq.4) then
+               call beginb(xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+            if (j.eq.5) then
+               call beginb(xiso(x(1,ie),y(1,ie),z(1,ie)) 
+     $                    ,yiso(x(1,ie),y(1,ie),z(1,ie)))
+               call drawc (xiso(x(2,ie),y(2,ie),z(2,ie)) 
+     $                    ,yiso(x(2,ie),y(2,ie),z(2,ie)))
+               call drawc (xiso(x(3,ie),y(3,ie),z(3,ie)) 
+     $                    ,yiso(x(3,ie),y(3,ie),z(3,ie)))
+               call drawc (xiso(x(4,ie),y(4,ie),z(4,ie)) 
+     $                    ,yiso(x(4,ie),y(4,ie),z(4,ie)))
+               call endp
+            endif
+            if (j.eq.6) then
+               call beginb(xiso(x(5,ie),y(5,ie),z(5,ie)) 
+     $                    ,yiso(x(5,ie),y(5,ie),z(5,ie)))
+               call drawc (xiso(x(6,ie),y(6,ie),z(6,ie)) 
+     $                    ,yiso(x(6,ie),y(6,ie),z(6,ie)))
+               call drawc (xiso(x(7,ie),y(7,ie),z(7,ie)) 
+     $                    ,yiso(x(7,ie),y(7,ie),z(7,ie)))
+               call drawc (xiso(x(8,ie),y(8,ie),z(8,ie)) 
+     $                    ,yiso(x(8,ie),y(8,ie),z(8,ie)))
+               call endp
+            endif
+   72    continue
       ELSE
 C
 C     Std draw:
@@ -1760,13 +2133,13 @@ C        fill black (i.e., erase)
          CALL fillp(icolor)
       ENDIF
 C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
-      IC=4
-      IF(IFCEIL)IC=8
-      IF(IEL.GT.10000)THEN
-         IIEL=IIEL-10000
-         CALL MOVEC(x(Iiel,IC),y(Iiel,IC))
-      ELSE
-         CALL BEGINB(x(Iiel,IC),y(Iiel,IC))
+      ic=4
+      if (ifceil) ic=8
+      if (iel.gt.10000) then
+         iiel=iiel-10000
+         call movec(x(ic,iiel),y(ic,iiel))
+      else
+         call beginb(x(ic,iiel),y(ic,iiel))
       ENDIF
       XCENTER=0.0
       YCENTER=0.0
@@ -1777,22 +2150,22 @@ C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
          ICBEG=1
          ICEND=4
       ENDIF
-      DO 6 IC=ICBEG,ICEND
-          YCENTER=YCENTER+Y(IIEL,IC)/4.
-          XCENTER=XCENTER+X(IIEL,IC)/4.
-          IEDGE=IC-1
-          IF(IC.EQ.1)IEDGE=4
-          IF(IC.EQ.5)IEDGE=8
-          IF(CCURVE(IEDGE,IIEL).EQ.' ')THEN
-             CALL DRAWC(X(IIEL,IC),Y(IIEL,IC))
-          ELSE
+      do 6 ic=icbeg,icend
+          ycenter=ycenter+y(ic,iiel)/4.
+          xcenter=xcenter+x(ic,iiel)/4.
+          iedge=ic-1
+          if(ic.eq.1)iedge=4
+          if(ic.eq.5)iedge=8
+          if(ccurve(iedge,iiel).eq.' ')then
+             call drawc(x(ic,iiel),y(ic,iiel))
+          else
 C            Draw curved side
-             CALL GETPTS(NPOINT,CSPACE,IIEL,IEDGE,XCRVED,YCRVED)
-             DO 118 I=1,NPOINT
-                CALL DRAWC(XCRVED(I),YCRVED(I))
-118          CONTINUE
-          ENDIF
-6     CONTINUE
+             call getpts(npoint,cspace,iiel,iedge,xcrved,ycrved)
+             do 118 i=1,npoint
+                call drawc(xcrved(i),ycrved(i))
+118          continue
+          endif
+6     continue
       IF(IEL.LT.10000)CALL ENDP
 C
       IF(IEL.GT.0)THEN
@@ -1814,7 +2187,6 @@ C
 C      call color(1)
       return
       end
-C
 c-----------------------------------------------------------------------
       subroutine flipel(ieg,fplane)
 c
@@ -1866,48 +2238,48 @@ C
       if (if3d) then
          do ic=1,4
             i4 = ic+4
-            xt       =x(ieg,ic)
-            x(ieg,ic)=x(ieg,I4)
-            x(ieg,I4)=xt
-            yt       =y(ieg,ic)
-            y(ieg,ic)=y(ieg,I4)
-            y(ieg,I4)=yt
-            zt       =z(ieg,ic)
-            z(ieg,ic)=z(ieg,I4)
-            z(ieg,I4)=zt
+            xt       =x(ic,ieg)
+            x(ic,ieg)=x(i4,ieg)
+            x(i4,ieg)=xt
+            yt       =y(ic,ieg)
+            y(ic,ieg)=y(i4,ieg)
+            y(i4,ieg)=yt
+            zt       =z(ic,ieg)
+            z(ic,ieg)=z(i4,ieg)
+            z(i4,ieg)=zt
          enddo
       else
-         xt      =x(ieg,1)
-         x(ieg,1)=x(ieg,4)
-         x(ieg,4)=xt
-         xt      =x(ieg,2)
-         x(ieg,2)=x(ieg,3)
-         x(ieg,3)=xt
-         yt      =y(ieg,1)
-         y(ieg,1)=y(ieg,4)
-         y(ieg,4)=yt
-         yt      =y(ieg,2)
-         y(ieg,2)=y(ieg,3)
-         y(ieg,3)=yt
+         xt      =x(1,ieg)
+         x(1,ieg)=x(4,ieg)
+         x(4,ieg)=xt
+         xt      =x(2,ieg)
+         x(2,ieg)=x(3,ieg)
+         x(3,ieg)=xt
+         yt      =y(1,ieg)
+         y(1,ieg)=y(4,ieg)
+         y(4,ieg)=yt
+         yt      =y(2,ieg)
+         y(2,ieg)=y(3,ieg)
+         y(3,ieg)=yt
       endif
 c
       if (fplane.eq.'x') then
          idir = 1
          xcen(ieg) = -xcen(ieg)
          do ic=1,8
-            x(ieg,ic) = -x(ieg,ic)
+            x(ic,ieg) = -x(ic,ieg)
          enddo
       elseif (fplane.eq.'y') then
          idir = 2
          ycen(ieg) = -ycen(ieg)
          do ic=1,8
-            y(ieg,ic) = -y(ieg,ic)
+            y(ic,ieg) = -y(ic,ieg)
          enddo
       else
          idir = 3
          zcen(ieg) = -zcen(ieg)
          do ic=1,8
-            z(ieg,ic) = -z(ieg,ic)
+            z(ic,ieg) = -z(ic,ieg)
          enddo
       endif
 C
@@ -1988,7 +2360,16 @@ c
             curve(i,3,ieg) = ct
          enddo
       endif
-c
+
+      if (fplane.eq.'x') i=1
+      if (fplane.eq.'y') i=2
+      if (fplane.eq.'z') i=3
+      nedge = 4 + 8*(ndim-2)
+      do k=1,nedge
+         if (ccurve(k,ieg).eq.'m') curve(i,k,ieg) = -curve(i,k,ieg)
+      enddo
+
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2107,6 +2488,34 @@ c     Directed arc:
       write(6,*) 'area:',area,aaa,bbb
       if (abs(area).lt.tol*aaa) return  ! nearly colinear
       if (bbb.gt.0) rad_circ = 0.25*sqrt(bbb)/area
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine side_to_obj(iobj,xo,yo,e,side)
+      include 'basics.inc'
+
+c     Is this side attached to object iobj ?
+
+      integer e,side,v
+
+
+      tolobj = 1.e-4*(griddx**2+griddy**2)
+
+      do iobj=1,nobjs
+         if (ifobjg(iobj)) then ! Active object
+            nv = 0              ! Number of vertices on this object
+            do j=side,side+1
+               v = j
+               if (v.gt.4) v=1
+               call latchob(xo,yo,x(v,e),y(v,e),0.,dist2,ko,io,iobj)
+               if (dist2.lt.tolobj) nv = nv+1
+               if (nv.eq.2) return
+            enddo
+         endif
+      enddo
+
+      iobj = 0   ! Nothing found
 
       return
       end

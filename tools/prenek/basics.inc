@@ -1,8 +1,7 @@
 C     Utilities to be included in all subroutines in Preprocessor Program
 C     BASICS.INC
 
-      parameter (nelm=1 000 000,nxm=9,nym=9,nzm=9,maxfld=5) ! nxm must be odd
-c     parameter (nelm=10 000,nxm=9,nym=9,nzm=9,maxfld=5)
+      parameter (nelm=3 000 000,nxm=7,nym=7,nzm=7,maxfld=5)
       parameter (lx1=nxm,ly1=nym,lz1=nzm)
 
       PARAMETER ( MAXCRV=4,MAXIBC=4,MAXHIS=2,MPSCAL=4)
@@ -30,18 +29,23 @@ c     parameter (nelm=10 000,nxm=9,nym=9,nzm=9,maxfld=5)
       COMMON /LOGO/IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
      $            ,IFFMTIN,ifptplt,ifauto,if_unstructure
-      COMMON /NEK2/ CURVE(6,12,NELM),NPTPRO,NCSEGS,NRAKE
-     $         ,NCURVE,IELLEV,VELTYP,ISRT(NELM),BC(5,6,NELM,0:MAXFLD)
-     $         ,NUMAPT(NELM),ILETAP,MAXLET,ILEVEL,NSIDES,NCORNS,PI
-     $         ,NEDGES,IGRP
-     $         ,THETA,PHI,VHOBS(3),XHOBS(3),YHOBS(3),LOCHIS(4,MAXHIS)
-     $         ,ZPTS(NXM),WGHT(NXM),DFDR(NXM,NXM),DFDRT(NXM,NXM)
-     $         ,DGDR(NXM,NXM),DGDRT(NXM,NXM)
-     $         ,POINTS(3,3),NPSCAL,NCOND
-     $         ,PCOND(11),PRHOCP(11)
-     $         ,IPSCO,IPSCH,DMPTIM(1000),IDSTEP(1000)
-     $         ,IGROUP(NELM),CPROP(-5:10,10,3),ISOBJ
-     $         ,CERROR(6,NELM),MATYPE(-5:10,0:MAXFLD)
+      common /nek2r/ curve(6,12,nelm),bc(5,6,nelm,0:maxfld)
+     $         ,pi,theta,phi,vhobs(3),xhobs(3),yhobs(3)
+     $         ,zpts(nxm),wght(nxm),dfdr(nxm,nxm),dfdrt(nxm,nxm)
+     $         ,dgdr(nxm,nxm),dgdrt(nxm,nxm)
+     $         ,points(3,3),pcond(11),prhocp(11)
+     $         ,dmptim(1000),cprop(-5:10,10,3),cerror(6,nelm)
+     $         ,veltyp
+      common /nek2i/ nptpro,ncsegs,nrake
+     $         ,ncurve,iellev,isrt(nelm)
+     $         ,numapt(nelm),iletap,maxlet,ilevel,nsides,ncorns
+     $         ,nedges,igrp
+     $         ,lochis(4,maxhis)
+     $         ,npscal,ncond
+     $         ,ipsco,ipsch,idstep(1000)
+     $         ,igroup(nelm),isobj
+     $         ,matype(-5:10,0:maxfld)
+     $         ,ibc(6,nelm,0:maxfld) ! For periodic with nel>1e6
 C
       COMMON /CHAAR/LINE,SESION,ITEM,CHOICE,OLDVER,CMD(500),RSTV,RSTT
      $,X13,CPARAM(500),HCODE(11,MAXHIS),OCODE(20),CBC1,CBC3,DARROW
@@ -63,7 +67,7 @@ C
 
       COMMON /MATS/XPTS(NXM,NYM,NELM),YPTS(NXM,NYM,NELM)
      $,ZPTN(NXM,NYM,NELM),XXPTS(NXM),YYPTS(NYM)
-     $,X(NELM,8),Y(NELM,8),z(nelm,8)
+     $,x(8,nelm),y(8,nelm),z(8,nelm)
      $,XCEN(NELM),YCEN(NELM),ZCEN(NELM),RCEN(NELM)
      $,ZDEPTH(NELM,6),IZDPTH(NELM*6,2)
      $,SIDES(NELM,6,4),MASKEL(NELM,MAXFLD)
@@ -113,11 +117,12 @@ C     Stuff that used to be in basicsp.inc
       COMMON /CPOST/ STRFLE,FLDFLE,FILENM,EXCODE(15)
       CHARACTER*2  EXCODE
       CHARACTER*17   STRFLE,FLDFLE,FILENM
-      COMMON /RGEOM/ ZMOUSE,XOBJ(9000),YOBJ(9000),cobjs(6,20)
-      COMMON /IGEOM/ NOBJS,IOBJCT,NPTS(20)
-      COMMON /LGEOM/ IFOBJS,IFOBJG(20)
-      COMMON /CGEOM/ ccobjs(20)
-      LOGICAL IFOBJS,IFOBJG
+      parameter (mobj=20,lobj=30000)
+      common /rgeom/ zmouse,xobj(lobj),yobj(lobj),cobjs(6,mobj)
+      common /igeom/ nobjs,iobjct,npts(mobj)
+      common /lgeom/ ifobjs,ifobjg(mobj)
+      common /cgeom/ ccobjs(mobj)
+      logical ifobjs,ifobjg
       character*1 ccobjs
 C
 C     Window size

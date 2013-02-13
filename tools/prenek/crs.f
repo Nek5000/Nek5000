@@ -77,10 +77,11 @@ c
             if (cbc(iface,ie,kfld).eq.'P  ') then
                je = bc(1,iface,ie,kfld)
                jf = bc(2,iface,ie,kfld)
+               je = ibc(iface,ie,kfld)
 c
                ifcons = .true.
                if (cbc(jf,je,kfld).ne.'P  '  ) ifcons = .false.
-               if ( bc(1,jf,je,kfld).ne.ie   ) ifcons = .false.
+               if ( ibc(jf,je,kfld).ne.ie    ) ifcons = .false.
                if ( bc(2,jf,je,kfld).ne.iface) ifcons = .false.
                if (.not.ifcons) then
                   call blank(line,70)
@@ -163,9 +164,9 @@ c
 c     Load (iface,ie) in reverse order
 c
       do ic = 1,ncf
-         xl(ic,1)    = x(ie,order3(ncf+1-ic,iface))
-         yl(ic,1)    = y(ie,order3(ncf+1-ic,iface))
-         zl(ic,1)    = z(ie,order3(ncf+1-ic,iface))
+         xl(ic,1)    = x(order3(ncf+1-ic,iface),ie)
+         yl(ic,1)    = y(order3(ncf+1-ic,iface),ie)
+         zl(ic,1)    = z(order3(ncf+1-ic,iface),ie)
          vlist(ic,1) =      order3(ncf+1-ic,iface) + nc*(ie-1)
       enddo
 c
@@ -174,9 +175,9 @@ c
       do jrot = 0,ncf-1
          do jc=1,ncf
             jcr         = mod1(jc+jrot,ncf)
-            xl(jc,2)    = x(je,order3(jcr,jf))
-            yl(jc,2)    = y(je,order3(jcr,jf))
-            zl(jc,2)    = z(je,order3(jcr,jf))
+            xl(jc,2)    = x(order3(jcr,jf),je)
+            yl(jc,2)    = y(order3(jcr,jf),je)
+            zl(jc,2)    = z(order3(jcr,jf),je)
          enddo
          if (ndim.eq.2) call rzero(zl,8)
          d = 0.
@@ -278,10 +279,11 @@ c
             if (cbc(iface,ie,ifld).eq.'P  ') then
                je = bc(1,iface,ie,ifld)
                jf = bc(2,iface,ie,ifld)
+               je = ibc(iface,ie,ifld)
 c
                icons = 0
                if (cbc(jf,je,ifld).ne.'P  '  ) icons = 1
-               if ( bc(1,jf,je,ifld).ne.ie   ) icons = 2
+               if ( ibc(jf,je,ifld).ne.ie    ) icons = 2
                if ( bc(2,jf,je,ifld).ne.iface) icons = 3
                if (icons.ne.0) then
                   call blank(line,70)

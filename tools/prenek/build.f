@@ -108,11 +108,11 @@ C     Save scale factors for UnZoom function
          XZEROO=XZERO
          YZEROO=YZERO
 C     Now set stuff based on data from readat
-         DO 20 IEL=1,NEL
-            HEIGHT(NUMAPT(IEL))=Z(IEL,5)-Z(IEL,1)
-            XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.0
-            YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.0
- 20      CONTINUE
+         do 20 ie=1,nel
+            height(numapt(ie))=z(5,ie)-z(1,ie)
+            xcen(ie)=(x(1,ie)+x(2,ie)+x(3,ie)+x(4,ie))/4.0
+            ycen(ie)=(y(1,ie)+y(2,ie)+y(3,ie)+y(4,ie))/4.0
+ 20      continue
 C     Display Mesh (or at least 1st floor)
          CALL DRGRID
          NLEVEL=0
@@ -142,7 +142,7 @@ c        NCHOIC =  2                                              !
 c        CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')          !
 c        IF(IFNOSEG)CALL DRCOVR(13)                               !
 c        IF(CHOICE.EQ.'ACCEPT MESH')THEN                          !
-c           GOTO 330                                              !
+c           goto 330                                              !
 c        ELSE IF(CHOICE.EQ.'Edit Mesh')THEN                       !
 c           call mesh_edit                                        !
 c        ELSE IF(CHOICE.EQ.'REVIEW/MODIFY')THEN                   !
@@ -194,7 +194,7 @@ C     For interactive sesion, Demand Height of First Level
  50         call rer(HEIGHT(ILEVEL))
             IF(HEIGHT(ILEVEL).LE.0.0)THEN
                CALL PRS('HEIGHT must be a positive number!$')
-               GOTO 50
+               goto 50
             ENDIF
          ENDIF
 C     2nd arg: 0 for no fade; negative for bottom only (for floor modify)
@@ -213,112 +213,43 @@ C     IF(NUMAPT(IEL).EQ.ILEVEL)CALL DRAWEL(IEL)
 C     ! ??!!
 C     
  1000 CONTINUE
+
       call gencen
-C     
+      call mkside
+
+
 C***  BIG DECISION POINT  ****
-C     Draw menu
-      nchoic = 0
-      IF(IF3D)THEN
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'END    ELEMENTS'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'MODIFY ELEMENT'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'GLOBAL REFINE'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'CURVE SIDES'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'DELETE ELEMENT'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'ZOOM'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'SET GRID'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'DEFINE OBJECT'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'REDRAW MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'IMPORT MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'IMPORT vtx MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'REFLECT MESH '
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'UP   LEVEL'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'DOWN LEVEL'
-         nchoic = nchoic+1
-         ITEM(nchoic)        =             'CEILING'
-c        nchoic = nchoic+1
-c        ITEM(nchoic)        =             'REDRAW ISOMETRIC'
-c        ITEM(nchoic)        =             'IMPORT vtk MESH'
-c        nchoic = nchoic+1
-c        nchoic = nchoic+1
-c        ITEM(nchoic)        =             'RSB'
-         IF(IFCEIL)THEN
-C     Restrict choices for person on CEILING
-            ITEM(1)='OFF CEILING'
-            ITEM(2)='MODIFY ELEMENT'
-            ITEM(3)='CURVE SIDES'
-            NCHOIC=3
-         ENDIF
-      ELSE
-C     2-D
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'END    ELEMENTS'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'MODIFY ELEMENT'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'GLOBAL REFINE'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'CURVE SIDES'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'DELETE ELEMENT'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'ZOOM'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'SET GRID'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'DEFINE OBJECT'
-         nchoic = nchoic+1
-c        ITEM(nchoic)       =             'Edit Mesh'
-c        nchoic = nchoic+1
-         ITEM(nchoic)       =             'REDRAW MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'IMPORT MESH'
-c        nchoic = nchoic+1
-c        ITEM(nchoic)       =             'IMPORT vtk MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'IMPORT vtx MESH'
-         nchoic = nchoic+1
-         ITEM(nchoic)       =             'REFLECT MESH '
-      ENDIF
-C     
-C     Menu's all set, prompt for user input:
-C     
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-C     
-      IF(CHOICE.EQ.'ADD    ELEMENT') THEN
-         IF(NEL.GE.NELM-3)THEN
-            CALL PRS('TOO MANY ELEMENTS$')
-            CALL PRS('SEE YOUR NEKTONICS REPRESENTATIVE TO ADJUST$')
-            GOTO 1000
-         ENDIF
-         NEL=NEL+1
-         NUMAPT(NEL)=ILEVEL
-         IF(ILETAP.LE.122)LETAPT(NEL)=CHAR(ILETAP)
-         IF(ILETAP.GT.122)LETAPT(NEL)=' '
-         CALL PRS('Enter element corners. Use mouse,$')
-         CALL PRS('or click menu area to type x-y coordinate$')
+
+      call set_main_menu
+      call menu(xmouse,ymouse,button,'NOCOVER') ! Prompt for user input.
+     
+      IF (CHOICE.EQ.'ADD    ELEMENT') THEN
+         if(nel.ge.nelm-3)then
+            call prs('Too many elements. Increase nelm in basics.inc.$')
+            goto 1000
+         endif
+
+         ne1=nel+1
+         numapt(ne1)=ilevel
+         if (iletap.le.122) letapt(ne1)=char(iletap)
+         if (iletap.gt.122) letapt(ne1)=' '
+
+         call prs('Enter element corners. Use mouse,$')
+         call prs('or click menu area to type x-y coordinate$')
+
 C     Turn on Keypad
-         CALL NEWEL(NEL,XMOUSE,YMOUSE,BUTTON,IERR)
-         IF (IERR.EQ.1) THEN
-            CALL DRAWEL(-NEL)
-            NEL=NEL-1
-         ENDIF
+
+         call newel(xmouse,ymouse,button,ierr)
+         nel = nel+1
+
+         if (ierr.eq.1) then
+            call drawel(-nel)
+            nel=nel-1
+         endif
+
       ELSE IF(CHOICE.EQ.'CEILING') THEN
-C     Make sure everythingh is drawn on ceiling.  And that
-C     MODEL and CURVE know about it, too
+C        Make sure everything is drawn on ceiling.  And that
+C        MODEL and CURVE know about it, too
          DO 80 I=1,NEL
             IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
  80      CONTINUE
@@ -327,10 +258,7 @@ C     MODEL and CURVE know about it, too
             IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(I)
  90      CONTINUE
          CALL DRELEV(-(ILEVEL+1),ILEVEL,'     ')
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'OFF CEILING') THEN
-C     Make sure everythingh is drawn on ceiling.  And that
-C     MODEL and CURVE know about it, too
          DO 100 I=1,NEL
             IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
  100     CONTINUE
@@ -339,28 +267,21 @@ C     MODEL and CURVE know about it, too
             IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(I)
  110     CONTINUE
          CALL DRELEV(ILEVEL,-(ILEVEL+1),'     ')
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT MESH')THEN
          call imp_mesh(.true.)
          call redraw_mesh_small
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT vtk MESH')THEN
          call imp_mesh_vtk
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'IMPORT vtx MESH')THEN
          call imp_mesh_vtx
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'CURVE SIDES')THEN
          CALL CURVES
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'MODIFY ELEMENT')THEN
 C     Normal Modify
          IF(NEL.EQ.0)THEN
             CALL PRS('ERROR: No elements to modify$')
-            GOTO 1000
          ELSE
             CALL MODEL(NEL)
          ENDIF
@@ -368,192 +289,30 @@ C     Normal Modify
 C     Normal Modify
          IF(NEL.EQ.0)THEN
             CALL PRS('ERROR: No elements to modify$')
-            GOTO 1000
          ELSE
 C     Only floor of elevator hilighted during modify
             CALL DRELEV(-ILEVEL,ILEVEL,'     ')
             CALL GLOMOD
             CALL DRELEV(ILEVEL,0,'     ')
          ENDIF
-      ELSE IF(CHOICE.EQ.'DELETE ELEMENT')THEN
-         IF(NEL.EQ.0)THEN
-            CALL PRS('ERROR: No elements to delete$')
-            GOTO 1000
-         ELSE
-C     Find out which element to delete
-            CALL PRS(
-     $           'Enter (w/mouse) 2 points in element to be deleted,$')
-            CALL PRS(
-     $           'or, 2 points framing a box containing elements.$')
-            CALL PRS(
-     $           'Enter in menu area to abort DELETE ELEMENT op.$')
-            IFTMP =IFGRID
-            IFGRID=.FALSE.
- 120        CONTINUE
-            CALL PRS('Enter 1st point:$')
-            CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-            IF (XMOUSE.GT.XPHY(1.0)) THEN
-C     look for a keypad input
-               ifgrid=iftmp 
-               call beep
-               call prs('Abort DELETE? (y/l=list):$')
-               call res(ans,1)
-               if (ans.eq.'y'.or.ans.eq.'Y') goto 1000
-               if (ans.eq.'l'.or.ans.eq.'L') call list_delete
-               if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
-               goto 1000
-            ELSE
-               CALL PRS('Enter 2nd point:$')
-               CALL MOUSE(XMOUS2,YMOUS2,BUTTON)
-               IF (XMOUS2.GT.XPHY(1.0)) THEN
-                  ifgrid=iftmp 
-                  call beep
-                  call prs('Abort DELETE? (y/l=list):$')
-                  call res(ans,1)
-                  if (ans.eq.'y'.or.ans.eq.'Y') goto 1000
-                  if (ans.eq.'l'.or.ans.eq.'L') call list_delete
-                  if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
-                  goto 1000
-               ENDIF
-            ENDIF
-C     
-C     We successfully input 2 points in the build area
-C     1) count number of centroids in the bounding box
-C     2) if ncntrd=0, find nearest element and anihilate it.
-C     
-C     Box
-            XMAX=MAX(XMOUSE,XMOUS2)
-            XMIN=MIN(XMOUSE,XMOUS2)
-            YMAX=MAX(YMOUSE,YMOUS2)
-            YMIN=MIN(YMOUSE,YMOUS2)
-C     
-C     Check box to see if it contains any elements, and delete them.
-C     
-C     This is a gross N^2 algorithm, but it beats entering them all
-C     by hand....
-C     
-            NUMDEL=0
- 124        CONTINUE
-            NELT=NEL
-            DO 125 JEL=1,NELT
-               IF (JEL.LE.NEL        .AND.
-     $              XMIN.LE.XCEN(JEL) .AND.
-     $              XCEN(JEL).LE.XMAX .AND.
-     $              YMIN.LE.YCEN(JEL) .AND.
-     $              YCEN(JEL).LE.YMAX ) THEN
-                  IF (NUMDEL.EQ.0) 
-     $                 CALL DRWBOX(XMIN,YMIN,XMAX,YMAX,1)
-                  CALL DELEL(JEL)
-                  NUMDEL=NUMDEL+1
-                  GOTO 124
-               ENDIF
- 125        CONTINUE
-            IF (NUMDEL.GT.0) THEN
-C     redraw the mesh
-               CALL REFRESH
-               CALL DRMENU('NOCOVER')
-               CALL DRGRID
-               DO 128 IEL=1,NEL
-                  CALL DRAWEL(IEL)
- 128           CONTINUE
-               IFGRID=IFTMP 
-               GOTO 1000
-            ELSE
-C     Look for closest element (standard delete element option)
-               XMOUSE=(XMIN+XMAX)/2.0
-               YMOUSE=(YMIN+YMAX)/2.0
-               RMIN=1.0E20
-               DO 130 JEL=1,NEL
-                  IF (.NOT.IF3D .OR. NUMAPT(JEL).EQ.ILEVEL) THEN
-                     R2= (XCEN(JEL)-XMOUSE)**2 + (YCEN(JEL)-YMOUSE)**2
-                     IF(R2.LT.RMIN) THEN
-                        RMIN  = R2
-                        IELMIN= JEL
-                     ENDIF
-                  ENDIF
- 130           CONTINUE
-            ENDIF
-C     Check if it$')s OK to delete
-            IF(IF3D)THEN
-               IEQ=0
-               IGT=0
-               DO 140 I=1,NEL
-                  IF(NUMAPT(I).EQ.ILEVEL  )IEQ=IEQ+1
-                  IF(NUMAPT(I).EQ.ILEVEL+1)IGT=IGT+1
- 140           CONTINUE
-               IF(IEQ.EQ.1)THEN
-C     Last element on floor
-                  IF(IGT.GT.0)THEN
-                     CALL PRS('**ERROR** You cannot delete all the$')
-                     CALL PRS('elements on a level when there are $')
-                     CALL PRS('elements above$')
-                     IFGRID=IFTMP 
-                     GOTO 1000
-                  ELSE IF(ILEVEL.GT.1)THEN
-                     CALL PRS(' ** EMPTY LEVEL ** Please ADD ELEMENT$')
-                     CALL PRS('Go DOWN LEVEL to continue$')
-                     nlevel=nlevel-1
-                  ENDIF
-               ENDIF
-            ENDIF
-            CALL PRSI('Deleting Element $',IELMIN)
-C     Now, black out old element
-            CALL DRAWEL(-IELMIN)
-            CALL DRAWIS(-IELMIN)
-C     Now draw any elements with higher priority
-C     ISRT contains the numbers of the elements in order of
-C     plotting priority.  Element (ISRT(NEL)) is most visible.
-            CALL DELEL(IELMIN)
-C     Sort out the elements so that they will be drawn correctly
-            CALL SORTEL
-C     Now redraw all the isometric elements.
-            DO 150 I=1,NEL
-C     CALL DRAWIS(ISRT(I))
- 150        CONTINUE
-            IF(.NOT.IF3D .AND.IELMIN.LE.NEL)CALL DRAWEL(IELMIN)
-            IFGRID=IFTMP 
-         ENDIF
-      ELSE IF(CHOICE.EQ.'REDRAW ISOMETRIC')THEN
-         CALL SORTEL
-C     Now redraw all the isometric elements.
-         DO 160 I=1,NEL
-            CALL DRAWIS(ISRT(I))
- 160     CONTINUE
-      ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
-c     
-         CALL REFRESH
-         CALL DRMENU('NOCOVER')
-         CALL DRGRID
-         DO 170 IEL=1,NEL
-            CALL DRAWEL(IEL)
- 170     CONTINUE
-c     
-C     Now redraw all the isometric elements.
+      elseif (choice.eq.'DELETE ELEMENT') then
+         call delete
+      elseif (choice.eq.'REDRAW ISOMETRIC') then ! redraw isometric elements.
          call sortel
-         do i=1,nel
+         do 160 i=1,nel
             call drawis(isrt(i))
-         enddo
-c     
-         GOTO 1000
-c     
+ 160     continue
+      ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
+         call redraw_mesh
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
-         CALL SETZOOM
-         CALL REFRESH
-         CALL DRMENU('NOCOVER')
-         CALL DRGRID
-         DO 175 IEL=1,NEL
-            CALL DRAWEL(IEL)
- 175     CONTINUE
-         GOTO 1000
+         call setzoom
+         call redraw_mesh
       ELSE IF(CHOICE.EQ.'SET GRID')THEN
-         CALL SETGRD
-         GOTO 1000
+         call setgrd
       ELSE IF(CHOICE.EQ.'Edit Mesh')THEN
          call mesh_edit
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'DEFINE OBJECT')THEN
          CALL SETOBJ
-         GOTO 1000
       ELSE IF(CHOICE.EQ.'END    ELEMENTS')THEN
 C      WHAT ELSE TO DO WHEN 2-D PROBLEM?
          IF(NEL.EQ.0) THEN
@@ -564,7 +323,7 @@ C      WHAT ELSE TO DO WHEN 2-D PROBLEM?
             DO 180 I=1,NEL
                NLEVEL=MAX(NLEVEL,NUMAPT(I))
  180        CONTINUE
-            GOTO 320
+            goto 320
          ENDIF
       ELSE IF(CHOICE.EQ.'UP   LEVEL') THEN
 C     Make Checks
@@ -581,7 +340,6 @@ C     !!?? maybe 96-32??  also, sometimes up gives wrong ele
          IF(NTHISL.EQ.0)THEN
             CALL PRSI('*** ERROR *** No elements on level$',ILEVEL)
             CALL PRS('Can''t make level above empty one$')
-            GOTO 1000
          ENDIF
          IF(NNEXTL.EQ.0)THEN
             CALL PRS('** New Level **  Enter Height:$')
@@ -592,7 +350,6 @@ C     !!?? HOW TO MODIFY HEIGHT ONCE IT'S IN?
 C     Abort level change
                CALL PRSI('Aborting level change. Still on $',ilevel)
                HEIGHT(ILEVEL+1)=0
-               GOTO 1000
             ELSE IF(HEIGHT(ILEVEL+1) .GT. 0.0) THEN
 C     Really go up one
                CALL PRSIS('Using Ceiling of Level$',ILEVEL,
@@ -623,16 +380,17 @@ C     Remove periodic b.c.'s
                            BC (1, ISIDE, NEL,IF)= 0
                            BC (2, ISIDE, NEL,IF)= 0
                            BC (3, ISIDE, NEL,IF)= 0
+                           ibc(   ISIDE, NEL,IF)= 0
                         ENDIF
  210                 CONTINUE
                      DO 230 IC=1,4
-                        X(NEL,IC)=X(I,IC+4)
-                        Y(NEL,IC)=Y(I,IC+4)
-                        Z(NEL,IC)=Z(I,IC+4)
+                        x(ic,nel)=x(ic+4,i)
+                        y(ic,nel)=y(ic+4,i)
+                        z(ic,nel)=z(ic+4,i)
                         SIDES(NEL,IC,3)=SIDES(NEL,IC,3)+
      $                       (HEIGHT(ILEVEL-1)+HEIGHT(ILEVEL))/2.
-                        XCEN(NEL)=XCEN(NEL)+X(NEL,IC)/4.0
-                        YCEN(NEL)=YCEN(NEL)+Y(NEL,IC)/4.0
+                        xcen(nel)=xcen(nel)+x(ic,nel)/4.
+                        ycen(nel)=ycen(nel)+y(ic,nel)/4.
 C     Curved side stuff
                         CCURVE(IC,NEL)=CCURVE(IC+4,I)
                         DO 220 II=1,6
@@ -641,7 +399,7 @@ C     Curved side stuff
  230                 CONTINUE
 C     RAISE Z OF CEILING OF NEW ELEMENTS
                      DO 240 IC=5,8
-                        Z(NEL,IC)=Z(NEL,IC)+HEIGHT(ILEVEL)
+                        z(ic,nel)=z(ic,nel)+height(ilevel)
  240                 CONTINUE
                      SIDES(NEL,5,3)=SIDES(NEL,5,3)+HEIGHT(ILEVEL-1)
                      SIDES(NEL,6,3)=SIDES(NEL,6,3)+HEIGHT(ILEVEL)
@@ -653,7 +411,6 @@ C     Sort out the elements so that they will be drawn correctly
                DO 260 I=1,NEL
                   IF(NUMAPT(ISRT(I)).EQ.ILEVEL)CALL DRAWIS(ISRT(I))
  260           CONTINUE
-               GOTO 1000
             ELSE
 C     Already have elements on next level. Erase old mesh& draw new
                CALL DRELEV(ILEVEL+1,ILEVEL,'     ')
@@ -664,14 +421,12 @@ C     Already have elements on next level. Erase old mesh& draw new
                DO 280 I=1,NEL
                   IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL( I)
  280           CONTINUE
-               GOTO 1000
             ENDIF
          ELSE IF(CHOICE.EQ.'DOWN LEVEL')THEN
 C     Make Checks
             IF(ILEVEL.EQ.1)THEN
                CALL PRS('You already are on Level 1.  You cannot$')
                CALL PRS('go down any further.  Choose something else.$')
-               GOTO 1000
             ENDIF
             NTHISL=0
             NDOWNL=0
@@ -691,11 +446,10 @@ C     Go down one level.  Erase old mesh& draw new
             DO 310 I=1,NEL
                IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL( I)
  310        CONTINUE
-            GOTO 1000
          ELSE
             CALL PRS('CHOICE:'//CHOICE//'NOT IN MENU$')
          ENDIF
-         GOTO 1000
+         goto 1000
  320     CONTINUE
  330     CONTINUE
 
@@ -714,6 +468,9 @@ c     Call routines that set boundary conditions.
       character key,string*6,leto,char1
       logical iftmp
       common /splitt/ enew(nelm),ind(nelm)
+      real znew(nelm)
+      equivalence (znew,enew)
+      integer e
 
 
 C     Now, cover menu
@@ -754,6 +511,7 @@ c    $       CBC( ISIDE, IEL,Ifld).EQ.'J  ') then
             BC (1, ISIDE, IEL,Ifld)= 0
             BC (2, ISIDE, IEL,Ifld)= 0
             BC (3, ISIDE, IEL,Ifld)= 0
+            ibc(   ISIDE, IEL,Ifld)= 0
          endif
  335  continue
 C     
@@ -766,124 +524,37 @@ C
       enddo
   345 continue
 
-      dscale_fac = .001
-      open(unit=39,file='dscale.fac',status='old',err=339)
-      read(39,*,err=39,end=39) dscale_fac_in
-      dscale_fac = dscale_fac_in
-   39 continue
-      close(39)
-  339 continue
 
-      call gencen
-      do 370 ifld=ifld0,ifld1
-         do 365 IEL=1,NEL
-               if (nel.gt.100.and.mod(iel,icount).eq.0)
-     $            write(6,*) 'checking el:',iel
-     
-                  IF (MASKEL(IEL,Ifld).EQ.0) GOTO 365
-                  do 360 JEL=1,IEL-1
-                     IF (MASKEL(JEL,Ifld).EQ.0) GOTO 360
-     
-                     D2 = SQRT( ( xcen(iel)-xcen(jel) )**2 +
-     $                  ( ycen(iel)-ycen(jel) )**2 +
-     $                  ( zcen(iel)-zcen(jel) )**2 )
-                     IF (D2.GT.(RCEN(IEL)+RCEN(JEL))) GOTO 360
-     
-                     DELTA = dscale_fac * MIN(rcen(iel),rcen(jel))
-     
-                     do 350 ISIDE=1,NSIDES
-                        IF (CBC(Iside,Iel,Ifld).eq.'E'  ) GOTO 350
-c                       IF (CBC(Iside,Iel,Ifld).eq.'SP' ) GOTO 350
-c                       IF (CBC(Iside,Iel,Ifld).eq.'J'  ) GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'msi') GOTO 350
-                        IF (CBC(Iside,Iel,Ifld).eq.'MSI') GOTO 350
-                        INTERN=0
-C     
-                        do 340 JSIDE=1,NSIDES
-                           IF (CBC(Jside,Jel,Ifld).eq.'E') GOTO 340
-                           DELTAX = ABS(SIDES(IEL,ISIDE,1)-
-     $                             SIDES(JEL,JSIDE,1))
-                           DELTAY = ABS(SIDES(IEL,ISIDE,2)-
-     $                             SIDES(JEL,JSIDE,2))
-                           DELTAZ = ABS(SIDES(IEL,ISIDE,3)-
-     $                             SIDES(JEL,JSIDE,3))
-                           IF (DELTAX .LT. DELTA .AND.
-     $                        DELTAY .LT. DELTA .AND.
-     $                        DELTAZ .LT. DELTA ) THEN
-                              CBC3=CBC( ISIDE, IEL, Ifld)
-                              IF(CBC3(3:3) .NE. 'I' .AND. CBC3(3:3) 
-     $                                .NE. 'i')THEN
-C     Overlapping edges not Internal B.C.'s are elemental b.c.'s
-                                 CBC(ISIDE,IEL,Ifld)='E'
-                                 CBC(JSIDE,JEL,Ifld)='E'
-                              ENDIF
-                              IORIEN = 1
-                              BC (1, ISIDE, IEL, Ifld) = JEL
-                              BC (2, ISIDE, IEL, Ifld) = JSIDE
-C                             BC (3, ISIDE, IEL, Ifld) = IORIEN
-                              BC (1, JSIDE, JEL, Ifld) = IEL
-                              BC (2, JSIDE, JEL, Ifld) = ISIDE
-C                             BC (3, JSIDE, JEL, Ifld) = IORIEN
-                              call match_face_vtx(iside,iel,jside,jel)
-                              GOTO 350
-                           ENDIF
-                           INTERN=1
- 340                    CONTINUE
-C     If the side is not internal but has an internal B.C., zero it out
-                        CBC3 = CBC(ISIDE, IEL,Ifld)
-                        IF (INTERN.EQ.0 .AND.
-     $                     (CBC3.EQ.'E' .OR. CBC3(3:3).EQ.'I'.OR. 
-     $                      CBC3(3:3).EQ.'i') ) THEN
-                            CBC(   ISIDE, IEL,Ifld)='   '
-                            BC (1, ISIDE, IEL,Ifld)= 0
-                            BC (2, ISIDE, IEL,Ifld)= 0
-C                           BC (3, ISIDE, IEL,Ifld)= 0
-                        ENDIF
- 350                 CONTINUE
- 360              CONTINUE
- 365           CONTINUE
- 370  CONTINUE
-      CALL GINGRD(0.0)
-C     TURN OFF GRIDDING
-      CALL SCROLL(7)
-C     ??!! MUST PUT P IN OTHER PERIODIC B.C. IF NEK2.  MUST ACCOUNT FOR
-C     CONDUCTION ELEMENTS-- THEY DON'T NEED B.C'S FOR THEIR FLUID
+c     Find 'E-E' boundary pairs in n log n time
 
-      nsides = 2*ndim
+      call cell_cell_connectivity
 
-      do 380 Ifld=1,NFLDS
-
-      nel = nelv
-      if (ifld.eq.2) nel = nelt
-
-      do 380 IEL=1,NEL
-      do 380 ISIDE=1,NSIDES
-         IF (CBC(ISIDE,IEL,Ifld).EQ.'   ') then
-            NEEDBC=1
-         ENDIF
-c        write(77,*) 'bc:',iel,iside,cbc(iside,iel,ifld),enew(iel)
- 380  CONTINUE
-c
 c     All 'E-E' boundaries are set.  Check for nonconforming (SP-J)
-c
+
       call check_spj
-c
-      CALL BOUND
-c
+
+
 c     All internal boundaries are set.  Query remaining bcs
-c
-      CALL BOUND
-C     
-      IFMVBD=.FALSE.
+
+      call gingrd(0.0)
+      call scroll(7)
+
+      call bound
+      call bound
+     
+      nsides = 2*ndim
+      ifmvbd=.false.
       do 381 Ifld=1,NFLDS
       do 381 IEL=1,NEL
       do 381 ISIDE=1,NSIDES
          CHAR1 = CBC(ISIDE,IEL,Ifld)
-         IF(CHAR1.EQ.'M'.OR.CHAR1.EQ.'m') IFMVBD=.TRUE.
- 381  CONTINUE
-C     Force a dump of mesh location, unless the user specifiaclly turn it
-C     off in the output menu
-      IF(IFMVBD) IFXYO = .TRUE.
+         if (char1.eq.'m'.or.char1.eq.'M') then
+            ifmvbd=.true.
+            goto 382
+         endif
+ 381  continue
+ 382  continue
+      if (ifmvbd) ifxyo = .true.
      
       if (.not.ifmerge) call mesgen
      
@@ -895,6 +566,7 @@ c-----------------------------------------------------------------------
       logical iffold,ifhold
       character chtemp*3
       character*80 string
+      real*8 bc8(5)
 
       NLINF=0
       NLINP=0
@@ -933,7 +605,12 @@ C     Read Elemental Mesh data
       READ(9,*,ERR=33,end=34)XFAC,YFAC,XZERO,YZERO
       READ(9,*,ERR=33)
       READ(9,*,ERR=33,END=33)NEL,NDIM
-c     
+
+      if (nel.ge.nelm) then
+         call prsii('NELM too small in basics.inc.$',nel,nelm)
+         call prs  ('Recompile prenek.  ABORT$')
+      endif
+     
       iffmtin = .true.
       IF (NEL.lt.0) iffmtin = .false.
       IF (NEL.lt.0) NEL = -NEL
@@ -967,30 +644,30 @@ c        write(6,*) iel,' ',string
 
          IF(IGROUP(IEL).GT.0) NCOND=NCOND+1
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
-            WRITE(S,'(A20,I9,A4,I5,A1,A1)',ERR=33)
+            WRITE(S,'(A20,I8,A4,I5,A1,A1)',ERR=33)
      $           ' Reading Element',
      $           idum,' [',NUMAPT(IEL),LETAPT(IEL),']'
             CALL PRS(S//'$')
          ENDIF
          IF(NDIM.EQ.2)THEN
-            READ(9,*,ERR=33,END=33)(X(IEL,IC),IC=1,4)
-            READ(9,*,ERR=33,END=33)(Y(IEL,IC),IC=1,4)
+            read(9,*,err=33,end=33)(x(ic,iel),ic=1,4)
+            read(9,*,err=33,end=33)(y(ic,iel),ic=1,4)
             IF (IF3D) THEN
                do 197 IC=1,4
                   I4 = IC+4
-                  Z(IEL,IC) = 0.0
-                  X(IEL,I4) = X(IEL,IC)
-                  Y(IEL,I4) = Y(IEL,IC)
-                  Z(IEL,I4) = ZHGHT
+                  z(ic,iel) = 0.0
+                  x(i4,iel) = x(ic,iel)
+                  y(i4,iel) = y(ic,iel)
+                  z(i4,iel) = zhght
  197           CONTINUE
             ENDIF
          ELSE IF(NDIM.EQ.3)THEN
-            READ(9,*,ERR=33,END=33)(X(IEL,IC),IC=1,4)
-            READ(9,*,ERR=33,END=33)(Y(IEL,IC),IC=1,4)
-            READ(9,*,ERR=33,END=33)(Z(IEL,IC),IC=1,4)
-            READ(9,*,ERR=33,END=33)(X(IEL,IC),IC=5,8)
-            READ(9,*,ERR=33,END=33)(Y(IEL,IC),IC=5,8)
-            READ(9,*,ERR=33,END=33)(Z(IEL,IC),IC=5,8)
+            read(9,*,err=33,end=33)(x(ic,iel),ic=1,4)
+            read(9,*,err=33,end=33)(y(ic,iel),ic=1,4)
+            read(9,*,err=33,end=33)(z(ic,iel),ic=1,4)
+            read(9,*,err=33,end=33)(x(ic,iel),ic=5,8)
+            read(9,*,err=33,end=33)(y(ic,iel),ic=5,8)
+            read(9,*,err=33,end=33)(z(ic,iel),ic=5,8)
 C     For Flat floors only.  On write will flatten floors.
          ENDIF
  98   CONTINUE
@@ -1000,6 +677,7 @@ C     Read curved side data
       READ(9,*,ERR=57,END=57)NCURVE
       IF(NCURVE.GT.0)THEN
          do 19 I=1,NCURVE
+
             if (nel.lt.1000) then
                READ(9,'(I3,I3,5G14.6,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
@@ -1007,9 +685,15 @@ C     Read curved side data
                READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             else
-               READ(9,'(I2,I12,5G18.11,1X,A1)',ERR=57,END=57)
-     $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
+               read(9,'(i2,i12,5g18.11,1x,a1)',err=158,end=158)
+     $              iedge,iel,r1,r2,r3,r4,r5,ans
             endif
+            goto 160
+  158       continue
+              read(9,'(i2,i12,5g14.6,1x,a1)',err=57,end=57) ! old format
+     $              iedge,iel,r1,r2,r3,r4,r5,ans            ! pff, feb 2013
+  160       continue
+
             CALL DDUMMY(IEDGE,IEL)
             CURVE(1,IEDGE,IEL)=R1
             CURVE(2,IEDGE,IEL)=R2
@@ -1019,27 +703,9 @@ C     Read curved side data
             CCURVE( IEDGE,IEL)=ANS
  19      CONTINUE
       ENDIF
-C     Check here if the old data has the same fields as the new stuff.
-C     if not, skip the b.c.'s, etc to avoid confusion
-c...  skip, pff        IF( (IFFLOW.AND..NOT.IFFOLD).OR.(.NOT.IFFLOW.AND.IFFOLD)
-c...  skip, pff       $.OR.(IFHEAT.AND..NOT.IFHOLD).OR.(.NOT.IFHEAT.AND.IFHOLD)
-c...  skip, pff       $.OR. NPSOLD .NE. NPSCAL .or. NKTOLD .ne. NKTONV) THEN
-c...  skip, pff           CALL PRS
-c...  skip, pff       $ ('Old B.C.''s and options were for different equations.$')
-c...  skip, pff           CALL PRS
-c...  skip, pff       $ ('Using mesh data only; ignoring old B.C''s and options$')
-c...  skip, pff           CALL PRS('Difference, New, Old:$')
-c...  skip, pff           IF(NPSOLD.NE.NPSCAL) THEN
-c...  skip, pff               CALL PRS('Passive Scalars $')
-c...  skip, pff               CALL PRII(npsold,NPSCAL)
-c...  skip, pff           ENDIF
-c...  skip, pff           IF(NKTOLD.NE.NKTONV) THEN
-c...  skip, pff              CALL PRS('Nekton Version $')
-c...  skip, pff              CALL PRII(nktold,nktonv)
-c...  skip, pff           ENDIF
-c...  skip, pff           return
-c...  skip, pff        ENDIF
+
 C     Read Boundary Conditions (and connectivity data)
+
       if (iffmtin) READ(9,*,ERR=44,END=44)
       do 90 IFLD=1,NoLDS
 C     Fluid and/or thermal
@@ -1053,26 +719,27 @@ C     !Fix to a4,i2 when you make cbc character*4
                   IF(VNEKOLD .LE. 2.5) NBCREA = 3
                   IF(VNEKOLD .GE. 2.6) NBCREA = 5
                   IF (NEL.LT.1000.and.iffmtin) THEN
-                     READ(9,'(1X,A3,1x,2I3,5G14.6)',ERR=44,END=44)
-     $                    CBC(ISIDE,IEL,IFLD),ID,ID,
-     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-                  ELSEIF (NEL.LT.100 000.and.iffmtin) then
-                     READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=44,END=44)
-     $                    CBC(ISIDE,IEL,IFLD),ID,ID,
-     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-                  ELSEIF (NEL.LT.1 000 000.and.iffmtin) then
-                     READ(9,'(1X,A3,I6,5G14.6)',ERR=44,END=44)
-     $                    CBC(ISIDE,IEL,IFLD),ID,
-     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
-                  ELSEIF (iffmtin) then
-                     READ(9,'(1X,A3,I12,5G18.11)',ERR=44,END=44)
-     $                    CBC(ISIDE,IEL,IFLD),ID,
-     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+                     READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
+     $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
+                  ELSEIF (iffmtin.and.nel.lt. 100 000) then
+                     READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=441,END=441)
+     $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
+                  ELSEIF (iffmtin.and.nel.lt.2 000 000 000) then
+                     read(9,'(1x,a3,i12,5g18.11)',err=2443,end=2443)
+     $                  cbc(iside,iel,ifld),id,(bc8(ii),ii=1,nbcrea)
                   ELSE
-                     READ(8,ERR=44,END=44) chtmp3,
-     $                    CBC(ISIDE,IEL,IFLD),ID,ID,
-     $                    (BC(II,ISIDE,IEL,IFLD),II=1,NBCREA)
+                     READ(8,ERR=443,END=443) chtmp3,
+     $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
                   ENDIF
+                  goto 2444
+ 2443             continue
+                     read(9,'(1x,a3,9x,i1,5g14.6)',err=442,end=442) ! old format
+     $                  cbc(iside,iel,ifld),id,(bc8(ii),ii=1,nbcrea)
+ 2444             continue
+                  do ii=1,nbcrea
+                     bc(ii,iside,iel,ifld)=bc8(ii)
+                  enddo
+                  ibc(iside,iel,ifld)=bc8(1)
                   CBC1=CBC(ISIDE,IEL,IFLD)
                   IF(CBC1.EQ.'M'.OR.CBC1.EQ.'m')THEN
                      IFMOVB=.TRUE.
@@ -1087,30 +754,12 @@ c                    pff  no nlines!!
                      do k=1,5
                         BC(k,ISIDE,IEL,IFLD) = 0
                      enddo
-ccc  c
-ccc                       IF(CBC3(3:3) .EQ. 'i')THEN
-ccc  C     Special storage for internal boundaries
-ccc                          NLINES=BC(4,ISIDE,IEL,IFLD)
-ccc                          BC(5,ISIDE,IEL,IFLD)=LOCLIN
-ccc                       ELSE
-ccc                          NLINES=BC(1,ISIDE,IEL,IFLD)
-ccc                          BC(2,ISIDE,IEL,IFLD)=LOCLIN
-ccc                       ENDIF
-ccc                       do 86 I=1,NLINES
-ccc                          READ(9,'(A70)',ERR=44,END=44)INBC(LOCLIN)
-ccc                          LOCLIN=LOCLIN+1
-ccc   86                  CONTINUE
                   ENDIF
  88            CONTINUE
-c              do 89 IEL=1,NEL                       ! NO MORE !
-c                 IF(IFMOVB)ICRV(IEL)=1+4+9+16       ! pff, Aug.15,2009
-c                 do 89 IEDGE=1,8
-c                    IF(IFMOVB)CCURVE(IEDGE,IEL)='M'
-c89               CONTINUE
                ENDIF
  90         CONTINUE
             IF(NFLDS.EQ.1.and.iffmtin)READ(9,*,err=45,end=45)
-c
+
 C           Read Initial Conditions
             IF(VNEKOLD.LT.2.5)THEN
                CALL PRS('***** OLD VERSION RESTART DATA ****$')
@@ -1237,11 +886,31 @@ C
  35                  CALL PRS('FILE DOES NOT CONTAIN VALID B.C. DATA.'//
      $                    '  CONTINUEING WITH MESH ONLY.$')
                      return
- 44                  WRITE(S,'(1X,A36,I4,A6,I3)')
-     $                    'Err reading B.C. data for elm',IEL,
+ 44                  WRITE(S,'(1X,A39,I4,A6,I3)')
+     $                    '0. Err reading B.C. data for elm',IEL,
      $                    ' side ',ISIDE
                      CALL PRS(S//'$')
+                     kzm = 1/(iel-iside)
                      return
+ 441                 WRITE(S,'(1X,A39,I4,A6,I3)')
+     $                    'A. Err reading B.C. data for elm',IEL,
+     $                    ' side ',ISIDE
+                     CALL PRS(S//'$')
+                     kzm = 1/(iel-iside)
+                     return
+ 442                 WRITE(S,'(1X,A39,I4,A6,I3)')
+     $                    'B. Err reading B.C. data for elm',IEL,
+     $                    ' side ',ISIDE
+                     CALL PRS(S//'$')
+                     kzm = 1/(iel-iside)
+                     return
+ 443                 WRITE(S,'(1X,A39,I4,A6,I3)')
+     $                    'C. Err reading B.C. data for elm',IEL,
+     $                    ' side ',ISIDE
+                     CALL PRS(S//'$')
+                     kzm = 1/(iel-iside)
+                     return
+
  45                  CALL PRS('FILE DOES NOT CONTAIN VALID B.C. DATA.'//
      $                    '  CONTINUEING WITH MESH ONLY.$')
                      return
@@ -1270,10 +939,7 @@ C
       include 'basics.inc'
       LOGICAL IFMENU
       REAL XSC(4),YSC(4)
-
-      grid=param(18)
-      if (grid.lt.0) grid = -1./grid
-
+      GRID=PARAM(18)
  3    CONTINUE
       CALL CLEAR
       CALL REFRESH
@@ -1336,7 +1002,7 @@ C     Check for keypad entry?
 C     
 c           IF (IFMENU(XSC(I),YSC(I)).AND.I.LE.2) THEN
 c              CALL PRS('Please enter two points in build area.$')
-c              GOTO 17
+c              goto 17
 c           ENDIF
 c           IF (IFMENU(XSC(I),YSC(I)).AND.I.GT.2) THEN
             IF (I.GT.2) THEN
@@ -1345,7 +1011,7 @@ c           IF (IFMENU(XSC(I),YSC(I)).AND.I.GT.2) THEN
                YSC(3)=XSC(1)
                YLEN=XLEN
                ICOUNT=I-1
-               GOTO 19
+               goto 19
             ENDIF
 C     
             CALL COLOR(7)
@@ -1446,6 +1112,7 @@ c-----------------------------------------------------------------------
       equivalence (fname,fnam1)
 
       logical ifquery_displace,ifdisplace
+      logical iflow,iheat
 
       real    xyzbox(6)
 
@@ -1453,7 +1120,7 @@ c-----------------------------------------------------------------------
       call blank(fname,70)
       call res  (fname,70)
 
-      if (indx1(fname,'base_spec',9).eq.1) then
+      if (indx1(fname,'base',4).eq.1) then
          call imp_mesh_special
          return
       endif
@@ -1472,6 +1139,18 @@ c-----------------------------------------------------------------------
       open(unit=47,file=fname,status='old',err=1000)
 
 c     Successfully opened file, scan until 'MESH DATA' is found
+      call readscan('DIMENSION',9,47)
+
+      do ipass=1,2              ! Read parameters and passive scalar data
+         read(47,*) mpar
+         do k=1,mpar
+            read(47,'(a1)') ans ! dummy read
+         enddo
+      enddo
+
+      read(47,*) nlogic
+      call get_flow_heat(iflow,iheat,nlogic,47) ! iflow/iheat _local_ logicals
+
       call readscan('MESH DATA',9,47)
       read (47,*) nelin,ndimn
       neln = nelin + nel
@@ -1496,7 +1175,7 @@ c     Read geometry
       nelo = nel
       nels = nel+1
 
-      ierr=imp_geom(x(nels,1),y(nels,1),z(nels,1),nelm
+      ierr=imp_geom(x(1,nels),y(1,nels),z(1,nels),nelm
      $             ,numapt(nels),letapt(nels),igroup(nels)
      $             ,ndim,nelin,47)
       if (ierr.ne.0) then
@@ -1520,13 +1199,13 @@ c
     3 format(a3)
 c
       ifld0 = 1
-      if (.not.ifflow) ifld0=2
-      write(6,*) 'IFLD:',ifld0,nflds,ifflow,ifheat
+      if (.not.iflow) ifld0=2
+      write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
 c
       do ifld=ifld0,nflds
-         if (.not.ifflow) read(47,*) ans  ! dummy read
-         ierr
-     $   =imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ndim,nelin,nel,47)
+         if (.not.iflow) read(47,*) ans  ! dummy read
+         ierr=imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ibc(1,nels,ifld)
+     $      ,ndim,nelin,nel,47)
          if (ierr.ne.0) then
             call prsii('nelin,ifld:$',nelin,ifld)
             call prs('Error reading boundary conditions. Returning.$')
@@ -1560,12 +1239,12 @@ c
 c
          do ie=nels,nel   ! Find box containing imported mesh
          do i=1,ncrnr
-            xyzbox(1) = min(xyzbox(1),x(ie,i))
-            xyzbox(2) = max(xyzbox(2),x(ie,i))
-            xyzbox(3) = min(xyzbox(3),y(ie,i))
-            xyzbox(4) = max(xyzbox(4),y(ie,i))
-            xyzbox(5) = min(xyzbox(5),z(ie,i))
-            xyzbox(6) = max(xyzbox(6),z(ie,i))
+            xyzbox(1) = min(xyzbox(1),x(i,ie))
+            xyzbox(2) = max(xyzbox(2),x(i,ie))
+            xyzbox(3) = min(xyzbox(3),y(i,ie))
+            xyzbox(4) = max(xyzbox(4),y(i,ie))
+            xyzbox(5) = min(xyzbox(5),z(i,ie))
+            xyzbox(6) = max(xyzbox(6),z(i,ie))
          enddo
          enddo
 c
@@ -1583,10 +1262,9 @@ c
       return
 c
  1000 continue
-      call prs('Unable to open file.  Exiting.$')
+      call prs('Unable to open file.  Returning.$')
       close(47)
-      call exit
-
+c
       return
       end
 c-----------------------------------------------------------------------
@@ -1615,7 +1293,7 @@ c
       end
 c-----------------------------------------------------------------------
       function imp_geom(x,y,z,ld,numapt,letapt,igroup,ndim,nel,io)
-      real        x(ld,8),y(ld,8),z(ld,8)
+      real        x(8,ld),y(8,ld),z(8,ld)
       integer     numapt(1),igroup(1)
       character*1 letapt(1)
 c
@@ -1636,13 +1314,13 @@ c    $      idum,numapt(ie),letapt(ie),igroup(ie)
             letapt(ie) = 'A'
             igroup(ie) = 0
 c
-            read(io,*,end=9,err=9) (x(ie,k),k=1,4)
-            read(io,*,end=9,err=9) (y(ie,k),k=1,4)
-            read(io,*,end=9,err=9) (z(ie,k),k=1,4)
+            read(io,*,end=9,err=9) (x(k,ie),k=1,4)
+            read(io,*,end=9,err=9) (y(k,ie),k=1,4)
+            read(io,*,end=9,err=9) (z(k,ie),k=1,4)
 c
-            read(io,*,end=9,err=9) (x(ie,k),k=5,8)
-            read(io,*,end=9,err=9) (y(ie,k),k=5,8)
-            read(io,*,end=9,err=9) (z(ie,k),k=5,8)
+            read(io,*,end=9,err=9) (x(k,ie),k=5,8)
+            read(io,*,end=9,err=9) (y(k,ie),k=5,8)
+            read(io,*,end=9,err=9) (z(k,ie),k=5,8)
 c
          enddo
       else
@@ -1657,8 +1335,8 @@ c    $      idum,numapt(ie),letapt(ie),igroup(ie)
             letapt(ie) = 'A'
             igroup(ie) = 0
 c
-            read(io,*,end=9,err=9) (x(ie,k),k=1,4)
-            read(io,*,end=9,err=9) (y(ie,k),k=1,4)
+            read(io,*,end=9,err=9) (x(k,ie),k=1,4)
+            read(io,*,end=9,err=9) (y(k,ie),k=1,4)
          enddo
       endif
 c
@@ -1686,8 +1364,9 @@ c
 c
       read(io,*) nc
       write(6,*) 'Found',nc,' curve sides.'
-c
+ 
       do i=1,nc
+
          if (nel.lt.1000.AND.iffmtin) then
             read(io,'(2i3,5g14.6,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
@@ -1700,6 +1379,7 @@ c
          else
             read(io,err=9,end=9) iedge,ie,r1,r2,r3,r4,r5,d
          endif
+
          ie = nelo + ie
          c(1,iedge,ie)=r1
          c(2,iedge,ie)=r2
@@ -1718,26 +1398,28 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      function imp_bc(cbc,bc,ndim,neln,nel,io)
+      function imp_bc(cbc,bc,ibc,ndim,neln,nel,io)
       character*3  cbc   (6,1)
       real          bc (5,6,1)
-c
+      integer      ibc (6,1)
+      real*8       bc8 (5)
+
       character*80 a80
       character*1  a81(1)
       equivalence(a81,a80)
-c
+
       imp_bc = 0
-c
+
       call blank (a80,80)
       read(io,80) a80
    80 format(a80)
-c
+
       call capit(a80,80)
       len = ltrunc(a80,80)
       a81(len+1) = '$'
       call prs(a80)
       write(6,80) a80
-c
+
       i1 = indx1(a80,'NO',2)
 c     write(6,*) i1,' indx1 '
       if (i1.ne.0) return
@@ -1745,28 +1427,36 @@ c     if (indx1(a80,'NO',2).ne.0) return
 c
       nsides = 2*ndim
       nbcrea = 5
-c
+
       do ie=1,neln
       do iside = 1,nsides
          if (neln.lt.1000) then
-            read(io,'(1x,a3,1X,i3,i3,5g14.6)',err=9,end=9)
-     $      cbc(iside,ie),id,jd,
-     $      (bc(ii,iside,ie),ii=1,nbcrea)
-         elseif(neln.lt.100000) then
-            read(io,'(1x,a3,i5,i1,5g14.6)',err=9,end=9)
-     $      cbc(iside,ie),id,jd,
-     $      (bc(ii,iside,ie),ii=1,nbcrea)
-         elseif(neln.lt.1000000) then
+            read(io,'(1x,a3,1X,2i3,5g14.6)',err=9,end=9)
+     $      cbc(iside,ie),id,jd,(bc8(ii),ii=1,nbcrea)
+         elseif (neln.lt.1 000 000) then
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
-     $      cbc(iside,ie),id,
-     $      (bc(ii,iside,ie),ii=1,nbcrea)
+     $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          else
-            read(io,'(1x,a3,i12,5g18.11)',err=9,end=9)
-     $      cbc(iside,ie),id,
-     $      (bc(ii,iside,ie),ii=1,nbcrea)
+            read(io,'(1x,a3,i12,5g18.11)',err=191,end=191)
+     $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          endif
+         goto 192
+
+  191    continue
+            if (iside.eq.1.and.mod(ie,100 000).eq.0) write(6,*)
+     $      'Warning: reading bc in old format! Check results!'
+            write(6,*) 'Warning: input bc in old format! Check results!'
+            read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
+     $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
+  192    continue
+
+         do ii=1,nbcrea
+            bc(ii,iside,ie) = bc8(ii)
+            ibc(iside,ie)   = bc8(1)   ! High precision for P bc
+         enddo
 c        Adjust periodic boundary conditions
          if (cbc(iside,ie).eq.'P  ') bc(1,iside,ie) = bc(1,iside,ie)+nel
+         if (cbc(iside,ie).eq.'P  ') ibc(iside,ie) =  ibc(iside,ie)+nel
       enddo
       enddo
 c
@@ -1824,9 +1514,9 @@ c
       do ie = 1,neln
          do k=1,ncrnr
             j     = ecrnr(k)
-            xp(l) = x (ie,j)
-            yp(l) = y (ie,j)
-            zp(l) = z (ie,j)
+            xp(l) = x(j,ie)
+            yp(l) = y(j,ie)
+            zp(l) = z(j,ie)
             l=l+1
          enddo
       enddo
@@ -2020,38 +1710,32 @@ c
 
       npt=2**ndim
       mcell = 0
-      kcmin = 99999999
       do ie=1,ncell
-         read(47,*,end=444) (kcell(k),k=1,npt)
-         mcell = mcell+1
-         do k=1,npt
-            vv(k,ie) = kcell(k)
-            kcmin    = min(kcmin,kcell(k)) ! Check for 0 or 1-based indexing
+         read(47,*) icell,(kcell(k),k=1,npt)
+         if (icell.eq.npt) then
+            mcell = mcell+1
+            do k=1,npt
+               kcell(k) = kcell(k) + 1   ! for vtk, need to add 1
+               vv(k,ie) = kcell(k)
 
-c           rrr = .05
-c           ii = vv(k,ie)
-c           call draw_circ(xp(ii),yp(ii),zp(ii),rrr)
-c           write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
-c           vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
+c              rrr = .05
+c              ii = vv(k,ie)
+c              call draw_circ(xp(ii),yp(ii),zp(ii),rrr)
+c              write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
+c              vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
 
-         enddo
+            enddo
+         endif
+
 c        call prsi('continue? $',ie)
 c        call res(ans,1)
          numapt(ie)=1
          letapt(ie)='A'
       enddo
-
   444 ncell = mcell
 
-      if (kcmin.eq.0) then  ! Shift to 1-based indexing
-         do ie=1,ncell
-         do k=1,npt
-            vv(k,ie) = vv(k,ie) + 1
-         enddo
-         enddo
-      endif
-
-      call prsii('Number of vertices and elements:$',nvtx,ncell)
+      call prs('continue?$')
+      call res(ans,1)
 
 c
 c     At this point, we have the cell data in the "new" format.
@@ -2071,9 +1755,9 @@ c
             nel = nel+1
             do k=1,npt
                l = vv(k,ie)
-               x(nel,k)=xp(l)
-               y(nel,k)=yp(l)
-               z(nel,k)=zp(l)
+               x(k,nel)=xp(l)
+               y(k,nel)=yp(l)
+               z(k,nel)=zp(l)
             enddo
          enddo
       else                     ! flip
@@ -2082,15 +1766,15 @@ c
             do k=1,npt
                l = vv(k,ie)
                j = indx(k)
-               x(nel,j)=xp(l)
-               y(nel,j)=yp(l)
-               z(nel,j)=zp(l)
+               x(j,nel)=xp(l)
+               y(j,nel)=yp(l)
+               z(j,nel)=zp(l)
             enddo
          enddo
       endif
 c     do ie=1,ncell
 c     do k=1,npt
-c        write(6,*) ie,k,x(ie,k),y(ie,k)
+c        write(6,*) k,ie,x(k,ie),y(k,ie)
 c     enddo
 c     enddo
       if_unstructure=.true.
@@ -2104,7 +1788,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine imp_mesh_vtk  ! NO LONGER ACTIVE  (2/16/2011, pff)
+      subroutine imp_mesh_vtk
 c
 c     Read vtk-like unstructured mesh format
 c
@@ -2229,9 +1913,9 @@ c
             nel = nel+1
             do k=1,npt
                l = vv(k,ie)
-               x(nel,k)=xp(l)
-               y(nel,k)=yp(l)
-               z(nel,k)=zp(l)
+               x(k,nel)=xp(l)
+               y(k,nel)=yp(l)
+               z(k,nel)=zp(l)
             enddo
          enddo
       else                     ! don't flip
@@ -2240,9 +1924,9 @@ c
             do k=1,npt
                l = vv(k,ie)
                j = indx(k)
-               x(nel,j)=xp(l)
-               y(nel,j)=yp(l)
-               z(nel,j)=zp(l)
+               x(j,nel)=xp(l)
+               y(j,nel)=yp(l)
+               z(j,nel)=zp(l)
             enddo
          enddo
       endif
@@ -2309,6 +1993,7 @@ c                    Currently designed only for 2D, NO CURVE nonconf.
                           cbc(is,ie,kf)='SP '
                           bc (5,is,ie,kf)=bc (5,is,ie,kf)+1
                           cbc(js,je,kf)='J  '
+                          ibc(js,je,kf)=ie
                           bc (1,js,je,kf)=ie
                           bc (2,js,je,kf)=is
 c                         write(6,*) 'Match:',ie,is,je,js,icond
@@ -2324,6 +2009,7 @@ c                       write(6,*) 'Match:',cbc(is,ie,kf),cbc(js,je,kf)
                           cbc(is,ie,kf)='SP '
                           bc (5,is,ie,kf)=bc (5,is,ie,kf)+1
                           cbc(js,je,kf)='J  '
+                          ibc(js,je,kf)=ie
                           bc (1,js,je,kf)=ie
                           bc (2,js,je,kf)=is
                           bc (3,js,je,kf)=g1
@@ -2361,9 +2047,9 @@ c
       nv=2**(ndim-1)
       dz=0.
       do jv=1,nv
-         dx = sides(ie,is,1)-x(je,jvs(jv,js))
-         dy = sides(ie,is,2)-y(je,jvs(jv,js))
-         if (if3d) dz = sides(ie,is,3)-z(je,jvs(jv,js))
+         dx = sides(ie,is,1)-x(jvs(jv,js),je)
+         dy = sides(ie,is,2)-y(jvs(jv,js),je)
+         if (if3d) dz = sides(ie,is,3)-z(jvs(jv,js),je)
          ds = dx*dx+dy*dy+dz*dz
          if (ds.le.rcen(ie)*rcen(ie)) return
       enddo
@@ -2393,16 +2079,16 @@ c
 c
 c
 c     find the (x,y) coordinates of the two endpoints of side (ie,is)
-      x1 = x(ie,jvs(1,is))
-      y1 = y(ie,jvs(1,is))
-      x2 = x(ie,jvs(2,is))
-      y2 = y(ie,jvs(2,is))
+      x1 = x(jvs(1,is),ie)
+      y1 = y(jvs(1,is),ie)
+      x2 = x(jvs(2,is),ie)
+      y2 = y(jvs(2,is),ie)
 c
 c     find the (x,y) coordinates of the two endpoints of side (je,js)
-      x3 = x(je,jvs(1,js))
-      y3 = y(je,jvs(1,js))
-      x4 = x(je,jvs(2,js))
-      y4 = y(je,jvs(2,js))
+      x3 = x(jvs(1,js),je)
+      y3 = y(jvs(1,js),je)
+      x4 = x(jvs(2,js),je)
+      y4 = y(jvs(2,js),je)
 c
 c     use these endpoints to set up the transformation.
 c     the 3x3 matrix is not explicitly formed, just the closed 
@@ -2453,9 +2139,9 @@ c     write(6,*) 'Continue? (any key)'
 c     read (5,*) ans
 c
       do i=1,4
-         xx(1,i) = x(ie,jvs(i,is))
-         xx(2,i) = y(ie,jvs(i,is))
-         xx(3,i) = z(ie,jvs(i,is))
+         xx(1,i) = x(jvs(i,is),ie)
+         xx(2,i) = y(jvs(i,is),ie)
+         xx(3,i) = z(jvs(i,is),ie)
       enddo
 c     write(6,1) (i,(xx(k,i),k=1,3),' xx',i=1,4)
     1 format(/,4(i4,3f10.4,a3,/))
@@ -2491,9 +2177,9 @@ c
       ifok  = .false.
       icond = 0
       do j=1,4
-         xj(1) = x(je,jvs(j,js))
-         xj(2) = y(je,jvs(j,js))
-         xj(3) = z(je,jvs(j,js))
+         xj(1) = x(jvs(j,js),je)
+         xj(2) = y(jvs(j,js),je)
+         xj(3) = z(jvs(j,js),je)
 c        write(6,1) j,(xj(k),k=1,3),' xj'
 c
 c        map to canonical plane of face i
@@ -2560,8 +2246,8 @@ c
 c
       do iel=1,nl
          do 210 I=1,4
-            XYZ(1,I)= x(iel,i)
-            XYZ(2,I)= y(iel,i)
+            XYZ(1,I)= x(i,iel)
+            XYZ(2,I)= y(i,iel)
   210    CONTINUE
 C
 C        CRSS2D(A,B,O) = (A-O) X (B-O)
@@ -2577,14 +2263,14 @@ C
      $       C3.LE.0.0.AND.C4.LE.0.0 ) THEN
 C            cyclic permutation (counter clock-wise):  reverse
              call prsi('Reversing Element: $',iel)
-             x(iel,2) = xyz(1,4)
-             y(iel,2) = xyz(2,4)
-             x(iel,4) = xyz(1,2)
-             y(iel,4) = xyz(2,2)
+             x(2,iel) = xyz(1,4)
+             y(2,iel) = xyz(2,4)
+             x(4,iel) = xyz(1,2)
+             y(4,iel) = xyz(2,2)
              IF (IF3D) THEN
                 do 400 I=1,4
-                   x(iel,i+4)=x(iel,i)
-                   y(iel,i+4)=y(iel,i)
+                   x(i+4,iel)=x(i,iel)
+                   y(i+4,iel)=y(i,iel)
   400           CONTINUE
              ENDIF
          ELSEIF (C1.LE.0.0.OR.C2.LE.0.0.OR.
@@ -2593,6 +2279,59 @@ C            cyclic permutation (counter clock-wise):  reverse
              IERR=1
          ENDIF
       enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine special_delete
+      include 'basics.inc'
+c
+      integer dflag(nelm),e,emin,ecount
+c
+      open(unit=49,file='cyls.dat',status='old',err=999)
+c
+      read(49,*) ncyl
+c
+c     Delete all elements within radius
+c
+c
+      call izero(dflag,nel)
+c
+      do k=1,ncyl
+         read(49,*) rad,x0,y0
+         r1 = .99*rad
+         r1 = r1*r1
+         do e=1,nel
+         do i=1,4
+            dx = x0-x(i,e)
+            dy = y0-y(i,e)
+            r2 = dx*dx + dy*dy
+            if (r2.lt.r1) dflag(e) = 1
+         enddo
+         enddo
+      enddo
+      close(49)
+c
+      emin = nel+1
+      do e=1,nel
+         if (dflag(e).ne.0) then
+            emin=e
+            goto 10
+         endif
+      enddo
+   10 continue
+c
+      ecount = emin-1
+      do e=emin+1,nel
+         if (dflag(e).eq.0) then
+            ecount = ecount + 1
+            call copyel(e,ecount)
+         endif
+      enddo
+      ndel = nel - ecount
+      call prsis('Special delete of$',ndel,' elements.$')
+      nel  = ecount
+c
+  999 continue
       return
       end
 c-----------------------------------------------------------------------
@@ -2658,8 +2397,8 @@ c
          r1 = r1*r1
          do e=1,nel
          do i=1,4
-            dx = x0-x(e,i)
-            dy = y0-y(e,i)
+            dx = x0-x(i,e)
+            dy = y0-y(i,e)
             r2 = dx*dx + dy*dy
             if (r2.lt.r1) dflag(e) = 1
          enddo
@@ -2737,7 +2476,7 @@ c
       nelo = nel
       nels = nel+1
 c
-      ierr=imp_geom(x(nels,1),y(nels,1),z(nels,1),nelm
+      ierr=imp_geom(x(1,nels),y(1,nels),z(1,nels),nelm
      $             ,numapt(nels),letapt(nels),igroup(nels)
      $             ,ndim,nelin,47)
       if (ierr.ne.0) then
@@ -2758,9 +2497,9 @@ c
       write(6,*) neli,neln,xtr,ytr,ztr,'  XTR'
       do e=neli+1,neln
          do i=1,8
-            x(e,i) = x(e,i) + xtr
-            y(e,i) = y(e,i) + ytr
-            z(e,i) = z(e,i) + ztr
+            x(i,e) = x(i,e) + xtr
+            y(i,e) = y(i,e) + ytr
+            z(i,e) = z(i,e) + ztr
          enddo
          do f=1,6
             if (ccurve(f,e).eq.'s') then
@@ -2779,13 +2518,13 @@ c
     3 format(a3)
 c
       ifld0 = 1
-      if (.not.ifflow) ifld0=2
-      write(6,*) 'IFLD:',ifld0,nflds,ifflow,ifheat
+      if (.not.iflow) ifld0=2
+      write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
 c
       do ifld=ifld0,nflds
-         if (.not.ifflow) read(47,*) ans  ! dummy read
-         ierr
-     $   =imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ndim,nelin,nel,47)
+         if (.not.iflow) read(47,*) ans  ! dummy read
+         ierr=imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ibc(1,nels,ifld)
+     $      ,ndim,nelin,nel,47)
          if (ierr.ne.0) then
             call prsii('nelin,ifld:$',nelin,ifld)
             call prs('Error reading boundary conditions. Returning.$')
@@ -2824,8 +2563,8 @@ c
       read(84,*) nsph 
 c
       call blank(iname,70)
-      write(iname,10) 'base_spec'
-   10 format(a9)
+      write(iname,10) 'base'
+   10 format(a4)
 c
       ztr = 0.
       do i=1,nsph
@@ -2918,10 +2657,1019 @@ c           ELEMENT    1 [    1a]    GROUP     0
       return
       end
 c-----------------------------------------------------------------------
-      subroutine match_face_vtx(iside,iel,jside,jel)
+      subroutine set_main_menu
+
+c***  BIG DECISION POINT  ****
+
       include 'basics.inc'
 
-      integer efac
+      nchoic = 0
+
+      if (if3d) then
+
+         if (ifceil) then !  Restrict choices for person on CEILING
+
+            ITEM(1)='OFF CEILING'
+            ITEM(2)='MODIFY ELEMENT'
+            ITEM(3)='CURVE SIDES'
+            nchoic=3
+
+         else
+
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'END    ELEMENTS'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'MODIFY ELEMENT'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'GLOBAL REFINE'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'CURVE SIDES'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'DELETE ELEMENT'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'ZOOM'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'SET GRID'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'DEFINE OBJECT'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'REDRAW MESH'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'IMPORT MESH'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'IMPORT vtx MESH'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'REFLECT MESH '
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'UP   LEVEL'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'DOWN LEVEL'
+            nchoic = nchoic+1
+            ITEM(nchoic)        =   'CEILING'
+         endif
+
+      else  !  2-D
+
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'END    ELEMENTS'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'MODIFY ELEMENT'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'GLOBAL REFINE'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'CURVE SIDES'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'DELETE ELEMENT'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'ZOOM'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'SET GRID'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'DEFINE OBJECT'
+         nchoic = nchoic+1
+c        ITEM(nchoic)       =       'Edit Mesh'
+c        nchoic = nchoic+1
+         ITEM(nchoic)       =       'REDRAW MESH'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'IMPORT MESH'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'IMPORT vtx MESH'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'REFLECT MESH '
+      ENDIF
+     
+      return   ! End of menu-driven query
+      end
+c-----------------------------------------------------------------------
+      subroutine cell_cell_connectivity
+
+      include 'basics.inc'
+
+
+      parameter(lpts=8*nelm)
+      common /arrayi/ i_n(lpts)   , j_n(4*lpts)
+     $              , j_o(4*lpts)
+     $              , ee(lpts)   , cell(lpts)
+      integer cell,ee
+
+      common /arrayr/ wk (lpts),dx(4*lpts)
+
+      integer clist_i(lpts),clist_j(4*lpts)
+      equivalence (clist_i,i_n)
+      equivalence (clist_j,j_n)
+
+      integer e,f,fe
+
+      call chker
+
+      nv = 2**ndim
+
+      call set_d2a(dx,x,y,z,nv,nel,ndim)
+
+      call makecell  (cell,nv,nel,dx,ndim,wk,i_n,j_n,j_o)
+      call chker2    (cell,nv,nel)
+
+
+      nf  = 2*ndim
+      nv  = 2**ndim
+      nic = lpts
+      njc = lpts
+      itype = 1   ! return structured cell pointer 
+      call cell2v(i0,i1,clist_i,nic,clist_j,njc,cell,nv,nel,itype,j_o) 
+c     fe=1/(nf-nv)
+c     stop
+
+      call find_ee(ee,nf,nel,clist_i,clist_j,cell,nv,ndim)
+
+      do e=1,nel   ! This needs to be fixed for CHT case.
+      do f=1,nf
+         fe = f + (e-1)*nf
+         if (ee(fe).ne.0) then
+            je = ee(fe)
+            call get_ee_face(jf,je,f,e,ee,nf)
+            do i=1,nflds
+               cbc(f,e,i)   = 'E  '
+               ibc(f,e,i)   = je
+               bc (1,f,e,i) = je
+               bc (2,f,e,i) = jf
+            enddo
+         endif
+      enddo
+      enddo
+
+      if (nelt.gt.nel) then
+         call prs('FIX CHT CASE FOR find_ee. ABORT.$')
+         stop
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_ee(ee,nf,nel,clist_i,clist_j,cell,nv,ndim)
+c
+c     For each cell, use vertex connectivity to establish cell-cell connections.
+c
+c     A cell is connected if 2^(ndim-1) vertices are shared with another cell.
+c
+c     We also scan for pathological cases where the number of connections in
+c     3D is only 3 and not 4.
+c
+c     Algorithm is as follows:
+c
+c     1. For each vertex, collect cell numbers sharing that vertex.
+c
+c     2. For each cell face collect lists of cells sharing vertices on face,
+c        and tally these.
+c
+c     3. Look for high tally counts (e.g., 3 or 4 in the 3D case).
+c
+
+      integer ee(nf,nel)
+      integer clist_i(1),clist_j(1),cell(nv,nel)
+      integer e,f,e_share,share(200),wk(200)
+
+      integer flist_3d(4,6)  ! use preprocessor numbering for f AND for v
+      save    flist_3d
+      data    flist_3d / 1,2,5,6 , 2,3,6,7 , 3,4,7,8 
+     $                 , 1,4,5,8 , 1,2,3,4 , 5,6,7,8 /
+
+      integer flist_2d(2,4)  ! use preprocessor numbering for f AND for v
+      save    flist_2d
+      data    flist_2d / 1,2 , 2,3 , 3,4 , 4,1 /
+
+
+      nface = 2*ndim
+      nvf   = 2**(ndim-1)
+
+      n  = nv*nel
+      i0 = iglmin(cell,n)
+      i1 = iglmax(cell,n)
+
+      nfail = 0
+
+      do e=1,nel
+      do f=1,nface
+
+         ee(f,e) = 0
+         n_shared = 0
+         do ii=1,nvf      ! Get tally for this face
+
+            iv = flist_3d(ii,f)
+            if (ndim.eq.2) iv = flist_2d(ii,f)
+
+            i  = cell(iv,e)
+            j0 = clist_i(i)    ! CSR pointer
+            j1 = clist_i(i+1)-1
+
+            do jj=j0,j1
+               je=clist_j(jj) ! je is an element shared by element e on face f
+               if (je.ne.e) then
+                  n_shared = n_shared+1
+                  share(n_shared) = je
+               endif
+            enddo
+         enddo
+
+         call isortg(share,wk,n_shared)
+
+         ne_3     = 0
+         ne_share = 0
+         icount   = 0
+         ilast    = 0
+
+
+         do i=1,n_shared
+            if (share(i).eq.ilast) then
+               icount = icount+1
+               if (icount.eq.3) then  ! Consistency check for 3D
+                  ne_3 = ne_3+1
+               elseif (icount.eq.nvf) then
+                  e_share = share(i)
+                  ne_share = ne_share+1
+               endif
+            else
+               ilast  = share(i)
+               icount = 1
+            endif
+         enddo
+         if (ne_share.eq.1) then ! OK
+            if (ndim.eq.2.or.ne_3.eq.1) then
+               ee(f,e) = e_share
+            elseif (ndim.eq.3.and.ne_3.gt.1) then
+               nfail = nfail+1
+               write(6,3) 'A',e,f,ne_3,n_shared,ne_share
+    3          format('Consistency failure ',a1,i9,i3,3i8)
+            endif
+         elseif (ne_share.gt.1) then
+               nfail = nfail+1
+               write(6,3) 'B',e,f,ne_3,n_shared,ne_share
+         elseif (ne_share.lt.ne_3) then
+               nfail = nfail+1
+               write(6,3) 'C',e,f,ne_3,n_shared,ne_share
+         else
+            ee(f,e) = 0
+         endif
+
+      enddo
+      enddo
+
+      if (nfail.eq.0) return
+      write(6,*) 'FAIL in find_ee: nfail=',nfail
+      stop
+
+      end
+c-----------------------------------------------------------------------
+      subroutine unique_vertex2(cell,dx,ndim,nel,q,ind,ninseg,ifseg,wk)
+ 
+      integer cell(1),ind(1),ninseg(1)
+      logical ifseg(1)
+      real dx(0:ndim,1)
+
+      integer e
+      real dxt(4),t1(4),t2(4),wk(0:ndim,1)
+
+
+      nv = 2**ndim
+      n = nv*nel
+
+      write(6,*) 'start locglob_lexico:',nv,nel,n,q
+
+      qq = q*q  ! Square of relative tolerance
+
+      do i=1,n
+         cell(i)   = i
+         ifseg (i) = .false.
+      enddo
+
+c     Sort by directions
+
+      lda         = 1+ndim
+      nseg        = 1
+      ifseg(1)    = .true.
+      ninseg(1)   = n
+
+      do ipass=1,ndim   ! Multiple passes eliminates false positives
+      do j=1,ndim       ! Sort within each segment
+         write(6,*) 'locglob:',j,nseg,n
+         i =1
+         j1=j+1
+         do iseg=1,nseg
+            call tuple_sort(dx(0,i),lda,ninseg(iseg),j1,1,ind,dxt) !key=j1
+            call iswap_ip  (cell(i),ind,ninseg(iseg)) ! Swap position
+            i  =   i + ninseg(iseg)
+         enddo
+ 
+c        q=0.0010   ! Smaller is better
+c        q=0.2      ! But generous is more forgiving for bad meshes!
+
+         do i=2,n
+           if ((dx(j,i)-dx(j,i-1))**2.gt.qq*min(dx(0,i),dx(0,i-1)))
+     $        ifseg(i)=.true.
+         enddo
+
+         nseg = 0              !  Count up number of different segments
+         do i=1,n
+            if (ifseg(i)) then
+               nseg = nseg+1
+               ninseg(nseg) = 1
+            else
+               ninseg(nseg) = ninseg(nseg) + 1
+            endif
+         enddo
+      enddo
+      enddo
+c
+c     Assign global node numbers (now sorted lexigraphically!)
+c
+      ig  = 0
+      ic  = 0
+      icm = 0
+      do i=1,n
+        ic = ic+1     ! count number of instances at present ig
+
+        if (ifseg(i)) then
+           ig=ig+1
+           icm = max(ic,icm)
+           ic  = 0
+        endif
+        ind(cell(i)) = ig
+      enddo
+      nglb = ig
+
+c     Unshuffle geometry:
+      call tuple_swapt_ip(dx,lda,n,cell,t1,t2)
+
+c     Reassign cell to hold global index numbering
+
+      call icopy     (cell,ind,n)
+      write(6,*) 'Performing unique_vertex2 self_chk',n
+      call self_chk  (cell,nv,nel,0)       ! check for not self-ptg.
+
+
+      write(6,6) nseg,nglb,n,icm
+    6 format(' done locglob_lexico:',4i10)
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine makecell(cell,nv,nel,dx,ndim,wk,i_n,j_n,j_o)
+
+      integer      cell(1),i_n(1),j_n(1),j_o(1)
+      real         dx  (1)
+      real         wk  (1)
+      integer e,f
+
+
+      logical ifbinary,ifbswap
+      integer buf(30)
+
+      integer eface(6)  ! return Nekton preprocessor face ordering
+      save    eface
+      data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
+         
+      q = 0.02
+
+c     Compress vertices based on coordinates
+      call unique_vertex2(cell,dx,ndim,nel,q,i_n,j_n,j_o,wk)
+
+      nv   = 2**ndim
+      n    = nel*nv
+
+c     write(6,*) 'THIS is NEL,NV:',nel,nv,n
+
+      call iranku    (cell,j_n,n)
+      write(6,*) 'Performing makecell self_chk',n
+      call self_chk  (cell,nv,nel,32)       ! check for not self-ptg.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_d2a(dx,x,y,z,nv,nel,ndim)
+      real dx(0:ndim,nv,nel)
+      real x(8,nel),y(8,nel),z(8,nel) ! Hardcoded to 8 in prenek :(
+
+      integer e
+
+      if (ndim.eq.3) then
+         do e=1,nel
+         do i=1,nv
+            dx(1,i,e) = x(i,e)
+            dx(2,i,e) = y(i,e)
+            dx(3,i,e) = z(i,e)
+         enddo
+         enddo
+      else
+         do e=1,nel
+         do i=1,nv
+            dx(1,i,e) = x(i,e)
+            dx(2,i,e) = y(i,e)
+         enddo
+         enddo
+      endif
+
+      call set_d2(dx,nv,nel,ndim)  ! Fill up the "0" location
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_d2(dx,nv,nel,ndim)
+      real dx(0:ndim,nv,nel)
+
+      integer neigh(3,8),e
+      save    neigh
+      data    neigh / 2,4,5 , 1,3,6 , 2,4,7 , 1,3,8   ! symm. ordering
+     $              , 1,6,8 , 2,5,7 , 3,6,8 , 4,5,7 /
+
+c     data    neigh / 2,3,5 , 1,4,6 , 1,4,7 , 2,3,8   ! symm. ordering
+c    $              , 1,6,7 , 2,5,8 , 3,5,8 , 4,6,7 / ! used for genmap?
+
+      b = 1.e22
+
+      do e = 1,nel
+      do i = 1,nv
+
+         dx(0,i,e) = b
+
+         do k = 1,ndim
+
+            n   = neigh(k,i)
+            d2l = 0.
+
+            do j=1,ndim
+               d2l = d2l + (dx(j,n,e)-dx(j,i,e))**2
+            enddo
+
+            dx(0,i,e) = min (dx(0,i,e),d2l)
+c           write(6,9) i,e,' dx',(dx(j,i,e),j=0,ndim)
+c  9        format(2i6,a3,1p4e11.3)
+
+         enddo
+
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine iranku(a,p,n)
+c
+c     Return r = rank of a() in place of a(), where r =< n
+c     so that a() is the number of unique pts sorted such that
+c     it is in the original spot
+c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c
+c
+      integer a(1),p(1)
+      integer rank
+
+      call isortg(a,p,n)
+
+      rank = 1
+      last = a(1)
+      a(1) = 1
+
+      do k=2,n
+         next = a(k)
+         if (next.ne.last) rank=rank+1
+         a(k) = rank
+         last = next
+      enddo
+
+      call iswapt_ip(a,p,n)  ! restore a() to orginal location
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine tuple_swapt_ip(x,m,n,p,t1,t2)
+      real x(m,n),t1(m),t2(m)
+      integer p(1)
+c
+c     In-place permutation: x'(p) = x
+c
+
+      do k=1,n
+         if (p(k).gt.0) then   ! not swapped
+            loop_start = k
+            next       = p(loop_start)
+            call copy(t1,x(1,loop_start),m)
+            do j=1,n
+               if (next.lt.0) then
+                  write(6,*) 'Hey! iswapt_ip problem.',j,k,n,next
+                  call exitt(1)
+               elseif (next.eq.loop_start) then
+                  call copy(x(1,next),t1,m)
+                  p(next) = -p(next)
+                  goto 10
+               else
+                  call copy(t2,x(1,next),m)
+                  call copy(x(1,next),t1,m)
+                  call copy(t1,t2       ,m)
+                  nextp   =  p(next)
+                  p(next) = -p(next)
+                  next    =  nextp
+               endif
+            enddo
+   10       continue
+         endif
+      enddo
+c
+      do k=1,n
+         p(k) = -p(k)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine iswapt_ip(x,p,n)
+      integer x(1),t1,t2
+      integer p(1)
+c
+c     In-place permutation: x'(p) = x
+c
+
+      do k=1,n
+         if (p(k).gt.0) then   ! not swapped
+            loop_start = k
+            next       = p(loop_start)
+            t1         = x(loop_start)
+            do j=1,n
+               if (next.lt.0) then
+                  write(6,*) 'Hey! iswapt_ip problem.',j,k,n,next
+                  call exitt(1)
+               elseif (next.eq.loop_start) then
+                  x(next) = t1
+                  p(next) = -p(next)
+                  goto 10
+               else
+                  t2      =  x(next)
+                  x(next) =  t1
+                  t1      =  t2
+                  nextp   =  p(next)
+                  p(next) = -p(next)
+                  next    =  nextp
+               endif
+            enddo
+   10       continue
+         endif
+      enddo
+c
+      do k=1,n
+         p(k) = -p(k)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine self_chk(cell,nv,nel,flag)     ! check for not self-ptg.
+      integer cell(nv,nel),flag
+      integer e
+
+
+      n10 = min(nel,10)
+
+      do e=1,nel
+      do i=1,nv
+         do j=i+1,nv
+            if (cell(i,e).eq.cell(j,e)) then
+
+               write(6,*)
+               call outmati(cell(1,e),2,4,'SELF!!',e,flag)
+
+               write(6,*)
+               write(6,*) 'ABORT: SELF-CHK ',i,j,e,flag
+               write(6,*) 'Try to tighten the mesh tolerance!' 
+
+               call outmatti  (cell,nv,n10,'slfchk',nel,flag)
+
+               call exitt(flag)
+
+            endif
+         enddo
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmatti(u,m,n,name6,nid,ic)
+      integer u(m,n)
+      character*6 name6
+      character*1 adum
+c
+c     Print out copies of a global matrix, transpose
+c
+         write(6,1) nid,m,n,name6,nid,ic
+   1     format(3i6,'  Matrix T:',2x,a6,2i9)
+
+         m8 = min(m,10)
+         do j=1,n
+            write(6,2) j,name6,(u(i,j),i=1,m8)
+         enddo
+   2     format(i8,1x,a6,10i9)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmati(u,m,n,name6,nid,ic)
+      integer u(m,n)
+      character*6 name6
+      character*1 adum
+c
+c     return
+c
+c     Print out copies of a global matrix
+c
+      n200 = min(n,200)
+      if (m.gt.1) then
+         write(6,1) nid,m,n,name6
+   1     format(3i6,'  Matrix:',2x,a6)
+         do i=1,m
+            write(6,2) i,name6,(u(i,j),j=1,n200)
+         enddo
+   2     format(i8,1x,a6,20(10i9,/,10x))
+      else
+         write(6,3) nid,n,name6,(u(1,j),j=1,n200)
+   3     format(2i8,1x,a6,20(10i9,/,10x))
+      endif
+      if (ic.eq.0) then
+         write(6,*) 'cont: ',name6,nid,'  ??'
+c        read (5,*) adum
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmatx (u,m,n,name6,nid)
+      real u(m,n)
+      character*6 name6
+c
+c     return
+c
+c     Print out copies of a global matrix
+c
+      write(6,1) nid,m,n,name6
+      n8 = min(8,n)
+   1  format(3i6,'  Matrix:',2x,a6)
+      do i=1,m
+         write(6,2) i,name6,(u(i,j),j=1,n8)
+      enddo
+   2  format(i3,1x,a6,1p8e12.4)
+c  2  format(i3,1x,a6,20(1p8e12.4,/,10x))
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cell2v(i0,i1,ic,nic,jc,njc,cell,nv,ncell,type,wk)
+c
+c     Generate a list of cells that point to each numbered
+c     vertex in [i0,i1].  ic/jc is the csr-formated list.
+c
+c     Cells (aka elements) have nv local verties.
+c
+      integer ic(1),jc(1),cell(nv,ncell),wk(1),type
+c
+      i0 = iglmin(cell,nv*ncell)
+      i1 = iglmax(cell,nv*ncell)
+
+      if (i1-i0.gt.nic) then
+         write(6,1) i0,i1,nic,nv,ncell,njc
+    1    format(' ERROR: nic too small in cell2v:',6i10)
+         i0 = 0 ! error return code
+         i1 = 0 ! error return code
+         stop
+      endif
+
+      call cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
+c
+c     Generate a list of cells that point to each numbered
+c     vertex in [i0,i1].  ic/jc is the csr-formated list.
+c
+c     Cells (aka elements) have nv local verties.
+c
+      integer ic(i0:i1),jc(1),cell(nv,ncell),wk(i0:i1),type
+
+c     Step 1:  count number of cells per vertex
+c  the number of cells each vertex 'touches'
+
+      nic = i1-i0+1
+      call izero(wk,nic)
+      do j=1,nv*ncell
+         i = cell(j,1)
+         wk(i) = wk(i) + 1
+      enddo
+c  wk() is an array refering to each vertex, and holds the num of cells
+c     Step 2:  Generate csr pointer
+
+      ic(1) = 1
+      do i=i0,i1
+         ic(i+1) = ic(i) + wk(i)
+         wk(i)   = 0
+      enddo
+
+c     Step 3:  fill jc()
+
+      if (type.eq.1) then ! return cell
+         do k=1,ncell
+         do j=1,nv
+            i = cell(j,k)
+            jc(ic(i)+wk(i)) = k  ! This is the cell number
+            wk(i) = wk(i) + 1    ! This is number filled for ith vertex
+         enddo
+         enddo
+         
+      else                ! return structured pointer
+         do j=1,nv*ncell
+            i = cell(j,1)
+            jc(ic(i)+wk(i)) = j  ! This is the structured pointer
+            wk(i) = wk(i) + 1    ! This is number filled for ith vertex
+         enddo
+      endif
+
+c     Diagnostics
+
+      write(6,*)
+c     do i=i0,i1
+c        j0 = ic(i)
+c        j1 = ic(i+1)-1
+c        write(64,1) i,(jc(j),j=j0,j1)
+c  1     format(i8,' c2v:',20i5)
+c     enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine isortg(a,ind,n)
+C
+C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C
+      integer a(1),ind(1)
+      integer aa
+C
+      dO 10 j=1,n
+         ind(j)=j
+   10 continue
+C
+      if (n.le.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         if (l.gt.1) then
+            l=l-1
+            aa  = a  (l)
+            ii  = ind(l)
+         else
+                 aa =   a(ir)
+                 ii = ind(ir)
+              a(ir) =   a( 1)
+            ind(ir) = ind( 1)
+            ir=ir-1
+            if (ir.eq.1) then
+                 a(1) = aa
+               ind(1) = ii
+               return
+            endif
+         endif
+         i=l
+         j=l+l
+  200    continue
+         if (j.le.ir) then
+            if (j.lt.ir) then
+               if ( a(j).lt.a(j+1) ) j=j+1
+            endif
+            if (aa.lt.a(j)) then
+                 a(i) = a(j)
+               ind(i) = ind(j)
+               i=j
+               j=j+j
+            else
+               j=ir+1
+            endif
+         goto 200
+         endif
+           a(i) = aa
+         ind(i) = ii
+      goto 100
+      end
+c-----------------------------------------------------------------------
+      subroutine get_ee_face(jf,je,f,e,ee,nf)
+
+      integer f,e,ee(nf,1)
+
+      do jf=1,nf
+         ie=ee(jf,je)
+         if (ie.eq.e) return
+      enddo
+      write(6,*)
+      write(6,*) 'ERROR: inconsistent ee pairing:'
+      do i=1,nf
+         write(6,1) i,e,f,ee(i,e),je,ee(i,je)
+      enddo
+    1 format(6i8,' i,e,f,ee(i,e),je,ee(i,je) ERR')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chker
+
+      include 'basics.inc'
+
+c     character*1 ans
+
+      return
+
+      call prs('Write or Read xyz pts? (r/w):$')
+      call res(ans,1)
+
+      open(unit=65,file='xyz.dat')
+      if (ans.eq.'r') then
+         ntot = 8*nel
+         do i=1,ntot
+            read(65,*) je,jv,x(i,1),y(i,1),z(i,1)
+         enddo
+      else
+         do je=1,nel
+         do jv=1,8
+            write(65,1) je,jv,x(jv,je),y(jv,je),z(jv,je)
+    1       format(i9,i3,1p3e14.6)
+         enddo
+         enddo
+      endif
+      close(65)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chker2(cell,nv,nel)
+
+      integer cell(nv,nel)
+
+      character*1 ans
+
+      return
+      call prs('Write or Read cell dat? (r/w):$')
+      call res(ans,1)
+
+      open(unit=65,file='cell.dat')
+      if (ans.eq.'r') then
+         do ie=1,nel
+            read(65,*) je,(cell(jv,ie),jv=1,8)
+         enddo
+      else
+         do je=1,nel
+            write(65,1) je,(cell(jv,je),jv=1,8)
+    1       format(i6,8i9)
+         enddo
+      endif
+      close(65)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_flow_heat(ifflow,ifheat,nlogic,io)
+      logical ifflow,ifheat
+      character*132 string
+      do i=1,nlogic
+         read(io,132) string
+  132    format(a132)
+         call capit(string,132)
+         if (indx1(string,'IFFLOW' ,6).gt.0) then
+              read(string,*) IFFLOW
+         elseif (indx1(string,'IFHEAT' ,6).gt.0) then 
+              read(string,*) IFHEAT
+         endif
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine delete  ! Query to delete elements
+
+      include 'basics.inc'
+
+      if (nel.eq.0) call prs('ERROR: No elements to delete$')
+      if (nel.eq.0) return
+
+C     Find out which element to delete
+      call prs('Enter (w/mouse) 2 points in element to be deleted,$')
+      call prs('or, 2 points framing a box containing elements.$')
+      call prs('Enter in menu area to abort DELETE ELEMENT op.$')
+
+      iftmp =ifgrid
+      ifgrid=.false.
+
+      call prs('Enter 1st point:$')
+      call mouse(xmouse,ymouse,button)
+      if (xmouse.gt.xphy(1.0)) then ! look for a keypad input
+         ifgrid=iftmp 
+         call beep
+         call prs('Abort DELETE? (y/l=list):$')
+         call res(ans,1)
+         if (ans.eq.'y'.or.ans.eq.'Y') return
+         if (ans.eq.'l'.or.ans.eq.'L') call list_delete
+         if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
+         return
+      else
+         call prs('Enter 2nd point:$')
+         call mouse(xmous2,ymous2,button)
+         if (xmous2.gt.xphy(1.0)) then
+            ifgrid=iftmp 
+            call beep
+            call prs('Abort DELETE? (y/l=list):$')
+            call res(ans,1)
+            if (ans.eq.'y'.or.ans.eq.'Y') return
+            if (ans.eq.'l'.or.ans.eq.'L') call list_delete
+            if (ans.eq.'s'.or.ans.eq.'S') call special_delete_cyls
+            return
+         endif
+      endif
+C     
+C     We successfully input 2 points in the build area
+C     1) count number of centroids in the bounding box
+C     2) if ncntrd=0, find nearest element and anihilate it.
+C     
+      xmax=max(xmouse,xmous2) ! Box
+      xmin=min(xmouse,xmous2)
+      ymax=max(ymouse,ymous2)
+      ymin=min(ymouse,ymous2)
+C     
+C     Check box to see if it contains any elements, and delete them.
+C     
+C     This is a gross N^2 algorithm, but it beats entering them all
+C     by hand....
+C     
+      numdel=0
+ 124  continue
+      nelt=nel
+      DO 125 JEL=1,NELT
+         if (jel.le.nel.and.xmin.le.xcen(jel) .and.xcen(jel).le.xmax
+     $       .and.ymin.le.ycen(jel) .and.ycen(jel).le.ymax ) then
+            if (numdel.eq.0) call drwbox(xmin,ymin,xmax,ymax,1)
+            call delel(jel)
+            numdel=numdel+1
+            goto 124
+         endif
+ 125  continue
+      if (numdel.gt.0) then !     redraw the mesh
+         call refresh
+         call drmenu('NOCOVER')
+         call drgrid
+         do 128 iel=1,nel
+            call drawel(iel)
+ 128     continue
+         ifgrid=iftmp 
+         return
+      else ! Look for closest element (standard delete element option)
+         xmouse=(xmin+xmax)/2.0
+         ymouse=(ymin+ymax)/2.0
+         rmin=1.0e20
+         do 130 jel=1,nel
+            if (.not.if3d .or. numapt(jel).eq.ilevel) then
+               r2= (xcen(jel)-xmouse)**2 + (ycen(jel)-ymouse)**2
+               if(r2.lt.rmin) then
+                  rmin  = r2
+                  ielmin= jel
+               endif
+            endif
+ 130     continue
+      endif
+
+      if (if3d) then ! check if it's OK to delete
+         ieq=0
+         igt=0
+         do 140 i=1,nel
+            if (numapt(i).eq.ilevel  ) ieq=ieq+1
+            if (numapt(i).eq.ilevel+1) igt=igt+1
+ 140     continue
+
+         if (ieq.eq.1) then ! Last element on floor
+            if (igt.gt.0) then
+               CALL PRS('**ERROR** You cannot delete all the$')
+               CALL PRS('elements on a level when there are $')
+               CALL PRS('elements above$')
+               ifgrid=iftmp 
+               return
+            elseif (ilevel.gt.1) then
+               CALL PRS(' ** EMPTY LEVEL ** Please ADD ELEMENT$')
+               CALL PRS('Go DOWN LEVEL to continue$')
+               nlevel=nlevel-1
+            endif
+         endif
+      endif
+      call prsi('Deleting Element $',ielmin) ! Now, black out old element
+      call drawel(-ielmin)
+      call drawis(-ielmin)
+      call delel(ielmin)
+
+c     call sortel    ! Sort elements for isometric
+c     do 150 i=1,nel ! Redraw all the isometric elements.
+C        call drawis(isrt(i))
+c150  continue
+
+      if(.not.if3d .and.ielmin.le.nel) call drawel(ielmin)
+      ifgrid=iftmp 
 
       return
       end

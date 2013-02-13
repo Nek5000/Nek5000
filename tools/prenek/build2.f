@@ -26,12 +26,12 @@ c        call saddle_fcc     (dlat,sphrad,xlat0)
 c        return
 c
       MESH = 24
-C
+
       call prs('H/W sph/hex-pkd hemi/tet/dia/lat/fcc/r12/cap:$')
       call prs('(H/W/X/T/D/L/F/R/C)?$')
       call res(hemi,1)
       call capit(hemi,1)
-c
+
       if (hemi.eq.'C'.or.hemi.eq.'c') then
          radii(1)=1.0
          radii(2)=1.5
@@ -41,12 +41,12 @@ c
          nr       = 3
          call sc_make_sphere_cap(radii,nr)
          return
-c
+
       elseif (hemi.eq.'t'.or.hemi.eq.'T') then
          call get_lattice_0  (dlat,sphrad,xlat0)
          call saddle_tet     (dlat,sphrad,xlat0,if_lat_sph_cent)
          return
-c
+
       elseif (hemi.eq.'d'.or.hemi.eq.'D') then
          call get_lattice_0  (dlat,sphrad,xlat0)
          call saddle_dia     (dlat,sphrad,xlat0,if_lat_sph_cent)
@@ -133,9 +133,9 @@ C
 C
             IEL=NEL+IE
             DO 101 I=1,4
-               X(IEL,I)=XCS(I,IE)*RATIO
-               Y(IEL,I)=YCS(I,IE)
-               Z(IEL,I)=ZCS(I,IE)
+               x(i,iel)=xcs(i,ie)*ratio
+               y(i,iel)=ycs(i,ie)
+               z(i,iel)=zcs(i,ie)
   101       CONTINUE
 
             IF (SHELL.EQ.'S') THEN
@@ -150,10 +150,10 @@ C
             IF (ISHLL.GT.1) THEN
                IEL=NEL-NELSPH+IE
                DO 201 I=1,4
-                  J=I+4
-                  X(IEL,J)=XCS(I,IE)*RATIO
-                  Y(IEL,J)=YCS(I,IE)
-                  Z(IEL,J)=ZCS(I,IE)
+                  j=i+4
+                  x(j,iel)=xcs(i,ie)*ratio
+                  y(j,iel)=ycs(i,ie)
+                  z(j,iel)=zcs(i,ie)
   201          CONTINUE
                IF (SHELL.EQ.'S') THEN
                   CCURVE(6,IEL)='s'
@@ -603,14 +603,14 @@ c-----------------------------------------------------------------------
       DIMENSION XYZ(3,8)
       include 'basics.inc'
 C
-      NEL=NEL+1
-      DO 10 I=1,8
-         X(NEL,I)=XYZ(1,I)
-         Y(NEL,I)=XYZ(2,I)
-         Z(NEL,I)=XYZ(3,I)
-   10 CONTINUE
-      NUMAPT(NEL)=ILEVEL
-      LETAPT(NEL)='A'
+      nel=nel+1
+      do 10 i=1,8
+         x(i,nel)=xyz(1,i)
+         y(i,nel)=xyz(2,i)
+         z(i,nel)=xyz(3,i)
+   10 continue
+      numapt(nel)=ilevel
+      letapt(nel)='A'
       return
       end
 c-----------------------------------------------------------------------
@@ -927,9 +927,9 @@ c
          e = nel+k
          do i=1,8
             j      = e2pfv(i)
-            x(e,i) = v(1,j,k)
-            y(e,i) = v(2,j,k)
-            z(e,i) = v(3,j,k)
+            x(i,e) = v(1,j,k)
+            y(i,e) = v(2,j,k)
+            z(i,e) = v(3,j,k)
          enddo
 c
          ccurve(5,e)   = 's'
@@ -985,9 +985,9 @@ c
          e = nel+k
          do i=1,8
             j      = e2pfv(i)
-            x(e,i) = v(1,j,k)
-            y(e,i) = v(2,j,k)
-            z(e,i) = v(3,j,k)
+            x(i,e) = v(1,j,k)
+            y(i,e) = v(2,j,k)
+            z(i,e) = v(3,j,k)
          enddo
 c
          ccurve(5,e)   = 's'
@@ -1402,9 +1402,9 @@ c
          e = nel+k
          do i=1,8
             j      = e2pfv(i)
-            x(e,i) = v(1,j,k)
-            y(e,i) = v(2,j,k)
-            z(e,i) = v(3,j,k)
+            x(i,e) = v(1,j,k)
+            y(i,e) = v(2,j,k)
+            z(i,e) = v(3,j,k)
          enddo
 c
          ccurve(5,e)   = ' '
@@ -2110,9 +2110,9 @@ c        floor z-level to zero
 
                j      = j+1
                i      = pf2ev(j)
-               x(e,i) = xt(1,m,pface,k)
-               y(e,i) = xt(2,m,pface,k)
-               z(e,i) = xt(3,m,pface,k)
+               x(i,e) = xt(1,m,pface,k)
+               y(i,e) = xt(2,m,pface,k)
+               z(i,e) = xt(3,m,pface,k)
 
             enddo
             enddo
@@ -2299,9 +2299,9 @@ c        adjust xy-pos on outer shell to user position, post-projection
 
                j      = j+1
                i      = pf2ev(j)
-               x(e,i) = xt(1,m,pface,k)
-               y(e,i) = xt(2,m,pface,k)
-               z(e,i) = xt(3,m,pface,k)
+               x(i,e) = xt(1,m,pface,k)
+               y(i,e) = xt(2,m,pface,k)
+               z(i,e) = xt(3,m,pface,k)
 
             enddo
             enddo
@@ -2472,9 +2472,9 @@ c    $           (xt(1,m,pface,kl),x0,xt(1,m,pface,4),x0(1,kl),r1)
 
                j      = j+1
                i      = pf2ev(j)
-               x(e,i) = xt(1,m,pface,k)
-               y(e,i) = xt(2,m,pface,k)
-               z(e,i) = xt(3,m,pface,k)
+               x(i,e) = xt(1,m,pface,k)
+               y(i,e) = xt(2,m,pface,k)
+               z(i,e) = xt(3,m,pface,k)
 
             enddo
             enddo
@@ -2654,9 +2654,9 @@ c-----------------------------------------------------------------------
 
       write(6,*)
       do i=1,8
-         x(e,i) = xr(i)
-         y(e,i) = yr(i)
-         z(e,i) = zr(i)
+         x(i,e) = xr(i)
+         y(i,e) = yr(i)
+         z(i,e) = zr(i)
 c        write(6,1) e,xr(i),yr(i),zr(i),i
 c  1     format(i8,3f9.4,i3,' ec')
       enddo
@@ -2672,9 +2672,9 @@ c-----------------------------------------------------------------------
       write(6,*)
       do i=1,8
          i2d = mod1(i,4)
-         x(e,i) = xr(i2d)
-         y(e,i) = yr(i2d)
-         z(e,i) = zr(i)
+         x(i,e) = xr(i2d)
+         y(i,e) = yr(i2d)
+         z(i,e) = zr(i)
 c        write(6,1) e,xr(i),yr(i),zr(i),i
 c  1     format(i8,3f9.4,i3,' ec2')
       enddo

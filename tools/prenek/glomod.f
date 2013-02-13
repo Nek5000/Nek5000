@@ -12,6 +12,8 @@ C not to be disclosed to others, copied, distributed, or displayed
 C without prior authorization.
 C
 C------------------------------------------------------------------------------
+C
+c-----------------------------------------------------------------------
       subroutine glomod
       include 'basics.inc'
       include 'basicsp.inc'
@@ -26,8 +28,37 @@ C
       ITEM(NCHOIC)='ZIPPER'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Non-conf SPLIT'
+c
+c     if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='SPIDER WEB'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='PICTURE FRAME'
+              NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='CORNER FRAME'
+c           NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='SMOOTH'
+c     endif
+c
+      IF(IF3D)THEN
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='SPLIT FLOOR'
+         NCHOIC=NCHOIC+1
+         ITEM(NCHOIC)='NEW SPLIT'
+c        NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='3D CORNER'
+      ENDIF
+c
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='REPLICATE/ROTATE'
+c     if (ndim.eq.2) then
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Refine Hexagons'
+c     else
+c             NCHOIC=NCHOIC+1
+c        ITEM(NCHOIC)='Hex transition'
+c     endif
+
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='OCT/Multi-SPLIT'
            NCHOIC=NCHOIC+1
@@ -40,35 +71,6 @@ C
       ITEM(NCHOIC)='CLIP DOMAIN'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Clean up vertices'
- 
-      if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='SPIDER WEB'
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='PICTURE FRAME'
-              NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='CORNER FRAME'
-c           NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SMOOTH'
-      endif
- 
-      IF(IF3D)THEN
-c        NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SPLIT FLOOR'
-         NCHOIC=NCHOIC+1
-         ITEM(NCHOIC)='NEW SPLIT'
-c        NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='3D CORNER'
-      ENDIF
- 
-c     if (ndim.eq.2) then
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='Refine Hexagons'
-c     else
-c             NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='Hex transition'
-c     endif
-
 
       if (ndim.eq.2) call redraw_mesh
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'GLOBAL REFINE')
@@ -146,7 +148,7 @@ C           Split elements marked in vector ISPLIT
       ENDIF
 c
       GO TO 1
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine frame(isplit,nframe)
 C     Refines corner elements
@@ -170,8 +172,8 @@ C           Only for 2-d
          RMIN=1.0E10
          DO 50 IC=1,4
 C           Only for 2-d
-            RAD=SQRT( (XMOUSE-X(IFEL(1),IC))**2
-     $      +         (YMOUSE-Y(IFEL(1),IC))**2 )
+            rad=sqrt( (xmouse-x(ic,ifel(1)))**2
+     $      +         (ymouse-y(ic,ifel(1)))**2 )
             IF(RAD.LT.RMIN)THEN
                RMIN=RAD
                ICIN(1) = IC
@@ -191,7 +193,7 @@ C           Only for 2-d
             DO 150 IC=1,4
               DO 100 IEL=1,NEL
 C                Only for 2-d
-                 RAD=SQRT((XMOUSE-X(IEL,IC))**2 + (YMOUSE-Y(IEL,ic))**2)
+                 rad=sqrt((xmouse-x(ic,iel))**2 + (ymouse-y(ic,iel))**2)
                  IF(RAD.LT.RMIN)THEN
                     IF(IIEL.EQ.1)THEN
 C                      Pick any old element without further checking
@@ -238,11 +240,11 @@ C                               Set overlaps, we found a common side.
       call rer(fac)
       IF(FAC.LE.0.0)THEN
          CALL PRS('Aborting Picture Frame mesh refinement.$')
-         RETURN
+         return
       ELSE IF(FAC.GT.1.0)THEN
         CALL PRS('Error; You cannot make new refined elements larger $')
         CALL PRS('than the old ones.  ABORTING.$')
-         RETURN
+         return
       ENDIF
 C     Mark elements on other levels for spider web
       DO 10 I=1,NELM
@@ -342,87 +344,84 @@ c
                ICP2=ICP2+4
                ICP3=ICP3+4
            ENDIF
-           IF(ICIN(IIEL).EQ.IOVER(IIEL))THEN
+           if (icin(iiel).eq.iover(iiel)) then
+             ifl = ifel(iiel)
+             ne1 = nel+1
+             ne2 = nel+2
+
 C            FOR "TOP" element (inside corner# = overlapping side #)
-C
-             X(NEL+1,IC  )=X(NEL+1,IC)+(X(NEL+1,ICP1)-X(NEL+1,IC))*FAC
-             Y(NEL+1,IC  )=Y(NEL+1,IC)+(Y(NEL+1,ICP1)-Y(NEL+1,IC))*FAC
+
+             x(ic,ne1)=x(ic,ne1)+(x(icp1,ne1)-x(ic,ne1))*fac
+             y(ic,ne1)=y(ic,ne1)+(y(icp1,ne1)-y(ic,ne1))*fac
+
 C            Calculate Middle point
-             XDIAG=X(NEL+1,IC)
-             YDIAG=Y(NEL+1,IC)
-             XMID=XDIAG+( X(IFEL(IIEL),ICP2)-X(IFEL(IIEL),ICP1) ) * FAC
-             YMID=YDIAG+( Y(IFEL(IIEL),ICP2)-Y(IFEL(IIEL),ICP1) ) * FAC
-C
-            X(NEL+1,ICP3)=XMID
-            Y(NEL+1,ICP3)=YMID
-C
-            X(NEL+2,IC  )=X(NEL+2,IC)+(X(NEL+2,ICP3)-X(NEL+2,IC))*FAC
-            Y(NEL+2,IC  )=Y(NEL+2,IC)+(Y(NEL+2,ICP3)-Y(NEL+2,IC))*FAC
-            X(NEL+2,ICP1)=XMID
-            Y(NEL+2,ICP1)=YMID
-C
-            X(IFEL(IIEL),ICP1)=X(IFEL(IIEL),IC)+
-     $     (X(IFEL(IIEL),ICP1)-X(IFEL(IIEL),IC))*FAC
-            Y(IFEL(IIEL),ICP1)=Y(IFEL(IIEL),IC)+
-     $     (Y(IFEL(IIEL),ICP1)-Y(IFEL(IIEL),IC))*FAC
-            X(IFEL(IIEL),ICP2)=XMID
-            Y(IFEL(IIEL),ICP2)=YMID
-            X(IFEL(IIEL),ICP3)=X(IFEL(IIEL),IC)+
-     $     (X(IFEL(IIEL),ICP3)-X(IFEL(IIEL),IC))*FAC
-            Y(IFEL(IIEL),ICP3)=Y(IFEL(IIEL),IC)+
-     $     (Y(IFEL(IIEL),ICP3)-Y(IFEL(IIEL),IC))*FAC
-         ELSE
-C           FOR "other" element (inside corner# NOT= overlapping side #)
-            X(NEL+1,IC  )=X(NEL+1,IC)+(X(NEL+1,ICP3)-X(NEL+1,IC))*FAC
-            Y(NEL+1,IC  )=Y(NEL+1,IC)+(Y(NEL+1,ICP3)-Y(NEL+1,IC))*FAC
-C
-C           Calculate Middle point
-            XDIAG=X(NEL+1,IC)
-            YDIAG=Y(NEL+1,IC)
-            XMID=XDIAG+( X(IFEL(IIEL),ICP2)-X(IFEL(IIEL),ICP3) ) * FAC
-            YMID=YDIAG+( Y(IFEL(IIEL),ICP2)-Y(IFEL(IIEL),ICP3) ) * FAC
-C
-            X(NEL+1,ICP1)=XMID
-            Y(NEL+1,ICP1)=YMID
-C
-            X(NEL+2,IC  )=X(NEL+2,IC)+(X(NEL+2,ICP1)-X(NEL+2,IC))*FAC
-            Y(NEL+2,IC  )=Y(NEL+2,IC)+(Y(NEL+2,ICP1)-Y(NEL+2,IC))*FAC
-            X(NEL+2,ICP3)=XMID
-            Y(NEL+2,ICP3)=YMID
-C
-            X(IFEL(IIEL),ICP1)=X(IFEL(IIEL),IC)+
-     $     (X(IFEL(IIEL),ICP1)-X(IFEL(IIEL),IC))*FAC
-            Y(IFEL(IIEL),ICP1)=Y(IFEL(IIEL),IC)+
-     $     (Y(IFEL(IIEL),ICP1)-Y(IFEL(IIEL),IC))*FAC
-            X(IFEL(IIEL),ICP2)=XMID
-            Y(IFEL(IIEL),ICP2)=YMID
-            X(IFEL(IIEL),ICP3)=X(IFEL(IIEL),IC)+
-     $     (X(IFEL(IIEL),ICP3)-X(IFEL(IIEL),IC))*FAC
-            Y(IFEL(IIEL),ICP3)=Y(IFEL(IIEL),IC)+
-     $     (Y(IFEL(IIEL),ICP3)-Y(IFEL(IIEL),IC))*FAC
-         ENDIF
-390      CONTINUE
-C
-         NEL=NEL+2
-       ENDIF
-400   CONTINUE
+             xdiag=x(ic,ne1)
+             ydiag=y(ic,ne1)
+             xmid=xdiag+( x(icp2,ifl)-x(icp1,ifl) ) * fac
+             ymid=ydiag+( y(icp2,ifl)-y(icp1,ifl) ) * fac
+
+             x(icp3,ne1)=xmid
+             y(icp3,ne1)=ymid
+
+             x(ic,ne1)=x(ic,ne1)+(x(icp3,ne1)-x(ic,ne1))*fac
+             y(ic,ne1)=y(ic,ne1)+(y(icp3,ne1)-y(ic,ne1))*fac
+             x(icp1,ne2)=xmid
+             y(icp1,ne2)=ymid
+
+             x(icp1,ifl)=x(ic,ifl)+(x(icp1,ifl)-x(ic,ifl))*fac
+             y(icp1,ifl)=y(ic,ifl)+(y(icp1,ifl)-y(ic,ifl))*fac
+             x(icp2,ifl)=xmid
+             y(icp2,ifl)=ymid
+             x(icp3,ifl)=x(ic,ifl)+(x(icp3,ifl)-x(ic,ifl))*fac
+             y(icp3,ifl)=y(ic,ifl)+(y(icp3,ifl)-y(ic,ifl))*fac
+         else
+C            FOR "other" element (inside corner# NOT= overlapping side #)
+             x(ic,ne1)=x(ic,ne1)+(x(icp3,ne1)-x(ic,ne1))*fac
+             y(ic,ne1)=y(ic,ne1)+(y(icp3,ne1)-y(ic,ne1))*fac
+
+C            Calculate Middle point
+             xdiag=x(ic,ne1)
+             ydiag=y(ic,ne1)
+             xmid=xdiag+( x(icp2,ifl)-x(icp3,ifl) ) * fac
+             ymid=ydiag+( y(icp2,ifl)-y(icp3,ifl) ) * fac
+
+             x(icp1,ne1)=xmid
+             y(icp1,ne1)=ymid
+
+             x(ic  ,ne2)=x(ic,ne2)+(x(icp1,ne2)-x(ic,ne2))*fac
+             y(ic  ,ne2)=y(ic,ne2)+(y(icp1,ne2)-y(ic,ne2))*fac
+             x(icp3,ne2)=xmid
+             y(icp3,ne2)=ymid
+
+             x(icp1,ifl)=x(ic,ifl)+(x(icp1,ifl)-x(ic,ifl))*fac
+             y(icp1,ifl)=y(ic,ifl)+(y(icp1,ifl)-y(ic,ifl))*fac
+             x(icp2,ifl)=xmid
+             y(icp2,ifl)=ymid
+             x(icp3,ifl)=x(ic,ifl)+(x(icp3,ifl)-x(ic,ifl))*fac
+             y(icp3,ifl)=y(ic,ifl)+(y(icp3,ifl)-y(ic,ifl))*fac
+         endif
+390      continue
+
+         nel=nel+2
+       endif
+400   continue
 C     Recalculate centers
       IF(NFRAME.EQ.1)NBACK=1
       IF(NFRAME.EQ.2)NBACK=3
-      DO 110 IEL=1,nel
-        XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-        YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
-        CALL DRAWEL(IEL)
-110   CONTINUE
-      DO 120 IIEL=1,NFRAME
-        IEL=IFEL(IIEL)
-        XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-        YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
-        CALL DRAWEL(IEL)
-120   CONTINUE
+      do 110 iel=1,NEL
+        xcen(iel)=(x(1,iel)+x(2,iel)+x(3,iel)+x(4,iel))/4.
+        ycen(iel)=(y(1,iel)+y(2,iel)+y(3,iel)+y(4,iel))/4.
+        call drawel(iel)
+110   continue
+      do 120 iiel=1,nframe
+        iel=ifel(iiel)
+        xcen(iel)=(x(1,iel)+x(2,iel)+x(3,iel)+x(4,iel))/4.
+        ycen(iel)=(y(1,iel)+y(2,iel)+y(3,iel)+y(4,iel))/4.
+        call drawel(iel)
+120   continue
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine splitf
 C     Splits floor in mesh
@@ -433,7 +432,7 @@ C     Splits floor in mesh
       IF(ISPLIT.GT.NLEVEL) THEN
          CALL PRS
      $   ('ERROR- ONLY ',NLEVEL,'Floors Exist.  Aborting Split.$')
-         RETURN
+         return
       ENDIF
       CALL PRS('At what height in this floor do you want the crack?$')
       CALL PRS('0<h<1; 0 is at floor, 1 is at ceiling.'//
@@ -441,10 +440,10 @@ C     Splits floor in mesh
       call rer(fac)
       IF(FAC.GE.1.0)THEN
          CALL PRS('ERROR- Split cant be above ceiling$')
-         RETURN
+         return
       ELSE IF (FAC.LE.0.0)then
          CALL PRS('Aborting Floor Split$')
-         RETURN
+         return
       ENDIF
 C
       NELOLD=NEL
@@ -457,12 +456,12 @@ C
            NEL=NEL+1
            CALL COPYEL(IEL,NEL)
            DO 5 IC=1,4
-              X(IEL,IC+4)=X(IEL,IC  ) + (X(IEL,IC+4)-X(IEL,IC  )) * FAC
-              X(NEL,IC  )=X(IEL,IC+4)
-              Y(IEL,IC+4)=Y(IEL,IC  ) + (Y(IEL,IC+4)-Y(IEL,IC  )) * FAC
-              Y(NEL,IC  )=Y(IEL,IC+4)
-              Z(IEL,IC+4)=Z(IEL,IC  ) + (Z(IEL,IC+4)-Z(IEL,IC  )) * FAC
-              Z(NEL,IC  )=Z(IEL,IC+4)
+              x(ic+4,iel)=x(ic  ,iel) + (x(ic+4,iel)-x(ic  ,iel)) * fac
+              x(ic  ,nel)=x(ic+4,iel)
+              y(ic+4,iel)=y(ic  ,iel) + (y(ic+4,iel)-y(ic  ,iel)) * fac
+              y(ic  ,nel)=y(ic+4,iel)
+              z(ic+4,iel)=z(ic  ,iel) + (z(ic+4,iel)-z(ic  ,iel)) * fac
+              z(ic  ,nel)=z(ic+4,iel)
 C             Now interpolate curved sides
               DO 4 II=1,6
                   CURVE(II,IC+4,IEL)=CURVE(II,IC  ,IEL) +
@@ -483,8 +482,8 @@ C                Straighten them
 C
 5          continue
            NUMAPT(NEL)=ISPLIT+1
-           XCEN(NEL)=(X(NEL,1)+X(NEL,2)+X(NEL,3)+X(NEL,4))/4.
-           YCEN(NEL)=(Y(NEL,1)+Y(NEL,2)+Y(NEL,3)+Y(NEL,4))/4.
+           xcen(nel)=vlsum(x(1,nel),4)/4.
+           ycen(nel)=vlsum(y(1,nel),4)/4.
          ELSE IF(NUMAPT(IEL).GT.ISPLIT)THEN
               NUMAPT(IEL)=NUMAPT(IEL)+1
          ENDIF
@@ -502,8 +501,8 @@ C     Fix Height Vector
          IF(I.EQ.ISPLIT  )HEIGHT(I)=HEIGHT(ISPLIT)*(    FAC)
 80    continue
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine parker(isplit)
 C     Makes spider web
@@ -567,8 +566,8 @@ C                 Check neighbors of this marked element for splits
                  LETAPT(NEL+I)=CHAR(MIN0(ILETAP,122))
 320         CONTINUE
             IF(IF3D)THEN
-              XCENT=(X(IELCRK,5)+X(IELCRK,6)+X(IELCRK,7)+X(IELCRK,8))/4
-              YCENT=(Y(IELCRK,5)+Y(IELCRK,6)+Y(IELCRK,7)+Y(IELCRK,8))/4
+              xcent=vlsum(x(5,ielcrk),4)/4.
+              ycent=vlsum(y(5,ielcrk),4)/4.
             ENDIF
             DO 200 IP=1,4
 C              Straighten internal curved sides
@@ -585,35 +584,36 @@ C              Element adjacent to side IP
                IF(IC.LE.0)IC=IC+4
                IF(INEW.EQ.1)IOUT=IC+3
                IF(INEW.EQ.2)IOUT=IC+1
+
                IF(IOUT.GT.4)IOUT=IOUT-4
-               X    (NEL+IP,IC)=X(NEL+IP,IOUT)+
-     $         (XCEN(NEL+IP) -  X(NEL+IP,IOUT))*.65
-               Y    (NEL+IP,IC)=Y(NEL+IP,IOUT)+
-     $         (YCEN(NEL+IP) -  Y(NEL+IP,IOUT))*.65
-               IF(IF3D)THEN
-                  X(NEL+IP,IC+4)=X(NEL+IP,IOUT+4)+
-     $            (XCENT    -    X(NEL+IP,IOUT+4))*.65
-                  Y(NEL+IP,IC+4)=Y(NEL+IP,IOUT+4)+
-     $            (YCENT    -    Y(NEL+IP,IOUT+4))*.65
-               ENDIF
-               IF(INEW.EQ.2)THEN
+               x    (ic,nel+ip)=x(iout,nel+ip)+
+     $         (xcen(nel+ip) -  x(iout,nel+ip))*.65
+               y    (ic,nel+ip)=y(iout,nel+ip)+
+     $         (ycen(nel+ip) -  y(iout,nel+ip))*.65
+               if (if3d) then
+                  x(ic+4,nel+ip)=x(iout+4,nel+ip)+
+     $            (xcent    -    x(iout+4,nel+ip))*.65
+                  y(ic+4,nel+ip)=y(iout+4,nel+ip)+
+     $            (ycent    -    y(iout+4,nel+ip))*.65
+               endif
+               if (inew.eq.2) then
 C                 Move Corners of center element
-                  X(IELCRK,IP)=X(NEL+IP,IC)
-                  Y(IELCRK,IP)=Y(NEL+IP,IC)
-                  IF(IF3D)THEN
-                     X(IELCRK,IP+4)=X(NEL+IP,IC+4)
-                     Y(IELCRK,IP+4)=Y(NEL+IP,IC+4)
-                  ENDIF
-               ENDIF
-200         CONTINUE
+                  x(ip,ielcrk)=x(ic,nel+ip)
+                  y(ip,ielcrk)=y(ic,nel+ip)
+                  if(if3d)then
+                     x(ip+4,ielcrk)=x(ic+4,nel+ip)
+                     y(ip+4,ielcrk)=y(ic+4,nel+ip)
+                  endif
+               endif
+200         continue
 C           Recalculate centers
-            DO 110 IEL=NEL+1,nel+4
-              XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-              YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
-110         CONTINUE
-            IEL=IELCRK
-            XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-            YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
+            do iel=nel+1,NEL+4
+              xcen(iel)=.25*vlsum(x(1,iel),4)
+              ycen(iel)=.25*vlsum(y(1,iel),4)
+            enddo
+            iel=ielcrk
+            xcen(iel)=.25*vlsum(x(1,iel),4)
+            ycen(iel)=.25*vlsum(y(1,iel),4)
 C
             NEL=NEL+4
          ENDIF
@@ -624,8 +624,8 @@ C     Draw whole new isometric surface
 c        CALL DRAWIS(ISRT(IEL))
          IF(.NOT.IF3D  .OR. NUMAPT(IEL).EQ.ILEVEL) CALL DRAWEL(IEL)
 51    CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine crack(ielcrk,ifacrk,sfrac)
 C     Initiates crack in 1st element of split.  Output is Element #, Side#, and
@@ -686,8 +686,8 @@ c
       CALL PRS(
      $'Closer to a; S > 0.5 is closer to b. <0 to abort.$')
       call rer(sfrac)
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine mark (ielcrk,ifacrk,sfrac,isplit)
 C     Mark where CRACK propagates in vector ISPLIT
@@ -737,10 +737,10 @@ C                            IMAR=5:Check floor of marked with ceiling of new
 C                            IMAR=6:Check ceiling of marked with floor of new
                              RMIN=1.0E10
                              DO 120 IC=1,4
-                                RAD5=SQRT((X(MARKED,1)-X(IEL,IC+4))**2+
-     $                                    (Y(MARKED,1)-Y(IEL,IC+4))**2)
-                                RAD6=SQRT((X(MARKED,5)-X(IEL,IC  ))**2+
-     $                                    (Y(MARKED,5)-Y(IEL,IC  ))**2)
+                                rad5=sqrt((x(marked,1)-x(ic+4,iel))**2+
+     $                                    (y(marked,1)-y(ic+4,iel))**2)
+                                rad6=sqrt((x(marked,5)-x(ic  ,iel))**2+
+     $                                    (y(marked,5)-y(ic  ,iel))**2)
                                 IF(IFMAR.EQ.5)RAD=RAD5
                                 IF(IFMAR.EQ.6)RAD=RAD6
                                 IF(RAD .LT. RMIN) THEN
@@ -806,8 +806,8 @@ C        We're done if no new elements got split
       CALL PRS
      $('ERROR; SOME ELEMENTS MAY BE LEFT UNSPLIT ! PLEASE CHECK.$')
 301   CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine mark2(ielcrk,ifacrk,sfrac,isplit)
 C     Mark where CRACK propagates in vector ISPLIT
@@ -879,32 +879,32 @@ C           Now move corners
 C             Move corners of new element
               IF(CCURVE(IEDGE,IEL).EQ.' ')THEN
 C                Straight line
-                 X(NEL,ICA)=X(NEL,ICA) + (X(NEL,ICB)-X(NEL,ICA))*SFRAC
-                 Y(NEL,ICA)=Y(NEL,ICA) + (Y(NEL,ICB)-Y(NEL,ICA))*SFRAC
-                 Z(NEL,ICA)=Z(NEL,ICA) + (Z(NEL,ICB)-Z(NEL,ICA))*SFRAC
+                 X(ICA,NEL)=X(ICA,NEL) + (X(ICB,NEL)-X(ICA,NEL))*SFRAC
+                 Y(ICA,NEL)=Y(ICA,NEL) + (Y(ICB,NEL)-Y(ICA,NEL))*SFRAC
+                 Z(ICA,NEL)=Z(ICA,NEL) + (Z(ICB,NEL)-Z(ICA,NEL))*SFRAC
               ELSE
                 IF(I12.EQ.2)
-     $          CALL GETPTS(1,    SFRAC,IEL,IEDGE,X(NEL,ICA),Y(NEL,ICA))
+     $          CALL GETPTS(1,    SFRAC,IEL,IEDGE,X(ICA,NEL),Y(ICA,NEL))
                 IF(I12.EQ.1)
-     $          CALL GETPTS(1,1.0-SFRAC,IEL,IEDGE,X(NEL,ICA),Y(NEL,ICA))
+     $          CALL GETPTS(1,1.0-SFRAC,IEL,IEDGE,X(ICA,NEL),Y(ICA,NEL))
               ENDIF
-              Z(NEL,ICA)=Z(NEL,ICA) + (Z(NEL,ICB)-Z(NEL,ICA))*SFRAC
+              Z(ICA,NEL)=Z(ICA,NEL) + (Z(ICB,NEL)-Z(ICA,NEL))*SFRAC
 C             Move corners of old element
-              X(IEL,ICB)=X(NEL,ICA)
-              Y(IEL,ICB)=Y(NEL,ICA)
-              Z(IEL,ICB)=Z(NEL,ICA)
+              X(ICB,IEL)=X(ICA,NEL)
+              Y(ICB,IEL)=Y(ICA,NEL)
+              Z(ICB,IEL)=Z(ICA,NEL)
               IF(CCURVE(IEDGE,IEL).EQ.'S')THEN
 C                Modify Control points
                  IF(I12.EQ.2)THEN
-                    CURVE(3,IEDGE,IEL)=X(NEL,ICB)
-                    CURVE(4,IEDGE,IEL)=Y(NEL,ICB)
-                    CURVE(1,IEDGE,NEL)=X(IEL,ICA)
-                    CURVE(2,IEDGE,NEL)=Y(IEL,ICA)
+                    CURVE(3,IEDGE,IEL)=X(ICB,NEL)
+                    CURVE(4,IEDGE,IEL)=Y(ICB,NEL)
+                    CURVE(1,IEDGE,NEL)=X(ICA,IEL)
+                    CURVE(2,IEDGE,NEL)=Y(ICA,IEL)
                  ELSE IF(I12.EQ.1)THEN
-                    CURVE(3,IEDGE,NEL)=X(IEL,ICA)
-                    CURVE(4,IEDGE,NEL)=Y(IEL,ICA)
-                    CURVE(1,IEDGE,IEL)=X(NEL,ICB)
-                    CURVE(2,IEDGE,IEL)=Y(NEL,ICB)
+                    CURVE(3,IEDGE,NEL)=X(ICA,IEL)
+                    CURVE(4,IEDGE,NEL)=Y(ICA,IEL)
+                    CURVE(1,IEDGE,IEL)=X(ICB,NEL)
+                    CURVE(2,IEDGE,IEL)=Y(ICB,NEL)
                  ENDIF
               ENDIF
 60          CONTINUE
@@ -947,6 +947,7 @@ C           Delete periodic b.c.'s to avoid confusion
                        BC(1,IS,NEL,IF)=0.0
                        BC(2,IS,NEL,IF)=0.0
                        BC(3,IS,NEL,IF)=0.0
+                       ibc(is,nel,if)=0
                   ENDIF
 70          CONTINUE
 C
@@ -954,8 +955,8 @@ C
 100   CONTINUE
 C     Recalculate centers
       DO 110 IEL=1,NEL
-        XCEN(IEL)=(X(IEL,1)+X(IEL,2)+X(IEL,3)+X(IEL,4))/4.
-        YCEN(IEL)=(Y(IEL,1)+Y(IEL,2)+Y(IEL,3)+Y(IEL,4))/4.
+        xcen(iel)=(x(1,iel)+x(2,iel)+x(3,iel)+x(4,iel))/4.
+        ycen(iel)=(y(1,iel)+y(2,iel)+y(3,iel)+y(4,iel))/4.
 110   CONTINUE
 C
       CALL SORTEL
@@ -964,10 +965,132 @@ C     Draw whole new isometric surface
 c        CALL DRAWIS(ISRT(IEL))
          IF(.NOT.IF3D  .OR. NUMAPT(IEL).EQ.ILEVEL) CALL DRAWEL(IEL)
 51    CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine vertadj
+
+      include 'basics.inc'
+
+      integer icalld,nelold,ff,e
+      save    icalld,nelold
+      data    icalld,nelold /2*0/
+
+      icalld=icalld+1
+      io = icalld+75
+
+      call gencen
+      rmin=glmin(rcen,nel)
+
+      call cell_cell_connectivity
+
+      WRITE(S,10) RMIN
+   10 FORMAT(2X,'RMIN:',g13.6,'$')
+      CALL PRS(S)
+
+c     CALL PRS('Input tolerance, relative to el. size (e.g., 0.5:)$')
+c     CALL RER(EPS)
+      eps = 0.05
+
+
+      WRITE(S,20) EPS,RMIN
+   20 FORMAT(2X,'EPS,RMIN:',2E13.6,'$')
+      CALL PRS(S)
+      EPS2=EPS**2
+      epsr=eps*rmin
+
+
+      ncrnr=2**ndim
+      ichk=10
+      if (nel.gt.200) ichk=50
+      if (nel.gt.2000) ichk=500
+      if (nel.gt.20000) ichk=5000
+      iadj=0
+
+      if (nelold.ne.nel) then
+         nelold=nel
+         do 500 ie=1,nel
+         do 500 ic=1,ncrnr
+            x(ic,ie)=round(x(ic,ie))
+            y(ic,ie)=round(y(ic,ie))
+            z(ic,ie)=round(z(ic,ie))
+  500    continue
+      endif
+
+      epsr=.0001*rmin
+      do 1000 ie=1,nel
+
+         if (mod(ie,ichk).eq.0.and.iadj.eq.0) then
+            write(6,1001) ie
+         else
+            iadj=0
+         endif
+
+         do 100 ic=1,ncrnr
+
+            if (abs(x(ic,ie)).lt.epsr.and.x(ic,ie).ne.0.0) then
+               write(s,'(1x,a10,i6,i4,g16.8)') 
+     $         'zeroing x:',ic,ie,x(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               x(ic,ie)=0.0
+               iadj=1
+            endif
+C
+            if (abs(y(ic,ie)).lt.epsr.and.y(ic,ie).ne.0.0) then
+               write(s,'(1x,a10,i6,i4,g16.8)') 
+     $         'zeroing y:',ic,ie,y(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               y(ic,ie)=0.0
+               iadj=1
+            endif
+C
+            if (abs(z(ic,ie)).lt.epsr.and.z(ic,ie).ne.0.0) then
+               write(s,'(1x,a10,i6,i4,g16.8)') 
+     $         'zeroing z:',ic,ie,z(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               z(ic,ie)=0.0
+               iadj=1
+            endif
+  100    continue
+
+         nfaces = 2*ndim
+         do ff=1,nfaces
+           if (cbc(ff,ie,1).eq.'E  ') then
+            je = ibc(ff,ie,1)
+            dist1=(xcen(ie)-xcen(jE))**2+(ycen(ie)-ycen(jE))**2
+     $           +(zcen(ie)-zcen(jE))**2
+            dist2= 1.01*( rcen(ie) + rcen(je) )**2
+            if (dist1.le.dist2) then
+               epsrr = eps2*min(rcen(ie),rcen(je))
+               epsrr = epsrr**2
+               do 700 ic=1,ncrnr
+               do 700 jc=1,ncrnr
+                  dist1=(x(ic,ie)-x(jc,je))**2+(y(ic,ie)-y(jc,je))**2
+     $                 +(z(ic,ie)-z(jc,je))**2
+                  if (dist1.lt.epsrr.and.dist1.ne.0.0) then
+                     if (nel.lt.2000) then
+                        write(s,'(1x,a10,2(i6,i3))')
+     $                  'Adjusting:',je,jc,ie,ic
+                        CALL PRS(S//'$')
+                        call prrrr(x(ic,ie),y(ic,ie),z(ic,ie))
+                        call prrrr(x(jc,je),y(jc,je),z(jc,je))
+                     endif
+c
+                     x(jc,je)=x(ic,ie)
+                     y(jc,je)=y(ic,ie)
+                     z(jc,je)=z(ic,ie)
+                     iadj=1
+                  endif
+  700          continue
+            endif
+           endif
+         enddo
+ 1000 continue
+ 1001 format('  Checking',i9)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine vertadj_old
 C
       include 'basics.inc'
       integer nelold
@@ -1007,46 +1130,46 @@ C
 C
       if (nelold.ne.nel) then
          nelold=nel
-         DO 500 IE=1,NEL
-         DO 500 IC=1,NCRNR
-            X(IE,IC)=ROUND(X(IE,IC))
-            Y(IE,IC)=ROUND(Y(IE,IC))
-            Z(IE,IC)=ROUND(Z(IE,IC))
-  500    CONTINUE
+         do 500 ie=1,nel
+         do 500 ic=1,ncrnr
+            x(ic,ie)=round(x(ic,ie))
+            y(ic,ie)=round(y(ic,ie))
+            z(ic,ie)=round(z(ic,ie))
+  500    continue
       endif
 C
       epsr=.0001*rmin
-      DO 1000 IE=1,NEL
+      do 1000 ie=1,nel
 C
          if (mod(ie,ichk).eq.0.and.iadj.eq.0) then
-            WRITE(6,1001) IE
+            write(6,1001) ie
          else
             iadj=0
          endif
 C
-         DO 100 IC=1,NCRNR
+         do 100 ic=1,ncrnr
 C
-            if (abs(x(ie,ic)).lt.epsr.and.x(ie,ic).ne.0.0) then
+            if (abs(x(ic,ie)).lt.epsr.and.x(ic,ie).ne.0.0) then
                write(s,'(1x,a10,i6,i4,g16.8)') 
-     $         'zeroing x:',ie,ic,x(ie,ic)
-               CALL PRS(S//'$')
-               x(ie,ic)=0.0
+     $         'zeroing x:',ic,ie,x(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               x(ic,ie)=0.0
                iadj=1
             endif
 C
-            if (abs(y(ie,ic)).lt.epsr.and.y(ie,ic).ne.0.0) then
+            if (abs(y(ic,ie)).lt.epsr.and.y(ic,ie).ne.0.0) then
                write(s,'(1x,a10,i6,i4,g16.8)') 
-     $         'zeroing y:',ie,ic,y(ie,ic)
-               CALL PRS(S//'$')
-               y(ie,ic)=0.0
+     $         'zeroing y:',ic,ie,y(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               y(ic,ie)=0.0
                iadj=1
             endif
 C
-            if (abs(z(ie,ic)).lt.epsr.and.z(ie,ic).ne.0.0) then
+            if (abs(z(ic,ie)).lt.epsr.and.z(ic,ie).ne.0.0) then
                write(s,'(1x,a10,i6,i4,g16.8)') 
-     $         'zeroing z:',ie,ic,z(ie,ic)
-               CALL PRS(S//'$')
-               z(ie,ic)=0.0
+     $         'zeroing z:',ic,ie,z(ic,ie)
+               if (nel.lt.10000.or.mod(ie,1000).eq.0) CALL PRS(S//'$')
+               z(ic,ie)=0.0
                iadj=1
             endif
   100    CONTINUE
@@ -1067,10 +1190,10 @@ c           endif
 c              epsrr = .01*min(rcen(ie),rcen(je))
                epsrr = eps2*min(rcen(ie),rcen(je))
                epsrr = epsrr**2
-               DO 700 IC=1,NCRNR
-               DO 700 JC=1,NCRNR
-                  DIST1=(X(IE,IC)-X(JE,JC))**2+(Y(IE,IC)-Y(JE,JC))**2
-     $                 +(Z(IE,IC)-Z(JE,JC))**2
+               do 700 ic=1,ncrnr
+               do 700 jc=1,ncrnr
+                  dist1=(x(ic,ie)-x(jc,je))**2+(y(ic,ie)-y(jc,je))**2
+     $                 +(z(ic,ie)-z(jc,je))**2
                   IF (DIST1.LT.epsrr.and.dist1.ne.0.0) THEN
                      if (nel.lt.2000) then
                         write(s,'(1x,a10,2(i6,i3))')
@@ -1079,26 +1202,26 @@ c              epsrr = .01*min(rcen(ie),rcen(je))
 c
 c                   diag.
 c                      if (ie.eq.514.and.je.eq.3377) then
-c                         write(6,*) ic,x(ie,ic),y(ie,ic),z(ie,ic),dist1
-c                         write(6,*) jc,x(ie,jc),y(ie,jc),z(ie,jc),eps2
+c                         write(6,*) ic,x(ic,ie),y(ic,ie),z(ic,ie),dist1
+c                         write(6,*) jc,x(jc,ie),y(jc,ie),z(jc,ie),eps2
 c                         write(6,*) 'go?'
 c                         call res(s,1)
 c                      endif
-c                      write(io,75) ie,ic,x(ie,ic),y(ie,ic),z(ie,ic),je,jc
-c                      write(io,76) je,jc,x(je,jc),y(je,jc),z(je,jc),ie,ic
+c                      write(io,75) ic,ie,x(ic,ie),y(ic,ie),z(ic,ie),je,jc
+c                      write(io,76) je,jc,x(jc,je),y(jc,je),z(jc,je),ic,ie
 c                   diag.
 c
-                        call prrrr(x(ie,ic),y(ie,ic),z(ie,ic))
-                        call prrrr(x(je,jc),y(je,jc),z(je,jc))
+                        call prrrr(x(ic,ie),y(ic,ie),z(ic,ie))
+                        call prrrr(x(jc,je),y(jc,je),z(jc,je))
                      endif
 c
-                     X(JE,JC)=X(IE,IC)
-                     Y(JE,JC)=Y(IE,IC)
-                     Z(JE,JC)=Z(IE,IC)
+                     x(jc,je)=x(ic,ie)
+                     y(jc,je)=y(ic,ie)
+                     z(jc,je)=z(ic,ie)
 C
 c                diag.
-c                  write(io,77) je,jc,x(je,jc),y(je,jc),z(je,jc),ie,ic
-c                  call prrrr(x(je,jc),y(je,jc),z(je,jc))
+c                  write(io,77) jc,je,x(jc,je),y(jc,je),z(jc,je),ic,ie
+c                  call prrrr(x(jc,je),y(jc,je),z(jc,je))
 C
    75 format('I',i6,i2,3g18.9,I8,i2)
    76 format('J',i6,i2,3g18.9,I8,i2)
@@ -1110,8 +1233,8 @@ C
   800    CONTINUE
  1000 CONTINUE
  1001 FORMAT('  Checking',i9)
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine clpdom
       include 'basics.inc'
@@ -1122,10 +1245,6 @@ C
       nchoic = 1
       ITEM(nchoic)       =             'UP MENU'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Clip N'
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Input DEL list'
-      nchoic = nchoic+1
       ITEM(nchoic)       =             'Clip X'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Clip Y'
@@ -1133,45 +1252,46 @@ C
          nchoic = nchoic+1
          ITEM(nchoic)    =             'Clip Z'
       ENDIF
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Clip N'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Input DEL list'
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 C
-      IF (CHOICE.EQ.'UP MENU') RETURN
+      IF (CHOICE.EQ.'UP MENU') return
       IF (CHOICE.EQ.'Clip X') THEN
-         call get_xminmax(xmin,xmax,x)
-         call prsrr(
-     $   'Input location of X-clipping plane:  Xrange=$',xmin,xmax)
+         CALL PRS(
+     $   'Input location of X-clipping plane.$')
          CALL RER(Xclip)
 c        CALL DRAWLINE(Xclip,Ymax,Xclip,Ymin)
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') RETURN
-         call clipper(Xclip,ANS,X)
+         IF (ANS.eq.'=') return
+         CALL Clipper(Xclip,ANS,X)
       ELSEIF (CHOICE.EQ.'Clip Y') THEN
-         call get_xminmax(ymin,ymax,y)
-         call prsrr(
-     $   'Input location of Y-clipping plane:  Yrange=$',ymin,ymax)
+         CALL PRS(
+     $   'Input location of Y-clipping plane.$')
          CALL RER(Yclip)
 c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') RETURN
-         call clipper(Yclip,ANS,Y)
+         IF (ANS.eq.'=') return
+         CALL Clipper(Yclip,ANS,Y)
       ELSEIF (CHOICE.EQ.'Clip Z') THEN
-         call get_xminmax(zmin,zmax,z)
-         call prsrr(
-     $   'Input location of Z-clipping plane:  Zrange=$',zmin,zmax)
+         CALL PRS(
+     $   'Input location of Z-clipping plane.$')
          CALL RER(Zclip)
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') RETURN
-         call clipper(Zclip,ANS,Z)
+         IF (ANS.eq.'=') return
+         CALL Clipper(Zclip,ANS,Z)
       ELSEIF (CHOICE.EQ.'Clip N') THEN
          CALL PRS('Allows to clip below/above arbitrary plane.$')
          if (if3d) then
@@ -1202,119 +1322,75 @@ c
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') RETURN
-         call clippern(xyzclip,xyznorm,ANS,x,y,z,del_list)
+         IF (ANS.eq.'=') return
+         CALL ClipperN(xyzclip,xyznorm,ANS,x,y,z,del_list)
       ELSEIF (CHOICE.EQ.'Input DEL list') THEN
          call mult_del(del_list)
       ENDIF
       GOTO 1
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine clipper(Clip,DIR,pts)
       include 'basics.inc'
-      DIMENSION pts(nelm,8)
-      CHARACTER*1 DIR,YESNO
-C
-      Nvts = 4
-      IF (IF3D) Nvts=8
-C
-      IF (DIR.eq.'>') THEN
-C
-C        Count number
-         NUMDEL=0
-         DO 101 JE=1,NEL
-            DO 100  i=1,Nvts
-               if (je.le.nel .and. pts(je,i).gt.clip) then
-                   NUMDEL=NUMDEL+1
-                   GOTO 101
-               endif
-  100       CONTINUE
-  101    CONTINUE
-         write(s,102) numdel,nel
-  102    format(' You will be eliminating',i8,' of ',i8,
-     $   ' elements ABOVE clipping plane.$')
-         call prs(s)
-         call prs(' OK? (Y/N)$')
-         call res(yesno,1)
-C
-         if (yesno.eq.'y'.or.yesno.eq.'Y') THEN
-C
-C           If any part of an element is above the clipping plane, delte it.
-C           This is a gross N^2 algorithm, but it beats entering them all
-C           by hand....
-C
-            NUMDEL=0
-  110       CONTINUE
-            NELT=NEL
-            DO 120 JE=1,NELT
-            DO 120  i=1,Nvts
-               if (je.le.nel .and. pts(je,i).gt.clip) then
-                   call delelq(je)
-                   NUMDEL=NUMDEL+1
-                   GOTO 110
-               ENDIF
-  120       CONTINUE
-            IF (NUMDEL.GT.0.and.nel.le.100) THEN
-C              redraw the mesh
-               CALL REFRESH
-               CALL DRMENU('NOCOVER')
-               CALL DRGRID
-               write(s,500) numdel,nel
-               call prs(s)
-               DO 130 IEL=1,NEL
-                  CALL DRAWEL(IEL)
-  130          CONTINUE
-            ENDIF
-         ENDIF
-C
-      ELSEIF (DIR.eq.'<') THEN
-C
-C        If any part of an element is below the clipping plane, delte it.
-C        Count number
-         NUMDEL=0
-         DO 201 JE=1,NEL
-            DO 200  i=1,Nvts
-               if (je.le.nel.and.pts(je,i).lt.clip) then
-                   NUMDEL=NUMDEL+1
-                   GOTO 201
-               endif
-  200       CONTINUE
-  201    CONTINUE
-         write(s,202) numdel,nel
-  202    format(' You will be eliminating',i8,' of ',i8,
-     $   ' elements BELOW clipping plane.$')
-         call prs(s)
-         call prs(' OK? (Y/N)$')
-         call res(yesno,1)
-C
-         if (yesno.eq.'y'.or.yesno.eq.'Y') THEN
-            NUMDEL=0
-  210       CONTINUE
-            NELT=NEL
-            DO 220 JE=1,NELT
-            DO 220  i=1,Nvts
-               if (je.le.nel .and. pts(je,i).lt.clip) then
-                   call delelq(je)
-                   NUMDEL=NUMDEL+1
-                   GOTO 210
-               ENDIF
-  220       CONTINUE
-            IF (NUMDEL.GT.0.and.nel.le.100) THEN
-C              redraw the mesh
-               CALL REFRESH
-               CALL DRMENU('NOCOVER')
-               CALL DRGRID
-               write(s,500) numdel,nel
-               call prs(s)
-               DO 230 IEL=1,NEL
-                  CALL DRAWEL(IEL)
-  230          CONTINUE
-            ENDIF
-         ENDIF
-      ENDIF
-  500 format(i7,' elements deleted.',i7,' elements remaining.$')
-      RETURN
-      END
+      real pts(8,nelm)
+      character*1 dir,yesno
+      common /ctmp0/ idel(nelm),edel(nelm)
+      integer edel,slot,e
+
+      call izero(idel,nel)
+
+      nvts = 4
+      if (if3d) nvts=8
+
+      numdel=0
+      do e=1,nel
+         do i=1,nvts
+            if ((dir.eq.'>'.and.pts(i,e).gt.clip)  .or.
+     $          (dir.eq.'<'.and.pts(i,e).lt.clip)) then
+                numdel=numdel+1
+                idel(e)=1
+                edel(numdel)=e
+                goto 100
+            endif
+         enddo
+  100    continue
+      enddo
+
+      if (dir.eq.'>') write(s,101) numdel,nel
+  101 format(' You will be eliminating',i8,' of ',i8,
+     $' elements ABOVE clipping plane.$')
+
+      if (dir.eq.'<') write(s,102) numdel,nel
+  102 format(' You will be eliminating',i8,' of ',i8,
+     $' elements BELOW clipping plane.$')
+
+      call prs(s)
+      call prs(' OK? (Y/N)$')
+      call res(yesno,1)
+      if (yesno.eq.'n'.or.yesno.eq.'N') return
+      if (numdel.eq.0) return
+
+      slot = edel(1)
+      do e=edel(1)+1,nel
+         if (idel(e).eq.0) then
+            call copyel(e,slot)  ! e-->slot
+            slot = slot+1
+         endif
+      enddo
+      nel = slot-1
+
+      call copyel(nel,nelm)
+
+C     Recount the number of curved sides
+      ncurve=0
+      do e=1,nel
+      do iedge=1,12
+         if(ccurve(iedge,e).ne.' ') ncurve=ncurve+1
+      enddo
+      enddo
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine stretch
       call shift2
@@ -1413,14 +1489,14 @@ c        enddo
 c
       do ie=1,nel
       do i=1,nvc
-        xo=x(ie,i)
+        xo=x(i,ie)
         if (b(cell(i,ie)).le.0) then
-           x(ie,i) = xp(cell(i,ie))
-           y(ie,i) = yp(cell(i,ie))
-           z(ie,i) = zp(cell(i,ie))
+           x(i,ie) = xp(cell(i,ie))
+           y(i,ie) = yp(cell(i,ie))
+           z(i,ie) = zp(cell(i,ie))
         endif
         jc=cell(i,ie)
-        write(66,*) b(jc),' xo:',xo,x(ie,i),i,ie,jc,g(jc)
+        write(66,*) b(jc),' xo:',xo,x(i,ie),i,ie,jc,g(jc)
       enddo
       enddo
     1 format('xc:',2i4,i9,4f12.5)
@@ -1886,19 +1962,19 @@ c
 c
 c     Get current vertex map info
 c
-      open(unit=28,file=string,err=999)
-      read(28,*) ncell
+      open(unit=10,file=string,err=999)
+      read(10,*) ncell
       do ie=1,ncell
-c        read(28,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
+c        read(10,*,end=998,err=998) idum,(cell(k,ie),k=1,nvc)
 c
 c        HMT's data (.map) is in the good h-cube ordering
-         read(28,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
+         read(10,*,end=998,err=998) idum,(kcell(k),k=1,nvc)
          do k=1,nvc
             j=ecrnr(k)
             cell(k,ie) = kcell(j)
          enddo
       enddo
-      close(unit=28)
+      close(unit=10)
 c
 c
 c     Sort data and gridpoints by global vertex number
@@ -1908,9 +1984,9 @@ c
          do k=1,nvc
 c           j     = ecrnr(k)
             l     = cell(k,ie)
-            xp(l) = x (ie,k)
-            yp(l) = y (ie,k)
-            zp(l) = z (ie,k)
+            xp(l) = x(k,ie)
+            yp(l) = y(k,ie)
+            zp(l) = z(k,ie)
             lmax  = max(l,lmax)
 c           write(6,6) 'x:',ie,k,l,xp(l),yp(l)
          enddo
@@ -1988,7 +2064,7 @@ C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 c
 C
-      IF (CHOICE.EQ.'UP MENU') RETURN
+      IF (CHOICE.EQ.'UP MENU') return
       IF (CHOICE.EQ.'Redraw mesh') then
          call redraw_mesh
       ELSEIF (CHOICE.EQ.'Set smoothing box') THEN
@@ -2012,7 +2088,7 @@ c     subroutine smoother(cell,nvc,ia,ja,ww,b,g,x0,x1,y0,y1,z0,z1)
       ENDIF
 c
       GOTO 1
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine find_sm_box(b,nv,x0,x1,y0,y1,z0,z1)
 c
@@ -2101,8 +2177,8 @@ C
          do ie=1,nel
             do j=1,4
                i=inv(j)
-               xm3(i,1,1) = x(ie,j)
-               ym3(i,1,1) = y(ie,j)
+               xm3(i,1,1) = x(j,ie)
+               ym3(i,1,1) = y(j,ie)
             enddo
 c           Overload with new mesh data
             do j=1,4
@@ -2137,9 +2213,9 @@ C
 c
             do j=1,8
                i=inv(j)
-               xm3(i,1,1) = x(ie,j)
-               ym3(i,1,1) = y(ie,j)
-               zm3(i,1,1) = z(ie,j)
+               xm3(i,1,1) = x(j,ie)
+               ym3(i,1,1) = y(j,ie)
+               zm3(i,1,1) = z(j,ie)
             enddo
 c           Overload with new mesh data
             do j=1,8
@@ -2181,7 +2257,7 @@ c
                write(6,4) ie,zm3(i,1,1),zp(cell(inv(i),ie)),jacm3(i,1,1)
                   write(6,4) 
                enddo
-4              format(i9,1p4e14.6)
+4              format(i5,1p4e14.6)
                write(6,*) ie,nebad
                call prs('continue?$')
                call res(string,1)
@@ -2200,7 +2276,7 @@ C
       ierr=1
       SIGN = JAC(1)
       DO 100 I=2,N
-         IF (SIGN*JAC(I).LE.0.0) RETURN
+         IF (SIGN*JAC(I).LE.0.0) return
   100 CONTINUE
       ierr=0
       return
@@ -2261,7 +2337,7 @@ C     Count number
   101 continue
 c
       write(s,102) numdel,nel
-  102 format('You will be eliminating',i9,' of ',i9,
+  102 format('You will be eliminating',i6,' of ',i6,
      $' elements. OK? (Y/N)$')
       call prs(s)
       call res(yesno,1)
@@ -2295,11 +2371,11 @@ C        redraw the mesh
   130    CONTINUE
       ENDIF
   500 format(i7,' elements deleted.',i7,' elements remaining.$')
-      RETURN
+      return
   999 continue
       call prs('Could not open file.  Returning.$')
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine ipsort( ID, N, D, INFO )
 *
@@ -2382,12 +2458,12 @@ c-----------------------------------------------------------------------
          INFO = -2
       ENDIF
       IF (INFO.NE.0 ) THEN
-         RETURN
+         return
       ENDIF
 *
 *     Quick return if possible
 *
-      IF (N.LE.1) RETURN
+      IF (N.LE.1) return
 *
       STKPNT = 1
       STACK( 1, 1 ) = 1
@@ -2538,16 +2614,16 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (STKPNT.GT.0 )
      $   GO TO 10
-      RETURN
+      return
 *
 *     End of DLASRT
 *
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine clipperN(xyzc,xyzn,DIR,xcl,ycl,zcl,del_list)
       include 'basics.inc'
       real xyzc(3),xyzn(3)
-      real xcl(nelm,8),ycl(nelm,8),zcl(nelm,8)
+      real xcl(8,1),ycl(8,1),zcl(8,1)
       integer del_list(1)
       real dxyz(3)
       CHARACTER*1 DIR,YESNO
@@ -2561,9 +2637,9 @@ C     Count number
       NUMDEL=0
       DO 101 JE=1,NEL
          DO 100  i=1,Nvts
-            dxyz(1) = xcl(je,i)-xyzc(1)
-            dxyz(2) = ycl(je,i)-xyzc(2)
-            dxyz(3) = zcl(je,i)-xyzc(3)
+            dxyz(1) = xcl(i,je)-xyzc(1)
+            dxyz(2) = ycl(i,je)-xyzc(2)
+            dxyz(3) = zcl(i,je)-xyzc(3)
             dn    = dxyz(1)*xyzn(1)+dxyz(2)*xyzn(2)+dxyz(3)*xyzn(3)
             if (dir.eq.'>') then
                if (je.le.nel .and. dn .gt. 0) then
@@ -2583,11 +2659,11 @@ C     Count number
 c
       if (dir.eq.'>') then
          write(s,102) numdel,nel
-  102    format(' You will be eliminating',i9,' of ',i9,
+  102    format(' You will be eliminating',i5,' of ',i5,
      $   ' elements ABOVE clipping plane.$')
       else
          write(s,103) numdel,nel
-  103    format(' You will be eliminating',i9,' of ',i9,
+  103    format(' You will be eliminating',i5,' of ',i5,
      $   ' elements BELOW clipping plane.$')
       endif
       call prs(s)
@@ -2623,8 +2699,8 @@ C        redraw the mesh
   130    CONTINUE
       ENDIF
   500 format(i7,' elements deleted.',i7,' elements remaining.$')
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine iusort( ID, N, list, INFO )
 c
@@ -2686,21 +2762,21 @@ c
 C
       do 100 ie=1,nel
       do 100 i=1,nvts
-         if (z(ie,i).gt.z00) then
-c           zt = z(ie,i)-z0
-            zt = z(ie,i)
-            rt = zt*zt + x(ie,i)**2 + y(ie,i)**2
+         if (z(i,ie).gt.z00) then
+c           zt = z(i,ie)-z0
+            zt = z(i,ie)
+            rt = zt*zt + x(i,ie)**2 + y(i,ie)**2
             if (rt.gt.rr) then
-               if (if_sph_str) z(ie,i) = z0 + sfact*zt
-               x(ie,i) = sfact*x(ie,i)
-               y(ie,i) = sfact*y(ie,i)
-               if (if_sph_str) z(ie,i) = sfact*z(ie,i)
+               if (if_sph_str) z(i,ie) = z0 + sfact*zt
+               x(i,ie) = sfact*x(i,ie)
+               y(i,ie) = sfact*y(i,ie)
+               if (if_sph_str) z(i,ie) = sfact*z(i,ie)
             endif
          else
-            rt = x(ie,i)**2 + y(ie,i)**2
+            rt = x(i,ie)**2 + y(i,ie)**2
             if (rt.gt.rr) then
-               x(ie,i) = sfact*x(ie,i)
-               y(ie,i) = sfact*y(ie,i)
+               x(i,ie) = sfact*x(i,ie)
+               y(i,ie) = sfact*y(i,ie)
             endif
          endif
   100 continue
@@ -2709,19 +2785,15 @@ C     Take care of curved sides
 C
       do 200 ie = 1,nel
       do 200 is = 1,12
-         if (ccurve(is,ie).eq.'s') then ! sphere rad=curve(4,is,ie)
-c           if (curve(4,is,ie).gt.re)
-c    $         curve(4,is,ie) = sfact*curve(4,is,ie)
+         if (ccurve(is,ie).eq.'s'.or.ccurve(is,ie).eq.'m') then
             do i=1,4
                curve(i,is,ie) = sfact*curve(i,is,ie)
             enddo
-         elseif (ccurve(is,ie).eq.'C') then ! cylinder rad=curve(1,is,ie)
+         endif
+         if (ccurve(is,ie).eq.'C') then
+C           cylindrical side, rad = curve(1,is,ie)
             if (abs(curve(1,is,ie)).gt.re)
      $         curve(1,is,ie) = sfact*curve(1,is,ie)
-         elseif (ccurve(is,ie).eq.'m') then ! midside node
-            do i=1,3
-               curve(i,is,ie) = sfact*curve(i,is,ie)
-            enddo
          endif
   200 continue
       return
@@ -2744,12 +2816,12 @@ C
       do 100 ie=1,nel
       do 100 i=1,nvts
 
-         rad_o   = y(ie,i)**2 + x(ie,i)**2
+         rad_o   = y(i,ie)**2 + x(i,ie)**2
          if (rad_o.gt.0) rad_o = sqrt(rad_o)
-         theta_o = atan2(y(ie,i),x(ie,i))
+         theta_o = atan2(y(i,ie),x(i,ie))
          theta_n = sfact*theta_o
-         x(ie,i) = rad_o*cos(theta_n)
-         y(ie,i) = rad_o*sin(theta_n)
+         x(i,ie) = rad_o*cos(theta_n)
+         y(i,ie) = rad_o*sin(theta_n)
 
   100 continue
       return
@@ -2873,13 +2945,13 @@ c
       do e=e0,e1
 c
          do i =1,8
-            x(e,i) = x(e,i) + xt
-            y(e,i) = y(e,i) + yt
-            z(e,i) = z(e,i) + zt
+            x(i,e) = x(i,e) + xt
+            y(i,e) = y(i,e) + yt
+            z(i,e) = z(i,e) + zt
          enddo
 c
-         do f=1,12
-            if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
+         do f=1,6
+            if (ccurve(f,e).eq.'s') then
                curve(1,f,e) = curve(1,f,e) + xt
                curve(2,f,e) = curve(2,f,e) + yt
                curve(3,f,e) = curve(3,f,e) + zt
@@ -2890,43 +2962,166 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rotate_mesh_3d
+      subroutine get_t1(t,n)
+      real t(3),n(3)
+
+      call copy(t,n,3)
+
+      tmin = glmin(t,3)
+      tmax = glmax(t,3)
+      tnrm = glamax(t,3)
+
+      eps = 1.e-4
+
+      if (tnrm.lt.eps) then
+         t(1) = 1.
+         call orthogonalize(t,n,3)
+         call normalize (t,3)
+c        call outmat(n,1,3,'nveca',1)
+c        call outmat(t,1,3,'tveca',1)
+         return
+      endif
+
+      do i=2,3
+         if (abs(t(i)-t(1))/tnrm.gt.eps) then
+            t1=t(1)
+            t(1) = t(i)
+            t(i) = t1
+            call orthogonalize(t,n,3)
+            call normalize (t,3)
+c           call outmat(n,1,3,'nvecb',1)
+c           call outmat(t,1,3,'tvecb',1)
+            return
+         endif
+      enddo
+
+c     If we get here, all 3 components are same and nonzero
+
+      t(1) = 0
+      call orthogonalize(t,n,3)
+      call normalize (t,3)
+c     call outmat(n,1,3,'nvecc',1)
+c     call outmat(t,1,3,'tvecc',1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rotate_mat_3d(a,normal,angle)
+
+      real a(3,3),normal(3)
+
+      real r(3,3),o(3,3),rt(3,3)
+
+c     call outmat(normal,1,3,'norml',1)
+
+      call copy      (r,normal,3)  ! Column 1 of R is normal
+      call normalize (r,3)
+
+c     call outmat    (r,1,3,'rnrml',1)
+
+      call get_t1        (r(1,2),r)         ! arbritrary t1 from normal
+      call vcross_normal (r(1,3),r,r(1,2))  ! t2 = n x t1 --> n = t1 x t2
+
+      call transpose_r (rt,3,r,3)
+
+      one   = 1.
+      pi    = 4.*atan(one)
+      theta = pi*angle/180.
+      c     = cos(theta)
+      s     = sin(theta)
+
+      call rzero(o,9)
+      o(1,1) = 1
+      o(2,2) = c
+      o(3,3) = c
+      o(2,3) = s
+      o(3,2) = -s
+
+c     call outmat(r ,3,3,'r rot',1)
+c     call outmat(rt,3,3,'rtrot',2)
+c     call outmat(o ,3,3,'omega',3)
+
+      call mxm(o,3,rt,3,a,3)
+      call copy(o,a,9)
+      call mxm(r,3,o,3,a,3)
+
+c     call outmat(a ,3,3,'a  rot',1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rotate_el_vec(e,normal,angle)
+
+c     Rotate element e about axis normal emanating from origin
+
+      include 'basics.inc'
+      real normal(3)
+      integer e
+      real a(3,3)
+
+      call gen_rotate_mat_3d(a,normal,angle)
+      call rotate_el_3d(e,a)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rotate_el_3d(e,a)
       include 'basics.inc'
       real a(3,3)
       integer e,f
-      character*132 sname
-      character*80 fname
-      character*1  fname1(80)
-      equivalence (fname1,fname)
 
-      call prs('Input file name for 3x3 rotation matrix:$')
-      call rzero (fname,80)
-      call res   (fname,80)
-
-      open  (unit=20,file=fname,status='old',err=999)
-
-      call blank(sname,132)
-      len = ltrunc(fname,80)
-      write(sname,1) (fname1(k),k=1,len),'$'
-    1 format('Opening file ',80a1)
-      call prs(sname)
-
-      read  (20,*) ((a(i,j),j=1,ndim),i=1,ndim)
-      close (20)
-
-      do i=1,ndim
-         call prsrrr('rot mat: $',a(i,1),a(i,2),a(i,3))
+      do i=1,2**ndim
+         xt = x(i,e)
+         yt = y(i,e)
+         zt = z(i,e)
+         x(i,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+         y(i,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+         z(i,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
       enddo
 
+      do i=1,27
+         xt = x27(i,e)
+         yt = y27(i,e)
+         zt = z27(i,e)
+         x27(i,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+         y27(i,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+         z27(i,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+      enddo
+
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
+            xt = curve(1,f,e)
+            yt = curve(2,f,e)
+            zt = curve(3,f,e)
+            curve(1,f,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+            curve(2,f,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+            curve(3,f,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rotate_mesh_3d_mat
+      include 'basics.inc'
+      real a(3,3)
+      integer e,f
+c
+      call rzero(a,9)
+      call prs('Opening file rot.mat$')
+      open  (unit=10,file='rot.mat',status='old',err=999)
+      read  (10,*) ((a(i,j),j=1,ndim),i=1,ndim)
+      close (10)
+c
       do e=1,nel
 
         do i=1,2**ndim
-           xt = x(e,i)
-           yt = y(e,i)
-           zt = z(e,i)
-           x(e,i) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
-           y(e,i) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
-           z(e,i) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+           xt = x(i,e)
+           yt = y(i,e)
+           zt = z(i,e)
+           x(i,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+           y(i,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+           z(i,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
         enddo
 
         do i=1,27
@@ -2955,11 +3150,24 @@ c
 c
       return
 c
-  999 call blank(sname,132)
-      len = ltrunc(fname,80)
-      write(sname,2) (fname1(k),k=1,len),'$'
-    2 format('File not found: ',80a1)
-      call prs(sname)
+  999 call prs('File "rot.mat" not found...$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rotate_mesh_3d
+      include 'basics.inc'
+      real normal(3)
+      integer e,f
+
+      call prs('Enter vector, (e.g., 1,1,1):$')
+      call rerrr(normal(1),normal(2),normal(3))
+
+      call prs('Enter angle:$')
+      call rer(angle)
+
+      do e=1,nel
+         call rotate_el_vec(e,normal,angle)
+      enddo
 
       return
       end
@@ -2977,10 +3185,10 @@ c
 c
       do e=1,nel
       do i=1,2**ndim
-         xt = x(e,i)
-         yt = y(e,i)
-         x(e,i) = ca*xt-sa*yt
-         y(e,i) = sa*xt+ca*yt
+         xt = x(i,e)
+         yt = y(i,e)
+         x(i,e) = ca*xt-sa*yt
+         y(i,e) = sa*xt+ca*yt
       enddo
       enddo
 
@@ -2992,8 +3200,8 @@ c
       a(3,3) =  1.
 
       do e=1,nel
-      do f=1,12
-         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
+      do f=1,6
+         if (ccurve(f,e).eq.'s') then
             xt = curve(1,f,e)
             yt = curve(2,f,e)
             zt = curve(3,f,e)
@@ -3025,10 +3233,10 @@ c-----------------------------------------------------------------------
 
       do e=e0,e1
       do i=1,2**ndim
-         xt = x(e,i)
-         yt = y(e,i)
-         x(e,i) = ca*xt-sa*yt
-         y(e,i) = sa*xt+ca*yt
+         xt = x(i,e)
+         yt = y(i,e)
+         x(i,e) = ca*xt-sa*yt
+         y(i,e) = sa*xt+ca*yt
       enddo
       enddo
 
@@ -3125,9 +3333,9 @@ c     precompute it on the first call.
          call apply_form_2d(y27(1,e),y27(1,ef),jr,js)
       endif
 
-      call q_to_neklin  (x(e,1),nelm,x27(1,e),if3d)
-      call q_to_neklin  (y(e,1),nelm,y27(1,e),if3d)
-      call q_to_neklin  (z(e,1),nelm,z27(1,e),if3d)
+      call q_to_neklin  (x(1,e),1,x27(1,e),if3d)
+      call q_to_neklin  (y(1,e),1,y27(1,e),if3d)
+      call q_to_neklin  (z(1,e),1,z27(1,e),if3d)
 
       call fix_m_curve(e)
 
@@ -3262,26 +3470,6 @@ c     Move forms (for now, assumed to be whole existant mesh)
       nel = 0                 ! Nothing left after form-shift
 
       call template_to_forms  ! Map template to forms
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine get_xminmax(xmin,xmax,xx)
-      include 'basics.inc'
-      real xx(nelm,8)
-      integer e
-
-      nv   = 2**ndim
-
-      xmin = 1.e20
-      xmax = -1.e20
-
-      do i=1,nv
-      do e=1,nel
-         xmin=min(xmin,xx(e,i))
-         xmax=max(xmax,xx(e,i))
-      enddo
-      enddo
 
       return
       end

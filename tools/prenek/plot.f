@@ -21,7 +21,7 @@ C     This subroutine replaces data statements
       INCLUDE 'basics.inc'
       COMMON /TTSCAL/ TX(16)
 C
-      OPEN(UNIT=13)
+      OPEN(UNIT=13,STATUS='SCRATCH')
 C
 C     Initialize Character Strings to blank.
 C
@@ -300,25 +300,15 @@ c-----------------------------------------------------------------------
       YPHY = YZERO + YSCREN  * YFAC
       RETURN
       END
-c-----------------------------------------------------------------------
-      subroutine ginGRD(X1i)
+      subroutine ginGRD(X1)
 C     Sets Coarseness of Grid on tablet and screen. 0 < x1 < 1
       INCLUDE 'devices.inc'
-
-      x1 = x1i
-      if (x1i.lt.0) x1 = 1./x1i
-
       IF(X1.LT.0.0 .OR. X1.GT.1.0) THEN
          CALL PRS('Error: Grid must be between 0 and 1 (fraction of$')
          CALL PRS
      $   ('Screen height).  Screen gridding couldnt be changed$')
-
-c        if (x1.lt.0) x1=sqrt(x1)
-c        if (x1.gt.0) x1=sqrt(-x1)
-
          RETURN
       ENDIF
-
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -589,9 +579,9 @@ C
              ZFA=0.0
 C            FIND X,Y,Z at center of each face
              DO 20 ICORN=1,4
-                XFA=XFA+X(IEL,FCORNS(ICORN,IFACE))
-                YFA=YFA+Y(IEL,FCORNS(ICORN,IFACE))
-                ZFA=ZFA+Z(IEL,FCORNS(ICORN,IFACE))
+                xfa=xfa+x(fcorns(icorn,iface),iel)
+                yfa=yfa+y(fcorns(icorn,iface),iel)
+                zfa=zfa+z(fcorns(icorn,iface),iel)
 20           CONTINUE
              NUMBER=NUMBER+1
              xfa=0.25*xfa
@@ -1029,30 +1019,36 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE GETPTS(NPOINT,CSPACE,IELS,ISID,XCRVED,YCRVED)
-      INCLUDE 'basics.inc'
-      REAL CAR(4,4),CPTS(3,4),CRVS(2,4)
-      REAL CSPACE(NPOINT),XCRVED(NPOINT),YCRVED(NPOINT)
-C     Cardinal spline stuff
-      save CAR
-      DATA CAR/
+      subroutine getpts(npoint,cspace,iels,isid,xcrved,ycrved)
+      include 'basics.inc'
+
+      real cspace(npoint),xcrved(npoint),ycrved(npoint)
+      real car(4,4),cpts(3,4),crvs(2,4),zu(3),wk(nxm*nxm),jx(10*nxm*nxm)
+
+      integer npo
+      save    npo
+      data    npo / 0 /
+
+      save car,zu,jx !     Cardinal spline stuff
+      data car/
      +        -0.5, 1.5, -1.5, 0.5,
      +         1.0,-2.5,  2.0,-0.5,
      +        -0.5, 0.0,  0.5, 0.0,
      +         0.0, 1.0,  0.0, 0.0/
-C
-      PT1X = X(IELS,ISID)
-      PT1Y = Y(IELS,ISID)
-      IF(ISID.EQ.4) THEN
-         PT2X = X(IELS,1)
-         PT2Y = Y(IELS,1)
-      ELSE IF(ISID.EQ.8) THEN
-         PT2X = X(IELS,5)
-         PT2Y = Y(IELS,5)
-      ELSE
-         PT2X = X(IELS,ISID+1)
-         PT2Y = Y(IELS,ISID+1)
-      ENDIF
+      data zu / 0.0 , 0.5 , 1.0 /
+
+      pt1x = x(isid,iels)
+      pt1y = y(isid,iels)
+      if (isid.eq.4) then
+         pt2x = x(1,iels)
+         pt2y = y(1,iels)
+      elseif (isid.eq.8) then
+         pt2x = x(5,iels)
+         pt2y = y(5,iels)
+      else
+         pt2x = x(isid+1,iels)
+         pt2y = y(isid+1,iels)
+      endif
       IF (CCURVE(ISID,IELS).EQ.' ' .OR.
      $    CCURVE(ISID,IELS).EQ.'M' .OR.
      $    CCURVE(ISID,IELS).EQ.'s'     )THEN
@@ -1148,7 +1144,7 @@ C         CCw corner: keep 3&4  2 is split pt; 1 is what used to be 2
               XCRVED(IU)=XX
               YCRVED(IU)=YY
    70     CONTINUE
-      ELSEIF(CCURVE(ISID,IELS).EQ.'O')THEN
+      elseif (ccurve(isid,iels).eq.'O') then
 C        O - object defined by points
 C        o - object defined by function
 C
@@ -1164,9 +1160,48 @@ C zero -- 2D kludge
             XCRVED(IX) = xt
             YCRVED(IX) = yt
    90    CONTINUE
-      ENDIF
-      RETURN
-      END
+
+      elseif (ccurve(isid,iels).eq.'m') then ! midside node
+
+c        write(6,*) 'in getpts:',iels,npoint
+c        write(6,*) 'in getpts:',(cspace(k),k=1,npoint)
+
+         zu(1) = 0    ! Uniform input for midside node
+         zu(2) = 0.5
+         zu(3) = 1
+         nzu   = 3
+         if (npoint.ne.npo) call gen_int_gz(jx,wk,cspace,npoint,zu,nzu)
+         npo = npoint
+         
+         do k=1,2
+            if (k.eq.1) then
+               wk(1) = pt1x
+               wk(2) = curve(1,isid,iels)
+               wk(3) = pt2x
+               call mxm(jx,npoint,wk,3,xcrved,1)
+            else
+               wk(1) = pt1y
+               wk(2) = curve(2,isid,iels)
+               wk(3) = pt2y
+               call mxm(jx,npoint,wk,3,ycrved,1)
+            endif
+         enddo
+
+c        write(6,*)
+c        write(68,*)
+c        m=npoint
+c        do k=1,npoint
+c         write(6,1) iels,isid,k
+c    $     ,cspace(k),xcrved(k),ycrved(k),(jx(k+j*m),j=0,2)
+c         write(68,1) iels,isid,k
+c    $     ,cspace(k),xcrved(k),ycrved(k),(jx(k+j*m),j=0,2)
+c  1      format(i9,2i4,1p6e12.4,' xyc')
+c        enddo
+
+      endif
+
+      return
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE DRAWED(IEL,IEDGE,IFLIP)
 C     DRAWs EDge.  IFLIP CAuses to draw from end to beginning
@@ -1182,8 +1217,8 @@ C
 18    CONTINUE
 C     Patch on drised to make drawing simple edge complicated.
       DO 7 IC=1,8
-         XISM(IC)=X(IEL,IC)
-         YISM(IC)=Y(IEL,IC)
+         xism(ic)=x(ic,iel)
+         yism(ic)=y(ic,iel)
 7     CONTINUE
       IF(IEDGE.GT.8)THEN
 C        Vertical strut

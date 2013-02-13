@@ -66,12 +66,12 @@ C
          CALL RONE(H(1,3,2),NZL)
       ENDIF
 C
-      DO 50 IX=1,NDIM2
-         I=INDX(IX)
-         XCB(IX,1,1)=X(IE,I)
-         YCB(IX,1,1)=Y(IE,I)
-         ZCB(IX,1,1)=Z(IE,I)
-   50 CONTINUE
+      do 50 ix=1,ndim2
+         i=indx(ix)
+         xcb(ix,1,1)=x(i,ie)
+         ycb(ix,1,1)=y(i,ie)
+         zcb(ix,1,1)=z(i,ie)
+   50 continue
 C
 C     Map R-S-T space into physical X-Y-Z space.
 C
@@ -164,11 +164,11 @@ C
 C
 C     Generate (normalized) corner vectors XCV(1,i,j):
 C
-      DO 10 I=1,8
-         XCC(I)=X(IE,I)
-         YCC(I)=Y(IE,I)
-         ZCC(I)=Z(IE,I)
-   10 CONTINUE
+      do 10 i=1,8
+         xcc(i)=x(i,ie)
+         ycc(i)=y(i,ie)
+         zcc(i)=z(i,ie)
+   10 continue
       CALL CRN3D(XCV,XCC,YCC,ZCC,CURVE(1,IFCE,IE),IFACE)
 C
 C     Generate edge vectors on the sphere RR=1.0, 

@@ -134,77 +134,29 @@ C       Read in Parameters
      $       call chcopy(cparam(ip),s40,40)
  1052   CONTINUE
  1053   format(19x,a40)
- 
+C
         NPARAM=MAX(NPARAM,NPARMO)
         NPSCAL=PARAM(23)
-
-        READ(9,*,ERR=59) nskip
-        if(nskip.ne.0) then
-          READ(9,*,ERR=59) (PCOND (I),I=3,11)
-          READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
-        endif
+        READ(9,*,ERR=59)
+        READ(9,*,ERR=59) (PCOND (I),I=3,11)
+        READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
 C       IFFLOW,IFHEAT,IFTRAN,IFNAV
-        ifflow    = .false.
-        ifheat    = .false.
-        iftran    = .false.
-        ifaxis    = .false.
-        ifstrs    = .false.
-        ifsplit   = .false.
-        ifmgrid   = .false.
-        ifmodel   = .false.
-        ifkeps    = .false.
-        ifmvbd    = .false.
-        ifchar    = .false.
-        ifadvc(1) = .false.
-        iftmsh(1) = .false.
         READ(9,*,ERR=59)NLOGIC
-        DO IL = 1,NLOGIC
-           call blank(s40,40)
-           READ(9,'(a40)',ERR=59) s40
-           if    (indx1(s40,'IFFLOW',6).ne.0) then
-                   read(s40,*) ifflow
-           elseif(indx1(s40,'IFHEAT',6).ne.0) then
-                   read(s40,*) ifheat
-           elseif(indx1(s40,'IFTRAN',6).ne.0) then
-                   read(s40,*) iftran
-           elseif(indx1(s40,'IFADVC',6).ne.0) then
-                   read(s40,*) (IFADVC(I),I=1,NPSCAL+2)
-           elseif(indx1(s40,'IFTMSH',6).ne.0) then
-                   IF(VNEKOLD.LT.2.6)READ(s40,*)(IFTMSH(I),I=1,NPSCAL+2)
-                   IF(VNEKOLD.GE.2.6)READ(s40,*)(IFTMSH(I),I=0,NPSCAL+2)
-           elseif(indx1(s40,'IFAXIS',6).ne.0) then
-                   read(s40,*) ifaxis
-           elseif(indx1(s40,'IFSTRS',6).ne.0) then
-                   read(s40,*) ifstrs
-           elseif(indx1(s40,'IFSPLIT',7).ne.0)then
-                   read(s40,*) ifsplit
-           elseif(indx1(s40,'IFMGRID',7).ne.0)then
-                   read(s40,*) ifmgrid
-           elseif(indx1(s40,'IFMODEL',7).ne.0)then
-                   read(s40,*) ifmodel
-           elseif(indx1(s40,'IFKEPS',6).ne.0.)then
-                   read(s40,*) ifkeps
-           elseif(indx1(s40,'IFMVBD',6).ne.0) then
-                   read(s40,*) ifmvbd
-           elseif(indx1(s40,'IFCHAR',6).ne.0.)then
-                   read(s40,*) ifchar
-           endif
-        ENDDO
-c       READ(9,*,ERR=59)IFFLOW
-c       READ(9,*,ERR=59)IFHEAT
-c       READ(9,*,ERR=59)IFTRAN
+        READ(9,*,ERR=59)IFFLOW
+        READ(9,*,ERR=59)IFHEAT
+        READ(9,*,ERR=59)IFTRAN
 C       IFADVC(1)=IFNAV
-c       READ(9,*,ERR=59)(IFADVC(I),I=1,NPSCAL+2)
-c       IF(VNEKOLD.LT.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=1,NPSCAL+2)
-c       IF(VNEKOLD.GE.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=0,NPSCAL+2)
-c       IF(NLOGIC.GE.6)READ(9,*,ERR=59)IFAXIS
-c       IF(NLOGIC.GE.7)READ(9,*,ERR=59)IFSTRS
-c       IF(NLOGIC.GE.8)READ(9,*,ERR=59)IFSPLIT
-c       IF(NLOGIC.GE.9)READ(9,*,ERR=59)IFMGRID
-c       IF(NLOGIC.GE.10)READ(9,*,ERR=59)IFMODEL
-c       IF(NLOGIC.GE.11)READ(9,*,ERR=59)IFKEPS
-c       IF(NLOGIC.GE.12)READ(9,*,ERR=59)IFMVBD
-c       IF(NLOGIC.GE.13)READ(9,*,ERR=59)IFCHAR
+        READ(9,*,ERR=59)(IFADVC(I),I=1,NPSCAL+2)
+        IF(VNEKOLD.LT.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=1,NPSCAL+2)
+        IF(VNEKOLD.GE.2.6)READ(9,*,ERR=59)(IFTMSH(I),I=0,NPSCAL+2)
+        IF(NLOGIC.GE.6)READ(9,*,ERR=59)IFAXIS
+        IF(NLOGIC.GE.7)READ(9,*,ERR=59)IFSTRS
+        IF(NLOGIC.GE.8)READ(9,*,ERR=59)IFSPLIT
+        IF(NLOGIC.GE.9)READ(9,*,ERR=59)IFMGRID
+        IF(NLOGIC.GE.10)READ(9,*,ERR=59)IFMODEL
+        IF(NLOGIC.GE.11)READ(9,*,ERR=59)IFKEPS
+        IF(NLOGIC.GE.12)READ(9,*,ERR=59)IFMVBD
+        IF(NLOGIC.GE.13)READ(9,*,ERR=59)IFCHAR
 C        IF(VNEKOLD.GE.2.4) then
 C           READ(9,*,ERR=59)NTEXTSW
 C           DO 143 I=1,NTEXTSW
@@ -244,8 +196,9 @@ c-----------------------------------------------------------------------
 310   NCHOIC =  2
       ITEM(1)='BUILD FROM FILE'
       ITEM(2)='BUILD INTERACTIVELY'
-c     ITEM(3)='ALTER PARAMETERS'
-c     ITEM(4)='SHOW PARAMETERS'
+c     ITEM(2)='ALTER PARAMETERS'
+c     ITEM(3)='SHOW PARAMETERS'
+c     ITEM(4)='BUILD INTERACTIVELY'
 c     ITEM(5)='IMPORT UNIVERSAL FILE'
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'CENTRAL')
 
@@ -528,9 +481,9 @@ C                 Fill Up element arrays
      $            (IICORN(IC),IC=1,NCORNS)
 C
                   DO 50 IC=1,NCORNS
-                     X(IEL,IC) = XPTS(IICORN(IC),1,1)
-                     Y(IEL,IC) = YPTS(IICORN(IC),1,1)
-                     Z(IEL,IC) = ZPTN(IICORN(IC),1,1)
+                     x(ic,iel) = xpts(iicorn(ic),1,1)
+                     y(ic,iel) = ypts(iicorn(ic),1,1)
+                     z(ic,iel) = zptn(iicorn(ic),1,1)
 50                CONTINUE
                   NUMAPT(IEL) = 1
                   ILETAP = ILETAP + 1
@@ -567,35 +520,35 @@ C        MAKE THEM THE SAME
       end
 c-----------------------------------------------------------------------
       function rmaxx(r,nelm,nel,nc)
-      REAL R(NELM,8)
-      RM=R(1,1)
-      DO 1 I=1,NEL
-      DO 1 J=1,NC
-         IF(R(I,J) .GT. RM) RM=R(I,J)
-1     CONTINUE
-      RMAXX = RM
+      real r(8,nelm)
+      rm=r(1,1)
+      do 1 i=1,nel
+      do 1 j=1,nc
+         if (r(j,i) .gt. rm) rm=r(j,i)
+1     continue
+      rmaxx = rm
       return
       end
 c-----------------------------------------------------------------------
       function rminx(r,nelm,nel,nc)
-      REAL R(NELM,8)
-      RM=R(1,1)
-      DO 1 I=1,NEL
-      DO 1 J=1,NC
-         IF(R(I,J) .LT. RM) RM=R(I,J)
-1     CONTINUE
-      RMINX = RM
+      real r(8,nelm)
+      rm=r(1,1)
+      do 1 i=1,nel
+      do 1 j=1,nc
+         if (r(j,i) .lt. rm) rm=r(j,i)
+1     continue
+      rminx = rm
       return
       end
 c-----------------------------------------------------------------------
       function rbarx(r,nelm,nel,nc)
-      REAL R(NELM,8)
-      RB =0.0
-      DO 1 I=1,NEL
-      DO 1 J=1,NC
-         RB = RB + R(I,J)
-1     CONTINUE
-      RBARX = RB / (NEL*NC)
+      real r(8,nelm)
+      rb=0.
+      do 1 i=1,nel
+      do 1 j=1,nc
+         rb = rb+r(i,j)
+1     continue
+      rbarx = rb
       return
       end
 c-----------------------------------------------------------------------
@@ -1290,22 +1243,22 @@ C                 ??!! Make more extensive tests
      $               (' Grid > 0.5 gives only 4 possible points.$')
                      GO TO 301
                   endif
-c                 NORDER=PARAM(20)
-c                 if (NORDER.GT.NXM) THEN
-c                    WRITE(S,104) NX,NXM
-c 104                FORMAT(' Warning, current NORDER exceeds NXM'
-c    $                     ,' resetting from',I3,' to',I3,'.$')
-c                    CALL PRS(S)
-c                    NORDER=NXM
-c                    PARAM(20)=NORDER
-c                 endif
-c                 IF(CPARAM(I).EQ.'NORDER'.AND.NORDER.GE.NXM) then
-c                    CALL PRSI(' ERROR: Maximum NORDER set to $',NXM)
-c                    CALL PRS(' Please contact your NEKTONICS '//
-c    $               'representative to increase it.$')
-c                    CALL BEEP
-c                    GO TO 301
-c                 endif
+                  NORDER=PARAM(20)
+                  if (NORDER.GT.NXM) THEN
+                     WRITE(S,104) NX,NXM
+  104                FORMAT(' Warning, current NORDER exceeds NXM'
+     $                     ,' resetting from',I3,' to',I3,'.$')
+                     CALL PRS(S)
+                     NORDER=NXM
+                     PARAM(20)=NORDER
+                  endif
+                  IF(CPARAM(I).EQ.'NORDER'.AND.NORDER.GE.NXM) then
+                     CALL PRSI(' ERROR: Maximum NORDER set to $',NXM)
+                     CALL PRS(' Please contact your NEKTONICS '//
+     $               'representative to increase it.$')
+                     CALL BEEP
+                     GO TO 301
+                  endif
 C                 UN-Blink Current box
                   CALL COLOR(1)
                   CALL MOVESC(XLMEN,YBS(IBOX))
@@ -1456,7 +1409,7 @@ C
       endif
       NELsgn=NEL
       if (.not.IFFMTIN) NELsgn = -NEL
-      WRITE(10,'(i12,i3,i12,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
+      WRITE(10,'(3I10,'' NEL,NDIM,NELV'')')NELsgn,NDIM,NELV
 C
       DO 98 IEL=1,NEL
          if (IEL.GT.52) LETAPT(IEL) = 'A'
@@ -1466,29 +1419,29 @@ C           formatted
      $   '      ELEMENT  ',IEL,' [',NUMAPT(IEL),LETAPT(IEL),
      $   ']    GROUP',IGROUP(IEL)
             IF(NDIM.EQ.2) then
-               WRITE(10,'(4G15.7)',ERR=60)(X(IEL,IC),IC=1,4)
-               WRITE(10,'(4G15.7)',ERR=60)(Y(IEL,IC),IC=1,4)
+               WRITE(10,'(4G15.7)',ERR=60)(X(IC,IEL),IC=1,4)
+               WRITE(10,'(4G15.7)',ERR=60)(Y(IC,IEL),IC=1,4)
             elseif (NDIM.EQ.3) then
-               WRITE(10,'(4G15.7)',ERR=60)(X(IEL,IC),IC=1,4)
-               WRITE(10,'(4G15.7)',ERR=60)(Y(IEL,IC),IC=1,4)
-               WRITE(10,'(4G15.7)',ERR=60)(Z(IEL,IC),IC=1,4)
-               WRITE(10,'(4G15.7)',ERR=60)(X(IEL,IC),IC=5,8)
-               WRITE(10,'(4G15.7)',ERR=60)(Y(IEL,IC),IC=5,8)
-               WRITE(10,'(4G15.7)',ERR=60)(Z(IEL,IC),IC=5,8)
+               WRITE(10,'(4G15.7)',ERR=60)(X(IC,IEL),IC=1,4)
+               WRITE(10,'(4G15.7)',ERR=60)(Y(IC,IEL),IC=1,4)
+               WRITE(10,'(4G15.7)',ERR=60)(Z(IC,IEL),IC=1,4)
+               WRITE(10,'(4G15.7)',ERR=60)(X(IC,IEL),IC=5,8)
+               WRITE(10,'(4G15.7)',ERR=60)(Y(IC,IEL),IC=5,8)
+               WRITE(10,'(4G15.7)',ERR=60)(Z(IC,IEL),IC=5,8)
             endif
          else
 C           Unformatted
             WRITE(11) IGROUP(IEL)
             IF(NDIM.EQ.2) then
-               WRITE(11,ERR=60)(X(IEL,IC),IC=1,4)
-               WRITE(11,ERR=60)(Y(IEL,IC),IC=1,4)
+               WRITE(11,ERR=60)(X(IC,IEL),IC=1,4)
+               WRITE(11,ERR=60)(Y(IC,IEL),IC=1,4)
             elseif (NDIM.EQ.3) then
-               WRITE(11,ERR=60)(X(IEL,IC),IC=1,4)
-               WRITE(11,ERR=60)(Y(IEL,IC),IC=1,4)
-               WRITE(11,ERR=60)(Z(IEL,IC),IC=1,4)
-               WRITE(11,ERR=60)(X(IEL,IC),IC=5,8)
-               WRITE(11,ERR=60)(Y(IEL,IC),IC=5,8)
-               WRITE(11,ERR=60)(Z(IEL,IC),IC=5,8)
+               WRITE(11,ERR=60)(X(IC,IEL),IC=1,4)
+               WRITE(11,ERR=60)(Y(IC,IEL),IC=1,4)
+               WRITE(11,ERR=60)(Z(IC,IEL),IC=1,4)
+               WRITE(11,ERR=60)(X(IC,IEL),IC=5,8)
+               WRITE(11,ERR=60)(Y(IC,IEL),IC=5,8)
+               WRITE(11,ERR=60)(Z(IC,IEL),IC=5,8)
             endif
          endif
 C
@@ -1508,7 +1461,7 @@ C
                      write(10,'(i2,i6,5g14.6,1x,a1)')iedge,iel,
      $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
                   else
-                     write(10,'(i2,i12,5g18.11,1x,a1)')iedge,iel,
+                     write(10,'(i2,i12,5g18.11,1x,a1)')iedge,iel, ! Feb, 2013
      $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
                   endif
                endif
@@ -2243,8 +2196,8 @@ C               WHAT'S XPTS??
                 else
                    R=SQRT((XPTS(I,J,IEL)-XMOUSE)**2+
      $                    (YPTS(I,J,IEL)-YMOUSE)**2+
-     $             (ZMOUSE- ( (Z(IEL,5)+Z(IEL,1))/2+
-     $          (Z(IEL,5)-Z(IEL,1))/2*ZPTS(K) ) )**2)
+     $             (ZMOUSE- ( (Z(5,IEL)+Z(1,IEL))/2+
+     $          (Z(5,IEL)-Z(1,IEL))/2*ZPTS(K) ) )**2)
                 endif
                 IF(R.LT.RMIN) THEN
                     RMIN=R

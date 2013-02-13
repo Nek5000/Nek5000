@@ -14,7 +14,7 @@ C without prior authorization.
 C
 C------------------------------------------------------------------------------
 C
-      SUBROUTINE SORT(A,IND,N)
+      subroutine sort(a,ind,n)
 C
 C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
 C
@@ -42,27 +42,27 @@ C
                ind(1)=indx
                return
             endif
-         ENDIF
+         endif
          i=l
          j=l+l
   200    CONTINUE
          IF (J.le.IR) THEN
             IF (J.lt.IR) THEN
                IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
-            ENDIF
+            endif
             IF (q.lt.A(IND(j))) THEN
                IND(I)=IND(J)
                I=J
                J=J+J
             ELSE
                J=IR+1
-            ENDIF
+            endif
          GOTO 200
-         ENDIF
+         endif
          IND(I)=INDX
       GOTO 100
-      END
-      SUBROUTINE SWAP(A,W,IND,N)
+      end
+      subroutine swap(a,w,ind,n)
 C
 C     Use IND to sort array A   (p 233 Num. Rec.), 5/26/93 pff.
 C
@@ -76,9 +76,9 @@ C
       DO 20 J=1,N
          A(j)=W(ind(j))
    20 continue
-      RETURN
-      END
-      SUBROUTINE ISORT(A,IND,N)
+      return
+      end
+      subroutine isort(a,ind,n)
 C
 C     Use Heap Sort (p 233 Num. Rec.)
 C
@@ -107,27 +107,27 @@ C
                ind(1)=indx
                return
             endif
-         ENDIF
+         endif
          i=l
          j=l+l
   200    CONTINUE
          IF (J.le.IR) THEN
             IF (J.lt.IR) THEN
                IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
-            ENDIF
+            endif
             IF (q.lt.A(IND(j))) THEN
                IND(I)=IND(J)
                I=J
                J=J+J
             ELSE
                J=IR+1
-            ENDIF
+            endif
          GOTO 200
-         ENDIF
+         endif
          IND(I)=INDX
       GOTO 100
-      END
-      SUBROUTINE SWAP8(A,W,IND,N)
+      end
+      subroutine swap8(a,w,ind,n)
 C
 C     Use IND to sort array A
 C
@@ -142,9 +142,9 @@ C
       DO 20 J=1,N
          A(j)=W(ind(j))
    20 continue
-      RETURN
-      END
-      SUBROUTINE ISWAP(A,W,IND,N)
+      return
+      end
+      subroutine iswap(a,w,ind,n)
 C
 C     Use IND to sort array A
 C
@@ -158,9 +158,9 @@ C
       DO 20 J=1,N
          A(j)=W(ind(j))
    20 continue
-      RETURN
-      END
-      SUBROUTINE ChSWAP(A,W,L,IND,N)
+      return
+      end
+      subroutine cHswap(a,w,l,ind,n)
 C
 C     Use IND to sort array A
 C
@@ -178,13 +178,13 @@ C
             A(l,j)=W(l,ij)
    20    continue
    30 continue
-      RETURN
-      END
-      SUBROUTINE LJUST(STRING)
+      return
+      end
+      subroutine ljust(string)
 C     left justify string
       CHARACTER*1 STRING(80)
 C
-      IF (STRING(1).NE.' ') RETURN
+      IF (STRING(1).NE.' ') return
 C
       DO 100 I=2,80
 C
@@ -196,13 +196,13 @@ C
             DO 30 J=82-I,80
                STRING(J)=' '
    30       CONTINUE
-            RETURN
-         ENDIF
+            return
+         endif
 C
   100 CONTINUE
-      RETURN
-      END
-      SUBROUTINE CAPIT(LETTRS,N)
+      return
+      end
+      subroutine capit(lettrs,n)
 C     Capitalizes string of length n
       CHARACTER LETTRS(N)
 C
@@ -211,11 +211,11 @@ C
          IF(INT.GE.97 .AND. INT.LE.122) THEN
             INT=INT-32
             LETTRS(I)=CHAR(INT)
-         ENDIF
+         endif
 5     CONTINUE
-      RETURN
-      END
-      SUBROUTINE PARSE(LINES,ARGS,IA)
+      return
+      end
+      subroutine parse(lines,args,ia)
 C       Capitalizes LINE and splits it into 5 ARGuments of 10 Characters.
 C
       CHARACTER ARGS(10,5),COMAND*10,LINES(70)
@@ -239,7 +239,7 @@ C! Found the start of new argument
                IA=IA+1
                IAS(IA)=I
             ELSE
-            ENDIF
+            endif
             GAP = .FALSE.
          ELSE
             IF(.NOT.(GAP)) THEN
@@ -247,9 +247,9 @@ C!Found End of argument
                IE=IE+1
                IES(IE)=I-1
             ELSE
-            ENDIF
+            endif
             GAP = .TRUE.
-         ENDIF
+         endif
 10    CONTINUE
 C       COMMAND
 C     Max 5 Arguments
@@ -260,10 +260,10 @@ C     Max 5 Arguments
 50    CONTINUE
       DO 60 I=1,10
 60            COMAND(I:I)=ARGS(I,1)
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE BLANK(STRING,N)
+      subroutine blank(string,n)
       CHARACTER*1 STRING(N)
       CHARACTER*1   BLNK
       DATA BLNK/' '/
@@ -271,17 +271,17 @@ c-----------------------------------------------------------------------
       DO 100 I=1,N
          STRING(I)=BLNK
   100 CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
-      SUBROUTINE CHFILL(STRING,S,N)
+      subroutine chfill(string,s,n)
       CHARACTER*1 STRING(N)
       CHARACTER*1   S
       DO 100 I=1,N
          STRING(I)=S
   100 CONTINUE
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       function vlsum(a,n)
       real a(1)
@@ -303,20 +303,20 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      SUBROUTINE CMULT(A,B,N)
+      subroutine cmult(a,b,n)
       DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I) = B*A(I)
-      RETURN
-      END
-      SUBROUTINE CHCOPY(A,B,N)
+      return
+      end
+      subroutine chcopy(a,b,n)
       CHARACTER*1 A(1), B(1)
       DO 100 I = 1, N
  100     A(I) = B(I)
-      RETURN
-      END
+      return
+      end
 C
-      FUNCTION LTRUNC(STRING,L)
+      function ltrunc(string,l)
       CHARACTER*1 STRING(L)
       CHARACTER*1   BLNK
       DATA BLNK/' '/
@@ -327,9 +327,9 @@ C
       L1=0
   200 CONTINUE
       LTRUNC=L1
-      RETURN
-      END
-      SUBROUTINE ROOTS(XVAL,NROOTS,FTARGT,F,N)
+      return
+      end
+      subroutine roots(xval,nroots,ftargt,f,n)
 C
 C     Find all values of I which yield F(I) close to FTARGT
 C     and give the additional increment DI such that F(I+DI)+FTARGT,
@@ -350,27 +350,27 @@ C
                DI=0.5
             ELSE
                DI=(FTARGT-F1)/DF
-            ENDIF
+            endif
             XVAL(1,NROOTS)=FLOAT(I-1)
             XVAL(2,NROOTS)=DI
-         ENDIF
+         endif
   100 CONTINUE
-      RETURN
-      END
-      SUBROUTINE VSQRT(A,N)
+      return
+      end
+      subroutine vsqrt(a,n)
       DIMENSION  A(1)
       DO 100 I = 1, N
  100     A(I) = SQRT(A(I))
-      RETURN
-      END
-      SUBROUTINE VCNVERT(A,N)
+      return
+      end
+      subroutine vcnvert(a,n)
       REAL*4 A(1)
       DO 100 I=1,N
          CALL CONVERT(A(I))
   100 CONTINUE
-      RETURN
-      END
-      SUBROUTINE CONVERT(T)
+      return
+      end
+      subroutine convert(t)
 C
       CHARACTER*12 VC
       CHARACTER*1  V1(12)
@@ -435,10 +435,10 @@ C
 C
 C     Convert the input value
       T=W
-      RETURN
-      END
-      SUBROUTINE DELTMP
-      INCLUDE  'basics.inc'
+      return
+      end
+      subroutine deltmp
+      include  'basics.inc'
       character*80 command
 C     Remove all tmp.* files
 C
@@ -451,9 +451,18 @@ C        Ultrix
          write(command,10) 
    10    format('rm tmp.*')
          CALL SYSTEM(command)
-      ENDIF
-      RETURN
-      END
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglmin(a,n)
+      integer a(1)
+      iglmin= 999999999
+      do 100 i=1,n
+         iglmin=min(iglmin,a(i))
+  100 continue
+      return
+      end
 c-----------------------------------------------------------------------
       function iglmax(a,n)
       integer a(1)
@@ -464,56 +473,98 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      FUNCTION GLMAX(A,N)
-      DIMENSION A(N)
-      TEMP = A(1)
-      DO 10 I=1,N
-         TEMP = MAX(TEMP,A(I))
-   10 CONTINUE
-      GLMAX=TEMP
-      RETURN
-      END
-      FUNCTION GLMIN(A,N)
-      DIMENSION A(N)
-      TEMP = A(1)
-      DO 10 I=1,N
-         TEMP = MIN(TEMP,A(I))
-   10 CONTINUE
-      GLMIN=TEMP
-      RETURN
-      END
-      FUNCTION MOD1(I,N)
+      function glsc2(a,b,n)
+      real a(n),b(n)
+      temp = 0
+      do 10 i=1,n
+         temp = temp + a(i)*b(i)
+   10 continue
+      glsc2=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function glamax(a,n)
+      dimension a(n)
+      temp = 0
+      do 10 i=1,n
+         temp = max(temp,abs(a(i)))
+   10 continue
+      glamax=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function vlmax(a,n)
+      dimension a(n)
+      temp = a(1)
+      do 10 i=1,n
+         temp = max(temp,a(i))
+   10 continue
+      vlmax=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function vlmin(a,n)
+      dimension a(n)
+      temp = a(1)
+      do 10 i=1,n
+         temp = min(temp,a(i))
+   10 continue
+      vlmin=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function glmax(a,n)
+      dimension a(n)
+      temp = a(1)
+      do 10 i=1,n
+         temp = max(temp,a(i))
+   10 continue
+      glmax=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function glmin(a,n)
+      dimension a(n)
+      temp = a(1)
+      do 10 i=1,n
+         temp = min(temp,a(i))
+   10 continue
+      glmin=temp
+      return
+      end
+c-----------------------------------------------------------------------
+      function mod1(i,n)
 C
 C     Yields MOD(I,N) with the exception that if I=K*N, result is N.
 C
       MOD1 = 1
       IF (N.EQ.0) THEN
          CALL PRS(
-     $  'WARNING:  Attempt to take MOD(I,0) in FUNCTION MOD1.$')
-         RETURN
-      ENDIF
+     $  'WARNING:  Attempt to take MOD(I,0) in function mod1.$')
+         return
+      endif
       II = I+N-1
       MOD1 = MOD(II,N)+1
-      RETURN
-      END
-      INTEGER FUNCTION INDX1(S1,S2,L2)
+      return
+      end
+      integer function indx1(s1,s2,l2)
       CHARACTER*80 S1,S2
 C
       N1=80-L2+1
       INDX1=0
-      IF (N1.LT.1) RETURN
+      IF (N1.LT.1) return
 C
       DO 100 I=1,N1
          I2=I+L2-1
          IF (S1(I:I2).EQ.S2(1:L2)) THEN
             INDX1=I
-            RETURN
-         ENDIF
+            return
+         endif
   100 CONTINUE
 C
-      RETURN
-      END
-      INTEGER FUNCTION NINDX1(S1,S2,L2)
+      return
+      end
+      integer function nindx1(s1,s2,l2)
 C
 C     Return index of first character Not equal to S2
 C
@@ -521,18 +572,18 @@ C
 C
       N1=80-L2+1
       NINDX1=0
-      IF (N1.LT.1) RETURN
+      IF (N1.LT.1) return
 C
       DO 100 I=1,N1
          I2=I+L2-1
          IF (S1(I:I2).NE.S2(1:L2)) THEN
             NINDX1=I
-            RETURN
-         ENDIF
+            return
+         endif
   100 CONTINUE
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine ifill(x,i,n)
       integer x(1)
@@ -599,7 +650,28 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-C
+      subroutine orthogonalize(y,x,n)  ! y = y - P(x)*y
+      real y(1),x(1)
+
+      xnrm = glsc2(x,x,n)
+      if (xnrm.eq.0) return
+
+      call outmat(x,1,3,'xorth',n)
+      call outmat(y,1,3,'yorth',1)
+
+      xty  = glsc2(x,y,n)/xnrm
+
+      write(6,*) xnrm,xty,' xty',n
+
+      do i=1,n
+         y(i) = y(i) - xty*x(i)
+      enddo
+
+      call outmat(y,1,3,'yorth',2)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine rank(A,IND,N)
 C
 C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
@@ -629,26 +701,26 @@ C
                ind(1)=indx
                return
             endif
-         ENDIF
+         endif
          i=l
          j=l+l
   200    CONTINUE
          IF (J.le.IR) THEN
             IF (J.lt.IR) THEN
                IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
-            ENDIF
+            endif
             IF (q.lt.A(IND(j))) THEN
                IND(I)=IND(J)
                I=J
                J=J+J
             ELSE
                J=IR+1
-            ENDIF
+            endif
          GOTO 200
-         ENDIF
+         endif
          IND(I)=INDX
       GOTO 100
-      END
+      end
 C
 C-----------------------------------------------------------------------
 C
@@ -680,23 +752,23 @@ C
                ind(1)=indx
                return
             endif
-         ENDIF
+         endif
          i=l
          j=l+l
   200    CONTINUE
          IF (J.le.IR) THEN
             IF (J.lt.IR) THEN
                IF ( a(ind(j)).lt.a(ind(j+1)) ) j=j+1
-            ENDIF
+            endif
             IF (q.lt.a(ind(j))) THEN
                ind(i)=ind(j)
                I=J
                J=J+J
             ELSE
                J=IR+1
-            ENDIF
+            endif
          GOTO 200
-         ENDIF
+         endif
          IND(I)=INDX
       GOTO 100
       end

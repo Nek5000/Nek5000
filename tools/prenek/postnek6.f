@@ -276,9 +276,9 @@ C     Map the element corner points (x,y,z) to standard vector.
 C
       DO 50 IX=1,NDIM2
          I=INDX(IX)
-         XYZ(1,IX)=X(IE,I)
-         XYZ(2,IX)=Y(IE,I)
-         XYZ(3,IX)=Z(IE,I)
+         xyz(1,ix)=x(i,ie)
+         xyz(2,ix)=y(i,ie)
+         xyz(3,ix)=z(i,ie)
    50 CONTINUE
       RETURN
       END
@@ -459,54 +459,77 @@ c-----------------------------------------------------------------------
       subroutine gencen
       include 'basics.inc'
 
+      integer e
+
       common /ctmp2/ xp(nxm,nxm,nxm),yp(nxm,nxm,nxm),zp(nxm,nxm,nxm)
 
+      if (mod(nxm,2).eq.0) then
+         write(6,*) 'ERROR: Recompile with nxm odd in basics.inc'
+         stop
+      endif
+
       nxh = (nxm+1)/2
+      nh1 = nxh-1
+
       write(6,*) 'inside gencen ',nel,if3d,nxh
 
 C     Generate the element centers
-      do ie=1,nel
-c        call genxyz_e (xp,yp,zp,ie,3,3,3)
-         call genxyz_e (xp,yp,zp,ie,nxm,nxm,nxm)
+      do e=1,nel
+c        call genxyz_e (xp,yp,zp,e,3,3,3)
+         call genxyz_e (xp,yp,zp,e,nxm,nxm,nxm)
          
          if (if3d) then
-            xcen(ie)=xp(nxh,nxh,nxh)
-            ycen(ie)=yp(nxh,nxh,nxh)
-            zcen(ie)=zp(nxh,nxh,nxh)
-c           call copy(x27(1,ie),xp,27)
-c           call copy(y27(1,ie),yp,27)
-c           call copy(z27(1,ie),zp,27)
+            xcen(e)=xp(nxh,nxh,nxh)
+            ycen(e)=yp(nxh,nxh,nxh)
+            zcen(e)=zp(nxh,nxh,nxh)
+            l=0
+            do k=1,nxm,nh1
+            do j=1,nxm,nh1
+            do i=1,nxm,nh1
+               l=l+1
+               x27(l,e) = xp(i,j,k)
+               y27(l,e) = yp(i,j,k)
+               z27(l,e) = zp(i,j,k)
+            enddo
+            enddo
+            enddo
          else
-            xcen(ie)=xp(nxh,nxh,1)
-            ycen(ie)=yp(nxh,nxh,1)
-            zcen(ie)=0
-c           call copy (x27(1,ie),xp,9)
-c           call copy (y27(1,ie),yp,9)
-            call rzero(z27(1,ie)   ,9)
+            xcen(e)=xp(nxh,nxh,1)
+            ycen(e)=yp(nxh,nxh,1)
+            zcen(e)=0
+            l=0
+            do j=1,nxm,nh1
+            do i=1,nxm,nh1
+               l=l+1
+               x27(l,e) = xp(i,j,1)
+               y27(l,e) = yp(i,j,1)
+               z27(l,e) = 0
+            enddo
+            enddo
          endif
 
-c        call out27(x27(1,ie),y27(1,ie),z27(1,ie),ie,'genc')
+c        call out27(x27(1,e),y27(1,e),z27(1,e),e,'genc')
 
       enddo
 
 C     Compute the maximum radius from the center
 
-      CALL RZERO(RCEN,NEL) 
-      IF (IF3D) THEN
-         DO 300 IEL=1,NEL
-         DO 300 J=1,8
-            RAD=(X(IEL,J)-XCEN(IEL))**2 + (Y(IEL,J)-YCEN(IEL))**2
-     $         +(Z(IEL,J)-ZCEN(IEL))**2
-            RCEN(IEL)=MAX(RCEN(IEL),RAD)
-  300    CONTINUE
-      ELSE
-         DO 400 IEL=1,NEL
-         DO 400 J=1,4
-            RAD=(X(IEL,J)-XCEN(IEL))**2 + (Y(IEL,J)-YCEN(IEL))**2
-            RCEN(IEL)=MAX(RCEN(IEL),RAD)
+      call rzero(rcen,nel) 
+      if (if3d) then
+         do 300 e=1,nel
+         do 300 j=1,8
+            rad=(x(j,e)-xcen(e))**2 + (y(j,e)-ycen(e))**2
+     $         +(z(j,e)-zcen(e))**2
+            rcen(e)=max(rcen(e),rad)
+  300    continue
+      else
+         do 400 e=1,nel
+         do 400 j=1,4
+            rad=(x(j,e)-xcen(e))**2 + (y(j,e)-ycen(e))**2
+            rcen(e)=max(rcen(e),rad)
   400    CONTINUE
       ENDIF
-      CALL VSQRT(RCEN,NEL)
+      call vsqrt(rcen,nel)
 
       write(6,*) 'done gencen ',nel
 

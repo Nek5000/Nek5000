@@ -54,8 +54,8 @@ C
          CALL PRS(S)
          WRITE(S,52) 
          CALL PRS(S)
-   51  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
-     $                ,I9,').$')
+   51  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
+     $                ,i11,').$')
    52    FORMAT(2X,'Aborting zipper.$')
          return
       ELSE
@@ -64,7 +64,7 @@ C
      $ 'WARNING: Number of elements after OctSplit operation$')
          WRITE(S,61) NELN
          CALL PRS(S)
-   61  FORMAT(2X,'will be (',I9
+   61  FORMAT(2X,'will be (',i11
      $          ,'). Are you sure you want to split (y/n)?$')
          CALL RES(ANS,1)
          IF (ANS.ne.'y'.and.ANS.ne.'Y') return
@@ -109,7 +109,7 @@ C
       call vertadj
 
       WRITE(S,300) Nnew,NEL
-  300 FORMAT(I9,' new elements generated. NEL=',I9,'$')
+  300 FORMAT(i11,' new elements generated in octspl. NEL=',i11,'$')
       call prs(s)
 
       call gencen
@@ -177,7 +177,7 @@ C
       CALL COPY(VEC,VEC3,3)
       IPLN0=IJKPLN
       IE0  =IE
-      write(6,*) 'ie0:',ie0,ipln0
+c     write(6,*) 'ie0:',ie0,ipln0
 C
 C     For a given IJKPLN (taking values 1-6), we can find the orthogonal
 C     planes by adding 2, and taking mod1(ijkpln+2,6).  NOTE that MOD1 is
@@ -300,8 +300,8 @@ C
          WRITE(S,152) 
          CALL PRS(S)
   150  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
-  151  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
-     $                ,I9,').$')
+  151  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
+     $                ,i11,').$')
   152    FORMAT(2X,'Aborting corner refine operation.$')
          return
       ENDIF
@@ -338,7 +338,7 @@ C     Third, find the ratio to be split
          CALL PRS(S)
          CALL WIN3D(NELN,IE,I,S0)
   500 CONTINUE
-  502 FORMAT(' Generating window for element',2I9,'.$')
+  502 FORMAT(' Generating window for element',2i11,'.$')
       NEL=NELN+1
 C
 C     Elements are all set. Sort.
@@ -350,7 +350,7 @@ C     Exit
 C
       NLSTP2=NLSTP*2
       WRITE(S,900) NLSTP2,NEL
-  900 FORMAT(I9,' new elements generated. NEL=',I9,'$')
+  900 FORMAT(i11,' new elements generated in win3d. NEL=',i11,'$')
       CALL PRS(S)
 C
       call gencen
@@ -405,8 +405,8 @@ C
          WRITE(S,52) 
          CALL PRS(S)
    50  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
-   51  FORMAT(2X,'(',I9,') would be greater than the allowed maxium ('
-     $                ,I9,').$')
+   51  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
+     $                ,i11,').$')
    52    FORMAT(2X,'Aborting zipper.$')
          return
       ENDIF
@@ -447,7 +447,7 @@ C
 C     Exit
 C
       WRITE(S,300) NLSTP,NEL
-  300 FORMAT(I9,' new elements generated. NEL=',I9,'$')
+  300 FORMAT(i11,' new elements generated in zip2. NEL=',i11,'$')
       CALL PRS(S)
 C
       call gencen
@@ -731,9 +731,9 @@ C     Determine geometric parameters
 
 C     Generate (normalized) corner vectors XCV(1,i,j):
       do 10 i=1,8
-         xcc(i)=x(e,i)
-         ycc(i)=y(e,i)
-         zcc(i)=z(e,i)
+         xcc(i)=x(i,e)
+         ycc(i)=y(i,e)
+         zcc(i)=z(i,e)
    10 continue
       call crn3d(xcv,xcc,ycc,zcc,curve(1,ifce,e),iface,e)
 
@@ -923,15 +923,12 @@ C
             IF (TEST.GT.EPS) THEN
              WRITE(6,30) 
      $       RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
-   30        FORMAT(5X,'ERROR: vertex not on requested sphere A.'
+   30        FORMAT(5X,'ERROR: Element vertex not on requested sphere.'
      $           ,/,5X,'REPAIRING in CRN3Dd',5F12.7)
 c    $           ,/,5X,'EXITING in CRN3Dd',5F12.7)
-             WRITE(6,31) i,IE,IFACE,XCTR,YCTR,ZCTR
-   31        FORMAT(5X,'i,IE,IF,XYZCTR:',3I4,3F12.7)
-             WRITE(6,*) 'xc'
+             WRITE(6,31) IE,IFACE,XCTR,YCTR,ZCTR
+   31        FORMAT(5X,'IE,IF,XYZCTR:',2I4,3F12.7)
              WRITE(6,32) (xc(j),yc(j),zc(j),j=1,8)
-             WRITE(6,*) 'xcv'
-             WRITE(6,32) ((xcv(k,j,1),k=1,3),j=1,4)
    32        FORMAT(3f12.7)
 
 c            CALL EXITT
@@ -1072,17 +1069,17 @@ C     ctmpg is used in this format in several subsequent routines
 C     if (ifaxis .and. ifrzer(ie) .and. (isid.eq.2 .or. isid.eq.4)) 
 C    $ifglj = .true.
 
-      pt1x  = x(e,isid)
-      pt1y  = y(e,isid)
+      pt1x  = x(isid,e)
+      pt1y  = y(isid,e)
       if(isid.eq.4) then
-         pt2x = x(e,1)
-         pt2y = y(e,1)
+         pt2x = x(1,e)
+         pt2y = y(1,e)
       else if(isid.eq.8) then
-         pt2x = x(e,5)
-         pt2y = y(e,5)
+         pt2x = x(5,e)
+         pt2y = y(5,e)
       else
-         pt2x = x(e,isid+1)
-         pt2y = y(e,isid+1)
+         pt2x = x(isid+1,e)
+         pt2y = y(isid+1,e)
       endif
 
 C     Find slope of perpendicular
@@ -1093,7 +1090,8 @@ C     Find slope of perpendicular
    10    format(//,2x,'ERROR: Too small a radius (',g11.3
      $  ,') specified for side',I2,' of element',I4,':  '
      $  ,g11.3,/,2x,'ABORTING during mesh generation.')
-         call exitt
+        radius = 1.5*gap
+        curve(1,isid,e) = radius
       endif
       xs = pt2y-pt1y
       ys = pt1x-pt2x
@@ -1478,7 +1476,7 @@ C     Count the number which are in
      $       YCEN(IIEL).LE.YMAX )         NUMIN=NUMIN+1
   100 CONTINUE
       WRITE(S,101) NUMIN,NEL
-  101 FORMAT('Renumbering',I9,' out of',I9,' elements.$')
+  101 FORMAT('Renumbering',i11,' out of',i11,' elements.$')
       CALL PRS(S)
       IF (NUMIN.GT.0) THEN
 C        renumber the elements which are inside to be less than NUMIN
@@ -1503,7 +1501,7 @@ C               We've got one which is out, but too low.
              ENDIF
   200    CONTINUE
       WRITE(S,201) J,K
-  201 FORMAT('Found',I9,' elements in, and',I9,' elements out.$')
+  201 FORMAT('Found',i11,' elements in, and',i11,' elements out.$')
       CALL PRS(S)
       IF (J.NE.K) return
 C
@@ -1550,7 +1548,7 @@ C     Exception handling:
          IF (YESNO.EQ.'Y'.OR.YESNO.EQ.'y') GOTO 10
       ELSE
          WRITE(S,30) IE,XCEN(IE),YCEN(IE),ZCEN(IE)
-   30    FORMAT(2X,'Found element number',I9,3f9.4,'$')
+   30    FORMAT(2X,'Found element number',i11,3f9.4,'$')
          CALL PRS(S)
       ENDIF
 C
@@ -1768,14 +1766,14 @@ C     "A" point
          CALL EVALSC(YVAL,YP,RRL,0)
          CALL EVALSC(ZVAL,ZP,RRL,0)
          write(6,*) 'xyzv1:',xval,yval,zval
-C
-         X(IE,I2)=XVAL
-         Y(IE,I2)=YVAL
-         Z(IE,I2)=ZVAL
-C
-         X(JE,I1)=XVAL
-         Y(JE,I1)=YVAL
-         Z(JE,I1)=ZVAL
+
+         x(i2,ie)=xval
+         y(i2,ie)=yval
+         z(i2,ie)=zval
+
+         x(i1,je)=xval
+         y(i1,je)=yval
+         z(i1,je)=zval
 C
 C     "B" point
          RRL(1)=FRACS
@@ -1785,17 +1783,17 @@ C     "B" point
          CALL EVALSC(ZVAL,ZP,RRL,0)
          write(6,*) 'xyzv2:',xval,yval,zval
 C
-         X(IE,I3)=XVAL
-         Y(IE,I3)=YVAL
-         Z(IE,I3)=ZVAL
+         x(i3,ie)=xval
+         y(i3,ie)=yval
+         z(i3,ie)=zval
 C
-         X(JE,I4)=XVAL
-         Y(JE,I4)=YVAL
-         Z(JE,I4)=ZVAL
+         x(i4,je)=xval
+         y(i4,je)=yval
+         z(i4,je)=zval
 C
-         X(KE,I2)=XVAL
-         Y(KE,I2)=YVAL
-         Z(KE,I2)=ZVAL
+         x(i2,ke)=xval
+         y(i2,ke)=yval
+         z(i2,ke)=zval
 C
 C     "C" point
          RRL(1)=-1.0
@@ -1805,13 +1803,13 @@ C     "C" point
          CALL EVALSC(ZVAL,ZP,RRL,0)
          write(6,*) 'xyzv3:',xval,yval,zval
 C
-         X(IE,I4)=XVAL
-         Y(IE,I4)=YVAL
-         Z(IE,I4)=ZVAL
-C
-         X(KE,I1)=XVAL
-         Y(KE,I1)=YVAL
-         Z(KE,I1)=ZVAL
+         x(i4,ie)=xval
+         y(i4,ie)=yval
+         z(i4,ie)=zval
+c
+         x(i1,ke)=xval
+         y(i1,ke)=yval
+         z(i1,ke)=zval
 C
   100 CONTINUE
 C
@@ -1918,33 +1916,33 @@ C
          IFAC=3
       ENDIF
 C
-      X1=X(IE,FCRN2(4,IFC1))
-      Y1=Y(IE,FCRN2(4,IFC1))
-      Z1=Z(IE,FCRN2(4,IFC1))
-      X2=X(IE,FCRN2(4,IFC2))
-      Y2=Y(IE,FCRN2(4,IFC2))
-      Z2=Z(IE,FCRN2(4,IFC2))
+      x1=x(fcrn2(4,ifc1),ie)
+      y1=y(fcrn2(4,ifc1),ie)
+      z1=z(fcrn2(4,ifc1),ie)
+      x2=x(fcrn2(4,ifc2),ie)
+      y2=y(fcrn2(4,ifc2),ie)
+      z2=z(fcrn2(4,ifc2),ie)
       CCTMP=CCURVE(FFAC(4,IFAC),IE)
       CALL COPY(TMP,CURVE(1,FFAC(4,IFAC),IE),6)
       DO 10 I=3,1,-1
          I1=I+1
-         X(IE,FCRN2(I1,IFC1))=X(IE,FCRN2(I,IFC1))
-         Y(IE,FCRN2(I1,IFC1))=Y(IE,FCRN2(I,IFC1))
-         Z(IE,FCRN2(I1,IFC1))=Z(IE,FCRN2(I,IFC1))
-         X(IE,FCRN2(I1,IFC2))=X(IE,FCRN2(I,IFC2))
-         Y(IE,FCRN2(I1,IFC2))=Y(IE,FCRN2(I,IFC2))
-         Z(IE,FCRN2(I1,IFC2))=Z(IE,FCRN2(I,IFC2))
+         x(fcrn2(i1,ifc1),ie)=x(fcrn2(i,ifc1),ie)
+         y(fcrn2(i1,ifc1),ie)=y(fcrn2(i,ifc1),ie)
+         z(fcrn2(i1,ifc1),ie)=z(fcrn2(i,ifc1),ie)
+         x(fcrn2(i1,ifc2),ie)=x(fcrn2(i,ifc2),ie)
+         y(fcrn2(i1,ifc2),ie)=y(fcrn2(i,ifc2),ie)
+         z(fcrn2(i1,ifc2),ie)=z(fcrn2(i,ifc2),ie)
 C
          CCURVE(FFAC(I1,IFAC),IE)=CCURVE(FFAC(I,IFAC),IE)
          CALL COPY(CURVE(1,FFAC(I1,IFAC),IE)
      $            ,CURVE(1,FFAC(I,IFAC),IE),6)
    10 CONTINUE
-      X(IE,FCRN2(1,IFC1))=X1
-      Y(IE,FCRN2(1,IFC1))=Y1
-      Z(IE,FCRN2(1,IFC1))=Z1
-      X(IE,FCRN2(1,IFC2))=X2
-      Y(IE,FCRN2(1,IFC2))=Y2
-      Z(IE,FCRN2(1,IFC2))=Z2
+      x(fcrn2(1,ifc1),ie)=x1
+      y(fcrn2(1,ifc1),ie)=y1
+      z(fcrn2(1,ifc1),ie)=z1
+      x(fcrn2(1,ifc2),ie)=x2
+      y(fcrn2(1,ifc2),ie)=y2
+      z(fcrn2(1,ifc2),ie)=z2
       CCURVE(FFAC(1,IFAC),IE)=CCTMP
       CALL COPY(CURVE(1,FFAC(1,IFAC),IE),TMP,6)
 C
@@ -2145,6 +2143,7 @@ C     ZERO OUT OLD ELEMENTAL CONNECTIVITY
       DO 300 ISIDE=1,NSIDES
          IF(  CBC( ISIDE, IE,IFLD).EQ.'E')THEN
               CBC(   ISIDE, IE,IFLD)=' '
+              ibc(   iside, ie,ifld)= 0
               BC (1, ISIDE, IE,IFLD)= 0
               BC (2, ISIDE, IE,IFLD)= 0
               BC (3, ISIDE, IE,IFLD)= 0
@@ -2189,9 +2188,12 @@ C                    Overlapping edges not Internal B.C.'s are elemental b.c.'s
                      CBC(JSIDE,JE,IFLD)='E'
                    ENDIF
                    IORIEN = 0
+                   ibc(iside,ie,ifld)   = je
                    BC (1,ISIDE,IE,IFLD) = JE
                    BC (2,ISIDE,IE,IFLD) = JSIDE
                    BC (3,ISIDE,IE,IFLD) = IORIEN
+
+                   ibc(jside,je,ifld)   = ie
                    BC (1,JSIDE,JE,IFLD) = IE
                    BC (2,JSIDE,JE,IFLD) = ISIDE
                    BC (3,JSIDE,JE,IFLD) = IORIEN
@@ -2260,9 +2262,9 @@ C       +--->  +-----------------+              +--->  +-----+
 C         x                                      x'
 C
       do 10 i=1,8
-         xcc(i)=x(e,i)*PratiI
-         ycc(i)=y(e,i)
-         zcc(i)=z(e,i)
+         xcc(i)=x(i,e)*PratiI
+         ycc(i)=y(i,e)
+         zcc(i)=z(i,e)
    10 continue
       call crn3d(xcv,xcc,ycc,zcc,curve(1,ifce,e),iface,e)
 C
@@ -2381,15 +2383,15 @@ C        Flash mesh sides
             IED1=1
             IED2=4
          ENDIF
-         CALL MOVE(X(IE, IED1),Y(IE, IED1))
+         call move(x(ied1,ie),y(ied1,ie))
          DO 220 IEDGE=IED1,IED2
             CALL DRAWED(IE,IEDGE,1)
 220      CONTINUE
       ELSE
-C        SIDES 1-4  (SAME AS EDGES IN THIS CASE)
+c        SIDES 1-4  (SAME AS EDGES IN THIS CASE)
 c        write(6,*) 'ie,is:',ie,iside
-c        CALL MOVE(X(IE, ISIDE),Y(IE, ISIDE))
-         CALL DRAWED(IE,ISIDE,1)
+c        call move(x(iside,ie),y(iside,ie))
+         call drawed(ie,iside,1)
       ENDIF
 C
       return
@@ -2419,7 +2421,15 @@ c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 c
-      call getxyzstat
+      n  = nel*(2**ndim)
+      xmean = glsum(x,8*nelm)/n
+      ymean = glsum(y,8*nelm)/n
+      zmean = glsum(z,8*nelm)/n
+      if (if3d) then
+         call prsrrr('XYZ mean:$',xmean,ymean,zmean)
+      else
+         call prsrr ('XY  mean:$',xmean,ymean)
+      endif
 c
       IF (CHOICE.EQ.'UP MENU') return
       IF (CHOICE.EQ.'Redraw mesh') then
@@ -2450,7 +2460,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in X-direction$')
          CALL RER(Xshift)
-         call shifter(Xshift,Xsep,ANS,X,'X')
+         CALL Shifter(Xshift,Xsep,ANS,X,'X')
       ELSEIF (CHOICE.EQ.'Shift Y') THEN
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
@@ -2463,7 +2473,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in Y-direction$')
          CALL RER(Yshift)
-         call shifter(Yshift,Ysep,ANS,Y,'Y')
+         CALL Shifter(Yshift,Ysep,ANS,Y,'Y')
       ELSEIF (CHOICE.EQ.'Shift Z') THEN
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
@@ -2475,20 +2485,20 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to shift in Z-direction$')
          CALL RER(Zshift)
-         call shifter(Zshift,Zsep,ANS,Z,'Z')
+         CALL Shifter(Zshift,Zsep,ANS,Z,'Z')
       ENDIF
       GOTO 1
       END
 c-----------------------------------------------------------------------
-      subroutine shifter(shift,Sep,DIR,pts,coord)
+      subroutine shifter(Shift,Sep,DIR,pts,coord)
       include 'basics.inc'
-      DIMENSION pts(nelm,8)
+      real pts(8,nelm)
       CHARACTER*1 DIR,coord
       LOGICAL IFG,IFL
 C
-      Nvts = 4
-      IF (IF3D) Nvts=8
-      Nkshift = 0
+      nvts = 4
+      IF (IF3D) nvts=8
+      nkshift = 0
 C
       IF (DIR.eq.'>') THEN
          DO 100 K=1,NEL
@@ -2496,16 +2506,16 @@ C
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 10 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 10 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
    10       CONTINUE
-c           IF ((IFG.AND.IFL).and.shift.lt.0.0) THEN ! cmt out; 9/29/05
+c           IF ((IFG.AND.IFL).and.Shift.lt.0.0) THEN ! cmt out; 9/29/05
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
@@ -2515,13 +2525,13 @@ c              IF (pmin+shift.le.pmax) THEN
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,shift)
+c                 CALL PRRR(pmax,pmin,Shift)
 c                 CALL PRS('Aborting shift operation$')
 c                 return
 c              ENDIF
 c           ENDIF
-            DO 20 j=1,Nvts
-               IF (pts(k,j).ge.sep) pts(k,j)=pts(k,j)+shift
+            DO 20 j=1,nvts
+               IF (pts(j,k).ge.sep) pts(j,k)=pts(j,k)+shift
    20       CONTINUE
             if (if3d.and.pmin.ge.sep) then
               do l=1,12
@@ -2538,8 +2548,15 @@ c           ENDIF
                   if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
+            elseif (pmin.ge.sep) then  ! 2D
+              do l=1,4
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                endif
+              enddo
             endif
-            Nkshift=Nkshift+1
+            nkshift=nkshift+1
   100   CONTINUE
       ELSE
          DO 200 K=1,NEL
@@ -2547,16 +2564,16 @@ c           ENDIF
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 110 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 110 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
   110       CONTINUE
-c           IF ((IFG.AND.IFL).and.shift.gt.0.0) THEN
+c           IF ((IFG.AND.IFL).and.Shift.gt.0.0) THEN
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
@@ -2566,13 +2583,13 @@ c              IF (pmax+shift.le.pmin) THEN
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,shift)
+c                 CALL PRRR(pmax,pmin,Shift)
 c                 CALL PRS('Aborting shift operation$')
 c                 return
 c              ENDIF
 c           ENDIF
-            DO 120 j=1,Nvts
-               IF (pts(k,j).le.sep) pts(k,j)=pts(k,j)+shift
+            DO 120 j=1,nvts
+               IF (pts(j,k).le.sep) pts(j,k)=pts(j,k)+shift
   120       CONTINUE
             if (if3d.and.pmax.le.sep) then
               do l=1,12
@@ -2589,15 +2606,22 @@ c           ENDIF
                   if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
+            elseif (pmax.le.sep) then  ! 2D
+              do l=1,4
+                if (ccurve(l,k).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
+                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                endif
+              enddo
             endif
-            Nkshift=Nkshift+1
+            nkshift=nkshift+1
   200    CONTINUE
       ENDIF
-C
-      WRITE(S,500) Nkshift
-  500 FORMAT(' Shifted',I9,' elements.$')
+
+      WRITE(S,500) nkshift
+  500 FORMAT(' Shifter',i11,' elements.$')
       CALL PRS(S)
-C
+
       return
       END
 c-----------------------------------------------------------------------
@@ -2665,12 +2689,12 @@ C        X-plane
                CALL EVALSC(ZVAL,ZP,RRL,0)
                I0=I0+2
                I1=I0+1
-               X(IE,INV(I1))=XVAL
-               Y(IE,INV(I1))=YVAL
-               Z(IE,INV(I1))=ZVAL
-               X(JE,INV(I0))=XVAL
-               Y(JE,INV(I0))=YVAL
-               Z(JE,INV(I0))=ZVAL
+               x(inv(i1),ie)=xval
+               y(inv(i1),ie)=yval
+               z(inv(i1),ie)=zval
+               x(inv(i0),je)=xval
+               y(inv(i0),je)=yval
+               z(inv(i0),je)=zval
   100       CONTINUE
   200    CONTINUE
 C
@@ -2694,12 +2718,12 @@ C              II,JJ = 1,2
 C              I0=1,2,5,6; I1=3,4,7,8
                I0=II+4*(JJ-1)
                I1=I0+2
-               X(IE,INV(I1))=XVAL
-               Y(IE,INV(I1))=YVAL
-               Z(IE,INV(I1))=ZVAL
-               X(JE,INV(I0))=XVAL
-               Y(JE,INV(I0))=YVAL
-               Z(JE,INV(I0))=ZVAL
+               x(inv(i1),ie)=xval
+               y(inv(i1),ie)=yval
+               z(inv(i1),ie)=zval
+               x(inv(i0),je)=xval
+               y(inv(i0),je)=yval
+               z(inv(i0),je)=zval
 C
   110       CONTINUE
   210    CONTINUE
@@ -2719,12 +2743,12 @@ C        Z-plane
                CALL EVALSC(ZVAL,ZP,RRL,0)
                I0=I0+1
                I1=I0+4
-               X(IE,INV(I1))=XVAL
-               Y(IE,INV(I1))=YVAL
-               Z(IE,INV(I1))=ZVAL
-               X(JE,INV(I0))=XVAL
-               Y(JE,INV(I0))=YVAL
-               Z(JE,INV(I0))=ZVAL
+               x(inv(i1),ie)=xval
+               y(inv(i1),ie)=yval
+               z(inv(i1),ie)=zval
+               x(inv(i0),je)=xval
+               y(inv(i0),je)=yval
+               z(inv(i0),je)=zval
   120       CONTINUE
   220    CONTINUE
          JFAC1=EFACE(5)
@@ -2858,9 +2882,9 @@ C
               DO 760 Jx=0,1
                 jx0 = Jx+Ix
                 iv = iv+1
-                X(JE,INV(Iv))=XVAL(jx0,jy0,jz0)
-                Y(JE,INV(Iv))=YVAL(jx0,jy0,jz0)
-                Z(JE,INV(Iv))=ZVAL(jx0,jy0,jz0)
+                x(inv(iv),je)=xval(jx0,jy0,jz0)
+                y(inv(iv),je)=yval(jx0,jy0,jz0)
+                z(inv(iv),je)=zval(jx0,jy0,jz0)
   760     CONTINUE
 C
           DO 400 Ifce=1,3
@@ -2965,9 +2989,9 @@ C
               DO 2760 Jx=0,1
                 jx0 = Jx+Ix
                 iv = iv+1
-                X(JE,INV(Iv))=XVAL(jx0,jy0,1)
-                Y(JE,INV(Iv))=YVAL(jx0,jy0,1)
-                Z(JE,INV(Iv))=ZVAL(jx0,jy0,1)
+                x(inv(iv),je)=xval(jx0,jy0,1)
+                y(inv(iv),je)=yval(jx0,jy0,1)
+                z(inv(iv),je)=zval(jx0,jy0,1)
  2760     CONTINUE
 C
           DO 2400 Ifce=1,2
@@ -3107,9 +3131,9 @@ c         DO 760 Jz=0,1
               DO 760 Jx=0,1
                 jx0 = Jx+Ix
                 iv = iv+1
-                X(JE,INV(Iv))=XVAL(jx0,jy0,jz0)
-                Y(JE,INV(Iv))=YVAL(jx0,jy0,jz0)
-                Z(JE,INV(Iv))=ZVAL(jx0,jy0,jz0)
+                x(inv(iv),je)=xval(jx0,jy0,jz0)
+                y(inv(iv),je)=yval(jx0,jy0,jz0)
+                z(inv(iv),je)=zval(jx0,jy0,jz0)
   760     CONTINUE
 C
           DO 400 Ifce=1,2
@@ -3209,15 +3233,15 @@ C
 C         Eight vertices
 C
           iv = 0
-            DO 2760 Jy=0,1
-              jy0 = Jy+Iy
-              DO 2760 Jx=0,1
-                jx0 = Jx+Ix
+            do 2760 jy=0,1
+              jy0 = jy+iy
+              do 2760 jx=0,1
+                jx0 = jx+ix
                 iv = iv+1
-                X(JE,INV(Iv))=XVAL(jx0,jy0,1)
-                Y(JE,INV(Iv))=YVAL(jx0,jy0,1)
-                Z(JE,INV(Iv))=ZVAL(jx0,jy0,1)
- 2760     CONTINUE
+                x(inv(iv),je)=xval(jx0,jy0,1)
+                y(inv(iv),je)=yval(jx0,jy0,1)
+                z(inv(iv),je)=zval(jx0,jy0,1)
+ 2760     continue
 C
           DO 2400 Ifce=1,2
            IFAC1=EFACE(2*Ifce-1)
@@ -3307,10 +3331,6 @@ c
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Redraw mesh'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch R'
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch theta'
-      nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch X'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch Y'
@@ -3318,6 +3338,10 @@ c
          nchoic = nchoic+1
          ITEM(nchoic)    =             'Stretch Z'
       ENDIF
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch R'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch theta'
 c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
@@ -3342,7 +3366,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in X-direction$')
          CALL RER(Xshift)
-         call shifter2(Xshift,Xsep,ANS,X,'X')
+         CALL Shifter2(Xshift,Xsep,ANS,X,'X')
       ELSEIF (CHOICE.EQ.'Stretch Y') THEN
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
@@ -3355,7 +3379,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Y-direction$')
          CALL RER(Yshift)
-         call shifter2(Yshift,Ysep,ANS,Y,'Y')
+         CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
       ELSEIF (CHOICE.EQ.'Stretch Z') THEN
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
@@ -3367,18 +3391,18 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          IF (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Z-direction$')
          CALL RER(Zshift)
-         call shifter2(Zshift,Zsep,ANS,Z,'Z')
+         CALL Shifter2(Zshift,Zsep,ANS,Z,'Z')
       ENDIF
       GOTO 1
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2a(pmin,pmax,gain,shift,Sep,DIR,pts,coord)
+      subroutine shifter2a(pmin,pmax,gain,Shift,Sep,DIR,pts,coord)
 c
 c     In this pass, we just figure out range of geometry in shifted 
 c     section
 c
       include 'basics.inc'
-      DIMENSION pts(nelm,8)
+      real pts(8,nelm)
       CHARACTER*1 DIR,coord
       LOGICAL IFG,IFL
 C
@@ -3387,70 +3411,70 @@ C
       if (gain.eq.0) gain=1.
       if (gain.lt.0) gain=-1./gain
 c
-      Nvts = 4
-      IF (IF3D) Nvts=8
-      Nkshift = 0
+      nvts = 4
+      IF (IF3D) nvts=8
+      nkshift = 0
 C
       pmin= 9.99e15
       pmax=-9.99e15
 c
       DO K=1,NEL
-      DO j=1,Nvts
-         pmin=min(pmin,pts(k,j))
-         pmax=max(pmax,pts(k,j))
+      DO j=1,nvts
+         pmin=min(pmin,pts(j,k))
+         pmax=max(pmax,pts(j,k))
       enddo
       enddo
 c
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2b(stretch,Sep,DIR,pts,coord)
+      subroutine shifter2b(Shift,Sep,DIR,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
       include 'basics.inc'
-      DIMENSION pts(nelm,8)
-      CHARACTER*1 DIR,coord
-      LOGICAL IFG,IFL
-c
-      Nvts = 4
-      IF (IF3D) Nvts=8
-      nkstretch = 0
-C
+      real pts(8,nelm)
+      character*1 dir,coord
+      logical ifg,ifl
+
+      nvts = 4
+      if (if3d) nvts=8
+      nkshift = 0
+
+      if (coord.eq.'X') i=1
+      if (coord.eq.'Y') i=2
+      if (coord.eq.'Z') i=3
+      nedge = 4 + 8*(ndim-2)
+
       IF (DIR.eq.'>') THEN
          DO 100 K=1,NEL
             IFG=.FALSE.
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 10 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 10 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
    10       CONTINUE
-            DO 20 j=1,Nvts
-               IF (pts(k,j).ge.sep) pts(k,j)=stretch*(pts(k,j)-sep)+sep
-   20       CONTINUE
-            if (if3d.and.pmin.ge.sep) then
-              if (coord.eq.'X') j=1
-              if (coord.eq.'Y') j=2
-              if (coord.eq.'Z') j=3
-              do l=1,12
+            do 20 j=1,nvts
+               if (pts(j,k).ge.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
+   20       continue
+
+            if (pmin.ge.sep) then
+              do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  curve(j,l,k)=stretch*(curve(j,l,k)-sep) + sep
-                endif
-              enddo
-              do l=1,6
-                if (ccurve(l,k).eq.'s') then
+                  curve(i,l,k)=shift*(curve(i,l,k)-sep)+sep
+                elseif (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
                 endif
               enddo
             endif
-            nkstretch=nkstretch+1
+            nkshift=nkshift+1
   100   CONTINUE
       ELSE
          DO 200 K=1,NEL
@@ -3458,68 +3482,69 @@ C
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 110 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 110 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
   110       CONTINUE
-            DO 120 j=1,Nvts
-               if (pts(k,j).le.sep) pts(k,j)=stretch*(pts(k,j)-sep)+sep
-c              if (pts(k,j).le.sep) then
-c                  pold = pts(k,j)
-c                  pts(k,j)=stretch*(pts(k,j)-sep) + sep
-c                  pnew = pts(k,j)
-c                  write(6,*) 'stretch',pold,pnew,sep,stretch,j,dir,coord
-c              endif
+            DO 120 j=1,nvts
+c              IF (pts(j,k).le.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
+               IF (pts(j,k).le.sep) then
+                   pold = pts(j,k)
+                   pts(j,k)=shift*(pts(j,k)-sep) + sep
+                   pnew = pts(j,k)
+                   write(6,*) 'stretch',pold,pnew,sep,shift,j,dir,coord
+               endif
   120       CONTINUE
-            if (if3d.and.pmax.le.sep) then
-              if (coord.eq.'X') j=1
-              if (coord.eq.'Y') j=2
-              if (coord.eq.'Z') j=3
-              do l=1,12
+
+            if (pmax.le.sep) then
+              do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  curve(j,l,k)=stretch*(curve(j,l,k)-sep) + sep
-                endif
-              enddo
-              do l=1,6
-                if (ccurve(l,k).eq.'s') then
+                  curve(i,l,k)=shift*(curve(i,l,k)-sep)+sep
+                elseif (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
                 endif
               enddo
             endif
-            nkstretch=nkstretch+1
+            nkshift=nkshift+1
   200    CONTINUE
       ENDIF
-C
-      WRITE(S,500) nkstretch
-  500 FORMAT(' Stretched',I9,' elements.$')
+
+      WRITE(S,500) nkshift
+  500 FORMAT(' Shifter2b',i11,' elements.$')
       CALL PRS(S)
-C
+
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2c(shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+      subroutine shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
 
 c     Geometric gain
 
       include 'basics.inc'
-      real pts(nelm,8)
+      real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
 
-      Nvts = 4
-      IF (IF3D) Nvts=8
-      Nkshift = 0
+      nvts = 4
+      IF (IF3D) nvts=8
+      nkshift = 0
 c
 c     We only get here if gain > 0,  different than 1
 c
       g = log(gain)
       c = shift*g/(gain-1.)
-c
+
+      nedge = 4 + 8*(ndim-2)
+      if (coord.eq.'X') i=1
+      if (coord.eq.'Y') i=2
+      if (coord.eq.'Z') i=3
+
+
       IF (DIR.eq.'>') THEN
          dx  = qmax - sep
          gdx = g/dx
@@ -3528,42 +3553,36 @@ c
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 10 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 10 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
    10       CONTINUE
-            DO 20 j=1,Nvts
-               if (pts(k,j).ge.sep) then
-                  argu = gdx*(pts(k,j)-sep)
+            DO 20 j=1,nvts
+               if (pts(j,k).ge.sep) then
+                  argu = gdx*(pts(j,k)-sep)
                   xn   = sep + c*dx*(exp(argu)-1.)/g
-                  write(6,1) shift,gain,g,c,dx,gdx,pts(k,j),xn
+                  write(6,1) shift,gain,g,c,dx,gdx,pts(j,k),xn
     1             format('s:',1p8e12.3)
-                  pts(k,j)=xn
+                  pts(j,k)=xn
                endif
    20       CONTINUE
-            if (if3d.and.pmin.ge.sep) then
-              do l=1,12
+            if (pmin.ge.sep) then
+              do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
-                endif
-              enddo
-              do l=1,6
-                if (ccurve(l,k).eq.'s') then
+                  argu = gdx*(curve(i,l,k)-sep)
+                  xn   = sep + c*dx*(exp(argu)-1.)/g
+                  curve(i,l,k)=xn
+                elseif (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
-c                 if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-c                 if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
             endif
-            Nkshift=Nkshift+1
+            nkshift=nkshift+1
   100   CONTINUE
       ELSE
          dx  = qmin - sep
@@ -3573,66 +3592,60 @@ c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 110 j=1,Nvts
-               IF (pts(k,j).ge.sep) THEN
+            DO 110 j=1,nvts
+               IF (pts(j,k).ge.sep) THEN
                   IFG=.TRUE.
-                  pmin=min(pmin,pts(k,j))
+                  pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
-                  pmax=max(pmax,pts(k,j))
+                  pmax=max(pmax,pts(j,k))
                ENDIF
   110       CONTINUE
-            DO 120 j=1,Nvts
-               if (pts(k,j).le.sep) then
-                  argu = gdx*(pts(k,j)-sep)
+            DO 120 j=1,nvts
+               if (pts(j,k).le.sep) then
+                  argu = gdx*(pts(j,k)-sep)
                   xn   = sep + c*dx*(exp(argu)-1.)/g
-                  pts(k,j)=xn
+                  pts(j,k)=xn
                endif
   120       CONTINUE
-            if (if3d.and.pmax.le.sep) then
-              do l=1,12
+            if (pmax.le.sep) then
+              do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
-                endif
-              enddo
-              do l=1,6
-                if (ccurve(l,k).eq.'s') then
+                  argu = gdx*(curve(i,l,k)-sep)
+                  xn   = sep + c*dx*(exp(argu)-1.)/g
+                  curve(i,l,k)=xn
+                elseif (ccurve(l,k).eq.'s') then
                   call prs('need to fix spherical+shifter2, pff$')
-c                 if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-c                 if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-c                 if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
                 endif
               enddo
             endif
-            Nkshift=Nkshift+1
+            nkshift=nkshift+1
   200    CONTINUE
       ENDIF
-C
-      WRITE(S,500) Nkshift
-  500 FORMAT(' shifted',I9,' elements.$')
-      CALL PRS(S)
-C
+
+      write(s,500) nkshift
+  500 format(' Shifter2c',i11,' elements.$')
+      call prs(s)
+
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2(shift,Sep,DIR,pts,coord)
+      subroutine shifter2(Shift,Sep,DIR,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
       include 'basics.inc'
-      real pts(nelm,8)
+      real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
 c
-      call shifter2a(qmin,qmax,gain,shift,Sep,DIR,pts,coord)
+      call shifter2a(qmin,qmax,gain,Shift,Sep,DIR,pts,coord)
       write(6,*) 'qmnx gn:',qmin,qmax,gain
 c
       if (abs(gain-1.) .gt. 1.e-5) then
-         call shifter2c(shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+         call shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
       else
-         call shifter2b(shift,Sep,DIR,pts,coord)
+         call shifter2b(Shift,Sep,DIR,pts,coord)
       endif
 c
       return
@@ -3744,9 +3757,9 @@ C
          do jv=1,4
             q = qmap(jv,e)
             v = v+1
-            x(je,inv(v))=xval(1,q,kv)
-            y(je,inv(v))=xval(2,q,kv)
-            z(je,inv(v))=xval(3,q,kv)
+            x(inv(v),je)=xval(1,q,kv)
+            y(inv(v),je)=xval(2,q,kv)
+            z(inv(v),je)=xval(3,q,kv)
          enddo
          enddo
 C
@@ -3813,9 +3826,9 @@ C
 C        Eight vertices
 C
          do v=1,8
-            x(je,inv(v))=xval(1,v+kv)
-            y(je,inv(v))=xval(2,v+kv)
-            z(je,inv(v))=xval(3,v+kv)
+            x(inv(v),je)=xval(1,v+kv)
+            y(inv(v),je)=xval(2,v+kv)
+            z(inv(v),je)=xval(3,v+kv)
          enddo
          kv = 4
 C
@@ -3853,14 +3866,17 @@ c     if(xscr(xmouse).gt.1.0 .and. yscr(ymouse).gt.0.62) then
       endif
 
       rmin=1.0e10
-      DO 100 IEL=1,NEL
-         RAD=SQRT( (XMOUSE-XCEN(IEL))**2 + (YMOUSE-YCEN(IEL))**2 )
-         IF(RAD.LT.RMIN .AND. NUMAPT(IEL).EQ.ILEVEL)THEN
-            RMIN=RAD
-            ie_click=IEL
-         ENDIF
-100   CONTINUE
-c
+      do iel=1,nel
+         rad=sqrt( (xmouse-xcen(iel))**2 + (ymouse-ycen(iel))**2 )
+         if (if3d.and.rad.lt.rmin .and. numapt(iel).eq.ilevel) then
+            rmin=rad
+            ie_click=iel
+         elseif (rad.lt.rmin)then
+            rmin=rad
+            ie_click=iel
+         endif
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -3896,6 +3912,11 @@ c
          raz  = 1.
 
       endif
+
+      write(6,*)
+      write(6,9) ie,(x(jj,ie),jj=1,4),' xorg'
+      write(6,9) ie,(y(jj,ie),jj=1,4),' yorg'
+    9 format(i5,4f14.5,a5)
 
       if (ie.gt.0) then
          call msplite(ie,nxsp,nysp,nzsp,rax,ray,raz)
@@ -3969,23 +3990,56 @@ c     write(6,*) i,n,ratio,get_ratio
       return
       end
 c-----------------------------------------------------------------------
-      subroutine fix_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+      subroutine fix_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz,xl,yl,zl)
 
 c     Assign / repair curve-side info for edges
 
       include 'basics.inc'
       real rrx(1),rry(1),rrz(1)
+      real xl(3,3,3),yl(3,3,3),zl(3,3,3)
+
       integer e
 
-      if (ifmid) then
-         call fix_m_curve(e)  ! in curve.f
-c        ifcstd = .false.
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      character m12(12),cct(12)
+      save      m12
+      data      m12  / 12 * 'm' /
+
+
+      call fix_c_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+      call fix_s_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+
+
+      call chcopy(cct,m12,12)
+
+      if (if3d) then                      !  NOTE THE SERIOUS CONFLICT:
+         if (ccurve(6,e).eq.'s') then     !
+            cct(6) = 's'                  !  cct(5) = 's'
+            call blank(cct(5),4)          !
+         endif                            !  and 
+         if (ccurve(5,e).eq.'s') then     !
+            cct(5) = 's'                  !  cct(5) = 'm' are compatible, but
+            call blank(cct,4)             !  not allowed because of naming conv!
+         endif
       endif
 
-      if (ifcstd) then
-         call fix_c_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
-         call fix_s_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
-      endif
+      nedge = 4 + 8*(ndim-2)
+      do kk=1,nedge
+         if (ccurve(kk,e).eq.'C') then
+c           do nothing
+         elseif (cct(kk).eq.'m') then
+            ccurve(kk,e)='m'
+            jj = eindx(kk)
+            curve(1,kk,e) = xl(jj,1,1)
+            curve(2,kk,e) = yl(jj,1,1)
+            curve(3,kk,e) = zl(jj,1,1)
+         endif
+      enddo
 
       return
       end
@@ -4279,8 +4333,10 @@ c-----------------------------------------------------------------------
          cb=cbc(f,e,ifld)
          if (cb.eq.'P  ') then
             e_old = bc(1,f,e,ifld) ! old element number
+            e_old = ibc(f,e,ifld)  ! old element number
             e_new = list1(e_old)
             bc(1,f,e,ifld) = e_new
+            ibc(f,e,ifld)  = e_new
          endif
       enddo
       enddo
@@ -4336,7 +4392,7 @@ c-----------------------------------------------------------------------
       dmin = 1.e22
 
       do v=1,nv
-         dist = dist_special(x(e,v),y(e,v),z(e,v))
+         dist = dist_special(x(v,e),y(v,e),z(v,e))
          dmin = min(dmin,dist)
       enddo
 
@@ -4526,6 +4582,9 @@ c        n   = number of points on g grid
 
       real j(n,m),jt(m,n),g(n),z(m)
 
+c     call outmat(z,1,m,'zptsA',n)
+
+
       mpoly  = m-1
       do i=1,n
          call fd_weights_full(g(i),z,mpoly,0,jt(1,i))
@@ -4609,12 +4668,15 @@ c-----------------------------------------------------------------------
       integer nxo
       save    nxo
       data    nxo / 0 /
-      
+
       nxl = min(nxi,nxm)
 
       if (nxo.ne.nxl) call legend(zgml,wght,nxl)
-      nxo=nxl
 
+c     write(6,*) nxo,nxl,nxi,nxm,' POINTS'
+c     call outmat(zgml,1,nxm,'setzg',nxl)
+
+      nxo=nxl
       return
       end
 c-----------------------------------------------------------------------
@@ -4644,10 +4706,11 @@ C
      $              , 20 , 24 , 26 , 22  ! Follows preproc. vtx notation
      $              , 10 , 12 , 18 , 16  /
 
+
 c     ifmid  = .false.
 c     ifcstd = .true.
+      write(6,*) nx,ny,nz,nxm,' NXM!'
 
-      call set_zgml (nx)
       call genxyz_e (xp,yp,zp,ie,nx,ny,nz) ! high definition mesh
 
       nxsp = abs(nxspi)
@@ -4662,6 +4725,8 @@ c     call outmat(rrx,1,nxsp+1,'rrx  ',nxspi)
 c     call outmat(rry,1,nysp+1,'rry  ',nyspi)
 c     call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
       call rzero(zq,27) ! for 2D
+
+      call set_zgml (nx)
 
       e  = 0
       do k=1,nzsp
@@ -4700,11 +4765,19 @@ c     call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
               call tensr3(yq,3,3,3,yp,nx,ny,nz,jx,jyt,jzt,wk,ldw,if3d)
             endif
 
-            call q_to_neklin(x(je,1),nelm,xq,if3d)
-            call q_to_neklin(y(je,1),nelm,yq,if3d)
-            call q_to_neklin(z(je,1),nelm,zq,if3d)
+            call q_to_neklin(x(1,je),1,xq,if3d)
+            call q_to_neklin(y(1,je),1,yq,if3d)
+            call q_to_neklin(z(1,je),1,zq,if3d)
 
-            call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
+            write(6,*)
+            write(6,9) ie,(x(jj,ie),jj=1,4),' xold'
+            write(6,9) ie,(y(jj,ie),jj=1,4),' yold'
+            write(6,*)
+            write(6,9) je,(x(jj,je),jj=1,4),' xnew'
+            write(6,9) je,(y(jj,je),jj=1,4),' ynew'
+    9       format(i5,4f14.5,a5)
+
+c           call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz,xq,yq,zq)
 
             if (je.lt.500) call drawel(je)
  
@@ -4799,9 +4872,9 @@ c     Note : ctmpg is used in this format in several subsequent routines
 
       do ix=1,ndim2
          i=indx(ix)
-         xcb(ix,1,1)=x(e,i)  !  nek:   xc(i,e)
-         ycb(ix,1,1)=y(e,i)  !  nek:   yc(i,e)
-         zcb(ix,1,1)=z(e,i)  !  nek:   zc(i,e)
+         xcb(ix,1,1)=x(i,e)  !  nek:   xc(i,e)
+         ycb(ix,1,1)=y(i,e)  !  nek:   yc(i,e)
+         zcb(ix,1,1)=z(i,e)  !  nek:   zc(i,e)
       enddo
 
 c     Map R-S-T space into physical X-Y-Z space.
@@ -4890,12 +4963,13 @@ C     ctmpg is used in this format in several subsequent routines
       integer e
 
       call set_zgml (nxl)
-
 c     Initialize geometry arrays with bi- triquadratic deformations
       call linquad(xl,yl,zl,nxl,nyl,nzl,e)
 
 c     Deform surfaces - general 3D deformations
 c                     - extruded geometry deformations
+      call set_zgml (nxl)
+
       nfaces = 2*ndim
       do iface=1,nfaces
         ccv = ccurve(iface,e)
@@ -4989,53 +5063,6 @@ c-----------------------------------------------------------------------
            x(1,inv(v))=xq(ijk)
         enddo
         enddo
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine getxyzstat
-      include 'basics.inc'
-      integer e
-      common /xyzzst/ xyzs(3,3)
-
-      big =  1.e22
-      bgm = -1.e22
-      call rzero(xyzs(1,1),3)
-      call cfill(xyzs(1,2),big,3)
-      call cfill(xyzs(1,3),bgm,3)
-
-      nv = 2**ndim
-      do i=1,nv
-      do e=1,nel
-
-         xyzs(1,1) = xyzs(1,1) + x(e,i)
-         xyzs(2,1) = xyzs(2,1) + y(e,i)
-         xyzs(3,1) = xyzs(3,1) + z(e,i)
-         
-         xyzs(1,2) = min(xyzs(1,1) , x(e,i) )
-         xyzs(2,2) = min(xyzs(2,1) , y(e,i) )
-         xyzs(3,2) = min(xyzs(3,1) , z(e,i) )
-         
-         xyzs(1,3) = max(xyzs(1,1) , x(e,i) )
-         xyzs(2,3) = max(xyzs(2,1) , y(e,i) )
-         xyzs(3,3) = max(xyzs(3,1) , z(e,i) )
-         
-      enddo
-      enddo
-
-      xyzs(1,1) = xyzs(1,1)/(nel*nv)
-      xyzs(2,1) = xyzs(2,1)/(nel*nv)
-      xyzs(3,1) = xyzs(3,1)/(nel*nv)
-    
-      if (if3d) then
-         call prsrrr('XYZ mean:$',xyzs(1,1),xyzs(2,1),xyzs(3,1))
-         call prsrrr('XYZ min :$',xyzs(1,2),xyzs(2,2),xyzs(3,2))
-         call prsrrr('XYZ max :$',xyzs(1,3),xyzs(2,3),xyzs(3,3))
-      else
-         call prsrr ('XY  mean:$',xyzs(1,1),xyzs(2,1))
-         call prsrr ('XY  min :$',xyzs(1,2),xyzs(2,2))
-         call prsrr ('XY  max :$',xyzs(1,3),xyzs(2,3))
       endif
 
       return

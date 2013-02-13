@@ -168,10 +168,18 @@ C        GRIDDY=YFAC*GRIDT  kludge for now
          if (nobjs.gt.1) then
             WRITE(S,701)
             CALL PRS(S//'$')
-  701       FORMAT(2X,'Input object number you wish to change.')
-            call rer(OBJECT)
-            I=INT(OBJECT)
-            if (1.le.i.and.i.le.nobjs) ifobjg(i)=.not.ifobjg(i)
+  701       FORMAT(1x,
+     $      'Input object # to change (ALL: 0=F,99=T,-1=toggle)')
+            call rei(iobj)
+            if (1.le.iobj.and.iobj.le.nobjs) then
+               ifobjg(iobj)=.not.ifobjg(iobj)
+            elseif (iobj.eq.-1.or.iobj.eq.0.or.iobj.ge.99) then
+               do i=1,nobjs
+                  if (iobj.eq.-1) ifobjg(i)=.not.ifobjg(i)
+                  if (iobj.eq. 0) ifobjg(i)=.false.
+                  if (iobj.ge.99) ifobjg(i)=.true.
+               enddo
+            endif
          ELSE
             IFOBJG(1)=.NOT.IFOBJG(1)
          ENDIF
@@ -365,13 +373,11 @@ C               Draw Axis
                 CALL GWRITE(0.01*XFAC,0.1 *YFAC,1.0,'Y$')
               ENDIF
       ENDIF
-C
-      write(6,*) 'nobjs',nobjs
-      do 400 i=1,nobjs
-         if (ifobjg(i)) call drwobj(i)
-  400 continue
+
+      call drwobjs
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine refresh
       include 'basics.inc'
@@ -577,40 +583,43 @@ c
             yhex(k) = sin(angle)
          enddo
       endif
-c
-c
+
+      write(6,*) iobjct,' FILTER IOBJ CAA'
+
       xmse0 = xphy(xscreen)
       ymse0 = yphy(yscreen)
       zmse0 = zplane
-c
-c     default return values
-      xmouse=xmse0
+
+      xmouse=xmse0 ! default return values
       ymouse=ymse0
       zmouse=zmse0
-c
+
 c     Check objects first, then background grids.
-c
+
       iobjct = 0
+      write(6,*) iobjct,' FILTER IOBJ AAA',griddx,griddy
+
       tolobj = (griddx**2+griddy**2)/10.0
       do 10 iobj=1,nobjs
-         if (ifobjg(iobj)) then
-C           grab object?
+         if (ifobjg(iobj)) then ! grab object?
             call latchob(xms1,yms1,xmse0,ymse0,zmse0,dist2,k,i,iobj)
+            write(6,9) k,i,iobj,xms1,yms1,xmse0,ymse0,dist2
+   9        format(3i5,1p5e12.4,' OBJECT')
             if (dist2.lt.tolobj) then
-               tolobj=dist2
+               write(6,*) dist2,tolobj,iobjct,' filter obj'
                iobjct=iobj
+               tolobj=dist2
                xmouse=xms1
                ymouse=yms1
                zmouse=zmse0
-c              write(6,*) xmouse,ymouse,iobjct,' obj'
 c              zmouse = sqrt(-1./(iobj-1))
             endif
          endif
+         write(6,*) iobjct,' FILTER IOBJ BAA',iobj
    10 continue
       if (iobjct.gt.0) return
-c
+
       if (ifgrdh) then
-c
          dxhx = 3*griddx
          dyhx = 3
          dyhx = sqrt(dyhx)*griddx
@@ -720,23 +729,83 @@ c-----------------------------------------------------------------------
 
       nobjs = 0
       l=1
-      do iobj=1,100
+      do iobj=1,mobj
          read(39,*,end=99,err=99) npts(iobj)
          n = abs(npts(iobj))  ! < 0 --> closed object
          do k=1,n
             read(39,*,end=99,err=99) xobj(l),yobj(l)
             l=l+1
+            if (l.gt.lobj) then
+               call prsii ('ERROR: increase lobj in basics.inc$',k,n)
+               close(39)
+               return
+            endif
          enddo
          nobjs = nobjs+1
          ccobjs(nobjs) = 'o'
+         ifobjs        = .true.
+         ifobjg(nobjs) = .true.  ! Turn on object, as default
+         ifgrdc        = .false. ! Turn off Cartesian, as default
       enddo
-      call prsis('Found$',nobjs,' objects in obj.dat file.$')
       close(39)
+      call redraw_mesh
+      call prsis('Found$',nobjs,' objects in obj.dat file.$')
       return
 
    99 continue
       close(39)
-      call prsis('Found$',nobjs,' objects in obj.dat file.$')
+      call redraw_mesh
+      call prsis('Found$',nobjs,' objects.$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drwobjs
+      include 'basics.inc'
+
+      write(6,*) 'drwobjs: ',nobjs
+
+      do i=1,nobjs
+         if (ifobjg(i)) then
+            call drwobj(i)
+         else
+            call drwobj_dash(i)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drwobj_dash(iobj)
+      include 'basics.inc'
+
+      ioff=1
+      do i=1,iobj-1
+         ioff=ioff+npts(i)
+      enddo
+
+      ndash = 64
+      do ipass=1,5
+         n_per_dash = npts(i)/(2*ndash)
+         if (n_per_dash.gt.0) goto 10
+         ndash = ndash/2
+      enddo
+      return  ! Not enough points to draw dashed line
+
+   10 continue
+
+      iclro = mod1(iobj,7)+5
+      call color(iclro)
+
+      imax = ioff-1+npts(iobj)
+      i    = ioff
+      do k=1,2*ndash
+         ilast = i+n_per_dash
+         if (ilast.gt.imax) n_per_dash = imax-i
+         call vdraw(xobj(i),yobj(i),n_per_dash)
+         i = i+2*n_per_dash
+         if (i.ge.imax) return
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -748,7 +817,7 @@ c-----------------------------------------------------------------------
          ioff=ioff+npts(i)
   100 continue
 
-      iclro = mod1(iobj,7)+3
+      iclro = mod1(iobj,7)+5
       call color(iclro)
       call vdraw(xobj(ioff),yobj(ioff),npts(iobj))
 
@@ -764,12 +833,11 @@ c-----------------------------------------------------------------------
       subroutine latchob(x1,y1,x0,y0,z0,dist2,k,i,iobj)
       include 'basics.inc'
 
-
       dist2 =1.e23
       x1 = x0
       y1 = y0
 
-      if (.not.ifobjs) RETURN
+      if (.not.ifobjg(iobj)) return
 
       ioff=1
       do i=1,iobj-1
@@ -1106,10 +1174,10 @@ c
       if (if3d) nc = 8
       DO 50 IEL=1,NEL
          DO 50 IC=1,nc
-         XMAX = MAX(XMAX,XISO(X(IEL,IC),Y(IEL,IC),Z(IEL,IC)) )
-         XMIN = MIN(XMIN,XISO(X(IEL,IC),Y(IEL,IC),Z(IEL,IC)) )
-         YMAX = MAX(YMAX,YISO(X(IEL,IC),Y(IEL,IC),Z(IEL,IC)) )
-         YMIN = MIN(YMIN,YISO(X(IEL,IC),Y(IEL,IC),Z(IEL,IC)) )
+         xmax = max(xmax,xiso(x(ic,iel),y(ic,iel),z(ic,iel)) )
+         xmin = min(xmin,xiso(x(ic,iel),y(ic,iel),z(ic,iel)) )
+         ymax = max(ymax,yiso(x(ic,iel),y(ic,iel),z(ic,iel)) )
+         ymin = min(ymin,yiso(x(ic,iel),y(ic,iel),z(ic,iel)) )
 50    CONTINUE
       IF(IFPOST)THEN
          IF(IF3D)THEN
@@ -1320,11 +1388,15 @@ c
          call drawel(ie)
       enddo
 
-C     Now redraw all the isometric elements.
-      call sortel
-      do i=1,nelcap
-         call drawis(isrt(i))
-      enddo
+      call drwobjs         !  draw object on top of mesh, for visibility
+
+      if (if3d) then       !  redraw all the isometric elements.
+         call sortel
+         do i=1,nelcap
+            call drawis(isrt(i))
+         enddo
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1339,6 +1411,9 @@ c
       do ie=1,nelcap
          call drawel(ie)
       enddo
+
+      call drwobjs         !  draw object on top of mesh, for visibility
+
 
 C     Now redraw all the isometric elements.
       call sortel

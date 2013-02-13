@@ -101,11 +101,11 @@ c-----------------------------------------------------------------------
       do k=1,nin
          i = mod(ein(k),5)
          e = 1 + ein(k)/5
-         write(6,9) 'i,e:',i,e,k,ein(k),x(e,i),y(e,i),dx,dy,ddom(imin,k)
+         write(6,9) 'i,e:',i,e,k,ein(k),x(i,e),y(i,e),dx,dy,ddom(imin,k)
   9      format(a4,4i4,5f11.4)
-         if (i.gt.0) then ! move vtx (e,i)
-            x(e,i) = x(e,i) + ddom(imin,k)*dx
-            y(e,i) = y(e,i) + ddom(imin,k)*dy
+         if (i.gt.0) then ! move vtx (i,e)
+            x(i,e) = x(i,e) + ddom(imin,k)*dx
+            y(i,e) = y(i,e) + ddom(imin,k)*dy
          endif
       enddo
 
@@ -215,11 +215,11 @@ c     write(6,*) 'bb:',blx,bux,bly,buy
          xce = 0.
          yce = 0.
          do i=1,4
-            xce = xce + x(e,i)
-            yce = yce + y(e,i)
-            if (blx.le.x(e,i).and.x(e,i).le.bux .and.
-     $          bly.le.y(e,i).and.y(e,i).le.buy ) then ! inside bbox
-                ddist(0) = dom_dist(ddist(1),xdom,npdom,x(e,i),y(e,i))
+            xce = xce + x(i,e)
+            yce = yce + y(i,e)
+            if (blx.le.x(i,e).and.x(i,e).le.bux .and.
+     $          bly.le.y(i,e).and.y(i,e).le.buy ) then ! inside bbox
+                ddist(0) = dom_dist(ddist(1),xdom,npdom,x(i,e),y(i,e))
                 if (ddist(0).ge.epsm) then
                    nin = nin+1
                    ein(nin) = i+5*(e-1)
