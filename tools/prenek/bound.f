@@ -1996,6 +1996,7 @@ c
 c-----------------------------------------------------------------------
       subroutine autoperiod
       include 'basics.inc'
+      character*3 cb_clear
  
       tol=1.e-1
 
