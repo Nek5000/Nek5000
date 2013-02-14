@@ -63,3 +63,6 @@ C
       character*80 string
       character*1  string1(80)
       equivalence (string,string1)
+
+      common /bc8i/ ibc(6,lelt,ldimt1)
+      integer ibc

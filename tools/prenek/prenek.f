@@ -1461,7 +1461,7 @@ C
                      write(10,'(i2,i6,5g14.6,1x,a1)')iedge,iel,
      $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
                   else
-                     write(10,'(i2,i12,5g18.11,1x,a1)')iedge,iel, ! Feb, 2013
+                     write(10,'(i2,i12,5g14.6,1x,a1)')iedge,iel, ! Feb, 2013
      $               (curve(i,iedge,iel),i=1,5),ccurve(iedge,iel)
                   endif
                endif
@@ -1524,7 +1524,7 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
                   elseif (iffmtin) then
-                     WRITE(10,'(A1,A3,I12,5G18.11)',ERR=60)
+                     WRITE(10,'(A1,A3,I12,5G18.6)',ERR=60)
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)

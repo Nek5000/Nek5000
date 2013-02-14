@@ -29,6 +29,9 @@ c     an ascii rea file for just the parameters
       real*4 test
       data   test  / 6.54321 /
 
+      integer ibc(6,lelt)
+      real*8  bc8(5)
+
       write(6,*) 'Input old (source) file name:'      
       call blank(file,80)
       read(5,80) file
@@ -127,7 +130,7 @@ c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
          enddo
    60    format(i3,i3 ,5g14.6,1x,a1)
    61    format(i2,i6 ,5g14.6,1x,a1)
-   62    format(i2,i12,5g18.11,1x,a1)
+   62    format(i2,i12,5g14.6,1x,a1)
 
           write(6,*) ncurve,' Number of curved sides'
       endif
@@ -150,13 +153,17 @@ C BOUNDARY CONDITIONS
                   if (nel.lt.1 000 000) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
-                     read(10,21) cbc(f,e),(bc(k,f,e),k=1,5)
+                     read(10,21) cbc(f,e),(bc8(k),k=1,5)
+                     do ii=1,5
+                        bc(k,f,e) = bc8(k)
+                     enddo
+                     ibc(f,e) = bc8(1)
                   endif
                   if (cbc(f,e).ne.'E  ') nbc = nbc+1
                enddo
                enddo
    20          format(1x,a3,6x,5g14.6)  
-   21          format(1x,a3,12x,5g18.11)  
+   21          format(1x,a3,12x,5g18.6)  
 
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)
@@ -169,6 +176,7 @@ C BOUNDARY CONDITIONS
                      call copy       (buf(3),bc(1,f,e),5)
                      call blank      (buf(8),4)
                      call chcopy     (buf(8),cbc(f,e),3)
+                     if(nelb.gt.1000000) call icopy(buf(3),ibc(f,e),1)
                      call byte_write (buf,8)
                   endif
                enddo

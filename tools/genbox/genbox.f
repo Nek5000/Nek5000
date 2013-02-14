@@ -100,6 +100,9 @@ c     parameter (maxel = mbox*maxx*maxx)   !
       character*1 boxcirc(mbox)
       integer e0
 
+      real*8 rbc8(6)
+      integer ibc(6)
+
       common /genbr/ x,y,z,xc,yc,zc,curve
       common /genbc/ cbc
 
@@ -738,7 +741,7 @@ c     output curve stuff and Boundary conditions
      $              iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
               enddo
            enddo
-  292      format(i2,i12,5g18.11,1x,a1)
+  292      format(i2,i12,5g14.6,1x,a1)
          endif
       else
          call byte_write(ncurv,1)  
@@ -814,6 +817,7 @@ c     output curve stuff and Boundary conditions
                call rzero(rbc4,5)
                call rzero(rbc5,5)
                call rzero(rbc6,5)
+               call rzero8(rbc8,6)
 
                nelx = nlx(ibx)
                nely = nly(ibx)
@@ -826,23 +830,32 @@ c     output curve stuff and Boundary conditions
                irgtx = mod1(iex+1+nelx,nelx)
 
                rbc1(1) = nely*nelx*(iez-1)+nelx*(iey-1) + ilftx + e0
+               rbc8(1) = nely*nelx*(iez-1)+nelx*(iey-1) + ilftx + e0
                rbc1(2) = eface(2)
                rbc2(1) = nely*nelx*(iez-1)+nelx*(iey-1) + irgtx + e0
+               rbc8(2) = nely*nelx*(iez-1)+nelx*(iey-1) + irgtx + e0
                rbc2(2) = eface(1)
 
                rbc3(1) = nely*nelx*(iez-1)+nelx*(ilfty-1) + iex + e0
+               rbc8(3) = nely*nelx*(iez-1)+nelx*(ilfty-1) + iex + e0
                rbc3(2) = eface(4)
                rbc4(1) = nely*nelx*(iez-1)+nelx*(irgty-1) + iex + e0
+               rbc8(4) = nely*nelx*(iez-1)+nelx*(irgty-1) + iex + e0
                rbc4(2) = eface(3)
 
                rbc5(1) = nely*nelx*(ilftz-1)+nelx*(iey-1) + iex + e0
+               rbc8(5) = nely*nelx*(ilftz-1)+nelx*(iey-1) + iex + e0
                rbc5(2) = eface(6)
                rbc6(1) = nely*nelx*(irgtz-1)+nelx*(iey-1) + iex + e0
+               rbc8(6) = nely*nelx*(irgtz-1)+nelx*(iey-1) + iex + e0
                rbc6(2) = eface(5)
 
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
-                  if (cbc1.ne.'P  ')  call rzero(rbc1,5)
+                  if (cbc1.ne.'P  ')  then
+                      call rzero(rbc1,5)
+                      rbc8(1) = 0.0
+                  endif
                   if (cbc1.ne.'E  ')  nbc = nbc + 1
                else
                   cbc1='E  '
@@ -850,7 +863,10 @@ c     output curve stuff and Boundary conditions
  
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
-                  if (cbc2.ne.'P  ') call rzero(rbc2,5)
+                  if (cbc2.ne.'P  ') then 
+                      call rzero(rbc2,5)
+                      rbc8(2) = 0.0
+                  endif
                   if (cbc2.ne.'E  ')  nbc = nbc + 1
                else
                   cbc2='E  '
@@ -858,7 +874,10 @@ c     output curve stuff and Boundary conditions
  
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
-                  if (cbc3.ne.'P  ') call rzero(rbc3,5)
+                  if (cbc3.ne.'P  ') then
+                      call rzero(rbc3,5)
+                      rbc8(3) = 0.0
+                  endif
                   if (cbc3.ne.'E  ')  nbc = nbc + 1
                else
                   cbc3='E  '
@@ -866,7 +885,10 @@ c     output curve stuff and Boundary conditions
  
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
-                  if (cbc4.ne.'P  ') call rzero(rbc4,5)
+                  if (cbc4.ne.'P  ') then 
+                      call rzero(rbc4,5)
+                      rbc8(4) = 0.0
+                  endif
                   if (cbc4.ne.'E  ')  nbc = nbc + 1
                else
                   cbc4='E  '
@@ -874,7 +896,10 @@ c     output curve stuff and Boundary conditions
  
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
-                  if (cbc5.ne.'P  ') call rzero(rbc5,5)
+                  if (cbc5.ne.'P  ') then 
+                      call rzero(rbc5,5)
+                      rbc8(5) = 0.0
+                  endif
                   if (cbc5.ne.'E  ')  nbc = nbc + 1
                else
                   cbc5='E  '
@@ -882,7 +907,10 @@ c     output curve stuff and Boundary conditions
  
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
-                  if (cbc6.ne.'P  ') call rzero(rbc6,5)
+                  if (cbc6.ne.'P  ') then
+                     call rzero(rbc6,5)
+                     rbc8(6) = 0.0
+                  endif
                   if (cbc6.ne.'E  ')  nbc = nbc + 1
                else
                   cbc6='E  '
@@ -914,22 +942,25 @@ c
                     write(9,22) cbc5,ie,(rbc5(j),j=1,5)
                     write(9,22) cbc6,ie,(rbc6(j),j=1,5)
                  else        
-                    write(9,23) cbc3,ie,(rbc3(j),j=1,5)
-                    write(9,23) cbc2,ie,(rbc2(j),j=1,5)
-                    write(9,23) cbc4,ie,(rbc4(j),j=1,5)
-                    write(9,23) cbc1,ie,(rbc1(j),j=1,5)
-                    write(9,23) cbc5,ie,(rbc5(j),j=1,5) 
-                    write(9,23) cbc6,ie,(rbc6(j),j=1,5) 
+                    write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                    write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
+                    write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
+                    write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
+                    write(9,23) cbc5,ie,rbc8(5),(rbc5(j),j=2,5) 
+                    write(9,23) cbc6,ie,rbc8(6),(rbc6(j),j=2,5) 
                  endif
 
    20            format(1x,a3,2i3,5g14.6)
    21            format(1x,a3,i5,i1,5g14.6)
    22            format(1x,a3,i6,5g14.6)
-   23            format(1x,a3,i12,5g18.11)
+   23            format(1x,a3,i12,5g18.6)
 
                elseif (.not. iffo) then
 
                  if(ipass.eq.2) then
+                   do ii = 1,6
+                      ibc(ii) = rbc8(ii) 
+                   enddo
                    call blank(buf(1),30*4)
                    call icopy(buf(1),ie,1)
 c                  call blank(buf(8),4)
@@ -938,6 +969,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(3),1)
                      call copy(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -946,6 +978,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(2),1)
                      call copy(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -954,6 +987,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(4),1)
                      call copy(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -962,6 +996,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(1),1)
                      call copy(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif 
@@ -970,6 +1005,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(5),1)
                      call copy(buf(3),rbc5,5)
                      call chcopy(buf(8),cbc5,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(5),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -978,6 +1014,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(6),1)
                      call copy(buf(3),rbc6,5)
                      call chcopy(buf(8),cbc6,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(6),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -1004,6 +1041,7 @@ c                  call blank(buf(8),4)
                call rzero(rbc2,5)
                call rzero(rbc3,5)
                call rzero(rbc4,5)
+               call rzero8(rbc8,4)
 
                nelx = nlx(ibx)
                nely = nly(ibx)
@@ -1013,18 +1051,25 @@ c                  call blank(buf(8),4)
                irgtx = mod1(iex+1+nelx,nelx)
 
                rbc1(1) = nelx*(iey-1) + ilftx + e0
+               rbc8(1) = nelx*(iey-1) + ilftx + e0
                rbc1(2) = eface(2)
                rbc2(1) = nelx*(iey-1) + irgtx + e0
+               rbc8(2) = nelx*(iey-1) + irgtx + e0
                rbc2(2) = eface(1)
 
                rbc3(1) = nelx*(ilfty-1) + iex + e0
+               rbc8(3) = nelx*(ilfty-1) + iex + e0
                rbc3(2) = eface(4)
                rbc4(1) = nelx*(irgty-1) + iex + e0
+               rbc8(4) = nelx*(irgty-1) + iex + e0
                rbc4(2) = eface(3)
 
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
-                  if (cbc1.ne.'P  ') call rzero(rbc1,5)
+                  if (cbc1.ne.'P  ') then 
+                     call rzero(rbc1,5)
+                     rbc8(1) = 0.0
+                  endif
                   if (cbc1.ne.'E  ') nbc = nbc + 1
                else
                   cbc1='E  '
@@ -1032,7 +1077,10 @@ c                  call blank(buf(8),4)
  
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
-                  if (cbc2.ne.'P  ') call rzero(rbc2,5)
+                  if (cbc2.ne.'P  ') then 
+                     call rzero(rbc2,5)
+                     rbc8(2) = 0.0
+                  endif
                   if (cbc2.ne.'E  ') nbc = nbc + 1
                else
                   cbc2='E  '
@@ -1040,7 +1088,10 @@ c                  call blank(buf(8),4)
  
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
-                  if (cbc3.ne.'P  ') call rzero(rbc3,5)
+                  if (cbc3.ne.'P  ') then 
+                     call rzero(rbc3,5)
+                     rbc8(3) = 0.0
+                  endif
                   if (cbc5.ne.'E  ') nbc = nbc + 1
                else
                   cbc3='E  '
@@ -1048,7 +1099,10 @@ c                  call blank(buf(8),4)
  
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
-                  if (cbc4.ne.'P  ') call rzero(rbc4,5)
+                  if (cbc4.ne.'P  ') then 
+                     call rzero(rbc4,5)
+                     rbc8(4) = 0.0
+                  endif
                   if (cbc4.ne.'E  ') nbc = nbc + 1
                else
                   cbc4='E  '
@@ -1074,13 +1128,16 @@ c
                     write(9,22) cbc4,ie,(rbc4(j),j=1,5)
                     write(9,22) cbc1,ie,(rbc1(j),j=1,5)
                  else
-                    write(9,23) cbc3,ie,(rbc3(j),j=1,5)
-                    write(9,23) cbc2,ie,(rbc2(j),j=1,5)
-                    write(9,23) cbc4,ie,(rbc4(j),j=1,5)
-                    write(9,23) cbc1,ie,(rbc1(j),j=1,5)
+                    write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                    write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
+                    write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
+                    write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
                  endif
                elseif (.not. iffo) then
                  if(ipass.eq.2) then
+                   do ii = 1,6
+                      ibc(ii) = rbc8(ii) 
+                   enddo
                    call icopy(buf(1),ie,1)
                    call blank(buf(8),4)
  
@@ -1088,6 +1145,7 @@ c
                      call icopy(buf(2),eface(3),1)
                      call copy(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1095,6 +1153,7 @@ c
                      call icopy(buf(2),eface(2),1)
                      call copy(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1102,6 +1161,7 @@ c
                      call icopy(buf(2),eface(4),1)
                      call copy(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1109,6 +1169,7 @@ c
                      call icopy(buf(2),eface(1),1)
                      call copy(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
+                     if(nel.gt.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
                    endif 
                  endif
@@ -1248,6 +1309,13 @@ c-----------------------------------------------------------------------
       CHARACTER*1 A(1), B(1)
       DO 100 I = 1, N
  100     A(I) = B(I)
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE RZERO8(A,N)
+      real*8  A(1)
+      DO 100 I = 1, N
+ 100     A(I ) = 0.0
       RETURN
       END
 c-----------------------------------------------------------------------
@@ -2154,7 +2222,7 @@ c
       enddo
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
-  292 format(i2,i12,5g18.11,1x,a1)
+  292 format(i2,i12,5g14.6,1x,a1)
  
       return
       end
@@ -2209,7 +2277,7 @@ c
       enddo
   290 format(i3,i3,5g14.6,1x,a1)
   291 format(i2,i6,5g14.6,1x,a1)
-  292 format(i2,i12,5g18.11,1x,a1)
+  292 format(i2,i12,5g14.6,1x,a1)
  
       return
       end
@@ -2224,6 +2292,7 @@ c
  
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
       real        rbc1(5),rbc2(5),rbc3(5),rbc4(5),rbc5(5),rbc6(5)
+      real*8 rbc8(6)
  
       integer eface(6)
       save    eface
@@ -2268,6 +2337,7 @@ c
                call rzero(rbc4,5)
                call rzero(rbc5,5)
                call rzero(rbc6,5)
+               call rzero8(rbc8,6)
  
                nelx = nlx(ibx)
                nely = nly(ibx)
@@ -2280,58 +2350,82 @@ c
                irgtx = mod1(iex+1+nelx,nelx)
  
                rbc1(1) = nely*nelx*(iez-1)+nelx*(iey-1) + ilftx
+               rbc8(1) = nely*nelx*(iez-1)+nelx*(iey-1) + ilftx
                rbc1(2) = eface(2)
                rbc2(1) = nely*nelx*(iez-1)+nelx*(iey-1) + irgtx
+               rbc8(2) = nely*nelx*(iez-1)+nelx*(iey-1) + irgtx
                rbc2(2) = eface(1)
  
                rbc3(1) = nely*nelx*(iez-1)+nelx*(ilfty-1) + iex
+               rbc8(3) = nely*nelx*(iez-1)+nelx*(ilfty-1) + iex
                rbc3(2) = eface(4)
                rbc4(1) = nely*nelx*(iez-1)+nelx*(irgty-1) + iex
+               rbc8(4) = nely*nelx*(iez-1)+nelx*(irgty-1) + iex
                rbc4(2) = eface(3)
  
                rbc5(1) = nely*nelx*(ilftz-1)+nelx*(iey-1) + iex
+               rbc8(5) = nely*nelx*(ilftz-1)+nelx*(iey-1) + iex
                rbc5(2) = eface(6)
                rbc6(1) = nely*nelx*(irgtz-1)+nelx*(iey-1) + iex
+               rbc8(6) = nely*nelx*(irgtz-1)+nelx*(iey-1) + iex
                rbc6(2) = eface(5)
  
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
-                  if (cbc1.ne.'P  '.and.cbc1.ne.'E  ')call rzero(rbc1,5)
+                  if (cbc1.ne.'P  '.and.cbc1.ne.'E  ') then 
+                    call rzero(rbc1,5)
+                    rbc8(1)=0.0
+                  endif
                else
                   cbc1='E  '
                endif
  
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
-                  if (cbc2.ne.'P  '.and.cbc2.ne.'E  ')call rzero(rbc2,5)
+                  if (cbc2.ne.'P  '.and.cbc2.ne.'E  ') then
+                    call rzero(rbc2,5)
+                    rbc8(2)=0.0
+                  endif
                else
                   cbc2='E  '
                endif
  
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
-                  if (cbc3.ne.'P  '.and.cbc3.ne.'E  ')call rzero(rbc3,5)
+                  if (cbc3.ne.'P  '.and.cbc3.ne.'E  ') then 
+                    call rzero(rbc3,5)
+                    rbc8(3)=0.0
+                  endif
                else
                   cbc3='E  '
                endif
  
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
-                  if (cbc4.ne.'P  '.and.cbc4.ne.'E  ')call rzero(rbc4,5)
+                  if (cbc4.ne.'P  '.and.cbc4.ne.'E  ') then 
+                    call rzero(rbc4,5)
+                    rbc8(4)=0.0
+                  endif
                else
                   cbc4='E  '
                endif
  
                if (iez.eq.1) then
                   cbc5=cbc(5,ibx,ifld)
-                  if (cbc5.ne.'P  '.and.cbc5.ne.'E  ')call rzero(rbc5,5)
+                  if (cbc5.ne.'P  '.and.cbc5.ne.'E  ') then 
+                    call rzero(rbc5,5)
+                    rbc8(5)=0.0
+                  endif
                else
                   cbc5='E  '
                endif
  
                if (iez.eq.nelz) then
                   cbc6=cbc(6,ibx,ifld)
-                  if (cbc6.ne.'P  '.and.cbc6.ne.'E  ')call rzero(rbc6,5)
+                  if (cbc6.ne.'P  '.and.cbc6.ne.'E  ')then 
+                    call rzero(rbc6,5)
+                    rbc8(6)=0.0
+                  endif
                else
                   cbc6='E  '
                endif
@@ -2361,17 +2455,17 @@ c
                   write(9,22) cbc5,ie,(rbc5(j),j=1,5)
                   write(9,22) cbc6,ie,(rbc6(j),j=1,5)
                else
-                  write(9,23) cbc3,ie,(rbc3(j),j=1,5)
-                  write(9,23) cbc2,ie,(rbc2(j),j=1,5)
-                  write(9,23) cbc4,ie,(rbc4(j),j=1,5)
-                  write(9,23) cbc1,ie,(rbc1(j),j=1,5)
-                  write(9,23) cbc5,ie,(rbc5(j),j=1,5)
-                  write(9,23) cbc6,ie,(rbc6(j),j=1,5)
+                  write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                  write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
+                  write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
+                  write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
+                  write(9,23) cbc5,ie,rbc8(5),(rbc5(j),j=2,5)
+                  write(9,23) cbc6,ie,rbc8(6),(rbc6(j),j=2,5)
                endif
    20          format(1x,a3,2i3,5g14.6)
    21          format(1x,a3,i5,i1,5g14.6)
    22          format(1x,a3,i6,5g14.6)
-   23          format(1x,a3,i12,5g18.11)
+   23          format(1x,a3,i12,5g18.6)
             enddo
             enddo
             enddo
@@ -2385,6 +2479,7 @@ c
                call rzero(rbc2,5)
                call rzero(rbc3,5)
                call rzero(rbc4,5)
+               call rzero8(rbc8,4)
  
                nelx = nlx(ibx)
                nely = nly(ibx)
@@ -2394,39 +2489,55 @@ c
                irgtx = mod1(iex+1+nelx,nelx)
  
                rbc1(1) = nelx*(iey-1) + ilftx
+               rbc8(1) = nelx*(iey-1) + ilftx
                rbc1(2) = eface(2)
                rbc2(1) = nelx*(iey-1) + irgtx
+               rbc8(2) = nelx*(iey-1) + irgtx
                rbc2(2) = eface(1)
  
                rbc3(1) = nelx*(ilfty-1) + iex
+               rbc8(3) = nelx*(ilfty-1) + iex
                rbc3(2) = eface(4)
                rbc4(1) = nelx*(irgty-1) + iex
+               rbc8(4) = nelx*(irgty-1) + iex
                rbc4(2) = eface(3)
  
                if (iex.eq.1) then
                   cbc1=cbc(1,ibx,ifld)
-                  if (cbc1.ne.'P  '.and.cbc1.ne.'E  ')call rzero(rbc1,5)
+                  if (cbc1.ne.'P  '.and.cbc1.ne.'E  ') then 
+                     call rzero(rbc1,5) 
+                     rbc8(1) = 0.0
+                  endif
                else
                   cbc1='E  '
                endif
  
                if (iex.eq.nelx) then
                   cbc2=cbc(2,ibx,ifld)
-                  if (cbc2.ne.'P  '.and.cbc2.ne.'E  ')call rzero(rbc2,5)
+                  if (cbc2.ne.'P  '.and.cbc2.ne.'E  ') then 
+                     call rzero(rbc2,5)
+                     rbc8(2) = 0.0
+                  endif
                else
                   cbc2='E  '
                endif
  
                if (iey.eq.1) then
                   cbc3=cbc(3,ibx,ifld)
-                  if (cbc3.ne.'P  '.and.cbc3.ne.'E  ')call rzero(rbc3,5)
+                  if (cbc3.ne.'P  '.and.cbc3.ne.'E  ') then 
+                     call rzero(rbc3,5)
+                     rbc8(3) = 0.0
+                  endif
                else
                   cbc3='E  '
                endif
  
                if (iey.eq.nely) then
                   cbc4=cbc(4,ibx,ifld)
-                  if (cbc4.ne.'P  '.and.cbc4.ne.'E  ')call rzero(rbc4,5)
+                  if (cbc4.ne.'P  '.and.cbc4.ne.'E  ') then
+                     call rzero(rbc4,5)
+                     rbc8(4) = 0.0
+                  endif
                else
                   cbc4='E  '
                endif
@@ -2450,10 +2561,10 @@ c
                   write(9,22) cbc4,ie,(rbc4(j),j=1,5)
                   write(9,22) cbc1,ie,(rbc1(j),j=1,5)
                else
-                  write(9,23) cbc3,ie,(rbc3(j),j=1,5)
-                  write(9,23) cbc2,ie,(rbc2(j),j=1,5)
-                  write(9,23) cbc4,ie,(rbc4(j),j=1,5)
-                  write(9,23) cbc1,ie,(rbc1(j),j=1,5)
+                  write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                  write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
+                  write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
+                  write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
                endif
             enddo
             enddo

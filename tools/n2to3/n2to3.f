@@ -43,6 +43,7 @@ c
 
       integer e,en
 
+
       write(6,*)
       write(6,*) 'This is the code that establishes proper'
       write(6,*) 'element connectivities, as of Oct., 2006.'
@@ -202,10 +203,14 @@ c     re2 stuff
       integer e,en
       real mhd
 
+      real*8 bc8(5)
+      integer ibc(6,nelm)
 
       call rzero(x,4*nelm)
       call rzero(y,4*nelm)
       call rzero(bc,30*nelm)
+      call rzero8(bc8,5)
+      call izero(ibc,6*nelm)
       call blank(cbc,18*nelm)
 c
 c
@@ -427,7 +432,7 @@ c     Curve sides (added 3/26/99   pff)
 
 c     Read and write boundary conditions
 
-      do ibc=1,nbc
+      do iibc=1,nbc
 
          read (10,80) string
          len = ltrunc(string,80)
@@ -448,13 +453,19 @@ c     Read and write boundary conditions
                enddo
             else
                do  k = 1,4
-                  read (10,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  read (10,23) cbc(k,e),id,(bc8(j),j=1,5)
+                  do j = 1,5
+                     bc(j,k,e) = bc8(j)
+                  enddo
+                  ibc(k,e) = bc8(1)
                enddo
             endif
 
             call rzero(bc(1,5,e),5)
+            ibc(5,e) = 0
             if     (ifper) then
                bc(1,5,e) = e+(nlev-1)*nel
+               ibc(5,e)  = e+(nlev-1)*nel
                bc(2,5,e) = 6
                cbc(5,e) = 'P  '
             else
@@ -462,17 +473,21 @@ c     Read and write boundary conditions
             endif
 
             call rzero(bc(1,6,e),5)
+            ibc(6,e) = 0
             bc(1,6,e) = e+nel
+            ibc(6,e)  = e+nel
             bc(2,6,e) = 5
             cbc(6,e)  = 'E  '
 
             if (nlev.eq.1) then
                if     (ifper) then
                   bc(1,6,e) = e
+                  ibc(6,e)  = e
                   cbc(6,e)  = 'P  '
                else
                   cbc(6,e) = cb6
                   call rzero(bc(1,6,e),5)
+                  ibc(6,e) = 0
                endif
             endif
 
@@ -484,11 +499,16 @@ c     Read and write boundary conditions
                elseif (neln.lt.1000000) then
                   write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
                else
-                  write(11,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  do j = 1,5
+                     bc8(j)=bc(j,k,e)
+                  enddo
+                  bc8(1)=ibc(k,e)
+                  write(11,23) cbc(k,e),id,(bc8(j),j=1,5)
                endif
             enddo
             cbc(5,e) = 'E  '
             bc (1,5,e) = e   !  -nel
+            ibc(5,e)   = e
 
          enddo
 
@@ -501,26 +521,38 @@ c              Periodic bc's on Z plane
                  if     (ifper) then
                    cbc(6,e) = 'P  '
                    bc(1,6,e) = e
+                   ibc(6,e)  = e
                  else
                    cbc(6,e) = cb6
                    call rzero(bc(1,6,e),5)
+                   ibc(6,e) = 0
                  endif
                else
                  ! bcs for intermediate level
                  cbc(6,e) = 'E  '
                  call rzero(bc(1,6,e),5)
+                 ibc(6,e) = 0
                  bc(1,6,e) = id+nel
+                 ibc(6,e)  = id+nel
                  bc(2,6,e) = 5
                endif
 
                cbc(5,e) = 'E  '
                call rzero(bc(1,5,e),5)
+               ibc(5,e) = 0
                bc(1,5,e) = id-nel
+               ibc(5,e)  = id-nel
                bc(2,5,e) = 6
 
                do  k = 1,4
-                 if (cbc(k,e).eq.'P  ') bc(1,k,e) = bc(1,k,e)+nel
-                 if (cbc(k,e).eq.'E  ') bc(1,k,e) = bc(1,k,e)+nel
+                 if (cbc(k,e).eq.'P  ') then 
+                    bc(1,k,e) = bc(1,k,e)+nel
+                    ibc(k,e)  = ibc(k,e)+nel
+                 endif
+                 if (cbc(k,e).eq.'E  ') then
+                    bc(1,k,e) = bc(1,k,e)+nel
+                    ibc(k,e)  = ibc(k,e)+nel
+                 endif
                enddo
                do  k = 1,6
                   if (neln.lt.1000) then
@@ -530,7 +562,11 @@ c              Periodic bc's on Z plane
                   elseif (neln.lt.1000000) then
                      write(11,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
                   else
-                     write(11,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                     do j = 1,5
+                        bc8(j)=bc(j,k,e)
+                     enddo
+                     bc8(1) = ibc(k,e)
+                     write(11,23) cbc(k,e),id,(bc8(j),j=1,5)
                   endif
                enddo
             enddo
@@ -546,7 +582,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.11)
+   23 FORMAT(1x,A3,i12,5G18.6)
 
  
    80 format(a80)
@@ -620,10 +656,16 @@ c-----------------------------------------------------------------------
       logical ifflow,ifheat,ifper
       real*4 buf(10)
       integer e
+
+      real*8 bc8(5)
+      integer ibc(6,nelm)
       
 
+      call rzero8(bc8,5)
+      call izero(ibc,6*nelm)
+
 c     Read bc from .rea
-      do ibc=1,nbc
+      do iibc=1,nbc
          read (10,80) string ! ASCII boundary string
          nb = 0
          do e = 1,nel
@@ -644,13 +686,18 @@ c     Read bc from .rea
                enddo
             else
                do  k = 1,4
-                  read (10,23) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  read (10,23) cbc(k,e),id,(bc8(j),j=1,5)
+                  do j = 1,5
+                     bc(j,k,e) = bc8(j)
+                  enddo
+                  ibc(k,e) = bc8(1)
                   if (cbc(k,e).ne.'E  ') nb = nb+1
                enddo
             endif
          enddo
 
          nb = nb*nlev
+         neln = nel*nlev
          if(cb5.ne.'E  ') nb = nb+nel
          if(cb6.ne.'E  ') nb = nb+nel
          
@@ -659,8 +706,10 @@ c     Read bc from .rea
          do e = 1,nel
 c           Set bc and cbc
             call rzero(bc(1,5,e),5)
+            ibc(5,e) = 0
             if (ifper) then
                bc(1,5,e) = e+(nlev-1)*nel
+               ibc(5,e)  = e+(nlev-1)*nel
                bc(2,5,e) = 6
                cbc(5,e) = 'P  '
             else
@@ -668,16 +717,20 @@ c           Set bc and cbc
             endif
 
             call rzero(bc(1,6,e),5)
+            ibc(6,e) = 0
             bc(1,6,e) = e+nel
+            ibc(6,e)  = e+nel
             bc(2,6,e) = 5
             cbc(6,e)  = 'E  '
             if (nlev.eq.1) then
                if     (ifper) then
                   bc(1,6,e) = e
+                  ibc(6,e)  = e
                   cbc(6,e)  = 'P  '
                else
                   cbc(6,e) = cb6
                   call rzero(bc(1,6,e),5)
+                  ibc(6,e) = 0
                endif
             endif
             
@@ -688,11 +741,13 @@ c           Set bc and cbc
                call copy      (buf(3),bc(1,k,e),5)
                call blank     (buf(8),4)
                call chcopy    (buf(8),cbc(k,e),3)
+               if(neln.gt.1000000) call icopy(buf(3),ibc(k,e),1)
                call byte_write(buf,8)
             endif
             enddo
             cbc(5,e) = 'E  '
             bc (1,5,e) = e   !  -nelc
+            ibc(5,e)   = e
          enddo
 
 
@@ -705,25 +760,34 @@ c              Periodic bc's on Z plane
                  if     (ifper) then
                    cbc(6,e) = 'P  '
                    bc(1,6,e) = e
+                   ibc(6,e) = e
                  else
                    cbc(6,e) = cb6
                    call rzero(bc(1,6,e),5)
+                   ibc(6,e) = 0
                  endif
                else
                  ! bcs for intermediate level
                  cbc(6,e) = 'E  '
                  call rzero(bc(1,6,e),5)
+                 ibc(6,e) = 0
                  bc(1,6,e) = id+nel
+                 ibc(6,e)  = id+nel
                  bc(2,6,e) = 5
                endif
 
                cbc(5,e) = 'E  '
                call rzero(bc(1,5,e),5)
+               ibc(5,e) = 0
                bc(1,5,e) = id-nel
+               ibc(5,e)  = id-nel
                bc(2,5,e) = 6
 
                do  k = 1,4
-                 if (cbc(k,e).eq.'P  ') bc(1,k,e) = bc(1,k,e)+nel
+                 if (cbc(k,e).eq.'P  ') then 
+                     bc(1,k,e) = bc(1,k,e)+nel
+                     ibc(k,e)  = ibc( k,e)+nel
+                 endif
                enddo
                do  k = 1,6
                  if(cbc(k,e).ne.'E  ') then
@@ -732,6 +796,7 @@ c              Periodic bc's on Z plane
                  call copy      (buf(3),bc(1,k,e),5)
                  call blank     (buf(8),4)
                  call chcopy    (buf(8),cbc(k,e),3)
+                 if(neln.gt.1000000) call icopy(buf(3),ibc(k,e),1)
                  call byte_write(buf,8)
                  endif
                enddo
@@ -747,7 +812,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.11)
+   23 FORMAT(1x,A3,i12,5G18.6)
 
    80 format(a80)
 
@@ -1008,6 +1073,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine izero(x,n)
+      integer x(1)
+      do i=1,n
+         x(i) = 0
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rzero8(x,n)
+      real*8 x(1)
+      do i=1,n
+         x(i) = 0.0
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine rdcurve
 C
       parameter(nelm=9999)
@@ -1046,7 +1127,7 @@ C     .Read formatted curve side data
    50    CONTINUE
    60    FORMAT(I3,I3,5G14.6,1X,A1)
    61    FORMAT(I2,I6,5G14.6,1X,A1)
-   62    FORMAT(I2,I12,5G18.11,1X,A1)
+   62    FORMAT(I2,I12,5G14.6,1X,A1)
       ENDIF
       RETURN
 C
@@ -1182,7 +1263,7 @@ C
    55    continue
    60    format(i3,i3,5g14.6,1x,a1)
    61    format(i2,i6,5g14.6,1x,a1)
-   62    format(i2,i12,5g18.11,1x,a1)
+   62    format(i2,i12,5g14.6,1x,a1)
 
       endif
       return
@@ -1360,7 +1441,7 @@ c-----------------------------------------------------------------------
          else
 
             write(11,62) edge,e,r1,r2,r3,r4,r5,cc
-   62       format(i2,i12,5g18.11,1x,a1)
+   62       format(i2,i12,5g14.6,1x,a1)
 
          endif
       elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then

@@ -543,7 +543,7 @@ C
          else
             read(io,53,err=540,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
-   53       format(1x,a3,i12,5g18.11)
+   53       format(1x,a3,i12,5g18.6)
          endif
 c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
       enddo
@@ -3791,7 +3791,7 @@ c-----------------------------------------------------------------------
          write(6,1) e,f,cbc(f,e),(bc(k,f,e),k=1,5),name6
       enddo
       enddo
-    1 format(i12,i4,2x,a3,5g18.11,1x,a6)
+    1 format(i12,i4,2x,a3,5g18.6,1x,a6)
       return
       end
 c-----------------------------------------------------------------------

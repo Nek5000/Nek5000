@@ -685,7 +685,7 @@ C     Read curved side data
                READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=57,END=57)
      $              IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             else
-               read(9,'(i2,i12,5g18.11,1x,a1)',err=158,end=158)
+               read(9,'(i2,i12,5g14.6,1x,a1)',err=158,end=158)
      $              iedge,iel,r1,r2,r3,r4,r5,ans
             endif
             goto 160
@@ -725,7 +725,7 @@ C     !Fix to a4,i2 when you make cbc character*4
                      READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=441,END=441)
      $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
                   ELSEIF (iffmtin.and.nel.lt.2 000 000 000) then
-                     read(9,'(1x,a3,i12,5g18.11)',err=2443,end=2443)
+                     read(9,'(1x,a3,i12,5g18.6)',err=2443,end=2443)
      $                  cbc(iside,iel,ifld),id,(bc8(ii),ii=1,nbcrea)
                   ELSE
                      READ(8,ERR=443,END=443) chtmp3,
@@ -1369,7 +1369,7 @@ c
             read(io,'(i2,i6,5g14.6,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
          elseif (iffmtin) THEN
-            read(io,'(i2,i12,5g18.11,1x,a1)',err=9,end=9)
+            read(io,'(i2,i12,5g14.6,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
          else
             read(io,err=9,end=9) iedge,ie,r1,r2,r3,r4,r5,d
@@ -1432,7 +1432,7 @@ c
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          else
-            read(io,'(1x,a3,i12,5g18.11)',err=191,end=191)
+            read(io,'(1x,a3,i12,5g18.6)',err=191,end=191)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          endif
          goto 192

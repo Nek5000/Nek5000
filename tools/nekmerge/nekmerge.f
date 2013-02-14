@@ -87,7 +87,7 @@ c     an ascii rea file for just the parameters
          ncurve = ncurve + ncurvn
 c         write(6,*) ncurve,ncurvn,e,' NCURVE'
 
-         call rd_bdry(cbc(1,e,1),bc(1,1,e,1),string
+         call rd_bdry(cbc(1,e,1),bc(1,1,e,1),ibc(1,e,1),string
      $               ,nel,nelo,ndim,nfld,lelt)
 c        write(6,66) (cbc(k,1,1),k=1,12)
 c 66     format(6(1x,a3))
@@ -419,6 +419,7 @@ c     output remainder of mesh: .rea/.re2 format
 
       integer e,f
 
+
       nels = -nelt
       write(11,11) nels, ndim, nelv
       write(6 ,11) nels, ndim, nelv
@@ -502,6 +503,7 @@ c         call  int_write(nbc,1)
                call copy       (buf(3),bc(1,f,e,ifld),5)
                call blank      (buf(8),4)
                call chcopy     (buf(8),cbc(f,e,ifld),3)
+               if(nel.gt.1000000) call icopy(buf(3),ibc(f,e,ifld),1)
                call byte_write (buf,8)
 c               call bdry_write (buf,8)
             endif
@@ -619,7 +621,7 @@ c     .Ouput curve side data in ascii to unit 11
    50    continue
    60    format(i3,i3,1p5g14.6,1x,a1)
    61    format(i2,i6,1p5g14.6,1x,a1)
-   62    format(i2,i12,1p5g18.11,1x,a1)
+   62    format(i2,i12,1p5g14.6,1x,a1)
       endif
 
       return
@@ -637,6 +639,8 @@ c     .Ouput bdry data
       integer eface(6)
       save    eface
       data    eface  / 4,2,1,3,5,6 /
+
+      real*8 bc8(6)
 c
 c
       write(11,31) 
@@ -663,13 +667,14 @@ c
             elseif (nel.lt.1000000) then
                write(11,22) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
             else
-               write(11,23) cbc(f,e,fld),e,(bc(j,f,e,fld),j=1,5)
+               bc8(f) = ibc(f,e,fld)
+               write(11,23) cbc(f,e,fld),e,bc8(f),(bc(j,f,e,fld),j=2,5)
             endif
 
    20       format(1x,a3,2i3,5g14.6)
    21       format(1x,a3,i5,i1,5g14.6)
    22       format(1x,a3,i6,5g14.6)
-   23       format(1x,a3,i12,5g18.11)
+   23       format(1x,a3,i12,5g18.6)
          enddo
          enddo
       enddo

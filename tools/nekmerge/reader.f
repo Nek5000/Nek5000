@@ -106,7 +106,7 @@ c-----------------------------------------------------------------------
          enddo
    60    format(i3,i3,5g14.6,1x,a1)
    61    format(i2,i6,5g14.6,1x,a1)
-   62    format(i2,i12,5g18.11,1x,a1)
+   62    format(i2,i12,5g14.6,1x,a1)
       endif
 
       call cleanr(curve ,72*nel)  ! clean up small zeros
@@ -114,12 +114,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rd_bdry(cbc,bc,string,nel,nelo,ndim,nfld,lelt)
+      subroutine rd_bdry(cbc,bc,ibc,string,nel,nelo,ndim,nfld,lelt)
 
       character*3  cbc (6,lelt,nfld) ! note: lelt reqd
       real         bc(5,6,lelt,nfld) ! for memory reasons
       character*80 string
       integer e,f
+      integer ibc (6,lelt,nfld)
+
+      real*8 bc8(5)
 
       call blank(string,80)
       read (10,80) string ! ***** BOUNDARY CONDITIONS *****
@@ -137,11 +140,15 @@ c-----------------------------------------------------------------------
                   elseif (nel.lt.1 000 000) then
                      read(10,21) cbc(f,e,j),(bc(k,f,e,j),k=1,5)
                   else
-                     read(10,22) cbc(f,e,j),(bc(k,f,e,j),k=1,5)
+                     read(10,22) cbc(f,e,j),(bc8(k),k=1,5)
+                     ibc(f,e,j) = bc8(1)
+                     do ii = 1,5
+                        bc(k,f,e,j) = bc8(k)
+                     enddo
                   endif
    20             format(1x,a3,6x,5g14.7)
    21             format(1x,a3,6x,5g14.7)
-   22             format(1x,a3,12x,5g18.11)
+   22             format(1x,a3,12x,5g18.6)
 
 
 c                 Update E-E and P-P pointers:
@@ -151,6 +158,9 @@ c                     eliminated during mesh merge
 c
                   if (cbc(f,e,j).eq.'P  '.or.cbc(f,e,j).eq.'E  ')
      $               bc(1,f,e,j) = bc(1,f,e,j) + nelo
+                  if (cbc(f,e,j).eq.'P  '.or.cbc(f,e,j).eq.'E  '.and.
+     $                 nel.gt.1000000)
+     $               ibc(f,e,j) = ibc(f,e,j) + nelo
 
                enddo
                enddo
