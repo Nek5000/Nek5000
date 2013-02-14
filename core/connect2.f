@@ -810,7 +810,7 @@ C
             ENDIF
    60       FORMAT(I3,I3 ,5G14.6,1X,A1)
    61       FORMAT(I2,I6 ,5G14.6,1X,A1)
-   62       FORMAT(I2,I12,5G18.11,1X,A1)
+   62       FORMAT(I2,I12,5G14.6,1X,A1)
 
             IF (GLLNID(IEG).EQ.NID) THEN
                IEL=GLLEL(IEG)
@@ -960,7 +960,7 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   53             FORMAT(A1,A3,I12,5G18.11)
+   53             FORMAT(A1,A3,I12,5G18.6)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP

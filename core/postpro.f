@@ -1018,7 +1018,7 @@ c        imid = 2  ! All nontrivial midside node defs
                         write(10,'(i2,i6,5g14.6,1x,a1)') i,eg,
      $                  (vcurve(k,i,kb),k=1,5),cc
                      else
-                        write(10,'(i2,i12,5g18.11,1x,a1)') i,eg,
+                        write(10,'(i2,i12,5g14.6,1x,a1)') i,eg,
      $                  (vcurve(k,i,kb),k=1,5),cc
                      endif
                   endif
@@ -1109,7 +1109,7 @@ c    $               chtemp = cbc(i,kb,0)
                      write(10,'(a1,a3,i6,5g14.6)')
      $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
                   else
-                     write(10,'(a1,a3,i12,5g18.11)')
+                     write(10,'(a1,a3,i12,5g18.6)')
      $               chtemp,s3,eg,(vbc(ii,i,kb),ii=1,5)
                   endif
                enddo
