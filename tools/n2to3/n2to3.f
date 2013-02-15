@@ -18,6 +18,8 @@ c
 c     Run n2to3.   Enter blah,  enter out, enter nlev and zmax.
 c     
 c
+
+      include 'SIZE'
       character*80 file,fname
       character*1  file1(80)
       equivalence (file1,file)
@@ -28,13 +30,6 @@ c
       character*1  fout21(80)
       equivalence (fout21,fout2)
 
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
       logical ifflow,ifheat
       common /arraz/ zmin,zmax,dz(nelm)
 
@@ -160,6 +155,7 @@ c     write(6,*) len,(file1(k),k=1,len+4)
       end
 c-----------------------------------------------------------------------
       subroutine rea23(dzi,zmin,neln,itype)
+      include 'SIZE'
       real dzi(1)
       character*80 string
       character*1  string1(80)
@@ -181,13 +177,6 @@ c-----------------------------------------------------------------------
       logical      ifcem,ifper, ifpec,ifpmc,ifpml
 
 c     Nekton stuff
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
       logical ifflow,ifheat,ifmhd
 
       real xc(4),yc(4),zc(4)
@@ -582,7 +571,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.6)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
  
    80 format(a80)
@@ -592,13 +581,7 @@ c              Periodic bc's on Z plane
 c-----------------------------------------------------------------------
       subroutine rea2re2(dzi,zmin,cb5,cb6,ifflow,ifheat,ifper,ifmhd)
 
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+      include 'SIZE'
 
       real dzi(1)
       character*3  cb5,cb6
@@ -629,7 +612,7 @@ c     Boundary conditions!
 
       write(6,*) ifheat,npscal,nbc,' ifheat'
 
-      call re2_bc(nbc,bc,cb5,cb6,ifflow,ifheat,ifper)
+      call re2_bc(nbc,cb5,cb6,ifflow,ifheat,ifper)
 
       call readwrite(string,'endendend',9)
  80   format(a80)
@@ -637,21 +620,15 @@ c     Boundary conditions!
       return
       end
 c-----------------------------------------------------------------------
-      subroutine re2_bc(nbc,bc,cb5,cb6,ifflow,ifheat,ifper)
+      subroutine re2_bc(nbc,cb5,cb6,ifflow,ifheat,ifper)
 
-      parameter(nelm=9999)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+      include 'SIZE'
 
       common /arral/ ifcirc
       logical ifcirc
 
       character*80 string
 
-      real bc(5,6,nelm)
       character*3  cb5,cb6
       logical ifflow,ifheat,ifper
       real*4 buf(10)
@@ -741,7 +718,7 @@ c           Set bc and cbc
                call copy      (buf(3),bc(1,k,e),5)
                call blank     (buf(8),4)
                call chcopy    (buf(8),cbc(k,e),3)
-               if(neln.gt.1000000) call icopy(buf(3),ibc(k,e),1)
+               if(neln.ge.1000000) call icopy(buf(3),ibc(k,e),1)
                call byte_write(buf,8)
             endif
             enddo
@@ -796,7 +773,7 @@ c              Periodic bc's on Z plane
                  call copy      (buf(3),bc(1,k,e),5)
                  call blank     (buf(8),4)
                  call chcopy    (buf(8),cbc(k,e),3)
-                 if(neln.gt.1000000) call icopy(buf(3),ibc(k,e),1)
+                 if(neln.ge.1000000) call icopy(buf(3),ibc(k,e),1)
                  call byte_write(buf,8)
                  endif
                enddo
@@ -812,7 +789,7 @@ c              Periodic bc's on Z plane
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.6)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
    80 format(a80)
 
@@ -1090,14 +1067,8 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rdcurve
-C
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+
+      include 'SIZE'
       character*1 ans
       integer e
 
@@ -1144,14 +1115,8 @@ C
 c-----------------------------------------------------------------------
       subroutine out_curve(itype)
 
-      parameter(nelm=9999)
+      include 'SIZE'
       common /arraz/ zmin,zmax,dz(nelm)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
       character*1 ans
       real*4 buf(20)
 c
@@ -1337,13 +1302,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine newcurve(itype)
 
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+      include 'SIZE'
       logical ifflow,ifheat
       common /arraz/ zmin,zmax,dz(nelm)
 
@@ -1447,7 +1406,6 @@ c-----------------------------------------------------------------------
       elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then
           call icopy(buf(1),e,1)
           call icopy(buf(2),edge,1)
-          buf(2) = e
           buf(3) = r1
           buf(4) = r2
           buf(5) = r3
@@ -1463,13 +1421,7 @@ c-----------------------------------------------------------------------
       subroutine get_midside(xm,ym,edge,e) ! Works only for edge=1,...,4
       integer edge,e
 
-      parameter(nelm=9999)
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
-      common /arrai/ nlev,nel,ncurve,npscal
-      common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+      include 'SIZE'
       logical ifflow,ifheat
 
       real l

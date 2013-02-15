@@ -543,7 +543,7 @@ C
          else
             read(io,53,err=540,end=600)    
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
-   53       format(1x,a3,i12,5g18.6)
+   53       format(1x,a3,i12,5g18.11)
          endif
 c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
       enddo
@@ -3148,7 +3148,7 @@ c     .Read Boundary Conditions (and connectivity data)
       ierr = 0
       do kpass = 1,npass
 
-         do e=1,lelm   ! fill up cbc w/ default
+         do e=1,nelt   ! fill up cbc w/ default
          do k=1,6
             cbc(k,e) = 'E  '
          enddo
@@ -3164,7 +3164,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
             if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
             if(ierr.ne.0) call exitti
      &              ('Error reading byte bcs ',ierr)
-            call buf_to_bc(cbc,bc,buf)
+            call buf_to_bc(cbc,bc,buf,nelt)
          enddo
 
       enddo
@@ -3174,7 +3174,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
 
 
 c-----------------------------------------------------------------------
-      subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
+      subroutine buf_to_bc(cbl,bl,buf,nelt)  ! version 1 of binary reader
 
       include 'SIZE'
 
@@ -3189,6 +3189,8 @@ c-----------------------------------------------------------------------
 
       call copy48r ( bl(1,f,e),buf(3),5)
       call chcopy  (cbl(  f,e),buf(8),3)
+      if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
+     $   bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
 
 c      write(6,1) e,f,cbl(f,e),(bl(k,f,e),k=1,5),' CBC'
 c  1   format(i8,i4,2x,a3,5f8.3,1x,a4)
@@ -3791,7 +3793,7 @@ c-----------------------------------------------------------------------
          write(6,1) e,f,cbc(f,e),(bc(k,f,e),k=1,5),name6
       enddo
       enddo
-    1 format(i12,i4,2x,a3,5g18.6,1x,a6)
+    1 format(i12,i4,2x,a3,5g18.11,1x,a6)
       return
       end
 c-----------------------------------------------------------------------

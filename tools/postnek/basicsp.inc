@@ -16,17 +16,17 @@ c
      $               ,SXM1(MAXPTS),SYM1(MAXPTS),SZM1(MAXPTS)
      $               ,TXM1(MAXPTS),TYM1(MAXPTS),TZM1(MAXPTS)
      $               ,JACM1(MAXPTS)
-c
+ 
       COMMON /FIELDr/ mult(MAXPTS)
       real mult
-c
+ 
       parameter (msrf1=nxm*nzm*6*nelm)
       parameter (msrf=min(msrf1,maxpts))
       common /fields/ area(msrf),unx(msrf),uny(msrf),unz(msrf)
-c
+ 
       COMMON /FIELDi/ nglob,iglob(maxpts),nsrf,srf_list(msrf)
       integer nsrf,srf_list
-C
+ 
       PARAMETER (mpscal=4) ! Max number of passive scalars
       COMMON /FIELD1/ SDUMP(MAXPTS,8+mpscal)
       REAL U (MAXPTS),V (MAXPTS),W (MAXPTS)
@@ -43,13 +43,13 @@ C
      $            ,(PSB,SDUMP(1,10))
      $            ,(PSC,SDUMP(1,11))
      $            ,(PSD,SDUMP(1,12))
-C
+ 
       COMMON /OLDSTF/ TIMEH(MAXS),UH(MAXS,7),VH(MAXS,7),TH(MAXS,7)
      $               ,WH(MAXS,7),PSH(MAXS,7)
      $               ,PH(MAXS,7),COURNT(MAXS),FLOW(MAXS),PGRAD(MAXS)
      $               ,TIMEX(MAXS)
       REAL JACM1
-C
+ 
       PARAMETER (NPRT=100)
       PARAMETER (NSTOR=400*NPRT)
 c     PARAMETER (NPRT=10)
@@ -72,7 +72,7 @@ c     PARAMETER (NSTOR=40*NPRT)
       LOGICAL         ifportrait,ifwkclobber
       COMMON /LGRINT/ NPLEL,LEVMIN,LEVMAX
       COMMON /LGRREA/ USRMIN,USRMAX,THRMIN,THRMAX
-c
+ 
       parameter (max_cont_nlev=1000)
       COMMON /contcmr/ spec_cont(0:max_cont_nlev)
      $               , spec_ind (0:max_cont_nlev) 
@@ -90,7 +90,7 @@ c
 C     nfacemx ~>=  (nelm)**(2/3)
       integer nhemimx
       PARAMETER(nhemimx=30)
-c
+ 
       INTEGER nhemi
       INTEGER bttm_elist(nfacemx,2)
       parameter (mxel=400 000)
@@ -105,15 +105,15 @@ c
      $                 ,nccolor,ieminl2,nhemi,bttm_elist
      $                 ,list_obi(msobjs+1)
      $                 ,list_obj(msobjs*6*nelm)
-c
+ 
       REAL     LAM2(NELM)
       REAL XPC(NELM),YPC(NELM),ZPC(NELM)
       REAL ENSTROPHY(NELM)
       REAL strss1(nfacemx),strss2(nfacemx),strss3(nfacemx)
 
-c
+ 
       COMMON /VRTXTRKr/ LAM2,XPC,YPC,ZPC,ENSTROPHY
-c
+ 
       parameter (mxpro=4000)  ! Maximum number of profile pts
       common /ezdat/ xpt(0:mxpro),ypt(0:mxpro),zpt(0:mxpro)
      $             , upr(0:mxpro),vpr(0:mxpro),wpr(0:mxpro)

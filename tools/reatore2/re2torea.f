@@ -40,6 +40,7 @@ c
       integer buf(30)
 
       real*8 bc8(5)
+      integer ibc
 c     
 c     for workstation:
       in = 5
@@ -178,13 +179,15 @@ c boundary conditions
          do ie = 1,nbc
             call byte_read(id,1) !element
             call byte_read(jd,1)
-            call byte_read(bc8,5)
+            call byte_read(ibc,1)
+            call byte_read(bc(2),4)
             call byte_read(buf,1)
             call chcopy(cbc,buf,3)
 
-
-            do ii = 1,5
-               bc(ii) = bc8(ii)
+            bc(1)  = ibc
+            bc8(1) = ibc
+            do ii = 2,5
+               bc8(ii) = bc(ii)
             enddo
 
             if (nel.lt.1 000) then
@@ -201,7 +204,7 @@ c boundary conditions
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.7)
-   23 FORMAT(1x,A3,i12,5G18.6)
+   23 FORMAT(1x,A3,i12,5G18.11)
 
       rewind(10) 
       call scanout(sstring,'PRESOLVE',8,10,99)

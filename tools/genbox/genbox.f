@@ -65,6 +65,7 @@ c
 c
 c------------------------------------------------------------------------------
       program genbox
+      include 'SIZE'
       character*132 string
       character*1  string1(132)
       equivalence (string,string1)
@@ -83,14 +84,6 @@ c------------------------------------------------------------------------------
       character*52 apt52
       equivalence (apt52,apt)
       data apt52/'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'/
-
-c     parameter (mbox  = 300)              ! Std. but arbitrary 
-c     parameter (maxx  = 300)              ! default values
-c     parameter (maxel = mbox*maxx*maxx)   !
-
-      parameter (mbox  = 20)
-      parameter (maxx  = 900)
-      parameter (maxel = mbox*maxx*30)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
       real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
@@ -953,7 +946,7 @@ c
    20            format(1x,a3,2i3,5g14.6)
    21            format(1x,a3,i5,i1,5g14.6)
    22            format(1x,a3,i6,5g14.6)
-   23            format(1x,a3,i12,5g18.6)
+   23            format(1x,a3,i12,5g18.11)
 
                elseif (.not. iffo) then
 
@@ -969,7 +962,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(3),1)
                      call copy(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(3),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -978,7 +971,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(2),1)
                      call copy(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(2),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -987,7 +980,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(4),1)
                      call copy(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(4),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -996,7 +989,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(1),1)
                      call copy(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(1),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif 
@@ -1005,7 +998,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(5),1)
                      call copy(buf(3),rbc5,5)
                      call chcopy(buf(8),cbc5,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(5),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(5),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -1014,7 +1007,7 @@ c                  call blank(buf(8),4)
                      call icopy(buf(2),eface(6),1)
                      call copy(buf(3),rbc6,5)
                      call chcopy(buf(8),cbc6,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(6),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(6),1)
                      call byte_write(buf,8)
                      icount = icount+1
                    endif
@@ -1145,7 +1138,7 @@ c
                      call icopy(buf(2),eface(3),1)
                      call copy(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(3),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1153,7 +1146,7 @@ c
                      call icopy(buf(2),eface(2),1)
                      call copy(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(2),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1161,7 +1154,7 @@ c
                      call icopy(buf(2),eface(4),1)
                      call copy(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(4),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
                    endif
  
@@ -1169,7 +1162,7 @@ c
                      call icopy(buf(2),eface(1),1)
                      call copy(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
-                     if(nel.gt.1000000) call icopy(buf(3),ibc(1),1)
+                     if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
                    endif 
                  endif
@@ -1325,6 +1318,7 @@ c-----------------------------------------------------------------------
  100     A(I ) = 0.0
       RETURN
       END
+c-----------------------------------------------------------------------
       FUNCTION MOD1(I,N)
 C
 C     Yields MOD(I,N) with the exception that if I=K*N, result is N.
@@ -1796,9 +1790,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine cyl(if3d,ifflow,nfld,string,string1)
 
-      parameter (mbox  = 10)
-      parameter (maxx  = 900)
-      parameter (maxel = mbox*maxx*30)
+      include 'SIZE'
 
       character*132 string
       character*1  string1(132)
@@ -2465,7 +2457,7 @@ c
    20          format(1x,a3,2i3,5g14.6)
    21          format(1x,a3,i5,i1,5g14.6)
    22          format(1x,a3,i6,5g14.6)
-   23          format(1x,a3,i12,5g18.6)
+   23          format(1x,a3,i12,5g18.11)
             enddo
             enddo
             enddo

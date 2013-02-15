@@ -1,6 +1,6 @@
 C     Beginning of basicsp.inc**********
       PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=4000)
-c
+ 
 c     Maximum resolution for contour plots
       PARAMETER (NXXM=10)
       COMMON /FIELD4/ WV1(MAXPTS),WV2(MAXPTS),WV3(MAXPTS)
@@ -10,7 +10,7 @@ c     Maximum resolution for contour plots
      $               ,SXM1(MAXPTS),SYM1(MAXPTS),SZM1(MAXPTS)
      $               ,TXM1(MAXPTS),TYM1(MAXPTS),TZM1(MAXPTS)
      $               ,JACM1(MAXPTS)
-C
+ 
       COMMON /FIELD1/ SDUMP(MAXPTS,8)
       REAL U (MAXPTS),V (MAXPTS),W (MAXPTS)
      $    ,P (MAXPTS),T (MAXPTS)
@@ -18,7 +18,7 @@ C
       EQUIVALENCE  (XP,SDUMP(1,1)) , (YP,SDUMP(1,2)) , (ZP,SDUMP(1,3))
      $            ,(U ,SDUMP(1,4)) , (V ,SDUMP(1,5)) , (W ,SDUMP(1,6))
      $            ,(P ,SDUMP(1,7)) , (T ,SDUMP(1,8))
-C
+ 
       COMMON /OLDSTF/ TIMEH(MAXS),UH(MAXS,7),VH(MAXS,7),TH(MAXS,7)
      $               ,WH(MAXS,7),PSH(MAXS,7)
      $               ,PH(MAXS,7),COURNT(MAXS),FLOW(MAXS),PGRAD(MAXS)
@@ -26,7 +26,7 @@ C
      $               ,XPART(1,1),YPART(1,1)
      $               ,ZPART(1,1)
       REAL JACM1
-C
+ 
       PARAMETER (NPRT=100)
       PARAMETER (NSTOR=400*NPRT)
 c     PARAMETER (NPRT=10)
@@ -41,8 +41,9 @@ c     PARAMETER (NSTOR=40*NPRT)
       COMMON /IBUBBL/ NBURST,NCLOCK,NPART
       COMMON /LGRNG/ XBMIN(NELM),XBMAX(NELM)
      $              ,YBMIN(NELM),YBMAX(NELM),ZBMIN(NELM),ZBMAX(NELM)
-     $              ,RR(3,NPRT),XLG(4,NPRT),IELGR(NPRT),ILOST(NPRT)
-     $              ,NLP,TOLLG,SCALLG(5,NPRT)
+     $              ,RR(3,NPRT),XLG(4,NPRT)
+     $              ,TOLLG,SCALLG(5,NPRT)
+      COMMON /LGRNGI/ IELGR(NPRT),ILOST(NPRT),NLP
       COMMON /LGRLOG/ IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR
       LOGICAL         IFOUTL,IFSCND,IFSELE,IFUSCL,IFTHRS,IFVLPR
       COMMON /LGRINT/ NPLEL,LEVMIN,LEVMAX

@@ -1,0 +1,8 @@
+      parameter(nelm=9999)
+
+      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
+      common /arrai/ nlev,nel,ncurve,npscal
+      common /arrac/ cbc,ccurve,ca
+      character*3 cbc(6,nelm)
+      character*1 ccurve(12,nelm)
+      character*1 ca(nelm)

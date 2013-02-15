@@ -503,7 +503,7 @@ c         call  int_write(nbc,1)
                call copy       (buf(3),bc(1,f,e,ifld),5)
                call blank      (buf(8),4)
                call chcopy     (buf(8),cbc(f,e,ifld),3)
-               if(nel.gt.1000000) call icopy(buf(3),ibc(f,e,ifld),1)
+               if(nel.ge.1000000) call icopy(buf(3),ibc(f,e,ifld),1)
                call byte_write (buf,8)
 c               call bdry_write (buf,8)
             endif
@@ -674,7 +674,7 @@ c
    20       format(1x,a3,2i3,5g14.6)
    21       format(1x,a3,i5,i1,5g14.6)
    22       format(1x,a3,i6,5g14.6)
-   23       format(1x,a3,i12,5g18.6)
+   23       format(1x,a3,i12,5g18.11)
          enddo
          enddo
       enddo

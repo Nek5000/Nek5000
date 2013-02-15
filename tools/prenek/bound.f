@@ -1501,7 +1501,7 @@ c           Check edges
                  WRITE(S,210) je,jed,CCURVE(jed,je),Curve(1,jed,je)
                  CALL PRS(S)
   210            FORMAT(
-     $           ' El:',I5,3x,'Edge:',I2,3x,'C: ',A3,' Rad:',G14.6,'$')
+     $           ' El:',I10,3x,'Edge:',I2,3x,'C: ',A3,' Rad:',G14.6,'$')
 cccc             CALL REI(Ke)
                  IF (Ke.eq.ie) THEN
                     CCURVE(ied,ie)   = CCURVE(jed,je)
@@ -1541,7 +1541,7 @@ C
      $                        (Curve(j,jside,je),j=1,4)
                  CALL PRS(S)
   310            FORMAT(
-     $           ' El:',I5,3x,'F:',I2,3x,'c: ',A3,4G13.5,'$')
+     $           ' El:',I10,3x,'F:',I2,3x,'c: ',A3,4G13.5,'$')
 cccc             CALL REI(Ke)
                  IF (Ke.eq.ie) THEN
                     CCURVE(iside,ie)   = CCURVE(jside,je)

@@ -21,14 +21,17 @@ C     BASICS.INC
 
       COMMON /OBJECT/ NVOBJS,NSOBJS,NEOBJS,NPOBJS,NFACE(MSOBJS),
      $ILSURF(2,MSOBJS,MFACES)
+
       COMMON /OBJECC/ SOBJ(MSOBJS)
       CHARACTER SOBJ*20
+
       LOGICAL      IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
      $            ,IFFMTIN,ifptplt,ifauto,if_unstructure
       COMMON /LOGO/IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
      $            ,IFFMTIN,ifptplt,ifauto,if_unstructure
+
       common /nek2r/ curve(6,12,nelm),bc(5,6,nelm,0:maxfld)
      $         ,pi,theta,phi,vhobs(3),xhobs(3),yhobs(3)
      $         ,zpts(nxm),wght(nxm),dfdr(nxm,nxm),dfdrt(nxm,nxm)
@@ -36,6 +39,7 @@ C     BASICS.INC
      $         ,points(3,3),pcond(11),prhocp(11)
      $         ,dmptim(1000),cprop(-5:10,10,3),cerror(6,nelm)
      $         ,veltyp
+
       common /nek2i/ nptpro,ncsegs,nrake
      $         ,ncurve,iellev,isrt(nelm)
      $         ,numapt(nelm),iletap,maxlet,ilevel,nsides,ncorns
@@ -44,9 +48,9 @@ C     BASICS.INC
      $         ,npscal,ncond
      $         ,ipsco,ipsch,idstep(1000)
      $         ,igroup(nelm),isobj
-     $         ,matype(-5:10,0:maxfld)
      $         ,ibc(6,nelm,0:maxfld) ! For periodic with nel>1e6
-C
+     $         ,matype(-5:10,0:maxfld)
+
       COMMON /CHAAR/LINE,SESION,ITEM,CHOICE,OLDVER,CMD(500),RSTV,RSTT
      $,X13,CPARAM(500),HCODE(11,MAXHIS),OCODE(20),CBC1,CBC3,DARROW
      $,PLANE,PLANE2,VPROP(-5:10,10,3),TEXTSW(100,2),S
@@ -59,29 +63,34 @@ C
 
       PARAMETER (LHI=50)
       COMMON /IBASIC/ NLINF,NLINP,NLINR,NHI,IEH(LHI)
-      COMMON /BASICS/ IN,NEL,NELF,NX,NY,NZ,NFLDS,NDIM,NELV,NELT
-     $,NODES(MAXFLD),NODESB(MAXFLD),DXMIN,DYMIN
-     $,CWRITE,ICHOIC,NCHOIC,YBS(100),YTS(100),XLMEN,XRMEN
-     $,ICRV(NELM),HEIGHT(nelm),nlevel,NKTONV,LOCLIN,LPSDMP,NPSDMP
-     $,VNEKTON,VNEKOLD
+      COMMON /BASICSI/ IN,NEL,NELF,NX,NY,NZ,NFLDS,NDIM,NELV,NELT
+     $,NODES(MAXFLD),NODESB(MAXFLD),ICHOIC,NCHOIC,ICRV(NELM),nlevel
+     $,NKTONV,LOCLIN,LPSDMP,NPSDMP
+
+       COMMON /BASICSR/DXMIN,DYMIN
+     $,CWRITE,YBS(100),YTS(100),XLMEN,XRMEN
+     $,HEIGHT(nelm),VNEKTON,VNEKOLD
 
       COMMON /MATS/XPTS(NXM,NYM,NELM),YPTS(NXM,NYM,NELM)
      $,ZPTN(NXM,NYM,NELM),XXPTS(NXM),YYPTS(NYM)
      $,x(8,nelm),y(8,nelm),z(8,nelm)
      $,XCEN(NELM),YCEN(NELM),ZCEN(NELM),RCEN(NELM)
-     $,ZDEPTH(NELM,6),IZDPTH(NELM*6,2)
+
+       COMMON /MATSR/ZDEPTH(NELM,6)
      $,SIDES(NELM,6,4),MASKEL(NELM,MAXFLD)
-     $,adje(6,NELM),adjf(6,NELM)
      $,zgml(nxm)
+
+       COMMON /MATSI/adje(6,NELM),adjf(6,NELM),IZDPTH(NELM*6,2)
        integer adje,adjf
 
       common /crparam/ param(500),sarrow,hfish
       common /ciparam/ nparam,ncmd,nhispt
-     $,irstt,irstv,rstim,irstim,isegdum
+     $,irstt,irstv,irstim,isegdum
+      common/crparam/rstim
 
 C     MASK = 1 FOR NORMAL ELEMENT, = 0 FOR NO ELEMENT
 C     IPER ARGUMENTS ARE IEL, ISIDE, III ,IFIELD. III=1 FOR IELP; =2 ISIDEP
-C
+
       CHARACTER LINE*80,LINES(80),SESION*14,OCODE*2,CCURVE,REQD(100)
      $,CPARAM*40,CMD*10,OLDVER*4,RSTV*10,RSTT*10,X13*80,INBC*60
      $,PLANE*20,PLANE2*20,DRIVC*80,VCOND*80,INITC*80,INITP*80,VPROP*80
@@ -108,15 +117,18 @@ C     Stuff that used to be in basicsp.inc
      $  ,XPOINT,YPOINT,ZPOINT
      $  ,XLINE(2),YLINE(2),ZLINE(2)
      $  ,VN(3),XV(3,3)
+
       COMMON /IPOST/
      $ ISTEP,NSTEPS,IDUMP
      $  ,IOSTEP,NHIS,NNHIS,NDUMPS,IINTEG,NINTEG
      $  ,IPLANE,JPLANE,KPLANE
      $  ,IPOINT,JPOINT,KPOINT,IELPNT,IHISPT
      $  ,IPLTYP,NXGRID,NXBAND,NXCONT,IROT
+
       COMMON /CPOST/ STRFLE,FLDFLE,FILENM,EXCODE(15)
       CHARACTER*2  EXCODE
       CHARACTER*17   STRFLE,FLDFLE,FILENM
+
       parameter (mobj=20,lobj=30000)
       common /rgeom/ zmouse,xobj(lobj),yobj(lobj),cobjs(6,mobj)
       common /igeom/ nobjs,iobjct,npts(mobj)
@@ -124,7 +136,7 @@ C     Stuff that used to be in basicsp.inc
       common /cgeom/ ccobjs(mobj)
       logical ifobjs,ifobjg
       character*1 ccobjs
-C
+
 C     Window size
       COMMON /WIND/ WINDOWW,WINDOWH
       common /pixmp/ xpmn,ypmn,xpmx,ypmx
@@ -150,13 +162,13 @@ C
       COMMON /LCVOL/ IFCVOL
       CHARACTER*7 VPLANE
       LOGICAL IFCVOL
-c
+
       common /forgotr/ cont_lev
-c
+
       common /lat_r/ ulat1(3),ulat2(3),ulat3(3)
       common /lat_l/ if_lattice,if_lat_sph_cent
       logical        if_lattice,if_lat_sph_cent
-c
+
       common /hexag/ long_edge(nelm)
      $             , neighb(6,nelm)
 

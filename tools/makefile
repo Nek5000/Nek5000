@@ -13,6 +13,7 @@ all:
            export FFLAGS_IN=${R8} ;         \
         fi ;                                \
         if [ "$$i" == "prenek" ]; then      \
+           export FFLAGS_IN=${R8} ;         \
            export CFLAGS_IN="$(US) -Dr8";   \
         fi ;                                \
         ${MAKE} ;                           \

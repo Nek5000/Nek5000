@@ -15,27 +15,30 @@ C     BASICS.INC
      $ILSURF(2,MSOBJS,MFACES)
       COMMON /OBJECC/ SOBJ(MSOBJS)
       CHARACTER SOBJ*20
-c
+ 
       LOGICAL      IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
      $            ,IFFMTIN,ifptplt,ifauto,ifregz,ifvecout,if_output_ijke
       COMMON /LOGO/IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
      $            ,IFFMTIN,ifptplt,ifauto,ifregz,ifvecout,if_output_ijke
-c
-      COMMON /NEK2/ CURVE(6,8,NELM),NPTPRO,NCSEGS,NRAKE
-     $         ,NCURVE,IELLEV,VELTYP,ISRT(NELM),BC(5,6,NELM,0:MAXFLD)
-     $         ,NUMAPT(NELM),ILETAP,MAXLET,ILEVEL,NSIDES,NCORNS,PI
-     $         ,NEDGES,IGRP
-     $         ,THETA,PHI,VHOBS(3),XHOBS(3),YHOBS(3),LOCHIS(4,MAXHIS)
+ 
+      COMMON /NEK2/ NPTPRO,NCSEGS,NRAKE
+     $         ,NCURVE,IELLEV,ISRT(NELM)
+     $         ,NUMAPT(NELM),ILETAP,MAXLET,ILEVEL,NSIDES,NCORNS
+     $         ,NEDGES,IGRP,LOCHIS(4,MAXHIS)
+     $         ,NPSCAL,NCOND
+     $         ,IPSCO,IPSCH,DMPTIM(1000),IDSTEP(1000)
+     $         ,IGROUP(NELM),ISOBJ
+     $         ,CERROR(6,NELM)
+ 
+      COMMON /NEK2r/ CURVE(6,8,NELM),VELTYP,BC(5,6,NELM,0:MAXFLD)
+     $         ,PI,THETA,PHI,VHOBS(3),XHOBS(3),YHOBS(3)
      $         ,ZPTS(NXM),WGHT(NXM),DFDR(NXM,NXM),DFDRT(NXM,NXM)
      $         ,DGDR(NXM,NXM),DGDRT(NXM,NXM)
-     $         ,POINTS(3,3),NPSCAL,NCOND
-     $         ,PCOND(11),PRHOCP(11)
-     $         ,IPSCO,IPSCH,DMPTIM(1000),IDSTEP(1000)
-     $         ,IGROUP(NELM),CPROP(-5:10,10,3),ISOBJ
-     $         ,CERROR(6,NELM),MATYPE(-5:10,0:MAXFLD)
-C
+     $         ,POINTS(3,3),PCOND(11),PRHOCP(11),CPROP(-5:10,10,3)
+     $         ,MATYPE(-5:10,0:MAXFLD)
+
       COMMON /CHAAR/LINE,SESION,ITEM,CHOICE,OLDVER,CMD(500),RSTV,RSTT
      $,X13,CPARAM(500),HCODE(11,MAXHIS),OCODE(20),CBC1,CBC3,DARROW
      $,PLANE,PLANE2,VPROP(-5:10,10,3),TEXTSW(100,2),S
@@ -50,27 +53,29 @@ C
      $,session_path
      $,fld_name
       character*80 session_name,session_path,fld_name
-C
+ 
       PARAMETER (LHI=50)
       COMMON /IBASIC/ NLINF,NLINP,NLINR,NHI,IEH(LHI)
       COMMON /BASICS/ IN,NEL,NELF,NX,NY,NZ,NFLDS,NDIM,
-     $NODES(MAXFLD),NODESB(MAXFLD),DXMIN,DYMIN,
-     $CWRITE,ICHOIC,NCHOIC,YBS(100),YTS(100),XLMEN,XRMEN
-     $,ICRV(NELM),HEIGHT(nelm),nlevel,NKTONV,LOCLIN,LPSDMP,NPSDMP
-     $,VNEKTON,VNEKOLD
-c
+     $NODES(MAXFLD),NODESB(MAXFLD)
+     $,ICHOIC,NCHOIC
+     $,ICRV(NELM),nlevel,NKTONV,LOCLIN,LPSDMP,NPSDMP
+
+      COMMON /BASICSR/ DXMIN,DYMIN,CWRITE,YBS(100),YTS(100),XLMEN
+     $,XRMEN,HEIGHT(nelm),VNEKTON,VNEKOLD
+ 
       COMMON /MATSR/ XPTS(NXM,NYM,NELM),YPTS(NXM,NYM,NELM)
      $,ZPTN(NXM,NYM,NELM),XXPTS(NXM),YYPTS(NYM)
      $,X(NELM,8),Y(NELM,8),z(nelm,8)
      $,XCEN(NELM),YCEN(NELM),ZCEN(NELM),RCEN(NELM)
      $,ZDEPTH(NELM,6)
-     $,SIDES(NELM,6,4),EDGES(8,3,NELM)
-c
+     $,SIDES(NELM,6,4),EDGES(8,3,NELM),MASKEL(NELM,MAXFLD)
+ 
       COMMON /MATSI/ IZDPTH(NELM*6,2)
-     $,MASKEL(NELM,MAXFLD),adje(6,NELM),adjf(6,NELM)
-c
+     $,adje(6,NELM),adjf(6,NELM)
+ 
        integer adje,adjf
-c
+ 
       COMMON /PARAM/ PARAM(500),NPARAM,NCMD,NHISPT
      $,IRSTT,IRSTV,RSTIM,IRSTIM,ISEGDUM,SARROW,HFISH
 c
@@ -147,18 +152,18 @@ C
       COMMON /LCVOL/ IFCVOL
       CHARACTER*7 VPLANE
       LOGICAL IFCVOL
-c
+ 
       common /forgotr/ cont_lev
-c
+ 
       common /mpaull/ ifmean,ifmftp,ifuvtp
       logical         ifmean,ifmftp,ifuvtp
-c
-c
+ 
+ 
       parameter (ll=4*nxm*nxm)
       common /ahat/ aht (ll),bht (ll),cht(ll),dht(ll)
      $             ,dpht(ll),jpht(ll),zht(ll),wht(ll)
       real          aht,bht,cht,dht,dpht,jpht,zht,wht
-c
-C
+ 
+ 
       INCLUDE 'devices.inc'
 C     END OF BASICS.INC

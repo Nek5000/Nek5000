@@ -725,7 +725,7 @@ C     !Fix to a4,i2 when you make cbc character*4
                      READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=441,END=441)
      $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
                   ELSEIF (iffmtin.and.nel.lt.2 000 000 000) then
-                     read(9,'(1x,a3,i12,5g18.6)',err=2443,end=2443)
+                     read(9,'(1x,a3,i12,5g18.11)',err=2443,end=2443)
      $                  cbc(iside,iel,ifld),id,(bc8(ii),ii=1,nbcrea)
                   ELSE
                      READ(8,ERR=443,END=443) chtmp3,
@@ -1432,7 +1432,7 @@ c
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          else
-            read(io,'(1x,a3,i12,5g18.6)',err=191,end=191)
+            read(io,'(1x,a3,i12,5g18.11)',err=191,end=191)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          endif
          goto 192

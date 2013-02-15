@@ -148,7 +148,7 @@ c-----------------------------------------------------------------------
                   endif
    20             format(1x,a3,6x,5g14.7)
    21             format(1x,a3,6x,5g14.7)
-   22             format(1x,a3,12x,5g18.6)
+   22             format(1x,a3,12x,5g18.11)
 
 
 c                 Update E-E and P-P pointers:
@@ -159,7 +159,7 @@ c
                   if (cbc(f,e,j).eq.'P  '.or.cbc(f,e,j).eq.'E  ')
      $               bc(1,f,e,j) = bc(1,f,e,j) + nelo
                   if (cbc(f,e,j).eq.'P  '.or.cbc(f,e,j).eq.'E  '.and.
-     $                 nel.gt.1000000)
+     $                 nel.ge.1000000)
      $               ibc(f,e,j) = ibc(f,e,j) + nelo
 
                enddo

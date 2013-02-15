@@ -815,7 +815,7 @@ C     Read curved side data
                READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=57,END=57)
      $         IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             else
-               READ(9,'(I2,I12,5G18.11,1X,A1)',ERR=57,END=57)
+               READ(9,'(I2,I12,5G14.6,1X,A1)',ERR=57,END=57)
      $         IEDGE,IEL,R1,R2,R3,R4,R5,ANS
             endif
             CALL DDUMMY(IEDGE,IEL)

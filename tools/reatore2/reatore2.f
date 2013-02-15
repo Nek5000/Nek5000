@@ -163,7 +163,7 @@ C BOUNDARY CONDITIONS
                enddo
                enddo
    20          format(1x,a3,6x,5g14.6)  
-   21          format(1x,a3,12x,5g18.6)  
+   21          format(1x,a3,12x,5g18.11)  
 
                write(6,*) kpass,nbc,' Number of bcs'
                call byte_write(nbc,1)
@@ -176,7 +176,7 @@ C BOUNDARY CONDITIONS
                      call copy       (buf(3),bc(1,f,e),5)
                      call blank      (buf(8),4)
                      call chcopy     (buf(8),cbc(f,e),3)
-                     if(nelb.gt.1000000) call icopy(buf(3),ibc(f,e),1)
+                     if(nelb.ge.1000000) call icopy(buf(3),ibc(f,e),1)
                      call byte_write (buf,8)
                   endif
                enddo

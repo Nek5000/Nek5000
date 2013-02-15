@@ -1524,7 +1524,7 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
                   elseif (iffmtin) then
-                     WRITE(10,'(A1,A3,I12,5G18.6)',ERR=60)
+                     WRITE(10,'(A1,A3,I12,5G18.11)',ERR=60)
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
