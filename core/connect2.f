@@ -960,7 +960,7 @@ c    $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
      $            CHTEMP,
      $            CBC(ISIDE,IEL,IFIELD),ID1,
      $            (BC(II,ISIDE,IEL,IFIELD),II=1,NBCREA)
-   53             FORMAT(A1,A3,I12,5G18.6)
+   53             FORMAT(A1,A3,I12,5G18.11)
                ENDIF
 C              Mesh B.C.'s in 1st column of 1st field
                IF (CHTEMP.NE.' ') CBC(ISIDE,IEL,0)(1:1)= CHTEMP
@@ -2257,6 +2257,12 @@ c-----------------------------------------------------------------------
 
       call copy4r ( bl(1,f,e),buf(3),5)
       call chcopy (cbl(  f,e),buf(8),3)
+
+      if (nelgt.ge.1 000 000.and.cbl(f,e).eq.'P  ') 
+     $   bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+
+
+
 
 c     write(6,1) eg,e,f,cbl(f,e),' CBC',nid
 c  1  format(2i8,i4,2x,a3,a4,i8)
