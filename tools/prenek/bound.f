@@ -15,1141 +15,6 @@ C
 C------------------------------------------------------------------------------
 C
 c-----------------------------------------------------------------------
-      subroutine bound
-C     Sets boundary conditions
-      include 'basics.inc'
-      CHARACTER heatbc,velbc,KEY,STRING*5,ELE(4),BCLAB(2),REPLY,QUES(2)
-     $,REPLY2,IPAPT,BCCHOICE*26,MODE*15,CMENU*15
-      INTEGER FCORNS (4,6),ICALLD
-      SAVE    FCORNS,ICALLD
-      LOGICAL IFTMP
-      DATA CMENU /' '/
-      DATA FCORNS / 1,2,6,5,
-     $              2,3,7,6,
-     $              3,4,8,7,
-     $              4,1,5,8,
-     $              1,2,3,4,
-     $              5,6,7,8 /
-      DATA ICALLD / 0 /
-C     Turn of grid latch for improved mousy resolution.
-      IFGRID=.FALSE.
-C       PROMPTS USER FOR B.C.'S
-C
-C!!?? AFTER READING IN MESH, DISPLAY B.C.'S.  CHECK FOR SUSPECTED ONES.
-C     Boundary condition storage
-C     cbc array of characters. (6,NELM,MAXFLD) Side (or face); Element; Field
-C     BC  array of reals.    (3,6,NELM,MAXFLD) 1st Subscript: 1-temp;2-flux;3-?
-C     BC  array of reals.    For Internal Bndry:neighbor side; ele; orientation
-1     CONTINUE
-      BCLAB(2)='$'
-      QUES(1)='?'
-      QUES(2)='$'
-      IF(.NOT.IF3D) NSIDES=4
-      IF(     IF3D) NSIDES=6
-      IF1=1
-      IF(.NOT. IFFLOW) IF1=2
-C! No Fluid B.C.'s
-C     Check if b.c.'s are necessary
-C     ??!! Also check if old b.c.'s are reasonable?? Put in ability to edit
-C     the .rea file to make overlapping sides have branch-cut b.c.'s??
-      ELEC= 0.95
-      ELEW= 0.02
-      ELEB= 0.1
-      ELEDY=0.1
-      NEEDBC=0
-      MAXLEV=0
-C     Make sure B.C.'s for nonexistent elements are blanked out.
-      ifld0=if1
-      ifld1=nflds
-      if (ifconj_merge) then
-         ifld0=2
-         ifld1=2
-      endif
-      do 28 if=ifld0,ifld1
-        if (nelf.ne.nel) then
-           do 27 iel=nelf+1,nel
-           do 27 iside=1,nsides
-c             if(.not.iftmsh(if)) print*,'iel,iside,if',iel,iside,if
-              if(.not.iftmsh(if)) cbc(iside,iel,if)=' '
-   27      continue
-        endif
-28    continue
-
-      do 29 if=ifld0,ifld1
-        IF(     IFTMSH(IF))NNEL=NEL
-        IF(.NOT.IFTMSH(IF))NNEL=NELF
-        DO 29 IEL=1,NNEL
-          IF(NUMAPT(IEL).GT.MAXLEV)MAXLEV=NUMAPT(IEL)
-          DO 29 ISIDE=1,NSIDES
-          IF(cbc(ISIDE,IEL,IF).EQ.' ')NEEDBC=1
-29    CONTINUE
-C     Display B.C.'s already here (for 2-d case)
-C
-      if(nlevel.eq.1) then
-        do 30 if=ifld0,ifld1
-        do 30 iel=1,nel
-        do 30 iside=1,nsides
-           IF(cbc(ISIDE,IEL,IF).NE.' ')
-     $         CALL LETBC(ISIDE,IEL,IF,cbc(ISIDE,IEL,IF))
-30      continue
-      endif
-C
-c
-c
-c     Dump element centroids, w/ element numbers for positional sorting
-c                                   pff 4/8/99
-      call out_cent
-c
-      IF(NEEDBC.EQ.1)THEN
-C         Ya gotta have b.c.'s
-         CALL PRS('              *** MIDWAY BREAK MENU ***$')
-         CALL PRS('ABORT to write build data to file and exit$')
-         CALL PRS('SET B.C''S to continue$')
-         ITEM(1)='SET BCs'
-         ITEM(2)='ABORT'
-         nchoic =  2
-         CALL MENU(XMOUSE,YMOUSE,BUTTON,'MIDWAY BREAK')
-         IF(CHOICE.EQ.'ABORT')THEN
-             CALL MESGEN
-             CALL PREXIT
-         ENDIF
-      ELSE
-         ITEM(1)='ACCEPT B.C.''s'
-         ITEM(2)='REVIEW/MODIFY'
-         nchoic = 2
-         if (ifconj_merge) then
-            choice = item(1)
-         else
-            CALL MENU(XMOUSE,YMOUSE,BUTTON,'ACCEPT/REVIEW')
-         endif
-         IF(CHOICE.EQ.'ACCEPT B.C.''s')THEN
-C           Where do you jump if he/she wants to accept??
-            CALL CHKBCS
-c
-            DO IF=IF1,NFLDS
-               call period_check(if)
-            ENDDO
-c
-            RETURN
-         ENDIF
-      ENDIF
-      IF(CHOICE.EQ.'SET BCs GLOBALLY'.OR.CHOICE.EQ.'GLOBAL MODIFY')
-     $THEN
-         ITEM(1)='ALL BOUNDARIES'
-         ITEM(2)='ALL FLOORS'
-         ITEM(3)='ALL CEILINGS'
-         ITEM(4)='ONE LEVEL'
-         NCHOIC=4
-         CALL MENU(XMOUSE,YMOUSE,BUTTON,'TITLE$')
-         IF(CHOICE.EQ.'ALL BOUNDARIES')THEN
-
-
-            CALL PRS('ENTER B.C.TYPE$')
-            CALL RES(ANS,1)
-            IF(IFLEARN)WRITE(3,'(A1)') ANS
-            IF(ANS.EQ.'W'.OR.ANS.EQ.'w')THEN
-               DO 39 IF=IF1,NFLDS
-                 DO 39 IEL=1,NEL
-                   DO 39 ISIDE=1,NSIDES
-                     IF(cbc(ISIDE,IEL,IF).NE.'E  ')
-     $               cbc(ISIDE,IEL,IF)='W  '
-39             CONTINUE
-            ELSE
-               CALL PRS('NOT IMPLEMENTED YET. USE w for wall.$')
-            ENDIF
-         ELSE
-            CALL PRS('NOT IMPLEMENTED YET. USE ALL BOUNDARIES.$')
-         ENDIF
-         GO TO 1
-      ENDIF
-C
-      CALL PRS('                   *** BOUNDARY CONDITION MENU ***$')
-C     Set up gray elevator
-      IF(NDIM.EQ.3)THEN
-         IF(MAXLEV.GE.2)THEN
-            DO 50 I=MAXLEV,2,-1
-               CALL DRELEV(I-1,I,'     ')
-50          CONTINUE
-         ELSE
-            CALL DRELEV(I,0,'     ')
-         ENDIF
-      ENDIF
-C
-C     On each level First demand all unset B.C.'s; then give option to modify
-      DO 2000 IF=IF1,NFLDS
-C
-         IF(IF.EQ.1) THEN
-             CALL PRS('Begin Inputting Fluid Boundary Conditions$')
-         ELSE IF(IF.EQ.2) THEN
-             CALL PRS('Begin Inputting Thermal Boundary Conditions$')
-         ELSE
-             CALL PRS
-     $       ('Begin Inputting PASSIVE SCALAR Boundary Conditions$')
-             NN=IF-2
-             CALL PRSI('PASSIVE SCALAR #$',NN)
-         ENDIF
-C
-         DO 1000 ILEVEL=1,NLEVEL
-1010        CONTINUE
-            IF(NLEVEL.GT.1) THEN
-C              Black out whole level
-               CALL COLOR(0)
-               CALL FILLP(0)
-               CALL BEGINP(XPHY(0.0),YPHY(0.0))
-               CALL DRAW  (XPHY(.90),YPHY(0.0))
-               CALL DRAW  (XPHY(.90),YPHY(.99))
-               CALL DRAW  (XPHY(0.0),YPHY(.99))
-               CALL DRAW  (XPHY(0.0),YPHY(0.0))
-               CALL ENDP
-C              Make isometric drawing
-               IF (ICALLD.EQ.0) THEN
-                  ICALLD=1
-                  DO 122 IEL=1,NEL
-                     CALL DRAWIS(ISRT(IEL))
-122               CONTINUE
-               ENDIF
-C              Draw mesh OR WHOLE ELEMENT?  ??Delete previous mesh(+bclabels?)
-               CALL COLOR(1)
-               NTHISL=0
-               DO 300 IEL=1,NEL
-                   IF(NUMAPT(IEL).EQ.ILEVEL)THEN
-                      NTHISL=NTHISL+1
-                      CALL DRAWEL(IEL)
-                      DO 200 ISIDE=1,NSIDES
-                         IF(cbc(ISIDE,IEL,IF).NE.'   ')
-     $                   CALL LETBC(ISIDE,IEL,IF,cbc(ISIDE,IEL,IF))
-200                   CONTINUE
-                   ENDIF
-300            CONTINUE
-               IF(NTHISL.EQ.0) GO TO 1999
-               IF(NDIM.EQ.3)CALL DRELEV(ILEVEL,ILEVEL-1,'     ')
-            ENDIF
-C           Go thru normal stuff
-800         CONTINUE
-            MODE='NORMAL'
-            DO 900 ISIDE=1,NSIDES
-               DO 900 IEL=1,NEL
-                  IF(NUMAPT(IEL) .NE. ILEVEL )GO TO 900
-                  IF(cbc(ISIDE,IEL,IF).NE.'   ')GO TO 900
-                  IF(MASKEL(IEL,IF) .EQ. 0   )GO TO 900
-C                 Side which is on Boundary and Not periodic with Previous el
-C
-                  IISIDE=ISIDE+1
-                  IF(IISIDE.EQ.5) IISIDE = 1
-C                 Flash Elevator
-                  IFLASH=ILEVEL
-                  IF(ISIDE.EQ.5)IFLASH= -ILEVEL
-                  IF(ISIDE.EQ.6)IFLASH=-(ILEVEL+1)
-                  IFADE=IFLASH
-                  CALL DRELEV(IFLASH,IFADE,'BLINK')
-C                 Flash element side
-C                 Hilight side with Blinking lights
-                  CALL COLOR(2)
-                  IF(IFBWGKS)CALL COLOR(0)
-                  CALL HILITES(IEL,ISIDE)
-                  CALL LETBC(ISIDE,IEL,IF,QUES)
-c                 
-                  IF(IF3D)THEN
-C                    FLASH SIDE ON ISOMETRIC
-                     DO 223 ICORN=0,4
-                        IF(ICORN.EQ.0) IC=FCORNS(4    ,ISIDE)
-                        IF(ICORN.NE.0) IC=FCORNS(ICORN,ISIDE)
-                        xisom=xphy(xscr(x(ic,iel))/5.0 + 0.8)
-     $                  -z(ic,iel)/20.
-                        yisom=yphy(yscr(y(ic,iel))/5.0 + 0.8)
-     $                  -z(ic,iel)/20.
-                        IF(ICORN.EQ.0) CALL MOVEC(XISOM,YISOM)
-                        IF(ICORN.NE.0) CALL DRAWC(XISOM,YISOM)
-223                  CONTINUE
-                  ENDIF
-C
-113               CONTINUE
-C                 Error Reading Input
-                  FLUX=0.0
-                  TEMP=0.0
-                  VX  =0.0
-                  VY  =0.0
-                  IF(MODE.NE.'SKIP MENU')CALL PRSii(' B.C.>$',iel,iside)
-                  IDUP=0
-C                 SET UP MENU CHOICES
-                  IF(IF.EQ.1) THEN
-C                    FLUID B.C.'s
-                     nchoic=1
-                     ITEM(NCHOIC)='PERIODIC-AUTO'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='PERIODIC'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='WALL'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='VELOCITY'
-                     nchoic=nchoic+1
-                     ITEM(nchoic)='OUTFLOW'
-                     nchoic=nchoic+1
-                     ITEM(nchoic)='OUTFLOW/N'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='VELOCITY (LOCAL)'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='SYMMETRY'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='MOVING WALL'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='MELTING FRONT'
-c                    nchoic=nchoic+1
-c                    ITEM(NCHOIC)='QUASI-SYMMETRY'
-                     IF(IFAXIS)THEN
-                        nchoic=nchoic+1
-                        ITEM(NCHOIC)='AXIS'
-                     ENDIF
-                     IF(IFSTRS)THEN
-                        nchoic=nchoic+1
-                        ITEM(NCHOIC)='STRESS B.C.s'
-                     ENDIF
-                  ELSE IF(IF.GE.2)THEN
-C                    THERMAL B.C.'s  USE FOR PASSICVE SCALARS
-                     nchoic=1
-                     ITEM(NCHOIC)='PERIODIC-AUTO'
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='PERIODIC'
-                     nchoic=nchoic+1
-                     ITEM(nchoic)='INSULATED'
-                     nchoic=nchoic+1
-                     ITEM(nchoic)='FLUX'
-                     nchoic=nchoic+1
-                     ITEM(nchoic)='TEMP'
-C                    Convection IS now ready for v2
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='CONVECTION'
-                     IF(IFFLOW.OR.IFADVC(IF))THEN
-                        nchoic=nchoic+1
-                        ITEM(NCHOIC)='OUTFLOW'
-                     ENDIF
-                     IF(IFAXIS)THEN
-                        nchoic=nchoic+1
-                        ITEM(NCHOIC)='AXIS'
-                     ENDIF
-                     nchoic=nchoic+1
-                     ITEM(NCHOIC)='RADIATION'
-                  ENDIF
-                  nchoic=nchoic+1
-                  ITEM(NCHOIC)='SET ENTIRE LEVEL'
-                  nchoic=nchoic+1
-                  ITEM(nchoic)='ZOOM'
-C
-                  IF(CMENU.EQ.'INTERNAL')THEN
-C                    Start over with short menu
-                     IF(IF.EQ.1)THEN
-                        nchoic=1
-                        ITEM(NCHOIC)='FLUID LAYERS'
-                     ELSE IF(IF.EQ.2)THEN
-C                        Fill up solid & liquid front when melting front is
-C                        chosen
-C                        NCHOIC       =1
-C                        ITEM(NCHOIC)='SOLID FRONT'
-C                        nchoic=NCHOIC+1
-C                        ITEM(NCHOIC)='LIQUID FRONT'
-C
-c                        nchoic=NCHOIC+1   No internal radiation yet
-c                        ITEM(NCHOIC)='RADIATION'
-                        nchoic=1
-                        ITEM(NCHOIC)='MELTING FRONT'
-C                        CALL PRS(
-c     $                  'No internal boundaries for temperature$')
-c                        GO TO 313
-                     ELSE IF(IF.GT.2)THEN
-                        CALL PRS(
-     $                  'No internal boundaries for passive scalars$')
-                        GO TO 313
-                     ENDIF
-                  ENDIF
-C
-C                 We already got info for first value; skip menu now.
-                  IF(MODE.EQ.'GET FIRST')MODE='SKIP MENU'
-63                IF(MODE.NE.'SKIP MENU')THEN
-                     IF(IFAXIS .AND.
-     $               ABS(SIDES(IEL,ISIDE,2)).LT.YFAC/1000.)THEN
-                        CALL PRS
-     $                  ('**Axis B.C. Strongly Recommended here**$')
-                        CALL BEEP
-                     ENDIF
-                     CALL MENU (XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-                  ENDIF
-C
-                  IF(CHOICE.eq.'STRESS B.C.s')THEN
-C
-                        NCHOIC=       1
-                        ITEM(NCHOIC)='MAIN B.C. MENU'
-                        NCHOIC=NCHOIC+1
-                        ITEM(NCHOIC)='SHEAR'
-                        NCHOIC=NCHOIC+1
-                        ITEM(NCHOIC)='SHEAR    (LOCAL)'
-                        NCHOIC=NCHOIC+1
-                        ITEM(NCHOIC)='FREE SURFACE'
-C                    New B.C.'s From Lee Ho
-                        NCHOIC=NCHOIC+1
-                        ITEM(NCHOIC)='TRACTION'
-                        NCHOIC=NCHOIC+1
-                        ITEM(NCHOIC)='TRACTION (LOCAL)'
-C                        Catch at internal b.c. menu
-c                        NCHOIC=NCHOIC+1
-c                        ITEM(NCHOIC)='FLUID LAYERS'
-                        CALL MENU (XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-                        IF(CHOICE.EQ.'MAIN B.C. MENU') GO TO 113
-                  ENDIF
-C                 End of patch
-C
-                 IF(MODE.EQ.'GET FIRST'.AND.CHOICE.EQ.'PERIODIC') then
-c                IF((MODE.EQ.'GET FIRST'.AND.CHOICE.EQ.'PERIODIC').OR.
-c    $              (MODE.EQ.'GET FIRST'.AND.
-c    $               CHOICE.EQ.'PERIODIC-AUTO'))THEN
-                     CALL PRS
-     $               ('*** ERROR ***  YOU CANNOT SET WHOLE LEVEL$')
-                    CALL PRS('TO BE PERIODIC; CHOOSE A DIFFERENT B.C.$')
-                     GO TO 63
-                  elseif (MODE.EQ.'GET FIRST'.AND.
-     $                    CHOICE.EQ.'PERIODIC-AUTO') THEN
-                     call autoperiod
-                  ENDIF
-                  if(choice.eq.'ZOOM')then
-                     CALL SETZOOM
-                     CALL REFRESH
-                     CALL DRMENU('NOCOVER')
-                     CALL DRGRID
-                     DO 170 IE=1,NEL
-                        CALL DRAWEL(IE)
-  170                CONTINUE
-C
-C                    Re-highlight the current element boundaries
-C
-                     CALL COLOR(2)
-                     IF(ISIDE.EQ.5.OR.ISIDE.EQ.6) THEN
-                       IF(ISIDE.EQ.5)ILEV=ILEVEL
-                       IF(ISIDE.EQ.6)ILEV=ILEVEL+1
-                       CALL MOVESC(ELEC-ELEW,ELEB+ELEDY*(ILEV-1))
-                       CALL DRAWSC(ELEC+ELEW,ELEB+ELEDY*(ILEV-1))
-C                      Flash mesh sides
-                       IF(ISIDE.EQ.5)THEN
-                          IED1=1
-                          IED2=4
-                       ELSE IF(ISIDE.EQ.6)THEN
-                          IED1=1
-                          IED2=4
-                       ENDIF
-                       call movec(x(ied1,iel),y(ied1,iel))
-                       DO 172 IEDGE=IED1,IED2
-                          CALL DRAWED(IEL,IEDGE,1)
-  172                  CONTINUE
-                     ELSE
-C                       SIDES 1-4  (SAME AS EDGES IN THIS CASE)
-                        call movec(x(iside,iel),y(iside,iel))
-                        CALL DRAWED(IEL,ISIDE,1)
-                     ENDIF
-                     GO TO 63
-                  ENDIF
-                  if(choice.eq.'SET ENTIRE LEVEL')then
-C                    First get b.c., then copy for rest of loops
-                     MODE='GET FIRST'
-                     CHOICE=' '
-                     IELDUP=IEL
-                     ISIDUP=ISIDE
-                     CALL PRS
-     $               ('Choose B.C.''s for all remaining sides '//
-     $               'in entire level$')
-                     GO TO 63
-                  ENDIF
-                  IF(MODE.EQ.'SKIP MENU')BUTTON='RIGHT'
-                  IF(BUTTON.EQ.'RIGHT') THEN
-                     BCCHOICE='DUPLICATE'
-                     IF(XSCR(XMOUSE).GE.1.0.AND.MODE.NE.'SKIP MENU')THEN
-                        CALL PRS
-     $                  ('Right button not used in red menu area.$')
-                        CALL PRS('Try again.$')
-                        IF(MODE.NE.'NORMAL')CALL PRS(
-     $                  'Global mode reset.  Start over.$')
-                        MODE='NORMAL'
-                        GO TO 113
-                     ENDIF
-                     IF(MODE.NE.'SKIP MENU')THEN
-                       XP=XMOUSE
-                       YP=YMOUSE
-C                      Find closest element, side that we want to duplicate
-                       RMIN=10000.0
-                       DO 133 IIEL=1,NEL
-C                         Only try those on same floor
-                          IF(NUMAPT(IIEL).EQ.ILEVEL)THEN
-                             DO 131 IISIDE=1,NSIDES
-                                R=    ((XP-SIDES(IIEL,IISIDE,1))**2
-     $                          +      (YP-SIDES(IIEL,IISIDE,2))**2)
-                                IF(R.LT.RMIN) THEN
-                                   RMIN=R
-                                   ISIDUP = IISIDE
-                                   IELDUP = IIEL
-                                ENDIF
-131                          CONTINUE
-                          ENDIF
-133                    CONTINUE
-                       IF(ISIDUP.EQ.5.OR.ISIDUP.EQ.6)THEN
-C                         CHECK IF IT'S ABOVE OR BELOW CENTER
-                          IF(YP.GT.SIDES(IELDUP,ISIDUP,2))THEN
-                              ISIDUP=6
-                          ELSE
-                              ISIDUP=5
-                          ENDIF
-                       ENDIF
-                     ENDIF
-                     IF (cbc(ISIDUP,IELDUP,IF).EQ.'   ') THEN
-                        call prsi (
-     $                      'B.C. not set for isidup$',isidup,
-     $                      'of element$',ieldup)
-                        go to 113
-                     ENDIF
-                     cbc3=cbc(ISIDUP,IELDUP,IF)
-                     IF (cbc(ISIDUP,IELDUP,IF).EQ.'E  ') THEN
-                        WRITE(S,'(A5,I4,A12,I4,A1)')'Side ',isidup,
-     $                  ' of element ',IELDUP,'$'
-                        CALL PRS(S)
-                        CALL PRS
-     $                  ('is internal side.  I won''t duplicate.$')
-                        go to 113
-                     ELSE IF (cbc(ISIDUP,IELDUP,IF).EQ.'P  ') THEN
-                        WRITE(S,'(A5,I4,A12,I4,A1)')'Side ',isidup,
-     $                  ' of element ',IELDUP,'$'
-                        CALL PRS(S)
-                        CALL PRS
-     $                  ('is Periodic side.  I won''t duplicate.$')
-                        go to 113
-                     ELSE IF(cbc3(3:3).EQ.'i'.OR.cbc3(3:3).EQ.'I')THEN
-                        WRITE(S,'(A5,I4,A12,I4,A1)')'Side ',isidup,
-     $                  ' of element ',IELDUP,'$'
-                        CALL PRS(S)
-                        CALL PRS
-     $                  ('is Internal side.  I won''t duplicate.$')
-                        go to 113
-                     ENDIF
-C                    Need flag to know if b.c. is fortran function.
-C                    Special handling puts new fortran in next available lines
-                     cbc3 = cbc(ISIDUP,IELDUP,IF)
-                     Icbc = ICHAR(cbc3(1:1))
-                     IF(Icbc.GE.97.AND.Icbc.LE.122)THEN
-C                       Small letter signifies fortran function
-                        IF(cbc3(3:3).eq.'i  ')THEN
-C                          Special storage locations
-                           NLINES=BC(4,ISIDUP,IELDUP,IF)
-                           LINE1 =BC(5,ISIDUP,IELDUP,IF)
-                           BC(4,ISIDE,IEL,IF)=NLINES
-                           BC(5,ISIDE,IEL,IF)=LOCLIN
-                        ELSE
-                           NLINES=BC(1,ISIDUP,IELDUP,IF)
-                           LINE1 =BC(2,ISIDUP,IELDUP,IF)
-                           BC(1,ISIDE,IEL,IF)=NLINES
-                           BC(2,ISIDE,IEL,IF)=LOCLIN
-                        ENDIF
-                        cbc (ISIDE,IEL,IF)=cbc( ISIDUP,IELDUP,IF)
-                        DO 777 I=1,NLINES
-                           INBC(LOCLIN)=INBC(LINE1+I-1)
-                           LOCLIN=LOCLIN+1
-777                     CONTINUE
-                     ELSE
-                        BC(1,ISIDE,IEL,IF)=BC(1,ISIDUP,IELDUP,IF)
-                        BC(2,ISIDE,IEL,IF)=BC(2,ISIDUP,IELDUP,IF)
-                        BC(3,ISIDE,IEL,IF)=BC(3,ISIDUP,IELDUP,IF)
-                        BC(4,ISIDE,IEL,IF)=BC(4,ISIDUP,IELDUP,IF)
-                        BC(5,ISIDE,IEL,IF)=BC(5,ISIDUP,IELDUP,IF)
-                        cbc (ISIDE,IEL,IF)=cbc( ISIDUP,IELDUP,IF)
-                        ibc (ISIDE,IEL,IF)=ibc( ISIDUP,IELDUP,IF)
-                     ENDIF
-                     BCLAB(1) = cbc(ISIDUP,IELDUP,IF)
-                  ELSE IF(BUTTON.EQ.'LEFT') THEN
-                     BCCHOICE=CHOICE
-                     BCLAB(1)          = BCCHOICE(1:1)
-                     cbc(ISIDE,IEL,IF) = BCCHOICE(1:1)
-           IF(CHOICE.EQ.'VELOCITY'        )cbc(ISIDE,IEL,IF)='V  '
-           IF(CHOICE.EQ.'VELOCITY (LOCAL)')cbc(ISIDE,IEL,IF)='VL '
-           IF(CHOICE.EQ.'MOVING WALL     ')cbc(ISIDE,IEL,IF)='mv '
-           IF(CHOICE.EQ.'STRESS'          )cbc(ISIDE,IEL,IF)='S  '
-           IF(CHOICE.EQ.'STRESS   (LOCAL)')cbc(ISIDE,IEL,IF)='SL '
-           IF(CHOICE.EQ.'SHEAR'           )cbc(ISIDE,IEL,IF)='SH '
-           IF(CHOICE.EQ.'SHEAR    (LOCAL)')cbc(ISIDE,IEL,IF)='SHL'
-           IF(CHOICE.EQ.'SYMMETRY'        )cbc(ISIDE,IEL,IF)='SYM'
-           IF(CHOICE.EQ.'QUASI-SYMMETRY'  )cbc(ISIDE,IEL,IF)='QSM'
-           IF(CHOICE.EQ.'FREE SURFACE'    )cbc(ISIDE,IEL,IF)='MS '
-           IF(CHOICE.EQ.'OUTFLOW/N'       )cbc(ISIDE,IEL,IF)='ON '
-           IF(CHOICE.EQ.'TRACTION'        )cbc(ISIDE,IEL,IF)='S  '
-           IF(CHOICE.EQ.'TRACTION (LOCAL)')cbc(ISIDE,IEL,IF)='SL '
-           IF(CHOICE.EQ.'FLUID LAYERS'    )cbc(ISIDE,IEL,IF)='MSI'
-           IF(CHOICE.EQ.'MELTING FRONT'   )cbc(ISIDE,IEL,IF)='MF '
-           IF(CHOICE.EQ.'SOLID FRONT'     )cbc(ISIDE,IEL,IF)='MCI'
-           IF(CHOICE.EQ.'LIQUID FRONT'    )cbc(ISIDE,IEL,IF)='MLI'
-C
-                 cbc3=cbc(ISIDE,IEL,IF)
-                 BCLAB(1)= cbc3(1:1)
-c
-                     IF(CHOICE.EQ.'TEMP'         .OR.
-     $               CHOICE.EQ.'FLUX'            .OR.
-     $               CHOICE.EQ.'VELOCITY'        .OR.
-     $               CHOICE.EQ.'VELOCITY (LOCAL)'.OR.
-     $               CHOICE.EQ.'STRESS'          .OR.
-     $               CHOICE.EQ.'STRESS   (LOCAL)'.OR.
-     $               CHOICE.EQ.'SHEAR'           .OR.
-     $               CHOICE.EQ.'SHEAR    (LOCAL)'.OR.
-     $               CHOICE.EQ.'MOVING WALL     '.OR.
-     $               CHOICE.EQ.'CONVECTION'      .OR.
-     $               CHOICE.EQ.'OUTFLOW'         .OR.
-     $               CHOICE.EQ.'OUTFLOW/N'       .OR.
-     $               CHOICE.EQ.'TRACTION'        .OR.
-     $               CHOICE.EQ.'TRACTION (LOCAL)'.OR.
-     $               CHOICE.EQ.'RADIATION'       .OR.
-     $               CHOICE.EQ.'FREE SURFACE'    .OR.
-     $               CHOICE.EQ.'FLUID LAYERS'    .OR.
-     $               CHOICE.EQ.'MELTING FRONT'   .OR.
-     $               CHOICE.EQ.'SOLID FRONT'     .OR.
-     $               CHOICE.EQ.'LIQUID FRONT'    )THEN
-                        IF(CHOICE.EQ.'MOVING WALL') THEN
-C                          Can only have fortran function
-                           CHOICE='FORTRAN FUNCTION'
-                        ELSE IF(CHOICE.EQ.'OUTFLOW')THEN
-C                          Can only have constant
-                           CHOICE='CONSTANT'
-                        ELSE IF(CHOICE.EQ.'OUTFLOW/N')THEN
-C                          Can only have constant
-                           CHOICE='CONSTANT'
-                        ELSE IF(CHOICE.EQ.'MELTING FRONT') THEN
-C                          Can only have constant
-                           CHOICE='CONSTANT'
-                        ELSE
-                           CALL PRS(
-     $                     ' Choose Format for Relevant Parameters$')
-                           NCHOIC=2
-                           ITEM(1)='CONSTANT'
-                           ITEM(2)='FORTRAN FUNCTION'
-                           CALL MENU (XMOUSE,YMOUSE,BUTTON,
-     $                     'FORTRAN FUNCTION')
-                        ENDIF
-                        IF(CHOICE.EQ.'FORTRAN FUNCTION')THEN
-                         DO 111 I=1,3
-                            III=ICHAR(cbc3(I:I))+32
-                            IF(III.GE.97.AND.III.LE.122)THEN
-                               cbc3(I:I)=CHAR(ICHAR(cbc3(I:I))+32)
-                            ENDIF
-111                      CONTINUE
-                         cbc(ISIDE,IEL,IF)=cbc3
-                         BCLAB(1)          = cbc3(1:1)
-                         CALL INFLOW(IEL,ISIDE,IF,cbc(ISIDE,IEL,IF))
-                         call rzero(bc(1,iside,iel,if),5)
-                         ibc(iside,iel,if)=0
-                        ELSE IF(CHOICE.EQ.'CONSTANT')THEN
-                           IF(BCCHOICE.EQ.'SHEAR    (LOCAL)')THEN
-                             IF(IF3D)THEN
-                               CALL PRS
-     $                         (' Type #1-comp of Shear:$')
-                               call rer(BC(2,ISIDE,IEL,IF))
-                               CALL PRS
-     $                         (' Type #2-comp of Shear:$')
-                               call rer(BC(3,ISIDE,IEL,IF))
-                             ELSE
-                               CALL PRS
-     $                         (' Type Shear:$')
-                               call rer(BC(2,ISIDE,IEL,IF))
-                             ENDIF
-                           ELSE IF(BCCHOICE(10:16).EQ.'(LOCAL)')THEN
-                              CALL PRS(' Type:$')
-                              CALL PRS(' NORMAL-'//BCCHOICE//'$')
-                              call rer(BC(1,ISIDE,IEL,IF))
-                              IF(IF3D)THEN
-                                 CALL PRS
-     $                           (' #1 TANGENTIAL '//BCCHOICE//'$')
-                                 call rer(BC(2,ISIDE,IEL,IF))
-                                 CALL PRS
-     $                           (' #2 TANGENTIAL '//BCCHOICE//'$')
-                                 call rer(BC(3,ISIDE,IEL,IF))
-                              ELSE
-                                 CALL PRS
-     $                           (' TANGENTIAL '//BCCHOICE//'$')
-                                 call rer(BC(2,ISIDE,IEL,IF))
-                              ENDIF
-                           ELSE IF(BCCHOICE.EQ.'TEMP')THEN
-                              CALL PRS('Type TEMP:$')
-                              call rer(BC(1,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'FLUX')THEN
-                              CALL PRS('Type FLUX:$')
-                              call rer(BC(1,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'OUTFLOW/N' .OR.
-     $                             BCCHOICE.EQ.'OUTFLOW')THEN
-                              IF(.NOT.IFSTRS)THEN
-                                 CALL PRS(' Exit pressure set to zero$')
-                                 BC(1,ISIDE,IEL,IF) = 0.0
-                              ELSE
-                                 CALL PRS(
-     $                           ' Type Exit Pressure:$')
-                                 call rer(BC(1,ISIDE,IEL,IF))
-                              ENDIF
-                           ELSE IF(BCCHOICE.EQ.'FLUID LAYERS')THEN
-                              WRITE(S,
-     $                      '('' Type Surface Tension:'')')
-                            CALL PRS(S//'$')
-                            call rer(BC(4,ISIDE,IEL,IF))
-                            CALL OVERLAP(IEL,ISIDE,IELO,ISIDEO)
-                            cbc(  ISIDEO,IELO,IF) = 'MPI'
-                            BC(4,ISIDEO,IELO,IF)=BC(4,ISIDE,IEL,IF)
-                           ELSE IF(BCCHOICE.EQ.'SHEAR')THEN
-                             IF(IF3D)THEN
-                               CALL PRS
-     $                         (' Type X-comp of Shear:$')
-                               call rer(BC(1,ISIDE,IEL,IF))
-                               CALL PRS
-     $                         (' Type Y-comp of Shear:$')
-                               call rer(BC(2,ISIDE,IEL,IF))
-                               CALL PRS
-     $                         (' Type Z-comp of Shear:$')
-                               call rer(BC(3,ISIDE,IEL,IF))
-                             ELSE
-                               CALL PRS
-     $                         (' Type X-comp of Shear:$')
-                               call rer(BC(1,ISIDE,IEL,IF))
-                               CALL PRS
-     $                         (' Type Y-comp of Shear:$')
-                               call rer(BC(2,ISIDE,IEL,IF))
-                             ENDIF
-                           ELSE IF(BCCHOICE.EQ.'CONVECTION') THEN
-                             CALL PRS
-     $                       (' Heat Transfer Coefficient (h)>$')
-C                            2nd storage Contains h
-                             call rer(BC(2,ISIDE,IEL,IF))
-                             CALL PRS
-     $                       (' Temperature at Infinity (Tinf)>$')
-                             call rer(BC(1,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'FREE SURFACE') THEN
-                             CALL PRS
-     $                       (' Pressure of Gas (Normal Traction)>$')
-                             call rer(BC(1,ISIDE,IEL,IF))
-                             CALL PRS
-     $                       (' Shear (Tangential Traction)>$')
-                             call rer(BC(2,ISIDE,IEL,IF))
-                             IF(IF3D)THEN
-                             CALL PRS
-     $                       (' #2 Component of Shear '//
-     $                       '(Tangential Traction)>$')
-                             call rer(BC(3,ISIDE,IEL,IF))
-                             ENDIF
-                             CALL PRS(' Surface tension Coefficient>$')
-                             call rer(BC(4,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'RADIATION') THEN
-                             CALL PRS
-     $                       (' Temperature at Infinity (Tinf)>$')
-                             call rer(BC(1,ISIDE,IEL,IF))
-                             CALL PRS(' Type Product of Emissivity$')
-                             CALL PRS(' and Boltzmanns Constant >$')
-                             call rer(BC(2,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'SOLID FRONT'
-     $                     .OR.    BCCHOICE.EQ.'LIQUID FRONT')THEN
-                             CALL PRS(' Freezing Temperature>$')
-                             call rer(BC(4,ISIDE,IEL,IF))
-                             CALL PRS(' Rho * Latent Heat>$')
-                             call rer(BC(5,ISIDE,IEL,IF))
-                           ELSE IF(BCCHOICE.EQ.'MELTING FRONT')THEN
-C                            Fill up both sides of TEMPERATURE B.C.
-                             CALL PRS(' Freezing Temperature>$')
-                             call rer(BC(4,ISIDE,IEL,2))
-                             CALL PRS(' Rho * Latent Heat>$')
-                             call rer(BC(5,ISIDE,IEL,2))
-C                            Export to overlapping edge
-                             CALL OVERLAP(IEL,ISIDE,IELO,ISIDEO)
-                             BC (4,ISIDEO,IELO,2)=BC (4,ISIDE,IEL,2)
-                             BC (5,ISIDEO,IELO,2)=BC (5,ISIDE,IEL,2)
-                             IF(IIEL.GT.IEL)THEN
-                                cbc(ISIDE ,IEL ,2)='MLI'
-                                cbc(ISIDEO,IELO,2)='MCI'
-                             ELSE
-                                cbc(ISIDE ,IEL ,2)='MCI'
-                                cbc(ISIDEO,IELO,2)='MLI'
-                             ENDIF
-                           ELSE
-C                             B.C. requiring 3 x,y,z components
-                              WRITE(S,'('' Type:'')')
-                              CALL PRS(S//'$')
-                              WRITE(S,'('' X-'',A26)')BCCHOICE
-                              CALL PRS(S//'$')
-                              call rer(BC(1,ISIDE,IEL,IF))
-                              WRITE(S,'('' Y-'',A26)')BCCHOICE
-                              CALL PRS(S//'$')
-                              call rer(BC(2,ISIDE,IEL,IF))
-                              IF(IF3D)THEN
-                                 WRITE(S,'('' Z-'',A26)')BCCHOICE
-                                 CALL PRS(S//'$')
-                                 call rer(BC(3,ISIDE,IEL,IF))
-                              ENDIF
-                           ENDIF
-                        ENDIF
-                     ELSE IF(BCCHOICE.EQ.'PERIODIC-AUTO') THEN
-C                    Automatic selection of Periodic bc
-                        CALL FNDSIDA(JSIDE,JEL,ISIDE,IEL,IF)
-                        IF (JSIDE.EQ.0) THEN
-                         CALL PRS(
-     $  'Cannot find a corresponding side, choose a new BC.$')
-                         GOTO 63
-                        ELSE
-                          CALL LETBC(JSIDE,JEL,IF,BCLAB)
-                          CALL LETBC(ISIDE,IEL,IF,BCLAB)
-                          cbc( ISIDE,IEL,IF) = 'P  '
-                          BC(1,ISIDE,IEL,IF) = JEL
-                          BC(2,ISIDE,IEL,IF) = JSIDE
-                          cbc( JSIDE,JEL,IF) = 'P  '
-                          BC(1,JSIDE,JEL,IF) = IEL
-                          BC(2,JSIDE,JEL,IF) = ISIDE
-                          ibc(jside,jel,if)  = iel
-                          ibc(iside,iel,if)  = jel
-                        ENDIF
-                     ELSE IF(BCCHOICE.EQ.'PERIODIC') THEN
-C                    Periodic B.C.
-C                    !!?? In general, check if old b.c. was a periodic or
-C                    !!?? B.c. before writing over it!
-                     CALL PRS
-     $               ('Choose corresponding periodic with mouse$')
-                     CALL PRS
-     $               ('(use red menu area if side on other level)$')
-C
-                     go to 124
-c23                  CALL PRS('ERROR: To input side, Use Mouse $')
-124                  WRITE(S,'('' Periodic Side>'')')
-                     CALL PRS(S//'$')
-C                    Look for mouse input for periodic side
-116                  CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-                     XP=XMOUSE
-                     YP=YMOUSE
-                     IF(BUTTON.NE.'LEFT') THEN
-                        CALL PRS
-     $                  ('Use left button to specify periodic side.$')
-                        GO TO 124
-                     ENDIF
-                     IOTHER = 0
-                     IF(XSCR(XMOUSE).GT.1.0)THEN
-                        IOTHER = 1
-                        CALL PRS('Type Level:$')
-                        CALL REI(IPLEV)
-                        IF(IFLEARN)WRITE(3,*) IPLEV
-                        CALL PRS(
-     $                  'Type Apartment letter (with correct case):$')
-                        CALL RES(IPAPT,1)
-                        IF(IFLEARN)WRITE(3,*) IPAPT
-                        CALL PRS('Type Side number:$')
-                        CALL REI(IPSIDE)
-                        IF(IFLEARN)WRITE(3,*) IPSIDE
-C                       Find Closest Side
-C                       Use data from other level
-                        ISIDEP = Ipside
-                        DO 103 IIEL=1,NEL
-                           IF(NUMAPT(IIEL).EQ.IPLEV .AND.
-     $                        LETAPT(IIEL).EQ.IPAPT     ) IELP=IIEL
-103                     CONTINUE
-                        CALL PRSI('Displaying BC label From level$'
-     $                  ,iplev)
-                        CALL PRS('On this level.  Do not be alarmed.$')
-                     ELSE
-C                       Look on this level
-                        RMIN=10000.0
-                        DO 105 IIEL=1,NEL
-                           DO 105 IISIDE=1,NSIDES
-                              IF(NUMAPT(IIEL).NE.ILEVEL) GO TO 105
-                              R=    ((XP-SIDES(IIEL,IISIDE,1))**2
-     $                        +      (YP-SIDES(IIEL,IISIDE,2))**2)
-                              IF(R.LT.RMIN) THEN
-                                 RMIN=R
-                                 ISIDEP = IISIDE
-                                 IELP   = IIEL
-                              ENDIF
-105                     CONTINUE
-                        IF(ISIDEP.EQ.5.OR.ISIDEP.EQ.6)THEN
-C                          CHECK IF IT'S ABOVE OR BELOW CENTER
-                           IF(YP.GT.SIDES(IELP,ISIDEP,2))THEN
-                               ISIDEP=6
-                           ELSE
-                               ISIDEP=5
-                           ENDIF
-                        ENDIF
-                        CALL PRSI('ISIDEP=$',ISIDEP)
-                     ENDIF
-                     IF(IELP.EQ.IEL .AND. ISIDEP.EQ.ISIDE) THEN
-                        CALL PRS
-     $                  ('** ERROR **  A side cannot be periodic$')
-                        CALL PRS
-     $                  ('with itself !  Choose the (different) $')
-                        CALL PRS('side that the flashing side is $')
-                        CALL PRS('periodic with.$')
-                        go to 124
-                     ENDIF
-                     WRITE(S,110) IELP,ISIDEP,IEL,ISIDE
-                     CALL PRS(S//'$')
-110                  FORMAT(' ',2I7,'  IS PERIODIC WITH ',2I7)
-C                    Now Enter Information into Periodicity Array
-C                    !?? WHATS THE ORIENTATION??
-                     IORIEN=1
-                     CALL LETBC(ISIDEP,IELP,IF,BCLAB)
-                     cbc( ISIDEP,IELP,IF) = 'P  '
-                     BC(1,ISIDE ,IEL ,IF) = IELP
-                     BC(2,ISIDE ,IEL ,IF) = ISIDEP
-c                    BC(3,ISIDE ,IEL ,IF) = IORIEN
-                     BC(1,ISIDEP,IELP,IF) = IEL
-                     BC(2,ISIDEP,IELP,IF) = ISIDE
-c                    BC(3,ISIDEP,IELP,IF) = IORIEN
-                     ibc(iside ,iel ,if)  = ielp    ! high-precision periodic bc
-                     ibc(isidep,ielp,if)  = iel
-                  ENDIF
-C                 Post-pick warnings
-                  IF(BCCHOICE.EQ.'AXIS')THEN
-C                    Axisymmetric B.C.
-                     if(abs(y(iside,iel)/yfac).gt.0.01)
-     $               CALL PRS('** WARNING ** AXIS B.C. FOR Y=0 ONLY!$')
-                     IF(ISIDE .NE. 1) THEN
-                        CALL PRS('*** Error!!! Gauss-Jacobi Mesh$')
-                        CALL PRS('allows only side 1 to be on axis.$')
-                        CALL PRSI('Please delete element$',IEL)
-                        CALL PRS('and Re-enter with axial side first.$')
-                        CALL PRS('Hit <cr> to continue$')
-                        CALL RES(LINE,0)
-                     ENDIF
-                  ENDIF
-115               FORMAT(A1,'   <-- B.C. FOR ELE ',I3,' SIDE',I3)
-                 ENDIF
-                 CALL COLOR(3)
-C                Turn Off Der Blinkenlights
-                 IISIDE=ISIDE+1
-                 IF(IISIDE.EQ.5) IISIDE = 1
-                 CALL DRELEV(IFLASH,IFADE,'     ')
-                 IF(ISIDE.EQ.5.OR.ISIDE.EQ.6) THEN
-C                   Un-Flash Elevator at element floor or ceiling
-                    IF(ISIDE.EQ.5)ILEV=ILEVEL
-                    IF(ISIDE.EQ.6)ILEV=ILEVEL+1
-                    CALL MOVESC(ELEC-ELEW,ELEB+ELEDY*(ILEV-1))
-                    CALL DRAWSC(ELEC+ELEW,ELEB+ELEDY*(ILEV-1))
-C                   Un-Flash mesh sides
-                    IF(ISIDE.EQ.5)THEN
-                       IED1=1
-                       IED2=4
-                    ELSE IF(ISIDE.EQ.6)THEN
-                       IED1=1
-                       IED2=4
-                    ENDIF
-                    call movec(x(ied1,iel),y(ied1,iel))
-                    DO 230 IEDGE=IED1,IED2
-                       CALL DRAWED(IEL,IEDGE,1)
-230                 CONTINUE
-                 ELSE
-                    IF(IF3D)THEN
-C                      Un-Flash at elevator at walls of current level
-                       CALL MOVESC(ELEC     ,ELEB+ELEDY*(ILEVEL-1))
-                       CALL DRAWSC(ELEC     ,ELEB+ELEDY*(ILEVEL  ))
-                    ENDIF
-C                   Un-Flash mesh side
-                    call movec(x( iside,iel),y( iside,iel))
-c                   call draw (x(iiside,iel),y(iiside,iel))
-                    call drawed(iel,iside,1)
-                 ENDIF
-                 IF(IF3D)THEN
-C                   UN-FLASH SIDE ON ISOMETRIC
-                    DO 233 ICORN=0,4
-                        IF(ICORN.EQ.0) IC=FCORNS(4    ,ISIDE)
-                        IF(ICORN.NE.0) IC=FCORNS(ICORN,ISIDE)
-                        xisom=xphy(xscr(x(ic,iel))/5.0 + 0.8)
-     $                  -z(ic,iel)/20.
-                        yisom=yphy(yscr(y(ic,iel))/5.0 + 0.8)
-     $                  -z(ic,iel)/20.
-                        IF(ICORN.EQ.0) CALL MOVEC(XISOM,YISOM)
-                        IF(ICORN.NE.0) CALL DRAWC(XISOM,YISOM)
-233                 CONTINUE
-                 ENDIF
-C                Label Boundary Side
-                 CALL LETBC(ISIDE,IEL,IF,BCLAB)
-900         CONTINUE
-C
-C==================================================================
-C           Entering MODIFY BC MENU area (apparently)
-C==================================================================
-C
-313         CONTINUE
-            ITEM(1)='END  LEVEL'
-            ITEM(2)='MODIFY B.C.'
-            ITEM(3)='SHOW   B.C.'
-            ITEM(4)='USER   B.C.'
-            IF(IF.eq.1 .OR. IF.EQ.2 .AND. .NOT. IFFLOW)THEN
-               ITEM(5)='INTERNAL B.C.'
-               NCHOIC=5
-            ELSE
-               NCHOIC=4
-            ENDIF
-            NCHOIC=NCHOIC+1
-            ITEM(NCHOIC)='ZOOM'
-            CALL MENU (XMOUSE,YMOUSE,BUTTON,'MODIFY B.C.')
-C
-            IF (CHOICE.EQ.'USER   B.C.') then
-               call user_bc
-               return
-            endif
-c
-            IF(CHOICE.EQ.'INTERNAL B.C.') THEN
-               CMENU = 'INTERNAL'
-            ELSE
-               CMENU = ' '
-            ENDIF
-            IF(CHOICE.EQ.'MODIFY B.C.' .OR. CHOICE.EQ.'SHOW   B.C.'
-     $     .OR.CHOICE.EQ.'INTERNAL B.C.')THEN
-                CALL PRS('Enter side with mouse$')
-                CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-C               Find closest BOUNDARY side
-                XP=XMOUSE
-                YP=YMOUSE
-                RMIN=10000.0
-                DO 106 IIEL=1,NEL
-                   DO 106 IISIDE=1,NSIDES
-                      IF(NUMAPT(IIEL).EQ.ILEVEL .AND.
-     $                (cbc(IISIDE,IIEL,IF).NE.'E  '.OR.
-     $                 CHOICE.EQ.'INTERNAL B.C.'))THEN
-                         R=    ((XP-SIDES(IIEL,IISIDE,1))**2
-     $                   +      (YP-SIDES(IIEL,IISIDE,2))**2)
-                         IF(R.LT.RMIN) THEN
-C                         One last check: above or below center- 5 or 6
-                          IF(IISIDE.EQ.5.AND.YP.GT.SIDES(IIEL,IISIDE,2))
-     $                    GO TO 1113
-                          IF(IISIDE.EQ.6.AND.YP.LT.SIDES(IIEL,IISIDE,2))
-     $                    GO TO 1113
-                            RMIN=R
-                            ISIMOD = IISIDE
-                            IELMOD = IIEL
-1113                        CONTINUE
-                         ENDIF
-                      ENDIF
-106             CONTINUE
-c
-                IF(CHOICE.EQ.'SHOW   B.C.')THEN
-C                  Show   B.C.
-                   WRITE(S,'(A7,I4,A6,I3,A1)')'Element',IELMOD,
-     $             '  Side',ISIMOD,'$'
-                   CALL PRS(S)
-                   WRITE(S,'(a5,5g12.5,a1)')
-     $             cbc(isimod,IELMOD,IF),
-     $             BC(1,ISIMOD,IELMOD,IF),
-     $             BC(2,ISIMOD,IELMOD,IF),
-     $             BC(3,ISIMOD,IELMOD,IF),
-     $             BC(4,ISIMOD,IELMOD,IF),
-     $             BC(5,ISIMOD,IELMOD,IF),'$'
-                   CALL PRS(S)
-                   GO TO 313
-                ELSE IF(CHOICE.EQ.'MODIFY B.C.'
-     $           .OR.   CHOICE.EQ.'INTERNAL B.C.')THEN
-C                  Reset to zero and send back into loop.  Loop will demand bc
-                   IF(cbc(isimod,ielmod,IF).EQ.'P  ')THEN
-C                     We need to zero out the periodic side also
-                      IELPER=BC(1,ISIMOD,IELMOD,IF)
-                      ielper=ibc(isimod,ielmod,if)
-                      ISIPER=BC(2,ISIMOD,IELMOD,IF)
-                      CALL LETBC(ISIPER,IELPER,IF,' ')
-                      cbc( ISIPER,IELPER,IF)='   '
-                      BC(1,ISIPER,IELPER,IF)=0
-                      BC(2,ISIPER,IELPER,IF)=0
-                      BC(3,ISIPER,IELPER,IF)=0
-                      BC(4,ISIPER,IELPER,IF)=0
-                      BC(5,ISIPER,IELPER,IF)=0
-                      ibc (isiper,ielper,if)=0 ! high-precision periodic bc
-                   ENDIF
-                   CALL LETBC(ISIMOD,IELMOD,IF,' ')
-                   cbc( isimod,ielmod,IF)='   '
-                   IF(CHOICE.NE.'INTERNAL B.C.')THEN
-C                     Retain old elemental connectivity for internal B.C.'s
-                      BC(1,ISIMOD,IELMOD,IF)=0
-                      BC(2,ISIMOD,IELMOD,IF)=0
-                      BC(3,ISIMOD,IELMOD,IF)=0
-                      BC(4,ISIMOD,IELMOD,IF)=0
-                      BC(5,ISIMOD,IELMOD,IF)=0
-                   ENDIF
-                   GO TO 800
-                ENDIF
-             ELSE IF(CHOICE.EQ. 'END  LEVEL') THEN
-C               First check to see that all elements on this level are
-C               Consistent in coordinates; a given element cannot have both
-C               local and global definition of velocity and stress.
-C
-                DO 1500 IEL=1,NEL
-                   IF(NUMAPT(IEL).EQ.ILEVEL)THEN
-                      ITYPE=0
-                      DO 1200 ISIDE=1,NSIDES
-                         IF( cbc(ISIDE,IEL,IF).EQ.'VL'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'vl'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'SL'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'sl')THEN
-C                           There is at least one BC in local coordinates
-                            IF(ITYPE.EQ.1)THEN
-C                              There is a conflict
-                               CALL PRS
-     $                         ('Error: You cannot mix local and'
-     $                         //' cartesian coordinates in B.C.''s in '
-     $                         //'the same element.$')
-                               WRITE(S,'(1X,A7,I4,A2,I3,A2,A2)')
-     $                         'Element',IEL,' [',NUMAPT(IEL),
-     $                         LETAPT(IEL),']$'
-                               CALL PRS(S)
-                               CALL PRS(' has such a mixture.$')
-                               CALL PRS(
-     $'Please MODIFY velocity and stress B.C.''s to consistent '
-     $//'coordinates.$')
-                               GO TO 1010
-                            ELSE
-                               ITYPE=2
-                            ENDIF
-                         ENDIF
-                         IF( cbc(ISIDE,IEL,IF).EQ.'V'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'v'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'S'
-     $                   .OR.cbc(ISIDE,IEL,IF).EQ.'s')THEN
-C                           There is at least one BC in global coordinates
-                            IF(ITYPE.EQ.2)THEN
-C                              There is a conflict
-                               CALL PRS
-     $                         ('Error: You cannot mix local and'
-     $                         //' cartesian coordinates in B.C.''s in '
-     $                         //'the same element.$')
-                               WRITE(S,'(1X,A7,I4,A2,I3,A2,A2)')
-     $                         'Element',IEL,' [',NUMAPT(IEL),
-     $                         LETAPT(IEL),']$'
-                               CALL PRS(S)
-                               CALL PRS('has such a mixture.$')
-                               CALL PRS('Please MODIFY velocity '
-     $                         //'and stress B.C.''s to consistent '
-     $                         //'coordinates.$')
-                               GO TO 1010
-                            ELSE
-                               ITYPE=1
-                            ENDIF
-                         ENDIF
-1200                  CONTINUE
-                   ENDIF
-1500            CONTINUE
-             ELSE IF(CHOICE.EQ. 'ZOOM') THEN
-                CALL SETZOOM
-                CALL REFRESH
-                CALL DRMENU('NOCOVER')
-                CALL DRGRID
-                DO 1600 IEL=1,NEL
-                   CALL DRAWEL(IEL)
- 1600           CONTINUE
-                GOTO 313
-             ENDIF
-C            Just keep on going in loop (to 1000)
-1000     CONTINUE
-1999  CONTINUE
-      ILEVEL=NLEVEL
-2000  CONTINUE
-c
-c     Check and reset stray period bcs  , pff  4/7/99
-c
-      DO IF=IF1,NFLDS
-         call period_check(if)
-      ENDDO
-c
-      RETURN
-c
-c     This is the auto-bc setting loop  pff
-c
-      END
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
       subroutine overlap(iel,iside,ielo,isideo)
 C
       include 'basics.inc'
@@ -1395,42 +260,43 @@ C        EXPORT B.C. FOR INTERNAL Boundary
       END
 C
 c-----------------------------------------------------------------------
-      subroutine letbc(iside,iel,if,bclab)
+      subroutine letbc(f,e,ifld,bclab)
       include 'basics.inc'
-      CHARACTER BCLAB,BCLAB2*2
-      BCLAB2(1:1)=BCLAB
-      BCLAB2(2:2)='$'
-      YSHIFT= 0.0
-      IF(ISIDE.EQ.5) YSHIFT=-YFAC*0.05
-      IF(ISIDE.EQ.6) YSHIFT= YFAC*0.02
-      XSHIFT= XFAC*(-3.0/200.) +(IF-1)*XFAC/50.0
-      XLAB=SIDES(IEL,ISIDE,1)+XSHIFT
-      YLAB=SIDES(IEL,ISIDE,2)+YSHIFT
-c     CALL PRSii(' B.C.?$',iel,iside)
-      IF(BCLAB.EQ.' ')THEN
-C        Draw empty box
-         DX=XFAC/50.
-         DY=YFAC/40.
-         CALL FILLP(-15)
-         CALL BEGINP(XLAB,YLAB)
-         CALL DRAW(XLAB+DX,YLAB   )
-         CALL DRAW(XLAB+DX,YLAB+DY)
-         CALL DRAW(XLAB   ,YLAB+DY)
-         CALL DRAW(XLAB   ,YLAB   )
-         CALL ENDP
-      ELSE
-C        Normal Write
-         IF(CWRITE.NE.0. .AND.BCLAB2 .NE.'E$')
-     $   CALL GWRITE(XLAB+XFAC/300.,YLAB+YFAC/300.,1.0,BCLAB2)
-      ENDIF
-      RETURN
-      END
+      character bclab,bclab2*2
+      integer e,f
+
+      bclab2(1:1)=bclab
+      bclab2(2:2)='$'
+      yshift= 0.0
+      if (f.eq.5) yshift=-yfac*0.05
+      if (f.eq.6) yshift= yfac*0.02
+      xshift= xfac*(-3.0/200.) +(ifld-1)*xfac/50.0
+      xlab=sides(e,f,1)+xshift
+      ylab=sides(e,f,2)+yshift
+C     call prsii(' B.C.?$',e,f)
+
+      if (bclab.eq.' ') then ! Draw empty box
+         dx=xfac/50.
+         dy=yfac/40.
+         call fillp(-15)
+         call beginp(xlab,ylab)
+         call draw(xlab+dx,ylab   )
+         call draw(xlab+dx,ylab+dy)
+         call draw(xlab   ,ylab+dy)
+         call draw(xlab   ,ylab   )
+         call endp
+      else ! Normal Write
+         if(cwrite.ne.0. .and.bclab2 .ne.'E$')
+     $   call gwrite(xlab+xfac/300.,ylab+yfac/300.,1.0,bclab2)
+      endif
+      return
+      end
 c-----------------------------------------------------------------------
-      subroutine CHKBCS
+      subroutine chkbcs
       include 'basics.inc'
-      CHARACTER*3 cbcTMP
-      CHARACTER*1 YESNO
-      LOGICAL IFFAIL
+      character*3 cbctmp
+      character*1 yesno
+      logical iffaiL
 C
       IF=1
       DO 100 IEL=1,NELF
@@ -1707,8 +573,8 @@ c
 c
       call fndsida(jside,jel,iside,ie,ifld)
       if (jside.eq.0) then
-        CALL prsii('For element,side:',ie,iside)
-        CALL PRS('Cannot find a corresponding side, choose a new BC.$')
+        call prsii('For element,side:',ie,iside)
+        call prs('Cannot find a corresponding side, choose a new BC.$')
         i_periodic=1
         return
       endif
@@ -1994,329 +860,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine autoperiod
-      include 'basics.inc'
-      character*3 cb_clear
- 
-      tol=1.e-1
-
-      call prs('Is this for X-, Y-, or Z-extrema (x,y,z or other) ?$')
-      call res(ans,1)
-      call capit(ans,1)
-      if (ans.eq.'X'.or.ans.eq.'Y'.or.ans.eq.'Z') then
-         call mkside
-         call gencen
-         cb_clear = 'O  '
-         call autoperiodz(ans,tol,cb_clear,z27)
-         return
-      else
-         write(6,*) ' this is answer: ',ans
-         stop
-      endif
-
-      call autoperiod1(nfail,tol)
-      write(6,*) 'NFAIL:',nfail,tol
-      if (nfail.eq.0) return
-      do k=1,10
-         tol = .7*tol
-         call autoperiod2(nfail,tol)
-         write(6,*) 'NFAIL:',nfail,tol
-         if (nfail.eq.0) return
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine autoperiod1(nfail,tol)
-      include 'basics.inc'
-      character*3 cb,ck
-c
-c     Set any remaining candidate bcs to P
-c
-      if (.not.if_lattice) call get_lattice_per_bc
-
-      call mkside   ! moved, 9/1/09 pff
-      call gencen
-
-      nsides = 2*ndim
-      do if=1,nflds
-      do ie=1,nel
-      do is=1,nsides
-         cb = cbc(is,ie,if)
-         if (cb.eq.'   ') then
-C           Automatic selection of Periodic bc
-            call fndsidb(js,je,is,ie,if,tol)
-            if (js.ne.0) then
-
-               call letbc(js,je,if,bclab)
-               call letbc(is,ie,if,bclab)
-
-               call rzero(bc(1,is,ie,if),5)
-               call rzero(bc(1,js,je,if),5)
-
-               cbc (is,ie,if) = 'P  '
-               ibc (is,ie,if) = je       ! high-precision periodic bc
-               bc(1,is,ie,if) = je
-               bc(2,is,ie,if) = js
-
-               cbc (js,je,if) = 'P  '
-               ibc (js,je,if) = ie       ! high-precision periodic bc
-               bc(1,js,je,if) = ie
-               bc(2,js,je,if) = is
-
-
-               if (nel.le.1000.or.mod(ie,100).eq.0)
-     $         write(6,1) if,ie,is,je,js
-    1          format('autoper:',5i8)
-            endif
-         endif
-      enddo
-      enddo
-      enddo
-c
-c     consistency check
-c
-      nfail = 0
-      do if=1,nflds
-      do ie=1,nel
-      do is=1,nsides
-         cb = cbc(is,ie,if)
-         if (cb.eq.'P  ') then
-C           check for consistency
-            je = bc(1,is,ie,if)
-            js = bc(2,is,ie,if)
-            ke = bc(1,js,je,if)
-            ks = bc(2,js,je,if)
-
-            je = ibc (is,ie,if)     ! high-precision periodic bc
-            ke = ibc (js,je,if)     ! high-precision periodic bc
-
-            ck = cbc (js,je,if)
-
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) then
-               write(6,*) ie,is,je,js,ke,ks,ck,' fail',nfail
-               cbc(is,ie,if)='   '
-               nfail = nfail + 1
-               write(6,11) (sides(ie,is,k),k=1,3),ie,is,' side i'
-               write(6,11) (sides(je,js,k),k=1,3),je,js,' side j'
-               write(6,11) (sides(ke,ks,k),k=1,3),ke,ks,' side k'
-            endif
-  11        format(1p3e14.5,i8,i3,a7)
-         endif
-      enddo
-      enddo
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine autoperiod2(nfail,tol)
-      include 'basics.inc'
-      character*3 cb,ck
-c
-c     Set any remaining candidate bcs to P
-c
-      if (.not.if_lattice) call get_lattice_per_bc
-
-      call mkside   ! moved, 9/1/09 pff
-      call gencen
-
-      nsides = 2*ndim
-      do if=1,nflds
-      do ie=1,nel
-      do is=1,nsides
-         cb = cbc(is,ie,if)
-         if (cb.eq.'   '.or.cb.eq.'P  ') then
-C           Automatic selection of Periodic bc
-            call fndsidb(js,je,is,ie,if,tol)
-            if (js.ne.0) then
-               CALL LETBC(JS,JE,IF,BCLAB)
-               CALL LETBC(IS,IE,IF,BCLAB)
-               cbc( IS,IE,IF) = 'P  '
-               call rzero(bc(1,is,ie,if),5)
-               call rzero(bc(1,js,je,if),5)
-               BC(1,IS,IE,IF) = JE
-               BC(2,IS,IE,IF) = JS
-               cbc( JS,JE,IF) = 'P  '
-               BC(1,JS,JE,IF) = IE
-               BC(2,JS,JE,IF) = IS
-               ibc (is,ie,if) = je  ! high-precision periodic bc
-               ibc (js,je,if) = ie  ! high-precision periodic bc
-
-               if (nel.le.1000.or.mod(ie,100).eq.0)
-     $         write(6,1) if,ie,is,je,js
-    1          format('autoper:',5i8)
-            endif
-         endif
-      enddo
-      enddo
-      enddo
-c
-c     consistency check
-c
-      nfail = 0
-      do if=1,nflds
-      do ie=1,nel
-      do is=1,nsides
-         cb = cbc(is,ie,if)
-         if (cb.eq.'P  ') then
-C           check for consistency
-            je = bc(1,is,ie,if)
-            js = bc(2,is,ie,if)
-            ke = bc(1,js,je,if)
-            ks = bc(2,js,je,if)
-            ck = cbc(js,je,if)
-
-            je = ibc (is,ie,if)     ! high-precision periodic bc
-            ke = ibc (js,je,if)     ! high-precision periodic bc
-
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) cbc(is,ie,if)='   '
-            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) nfail = nfail + 1
-         endif
-      enddo
-      enddo
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine fndsidb(kside,ke,iside,ie,if,tol)
-      include 'basics.inc'
-      real vec1(3),vec2(3),vec3(3),vecj(3)
-      integer icrn(4,6)
-      save    icrn
-      data    icrn / 1 , 2 , 6 , 5 
-     $             , 2 , 3 , 7 , 6 
-     $             , 3 , 4 , 8 , 7 
-     $             , 4 , 1 , 5 , 8 
-     $             , 1 , 2 , 3 , 4 
-     $             , 5 , 6 , 7 , 8 /
-C
-C     Find a side JSIDE,JEL which corresponds to ISIDE,IE and doesn't
-C     have BC's set already
-C
-      NSIDES=NDIM*2
-C
-C     Define Normal to this plane (side), and find the element
-C     center which also lies on this line, and is farthest from
-C     the current element.
-c
-c     CALL MKSIDE   ! moved, 9/1/09 pff
-c     CALL GENCEN
-C
-C     Find Sides' Normal Vector at midpoint
-
-      ic1 = icrn(1,iside)
-      ic2 = icrn(2,iside)
-      ic3 = icrn(3,iside)
-      ic4 = icrn(4,iside)
-
-c     write(s,9) ie,iside,ic1,ic2,ic3,ic4
-c   9 format(' iesc14:',6i5,'$')
-c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
-
-      IF (IF3D) THEN
-         vec1(1)=x(ic3,ie)-x(ic1,ie)
-         vec1(2)=y(ic3,ie)-y(ic1,ie)
-         vec1(3)=z(ic3,ie)-z(ic1,ie)
-         vec2(1)=x(ic4,ie)-x(ic2,ie)
-         vec2(2)=y(ic4,ie)-y(ic2,ie)
-         vec2(3)=z(ic4,ie)-z(ic2,ie)
-         call cross(vec3,vec1,vec2)
-         call norm3d(vec3)
-      else
-         vec1(1)=x(ic2,ie)-x(ic1,ie)
-         vec1(2)=y(ic2,ie)-y(ic1,ie)
-         vec3(1)= vec1(2)
-         vec3(2)=-vec1(1)
-         vec3(3)=0.0
-         call norm3d(vec3)
-      ENDIF
-c
-      if (if_lattice) then          ! Make vector point in lattice direction
-         d1 = dotprod(vec3,ulat1)
-         d2 = dotprod(vec3,ulat2)
-         d3 = dotprod(vec3,ulat3)
-         if (d1.le.d2.and.d1.le.d3) then
-            call copy(vec3,ulat1,3)
-         elseif (d2.le.d3) then
-            call copy(vec3,ulat2,3)
-         else
-            call copy(vec3,ulat3,3)
-         endif
-      endif
-c
-c     write(s,19) vec3(1),vec3(2),vec3(3)
-c  19 format(' vec3:',3e13.5,'$')
-c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
-c
-c     EPS2=(EPSM*RCEN(IE))**2
-      EPSM=tol
-      EPS2=EPSM**2
-      D2MN=10*EPS2
-c
-      KE=0
-      KSIDE=0
-      DSTMAX=0.0
-c
-      DO 100 JE=1,NEL
-      DO 100 JSIDE=1,NSIDES
-C
-C        Don't find yourself.
-         IF (JE.EQ.IE.AND.JSIDE.EQ.ISIDE) GOTO 100
-C
-C        Don't find a bc which is already defined. (to be 'E')
-         IF (cbc(JSIDE,JE,IF).EQ.'E  ') GOTO 100
-c
-c        Check if dot product of surface normals are O(1)
-c
-
-         ic1 = icrn(1,jside)
-         ic2 = icrn(2,jside)
-         ic3 = icrn(3,jside)
-         ic4 = icrn(4,jside)
-         vec1(1)=x(ic3,je)-x(ic1,je)
-         vec1(2)=y(ic3,je)-y(ic1,je)
-         vec1(3)=z(ic3,je)-z(ic1,je)
-         vec2(1)=x(ic4,je)-x(ic2,je)
-         vec2(2)=y(ic4,je)-y(ic2,je)
-         vec2(3)=z(ic4,je)-z(ic2,je)
-         call cross (vecj,vec1,vec2)
-         call norm3d(vecj)
-         dotnorm = dotprod(vec3,vecj)
-         if (abs(dotnorm).lt.0.9) goto 100
-C
-C        OK, is the center of this element side close to the line?
-C
-         VEC1(1)=SIDES(IE,ISIDE,1)-SIDES(JE,JSIDE,1)
-         VEC1(2)=SIDES(IE,ISIDE,2)-SIDES(JE,JSIDE,2)
-         VEC1(3)=SIDES(IE,ISIDE,3)-SIDES(JE,JSIDE,3)
-         DISTP=DOTPROD(VEC1,VEC1)
-         dis13=(dotprod(vec1,vec3))**2
-         dist2=distp-dis13
-         if (distp.gt.0) DIST2=DIST2/DISTP
-c        write(6,11) dist2,distp,eps2,dstmax,je,jside
-c  11    format(1p4e12.4,2i6,' dist2')
-c        IF (DIST2.LE.EPS2.AND.DISTP.GT.DSTMAX) THEN
-         IF (DIST2.LE.D2MN) THEN
-            KE    = JE
-            KSIDE = JSIDE
-            DSTMAX= DISTP
-c     if ((69.le.ie.and.ie.le.76).or.(9114.le.ie.and.ie.le.9120)) then
-c     write(6,12) distp,dist2,(sides(ie,iside,k),k=1,3),ie,iside,' si'
-c     write(6,12) dis13,d2mn ,(sides(je,jside,k),k=1,3),je,jside,' sj'
-c     write(6,12) dis13,d2mn ,(vec1(k),k=1,3),je,jside,'vc1'
-c     write(6,12) dis13,dotnorm ,(vecj(k),k=1,3),je,jside,'vcj'
-c  12 format(1p5e14.5,i8,i3,1x,a3)
-c     endif
-
-            D2MN  = DIST2
-
-         ENDIF
-  100 CONTINUE
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine set_match_p(je,jf,ie,if)
       include 'basics.inc'
 
@@ -2492,6 +1035,1391 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bound ! Set boundary conditions
+      include 'basics.inc'
+      character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
+     $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
+      logical iftmp
+      integer icalld,e,f
+      save    icalld
+      data icalld / 0 /
+      data cmenu /' '/
+
+c     call out_cent ! dump element centroids, w/ element numbers for positional sorting
+
+      call semi_init_bcs(maxlev,needbc,if1)
+
+      call first_bc_menu(needbc,if1)
+      if (choice.eq.'ACCEPT B.C.''s') return
+
+      call prs('                   *** BOUNDARY CONDITION MENU ***$')
+      if (if3d) then !     Set up gray elevator
+         if (maxlev.ge.2) then
+            do 50 i=maxlev,2,-1
+               call drelev(i-1,i,'     ')
+50          continue
+         else
+            call drelev(i,0,'     ')
+         endif
+      endif
+
+      do ifld=if1,nflds 
+         call set_bc_fld(ifld)  ! Set BCs for each field
+      enddo
+
+      do if=if1,nflds
+         call period_check(if) ! Check and reset stray period bcs  , pff  4/7/99
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine semi_init_bcs(maxlev,needbc,if1)
+      include 'basics.inc'
+      character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
+     $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
+      logical iftmp
+      integer fcorns (4,6),icalld,e,f
+      save    fcorns,icalld
+      data icalld / 0 /
+      data cmenu /' '/
+
+      ifgrid=.false. ! Turn off grid latch for improved mouse resolution.
+
+      needbc=0
+      maxlev=0
+
+      if1=1
+      if (.not. ifflow) if1=2
+
+      ifld0=if1
+      ifld1=nflds
+      if (ifconj_merge) ifld0=2
+      if (ifconj_merge) ifld1=2
+
+      if (nelf.ne.nel) then
+         do ifld=ifld0,ifld1 ! Blank out B.C.'s for nonexistent elements.
+         do e=nelf+1,nel
+         do f=1,nsides
+            if(.not.iftmsh(ifld)) cbc(f,e,ifld)='   '
+         enddo
+         enddo
+         enddo
+      endif
+
+      do ifld=ifld0,ifld1
+        if (     iftmsh(ifld)) nnel=nel
+        if (.not.iftmsh(ifld)) nnel=nelf
+        do e=1,nnel
+           maxlev=max(numapt(e),maxlev)
+         enddo
+      enddo
+
+      do ifld=ifld0,ifld1
+        if (     iftmsh(ifld)) nnel=nel
+        if (.not.iftmsh(ifld)) nnel=nelf
+        do e=1,nnel
+        do f=1,nsides
+             if (cbc(f,e,ifld).eq.'   ') then
+                needbc=1
+                goto 11
+             endif
+         enddo
+         enddo
+      enddo
+   11 continue
+
+      if (nlevel.eq.1) then ! Display B.C.'s already here (for 2-d case)
+        do ifld=ifld0,ifld1
+        do e=1,nel
+        do f=1,nsides
+           if (cbc(f,e,ifld).ne.'   ') call letbc(f,e,if,cbc(f,e,ifld))
+        enddo
+        enddo
+        enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine first_bc_menu(needbc,if1)
+
+      include 'basics.inc'
+
+      if (needbc.eq.1) then ! Ya gotta have b.c.'s
+         call prs('              *** MIDWAY BREAK MENU ***$')
+         call prs('ABORT to write build data to file and exit$')
+         call prs('SET B.C''S to continue$')
+         item(1)='SET BCs'
+         item(2)='ABORT'
+         nchoic =  2
+         call menu(xmouse,ymouse,button,'MIDWAY BREAK')
+         if (choice.eq.'ABORT') then
+             call mesgen
+             call prexit
+         endif
+      else
+         item(1)='ACCEPT B.C.''s'
+         item(2)='REVIEW/MODIFY'
+         nchoic = 2
+         if (ifconj_merge) then
+            choice = item(1)
+         else
+            call menu(xmouse,ymouse,button,'ACCEPT/REVIEW')
+         endif
+         if (choice.eq.'ACCEPT B.C.''s') then
+
+            call chkbcs
+ 
+            do ifld=if1,nflds
+               call period_check(ifld)
+            enddo
+ 
+         endif
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rehighlight(e,f,jlevel)
+      include 'basics.inc'
+      integer e,f
+c
+c     Re-highlight the current element boundaries
+c
+      call color(2)
+      if (f.eq.5.or.f.eq.6) then
+         if (f.eq.5) ilev=jlevel
+         if (f.eq.6) ilev=jlevel+1
+         call movesc(elec-elew,eleb+eledy*(ilev-1))
+         call drawsc(elec+elew,eleb+eledy*(ilev-1))
+
+c        Flash mesh sides
+         if (f.eq.5) then
+            ied1=1
+            ied2=4
+         elseif (f.eq.6) then
+            ied1=1
+            ied2=4
+         endif
+         call movec(x(ied1,e),y(ied1,e))
+         do iedge=ied1,ied2
+            call drawed(e,iedge,1)
+         enddo
+      else
+         call movec(x(f,e),y(f,e)) ! sides 1-4  (Same as edges in this case)
+         call drawed(e,f,1)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rezoom
+      include 'basics.inc'
+      integer e
+
+      call setzoom
+      call refresh
+      call drmenu('NOCOVER')
+      call drgrid
+
+      do e=1,nel
+         call drawel(e)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine black_out_level
+      include 'basics.inc'
+
+      call color(0)
+      call fillp(0)
+      call beginp(xphy(0.0),yphy(0.0))
+      call draw  (xphy(.90),yphy(0.0))
+      call draw  (xphy(.90),yphy(.99))
+      call draw  (xphy(0.0),yphy(.99))
+      call draw  (xphy(0.0),yphy(0.0))
+      call endp
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_up_level(num_on_this_level,ifld,jlevel)
+      include 'basics.inc'
+      integer e,f
+
+      call black_out_level  ! Black out whole level
+
+      if (icalld.eq.0) then ! Make isometric drawing
+         do e=1,nel
+            call drawis(isrt(e))
+         enddo
+         icalld=1
+      endif
+
+c     Draw mesh OR WHOLE ELEMENT?  ??Delete previous mesh(+bclabels?)
+      call color(1)
+      num_on_this_level=0
+      do 300 e=1,nel
+         if (numapt(e).eq.jlevel) then
+            num_on_this_level=num_on_this_level+1
+            call drawel(e)
+            do 200 f=1,nsides
+               IF (cbc(f,e,if).ne.'   ')
+     $         call letbc(f,e,ifld,cbc(f,e,ifld))
+200         continue
+         endif
+300   continue
+      if (ndim.eq.3) call drelev(jlevel,jlevel-1,'     ')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine check_end_level(icontinue,jlevel,ifld)
+      include 'basics.inc'
+      character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
+     $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
+      logical iftmp
+      integer e,f,ee,ff,edup,fdup,ep,fp,eper,fper
+
+      do 1500 e=1,nel
+         if (numapt(e).eq.jlevel) then  ! Not 100% clear we need this check
+             itype=0
+             do 1200 f=1,nsides
+                cc = cbc(f,e,ifld)
+                if (cc.eq.'VL'.or.cc.eq.'vl'.or.
+     $              cc.eq.'VL'.or.cc.eq.'vl') then ! at least one BC
+                   if (itype.eq.1) then            ! in local coords.
+                      call prs('Error: You cannot mix local and'
+     $                   //' cartesian coordinates in B.C.''s in '
+     $                   //'the same element.$')
+                      write(s,'(1X,A7,I11,A2,I3,A2,A2)')
+     $                   'Element',e,' [',NUMAPT(e),LETAPT(e),']$'
+                      call prs(s)
+                      call prs(' has such a mixture.$')
+                      call prs('Please MODIFY velocity and stress'
+     $                 //' B.C.''s to consistent coordinates.$')
+                      goto 1010
+                   else
+                      itype=2
+                   endif
+                endif
+                if (cc.eq.'V'.or.cc.eq.'v'.or.
+     $              cc.eq.'V'.or.cc.eq.'v') then ! at least one BC global
+                   if (itype.eq.2) then ! There is a conflict
+                      call prs('Error: You cannot mix local and'
+     $                   //' cartesian coordinates in B.C.''s in '
+     $                   //'the same element.$')
+                      write(s,'(1x,a7,i11,a2,i3,a2,a2)')
+     $                   'Element',e,' [',NUMAPT(e),
+     $                   LETAPT(e),']$'
+                      call prs(s)
+                      call prs('has such a mixture.$')
+                      call prs('Please MODIFY velocity '
+     $                   //'and stress B.C.''s to consistent '
+     $                   //'coordinates.$')
+                      goto 1010
+                   else
+                      itype=1
+                   endif
+                endif
+1200         continue
+         endif
+1500  continue
+      icontinue = 0
+      return
+
+1010  continue
+      icontinue = 1
+      return
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine flash_side_a (ifade,e,f,fcorns,jlevel,ifld)
+      include 'basics.inc'
+      integer e,f
+      integer fcorns (4,6)
+
+      ff=f+1 ! Side which is on Boundary and Not periodic with Previous el
+      if (ff.eq.5) ff = 1
+      iflash=jlevel
+      if (f.eq.5) iflash= -jlevel
+      if (f.eq.6) iflash=-(jlevel+1)
+      ifade=iflash
+      call drelev(iflash,ifade,'BLINK')
+
+      call color(2)  !  Flash element side ;  Hilight side with Blinking lights
+      if (ifbwgks) call color(0)
+      call hilites(e,f)
+      call letbc(f,e,ifld,ques)
+     
+      if (if3d) then ! FLASH SIDE ON ISOMETRIC
+         do icorn=0,4
+            if (icorn.eq.0) ic=fcorns(4    ,f)
+            if (icorn.ne.0) ic=fcorns(icorn,f)
+            xisom=xphy(xscr(x(ic,e))/5.0 + 0.8)-z(ic,e)/20.
+            yisom=yphy(yscr(y(ic,e))/5.0 + 0.8)-z(ic,e)/20.
+            if (icorn.eq.0) call movec(xisom,yisom)
+            if (icorn.ne.0) call drawc(xisom,yisom)
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine flash_element_b(ifade,e,f,jlevel,ifld,fcorns)
+      include 'basics.inc'
+      integer e,f
+      integer fcorns (4,6)
+      character bclab(2)
+
+      call color(3)
+      ff=f+1
+      if (ff.eq.5) ff = 1
+      call drelev(iflash,ifade,'     ') ! Turn Off Der Blinkenlights
+
+      if (f.eq.5.or.f.eq.6) then ! Un-Flash Elevator at element floor or ceiling
+         if (f.eq.5) ilev=jlevel
+         if (f.eq.6) ilev=jlevel+1
+         call movesc(elec-elew,eleb+eledy*(ilev-1))
+         call drawsc(elec+elew,eleb+eledy*(ilev-1))
+         if (f.eq.5) then ! Un-Flash mesh sides
+            ied1=1
+            ied2=4
+         elseif (f.eq.6) then
+            ied1=1
+            ied2=4
+         endif
+         call movec(x(ied1,e),y(ied1,e))
+         do 230 iedge=ied1,ied2
+            call drawed(e,iedge,1)
+230      continue
+      else
+         if (if3d) then ! Un-Flash at elevator at walls of current level
+            call movesc (elec,eleb+eledy*(jlevel-1))
+            call drawsc (elec,eleb+eledy*(jlevel  ))
+         endif
+         call movec(x( f,e),y( f,e)) ! Un-Flash mesh side
+c        call draw (x(ff,e),y(ff,e))
+         call drawed(e,f,1)
+      endif
+      if (if3d) then !  un-flash side on isometric
+         do 233 icorn=0,4
+             if (icorn.eq.0) ic=fcorns(4    ,f)
+             if (icorn.ne.0) ic=fcorns(icorn,f)
+             xisom=xphy(xscr(x(ic,e))/5.0 + 0.8)-z(ic,e)/20.
+             yisom=yphy(yscr(y(ic,e))/5.0 + 0.8)-z(ic,e)/20.
+             if (icorn.eq.0) call movec(xisom,yisom)
+             if (icorn.ne.0) call drawc(xisom,yisom)
+233      continue
+      endif
+
+      call letbc(f,e,ifld,bclab) ! Label Boundary Side
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_bc_fld(ifld)  ! Set BCs for each field
+      include 'basics.inc'
+      character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
+     $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
+      logical iftmp
+      integer e,f,ee,ff,edup,fdup,ep,fp,eper,fper,eo,fo
+      integer fcorns (4,6),icalld
+      save    fcorns,icalld
+      data icalld / 0 /
+      data cmenu /' '/
+      data fcorns / 1,2,6,5,
+     $              2,3,7,6,
+     $              3,4,8,7,
+     $              4,1,5,8,
+     $              1,2,3,4,
+     $              5,6,7,8 /
+
+      bclab(2)='$'
+      ques(1)='?'
+      ques(2)='$'
+
+      nsides=4
+      if (if3d) nsides=6
+
+      if (ifld.eq.1) then
+        call prs('Begin Inputting Fluid Boundary Conditions$')
+      elseif (ifld.eq.2) then
+        call prs('Begin Inputting Thermal Boundary Conditions$')
+      else
+        call prs('Begin Inputting PASSIVE SCALAR Boundary Conditions$')
+        nn=ifld-2
+        call prsi('PASSIVE SCALAR #$',nn)
+      endif
+c
+      do 1000 ilevel=1,nlevel
+1010     continue
+         if (nlevel.gt.1) then
+            call set_up_level(num_on_this_level,ifld,ilevel)
+            if (num_on_this_level.eq.0) goto 1999
+         endif
+
+800      continue !    Go thru normal stuff
+         mode='NORMAL'
+         do 900 f=1,nsides
+         do 900 e=1,nel
+            IF (numapt(e) .ne. ilevel )   goto 900
+            if (cbc(f,e,ifld).ne.'   ')     goto 900
+            if (maskel(e,ifld) .eq. 0   )   goto 900
+
+            call flash_side_a (ifade,e,f,fcorns,jlevel,ifld)
+
+113         continue
+c           Error Reading Input
+            FLUX=0.0
+            TEMP=0.0
+            VX  =0.0
+            VY  =0.0
+            if (mode.NE.'SKIP MENU') call prsii(' B.C.>$',e,f)
+            IDUP=0
+c           SET UP MENU choiceS
+            if (ifld.eq.1) then !  FLUID B.C.'s
+               item( 1)='PERIODIC-AUTO'
+               item( 2)='PERIODIC'
+               item( 3)='WALL'
+               item( 4)='VELOCITY'
+               item( 5)='OUTFLOW'
+               item( 6)='OUTFLOW/N'
+               item( 7)='VELOCITY (LOCAL)'
+               item( 8)='SYMMETRY'
+               item( 9)='MOVING WALL'
+               item(10)='MELTING FRONT'
+c              item(11)='QUASI-SYMMETRY'
+               nchoic=10
+
+               if (IFAXIS) then
+                  nchoic=nchoic+1
+                  item(nchoic)='AXIS'
+               endif
+               if (IFSTRS) then
+                  nchoic=nchoic+1
+                  item(nchoic)='STRESS B.C.s'
+               endif
+            elseif (ifld.GE.2) then ! THERMAL BCs:  USE FOR PASSICVE SCALARS
+               item(1)='PERIODIC-AUTO'
+               item(2)='PERIODIC'
+               item(3)='INSULATED'
+               item(4)='FLUX'
+               item(5)='TEMP' !  Convection IS now ready for v2
+               item(6)='CONVECTION'
+               nchoic=6
+               if (IFFLOW.or.IFADVC(ifld)) then
+                  nchoic=nchoic+1
+                  item(nchoic)='OUTFLOW'
+               endif
+               if (IFAXIS) then
+                  nchoic=nchoic+1
+                  item(nchoic)='AXIS'
+               endif
+c              nchoic=nchoic+1
+c              item(nchoic)='RADIATION'
+            endif
+            nchoic=nchoic+1
+            item(nchoic)='SET ENTIRE LEVEL'
+            nchoic=nchoic+1
+            item(nchoic)='ZOOM'
+
+            if (CMENU.eq.'INTERNAL') then
+c              Start over with short menu
+               if (ifld.eq.1) then
+                  nchoic=1
+                  item(nchoic)='FLUID LAYERS'
+               elseif (ifld.eq.2) then
+c                  Fill up solid & liquid front when melting front is
+c                  chosen
+c                  nchoic       =1
+c                  item(nchoic)='SOLID FRONT'
+c                  nchoic=nchoic+1
+c                  item(nchoic)='LIQUID FRONT'
+c
+c                  nchoic=nchoic+1   No internal radiation yet
+c                  item(nchoic)='RADIATION'
+                  nchoic=1
+                  item(nchoic)='MELTING FRONT'
+c                  call prs('No internal boundaries for temperature$')
+c                  goto 313
+               elseif (ifld.GT.2) then
+                  call prs(
+     $               'No internal boundaries for passive scalars$')
+                  goto 313
+               endif
+            endif
+
+c           We already got info for first value; skip menu now.
+            if (mode.eq.'GET FIRST') mode='SKIP MENU'
+63          if (mode.NE.'SKIP MENU') then
+               if (ifaxis.and.abs(sides(e,f,2)).lt.yfac/1000.) then
+                  call prs('**Axis B.C. Strongly Recommended here**$')
+                  call beep
+               endif
+               call menu (xmouse,ymouse,button,'NOCOVER')
+            endif
+
+            if (choice.eq.'STRESS B.C.s') then ! New B.C.'s From Lee Ho
+               item(1)='MAIN B.C. MENU'
+               item(2)='SHEAR'
+               item(3)='SHEAR    (LOCAL)'
+               item(4)='FREE SURFACE'
+               item(5)='TRACTION'
+               item(6)='TRACTION (LOCAL)'
+c              item(7)='FLUID LAYERS' ! Catch at internal b.c. menu
+               nchoic=7
+               call menu (xmouse,ymouse,button,'NOCOVER')
+               if (choice.eq.'MAIN B.C. MENU') goto 113
+            endif
+c           End of patch
+
+           if (mode.eq.'GET FIRST'.AND.choice.eq.'PERIODIC') then
+              call prs('*** ERROR ***  YOU CANNOT SET WHOLE LEVEL$')
+              call prs('TO BE PERIODIC; CHOOSE A DIFFERENT B.C.$')
+               goto 63
+            elseif (mode.eq.'GET FIRST'.AND.
+     $             choice.eq.'PERIODIC-AUTO') then
+               call autoperiod
+            endif
+
+            if(choice.eq.'ZOOM') then
+               call rezoom
+               call rehighlight(e,f,ilevel)
+               goto 63
+            endif
+
+            if(choice.eq.'SET ENTIRE LEVEL') then ! Get b.c., then copy for rest of loops
+               mode='GET FIRST'
+               choice='   '
+               edup=e
+               fdup=f
+               call prs('Choose B.C.''s for all remaining sides '//
+     $            'in entire level$')
+               goto 63
+            endif
+
+            if (mode.eq.'SKIP MENU')BUTTON='RIGHT'
+            if (BUTTON.eq.'RIGHT') then
+               bcchoice='DUPLICATE'
+               if (XSCR(XMOUSE).GE.1.0.AND.mode.NE.'SKIP MENU') then
+                  call prs('Right button not used in red menu area.$')
+                  call prs('Try again.$')
+                  if (mode.NE.'NORMAL')call prs(
+     $               'Global mode reset.  Start over.$')
+                  mode='NORMAL'
+                  goto 113
+               endif
+               if (mode.NE.'SKIP MENU') then
+                 xp=xmouse
+                 yp=ymouse
+                 rmin=10000.0 ! Find closest element, side that we want to duplicate
+                 do ee=1,nel 
+                    if (numapt(ee).eq.ilevel) then ! Only those on same floor
+                       do ff=1,nsides
+                          r = ((xp-sides(ee,ff,1))**2
+     $                      +  (yp-sides(ee,ff,2))**2)
+                          if (r.lt.rmin) then
+                             rmin = r
+                             fdup = ff
+                             edup = ee
+                          endif
+                       enddo
+                    endif
+                 enddo
+                 if (fdup.eq.5.or.fdup.eq.6) then ! check IF it's above or below center
+                    fdup=5
+                    if (YP.GT.SIDES(edup,fdup,2)) fdup=6
+                 endif
+               endif
+               if (cbc(fdup,edup,ifld).eq.'   ') then
+                  call prsi ('B.C. not set for fdup$',fdup,
+     $                   'of element$',edup)
+                  goto 113
+               endif
+               cbc3=cbc(fdup,edup,ifld)
+               if (cbc3.eq.'E  ') then
+                  write(s,'(A5,I4,A12,i11,A1)')'Side ',fdup,
+     $               ' of element ',edup,'$'
+                  call prs(s)
+                  call prs('is internal side.  I won''t duplicate.$')
+                  goto 113
+               elseif  (cbc3.eq.'P  ') then
+                  write(s,'(A5,I4,A12,i11,A1)')'Side ',fdup,
+     $               ' of element ',edup,'$'
+                  call prs(s)
+                  call prs('is Periodic side.  I won''t duplicate.$')
+                  goto 113
+               elseif (cbc3(3:3).eq.'i'.or.cbc3(3:3).eq.'I') then
+                  write(s,'(A5,I4,A12,i11,A1)')'Side ',fdup,
+     $               ' of element ',edup,'$'
+                  call prs(s)
+                  call prs('is Internal side.  I won''t duplicate.$')
+                  goto 113
+               endif
+
+c              Need flag to know if b.c. is fortran function.
+c              Special handling puts new fortran in next available lines
+               cbc3 = cbc(fdup,edup,ifld)
+               icbc = ICHAR(cbc3(1:1))
+               if (icbc.GE.97.AND.icbc.LE.122) then ! lower case signifies function
+                  if (cbc3(3:3).eq.'i  ') then ! Special storage locations
+                     nlines=bc(4,fdup,edup,ifld)
+                     line1 =bc(5,fdup,edup,ifld)
+                     BC(4,f,e,ifld)=nlines
+                     BC(5,f,e,ifld)=loclin
+                  else
+                     nlines=bc(1,fdup,edup,ifld)
+                     line1 =bc(2,fdup,edup,ifld)
+                     BC(1,f,e,ifld)=nlines
+                     BC(2,f,e,ifld)=loclin
+                  endif
+                  cbc (f,e,ifld)=cbc( fdup,edup,ifld)
+                  do 777 i=1,nlines
+                     inbc(loclin)=inbc(line1+i-1)
+                     loclin=loclin+1
+777               continue
+               else
+                  call copy(bc(1,f,e,ifld),bc(1,fdup,edup,ifld),5)
+                  cbc (f,e,ifld)=cbc( fdup,edup,ifld)
+                  ibc (f,e,ifld)=ibc( fdup,edup,ifld)
+               endif
+               bclab(1) = cbc(fdup,edup,ifld)
+            elseif (BUTTON.eq.'LEFT') then
+               bcchoice=choice
+               bclab(1)      = bcchoice(1:1)
+               cbc(f,e,ifld) = bcchoice(1:1)
+               if (choice.eq.'VELOCITY'        ) cbc(f,e,ifld)='V  '
+               if (choice.eq.'VELOCITY (LOCAL)') cbc(f,e,ifld)='VL '
+               if (choice.eq.'MOVING WALL     ') cbc(f,e,ifld)='mv '
+               if (choice.eq.'STRESS'          ) cbc(f,e,ifld)='S  '
+               if (choice.eq.'STRESS   (LOCAL)') cbc(f,e,ifld)='SL '
+               if (choice.eq.'SHEAR'           ) cbc(f,e,ifld)='SH '
+               if (choice.eq.'SHEAR    (LOCAL)') cbc(f,e,ifld)='SHL'
+               if (choice.eq.'SYMMETRY'        ) cbc(f,e,ifld)='SYM'
+               if (choice.eq.'QUASI-SYMMETRY'  ) cbc(f,e,ifld)='QSM'
+               if (choice.eq.'FREE SURFACE'    ) cbc(f,e,ifld)='MS '
+               if (choice.eq.'OUTFLOW/N'       ) cbc(f,e,ifld)='ON '
+               if (choice.eq.'TRACTION'        ) cbc(f,e,ifld)='S  '
+               if (choice.eq.'TRACTION (LOCAL)') cbc(f,e,ifld)='SL '
+               if (choice.eq.'FLUID LAYERS'    ) cbc(f,e,ifld)='MSI'
+               if (choice.eq.'MELTING FRONT'   ) cbc(f,e,ifld)='MF '
+               if (choice.eq.'SOLID FRONT'     ) cbc(f,e,ifld)='MCI'
+               if (choice.eq.'LIQUID FRONT'    ) cbc(f,e,ifld)='MLI'
+
+              cbc3=cbc(f,e,ifld)
+              bclab(1)= cbc3(1:1)
+
+              if (choice.eq.'TEMP'         .or.
+     $            choice.eq.'FLUX'            .or.
+     $            choice.eq.'VELOCITY'        .or.
+     $            choice.eq.'VELOCITY (LOCAL)'.or.
+     $            choice.eq.'STRESS'          .or.
+     $            choice.eq.'STRESS   (LOCAL)'.or.
+     $            choice.eq.'SHEAR'           .or.
+     $            choice.eq.'SHEAR    (LOCAL)'.or.
+     $            choice.eq.'MOVING WALL     '.or.
+     $            choice.eq.'CONVECTION'      .or.
+     $            choice.eq.'OUTFLOW'         .or.
+     $            choice.eq.'OUTFLOW/N'       .or.
+     $            choice.eq.'TRACTION'        .or.
+     $            choice.eq.'TRACTION (LOCAL)'.or.
+     $            choice.eq.'RADIATION'       .or.
+     $            choice.eq.'FREE SURFACE'    .or.
+     $            choice.eq.'FLUID LAYERS'    .or.
+     $            choice.eq.'MELTING FRONT'   .or.
+     $            choice.eq.'SOLID FRONT'     .or.
+     $            choice.eq.'LIQUID FRONT'    ) then
+                  if (choice.eq.'MOVING WALL') then   ! only have fortran function
+                     choice='FORTRAN FUNCTION'
+                  elseif (choice.eq.'OUTFLOW') then   ! only have constant
+                     choice='CONSTANT'
+                  elseif (choice.eq.'OUTFLOW/N') then ! only have constant
+                     choice='CONSTANT'
+                  elseif (choice.eq.'MELTING FRONT') then ! only have constant
+                     choice='CONSTANT'
+                  else
+                     call prs(' Choose Format for Relevant Parameters$')
+                     nchoic=2
+                     item(1)='CONSTANT'
+                     item(2)='FORTRAN FUNCTION'
+                     call menu (xmouse,ymouse,button,'FORTRAN FUNCTION')
+                  endif
+                  if (choice.eq.'FORTRAN FUNCTION') then ! Make lower case (? pff, 2013)
+                   do i=1,3
+                      iii=ichar(cbc3(i:i))+32
+                      if (iii.ge.97.and.iii.le.122) cbc3(i:i)=char(iii)
+                   enddo
+                   cbc(f,e,ifld)=cbc3
+                   bclab(1)          = cbc3(1:1)
+                   call inflow(e,f,ifld,cbc(f,e,ifld))
+                   call rzero(bc(1,f,e,ifld),5)
+                   ibc(f,e,ifld)=0
+                  elseif (choice.eq.'CONSTANT') then
+                     if (bcchoice.eq.'SHEAR    (LOCAL)') then
+                       if (if3d) then
+                         call prs(' Type #1-comp of Shear:$')
+                         call rer(BC(2,f,e,ifld))
+                         call prs(' Type #2-comp of Shear:$')
+                         call rer(BC(3,f,e,ifld))
+                       else
+                         call prs(' Type Shear:$')
+                         call rer(BC(2,f,e,ifld))
+                       endif
+                     elseif (bcchoice(10:16).eq.'(LOCAL)') then
+                        call prs(' Type:$')
+                        call prs(' NORMAL-'//bcchoice//'$')
+                        call rer(BC(1,f,e,ifld))
+                        if (if3d) then
+                           call prs(' #1 TANGENTIAL '//bcchoice//'$')
+                           call rer(BC(2,f,e,ifld))
+                           call prs(' #2 TANGENTIAL '//bcchoice//'$')
+                           call rer(BC(3,f,e,ifld))
+                        else
+                           call prs(' TANGENTIAL '//bcchoice//'$')
+                           call rer(BC(2,f,e,ifld))
+                        endif
+                     elseif (bcchoice.eq.'TEMP') then
+                        call prs('Type TEMP:$')
+                        call rer(BC(1,f,e,ifld))
+                     elseif (bcchoice.eq.'FLUX') then
+                        call prs('Type FLUX:$')
+                        call rer(BC(1,f,e,ifld))
+                     elseif (bcchoice.eq.'OUTFLOW/N' .or.
+     $                          bcchoice.eq.'OUTFLOW') then
+                        if (.NOT.IFSTRS) then
+                           call prs(' Exit pressure set to zero$')
+                           BC(1,f,e,ifld) = 0.0
+                        else
+                           call prs(' Type Exit Pressure:$')
+                           call rer(BC(1,f,e,ifld))
+                        endif
+                     elseif (bcchoice.eq.'FLUID LAYERS') then
+                      write(s,'('' Type Surface Tension:'')')
+                      call prs(s//'$')
+                      call rer(BC(4,f,e,ifld))
+                      call overlap(e,f,eo,fo)
+                      cbc(  fo,eo,ifld) = 'MPI'
+                      BC(4,fo,eo,ifld)=BC(4,f,e,ifld)
+                     elseif (bcchoice.eq.'SHEAR') then
+                       call prs(' Type X-comp of Shear:$')
+                       call rer(BC(1,f,e,ifld))
+                       call prs(' Type Y-comp of Shear:$')
+                       call rer(BC(2,f,e,ifld))
+                       if (if3d) then
+                         call prs(' Type Z-comp of Shear:$')
+                         call rer(BC(3,f,e,ifld))
+                       endif
+                     elseif (bcchoice.eq.'CONVECTION') then
+                       call prs(' Heat Transfer Coefficient (h)>$')
+                       call rer(BC(2,f,e,ifld)) ! 2nd storage Contains h
+                       call prs(' Temperature at Infinity (Tinf)>$')
+                       call rer(BC(1,f,e,ifld))
+                     elseif (bcchoice.eq.'FREE SURFACE') then
+                       call prs(' Pressure of Gas (Normal Traction)>$')
+                       call rer(BC(1,f,e,ifld))
+                       call prs(' Shear (Tangential Traction)>$')
+                       call rer(BC(2,f,e,ifld))
+                       if (if3d) then
+                          call prs(' #2 Component of Shear '//
+     $                       '(Tangential Traction)>$')
+                          call rer(BC(3,f,e,ifld))
+                       endif
+                       call prs(' Surface tension Coefficient>$')
+                       call rer(BC(4,f,e,ifld))
+                     elseif (bcchoice.eq.'RADIATION') then
+                       call prs(' Temperature at Infinity (Tinf)>$')
+                       call rer(BC(1,f,e,ifld))
+                       call prs(' Type Product of Emissivity$')
+                       call prs(' and Boltzmanns Constant >$')
+                       call rer(BC(2,f,e,ifld))
+                     elseif (bcchoice.eq.'SOLID FRONT'
+     $                  .or.    bcchoice.eq.'LIQUID FRONT') then
+                       call prs(' Freezing Temperature>$')
+                       call rer(BC(4,f,e,ifld))
+                       call prs(' Rho * Latent Heat>$')
+                       call rer(BC(5,f,e,ifld))
+                     elseif (bcchoice.eq.'MELTING FRONT') then
+c                      Fill up both sides of TEMPERATURE B.C.
+                       call prs(' Freezing Temperature>$')
+                       call rer(BC(4,f,e,2))
+                       call prs(' Rho * Latent Heat>$')
+                       call rer(bc(5,f,e,2))
+                       call overlap(e,f,eo,fo) ! Export to overlapping edge
+                       BC (4,fo,eo,2)=BC (4,f,e,2)
+                       BC (5,fo,eo,2)=BC (5,f,e,2)
+                       if (ee.gt.e) then
+                          cbc(f ,e ,2)='MLI'
+                          cbc(fo,eo,2)='MCI'
+                       else
+                          cbc(f ,e ,2)='MCI'
+                          cbc(fo,eo,2)='MLI'
+                       endif
+                     else
+c                       B.C. requiring 3 x,y,z components
+                        write(s,'('' Type:'')')
+                        call prs(s//'$')
+                        write(s,'('' X-'',A26)')bcchoice
+                        call prs(s//'$')
+                        call rer(BC(1,f,e,ifld))
+                        write(s,'('' Y-'',A26)')bcchoice
+                        call prs(s//'$')
+                        call rer(BC(2,f,e,ifld))
+                        if (if3d) then
+                           write(s,'('' Z-'',A26)')bcchoice
+                           call prs(s//'$')
+                           call rer(BC(3,f,e,ifld))
+                        endif
+                     endif
+                  endif
+
+               elseif (bcchoice.eq.'PERIODIC-AUTO') then ! Automatic selection of Periodic bc
+
+                  call fndsida(jside,jel,f,e,ifld)
+                  if (jside.eq.0) then
+                   call prs(
+     $            'Cannot find a corresponding side, choose a new BC.$')
+                   goto 63
+                  else
+                    call letbc(jside,jel,ifld,bclab)
+                    call letbc(f,e,ifld,bclab)
+
+                    cbc( f,e,ifld) = 'P  '
+                    bc(1,f,e,ifld) = jel
+                    bc(2,f,e,ifld) = jside
+
+                    cbc( jside,jel,ifld) = 'P  '
+                    bc(1,jside,jel,ifld) = e
+                    bc(2,jside,jel,ifld) = f
+                    ibc(jside,jel,ifld)  = e
+                    ibc(f,e,ifld)  = jel
+                  endif
+
+               elseif (bcchoice.eq.'PERIODIC') then ! Periodic B.C.
+c                 !!?? In general, check if old b.c. was a periodic or
+c                 !!?? B.c. before writing over it!
+                  call prs('Choose corresponding periodic with mouse.$')
+                  call prs('Use red menu area if side on other level.$')
+124               write(s,'('' Periodic Side>'')')
+                  call prs(s//'$')
+116               call mouse(xmouse,ymouse,button) ! look for mouse input for periodic side
+                  xp=xmouse
+                  yp=ymouse
+                  if (button.ne.'LEFT') then
+                   call prs('Use left button to choose periodic side.$')
+                   goto 124
+                  endif
+                 iother = 0
+                 if (xscr(xmouse).gt.1.0) then
+                  iother = 1
+                  call prs('Type Level:$')
+                  call rei(iplev)
+                  if (iflearn) write(3,*) IPLEV
+                  call prs('Type Apartment letter (with correct case)$')
+                  call res(ipapt,1)
+                  if (IFLEARN) write(3,*) IPAPT
+                  call prs('Type Side number:$')
+                  call rei(ipside)
+                  if (IFLEARN)write(3,*) IPSIDE
+                  fp = ipside ! Find Closest Side, Use data from other level
+                  ep = 1
+c                 do ee=1,nel
+c                    if (NUMAPT(ee).eq.IPLEV .AND.LETAPT(ee).eq.IPAPT) ep=ee
+c                 enddo
+                  call prsi('Displaying BC label From level$',iplev)
+                  call prs('On this level.  Do not be alarmed.$')
+                 else !  Look on this level
+                  rmin=1.e22
+                  do 105 ee=1,nel
+                  do 105 ff=1,nsides
+                     if (numapt(ee).ne.ilevel) goto 105
+                     r=((xp-sides(ee,ff,1))**2+(yp-sides(ee,ff,2))**2)
+                     if (r.lt.rmin) then
+                        rmin=r
+                        fp = ff
+                        ep = ee
+                     endif
+105               continue
+                  if (fp.eq.5.or.fp.eq.6) then ! check IF it's above or below center
+                     fp=5
+                     if (yp.gt.sides(ep,fp,2)) fp=6
+                  endif
+                  call prsi('fp=$',fp)
+               endif
+               if (ep.eq.e .and. fp.eq.f) then
+                  call prs('** ERROR **  A side cannot be periodic$')
+                  call prs('with itself !  Choose the (different) $')
+                  call prs('side that the flashing side is $')
+                  call prs('periodic with.$')
+                  goto 124
+               endif
+               write(s,110) ep,fp,e,f
+               call prs(s//'$')
+110            format('   ',2I7,'  IS PERIODIC WITH ',2I7)
+c              Now Enter Information into Periodicity Array
+c              !?? WHATS THE ORIENTATION??
+               IORIEN=1
+               CALL LETBC(fp,ep,ifld,BCLAB)
+               cbc( fp,ep,ifld) = 'P  '
+               BC(1,f ,e ,ifld) = ep
+               BC(2,f ,e ,ifld) = fp
+c              BC(3,f ,e ,ifld) = IORIEN
+               BC(1,fp,ep,ifld) = e
+               BC(2,fp,ep,ifld) = f
+c              BC(3,fp,ep,ifld) = IORIEN
+               ibc(f ,e ,ifld)  = ep    ! high-precision periodic bc
+               ibc(fp,ep,ifld)  = e
+            endif
+c           Post-pick warnings
+            if (bcchoice.eq.'AXIS') then ! Axisymmetric B.C.
+               if(abs(y(iside,e)/yfac).gt.0.01)
+     $            call prs('** WARNING ** AXIS B.C. FOR Y=0 ONLY!$')
+               if (f .NE. 1) then
+                  call prs('*** Error!!! Gauss-Jacobi Mesh$')
+                  call prs('allows only side 1 to be on axis.$')
+                  call prsI('Please delete element$',e)
+                  call prs('and Re-enter with axial side first.$')
+                  call prs('Hit <cr> to continue$')
+                  call res(line,0)
+               endif
+            endif
+           endif
+
+           call flash_element_b(ifade,e,f,ilevel,ifld,fcorns)
+
+900   continue
+c
+c==================================================================
+c     Entering MODIFY BC MENU area (apparently)
+c==================================================================
+c
+313   continue
+      item(1)='END  LEVEL'
+      item(2)='MODIFY B.C.'
+      item(3)='SHOW   B.C.'
+      item(4)='INTERNAL B.C.'
+      nchoic=3
+      if (ifld.eq.1 .or. ifld.eq.2 .and. .not. ifflow) nchoic=4
+
+      nchoic=nchoic+1
+      item(nchoic)='ZOOM'
+      call menu (xmouse,ymouse,button,'MODIFY B.C.')
+
+      cmenu = '   '
+      if (choice.eq.'INTERNAL B.C.') cmenu = 'INTERNAL'
+
+      if (choice.eq.'MODIFY B.C.' .or. choice.eq.'SHOW   B.C.'
+     $     .or.choice.eq.'INTERNAL B.C.') then
+          call prs('Enter side with mouse$')
+          call mouse(xp,yp,button) ! Find closest BOUNDARY side
+          rmin=1.e20
+          do ee=1,nel
+          do ff=1,nsides
+             if (ff.eq.5.and.yp.gt.sides(ee,ff,2)) goto 1113 ! above or below
+             if (ff.eq.6.and.yp.lt.sides(ee,ff,2)) goto 1113 ! center- 5 or 6
+             if (numapt(ee).eq.ilevel .and. (cbc(ff,ee,ifld).ne.'E  '
+     $          .or.choice.eq.'INTERNAL B.C.')) then
+                r = ((xp-sides(ee,ff,1))**2 + (yp-sides(ee,ff,2))**2)
+                if (r.lt.rmin) then
+                  rmin=r
+                  isimod = ff
+                  ielmod = ee
+                endif
+             endif
+1113         continue
+          enddo
+          enddo
+
+          if (choice.eq.'SHOW   B.C.') then ! Show   B.C.
+             write(s,'(A7,i11,A6,I3,A1)')'Element',ielmod,
+     $          '  Side',isimod,'$'
+             call prs(s)
+             write (s,'(a5,5g12.5,a1)') cbc(isimod,ielmod,ifld)
+     $                            ,(bc(k,isimod,ielmod,ifld),k=1,5),'$'
+             call prs(s)
+             goto 313
+          elseif (choice.eq.'MODIFY B.C.' .or.
+     $            choice.eq.'INTERNAL B.C.') then
+c            Reset to zero and send back into loop.  Loop will demand bc
+             if (cbc(isimod,ielmod,ifld).eq.'P  ') then ! zero out the periodic side
+                eper=bc(1,isimod,ielmod,ifld)
+                eper=ibc(isimod,ielmod,ifld)
+                fper=bc(2,isimod,ielmod,ifld)
+                call letbc(fper,eper,ifld,'   ')
+                cbc( fper,eper,ifld)='   '
+                call rzero(bc(1,fper,eper,ifld),5)
+                ibc (fper,eper,ifld)=0 ! high-precision periodic bc
+             endif
+             call letbc(isimod,ielmod,ifld,'   ')
+             cbc( isimod,ielmod,ifld)='   '
+             if (choice.ne.'INTERNAL B.C.') then
+c               Retain old elemental connectivity for internal B.C.'s
+                call rzero(bc(1,isimod,ielmod,ifld),5)
+             endif
+             goto 800
+          endif
+       elseif (choice.eq. 'END  LEVEL') then
+          call check_end_level(icontinue,ilevel,ifld)
+          if (icontinue.gt.0) goto 1010
+       elseif (choice.eq. 'ZOOM') then
+          call rezoom
+          goto 313
+       endif
+
+1000  continue ! Just keep on going in loop (to 1000)
+1999  continue
+      ilevel=nlevel
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine autoperiod
+      include 'basics.inc'
+      character*3 cb_clear
+ 
+      tol=1.e-1
+      m  = 9
+      if (if3d) m = 27 
+
+      if (if3d) then  ! Now, supported only for 3D:
+
+       call prs('Is this for X-, Y-, or Z-extrema (x,y,z or other) ?$')
+       call res(ans,1)
+       call capit(ans,1)
+
+       if (ans.eq.'X'.or.ans.eq.'Y'.or.ans.eq.'Z') then
+         call mkside
+         call gencen
+         cb_clear = 'O  '
+         if (ans.eq.'X') call autoperiodz(ans,tol,cb_clear,x27,m)
+         if (ans.eq.'Y') call autoperiodz(ans,tol,cb_clear,y27,m)
+         if (ans.eq.'Z') call autoperiodz(ans,tol,cb_clear,z27,m)
+         return
+       endif
+      endif
+
+      call autoperiod1(nfail,tol)      ! Standard periodicity search
+      if (nfail.eq.0) return
+
+      write(6,*) 'NFAIL:',nfail,tol
+      do k=1,10
+         tol = .7*tol
+         call autoperiod2(nfail,tol)
+         write(6,*) 'NFAIL:',nfail,tol
+         if (nfail.eq.0) return
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine autoperiod1(nfail,tol)
+      include 'basics.inc'
+      character*3 cb,ck
+c
+c     Set any remaining candidate bcs to P
+c
+      if (.not.if_lattice) call get_lattice_per_bc
+
+      call mkside   ! moved, 9/1/09 pff
+      call gencen
+
+      nsides = 2*ndim
+      do if=1,nflds
+      do ie=1,nel
+      do is=1,nsides
+         cb = cbc(is,ie,if)
+         if (cb.eq.'   ') then
+C           Automatic selection of Periodic bc
+            call fndsidb(js,je,is,ie,if,tol)
+            if (js.ne.0) then
+
+               call letbc(js,je,if,bclab)
+               call letbc(is,ie,if,bclab)
+
+               call rzero(bc(1,is,ie,if),5)
+               call rzero(bc(1,js,je,if),5)
+
+               cbc (is,ie,if) = 'P  '
+               ibc (is,ie,if) = je       ! high-precision periodic bc
+               bc(1,is,ie,if) = je
+               bc(2,is,ie,if) = js
+
+               cbc (js,je,if) = 'P  '
+               ibc (js,je,if) = ie       ! high-precision periodic bc
+               bc(1,js,je,if) = ie
+               bc(2,js,je,if) = is
+
+
+               if (nel.le.1000.or.mod(ie,100).eq.0)
+     $         write(6,1) if,ie,is,je,js
+    1          format('autoper:',5i8)
+            endif
+         endif
+      enddo
+      enddo
+      enddo
+c
+c     consistency check
+c
+      nfail = 0
+      do if=1,nflds
+      do ie=1,nel
+      do is=1,nsides
+         cb = cbc(is,ie,if)
+         if (cb.eq.'P  ') then
+C           check for consistency
+            je = bc(1,is,ie,if)
+            js = bc(2,is,ie,if)
+            ke = bc(1,js,je,if)
+            ks = bc(2,js,je,if)
+
+            je = ibc (is,ie,if)     ! high-precision periodic bc
+            ke = ibc (js,je,if)     ! high-precision periodic bc
+
+            ck = cbc (js,je,if)
+
+            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) then
+               write(6,*) ie,is,je,js,ke,ks,ck,' fail',nfail
+               cbc(is,ie,if)='   '
+               nfail = nfail + 1
+               write(6,11) (sides(ie,is,k),k=1,3),ie,is,' side i'
+               write(6,11) (sides(je,js,k),k=1,3),je,js,' side j'
+               write(6,11) (sides(ke,ks,k),k=1,3),ke,ks,' side k'
+               sides(1,1,1) = -nel
+               sides(1,1,1) = sqrt(sides(1,1,1))
+            endif
+  11        format(1p3e14.5,i8,i3,a7)
+         endif
+      enddo
+      enddo
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine autoperiod2(nfail,tol)
+      include 'basics.inc'
+      character*3 cb,ck
+c
+c     Set any remaining candidate bcs to P
+c
+      if (.not.if_lattice) call get_lattice_per_bc
+
+      call mkside   ! moved, 9/1/09 pff
+      call gencen
+
+      nsides = 2*ndim
+      do if=1,nflds
+      do ie=1,nel
+      do is=1,nsides
+         cb = cbc(is,ie,if)
+         if (cb.eq.'   '.or.cb.eq.'P  ') then
+C           Automatic selection of Periodic bc
+            call fndsidb(js,je,is,ie,if,tol)
+            if (js.ne.0) then
+               CALL LETBC(JS,JE,IF,BCLAB)
+               CALL LETBC(IS,IE,IF,BCLAB)
+               cbc( IS,IE,IF) = 'P  '
+               call rzero(bc(1,is,ie,if),5)
+               call rzero(bc(1,js,je,if),5)
+               BC(1,IS,IE,IF) = JE
+               BC(2,IS,IE,IF) = JS
+               cbc( JS,JE,IF) = 'P  '
+               BC(1,JS,JE,IF) = IE
+               BC(2,JS,JE,IF) = IS
+               ibc (is,ie,if) = je  ! high-precision periodic bc
+               ibc (js,je,if) = ie  ! high-precision periodic bc
+
+               if (nel.le.1000.or.mod(ie,100).eq.0)
+     $         write(6,1) if,ie,is,je,js
+    1          format('autoper:',5i8)
+            endif
+         endif
+      enddo
+      enddo
+      enddo
+c
+c     consistency check
+c
+      nfail = 0
+      do if=1,nflds
+      do ie=1,nel
+      do is=1,nsides
+         cb = cbc(is,ie,if)
+         if (cb.eq.'P  ') then
+C           check for consistency
+            je = bc(1,is,ie,if)
+            js = bc(2,is,ie,if)
+            ke = bc(1,js,je,if)
+            ks = bc(2,js,je,if)
+            ck = cbc(js,je,if)
+
+            je = ibc (is,ie,if)     ! high-precision periodic bc
+            ke = ibc (js,je,if)     ! high-precision periodic bc
+
+            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) cbc(is,ie,if)='   '
+            if (ck.ne.'P  '.or.ke.ne.ie.or.ks.ne.is) nfail = nfail + 1
+         endif
+      enddo
+      enddo
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vec_side(vec3,iside,ie)
+      include 'basics.inc'
+      real vec1(3),vec2(3),vec3(3)
+
+      ic1 = icrn(1,iside)
+      ic2 = icrn(2,iside)
+      ic3 = icrn(3,iside)
+      ic4 = icrn(4,iside)
+
+c     write(s,9) ie,iside,ic1,ic2,ic3,ic4
+c   9 format(' iesc14:',6i5,'$')
+c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+
+      IF (IF3D) THEN
+         vec1(1)=x(ic3,ie)-x(ic1,ie)
+         vec1(2)=y(ic3,ie)-y(ic1,ie)
+         vec1(3)=z(ic3,ie)-z(ic1,ie)
+         vec2(1)=x(ic4,ie)-x(ic2,ie)
+         vec2(2)=y(ic4,ie)-y(ic2,ie)
+         vec2(3)=z(ic4,ie)-z(ic2,ie)
+         call cross(vec3,vec1,vec2)
+         call norm3d(vec3)
+      else
+         vec1(1)=x(ic2,ie)-x(ic1,ie)
+         vec1(2)=y(ic2,ie)-y(ic1,ie)
+         vec3(1)= vec1(2)
+         vec3(2)=-vec1(1)
+         vec3(3)=0.0
+         call norm3d(vec3)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fndsidb(kside,ke,iside,ie,if,tol)
+      include 'basics.inc'
+      real vec1(3),vec2(3),vec3(3),vecj(3)
+C
+C     Find a side JSIDE,JEL which corresponds to ISIDE,IE and doesn't
+C     have BC's set already
+C
+      NSIDES=NDIM*2
+C
+C     Define Normal to this plane (side), and find the element
+C     center which also lies on this line, and is farthest from
+C     the current element.
+c
+c     CALL MKSIDE   ! moved, 9/1/09 pff
+c     CALL GENCEN
+C
+C     Find Sides' Normal Vector at midpoint
+
+      call get_vec_side(vec3,iside,ie)
+
+      ic1 = icrn(1,iside)
+      ic2 = icrn(2,iside)
+      ic3 = icrn(3,iside)
+      ic4 = icrn(4,iside)
+
+c     write(s,9) ie,iside,ic1,ic2,ic3,ic4
+c   9 format(' iesc14:',6i5,'$')
+c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+
+      IF (IF3D) THEN
+         vec1(1)=x(ic3,ie)-x(ic1,ie)
+         vec1(2)=y(ic3,ie)-y(ic1,ie)
+         vec1(3)=z(ic3,ie)-z(ic1,ie)
+         vec2(1)=x(ic4,ie)-x(ic2,ie)
+         vec2(2)=y(ic4,ie)-y(ic2,ie)
+         vec2(3)=z(ic4,ie)-z(ic2,ie)
+         call cross(vec3,vec1,vec2)
+         call norm3d(vec3)
+      else
+         vec1(1)=x(ic2,ie)-x(ic1,ie)
+         vec1(2)=y(ic2,ie)-y(ic1,ie)
+         vec3(1)= vec1(2)
+         vec3(2)=-vec1(1)
+         vec3(3)=0.0
+         call norm3d(vec3)
+      ENDIF
+c
+      if (if_lattice) then          ! Make vector point in lattice direction
+         d1 = dotprod(vec3,ulat1)
+         d2 = dotprod(vec3,ulat2)
+         d3 = dotprod(vec3,ulat3)
+         if (d1.le.d2.and.d1.le.d3) then
+            call copy(vec3,ulat1,3)
+         elseif (d2.le.d3) then
+            call copy(vec3,ulat2,3)
+         else
+            call copy(vec3,ulat3,3)
+         endif
+      endif
+c
+c     write(s,19) vec3(1),vec3(2),vec3(3)
+c  19 format(' vec3:',3e13.5,'$')
+c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
+c
+c     EPS2=(EPSM*RCEN(IE))**2
+      EPSM=tol
+      EPS2=EPSM**2
+      D2MN=10*EPS2
+c
+      KE=0
+      KSIDE=0
+      DSTMAX=0.0
+c
+      do 100 je=1,nel
+      do 100 jside=1,nsides
+C
+C        Don't find yourself.
+         if (je.eq.ie.and.jside.eq.iside) goto 100
+C
+C        Don't find a bc which is already defined. (to be 'E')
+         if (cbc(jside,je,if).eq.'E  ') goto 100
+c
+c        Check if dot product of surface normals are O(1)
+c
+         call get_vec_side(vecj,jside,je)
+
+C        OK, is the center of this element side close to the line?
+
+         vec1(1)=sides(ie,iside,1)-sides(je,jside,1)
+         vec1(2)=sides(ie,iside,2)-sides(je,jside,2)
+         vec1(3)=sides(ie,iside,3)-sides(je,jside,3)
+         distp=dotprod(vec1,vec1)
+         dis13=(dotprod(vec1,vec3))**2
+         dist2=distp-dis13
+         if (distp.gt.0) DIST2=DIST2/DISTP
+c        write(6,11) dist2,distp,eps2,dstmax,je,jside
+c  11    format(1p4e12.4,2i6,' dist2')
+c        if (dist2.le.eps2.and.distp.gt.dstmax) then
+         if (dist2.le.d2mn) then
+            ke    = je
+            kside = jside
+            dstmax= distp
+c     write(6,12) distp,dist2,(sides(ie,iside,k),k=1,3),ie,iside,' si'
+c     write(6,12) dis13,d2mn ,(sides(je,jside,k),k=1,3),je,jside,' sj'
+c     write(6,12) dis13,d2mn ,(vec1(k),k=1,3),je,jside,'vc1'
+c     write(6,12) dis13,dotnorm ,(vecj(k),k=1,3),je,jside,'vcj'
+c  12 format(1p5e14.5,i8,i3,1x,a3)
+
+            d2mn  = dist2
+
+         endif
+  100 continue
 
       return
       end

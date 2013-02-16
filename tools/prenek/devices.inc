@@ -34,5 +34,9 @@ c     .plt file pointers
       common /fplotc/ fplotnam
       character*17    fplotnam
       common /fploti/ iplotnam,iplotnum
-c
+
+      real elec,elew,eleb,eledy ! Elevator coords for BC menu
+      save elec,elew,eleb,eledy
+      data elec,elew,eleb,eledy / 0.95 , 0.02 , 0.10 , 0.10 /
+
 C     End of Devices.inc***********

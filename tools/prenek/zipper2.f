@@ -2682,8 +2682,8 @@ C        X-plane
          RRL(1)=FRACS
          DO 200 JCRN=-1,1,2
             RRL(3)=FLOAT(JCRN)
-            DO 100 ICRN=-1,1,2
-               RRL(2)=FLOAT(ICRN)
+            DO 100 ic=-1,1,2
+               RRL(2)=FLOAT(ic)
                CALL EVALSC(XVAL,XP,RRL,1)
                CALL EVALSC(YVAL,YP,RRL,0)
                CALL EVALSC(ZVAL,ZP,RRL,0)
@@ -2707,13 +2707,13 @@ C        Y-plane
          RRL(2)=FRACS
          DO 210 JCRN=-1,1,2
             RRL(3)=FLOAT(JCRN)
-            DO 110 ICRN=-1,1,2
-               RRL(1)=FLOAT(ICRN)
+            DO 110 ic=-1,1,2
+               RRL(1)=FLOAT(ic)
                CALL EVALSC(XVAL,XP,RRL,1)
                CALL EVALSC(YVAL,YP,RRL,0)
                CALL EVALSC(ZVAL,ZP,RRL,0)
 C              II,JJ = 1,2
-               II=1+(ICRN+1)/2
+               II=1+(ic+1)/2
                JJ=1+(JCRN+1)/2
 C              I0=1,2,5,6; I1=3,4,7,8
                I0=II+4*(JJ-1)
@@ -2736,8 +2736,8 @@ C        Z-plane
          RRL(3)=FRACS
          DO 220 JCRN=-1,1,2
             RRL(2)=FLOAT(JCRN)
-            DO 120 ICRN=-1,1,2
-               RRL(1)=FLOAT(ICRN)
+            DO 120 ic=-1,1,2
+               RRL(1)=FLOAT(ic)
                CALL EVALSC(XVAL,XP,RRL,1)
                CALL EVALSC(YVAL,YP,RRL,0)
                CALL EVALSC(ZVAL,ZP,RRL,0)
