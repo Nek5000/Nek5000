@@ -150,12 +150,12 @@ C BOUNDARY CONDITIONS
                if(kpass.eq.2) nelb=nel     ! only ifield2 is a T mesh 
                do e=1,nelb
                do f=1,nface
-                  if (nel.lt.1 000 000) then
+                  if (nelb.lt.1 000 000) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
                      read(10,21) cbc(f,e),(bc8(k),k=1,5)
-                     do ii=1,5
-                        bc(k,f,e) = bc8(k)
+                     do ii = 1,5
+                        bc(ii,f,e)=bc8(ii)
                      enddo
                      ibc(f,e) = bc8(1)
                   endif

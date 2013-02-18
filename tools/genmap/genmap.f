@@ -3178,8 +3178,8 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
 
-      character*3 cbl(6,lelm)
-      real*8      bl(5,6,lelm)
+      character*3 cbl(6,nelt)
+      real*8      bl(5,6,nelt)
       integer     buf(30)
 
       integer e,eg,f
