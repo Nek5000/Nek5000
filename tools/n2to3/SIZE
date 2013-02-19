@@ -1,8 +1,11 @@
-      parameter(nelm=9999)
+      parameter(nelxym=53000) ! Max number of elements in x-y plane
 
-      common /array/ x(4,nelm),y(4,nelm),bc(5,6,nelm),curve(6,12,nelm)
+      common /array/ x(4,nelxym),y(4,nelxym)
+     $             , bc(5,6,nelxym),curve(6,12,nelxym)
+
       common /arrai/ nlev,nel,ncurve,npscal
+
       common /arrac/ cbc,ccurve,ca
-      character*3 cbc(6,nelm)
-      character*1 ccurve(12,nelm)
-      character*1 ca(nelm)
+      character*3 cbc(6,nelxym)
+      character*1 ccurve(12,nelxym)
+      character*1 ca(nelxym)

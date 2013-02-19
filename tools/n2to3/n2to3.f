@@ -31,7 +31,7 @@ c
       equivalence (fout21,fout2)
 
       logical ifflow,ifheat
-      common /arraz/ zmin,zmax,dz(nelm)
+      common /arraz/ zmin,zmax,dz(nelxym)
 
       common /arral/ ifcirc
       logical ifcirc
@@ -104,7 +104,7 @@ c     Get file output type
          nlev = 0
          read(61,*) z0
          zmin = z0
-         do i=1,nelm
+         do i=1,nelxym
             read(61,*,end=88) z1
             zmax = z1
             nlev = nlev + 1
@@ -193,14 +193,14 @@ c     re2 stuff
       real mhd
 
       real*8 bc8(5)
-      integer ibc(6,nelm)
+      integer ibc(6,nelxym)
 
-      call rzero(x,4*nelm)
-      call rzero(y,4*nelm)
-      call rzero(bc,30*nelm)
+      call rzero(x,4*nelxym)
+      call rzero(y,4*nelxym)
+      call rzero(bc,30*nelxym)
       call rzero8(bc8,5)
-      call izero(ibc,6*nelm)
-      call blank(cbc,18*nelm)
+      call izero(ibc,6*nelxym)
+      call blank(cbc,18*nelxym)
 c
 c
 c     Choose BC for Z direction
@@ -318,8 +318,8 @@ c     Read mesh data
 c
       read (10,*) nel,ndim
       ndim3 = 3
-      if (nel.gt.nelm) then
-         write(6,*) 'ABORT:  increase nelm in n2to3.f',nel,nelm
+      if (nel.gt.nelxym) then
+         write(6,*) 'ABORT:  increase nelxym in n2to3.f',nel,nelxym
          call exit
       endif
       neln = nlev*nel
@@ -431,14 +431,17 @@ c     Read and write boundary conditions
             if (nel.lt.1000) then
                do  k = 1,4
                   read (10,20) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
+                  ibc(k,e) = bc(1,k,e)
                enddo
             elseif (nel.lt.100000) then
                do  k = 1,4
                   read (10,21) cbc(k,e),id,jd,(bc(j,k,e),j=1,5)
+                  ibc(k,e) = bc(1,k,e)
                enddo
             elseif(nel.lt.1000000) then
                do  k = 1,4
                   read (10,22) cbc(k,e),id,(bc(j,k,e),j=1,5)
+                  ibc(k,e) = bc(1,k,e)
                enddo
             else
                do  k = 1,4
@@ -585,7 +588,7 @@ c-----------------------------------------------------------------------
 
       real dzi(1)
       character*3  cb5,cb6
-      logical ifflow,ifheat,ifmhd
+      logical ifflow,ifheat,ifmhd,ifper
 
       common /arral/ ifcirc
       logical ifcirc
@@ -635,11 +638,11 @@ c-----------------------------------------------------------------------
       integer e
 
       real*8 bc8(5)
-      integer ibc(6,nelm)
+      integer ibc(6,nelxym)
       
 
       call rzero8(bc8,5)
-      call izero(ibc,6*nelm)
+      call izero(ibc,6*nelxym)
 
 c     Read bc from .rea
       do iibc=1,nbc
@@ -1077,8 +1080,8 @@ C     .Read formatted curve side data
 
       read(10,*)
       read(10,*) ncurve
-      call rzero(curve ,72*NELM)
-      call blank(ccurve,12*NELM)
+      call rzero(curve ,72*nelxym)
+      call blank(ccurve,12*nelxym)
 
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
@@ -1116,7 +1119,7 @@ c-----------------------------------------------------------------------
       subroutine out_curve(itype)
 
       include 'SIZE'
-      common /arraz/ zmin,zmax,dz(nelm)
+      common /arraz/ zmin,zmax,dz(nelxym)
       character*1 ans
       real*4 buf(20)
 c
@@ -1304,7 +1307,7 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       logical ifflow,ifheat
-      common /arraz/ zmin,zmax,dz(nelm)
+      common /arraz/ zmin,zmax,dz(nelxym)
 
       common /arral/ ifcirc
       logical ifcirc
