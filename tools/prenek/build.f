@@ -3397,6 +3397,7 @@ c-----------------------------------------------------------------------
       subroutine delete  ! Query to delete elements
 
       include 'basics.inc'
+      logical iftmp
 
       if (nel.eq.0) call prs('ERROR: No elements to delete$')
       if (nel.eq.0) return

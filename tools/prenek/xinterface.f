@@ -159,7 +159,6 @@ C       Filter Only if building and outside build menu area.
 C     Moves with "Pen up", no line Drawn  IN SCREEN COORDINATES
       CHARACTER STRING*5
       INCLUDE 'devices.inc'
-      COMMON /FILL/ ICFILL,IFILL,NFILL,XFILL(210),YFILL(210)
 
       IF(IFILL.NE.0) THEN
 C          Currently Filling region defined by moves and draws
@@ -185,8 +184,7 @@ C
 C     Draws lines for various devices with "Pen down" IN SCREEN COORDINATES
       CHARACTER STRING*5
       INCLUDE 'devices.inc'
-      COMMON /FILL/ ICFILL,IFILL,NFILL,XFILL(210),YFILL(210)
-C
+
       IF(IFILL.NE.0) THEN
 C          Currently Filling region defined by moves and draws
            IF(NFILL.GT.210)THEN
@@ -211,7 +209,6 @@ C     Begins panel for fill  NO BOUNDARY DISPLAY
       LOGICAL IFTMP 
       CHARACTER STRING*5
       INCLUDE 'devices.inc'
-      COMMON /FILL/ ICFILL,IFILL,NFILL,XFILL(210),YFILL(210)
 C
       X=(X1-XZERO)/XFAC
       Y=(Y1-YZERO)/YFAC
@@ -231,7 +228,6 @@ C
 C     Begins panel for fill WITH BOUNDARY DISPLAY
       CHARACTER STRING*5
       INCLUDE 'devices.inc'
-      COMMON /FILL/ ICFILL,IFILL,NFILL,XFILL(210),YFILL(210)
       LOGICAL IFTMP 
       X=(X1-XZERO)/XFAC
       Y=(Y1-YZERO)/YFAC
@@ -375,7 +371,6 @@ C     Set Screen to scroll
       END
       SUBROUTINE ENDP
       INCLUDE 'devices.inc'
-      COMMON /FILL/ ICFILL,IFILL,NFILL,XFILL(210),YFILL(210)
       IF (NFILL.GT.210) THEN
          NFILL=210 
          XFILL(NFILL)=XFILL(1)

@@ -39,4 +39,8 @@ c     .plt file pointers
       save elec,elew,eleb,eledy
       data elec,elew,eleb,eledy / 0.95 , 0.02 , 0.10 , 0.10 /
 
-C     End of Devices.inc***********
+
+      common /cfilli/ icfill,ifill,nfill
+      common /cfillr/ xfill(210),yfill(210)
+
+c     End of Devices.inc***********

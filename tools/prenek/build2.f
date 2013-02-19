@@ -10,7 +10,7 @@ c-----------------------------------------------------------------------
       save         alpha
       data         alpha 
      $      /'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'/
-      logical ifpsph
+      logical ifpsph,if_sph_ctr
 c
       real xlat0(3)
 C
@@ -1715,7 +1715,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine non_reg_tet_mod(v,x1,x2,x3,r)
-      real v(3),x1(3),x2(3),x4(3)
+      real v(3),x1(3),x2(3),x3(3)
       real w(3),x(3,3),s(3),a(3,3),xr(3,3),sl(3),t(3)
 c
       call copy(x(1,1),x1,3)

@@ -72,6 +72,7 @@ c
 c     March over all elements, looking for periodic face.
 c     Also, check for consistency of P-P bcs.
 c
+      kount=0
       do ie=1,nel
          do iface = 1,nfaces
             if (cbc(iface,ie,kfld).eq.'P  ') then
@@ -83,7 +84,8 @@ c
                if (cbc(jf,je,kfld).ne.'P  '  ) ifcons = .false.
                if ( ibc(jf,je,kfld).ne.ie    ) ifcons = .false.
                if ( bc(2,jf,je,kfld).ne.iface) ifcons = .false.
-               if (.not.ifcons) then
+               if (.not.ifcons.and.kount.lt.15) then
+                  kount = kount+1
                   call blank(line,70)
                   write(line,1)
                   call prs(line)
@@ -92,7 +94,7 @@ c
                   write(line,2) je,jf
                   call prs(line)
     1             format('WARNING: inconsistent periodic BCs.$')
-    2             format('Reset el/face2:',i6,i3,' to "p"$')
+    2             format('Reset el/face2:',i12,i3,' to "p"$')
                endif
 c
 c              Find pairings of vertices based upon face info & geom.
@@ -274,6 +276,7 @@ c
 c     March over all elements, looking for periodic face.
 c     Also, check for consistency of P-P bcs.
 c
+      kount=0
       do ie=1,nel
          do iface = 1,nfaces
             if (cbc(iface,ie,ifld).eq.'P  ') then
@@ -285,7 +288,8 @@ c
                if (cbc(jf,je,ifld).ne.'P  '  ) icons = 1
                if ( ibc(jf,je,ifld).ne.ie    ) icons = 2
                if ( bc(2,jf,je,ifld).ne.iface) icons = 3
-               if (icons.ne.0) then
+               if (icons.ne.0.and.kount.lt.15) then
+                  kount = kount+1
                   call blank(line,70)
                   write(line,1) icons,cbc(jf,je,ifld)
                   call prs(line)
@@ -294,7 +298,7 @@ c
                   write(line,2) je,jf,ifld
                   call prs(line)
     1             format('WARNING: inconsistent per. BCs:',i2,1x,a3,'$')
-    2             format('Reset el/face1:',i6,2i3,' to "p"$')
+    2             format('Reset el/face1:',i12,2i3,' to "p"$')
                   cbc(iface,ie,ifld) = '   '
                   call rzero(bc(1,iface,ie,ifld),5)
 c

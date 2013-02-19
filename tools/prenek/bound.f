@@ -925,7 +925,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine autoperiodz(dir,tol,cb_clear,xyz) ! dir=X,Y, or Z.
+      subroutine autoperiodz(dir,tol,cb_clear,xyz,m) ! dir=X,Y, or Z.
       include 'basics.inc'
       common /domainr/ scal(nelm),list_e(2*nelm)
       character*1 dir
@@ -1346,6 +1346,11 @@ c-----------------------------------------------------------------------
       integer e,f
       integer fcorns (4,6)
 
+      character*2 ques
+      save ques
+      data ques /'?$'/
+
+
       ff=f+1 ! Side which is on Boundary and Not periodic with Previous el
       if (ff.eq.5) ff = 1
       iflash=jlevel
@@ -1443,8 +1448,6 @@ c-----------------------------------------------------------------------
      $              5,6,7,8 /
 
       bclab(2)='$'
-      ques(1)='?'
-      ques(2)='$'
 
       nsides=4
       if (if3d) nsides=6
@@ -1966,7 +1969,7 @@ c                 enddo
 c              Now Enter Information into Periodicity Array
 c              !?? WHATS THE ORIENTATION??
                IORIEN=1
-               CALL LETBC(fp,ep,ifld,BCLAB)
+               call letbc(fp,ep,ifld,bclab)
                cbc( fp,ep,ifld) = 'P  '
                BC(1,f ,e ,ifld) = ep
                BC(2,f ,e ,ifld) = fp
@@ -2088,6 +2091,9 @@ c-----------------------------------------------------------------------
       m  = 9
       if (if3d) m = 27 
 
+c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      goto 1  ! BELOW IS WORKING ONLY FOR Z AT THE MOMENT  (2/19/13,pff)
+
       if (if3d) then  ! Now, supported only for 3D:
 
        call prs('Is this for X-, Y-, or Z-extrema (x,y,z or other) ?$')
@@ -2105,6 +2111,10 @@ c-----------------------------------------------------------------------
        endif
       endif
 
+    1 continue
+c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
       call autoperiod1(nfail,tol)      ! Standard periodicity search
       if (nfail.eq.0) return
 
@@ -2115,7 +2125,7 @@ c-----------------------------------------------------------------------
          write(6,*) 'NFAIL:',nfail,tol
          if (nfail.eq.0) return
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2206,7 +2216,7 @@ c
 c-----------------------------------------------------------------------
       subroutine autoperiod2(nfail,tol)
       include 'basics.inc'
-      character*3 cb,ck
+      character*3 cb,ck,bclab
 c
 c     Set any remaining candidate bcs to P
 c
@@ -2224,8 +2234,8 @@ c
 C           Automatic selection of Periodic bc
             call fndsidb(js,je,is,ie,if,tol)
             if (js.ne.0) then
-               CALL LETBC(JS,JE,IF,BCLAB)
-               CALL LETBC(IS,IE,IF,BCLAB)
+c              call letbc(js,je,if,bclab)
+c              call letbc(is,ie,if,bclab)
                cbc( IS,IE,IF) = 'P  '
                call rzero(bc(1,is,ie,if),5)
                call rzero(bc(1,js,je,if),5)
