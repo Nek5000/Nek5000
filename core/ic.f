@@ -2244,13 +2244,11 @@ c     endif
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
                call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
-       write(6,*) ' test ' , u(1,ei),v(1,ei)
                if (if3d) 
      $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
             else
                call copy  (u(1,ei),wk(l        ),nxyzr)
                call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
-       write(6,*) ' test ' , u(1,ei),v(1,ei)
                if (if3d) 
      $         call copy  (w(1,ei),wk(l+2*nxyzw),nxyzr)
             endif
