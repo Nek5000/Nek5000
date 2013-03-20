@@ -359,7 +359,7 @@ c           Check edges
      $             -CURVE(1,jed,je).ne.CURVE(1,ied,ie)) THEN
                  call qchk(ie,iside,je,jside,IF)
                  iffail = .true.
-                 CALL PRS('ERROR: Curve side consistency failure.$')
+                 CALL PRS('ERROR: Curve side consistency failure A.$')
   200            CALL PRS(
      $          'Enter element number to be changed (other=abort).$')
                  WRITE(S,210) ie,ied,CCURVE(ied,ie),Curve(1,ied,ie)
@@ -389,24 +389,24 @@ cccc              IF (YESNO.ne.'y'.and.YESNO.ne.'Y') GOTO 200
   250        CONTINUE
             ENDIF
 C
-            IF (CCURVE(iside,ie).eq.'s') THEN
-               IF (CCURVE(jside,je).ne.CCURVE(iside,ie)   .or.
-     $            CURVE(1,jside,je).ne.CURVE(1,iside,ie)  .or.
-     $            CURVE(2,jside,je).ne.CURVE(2,iside,ie)  .or.
-     $            CURVE(3,jside,je).ne.CURVE(3,iside,ie)  .or.
-     $            CURVE(4,jside,je).ne.CURVE(4,iside,ie)) THEN
+            if (ccurve(iside,ie).eq.'s') then
+               tol   = 1.e-4
+               diffc =
+     $           dif_rel_inf_norm(curve(1,jside,je),curve(1,iside,ie),4)
+               if (ccurve(jside,je).ne.ccurve(iside,ie)   .or.
+     $            diffc.gt.tol) then
                  iffail = .true.
-                 call qchk(ie,iside,je,jside,IF)
-                 CALL PRS('ERROR: Curve side consistency failure.$')
-  300            CALL PRS(
+                 call qchk(ie,iside,je,jside,if)
+                 call prs('ERROR: Curve side consistency failure B.$')
+  300            call prs(
      $          'Enter element number to be changed (other=abort).$')
-                 WRITE(S,310) ie,iside,CCURVE(iside,ie),
-     $                        (Curve(j,iside,ie),j=1,4)
-                 CALL PRS(S)
-                 WRITE(S,310) je,jside,CCURVE(jside,je),
-     $                        (Curve(j,jside,je),j=1,4)
-                 CALL PRS(S)
-  310            FORMAT(
+                 write(s,310) ie,iside,CCURVE(iside,ie),
+     $                        (curve(j,iside,ie),j=1,4)
+                 call prs(s)
+                 write(s,310) je,jside,CCURVE(jside,je),
+     $                        (curve(j,jside,je),j=1,4)
+                 call prs(s)
+  310            format(
      $           ' El:',I10,3x,'F:',I2,3x,'c: ',A3,4G13.5,'$')
 cccc             CALL REI(Ke)
                  IF (Ke.eq.ie) THEN
@@ -552,12 +552,12 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      subroutine qchk(ie,iside,je,jside,IF)
+      subroutine qchk(ie,iside,je,jside,ifld)
       include 'basics.inc'
-      write(6,9) ie,iside,cbc(iside,ie,IF),
-     $            (bc(j,iside,ie,IF),j=1,5)
-      write(6,9) je,jside,cbc(jside,je,IF),
-     $            (bc(j,jside,je,IF),j=1,5)
+      write(6,9) ie,iside,cbc(iside,ie,ifld),
+     $            (bc(j,iside,ie,ifld),j=1,5)
+      write(6,9) je,jside,cbc(jside,je,ifld),
+     $            (bc(j,jside,je,ifld),j=1,5)
     9 format(' ie,side,c,b:',i5,i2,1x,a3,1x,5g11.3)
       return
       end
@@ -1054,6 +1054,9 @@ c     call out_cent ! dump element centroids, w/ element numbers for positional 
       call semi_init_bcs(maxlev,needbc,if1)
 
       call first_bc_menu(needbc,if1)
+
+      write(6,*) 'bound A: ',choice,needbc,nlevel
+
       if (choice.eq.'ACCEPT B.C.''s') return
 
       call prs('                   *** BOUNDARY CONDITION MENU ***$')
@@ -1270,7 +1273,7 @@ c     Draw mesh OR WHOLE ELEMENT?  ??Delete previous mesh(+bclabels?)
             num_on_this_level=num_on_this_level+1
             call drawel(e)
             do 200 f=1,nsides
-               IF (cbc(f,e,if).ne.'   ')
+               if (cbc(f,e,ifld).ne.'   ')
      $         call letbc(f,e,ifld,cbc(f,e,ifld))
 200         continue
          endif
@@ -1452,6 +1455,8 @@ c-----------------------------------------------------------------------
       nsides=4
       if (if3d) nsides=6
 
+      write(6,*) ilevel,nlevel,num_on_this_level,ifld,' level A'
+
       if (ifld.eq.1) then
         call prs('Begin Inputting Fluid Boundary Conditions$')
       elseif (ifld.eq.2) then
@@ -1466,6 +1471,7 @@ c
 1010     continue
          if (nlevel.gt.1) then
             call set_up_level(num_on_this_level,ifld,ilevel)
+            write(6,*) ilevel,nlevel,num_on_this_level,ifld,' level'
             if (num_on_this_level.eq.0) goto 1999
          endif
 
@@ -2430,6 +2436,28 @@ c  12 format(1p5e14.5,i8,i3,1x,a3)
 
          endif
   100 continue
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dif_rel_inf_norm(x,y,n)
+      real x(n),y(n)
+
+      dif_rel_inf_norm = 0.
+
+      dmax = 0.
+      xmax = 0.
+      ymax = 0.
+
+      do i=1,n
+         dif = abs(x(i)-y(i))
+         dmax = max(dmax,dif)
+         xmax = max(xmax,abs(x(i)))
+         ymax = max(ymax,abs(y(i)))
+      enddo
+
+      den = max(xmax,ymax)
+      if (den.gt.0) dif_rel_inf_norm = dmax / den
 
       return
       end

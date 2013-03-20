@@ -1255,6 +1255,8 @@ C
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Clip N'
       nchoic = nchoic+1
+      ITEM(nchoic)       =             'Clip R'
+      nchoic = nchoic+1
       ITEM(nchoic)       =             'Input DEL list'
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
@@ -1292,6 +1294,16 @@ c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
          CALL RES(ANS,1)
          IF (ANS.eq.'=') return
          CALL Clipper(Zclip,ANS,Z)
+      ELSEIF (CHOICE.EQ.'Clip R') THEN
+         CALL PRS
+     $   ('Type in center and radius of cylinder cut (e.g., 0 0 .5):$')
+         call rerrr(xcyl,ycyl,rcyl)
+         call prs(
+     $   'Input "<" or ">" to indicate desired clip section.$')
+         CALL PRS('("=" implies abort.)$')
+         CALL RES(ANS,1)
+         IF (ANS.eq.'=') return
+         call clipper_r(xcyl,ycyl,rcyl,ans)
       ELSEIF (CHOICE.EQ.'Clip N') THEN
          CALL PRS('Allows to clip below/above arbitrary plane.$')
          if (if3d) then
@@ -1307,9 +1319,8 @@ c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
             xyzclip(3)= 0.
             xyznorm(3)= 0.
          endif
-c
-c     normalize
-         xyzl = xyznorm(1)*xyznorm(1)
+
+         xyzl = xyznorm(1)*xyznorm(1) !     normalize
      $        + xyznorm(2)*xyznorm(2)
      $        + xyznorm(3)*xyznorm(3)
          if (xyzl.le.0) return
@@ -1317,7 +1328,7 @@ c     normalize
          xyznorm(1) = xyznorm(1)/xyzl
          xyznorm(2) = xyznorm(2)/xyzl
          xyznorm(3) = xyznorm(3)/xyzl
-c
+
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
          CALL PRS('("=" implies abort.)$')
@@ -1363,6 +1374,72 @@ c-----------------------------------------------------------------------
       if (dir.eq.'<') write(s,102) numdel,nel
   102 format(' You will be eliminating',i8,' of ',i8,
      $' elements BELOW clipping plane.$')
+
+      call prs(s)
+      call prs(' OK? (Y/N)$')
+      call res(yesno,1)
+      if (yesno.eq.'n'.or.yesno.eq.'N') return
+      if (numdel.eq.0) return
+
+      slot = edel(1)
+      do e=edel(1)+1,nel
+         if (idel(e).eq.0) then
+            call copyel(e,slot)  ! e-->slot
+            slot = slot+1
+         endif
+      enddo
+      nel = slot-1
+
+      call copyel(nel,nelm)
+
+C     Recount the number of curved sides
+      ncurve=0
+      do e=1,nel
+      do iedge=1,12
+         if(ccurve(iedge,e).ne.' ') ncurve=ncurve+1
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine clipper_r(xcyl,ycyl,rcyl,dir)
+      include 'basics.inc'
+      character*1 dir,yesno
+      common /ctmp0/ idel(nelm),edel(nelm)
+      integer edel,slot,e
+
+      call izero(idel,nel)
+
+      nvts = 4
+      if (if3d) nvts=8
+
+      rcyl2 = rcyl**2
+
+      numdel=0
+      do e=1,nel
+         rr=0
+         do i=1,nvts
+            rr = rr+(x(i,e)-xcyl)**2+(y(i,e)-ycyl)**2
+         enddo
+         rr = rr/nvts
+         if ((dir.eq.'>'.and.rr.gt.rcyl2)  .or.
+     $       (dir.eq.'<'.and.rr.lt.rcyl2) ) then
+                numdel=numdel+1
+                idel(e)=1
+                edel(numdel)=e
+                goto 100
+         endif
+  100    continue
+      enddo
+
+      if (dir.eq.'>') write(s,101) numdel,nel
+  101 format(' You will be eliminating',i8,' of ',i8,
+     $' elements OUTSIDE the clipping radius.$')
+
+      if (dir.eq.'<') write(s,102) numdel,nel
+  102 format(' You will be eliminating',i8,' of ',i8,
+     $' elements INSIDE the clipping radius.$')
 
       call prs(s)
       call prs(' OK? (Y/N)$')
@@ -2289,7 +2366,7 @@ c
 c
 c     Build stiffness matrix based on original xj-xi distances
 c
-      call ifill(g,n,n)
+      call jfill(g,n,n)
       do i=1,n
          if (b(i).eq.1) g(i)=0
       enddo
@@ -2891,13 +2968,21 @@ c
 c-----------------------------------------------------------------------
       subroutine rep_rotate_mesh
       include 'basics.inc'
-c
+      character*1 axisr
+
       call prs('Input rotation angle (deg):$')
       call rer(angle_deg)
-c
+
       call prs('Input number of reps (e.g., 1 --> double mesh size)$')
       call rei(nrep)
-c
+
+      axisr = 'Z'
+      if (if3d) then
+         call prs('Input axis of rotation (x,y,z):$')
+         call res(axisr,1)
+         call capit(axisr,1)
+      endif
+
       ie0 = 1
       ie1 = nel
       ie2 = ie1+1
@@ -2907,12 +2992,10 @@ c
          ie2 = ie1+1
          ie3 = ie2 + nel-1
 
-c        call copy_sub_mesh(ie0,ie1,ie2)
-c        call rotate_submesh_2d(ie2,ie3,angle_deg)
-
          call copy_sub_mesh(1,nel,ie2)
          angle_deg_i = i*angle_deg
-         call rotate_submesh_2d(ie2,ie3,angle_deg_i)
+c        call rotate_submesh_2d(ie2,ie3,angle_deg_i)
+         call rotate_submesh_3d(ie2,ie3,angle_deg_i,axisr)
 
          ie0 = ie0 + nel
          ie1 = ie0 + nel-1
@@ -2950,8 +3033,8 @@ c
             z(i,e) = z(i,e) + zt
          enddo
 c
-         do f=1,6
-            if (ccurve(f,e).eq.'s') then
+         do f=1,12
+            if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
                curve(1,f,e) = curve(1,f,e) + xt
                curve(2,f,e) = curve(2,f,e) + yt
                curve(3,f,e) = curve(3,f,e) + zt
@@ -3200,8 +3283,8 @@ c
       a(3,3) =  1.
 
       do e=1,nel
-      do f=1,6
-         if (ccurve(f,e).eq.'s') then
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
             xt = curve(1,f,e)
             yt = curve(2,f,e)
             zt = curve(3,f,e)
@@ -3237,6 +3320,64 @@ c-----------------------------------------------------------------------
          yt = y(i,e)
          x(i,e) = ca*xt-sa*yt
          y(i,e) = sa*xt+ca*yt
+      enddo
+      enddo
+
+      do e=e0,e1
+      do f=1,12
+         if (ccurve(f,e).eq.'s'.or.ccurve(f,e).eq.'m') then
+            xt = curve(1,f,e)
+            yt = curve(2,f,e)
+            zt = curve(3,f,e)
+            curve(1,f,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+            curve(2,f,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+            curve(3,f,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
+         endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rotate_submesh_3d(e0,e1,angle_deg,axisr)
+      include 'basics.inc'
+      character*1 axisr
+      integer e,f,e0,e1
+      real a(3,3)
+
+      angle = pi*angle_deg/180.
+      ca    = cos(angle)
+      sa    = sin(angle)
+
+      call rzero(a,9)
+      if (axisr.eq.'Z') then
+         a(1,1) =  ca
+         a(1,2) = -sa
+         a(2,1) =  sa
+         a(2,2) =  ca
+         a(3,3) =  1.
+      elseif (axisr.eq.'X') then
+         a(1,1) =  1.
+         a(3,2) = -sa
+         a(2,3) =  sa
+         a(2,2) =  ca
+         a(3,3) =  ca
+      else
+         a(1,1) =  ca
+         a(1,3) = -sa
+         a(3,1) =  sa
+         a(3,3) =  ca
+         a(2,2) =  1.
+      endif
+
+      do e=e0,e1
+      do i=1,2**ndim
+         xt = x(i,e)
+         yt = y(i,e)
+         zt = z(i,e)
+         x(i,e) = a(1,1)*xt+a(1,2)*yt+a(1,3)*zt
+         y(i,e) = a(2,1)*xt+a(2,2)*yt+a(2,3)*zt
+         z(i,e) = a(3,1)*xt+a(3,2)*yt+a(3,3)*zt
       enddo
       enddo
 

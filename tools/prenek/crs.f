@@ -27,7 +27,22 @@ c
       end
 C
 C-----------------------------------------------------------------------
-C
+      subroutine rint(a,n)
+      real  a(1)
+      do i = 1, n
+         a(i) = i
+      enddo
+      return
+      end
+C-----------------------------------------------------------------------
+      subroutine iint(a,n)
+      integer  a(1)
+      do i = 1, n
+         a(i) = i
+      enddo
+      return
+      end
+C-----------------------------------------------------------------------
       subroutine cfill(a,b,n)
       real  a(1)
       do i = 1, n
@@ -35,7 +50,6 @@ C
       enddo
       return
       end
-C
 C-----------------------------------------------------------------------
 C
       subroutine lfalse(a,n)

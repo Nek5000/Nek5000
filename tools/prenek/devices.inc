@@ -40,7 +40,7 @@ c     .plt file pointers
       data elec,elew,eleb,eledy / 0.95 , 0.02 , 0.10 , 0.10 /
 
 
-      common /cfilli/ icfill,ifill,nfill
-      common /cfillr/ xfill(210),yfill(210)
+c     common /cfilli/ icfill,ifill,nfill
+c     common /cfillr/ xfill(210),yfill(210)
 
 c     End of Devices.inc***********

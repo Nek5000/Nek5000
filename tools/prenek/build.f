@@ -3089,6 +3089,8 @@ c-----------------------------------------------------------------------
 
                call outmatti  (cell,nv,n10,'slfchk',nel,flag)
 
+               call prexit
+
                call exitt(flag)
 
             endif
@@ -3403,6 +3405,15 @@ c-----------------------------------------------------------------------
       if (nel.eq.0) return
 
 C     Find out which element to delete
+
+      if (.not.ifgraf) then
+         ielmin = 1
+         call drawel(-ielmin)
+         call drawis(-ielmin)
+         call delel(ielmin)
+         return
+      endif
+
       call prs('Enter (w/mouse) 2 points in element to be deleted,$')
       call prs('or, 2 points framing a box containing elements.$')
       call prs('Enter in menu area to abort DELETE ELEMENT op.$')

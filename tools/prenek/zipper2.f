@@ -1389,18 +1389,27 @@ c           write(6,*) i,sum,scal(i),hhh(i,1,1),' sum 2'
       return
       END
 c-----------------------------------------------------------------------
-      subroutine cross(v1,v2,v3)
-C
-C     Compute Cartesian vector cross product.
-C
-      DIMENSION V1(3),V2(3),V3(3)
-C
-      V1(1) = V2(2)*V3(3) - V2(3)*V3(2)
-      V1(2) = V2(3)*V3(1) - V2(1)*V3(3)
-      V1(3) = V2(1)*V3(2) - V2(2)*V3(1)
-C
+      subroutine chsign(x,n)
+
+      real x(n)
+
+      do i=1,n
+         x(i) = -x(i)
+      enddo
+
       return
-      END
+      end
+c-----------------------------------------------------------------------
+      subroutine cross(v1,v2,v3) ! Cartesian vector cross product.
+
+      real v1(3),v2(3),v3(3)
+
+      v1(1) = v2(2)*v3(3) - v2(3)*v3(2)
+      v1(2) = v2(3)*v3(1) - v2(1)*v3(3)
+      v1(3) = v2(1)*v3(2) - v2(2)*v3(1)
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine norm3d(v1)
 C
@@ -2387,108 +2396,127 @@ C        Flash mesh sides
          DO 220 IEDGE=IED1,IED2
             CALL DRAWED(IE,IEDGE,1)
 220      CONTINUE
-      ELSE
+      else
 c        SIDES 1-4  (SAME AS EDGES IN THIS CASE)
 c        write(6,*) 'ie,is:',ie,iside
 c        call move(x(iside,ie),y(iside,ie))
          call drawed(ie,iside,1)
-      ENDIF
+      endif
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine shift
       include 'basics.inc'
-C
-    1 CONTINUE
-c
+
+      real x0(3),p1(3),p2(3),p3(3)
+
+    1 continue           !    Set up menu and query
+
       nchoic = 0
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'UP MENU'
+      item(nchoic)       =             'UP MENU'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Redraw mesh'
+      item(nchoic)       =             'Redraw mesh'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Center'
+      item(nchoic)       =             'Center'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Shift X'
+      item(nchoic)       =             'Shift X'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Shift Y'
-      IF (IF3D) THEN
+      item(nchoic)       =             'Shift Y'
+      if (if3d) then
          nchoic = nchoic+1
-         ITEM(nchoic)    =             'Shift Z'
-      ENDIF
-c
-C     Menu's all set, prompt for user input:
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-c
+         item(nchoic)    =             'Shift Z'
+         nchoic = nchoic+1
+         item(nchoic)    =             'Project on Plane'
+      endif
+
+      call menu(xmouse,ymouse,button,'NOCOVER') ! Prompt for user input
+
       n  = nel*(2**ndim)
-      xmean = glsum(x,8*nelm)/n
-      ymean = glsum(y,8*nelm)/n
-      zmean = glsum(z,8*nelm)/n
+      xmean = glsum(x,8*nel)/n
+      ymean = glsum(y,8*nel)/n
+      zmean = glsum(z,8*nel)/n
       if (if3d) then
          call prsrrr('XYZ mean:$',xmean,ymean,zmean)
       else
          call prsrr ('XY  mean:$',xmean,ymean)
       endif
-c
-      IF (CHOICE.EQ.'UP MENU') return
-      IF (CHOICE.EQ.'Redraw mesh') then
+
+      if (choice.eq.'UP MENU') return
+      if (choice.eq.'Redraw mesh') then
+
          call redraw_mesh
+
       elseif (choice.eq.'Center') then
-c
+
          xsep = glmin(x,8*nelm) - 1.e5
          ysep = glmin(y,8*nelm) - 1.e5
          zsep = glmin(z,8*nelm) - 1.e5
-c
+
          xshift = -xmean
          yshift = -ymean
          zshift = -zmean
-c
+
          call shifter(xshift,xsep,'>',x,'X')
          call shifter(yshift,ysep,'>',y,'Y')
          if (if3d) call shifter(zshift,zsep,'>',z,'Z')
-c
+
       elseif (choice.eq.'Shift X') then
-         CALL PRS(
+         call prs(
      $   'Input X-location separating shifted section.$')
-         CALL RER(Xsep)
-c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
-         CALL PRS(
+         call rer(Xsep)
+c        call drawline(Xsep,Ymax,Xsep,Ymin)
+         call prs(
      $   'Input "<" or ">" to indicate desired shift section.$')
-         CALL PRS('("=" implies abort.)$')
-         CALL RES(ANS,1)
+         call prs('("=" implies abort.)$')
+         call res(ans,1)
          IF (ANS.eq.'=') return
-         CALL PRS('Input amount to shift in X-direction$')
-         CALL RER(Xshift)
-         CALL Shifter(Xshift,Xsep,ANS,X,'X')
-      ELSEIF (CHOICE.EQ.'Shift Y') THEN
-         CALL PRS(
+         call prs('Input amount to shift in X-direction$')
+         call rer(Xshift)
+         call shifter(Xshift,Xsep,ANS,X,'X')
+      elseif (choice.EQ.'Shift Y') then
+         call prs(
      $   'Input Y-location separating shifted section.$')
-         CALL RER(Ysep)
-c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
-         CALL PRS(
+         call rer(Ysep)
+c        call drawline(Ysep,Xmax,Ysep,Xmin)
+         call prs(
      $   'Input "<" or ">" to indicate desired shift section.$')
-         CALL PRS('("=" implies abort.)$')
-         CALL RES(ANS,1)
+         call prs('("=" implies abort.)$')
+         call res(ANS,1)
          IF (ANS.eq.'=') return
-         CALL PRS('Input amount to shift in Y-direction$')
-         CALL RER(Yshift)
-         CALL Shifter(Yshift,Ysep,ANS,Y,'Y')
-      ELSEIF (CHOICE.EQ.'Shift Z') THEN
-         CALL PRS(
+         call prs('Input amount to shift in Y-direction$')
+         call rer(Yshift)
+         call shifter(Yshift,Ysep,ANS,Y,'Y')
+
+      elseif (choice.EQ.'Shift Z') then
+         call prs(
      $   'Input Z-location separating shifted section.$')
-         CALL RER(Zsep)
-         CALL PRS(
+         call rer(Zsep)
+         call prs(
      $   'Input "<" or ">" to indicate desired shift section.$')
-         CALL PRS('("=" implies abort.)$')
-         CALL RES(ANS,1)
+         call prs('("=" implies abort.)$')
+         call res(ANS,1)
          IF (ANS.eq.'=') return
-         CALL PRS('Input amount to shift in Z-direction$')
-         CALL RER(Zshift)
-         CALL Shifter(Zshift,Zsep,ANS,Z,'Z')
-      ENDIF
-      GOTO 1
-      END
+         call prs('Input amount to shift in Z-direction$')
+         call rer(Zshift)
+         call Shifter(Zshift,Zsep,ANS,Z,'Z')
+
+      elseif (choice.EQ.'Project on Plane') then
+         call prs('Enter plane Point 1 (x,y,z):$')
+         call rerrr(p1(1),p1(2),p1(3))
+         call prs('Enter plane Point 2 (x,y,z):$')
+         call rerrr(p2(1),p2(2),p2(3))
+         call prs('Enter plane Point 3 (x,y,z):$')
+         call rerrr(p3(1),p3(2),p3(3))
+         call prs('Enter point on side to be preserved (x,y,z):$')
+         call rerrr(x0(1),x0(2),x0(3))
+         call prs('Enter tolerance (e.g., 0):$')
+         call rer(tol)
+         call plane_project_mesh(x0,p1,p2,p3,1,nel,tol)
+      endif
+      goto 1
+      end
 c-----------------------------------------------------------------------
       subroutine shifter(Shift,Sep,DIR,pts,coord)
       include 'basics.inc'
@@ -3315,16 +3343,15 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine shift2
-c
+
 c     This routine is like "shift" except that the shifted points
 c     are moved a scaled distance, proportional to the distance from
 c     the selected point.
-c
-c
+
       include 'basics.inc'
-C
+
     1 CONTINUE
-c
+
       nchoic = 0
       nchoic = nchoic+1
       ITEM(nchoic)       =             'UP MENU'
@@ -3347,14 +3374,14 @@ C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
 c
 C
-      IF (CHOICE.EQ.'UP MENU') return
-      IF (CHOICE.EQ.'Redraw mesh') then
+      IF (choice.EQ.'UP MENU') return
+      IF (choice.EQ.'Redraw mesh') then
          call redraw_mesh
-      ELSEIF (CHOICE.EQ.'Stretch theta') THEN
+      ELSEIF (choice.EQ.'Stretch theta') THEN
          call stretch_theta
-      ELSEIF (CHOICE.EQ.'Stretch R') THEN
+      ELSEIF (choice.EQ.'Stretch R') THEN
          call stretch_rad
-      ELSEIF (CHOICE.EQ.'Stretch X') THEN
+      ELSEIF (choice.EQ.'Stretch X') THEN
          CALL PRS(
      $   'Input X-location separating shifted section.$')
          CALL RER(Xsep)
@@ -3367,7 +3394,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          CALL PRS('Input amount to stretch in X-direction$')
          CALL RER(Xshift)
          CALL Shifter2(Xshift,Xsep,ANS,X,'X')
-      ELSEIF (CHOICE.EQ.'Stretch Y') THEN
+      ELSEIF (choice.EQ.'Stretch Y') THEN
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
          CALL RER(Ysep)
@@ -3380,7 +3407,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          CALL PRS('Input amount to stretch in Y-direction$')
          CALL RER(Yshift)
          CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
-      ELSEIF (CHOICE.EQ.'Stretch Z') THEN
+      ELSEIF (choice.EQ.'Stretch Z') THEN
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
          CALL RER(Zsep)
@@ -5066,6 +5093,50 @@ c-----------------------------------------------------------------------
         enddo
       endif
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine plane_project_mesh(x0,p1,p2,p3,e0,e1,tol)
+      include 'basics.inc'
+      real x0(3),p1(3),p2(3),p3(3)
+      real nh(3),v0(3),v2(3),v3(3)
+      integer e,e0,e1
+
+
+      call sub3(v2,p2,p1,3)
+      call sub3(v3,p3,p1,3)
+      call vcross_normal(nh,v2,v3)
+
+      call sub3(v0,x0,p1,3)
+
+      alpha = dot(v0,nh,3)
+      if (alpha.lt.0) call chsign(nh,3)
+
+      do e=e0,e1
+        do i=1,8
+           d2plane = (x(i,e)-p1(1))*nh(1)
+     $             + (y(i,e)-p1(2))*nh(2)
+     $             + (z(i,e)-p1(3))*nh(3)
+           if (d2plane.lt.tol) then
+              x(i,e) = x(i,e) - d2plane*nh(1)
+              y(i,e) = y(i,e) - d2plane*nh(2)
+              z(i,e) = z(i,e) - d2plane*nh(3)
+           endif
+        enddo
+
+        do i=1,12 ! Check midside nodes
+           if (ccurve(i,e).eq.'m') then
+              d2plane = (curve(1,i,e)-p1(1))*nh(1)
+     $                + (curve(2,i,e)-p1(2))*nh(2)
+     $                + (curve(3,i,e)-p1(3))*nh(3)
+              if (d2plane.lt.tol) then ! PROJECT
+                 curve(1,i,e) = curve(1,i,e)-d2plane*nh(1)
+                 curve(2,i,e) = curve(2,i,e)-d2plane*nh(2)
+                 curve(3,i,e) = curve(3,i,e)-d2plane*nh(3)
+              endif
+           endif
+        enddo
+      enddo
       return
       end
 c-----------------------------------------------------------------------

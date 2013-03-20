@@ -56,12 +56,15 @@ c
          call get_lattice_0  (dlat,sphrad,xlat0)
          call saddle_lat     (dlat,sphrad,xlat0)
          return
-c
+
       elseif (hemi.eq.'f'.or.hemi.eq.'F') then
-         call get_lattice_0  (dlat,sphrad,xlat0)
-         call saddle_fcc     (dlat,sphrad,xlat0)
+
+c        call get_lattice_0  (dlat,sphrad,xlat0)
+c        call saddle_fcc     (dlat,sphrad,xlat0)
+
+         call fcc2  ! Build fcc mesh
          return
-c
+
       elseif (hemi.eq.'r'.or.hemi.eq.'R') then
          dlat = 1.
          call rzero(xlat0,3)
@@ -1408,7 +1411,7 @@ c
          enddo
 c
          ccurve(5,e)   = ' '
-         call rzero(curve(1,1,e),5)
+         call rzero(curve(1,1,e),6)
 c
          cbc   (5,e,1) = 'v  '
          cbc   (5,e,2) = 'f  '  ! flux bc as default for Temperature
@@ -2118,7 +2121,7 @@ c        floor z-level to zero
             enddo
             enddo
 
-            call rzero(curve(1,1,e),30)
+            call rzero(curve(1,1,e),72)
 
             if (klev.eq.1) then
                ccurve(  5,e) = 's'
@@ -2307,7 +2310,7 @@ c        adjust xy-pos on outer shell to user position, post-projection
             enddo
             enddo
 
-            call rzero(curve(1,1,e),30)
+            call rzero(curve(1,1,e),72)
 
             if (klev.eq.1) then
                ccurve(  5,e) = 's'
@@ -2480,7 +2483,7 @@ c    $           (xt(1,m,pface,kl),x0,xt(1,m,pface,4),x0(1,kl),r1)
             enddo
             enddo
 
-            call rzero(curve(1,1,e),30)
+            call rzero(curve(1,1,e),72)
 
             if (klev.eq.1) then
                ccurve(  5,e) = 's'
@@ -2777,7 +2780,7 @@ c-----------------------------------------------------------------------
       ccurve(6,e1) = 's'
       ccurve(6,e2) = 's'
 
-      call rzero(curve(1,1,e),3*4*6)
+      call rzero(curve(1,1,e),3*72)
       curve(4,6,e ) = r2
       curve(4,6,e1) = r2
       curve(4,6,e2) = r2
@@ -2843,13 +2846,16 @@ c-----------------------------------------------------------------------
       ccurve(6,e1) = 's'
       ccurve(6,e2) = 's'
 
-      call rzero(curve(1,1,e),3*4*6)
+      call rzero(curve(1,1,e),3*72)
       curve(4,5,e ) = r1
       curve(4,5,e1) = r1
       curve(4,5,e2) = r1
       curve(4,6,e ) = r2
       curve(4,6,e1) = r2
       curve(4,6,e2) = r2
+
+      letapt(e) = 'A'
+      numapt(e) = 1
 
       return
       end
@@ -2924,7 +2930,7 @@ c-----------------------------------------------------------------------
       ccurve(5,e1) = 's'
       ccurve(5,e2) = 's'
 
-      call rzero(curve(1,1,e),3*4*6)
+      call rzero(curve(1,1,e),3*72)
       curve(4,5,e ) = r1
       curve(4,5,e1) = r1
       curve(4,5,e2) = r1
@@ -3006,7 +3012,7 @@ c        write(6,*) xr(k),yr(k),zr(k),'  MIDSIDE ?'
 c     enddo
 c     stop
 
-      call rzero(curve(1,1,e),3*6*12)
+      call rzero(curve(1,1,e),3*72)
       do e1=e,e+2
          call el_convert  (e1,xr,yr,zr)
          ccurve(4,e1) = 'm'
@@ -3066,7 +3072,7 @@ c-----------------------------------------------------------------------
       zr(7)=x1
       zr(8)=x1
 
-      call rzero(curve(1,1,e),4*6)
+      call rzero(curve(1,1,e),72)
       do e1=e,e+2
          call el_convert     (e1,xr,yr,zr)
          call permute_xyz    (xr,yr,zr,8)
@@ -3330,6 +3336,571 @@ c     enddo
       do e=1,nel
          numapt(e) = e
          letapt(e) = 'A'
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rep_rotate_mesh2
+      include 'basics.inc'
+      character*1 axisr
+
+      call prs('Input rotation angle (deg):$')
+      call rer(angle_deg)
+
+      call prs('Input number of reps (e.g., 1 --> double mesh size)$')
+      call rei(nrep)
+
+      axisr = 'Z'
+      if (if3d) then
+         call prs('Input axis of rotation (x,y,z):$')
+         call res(axisr,1)
+         call capit(axisr,1)
+      endif
+      call do_rep_rotate_mesh(1,nel,angle_deg,nrep,axisr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine do_rep_rotate_meshg(e0,e1,angle_deg,nrep,normal)
+
+c     Replicate & Rotate about general normal vector
+
+      include 'basics.inc'
+      integer e,e0,e1,e2,e3
+      real normal(3)
+
+
+      e3 = nel
+      do i=1,nrep
+
+         angle_deg_i = i*angle_deg
+
+         e2 = e3+1
+         e3 = e2 + (e1-e0)
+
+         call copy_sub_mesh(e0,e1,e2)
+
+         do e=e2,e3
+            call rotate_el_vec(e,normal,angle_deg_i)
+         enddo
+
+      enddo
+      nel = e3
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine do_rep_rotate_mesh(e0,e1,angle_deg,nrep,axisr)
+      include 'basics.inc'
+      integer e0,e1,e2,e3
+      character*1 axisr
+
+
+      e3 = nel
+      do i=1,nrep
+
+         e2 = e3+1
+         e3 = e2 + (e1-e0)
+
+         call copy_sub_mesh(e0,e1,e2)
+         angle_deg_i = i*angle_deg
+         call rotate_submesh_3d(e2,e3,angle_deg_i,axisr)
+
+      enddo
+
+      nel = e3
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine octquad_split_submesh(e0,e1,ifoct)
+      include 'basics.inc'
+      common /splitt/ enew(nelm),ind(nelm)
+      dimension liste(8)
+      integer e,e0,e1,en
+
+      logical ifoct
+
+      noct = 4
+      if (ifoct.and.if3d) noct=8
+
+      neln=nel + (1+e1-e0)*noct
+      nelm1=nelm-2
+      if (neln.gt.nelm1) then
+         call prs('Number of elements after OctSplit operation$')
+         write(s,51) neln,nelm1
+         call prs(s)
+   51    format(2x,'(',i9,') would be greater than the allowed maxium '
+     $            ,'(',i9,').$')
+         call prs('Aborting octquad_split.$')
+         return
+      endif
+
+c     Renumber ALL elements, so that low numbered elements will remain
+c     low numbered.  This will be achieved by assigning IE+0.1 to the
+c     new element numbers, and then sorting the list.
+
+      neln=nel
+      call rint(enew,nel)
+
+      do e=e0,e1
+         en = 0
+         do ioct = 2,noct
+            neln=neln+1
+c           enew(neln) = e + 0.1*ioct
+            enew(neln) = e + 0.1
+            en = en+1
+            liste(en) = neln
+         enddo
+         liste(Noct) = Neln+1
+
+         if (ifoct) then
+            call octsplite(e,liste) 
+         else
+            call qsplite(e,liste) 
+         endif
+      enddo
+
+      write(6,*) e0,e1,nel,noct,' e0e1'
+c     do i=1,neln,8
+c        write(6,8) (enew(j),j=i,i+7)
+c  8     format(8f8.1,' enew')
+c     enddo
+
+c     Generate new sub-elements as a result of the oct-split action.
+
+      nnew = neln-nel
+      nel  = neln
+
+C     Elements are all set. Sort.
+
+      call sort   (enew,ind,nel)
+      call swapel (ind,nel,nelm1)
+      call curcnt
+c     call vertadj
+
+
+      write(s,300) nnew,nel
+  300 format(i11,' new elements generated in octspl. NEL=',i11,'$')
+      call prs(s)
+
+      call gencen
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine mesh4to3(p9,idir)
+
+      include 'basics.inc'
+      real p9(3,9)
+      integer ptr9(4,4),e
+      save    ptr9
+      data    ptr9 / 5,4,1,2 , 8,7,4,5 , 9,8,5,6 , 6,5,2,3 /
+
+      if (idir.eq.1) then ! mesh to p9
+         do e=1,4
+         do i=1,4
+            j=i+4
+            k=ptr9(i,e)
+            p9(1,k) = x(j,e)
+            p9(2,k) = y(j,e)
+            p9(3,k) = z(j,e)
+            write(30,1) k,e,i,p9(1,k),p9(2,k),p9(3,k)
+ 1          format(3i5,3f12.5)
+         enddo
+         enddo
+      else
+         do e=1,4
+         do i=1,4
+            j=i+4
+            k=ptr9(i,e)
+            x(j,e) = p9(1,k)
+            y(j,e) = p9(2,k)
+            z(j,e) = p9(3,k)
+         enddo
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine proj2plane(x,x0,p1,p2,p3,tol)
+      real x(3),x0(3),p1(3),p2(3),p3(3)
+      real nh(3),v0(3),v2(3),v3(3)
+
+
+      call sub3(v2,p2,p1,3)
+      call sub3(v3,p3,p1,3)
+      call vcross_normal(nh,v2,v3)
+
+      call sub3(v0,x0,p1,3)
+
+      alpha = dot(v0,nh,3)
+      if (alpha.lt.0) call chsign(nh,3)
+
+      d2plane=(x(1)-p1(1))*nh(1)+(x(2)-p1(2))*nh(2)+(x(3)-p1(3))*nh(3)
+
+      if (d2plane.lt.tol) then
+         x(1) = x(1) - d2plane*nh(1)
+         x(2) = x(2) - d2plane*nh(2)
+         x(3) = x(3) - d2plane*nh(3)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine proj2line(x,p0,p1)
+      real x(3),p0(3),p1(3),dx(3),t(3)
+
+      call sub3  (t,p1,p0,3)
+      call norm3d(t)                 ! Unit tangent vector
+
+      call sub3(dx,x,p0,3)           ! Difference between x and base point
+
+      alpha = dot(dx,t,3)            ! Inner product of dx and t
+
+      do i=1,3
+         x(i) = p0(i) + alpha*t(i)   ! Projection onto line [p0,p1]
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build_corner_mesh(p9,nrefine) ! Here, we build the corner mesh
+
+      include 'basics.inc'
+      integer e,f,e0,e1,e2,e3
+
+      real pp(3,3,2),pl(3,2),p0(3),p9(3,9)
+      save pp,pl,p0
+      data pp / 0.,0.,1. , 1.,0.,1. , 0.,1.,0.
+     $        , 0.,0.,1. , 0.,1.,1. , 1.,0.,0. /
+      data pl / 0.,0.,1. , 1.,1.,0. /
+      integer pc(4)
+      save    pc
+      data    pc / 9,8,5,6 /
+
+
+      e2=nel+1
+
+      call copyel(nel,e2)
+
+      do f=1,6
+         ccurve(f,e2)=' '
+      enddo
+
+      call rone (x(1,e2),8)
+      call rone (y(1,e2),8)
+      call rzero(z(1,e2),8)
+
+      do i=1,4
+         k=pc(i)
+         x(i,e2)=p9(1,k)
+         y(i,e2)=p9(2,k)
+         z(i,e2)=p9(3,k)
+      enddo
+
+      x(8,e2) = 1 - z(1,e2)  ! Exploit symmetries
+      x(7,e2) = x(4,e2)
+
+      y(6,e2) = 1 - z(1,e2)
+      y(7,e2) = y(2,e2)
+
+      nel = nel+1
+
+      do k=1,nrefine
+         call octquad_split_submesh(e2,nel,.true.) ! Oct refine base mesh
+      enddo
+
+c     Now copy and rotate sub-block
+
+      e3 = nel
+      call rone(p0,3)
+      call do_rep_rotate_meshg(e2,e3,120.,1,p0)
+
+      call translate_sub_mesh(e2,nel,-.5,-.5,-.5)
+      call do_rep_rotate_mesh(e2,nel,180.,1,'Z')
+      call translate_sub_mesh(e2,nel,0.5,0.5,0.5)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build_center_mesh(p9,nrefine) ! Build the center tet mesh
+
+      include 'basics.inc'
+      integer e,f,e0,e1,e2,e3,e4
+
+      real p0(3),p9(3,9),p5(3,5),pr(3,5),a(3,3),normal(3)
+      integer pc(4)
+      save    pc
+      data    pc / 5,4,1,2 /
+      save    normal
+      data    normal / -1. , -1. , 1. /
+
+      call cfill(p5,0.5,15)
+      do i=1,4
+         k=pc(i)
+         p5(1,i)=p9(1,k)-p9(1,5)  ! Shift defining tet face to origin
+         p5(2,i)=p9(2,k)-p9(2,5)
+         p5(3,i)=p9(3,k)-p9(3,5)
+      enddo
+      call sub2(p5(1,5),p9(1,5),3)
+      
+      call gen_rotate_mat_3d(a,normal, 120.)
+
+      e0=nel+1
+
+      call copyel(nel,e0)
+
+      do f=1,6
+         ccurve(f,e0)=' '
+         cbc(f,e0,1) = 'V'
+      enddo
+
+      do i=1,4
+         x(i,e0)=p5(1,i)
+         y(i,e0)=p5(2,i)
+         z(i,e0)=p5(3,i)
+      enddo
+      x(7,e0)=p5(1,5)
+      y(7,e0)=p5(2,5)
+      z(7,e0)=p5(3,5)
+
+      call mxm(a,3,p5,3,pr,4)
+      x(6,e0)=pr(1,3)
+      y(6,e0)=pr(2,3)
+      z(6,e0)=pr(3,3)
+      call mxm(a,3,pr,3,p5,4)
+      x(5,e0)=p5(1,4)
+      y(5,e0)=p5(2,4)
+      z(5,e0)=p5(3,4)
+      x(8,e0)=p5(1,3)
+      y(8,e0)=p5(2,3)
+      z(8,e0)=p5(3,3)
+
+      do i=1,8                          ! Translate back
+         x(i,e0) = x(i,e0) + p9(1,5)
+         y(i,e0) = y(i,e0) + p9(2,5)
+         z(i,e0) = z(i,e0) + p9(3,5)
+      enddo
+
+
+      nel = nel+1
+      do k=1,nrefine
+         call octquad_split_submesh(e0,nel,.true.) ! Oct refine base mesh
+      enddo
+
+c     Now copy and rotate sub-block
+      e1 = nel
+      call rone(p0,3)
+      call do_rep_rotate_meshg(e0,e1,120.,2,p0)
+
+      call translate_sub_mesh(1,nel,-.5,-.5,-.5)
+      p0(2) = -1
+      call do_rep_rotate_meshg(e0,e1,120.,1,p0)
+      call translate_sub_mesh(1,nel,0.5,0.5,0.5)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine skin_fcc_spheres(rt,r0,nrefine) 
+
+      include 'basics.inc'
+      integer e,f,e0,e1,e2,e3,e4
+      real p0(3)
+
+      nel0 = nel ! Track baseline number of elements
+      e0   = nel0+1
+
+      call sc_std_shell(rt,r0,e0)     ! Standard spherical shell
+      nel = nel+3                     ! Keep only the first elements
+
+      e1  = nel
+
+      write(6,*) e0,e1,nrefine,' in skin',nel,rt,r0
+
+c     call prexit  ! Definitely messed up
+
+      do e=e0,e1
+         do f=1,4
+            cbc(f,e,1) = 'SYM'
+            cbc(f,e,1) = 'O  '
+            cbc(f,e,2) = 'I  '
+         enddo
+         cbc(5,e,1) = 'W  '
+         cbc(5,e,2) = 't  '
+         cbc(6,e,1) = 'v  '
+         cbc(6,e,2) = 't  '
+      enddo
+      e = e0                  ! Identify first element
+      cbc(6,e,1) = 'O  '
+      cbc(6,e,2) = 'O  '
+
+      call rotate_submesh_3d (e0,e1,180.,'X')
+      call rotate_submesh_3d (e0,e1,-90.,'Z')
+      call translate_sub_mesh(e0,e1,1.0,1.0,1.0)
+
+      call octquad_split_submesh(e0,e1,.false.) ! Quad refine base mesh
+
+      call translate_sub_mesh (e0,nel,-.5,-.5,-.5)
+      call do_rep_rotate_mesh (e0,nel,180.,1,'X')
+      call do_rep_rotate_mesh (e0,nel,180.,1,'Z')
+      call translate_sub_mesh (e0,nel,0.5,0.5,0.5)
+
+      if (nrefine.ge.1)
+     $    call octquad_split_submesh(e0,nel,.false.) ! Quad refine base mesh
+      if (nrefine.ge.2)
+     $    call octquad_split_submesh(e0,nel,.true.)  ! Oct refine base mesh
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fcc_x8 ! copy unit 1/2-cell to 4x-cell
+
+      include 'basics.inc'
+
+      call do_rep_rotate_mesh (1,nel, 90.,3,'X')
+      call do_rep_rotate_mesh (1,nel,180.,1,'Z')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fcc_base(p9,rt,r0,r1,nrefine)  ! Build fcc mesh
+      include 'basics.inc'
+
+      real p9(3,9)
+
+      integer e,f,e0,e1,e2
+
+      real pp(3,3,2),pl(3,2),p0(3)
+      save pp,pl,p0
+      data pp / 0.,0.,1. , 1.,0.,1. , 0.,1.,0.
+     $        , 0.,0.,1. , 0.,1.,1. , 1.,0.,0. /
+      data pl / 0.,0.,1. , 1.,1.,0. /
+
+
+c     NOTES:
+c
+c        Target R = .5*6 cm / 4.59619 = .652714
+c
+
+      nel0 = nel ! Track baseline number of elements
+      e0   = nel0+1
+
+      call sc_std_shell(r0,r1,1)     ! Standard spherical shell
+      nel = 1                        ! Keep only the first elements
+
+      e1  = nel
+
+      do e=e0,e1
+         do f=1,4
+            cbc(f,e,1) = 'SYM'
+            cbc(f,e,1) = 'O  '
+            cbc(f,e,2) = 'I  '
+         enddo
+         cbc(5,e,1) = 'W  '
+         cbc(5,e,2) = 't  '
+         cbc(6,e,1) = 'v  '
+         cbc(6,e,2) = 't  '
+      enddo
+      e = e0                  ! Identify first element
+      cbc(6,e,1) = 'O  '
+      cbc(6,e,2) = 'O  '
+
+      call rotate_submesh_3d (e0,e1,180.,'X')
+      call rotate_submesh_3d (e0,e1,-90.,'Z')
+      call translate_sub_mesh(e0,e1,1.0,1.0,1.0)
+
+      call octquad_split_submesh(e0,e1,.false.) ! Quad refine base mesh
+
+      do e=1,4
+         ccurve(6,e)=' '
+      enddo
+
+      call rone(p0,3)
+      call mesh4to3(p9,1) ! map 4 elements to 3 x 3 array
+      call proj2plane(p9(1,2),p0,pp(1,1,2),pp(1,2,2),pp(1,3,2),1.e20)
+      call proj2plane(p9(1,3),p0,pp(1,1,2),pp(1,2,2),pp(1,3,2),1.e20)
+      call proj2plane(p9(1,6),p0,pp(1,1,2),pp(1,2,2),pp(1,3,2),1.e20)
+      call proj2plane(p9(1,4),p0,pp(1,1,1),pp(1,2,1),pp(1,3,1),1.e20)
+      call proj2plane(p9(1,7),p0,pp(1,1,1),pp(1,2,1),pp(1,3,1),1.e20)
+      call proj2plane(p9(1,8),p0,pp(1,1,1),pp(1,2,1),pp(1,3,1),1.e20)
+      call proj2line (p9(1,5),pl(1,1),pl(1,2))
+      call mesh4to3(p9,2) ! map 3x3 array to 4 elements
+
+      call do_rep_rotate_meshg(1,nel,120.,2,p0)
+      call translate_sub_mesh (1,nel,-.5,-.5,-.5)
+      call do_rep_rotate_mesh (1,nel,180.,1,'X')
+      call do_rep_rotate_mesh (1,nel,180.,1,'Z')
+      call translate_sub_mesh (1,nel,0.5,0.5,0.5)
+
+
+      if (nrefine.ge.1)
+     $   call octquad_split_submesh(1,nel,.false.) ! Quad refine base mesh
+
+      do k=2,nrefine
+         call octquad_split_submesh(1,nel,.true.)  ! Oct refine base mesh
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fcc2  ! Build fcc mesh
+
+      include 'basics.inc'
+      integer e,f,e0,e1,e2
+
+      real pp(3,3,2),pl(3,2),p0(3)
+      save pp,pl,p0
+      data pp / 0.,0.,1. , 1.,0.,1. , 0.,1.,0.
+     $        , 0.,0.,1. , 0.,1.,1. , 1.,0.,0. /
+      data pl / 0.,0.,1. , 1.,1.,0. /
+
+      common /fccpts/ p9(3,9)
+
+
+
+c     NOTES:  Target R = .5*6 cm / 4.59619 = .652714
+
+      rt = 0.652714  ! Target radius
+      r0 = 0.678
+      r1 = 0.735
+
+      nrefine = 3  ! NEL = 143360   ( untested )
+      nrefine = 2  ! NEL =  28000   ( n ~ 10 million for N=8 )
+
+      call fcc_base           (p9,rt,r0,r1,nrefine)  ! Build fcc mesh
+      call build_corner_mesh           (p9,nrefine)
+      call build_center_mesh           (p9,nrefine)  ! Remaining tet-mesh
+      call skin_fcc_spheres         (rt,r0,nrefine) 
+      call fcc_x8                                    ! copy to 4x-cell
+
+      call fcc_set_bcs(rt)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fcc_set_bcs(r0)  ! BCs for fcc mesh
+      include 'basics.inc'
+
+      integer e,f
+
+      tol = 1.e-4
+
+      do e=1,nel
+      do f=1,6
+         cbc(f,e,1)='   '
+         cbc(f,e,2)='   '
+
+         dr=abs(curve(4,f,e)-r0)
+
+         if (ccurve(f,e).eq.'s'.and.dr.lt.tol) then
+            cbc(f,e,1) = 'W  '
+            cbc(f,e,2) = 'f  '
+         endif
+
+      enddo
       enddo
 
       return

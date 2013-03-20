@@ -585,7 +585,7 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ifill(x,i,n)
+      subroutine jfill(x,i,n)
       integer x(1)
       do j=1,n
          x(j)=i
@@ -656,18 +656,18 @@ c-----------------------------------------------------------------------
       xnrm = glsc2(x,x,n)
       if (xnrm.eq.0) return
 
-      call outmat(x,1,3,'xorth',n)
-      call outmat(y,1,3,'yorth',1)
+c     call outmat(x,1,3,'xorth',n)
+c     call outmat(y,1,3,'yorth',1)
 
       xty  = glsc2(x,y,n)/xnrm
 
-      write(6,*) xnrm,xty,' xty',n
+c     write(6,*) xnrm,xty,' xty',n
 
       do i=1,n
          y(i) = y(i) - xty*x(i)
       enddo
 
-      call outmat(y,1,3,'yorth',2)
+c     call outmat(y,1,3,'yorth',2)
 
       return
       end

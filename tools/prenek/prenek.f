@@ -1378,7 +1378,12 @@ c-----------------------------------------------------------------------
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
-C
+
+
+      write(6,*) nel,' this is nel in prexit'
+      call curcnt  ! Recount number of curved sides
+
+
       CALL CLEARA
       CALL WRTPAR('FULL DUMP ')
       sesion(11:14) ='   '
@@ -1662,7 +1667,9 @@ C     Sort so that integrals are last
       WRITE(10,'(2X,I6,A17)')NPOBJS, ' Point   Objects '
 C
       CLOSE(UNIT=10)
-c
+
+      call session_exit
+
       return
 c
 60    CALL EREXIT
@@ -1852,7 +1859,11 @@ C       Perpendicular to above two
       YHOBS(1)=-1.0*SIN(THETAR)*COS(PHIR)
       YHOBS(2)=-1.0*SIN(THETAR)*SIN(PHIR)
       YHOBS(3)=COS(THETAR)
-C
+
+      do i=1,nelm
+         letapt(i)='a'
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -3009,6 +3020,7 @@ c-----------------------------------------------------------------------
       subroutine exitt
       include 'basics.inc'
       write(6,*) 'stopping in exitt'
+      nz = 1/(nx-ny)
       zzz = -nel
       zzz = sqrt(zzz)
       write(6,*) zzz
