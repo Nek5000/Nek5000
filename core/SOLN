@@ -42,6 +42,7 @@ c     Solution data
      $               , BFX    (LX1,LY1,LZ1,LELV)
      $               , BFY    (LX1,LY1,LZ1,LELV)
      $               , BFZ    (LX1,LY1,LZ1,LELV)
+     $               , cflf   (lx1,ly1,lz1,lelv)
      $               , c_vx   (lxd*lyd*lzd*lelv*ldim,lorder+1) ! characteristics
 c     Solution data for magnetic field
      $               , BX     (LBX1,LBY1,LBZ1,LBELV)
