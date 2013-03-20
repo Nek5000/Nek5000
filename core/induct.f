@@ -921,6 +921,7 @@ c
       include 'GEOM'
       include 'INPUT'
       include 'WZ'
+      include 'SOLN'
 c
       real u(nx1,ny1,nz1,nelv),v(nx1,ny1,nz1,nelv),w(nx1,ny1,nz1,nelv)
 c
@@ -960,14 +961,16 @@ c
                ut = ( u(i,j,k,e)*txm1(i,j,k,e)
      $            +   v(i,j,k,e)*tym1(i,j,k,e)
      $            +   w(i,j,k,e)*tzm1(i,j,k,e) ) * jacmi(l,1)
-c
+ 
                cflr = abs(dt*ur*dri(i))
                cfls = abs(dt*us*dsi(j))
                cflt = abs(dt*ut*dti(k))
-c
+ 
                cflm = cflr + cfls + cflt
                cfl  = max(cfl,cflm)
-c
+
+               cflf(i,j,k,e) = cflm
+ 
             enddo
             enddo
             enddo
@@ -988,6 +991,8 @@ c
 
                cflm = cflr + cfls
                cfl  = max(cfl,cflm)
+
+               cflf(i,j,1,e) = cflm
 
             enddo
             enddo
