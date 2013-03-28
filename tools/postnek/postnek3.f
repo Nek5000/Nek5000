@@ -735,7 +735,9 @@ C
 c-----------------------------------------------------------------------
       subroutine drawel(iel)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      INCLUDE 'basics.inc'
+      include 'basics.inc'
+      real xx(3,9)
+
       CHARACTER STRING*6
       DIMENSION CSPACE(100),XCRVED(100),YCRVED(100)
 C     Now, draw new elements for elements that were modified
@@ -812,6 +814,31 @@ C        LABEL Element Center
      $   YCENTER-.02*YFAC,1.0,STRING)
       ENDIF
       call color(1)
+
+      call rzero(xx,9)
+      do j=5,8
+         xx(1,1)=xx(1,1)+.25*x(iel,j)
+         xx(2,1)=xx(2,1)+.25*y(iel,j)
+         xx(3,1)=xx(3,1)+.25*z(iel,j)
+      stop
+      enddo
+      do j=5,8
+         xx(1,2)=max(xx(1,2),abs(xx(1,1)-x(iel,j)))
+         xx(2,2)=max(xx(2,2),abs(xx(2,1)-y(iel,j)))
+         xx(3,2)=max(xx(3,2),abs(xx(3,1)-z(iel,j)))
+      enddo
+      do j=5,8
+         xxm=x(iel,j) + .12*(xx(1,1)-x(iel,j))**2 / xx(1,2)
+         yym=y(iel,j) + .12*(xx(2,1)-x(iel,j))**2 / xx(2,2)
+         zzm=z(iel,j) + .12*(xx(3,1)-x(iel,j))**2 / xx(3,2)
+         xm=xiso(xxm,yym,zzm)
+         ym=yiso(xxm,yym,zzm)
+         if (j.eq.5) call gwrite(xm,ym,1.0,'5$')
+         if (j.eq.6) call gwrite(xm,ym,1.0,'6$')
+         if (j.eq.7) call gwrite(xm,ym,1.0,'7$')
+         if (j.eq.8) call gwrite(xm,ym,1.0,'8$')
+      enddo
+
       return
       END
 c-----------------------------------------------------------------------

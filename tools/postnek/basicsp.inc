@@ -1,7 +1,7 @@
 c     Beginning of basicsp.inc**********
 c
 c     MAXIMUM # OF History values (per point) and max particles
-      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=1 800 000)
+      PARAMETER (MAXS=11,MAXPAR=10,MAXPTS=50 000 000)
 c     PARAMETER (lvrt=maxpts)
       PARAMETER (lvrt=1)
 c

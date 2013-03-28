@@ -518,7 +518,15 @@ c-----------------------------------------------------------------------
 C
 C     Everything has been set up; check for reasonableness and then plot.
 C     Set up screen
-C
+
+c     k=1
+c     do ie=1,nel
+c        call quickfill(work(k))
+c        k=k+nx*ny*nz
+c     enddo
+
+
+
       IF(IFERROR)THEN
 C        Special overriding case-  you get color fill plot
          CALL PLERR
@@ -734,9 +742,11 @@ C     Draws Mesh.  Draws walls white.
 c
       character*3 c3
       logical ifdhis
-C
-C
-C       Draw Element Sides
+
+      real xx(3,9)
+
+
+C     Draw Element Sides
 C     DRISO Good for 2- or 3-D SIMULATION
 C     Pseudo-hidden line removal:Draw in order of increasing zscxreen
 C     and fill with color zero
@@ -749,6 +759,30 @@ c
       ELSE
          CALL DRISO
       ENDIF
+
+      do iel=1,4
+        call rzero(xx,9)
+        do j=5,8
+         xx(1,1)=xx(1,1)+.25*x(iel,j)
+         xx(2,1)=xx(2,1)+.25*y(iel,j)
+         xx(3,1)=xx(3,1)+.25*z(iel,j)
+        enddo
+        do j=5,8
+         xx(1,2)=max(xx(1,2),abs(xx(1,1)-x(iel,j)))
+         xx(2,2)=max(xx(2,2),abs(xx(2,1)-y(iel,j)))
+         xx(3,2)=max(xx(3,2),abs(xx(3,1)-z(iel,j)))
+        enddo
+        do j=5,8
+         xxm=x(iel,j)!+ .12*(xx(1,1)-x(iel,j))**2 / xx(1,2)
+         yym=y(iel,j)!+ .12*(xx(2,1)-x(iel,j))**2 / xx(2,2)
+         zzm=z(iel,j)!+ .12*(xx(3,1)-x(iel,j))**2 / xx(3,2)
+         if (j.eq.5) call g3writ(xxm,yym,zzm,1.0,'5$')
+         if (j.eq.6) call g3writ(xxm,yym,zzm,1.0,'6$')
+         if (j.eq.7) call g3writ(xxm,yym,zzm,1.0,'7$')
+         if (j.eq.8) call g3writ(xxm,yym,zzm,1.0,'8$')
+        enddo
+      enddo
+
 C     History points
 c     IF (IFDMSH.AND.NNHIS.GT.0.AND.NDIM.EQ.2) THEN
 c        CALL COLOR(15)
@@ -2595,6 +2629,7 @@ c-----------------------------------------------------------------------
      $               ,ZPLOT(NXM2)
      $               ,XVEC(NXM2) ,YVEC(NXM2) ,ZVEC(NXM2)
       COMMON /ccdiag/ iee
+      common /ccntr/ iel
       common /surfavg/ xsavg,ysavg,zsavg,wsavg
       CHARACTER C*20
       SAVE IFIRST
@@ -4594,4 +4629,17 @@ c-----------------------------------------------------------------------
       enddo
       return
       end
-
+c-----------------------------------------------------------------------
+      subroutine quickfill(pp)
+      include 'basics.inc'
+      real   pp(nx,ny,nz)
+      do k = 1, nz
+      do j = 1, ny
+      do i = 1, nx
+         pp(i,j,k) = i
+      enddo
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
