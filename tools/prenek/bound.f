@@ -1137,13 +1137,13 @@ c-----------------------------------------------------------------------
    11 continue
 
       if (nlevel.eq.1) then ! Display B.C.'s already here (for 2-d case)
-        do ifld=ifld0,ifld1
-        do e=1,nel
-        do f=1,nsides
-           if (cbc(f,e,ifld).ne.'   ') call letbc(f,e,if,cbc(f,e,ifld))
-        enddo
-        enddo
-        enddo
+       do ifld=ifld0,ifld1
+       do e=1,nel
+       do f=1,nsides
+         if (cbc(f,e,ifld).ne.'   ') call letbc(f,e,ifld,cbc(f,e,ifld))
+       enddo
+       enddo
+       enddo
       endif
 
       return
