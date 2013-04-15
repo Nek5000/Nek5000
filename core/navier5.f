@@ -3752,3 +3752,135 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine build_filter(f,diag,nx)
+      include 'SIZE'
+
+      real f(nx,nx),diag(nx),zpts(nx)
+
+      parameter (lm=4*lx1) ! Totally arbitrary
+      parameter (lm2=lm*lm)
+
+      common /cfilt1/ phi,pht,ft,rmult,Lj,gpts,indr,indc,ipiv
+      real      phi(lm2),pht(lm2),ft(lm2),rmult(lm),Lj(lm),gpts(lm)
+      integer   indr(lm),indc(lm),ipiv(lm)
+
+      integer nxl
+      save    nxl
+      data    nxl / -9 /
+
+      if (nx.gt.lm) call exitti('ABORT in build_filter:$',nx)
+
+      if (nx.ne.nxl) then
+
+        nxl = nx
+
+        call zwgll (gpts,f,nx)  ! Get nx GLL points
+
+        kj = 0
+        n  = nx-1
+        do j=1,nx
+         z = gpts(j)
+         call legendre_poly(Lj,z,n)
+         kj = kj+1
+         pht(kj) = Lj(1)
+         kj = kj+1
+         pht(kj) = Lj(2)
+         do k=3,nx
+            kj = kj+1
+            pht(kj) = Lj(k)-Lj(k-2)
+         enddo
+        enddo
+
+        call transpose (phi,nx,pht,nx)
+        call copy      (pht,phi,nx*nx)
+        call gaujordf  (pht,nx,nx,indr,indc,ipiv,ierr,rmult)
+
+      endif ! End of save section
+
+      ij=0
+      do j=1,nx
+      do i=1,nx
+         ij = ij+1
+         ft(ij) = diag(i)*pht(ij)
+      enddo
+      enddo
+                                          !          -1
+      call mxm  (phi,nx,ft,nx,f,nx)       !     V D V
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine g_filter(u,diag,ifld)
+c
+c     Generalized filter: F(u) with F = J^T D J, where D=diag(diag)
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u(1),diag(1)
+
+      parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
+      common /ctmp0/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz)
+
+      ifldt = ifield
+      ifield = ifld
+
+      call build_filter(f,diag,nx1)
+      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+
+      ifield = ifldt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cut_off_filter(u,mx,ifld) ! mx=max saved mode
+c
+c     Generalized filter: F(u) with F = J^T D J, where D=diag(diag)
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u(1)
+
+      parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
+      common /ctmp0/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz),diag(lx1)
+
+      ifldt = ifield
+      ifield = ifld
+
+      call rone(diag,nx1)
+      do i=mx+1,nx1
+         diag(i)=0.
+      enddo
+
+      call build_filter(f,diag,nx1)
+      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+
+      ifield = ifldt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine domain_size(x0,x1,y0,y1,z0,z1)
+      include 'SIZE'
+      include 'TOTAL'
+
+      n = nx1*ny1*nz1*nelt
+
+      x0 = glmin(xm1,n)
+      x1 = glmax(xm1,n)
+
+      y0 = glmin(ym1,n)
+      y1 = glmax(ym1,n)
+
+      if (if3d) then
+         z0 = glmin(zm1,n)
+         z1 = glmax(zm1,n)
+      else
+         z0 = 0.
+         z1 = 0.
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
