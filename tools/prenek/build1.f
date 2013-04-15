@@ -406,13 +406,13 @@ c-----------------------------------------------------------------------
                js = f
                je = e
             endif
-            write(6,1) e,f,r,rmin,(sides(e,f,k),k=1,2),xp,yp
-  1         format(i5,i2,1p6e12.4,' sides')
+c           write(6,1) e,f,r,rmin,(sides(e,f,k),k=1,2),xp,yp
+c 1         format(i5,i2,1p6e12.4,' sides')
          enddo
          enddo
       endif
-      write(6,2) je,js,rmin,(sides(je,js,k),k=1,2),xp,yp
-  2   format(i5,i2,1p5e12.4,' sides2')
+c     write(6,2) je,js,rmin,(sides(je,js,k),k=1,2),xp,yp
+c 2   format(i5,i2,1p5e12.4,' sides2')
 
       return
       end
@@ -896,8 +896,8 @@ c-----------------------------------------------------------------------
          enddo
 
          erad(e) = (exmx-exmn)+(eymx-eymn)
-         write(6,1) e,em,cm,xt,yt,xc,yc,rm
-   1     format(2i5,i3,1p5e12.4,' rmin2')
+c        write(6,1) e,em,cm,xt,yt,xc,yc,rm
+c  1     format(2i5,i3,1p5e12.4,' rmin2')
 
       enddo
 

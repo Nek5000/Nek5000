@@ -378,9 +378,8 @@ cccc             CALL REI(Ke)
                  ELSE
                   CALL PRS(
      $            'Are you sure you want to keep it this way (A)?$')
-                  jed=1/ie + 1/je
                   je =jed
-c                 stop
+c                 call prexit
 cccc              CALL RES(YESNO,1)
 cccc              IF (YESNO.ne.'y'.and.YESNO.ne.'Y') GOTO 200
                  ENDIF
@@ -644,7 +643,7 @@ c
          v(2) = y(8,ie)-y(6,ie)
          v(3) = z(8,ie)-z(6,ie)
       endif
-      call vcross_normal(w,u,v)
+      call vcross_normal(w,sine,u,v)
       unx = w(1)
       uny = w(2)
       unz = w(3)
@@ -652,7 +651,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine vcross_normal(u,v,w)
+      subroutine vcross_normal(u,r2,v,w)
 C
 C     Compute a Cartesian vector cross product.
 C
@@ -1066,7 +1065,7 @@ c     call out_cent ! dump element centroids, w/ element numbers for positional 
                call drelev(i-1,i,'     ')
 50          continue
          else
-            call drelev(i,0,'     ')
+            call drelev(1,0,'     ')
          endif
       endif
 
@@ -1344,7 +1343,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine flash_side_a (ifade,e,f,fcorns,jlevel,ifld)
+      subroutine flash_side_a (ifade,iflash,e,f,fcorns,jlevel,ifld)
       include 'basics.inc'
       integer e,f
       integer fcorns (4,6)
@@ -1381,7 +1380,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine flash_element_b(ifade,e,f,jlevel,ifld,fcorns)
+      subroutine flash_element_b(ifade,iflash,e,f,jlevel,ifld,fcorns)
       include 'basics.inc'
       integer e,f
       integer fcorns (4,6)
@@ -1483,7 +1482,7 @@ c
             if (cbc(f,e,ifld).ne.'   ')     goto 900
             if (maskel(e,ifld) .eq. 0   )   goto 900
 
-            call flash_side_a (ifade,e,f,fcorns,jlevel,ifld)
+            call flash_side_a (ifade,iflash,e,f,fcorns,jlevel,ifld)
 
 113         continue
 c           Error Reading Input
@@ -2001,7 +2000,7 @@ c           Post-pick warnings
             endif
            endif
 
-           call flash_element_b(ifade,e,f,ilevel,ifld,fcorns)
+           call flash_element_b(ifade,iflash,e,f,ilevel,ifld,fcorns)
 
 900   continue
 c

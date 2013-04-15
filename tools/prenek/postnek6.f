@@ -465,7 +465,7 @@ c-----------------------------------------------------------------------
 
       if (mod(nxm,2).eq.0) then
          write(6,*) 'ERROR: Recompile with nxm odd in basics.inc'
-         stop
+         call prexit
       endif
 
       nxh = (nxm+1)/2

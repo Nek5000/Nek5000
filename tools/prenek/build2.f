@@ -1,4 +1,137 @@
 c-----------------------------------------------------------------------
+cc   TODO:
+c
+c .check (nelm-1) and nelm usage to ensure safe_haven is ok
+c
+c .need arc_circle transform with:
+c
+c    .arclength preservation (a bit of calculus)
+c
+c    .need midside node adjust so that midside nodes stay centered
+c       -- would the "deviation" (d) ccurve idea work here?
+c       -- It should, if we compute and preserve the relative
+c          orthonormal vectors so that the deflection is still
+c          orthogonal --- _and_ the magnitude change of the normal
+c          vector coincides with that of the chord; but only if
+c          the magnitude change is computed according to the curvature
+c          rather than the length.  Curvature is easy in this case
+c          because 'm' implies a parabola!  So, a little algebra
+c          will save this.
+c
+c          What about the sphere ?  That should be OK.  Ditto for 'C'
+c
+c          .So, idea for 'm' is the following:
+c
+c               - Pass v1,m,v2 and v1' v2' into a routine that returns m'.
+c
+c               - Easy!
+c
+c-----------------------------------------------------------------------
+      subroutine mid_3d(xm,x0,x1)  ! xm = (x0+x1)/2
+
+      real xm(3),x0(3),x1(3)
+
+      call add3 (xm,x0,x1,3)
+      call cmult(xm,0.5,3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine midside_convert_all ! Convert all elements to midside
+      include 'basics.inc'
+      integer e
+      do e=1,nel
+         call fix_m_curve(e) ! Convert all elements to midside
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine midside_clean(xm,x0,x1,linear) 
+
+c     clean up midside node so it's projection is midpoint of (x0,x1)
+
+      real xm(3),x0(3),x1(3)
+
+      real v(3),d(3),n(3),xh(3),length,lp
+
+      call sub3(v,x1,x0,3)            ! v  = x1-x0
+      call normalize(v,length,3)      ! d := d/||d||, disp = ||d||
+      call mid_3d(xh,x0,x1)           ! xh = (x0+x1)/2
+      call sub3(d,xm,xh,3)            ! d  = xm-xh
+      call normalize(d,disp,3)        ! d := d/||d||, disp = ||d||
+      call vcross_normal(o,sine,v,d)  ! o  = v x d
+
+      eps  = 2.e-5
+      test = min(disp,sine)
+      linear = 0
+      if (test.lt.eps*length) then    ! point is nearly colinear with v
+         linear = 1
+         call mid_3d(xm,x0,x1)        ! set xm = (x0+x1)/2 and return
+         return
+      endif
+
+c     p = projection of xm onto v
+
+      call sub3   (d0,xm,x0,3)        ! d0 = xm-x0
+      lp = dot    (d0,v,3)
+      call add3s2 (p,x0,v,lp,3)       ! p = x0 + lp*v
+
+      call sub3     (d,xm,p,3)        ! d = xm-p
+      call normalize(d,disp,3)        ! d := d/||d||, disp = ||d||
+
+      amp = disp/(lp*(length-lp))     ! a = y/(x*(l-x))
+      call add3s2 (xm,xh,d,amp,3)     ! xm = xh + d*amp
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine midside_refine(xmp,x0p,x1p,xmi,x0,x1,linear)
+      real xmp(3),x0p(3),x1p(3),xmi(3),x0(3),x1(3)
+
+c     Compute new midpoint, xmp, assuming that (x0,x1) 
+c     has been moved to (x0p,x1p).
+c
+c     Assumption is that displacement will be in same plane and
+c     that magnitude of Curvature is preserved as v is shrunk.
+c
+c     This strategy is good for refinement but not for general
+c     affine transformations.   pff 3/30/13
+
+      real xm(3),o(3)
+      real xh (3),v (3),n (3),l
+      real xhp(3),vp(3),np(3),lp
+
+
+      call copy          (xm,xmi,3)     ! Ensure quality input data
+      call midside_clean (xm,x0,x1,linear) 
+      if (linear.eq.1) then
+         call mid_3d (xmp,x0p,x1p)      ! Midpoint of original vector
+         return
+      endif
+
+      call mid_3d        (xh,x0,x1)     ! Midpoint of original vector
+      call sub3          (n,xm,xh,3)    ! Deviation of original vector: n=xm-xh
+      call normalize     (n,alpha,3)    ! alpha := | n |
+
+      call sub3          (v ,x1,x0,3)   ! v = x1-x0
+      call normalize     (v ,l ,3)      ! l = original length
+      call sub3          (v ,x1p,x0p,3) ! v = x1-x0
+      call normalize     (vp,lp,3)      ! l = original length
+
+      call vcross_normal (o,sine,v,d)   ! bi-normal
+
+      a = 4*alpha/(l*l)                 ! curvature
+
+      alphap = a*(lp*lp)/4              ! amplitude of new curve
+      call vcross_normal (np,sine,o,vp) ! normal for new midpoint
+
+      call mid_3d        (xhp,x0p,x1p)  ! midpoint of original vector
+
+      call add3s2(xmp,xhp,np,alphap,3)  ! xm' = xh' + n'*amp
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine sphmesh
       include 'basics.inc'
       common /ctmp0/ sphctr(3),xcs(4,24),ycs(4,24),zcs(4,24)
@@ -33,12 +166,25 @@ c
       call capit(hemi,1)
 
       if (hemi.eq.'C'.or.hemi.eq.'c') then
+
          radii(1)=1.0
          radii(2)=1.5
          radii(3)=2.0
          radii(4)=0.5  ! thickness of pipe
          radii(5)=0.25 ! 4x reduction factor
          nr       = 3
+
+         radii(1)=0.8
+         radii(2)=1.2
+         radii(3)=1.4
+         radii(4)=1.5
+         radii(5)=1.6
+         radii(6)=1.65
+         radii(7)=2.0
+         radii(8)=0.5  ! thickness of pipe
+         radii(9)=0.25 ! 4x reduction factor
+         nr       = 7
+
          call sc_make_sphere_cap(radii,nr)
          return
 
@@ -2550,7 +2696,7 @@ c
       if (x1(3).ge.h0) return
 
       call sub3(t2,t1,x0,3)
-      call normalize(t2,3)
+      call normalize(t2,alpha,3)
 
    
       call rzero(un,3) 
@@ -2860,25 +3006,28 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sc_cartesian_shell(r1,r2,e) ! build 7 elements, use rotation
+      subroutine sc_cartesian_shell(r1,r2,e,ifsix) ! build 7 elements, use rotation
 
       include 'basics.inc'
       integer e,e1
 
-      call sc_cartesian_shell_a(r1,r2,e)
+      logical ifsix
+
+      call sc_cartesian_shell_a(r1,r2,e,ifsix)
       e1 = e+3
 
-      call sc_cartesian_shell_b(r1,r2,e1)
+      call sc_cartesian_shell_b(r1,r2,e1,ifsix)
       e1 = e1+3
 
-      call sc_cartesian_shell_c(r1,r2,e1)
+      call sc_cartesian_shell_c(r1,r2,e1,ifsix)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sc_cartesian_shell_a(r1,r2,e) ! build 3 elements, use rotation
+      subroutine sc_cartesian_shell_a(r1,r2,e,ifsix) ! build 3 elements, use rotation
 
       include 'basics.inc'
+      logical ifsix
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -2895,6 +3044,7 @@ c-----------------------------------------------------------------------
 
       x1 = r2
       x2 = r2/2   ! by fiat
+      if (ifsix) x2 = 2.*r2/3   ! by fiat
 
       zr(1)=p1
       zr(2)=p2
@@ -2938,9 +3088,10 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sc_cartesian_shell_b(r1,r2,e) ! build 3 elements, use rotation
+      subroutine sc_cartesian_shell_b(r1,r2,e,ifsix) ! build 3 elements, use rotation
 
       include 'basics.inc'
+      logical ifsix
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -2979,6 +3130,7 @@ c---------- the stuff above for midside node extraction -----------------
 
       x1 = r2
       x2 = r2/2   ! by fiat
+      if (ifsix) x2 = 2.*r2/3   ! by fiat
 
       xr(1)=p2    !             ^
       xr(2)=x1    !             |            |                          
@@ -3025,9 +3177,13 @@ c     stop
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sc_cartesian_shell_c(r1,r2,e) ! build 1 elements, use rotation
+      subroutine sc_cartesian_shell_c(r1,r2,e,ifsix) 
+
+c     build one element, use rotation
 
       include 'basics.inc'
+      logical ifsix
+
       integer e,e1
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -3044,6 +3200,7 @@ c-----------------------------------------------------------------------
 
       x1 = r2
       x2 = r2/2   ! by fiat
+      if (ifsix) x2 = 2.*r2/3   ! by fiat
 
       xr(1)=p3
       xr(2)=x1
@@ -3081,9 +3238,10 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sc_pipe_section (radii,nr,e) 
+      subroutine sc_pipe_section (radii,nr,e,ifsix)
 
       include 'basics.inc'
+      logical ifsix
 
       integer e,e1,e2
       real radii(nr)
@@ -3192,6 +3350,7 @@ c-----------------------------------------------------------------------
       r2 = radii(i)
       x1 = r2
       x2 = r2/2   ! by fiat
+      if (ifsix) x2 = 2.*r2/3   ! by fiat
 
       p1 = r1
       p2 = r1/s2
@@ -3266,76 +3425,6 @@ c-----------------------------------------------------------------------
             curve (2,ie,e) = y27(eindx(ie),e)
             curve (3,ie,e) = z27(eindx(ie),e)
          endif
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine sc_make_sphere_cap(radii,nr)
-      real radii(nr)
-
-      include 'basics.inc'
-      integer e,e0,e1,f
-
-      common /xyzr/ xr(100),yr(100),zr(100)
-
-      parameter      (nxm3=nxm*nym*nzm)
-      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3) ! for genxyze_e
-
-      e0 = nel
-      e  = e0 + 1
-
-      call sc_central_shell    (radii(1),radii(2),e)
-      e = e+1
-
-      call sc_transition_shell (radii(1),radii(2),e)
-      e = e+3
-
-      do i=3,nr-1  ! work from inner to outer radii: 1st & last are special
-         call sc_std_shell     (radii(i-1),radii(i),e)
-         e = e+3
-      enddo
-      do e1=e0+1,e
-      do f=1,6
-         cbc(f,e1,1) = 'v  '
-         cbc(f,e1,2) = 't  '
-      enddo
-      enddo
-
-
-      call sc_cartesian_shell  (radii(nr-1),radii(nr),e)
-      do e1=e+1,e+7
-      do f=1,6
-         cbc(f,e1,1) = 'W  '
-         cbc(f,e1,2) = 'I  '
-      enddo
-      enddo
-
-      e = e+7
-
-      call prs('WARNING: Geometry inconsistent!!$')
-      call prs('You must call fix_geom from usrdat2!!$')
-
-c     do i=nel+1,e-1
-c        call genxyz_e (xp,yp,zp,i,nxm,nym,nzm) ! fill x27(.,e2)
-c        call fix_m_curve(i) ! convert cap to midside nodes
-c     enddo
-
-c     call sc_pipe_section     (radii,nr,e) !
-c     e = e+6
-
-      nel = e-1
-
-c     do e=1,nel
-c     do f=1,6
-c        cbc(f,e,1) = 'v  '
-c        cbc(f,e,2) = 't  '
-c     enddo
-c     enddo
-
-      do e=1,nel
-         numapt(e) = e
-         letapt(e) = 'A'
       enddo
 
       return
@@ -3532,7 +3621,7 @@ c-----------------------------------------------------------------------
 
       call sub3(v2,p2,p1,3)
       call sub3(v3,p3,p1,3)
-      call vcross_normal(nh,v2,v3)
+      call vcross_normal(nh,sine,v2,v3)
 
       call sub3(v0,x0,p1,3)
 
@@ -3902,6 +3991,158 @@ c-----------------------------------------------------------------------
 
       enddo
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_set_bc_etc ! Extraneous spherical cap (SC) cleanup
+      include 'basics.inc'
+      integer e,f
+
+      do e=1,nel
+      do f=1,6
+         cbc(f,e,1) = 'v  '
+         cbc(f,e,2) = 't  '
+      enddo
+      enddo
+
+      do e=1,nel
+         numapt(e) = 1
+         letapt(e) = 'A'
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy_el_to_safe_haven(e_safe) ! Cache element list
+      include 'basics.inc'
+
+      integer e,e0,e1,e_safe
+
+      common /csafe/ ne_safe
+
+      e_safe = (nelm-3) - ne_safe - nel ! This keeps nelm open
+
+      ne_safe = ne_safe + nel       ! Track number being saved
+
+      call copy_sub_mesh(1,nel,e_safe) ! Copy current element list
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine free_safe_haven(e_safe) ! Free (ALL) cached space
+      include 'basics.inc'
+
+      integer e,e0,e1,e_safe
+
+      common /csafe/ ne_safe
+
+      ne_safe = 0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_make_sphere_cap(radii,nr)
+      include 'basics.inc'
+
+      real radii(nr)
+
+      integer e,e0,e1,f
+      logical ifsix
+
+      common /xyzr/ xr(100),yr(100),zr(100)
+
+      parameter      (nxm3=nxm*nym*nzm)
+      common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3) ! for genxyze_e
+
+      ifsix = .true.
+
+      e0 = nel
+      e  = e0 + 1
+
+      call sc_central_shell    (radii(1),radii(2),e)
+      e = e+1
+
+      call sc_transition_shell (radii(1),radii(2),e)
+      e = e+3
+
+      do i=3,nr-1  ! work from inner to outer radii: 1st & last are special
+         call sc_std_shell     (radii(i-1),radii(i),e)
+         e = e+3
+      enddo
+      do e1=e0+1,e
+      do f=1,6
+         cbc(f,e1,1) = 'v  '
+         cbc(f,e1,2) = 't  '
+      enddo
+      enddo
+
+
+      call sc_cartesian_shell  (radii(nr-1),radii(nr),e,ifsix)
+      do e1=e+1,e+7
+      do f=1,6
+         cbc(f,e1,1) = 'W  '
+         cbc(f,e1,2) = 'I  '
+      enddo
+      enddo
+
+      e = e+7
+
+      call prs('WARNING: Geometry inconsistent!!$')
+      call prs('You must call fix_geom from usrdat2!!$')
+c     do i=nel+1,e-1
+c        call genxyz_e (xp,yp,zp,i,nxm,nym,nzm) ! fill x27(.,e2)
+c        call fix_m_curve(i) ! convert cap to midside nodes
+c     enddo
+
+      ne_cap = e-1  ! number of elements in spherical cap
+
+      call sc_pipe_section  (radii,nr,e,ifsix) ! Add pipe
+      e   = e+6 + 2*(nr-3)
+      nel = e-1
+      call sc_set_bc_etc
+
+      if (ifsix) call sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
+
+      call sc_set_bc_etc
+      call prexit
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
+      include 'basics.inc'
+
+      common /cisplit/ isplit(nelm)
+
+      real radii(nr)
+
+      integer e,e0,e1,f,e0s
+      integer e_pipe_0,e_pipe_1
+
+      write(6,*) nr,(radii(k),k=1,nr),' Radii 6x6'
+
+      ne_orig = nel        ! Number of elements before refinement
+      ne_pipe = nel-ne_cap ! Number of elements in pipe section
+
+      call copy_el_to_safe_haven(e0s)         ! Cache existing element list
+
+
+!- - - Refine pipe section - - - - - - - - - - - - - - - - - - - - - - -
+
+      e_pipe_0 = e0s + ne_cap                 ! Pointer to pipe section
+      e_pipe_1 = e_pipe_0 + (ne_pipe-1)
+      call copy_sub_mesh(e_pipe_0,e_pipe_1,1) ! Retrieve pipe
+      
+      nel = ne_pipe
+
+c     call midside_convert_all ! Convert all elements to midside?
+
+      call mark (1,1,0.5,isplit)  ! Zipper pipe element 1, side 1
+      call split(0.5,isplit)
+
+      call mark (1,2,0.5,isplit)  ! Zipper pipe element 1, side 2
+      call split(0.5,isplit)
 
       return
       end

@@ -1523,7 +1523,7 @@ C           !!?? NELF DIFFERENT FROM NEL??
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,ISIDE,
      $               (BC(II,ISIDE,IEL,IFLD),II=1,5)
-                  elseif (nel.lt.1000000.and.iffmtin) then
+                  elseif (nel.lt.1 000 000.and.iffmtin) then
                      WRITE(10,'(A1,A3,I6,5G14.6)',ERR=60)
      $               CHTEMP,
      $               CBC(ISIDE,IEL,IFLD),IEL,

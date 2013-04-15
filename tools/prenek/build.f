@@ -644,10 +644,10 @@ c        write(6,*) iel,' ',string
 
          IF(IGROUP(IEL).GT.0) NCOND=NCOND+1
          IF (NEL.LT.100.or.mod(iel,nel50).eq.0) THEN
-            WRITE(S,'(A20,I8,A4,I5,A1,A1)',ERR=33)
+            WRITE(S,'(A20,I8,A4,I5,A1,A2)',ERR=33)
      $           ' Reading Element',
-     $           idum,' [',NUMAPT(IEL),LETAPT(IEL),']'
-            CALL PRS(S//'$')
+     $           idum,' [',NUMAPT(IEL),LETAPT(IEL),']$'
+            CALL PRS(S)
          ENDIF
          IF(NDIM.EQ.2)THEN
             read(9,*,err=33,end=33)(x(ic,iel),ic=1,4)
@@ -724,6 +724,9 @@ C     !Fix to a4,i2 when you make cbc character*4
                   ELSEIF (iffmtin.and.nel.lt. 100 000) then
                      READ(9,'(1X,A3,I5,I1,5G14.6)',ERR=441,END=441)
      $                  CBC(ISIDE,IEL,IFLD),ID,ID,(bc8(ii),ii=1,nbcrea)
+                  ELSEIF (iffmtin.and.nel.lt. 1 000 000) then
+                     READ(9,'(1X,A3,6x,5G14.6)',ERR=441,END=441)
+     $                  CBC(ISIDE,IEL,IFLD),(bc8(ii),ii=1,nbcrea)
                   ELSEIF (iffmtin.and.nel.lt.2 000 000 000) then
                      read(9,'(1x,a3,i12,5g18.11)',err=2443,end=2443)
      $                  cbc(iside,iel,ifld),id,(bc8(ii),ii=1,nbcrea)
@@ -1121,7 +1124,7 @@ c-----------------------------------------------------------------------
       call res  (fname,70)
 
       ifdisplace = .false.
-      if (ifquery_displace) then
+      if (nel.gt.0.and.ifquery_displace) then
        call prs('Would you like to displace existing elements in box?$')
        call res  (ans,1)
        if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
@@ -2152,7 +2155,7 @@ c     write(6,1) i,(xo(k),k=1,3),' xo'
 c
       call sub3(d1,xx(1,3),xx(1,1),3) ! vectors connecting diagonally
       call sub3(d2,xx(1,2),xx(1,4),3) ! opposed vertices of face i
-      call vcross_normal(nhat,d2,d1)
+      call vcross_normal(nhat,sine,d2,d1)
 c     write(6,1) i,(nhat(k),k=1,3),' nh'
       d1n = dotprod(d1,d1)
       d2n = dotprod(d2,d2)
@@ -2162,7 +2165,7 @@ c
 c     Generate basis vectors for plane i
 c
       call norm3d(d1)
-      call vcross_normal(d2,nhat,d1)
+      call vcross_normal(d2,sine,nhat,d1)
 c     write(6,1) i,(d1(k),k=1,3),' d1'
 c     write(6,1) i,(d2(k),k=1,3),' d2'
 c
@@ -2648,7 +2651,7 @@ c     stop
 
       if (nelt.gt.nel) then
          call prs('FIX CHT CASE FOR find_ee. ABORT.$')
-         stop
+         call prexit
       endif
 
       return
@@ -2764,7 +2767,7 @@ c
 
       if (nfail.eq.0) return
       write(6,*) 'FAIL in find_ee: nfail=',nfail
-      stop
+      call prexit
 
       end
 c-----------------------------------------------------------------------
@@ -3186,7 +3189,7 @@ c
     1    format(' ERROR: nic too small in cell2v:',6i10)
          i0 = 0 ! error return code
          i1 = 0 ! error return code
-         stop
+         call prexit
       endif
 
       call cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)

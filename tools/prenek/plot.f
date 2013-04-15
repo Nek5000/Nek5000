@@ -765,9 +765,10 @@ C
 C
 C        NON-GRAPHICS DEVICE INPUT
 C
- 1130    DO 1135 IBOX = 1,NCHOIC
-            CALL PRIS(ibox,ITEM(IBOX)//'$')
- 1135    CONTINUE
+ 1130    do 1135 ibox = 1,nchoic
+c           call pris (ibox,item(ibox)//'$')
+            call pris4(ibox,item(ibox)//'$')
+ 1135    continue
          call prs('Choose item:$')
          call rei(ichoice)
          if (ichoice.lt.1.or.ichoice.gt.nchoic) then

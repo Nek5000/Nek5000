@@ -17,9 +17,10 @@ c-----------------------------------------------------------------------
       subroutine glomod
       include 'basics.inc'
       include 'basicsp.inc'
-      INTEGER ISPLIT(NELM)
-      LOGICAL IFTMP
-C
+
+      common /cisplit/ isplit(nelm)
+      logical iftmp
+
       IFTMP=IFGRID
       IFGRID=.FALSE.
 1     NCHOIC=1
@@ -693,7 +694,10 @@ c-----------------------------------------------------------------------
 C     Mark where CRACK propagates in vector ISPLIT
       include 'basics.inc'
       INTEGER ISPLIT(NELM)
-C
+
+c     write(6,*) ielcrk,ifacrk,sfrac,nel,' Cracking mark'
+      call gen_neigh
+
       DO 10 I=1,NELM
          ISPLIT(I)=0
 10    CONTINUE
@@ -778,12 +782,13 @@ C                            Make sure old split element doesn't conflict
                                CALL PRSIS('ERROR: ELEMENT$',IEL,
      $                         'WOULD NEED TO BE SPLIT TWICE.  '//
      $                         'ABORTING SPLIT.$')
-                               call prsii('isplit,nsplit$'
-     $                             ,isplit(iel),nsplit)
+c                              call prsii('isplit,nsplit$'
+c    $                             ,isplit(iel),nsplit)
 
                                call prs('Continue splitting?$')
                                call res(ans,1)
 
+                               if (.not.ifgraf) goto 301
                                if (ans.eq.'n'.or.ans.eq.'N') then
                                  do i=1,nelm
                                    ISPLIT(I)=0
@@ -825,89 +830,119 @@ c-----------------------------------------------------------------------
       subroutine split(sfrac,isplit)
 C     Split elements marked in vector ISPLIT
       include 'basics.inc'
-      INTEGER ISPLIT(1000),IIPOINT(2,3,2)
-      CHARACTER LETNEW(1000)
-C     IPOINT: 1st subscript-which end of a; 2nd subscript- a or b; 3rd-top/bot
-C     First we modify element.  Move oposite face toward IFACRK.  Insert
-C     new element in gap.
-c
-C     Set up stuff for letter of daughter element
-      MAXNW=MAXLET
-      DO 20 I=1,MAXLET
-         LETNEW(I)=' '
-20    CONTINUE
-      IA=1
-      IB=2
-      NELOLD=NEL
-      DO 100 IEL=1,NELOLD
-         IF(ISPLIT(IEL).NE.0)THEN
-C           First make copy
-            WRITE(S,'(1X,A18,i9,A6,i9,i9)')
+      integer isplit(1000),iipoint(2,3,2),aface
+      character letnew(1000)
+      logical if_special_curve
+
+c     IPOINT: 1st subscript-which end of a; 2nd subscript- a or b; 3rd-top/bot
+c     First we modify element.  Move oposite face toward IFACRK.  Insert
+c     new element in gap.
+
+      maxnw=maxlet  ! Set up stuff for letter of daughter element
+      do 20 i=1,maxlet
+         letnew(i)=' '
+20    continue
+
+c     write(6,222) (isplit(k),k=1,nel)
+c 222 format(' isplit: ',20i4)
+
+      ia=1
+      ib=2
+      nelold=nel
+      do 100 iel=1,nelold
+         if (isplit(iel).ne.0) then 
+           if_special_curve = .false.
+           nedge = 4 + 8*(ndim-2)
+           do ic=1,nedge
+              if (ccurve(ic,iel).eq.'s') if_special_curve = .true.
+              if (ccurve(ic,iel).eq.'m') if_special_curve = .true.
+c             write(6,*) iel,ic,ccurve(ie,iel),if_special_curve
+           enddo 
+           if (if_special_curve) then
+              aface = isplit(iel)
+              ratio = (1-sfrac)/sfrac
+              ratii = 1./ratio
+c             write(6,*) iel,aface,sfrac,ratio,nel,' MSPLIT$'
+c             write(s,*) iel,aface,sfrac,ratio,nel,' MSPLIT$'
+c             call prs(s)
+              if (aface.eq.1) call msplite(iel,1,2,1,1.,ratio,1.)
+              if (aface.eq.2) call msplite(iel,2,1,1,ratii,1.,1.)
+              if (aface.eq.3) call msplite(iel,1,2,1,1.,ratii,1.)
+              if (aface.eq.4) call msplite(iel,2,1,1,ratio,1.,1.)
+           else
+            write(s,'(1x,a18,I9,a6,I9,I9)')
      $      'SPLITTING ELEMENT ',IEL,'  SIDE',ISPLIT(I),NEL
-            CALL PRS(S//'$')
-            NEL=NEL+1
-            CALL COPYEL(IEL,NEL)
-C           Give Daughter element a letter
-            IF(LETNEW(ICHAR(LETAPT(IEL))) .EQ. ' ')THEN
-C              A parent with this letapt hasn't split yet; assign new pointer
-               MAXNW=MAXNW+1
-               LETNEW(ICHAR(LETAPT(IEL))) = CHAR(MIN0(122,MAXNW))
-            ENDIF
-            LETAPT(NEL) = LETNEW(ICHAR(LETAPT(IEL)))
-C           That was, Each old letter points to a new letter for the daughter
-C           Establish pointers to the element corners
-            IIPOINT(1,IA,1)=ISPLIT(IEL)
-            IIPOINT(2,IA,1)=ISPLIT(IEL)+1
-            IF(IIPOINT(2,IA,1).EQ.5) IIPOINT(2,IA,1)=1
-C
-            IIPOINT   (2,IB,1)     = IIPOINT(2,IA,1)+1
-            IF(IIPOINT(2,IB,1).EQ.5) IIPOINT(2,IB,1)=1
-            IIPOINT   (1,IB,1)     = IIPOINT(1,IA,1)-1
-            IF(IIPOINT(1,IB,1).EQ.0) IIPOINT(1,IB,1)=4
-C
-            DO 50 I12=1,2
-               DO 50 IABC=1,3
-                  IIPOINT(I12,IABC,2) = IIPOINT(I12,IABC,1) + 4
-50          CONTINUE
+            call prs(s//'$')
+            nel=nel+1
+            call copyel(iel,nel)
+c           Give Daughter element a letter
+            if(letnew(ichar(letapt(iel))) .eq. ' ')then
+c              A parent with this letapt hasn't split yet; assign new pointer
+               maxnw=maxnw+1
+               letnew(ichar(letapt(iel))) = char(min0(122,maxnw))
+            endif
+            letapt(nel) = letnew(ichar(letapt(iel)))
+c           That was, Each old letter points to a new letter for the daughter
+c           Establish pointers to the element corners
+            iipoint(1,ia,1)=isplit(iel)
+            iipoint(2,ia,1)=isplit(iel)+1
+            if(iipoint(2,ia,1).eq.5) iipoint(2,ia,1)=1
+
+            iipoint   (2,ib,1)     = iipoint(2,ia,1)+1
+            if(iipoint(2,ib,1).eq.5) iipoint(2,ib,1)=1
+            iipoint   (1,ib,1)     = iipoint(1,ia,1)-1
+            if(iipoint(1,ib,1).eq.0) iipoint(1,ib,1)=4
+
+            do 50 i12=1,2
+            do 50 iabc=1,3
+               iipoint(i12,iabc,2) = iipoint(i12,iabc,1) + 4
+50          continue
 C           Now move corners
-            DO 60 I12=1,2
-            DO 60 ITB=1,2
-              ICA=IIPOINT(I12,IA,ITB)
-              ICB=IIPOINT(I12,IB,ITB)
-              IF(I12.EQ.1) IEDGE=ICB
-              IF(I12.EQ.2) IEDGE=ICA
+            do 60 i12=1,2
+            do 60 itb=1,2
+              ica=iipoint(i12,ia,itb)
+              icb=iipoint(i12,ib,itb)
+              if (i12.eq.1) iedge=icb
+              if (i12.eq.2) iedge=ica
 C             Move corners of new element
-              IF(CCURVE(IEDGE,IEL).EQ.' ')THEN
-C                Straight line
-                 X(ICA,NEL)=X(ICA,NEL) + (X(ICB,NEL)-X(ICA,NEL))*SFRAC
-                 Y(ICA,NEL)=Y(ICA,NEL) + (Y(ICB,NEL)-Y(ICA,NEL))*SFRAC
-                 Z(ICA,NEL)=Z(ICA,NEL) + (Z(ICB,NEL)-Z(ICA,NEL))*SFRAC
-              ELSE
-                IF(I12.EQ.2)
-     $          CALL GETPTS(1,    SFRAC,IEL,IEDGE,X(ICA,NEL),Y(ICA,NEL))
-                IF(I12.EQ.1)
-     $          CALL GETPTS(1,1.0-SFRAC,IEL,IEDGE,X(ICA,NEL),Y(ICA,NEL))
-              ENDIF
-              Z(ICA,NEL)=Z(ICA,NEL) + (Z(ICB,NEL)-Z(ICA,NEL))*SFRAC
+              if (ccurve(iedge,iel).eq.' ') then  ! straight line
+                 x(ica,nel)=x(ica,nel) + (x(icb,nel)-x(ica,nel))*sfrac
+                 y(ica,nel)=y(ica,nel) + (y(icb,nel)-y(ica,nel))*sfrac
+                 z(ica,nel)=z(ica,nel) + (z(icb,nel)-z(ica,nel))*sfrac
+              else
+                if(i12.eq.2)
+     $          call getpts(1,    sfrac,iel,iedge,x(ica,nel),y(ica,nel))
+                if(i12.eq.1)
+     $          call getpts(1,1.0-sfrac,iel,iedge,x(ica,nel),y(ica,nel))
+              endif
+              z(ica,nel)=z(ica,nel) + (z(icb,nel)-z(ica,nel))*sfrac
 C             Move corners of old element
-              X(ICB,IEL)=X(ICA,NEL)
-              Y(ICB,IEL)=Y(ICA,NEL)
-              Z(ICB,IEL)=Z(ICA,NEL)
-              IF(CCURVE(IEDGE,IEL).EQ.'S')THEN
-C                Modify Control points
-                 IF(I12.EQ.2)THEN
-                    CURVE(3,IEDGE,IEL)=X(ICB,NEL)
-                    CURVE(4,IEDGE,IEL)=Y(ICB,NEL)
-                    CURVE(1,IEDGE,NEL)=X(ICA,IEL)
-                    CURVE(2,IEDGE,NEL)=Y(ICA,IEL)
-                 ELSE IF(I12.EQ.1)THEN
-                    CURVE(3,IEDGE,NEL)=X(ICA,IEL)
-                    CURVE(4,IEDGE,NEL)=Y(ICA,IEL)
-                    CURVE(1,IEDGE,IEL)=X(ICB,NEL)
-                    CURVE(2,IEDGE,IEL)=Y(ICB,NEL)
-                 ENDIF
-              ENDIF
-60          CONTINUE
+              x(icb,iel)=x(ica,nel)
+              y(icb,iel)=y(ica,nel)
+              z(icb,iel)=z(ica,nel)
+              if(ccurve(iedge,iel).eq.'S')then ! Modify Control points
+                 if (i12.eq.2)then
+                    curve(3,iedge,iel)=x(icb,nel)
+                    curve(4,iedge,iel)=y(icb,nel)
+                    curve(1,iedge,nel)=x(ica,iel)
+                    curve(2,iedge,nel)=y(ica,iel)
+                 elseif (i12.eq.1)then
+                    curve(3,iedge,nel)=x(ica,iel)
+                    curve(4,iedge,nel)=y(ica,iel)
+                    curve(1,iedge,iel)=x(icb,nel)
+                    curve(2,iedge,iel)=y(icb,nel)
+                 endif
+              endif
+60          continue
+cuuuu
+cuuuu
+cuuuu  Here, we need to add support for midside nodes
+cuuuu
+cuuuu  Easiest way is to check for any 'm' curves, then
+c      generate x27, etc. for that element only (or, "x125" as it were)
+c      or... I guess it depends on "s" ... and edge.... so better think
+cuuuu
+cuuuu
 C           Make reasonable b.c.'s along split
 C           Any splines present kill curve, TWO circles get average;
 C           One circle?? currently yields straight.
@@ -950,7 +985,8 @@ C           Delete periodic b.c.'s to avoid confusion
                        ibc(is,nel,if)=0
                   ENDIF
 70          CONTINUE
-C
+
+         ENDIF
          ENDIF
 100   CONTINUE
 C     Recalculate centers
@@ -1320,14 +1356,7 @@ c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
             xyznorm(3)= 0.
          endif
 
-         xyzl = xyznorm(1)*xyznorm(1) !     normalize
-     $        + xyznorm(2)*xyznorm(2)
-     $        + xyznorm(3)*xyznorm(3)
-         if (xyzl.le.0) return
-         xyzl = sqrt(xyzl)
-         xyznorm(1) = xyznorm(1)/xyzl
-         xyznorm(2) = xyznorm(2)/xyzl
-         xyznorm(3) = xyznorm(3)/xyzl
+         call normalize(xyznorm,xyzl,3)
 
          CALL PRS(
      $   'Input "<" or ">" to indicate desired clip section.$')
@@ -2811,10 +2840,14 @@ C
       call prs(' Input expansion factor ( =< 0 to abort):$')
       call rer(sfact)
       if (sfact.le.0) return
-      call prs(' Spherical or Cylindrical (x-y) stretch? (s,c)$')
-      call res(ans,1)
-      if_sph_str = .true.
-      if (ans.eq.'c' .or. ans.eq.'C') if_sph_str = .false.
+
+      if_sph_str = .false.
+      if (if3d) then
+         if_sph_str = .true.
+         call prs(' Spherical or Cylindrical (x-y) stretch? (s,c)$')
+         call res(ans,1)
+         if (ans.eq.'c' .or. ans.eq.'C') if_sph_str = .false.
+      endif
 
 C
 C     Stretch for hemisphere problem
@@ -3059,7 +3092,7 @@ c-----------------------------------------------------------------------
       if (tnrm.lt.eps) then
          t(1) = 1.
          call orthogonalize(t,n,3)
-         call normalize (t,3)
+         call normalize (t,alpha,3)
 c        call outmat(n,1,3,'nveca',1)
 c        call outmat(t,1,3,'tveca',1)
          return
@@ -3071,7 +3104,7 @@ c        call outmat(t,1,3,'tveca',1)
             t(1) = t(i)
             t(i) = t1
             call orthogonalize(t,n,3)
-            call normalize (t,3)
+            call normalize (t,alpha,3)
 c           call outmat(n,1,3,'nvecb',1)
 c           call outmat(t,1,3,'tvecb',1)
             return
@@ -3082,7 +3115,7 @@ c     If we get here, all 3 components are same and nonzero
 
       t(1) = 0
       call orthogonalize(t,n,3)
-      call normalize (t,3)
+      call normalize (t,alpha,3)
 c     call outmat(n,1,3,'nvecc',1)
 c     call outmat(t,1,3,'tvecc',1)
 
@@ -3098,13 +3131,12 @@ c-----------------------------------------------------------------------
 c     call outmat(normal,1,3,'norml',1)
 
       call copy      (r,normal,3)  ! Column 1 of R is normal
-      call normalize (r,3)
+      call normalize (r,alpha,3)
 
 c     call outmat    (r,1,3,'rnrml',1)
 
-      call get_t1        (r(1,2),r)         ! arbritrary t1 from normal
-      call vcross_normal (r(1,3),r,r(1,2))  ! t2 = n x t1 --> n = t1 x t2
-
+      call get_t1       (r(1,2),r)    ! arbritrary t1 from normal
+      call vcross_normal(r(1,3),sine,r,r(1,2))!t2=nxt1-->n=t1xt2
       call transpose_r (rt,3,r,3)
 
       one   = 1.
@@ -3611,6 +3643,202 @@ c     Move forms (for now, assumed to be whole existant mesh)
       nel = 0                 ! Nothing left after form-shift
 
       call template_to_forms  ! Map template to forms
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function blend_circ_in_box2(x,y,r0,x0i,x1i,y0i,y1i)
+      real p(2),v(2,5)
+      real o(2)
+      save o
+      data o / 0. , 0. /
+
+      blend_circ_in_box2 = 1.
+
+      r=x*x+y*y
+      if (r.le.r0*r0) return
+
+      ey = 1.e-6*(y1i-y0i)   ! Put a slight tolerance on box size
+      ex = 1.e-6*(x1i-x0i)
+      x0 = x0i-ex
+      x1 = x1i+ex
+      y0 = y0i-ey
+      y1 = y1i+ey
+
+      r = sqrt(r)
+      t = atan2(y,x)
+
+      p(1)=x
+      p(2)=y
+
+      do i=1,5
+         v(1,i)=x0
+         v(2,i)=y0
+      enddo
+      v(1,2)=x1
+      v(1,3)=x1
+      v(2,3)=y1
+      v(2,4)=y1
+      call cmult(v,2.0,10) ! Make domain bigger for "in_triangle" check
+
+      ks=0
+      do k=1,4
+         in = in_triangle2(p,o,v(1,k),v(1,k+1)) ! triangle: [ o vk vk1 ]
+         if (in.gt.0) then
+           if (k.eq.1) then       !  Lower y boundary
+              yc = r0*sin(t)
+              b  = (y-y0)/(yc-y0)
+           elseif (k.eq.2) then   ! Right x boundary
+              xc = r0*cos(t)
+              b  = (x-x1)/(xc-x1)
+           elseif (k.eq.3) then   ! Upper y boundary
+              yc = r0*sin(t)
+              b  = (y-y1)/(yc-y1)
+           else                   !  Left x boundary
+              xc = r0*cos(t) 
+              b  = (x-x0)/(xc-x0) 
+           endif
+           blend_circ_in_box2 = max(b,0.)
+           return
+         endif
+      enddo
+      close(78)
+      close(83)
+      t = sqrt(-t)
+      t = sqrt(-t)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function in_triangle2(p,a,b,c)
+      real p(2),a(2),b(2),c(2)
+      real v0(2),v1(2),v2(2),invdenom
+
+      call sub3(v0,c,a,2) ! v0 = c-a
+      call sub3(v1,b,a,2) ! v1 = b-a
+      call sub3(v2,p,a,2) ! v2 = p-a
+
+      d00 = vlsc2(v0,v0,2)
+      d01 = vlsc2(v0,v1,2)
+      d02 = vlsc2(v0,v2,2)
+      d11 = vlsc2(v1,v1,2)
+      d12 = vlsc2(v1,v2,2)
+
+c     Compte barycentric coordinates
+
+      invdenom = 1./(d00*d11-d01*d01)
+      u=(d11*d02-d01*d12)*invdenom
+      v=(d00*d12-d01*d02)*invdenom
+
+      in_triangle2 = 0
+      if (u.ge.0.and.v.ge.0.and.(u+v).lt.1) in_triangle2 = 1
+      write(83,1) in_triangle2,p(1),p(2),a(1),a(2),b(1),b(2),c(1),c(2)
+    1 format(i3,1p8e11.3)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine stretch_outside_circ
+      include 'basics.inc'
+
+      call gencen  ! Generate x27
+
+      n = 27*nel
+      xmn=glmin(x27,n)
+      xmx=glmax(x27,n)
+      ymn=glmin(y27,n)
+      ymx=glmax(y27,n)
+      zmn=glmin(z27,n)
+      zmx=glmax(z27,n)
+
+      call prs('Input protected radius:$')
+      call rer(r0)
+
+      call prsrr('Input new xmin/xmax (0,0 to scale): $',xmn,xmx)
+      call rerr(x0,x1)
+      if (x0.eq.0..and.x1.eq.0.) then
+         call prs('Input x-scale factor:$')
+         call rer(scale)
+         x0 = scale*xmn
+         x1 = scale*xmx
+      endif
+
+
+      call prsrr('Input new ymin/ymax (0,0 to scale): $',ymn,ymx)
+      call rerr(y0,y1)
+      if (y0.eq.0..and.y1.eq.0.) then
+         call prs('Input y-scale factor:$')
+         call rer(scale)
+         y0 = scale*ymn
+         y1 = scale*ymx
+      endif
+
+      call stretch_outside_circ2(r0,x0,x1,y0,y1,xmn,xmx,ymn,ymx)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine stretch_outside_circ2(r0,x0,x1,y0,y1,xmn,xmx,ymn,ymx)
+      include 'basics.inc'
+
+      n = 27*nel
+
+      scalex = (x1-x0)/(xmx-xmn)
+      scaley = (y1-y0)/(ymx-ymn)
+
+      xbr  = (xmn+xmx)/2  ! Midpoint of current data
+      ybr  = (ymn+ymx)/2
+      xbrt = (x0+x1)/2    ! Target midpoint
+      ybrt = (y0+y1)/2
+
+      do i=1,n
+         xx = x27(i,1)
+         yy = y27(i,1)
+
+         xnt= xbrt + scalex*(xx-xbr) ! Temporary new point
+         ynt= ybrt + scaley*(yy-ybr)
+
+         bb = blend_circ_in_box(xx,yy,r0,xmn,xmx,ymn,ymx)
+
+         dx = (xnt-xx)*(1-bb)
+         dy = (ynt-yy)*(1-bb)
+
+         xn = xx+dx   ! Now in a proper rectangle to combine
+         yn = yy+dy   ! two arc-segment transformations
+
+         x27(i,1) = xn
+         y27(i,1) = yn
+
+      enddo
+
+      call x27_to_e  ! Converts all edges to 'm'
+      call flatten_edges_outside_circle(r0)
+
+      call redraw_mesh
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine flatten_edges_outside_circle(r0)
+      include 'basics.inc'
+      integer e
+
+      nedge = 4 + 8*(ndim-2)
+
+      re = 1.01*r0  ! Allow for a bit of wobble
+      r2 = re*re
+
+      do e=1,nel
+      do i=1,nedge
+         if (ccurve(i,e).eq.'m') then
+            xx=curve(1,i,e)
+            yy=curve(2,i,e)
+            rr = xx*xx+yy*yy
+            if (rr.gt.r2) ccurve(i,e) = ' '
+            if (rr.gt.r2) call rzero(curve(1,i,e),6)
+         endif
+      enddo
+      enddo
 
       return
       end

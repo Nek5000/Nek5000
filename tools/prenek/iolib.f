@@ -160,29 +160,76 @@ C
       RETURN
       END
 C
-      SUBROUTINE PRIS(I,S)
-      CHARACTER S(*),SS*80
-C
-      WRITE(SS(1:8),'(I8)',ERR=13)I
-      DO 1 J=1,70
-         IF(S(J).EQ.'$')THEN
-            NC=J-1
-            GO TO 2
-         ENDIF
-         SS(J+8:J+8)=S(J)
- 1    CONTINUE
+c-----------------------------------------------------------------------
+      subroutine pris4(i,s) ! here to match iolib_no_graph
+      character s(*),ss*80
+c
+      write(ss(1:8),'(i8)',err=13)i
+      do 1 j=1,70
+         if(s(j).eq.'$')then
+            nc=j-1
+            go to 2
+         endif
+         ss(j+8:j+8)=s(j)
+ 1    continue
       CALL PUTS('I/O Error: No String Terminator sent to PRSI',44)
-      CALL PUTS(S,70)
-      RETURN
- 2    CONTINUE
-C
-      SS(NC+9:NC+9)='$'
-      CALL PRS(SS)
-      RETURN
+      call puts(s,70)
+      return
+ 2    continue
+c
+      ss(nc+9:nc+9)='$'
+      call prs(ss)
+      return
  13   CALL PUTS('I/O Error: cant write to string in PRIS',39)
-      RETURN
-      END
-C-----------------------------------------------------------------------
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pris8(i,s) ! here to match iolib_no_graph
+      character s(*),ss*80
+c
+      write(ss(1:8),'(i8)',err=13)i
+      do 1 j=1,70
+         if(s(j).eq.'$')then
+            nc=j-1
+            go to 2
+         endif
+         ss(j+8:j+8)=s(j)
+ 1    continue
+      CALL PUTS('I/O Error: No String Terminator sent to PRSI',44)
+      call puts(s,70)
+      return
+ 2    continue
+c
+      ss(nc+9:nc+9)='$'
+      call prs(ss)
+      return
+ 13   CALL PUTS('I/O Error: cant write to string in PRIS',39)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pris(i,s)
+      character s(*),ss*80
+c
+      write(ss(1:8),'(i8)',err=13)i
+      do 1 j=1,70
+         if(s(j).eq.'$')then
+            nc=j-1
+            go to 2
+         endif
+         ss(j+8:j+8)=s(j)
+ 1    continue
+      CALL PUTS('I/O Error: No String Terminator sent to PRSI',44)
+      call puts(s,70)
+      return
+ 2    continue
+c
+      ss(nc+9:nc+9)='$'
+      call prs(ss)
+      return
+ 13   CALL PUTS('I/O Error: cant write to string in PRIS',39)
+      return
+      end
+c-----------------------------------------------------------------------
       SUBROUTINE PRSRRR(S,r1,r2,r3)
       CHARACTER S(*),SS*80
 C

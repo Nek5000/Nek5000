@@ -33,7 +33,8 @@ C
 c     ITEM(5)='Tile with hexagons'
 c     ITEM(6)='TRANSITION HEXAGONS'
       ITEM(6)='Refine hexagons'
-      ITEM(7)='MAKE SPLINE'
+c     ITEM(7)='MAKE SPLINE'
+      ITEM(7)='Arc-Circle Transform'
 c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
       NCHOIC=7
@@ -101,6 +102,10 @@ C         Export copies curve ICURVE to all overlapping sides
 c     ELSE IF(CHOICE.EQ.'CIRC MESH') THEN
 c          call circ_mesh 
 c          GOTO 1
+      ITEM(7)='Arc-Circle Transform'
+      ELSEIF (CHOICE.EQ.'Arc-Circle Transform') THEN
+           call make_arc_circ
+           goto 1
       ELSE IF(CHOICE.EQ.'SPHERICAL MESH') THEN
            CALL SPHMESH
            GOTO 1
@@ -1279,7 +1284,7 @@ c     Assign / repair curve-side info for edges
             xyz(3,j)=z27(e3(j,i),e)
          enddo
 
-         write(6,*)
+c        write(6,*)
 c        write(65,*)
 c        write(6,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
 c        write(65,6) (e,i,xyz(1,k),xyz(2,k),k=1,3)
@@ -1405,9 +1410,9 @@ c-----------------------------------------------------------------------
       integer e,f
 
       r = 0.5
-      a = 0.120   ! (1,0,0) radius
-      b = .90*a   ! (1,1,0) radius
-      c = .85*a   ! (1,1,1) radius
+      a = 0.120   ! delta (1,0,0) radius
+      b = .90*a   ! delta (1,1,0) radius
+      c = .85*a   ! delta (1,1,1) radius
 
       ra = r-a
       rb = r-2*b+a  ! .5*(rb+ra) = .5*(r+r-2*b+a-a) = r-b
@@ -1451,15 +1456,19 @@ c     Curve the interior connector edges
 
       w0 = 1.10 ! weight on curve
       w1 = 1-w0
+      wp = 1 + .2*a/r
 
       nedge = 12
       do k=1,nedge
          if (ccurve(k,e).eq.'m') then
             j = eindx(k)
-            call s2vec(xs,ys,zs,xl(j,1,1),yl(j,1,1),zl(j,1,1),ra)
-            curve(1,k,e) = w0*xs + w1*xl(j,1,1)
-            curve(2,k,e) = w0*ys + w1*yl(j,1,1)
-            curve(3,k,e) = w0*zs + w1*zl(j,1,1)
+            call s2vec(xs,ys,zs,xl(j,1,1),yl(j,1,1),zl(j,1,1),r )
+c           curve(1,k,e) = w0*xs + w1*xl(j,1,1)
+c           curve(2,k,e) = w0*ys + w1*yl(j,1,1)
+c           curve(3,k,e) = w0*zs + w1*zl(j,1,1)
+            curve(1,k,e) = wp*xl(j,1,1)
+            curve(2,k,e) = wp*yl(j,1,1)
+            curve(3,k,e) = wp*zl(j,1,1)
          endif
       enddo
 
@@ -1714,6 +1723,301 @@ c     ro  = .6
       enddo
 
       call vertadj
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function blend_circ_in_box(x,y,r0,x0i,x1i,y0i,y1i)
+      real p(2),v(2,5)
+      real o(2)
+      save o
+      data o / 0. , 0. /
+
+      blend_circ_in_box = 1.
+
+      r=x*x+y*y
+      if (r.le.r0*r0) return
+
+      ey = 1.e-6*(y1i-y0i)   ! Put a slight tolerance on box size
+      ex = 1.e-6*(x1i-x0i)
+      x0 = x0i-ex
+      x1 = x1i+ex
+      y0 = y0i-ey
+      y1 = y1i+ey
+
+      r = sqrt(r)
+      t = atan2(y,x)
+
+      p(1)=x
+      p(2)=y
+
+      do i=1,5
+         v(1,i)=x0
+         v(2,i)=y0
+      enddo
+      v(1,2)=x1
+      v(1,3)=x1
+      v(2,3)=y1
+      v(2,4)=y1
+      call cmult(v,2.0,10) ! Make domain bigger for "in_triangle" check
+
+      ks=0
+      do k=1,4
+         in = in_triangle(p,o,v(1,k),v(1,k+1)) ! triangle: [ o vk vk1 ]
+         if (in.gt.0) then
+           if (k.eq.1) then       !  Lower y boundary
+              yc = r0*sin(t)
+              b  = (y-y0)/(yc-y0)
+           elseif (k.eq.2) then   ! Right x boundary
+              xc = r0*cos(t)
+              b  = (x-x1)/(xc-x1)
+           elseif (k.eq.3) then   ! Upper y boundary
+              yc = r0*sin(t)
+              b  = (y-y1)/(yc-y1)
+           else                   !  Left x boundary
+              xc = r0*cos(t) 
+              b  = (x-x0)/(xc-x0) 
+           endif
+           blend_circ_in_box = max(b,0.)
+           return
+         endif
+      enddo
+      t = sqrt(-t)
+      t = sqrt(-t)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function in_triangle(p,a,b,c)
+      real p(2),a(2),b(2),c(2)
+      real v0(2),v1(2),v2(2),invdenom
+
+      call sub3(v0,c,a,2) ! v0 = c-a
+      call sub3(v1,b,a,2) ! v1 = b-a
+      call sub3(v2,p,a,2) ! v2 = p-a
+
+      d00 = vlsc2(v0,v0,2)
+      d01 = vlsc2(v0,v1,2)
+      d02 = vlsc2(v0,v2,2)
+      d11 = vlsc2(v1,v1,2)
+      d12 = vlsc2(v1,v2,2)
+
+c     Compte barycentric coordinates
+
+      invdenom = 1./(d00*d11-d01*d01)
+      u=(d11*d02-d01*d12)*invdenom
+      v=(d00*d12-d01*d02)*invdenom
+
+      in_triangle = 0
+      if (u.ge.0.and.v.ge.0.and.(u+v).lt.1) in_triangle = 1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine x27_to_e
+      include 'basics.inc'
+
+      integer e
+
+      integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
+      save    eindx      ! Follows preprocessor notation..
+      data    eindx /  2 ,  6 ,  8 ,  4
+     $              , 20 , 24 , 26 , 22
+     $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
+
+      nedge = 4 + 8*(ndim-2)
+
+      do e=1,nel
+
+         call q_to_neklin  (x(1,e),1,x27(1,e),if3d)
+         call q_to_neklin  (y(1,e),1,y27(1,e),if3d)
+         call q_to_neklin  (z(1,e),1,z27(1,e),if3d)
+
+         do kk=1,nedge
+            ccurve(kk,e)='m'
+            jj = eindx(kk)
+            curve(1,kk,e) = x27(jj,e)
+            curve(2,kk,e) = y27(jj,e)
+            curve(3,kk,e) = z27(jj,e)
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine std_transform(t0,t1)
+      include 'basics.inc'
+
+c     Transforms existing 2D or 3D rectangular domain to a
+c     circular arc segment
+c
+c     Here, we judge the length at y=0 -- this arc length will be
+c     preserved over the desired theta range (t0,t1)
+c
+c     This routine uses x27 and converts all circles and spheres to midside node.
+
+c     Results are best if incoming domain is close to desired dimensions.
+
+      call gencen  ! Generate x27
+
+      n = 27*nel
+      xmin=glmin(x27,n)
+      xmax=glmax(x27,n)
+      xbar=(xmax+xmin)/2
+      ymin=glmin(y27,n)
+      ymax=glmax(y27,n)
+      ybar=(ymax+ymin)/2
+      zmin=glmin(z27,n)
+      zmax=glmax(z27,n)
+      zbar=(zmax+zmin)/2
+
+      arclength = xmax-xmin
+      r1 = arclength/(t1-t0)
+      write(6,*) xmin,xmax, ' xmin,xmax'
+      write(6,*) t0,t1,' t0,t1'
+      write(6,*) arclength,r1,' arclngth,r1'
+
+
+      do i=1,n
+
+         xx = x27(i,1)
+         yy = y27(i,1)
+         zz = z27(i,1) ! / (i-1)
+
+         rr = yy + r1
+         th = xx / r1
+
+         x27(i,1) = rr*sin(th)
+         y27(i,1) = rr*cos(th)
+
+      enddo
+
+      call x27_to_e  ! Converts all edges to 'm'
+      call redraw_mesh
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_x27max(xmin,xmax,ymin,ymax,zmin,zmax)
+      include 'basics.inc'
+
+      n = 27*nel
+      xmin=glmin(x27,n)
+      xmax=glmax(x27,n)
+      ymin=glmin(y27,n)
+      ymax=glmax(y27,n)
+      zmin=glmin(z27,n)
+      zmax=glmax(z27,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine make_arc_circ
+      include 'basics.inc'
+      integer e
+
+c     Transforms existing 2D or 3D rectangular domain to a circular arc
+
+
+      call gencen
+      do e=1,nel
+         call fix_m_curve(e)
+      enddo
+      ifmid  = .true.
+      ifcstd = .true.
+
+      call get_x27max(xmin,xmax,ymin,ymax,zmin,zmax)
+
+      call prs('Standard (0) or Circle preserving (1)?$')
+      call rei(icirc)
+
+c     call prs('Enter protected radius:$')
+c     call rer(r0)
+
+c     call prs('Enter desired angle (deg.):$')
+c     call rer(dth)
+      dth = 30
+      dth = pi*dth/180.
+
+      t0  = -dth/2
+      t1  =  dth/2
+
+      y0  = 1.9
+      y1  = 6.
+      r1  = (y0+y1)/2
+
+      arclength_b = r1*(t1-t0)
+      arclength_a = xmax-xmin
+      r1          = 0.5*arclength_a/(t1-t0)
+
+      write(6,*) arclength_a,arclength_b,' arclength a,b'
+      write(6,*) xmin,xmax, ' xmin,xmax'
+      write(6,*) t0,t1,' t0,t1'
+      write(6,*) arclength,r1,' arclength,r1'
+
+      if (icirc.eq.0) then ! Standard Map
+         call std_transform(t0,t1)
+      else
+         call circle_in_arc_transform_0(r1)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine circle_in_arc_transform_0(r1)
+      include 'basics.inc'
+
+c     NOTE: Must call gencen first!
+
+c     Transforms existing 2D or 3D rectangular domain
+c     to a circular arc segment.
+c
+c     Origin, center of circle, is mapped to radius r1 and angle t=0.
+c
+c     Domain is transformed to arc segment [t0,t1], with angle t
+c     measured _clockwise_ from the y axis, and major radii spanning [y0,y1].
+
+c     This routine uses x27 and converts all edges to midside node.
+
+c     Results are best if incoming domain is close to desired dimensions.
+
+c     call gencen  ! Generate x27
+
+      open(76,file='x.x')
+
+      do i=1,n
+         xx = x27(i,1)
+         yy = y27(i,1)
+
+         rad2  = xx*xx + yy*yy       ! Circle-preserving transform
+         ycirc = yy - .5*xx*xx/r1
+         argx  = rad2 - ycirc**2
+         xcirc = sqrt(argx)
+         if (xx.lt.0) xcirc = -xcirc
+         ycirc = ycirc + r1
+
+         x27(i,1) = xcirc
+         y27(i,1) = ycirc
+
+         rad = sqrt(rad2)
+         write(76,1) xx,yy,xcirc,ycirc,rad,r1
+   1     format(1p6e12.4)
+      enddo
+      close(76)
+
+      call x27_to_e  ! Converts all edges to 'm'
+      call redraw_mesh
+
+      call get_x27max(xmin,xmax,ymin,ymax,zmin,zmax)
+      dx  = xmax-xmin
+      r1n = ymax
+
+      theta = 180*2*atan2(dx,r1n)/pi
+      thet0 = 180*2*atan2(dx,r1 )/pi
+
+      write(6,*) xmin,xmax,' new xmin,xmax'
+      write(6,*) r1n,r1,' new r1n,r1'
+      write(6,*) theta,thet0,' new theta,thet0'
 
       return
       end

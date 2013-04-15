@@ -49,7 +49,7 @@ C     The lower layer (not seen by the applications code) contains two
 C     routines, GETS and PUTS, which perform I/O with the device.
 C
 C     Driver Subroutine Calling Convention:
-C     GETS         Reads  String of 80 chars        CALL GETS(S)
+C     GETS         Reads  String of 130 chars        CALL GETS(S)
 C     PUTS         Prints String of  N chars        CALL PUTS(S,N)
 
 c-----------------------------------------------------------------------
@@ -61,12 +61,12 @@ c-----------------------------------------------------------------------
       data    icalld /0/
       
       character s(*)
-      character*1 s1(80),s2(80)
-      character*80 s81,s82
-      equivalence (s81,s1)
-      equivalence (s82,s2)
+      character*1 s1(132),s2(132)
+      character*132 s131,s132
+      equivalence (s131,s1)
+      equivalence (s132,s2)
       save s2
-      data s2 /80*' '/
+      data s2 /132*' '/
       integer scount
       save    scount
       data    scount /0/
@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
       if (icalld.eq.0) open(unit=87,file='pretex.jou')
       icalld=1
 
-      do 1 i=1,81
+      do 1 i=1,133
          if(s(i).eq.'$')then
             nchars=i-1
             goto 2
@@ -85,7 +85,10 @@ c-----------------------------------------------------------------------
       write(6 ,*)  'I/O Error: No String Terminator sent to PRS'
       write(87,*)  'I/O Error: No String Terminator sent to PRS'
 
-      nchars = 80
+      ri=-i
+      nchars=sqrt(ri)
+
+      nchars = 132
       call chcopy (s1,s,nchars)
       write(87,3) (s1(j),j=1,nchars)
 
@@ -94,7 +97,7 @@ c-----------------------------------------------------------------------
       if (ifgraf) call putsold  (s   ,nchars)
       call chcopy (s1,s,nchars)
 
-      if (s81.eq.s82) then  ! Check for infinite loop
+      if (s131.eq.s132) then  ! Check for infinite loop
          scount = scount+1
          if (scount.gt.10) then
             write(6,*) 'ABORT: too many repeat calls to prs.'
@@ -103,27 +106,27 @@ c-----------------------------------------------------------------------
       else
          scount = 0
       endif
-      call chcopy (s2,s1,80)
+      call chcopy (s2,s1,132)
 
       write(6 ,3) (s1(j),j=1,nchars)
       write(87,3) (s1(j),j=1,nchars)
 
- 3    format(80a1)
+ 3    format(132a1)
       return
       end
 c-----------------------------------------------------------------------
       SUBROUTINE PRI(I)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
-      WRITE(S,'(I8)',ERR=1)I
+      WRITE(S,'(I13)',ERR=1)I
       S(9:9)='$'
       CALL PRS(S)
  1    RETURN
       END
 C
       SUBROUTINE PRR(R)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(G14.6)',ERR=1)R
@@ -134,27 +137,27 @@ C
 C
 C
       SUBROUTINE PRII(I1,I2)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
-      WRITE(S,'(2I8)',ERR=1)I1,I2
+      WRITE(S,'(2I13)',ERR=1)I1,I2
       S(17:17)='$'
       CALL PRS(S)
  1    RETURN
       END
 C
       SUBROUTINE PRRRR(R1,R2,R3)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
-      WRITE(S,'(3G18.9)',ERR=1)R1,R2,R3
+      WRITE(S,'(3G113.9)',ERR=1)R1,R2,R3
       S(55:55)='$'
       CALL PRS(S)
  1    RETURN
       END
 C
       SUBROUTINE PRRR(R1,R2)
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
       WRITE(S,'(2G14.6)',ERR=1)R1,R2
@@ -164,7 +167,7 @@ C
       END
 C
       SUBROUTINE PRSI(S,I)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 J=1,70
          IF(S(J).EQ.'$')THEN
@@ -174,24 +177,71 @@ C
          SS(J:J)=S(J)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSI',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
 C
-      WRITE(SS(NC+1:NC+8),'(I8)',ERR=13)I
-      SS(NC+9:NC+9)='$'
+      WRITE(SS(NC+1:NC+5),'(I13)',ERR=13)I
+      SS(NC+14:NC+14)='$'
       CALL PRS(SS)
       RETURN
  13   CALL PUTSOLD('I/O Error: cant write to string in PRSI',39)
       RETURN
       END
 C
-      SUBROUTINE PRIS(I,S)
-      CHARACTER S(*),SS*80
+c-----------------------------------------------------------------------
+      subroutine pris(i,s)
+      character s(*),ss*146
 
-      call blank(ss,80)
-      write(ss(1:8),'(i8)',err=13)i
-      do 1 j=1,70
+      call blank(ss,146)
+      write(ss(1:13),'(i13)',err=13)i
+      do 1 j=1,133
+         if(s(j).eq.'$')then
+            nc=j-1
+            go to 2
+         endif
+         ss(j+14:j+14)=s(j)
+ 1    continue
+      call putsold('I/O Error: No String Terminator sent to PRSI',44)
+
+ 2    continue
+      ss(nc+14:nc+14)='$'
+      call prs(ss)
+      return
+
+ 13   call putsold('I/O Error: cant write to string in PRIS',39)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pris4(i,s)
+      character s(*),ss*136
+
+      call blank(ss,136)
+      write(ss(1:4),'(i4)',err=8)i
+      do 1 j=1,133
+         if(s(j).eq.'$')then
+            nc=j-1
+            go to 2
+         endif
+         ss(j+5:j+5)=s(j)
+ 1    continue
+      call putsold('I/O Error: No String Terminator sent to PRSI',44)
+
+ 2    continue
+      ss(nc+5:nc+5)='$'
+      call prs(ss)
+      return
+
+ 8    call putsold('I/O Error: cant write to string in PRIS',39)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pris8(i,s)
+      character s(*),ss*140
+
+      call blank(ss,140)
+      write(ss(1:8),'(i8)',err=8)i
+      do 1 j=1,133
          if(s(j).eq.'$')then
             nc=j-1
             go to 2
@@ -205,12 +255,12 @@ C
       call prs(ss)
       return
 
- 13   call putsold('I/O Error: cant write to string in PRIS',39)
+ 8    call putsold('I/O Error: cant write to string in PRIS',39)
       return
       end
-C-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       SUBROUTINE PRSRRR(S,r1,r2,r3)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -220,7 +270,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSRR',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+42),'(1p3e14.6)',ERR=13)r1,r2,r3
@@ -232,7 +282,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSRR(S,r1,r2)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -242,7 +292,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSRR',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+28),'(1p2e14.6)',ERR=13)r1,r2
@@ -254,7 +304,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSR(S,R)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -264,7 +314,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSR',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+14),'(G14.6)',ERR=13)R
@@ -276,7 +326,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSII(S,I,J)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -286,7 +336,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSii',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+20),'(2I10)',ERR=13)I,J
@@ -298,7 +348,7 @@ C
       END
 C
       SUBROUTINE PRSIR(S,I,R)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -308,7 +358,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       CALL PUTSOLD('I/O Error: No String Terminator sent to PRSir',44)
-      CALL PUTSOLD(S,80)
+      CALL PUTSOLD(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+20),'(I6,G14.6)',ERR=13)I,R
@@ -320,7 +370,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE PRSIS(S1,I,S2)
-      CHARACTER S1(*),S2(*),SS*80
+      CHARACTER S1(*),S2(*),SS*132
 C
       SS = ' '
       DO 1 J=1,70
@@ -339,7 +389,7 @@ C
 C
       ISTART = NC+10
       IS2=0
-      DO 11 J=ISTART,80
+      DO 11 J=ISTART,132
          IS2=IS2+1
          IF(S2(IS2).EQ.'$')THEN
             NC=J-1
@@ -360,7 +410,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE PRSISI(S1,I1,S2,I2)
-      CHARACTER S1(*),S2(*),SS*80
+      CHARACTER S1(*),S2(*),SS*132
 C
       SS = ' '
       DO 1 J=1,70
@@ -379,7 +429,7 @@ C
 C
       ISTART = NC+10
       IS2=0
-      DO 11 J=ISTART,80
+      DO 11 J=ISTART,132
          IS2=IS2+1
          IF(S2(IS2).EQ.'$')THEN
             NC=J-1
@@ -394,7 +444,7 @@ C
 C
       NC = NC + 1
       WRITE(SS(NC+1:NC+8),'(I8)',ERR=13) I2
-      NC = NC+8
+      NC = NC+13
       SS(NC+1:NC+1)='$'
       CALL PRS(SS)
       RETURN
@@ -403,7 +453,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE PRSRS(S1,R,S2)
-      CHARACTER S1(*),S2(*),SS*80
+      CHARACTER S1(*),S2(*),SS*132
 C
       SS = ' '
       DO 1 I=1,60
@@ -424,7 +474,7 @@ C     Pad a few blanks
 C
       ISTART = NC + 16
       IS2 = 0
-      DO 11 I=ISTART,80
+      DO 11 I=ISTART,132
          IS2 = IS2 + 1
          IF(S2(IS2).EQ.'$')THEN
             NC=I-1
@@ -450,7 +500,7 @@ C
 C
       SUBROUTINE RES(S1,N)
       include 'devices.inc'
-      CHARACTER S1(*),S(80)
+      CHARACTER S1(*),S(132)
 C
 C     All text input comes thru here
 C
@@ -458,8 +508,8 @@ C
       IF (.NOT.IFDEMO) THEN
          CALL GETSOLD(S)
       ELSE
-         READ(55,80) S
-   80    FORMAT(80A1)
+         READ(55,132) S
+  132    FORMAT(132A1)
       ENDIF
 C
 c     CALL GETSOLD(S)
@@ -471,11 +521,11 @@ c     CALL GETSOLD(S)
 C
       SUBROUTINE REiii(i,j,k)
 C     Read Integer
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13) i,j,k
       write (6,*) i,j,k
@@ -487,11 +537,11 @@ C
 C
       SUBROUTINE REIi(I,j)
 C     Read Integer
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)I,j
       write (6,*) i,j
@@ -503,11 +553,11 @@ C
 c
       SUBROUTINE REI(I)
 C     Read Integer
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)I
       write (6,*) i
@@ -519,11 +569,11 @@ C
 C
       SUBROUTINE RER(R1)
 C     Read Real
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1
       write (6,*) r1
@@ -535,11 +585,11 @@ C
 C
       SUBROUTINE RERR(R1,R2)
 C     Read Real
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2
       write (6,*) r1,r2
@@ -551,11 +601,11 @@ C
 C
       SUBROUTINE RERRR(R1,R2,R3)
 C     Read Real
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2,R3
       write (6,*) r1,r2,r3
@@ -567,11 +617,11 @@ C
 C
       SUBROUTINE RERRRR(R1,R2,R3,R4)
 C     Read Real
-      CHARACTER*80 S
+      CHARACTER*132 S
 C
- 1    CALL RES(S,80)
+ 1    CALL RES(S,132)
       REWIND(13)
-      WRITE (13,'(A80)')S
+      WRITE (13,'(A132)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2,R3,R4
       write (6,*) r1,r2,r3,r4
@@ -586,24 +636,24 @@ C     PUTSOLD is the one device-dependent output subroutine.
 C     It Goes in Tekplot.f (Or Xinterface.f)  This is the Tek version
 C     It displays a string on the output display device
       CHARACTER S(*)
-      WRITE(6,'(1X,80A1)',ERR=1)(S(I),I=1,NCHARS)
+      WRITE(6,'(1X,132A1)',ERR=1)(S(I),I=1,NCHARS)
  1    RETURN
       END
 C
       SUBROUTINE GETSOLD(S)
 C     GETSOLD is the one device-dependent input subroutine.
 C     It Goes in Tekplot.f (Or Xinterface.f)  This is the Tek version
-C     It returns an 80 character string entered from the input device
+C     It returns an 132 character string entered from the input device
 C
-      CHARACTER S*80
+      CHARACTER S*132
 C
       S=' '
-      READ(5,'(A80)',ERR=1,END=1)S
+      READ(5,'(A132)',ERR=1,END=1)S
  1    RETURN
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSIII(S,I1,i2,i3)
-      CHARACTER S(*),SS*80
+      CHARACTER S(*),SS*132
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -613,7 +663,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       CALL PUTS('I/O Error: No String Terminator sent to PRSiii',44)
-      CALL PUTS(S,80)
+      CALL PUTS(S,132)
       RETURN
  2    CONTINUE
       WRITE(SS(NC+1:NC+30),'(3I10)',ERR=13)i1,i2,i3
@@ -625,9 +675,9 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRIII(I1,I2,I3)
-      CHARACTER S*80
+      CHARACTER S*132
       S=' '
-      WRITE(S,'(3I8)',ERR=1)I1,I2,I3
+      WRITE(S,'(3I13)',ERR=1)I1,I2,I3
       S(25:25)='$'
       CALL PRS(S)
  1    RETURN

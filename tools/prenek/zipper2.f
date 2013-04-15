@@ -3369,21 +3369,27 @@ c     the selected point.
       ITEM(nchoic)       =             'Stretch R'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch theta'
-c
-C     Menu's all set, prompt for user input:
-      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
-c
-C
-      IF (choice.EQ.'UP MENU') return
-      IF (choice.EQ.'Redraw mesh') then
+c     nchoic = nchoic+1
+c     ITEM(nchoic)       =             'Stretch inside circle'
+      nchoic = nchoic+1
+      ITEM(nchoic)       =             'Stretch outside circle'
+
+
+      CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER') ! Prompt for user input.
+
+
+      if (choice.eq.'UP MENU') return
+
+      if (choice.eq.'Redraw mesh') then
          call redraw_mesh
-      ELSEIF (choice.EQ.'Stretch theta') THEN
+      elseif (choice.eq.'Stretch outside circle') then
+         call stretch_outside_circ
+      elseif (choice.eq.'Stretch theta') then
          call stretch_theta
-      ELSEIF (choice.EQ.'Stretch R') THEN
+      elseif (choice.eq.'Stretch R') then
          call stretch_rad
-      ELSEIF (choice.EQ.'Stretch X') THEN
-         CALL PRS(
-     $   'Input X-location separating shifted section.$')
+      elseif (choice.eq.'Stretch X') then
+         CALL PRS('Input X-location separating shifted section.$')
          CALL RER(Xsep)
 c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          CALL PRS(
@@ -3394,7 +3400,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
          CALL PRS('Input amount to stretch in X-direction$')
          CALL RER(Xshift)
          CALL Shifter2(Xshift,Xsep,ANS,X,'X')
-      ELSEIF (choice.EQ.'Stretch Y') THEN
+      elseif (choice.eq.'Stretch Y') then
          CALL PRS(
      $   'Input Y-location separating shifted section.$')
          CALL RER(Ysep)
@@ -3407,7 +3413,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          CALL PRS('Input amount to stretch in Y-direction$')
          CALL RER(Yshift)
          CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
-      ELSEIF (choice.EQ.'Stretch Z') THEN
+      elseif (choice.eq.'Stretch Z') then
          CALL PRS(
      $   'Input Z-location separating shifted section.$')
          CALL RER(Zsep)
@@ -3419,9 +3425,9 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
          CALL PRS('Input amount to stretch in Z-direction$')
          CALL RER(Zshift)
          CALL Shifter2(Zshift,Zsep,ANS,Z,'Z')
-      ENDIF
-      GOTO 1
-      END
+      endif
+      goto 1
+      end
 c-----------------------------------------------------------------------
       subroutine shifter2a(pmin,pmax,gain,Shift,Sep,DIR,pts,coord)
 c
@@ -4737,7 +4743,7 @@ C
 
 c     ifmid  = .false.
 c     ifcstd = .true.
-      write(6,*) nx,ny,nz,nxm,' NXM!'
+c     write(6,*) nx,ny,nz,nxm,' NXM!'
 
       call genxyz_e (xp,yp,zp,ie,nx,ny,nz) ! high definition mesh
 
@@ -4797,15 +4803,15 @@ c     call outmat(rrz,1,nzsp+1,'rrz  ',nzspi)
             call q_to_neklin(y(1,je),1,yq,if3d)
             call q_to_neklin(z(1,je),1,zq,if3d)
 
-            write(6,*)
-            write(6,9) ie,(x(jj,ie),jj=1,4),' xold'
-            write(6,9) ie,(y(jj,ie),jj=1,4),' yold'
-            write(6,*)
-            write(6,9) je,(x(jj,je),jj=1,4),' xnew'
-            write(6,9) je,(y(jj,je),jj=1,4),' ynew'
-    9       format(i5,4f14.5,a5)
+c           write(6,*)
+c           write(6,9) ie,(x(jj,ie),jj=1,4),' xold'
+c           write(6,9) ie,(y(jj,ie),jj=1,4),' yold'
+c           write(6,*)
+c           write(6,9) je,(x(jj,je),jj=1,4),' xnew'
+c           write(6,9) je,(y(jj,je),jj=1,4),' ynew'
+c   9       format(i5,4f14.5,a5)
 
-c           call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz,xq,yq,zq)
+            call fix_curve(je,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz,xq,yq,zq)
 
             if (je.lt.500) call drawel(je)
  
