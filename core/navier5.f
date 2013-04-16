@@ -3861,26 +3861,157 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine domain_size(x0,x1,y0,y1,z0,z1)
+      function dist3d(a,b,c,x,y,z)
+
+      d = (a-x)**2 + (b-y)**2 + (c-z)**2
+
+      dist3d = 0.
+      if (d.gt.0) dist3d = sqrt(d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dist2d(a,b,x,y)
+
+      d = (a-x)**2 + (b-y)**2
+
+      dist2d = 0.
+      if (d.gt.0) dist2d = sqrt(d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
+
       include 'SIZE'
       include 'TOTAL'
 
       n = nx1*ny1*nz1*nelt
 
-      x0 = glmin(xm1,n)
-      x1 = glmax(xm1,n)
-
-      y0 = glmin(ym1,n)
-      y1 = glmax(ym1,n)
-
+      xmin = glmin(xm1,n)
+      xmax = glmax(xm1,n)
+      ymin = glmin(ym1,n)
+      ymax = glmax(ym1,n)
       if (if3d) then
-         z0 = glmin(zm1,n)
-         z1 = glmax(zm1,n)
+         zmin = glmin(zm1,n)
+         zmax = glmax(zm1,n)
       else
-         z0 = 0.
-         z1 = 0.
+         zmin = 0.
+         zmax = 0.
       endif
 
       return
+      end
+c-----------------------------------------------------------------------
+      subroutine cheap_dist(d,ifld)
+
+c     Finds a pseudo-distance function.
+
+c     INPUT:  ifld - field type for which distance function is to be found.
+c             ifld = 1 for velocity
+c             ifld = 2 for temperature, etc.
+
+c     OUTPUT: d = "path" distance to nearest wall
+
+c     This approach has a significant advantage that it works for
+c     periodict boundary conditions, whereas most other approaches
+c     will not.
+
+      include 'SIZE'
+      include 'GEOM'       ! Coordinates
+      include 'INPUT'      ! cbc()
+      include 'PARALLEL'   ! gather-scatter handle for field "ifld"
+
+      real d(lx1,ly1,lz1,lelt)
+
+      integer e,eg,f
+
+      n = nx1*ny1*nz1*nelt
+
+      call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
+
+      xmn = min(xmin,ymin)
+      xmx = max(xmax,ymax)
+      if (if3d) xmn = min(xmn ,zmin)
+      if (if3d) xmx = max(xmx ,zmax)
+
+      big = 10*(xmx-xmn)
+      call cfill(d,big,n)
+
+      nface = 2*ndim
+      do e=1,nelt    ! Set d=0 on walls
+      do f=1,nface
+         if (cbc(f,e,1).eq.'W  ') call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,1).eq.'v  ') call facev(d,e,f,0.,nx1,ny1,nz1)
+      enddo
+      enddo
+
+      do ipass=1,10000
+         dmax    = 0
+         nchange = 0
+         do e=1,nelt
+          if (if3d) then
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+              i0=max(  1,i-1)
+              j0=max(  1,j-1)
+              k0=max(  1,k-1)
+              i1=min(nx1,i+1)
+              j1=min(ny1,j+1)
+              k1=min(nz1,k+1)
+              do kk=k0,k1
+              do jj=j0,j1
+              do ii=i0,i1
+
+                dtmp = d(ii,jj,kk,e) + dist3d(
+     $            xm1(ii,jj,kk,e),ym1(ii,jj,kk,e),zm1(ii,jj,kk,e)
+     $           ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e),zm1(i ,j ,k ,e))
+
+               if (dtmp.lt.d(i,j,k,e)) then
+                d(i,j,k,e) = dtmp
+                nchange = nchange+1
+                dmax = max(dmax,d(i,j,k,e))
+               endif
+              enddo
+              enddo
+              enddo
+
+            enddo
+            enddo
+            enddo
+          else     ! 2D
+            k=1
+            kk=1
+            do j=1,ny1
+            do i=1,nx1
+              i0=max(  1,i-1)
+              j0=max(  1,j-1)
+              i1=min(nx1,i+1)
+              j1=min(ny1,j+1)
+              do jj=j0,j1
+              do ii=i0,i1
+               if (d(ii,jj,kk,e).lt.d(i,j,k,e)) then
+                nchange = nchange + 1
+                d(i,j,k,e) = d(ii,jj,kk,e) + dist2d(
+     $            xm1(ii,jj,kk,e),ym1(ii,jj,kk,e)
+     $           ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e))
+                dmax = max(dmax,d(i,j,k,e))
+               endif
+              enddo
+              enddo
+
+            enddo
+            enddo
+          endif
+         enddo
+         call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
+         nchange = iglsum(nchange,1)
+         dmax = glmax(dmax,1)
+         if (nid.eq.0) write(6,1) ipass,nchange,dmax
+    1    format(i9,i12,1pe12.4,' max wall distance')
+         if (nchange.eq.0) goto 1000
+      enddo
+ 1000 return
       end
 c-----------------------------------------------------------------------
