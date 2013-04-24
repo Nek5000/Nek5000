@@ -3861,6 +3861,105 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine filter_d2(v,nx,nz,wgt,ifd4)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lt=lx1*ly1*lz1)
+      real v(lt,nelt)
+      logical ifd4
+
+      common /cfunc/ w(lt,lelt),ur(lt),us(lt),ut(lt),w1(2*lt)
+
+      integer e
+
+      n   = nx1*ny1*nz1*nelt
+      nn  = nx-1
+      nel = nelfld(ifield)
+
+      bmax = glamax(v,n)
+
+      if (if3d) then
+        do e=1,nel
+          call local_grad3(ur,us,ut,v(1,e),nn,1,dxm1,dxtm1)
+          do i=1,lt
+            ur(i) = ur(i)*w3m1(i,1,1)
+            us(i) = us(i)*w3m1(i,1,1)
+            ut(i) = ut(i)*w3m1(i,1,1)
+          enddo
+          call local_grad3_t(w(1,e),ur,us,ut,nn,1,dxm1,dxtm1,w1)
+        enddo
+        call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
+
+        if (ifd4) then
+           wght = 20./(nx1**4)
+           do e=1,nel
+             do i=1,lt
+               w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
+             enddo
+             call local_grad3(ur,us,ut,w(1,e),nn,1,dxm1,dxtm1)
+             do i=1,lt
+               ur(i) = ur(i)*w3m1(i,1,1)
+               us(i) = us(i)*w3m1(i,1,1)
+               ut(i) = ut(i)*w3m1(i,1,1)
+             enddo
+             call local_grad3_t(w(1,e),ur,us,ut,nn,1,dxm1,dxtm1,w1)
+           enddo
+           call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
+        endif
+
+        wght = wgt/(nx1**4)
+        do e=1,nel
+          do i=1,lt
+            v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
+          enddo
+        enddo
+
+      else  ! 2D
+
+        do e=1,nel
+          call local_grad2(ur,us,v(1,e),nn,1,dxm1,dxtm1)
+          do i=1,lt
+            ur(i) = ur(i)*w3m1(i,1,1)
+            us(i) = us(i)*w3m1(i,1,1)
+          enddo
+          call local_grad2_t(w(1,e),ur,us,nn,1,dxm1,dxtm1,w1)
+        enddo
+        call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
+
+        if (ifd4) then
+           wght = 200./(nx1**4)
+           do e=1,nel
+             do i=1,lt
+               w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
+             enddo
+             call local_grad2(ur,us,w(1,e),nn,1,dxm1,dxtm1)
+             do i=1,lt
+               ur(i) = ur(i)*w3m1(i,1,1)
+               us(i) = us(i)*w3m1(i,1,1)
+             enddo
+             call local_grad2_t(w(1,e),ur,us,nn,1,dxm1,dxtm1,w1)
+           enddo
+           call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
+        endif
+
+        wght = wgt/(nx1**4)
+        do e=1,nel
+          do i=1,lt
+            v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
+          enddo
+        enddo
+
+      endif
+
+      vmax = glamax(v,n)
+      if (nid.eq.0) write(6,1) istep,time,vmax,bmax,' filter max'
+    1 format(i9,1p3e12.4,a11)
+
+      return
+      end
+c-------------------------------------------------------------------------
       function dist3d(a,b,c,x,y,z)
 
       d = (a-x)**2 + (b-y)**2 + (c-z)**2
@@ -3903,7 +4002,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cheap_dist(d,ifld)
+      subroutine cheap_dist(d,ifld,b)
 
 c     Finds a pseudo-distance function.
 
@@ -3920,13 +4019,17 @@ c     will not.
       include 'SIZE'
       include 'GEOM'       ! Coordinates
       include 'INPUT'      ! cbc()
+      include 'TSTEP'      ! nelfld
       include 'PARALLEL'   ! gather-scatter handle for field "ifld"
 
       real d(lx1,ly1,lz1,lelt)
 
+      character*3 b  ! Boundary condition of interest
+
       integer e,eg,f
 
-      n = nx1*ny1*nz1*nelt
+      nel = nelfld(ifld)
+      n = nx1*ny1*nz1*nel
 
       call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
 
@@ -3938,19 +4041,121 @@ c     will not.
       big = 10*(xmx-xmn)
       call cfill(d,big,n)
 
+
       nface = 2*ndim
-      do e=1,nelt    ! Set d=0 on walls
+      do e=1,nel     ! Set d=0 on walls
       do f=1,nface
-         if (cbc(f,e,1).eq.'W  ') call facev(d,e,f,0.,nx1,ny1,nz1)
-         if (cbc(f,e,1).eq.'v  ') call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
       enddo
       enddo
 
-      do ipass=1,10000
+      do ipass=1,100
          dmax    = 0
          nchange = 0
-         do e=1,nelt
-          if (if3d) then
+         do e=1,nel
+           do k=1,nz1
+           do j=1,ny1
+           do i=1,nx1
+             i0=max(  1,i-1)
+             j0=max(  1,j-1)
+             k0=max(  1,k-1)
+             i1=min(nx1,i+1)
+             j1=min(ny1,j+1)
+             k1=min(nz1,k+1)
+             do kk=k0,k1
+             do jj=j0,j1
+             do ii=i0,i1
+
+              if (if3d) then
+               dtmp = d(ii,jj,kk,e) + dist3d(
+     $           xm1(ii,jj,kk,e),ym1(ii,jj,kk,e),zm1(ii,jj,kk,e)
+     $          ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e),zm1(i ,j ,k ,e))
+              else
+               dtmp = d(ii,jj,kk,e) + dist2d(
+     $           xm1(ii,jj,kk,e),ym1(ii,jj,kk,e)
+     $          ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e))
+              endif
+
+              if (dtmp.lt.d(i,j,k,e)) then
+                d(i,j,k,e) = dtmp
+                nchange = nchange+1
+                dmax = max(dmax,d(i,j,k,e))
+              endif
+             enddo
+             enddo
+             enddo
+
+           enddo
+           enddo
+           enddo
+         enddo
+         call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
+         nchange = iglsum(nchange,1)
+         dmax = glmax(dmax,1)
+         if (nid.eq.0) write(6,1) ipass,nchange,dmax
+    1    format(i9,i12,1pe12.4,' max wall distance 1')
+         if (nchange.eq.0) goto 1000
+      enddo
+ 1000 return
+      end
+c-----------------------------------------------------------------------
+      subroutine distf(d,ifld,b,dmin,emin,xn,yn,zn)
+
+c     Generate a distance function to boundary with bc "b".
+c     This approach does not yet work with periodic boundary conditions.
+
+c     INPUT:  ifld - field type for which distance function is to be found.
+c             ifld = 1 for velocity
+c             ifld = 2 for temperature, etc.
+
+c     OUTPUT: d = distance to nearest boundary with boundary condition "b"
+
+c     Work arrays:  dmin,emin,xn,yn,zn
+
+      include 'SIZE'
+      include 'GEOM'       ! Coordinates
+      include 'INPUT'      ! cbc()
+      include 'TSTEP'      ! nelfld
+      include 'PARALLEL'   ! gather-scatter handle for field "ifld"
+
+      real d(lx1,ly1,lz1,lelt)
+      character*3 b
+
+      real dmin(lx1,ly1,lz1,lelt),emin(lx1,ly1,lz1,lelt)
+      real xn(lx1,ly1,lz1,lelt),yn(lx1,ly1,lz1,lelt)
+      real zn(lx1,ly1,lz1,lelt)
+
+
+      integer e,eg,f
+
+      nel = nelfld(ifld)
+      n = nx1*ny1*nz1*nel
+
+      call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
+
+      xmn = min(xmin,ymin)
+      xmx = max(xmax,ymax)
+      if (if3d) xmn = min(xmn ,zmin)
+      if (if3d) xmx = max(xmx ,zmax)
+
+      big = 10*(xmx-xmn)
+      call cfill (d,big,n)
+
+      call opcopy(xn,yn,zn,xm1,ym1,zm1)
+
+      nface = 2*ndim
+      do e=1,nel     ! Set d=0 on walls
+      do f=1,nface
+         if (cbc(f,e,1).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
+      enddo
+      enddo
+
+      nxyz = nx1*ny1*nz1
+
+      do ipass=1,1000
+         dmax    = 0
+         nchange = 0
+         do e=1,nel
             do k=1,nz1
             do j=1,ny1
             do i=1,nx1
@@ -3964,14 +4169,21 @@ c     will not.
               do jj=j0,j1
               do ii=i0,i1
 
-                dtmp = d(ii,jj,kk,e) + dist3d(
-     $            xm1(ii,jj,kk,e),ym1(ii,jj,kk,e),zm1(ii,jj,kk,e)
-     $           ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e),zm1(i ,j ,k ,e))
-
-               if (dtmp.lt.d(i,j,k,e)) then
-                d(i,j,k,e) = dtmp
-                nchange = nchange+1
-                dmax = max(dmax,d(i,j,k,e))
+               dself  = d(i,j,k,e)
+               dneigh = d(ii,jj,kk,e)
+               if (dneigh.lt.dself) then  ! check neighbor's nearest point
+                  d2 = (xm1(i,j,k,e)-xn(ii,jj,kk,e))**2
+     $               + (ym1(i,j,k,e)-yn(ii,jj,kk,e))**2
+                  if (if3d) d2 = d2 + (zm1(i,j,k,e)-zn(ii,jj,kk,e))**2
+                  if (d2.gt.0) d2 = sqrt(d2)
+                  if (d2.lt.dself) then
+                    nchange = nchange+1
+                    d (i,j,k,e) = d2
+                    xn(i,j,k,e) = xn(ii,jj,kk,e)
+                    yn(i,j,k,e) = yn(ii,jj,kk,e)
+                    zn(i,j,k,e) = zn(ii,jj,kk,e)
+                    dmax = max(dmax,d(i,j,k,e))
+                  endif
                endif
               enddo
               enddo
@@ -3980,38 +4192,55 @@ c     will not.
             enddo
             enddo
             enddo
-          else     ! 2D
-            k=1
-            kk=1
-            do j=1,ny1
-            do i=1,nx1
-              i0=max(  1,i-1)
-              j0=max(  1,j-1)
-              i1=min(nx1,i+1)
-              j1=min(ny1,j+1)
-              do jj=j0,j1
-              do ii=i0,i1
-               if (d(ii,jj,kk,e).lt.d(i,j,k,e)) then
-                nchange = nchange + 1
-                d(i,j,k,e) = d(ii,jj,kk,e) + dist2d(
-     $            xm1(ii,jj,kk,e),ym1(ii,jj,kk,e)
-     $           ,xm1(i ,j ,k ,e),ym1(i ,j ,k ,e))
-                dmax = max(dmax,d(i,j,k,e))
-               endif
-              enddo
-              enddo
 
-            enddo
-            enddo
+            re = lglel(e)
+            call cfill(emin(1,1,1,e),re,nxyz)
+            call copy (dmin(1,1,1,e),d(1,1,1,e),nxyz)
+
+         enddo
+         nchange = iglsum(nchange,1)
+
+         call gs_op(gsh_fld(ifld),dmin,1,3,0) ! min over all elements
+
+
+         nchange2=0
+         do e=1,nel
+         do i=1,nxyz
+          if (dmin(i,1,1,e).ne.d(i,1,1,e)) then
+             nchange2 = nchange2+1
+             emin(i,1,1,e) = 0  ! Flag
           endif
          enddo
-         call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
-         nchange = iglsum(nchange,1)
+         enddo
+         call copy(d,dmin,n)                !   Ensure updated distance
+         nchange2 = iglsum(nchange2,1)
+         nchange  = nchange + nchange2
+         call gs_op(gsh_fld(ifld),emin,1,4,0) ! max over all elements
+
+         do e=1,nel    ! Propagate nearest wall points
+         do i=1,nxyz
+          eg = emin(i,1,1,e)
+          if (eg.ne.lglel(e)) then
+             xn(i,1,1,e) = 0
+             yn(i,1,1,e) = 0
+             zn(i,1,1,e) = 0
+          endif
+         enddo
+         enddo
+         call gs_op(gsh_fld(ifld),xn,1,1,0) !   Sum over all elements to
+         call gs_op(gsh_fld(ifld),yn,1,1,0) !   convey nearest point
+         call gs_op(gsh_fld(ifld),zn,1,1,0) !   to shared neighbor.
+
          dmax = glmax(dmax,1)
          if (nid.eq.0) write(6,1) ipass,nchange,dmax
-    1    format(i9,i12,1pe12.4,' max wall distance')
+    1    format(i9,i12,1pe12.4,' max wall distance 2')
          if (nchange.eq.0) goto 1000
       enddo
- 1000 return
+ 1000 continue
+
+c     wgt = 0.3
+c     call filter_d2(d,nx1,nz1,wgt,.true.)
+
+      return
       end
 c-----------------------------------------------------------------------
