@@ -73,7 +73,7 @@ static void pack_more(
   while(buf!=buf_end) {
     uint *msg_end = buf+3+buf[2]; buf+=3;
     while(buf!=msg_end)
-      memcpy(buf+off, input+size*(*perm++), size), buf+=row_size;
+      memcpy((char*)buf+off, input+size*(*perm++), size), buf+=row_size;
   }
 }
 
@@ -85,7 +85,7 @@ static void unpack_more(
   while(buf!=buf_end) {
     const uint *msg_end = buf+3+buf[2]; buf+=3;
     while(buf!=msg_end)
-      memcpy(out, buf+off, size), out+=size, buf+=row_size;
+      memcpy(out, (char*)buf+off, size), out+=size, buf+=row_size;
   }
 }
 
