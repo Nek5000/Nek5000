@@ -173,7 +173,10 @@ c
          radii(4)=0.5  ! thickness of pipe
          radii(5)=0.25 ! 4x reduction factor
          nr       = 3
+         call sc_make_sphere_cap(radii,nr)
+         return
 
+      elseif (hemi.eq.'2') then
          radii(1)=0.8
          radii(2)=1.2
          radii(3)=1.4
@@ -4055,7 +4058,8 @@ c-----------------------------------------------------------------------
       parameter      (nxm3=nxm*nym*nzm)
       common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3) ! for genxyze_e
 
-      ifsix = .true.
+      ifsix = .false.
+      if (nr.eq.7) ifsix = .true.
 
       e0 = nel
       e  = e0 + 1
@@ -4102,10 +4106,11 @@ c     enddo
       nel = e-1
       call sc_set_bc_etc
 
-      if (ifsix) call sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
-
-      call sc_set_bc_etc
-      call prexit
+      if (ifsix) then
+         call sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
+         call sc_set_bc_etc
+c        call prexit
+      endif
 
       return
       end
