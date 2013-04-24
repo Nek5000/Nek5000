@@ -3870,7 +3870,7 @@ c-----------------------------------------------------------------------
       real v(lt,nelt)
       logical ifd4
 
-      common /cfunc/ w(lt,lelt),ur(lt),us(lt),ut(lt),w1(2*lt)
+      common /ctmp1/ w(lt,lelt),ur(lt),us(lt),ut(lt),w1(2*lt)
 
       integer e
 
@@ -4049,7 +4049,7 @@ c     will not.
       enddo
       enddo
 
-      do ipass=1,100
+      do ipass=1,10000
          dmax    = 0
          nchange = 0
          do e=1,nel
@@ -4152,7 +4152,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
 
       nxyz = nx1*ny1*nz1
 
-      do ipass=1,1000
+      do ipass=1,10000
          dmax    = 0
          nchange = 0
          do e=1,nel
