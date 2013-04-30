@@ -216,6 +216,7 @@ $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
