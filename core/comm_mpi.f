@@ -1200,3 +1200,19 @@ c     Double Buffer : does 2*nloop timings
       return
       end
 c-----------------------------------------------------------------------
+      integer*8 function i8gl_running_sum(in)
+c
+      include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      integer status(mpi_status_size)
+      integer*8 x,r
+
+      x = in  ! running sum
+      r = 0   ! recv buff
+
+      call mpi_scan(x,r,1,mpi_integer8,mpi_sum,nekcomm,ierr)
+      i8gl_running_sum = r
+
+      return
+      end
+c-----------------------------------------------------------------------
