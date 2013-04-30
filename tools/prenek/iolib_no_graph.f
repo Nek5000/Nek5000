@@ -150,7 +150,7 @@ C
       CHARACTER S*132
 C
       S=' '
-      WRITE(S,'(3G113.9)',ERR=1)R1,R2,R3
+      WRITE(S,'(3G13.9)',ERR=1)R1,R2,R3
       S(55:55)='$'
       CALL PRS(S)
  1    RETURN
@@ -181,7 +181,7 @@ C
       RETURN
  2    CONTINUE
 C
-      WRITE(SS(NC+1:NC+5),'(I13)',ERR=13)I
+      WRITE(SS(NC+1:NC+13),'(I13)',ERR=13)I
       SS(NC+14:NC+14)='$'
       CALL PRS(SS)
       RETURN
