@@ -508,8 +508,233 @@ c
      $     ipass, m, k, iwork, dumval2
       common /ctmp0/ iwork(lelt)
       
-      integer nekcomm, nekgroup, nekreal, nid_, np_
+      integer nekcomm, nekgroup, nekreal, nid_, np_, j
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      call nekMOAB_get_set_infos(imeshh, fileset, nekcomm, 
+     *     matsetTag, numflu, numoth, numsts, iestart, iecount, ieiter, 
+     *     matsets, matids, nelgv, nelgt)
+
+c set material types
+      tmp = 1
+      do i = 1, numflu+numoth
+         do j = iestart(i), iestart(i)+iecount(i)-1
+            IMATIE(j) = matindx(i)
+         enddo
+      enddo
+
+      call nekMOAB_get_gids(imeshh, nekcomm, nid_, globalIdTag, numflu,
+     *     numoth, nelgv, nelgt, iestart, iecount, ieiter, lglel, gllel,
+     *     gllnid)
+
+      return
+      end 
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_gids(imeshh, nekcomm, nid_, globalIdTag,
+     *     numflu, numoth, nelgv, nelgt, iestart, iecount, ieiter, 
+     *     lglel, gllel, gllnid)
+c
+      implicit none
+
+#ifdef PTRSIZE8
+#define POINTER_SIZE 8
+#else
+#define POINTER_SIZE 4
+#endif
+#ifdef MPI
+#include "iMeshP_f.h"
+#include "mpif.h"
+#else
+#include "iMesh_f.h"
+#endif
+
+      iMesh_Instance imeshh
+      integer numflu, numoth, nid_, iestart(*), iecount(*), nekcomm,
+     *     lglel(*), gllel(*), gllnid(*), numsts, nelgv, nelgt
+      iBase_EntityArrIterator ieiter(*)
+      iBase_TagHandle globalIdTag
+c
+      include 'SIZE'
+
+      common /ctmp0/ iwork(lelt)
+      integer ietmp1(2), ietmp2(2), ierr, i, ipass, k, m, iwork, atend, 
+     *     count, mcount, tmpcount, npass, nekid, gid
+      iBase_TagHandle nekGidTag
+      IBASE_HANDLE_T tag_ptr
+      pointer(tag_ptr, nekid(1))
+
+c check whether we have nek gid tag yet
+      nekGidTag = 0
+      call iMesh_getTagHandle(%VAL(imeshh), "NEK_GID", nekGidTag, ierr)
+
+      if (ierr .eq. iBase_SUCCESS) then
+c initialize global numbers
+         call izero(lglel, nelgt)
+         call izero(gllel, nelgt)
+         call izero(gllnid, nelgt)
+         
+c - foreach fluid/solid set
+         mcount = 0
+         do i = 1, numflu+numoth
+            atend = 0
+           count = 0
+            if (iecount(i) .ne. 0) then
+               call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $              ierr)
+               IMESH_ASSERT
+            else
+               atend = 1
+            endif
+
+            do while (atend .eq. 0)
+c   . get ptr to nekgid tag storage
+               call iMesh_tagIterate(%VAL(imeshh), %VAL(nekGidTag), 
+     $        %VAL(ieiter(i)), tag_ptr, tmpcount, ierr)
+c   . foreach elem in set
+               do k = 1, tmpcount
+c     - check that gid is <= nelt and, if fluid, is <= nelv
+                  gid = nekid(k)
+                  if (gid .gt. nelgt .or. 
+     $                 (i .lt. numflu .and. gid .gt. nelgv)) then
+                     call exitti('Global id is too large for elem ', 
+     $                    count+k)
+                  endif
+c     - set lglel, gllel, gllnid
+                  lglel(mcount+count+k) = gid
+                  gllel(gid) = mcount+count + k
+                  gllnid(gid) = nid_
+               enddo
+
+               call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $              %VAL(tmpcount), atend, ierr)
+               IMESH_ASSERT
+               count = count + tmpcount
+               mcount = mcount + tmpcount
+            enddo
+         enddo
+      else
+         ietmp1(1) = 0
+         do i = 1, numflu
+            ietmp1(1) = ietmp1(1) + iecount(i)
+         enddo
+         ietmp1(2) = 0
+         do i = numflu+1, numflu+numoth
+            ietmp1(2) = ietmp1(2) + iecount(i)
+         enddo
+#ifdef MPI
+         call mpi_scan(ietmp1, ietmp2, 2, MPI_INTEGER, 
+     $        MPI_SUM, nekcomm, ierr)
+         if (ierr .ne. MPI_SUCCESS) ierr = iBase_FAILURE
+         IMESH_ASSERT
+#else
+         ietmp2(1) = ietmp1(1)
+         ietmp2(2) = ietmp1(2)
+#endif
+c     set returned nums to exclusive start - 1
+         ietmp2(1) = ietmp2(1) - ietmp1(1)
+         ietmp2(2) = ietmp2(2) - ietmp1(2)
+c     set gids for local fluid, other elems
+         call izero(lglel, nelgt)
+         call izero(gllel, nelgt)
+         call izero(gllnid, nelgt)
+         do i = 1, nelv
+            lglel(i) = ietmp2(1)+i
+            gllel(lglel(i)) = i
+            gllnid(lglel(i)) = nid_
+         enddo
+         do i = nelv+1, nelt
+            lglel(i) = nelgv+ietmp2(2)-nelv+i
+            gllel(lglel(i)) = i
+            gllnid(lglel(i)) = nid_
+         enddo
+
+      endif
+
+c     now communicate to other procs (taken from set_proc_map in map2.f)
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+
+      call igop(GLLNID, iwork, 'M  ', NELGT)
+
+c     set the global id tag on elements
+
+c      print *, 'Local to global'
+c      print *, lglel(:)
+
+c create the nekgidtag if it wasn\'t there before
+      if (0 .eq. nekGidTag) then
+         call nekMOAB_create_find_tag("NEK_GID", 
+     $        " moab:TAG_STORAGE_TYPE=DENSE moab:TAG_DEFAULT_VALUE=-1", 
+     $        1, iBase_INTEGER, nekGidTag, .true., ierr)
+         IMESH_ASSERT
+      endif
+
+      do i = 1, numflu+numoth
+         atend = 0
+         count = 0
+         if (iecount(i) .ne. 0) then
+            call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           ierr)
+            IMESH_ASSERT
+         else
+            atend = 1
+         endif
+
+         do while (atend .eq. 0)
+c            print *, 'Estart:', iestart(i),
+c     $           'local-to-global:',lglel(iestart(i)+count)
+
+c use the same iterator for all variables, since the elems are the same
+            call nekMOAB_set_int_tag(ieiter(i), globalIdTag, 1, 
+     $           tmpcount, lglel(iestart(i)+count))
+            call nekMOAB_set_int_tag(ieiter(i), nekGidTag, 1, 
+     $           tmpcount, lglel(iestart(i)+count))
+            call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
+     $           %VAL(tmpcount), atend, ierr)
+            IMESH_ASSERT
+            count = count + tmpcount
+         enddo
+      enddo
+
+      return
+      end 
+c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_set_infos(imeshh, fileset, nekcomm, 
+     *     matsetTag, numflu, numoth, numsts, iestart, iecount, ieiter, 
+     *     matsets, matids, nelgv, nelgt)
+c
+      implicit none
+
+#ifdef PTRSIZE8
+#define POINTER_SIZE 8
+#else
+#define POINTER_SIZE 4
+#endif
+#ifdef MPI
+#include "iMeshP_f.h"
+#else
+#include "iMesh_f.h"
+#endif
+
+      integer iestart(*), iecount(*), nelgv, nelgt, numsts, 
+     *     numflu, numoth, nekcomm, matids(*)
+      iBase_EntityArrIterator ieiter(*)
+      iBase_TagHandle matsetTag
+      iBase_EntitySetHandle fileset, matsets(*)
+      iMesh_Instance imeshh
+
+      include 'SIZE'
+
+      integer dumval, dumsize, tmp, j, dumalloc, dumnum, i, ierr, ilast
+      integer iglsum
+      iBase_EntitySetHandle dumsets(numsts)
+      IBASE_HANDLE_T valptr, setsptr
 
 c get fluid, other material sets, and count elements in them
       valptr = loc(dumval)
@@ -519,7 +744,6 @@ c get fluid, other material sets, and count elements in them
       tmp = 1
       do i = 1, numflu+numoth
          dumval = matids(i)
-         dumval2 =matindx(i)
          dumsize = numsts
 c get the set by matset number
          call iMesh_getEntSetsByTagsRec(%VAL(imeshh), %VAL(fileset),
@@ -548,10 +772,6 @@ c     get an iterator for this set, used later
             iecount(i) = 0
          endif
 
-c set total number if nec
-         do p = tmp, ilast
-            IMATIE(p) = dumval2 
-         enddo
          tmp = ilast+1
          if (i .eq. numflu) then
             nelv = ilast
@@ -586,73 +806,8 @@ c reduce to get global numbers of fluid, other elements, and check size
          call exitt
       endif
 
-c do global scan to allow computation of global element ids
-      ietmp1(1) = 0
-      do i = 1, numflu
-         ietmp1(1) = ietmp1(1) + iecount(i)
-      enddo
-      ietmp1(2) = 0
-      do i = numflu+1, numflu+numoth
-         ietmp1(2) = ietmp1(2) + iecount(i)
-      enddo
-      call mpi_scan(ietmp1, ietmp2, numflu+numoth, MPI_INTEGER, MPI_SUM, 
-     $     nekcomm, ierr)
-      if (ierr .ne. MPI_SUCCESS) ierr = iBase_FAILURE
-      IMESH_ASSERT
-c     set returned nums to exclusive start - 1
-      ietmp2(1) = ietmp2(1) - ietmp1(1)
-      ietmp2(2) = ietmp2(2) - ietmp1(2)
-c     set gids for local fluid, other elems
-      call izero(lglel, nelgt)
-      call izero(gllel, nelgt)
-      call izero(gllnid, nelgt)
-      do i = 1, nelv
-         lglel(i) = ietmp2(1)+i
-         gllel(lglel(i)) = i
-         gllnid(lglel(i)) = nid_
-      enddo
-      do i = nelv+1, nelt
-         lglel(i) = nelgv+ietmp2(2)-nelv+i
-         gllel(lglel(i)) = i
-         gllnid(lglel(i)) = nid_
-      enddo
-c     now communicate to other procs (taken from set_proc_map in map2.f)
-      npass = 1 + nelgt/lelt
-      k=1
-      do ipass = 1,npass
-         m = nelgt - k + 1
-         m = min(m,lelt)
-         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
-         k = k+m
-      enddo
-
-      call igop(GLLNID, iwork, 'M  ', NELGT)
-
-c     set the global id tag on elements
-      do i = 1, numflu+numoth
-         atend = 0
-         count = 0
-         if (iecount(i) .ne. 0) then
-            call iMesh_resetEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
-     $           ierr)
-            IMESH_ASSERT
-         else
-            atend = 1
-         endif
-
-         do while (atend .eq. 0)
-c use the same iterator for all variables, since the elems are the same
-            call nekMOAB_set_int_tag(ieiter(i), globalIdTag, 1, 
-     $           tmpcount, lglel(iestart(i)+count))
-            call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
-     $           %VAL(tmpcount), atend, ierr)
-            IMESH_ASSERT
-            count = count + tmpcount
-         enddo
-      enddo
-
       return
-      end 
+      end
 c-----------------------------------------------------------------------
       subroutine nekMOAB_gllnid(matset, iter, count)
       implicit none
