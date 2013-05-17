@@ -1017,8 +1017,8 @@ c     find the right set
             endif
          enddo
       enddo
-
-      call free(rpentSet)
+      
+      call iMesh_freeMemory(%VAL(imeshh), rpentSet)
 
       return
       end 
@@ -1124,7 +1124,7 @@ c
            bcdata(side_no, elno, field) = setId
            numids = numids + 1
 
-           call free(rphvtx)
+          call iMesh_freeMemory(%VAL(imeshh), rphvtx)
          enddo
 
 c		 Check if we share a side and warn iff not solving a 
@@ -1134,12 +1134,12 @@ c		 non-fluid type are present.
      $        print *, 'Warning: face shared by 2 hexes: ', elnos(1), 
      $        elnos(2)
 
-         call free(rpahex)
-         call free(rpfvtx)
+         call iMesh_freeMemory(%VAL(imeshh), rpahex)
+         call iMesh_freeMemory(%VAL(imeshh), rpfvtx)
 
       enddo
 
-      call free(rpfaces)
+         call iMesh_freeMemory(%VAL(imeshh), rpfaces)
 
 c     Should probably print the following only if verbose output needed
       print *, 'Setid, numids = ', setId, numids
