@@ -702,15 +702,15 @@ c             BOX
       endif
  
 c     output curve stuff and Boundary conditions
+      maxedge = 4
+      if(if3d) maxedge=8
+      zero = 0.
       if(iffo) then
         write(9,28) ncurv
    28   format(
      $   '  ***** CURVED SIDE DATA *****',/,
      $      i12,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
-        zero = 0.
-        maxedge = 4
-        if(if3d) maxedge=8
         if (nel.lt.1000) then
            do ie=1,nel
               do iedge = 2,maxedge,2
@@ -741,20 +741,15 @@ c     output curve stuff and Boundary conditions
          do ie=1,nel
             do iedge = 2,maxedge,2
                if (curve(iedge,ie).ne.0) then
-                  if(iffo) then
-                    write(9,292) 
-     $                iedge,ie,curve(iedge,ie),(zero,k=1,4),'C'
-                  else
-                      buf(1) = ie
-                      buf(2) = iedge
-                      buf(3) = curve(iedge,ie)
-                      buf(4) = zero
-                      buf(5) = zero
-                      buf(6) = zero
-                      buf(7) = zero
-                      call chcopy(buf(8),'C',1)
-                      call byte_write(buf,8)
-                  endif
+                  call icopy(buf(1),ie,1)
+                  call icopy(buf(2),iedge,1)
+                  buf(3) = curve(iedge,ie)
+                  buf(4) = zero
+                  buf(5) = zero
+                  buf(6) = zero
+                  buf(7) = zero
+                  call chcopy(buf(8),'C',1)
+                  call byte_write(buf,8)
                endif
             enddo
          enddo
@@ -935,10 +930,10 @@ c
                     write(9,22) cbc5,ie,(rbc5(j),j=1,5)
                     write(9,22) cbc6,ie,(rbc6(j),j=1,5)
                  else        
-                    write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                    write(9,23) cbc3,ie,rbc8(3),(rbc3(j),j=2,5)
                     write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
-                    write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
-                    write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
+                    write(9,23) cbc4,ie,rbc8(4),(rbc4(j),j=2,5)
+                    write(9,23) cbc1,ie,rbc8(1),(rbc1(j),j=2,5)
                     write(9,23) cbc5,ie,rbc8(5),(rbc5(j),j=2,5) 
                     write(9,23) cbc6,ie,rbc8(6),(rbc6(j),j=2,5) 
                  endif
@@ -1121,10 +1116,10 @@ c
                     write(9,22) cbc4,ie,(rbc4(j),j=1,5)
                     write(9,22) cbc1,ie,(rbc1(j),j=1,5)
                  else
-                    write(9,23) cbc3,ie,rbc8(1),(rbc3(j),j=2,5)
+                    write(9,23) cbc3,ie,rbc8(3),(rbc3(j),j=2,5)
                     write(9,23) cbc2,ie,rbc8(2),(rbc2(j),j=2,5)
-                    write(9,23) cbc4,ie,rbc8(3),(rbc4(j),j=2,5)
-                    write(9,23) cbc1,ie,rbc8(4),(rbc1(j),j=2,5)
+                    write(9,23) cbc4,ie,rbc8(4),(rbc4(j),j=2,5)
+                    write(9,23) cbc1,ie,rbc8(1),(rbc1(j),j=2,5)
                  endif
                elseif (.not. iffo) then
                  if(ipass.eq.2) then
@@ -1217,7 +1212,7 @@ c     all lines save that containing input to "outfile"
 c
       character*132 string
       character*1 input(1)
-      integer infile,outfile
+      integer infile,outfile,len
  
       character*1 string1(132)
  

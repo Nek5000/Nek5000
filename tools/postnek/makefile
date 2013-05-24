@@ -1,10 +1,19 @@
 FLAGS =  $(FFLAGS_IN)
-CFLAGS = $(CFLAGS_IN)
+CFLAGS = $(CFLAGS_IN) 
 LFLAGS = $(LFLAGS_IN)
 prefix = $(bin_nek_tools)
 
+UNAME := $(shell uname)
+ifeq ($(UNAME),Linux)
+ X = /usr/lib/X11
+else 
+ifeq ($(UNAME),Darwin)
+ CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
+ X      = /opt/X11/lib
+endif
+endif
+
 S     = .
-X     = /usr/X11R6/lib
 
 NOBJS = postnek.o postnek2.o postnek3.o postnek5.o postnek6.o tsort.o \
 	postnek8.o postnek9.o plot.o getfld.o legend.o userf.o revert.o \
@@ -16,6 +25,7 @@ all: postx postex
 
 postx:	$(NOBJS) iolib.o
 	$(F77) -o  $(prefix)/postx $(NOBJS) iolib.o -L$(X) -lX11 -lm
+	@echo $(UNAME)
 
 postex:	$(NOBJS) iolib_no_graph.o
 	$(F77) -o  $(prefix)/postex $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm
@@ -62,6 +72,4 @@ blas.o	   : ../../nek/3rd_party/blas.f	; $(F77) -c $(FLAGS)  ../../nek/3rd_party
 
 revert.o	: revert.c				; $(CC)  -c $(CFLAGS)  revert.c
 byte.o   : byte.c   					; $(CC)  -c $(CFLAGS)  byte.c
-#  xdriver.o	: xdriver.c		; $(CC)  -c -O2  -DLAPTOP xdriver.c
 xdriver.o	: xdriver.c			; $(CC)  -c -O2  $(CFLAGS) xdriver.c
-#  xdriver.o	: xdriver.c		; cp  xdriver.ok xdriver.o

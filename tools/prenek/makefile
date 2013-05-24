@@ -1,11 +1,19 @@
 FLAGS =  $(FFLAGS_IN)
-CFLAGS = $(CFLAGS_IN)
+CFLAGS = $(CFLAGS_IN) 
 LFLAGS = $(LFLAGS_IN)
 prefix = $(bin_nek_tools)
 
-C     = code
+UNAME := $(shell uname)
+ifeq ($(UNAME),Linux)
+ X = /usr/lib/X11
+else 
+ifeq ($(UNAME),Darwin)
+ CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
+ X      = /opt/X11/lib
+endif
+endif
+
 L     = .
-X     = /usr/X11R6/lib
 
 
 NOBJS = prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib.o subs.o zipper2.o postnek6.o screen.o revert.o crs.o mxm.o xdriver.o 
@@ -17,6 +25,7 @@ all: prex pretex
 
 prex:	$(NOBJS)
 	$(F77) -o $(prefix)/prex $(NOBJS) -L$(X) -lX11 -lm
+	@echo $(UNAME)
 
 pretex:	$(TOBJS)
 	$(F77) -o $(prefix)/pretex $(TOBJS) -L$(X) -lX11 -lm
