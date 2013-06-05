@@ -1222,13 +1222,14 @@ c----------------------------------------------------------------------
             write(6,*) 'lmg_swt too small',i,itmp,lmg_swt,l
             call exitt
          endif
-         if(.not.if3d) call hsmg_setup_schwarz_wt2d(
+
+         if (ndim.eq.2) call hsmg_setup_schwarz_wt2d(
      $       mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
      $      ,nl,mg_worke,ifsqrt)
-c        if(if3d) write(6,*) mg_schwarz_wt_index(l,mg_fld),l,'SCHWARZ'
-         if(if3d) call hsmg_setup_schwarz_wt3d(
+         if (ndim.eq.3) call hsmg_setup_schwarz_wt3d(
      $       mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
      $      ,nl,mg_worke,ifsqrt)
+
       enddo
       mg_schwarz_wt_index(l,mg_fld)=i
 
@@ -1257,17 +1258,8 @@ c----------------------------------------------------------------------
             call exitt
          endif
 
-c        write(6,*) mg_schwarz_wt_index(l,mg_fld),l,'SCHWARZ'
-
-         if (if3d) then
-             call hsmg_setup_schwarz_wt3d(
-     $          mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
-     $         ,nl,mg_worke,ifsqrt)
-         else
-             call hsmg_setup_schwarz_wt2d(
-     $           mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld))
-     $          ,nl,mg_worke,ifsqrt)
-         endif
+         call h1mg_setup_schwarz_wt_1(
+     $      mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),l,ifsqrt)
 
       enddo
 
@@ -3192,3 +3184,155 @@ c     write(6,*)
       return
       end
 c-----------------------------------------------------------------------
+      subroutine h1mg_setup_schwarz_wt_2(wt,ie,n,work,ifsqrt)
+      include 'SIZE'
+      real wt(1),work(1)
+      logical ifsqrt
+
+      if (ndim.eq.2) call h1mg_setup_schwarz_wt2d_2(wt,ie,n,work,ifsqrt)
+      if (ndim.eq.3) call h1mg_setup_schwarz_wt3d_2(wt,ie,n,work,ifsqrt)
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine h1mg_setup_schwarz_wt2d_2(wt,ie,n,work,ifsqrt)
+      include 'SIZE'
+      logical ifsqrt
+      integer n
+      real wt(n,4,2,nelv)
+      real work(n,n)
+      
+      integer ie,i,j
+      do j=1,n
+         wt(j,1,1,ie)=1.0/work(1,j)
+         wt(j,2,1,ie)=1.0/work(2,j)
+         wt(j,3,1,ie)=1.0/work(n-1,j)
+         wt(j,4,1,ie)=1.0/work(n,j)
+      enddo
+      do i=1,n
+         wt(i,1,2,ie)=1.0/work(i,1)
+         wt(i,2,2,ie)=1.0/work(i,2)
+         wt(i,3,2,ie)=1.0/work(i,n-1)
+         wt(i,4,2,ie)=1.0/work(i,n)
+      enddo
+      if(ifsqrt) then
+         do ii=1,2
+         do j=1,4
+         do i=1,n
+            wt(i,j,ii,ie)=sqrt(wt(i,j,ii,ie))
+         enddo
+         enddo
+         enddo
+      endif
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine h1mg_setup_schwarz_wt3d_2(wt,ie,n,work,ifsqrt)
+      include 'SIZE'
+      logical ifsqrt
+      integer n
+      real wt(n,n,4,3,nelv)
+      real work(n,n,n)
+      
+      integer ie,i,j,k
+      integer lbr,rbr,lbs,rbs,lbt,rbt
+
+      ierr = 0
+      do k=1,n
+      do j=1,n
+         wt(j,k,1,1,ie)=1.0/work(1,j,k)
+         wt(j,k,2,1,ie)=1.0/work(2,j,k)
+         wt(j,k,3,1,ie)=1.0/work(n-1,j,k)
+         wt(j,k,4,1,ie)=1.0/work(n,j,k)
+      enddo
+      enddo
+      do k=1,n
+      do i=1,n
+         wt(i,k,1,2,ie)=1.0/work(i,1,k)
+         wt(i,k,2,2,ie)=1.0/work(i,2,k)
+         wt(i,k,3,2,ie)=1.0/work(i,n-1,k)
+         wt(i,k,4,2,ie)=1.0/work(i,n,k)
+      enddo
+      enddo
+      do j=1,n
+      do i=1,n
+         wt(i,j,1,3,ie)=1.0/work(i,j,1)
+         wt(i,j,2,3,ie)=1.0/work(i,j,2)
+         wt(i,j,3,3,ie)=1.0/work(i,j,n-1)
+         wt(i,j,4,3,ie)=1.0/work(i,j,n)
+      enddo
+      enddo
+      if(ifsqrt) then
+         do ii=1,3
+         do k=1,4
+         do j=1,4
+         do i=1,n
+            wt(i,j,k,ii,ie)=sqrt(wt(i,j,k,ii,ie))
+         enddo
+         enddo
+         enddo
+         enddo
+      endif
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine h1mg_setup_schwarz_wt_1(wt,l,ifsqrt)
+      include 'SIZE'
+      include 'INPUT'  ! if3d
+      include 'TSTEP'  ! ifield
+      include 'HSMG'
+
+      real wt(1),work(1)
+      logical ifsqrt
+
+      integer enx,eny,enz,pm
+
+      zero =  0
+      one  =  1
+      onem = -1
+
+      n  = mg_h1_n (l,mg_fld)
+      pm = p_mg_msk(l,mg_fld)
+
+      enx=mg_nh(l)+2
+      eny=mg_nh(l)+2
+      enz=mg_nh(l)+2
+      if(.not.if3d) enz=1
+      ns = enx*eny*enz*nelfld(ifield)
+      i  = ns+1
+
+      call rone(mg_work(i),ns)
+ 
+c     Sum overlap region (border excluded)
+      call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
+      call hsmg_schwarz_dssum(mg_work(i),l)
+      call hsmg_extrude(mg_work(i),0,one ,mg_work,0,onem,enx,eny,enz)
+      call hsmg_extrude(mg_work(i),2,one,mg_work(i),0,one,enx,eny,enz)
+
+      if(.not.if3d) then ! Go back to regular size array
+         call hsmg_schwarz_toreg2d(mg_work,mg_work(i),mg_nh(l))
+      else
+         call hsmg_schwarz_toreg3d(mg_work,mg_work(i),mg_nh(l))
+      endif
+
+      call hsmg_dssum(mg_work,l)                           ! sum border nodes
+
+
+      nx = mg_nh(l)
+      ny = mg_nh(l)
+      nz = mg_nh(l)
+      if (.not.if3d) nz=1
+      nxyz = nx*ny*nz
+      k    = 1
+      do ie=1,nelfld(ifield)
+c        call outmat(mg_work(k),nx,ny,'NEW WT',ie)
+         call h1mg_setup_schwarz_wt_2(wt,ie,nx,mg_work(k),ifsqrt)
+         k = k+nxyz
+      enddo
+c     stop
+
+      return
+      end
+c----------------------------------------------------------------------
