@@ -325,7 +325,8 @@ static void make_topology_unique(struct gs_topology *top, slong *id,
 ------------------------------------------------------------------------------*/
 
 /* assumes nz is sorted by primary, then flag, then index */
-static const uint *local_map(const struct array *nz, const int ignore_flagged)
+static const uint *local_map(const struct array *nz, const int ignore_flagged,
+                             uint *mem_size)
 {
   uint *map, *p, count = 1;
   const struct nonzero_id *row, *other, *end;
@@ -338,7 +339,7 @@ static const uint *local_map(const struct array *nz, const int ignore_flagged)
     } while(0)
   if(ignore_flagged) DO_COUNT(other->flag==0); else DO_COUNT(1);
 #undef DO_COUNT
-  p = map = tmalloc(uint,count);
+  p = map = tmalloc(uint,count); *mem_size += count*sizeof(uint);
 #define DO_SET(cond) do \
     for(row=nz->ptr,end=row+nz->n;row!=end;) {                     \
       ulong row_id = row->id; int any=0;                           \
@@ -354,13 +355,13 @@ static const uint *local_map(const struct array *nz, const int ignore_flagged)
   return map;
 }
 
-static const uint *flagged_primaries_map(const struct array *nz)
+static const uint *flagged_primaries_map(const struct array *nz, uint *mem_size)
 {
   uint *map, *p, count=1;
   const struct nonzero_id *row, *end;
   for(row=nz->ptr,end=row+nz->n;row!=end;++row)
     if(row->i==row->primary && row->flag==1) ++count;
-  p = map = tmalloc(uint,count);
+  p = map = tmalloc(uint,count); *mem_size += count*sizeof(uint);
   for(row=nz->ptr,end=row+nz->n;row!=end;++row)
     if(row->i==row->primary && row->flag==1) *p++ = row->i;
   *p = -(uint)1;
@@ -377,7 +378,7 @@ typedef void exec_fun(
 typedef void fin_fun(void *data);
 
 struct gs_remote {
-  uint buffer_size;
+  uint buffer_size, mem_size;
   void *data;
   exec_fun *exec;
   fin_fun *fin;
@@ -456,10 +457,10 @@ static void pw_exec(
 /*------------------------------------------------------------------------------
   Pairwise setup
 ------------------------------------------------------------------------------*/
-static void pw_comm_setup(struct pw_comm_data *data, struct array *sh,
+static uint pw_comm_setup(struct pw_comm_data *data, struct array *sh,
                           const unsigned flags_mask, buffer *buf)
 {
-  uint n=0,count=0, lp=-(uint)1;
+  uint n=0,count=0, lp=-(uint)1, mem_size=0;
   struct shared_id *s, *se;
   /* sort by remote processor and id (a globally consistent ordering) */
   sarray_sort_2(struct shared_id,sh->ptr,sh->n, p,0, id,1, buf);
@@ -470,7 +471,7 @@ static void pw_comm_setup(struct pw_comm_data *data, struct array *sh,
     if(s->p!=lp) lp=s->p, ++n;
   }
   data->n = n;
-  data->p = tmalloc(uint,2*n);
+  data->p = tmalloc(uint,2*n); mem_size+=2*n*sizeof(uint);
   data->size = data->p + n;
   data->total = count;
   n = 0, lp=-(uint)1;
@@ -484,12 +485,13 @@ static void pw_comm_setup(struct pw_comm_data *data, struct array *sh,
     ++count;
   }
   if(n!=0) data->size[n-1] = count;
+  return mem_size;
 }
 
 static void pw_comm_free(struct pw_comm_data *data) { free(data->p); }
 
 /* assumes that the bi field of sh is set */
-static const uint *pw_map_setup(struct array *sh, buffer *buf)
+static const uint *pw_map_setup(struct array *sh, buffer *buf, uint *mem_size)
 {
   uint count=0, *map, *p;
   struct shared_id *s, *se;
@@ -503,7 +505,7 @@ static const uint *pw_map_setup(struct array *sh, buffer *buf)
     for(++s;s!=se&&s->i==i;++s) if(s->bi!=-(uint)1) ++count;
   }
   /* write map */
-  p = map = tmalloc(uint,count);
+  p = map = tmalloc(uint,count); *mem_size += count*sizeof(uint);
   for(s=sh->ptr,se=s+sh->n;s!=se;) {
     uint i=s->i;
     if(s->bi==-(uint)1) { ++s; continue; }
@@ -515,19 +517,22 @@ static const uint *pw_map_setup(struct array *sh, buffer *buf)
   return map;
 }
 
-static struct pw_data *pw_setup_aux(struct array *sh, buffer *buf)
+static struct pw_data *pw_setup_aux(struct array *sh, buffer *buf,
+                                    uint *mem_size)
 {
   struct pw_data *pwd = tmalloc(struct pw_data,1);
+  *mem_size = sizeof(struct pw_data);
   
   /* default behavior: receive only remotely unflagged data */
-  pw_comm_setup(&pwd->comm[0],sh, FLAGS_REMOTE, buf);
-  pwd->map[0] = pw_map_setup(sh, buf);
+  *mem_size+=pw_comm_setup(&pwd->comm[0],sh, FLAGS_REMOTE, buf);
+  pwd->map[0] = pw_map_setup(sh, buf, mem_size);
 
   /* default behavior: send only locally unflagged data */
-  pw_comm_setup(&pwd->comm[1],sh, FLAGS_LOCAL, buf);
-  pwd->map[1] = pw_map_setup(sh, buf);
+  *mem_size+=pw_comm_setup(&pwd->comm[1],sh, FLAGS_LOCAL, buf);
+  pwd->map[1] = pw_map_setup(sh, buf, mem_size);
   
   pwd->req = tmalloc(comm_req,pwd->comm[0].n+pwd->comm[1].n);
+  *mem_size += (pwd->comm[0].n+pwd->comm[1].n)*sizeof(comm_req);
   pwd->buffer_size = pwd->comm[0].total + pwd->comm[1].total;
   return pwd;
 }
@@ -545,7 +550,7 @@ static void pw_free(struct pw_data *data)
 static void pw_setup(struct gs_remote *r, struct gs_topology *top,
                      const struct comm *comm, buffer *buf)
 {
-  struct pw_data *pwd = pw_setup_aux(&top->sh,buf);
+  struct pw_data *pwd = pw_setup_aux(&top->sh,buf, &r->mem_size);
   r->buffer_size = pwd->buffer_size;
   r->data = pwd;
   r->exec = (exec_fun*)&pw_exec;
@@ -618,8 +623,9 @@ static void cr_exec(
 /*------------------------------------------------------------------------------
   Crystal-Router setup
 ------------------------------------------------------------------------------*/
-static void cr_schedule(struct cr_data *data, const struct comm *comm)
+static uint cr_schedule(struct cr_data *data, const struct comm *comm)
 {
+  uint mem_size = 0;
   const uint id = comm->id;
   uint bl=0, n=comm->np;
   unsigned k = 0;
@@ -631,6 +637,7 @@ static void cr_schedule(struct cr_data *data, const struct comm *comm)
   data->nstages = k;
   data->stage[0] = tmalloc(struct cr_stage,2*(k+1));
   data->stage[1] = data->stage[0] + (k+1);
+  mem_size += 2*(k+1)*sizeof(struct cr_stage);
   bl=0, n=comm->np, k=0;
   while(n>1) {
     uint nl = (n+1)/2, bh = bl+nl;
@@ -644,6 +651,7 @@ static void cr_schedule(struct cr_data *data, const struct comm *comm)
     if(id<bh) n=nl; else n-=nl,bl=bh;
     ++k;
   }
+  return mem_size;
 }
 
 struct crl_id {
@@ -682,8 +690,9 @@ static void crl_work_init(struct array *cw, struct array *sh,
 #undef CW_ADD  
 }
 
-static void crl_maps(struct cr_stage *stage, struct array *cw, buffer *buf)
+static uint crl_maps(struct cr_stage *stage, struct array *cw, buffer *buf)
 {
+  uint mem_size=0;
   struct crl_id *w, *we, *other;
   uint scount=1, gcount=1, *sp, *gp;
   sarray_sort_2(struct crl_id,cw->ptr,cw->n, bi,0, si,0, buf);
@@ -696,6 +705,7 @@ static void crl_maps(struct cr_stage *stage, struct array *cw, buffer *buf)
   }
   stage->scatter_map = sp = tmalloc(uint,scount+gcount);
   stage->gather_map  = gp = sp + scount;
+  mem_size += (scount+gcount)*sizeof(uint);
   for(w=cw->ptr,we=w+cw->n;w!=we;w=other) {
     uint bi=w->bi,any=0,si=w->si;
     *sp++ = w->si, *sp++ = bi;
@@ -706,10 +716,12 @@ static void crl_maps(struct cr_stage *stage, struct array *cw, buffer *buf)
     *sp++ = -(uint)1;
   }
   *sp=-(uint)1, *gp=-(uint)1;
+  return mem_size;
 }
 
 static uint crl_work_label(struct array *cw, struct cr_stage *stage,
-                           uint cutoff, int send_hi, buffer *buf)
+                           uint cutoff, int send_hi, buffer *buf,
+                           uint *mem_size)
 {
   struct crl_id *w, *we, *start;
   uint nsend, nkeep = 0, nks = 0, bi=0;
@@ -737,7 +749,7 @@ static uint crl_work_label(struct array *cw, struct cr_stage *stage,
     w->bi = bi;
   }
   stage->size_sk = cw->n==0 ? 0 : bi+1;
-  crl_maps(stage,cw,buf);
+  *mem_size += crl_maps(stage,cw,buf);
   return nsend;
 }
 
@@ -750,7 +762,7 @@ static void crl_ri_to_bi(struct crl_id *w, uint n) {
 }
 
 static uint cr_learn(struct array *cw, struct cr_stage *stage,
-                     const struct comm *comm, buffer *buf)
+                     const struct comm *comm, buffer *buf, uint *mem_size)
 {
   comm_req req[3];
   const uint id = comm->id;
@@ -761,7 +773,7 @@ static uint cr_learn(struct array *cw, struct cr_stage *stage,
     uint nl = (n+1)/2, bh = bl+nl;
     uint nkeep, nsend[2], nrecv[2][2] = {{0,0},{0,0}};
     struct crl_id *wrecv[2], *wsend;
-    nsend[0] = crl_work_label(cw,stage,bh,id<bh,buf);
+    nsend[0] = crl_work_label(cw,stage,bh,id<bh,buf, mem_size);
     nsend[1] = stage->size_s;
     nkeep = cw->n - nsend[0];
 
@@ -801,27 +813,28 @@ static uint cr_learn(struct array *cw, struct cr_stage *stage,
     ++stage;
   }
   crl_ri_to_bi(cw->ptr,cw->n);
-  crl_maps(stage,cw,buf);
+  *mem_size += crl_maps(stage,cw,buf);
   return size_max;
 }
 
 static struct cr_data *cr_setup_aux(
-  struct array *sh, const struct comm *comm, buffer *buf)
+  struct array *sh, const struct comm *comm, buffer *buf, uint *mem_size)
 {
   uint size_max[2];
   struct array cw = null_array;
   struct cr_data *crd = tmalloc(struct cr_data,1);
+  *mem_size = sizeof(struct cr_data);
   
   /* default behavior: receive only remotely unflagged data */
   /* default behavior: send only locally unflagged data */
   
-  cr_schedule(crd,comm);
+  *mem_size += cr_schedule(crd,comm);
 
   sarray_sort(struct shared_id,sh->ptr,sh->n, i,0, buf);
   crl_work_init(&cw,sh, FLAGS_LOCAL , comm->id);
-  size_max[0]=cr_learn(&cw,crd->stage[0],comm,buf);
+  size_max[0]=cr_learn(&cw,crd->stage[0],comm,buf, mem_size);
   crl_work_init(&cw,sh, FLAGS_REMOTE, comm->id);
-  size_max[1]=cr_learn(&cw,crd->stage[1],comm,buf);
+  size_max[1]=cr_learn(&cw,crd->stage[1],comm,buf, mem_size);
   
   crd->stage_buffer_size = size_max[1]>size_max[0]?size_max[1]:size_max[0];
 
@@ -852,7 +865,7 @@ static void cr_free(struct cr_data *data)
 static void cr_setup(struct gs_remote *r, struct gs_topology *top,
                      const struct comm *comm, buffer *buf)
 {
-  struct cr_data *crd = cr_setup_aux(&top->sh,comm,buf);
+  struct cr_data *crd = cr_setup_aux(&top->sh,comm,buf, &r->mem_size);
   r->buffer_size = crd->buffer_size;
   r->data = crd;
   r->exec = (exec_fun*)&cr_exec;
@@ -893,13 +906,13 @@ static void allreduce_exec(
   All-reduce setup
 ------------------------------------------------------------------------------*/
 static const uint *allreduce_map_setup(
-  struct array *pr, const unsigned flags_mask, int to_buf)
+  struct array *pr, const unsigned flags_mask, int to_buf, uint *mem_size)
 {
   struct primary_shared_id *p, *pe;
   uint count=1, *map, *m;
   for(p=pr->ptr,pe=p+pr->n;p!=pe;++p)
     if((p->flag&flags_mask)==0) count+=3;
-  m=map=tmalloc(uint,count);
+  m=map=tmalloc(uint,count); *mem_size += count*sizeof(uint);
   if(to_buf) {
     for(p=pr->ptr,pe=p+pr->n;p!=pe;++p)
       if((p->flag&flags_mask)==0)
@@ -914,17 +927,18 @@ static const uint *allreduce_map_setup(
 }
 
 static struct allreduce_data *allreduce_setup_aux(
-  struct array *pr, ulong total_shared)
+  struct array *pr, ulong total_shared, uint *mem_size)
 {
   struct allreduce_data *ard = tmalloc(struct allreduce_data,1);
+  *mem_size = sizeof(struct allreduce_data);
   
   /* default behavior: reduce only unflagged data, copy to all */
-  ard->map_to_buf  [0] = allreduce_map_setup(pr,1,1);
-  ard->map_from_buf[0] = allreduce_map_setup(pr,0,0);
+  ard->map_to_buf  [0] = allreduce_map_setup(pr,1,1, mem_size);
+  ard->map_from_buf[0] = allreduce_map_setup(pr,0,0, mem_size);
 
   /* transpose behavior: reduce all data, copy to unflagged */
-  ard->map_to_buf  [1] = allreduce_map_setup(pr,0,1);
-  ard->map_from_buf[1] = allreduce_map_setup(pr,1,0);
+  ard->map_to_buf  [1] = allreduce_map_setup(pr,0,1, mem_size);
+  ard->map_from_buf[1] = allreduce_map_setup(pr,1,0, mem_size);
   
   ard->buffer_size = total_shared*2;
   return ard;
@@ -942,7 +956,8 @@ static void allreduce_free(struct allreduce_data *ard)
 static void allreduce_setup(struct gs_remote *r, struct gs_topology *top,
                             const struct comm *comm, buffer *buf)
 {
-  struct allreduce_data *ard = allreduce_setup_aux(&top->pr,top->total_shared);
+  struct allreduce_data *ard
+    = allreduce_setup_aux(&top->pr,top->total_shared, &r->mem_size);
   r->buffer_size = ard->buffer_size;
   r->data = ard;
   r->exec = (exec_fun*)&allreduce_exec;
@@ -1022,6 +1037,7 @@ struct gs_data {
   const uint *map_local[2]; /* 0=unflagged, 1=all */
   const uint *flagged_primaries;
   struct gs_remote r;
+  uint handle_size;
 };
 
 static void gs_aux(
@@ -1065,11 +1081,13 @@ void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,
 ------------------------------------------------------------------------------*/
 typedef enum {gs_auto, gs_pairwise, gs_crystal_router, gs_all_reduce} gs_method;
 
-static void local_setup(struct gs_data *gsh, const struct array *nz)
+static uint local_setup(struct gs_data *gsh, const struct array *nz)
 {
-  gsh->map_local[0] = local_map(nz,1);
-  gsh->map_local[1] = local_map(nz,0);
-  gsh->flagged_primaries = flagged_primaries_map(nz);
+  uint mem_size = 0;
+  gsh->map_local[0] = local_map(nz,1, &mem_size);
+  gsh->map_local[1] = local_map(nz,0, &mem_size);
+  gsh->flagged_primaries = flagged_primaries_map(nz, &mem_size);
+  return mem_size;
 }
 
 static void gs_setup_aux(struct gs_data *gsh, const slong *id, uint n,
@@ -1086,12 +1104,30 @@ static void gs_setup_aux(struct gs_data *gsh, const slong *id, uint n,
   get_topology(&top, id,n, &cr);
   if(unique) make_topology_unique(&top,0,gsh->comm.id,&cr.data);
 
-  local_setup(gsh,&top.nz);
+  gsh->handle_size = sizeof(struct gs_data);
+  gsh->handle_size += local_setup(gsh,&top.nz);
 
   if(verbose && gsh->comm.id==0)
     printf("gs_setup: %ld unique labels shared\n",(long)top.total_shared);
 
   remote_setup[method](&gsh->r, &top,&gsh->comm,&cr.data);
+  gsh->handle_size += gsh->r.mem_size;
+
+  if(verbose) { /* report memory usage */
+    double avg[2],td[2]; uint min[2],max[2],ti[2];
+    avg[0] = min[0] = max[0] = gsh->handle_size;
+    avg[1] = min[1] = max[1] = sizeof(double)*gsh->r.buffer_size;
+    avg[0] /= gsh->comm.np; avg[1] /= gsh->comm.np;
+    comm_allreduce(&gsh->comm,gs_double,gs_add, avg,2, td);
+    comm_allreduce(&gsh->comm,gs_sint,gs_min, min,2, ti);
+    comm_allreduce(&gsh->comm,gs_sint,gs_max, max,2, ti);
+    if(gsh->comm.id==0) {
+      printf("   " "handle bytes (avg, min, max)" ": " "%g %u %u\n",
+        avg[0], (unsigned)min[0], (unsigned)max[0]);
+      printf("   " "buffer bytes (avg, min, max)" ": " "%g %u %u\n",
+        avg[1], (unsigned)min[1], (unsigned)max[1]);
+    }
+  }
 
   gs_topology_free(&top);
   crystal_free(&cr);
