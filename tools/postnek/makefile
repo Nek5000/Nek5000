@@ -5,11 +5,18 @@ prefix = $(bin_nek_tools)
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
+ VERSION1 := $(shell uname -r)
  X = /usr/lib/X11
 else 
 ifeq ($(UNAME),Darwin)
- CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
- X      = /opt/X11/lib
+  VERSION1 := $(shell sw_vers -productVersion)
+  ifeq "10.8" "$(word 1, $(sort 10.8 $(VERSION1)))"
+     CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
+     X      = /opt/X11/lib
+  else
+     CFLAGS = $(CFLAGS_IN) -I/usr/X11/include
+     X      = /usr/X11/lib
+  endif
 endif
 endif
 
@@ -26,6 +33,7 @@ all: postx postex
 postx:	$(NOBJS) iolib.o
 	$(F77) -o  $(prefix)/postx $(NOBJS) iolib.o -L$(X) -lX11 -lm
 	@echo $(UNAME)
+	@echo $(VERSION1)
 
 postex:	$(NOBJS) iolib_no_graph.o
 	$(F77) -o  $(prefix)/postex $(NOBJS) iolib_no_graph.o -L$(X) -lX11 -lm

@@ -485,7 +485,7 @@ c     Read and write boundary conditions
 
             do k=1,6
                if (neln.lt.1000) then
-                  write(11,20) cbc(k,e),e,k,(bc(j,k,e),j=1,5)
+                  write(11,20) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
                elseif (neln.lt.100000) then
                   write(11,21) cbc(k,e),id,k,(bc(j,k,e),j=1,5)
                elseif (neln.lt.1000000) then

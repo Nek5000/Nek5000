@@ -8,8 +8,14 @@ ifeq ($(UNAME),Linux)
  X = /usr/lib/X11
 else 
 ifeq ($(UNAME),Darwin)
- CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
- X      = /opt/X11/lib
+  VERSION1 := $(shell sw_vers -productVersion)
+  ifeq "10.8" "$(word 1, $(sort 10.8 $(VERSION1)))"
+     CFLAGS = $(CFLAGS_IN) -I/opt/X11/include
+     X      = /opt/X11/lib
+  else
+     CFLAGS = $(CFLAGS_IN) -I/usr/X11/include
+     X      = /usr/X11/lib
+  endif
 endif
 endif
 

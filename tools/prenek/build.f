@@ -1431,6 +1431,9 @@ c
          if (neln.lt.1000) then
             read(io,'(1x,a3,1X,2i3,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,(bc8(ii),ii=1,nbcrea)
+         elseif (neln.lt.100 000) then
+            read(io,'(1x,a3,i5,i1,5g14.6)',err=9,end=9)
+     $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          elseif (neln.lt.1 000 000) then
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
@@ -2639,7 +2642,13 @@ c     stop
          if (ee(fe).ne.0) then
             je = ee(fe)
             call get_ee_face(jf,je,f,e,ee,nf)
-            do i=1,nflds
+            nfld0=1
+            nfld1=nflds
+            if(ifconj_merge) then
+              nfld0=2
+              nfld1=2
+            endif
+            do i=nfld0,nfld1
                cbc(f,e,i)   = 'E  '
                ibc(f,e,i)   = je
                bc (1,f,e,i) = je
