@@ -2367,6 +2367,51 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine z_slice_g (uz,u,w1,kz,ezi,nx,ny,nz,nlxy)
+c
+c     Extract a z slice of quantity u() 
+c
+c     ASSUMES data is in a global tensor-product structure, nlxy x nelz,
+c             as would be produced by n2to3 or genbox.
+c
+c     Arguments:
+c
+c     uz(nx1,ny1,nlxy):       extracted z-slice data
+c     u (nx1,ny1,nz1,nelt):   input data
+c     w1(nx1,ny1,nlxy):       work array
+c     kz:                     z-plane within element ezi to be extracted
+c     ezi:                    elemental z-slab to be extracted
+c     nx,ny,nz:               dimensions for 3D spectral element input
+c     nlxy:                   global number of elements in x-y plane.
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+
+      real uz(nx,ny,nlxy),u (nx,ny,nz,nelv),w1(nx,ny,nlxy)
+      integer e,eg,ex,ey,ez,ezi
+      real dy2
+
+      nxy = nx*ny
+      mxy = nxy*nlxy
+
+      call rzero(uz,mxy) ! zero out the entire plane
+
+      do e=1,nelt
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nlxy,1,1)
+
+         if (ez.eq.ezi) 
+     $      call copy(uz(1,1,ex),u(1,1,kz,e),nxy) ! u(zlice) --> uz()
+
+      enddo
+
+      call gop(uz,w1,'+  ',mxy) ! Collect partial contributions from all procs
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine z_slice (ua,u,w1,w2)
 c
 c     Extract a z slice of quantity u() - assumes global tens.prod.
