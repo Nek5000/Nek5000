@@ -12,6 +12,9 @@ all:
         if [ "$$i" == "genmap" ]; then      \
            export FFLAGS_IN=${R8} ;         \
         fi ;                                \
+        if [ "$$i" == "genbox" ]; then      \
+           export FFLAGS_IN=${R8} ;         \
+        fi ;                                \
         if [ "$$i" == "prenek" ]; then      \
            export CFLAGS_IN="$(US) -Dr8";   \
         fi ;                                \
