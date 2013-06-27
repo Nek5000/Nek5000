@@ -731,14 +731,14 @@ c
       IFH2   = .FALSE.
       IFSOLV = .TRUE.
       IMSOLV = 0
-      VNU    = 0.0
-      VNU    = 0.4
-      VNU    = param(47)
+
+      vnu    = param(47)
+      if (vnu.eq.0) vnu = 0.4 ! Default value
       vnu    = max(0.00,vnu)
       vnu    = min(0.49,vnu)
-C
+
 C     Set up elastic material constants
-C
+
       CE = 1./(1. + VNU)
       C2 = VNU * CE / (1. - 2.*VNU)
       C3 = 0.5 * CE
