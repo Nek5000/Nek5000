@@ -272,7 +272,7 @@ C        MODEL and CURVE know about it, too
          call redraw_mesh_small
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
-      ELSE IF(CHOICE.EQ.'IMPORT vtk MESH')THEN
+      ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
       ELSE IF(CHOICE.EQ.'IMPORT vtx MESH')THEN
          call imp_mesh_vtx
@@ -1632,6 +1632,22 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      function i_findu_zero(list,ig,n)
+c     Find if there is a match of ig in *unsorted* list	starting from 0
+      integer i_findu,ig,list(1),n
+      integer hi,lo,m
+c
+      i_findu_zero = 0
+c
+      do m=1,n
+         if (ig.eq.list(m)) then
+            i_findu_zero = m-1
+            return
+         endif
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine imp_mesh_vtx
 c
 c     Read vtk-like unstructured mesh format
@@ -1791,15 +1807,15 @@ c
 c-----------------------------------------------------------------------
       subroutine imp_mesh_vtk
 c
-c     Read vtk-like unstructured mesh format
+c     Read vtk unstructured mesh format
 c
       include 'basics.inc'
 c
       parameter (maxv = 8*nelm)
-      integer        vv(8,nelm),vnum(maxv)
+      integer        vv(8,nelm),vnum(0:maxv-1)
       common /c_vtx/ vv,vnum
 
-      real      xp(maxv),yp(maxv),zp(maxv)
+      real      xp(0:maxv-1),yp(0:maxv-1),zp(0:maxv-1)
       common /c_xyz/ xp,yp,zp
 
       integer      kcell(8),indx(8)
@@ -1816,7 +1832,7 @@ c
       equivalence (s80,s81)
 c
       call prsi('Current number of elements:$',nel)
-      call prs('input name of new vertex/cell file$')
+      call prs('input name of vtk file$')
       call blank(fname,70)
       call res  (fname,70)
       ikill = indx1(fname,' ',1)
@@ -1829,10 +1845,11 @@ c     Successfully opened file, scan until 'MESH DATA' is found
 c
 c     Read vertex info
 c
-c     read(47,*) 
-c     read(47,*) 
-c     read(47,*) 
-c
+      read(47,*) 
+      read(47,*) 
+      read(47,*) 
+      read(47,*) 
+ 
       call blank(s80,80)
       read(47,80) s80
       ib = indx1(s80,' ',1)
@@ -1850,22 +1867,22 @@ c
       endif
 c
       if (if3d) then
-        do i=1,nvtx
-c        read(47,*) xp(i),yp(i),zp(i)
-c        vnum(i) = i-1
-         read(47,*) vnum(i),xp(i),yp(i),zp(i)
-         write(6,*) vnum(i),xp(i),yp(i),zp(i),i
+        do i=0,nvtx-1
+         read(47,*) xp(i),yp(i),zp(i)
+         write(6,*) xp(i),yp(i),zp(i),i
+         vnum(i) = i
         enddo
       else
-        do i=1,nvtx
+        do i=0,nvtx-1
          read(47,*) xp(i),yp(i)
-         vnum(i) = i-1
+         vnum(i) = i
         enddo
       endif
 c
 c
 c     Read cell data
 c
+      read(47,*)
       call blank(s80,80)
       read(47,80) s80
       write(6,*) s80
@@ -1883,19 +1900,37 @@ c
          close(47)
          return
       endif
-c
+
       nelo = 0
+      ncrd = 0 ! # of cell lines read
       npt=2**ndim
       do ie=1,ncell
-c        read(47,*) nv_per_cell,(kcell(k),k=1,npt)
-         write(6,*) ie,npt,ncell,'  KCELL'
-         read(47,*) (kcell(k),k=1,npt)
-         write (6,*) (kcell(k),k=1,npt)
-         do k=1,npt
-            vv(k,ie) = i_findu(vnum,kcell(k),nvtx)
-c           vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
-         enddo
+         call blank(s80,80)
+         read(47,80) s80
+         read(s80,1) icell_type
+   1     format(i1)
+         if (icell_type.eq.npt) then   ! =4 for quad/2D, =8 for hex/3D
+            ib = indx1(s80,' ',1)
+            open (unit=48,file='my_vtk.tmp')
+            write(48,81) (s81(k),k=ib+1,80)
+            rewind (unit=48)
+            read (48,*) (kcell(k),k=1,npt)
+            close (unit=48)
+
+            ncrd = ncrd + 1
+
+            do k=1,npt
+               vv(k,ncrd) = i_findu_zero(vnum,kcell(k),nvtx)
+
+               l=vv(k,ncrd)
+               write(6,*) k,ie,ncrd,l,xp(l),yp(l),'  cell numbers'
+            enddo
+         endif
       enddo
+
+c     Check that only CELL_TYPES 1,3,8,9,11,12 are in the .vtk file (i.e. point,line,quad,hex)?
+ 
+      close (unit=47)
 c
 c     At this point, we have the cell data in the "new" format.
 c
@@ -1910,7 +1945,8 @@ c     call res(ans,1)
 c
 c
       if (ans.eq.'y'.or.ans.eq.'Y') then
-         do ie=1,ncell
+c        do ie=1,ncell
+         do ie=1,ncrd
             nel = nel+1
             do k=1,npt
                l = vv(k,ie)
@@ -1920,7 +1956,7 @@ c
             enddo
          enddo
       else                     ! don't flip
-         do ie=1,ncell
+         do ie=1,ncrd
             nel = nel+1
             do k=1,npt
                l = vv(k,ie)
@@ -2587,6 +2623,8 @@ c        nchoic = nchoic+1
          ITEM(nchoic)       =       'REDRAW MESH'
          nchoic = nchoic+1
          ITEM(nchoic)       =       'IMPORT MESH'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'IMPORT VTK MESH'
          nchoic = nchoic+1
          ITEM(nchoic)       =       'IMPORT vtx MESH'
          nchoic = nchoic+1
