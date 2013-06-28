@@ -1597,7 +1597,7 @@ c-----------------------------------------------------------------------
       endif
 
 
-      call bcast(npoints,1)
+      call bcast(npoints,4)
       npass =  npoints/nbuf +1  !number of passes to cover all pts
       n0    =  mod(npoints,nbuf)!remainder 
       if(n0.eq.0) then

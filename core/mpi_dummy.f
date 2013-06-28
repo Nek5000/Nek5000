@@ -1037,10 +1037,9 @@ c
       implicit none
 
       real*8 mpi_wtime
-      real*4 a(2),etime
-      a(1)=0.0
-      a(2)=0.0
-      mpi_wtime = etime(a)
+      real*4 a
+      call cpu_time(a)
+      mpi_wtime = a
 
       return
       end
