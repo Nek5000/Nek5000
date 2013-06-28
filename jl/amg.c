@@ -723,42 +723,67 @@ static int rfwrite(FILE *const fptr, const void *ptr, size_t n)
 }
 
 
-static struct file dopen(const char *filename, const char mode)
+static struct file dopen(const char *filename, const char mode,int *code)
 {
   const double magic = 3.14159;
   double t;
   struct file f;
   f.fptr = fopen(filename,mode=='r'?"r":"w");
   f.swap = 0;
-  if(f.fptr==0) fail(1,__FILE__,__LINE__,"AMG: could not open %s for %s",
-    filename,mode=='r'?"reading":"writing");
+  if(f.fptr==0) {
+   diagnostic("ERROR ",__FILE__,__LINE__,
+              "AMG: could not open %s for %s",
+              filename,mode=='r'?"reading":"writing");
+   *code=1;
+   return f;
+  }
   if(mode=='r') {
-    if(rfread(&t,sizeof(double), f.fptr))
-      fail(1,__FILE__,__LINE__,"AMG: could not read from %s",filename);
+    if(rfread(&t,sizeof(double), f.fptr)){
+      diagnostic("ERROR ",__FILE__,__LINE__,
+                 "AMG: could not read from %s",filename);
+      *code=1;
+      return f;
+    }
     if(fabs(t-magic)>0.000001) {
       t=byteswap(t);
-      if(fabs(t-magic)>0.000001) fail(1,__FILE__,__LINE__,
-          "AMG: magic number for endian test not found in %s",filename);
+      if(fabs(t-magic)>0.000001) {
+         diagnostic("ERROR ",__FILE__,__LINE__,
+                    "AMG: magic number for endian test not found in %s",
+                     filename);
+         *code=1;
+         return f;
+      }
       f.swap = 1;
     }
   } else {
-    if(rfwrite(f.fptr, &magic,sizeof(double)))
-      fail(1,__FILE__,__LINE__,"AMG: could not write to %s",filename);
+    if(rfwrite(f.fptr, &magic,sizeof(double))){
+      fail("ERROR ",__FILE__,__LINE__,
+           "AMG: could not write to %s",filename);
+      *code=1;
+      return f;
+    }
   }
   return f;
 }
 
-static void dread(double *p, size_t n, const struct file f)
+static void dread(double *p, size_t n, const struct file f,int *code)
 {
-  if(rfread(p,n*sizeof(double),f.fptr)) fail(1,__FILE__,__LINE__,
-      "AMG: failed reading %u doubles from disk",(unsigned)n);
+  if(rfread(p,n*sizeof(double),f.fptr)) {
+     diagnostic("ERROR ",__FILE__,__LINE__,
+                "AMG: failed reading %u doubles from disk",(unsigned)n);
+     *code=1;
+     return;
+  }
   if(f.swap) while(n) *p=byteswap(*p), ++p, --n;
 }
 
-static void dwrite(const struct file f, const double *p, size_t n)
+static void dwrite(const struct file f, const double *p, size_t n,int *code)
 {
-  if(rfwrite(f.fptr, p,n*sizeof(double))) fail(1,__FILE__,__LINE__,
-       "AMG: failed writing %u doubles to disk",(unsigned)n);
+  if(rfwrite(f.fptr, p,n*sizeof(double))) {
+     diagnostic("ERROR ",__FILE__,__LINE__,
+                "AMG: failed writing %u doubles to disk",(unsigned)n);
+     *code=1;
+  }
 }
 
 static void dclose(const struct file f)
@@ -782,27 +807,35 @@ static ulong read_level_data(struct crs_data *data, struct file f)
 {
   unsigned i,n; ulong tn; double *buf;
   int updt=1;
+  int code=0;
   if(data->comm.id==0) {
 //Check header for newest amg_matlab code.
-    double hdr; dread(&hdr,1,f);
-    printf("AMG version %3.2f\n",hdr);
-    if(hdr!=2.01) {
-       printf("Update amg_matlab tool and create new .dat files before re-running\n"); 
-       updt=0;
+    double hdr; dread(&hdr,1,f,&code);
+    if(code==0) {
+      printf("AMG version %3.2f\n",hdr);
+      if(hdr!=2.01) {
+        printf("Update amg_matlab tool and create new .dat files before re-running\n"); 
+        updt=0;
+     }
+      double t; dread(&t,1,f,&code);
+      data->levels = t;
+      printf("AMG: %u levels\n", data->levels);
     }
-    double t; dread(&t,1,f);
-    data->levels = t;
-    printf("AMG: %u levels\n", data->levels);
   }
   comm_bcast(&data->comm, &data->levels,sizeof(unsigned), 0);
   comm_bcast(&data->comm, &updt,sizeof(int), 0);
-  if(!updt) die(1);
+  comm_bcast(&data->comm, &code,sizeof(int), 0);
+  if(!updt||code!=0) die(1);
+
   n = data->levels-1;
   data->cheb_m   = tmalloc(unsigned,n);
   data->cheb_rho = tmalloc(double  ,n);
   
   buf = tmalloc(double, 2*n+1);
-  if(data->comm.id==0) dread(buf,2*n+1,f);
+  if(data->comm.id==0) dread(buf,2*n+1,f,&code);
+  comm_bcast(&data->comm, &code,sizeof(int), 0);
+  if(code!=0) die(1);
+
   comm_bcast(&data->comm, buf,(2*n+1)*sizeof(double), 0);
   for(i=0;i<n;++i) data->cheb_m[i]   = buf[i];
   for(i=0;i<n;++i) data->cheb_rho[i] = buf[n+i];
@@ -827,6 +860,7 @@ static void read_data(
   struct crystal *const cr,
   const ulong *uid, const uint uid_n)
 {
+  int code;
   struct find_id_data fid;
   const uint pid = data->comm.id;
   ulong r,tn;
@@ -839,46 +873,59 @@ static void read_data(
   ids->ptr=0, ids->n=0, ids->max=0;
   for(m=0;m<3;++m) mat[m].ptr=0,mat[m].n=0,mat[m].max=0;
   find_id_setup(&fid, uid,uid_n, cr);
+  code=0;
   if(pid==0) {
-    f = dopen("amg.dat",'r');
-    fm[0] = dopen("amg_W.dat",'r');
-    fm[1] = dopen("amg_AfP.dat",'r');
-    fm[2] = dopen("amg_Aff.dat",'r');
-    array_init(double, &read_buffer, 6*AMG_BLOCK_ROWS);
-    row_lens = tmalloc(uint, 5*AMG_BLOCK_ROWS);
-    id_proc = row_lens + 3*AMG_BLOCK_ROWS;
-    id_perm = id_proc + AMG_BLOCK_ROWS;
-    array_reserve(struct id_data, &id_buffer, AMG_BLOCK_ROWS);
+    f = dopen("amg.dat",'r',&code);
+    fm[0] = dopen("amg_W.dat",'r',&code);
+    fm[1] = dopen("amg_AfP.dat",'r',&code);
+    fm[2] = dopen("amg_Aff.dat",'r',&code);
+    if(code==0) {
+     array_init(double, &read_buffer, 6*AMG_BLOCK_ROWS);
+     row_lens = tmalloc(uint, 5*AMG_BLOCK_ROWS);
+     id_proc = row_lens + 3*AMG_BLOCK_ROWS;
+     id_perm = id_proc + AMG_BLOCK_ROWS;
+     array_reserve(struct id_data, &id_buffer, AMG_BLOCK_ROWS);
+    }
   }
+  comm_bcast(&data->comm,&code,sizeof(int),0);
+  if(code!=0) die(1);
+
   tn = read_level_data(data,f);
   for(r=0;r<tn;r+=AMG_BLOCK_ROWS) {
     unsigned nr = tn-r>AMG_BLOCK_ROWS ? AMG_BLOCK_ROWS : (unsigned)(tn-r);
     uint mat_size[3]={0,0,0};
+    
     /* read id data */
     if(pid==0) {
       unsigned i;
       struct id_data *idp = id_buffer.ptr;
       double *b = read_buffer.ptr;
-      dread(b,nr*6, f);
-      printf("AMG: reading through row %lu, pass %u/%u\n",
+      dread(b,nr*6, f,&code);
+      if(code==0) {
+        printf("AMG: reading through row %lu, pass %u/%u\n",
         (unsigned long)b[(nr-1)*6],
         (unsigned)(r/AMG_BLOCK_ROWS+1),
         (unsigned)((tn+AMG_BLOCK_ROWS-1)/AMG_BLOCK_ROWS));
-      for(i=0;i<nr;++i) {
-        idp[i].id = *b++;
-        idp[i].level = (uint)(*b++) - 1;
-        mat_size[0] += row_lens[3*i+0] = *b++; /* W   row length */
-        mat_size[1] += row_lens[3*i+1] = *b++; /* AfP row length */
-        mat_size[2] += row_lens[3*i+2] = *b++; /* Aff row length */
-        idp[i].D = *b++;
-      }
-      id_buffer.n=nr;
+        for(i=0;i<nr;++i) {
+          idp[i].id = *b++;
+          idp[i].level = (uint)(*b++) - 1;
+          mat_size[0] += row_lens[3*i+0] = *b++; /* W   row length */
+          mat_size[1] += row_lens[3*i+1] = *b++; /* AfP row length */
+          mat_size[2] += row_lens[3*i+2] = *b++; /* Aff row length */
+          idp[i].D = *b++;
+        }
+        id_buffer.n=nr;
       
       /* sort id_buffer, remember how to undo */
-      sarray_sort(struct id_data,idp,nr, id,1, &cr->data);
-      sarray_perm_invert(id_perm, cr->data.ptr, nr);
+        sarray_sort(struct id_data,idp,nr, id,1, &cr->data);
+        sarray_perm_invert(id_perm, cr->data.ptr, nr);
+      }
     } else
       id_buffer.n=0;
+
+    comm_bcast(&data->comm,&code,sizeof(int),0);
+    if(code!=0)die(1);
+
     /* find who owns each row */
     if(find_id(id_proc,sizeof(uint), &fid,
        (const ulong*)((const char*)id_buffer.ptr+offsetof(struct id_data,id)),
@@ -900,16 +947,20 @@ static void read_data(
         struct gnz *p = array_reserve(struct gnz, &mat_buffer, mat_size[m]);
         double *b = array_reserve(double, &read_buffer, 2*mat_size[m]);
         uint *proc = array_reserve(uint, &mat_proc, mat_size[m]);
-        dread(b,2*mat_size[m], fm[m]);
-        for(i=0;i<nr;++i) {
-          const ulong i_id = idp[i].id; 
-          const uint i_p = id_proc[i];
-          for(rl=row_lens[3*i+m],j=0;j<rl;++j)
-            p->i = i_id, p->j = *b++, p->a = *b++, *proc++ = i_p, ++p;
+        dread(b,2*mat_size[m], fm[m],&code);
+        if(code==0) {
+          for(i=0;i<nr;++i) {
+            const ulong i_id = idp[i].id; 
+            const uint i_p = id_proc[i];
+            for(rl=row_lens[3*i+m],j=0;j<rl;++j)
+              p->i = i_id, p->j = *b++, p->a = *b++, *proc++ = i_p, ++p;
+          }
+          mat_buffer.n = mat_size[m];
         }
-        mat_buffer.n = mat_size[m];
       } else
         mat_buffer.n = 0;
+      comm_bcast(&data->comm,&code,sizeof(int),0);
+      if(code!=0)die(1);
       sarray_transfer_ext(struct gnz,&mat_buffer,mat_proc.ptr,sizeof(uint),cr);
       array_cat(struct gnz,&mat[m],mat_buffer.ptr,mat_buffer.n);
     }
@@ -1098,14 +1149,19 @@ static void dump_matrix(
   buffer *const buf = &cr->data;
   struct file fi={0,0}, fj={0,0}, fp={0,0};
   uint i,n;
+  int code;
   
   n = dump_matrix_setdata(buf, mat,uid,cr);
 
+  code = 0;
   if(pid==0) {
-    fi=dopen("amgdmp_i.dat",'w');
-    fj=dopen("amgdmp_j.dat",'w');
-    fp=dopen("amgdmp_p.dat",'w');
+    fi=dopen("amgdmp_i.dat",'w',&code);
+    fj=dopen("amgdmp_j.dat",'w',&code);
+    fp=dopen("amgdmp_p.dat",'w',&code);
   }
+  comm_bcast(comm,&code,sizeof(int),0);
+  if(code!=0) die(1);
+   
   for(i=0;i<np;++i) {
     comm_barrier(comm);
     if(pid!=0 && i==pid)
@@ -1120,12 +1176,16 @@ static void dump_matrix(
         comm_recv(comm, buf->ptr,3*n*sizeof(double), i,np+i);
       }
       v = buf->ptr;
-      dwrite(fi, v    , n);
-      dwrite(fj, v+  n, n);
-      dwrite(fp, v+2*n, n);
+      if(code==0) {
+        dwrite(fi, v    , n,&code);
+        dwrite(fj, v+  n, n,&code);
+        dwrite(fp, v+2*n, n,&code);
+      }
     }
   }
   if(pid==0) dclose(fi),dclose(fj),dclose(fp);
+  comm_bcast(comm,&code,sizeof(int),0);
+  if(code!=0) die(1);
   comm_barrier(comm);
 }
 

@@ -491,6 +491,7 @@ c-----------------------------------------------------------------------
 
       real*4 papi_mflops
       integer*8 papi_flops
+      logical ifopen              !check for opened files
 c
 
 c     Communicate unhappiness to the other session
@@ -508,6 +509,8 @@ c     Communicate unhappiness to the other session
       nxyz   = nx1*ny1*nz1
 
       if (nid.eq.0) then 
+         inquire(unit=50,opened=ifopen)
+         if(ifopen) close(50)
          dtmp1 = 0
          dtmp2 = 0
          dtmp3 = 0
