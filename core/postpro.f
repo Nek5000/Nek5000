@@ -396,8 +396,8 @@ c setup routine for interpolation tool
 c tolin ... stop point seach interation if 1-norm of the step in (r,s,t) 
 c           is smaller than tolin 
 c
-      INCLUDE 'SIZE'
-      INCLUDE 'GEOM'
+      include 'SIZE'
+      include 'GEOM'
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
@@ -1457,8 +1457,8 @@ c     note: read/write on rank0 only
 c
 c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
 
       parameter(nfldm=ldim+ldimt+1)
 
@@ -1572,8 +1572,8 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 c-----------------------------------------------------------------------
       subroutine buffer_in(buffer,npp,npoints,nbuf)
         
-      INCLUDE 'SIZE'
-      INCLUDE 'PARALLEL'
+      include 'SIZE'
+      include 'PARALLEL'
 
       real    buffer(ldim,nbuf)  
 
@@ -1597,7 +1597,7 @@ c-----------------------------------------------------------------------
       endif
 
 
-      call bcast(npoints,4)
+      call bcast(npoints,isize)
       npass =  npoints/nbuf +1  !number of passes to cover all pts
       n0    =  mod(npoints,nbuf)!remainder 
       if(n0.eq.0) then
