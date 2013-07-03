@@ -1809,20 +1809,19 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine norm3d(v1)
-C
+
 C     Compute Cartesian vector dot product.
-C
+
       DIMENSION V1(3)
 
       VLNGTH = DOTPROD(V1,V1)
       if (vlngth.le.0) return
 
-      VLNGTH = SQRT(VLNGTH)
-      VLNGTH = SQRT(VLNGTH)
-      V1(1) = V1(1) / VLNGTH
-      V1(2) = V1(2) / VLNGTH
-      V1(3) = V1(3) / VLNGTH
-C
+      vlngth = sqrt(vlngth)
+      v1(1) = v1(1) / vlngth
+      v1(2) = v1(2) / vlngth
+      v1(3) = v1(3) / vlngth
+
       return
       END
 C----------------------------------------------------
