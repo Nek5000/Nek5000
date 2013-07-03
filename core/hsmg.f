@@ -1966,6 +1966,8 @@ c     call exitt
          z(i) = z(i) + w(i)                           ! z := z + w
       enddo
 
+      call dsavg(z) ! Emergency hack --- to ensure continuous z!
+
       return
       end
 c-----------------------------------------------------------------------
