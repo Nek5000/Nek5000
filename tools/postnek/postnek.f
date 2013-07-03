@@ -2107,8 +2107,8 @@ c 423       continue
       call prrr(ZZmin,ZZmax)
 C     Read curved side data
       if (iffmtin) then
-         READ(9,*,err=45,end=45)
-         READ(9,*,ERR=45,END=45)NCURVE
+         READ(9,*,err=7201,end=7201)
+         READ(9,*,ERR=7202,END=7202)NCURVE
       else
          call byte_read(ncurve,1)
          if(ifbswap) call byte_reverse(ncurve,1)
@@ -2116,16 +2116,18 @@ C     Read curved side data
       IF(NCURVE.GT.0)THEN
          DO 19 I=1,NCURVE
             IF (NEL.LT.1000.and.iffmtin) THEN
-               READ(9,'(2I3,5G14.6,1X,A1)',ERR=45,END=45)
+               READ(9,'(2I3,5G14.6,1X,A1)',ERR=7203,END=7203)
      $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
-            ELSEIF (iffmtin) then
-               READ(9,*,ERR=451,END=451)
-     $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
-               goto 452
-  451          READ(9,'(I2,I6,5G14.6,1X,A1)',ERR=45,END=45)
-     $                       IEDGE,IEL,R1,R2,R3,R4,R5,ANS
-  452          continue
-            ELSE
+            elseif (iffmtin.and.nel.lt.100 000) then
+               read(9,*,err=7204,end=7204)
+     $                       iedge,iel,r1,r2,r3,r4,r5,ans
+            elseif (iffmtin.and.nel.lt.1 000 000) then
+               read(9,'(i2,i6,5g14.6,1x,a1)',err=7224,end=7224)
+     $                       iedge,iel,r1,r2,r3,r4,r5,ans
+            elseif (iffmtin) then
+               read(9,'(i2,i12,5g14.6,1x,a1)',err=7234,end=7234)
+     $                       iedge,iel,r1,r2,r3,r4,r5,ans
+            else
                call byte_read(buf,8)
                if(ifbswap) call byte_reverse(buf,7)
                iedge = buf(1)
@@ -2170,7 +2172,7 @@ C         FIX UP FOR WHICH OF FIELDS TO BE USED
             DO 88 ISIDE=1,NSIDES
 C              !Fix to a4,i2 when you make cbc character*4
                NBCREA = 5
-               IF(VNEKOLD .LE. 2.5) NBCREA = 3
+c              IF(VNEKOLD .LE. 2.5) NBCREA = 3
                IF (NEL.LT.1000) THEN
                   READ(9,'(1X,A3,1x,I2,I3,5G14.6)',ERR=44,END=44)
      $            CBC(ISIDE,IEL,IFLD),ID,ID,
@@ -2239,47 +2241,47 @@ c     write(6,*) iside,iel,ifld,' ',cbc(iside,iel,ifld),' cbc2'
 89        CONTINUE
          ENDIF
 90    CONTINUE
-      IF(NFLDS.EQ.1.and.iffmtin)READ(9,*,err=45,end=45)
+      IF(NFLDS.EQ.1.and.iffmtin)READ(9,*,err=7205,end=7205)
       if(.not.iffmtin) call byte_close() 
 C     Read initial conditions
       IF(VNEKOLD.GE.2.5)THEN
-         READ(9,'(A70)',ERR=45,END=45) LINE
+         READ(9,'(A70)',ERR=7206,END=7206) LINE
          IF (INDX1(LINE,'RESTART',7).NE.0) THEN
             REWIND(13)
             WRITE(13,'(A70)')LINE
             REWIND(13)
-            READ(13,*,ERR=45,END=45)NSKIP
+            READ(13,*,ERR=7207,END=7207)NSKIP
             REWIND(13)
             DO 56 I=1,NSKIP
-               READ(9,*,err=45,end=45)
+               READ(9,*,err=7208,end=7208)
 56          CONTINUE
-            READ(9,'(A70)',ERR=45,END=45) LINE
+            READ(9,'(A70)',ERR=7209,END=7209) LINE
          ENDIF
          REWIND(13)
          WRITE(13,'(A70)')LINE
          REWIND(13)
-         READ(13,*,ERR=45,END=45)NSKIP
+         READ(13,*,ERR=7210,END=7210)NSKIP
          REWIND(13)
       ENDIF
       IF(VNEKOLD.LT.2.5)NSKIP=8
       DO 57 I=1,NSKIP
-         READ(9,*,err=45,end=45)
+         READ(9,*,err=7211,end=7211)
 57    CONTINUE
 C     Read Drive force data
-      READ(9,*,err=45,end=45)
-      READ(9,*,err=45,end=45)NSKIP
+      READ(9,*,err=7212,end=7212)
+      READ(9,*,err=7213,end=7213)NSKIP
       DO 58 I=1,NSKIP
-         READ(9,*,err=45,end=45)
+         READ(9,*,err=7214,end=7214)
 58    CONTINUE
 C     Read conduction element data
-      READ(9,*,err=45,end=45)
-      READ(9,*,err=45,end=45)nskip
+      READ(9,*,err=7215,end=7215)
+      READ(9,*,err=7216,end=7216)nskip
       DO 60 I=1,NSKIP
-         READ(9,*,err=45,end=45)
+         READ(9,*,err=7217,end=7217)
 60    CONTINUE
 C     Read History data
 C     HCODE(10) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
-      READ(9,*,err=45,end=45)
+      READ(9,*,err=7218,end=7218)
 C
       READ(9,*,err=51)NNHIS
       filenm(m:n)='.his'
@@ -2431,6 +2433,31 @@ C     MESS TO JUMP TO
       GO TO 1111
 45    CALL PRS('Error reading options in .REA file$')
       GO TO 1111
+
+7201  CALL PRS('Error reading options 7201 in .REA file$')
+7202  CALL PRS('Error reading options 7202 in .REA file$')
+7203  CALL PRS('Error reading options 7203 in .REA file$')
+7204  CALL PRS('Error reading options 7204 in .REA file$')
+7224  CALL PRS('Error reading options 7224 in .REA file$')
+7234  CALL PRS('Error reading options 7234 in .REA file$')
+7205  CALL PRS('Error reading options 7205 in .REA file$')
+7206  CALL PRS('Error reading options 7206 in .REA file$')
+7207  CALL PRS('Error reading options 7207 in .REA file$')
+7208  CALL PRS('Error reading options 7208 in .REA file$')
+7209  CALL PRS('Error reading options 7209 in .REA file$')
+7210  CALL PRS('Error reading options 7210 in .REA file$')
+7211  CALL PRS('Error reading options 7211 in .REA file$')
+7212  CALL PRS('Error reading options 7212 in .REA file$')
+7213  CALL PRS('Error reading options 7213 in .REA file$')
+7214  CALL PRS('Error reading options 7214 in .REA file$')
+7215  CALL PRS('Error reading options 7215 in .REA file$')
+7216  CALL PRS('Error reading options 7216 in .REA file$')
+7217  CALL PRS('Error reading options 7217 in .REA file$')
+7218  CALL PRS('Error reading options 7218 in .REA file$')
+      write(6,*) 'this is line:'
+      write(6,*) LINE
+      GO TO 1111
+
 51    CALL PRS('No output specs$')
       GO TO 1111
 52    CALL PRS('No object specifications$')

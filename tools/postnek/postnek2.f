@@ -1813,8 +1813,11 @@ C
 C     Compute Cartesian vector dot product.
 C
       DIMENSION V1(3)
-C
+
       VLNGTH = DOTPROD(V1,V1)
+      if (vlngth.le.0) return
+
+      VLNGTH = SQRT(VLNGTH)
       VLNGTH = SQRT(VLNGTH)
       V1(1) = V1(1) / VLNGTH
       V1(2) = V1(2) / VLNGTH

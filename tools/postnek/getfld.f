@@ -71,7 +71,7 @@ c
       real wk(maxpts)
       logical iffform   ! .f00000 format flag
       character*4 dummy ! .f00000 hdr read 
-      integer er(1)     ! .f00000 element mapping 
+      integer er(nelm)     ! .f00000 element mapping 
       integer e
 
       jerr = 0
@@ -484,11 +484,11 @@ C
                 l=l+ndim*nxyzr
 
                 call mapdmp
-     $            (sdump(1,1),xdump(1,iposx),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,1),xdump(1,iposx),ieg,nxr,nyr,nzr,.false.)
                 call mapdmp
-     $            (sdump(1,2),xdump(1,iposy),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,2),xdump(1,iposy),ieg,nxr,nyr,nzr,.false.)
                 if (ndim.eq.3) call mapdmp
-     $            (sdump(1,3),xdump(1,iposz),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,3),xdump(1,iposz),ieg,nxr,nyr,nzr,.false.)
               enddo
            endif
            if (ifgetu) then
@@ -504,11 +504,16 @@ C
                 l=l+ndim*nxyzr
 
                 call mapdmp
-     $            (sdump(1,4),xdump(1,iposu),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,4),xdump(1,iposu),ieg,nxr,nyr,nzr,.false.)
                 call mapdmp
-     $            (sdump(1,5),xdump(1,iposv),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,5),xdump(1,iposv),ieg,nxr,nyr,nzr,.false.)
                 if (ndim.eq.3) call mapdmp
-     $            (sdump(1,6),xdump(1,iposw),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,6),xdump(1,iposw),ieg,nxr,nyr,nzr,.false.)
+                if (mod(e,1000).eq.0) then
+                   umin = vlmin(xdump(1,iposu),nxyzr)
+                   umax = vlmax(xdump(1,iposu),nxyzr)
+                   write(6,*) e,er(e),umin,umax,' reading: umax'
+                endif
               enddo
            endif
            if (ifgetp) then
@@ -521,7 +526,7 @@ C
                  l=l+nxyzr
 
                 call mapdmp
-     $            (sdump(1,7),xdump(1,iposp),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,7),xdump(1,iposp),ieg,nxr,nyr,nzr,.false.)
               enddo
            endif
           if (ifgett) then
@@ -534,7 +539,7 @@ C
                  l=l+nxyzr
 
                  call mapdmp
-     $            (sdump(1,8),xdump(1,ipost),ieg,nxr,nyr,nzr,if_byte_sw)
+     $            (sdump(1,8),xdump(1,ipost),ieg,nxr,nyr,nzr,.false.)
               enddo
            endif
            do k=1,npscal 
@@ -549,7 +554,7 @@ C
                   l=l+nxyzr
                   call mapdmp
      $              (sdump(1,k8),xdump(1,ipsps(k))
-     $              ,ieg,nxr,nyr,nzr,if_byte_sw)
+     $              ,ieg,nxr,nyr,nzr,.false.)
                enddo
               endif
            enddo
@@ -760,7 +765,7 @@ C
       end
 C
 c-----------------------------------------------------------------------
-      SUBROUTINE MAPDMP(YD,XD,IEG,NXR,NYR,NZR,if_byte_sw)
+      subroutine mapdmp(yd,xd,ieg,nxr,nyr,nzr,IF_BYTE_SW)
 C----------------------------------------------------------------------
       INCLUDE 'basics.inc'
       INCLUDE 'basicsp.inc'
@@ -785,7 +790,7 @@ c
       return
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE VRNVERTq(A,N)
+      subroutine vrnvertQ(a,n)
       REAL*4 A(1)
       ioldexp=-2
       A(1)=REVERTq(A(1),ioldexp,izero)
@@ -956,7 +961,7 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE VRNVERT(A,N)
+      subroutine vrnvert(a,n)
       REAL*4 A(1)
       DO 100 I=1,N
          A(I)=REVERT(A(I))
