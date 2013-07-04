@@ -893,25 +893,25 @@ C
      $                    '0. Err reading B.C. data for elm',IEL,
      $                    ' side ',ISIDE
                      CALL PRS(S//'$')
-                     kzm = 1/(iel-iside)
+c                    kzm = 1/(iel-iside)
                      return
  441                 WRITE(S,'(1X,A39,I4,A6,I3)')
      $                    'A. Err reading B.C. data for elm',IEL,
      $                    ' side ',ISIDE
                      CALL PRS(S//'$')
-                     kzm = 1/(iel-iside)
+c                    kzm = 1/(iel-iside)
                      return
  442                 WRITE(S,'(1X,A39,I4,A6,I3)')
      $                    'B. Err reading B.C. data for elm',IEL,
      $                    ' side ',ISIDE
                      CALL PRS(S//'$')
-                     kzm = 1/(iel-iside)
+c                    kzm = 1/(iel-iside)
                      return
  443                 WRITE(S,'(1X,A39,I4,A6,I3)')
      $                    'C. Err reading B.C. data for elm',IEL,
      $                    ' side ',ISIDE
                      CALL PRS(S//'$')
-                     kzm = 1/(iel-iside)
+c                    kzm = 1/(iel-iside)
                      return
 
  45                  CALL PRS('FILE DOES NOT CONTAIN VALID B.C. DATA.'//
