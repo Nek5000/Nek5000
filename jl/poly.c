@@ -24,7 +24,7 @@ typedef void lagrange_fun(double *restrict p,
 
 static void lagrange_eval(double *restrict p,
                           double *restrict data, unsigned n, int der, double x)
-{
+{{
   unsigned i;
   const double *restrict z=data, *restrict w=z+n;
   double *restrict d=data+2*n, *restrict u0=d+n, *restrict v0=u0+n;
@@ -45,7 +45,7 @@ static void lagrange_eval(double *restrict p,
         p2[i]=4*w[i]*(u2[i]*v0[i]+2*u1[i]*v1[i]+u0[i]*v2[i]);
     }
   }
-}
+}}
 
 static void lagrange_coef(
   double *restrict p, double *data, double *w, const double *z,

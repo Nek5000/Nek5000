@@ -71,7 +71,7 @@ struct dbl_range { double min,max; };
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923
 
 void lob_bnd_setup(double *restrict data, unsigned n, unsigned m)
-{
+{{
   unsigned nm = n*m, i,j;
   double *restrict z=data,
          *restrict Q=z+n, *restrict h=Q+2*n,
@@ -122,7 +122,7 @@ void lob_bnd_setup(double *restrict data, unsigned n, unsigned m)
   }
 
   free(pl);
-}
+}}
 
 static void lob_bnd_fst(
   double *restrict b,

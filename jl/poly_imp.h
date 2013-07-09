@@ -2,10 +2,9 @@
 
 #define GLL_LAG_FIX_MAX 16
 
-static void gll_lag_02(double *restrict p, double *restrict data,
+static void gll_lag_02(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x-2            ;
   const double u0_01=    1*d00;
@@ -21,10 +20,9 @@ static void gll_lag_02(double *restrict p, double *restrict data,
   }
 }
 
-static void gll_lag_03(double *restrict p, double *restrict data,
+static void gll_lag_03(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x              ,d02=x-2            ;
   const double u0_01=    1*d00,u0_02=u0_01*d01;
@@ -48,10 +46,9 @@ static const double gllz_04[ 1] = {
   0.44721359549995793928183473374625524708812367192231
 };
 
-static void gll_lag_04(double *restrict p, double *restrict data,
+static void gll_lag_04(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_04[ 0],d02=x-2*gllz_04[ 0],
                d03=x-2            ;
@@ -81,10 +78,9 @@ static const double gllz_05[ 1] = {
   0.65465367070797714379829245624685835556920808239542
 };
 
-static void gll_lag_05(double *restrict p, double *restrict data,
+static void gll_lag_05(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_05[ 0],d02=x              ,
                d03=x-2*gllz_05[ 0],d04=x-2            ;
@@ -121,10 +117,9 @@ static const double gllz_06[ 2] = {
   0.28523151648064509631415099404087907191900347272643
 };
 
-static void gll_lag_06(double *restrict p, double *restrict data,
+static void gll_lag_06(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_06[ 0],d02=x+2*gllz_06[ 1],
                d03=x-2*gllz_06[ 1],d04=x-2*gllz_06[ 0],d05=x-2            ;
@@ -165,10 +160,9 @@ static const double gllz_07[ 2] = {
   0.46884879347071421380377188190876632940559747167184
 };
 
-static void gll_lag_07(double *restrict p, double *restrict data,
+static void gll_lag_07(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_07[ 0],d02=x+2*gllz_07[ 1],
                d03=x              ,d04=x-2*gllz_07[ 1],d05=x-2*gllz_07[ 0],
@@ -216,10 +210,9 @@ static const double gllz_08[ 3] = {
   0.20929921790247886876865726034535125529554540508668
 };
 
-static void gll_lag_08(double *restrict p, double *restrict data,
+static void gll_lag_08(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_08[ 0],d02=x+2*gllz_08[ 1],
                d03=x+2*gllz_08[ 2],d04=x-2*gllz_08[ 2],d05=x-2*gllz_08[ 1],
@@ -273,10 +266,9 @@ static const double gllz_09[ 3] = {
   0.36311746382617815871075206870865921302064227760088
 };
 
-static void gll_lag_09(double *restrict p, double *restrict data,
+static void gll_lag_09(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_09[ 0],d02=x+2*gllz_09[ 1],
                d03=x+2*gllz_09[ 2],d04=x              ,d05=x-2*gllz_09[ 2],
@@ -335,10 +327,9 @@ static const double gllz_10[ 4] = {
   0.16527895766638702462621976595817353323115034354948
 };
 
-static void gll_lag_10(double *restrict p, double *restrict data,
+static void gll_lag_10(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_10[ 0],d02=x+2*gllz_10[ 1],
                d03=x+2*gllz_10[ 2],d04=x+2*gllz_10[ 3],d05=x-2*gllz_10[ 3],
@@ -403,10 +394,9 @@ static const double gllz_11[ 4] = {
   0.2957581355869393914319115155590575089410064343486
 };
 
-static void gll_lag_11(double *restrict p, double *restrict data,
+static void gll_lag_11(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_11[ 0],d02=x+2*gllz_11[ 1],
                d03=x+2*gllz_11[ 2],d04=x+2*gllz_11[ 3],d05=x              ,
@@ -478,10 +468,9 @@ static const double gllz_12[ 5] = {
   0.13655293285492755486406185573969389689841411128206
 };
 
-static void gll_lag_12(double *restrict p, double *restrict data,
+static void gll_lag_12(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_12[ 0],d02=x+2*gllz_12[ 1],
                d03=x+2*gllz_12[ 2],d04=x+2*gllz_12[ 3],d05=x+2*gllz_12[ 4],
@@ -557,10 +546,9 @@ static const double gllz_13[ 5] = {
   0.24928693010623999256867370037422698148881131249298
 };
 
-static void gll_lag_13(double *restrict p, double *restrict data,
+static void gll_lag_13(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_13[ 0],d02=x+2*gllz_13[ 1],
                d03=x+2*gllz_13[ 2],d04=x+2*gllz_13[ 3],d05=x+2*gllz_13[ 4],
@@ -643,10 +631,9 @@ static const double gllz_14[ 6] = {
   0.11633186888370386765877670973616016794150904425628
 };
 
-static void gll_lag_14(double *restrict p, double *restrict data,
+static void gll_lag_14(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_14[ 0],d02=x+2*gllz_14[ 1],
                d03=x+2*gllz_14[ 2],d04=x+2*gllz_14[ 3],d05=x+2*gllz_14[ 4],
@@ -735,10 +722,9 @@ static const double gllz_15[ 6] = {
   0.21535395536379423822567944627291771265215790120304
 };
 
-static void gll_lag_15(double *restrict p, double *restrict data,
+static void gll_lag_15(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_15[ 0],d02=x+2*gllz_15[ 1],
                d03=x+2*gllz_15[ 2],d04=x+2*gllz_15[ 3],d05=x+2*gllz_15[ 4],
@@ -832,10 +818,9 @@ static const double gllz_16[ 7] = {
   0.10132627352194944784303300504591776253324091440019
 };
 
-static void gll_lag_16(double *restrict p, double *restrict data,
+static void gll_lag_16(double *restrict p, double *restrict w,
                        unsigned n, int d, double xh)
 {
-  const double *restrict w = data;
   const double x = xh*2;
   const double d00=x+2            ,d01=x+2*gllz_16[ 0],d02=x+2*gllz_16[ 1],
                d03=x+2*gllz_16[ 2],d04=x+2*gllz_16[ 3],d05=x+2*gllz_16[ 4],
