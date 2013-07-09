@@ -1198,12 +1198,12 @@ c
 
       if (ax1.ne.lx1 .or. ay1.ne.ly1 .or. az1.ne.lz1) then
          if(nid.eq.0) write(6,*)
-     $     'ABORT: wrong size of ax1,ay1,az1 in avg_all(), check SIZEu!'
+     $     'ABORT: wrong size of ax1,ay1,az1 in avg_all(), check SIZE!'
          call exitt
       endif
       if (ax2.ne.lx2 .or. ay2.ne.ay2 .or. az2.ne.lz2) then
          if(nid.eq.0) write(6,*)
-     $     'ABORT: wrong size of ax2,ay2,az2 in avg_all(), check SIZEu!'
+     $     'ABORT: wrong size of ax2,ay2,az2 in avg_all(), check SIZE!'
          call exitt
       endif
 
@@ -1288,9 +1288,9 @@ c-----------------------------------------------------------------------
          time_temp = time
          time      = atime   ! Output the duration of this avg
 
-         call outpost (uavg,vavg,wavg,pavg,tavg,'avg')
-         call outpost (urms,vrms,wrms,prms,trms,'rms')
-         call outpost (uvms,vwms,wums,prms,trms,'rm2')
+         call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
+         call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
+         call outpost (uvms,vwms,wums,prms,trms,      'rm2')
 
          atime = 0.
          time  = time_temp  ! Restore clock
