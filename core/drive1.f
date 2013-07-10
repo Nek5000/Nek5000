@@ -152,6 +152,8 @@ C     Initialize CVODE
 
       jp = 0  ! Set perturbation field count to 0 for baseline flow
 
+      call in_situ_init()
+
 C     Initalize timers to ZERO
       call time00
       call opcount(2)
@@ -211,6 +213,7 @@ c-----------------------------------------------------------------------
          call nek_advance
          call userchk
          call prepost (.false.,'his')
+         call in_situ_check()
          if (lastep .eq. 1) goto 1001
       ENDDO
  1001 lastep=1
@@ -314,6 +317,6 @@ c-----------------------------------------------------------------------
       if(xxth(1).gt.0) call crs_stats(xxth(1))
 
    
+      call in_situ_end()
       return
       end
-c-----------------------------------------------------------------------

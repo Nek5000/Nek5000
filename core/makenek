@@ -61,6 +61,13 @@ PLUGIN_LIST=""
 # USR_LFLAGS="-pgcpplibs"
 # USR_LFLAGS=" -lmpi_cxx -lstdc++"
 
+# enable VisIt in situ
+#  Note: you can override the lib and include paths. VISIT_LIB and VISIT_INC
+#  If VISIT_STOP is set the simulation will stop after first step and wait
+#  for VisIt to connect.
+#IFVISIT=true
+#VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
+#VISIT_STOP=true
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
