@@ -401,6 +401,34 @@ if [ $? -eq 0 ]; then
   echo "Activate DEBUG mode"
 fi
 
+if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
+  echo ""
+  echo "Activate VisIt Sim Mode"
+  IFVISIT=true
+
+  if [ -z "$VISIT_INC" ]; then
+    VISIT_INC=${VISIT_INSTALL}/libsim/V2/include
+  fi
+  echo "  VISIT_INC = ($VISIT_INC)"
+  if [ -z "$VISIT_LIB" ]; then
+    VISIT_LIB=${VISIT_INSTALL}/libsim/V2/lib
+  fi
+  echo "  VISIT_LIB = ($VISIT_LIB)"
+  if [ -n "$VISIT_STOP" ]; then
+    VISIT_STOP="VISIT_STOP"
+    echo "  VISIT_STOP is defined. Nek5000 will wait for VisIt to Connect."
+  fi
+
+  sed -e "s/^IFVISIT[ ]*=.*/IFVISIT:=${IFVISIT}/" \
+      -e "s:^VISIT_IFLAGS[ ]*=.*:VISIT_IFLAGS\:=-I${VISIT_INC}:" \
+      -e "s:^VISIT_LFLAGS[ ]*=.*:VISIT_LFLAGS\:=-L${VISIT_LIB} -lsimV2 -lsimV2f -ldl -lstdc++:" \
+      -e "s/^PPS[ ]*=.*/PPS=${PPLIST} VISIT ${VISIT_STOP}/" \
+      .makefile > .makefile.tmp
+
+  mv .makefile.tmp .makefile
+  echo ""
+fi
+
 if [ "$USR" != "" ]; then
   echo "###########################################################" >> makefile
   echo "include makefile_usr.inc" >> .makefile

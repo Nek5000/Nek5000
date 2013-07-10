@@ -21,6 +21,9 @@ G=
 OPT_FLAGS_STD=
 USR=
 USR_LFLAGS=
+IFVISIT=
+VISIT_IFLAGS=
+VISIT_LFLAGS=
 
 ################################################################################
 
@@ -82,6 +85,13 @@ ifeq ($(IFMPI),false)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
+# VISIT ########################################################################
+ifeq ($(IFVISIT),true)
+  VISITNEK_INCLUDES:=-I$S/3rd_party
+  VISITO := visit.o nek_in_situ.o
+  lFLAGS := ${lFLAGS} $(VISIT_LFLAGS)
+endif
+
 # MOAB #########################################################################
 ifeq ($(IFMOAB),true)
   MOABNEK_INCLUDES:=-I$S/3rd_party
@@ -96,7 +106,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO)
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 TMP2 = $(JLCORE) $(JLINTP) $(CGS) 
 NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
@@ -125,7 +135,7 @@ objdir:
 	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
 
 nek5000:	objdir $(NOBJS)
-	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(MOABNEK_INCLUDES) $(IMESH_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
+	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(MOABNEK_INCLUDES) $(VISITNEK_INCLUDES) $(IMESH_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
 	$(F77) -o ${BINNAME} $G ${OBJDIR}/${CASENAME}.o $(NOBJS) $(lFLAGS)
 	@if test -f ${BINNAME}; then \
 	echo "#############################################################"; \
@@ -260,4 +270,6 @@ $(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/moab.o        :$S/3rd_party/moab.f;           $(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 $(OBJDIR)/imeshutil.o   :$S/3rd_party/imeshutil.f;  	$(F77) -c $(FL2) $(IMESH_INCLUDES) $< -o $@
 $(OBJDIR)/imeshcutil.o   :$S/3rd_party/imeshcutil.c;  	$(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/visit.o        :$S/3rd_party/visit.f;			$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
+$(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 
