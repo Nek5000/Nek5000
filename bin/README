@@ -57,6 +57,10 @@ nekqsub -- create a nek5000 command script and submit using qsub
 
 nekpbs -- run nek5000 in a batch script environment 
 
+nekvisit -- run serial nek5000 interactively with VisIt in-situ setup
+
+nekvisitmpi -- run mpi nek5000 interactively with VisIt in-situ setup
+
 ===============================================
 Scripts for running NekNek 
 ==============================================
