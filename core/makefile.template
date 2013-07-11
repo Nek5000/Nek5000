@@ -44,7 +44,7 @@ navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
 init_plugin.o setprop.o qthermal.o cvode_aux.o makeq_aux.o \
-papi.o ssygv.o dsygv.o
+papi.o ssygv.o dsygv.o nek_in_situ.o
 ################################################################################
 # MXM 
 MXM = mxm_std.o 
@@ -88,7 +88,7 @@ endif
 # VISIT ########################################################################
 ifeq ($(IFVISIT),true)
   VISITNEK_INCLUDES:=-I$S/3rd_party
-  VISITO := visit.o nek_in_situ.o
+  VISITO := visit.o 
   lFLAGS := ${lFLAGS} $(VISIT_LFLAGS)
 endif
 
@@ -272,4 +272,3 @@ $(OBJDIR)/imeshutil.o   :$S/3rd_party/imeshutil.f;  	$(F77) -c $(FL2) $(IMESH_IN
 $(OBJDIR)/imeshcutil.o   :$S/3rd_party/imeshcutil.c;  	$(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;			$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
-
