@@ -657,6 +657,7 @@ c      write(6,*) ifsplit,name,param(44),' P44 C'
 c **  zero out stuff for Lanczos eigenvalue estimator
       call rzero(diagt,maxcg)
       call rzero(upper,maxcg)
+      rho = 0.00
 C
 C     Initialization
 C
