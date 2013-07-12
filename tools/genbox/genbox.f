@@ -105,6 +105,7 @@ c------------------------------------------------------------------------------
       data   test  / 6.54321 /
 
 
+
       one    = 1.
       pi     = 4.*atan(one)
       pi180  = pi/180.
@@ -955,7 +956,7 @@ c                  call blank(buf(8),4)
  
                    if(cbc3.ne.'E  ') then 
                      call icopy(buf(2),eface(3),1)
-                     call copy(buf(3),rbc3,5)
+                     call copy48(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
@@ -964,7 +965,7 @@ c                  call blank(buf(8),4)
  
                    if(cbc2.ne.'E  ') then 
                      call icopy(buf(2),eface(2),1)
-                     call copy(buf(3),rbc2,5)
+                     call copy48(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
@@ -973,7 +974,7 @@ c                  call blank(buf(8),4)
  
                    if(cbc4.ne.'E  ') then 
                      call icopy(buf(2),eface(4),1)
-                     call copy(buf(3),rbc4,5)
+                     call copy48(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
@@ -982,7 +983,7 @@ c                  call blank(buf(8),4)
  
                    if(cbc1.ne.'E  ') then 
                      call icopy(buf(2),eface(1),1)
-                     call copy(buf(3),rbc1,5)
+                     call copy48(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
@@ -991,7 +992,7 @@ c                  call blank(buf(8),4)
  
                    if(cbc5.ne.'E  ') then 
                      call icopy(buf(2),eface(5),1)
-                     call copy(buf(3),rbc5,5)
+                     call copy48(buf(3),rbc5,5)
                      call chcopy(buf(8),cbc5,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(5),1)
                      call byte_write(buf,8)
@@ -1000,7 +1001,7 @@ c                  call blank(buf(8),4)
 
                    if(cbc6.ne.'E  ') then 
                      call icopy(buf(2),eface(6),1)
-                     call copy(buf(3),rbc6,5)
+                     call copy48(buf(3),rbc6,5)
                      call chcopy(buf(8),cbc6,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(6),1)
                      call byte_write(buf,8)
@@ -1131,7 +1132,7 @@ c
  
                    if(cbc3.ne.'E  ') then 
                      call icopy(buf(2),eface(3),1)
-                     call copy(buf(3),rbc3,5)
+                     call copy48(buf(3),rbc3,5)
                      call chcopy(buf(8),cbc3,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
                      call byte_write(buf,8)
@@ -1139,7 +1140,7 @@ c
  
                    if(cbc2.ne.'E  ') then 
                      call icopy(buf(2),eface(2),1)
-                     call copy(buf(3),rbc2,5)
+                     call copy48(buf(3),rbc2,5)
                      call chcopy(buf(8),cbc2,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
                      call byte_write(buf,8)
@@ -1147,7 +1148,7 @@ c
  
                    if(cbc4.ne.'E  ') then 
                      call icopy(buf(2),eface(4),1)
-                     call copy(buf(3),rbc4,5)
+                     call copy48(buf(3),rbc4,5)
                      call chcopy(buf(8),cbc4,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
                      call byte_write(buf,8)
@@ -1155,7 +1156,7 @@ c
  
                    if(cbc1.ne.'E  ') then 
                      call icopy(buf(2),eface(1),1)
-                     call copy(buf(3),rbc1,5)
+                     call copy48(buf(3),rbc1,5)
                      call chcopy(buf(8),cbc1,3)
                      if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
                      call byte_write(buf,8)
@@ -1583,6 +1584,15 @@ c-----------------------------------------------------------------------
       real a(1), b(1)
       do 100 i = 1, n
  100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy48(a,b,n)  !copy a *8 into a *4
+      real*4 a(1)
+      real*8 b(1)
+      do i = 1, n
+         a(i) = b(i)
+      enddo
       return
       end
 c-----------------------------------------------------------------------
