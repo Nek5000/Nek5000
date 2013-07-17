@@ -1,89 +1,91 @@
 c-----------------------------------------------------------------------
-      subroutine gfdm_ops
-c
+      subroutine gfdm_ops(nx,ny,nz,kwave2,inew)
+
 c     Initialize Fast Diagonalization Method for x-y-z tensor product 
 c     geometry
 c
 c     Assumes that  p116 = Nelx, p117=Nely, p118=Nelz
 c
 c     Also, assumes that elements are *ordered lexicographically*
-c
+
       include 'SIZE'
       include 'GEOM'
       include 'INPUT'
       include 'ZPER'
 
+      real kwave2     ! Solve (A - kwave2*B) u = g
+
       call gfdm_chk_size
 
       mflds = 1
       if (ifmhd) mflds = 2
-c
+
       ii = 1          ! we'll need to change this for multiple flds
-c
+
+      if (inew.eq.1) then
+         do mfld=1,mflds
+           call gfdm_set_prs_op(mfld)
+         enddo
+      endif
+
       do mfld=1,mflds
-c
-        call gfdm_set_prs_op(mfld)
-        l = ngfdm_p(1)
-        m = ngfdm_p(2)
-        n = ngfdm_p(3)
-c
-        i = mlp(1,mfld)
-        j = mlp(2,mfld)
-        k = mlp(3,mfld)
-c
-c       write(6,*) 'mfld:',mfld,l,m,n,i,j,k,eigp(1)
-c
-        call gfdm_set_diagp
-     $   (wavep(ii),tpn1,mcex,eigp(i),l,eigp(j),m,eigp(k),n)
-c
+         l = ngfdm_p(1)
+         m = ngfdm_p(2)
+         n = ngfdm_p(3)
+         i = mlp(1,mfld)
+         j = mlp(2,mfld)
+         k = mlp(3,mfld)
+         call gfdm_set_diagp(wavep(ii),tpn1,mcex
+     $                  ,eigp(i),l,eigp(j),m,eigp(k),n,kwave2)
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
       subroutine gfdm_set_prs_op(mfld)
-c
+
 c     Set up global 1D pressure operators for general penciled 
 c     partition of 2D or 3D tensor-product domain, to be used
 c     with fast-diagonalization method solver
-c
+
 c     Based on exact E operator, w/ correct velocity bc's in each direction.
-c
-c
+
+
       include 'SIZE'
       include 'TOTAL'
       include 'ZPER'
-c
-      common /fastdr/ lx(lelg_sm),ly(lelg_sm),lz(lelg_sm)
+
+      common /fastdr/ lx(lelx),ly(lely),lz(lelz)
       real            lx,      ly,      lz
-c
+
       parameter (lbw=7*lx1*ly1*lz1*lelv-1)
-      common /SCRNS/ bw(0:lbw)
-c
+      common /scrns/ bw(0:lbw)
+
       character*1  cb0(3),cbn(3)
-c
+
 c     Set up array of element pointers
-c
+
       nelq = nelx*nely*nelz
       if (nelq.ne.nelgv.or.nelgv.gt.lelg_sm) then
          write(6,1) nid,nelq,nelv,nelx,nely,nelz,nelgv,lelg_sm
     1    format(i8,' problem in set_fast_eprec, nelv?',7i8)
          call exitt
       endif
-c
+
       if(nelq.gt.lbw) then
          write(6,2) nid,nelq,nelv,nelx,nely,nelz,lbw
     2    format(i8,' problem in set_fast_eprec, lbw?',7i8)
          call exitt
       endif
-c
+
       call gfdm_set_bc    (cb0,cbn,mfld)        !  Find tp-box bdry conds.
       call gfdm_set_geom  (bw,nelx,nely,nelz)   !  Get 1D elem't lengths
-      call gfdm_set_genwz (nx1,nx2)             !  Compute weights in WFZ
-c
-c
+
+      if (ifemat) call gfdm_set_genwz (nx1,nx2) !  Compute weights in WFZ
+
+
 c     Generate eigenvector and eigenvalue arrays for 1D E-operators
-c
+
       l = 1             !   X-direction
       m = 1
       if (mfld.eq.2) then
@@ -92,34 +94,51 @@ c
             m = m+ngfdm_p(k)**2
          enddo
       endif
-c
+
       msp(1,mfld) = m
       mlp(1,mfld) = l
-c
-      call set_1d_e_mat(sp(m),eigp(l),mx,lx,nelx,nx1,nx2
-     $                 ,cb0(1),cbn(1),dglgt,wglgt,wgl,bw,lbw)
+
+      if (ifemat) then
+         call set_1d_e_mat(sp(m),eigp(l),mx,lx,nelx,nx1,nx2
+     $                    ,cb0(1),cbn(1),dglgt,wglgt,wgl,bw,lbw)
+      else
+         call set_1d_a_mat(sp(m),eigp(l),xmlt,mx,lx,nelx,nx1
+     $                    ,cb0(1),cbn(1),bw,lbw)
+      endif
       call transpose(spt(m),mx,sp(m),mx)
-c
+      
+
+
       l = l+mx          !   Y-direction
       m = m+mx*mx
       msp(2,mfld) = m
       mlp(2,mfld) = l
-      call set_1d_e_mat(sp(m),eigp(l),my,ly,nely,nx1,nx2
-     $                 ,cb0(2),cbn(2),dglgt,wglgt,wgl,bw,lbw)
+      if (ifemat) then
+         call set_1d_e_mat(sp(m),eigp(l),my,ly,nely,nx1,nx2
+     $                    ,cb0(2),cbn(2),dglgt,wglgt,wgl,bw,lbw)
+      else
+         call set_1d_a_mat(sp(m),eigp(l),ymlt,my,ly,nely,nx1
+     $                    ,cb0(2),cbn(2),bw,lbw)
+      endif
       call transpose(spt(m),my,sp(m),my)
-c
+
       if (if3d) then
          l = l+my       !   Z-direction
          m = m+my*my
          msp(3,mfld) = m
          mlp(3,mfld) = l
-         call set_1d_e_mat(sp(m),eigp(l),mz,lz,nelz,nx1,nx2
-     $                    ,cb0(3),cbn(3),dglgt,wglgt,wgl,bw,lbw)
+         if (ifemat) then
+            call set_1d_e_mat(sp(m),eigp(l),mz,lz,nelz,nx1,nx2
+     $                       ,cb0(3),cbn(3),dglgt,wglgt,wgl,bw,lbw)
+         else
+            call set_1d_a_mat(sp(m),eigp(l),zmlt,mz,lz,nelz,nx1
+     $                    ,cb0(1),cbn(1),bw,lbw)
+         endif
          call transpose(spt(m),mz,sp(m),mz)
       else
          mz=1
       endif
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -151,6 +170,7 @@ c
       if (nbw.gt.lbw) then
          write(6,*) 
      $   'ABORT. Insufficient space in set_1d_e_mat(bw).',nbw,lbw
+         nz1 = 1/(nx1-ny1)
          call exitt
       endif
 c
@@ -320,77 +340,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_set_diagp(eigi,tpn,nn,eigx,l,eigy,m,eigz,n)
-c
-c     Set up diagonal for pressure operator inversion
-c     via Fast Diag. Meth.
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-c
-      real    eigi(nn)
-      integer tpn(nn)
-      real    eigx(l),eigy(m),eigz(n)
-c
-      eps = 1.e-12
-      if (wdsize.eq.4) eps = 1.e-6
-      ni  = l
-      nj  = m
-      nk  = n
-      nij = ni*nj
-c
-      eigxmin = glmin(eigx,l)
-      eigymin = glmin(eigy,m)
-      eigzmin = glmin(eigz,n)
-      if (nid.eq.0) write(6,11) eigxmin,eigymin,eigzmin,l,m,n
-      eigxmax = glmax(eigx,l)
-      eigymax = glmax(eigy,m)
-      eigzmax = glmax(eigz,n)
-      if (nid.eq.0) write(6,12) eigxmax,eigymax,eigzmax,l,m,n
-   11 format(1p3e12.4,' gfdm eigmins',3i6)
-   12 format(1p3e12.4,' gfdm eigmaxs',3i6)
-      epx = eps*abs(eigxmax)
-      epy = eps*abs(eigymax)
-      epz = eps*abs(eigzmax)
-      if (if3d) then
-         do ii=1,nn
-            ijk = tpn(ii)
-            i   = mod1(ijk,ni)
-            k   = 1+(ijk-1)/nij
-            j   = 1+(ijk-1)/ni
-            j   = mod1(j,nj)
-            if (eigx(i).lt.epx.and.eigy(j).lt.epy.and.eigz(k).lt.epz) 
-     $                                                           then
-               eigi(ii) = 0.0
-               write(6,3) i,j,k,eigx(i),eigy(j),eigz(k),eps
-   3           format(3i5,1p4e10.2,' zero eigenvalue, diagp')
-            else
-               eig3d     = ( eigx(i) + eigy(j) + eigz(k) )
-               eigi(ii) = 1./eig3d
-            endif
-         enddo
-      else
-         do ii=1,nn
-            ij = tpn(ii)
-            i  = mod1(ij,ni)
-            j  = 1+(ij-1)/ni
-c           write(6,4) ij,i,j,ii,eigx(i),eigy(j),eps
-c  4        format(4i8,1p3e10.2,' EIG, diagp')
-            if (eigx(i).lt.eps.and.eigy(j).lt.eps) then
-               eigi(ii) = 0.0
-               write(6,2) i,j,eigx(i),eigy(j),eps
-   2           format(2i5,1p3e10.2,' zero eigenvalue, diagp')
-            else
-               eig2d     = ( eigx(i) + eigy(j) )
-               eigi(ii) = 1./eig2d
-            endif
-         enddo
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine gfdm_set_geom(work,melx,mely,melz)
 c
       include 'SIZE'
@@ -398,121 +347,101 @@ c
       include 'PARALLEL'
       include 'ZPER'
       real work(nelx,nely,nelz)
-c
-      common /fastdr/ lx(lelg_sm),ly(lelg_sm),lz(lelg_sm)
+
+      common /fastdr/ lx(lelx),ly(lely),lz(lelz)
       real            lx,      ly,      lz
       integer e,ex,ey,ez,eg
-c
-      call rzero(lx,nelgt)
-      call rzero(ly,nelgt)
-      call rzero(lz,nelgt)
+
+      call rzero(lx,nelx)
+      call rzero(ly,nely)
+      call rzero(lz,nelz)
       do e=1,nelv
          eg = lglel(e)
-         lx(eg) = xm1(nx1,1,1,e) - xm1(1,1,1,e)
-         ly(eg) = ym1(1,ny1,1,e) - ym1(1,1,1,e)
-         lz(eg) = zm1(1,1,nz1,e) - zm1(1,1,1,e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+         lx(ex) = lx(ex) + xm1(nx1,1,1,e) - xm1(1,1,1,e)
+         ly(ey) = ly(ey) + ym1(1,ny1,1,e) - ym1(1,1,1,e)
+         lz(ez) = lz(ez) + zm1(1,1,nz1,e) - zm1(1,1,1,e)
       enddo
-c
-      call gop(lx,work,'+  ',nelgt)
-      call gop(ly,work,'+  ',nelgt)
-      call gop(lz,work,'+  ',nelgt)
-c
-      call copy(work,ly,nelgt)
-      do ey=1,nely
-         ly(ey) = work(1,ey,1)
-      enddo
-c
-      call copy(work,lz,nelgt)
-      do ez=1,nelz
-         lz(ez) = work(1,1,ez)
-      enddo
-c
+
+      call gop(lx,work,'+  ',nelx)
+      call gop(ly,work,'+  ',nely)
+      call gop(lz,work,'+  ',nelz)
+
+      scalex = 1./(nely*nelz)
+      scaley = 1./(nelx*nelz)
+      scalez = 1./(nelx*nely)
+      call cmult(lx,scalex,nelx)
+      call cmult(ly,scaley,nely)
+      call cmult(lz,scalez,nelz)
+
+
 c     Store xgtp,ygtp, and zgtp (gtp = global tensor product)
-c
+
       n = nx1*ny1*nz1*nelv
       xgtp(0) = glmin(xm1,n)
       do ex=1,nelx
          xgtp(ex) = xgtp(ex-1) + lx(ex)
       enddo
-c
+
       ygtp(0) = glmin(ym1,n)
       do ey=1,nely
          ygtp(ey) = ygtp(ey-1) + ly(ey)
       enddo
-c
+
       zgtp(0) = glmin(zm1,n)
       do ez=1,nelz
          zgtp(ez) = zgtp(ez-1) + lz(ez)
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
       subroutine gfdm_set_genwz(nx,nxp)
-C
-C     GENERATE
-C
-C            - DERIVATIVE OPERATORS
-C            - INTERPOLATION OPERATORS
-C            - WEIGHTS
-C            - COLLOCATION POINTS
-C
-C     ASSOCIATED WITH THE
-C
-C            - GAUSS-LOBATTO LEGENDRE MESH (SUFFIX M1/M2/M3)
-C            - GAUSS LEGENDRE         MESH (SUFFIX M2)
-C            - GAUSS-LOBATTO JACOBI   MESH (SUFFIX M1/M2/M3)
-C
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'WZF'
+
+c     GENERATE
+c
+c            - DERIVATIVE OPERATORS
+c            - INTERPOLATION OPERATORS
+c            - WEIGHTS
+c            - COLLOCATION POINTS
+c
+c     ASSOCIATED WITH THE
+c
+c            - GAUSS-LOBATTO LEGENDRE MESH (SUFFIX M1/M2/M3)
+c            - GAUSS LEGENDRE         MESH (SUFFIX M2)
+c            - GAUSS-LOBATTO JACOBI   MESH (SUFFIX M1/M2/M3)
+
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'WZF'
 c
       parameter (lt=lx1*ly1*lz1*lelv)
       common /SCRNS/ bw(0:7*lt-1)
-C
-C
-C
-C     Gauss-Lobatto Legendre mesh (suffix M1)
-C     Generate collocation points and weights
-c
-c
-      call zwgll (zgl , wgl , nx  )
-c
-c     Pressure mesh weights and points
-c
-      if(ifsplit)then
-         call zwgll (zgp , wgp , nxp )
+
+c     Gauss-Lobatto Legendre mesh (suffix M1)
+
+      call zwgll (zgl , wgl , nx  )    !  Collocation points and weights
+      if (ifsplit) then
+         call zwgll (zgp , wgp , nxp ) !  Pressure mesh weights and points
       else
-         call zwgl  (zgp , wgp , nxp )
+         call zwgl  (zgp , wgp , nxp ) !  Pressure mesh weights and points
       endif
-c
+
       call iglm  (iggl,igglt,zgp,zgl,nxp,nx,nxp,nx)
       call igllm (wglg,wglgt,zgl,zgp,nx,nxp,nx,nxp)
       call dgllgl(dglg,dglgt,zgl,zgp,wglg,nx,nxp,nx,nxp)
-c
-c
-c     perform row-scaling of dglg and wglg
-c
-      call row_mult (dglg,wgp,nxp,nx)
+
+      call row_mult (dglg,wgp,nxp,nx)  !  Row-scaling of dglg and wglg
       call transpose(dglgt,nx,dglg,nxp)
-c
+
       call row_mult (wglg,wgp,nxp,nx)
       call transpose(wglgt,nx,wglg,nxp)
-c
-c
-c     Generate 1st derivative matrices
-      call dgll (d1,d1t,zgl,nx,nx)
-c
-c
-c     Generate 2nd-order derivative matrices 
-      call A1D (B1iA1,B1iA1t,d2,b2p,d1,d1t,wgl,nx)
-c
-c
-c     Compute diagonal of Laplacian 
-      call set_diaga(da,dat,wgl,d1,bw,nx)
-c
-c
+
+      call dgll (d1,d1t,zgl,nx,nx)     !  Generate 1st derivative matrices
+      call A1D (B1iA1,B1iA1t,d2,b2p,d1,d1t,wgl,nx) ! 2nd-order derivatives
+      call set_diaga(da,dat,wgl,d1,bw,nx)          ! Diagonal of Laplacian 
+
       return
       end
 c-----------------------------------------------------------------------
@@ -619,30 +548,16 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine solveMp(z,r,n,w,nza)
-c
-c     Preconditioner
-c
-      real z(n,nza),r(n,nza),w(n,nza)
-      call copy(z,r,n*nza)
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine map12q(r2,r1,rt)
-c
+
       include 'SIZE'
       include 'IXYZ'
-c
+
       real r2(lx2,ly2),r1(lx1,ly1),rt(lx2,lx1)
-c
+
       call mxm(ixm12 ,nx2,r1,nx1,rt,nx1)
       call mxm(rt,nx2,ixm12t,nx1,r2,nx2)
-C
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine cgpa(x,b,r,p,z,w,niter,tolin)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -724,7 +639,8 @@ c
 c     Check arrays for fast tensor product solver
 c
 c     Assumes p116 = Nelx, p117=Nely, p118=Nelz
-c         and elements are *ordered lexicographically*
+c     and elements are ordered lexicographically,
+c     as could be generated by genbox().
 c
       include 'SIZE'
       include 'GEOM'
@@ -739,6 +655,304 @@ c
          if (nid.eq.0) write(6,*) 'Change lelx...lelz in SIZEu.'
          call exitt
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_q_1d(q,m,nx,nel,bc0,bc1)  ! set up 1D Q matrix
+                                               ! and apply bc restrictions
+      real q(nx*nel,1)
+
+c     Input:
+c
+c       .  nx  = number of points in each element = N+1
+c       .  nel = number of elements
+c       .  bc0 = 0 --> Dirichlet for element 1
+c              = 1 --> Neumann for element 1
+c              = 2 --> periodic
+c       .  bc1 = 0 --> Dirichlet for element E
+c              = 1 --> Neumann for element E
+c              = 2 --> periodic
+
+      character*1 bc0,bc1
+      integer e
+
+      ldq = nx*nel
+      m   = nel*(nx-1) + 1
+      if (bc0.eq.'D') m = m-1   ! Dirchlet on left
+      if (bc1.eq.'D') m = m-1   ! Dirchlet on right
+      if (bc1.eq.'P') m = m-1   ! Periodic
+
+      call rzero(q,m*ldq)
+
+      j=1
+      i=1
+      if (bc0.eq.'D') i=2
+      do e=1,nel
+         n=nx
+         if (e.eq.1  .and.bc0.eq.'D') n=nx-1
+         if (e.eq.nel.and.bc1.eq.'D') n=nx-1
+         if (e.eq.nel.and.bc1.eq.'P') n=nx-1
+
+         call set_ident(q(i,j),ldq,n)
+c        call outmat(q,ldq,m,'Q tmp ',i)
+
+         i = i+n
+         j = j+n-1
+         if (e.eq.nel.and.bc1.eq.'P') q(i,1) = 1
+
+      enddo
+
+c     call outmat(q,ldq,m,'Q mat ',nel)
+c     stop
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_1d_abq(a,b,q,qt,m,nx,nel,len,bc0,bc1,wk)
+
+c     Generate fast diagonalization matrices for 1D SEM operator
+
+      include 'SIZE'
+      include 'SEMHAT'
+
+      real a(m,m),b(m,m),q(m,m),qt(m,m),len(nel),wk(1)
+      character*1 bc0,bc1
+      integer e
+
+      ml = nx*nel   ! Size of local stiffness matrix, A_L
+      call set_q_1d(q,m,nx,nel,bc0,bc1)  ! set up 1D Q matrix
+      call transpose(qt,m,q,ml)
+
+      nr = nx-1
+      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,nr,wh)
+
+      ij=1
+      call rzero(wk,nx*nx)
+      do i=1,nx
+         wk(ij) = bh(i)
+         ij = ij+nx+1
+      enddo
+
+      call rzero(a,ml*ml)
+      call rzero(b,ml*ml)
+
+      ij = 1
+      do e=1,nel
+         sa = 2/len(e)
+         sb = len(e)/2
+         call axpym  (a(ij,1),ml,ah,nx,sa,nx,nx)
+         call axpym  (b(ij,1),ml,wk,nx,sb,nx,nx)
+         ij = ij + nx*ml + nx
+      enddo
+
+      call mxm(a ,ml,q,ml,wk,m) ! wk(ml,m) = a(ml,ml)*q(ml,m)
+      call mxm(qt,m,wk,ml,a,m)  ! A = qt*wk = Qt*A_L*Q
+
+      call mxm(b ,ml,q,ml,wk,m) ! wk(ml,m) = b(ml,ml)*q(ml,m)
+      call mxm(qt,m,wk,ml,b,m)  ! B = qt*wk = Qt*B_L*Q
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_ident(eye,ldi,n)
+
+      real eye(ldi,1)
+
+      do j=1,n
+         do i=1,n
+            eye(i,j) = 0.
+         enddo
+         eye(j,j) = 1.
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine axpym(x,ldx,y,ldy,a,m,n) ! X = X + a*Y
+
+      real x(ldx,1),y(ldy,1)
+
+      do j=1,n
+      do i=1,m
+           xi = x(i,j)
+           x(i,j) = x(i,j) + a*y(i,j)
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_fast_solve_1d(a,b,lam,q,qt,m,nx,nel,len,bc0,bc1,wk)
+
+      include 'SIZE'
+      include 'INPUT' ! if3d
+      include 'ZPER'  ! lelx,lely,lelz in nek5000
+
+      real a(1),b(1),lam(1),q(1),qt(1),len(nel),wk(1)
+      character*1 bc0,bc1
+
+      call set_1d_abq (a,b,q,qt,m,nx,nel,len,bc0,bc1,wk)
+      call generalev  (a,b,lam,m,wk)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_1d_a_mat(eigv,eigs,mlt,n,len,nel,nx,bc0,bc1,bw,lbw)
+
+c     Construct and diagonalize 1D A-matrix (H1 operator)
+
+
+      real    eigv(1),eigs(1)     ! output eigenvec and eigenvalues
+      real    mlt(1)              ! output 1D inverse multiplicity array
+      integer n                   ! output size of eigv (nxn) and eigs(n)
+
+      real    len(nel)            ! input array containing length of els.
+      integer nx                  ! # els, # vel pts/el
+      character*1 bc0,bc1         ! bc at each end of domain
+      real bw(0:lbw)              ! big work array
+
+
+
+      ml  = nx*nel   ! Size of local stiffness matrix, A_L
+      n1  = ml**2
+      n2  = ml**2  +  n1
+      n3  = ml**2  +  n2
+      n4  = ml**2  +  n3
+
+      if (n4.gt.lbw) then
+         write(6,*) 
+     $   'ABORT. Insufficient space in set_1d_a_mat(bw).',n4,lbw
+         nz1 = 1/(n2-2*n1)
+         call exitt
+      endif
+
+c     set_fast_solve_1d(a,b,lam,q,qt,m,nx,nel,len,bc0,bc1,wk)
+      call set_fast_solve_1d
+     $    (eigv,bw,eigs,bw(n1),bw(n2),m,nx,nel,len,bc0,bc1,bw(n3))
+
+c                          Q     ,Qt
+      call gen_1d_mult(mlt,bw(n1),bw(n2),ml,m,bw(n3))
+
+
+c     Spread the data out to Local form
+c         eigv = Q*eigv*Qt
+c         eigs = Q*eigs/mult
+
+c     call modify_eig(eigv,eigs,q     ,qt    ,m,ml,bw)
+      call modify_eig(eigv,eigs,bw(n1),bw(n2),m,ml,bw(n3))
+      n = ml ! The system is now bigger
+
+      write(6,*) bc0,bc1,' bc ',m,ml,nel,nx
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine modify_eig(eigv,eigs,q,qt,m,ml,wk)
+c         eigv = Q*eigv*Qt
+c         eigs = Q*eigs
+
+      real eigv(1),eigs(1),mult(ml),q(ml,m),qt(m,ml),wk(1)
+
+c     call outmat(eigv,m,m,'eigv a',m)
+
+      call mxm(q ,ml,eigv,m ,wk  ,m ) !         Eigv = Q*Eigv*Qt
+      call mxm(wk,ml,qt  ,m ,eigv,ml)
+c     call outmat(eigv,ml,ml,'eigv b',ml)
+
+      call mxm(q ,ml,eigs,m ,wk  ,1)  !         eigs = Q*eigs
+      call copy(eigs,wk,ml)
+c     call outmat(eigs,1,ml,'eigs b',ml)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_1d_mult(mlt,q,qt,ml,m,wk)
+
+      real mlt(ml),q(ml,m),qt(m,ml),wk(ml)
+
+      call rone(mlt,ml)
+      call mxm(qt,m ,mlt,ml,wk ,1) !     Q'*1
+      call mxm(q ,ml,wk ,m ,mlt,1) !     Q*Q'*1
+
+      do i=1,ml
+         if (mlt(i).gt.0) mlt(i) = 1./mlt(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gfdm_set_diagp(eigi,tpn,nn
+     $                         ,eigx,l,eigy,m,eigz,n,kwave2)
+
+c     Set up diagonal for pressure operator inversion via Fast Diag. Meth.
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'ZPER'
+
+      real    eigi(nn)
+      integer tpn(nn)
+      real    eigx(l),eigy(m),eigz(n),kwave2
+
+      eps = 1.e-12
+      if (wdsize.eq.4) eps = 1.e-6
+      ni  = l
+      nj  = m
+      nk  = n
+      nij = ni*nj
+
+      eigxmin = glmin(eigx,l)
+      eigymin = glmin(eigy,m)
+      eigzmin = glmin(eigz,n)
+      if (nid.eq.0) write(6,11) eigxmin,eigymin,eigzmin,l,m,n
+      eigxmax = glmax(eigx,l)
+      eigymax = glmax(eigy,m)
+      eigzmax = glmax(eigz,n)
+      if (nid.eq.0) write(6,12) eigxmax,eigymax,eigzmax,l,m,n
+   11 format(1p3e12.4,' gfdm eigmins',3i6)
+   12 format(1p3e12.4,' gfdm eigmaxs',3i6)
+      epx = eps*abs(eigxmax)
+      epy = eps*abs(eigymax)
+      epz = eps*abs(eigzmax)
+      if (if3d) then
+         do ii=1,nn
+            ijk   = tpn(ii)
+            i     = mod1(ijk,ni)
+            k     = 1+(ijk-1)/nij
+            j     = 1+(ijk-1)/ni
+            j     = mod1(j,nj)
+            eig3d = ( eigx(i) + eigy(j) + eigz(k) - kwave2 )
+            if (eig3d.lt.eps) then
+               write(6,3) i,j,k,eigx(i),eigy(j),eigz(k),kwave2,eps
+   3           format(3i5,1p5e11.3,' zero eigenvalue, diagp')
+               eigi(ii) = 0.0
+            else
+               eigi(ii) = 1./eig3d
+            endif
+            if(.not.ifemat)eigi(ii)=eigi(ii)*(xmlt(i)*ymlt(j)*zmlt(k))
+         enddo
+      else
+         do ii=1,nn
+            ij = tpn(ii)
+            i  = mod1(ij,ni)
+            j  = 1+(ij-1)/ni
+c           write(6,4) ij,i,j,ii,eigx(i),eigy(j),eps
+c  4        format(4i8,1p3e10.2,' EIG, diagp')
+            eig2d = ( eigx(i) + eigy(j) - kwave2 )
+            if (eig2d.lt.eps) then
+               write(6,2) i,j,eigx(i),eigy(j),eps
+   2           format(2i5,1p3e10.2,' zero eigenvalue, diagp')
+               eigi(ii) = 0.0
+            else
+               eigi(ii) = 1./eig2d
+            endif
+            if (.not.ifemat) eigi(ii)=eigi(ii)*(xmlt(i)*ymlt(j))
+         enddo
+      endif
+c     call outmat(eigi,ni,nj,'eigi  ',nn)
 
       return
       end
