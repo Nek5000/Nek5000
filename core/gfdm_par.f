@@ -8,7 +8,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_init
+      subroutine gfdm_init(nx,ny,nz,ifemati,kwave2)
 c
 c     This is the driver for the Global Fast Diagonalization Method
 c
@@ -35,28 +35,29 @@ c
       include 'PARALLEL'
       include 'ZPER'
 
-      call gfdm_check_array_sizes
+      logical ifemati
+      real    kwave2
 
-      call gfdm_mappings
-c     write(6,*) 'done ops1'
+      ifemat = ifemati   ! Flag for Pn-Pn-2 vs Pn-Pn
 
-      call gfdm_ops
-c     write(6,*) 'done ops2'
-c     call exitt
+      call gfdm_check_array_sizes (nx,ny,nz)
+      call gfdm_mappings          (nx,ny,nz)
+      call gfdm_ops               (nx,ny,nz,kwave2,1)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_check_array_sizes
+      subroutine gfdm_check_array_sizes(nx,ny,nz)
       include 'SIZE'
       include 'PARALLEL'
       include 'ZPER'
 
-      if (lelg_sm.lt.lelg.or.ltfdm2.lt.2*lx2*ly2*lz2*lelt) then
+      if (lelg_sm.lt.lelg.or.ltfdm2.lt.2*nx*ny*nz*nelt) then
          if (nid.eq.0) then
             write(6,*) 'gfdm_array_check fail A:',lelg_sm,ltfdm2,lelg
             write(6,*) 'modify lelg_sm,ltfdm2 in ZPER; makenek clean'
          endif
+         nz1 = 1/(nx1-ny1)
          call exitt
       endif
 
@@ -71,14 +72,14 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_mappings
+      subroutine gfdm_mappings(nx,ny,nz) ! Typ., nx2,ny2,nz2
 c
 c     This routine establishes SEM to FDM mappings for pressure arrays.
 c
-c  0. The initial mapping is the std. SEM  (nx2,ny2,nz2,nelv)
+c  0. The initial mapping is the std. SEM  (nx,ny,nz,nelv)
 c
 c  1. The first permuation (tpn1) maps the SEM ordering into a standard
-c     (global) lexicographal ordering of the points (x by y by z).
+c     (global) lexicographical ordering of the points (x by y by z).
 c     tpn1() is not used in the execution phase, but simply helps to
 c     allow the std. lexicographical ordering to be mapped into subsequent
 c     p,s,t (primary, secondary, tertiary) orderings, where p,s,t can be
@@ -118,21 +119,19 @@ c
       include 'SIZE'
       include 'PARALLEL'
       include 'ZPER'
-c
-c
-c
+
 c     This next call assigns the std. global tensor-product numbering to
 c     each pressure degree-of-freedom, based on an (nelx by nely by nelz)
 c     (lexicographical) ordering of the elements.
-c
-      call assign_tp_numbering_pres(tpn1,nelx,nely,nelz,nx2,ny2,nz2
+
+      call assign_tp_numbering_pres(tpn1,nelx,nely,nelz,nx,ny,nz
      $                                    ,lglel(1),nelv)
-c
-      ntot = nelv*nx2*ny2*nz2
-      ni   = nelx*nx2
-      nj   = nely*ny2
-      nk   = nelz*nz2
-c
+
+      ntot = nelv*nx*ny*nz
+      ni   = nelx*nx
+      nj   = nely*ny
+      nk   = nelz*nz
+
       ip=pst2lex(1)
       is=pst2lex(2)
       it=pst2lex(3)

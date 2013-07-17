@@ -1,7 +1,11 @@
-      parameter (lxm=lx2+2,lym=lxm,lzm=lz2+2*(ldim-2)) ! mgrid sizes
-      parameter (lmgs=1)                   ! max number of multigrid solvers
+
+c     Allocate MHD memory only if lbx1==lx1
+      parameter (lmg_mhd=1-(lx1-lbx1)/(lx1-1))!1 if MHD is true, 0 otherwise
+
+      parameter (lmgs=1 + lmg_mhd)         ! max number of multigrid solvers
       parameter (lmgn=3)                   ! max number of multigrid levels
       parameter (lmgx=lmgn+1)              ! max number of mg index levels
+      parameter (lxm=lx2+2,lym=lxm,lzm=lz2+2*(ldim-2)) ! mgrid sizes
       parameter (lmg_rwt=2*lxm*lzm)        ! restriction weight max size
       parameter (lmg_fasts=2*lxm*lxm)      ! FDM S max size
       parameter (lmg_fastd=2*lxm*lym*lzm)  ! FDM D max size

@@ -63,7 +63,7 @@ C
          CALL MAKEG   (   G1,G2,G3,H1,H2,INTYPE)
          CALL CRESPUZ (WP,G1,G2,G3,H1,H2,H2INV,INTYPE)
          if (solver_type.eq.'fdm') then
-            call gfdm_pres_solv(dv1,wp,dv2,dv3)
+            call gfdm_pres_solv(dv1,wp,dv2,dv3,.true.,0.0)
             call copy (wp,dv1,ntot2)
          else
             CALL UZAWA   (WP,H1,H2,H2INV,INTYPE,ICG)
@@ -991,7 +991,7 @@ c
 c
 c
       if (solver_type.eq.'pdm') then
-         call gfdm_pres_solv(rpcg,rcg,h1m2,h2m2)
+         call gfdm_pres_solv(rpcg,rcg,h1m2,h2m2,.true.,0.0)
          return
       endif
 c

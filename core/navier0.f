@@ -15,21 +15,21 @@ C
       common /scruz/ wk1(lx2*ly2*lz2*lelv)
      $             , wk2(lx2*ly2*lz2*lelv)
      $             , wk3(lx2*ly2*lz2*lelv)
-c
+
       include 'CTIMER'
-c
-#ifndef NOTIMER
+      real kwave2
+
       if (icalld.eq.0) teslv=0.0
       icalld=icalld+1
       neslv=icalld
       etime1=dnekclock()
-#endif
-C
+
 c     write(6,*) solver_type,' solver type',iesolv
-      IF (IESOLV.EQ.1) THEN
+      if (iesolv.eq.1) then
          if (solver_type.eq.'fdm') then
             ntot2 = nx2*ny2*nz2*nelv
-            call gfdm_pres_solv  (wk1,res,wk2,wk3)
+            kwave2 = 0.
+            call gfdm_pres_solv  (wk1,res,wk2,wk3,kwave2)
             call copy            (res,wk1,ntot2)
          else
             if (param(42).eq.1.or.solver_type.eq.'pdm') then
@@ -38,14 +38,14 @@ c     write(6,*) solver_type,' solver type',iesolv
                call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
             endif
          endif
-      ELSE
+      else
          WRITE(6,*) 'ERROR: E-solver does not exist',iesolv
          WRITE(6,*) 'Stop in ESOLVER'
          CALL EXITT
       ENDIF
-#ifndef NOTIMER
+
       teslv=teslv+(dnekclock()-etime1)
-#endif
+
       RETURN
       END
       SUBROUTINE ESTRAT
@@ -59,18 +59,18 @@ C---------------------------------------------------------------------------
 C
       IESOLV = 1
       if (ifsplit) iesolv=0
-c
+
       solver_type='itr'
       if (param(116).ne.0) solver_type='fdm'
 c     if (param(90).ne.0)  solver_type='itn'
-c
+
 c     The following change recognizes that geometry is logically 
 c     tensor-product, but deformed:  pdm = Preconditioner is fdm
-c
+
       if (param(59).ne.0.and.solver_type.eq.'fdm') solver_type='pdm'
 
-      IF (ISTEP.LT.2.AND.NID.EQ.0) WRITE(6,10) IESOLV,solver_type
-   10 FORMAT(2X,'E-solver strategy: ',I2,1X,A)
+      if (istep.lt.2.and.nid.eq.0) write(6,10) iesolv,solver_type
+   10 format(2X,'E-solver strategy: ',I2,1X,A)
 
 
 
@@ -179,4 +179,3 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-

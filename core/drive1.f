@@ -25,11 +25,10 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
   
-      REAL e, oe
-      REAL*8 t0, tpp
-      common /drive1f/ e, oe, t0, tpp
+      real kwave2
+      real*8 t0, tpp
 
-      logical ifsync_
+      logical ifemati,ifsync_
 
       call get_session_info(intracomm)
       
@@ -117,7 +116,10 @@ C     Pressure solver initialization (uses "SOLN" space as scratch)
          if (iftran.and.solver_type.eq.'itr') then
             call set_overlap
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
-            call gfdm_init
+            ifemati = .true.
+            kwave2  = 0.0
+            if (ifsplit) ifemati = .false.
+            call gfdm_init(nx2,ny2,nz2,ifemati,kwave2)
          elseif (solver_type.eq.'25D') then
             call g25d_init
          endif
@@ -320,3 +322,4 @@ c-----------------------------------------------------------------------
       call in_situ_end()
       return
       end
+c-----------------------------------------------------------------------
