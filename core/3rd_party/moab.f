@@ -1548,6 +1548,23 @@ c     call print_tag_values(tTag, 99, 0)
       return
       end
 c-----------------------------------------------------------------------
+      subroutine nekMOAB_import_tagvalues(tagname, is_v, field)
+      implicit none
+#include "NEKMOAB"
+
+      character(*) tagname
+      integer is_v, ierr
+      real field(lx1,ly1,lz1,lelt)
+
+      iBase_TagHandle tagh
+
+      call iMesh_getTagHandle(%VAL(imeshh), tagname, tagh, ierr)
+      
+      call nekMOAB_import_vars(tagh, is_v, field)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine nekMOAB_import_vars(tagh, is_v, field)
       implicit none
 #include "NEKMOAB"
