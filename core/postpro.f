@@ -1589,7 +1589,7 @@ c-----------------------------------------------------------------------
           write(6,*) 'Cannot open hpts.in in subroutine hpts()'
           call exitt
         endif
-        if(npoints.gt.nbuf*np) then
+        if(npoints.gt.lhis*np) then
           write(6,*) 'ABORT: Too many pts to read in hpts()!'
           call exitt
         endif
