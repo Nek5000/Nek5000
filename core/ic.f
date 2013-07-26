@@ -2575,10 +2575,10 @@ c-----------------------------------------------------------------------
       character*1  fname1(132)
       equivalence (fname1,fname)
 
-      integer      iname(20)
+      integer      iname(33)
       equivalence (iname,fname)
 
-      call izero  (iname,20)
+      call izero  (iname,33)
       len = ltrunc(hname,132)
       call chcopy (fname,hname,len)
 

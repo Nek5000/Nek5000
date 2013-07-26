@@ -191,7 +191,7 @@ fi
 case $F77comp in
   *pgf*)        P="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   P="-fcray-pointer -fdefault-real-8 -x f77-cpp-input"
+  *gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
                ;;
   *ifort*)      P="-r8 -fpconstant -fpp"
                ;;
@@ -262,6 +262,10 @@ for i in $PPLIST
 do
    if [ "$i" == "MOAB" ]; then
      IFMOAB=true
+     echo $F77comp | grep 'gfort' >/dev/null 
+     if [ $? -eq 0 ]; then
+       P="${P} -fcray-pointer"
+     fi
      if [ "$MOAB_DIR" == "" ]; then
        echo "ABORT: Please specify path to MOAB in MOAB_DIR!" 
        exit 1
