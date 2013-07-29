@@ -1654,7 +1654,7 @@ c-----------------------------------------------------------------------
       if (prefx.eq.'rst'.and.max_rst.gt.0) nfld = mod1(nfld,max_rst)
 
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
-c     if (nfld.eq.1) ifxyo_ = .true.
+      if (prefx.eq.'   '.and.nfld.eq.1) ifxyo_ = .true. ! 1st file
 
 #ifdef MPIIO
       rfileo = 1
