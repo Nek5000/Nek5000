@@ -177,7 +177,8 @@ c            // Tell VisIt to update its plots
          endif
       endif
 
-c     write (6, '(/,A,/)') 'VisIt Check!'
+c     write (6, 2000)
+ 2000 format('VisIt Check!')
       do 10
 c         // If we are running don't block
           if(runflag.eq.1) then
@@ -197,22 +198,29 @@ c         // the results of that input to all processors.
 c             // Okay - Process time step.
               goto 1234
           elseif (visitstate.eq.1) then
-c             // Listen socket input
+c             // Attempt to Connect VisIt
+              ierr = runflag
               runflag = 0
               result = visitattemptconnection()
               if (result.eq.1) then
-                  write (6, '(/,A,/)') 'VisIt connected!'
+                  write (6, 2001)
+ 2001             format('VisIt connected!')
               else
-                  write (6, '(/,A,/)') 'VisIt did not connect!'
+                  write (6, 2002)
+ 2002             format('VisIt did not connected!')
               endif
               flush( 6 )
+              runflag = ierr
           elseif (visitstate.eq.2) then
 c             // Engine socket input
-              runflag = 0
+c             ierr = runflag
+c             runflag = 0
               if (processvisitcommand().eq.0) then
                   result = visitdisconnect()
+c                 // If VisIt is disconnect lets run.
                   runflag = 1
               endif
+c             // Check if user wants to exit sim.
               if(runflag.eq.2) then
                   goto 1234
               endif
@@ -230,22 +238,31 @@ c visit_end
 c---------------------------------------------------------------------
       subroutine visit_end()
       implicit none
+      include "visitfortransimV2interface.inc"
+c     // local variables
+      integer result
 c     // SIMSTATE common block
       integer runflag, endflag
       common /SIMSTATE/ runflag, endflag
 
-c     // This will tell the visit_check function we are at the end.
-      endflag = 1
-      runflag = 0
+c     // Check if we are connected to VisIt
+      result = visitisconnected()
+      if(result.eq.1) then
+c        // Let VisIt exit the sim.
 
-      do 10
-          call visit_check()
+c        // This will tell the visit_check function we are at the end.
+         endflag = 1
+         runflag = 0
 
-c         // User asked to finish.
-          if (endflag.eq.2) then
-              EXIT
-          endif
-10    continue
+         do 10
+            call visit_check()
+
+c           // User asked to finish.
+            if (endflag.eq.2) then
+               EXIT
+            endif
+10       continue
+      endif
 
       end
 
