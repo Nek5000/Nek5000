@@ -246,249 +246,286 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine mvbdry (nel)
-C
-C     Routine to evaluate mesh velocities at all moving boundaries
-C
+
+c     Evaluate mesh velocities at all moving boundaries
+
       include 'SIZE'
       include 'GEOM'
       include 'INPUT'
       include 'MVGEOM'
       include 'SOLN'
       include 'TSTEP'
-      COMMON /SCRSF/ WVX(LX1,LY1,LZ1,LELT)
-     $             , WVY(LX1,LY1,LZ1,LELT)
-     $             , WVZ(LX1,LY1,LZ1,LELT)
-      COMMON /SCRCH/ WTX(LX1,LY1,LZ1,LELT)
-     $             , WTY(LX1,LY1,LZ1,LELT)
-      COMMON /SCRMG/ WTZ(LX1,LY1,LZ1,LELT)
-     $             , RNX(LX1,LY1,LZ1,LELT)
-     $             , RNY(LX1,LY1,LZ1,LELT)
-     $             , RNZ(LX1,LY1,LZ1,LELT)
-      COMMON /SCRUZ/ DSA(LX1,LY1,LZ1,LELT)
-     $             , QNI(LX1,LY1,LZ1,LELT)
-     $             , SMT(LX1,LY1,LZ1,LELT)
-     $             , TA (LX1,LY1,LZ1,LELT)
-C
-      LOGICAL IFALGN,IFNORX,IFNORY,IFNORZ,IFDSMV,IFREGW
-      CHARACTER CB*3
-C
-      IFIELD = 0
-      NXYZ1  = NX1*NY1*NZ1
-      NTOT1  = NX1*NY1*NZ1*NEL
-      NFACE  = 2*NDIM
-      CALL RZERO3  (RNX,RNY,RNZ,NTOT1)
-C
-      DO 100 IEL=1,NEL
-      DO 100 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR. 
-     $       CB.EQ.'MSI' .OR. CB.EQ.'msi' .OR. 
-     $       CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR. 
-     $       CB.EQ.'mv ' .OR. CB.EQ.'mvn' .OR.
-     $       CB.EQ.'MLI') THEN
-             CALL FACEXV (UNX(1,1,IFC,IEL),UNY(1,1,IFC,IEL),
-     $                    UNZ(1,1,IFC,IEL),RNX(1,1,1,IEL),
-     $                    RNY(1,1,1,IEL),RNZ(1,1,1,IEL),IFC,1)
-         ENDIF
-  100 CONTINUE
-C
-      CALL DSSUM (RNX,NX1,NY1,NZ1)
-      CALL DSSUM (RNY,NX1,NY1,NZ1)
-      IF (NDIM.EQ.3) CALL DSSUM (RNZ,NX1,NY1,NZ1)
-      CALL UNITVEC (RNX,RNY,RNZ,NTOT1)
-C
-      CALL RZERO3 (WVX,WVY,WVZ,NTOT1)
-      CALL RZERO3 (WTX,WTY,WTZ,NTOT1)
-      DO 1000 ISWEEP=1,2
-C
-      IFREGW = .FALSE.
-      IFDSMV = .FALSE.
-      CALL RZERO  (DSA,NTOT1)
-      CALL RZERO  (TA,NTOT1)
-C
-      IF (IFFLOW) THEN
-C
-      IFIELD = 1
-      CALL RZERO  (SMT,NTOT1)
-      DO 210 IEL=1,NELV
-      DO 210 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'mv ' .OR. CB.EQ.'mvn'  .OR.
-     $       CB.EQ.'MM ' .OR. CB.EQ.'mm '  .OR.
-     $       CB.EQ.'MS ' .OR. CB.EQ.'ms ') THEN
-            IFREGW = .TRUE.
-            CALL FACEC3 (WVX(1,1,1,IEL),WVY(1,1,1,IEL),WVZ(1,1,1,IEL),
-     $                   VX(1,1,1,IEL),VY(1,1,1,IEL),VZ(1,1,1,IEL),IFC)
-            IF (CB.NE.'mv ')
-     $      CALL NORCMP (WVX(1,1,1,IEL),WVY(1,1,1,IEL),WVZ(1,1,1,IEL),
-     $                   RNX(1,1,1,IEL),RNY(1,1,1,IEL),RNZ(1,1,1,IEL),
-     $                 IFC) 
-         ENDIF
-         IF (CB.EQ.'MSI' .OR. CB.EQ.'msi') THEN
-            IFDSMV = .TRUE.
-            CALL FACSMT (SMT(1,1,1,IEL),IFC)
-         ENDIF
-  210 CONTINUE
 
-      if (istep.eq.0) call opcopy(wx,wy,wz,wvx,wvy,wvz)
-c     call outpost(wvx,wvy,wvz,wtx,wtx,'   ')
-c     call outpost(wx,wy,wz,wtx,wtx,'   ')
-c     write(6,*) 'quit1'
-c     call exitt
+      common /scrsf/ wvx(lx1*ly1*lz1,lelt)
+     $             , wvy(lx1*ly1*lz1,lelt)
+     $             , wvz(lx1*ly1*lz1,lelt)
+      common /scrch/ wtx(lx1*ly1*lz1,lelt)
+     $             , wty(lx1*ly1*lz1,lelt)
+      common /scrmg/ wtz(lx1*ly1*lz1,lelt)
+     $             , rnx(lx1*ly1*lz1,lelt)
+     $             , rny(lx1*ly1*lz1,lelt)
+     $             , rnz(lx1*ly1*lz1,lelt)
+      common /scruz/ dsa(lx1*ly1*lz1,lelt)
+     $             , qni(lx1*ly1*lz1,lelt)
+     $             , smt(lx1*ly1*lz1,lelt)
+     $             , ta (lx1*ly1*lz1,lelt)
 
-      iregw = 0                   ! Global handshake on logicals ifregw, ifdsmv
-      if (ifregw) iregw = 1       ! pff  9/11/07
-      iregw = iglmax(iregw,1)
-      if (iregw.eq.1) ifregw = .true.
+      logical ifalgn,ifnorx,ifnory,ifnorz,ifdsmv,ifregw
+      character cb*3
+      integer e,f
 
-      idsmv = 0
-      if (ifdsmv) idsmv = 1
-      idsmv = iglmax(idsmv,1)
-      if (idsmv.eq.1) ifdsmv = .true.
+      ifield = 0
+      nxyz1  = nx1*ny1*nz1
+      n      = nx1*ny1*nz1*nel
+      nface  = 2*ndim
+      call rzero3  (rnx,rny,rnz,n)
 
-C
-      IF (IFDSMV) THEN
-      CALL DSSUM (SMT,NX1,NY1,NZ1)
-      DO 215 IEL=1,NELV
-      DO 215 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'MSI' .OR. CB.EQ.'msi') THEN
-         CALL FACEC3 (WTX(1,1,1,IEL),WTY(1,1,1,IEL),WTZ(1,1,1,IEL),
-     $                VX(1,1,1,IEL),VY(1,1,1,IEL),VZ(1,1,1,IEL),IFC)
-         CALL FACEMV (WTX(1,1,1,IEL),WTY(1,1,1,IEL),WTZ(1,1,1,IEL),
-     $                RNX(1,1,1,IEL),RNY(1,1,1,IEL),RNZ(1,1,1,IEL),
-     $                SMT(1,1,1,IEL),IFC) 
-         ENDIF
-  215 CONTINUE
+      do 100 e=1,nel
+      do 100 f=1,nface
+         cb = cbc(f,e,ifield)
+         if (cb.eq.'ms ' .or. cb.eq.'MS ' .or. 
+     $       cb.eq.'msi' .or. cb.eq.'MSI' .or. 
+     $       cb.eq.'mm ' .or. cb.eq.'MM ' .or. 
+     $       cb.eq.'mv ' .OR. cb.eq.'mvn' .or.
+     $       cb.eq.'MLI') then
+             call facexv (unx(1,1,f,e),uny(1,1,f,e),
+     $                    unz(1,1,f,e),rnx(1,e),
+     $                    rny(1,e),rnz(1,e),f,1)
+         endif
+  100 continue
 
-         CALL DSSUM (WTX,NX1,NY1,NZ1)
-         CALL DSSUM (WTY,NX1,NY1,NZ1)
-         IF (NDIM.EQ.3) CALL DSSUM (WTZ,NX1,NY1,NZ1)
+      call opdssum (rnx,rny,rnz)
+      call unitvec (rnx,rny,rnz,n)
 
-      ENDIF
+      call rzero3 (wvx,wvy,wvz,n)
+      call rzero3 (wtx,wty,wtz,n)
+      do 1000 isweep=1,2
 
-      ENDIF
+        ifregw = .false.
+        ifdsmv = .false.
+        call rzero  (dsa,n)
+        call rzero  (ta,n)
+
+        if (ifflow) then
+          ifield = 1
+          call rzero  (smt,n)
+          do 210 e=1,nelv
+          do 210 f=1,nface
+           cb = cbc(f,e,ifield)
+           if (cb.eq.'mv ' .or. cb.eq.'mvn'  .or.
+     $         cb.eq.'mm ' .or. cb.eq.'MM '  .or.
+     $         cb.eq.'msi' .or. cb.eq.'MSI'  .or.
+     $         cb.eq.'ms ' .or. cb.eq.'MS ') then
+              ifregw = .true.
+              call facec3 (wvx(1,e),wvy(1,e),wvz(1,e),
+     $                     vx (1,1,1,e),vy (1,1,1,e),vz (1,1,1,e),f)
+              if (cb.ne.'mv ')
+     $           call norcmp2(wvx(1,e),wvy(1,e),wvz(1,e),e,f)
+           endif
+c          if (cb.eq.'msi' .or. cb.eq.'MSI') then
+c             ifdsmv = .true.
+c             call facsmt (smt(1,e),f)
+c          endif
+  210     continue
+
+          call dsavg(wvx)
+          call dsavg(wvy)
+          if (if3d) call dsavg(wvz)
+
+          if (istep.eq.0) call opcopy(wx,wy,wz,wvx,wvy,wvz)
+c         if (istep.eq.4) then
+c            call opcopy(wx,wy,wz,wvx,wvy,wvz)
+c            call outpost(vx,vy,vz,wtx,wtx,'   ')
+c            call outpost(wx,wy,wz,wtx,wtx,'   ')
+c            write(6,*) 'quit1',istep
+c            stop
+c         endif
+
+          iregw = 0    ! Global handshake on logicals ifregw, ifdsmv
+          if (ifregw) iregw = 1       ! pff  9/11/07
+          iregw = iglmax(iregw,1)
+          if (iregw.eq.1) ifregw = .true.
+
+          idsmv = 0
+          if (ifdsmv) idsmv = 1
+          idsmv = iglmax(idsmv,1)
+          if (idsmv.eq.1) ifdsmv = .true.
+
+          ifdsmv = .false.
+          ifregw = .true.
+
+c         if (ifdsmv) then
+c           call dssum (smt,nx1,ny1,nz1)
+c           do 215 e=1,nelv
+c           do 215 f=1,nface
+c              cb = cbc(f,e,ifield)
+c              if (cb.eq.'msi' .or. cb.eq.'MSI') then
+c               call facec3 (wtx(1,e),wty(1,e),wtz(1,e),
+c    $                       vx(1,1,1,e),vy(1,1,1,e),vz(1,1,1,e),f)
+c               call facemv (wtx(1,e),wty(1,e),wtz(1,e),
+c    $                       rnx(1,e),rny(1,e),rnz(1,e),
+c    $                       smt(1,e),f) 
+c              endif
+c 215       continue
+c           call opdssum(wtx,wty,wtz)
+c         endif
+
+        endif
 C
-      IF (IFMELT .AND. ISTEP.GT.0) THEN
-         IFIELD = 2
-         CALL RZERO (SMT,NTOT1)
-         CALL CQNET (QNI,TA,NEL)
-      DO 220 IEL=1,NELT
-      DO 220 IFC=1,NFACE
-         CB   = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'MLI') THEN
-            CALL FACSMT (SMT(1,1,1,IEL),IFC)
-         ENDIF
-         IF (CB.EQ.'MLI' .OR. CB.EQ.'MCI') THEN
-            CALL FACEXS (AREA(1,1,IFC,IEL),TA,IFC,1)
-            CALL ADD2   (DSA(1,1,1,IEL),TA,NXYZ1)
-         ENDIF
-  220 CONTINUE
-         CALL DSSUM (SMT,NX1,NY1,NZ1)
-         CALL DSSUM (DSA,NX1,NY1,NZ1)
-      DO 280 IEL=1,NELT
-      DO 280 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'MLI') THEN
-            RHOLA = -0.5 * BC(5,IFC,IEL,IFIELD)
-            CALL FACEMT (WTX(1,1,1,IEL),WTY(1,1,1,IEL),WTZ(1,1,1,IEL),
-     $                   RNX(1,1,1,IEL),RNY(1,1,1,IEL),RNZ(1,1,1,IEL),
-     $                   QNI(1,1,1,IEL),DSA(1,1,1,IEL),SMT(1,1,1,IEL),
-     $                   RHOLA,IFC)
-         ENDIF
-  280 CONTINUE
-         CALL DSSUM (WTX,NX1,NY1,NZ1)
-         CALL DSSUM (WTY,NX1,NY1,NZ1)
-         IF (NDIM.EQ.3) CALL DSSUM (WTZ,NX1,NY1,NZ1)
-      ENDIF
-C
-      IFIELD = 0
-      DO 330 IEL=1,NEL
-      DO 330 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'SYM') THEN
-            CALL CHKNORD (IFALGN,IFNORX,IFNORY,IFNORZ,IFC,IEL)
-            IF (IFREGW) THEN
-               IF (IFNORX) CALL FACEV (WVX,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (IFNORY) CALL FACEV (WVY,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (IFNORZ) CALL FACEV (WVZ,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (.NOT.IFALGN) 
-     $         CALL FACZQN (WVX(1,1,1,IEL),WVY(1,1,1,IEL),
-     $                      WVZ(1,1,1,IEL),IFC,IEL)
-            ENDIF
-            IF (IFDSMV .OR. IFMELT) THEN
-               IF (IFNORX) CALL FACEV (WTX,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (IFNORY) CALL FACEV (WTY,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (IFNORZ) CALL FACEV (WTZ,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (.NOT.IFALGN) 
-     $         CALL FACZQN (WTX(1,1,1,IEL),WTY(1,1,1,IEL),
-     $                      WTZ(1,1,1,IEL),IFC,IEL)
-            ENDIF
-         ENDIF
-  330 CONTINUE
-C
-      DO 350 IEL=1,NEL
-      DO 350 IFC=1,NFACE
-         CB = CBC(IFC,IEL,IFIELD)
-         IF (CB.EQ.'FIX') THEN
-            IF (IFREGW) THEN
-               CALL FACEV (WVX,IEL,IFC,0.0,NX1,NY1,NZ1)
-               CALL FACEV (WVY,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (NDIM.EQ.3) CALL FACEV (WVZ,IEL,IFC,0.0,NX1,NY1,NZ1)
-            ENDIF
-            IF (IFDSMV .OR. IFMELT) THEN
-               CALL FACEV (WTX,IEL,IFC,0.0,NX1,NY1,NZ1)
-               CALL FACEV (WTY,IEL,IFC,0.0,NX1,NY1,NZ1)
-               IF (NDIM.EQ.3) CALL FACEV (WTZ,IEL,IFC,0.0,NX1,NY1,NZ1)
-            ENDIF
-         ENDIF
-  350 CONTINUE 
-C
-      IF (ISWEEP.EQ.1) THEN
-         IF (IFREGW) THEN
-            CALL DSOP (WVX,'MXA',NX1,NY1,NZ1)
-            CALL DSOP (WVY,'MXA',NX1,NY1,NZ1)
-            IF (NDIM.EQ.3) CALL DSOP (WVZ,'MXA',NX1,NY1,NZ1)
-         ENDIF
-         IF (IFDSMV .OR. IFMELT) THEN
-            CALL DSOP (WTX,'MXA',NX1,NY1,NZ1)
-            CALL DSOP (WTY,'MXA',NX1,NY1,NZ1)
-            IF (NDIM.EQ.3) CALL DSOP (WTZ,'MXA',NX1,NY1,NZ1)
-         ENDIF
-      ELSE
-         IF (IFREGW) THEN
-            CALL DSOP (WVX,'MNA',NX1,NY1,NZ1)
-            CALL DSOP (WVY,'MNA',NX1,NY1,NZ1)
-            IF (NDIM.EQ.3) CALL DSOP (WVZ,'MNA',NX1,NY1,NZ1)
-         ENDIF
-         IF (IFDSMV .OR. IFMELT) THEN
-            CALL DSOP (WTX,'MNA',NX1,NY1,NZ1)
-            CALL DSOP (WTY,'MNA',NX1,NY1,NZ1)
-            IF (NDIM.EQ.3) CALL DSOP (WTZ,'MNA',NX1,NY1,NZ1)
-         ENDIF
-      ENDIF
-C
- 1000 CONTINUE
-C
-      CALL RMASK (WX,WY,WZ,NEL)
-c     call outpost(wx,wy,wz,wtx,wtx,'   ')
-c     write(6,*) 'quit2'
-c     call exitt
-C
-      IF (IFREGW) THEN
-         CALL ADD2  (WX,WVX,NTOT1)
-         CALL ADD2  (WY,WVY,NTOT1)
-         IF (NDIM.EQ.3) CALL ADD2  (WZ,WVZ,NTOT1)
-      ENDIF
-      IF (IFDSMV .OR. IFMELT) THEN
-         CALL ADD2  (WX,WTX,NTOT1)
-         CALL ADD2  (WY,WTY,NTOT1)
-         IF (NDIM.EQ.3) CALL ADD2  (WZ,WTZ,NTOT1)
-      ENDIF
+        if (ifmelt .and. istep.gt.0) then
+           ifield = 2
+           call rzero (smt,n)
+           call cqnet (qni,ta,nel)
+           do 220 e=1,nelt
+           do 220 f=1,nface
+              cb   = cbc(f,e,ifield)
+              if (cb.eq.'MLI') call facsmt (smt(1,e),f)
+              if (cb.eq.'MLI' .or. cb.eq.'MCI') then
+                 call facexs (area(1,1,f,e),ta,f,1)
+                 call add2   (dsa(1,e),ta,nxyz1)
+              endif
+  220      continue
+           call dssum (smt,nx1,ny1,nz1)
+           call dssum (dsa,nx1,ny1,nz1)
+           do 280 e=1,nelt
+           do 280 f=1,nface
+              cb = cbc(f,e,ifield)
+              if (cb.eq.'MLI') then
+                 rhola = -0.5 * bc(5,f,e,ifield)
+                 call facemt (wtx(1,e),wty(1,e),wtz(1,e),
+     $                        rnx(1,e),rny(1,e),rnz(1,e),
+     $                        qni(1,e),dsa(1,e),smt(1,e),
+     $                        rhola,f)
+              endif
+  280      continue
+           call opdssum (wtx,wty,wtz)
+        endif
+
+        ifield = 0
+        do 330 e=1,nel
+        do 330 f=1,nface
+         cb = cbc(f,e,ifield)
+         if (cb.eq.'SYM') then
+            call chknord (ifalgn,ifnorx,ifnory,ifnorz,f,e)
+            if (ifregw) then
+               if (ifnorx) call facev (wvx,e,f,0.0,nx1,ny1,nz1)
+               if (ifnory) call facev (wvy,e,f,0.0,nx1,ny1,nz1)
+               if (ifnorz) call facev (wvz,e,f,0.0,nx1,ny1,nz1)
+               if (.not.ifalgn) call faczqn (wvx(1,e),wvy(1,e),
+     $                                       wvz(1,e),f,e)
+            endif
+            if (ifdsmv .or. ifmelt) then
+               if (ifnorx) call facev (wtx,e,f,0.0,nx1,ny1,nz1)
+               if (ifnory) call facev (wty,e,f,0.0,nx1,ny1,nz1)
+               if (ifnorz) call facev (wtz,e,f,0.0,nx1,ny1,nz1)
+               if (.not.ifalgn) call faczqn (wtx(1,e),wty(1,e),
+     $                                       wtz(1,e),f,e)
+            endif
+         endif
+  330   continue
+
+        do 350 e=1,nel
+        do 350 f=1,nface
+         cb = cbc(f,e,ifield)
+         if (cb.eq.'FIX') then
+            if (ifregw) then
+               call facev (wvx,e,f,0.0,nx1,ny1,nz1)
+               call facev (wvy,e,f,0.0,nx1,ny1,nz1)
+               if (ndim.eq.3) call facev (wvz,e,f,0.0,nx1,ny1,nz1)
+            endif
+            if (ifdsmv .or. ifmelt) then
+               call facev (wtx,e,f,0.0,nx1,ny1,nz1)
+               call facev (wty,e,f,0.0,nx1,ny1,nz1)
+               if (ndim.eq.3) call facev (wtz,e,f,0.0,nx1,ny1,nz1)
+            endif
+         endif
+  350   continue 
+
+        if (isweep.eq.1) then
+         if (ifregw) then
+            call dsop (wvx,'MXA',nx1,ny1,nz1)
+            call dsop (wvy,'MXA',nx1,ny1,nz1)
+            if (ndim.eq.3) call dsop (wvz,'MXA',nx1,ny1,nz1)
+         endif
+         if (ifdsmv .or. ifmelt) then
+            call dsop (wtx,'MXA',nx1,ny1,nz1)
+            call dsop (wty,'MXA',nx1,ny1,nz1)
+            if (ndim.eq.3) call dsop (wtz,'MXA',nx1,ny1,nz1)
+         endif
+        else
+         if (ifregw) then
+            call dsop (wvx,'MNA',nx1,ny1,nz1)
+            call dsop (wvy,'MNA',nx1,ny1,nz1)
+            if (ndim.eq.3) call dsop (wvz,'MNA',nx1,ny1,nz1)
+         endif
+         if (ifdsmv .or. ifmelt) then
+            call dsop (wtx,'MNA',nx1,ny1,nz1)
+            call dsop (wty,'MNA',nx1,ny1,nz1)
+            if (ndim.eq.3) call dsop (wtz,'MNA',nx1,ny1,nz1)
+         endif
+        endif
+
+ 1000 continue
+
+      call rmask (wx,wy,wz,nel)
+c     if (istep.eq.2) then
+c        call outpost(wx,wy,wz,wtx,wtx,'   ')
+c        write(6,*) 'quit2'
+c        stop
+c     endif
+
+      if (ifregw) then
+         call add2  (wx,wvx,n)
+         call add2  (wy,wvy,n)
+         if (ndim.eq.3) call add2  (wz,wvz,n)
+      endif
+      if (ifdsmv .or. ifmelt) then
+         call add2  (wx,wtx,n)
+         call add2  (wy,wty,n)
+         if (ndim.eq.3) call add2  (wz,wtz,n)
+      endif
  
-c     call outpost(wx,wy,wz,wtx,wtx,'   ')
-c     call exitt
+c     if (istep.gt.4) then
+c        call outpost(wx,wy,wz,wtx,wtx,'   ')
+c        write(6,*) 'quit3'
+c        stop
+c     endif
  
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine norcmp2(wvx,wvy,wvz,e,f)
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+
+
+      real wvx(lx1,ly1,lz1),wvy(lx1,ly1,lz1),wvz(lx1,ly1,lz1)
+
+      integer e,f
+
+      common /scruz/ r1(lx1,ly1,lz1),r2(lx1,ly1,lz1),r3(lx1,ly1,lz1)
+
+      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)
+
+      l=0
+      do k=k0,k1
+      do j=j0,j1
+      do i=i0,i1
+         l=l+1
+         scale=wvx(i,j,k)*unx(l,1,f,e)
+     $        +wvy(i,j,k)*uny(l,1,f,e)
+     $        +wvz(i,j,k)*unz(l,1,f,e)
+         wvx(i,j,k) = scale*unx(l,1,f,e)
+         wvy(i,j,k) = scale*uny(l,1,f,e)
+         wvz(i,j,k) = scale*unz(l,1,f,e)
+      enddo
+      enddo
+      enddo
+
+c     wvxm = vlamax(wvx,nx1*ny1)
+c     write(6,*) f,e,wvxm,' w-max'
+
       return
       end
 c-----------------------------------------------------------------------
@@ -731,11 +768,11 @@ c
       IFH2   = .FALSE.
       IFSOLV = .TRUE.
       IMSOLV = 0
-
-      vnu    = param(47)
-      if (vnu.eq.0) vnu = 0.4 ! Default value
+      VNU    = 0.0
+      VNU    = param(47)
+      if (vnu.eq.0) VNU    = 0.4
       vnu    = max(0.00,vnu)
-      vnu    = min(0.49,vnu)
+      vnu    = min(0.499,vnu)
 
 C     Set up elastic material constants
 
@@ -744,15 +781,22 @@ C     Set up elastic material constants
       C3 = 0.5 * CE
       CALL CFILL (H1,C2,NTOT1)
       CALL CFILL (H2,C3,NTOT1)
-C
+
 C     Solve for interior mesh velocities
-C
+
       CALL MESHTOL (AW1,TOLMSH,NEL,IMSOLV)
       IF (IMSOLV.EQ.1) return
-C
+
+
       CALL AXHMSF  (AW1,AW2,AW3,WX,WY,WZ,H1,H2,MATMOD)
-c     call outpost(wx,wy,wz,h1,h2,'   ')
-c     call exitt
+
+c     if (istep.eq.2) then
+c        call outpost(wx,wy,wz,h1,h2,'   ')
+c        call outpost(aw1,aw2,aw3,h1,h2,'   ')
+c        write(6,*) 'quit elas 1'
+c        stop
+c     endif
+
       CALL CHSIGN  (AW1,NTOT1)
       CALL CHSIGN  (AW2,NTOT1)
       IF (NDIM.EQ.3) CALL CHSIGN (AW3,NTOT1)

@@ -336,14 +336,15 @@ C
       INCLUDE 'MVGEOM'
       INCLUDE 'SOLN'
       INCLUDE 'TOPOL'
-C
+
       common  /nekcb/ cb
       character*3 cb
       character*1 cb1(3)
       equivalence (cb1,cb)
-c
+
       logical ifalgn,ifnorx,ifnory,ifnorz
-c
+      integer e,f
+
       NFACES=2*NDIM
       NXYZ  =NX1*NY1*NZ1
 
@@ -353,6 +354,15 @@ C
       IF (IFMVBD) THEN
          IFIELD = 0
          CALL STSMASK (W1MASK,W2MASK,W3MASK)
+         do e=1,nelv
+         do f=1,nfaces
+            if (cbc(f,e,1).eq.'msi'.or.cbc(f,e,1).eq.'msi') then
+               call facev(w1mask,e,f,0.0,nx1,ny1,nz1)
+               call facev(w2mask,e,f,0.0,nx1,ny1,nz1)
+               call facev(w3mask,e,f,0.0,nx1,ny1,nz1)
+            endif
+         enddo
+         enddo
       ENDIF
 C
 C     Masks for flow variables
@@ -1269,7 +1279,8 @@ C
                 CALL TRCON   (TRX,TRY,TRZ,BCN,BC2,BC3,IEL,IFC)
                 CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
              ENDIF
-             IF (CB.EQ.'ms '.or.cb.eq.'mm ') THEN
+c            IF (CB.EQ.'ms '.or.cb.eq.'mm ') THEN
+             IF (CB.EQ.'ms '.or.cb.eq.'msi') THEN
                 CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,NX1,NY1,NZ1)
                 CALL FACCVS  (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
                 CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)

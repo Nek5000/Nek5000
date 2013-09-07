@@ -1,242 +1,3 @@
-      SUBROUTINE STRESS (H1,H2,NEL,MATMOD,IFAXIS)
-C
-C     MATMOD.GE.0        Fluid material models
-C     MATMOD.LT.0        Solid material models
-C
-C     CAUTION : Stresses and strainrates share the same scratch commons
-C
-      INCLUDE 'SIZE'
-      COMMON /CTMP1/ TXX(LX1,LY1,LZ1,LELT)
-     $             , TXY(LX1,LY1,LZ1,LELT)
-     $             , TYY(LX1,LY1,LZ1,LELT)
-     $             , TZZ(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ TXZ(LX1,LY1,LZ1,LELT)
-     $             , TYZ(LX1,LY1,LZ1,LELT)
-      COMMON /SCRSF/ T11(LX1,LY1,LZ1,LELT)
-     $             , T22(LX1,LY1,LZ1,LELT)
-     $             , T33(LX1,LY1,LZ1,LELT)
-      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,3)
-     $             , HII(LX1,LY1,LZ1,LELT)
-C
-      DIMENSION H1(LX1,LY1,LZ1,1),H2(LX1,LY1,LZ1,1)
-      LOGICAL IFAXIS
-C
-      NTOT1 = NX1*NY1*NZ1*NEL
-C
-      IF (MATMOD.EQ.0) THEN
-C
-C        Newtonian fluids
-C
-         CONST = 2.0
-         CALL CMULT2 (HII,H1,CONST,NTOT1)
-         CALL COL2   (TXX,HII,NTOT1)
-         CALL COL2   (TXY,H1 ,NTOT1)
-         CALL COL2   (TYY,HII,NTOT1)
-         IF (IFAXIS .OR. NDIM.EQ.3) CALL COL2 (TZZ,HII,NTOT1)
-         IF (NDIM.EQ.3) THEN
-            CALL COL2 (TXZ,H1 ,NTOT1)
-            CALL COL2 (TYZ,H1 ,NTOT1)
-         ENDIF
-C
-      ELSEIF (MATMOD.EQ.-1) THEN
-C
-C        Elastic solids
-C
-         CONST = 2.0
-         CALL ADD3S   (HII,H1,H2,CONST,NTOT1)
-         CALL COPY    (T11,TXX,NTOT1)
-         CALL COPY    (T22,TYY,NTOT1)
-         CALL COL3    (TXX,HII,T11,NTOT1)
-         CALL ADDCOL3 (TXX,H1 ,T22,NTOT1)
-         CALL COL3    (TYY,H1 ,T11,NTOT1)
-         CALL ADDCOL3 (TYY,HII,T22,NTOT1)
-         CALL COL2    (TXY,H2     ,NTOT1)
-         IF (IFAXIS .OR. NDIM.EQ.3) THEN
-            CALL COPY (T33,TZZ,NTOT1)
-            CALL COL3    (TZZ,H1 ,T11,NTOT1)
-            CALL ADDCOL3 (TZZ,H1 ,T22,NTOT1)
-            CALL ADDCOL3 (TZZ,HII,T33,NTOT1)
-            CALL ADDCOL3 (TXX,H1 ,T33,NTOT1)
-            CALL ADDCOL3 (TYY,H1 ,T33,NTOT1)
-         ENDIF
-         IF (NDIM.EQ.3) THEN
-            CALL COL2 (TXZ,H2     ,NTOT1)
-            CALL COL2 (TYZ,H2     ,NTOT1)
-         ENDIF
-C
-      ENDIF
-C
-      RETURN
-      END
-      SUBROUTINE AIJUJ (AU1,AU2,AU3,NEL,IFAXIS)
-C
-      INCLUDE 'SIZE'
-      COMMON /CTMP1/ TXX(LX1,LY1,LZ1,LELT)
-     $             , TXY(LX1,LY1,LZ1,LELT)
-     $             , TYY(LX1,LY1,LZ1,LELT)
-     $             , TZZ(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ TXZ(LX1,LY1,LZ1,LELT)
-     $             , TYZ(LX1,LY1,LZ1,LELT)
-C
-      DIMENSION AU1(LX1,LY1,LZ1,1)
-     $        , AU2(LX1,LY1,LZ1,1)
-     $        , AU3(LX1,LY1,LZ1,1)
-      LOGICAL IFAXIS
-C
-      CALL TTXYZ (AU1,TXX,TXY,TXZ,NEL)
-      CALL TTXYZ (AU2,TXY,TYY,TYZ,NEL)
-      IF (IFAXIS)    CALL AXITZZ (AU2,TZZ,NEL)
-      IF (NDIM.EQ.3) CALL TTXYZ  (AU3,TXZ,TYZ,TZZ,NEL)
-C
-      RETURN
-      END
-      SUBROUTINE TTXYZ (FF,TX,TY,TZ,NEL)
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'DXYZ'
-      INCLUDE 'GEOM'
-      INCLUDE 'INPUT'
-      INCLUDE 'WZ'
-      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,3)
-     $             , WA(LX1,LY1,LZ1,LELT)
-      COMMON /SCRSF/ FR(LX1,LY1,LZ1,LELT)
-     $             , FS(LX1,LY1,LZ1,LELT)
-     $             , FT(LX1,LY1,LZ1,LELT)
-C
-      DIMENSION TX(LX1,LY1,LZ1,1)
-     $        , TY(LX1,LY1,LZ1,1)
-     $        , TZ(LX1,LY1,LZ1,1)
-     $        , FF(LX1,LY1,LZ1,1)
-      DIMENSION YS(LX1)
-      EQUIVALENCE (YS(1),FT(1,1,1,1))
-C
-      NXYZ1 = NX1*NY1*NZ1
-      NTOT1 = NXYZ1*NEL
-C
-      CALL COL3    (FR,RXM1,TX,NTOT1)
-      CALL ADDCOL3 (FR,RYM1,TY,NTOT1)
-      CALL COL3    (FS,SXM1,TX,NTOT1)
-      CALL ADDCOL3 (FS,SYM1,TY,NTOT1)
-C
-      IF (NDIM.EQ.3) THEN
-         CALL ADDCOL3 (FR,RZM1,TZ,NTOT1)
-         CALL ADDCOL3 (FS,SZM1,TZ,NTOT1)
-         CALL COL3    (FT,TXM1,TX,NTOT1)
-         CALL ADDCOL3 (FT,TYM1,TY,NTOT1)
-         CALL ADDCOL3 (FT,TZM1,TZ,NTOT1)
-      ENDIF
-C
-      IF (IFAXIS) THEN
-         DO 100 IEL=1,NEL
-         IF ( IFRZER(IEL) ) THEN
-            CALL MXM (YM1(1,1,1,IEL),NX1,DATM1,NY1,YS,1)
-            DO 120 IX=1,NX1
-               IY = 1
-               WA(IX,IY,1,IEL)=YS(IX)*W2AM1(IX,IY)
-            DO 120 IY=2,NY1
-               DNR = 1.0 + ZAM1(IY)
-               WA(IX,IY,1,IEL)=YM1(IX,IY,1,IEL)*W2AM1(IX,IY)/DNR
-  120       CONTINUE
-         ELSE
-            CALL COL3 (WA(1,1,1,IEL),YM1(1,1,1,IEL),W2CM1,NXYZ1)
-         ENDIF
-  100    CONTINUE
-      ELSE
-         DO 180 IEL=1,NEL
-            CALL COPY (WA(1,1,1,IEL),W3M1,NXYZ1)
-  180    CONTINUE
-      ENDIF
-C
-      CALL COL2 (FR,WA,NTOT1)      
-      CALL COL2 (FS,WA,NTOT1)      
-      IF (NDIM.EQ.3) CALL COL2 (FT,WA,NTOT1)
-C
-      DO 200 IEL=1,NEL
-         IF (IFAXIS) CALL SETAXDY ( IFRZER(IEL) )
-         CALL TTRST (FF(1,1,1,IEL),FR(1,1,1,IEL),FS(1,1,1,IEL),
-     $               FT(1,1,1,IEL),WA(1,1,1,IEL))
-  200 CONTINUE
-C
-      RETURN
-      END
-      SUBROUTINE TTRST (FF,FR,FS,FT,TA)
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'DXYZ'
-C
-      DIMENSION FF(LX1,LY1,LZ1)
-     $        , FR(LX1,LY1,LZ1)
-     $        , FS(LX1,LY1,LZ1)
-     $        , FT(LX1,LY1,LZ1)
-     $        , TA(LX1,LY1,LZ1)
-C
-      NXY1  = NX1*NY1
-      NYZ1  = NY1*NZ1
-      NXYZ1 = NXY1*NZ1
-C
-      CALL MXM (DXTM1,NX1,FR,NX1,FF,NYZ1)
-      IF (NDIM.EQ.2) THEN
-         CALL MXM  (FS,NX1,DYM1,NY1,TA,NY1)
-         CALL ADD2 (FF,TA,NXYZ1)
-      ELSE
-         DO 10 IZ=1,NZ1
-         CALL MXM  (FS(1,1,IZ),NX1,DYM1,NY1,TA(1,1,IZ),NY1)
-   10    CONTINUE
-         CALL ADD2 (FF,TA,NXYZ1)
-         CALL MXM  (FT,NXY1,DZM1,NZ1,TA,NZ1)
-         CALL ADD2 (FF,TA,NXYZ1)
-      ENDIF
-C
-      RETURN
-      END
-      SUBROUTINE AXITZZ (VFY,TZZ,NEL)
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'DXYZ'
-      INCLUDE 'GEOM'
-      INCLUDE 'WZ'
-      COMMON /CTMP0/ PHI(LX1,LY1)
-C
-      DIMENSION VFY(LX1,LY1,LZ1,1)
-     $        , TZZ(LX1,LY1,LZ1,1)
-C
-      NXYZ1 = NX1*NY1*NZ1
-C
-      DO 100 IEL=1,NEL
-         CALL SETAXW1 ( IFRZER(IEL) )
-         CALL COL4 (PHI,TZZ(1,1,1,IEL),JACM1(1,1,1,IEL),W3M1,NXYZ1)
-         IF ( IFRZER(IEL) ) THEN
-            DO 120 IX=1,NX1
-            DO 120 IY=2,NY1
-               DNR = PHI(IX,IY)/( 1.0 + ZAM1(IY) )
-               DDS = WXM1(IX) * WAM1(1) * DATM1(IY,1) *
-     $               JACM1(IX,1,1,IEL) * TZZ(IX,1,1,IEL)
-               VFY(IX,IY,1,IEL)=VFY(IX,IY,1,IEL) + DNR + DDS
-  120       CONTINUE
-         ELSE
-            CALL ADD2 (VFY(1,1,1,IEL),PHI,NXYZ1)
-         ENDIF
-  100 CONTINUE
-C
-      RETURN
-      END
-      SUBROUTINE SETAXDY (IFAXDY)
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'DXYZ'
-C
-      LOGICAL IFAXDY
-C
-      IF (IFAXDY) THEN
-         CALL COPY (DYM1 ,DAM1 ,NY1*NY1)
-         CALL COPY (DYTM1,DATM1,NY1*NY1)
-      ELSE
-         CALL COPY (DYM1 ,DCM1 ,NY1*NY1)
-         CALL COPY (DYTM1,DCTM1,NY1*NY1)
-      ENDIF
-C
-      RETURN
-      END
       SUBROUTINE SETAXW1 (IFAXWG)
 C
       INCLUDE 'SIZE'
@@ -274,15 +35,15 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-      COMMON /SCREV/ EI2(LX1,LY1,LZ1,LELT)
-     $             , EI3(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP1/ EXX(LX1,LY1,LZ1,LELT)
-     $             , EXY(LX1,LY1,LZ1,LELT)
-     $             , EYY(LX1,LY1,LZ1,LELT)
-     $             , EZZ(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ EXZ(LX1,LY1,LZ1,LELT)
-     $             , EYZ(LX1,LY1,LZ1,LELT)
-C
+      common /screv/ ei2(lx1,ly1,lz1,lelt)
+     $             , ei3(lx1,ly1,lz1,lelt)
+      common /ctmp1/ exx(lx1,ly1,lz1,lelt)
+     $             , exy(lx1,ly1,lz1,lelt)
+     $             , eyy(lx1,ly1,lz1,lelt)
+     $             , ezz(lx1,ly1,lz1,lelt)
+      common /ctmp0/ exz(lx1,ly1,lz1,lelt)
+     $             , eyz(lx1,ly1,lz1,lelt)
+c
       NTOT1  = NX1*NY1*NZ1*NELV
       CALL RZERO (EI2,NTOT1)
       CALL RZERO (EI3,NTOT1)
@@ -498,12 +259,12 @@ C-----------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
       INCLUDE 'WZ'
-      COMMON /SCRMG/ AE1(LX1,LY1,LZ1,LELV)
-     $             , AE2(LX1,LY1,LZ1,LELV)
-     $             , AE3(LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/ E1(LX1,LY1,LZ1,LELV)
-     $             , E2(LX1,LY1,LZ1,LELV)
-     $             , E3(LX1,LY1,LZ1,LELV)
+      common /scrmg/ ae1(lx1,ly1,lz1,lelv)
+     $             , ae2(lx1,ly1,lz1,lelv)
+     $             , ae3(lx1,ly1,lz1,lelv)
+      common /scruz/ e1(lx1,ly1,lz1,lelv)
+     $             , e2(lx1,ly1,lz1,lelv)
+     $             , e3(lx1,ly1,lz1,lelv)
 C
       DIMENSION H1(LX1,LY1,LZ1,1),H2(LX1,LY1,LZ1,1)
 C
@@ -672,12 +433,12 @@ C------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'MASS'
       INCLUDE 'SOLN'
-      COMMON /SCRMG/ AE1(LX1,LY1,LZ1,LELV)
-     $             , AE2(LX1,LY1,LZ1,LELV)
-     $             , AE3(LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/ E1(LX1,LY1,LZ1,LELV)
-     $             , E2(LX1,LY1,LZ1,LELV)
-     $             , E3(LX1,LY1,LZ1,LELV)
+      common /scrmg/ ae1(lx1,ly1,lz1,lelv)
+     $             , ae2(lx1,ly1,lz1,lelv)
+     $             , ae3(lx1,ly1,lz1,lelv)
+      common /scruz/ e1(lx1,ly1,lz1,lelv)
+     $             , e2(lx1,ly1,lz1,lelv)
+     $             , e3(lx1,ly1,lz1,lelv)
 C
       NTOT1 = NX1*NY1*NZ1*NELV
       CALL RZERO3 (E1 ,E2 ,E3 ,NTOT1)
@@ -972,8 +733,8 @@ C
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
       include 'INPUT'
-      COMMON /SCRVH/ HVMASK(LX1,LY1,LZ1,LELT)
-      COMMON /SCREV/ HFMASK(LX1,LZ1,6,LELT)
+      common /screv/ hfmask(lx1,lz1,6,lelt)
+     $             , hvmask(lx1,ly1,lz1,lelt)
 C
       DIMENSION C1MASK(LX1,LY1,LZ1,1)
      $        , C2MASK(LX1,LY1,LZ1,1)
@@ -1006,8 +767,8 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      COMMON /SCRVH/ HVMASK(LX1,LY1,LZ1,LELT)
-      COMMON /SCREV/ HFMASK(LX1,LZ1,6,LELT)
+      common /screv/ hfmask(lx1,lz1,6,lelt)
+     $             , hvmask(lx1,ly1,lz1,lelt)
 C
       IF (.NOT.IFLMSF(IFLD)) RETURN
 C
@@ -1121,7 +882,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1196,7 +957,7 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1326,7 +1087,7 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1390,8 +1151,8 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      COMMON /SCRCG/  VNMAG(LX1,LY1,LZ1,LELT)
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /scrcg/  vnmag(lx1,ly1,lz1,lelt)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1554,7 +1315,7 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1601,7 +1362,7 @@ C
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1682,7 +1443,7 @@ C
       SUBROUTINE SETCDAT 
 C
       INCLUDE 'SIZE'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1960,7 +1721,7 @@ C
       SUBROUTINE EDGINDF (LF1,LF2,LFSKIP,ISD,IFCN)
 C
       INCLUDE 'SIZE'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -1985,8 +1746,8 @@ C
       SUBROUTINE EDGINDV (LV1,LV2,LVSKIP,ISD)
 C
       INCLUDE 'SIZE'
-      COMMON /INDXFC/ MCRFC(4,6)
-     $              , MFCCR(3,8)
+      common /indxfc/ mcrfc(4,6)
+     $              , mfccr(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
      $              , MCREG(2,12)
@@ -2037,10 +1798,10 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-      COMMON /SCRSF/ A1MASK(LX1,LY1,LZ1,LELT)
-     $             , A2MASK(LX1,LY1,LZ1,LELT)
-     $             , A3MASK(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ WA(LX1,LY1,LZ1,LELT)
+      common /scrsf/ a1mask(lx1,ly1,lz1,lelt)
+     $             , a2mask(lx1,ly1,lz1,lelt)
+     $             , a3mask(lx1,ly1,lz1,lelt)
+      common /ctmp0/ wa(lx1,ly1,lz1,lelt)
 C
       DIMENSION VB1(LX1,LY1,LZ1,1)
      $        , VB2(LX1,LY1,LZ1,1)
@@ -2112,9 +1873,9 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      COMMON /CTMP1/ S1(LX1,LY1,LZ1,LELT)
-     $             , S2(LX1,LY1,LZ1,LELT)
-     $             , S3(LX1,LY1,LZ1,LELT)
+      common /ctmp1/ s1(lx1,ly1,lz1,lelt)
+     $             , s2(lx1,ly1,lz1,lelt)
+     $             , s3(lx1,ly1,lz1,lelt)
 C
       DIMENSION R1(LX1,LY1,LZ1,1)
      $        , R2(LX1,LY1,LZ1,1)
@@ -2301,7 +2062,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -2346,7 +2107,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      COMMON /INDXFC/ MCRFC(4,6)
+      common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
      $              , MFCEG(2,12)
@@ -2433,59 +2194,46 @@ c     calculate surface normal
 
       subroutine fixmska (c1mask,c2mask,c3mask)
 
-c	fixes masks for A/SYM face corners
+c     fixes masks for A/SYM face corners
 
       include 'SIZE'
       include 'INPUT'
  
-      dimension   c1mask(lx1,ly1,lz1,1)
-     $           ,c2mask(lx1,ly1,lz1,1)
-     $           ,c3mask(lx1,ly1,lz1,1)
+      real   c1mask(lx1,ly1,lz1,1)
+     $      ,c2mask(lx1,ly1,lz1,1)
+     $      ,c3mask(lx1,ly1,lz1,1)
 
-      common /scrvh/ im1(lx1,ly1,lz1,lelv)
-     $              ,im2(lx1,ly1,lz1,lelv)
+      common /ctmp0/ im1(lx1,ly1,lz1),im2(lx1,ly1,lz1)
+      integer e,f,val,im1,im2
 
-      integer e,f,val
       character*3 cb
 
-      ntotv = nx1*ny1*nz1*nelv
+      n = nx1*ny1*nz1
 
-      call rzero (im1,ntotv)
-      call rzero (im2,ntotv)
-
-      val = 1
       do e=1,nelv
-      do f=1,ndim*2
-         cb  = cbc (f,e,1)
-         if (cb.eq.'SYM')  call ifacev(im1,e,f,val,nx1,ny1,nz1)
-      enddo
-      enddo
+         call izero (im1,n)
+         call izero (im2,n)
+         do f=1,nface
+            cb  = cbc (f,e,1)
+            if (cb.eq.'SYM')  call iface_e(im1,f,1,nx1,ny1,nz1)
+            if (cb.eq.'A  ')  call iface_e(im2,f,2,nx1,ny1,nz1)
+         enddo
+         call icol2(im2,im1,n)
 
-      val = 2
-      do e=1,nelv
-      do f=1,ndim*2
-         cb  = cbc (f,e,1)
-         if (cb.eq.'A  ')  call ifacev(im2,e,f,val,nx1,ny1,nz1)
-      enddo
-      enddo
-
-      call icol2(im2,im1,ntotv)
-
-      k = 1
-      do e=1,nelv
-      do j=1,ny1,ny1-1
-      do i=1,nx1,nx1-1
-         if  ( im2(i,j,k,e) .eq. 2) then  ! corner of SYM & 'A  ' faces
-            c1mask(i,j,k,e) = 0. 
-            c2mask(i,j,k,e) = 0. 
-         endif
-      enddo
-      enddo
+         k = 1
+         do j=1,ny1,ny1-1
+         do i=1,nx1,nx1-1
+            if  ( im2(i,j,k) .eq. 2) then  ! corner of SYM & 'A  ' faces
+               c1mask(i,j,k,e) = 0. 
+               c2mask(i,j,k,e) = 0. 
+            endif
+         enddo
+         enddo
       enddo
 
       return
       end
-
+c-----------------------------------------------------------------------
       subroutine icol2(a,b,n)
       integer a(1),b(1)
 
@@ -2495,3 +2243,68 @@ c	fixes masks for A/SYM face corners
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine iface_e(a,iface,val,nx,ny,nz)
+
+C     Assign the value VAL to face(IFACE,IE) of array A.
+C     IFACE is the input in the pre-processor ordering scheme.
+
+      include 'SIZE'
+      integer a(nx,ny,nz),val
+      call facind (kx1,kx2,ky1,ky2,kz1,kz2,nx,ny,nz,iface)
+      do 100 iz=kz1,kz2
+      do 100 iy=ky1,ky2
+      do 100 ix=kx1,kx2
+         a(ix,iy,iz)=val
+  100 continue
+      return
+      end
+c-----------------------------------------------------------------------
+      function op_vlsc2_wt(b1,b2,b3,x1,x2,x3,wt)
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      real b1(1),b2(1),b3(1),x1(1),x2(1),x3(1),wt(1)
+
+      nel = nelfld(ifield)
+      n   = nx1*ny1*nz1*nel
+
+      s = 0
+      if (if3d) then
+         do i=1,n
+            s=s+wt(i)*(b1(i)*x1(i)+b2(i)*x2(i)+b3(i)*x3(i))
+         enddo
+      else
+         do i=1,n
+            s=s+wt(i)*(b1(i)*x1(i)+b2(i)*x2(i))
+         enddo
+      endif
+      op_vlsc2_wt = s
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      function op_glsc2_wt(b1,b2,b3,x1,x2,x3,wt)
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      real b1(1),b2(1),b3(1),x1(1),x2(1),x3(1),wt(1)
+
+      nel = nelfld(ifield)
+      n   = nx1*ny1*nz1*nel
+
+      s = 0
+      if (if3d) then
+         do i=1,n
+            s=s+wt(i)*(b1(i)*x1(i)+b2(i)*x2(i)+b3(i)*x3(i))
+         enddo
+      else
+         do i=1,n
+            s=s+wt(i)*(b1(i)*x1(i)+b2(i)*x2(i))
+         enddo
+      endif
+      op_glsc2_wt = glsum(s,1)
+      
+      return
+      end
+c-----------------------------------------------------------------------
