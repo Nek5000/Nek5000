@@ -191,7 +191,7 @@ fi
 case $F77comp in
   *pgf*)        P="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   P="-fdefault-real-8 -x f77-cpp-input"
+  *gfortran*)   P="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
                ;;
   *ifort*)      P="-r8 -fpconstant -fpp"
                ;;
