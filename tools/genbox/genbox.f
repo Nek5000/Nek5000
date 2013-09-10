@@ -136,7 +136,14 @@ c     here is where the 2d/3d determination is made....
         call byte_open('box.re2' // char(0))
       endif
       ndim = abs(ndim)
-      if (ndim.eq.3) if3d = .true.
+      if (ndim.eq.3) then 
+          if3d = .true.
+      elseif(ndim.ne.2) then
+          write(6,*) "Original .rea file has invalid NDIM -- ",ndim
+          write(6,*) "********Setting new NDIM = 2************* "
+          ndim = 2
+      endif
+      
 c-----------------------------------------------------------------------
 c     here is where the fluid, fluid+heat, mhd determination is made....
       call getr1(rfld,iend,7)

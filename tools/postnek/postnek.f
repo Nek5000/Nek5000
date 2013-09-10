@@ -2104,7 +2104,7 @@ c 423       continue
       call prs('XYZ Min,Max:$')
       call prrr(xxmin,xxmax)
       call prrr(yymin,yymax)
-      call prrr(ZZmin,ZZmax)
+      if(ndim.eq.3) call prrr(ZZmin,ZZmax)
 C     Read curved side data
       if (iffmtin) then
          READ(9,*,err=7201,end=7201)
@@ -2342,7 +2342,7 @@ C     Read output specs
       IF(IPSCO .GT.0)THEN
          DO 1221 I=1,IPSCO
 c           READ(9,'(1X,L1,1X,A5)',ERR=51,END=51) IFPSCO(I),PSNAME(I)
-c           READ(9,*) IFPSCO(I)
+            READ(9,*) IFPSCO(I)
 1221     CONTINUE
       ENDIF
 C     OBJECT SPECIFICATION DATA
