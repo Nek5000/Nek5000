@@ -24,7 +24,7 @@ configure_file (
   "${PROJECT_BINARY_DIR}/nek_config.h"
   )
 
-add_library (nek_intp sort.c sarray_sort.c obbox.c tensor.c poly.c lob_bnd.c findpts_el_3.c findpts_el_2.c fail.c comm.c gs_local.c ext/findpts_local_ext.c)
+add_library (nek_intp sort.c sarray_sort.c obbox.c tensor.c poly.c lob_bnd.c findpts_el_3.c findpts_el_2.c fail.c comm.c gs_local.c findpts_local.c ext/findpts_local_ext.c)
 
 install (TARGETS nek_intp DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/nek_config.h" DESTINATION include/nek)
