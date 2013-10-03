@@ -149,12 +149,13 @@ static void comm_init_check_(struct comm *c, MPI_Fint ce, uint np,
   comm_init(c,MPI_Comm_f2c(ce));
   if(c->np != np)
     fail(1,file,line,"comm_init_check: passed P=%u, "
-                     "but MPI_Comm_size gives P=%u",np,c->np);
+                     "but MPI_Comm_size gives P=%u",
+                     (unsigned)np,(unsigned)c->np);
 #else
   comm_init(c,0);
   if(np != 1)
     fail(1,file,line,"comm_init_check: passed P=%u, "
-                     "but not compiled with -DMPI",np);
+                     "but not compiled with -DMPI",(unsigned)np);
 #endif
 }
 #define comm_init_check(c,ce,np) comm_init_check_(c,ce,np,__FILE__,__LINE__)
