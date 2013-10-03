@@ -5,7 +5,7 @@
 #define PREC_BITS 256
 #define DIGITS 50
 
-#define GLL_LAG_FIX_MAX 16
+#define GLL_LAG_FIX_MAX 24
 
 #if 1
 #  define STATIC "static "
