@@ -486,7 +486,7 @@ if [ -f "./SIZE" ]; then
   if [ $? -ne 0 ]; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
-     echo '      parameter(lpart = 1  ) ! max number of particles' >>SIZE
+     echo '      parameter(lpart = 1  ) ! max number of particles/proc' >>SIZE
   fi
   cat SIZE | grep -i 'ax1' >/dev/null
   if [ $? -ne 0 ]; then
