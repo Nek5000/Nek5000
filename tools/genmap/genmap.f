@@ -489,8 +489,10 @@ c
 
       call cscan(string,'BOUNDARY',8) ! for now, fluid only
 
+
       npass = 1
       if (nelt.gt.nelv) npass = 2
+c     write(6,*) nelt,nelv,' NELT/V'
 
       do kpass = 1,npass
 
@@ -504,7 +506,7 @@ c
          endif
 
          nel=nelv
-         if (ipass.eq.2) nel=nelt
+         if (kpass.eq.2) nel=nelt
          call rd_bc(cbc,bc,nel,ndim,ifield,10)
 
       enddo
@@ -519,7 +521,9 @@ c     .Read Boundary Conditions (and connectivity data)
       character*3 cbc(6,nel)
       real*8      bc(5,6,nel)
       integer e,f
-C
+
+c     write(6,*) 'inside rd_bc: ',nel,ndim,ifield,io
+
       nbcrea = 5
       nface  = 2*ndim
       do e=1,nel
@@ -545,7 +549,7 @@ C
      $      cbc(f,e),id1,(bc(ii,f,e),ii=1,nbcrea)
    53       format(1x,a3,i12,5g18.11)
          endif
-c        write(6,*) e,f,' ',cbc(f,e),' BC IN?'
+c        write(6,*) e,f,' ',cbc(f,e),' BC IN?',nel,ifield
       enddo
       enddo
 
@@ -2042,7 +2046,10 @@ c        write(6,*) cb,e,f,' cb'
            ke = abs(bc(1,jf,je))
            kf = bc(2,jf,je)
            kf = efaci(kf)
-            
+
+c          write(26,26)   e,f,cb,je,jf,cj,ke,kf,nel
+c  26      format(i9,i2,1x,a3,i9,i2,1x,a3,i9,i2)
+
            if (bc(1,f,e).gt.0 .and. bc(1,jf,je).gt.0) then
               if (ke.ne.e .or. kf.ne.f .or. cj.ne.'P  ') then
                write(6,*)
@@ -2097,6 +2104,7 @@ c
       enddo
 
       write(6,*) 'done periodic vtx'
+
       return
       end
 c-----------------------------------------------------------------------
@@ -4432,14 +4440,16 @@ c     cell   : global vertex numbering
               ilast  = share(k)
               if(n_is_3) then  !FAIL
                  n_fail = share(k-1)
-c                write(6,*) "MISSING FACE CONNECTION   ",i,f,n_fail
+                 write(6,6) f,i,n_fail,k,n_shared
+    6            format('MISSING FACE CONNECTION  a',i3,2i10,i4,i3)
+                 write(6,*) (share(kk),kk=1,n_shared)
                  goto 10
               endif
             endif
          enddo
          if (n_is_3) then !FAIL
             n_fail = share(k-1)
-c           write(6,*) "MISSING FACE CONNECTION   ",i,f,n_fail
+            write(6,*) 'MISSING FACE CONNECTION  b',i,f,n_fail,k
             goto 10
          endif
       enddo
@@ -4548,4 +4558,3 @@ C
       return
       end
 c-----------------------------------------------------------------------
-
