@@ -194,30 +194,22 @@ c-----------------------------------------------------------------------
         if(nid.eq.0) write(6,'(/,A,/)') 'Starting time loop ...'
       endif
 
-#ifdef PAPI
-      call nek_flops(papi_flops,papi_mflops)
-#endif
-#ifdef HPCT
-      call summary_start()
-      call hpm_start("nek_advance")
-#endif
       isyc  = 0
       itime = 0
       if(ifsync) isyc=1
-#ifndef NOTIMER
       itime = 1
-#endif
       call nek_comm_settings(isyc,itime)
 
       call nek_comm_startstat()
 
-      DO ISTEP=1,NSTEPS
-         call nek_advance
+      msteps = 1
+      do kstep=1,nsteps,msteps
+         call nek__multi_advance(kstep,msteps)
          call userchk
          call prepost (.false.,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001
-      ENDDO
+      enddo
  1001 lastep=1
 
 
@@ -238,10 +230,6 @@ c     check for post-processing mode
      $      'end of time-step loop' 
       endif
 
-#ifdef HPCT
-      call hpm_stop("nek_advance")
-      call summary_stop()
-#endif
 
       RETURN
       END
@@ -320,6 +308,19 @@ c-----------------------------------------------------------------------
 
    
       call in_situ_end()
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nek__multi_advance(kstep,msteps)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      do i=1,msteps
+         istep = istep+i
+         call nek_advance
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------

@@ -1906,7 +1906,7 @@ c
      $ ,             ZM3 (LX1,LY1,LZ1,LELT)
 C
 c
-      if(nid.eq.0) write(6,*) 'regenerate geomerty data',icall
+      if(nid.eq.0) write(6,*) 'regenerate geometry data',icall
 
       ntot = nx1*ny1*nz1*nelt
 c
@@ -1929,7 +1929,7 @@ c
       CALL SFASTAX
 c
       if(nid.eq.0) then
-        write(6,*) 'done :: regenerate geomerty data',icall
+        write(6,*) 'done :: regenerate geometry data',icall
         write(6,*) ' '
       endif
 
