@@ -106,163 +106,161 @@ C
       REAL           DUAX  (LX1)
       REAL           YSM1  (LX1)
       EQUIVALENCE    (DUDR,TM1),(DUDS,TM2),(DUDT,TM3)
-C
-      IF(IMESH.EQ.1) NEL=NELV
-      IF(IMESH.EQ.2) NEL=NELT
+
+      integer e
+
+      nel=nelt
+      if (imesh.eq.1) nel=nelv
+
       NXY=NX1*NY1
       NYZ=NY1*NZ1
       NXZ=NX1*NZ1
       NXYZ=NX1*NY1*NZ1
       NTOT=NXYZ*NEL
-C
-#ifndef NOTIMER
+
       if (icalld.eq.0) taxhm=0.0
       icalld=icalld+1
       naxhm=icalld
       etime1=dnekclock()
-#endif
-C
+
       IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
       CALL RZERO (AU,NTOT)
+
+      do 100 e=1,nel
 C
-      DO 100 IEL=1,NEL
-        ie=iel
-C
-        IF (IFAXIS) CALL SETAXDY ( IFRZER(IEL) )
+        if (ifaxis) call setaxdy ( ifrzer(e) )
 C
         IF (NDIM.EQ.2) THEN
 C
 C       2-d case ...............
 C
-           IF (IFFAST(IEL)) THEN
+           if (iffast(e)) then
 C
 C          Fast 2-d mode: constant properties and undeformed element
 C
-           H1 = HELM1(1,1,1,IEL)
-           CALL MXM   (WDDX,NX1,U(1,1,1,IEL),NX1,TM1,NYZ)
-           CALL MXM   (U(1,1,1,IEL),NX1,WDDYT,NY1,TM2,NY1)
-           CALL COL2  (TM1,G4M1(1,1,1,IEL),NXYZ)
-           CALL COL2  (TM2,G5M1(1,1,1,IEL),NXYZ)
-           CALL ADD3  (AU(1,1,1,IEL),TM1,TM2,NXYZ)
-           CALL CMULT (AU(1,1,1,IEL),H1,NXYZ)
+           h1 = helm1(1,1,1,e)
+           call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
+           call mxm   (u(1,1,1,e),nx1,wddyt,ny1,tm2,ny1)
+           call col2  (tm1,g4m1(1,1,1,e),nxyz)
+           call col2  (tm2,g5m1(1,1,1,e),nxyz)
+           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+           call cmult (au(1,1,1,e),h1,nxyz)
 C
-           ELSE
+           else
 C
 C          General case, speed-up for undeformed elements
 C
-           CALL MXM  (DXM1,NX1,U(1,1,1,IEL),NX1,DUDR,NYZ)
-           CALL MXM  (U(1,1,1,IEL),NX1,DYTM1,NY1,DUDS,NY1)
-           CALL COL3 (TMP1,DUDR,G1M1(1,1,1,IEL),NXYZ)
-           CALL COL3 (TMP2,DUDS,G2M1(1,1,1,IEL),NXYZ)
-           IF (IFDFRM(IEL)) THEN
-              CALL ADDCOL3 (TMP1,DUDS,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDR,G4M1(1,1,1,IEL),NXYZ)
-           ENDIF
-           CALL COL2 (TMP1,HELM1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP2,HELM1(1,1,1,IEL),NXYZ)
-           CALL MXM  (DXTM1,NX1,TMP1,NX1,TM1,NYZ)
-           CALL MXM  (TMP2,NX1,DYM1,NY1,TM2,NY1)
-           CALL ADD2 (AU(1,1,1,IEL),TM1,NXYZ)
-           CALL ADD2 (AU(1,1,1,IEL),TM2,NXYZ)
+           call mxm  (dxm1,nx1,u(1,1,1,e),nx1,dudr,nyz)
+           call mxm  (u(1,1,1,e),nx1,dytm1,ny1,duds,ny1)
+           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+           endif
+           call col2 (tmp1,helm1(1,1,1,e),nxyz)
+           call col2 (tmp2,helm1(1,1,1,e),nxyz)
+           call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
+           call mxm  (tmp2,nx1,dym1,ny1,tm2,ny1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+
+        endif
 C
-        ENDIF
-C
-        ELSE
+        else
 C
 C       3-d case ...............
 C
-           IF (IFFAST(IEL)) THEN
+           if (iffast(e)) then
 C
 C          Fast 3-d mode: constant properties and undeformed element
 C
-           H1 = HELM1(1,1,1,IEL)
-           CALL MXM   (WDDX,NX1,U(1,1,1,IEL),NX1,TM1,NYZ)
-           DO 5 IZ=1,NZ1
-           CALL MXM   (U(1,1,IZ,IEL),NX1,WDDYT,NY1,TM2(1,1,IZ),NY1)
- 5         CONTINUE
-           CALL MXM   (U(1,1,1,IEL),NXY,WDDZT,NZ1,TM3,NZ1)
-           CALL COL2  (TM1,G4M1(1,1,1,IEL),NXYZ)
-           CALL COL2  (TM2,G5M1(1,1,1,IEL),NXYZ)
-           CALL COL2  (TM3,G6M1(1,1,1,IEL),NXYZ)
-           CALL ADD3  (AU(1,1,1,IEL),TM1,TM2,NXYZ)
-           CALL ADD2  (AU(1,1,1,IEL),TM3,NXYZ)
-           CALL CMULT (AU(1,1,1,IEL),H1,NXYZ)
+           h1 = helm1(1,1,1,e)
+           call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
+           do 5 iz=1,nz1
+           call mxm   (u(1,1,iz,e),nx1,wddyt,ny1,tm2(1,1,iz),ny1)
+ 5         continue
+           call mxm   (u(1,1,1,e),nxy,wddzt,nz1,tm3,nz1)
+           call col2  (tm1,g4m1(1,1,1,e),nxyz)
+           call col2  (tm2,g5m1(1,1,1,e),nxyz)
+           call col2  (tm3,g6m1(1,1,1,e),nxyz)
+           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+           call add2  (au(1,1,1,e),tm3,nxyz)
+           call cmult (au(1,1,1,e),h1,nxyz)
 C
-           ELSE
+           else
 C
 C          General case, speed-up for undeformed elements
 C
-           CALL MXM(DXM1,NX1,U(1,1,1,IEL),NX1,DUDR,NYZ)
-           DO 10 IZ=1,NZ1
-              CALL MXM(U(1,1,IZ,IEL),NX1,DYTM1,NY1,DUDS(1,1,IZ),NY1)
-   10      CONTINUE
-           CALL MXM     (U(1,1,1,IEL),NXY,DZTM1,NZ1,DUDT,NZ1)
-           CALL COL3    (TMP1,DUDR,G1M1(1,1,1,IEL),NXYZ)
-           CALL COL3    (TMP2,DUDS,G2M1(1,1,1,IEL),NXYZ)
-           CALL COL3    (TMP3,DUDT,G3M1(1,1,1,IEL),NXYZ)
-           IF (IFDFRM(IEL)) THEN
-              CALL ADDCOL3 (TMP1,DUDS,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP1,DUDT,G5M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDR,G4M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP2,DUDT,G6M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP3,DUDR,G5M1(1,1,1,IEL),NXYZ)
-              CALL ADDCOL3 (TMP3,DUDS,G6M1(1,1,1,IEL),NXYZ)
-           ENDIF
-           CALL COL2 (TMP1,HELM1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP2,HELM1(1,1,1,IEL),NXYZ)
-           CALL COL2 (TMP3,HELM1(1,1,1,IEL),NXYZ)
-           CALL MXM  (DXTM1,NX1,TMP1,NX1,TM1,NYZ)
-           DO 20 IZ=1,NZ1
-              CALL MXM(TMP2(1,1,IZ),NX1,DYM1,NY1,TM2(1,1,IZ),NY1)
-   20      CONTINUE
-           CALL MXM  (TMP3,NXY,DZM1,NZ1,TM3,NZ1)
-           CALL ADD2 (AU(1,1,1,IEL),TM1,NXYZ)
-           CALL ADD2 (AU(1,1,1,IEL),TM2,NXYZ)
-           CALL ADD2 (AU(1,1,1,IEL),TM3,NXYZ)
+           call mxm(dxm1,nx1,u(1,1,1,e),nx1,dudr,nyz)
+           do 10 iz=1,nz1
+              call mxm(u(1,1,iz,e),nx1,dytm1,ny1,duds(1,1,iz),ny1)
+   10      continue
+           call mxm     (u(1,1,1,e),nxy,dztm1,nz1,dudt,nz1)
+           call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp1,dudt,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudt,g6m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
+           endif
+           call col2 (tmp1,helm1(1,1,1,e),nxyz)
+           call col2 (tmp2,helm1(1,1,1,e),nxyz)
+           call col2 (tmp3,helm1(1,1,1,e),nxyz)
+           call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
+           do 20 iz=1,nz1
+              call mxm(tmp2(1,1,iz),nx1,dym1,ny1,tm2(1,1,iz),ny1)
+   20      continue
+           call mxm  (tmp3,nxy,dzm1,nz1,tm3,nz1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+           call add2 (au(1,1,1,e),tm3,nxyz)
 C
-           ENDIF
+           endif
+c
+        endif
 C
-        ENDIF
+ 100  continue
 C
- 100  CONTINUE
-C
-      IF (IFH2) CALL ADDCOL4 (AU,HELM2,BM1,U,NTOT)
+      if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 C
 C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
 C
-      IF (IFAXIS.AND.(ISD.EQ.2)) THEN
-         DO 200 IEL=1,NEL
+      if (ifaxis.and.(isd.eq.2)) then
+         do 200 e=1,nel
 C
-            IF (IFRZER(IEL)) THEN
-               CALL MXM(U  (1,1,1,IEL),NX1,DATM1,NY1,DUAX,1)
-               CALL MXM(YM1(1,1,1,IEL),NX1,DATM1,NY1,YSM1,1)
-            ENDIF
-C
-            DO 190 J=1,NY1
-            DO 190 I=1,NX1
-c               IF (YM1(I,J,1,IEL).NE.0.) THEN
-                  IF (IFRZER(IEL)) THEN
-                     TERM1 = 0.0
+            if (ifrzer(e)) then
+               call mxm(u  (1,1,1,e),nx1,datm1,ny1,duax,1)
+               call mxm(ym1(1,1,1,e),nx1,datm1,ny1,ysm1,1)
+            endif
+c
+            do 190 j=1,ny1
+            do 190 i=1,nx1
+C               if (ym1(i,j,1,e).ne.0.) then
+                  if (ifrzer(e)) then
+                     term1 = 0.0
                      if(j.ne.1) 
-     $             TERM1 = BM1(I,J,1,IEL)*U(I,J,1,IEL)/YM1(I,J,1,IEL)**2
-                     TERM2 =  WXM1(I)*WAM1(1)*DAM1(1,J)*DUAX(I)
-     $                       *JACM1(I,1,1,IEL)/YSM1(I)
-                  ELSE
-                   TERM1 = BM1(I,J,1,IEL)*U(I,J,1,IEL)/YM1(I,J,1,IEL)**2
-                     TERM2 = 0.
-                  ENDIF
-                  AU(I,J,1,IEL) = AU(I,J,1,IEL)
-     $                          + HELM1(I,J,1,IEL)*(TERM1+TERM2)
-c               ENDIF
-  190       CONTINUE
-  200    CONTINUE
-      ENDIF
-C
-#ifndef NOTIMER
+     $             term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
+                     term2 =  wxm1(i)*wam1(1)*dam1(1,j)*duax(i)
+     $                       *jacm1(i,1,1,e)/ysm1(i)
+                  else
+                   term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
+                     term2 = 0.
+                  endif
+                  au(i,j,1,e) = au(i,j,1,e)
+     $                          + helm1(i,j,1,e)*(term1+term2)
+C               endif
+  190       continue
+  200    continue
+      endif
+
       taxhm=taxhm+(dnekclock()-etime1)
-#endif
       return
-      END
+      end
 C
 c=======================================================================
       subroutine setfast (helm1,helm2,imesh)
@@ -383,7 +381,7 @@ C
       END
 C
 c=======================================================================
-      subroutine setprec (dpcm1,helm1,helm2,jmesh,isd)
+      subroutine setprec (dpcm1,helm1,helm2,imsh,isd)
 C-------------------------------------------------------------------
 C
 C     Generate diagonal preconditioner for the Helmholtz operator.
@@ -402,9 +400,10 @@ C-------------------------------------------------------------------
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
       REAL YSM1(LY1)
 
-      IF(IMESH.EQ.1) NEL=NELV
-      IF(IMESH.EQ.2) NEL=NELT
-      NTOT = NEL*NX1*NY1*NZ1
+      nel=nelt
+      if (imsh.eq.1) nel=nelv
+
+      ntot = nel*nx1*ny1*nz1
 
 c     The following lines provide a convenient debugging option
 c     call rone(dpcm1,ntot)

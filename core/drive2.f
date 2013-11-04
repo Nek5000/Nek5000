@@ -417,7 +417,7 @@ C
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
 
-      if (nid.eq.0.and.istep.le.1) write(6,*) 'generate geomerty data'
+      if (nid.eq.0.and.istep.le.1) write(6,*) 'generate geometry data'
 
       IF (IGEOM.EQ.1) THEN
          RETURN
@@ -471,7 +471,7 @@ c
       ENDIF
 
       if (nid.eq.0.and.istep.le.1) then
-        write(6,*) 'done :: generate geomerty data' 
+        write(6,*) 'done :: generate geometry data' 
         write(6,*) ' '
       endif
 
