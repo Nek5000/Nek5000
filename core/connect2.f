@@ -2199,23 +2199,37 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       logical ifbswap
 
-      integer e,eg,buf(0:30)
+      integer e,eg,buf(0:49)
 
       nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
 
-      if (ifbswap.and.ierr.eq.0) call byte_reverse(buf,nwds,ierr)
+      if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
+          call byte_reverse8(buf,nwds,ierr)
+      elseif (ifbswap.and.ierr.eq.0.and.wdsizi.eq.4) then
+          call byte_reverse (buf,nwds,ierr)
+      endif
       if(ierr.ne.0) return
 
-
-      igroup(e) = buf(0)
-
-      if (if3d) then
-         call copy4r(xc(1,e),buf( 1),8)
-         call copy4r(yc(1,e),buf( 9),8)
-         call copy4r(zc(1,e),buf(17),8)
+      if(wdsizi.eq.8) then
+         call copyi4(igroup,buf(0),1) !0-1
+         if (ndim.eq.3) then
+            call copy  (xc(1,e),buf( 2),8) !2 --17
+            call copy  (yc(1,e),buf(18),8) !18--33
+            call copy  (zc(1,e),buf(34),8) !34--49
+         else
+            call copy  (xc(1,e),buf( 2),4) !2 --9
+            call copy  (yc(1,e),buf(10),4) !10--17
+          endif
       else
-         call copy4r(xc(1,e),buf( 1),4)
-         call copy4r(yc(1,e),buf( 5),4)
+         igroup(e) = buf(0)
+         if (if3d) then
+            call copy4r(xc(1,e),buf( 1),8)
+            call copy4r(yc(1,e),buf( 9),8)
+            call copy4r(zc(1,e),buf(17),8)
+         else
+            call copy4r(xc(1,e),buf( 1),4)
+            call copy4r(yc(1,e),buf( 5),4)
+         endif
       endif
 
       return
@@ -2228,15 +2242,25 @@ c-----------------------------------------------------------------------
 
       integer e,eg,f,buf(30)
 
-      eg = buf(1)
-      e  = gllel(eg)
-      f  = buf(2)
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+        e  = gllel(eg)
 
-      call copy4r( curve(1,f,e),buf(3),5)
-      call chcopy(ccurve(f,e)  ,buf(8),1)
+        call copyi4(f,buf(3),1) !3-4
 
-c     write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
-c   1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
+        call copy  ( curve(1,f,e),buf(5) ,5) !5--14
+        call chcopy(ccurve(  f,e),buf(15),1)!15
+      else
+        eg = buf(1)
+        e  = gllel(eg)
+        f  = buf(2)
+
+        call copy4r( curve(1,f,e),buf(3),5)
+        call chcopy(ccurve(f,e)  ,buf(8),1)
+      endif
+
+      write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
+    1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
 
       return
       end
@@ -2251,16 +2275,29 @@ c-----------------------------------------------------------------------
 
       integer e,eg,f,buf(30)
 
-      eg = buf(1)
-      e  = gllel(eg)
-      f  = buf(2)
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+        e  = gllel(eg)
 
-      call copy4r ( bl(1,f,e),buf(3),5)
-      call chcopy (cbl(  f,e),buf(8),3)
+        call copyi4(f,buf(3),1) !3-4
 
-      if (nelgt.ge.1 000 000.and.cbl(f,e).eq.'P  ') 
-     $   bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+        call copy  (bl(1,f,e),buf(5),5) !5--14
+        call chcopy(cbl( f,e),buf(15),3)!15-16
 
+        if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+
+      else
+        eg = buf(1)
+        e  = gllel(eg)
+        f  = buf(2)
+
+        call copy4r ( bl(1,f,e),buf(3),5)
+        call chcopy (cbl(  f,e),buf(8),3)
+
+        if (nelgt.ge.1 000 000.and.cbl(f,e).eq.'P  ') 
+     $     bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+      endif
 
 
 
@@ -2276,12 +2313,12 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       logical ifbswap
 
-      integer e,eg,buf(30)
+      integer e,eg,buf(55)
 
-      nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
-      len  = 4*nwds             ! 4 bytes / wd
+      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      len  = 4*nwds                          ! 4 bytes / wd
 
-      if (nwds.gt.30.or.isize.gt.4) then
+      if (nwds.gt.55.or.isize.gt.4) then
          write(6,*) nid,' Error in bin_rd1_mesh: buf size',nwds,isize
          call exitt
       endif
@@ -2344,12 +2381,13 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       logical ifbswap
 
-      integer e,eg,buf(30)
+      integer e,eg,buf(55)
+      real rcurve
 
-      nwds = 2 + 1 + 5   ! eg + iside + ccurve + curve(6,:,:) !only 5 in rea
+      nwds = (2 + 1 + 5)*(wdsizi/4) !eg+iside+ccurve+curve(6,:,:) !only 5 in rea
       len  = 4*nwds      ! 4 bytes / wd
 
-      if (nwds.gt.30.or.isize.gt.4) then
+      if (nwds.gt.55.or.isize.gt.4) then
          write(6,*)nid,' Error in bin_rd1_curve: buf size',nwds,isize
          call exitt
       endif
@@ -2360,22 +2398,35 @@ c-----------------------------------------------------------------------
       len1 = 4
       if (nid.eq.0) then  ! read & send/process
 
-         call byte_read(ncurve,1,ierr)
-         if (ifbswap) call byte_reverse(ncurve,1,ierr)
+         if(wdsizi.eq.8) then
+           call byte_read(rcurve,2,ierr)
+           if (ifbswap) call byte_reverse8(rcurve,1,ierr)
+           ncurve = rcurve
+         else
+           call byte_read(ncurve,1,ierr)
+           if (ifbswap) call byte_reverse(ncurve,1,ierr)
+         endif
 
          do k=1,ncurve
            if(ierr.eq.0) then
               call byte_read(buf,nwds,ierr)
-              if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-              eg  = buf(1)
+              if(wdsizi.eq.8) then
+                nwds2 = nwds/2
+                if(ifbswap) call byte_reverse8(buf,nwds2-1,ierr)
+                call copyi4(eg,buf(1),1)  !1,2
+              else
+                if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+                eg  = buf(1)
+              endif
+
               mid = gllnid(eg)
               if (mid.eq.0.and.ierr.eq.0) then
                  call buf_to_curve(buf)
               else
                  if(ierr.eq.0) then
-                    call csend(mid,buf,len,mid,0)
+                   call csend(mid,buf,len,mid,0)
                  else
-                    goto 98
+                   goto 98
                  endif
               endif
            else
@@ -2390,7 +2441,11 @@ c-----------------------------------------------------------------------
          do k=1,ncurve_mx+1   ! +1 to make certain we receive the close-out
 
             call crecv(nid,buf,len)
-            if (buf(1).eq.0) then
+            if(wdsizi.eq.8) then 
+               call copyi4(ichk,buf(1),1)
+               if(ichk.eq.0) goto 99
+               call buf_to_curve(buf)
+            elseif (buf(1).eq.0) then
                goto 99
             else
                call buf_to_curve(buf)
@@ -2415,12 +2470,13 @@ c-----------------------------------------------------------------------
       character*3 cbl(6,lelt)
       real         bl(5,6,lelt)
 
-      integer e,eg,buf(30)
+      integer e,eg,buf(55)
+      real rbc_max
 
-      nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
+      nwds = (2 + 1 + 5)*(wdsizi/4)   ! eg + iside + cbc + bc(5,:,:)
       len  = 4*nwds      ! 4 bytes / wd
 
-      if (nwds.gt.30.or.isize.gt.4) then
+      if (nwds.gt.55.or.isize.gt.4) then
          write(6,*) nid,' Error in bin_rd1_bc: buf size',nwds,isize
          call exitt
       endif
@@ -2435,37 +2491,46 @@ c-----------------------------------------------------------------------
       ierr=0
       len1=4
       if (nid.eq.0) then  ! read & send/process
-
-         call byte_read(nbc_max,1,ierr)
-         if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
+  
+         if(wdsizi.eq.8) then
+           call byte_read(rbc_max,2,ierr)
+           if (ifbswap) call byte_reverse8(rbc_max,1,ierr) ! last is char
+           nbc_max = rbc_max
+         else
+           call byte_read(nbc_max,1,ierr)
+           if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
+         endif
 
          do k=1,nbc_max
+c           write(6,*) k,' dobc1 ',nbc_max
+            if(ierr.eq.0) then
+               call byte_read(buf,nwds,ierr)
+               if(wdsizi.eq.8) then
+                 nwds2 = nwds/2
+                 if (ifbswap) call byte_reverse8(buf,nwds2-1,ierr)
+                 call copyi4(eg,buf(1),1) !1&2 of buf
+               else
+                 if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+                 eg  = buf(1)
+               endif
+               mid = gllnid(eg)
+c              write(6,*) k,' dobc3 ',eg,mid
 
-c          write(6,*) k,' dobc1 ',nbc_max
-           if(ierr.eq.0) then
-             call byte_read(buf,nwds,ierr)
-             if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-
-             eg  = buf(1)
-             mid = gllnid(eg)
-c            write(6,*) k,' dobc3 ',eg,mid
-
-             if (mid.eq.0.and.ierr.eq.0) then
-                call buf_to_bc(cbl,bl,buf)
-             else
-c               write(6,*) mid,' sendbc1 ',eg
-                if(ierr.eq.0) then
-                   call csend(mid,buf,len,mid,0)
-                else
-                   goto 98
-                endif
-c               write(6,*) mid,' sendbc2 ',eg
-             endif
-
-c            write(6,*) k,' dobc2 ',nbc_max,eg
-           else
-             goto 98
-           endif
+               if (mid.eq.0.and.ierr.eq.0) then
+                   call buf_to_bc(cbl,bl,buf)
+               else
+c                  write(6,*) mid,' sendbc1 ',eg
+                   if(ierr.eq.0) then
+                     call csend(mid,buf,len,mid,0)
+                   else
+                     goto 98
+                   endif
+c                  write(6,*) mid,' sendbc2 ',eg
+               endif
+c              write(6,*) k,' dobc2 ',nbc_max,eg
+            else
+               goto 98
+            endif
          enddo
 c        write(6,*) mid,' bclose ',eg,nbc_max
   98     call buf_close_outv ! notify all procs: no more data
@@ -2479,7 +2544,11 @@ c           write(6,*) nid,' recvbc1',k
             call crecv(nid,buf,len)
 c           write(6,*) nid,' recvbc2',k,buf(1)
 
-            if (buf(1).eq.0) then
+            if(wdsizi.eq.8) then 
+               call copyi4(ichk,buf(1),1)
+               if(ichk.eq.0) goto 99
+               call buf_to_bc(cbl,bl,buf)
+            elseif (buf(1).eq.0) then
                 goto 99
             else
                 call buf_to_bc(cbl,bl,buf)
@@ -2495,18 +2564,30 @@ c           write(6,*) nid,' recvbc2',k,buf(1)
       return
       end
 c-----------------------------------------------------------------------
+      subroutine bufchk(buf,n)
+      integer n
+      real buf(n)
+      do i=1,n
+         write(6,*) buf(i), ' whhhh'
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine buf_close_outv  ! this is the stupid O(P) formulation
 
       include 'SIZE'
       include 'PARALLEL'
       integer*4 zero
+      real      rzero
 
-      len  = 4
-      zero = 0
+      len   = wdsizi
+      rzero = 0
+      zero  = 0
 c     write(6,*) nid,' bufclose'
       if (nid.eq.0) then
          do mid=1,np-1
-            call csend(mid,zero,len,mid,0)
+            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
+            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
 c           write(6,*) mid,' sendclose'
          enddo
       endif
@@ -2519,12 +2600,16 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'PARALLEL'
       integer*4 zero
+      real      rzero
 
-      len  = 4
+c     len  = 4
+      len   = wdsizi
       zero = 0
+      rzero = 0
       if (nid.eq.0) then
          do mid=1,np-1
-            call csend(mid,zero,len,mid,0)
+            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
+            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
          enddo
       endif
 
@@ -2562,6 +2647,9 @@ c-----------------------------------------------------------------------
          read (hdr,1) version,nelgt,ndum,nelgv
     1    format(a5,i9,i3,i9)
  
+         wdsizi = 4
+         if(version.eq.'#v002') wdsizi = 8
+
          call byte_read(test,1,ierr)
          if(ierr.ne.0) goto 100
          ifbswap = if_byte_swap_test(test,ierr)
@@ -2571,9 +2659,13 @@ c-----------------------------------------------------------------------
  
  100  call err_chk(ierr,'Error opening or reading .re2 header. Abort.$')
 
+      call bcast(wdsizi, ISIZE)
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)
       call bcast(nelgt  ,ISIZE)
+
+      if(wdsize.eq.4.and.wdsizi.eq.8) 
+     $   call exitti('wdsize=4 & wdsizi(re2)=8 not compatible$',wdsizi)
 
       return
       end

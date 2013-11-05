@@ -808,6 +808,475 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gen_re2(imid)  ! Generate and output essential parts of .rea
+                                ! And re2
+                                ! Clobbers ccurve()
+                                ! byte read is float size..
+                                ! 4 wdsize
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*80 hdr
+      real*4 test
+      data   test  / 6.54321 /
+      integer ierr
+
+
+c     imid = 0  ! No midside node defs
+c     imid = 1  ! Midside defs where current curve sides don't exist
+c     imid = 2  ! All nontrivial midside node defs
+
+      ierr = 0
+      if (nid.eq.0) then
+         call byte_open('newre2.re2' // char(0), ierr)
+         call blank(hdr,80)
+         if(wdsize.eq.8) then 
+            write(hdr,112) nelgt,ndim,nelgv 
+         else
+            write(hdr,111) nelgt,ndim,nelgv
+         endif
+  111    format('#v001',i9,i3,i9,' hdr')
+  112    format('#v002',i9,i3,i9,' hdr')
+         if(ierr.eq.0) call byte_write(hdr,20,ierr)  
+         if(ierr.eq.0) call byte_write(test,1,ierr) !write endian discriminator
+      endif
+      call err_chk(ierr,'Error opening  in gen_re2$') 
+
+      call gen_re2_xyz
+      call gen_re2_curve(imid)  ! Clobbers ccurve()
+
+      do ifld=1,nfield
+         call gen_re2_bc   (ifld)
+      enddo
+
+      if (nid.eq.0) call byte_close(ierr)
+      call err_chk(ierr,'Error closing in gen_re2$') 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_re2_xyz
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lv=2**ldim,lblock=1000)
+      common /scrns/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
+      common /scruz/ igr(lblock)
+
+      integer e,eb,eg,ierr,wdsiz2
+
+      integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
+      save    isym2pre
+      data    isym2pre / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
+
+      real*4 buf (50)  ! nwds * 2 for double precision
+      real   buf2(25)  ! double precsn
+      equivalence (buf,buf2)
+
+
+      nxs = nx1-1
+      nys = ny1-1
+      nzs = nz1-1
+ 
+      wdsiz2=4
+      if(wdsize.eq.8) wdsiz2=8
+      nblock = lv*ldim*lblock   !memory size of data blocks
+
+      ierr=0
+
+      do eb=1,nelgt,lblock
+         nemax = min(eb+lblock-1,nelgt)
+         call rzero(xyz,nblock)
+         call izero(igr,lblock)
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            l   = 0
+            if (mid.eq.nid.and.if3d) then ! fill owning processor
+               igr(kb) = igroup(e)
+               do k=0,1
+               do j=0,1
+               do i=0,1
+                  l=l+1
+                  li=isym2pre(l)
+                  xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,3,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+               enddo
+               enddo
+               enddo
+            elseif (mid.eq.nid) then    ! 2D
+               igr(kb) = igroup(e)
+               do j=0,1
+               do i=0,1
+                  l =l+1
+                  li=isym2pre(l)
+                  xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1,e)
+                  xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1,e)
+               enddo
+               enddo
+            endif
+         enddo
+         call  gop(xyz,wk,'+  ',nblock)  ! Sum across all processors
+         call igop(igr,wk,'+  ',lblock)  ! Sum across all processors
+
+         if (nid.eq.0.and.ierr.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               if(wdsiz2.eq.8) then
+                  call rgrp=igr(kb)
+                  call byte_write(rgrp,2,ierr)
+                 
+                  if(if3d) then
+                    buf2(1) = xyz(1,1,kb)
+                    buf2(2) = xyz(2,1,kb)
+                    buf2(3) = xyz(3,1,kb)
+                    buf2(4) = xyz(4,1,kb)
+
+                    buf2(5) = xyz(5,1,kb)
+                    buf2(6) = xyz(6,1,kb)
+                    buf2(7) = xyz(7,1,kb)
+                    buf2(8) = xyz(8,1,kb)
+
+                    buf2(9) = xyz(1,2,kb)
+                    buf2(10)= xyz(2,2,kb)
+                    buf2(11)= xyz(3,2,kb)
+                    buf2(12)= xyz(4,2,kb)
+                  
+                    buf2(13)= xyz(5,2,kb)
+                    buf2(14)= xyz(6,2,kb)
+                    buf2(15)= xyz(7,2,kb)
+                    buf2(16)= xyz(8,2,kb)
+
+                    buf2(17)= xyz(1,3,kb)
+                    buf2(18)= xyz(2,3,kb)
+                    buf2(19)= xyz(3,3,kb)
+                    buf2(20)= xyz(4,3,kb)
+
+                    buf2(21)= xyz(5,3,kb)
+                    buf2(22)= xyz(6,3,kb)
+                    buf2(23)= xyz(7,3,kb)
+                    buf2(24)= xyz(8,3,kb)
+
+                    if(ierr.eq.0) call byte_write(buf,48,ierr)
+                  else
+                    buf2(1) = xyz(1,1,kb)
+                    buf2(2) = xyz(2,1,kb)
+                    buf2(3) = xyz(3,1,kb)
+                    buf2(4) = xyz(4,1,kb)
+
+                    buf2(5) = xyz(1,2,kb)
+                    buf2(6) = xyz(2,2,kb)
+                    buf2(7) = xyz(3,2,kb)
+                    buf2(8) = xyz(4,2,kb)
+    
+                    if(ierr.eq.0) call byte_write(buf,16,ierr)
+                  endif
+               else  !!!! 4byte precision !!!!
+                  call byte_write(igr(kb),1,ierr)
+                  if (if3d) then 
+
+                    buf(1)  = xyz(1,1,kb)
+                    buf(2)  = xyz(2,1,kb)
+                    buf(3)  = xyz(3,1,kb)
+                    buf(4)  = xyz(4,1,kb)
+
+                    buf(5)  = xyz(5,1,kb)
+                    buf(6)  = xyz(6,1,kb)
+                    buf(7)  = xyz(7,1,kb)
+                    buf(8)  = xyz(8,1,kb)
+
+                    buf(9)  = xyz(1,2,kb)
+                    buf(10) = xyz(2,2,kb)
+                    buf(11) = xyz(3,2,kb)
+                    buf(12) = xyz(4,2,kb)
+                  
+                    buf(13) = xyz(5,2,kb)
+                    buf(14) = xyz(6,2,kb)
+                    buf(15) = xyz(7,2,kb)
+                    buf(16) = xyz(8,2,kb)
+
+                    buf(17) = xyz(1,3,kb)
+                    buf(18) = xyz(2,3,kb)
+                    buf(19) = xyz(3,3,kb)
+                    buf(20) = xyz(4,3,kb)
+
+                    buf(21) = xyz(5,3,kb)
+                    buf(22) = xyz(6,3,kb)
+                    buf(23) = xyz(7,3,kb)
+                    buf(24) = xyz(8,3,kb)
+
+                    if(ierr.eq.0) call byte_write(buf,24,ierr)
+
+                  else ! 2D
+                    buf(1)  = xyz(1,1,kb)
+                    buf(2)  = xyz(2,1,kb)
+                    buf(3)  = xyz(3,1,kb)
+                    buf(4)  = xyz(4,1,kb)
+
+                    buf(5)  = xyz(1,2,kb)
+                    buf(6)  = xyz(2,2,kb)
+                    buf(7)  = xyz(3,2,kb)
+                    buf(8)  = xyz(4,2,kb)
+
+                    if(ierr.eq.0) call byte_write(buf,8,ierr)
+                  endif
+               endif
+              
+            enddo
+         endif
+      enddo
+      call err_chk(ierr,'Error writing to newre2.re2 in gen_re2_xyz$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_re2_curve(imid)
+
+c     This routine is complex because we must first count number of 
+c     nontrivial curved sides.
+
+c     A two pass strategy is used:  first count, then write
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eb,eg,wdsiz2
+      character*1 cc(4)
+
+      real*4 buf (16)  ! nwds * 2 for double precision
+      real   buf2( 8)  ! double precsn
+      equivalence (buf,buf2)
+
+      parameter (lblock=500)
+      common /scrns/ vcurve(5,12,lblock),wk(5*12*lblock)
+      common /scruz/ icurve(12,lblock)
+
+      wdsiz2=4
+      if(wdsize.eq.8) wdsiz2=8
+
+      nblock = lv*ldim*lblock   !memory size of data blocks
+
+      if (imid.gt.0) then
+
+c        imid = 0  ! No midside node defs
+c        imid = 1  ! Midside defs where current curve sides don't exist
+c        imid = 2  ! All nontrivial midside node defs
+
+         if (imid.eq.2) call blank(ccurve,12*lelt)
+
+         do e=1,nelt
+            call gen_rea_midside_e(e)
+         enddo
+
+      endif
+      nedge = 4 + 8*(ndim-2)
+
+      ncurvn = 0
+      do e=1,nelt
+      do i=1,nedge
+         if (ccurve(i,e).ne.' ') ncurvn = ncurvn+1
+      enddo
+      enddo
+      ncurvn = iglsum(ncurvn,1)
+ 
+      ierr=0
+
+      if(nid.eq.0.and.wdsiz2.eq.8) then
+         rcurvn = ncurvn
+         call byte_write(rcurvn,2,ierr)
+      elseif(nid.eq.0) then
+         call byte_write(ncurvn,1,ierr)
+      endif
+
+      do eb=1,nelgt,lblock
+
+         nemax = min(eb+lblock-1,nelgt)
+         call izero(icurve,12*lblock)
+         call rzero(vcurve,60*lblock)
+
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            if (mid.eq.nid) then ! fill owning processor
+               do i=1,nedge
+                  icurve(i,kb) = 0
+                  if (ccurve(i,e).eq.'C') icurve(i,kb) = 1
+                  if (ccurve(i,e).eq.'s') icurve(i,kb) = 2
+                  if (ccurve(i,e).eq.'m') icurve(i,kb) = 3
+                  call copy(vcurve(1,i,kb),curve(1,i,e),5)
+               enddo
+            endif
+         enddo
+         call igop(icurve,wk,'+  ',12*lblock)  ! Sum across all processors
+         call  gop(vcurve,wk,'+  ',60*lblock)  ! Sum across all processors
+
+         if (nid.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               do i=1,nedge
+                  ii = icurve(i,kb)   ! equivalenced to s4
+                  if (ii.ne.0) then
+                     if (ii.eq.1) cc(1)='C'
+                     if (ii.eq.2) cc(1)='s'
+                     if (ii.eq.3) cc(1)='m'
+
+                     if(wdsiz2.eq.8) then
+
+                        buf2(1) = eg
+                        buf2(2) = i
+                        call copy  (buf2(3),vcurve(1,i,kb),5)!real*8 write
+                        call blank(buf2(8),8)
+                        call chcopy(buf2(8),cc,4)
+                        iz = 16
+                     else
+                        call icopy(buf(1),eg,1) 
+                        call icopy(buf(2), i,1) 
+                        call copyX4(buf(3),vcurve(1,i,kb),5) !real*4 write
+                        call blank(buf(8),4)
+                        call chcopy(buf(8),cc,4)
+                        iz = 8
+                     endif
+
+                     if(ierr.eq.0) call byte_write(buf,iz,ierr)
+                  endif
+               enddo
+            enddo
+         endif
+
+      enddo
+      call err_chk(ierr,'Error writing to newre2.re2 in gen_re2_curve$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_re2_bc (ifld)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eb,eg,wdsiz2
+
+      parameter (lblock=500)
+      common /scrns/ vbc(5,6,lblock),wk(5*6*lblock)
+      common /scruz/ ibc(6,lblock)
+
+      character*1 s4(4)
+      character*3 s3
+      integer     i4
+      equivalence(i4,s4)
+      equivalence(s3,s4)
+
+      character*1 chtemp
+      save        chtemp
+      data        chtemp /' '/   ! For mesh bcs
+
+      real*4 buf (16)  ! nwds * 2 for double precision
+      real   buf2( 8)  ! double precsn
+      equivalence (buf,buf2)
+
+
+      nface = 2*ndim
+      ierr = 0
+      nbc  = 0
+      rbc  = 0
+
+      wdsiz2=4
+      if(wdsize.eq.8) wdsiz2=8
+
+      nlg = nelg(ifld)
+
+      if (ifld.eq.1.and..not.ifflow) then ! NO B.C.'s for this field
+         if(nid.eq.0.and.wdsiz2.eq.4) call byte_write(nbc,1,ierr)
+         if(nid.eq.0.and.wdsiz2.eq.8) call byte_write(rbc,2,ierr)
+         call err_chk(ierr,'Error writing to newre2.re2 in gen_re2_bc$')
+         return
+      endif
+
+      do ii = 1,nelt
+         do jj = 1,nface
+            if(cbc(jj,ii,ifld).ne.'E  ')nbc=nbc+1
+         enddo
+      enddo
+      call igop(nbc,wk,'+  ', 1       )  ! Sum across all processors
+      if(nid.eq.0.and.wdsiz2.eq.8) then
+         rbc = nbc
+         call byte_write(rbc,2,ierr)
+      elseif(nid.eq.0) then
+         call byte_write(nbc,1,ierr)
+      endif
+
+      do eb=1,nlg,lblock
+         nemax = min(eb+lblock-1,nlg)
+         call izero(ibc, 6*lblock)
+         call rzero(vbc,30*lblock)
+         kb = 0
+         do eg=eb,nemax
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            kb  = kb+1
+            if (mid.eq.nid) then ! fill owning processor
+               do i=1,nface
+                  i4 = 0
+                  call chcopy(s4,cbc(i,e,ifld),3)
+                  ibc(i,kb) = i4
+                  call copy(vbc(1,i,kb),bc(1,i,e,ifld),5)
+               enddo
+            endif
+         enddo
+         call igop(ibc,wk,'+  ', 6*lblock)  ! Sum across all processors
+         call  gop(vbc,wk,'+  ',30*lblock)  ! Sum across all processors
+
+         if (nid.eq.0) then
+            kb = 0
+            do eg=eb,nemax
+               kb  = kb+1
+
+               do i=1,nface
+                  i4 = ibc(i,kb)   ! equivalenced to s4
+                  if (s3.ne.'E  ') then
+
+                     if(wdsiz2.eq.8) then
+                        buf2(1)=eg
+                        buf2(2)=i
+                        call copy    (buf2(3),vbc(1,i,eg),5)
+                        call blank   (buf2(8),8)
+                        call chcopy  (buf2(8),s3,3)
+                       if(nlg.ge.1000000) then
+                            call icopy(i_vbc,vbc(1,i,eg),1)
+                            buf2(3)=i_vbc
+                        endif
+                        iz=16
+                     else
+                        call icopy   (buf(1),eg,1)
+                        call icopy   (buf(2),i,1)
+                        call copyX4  (buf(3),vbc(1,i,eg),5)
+                        call blank   (buf(8),4)
+                      if(nlg.ge.1000000)call icopy(buf(3),vbc(1,i,eg),1)
+                        call chcopy  (buf(8),s3,3)
+                        iz=8
+                     endif
+
+                     if(ierr.eq.0) call byte_write (buf,iz,ierr)
+                     
+                  endif
+               enddo
+            enddo
+         endif
+      enddo
+      call err_chk(ierr,'Error writing to newre2.re2 in gen_re2_bc$')
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine gen_rea(imid)  ! Generate and output essential parts of .rea
                                 ! Clobbers ccurve()
       include 'SIZE'
@@ -1585,19 +2054,21 @@ c-----------------------------------------------------------------------
         goto 101
  100    ierr = 1
  101    continue
-        if(ierr.gt.0) then
-          write(6,*) 'Cannot open hpts.in in subroutine hpts()'
-          call exitt
-        endif
-        if(npoints.gt.lhis*np) then
-          write(6,*) 'ABORT: Too many pts to read in hpts()!'
-          call exitt
-        endif
-        write(6,*) 'found ', npoints, ' points'
       endif
-
-
+      ierr=iglsum(ierr,1)
+      if(ierr.gt.0) then
+        write(6,*) 'Cannot open hpts.in in subroutine hpts()'
+        call exitt
+      endif
+      
       call bcast(npoints,isize)
+      if(npoints.gt.nbuf*np) then
+        if(nid.eq.0) write(6,*) 'ABORT: Too many pts to read in hpts()!'
+        call exitt
+      endif
+      if(nid.eq.0) write(6,*) 'found ', npoints, ' points'
+
+
       npass =  npoints/nbuf +1  !number of passes to cover all pts
       n0    =  mod(npoints,nbuf)!remainder 
       if(n0.eq.0) then
