@@ -22,11 +22,12 @@ c-----------------------------------------------------------------------
 
          call build0             ! Read in fluid mesh
          nelv = nel
-         nelf = nel
 
          call imp_mesh(.false.)  ! Get thermal mesh
          nelt  = nel
          ncond = nelt-nelv
+
+         call set_igroup(nelv,nelt)
 
          call build2             ! Set bcs
 
@@ -354,8 +355,7 @@ C     Abort level change
 C     Really go up one
                CALL PRSIS('Using Ceiling of Level$',ILEVEL,
      $              '  Mesh as default$')
-C     Erase old mesh
-               DO 200 I=1,NEL
+               DO 200 I=1,NEL !     Erase old mesh
                   IF(NUMAPT(I).EQ.ILEVEL) CALL DRAWEL(-I)
  200           CONTINUE
                ILEVEL=ILEVEL+1
@@ -476,7 +476,7 @@ c     Call routines that set boundary conditions.
 C     Now, cover menu
          CALL SGVIS(13,0)
          CALL SGVIS(13,1)
-         NELF= NEL
+         nelv= nel
 C     
 C     Finished with gridlatch
          IFGRID=.FALSE.
@@ -671,7 +671,7 @@ c        write(6,*) iel,' ',string
 C     For Flat floors only.  On write will flatten floors.
          ENDIF
  98   CONTINUE
-      NELF=NEL-NCOND
+      nelv=nel-ncond
 C     Read curved side data
       READ(9,*,ERR=57,END=57)
       READ(9,*,ERR=57,END=57)NCURVE
@@ -709,7 +709,7 @@ C     Read Boundary Conditions (and connectivity data)
       if (iffmtin) READ(9,*,ERR=44,END=44)
       do 90 IFLD=1,NoLDS
 C     Fluid and/or thermal
-C     !!?? NELF DIFFERENT FROM NEL??
+C     !!?? nelv different from nel??
          if (iffmtin) READ(9,*,ERR=44,END=44)
          IF( (IFLD.EQ.1.AND.IFFOLD) .OR. IFLD.GT.1)THEN
 C     FIX UP FOR WHICH OF FIELDS TO BE USED
@@ -1428,12 +1428,10 @@ c
 
       do ie=1,neln
       do iside = 1,nsides
+c        write(6,*) ie,iside,neln,' READING BC'
          if (neln.lt.1000) then
             read(io,'(1x,a3,1X,2i3,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,jd,(bc8(ii),ii=1,nbcrea)
-         elseif (neln.lt.100 000) then
-            read(io,'(1x,a3,i5,i1,5g14.6)',err=9,end=9)
-     $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
          elseif (neln.lt.1 000 000) then
             read(io,'(1x,a3,i6,5g14.6)',err=9,end=9)
      $      cbc(iside,ie),id,(bc8(ii),ii=1,nbcrea)
@@ -2686,7 +2684,9 @@ c     stop
               nfld0=2
               nfld1=2
             endif
-            do i=nfld0,nfld1
+            nflda = nfld0
+            if (e.gt.nelv) nflda=2
+            do i=nflda,nfld1
                cbc(f,e,i)   = 'E  '
                ibc(f,e,i)   = je
                bc (1,f,e,i) = je
@@ -3581,6 +3581,17 @@ c150  continue
 
       if(.not.if3d .and.ielmin.le.nel) call drawel(ielmin)
       ifgrid=iftmp 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_igroup(nelv_i,nelt_i)
+      include 'basics.inc'
+
+      ncond=nelt_i - nelv_i ! recalculate ncond
+      do i=nelv_i+1,nelt_i
+         igroup(i) = 1
+      enddo
 
       return
       end

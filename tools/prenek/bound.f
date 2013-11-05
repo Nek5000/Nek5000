@@ -1606,7 +1606,7 @@ c           End of patch
 
             if(choice.eq.'SET ENTIRE LEVEL') then ! Get b.c., then copy for rest of loops
                mode='GET FIRST'
-               choice='   '
+               call blank(choice,26)
                edup=e
                fdup=f
                call prs('Choose B.C.''s for all remaining sides '//

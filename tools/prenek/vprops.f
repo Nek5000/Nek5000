@@ -278,7 +278,7 @@ C        recalculate NCOND
          do 82 I=1,NEL
             IF(IGROUP(I).GT.0)NCOND=NCOND+1
 82       CONTINUE
-         NELF=NEL-NCOND
+         nelv=nel-ncond
 C        SET mask of all elements
 C        Change mask of all elements that have FLUID mesh.
          DO 350 IELC=1,NEL
@@ -292,11 +292,11 @@ C        SHUFFLE ELEMENT NUMBERS
          IF(NCOND.GT.0)THEN
 C           REQUIRES HEAT TRANSFER FIELD
 C           If an element is a conduction element and it's current number
-C           is <= NELF, Swap it with the highest # fluid element
-            DO 11 IEL=1,NELF
+C           is <= nelv, Swap it with the highest # fluid element
+            DO 11 IEL=1,nelv
                IF(MASKEL(IEL,1).EQ.0)THEN
 C                 Find fluid element to swap it with
-                  DO 8 JEL=NELF+1,NEL
+                  DO 8 JEL=nelv+1,NEL
                      IF(MASKEL(JEL,1).EQ.1)THEN
 C                       Do the swap; first copy fluid to last
                         CALL COPYEL(JEL ,NELM-1)
