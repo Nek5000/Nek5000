@@ -97,6 +97,14 @@ c     read nekton .rea file and make a .map file
       integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
       integer     e1,c1,f1
 
+
+      wdsize=4
+      eps=1.0e-12
+      oneeps = 1.0+eps
+      if (oneeps.ne.1.0) then
+         wdsize=8
+      endif
+ 
       call makemesh  (cell,nelv,nelt,irnk,dx,cbc,bc,ndim,w14)
 c                                    irnk is # unique points
 
@@ -243,16 +251,28 @@ c     read nekton .rea file and make a mesh
       ierr = 0
       if (ifbinary) then
          ! skip curved side data
-         call byte_read(ncurve,1,ierr)
-         if (ifbswap) call byte_reverse(ncurve,1,ierr)
-         if(ierr.ne.0) call exitti
-     $       ('Error reading ncurve in makemesh ',ierr)
-         do k = 1,ncurve
-            call byte_read(buf,8,ierr)
-            if(ierr.ne.0) call exitti
-     $       ('Error reading curve data in makemesh ',ierr)
-         enddo
-
+         if(wdsizi.eq.8) then 
+           call byte_read(rcurve,2,ierr)
+           if (ifbswap) call byte_reverse8(rcurve,1,ierr)
+           ncurve = rcurve
+           if(ierr.ne.0) call exitti
+     $         ('Error reading ncurve in makemesh ',ierr)
+           do k = 1,ncurve
+              call byte_read(buf,16,ierr)
+              if(ierr.ne.0) call exitti
+     $         ('Error reading curve data in makemesh ',ierr)
+           enddo
+         else
+           call byte_read(ncurve,1,ierr)
+           if (ifbswap) call byte_reverse(ncurve,1,ierr)
+           if(ierr.ne.0) call exitti
+     $         ('Error reading ncurve in makemesh ',ierr)
+           do k = 1,ncurve
+              call byte_read(buf,8,ierr)
+              if(ierr.ne.0) call exitti
+     $         ('Error reading curve data in makemesh ',ierr)
+           enddo
+         endif
 c        For current version of genmap, only need the fluid bcs.
 c        Later, for more complex MHD configs, we'll need fluid + induct.
 
@@ -351,7 +371,7 @@ c
 c
       real dx(1)
       real x(8),y(8),z(8)
-      integer e,buf(30)
+      integer e,buf(50)
 
       integer h2s(8) ! hypercube to strange ordering
       save    h2s
@@ -370,10 +390,15 @@ c
       if (nelt.lt.0) then
          ifbinary = .true.
          write(6,*) 'reading .re2 file data ...'
-         call open_bin_file(ifbswap,nelgtr,nelgvr)
+         call open_bin_file(ifbswap,nelgtr,nelgvr,wdsizi)
+         if(wdsize.eq.4.and.wdsizi.eq.8) then
+             write(6,*) "Double Precision .rea not supported ",
+     $                  "in Single Precision mode, compile with -r8"
+             call exitt(wdsize)
+         endif
          nelt = nelgtr
          nelv = nelgvr
-         nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
+         nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
       endif
 
 c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
@@ -392,7 +417,7 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
             if(ifbinary) then
               call byte_read(buf,nwds,ierr)
               if(ierr.ne.0) goto 100
-              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
+              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim,wdsizi)
             else 
               read (10,80) string
               read (10,*)   (x(k),k=1,4)
@@ -402,6 +427,10 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
               read (10,*)   (y(k),k=5,8)
               read (10,*)   (z(k),k=5,8)
             endif
+c           write(6,*) e
+c           do ii=1,8
+c          write(6,*) x(ii),y(ii),z(ii)
+c           enddo
             do k=1,8
                dx(l+0) = b
                dx(l+1) = x(h2s(k))
@@ -415,7 +444,7 @@ c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
             if(ifbinary) then
               call byte_read(buf,nwds,ierr)
               if(ierr.ne.0) goto 100
-              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim)
+              call buf_to_xyz(buf,x,y,z,e,ifbswap,ndim,wdsizi)
             else
               read (10,80) string
               read (10,*)   (x(k),k=1,4)
@@ -489,10 +518,8 @@ c
 
       call cscan(string,'BOUNDARY',8) ! for now, fluid only
 
-
       npass = 1
       if (nelt.gt.nelv) npass = 2
-c     write(6,*) nelt,nelv,' NELT/V'
 
       do kpass = 1,npass
 
@@ -3162,18 +3189,32 @@ c     .Read Boundary Conditions (and connectivity data)
          enddo
          enddo
 
-         nwds = 2 + 1 + 5   ! eg + iside + cbc + bc(5,:,:)
+         nwds =(2 + 1 + 5)*(wdsizi/4)   ! eg + iside + cbc + bc(5,:,:)
 
-         call byte_read(nbc_max,1,ierr)
-         if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
-         do k=1,nbc_max
-c           write(6,*) k,' dobc1 ',nbc_max
-            call byte_read(buf,nwds,ierr)
-            if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-            if(ierr.ne.0) call exitti
+         if(wdsizi.eq.8) then
+            call byte_read(rbc_max,2,ierr)
+            if (ifbswap) call byte_reverse8(rbc_max,1,ierr) 
+            nbc_max = rbc_max
+            do k=1,nbc_max
+c              write(6,*) k,' dobc1 ',nbc_max
+               call byte_read(buf,nwds,ierr)
+               if (ifbswap) call byte_reverse8(buf,nwds-2,ierr) ! last is char
+               if(ierr.ne.0) call exitti
      &              ('Error reading byte bcs ',ierr)
-            call buf_to_bc(cbc,bc,buf,nelt)
-         enddo
+               call buf_to_bc(cbc,bc,buf,nelt)
+            enddo
+         else
+            call byte_read(nbc_max,1,ierr)
+            if (ifbswap) call byte_reverse(nbc_max,1,ierr) 
+            do k=1,nbc_max
+c              write(6,*) k,' dobc1 ',nbc_max
+               call byte_read(buf,nwds,ierr)
+               if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+               if(ierr.ne.0) call exitti
+     &              ('Error reading byte bcs ',ierr)
+               call buf_to_bc(cbc,bc,buf,nelt)
+            enddo
+         endif
 
       enddo
 
@@ -3192,13 +3233,22 @@ c-----------------------------------------------------------------------
 
       integer e,eg,f
 
-      e  = buf(1)
-      f  = buf(2)
+      if(wdsizi.eq.8) then
+         call copyi4(e,buf(1),1) !1-2
+         call copyi4(f,buf(3),1) !3-4
+         call copy  (bl(1,f,e),buf(5),5) !5--14
+         call chcopy(cbl( f,e),buf(15),3)!15-16
+         if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
+     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+      else
+         e  = buf(1)
+         f  = buf(2)
+         call copy48r ( bl(1,f,e),buf(3),5)
+         call chcopy  (cbl(  f,e),buf(8),3)
+         if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
+     $     bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+      endif
 
-      call copy48r ( bl(1,f,e),buf(3),5)
-      call chcopy  (cbl(  f,e),buf(8),3)
-      if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
-     $   bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
 
 c      write(6,1) e,f,cbl(f,e),(bl(k,f,e),k=1,5),' CBC'
 c  1   format(i8,i4,2x,a3,5f8.3,1x,a4)
@@ -3207,36 +3257,69 @@ c  1   format(i8,i4,2x,a3,5f8.3,1x,a4)
       end
 
 c-----------------------------------------------------------------------
-      subroutine buf_to_xyz(buf,xc,yc,zc,e,ifbswap,ndim)  ! version 1 of binary
+      subroutine buf_to_xyz(buf,xc,yc,zc,e,ifbswap,ndim,wdsizi)  
+c     version 1 of binary
 
       logical ifbswap
-      integer e,eg,buf(0:30)
+      integer e,eg,buf(0:49),wdsizi
 
       real xc(8),yc(8),zc(8)   !these are *8
 
-      nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ndim*(2**ndim)) ! group + 2x4 for 2d, 3x8 for 3d
 
       ierr = 0
-      if (ifbswap) call byte_reverse(buf,nwds,ierr)
+
+      if (ifbswap.and.wdsizi.eq.8)     then
+          call byte_reverse8(buf,nwds,ierr)
+      elseif (ifbswap.and.wdsizi.eq.4) then 
+          call byte_reverse (buf,nwds,ierr)
+      endif
+
       if (ierr.ne.0) call exitti
      $   ('Error byte_reverse in buf_to_xy ',ierr)
 
-      igroup = buf(0)
-
-      if (ndim.eq.3) then
-         call copy4r(xc,buf( 1),8)
-         call copy4r(yc,buf( 9),8)
-         call copy4r(zc,buf(17),8)
-      else
-         call copy4r(xc,buf( 1),4)
-         call copy4r(yc,buf( 5),4)
+      if(wdsizi.eq.8) then
+         call copyi4(igroup,buf(0),1) !0-1
+         if (ndim.eq.3) then 
+            call copy  (xc,buf( 2),8) !2 --17
+            call copy  (yc,buf(18),8) !18--33
+            call copy  (zc,buf(34),8) !34--49
+         else
+            call copy  (xc,buf( 2),4) !2 --9
+            call copy  (yc,buf(10),4) !10--17
+         endif
+      else 
+         igroup = buf(0)
+         if (ndim.eq.3) then
+            call copy4r(xc,buf( 1),8)
+            call copy4r(yc,buf( 9),8)
+            call copy4r(zc,buf(17),8)
+         else
+            call copy4r(xc,buf( 1),4)
+            call copy4r(yc,buf( 5),4)
+         endif
       endif
 
       return
       end
 
 c-----------------------------------------------------------------------
-      subroutine open_bin_file(ifbswap,nelgt,nelgv) ! open file & chk for byteswap
+       subroutine outcheck(buf,nwds)
+       integer nwds
+       real buf(nwds)
+       
+       nn = nwds/2
+       do i=1,nn
+          write(6,*) buf(i),i,' whatt'
+       enddo
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      subroutine open_bin_file(ifbswap,nelgt,nelgv,wdsizi) 
+c     open file & chk for byteswap & 8byte reals
 
       logical ifbswap,if_byte_swap_test
 
@@ -3260,6 +3343,8 @@ c-----------------------------------------------------------------------
       common /sess/ session
       character*80 session
 
+      integer wdsizi
+
       call izero  (fnami,33)
 
       len = ltrunc(session,80)
@@ -3281,6 +3366,8 @@ c   80 format(a80)
 
       read (hdr,1) version,nelgt,ndum,nelgv
     1 format(a5,i9,i3,i9)
+      wdsizi=4
+      if(version.eq.'#v002')wdsizi=8
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti
@@ -3312,6 +3399,23 @@ c     write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,test2
       return
       end
 
+c-----------------------------------------------------------------------
+      subroutine copyI4(a,b,n)
+      integer A(1)
+      REAL   B(1)
+      DO 100 I = 1, N
+ 100     A(I) = B(I)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy4(a,b,n)
+      real*4 a(1)
+      real*4 b(1)
+      do i = 1, n
+         a(i) = b(i)
+      enddo
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine copy4r(a,b,n)
       real   a(1)

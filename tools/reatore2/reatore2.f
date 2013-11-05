@@ -8,6 +8,8 @@ c     an ascii rea file for just the parameters
       
       character*4 ans
       real*4      buf(10)
+      real*8      buf2(30)
+      real*8      rgroup,rcurve,rbc
 
       character*80 file,fout,fbout,string
       character*1  file1(80),fout1(80),fbout1(80),string1(80)
@@ -74,7 +76,7 @@ c     an ascii rea file for just the parameters
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
-    1 format('#v001',i9,i3,i9,' this is the hdr')
+    1 format('#v002',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20)   ! assumes byte_open() already issued
       call byte_write(test,1)   ! write the endian discriminator
 
@@ -83,7 +85,8 @@ C MESH
       igroup = 0
       do ie=1,nel      
          read(10,*) ! for now skip igroup (not used at the moment)
-         call byte_write(igroup, 1)
+         rgroup=igroup
+         call byte_write(rgroup, 2)
 
          if (ndim.eq.3) then
             read (10,*)   (x(k),k=1,4)
@@ -93,14 +96,20 @@ C MESH
             read (10,*)   (y(k),k=5,8)
             read (10,*)   (z(k),k=5,8)
 
-            call byte_write(x,8)
-            call byte_write(y,8)
-            call byte_write(z,8)
+            call copy48(buf2(1) ,x,8)
+            call copy48(buf2(9) ,y,8)
+            call copy48(buf2(17),z,8)
+            call byte_write(buf2(1) ,16)
+            call byte_write(buf2(9) ,16)
+            call byte_write(buf2(17),16)
          else
             read (10,*)   (x(k),k=1,4)
             read (10,*)   (y(k),k=1,4)
-            call byte_write(x,4)
-            call byte_write(y,4)
+           
+            call copy48(buf2(1) ,x,4)
+            call copy48(buf2(5) ,y,4)
+            call byte_write(buf2(1),8)
+            call byte_write(buf2(5),8)
          endif
       enddo
       write(6,'(i12,1x,i12,1x,i1,A)') nel,nelv,ndim, 
@@ -110,7 +119,8 @@ c CURVED SIDES
       read (10,80) string !  curved sides
       write(6,'(A,A)') 'read: ',string
       read(10,*) ncurve
-      call byte_write(ncurve,1)
+      rcurve=ncurve
+      call byte_write(rcurve,2)
 
       call blank(ccurve,4)
       if (ncurve.gt.0) then
@@ -123,10 +133,12 @@ c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             else
                read(10,62) f,e,(buf(k),k=1,5),ccurve(1)
             endif
-            call byte_write(e     ,1)
-            call byte_write(f     ,1)
-            call byte_write(buf   ,5)
-            call byte_write(ccurve,1)
+            buf2(1)=e
+            buf2(2)=f
+            call copy48(buf2(3),buf(1),5)
+            call blank(buf2(8),8)
+            call chcopy(buf2(8),ccurve,1)
+            call byte_write(buf2,16)
          enddo
    60    format(i3,i3 ,5g14.6,1x,a1)
    61    format(i2,i6 ,5g14.6,1x,a1)
@@ -166,18 +178,19 @@ C BOUNDARY CONDITIONS
    21          format(1x,a3,12x,5g18.11)  
 
                write(6,*) kpass,nbc,' Number of bcs'
-               call byte_write(nbc,1)
+               rbc=nbc
+               call byte_write(rbc,2)
 
                do e=1,nelb
                do f=1,nface
                   if (cbc(f,e).ne.'E  ') then
-                     call icopy      (buf(1),e,1)
-                     call icopy      (buf(2),f,1)
-                     call copy       (buf(3),bc(1,f,e),5)
-                     call blank      (buf(8),4)
-                     call chcopy     (buf(8),cbc(f,e),3)
-                     if(nelb.ge.1000000) call icopy(buf(3),ibc(f,e),1)
-                     call byte_write (buf,8)
+                     buf2(1)=e
+                     buf2(2)=f
+                     call copy48(buf2(3),bc(1,f,e),5)
+                     call blank      (buf2(8),8)
+                     call chcopy     (buf2(8),cbc(f,e),3)
+                     if(nelb.ge.1000000) buf2(3)=ibc(f,e)
+                     call byte_write (buf2,16)
                   endif
                enddo
                enddo

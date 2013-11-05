@@ -99,7 +99,11 @@ c------------------------------------------------------------------------------
       common /genbr/ x,y,z,xc,yc,zc,curve
       common /genbc/ cbc
 
-      real*4 buf(30)
+      real*4 buf (60)
+      real   buf2(30)
+      equivalence (buf,buf2)
+
+
       character*80 hdr
       real*4 test
       data   test  / 6.54321 /
@@ -109,6 +113,13 @@ c------------------------------------------------------------------------------
       one    = 1.
       pi     = 4.*atan(one)
       pi180  = pi/180.
+
+      wdsize = 4
+      eps=1.0e-12
+      oneeps = 1.0+eps
+      if (oneeps.ne.1.0) then
+         wdsize=8
+      endif
 
 
 c     Get the input file, which specifies the base .rea file
@@ -201,6 +212,8 @@ c-----------------------------------------------------------------------
          if (boxcirc(ibox).eq.'m'.or.boxcirc(ibox).eq.'M') 
      $      if_multi_seg = .true.
  
+c----------------------------------------------------------------------
+c       If cyl, call seperate routines..
          if (boxcirc(ibox).eq.'y'.or.boxcirc(ibox).eq.'Y') then
             if (iffo) then
                 call cyl(if3d,ifflow,nfld,string,string1)
@@ -209,6 +222,7 @@ c-----------------------------------------------------------------------
             endif
             call exitt
          endif
+c----------------------------------------------------------------------
        
          if (if_multi_seg) then
             call get_multi_seg
@@ -247,6 +261,8 @@ c-----------------------------------------------------------------------
             if (iend.eq.1) goto 99
             ninbox = nelx*nely*nelz
             write(6,6) ninbox,nelx,nely,nelz,ibox,nfld
+c----------------------------------------------------------------------
+c           Generate xyz data
  
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
@@ -427,8 +443,13 @@ c
       else
         write(9,10) -nel,ndim,nel
         call blank(hdr,80)
-        write(hdr,111) nel,ndim,nel
+        if(wdsize.ne.8) then       !8byte decision!!
+          write(hdr,111) nel,ndim,nel
+        else
+          write(hdr,112) nel,ndim,nel
+        endif
   111   format('#v001',i9,i3,i9,' hdr')
+  112   format('#v002',i9,i3,i9,' hdr')
         call byte_write(hdr,20)   ! assumes byte_open() already issued
         call byte_write(test,1)   ! write the endian discriminator
       endif
@@ -437,6 +458,8 @@ c
 
       call rzero(curve,8*nel)
  
+c----------------------------------------------------------------------
+c     OUTPUT mesh data
       if (if3d) then
         ie   = 0
         ilev = 0
@@ -480,7 +503,7 @@ c                  write(9,11) ie,ilev,apt(ia),'0'
                       write(9,12) x1,x2,x3,x4
                       write(9,12) y1,y2,y3,y4
                       write(9,12) z2,z2,z2,z2
-                   else 
+                   elseif(wdsize.eq.4) then
                     igroup = 0
                     call byte_write(igroup, 1)
                     buf(1)  = x1
@@ -508,6 +531,34 @@ c                  write(9,11) ie,ilev,apt(ia),'0'
                     buf(23) = z2
                     buf(24) = z2
                     call byte_write(buf,24)
+                   else
+                    rgroup = 0.0
+                    call byte_write(rgroup, 2)
+                    buf2(1)  = x1
+                    buf2(2)  = x2
+                    buf2(3)  = x3
+                    buf2(4)  = x4
+                    buf2(5)  = x1
+                    buf2(6)  = x2
+                    buf2(7)  = x3
+                    buf2(8)  = x4
+                    buf2(9)  = y1
+                    buf2(10) = y2
+                    buf2(11) = y3
+                    buf2(12) = y4
+                    buf2(13) = y1
+                    buf2(14) = y2
+                    buf2(15) = y3
+                    buf2(16) = y4
+                    buf2(17) = z1
+                    buf2(18) = z1
+                    buf2(19) = z1
+                    buf2(20) = z1
+                    buf2(21) = z2
+                    buf2(22) = z2
+                    buf2(23) = z2
+                    buf2(24) = z2
+                    call byte_write(buf,48)
                    endif
                 enddo
               enddo
@@ -543,7 +594,7 @@ c           ilev = ilev+1
                     write(9,12) x1,x2,x2,x1
                     write(9,12) y1,y1,y2,y2
                     write(9,12) z2,z2,z2,z2
-                  else
+                  elseif(wdsize.eq.4) then
                     igroup = 0
                     call byte_write(igroup, 1)
                     buf(1)  = x1
@@ -571,6 +622,34 @@ c           ilev = ilev+1
                     buf(23) = z2
                     buf(24) = z2
                     call byte_write(buf,24)
+                  else
+                    rgroup = 0.0
+                    call byte_write(rgroup, 2)
+                    buf2(1)  = x1
+                    buf2(2)  = x2
+                    buf2(3)  = x2
+                    buf2(4)  = x1
+                    buf2(5)  = x1
+                    buf2(6)  = x2
+                    buf2(7)  = x2
+                    buf2(8)  = x1
+                    buf2(9)  = y1
+                    buf2(10) = y1
+                    buf2(11) = y2
+                    buf2(12) = y2
+                    buf2(13) = y1
+                    buf2(14) = y1
+                    buf2(15) = y2
+                    buf2(16) = y2
+                    buf2(17) = z1
+                    buf2(18) = z1
+                    buf2(19) = z1
+                    buf2(20) = z1
+                    buf2(21) = z2
+                    buf2(22) = z2
+                    buf2(23) = z2
+                    buf2(24) = z2
+                    call byte_write(buf,48)
                   endif
                enddo
             enddo
@@ -613,7 +692,7 @@ c             CIRCLE (x = r, y = theta) .... specified in std. "box" way...
                       write(9,11) ie,ilev,apt(ia),'0'
                       write(9,12) x1,x2,x3,x4
                       write(9,12) y1,y2,y3,y4
-                    else
+                    elseif(wdsize.eq.4) then
                       igroup = 0
                       call byte_write(igroup, 1)
                       buf(1) = x1
@@ -625,6 +704,18 @@ c             CIRCLE (x = r, y = theta) .... specified in std. "box" way...
                       buf(7) = y3
                       buf(8) = y4
                       call byte_write(buf,8)
+                    else
+                      rgroup = 0.0
+                      call byte_write(rgroup, 2)
+                      buf2(1) = x1
+                      buf2(2) = x2
+                      buf2(3) = x3
+                      buf2(4) = x4
+                      buf2(5) = y1
+                      buf2(6) = y2
+                      buf2(7) = y3
+                      buf2(8) = y4
+                      call byte_write(buf,16)
                     endif
                     ncurv = ncurv+2
                  enddo
@@ -659,7 +750,7 @@ c             CIRCLE (x = r, y = theta) .... specified in Cool fast way...
                       write(9,11) ie,ilev,apt(ia),'0'
                       write(9,12) x1,x2,x3,x4
                       write(9,12) y1,y2,y3,y4
-                    else
+                    elseif(wdsize.eq.4) then 
                       igroup = 0
                       call byte_write(igroup, 1)
                       buf(1) = x1
@@ -671,6 +762,18 @@ c             CIRCLE (x = r, y = theta) .... specified in Cool fast way...
                       buf(7) = y3
                       buf(8) = y4
                       call byte_write(buf,8)
+                    else
+                      rgroup = 0.0
+                      call byte_write(rgroup, 2)
+                      buf2(1) = x1
+                      buf2(2) = x2
+                      buf2(3) = x3
+                      buf2(4) = x4
+                      buf2(5) = y1
+                      buf2(6) = y2
+                      buf2(7) = y3
+                      buf2(8) = y4
+                      call byte_write(buf,16)
                     endif
                     ncurv = ncurv+2
                  enddo
@@ -690,7 +793,7 @@ c             BOX
                       write(9,11) ie,ilev,apt(ia),'0'
                       write(9,12) x1,x2,x2,x1
                       write(9,12) y1,y1,y2,y2
-                    else
+                    elseif(wdsize.eq.4) then
                       igroup = 0
                       call byte_write(igroup, 1)
                       buf(1) = x1
@@ -702,6 +805,18 @@ c             BOX
                       buf(7) = y2
                       buf(8) = y2
                       call byte_write(buf,8)
+                    else
+                      rgroup = 0.0
+                      call byte_write(rgroup, 2)
+                      buf2(1) = x1
+                      buf2(2) = x2
+                      buf2(3) = x2
+                      buf2(4) = x1
+                      buf2(5) = y1
+                      buf2(6) = y1
+                      buf2(7) = y2
+                      buf2(8) = y2
+                      call byte_write(buf,16)
                     endif
                  enddo
               enddo
@@ -709,6 +824,7 @@ c             BOX
         enddo
       endif
  
+c----------------------------------------------------------------------
 c     output curve stuff and Boundary conditions
       maxedge = 4
       if(if3d) maxedge=8
@@ -744,7 +860,7 @@ c     output curve stuff and Boundary conditions
            enddo
   292      format(i2,i12,5g14.6,1x,a1)
          endif
-      else
+      elseif(wdsize.eq.4) then 
          call byte_write(ncurv,1)  
          do ie=1,nel
             do iedge = 2,maxedge,2
@@ -761,9 +877,29 @@ c     output curve stuff and Boundary conditions
                endif
             enddo
          enddo
+      else
+         rcurv=ncurv
+         call byte_write(rcurv,2)  
+         do ie=1,nel
+            do iedge = 2,maxedge,2
+               if (curve(iedge,ie).ne.0) then
+                  buf2(1) = ie
+                  buf2(2) = iedge
+                  buf2(3) = curve(iedge,ie)
+                  buf2(4) = zero
+                  buf2(5) = zero
+                  buf2(6) = zero
+                  buf2(7) = zero
+                  call chcopy(buf2(8),'C',1)
+                  call byte_write(buf,16)
+               endif
+            enddo
+         enddo
       endif
 
  
+c----------------------------------------------------------------------
+c     output Boundary conditions
       if(iffo) 
      &   write(9,31) 
    31    format('  ***** BOUNDARY CONDITIONS *****')
@@ -800,8 +936,14 @@ c     output curve stuff and Boundary conditions
              ie = 0
              e0 = 0
 
-             if (ipass.eq.2 .and. .not. iffo) call byte_write(nbc,1)
-
+             if (ipass.eq.2 .and. .not. iffo) then
+                if(wdsize.eq.4) then
+                   call byte_write(nbc,1)
+                else
+                   rbc=nbc
+                   call byte_write(rbc,2)
+                endif
+             endif
              do ibx=1,nbox
               do iez=1,nlz(ibx)
               do iey=1,nly(ibx)
@@ -955,64 +1097,110 @@ c
 
                  if(ipass.eq.2) then
                    do ii = 1,6
-                      ibc(ii) = rbc8(ii) 
+                     ibc(ii) = rbc8(ii) 
                    enddo
                    call blank(buf(1),30*4)
-                   call icopy(buf(1),ie,1)
-c                  call blank(buf(8),4)
- 
-                   if(cbc3.ne.'E  ') then 
-                     call icopy(buf(2),eface(3),1)
-                     call copy48(buf(3),rbc3,5)
-                     call chcopy(buf(8),cbc3,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
-                   endif
- 
-                   if(cbc2.ne.'E  ') then 
-                     call icopy(buf(2),eface(2),1)
-                     call copy48(buf(3),rbc2,5)
-                     call chcopy(buf(8),cbc2,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
-                   endif
- 
-                   if(cbc4.ne.'E  ') then 
-                     call icopy(buf(2),eface(4),1)
-                     call copy48(buf(3),rbc4,5)
-                     call chcopy(buf(8),cbc4,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
-                   endif
- 
-                   if(cbc1.ne.'E  ') then 
-                     call icopy(buf(2),eface(1),1)
-                     call copy48(buf(3),rbc1,5)
-                     call chcopy(buf(8),cbc1,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
-                   endif 
- 
-                   if(cbc5.ne.'E  ') then 
-                     call icopy(buf(2),eface(5),1)
-                     call copy48(buf(3),rbc5,5)
-                     call chcopy(buf(8),cbc5,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(5),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
-                   endif
 
-                   if(cbc6.ne.'E  ') then 
-                     call icopy(buf(2),eface(6),1)
-                     call copy48(buf(3),rbc6,5)
-                     call chcopy(buf(8),cbc6,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(6),1)
-                     call byte_write(buf,8)
-                     icount = icount+1
+                   if(wdsize.eq.4) then
+                     call icopy(buf(1),ie,1)
+                     if(cbc3.ne.'E  ') then
+                       call icopy(buf(2),eface(3),1)
+                       call copy48(buf(3),rbc3,5)
+                       call chcopy(buf(8),cbc3,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
+                       call byte_write(buf,8)
+                       icount = icount+1
+                     endif
+                     if(cbc2.ne.'E  ') then 
+                       call icopy(buf(2),eface(2),1)
+                       call copy48(buf(3),rbc2,5)
+                       call chcopy(buf(8),cbc2,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
+                       call byte_write(buf,8)
+                       icount = icount+1
+                     endif
+                     if(cbc4.ne.'E  ') then 
+                       call icopy(buf(2),eface(4),1)
+                       call copy48(buf(3),rbc4,5)
+                       call chcopy(buf(8),cbc4,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
+                       call byte_write(buf,8)
+                       icount = icount+1
+                     endif
+                     if(cbc1.ne.'E  ') then 
+                       call icopy(buf(2),eface(1),1)
+                       call copy48(buf(3),rbc1,5)
+                       call chcopy(buf(8),cbc1,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
+                       call byte_write(buf,8)
+                       icount = icount+1
+                     endif
+                     if(cbc5.ne.'E  ') then 
+                      call icopy(buf(2),eface(5),1)
+                      call copy48(buf(3),rbc5,5)
+                      call chcopy(buf(8),cbc5,3)
+                      if(nel.ge.1000000) call icopy(buf(3),ibc(5),1)
+                      call byte_write(buf,8)
+                      icount = icount+1
+                     endif
+                     if(cbc6.ne.'E  ') then 
+                      call icopy(buf(2),eface(6),1)
+                      call copy48(buf(3),rbc6,5)
+                      call chcopy(buf(8),cbc6,3)
+                      if(nel.ge.1000000) call icopy(buf(3),ibc(6),1)
+                      call byte_write(buf,8)
+                      icount = icount+1
+                     endif
+                   else
+                     buf2(1)=ie
+                     if(cbc3.ne.'E  ') then
+                       buf2(2)=eface(3)
+                       call copy(buf2(3),rbc3,5)
+                       call chcopy(buf2(8),cbc3,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(3)
+                       call byte_write(buf,16)
+                       icount = icount+1
+                     endif
+                     if(cbc2.ne.'E  ') then 
+                        buf2(2)=eface(2)
+                        call copy  (buf2(3),rbc2,5)
+                        call chcopy(buf2(8),cbc2,3)
+                        if(nel.ge.1000000) buf(3)=ibc(2)
+                        call byte_write(buf,16)
+                        icount = icount+1
+                     endif
+                     if(cbc4.ne.'E  ') then 
+                       buf2(2)=eface(4)
+                       call copy  (buf2(3),rbc4,5)
+                       call chcopy(buf2(8),cbc4,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(4)
+                       call byte_write(buf,16)
+                       icount = icount+1
+                     endif
+                     if(cbc1.ne.'E  ') then 
+                       buf2(2)=eface(1)
+                       call copy  (buf2(3),rbc1,5)
+                       call chcopy(buf2(8),cbc1,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(1)
+                       call byte_write(buf,16)
+                       icount = icount+1
+                     endif
+                     if(cbc5.ne.'E  ') then 
+                      buf2(2)=eface(5)
+                      call copy  (buf2(3),rbc5,5)
+                      call chcopy(buf2(8),cbc5,3)
+                      if(nel.ge.1000000) buf2(3)=ibc(5)
+                      call byte_write(buf,16)
+                      icount = icount+1
+                     endif
+                     if(cbc6.ne.'E  ') then 
+                      buf2(2)=eface(6)
+                      call copy  (buf2(3),rbc6,5)
+                      call chcopy(buf2(8),cbc6,3)
+                      if(nel.ge.1000000) buf2(3)=ibc(6)
+                      call byte_write(buf,16)
+                      icount = icount+1
+                     endif
                    endif
                  endif
                endif
@@ -1027,8 +1215,14 @@ c                  call blank(buf(8),4)
 
              e0 = 0
              ie = 0
-             if(ipass.eq.2 .and. .not. iffo) call byte_write(nbc,1)
-
+             if(ipass.eq.2 .and. .not. iffo) then
+                if(wdsize.eq.4) then
+                   call byte_write(nbc,1)
+                else
+                   rbc=nbc
+                   call byte_write(rbc,2)
+                endif
+             endif
              do ibx=1,nbox
               do iey=1,nly(ibx)
               do iex=1,nlx(ibx)
@@ -1134,40 +1328,76 @@ c
                    do ii = 1,6
                       ibc(ii) = rbc8(ii) 
                    enddo
-                   call icopy(buf(1),ie,1)
-                   call blank(buf(8),4)
+                   call blank(buf(1),30*4)
+                   if(wdsize.eq.4) then
+                     call icopy(buf(1),ie,1)
  
-                   if(cbc3.ne.'E  ') then 
-                     call icopy(buf(2),eface(3),1)
-                     call copy48(buf(3),rbc3,5)
-                     call chcopy(buf(8),cbc3,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
-                     call byte_write(buf,8)
+                     if(cbc3.ne.'E  ') then 
+                       call icopy(buf(2),eface(3),1)
+                       call copy48(buf(3),rbc3,5)
+                       call chcopy(buf(8),cbc3,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
+                       call byte_write(buf,8)
+                     endif
+ 
+                     if(cbc2.ne.'E  ') then 
+                       call icopy(buf(2),eface(2),1)
+                       call copy48(buf(3),rbc2,5)
+                       call chcopy(buf(8),cbc2,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
+                       call byte_write(buf,8)
+                     endif
+ 
+                     if(cbc4.ne.'E  ') then 
+                       call icopy(buf(2),eface(4),1)
+                       call copy48(buf(3),rbc4,5)
+                       call chcopy(buf(8),cbc4,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
+                       call byte_write(buf,8)
+                     endif
+ 
+                     if(cbc1.ne.'E  ') then 
+                       call icopy(buf(2),eface(1),1)
+                       call copy48(buf(3),rbc1,5)
+                       call chcopy(buf(8),cbc1,3)
+                       if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
+                       call byte_write(buf,8)
+                     endif 
+                   else
+                     buf2(1)=ie
+ 
+                     if(cbc3.ne.'E  ') then 
+                       buf2(2)=eface(3)
+                       call copy(buf2(3),rbc3,5)
+                       call chcopy(buf2(8),cbc3,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(3)
+                       call byte_write(buf,16)
+                     endif
+ 
+                     if(cbc2.ne.'E  ') then 
+                       buf2(2)=eface(2)
+                       call copy(buf2(3),rbc2,5)
+                       call chcopy(buf2(8),cbc2,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(2)
+                       call byte_write(buf,16)
+                     endif
+ 
+                     if(cbc4.ne.'E  ') then 
+                       buf2(2)=eface(4)
+                       call copy(buf2(3),rbc4,5)
+                       call chcopy(buf2(8),cbc4,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(4)
+                       call byte_write(buf,16)
+                     endif
+ 
+                     if(cbc1.ne.'E  ') then 
+                       buf2(2)=eface(1)
+                       call copy(buf2(3),rbc1,5)
+                       call chcopy(buf2(8),cbc1,3)
+                       if(nel.ge.1000000) buf2(3)=ibc(1)
+                       call byte_write(buf,16)
+                     endif
                    endif
- 
-                   if(cbc2.ne.'E  ') then 
-                     call icopy(buf(2),eface(2),1)
-                     call copy48(buf(3),rbc2,5)
-                     call chcopy(buf(8),cbc2,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
-                     call byte_write(buf,8)
-                   endif
- 
-                   if(cbc4.ne.'E  ') then 
-                     call icopy(buf(2),eface(4),1)
-                     call copy48(buf(3),rbc4,5)
-                     call chcopy(buf(8),cbc4,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
-                     call byte_write(buf,8)
-                   endif
- 
-                   if(cbc1.ne.'E  ') then 
-                     call icopy(buf(2),eface(1),1)
-                     call copy48(buf(3),rbc1,5)
-                     call chcopy(buf(8),cbc1,3)
-                     if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
-                     call byte_write(buf,8)
-                   endif 
                  endif
                endif
               enddo

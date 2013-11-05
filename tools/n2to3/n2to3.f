@@ -329,7 +329,7 @@ c
 
         call blank(hdr,80)
         write(hdr,111) neln,ndim3,neln       ! writes out header for .re2
-  111   format('#v001',i9,i3,i9,' hdr')
+  111   format('#v002',i9,i3,i9,' hdr')
         call byte_write(hdr,20)              ! assumes byte_open() already issued
         call byte_write(test,1)              ! write the endian discriminator
 
@@ -634,7 +634,8 @@ c-----------------------------------------------------------------------
 
       character*3  cb5,cb6
       logical ifflow,ifheat,ifper
-      real*4 buf(10)
+      real*8 buf(10)
+      real*8 r_nb
       integer e
 
       real*8 bc8(5)
@@ -681,7 +682,8 @@ c     Read bc from .rea
          if(cb5.ne.'E  ') nb = nb+nel
          if(cb6.ne.'E  ') nb = nb+nel
          
-         call byte_write(nb,1)
+         r_nb=nb
+         call byte_write(r_nb,2)
 
          do e = 1,nel
 c           Set bc and cbc
@@ -716,13 +718,17 @@ c           Set bc and cbc
             
             do k=1,6
             if(cbc(k,e).ne.'E  ') then
-               call icopy     (buf(1),e,1)
-               call icopy     (buf(2),k,1)
-               call copy      (buf(3),bc(1,k,e),5)
-               call blank     (buf(8),4)
+               buf(1)=e
+               buf(2)=k
+               buf(3)=bc(1,k,e)
+               buf(4)=bc(2,k,e)
+               buf(5)=bc(3,k,e)
+               buf(6)=bc(4,k,e)
+               buf(7)=bc(5,k,e)
+               call blank     (buf(8),8)
                call chcopy    (buf(8),cbc(k,e),3)
-               if(neln.ge.1000000) call icopy(buf(3),ibc(k,e),1)
-               call byte_write(buf,8)
+               if(neln.ge.1000000) buf(3)=ibc(k,e)
+               call byte_write(buf,16)
             endif
             enddo
             cbc(5,e) = 'E  '
@@ -771,13 +777,17 @@ c              Periodic bc's on Z plane
                enddo
                do  k = 1,6
                  if(cbc(k,e).ne.'E  ') then
-                 call icopy     (buf(1),id,1)
-                 call icopy     (buf(2),k,1)
-                 call copy      (buf(3),bc(1,k,e),5)
-                 call blank     (buf(8),4)
+                 buf(1)=id
+                 buf(2)=k
+                 buf(3)=bc(1,k,e)
+                 buf(4)=bc(2,k,e)
+                 buf(5)=bc(3,k,e)
+                 buf(6)=bc(4,k,e)
+                 buf(7)=bc(5,k,e)
+                 call blank     (buf(8),8)
                  call chcopy    (buf(8),cbc(k,e),3)
-                 if(neln.ge.1000000) call icopy(buf(3),ibc(k,e),1)
-                 call byte_write(buf,8)
+                 if(neln.ge.1000000) buf(3)=ibc(k,e)
+                 call byte_write(buf,16)
                  endif
                enddo
             enddo
@@ -817,7 +827,8 @@ c-----------------------------------------------------------------------
       subroutine re2_xyz(x,y,dzi,zmin,nel,nlev,ifcirc)
 
       character*80 string
-      real*4 buf(30)
+      real*8 buf(30)
+      real*8 rgroup
 
       real x(4,1),y(4,1)
       real dzi(1)
@@ -844,7 +855,8 @@ c-----------------------------------------------------------------------
          z1 = z1+dzi(ilev)
 
          do e=1,nel
-            call byte_write(igroup, 1)
+            rgroup=igroup
+            call byte_write(rgroup, 2)
             if (ifcirc) then ! Sweep in circular arc
 
                call sweep_circ(xc,yc,zc,x(1,e),y(1,e),4,z0)             ! z0=theta
@@ -875,7 +887,7 @@ c-----------------------------------------------------------------------
                buf(23) = zc(3)
                buf(24) = zc(4)
 
-               call byte_write(buf,24)
+               call byte_write(buf,48)
 
             else   ! Translate data in z direction (std n2to3)
 
@@ -903,7 +915,7 @@ c-----------------------------------------------------------------------
                buf(22) = z1
                buf(23) = z1
                buf(24) = z1
-               call byte_write(buf,24)
+               call byte_write(buf,48)
 
             endif
 
@@ -913,6 +925,15 @@ c-----------------------------------------------------------------------
       
       return
       end
+c-----------------------------------------------------------------------
+      subroutine bufchk(buf,n)
+      real*8 buf(n)
+       do ii=1,n
+         write(6,*) buf(ii), ii, 'HERE!!!!!'
+       enddo
+      return
+      end
+      
 c-----------------------------------------------------------------------
       subroutine blank(s,n)
       character*1 s(1)
@@ -1121,7 +1142,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       common /arraz/ zmin,zmax,dz(nelxym)
       character*1 ans
-      real*4 buf(20)
+      real*8 buf(20)
+      real*8 rcun
 c
 C     .write formatted curve side data 
 C
@@ -1135,7 +1157,8 @@ C
    12    format(i12
      $    ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
       else
-         call byte_write(ncun,1)
+         rcun=ncun
+         call byte_write(rcun,2)
       endif
 
       ilev = 0
@@ -1170,8 +1193,8 @@ C
                    write(11,62) ied4,ie,r1,r2,r3,r4,r5,ans
                  endif
                else
-                 call icopy(buf(1),ie,1)
-                 call icopy(buf(2),iedg,1)
+                 buf(1) = ie
+                 buf(2) = iedg
                  buf(3) = r1
                  buf(4) = r2
                  buf(5) = r3
@@ -1179,15 +1202,15 @@ C
                  buf(7) = r5
                  call chcopy(buf(8),ans,1)
                  ied4    = iedg+4
-                 call icopy(buf(9),ie,1)
-                 call icopy(buf(10),ied4,1)
+                 buf(9)  = ie
+                 buf(10) = ied4
                  buf(11) = r1
                  buf(12) = r2
                  buf(13) = r3
                  buf(14) = r4
                  buf(15) = r5
                  call chcopy(buf(16),ans,1)
-                 call byte_write(buf,16)
+                 call byte_write(buf,32)
                endif
             elseif (ans.eq.'m') then
                if(itype.eq.0) then
@@ -1205,8 +1228,8 @@ C
                    write(11,62) ied4,ie,r1,r2,r31,r4,r5,ans
                  endif
                else
-                 call icopy(buf(1),ie,1)
-                 call icopy(buf(2),iedg,1)
+                 buf(1) = ie
+                 buf(2) = iedg
                  buf(3) = r1
                  buf(4) = r2
                  buf(5) = r30
@@ -1214,15 +1237,15 @@ C
                  buf(7) = r5
                  call chcopy(buf(8),ans,1)
                  ied4    = iedg+4
-                 call icopy(buf(9),ie,1)
-                 call icopy(buf(10),ied4,1)
+                 buf(9)  = ie
+                 buf(10) = ied4
                  buf(11) = r1
                  buf(12) = r2
                  buf(13) = r31
                  buf(14) = r4
                  buf(15) = r5
                  call chcopy(buf(16),ans,1)
-                 call byte_write(buf,16)
+                 call byte_write(buf,32)
                endif
             endif
    50      continue
@@ -1367,7 +1390,8 @@ c-----------------------------------------------------------------------
       integer ncurve,ilast
       save    ncurve,ilast
       data    ncurve,ilast  /0,0/
-      real*4 buf(10)
+      real*8 buf(10)
+      real*8 rcurve
       integer edge,e
 
       if (ilast.eq.1.and.ipass.eq.2.and.itype.eq.0) then
@@ -1379,7 +1403,8 @@ c-----------------------------------------------------------------------
      $      ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
 
       elseif(ilast.eq.1.and.ipass.eq.2.and.itype.eq.1) then
-          call byte_write(ncurve,1)
+          rcurve=ncurve
+          call byte_write(rcurve,2)
       endif
 
       ilast = ipass
@@ -1407,15 +1432,15 @@ c-----------------------------------------------------------------------
 
          endif
       elseif(ipass.eq.2.and.cc.ne.' '.and.itype.eq.1) then
-          call icopy(buf(1),e,1)
-          call icopy(buf(2),edge,1)
+          buf(1)=e
+          buf(2)=edge
           buf(3) = r1
           buf(4) = r2
           buf(5) = r3
           buf(6) = r4
           buf(7) = r5
           call chcopy(buf(8),cc,1)
-          call byte_write(buf,8)
+          call byte_write(buf,16)
       endif
 
       return
