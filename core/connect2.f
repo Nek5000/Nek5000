@@ -2259,8 +2259,8 @@ c-----------------------------------------------------------------------
         call chcopy(ccurve(f,e)  ,buf(8),1)
       endif
 
-      write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
-    1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
+c     write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
+c   1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
 
       return
       end
