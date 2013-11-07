@@ -299,7 +299,7 @@ c-----------------------------------------------------------------------
       logical iffaiL
 C
       IF=1
-      DO 100 IEL=1,NELF
+      do 100 iel=1,nelv
          DO 100 ISIDE=1,NSIDES
             IF( cbc(ISIDE,IEL,IF).EQ.'MSI'
      $      .OR.cbc(ISIDE,IEL,IF).EQ.'msi')THEN
@@ -1103,9 +1103,9 @@ c-----------------------------------------------------------------------
       if (ifconj_merge) ifld0=2
       if (ifconj_merge) ifld1=2
 
-      if (nelf.ne.nel) then
+      if (nelv.ne.nel) then
          do ifld=ifld0,ifld1 ! Blank out B.C.'s for nonexistent elements.
-         do e=nelf+1,nel
+         do e=nelv+1,nel
          do f=1,nsides
             if(.not.iftmsh(ifld)) cbc(f,e,ifld)='   '
          enddo
@@ -1115,7 +1115,7 @@ c-----------------------------------------------------------------------
 
       do ifld=ifld0,ifld1
         if (     iftmsh(ifld)) nnel=nel
-        if (.not.iftmsh(ifld)) nnel=nelf
+        if (.not.iftmsh(ifld)) nnel=nelv
         do e=1,nnel
            maxlev=max(numapt(e),maxlev)
          enddo
@@ -1123,7 +1123,7 @@ c-----------------------------------------------------------------------
 
       do ifld=ifld0,ifld1
         if (     iftmsh(ifld)) nnel=nel
-        if (.not.iftmsh(ifld)) nnel=nelf
+        if (.not.iftmsh(ifld)) nnel=nelv
         do e=1,nnel
         do f=1,nsides
              if (cbc(f,e,ifld).eq.'   ') then
