@@ -2329,6 +2329,220 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine auto_averager ! simple average of files
+
+c     This routine reads files specificed of file.list and averages
+c     them with uniform weight
+c
+c     Note that it relies on scrns and scruz common blocks. pff 11/12/13
+c
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scruz/ ua(lt),va(lt),wa(lt),pa(lt)
+      common /scrns/ ta(lt,ldimt)
+
+      character*1 s1(132)
+      equivalence (s1,initc) ! equivalence to initial condition
+
+      ierr = 0
+      if (nid.eq.0) open(77,file='file.list',status='old',err=199)
+      ierr = iglmax(ierr,1)
+      if (ierr.gt.0) return
+
+      n = nx1*ny1*nz1*nelt
+      n2= nx2*ny2*nz2*nelt
+
+      call rzero (ua,n)
+      call rzero (va,n)
+      call rzero (wa,n)
+      call rzero (pa,n2)
+      do k=1,npscal+1
+         call rzero (ta(1,k),n)
+      enddo
+
+      icount = 0
+      do ipass=1,9999999
+
+         call blank(initc,132)
+         initc(1) = 'done '
+         if (nid.eq.0) read(77,132,end=998) initc(1)
+  998    call bcast(initc,132)
+  132    format(a132)
+
+         iblank = indx1(initc,' ',1)-1
+         if (nid.eq.0) write(6,1) ipass,(s1(k),k=1,iblank)
+    1    format(i8,'Reading: ',132a1)
+
+         if (indx1(initc,'done ',5).eq.0) then ! We're not done
+
+            nfiles = 1
+            call restart(nfiles)  ! Note -- time is reset.
+
+            call opadd2 (ua,va,wa,vx,vy,vz)
+            call add2   (pa,pr,n2)
+            do k=1,npscal+1
+               call add2(ta(1,k),t(1,1,1,1,k),n)
+            enddo
+            icount = icount+1
+
+         else
+            goto 999
+         endif
+
+      enddo
+
+  999 continue  ! clean up averages
+      if (nid.eq.0) close(77)
+
+      scale = 1./icount
+      call cmult2(vx,ua,scale,n)
+      call cmult2(vy,va,scale,n)
+      call cmult2(vz,wa,scale,n)
+      call cmult2(pr,pa,scale,n2)
+      do k=1,npscal+1
+         call cmult2(t(1,1,1,1,k),ta(1,k),scale,n)
+      enddo
+      return
+
+  199 continue ! exception handle for file not found
+      ierr = 1
+      ierr = iglmax(ierr,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine x_average(ua,u,w1,w2)
+c
+c     Compute the x average of quantity u() - assumes global tens.prod.
+c
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real ua(ny1,nz1,nely,nelz),u (nx1,ny1,nz1,nelv)
+     $    ,w1(ny1,nz1,nely,nelz),w2(ny1,nz1,nely,nelz)
+      integer e,eg,ex,ey,ez
+      real dy2
+
+      nelyz = nely*nelz
+      if (nelyz.gt.lely*lelz) call exitti
+     $  ('ABORT IN x_average. Increase lely*lelz in SIZE:$',nelyz)
+
+      myz = nely*nelz*ny1*nz1
+      call rzero(ua,myz)
+      call rzero(w1,myz)
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do j=1,ny1
+            do i=1,nx1
+               dx2 = 1.0  !  Assuming uniform element size in "x" direction
+               ua(j,k,ey,ez) = ua(j,k,ey,ez)+dx2*wzm1(i)*u(i,j,k,e)
+               w1(j,k,ey,ez) = w1(j,k,ey,ez)+dx2*wzm1(i) ! redundant but clear
+            enddo
+         enddo
+         enddo
+      enddo
+
+      call gop(ua,w2,'+  ',myz)
+      call gop(w1,w2,'+  ',myz)
+
+      do i=1,myz
+         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine x_average_transpose(u,ua) ! distribute ua to each z-plane
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'WZ'
+      include 'ZPER'
+
+      real u(nx1,ny1,nz1,nelv),ua(ny1,nz1,nely,nelz)
+
+      integer e,eg,ex,ey,ez
+
+
+      do e=1,nelt
+
+         eg = lglel(e)
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+
+         do k=1,nz1
+         do j=1,ny1
+            do i=1,nx1
+               u(i,j,k,e) = ua(j,k,ey,ez)
+            enddo
+         enddo
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine x_distribute(u)
+c
+c     Compute the x average of quantity u() and redistribute
+c
+c     Assumes you have nelx*nely elements, in the same order,
+c     within each x plane
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      real u(1)
+
+      parameter (lyavg = ly1*lz1*lely*lelz)
+      common /scravg/ ua(lyavg)
+     $              , w1(lyavg)
+     $              , w2(lyavg)
+
+      call x_average          (ua,u,w1,w2)
+      call x_average_transpose(u,ua) ! distribute ua to each z-plane
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine x_distribute2(ua,u)
+c
+c     Compute the x average of quantity u() and redistribute
+c
+c     Assumes you have nelx*nely elements, in the same order,
+c     within each x plane
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      real u(1)
+
+      parameter (lyavg = ly1*lz1*lely*lelz)
+      common /scravg/ w1(lyavg)
+     $              , w2(lyavg)
+
+      call x_average          (ua,u,w1,w2)
+      call x_average_transpose(u,ua) ! distribute ua to each z-plane
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine y_slice (ua,u,w1,w2)
 c
 c     Extract a y slice of quantity u() - assumes global tens.prod.
