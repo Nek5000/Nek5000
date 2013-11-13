@@ -2531,7 +2531,7 @@ c
       include 'TOTAL'
       include 'ZPER'
 
-      real u(1)
+      real ua(1),u(1)
 
       parameter (lyavg = ly1*lz1*lely*lelz)
       common /scravg/ w1(lyavg)
