@@ -688,19 +688,15 @@ static void separate_matrix(
   array_init(struct yale_mat,&mat_ss,2*nz), mss=mat_ss.ptr;
   for(k=0;k<nz;++k) {
     sint i=perm[Ai[k]], j=perm[Aj[k]];
-    if(i<0 || j<0 || Aj[k]<Ai[k] || A[k]==0) continue;
-    if(j<i) { sint k=j; j=i,i=k; }
+    if(i<0 || j<0 || A[k]==0) continue;
     if((uint)i<ln) {
-      if((uint)j<ln) {
+      if((uint)j<ln)
         n=mat_ll.n++,mll[n].i=i,mll[n].j=j,mll[n].v=A[k];
-        if(i!=j)
-        n=mat_ll.n++,mll[n].i=j,mll[n].j=i,mll[n].v=A[k];
-      } else
-        n=mat_sl.n++,msl[n].i=j-ln,msl[n].j=i,msl[n].v=A[k];
     } else {
-      n=mat_ss.n++,mss[n].i=i-ln,mss[n].j=j-ln,mss[n].v=A[k];
-      if(i!=j)
-      n=mat_ss.n++,mss[n].i=j-ln,mss[n].j=i-ln,mss[n].v=A[k];
+      if((uint)j<ln)
+        n=mat_sl.n++,msl[n].i=i-ln,msl[n].j=j,msl[n].v=A[k];
+      else
+        n=mat_ss.n++,mss[n].i=i-ln,mss[n].j=j-ln,mss[n].v=A[k];
     }
   }
   condense_matrix(&mat_ll,ln,out_ll,buf);
