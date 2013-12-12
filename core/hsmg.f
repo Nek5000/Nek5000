@@ -736,12 +736,13 @@ c----------------------------------------------------------------------
       
       integer i,j,k
       integer ie,il,nr,ns,nt
-      integer lbr,rbr,lbs,rbs,lbt,rbt
+      integer lbr,rbr,lbs,rbs,lbt,rbt,two
       real eps,diag
       
+      two  = 2
       ierr = 0
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,two,ierr)
          nr=nl
          ns=nl
          nt=nl
@@ -1093,7 +1094,7 @@ c----------------------------------------------------------------------
       real wt(nx,nz,2,ndim,nelv)
       
       integer ie
-      integer lbr,rbr,lbs,rbs,lbt,rbt
+      integer lbr,rbr,lbs,rbs,lbt,rbt,two
 c     init everything to 1
 
       n = nx*ny*nz*nelv
@@ -1101,11 +1102,12 @@ c     init everything to 1
 
 c     set dirichlet nodes to zero
       ierr = 0
+      two  = 2
       do ie=1,nelv
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,two,ierr)
          if (ierr.ne.0) then
             ierr = -1
-            call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,2,ierr)
+            call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,ie,two,ierr)
          endif
 
          if(lbr.eq.1) then
@@ -1661,6 +1663,7 @@ c     if (lx1.eq.6)  mgnx2 = 3
       if (lx1.eq.8)  mgnx2 = 3
 
 c     mgnx2 = min(3,mgnx2)  
+      
 
       mg_nx(2) = mgnx2
       mg_ny(2) = mgnx2
@@ -2454,7 +2457,7 @@ c----------------------------------------------------------------------
       real w(nx,ny,nz,nel)
       
       integer e,count,ptr
-      integer lbr,rbr,lbs,rbs,lbt,rbt
+      integer lbr,rbr,lbs,rbs,lbt,rbt,two
 
       zero = 0
       nxyz = nx*ny*nz
@@ -2463,9 +2466,10 @@ c----------------------------------------------------------------------
       call rone(w,n)   ! Init everything to 1
 
       ierrmx = 0       ! BC verification
+      two    = 2
       do e=1,nel       ! Set dirichlet nodes to zero
 
-         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,e,2,ierr)
+         call get_fast_bc(lbr,rbr,lbs,rbs,lbt,rbt,e,two,ierr)
 c        write(6,6) e,lbr,rbr,lbs,rbs,ierr,nx
 c   6    format(i5,2x,4i3,2x,i2,3x,i5,'  lbr,rbr,lbs')
 
