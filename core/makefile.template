@@ -44,11 +44,13 @@ navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
 init_plugin.o setprop.o qthermal.o cvode_aux.o makeq_aux.o \
-papi.o ssygv.o dsygv.o nek_in_situ.o
+papi.o nek_in_situ.o
 ################################################################################
 # MXM 
 MXM = mxm_std.o 
-
+################################################################################
+# LAPACK
+LPACK = dsygv.o ssygv.o
 # JL Routines ###################################################################
 JO  = jl_
 
@@ -106,7 +108,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 TMP2 = $(JLCORE) $(JLINTP) $(CGS) 
 NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
