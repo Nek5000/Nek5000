@@ -15,6 +15,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
   echo "  NEKNEK    enable multidomain support (experimental)"
+  echo "  NO_LAPACK disable nek-supplied LAPACK routines"
+  echo "  BLAS_MXM  disable nek-supplied BLAS routines"
   exit 1
 fi
 
@@ -345,6 +347,11 @@ echo $PPLIST | grep 'BLAS_MXM' >/dev/null
 if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o" 
 fi
+LPACK="dsygv.o ssygv.o"
+echo $PPLIST | grep 'NO_LAPACK' >/dev/null 
+if [ $? -eq 0 ]; then
+   LPACK=" "
+fi
 
 # set optimization flags
 L0="\$(G) -O0"
@@ -388,6 +395,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
+-e "s:^LPACK[ ]*=.*:LPACK=$LPACK:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
