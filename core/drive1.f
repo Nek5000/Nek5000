@@ -202,7 +202,9 @@ c-----------------------------------------------------------------------
 
       call nek_comm_startstat()
 
+      istep  = 0
       msteps = 1
+
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
          call userchk
