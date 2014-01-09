@@ -473,11 +473,15 @@ c              read(string,*) IFSPLIT
 C
 C     Set up default time dependent coefficients - NSTEPS,DT.
 C
-      IF (.NOT.IFTRAN) THEN
-         PARAM(11) = 1.0
-         PARAM(12) = 1.0
-         PARAM(19) = 0.0
-      ENDIF
+      if (.not.iftran) then
+         if (ifflow.and.ifsplit) then
+            iftran=.true.
+         else
+            param(11) = 1.0
+            param(12) = 1.0
+            param(19) = 0.0
+         endif
+      endif
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
 c     This is here because it influence the mesh read, which follows.
