@@ -2205,7 +2205,7 @@ c-----------------------------------------------------------------------
 
       integer e,eg,buf(0:49)
 
-      nwds = 1 + ndim*(2**ndim) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = 1 + ndim*(2**ndim)*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 
       if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
           call byte_reverse8(buf,nwds,ierr)
@@ -2404,7 +2404,7 @@ c-----------------------------------------------------------------------
 
          if(wdsizi.eq.8) then
            call byte_read(rcurve,2,ierr)
-           if (ifbswap) call byte_reverse8(rcurve,1,ierr)
+           if (ifbswap) call byte_reverse8(rcurve,2,ierr)
            ncurve = rcurve
          else
            call byte_read(ncurve,1,ierr)
@@ -2415,8 +2415,7 @@ c-----------------------------------------------------------------------
            if(ierr.eq.0) then
               call byte_read(buf,nwds,ierr)
               if(wdsizi.eq.8) then
-                nwds2 = nwds/2
-                if(ifbswap) call byte_reverse8(buf,nwds2-1,ierr)
+                if(ifbswap) call byte_reverse8(buf,nwds-2,ierr)
                 call copyi4(eg,buf(1),1)  !1,2
               else
                 if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
@@ -2498,7 +2497,7 @@ c-----------------------------------------------------------------------
   
          if(wdsizi.eq.8) then
            call byte_read(rbc_max,2,ierr)
-           if (ifbswap) call byte_reverse8(rbc_max,1,ierr) ! last is char
+           if (ifbswap) call byte_reverse8(rbc_max,2,ierr) ! last is char
            nbc_max = rbc_max
          else
            call byte_read(nbc_max,1,ierr)
@@ -2510,8 +2509,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
             if(ierr.eq.0) then
                call byte_read(buf,nwds,ierr)
                if(wdsizi.eq.8) then
-                 nwds2 = nwds/2
-                 if (ifbswap) call byte_reverse8(buf,nwds2-1,ierr)
+                 if (ifbswap) call byte_reverse8(buf,nwds2-2,ierr)
                  call copyi4(eg,buf(1),1) !1&2 of buf
                else
                  if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char

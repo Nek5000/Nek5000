@@ -2062,7 +2062,7 @@ c-----------------------------------------------------------------------
       endif
       
       call bcast(npoints,isize)
-      if(npoints.gt.nbuf*np) then
+      if(npoints.gt.lhis*np) then
         if(nid.eq.0) write(6,*) 'ABORT: Too many pts to read in hpts()!'
         call exitt
       endif
