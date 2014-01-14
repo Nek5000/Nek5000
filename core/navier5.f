@@ -839,7 +839,9 @@ c
       data    icalld/0/
       logical ifpf
       save    ifpf
-c
+
+      call dsset(nx1,ny1,nz1)
+
       if (icalld.eq.0) then
          icalld=icalld+1
          if (skpdat(1,2).eq.nx1) then
@@ -850,11 +852,10 @@ c           write(6,*) 'In surface_int, using std version of skpdat.'
             ifpf = .false.
          endif
       endif
-C
+
       sarea = 0.
       sint  = 0.
 C
-      call dsset(nx1,ny1,nz1)
       iface  = eface1(iface1)
 c
 c     Check skpdat (because of difference in pf vs. commercial version...arrghh)
@@ -903,8 +904,9 @@ c
       data    icalld/0/
       logical ifpf
       save    ifpf
-c
+
       call dsset(nx1,ny1,nz1)
+
       if (icalld.eq.0) then
          icalld=icalld+1
          if (skpdat(1,2).eq.nx1) then
@@ -915,7 +917,7 @@ c           write(6,*) 'In surface_flux, using std version of skpdat.'
             ifpf = .false.
          endif
       endif
-C
+
       ifacepf  = eface1(iface)
 c
 c     Check skpdat (because of difference in pf vs. commercial version...arrghh)
