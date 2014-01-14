@@ -828,133 +828,73 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine surface_int(sint,sarea,a,ie,iface1)
+      subroutine surface_int(sint,sarea,a,e,f)
 C
       include 'SIZE'
       include 'GEOM'
       include 'PARALLEL'
       include 'TOPOL'
       real a(lx1,ly1,lz1,1)
-c
-      integer icalld
-      save    icalld
-      data    icalld/0/
-      logical ifpf
-      save    ifpf
+
+      integer e,f
 
       call dsset(nx1,ny1,nz1)
 
-      if (icalld.eq.0) then
-         icalld=icalld+1
-         if (skpdat(1,2).eq.nx1) then
-c           write(6,*) 'In surface_int, using pf version of skpdat.'
-            ifpf = .true.
-         else
-c           write(6,*) 'In surface_int, using std version of skpdat.'
-            ifpf = .false.
-         endif
-      endif
+      iface  = eface1(f)
+      js1    = skpdat(1,iface)
+      jf1    = skpdat(2,iface)
+      jskip1 = skpdat(3,iface)
+      js2    = skpdat(4,iface)
+      jf2    = skpdat(5,iface)
+      jskip2 = skpdat(6,iface)
 
       sarea = 0.
       sint  = 0.
-C
-      iface  = eface1(iface1)
-c
-c     Check skpdat (because of difference in pf vs. commercial version...arrghh)
-c
-      if (ifpf) then
-c        pf version
-         js1    = skpdat(1,iface)
-         jf1    = skpdat(2,iface)
-         jskip1 = skpdat(3,iface)
-         js2    = skpdat(4,iface)
-         jf2    = skpdat(5,iface)
-         jskip2 = skpdat(6,iface)
-      else
-c        std version
-         js1    = skpdat(iface,1)
-         jf1    = skpdat(iface,2)
-         jskip1 = skpdat(iface,3)
-         js2    = skpdat(iface,4)
-         jf2    = skpdat(iface,5)
-         jskip2 = skpdat(iface,6)
-      endif
-C
-      I = 0
+      i     = 0
+
       do 100 j2=js2,jf2,jskip2
       do 100 j1=js1,jf1,jskip1
-         I = I+1
-         sarea = sarea+area(i,1,iface1,ie)
-         sint  = sint +area(i,1,iface1,ie)*a(j1,j2,1,ie)
+         i = i+1
+         sarea = sarea+area(i,1,f,e)
+         sint  = sint +area(i,1,f,e)*a(j1,j2,1,e)
   100 continue
-C
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine surface_flux(dq,qx,qy,qz,ie,iface,w)
-C
+      subroutine surface_flux(dq,qx,qy,qz,e,f,w)
+
       include 'SIZE'
       include 'GEOM'
       include 'INPUT'
       include 'PARALLEL'
       include 'TOPOL'
       parameter (l=lx1*ly1*lz1)
-      real w(lx1,ly1,lz1),qx(l,1),qy(l,1),qz(l,1)
-c
-      integer icalld
-      save    icalld
-      data    icalld/0/
-      logical ifpf
-      save    ifpf
+
+      real qx(l,1),qy(l,1),qz(l,1),w(lx1,ly1,lz1)
+      integer e,f
+
+      call           faccl3  (w,qx(1,e),unx(1,1,f,e),f)
+      call           faddcl3 (w,qy(1,e),uny(1,1,f,e),f)
+      if (if3d) call faddcl3 (w,qz(1,e),unz(1,1,f,e),f)
 
       call dsset(nx1,ny1,nz1)
+      iface  = eface1(f)
+      js1    = skpdat(1,iface)
+      jf1    = skpdat(2,iface)
+      jskip1 = skpdat(3,iface)
+      js2    = skpdat(4,iface)
+      jf2    = skpdat(5,iface)
+      jskip2 = skpdat(6,iface)
 
-      if (icalld.eq.0) then
-         icalld=icalld+1
-         if (skpdat(1,2).eq.nx1) then
-c           write(6,*) 'In surface_flux, using pf version of skpdat.'
-            ifpf = .true.
-         else
-c           write(6,*) 'In surface_flux, using std version of skpdat.'
-            ifpf = .false.
-         endif
-      endif
-
-      ifacepf  = eface1(iface)
-c
-c     Check skpdat (because of difference in pf vs. commercial version...arrghh)
-c
-      if (ifpf) then
-c        pf version
-         js1    = skpdat(1,ifacepf)
-         jf1    = skpdat(2,ifacepf)
-         jskip1 = skpdat(3,ifacepf)
-         js2    = skpdat(4,ifacepf)
-         jf2    = skpdat(5,ifacepf)
-         jskip2 = skpdat(6,ifacepf)
-      else
-c        std version
-         js1    = skpdat(ifacepf,1)
-         jf1    = skpdat(ifacepf,2)
-         jskip1 = skpdat(ifacepf,3)
-         js2    = skpdat(ifacepf,4)
-         jf2    = skpdat(ifacepf,5)
-         jskip2 = skpdat(ifacepf,6)
-      endif
-C
-      call faccl3 (w,qx(1,ie),unx(1,1,iface,ie),iface)
-      call faddcl3(w,qy(1,ie),uny(1,1,iface,ie),iface)
-      if (if3d)
-     $call faddcl3(w,qz(1,ie),unz(1,1,iface,ie),iface)
-c
       dq = 0
       i  = 0
       do 100 j2=js2,jf2,jskip2
       do 100 j1=js1,jf1,jskip1
          i = i+1
-         dq    = dq   +area(i,1,iface,ie)*w(j1,j2,1)
+         dq    = dq + area(i,1,f,e)*w(j1,j2,1)
   100 continue
-C
+
       return
       end
 c-----------------------------------------------------------------------
