@@ -85,11 +85,11 @@ c        decay in wave space
 c     ifield = 1
 
       if_fltv = .false.
-      if ( (ifflow.and. .not. ifmhd) ) if_fltv = .true
-      if ( (ifield.eq.1 .and. ifmhd) ) if_fltv = .true.
+      if ( ifflow .and. .not. ifmhd ) if_fltv = .true.
+      if ( ifield.eq.1  .and. ifmhd ) if_fltv = .true.
 
 c     Adam Peplinski; to take into account freezing of base flow
-      if ( .not.ifbase               ) if_fltv = .false. ! base-flow frozen
+      if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
 
       if ( if_fltv ) then
          call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
@@ -4295,8 +4295,8 @@ c     will not.
          call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
          nchange = iglsum(nchange,1)
          dmax = glmax(dmax,1)
-         if (nid.eq.0) write(6,1) ipass,nchange,dmax
-    1    format(i9,i12,1pe12.4,' max wall distance 1')
+         if (nid.eq.0) write(6,1) ipass,nchange,dmax,b
+    1    format(i9,i12,1pe12.4,' max distance b: ',a3)
          if (nchange.eq.0) goto 1000
       enddo
  1000 return
