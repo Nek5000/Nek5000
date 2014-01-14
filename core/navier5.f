@@ -4447,50 +4447,63 @@ c     call filter_d2(d,nx1,nz1,wgt,.true.)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine turb_outflow(rq)
+      subroutine turb_outflow(d,m1,rq)
 
 c     . Set div U > 0 in elements with 'O  ' bc.
 c
 c     . rq is nominally the ratio of Qout/Qin and is typically 1.5
 c
+c     . d and m1 are work arrays of size (lx1,ly1,lz1,lelt), assumed persistant
 
+c
 c     This routine may or may not work with multiple outlets --- it has
 c     not been tested for this case.
+c
 
       include 'SIZE'
       include 'TOTAL'
 
-      common /scrcg/ d(lx1,ly1,lz1,lelt),m1(lx1,ly1,lz1,lelt)
-      real m1
+      real d(lx1,ly1,lz1,lelt),m1(lx1,ly1,lz1,lelt)
 
-
-      integer icalld,e,f,fo,of(6)
-      save    icalld,of
+      integer icalld,e,f
+      save    icalld
       data    icalld /0/
-      data    of     / 3,1 , 4,2 , 6,5 /  ! Set of opposite faces
+
+      real ddmax
+      save ddmax
 
       character*3 b
 
       n    = nx1*ny1*nz1*nelv
       nxyz = nx1*ny1*nz1
 
-      b = 'O  '
+      if (icalld.eq.0) then
+         icalld = 1
 
-      call rone(m1,n)
-      call cheap_dist(d,1,b)
+         b = 'O  '
+         call cheap_dist(d,1,b)
+         call rone(m1,n)
 
-      ddmax = 0.
-      do e=1,nelv
-      do f=1,2*ndim
-         if (cbc(f,e,1).eq.b) then
-            call rzero(m1(1,1,1,e),nxyz)
-            dmax  = vlmax(d(1,1,1,e),nxyz)
-            ddmax = max(ddmax,dmax)
-         endif
-      enddo
-      enddo
+         ddmax = 0.
+         do e=1,nelv
+         do f=1,2*ndim
+            if (cbc(f,e,1).eq.b) then
+               call rzero(m1(1,1,1,e),nxyz)
+               dmax  = vlmax(d(1,1,1,e),nxyz)
+               ddmax = max(ddmax,dmax)
+            endif
+         enddo
+         enddo
+         ddmax = glamax(ddmax,1)
 
-      ubar = glsc3(vx,bm1,m1,n)
+         do i=1,n
+            xs = 0.
+            if (m1(i,1,1,1).eq.0) xs = (ddmax - d(i,1,1,1))/ddmax
+            d(i,1,1,1) = xs
+         enddo
+      endif
+
+      ubar = glsc3(vx,bm1,m1,n)   ! Masked average
       vbar = glsc3(vy,bm1,m1,n)
       wbar = glsc3(vz,bm1,m1,n)
       volu = glsc2(bm1,m1,n)
@@ -4500,11 +4513,7 @@ c     not been tested for this case.
 
       cs = 3*(rq-1.)*(ubar/ddmax)
       do i=1,n
-         usrdiv(i,1,1,1) = 0
-         if (m1(i,1,1,1).eq.0) then
-            xs = (ddmax - d(i,1,1,1))/ddmax
-            usrdiv(i,1,1,1) = cs*xs**2
-         endif
+         usrdiv(i,1,1,1) = cs*(d(i,1,1,1)**2)
       enddo
 
       return
