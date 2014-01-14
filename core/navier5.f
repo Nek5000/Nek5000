@@ -45,6 +45,7 @@ c     outpost arrays
       save    icalld
       data    icalld /0/
 
+      logical if_fltv
 
       imax = nid
       imax = iglmax(imax,1)
@@ -70,26 +71,27 @@ c
 c
 c        Weight the filter to make it a smooth (as opposed to truncated)
 c        decay in wave space
-c
+
          w0 = 1.-wght
          call ident(intup,nx2)
          call add2sxy(intp,wght,intup,w0,nx2*nx2)
-c
+
          call ident   (intuv,nx1)
          call add2sxy (intv ,wght,intuv,w0,nx1*nx1)
-c
-c        if (nid.eq.0) call outmatx(intp,nx2,nx2,21,'flt2')
-c        if (nid.eq.0) call outmatx(zgm2 ,nx2,1  ,22,'zgm2')
-c        if (nid.eq.0) call outmatx(intv,nx1,nx1,11,'flt1')
-c        if (nid.eq.0) call outmatx(zgm1 ,nx1,1  ,12,'zgm1')
-c
+
       endif
 
       ifldt  = ifield
 c     ifield = 1
 
-      if ( (ifflow.and. .not. ifmhd)  .or.
-     $     (ifield.eq.1 .and. ifmhd)      ) then
+      if_fltv = .false.
+      if ( (ifflow.and. .not. ifmhd) ) if_fltv = .true
+      if ( (ifield.eq.1 .and. ifmhd) ) if_fltv = .true.
+
+c     Adam Peplinski; to take into account freezing of base flow
+      if ( .not.ifbase               ) if_fltv = .false. ! base-flow frozen
+
+      if ( if_fltv ) then
          call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
          call filterq(vy,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
