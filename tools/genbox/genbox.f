@@ -189,14 +189,7 @@ c-----------------------------------------------------------------------
       
       nel  = 0
       nbox = 0
-      do ibox=1,mbox+1
-
-         if (ibox.gt.mbox) then
-            write(6,*) 'Error: number of boxes >',mbox
-            write(6,*) 'Increase mbox in genbox.f and'
-            write(6,*) 'remake nek5_svn/trunk/tools/genbox'
-            call exitt
-         endif
+      do ibox=1,mbox 
 
          ifevenx = .false.
          ifeveny = .false.
@@ -416,6 +409,15 @@ c           write(998,*) (y(i,1),i=0,nely)
       enddo
     6 format('Reading',i12,' =',3i9,' elements for box',i4,'.')
    99 continue
+
+      call gets(boxcirc(ibox),1,iend,7)
+      if (iend.ne.1) then
+         write(6,*) 'Error: number of boxes >',mbox
+         write(6,*) 'Increase mbox in genbox.f and'
+         write(6,*) 'remake nek5_svn/trunk/tools/genbox'
+         call exitt
+      endif
+
 
       if(nel.gt.maxel) then
         write(6,*)
