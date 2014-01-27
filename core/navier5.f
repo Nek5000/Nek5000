@@ -4519,3 +4519,65 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine add_temp(f2tbc,nbc)
+
+c
+c     TYPICAL USAGE:  Add the below to usrdat().
+c
+c     parameter (lbc=10) ! Maximum number of bc types
+c     character*3 f2tbc(2,lbc)
+c
+c     f2tbc(1,1) = 'W  '   ! Any 'W  ' bc is swapped to ft2bc(2,1)
+c     f2tbc(2,1) = 'I  '
+c
+c     f2tbc(1,2) = 'v  '   ! Any 'v  ' bc is swapped to ft2bc(2,2)
+c     f2tbc(2,2) = 't  '
+c
+c     nbc = 2      ! Number of boundary condition pairings (e.g., W-->t)
+c     do i=1,ldimt-1
+c        call add_temp(f2tbc,nbc)
+c     enddo
+
+      include 'SIZE'
+      include 'TOTAL'
+      character*3 f2tbc(2,nbc)
+
+      integer e,f
+
+      nfld=nfield+1
+
+      write(6,*) 'add temp: ',nfld,nfield,istep
+
+      nelfld(nfld) = nelfld(nfield)
+      nel = nelfld(nfield)
+      call copy  (bc(1,1,1,nfld),bc(1,1,1,nfield),30*nel)
+      call chcopy(cbc(1,1,nfld),cbc(1,1,nfield),3*6*nel)
+
+      do k=1,3
+         cpfld(nfld,k)=cpfld(nfield,k)
+         call copy (cpgrp(-5,nfld,k),cpgrp(-5,nfield,k),16)
+      enddo
+      call icopy(matype(-5,nfld),matype(-5,nfield),16)
+
+      ifadvc(nfld) = .true.
+      iftmsh(nfld) = .true.
+      ifvarp(nfld) = ifvarp(nfield)
+      if (nfld.eq.2) ifto = .true.
+      if (nfld.gt.2) ifpsco(nfld-2) = .true.
+      if (nfld.gt.2) npscal = npscal+1
+
+
+      nfield = nfld
+
+      nface = 2*ndim
+      do k=1,nbc               ! BC conversion
+        do e=1,nelfld(nfld)
+        do f=1,nface
+          if (cbc(f,e,nfld).eq.f2tbc(1,k)) cbc(f,e,nfld)=f2tbc(2,k)
+        enddo
+        enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
