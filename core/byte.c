@@ -101,7 +101,7 @@ void byte_reverse8(float *buf, int *nn,int *ierr)
     return;
   }
 
-  for (ptr=(char *)buf,n=*nn; n-=2; ptr+=8)
+  for (ptr=(char *)buf,n=*nn,n=n+2; n-=2; ptr+=8)
   {
      SWAP(ptr[0],ptr[7])
      SWAP(ptr[1],ptr[6])

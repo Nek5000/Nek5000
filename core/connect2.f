@@ -2205,7 +2205,7 @@ c-----------------------------------------------------------------------
 
       integer e,eg,buf(0:49)
 
-      nwds = 1 + ndim*(2**ndim)*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 
       if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
           call byte_reverse8(buf,nwds,ierr)
@@ -2215,7 +2215,7 @@ c-----------------------------------------------------------------------
       if(ierr.ne.0) return
 
       if(wdsizi.eq.8) then
-         call copyi4(igroup,buf(0),1) !0-1
+         call copyi4(igroup(e),buf(0),1) !0-1
          if (ndim.eq.3) then
             call copy  (xc(1,e),buf( 2),8) !2 --17
             call copy  (yc(1,e),buf(18),8) !18--33
@@ -2509,7 +2509,7 @@ c           write(6,*) k,' dobc1 ',nbc_max
             if(ierr.eq.0) then
                call byte_read(buf,nwds,ierr)
                if(wdsizi.eq.8) then
-                 if (ifbswap) call byte_reverse8(buf,nwds2-2,ierr)
+                 if (ifbswap) call byte_reverse8(buf,nwds-2,ierr)
                  call copyi4(eg,buf(1),1) !1&2 of buf
                else
                  if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
