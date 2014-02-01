@@ -83,6 +83,10 @@ c     Get file output type
       read(in,*) zmin
       write(6,*) 'input z max:'
       read(in,*) zmax
+
+      if (zmax.le.zmin) 
+     $  call exitrr('Error, must have zmax > zmin.$',zmin,zmax)
+
       write(6,*) 
      $  'input gain (0=custom,1=uniform,other=geometric spacing):'
       read(in,*) gain
@@ -1517,4 +1521,24 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exitrr(stringi,r1,r2)
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*26 s26
 
+      call blank  (stringo,132)
+      call chcopy (stringo,stringi,132)
+      len = indx1 (stringo,'$',1)
+      write(s26,26) r1,r2
+   26 format(1p2e13.4)
+      call chcopy(stringo(len),s26,26)
+
+      if (nid.eq.0) write(6,1) (stringo(k),k=1,len+25)
+      if (nid.eq.0) write(6,*)
+    1 format(/,'EXIT: ',132a1)
+
+      call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
