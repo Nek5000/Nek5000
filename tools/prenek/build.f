@@ -2928,6 +2928,7 @@ c-----------------------------------------------------------------------
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       q = 0.02
+      q = 0.002
 
 c     Compress vertices based on coordinates
       call unique_vertex2(cell,dx,ndim,nel,q,i_n,j_n,j_o,wk)
@@ -3140,7 +3141,6 @@ c-----------------------------------------------------------------------
                call outmatti  (cell,nv,n10,'slfchk',nel,flag)
 
                call prexit
-
                call exitt(flag)
 
             endif
