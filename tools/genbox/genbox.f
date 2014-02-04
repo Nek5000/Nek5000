@@ -265,6 +265,11 @@ c           Generate xyz data
                       call exitt
                    endif
                endif
+               if(x1.le.x0) then
+                  write(6,*) 'ABORT, must have x1 > x0 !'
+                  write(6,*) 'x0: ',x0,' x1: ',x1
+                  call exitt
+               endif
                if (ratio.le.0) ratio=1.
                dx = (x1-x0)/nelx
                x(0,ibox) = 0.
@@ -288,6 +293,11 @@ c           Generate xyz data
  
             if (ifeveny) then
                call getr3(y0,y1,ratio,iend,7)
+               if(y1.le.y0) then
+                  write(6,*) 'ABORT, must have y1 > y0 !'
+                  write(6,*) 'y0: ',y0,' y1: ',y1
+                  call exitt
+               endif
                if (ratio.le.0) ratio=1.
                dy = (y1-y0)/nely
                y(0,ibox) = 0.
@@ -305,6 +315,11 @@ c           Generate xyz data
  
             if (ifevenz) then
                call getr3(z0,z1,ratio,iend,7)
+               if(z1.le.z0) then
+                  write(6,*) 'ABORT, must have z1 > z0 !'
+                  write(6,*) 'z0: ',z0,' z1: ',z1
+                  call exitt
+               endif
                if (ratio.le.0) ratio=1.
                dz = (z1-z0)/nelz
                z(0,ibox) = 0.
@@ -350,6 +365,11 @@ c              write(6,*) 'CBC:',(cbc(k,ibox,ifld),k=1,6),ifld,ibox
  
             if (ifevenx) then
                call getr3(x0,x1,ratio,iend,7)
+               if(x1.le.x0) then
+                  write(6,*) 'ABORT, must have x1 > x0 !'
+                  write(6,*) 'x0: ',x0,' x1: ',x1
+                  call exitt
+               endif
                if (boxcirc(ibox).eq.'c'.or.boxcirc(ibox).eq.'C') then
                    if(x0.le.xc(ibox)) then
                       write(6,*) 'ABORT, x0 is equal to the center!'
@@ -380,6 +400,11 @@ c           write(999,*) (x(i,1),i=0,nelx)
 
             if (ifeveny) then
                call getr3(y0,y1,ratio,iend,7)
+               if(y1.le.y0) then
+                  write(6,*) 'ABORT, must have y1 > y0 !'
+                  write(6,*) 'y0: ',y0,' y1: ',y1
+                  call exitt
+               endif
                if (ratio.le.0) ratio=1.
                dy = (y1-y0)/nely
                y(0,ibox) = 0.
@@ -1770,6 +1795,11 @@ c
       do l=1,n
          do k=1,m
             i = i+1
+            if(adum(i).eq.',') then
+               write(6,*) "ABORT, each BC must be 3 characters long"
+               write(6,*) "BC  : ",l
+               call exitt
+            endif
             c(k,l) = adum(i)
          enddo
  
@@ -1995,7 +2025,11 @@ c-----------------------------------------------------------------------
       x1 = x(1)
       r  = x(2)
       write(6,*) 'x0:',x0,x1,r,nelx
- 
+      if(x1.le.x0) then
+        write(6,*) 'ABORT, must have x1 > x0 !'
+        call exitt
+      endif
+
       nelx = abs(nelx)
       if (r.eq.1.0) then
          dx = (x1-x0)/nelx
