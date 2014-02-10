@@ -4447,7 +4447,7 @@ c     call filter_d2(d,nx1,nz1,wgt,.true.)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine turb_outflow(d,m1,rq)
+      subroutine turb_outflow(d,m1,rq,uin)
 
 c     . Set div U > 0 in elements with 'O  ' bc.
 c
@@ -4463,58 +4463,86 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      real d(lx1,ly1,lz1,lelt),m1(lx1,ly1,lz1,lelt)
+      real d(lx2,ly2,lz2,lelt),m1(lx1*ly1*lz1,lelt)
+
+      parameter (lw = 3*lx1*ly1*lz1)
+      common /ctmp1/ w(lw)
 
       integer icalld,e,f
       save    icalld
       data    icalld /0/
 
-      real ddmax
-      save ddmax
+      real ddmax,cso
+      save ddmax,cso
+      logical ifout
 
       character*3 b
 
-      n    = nx1*ny1*nz1*nelv
-      nxyz = nx1*ny1*nz1
+      n     = nx1*ny1*nz1*nelv
+      n2    = nx2*ny2*nz2*nelv
+      nxyz  = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
 
       if (icalld.eq.0) then
          icalld = 1
 
          b = 'O  '
-         call cheap_dist(d,1,b)
-         call rone(m1,n)
+         call cheap_dist(m1,1,b)
+
+         call rzero (d,n2)
 
          ddmax = 0.
          do e=1,nelv
-         do f=1,2*ndim
-            if (cbc(f,e,1).eq.b) then
-               call rzero(m1(1,1,1,e),nxyz)
-               dmax  = vlmax(d(1,1,1,e),nxyz)
-               ddmax = max(ddmax,dmax)
+           ifout = .false.
+           do f=1,2*ndim
+             if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
+           enddo
+           if (ifout) then
+            if (lx2.lt.lx1) then ! Map distance function to Gauss
+             call maph1_to_l2(d(1,1,1,e),nx2,m1(1,e),nx1,if3d,w,lw)
+            else
+             call copy(d(1,1,1,e),m1(1,e),nxyz)
             endif
+            dmax  = vlmax(m1(1,e),nxyz)
+            ddmax = max(ddmax,dmax)
+            call rzero(m1(1,e),nxyz) ! mask points at outflow
+           else
+             call rone (m1(1,e),nxyz)
+           endif
          enddo
-         enddo
+
          ddmax = glamax(ddmax,1)
 
-         do i=1,n
-            xs = 0.
-            if (m1(i,1,1,1).eq.0) xs = (ddmax - d(i,1,1,1))/ddmax
-            d(i,1,1,1) = xs
+         do e=1,nelv
+           ifout = .false.
+           do f=1,2*ndim
+             if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
+           enddo
+           if (ifout) then
+              do i=1,nxyz2
+                d(i,1,1,e) = (ddmax - d(i,1,1,e))/ddmax
+              enddo
+           endif
          enddo
       endif
 
-      ubar = glsc3(vx,bm1,m1,n)   ! Masked average
-      vbar = glsc3(vy,bm1,m1,n)
-      wbar = glsc3(vz,bm1,m1,n)
-      volu = glsc2(bm1,m1,n)
-      ubar = abs(ubar)+abs(vbar)
-      if (if3d) ubar = abs(ubar)+abs(wbar)
-      if (volu.gt.0) ubar = ubar/volu
+      if (uin.ne.0) then ! Use user-supplied characteristic velocity
+         ubar = uin
+      else
+         ubar = glsc3(vx,bm1,m1,n)   ! Masked average
+         vbar = glsc3(vy,bm1,m1,n)
+         wbar = glsc3(vz,bm1,m1,n)
+         volu = glsc2(bm1,m1,n)
+         ubar = abs(ubar)+abs(vbar)
+         if (if3d) ubar = abs(ubar)+abs(wbar)
+      endif
 
       cs = 3*(rq-1.)*(ubar/ddmax)
-      do i=1,n
+      if (istep.gt.1) cs=cso
+      do i=1,n2
          usrdiv(i,1,1,1) = cs*(d(i,1,1,1)**2)
       enddo
+      cso = cs
 
       return
       end
