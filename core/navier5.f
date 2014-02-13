@@ -4468,9 +4468,9 @@ c
       parameter (lw = 3*lx1*ly1*lz1)
       common /ctmp1/ w(lw)
 
-      integer icalld,e,f
-      save    icalld
-      data    icalld /0/
+      integer icalld,noutf,e,f
+      save    icalld,noutf
+      data    icalld,noutf /0,0/
 
       real ddmax,cso
       save ddmax,cso
@@ -4492,10 +4492,13 @@ c
          call rzero (d,n2)
 
          ddmax = 0.
+         noutf = 0
+
          do e=1,nelv
            ifout = .false.
            do f=1,2*ndim
              if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
+             if (cbc(f,e,1).eq.b) noutf = noutf+1
            enddo
            if (ifout) then
             if (lx2.lt.lx1) then ! Map distance function to Gauss
@@ -4524,7 +4527,10 @@ c
               enddo
            endif
          enddo
+         noutf = iglsum(noutf,1)
       endif
+
+      if (noutf.eq.0) return
 
       if (uin.ne.0) then ! Use user-supplied characteristic velocity
          ubar = uin
@@ -4586,6 +4592,9 @@ c     enddo
          call copy (cpgrp(-5,nfld,k),cpgrp(-5,nfield,k),16)
       enddo
       call icopy(matype(-5,nfld),matype(-5,nfield),16)
+
+      param(7) = param(1)  ! rhoCP   = rho
+      param(8) = param(2)  ! conduct = dyn. visc
 
       ifadvc(nfld) = .true.
       iftmsh(nfld) = .true.
