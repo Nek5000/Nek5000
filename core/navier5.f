@@ -4596,6 +4596,7 @@ c     enddo
       param(7) = param(1)  ! rhoCP   = rho
       param(8) = param(2)  ! conduct = dyn. visc
 
+      ifheat       = .true.
       ifadvc(nfld) = .true.
       iftmsh(nfld) = .true.
       ifvarp(nfld) = ifvarp(nfield)
