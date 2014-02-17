@@ -1629,11 +1629,13 @@ c
       character*1 file2(40)
       EQUIVALENCE (file2,fnamei)
       
-      integer buf(30)
+      integer buf(50)
       character*80 hdr
       character*5 ver
+      integer wdsizi
       logical ifbswap
       real*4 test
+      real*8 rtemp
 
 
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
@@ -1969,6 +1971,8 @@ c     OPEN .re2
          call byte_open(file2)
          call byte_read(hdr,20)
          read(hdr,*) ver,nelr,ndim
+         wdsizi = 4
+         if(ver.eq.'#v002') wdsizi = 8
          call byte_read(test,1)
          ifbswap = if_byte_swap_test(test)
       endif
@@ -2041,12 +2045,19 @@ c 423       continue
                READ(9,*,ERR=43,END=43)(X(IEL,IC),IC=1,4)
                READ(9,*,ERR=43,END=43)(Y(IEL,IC),IC=1,4)
             else
-               nwds =  1 + ndim*(2**ndim)
+               nwds =  (1 + ndim*(2**ndim))*(wdsizi/4)
                call byte_read(buf,nwds)
-               if (ifbswap) call byte_reverse(buf,nwds)
-               ig=buf(1)
-               call copy4b(x(iel,1),buf( 2),4,iel,nelm)
-               call copy4b(y(iel,1),buf( 6),4,iel,nelm)
+               if(wdsizi.eq.8) then
+                 if (ifbswap) call byte_reverse8(buf,nwds)
+                 call copyi(ig,buf(1 ),1)          !1-2
+                 call copy8b(x,buf( 3),4,iel,nelm) !3-10
+                 call copy8b(y,buf( 11),4,iel,nelm)!11-18
+               else
+                 if (ifbswap) call byte_reverse(buf,nwds)
+                 ig=buf(1)
+                 call copy4b(x(iel,1),buf( 2),4,iel,nelm)
+                 call copy4b(y(iel,1),buf( 6),4,iel,nelm)
+               endif
             endif
             DO 96 IC=5,8
                X(IEL,IC)=X(IEL,IC-4)
@@ -2074,14 +2085,22 @@ c 423       continue
                READ(9,*,ERR=43,END=43)(Y(IEL,IC),IC=5,8)
                READ(9,*,ERR=43,END=43)(Z(IEL,IC),IC=5,8)
             else
-               nwds =  1 + ndim*(2**ndim)
+               nwds =  (1 + ndim*(2**ndim))*(wdsizi/4)
  
                call byte_read(buf,nwds)
-               if(ifbswap) call byte_reverse(buf,nwds)
-               ig=buf(1)
-               call copy4b(x(iel,1),buf( 2),8,iel,nelm)
-               call copy4b(y(iel,1),buf(10),8,iel,nelm)
-               call copy4b(z(iel,1),buf(18),8,iel,nelm)
+               if(wdsizi.eq.8) then
+                 if(ifbswap) call byte_reverse8(buf,nwds)
+                 call copyi(ig,buf(1),1)                  !1-2
+                 call copy8b(x,buf( 3),8,iel,nelm) !3-18
+                 call copy8b(y,buf(19),8,iel,nelm) !19-34
+                 call copy8b(z,buf(35),8,iel,nelm) !35-50
+               else
+                 if(ifbswap) call byte_reverse(buf,nwds)
+                 ig=buf(1)
+                 call copy4b(x,buf( 2),8,iel,nelm)
+                 call copy4b(y,buf(10),8,iel,nelm)
+                 call copy4b(z,buf(18),8,iel,nelm)
+               endif
             endif
             if (iel.eq.1) then
                xxmin = x(iel,1)
@@ -2110,8 +2129,14 @@ C     Read curved side data
          READ(9,*,err=7201,end=7201)
          READ(9,*,ERR=7202,END=7202)NCURVE
       else
-         call byte_read(ncurve,1)
-         if(ifbswap) call byte_reverse(ncurve,1)
+         if(wdsizi.eq.4) then
+            call byte_read(ncurve,1)
+            if(ifbswap) call byte_reverse(ncurve,1)
+         else
+            call byte_read(rtemp,2)
+            if(ifbswap) call byte_reverse8(rtemp,2)
+            ncurve = rtemp
+         endif
       endif
       IF(NCURVE.GT.0)THEN
          DO 19 I=1,NCURVE
@@ -2128,6 +2153,18 @@ C     Read curved side data
                read(9,'(i2,i12,5g14.6,1x,a1)',err=7234,end=7234)
      $                       iedge,iel,r1,r2,r3,r4,r5,ans
             else
+             if(wdsizi.eq.8) then
+               call byte_read(buf,16)
+               if(ifbswap) call byte_reverse8(buf,14)
+               call copyi(iedge,buf(1),1) !1-2
+               call copyi(iel  ,buf(3),1) !3-4
+               call copy8r (r1,buf( 5),1) !5-6
+               call copy8r (r2,buf( 7),1) !7-8
+               call copy8r (r3,buf( 9),1) !9-10
+               call copy8r (r4,buf(11),1) !11-12
+               call copy8r (r5,buf(13),1) !13-14
+               call chcopy(ans,buf(15),1)
+             else
                call byte_read(buf,8)
                if(ifbswap) call byte_reverse(buf,7)
                iedge = buf(1)
@@ -2138,6 +2175,7 @@ C     Read curved side data
                call copy4r(r4,buf(6),1)
                call copy4r(r5,buf(7),1)
                call chcopy(ans,buf(8),1)
+             endif
             ENDIF
             IEL=min(iel,nelm)
             CALL DDUMMY(IEDGE,IEL)
@@ -2159,8 +2197,14 @@ C        !!?? NELF DIFFERENT FROM NEL??
          if (iffmtin) then 
              READ(9,*,ERR=44,END=44)
          else
+           if(wdsizi.eq.8) then 
+             call byte_read(rtemp,2)
+             if (ifbswap) call byte_reverse8(rtemp,2)
+             nbc_max=rtemp
+           else
              call byte_read(nbc_max,1)
              if (ifbswap) call byte_reverse(nbc_max,1)
+           endif
          endif
          IF( (IFLD.EQ.1.AND.IFFLOW) .OR. IFLD.GT.1)THEN
 C         FIX UP FOR WHICH OF FIELDS TO BE USED
@@ -2220,12 +2264,21 @@ c     write(6,*) iside,iel,ifld,' ',cbc(iside,iel,ifld),' cbc2'
 88        CONTINUE
           else  !re2
              do  k=1,nbc_max
-               call byte_read(buf,8)
-               if (ifbswap) call byte_reverse(buf,8-1)
-               iel   = buf(1)
-               iside = buf(2)
-               call copy4r ( bc(1,iside,iel,ifld),buf(3),5)
-               call chcopy (cbc(  iside,iel,ifld),buf(8),3)
+               if(wdsizi.eq.8) then
+                 call byte_read(buf,16)
+                 if (ifbswap) call byte_reverse(buf,14)
+                 call copyi(iel,buf(1),1)  !1-2
+                 call copyi(iside,buf(3),1)!3-4
+                 call copy8r ( bc(1,iside,iel,ifld),buf(5) ,5)
+                 call chcopy (cbc(  iside,iel,ifld),buf(15),3)
+               else
+                 call byte_read(buf,8)
+                 if (ifbswap) call byte_reverse(buf,8-1)
+                 iel   = buf(1)
+                 iside = buf(2)
+                 call copy4r ( bc(1,iside,iel,ifld),buf(3),5)
+                 call chcopy (cbc(  iside,iel,ifld),buf(8),3)
+               endif
              enddo
              cbc1=cbc(iside,iel,ifld)
              if(cbc1.eq.'m'.or.cbc1.eq.'m')then
@@ -4653,6 +4706,24 @@ c-----------------------------------------------------------------------
       real*4 b(1)
       do i = 1, n
          a(iel,i) = b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copy8b(a,b,n,iel,nel)
+      real   a(nel,1)
+      real*8 b(1)
+      do i = 1, n
+         a(iel,i) = b(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine copyi(a,b,n)
+      integer a(1)
+      real*8  b(1)
+      do i = 1, n
+         a(i) = b(i)
       enddo
       return
       end
