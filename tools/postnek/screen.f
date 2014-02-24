@@ -1020,6 +1020,7 @@ c           reset clipping window
             ENDIF
          else if (x1.eq.2. .and. y1.eq.-2.) then
 c           Scale current y coordinates by scale
+            if (x2.eq.0) x2=1.
             scale = 1./x2
             IFZOOM=.TRUE.
             delt =yfac*scale
@@ -1038,6 +1039,8 @@ c           reset clipping window
             ENDIF
          else if (x1.eq.3. .and. y1.eq.3.) then
 c           Scale x coordinates by x2, y by y2
+            if (x2.eq.0) x2=1.
+            if (y2.eq.0) y2=1.
             scalx = 1./x2
             scaly = 1./y2
             IFZOOM=.TRUE.
