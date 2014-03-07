@@ -1175,7 +1175,7 @@ c       write(6,111)               !       print on screen
 c     $     nelgt,nx1,ny1,nz1,time,istep,excode
 c
       if (mod(p66,1.0).eq.0.0) then !       old header format
-         if (p66.lt.1.0) then
+         if (p66.lt.1.0) then       !ASCII
            if(nelgt.lt.10000) then
             WRITE(24,'(4i4,1pe14.7,I5,1X,30A1,1X,A12)')
      $           NELGT,NX1,NY1,NZ1,TIME,ikstep,(EXCODE1(I),I=1,30),
@@ -1185,7 +1185,7 @@ c
      $           NELGT,NX1,NY1,NZ1,TIME,ikstep,(EXCODE1(I),I=1,30),
      $           'NELT,NX,NY,N'
            endif
-         else
+         else                       !Binary
             if (nelgt.lt.10000) then
                WRITE(fhdfle,'(4I4,1pe14.7,I5,1X,30A1,1X,A12)')
      $              NELGT,NX1,NY1,NZ1,TIME,ikstep,(EXCODE1(I),I=1,30),

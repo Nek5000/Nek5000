@@ -579,7 +579,8 @@ c
       if(nid.eq.0) write(6,*) 'Reading checkpoint data'
 
 c use new reader (only binary support)
-      if (param(67).eq.6.0) then
+      p67 = abs(param(67))
+      if (p67.eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
             call mfi(fname,ifile)
@@ -592,7 +593,7 @@ c use new reader (only binary support)
 
 c use old reader (for ASCII + old binary support)
       
-      if (param(67).eq.0) then  ! zero only. should be abs.
+      if (param(67).lt.1.0) then  ! zero only. should be abs.
          iffmat=.true.  ! ascii
       else
          iffmat=.false. ! binary

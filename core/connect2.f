@@ -650,17 +650,21 @@ c     set dealiasing handling
       endif
 
 c     set I/O format handling
-      if (param(67).lt.0) then
-         param(67) = 0        ! ASCII
-      else ! elseif (param(67).ne.4) then
-         param(67) = 6        ! binary is default
-      endif
+c     if (param(67).lt.0) then
+c        param(67) = 0        ! ASCII
+c     else ! elseif (param(67).ne.4) then
+c        param(67) = 6        ! binary is default
+c     endif
 
-      if (param(66).lt.0) then
-         param(66) = 0        ! ASCII
-      else ! elseif (param(66).ne.4) then
-         param(66) = 6        ! binary is default
-      endif
+c     if (param(66).lt.0) then
+c        param(66) = 0        ! ASCII
+c     else ! elseif (param(66).ne.4) then
+c        param(66) = 6        ! binary is default
+c     endif
+
+c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
+      param(66) = 6
+      param(67) = 6
 
 #ifndef MOAB
       if (ifmoab) then
