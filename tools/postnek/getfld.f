@@ -71,8 +71,9 @@ c
       real wk(maxpts)
       logical iffform   ! .f00000 format flag
       character*4 dummy ! .f00000 hdr read 
-      integer er(nelm)     ! .f00000 element mapping 
+      integer er(nelm)  ! .f00000 element mapping 
       integer e
+      real p66          ! abs value param66
 
       jerr = 0
       close(unit=24,err=1)
@@ -97,9 +98,9 @@ c     if (newdump.eq.odump) return
       ifok   =.false.
       iffmat =.true.
       iffform=.false.
-      if (param(66).ge.0.0) iffmat =.false.
-c     if (param(66).eq.4.0.or.param(66).eq.5) iffmat =.false.
-      if (param(66).eq.6.0) then
+      p66 = abs(param(66))
+      if (p66.ge.1.0) iffmat =.false.
+      if (p66.eq.6.0) then
          iffform =.true.
       endif
 
@@ -197,7 +198,7 @@ C     Standard Case:   Requested inputs are in the file.
          open (unit=24,file=fname,err=9,status='old')
          close(unit=24)
          call byte_open(fname_c)
-      elseif (param(66).ge.0.0) then
+      elseif (p66.ge.1.0) then
          write(6,*) 'opening file:',len,' ',(fname1(k),k=1,len)
          open (unit=24,file=fname,err=9,status='old')
          close(unit=24)
@@ -234,7 +235,7 @@ c
             read(24,80,err=1500,end=1500) hname
            elseif(iffform) then
             call byte_read(hname,33)
-           elseif(param(66).ge.0.0) then
+           elseif(p66.ge.1.0) then
             call byte_read(hname,20)
            endif
 c          write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
@@ -270,11 +271,11 @@ c              hack to get around overflow in file header...
            if (param(68).eq.2.0) 
      $      WRITE(29,'(4I4,1X,G13.4,I5,1X,10A2)')
      $      neltr,nxr,nyr,nzr,rstime,istepr,(excoder(i),i=1,10)
-            write(6,*) ' done read from hname',nxr,nyr,nzr
+           write(6,*) ' done read from hname',nxr,nyr,nzr
  
-            time=rstime
-            if (rdsize.eq.0) rdsize=4
-            write(6,*) 'this is rdsize:',rdsize
+           time=rstime
+           if (rdsize.eq.0) rdsize=4
+           write(6,*) 'this is rdsize:',rdsize
          endif
 c
 c        Reset spatial dimension according to contents of .fld file
@@ -700,7 +701,7 @@ C     Else, end of file found - notify other processors.
          dmptim(idump)=time
       endif
  
-      if (param(66).ge.0.0.and.param(66).ne.6.0) then
+      if (p66.ge.1.0.and.p66.ne.6.0) then
          call byte_close()
       else
          close(unit=24)
@@ -719,7 +720,7 @@ C     Can't open file...
      $   ,//,2X,'ASSUMING DEFAULT INITIAL CONDITIONS.')
 c     call exitt
 
-      if (param(66).ge.0.0.and.param(66).ne.6.0) then
+      if (p66.ge.1.0.and.p66.ne.6.0) then
          call byte_close()
       else
          close(unit=24,err=5009)
@@ -1012,6 +1013,18 @@ c
 
 
       write(6,*) 'Byte swap:',if_byte_swap_test,bytetest,zzz
+   
+      xxx = bytetest-test_pattern
+      yyy = zzz     -test_pattern
+      if(xxx.gt.eps.and.yyy.gt.eps) then
+         write(6,*)  'ERROR!! COULD NOT FIND BYTESWAP PATTERN'
+         write(6,*)  'CHECK PARAM(66) IN .REA FILE:'
+         write(6,*)  '   PARAM(66) = 0   --> ASCII  fld'
+         write(6,*)  '   PARAM(66) = >=1 --> BINARY fld'
+         write(6,*)  '   PARAM(66) = 6   --> F00000'
+         call exitt
+      endif
+ 
 
 c     if_byte_swap_test = .false.
 

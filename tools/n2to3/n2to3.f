@@ -175,7 +175,7 @@ c-----------------------------------------------------------------------
       data abcs /'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw'/
       save abc
 
-      character*3  cb5,cb6
+      character*3  cb5(2),cb6(2)
       character*3  a1
       character*3  option
       logical      ifcem,ifper, ifpec,ifpmc,ifpml
@@ -205,10 +205,13 @@ c     re2 stuff
       call rzero8(bc8,5)
       call izero(ibc,6*nelxym)
       call blank(cbc,18*nelxym)
-c
-c
+ 
+   
+      call rdparam(ifflow,ifheat,ifmhd) ! Read parameters from old file
+c  
+
 c     Choose BC for Z direction
-c
+
     
       write(6,*) 'This is for CEM: yes or no:'
       read (5,1) option
@@ -220,8 +223,8 @@ c
       if (ifcem) then
         write(6,*) 'Enter Z (5) boundary condition (P,PEC,PMC,PML):'
         read (5,1) a1           
-        call blank(cb5,3)
-        write(cb5,3) a1
+        call blank(cb5(1),3)
+        write(cb5(1),3) a1
     3   format(a3)
       
         ifper = .false.
@@ -233,30 +236,43 @@ c
         if (.not.ifper) then
            write(6,*) 'Enter Z (6) boundary condition (PEC,PMC,PML):'
            read (5,1) a1
-           call blank(cb6,3)
-           write(cb6,3) a1
+           call blank(cb6(1),3)
+           write(cb6(1),3) a1
         endif
 
       else
+        if(ifflow) then
+          write(6,*)'Enter Z(5) FLUID boundary condition (P,v,O,ect):'
+          read (5,1) a1
+          call blank(cb5(1),3)
+          write(cb5(1),3) a1
 
-        write(6,*) 'Enter Z (5) boundary condition (P,v,O):'
-        read (5,1) a1
-        call blank(cb5,3)
-        write(cb5,3) a1
+          ifper = .false.
+          if (a1.eq.'P  ')  then
+              ifper = .true.
+              write(cb6(1),3) a1
+              write(cb5(2),3) a1  !P in velocity --> P in thermal
+              write(cb6(2),3) a1
+          endif
 
-        ifper = .false.
-        if (a1.eq.'P  ')  then
-            ifper = .true.
-            write(cb6,3) a1
+          if (.not.ifper) then
+             write(6,*) 'Enter Z(6) FLUID boundary condition (v,O,ect):'
+             read (5,1) a1
+             call blank(cb6(1),3)
+             write(cb6(1),3) a1
+          endif
         endif
+        if(ifheat.and..not.ifper) then
+          write(6,*)'Enter Z(5) THERMAL boundary condition (t,O,ect):'
+          read (5,1) a1
+          call blank(cb5(2),3)
+          write(cb5(2),3) a1
 
-        if (.not.ifper) then
-           write(6,*) 'Enter Z (6) boundary condition (v,O):'
-           read (5,1) a1
-           call blank(cb6,3)
-           write(cb6,3) a1
+          write(6,*)'Enter Z(6) THERMAL boundary condition (t,O,ect):'
+          read (5,1) a1
+          call blank(cb6(2),3)
+          write(cb6(2),3) a1
         endif
-
       endif
 
       if (ifper.and.nlev.lt.3) then
@@ -266,51 +282,13 @@ c
          stop
       endif
 
-      write(6,*) 'this is cbz: ',cb5, cb6,' <--- '
+
+      write(6,*) 'this is FLUID cbz: ',cb5(1), cb6(1),' <--- '
+      if(ifheat) write(6,*) 
+     $    'this is THERMAL cbz: ',cb5(2), cb6(2),' <--- '
 
 
-c   
-c
-c     Read parameters from old .rea file
-c
-      call readwrite(string,'NEKTON',6)
-      read(10,80) string
-      write(11,'(2x,a18)') ' 3 DIMENSIONAL RUN'
-    
-      read(10,80) string
-      read(string,*) nparam
-      write(11,80) string
-      do i=1,nparam
-         call blank(string,80)
-         read(10,80) string
-         len = ltrunc(string,80)
-         write(11,81) (string1(k),k=1,len)
-         if(i.eq.23) then 
-           read(string,*) rpscal
-           npscal = (rpscal + 0.01)
-         elseif(i.eq.29) then
-           ifmhd=.false.
-           read (string,*) mhd
-           if(mhd.ne.0.0) ifmhd = .true.
-         endif
-      enddo
 
-      ifflow = .false.
-      ifheat = .false.
-      call readwrite(string,'LOGICAL',7)
-      read(string,*) nlogic
-      do i=1,nlogic
-         call blank(string,80)
-         read(10,80) string
-         len = ltrunc(string,80)
-         write(11,81) (string1(k),k=1,len)
-
-         if(indx1(string,'IFFLOW',6).ne.0.and.
-     $      indx1(string,' T ',3).ne.0) ifflow=.true.
-         if(indx1(string,'IFHEAT',6).ne.0.and.
-     $      indx1(string,' T ',3).ne.0) ifheat=.true.
-         
-      enddo
 
       call readwrite(string,'XFAC,YFAC',9)
       read(10,80) string
@@ -320,10 +298,15 @@ c
 c
 c     Read mesh data
 c
-      read (10,*) nel,ndim
+      read (10,*) nel,ndim,nelv
       ndim3 = 3
       if (nel.gt.nelxym) then
          write(6,*) 'ABORT:  increase nelxym in n2to3.f',nel,nelxym
+         call exit
+      endif
+      if(nel.ne.nelv) then
+         write(6,*) 'ABORT:  NEL is NOT equal to NELV',nel,nelv
+         write(6,*) 'ABORT:  n2to3 cannot solve this case at this time'
          call exit
       endif
       neln = nlev*nel
@@ -464,8 +447,10 @@ c     Read and write boundary conditions
                ibc(5,e)  = e+(nlev-1)*nel
                bc(2,5,e) = 6
                cbc(5,e) = 'P  '
+            elseif(ifflow.and.iibc.eq.1) then
+               cbc(5,e) = cb5(1)
             else
-               cbc(5,e) = cb5
+               cbc(5,e) = cb5(2)
             endif
 
             call rzero(bc(1,6,e),5)
@@ -480,8 +465,12 @@ c     Read and write boundary conditions
                   bc(1,6,e) = e
                   ibc(6,e)  = e
                   cbc(6,e)  = 'P  '
+               elseif(ifflow.and.iibc.eq.1) then
+                  cbc(6,e) = cb6(1)
+                  call rzero(bc(1,6,e),5)
+                  ibc(6,e) = 0
                else
-                  cbc(6,e) = cb6
+                  cbc(6,e) = cb6(2)
                   call rzero(bc(1,6,e),5)
                   ibc(6,e) = 0
                endif
@@ -518,8 +507,12 @@ c              Periodic bc's on Z plane
                    cbc(6,e) = 'P  '
                    bc(1,6,e) = e
                    ibc(6,e)  = e
+                 elseif(ifflow.and.iibc.eq.1) then 
+                   cbc(6,e) = cb6(1)
+                   call rzero(bc(1,6,e),5)
+                   ibc(6,e) = 0
                  else
-                   cbc(6,e) = cb6
+                   cbc(6,e) = cb6(2)
                    call rzero(bc(1,6,e),5)
                    ibc(6,e) = 0
                  endif
@@ -568,8 +561,8 @@ c              Periodic bc's on Z plane
             enddo
          enddo
  
-         if (cb5.eq.'v  ') cb5='t  '
-         if (cb6.eq.'v  ') cb6='t  '
+c        if (cb5.eq.'v  ') cb5='t  '
+c        if (cb6.eq.'v  ') cb6='t  '
  
       enddo
  
@@ -591,7 +584,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
 
       real dzi(1)
-      character*3  cb5,cb6
+      character*3  cb5(2),cb6(2)
       logical ifflow,ifheat,ifmhd,ifper
 
       common /arral/ ifcirc
@@ -636,7 +629,7 @@ c-----------------------------------------------------------------------
 
       character*80 string
 
-      character*3  cb5,cb6
+      character*3  cb5(2),cb6(2)
       logical ifflow,ifheat,ifper
       real*8 buf(10)
       real*8 r_nb
@@ -681,10 +674,15 @@ c     Read bc from .rea
             endif
          enddo
 
-         nb = nb*nlev
-         neln = nel*nlev
-         if(cb5.ne.'E  ') nb = nb+nel
-         if(cb6.ne.'E  ') nb = nb+nel
+         nb = nb*nlev     !number of BC in 2D * Nlevels(Z)
+         neln = nel*nlev  !number of elements = 2D nel* Nlevel
+         if(ifflow.and.iibc.eq.1) then
+           if(cb5(1).ne.'E  ') nb = nb+nel   ! Add Z(5) Plane BC
+           if(cb6(1).ne.'E  ') nb = nb+nel   ! Add Z(6) Plane BC
+         else
+           if(cb5(2).ne.'E  ') nb = nb+nel   ! Add Z(5) Plane BC
+           if(cb6(2).ne.'E  ') nb = nb+nel   ! Add Z(6) Plane BC
+         endif
          
          r_nb=nb
          call byte_write(r_nb,2)
@@ -698,8 +696,10 @@ c           Set bc and cbc
                ibc(5,e)  = e+(nlev-1)*nel
                bc(2,5,e) = 6
                cbc(5,e) = 'P  '
+            elseif(ifflow.and.iibc.eq.1) then
+               cbc(5,e) = cb5(1)
             else
-               cbc(5,e) = cb5
+               cbc(5,e) = cb5(2)
             endif
 
             call rzero(bc(1,6,e),5)
@@ -713,8 +713,12 @@ c           Set bc and cbc
                   bc(1,6,e) = e
                   ibc(6,e)  = e
                   cbc(6,e)  = 'P  '
+               elseif(ifflow.and.iibc.eq.1) then
+                  cbc(6,e) = cb6(1)
+                  call rzero(bc(1,6,e),5)
+                  ibc(6,e) = 0
                else
-                  cbc(6,e) = cb6
+                  cbc(6,e) = cb6(2)
                   call rzero(bc(1,6,e),5)
                   ibc(6,e) = 0
                endif
@@ -751,8 +755,12 @@ c              Periodic bc's on Z plane
                    cbc(6,e) = 'P  '
                    bc(1,6,e) = e
                    ibc(6,e) = e
+                 elseif(ifflow.and.iibc.eq.1) then
+                   cbc(6,e) = cb6(1)
+                   call rzero(bc(1,6,e),5)
+                   ibc(6,e) = 0
                  else
-                   cbc(6,e) = cb6
+                   cbc(6,e) = cb6(2)
                    call rzero(bc(1,6,e),5)
                    ibc(6,e) = 0
                  endif
@@ -797,8 +805,8 @@ c              Periodic bc's on Z plane
             enddo
          enddo
 
-         if (cb5.eq.'v  ') cb5='t  '
-         if (cb6.eq.'v  ') cb6='t  '
+c        if (cb5.eq.'v  ') cb5='t  '
+c        if (cb6.eq.'v  ') cb6='t  '
 
       enddo
       if(.not.ifheat) read(10,80)string
@@ -1538,6 +1546,64 @@ c-----------------------------------------------------------------------
     1 format(/,'EXIT: ',132a1)
 
       call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rdparam(ifflow,ifheat,ifmhd) ! Read parameters from .rea file
+      include 'SIZE'
+
+      character*80 string
+      character*1  string1(80)
+      equivalence (string1,string)
+      character*6  string21
+      equivalence (string21,string1(19))
+      character*4  string30
+      equivalence (string30,string1(29))
+
+      logical ifflow,ifheat,ifmhd
+c
+      call readwrite(string,'NEKTON',6)
+      read(10,80) string
+      write(11,'(2x,a18)') ' 3 DIMENSIONAL RUN'
+    
+      read(10,80) string
+      read(string,*) nparam
+      write(11,80) string
+      do i=1,nparam
+         call blank(string,80)
+         read(10,80) string
+         len = ltrunc(string,80)
+         write(11,81) (string1(k),k=1,len)
+         if(i.eq.23) then 
+           read(string,*) rpscal
+           npscal = (rpscal + 0.01)
+         elseif(i.eq.29) then
+           ifmhd=.false.
+           read (string,*) mhd
+           if(mhd.ne.0.0) ifmhd = .true.
+         endif
+      enddo
+
+      ifflow = .false.
+      ifheat = .false.
+      call readwrite(string,'LOGICAL',7)
+      read(string,*) nlogic
+      do i=1,nlogic
+         call blank(string,80)
+         read(10,80) string
+         len = ltrunc(string,80)
+         write(11,81) (string1(k),k=1,len)
+
+         if(indx1(string,'IFFLOW',6).ne.0.and.
+     $      indx1(string,' T ',3).ne.0) ifflow=.true.
+         if(indx1(string,'IFHEAT',6).ne.0.and.
+     $      indx1(string,' T ',3).ne.0) ifheat=.true.
+         
+      enddo
+
+   80 format(a80)
+   81 format(80a1)
 
       return
       end

@@ -3,7 +3,7 @@
       common /array/ x(4,nelxym),y(4,nelxym)
      $             , bc(5,6,nelxym),curve(6,12,nelxym)
 
-      common /arrai/ nlev,nel,ncurve,npscal
+      common /arrai/ nlev,nel,ncurve,npscal,nelv
 
       common /arrac/ cbc,ccurve,ca
       character*3 cbc(6,nelxym)
