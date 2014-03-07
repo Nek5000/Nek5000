@@ -2273,7 +2273,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine auto_averager ! simple average of files
+      subroutine auto_averager(fname127) ! simple average of files
 
 c     This routine reads files specificed of file.list and averages
 c     them with uniform weight
@@ -2285,18 +2285,27 @@ c
       include 'TOTAL'
       include 'ZPER'
 
+      character*127 fname127
+      character*1   f1(127)
+
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scruz/ ua(lt),va(lt),wa(lt),pa(lt)
       common /scrns/ ta(lt,ldimt)
 
-      character*1 s1(132)
+      character*1 s1(127)
       equivalence (s1,initc) ! equivalence to initial condition
 
-      ierr = 0
-      if (nid.eq.0) open(77,file='file.list',status='old',err=199)
-      ierr = iglmax(ierr,1)
-      if (ierr.gt.0) return
+      if (nid.eq.0) then
+         ib=indx1(fname127,' ',1)-1
+         call chcopy(f1,fname127,ib)
+         write(6,2) (f1(k),k=1,ib)
+    2    format('Open file: ',127a1)
+      endif
 
+      ierr = 0
+      if (nid.eq.0) open(77,file=fname127,status='old',err=199)
+      ierr = iglmax(ierr,1)
+      if (ierr.gt.0) goto 199
       n = nx1*ny1*nz1*nelt
       n2= nx2*ny2*nz2*nelt
 
@@ -2311,15 +2320,15 @@ c
       icount = 0
       do ipass=1,9999999
 
-         call blank(initc,132)
+         call blank(initc,127)
          initc(1) = 'done '
-         if (nid.eq.0) read(77,132,end=998) initc(1)
-  998    call bcast(initc,132)
-  132    format(a132)
+         if (nid.eq.0) read(77,127,end=998) initc(1)
+  998    call bcast(initc,127)
+  127    format(a127)
 
          iblank = indx1(initc,' ',1)-1
          if (nid.eq.0) write(6,1) ipass,(s1(k),k=1,iblank)
-    1    format(i8,'Reading: ',132a1)
+    1    format(i8,'Reading: ',127a1)
 
          if (indx1(initc,'done ',5).eq.0) then ! We're not done
 
@@ -2354,7 +2363,8 @@ c
 
   199 continue ! exception handle for file not found
       ierr = 1
-      ierr = iglmax(ierr,1)
+      if (nid.eq.0) ierr = iglmax(ierr,1)
+      call exitti('Auto averager did not find list file.$',ierr)
 
       return
       end
