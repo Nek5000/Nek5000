@@ -17,6 +17,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  NEKNEK    enable multidomain support (experimental)"
   echo "  NO_LAPACK disable nek-supplied LAPACK routines"
   echo "  BLAS_MXM  disable nek-supplied BLAS routines"
+  echo "  EXTBAR    adds underscore to exit call(for BGQ)"
   exit 1
 fi
 
