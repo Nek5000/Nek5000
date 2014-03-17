@@ -329,15 +329,15 @@ c     IFSPLIT   = .false.
       ifpert = .false.
 
 
-      IF(NID.EQ.0) THEN
-        READ(9,*,ERR=500) NLOGIC
-        IF(NLOGIC.GT.100) THEN
-          write(6,*) 'ABORT: Too many logical switches', NLOGIC
-          call exitt
-        ENDIF
-        READ(9,'(A132)',ERR=500) (string(i),i=1,NLOGIC)
-      ENDIF
+      IF(NID.EQ.0) READ(9,*,ERR=500) NLOGIC
       call bcast(NLOGIC,ISIZE)
+      IF(NLOGIC.GT.100) THEN
+          if(nid.eq.0)
+     $       write(6,*) 'ABORT: Too many logical switches', NLOGIC
+          call exitt
+      ENDIF
+
+      if(nid.eq.0) READ(9,'(A132)',ERR=500) (string(i),i=1,NLOGIC)
       call bcast(string,100*132*CSIZE)
 
       do i = 1,NLOGIC
@@ -1185,15 +1185,17 @@ C
       CALL BLANK (HCODE ,11*lhis)
       CALL IZERO (LOCHIS, 4*lhis)
 
+      ierr=0
       IF(NID.EQ.0) THEN
 C       Read history data
         READ (9,*)
         READ (9,*,ERR=200,END=200) NHIS
         if (nhis.gt.lhis) then
            write(6,*) nid,' Too many history pts. RESET LHIS.',nhis,lhis
-           call exitt
+           ierr=1
         endif
-c
+ 
+        if(ierr.eq.0) then
 C       HCODE(10) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
         if (nhis.gt.0) then
            do i=1,nhis
@@ -1223,7 +1225,9 @@ c
               endif
            enddo
         endif
+        endif
       ENDIF
+      call err_chk(ierr,' Too many histroy pts. RESET LHIS$')
 
       call bcast(NHIS  ,ISIZE)
       call bcast(HCODE ,11*LHIS*CSIZE)
@@ -1338,43 +1342,46 @@ C
 C
 C     Default if no data is read No Objects
 C
+      ierr=0
       IF(NID.EQ.0) THEN
         NOBJ=0
         READ(9,*,ERR=200,END=200)
         READ(9,*,ERR=200,END=200) NOBJ
-C
-        IF(NOBJ.GT.MAXOBJ)THEN
-           write(6,*) nid,'ERROR, too many objects:',nobj,maxobj
-           call exitt
-        ENDIF
-C
-        DO 10 IOBJ = 1,NOBJ
-           READ(9,*,ERR=200,END=200) NMEMBER(IOBJ)
-           IF(NMEMBER(IOBJ).GT.MAXMBR)THEN
-              PRINT*,'ERROR: Too many members in object ',IOBJ
-              call exitt
-           ENDIF
-           DO 5 MEMBER=1,NMEMBER(IOBJ)
-              READ(9,*,ERR=200,END=200) OBJECT(IOBJ,MEMBER,1),
-     $                                  OBJECT(IOBJ,MEMBER,2)
-    5      CONTINUE
-   10   CONTINUE
-        write(6,*) nobj,' objects found'
+ 
+        IF(NOBJ.GT.MAXOBJ) ierr=1
+ 
+        if(ierr.eq.0) then
+         DO 10 IOBJ = 1,NOBJ
+            READ(9,*,ERR=200,END=200) NMEMBER(IOBJ)
+            IF(NMEMBER(IOBJ).GT.MAXMBR)THEN
+               PRINT*,'ERROR: Too many members in object ',IOBJ
+               ierr=2
+            ENDIF
+            if(ierr.eq.0) then
+             DO 5 MEMBER=1,NMEMBER(IOBJ)
+                READ(9,*,ERR=200,END=200) OBJECT(IOBJ,MEMBER,1),
+     $                                    OBJECT(IOBJ,MEMBER,2)
+    5        CONTINUE
+            endif
+   10    CONTINUE
+         write(6,*) nobj,' objects found'
      $            ,(nmember(k),k=1,nobj)
-      ENDIF
+        endif
+      endif
+      call err_chk(ierr,'ERROR, too many objects:$')
  
       call bcast(NOBJ   ,ISIZE)
       call bcast(NMEMBER,MAXOBJ*ISIZE)
       call bcast(OBJECT ,MAXOBJ*MAXMBR*2*ISIZE)
 
-C
+ 
       return
 C
 C     Error handling:  For old versions, default to no objects
 C
   200 CONTINUE
       NOBJ=0
-C
+ 
       return
       END
 c-----------------------------------------------------------------------
@@ -1509,7 +1516,6 @@ C
      $            ,1x,'i,j,k,ie:',3i5,I12,/
      $            ,1X,'Near X =',3G16.8,', d:',3G16.8)
             ierr=1
-            call exitt
          endif
  1100 CONTINUE
 C
@@ -1545,7 +1551,6 @@ C
      $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,1X,'Near Y =',3G16.8,', d:',3G16.8)
             IERR=2
-            call exitt
          ENDIF
  1200 CONTINUE
 C
@@ -1582,18 +1587,18 @@ C
      $            ,1X,'I,J,K,IE:',3I5,i12,/
      $            ,1X,'Near Z =',3G16.8,', d:',3G16.8)
             IERR=3
-            call exitt
           ENDIF
  1300  CONTINUE
       ENDIF
-C
+ 
+      ierr = glsum(ierr,1)
       IF (IERR.gt.0) THEN
-         WRITE(6,1400) 
+         if(nid.eq.0) WRITE(6,1400) 
  1400    FORMAT
      $   (' Mesh consistency check failed.  EXITING in VRDSMSH.')
             call exitt
       ENDIF
-C
+ 
       tmp(1)=ierr
       CALL GOP(tmp,tmp(2),'M  ',1)
       IF (tmp(1).ge.4.0) THEN
@@ -1601,7 +1606,7 @@ C
      $   (' Mesh consistency check failed.  EXITING in VRDSMSH.')
          call exitt
       ENDIF
-C
+ 
       if(nid.eq.0) then
         write(6,*) 'done :: verify mesh topology'
         write(6,*) ' '

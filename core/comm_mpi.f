@@ -472,7 +472,7 @@ c-----------------------------------------------------------------------
       call flush_io
 
       call mpi_finalize (ierr)
-#ifdef BG
+#ifdef EXTBAR
       call exit_(0)
 #else
       call exit(0)
@@ -540,7 +540,7 @@ c     Communicate unhappiness to the other session
       call flush_io
 
       call mpi_finalize (ierr)
-#ifdef BG
+#ifdef EXTBAR
      call exit_(0)
 #else
       call exit(0)
