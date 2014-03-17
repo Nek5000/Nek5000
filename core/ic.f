@@ -2273,7 +2273,7 @@ c     endif
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi_parse_hdr(hdr)
+      subroutine mfi_parse_hdr(hdr,ierr)
       include 'SIZE'
 
       character*132 hdr
@@ -2284,7 +2284,7 @@ c-----------------------------------------------------------------------
          if (nid.eq.0) write(6,80) hdr
          if (nid.eq.0) write(6,80) 'NONSTD HDR, parse_hdr, abort.'
   80     format(a132)
-         call exitt
+         ierr = 1
       endif
 
       return
@@ -2640,7 +2640,7 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 101
          if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
          if(ierr.ne.0) goto 101
-         call mfi_parse_hdr(hdr)
+         call mfi_parse_hdr(hdr,ierr)
       endif
 
  101  continue
@@ -2648,7 +2648,7 @@ c-----------------------------------------------------------------------
 
       call bcast(if_byte_sw,lsize) 
       call bcast(hdr,iHeaderSize)  
-      if(nid.ne.0) call mfi_parse_hdr(hdr)
+      if(nid.ne.0) call mfi_parse_hdr(hdr,ierr)
 
       stride = np / nfiler
       if (stride.lt.1) then
