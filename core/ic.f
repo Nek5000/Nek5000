@@ -633,20 +633,24 @@ C
             IF (NID.EQ.0) THEN
                 ! read header
                if (iffmat) then
+                 ierr = 2
                  if(mod(param(67),1.0).eq.0) then ! old header format
                    if(nelgt.lt.10000) then
-                     read(91,91,err=1500,end=1500)
+                     read(91,91,err=10,end=10)
      $              neltr,nxr,nyr,nzr,rstime,istepr,(excoder1(i),i=1,30)
    91                format(4i4,1x,g13.4,i5,1x,30a1)
+                     ierr=0
                    else
-                     read(91,92,err=1500,end=1500)
+                     read(91,92,err=10,end=10)
      $              neltr,nxr,nyr,nzr,rstime,istepr,(excoder1(i),i=1,30)
    92                format(i10,3i4,1P1e18.9,i9,1x,30a1)
+                     ierr=0
                    endif
                  else                          ! new head format
-                   read(91,'(A132)',err=1500,end=1500) header
+                   read(91,'(A132)',err=10,end=10) header
                    read(header,*)
      &                  neltr,nxr,nyr,nzr,rstime,istepr,excoder
+                   ierr=0
                  endif
                else
                  if(mod(param(67),1.0).eq.0) then  ! old header format
@@ -674,7 +678,8 @@ C
    94                icase = 3-icase  !  toggle: 2-->1  1-->2
                      goto 93
                    else
-                     goto 1500 ! failed
+                     ierr=2
+                     goto 10
                    endif
    95              continue
                  else                         ! new head format
@@ -831,10 +836,15 @@ C
 C           Read the error estimators
 C           not supported at the moment => just do dummy reading
 C
+            ifok = .false.
             IF(NID.EQ.0)THEN
                if (iffmat)
-     &             READ(91,'(6G11.4)',END=1500)(CDUMP,I=1,NELTR)
+     &             READ(91,'(6G11.4)',END=15)(CDUMP,I=1,NELTR)
+               ifok = .true.
             ENDIF
+  15        continue
+            call lbcast(ifok)
+            if(.not.ifok) goto 1600
 C
 C           Read the current dump, double buffer so that we can
 C           fit the data on a distributed memory machine,
@@ -852,7 +862,7 @@ C
                IF (NID.EQ.0) THEN
                  IF (MOD(IEG,10000).EQ.1) WRITE(6,*) 'Reading',IEG
                  IF (iffmat) THEN
-                    READ(91,*,ERR=1500,END=1500)
+                    READ(91,*,ERR=70,END=70)
      $              ((tdump(IXYZ,II),II=1,NOUTS),IXYZ=1,NXYZR)
                  ELSE
                     do ii=1,nouts
@@ -982,12 +992,7 @@ C              passive scalars
 
  1000    CONTINUE
          GOTO 1600
-C
-C           Else, end of file found - notify other processors.
- 1500       CONTINUE
-            IFOK=.FALSE.
-            call lbcast(ifok)
-C
+ 
  1600    CONTINUE
 C
          IF (IDUMP.EQ.1.AND.NID.EQ.0) THEN
