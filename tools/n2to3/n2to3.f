@@ -194,7 +194,6 @@ c     re2 stuff
       data   test  / 6.54321 /
 
       integer e,en
-      real mhd
 
       real*8 bc8(5)
       integer ibc(6,nelxym)
@@ -1562,6 +1561,7 @@ c-----------------------------------------------------------------------
       equivalence (string30,string1(29))
 
       logical ifflow,ifheat,ifmhd
+      real mhd
 c
       call readwrite(string,'NEKTON',6)
       read(10,80) string
