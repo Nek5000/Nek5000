@@ -270,13 +270,16 @@ C        MODEL and CURVE know about it, too
          CALL DRELEV(ILEVEL,-(ILEVEL+1),'     ')
       ELSE IF(CHOICE.EQ.'IMPORT MESH')THEN
          call imp_mesh(.true.)
+         if (.not.if3d) call chk_right_hand(nel)
          call redraw_mesh_small
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
+         if (.not.if3d) call chk_right_hand(nel)
       ELSE IF(CHOICE.EQ.'IMPORT vtx MESH')THEN
          call imp_mesh_vtx
+         if (.not.if3d) call chk_right_hand(nel)
       ELSE IF(CHOICE.EQ.'CURVE SIDES')THEN
          CALL CURVES
       ELSE IF(CHOICE.EQ.'MODIFY ELEMENT')THEN
