@@ -1591,7 +1591,7 @@ C
  1300  CONTINUE
       ENDIF
  
-      ierr = glsum(ierr,1)
+      ierr = iglsum(ierr,1)
       IF (IERR.gt.0) THEN
          if(nid.eq.0) WRITE(6,1400) 
  1400    FORMAT
