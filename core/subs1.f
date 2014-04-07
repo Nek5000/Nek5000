@@ -119,8 +119,6 @@ c     call copy (dpc,binv,n)
          rbnorm = sqrt (rbnorm/vol)
 
          if (iter.eq.1) r0 = rbnorm
-         if (nid.eq.0.and.istep.lt.5) 
-     $      write(6,3007) istep,iter,rbnorm,tol,r0
 
          if (rbnorm.lt.tol) then
             ifin = iter
@@ -168,7 +166,6 @@ c     call copy (dpc,binv,n)
  2000 format(i12,1x,'Helmholtz3/fluid: no iteration - rbnorm =', 2E13.4)
  2010 format(i12,1x,'Helmholtz3/ mesh: no iteration - rbnorm =', 2E13.4)
  3000 format(i12,1x,'Helmholtz3/fluid: ',I6,5E13.4)
- 3007 format(i12,1x,'tx3: ',I6,5E13.4)
  3010 format(i12,1x,'Helmholtz3/ Mesh: ',I6,5E13.4)
  3001 format(2i6,' Unconverged Helmholtz3/Fluid: rbnorm =',2E13.6)
  3011 format(2i6,' Unconverged Helmholtz3/Mesh : rbnorm =',2E13.6)
