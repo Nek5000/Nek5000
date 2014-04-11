@@ -1216,13 +1216,15 @@ static void fgs_check_handle(sint handle, const char *func, unsigned line)
     fail(1,__FILE__,line,"%s: invalid handle", func);
 }
 
+static const gs_dom fgs_dom[4] = { 0, gs_double, gs_sint, gs_slong };
+
 static void fgs_check_parms(sint handle, sint dom, sint op,
                             const char *func, unsigned line)
 {
-  if(dom<1 || dom>4)
-    fail(1,__FILE__,line,"%s: datatype %d not in valid range 1-4",func,dom);
-  if(op <1 || op >4)
-    fail(1,__FILE__,line,"%s: op %d not in valid range 1-4",func,op);
+  if(dom<1 || dom>3)
+    fail(1,__FILE__,line,"%s: datatype %d not in valid range 1-3",func,dom);
+  if(op <1 || op >3)
+    fail(1,__FILE__,line,"%s: op %d not in valid range 1-3",func,op);
   fgs_check_handle(handle,func,line);
 }
 
@@ -1230,14 +1232,14 @@ void fgs(const sint *handle, void *u, const sint *dom, const sint *op,
          const sint *transpose)
 {
   fgs_check_parms(*handle,*dom,*op,"gs_op",__LINE__);
-  cgs(u,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,fgs_info[*handle],0);
+  cgs(u,fgs_dom[*dom],(gs_op_t)(*op-1),*transpose!=0,fgs_info[*handle],0);
 }
 
 void fgs_vec(const sint *handle, void *u, const sint *n,
              const sint *dom, const sint *op, const sint *transpose)
 {
   fgs_check_parms(*handle,*dom,*op,"gs_op_vec",__LINE__);
-  cgs_vec(u,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
+  cgs_vec(u,*n,fgs_dom[*dom],(gs_op_t)(*op-1),*transpose!=0,
           fgs_info[*handle],0);
 }
 
@@ -1248,7 +1250,7 @@ void fgs_many(const sint *handle, void *u1, void *u2, void *u3,
   void *uu[6];
   uu[0]=u1,uu[1]=u2,uu[2]=u3,uu[3]=u4,uu[4]=u5,uu[5]=u6;
   fgs_check_parms(*handle,*dom,*op,"gs_op_many",__LINE__);
-  cgs_many((void *const*)uu,*n,(gs_dom)(*dom-1),(gs_op_t)(*op-1),*transpose!=0,
+  cgs_many((void *const*)uu,*n,fgs_dom[*dom],(gs_op_t)(*op-1),*transpose!=0,
            fgs_info[*handle],0);
 }
 
@@ -1271,7 +1273,7 @@ void fgs_fields(const sint *handle,
   for(i=*n;i;--i) *p++ = u, u = (char*)u + offset;
 
   cgs_many((void *const*)fgs_fields_array.ptr,*n,
-           (gs_dom)(*dom-1),(gs_op_t)(*op-1),
+           fgs_dom[*dom],(gs_op_t)(*op-1),
            *transpose!=0, fgs_info[*handle],0);
 }
 
