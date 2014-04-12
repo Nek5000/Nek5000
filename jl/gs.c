@@ -1223,8 +1223,8 @@ static void fgs_check_parms(sint handle, sint dom, sint op,
 {
   if(dom<1 || dom>3)
     fail(1,__FILE__,line,"%s: datatype %d not in valid range 1-3",func,dom);
-  if(op <1 || op >3)
-    fail(1,__FILE__,line,"%s: op %d not in valid range 1-3",func,op);
+  if(op <1 || op >4)
+    fail(1,__FILE__,line,"%s: op %d not in valid range 1-4",func,op);
   fgs_check_handle(handle,func,line);
 }
 
