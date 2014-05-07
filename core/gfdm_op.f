@@ -132,7 +132,7 @@ c     Generate eigenvector and eigenvalue arrays for 1D E-operators
      $                       ,cb0(3),cbn(3),dglgt,wglgt,wgl,bw,lbw)
          else
             call set_1d_a_mat(sp(m),eigp(l),zmlt,mz,lz,nelz,nx1
-     $                    ,cb0(1),cbn(1),bw,lbw)
+     $                    ,cb0(3),cbn(3),bw,lbw)
          endif
          call transpose(spt(m),mz,sp(m),mz)
       else
