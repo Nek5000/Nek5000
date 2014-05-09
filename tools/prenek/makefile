@@ -3,6 +3,7 @@ CFLAGS = $(CFLAGS_IN)
 LFLAGS = $(LFLAGS_IN)
 prefix = $(bin_nek_tools)
 
+X = /usr/lib/X11
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
  X = /usr/lib/X11

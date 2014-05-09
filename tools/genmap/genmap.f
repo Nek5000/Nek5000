@@ -253,7 +253,7 @@ c     read nekton .rea file and make a mesh
          ! skip curved side data
          if(wdsizi.eq.8) then 
            call byte_read(rcurve,2,ierr)
-           if (ifbswap) call byte_reverse8(rcurve,1,ierr)
+           if (ifbswap) call byte_reverse8(rcurve,2,ierr)
            ncurve = rcurve
            if(ierr.ne.0) call exitti
      $         ('Error reading ncurve in makemesh ',ierr)
@@ -3193,11 +3193,12 @@ c     .Read Boundary Conditions (and connectivity data)
 
          if(wdsizi.eq.8) then
             call byte_read(rbc_max,2,ierr)
-            if (ifbswap) call byte_reverse8(rbc_max,1,ierr) 
+            if (ifbswap) call byte_reverse8(rbc_max,2,ierr) 
             nbc_max = rbc_max
             do k=1,nbc_max
 c              write(6,*) k,' dobc1 ',nbc_max
                call byte_read(buf,nwds,ierr)
+               n8wds=nwds/2
                if (ifbswap) call byte_reverse8(buf,nwds-2,ierr) ! last is char
                if(ierr.ne.0) call exitti
      &              ('Error reading byte bcs ',ierr)
@@ -3270,6 +3271,7 @@ c     version 1 of binary
       ierr = 0
 
       if (ifbswap.and.wdsizi.eq.8)     then
+          nwds=nwds*2
           call byte_reverse8(buf,nwds,ierr)
       elseif (ifbswap.and.wdsizi.eq.4) then 
           call byte_reverse (buf,nwds,ierr)
