@@ -1562,22 +1562,22 @@ c-----------------------------------------------------------------------
 
 #ifdef MPIIO
 
-c#ifdef MPIIO_NOCOL
-c      nfileo  = abs(param(65))
-c      if(nfileo.eq.0) nfileo = 1
-c      if(np.lt.nfileo) nfileo=np   
-c      nproc_o = np / nfileo              !  # processors pointing to pid0
-c      fid0    = nid/nproc_o              !  file id
-c      pid0    = nproc_o*fid0             !  my parent i/o node
-c      pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
-c      fid0    = 0 
-c#else
+#ifdef MPIIO_NOCOL
+       nfileo  = abs(param(65))
+       if(nfileo.eq.0) nfileo = 1
+       if(np.lt.nfileo) nfileo=np   
+       nproc_o = np / nfileo              !  # processors pointing to pid0
+       fid0    = nid/nproc_o              !  file id
+       pid0    = nproc_o*fid0             !  my parent i/o node
+       pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
+       fid0    = 0 
+#else
       nfileo  = np
       nproc_o = 1
       fid0    = 0
       pid0    = nid
       pid1    = 0
-c#endif
+#endif
 
 #else
       if(param(65).lt.0) ifdiro = .true. !  p65 < 0 --> multi subdirectories

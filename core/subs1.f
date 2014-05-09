@@ -2059,7 +2059,7 @@ c     call opdssum (a1,a2,a3)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_local_crs_galerkin_strs(a,ncl,nxc,h1,h2)
+      subroutine get_local_crs_galerkin_strs(a,ncl,nxc,h1,h2,matmod)
 
 c     This routine generates Nelv submatrices of order ncl using
 c     Galerkin projection
@@ -2251,7 +2251,7 @@ c     Set mask for full array
 
 
 c     Setup local SEM-based Neumann operators (for now, just full...)
-      call get_local_crs_galerkin_strs(a,ncr,nxc,h1,h2,w1,w2)
+      call get_local_crs_galerkin_strs(a,ncr,nxc,h1,h2,matmod)
       call set_mat_ij(ia,ja,mcr,nel)
       nnz=mcr*mcr*nel
 
