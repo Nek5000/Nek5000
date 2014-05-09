@@ -2673,7 +2673,7 @@ c-----------------------------------------------------------------------
             if(ierr.ne.0) goto 102
             call byte_read (bytetest,1,ierr) 
             if(ierr.ne.0) goto 102
-            call mfi_parse_hdr (hdr)     ! replace hdr with correct one 
+            call mfi_parse_hdr (hdr,ierr)  ! replace hdr with correct one 
          endif
          call byte_read (er,nelr,ierr)     ! get element mapping
          if (if_byte_sw) call byte_reverse(er,nelr,ierr)
@@ -2699,7 +2699,7 @@ c-----------------------------------------------------------------------
       call bcast(bytetest,4) 
 
       if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
-      call mfi_parse_hdr(hdr)
+      call mfi_parse_hdr(hdr,ierr)
       if(nfiler.ne.1) then
         if(nid.eq.0) write(6,*) 'ABORT: too many restart files!'
         call exitt
