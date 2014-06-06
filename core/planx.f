@@ -36,8 +36,8 @@ C
 
          mstep = abs(param(94))
          if (param(94).ne.0. .and. istep.ge.mstep) then
-           CALL OPHINVpr(DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
-c          CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
+          call ophinvpr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+c         CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
          else
            CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
          endif
@@ -145,31 +145,38 @@ c-----------------------------------------------------------------------
       subroutine ophinvpr(ot1,ot2,ot3,in1,in2,in3,h1,h2,tolh,nmxi)
 C
 C     OT = (H1*A+H2*B)-1 * IN  (implicit)
+c     VELOCITY 
 C
       include 'SIZE'
       include 'INPUT'
       include 'ORTHOV'
       include 'TSTEP'
       include 'SOLN'
-c
-      REAL OT1 (LX1,LY1,LZ1,1)
-      REAL OT2 (LX1,LY1,LZ1,1)
-      REAL OT3 (LX1,LY1,LZ1,1)
-      REAL IN1 (LX1,LY1,LZ1,1)
-      REAL IN2 (LX1,LY1,LZ1,1)
-      REAL IN3 (LX1,LY1,LZ1,1)
-      REAL H1  (LX1,LY1,LZ1,1)
-      REAL H2  (LX1,LY1,LZ1,1)
-c
-c
-      IMESH = 1
-C
-      IF (IFSTRS) THEN
+ 
+      real ot1 (lx1,ly1,lz1,1)
+      real ot2 (lx1,ly1,lz1,1)
+      real ot3 (lx1,ly1,lz1,1)
+      real in1 (lx1,ly1,lz1,1)
+      real in2 (lx1,ly1,lz1,1)
+      real in3 (lx1,ly1,lz1,1)
+      real h1  (lx1,ly1,lz1,1)
+      real h2  (lx1,ly1,lz1,1)
+
+      mprev =param(93)
+      istart=param(94)
+      if (mprev.le.0 .or. istep.le.istart) then
+         call ophinv  (ot1,ot2,ot3,in1,in2,in3,h1,h2,tolh,nmxi)
+         return
+      endif
+
+      imesh = 1
+
+      if (ifstrs) then
          MATMOD = 0
          CALL HMHZSF  ('NOMG',OT1,OT2,OT3,IN1,IN2,IN3,H1,H2,
      $                  V1MASK,V2MASK,V3MASK,VMULT,
      $                  TOLH,NMXi,MATMOD)
-      ELSE
+      ELSEIF(ifield.eq.1) then
          CALL hmzpf2 ('VELX',OT1,IN1,H1,H2,V1MASK,VMULT,
      $                                   IMESH,TOLH,NMXi,1)
          CALL hmzpf2 ('VELY',OT2,IN2,H1,H2,V2MASK,VMULT,
@@ -177,6 +184,15 @@ C
          IF (NDIM.EQ.3) 
      $   CALL hmzpf2 ('VELZ',OT3,IN3,H1,H2,V3MASK,VMULT,
      $                                   IMESH,TOLH,NMXi,3)
+      ELSE 
+         CALL hmzpf2 (' BX ',OT1,IN1,H1,H2,B1MASK,VMULT,
+     $                                   IMESH,TOLH,NMXi,1)
+         CALL hmzpf2 (' BY ',OT2,IN2,H1,H2,B2MASK,VMULT,
+     $                                   IMESH,TOLH,NMXi,2)
+         IF (NDIM.EQ.3) 
+     $   CALL hmzpf2 (' BZ ',OT3,IN3,H1,H2,B3MASK,VMULT,
+     $                                   IMESH,TOLH,NMXi,3)
+
       ENDIF
 C
       return
@@ -200,6 +216,7 @@ c
 
       call col2   (rhs,mask,ntot1)
       call dssum  (rhs,nx1,ny1,nz1)
+         
       call projh2 (rhs,h1,h2,mult,mask,isd,imsh)
       if (imsh.eq.1) then
         call hmhzpf (nm,u,rhs,h1,h2,mask,mult,imsh,tol,mxit,isd,binvm1)
@@ -237,7 +254,6 @@ C
          call izero(nprev,ndim)
          mprev=param(93)
          mprev=min(mprev,mxprev)
-         if (mprev.eq.0) mprev = mxprev
          if (nid.eq.0) write(6,*) 'this is mprev:',mprev,mxprev
       endif
 
@@ -251,9 +267,9 @@ C     Diag to see how much reduction in the residual is attained.
       endif
 
 c     if (icalld.eq.0.and.nid.eq.0) 
-c    $     write(6,*) 'alpha1:',alpha1,volvm1,ntot1
+c    $    write(6,*) 'alpha1:',alpha1,volvm1,ntot1
 c     if (icalld.eq.0.and.nid.eq.0) 
-c    $     write(6,*) 'binvm1:',binvm1(1,1,1,1),vml(1),v1(1)
+c    $   write(6,*) 'binvm1:',binvm1(1,1,1,1),vml(1),v1(1)
 
 
       call updrhsh2(h1,h2,vml,vmask,isd,imsh) ! Update rhs's if matrix has changed
@@ -399,6 +415,7 @@ C
       real h1(1),h2(1),vml(1),vmask(1)
       real work(mxprev)
 
+      ierr=0
       ntot1 = nx1*ny1*nz1*nelv
       if (imsh.eq.2) ntot1 = nx1*ny1*nz1*nelt
 
@@ -410,6 +427,7 @@ C
       call dssum   (vbar(1,isd),nx1,ny1,nz1)
       call col2    (vbar(1,isd),vml   ,ntot1) ! Compute part of the norm
       alphad=glsc2 (vbar(1,isd),sln(i1,isd),ntot1)
+      alph1=alphad
 
       do i=1,kprev1                    ! Gram-Schmidt
          ioff = (i-1)*ntot1 + 1
@@ -425,8 +443,40 @@ C
       enddo
 
 c    .Normalize new element in P~
-      alphad = 1.0/sqrt(alphad)
-      call cmult(sln(i1,isd),alphad,ntot1)
+      ratio=alphad/alph1
+      eps = 1.e-7
+      if (wdsize.eq.8) eps = 1.e-15
+
+      if(ratio.le.0) then 
+         ierr=1
+         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+   12    format(I6,1x,' alpha b4 sqrt:',i4,1p2e12.4)
+      elseif (ratio.le.eps) then
+         ierr=2
+         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+      else
+         ierr=0
+         alphad = 1.0/sqrt(alphad)
+         call cmult(sln(i1,isd),alphad,ntot1)
+      endif
+ 
+      if (ierr.ne.0) then
+         call axhelm  (vbar(1,isd),sln(i1,isd),h1,h2,1,1)
+         call col2    (vbar(1,isd),vmask,ntot1)
+         call dssum   (vbar(1,isd),nx1,ny1,nz1)
+         call col2    (vbar(1,isd),vml   ,ntot1) ! Compute part of the norm
+         alphad=glsc2 (vbar(1,isd),sln(i1,isd),ntot1)
+
+         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+         if (alphad.le.0) then
+            ierr=3
+            if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+            return
+         endif
+         alphad = 1.0/sqrt(alphad)
+         call cmult(sln(i1,isd),alphad,ntot1)
+         ierr = 0
+      endif
 
       return
       end

@@ -822,8 +822,8 @@ c
 
       if (.not.ifflow) ifstdh = .false.
 
-      if (param(95).ne.0.and.istep.gt.param(95)) then
-         if (cname.eq.'PRES') ifstdh = .false.
+      if(cname.eq.'PRES') then
+         if (param(95).ne.0.and.istep.gt.param(95)) ifstdh = .false.
       elseif (param(94).ne.0.and.istep.gt.param(94)) then
          ifstdh = .false.
       endif
@@ -836,8 +836,8 @@ c
 
          n = nx1*ny1*nz1*nelfld(ifield)
 
-         call dssum  (r,nx1,ny1,nz1)
          call col2   (r,vmk,n)
+         call dssum  (r,nx1,ny1,nz1)
          call projh  (r,h1,h2,bi,vml,vmk,approx,napprox,w1,w2,name)
          call hmhzpf (name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd,bi)
          call gensh  (u,h1,h2,vml,vmk,approx,napprox,w1,w2,name)
