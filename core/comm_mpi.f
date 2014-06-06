@@ -509,8 +509,7 @@ c     Communicate unhappiness to the other session
       nxyz   = nx1*ny1*nz1
 
       if (nid.eq.0) then 
-         inquire(unit=50,opened=ifopen)
-         if(ifopen) close(50)
+         call close_files(ifopen)
          dtmp1 = 0
          dtmp2 = 0
          dtmp3 = 0
@@ -1223,6 +1222,19 @@ c
 
       call mpi_scan(x,r,1,mpi_integer8,mpi_sum,nekcomm,ierr)
       i8gl_running_sum = r
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine close_files(ifopen)
+      logical ifopen
+
+      do ii=1,99
+         if(ii.ne.5.and.ii.ne.6) then
+           inquire(unit=ii,opened=ifopen)
+           if(ifopen) close(ii)
+         endif
+      enddo
 
       return
       end
