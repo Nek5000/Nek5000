@@ -164,6 +164,7 @@ C
 
       mprev =param(93)
       istart=param(94)
+      mprev=min(mprev,mxprev)
       if (mprev.le.0 .or. istep.le.istart) then
          call ophinv  (ot1,ot2,ot3,in1,in2,in3,h1,h2,tolh,nmxi)
          return
