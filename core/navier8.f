@@ -23,9 +23,9 @@ c     Check for single-element periodicity 'p' bc
       if (if3d) nz = nx
       call check_p_bc(glo_num,nx,nx,nz,nel)
 
-      if(nid.eq.0) write(6,*) 'call usrsetvert'
+      if(nio.eq.0) write(6,*) 'call usrsetvert'
       call usrsetvert(glo_num,nel,nx,nx,nx)
-      if(nid.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
 
       return
       end
@@ -129,7 +129,7 @@ c     if (nxc.lt.2) nxc=2
       nxc     = 2
       nx_crs  = nxc
 
-      if(nid.eq.0) write(6,*) 'setup h1 coarse grid, nx_crs=', nx_crs
+      if(nio.eq.0) write(6,*) 'setup h1 coarse grid, nx_crs=', nx_crs
 
       ncr     = nxc**ndim
       nxyz_c  = ncr
@@ -207,7 +207,7 @@ c      endif
 c     call crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,*) 'done :: setup h1 coarse grid ',t0, ' sec'
          write(6,*) ' '
       endif
@@ -2347,7 +2347,7 @@ c     Quick check on maximum #dofs:
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve + ngvs  ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
-      if (nid.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
+      if (nio.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
     1 format('   setvert3d:',i4,4i12)
 c
       return
@@ -2522,7 +2522,7 @@ c     Quick check on maximum #dofs:
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve         ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
-      if (nid.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
+      if (nio.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
     1 format('   setvert2d:',i4,4i12)
 c
       return

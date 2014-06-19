@@ -47,7 +47,7 @@ C
 C... no steady state
          IFSTUZ = .FALSE.
          IF (IFSTUZ) THEN
-            IF (NID.EQ.0) WRITE (6,*) 
+            IF (NIO.EQ.0) WRITE (6,*) 
      $      'Steady state reached in the fluid solver'
             return
          ENDIF
@@ -223,7 +223,7 @@ C
       IF (TOLSPL.LT.TOLMIN) THEN
          TOLOLD = TOLSPL
          TOLSPL = TOLMIN
-         IF (NID.EQ.0) 
+         IF (NIO.EQ.0) 
      $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
       ENDIF
       return
@@ -1210,7 +1210,7 @@ C
       IF (TOL.LT.RMIN) THEN
          TOLOLD = TOL
          TOL = RMIN
-         IF (NID.EQ.0 .AND. IFPRINT) WRITE (6,*)
+         IF (NIO.EQ.0 .AND. IFPRINT) WRITE (6,*)
      $   'New CG2-tolerance (RINIT*10-5/10-10) = ',TOL,TOLOLD
       ENDIF
       IF (IFVCOR) THEN
@@ -1219,7 +1219,7 @@ C
          IF (TOL .LT. TOLMIN) THEN
              TOLOLD = TOL
              TOL = TOLMIN
-             IF (NID.EQ.0 .AND. IFPRINT)
+             IF (NIO.EQ.0 .AND. IFPRINT)
      $       WRITE (6,*) 'New CG2-tolerance (OTR) = ',TOLMIN,TOLOLD
          ENDIF
       ENDIF
@@ -3286,7 +3286,7 @@ C        CALL CONVPR  (RCG,tolpss,ICONV,RNORM)
          if (param(21).lt.0) tolpss = abs(param(21))*div0
 
          ratio = rnorm/div0
-         IF (IFPRINT.AND.NID.EQ.0) 
+         IF (IFPRINT.AND.NIO.EQ.0) 
      $   WRITE (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66    format(i5,1p4e12.5,i8,' Divergence')
 c
@@ -3324,7 +3324,7 @@ c        if (ratio.le.1.e-5) goto 9000
             if (iconv.eq.1) then
                rnorm = rnrm1
                ratio = rnrm1/div0
-               if (nid.eq.0) 
+               if (nio.eq.0) 
      $         write (6,66) iter,tolpss,rnrm1,div0,ratio,istep
                goto 9000
             endif
@@ -3349,7 +3349,7 @@ c        RRP1 = GLSC2 (RPCG,RCG,NTOT2)
       call ortho(rcg)
 
       etime1 = dnekclock()-etime1
-      IF (NID.EQ.0) WRITE(6,9999) ISTEP,ITER,DIVEX,tolpss,div0,etime1
+      IF (NIO.EQ.0) WRITE(6,9999) ISTEP,ITER,DIVEX,tolpss,div0,etime1
  9999 FORMAT(I10,' U-Press std. : ',I6,1p4E13.4)
 19999 FORMAT(I10,' U-Press 1.e-5: ',I6,1p4E13.4)
 C
@@ -4689,7 +4689,7 @@ c
       call zwgll(zN,wN,N)
       call zwgll(zD,wD,D)
 c
-      if (nid.eq.0) write(6,*) 'dealias, pndoi:',N,D
+      if (nio.eq.0) write(6,*) 'dealias, pndoi:',N,D
       call IGLLM (P,Pt,ZN,ZD,N,D,N,D)
 c
       do j=1,D
@@ -4988,7 +4988,7 @@ c-----------------------------------------------------------------------
       save    icalld
       data    icalld /0/
 
-      if (nid.eq.0.and.icalld.eq.0) write(6,*) 'nu_star:',nu_star
+      if (nio.eq.0.and.icalld.eq.0) write(6,*) 'nu_star:',nu_star
       icalld=1
 
       if (if3d) then

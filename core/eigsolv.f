@@ -70,7 +70,7 @@ C
       EIGAS  = 0.25*RATIO
       EIGGS  = 2.0
 C
-      IF (NID.EQ.0 .AND. ISTEP.LE.0) THEN
+      IF (NIO.EQ.0 .AND. ISTEP.LE.0) THEN
          WRITE (6,*) ' '
          WRITE (6,*) 'Estimated eigenvalues'
          WRITE (6,*) 'EIGAA = ',EIGAA
@@ -126,7 +126,7 @@ C
             CALL ALPHAM1 (EIGAA3,V3MASK,VMULT,H1,H2,3)
             EIGAA = MIN  (EIGAA,EIGAA3)
          ENDIF
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAA = ',EIGAA
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAA = ',EIGAA
       ENDIF
 C
       IF (IFAS) THEN
@@ -135,7 +135,7 @@ C
          CALL RZERO   (H2,NTOT1)
          CALL RZERO   (H2INV,NTOT1)
          CALL ALPHAM2  (EIGAS,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAS = ',EIGAS
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAS = ',EIGAS
       ENDIF
 C
       IF (IFAE) THEN
@@ -144,7 +144,7 @@ C
          CALL RONE    (H2,NTOT1)
          CALL RONE    (H2INV,NTOT1)
          CALL ALPHAM2  (EIGAE,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAE = ',EIGAE
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAE = ',EIGAE
       ENDIF
 C
       IF (IFAST) THEN
@@ -152,7 +152,7 @@ C
          CALL SETHLM  (H1,H2,INLOC)
          CALL INVERS2 (H2INV,H2,NTOT1)
          CALL ALPHAM2  (EIGAST,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAST = ',EIGAST
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGAST = ',EIGAST
       ENDIF
 C
       IF (IFGS) THEN
@@ -161,7 +161,7 @@ C
          CALL RZERO   (H2,NTOT1)
          CALL RZERO   (H2INV,NTOT1)
          CALL GAMMAM2 (EIGGS,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGS = ',EIGGS
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGS = ',EIGGS
       ENDIF
 C
       IF (IFGE) THEN
@@ -170,7 +170,7 @@ C
          CALL RONE    (H2,NTOT1)
          CALL RONE    (H2INV,NTOT1)
          CALL GAMMAM2 (EIGGE,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGE = ',EIGGE
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGE = ',EIGGE
       ENDIF
 C
       IF (IFGST) THEN
@@ -178,7 +178,7 @@ C
          CALL SETHLM  (H1,H2,INLOC)
          CALL INVERS2 (H2INV,H2,NTOT1)
          CALL GAMMAM2 (EIGGST,H1,H2,H2INV,INLOC)
-         IF (NID.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGST = ',EIGGST
+         IF (NIO.EQ.0 .AND. ISTEP.LE.0) WRITE (6,*) 'EIGGST = ',EIGGST
       ENDIF
 C
       IF (IFGA) THEN
@@ -291,7 +291,7 @@ C
 C
 C HMT removed
 C
-C         if (nid.eq.0) then
+C         if (nio.eq.0) then
 C            write(6,*) iter,' eig_max A:',evnew,crit,tolev
 C         endif
          IF (CRIT.LT.TOLEV)                  GOTO 2000

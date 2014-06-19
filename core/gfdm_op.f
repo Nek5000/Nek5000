@@ -907,11 +907,11 @@ c     Set up diagonal for pressure operator inversion via Fast Diag. Meth.
       eigxmin = glmin(eigx,l)
       eigymin = glmin(eigy,m)
       eigzmin = glmin(eigz,n)
-      if (nid.eq.0) write(6,11) eigxmin,eigymin,eigzmin,l,m,n
+      if (nio.eq.0) write(6,11) eigxmin,eigymin,eigzmin,l,m,n
       eigxmax = glmax(eigx,l)
       eigymax = glmax(eigy,m)
       eigzmax = glmax(eigz,n)
-      if (nid.eq.0) write(6,12) eigxmax,eigymax,eigzmax,l,m,n
+      if (nio.eq.0) write(6,12) eigxmax,eigymax,eigzmax,l,m,n
    11 format(1p3e12.4,' gfdm eigmins',3i6)
    12 format(1p3e12.4,' gfdm eigmaxs',3i6)
       epx = eps*abs(eigxmax)

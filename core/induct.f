@@ -1110,7 +1110,7 @@ c     include 'TSTEP'   ! ifield?
 
       call gllog(ifbcor , .false.)
 
-      if (nid.eq.0)  write (6,*) 'IFBCOR   =',ifbcor
+      if (nio.eq.0)  write (6,*) 'IFBCOR   =',ifbcor
 
       return
       end
@@ -1201,8 +1201,8 @@ c    ................................................................
          alpha2 = sqrt(alpha2/volvm2)
          ratio  = alpha1/alpha2
          n10=min(10,nprev)
-         if (nid.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
-         if (nid.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
+         if (nio.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
+         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
    11    format(2i5,' alpha:',1p10e12.4)
    12    format(i6,i4,1p3e12.4,' alph12')
       endif
@@ -1338,7 +1338,6 @@ c
       nxyz1 = nx1*ny1*nz1
       nxyzd = nxd*nyd*nzd
 
-      if (icalld.eq.1.and.nid.eq.0) write(6,*) 'inside fast',nxyz1,nxyzd
 
       if (if3d) then
 c
@@ -1618,7 +1617,7 @@ c
 
       courno = max(cflp,cflm)
 
-      if (nid.eq.0) write(6,1) istep,time,dt,cflp,cflm
+      if (nio.eq.0) write(6,1) istep,time,dt,cflp,cflm
     1 format(i9,1p4e15.7,' CFL')
 
       return

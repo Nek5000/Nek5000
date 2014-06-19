@@ -1494,7 +1494,7 @@ c     if (param(41).eq.1) if_hybrid = .true.
             avg2     = 1./iter
             avg1     = 1.-avg2
             copt1    = avg1*copt1 + avg2*copt(1)
-            if(nid.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt1,'cpt1'
+            if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt1,'cpt1'
     1       format(2i6,1p3e14.5,2x,a4)
          endif
          ! w := r - w
@@ -1595,7 +1595,7 @@ c        call exitti('quit in mg$',l)
          avg2     = 1./iter
          avg1     = 1.-avg2
          copt2    = avg1*copt2 + avg2*copt(1)
-         if(nid.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt2,'cpt2'
+         if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt2,'cpt2'
       endif
       ! e := e + w
 
@@ -1679,9 +1679,9 @@ c     mgnx2 = min(3,mgnx2)
       mg_ny(mg_lmax) = ly1-1
       mg_nz(mg_lmax) = lz1-1
 
-      if (nid.eq.0) write(*,*) 'mg_nx:',(mg_nx(i),i=1,mg_lmax)
-      if (nid.eq.0) write(*,*) 'mg_ny:',(mg_ny(i),i=1,mg_lmax)
-      if (nid.eq.0) write(*,*) 'mg_nz:',(mg_nz(i),i=1,mg_lmax)
+      if (nio.eq.0) write(*,*) 'mg_nx:',(mg_nx(i),i=1,mg_lmax)
+      if (nio.eq.0) write(*,*) 'mg_ny:',(mg_ny(i),i=1,mg_lmax)
+      if (nio.eq.0) write(*,*) 'mg_nz:',(mg_nz(i),i=1,mg_lmax)
 
       return
       end
@@ -2347,9 +2347,9 @@ c     if (lx1.eq.6)  mgnx2 = 3
       mg_ny(mg_h1_lmax) = ly1-1
       mg_nz(mg_h1_lmax) = lz1-1
 
-      if (nid.eq.0) write(*,*) 'h1_mg_nx:',(mg_nx(i),i=1,mg_h1_lmax)
-      if (nid.eq.0) write(*,*) 'h1_mg_ny:',(mg_ny(i),i=1,mg_h1_lmax)
-      if (nid.eq.0) write(*,*) 'h1_mg_nz:',(mg_nz(i),i=1,mg_h1_lmax)
+      if (nio.eq.0) write(*,*) 'h1_mg_nx:',(mg_nx(i),i=1,mg_h1_lmax)
+      if (nio.eq.0) write(*,*) 'h1_mg_ny:',(mg_ny(i),i=1,mg_h1_lmax)
+      if (nio.eq.0) write(*,*) 'h1_mg_nz:',(mg_nz(i),i=1,mg_h1_lmax)
 
       do ifld=1,ldimt1
       do l=1,mg_lmax

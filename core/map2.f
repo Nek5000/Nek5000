@@ -9,7 +9,7 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
 c
-      if(nid.eq.0) write(6,'(/,A)') ' mapping elements to processors'
+      if(nio.eq.0) write(6,'(/,A)') ' mapping elements to processors'
 
       MFIELD=2
       IF (IFFLOW) MFIELD=1
@@ -83,9 +83,9 @@ C      ENDIF
 
       nn = iglmin(nelt,1)
       nm = iglmax(nelt,1)
-      if(nid.eq.0) write(6,*) 'element load imbalance: ',nm-nn,nn,nm
+      if(nio.eq.0) write(6,*) 'element load imbalance: ',nm-nn,nn,nm
 
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,*) 'done :: mapping elements to processors'
         write(6,*) ' '
       endif

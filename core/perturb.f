@@ -11,7 +11,7 @@ c
 
       do jp=1,npert
 
-         if (nid.eq.0.and.igeom.eq.2) write(6,1) istep,time,jp
+         if (nio.eq.0.and.igeom.eq.2) write(6,1) istep,time,jp
    1     format(i9,1pe14.7,' Perturbation Solve:',i5)
 
          call perturbv (igeom)
@@ -588,7 +588,7 @@ C
       ELSE
 C
          IF (IFPRINT) THEN
-            IF (IFIELD.EQ.2.AND.NID.EQ.0) THEN
+            IF (IFIELD.EQ.2.AND.NIO.EQ.0) THEN
                WRITE (6,*) ' Temperature/Passive scalar solution'
             ENDIF
          ENDIF
@@ -960,7 +960,7 @@ c
 c        Also, must orthogonalize
       enddo
 c
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          if (npert.eq.1) write(6,1) istep,time,(sigma(j),j=1,npert)
          if (npert.eq.2) write(6,2) istep,time,(sigma(j),j=1,npert)
          if (npert.eq.3) write(6,3) istep,time,(sigma(j),j=1,npert)
@@ -1231,7 +1231,7 @@ c-----------------------------------------------------------------------
 
       twt = param(126) !time to wait to start computing exponents
 
-      if (nid.eq.0) 
+      if (nio.eq.0) 
      $  write(6,8) istep,icount,time,twt,(lyap(k,jpp),k=1,3),jpp
     8 format(i9,i4,2f8.4,1p3e12.4,i3,'clyap')
 
@@ -1320,7 +1320,7 @@ c-----------------------------------------------------------------------
       call cmult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
       call cmult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
 
-      if (nid.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
+      if (nio.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
   1   format(i4,1p2e12.4,i4,a5)
       pertnorm = pertnorm*pertinvnorm
 

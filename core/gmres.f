@@ -164,7 +164,7 @@ c            call outmat(h,m,j,' h    ',j)
             
             rnorm = abs(gamma(j+1))*norm_fac
             ratio = rnorm/div0
-            if (ifprint.and.nid.eq.0) 
+            if (ifprint.and.nio.eq.0) 
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
@@ -222,7 +222,7 @@ c     END DIAGNOSTICS
       call ortho (res)  ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
-      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
+      if (nio.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
      &                            etime1
 c     call flush_hack
  9999 format(i10,' U-PRES gmres:',I7,1p5e12.4)
@@ -478,7 +478,7 @@ c           enddo
 
             rnorm = abs(gamma(j+1))*norm_fac
             ratio = rnorm/div0
-            if (ifprint.and.nid.eq.0) 
+            if (ifprint.and.nio.eq.0) 
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
@@ -519,7 +519,7 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       call ortho   (res) ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
-      if (nid.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
+      if (nio.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
      &                            etime1,if_hyb
 c     call flush_hack
  9999 format(i9,' PRES gmres:',i5,1p5e12.4,1x,l4)
@@ -1308,7 +1308,7 @@ c     zero out corners
 
 c     call gs_chkr(glo_num)
 
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,1) et,nx,nel,ntot,ngv,gs_h
     1    format('   gs_init time',1pe11.4,' seconds ',i3,4i10)
       endif

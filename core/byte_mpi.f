@@ -124,7 +124,7 @@ C--------------------------------------------------------------------------
          return
       endif
 #else
-      if(nid.eq.0) write(6,*) 'byte_close_mpi: No MPI-IO support!'
+      if(nio.eq.0) write(6,*) 'byte_close_mpi: No MPI-IO support!'
       ierr=1
       return
 #endif

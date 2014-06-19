@@ -53,7 +53,7 @@ c     outpost arrays
       if (icalld.eq.0) then
          icalld = 1
          ncut = param(101)+1
-         call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
+         call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
       elseif (icalld.lt.0) then   ! old (std.) filter
          icalld = 1
          call zwgll(zgmv,wgtv,lxv)
@@ -144,7 +144,7 @@ c
          enddo
       endif
 
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          if (npscal.eq.0) then
 c           write(6,101) mmax
 c           write(sfmt,101) mmax
@@ -464,9 +464,9 @@ c
          dragyt = dragyt + dragy(iobj)
          dragzt = dragzt + dragz(iobj)
 c
-         if (nid.eq.0.and.istep.eq.1) 
+         if (nio.eq.0.and.istep.eq.1) 
      $      write(6,*) 'drag_calc: scale=',scale
-         if (nid.eq.0) then
+         if (nio.eq.0) then
             write(6,6) istep,time,dragx(iobj),dragpx,dragvx,'dragx',iobj
             write(6,6) istep,time,dragy(iobj),dragpy,dragvy,'dragy',iobj
             if (if3d) 
@@ -483,13 +483,13 @@ c
     6    format(i8,1p4e15.7,2x,a5,i5)
   112    format(i6,1p3e15.7,'  momx')
   113    format(i6,1p4e15.7,'  momx')
-         if (istep.lt.10.and.nid.eq.0) 
+         if (istep.lt.10.and.nio.eq.0) 
      $      write(6,9) 'check:',check1,check2,dpdx_mean,istep
     9    format(a6,1p3e16.8,i9)
 c        if (time.gt.1.0.and.dragx.gt.10.) call emerxit
   100 continue
 c
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,6) istep,time,dragxt,dragpx,dragvx,'drgxt',iobj
          write(6,6) istep,time,dragyt,dragpy,dragvy,'drgyt',iobj
          if (if3d) 
@@ -1031,7 +1031,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine build_new_filter(intv,zpts,nx,kut,wght,nid)
+      subroutine build_new_filter(intv,zpts,nx,kut,wght,nio)
 c
 c     This routing builds a 1D filter with a transfer function that
 c     looks like:
@@ -1104,7 +1104,7 @@ c
          pht(k) = 1.-diag(k)
       enddo
       np1 = nx+1
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,6) 'filt amp',(pht (k),k=1,nx*nx,np1)
          write(6,6) 'filt trn',(diag(k),k=1,nx*nx,np1)
    6     format(a8,16f7.4,6(/,8x,16f7.4))
@@ -1195,7 +1195,7 @@ c
       if  (mod(istep,iastep).eq.0) ifverbose=.true.
 
       if (atime.ne.0..and.dtime.ne.0.) then
-         if(nid.eq.0) write(6,*) 'Compute statistics ...'
+         if(nio.eq.0) write(6,*) 'Compute statistics ...'
          beta  = dtime/atime
          alpha = 1.-beta
          ! compute averages E(X)
@@ -1261,7 +1261,7 @@ c
       if (ifverbose) then
          avgmax = glmax(avg,n)
          avgmin = glmin(avg,n)
-         if (nid.eq.0) write(6,1) istep,time,avgmin,avgmax
+         if (nio.eq.0) write(6,1) istep,time,avgmin,avgmax
      $                           ,alpha,beta,name
     1    format(i9,1p5e13.5,1x,a4,' av1mnx')
       endif
@@ -1284,7 +1284,7 @@ c
       if (ifverbose) then
          avgmax = glmax(avg,n)
          avgmin = glmin(avg,n)
-         if (nid.eq.0) write(6,1) istep,time,avgmin,avgmax
+         if (nio.eq.0) write(6,1) istep,time,avgmin,avgmax
      $                           ,alpha,beta,name
     1    format(i9,1p5e13.5,1x,a4,' av2mnx')
       endif
@@ -1307,7 +1307,7 @@ c
       if (ifverbose) then
          avgmax = glmax(avg,n)
          avgmin = glmin(avg,n)
-         if (nid.eq.0) write(6,1) istep,time,avgmin,avgmax
+         if (nio.eq.0) write(6,1) istep,time,avgmin,avgmax
      $                           ,alpha,beta,name
     1    format(i9,1p5e13.5,1x,a4,' av3mnx')
       endif
@@ -2110,7 +2110,7 @@ c
       if (nobj.le.1) i0 = 1  ! one output for single-object case
 c
       do i=i0,nobj
-        if (nid.eq.0) then
+        if (nio.eq.0) then
           if (if3d.or.ifaxis) then
            if (ifdout) then
             write(6,6) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
@@ -2327,7 +2327,7 @@ c
   127    format(a127)
 
          iblank = indx1(initc,' ',1)-1
-         if (nid.eq.0) write(6,1) ipass,(s1(k),k=1,iblank)
+         if (nio.eq.0) write(6,1) ipass,(s1(k),k=1,iblank)
     1    format(i8,'Reading: ',127a1)
 
          if (indx1(initc,'done ',5).eq.0) then ! We're not done
@@ -2929,7 +2929,7 @@ c-----------------------------------------------------------------------
       if (nelx.gt.lelx .or.
      $    nely.gt.lely .or.
      $    nelz.gt.lelz ) then
-         if (nid.eq.0) write(6,1) nelx,nely,nelz,lelx,lely,lelz
+         if (nio.eq.0) write(6,1) nelx,nely,nelz,lelx,lely,lelz
     1    format('anal_2d fail:',6i6)
          return
       endif
@@ -2975,7 +2975,7 @@ c-----------------------------------------------------------------------
       umin = vlmin(u,n)
       umax = vlmax(u,n)
       ulst = u(n)
-      if (nid.eq.0)
+      if (nio.eq.0)
      $write(6,1) nid,icalld,istep,n,umin,umax,ulst,name4,' chkit',nid
     1 format(4i7,1p3e12.4,a4,a6,i1)
 
@@ -3355,7 +3355,7 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
          ym = glmax(ym,1)
          zm = glmax(zm,1)
 
-         if (nid.eq.0) write(6,1) xm,ym,zm,xx,yx,zx,kpass
+         if (nio.eq.0) write(6,1) xm,ym,zm,xx,yx,zx,kpass
     1    format(1p6e12.4,' xyz repair',i2)
 
       enddo
@@ -4167,7 +4167,7 @@ c-----------------------------------------------------------------------
       endif
 
       vmax = glamax(v,n)
-      if (nid.eq.0) write(6,1) istep,time,vmax,bmax,' filter max'
+      if (nio.eq.0) write(6,1) istep,time,vmax,bmax,' filter max'
     1 format(i9,1p3e12.4,a11)
 
       return
@@ -4305,7 +4305,7 @@ c     will not.
          call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
          nchange = iglsum(nchange,1)
          dmax = glmax(dmax,1)
-         if (nid.eq.0) write(6,1) ipass,nchange,dmax,b
+         if (nio.eq.0) write(6,1) ipass,nchange,dmax,b
     1    format(i9,i12,1pe12.4,' max distance b: ',a3)
          if (nchange.eq.0) goto 1000
       enddo
@@ -4445,7 +4445,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
          call gs_op(gsh_fld(ifld),zn,1,1,0) !   to shared neighbor.
 
          dmax = glmax(dmax,1)
-         if (nid.eq.0) write(6,1) ipass,nchange,dmax
+         if (nio.eq.0) write(6,1) ipass,nchange,dmax
     1    format(i9,i12,1pe12.4,' max wall distance 2')
          if (nchange.eq.0) goto 1000
       enddo

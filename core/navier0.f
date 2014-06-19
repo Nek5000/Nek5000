@@ -69,7 +69,7 @@ c     tensor-product, but deformed:  pdm = Preconditioner is fdm
 
       if (param(59).ne.0.and.solver_type.eq.'fdm') solver_type='pdm'
 
-      if (istep.lt.2.and.nid.eq.0) write(6,10) iesolv,solver_type
+      if (istep.lt.2.and.nio.eq.0) write(6,10) iesolv,solver_type
    10 format(2X,'E-solver strategy: ',I2,1X,A)
 
 

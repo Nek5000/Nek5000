@@ -22,7 +22,7 @@ c     Initialize gather-scatter code
 c     call gs_chkr(glo_num)
 
       t1 = dnekclock() - t0
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,1) t1,gs_handle,nx,ngv,melg
     1    format('   setupds time',1pe11.4,' seconds ',2i3,2i12)
       endif
@@ -128,7 +128,7 @@ c
 c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
-c     if (nid.eq.0) 
+c     if (nio.eq.0) 
 c    $   write(6,*) istep,' dsop: ',op,ifield,ifldt,gsh_fld(ifldt)
 
       if(ifsync) call nekgsync()

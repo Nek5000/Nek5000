@@ -53,7 +53,7 @@ c-----------------------------------------------------------------------
       include 'ZPER'
 
       if (lelg_sm.lt.lelg.or.ltfdm2.lt.2*nx*ny*nz*nelt) then
-         if (nid.eq.0) then
+         if (nio.eq.0) then
             write(6,*) 'gfdm_array_check fail A:',lelg_sm,ltfdm2,lelg
             write(6,*) 'modify lelg_sm,ltfdm2 in ZPER; makenek clean'
          endif
@@ -62,7 +62,7 @@ c-----------------------------------------------------------------------
       endif
 
       if (lp_small.lt.np) then
-         if (nid.eq.0) then
+         if (nio.eq.0) then
             write(6,*) 'gfdm_array_check fail B:',lp_small,np
             write(6,*) 'modify lp_small > np in ZPER; makenek clean'
          endif

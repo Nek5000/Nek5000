@@ -30,7 +30,7 @@ C-----------------------------------------------------------------------
 
       real psmax(LDIMT)
 
-      if(nid.eq.0) write(6,*) 'set initial conditions'
+      if(nio.eq.0) write(6,*) 'set initial conditions'
 
 C     Initialize all fields:
 
@@ -82,7 +82,7 @@ C     Check if any pre-solv necessary for temperature/passive scalars
       IFANYP = .FALSE.
       DO 100 IFIELD=2,NFIELD
          IF (IFPRSL(IFIELD,jp)) THEN
-            IF (NID.EQ.0) WRITE(6,101) IFIELD
+            IF (NIO.EQ.0) WRITE(6,101) IFIELD
             IFANYP = .TRUE.
          ENDIF
   100 CONTINUE
@@ -95,7 +95,7 @@ C     Fortran function initial conditions for temp/pass. scalars.
 
 c     Always call nekuic (pff, 12/7/11)
       do ifield=1,maxfld
-         if (nid.eq.0) write(6,*) 'nekuic (1) for ifld ', ifield
+         if (nio.eq.0) write(6,*) 'nekuic (1) for ifld ', ifield
          call nekuic
       enddo
 
@@ -105,7 +105,7 @@ C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
       jp = 0 ! jp=0 --> base field, not perturbation field
       do 200 ifield=2,maxfld
          if (iffort(ifield,jp)) then
-            if (nid.eq.0) write(6,*) 'call nekuic for ifld ', ifield
+            if (nio.eq.0) write(6,*) 'call nekuic for ifld ', ifield
             call nekuic
          endif
  200  continue
@@ -113,7 +113,7 @@ C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
       if (ifpert) then
          ifield=2
          do jp=1,npert
-         if (nid.eq.0) write(6,*) 'nekuicP',ifield,jp,iffort(ifield,jp)
+         if (nio.eq.0) write(6,*) 'nekuicP',ifield,jp,iffort(ifield,jp)
             if (iffort(ifield,jp)) call nekuic
          enddo
       endif
@@ -136,7 +136,7 @@ C     ...else, do pre-solv for fluid if requested.)
 C     Fortran function initial conditions for velocity.
       ifield = 1
       if (iffort(ifield,jp)) then
-         if (nid.eq.0) write(6,*) 'call nekuic for vel  '
+         if (nio.eq.0) write(6,*) 'call nekuic for vel  '
          call nekuic
       endif
 c
@@ -144,7 +144,7 @@ c
          ifield=1
          do jp=1,npert
             if (iffort(ifield,jp)) call nekuic
-            if (nid.eq.0) write(6,*) 'ic vel pert:',iffort(1,jp),jp
+            if (nio.eq.0) write(6,*) 'ic vel pert:',iffort(1,jp),jp
          enddo
       endif
       jp = 0
@@ -281,7 +281,7 @@ c
 c           note... must be updated for addl pass. scal's. pff 4/26/04
             vxmax = glamax(vxp(1,jp),ntotv)
             vymax = glamax(vyp(1,jp),ntotv)
-            if (nid.eq.0) write(6,111) jp,vxmax,vymax
+            if (nio.eq.0) write(6,111) jp,vxmax,vymax
   111       format(i5,1p2e12.4,' max pert vel')
          enddo
       endif
@@ -305,16 +305,16 @@ C print min values
          psmax(i) = glmin(T(1,1,1,1,i+1),ntot)
       enddo
 
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,19) xxmax,yymax,zzmax
    19    format(' xyz min  ',5g13.5)
       endif
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,20) vxmax,vymax,vzmax,prmax,ttmax
    20    format(' uvwpt min',5g13.5)
       endif
       if (ldimt-1.gt.0) then
-         if (nid.eq.0) write(6,21) (psmax(i),i=1,LDIMT-1)
+         if (nio.eq.0) write(6,21) (psmax(i),i=1,LDIMT-1)
    21    format(' PS min   ',50g13.5)
       endif
 
@@ -336,18 +336,18 @@ c print max values
          psmax(i) = glmax(T(1,1,1,1,i+1),ntot)
       enddo
 
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,16) xxmax,yymax,zzmax
    16    format(' xyz max  ',5g13.5)
       endif
 
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,17) vxmax,vymax,vzmax,prmax,ttmax
    17    format(' uvwpt max',5g13.5)
       endif
 
       if (ldimt-1.gt.0) then
-         if (nid.eq.0)  then
+         if (nio.eq.0)  then
             write(6,18) (psmax(i),i=1,ldimt-1)
    18       format(' PS max   ',50g13.5)
          endif
@@ -355,7 +355,7 @@ c print max values
 
 
       if (ifrest(0,jp)) then !  mesh has been read in.
-         if (nid.eq.0) write(6,*) 'Restart: recompute geom. factors.'
+         if (nio.eq.0) write(6,*) 'Restart: recompute geom. factors.'
          call geom_reset(1)  !  recompute geometric factors
       endif
 
@@ -365,7 +365,7 @@ c     ! save velocity on fine mesh for dealiasing
 c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitti('setic exit$',nelv)
 
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,*) 'done :: set initial conditions'
         write(6,*) ' '
       endif
@@ -422,7 +422,7 @@ C           found a presolve request
             CALL CSPLIT(CDUM,LINE,' ',1)
 C
             IF (LTRUNC(LINE,132).EQ.0) THEN
-               IF (NID.EQ.0) WRITE(6,700)
+               IF (NIO.EQ.0) WRITE(6,700)
   700          FORMAT(/,2X,'Presolve options: ALL')
 C              default - all fields are presolved.
                DO 800 IFIELD=1,nfldt
@@ -433,7 +433,7 @@ C              default - all fields are presolved.
 C           check line for arguments
 C
                LL=LTRUNC(LINE,132)
-               IF (NID.EQ.0) WRITE(6,810) (LINE1(L),L=1,LL)
+               IF (NIO.EQ.0) WRITE(6,810) (LINE1(L),L=1,LL)
   810          FORMAT(/,2X,'Presolve options: ',132A1)
 C
                IF (INDX_CUT(LINE,'U',1).NE.0) THEN
@@ -470,7 +470,7 @@ C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
-            IF (NID.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
  1010       FORMAT(1X,'Checking restart options: ',A132)
 c            IF (NID.EQ.0) WRITE(6,'(A132)') LINE
 C
@@ -576,7 +576,7 @@ c
       ifbytsw = .false.
 
       if(nfiles.lt.1) return
-      if(nid.eq.0) write(6,*) 'Reading checkpoint data'
+      if(nio.eq.0) write(6,*) 'Reading checkpoint data'
 
 c use new reader (only binary support)
       p67 = abs(param(67))
@@ -810,8 +810,8 @@ C
                ENDIF
 
                lname=ltrunc(fname,132)
-               if (nid.eq.0) write(6,61) (fname1(i),i=1,lname)
-               if (nid.eq.0) write(6,62) 
+               if (nio.eq.0) write(6,61) (fname1(i),i=1,lname)
+               if (nio.eq.0) write(6,62) 
      $             iposu,iposv,iposw,iposp,ipost,nps,nouts
    61          FORMAT(/,2X,'Restarting from file ',132A1)
    62          FORMAT(2X,'Columns for restart data U,V,W,P,T,S,N: ',7I4)
@@ -933,7 +933,7 @@ C
                if (ifgetu) call copy(by,sdump(1,5),ntott)
                if (ifgetw) call copy(bz,sdump(1,6),ntott)
                if (ifgetp) then
-                 if (nid.eq.0) write(6,*) 'getting restart pressure'
+                 if (nio.eq.0) write(6,*) 'getting restart pressure'
                  if (ifsplit) then
                     call copy( pm,sdump(1,7),ntotv)
                  else
@@ -951,7 +951,7 @@ C
                if (ifgetu) call copy(vyp(1,j),sdump(1,5),ntotv)
                if (ifgetw) call copy(vzp(1,j),sdump(1,6),ntotv)
                if (ifgetp) then
-                  if (nid.eq.0) write(6,*) 'getting restart pressure'
+                  if (nio.eq.0) write(6,*) 'getting restart pressure'
                   if (ifsplit) then
                      call copy(prp(1,j),sdump(1,7),ntotv)
                   else
@@ -1010,7 +1010,7 @@ C
             call exitt
          ELSE
             IDUMP=IDUMP-1
-            IF (NID.EQ.0) WRITE(6,1800) IDUMP
+            IF (NIO.EQ.0) WRITE(6,1800) IDUMP
  1800       FORMAT(2X,'Successfully read data from dump number',I3,'.')
          ENDIF
          if (iffmat) then
@@ -1033,7 +1033,7 @@ C        Can't open file...
          CLOSE(UNIT=91)
          call exitt
  5002    CONTINUE
-         IF (NID.EQ.0) WRITE(6,5001) HNAME 
+         IF (NIO.EQ.0) WRITE(6,5001) HNAME 
          call exitt
 C
 C
@@ -1305,7 +1305,7 @@ C
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
          CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,NX1,NXR,NX1)      
-         IF (NID.EQ.0) WRITE(6,10) NXR,NX1
+         IF (NIO.EQ.0) WRITE(6,10) NXR,NX1
    10       FORMAT(2X,'Mapping restart data from Nold=',I2
      $               ,' to Nnew=',I2,'.')
       ENDIF
@@ -1367,7 +1367,7 @@ C
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
          CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,NX1,NXR,NX1)      
-         IF (NID.EQ.0) WRITE(6,10) NXR,NX1
+         IF (NIO.EQ.0) WRITE(6,10) NXR,NX1
    10       FORMAT(2X,'Mapping restart data from Nold=',I2
      $               ,' to Nnew=',I2,'.')
       ENDIF
@@ -1562,8 +1562,8 @@ C----------------------------------------------------------------------
       INCLUDE 'TSTEP'
       LOGICAL  IFSAV1,IFSAV2(LDIMT1)
 C
-      IF (NID.EQ.0) WRITE(6,*) ' '
-      IF (NID.EQ.0) WRITE(6,*) 'Conduction pre-solver activated'
+      IF (NIO.EQ.0) WRITE(6,*) ' '
+      IF (NIO.EQ.0) WRITE(6,*) 'Conduction pre-solver activated'
 C
 C     Set logical IFTRAN to false (steady state)
 C     Save logicals for convection
@@ -1579,7 +1579,7 @@ C
       CALL SETPROP
       CALL SETSOLV
 C
-      IF(NID.EQ.0)WRITE(6,*)'Steady conduction/passive scalar problem'
+      IF(NIO.EQ.0)WRITE(6,*)'Steady conduction/passive scalar problem'
 C
       DO 200 IGEOM=1,2
          CALL HEAT (IGEOM)
@@ -1610,8 +1610,8 @@ C----------------------------------------------------------------------
       INCLUDE 'TSTEP'
       LOGICAL  IFSAV1,IFSAV2
 C
-      IF (NID.EQ.0) WRITE(6,*) ' '
-      IF (NID.EQ.0) WRITE(6,*) 'Velocity pre-solver activated'
+      IF (NIO.EQ.0) WRITE(6,*) ' '
+      IF (NIO.EQ.0) WRITE(6,*) 'Velocity pre-solver activated'
 C
 C     Initialize velocity to some non-trivial RHS to avoid FP trap in i860.
 C
@@ -1647,7 +1647,7 @@ C
       CALL SETSOLV
       IF (IFNATC) GTHETA = GTHETA+10.
 C
-      IF (NID.EQ.0) WRITE (6,*) 'Steady Stokes problem'
+      IF (NIO.EQ.0) WRITE (6,*) 'Steady Stokes problem'
       DO 100 IGEOM=1,2
          IF (.NOT.IFSPLIT) CALL FLUID (IGEOM)
  100  CONTINUE
@@ -1912,7 +1912,7 @@ c
      $ ,             ZM3 (LX1,LY1,LZ1,LELT)
 C
 c
-      if(nid.eq.0) write(6,*) 'regenerate geometry data',icall
+      if(nio.eq.0) write(6,*) 'regenerate geometry data',icall
 
       ntot = nx1*ny1*nz1*nelt
 c
@@ -1934,7 +1934,7 @@ c
       CALL SETDEF
       CALL SFASTAX
 c
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,*) 'done :: regenerate geometry data',icall
         write(6,*) ' '
       endif
@@ -2286,8 +2286,8 @@ c-----------------------------------------------------------------------
       if (indx2(hdr,132,'#std',4).eq.1) then
           call parse_std_hdr(hdr)
       else
-         if (nid.eq.0) write(6,80) hdr
-         if (nid.eq.0) write(6,80) 'NONSTD HDR, parse_hdr, abort.'
+         if (nio.eq.0) write(6,80) hdr
+         if (nio.eq.0) write(6,80) 'NONSTD HDR, parse_hdr, abort.'
   80     format(a132)
          ierr = 1
       endif
@@ -2549,7 +2549,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = glsum(dnbyte,1)
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
-      if(nid.eq.0) write(6,7) istep,time,
+      if(nio.eq.0) write(6,7) istep,time,
      &             nbyte/tio/1024/1024/10,
      &             nfiler
     7 format(/,i9,1pe12.4,' done :: Read checkpoint data',/,
@@ -2604,11 +2604,11 @@ c-----------------------------------------------------------------------
       
 #ifdef MPIIO
       call byte_open_mpi(fname,ifh_mbyte,ierr)
-      if(nid.eq.0) write(6,6) istep,(fname1(k),k=1,len)
+      if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
     6 format(1i8,' OPEN: ',132a1)
 #else
       call byte_open(fname,ierr)
-      write(6,6) nid,istep,(fname1(k),k=1,len)
+      if(nio.eq.0)write(6,6) nid,istep,(fname1(k),k=1,len)
     6 format(2i8,' OPEN: ',132a1)
 #endif
 

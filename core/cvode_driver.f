@@ -105,7 +105,7 @@ c
       ifcvodeinit   = .false.
       cv_time       = time
 
-      if(nid.eq.0) write(*,*) 'initializing ODE integrator ...'
+      if(nio.eq.0) write(*,*) 'initializing ODE integrator ...'
 
       if(cv_nfld.lt.2) then
         if(nid.eq.0) write(6,*)
@@ -177,7 +177,7 @@ c      endif
       ! check for user-supplied Jacobian routine
       if(abs(PARAM(16)).ge.3) then 
         call FCVSPILSSETJAC(1, ier)
-        if(nid.eq.0) then 
+        if(nio.eq.0) then 
           write(6,*) '  user-supplied Jacobian enabled'
           write(6,'(A,4x,e7.1)') '   DQ perturbation scaling factor :',
      &                            CV_SIGS
@@ -185,7 +185,7 @@ c      endif
       endif
 
       etime1 = dnekclock_sync() - etime1
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,'(A,i11)')     '   degrees of freedom            : ',
      &                         cv_nglobal
         write(6,'(A,7x,i4)')   '   krylov dimension              : ',
@@ -429,7 +429,7 @@ c
 
       if (time_ .eq. timel) return
 
-c      if(nid.eq.0) write(6,*) 'recompute extrapolated velocity'
+c      if(nio.eq.0) write(6,*) 'recompute extrapolated velocity'
       timel = time_
 
       ntot = nx1*ny1*nz1*nelv
@@ -487,7 +487,7 @@ c
 
       if (cv_time.ne.timel) then
         timel = cv_time
-        if(nid.eq.0) write(6,10) cv_time
+        if(nio.eq.0) write(6,10) cv_time
   10                 format(14X,'substepping t=',1pE14.7)
       endif
 

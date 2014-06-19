@@ -518,6 +518,12 @@ if [ -f "./SIZE" ]; then
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
+  cat SIZE | grep -i 'nio' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
+  fi
 
   echo $PPLIST | grep 'CVODE' >/dev/null
   if [ $? -eq 0 ]; then

@@ -116,7 +116,7 @@ c     Calculate Divergence difference norms
       QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
       QTL2 = SQRT  (QTL2)
 
-      IF (NID.EQ.0) THEN
+      IF (NIO.EQ.0) THEN
          WRITE(6,'(15X,A,1p2e13.4)')
      &      'L1/L2 DIV(V)    :',DIV1,DIV2
          WRITE(6,'(15X,A,1p2e13.4)') 

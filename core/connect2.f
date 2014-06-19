@@ -21,7 +21,7 @@ C     Test timer accuracy
          edif = edif + e2-e1
       enddo
       edif = edif/10.
-      if(nid.eq.0) write(6,'(A,1pE15.7,A,/)') 
+      if(nio.eq.0) write(6,'(A,1pE15.7,A,/)') 
      &              ' timer accuracy: ', edif, ' sec'
 
       etime_tmp = dnekclock()
@@ -139,7 +139,7 @@ c pack into long int array and bcast as that
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
-        if (nid.eq.0) then
+        if (nio.eq.0) then
           write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
           write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12       format(1X,A,4I12,/,/)
@@ -1401,7 +1401,7 @@ C
 
 c      call  vrdsmshx  ! verify mesh topology
 
-      if(nid.eq.0) write(*,*) 'verify mesh topology'
+      if(nio.eq.0) write(*,*) 'verify mesh topology'
 
       IERR      = 0
       EPS       = 1.0e-04
@@ -1418,9 +1418,9 @@ c      call  vrdsmshx  ! verify mesh topology
       ymn = glmin(ym1,ntot)
       zmx = glmax(zm1,ntot)
       zmn = glmin(zm1,ntot)
-      if (nid.eq.0) write(6,*) xmn,xmx,' Xrange'
-      if (nid.eq.0) write(6,*) ymn,ymx,' Yrange'
-      if (nid.eq.0) write(6,*) zmn,zmx,' Zrange'
+      if (nio.eq.0) write(6,*) xmn,xmx,' Xrange'
+      if (nio.eq.0) write(6,*) ymn,ymx,' Yrange'
+      if (nio.eq.0) write(6,*) zmn,zmx,' Zrange'
 c     return
 C
 C     First check - use 1/Multiplicity
@@ -1478,7 +1478,7 @@ c      zzmin = glmin(zm1,ntot)
 c      xxmax = glmax(xm1,ntot)
 c      yymax = glmax(ym1,ntot)
 c      zzmax = glmax(zm1,ntot)
-c      if (nid.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+c      if (nio.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
 c    7 format('xyz minmx2:',6g13.5)
 
 
@@ -1645,9 +1645,9 @@ C
       ymn = glmin(ym1,ntot)
       zmx = glmax(zm1,ntot)
       zmn = glmin(zm1,ntot)
-      if (nid.eq.0) write(6,*) xmn,xmx,' Xrange'
-      if (nid.eq.0) write(6,*) ymn,ymx,' Yrange'
-      if (nid.eq.0) write(6,*) zmn,zmx,' Zrange'
+      if (nio.eq.0) write(6,*) xmn,xmx,' Xrange'
+      if (nio.eq.0) write(6,*) ymn,ymx,' Yrange'
+      if (nio.eq.0) write(6,*) zmn,zmx,' Zrange'
 c     return
 C
 C     First check - use 1/Multiplicity
@@ -1705,7 +1705,7 @@ C
       xxmax = glmax(xm1,ntot)
       yymax = glmax(ym1,ntot)
       zzmax = glmax(zm1,ntot)
-      if (nid.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+      if (nio.eq.0) write(6,7) xxmin,yymin,zzmin,xxmax,yymax,zzmax
     7 format('xyz minmx2:',6g13.5)
 
 
@@ -1728,7 +1728,7 @@ C
       yymin = glmin(ta ,ntot)
       zzmin = glmin(tb ,ntot)
       zzmax = glmax(tb ,ntot)
-      if (nid.eq.0) write(6,9) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+      if (nio.eq.0) write(6,9) xxmin,yymin,zzmin,xxmax,yymax,zzmax
     9 format('xyz minmx3:',6g13.5)
 
       CALL SUB2(TA,XM1,NTOT)
@@ -1740,7 +1740,7 @@ C
       yymin = glmin(ta ,ntot)
       zzmin = glmin(tb ,ntot)
       zzmax = glmax(tb ,ntot)
-      if (nid.eq.0) write(6,19) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+      if (nio.eq.0) write(6,19) xxmin,yymin,zzmin,xxmax,yymax,zzmax
    19 format('xyz minmx4:',6g13.5)
 
       CALL COL2(TA,QMASK,NTOT)
@@ -1752,7 +1752,7 @@ C
       yymin = glmin(ta ,ntot)
       zzmin = glmin(tb ,ntot)
       zzmax = glmax(tb ,ntot)
-      if (nid.eq.0) write(6,29) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+      if (nio.eq.0) write(6,29) xxmin,yymin,zzmin,xxmax,yymax,zzmax
    29 format('xyz minmx5:',6g13.5)
 
       DO 1100 IE=1,NELT
@@ -1789,7 +1789,7 @@ c1105       format(i4.4,1x,'ie:',3i3,i6,1p9e11.3)
       yymin = glmin(ta ,ntot)
       zzmin = glmin(tb ,ntot)
       zzmax = glmax(tb ,ntot)
-      if (nid.eq.0) write(6,39) xxmin,yymin,zzmin,xxmax,yymax,zzmax
+      if (nio.eq.0) write(6,39) xxmin,yymin,zzmin,xxmax,yymax,zzmax
    39 format('xyz minmx5:',6g13.5)
 
 c     ifvo = .true.
@@ -2184,13 +2184,13 @@ c
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
-      if (nid.eq.0) write(6,*)    '  reading mesh '
+      if (nio.eq.0) write(6,*)    '  reading mesh '
       call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader
-      if (nid.eq.0) write(6,*) '  reading curved sides '
+      if (nio.eq.0) write(6,*) '  reading curved sides '
       call bin_rd1_curve (ifbswap)
 
       do ifield = ibc,nfldt
-         if (nid.eq.0) write(6,*) '  reading bc for ifld',ifield
+         if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
@@ -2353,7 +2353,7 @@ c-----------------------------------------------------------------------
          mid = gllnid(eg)
          e   = gllel (eg)
 #ifdef DEBUG
-         if (nid.eq.0.and.mod(eg,nio).eq.0) write(6,*) eg,' mesh read'
+         if (nio.eq.0.and.mod(eg,nio).eq.0) write(6,*) eg,' mesh read'
 #endif
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 
@@ -2642,7 +2642,7 @@ c-----------------------------------------------------------------------
       character*5 version
       real*4      test
 
-      if(nid.eq.0) write(6,*) 'read .re2 file'
+      if(nio.eq.0) write(6,*) 'read .re2 file'
 
       ierr=0
       if (nid.eq.0) then

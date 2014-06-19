@@ -255,7 +255,7 @@ C
          call izero(nprev,ndim)
          mprev=param(93)
          mprev=min(mprev,mxprev)
-         if (nid.eq.0) write(6,*) 'this is mprev:',mprev,mxprev
+         if (nio.eq.0) write(6,*) 'this is mprev:',mprev,mxprev
       endif
 
 C     Diag to see how much reduction in the residual is attained.
@@ -322,9 +322,9 @@ C     Diag. ............................................................
       endif
       ratio  = alpha1/alpha2
       n10=min(10,nprev(isd))
-      if (nid.eq.0) write(6,10) istep,isd,alpha1,alpha2,ratio,nprev(isd)
+      if (nio.eq.0) write(6,10) istep,isd,alpha1,alpha2,ratio,nprev(isd)
    10 format(i8,i3,1p3e12.4,i4,' alph1x')
-      if (nid.eq.0) write(6,11) istep,nprev(isd),(alpha(I),I=1,n10)
+      if (nio.eq.0) write(6,11) istep,nprev(isd),(alpha(I),I=1,n10)
    11 format(i6,' halpha',i4,10(1p10e12.4,/,17x))
 
 c     alphmn = glmax(v1,ntot1)
@@ -450,11 +450,11 @@ c    .Normalize new element in P~
 
       if(ratio.le.0) then 
          ierr=1
-         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+         if (nio.eq.0) write(6,12) istep,kprev,alphad,alph1
    12    format(I6,1x,' alpha b4 sqrt:',i4,1p2e12.4)
       elseif (ratio.le.eps) then
          ierr=2
-         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+         if (nio.eq.0) write(6,12) istep,kprev,alphad,alph1
       else
          ierr=0
          alphad = 1.0/sqrt(alphad)
@@ -468,10 +468,10 @@ c    .Normalize new element in P~
          call col2    (vbar(1,isd),vml   ,ntot1) ! Compute part of the norm
          alphad=glsc2 (vbar(1,isd),sln(i1,isd),ntot1)
 
-         if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+         if (nio.eq.0) write(6,12) istep,kprev,alphad,alph1
          if (alphad.le.0) then
             ierr=3
-            if (nid.eq.0) write(6,12) istep,kprev,alphad,alph1
+            if (nio.eq.0) write(6,12) istep,kprev,alphad,alph1
             return
          endif
          alphad = 1.0/sqrt(alphad)

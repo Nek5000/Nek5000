@@ -1169,7 +1169,7 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       nrstd = md**2
       call lim_chk(nrstd,ldd,'urus ','ldd  ','convp_cons')
 
-      if (nid.eq.0.and.istep.lt.3) write(6,*) 'convp_cons',istep
+      if (nio.eq.0.and.istep.lt.3) write(6,*) 'convp_cons',istep
 
       do e=1,nel
 
