@@ -128,25 +128,25 @@ C
          IFIELD = 1
          RDIFF = ABS((H1NRM2(IFIELD)-H1NRM1(IFIELD))/H1NRM1(IFIELD))
          IF (RDIFF.GT.RDMAX) RDMAX = RDIFF
-         IF (NID.EQ.0) WRITE (6,*) ' ifield, rdiff ',ifield,rdiff
+         IF (NIO.EQ.0) WRITE (6,*) ' ifield, rdiff ',ifield,rdiff
          IF (RDIFF.GT.XLIM) IFACCX = .FALSE.
       ENDIF
       DO 100 IFIELD=2,NFIELD
          RDIFF = ABS((H1NRM2(IFIELD)-H1NRM1(IFIELD))/H1NRM1(IFIELD))
          IF (RDIFF.GT.RDMAX) RDMAX = RDIFF
-         IF (NID.EQ.0) WRITE (6,*) ' ifield, rdiff ',ifield,rdiff
+         IF (NIO.EQ.0) WRITE (6,*) ' ifield, rdiff ',ifield,rdiff
          IF (RDIFF.GT.XLIM) IFACCX = .FALSE.
  100  CONTINUE
 C
       IF (.NOT.IFACCX) THEN
-          IF (NID.EQ.0) THEN
+          IF (NIO.EQ.0) THEN
              WRITE (6,*) ' '
              write (6,*) 'Extrapolation attempt rejected'
              write (6,*) ' '
           ENDIF
           CALL MKARR (Z)
       ELSE
-          IF (NID.EQ.0) THEN
+          IF (NIO.EQ.0) THEN
              write (6,*)  ' '
              write (6,*) 'Extrapolation accepted'
              write (6,*) ' '
@@ -542,7 +542,7 @@ C
       CALL SETTOLV
       TOLHV3 = TOLHV*(NDIM)
       IF (IFSTRS) TOLHV3 = TOLHV
-      IF (NID.EQ.0 .AND. IFPRINT) THEN
+      IF (NIO.EQ.0 .AND. IFPRINT) THEN
          WRITE (6,*) 'USNORM, TOLHV',USNORM,TOLHV3
          WRITE (6,*) 'DNORM, TOLPS',DNORM,TOLPS
       ENDIF
@@ -561,7 +561,7 @@ C
 c      IF ((USREL.LT.EXFAC).OR.(TIME.GT.TXNEXT(IFIELD))) 
 c     $                                       IFEXTR(IFIELD) = .TRUE.
       IF (USREL.LT.EXFAC)                    IFEXTR(IFIELD) = .TRUE.
-      if (nid.eq.0 .and. ifprint)
+      if (nio.eq.0 .and. ifprint)
      $WRITE (6,*) 'Tau, Txnext ',IFIELD,tauss(ifield),txnext(ifield)
 C
       IFSTST(IFIELD) = .FALSE.
@@ -610,7 +610,7 @@ C
       USNORM = SQRT(GLSUM(WA,NTOT)/VOLTM1)
 C
       CALL SETTOLT
-      IF (NID.EQ.0 .AND. IFPRINT) 
+      IF (NIO.EQ.0 .AND. IFPRINT) 
      $WRITE (6,*) 'USNORM, TOLHT',USNORM,TOLHT(IFIELD)
       USREL = USNORM/TOLHT(IFIELD)
 C
@@ -624,7 +624,7 @@ C
 c      IF ((USREL.LT.EXFAC).OR.(TIME.GT.TXNEXT(IFIELD))) 
 c     $                     IFEXTR(IFIELD) = .TRUE.
       IF (USREL.LT.EXFAC)  IFEXTR(IFIELD) = .TRUE.
-      IF(NID.EQ.0 .AND. IFPRINT) 
+      IF(NIO.EQ.0 .AND. IFPRINT) 
      $WRITE (6,*) 'Tau, Txnext ',IFIELD,tauss(ifield),txnext(ifield)
 C
       IFSTST(IFIELD) = .FALSE.
@@ -776,7 +776,7 @@ c        endif
       ELSE
          NTAUBD = 0
          IF (CTARG.GT.0.5) THEN
-            IF (NID.EQ.0)
+            IF (NIO.EQ.0)
      $      WRITE (6,*) 'Reset the target Courant number to .5'
             CTARG = 0.5
          ENDIF
@@ -803,7 +803,7 @@ C--------------------------------------------------------------------
       COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 C
-      IF (NID.EQ.0) WRITE(6,5)
+      IF (NIO.EQ.0) WRITE(6,5)
     5 FORMAT(/,'  Project',/)
 C
       NTOT1  = NX1*NY1*NZ1*NELV

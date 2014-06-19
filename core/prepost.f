@@ -131,7 +131,7 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
 
 
-      if (ifdoit.and.nid.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
+      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
       if (ifdoit) call outfld(prefix)
 
       call outhis(ifhis)
@@ -302,7 +302,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       logical ifxyo_s
 
-      if(nid.eq.0) then 
+      if(nio.eq.0) then 
         WRITE(6,1001) istep,time
  1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
       endif
@@ -1075,7 +1075,7 @@ C        less than 10000 dumps....
 C
 C     Write the name of the .fld file to the logfile.
 C
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          call chcopy(string,fldfle,78)
          write(6,1000) istep,time,string
  1000    format(/,i9,1pe12.4,' OPEN: ',a78)
@@ -1538,7 +1538,7 @@ c     call exitti('this is wdsizo A:$',wdsizo)
       dnbyte = glsum(dnbyte,1)
       dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
       dnbyte = dnbyte/1024/1024
-      if(nid.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
+      if(nio.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
      &             nfileo
     7 format(/,i9,1pe12.4,' done :: Write checkpoint',/,
      &       30X,'file size = ',3pG12.2,'MB',/,

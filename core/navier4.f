@@ -73,8 +73,8 @@ C      Diag.
          if (alpha2.gt.0) ALPHA2 = sqrt(alpha2/volvm2)
          ratio  = alpha1/alpha2
          n10=min(10,nprev)
-         IF (NID.EQ.0) WRITE(6,11)ISTEP,Nprev,(ALPHA(I),I=1,N10)
-         IF (NID.EQ.0) WRITE(6,12) ISTEP,nprev,ALPHA1,ALPHA2,ratio
+         IF (NIO.EQ.0) WRITE(6,11)ISTEP,Nprev,(ALPHA(I),I=1,N10)
+         IF (NIO.EQ.0) WRITE(6,12) ISTEP,nprev,ALPHA1,ALPHA2,ratio
    11    FORMAT(2I5,' alpha:',1p10e12.4)
    12    FORMAT(I6,i4,1p3e12.4,' alph12')
 C
@@ -292,7 +292,7 @@ C
       CALL COL3 (DIVV,BDIVV,BM2INV,NTOT2)
       DNORM = SQRT(GLSC2(DIVV,BDIVV,NTOT2)/VOLVM2) 
 C
-      if (nid.eq.0) WRITE (6,*) istep,' DNORM, DIVEX',DNORM,DIVEX
+      if (nio.eq.0) WRITE (6,*) istep,' DNORM, DIVEX',DNORM,DIVEX
 C
 c     IF (istep.gt.10.and.DNORM.GT.(1.01*DIVEX).AND.DIVEX.GT.0.) then
 c        if (DNORM.gt.1e-8) then
@@ -387,7 +387,7 @@ C
          IFNEWE=.TRUE.
          DTlast=DT
       ENDIF
-      IF (IFNEWE.and.nid.eq.0) write(6,*) 'reorthogo:',nprev
+      IF (IFNEWE.and.nio.eq.0) write(6,*) 'reorthogo:',nprev
 C
 C     
 C     
@@ -447,7 +447,7 @@ C
          do 10 i=1,kprev
             Alphad = GLSC2(RHS(1,i),Pbar,NTOT2)
             Alphas = alphad
-            if (nid.eq.0) then
+            if (nio.eq.0) then
                write(6,5) i,j,alphad,alphas,istep,kprev
     5          format(' E-check:',2i4,e16.8,g12.5,i6,i4)
             endif
@@ -528,10 +528,10 @@ c   Diag.
       ratio  = alpha1/alpha2
       n10=min(10,n_sav)
 c
-      if (nid.eq.0) write(6,10) istep,name4,alpha1,alpha2,ratio,n_sav
+      if (nio.eq.0) write(6,10) istep,name4,alpha1,alpha2,ratio,n_sav
    10 format(4X,I7,4x,a4,' alph1n',1p3e12.4,i6)
 c
-      if (nid.eq.0) write(6,11) istep,name4,n_sav,(ws(i),i=1,n10)
+      if (nio.eq.0) write(6,11) istep,name4,n_sav,(ws(i),i=1,n10)
    11 format(4X,I7,4x,a4,' halpha',i6,10(1p10e12.4,/,17x))
 c
       return
@@ -644,11 +644,11 @@ c
 c
       if (ratio.le.0) then
          ierr=1
-         if (nid.eq.0) write(6,12) istep,name4,k,alpha,alph1
+         if (nio.eq.0) write(6,12) istep,name4,k,alpha,alph1
    12    format(I6,1x,a4,' alpha b4 sqrt:',i4,1p2e12.4)
       elseif (ratio.le.eps) then
          ierr=2
-         if (nid.eq.0) write(6,12) istep,name4,k,alpha,alph1
+         if (nio.eq.0) write(6,12) istep,name4,k,alpha,alph1
       else
          ierr=0
          alpha = 1.0/sqrt(alpha)
@@ -664,10 +664,10 @@ c
 c        Compute part of the norm   (Note:  a(0) already scaled by vml)
 c
          alpha = glsc2(approx(1,0),approx(1,k),ntot)
-         if (nid.eq.0) write(6,12) istep,name4,k,alpha,alph1
+         if (nio.eq.0) write(6,12) istep,name4,k,alpha,alph1
          if (alpha.le.0) then
             ierr=3
-            if (nid.eq.0) write(6,12) istep,name4,k,alpha,alph1
+            if (nio.eq.0) write(6,12) istep,name4,k,alpha,alph1
             return
          endif
          alpha = 1.0/sqrt(alpha)

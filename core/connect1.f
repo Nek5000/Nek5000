@@ -33,7 +33,7 @@ C
       common /ivrtx/ vertex ((2**ldim)*lelt)
       integer vertex
 
-      if(nid.eq.0) write(6,*) 'setup mesh topology'
+      if(nio.eq.0) write(6,*) 'setup mesh topology'
 C
 C     Initialize key arrays for Direct Stiffness SUM.
 C
@@ -114,7 +114,7 @@ c        do iel = 1,nelt
 c           ieg = lglel(iel)
 c           if (ieg.le.nelgv) goto 101 
 c        enddo
-c        if(nid.eq.0) write(6,*) 
+c        if(nio.eq.0) write(6,*) 
 c    &     'ERROR: each domain must contain at least one fluid element!'
 c        call exitt
 c 101   continue
@@ -140,7 +140,7 @@ C========================================================================
          call dssum   (vmult,nx1,ny1,nz1)
          vmltmax=glmax(vmult,ntotv)
          ivmltmax=vmltmax
-         if (nid.eq.0) write(6,*) ivmltmax,' max multiplicity'
+         if (nio.eq.0) write(6,*) ivmltmax,' max multiplicity'
          call invcol1 (vmult,ntotv)
       endif
       if (ifheat) then
@@ -161,7 +161,7 @@ C========================================================================
          endif
       enddo
 
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,*) 'done :: setup mesh topology'
         write(6,*) ' '
       endif
@@ -967,7 +967,7 @@ C
          IF (NID.EQ.0) WRITE(6,2003) NELGT
          call exitt
       ELSE
-         IF (NID.EQ.0) WRITE(6,2002) NELGT
+         IF (NIO.EQ.0) WRITE(6,2002) NELGT
       ENDIF
 C
  2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
@@ -1621,7 +1621,7 @@ c-----------------------------------------------------------------------
 
       integer gsh_std
 
-      if (nid.eq.0) write(6,*) 'dstat test'
+      if (nio.eq.0) write(6,*) 'dstat test'
 
       ifield = 1
 
@@ -1769,7 +1769,7 @@ c-----------------------------------------------------------------------
       call nekgsync()
       t5 = (dnekclock() - t0)/20
 
-      if (nid.eq.0) write(6,1) t1,t2,t3,t4,t5
+      if (nio.eq.0) write(6,1) t1,t2,t3,t4,t5
     1 format(5e12.4,' dstatb')
 
       return

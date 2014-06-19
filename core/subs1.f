@@ -53,7 +53,7 @@ c     tol = 1.e-10
 
       if (ifcrsl) call set_up_h1_crs_strs(h1,h2,ifield,matmod)
 
-      if (nid.eq.0.and.istep.eq.1) write(6,6) matmod,tol,tin,param(22)
+      if (nio.eq.0.and.istep.eq.1) write(6,6) matmod,tol,tin,param(22)
    6  format(i3,1p3e12.4,' tol,matmod')
 
       if ( .not.ifsolv ) then           !     Set logical flags
@@ -66,8 +66,8 @@ c     tol = 1.e-10
       rbnorm = sqrt ( rbnorm / vol )
       if (rbnorm .lt. tol**2) then
 c        if ( .not.ifprint )  goto 9999
-         if (matmod.ge.0.and.nid.eq.0) write (6,2000) istep,rbnorm,tol
-         if (matmod.lt.0.and.nid.eq.0) write (6,2010) istep,rbnorm,tol
+         if (matmod.ge.0.and.nio.eq.0) write (6,2000) istep,rbnorm,tol
+         if (matmod.lt.0.and.nio.eq.0) write (6,2010) istep,rbnorm,tol
          goto 9999
       endif
 
@@ -122,7 +122,7 @@ c     call copy (dpc,binv,n)
 
          if (rbnorm.lt.tol) then
             ifin = iter
-            if (nid.eq.0) then
+            if (nio.eq.0) then
                if (matmod.ge.0) write(6,3000) istep,ifin,rbnorm,tol,r0
                if (matmod.lt.0) write(6,3010) istep,ifin,rbnorm,tol,r0
             endif
@@ -156,8 +156,8 @@ c     call copy (dpc,binv,n)
 
  1000 continue
  
-      if (matmod.ge.0.and.nid.eq.0) write (6,3001) istep,iter,rbnorm,tol
-      if (matmod.lt.0.and.nid.eq.0) write (6,3011) istep,iter,rbnorm,tol
+      if (matmod.ge.0.and.nio.eq.0) write (6,3001) istep,iter,rbnorm,tol
+      if (matmod.lt.0.and.nio.eq.0) write (6,3011) istep,iter,rbnorm,tol
 
  9999 continue
       ifsolv = .false.
@@ -240,8 +240,8 @@ C
           DT = DT
       ELSE
           DT = 0.
-          IF (NID.EQ.0) WRITE (6,*) 'WARNING: DT<0 or DTFS<0'
-          IF (NID.EQ.0) WRITE (6,*) '         Reset DT      '
+          IF (NIO.EQ.0) WRITE (6,*) 'WARNING: DT<0 or DTFS<0'
+          IF (NIO.EQ.0) WRITE (6,*) '         Reset DT      '
       endif
 C
 C     Check DT against user-specified input, DTINIT=PARAM(12).
@@ -254,7 +254,7 @@ C
          DT = DT
       ELSEIF (.not.iffxdt) THEN
          DT = 0.001
-         IF(NID.EQ.0)WRITE (6,*) 'WARNING: Set DT=0.001 (arbitrarily)'
+         IF(NIO.EQ.0)WRITE (6,*) 'WARNING: Set DT=0.001 (arbitrarily)'
       endif
 C
 C     Check if final time (user specified) has been reached.
@@ -263,11 +263,11 @@ C
 C        Last step
          LASTEP = 1
          DT = FINTIM-TIME
-         IF (NID.EQ.0) WRITE (6,*) 'Final time step = ',DT
+         IF (NIO.EQ.0) WRITE (6,*) 'Final time step = ',DT
       endif
 C
       COURNO = DT*UMAX
-      IF (NID.EQ.0.AND.IFPRINT.AND.DT.NE.DTOLD)
+      IF (NIO.EQ.0.AND.IFPRINT.AND.DT.NE.DTOLD)
      $   WRITE (6,100) DT,DTCFL,DTFS,DTINIT
  100     FORMAT(5X,'DT/DTCFL/DTFS/DTINIT',4E12.3)
 C
@@ -419,7 +419,7 @@ C
       IF (TOL.LT.RMIN) THEN
          TOLOLD=TOL
          TOL = RMIN
-         IF (NID.EQ.0)
+         IF (NIO.EQ.0)
      $   WRITE (6,*) 'New MG-tolerance (RINIT*epsm*cond) = ',TOL,TOLOLD
       endif
 C
@@ -433,7 +433,7 @@ C
          IF (TOL .LT. TOLMIN) THEN
              TOLOLD = TOL
              TOL = TOLMIN
-             IF (NID.EQ.0)
+             IF (NIO.EQ.0)
      $       WRITE (6,*) 'New MG-tolerance (OTR) = ',TOL,TOLOLD
          endif
       endif
@@ -602,7 +602,7 @@ C           -C IS Target Courant number
             DISCR=B**2-4*A*C
             DTOLD=DT
             IF(DISCR.LE.0.0)THEN
-               if (nid.eq.0) 
+               if (nio.eq.0) 
      $         PRINT*,'Problem calculating new DT Discriminant=',discr
                DT=DT*(CTARG/COURNO)
 C               IF(DT.GT.DTOLD) DT=DTOLD
@@ -824,7 +824,7 @@ C
       DTFS = DTFS * FACTOR
 C
       IF (DTFS.EQ.0.0) THEN
-         IF (ISTEP.EQ.1.AND.NID.EQ.0) THEN
+         IF (ISTEP.EQ.1.AND.NIO.EQ.0) THEN
             WRITE (6,*) ' Warning - zero surface-tension may results in'
             WRITE (6,*) ' instability of free-surface update'
          endif
@@ -1460,7 +1460,7 @@ C
       IF (TOL.LT.RMIN) THEN
        TOLOLD = TOL
        TOL = RMIN
-       IF (NID.EQ.0 .AND. IFPRINT)
+       IF (NIO.EQ.0 .AND. IFPRINT)
      $ WRITE(6,*)'New CG1(stress)-tolerance (RINIT*epsm) = ',TOL,TOLOLD
       endif
 C
@@ -1483,7 +1483,7 @@ C
          IF (TOL .LT. TOLMIN) THEN
             TOLOLD = TOL
             TOL = TOLMIN
-            IF (NID.EQ.0)
+            IF (NIO.EQ.0)
      $      WRITE (6,*) 'New CG1(stress)-tolerance (OTR) = ',TOL,TOLOLD
          endif
       endif
@@ -2258,7 +2258,7 @@ c     Setup local SEM-based Neumann operators (for now, just full...)
       null_space=0
 
       t1 = dnekclock()-t0
-      if (nid.eq.0) 
+      if (nio.eq.0) 
      $  write(6,*) 'start:: setup h1 coarse grid ',t1, ' sec'
      $             ,nnz,mcr,ncr,nel
 
@@ -2272,7 +2272,7 @@ c     stop
      $               nnz,ia,ja,a,null_space)
 
       t0 = dnekclock()-t0
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,*) 'done :: setup h1 coarse grid ',t0, ' sec',xxth_strs
          write(6,*) ' '
       endif
@@ -2667,7 +2667,7 @@ c     Reorthogonalize basis
       call opcopy(b1,b2,b3,b(1),b(1+n),b(1+2*n))
       l2b=opnorm2w(b1,b2,b3,binvm1)
 
-      if (nid.eq.0) write(6,6) istep,k,ierr,l2a,l2b
+      if (nio.eq.0) write(6,6) istep,k,ierr,l2a,l2b
     6 format(i9,2i3,1p2e12.4,' h3proj')
 
       return
@@ -2778,7 +2778,7 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       ierr = 0
       if (scale/xax0.lt.eps) ierr=1
 
-      if(nid.eq.0.and.(istep.lt.10.or.mod(istep,100).eq.0.or.ierr.gt.0))
+      if(nio.eq.0.and.(istep.lt.10.or.mod(istep,100).eq.0.or.ierr.gt.0))
      $write(6,3) istep,k,ierr,xax1/xax0,xax2/xax0
     3 format(i9,2i3,1p2e12.4,' scale ortho')
 

@@ -30,6 +30,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       logical ifemati,ifsync_
 
+      nio = -1
+      if(nid.eq.0) nio=0
       call get_session_info(intracomm)
       
 C     Initalize Nek (MPI stuff, word sizes, ...)
@@ -81,9 +83,9 @@ C     Set size for CVODE solver
       if(ifcvode .and. nsteps.gt.0) call cv_setsize(0,nfield)
 
 C     USRDAT
-      if(nid.eq.0) write(6,*) 'call usrdat'
+      if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
-      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat' 
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
 
 C     generate geometry (called after usrdat in case something changed)
       call gengeom (igeom)
@@ -91,9 +93,9 @@ C     generate geometry (called after usrdat in case something changed)
       if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
 
 C     USRDAT2
-      if(nid.eq.0) write(6,*) 'call usrdat2'
+      if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
-      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -129,9 +131,9 @@ C     Initialize optional plugin
       call init_plugin
 
 C     USRDAT3
-      if(nid.eq.0) write(6,*) 'call usrdat3'
+      if(nio.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
-      if(nid.eq.0) write(6,'(A,/)') ' done :: usrdat3'
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
 C     Set initial conditions + compute field properties
       call setics
@@ -139,9 +141,9 @@ C     Set initial conditions + compute field properties
 
 C     USRCHK
       if(instep.ne.0) then
-        if(nid.eq.0) write(6,*) 'call userchk'
+        if(nio.eq.0) write(6,*) 'call userchk'
         call userchk
-        if(nid.eq.0) write(6,'(A,/)') ' done :: userchk' 
+        if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
 C     Initialize CVODE
@@ -161,7 +163,7 @@ C     Initalize timers to ZERO
       call opcount(2)
 
       etims0 = dnekclock_sync()
-      IF (NID.EQ.0) THEN
+      IF (NIO.EQ.0) THEN
         WRITE (6,*) ' '
         IF (TIME.NE.0.0) WRITE (6,'(A,E14.7)') ' Initial time:',TIME
         WRITE (6,'(A,g13.5,A)') 
@@ -191,7 +193,7 @@ c-----------------------------------------------------------------------
      &     ' nsteps=0 -> skip time loop',
      &     ' running solver in post processing mode'
       else
-        if(nid.eq.0) write(6,'(/,A,/)') 'Starting time loop ...'
+        if(nio.eq.0) write(6,'(/,A,/)') 'Starting time loop ...'
       endif
 
       isyc  = 0
@@ -223,12 +225,12 @@ c     check for post-processing mode
       if (instep.eq.0) then
          nsteps=0
          istep=0
-         if(nid.eq.0) write(6,*) 'call userchk'
+         if(nio.eq.0) write(6,*) 'call userchk'
          call userchk
-         if(nid.eq.0) write(6,*) 'done :: userchk'
+         if(nio.eq.0) write(6,*) 'done :: userchk'
          call prepost (.true.,'his')
       else
-         if (nid.eq.0) write(6,'(/,A,/)') 
+         if (nio.eq.0) write(6,'(/,A,/)') 
      $      'end of time-step loop' 
       endif
 

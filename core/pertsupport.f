@@ -167,7 +167,7 @@ c-----------------------------------------------------------------------
 
       twt = param(126) !time to wait to start computing exponents
 
-      if (nid.eq.0) 
+      if (nio.eq.0) 
      $  write(6,8) istep,icount,time,twt,(lyap(k,jpp),k=1,3),jpp
     8 format(i9,i4,2f8.4,1p3e12.4,i3,'clyap')
 
@@ -256,7 +256,7 @@ c-----------------------------------------------------------------------
       call cmult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
       call cmult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
 
-      if (nid.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
+      if (nio.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
   1   format(i4,1p2e12.4,i4,a5)
       pertnorm = pertnorm*pertinvnorm
 
@@ -418,11 +418,11 @@ c----------------------------------------------------------------------
          if_restart = .false.
          call rzero(lyap(1,jpp),3)
       else
-         if(nid.eq.0) write(6,*)jpp,'norm of pert IC=',pertnorm
+         if(nio.eq.0) write(6,*)jpp,'norm of pert IC=',pertnorm
          if_restart  = .true.
          pertInvNorm = 1.0/pertNorm
          call rescalepert(pertnorm,pertinvnorm,jpp)
-         if(nid.eq.0) write(6,*) jpp,'Rescaled the perturbation'
+         if(nio.eq.0) write(6,*) jpp,'Rescaled the perturbation'
          call rzero(lyap(1,jpp),3)
          lyap(3,jpp) = pertnorm
       endif

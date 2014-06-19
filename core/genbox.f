@@ -329,7 +329,7 @@ c
     6 format('Reading',i12,' =',3i6,' elements for box',i3,'.')
    99 continue
 c
-      if (nid.eq.0) then
+      if (nio.eq.0) then
       write(6,*) 'Beginning construction of new mesh.'
      $           ,nel,nelx,nely,nelz
       endif

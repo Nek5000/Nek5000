@@ -333,7 +333,7 @@ c-----------------------------------------------------------------------
       real w1(lxyz,lelt)
 
 c     Build 1D-filter based on the transfer function (tf)
-      call build_1d_filt(fh,fht,tf,nx,nid)
+      call build_1d_filt(fh,fht,tf,nx,nio)
 
 c     Filter scalar
       call copy(w1,scalar,lxyz*nel)
@@ -376,15 +376,15 @@ c-----------------------------------------------------------------------
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
 
-c      if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
-      call build_new_filter(intv,zgm1,nx1,ncut,wght,nid)
+c    if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
+      call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
 
       icall = 1
 
       call filterq(scalar,intv,nx1,nz1,wk1,wk2,intt,if3d,fmax)
       fmax = glmax(fmax,1)
 
-      if (nid.eq.0) write(6,1) istep,fmax,name5
+      if (nio.eq.0) write(6,1) istep,fmax,name5
     1 format(i8,' sfilt:',1pe12.4,a10)
 
       return
@@ -452,7 +452,7 @@ c
       integer nn(2)
       logical ifot,ifpts
 
-      if(nid.eq.0) write(6,*) 'call intpts'
+      if(nio.eq.0) write(6,*) 'call intpts'
 
       if(n.gt.lpart) then
         write(6,*) 
@@ -463,7 +463,7 @@ c
       ! locate points (iel,iproc,r,s,t)
       nfail = 0 
       if(ifpts) then
-        if(nid.eq.0) write(6,*) 'call findpts'
+        if(nio.eq.0) write(6,*) 'call findpts'
         call findpts(ih,rcode,1,
      &               proc,1,
      &               elid,1,
@@ -510,7 +510,7 @@ c
 
       nn(1) = iglsum(n,1)
       nn(2) = iglsum(nfail,1)
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
      &         ,i12,/,' done :: intpts')
@@ -563,7 +563,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine build_1d_filt(fh,fht,trnsfr,nx,nid)
+      subroutine build_1d_filt(fh,fht,trnsfr,nx,nio)
 c
 c     This routing builds a 1D filter with transfer function diag()
 c
@@ -621,7 +621,7 @@ c
          pht(k) = 1.-diag(k)
       enddo
       np1 = nx+1
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,6) 'flt amp',(pht (k),k=1,nx*nx,np1)
          write(6,6) 'flt trn',(diag(k),k=1,nx*nx,np1)
    6     format(a8,16f7.4,6(/,8x,16f7.4))
@@ -1681,7 +1681,7 @@ c
       integer*8 ioff,ioff0,wds,ifldoff,nelrr_b
 
       etime_t = dnekclock_sync()
-      if(nid.eq.0) write(6,*) 'grid-to-grid interpolation'
+      if(nio.eq.0) write(6,*) 'grid-to-grid interpolation'
 
 #ifndef MPIIO
       if(nid.eq.0) write(6,*) 'ABORT: compile with MPIIO support!'
@@ -1796,7 +1796,7 @@ c
       call intpts_setup(-1.0,ih)
       necrw = nec
       do ic = 1,ncg
-         if(nid.eq.0) write(6,*) 'chunk',ic,ncg
+c        if(nid.eq.0) write(6,*) 'chunk',ic,ncg
          call byte_sync_mpi(ifh) ! free buffer
          if(ic.eq.nc) necrw = nelrr - (nc-1)*necrw ! remainder
          if(ic.gt.nc) then
@@ -1876,7 +1876,7 @@ c
       call err_chk(ierr,'Error closing files in g2gi. $')
 
       etime_t = dnekclock_sync() - etime_t
-      if(nid.eq.0) write(6,'(A,2(1g8.2),A)')
+      if(nio.eq.0) write(6,'(A,2(1g8.2),A)')
      &                        'done :: grid-to-grid interpolation   ',
      &                        etime_t,etime_i, ' sec'
 
@@ -1956,7 +1956,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       ntot  = nxyz*nelt 
       nbuff = lhis      ! point to be read in on 1 proc.
 
-      if(nid.eq.0) write(6,*) 'dump history points'
+      if(nio.eq.0) write(6,*) 'dump history points'
 
       if(icalld.eq.0) then
         npts  = lhis      ! number of points per proc
@@ -2034,7 +2034,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       call prepost_map(1)  ! maps back axisymm arrays
 
-      if(nid.eq.0) write(6,*) 'done :: dump history points'
+      if(nio.eq.0) write(6,*) 'done :: dump history points'
 
       return
       end

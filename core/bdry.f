@@ -125,7 +125,7 @@ C
          CALL GLLOG(IFNONL(IFIELD),.TRUE.)
   400 CONTINUE
 C
-      IF (NID.EQ.0) THEN
+      IF (NIO.EQ.0) THEN
          WRITE (6,*) 'IFTRAN   =',IFTRAN
          WRITE (6,*) 'IFFLOW   =',IFFLOW
          WRITE (6,*) 'IFHEAT   =',IFHEAT

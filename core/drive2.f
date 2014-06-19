@@ -108,7 +108,7 @@ C---------------------------------------------------------------------
 
 C
 C     Only node zero makes comments.
-      IF (NID.NE.0) RETURN
+      IF (NIO.NE.0) RETURN
 C
 C
       IF (EETIME0.EQ.0.0 .AND. ISTEP.EQ.1) EETIME0=DNEKCLOCK()
@@ -129,7 +129,7 @@ C
            TTIME     = 0
          ENDIF
          IF (     IFCOUR) 
-     $      WRITE (6,100) ISTEP,TIME,DT,COURNO,TTIME,TTIME_STP
+     $       WRITE(6,100)ISTEP,TIME,DT,COURNO,TTIME,TTIME_STP
          IF (.NOT.IFCOUR) WRITE (6,101) ISTEP,TIME,DT
       ELSEIF (LASTEP.EQ.1) THEN
          TTIME_STP = EETIME2-EETIME1   ! time per timestep
@@ -369,14 +369,14 @@ C
       CLOSE (UNIT=9)
       write(6,*) ' '
 
-c      if(param(2).ne.param(8).and.nid.eq.0) then
+c      if(param(2).ne.param(8).and.nio.eq.0) then
 c         write(6,*) 'Note VISCOS not equal to CONDUCT!'
 c         write(6,*) 'Note VISCOS  =',PARAM(2)
 c         write(6,*) 'Note CONDUCT =',PARAM(8)
 c      endif
 
       if (param(62).gt.0) then
-         if(nid.eq.0) write(6,*)
+         if(nio.eq.0) write(6,*)
      &      'enable byte swap for output'
          call set_bytesw_write(1)
       endif
@@ -417,7 +417,7 @@ C
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
 
-      if (nid.eq.0.and.istep.le.1) write(6,*) 'generate geometry data'
+      if (nio.eq.0.and.istep.le.1) write(6,*) 'generate geometry data'
 
       IF (IGEOM.EQ.1) THEN
          RETURN
@@ -470,7 +470,7 @@ c
          ifield = ifieldo
       ENDIF
 
-      if (nid.eq.0.and.istep.le.1) then
+      if (nio.eq.0.and.istep.le.1) then
         write(6,*) 'done :: generate geometry data' 
         write(6,*) ' '
       endif
@@ -587,7 +587,7 @@ c .nre file
 c
 C     Write the name of the .rea file to the logfile.
 C
-      IF (NID.EQ.0) THEN
+      IF (NIO.EQ.0) THEN
          CALL CHCOPY(STRING,REAFLE,78)
          WRITE(6,1000) STRING
          WRITE(6,1001) 
@@ -655,11 +655,12 @@ C
       IFPRINT = .FALSE.
       IF (IOCOMM.GT.0.AND.MOD(ISTEP,IOCOMM).EQ.0) IFPRINT=.TRUE.
       IF (ISTEP.eq.1  .or. ISTEP.eq.0           ) IFPRINT=.TRUE.
-C
+      IF (NIO.eq.-1)  ifprint=.false.
+ 
       RETURN
       END
-C
-C
+ 
+ 
       subroutine geneig (igeom)
 C-----------------------------------------------------------------------
 C
@@ -739,7 +740,7 @@ C-----------------------------------------------------------------------
 
       ts = dnekclock() 
 
-      if(nid.eq.0 .and. igeom.eq.1) 
+      if(nio.eq.0 .and. igeom.eq.1) 
      &   write(6,*) 'Solving for fluid',ifsplit,iftran,ifnav
 
       if (ifsplit) then
@@ -777,7 +778,7 @@ c             - Velocity/stress formulation.
 
       endif
 
-      if(nid.eq.0 .and. igeom.ge.2) 
+      if(nio.eq.0 .and. igeom.ge.2) 
      &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
      &   istep,time,dnekclock()-ts,' Fluid done'
 
@@ -807,7 +808,7 @@ C
 
       ts = dnekclock()
 
-      if (nid.eq.0 .and. igeom.eq.1) 
+      if (nio.eq.0 .and. igeom.eq.1) 
      &    write(*,'(13x,a)') 'Solving for heat'
 
       if (ifcvode) then
@@ -842,7 +843,7 @@ C
 
       endif
 
-      if (nid.eq.0 .and. igeom.ge.2)
+      if (nio.eq.0 .and. igeom.ge.2)
      &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
      &   istep,time,dnekclock()-ts,' Heat done'
 
@@ -1297,7 +1298,7 @@ c
       avg_usbc = avg_usbc/np
 c
       tttstp = tttstp + 1e-7
-      if (nid.eq.0) then
+      if (nio.eq.0) then
          write(6,'(A)') 'runtime statistics:'
          write(6,*) 'total time',tttstp
 
@@ -1433,7 +1434,7 @@ c        MPI_Allreduce(sync) timings
 #endif
       endif
 
-      if (nid.eq.0)  ! header for timing
+      if (nio.eq.0)  ! header for timing
      $ write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop',ifsync
     1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
@@ -1526,7 +1527,7 @@ C
 
          dhc = dcount
          call gop(dhc,dwork,'+  ',1)
-         if (nid.eq.0) then
+         if (nio.eq.0) then
             write(6,*) ' TOTAL OPCOUNT',dhc
          endif
 C
@@ -1535,7 +1536,7 @@ C
          CALL CHSWAPR(rname,6,ind,nrout,sname)
          call iswap(ncall,ind,nrout,idum)
 C
-         if (nid.eq.0) then
+         if (nio.eq.0) then
             do 200 i=1,nrout
                write(6,201) nid,rname(i),rct(i),ncall(i)
   200       continue
@@ -1565,7 +1566,7 @@ c-----------------------------------------------------------------------
       ppts = glsum(work,1) + .1
       ntot=ppts
 C
-      if (nid.eq.0) write(6,'(A,2i13)') 
+      if (nio.eq.0) write(6,'(A,2i13)') 
      &   'gridpoints unique/tot: ',nvtot,ntot
 
       ntot1=nx1*ny1*nz1*nelv
@@ -1576,7 +1577,7 @@ C
 
       if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
       if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
-      if (nid.eq.0) write(6,*) ' dofs:',ntotv,ntotp
+      if (nio.eq.0) write(6,*) ' dofs:',ntotv,ntotp
 
       return
       end
@@ -1667,7 +1668,7 @@ c     in userf then the true FFX is given by ffx_userf + scale.
 c
       scale = delta_flow/base_flow
       scale_vf(icvflow) = scale
-      if (nid.eq.0) write(6,1) istep
+      if (nio.eq.0) write(6,1) istep
      $   ,time,scale,delta_flow,current_flow,flow_rate,chv(icvflow)
     1    format(i8,e14.7,1p4e13.5,' volflow',1x,a1)
 c
@@ -1734,7 +1735,7 @@ c
       if (icvflow.eq.2) base_flow = glsc2(vyc,bm1,ntot1)/domain_length
       if (icvflow.eq.3) base_flow = glsc2(vzc,bm1,ntot1)/domain_length
 c
-      if (nid.eq.0) write(6,1) 
+      if (nio.eq.0) write(6,1) 
      $   istep,base_flow,domain_length,flow_rate,chv(icvflow)
     1    format(i9,1p3e13.5,' basflow',1x,a1)
 c
@@ -2016,7 +2017,7 @@ c     istpp = istep+2033+1250
          rnew = rstart + (rfinal-rstart)*sarg
          vnew = 1./rnew
          call cfill(vdiff,vnew,ntot)
-         if (nid.eq.0) write(6,*) istep,' New Re:',rnew,sarg,istpp
+         if (nio.eq.0) write(6,*) istep,' New Re:',rnew,sarg,istpp
       endif
       return
       end

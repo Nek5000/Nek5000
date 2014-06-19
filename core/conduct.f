@@ -659,7 +659,7 @@ c     QUESTIONABLE support for Robin BC's at this point! (5/15/08)
 
       else                   ! geometry at t^n
 
-         if (.true..and.nid.eq.0) 
+         if (.true..and.nio.eq.0) 
      $      write (6,*) istep,ifield,' explicit step'
 
 
