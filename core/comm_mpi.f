@@ -18,7 +18,7 @@ c      endif
       nid  = nid_
       np   = np_
 
-      if(nio.eq.0) call printHeader
+      if(nid.eq.0) call printHeader
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
@@ -69,7 +69,7 @@ c
       NODE0=0
       NODE= NID+1
 
-      if (nio.eq.0) then 
+      if (nid.eq.0) then 
          write(6,*) 'Number of processors:',np
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
