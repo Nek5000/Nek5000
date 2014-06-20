@@ -2338,10 +2338,10 @@ c-----------------------------------------------------------------------
 
       call nekgsync()
 
-      nio = 10
+      niop = 10
       do k=1,8
-         if (nelgt/nio .lt. 100) goto 10
-         nio = nio*10
+         if (nelgt/niop .lt. 100) goto 10
+         niop = niop*10
       enddo
    10 continue
 
@@ -2353,7 +2353,7 @@ c-----------------------------------------------------------------------
          mid = gllnid(eg)
          e   = gllel (eg)
 #ifdef DEBUG
-         if (nio.eq.0.and.mod(eg,nio).eq.0) write(6,*) eg,' mesh read'
+         if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
 #endif
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 

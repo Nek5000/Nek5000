@@ -30,9 +30,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       logical ifemati,ifsync_
 
+      call get_session_info(intracomm)
       nio = -1
       if(nid.eq.0) nio=0
-      call get_session_info(intracomm)
       
 C     Initalize Nek (MPI stuff, word sizes, ...)
 c     call iniproc (initalized in get_session_info)
