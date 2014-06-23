@@ -1804,7 +1804,7 @@ c
          enddo
    10    if (kfld.eq.16) kfld=4 ! std. default
          nfln = mod1(nfld,kfld) ! Restart A (1,2) and B (3,4)
-         write(6,*) nfln,nfld,kfld,' kfld'
+         if (nio.eq.0) write(6,*) nfln,nfld,kfld,' kfld'
          nfld = nfln
       endif
 
