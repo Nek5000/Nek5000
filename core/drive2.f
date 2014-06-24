@@ -1307,7 +1307,7 @@ c         write(6,*) 'copy time',ncopy,tcopy,pcopy
 c         pmxmf=tmxmf/tttstp
 c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
 
-         pgop=tgop/ttstp
+         pgop=tgop/tttstp
          write(6,*) 'tgop time',ngop,tgop,pgop
          pinv3=tinv3/tttstp
          write(6,*) 'inv3 time',ninv3,tinv3,pinv3
