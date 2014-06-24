@@ -1607,7 +1607,7 @@ C
          call exitt
       ENDIF
  
-      if(nid.eq.0) then
+      if(nio.eq.0) then
         write(6,*) 'done :: verify mesh topology'
         write(6,*) ' '
       endif

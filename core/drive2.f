@@ -1193,7 +1193,7 @@ c-----------------------------------------------------------------------
 c      call opcount(3)      ! print op-counters
 
       call nek_comm_getstat(comm_timers,comm_counters)
-      tgop      = comm_timers(1)
+      tgp2     = comm_timers(1)
       tgop_sync = comm_timers(2)
       twal      = comm_timers(3)
       tsyc      = comm_timers(4)
@@ -1201,13 +1201,13 @@ c      call opcount(3)      ! print op-counters
       tisd      = comm_timers(6)       
       trc       = comm_timers(7)
       tsd       = comm_timers(8)
-      ngop      = comm_counters(1)
+      ngp2     = comm_counters(1)
       nwal      = comm_counters(3)
       nsyc      = comm_counters(4)
       nirc      = comm_counters(5)
       nisd      = comm_counters(6)
 
-      tcomm  = tisd + tirc + tsyc + tgop + twal + trc + tsd
+      tcomm  = tisd + tirc + tsyc + tgp2+ twal + trc + tsd
       min_comm = tcomm
       call gop(min_comm,wwork,'m  ',1)
       max_comm = tcomm
@@ -1248,11 +1248,11 @@ c
       call gop(avg_wal,wwork,'+  ',1)
       avg_wal = avg_wal/np
 c
-      min_gop = tgop
+      min_gop = tgp2
       call gop(min_gop,wwork,'m  ',1)
-      max_gop = tgop
+      max_gop = tgp2
       call gop(max_gop,wwork,'M  ',1)
-      avg_gop = tgop
+      avg_gop = tgp2
       call gop(avg_gop,wwork,'+  ',1)
       avg_gop = avg_gop/np
 c
@@ -1307,6 +1307,8 @@ c         write(6,*) 'copy time',ncopy,tcopy,pcopy
 c         pmxmf=tmxmf/tttstp
 c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
 
+         pgop=tgop/ttstp
+         write(6,*) 'tgop time',ngop,tgop,pgop
          pinv3=tinv3/tttstp
          write(6,*) 'inv3 time',ninv3,tinv3,pinv3
          pinvc=tinvc/tttstp
@@ -1419,8 +1421,8 @@ c        MPI_Waitall timings
          write(6,*) 'waitall avg ',avg_wal 
 
 c        MPI_Allreduce timings
-         pgop=tgop/tcomm
-         write(6,*) 'allreduce  time',ngop,tgop,pgop 
+         pgp2=tgp2/tcomm
+         write(6,*) 'allreduce  time',ngp2,tgp2,pgp2 
          write(6,*) 'allreduce  min ',min_gop 
          write(6,*) 'allreduce  max ',max_gop 
          write(6,*) 'allreduce  avg ',avg_gop 
