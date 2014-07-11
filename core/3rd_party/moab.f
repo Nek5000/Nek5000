@@ -550,7 +550,7 @@ c
 
       iMesh_Instance imeshh
       integer numflu, numoth, nid_, iestart(*), iecount(*), nekcomm,
-     *     lglel(*), gllel(*), gllnid(*), numsts, nelgv, nelgt
+     *     lglel(*), gllel(*), gllnid(*), numsts, nelgv, nelgt, nio
       iBase_EntityArrIterator ieiter(*)
       iBase_TagHandle globalIdTag
 c
@@ -723,7 +723,7 @@ c
 #endif
 
       integer iestart(*), iecount(*), nelgv, nelgt, numsts, 
-     *     numflu, numoth, nekcomm, matids(*)
+     *     numflu, numoth, nekcomm, matids(*), nio
       iBase_EntityArrIterator ieiter(*)
       iBase_TagHandle matsetTag
       iBase_EntitySetHandle fileset, matsets(*)

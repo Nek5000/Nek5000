@@ -3,7 +3,7 @@
       INTEGER IEACT, IFLDMHD,
      $     IGROUP, IPSCAL, NGEOM,
      $     NUMSTS, NUMFLU, NUMOTH, NUMBCS,
-     $     MATINDX, MATIDS, IMATIE, IBCSTS
+     $     MATINDX, MATIDS, IMATIE, IBCSTS, NIO
 
 c Data common to functions in moab.f. Do #include instead of include or
 c it won't work (because we're using preproc macros here)
