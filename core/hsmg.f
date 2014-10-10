@@ -344,15 +344,14 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       include 'CTIMER'
+      real u(1)
 
       if (ifsync) call nekgsync()
-#ifndef NOTIMER
       etime1=dnekclock()
-#endif
+
       call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
-#ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
-#endif
+
 
       return
       end
@@ -375,13 +374,11 @@ c----------------------------------------------------------------------
       include 'CTIMER'
 
       if (ifsync) call nekgsync()
-#ifndef NOTIMER
       etime1=dnekclock()
-#endif
+
       call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
-#ifndef NOTIMER
       tdadd =tdadd + dnekclock()-etime1
-#endif
+
       return
       end
 c----------------------------------------------------------------------
@@ -1364,15 +1361,13 @@ c
       if (ifsync) call nekgsync()
 
       ncrsl  = ncrsl  + 1
-#ifndef NOTIMER
       etime1=dnekclock()
-#endif
+
 
       call crs_solve(xxth(ifield),e,r)
 
-#ifndef NOTIMER
       tcrsl=tcrsl+dnekclock()-etime1
-#endif
+
 
       return
       end
@@ -1458,9 +1453,8 @@ c     return
       endif
 
       nddsl  = nddsl  + 1
-#ifndef NOTIMER
       etime1 = dnekclock()
-#endif
+
       
 c     n = nx2*ny2*nz2*nelv
 c     rmax = glmax(r,n)
@@ -1619,9 +1613,8 @@ c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
       call ortho (e)
 
-#ifndef NOTIMER
       tddsl  = tddsl + ( dnekclock()-etime1 )
-#endif
+
 
 
       return
