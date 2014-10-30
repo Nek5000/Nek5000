@@ -1535,6 +1535,8 @@ c     call exitti('this is wdsizo A:$',wdsizo)
       call err_chk(ierr,'Error closing file in mfo_outfld. Abort. $')
 
       tio = dnekclock_sync()-tiostart
+      if (tio.le.0) tio=1.
+
       dnbyte = glsum(dnbyte,1)
       dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
       dnbyte = dnbyte/1024/1024
