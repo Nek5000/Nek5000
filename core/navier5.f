@@ -2278,7 +2278,7 @@ c-----------------------------------------------------------------------
 c     This routine reads files specificed of file.list and averages
 c     them with uniform weight
 c
-c     Note that it relies on scrns and scruz common blocks. pff 11/12/13
+c     Note that it relies on scravg and scruz common blocks. pff 12/7/14
 c
 
       include 'SIZE'
@@ -2289,7 +2289,7 @@ c
       character*1   f1(127)
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scruz/ ua(lt),va(lt),wa(lt),pa(lt)
+      common /scravg/ ua(lt),va(lt),wa(lt),pa(lt)
       common /scrns/ ta(lt,ldimt)
 
       character*1 s1(127)
