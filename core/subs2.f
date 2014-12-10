@@ -2210,6 +2210,8 @@ c     fixes masks for A/SYM face corners
 
       n = nx1*ny1*nz1
 
+      nface = 2*ndim
+
       do e=1,nelv
          call izero (im1,n)
          call izero (im2,n)
