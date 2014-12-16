@@ -11,6 +11,7 @@ c
 C     Check on the number and numbering of the new elements to be generated.
 
       Noct = 4
+      ifoct = .false.
       ifoct = .true.
       ifhex = .false.
       ifzsp = .false.
@@ -77,11 +78,11 @@ C
       Neln=Nel
       DO 101 IE=1,NEL
          ENEW(IE)=IE
-         Ke = 0
+         ke = 0
          DO 100 Ioct = 2,Noct
             Neln=Neln+1
             Enew(Neln) = float(ie) + 0.1
-            Ke = Ke+1
+            ke = ke+1
             liste(ke) = Neln
   100    continue
          liste(Noct) = Neln+1
@@ -1065,6 +1066,8 @@ C     ctmpg is used in this format in several subsequent routines
      $             , work(3,lx1,lz1)
       logical ifglj
 
+      call set_hlin(h,nxl) ! linear to mx mapping
+
       ifglj = .false.
 C     if (ifaxis .and. ifrzer(ie) .and. (isid.eq.2 .or. isid.eq.4)) 
 C    $ifglj = .true.
@@ -1113,6 +1116,8 @@ C     Find Center
       endif
 C     Compute perturbation of geometry
       ISID1 = MOD1(ISID,4)
+      myflag = 0
+      if (ifglj) myflag=99
       if (ifglj) then
          i1 = isid/2
          i2 = 2 - isid/4
@@ -1133,8 +1138,29 @@ C     Compute perturbation of geometry
      $                          - ( h(ix,1,1)*pt1x + h(ix,1,2)*pt2x )
             ycrved(ixt) = ycenn + abs(radius) * sin(theta0 + r*dtheta)
      $                          - ( h(ix,1,1)*pt1y + h(ix,1,2)*pt2y )
+c           if (ix.eq.1) then
+c            call color(15)
+c            call move3(xcrved(ixt),ycrved(ixt),0.)
+c            write(6,*) ixt,xcrved(ixt),ycrved(ixt),' xcrv',radius,isid
+c           else
+c            call draw3(xcrved(ixt),ycrved(ixt),0.)
+c            write(6,*) ixt,xcrved(ixt),ycrved(ixt),' xcrv',radius,isid
+c           endif
    20    continue
       endif
+c     call prsi('KEEP going?$',myflag)
+c     call res(ans,1)
+
+c     call color(15)
+c     call move3(xcrved,ycrved,0.)
+c     do ix=2,nxl
+c        call draw3(xcrved(ix),ycrved(ix),0.)
+c        write(6,*) xcrved(ix),ycrved(ix),' xcrv',radius,isid
+c     enddo
+c     call prsi('keep going?$',myflag)
+c     call res(ans,1)
+
+
 C     Points all set, add perturbation to current mesh.
       isid1 = mod1(isid,4)
       isid1 = eface1(isid1)
@@ -2876,45 +2902,39 @@ C     Evaluate x,y,z on 27 pt stencil
 C
       if (if3d) then
 c
-      DO 160 It= -1,1,1
-        rrl(3)=float(it)
+        DO 160 It= -1,1,1
         DO 160 Is= -1,1,1
+        DO 160 Ir= -1,1,1
+          rrl(3)=float(it)
           rrl(2)=float(is)
-          DO 160 Ir= -1,1,1
-            rrl(1)=float(ir)
-            CALL EVALSC(XVAL(ir,is,it),XP,RRL,1)
-            CALL EVALSC(YVAL(ir,is,it),YP,RRL,0)
-            CALL EVALSC(ZVAL(ir,is,it),ZP,RRL,0)
-  160 CONTINUE
-C
-C     Eight quadrants
-C
-      Ke = 0
-      DO 860 Iz=-1,0,1
+          rrl(1)=float(ir)
+          call evalsc(xval(ir,is,it),xp,rrl,1)
+          call evalsc(yval(ir,is,it),yp,rrl,0)
+          call evalsc(zval(ir,is,it),zp,rrl,0)
+  160   CONTINUE
+
+        ke = 0
+        DO 860 Iz=-1,0,1 ! Eight quadrants
         DO 840 Iy=-1,0,1
-          DO 820 Ix=-1,0,1
-C
-C         Begin with copying the essential information
-C
-          Ke = Ke+1
-          Je = LISTE(Ke)
-          CALL COPYEL(IE,JE)
-C
-C         Eight vertices
-C
+        DO 820 Ix=-1,0,1
+
+          ke = ke+1
+          je = liste(ke)
+          call copyel(ie,je) ! copy essential information
+
           iv = 0
-          DO 760 Jz=0,1
-            jz0 = Jz+Iz
-            DO 760 Jy=0,1
-              jy0 = Jy+Iy
-              DO 760 Jx=0,1
-                jx0 = Jx+Ix
-                iv = iv+1
-                x(inv(iv),je)=xval(jx0,jy0,jz0)
-                y(inv(iv),je)=yval(jx0,jy0,jz0)
-                z(inv(iv),je)=zval(jx0,jy0,jz0)
+          DO 760 Jz=0,1 !         Eight vertices
+          DO 760 Jy=0,1
+          DO 760 Jx=0,1
+           jz0 = Jz+Iz
+           jy0 = Jy+Iy
+           jx0 = Jx+Ix
+           iv = iv+1
+           x(inv(iv),je)=xval(jx0,jy0,jz0)
+           y(inv(iv),je)=yval(jx0,jy0,jz0)
+           z(inv(iv),je)=zval(jx0,jy0,jz0)
   760     CONTINUE
-C
+
           DO 400 Ifce=1,3
            IFAC1=EFACE(2*Ifce-1)
            IFAC2=EFACE(2*Ifce  )
@@ -2926,7 +2946,7 @@ C
               JFAC = EFACE(5-Iz)
            ENDIF
 C
-C        Curve side fix up - only internal faces have to be changed
+C          Curve side fix up - only internal faces have to be changed
 C
            IF (CCURVE(IFAC1,IE).EQ.'s'  .and.
      $         CCURVE(IFAC2,IE).EQ.'s') THEN
@@ -2944,12 +2964,10 @@ c            CCURVE(JFAC,JE)='s'
 c            CURVE(4,JFAC,JE) = R
              CCURVE(JFAC,JE)=' '
            ENDIF
-C
-C          Check for cylinder  
-C          (Note this scheme fails for convex-convex case!)
-C          pff 4/10/93
-C
-           IF (Ifce.LE.2) THEN
+
+C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
+
+           if (ifce.le.2) then
               DO 300 Ilev=1,2
                 IF (CCURVE(IFAC1,IE).EQ.'C'.and.
      $              CCURVE(IFAC2,IE).EQ.'C') THEN
@@ -2977,49 +2995,39 @@ c                 CURVE(1,JFAC,JE) =  R
   300         CONTINUE
            ENDIF
   400     CONTINUE
-  820     CONTINUE
-  840   CONTINUE
-  860 CONTINUE
-C
-C     Copy last element generated back onto IE
-C
-      CALL COPYEL(jE,iE)
-c
-      else
-c
-        rrl(3)=0.0
+  820  CONTINUE
+  840  CONTINUE
+  860  CONTINUE
+
+      else ! 2D
+
         DO 2160 Is= -1,1,1
-          rrl(2)=float(is)
-          DO 2160 Ir= -1,1,1
-            rrl(1)=float(ir)
-            CALL EVALSC(XVAL(ir,is,1),XP,RRL,1)
-            CALL EVALSC(YVAL(ir,is,1),YP,RRL,0)
- 2160 CONTINUE
-C
-C     Four quadrants
-C
-      Ke = 0
-        DO 2840 Iy=-1,0,1
-          DO 2820 Ix=-1,0,1
-C
-C         Begin with copying the essential information
-C
-          Ke = Ke+1
-          Je = LISTE(Ke)
-C
-          CALL COPYEL(IE,JE)
-C
-C         Eight vertices
-C
+        DO 2160 Ir= -1,1,1
+           rrl(3)=0.0
+           rrl(2)=float(is)
+           rrl(1)=float(ir)
+           call evalsc(xval(ir,is,1),xp,rrl,1)
+           call evalsc(yval(ir,is,1),yp,rrl,0)
+ 2160  CONTINUE
+
+      ke = 0
+      DO 2840 Iy=-1,0,1      ! Four quadrants
+      DO 2820 Ix=-1,0,1
+
+          ke = ke+1
+          je = liste(ke)
+
+          call copyel(ie,je) ! copy essential information
+
           iv = 0
-            DO 2760 Jy=0,1
-              jy0 = Jy+Iy
-              DO 2760 Jx=0,1
-                jx0 = Jx+Ix
-                iv = iv+1
-                x(inv(iv),je)=xval(jx0,jy0,1)
-                y(inv(iv),je)=yval(jx0,jy0,1)
-                z(inv(iv),je)=zval(jx0,jy0,1)
+          DO 2760 Jy=0,1     ! Four vertices
+          DO 2760 Jx=0,1
+             jy0 = Jy+Iy
+             jx0 = Jx+Ix
+             iv = iv+1
+             x(inv(iv),je)=xval(jx0,jy0,1)
+             y(inv(iv),je)=yval(jx0,jy0,1)
+             z(inv(iv),je)=zval(jx0,jy0,1)
  2760     CONTINUE
 C
           DO 2400 Ifce=1,2
@@ -3051,11 +3059,8 @@ c            CCURVE(JFAC,JE)='s'
 c            CURVE(4,JFAC,JE) = R
              CCURVE(JFAC,JE)=' '
            ENDIF
-C
-C          Check for cylinder  
-C          (Note this scheme fails for convex-convex case!)
-C          pff 4/10/93
-C
+C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
+
            IF (Ifce.LE.2) THEN
               ilev = 1
               IF (CCURVE(IFAC1,IE).EQ.'C'.and.
@@ -3080,18 +3085,19 @@ c                 CURVE(1,JFAC,JE) =  R
               ENDIF
            ENDIF
  2400     CONTINUE
- 2820     CONTINUE
+ 2820   CONTINUE
  2840   CONTINUE
- 2860 CONTINUE
-C
-C     Copy last element generated back onto IE
-C
-      CALL COPYEL(jE,iE)
-c
-      endif
-C
+ 2860   CONTINUE
+
+      endif  ! End of 2D/3D decision branch
+
+      call copyel(je,ie) ! copy last element generated back onto ie
+
+      write(6,*) 'quit in octsplite'
+      stop
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine qsplite(ie,liste)
 C
@@ -3118,25 +3124,23 @@ C
 C     Compute XYZ on high definition mesh
 C
       call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
-C
-C     Evaluate x,y,z on 27 pt stencil
-C
+
       if (if3d) then
 c
-      DO 160 It= -1,1,1
-        rrl(3)=float(it)
-        DO 160 Is= -1,1,1
-          rrl(2)=float(is)
-          DO 160 Ir= -1,1,1
-            rrl(1)=float(ir)
-            CALL EVALSC(XVAL(ir,is,it),XP,RRL,1)
-            CALL EVALSC(YVAL(ir,is,it),YP,RRL,0)
-            CALL EVALSC(ZVAL(ir,is,it),ZP,RRL,0)
-  160 CONTINUE
+        do 160 it= -1,1,1 !     Evaluate x,y,z on 27 pt stencil
+        do 160 is= -1,1,1
+        do 160 ir= -1,1,1
+           rrl(3)=float(it)
+           rrl(2)=float(is)
+           rrl(1)=float(ir)
+           call evalsc(xval(ir,is,it),xp,rrl,1)
+           call evalsc(yval(ir,is,it),yp,rrl,0)
+           call evalsc(zval(ir,is,it),zp,rrl,0)
+  160 continue
 C
 C     Eight quadrants
 C
-      Ke = 0
+      ke = 0
 c     DO 860 Iz=-1,0,1
       DO 860 Iz= -1,-1,1
         DO 840 Iy=-1,0,1
@@ -3144,8 +3148,8 @@ c     DO 860 Iz=-1,0,1
 C
 C         Begin with copying the essential information
 C
-          Ke = Ke+1
-          Je = LISTE(Ke)
+          ke = ke+1
+          Je = LISTE(ke)
           CALL COPYEL(IE,JE)
 C
 C         Eight vertices
@@ -3229,32 +3233,29 @@ c                 CURVE(1,JFAC,JE) =  R
   820     CONTINUE
   840   CONTINUE
   860 CONTINUE
-C
-C     Copy last element generated back onto IE
-C
-      CALL COPYEL(jE,iE)
-c
-      else
-c
-        rrl(3)=0.0
+
+
+      else  ! 2D
+
         DO 2160 Is= -1,1,1
-          rrl(2)=float(is)
-          DO 2160 Ir= -1,1,1
-            rrl(1)=float(ir)
-            CALL EVALSC(XVAL(ir,is,1),XP,RRL,1)
-            CALL EVALSC(YVAL(ir,is,1),YP,RRL,0)
+        DO 2160 Ir= -1,1,1
+           rrl(3)=0.0
+           rrl(2)=float(is)
+           rrl(1)=float(ir)
+           CALL EVALSC(XVAL(ir,is,1),XP,RRL,1)
+           CALL EVALSC(YVAL(ir,is,1),YP,RRL,0)
  2160 CONTINUE
 C
 C     Four quadrants
 C
-      Ke = 0
+      ke = 0
         DO 2840 Iy=-1,0,1
           DO 2820 Ix=-1,0,1
 C
 C         Begin with copying the essential information
 C
-          Ke = Ke+1
-          Je = LISTE(Ke)
+          ke = ke+1
+          Je = LISTE(ke)
 C
           CALL COPYEL(IE,JE)
 C
@@ -3332,15 +3333,15 @@ c                 CURVE(1,JFAC,JE) =  R
  2820     CONTINUE
  2840   CONTINUE
  2860 CONTINUE
-C
-C     Copy last element generated back onto IE
-C
-      CALL COPYEL(jE,iE)
-c
+
+
+
       endif
-C
+
+      call copyel(je,ie) !     Copy last element generated back onto IE
+
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine shift2
 
@@ -3774,13 +3775,13 @@ c
 C
 C     six elements
 C
-      Ke = 0
+      ke = 0
       do e=1,6
 C
 C        Begin by copying the essential information
 C
-         Ke = Ke+1
-         Je = LISTE(Ke)
+         ke = ke+1
+         Je = LISTE(ke)
          call copyel(ie,je)
 C
 C        Eight vertices
@@ -3842,35 +3843,25 @@ c
       enddo
       enddo
       enddo
-c
-c
-c     two elements
-c
-      Ke = 0
+
+      ke = 0
       kv = 0
-      do e=1,2
-C
-C        Begin by copying the essential information
-C
-         Ke = Ke+1
-         Je = LISTE(Ke)
-         call copyel(ie,je)
-C
-C        Eight vertices
-C
-         do v=1,8
+      do e=1,2 ! two elements
+
+         ke = ke+1
+         je = liste(ke)
+         call copyel(ie,je) ! copy essential information
+
+         do v=1,8                       !  Eight vertices
             x(inv(v),je)=xval(1,v+kv)
             y(inv(v),je)=xval(2,v+kv)
             z(inv(v),je)=xval(3,v+kv)
          enddo
          kv = 4
-C
       enddo
-C
-C     Copy last element generated back onto IE
-C
-      call copyel(Je,Ie)
-c
+
+      call copyel(Je,Ie) ! Copy last element generated back onto IE
+
       return
       end
 c-----------------------------------------------------------------------
@@ -4999,6 +4990,7 @@ C     ctmpg is used in this format in several subsequent routines
       call set_zgml (nxl)
 c     Initialize geometry arrays with bi- triquadratic deformations
       call linquad(xl,yl,zl,nxl,nyl,nzl,e)
+      call drawqel(xl,yl,nxl,nyl,e,4)
 
 c     Deform surfaces - general 3D deformations
 c                     - extruded geometry deformations
@@ -5015,6 +5007,7 @@ c                     - extruded geometry deformations
         ccv = ccurve(isid,e)
         if (ccv.eq.'C') call arcsrf_e(xl,yl,zl,nxl,nyl,nzl,e,isid)
 c       write(6,*) ccv,isid,e,nxl,' ccv'
+c       if (ccv.eq.'C') call drawqel(xl,yl,nxl,nyl,e,14)
       enddo
 
       if (mod(nxl,2).eq.1) then
@@ -5143,6 +5136,55 @@ c-----------------------------------------------------------------------
            endif
         enddo
       enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine draw3v(x3,y3,z3)
+      x=xiso(x3,y3,z3)
+      y=yiso(x3,y3,z3)
+      write(6,1) x,y,x3,y3,z3
+    1 format(1p5e11.3,' draw3')
+      call drawc(x,y)
+C     call drawsc(xscr(x),yscr(y))
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine move3v(x3,y3,z3)
+      x=xiso(x3,y3,z3)
+      y=yiso(x3,y3,z3)
+      write(6,1) x,y,x3,y3,z3
+    1 format(1p5e11.3,' move3')
+      call movec(x,y)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine drawqel(xl,yl,nxl,nyl,e,ic)
+      real xl(nxl,nyl),yl(nxl,nyl)
+      integer e,ic
+      character*1 ans
+
+      return
+
+      call color(ic)
+
+      write(6,*) nxl,nyl,e,ic,' nxl,nyl,e,ic' 
+      do i=1,nxl
+         call move3(xl(i,1),yl(i,1),0.)
+         do j=2,nyl
+            call draw3(xl(i,j),yl(i,j),0.)
+         enddo
+      enddo
+
+      do j=1,nyl
+         call move3(xl(1,j),yl(1,j),0.)
+         do i=2,nxl
+            call draw3(xl(i,j),yl(i,j),0.)
+         enddo
+      enddo
+
+      call prsi('Continue?$',e)
+      call res(ans,1)
+
       return
       end
 c-----------------------------------------------------------------------
