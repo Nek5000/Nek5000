@@ -3675,7 +3675,6 @@ C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
       include 'basics.inc'
-      real rax(1000),ray(1000),raz(1000)
 c
       ie = ie_click('Click on element to refine:$')
       if (ie.eq.0) return
@@ -3696,7 +3695,7 @@ c
          call rerr(rax,ray)
 
          nzsp    = 1
-         raz(1)  = 1.
+         raz     = 1.
 
       endif
 
@@ -5174,7 +5173,6 @@ C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
       include 'basics.inc'
-      real rax(1000),ray(1000),raz(1000)
 
       nxsp=2
       nysp=2
