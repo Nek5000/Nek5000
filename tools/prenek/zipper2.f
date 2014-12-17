@@ -11,18 +11,17 @@ c
 C     Check on the number and numbering of the new elements to be generated.
 
       Noct = 4
-      ifoct = .false.
       ifoct = .true.
       ifhex = .false.
       ifzsp = .false.
-c
-      IF (IF3D) then
-         CALL PRS('Oct, quad, hex, z, multi-split? (o/q/h/z/m)$')
-         CALL RES(ANS,1)
+
+      if (if3d) then
+         call prs('Oct, quad, hex, z, multi-split? (o/q/h/z/m)$')
+         call res(ANS,1)
          ifoct = .false.
          ifhex = .false.
          ifzsp = .false.
-         IF (ANS.eq.'o'.or.ANS.eq.'O') then
+         if (ANS.eq.'o'.or.ANS.eq.'O') then
             Noct = 8
             ifoct = .true.
          elseif (ans.eq.'h'.or.ans.eq.'H') then
@@ -36,45 +35,33 @@ c
             return
          endif
       else
-         CALL PRS('quad or multi-split? (q/m)$')
-         CALL RES(ANS,1)
+         call prs('quad or multi-split? (q/m)$')
+         call res(ANS,1)
          if (ans.eq.'m'.or.ans.eq.'M') then
             call msplit
             return
          endif
       endif
 c
-      NELN=NEL*Noct
+      neln=nel*noct
       nelm1=nelm-2
-      IF (NELN.GT.NELM1) THEN
-C
-         CALL PRS(
-     $ 'WARNING: Number of elements after OctSplit operation$')
-C
-         WRITE(S,51) NELN,NELM1
-         CALL PRS(S)
-         WRITE(S,52) 
-         CALL PRS(S)
-   51  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
-     $                ,i11,').$')
-   52    FORMAT(2X,'Aborting zipper.$')
-         return
-      ELSE
-C
-         CALL PRS(
-     $ 'WARNING: Number of elements after OctSplit operation$')
-         WRITE(S,61) NELN
-         CALL PRS(S)
-   61  FORMAT(2X,'will be (',i11
-     $          ,'). Are you sure you want to split (y/n)?$')
-         CALL RES(ANS,1)
-         IF (ANS.ne.'y'.and.ANS.ne.'Y') return
-      ENDIF
-C
-C     Renumber ALL elements, so that low numbered elements will remain
-C     low numbered.  This will be achieved by assigning IE+0.1 to the
-C     new element numbers, and then sorting the list.
-C
+      if (neln.gt.nelm1) then
+       n1   =nelm-2
+       call prs('WARNING: Number of elements after OctSplit operation$')
+       call prsii('would be greater than the allowed maximum:$',neln,n1)
+       call prs('Aborting zipper.$')
+       return
+      else
+       call prsi('Number of elements after OctSplit operation:$',neln)
+       call prs ('Are you sure you want to split (y/n)?$')
+       call res(ans,1)
+       if (ans.ne.'Y'.and.ans.ne.'y') return
+      endif
+
+c     Renumber ALL elements, so that low numbered elements will remain
+c     low numbered.  This will be achieved by assigning IE+0.1 to the
+c     new element numbers, and then sorting the list.
+
       Neln=Nel
       DO 101 IE=1,NEL
          ENEW(IE)=IE
@@ -87,7 +74,8 @@ C
   100    continue
          liste(Noct) = Neln+1
          if (ifoct) then
-            call octsplite(ie,liste) 
+c           call octsplite(ie,liste)  ! Standard oct/quad split
+            call octsplitn(ie,liste)  ! New oct/quad split
          elseif (ifzsp) then
             call zsplite(ie,liste) 
          elseif (ifhex) then
@@ -95,22 +83,18 @@ C
          else
             call qsplite(ie,liste) 
          endif
-  101 CONTINUE
-C
+  101 continue
+
 C     Generate new sub-elements as a result of the oct-split action.
-C
       Nnew = Neln-Nel
-      NEL=NELN
-C
-C     Elements are all set. Sort.
-C
-      call sort   (enew,ind,nel)
+      nel  = neln
+      call sort   (enew,ind,nel)     !     Elements are all set. Sort.
       call swapel (ind,nel,nelm1)
       call curcnt
       call vertadj
 
-      WRITE(S,300) Nnew,NEL
-  300 FORMAT(i11,' new elements generated in octspl. NEL=',i11,'$')
+      write(s,300) Nnew,NEL
+  300 format(i11,' new elements generated in octspl. NEL=',i11,'$')
       call prs(s)
 
       call gencen
@@ -135,7 +119,7 @@ C
       NZ=NX
       call set_zgml(nxm)
 
-      CALL SETQUAD 
+      call setquad 
 C
 C     Set RST planes will find the set of dividing planes for the zipper.
 C
@@ -143,7 +127,7 @@ C     First, get the point of interest
       WRITE(S,10)
    10 FORMAT(' Enter a point near the corner to be refined.$')
       CALL GETPT3(XPT,IE,S)
-      IF (IE.EQ.0) return
+      if (IE.EQ.0) return
 C
 C     Second, find the defining plane
       WRITE(S,11)
@@ -215,16 +199,16 @@ C
          DO 20 IL1=1,NLSTP1
             LISTB=ABS(LIST1(IL1))
             CALL DECOD(IPLANE,JPLN,JE,IDUM,LISTB,NX,6,NELM)
-            IF (IE.EQ.JE) THEN
+            if (IE.EQ.JE) then
 C              Save information about both planes, as they define the split.
                NLSTP=NLSTP+1
                LIST(NLSTP)=6*6*(IE-1)+6*(IPLN-1)+JPLN
       write(6,*) 'ieijp0:',ie,ipln,jpln,nlstp
                GOTO 21
             ENDIF
-   20    CONTINUE
-   21    CONTINUE
-   30 CONTINUE
+   20    continue
+   21    continue
+   30 continue
 C
 C     Unfortunately, even this list is still too large, so we
 C     restrict the elements to the ones which are indeed adjacent
@@ -232,8 +216,8 @@ C     to the set we want:
 C
 C     Set up E-E boundary conditions
       IFLD=2
-      IF (IFFLOW) IFLD=1
-c     IF (ifld.lt.10) goto 917
+      if (IFFLOW) IFLD=1
+c     if (ifld.lt.10) goto 917
       CALL SETEBC(IFLD)
 C
 C     Find list of adjacent elements in the direction we want
@@ -248,7 +232,7 @@ C     Find list of adjacent elements in the direction we want
          DO 100 I=1,NLSTP
             CBCNXT=CBC(IFCCUR,IELCUR,IFLD)
             write(6,*) 'cbc',cbcnxt,ifccur,ielcur,idir,ifld
-            IF (CBCNXT.NE.'E') GOTO 101
+            if (CBCNXT.NE.'E') GOTO 101
 C           Else, we found another element
             IFCNXT=INT(BC(2,IFCCUR,IELCUR,IFLD))
             IELCUR=INT(BC(1,IFCCUR,IELCUR,IFLD))
@@ -261,9 +245,9 @@ C
 C           Bump up list count
             NLSTP1=NLSTP1+1
             LIST1(NLSTP1)=IELCUR
-  100    CONTINUE
-  101    CONTINUE
-  120 CONTINUE
+  100    continue
+  101    continue
+  120 continue
 C
 C     Compare E-E
       CALL ICOPY(LIST2,LIST,NLSTP)
@@ -277,22 +261,22 @@ C
          CALL DECOD(JPLN,IPLN,IE,IDUM,LISTA,6,6,NELM)
          DO 220 IL1=1,NLSTP1
             JE=LIST1(IL1)
-            IF (IE.EQ.JE) THEN
+            if (IE.EQ.JE) then
 C              Save this element in the list
                NLSTP=NLSTP+1
                LIST(NLSTP)=LIST2(IL2)
                GOTO 221
             ENDIF
-  220    CONTINUE
-  221    CONTINUE
-  230 CONTINUE
+  220    continue
+  221    continue
+  230 continue
 C
 C     Check on the number and numbering of the new elements to be generated.
 C
   917 continue
       NELN=NEL+2*NLSTP
       NELM1=NELM-1
-      IF (NELN.GT.NELM1) THEN
+      if (NELN.GT.NELM1) then
 C
          WRITE(S,150) 
          CALL PRS(S)
@@ -313,7 +297,7 @@ C     new element numbers, and then sorting the list.
 C
       DO 400 IE=1,NEL
          ENEW(IE)=IE
-  400 CONTINUE
+  400 continue
       NELN=NEL
       DO 401 I=1,NLSTP
          LISTA=ABS(LIST(I))
@@ -322,7 +306,7 @@ C
          ENEW(NELN)=FLOAT(IE)+0.3333
          NELN=NELN+1
          ENEW(NELN)=FLOAT(IE)+0.6666
-  401 CONTINUE
+  401 continue
 C
 C     Generate new sub-elements as a result of the zipper action.
 C
@@ -338,7 +322,7 @@ C     Third, find the ratio to be split
          WRITE(S,502) IE,NELN
          CALL PRS(S)
          CALL WIN3D(NELN,IE,I,S0)
-  500 CONTINUE
+  500 continue
   502 FORMAT(' Generating window for element',2i11,'.$')
       NEL=NELN+1
 C
@@ -379,7 +363,7 @@ C     First, get the point of interest
       WRITE(S,10)
    10 FORMAT(' Enter a point near the dividing surface.$')
       CALL GETPT3(XPT,IE,S)
-      IF (IE.EQ.0) return
+      if (IE.EQ.0) return
 C
 C     Second, find the defining plane
       WRITE(S,11)
@@ -397,7 +381,7 @@ C     Check on the number and numbering of the new elements to be generated.
 C
       NELN=NEL+NLSTP
       NELM1=NELM-1
-      IF (NELN.GT.NELM1) THEN
+      if (NELN.GT.NELM1) then
 C
          WRITE(S,50) 
          CALL PRS(S)
@@ -418,13 +402,13 @@ C     new element numbers, and then sorting the list.
 C
       DO 100 IE=1,NEL
          ENEW(IE)=IE
-  100 CONTINUE
+  100 continue
       DO 101 I=1,NLSTP
          NELN=NEL+I
          LISTA=ABS(LIST(I))
          CALL DECOD(IPLANE,IPLN,IE,IDUM,LISTA,NX,6,NELM)
          ENEW(NELN)=FLOAT(IE)+0.5
-  101 CONTINUE
+  101 continue
 C
 C     Generate new sub-elements as a result of the zipper action.
 C
@@ -436,7 +420,7 @@ C
          LISTA=ABS(LIST(I))
          CALL DECOD(IPLANE,IPLN,IE,IDUM,LISTA,NX,6,NELM)
          CALL SPLITE(NELN,IE,I,I0,S1)
-  200 CONTINUE
+  200 continue
       NEL=NELN
 C
 C     Elements are all set. Sort.
@@ -468,21 +452,21 @@ C
 C        Put element IE into slot I
 C
          IE=IND(I)
-         IF (IE.NE.I) THEN
+         if (IE.NE.I) then
 C
             call copyel(i,nelm1)  ! Move element I to the end
             call copyel(ie,i  )   ! Move correct element to Ith location
             call copyel(nelm1,ie) ! Copy temporary data to old slot.
 C           Update IND:
             DO 20 J=1,N
-               IF (IND(J).EQ.I) THEN
+               if (IND(J).EQ.I) then
                    IND(J)=IE
                    GOTO 21
                ENDIF
-   20       CONTINUE
-   21       CONTINUE
+   20       continue
+   21       continue
          ENDIF
-  100    CONTINUE
+  100    continue
       return
       END
 c-----------------------------------------------------------------------
@@ -867,7 +851,7 @@ C
          STP = SIN(THETAP)
          DO 200 IV = 1,3
             XYSRF(IV,I,J) = CTP*U1(IV) + STP*B(IV)
-  200 CONTINUE
+  200 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -880,7 +864,7 @@ C
       SUM = 0
       DO 100 I=1,N
          SUM = SUM + V1(I)*V2(I)
-  100 CONTINUE
+  100 continue
       DOT = SUM
       return
       END
@@ -907,11 +891,11 @@ C
          XCV(1,I,1)=XC(K)-XCTR
          XCV(2,I,1)=YC(K)-YCTR
          XCV(3,I,1)=ZC(K)-ZCTR
-   10 CONTINUE
+   10 continue
 C
 C     Check to ensure that these points are indeed on the sphere.
 C
-      IF (RADIUS.LE.0.0) THEN
+      if (RADIUS.LE.0.0) then
          WRITE(6,20) XCTR,YCTR,ZCTR,IFACE
   20     FORMAT(5X,'ERROR: Sphere of radius zero requested.'
      $       ,/,5X,'EXITING in CRN3Dc',3E12.4,I3)
@@ -921,7 +905,7 @@ C
             RADT=XCV(1,I,1)**2+XCV(2,I,1)**2+XCV(3,I,1)**2
             RADT=SQRT(RADT)
             TEST=ABS(RADT-RADIUS)/RADIUS
-            IF (TEST.GT.EPS) THEN
+            if (TEST.GT.EPS) then
              WRITE(6,30) 
      $       RADT,RADIUS,XCV(1,I,1),XCV(2,I,1),XCV(3,I,1)
    30        FORMAT(5X,'ERROR: Element vertex not on requested sphere.'
@@ -946,7 +930,7 @@ c            CALL EXITT
 
             endif
 
-   40    CONTINUE
+   40    continue
       ENDIF
 
       do I=1,4
@@ -986,7 +970,7 @@ C
 C
 C     Check if element surface counters are already set from last call...
 C
-      IF (MXO.EQ.MX.AND.MYO.EQ.MY.AND.MZO.EQ.MZ) return
+      if (MXO.EQ.MX.AND.MYO.EQ.MY.AND.MZO.EQ.MZ) return
 C
 C     else, proceed....
 C
@@ -1191,8 +1175,8 @@ C
          HH = H2(IY)*H3(IZ)
          DO 100 IX=1,NX
             S(IX,IY,IZ)=S(IX,IY,IZ)+HH*H1(IX)
-  100    CONTINUE
-  200 CONTINUE
+  100    continue
+  200 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -1227,7 +1211,7 @@ C
 C     Initialize pointers to zero
       DO 105 I=1,24*NELM
          XYZQ(5,I,1,1)=0.0
-  105 CONTINUE
+  105 continue
 C
       NLSTP=1
       LIST(NLSTP)=6*NX*(IE-1)+NX*(IJKPLN-1)+IPLAN
@@ -1237,42 +1221,42 @@ C     Set the sign of this plane according to requested normal vector:
 C
       RLNGTH = DOTPROD(VEC,VEC3)
       INRM=1
-      IF (RLNGTH.LT.0.0) INRM=-1
+      if (RLNGTH.LT.0.0) INRM=-1
       LIST(NLSTP)=INRM*LIST(NLSTP)
 C
       DO 110 I=1,4
          NEIGHI=INT(XYZQ(4,I,IJKPLN,IE))
-         IF (NEIGHI.EQ.0) THEN
+         if (NEIGHI.EQ.0) then
             XYZQ(5,I,IJKPLN,IE)=2.0
          ELSE
             RN=FLOAT(NEIGHI)
             XYZQ(5,I,IJKPLN,IE)=SIGN(1.0,RN)
          ENDIF
-  110 CONTINUE
+  110 continue
 C
 C=======================================
 C     Find all adjoining planes
 C=======================================
 C
       ICOUNT=0
-  200 CONTINUE
+  200 continue
       IFANY=.FALSE.
       ICOUNT=ICOUNT+1
       DO 500 IE=1,NEL
       DO 500 IPLN=1,6
       DO 500 IQ=1,4
-         IF (ABS(XYZQ(5,IQ,IPLN,IE)).EQ.1.0) THEN
+         if (ABS(XYZQ(5,IQ,IPLN,IE)).EQ.1.0) then
             IFANY=.TRUE.
             NEIGHI=INT(XYZQ(4,IQ,IPLN,IE))
             NEIGHA=ABS(NEIGHI)
-            IF (XYZQ(5,NEIGHA,1,1).EQ.0.0) THEN
+            if (XYZQ(5,NEIGHA,1,1).EQ.0.0) then
 C              The neighboring plane has Not been set.
                CALL DECOD(JQ,JPLN,JE,IDUM,NEIGHA,4,6,NEL)
                DO 400 J=1,3
                   JJ=JQ+J
                   JJ=MOD1(JJ,4)
                   NEIGHJ=INT(XYZQ(4,JJ,JPLN,JE))
-                  IF (NEIGHJ.EQ.0) THEN
+                  if (NEIGHJ.EQ.0) then
                      XYZQ(5,JJ,JPLN,JE)=2.0
                   ELSE
                      RN=FLOAT(NEIGHJ)
@@ -1280,11 +1264,11 @@ C              The neighboring plane has Not been set.
      $                   XYZQ(5,IQ,IPLN,IE)*SIGN(1.0,RN)
 
                   ENDIF
-  400          CONTINUE
+  400          continue
 C
 C              New neighbor points all set, now add neighbor plane to LIST.
                JMD=MOD(JPLN,2)
-               IF (IMD.EQ.JMD) THEN
+               if (IMD.EQ.JMD) then
                   JPLAN=IPLAN
                ELSE
                   JPLAN=NX+1-IPLAN
@@ -1300,8 +1284,8 @@ C              Remove pointers and exit
             ENDIF
             XYZQ(5,IQ,IPLN,IE)=2.0
          ENDIF
-  500 CONTINUE
-      IF (IFANY) GOTO 200
+  500 continue
+      if (IFANY) GOTO 200
 C
 C     { LIST is complete, sort by zbuff. (? or perhaps after rotation?)}
 C     LIST is complete, set normals according to the following:
@@ -1318,25 +1302,25 @@ C     Find element which is closest to the point xpt1
 C
       call gencen
       DSTMIN=10.0E10
-      IF (IF3D) THEN
+      if (IF3D) then
          DO 100 IEL=1,NEL
             DIST = (XCEN(IEL)-XPT1)**2 
      $           + (YCEN(IEL)-YPT1)**2 
      $           + (ZCEN(IEL)-ZPT1)**2 
-            IF (DIST.LT.DSTMIN) THEN
+            if (DIST.LT.DSTMIN) then
                DSTMIN=DIST
                IEMIN=IEL
             ENDIF
-  100    CONTINUE
+  100    continue
       ELSE
          DO 200 IEL=1,NEL
             DIST = (XCEN(IEL)-XPT1)**2 
      $           + (YCEN(IEL)-YPT1)**2 
-            IF (DIST.LT.DSTMIN) THEN
+            if (DIST.LT.DSTMIN) then
                DSTMIN=DIST
                IEMIN=IEL
             ENDIF
-  200    CONTINUE
+  200    continue
       ENDIF
       IE=IEMIN
       return
@@ -1365,8 +1349,8 @@ C
       call set_zgml(nxm)
       
       SUM = 0.0
-      IF (RRL(1).NE.RLXOLD.OR.RRL(2).NE.RLYOLD.OR.RRL(3).NE.RLZOLD
-     $   .OR.ICALLD.EQ.0) THEN
+      if (RRL(1).NE.RLXOLD.OR.RRL(2).NE.RLYOLD.OR.RRL(3).NE.RLZOLD
+     $   .OR.ICALLD.EQ.0) then
          ICALLD = 1
          RLXOLD = RRL(1)
          RLYOLD = RRL(2)
@@ -1380,7 +1364,7 @@ c        call outmat(hr,1,nx,'hr   ',nx)
 c        write(6,*) 'this is rr2:',rrl(2),ny
 c        call outmat(hs,1,ny,'hs   ',ny)
 
-         IF (IF3D) THEN
+         if (IF3D) then
             call hlegn(ht,rrl(3),zgml,nz)
             IJK=0
             DO 100 K=1,NZ
@@ -1389,7 +1373,7 @@ c        call outmat(hs,1,ny,'hs   ',ny)
                IJK=IJK+1
                HHH(IJK,1,1)=HR(I)*HS(J)*HT(K)
                SUM=SUM+SCAL(IJK)*HHH(IJK,1,1)
-  100       CONTINUE
+  100       continue
          ELSE
             IJK=0
             DO 200 J=1,NY
@@ -1399,7 +1383,7 @@ c        call outmat(hs,1,ny,'hs   ',ny)
                SUM=SUM+SCAL(IJK)*HHH(IJK,1,1)
 c              write(6,1) ijk,sum,scal(ijk),hr(i),hs(j),hhh(ijk,1,1)
 c  1           format(i5,5f12.7,' sum 1')
- 200       CONTINUE
+ 200       continue
          ENDIF
       ELSE
 C
@@ -1409,7 +1393,7 @@ C
          DO 300 I=1,NXYZ
             SUM=SUM+SCAL(I)*HHH(I,1,1)
 c           write(6,*) i,sum,scal(i),hhh(i,1,1),' sum 2'
-  300    CONTINUE
+  300    continue
       ENDIF
       X0 = SUM
       return
@@ -1471,10 +1455,10 @@ C     Find out which element are to be renumbered:
      $    'Enter in menu area to abort RENUMBER operation.$')
       IFTMP =IFGRID
       IFGRID=.FALSE.
-  120 CONTINUE
+  120 continue
       CALL PRS('Enter 1st point:$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
-      IF (XMOUSE.GT.XPHY(1.0)) THEN
+      if (XMOUSE.GT.XPHY(1.0)) then
 C        look for a keypad input
          CALL PRS('Aborting renumber operation.$')
          CALL BEEP
@@ -1483,7 +1467,7 @@ C        look for a keypad input
       ELSE
          CALL PRS('Enter 2nd point:$')
          CALL MOUSE(XMOUS2,YMOUS2,BUTTON)
-         IF (XMOUS2.GT.XPHY(1.0)) THEN
+         if (XMOUS2.GT.XPHY(1.0)) then
           CALL PRS('Aborting renumber operation.$')
           CALL BEEP
           IFGRID=IFTMP 
@@ -1505,40 +1489,40 @@ C     Count the number which are in
       NUMIN=0
       CALL DRWBOX(XMIN,YMIN,XMAX,YMAX,1)
       DO 100 IIEL=1,NEL
-         IF (XMIN.LE.XCEN(IIEL) .AND.
+         if (XMIN.LE.XCEN(IIEL) .AND.
      $       XCEN(IIEL).LE.XMAX .AND.
      $       YMIN.LE.YCEN(IIEL) .AND.
      $       YCEN(IIEL).LE.YMAX )         NUMIN=NUMIN+1
-  100 CONTINUE
+  100 continue
       WRITE(S,101) NUMIN,NEL
   101 FORMAT('Renumbering',i11,' out of',i11,' elements.$')
       CALL PRS(S)
-      IF (NUMIN.GT.0) THEN
+      if (NUMIN.GT.0) then
 C        renumber the elements which are inside to be less than NUMIN
          J=0
          K=0
          DO 200 IIEL=1,NEL
-            IF (XMIN.LE.XCEN(IIEL) .AND.
+            if (XMIN.LE.XCEN(IIEL) .AND.
      $          XCEN(IIEL).LE.XMAX .AND.
      $          YMIN.LE.YCEN(IIEL) .AND.
-     $          YCEN(IIEL).LE.YMAX ) THEN
-                IF (IIEL.GT.NUMIN) THEN
+     $          YCEN(IIEL).LE.YMAX ) then
+                if (IIEL.GT.NUMIN) then
 C               We've got one which is in, but too high.
                    J=J+1
                    IEIN(J)=IIEL
                 ENDIF
              ELSE
-                IF (IIEL.LT.NUMIN) THEN
+                if (IIEL.LT.NUMIN) then
 C               We've got one which is out, but too low.
                    K=K+1
                    IEOUT(K)=IIEL
                 ENDIF
              ENDIF
-  200    CONTINUE
+  200    continue
       WRITE(S,201) J,K
   201 FORMAT('Found',i11,' elements in, and',i11,' elements out.$')
       CALL PRS(S)
-      IF (J.NE.K) return
+      if (J.NE.K) return
 C
 C        Swap the elements
 C
@@ -1548,7 +1532,7 @@ C
             CALL COPYEL(IE,NELM1)
             CALL COPYEL(JE,IE)
             CALL COPYEL(NELM1,JE)
-  300    CONTINUE
+  300    continue
 C
       ENDIF
 
@@ -1573,14 +1557,14 @@ C
       call finde(ie,xpt(1),xpt(2),xpt(3))
 C
 C     Exception handling:
-      IF (IE.EQ.0) THEN
+      if (IE.EQ.0) then
          WRITE(S,20) XPT(1),XPT(2),XPT(3)
          CALL PRS(S)
    20    FORMAT(2X,'Point (',G10.3,',',G10.3,',',G10.3,') is not in '
      $            ,'the domain.$')
          CALL PRS('  Continue (y/n)?$')
          CALL RES(YESNO,1)
-         IF (YESNO.EQ.'Y'.OR.YESNO.EQ.'y') GOTO 10
+         if (YESNO.EQ.'Y'.OR.YESNO.EQ.'y') GOTO 10
       ELSE
          WRITE(S,30) IE,XCEN(IE),YCEN(IE),ZCEN(IE)
    30    FORMAT(2X,'Found element number',i11,3f9.4,'$')
@@ -1605,14 +1589,14 @@ C
          CALL NORM3D(VEC3)
          RLNGTH = DOTPROD(VEC,VEC3)
          RLNGTH = ABS(RLNGTH)
-         IF (RLNGTH.GT.RLMAX) THEN
+         if (RLNGTH.GT.RLMAX) then
             IJKPLN  = IPLN
             RLMAX   = RLNGTH
             DXORD=VEC3(1) 
             DYORD=VEC3(2) 
             DZORD=VEC3(3) 
          ENDIF
-   30 CONTINUE
+   30 continue
       VEC3(1)=DXORD
       VEC3(2)=DYORD
       VEC3(3)=DZORD
@@ -1682,7 +1666,7 @@ C
       DATA    ITRANS /108*0/
       DATA    CTRANS /108*' '/
 C
-      IF (FRAC.LE.0.0.OR.FRAC.GE.1.0) return
+      if (FRAC.LE.0.0.OR.FRAC.GE.1.0) return
 C
 c     ITRANS(1,1,4)=Z+1
 c     ITRANS(1,1,5)=Z+1;Y+1
@@ -1771,7 +1755,7 @@ C                                               ie  +----+  je
          CALL ROTELM(IE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
          CALL ROTELM(JE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
          CALL ROTELM(KE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
-   10 CONTINUE
+   10 continue
 C     Compute XYZ on high definition mesh
 C             (Note, because of this, ROTELM must rotate CURVE data as well.)
       call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
@@ -1846,7 +1830,7 @@ c
          y(i1,ke)=yval
          z(i1,ke)=zval
 C
-  100 CONTINUE
+  100 continue
 C
 C     Don't forget to eliminate Curve side data on new faces!
 C
@@ -1871,7 +1855,7 @@ C     Undo rotations via inverse sequence
          CALL ROTELM1(IE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
          CALL ROTELM1(JE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
          CALL ROTELM1(KE,ITRANS(IROT,I1,I2),CTRANS(IROT,I1,I2))
-  510 CONTINUE
+  510 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -1879,7 +1863,7 @@ c-----------------------------------------------------------------------
       CHARACTER*1 CROT
 C
 C     If there's no rotation to be done, we return.
-      IF (IROT.EQ.0) return
+      if (IROT.EQ.0) return
 C
 C     Else, we construct the necessary rotation as a series of unit
 C     rotations about the specified axis.
@@ -1889,7 +1873,7 @@ C
 C
       DO 100 I=1,NROT
          CALL ROTEL(JE,CROT)
-  100 CONTINUE
+  100 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -1897,22 +1881,22 @@ c-----------------------------------------------------------------------
       CHARACTER*1 CROT
 C
 C     Inverse rotation: if there's no rotation to be done, we return.
-      IF (IROT.EQ.0) return
+      if (IROT.EQ.0) return
 C
 C     Else, we construct the necessary rotation as a series of unit
 C     rotations about the specified axis.
 C
       NROT=IROT+8
       NROT=MOD(NROT,4)
-      IF (NROT.EQ.3) THEN
+      if (NROT.EQ.3) then
          NROT=1
-      ELSEIF (NROT.EQ.1) THEN
+      elseif (NROT.EQ.1) then
          NROT=3
       ENDIF
 C
       DO 100 I=1,NROT
          CALL ROTEL(JE,CROT)
-  100 CONTINUE
+  100 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -1937,11 +1921,11 @@ C
 C
 C     'X' axis
 C
-      IF (CROT.EQ.'X') THEN
+      if (CROT.EQ.'X') then
          IFC1=1
          IFC2=2
          IFAC=1
-      ELSEIF (CROT.EQ.'Y') THEN
+      elseif (CROT.EQ.'Y') then
          IFC1=3
          IFC2=4
          IFAC=2
@@ -1971,7 +1955,7 @@ C
          CCURVE(FFAC(I1,IFAC),IE)=CCURVE(FFAC(I,IFAC),IE)
          CALL COPY(CURVE(1,FFAC(I1,IFAC),IE)
      $            ,CURVE(1,FFAC(I,IFAC),IE),6)
-   10 CONTINUE
+   10 continue
       x(fcrn2(1,ifc1),ie)=x1
       y(fcrn2(1,ifc1),ie)=y1
       z(fcrn2(1,ifc1),ie)=z1
@@ -2024,11 +2008,11 @@ C
 C
 C     Sort the faces according to Z-location
 C     for the color fill plotting routines
-c     IF (IF3D) CALL SORTZ
+c     if (IF3D) CALL SORTZ
 C
       NFACES=2*NDIM
       NEDGE=4
-      IF (IF3D) NEDGE=12
+      if (IF3D) NEDGE=12
       IF(ICALLD.EQ.0)THEN
          ICALLD=1
 C
@@ -2054,7 +2038,7 @@ C
          EFACE1(6)=6
 C
       ENDIF
-      IF (NX.NE.NXOLD.OR.NY.NE.NYOLD.OR.NZ.NE.NZOLD) THEN
+      if (NX.NE.NXOLD.OR.NY.NE.NYOLD.OR.NZ.NE.NZOLD) then
          NXOLD=NX
          NYOLD=NY
          NZOLD=NZ
@@ -2073,7 +2057,7 @@ C
          IC(6) =  NX*NY*(NZ-1)             + (NX-1)
          IC(7) =  NX*NY*(NZ-1) + NX*(NY-1)
          IC(8) =  NX*NY*(NZ-1) + NX*(NY-1) + (NX-1)
-         IF (NCSOLD.NE.NCSEGS) THEN
+         if (NCSOLD.NE.NCSEGS) then
 C           Set up curve line segment evaluation array (exclude endpoints) :
             NCSOLD = NCSEGS
             NCSEG1 = NCSEGS + 1
@@ -2082,7 +2066,7 @@ C           Set up curve line segment evaluation array (exclude endpoints) :
             DO 400 K=1,NCSGM1
                RR1 = -1.0 + DR1*FLOAT(K)
                call hlegn(hik(1,k),rr1,zgml,nx)
-  400       CONTINUE
+  400       continue
          ENDIF
       ENDIF
 C
@@ -2101,14 +2085,14 @@ C
 C        Check if we can take a short cut in plotting the element bdry.
          IFCURV=.FALSE.
          DO 500 IEDG = 1,12
-            IF (CCURVE(IEDG,IE).NE.' ') IFCURV=.TRUE.
-  500    CONTINUE
+            if (CCURVE(IEDG,IE).NE.' ') IFCURV=.TRUE.
+  500    continue
 C
 C        Edges
 C
          DO 800 IEDG = 1,NEDGE
             IEDG0 = IEDG + 12
-            IF (IF3D) IEDG0 = IEDG
+            if (IF3D) IEDG0 = IEDG
             ICE1 = ICEDG(1,IEDG0)
             ICE2 = ICEDG(2,IEDG0)
             NSKIP = NSKIPX(ICEDG(3,IEDG0))
@@ -2120,7 +2104,7 @@ C
             XK(NCSEG1) = XP(IC1)
             YK(NCSEG1) = YP(IC1)
             ZK(NCSEG1) = ZP(IC1)
-            IF (IFCURV) THEN
+            if (IFCURV) then
                CALL EVLINE(XK(2),XP(IC0),HIK,NX,NXM,NCSGM1,NSKIP)
                CALL EVLINE(YK(2),YP(IC0),HIK,NX,NXM,NCSGM1,NSKIP)
                CALL EVLINE(ZK(2),ZP(IC0),HIK,NX,NXM,NCSGM1,NSKIP)
@@ -2131,8 +2115,8 @@ C
                ZK(2) = ZP(IC1)
                CALL VDRAW3A(XK,YK,ZK,2)
             ENDIF
-  800    CONTINUE
- 1000 CONTINUE
+  800    continue
+ 1000 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -2143,24 +2127,24 @@ C     Evaluate vector uv <== uvp, @ k=1,npts
 C
       REAL UV(NPT),UVP(1)
       REAL HIK(N1D,NPT)
-      IF (NPT.LE.N1) THEN
+      if (NPT.LE.N1) then
          DO 100 K=1,NPT
             UV(K) = 0.0
             ISKIP = 1 - NSKIP
             DO 100 I=1,N1
                ISKIP = ISKIP + NSKIP
                UV(K) = UV(K) + HIK(I,K)*UVP(ISKIP)
-  100    CONTINUE
+  100    continue
       ELSE
          DO 200 K=1,NPT
             UV(K)=0.0
-  200    CONTINUE
+  200    continue
          ISKIP = 1 - NSKIP
          DO 300 I=1,N1
             ISKIP = ISKIP + NSKIP
             DO 300 K=1,NPT
                UV(K) = UV(K) + HIK(I,K)*UVP(ISKIP)
-  300    CONTINUE
+  300    continue
       ENDIF
       return
       END
@@ -2183,7 +2167,7 @@ C     ZERO OUT OLD ELEMENTAL CONNECTIVITY
               BC (2, ISIDE, IE,IFLD)= 0
               BC (3, ISIDE, IE,IFLD)= 0
          ENDIF
-  300 CONTINUE
+  300 continue
 C
 C     Loop over all elements to find element-element interactions
 C
@@ -2194,7 +2178,7 @@ C
          DIST2=(XCEN(IE)-XCEN(JE))**2+(YCEN(IE)-YCEN(JE))**2
      $        +(ZCEN(IE)-ZCEN(JE))**2
          DISTR=(RCEN(IE)+RCEN(JE))**2
-         IF (DIST2.LE.DISTR) THEN
+         if (DIST2.LE.DISTR) then
 C           There is a potential interaction
 C
              DELTA2 = .001*RCEN(JE)
@@ -2207,7 +2191,7 @@ C
                 DELTAZ = ABS(SIDES(IE,ISIDE,3)-SIDES(JE,JSIDE,3))
                 IF(DELTAX .LT. DELTA .AND.
      $             DELTAY .LT. DELTA .AND.
-     $             DELTAZ .LT. DELTA ) THEN
+     $             DELTAZ .LT. DELTA ) then
 C                  BC Array used to define neighboring elements
 C                  For want of better notation, 
 C                 'E' means elemental (internal) bdry
@@ -2233,9 +2217,9 @@ C                    Overlapping edges not Internal B.C.'s are elemental b.c.'s
                    BC (2,JSIDE,JE,IFLD) = ISIDE
                    BC (3,JSIDE,JE,IFLD) = IORIEN
                 ENDIF
-  400       CONTINUE
+  400       continue
          ENDIF
-  500 CONTINUE
+  500 continue
       return
       END
 c-----------------------------------------------------------------------
@@ -2409,7 +2393,7 @@ C     Flash element side
 C     Hilight side with Blinking lights
       CALL COLOR(2)
       IF(IFBWGKS)CALL COLOR(0)
-      IF(ISIDE.EQ.5.OR.ISIDE.EQ.6) THEN
+      IF(ISIDE.EQ.5.OR.ISIDE.EQ.6) then
 C        Flash mesh sides
          IF(ISIDE.EQ.5)THEN
             IED1=1
@@ -2421,7 +2405,7 @@ C        Flash mesh sides
          call move(x(ied1,ie),y(ied1,ie))
          DO 220 IEDGE=IED1,IED2
             CALL DRAWED(IE,IEDGE,1)
-220      CONTINUE
+220      continue
       else
 c        SIDES 1-4  (SAME AS EDGES IN THIS CASE)
 c        write(6,*) 'ie,is:',ie,iside
@@ -2497,7 +2481,7 @@ c        call drawline(Xsep,Ymax,Xsep,Ymin)
      $   'Input "<" or ">" to indicate desired shift section.$')
          call prs('("=" implies abort.)$')
          call res(ans,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          call prs('Input amount to shift in X-direction$')
          call rer(Xshift)
          call shifter(Xshift,Xsep,ANS,X,'X')
@@ -2510,7 +2494,7 @@ c        call drawline(Ysep,Xmax,Ysep,Xmin)
      $   'Input "<" or ">" to indicate desired shift section.$')
          call prs('("=" implies abort.)$')
          call res(ANS,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          call prs('Input amount to shift in Y-direction$')
          call rer(Yshift)
          call shifter(Yshift,Ysep,ANS,Y,'Y')
@@ -2523,7 +2507,7 @@ c        call drawline(Ysep,Xmax,Ysep,Xmin)
      $   'Input "<" or ">" to indicate desired shift section.$')
          call prs('("=" implies abort.)$')
          call res(ANS,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          call prs('Input amount to shift in Z-direction$')
          call rer(Zshift)
          call Shifter(Zshift,Zsep,ANS,Z,'Z')
@@ -2551,31 +2535,31 @@ c-----------------------------------------------------------------------
       LOGICAL IFG,IFL
 C
       nvts = 4
-      IF (IF3D) nvts=8
+      if (IF3D) nvts=8
       nkshift = 0
 C
-      IF (DIR.eq.'>') THEN
+      if (DIR.eq.'>') then
          DO 100 K=1,NEL
             IFG=.FALSE.
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
             DO 10 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-   10       CONTINUE
-c           IF ((IFG.AND.IFL).and.Shift.lt.0.0) THEN ! cmt out; 9/29/05
+   10       continue
+c           if ((IFG.AND.IFL).and.Shift.lt.0.0) then ! cmt out; 9/29/05
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
 C              element
 C
-c              IF (pmin+shift.le.pmax) THEN
+c              if (pmin+shift.le.pmax) then
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
@@ -2585,8 +2569,8 @@ c                 return
 c              ENDIF
 c           ENDIF
             DO 20 j=1,nvts
-               IF (pts(j,k).ge.sep) pts(j,k)=pts(j,k)+shift
-   20       CONTINUE
+               if (pts(j,k).ge.sep) pts(j,k)=pts(j,k)+shift
+   20       continue
             if (if3d.and.pmin.ge.sep) then
               do l=1,12
                 if (ccurve(l,k).eq.'m') then ! midside node
@@ -2611,7 +2595,7 @@ c           ENDIF
               enddo
             endif
             nkshift=nkshift+1
-  100   CONTINUE
+  100   continue
       ELSE
          DO 200 K=1,NEL
             IFG=.FALSE.
@@ -2619,21 +2603,21 @@ c           ENDIF
             pmin= 9.99e15
             pmax=-9.99e15
             DO 110 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-  110       CONTINUE
-c           IF ((IFG.AND.IFL).and.Shift.gt.0.0) THEN
+  110       continue
+c           if ((IFG.AND.IFL).and.Shift.gt.0.0) then
 C
 C              If an element straddles the Separator, we have to
 C              ensure that the shift operation doesn't "invert" the
 C              element
 C
-c              IF (pmax+shift.le.pmin) THEN
+c              if (pmax+shift.le.pmin) then
 c                 CALL PRS(
 c    $           'Error:  Attempt to shrink element to zero length$')
 c                 CALL PRS(' Smax     Smin    Shift $')
@@ -2643,8 +2627,8 @@ c                 return
 c              ENDIF
 c           ENDIF
             DO 120 j=1,nvts
-               IF (pts(j,k).le.sep) pts(j,k)=pts(j,k)+shift
-  120       CONTINUE
+               if (pts(j,k).le.sep) pts(j,k)=pts(j,k)+shift
+  120       continue
             if (if3d.and.pmax.le.sep) then
               do l=1,12
                 if (ccurve(l,k).eq.'m') then ! midside node
@@ -2669,7 +2653,7 @@ c           ENDIF
               enddo
             endif
             nkshift=nkshift+1
-  200    CONTINUE
+  200    continue
       ENDIF
 
       WRITE(S,500) nkshift
@@ -2725,12 +2709,12 @@ C
 C     Are we taking an R, S or T cut?
 C
       FRACS=2.0*FRAC-1.0
-      IF (IPLN.EQ.0) THEN
+      if (IPLN.EQ.0) then
          LISTA=ABS(LIST(ILIST))
          CALL DECOD(IPLANE,IPLN,IIE,IDUM,LISTA,NX,6,NELM)
       ENDIF
 C
-      IF (IPLN.LE.2) THEN
+      if (IPLN.LE.2) then
 C        X-plane
          I0=-1
          RRL(1)=FRACS
@@ -2749,14 +2733,14 @@ C        X-plane
                x(inv(i0),je)=xval
                y(inv(i0),je)=yval
                z(inv(i0),je)=zval
-  100       CONTINUE
-  200    CONTINUE
+  100       continue
+  200    continue
 C
 C        Don't forget Curve side data on new faces!
          JFAC1=EFACE(1)
          JFAC2=EFACE(2)
 C
-      ELSEIF (IPLN.LE.4) THEN
+      elseif (IPLN.LE.4) then
 C        Y-plane
          RRL(2)=FRACS
          DO 210 JCRN=-1,1,2
@@ -2779,8 +2763,8 @@ C              I0=1,2,5,6; I1=3,4,7,8
                y(inv(i0),je)=yval
                z(inv(i0),je)=zval
 C
-  110       CONTINUE
-  210    CONTINUE
+  110       continue
+  210    continue
          JFAC1=EFACE(3)
          JFAC2=EFACE(4)
 C
@@ -2803,19 +2787,19 @@ C        Z-plane
                x(inv(i0),je)=xval
                y(inv(i0),je)=yval
                z(inv(i0),je)=zval
-  120       CONTINUE
-  220    CONTINUE
+  120       continue
+  220    continue
          JFAC1=EFACE(5)
          JFAC2=EFACE(6)
       ENDIF
 C
 C     Curve side fix up
 C
-      IF (CCURVE(JFAC1,IE).EQ.'O') CCURVE(JFAC1,JE)=' '
-      IF (CCURVE(JFAC2,IE).EQ.'O') CCURVE(JFAC2,JE)=' '
+      if (CCURVE(JFAC1,IE).EQ.'O') CCURVE(JFAC1,JE)=' '
+      if (CCURVE(JFAC2,IE).EQ.'O') CCURVE(JFAC2,JE)=' '
 
-      IF (CCURVE(JFAC1,IE).EQ.'s'  .and.
-     $    CCURVE(JFAC2,IE).EQ.'s') THEN
+      if (CCURVE(JFAC1,IE).EQ.'s'  .and.
+     $    CCURVE(JFAC2,IE).EQ.'s') then
           R = 0.5 * ( CURVE(4,JFAC1,IE) + CURVE(4,JFAC2,IE) )
           CCURVE(JFAC1,JE)='s'
           CCURVE(JFAC2,IE)='s'
@@ -2823,12 +2807,12 @@ C
           CURVE(4,JFAC1,JE) = R
           CALL COPY(CURVE(1,JFAC1,JE),CURVE(1,JFAC1,JE),3)
           CALL COPY(CURVE(1,JFAC2,IE),CURVE(1,JFAC1,IE),3)
-      ELSEIF (CCURVE(JFAC1,IE).EQ.'s'  .or.
-     $        CCURVE(JFAC2,IE).EQ.'s') THEN
+      elseif (CCURVE(JFAC1,IE).EQ.'s'  .or.
+     $        CCURVE(JFAC2,IE).EQ.'s') then
           R1i = 0.0
           R2i = 0.0
-          IF (CCURVE(JFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,JFAC1,IE)
-          IF (CCURVE(JFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,JFAC2,IE)
+          if (CCURVE(JFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,JFAC1,IE)
+          if (CCURVE(JFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,JFAC2,IE)
           R  = 2.0/(R1i+R2i)
 C
 c         CCURVE(JFAC1,JE)='s'
@@ -2844,10 +2828,10 @@ C
 C     Check for cylinder  (Note this scheme fails for convex-convex case!)
 C                         pff 4/10/93
 C
-      IF (IPLN.LE.4) THEN
+      if (IPLN.LE.4) then
          DO 300 Ilev=1,2
-           IF (CCURVE(JFAC1,IE).EQ.'C'.and.
-     $         CCURVE(JFAC2,IE).EQ.'C') THEN
+           if (CCURVE(JFAC1,IE).EQ.'C'.and.
+     $         CCURVE(JFAC2,IE).EQ.'C') then
                R1 = CURVE(1,JFAC1,IE)
                R2 = CURVE(1,JFAC2,IE)
                R = 0.5*(R1-R2)
@@ -2855,12 +2839,12 @@ C
                CURVE(1,JFAC1,JE) =  R
                CCURVE(JFAC1,JE)='C'
                CCURVE(JFAC2,IE)='C'
-           ELSEIF (CCURVE(JFAC1,IE).EQ.'C'.  or.
-     $             CCURVE(JFAC2,IE).EQ.'C') THEN
+           elseif (CCURVE(JFAC1,IE).EQ.'C'.  or.
+     $             CCURVE(JFAC2,IE).EQ.'C') then
                R1i = 0.0
                R2i = 0.0
-               IF (CCURVE(JFAC1,IE).EQ.'C') R1i = 1.0/CURVE(1,JFAC1,IE)
-               IF (CCURVE(JFAC2,IE).EQ.'C') R2i = 1.0/CURVE(1,JFAC2,IE)
+               if (CCURVE(JFAC1,IE).EQ.'C') R1i = 1.0/CURVE(1,JFAC1,IE)
+               if (CCURVE(JFAC2,IE).EQ.'C') R2i = 1.0/CURVE(1,JFAC2,IE)
                R  = 2.0/(R1i-R2i)
                CURVE(1,JFAC2,IE) = -R
                CURVE(1,JFAC1,JE) =  R
@@ -2869,235 +2853,13 @@ C
            ENDIF
            JFAC1=JFAC1+4
            JFAC2=JFAC2+4
-  300    CONTINUE
+  300    continue
       ENDIF
 C
 C     Delete periodic bcs and undo curved sides
 C
       return
       END
-c-----------------------------------------------------------------------
-      subroutine octsplite(ie,liste)
-C
-C     A routine which will split an element IE and assign the 
-C     appropriate fraction to element JE.   IPLN indicates the
-C     type of split.   FRAC indicates the sub-division point on
-C     the range [0,1].
-C
-      include 'basics.inc'
-      PARAMETER (NXM3=NXM*NYM*NZM)
-      COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
-     $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
-     $              ,ZVAL(-1:1,-1:1,-1:1)
-      INTEGER INV(8)
-      SAVE    INV
-      DATA    INV /1,2,4,3,5,6,8,7/
-      DIMENSION LISTE(8)
-C
-C     Compute XYZ on high definition mesh
-C
-      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)
-C
-C     Evaluate x,y,z on 27 pt stencil
-C
-      if (if3d) then
-c
-        DO 160 It= -1,1,1
-        DO 160 Is= -1,1,1
-        DO 160 Ir= -1,1,1
-          rrl(3)=float(it)
-          rrl(2)=float(is)
-          rrl(1)=float(ir)
-          call evalsc(xval(ir,is,it),xp,rrl,1)
-          call evalsc(yval(ir,is,it),yp,rrl,0)
-          call evalsc(zval(ir,is,it),zp,rrl,0)
-  160   CONTINUE
-
-        ke = 0
-        DO 860 Iz=-1,0,1 ! Eight quadrants
-        DO 840 Iy=-1,0,1
-        DO 820 Ix=-1,0,1
-
-          ke = ke+1
-          je = liste(ke)
-          call copyel(ie,je) ! copy essential information
-
-          iv = 0
-          DO 760 Jz=0,1 !         Eight vertices
-          DO 760 Jy=0,1
-          DO 760 Jx=0,1
-           jz0 = Jz+Iz
-           jy0 = Jy+Iy
-           jx0 = Jx+Ix
-           iv = iv+1
-           x(inv(iv),je)=xval(jx0,jy0,jz0)
-           y(inv(iv),je)=yval(jx0,jy0,jz0)
-           z(inv(iv),je)=zval(jx0,jy0,jz0)
-  760     CONTINUE
-
-          DO 400 Ifce=1,3
-           IFAC1=EFACE(2*Ifce-1)
-           IFAC2=EFACE(2*Ifce  )
-           IF (Ifce.eq.1) THEN
-              JFAC = EFACE(1-Ix)
-           ELSEIF (Ifce.eq.2) THEN
-              JFAC = EFACE(3-Iy)
-           ELSE
-              JFAC = EFACE(5-Iz)
-           ENDIF
-C
-C          Curve side fix up - only internal faces have to be changed
-C
-           IF (CCURVE(IFAC1,IE).EQ.'s'  .and.
-     $         CCURVE(IFAC2,IE).EQ.'s') THEN
-             R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
-             CCURVE(JFAC,JE)='s'
-             CURVE(4,JFAC,JE) = R
-           ELSEIF (CCURVE(IFAC1,IE).EQ.'s'  .or.
-     $             CCURVE(IFAC2,IE).EQ.'s') THEN
-             R1i = 0.0
-             R2i = 0.0
-             IF (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
-             IF (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
-             R  = 2.0/(R1i+R2i)
-c            CCURVE(JFAC,JE)='s'
-c            CURVE(4,JFAC,JE) = R
-             CCURVE(JFAC,JE)=' '
-           ENDIF
-
-C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
-
-           if (ifce.le.2) then
-              DO 300 Ilev=1,2
-                IF (CCURVE(IFAC1,IE).EQ.'C'.and.
-     $              CCURVE(IFAC2,IE).EQ.'C') THEN
-                  R1 = CURVE(1,IFAC1,IE)
-                  R2 = CURVE(1,IFAC2,IE)
-                  R = 0.5*(R1-R2)
-                  CCURVE(JFAC,JE)  = 'C'
-                  IF (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
-                  IF (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
-                ELSEIF (CCURVE(IFAC1,IE).EQ.'C'.  or.
-     $                  CCURVE(IFAC2,IE).EQ.'C') THEN
-                  R1i = 0.0
-                  R2i = 0.0
-                  IF (CCURVE(IFAC1,IE).EQ.'C') 
-     $               R1i = 1.0/CURVE(1,IFAC1,IE)
-                  IF (CCURVE(IFAC2,IE).EQ.'C') 
-     $               R2i = 1.0/CURVE(1,IFAC2,IE)
-                  R  = 2.0/(R1i-R2i)
-c                 CURVE(1,JFAC,JE) =  R
-                  CCURVE(JFAC,JE)=' '
-                ENDIF
-                JFAC =JFAC +4
-                IFAC1=IFAC1+4
-                IFAC2=IFAC2+4
-  300         CONTINUE
-           ENDIF
-  400     CONTINUE
-  820  CONTINUE
-  840  CONTINUE
-  860  CONTINUE
-
-      else ! 2D
-
-        DO 2160 Is= -1,1,1
-        DO 2160 Ir= -1,1,1
-           rrl(3)=0.0
-           rrl(2)=float(is)
-           rrl(1)=float(ir)
-           call evalsc(xval(ir,is,1),xp,rrl,1)
-           call evalsc(yval(ir,is,1),yp,rrl,0)
- 2160  CONTINUE
-
-      ke = 0
-      DO 2840 Iy=-1,0,1      ! Four quadrants
-      DO 2820 Ix=-1,0,1
-
-          ke = ke+1
-          je = liste(ke)
-
-          call copyel(ie,je) ! copy essential information
-
-          iv = 0
-          DO 2760 Jy=0,1     ! Four vertices
-          DO 2760 Jx=0,1
-             jy0 = Jy+Iy
-             jx0 = Jx+Ix
-             iv = iv+1
-             x(inv(iv),je)=xval(jx0,jy0,1)
-             y(inv(iv),je)=yval(jx0,jy0,1)
-             z(inv(iv),je)=zval(jx0,jy0,1)
- 2760     CONTINUE
-C
-          DO 2400 Ifce=1,2
-           IFAC1=EFACE(2*Ifce-1)
-           IFAC2=EFACE(2*Ifce  )
-           IF (Ifce.eq.1) THEN
-              JFAC = EFACE(1-Ix)
-           ELSEIF (Ifce.eq.2) THEN
-              JFAC = EFACE(3-Iy)
-           ELSE
-              JFAC = EFACE(5-Iz)
-           ENDIF
-C
-C        Curve side fix up - only internal faces have to be changed
-C
-           IF (CCURVE(IFAC1,IE).EQ.'s'  .and.
-     $         CCURVE(IFAC2,IE).EQ.'s') THEN
-             R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
-             CCURVE(JFAC,JE)='s'
-             CURVE(4,JFAC,JE) = R
-           ELSEIF (CCURVE(IFAC1,IE).EQ.'s'  .or.
-     $             CCURVE(IFAC2,IE).EQ.'s') THEN
-             R1i = 0.0
-             R2i = 0.0
-             IF (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
-             IF (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
-             R  = 2.0/(R1i+R2i)
-c            CCURVE(JFAC,JE)='s'
-c            CURVE(4,JFAC,JE) = R
-             CCURVE(JFAC,JE)=' '
-           ENDIF
-C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
-
-           IF (Ifce.LE.2) THEN
-              ilev = 1
-              IF (CCURVE(IFAC1,IE).EQ.'C'.and.
-     $              CCURVE(IFAC2,IE).EQ.'C') THEN
-                  R1 = CURVE(1,IFAC1,IE)
-                  R2 = CURVE(1,IFAC2,IE)
-                  R = 0.5*(R1-R2)
-                  CCURVE(JFAC,JE)  = 'C'
-                  IF (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
-                  IF (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
-              ELSEIF (CCURVE(IFAC1,IE).EQ.'C'.  or.
-     $                  CCURVE(IFAC2,IE).EQ.'C') THEN
-                  R1i = 0.0
-                  R2i = 0.0
-                  IF (CCURVE(IFAC1,IE).EQ.'C') 
-     $               R1i = 1.0/CURVE(1,IFAC1,IE)
-                  IF (CCURVE(IFAC2,IE).EQ.'C') 
-     $               R2i = 1.0/CURVE(1,IFAC2,IE)
-                  R  = 2.0/(R1i-R2i)
-c                 CURVE(1,JFAC,JE) =  R
-                  CCURVE(JFAC,JE)=' '
-              ENDIF
-           ENDIF
- 2400     CONTINUE
- 2820   CONTINUE
- 2840   CONTINUE
- 2860   CONTINUE
-
-      endif  ! End of 2D/3D decision branch
-
-      call copyel(je,ie) ! copy last element generated back onto ie
-
-      write(6,*) 'quit in octsplite'
-      stop
-
-      return
-      end
 c-----------------------------------------------------------------------
       subroutine qsplite(ie,liste)
 C
@@ -3166,14 +2928,14 @@ c         DO 760 Jz=0,1
                 x(inv(iv),je)=xval(jx0,jy0,jz0)
                 y(inv(iv),je)=yval(jx0,jy0,jz0)
                 z(inv(iv),je)=zval(jx0,jy0,jz0)
-  760     CONTINUE
+  760     continue
 C
           DO 400 Ifce=1,2
            IFAC1=EFACE(2*Ifce-1)
            IFAC2=EFACE(2*Ifce  )
-           IF (Ifce.eq.1) THEN
+           if (Ifce.eq.1) then
               JFAC = EFACE(1-Ix)
-           ELSEIF (Ifce.eq.2) THEN
+           elseif (Ifce.eq.2) then
               JFAC = EFACE(3-Iy)
            ELSE
               JFAC = EFACE(5-Iz)
@@ -3181,17 +2943,17 @@ C
 C
 C        Curve side fix up - only internal faces have to be changed
 C
-           IF (CCURVE(IFAC1,IE).EQ.'s'  .and.
-     $         CCURVE(IFAC2,IE).EQ.'s') THEN
+           if (CCURVE(IFAC1,IE).EQ.'s'  .and.
+     $         CCURVE(IFAC2,IE).EQ.'s') then
              R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
              CCURVE(JFAC,JE)='s'
              CURVE(4,JFAC,JE) = R
-           ELSEIF (CCURVE(IFAC1,IE).EQ.'s'  .or.
-     $             CCURVE(IFAC2,IE).EQ.'s') THEN
+           elseif (CCURVE(IFAC1,IE).EQ.'s'  .or.
+     $             CCURVE(IFAC2,IE).EQ.'s') then
              R1i = 0.0
              R2i = 0.0
-             IF (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
-             IF (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
+             if (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
+             if (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
              R  = 2.0/(R1i+R2i)
 c            CCURVE(JFAC,JE)='s'
 c            CURVE(4,JFAC,JE) = R
@@ -3202,23 +2964,23 @@ C          Check for cylinder
 C          (Note this scheme fails for convex-convex case!)
 C          pff 4/10/93
 C
-           IF (Ifce.LE.2) THEN
+           if (Ifce.LE.2) then
               DO 300 Ilev=1,2
-                IF (CCURVE(IFAC1,IE).EQ.'C'.and.
-     $              CCURVE(IFAC2,IE).EQ.'C') THEN
+                if (CCURVE(IFAC1,IE).EQ.'C'.and.
+     $              CCURVE(IFAC2,IE).EQ.'C') then
                   R1 = CURVE(1,IFAC1,IE)
                   R2 = CURVE(1,IFAC2,IE)
                   R = 0.5*(R1-R2)
                   CCURVE(JFAC,JE)  = 'C'
-                  IF (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
-                  IF (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
-                ELSEIF (CCURVE(IFAC1,IE).EQ.'C'.  or.
-     $                  CCURVE(IFAC2,IE).EQ.'C') THEN
+                  if (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
+                  if (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
+                elseif (CCURVE(IFAC1,IE).EQ.'C'.  or.
+     $                  CCURVE(IFAC2,IE).EQ.'C') then
                   R1i = 0.0
                   R2i = 0.0
-                  IF (CCURVE(IFAC1,IE).EQ.'C') 
+                  if (CCURVE(IFAC1,IE).EQ.'C') 
      $               R1i = 1.0/CURVE(1,IFAC1,IE)
-                  IF (CCURVE(IFAC2,IE).EQ.'C') 
+                  if (CCURVE(IFAC2,IE).EQ.'C') 
      $               R2i = 1.0/CURVE(1,IFAC2,IE)
                   R  = 2.0/(R1i-R2i)
 c                 CURVE(1,JFAC,JE) =  R
@@ -3227,12 +2989,12 @@ c                 CURVE(1,JFAC,JE) =  R
                 JFAC =JFAC +4
                 IFAC1=IFAC1+4
                 IFAC2=IFAC2+4
-  300         CONTINUE
+  300         continue
            ENDIF
-  400     CONTINUE
-  820     CONTINUE
-  840   CONTINUE
-  860 CONTINUE
+  400     continue
+  820     continue
+  840   continue
+  860 continue
 
 
       else  ! 2D
@@ -3244,7 +3006,7 @@ c                 CURVE(1,JFAC,JE) =  R
            rrl(1)=float(ir)
            CALL EVALSC(XVAL(ir,is,1),XP,RRL,1)
            CALL EVALSC(YVAL(ir,is,1),YP,RRL,0)
- 2160 CONTINUE
+ 2160 continue
 C
 C     Four quadrants
 C
@@ -3275,9 +3037,9 @@ C
           DO 2400 Ifce=1,2
            IFAC1=EFACE(2*Ifce-1)
            IFAC2=EFACE(2*Ifce  )
-           IF (Ifce.eq.1) THEN
+           if (Ifce.eq.1) then
               JFAC = EFACE(1-Ix)
-           ELSEIF (Ifce.eq.2) THEN
+           elseif (Ifce.eq.2) then
               JFAC = EFACE(3-Iy)
            ELSE
               JFAC = EFACE(5-Iz)
@@ -3285,17 +3047,17 @@ C
 C
 C        Curve side fix up - only internal faces have to be changed
 C
-           IF (CCURVE(IFAC1,IE).EQ.'s'  .and.
-     $         CCURVE(IFAC2,IE).EQ.'s') THEN
+           if (CCURVE(IFAC1,IE).EQ.'s'  .and.
+     $         CCURVE(IFAC2,IE).EQ.'s') then
              R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
              CCURVE(JFAC,JE)='s'
              CURVE(4,JFAC,JE) = R
-           ELSEIF (CCURVE(IFAC1,IE).EQ.'s'  .or.
-     $             CCURVE(IFAC2,IE).EQ.'s') THEN
+           elseif (CCURVE(IFAC1,IE).EQ.'s'  .or.
+     $             CCURVE(IFAC2,IE).EQ.'s') then
              R1i = 0.0
              R2i = 0.0
-             IF (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
-             IF (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
+             if (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
+             if (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
              R  = 2.0/(R1i+R2i)
 c            CCURVE(JFAC,JE)='s'
 c            CURVE(4,JFAC,JE) = R
@@ -3306,33 +3068,33 @@ C          Check for cylinder
 C          (Note this scheme fails for convex-convex case!)
 C          pff 4/10/93
 C
-           IF (Ifce.LE.2) THEN
+           if (Ifce.LE.2) then
               ilev = 1
-              IF (CCURVE(IFAC1,IE).EQ.'C'.and.
-     $              CCURVE(IFAC2,IE).EQ.'C') THEN
+              if (CCURVE(IFAC1,IE).EQ.'C'.and.
+     $              CCURVE(IFAC2,IE).EQ.'C') then
                   R1 = CURVE(1,IFAC1,IE)
                   R2 = CURVE(1,IFAC2,IE)
                   R = 0.5*(R1-R2)
                   CCURVE(JFAC,JE)  = 'C'
-                  IF (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
-                  IF (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
-              ELSEIF (CCURVE(IFAC1,IE).EQ.'C'.  or.
-     $                  CCURVE(IFAC2,IE).EQ.'C') THEN
+                  if (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
+                  if (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
+              elseif (CCURVE(IFAC1,IE).EQ.'C'.  or.
+     $                  CCURVE(IFAC2,IE).EQ.'C') then
                   R1i = 0.0
                   R2i = 0.0
-                  IF (CCURVE(IFAC1,IE).EQ.'C') 
+                  if (CCURVE(IFAC1,IE).EQ.'C') 
      $               R1i = 1.0/CURVE(1,IFAC1,IE)
-                  IF (CCURVE(IFAC2,IE).EQ.'C') 
+                  if (CCURVE(IFAC2,IE).EQ.'C') 
      $               R2i = 1.0/CURVE(1,IFAC2,IE)
                   R  = 2.0/(R1i-R2i)
 c                 CURVE(1,JFAC,JE) =  R
                   CCURVE(JFAC,JE)=' '
               ENDIF
            ENDIF
- 2400     CONTINUE
- 2820     CONTINUE
- 2840   CONTINUE
- 2860 CONTINUE
+ 2400     continue
+ 2820     continue
+ 2840   continue
+ 2860 continue
 
 
 
@@ -3351,7 +3113,7 @@ c     the selected point.
 
       include 'basics.inc'
 
-    1 CONTINUE
+    1 continue
 
       nchoic = 0
       nchoic = nchoic+1
@@ -3362,7 +3124,7 @@ c     the selected point.
       ITEM(nchoic)       =             'Stretch X'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Stretch Y'
-      IF (IF3D) THEN
+      if (IF3D) then
          nchoic = nchoic+1
          ITEM(nchoic)    =             'Stretch Z'
       ENDIF
@@ -3397,7 +3159,7 @@ c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
      $   'Input "<" or ">" to indicate desired stretch section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in X-direction$')
          CALL RER(Xshift)
          CALL Shifter2(Xshift,Xsep,ANS,X,'X')
@@ -3410,7 +3172,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
      $   'Input "<" or ">" to indicate desired stretch section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Y-direction$')
          CALL RER(Yshift)
          CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
@@ -3422,7 +3184,7 @@ c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
      $   'Input "<" or ">" to indicate desired stretch section.$')
          CALL PRS('("=" implies abort.)$')
          CALL RES(ANS,1)
-         IF (ANS.eq.'=') return
+         if (ANS.eq.'=') return
          CALL PRS('Input amount to stretch in Z-direction$')
          CALL RER(Zshift)
          CALL Shifter2(Zshift,Zsep,ANS,Z,'Z')
@@ -3446,7 +3208,7 @@ C
       if (gain.lt.0) gain=-1./gain
 c
       nvts = 4
-      IF (IF3D) nvts=8
+      if (IF3D) nvts=8
       nkshift = 0
 C
       pmin= 9.99e15
@@ -3480,21 +3242,21 @@ c
       if (coord.eq.'Z') i=3
       nedge = 4 + 8*(ndim-2)
 
-      IF (DIR.eq.'>') THEN
+      if (DIR.eq.'>') then
          DO 100 K=1,NEL
             IFG=.FALSE.
             IFL=.FALSE.
             pmin= 9.99e15
             pmax=-9.99e15
             DO 10 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-   10       CONTINUE
+   10       continue
             do 20 j=1,nvts
                if (pts(j,k).ge.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
    20       continue
@@ -3509,7 +3271,7 @@ c
               enddo
             endif
             nkshift=nkshift+1
-  100   CONTINUE
+  100   continue
       ELSE
          DO 200 K=1,NEL
             IFG=.FALSE.
@@ -3517,23 +3279,23 @@ c
             pmin= 9.99e15
             pmax=-9.99e15
             DO 110 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-  110       CONTINUE
+  110       continue
             DO 120 j=1,nvts
-c              IF (pts(j,k).le.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
-               IF (pts(j,k).le.sep) then
+c              if (pts(j,k).le.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
+               if (pts(j,k).le.sep) then
                    pold = pts(j,k)
                    pts(j,k)=shift*(pts(j,k)-sep) + sep
                    pnew = pts(j,k)
                    write(6,*) 'stretch',pold,pnew,sep,shift,j,dir,coord
                endif
-  120       CONTINUE
+  120       continue
 
             if (pmax.le.sep) then
               do l=1,nedge
@@ -3545,7 +3307,7 @@ c              IF (pts(j,k).le.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
               enddo
             endif
             nkshift=nkshift+1
-  200    CONTINUE
+  200    continue
       ENDIF
 
       WRITE(S,500) nkshift
@@ -3565,7 +3327,7 @@ c     Geometric gain
       logical ifg,ifl
 
       nvts = 4
-      IF (IF3D) nvts=8
+      if (IF3D) nvts=8
       nkshift = 0
 c
 c     We only get here if gain > 0,  different than 1
@@ -3579,7 +3341,7 @@ c
       if (coord.eq.'Z') i=3
 
 
-      IF (DIR.eq.'>') THEN
+      if (DIR.eq.'>') then
          dx  = qmax - sep
          gdx = g/dx
          DO 100 K=1,NEL
@@ -3588,14 +3350,14 @@ c
             pmin= 9.99e15
             pmax=-9.99e15
             DO 10 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-   10       CONTINUE
+   10       continue
             DO 20 j=1,nvts
                if (pts(j,k).ge.sep) then
                   argu = gdx*(pts(j,k)-sep)
@@ -3604,7 +3366,7 @@ c
     1             format('s:',1p8e12.3)
                   pts(j,k)=xn
                endif
-   20       CONTINUE
+   20       continue
             if (pmin.ge.sep) then
               do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
@@ -3617,7 +3379,7 @@ c
               enddo
             endif
             nkshift=nkshift+1
-  100   CONTINUE
+  100   continue
       ELSE
          dx  = qmin - sep
          gdx = g/dx
@@ -3627,21 +3389,21 @@ c
             pmin= 9.99e15
             pmax=-9.99e15
             DO 110 j=1,nvts
-               IF (pts(j,k).ge.sep) THEN
+               if (pts(j,k).ge.sep) then
                   IFG=.TRUE.
                   pmin=min(pmin,pts(j,k))
                ELSE
                   IFL=.TRUE.
                   pmax=max(pmax,pts(j,k))
                ENDIF
-  110       CONTINUE
+  110       continue
             DO 120 j=1,nvts
                if (pts(j,k).le.sep) then
                   argu = gdx*(pts(j,k)-sep)
                   xn   = sep + c*dx*(exp(argu)-1.)/g
                   pts(j,k)=xn
                endif
-  120       CONTINUE
+  120       continue
             if (pmax.le.sep) then
               do l=1,nedge
                 if (ccurve(l,k).eq.'m') then ! midside node
@@ -3654,7 +3416,7 @@ c
               enddo
             endif
             nkshift=nkshift+1
-  200    CONTINUE
+  200    continue
       ENDIF
 
       write(s,500) nkshift
@@ -5184,6 +4946,246 @@ c-----------------------------------------------------------------------
 
       call prsi('Continue?$',e)
       call res(ans,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine octsplite(ie,liste)
+C
+C     A routine which will split an element IE and assign the 
+C     appropriate fraction to element JE.   IPLN indicates the
+C     type of split.   FRAC indicates the sub-division point on
+C     the range [0,1].
+C
+      include 'basics.inc'
+      PARAMETER (NXM3=NXM*NYM*NZM)
+      COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
+     $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
+     $              ,ZVAL(-1:1,-1:1,-1:1)
+      INTEGER INV(8)
+      SAVE    INV
+      DATA    INV /1,2,4,3,5,6,8,7/
+      DIMENSION LISTE(8)
+
+      call genxyz_e (xp,yp,zp,ie,nx,ny,nz)  ! Compute XYZ on high definition mesh
+
+      if (if3d) then       !   Evaluate x,y,z on 27 pt stencil
+        do 160 It= -1,1,1
+        do 160 Is= -1,1,1
+        do 160 Ir= -1,1,1
+          rrl(3)=float(it)
+          rrl(2)=float(is)
+          rrl(1)=float(ir)
+          call evalsc(xval(ir,is,it),xp,rrl,1)
+          call evalsc(yval(ir,is,it),yp,rrl,0)
+          call evalsc(zval(ir,is,it),zp,rrl,0)
+  160   continue
+
+        ke = 0
+        do 860 Iz=-1,0,1 ! Eight quadrants
+        do 840 Iy=-1,0,1
+        do 820 Ix=-1,0,1
+
+          ke = ke+1
+          je = liste(ke)
+          call copyel(ie,je) ! copy essential information
+
+          iv = 0
+          do 760 Jz=0,1 !         Eight vertices
+          do 760 Jy=0,1
+          do 760 Jx=0,1
+           jz0 = Jz+Iz
+           jy0 = Jy+Iy
+           jx0 = Jx+Ix
+           iv = iv+1
+           x(inv(iv),je)=xval(jx0,jy0,jz0)
+           y(inv(iv),je)=yval(jx0,jy0,jz0)
+           z(inv(iv),je)=zval(jx0,jy0,jz0)
+  760     continue
+
+          do 400 Ifce=1,3
+           IFAC1=EFACE(2*Ifce-1)
+           IFAC2=EFACE(2*Ifce  )
+           if (Ifce.eq.1) then
+              JFAC = EFACE(1-Ix)
+           elseif (Ifce.eq.2) then
+              JFAC = EFACE(3-Iy)
+           ELSE
+              JFAC = EFACE(5-Iz)
+           ENDIF
+C
+C          Curve side fix up - only internal faces have to be changed
+C
+           if (CCURVE(IFAC1,IE).EQ.'s'  .and.
+     $         CCURVE(IFAC2,IE).EQ.'s') then
+             R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
+             CCURVE(JFAC,JE)='s'
+             CURVE(4,JFAC,JE) = R
+           elseif (CCURVE(IFAC1,IE).EQ.'s'  .or.
+     $             CCURVE(IFAC2,IE).EQ.'s') then
+             R1i = 0.0
+             R2i = 0.0
+             if (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
+             if (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
+             R  = 2.0/(R1i+R2i)
+c            CCURVE(JFAC,JE)='s'
+c            CURVE(4,JFAC,JE) = R
+             CCURVE(JFAC,JE)=' '
+           ENDIF
+
+C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
+
+           if (ifce.le.2) then
+              do 300 Ilev=1,2
+                if (CCURVE(IFAC1,IE).EQ.'C'.and.
+     $              CCURVE(IFAC2,IE).EQ.'C') then
+                  R1 = CURVE(1,IFAC1,IE)
+                  R2 = CURVE(1,IFAC2,IE)
+                  R = 0.5*(R1-R2)
+                  CCURVE(JFAC,JE)  = 'C'
+                  if (JFAC.eq.IFAC1) CURVE(1,JFAC,JE) =  R
+                  if (JFAC.eq.IFAC2) CURVE(1,JFAC,JE) = -R
+                elseif (CCURVE(IFAC1,IE).EQ.'C'.  or.
+     $                  CCURVE(IFAC2,IE).EQ.'C') then
+                  R1i = 0.0
+                  R2i = 0.0
+                  if (CCURVE(IFAC1,IE).EQ.'C') 
+     $               R1i = 1.0/CURVE(1,IFAC1,IE)
+                  if (CCURVE(IFAC2,IE).EQ.'C') 
+     $               R2i = 1.0/CURVE(1,IFAC2,IE)
+                  R  = 2.0/(R1i-R2i)
+c                 CURVE(1,JFAC,JE) =  R
+                  CCURVE(JFAC,JE)=' '
+                ENDIF
+                JFAC =JFAC +4
+                IFAC1=IFAC1+4
+                IFAC2=IFAC2+4
+  300         continue
+           ENDIF
+  400     continue
+  820  continue
+  840  continue
+  860  continue
+
+      else ! 2D
+
+        do 2160 Is= -1,1,1
+        do 2160 Ir= -1,1,1
+           rrl(3)=0.0
+           rrl(2)=float(is)
+           rrl(1)=float(ir)
+           call evalsc(xval(ir,is,1),xp,rrl,1)
+           call evalsc(yval(ir,is,1),yp,rrl,0)
+ 2160  continue
+
+      ke = 0
+      do 2840 Iy=-1,0,1      ! Four quadrants
+      do 2820 Ix=-1,0,1
+
+          ke = ke+1
+          je = liste(ke)
+
+          call copyel(ie,je) ! copy essential information
+
+          iv = 0
+          do 2760 Jy=0,1     ! Four vertices
+          do 2760 Jx=0,1
+             jy0 = Jy+Iy
+             jx0 = Jx+Ix
+             iv = iv+1
+             x(inv(iv),je)=xval(jx0,jy0,1)
+             y(inv(iv),je)=yval(jx0,jy0,1)
+             z(inv(iv),je)=zval(jx0,jy0,1)
+ 2760     continue
+C
+          do 2400 ifce=1,2
+           ifac1=eface(2*Ifce-1)
+           ifac2=eface(2*Ifce  )
+           if (ifce.eq.1) then
+              jfac = eface(1-Ix)
+           elseif (Ifce.eq.2) then
+              jfac = eface(3-iy)
+           else
+              jfac = eface(5-iz)
+           endif
+C
+C        Curve side fix up - only internal faces have to be changed
+C
+           if (CCURVE(IFAC1,IE).EQ.'s'  .and.
+     $         CCURVE(IFAC2,IE).EQ.'s') then
+             R = 0.5 * ( CURVE(4,IFAC1,IE) + CURVE(4,IFAC2,IE) )
+             CCURVE(JFAC,JE)='s'
+             CURVE(4,JFAC,JE) = R
+           elseif (CCURVE(IFAC1,IE).EQ.'s'  .or.
+     $             CCURVE(IFAC2,IE).EQ.'s') then
+             R1i = 0.0
+             R2i = 0.0
+             if (CCURVE(IFAC1,IE).EQ.'s') R1i = 1.0/CURVE(4,IFAC1,IE)
+             if (CCURVE(IFAC2,IE).EQ.'s') R2i = 1.0/CURVE(4,IFAC2,IE)
+             R  = 2.0/(R1i+R2i)
+c            CCURVE(JFAC,JE)='s'
+c            CURVE(4,JFAC,JE) = R
+             CCURVE(JFAC,JE)=' '
+           ENDIF
+C          Check for cylinder (Note this scheme fails for convex-convex case!) pff 4/10/93
+
+           if (Ifce.LE.2) then
+              ilev = 1
+              if (CCURVE(IFAC1,IE).EQ.'C'.and.
+     $              CCURVE(IFAC2,IE).EQ.'C') then
+                  R1 = CURVE(1,IFAC1,IE)
+                  R2 = CURVE(1,IFAC2,IE)
+                  R = 0.5*(R1-R2)
+                  ccurve(jfac,je)  = 'C'
+                  if (jfac.EQ.ifac1) curve(1,jfac,je) =  r
+                  if (jfac.EQ.ifac2) curve(1,jfac,je) = -r
+              elseif (CCURVE(IFAC1,IE).EQ.'C'.  or.
+     $                  CCURVE(IFAC2,IE).EQ.'C') then
+                  R1i = 0.0
+                  R2i = 0.0
+                  if (ccurve(ifac1,ie).eq.'C') r1i=1/curve(1,ifac1,ie)
+                  if (ccurve(ifac2,ie).eq.'C') r2i=1/curve(1,ifac2,ie)
+                  R  = 2.0/(R1i-R2i)
+c                 curve(1,jfac,je) =  r
+                  ccurve(jfac,je)=' '
+              ENDIF
+           ENDIF
+ 2400     continue
+ 2820   continue
+ 2840   continue
+ 2860   continue
+
+      endif  ! End of 2D/3D decision branch
+
+      call copyel(je,ie) ! copy last element generated back onto ie
+
+      write(6,*) 'quit in octsplite'
+      stop
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine octsplitn(ie,liste)
+C
+C     This routine is a hack-copy of octsplite to generate 
+c     multi-element decompositions of the square     (pff 9/28/05)
+c
+C     It simply modifies in the X-Y plane, but doesn't refine in Z.
+C
+C
+      include 'basics.inc'
+      real rax(1000),ray(1000),raz(1000)
+
+      nxsp=2
+      nysp=2
+      nzsp=1
+      if (if3d) nzsp=2
+
+      rax = 1.
+      ray = 1.
+      raz = 1.
+
+      call msplite(ie,nxsp,nysp,nzsp,rax,ray,raz)
 
       return
       end
