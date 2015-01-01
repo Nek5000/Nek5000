@@ -440,7 +440,13 @@ c              read(string,*) IFSPLIT
 
       ifmgrid   = .false.
       if (ifsplit) ifmgrid   = .true.
-      if (ifaxis ) ifmgrid   = .false.
+
+      if (ifaxis.and..not.ifsplit) then ! Use standard Schwarz/PCG solver
+         ifmgrid   = .false.
+         param(42) = 1.00000  !  p042 0=gmres/1=pcg
+         param(43) = 1.00000  !  p043 0=semg/1=schwarz
+         param(44) = 1.00000  !  p044 0=E-based/1=A-based prec.
+      endif
 
       if (param(29).ne.0.) ifmhd  = .true.
       if (ifmhd)           ifessr = .true.
@@ -542,6 +548,7 @@ C
          if(nid.eq.0) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
+
 
       if (ifsplit) then
          if (lx1.ne.lx2) then
