@@ -396,8 +396,8 @@ C
       IF (IFNEWE) THEN
 c
 c        new idea...
-         if (nprev.gt.0) nprev=1
-         call copy(rhs,pnew,ntot2)
+c        if (nprev.gt.0) nprev=1
+c        call copy(rhs,pnew,ntot2)
 c
          Nprevt = Nprev
          DO 100 Iprev=1,Nprevt

@@ -3338,7 +3338,7 @@ c        RRP1 = GLSC2 (RPCG,RCG,NTOT2)
 
  1000 CONTINUE
       if (nid.eq.0) WRITE (6,3001) ITER,RNORM,tolpss
-      if (istep.gt.20) CALL EMERXIT
+c     if (istep.gt.20) CALL EMERXIT
  3001 FORMAT(I6,' **ERROR**: Failed to converge in UZAWA:',6E13.4)
  9000 CONTINUE
 
