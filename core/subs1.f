@@ -1523,21 +1523,23 @@ C
       ntot1 = nx1*ny1*nz1*nel
 
 
-      if (ifsplit) then
+      if (.not.ifaxis) then
+       if (ifsplit) then
          call axhelm(au1,u1,h1,h2,1,1)
          call axhelm(au2,u2,h1,h2,1,2)
          if (if3d) call axhelm(au3,u3,h1,h2,1,3)
          return
-      endif
+       endif
 
-      if (matmod.eq.0) then
+       if (matmod.eq.0) then
          call axsf_fast(au1,au2,au3,u1,u2,u3,h1,h2,ifield)
          return
-      else
+       else
          call axhelm(au1,u1,h1,h2,1,1)
          call axhelm(au2,u2,h1,h2,1,2)
          if (if3d) call axhelm(au3,u3,h1,h2,1,3)
          return
+       endif
       endif
 
 C

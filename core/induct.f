@@ -1178,7 +1178,7 @@ c     Diag to see how much reduction in the residual is attained.
          return
       endif
 
-c     CALL UPDRHSE(P,H1,H2,H2INV,ierr) ! update rhs's if E-matrix has changed
+      CALL UPDRHSE(P,H1,H2,H2INV,ierr) ! update rhs's if E-matrix has changed
 c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
 
       do i=1,nprev  ! Perform Gram-Schmidt for previous soln's.
@@ -1239,6 +1239,13 @@ C
          call copy  (pset(1,nprev),p,ntot2)        ! Save current solution
          call add2  (p,pbar,ntot2)                 ! Reconstruct solution.
          call econjp(pset,nprev,h1,h2,h2inv,ierr)  ! Orthonormalize set
+
+         if (ierr.eq.1) then
+          nprev = 1
+          call copy  (pset(1,nprev),p,ntot2)       ! Save current solution
+          call econjp(pset,nprev,h1,h2,h2inv,ierr) !   and orthonormalize.
+        endif
+
       else                                         !          (uses pnew).
          nprev = 1
          call add2  (p,pbar,ntot2)                 ! Reconstruct solution.
