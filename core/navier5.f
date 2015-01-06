@@ -4563,7 +4563,26 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine add_temp(f2tbc,nbc)
+      subroutine add_temp(f2tbc,nbc,npass)
+
+c     add multiple passive scalar fields (npass new ones)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 f2tbc(2,nbc)
+
+      do i=1,npass
+         call add_temp_1(f2tbc,nbc)
+      enddo
+
+      igeom = 2
+      call setup_topo  ! Set gs handles and multiplicity
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add_temp_1(f2tbc,nbc)
 
 c
 c     TYPICAL USAGE:  Add the below to usrdat().
@@ -4625,6 +4644,7 @@ c     enddo
         enddo
         enddo
       enddo
+
 
       return
       end
