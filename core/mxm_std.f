@@ -1108,8 +1108,8 @@ c-----------------------------------------------------------------------
 c
 c     Collect matrix-matrix product statistics
 c
-      external mxms,mxmur2,mxmur3,mxmd,mxmfb,mxmf3,mxmu4,mxmn2
-      external mxmk2,mxmtr,mxmrg,madd,mxm,mxm44
+      external mxms,mxmur2,mxmur3,mxmd,mxmfb,mxmf3,mxmu4
+      external madd,mxm,mxm44
 c
       parameter (nn=24)
       parameter (nt=10)
