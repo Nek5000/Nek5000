@@ -2068,6 +2068,8 @@ c     Galerkin projection
 
       include 'SIZE'
       include 'INPUT'
+      include 'TSTEP'
+
 
       real    a(ndim,ncl,ndim,ncl,1),h1(1),h2(1)
 c     real    a(ncl,ndim,ncl,ndim,1),h1(1),h2(1)
@@ -2078,6 +2080,8 @@ c     real    a(ncl,ndim,ncl,ndim,1),h1(1),h2(1)
      $              , b (lx1*ly1*lz1,8)
 
       integer e
+
+      nel = nelfld(ifield)
 
       do j=1,ncl ! bi- or tri-linear interpolant, ONLY
          call gen_crs_basis(b(1,j),j)

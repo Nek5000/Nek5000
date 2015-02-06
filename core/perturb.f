@@ -1266,14 +1266,14 @@ c
          if(nid.eq.0) then        ! write out results to the .lyp file
  
            write(6 ,1) istep,time,lyap(1,jpp),lyapsum,pertnorm,jpp
-           write(79,2) time,lyap(1,jpp),lyapsum,pertporm,oldpertnorm,jpp
+           write(79,2) time,lyap(1,jpp),lyapsum,pertnorm,oldpertnorm,jpp
  1          format(i9,1p4e17.8,i4,'lyap')
  2          format(1p5e17.8,i4,'lyap')
 c           call flushbuffer(79)
  
             if (jpp.eq.1) open(unit=96,file=lyprestart)
-            write(96,9) lyapsum,timestart,timeinit,jpp
- 9          format(1p3e19.11,i9)
+            write(96,9) lyapsum,timestart,jpp
+ 9          format(1p2e19.11,i9)
             if (jpp.eq.npert) close(96)
          endif
 

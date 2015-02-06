@@ -1710,6 +1710,7 @@ c      write(6,*) nid,fid0,' FILE:',fname
 c-----------------------------------------------------------------------
 
       subroutine restart_nfld( nfld, prefix ) 
+      include 'SIZE' ! For nio
       character*3 prefix
 c
 c     Check for Restart option and return proper nfld value.

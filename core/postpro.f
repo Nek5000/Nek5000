@@ -1059,8 +1059,6 @@ c     A two pass strategy is used:  first count, then write
       wdsiz2=4
       if(wdsize.eq.8) wdsiz2=8
 
-      nblock = lv*ldim*lblock   !memory size of data blocks
-
       if (imid.gt.0) then
 
 c        imid = 0  ! No midside node defs

@@ -205,7 +205,7 @@ c
       real wt(0:lwtmax)
 c
       if (nc.gt.lwtmax) then
-         write(6,*) nid,'ERROR int_vel: lwtmax too small',lwtmax,m0
+         write(6,*) nid,'ERROR int_vel: lwtmax too small',lwtmax,nc
          call exitt
       endif
 c
