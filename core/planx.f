@@ -413,6 +413,7 @@ C
       include 'SOLN'
       include 'TSTEP'
       include 'ORTHOV'
+      include 'PARALLEL'
       real h1(1),h2(1),vml(1),vmask(1)
       real work(mxprev)
 
@@ -445,8 +446,8 @@ C
 
 c    .Normalize new element in P~
       ratio=alphad/alph1
-      eps = 1.e-7
-      if (wdsize.eq.8) eps = 1.e-15
+      eps = 1.e-6
+      if (wdsize.eq.8) eps = 1.e-14
 
       if(ratio.le.0) then 
          ierr=1

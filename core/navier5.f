@@ -2234,7 +2234,7 @@ c
      $            ( ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e) +
      $              vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e) )
 
-               if (yyyr.gt.0) then                             ! e_r@
+               if (r.gt.0) then                             ! e_r@
                   sij(i,5,e) = j*  ! dw/dy 
      $              ( wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e) )
      $              - w(i,e) / r
@@ -3244,7 +3244,6 @@ c
             i = i+1
             n1 = unx(i,1,f,e)*area(i,1,f,e)
             n2 = uny(i,1,f,e)*area(i,1,f,e)
-            a  = a +          area(i,1,f,e)
             v  = visc(j1,j2,1,e)
 
             s11 = sij(j1,j2,1,1,e)
