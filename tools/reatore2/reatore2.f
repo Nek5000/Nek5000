@@ -125,7 +125,7 @@ c CURVED SIDES
       call blank(ccurve,4)
       if (ncurve.gt.0) then
          do icurve=1,ncurve
-c            if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
+c           if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             if (nel.lt.1000) then
                read(10,60) f,e,(buf(k),k=1,5),ccurve(1)
             elseif (nel.lt.1 000 000) then
@@ -162,7 +162,7 @@ C BOUNDARY CONDITIONS
                if(kpass.eq.2) nelb=nel     ! only ifield2 is a T mesh 
                do e=1,nelb
                do f=1,nface
-                  if (nelb.lt.1 000 000) then
+                  if (nel.lt.1 000 000) then
                      read(10,20) cbc(f,e),(bc(k,f,e),k=1,5)
                   else
                      read(10,21) cbc(f,e),(bc8(k),k=1,5)
