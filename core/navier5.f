@@ -4550,14 +4550,15 @@ c
          volu = glsc2(bm1,m1,n)
          ubar = abs(ubar)+abs(vbar)
          if (if3d) ubar = abs(ubar)+abs(wbar)
+         ubar = ubar/volu
       endif
 
       cs = 3*(rq-1.)*(ubar/ddmax)
-      if (istep.gt.1) cs=cso
+      if (.not.ifsplit) cs = cs*bd(1)/dt
+
       do i=1,n2
          usrdiv(i,1,1,1) = cs*(d(i,1,1,1)**2)
       enddo
-      cso = cs
 
       return
       end
