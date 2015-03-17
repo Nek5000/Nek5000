@@ -10,7 +10,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  NOTIMER   disable runtime statistics"
   echo "  MPITIMER  enable MPI runtime statistics"
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  BGL        enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  BGQ        enable Blue Gene optimizations (BG/Q)"
   echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
   echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
@@ -333,11 +334,17 @@ if [ "$MXM_USER" != "" ]; then
     exit 1 
 fi
 MXM_USER="mxm_std.o blas.o"
-echo $PPLIST | grep 'BG' >/dev/null 
+echo $PPLIST | grep 'BGL' >/dev/null 
 if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o blas.o" 
    OPT_FLAGS_STD="-qarch=450 -qtune=450"
    OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
+fi
+echo $PPLIST | grep 'BGG' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o mxm_bgq.o " 
+   OPT_FLAGS_STD="-O3"
+   OPT_FLAGS_MAG="-O3"
 fi
 echo $PPLIST | grep 'K10_MXM' >/dev/null 
 if [ $? -eq 0 ]; then
