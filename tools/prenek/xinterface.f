@@ -119,6 +119,7 @@ C        YSCREEN=((YM-12)/1000.0*WINDOW) + 0.015
 
 c       filter x,y thru grid
         grid=param(18)
+        if (grid.eq.0) grid=0.05
         if (grid.lt.0) grid=-1./grid
         if (grid.lt. .0099) ifgrdc=.false.
 
@@ -776,6 +777,7 @@ c     yscreen=((ym-12)/1000.0*window) + 0.015
 
 c     filter x,y thru grid
       grid=param(18)
+      if (grid.eq.0) grid=0.05
       if (grid.lt.0) grid=-1./grid
       if (grid.lt. .0099) ifgrdc=.false.
 

@@ -131,9 +131,9 @@ C     First, get the point of interest
 C
 C     Second, find the defining plane
       WRITE(S,11)
-      CALL PRS(S)
+      call prs(S)
    11 FORMAT(' Enter normal vector defining the surface$')
-      CALL RERRR(VEC(1),VEC(2),VEC(3))
+      call rerRR(VEC(1),VEC(2),VEC(3))
 C
 C     This normal, plus the specified point can be used to define
 C     two normals which determine "splitting planes".  The intersection
@@ -279,11 +279,11 @@ C
       if (NELN.GT.NELM1) then
 C
          WRITE(S,150) 
-         CALL PRS(S)
+         call prs(S)
          WRITE(S,151) NELN,NELM1
-         CALL PRS(S)
+         call prs(S)
          WRITE(S,152) 
-         CALL PRS(S)
+         call prs(S)
   150  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
   151  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
      $                ,i11,').$')
@@ -312,15 +312,15 @@ C     Generate new sub-elements as a result of the zipper action.
 C
 C     Third, find the ratio to be split
       WRITE(S,501)
-      CALL PRS(S)
+      call prs(S)
   501 FORMAT(' Enter ratio (0=small corner element, negative-abort).$')
-      CALL RER(S0)
+      call rer(S0)
       DO 500 I=1,NLSTP
          NELN=NEL+2*I-1
          LISTA=ABS(LIST(I))
          CALL DECOD(JPLN,IPLN,IE,IDUM,LISTA,6,6,NELM)
          WRITE(S,502) IE,NELN
-         CALL PRS(S)
+         call prs(S)
          CALL WIN3D(NELN,IE,I,S0)
   500 continue
   502 FORMAT(' Generating window for element',2i11,'.$')
@@ -336,7 +336,7 @@ C
       NLSTP2=NLSTP*2
       WRITE(S,900) NLSTP2,NEL
   900 FORMAT(i11,' new elements generated in win3d. NEL=',i11,'$')
-      CALL PRS(S)
+      call prs(S)
 C
       call gencen
 C
@@ -367,12 +367,12 @@ C     First, get the point of interest
 C
 C     Second, find the defining plane
       WRITE(S,11)
-      CALL PRS(S)
+      call prs(S)
       WRITE(S,12)
-      CALL PRS(S)
+      call prs(S)
    11 FORMAT(' Enter the components of a normal vector defining the$')
    12 FORMAT(' surface, e.g.,  1 0 0.$')
-      CALL RERRR(VEC(1),VEC(2),VEC(3))
+      call rerRR(VEC(1),VEC(2),VEC(3))
 C
 C     Ok, now let's find all corresponding planes
       CALL SETRST2(XPT,VEC)
@@ -384,11 +384,11 @@ C
       if (NELN.GT.NELM1) then
 C
          WRITE(S,50) 
-         CALL PRS(S)
+         call prs(S)
          WRITE(S,51) NELN,NELM1
-         CALL PRS(S)
+         call prs(S)
          WRITE(S,52) 
-         CALL PRS(S)
+         call prs(S)
    50  FORMAT(2X,'WARNING: Number of elements after zipper operation$')
    51  FORMAT(2X,'(',i11,') would be greater than the allowed maxium ('
      $                ,i11,').$')
@@ -433,7 +433,7 @@ C     Exit
 C
       WRITE(S,300) NLSTP,NEL
   300 FORMAT(i11,' new elements generated in zip2. NEL=',i11,'$')
-      CALL PRS(S)
+      call prs(S)
 C
       call gencen
 C
@@ -1447,28 +1447,28 @@ C
       NELM1=NELM-1
 C 
 C     Find out which element are to be renumbered:
-      CALL PRS(
+      call prs(
      $    'Enter (with mouse) 2 points in element to be deleted,$')
-      CALL PRS(
+      call prs(
      $    'or, 2 points framing a box containing elements.$')
-      CALL PRS(
+      call prs(
      $    'Enter in menu area to abort RENUMBER operation.$')
       IFTMP =IFGRID
       IFGRID=.FALSE.
   120 continue
-      CALL PRS('Enter 1st point:$')
+      call prs('Enter 1st point:$')
       CALL MOUSE(XMOUSE,YMOUSE,BUTTON)
       if (XMOUSE.GT.XPHY(1.0)) then
 C        look for a keypad input
-         CALL PRS('Aborting renumber operation.$')
+         call prs('Aborting renumber operation.$')
          CALL BEEP
          IFGRID=IFTMP 
          return
       ELSE
-         CALL PRS('Enter 2nd point:$')
+         call prs('Enter 2nd point:$')
          CALL MOUSE(XMOUS2,YMOUS2,BUTTON)
          if (XMOUS2.GT.XPHY(1.0)) then
-          CALL PRS('Aborting renumber operation.$')
+          call prs('Aborting renumber operation.$')
           CALL BEEP
           IFGRID=IFTMP 
           return
@@ -1496,7 +1496,7 @@ C     Count the number which are in
   100 continue
       WRITE(S,101) NUMIN,NEL
   101 FORMAT('Renumbering',i11,' out of',i11,' elements.$')
-      CALL PRS(S)
+      call prs(S)
       if (NUMIN.GT.0) then
 C        renumber the elements which are inside to be less than NUMIN
          J=0
@@ -1521,7 +1521,7 @@ C               We've got one which is out, but too low.
   200    continue
       WRITE(S,201) J,K
   201 FORMAT('Found',i11,' elements in, and',i11,' elements out.$')
-      CALL PRS(S)
+      call prs(S)
       if (J.NE.K) return
 C
 C        Swap the elements
@@ -1549,8 +1549,8 @@ C     Set up list of candidate RST planes
       DIMENSION XPT(3)
 C
       
-   10 CALL PRS(TEXT)
-      CALL RERRR(XPT(1),XPT(2),XPT(3))
+   10 call prs(TEXT)
+      call rerRR(XPT(1),XPT(2),XPT(3))
 C
 C     Find the element closest to this point
 C
@@ -1559,16 +1559,16 @@ C
 C     Exception handling:
       if (IE.EQ.0) then
          WRITE(S,20) XPT(1),XPT(2),XPT(3)
-         CALL PRS(S)
+         call prs(S)
    20    FORMAT(2X,'Point (',G10.3,',',G10.3,',',G10.3,') is not in '
      $            ,'the domain.$')
-         CALL PRS('  Continue (y/n)?$')
+         call prs('  Continue (y/n)?$')
          CALL RES(YESNO,1)
          if (YESNO.EQ.'Y'.OR.YESNO.EQ.'y') GOTO 10
       ELSE
          WRITE(S,30) IE,XCEN(IE),YCEN(IE),ZCEN(IE)
    30    FORMAT(2X,'Found element number',i11,3f9.4,'$')
-         CALL PRS(S)
+         call prs(S)
       ENDIF
 C
       return
@@ -2528,137 +2528,108 @@ c        call drawline(Ysep,Xmax,Ysep,Xmin)
       goto 1
       end
 c-----------------------------------------------------------------------
-      subroutine shifter(Shift,Sep,DIR,pts,coord)
+      subroutine shifter(Shift,Sep,dir,pts,coord)
       include 'basics.inc'
       real pts(8,nelm)
-      CHARACTER*1 DIR,coord
-      LOGICAL IFG,IFL
-C
+      character*1 dir,coord
+      logical ifg,ifl
+      integer e
+
       nvts = 4
-      if (IF3D) nvts=8
-      nkshift = 0
-C
-      if (DIR.eq.'>') then
-         DO 100 K=1,NEL
-            IFG=.FALSE.
-            IFL=.FALSE.
+      if (if3d) nvts=8
+      neshift = 0
+
+      if (dir.eq.'>') then
+         do 100 e=1,nel
+            ifg=.false.
+            ifl=.false.
             pmin= 9.99e15
             pmax=-9.99e15
             DO 10 j=1,nvts
-               if (pts(j,k).ge.sep) then
-                  IFG=.TRUE.
-                  pmin=min(pmin,pts(j,k))
-               ELSE
-                  IFL=.TRUE.
-                  pmax=max(pmax,pts(j,k))
-               ENDIF
+               if (pts(j,e).ge.sep) then
+                  ifg=.true.
+                  pmin=min(pmin,pts(j,e))
+               else
+                  ifl=.true.
+                  pmax=max(pmax,pts(j,e))
+               endif
    10       continue
-c           if ((IFG.AND.IFL).and.Shift.lt.0.0) then ! cmt out; 9/29/05
-C
-C              If an element straddles the Separator, we have to
-C              ensure that the shift operation doesn't "invert" the
-C              element
-C
-c              if (pmin+shift.le.pmax) then
-c                 CALL PRS(
-c    $           'Error:  Attempt to shrink element to zero length$')
-c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,Shift)
-c                 CALL PRS('Aborting shift operation$')
-c                 return
-c              ENDIF
-c           ENDIF
             DO 20 j=1,nvts
-               if (pts(j,k).ge.sep) pts(j,k)=pts(j,k)+shift
+               if (pts(j,e).ge.sep) pts(j,e)=pts(j,e)+shift
    20       continue
             if (if3d.and.pmin.ge.sep) then
               do l=1,12
-                if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                if (ccurve(l,e).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
+                  if (coord.eq.'Z') curve(3,l,e)=curve(3,l,e)+shift
                 endif
               enddo
               do l=1,6
-                if (ccurve(l,k).eq.'s') then
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                if (ccurve(l,e).eq.'s') then
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
+                  if (coord.eq.'Z') curve(3,l,e)=curve(3,l,e)+shift
                 endif
               enddo
             elseif (pmin.ge.sep) then  ! 2D
               do l=1,4
-                if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                if (ccurve(l,e).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
                 endif
               enddo
             endif
-            nkshift=nkshift+1
+            neshift=neshift+1
   100   continue
-      ELSE
-         DO 200 K=1,NEL
-            IFG=.FALSE.
-            IFL=.FALSE.
+      else
+         do 200 e=1,nel
+            ifg=.false.
+            ifl=.false.
             pmin= 9.99e15
             pmax=-9.99e15
-            DO 110 j=1,nvts
-               if (pts(j,k).ge.sep) then
-                  IFG=.TRUE.
-                  pmin=min(pmin,pts(j,k))
-               ELSE
-                  IFL=.TRUE.
-                  pmax=max(pmax,pts(j,k))
-               ENDIF
+            do 110 j=1,nvts
+               if (pts(j,e).ge.sep) then
+                  ifg=.true.
+                  pmin=min(pmin,pts(j,e))
+               else
+                  ifl=.true.
+                  pmax=max(pmax,pts(j,e))
+               endif
   110       continue
-c           if ((IFG.AND.IFL).and.Shift.gt.0.0) then
-C
-C              If an element straddles the Separator, we have to
-C              ensure that the shift operation doesn't "invert" the
-C              element
-C
-c              if (pmax+shift.le.pmin) then
-c                 CALL PRS(
-c    $           'Error:  Attempt to shrink element to zero length$')
-c                 CALL PRS(' Smax     Smin    Shift $')
-c                 CALL PRRR(pmax,pmin,Shift)
-c                 CALL PRS('Aborting shift operation$')
-c                 return
-c              ENDIF
-c           ENDIF
-            DO 120 j=1,nvts
-               if (pts(j,k).le.sep) pts(j,k)=pts(j,k)+shift
+            do 120 j=1,nvts
+               if (pts(j,e).le.sep) pts(j,e)=pts(j,e)+shift
   120       continue
             if (if3d.and.pmax.le.sep) then
               do l=1,12
-                if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                if (ccurve(l,e).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
+                  if (coord.eq.'Z') curve(3,l,e)=curve(3,l,e)+shift
                 endif
               enddo
               do l=1,6
-                if (ccurve(l,k).eq.'s') then
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
-                  if (coord.eq.'Z') curve(3,l,k)=curve(3,l,k)+shift
+                if (ccurve(l,e).eq.'s') then
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
+                  if (coord.eq.'Z') curve(3,l,e)=curve(3,l,e)+shift
                 endif
               enddo
             elseif (pmax.le.sep) then  ! 2D
               do l=1,4
-                if (ccurve(l,k).eq.'m') then ! midside node
-                  if (coord.eq.'X') curve(1,l,k)=curve(1,l,k)+shift
-                  if (coord.eq.'Y') curve(2,l,k)=curve(2,l,k)+shift
+                if (ccurve(l,e).eq.'m') then ! midside node
+                  if (coord.eq.'X') curve(1,l,e)=curve(1,l,e)+shift
+                  if (coord.eq.'Y') curve(2,l,e)=curve(2,l,e)+shift
                 endif
               enddo
             endif
-            nkshift=nkshift+1
+            neshift=neshift+1
   200    continue
       ENDIF
 
-      WRITE(S,500) nkshift
-  500 FORMAT(' Shifter',i11,' elements.$')
-      CALL PRS(S)
+      write(s,500) neshift
+  500 format(' Shifter',i11,' elements.$')
+      call prs(s)
 
       return
       END
@@ -3117,25 +3088,25 @@ c     the selected point.
 
       nchoic = 0
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'UP MENU'
+      item(nchoic)       =             'UP MENU'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Redraw mesh'
+      item(nchoic)       =             'Redraw mesh'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch X'
+      item(nchoic)       =             'Stretch X'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch Y'
+      item(nchoic)       =             'Stretch Y'
       if (IF3D) then
          nchoic = nchoic+1
-         ITEM(nchoic)    =             'Stretch Z'
+         item(nchoic)    =             'Stretch Z'
       ENDIF
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch R'
+      item(nchoic)       =             'Stretch R'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch theta'
+      item(nchoic)       =             'Stretch theta'
 c     nchoic = nchoic+1
-c     ITEM(nchoic)       =             'Stretch inside circle'
+c     item(nchoic)       =             'Stretch inside circle'
       nchoic = nchoic+1
-      ITEM(nchoic)       =             'Stretch outside circle'
+      item(nchoic)       =             'Stretch outside circle'
 
 
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER') ! Prompt for user input.
@@ -3152,58 +3123,58 @@ c     ITEM(nchoic)       =             'Stretch inside circle'
       elseif (choice.eq.'Stretch R') then
          call stretch_rad
       elseif (choice.eq.'Stretch X') then
-         CALL PRS('Input X-location separating shifted section.$')
-         CALL RER(Xsep)
+         call prs('Input X-location separating shifted section.$')
+         call rer(Xsep)
 c        CALL DRAWLINE(Xsep,Ymax,Xsep,Ymin)
-         CALL PRS(
+         call prs(
      $   'Input "<" or ">" to indicate desired stretch section.$')
-         CALL PRS('("=" implies abort.)$')
+         call prs('("=" implies abort.)$')
          CALL RES(ANS,1)
          if (ANS.eq.'=') return
-         CALL PRS('Input amount to stretch in X-direction$')
-         CALL RER(Xshift)
-         CALL Shifter2(Xshift,Xsep,ANS,X,'X')
+         call prs('Input amount to stretch in X-direction$')
+         call rer(Xshift)
+         call shifter2(Xshift,Xsep,ANS,X,'X')
       elseif (choice.eq.'Stretch Y') then
-         CALL PRS(
+         call prs(
      $   'Input Y-location separating shifted section.$')
-         CALL RER(Ysep)
+         call rer(Ysep)
 c        CALL DRAWLINE(Ysep,Xmax,Ysep,Xmin)
-         CALL PRS(
+         call prs(
      $   'Input "<" or ">" to indicate desired stretch section.$')
-         CALL PRS('("=" implies abort.)$')
+         call prs('("=" implies abort.)$')
          CALL RES(ANS,1)
          if (ANS.eq.'=') return
-         CALL PRS('Input amount to stretch in Y-direction$')
-         CALL RER(Yshift)
-         CALL Shifter2(Yshift,Ysep,ANS,Y,'Y')
+         call prs('Input amount to stretch in Y-direction$')
+         call rer(Yshift)
+         call shifter2(Yshift,Ysep,ANS,Y,'Y')
       elseif (choice.eq.'Stretch Z') then
-         CALL PRS(
+         call prs(
      $   'Input Z-location separating shifted section.$')
-         CALL RER(Zsep)
-         CALL PRS(
+         call rer(Zsep)
+         call prs(
      $   'Input "<" or ">" to indicate desired stretch section.$')
-         CALL PRS('("=" implies abort.)$')
+         call prs('("=" implies abort.)$')
          CALL RES(ANS,1)
          if (ANS.eq.'=') return
-         CALL PRS('Input amount to stretch in Z-direction$')
-         CALL RER(Zshift)
-         CALL Shifter2(Zshift,Zsep,ANS,Z,'Z')
+         call prs('Input amount to stretch in Z-direction$')
+         call rer(Zshift)
+         call shifter2(Zshift,Zsep,ANS,Z,'Z')
       endif
       goto 1
       end
 c-----------------------------------------------------------------------
-      subroutine shifter2a(pmin,pmax,gain,Shift,Sep,DIR,pts,coord)
+      subroutine shifter2a(pmin,pmax,gain,Shift,Sep,dir,pts,coord)
 c
 c     In this pass, we just figure out range of geometry in shifted 
 c     section
 c
       include 'basics.inc'
       real pts(8,nelm)
-      CHARACTER*1 DIR,coord
+      CHARACTER*1 dir,coord
       LOGICAL IFG,IFL
 C
-      CALL PRS('Input Density Gain, G :$')
-      CALL RER(gain)
+      call prs('Input Density Gain, G :$')
+      call rer(gain)
       if (gain.eq.0) gain=1.
       if (gain.lt.0) gain=-1./gain
 c
@@ -3214,8 +3185,8 @@ C
       pmin= 9.99e15
       pmax=-9.99e15
 c
-      DO K=1,NEL
-      DO j=1,nvts
+      do k=1,nel
+      do j=1,nvts
          pmin=min(pmin,pts(j,k))
          pmax=max(pmax,pts(j,k))
       enddo
@@ -3224,7 +3195,7 @@ c
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2b(Shift,Sep,DIR,pts,coord)
+      subroutine shifter2b(Shift,Sep,dir,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
@@ -3242,7 +3213,7 @@ c
       if (coord.eq.'Z') i=3
       nedge = 4 + 8*(ndim-2)
 
-      if (DIR.eq.'>') then
+      if (dir.eq.'>') then
          DO 100 K=1,NEL
             IFG=.FALSE.
             IFL=.FALSE.
@@ -3312,12 +3283,12 @@ c              if (pts(j,k).le.sep) pts(j,k)=shift*(pts(j,k)-sep) + sep
 
       WRITE(S,500) nkshift
   500 FORMAT(' Shifter2b',i11,' elements.$')
-      CALL PRS(S)
+      call prs(S)
 
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+      subroutine shifter2c(Shift,Sep,dir,pts,coord,gain,qmax,qmin)
 
 c     Geometric gain
 
@@ -3341,7 +3312,7 @@ c
       if (coord.eq.'Z') i=3
 
 
-      if (DIR.eq.'>') then
+      if (dir.eq.'>') then
          dx  = qmax - sep
          gdx = g/dx
          DO 100 K=1,NEL
@@ -3426,7 +3397,7 @@ c
       return
       END
 c-----------------------------------------------------------------------
-      subroutine shifter2(Shift,Sep,DIR,pts,coord)
+      subroutine shifter2(Shift,Sep,dir,pts,coord)
 c
 c     Standard linear stretch -- unity gain.
 c
@@ -3435,13 +3406,13 @@ c
       character*1 dir,coord
       logical ifg,ifl
 c
-      call shifter2a(qmin,qmax,gain,Shift,Sep,DIR,pts,coord)
+      call shifter2a(qmin,qmax,gain,Shift,Sep,dir,pts,coord)
       write(6,*) 'qmnx gn:',qmin,qmax,gain
 c
       if (abs(gain-1.) .gt. 1.e-5) then
-         call shifter2c(Shift,Sep,DIR,pts,coord,gain,qmax,qmin)
+         call shifter2c(Shift,Sep,dir,pts,coord,gain,qmax,qmin)
       else
-         call shifter2b(Shift,Sep,DIR,pts,coord)
+         call shifter2b(Shift,Sep,dir,pts,coord)
       endif
 c
       return
@@ -3675,6 +3646,7 @@ C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
       include 'basics.inc'
+      real rax(1000),ray(1000),raz(1000)
 c
       ie = ie_click('Click on element to refine:$')
       if (ie.eq.0) return
@@ -3695,7 +3667,7 @@ c
          call rerr(rax,ray)
 
          nzsp    = 1
-         raz     = 1.
+         raz(1)  = 1.
 
       endif
 
@@ -5173,6 +5145,7 @@ C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
       include 'basics.inc'
+      real rax(1000),ray(1000),raz(1000)
 
       nxsp=2
       nysp=2
