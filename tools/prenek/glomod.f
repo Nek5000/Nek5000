@@ -2865,22 +2865,17 @@ c     z0 = 0.0346
 c     rr = 0.5*0.5 + .0001
 c     re = 0.5 + .0001
 c
-      z00= -9.e9
-      z0 = 0.
       rr = 0.
       re = 0.
-C
+
       do 100 ie=1,nel
       do 100 i=1,nvts
-         if (z(i,ie).gt.z00) then
-c           zt = z(i,ie)-z0
-            zt = z(i,ie)
-            rt = zt*zt + x(i,ie)**2 + y(i,ie)**2
+         if (if_sph_str) then
+            rt = x(i,ie)**2 + y(i,ie)**2 + z(i,ie)**2
             if (rt.gt.rr) then
-               if (if_sph_str) z(i,ie) = z0 + sfact*zt
                x(i,ie) = sfact*x(i,ie)
                y(i,ie) = sfact*y(i,ie)
-               if (if_sph_str) z(i,ie) = sfact*z(i,ie)
+               z(i,ie) = sfact*z(i,ie)
             endif
          else
             rt = x(i,ie)**2 + y(i,ie)**2
@@ -2890,7 +2885,7 @@ c           zt = z(i,ie)-z0
             endif
          endif
   100 continue
-C
+
 C     Take care of curved sides
 C
       do 200 ie = 1,nel
@@ -2905,6 +2900,12 @@ C           cylindrical side, rad = curve(1,is,ie)
             if (abs(curve(1,is,ie)).gt.re)
      $         curve(1,is,ie) = sfact*curve(1,is,ie)
          endif
+         if (ccurve(is,ie).eq.'m') then
+            curve(1,is,ie) = sfact*curve(1,is,ie)
+            curve(2,is,ie) = sfact*curve(2,is,ie)
+            if (if_sph_str) curve(3,is,ie) = sfact*curve(3,is,ie)
+         endif
+
   200 continue
       return
       end

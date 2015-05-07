@@ -1120,6 +1120,10 @@ c-----------------------------------------------------------------------
       logical ifquery_displace,ifdisplace
       logical iflow,iheat
 
+      integer e,f,import_count
+      save import_count
+      data import_count /0/
+
       real    xyzbox(6)
 
       call prs('input name of new .rea file$')
@@ -1171,6 +1175,7 @@ c     Successfully opened file, scan until 'MESH DATA' is found
          return
       endif
 
+
 c     Read geometry
 
       nelo = nel
@@ -1220,24 +1225,50 @@ c
       close(47)
 c
       write(6,*) 'This is nel,ncurve old:',nel,ncurve
-      nel = neln
+      nel  = neln
       ncurve = ncurve + nc
       write(6,*) 'This is nel,ncurve new:',nel,ncurve
-c
+
       call gencen
-c
-c
+
+c     Tag BCs:
+c     Here, we tag all incoming BCs with the current IMPORT_COUNT.
+c     This allows for easy diagnostics in circumstances where we're 
+c     loading objects one at a time.
+
+      import_count = import_count+1
+
+      nfaces = 2*ndim
+      do e=nelo,nel
+      do f=1,nfaces
+
+         if (cbc(f,e,1).eq.'W  ') bc(5,f,e,1)=import_count
+         if (cbc(f,e,1).eq.'v  ') bc(5,f,e,1)=import_count
+         if (cbc(f,e,1).eq.'V  ') bc(5,f,e,1)=import_count
+         if (cbc(f,e,1).eq.'SYM') bc(5,f,e,1)=import_count
+         if (cbc(f,e,1).eq.'O  ') bc(5,f,e,1)=import_count
+
+         if (cbc(f,e,2).eq.'t  ') bc(5,f,e,2)=import_count
+         if (cbc(f,e,2).eq.'T  ') bc(5,f,e,2)=import_count
+         if (cbc(f,e,2).eq.'I  ') bc(5,f,e,2)=import_count
+         if (cbc(f,e,2).eq.'f  ') bc(5,f,e,2)=import_count
+         if (cbc(f,e,2).eq.'c  ') bc(5,f,e,2)=import_count
+
+      enddo
+      enddo
+
+
       if (ifdisplace) then
-c
+
          ncrnr = 2**ndim
-c
+
          xyzbox(1) = 9.e21
          xyzbox(2) =-9.e21
          xyzbox(3) = 9.e21
          xyzbox(4) =-9.e21
          xyzbox(5) = 9.e21
          xyzbox(6) =-9.e21
-c
+
          do ie=nels,nel   ! Find box containing imported mesh
          do i=1,ncrnr
             xyzbox(1) = min(xyzbox(1),x(i,ie))
@@ -1248,7 +1279,7 @@ c
             xyzbox(6) = max(xyzbox(6),z(i,ie))
          enddo
          enddo
-c
+
          write(s,110) 'X',xyzbox(1),xyzbox(2)
          call prs(s)
          write(s,110) 'Y',xyzbox(3),xyzbox(4)
@@ -1256,16 +1287,17 @@ c
          if (if3d) write(s,110) 'Z',xyzbox(5),xyzbox(6)
          if (if3d) call prs(s)
   110    format(' ',a1,' min/max of new elements:',2g15.7,'$')
-c
+
          call substitute_el(xyzbox,nelo)
+
       endif
-c
+
       return
-c
+
  1000 continue
       call prs('Unable to open file.  Returning.$')
       close(47)
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1355,6 +1387,7 @@ c-----------------------------------------------------------------------
 c
       character*1 d
       logical iffmtin
+      integer e
 c
 c
 c
@@ -1365,9 +1398,13 @@ c
 c
       read(io,*) nc
       write(6,*) 'Found',nc,' curve sides.'
+
+      do e=nelo+1,nelo+nel            ! Clean up curve sides before reading
+         call blank(cc(  1,e),12)     ! pff, 12/23/14
+         call rzero(c (1,1,e),72)
+      enddo
  
       do i=1,nc
-
          if (nel.lt.1000.AND.iffmtin) then
             read(io,'(2i3,5g14.6,1x,a1)',err=9,end=9)
      $                    iedge,ie,r1,r2,r3,r4,r5,d
@@ -1683,7 +1720,7 @@ c
 c
 c     Read vertex info
 c
-      read(47,*) nvtx 
+      read(47,*,end=1000) nvtx 
 c
       if (nvtx.gt.maxv) then
          nvtx = nvtx+1
@@ -1694,14 +1731,14 @@ c
 c
       if (if3d) then
         do i=1,nvtx
-c        read(47,*) vnum(i),xp(i),yp(i),zp(i)
-         read(47,*) xp(i),yp(i),zp(i)
+c        read(47,*,end=1000) vnum(i),xp(i),yp(i),zp(i)
+         read(47,*,end=1000) xp(i),yp(i),zp(i)
          vnum(i) = i
         enddo
       else
         do i=1,nvtx
-c        read(47,*) vnum(i),xp(i),yp(i)
-         read(47,*) xp(i),yp(i)
+c        read(47,*,end=1000) vnum(i),xp(i),yp(i)
+         read(47,*,end=1000) xp(i),yp(i)
          vnum(i) = i
         enddo
       endif
@@ -1729,18 +1766,14 @@ c
       npt=2**ndim
       mcell = 0
       do ie=1,ncell
-         read(47,*) icell,(kcell(k),k=1,npt)
+c        read(47,*) icell,(kcell(k),k=1,npt)
+         read(47,*) (kcell(k),k=1,npt)
          if (icell.eq.npt) then
             mcell = mcell+1
             do k=1,npt
                kcell(k) = kcell(k) + 1   ! for vtk, need to add 1
                vv(k,ie) = kcell(k)
 
-c              rrr = .05
-c              ii = vv(k,ie)
-c              call draw_circ(xp(ii),yp(ii),zp(ii),rrr)
-c              write(6,*) ie,k,vv(k,ie),kcell(k),nvtx
-c              vv(k,ie) = i_finds(vnum,kcell(k),nvtx)
 
             enddo
          endif
@@ -2029,8 +2062,9 @@ c                    Currently designed only for 2D, NO CURVE nonconf.
                        call chk_segs(ifok,icond,ie,is,je,js)
                        if (ifok) then
                           cbc(is,ie,kf)='SP '
+                          cbc(is,ie,kf)='E  '
                           bc (5,is,ie,kf)=bc (5,is,ie,kf)+1
-                          cbc(js,je,kf)='J  '
+                          cbc(js,je,kf)='E  '
                           ibc(js,je,kf)=ie
                           bc (1,js,je,kf)=ie
                           bc (2,js,je,kf)=is
@@ -2045,8 +2079,10 @@ c                       write(6,*) 'Match:',cbc(is,ie,kf),cbc(js,je,kf)
      $                     -.01.le. g1.and.g1.le.1.01 .and.
      $                     -.01.le. g2.and.g2.le.1.01) then  ! segment
                           cbc(is,ie,kf)='SP '
+                          cbc(is,ie,kf)='E  '
                           bc (5,is,ie,kf)=bc (5,is,ie,kf)+1
                           cbc(js,je,kf)='J  '
+                          cbc(js,je,kf)='E  '
                           ibc(js,je,kf)=ie
                           bc (1,js,je,kf)=ie
                           bc (2,js,je,kf)=is

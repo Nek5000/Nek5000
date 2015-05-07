@@ -5152,9 +5152,9 @@ C
       nzsp=1
       if (if3d) nzsp=2
 
-      rax(1) = 1.
-      ray(1) = 1.
-      raz(1) = 1.
+      rax = 1.
+      ray = 1.
+      raz = 1.
 
       call msplite(ie,nxsp,nysp,nzsp,rax,ray,raz)
 
