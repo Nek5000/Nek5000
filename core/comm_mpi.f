@@ -607,7 +607,6 @@ c-----------------------------------------------------------------------
          if (nid.eq.0) write(6,2) nodeb,np,alphas,betas
     2    format(2i10,1p2e15.7,' alpha betao')
       enddo
-      enddo
 
       do kk=0,2
       do nodeb=1,n512
