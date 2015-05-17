@@ -603,15 +603,24 @@ c-----------------------------------------------------------------------
       n512 = min(512,np-1)
 
       do nodeb=1,n512
-         call pingpong(alphas,betas,0,nodeb,.0005,io,ivb)
-         if (nid.eq.0) write(6,1) nodeb,np,alphas,betas
-    1    format(2i10,1p2e15.7,' alpha beta')
+         call pingpongo(alphas,betas,0,nodeb,.0005,io,ivb)
+         if (nid.eq.0) write(6,2) nodeb,np,alphas,betas
+    2    format(2i10,1p2e15.7,' alpha betao')
+      enddo
+      enddo
+
+      do kk=0,2
+      do nodeb=1,n512
+         call pingpong (alphas,betas,0,nodeb,.0005,io,ivb,kk)
+         if (nid.eq.0) write(6,1) nodeb,np,alphas,betas,kk
+    1    format(2i10,1p2e15.7,' alpha beta',i1)
+      enddo
       enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine pingpong(alphas,betas,nodea,nodeb,dt,io,ivb)
+      subroutine pingpong(alphas,betas,nodea,nodeb,dt,io,ivb,kk)
 
       include 'SIZE'
       common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
@@ -648,15 +657,20 @@ c-----------------------------------------------------------------------
 
          len   = 8*nwds
      
-         call ping_loop(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+         if (kk.eq.0)
+     $      call ping_loop (t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+         if (kk.eq.1)
+     $      call ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+         if (kk.eq.2)
+     $      call ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
 
          if (nid.eq.nodea) then
             tmsg = (t1-t0)/(2*nloop)   ! 2*nloop--> Double Buffer
             tmsg = tmsg / 2.           ! one-way cost = 1/2 round-trip
             tpwd = tmsg                ! time-per-word
             if (nwds.gt.0) tpwd = tmsg/nwds
-            if (ivb.gt.0) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd
-    1       format(3i6,i12,1p2e16.8,' pg')
+            if (ivb.gt.0) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd,kk
+    1       format(3i6,i12,1p2e16.8,' pgn',i1)
 
             if (nwds.eq.1) then
                alphas = tmsg
@@ -743,7 +757,7 @@ c-----------------------------------------------------------------------
             tpwd = tmsg
             if (nwds.gt.0) tpwd = tmsg/nwds
             if (ivb.gt.0) write(io,1) nodeb,np,nloop,nwds,tmsg,tpwd
-    1       format(3i6,i12,1p2e16.8,' pg')
+    1       format(3i6,i12,1p2e16.8,' pgo')
 
             if (nwds.eq.1) then
                alphas = tmsg
