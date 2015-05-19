@@ -4620,7 +4620,7 @@ c     enddo
 
       nfld=nfield+1
 
-      write(6,*) 'add temp: ',nfld,nfield,istep
+      if (nio.eq.0) write(6,*) 'add temp: ',nfld,nfield,istep
 
       nelfld(nfld) = nelfld(nfield)
       nel = nelfld(nfield)
