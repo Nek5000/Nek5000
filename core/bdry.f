@@ -297,11 +297,16 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE CHKCBC (CB,IEL,IFC,IFALGN)
+      include 'SIZE' 
+      include 'PARALLEL' 
 C
 C     Check for illegal boundary conditions
 C
       CHARACTER CB*3
       LOGICAL IFALGN
+
+      ieg = lglel(iel)
+
 C
 C     Laplacian formulation only
 C
@@ -320,9 +325,10 @@ C
       GOTO 9999
  9010 WRITE (6,*) ' Mixed B.C. on a side nonaligned with either the X,Y,
      $ or Z axis detected for'
- 9999 WRITE (6,*) ' Element',IEL,'   side',IFC,'.'
+ 9999 WRITE (6,*) ' Element',ieg,'   side',IFC,'.'
       WRITE (6,*) ' Selected option only allowed for STRESS FORMULATION'
       WRITE (6,*) ' Execution terminates'
+
       call exitt
       END
 c-----------------------------------------------------------------------
@@ -378,8 +384,9 @@ C
          DO 50 IEL=1,NELV
          DO 50 IFACE=1,NFACES
             CB=CBC(IFACE,IEL,IFIELD)
-            IF (CB.EQ.'O  ' .OR. CB.EQ.'ON ')
-     $         CALL FACEV(PMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+            if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
+     $          cb.eq.'o  ' .or. cb.eq.'on ')
+     $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
    50    CONTINUE
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
@@ -609,7 +616,6 @@ c
 c
       ifonbc = .false.
 c
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -617,7 +623,6 @@ c
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
 C
       NFACES=2*NDIM
@@ -708,15 +713,13 @@ C
          ENDIF
          CALL RMASK (V1,V2,V3,NELV)
       ENDIF
-C
+
       CALL ADD2(V1,TMP1,NTOT)
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
-C
 
-#ifndef NOTIMER
+
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 
       RETURN
       END
@@ -740,7 +743,6 @@ C
       common  /nekcb/ cb
       CHARACTER CB*3
 
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -748,7 +750,6 @@ C
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
       IFLD   = 1
       NFACES = 2*NDIM
@@ -780,8 +781,9 @@ C
             IF (CB.EQ.'MLI') CALL FACEV (TMP,IE,IFACE,BC4,NX1,NY1,NZ1)
             IF (CB.EQ.'KD ') CALL FACEV (TMP,IE,IFACE,BCK,NX1,NY1,NZ1)
             IF (CB.EQ.'ED ') CALL FACEV (TMP,IE,IFACE,BCE,NX1,NY1,NZ1)
-            IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .OR. CB.EQ.'ed ') 
-     $         CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
+            IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .or.
+     $          CB.EQ.'ed ' .or. cb.eq.'o  ') 
+     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
  2010    CONTINUE
 C
 C        Take care of Neumann-Dirichlet shared edges...
@@ -795,9 +797,7 @@ C
       CALL COL2(S,TMASK(1,1,1,1,IFIELD-1),NTOT)
       CALL ADD2(S,TMP,NTOT)
 
-#ifndef NOTIMER
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 
       RETURN
       END
@@ -824,7 +824,6 @@ C
       common  /nekcb/ cb
       CHARACTER CB*3
 C
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -832,7 +831,6 @@ C
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
       NFACES=2*NDIM
       NXYZ  =NX1*NY1*NZ1
@@ -933,9 +931,7 @@ C
  2000    CONTINUE
       ENDIF
 C
-#ifndef NOTIMER
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 C
       RETURN
       END
@@ -966,8 +962,7 @@ C     Passive scalar term
       ieg = lglel(iel)
       CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX,NY,NZ,IFACE)
 
-      IF (CB.EQ.'t  ') THEN
-
+      if (cb.eq.'t  ') then
          DO 100 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
          DO 100 IY=KY1,KY2                           !  added here so users can leave
          DO 100 IX=KX1,KX2                           !  certain points to be Neumann,
@@ -978,9 +973,19 @@ C     Passive scalar term
             endif
   100    CONTINUE
          RETURN
-C
+
+      elseif (cb.eq.'o  ') then
+         DO 101 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
+         DO 101 IY=KY1,KY2                           !  added here so users can leave
+         DO 101 IX=KX1,KX2                           !  certain points to be Neumann,
+            CALL NEKASGN (IX,IY,IZ,IEL)
+            CALL USERBC  (IX,IY,IZ,IFACE,IEG)
+            S(IX,IY,IZ) = PA
+  101    CONTINUE
+         RETURN
+
       ELSEIF (CB.EQ.'ms ' .OR. CB.EQ.'msi') THEN
-C
+
          DO 200 IZ=KZ1,KZ2
          DO 200 IY=KY1,KY2
          DO 200 IX=KX1,KX2

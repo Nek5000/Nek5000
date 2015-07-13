@@ -323,6 +323,11 @@ c-----------------------------------------------------------------------
       do i=1,msteps
          istep = istep+i
          call nek_advance
+
+         if (ifneknek) call userchk_set_xfer
+         if (ifneknek) call bcopy
+         if (ifneknek) call chk_outflow
+
       enddo
 
       return
