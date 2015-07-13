@@ -80,5 +80,17 @@ c     Dummy for singlmesh
       return
       end
 c------------------------------------------------------------------------
+      subroutine bcopy
 
+c     Dummy for singlmesh
 
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine chk_outflow
+
+c     Dummy for singlmesh 
+
+      return
+      end
+c------------------------------------------------------------------------

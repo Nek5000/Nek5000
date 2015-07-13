@@ -142,7 +142,10 @@ C     Set initial conditions + compute field properties
 C     USRCHK
       if(instep.ne.0) then
         if(nio.eq.0) write(6,*) 'call userchk'
-        call userchk
+         if (ifneknek) call userchk_set_xfer
+         if (ifneknek) call bcopy
+         if (ifneknek) call chk_outflow
+         call userchk
         if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
