@@ -377,6 +377,7 @@ C-------------------------------------------------------------------------
      &             pts(2,1),ndim,
      &             pts(3,1),ndim,npoints_all)
 
+      ierror=0
 
 c     Rearrange arrays so that only the points which are found within 
 c     the mesh are marked for interpolation: those are truly internal 
