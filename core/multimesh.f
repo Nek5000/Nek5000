@@ -108,7 +108,8 @@ C     Intercommunications set up only for 2 sessions
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
       
-         ifneknek  = .true.
+         ifneknek   = .true.
+         ifneknekm  = .false.
 
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
 
@@ -135,6 +136,7 @@ C     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
          call set_intflag
+         call neknekmv()
          icalld = icalld + 1
       endif 
 
@@ -365,6 +367,16 @@ C-------------------------------------------------------------------------
       integer status(mpi_status_size)
       logical ifcomm
 
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      if (icalld.le.1) then
+         icalld=icalld+1
+      else
+         call intpts_done(inth_multi)
+      endif
+
       call intpts_setup(-1.0,inth_multi) ! use default tolerance
         
 
@@ -487,7 +499,8 @@ c     Store point counts (infosend(:,2)) instead of pointers
       enddo
       infosend(npsend,2)=npoints-infosend(npsend,2)+1
 
-      write(6,'(a7,i12,1x,a10)') 'found', npoints, session
+      if (istep.eq.0) write(6,'(a7,i12,1x,a10)') 'found', npoints, 
+     &                     session
 
 c     Sending all processors information about the number 
 c     of receiving points, including zero points
@@ -888,3 +901,25 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine neknekmv()
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer imove
+
+      imove=1
+      if (ifmvbd) imove=0
+      call neknekgsync()
+
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+      iglmove=iglmin(imove,1)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+
+      if (iglmove.eq.0) then
+         ifneknekm=.true.
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+

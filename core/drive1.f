@@ -278,6 +278,8 @@ c-----------------------------------------------------------------------
                call geneig  (igeom)
             endif
 
+            if (ifneknekm.and.igeom.eq.2) call multimesh_create
+
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
                                 call induct   (igeom)
