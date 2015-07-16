@@ -1522,7 +1522,7 @@ C----------------------------------------------------------------------
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
       if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
       if (ifmodel)                              call twallsh
-      if (.not.ifsplit)                         call bcneutr ! pff 6/16/15
+c     if (.not.ifsplit)                         call bcneutr ! pff 6/16/15 forgot why added 7/16/15
 
       return
       END
