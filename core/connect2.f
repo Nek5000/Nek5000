@@ -303,6 +303,7 @@ C
       IFTRAN    = .false.
       IFAXIS    = .false.
       IFAZIV    = .false.
+      IFDG      = .false.
       IFSTRS    = .false.
       IFLOMACH  = .false.
       IFMODEL   = .false.
