@@ -201,18 +201,20 @@ C     Ensure that initial field is continuous!
       nn = nxyz1
       ntotg=nelgv*nn
 
-      ifield = 2
-      if (ifflow) ifield = 1
-      call rone(work,ntotv)
-      ifield = 1
-      call dssum(work,nx1,ny1,nz1)
-      call col2(work,vmult,ntotv)
-      rdif = glsum(work,ntotv)
-      rtotg = ntotg
-      rdif = (rdif-rtotg)/rtotg
-      if (abs(rdif).gt.1e-14) then
-         if (nid.eq.0) write(*,*) 'ERROR: dssum test has failed!',rdif
-         call exitt
+      if (.not.ifdg) then
+         ifield = 2
+         if (ifflow) ifield = 1
+         call rone(work,ntotv)
+         ifield = 1
+         call dssum  (work,nx1,ny1,nz1)
+         call col2   (work,vmult,ntotv)
+         rdif  = glsum(work,ntotv)
+         rtotg = ntotg
+         rdif  = (rdif-rtotg)/rtotg
+         if (abs(rdif).gt.1e-14) then
+            if(nid.eq.0)write(*,*)'ERROR: dssum test has failed!',rdif
+            call exitt
+         endif
       endif
 
       vxmax = glamax(vx,ntotv)
@@ -242,7 +244,7 @@ C     Ensure that initial field is continuous!
       enddo
       ifield = ifldsave
     
-      if(ifflow) then
+      if(ifflow.and..not.ifdg) then
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -250,13 +252,13 @@ C     Ensure that initial field is continuous!
          if (ifvcor)  call ortho(pr)  ! remove any mean
       endif
 
-      if (ifmhd) then
+      if (ifmhd.and..not.ifdg) then
          ifield = ifldmhd
          call opdssum(bx,by,bz)
          call opcolv (bx,by,bz,vmult)
       endif
 
-      if (ifheat) then
+      if (ifheat.and..not.ifdg) then
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -270,7 +272,7 @@ C     Ensure that initial field is continuous!
          enddo
       endif
 c
-      if (ifpert) then
+      if (ifpert.and..not.ifdg) then
          do jp=1,npert
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
