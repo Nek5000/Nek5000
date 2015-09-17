@@ -5152,9 +5152,9 @@ C
       nzsp=1
       if (if3d) nzsp=2
 
-      rax(1) = 1.
-      ray(1) = 1.
-      raz(1) = 1.
+      call rone(rax,nxsp) ! Uniform decomposition
+      call rone(ray,nysp)
+      call rone(raz,nzsp)
 
       call msplite(ie,nxsp,nysp,nzsp,rax,ray,raz)
 

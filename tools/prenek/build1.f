@@ -2468,9 +2468,20 @@ C
       return
       end
 c-----------------------------------------------------------------------
-      function rad_circ(x0,x1,x2,y0,y1,y2)
+      function rad_circ(x0i,x1i,x2i,y0i,y1i,y2i)
+      real*8 x0,x1,x2,y0,y1,y2
+
+      real*8 rad_circ8,max_ratio
+      real*8 dx1,dx2,dx3,dy1,dy2,dy3,aaa,bbb,area
 
       rad_circ = 0
+
+      x0 = x0i ! real*4 --> real*8 conversion
+      x1 = x1i
+      x2 = x2i
+      y0 = y0i
+      y1 = y1i
+      y2 = y2i
 
 c     Directed arc:
 
@@ -2483,11 +2494,28 @@ c     Directed arc:
       aaa  = dx1*dx1 + dx2*dx2 + dx3*dx3 + dy1*dy1 + dy2*dy2 + dy3*dy3
       bbb  = (dx1*dx1+dy1*dy1) * (dx2*dx2+dy2*dy2) * (dx3*dx3+dy3*dy3)
       area = 0.5*(dx1*dy2 - dx2*dy1)
-      tol  = 1.e-7
 
-      write(6,*) 'area:',area,aaa,bbb
+      tol  = 1.e-5
+      tol  = 1.e-9
+c     write(6,*) x0,y0,' x0'
+c     write(6,*) x1,y1,' x1'
+c     write(6,*) x2,y2,' x2'
       if (abs(area).lt.tol*aaa) return  ! nearly colinear
-      if (bbb.gt.0) rad_circ = 0.25*sqrt(bbb)/area
+      rad_circ8 = 0.
+      if (bbb.gt.0) rad_circ8 = 0.25*sqrt(bbb)/area
+
+c     x20 = dx2**2 + dy2**2
+c     if (x20.gt.0) x20=sqrt(x20)
+c     write(6 ,1) 'area:',area,aaa,bbb,rad_circ8,x20
+c     write(86,1) 'area:',area,aaa,bbb,rad_circ8,x20
+c   1 format(a5,1p5e12.4)
+
+
+c     if (x20.gt.0) x20=sqrt(x20)
+c     max_ratio = 20.
+c     if (abs(rad_circ).gt.max_ratio*x20) rad_circ=0
+
+      rad_circ = rad_circ8
 
       return
       end
@@ -2516,6 +2544,50 @@ c     Is this side attached to object iobj ?
       enddo
 
       iobj = 0   ! Nothing found
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convert_m_to_c_e(f,e)
+      include 'basics.inc'
+      integer f,e
+
+      if (ccurve(f,e).ne.'m') return
+
+
+      ic=f
+      jc=ic+1
+      if (ic.eq.4) jc=1
+      if (ic.eq.8) jc=5
+
+      xm = curve(1,f,e)
+      ym = curve(2,f,e)
+      zm = curve(3,f,e)
+      write(6,*) f,e,' ',ccurve(f,e),(curve(k,f,e),k=1,2),' curve'
+
+      rad = rad_circ(x(ic,e),xm,x(jc,e),y(ic,e),ym,y(jc,e))
+
+      ccurve(f,e)=' '
+      call rzero(curve(1,f,e),6)
+
+      if (abs(rad).gt.0) then
+         ccurve (f,e)='C'
+         curve  (1,f,e)=rad
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine convert_m_to_c_all ! This works only for 2D at present
+
+      include 'basics.inc'
+      integer edge,e
+      
+      do e=1,nel
+      do edge=1,4*(ndim-1)
+         call convert_m_to_c_e(edge,e)
+      enddo
+      enddo
 
       return
       end

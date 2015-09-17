@@ -37,7 +37,8 @@ c     ITEM(7)='MAKE SPLINE'
       ITEM(7)='Arc-Circle Transform'
 c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
-      NCHOIC=7
+      ITEM(8)='Convert Midside to Circle'
+      NCHOIC=8
       if (if3d) then
          nchoic=nchoic+1
          ITEM(nchoic)='SPHERICAL MESH'
@@ -128,6 +129,9 @@ c          GOTO 1
           ifmid  = .true.
           ifcstd = .true.
           goto 1
+
+      elseif (choice.eq.'Convert Midside to Circle') then
+          call convert_m_to_c_all ! This works only for 2D at present
 
       elseif (choice.eq.'Autosphere') then
 

@@ -1766,17 +1766,12 @@ c
       npt=2**ndim
       mcell = 0
       do ie=1,ncell
-c        read(47,*) icell,(kcell(k),k=1,npt)
          read(47,*) (kcell(k),k=1,npt)
-         if (icell.eq.npt) then
-            mcell = mcell+1
-            do k=1,npt
-               kcell(k) = kcell(k) + 1   ! for vtk, need to add 1
-               vv(k,ie) = kcell(k)
-
-
-            enddo
-         endif
+         mcell = mcell+1
+         do k=1,npt
+            kcell(k) = kcell(k) + 1   ! for vtk, need to add 1
+            vv(k,ie) = kcell(k)
+         enddo
 
 c        call prsi('continue? $',ie)
 c        call res(ans,1)

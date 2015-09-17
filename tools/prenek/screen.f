@@ -1383,7 +1383,8 @@ c
       call drmenu('NOCOVER')
       call drgrid
 
-      nelcap = min(nel,5000)
+c     nelcap = min(nel,5000)
+      nelcap = nel
       do ie=1,nelcap
          call drawel(ie)
       enddo
@@ -1407,7 +1408,8 @@ c
       call drmenu('NOCOVER')
       call drgrid
 
-      nelcap = min(nel,500)
+c     nelcap = min(nel,500)
+      nelcap = nel
       do ie=1,nelcap
          call drawel(ie)
       enddo

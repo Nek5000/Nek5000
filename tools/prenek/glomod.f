@@ -2890,7 +2890,7 @@ C     Take care of curved sides
 C
       do 200 ie = 1,nel
       do 200 is = 1,12
-         if (ccurve(is,ie).eq.'s'.or.ccurve(is,ie).eq.'m') then
+         if (ccurve(is,ie).eq.'s') then
             do i=1,4
                curve(i,is,ie) = sfact*curve(i,is,ie)
             enddo
