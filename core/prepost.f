@@ -215,12 +215,15 @@ c
          endif
 C        Map the pressure onto the velocity mesh
 C
+         ntott = nx1*ny1*nz1*nelt
          ntot1 = nx1*ny1*nz1*nelv
          nyz2  = ny2*nz2
          nxy1  = nx1*ny1
          nxyz  = nx1*ny1*nz1
          nxyz2 = nx2*ny2*nz2
 C
+         
+         call rzero(pm1,ntott)
          if (ifsplit) then
             call copy(pm1,pr,ntot1)
          elseif (if_full_pres) then
