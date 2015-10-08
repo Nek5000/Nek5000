@@ -24,7 +24,7 @@ c     Check for single-element periodicity 'p' bc
       call check_p_bc(glo_num,nx,nx,nz,nel)
 
       if(nio.eq.0) write(6,*) 'call usrsetvert'
-      call usrsetvert(glo_num,nel,nx,nx,nx)
+      call usrsetvert(glo_num,nel,nx,nx,nz)
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
 
       return
