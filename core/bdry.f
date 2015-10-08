@@ -380,14 +380,18 @@ C
 C
 C        Pressure mask
 C
-         CALL RONE(PMASK,NTOT)
-         DO 50 IEL=1,NELV
-         DO 50 IFACE=1,NFACES
-            CB=CBC(IFACE,IEL,IFIELD)
+         call rone(pmask,ntot)
+         do 50 iel=1,nelt
+         do 50 iface=1,nfaces
+            cb=cbc(iface,iel,ifield)
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
      $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
-   50    CONTINUE
+   50    continue
+         if (nelt.gt.nelv) then
+            nn=nx1*ny1*nz1*(nelt-nelv)
+            call rzero(pmask(1,1,1,nelv+1),nn)
+         endif
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
 C
