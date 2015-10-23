@@ -1,3 +1,1 @@
 # CMT-nek #
-
-## Team ##
