@@ -1,0 +1,23 @@
+c
+c     arrays for overlapping Schwartz algorithm
+c
+      parameter (ltotd = lx1*ly1*lz1*lelt                     )
+c
+      common /ddptri/ ndom,n_o,nel_proc,gs_hnd_overlap
+     $              , na (lelt+1) , ma(lelt+1)
+     $              , nza(lelt+1)
+c
+      integer gs_hnd_overlap
+c
+c     These are the H1 coarse-grid arrays:
+c
+      parameter(lxc=2)
+      parameter(lcr=lxc**ldim)
+      common /h1_crsi/ se_to_gcrs(lcr,lelt)
+     $               , n_crs,m_crs, nx_crs, nxyz_c
+      integer*8 se_to_gcrs
+c
+      common /h1_crs/  h1_basis(lx1*lxc),h1_basist(lxc*lx1)
+      real             l2_basis(lx2*lxc),l2_basist(lxc*lx2)
+      equivalence     (h1_basis  ,l2_basis  )
+      equivalence     (h1_basist ,l2_basist )

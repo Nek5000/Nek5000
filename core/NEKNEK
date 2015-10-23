@@ -1,0 +1,27 @@
+      include 'GLOBALCOM' 	
+
+      common /intflag/ intflag(6,lelt)
+
+      common /intmask/ imask(lx1,ly1,lz1,lelt) 
+
+      common /valmask/ valint(lx1,ly1,lz1,lelt,nfldmax)
+
+      common /proclist/ npsend, nprecv, 
+     &  infosend(nmaxcom,2),inforecv(nmaxcom,2)
+
+      common /pointiden/ iden(ldim+1,nmaxl)  
+
+      common /cgeom/ igeom
+
+      common /mybc/ ubc(lx1,ly1,lz1,lelt,nfldmax), nfld
+
+      common /mybd/ bdrylg(lx1*ly1*lz1*lelt,nfldmax,0:2)
+
+      integer rcode(nmaxcom),elid(nmaxcom),proc(nmaxcom)
+      integer iList(ldim+1,nmaxcom),npoints
+      real    rst(nmaxcom*ldim)
+
+      common /multipts_r/ rst
+      common /multipts_i/ rcode,elid,proc,iList,npoints
+
+      save    inth_multi   

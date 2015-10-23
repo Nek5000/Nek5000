@@ -1,0 +1,23 @@
+C
+C     Arrays for direct stiffness summation
+C
+      COMMON /CFACES/ NOMLIS(2,3),NMLINV(6),GROUP(6),SKPDAT(6,6)
+     $               ,EFACE(6),EFACE1(6)
+c
+      INTEGER NOMLIS,NMLINV,GROUP,SKPDAT,EFACE,EFACE1
+      COMMON /CEDGES/ ESKIP(-12:12,3),NEDG(3)    ,NCMP
+     $               ,IXCN(8),NOFFST(3,0:LDIMT1)
+     $               ,MAXMLT,NSPMAX(0:LDIMT1)
+     $               ,NGSPCN(0:LDIMT1),NGSPED(3,0:LDIMT1)
+     $               ,NUMSCN(LELT,0:LDIMT1),NUMSED(LELT,0:LDIMT1)
+     $               ,GCNNUM( 8,LELT,0:LDIMT1),LCNNUM( 8,LELT,0:LDIMT1)
+     $               ,GEDNUM(12,LELT,0:LDIMT1),LEDNUM(12,LELT,0:LDIMT1)
+     $               ,GEDTYP(12,LELT,0:LDIMT1)
+     $               ,NGCOMM(2,0:LDIMT1)
+      INTEGER ESKIP,NEDG,IXCN,MAXMLT,NSPMAX,NOFFST,NGSPCN,NGSPED
+     $       ,NUMSCN,NUMSED,GCNNUM,LCNNUM,GEDNUM,LEDNUM,GEDTYP
+     $       ,NGCOMM
+      COMMON /EDGES/ IEDGE(20),IEDGEF(2,4,6,0:1)
+     $              ,ICEDG(3,16),IEDGFC(4,6),ICFACE(4,10)
+     $              ,INDX(8),INVEDG(27)
+

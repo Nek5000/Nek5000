@@ -1,0 +1,16 @@
+C     OPCTR is a set of arrays for tracking the number of operations,
+C     and number of calls for a particular subroutine
+
+      PARAMETER (MAXRTS=1000)
+      COMMON /OPCTRC/ rname(MAXRTS)
+      character*6     rname
+C
+      COMMON /OPCTRD/ dct(MAXRTS),rct(MAXRTS),dcount
+      real*8 dcount,dct,rct
+C
+      COMMON /OPCTRI/ ncall(MAXRTS),nrout
+C
+      integer myrout,isclld
+      save    myrout,isclld
+      data    myrout /0/
+      data    isclld /0/

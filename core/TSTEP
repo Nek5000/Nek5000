@@ -1,0 +1,23 @@
+      COMMON /TSTEP1/ TIME,TIMEF,FINTIM,TIMEIO
+     $               ,DT,DTLAG(10),DTINIT,DTINVM,COURNO,CTARG
+     $               ,AB(10),BD(10),ABMSH(10)
+     $               ,AVDIFF(LDIMT1),AVTRAN(LDIMT1),VOLFLD(0:LDIMT1)
+     $               ,TOLREL,TOLABS,TOLHDF,TOLPDF,TOLEV,TOLNL,PRELAX
+     $               ,TOLPS,TOLHS,TOLHR,TOLHV,TOLHT(LDIMT1),TOLHE
+     $               ,VNRMH1,VNRMSM,VNRML2,VNRML8,VMEAN
+     $               ,TNRMH1(LDIMT),TNRMSM(LDIMT),TNRML2(LDIMT)
+     $               ,TNRML8(LDIMT),TMEAN(LDIMT)
+C
+      COMMON /ISTEP2/ IFIELD,IMESH,ISTEP,NSTEPS,IOSTEP,LASTEP,IOCOMM
+     $               ,INSTEP
+     $               ,NAB,NBD,NBDINP,NTAUBD 
+     $               ,NMXH,NMXP,NMXE,NMXNL,NINTER
+     $               ,NELFLD(0:LDIMT1)
+     $               ,nconv,nconv_max
+C
+      COMMON /TSTEP3/ PI,BETAG,GTHETA
+      COMMON /TSTEP4/ IFPRNT,if_full_pres
+      LOGICAL IFPRNT,if_full_pres
+c
+      COMMON /TSTEP5/ lyap(3,lpert)  !  lyapunov simulation history
+      real lyap

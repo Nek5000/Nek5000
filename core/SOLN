@@ -1,0 +1,114 @@
+      parameter (lvt1  = lx1*ly1*lz1*lelv)
+      parameter (lvt2  = lx2*ly2*lz2*lelv)
+      parameter (lbt1  = lbx1*lby1*lbz1*lbelv)
+      parameter (lbt2  = lbx2*lby2*lbz2*lbelv)
+
+      parameter (lptmsk = lvt1*(5+2*ldimt) + 4*lbt1)
+      parameter (lptsol
+     $         = lvt1*(12 + 4*ldimt + 2*ldimt1 + (3+ldimt)*(lorder-1))
+     $         + lvt2*(lorder-1)
+     $         + lbt1*(12 + 3*(lorder-1))
+     $         + lbt2*(lorder-1) )
+c    $         + lptmsk )
+
+      parameter (lorder2 = max(1,lorder-2) )
+C
+C     Solution and data
+C
+      COMMON /BQCB/    BQ     (LX1,LY1,LZ1,LELT,LDIMT)
+
+      COMMON /VPTSOL/  
+c     Can be used for post-processing runs (SIZE .gt. 10+3*LDIMT flds)
+     $                 VXLAG  (LX1,LY1,LZ1,LELV,2)
+     $               , VYLAG  (LX1,LY1,LZ1,LELV,2)
+     $               , VZLAG  (LX1,LY1,LZ1,LELV,2)
+     $               , TLAG   (LX1,LY1,LZ1,LELT,LORDER-1,LDIMT)
+     $               , VGRADT1(LX1,LY1,LZ1,LELT,LDIMT)
+     $               , VGRADT2(LX1,LY1,LZ1,LELT,LDIMT)
+     $               , ABX1   (LX1,LY1,LZ1,LELV)
+     $               , ABY1   (LX1,LY1,LZ1,LELV)
+     $               , ABZ1   (LX1,LY1,LZ1,LELV)
+     $               , ABX2   (LX1,LY1,LZ1,LELV)
+     $               , ABY2   (LX1,LY1,LZ1,LELV)
+     $               , ABZ2   (LX1,LY1,LZ1,LELV)
+     $               , VDIFF_E(LX1,LY1,LZ1,LELT)
+c     Solution data
+     $               , VX     (LX1,LY1,LZ1,LELV)
+     $               , VY     (LX1,LY1,LZ1,LELV)
+     $               , VZ     (LX1,LY1,LZ1,LELV)
+     $               , T      (LX1,LY1,LZ1,LELT,LDIMT)
+     $               , VTRANS (LX1,LY1,LZ1,LELT,LDIMT1)
+     $               , VDIFF  (LX1,LY1,LZ1,LELT,LDIMT1)
+     $               , BFX    (LX1,LY1,LZ1,LELV)
+     $               , BFY    (LX1,LY1,LZ1,LELV)
+     $               , BFZ    (LX1,LY1,LZ1,LELV)
+     $               , cflf   (lx1,ly1,lz1,lelv)
+     $               , c_vx   (lxd*lyd*lzd*lelv*ldim,lorder+1) ! characteristics
+c     Solution data for magnetic field
+     $               , BX     (LBX1,LBY1,LBZ1,LBELV)
+     $               , BY     (LBX1,LBY1,LBZ1,LBELV)
+     $               , BZ     (LBX1,LBY1,LBZ1,LBELV)
+     $               , PM     (LBX2,LBY2,LBZ2,LBELV)
+     $               , BMX    (LBX1,LBY1,LBZ1,LBELV)  ! Magnetic field RHS
+     $               , BMY    (LBX1,LBY1,LBZ1,LBELV)
+     $               , BMZ    (LBX1,LBY1,LBZ1,LBELV)
+     $               , BBX1   (LBX1,LBY1,LBZ1,LBELV) ! Extrapolation terms for
+     $               , BBY1   (LBX1,LBY1,LBZ1,LBELV) ! magnetic field rhs
+     $               , BBZ1   (LBX1,LBY1,LBZ1,LBELV)
+     $               , BBX2   (LBX1,LBY1,LBZ1,LBELV)
+     $               , BBY2   (LBX1,LBY1,LBZ1,LBELV)
+     $               , BBZ2   (LBX1,LBY1,LBZ1,LBELV)
+     $               , BXLAG  (LBX1*LBY1*LBZ1*LBELV,LORDER-1)
+     $               , BYLAG  (LBX1*LBY1*LBZ1*LBELV,LORDER-1)
+     $               , BZLAG  (LBX1*LBY1*LBZ1*LBELV,LORDER-1)
+     $               , PMLAG  (LBX2*LBY2*LBZ2*LBELV,LORDER2)
+
+      common /expvis/  nu_star
+      real             nu_star
+
+      COMMON /CBM2/  
+     $                 PR     (LX2,LY2,LZ2,LELV)
+     $               , PRLAG  (LX2,LY2,LZ2,LELV,LORDER2)
+c
+      COMMON /DIVERG/  QTL    (LX2,LY2,LZ2,LELT)
+     $               , USRDIV (LX2,LY2,LZ2,LELT)
+
+      COMMON /VPTMSK/  V1MASK (LX1,LY1,LZ1,LELV)
+     $               , V2MASK (LX1,LY1,LZ1,LELV)
+     $               , V3MASK (LX1,LY1,LZ1,LELV)
+     $               , PMASK  (LX1,LY1,LZ1,LELV)
+     $               , TMASK  (LX1,LY1,LZ1,LELT,LDIMT)
+     $               , OMASK  (LX1,LY1,LZ1,LELT)
+     $               , VMULT  (LX1,LY1,LZ1,LELV)
+     $               , TMULT  (LX1,LY1,LZ1,LELT,LDIMT)
+     $               , B1MASK (LBX1,LBY1,LBZ1,LBELV)  ! masks for mag. field
+     $               , B2MASK (LBX1,LBY1,LBZ1,LBELV)
+     $               , B3MASK (LBX1,LBY1,LBZ1,LBELV)
+     $               , BPMASK (LBX1,LBY1,LBZ1,LBELV)  ! magnetic pressure
+C
+C     Solution and data for perturbation fields
+C
+      COMMON /PVPTSL/ VXP    (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , VYP    (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , VZP    (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , PRP    (LPX2*LPY2*LPZ2*LPELV,lpert)
+     $              , TP     (LPX1*LPY1*LPZ1*LPELT,LDIMT,lpert)
+     $              , BQP    (LPX1*LPY1*LPZ1*LPELT,LDIMT,lpert)
+     $              , BFXP   (LPX1*LPY1*LPZ1*LPELV,lpert)  ! perturbation field RHS
+     $              , BFYP   (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , BFZP   (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , VXLAGP (LPX1*LPY1*LPZ1*LPELV,LORDER-1,lpert)
+     $              , VYLAGP (LPX1*LPY1*LPZ1*LPELV,LORDER-1,lpert)
+     $              , VZLAGP (LPX1*LPY1*LPZ1*LPELV,LORDER-1,lpert)
+     $              , PRLAGP (LPX2*LPY2*LPZ2*LPELV,LORDER2,lpert)
+     $              , TLAGP  (LPX1*LPY1*LPZ1*LPELT,LDIMT,LORDER-1,lpert)
+     $              , EXX1P  (LPX1*LPY1*LPZ1*LPELV,lpert) ! Extrapolation terms for
+     $              , EXY1P  (LPX1*LPY1*LPZ1*LPELV,lpert) ! perturbation field rhs
+     $              , EXZ1P  (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , EXX2P  (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , EXY2P  (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              , EXZ2P  (LPX1*LPY1*LPZ1*LPELV,lpert)
+     $              ,VGRADT1P(LPX1*LPY1*LPZ1*LPELT,LDIMT,lpert)
+     $              ,VGRADT2P(LPX1*LPY1*LPZ1*LPELT,LDIMT,lpert)
+c
+      common /ppointr/ jp

@@ -1,0 +1,19 @@
+C
+C       Common block for turbulence model
+C
+      COMMON /TURBR/ VTURB (LX1M,LY1M,LZ1M,LELV)
+     $             , TURBL (LX1M,LY1M,LZ1M,LELV)
+     $             , UWALL (LX1M,LZ1M,6,LELV)
+     $             , ZWALL (LX1M,LZ1M,6,LELV)
+     $             , TWX   (LX1M,LZ1M,6,LELV)
+     $             , TWY   (LX1M,LZ1M,6,LELV)
+     $             , TWZ   (LX1M,LZ1M,6,LELV)
+      COMMON /TURBC/ CMU,CMT,SGK,SGE,CE1,CE2,VKC,BTA,SGT
+     $             , BETA1,BETA2
+     $             , CMI,SKI,SEI,VKI,BTI,STI
+     $             , ZPLDAT,ZPUDAT,ZPVDAT,TLMAX,TLIMUL
+      COMMON /TURBI/ IFLDK,IFLDTK,IFLDE,IFLDTE
+      COMMON /TURBL/ IFSWALL,IFTWSH(6,LELV),IFCWUZ
+C
+
+      LOGICAL IFSWALL,IFTWSH,IFCWUZ

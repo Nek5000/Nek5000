@@ -1,0 +1,21 @@
+      integer cv_nfld
+      COMMON /ICVODE/ cv_nfld
+
+      integer*8 cv_nglobal
+      COMMON /ILCVODE/ cv_nglobal
+
+      logical ifcvodeinit
+      COMMON /LCVODE/ ifcvodeinit
+
+      real atol,rtol
+      COMMON /RCVODE/ cv_atol,cv_rtol
+
+      INTEGER IGSTYPE,METH,ITMETH,IATOL,ITASK
+
+      PARAMETER(
+     &     METH    = 2,         ! BDF
+     &     ITMETH  = 2,         ! Newton iter
+     &     IATOL   = 1,         ! 1: CV_SS / 2: CV_SV)
+     &     IGSTYPE = 1,         ! GS 1: modified 2: classical
+     &     ITASK   = 1          ! overshoot + interpolate in time
+     &         )

@@ -1,0 +1,46 @@
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
+ 
+      COMMON /otherpvar/ PHIG(LX1,LY1,LZ1,LELV)
+      COMMON /CMTRES/ res1(lx1,ly1,lz1,lelt,toteq)
+     $               , res2(lx1,ly1,lz1,lelt,toteq)
+     $               , res3(lx1,ly1,lz1,toteq,lelt) 
+
+      COMMON /CMTGRADU/  gradu(lx1,ly1,lz1,toteq,3)
+      
+      COMMON /CONVECTDATA/ convh (lxd*lyd*lzd,3)
+     $                 ,   totalh(lxd*lyd*lzd,3)
+
+      COMMON /FORCEDATA/   usrf (lx1,ly1,lz1,5)
+c We assume we will be working with one gas. Therefore Rgas need not be 
+c full filed. To begin with we assume calorically perfect gas.
+c In near future we relax the constraint to thermally perfect gas.
+c------------------------------------------------- -------------------
+c NOTE --- CVG need not be stored on full field... removed in future.
+c       THis because, Temp will be stored fullfield and we expect Cv to
+c       have explicit temp dependence. At the begining of the time step
+c       a scratch space will be use to iteratively compute Cv and T from 
+c       internal energy.
+c--------------------------------------------------------------------- 
+      COMMON /CMTGASPROP/ CSOUND(lxd,lyd,lzd,lelt)
+      real                 csound
+
+      COMMON /CMTGASREF/  cvgref,cpgref,gmaref,rgasref,molmass
+      real                cvgref,cpgref,gmaref,rgasref,molmass
+      COMMON /CMTTRANSPROP/ cip(2*ldim,lelt)
+      real cip
+      COMMON /CMTTRANSREF/ muref
+     $                 ,   coeflambda,suthcoef,reftemp,prlam,cip_adhoc
+      real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc
+
+      COMMON /TSTEPSTAGE/  stage,nstage
+      integer              stage,nstage
+
+      COMMON /TIMESTEPCOEf/ tcoef(3,3)
+      
+      COMMON /CMTIOFLGS/   res_freq
+      integer              res_freq
+
+      COMMON /CMTVISCO/  ifbr1
+      logical            ifbr1
+      COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
+      real                 WGHT, WGHTD

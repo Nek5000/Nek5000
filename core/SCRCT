@@ -1,0 +1,43 @@
+C
+C     Scratch arrays used in CONNECT and associated subroutines.
+C
+C     Available scratch arrays and sizes determined from DRIVE
+C     14 Dec 1989 22:49:58 :
+C     COMMON /CTMP0/ DUMMY0(LX1,LY1,LZ1,LELT,2)
+C     COMMON /CTMP1/ DUMMY1(LX1,LY1,LZ1,LELT,4)
+C     COMMON /SCRNS/ DUMMY2(LX1,LY1,LZ1,LELT,7)
+C     COMMON /SCRUZ/ DUMMY3(LX1,LY1,LZ1,LELT,4)
+C     COMMON /SCREV/ DUMMY4(LX1,LY1,LZ1,LELT,2)
+C     COMMON /SCRVH/ DUMMY5(LX1,LY1,LZ1,LELT,2)
+C     COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
+C     COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
+C     COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
+C
+C
+C     ring pass arrays
+C
+      COMMON /SCRMG/ RMXS(LELT),RMAX(LELT)
+     $              ,XCG(LELT),YCG(LELT),ZCG(LELT)
+     $              ,XGS(LELT),YGS(LELT),ZGS(LELT)
+     $              ,XML(3,3,LZL,LELT),XMS(3,3,LZL,LELT)
+     $              ,YML(3,3,LZL,LELT),YMS(3,3,LZL,LELT)
+     $              ,ZML(3,3,LZL,LELT),ZMS(3,3,LZL,LELT)
+      COMMON /SCREV/ SIDE(4,6,LELT),SIDES(4,6,LELT)
+      COMMON /CTMP1/ FLAG(3,3,LZL,LELT),TMP2(3,3,LZL,LELT)
+     $              ,LMULT(3,3,LZL,LELT),BCS(5,6,LELT)
+     $              ,XYZ(3,8,LELT)
+      REAL           LMULT
+C
+C     Nested dissection arrays
+C
+      COMMON /SCRVH/ CBCS(6,LELT)
+      COMMON /SCRCH/ IBRNCH(LELT),NBRNCH(LELT)
+     $              ,LIST(LELT),LIST1(LELT) ,LIST2(LELT)
+     $              ,IFCNST(6,LELT)
+C
+      DIMENSION XYZL(3,8,LELT),CG(3,LELT)
+      EQUIVALENCE (XYZL,XMS)
+      EQUIVALENCE (CG,XGS)
+      CHARACTER*3    CBCS
+      LOGICAL        IFCNST
+C

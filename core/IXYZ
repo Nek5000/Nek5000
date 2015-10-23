@@ -1,0 +1,36 @@
+C
+C     Interpolation operators
+C
+      COMMON /IXYZ/ IXM12 (LX2,LX1),  IXM21 (LX1,LX2)
+     $             ,IYM12 (LY2,LY1),  IYM21 (LY1,LY2)
+     $             ,IZM12 (LZ2,LZ1),  IZM21 (LZ1,LZ2)
+     $             ,IXTM12(LX1,LX2),  IXTM21(LX2,LX1)
+     $             ,IYTM12(LY1,LY2),  IYTM21(LY2,LY1)
+     $             ,IZTM12(LZ1,LZ2),  IZTM21(LZ2,LZ1)
+     $             ,IXM13 (LX3,LX1),  IXM31 (LX1,LX3)
+     $             ,IYM13 (LY3,LY1),  IYM31 (LY1,LY3)
+     $             ,IZM13 (LZ3,LZ1),  IZM31 (LZ1,LZ3)
+     $             ,IXTM13(LX1,LX3),  IXTM31(LX3,LX1)
+     $             ,IYTM13(LY1,LY3),  IYTM31(LY3,LY1)
+     $             ,IZTM13(LZ1,LZ3),  IZTM31(LZ3,LZ1)
+      COMMON /IXYZA/
+     $              IAM12 (LY2,LY1),  IAM21 (LY1,LY2)
+     $             ,IATM12(LY1,LY2),  IATM21(LY2,LY1)
+     $             ,IAM13 (LY3,LY1),  IAM31 (LY1,LY3)
+     $             ,IATM13(LY1,LY3),  IATM31(LY3,LY1)
+     $             ,ICM12 (LY2,LY1),  ICM21 (LY1,LY2)
+     $             ,ICTM12(LY1,LY2),  ICTM21(LY2,LY1)
+     $             ,ICM13 (LY3,LY1),  ICM31 (LY1,LY3)
+     $             ,ICTM13(LY1,LY3),  ICTM31(LY3,LY1)
+     $             ,IAJL1 (LY1,LY1),  IATJL1(LY1,LY1)
+     $             ,IAJL2 (LY2,LY2),  IATJL2(LY2,LY2)
+     $             ,IALJ3 (LY3,LY3),  IATLJ3(LY3,LY3)
+     $             ,IALJ1 (LY1,LY1),  IATLJ1(LY1,LY1)
+C
+      REAL   IXM12,IYM12,IZM12,IXM21,IYM21,IZM21
+      REAL   IXTM12,IYTM12,IZTM12,IXTM21,IYTM21,IZTM21
+      REAL   IXM13,IYM13,IZM13,IXM31,IYM31,IZM31
+      REAL   IXTM13,IYTM13,IZTM13,IXTM31,IYTM31,IZTM31
+      REAL   IAM12,IAM21,IATM12,IATM21,IAM13,IAM31,IATM13,IATM31
+      REAL   ICM12,ICM21,ICTM12,ICTM21,ICM13,ICM31,ICTM13,ICTM31
+      REAL   IAJL1,IATJL1,IAJL2,IATJL2,IALJ3,IATLJ3,IALJ1,IATLJ1

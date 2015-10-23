@@ -1,0 +1,86 @@
+C
+C     Geometry arrays
+C
+      COMMON /GXYZ/
+     $              XM1   (LX1,LY1,LZ1,LELT)
+     $             ,YM1   (LX1,LY1,LZ1,LELT)
+     $             ,ZM1   (LX1,LY1,LZ1,LELT)
+     $             ,XM2   (LX2,LY2,LZ2,LELV)
+     $             ,YM2   (LX2,LY2,LZ2,LELV)
+     $             ,ZM2   (LX2,LY2,LZ2,LELV)
+C
+      COMMON /GISO1/
+     $              RXM1  (LX1,LY1,LZ1,LELT)
+     $             ,SXM1  (LX1,LY1,LZ1,LELT)
+     $             ,TXM1  (LX1,LY1,LZ1,LELT)
+     $             ,RYM1  (LX1,LY1,LZ1,LELT)
+     $             ,SYM1  (LX1,LY1,LZ1,LELT)
+     $             ,TYM1  (LX1,LY1,LZ1,LELT)
+     $             ,RZM1  (LX1,LY1,LZ1,LELT)
+     $             ,SZM1  (LX1,LY1,LZ1,LELT)
+     $             ,TZM1  (LX1,LY1,LZ1,LELT)
+     $             ,JACM1 (LX1,LY1,LZ1,LELT)
+     $             ,jacmi (lx1*ly1*lz1,lelt)
+      real          jacm1,jacmi
+C
+      COMMON /GISO2/
+     $              RXM2  (LX2,LY2,LZ2,LELV)
+     $             ,SXM2  (LX2,LY2,LZ2,LELV)
+     $             ,TXM2  (LX2,LY2,LZ2,LELV)
+     $             ,RYM2  (LX2,LY2,LZ2,LELV)
+     $             ,SYM2  (LX2,LY2,LZ2,LELV)
+     $             ,TYM2  (LX2,LY2,LZ2,LELV)
+     $             ,RZM2  (LX2,LY2,LZ2,LELV)
+     $             ,SZM2  (LX2,LY2,LZ2,LELV)
+     $             ,TZM2  (LX2,LY2,LZ2,LELV)
+     $             ,JACM2 (LX2,LY2,LZ2,LELV)
+      REAL          JACM2
+c
+      common /gisod/ rx(lxd*lyd*lzd,ldim*ldim,lelv)
+c
+      COMMON /GMFACT/
+     $              G1M1  (LX1,LY1,LZ1,LELT)
+     $             ,G2M1  (LX1,LY1,LZ1,LELT)
+     $             ,G3M1  (LX1,LY1,LZ1,LELT)
+     $             ,G4M1  (LX1,LY1,LZ1,LELT)
+     $             ,G5M1  (LX1,LY1,LZ1,LELT)
+     $             ,G6M1  (LX1,LY1,LZ1,LELT)
+C
+      COMMON /GSURF/
+     $              UNX   (LX1,LZ1,6,LELT)
+     $             ,UNY   (LX1,LZ1,6,LELT)
+     $             ,UNZ   (LX1,LZ1,6,LELT)
+     $             ,T1X   (LX1,LZ1,6,LELT)
+     $             ,T1Y   (LX1,LZ1,6,LELT)
+     $             ,T1Z   (LX1,LZ1,6,LELT)
+     $             ,T2X   (LX1,LZ1,6,LELT)
+     $             ,T2Y   (LX1,LZ1,6,LELT)
+     $             ,T2Z   (LX1,LZ1,6,LELT)
+     $             ,AREA  (LX1,LZ1,6,LELT)
+     $             ,DLAM
+      COMMON /GVOLM/
+     $              VNX   (LX1M,LY1M,LZ1M,LELT)
+     $             ,VNY   (LX1M,LY1M,LZ1M,LELT)
+     $             ,VNZ   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V1X   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V1Y   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V1Z   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V2X   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V2Y   (LX1M,LY1M,LZ1M,LELT)
+     $             ,V2Z   (LX1M,LY1M,LZ1M,LELT)
+C
+      COMMON /GLOG/
+     $        IFGEOM,IFGMSH3,IFVCOR,IFSURT,IFMELT,IFWCNO
+     $       ,IFRZER(LELT),IFQINP(6,LELV),IFEPPM(6,LELV)
+     $       ,IFLMSF(0:1),IFLMSE(0:1),IFLMSC(0:1)
+     $       ,IFMSFC(6,LELT,0:1)
+     $       ,IFMSEG(12,LELT,0:1)
+     $       ,IFMSCR(8,LELT,0:1)
+     $       ,IFNSKP(8,LELT)
+     $       ,IFBCOR
+      LOGICAL IFGEOM,IFGMSH3,IFVCOR,IFSURT,IFMELT,IFWCNO
+     $       ,IFRZER,IFQINP,IFEPPM
+     $       ,IFLMSF,IFLMSE,IFLMSC,IFMSFC
+     $       ,IFMSEG,IFMSCR,IFNSKP
+     $       ,IFBCOR
+C

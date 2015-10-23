@@ -1,0 +1,43 @@
+
+c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
+      parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
+
+      common /crst_i/ max_rst            ! for full restart
+
+      common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
+     $              , nxo,nyo,nzo,nrg
+     $              , wdsizr,wdsizo
+     $              , nfileo,nproc_o,nfldr
+     $              , er(lelr),nelB,nelBr
+      integer wdsizr,wdsizo,er
+
+      parameter(iHeaderSize=132)
+
+      common /cmfi_r/ timer
+
+      common /cmfi_c/ ihdr,rdcode,mfi_fname
+      character*3  ihdr
+      character*10 rdcode
+      character*80 mfi_fname
+
+      character*1  rdcode1(10)
+      equivalence (rdcode,rdcode1)
+
+      common /cmfi_l/ 
+     $        ifgetx ,ifgetu ,ifgetp ,ifgett ,ifgtps (ldimt1),ifgtim
+     $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr(ldimt1),ifgtimr
+     $       ,if_byte_sw
+     $       ,ifgetz,ifgetw
+     $       ,ifdiro
+      logical
+     $        ifgetx ,ifgetu ,ifgetp ,ifgett ,ifgtps         ,ifgtim
+     $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr        ,ifgtimr
+     $       ,if_byte_sw
+     $       ,ifgetz,ifgetw
+     $       ,ifdiro
+
+      common /cmfi_p/ fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00 
+      integer         fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00
+
+      integer          nekcomm_io,ifh_mbyte
+      common /i4mpiio/ nekcomm_io,ifh_mbyte

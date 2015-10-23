@@ -1,0 +1,67 @@
+
+c     Eigenvalue arrays and pointers for Global Tensor Product 
+c     parameter (lelg_sm=2)
+c     parameter (ltfdm2 =2)
+c     parameter (lelg_sm=lelg)
+c     parameter (ltfdm2=2*lx2*ly2*lz2*lelt)
+c     parameter (leig2=2*lx2*lx2*(lelx*lelx+lely*lely+lelz*lelz))
+c     parameter (leig =2*lx2*(lelx+lely+lelz))
+
+      parameter (lfdm0 = 1-lfdm)
+      parameter (lelg_sm=lfdm0+lfdm*lelg)
+      parameter (ltfdm2 =lfdm0+lfdm*2*lx2*ly2*lz2*lelt)
+      parameter (leig2  =lfdm0+lfdm*2*lx2*lx2
+     $                             *(lelx*lelx+lely*lely+lelz*lelz))
+      parameter (leig   =lfdm0+lfdm*2*lx2*(lelx+lely+lelz))
+
+
+      common /peigi/ neigx ,neigy ,neigz
+     $             , pvalx ,pvaly ,pvalz 
+     $             , pvecx ,pvecy ,pvecz 
+      integer        pvalx ,pvaly ,pvalz 
+     $             , pvecx ,pvecy ,pvecz 
+
+      common /eigpr/ sp(leig2),spt(leig2),eigp(leig)
+     $              ,wavep(ltfdm2)
+      common /eigpi/ msp(3,2),mlp(3,2)
+
+
+c     Logical, array and geometry data for tensor-product box
+      common /perlog/  ifycrv,ifzper,ifgfdm,ifgtp,ifemat
+      logical          ifycrv,ifzper,ifgfdm,ifgtp,ifemat
+
+      common /gfdmic/  nelx,nely,nelz,nelxy
+     $                ,lex2pst(3),pst2lex(3)
+     $                ,ngfdm_p(3),ngfdm_v(3,2)
+      integer          lex2pst   ,pst2lex
+
+c     Complete exchange arrays for pressure
+c     common /gfdmcx/  part_in(0:lp),part_out(0:lp)
+      parameter (lp_small=256)
+      common /gfdmcx/  part_in(0:lp_small),part_out(0:lp_small)
+     $                ,msg_id(0:lp_small,2)
+     $                ,mcex
+      integer          part_in,part_out
+
+c     Permutation arrays for gfdm pressure solve
+      common /gfdmia/  tpn1(ltfdm2),tpn2(ltfdm2)
+     $                ,tpn3(ltfdm2),ind23(ltfdm2)
+      integer tpn1,tpn2,tpn3
+
+      parameter (lfdx =lfdm0+lfdm*lx2*lelx)
+      parameter (lfdy =lfdm0+lfdm*ly2*lely)
+      parameter (lfdz =lfdm0+lfdm*lz2*lelz)
+      common /pergeo/  xgtp(0:lelx),ygtp(0:lely),zgtp(0:lelz)
+     $                ,xmlt(lfdx),ymlt(lfdy),zmlt(lfdz)
+
+
+c     Metrics for 2D x tensor-product solver
+      common /permet/  rx2  (lx2,ly2,lelv)
+     $               , ry2  (lx2,ly2,lelv)
+     $               , sx2  (lx2,ly2,lelv)
+     $               , sy2  (lx2,ly2,lelv)
+     $               , w2d  (lx2,ly2,lelv)
+     $               , bxyi (lx1,ly1,lelv)
+
+      common /gtpcbc/  gtp_cbc(6,0:ldimt1+1)
+      character*3      gtp_cbc
