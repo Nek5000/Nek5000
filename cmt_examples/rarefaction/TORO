@@ -1,0 +1,8 @@
+      REAL    GAMMA, G1, G2, G3, G4, G5, G6, G7, G8,
+     &        DL, UL, PL, CL, DR, UR, PR, CR,
+     &        DIAPH1, DOMLEN, DS, DX, PM, PSCALE, PS, S,
+     &        TIMEOU, UM, US, XPOS,ZEROTIME
+*
+      COMMON /GAMMAS/ GAMMA, G1, G2, G3, G4, G5, G6, G7, G8,zerotime
+      COMMON /STATES/ DL, UL, PL, CL, DR, UR, PRight, CR
+      COMMON /STARREGION/ domlen,diaph1,PMstar,UM
