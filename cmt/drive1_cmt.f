@@ -60,13 +60,12 @@ c that completely stops working if B become nondiagonal for any reason.
             enddo
          enddo
       enddo
+      call compute_primitive_vars
       ftime = ftime + dnekclock() - ftime_dum
 
       if (mod(istep,iostep).eq.0.or.istep.eq.1.or.istep.eq.2)then
          call out_pvar_nek
          call out_fld_nek
-C MS092215 Out_fld_nek will overwrite vx,vy,vz and t. see diagnostics
-c   Careful about this We may need to think of a different solution to this
          call mass_balance(if3d)
       end if
 
@@ -107,7 +106,11 @@ c-----------------------------------------------------------------------
 
 ! compute primitive vars on the FINE grid. Required to compute conv fluxes.
 !        primitive vars = rho, u, v, w, p, T, phi_p
-      call compute_primitive_vars
+      if (istep.eq.1) then
+         call compute_primitive_vars
+      else
+         if(stage.gt.1) call compute_primitive_vars
+      endif
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
 !          primitive variables. Only then can we compute CFL and/or dt.

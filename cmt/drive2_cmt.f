@@ -6,7 +6,7 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*)'Set up CMT-Nek'    
       call setup_cmt_commo
       
-      call setup_cmt_param
+c     call setup_cmt_param
       return
       end
 
