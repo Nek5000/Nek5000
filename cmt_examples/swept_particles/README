@@ -1,0 +1,10 @@
+MS102615 -  Swept particles in a triply periodic 3D domain.
+    Each direction spans [-1,1]. Particles are randomly placed and 
+    get advected at a prescribed velocity. User can prescribe the velocity 
+    in useric by specifying a value for ux,uy and uz. Number of particles in
+    the domian are specified ny nw in init_stokes_particles subroutine.
+    Note that lpart in SIZE file needs to be big enough to accomodate all the
+    particles.
+
+    This version uses barycentric Largrange interpolation and modifications that
+    reduce the number of particles passed to findpts call.  
