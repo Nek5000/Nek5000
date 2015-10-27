@@ -68,43 +68,64 @@ c-----------------------------------------------------------------------
 c----------------------------------------------------------------------
       subroutine out_fld_nek(wfnav)
       include 'SIZE'
-c     include 'CMTDATA'
       include 'SOLN'
       COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
-
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,LELV,7)
+      real                OTVAR
       integer e,f
 
       n = nx1*ny1*nz1
       do e=1,nelt
-         call copy(vx(1,1,1,e),u(1,1,1,2,e),n)
-         call copy(vy(1,1,1,e),u(1,1,1,3,e),n)
-         call copy(vz(1,1,1,e),u(1,1,1,4,e),n)
-         call copy(t(1,1,1,e,3),u(1,1,1,5,e),n)
-         call copy(t(1,1,1,e,2),u(1,1,1,1,e),n)
+         call copy(otvar(1,1,1,e,1),u(1,1,1,1,e),n)
+         call copy(otvar(1,1,1,e,2),u(1,1,1,2,e),n)
+         call copy(otvar(1,1,1,e,3),u(1,1,1,3,e),n)
+         call copy(otvar(1,1,1,e,4),u(1,1,1,4,e),n)
+         call copy(otvar(1,1,1,e,5),u(1,1,1,5,e),n)
       enddo
 c     ifxyo=.true.
-      itmp = 4
-      call outpost2(vx,vy,vz,pr,t,itmp,'fld')
+      if(lx2.ne.lx1)then
+        if(nio.eq.0) write(6,*)'Set LX1=LX2 for I/O',lx1,lx2
+        call exitt
+      endif
+      itmp = 1
+      call outpost2(otvar(1,1,1,1,2),otvar(1,1,1,1,3),otvar(1,1,1,1,4)
+     $             ,otvar(1,1,1,1,1),otvar(1,1,1,1,5),itmp,'fld')
       return
       end
 c----------------------------------------------------------------------
       subroutine out_pvar_nek(wfnav)
       include 'SIZE'
-c     include 'CMTDATA'
       include 'SOLN'
-c     include 'INPUT'
-      include 'DEALIAS'
-
-      real             pvars(lx1,ly1,lz1,7)
+      include 'CMTDATA'
+      include 'PERFECTGAS'
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,LELV,6)
+      real                OTVAR
 
       integer e,f
-
-      itmp = 2
-      n = nx1*ny1*nz1
-      do e=1,nelt
-         call copy(t(1,1,1,e,2),vtrans(1,1,1,e,irho),n)
+      n = nx1*ny1*nz1*nelt
+      itmp = 1
+      if(lx2.ne.lx1) then
+        if(nio.eq.0) write(6,*)'Set LX1=LX2 for I/O',lx1,lx2
+        call exitt
+      endif
+      call outpost2(vx,vy,vz,vtrans(1,1,1,1,irho),t,itmp,'vdt')
+      do i=1,n
+         ux = vx(i,1,1,1)
+         uy = vy(i,1,1,1)
+         uz = vz(i,1,1,1)
+         cp = vtrans(i,1,1,1,icp)/vtrans(i,1,1,1,irho)
+c        cv = vtrans(i,1,1,1,icv)/vtrans(i,1,1,1,irho)
+         gma = MixtPerf_G_CpR(cp,rgasref) 
+         otvar(i,1,1,1,2) = sqrt(ux*ux+uy*uy+uz*uz)/csound(i,1,1,1)
+         otvar(i,1,1,1,3) = phig(i,1,1,1)
+         otvar(i,1,1,1,4) = MixtPerf_To_CpTUVW(cp,t(i,1,1,1,1),ux
+     $                                    ,uy,uz)
+         otvar(i,1,1,1,5) = MixtPerf_Po_GPTTo(gma,pr(i,1,1,1)
+     $                            ,t(i,1,1,1,1),otvar(i,1,1,1,4))
       enddo
-      call outpost2(vx,vy,vz,pr,t,itmp,'pvr')
+      call copy(otvar(1,1,1,1,1),vtrans(1,1,1,1,irho),n)
+      call outpost2(otvar(1,1,1,1,1),otvar(1,1,1,1,2),otvar(1,1,1,1,3)
+     $             ,otvar(1,1,1,1,5),otvar(1,1,1,1,4),itmp,'dmt')
       return
       end
 c----------------------------------------------------------------------

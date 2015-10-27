@@ -1,0 +1,37 @@
+      integer    TOTEQ
+      PARAMETER (TOTEQ=5)
+
+! index for gas density in vtrans, Q+-
+      parameter (irho=1) ! better always be 1
+! other VTRANS indices
+      parameter (icp =2) ! rho*cp
+      parameter (icv =3) ! rho*cv
+! indices in VDIFF
+      parameter (imu =1) ! viscosity
+      parameter (iknd=2) ! thermal conductivity
+      parameter (ilam=3) ! lambda, 2nd viscosity
+! indices for fields in U
+      parameter (irg =1)     ! phi_g*rho_g
+      parameter (irpu=2)     ! phi_g*rho_g*u
+      parameter (irpv=3)     ! phi_g*rho_g*v
+      parameter (irpw=4)     ! phi_g*rho_g*w
+      parameter (iret=toteq) ! phi_g*rho_g*E
+! indices for fields in Q-+
+      parameter (iux =2)     ! u
+      parameter (iuy =3)     ! v
+      parameter (iuz =4)     ! w
+      parameter (ipr =5)     ! P
+      parameter (ithm=6)     ! T
+      parameter (isnd=7)     ! a
+      parameter (iph =8)     ! phi_g
+      parameter (icvf=9)     ! rho*cv
+      parameter (icpf=10)    ! rho*cp
+      parameter (imuf=11)    ! mu
+      parameter (ikndf=12)   ! K
+      parameter (ilamf=13)   ! lambda
+      parameter (iu1=14)   ! U1
+      parameter (iu2=15)   ! U2
+      parameter (iu3=16)   ! U3
+      parameter (iu4=17)   ! U4
+      parameter (iu5=18)   ! U5
+      parameter (nqq=18)
