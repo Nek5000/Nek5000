@@ -46,8 +46,10 @@ c
      $             ,G5M1  (LX1,LY1,LZ1,LELT)
      $             ,G6M1  (LX1,LY1,LZ1,LELT)
 C
-      COMMON /GSURF/
-     $              UNX   (LX1,LZ1,6,LELT)
+      COMMON /GSURF/unr   (lx1*lz1,6,lelt)
+     $             ,uns   (lx1*lz1,6,lelt)
+     $             ,unt   (lx1*lz1,6,lelt)
+     $             ,UNX   (LX1,LZ1,6,LELT)
      $             ,UNY   (LX1,LZ1,6,LELT)
      $             ,UNZ   (LX1,LZ1,6,LELT)
      $             ,T1X   (LX1,LZ1,6,LELT)
@@ -57,6 +59,7 @@ C
      $             ,T2Y   (LX1,LZ1,6,LELT)
      $             ,T2Z   (LX1,LZ1,6,LELT)
      $             ,AREA  (LX1,LZ1,6,LELT)
+     $             ,etalph(lx1*lz1,2*ldim,lelt)
      $             ,DLAM
       COMMON /GVOLM/
      $              VNX   (LX1M,LY1M,LZ1M,LELT)

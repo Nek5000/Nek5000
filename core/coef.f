@@ -1804,3 +1804,62 @@ C
       IF(A(N,N).EQ.0.0)A(N,N)=TINY
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine set_unr
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'TOPOL'
+c
+      integer e,f,ef
+c
+      nface = 2*ndim
+      call dsset(nx1,ny1,nz1)
+c
+      do e=1,nelt
+      do ef=1,nface
+
+         f      = eface1(ef)
+         js1    = skpdat(1,f)
+         jf1    = skpdat(2,f)
+         jskip1 = skpdat(3,f)
+         js2    = skpdat(4,f)
+         jf2    = skpdat(5,f)
+         jskip2 = skpdat(6,f)
+
+         i = 0
+         if (if3d) then
+            do j2=js2,jf2,jskip2
+            do j1=js1,jf1,jskip1
+               i = i+1
+               a = 1./jacm1(j1,j2,1,e)
+               unr(i,ef,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,ef,e)
+     $                           + rym1(j1,j2,1,e)*uny(i,1,ef,e)
+     $                           + rzm1(j1,j2,1,e)*unz(i,1,ef,e) )
+               uns(i,ef,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,ef,e)
+     $                           + sym1(j1,j2,1,e)*uny(i,1,ef,e)
+     $                           + szm1(j1,j2,1,e)*unz(i,1,ef,e) )
+               unt(i,ef,e) = a * ( txm1(j1,j2,1,e)*unx(i,1,ef,e)
+     $                           + tym1(j1,j2,1,e)*uny(i,1,ef,e)
+     $                           + tzm1(j1,j2,1,e)*unz(i,1,ef,e) )
+            enddo
+            enddo
+         else
+            do j2=js2,jf2,jskip2
+            do j1=js1,jf1,jskip1
+               i = i+1
+               a = 1./jacm1(j1,j2,1,e)
+               unr(i,ef,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,ef,e)
+     $                           + rym1(j1,j2,1,e)*uny(i,1,ef,e) )
+               uns(i,ef,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,ef,e)
+     $                           + sym1(j1,j2,1,e)*uny(i,1,ef,e) )
+               unt(i,ef,e) = 0.
+            enddo
+            enddo
+         endif
+      enddo
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
