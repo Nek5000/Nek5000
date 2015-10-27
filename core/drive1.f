@@ -31,68 +31,53 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       logical ifemati,ifsync_
 
       call get_session_info(intracomm)
-      nio = -1
-      if(nid.eq.0) nio=0
-      
-C     Initalize Nek (MPI stuff, word sizes, ...)
-c     call iniproc (initalized in get_session_info)
 
+      nio = -1             ! Default io flag 
+      if(nid.eq.0) nio=0   ! Only node 0 writes
+      
       etimes = dnekclock()
       istep  = 0
       tpp    = 0.0
 
       call opcount(1)
 
-C     Initialize and set default values.
-      call initdim
+      call initdim         ! Initialize / set default values.
       call initdat
       call files
 
-C     Read .rea +map file
       etime1 = dnekclock()
-      call readat
+      call readat          ! Read .rea +map file
 
       ifsync_ = ifsync
       ifsync = .true.
 
-C     Initialize some variables
-      call setvar  
+      call setvar          ! Initialize most variables
 
-c     Map BCs
-      if (ifmoab) then
 #ifdef MOAB
-        call nekMOAB_bcs
+      if (ifmoab) call nekMOAB_bcs  !   Map BCs
 #endif
-      endif
 
-c     Check for zero steps
-      instep=1
+      instep=1             ! Check for zero steps
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
 
-C     Setup domain topology  
       igeom = 2
-      call setup_topo
+      call setup_topo      ! Setup domain topology  
 
-C     Compute GLL stuff (points, weights, derivate op, ...)
-      call genwz
+      call genwz           ! Compute GLL points, weights, etc.
 
-C     Initalize io unit
-      call io_init
+      call io_init         ! Initalize io unit
 
-C     Set size for CVODE solver
-      if(ifcvode .and. nsteps.gt.0) call cv_setsize(0,nfield)
+      if (ifcvode.and.nsteps.gt.0) 
+     $   call cv_setsize(0,nfield) !Set size for CVODE solver
 
-C     USRDAT
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
 
-C     generate geometry (called after usrdat in case something changed)
-      call gengeom (igeom)
+      call gengeom(igeom)  ! Generate geometry, after usrdat 
 
-      if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
+      if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
-C     USRDAT2
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
@@ -103,20 +88,19 @@ C     USRDAT2
       call echopar ! echo back the parameter stack
       call setlog  ! Initalize logical flags
 
-C     Zero out masks corresponding to Dirichlet boundary points.
-      call bcmask
+      call bcmask  ! Set BC masks for Dirichlet boundaries.
 
-C     Need eigenvalues to set tolerances in presolve (SETICS)
-      if (fintim.ne.0.0.or.nsteps.ne.0) call geneig (igeom)
+      if (fintim.ne.0.0.or.nsteps.ne.0) 
+     $   call geneig(igeom) ! eigvals for tolerances
 
-C     Verify mesh topology
-      call vrdsmsh
+      call vrdsmsh     !     Verify mesh topology
 
-C     Pressure solver initialization (uses "SOLN" space as scratch)
-      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then
-         call estrat
-         if (iftran.and.solver_type.eq.'itr') then
-            call set_overlap
+      call dg_setup    !     Setup DG, if dg flag is set.
+
+      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
+         call estrat                                       ! initialization.
+         if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
+            call set_overlap                               ! as scratch!
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
             kwave2  = 0.0
@@ -127,52 +111,46 @@ C     Pressure solver initialization (uses "SOLN" space as scratch)
          endif
       endif
 
-C     Initialize optional plugin
-      call init_plugin
+      call init_plugin !     Initialize optional plugin
 
-C     USRDAT3
       if(nio.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
-C     Set initial conditions + compute field properties
-      call setics
-      call setprop
+      call setics      !     Set initial conditions 
+      call setprop     !     Compute field properties
 
-C     USRCHK
-      if(instep.ne.0) then
+      if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'
          if (ifneknek) call userchk_set_xfer
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
          call userchk
-        if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
+         if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-C     Initialize CVODE
-      if(ifcvode .and. nsteps.gt.0) call cv_init
+      if(ifcvode .and. nsteps.gt.0) call cv_init ! Initialize CVODE
 
       call comment
       call sstest (isss) 
 
       call dofcnt
 
-      jp = 0  ! Set perturbation field count to 0 for baseline flow
+      jp = 0            ! Set perturbation field count to 0 for baseline flow
 
       call in_situ_init()
 
-C     Initalize timers to ZERO
-      call time00
+      call time00       !     Initalize timers to ZERO
       call opcount(2)
 
       etims0 = dnekclock_sync()
-      IF (NIO.EQ.0) THEN
-        WRITE (6,*) ' '
-        IF (TIME.NE.0.0) WRITE (6,'(A,E14.7)') ' Initial time:',TIME
-        WRITE (6,'(A,g13.5,A)') 
+      if (nio.eq.0) then
+        write (6,*) ' '
+        if (time.ne.0.0) write (6,'(a,e14.7)') ' Initial time:',time
+        write (6,'(a,g13.5,a)') 
      &              ' Initialization successfully completed ',
      &              etims0-etimes, ' sec'
-      ENDIF
+      endif
 
       ifsync = ifsync_ ! restore initial value
 

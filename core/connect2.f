@@ -303,13 +303,13 @@ C
       IFTRAN    = .false.
       IFAXIS    = .false.
       IFAZIV    = .false.
-      IFDG      = .false.
       IFSTRS    = .false.
       IFLOMACH  = .false.
       IFMODEL   = .false.
       IFKEPS    = .false.
       IFMVBD    = .false.
       IFCHAR    = .false.
+      IFDG      = .false.
       IFANLS    = .false.
       IFMOAB    = .false.
       IFCOUP    = .false.
@@ -374,6 +374,8 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFMVBD
          elseif (indx1(string(i),'IFCHAR' ,6).gt.0) then 
               read(string(i),*) IFCHAR
+         elseif (indx1(string(i),'IFDG'   ,4).gt.0) then 
+              read(string(i),*) IFDG
          elseif (indx1(string(i),'IFANLS' ,6).gt.0) then 
               read(string(i),*) IFANLS
          elseif (indx1(string(i),'IFMOAB' ,6).gt.0) then 
@@ -422,6 +424,7 @@ c              read(string,*) IFSPLIT
      &           '   IFKEPS'   ,
      &           '   IFMVBD'   ,
      &           '   IFCHAR'   ,
+     &           '   IFDG'     ,
      &           '   IFANLS'   ,
      &           '   IFUSERVP' ,
      &           '   IFUSERMV' ,
@@ -673,6 +676,8 @@ c     endif
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
+
+      if (ifdg) param(59)=1  ! No fast operator eval for DG
 
 #ifndef MOAB
       if (ifmoab) then

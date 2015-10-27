@@ -1,12 +1,8 @@
 c=======================================================================
       subroutine hmholtz(name,u,rhs,h1,h2,mask,mult,imsh,tli,maxit,isd)
-      INCLUDE 'SIZE'
-      INCLUDE 'CTIMER'
-      INCLUDE 'INPUT'
-      INCLUDE 'MASS'
-      INCLUDE 'SOLN'
+      include 'SIZE'
+      include 'TOTAL'
       include 'FDMH1'
-      include 'TSTEP'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
@@ -19,22 +15,31 @@ c=======================================================================
       logical iffdm
       character*3 nam3
 
-      tol = abs(tli)
 
       if (icalld.eq.0) thmhz=0.0
+
+      icalld=icalld+1
+      nhmhz=icalld
+      etime1=dnekclock()
+
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+      if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
+      if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
+
+      tol = abs(tli)
+
+      if (ifdg) then
+         call hmholtz_dg(name,u,rhs,h1,h2,mask,tol,maxit)
+         thmhz=thmhz+(dnekclock()-etime1)
+         return
+      endif
 
       iffdm = .false.
 c     iffdm = .true.
       if (ifsplit) iffdm = .true.
-c
+
       if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
-c
-      icalld=icalld+1
-      nhmhz=icalld
-      etime1=dnekclock()
-      ntot = nx1*ny1*nz1*nelfld(ifield)
-      if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
-      if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
+
 
 C     Determine which field is being computed for FDM based preconditioner bc's
 c
@@ -76,14 +81,14 @@ C     Compute the (Helmholtz) matrix-vector product,
 C     AU = helm1*[A]u + helm2*[B]u, for NEL elements.
 C
 C------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'WZ'
-      INCLUDE 'DXYZ'
-      INCLUDE 'GEOM'
-      INCLUDE 'MASS'
-      INCLUDE 'INPUT'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'CTIMER'
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'CTIMER'
 C
       COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
@@ -111,6 +116,11 @@ C
 
       nel=nelt
       if (imesh.eq.1) nel=nelv
+
+      if (ifdg) then
+         call hxdg (au,u,helm1,helm2)
+         return
+      endif
 
       NXY=NX1*NY1
       NYZ=NY1*NZ1
@@ -269,8 +279,8 @@ C
 C     Set logicals for fast evaluation of A*x
 C
 C-------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
       REAL HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
@@ -318,10 +328,10 @@ C     For undeformed elements, set up appropriate elemental matrices
 C     and geometric factors for fast evaluation of Ax.
 C
 C----------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'WZ'
-      INCLUDE 'DXYZ'
-      INCLUDE 'GEOM'
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
       COMMON /FASTAX/ WDDX(LX1,LY1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
@@ -387,13 +397,13 @@ C
 C     Generate diagonal preconditioner for the Helmholtz operator.
 C
 C-------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'WZ'
-      INCLUDE 'DXYZ'
-      INCLUDE 'GEOM'
-      INCLUDE 'INPUT'
-      INCLUDE 'TSTEP'
-      INCLUDE 'MASS'
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'MASS'
       REAL            DPCM1 (LX1,LY1,LZ1,1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
@@ -535,10 +545,10 @@ C     Important when calling the CG-solver (Gauss-Lobatto mesh) with
 C     zero Neumann b.c.
 C
 C-------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'MASS'
-      INCLUDE 'EIGEN'
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'EIGEN'
       COMMON  /CPRINT/ IFPRINT
       LOGICAL          IFPRINT
       COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
@@ -619,21 +629,18 @@ C     using preconditioned conjugate gradient iteration.
 C     Preconditioner: diag(H).
 C
 C------------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'MASS'
-      INCLUDE 'INPUT'
-      INCLUDE 'SOLN'
-      INCLUDE 'TSTEP'
+      include 'SIZE'
+      include 'TOTAL'
       include 'FDMH1'
-      include 'GEOM'
-c
+ 
       COMMON  /CPRINT/ IFPRINT, IFHZPC
       LOGICAL          IFPRINT, IFHZPC
-C
-      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+ 
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+
       logical ifmcor,ifprint_hmh
-C
+ 
       real x(1),f(1),h1(1),h2(1),mask(1),mult(1),binv(1)
       parameter        (lg=lx1*ly1*lz1*lelt)
       COMMON /SCRCG/ d (lg) , scalar(2)
@@ -1444,6 +1451,715 @@ c     duh....  don't forget to change B ...  duh...
 c
       call ident(b,n)
 c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hmholtz_dg(name,u,rhs,h1,h2,mask,tol,maxit)
+      include 'SIZE'
+      include 'CTIMER'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'TSTEP'
+C
+      character      name*4
+      real           u    (lx1,ly1,lz1,1)
+      real           rhs  (lx1,ly1,lz1,1)
+      real           h1   (lx1,ly1,lz1,1)
+      real           h2   (lx1,ly1,lz1,1)
+      real           mask (lx1,ly1,lz1,1)
+
+      icalld=icalld+1
+      nhmhz=icalld
+      etime1=dnekclock()
+
+      if (ifield.eq.2) then
+         call cggo_dg (u,rhs,h1,h2,bintm1,mask,name,tol,maxit)
+      else
+         call cggo_dg (u,rhs,h1,h2,binvm1,mask,name,tol,maxit)
+      endif
+
+      thmhz=thmhz+(dnekclock()-etime1)
+
+      return
+      end
+C
+c=======================================================================
+      subroutine cggo_dg(x,f,h1,h2,binv,mask,name,tin,maxit)
+C-------------------------------------------------------------------------
+C
+C     Solve the Helmholtz equation, H*U = RHS,
+C     using preconditioned conjugate gradient iteration.
+C     Preconditioner: diag(H).
+C
+C------------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+
+      real x(1),f(1),h1(1),h2(1),binv(1),mask(1)
+      parameter        (lg=lx1*ly1*lz1*lelt)
+      common /scrcg/ d (lg) , scalar(2)
+      common /scrmg/ r (lg) , w (lg) , p (lg) , z (lg)
+
+      parameter (maxcg=60)
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+      common /iterhm/ niterhm
+      character*4 name
+
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+ 
+      common  /cprint/ ifprint, ifhzpc
+      logical          ifprint, ifhzpc
+
+      logical ifmcor
+
+
+c **  zero out stuff for Lanczos eigenvalue estimator
+      call rzero(diagt,maxcg)
+      call rzero(upper,maxcg)
+
+c     Initialization
+
+      NXYZ   = NX1*NY1*NZ1
+      NEL    = NELV
+      VOL    = VOLVM1
+      IF (ifield.eq.2) NEL=NELT
+      IF (ifield.eq.2) VOL=VOLTM1
+      n  = NEL*NXYZ
+ 
+      tol=tin
+      if (param(22).ne.0) tol=abs(param(22))
+      niter = min(maxit,maxcg)
+ 
+      imsh = ifield
+      call setprec(d,h1,h2,imsh,1) !  diag preconditioner
+ 
+      call copy (r,f,n)
+      call rzero(x,n)
+      call rzero(p,n)
+ 
+c     Check for non-trivial null-space
+ 
+      ifmcor = .false.
+      h2max = glmax(h2  ,n)
+      skmin = glmin(mask,n)
+      if (skmin.gt.0.and.h2max.eq.0) ifmcor = .true.
+ 
+      if (ifmcor) then
+         rmean = glsum(r,n)
+         call cadd(r,rmean,n)
+      endif
+      call col2(r,mask,n) ! HACK
+ 
+      krylov = 0
+      rtz1=1.0
+      niterhm = 0
+      do 1000 iter=1,niter
+ 
+c        call copy(z,r,n)   ! No     preconditioner
+         call col3(z,r,d,n) ! Jacobi Preconditioner
+         call col2(z,mask,n) ! HACK
+
+      
+ 
+         if (ifmcor) then
+            rmean = glsum(z,n)
+            call cadd(z,rmean,n)
+         endif
+ 
+         rtz2=rtz1
+         scalar(1)=vlsc2 (z,r,n)
+         scalar(2)=vlsc3 (r,r,binv,n)
+         call gop(scalar,w,'+  ',2)
+         rtz1=scalar(1)
+         rbn2=sqrt(scalar(2)/vol)
+         if (iter.eq.1) rbn0 = rbn2
+         if (param(22).lt.0) tol=abs(param(22))*rbn0
+ 
+         IF (IFPRINT.AND.NID.EQ.0.AND.PARAM(74).NE.0) THEN
+c        IF (IFPRINT.AND.NID.EQ.0.AND.PARAM(74).NE.0
+c    $      .and. mod(iter,10).eq.0) then
+            WRITE(6,3002) istep,ITER,name,ifmcor,rbn2,TOL,h1(1),h2(1)
+         ENDIF
+ 
+c     write(6,*) iter,niter,rbn0,param(22)
+c     if (iter.gt.3) call exitt
+ 
+c        Always take at least one iteration   (for projection) pff 11/23/98
+c        IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.2)) THEN
+         IF (rbn2.LE.TOL) THEN
+            NITER = ITER-1
+            IF(NID.EQ.0.AND.((.NOT.IFHZPC).OR.IFPRINT))
+     $      WRITE(6,3000) istep,name,NITER,rbn2,rbn0,TOL
+            GO TO 9999
+         ENDIF
+ 
+         beta = rtz1/rtz2
+         if (iter.eq.1) beta=0.0
+         call add2s1 (p,z,beta,n)
+         call hxdg   (w,p,h1,h2)
+c        call col2   (w,mask,n)
+ 
+         rho0 = rho
+         rho  = glsc2(w,p,n)
+         alpha=rtz1/rho
+         alphm=-alpha
+         call add2s2(x,p ,alpha,n)
+         call add2s2(r,w ,alphm,n)
+c
+c        Generate tridiagonal matrix for Lanczos scheme
+         if (iter.eq.1) then
+            krylov = krylov+1
+            diagt(iter) = rho/rtz1
+         elseif (iter.le.maxcg) then
+            krylov = krylov+1
+            diagt(iter)    = (beta**2 * rho0 + rho ) / rtz1
+            upper(iter-1)  = -beta * rho0 / sqrt(rtz2 * rtz1)
+         endif
+ 1000 continue
+      niter = iter-1
+c
+      if (nid.eq.0) write (6,3001) istep,niter,name,rbn2,rbn0,tol
+ 3000 format(i9,4x,'hmh dg ',a4,': ',I6,1p6E13.4)
+ 3001 format(2i6,' **ERROR**: Failed in hmh_dg: ',a4,1p6E13.4)
+ 3002 format(i3,i6,' HMH dg ',a4,1x,l4,':',1p6E13.4)
+ 9999 continue
+      niterhm = niter
+      ifsolv = .false.
+c
+c
+c     Call eigenvalue routine for Lanczos scheme:
+c          two work arrays are req'd if you want to save "diag & upper"
+c
+c     if (iter.ge.3) then
+c        niter = iter-1
+c        call calc (diagt,upper,w,z,krylov,dmax,dmin)
+c        cond = dmax/dmin
+c        if (nid.eq.0) write(6,6) istep,cond,dmin,dmax,' lambda'
+c     endif
+c   6 format(i9,1p3e12.4,4x,a7)
+c
+c     if (n.gt.0) write(6,*) 'quit in cggo'
+c     if (n.gt.0) call exitt
+c     call exitt
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outhmat(h1,h2)
+c
+      include 'SIZE'
+      include 'MASS'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+c
+      real h1(1),h2(1)
+      parameter        (lg=lx1*ly1*lz1*lelt)
+      common /scrmg/ u (lg) , v (lg) , w (lg) , x (lg)
+c
+      n = nx1*ny1*nz1*nelv
+c
+      k = 1
+      do j=1,n
+         call rzero(w,n)
+         w(j) = 1.
+         call hxdg (x(k),w,h1,h2)
+         k = k+n
+      enddo
+c
+      call outmax(x,n,n,'Hmat  ',n)
+      write(59,1) (x(k),k=1,n*n)
+   1  format(1pe24.14)
+      call exitt
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmax(a,m,n,name6,ie)
+      real a(m,n)
+      character*6 name6
+c
+      n18 = min(n,18)
+      write(6,*) 
+      write(6,*) ie,' matrix: ',name6,m,n
+      do i=1,m
+         write(6,6) ie,name6,(a(i,j),j=1,n18)
+      enddo
+    6 format(i3,1x,a6,18f7.2)
+      write(6,*) 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outmat4(a,l,m,n,nel,name6,ie)
+      real a(l,m,n,nel)
+      character*6 name6
+c
+      n18 = min(n,18)
+      write(6,*) 
+      write(6,*) ie,' matrix: ',name6,m,n
+      do ll=1,l
+      do k=1,nel
+         write(6,*) ie,' matrix: ',name6,ll,k
+         do j=1,4
+            write(6,6) ie,name6,(a(ll,i,j,k),i=1,m)
+         enddo
+      enddo
+      enddo
+    6 format(i3,1x,a6,18f7.2)
+      write(6,*) 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ioutmat4(a,l,m,n,nel,name6,ie)
+      integer a(l,m,n,nel)
+      character*6 name6
+c
+      n18 = min(n,18)
+      write(6,*) 
+      write(6,*) ie,' matrix: ',name6,m,n
+      do ll=1,l
+      do k=1,nel
+         write(6,*) ie,' matrix: ',name6,ll,k
+         do j=1,n
+            write(6,6) ie,name6,(a(ll,i,j,k),i=1,m)
+         enddo
+      enddo
+      enddo
+    6 format(i3,1x,a6,18i7)
+      write(6,*) 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ioutfld(a,m,n,nel,name6,ie)
+      integer a(m,n,nel)
+      character*6 name6
+c
+      n18 = min(n,18)
+      write(6,*) 
+      write(6,*) ie,' matrix: ',name6,m,n
+      do j=1,n
+         if (m.eq.3) write(6,3) ie,name6,((a(i,j,k),i=1,m),k=1,2)
+         if (m.eq.4) write(6,4) ie,name6,((a(i,j,k),i=1,m),k=1,2)
+         if (m.eq.5) write(6,5) ie,name6,((a(i,j,k),i=1,m),k=1,2)
+         if (m.eq.6) write(6,6) ie,name6,((a(i,j,k),i=1,m),k=1,2)
+      enddo
+    3 format(i3,1x,a6,2(3i7,2x))
+    4 format(i3,1x,a6,2(4i7,2x))
+    5 format(i3,1x,a6,2(5i7,2x))
+    6 format(i3,1x,a6,2(6i7,2x))
+      write(6,*) 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine compute_gradr(ur,us,ut,u) ! Grad_r for all elements
+c
+c     Output: ur,us,ut         Input: u
+c
+      include 'SIZE'
+      include 'DXYZ'
+      include 'INPUT'
+      include 'TSTEP'
+c
+      real ur(nx1*ny1*nz1,nelt) , us(nx1*ny1*nz1,nelt)
+     $   , ut(nx1*ny1*nz1,nelt) , u (nx1*ny1*nz1,nelt)
+      integer e
+c
+      do e=1,nelfld(ifield)
+         call gradr(ur(1,e),us(1,e),ut(1,e),u(1,e)
+     $            ,dxm1,dytm1,dztm1,nx1,ny1,nz1,if3d)
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine compute_gradrta(u,ur,us,ut)
+c
+c                      T      T      T
+c     Output: u = u + D ur + D us + D ut         Input: ur,us,ut
+c                      r      s      t
+c
+      include 'SIZE'
+      include 'DXYZ'
+      include 'INPUT'
+      include 'TSTEP'
+c
+      real u (nx1*ny1*nz1,nelt) , ur(nx1*ny1*nz1,nelt)
+     $   , us(nx1*ny1*nz1,nelt) , ut(nx1*ny1*nz1,nelt)
+      integer e
+c
+      do e=1,nelfld(ifield)
+         call gradrta(u(1,e),ur(1,e),us(1,e),ut(1,e)
+     $            ,dxtm1,dym1,dzm1,nx1,ny1,nz1,if3d)
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradr(ur,us,ut,u,Dr,Dst,Dtt,nr,ns,nt,if3d)
+c
+c     Output: ur,us,ut         Input: u
+c
+      real ur(nr,ns,nt),us(nr,ns,nt),ut(nr,ns,nt)
+      real u (nr,ns,nt)
+      real Dr(nr,nr),Dst(ns,ns),Dtt(nt,nt)
+c
+      logical if3d
+c
+      nst = ns*nt
+      nrs = nr*ns
+c
+      if (if3d) then
+         call mxm(Dr,nr,u,nr,ur,nst)
+         do k=0,nt
+            call mxm(u(1,1,k),nr,Dst,ns,us(1,1,k),nt)
+         enddo
+         call mxm(u,nrs,Dtt,nt,ut,nt)
+      else
+         call mxm(Dr,nr,u  ,nr,ur,ns)
+         call mxm(u ,nr,Dst,ns,us,ns)
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradrt(u,ur,us,ut,Drt,Ds,Dt,nr,ns,nt,if3d)
+c
+c                  T      T      T
+c     Output: u = D ur + D us + D ut         Input: ur,us,ut
+c                  r      s      t
+c
+      real u (nr,ns,nt)
+      real ur(nr,ns,nt),us(nr,ns,nt),ut(nr,ns,nt)
+      real Dr(nr,nr),Dst(ns,ns),Dtt(nt,nt)
+c
+      logical if3d
+c
+      nst = ns*nt
+      nrs = nr*ns
+c
+      if (if3d) then
+         call mxm (Drt,nr,ur,nr,u,nst)
+         do k=0,nt
+            call mxm (us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
+         enddo
+         call mxm (ut,nrs,Dt,nt,u,nt)
+      else
+         call mxm (Drt,nr,ur,nr,u,ns)
+         call mxm (us ,nr,Ds,ns,u,ns)
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradrta(u,ur,us,ut,Drt,Ds,Dt,nr,ns,nt,if3d)
+c
+c                      T      T      T
+c     Output: u = u + D ur + D us + D ut         Input: ur,us,ut
+c                      r      s      t
+c
+      real u (nr,ns,nt)
+      real ur(nr,ns,nt),us(nr,ns,nt),ut(nr,ns,nt)
+      real Dr(nr,nr),Dst(ns,ns),Dtt(nt,nt)
+c
+      logical if3d
+c
+      nst = ns*nt
+      nrs = nr*ns
+c
+      if (if3d) then
+         call mxma(Drt,nr,ur,nr,u,nst)
+         do k=0,nt
+            call mxma(us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
+         enddo
+         call mxma(ut,nrs,Dt,nt,u,nt)
+      else
+         call mxma(Drt,nr,ur,nr,u,ns)
+         call mxma(us ,nr,Ds,ns,u,ns)
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine compute_ugrdu_nhat (uf,ur,us,ut,u) 
+
+c     1) Restrict u to faces  -- stored in "1" locaction
+c     2) Restrict gradr u to faces, and dot with N_r  -- in "2" locaction
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real uf(nx1*nz1,2*ndim,lelt,2) 
+     $   , ur(nx1,ny1,nz1,nelt) , us(nx1,ny1,nz1,nelt)
+     $   , ut(nx1,ny1,nz1,nelt) , u (nx1,ny1,nz1,nelt)
+
+      integer e,f,ef
+
+      nface = 2*ndim
+      call dsset(nx1,ny1,nz1)
+
+      do e=1,nelfld(ifield)
+      do ef=1,nface
+
+         f      = eface1(ef)
+         js1    = skpdat(1,f)
+         jf1    = skpdat(2,f)
+         jskip1 = skpdat(3,f)
+         js2    = skpdat(4,f)
+         jf2    = skpdat(5,f)
+         jskip2 = skpdat(6,f)
+
+         if (if3d) then
+          i = 0
+          do j2=js2,jf2,jskip2
+          do j1=js1,jf1,jskip1
+             i = i+1
+c            Normally, we'd store this as a 2-vector
+c            uf(1,i,ef,e) = u(j1,j2,1,e)
+c            uf(2,i,ef,e) = area(i,1,ef,e)*unr(i,ef,e)*ur(j1,j2,1,e)
+c    $                    + area(i,1,ef,e)*uns(i,ef,e)*us(j1,j2,1,e)
+c    $                    + area(i,1,ef,e)*unt(i,ef,e)*ut(j1,j2,1,e)
+             uf(i,ef,e,1) = u(j1,j2,1,e)
+             uf(i,ef,e,2) = area(i,1,ef,e)*unr(i,ef,e)*ur(j1,j2,1,e)
+     $                    + area(i,1,ef,e)*uns(i,ef,e)*us(j1,j2,1,e)
+     $                    + area(i,1,ef,e)*unt(i,ef,e)*ut(j1,j2,1,e)
+          enddo
+          enddo
+         else
+          i = 0
+          do j2=js2,jf2,jskip2
+          do j1=js1,jf1,jskip1
+             i = i+1
+c            uf(1,i,ef,e) = u(j1,j2,1,e)
+c            uf(2,i,ef,e) = area(i,1,ef,e)*unr(i,ef,e)*ur(j1,j2,1,e)
+c    $                    + area(i,1,ef,e)*uns(i,ef,e)*us(j1,j2,1,e)
+             uf(i,ef,e,1) = u(j1,j2,1,e)
+             uf(i,ef,e,2) = area(i,1,ef,e)*unr(i,ef,e)*ur(j1,j2,1,e)
+     $                    + area(i,1,ef,e)*uns(i,ef,e)*us(j1,j2,1,e)
+          enddo
+          enddo
+         endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine face_diff (u,d,gsh_loc,w) ! difference: e_f - e'_f
+
+      include 'SIZE'
+      include 'TOPOL'
+      include 'PARALLEL'
+
+      integer d,gsh_loc
+      real u(nx1*nz1*2*ndim*lelt,2) 
+      real w(nx1*nz1*2*ndim*lelt,2) 
+      real s(lx1*lz1*2*ldim*lelt,2)
+
+      n = 2*ndim*nx1*nz1*nelt
+
+c     call copy(s,u,n)
+c     m = n/4
+c     call outmat(u(1,1),m,4,'u befor',d)
+
+      do j=1,d
+         do i=1,n
+            w(i,j) = u(i,j)
+         enddo
+         call gs_op (dg_hndl,w(1,j),1,1,0)  ! 1 ==> +
+
+         do i=1,n
+            u(i,j) = 2*u(i,j)-w(i,j)
+         enddo
+
+      enddo
+c     call sub2(s,u,n)
+c     call outmat(s(1,1),m,4,'u aftr',gsh_loc)
+c     stop
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gmult (ur,us,ut,h1)         ! Ur = h1 G Ur
+c
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TSTEP'
+c
+      real ur(nx1*ny1*nz1*nelt) , us(nx1*ny1*nz1*nelt)
+     $   , ut(nx1*ny1*nz1*nelt) , h1(nx1*ny1*nz1*nelt)
+c
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+c
+      if (if3d) then
+        do i=1,ntot
+          u=g1m1(i,1,1,1)*ur(i)+g4m1(i,1,1,1)*us(i)+g5m1(i,1,1,1)*ut(i)
+          v=g4m1(i,1,1,1)*ur(i)+g2m1(i,1,1,1)*us(i)+g6m1(i,1,1,1)*ut(i)
+          w=g5m1(i,1,1,1)*ur(i)+g6m1(i,1,1,1)*us(i)+g3m1(i,1,1,1)*ut(i)
+          ur(i) = h1(i)*u
+          us(i) = h1(i)*v
+          ut(i) = h1(i)*w
+        enddo
+      else
+        do i=1,ntot
+          u=g1m1(i,1,1,1)*ur(i)+g4m1(i,1,1,1)*us(i)
+          v=g4m1(i,1,1,1)*ur(i)+g2m1(i,1,1,1)*us(i)
+          ur(i) = h1(i)*u
+          us(i) = h1(i)*v
+        enddo
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rtna (au,ur,us,ut,uf)
+c
+c                T  
+c     Ur = Ur + R  N  du,   
+c
+c     au = au + Rs^T  dNu
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+c
+      real au(nx1,ny1,nz1,nelt)
+      real ur(nx1,ny1,nz1,nelt) , us(nx1,ny1,nz1,nelt)
+     $   , ut(nx1,ny1,nz1,nelt) , uf(nx1*nz1,2*ndim,lelt,2)
+c
+      integer e,f,ef
+c
+      nface = 2*ndim
+      call dsset(nx1,ny1,nz1)
+c
+      do e=1,nelfld(ifield)
+      do ef=1,nface
+c
+         f      = eface1(ef)
+         js1    = skpdat(1,f)
+         jf1    = skpdat(2,f)
+         jskip1 = skpdat(3,f)
+         js2    = skpdat(4,f)
+         jf2    = skpdat(5,f)
+         jskip2 = skpdat(6,f)
+C
+         if (if3d) then
+           i = 0
+           do j2=js2,jf2,jskip2
+           do j1=js1,jf1,jskip1
+              i = i+1
+              s             = -.5
+              a             = area  (i,1,ef,e)*s
+              b             = etalph(i  ,ef,e)
+              ur(j1,j2,1,e) = ur(j1,j2,1,e) + a*unr(i,ef,e)*uf(i,ef,e,1)
+              us(j1,j2,1,e) = us(j1,j2,1,e) + a*uns(i,ef,e)*uf(i,ef,e,1)
+              ut(j1,j2,1,e) = ut(j1,j2,1,e) + a*unt(i,ef,e)*uf(i,ef,e,1)
+              au(j1,j2,1,e) = au(j1,j2,1,e)
+     $                      + s*uf(i,ef,e,2) + b*uf(i,ef,e,1)
+           enddo
+           enddo
+         else
+           i = 0
+           do j2=js2,jf2,jskip2
+           do j1=js1,jf1,jskip1
+              i = i+1
+              s             = -.5
+              a             = area  (i,1,ef,e)*s
+              b             = etalph(i  ,ef,e)
+              ur(j1,j2,1,e) = ur(j1,j2,1,e) + a*unr(i,ef,e)*uf(i,ef,e,1)
+              us(j1,j2,1,e) = us(j1,j2,1,e) + a*uns(i,ef,e)*uf(i,ef,e,1)
+              au(j1,j2,1,e) = au(j1,j2,1,e)
+     $                      + s*uf(i,ef,e,2) + b*uf(i,ef,e,1)
+           enddo
+           enddo
+         endif
+      enddo
+      enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_eta_alpha
+
+c     Set up required dg terms, e.g., alpha, eta, etc.
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'MASS'
+      include 'TOPOL'
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      integer e,f,ef
+
+      nface = 2*ndim
+      call dsset(nx1,ny1,nz1)
+
+      eta = 4 / 2.  !   Generic value, scaled by Chris' 1/2
+
+      do e=1,nelfld(ifield)
+      do ef=1,nface
+
+         f      = eface1(ef)
+         js1    = skpdat(1,f)
+         jf1    = skpdat(2,f)
+         jskip1 = skpdat(3,f)
+         js2    = skpdat(4,f)
+         jf2    = skpdat(5,f)
+         jskip2 = skpdat(6,f)
+
+         i = 0
+         do j2=js2,jf2,jskip2
+         do j1=js1,jf1,jskip1
+            i = i+1
+            a = area(i,1,ef,e)
+            etalph(i,ef,e) = eta*a*a/bm1(j1,j2,1,e)/2. !/2 for avg.
+         enddo
+         enddo
+      enddo
+      enddo
+
+      call gs_op (dg_hndl,etalph,1,1,0)  ! 1 ==> +
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hxdg (au,u,h1,h2)
+
+c     Helmholtz matrix-vector product: Au = h1*[A]u + h2*[B]u
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real au(1),u(1),h1(1),h2(1)
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /ctmp0/ ugunh(2*lx1*lz1*2*ldim*lelt)
+     $                  ,w(2*lx1*lz1*2*ldim*lelt)
+      common /ctmp1/ ur(lt),us(lt),ut(lt)
+
+      n = nx1*ny1*nz1*nelv
+      call col4(au,h2,bm1,u,n)                     ! au = h2 B u
+                                                   !
+      call compute_gradr      (ur,us,ut,u)         ! Ur = Dr u for all elements
+                                                   !
+                                                   !
+      call compute_ugrdu_nhat (ugunh,ur,us,ut,u)   ! ugnuh is defined on faces
+      call face_diff          (ugunh,2,dg_hndl,w)  ! difference: e_f - e'_f
+                                                   !
+      call gmult              (ur,us,ut,h1)        ! Ur = h1 G Ur
+                                                   !
+                                                   !            T  
+      call rtna               (au,ur,us,ut,ugunh)  ! Ur = Ur + R  N  du
+                                                   ! au = au + Rs^T  dNu
+                                                   !
+                                                   !             T
+      call compute_gradrta    (au,ur,us,ut)        ! au = au + Dr  Ur
+
+      call col2(au,tmask,n)   ! HACK
+ 
       return
       end
 c-----------------------------------------------------------------------
