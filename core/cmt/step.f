@@ -12,14 +12,14 @@
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
-      COMMON /CMTGASPROP/  CSOUND(lx1,ly1,lz1,lelt)
+      COMMON /CMTGASPROP/  CSOUND(lx1,ly1,lz1,lelcmt)
       real                 csound
 
 !--------------------------------------------------------------
 ! YOU REALLY PROBABLY WANT YOUR OWN DAMN SCRATCH SPACE FOR THIS
-      common /scrsf/ u(lx1,ly1,lz1,lelv) ! mind if I borrow this?
-     $ ,             v(lx1,ly1,lz1,lelv) ! as long as the mesh
-     $ ,             w(lx1,ly1,lz1,lelv) ! doesn't move
+      common /scrsf/ u(lx1,ly1,lz1,lelcmt) ! mind if I borrow this?
+     $ ,             v(lx1,ly1,lz1,lelcmt) ! as long as the mesh
+     $ ,             w(lx1,ly1,lz1,lelcmt) ! doesn't move
 ! YOU REALLY PROBABLY WANT YOUR OWN DAMN SCRATCH SPACE FOR THAT
 !--------------------------------------------------------------
 
@@ -28,7 +28,7 @@
       SAVE VCOUR
 
       NTOT   = NX1*NY1*NZ1*NELV
-      NTOTL  = LX1*LY1*LZ1*LELV
+      NTOTL  = LX1*LY1*LZ1*lelcmt
       NTOTD  = NTOTL*NDIM
       COLD   = COURNO
       CMAX   = 1.2*CTARG

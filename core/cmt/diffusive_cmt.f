@@ -5,10 +5,10 @@
       include 'MASS'
       include 'DG'
       integer   heresize
-      parameter (lfq=lx1*lz1*2*ldim*lelt)
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt)
       parameter (heresize=nqq*3*lfq+toteq*2*ldim*lfq-2*lfq)
-      common /CMTSURFLX/ vminus(lx1*lz1,2*ldim,lelt),
-     >                    vplus(lx1*lz1,2*ldim,lelt),
+      common /CMTSURFLX/ vminus(lx1*lz1,2*ldim,lelcmt),
+     >                    vplus(lx1*lz1,2*ldim,lelcmt),
      >                   notyet(heresize)
       real    notyet
 
@@ -67,7 +67,7 @@
 ! jflux      index j; flux direction
 ! kdir       index k; direction of derivative or jump in U
       integer  ngvar,nu,npt,eq,jflux,kdir,e
-      real   gvar(ngvar,npt),gvart(npt,lelv,*),
+      real   gvar(ngvar,npt),gvart(npt,lelcmt,*),
      >                      du(nu,   npt),dut  (npt,nu)
       real  mu(npt),lambda(npt),kond(npt),cvg(npt)
       real visco(npt) ! you know, you should probably just
@@ -288,6 +288,7 @@
       include 'PARALLEL'
       include 'NEKUSE'
       include 'SOLN'
+      include 'CMTDATA'
 
       integer   e
 

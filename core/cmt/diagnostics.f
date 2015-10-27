@@ -69,8 +69,8 @@ c----------------------------------------------------------------------
       subroutine out_fld_nek(wfnav)
       include 'SIZE'
       include 'SOLN'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,LELV,7)
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,7)
       real                OTVAR
       integer e,f
 
@@ -98,7 +98,7 @@ c----------------------------------------------------------------------
       include 'SOLN'
       include 'CMTDATA'
       include 'PERFECTGAS'
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,LELV,6)
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,6)
       real                OTVAR
 
       integer e,f
@@ -216,133 +216,11 @@ c      write(6,*)wfnav(1:i1),'.',citer(is:il)
       return
       end
 c----------------------------------------------------------------------
-      subroutine dumpfield(wfnav,inmbr)
-      include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
-      include 'CMTDATA'
-
-      character*32    wfnav
-      character*32  citer,citer2
-      integer e,i1,is,il,i,inmbr,length,eq,is2,il2
-      integer nxyz1,nxy1,fid
-
-      i1 =index(wfnav,' ')-1
-      write(citer,*)inmbr
-      write(citer2,*)nid
-      length = len(wfnav)
-      do i=1,length
-         if(citer(i:i).ne.' ')then
-         is=i
-         exit
-         endif
-      enddo
-      do i=length,1,-1 
-         if(citer(i:i).ne.' ')then
-         il=i
-         exit
-         endif
-      enddo
-!     get the string that contains character nid
-      do i=1,length
-         if(citer2(i:i).ne.' ')then
-         is2=i
-         exit
-         endif
-      enddo
-      do i=length,1,-1 
-         if(citer2(i:i).ne.' ')then
-         il2=i
-         exit
-         endif
-      enddo
-      nxyz1 = nx1*ny1*nz1
-      nxy1  = nx1*ny1
-      fid = 12
-      open(unit=fid,file=wfnav(1:i1)//'.'//'it='//citer(is:il)//'.'//
-     $                     'p='//citer2(is2:il2))
-      write(fid,*)'Title="',wfnav(1:i1),'"'
-      if(if3d)then
-        write(fid,*)'Variables=x,y,z,u1,u2,u3,u4,u5'
-        do e = 1,nelt
-          write(fid,*)'zone T="',e,'",i=',nx1,',j=',ny1,',k=',nz1
-          do i=1,nxyz1
-          write(fid,201)xm1(i,1,1,e),ym1(i,1,1,e),zm1(i,1,1,e)
-     $        ,u(i,1,1,1,e),u(i,1,1,2,e),u(i,1,1,3,e)
-     $        ,u(i,1,1,4,e),u(i,1,1,5,e)
-          enddo
-        enddo
-      else
-        write(fid,*)'Variables=x,y,u1,u2,u3,u4,u5'
-        do e = 1,nelv
-          write(fid,*)'zone T="',e,'",i=',nx1,',j=',ny1
-          do i=1,nxy1
-          write(fid,202)xm1(i,1,1,e),ym1(i,1,1,e)
-     $        ,u(i,1,1,1,e),u(i,1,1,2,e),u(i,1,1,3,e)
-     $        ,u(i,1,1,4,e),u(i,1,1,5,e)
-          enddo
-        enddo
-      endif
-      close(fid)
-201   format(8(3x,f12.5))
-202   format(7(3x,e14.7))
-      return
-      end
-
-c-----------------------------------------------------------------------
-
-      subroutine write_interior_points
-      INCLUDE 'SIZE'
-      INCLUDE 'GEOM'
-      INCLUDE 'MASS'
-
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
-      integer e
-      nelmx = int(sqrt(real(nelt)))
-      nelmy = nelmx
-      if(nelmx.ne.1.and.nelmy.ne.1)then
-      e = 0
-      do j=1,(nelmy-1)
-         do i=1,(nelmx-1)
-            e=(j-1)*nelmx + i
-            write(800,101)xm1(nx1,ny1,1,e),xm1(1,ny1,1,e+1),
-     $      xm1(nx1,1,1,e+nelmx),xm1(1,1,1,e+nelmx+1)
-            write(800,101)ym1(nx1,ny1,1,e),ym1(1,ny1,1,e+1),
-     $      ym1(nx1,1,1,e+nelmx),ym1(1,1,1,e+nelmx+1)
-
-            write(801,101)u(nx1,ny1,1,1,e),u(1,ny1,1,1,e+1),
-     $      u(nx1,1,1,1,e+nelmx),u(1,1,1,1,e+nelmx+1)
-            write(802,101)u(nx1,ny1,1,2,e),u(1,ny1,1,2,e+1),
-     $      u(nx1,1,1,2,e+nelmx),u(1,1,1,2,e+nelmx+1)
-            write(803,101)u(nx1,ny1,1,3,e),u(1,ny1,1,3,e+1),
-     $      u(nx1,1,1,3,e+nelmx),u(1,1,1,3,e+nelmx+1)
-            write(804,101)u(nx1,ny1,1,5,e),u(1,ny1,1,5,e+1),
-     $      u(nx1,1,1,5,e+nelmx),u(1,1,1,5,e+nelmx+1)
-            write(805,101)unx(1,1,3,e),unx(nx1,1,3,e+1),
-     $      unx(nx1,1,1,e+nelmx),unx(1,1,1,e+nelmx+1)
-            write(806,101)uny(1,1,3,e),uny(nx1,1,3,e+1),
-     $      uny(nx1,1,1,e+nelmx),uny(1,1,1,e+nelmx+1)
-            write(807,101)unx(nx1,1,2,e),unx(1,1,4,e+1),
-     $      unx(1,1,2,e+nelmx),unx(nx1,1,4,e+nelmx+1)
-            write(808,101)uny(nx1,1,2,e),uny(1,1,4,e+1),
-     $      uny(1,1,2,e+nelmx),uny(nx1,1,4,e+nelmx+1)
-            write(809,101)area(1,1,3,e),area(nx1,1,3,e+1),
-     $      area(nx1,1,1,e+nelmx),area(1,1,1,e+nelmx+1)
-            write(810,101)area(nx1,1,2,e),area(1,1,4,e+1),
-     $      area(1,1,2,e+nelmx),area(nx1,1,4,e+nelmx+1)
-         enddo
-      enddo
-      endif
-
- 101  format(4(2x,e18.9))
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine mass_balance(if3d)
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'MASS'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
       logical if3d
       integer e
       real msum,total_mass
@@ -385,80 +263,6 @@ c    $   write(6,*)'Total mass in the domain ',total_mass
 c-----------------------------------------------------------------------
 ! That was a bunch of diagostic routines
 c-----------------------------------------------------------------------
-      subroutine testing_routines
-      include 'SIZE'
-      include 'CMTDATA'
-      include 'GEOM'
-      include 'MASS'
-      include 'INPUT'
-
-c     parameter (ldd=lxd*lyd*lzd)
-c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-c     common /UNIFORM_CONDS/ uics(lx1,ly1,lz1,toteq,lelv)
-c    
-c     integer e
-c     nrstd=ldd
-c     e = 1
-c     call gradl_rst(ur,us,ut,uics(1,1,1,2,e),lxd,if3d) ! navier1
-c     j = 1
-
-c     if (if3d) then
-c        j0=j+0
-c        j3=j+3
-c        j6=j+6
-c        do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-c           ud(i)=rx(i,j0,e)*ur(i)+rx(i,j3,e)*us(i)+rx(i,j6,e)*ut(i)
-c        enddo
-c     else
-c        j0=j+0
-c        j2=j+2
-c        do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-c           ud(i)=jacmi(i,e)*(rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i))
-c        enddo
-c     endif
-c     pi = 4.*atan(1.0)
-c     sum = 0.
-c     do i=1,nrstd
-c        x = xm1(i,1,1,e)
-c        deriv = 1. + 7.0*x**6 + 0.0001*33.0*x**32 
-c       write(9876,*)ud(i),u(i,1,1,1,e)*deriv
-c    $            ,abs(ud(i)-u(i,1,1,1,e)*deriv)
-c        sum = sum + abs(ud(i)-u(i,1,1,1,e)*deriv)**2
-c       write(9877,*)rx(i,j0,e),rym1(i,1,1,e)
-c    $            ,abs(rx(i,j0,e)-rym1(i,1,1,e))
-c       write(9878,*)rx(i,j2,e),sym1(i,1,1,e)
-c    $            ,abs(rx(i,j2,e)-sym1(i,1,1,e))
-c       write(9879,*)ur(i),us(i),u(i,1,1,2,e)
-c     enddo
-c     sum = sum/nrstd
-c     write(6,*)'l2 norm',sum
-c     call filter_cmtvar(0,IFCNTFILT)
-
-c     call gradl_rst(ur,us,ut,u(1,1,1,2,e),lxd,if3d) ! navier1
-c     j = 1
-
-c     if (if3d) then
-c     else
-c        j0=j+0
-c        j2=j+2
-c        do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-c           ud(i)=jacmi(i,e)*(rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i))
-c        enddo
-c     endif
-c     sum = 0.
-c     do i=1,nrstd
-c        x = xm1(i,1,1,e)
-c        deriv = 1. + 7.0*x**6  
-c       write(9880,*)ud(i),u(i,1,1,1,e)*deriv
-c    $            ,abs(ud(i)-u(i,1,1,1,e)*deriv)
-
-c     enddo
-c     n     = nx1*ny1*nz1*lelv*toteq
-c     call copy(u,uics,n)
-      return
-      end
-
-c-----------------------------------------------------------------------
       subroutine torque_calc_cmt(scale,x0,ifdout,iftout)
 c
 c     Compute torque about point x0
@@ -477,11 +281,11 @@ c
       real x0(3),w1(0:maxobj)
       logical ifdout,iftout
 c
-      common /scrns/         sij (lx1*ly1*lz1*6*lelv)
-      common /scrcg/         pm1 (lx1,ly1,lz1,lelv)
-      common /scrsf/         xm0(lx1,ly1,lz1,lelt)
-     $,                      ym0(lx1,ly1,lz1,lelt)
-     $,                      zm0(lx1,ly1,lz1,lelt)
+      common /scrns/         sij (lx1*ly1*lz1*6*lelcmt)
+      common /scrcg/         pm1 (lx1,ly1,lz1,lelcmt)
+      common /scrsf/         xm0(lx1,ly1,lz1,lelcmt)
+     $,                      ym0(lx1,ly1,lz1,lelcmt)
+     $,                      zm0(lx1,ly1,lz1,lelcmt)
 c
       parameter (lr=lx1*ly1*lz1)
       common /scruz/         ur(lr),us(lr),ut(lr)
@@ -712,7 +516,7 @@ c
 c
       integer e
 c
-      real sij(lx1*ly1*lz1,nij,lelv)
+      real sij(lx1*ly1*lz1,nij,lelcmt)
       real ur (1) , us (1) , ut (1)
      $   , vr (1) , vs (1) , vt (1)
      $   , wr (1) , ws (1) , wt (1)

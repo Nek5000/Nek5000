@@ -2,7 +2,6 @@ C     Dimension file to be included
 C
 C     HCUBE array dimensions
 C
-      include 'CMTSIZE'
       parameter (ldim=3)
       parameter (lx1=5,ly1=lx1,lz1=lx1,lelt=530,lelv=lelt)
       parameter (lxd=5,lyd=lxd,lzd=lxd)

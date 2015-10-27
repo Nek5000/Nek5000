@@ -89,14 +89,14 @@
 
       parameter (ldd=lx1*ly1*lz1)
 ! JH090815 need to get rid of this
-      common /primd/ pvart(ldd,lelv,7) ! rho,u,v,w,T,P,phi
+      common /primd/ pvart(ldd,lelcmt,7) ! rho,u,v,w,T,P,phi
 
 ! JH020215 Congratulations. You can't use this common block once toteq>5
       common /ctmp1/ jdu(ldd,toteq),visco(lx1,ly1,lz1)
 
       real jdu,visco
       integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelt,
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
       common /CMTSURFLX/ oldface(hcsize),fatface(hdsize)
@@ -387,9 +387,9 @@ c-----------------------------------------------------------------------
       subroutine penalty2(qface,ujump,nstate,flux,e,f,eq)
       include 'SIZE'
       include 'CMTDATA'
-      common /GSURF/ ZENORMS(LX1,LZ1,6,LELT,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*LELT*6)
-     >             ,AREA  (LX1,LZ1,6,LELT)
+      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
+     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
+     >             ,AREA  (LX1,LZ1,6,lelcmt)
      >             ,DLAM
       integer ctmp1pad
       parameter (ld2=lxd*lzd,ctmp1pad=(toteq+1)*lxd**3-2*toteq*ld2)
@@ -465,7 +465,7 @@ c-----------------------------------------------------------------------
 
       real jdu(ldd,toteq,ldim)
       integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelt,
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
       common /CMTSURFLX/ oldface(hcsize),fatface(hdsize)
