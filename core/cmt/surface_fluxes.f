@@ -12,7 +12,7 @@
       include 'INPUT'
 
       integer lfq,heresize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelt,
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
 ! JH070214 OK getting different answers whether or not the variables are
@@ -367,9 +367,9 @@
       include 'CMTDATA'
       include 'INPUT'
 
-      common /GSURF/ ZENORMS(LX1,LZ1,6,LELT,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*LELT*6)
-     >             ,AREA  (LX1,LZ1,6,LELT)
+      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
+     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
+     >             ,AREA  (LX1,LZ1,6,lelcmt)
      >             ,DLAM
 
       integer lfc1
@@ -424,9 +424,9 @@
 !     real qminus(nstate,nx1,nz1,2*ndim,nelt),
 !    >        ujump(toteq,nx1,nz1,2*ndim,nelt),scrf1(nx1,nz1,2*ndim),
 !    >        gdu(toteq,nx1,nz1)
-      common /GSURF/ ZENORMS(LX1,LZ1,6,LELT,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*LELT*6)
-     >             ,AREA  (LX1,LZ1,6,LELT)
+      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
+     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
+     >             ,AREA  (LX1,LZ1,6,lelcmt)
      >             ,DLAM
       integer f
 
@@ -484,10 +484,11 @@
 ! gets central-flux contribution to interior penalty numerical flux
 ! Hij^{d*}
       include 'SIZE'
+      include 'CMTDATA'
       include 'DG'
 
       integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelt,
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
       common /CMTSURFLX/ flux(hcsize),gdudxk(hdsize)

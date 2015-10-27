@@ -3,7 +3,17 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'DG'
-      if(nio.eq.0) write(6,*)'Set up CMT-Nek'    
+      if (nio.eq.0) write(6,*)'Set up CMT-Nek'    
+      if (toteq.ne.5) then
+         if (nio.eq.0) write(6,*)'toteq is low ! toteq = ',toteq
+         if (nio.eq.0) write(6,*) 'Reset toteq in SIZE to 5'
+         call exitt
+      endif
+      if (lelcmt.ne.lelt) then
+         if (nio.eq.0) write(6,*)'ERROR! lelcmt is not same as lelt '
+         if (nio.eq.0) write(6,*) 'lelcmt=',lelcmt,' lelt=',lelt
+         call exitt
+      endif
       call setup_cmt_commo
       
 c     call setup_cmt_param
