@@ -1,0 +1,7 @@
+*.f0*
+SESSION.NAME
+*.o
+obj
+*.3D
+compiler.out
+*.sch
