@@ -5,3 +5,6 @@ obj
 *.3D
 compiler.out
 *.sch
+.cproject
+.project
+*.swp
