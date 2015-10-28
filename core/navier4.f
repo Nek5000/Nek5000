@@ -614,8 +614,6 @@ c
 c
       call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
       call col2    (approx(1,0),vmk,ntot)
-      call dssum   (approx(1,0),nx1,ny1,nz1)
-      call col2    (approx(1,0),vml        ,ntot)
 c
 c     Compute part of the norm   (Note:  a(0) already scaled by vml)
 c
@@ -628,7 +626,7 @@ c
       do i=1,km1
          ws(i) = vlsc2(approx(1,0),approx(1,i),ntot)
       enddo
-      if (km1.GT.0) call gop(ws,ws(k),'+  ',km1)
+      if (km1.gt.0) call gop(ws,ws(k),'+  ',km1)
 c
       do i=1,km1
          alpham = -ws(i)
@@ -658,8 +656,6 @@ c
       if (ierr.ne.0) then
          call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
          call col2    (approx(1,0),vmk,ntot)
-         call dssum   (approx(1,0),nx1,ny1,nz1)
-         call col2    (approx(1,0),vml        ,ntot)
 c
 c        Compute part of the norm   (Note:  a(0) already scaled by vml)
 c
@@ -1176,9 +1172,7 @@ c-----------------------------------------------------------------------
       data    icalld/0/
 
       m    = ivar(2)
-      mmx  = ivar(1)
-
-      if (mmx.eq.-1) mmx = (mxprev-4)/2 ! ivar=0 --> mxprev array
+      mmx  = (mxprev-4)/2 ! ivar=0 --> mxprev array
       ivar(1) = mmx
 
       nn = n
