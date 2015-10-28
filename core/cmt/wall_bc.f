@@ -18,6 +18,7 @@
       subroutine slipwall_rflu(nvar,f,e,faceq,bcq,fluxw)
       include 'SIZE'
       include 'CMTBCDATA'
+      include 'CMTDATA'
       include 'GEOM'
       include 'NEKUSE'
       include 'INPUT'

@@ -90,12 +90,10 @@ ifeq ($(IFMPI),false)
 endif
 
 # IFCMT append *.o files to CORE
-ifeq ($(IFCMT),true)
-  CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
+CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
  face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
  bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
  filters_cmt.o diagnostics.o
-endif
 # VISIT ########################################################################
 ifeq ($(IFVISIT),true)
   VISITNEK_INCLUDES:=-I$S/3rd_party

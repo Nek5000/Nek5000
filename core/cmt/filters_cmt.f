@@ -61,7 +61,7 @@ c     taken from filterq in navier5.f
       include 'SIZE'
       include 'TSTEP'
     
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
       logical if3d
 c
       real w1(1),w2(1)

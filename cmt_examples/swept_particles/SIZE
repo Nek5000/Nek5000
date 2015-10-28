@@ -2,21 +2,21 @@ C     Dimension file to be included
 C
 C     HCUBE array dimensions
 C
-      parameter (ldim=2)
-      parameter (lx1=15,ly1=lx1,lz1=1,lelt=80,lelv=lelt)
-      parameter (lxd=15,lyd=lxd,lzd=1)
-      parameter (lelx=20,lely=20,lelz=1)
+      parameter (ldim=3)
+      parameter (lx1=5,ly1=lx1,lz1=lx1,lelt=530,lelv=lelt)
+      parameter (lxd=5,lyd=lxd,lzd=lxd)
+      parameter (lelx=1,lely=1,lelz=1)
  
       parameter (lzl=3 + 2*(ldim-3))
 
       parameter (lx2=lx1)
       parameter (ly2=ly1)
-      parameter (lz2=1)
+      parameter (lz2=lx1)
       parameter (lx3=lx2)
       parameter (ly3=ly2)
       parameter (lz3=lz2)
 
-      parameter (lp = 64)
+      parameter (lp =964)
       parameter (lelg = 30000)
 c
 c     parameter (lpelv=lelv,lpelt=lelt,lpert=3)  ! perturbation
@@ -88,11 +88,9 @@ C
      $,NX3,NY3,NZ3,NDIM,NFIELD,NPERT,NID
      $,NXD,NYD,NZD
 
+      parameter(lpart = 2*lx1*ly1*lz1*lelt ) ! max number of particles
 c automatically added by makenek
       parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)
-
-c automatically added by makenek
-      parameter(lpart = 1  ) ! max number of particles
 
 c automatically added by makenek
       integer ax1,ay1,az1,ax2,ay2,az2

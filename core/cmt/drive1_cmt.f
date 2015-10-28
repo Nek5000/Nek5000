@@ -18,7 +18,7 @@ c     Solve the Euler equations
 
       ftime_dum = dnekclock()
       nxyz1=lx1*ly1*lz1
-      n = nxyz1*lelt*toteq
+      n = nxyz1*lelcmt*toteq
       nfldpart = ndim*npart
 
       if(istep.eq.1) call set_tstep_coef
@@ -86,7 +86,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
       integer lfq,heresize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelt,
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
 ! not sure yet if viscous surface fluxes can live here yet
@@ -134,7 +134,7 @@ c-----------------------------------------------------------------------
 !          faces only), surface_fluxes_inviscid's argument list may grow
 !-----------------------------------------------------------------------
       call fluxes_full_field
-      ntot = lx1*ly1*lz1*lelt*toteq
+      ntot = lx1*ly1*lz1*lelcmt*toteq
       call rzero(res1,ntot)
 
       nstate=nqq
@@ -234,7 +234,7 @@ c-----------------------------------------------------------------------
       logical ifrestart
       integer e
       nxyz1 = nx1*ny1*nz1
-      n     = nxyz1*lelt*toteq
+      n     = nxyz1*lelcmt*toteq
       if (ifrestart)then
          do e=1,nelt
             call copy(U(1,1,1,2,e),vx(1,1,1,e),nxyz1) 
