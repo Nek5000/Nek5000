@@ -3,6 +3,7 @@ c=======================================================================
       include 'SIZE'
       include 'TOTAL'
       include 'FDMH1'
+      include 'CTIMER'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
@@ -15,8 +16,15 @@ c=======================================================================
       logical iffdm
       character*3 nam3
 
+      tol = abs(tli)
 
       if (icalld.eq.0) thmhz=0.0
+
+      iffdm = .false.
+c     iffdm = .true.
+      if (ifsplit) iffdm = .true.
+
+      if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
 
       icalld=icalld+1
       nhmhz=icalld
@@ -26,7 +34,6 @@ c=======================================================================
       if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
       if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
 
-      tol = abs(tli)
 
       if (ifdg) then
          call hmholtz_dg(name,u,rhs,h1,h2,mask,tol,maxit)
@@ -34,11 +41,6 @@ c=======================================================================
          return
       endif
 
-      iffdm = .false.
-c     iffdm = .true.
-      if (ifsplit) iffdm = .true.
-
-      if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
 
 
 C     Determine which field is being computed for FDM based preconditioner bc's
