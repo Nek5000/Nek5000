@@ -371,7 +371,7 @@ c     jrc, jpt, and je0 store the find results
          scrt_timers(6) = dnekclock()
 c        copy rfpts and ifpts back into their repsected positions in rpart and ipart
          call update_findpts_info(rpart,nr,ipart,ni,n,rfpts,lrf
-     $                       ,ifpts,lif,lrffptsmap,nfpts)
+     $                       ,ifpts,lif,fptsmap,nfpts)
          scrt_timers(9) = dnekclock() - scrt_timers(9) - scrt_timers(5)
          pt_timers(9) = scrt_timers(9) + pt_timers(9)
 c        Move particle info to the processor that owns each particle
