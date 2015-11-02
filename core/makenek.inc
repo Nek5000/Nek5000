@@ -563,6 +563,38 @@ if [ -f "./SIZE" ]; then
       echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>SIZE
   fi
   fi
+  cat SIZE | grep -i 'toteq' >/dev/null
+  if [ $? -ne 0 ]; then
+  if [ "$IFCMT" == "true" ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer toteq' >> SIZE
+      echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
+      echo 'c IFCMT=TRUE  then toteq=5'  >>SIZE
+  else
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer toteq' >> SIZE
+      echo '      parameter(toteq = 1  ) ! Number of conserved variables '  >>SIZE
+      echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
+  fi
+  fi
+  cat SIZE | grep -i 'lelcmt' >/dev/null
+  if [ $? -ne 0 ]; then
+  if [ "$IFCMT" == "true" ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer lelcmt' >> SIZE
+      echo '      parameter(lelcmt = lelt  ) ! Number of conserved variables '  >>SIZE
+      echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
+  else
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer lelcmt' >> SIZE
+      echo '      parameter(lelcmt = 1  ) ! # size of cmt variables '  >>SIZE
+      echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
+  fi
+  fi
 else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
@@ -611,6 +643,50 @@ c automatically added by makenek
       end
 _ACEOF
 fi
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usrflt(rmult) ! user defined filter
+      include 'SIZE'
+      real rmult(nx1)
+      rmult=1.0
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userflux" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine userflux ! user defined flux
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      real fluxout(lx1*lz1)
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userEOS" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine userEOS ! user defined EOS 
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      return
+      end
+_ACEOF
 fi
 
 if [ $NOCOMPILE -eq 1 ]; then
