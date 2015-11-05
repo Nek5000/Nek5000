@@ -28,17 +28,22 @@ C-----------------------------------------------------------------------
      $ ,             ta2 (lx2,ly2,lz1)
       integer*8 ntotg,nn
 
-      real psmax(LDIMT)
+      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
+      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
+      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
+
+      real psmax(ldimt)
 
       if(nio.eq.0) write(6,*) 'set initial conditions'
 
-C     Initialize all fields:
 
-      nxyz2=nx2*ny2*nz2
+      nxyz2=nx2*ny2*nz2       ! Initialize all fields:
       ntot2=nxyz2*nelv
       nxyz1=nx1*ny1*nz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
+      ltott=lelt*nxyz1
+      ntotcv=lelt*nxyz1*toteq
 
 
       call rzero(vx,ntott)
@@ -49,7 +54,15 @@ C     Initialize all fields:
          call rzero(t(1,1,1,1,ifld),ntott)
    10 continue
 
-      jp = 0                  ! set counter for perturbation analysis
+      jp = 0                  ! Set counter for perturbation analysis
+
+      if (ifcmt) then
+         call rzero(phig,ltott)
+         call rzero(csound,ltott)
+         call rzero(vtrans,ltott*ldimt1)
+         call rzero(vdiff ,ltott*ldimt1)
+         call rzero(u,ntotcv)
+      endif
 
       irst = param(46)        ! for lee's restart (rarely used)
       if (irst.gt.0)  call setup_convect(2)
@@ -230,21 +243,21 @@ C     Ensure that initial field is continuous!
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
 
-      small=1.0E-20
-      ifldsave = ifield
-      if (vxmax.eq.0.0) call perturb(vx,1,small)
-      if (vymax.eq.0.0) call perturb(vy,1,small)
-      if (vzmax.eq.0.0) call perturb(vz,1,small)
-      if (prmax.eq.0.0.and.ifsplit) call perturb(pr,1,small)
-      if (ttmax.eq.0.0) call perturb(t ,2,small)
-
-      do i=1,npscal
-         ntot = nxyz1*nelfld(i+2)
-         if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
-      enddo
-      ifield = ifldsave
+c     small=1.0E-20      ! THIS WAS ONCE IMPORTANT ON CERTAIN ARCHITECTURES.
+c     ifldsave = ifield  ! IT AVOIDS DENORMALIZED ARITHMETIC.
+c     if (vxmax.eq.0.0) call perturb(vx,1,small)
+c     if (vymax.eq.0.0) call perturb(vy,1,small)
+c     if (vzmax.eq.0.0) call perturb(vz,1,small)
+c     if (prmax.eq.0.0.and.ifsplit) call perturb(pr,1,small)
+c     if (ttmax.eq.0.0) call perturb(t ,2,small)
+c     do i=1,npscal
+c        ntot = nxyz1*nelfld(i+2)
+c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
+c     enddo
+c     ifield = ifldsave
     
-      if(ifflow.and..not.ifdg) then
+c     if (ifflow.and..not.ifdg) then  ! Current dg is for scalars only
+      if (ifflow) then                ! pff, 11/4/15
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -252,13 +265,14 @@ C     Ensure that initial field is continuous!
          if (ifvcor)  call ortho(pr)  ! remove any mean
       endif
 
-      if (ifmhd.and..not.ifdg) then
+c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
+      if (ifmhd) then
          ifield = ifldmhd
          call opdssum(bx,by,bz)
          call opcolv (bx,by,bz,vmult)
       endif
 
-      if (ifheat.and..not.ifdg) then
+      if (ifheat.and..not.ifdg) then  ! Don't project if using DG
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -272,15 +286,18 @@ C     Ensure that initial field is continuous!
          enddo
       endif
 c
-      if (ifpert.and..not.ifdg) then
+c     if (ifpert.and..not.ifdg) then ! Still not DG
+      if (ifpert) then
          do jp=1,npert
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
             call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
             ifield = 2
-            call dssum(tp(1,1,jp),nx1,ny1,nz1)
-            call col2 (tp(1,1,jp),tmult,ntotv)
+
 c           note... must be updated for addl pass. scal's. pff 4/26/04
+            if (.not.ifdg) call dssum(tp(1,1,jp),nx1,ny1,nz1)
+            if (.not.ifdg) call col2 (tp(1,1,jp),tmult,ntotv)
+
             vxmax = glamax(vxp(1,jp),ntotv)
             vymax = glamax(vyp(1,jp),ntotv)
             if (nio.eq.0) write(6,111) jp,vxmax,vymax
@@ -1665,82 +1682,125 @@ C
       END
 C
 c-----------------------------------------------------------------------
-      subroutine nekuic
-C------------------------------------------------------------------
-C
-C     User specified fortran function (=0 if not specified)
-C
-C------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'SOLN'
-      INCLUDE 'TSTEP'
-      INCLUDE 'TURBO'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'NEKUSE'
-C
-      NEL   = NELFLD(IFIELD)
-C
-      IF (IFMODEL .AND. IFKEPS .AND. IFIELD.EQ.IFLDK) THEN
-C
-      DO 100 IEL=1,NEL
-         ieg = lglel(iel)
-         DO 100 K=1,NZ1
-         DO 100 J=1,NY1
-         DO 100 I=1,NX1
-            CALL NEKASGN (I,J,K,IEL)
-            CALL USERIC  (I,J,K,IEG)
-            T(I,J,K,IEL,IFIELD-1) = TURBK
- 100  CONTINUE
-C
-      ELSEIF (IFMODEL .AND. IFKEPS .AND. IFIELD.EQ.IFLDE) THEN
-C
-      DO 200 IEL=1,NEL
-         ieg = lglel(iel)
-         DO 200 K=1,NZ1
-         DO 200 J=1,NY1
-         DO 200 I=1,NX1
-            CALL NEKASGN (I,J,K,IEL)
-            CALL USERIC  (I,J,K,IEG)
-            T(I,J,K,IEL,IFIELD-1) = TURBE
- 200  CONTINUE
-C
-      ELSE
-C
-      DO 300 IEL=1,NEL
-         ieg = lglel(iel)
-         DO 300 K=1,NZ1
-         DO 300 J=1,NY1
-         DO 300 I=1,NX1
-           CALL NEKASGN (I,J,K,IEL)
-           CALL USERIC  (I,J,K,IEG)
-           if (jp.eq.0) then
-             IF (IFIELD.EQ.1) THEN
-               VX(I,J,K,IEL) = UX
-               VY(I,J,K,IEL) = UY
-               VZ(I,J,K,IEL) = UZ
-             ELSEIF (IFIELD.EQ.ifldmhd) THEN
-               BX(I,J,K,IEL) = UX
-               BY(I,J,K,IEL) = UY
-               BZ(I,J,K,IEL) = UZ
-             ELSE
-               T(I,J,K,IEL,IFIELD-1) = TEMP
-             ENDIF
-           else
-             ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(iel-1)))
-             IF (IFIELD.EQ.1) THEN
-               VXP(IJKE,jp) = UX
-               VYP(IJKE,jp) = UY
-               VZP(IJKE,jp) = UZ
-             ELSE
-               TP(IJKE,IFIELD-1,jp) = TEMP
-             ENDIF
-           endif
+      subroutine nekuic ! user specified fortran function (=0 if not specified)
 
- 300  CONTINUE
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'TURBO'
+      include 'PARALLEL'
+      include 'NEKUSE'
+
+      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
+      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
+      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
+      integer eqnum,e,eg
+
+      nel   = nelfld(ifield)
+
+      if (ifmodel .and. ifkeps .and. ifield.eq.ifldk) then
+
+         do e=1,nel
+            eg = lglel(e)
+            do 100 k=1,nz1
+            do 100 j=1,ny1
+            do 100 i=1,nx1
+               call nekasgn (i,j,k,e)
+               call useric  (i,j,k,eg)
+               t(i,j,k,e,ifield-1) = turbk
+ 100        continue
+         enddo
+
+      elseif (ifmodel .and. ifkeps .and. ifield.eq.iflde) then
+
+         do e=1,nel
+            eg = lglel(e)
+            do 200 k=1,nz1
+            do 200 j=1,ny1
+            do 200 i=1,nx1
+               call nekasgn (i,j,k,e)
+               call useric  (i,j,k,eg)
+               t(i,j,k,e,ifield-1) = turbe
+ 200        continue
+         enddo
 C
-      ENDIF
-c
+      else
+         do e=1,nel
+            eg = lglel(e)
+            do 300 k=1,nz1
+            do 300 j=1,ny1
+            do 300 i=1,nx1
+              call nekasgn (i,j,k,e)
+              call useric  (i,j,k,eg)
+              if (jp.eq.0) then
+                if (ifield.eq.1) then
+                  vx(i,j,k,e) = ux
+                  vy(i,j,k,e) = uy
+                  vz(i,j,k,e) = uz
+                elseif (ifield.eq.ifldmhd) then
+                  bx(i,j,k,e) = ux
+                  by(i,j,k,e) = uy
+                  bz(i,j,k,e) = uz
+                else
+                  t(i,j,k,e,ifield-1) = temp
+                endif
+              else
+                ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
+                if (ifield.eq.1) then
+                  vxp(ijke,JP) = ux
+                  vyp(ijke,JP) = uy
+                  vzp(ijke,JP) = uz
+                else
+                  tp(ijke,ifield-1,JP) = temp
+                endif
+              endif
+
+ 300        continue
+         enddo
+
+      endif
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!     cmt-nek
+!
+!     User should be responsible for agreement between varsic and
+!     vxyz,rho, prsic, but a consistency check here would be wise.
+
+      if (ifcmt) then
+         do e=1,nel
+            eg = lglel(e)
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1           
+               call nekasgn (i,j,k,e)
+               call useric  (i,j,k,eg)
+               if (ifield.eq.1) then
+                  vx(i,j,k,e) = ux
+                  vy(i,j,k,e) = uy
+                  vz(i,j,k,e) = uz
+                  vtrans(i,j,k,e,ifield)=rho
+                  phig(i,j,k,e)=phi
+                  pr(i,j,k,e) =pres
+                  do eqnum=1,toteq
+                     u(i,j,k,eqnum,e)=varsic(eqnum)
+                  enddo
+                  if (ifvisc) vdiff(i,j,k,e,ifield)=mu
+               else
+                  t(i,j,k,e,ifield-1) = temp
+                  if (ifvisc) then
+                     if (ifield.eq.2) vdiff(i,j,k,e,ifield)=udiff
+                     if (ifield.eq.3) vdiff(i,j,k,e,ifield)=lambda
+                  endif
+               endif
+            enddo
+            enddo
+            enddo
+         enddo
+      endif
+!     cmt-nek
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
       return
       END
 c-----------------------------------------------------------------------

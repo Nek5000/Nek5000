@@ -4,6 +4,7 @@
 
 # source path 
 SOURCE_ROOT="$HOME/nek5_svn/trunk/nek" 
+SOURCE_ROOT2="$SOURCE_ROOT/cmt" 
 
 # Fortran compiler
 F77="mpif77"
@@ -16,7 +17,7 @@ CC="mpicc"
 #PPLIST="?" 
 
 # plug-in list
-PLUGIN_LIST=""
+#PLUGIN_LIST=""
 
 
 # OPTIONAL SETTINGS
@@ -24,6 +25,9 @@ PLUGIN_LIST=""
 
 # enable MPI (default true)
 #IFMPI="false"
+
+# enable CMT (default fasle)
+#IFCMT="true"
 
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek

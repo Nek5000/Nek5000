@@ -1968,7 +1968,7 @@ c     call outmat(u(1,1),m,4,'u befor',d)
          do i=1,n
             w(i,j) = u(i,j)
          enddo
-         call gs_op (dg_hndl,w(1,j),1,1,0)  ! 1 ==> +
+         call gs_op (dg_hndlx,w(1,j),1,1,0)  ! 1 ==> +
 
          do i=1,n
             u(i,j) = 2*u(i,j)-w(i,j)
@@ -2122,7 +2122,7 @@ c     Set up required dg terms, e.g., alpha, eta, etc.
       enddo
       enddo
 
-      call gs_op (dg_hndl,etalph,1,1,0)  ! 1 ==> +
+      call gs_op (dg_hndlx,etalph,1,1,0)  ! 1 ==> +
 
 
       return
@@ -2149,7 +2149,7 @@ c     Helmholtz matrix-vector product: Au = h1*[A]u + h2*[B]u
                                                    !
                                                    !
       call compute_ugrdu_nhat (ugunh,ur,us,ut,u)   ! ugnuh is defined on faces
-      call face_diff          (ugunh,2,dg_hndl,w)  ! difference: e_f - e'_f
+      call face_diff          (ugunh,2,dg_hndlx,w) ! difference: e_f - e'_f
                                                    !
       call gmult              (ur,us,ut,h1)        ! Ur = h1 G Ur
                                                    !

@@ -89,3 +89,10 @@ C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
       CHARACTER*3 BCTYPS
       integer     bcf
 
+c flags for CMT are as follows
+
+      COMMON /INPUT10/ IFCMT,  IFFLTR,    OUTFLSUB
+     $                ,IFVISC, IFCNTFILT, IFRESTART
+      LOGICAL          IFCMT,  IFFLTR,    OUTFLSUB
+     $                ,IFVISC, IFCNTFILT, IFRESTART
+

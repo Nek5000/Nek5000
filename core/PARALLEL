@@ -30,7 +30,8 @@ C
       integer               cr_h, gsh, gsh_fld          , xxth
 
 
-      common /cdg_arrays/ dg_face(lx1*lz1*2*ldim*lelt)
-      common /cdg_ints/ dg_hndl,ndg_face
-      integer dg_hndl,dg_face
+c     These arrays need to be reconciled with cmt (pff, 11/03/15)
+      common /xcdg_arrays/ dg_face(lx1*lz1*2*ldim*lelt)
+      common /xcdg_ints/   dg_hndlx,ndg_facex
+      integer dg_hndlx,dg_face
 
