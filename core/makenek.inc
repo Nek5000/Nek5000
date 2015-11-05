@@ -55,6 +55,9 @@ CASENAME=$1
 CASEDIR=`pwd`
 APATH_SRC=`cd $SOURCE_ROOT; pwd`
 SOURCE_ROOT=$APATH_SRC
+APATH_SRC=`cd $SOURCE_ROOT2; pwd`
+SOURCE_ROOT_CMT=$APATH_SRC
+echo "CMT root" $SOURCE_ROOT_CMT
 
 IFMOAB=false
 IFNEKNEK=false
@@ -327,6 +330,15 @@ else
   IFAMG=false
 fi
 
+# CMT flag
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+  IFCMT=true
+else
+  # default
+  IFCMT=false
+fi
+export IFCMT
+
 # MXM-handling
 if [ "$MXM_USER" != "" ]; then
     echo "ABORT: makenek version is too old! Update with latest from source!"
@@ -400,12 +412,14 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
+-e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
 -e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
 -e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" $SOURCE_ROOT/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" \
+-e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" $SOURCE_ROOT/makefile.template >.makefile
 
 echo $G | grep '\-g' 1>/dev/null
 if [ $? -eq 0 ]; then
@@ -549,6 +563,36 @@ if [ -f "./SIZE" ]; then
       echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>SIZE
   fi
   fi
+  cat SIZE | grep -i 'toteq' >/dev/null
+  if [ $? -ne 0 ]; then
+  if [ "$IFCMT" == "true" ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer toteq' >> SIZE
+      echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
+      echo 'c IFCMT=TRUE  then toteq=5'  >>SIZE
+  else
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      integer toteq' >> SIZE
+      echo '      parameter(toteq = 1  ) ! Number of conserved variables '  >>SIZE
+      echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
+  fi
+  fi
+  cat SIZE | grep -i 'lelcmt' >/dev/null
+  if [ $? -ne 0 ]; then
+  if [ "$IFCMT" == "true" ]; then
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      parameter(lelcmt = lelt  ) ! # of cmt elements '  >>SIZE
+      echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
+  else
+      echo >>SIZE
+      echo 'c automatically added by makenek' >>SIZE
+      echo '      parameter(lelcmt = 1  ) ! # of cmt elements '  >>SIZE
+      echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
+  fi
+  fi
 else
   echo "FATAL ERROR: Cannot find SIZE"
   exit 1
@@ -564,6 +608,80 @@ c
 c automatically added by makenek
       subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
       integer*8 glo_num(1)
+      return
+      end
+_ACEOF
+fi
+
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine cmt_switch ! to set IFCMT logical flag
+      include 'SIZE'
+      include 'INPUT'
+      IFCMT=.true.
+      return
+      end
+_ACEOF
+fi
+else
+cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine cmt_switch ! to set IFCMT logical flag
+      include 'SIZE'
+      include 'INPUT'
+      IFCMT=.false.
+      return
+      end
+_ACEOF
+fi
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usrflt(rmult) ! user defined filter
+      include 'SIZE'
+      real rmult(lx1)
+      call rone(rmult,lx1)
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userflux" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine userflux ! user defined flux
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      real fluxout(lx1*lz1)
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userEOS" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine userEOS ! user defined EOS 
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
       return
       end
 _ACEOF

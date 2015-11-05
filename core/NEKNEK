@@ -24,4 +24,4 @@
       common /multipts_r/ rst
       common /multipts_i/ rcode,elid,proc,iList,npoints
 
-      save    inth_multi   
+      save    inth_multi

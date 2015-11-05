@@ -117,6 +117,14 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
+
+      call cmt_switch          ! Check if compiled with cmt
+      if (ifcmt) then          ! Initialize CMT branch
+        call nek_cmt_init
+        if (nio.eq.0) write(6,*)'Initialized DG machinery'
+      endif
+
+
       call setics      !     Set initial conditions 
       call setprop     !     Compute field properties
 
@@ -228,10 +236,16 @@ c-----------------------------------------------------------------------
       common /cgeom/ igeom
 
       call nekgsync
-      IF (IFTRAN) CALL SETTIME
+      if (iftran) call settime
       if (ifmhd ) call cfl_check
-      CALL SETSOLV
-      CALL COMMENT
+      call setsolv
+      call comment
+
+      if (ifcmt) then
+         if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
+         call cmt_nek_advance
+         return
+      endif
 
       if (ifsplit) then   ! PN/PN formulation
 

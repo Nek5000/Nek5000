@@ -152,6 +152,10 @@ C
          WRITE (6,*) 'IFGEOM   =',IFGEOM
          WRITE (6,*) 'IFSURT   =',IFSURT
          WRITE (6,*) 'IFWCNO   =',IFWCNO
+         WRITE (6,*) 'IFCMT    =',IFCMT
+         WRITE (6,*) 'IFVISC   =',IFVISC
+         WRITE (6,*) 'IFFLTR   =',IFFLTR
+
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
             WRITE (6,*) 'IFTMSH for field',IFIELD,'   = ',IFTMSH(IFIELD)
@@ -1142,7 +1146,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE NEKASGN (IX,IY,IZ,IEL)
+      subroutine nekasgn (ix,iy,iz,e)
 C
 C     Assign NEKTON variables for definition (by user) of
 C     boundary conditions at collocation point (IX,IY,IZ)
@@ -1183,36 +1187,62 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
-c
+
+      INCLUDE 'CMTDATA' ! irho, etc.,            ! JH062414 CMT only
+
+      integer e,eqnum
+
       common  /nekcb/ cb
-      CHARACTER CB*3
-C
+      character cb*3
+
       COMMON /SCREV / SII (LX1,LY1,LZ1,LELT)
      $              , SIII(LX1,LY1,LZ1,LELT)
-C
-        X     = XM1(IX,IY,IZ,IEL)
-        Y     = YM1(IX,IY,IZ,IEL)
-        Z     = ZM1(IX,IY,IZ,IEL)
-        R     = X**2+Y**2
-        IF (R.GT.0.0) R=SQRT(R)
-        IF (X.NE.0.0 .OR. Y.NE.0.0) THETA = ATAN2(Y,X)
-C
-        UX    = VX(IX,IY,IZ,IEL)
-        UY    = VY(IX,IY,IZ,IEL)
-        UZ    = VZ(IX,IY,IZ,IEL)
-        TEMP  = T(IX,IY,IZ,IEL,1)
-        DO 100 IPS=1,NPSCAL
-           PS(IPS) = T(IX,IY,IZ,IEL,IPS+1)
- 100    CONTINUE
-        SI2   = SII (IX,IY,IZ,IEL)
-        SI3   = SIII(IX,IY,IZ,IEL)
-        UDIFF = VDIFF (IX,IY,IZ,IEL,IFIELD)
-        UTRANS= VTRANS(IX,IY,IZ,IEL,IFIELD)
-c
-        cbu   = cb
-C
-      RETURN
-      END
+
+      x     = xm1(ix,iy,iz,e)
+      y     = ym1(ix,iy,iz,e)
+      z     = zm1(ix,iy,iz,e)
+      r     = x**2+y**2
+      if (r.gt.0.0) r=sqrt(r)
+      if (x.ne.0.0 .or. y.ne.0.0) theta = atan2(y,x)
+
+      ux    = vx(ix,iy,iz,e)
+      uy    = vy(ix,iy,iz,e)
+      uz    = vz(ix,iy,iz,e)
+      temp  = t(ix,iy,iz,e,1)
+      do ips=1,npscal
+         ps(ips) = t(ix,iy,iz,e,ips+1)
+      enddo
+      si2   = sii (ix,iy,iz,e)
+      si3   = siii(ix,iy,iz,e)
+      udiff = vdiff (ix,iy,iz,e,ifield)
+      utrans= vtrans(ix,iy,iz,e,ifield)
+
+      cbu   = cb
+
+      if (ifcmt) then                            ! JH081415 CMT only
+
+         do eqnum=1,toteq
+            varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
+         enddo
+         phi  = phig  (ix,iy,iz,e)
+         rho  = vtrans(ix,iy,iz,e,irho)
+         pres = pr    (ix,iy,iz,e)
+         if (rho.ne.0) then
+            cv   = vtrans(ix,iy,iz,e,icv)/rho
+            cp   = vtrans(ix,iy,iz,e,icp)/rho
+         endif
+         asnd = csound(ix,iy,iz,e)
+
+         if (ifvisc) then ! lol stride
+            mu     = vdiff(ix,iy,iz,e,imu)
+            udiff  = vdiff(ix,iy,iz,e,iknd)
+            lambda = vdiff(ix,iy,iz,e,ilam)
+         endif
+
+      endif                                     ! JH081415 CMT only
+
+      return
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE BCNEUTR
 C

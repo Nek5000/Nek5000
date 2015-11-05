@@ -1328,7 +1328,7 @@ c     Set up pointer to restrict u to faces ! NOTE: compact
 
       enddo
       enddo
-      ndg_face = nxzf*nelv
+      ndg_facex = nxzf*nelv
 
       return
       end
@@ -1342,7 +1342,7 @@ c-----------------------------------------------------------------------
       real     vol_ary(lx1,ly1,lz1,lelt)
       integer  i,j
 
-      do j=1,ndg_face
+      do j=1,ndg_facex
          i=dg_face(j)
          faceary(j,1,1) = vol_ary(i,1,1,1)
       enddo
@@ -1363,7 +1363,7 @@ c-----------------------------------------------------------------------
       n=nx1*ny1*nz1*nelfld(ifield)
       call rzero(vol_ary,n)
 
-      do j=1,ndg_face
+      do j=1,ndg_facex
          i=dg_face(j)
          vol_ary(i,1,1,1) = vol_ary(i,1,1,1)+faceary(j,1,1)
       enddo
@@ -1380,7 +1380,7 @@ c-----------------------------------------------------------------------
       real     vol_ary(lx1,ly1,lz1,lelt)
       integer  i,j
 
-      do j=1,ndg_face
+      do j=1,ndg_facex
          i=dg_face(j)
          vol_ary(i,1,1,1) = vol_ary(i,1,1,1)+faceary(j,1,1)
       enddo
@@ -1397,7 +1397,7 @@ c-----------------------------------------------------------------------
 
       if (ifdg) then
 
-        call setup_dg_gs(dg_hndl,nx1,ny1,nz1,nelt,nelgt,vertex)
+        call setup_dg_gs(dg_hndlx,nx1,ny1,nz1,nelt,nelgt,vertex)
         call dg_set_fc_ptr
 
         call set_eta_alpha  ! For diffusion operator
@@ -1469,7 +1469,7 @@ c     Apply convecting field c(1,ndim) to scalar field u(1).
       enddo
       enddo
       
-      call gs_op(dg_hndl,uf,1,1,0)  ! 1 ==> +
+      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
       call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
                                     ! Should be combined with
       call add_face2full( du , uf)  ! <--- this stmt.
@@ -1630,7 +1630,7 @@ c          ufine(i)=wghtc(i)*jaco_f(i)*beta_f(i)*ufine(i)
       enddo
       enddo
 
-      call gs_op(dg_hndl,uf,1,1,0)  ! 1 ==> +
+      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
 
       call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
                                     ! Should be combined with
