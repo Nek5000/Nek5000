@@ -1609,6 +1609,7 @@ c
      $                , vyc(kx1,ky1,kz1,lelv)
      $                , vzc(kx1,ky1,kz1,lelv)
      $                , prc(kx2,ky2,kz2,lelv)
+     $                , vdc(kx1*ky1*kz1*lelv,2)
       common /cvflow_r/ flow_rate,base_flow,domain_length,xsec
      $                , scale_vf(3)
       common /cvflow_i/ icvflow,iavflow
@@ -1618,67 +1619,82 @@ c
       real bd_vflow,dt_vflow
       save bd_vflow,dt_vflow
       data bd_vflow,dt_vflow /-99.,-99./
-c
+
+      logical ifcomp
+
 c     Check list:
-c
+
 c     param (55) -- volume flow rate, if nonzero
 c     forcing in X? or in Z?
-c
-c
-c
+
+
+      ntot1 = nx1*ny1*nz1*nelv
+      ntot2 = nx2*ny2*nz2*nelv
+
       if (param(55).eq.0.) return
       if (kx1.eq.1) then
          write(6,*) 'ABORT. Recompile vol_flow with kx1=lx1, etc.'
          call exitt
       endif
-c
-      icvflow   = 1                                    ! Default flow dir. = X
+
+      icvflow   = 1                                  ! Default flow dir. = X
       if (param(54).ne.0) icvflow = abs(param(54))
-      iavflow   = 0                                    ! Determine flow rate from
-      if (param(54).lt.0) iavflow = 1                  ! mean velocity
+      iavflow   = 0                                  ! Determine flow rate
+      if (param(54).lt.0) iavflow = 1                ! from mean velocity
       flow_rate = param(55)
-c
+
       chv(1) = 'X'
       chv(2) = 'Y'
       chv(3) = 'Z'
-c
+
 c     If either dt or the backwards difference coefficient change,
 c     then recompute base flow solution corresponding to unit forcing:
-c
-      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.ifmvbd.or.
-     $                     (ifuservp .and. .not. ifexplvis) )
-     $   call compute_vol_soln(vxc,vyc,vzc,prc)
+
+      ifcomp = .false.
+      if (dt.ne.dt_vflow.or.bd(1).ne.bd_vflow.or.ifmvbd) ifcomp=.true.
+      if (.not.ifcomp) then
+         ifcomp=.true.
+         do i=1,ntot1
+            if (vdiff (i,1,1,1,1).ne.vdc(i,1)) goto 20
+            if (vtrans(i,1,1,1,1).ne.vdc(i,2)) goto 20
+         enddo
+         ifcomp=.false.  ! If here, then vdiff/vtrans unchanged.
+   20    continue
+      endif
+
+      call copy(vdc(1,1),vdiff (1,1,1,1,1),ntot1)
+      call copy(vdc(1,2),vtrans(1,1,1,1,1),ntot1)
       dt_vflow = dt
       bd_vflow = bd(1)
-c
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv
+
+      if (ifcomp) call compute_vol_soln(vxc,vyc,vzc,prc)
+
       if (icvflow.eq.1) current_flow=glsc2(vx,bm1,ntot1)/domain_length  ! for X
       if (icvflow.eq.2) current_flow=glsc2(vy,bm1,ntot1)/domain_length  ! for Y
       if (icvflow.eq.3) current_flow=glsc2(vz,bm1,ntot1)/domain_length  ! for Z
-c
+
       if (iavflow.eq.1) then
          xsec = volvm1 / domain_length
          flow_rate = param(55)*xsec
       endif
-c
+
       delta_flow = flow_rate-current_flow
-c
+
 c     Note, this scale factor corresponds to FFX, provided FFX has
 c     not also been specified in userf.   If ffx is also specified
 c     in userf then the true FFX is given by ffx_userf + scale.
-c
+
       scale = delta_flow/base_flow
       scale_vf(icvflow) = scale
       if (nio.eq.0) write(6,1) istep
      $   ,time,scale,delta_flow,current_flow,flow_rate,chv(icvflow)
     1    format(i8,e14.7,1p4e13.5,' volflow',1x,a1)
-c
+
       call add2s2(vx,vxc,scale,ntot1)
       call add2s2(vy,vyc,scale,ntot1)
       call add2s2(vz,vzc,scale,ntot1)
       call add2s2(pr,prc,scale,ntot2)
-c
+
       return
       end
 c-----------------------------------------------------------------------

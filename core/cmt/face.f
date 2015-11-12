@@ -1,3 +1,4 @@
+c-----------------------------------------------------------------------
       subroutine iface_vert_int8cmt(nx,ny,nz,fa,va,jz0,jz1,nel)
       include 'SIZE'
       integer*8 fa(nx*nz,2*ndim,nel),va(0:nx+1,0:ny+1,jz0:jz1,nel)
@@ -49,7 +50,7 @@
       enddo
 
       return
-      end subroutine iface_vert_int8cmt
+      end 
 
 !-----------------------------------------------------------------------
 
@@ -81,7 +82,7 @@
       call gs_setup(dg_hndl,gnf,nf,nekcomm,np)
 
       return
-      end subroutine setup_cmt_gs
+      end
 
 !-----------------------------------------------------------------------
 
@@ -100,7 +101,7 @@
       call cmt_set_fc_ptr(nelt,nx1,ny1,nz1,ndg_face,iface_flux)
 
       return
-      end subroutine setup_cmt_commo
+      end
 
 !-----------------------------------------------------------------------
 
@@ -151,11 +152,12 @@
       nface = nxzf*nel
 
       return
-      end subroutine cmt_set_fc_ptr
+      end
 
 !-----------------------------------------------------------------------
 
       subroutine full2face_cmt(nel,nx,ny,nz,iface,faces,vols)
+
 ! JH062314 Store face data from nel full elements (volume data). Merely
 !          selection for the time being (GLL grid), but if we need to
 !          extrapolate to faces (say, from Gauss points), this is where
@@ -164,10 +166,10 @@
       include 'SIZE'
       include 'TOTAL'
 
-      integer   nel,nx,ny,nz
-      integer   iface(nx*nz*2*ldim,*)
+      integer  nel,nx,ny,nz
+      integer  iface(nx*nz*2*ldim,1)
       real     faces(nx*nz   ,2*ldim,nel)
-      real     vols (nx,ny,nz       ,*  )
+      real     vols (nx,ny,nz       ,1  )
       integer  e,i,j
 
       n= nx*nz*2*ndim
@@ -179,7 +181,7 @@
       enddo
 
       return
-      end subroutine full2face_cmt
+      end
 
 !-----------------------------------------------------------------------
 
@@ -203,4 +205,4 @@
       enddo
 
       return
-      end subroutine add_face2full_cmt
+      end

@@ -23,33 +23,28 @@ C
      $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
      $               ,NGEOM
 C
-      COMMON /INPUT3/ IF3D
-     $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
+      COMMON /INPUT3/ IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
      $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
      $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
-     $               ,IFMODEL,IFKEPS
-     $               ,IFINTQ,IFCONS
+     $               ,IFMODEL,IFKEPS,IFINTQ,IFCONS
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
-     $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP,
-     $               IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,
-     $               IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM
-      LOGICAL         IF3D
-     $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
-     $               ,IFMGRID,IFADVC,IFTMSH
+     $               ,IFBO,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
+     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
+     $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
+     $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
+c
+      LOGICAL         IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
+     $               ,IFMGRID,IFADVC        ,IFTMSH
      $               ,IFMVBD,IFNATC,IFCHAR,IFNONL
-     $               ,IFVARP,IFPSCO,IFVPS
-     $               ,IFMODEL,IFKEPS
-     $               ,IFINTQ,IFCONS
-     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
-     $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFUSERVP,IFCYCLIC
-     $               ,IFSCHCLOB
-     $               ,IFMOAB, IFCOUP, IFVCOUP, IFUSERMV,IFREGUO,IFXYO_
-     $               ,ifaziv,IFNEKNEK,IFNEKNEKM
+     $               ,IFVARP        ,IFPSCO        ,IFVPS
+     $               ,IFMODEL,IFKEPS,IFINTQ,IFCONS
+     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO        ,IFFMTIN
+     $               ,IFBO,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
+     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
+     $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
+     $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
+
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))
 C
@@ -94,10 +89,10 @@ C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
       CHARACTER*3 BCTYPS
       integer     bcf
 
-
 c flags for CMT are as follows
 
-      COMMON /INPUT10/ IFCMT, IFFLTR, OUTFLSUB
-     $              ,IFVISC, IFCNTFILT, IFRESTART
-      LOGICAL          IFCMT, IFFLTR, OUTFLSUB
-     $              ,IFVISC, IFCNTFILT, IFRESTART
+      COMMON /INPUT10/ IFCMT,  IFFLTR,    OUTFLSUB
+     $                ,IFVISC, IFCNTFILT, IFRESTART
+      LOGICAL          IFCMT,  IFFLTR,    OUTFLSUB
+     $                ,IFVISC, IFCNTFILT, IFRESTART
+

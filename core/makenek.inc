@@ -584,14 +584,12 @@ if [ -f "./SIZE" ]; then
   if [ "$IFCMT" == "true" ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = lelt  ) ! Number of conserved variables '  >>SIZE
+      echo '      parameter(lelcmt = lelt  ) ! # of cmt elements '  >>SIZE
       echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
   else
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = 1  ) ! # size of cmt variables '  >>SIZE
+      echo '      parameter(lelcmt = 1  ) ! # of cmt elements '  >>SIZE
       echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
   fi
   fi
@@ -652,8 +650,8 @@ c
 c automatically added by makenek
       subroutine usrflt(rmult) ! user defined filter
       include 'SIZE'
-      real rmult(nx1)
-      rmult=1.0
+      real rmult(lx1)
+      call rone(rmult,lx1)
       return
       end
 _ACEOF

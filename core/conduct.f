@@ -21,10 +21,16 @@ C
 
       include 'ORTHOT'
 
-      napprox(1) = laxt
+      if (ifdg) then
+         call cdscal_dg(igeom)
+         return
+      endif
+
+
+      napprox(1) = laxt  ! Fix this... pff 10/10/15
 
       nel    = nelfld(ifield)
-      ntot   = nx1*ny1*nz1*nel
+      n   = nx1*ny1*nz1*nel
 
       if (igeom.eq.1) then   ! geometry at t^{n-1}
 
@@ -63,12 +69,12 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          IF (IFTRAN) INTYPE = -1
          CALL SETHLM  (H1,H2,INTYPE)
          CALL BCNEUSC (TA,-1)
-         CALL ADD2    (H2,TA,NTOT)
+         CALL ADD2    (H2,TA,N)
          CALL BCDIRSC (T(1,1,1,1,IFIELD-1))
          CALL AXHELM  (TA,T(1,1,1,1,IFIELD-1),H1,H2,IMESH,isd)
-         CALL SUB3    (TB,BQ(1,1,1,1,IFIELD-1),TA,NTOT)
+         CALL SUB3    (TB,BQ(1,1,1,1,IFIELD-1),TA,N)
          CALL BCNEUSC (TA,1)
-         CALL ADD2    (TB,TA,NTOT)
+         CALL ADD2    (TB,TA,N)
 
 c        CALL HMHOLTZ (name4,TA,TB,H1,H2
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
@@ -89,19 +95,19 @@ c    $                 ,IMESH,TOLHT(IFIELD),NMXH,isd)
      $                   ,approx,napprox,binvm1)
          endif 
 
-         call add2    (t(1,1,1,1,ifield-1),ta,ntot)
+         call add2    (t(1,1,1,1,ifield-1),ta,n)
 
          call cvgnlps (ifconv) ! Check convergence for nonlinear problem 
          if (ifconv) goto 2000
 
 C        Radiation case, smooth convergence, avoid flip-flop (ER).
-         CALL CMULT (TA,0.5,NTOT)
-         CALL SUB2  (T(1,1,1,1,IFIELD-1),TA,NTOT)
+         CALL CMULT (TA,0.5,N)
+         CALL SUB2  (T(1,1,1,1,IFIELD-1),TA,N)
 
  1000    CONTINUE
  2000    CONTINUE
          CALL BCNEUSC (TA,1)
-         CALL ADD2 (BQ(1,1,1,1,IFIELD-1),TA,NTOT) ! no idea why... pf
+         CALL ADD2 (BQ(1,1,1,1,IFIELD-1),TA,N) ! no idea why... pf
 
       endif
 
@@ -119,13 +125,13 @@ c     mass matrix on the Gauss-Lobatto mesh.
       include 'SOLN'
       include 'TSTEP'
 
-      ntot = nx1*ny1*nz1*nelfld(ifield)
+      n = nx1*ny1*nz1*nelfld(ifield)
 
       time = time-dt        ! Set time to t^n-1 for user function
 
-      call rzero   ( bq(1,1,1,1,ifield-1) ,    ntot)
+      call rzero   ( bq(1,1,1,1,ifield-1) ,    n)
       call setqvol ( bq(1,1,1,1,ifield-1)          )
-      call col2    ( bq(1,1,1,1,ifield-1) ,bm1,ntot)
+      call col2    ( bq(1,1,1,1,ifield-1) ,bm1,n)
 
       time = time+dt        ! Restore time
 
@@ -143,10 +149,15 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 
       real bql(lx1*ly1*lz1,lelt)
 
-#ifndef MOAB
+#ifdef MOAB
+c     pulling in temperature right now, since we dont have anything else
+      call userq2(bql)
+      return
+#endif
+
       nel   = nelfld(ifield)
       nxyz1 = nx1*ny1*nz1
-      ntot1 = nxyz1*nel
+      n     = nxyz1*nel
 
       do iel=1,nel
          igrp = igroup(iel)
@@ -160,10 +171,6 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 c
 c 101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
 c    $    ,/,' Aborting in SETQVOL.')
-#else
-c pulling in temperature right now, since we dont have anything else
-      call userq2(bql)
-#endif
 C   
       return
       end
@@ -212,10 +219,10 @@ C
       COMMON /SCRUZ/ TA (LX1,LY1,LZ1,LELT)
 C
       NEL = NELFLD(IFIELD)
-      NTOT1 = NX1*NY1*NZ1*NEL
+      N   = NX1*NY1*NZ1*NEL
       CALL CONVOP  (TA,T(1,1,1,1,IFIELD-1))
-      CALL COL2    (TA,VTRANS(1,1,1,1,IFIELD),NTOT1)
-      CALL SUBCOL3 (BQ(1,1,1,1,IFIELD-1),BM1,TA,NTOT1)
+      CALL COL2    (TA,VTRANS(1,1,1,1,IFIELD),N)
+      CALL SUBCOL3 (BQ(1,1,1,1,IFIELD-1),BM1,TA,N)
 C
       return
       end
@@ -234,15 +241,15 @@ C
       AB1   = AB(2)
       AB2   = AB(3)
       NEL   = NELFLD(IFIELD)
-      NTOT1 = NX1*NY1*NZ1*NEL
+      N = NX1*NY1*NZ1*NEL
 C
       CALL ADD3S2 (TA,VGRADT1(1,1,1,1,IFIELD-1),
-     $                VGRADT2(1,1,1,1,IFIELD-1),AB1,AB2,NTOT1)
+     $                VGRADT2(1,1,1,1,IFIELD-1),AB1,AB2,N)
       CALL COPY   (   VGRADT2(1,1,1,1,IFIELD-1),
-     $                VGRADT1(1,1,1,1,IFIELD-1),NTOT1)
+     $                VGRADT1(1,1,1,1,IFIELD-1),N)
       CALL COPY   (   VGRADT1(1,1,1,1,IFIELD-1),
-     $                     BQ(1,1,1,1,IFIELD-1),NTOT1)
-      CALL ADD2S1 (BQ(1,1,1,1,IFIELD-1),TA,AB0,NTOT1)
+     $                     BQ(1,1,1,1,IFIELD-1),N)
+      CALL ADD2S1 (BQ(1,1,1,1,IFIELD-1),TA,AB0,N)
 C
       return
       end
@@ -254,69 +261,61 @@ C     Add contributions to F from lagged BD terms.
 C
 C-----------------------------------------------------------------------
       include 'SIZE'
-      include 'SOLN'
-      include 'MASS'
-      include 'GEOM'
-      include 'INPUT'
-      include 'TSTEP'
-C
-      COMMON /SCRNS/ TA (LX1,LY1,LZ1,LELT)
-     $ ,             TB (LX1,LY1,LZ1,LELT)
-     $ ,             H2 (LX1,LY1,LZ1,LELT)
-C
-      NEL   = NELFLD(IFIELD)
-      NTOT1 = NX1*NY1*NZ1*NEL
-      CONST = 1./DT
-      CALL COPY  (H2,VTRANS(1,1,1,1,IFIELD),NTOT1)
-      CALL CMULT (H2,CONST,NTOT1)
-C
-      CALL COL3  (TB,BM1,T(1,1,1,1,IFIELD-1),NTOT1)
-      CALL CMULT (TB,BD(2),NTOT1)
-C
+      include 'TOTAL'
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrns/ ta(lt),tb(lt),h2(lt)
+
+      nel   = nelfld(ifield)
+      n     = nx1*ny1*nz1*nel
+
+   
+      const = 1./dt
+      call cmult2(h2,vtrans(1,1,1,1,ifield),const,n)
+      do i=1,n
+         h2(i)=const*vtrans(i,1,1,1,ifield)
+         tb(i)=bd(2)*bm1(i,1,1,1)*t(i,1,1,1,ifield-1)
+      enddo
+
       DO 100 ILAG=2,NBD
          IF (IFGEOM) THEN
             CALL COL3 (TA,BM1LAG(1,1,1,1,ILAG-1),
-     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
+     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),N)
          ELSE
             CALL COL3 (TA,BM1,
-     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
+     $                    TLAG  (1,1,1,1,ILAG-1,IFIELD-1),N)
          ENDIF
-         CALL CMULT (TA,BD(ILAG+1),NTOT1)
-         CALL ADD2  (TB,TA,NTOT1)
+         CALL CMULT (TA,BD(ILAG+1),N)
+         CALL ADD2  (TB,TA,N)
  100  CONTINUE
-C
-      CALL COL2 (TB,H2,NTOT1)
-      CALL ADD2 (BQ(1,1,1,1,IFIELD-1),TB,NTOT1)
-C
+
+      do i=1,n
+         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1) + tb(i)*h2(i)
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine lagscal
-C-----------------------------------------------------------------------
-C
-C     Keep old passive scalar field(s) 
-C
-C-----------------------------------------------------------------------
+      subroutine lagscal   !  Keep old passive scalar field(s) 
+
       include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'TSTEP'
-C
-      NTOT1 = NX1*NY1*NZ1*NELFLD(IFIELD)
-C
-      DO 100 ILAG=NBDINP-1,2,-1
-         CALL COPY (TLAG(1,1,1,1,ILAG  ,IFIELD-1),
-     $              TLAG(1,1,1,1,ILAG-1,IFIELD-1),NTOT1)
- 100  CONTINUE
-C
-      CALL COPY (TLAG(1,1,1,1,1,IFIELD-1),T(1,1,1,1,IFIELD-1),NTOT1)
-C
+      include 'TOTAL'
+
+      n = nx1*ny1*nz1*nelfld(ifield)
+
+      do ilag=nbdinp-1,2,-1
+         call copy (tlag(1,1,1,1,ilag  ,ifield-1),
+     $              tlag(1,1,1,1,ilag-1,ifield-1),n)
+      enddo
+
+      call copy (tlag(1,1,1,1,1,ifield-1),t(1,1,1,1,ifield-1),n)
+
       return
       end
 c-----------------------------------------------------------------------
       subroutine outfldrq (x,txt10,ichk)
-      INCLUDE 'SIZE'
-      INCLUDE 'TSTEP'
+      include 'SIZE'
+      include 'TSTEP'
       real x(nx1,ny1,nz1,lelt)
       character*10 txt10
 c
@@ -399,7 +398,7 @@ C
 c     QUESTIONABLE support for Robin BC's at this point! (5/15/08)
 
       nel    = nelfld(ifield)
-      ntot   = nx1*ny1*nz1*nel
+      n   = nx1*ny1*nz1*nel
 
       if (igeom.eq.1) then   ! geometry at t^{n-1}
 
@@ -422,16 +421,16 @@ C        New geometry
          call sethlm  (h1,h2,intype)
 
          call bcneusc (ta,-1)       ! Modify diagonal for Robin condition
-         call add2    (h2,ta ,ntot)
-         call col2    (h2,BM1,ntot)
+         call add2    (h2,ta ,n)
+         call col2    (h2,BM1,n)
 
          call bcneusc (tb,1)        ! Modify rhs for flux bc
-         call add2    (bq(1,1,1,1,ifield-1),tb,ntot)
+         call add2    (bq(1,1,1,1,ifield-1),tb,n)
 
          call dssum   (bq(1,1,1,1,ifield-1),nx1,ny1,nz1)
          call dssum   (h2,nx1,ny1,nz1)
 
-         call invcol3 (t(1,1,1,1,ifield-1),bq(1,1,1,1,ifield-1),h2,ntot)
+         call invcol3 (t(1,1,1,1,ifield-1),bq(1,1,1,1,ifield-1),h2,n)
 
          call bcdirsc (t(1,1,1,1,ifield-1)) ! --> no mask needed
 
@@ -456,7 +455,7 @@ c
      $              ,h2(lx1,ly1,lz1,lelt)
 
       nel = nelfld(ifield)
-      ntot1 = nx1*ny1*nz1*nel
+      n   = nx1*ny1*nz1*nel
 
       intype = 0
       if (iftran) intype = -1
@@ -467,10 +466,88 @@ c
       imesh = 1
 c      if (iftmsh(ifield)) imesh=2
 
-      call rzero   (h2,ntot1)
+      call rzero   (h2,n)
       call axhelm  (ta,t(1,1,1,1,ifield-1),vdiff(1,1,1,1,ifield)
      $             ,h2,imesh,isd)
-      call sub2    (bq(1,1,1,1,ifield-1),ta,ntot1)
+      call sub2    (bq(1,1,1,1,ifield-1),ta,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cdscal_dg (igeom)
+C
+C     Solve the convection-diffusion equation for passive scalar IPSCAL
+C
+      include 'SIZE'
+      include 'TOTAL'
+      common  /cprint/ ifprint
+      logical          ifprint,ifconv
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrns/ ta(lt),tb(lt)
+      common /scrvh/ h1(lt),h2(lt)
+
+      include 'ORTHOT'  ! This must be fixed
+
+      nel = nelfld(ifield)
+      n   = nx1*ny1*nz1*nel
+
+      if (igeom.eq.1) then   ! old geometry at t^{n-1}
+
+         call makeq
+         call lagscal
+
+      else                   ! new geometry at t^n
+
+         if (ifprint.and.ifield.eq.2.and.nio.eq.0) 
+     $      write (6,*) ' Temperature/Passive scalar solution'
+
+         if1=ifield-1
+         write(name4,1) if1-1
+    1    format('PS',i2)
+         if(ifield.eq.2) write(name4,'(A4)') 'TEMP'
+ 
+         isd = 1
+         if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
+c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
+
+         intype = 0
+         if (iftran) intype = -1
+         call sethlm  (h1,h2,intype)
+         call bcneusc (ta,-1)
+         call add2    (h2,ta,n)
+         call bcdirsc (t(1,1,1,1,ifield-1))
+         call axhelm  (ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd)
+         call sub3    (tb,bq(1,1,1,1,ifield-1),ta,n)
+         call bcneusc (ta,1)
+         call add2    (tb,ta,n)
+
+
+c        if (ifdg) then
+c           do i=1,n                        ! Quick Hack, 10/10/15, pff.
+c              s = h2(i)*bm1(i,1,1,1)
+c              ta(i)=tb(i)/s
+c              ta(i)=tmask(i,1,1,1,ifield-1)*tb(i)/s
+c           enddo
+c        elseif (iftmsh(ifield)) then
+
+         if (iftmsh(ifield)) then
+           call hsolve  (name4,ta,tb,h1,h2 
+     $                   ,tmask(1,1,1,1,ifield-1)
+     $                   ,tmult(1,1,1,1,ifield-1)
+     $                   ,imesh,tolht(ifield),nmxh,1
+     $                   ,approx,napprox,bintm1)
+         else
+           call hsolve  (name4,ta,tb,h1,h2 
+     $                   ,tmask(1,1,1,1,ifield-1)
+     $                   ,tmult(1,1,1,1,ifield-1)
+     $                   ,imesh,tolht(ifield),nmxh,1
+     $                   ,approx,napprox,binvm1)
+         endif 
+
+         call add2    (t(1,1,1,1,ifield-1),ta,n)
+
+      endif  ! End of IGEOM branch.
 
       return
       end

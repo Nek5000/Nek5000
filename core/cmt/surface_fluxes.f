@@ -70,7 +70,7 @@
 !    >                     flux_hndl) ! for non-symmetric gs_op someday
 
       return
-      end subroutine fluxes_full_field
+      end
 
 !-----------------------------------------------------------------------
 
@@ -88,7 +88,7 @@
       enddo
 
       return
-      end subroutine faceu
+      end
 
 !-----------------------------------------------------------------------
 
@@ -115,7 +115,7 @@
       enddo
 
       return
-      end subroutine fillq
+      end
 
 !-----------------------------------------------------------------------
 
@@ -143,7 +143,7 @@
       call gs_op_fields(handle,yours,nf,nstate,1,1,0)
       call sub2 (yours,mine,ntot)
       return
-      end subroutine face_state_commo
+      end
 
 !-----------------------------------------------------------------------
 
@@ -156,7 +156,7 @@
 ! JH061814 It doesn't need to do anything, but a sanity check would be
 !          wise.
       return
-      end subroutine face_flux_commo
+      end
 
 !-------------------------------------------------------------------------------
 
@@ -312,7 +312,7 @@
       enddo
       enddo
 
-      END subroutine InviscidFlux
+      end
 
 !-----------------------------------------------------------------------
 
@@ -352,7 +352,7 @@
       call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,vol,flux)
 
       return
-      end subroutine surface_integral_full
+      end
 
 !-------------------------------------------------------------------------------
 
@@ -366,11 +366,10 @@
       include 'DG'
       include 'CMTDATA'
       include 'INPUT'
+      include 'GEOM'
 
-      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
-     >             ,AREA  (LX1,LZ1,6,lelcmt)
-     >             ,DLAM
+      real zenorms(lx1,lz1,6,lelt,3)
+      equivalence (zenorms,unx)
 
       integer lfc1
       parameter (lfc1=lx1*lz1*2*ldim)
@@ -400,7 +399,7 @@
      >                       res1(1,1,1,e,eq),flux)
 
       return
-      end subroutine surface_integral_elm
+      end
 
 !-----------------------------------------------------------------------
 
@@ -415,6 +414,7 @@
       include  'DG'
       include  'CMTDATA'
       include  'INPUT'
+      include  'GEOM'
       integer e,nstate
       real hsijstar(nxd,nzd,2*ndim,toteq,ldim) ! starts life as scratch
       real qminus(nstate,nx1,nz1,2*ndim,nelt),
@@ -424,10 +424,10 @@
 !     real qminus(nstate,nx1,nz1,2*ndim,nelt),
 !    >        ujump(toteq,nx1,nz1,2*ndim,nelt),scrf1(nx1,nz1,2*ndim),
 !    >        gdu(toteq,nx1,nz1)
-      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
-     >             ,AREA  (LX1,LZ1,6,lelcmt)
-     >             ,DLAM
+
+      real zenorms(lx1,lz1,6,lelt,3)
+      equivalence (zenorms,unx)
+
       integer f
 
       nface=2*ndim
@@ -453,7 +453,7 @@
          enddo 
       enddo
       return
-      end subroutine AuxFlux
+      end
 
 !-----------------------------------------------------------------------
 
@@ -476,7 +476,7 @@
       call cmult(gdudxk(1,1,1,e,eq,j),-1.0,nxz*nface)
 
       return
-      end subroutine store_gdu_hstarsij
+      end
 
 !-----------------------------------------------------------------------
 
@@ -515,7 +515,7 @@
       call bcflux(flux) ! needs work
 
       return
-      end subroutine viscousf
+      end
 
 !-----------------------------------------------------------------------
 
@@ -559,4 +559,4 @@
       endif
 
       return
-      end subroutine special_dot_n
+      end

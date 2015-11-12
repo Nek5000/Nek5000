@@ -70,7 +70,7 @@
       enddo ! equation loop
 
       return
-      end subroutine compute_gradients
+      end
 
 !-----------------------------------------------------------------------
 
@@ -121,4 +121,4 @@
       endif
 
       return
-      end subroutine set_rxgll
+      end

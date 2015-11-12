@@ -11,7 +11,7 @@
       call slipwall_rflu(nstate,f,e,faceq,bcq,flux) ! calls RindState stuff
 
       return
-      end subroutine wallbc
+      end
 
 !--------------------------------------------------------------------
 
@@ -87,7 +87,7 @@
       enddo
 
       return
-      end subroutine slipwall_rflu
+      end
 
 !-----------------------------------------------------------------------
 ! ******************************************************************************
@@ -151,7 +151,7 @@
  
       al  = MixtPerf_C_DGP(rl,gGas,pl)
 
-      IF ( ql < 0.0 ) THEN
+      IF ( ql .lt. 0.0 ) THEN
          term = 1.0 + 0.5*(gGas-1.0)*ql/al
          pl   = pl*term**(2.0*gGas/(gGas-1.0))
       ELSE
@@ -163,4 +163,4 @@
 !   End
 ! ******************************************************************************
 
-      END SUBROUTINE RFLU_SetRindStateSlipWallPerf
+      end

@@ -614,8 +614,6 @@ c
 c
       call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
       call col2    (approx(1,0),vmk,ntot)
-      call dssum   (approx(1,0),nx1,ny1,nz1)
-      call col2    (approx(1,0),vml        ,ntot)
 c
 c     Compute part of the norm   (Note:  a(0) already scaled by vml)
 c
@@ -628,7 +626,7 @@ c
       do i=1,km1
          ws(i) = vlsc2(approx(1,0),approx(1,i),ntot)
       enddo
-      if (km1.GT.0) call gop(ws,ws(k),'+  ',km1)
+      if (km1.gt.0) call gop(ws,ws(k),'+  ',km1)
 c
       do i=1,km1
          alpham = -ws(i)
@@ -658,8 +656,6 @@ c
       if (ierr.ne.0) then
          call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
          call col2    (approx(1,0),vmk,ntot)
-         call dssum   (approx(1,0),nx1,ny1,nz1)
-         call col2    (approx(1,0),vml        ,ntot)
 c
 c        Compute part of the norm   (Note:  a(0) already scaled by vml)
 c
@@ -778,9 +774,13 @@ c     if (name.eq.'VELX') kfldfdm =  1
 c     if (name.eq.'VELY') kfldfdm =  2
 c     if (name.eq.'VELZ') kfldfdm =  3
       if (name.eq.'PRES') kfldfdm =  ndim+1
-c
-      call cggo
+
+      if (ifdg) then
+         call cggo_dg (u,r,h1,h2,bi,mask,name,tol,maxit)
+      else
+         call cggo
      $      (u,r,h1,h2,mask,mult,imesh,tol,maxit,isd,bi,name)
+      endif
       thmhz=thmhz+(dnekclock()-etime1)
 c
 c
@@ -793,10 +793,7 @@ c
 c     Either std. Helmholtz solve, or a projection + Helmholtz solve
 c
       include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'TSTEP'
-      include 'FDMH1'
+      include 'TOTAL'
       include 'CTIMER'
 c
       CHARACTER*4    NAME
@@ -814,21 +811,21 @@ c
 
       logical ifstdh
       character*4  cname
+      character*6  name6
+
+      logical ifwt,ifvec
 
       call chcopy(cname,name,4)
       call capit (cname,4)
 
-      ifstdh = .true.
 
-      if (.not.ifflow) ifstdh = .false.
+      p945 = param(94)
+      if (cname.eq.'PRES') p945 = param(95)
 
-      if(cname.eq.'PRES') then
-         if (param(95).ne.0.and.istep.gt.param(95)) ifstdh = .false.
-      elseif (param(94).ne.0.and.istep.gt.param(94)) then
-         ifstdh = .false.
-      endif
-
+                          ifstdh = .false.
       if (param(93).eq.0) ifstdh = .true.
+      if (p945.eq.0)      ifstdh = .true.
+      if (istep.lt.p945)  ifstdh = .true.
 
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
@@ -838,11 +835,442 @@ c
 
          call col2   (r,vmk,n)
          call dssum  (r,nx1,ny1,nz1)
-         call projh  (r,h1,h2,bi,vml,vmk,approx,napprox,w1,w2,name)
+
+         call blank (name6,6)
+         call chcopy(name6,name,4)
+         ifwt  = .true.
+         ifvec = .false.
+
+         call project1
+     $       (r,n,approx,napprox,h1,h2,vmk,vml,ifwt,ifvec,name6)
+
          call hmhzpf (name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd,bi)
-         call gensh  (u,h1,h2,vml,vmk,approx,napprox,w1,w2,name)
+
+         call project2
+     $       (u,n,approx,napprox,h1,h2,vmk,vml,ifwt,ifvec,name6)
 
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine project1(b,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
+
+c     1. Compute the projection of x onto X
+
+c     2. Re-orthogonalize the X basis set and corresponding B=A*X
+c        vectors if A has changed.
+
+c     Output:  b = b - projection of b onto B
+
+c     Input:   n     = length of field (or multifields, when ifvec=true)
+c              rvar  = real array of field values, including old h1,h2, etc.
+c              ivar  = integer array of pointers, etc.
+c              h1    = current h1, for Axhelm(.,.,h1,h2,...)
+c              h2    = current h2
+c              msk   = mask for Dirichlet BCs
+c              w     = weight for inner products (typ. w=vmult, tmult, etc.)
+c              ifwt  = use weighted inner products when ifwt=.true.
+c              ifvec = are x and b vectors, or scalar fields?
+c              name6 = discriminator for action of A*x
+
+c     The idea here is to have one pair of projection routines for 
+c     constructing the new rhs (project1) and reconstructing the new
+c     solution (x = xbar + dx) plus updating the approximation space.
+c     The latter functions are done in project2.
+c
+c     The approximation space X and corresponding right-hand sides,
+c     B := A*X are stored in rvar, as well as h1old and h2old and a
+c     couple of other auxiliary arrays.
+
+c     In this new code, we retain both X and B=A*X and we re-orthogonalize
+c     at each timestep (with no extra matrix-vector products, but O(n m^2)
+c     work.   The idea is to retain fresh vectors by injecting the most 
+c     recent solution and pushing the oldest off the stack, hopefully 
+c     keeping the number of vectors, m, small.
+
+
+      include 'SIZE'   ! For nid/nio
+      include 'TSTEP'  ! For istep
+
+      real b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
+      integer ivar(1)
+      character*6 name6
+      logical ifwt,ifvec
+
+      nn = n
+      if (ifvec) nn = n*ndim
+
+      call proj_get_ivar
+     $   (m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
+
+      if (m.le.0) return
+
+      ireset=iproj_chk_h1h2(rvar(ih1,1),rvar(ih2,1),h1,h2,n) ! Updated matrix?
+
+      bb4 = glsc3(b,w,b,n)
+      bb4 = sqrt(bb4)
+
+
+c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
+
+      if (ireset.eq.1) then
+
+         do j=0,m-1         ! First, set B := A*X
+            jb = ib+j*nn
+            jx = ix+j*nn
+            call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
+         enddo
+
+         if (nio.eq.0) write(6,*) 'Reorthogonalize Basis:'
+
+         call proj_ortho    ! Orthogonalize X & B basis sets
+     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
+
+      endif
+
+c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
+
+      call project1_a(rvar(ixb,1),rvar(ibb,1),b,rvar(ix,1),rvar(ib,1)
+     $               ,n,m,w,ifwt,ifvec)
+
+      baf = glsc3(b,w,b,n)
+      baf = sqrt(baf)
+      ratio = bb4/baf
+
+      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
+    1 format(i8,1p3e14.5,i4,1x,a6,' PROJECT')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine project1_a(xbar,bbar,b,xx,bb,n,m,w,ifwt,ifvec)
+
+c     xbar is best fit in xx, bbar = A*xbar
+c     b <-- b - bbar
+
+      include 'SIZE'
+      real xbar(n),bbar(n),b(n),xx(n,m),bb(n,m),w(n)
+      logical ifwt,ifvec
+
+      real alpha(mxprev),work(mxprev)
+
+
+      if (m.le.0) return
+
+      if (ifwt) then
+         do j=1,m
+            alpha(j)=vlsc3(xx(1,j),w,b,n)
+         enddo
+      else
+         do j=1,m
+            alpha(j)=vlsc2(xx(1,j),b,n)
+         enddo
+      endif
+      call gop(alpha,work,'+  ',m)
+
+      call cmult2(xbar,xx(1,1),alpha(1),n)
+      call cmult2(bbar,bb(1,1),alpha(1),n)
+
+      do j=1,m
+         call add2s2(xbar,xx(1,j),alpha(j),n)
+         call add2s2(bbar,bb(1,j),alpha(j),n)
+      enddo
+
+      call sub2(b,bbar,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iproj_chk_h1h2(h1old,h2old,h1,h2,n)
+
+c     Matrix has changed if h1/h2 differ from old values
+
+      real h1(n),h2(n),h1old(n),h2old(n)
+
+      dh1 = 0.
+      dh2 = 0.
+      do i=1,n
+         dh1 = max(dh1,abs(h1(i)-h1old(i)))
+         dh2 = max(dh2,abs(h2(i)-h2old(i)))
+      enddo
+      dh = max(dh1,dh2)
+      dh = glmax(dh,1)  ! Max across all processors
+
+      iproj_chk_h1h2 = 0
+
+      if (dh.gt.0) then
+
+         call copy(h1old,h1,n)   ! Save old h1 / h2 values
+         call copy(h2old,h2,n)
+
+         iproj_chk_h1h2 = 1      ! Force re-orthogonalization of basis
+
+      endif
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine proj_matvec(b,x,n,h1,h2,msk,name6)
+      include 'SIZE'
+      include 'TOTAL'
+      real b(n),x(n),h1(n),h2(n),msk(n)
+      character*6 name6
+
+c     This is the default matvec for nekcem.
+
+c     The code can later be updated to support different matvec
+c     implementations, which would be discriminated by the character
+c     string "name6"
+
+      imsh = 1
+      isd  = 1
+      call axhelm  (b,x,h1,h2,imsh,isd)       ! b = A x
+      call dssum   (b,nx1,ny1,nz1)
+      call col2    (b,msk,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
+
+      include 'SIZE'      ! nio
+      include 'PARALLEL'  ! wdsize
+
+      real xx(n,1),bb(n,1),w(n)
+      character*6 name6
+      logical ifwt,ifvec
+      integer flag(mxprev)
+      real normk,normp
+
+      if (m.le.0) return
+
+      if (      ifwt) alpha = glsc3(xx(1,m),w,bb(1,m),n)
+      if (.not. ifwt) alpha = glsc2(xx(1,m),bb(1,m),n)
+      if (alpha.eq.0) return
+
+      scale = 1./sqrt(alpha)
+      call cmult(xx(1,m),scale,n)
+      call cmult(bb(1,m),scale,n)
+      flag(m) = 1
+
+      do k=m-1,1,-1  ! Reorthogonalize, starting with latest solution
+
+         if (      ifwt) normk = glsc3(xx(1,k),w,bb(1,k),n)
+         if (.not. ifwt) normk = glsc2(xx(1,k),bb(1,k),n)
+         normk=sqrt(normk)
+
+         do j=m,k+1,-1   ! Modified GS
+            alpha = 0.
+            if (ifwt) then
+               alpha = alpha + .5*(vlsc3(xx(1,j),w,bb(1,k),n)
+     $                       +     vlsc3(bb(1,j),w,xx(1,k),n))
+            else
+               alpha = alpha + .5*(vlsc2(xx(1,j),bb(1,k),n)
+     $                       +     vlsc2(bb(1,j),xx(1,k),n))
+            endif
+            scale = -glsum(alpha,1)
+            call add2s2(xx(1,k),xx(1,j),scale,n)
+            call add2s2(bb(1,k),bb(1,j),scale,n)
+         enddo
+         if (      ifwt) normp = glsc3(xx(1,k),w,bb(1,k),n)
+         if (.not. ifwt) normp = glsc2(xx(1,k),bb(1,k),n)
+         normp=sqrt(normp)
+
+         tol = 1.e-12
+         if (wdsize.eq.4) tol=1.e-6
+
+         if (normp.gt.tol*normk) then ! linearly independent vectors
+            scale = 1./normp
+            call cmult(xx(1,k),scale,n)
+            call cmult(bb(1,k),scale,n)
+            flag(k) = 1
+         else
+            flag(k) = 0
+            if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
+    1       format(i9,'proj_ortho: ',a6,2i4,' Detect rank deficiency:'
+     $            ,1p2e12.4)
+         endif
+
+      enddo
+
+      k=0
+      do j=1,m
+         if (flag(j).eq.1) then
+            k=k+1
+            if (k.lt.j) then
+               call copy(xx(1,k),xx(1,j),n)
+               call copy(bb(1,k),bb(1,j),n)
+            endif
+         endif
+      enddo
+      m = k
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
+      real x(n),b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
+      integer ivar(1)
+      character*6 name6
+      logical ifwt,ifvec
+
+      call proj_get_ivar(m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
+
+c     ix  is pointer to X,     ib  is pointer to B
+c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
+
+      call project2_a(x,rvar(ixb,1),rvar(ix,1),rvar(ib,1)
+     $              ,n,m,mmx,h1,h2,msk,w,ifwt,ifvec,name6)
+
+      ivar(2) = m ! Update number of saved vectors
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine project2_a
+     $      (x,xbar,xx,bb,n,m,mmx,h1,h2,msk,w,ifwt,ifvec,name6)
+
+      real x(n),xbar(n),xx(n,1),bb(n,1),h1(n),h2(n),w(n),msk(n)
+      character*6 name6
+      logical ifwt,ifvec
+
+      nn = n
+      if (ifvec) nn=ndim*n
+
+      call add2        (x,xbar,n)      ! Restore desired solution
+
+      if (m.eq.mmx) then ! Push old vector off the stack
+         do k=2,mmx
+            call copy     (xx(1,k-1),xx(1,k),nn)
+            call copy     (bb(1,k-1),bb(1,k),nn)
+         enddo
+      endif
+
+      m = min(m+1,mmx)
+      call copy        (xx(1,m),x,nn)   ! Update (X,B)
+      call proj_matvec (bb(1,m),xx(1,m),n,h1,h2,msk,name6)
+      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) ! w=mult array
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine proj_get_ivar
+     $    (m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
+
+      include 'SIZE'
+      include 'TSTEP'
+
+      logical ifvec
+      character*6 name6
+
+      integer ivar(10)
+
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      m    = ivar(2)
+      mmx  = (mxprev-4)/2 ! ivar=0 --> mxprev array
+      ivar(1) = mmx
+
+      nn = n
+      if (ifvec) nn = n*ndim  ! Number of entries in a vector
+
+
+      ih1  = 1
+      ih2  = ih1 + n
+      ixb  = ih2 + n      ! pointer to xbar
+      ibb  = ixb + nn     !    "    to bbar
+      ix   = ibb + nn     !    "    to X
+      ib   = ix  + nn*mmx !    "    to B
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine laplacep(name,u,mask,mult,ifld,tol,maxi,approx,napprox)
+c
+c     Solve Laplace's equation, with projection onto previous solutions.
+c
+c     Boundary condition strategy:
+c
+c     u = u0 + ub
+c
+c        u0 = 0 on Dirichlet boundaries
+c        ub = u on Dirichlet boundaries
+c
+c        _
+c        A ( u0 + ub ) = 0
+c
+c        _            _
+c        A  u0  =   - A ub
+c
+c        _             _
+c       MAM u0  =   -M A ub,    M is the mask
+c
+c                      _
+c        A  u0  =   -M A ub ,  Helmholtz solve with SPD matrix A
+c
+c        u = u0+ub
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+c
+      character*4 name
+      real u(1),mask(1),mult(1),approx (1)
+      integer   napprox(1)
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrvh/ h1(lt),h2(lt)
+      common /scruz/ r (lt),ub(lt)
+
+      logical ifstdh
+      character*4  cname
+      character*6  name6
+
+      logical ifwt,ifvec
+
+      call chcopy(cname,name,4)
+      call capit (cname,4)
+
+      call blank (name6,6)
+      call chcopy(name6,name,4)
+      ifwt  = .true.
+      ifvec = .false.
+      isd   = 1
+      imsh  = 1
+      nel   = nelfld(ifld)
+
+      n = nx1*ny1*nz1*nel
+
+      call copy (ub,u,n)             ! ub = u on boundary
+      call dsavg(ub)                 ! Make certain ub is in H1
+      call rone (h1,n)
+      call rzero(h2,n)
+                                     !     _
+      call axhelm (r,ub,h1,h2,1,1)   ! r = A*ub
+
+      do i=1,n                       !        _
+         r(i)=-r(i)*mask(i)          ! r = -M*A*ub
+      enddo
+
+      call dssum  (r,nx1,ny1,nz1)    ! dssum rhs
+
+      call project1
+     $    (r,n,approx,napprox,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      if (nel.eq.nelv) then
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,binvm1)
+      else
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,bintm1)
+      endif
+
+      call project2
+     $     (u,n,approx,napprox,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      call add2(u,ub,n)
 
       return
       end

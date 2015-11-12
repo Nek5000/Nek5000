@@ -9,13 +9,15 @@
      $              , SI2,SI3,SIGMA
      $              , TURBK,TURBE
      $              , PS(LDIMT)
-C
-C
-      COMMON /NEKUSC/ cbu
+
+      common /nekusc/ cbu
       character*3     cbu
 
-      COMMON /NEKUSCMT/ varsic(toteq),rho,phi,pres,cv,e_internal
-     >,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
-      real varsic,rho,phi,pres,cv,e_internal,t0in,p0in
-     >                  ,asnd,rgas,cp,mu,lambda,molarmass
+
+      common /nekuscmt/ varsic(10),rho,phi,pres,cv,e_internal
+     $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
+
+      real              varsic    ,rho,phi,pres,cv,e_internal
+     $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
 ! let kond=udiff
+

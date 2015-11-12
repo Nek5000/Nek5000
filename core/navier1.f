@@ -1522,11 +1522,13 @@ C----------------------------------------------------------------------
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
       if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
       if (ifmodel)                              call twallsh
-c     if (.not.ifsplit)                         call bcneutr ! pff 6/16/15 forgot why added 7/16/15
+
+c     Adding this call allows prescribed pressure bc for PnPn-2
+c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
 
       return
-      END
-C
+      end
+c
       subroutine makeuf
 C---------------------------------------------------------------------
 C

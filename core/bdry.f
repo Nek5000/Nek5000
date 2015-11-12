@@ -155,6 +155,7 @@ C
          WRITE (6,*) 'IFCMT    =',IFCMT
          WRITE (6,*) 'IFVISC   =',IFVISC
          WRITE (6,*) 'IFFLTR   =',IFFLTR
+
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
             WRITE (6,*) 'IFTMSH for field',IFIELD,'   = ',IFTMSH(IFIELD)
@@ -383,14 +384,18 @@ C
 C
 C        Pressure mask
 C
-         CALL RONE(PMASK,NTOT)
-         DO 50 IEL=1,NELV
-         DO 50 IFACE=1,NFACES
-            CB=CBC(IFACE,IEL,IFIELD)
+         call rone(pmask,ntot)
+         do 50 iel=1,nelt
+         do 50 iface=1,nfaces
+            cb=cbc(iface,iel,ifield)
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
      $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
-   50    CONTINUE
+   50    continue
+         if (nelt.gt.nelv) then
+            nn=nx1*ny1*nz1*(nelt-nelv)
+            call rzero(pmask(1,1,1,nelv+1),nn)
+         endif
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
 C
@@ -1141,7 +1146,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE NEKASGN (IX,IY,IZ,IEL)
+      subroutine nekasgn (ix,iy,iz,e)
 C
 C     Assign NEKTON variables for definition (by user) of
 C     boundary conditions at collocation point (IX,IY,IZ)
@@ -1182,67 +1187,62 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
-c
-!-----------------------------------------------------------------------
-! JH062414 CMT-NEK only
-      INCLUDE 'CMTDATA'
-c     COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELV) 
-      
-c     COMMON /otherpvar/ PHIG(LX1,LY1,LZ1,LELV)
-c     COMMON /CMTGASPROP/  CSOUND(lx1,ly1,lz1,lelt)
-c     real                 csound
-! JH062414 CMT-NEK only
-!-----------------------------------------------------------------------
+
+      INCLUDE 'CMTDATA' ! irho, etc.,            ! JH062414 CMT only
+
+      integer e,eqnum
+
       common  /nekcb/ cb
-      CHARACTER CB*3
-    
-      integer eqnum 
-C
+      character cb*3
+
       COMMON /SCREV / SII (LX1,LY1,LZ1,LELT)
      $              , SIII(LX1,LY1,LZ1,LELT)
-C
-      X     = XM1(IX,IY,IZ,IEL)
-      Y     = YM1(IX,IY,IZ,IEL)
-      Z     = ZM1(IX,IY,IZ,IEL)
-      R     = X**2+Y**2
-      IF (R.GT.0.0) R=SQRT(R)
-      IF (X.NE.0.0 .OR. Y.NE.0.0) THETA = ATAN2(Y,X)
-C
-!-----------------------------------------------------------------------
-! JH081415 CMT only
-      IF(IFCMT)then
-         DO eqnum=1,toteq
-            varsic(eqnum)=U(IX,IY,IZ,eqnum,IEL)  
-         ENDDO
-         phi =phig  (IX,IY,IZ,IEL)
-         rho =vtrans(IX,IY,IZ,IEL,IRHO)
-         pres=pr    (IX,IY,IZ,IEL)
-         cv  =vtrans(ix,iy,iz,iel,icv)/rho
-         cp  =vtrans(ix,iy,iz,iel,icp)/rho
-         asnd=csound(ix,iy,iz,iel)
-         if (IFVISC) then ! lol stride
-            mu    =vdiff(ix,iy,iz,iel,imu)
-            udiff =vdiff(ix,iy,iz,iel,iknd)
-            lambda=vdiff(ix,iy,iz,iel,ilam)
-         endif
-      ENDIF
-! JH081415 CMT only
-!-----------------------------------------------------------------------
-      UX    = VX(IX,IY,IZ,IEL)
-      UY    = VY(IX,IY,IZ,IEL)
-      UZ    = VZ(IX,IY,IZ,IEL)
-      TEMP  = T(IX,IY,IZ,IEL,1)
-      DO 100 IPS=1,NPSCAL
-         PS(IPS) = T(IX,IY,IZ,IEL,IPS+1)
- 100  CONTINUE
-      SI2   = SII (IX,IY,IZ,IEL)
-      SI3   = SIII(IX,IY,IZ,IEL)
-      UDIFF = VDIFF (IX,IY,IZ,IEL,IFIELD)
-      UTRANS= VTRANS(IX,IY,IZ,IEL,IFIELD)
+
+      x     = xm1(ix,iy,iz,e)
+      y     = ym1(ix,iy,iz,e)
+      z     = zm1(ix,iy,iz,e)
+      r     = x**2+y**2
+      if (r.gt.0.0) r=sqrt(r)
+      if (x.ne.0.0 .or. y.ne.0.0) theta = atan2(y,x)
+
+      ux    = vx(ix,iy,iz,e)
+      uy    = vy(ix,iy,iz,e)
+      uz    = vz(ix,iy,iz,e)
+      temp  = t(ix,iy,iz,e,1)
+      do ips=1,npscal
+         ps(ips) = t(ix,iy,iz,e,ips+1)
+      enddo
+      si2   = sii (ix,iy,iz,e)
+      si3   = siii(ix,iy,iz,e)
+      udiff = vdiff (ix,iy,iz,e,ifield)
+      utrans= vtrans(ix,iy,iz,e,ifield)
 
       cbu   = cb
-      RETURN
-      END
+
+      if (ifcmt) then                            ! JH081415 CMT only
+
+         do eqnum=1,toteq
+            varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
+         enddo
+         phi  = phig  (ix,iy,iz,e)
+         rho  = vtrans(ix,iy,iz,e,irho)
+         pres = pr    (ix,iy,iz,e)
+         if (rho.ne.0) then
+            cv   = vtrans(ix,iy,iz,e,icv)/rho
+            cp   = vtrans(ix,iy,iz,e,icp)/rho
+         endif
+         asnd = csound(ix,iy,iz,e)
+
+         if (ifvisc) then ! lol stride
+            mu     = vdiff(ix,iy,iz,e,imu)
+            udiff  = vdiff(ix,iy,iz,e,iknd)
+            lambda = vdiff(ix,iy,iz,e,ilam)
+         endif
+
+      endif                                     ! JH081415 CMT only
+
+      return
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE BCNEUTR
 C

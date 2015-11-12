@@ -51,7 +51,7 @@
       enddo
 
       return
-      end subroutine compute_cip
+      end
 
 !-----------------------------------------------------------------------
 
@@ -245,20 +245,20 @@
 
             do l=2,ldim+1
                lm1=l-1
-               if (eijk3(jflux,kdir,lm1) .ne. 0) cycle
+               if (eijk3(jflux,kdir,lm1) .eq. 0) then
 
-               if (lm1 .eq. kdir) then
+                if (lm1 .eq. kdir) then
                   call copy(visco,lambda,npt)
                   m=jflux+1
-               else
+                else
                   call copy(visco,mu,npt)
                   m=kdir+1
-               endif
+                endif
 
-               if (xpflag) then
+                if (xpflag) then
                   call invcol2(visco,gvart(1,e,1),npt)
                   call addcol4(gijklu,visco,dut(1,l),gvart(1,e,m),npt)
-               else
+                else
                   do ipt=1,npt
                      visco(ipt)=visco(ipt)/gvar(1,ipt)
                   enddo
@@ -266,6 +266,8 @@
                      gijklu(ipt)=gijklu(ipt)+visco(ipt)*gvar(m,ipt)*
      >                                                    du(l,ipt)
                   enddo
+                endif
+
                endif
 
             enddo ! l
@@ -275,7 +277,7 @@
       endif ! energy equation
 
       return
-      end subroutine tauij_gdu
+      end
 
 !-----------------------------------------------------------------------
 
@@ -307,7 +309,7 @@
          enddo
       enddo
       return
-      end subroutine compute_transport_props
+      end
 
 ! shovel all this into usr files
 !     prrl = 1.0/prlam
