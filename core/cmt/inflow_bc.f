@@ -99,7 +99,7 @@ c--------------------------------------------------------------------
       enddo
 
       return
-      end subroutine inflow_rflu
+      end
 
 !*********************************************************************
 !* Illinois Open Source License                                      *
@@ -254,11 +254,11 @@ c--------------------------------------------------------------------
 
 ! - subsonic
 
-         IF ( ABS(ql) < al ) THEN
+         IF ( ABS(ql) .lt. al ) THEN
             sl = SQRT(ul*ul + vl*vl + wl*wl)
          
             IF ( bcOptFixed .eq. BCOPT_FIXED_NO ) THEN 
-               IF ( sl > 1.0E-6 ) THEN ! Avoid ill-defined angle computation
+               IF ( sl .gt. 1.0E-6 ) THEN ! Avoid ill-defined angle computation
                   eta = ql/sl        
                ELSE 
                   eta = -1.0
@@ -271,7 +271,7 @@ c--------------------------------------------------------------------
             disc = 0.5*gm1*eta**2*
      >       (a02/(Rm*Rm)*(1.0 + 0.5*gm1*eta**2) - 1.0)     
         
-            IF ( disc < 0.0 ) THEN ! discriminant cannot be negative
+            IF ( disc .lt. 0.0 ) THEN ! discriminant cannot be negative
                ar = SQRT(a02)
                tr = ttot
                pr = ptot
@@ -332,7 +332,7 @@ c--------------------------------------------------------------------
       END IF ! bcOptType
 
       return
-      END SUBROUTINE BcondInflowPerf
+      end
 
 !******************************************************************************
 !

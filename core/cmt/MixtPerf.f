@@ -72,161 +72,161 @@
       REAL Co2,G,U,V,W ! INTENT(IN) W
       REAL MixtPerf_C_Co2GUVW
       MixtPerf_C_Co2GUVW = SQRT(Co2 - 0.5*(G - 1.0)*(U*U + V*V + W*W))
-      END FUNCTION MixtPerf_C_Co2GUVW
+      END
 
       FUNCTION MixtPerf_C_DGP(D,G,P)
       IMPLICIT NONE
       REAL D,G,P! INTENT(IN) 
       REAL MixtPerf_C_DGP
       MixtPerf_C_DGP = SQRT(G*P/D)
-      END FUNCTION MixtPerf_C_DGP
+      END
 
       FUNCTION MixtPerf_C_GHoVm2(G,Ho,Vm2)
       IMPLICIT NONE
       REAL G,Ho,Vm2! INTENT(IN) 
       REAL MixtPerf_C_GHoVm2
       MixtPerf_C_GHoVm2 = SQRT((G - 1.0)*(Ho - 0.5*Vm2))
-      END FUNCTION MixtPerf_C_GHoVm2
+      END
 
       FUNCTION MixtPerf_C_GRT(G,R,T)
       IMPLICIT NONE
       REAL G,R,T! INTENT(IN) 
       REAL MixtPerf_C_GRT
       MixtPerf_C_GRT = SQRT(G*R*T)
-      END FUNCTION MixtPerf_C_GRT
+      END
 
       FUNCTION MixtPerf_C2_GRT(G,R,T)
       IMPLICIT NONE
       REAL G,R,T! INTENT(IN) 
       REAL MixtPerf_C2_GRT
       MixtPerf_C2_GRT = G*R*T
-      END FUNCTION MixtPerf_C2_GRT
+      END
 
       FUNCTION MixtPerf_Co2_CGUVW(C,G,U,V,W)
       IMPLICIT NONE
       REAL C,G,U,V,W! INTENT(IN) 
       REAL MixtPerf_Co2_CGUVW
       MixtPerf_Co2_CGUVW = C*C + 0.5*(G - 1.0)*(U*U + V*V + W*W)
-      END FUNCTION MixtPerf_Co2_CGUVW
+      END
 
       FUNCTION MixtPerf_Cv_CpR(Cp,R)
       IMPLICIT NONE
       REAL Cp,R! INTENT(IN) 
       REAL MixtPerf_Cv_CpR
       MixtPerf_Cv_CpR = Cp - R  
-      END FUNCTION MixtPerf_Cv_CpR
+      END
 
       FUNCTION MixtPerf_Cp_CvR(Cv,R)
       IMPLICIT NONE
       REAL Cv,R! INTENT(IN) 
       REAL MixtPerf_Cp_CvR
       MixtPerf_Cp_CvR = Cv + R  
-      END FUNCTION MixtPerf_Cp_CvR
+      END
 
       FUNCTION MixtPerf_D_CGP(C,G,P)
       IMPLICIT NONE
       REAL C,G,P! INTENT(IN) 
       REAL MixtPerf_D_CGP
       MixtPerf_D_CGP = G*P/(C*C)
-      END FUNCTION MixtPerf_D_CGP
+      END
 
       FUNCTION MixtPerf_D_DoGMa(D,G,Ma)
       IMPLICIT NONE
       REAL D,G,Ma! INTENT(IN) 
       REAL MixtPerf_D_DoGMa
       MixtPerf_D_DoGMa = D/ (1.0 + 0.5*(G-1.0)*Ma*Ma)**(1.0/(G-1.0))
-      END FUNCTION MixtPerf_D_DoGMa
+      END
 
       FUNCTION MixtPerf_D_PRT(P,R,T)
       IMPLICIT NONE
       REAL P,R,T ! INTENT(IN) 
       REAL MixtPerf_D_PRT
       MixtPerf_D_PRT = P/(R*T)
-      END FUNCTION MixtPerf_D_PRT
+      END
 
       FUNCTION MixtPerf_Eo_DGPUVW(D,G,P,U,V,W)
       IMPLICIT NONE
       REAL D,G,P,U,V,W! INTENT(IN) 
       REAL MixtPerf_Eo_DGPUVW
       MixtPerf_Eo_DGPUVW = P/(D*(G - 1.0)) + 0.5*(U*U + V*V + W*W)
-      END FUNCTION MixtPerf_Eo_DGPUVW
+      END
 
       FUNCTION MixtPerf_Eo_DGPVm(D,G,P,Vm)
       IMPLICIT NONE
       REAL D,G,P,Vm! INTENT(IN) 
       REAL MixtPerf_Eo_DGPVm
       MixtPerf_Eo_DGPVm = P/(D*(G - 1.0)) + 0.5*Vm*Vm
-      END FUNCTION MixtPerf_Eo_DGPVm
+      END
 
       FUNCTION MixtPerf_Eo_GRTUVW(G,R,T,U,V,W)
       IMPLICIT NONE
       REAL  G,R,T,U,V,W
       REAL  MixtPerf_Eo_GRTUVW
       MixtPerf_Eo_GRTUVW = R*T/(G - 1.0) + 0.5*(U*U + V*V + W*W)
-      END FUNCTION MixtPerf_Eo_GRTUVW
+      END
 
       FUNCTION MixtPerf_G_CpR(Cp,R)
       IMPLICIT NONE
       REAL  Cp,R
       REAL  MixtPerf_G_CpR
       MixtPerf_G_CpR = Cp/(Cp - R)
-      END FUNCTION MixtPerf_G_CpR
+      END
 
       FUNCTION MixtPerf_Ho_CpTUVW(Cp,T,U,V,W)
       IMPLICIT NONE
       REAL  Cp,T,U,V,W
       REAL  MixtPerf_Ho_CpTUVW
       MixtPerf_Ho_CpTUVW = Cp*T + 0.5*(U*U + V*V + W*W)
-      END FUNCTION MixtPerf_Ho_CpTUVW
+      END
 
       FUNCTION MixtPerf_M_R(R)
       IMPLICIT NONE
       REAL  R
       REAL  MixtPerf_M_R
       MixtPerf_M_R = 8314.3/R
-      END FUNCTION MixtPerf_M_R
+      END
 
       FUNCTION MixtPerf_P_DEoGVm2(D,Eo,G,Vm2)
       IMPLICIT NONE
       REAL  D,Eo,G,Vm2
       REAL  MixtPerf_P_DEoGVm2
       MixtPerf_P_DEoGVm2 = (G - 1.0)*D*(Eo - 0.5*Vm2)
-      END FUNCTION MixtPerf_P_DEoGVm2
+      END
 
       FUNCTION MixtPerf_P_DRT(D,R,T)
       IMPLICIT NONE
       REAL  D,R,T
       REAL  MixtPerf_P_DRT
       MixtPerf_P_DRT = D*R*T
-      END FUNCTION MixtPerf_P_DRT
+      END
 
       FUNCTION MixtPerf_P_GMaPo(G,Ma,Po)
       IMPLICIT NONE
       REAL  G,Ma,Po
       REAL  MixtPerf_P_GMaPo
       MixtPerf_P_GMaPo = Po/((1.0 + 0.5*(G - 1.0)*Ma*Ma)**(G/(G - 1.0)))
-      END FUNCTION MixtPerf_P_GMaPo
+      END
 
       FUNCTION MixtPerf_P_DDoGPo(D,Do,G,Po)
       IMPLICIT NONE
       REAL  D,Do,G,Po
       REAL  MixtPerf_P_DDoGPo
       MixtPerf_P_DDoGPo = Po*(D/Do)**G
-      END FUNCTION MixtPerf_P_DDoGPo
+      END
 
       FUNCTION MixtPerf_P_GPoTTo(G,Po,T,To)
       IMPLICIT NONE
       REAL  G,Po,T,To
       REAL  MixtPerf_P_GPoTTo
       MixtPerf_P_GPoTTo = Po*(T/To)**(G/(G - 1.0))
-      END FUNCTION MixtPerf_P_GPoTTo
+      END
 
       FUNCTION MixtPerf_Po_GPTTo(G,P,T,To)
       IMPLICIT NONE
       REAL  G,P,T,To
       REAL  MixtPerf_Po_GPTTo
       MixtPerf_Po_GPTTo = P*(To/T)**(G/(G - 1.0))
-      END FUNCTION MixtPerf_Po_GPTTo
+      END
 
       FUNCTION MixtPerf_Po_CGPUVW(C,G,P,U,V,W)
       IMPLICIT NONE
@@ -234,81 +234,81 @@
       REAL  MixtPerf_Po_CGPUVW
       MixtPerf_Po_CGPUVW =
      >        P*(1.0 + 0.5*(G - 1.0)*(U*U+V*V+W*W)/(C*C))**(G/(G - 1.0))
-      END FUNCTION MixtPerf_Po_CGPUVW
+      END
 
       FUNCTION MixtPerf_R_CpG(Cp,G)
       IMPLICIT NONE
       REAL  Cp,G
       REAL  MixtPerf_R_CpG
       MixtPerf_R_CpG = Cp - Cp/G  
-      END FUNCTION MixtPerf_R_CpG
+      END
 
       FUNCTION MixtPerf_R_M(M,whatev)
       IMPLICIT NONE
       REAL  M,whatev
       REAL  MixtPerf_R_M
       MixtPerf_R_M = 8314.3/M
-      END FUNCTION MixtPerf_R_M
+      END
 
       FUNCTION MixtPerf_T_CGR(C,G,R)
       IMPLICIT NONE
       REAL  C,G,R
       REAL  MixtPerf_T_CGR
       MixtPerf_T_CGR = C*C/(G*R)
-      END FUNCTION MixtPerf_T_CGR
+      END
 
       FUNCTION MixtPerf_T_CpHoVm2(Cp,Ho,Vm2)
       IMPLICIT NONE
       REAL  Cp,Ho,Vm2
       REAL  MixtPerf_T_CpHoVm2
       MixtPerf_T_CpHoVm2 = (Ho-0.5*Vm2)/Cp
-      END FUNCTION MixtPerf_T_CpHoVm2
+      END
 
       FUNCTION MixtPerf_T_CvEoVm2(Cv,Eo,Vm2)
       IMPLICIT NONE
       REAL  Cv,Eo,Vm2
       REAL  MixtPerf_T_CvEoVm2
       MixtPerf_T_CvEoVm2 = (Eo-0.5*Vm2)/Cv
-      END FUNCTION MixtPerf_T_CvEoVm2
+      END
 
       FUNCTION MixtPerf_T_DPR(D,P,R)
       IMPLICIT NONE
       REAL  D,P,R
       REAL  MixtPerf_T_DPR
       MixtPerf_T_DPR = P/(D*R)
-      END FUNCTION MixtPerf_T_DPR
+      END
 
       FUNCTION MixtPerf_HM_T_DGMP(D,G,M,P)
       IMPLICIT NONE
       REAL  D,G,M,P
       REAL  MixtPerf_HM_T_DGMP
       MixtPerf_HM_T_DGMP = (G*M*M*P + 1.0)/D 
-      END FUNCTION MixtPerf_HM_T_DGMP
+      END
 
       FUNCTION MixtPerf_T_GMaTo(G,Ma,To)
       IMPLICIT NONE
       REAL  G,Ma,To
       REAL  MixtPerf_T_GMaTo
       MixtPerf_T_GMaTo = To/(1.0 + 0.5*(G - 1.0)*Ma*Ma)
-      END FUNCTION MixtPerf_T_GMaTo
+      END
 
       FUNCTION MixtPerf_To_CpTUVW(Cp,T,U,V,W)
       IMPLICIT NONE
       REAL  Cp,T,U,V,W
       REAL  MixtPerf_To_CpTUVW
       MixtPerf_To_CpTUVW = T + 0.5*(U*U + V*V + W*W)/Cp
-      END FUNCTION MixtPerf_To_CpTUVW
+      END
 
       FUNCTION MixtPerf_Vm_C2Co2G(C2,Co2,G)
       IMPLICIT NONE
       REAL  C2,Co2,G
       REAL  MixtPerf_Vm_C2Co2G
-      IF ( Co2 > C2 ) THEN  
+      IF ( Co2 .gt. C2 ) THEN  
          MixtPerf_Vm_C2Co2G = SQRT(2.0/(G - 1.0)*(Co2 - C2))
       ELSE 
          MixtPerf_Vm_C2Co2G = 0.0
       END IF ! Co2
-      END FUNCTION MixtPerf_Vm_C2Co2G
+      END
 
 ! JH060614 stitched bloodily into cmt-nek. Before that,
 !******************************************************************************
