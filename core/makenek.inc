@@ -584,11 +584,13 @@ if [ -f "./SIZE" ]; then
   if [ "$IFCMT" == "true" ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
+      echo '      integer lelcmt' >> SIZE
       echo '      parameter(lelcmt = lelt  ) ! # of cmt elements '  >>SIZE
       echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
   else
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
+      echo '      integer lelcmt' >> SIZE
       echo '      parameter(lelcmt = 1  ) ! # of cmt elements '  >>SIZE
       echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
   fi
