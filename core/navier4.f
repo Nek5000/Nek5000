@@ -1,4 +1,11 @@
 c-----------------------------------------------------------------------
+c
+c     TO DO:   Need to monitor dssum when using DG.  (11/29/15, pff)
+c
+c              Specifically - line 837 in navier4.f
+c                           - line 537 in hmholtz.f
+c
+c-----------------------------------------------------------------------
       subroutine setrhs(p,h1,h2,h2inv)
 C
 C     Project rhs onto best fit in the "E" norm.
@@ -906,7 +913,7 @@ c     keeping the number of vectors, m, small.
 
       if (m.le.0) return
 
-      ireset=iproj_chk_h1h2(rvar(ih1,1),rvar(ih2,1),h1,h2,n) ! Updated matrix?
+      ireset=iproj_chk(rvar(ih1,1),rvar(ih2,1),h1,h2,n) ! Updated matrix?
 
       bb4 = glsc3(b,w,b,n)
       bb4 = sqrt(bb4)
@@ -982,11 +989,20 @@ c     b <-- b - bbar
       return
       end
 c-----------------------------------------------------------------------
-      function iproj_chk_h1h2(h1old,h2old,h1,h2,n)
+      function iproj_chk(h1old,h2old,h1,h2,n)
+      include 'SIZE'
+      include 'TOTAL'
 
 c     Matrix has changed if h1/h2 differ from old values
 
       real h1(n),h2(n),h1old(n),h2old(n)
+
+      iproj_chk = 0
+
+      if (ifmvbd) then
+         iproj_chk = 1
+         return
+      endif
 
       dh1 = 0.
       dh2 = 0.
@@ -997,17 +1013,14 @@ c     Matrix has changed if h1/h2 differ from old values
       dh = max(dh1,dh2)
       dh = glmax(dh,1)  ! Max across all processors
 
-      iproj_chk_h1h2 = 0
-
       if (dh.gt.0) then
 
          call copy(h1old,h1,n)   ! Save old h1 / h2 values
          call copy(h2old,h2,n)
 
-         iproj_chk_h1h2 = 1      ! Force re-orthogonalization of basis
+         iproj_chk = 1      ! Force re-orthogonalization of basis
 
       endif
-
 
       return
       end
@@ -1082,15 +1095,15 @@ c-----------------------------------------------------------------------
          if (wdsize.eq.4) tol=1.e-6
 
          if (normp.gt.tol*normk) then ! linearly independent vectors
-            scale = 1./normp
-            call cmult(xx(1,k),scale,n)
-            call cmult(bb(1,k),scale,n)
-            flag(k) = 1
+           scale = 1./normp
+           call cmult(xx(1,k),scale,n)
+           call cmult(bb(1,k),scale,n)
+           flag(k) = 1
          else
-            flag(k) = 0
-            if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
-    1       format(i9,'proj_ortho: ',a6,2i4,' Detect rank deficiency:'
-     $            ,1p2e12.4)
+           flag(k) = 0
+           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
+    1      format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:'
+     $           ,1p2e12.4)
          endif
 
       enddo
