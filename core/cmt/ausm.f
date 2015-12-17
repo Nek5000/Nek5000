@@ -74,7 +74,7 @@
       mr  = qr/af
       mra = ABS(mr)    
 
-      IF ( mla <= 1.0 ) THEN 
+      IF ( mla .le. 1.0 ) THEN 
          mlp = 0.25*(ml+1.0)*(ml+1.0) + 0.125*(ml*ml-1.0)*(ml*ml-1.0)
          wtl = 0.25*(ml+1.0)*(ml+1.0)*(2.0-ml) +
      >         0.1875*ml*(ml*ml-1.0)*(ml*ml-1.0)
@@ -83,7 +83,7 @@
          wtl = 0.5*(1.0+ml/mla)
       END IF ! mla
 
-      IF ( mra <= 1.0 ) THEN 
+      IF ( mra .le. 1.0 ) THEN 
          mrm = -0.25*(mr-1.0)*(mr-1.0)-0.125*(mr*mr-1.0)*(mr*mr-1.0)
          wtr = 0.25*(mr-1.0)*(mr-1.0)*(2.0+mr) -
      >         0.1875*mr*(mr*mr-1.0)*(mr*mr-1.0)
@@ -117,7 +117,7 @@
 ! End
 ! ******************************************************************************
       return
-      END SUBROUTINE AUSM_FluxFunction
+      END
 
 !-----------------------------------------------------------------------
 
@@ -149,4 +149,4 @@
       flx(5) = 0.5*(ql*(rel + pl) + pl*fs + qr*(rer + pr) + pr*fs)
 
       return
-      end subroutine CentralInviscid_FluxFunction
+      end

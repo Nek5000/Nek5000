@@ -50,15 +50,16 @@ c We have perfect gas law. Cvg is stored full field
       include 'SOLN'
       include 'PARALLEL'
       include 'NEKUSE'
-      integer   e
+      integer   e,eg
       real energy(nx1,ny1,nz1)
 
+      eg = lglel(e)
       do k=1,nz1
       do j=1,ny1
       do i=1,nx1
          call nekasgn(i,j,k,e)
          e_internal=energy(i,j,k) !nekasgn should do this, but can't
-         call userEOS(i,j,k,ieg)
+         call userEOS(i,j,k,eg)
          vtrans(i,j,k,e,icp)= cp*rho
          vtrans(i,j,k,e,icv)= cv*rho
          t(i,j,k,e,1)       = temp
@@ -69,4 +70,4 @@ c We have perfect gas law. Cvg is stored full field
       enddo
 
       return
-      end subroutine tdstate
+      end

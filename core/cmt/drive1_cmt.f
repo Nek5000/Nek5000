@@ -192,7 +192,7 @@ c-----------------------------------------------------------------------
       endif
 
       return
-      end subroutine compute_rhs_and_dt
+      end
 !-----------------------------------------------------------------------
 
       subroutine set_tstep_coef
@@ -223,7 +223,7 @@ c-----------------------------------------------------------------------
          endif
       enddo
       return
-      end subroutine
+      end
 !-----------------------------------------------------------------------
 
       subroutine cmt_flow_ics(ifrestart)
@@ -247,7 +247,7 @@ c-----------------------------------------------------------------------
       call rzero(res1,n)
       call rzero(res2,n)
       return
-      end subroutine
+      end
 !-----------------------------------------------------------------------
 
       subroutine print_cmt_timers
@@ -265,7 +265,7 @@ c we need our own IO features. Until then we use the default nek routines
      $               ,dtime_/np
       endif
       return 
-      end subroutine
+      end
 !-----------------------------------------------------------------------
 
       subroutine init_cmt_timers
@@ -275,5 +275,5 @@ c we need our own IO features. Until then we use the default nek routines
       ftime   = 0.00
 
       return
-      end subroutine
+      end
 !-----------------------------------------------------------------------

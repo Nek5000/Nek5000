@@ -8,3 +8,9 @@ compiler.out
 .cproject
 .project
 *.swp
+fort.*
+logfile
+makefile
+makenek
+*.log.*
+profiles

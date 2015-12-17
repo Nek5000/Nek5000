@@ -50,14 +50,14 @@
       enddo
 
       return
-      end subroutine printalot
+      end
 c-----------------------------------------------------------------------
 ! A bunch of diagostic routines
 c-----------------------------------------------------------------------
       subroutine matout_rowsum(ab,na,nb)
       integer   na,nb
       real   ab(na,nb)
-      character (len=100) zefmt
+      character*100 zefmt
       write(zefmt,'(a1,i2,a6)') '(',nb,'e15.7)'
       do i=1,na
          write(37,zefmt) (ab(i,j),j=1,nb)
@@ -82,11 +82,10 @@ c----------------------------------------------------------------------
          call copy(otvar(1,1,1,e,4),u(1,1,1,4,e),n)
          call copy(otvar(1,1,1,e,5),u(1,1,1,5,e),n)
       enddo
+
 c     ifxyo=.true.
-      if(lx2.ne.lx1)then
-        if(nio.eq.0) write(6,*)'Set LX1=LX2 for I/O',lx1,lx2
-        call exitt
-      endif
+      if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
+
       itmp = 1
       call outpost2(otvar(1,1,1,1,2),otvar(1,1,1,1,3),otvar(1,1,1,1,4)
      $             ,otvar(1,1,1,1,1),otvar(1,1,1,1,5),itmp,'fld')
@@ -104,10 +103,8 @@ c----------------------------------------------------------------------
       integer e,f
       n = nx1*ny1*nz1*nelt
       itmp = 1
-      if(lx2.ne.lx1) then
-        if(nio.eq.0) write(6,*)'Set LX1=LX2 for I/O',lx1,lx2
-        call exitt
-      endif
+      if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
+
       call outpost2(vx,vy,vz,vtrans(1,1,1,1,irho),t,itmp,'vdt')
       do i=1,n
          ux = vx(i,1,1,1)
@@ -141,7 +138,7 @@ c----------------------------------------------------------------------
       integer e,i1,is,il,i,inmbr,length,eq,is2,il2
       real    rhseqs(toteq)
 
-c      write(6,*)wfnav,inmbr
+c     write(6,*)wfnav,inmbr
       i1 =index(wfnav,' ')-1
       write(citer,*)inmbr
       write(citer2,*)nid
@@ -149,26 +146,26 @@ c      write(6,*)wfnav,inmbr
       do i=1,length
          if(citer(i:i).ne.' ')then
          is=i
-         exit
+c        exit ! Not valid w/ pgf77
          endif
       enddo
       do i=length,1,-1 
          if(citer(i:i).ne.' ')then
          il=i
-         exit
+c        exit ! Not valid w/ pgf77
          endif
       enddo
 !     get the string that contains character nid
       do i=1,length
          if(citer2(i:i).ne.' ')then
          is2=i
-         exit
+c        exit ! Not valid w/ pgf77
          endif
       enddo
       do i=length,1,-1 
          if(citer2(i:i).ne.' ')then
          il2=i
-         exit
+c        exit ! Not valid w/ pgf77
          endif
       enddo
       nxyz1 = nx1*ny1*nz1
@@ -247,17 +244,17 @@ c          need to add glsum to make it parallel
          do e=1,nelt
             il = 0
             do j=1,ny1
-               do i=1,nx1
-                  il = il +1
-                  msum = msum + (u(i,j,1,1,e)*bm1(i,j,1,e))
-               enddo
+            do i=1,nx1
+               il = il +1
+               msum = msum + (u(i,j,1,1,e)*bm1(i,j,1,e))
+            enddo
             enddo
          enddo
       endif
       total_mass = glsum(msum,1) 
       if(nio.eq.0)
 c    $   write(6,*)'Total mass in the domain ',total_mass
-     $   write(1144,*)'Total mass in the domain ',total_mass
+     $   write(144,*)'Total mass in the domain ',total_mass
       return
       end
 c-----------------------------------------------------------------------
