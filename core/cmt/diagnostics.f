@@ -217,6 +217,7 @@ c----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'MASS'
+      INCLUDE 'TSTEP'
       COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
       logical if3d
       integer e
@@ -254,7 +255,7 @@ c          need to add glsum to make it parallel
       total_mass = glsum(msum,1) 
       if(nio.eq.0)
 c    $   write(6,*)'Total mass in the domain ',total_mass
-     $   write(144,*)'Total mass in the domain ',total_mass
+     $   write(144,*)'Time ',time,'Mass ',total_mass
       return
       end
 c-----------------------------------------------------------------------

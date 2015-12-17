@@ -4,8 +4,8 @@ c--------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'CMTBCDATA'
       integer nvar,f,e
-      real faceq(nvar,nx1,nz1,2*ldim,nelt) 
-      real bcq(nvar,nx1,nz1,2*ldim,nelt) 
+      real faceq(nx1,nz1,2*ldim,nelt,nvar)
+      real bcq(nx1,nz1,2*ldim,nelt,nvar)
       real flux(nx1*nz1,2*ldim,nelt,*)  
 
       ! Assume that the user knows inflow is sub or super sonic
@@ -21,16 +21,24 @@ c--------------------------------------------------------------------
       include 'CMTDATA'
       include 'GEOM'
       include 'PARALLEL'
+      include 'DG'
 
       integer f,e ! intent(in)
       integer i,bcOptType
-      real faceq(nvar,nx1*nz1,2*ldim,nelt) ! intent(in)
-      real bcq(nvar,nx1*nz1,2*ldim,nelt)   ! intent(out)
+      real faceq(nx1*nz1,2*ldim,nelt,nvar) ! intent(in)
+      real bcq  (nx1*nz1,2*ldim,nelt,nvar)   ! intent(out)
       real flux1(nx1*nz1,2*ldim,nelt,*)    ! intent(out)
-      real nx,ny,nz,rl,ul,vl,wl,pl,rr,ur,vr,wr,prf,flx(5),fs
+      real nx,ny,nz,rl,ul,vl,wl,pl,rr,ur,vr,wr
       real ptot,ttot,mach
+      parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
+      common /SCRNS/ nxf(lfd1),nyf(lfd1),nzf(lfd1),fs(lfd1),
+     >               ufacel(lfd1,5),plc(lfc1),ufacer(lfd1,5),prc(lfd1),
+     >               flx(lfd1,5),plf(lfd1),prf(lfd1),jaco_c(lfc1),
+     >               jaco_f(lfd1)
+      real nxf,nyf,nzf,fs,ufacel,ufacer,plc,prc,plf,prf,jaco_c,jaco_f
 
       nxz=nx1*nz1
+      nxzd=nxd*nzd
       ieg=lglel(e)
 
       call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
@@ -45,57 +53,74 @@ c--------------------------------------------------------------------
          nx = unx(l,1,f,e)
          ny = uny(l,1,f,e)
          nz = unz(l,1,f,e)
-         phl= faceq(iph,l,f,e)
-         rl = faceq(iu1,l,f,e)/phl
-         rul= faceq(iu2,l,f,e)/phl
-         rvl= faceq(iu3,l,f,e)/phl
-         rwl= faceq(iu4,l,f,e)/phl
+         phl= faceq(l,f,e,iph)
+         rl = faceq(l,f,e,iu1)/phl
+         rul= faceq(l,f,e,iu2)/phl
+         rvl= faceq(l,f,e,iu3)/phl
+         rwl= faceq(l,f,e,iu4)/phl
+         plc(l)=faceq(l,f,e,iph)*faceq(l,f,e,ipr) ! needs phi. U has phi
          mach = sqrt(ux**2+uy**2+uz**2)/asnd
          if (mach.lt.1.0) bcOptType=1
          betah = atan2(uy,ux)
          betav = atan2(uz,ux)
-! belongs in userbc somehow
+! belongs in userbc somehow. triple-check to see if there are hidden
+! assumptions about reconstruction order in BcondInflowPerf
          call BcondInflowPerf(bcOptType,0,p0in,t0in,betah,
      >                        betav,mach,nx,ny,nz,cp,molarmass,rl,rul,
      >                        rvl,rwl,rr,rur,rvr,rwr,rer,pres)
-         bcq(irho,l,f,e) = rr     ! lol aliased
-!        bcq(iux, l,f,e) = rur/rr ! lol aliased
-!        bcq(iuy, l,f,e) = rvr/rr ! lol aliased
-!        bcq(iuz, l,f,e) = rwr/rr ! lol aliased
-         bcq(iux, l,f,e) = ux
-         bcq(iuy, l,f,e) = uy
-         bcq(iuz, l,f,e) = uz
-         bcq(ipr, l,f,e) = pres ! BcondInflowPerf
-         bcq(ithm,l,f,e) = temp ! userbc
-         bcq(isnd,l,f,e) = asnd ! userbc
-         bcq(iph, l,f,e) = phi  ! userbc
-         bcq(icvf,l,f,e) = cv   ! userbc
-         bcq(icpf,l,f,e) = cp   ! userbc
-         bcq(iu1, l,f,e) = phi*rr  ! still aliased
-         bcq(iu2, l,f,e) = phi*rur ! still aliased
-         bcq(iu3, l,f,e) = phi*rvr ! still aliased
-         bcq(iu4, l,f,e) = phi*rwr ! still aliased
-         bcq(iu5, l,f,e) = phi*rer ! still aliased
-!-----------------------------------------------------------------------
-! JH031615 OK fine we need more face storage for gas props, and
-!          compute_gas_props_face needs output arguments of some kind
-         fs = 0.0 ! moving grid stuff later or never
-! JH030915 rewrite the above to use compute_gas_props_face
-!-----------------------------------------------------------------------
-! Inviscid flux at inflow can probably just be hardcoded instead of
-! derived from a trivial call of CentralInviscid_FluxFunction
-         pl=faceq(iph,l,f,e)*faceq(ipr,l,f,e) ! needs phi. U has phi
-         pres=phi*pres ! needs phi. U in bcq has phi already
-         call CentralInviscid_FluxFunction(nx,ny,nz,fs,
-     >                                     faceq(iu1,l,f,e),pl,! U-
-     >                                     bcq(iu1,l,f,e),pres,! U+,bc
-     >                                     flx)
-         do j=1,5
-            flux1(l,f,e,j)=flx(j) ! this one has phi in it already
-         enddo
+         bcq(l,f,e,irho)= rr     ! lol aliased
+!        bcq(l,f,e,iux) = rur/rr ! lol aliased
+!        bcq(l,f,e,iuy) = rvr/rr ! lol aliased
+!        bcq(l,f,e,iuz) = rwr/rr ! lol aliased
+         bcq(l,f,e,iux) = ux
+         bcq(l,f,e,iuy) = uy
+         bcq(l,f,e,iuz) = uz
+         bcq(l,f,e,ipr) = pres ! BcondInflowPerf
+         bcq(l,f,e,ithm)= temp ! userbc
+         bcq(l,f,e,isnd)= asnd ! userbc
+         bcq(l,f,e,iph) = phi  ! userbc
+         bcq(l,f,e,icvf)= cv   ! userbc
+         bcq(l,f,e,icpf)= cp   ! userbc
+         bcq(l,f,e,iu1) = phi*rr  ! still aliased
+         bcq(l,f,e,iu2) = phi*rur ! still aliased
+         bcq(l,f,e,iu3) = phi*rvr ! still aliased
+         bcq(l,f,e,iu4) = phi*rwr ! still aliased
+         bcq(l,f,e,iu5) = phi*rer ! still aliased
+         prc(l)=phi*pres ! needs phi. U in bcq has phi already
 
       enddo
       enddo
+      enddo
+
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(plf,plc,nx1,nxd,fdim,0)
+      call map_faced(prf,prc,nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,1),bcq(1,f,e,iu1),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,2),bcq(1,f,e,iu2),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,3),bcq(1,f,e,iu3),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,4),bcq(1,f,e,iu4),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,5),bcq(1,f,e,iu5),  nx1,nxd,fdim,0)
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+      call col2(jaco_f,wghtf,nxzd)
+      call rzero(fs,nxzd)
+
+!-----------------------------------------------------------------------
+! Inviscid flux at inflow can probably just be hardcoded instead of
+! derived from a trivial call of CentralInviscid_FluxFunction
+      call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacel,plf,
+     >                                  ufacer,prf,flx)
+
+      do ieq=1,toteq
+         call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(flux1(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
       enddo
 
       return

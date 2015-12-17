@@ -74,19 +74,18 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine set_rxgll
+      subroutine set_dealias_face
 
 !-----------------------------------------------------------------------
-! JH091015 legacy. minimizes changes to flux_div from the bad old days
+! JH111815 needed for face Jacobian and surface integrals
 !-----------------------------------------------------------------------
 
       include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
+      include 'INPUT' ! for if3d
+      include 'GEOM'  ! for ifgeom
       include 'TSTEP' ! for istep
-      include 'CMTDATA'
-      include 'WZ'
-      integer e
+      include 'WZ'    ! for wxm1
+      include 'DG'    ! for facewz
 
       integer ilstep
       save    ilstep
@@ -96,28 +95,26 @@
       if (ifgeom.and.ilstep.eq.istep)  return  ! already computed
       ilstep = istep
 
-      nxyz1 = nx1*ny1*nz1
-      nxyzd = nxd*nyd*nzd
+      call zwgl(zptf,wgtf,nxd)
 
       if (if3d) then
-         do e=1,nelt
-            call copy(rx(1,1,e),rxm1(1,1,1,e),nxyz1)
-            call copy(rx(1,2,e),rym1(1,1,1,e),nxyz1)
-            call copy(rx(1,3,e),rzm1(1,1,1,e),nxyz1)
-            call copy(rx(1,4,e),sxm1(1,1,1,e),nxyz1)
-            call copy(rx(1,5,e),sym1(1,1,1,e),nxyz1)
-            call copy(rx(1,6,e),szm1(1,1,1,e),nxyz1)
-            call copy(rx(1,7,e),txm1(1,1,1,e),nxyz1)
-            call copy(rx(1,8,e),tym1(1,1,1,e),nxyz1)
-            call copy(rx(1,9,e),tzm1(1,1,1,e),nxyz1)
+         k=0
+         do j=1,ny1
+         do i=1,nx1
+            k=k+1
+            wghtc(k)=wxm1(i)*wzm1(j)
+         enddo
+         enddo
+         k=0
+         do j=1,nyd
+         do i=1,nxd
+            k=k+1
+            wghtf(k)=wgtf(i)*wgtf(j)
+         enddo
          enddo
       else
-         do e=1,nelt
-            call copy(rx(1,1,e),rxm1(1,1,1,e),nxyz1)
-            call copy(rx(1,2,e),rym1(1,1,1,e),nxyz1)
-            call copy(rx(1,3,e),sxm1(1,1,1,e),nxyz1)
-            call copy(rx(1,4,e),sym1(1,1,1,e),nxyz1)
-         enddo
+         call copy(wghtc,wxm1,nx1)
+         call copy(wghtf,wgtf,nxd)
       endif
 
       return
