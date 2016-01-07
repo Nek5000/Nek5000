@@ -376,31 +376,33 @@ C
       integer icalld
       save    icalld
       data    icalld/0/
-      NTOT2=NX2*NY2*NZ2*NELV
-C
-C
+
+      ntot2=nx2*ny2*nz2*nelv
+
+
 C     First, we have to decide if the E matrix has changed.
-C
-      IF (icalld.eq.0) THEN
+
+      if (icalld.eq.0) then
          icalld=1
-         DTlast=DT
-      ENDIF
-C
-      IFNEWE=.FALSE.
-      IF (IFMVBD) THEN
-         IFNEWE=.TRUE.
-         CALL INVERS2(bm2inv,bm2,Ntot2)
-      ELSEIF (DTlast.ne.DT) THEN
-         IFNEWE=.TRUE.
-         DTlast=DT
-      ENDIF
-      IF (IFNEWE.and.nio.eq.0) write(6,*) 'reorthogo:',nprev
-C
-C     
+         dtlast=dt
+      endif
+
+      ifnewe=.false.
+      if (ifmvbd) then
+         ifnewe=.true.
+         call invers2(bm2inv,bm2,ntot2)
+      endif
+      if (dtlast.ne.dt) then
+         ifnewe=.true.
+         dtlast=dt
+      endif
+      if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
+
+     
 C     
 C     Next, we reconstruct a new rhs set.
 C     
-      IF (IFNEWE) THEN
+      if (ifnewe) then
 c
 c        new idea...
 c        if (nprev.gt.0) nprev=1
@@ -411,7 +413,8 @@ c
 C           Orthogonalize this rhs w.r.t. previous rhs's
             CALL ECONJ (Iprev,H1,H2,H2INV,ierr)
             if (ierr.eq.1) then
-               Nprev = 0
+               if (nio.eq.0) write(6,*) istep,ierr,' ECONJ error'
+               nprev = 0
                return
             endif
   100    CONTINUE
