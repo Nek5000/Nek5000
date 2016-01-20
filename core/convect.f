@@ -1516,7 +1516,7 @@ c     return
       else
          if (fdim.eq.2) then
             call mxm(jgt(i),mx,u,md,wkd,md)
-            call mxm(wkd,md,jgl(i),md,ju,mx)
+            call mxm(wkd,mx,jgl(i),md,ju,mx)
          else
             call mxm(jgt(i),mx,u,md,ju,1)
          endif
