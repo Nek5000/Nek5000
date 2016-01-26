@@ -238,8 +238,13 @@ c     ifconv = .false.
       ifconv = .true.
 c
       n = nx1*ny1*nz1*nelv
-c
-      if (ifconv) then
+
+      if (ifdg) then
+
+       if (param(97).eq.0) call conv_rhs_dg         (du,u,c)
+       if (param(97).eq.1) call conv_rhs_dg_aliased (du,u,c)
+
+      elseif (ifconv) then
 
          if (ifcons) then
            if (if3d     ) call convop_cons_3d (du,u,c,nx1,nxd,nelv)
@@ -251,15 +256,12 @@ c
 
          call gs_op(gsl,du,1,1,0)  !  +
 
+         call col2 (du,bmsk,n)     !  du = Binv * msk * du
+
       else
          call rzero   (du,n)
-         return
       endif
-c
-      do i=1,n
-         du(i) = bmsk(i)*du(i)  ! Binv * msk
-      enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -995,12 +997,10 @@ c
      $ ,             phz  (lx1*ly1*lz1*lelt)
      $ ,             hmsk (lx1*ly1*lz1*lelt)
 
-#ifndef NOTIMER
       if (icalld.eq.0) tadvc=0.0
       icalld=icalld+1
       nadvc=icalld
       etime1=dnekclock()
-#endif
 
       dti = 1./dt
       n   = nx1*ny1*nz1*nelv
@@ -1031,9 +1031,8 @@ c
 
       endif
 
-#ifndef NOTIMER
       tadvc=tadvc+(dnekclock()-etime1)
-#endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1198,6 +1197,593 @@ c        call outmat(ju      ,md,md,'fine T',e)
       enddo
 
 c     call exitti('convop_cons_2d$',istep)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine iface_vert_int8(fa,va,jz0,jz1,nel)
+      include 'SIZE'
+      integer*8 fa(nx1*nz1,2*ndim,nel),va(0:nx1+1,0:ny1+1,jz0:jz1,nel)
+      integer e,f
+
+      n = nx1*nz1*2*ndim*nel
+      call i8zero(fa,n)
+
+      mx1 = nx1+2
+      my1 = ny1+2
+      mz1 = nz1+2
+      if (ndim.eq.2) mz1=1
+
+      nface = 2*ndim
+      do e=1,nel
+      do f=1,nface
+         call facind (kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,f)
+
+         if     (f.eq.1) then ! EB notation
+            ky1=ky1-1
+            ky2=ky1
+         elseif (f.eq.2) then
+            kx1=kx1+1
+            kx2=kx1
+         elseif (f.eq.3) then
+            ky1=ky1+1
+            ky2=ky1
+         elseif (f.eq.4) then
+            kx1=kx1-1
+            kx2=kx1
+         elseif (f.eq.5) then
+            kz1=kz1-1
+            kz2=kz1
+         elseif (f.eq.6) then
+            kz1=kz1+1
+            kz2=kz1
+         endif
+
+         i = 0
+         do iz=kz1,kz2
+         do iy=ky1,ky2
+         do ix=kx1,kx2
+            i = i+1
+            fa(i,f,e)=va(ix,iy,iz,e)
+c           write(6,*) 'fa:',fa(i,f,e),i,f,e
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setup_dg_gs(dgh,nx,ny,nz,nel,melg,vertex)
+
+c     Global-to-local mapping for gs
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer   dgh,vertex(1)
+
+      parameter(lf=lx1*lz1*2*ldim*lelt)
+      common /c_is1/ glo_num_face(lf)
+     $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelt)
+      integer*8 glo_num_face,glo_num_vol,ngv,nf
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      mx = nx+2
+      call set_vert(glo_num_vol,ngv,mx,nel,vertex,.false.)
+
+      mz0 = 1
+      mz1 = 1
+      if (if3d) mz0 = 0
+      if (if3d) mz1 = nz1+1
+      call iface_vert_int8 (glo_num_face,glo_num_vol,mz0,mz1,nelt) 
+
+      nf = nx1*nz1*2*ndim*nelt !total number of points on faces
+      call gs_setup(dgh,glo_num_face,nf,nekcomm,np)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine dg_set_fc_ptr
+
+c     Set up pointer to restrict u to faces ! NOTE: compact
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,f,ef
+
+      call dsset(nx1,ny1,nz1) ! set skpdat
+
+      nxyz  = nx1*ny1*nz1
+      nxz   = nx1*nz1
+      nface = 2*ndim
+      nxzf  = nx1*nz1*nface ! red'd mod to area, unx, etc.
+
+      k = 0
+
+      do e=1,nelv
+      do ef=1,nface  ! EB notation
+
+         f      = eface1(ef)
+         js1    = skpdat(1,f)
+         jf1    = skpdat(2,f)
+         jskip1 = skpdat(3,f)
+         js2    = skpdat(4,f)
+         jf2    = skpdat(5,f)
+         jskip2 = skpdat(6,f)
+
+         i = 0
+         do j2=js2,jf2,jskip2
+         do j1=js1,jf1,jskip1
+
+            i = i+1
+            k = i+nxz*(ef-1)+nxzf*(e-1)           ! face   numbering
+            dg_face(k) = j1+nx1*(j2-1)+nxyz*(e-1) ! global numbering
+
+         enddo
+         enddo
+
+      enddo
+      enddo
+      ndg_facex = nxzf*nelv
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine full2face(faceary, vol_ary)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real     faceary(lx1*lz1,2*ldim,lelt)
+      real     vol_ary(lx1,ly1,lz1,lelt)
+      integer  i,j
+
+      do j=1,ndg_facex
+         i=dg_face(j)
+         faceary(j,1,1) = vol_ary(i,1,1,1)
+      enddo
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine face2full(vol_ary, faceary)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real     faceary(lx1*lz1,2*ldim,lelt)
+      real     vol_ary(lx1,ly1,lz1,lelt)
+      integer  i,j
+
+      n=nx1*ny1*nz1*nelfld(ifield)
+      call rzero(vol_ary,n)
+
+      do j=1,ndg_facex
+         i=dg_face(j)
+         vol_ary(i,1,1,1) = vol_ary(i,1,1,1)+faceary(j,1,1)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add_face2full(vol_ary, faceary)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real     faceary(lx1*lz1,2*ldim,lelt)
+      real     vol_ary(lx1,ly1,lz1,lelt)
+      integer  i,j
+
+      do j=1,ndg_facex
+         i=dg_face(j)
+         vol_ary(i,1,1,1) = vol_ary(i,1,1,1)+faceary(j,1,1)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine dg_setup
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /ivrtx/ vertex ((2**ldim)*lelt)
+      integer vertex
+
+      if (ifdg) then
+
+        call setup_dg_gs(dg_hndlx,nx1,ny1,nz1,nelt,nelgt,vertex)
+        call dg_set_fc_ptr
+
+        call set_eta_alpha  ! For diffusion operator
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine conv_rhs_dg_aliased (du,u,c)
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+c     Apply convecting field c(1,ndim) to scalar field u(1).
+
+      real du(1),u(1),c(1)
+
+      parameter(lf=lx1*lz1*2*ldim*lelt)
+      common /scrdg/ uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf)
+
+      integer e,f
+
+      n  = nx1*ny1*nz1*nelv
+      nf = nx1*nz1*2*ndim*nelt
+
+
+      if (ifcons) then
+        if (if3d     ) call convop_cons_3d (du,u,c,nx1,nxd,nelv)
+        if (.not.if3d) call convop_cons_2d (du,u,c,nx1,nxd,nelv)
+      else
+        if (if3d     ) call convop_fst_3d  (du,u,c,nx1,nxd,nelv)
+        if (.not.if3d) call convop_fst_2d  (du,u,c,nx1,nxd,nelv)
+      endif
+
+      call full2face(uf ,u )
+      call full2face(uxf,vx)
+      call full2face(uyf,vy)
+      call full2face(uzf,vz)
+      if (.not.if3d) call rzero(uzf,nf)
+
+      beta_u = 0.00 ! 1=full upwind; 0=central flux
+      beta_u = 0.25 ! 1=full upwind; 0=central flux
+      beta_u = 1.00 ! 1=full upwind; 0=central flux
+      beta_u = param(98)
+      if (istep.le.5.and.nio.eq.0) write(6,*) beta_u,' dg upwind'
+
+      nface = 2*ndim
+      nxz   = nx1*nz1
+      k     = 0
+      do e=1,nelt
+      do f=1,nface
+      do i=1,nxz
+
+         k=k+1
+
+         beta   = ( unx (i,1,f,e)*uxf(k)
+     $            + uny (i,1,f,e)*uyf(k)
+     $            + unz (i,1,f,e)*uzf(k))
+
+         uf(k)  = -beta*area(i,1,f,e)*uf(k)
+
+         upwind_wgt(k) = 1.0
+         if (beta.gt.0) upwind_wgt(k) = 0.0
+         upwind_wgt(k) = 0.5*(1-beta_u) + upwind_wgt(k)*beta_u
+         if (beta.eq.0) upwind_wgt(k) = 0.5
+
+      enddo
+      enddo
+      enddo
+      
+      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
+      call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
+                                    ! Should be combined with
+      call add_face2full( du , uf)  ! <--- this stmt.
+
+      call fbinvert     ( du )      ! Right now works only for undeformed
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine map_faced(ju,u,mx,md,fdim,idir) ! GLL->GL interpolation
+
+c     GLL interpolation from mx to md for a face array of size (nx,nz)
+
+c     If idir ^= 0, then apply transpose operator  (md to mx)
+
+      include 'SIZE'
+
+      real    ju(1),u(1)
+      integer fdim
+
+      parameter (ldg=lxd**3,lwkd=4*lxd*lxd)
+      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
+
+      parameter (ld=2*lxd)
+      common /ctmp0/ w(ld**ldim,2)
+
+      call lim_chk(md,ld,'md   ','ld   ','map_faced ')
+      call lim_chk(mx,ld,'mx   ','ld   ','map_faced ')
+
+c     call copy(ju,u,mx)
+c     return
+
+      call get_int_ptr (i,mx,md)
+
+      if (idir.eq.0) then
+         if (fdim.eq.2) then
+            call mxm(jgl(i),md,u,mx,wkd,mx)
+            call mxm(wkd,md,jgt(i),mx,ju,md)
+         else
+            call mxm(jgl(i),md,u,mx,ju,1)
+         endif
+      else
+         if (fdim.eq.2) then
+            call mxm(jgt(i),mx,u,md,wkd,md)
+            call mxm(wkd,mx,jgl(i),md,ju,mx)
+         else
+            call mxm(jgt(i),mx,u,md,ju,1)
+         endif
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine conv_rhs_dg (du,u,c)
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+c     Apply convecting field c(1,ndim) to scalar field u(1).
+
+      real du(1),u(1),c(1)
+
+      parameter(lf=lx1*lz1*2*ldim*lelt)
+      common /scrdg/ uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf)
+     $             , beta_c(lx1*lz1),jaco_c(lx1*lz1),wghtc(lx1*lz1)
+     $             , beta_f(lxd*lzd),jaco_f(lxd*lzd),wghtf(lxd*lzd)
+     $             , ufine (lxd*lzd),zptf(lxd),wgtf(lxd)
+      real jaco_c,jaco_f
+
+      integer e,f,fdim
+
+      n  = nx1*ny1*nz1*nelv
+      nf = nx1*nz1*2*ndim*nelt
+
+c     Set fine-scale surface weights
+
+      call zwgl(zptf,wgtf,nxd)
+
+      if (if3d) then
+         k=0
+         do j=1,ny1
+         do i=1,nx1
+            k=k+1
+            wghtc(k)=wxm1(i)*wzm1(j)
+         enddo
+         enddo
+         k=0
+         do j=1,nyd
+         do i=1,nxd
+            k=k+1
+            wghtf(k)=wgtf(i)*wgtf(j)
+         enddo
+         enddo
+      else
+         call copy(wghtc,wxm1,nx1)
+         call copy(wghtf,wgtf,nxd)
+      endif
+
+      if (ifcons) then
+        if (if3d     ) call convop_cons_3d (du,u,c,nx1,nxd,nelv)
+        if (.not.if3d) call convop_cons_2d (du,u,c,nx1,nxd,nelv)
+      else
+        if (if3d     ) call convop_fst_3d  (du,u,c,nx1,nxd,nelv)
+        if (.not.if3d) call convop_fst_2d  (du,u,c,nx1,nxd,nelv)
+      endif
+
+      call full2face(uf ,u )
+      call full2face(uxf,vx)
+      call full2face(uyf,vy)
+      call full2face(uzf,vz)
+      if (.not.if3d) call rzero(uzf,nf)
+
+      beta_u = 0.00 ! 1=full upwind; 0=central flux
+      beta_u = 0.25 ! 1=full upwind; 0=central flux
+      beta_u = 1.00 ! 1=full upwind; 0=central flux
+      beta_u = param(98)
+      if (istep.le.5.and.nio.eq.0) write(6,*) beta_u,' dg upwind'
+
+      nface = 2*ndim
+      nxz   = nx1*nz1
+      nxzd  = nxd*nzd
+      k     = 0
+      do e=1,nelt         ! This formula for upwind weights appears to
+      do f=1,nface        ! assume that U is continuous, or at least of
+
+        kface = k+1
+        do i=1,nxz        ! the same sign on either side of the interface.
+
+         k=k+1
+
+         beta   = ( unx (i,1,f,e)*uxf(k)
+     $            + uny (i,1,f,e)*uyf(k)
+     $            + unz (i,1,f,e)*uzf(k))
+
+         upwind_wgt(k) = 1.0
+         if (beta.gt.0) upwind_wgt(k) = 0.0
+         upwind_wgt(k) = 0.5*(1-beta_u) + upwind_wgt(k)*beta_u
+
+         beta_c(i)   = -beta
+         jaco_c(i)   = area(i,1,f,e)/wghtc(i)
+
+        enddo
+
+        fdim = ndim-1 ! Dimension of face
+        call map_faced(beta_f,beta_c  ,nx1,nxd,fdim,0) ! Dealiased quadrature,
+        call map_faced(jaco_f,jaco_c  ,nx1,nxd,fdim,0) ! 0 --> coarse to fine,
+        call map_faced(ufine,uf(kface),nx1,nxd,fdim,0) !   ufine = J uf
+
+c       nxzd  = nx1*nz1
+        do i=1,nxzd
+c          ufine(i)=wghtc(i)*jaco_f(i)*beta_f(i)*ufine(i)
+           ufine(i)=wghtf(i)*jaco_f(i)*beta_f(i)*ufine(i)
+        enddo
+        call map_faced(uf(kface),ufine,nx1,nxd,fdim,1)  ! 1 --> uf = J^T ufine
+
+      enddo
+      enddo
+
+      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
+
+      call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
+                                    ! Should be combined with
+      call add_face2full( du , uf)  ! <--- this stmt.
+
+      call fbinvert     ( du )      ! Right now works only for undeformed
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fbinvert(rhs) ! Still in development.  10/10/15, pff.
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real     rhs(lx1,ly1,lz1,lelt)
+
+      common /cfbinv/ qn(lx1),alpha_n,beta_n
+     $               ,s1(ly1,lz1),binv(lx1)
+     $               ,tmp(lx1*ly1*lz1*lelt)
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      integer e
+
+      n = nx1*ny1*nz1*nelfld(ifield)
+
+      do i=1,n                            ! FOR NOW, USE DIAGONAL MASS
+c        rhs(i,1,1,1)=rhs(i,1,1,1)/bm1(i,1,1,1)   ! MATRIX.   pff, 10/10/15
+c        tmp(i)=rhs(i,1,1,1)/bm1(i,1,1,1)   ! MATRIX.   pff, 10/10/15
+         rhs(i,1,1,1)=rhs(i,1,1,1)/bm1(i,1,1,1)   ! MATRIX.   pff, 10/10/15
+      enddo
+      return
+
+      if (icalld.eq.0) then
+         icalld=1
+         n_order = nx1-1
+         do i=1,nx1
+            qn(i)=pnleg(zgm1(i,1),n_order)
+            binv(i) = 1./wxm1(i)
+         enddo
+         gamma_n = 2./n_order
+         h_n     = 2./(2*n_order+1)
+         alpha_n = (h_n - gamma_n)/(gamma_n * gamma_n) ! Forward app
+         beta_n  = -(h_n-gamma_n)/(gamma_n*h_n)        ! Inverse app
+      endif
+
+      do e=1,nelfld(ifield)
+         if (if3d) then
+            b1 = 2/(xm1(nx1,1,1,e)-xm1(1,1,1,e))
+            b2 = 2/(ym1(1,ny1,1,e)-ym1(1,1,1,e))
+            b3 = 2/(zm1(1,1,nz1,e)-zm1(1,1,1,e))
+            a1 = beta_n*b1
+            a2 = beta_n*b2
+            a3 = beta_n*b3
+
+            call rzero(s1,nx1*ny1)
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               s1(j,k)=s1(j,k) + qn(i)*rhs(i,j,k,e)*a1
+               rhs(i,j,k,e) = rhs(i,j,k,e)*binv(i)*b1
+            enddo
+            enddo
+            enddo
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               rhs(i,j,k,e) = rhs(i,j,k,e) + s1(j,k)*qn(i)
+            enddo
+            enddo
+            enddo
+
+            call rzero(s1,nx1*ny1)
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               s1(i,k)=s1(i,k) + qn(j)*rhs(i,j,k,e)*a2
+               rhs(i,j,k,e) = rhs(i,j,k,e)*binv(j)*b2
+            enddo
+            enddo
+            enddo
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               rhs(i,j,k,e) = rhs(i,j,k,e) + s1(i,k)*qn(j)
+            enddo
+            enddo
+            enddo
+
+            call rzero(s1,nx1*ny1)
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               s1(i,j)=s1(i,j) + qn(k)*rhs(i,j,k,e)*a3
+               rhs(i,j,k,e) = rhs(i,j,k,e)*binv(k)*b3
+            enddo
+            enddo
+            enddo
+            do k=1,nz1
+            do j=1,ny1
+            do i=1,nx1
+               rhs(i,j,k,e) = rhs(i,j,k,e) + s1(i,j)*qn(k)
+            enddo
+            enddo
+            enddo
+
+         else
+
+            b1 = 2/(xm1(nx1,1,1,e)-xm1(1,1,1,e))
+            b2 = 2/(ym1(1,ny1,1,e)-ym1(1,1,1,e))
+            a1 = beta_n*b1
+            a2 = beta_n*b2
+
+            t1 = 1.5
+            t2 = 0.5
+
+            t1 = 1.0
+            t2 = 1.0
+
+            call rzero(s1,nx1)
+            do j=1,ny1
+            do i=1,nx1
+               s1(j,1)=s1(j,1) + qn(i)*rhs(i,j,1,e)*a1
+               rhs(i,j,1,e) = rhs(i,j,1,e)*binv(i)*b1
+            enddo
+            enddo
+            do j=1,ny1
+            do i=1,nx1
+               rhs(i,j,1,e) = t1*rhs(i,j,1,e) + t2*s1(j,1)*qn(i)
+            enddo
+            enddo
+
+            call rzero(s1,nx1)
+            do j=1,ny1
+            do i=1,nx1
+               s1(i,1)=s1(i,1) + qn(j)*rhs(i,j,1,e)*a2
+               rhs(i,j,1,e) = rhs(i,j,1,e)*binv(j)*b2
+            enddo
+            enddo
+            do j=1,ny1
+            do i=1,nx1
+               rhs(i,j,1,e) = t1*rhs(i,j,1,e) + t2*s1(i,1)*qn(j)
+            enddo
+            enddo
+
+         endif
+      enddo
+
+c     do i=1,n
+c        rhs(i,1,1,1) = 0.5*(rhs(i,1,1,1)+tmp(i))
+c     enddo
 
       return
       end

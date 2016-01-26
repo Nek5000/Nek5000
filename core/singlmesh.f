@@ -37,7 +37,8 @@ C
       call bcast(SESSION,132*CSIZE)
       call bcast(PATH,132*CSIZE)
 
-      IFNEKNEK  = .false.
+      IFNEKNEK   = .false.
+      IFNEKNEKM  = .false.
 
       return
       end
@@ -80,5 +81,24 @@ c     Dummy for singlmesh
       return
       end
 c------------------------------------------------------------------------
+      subroutine bcopy
 
+c     Dummy for singlmesh
 
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine chk_outflow
+
+c     Dummy for singlmesh 
+
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine multimesh_create
+
+c     Dummy for singlmesh 
+
+      return
+      end
+c------------------------------------------------------------------------

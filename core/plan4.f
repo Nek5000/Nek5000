@@ -40,11 +40,11 @@ c
       ! add user defined divergence to qtl 
       call add2 (qtl,usrdiv,ntot1)
 
-      CALL V_EXTRAP(vext)
+      call v_extrap(vext)
 
       ! compute explicit contributions bfx,bfy,bfz 
-      CALL MAKEF 
-      CALL LAGVEL
+      call makef 
+      call lagvel
 
       ! split viscosity into explicit/implicit part
       if (ifexplvis) call split_vis
@@ -52,15 +52,13 @@ c
       ! extrapolate velocity
 
       ! mask Dirichlet boundaries
-      CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask) 
+      call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
 C     first, compute pressure
-#ifndef NOTIMER
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
       npres=icalld
       etime1=dnekclock()
-#endif
 
       call crespsp  (respr)
       call invers2  (h1,vtrans,ntot1)
@@ -73,9 +71,7 @@ C     first, compute pressure
      $                     ,approx,napprox,binvm1)
       call add2    (pr,dpr,ntot1)
       call ortho   (pr)
-#ifndef NOTIMER
       tpres=tpres+(dnekclock()-etime1)
-#endif
 
 C     Compute velocity
       call cresvsp (res1,res2,res3,h1,h2)
@@ -182,10 +178,15 @@ c
       call opcolv   (wa1,wa2,wa3,w1)
 
 c     add old pressure term because we solve for delta p 
-      CALL INVERS2 (TA1,VTRANS,NTOT1)
-      CALL RZERO   (TA2,NTOT1)
-      CALL AXHELM  (RESPR,PR,TA1,TA2,IMESH,1)
-      CALL CHSIGN  (RESPR,NTOT1)
+      call invers2 (ta1,vtrans,ntot1)
+      call rzero   (ta2,ntot1)
+
+      call bcdirsc (pr)
+c     call outpost(vx,vy,vz,pr,t,'   ')
+c     call exitti ('exit in cresps$',ifield)
+
+      call axhelm  (respr,pr,ta1,ta2,imesh,1)
+      call chsign  (respr,ntot1)
 
 c     add explicit (NONLINEAR) terms 
       n = nx1*ny1*nz1*nelv

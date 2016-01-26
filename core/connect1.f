@@ -124,7 +124,6 @@ c 101   continue
 
 c     if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh
 
-
 C========================================================================
 C     Set up multiplicity and direct stiffness arrays for each IFIELD
 C========================================================================
@@ -1899,6 +1898,41 @@ c     Now, check to see if normal is aligned with incoming normal
 
 
       call setupds(gsh_fld(0),nx1,ny1,nz1,nelv,nelgv,jvrtex,glo_num)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outfldnx(x,txt10,nx,ny)
+      include 'SIZE'
+      real x(nx,ny,4)
+      character*10 txt10
+      integer e,g
+
+      write(6,106) txt10,nel,nx
+  106 FORMAT(  /,5X,'     ^              ',/,
+     $           5X,'   Y |              ',/,
+     $           5X,'     |              ',A10,/,
+     $           5X,'     +---->         ','elem. = ',I2,'/',I2,/,
+     $           5X,'       X            ')
+
+      do e=3,1,-2
+         g=e+1
+         i=istart
+         do j=ny,1,-1
+            if (nx.eq.3) write(6,3) (x(i,j,e),i=1,nx),(x(i,j,g),i=1,nx)
+            if (nx.eq.4) write(6,4) (x(i,j,e),i=1,nx),(x(i,j,g),i=1,nx)
+            if (nx.eq.5) write(6,5) (x(i,j,e),i=1,nx),(x(i,j,g),i=1,nx)
+            if (nx.eq.6) write(6,6) (x(i,j,e),i=1,nx),(x(i,j,g),i=1,nx)
+            if (nx.eq.7) write(6,7) (x(i,j,e),i=1,nx),(x(i,j,g),i=1,nx)
+   3        format(3f8.4,3x,3f8.4)
+   4        format(4f8.4,3x,4f8.4)
+   5        format(5f8.4,3x,5f8.4)
+   6        format(6f8.4,3x,6f8.4)
+   7        format(7f8.4,3x,7f8.4)
+         enddo
+         write(6,*)
+      enddo
+      write(6,*)
 
       return
       end

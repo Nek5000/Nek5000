@@ -13,7 +13,8 @@
 
       common /cgeom/ igeom
 
-      common /mybc/ ubc(lx1,ly1,lz1,lelt,nfldmax), nfld
+      common /mybc/ ubc(lx1,ly1,lz1,lelt,nfldmax)
+      common /inbc/ nfld_neknek
 
       common /mybd/ bdrylg(lx1*ly1*lz1*lelt,nfldmax,0:2)
 
@@ -24,4 +25,4 @@
       common /multipts_r/ rst
       common /multipts_i/ rcode,elid,proc,iList,npoints
 
-      save    inth_multi   
+      save    inth_multi

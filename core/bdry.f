@@ -152,6 +152,10 @@ C
          WRITE (6,*) 'IFGEOM   =',IFGEOM
          WRITE (6,*) 'IFSURT   =',IFSURT
          WRITE (6,*) 'IFWCNO   =',IFWCNO
+         WRITE (6,*) 'IFCMT    =',IFCMT
+         WRITE (6,*) 'IFVISC   =',IFVISC
+         WRITE (6,*) 'IFFLTR   =',IFFLTR
+
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
             WRITE (6,*) 'IFTMSH for field',IFIELD,'   = ',IFTMSH(IFIELD)
@@ -297,11 +301,16 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE CHKCBC (CB,IEL,IFC,IFALGN)
+      include 'SIZE' 
+      include 'PARALLEL' 
 C
 C     Check for illegal boundary conditions
 C
       CHARACTER CB*3
       LOGICAL IFALGN
+
+      ieg = lglel(iel)
+
 C
 C     Laplacian formulation only
 C
@@ -320,9 +329,10 @@ C
       GOTO 9999
  9010 WRITE (6,*) ' Mixed B.C. on a side nonaligned with either the X,Y,
      $ or Z axis detected for'
- 9999 WRITE (6,*) ' Element',IEL,'   side',IFC,'.'
+ 9999 WRITE (6,*) ' Element',ieg,'   side',IFC,'.'
       WRITE (6,*) ' Selected option only allowed for STRESS FORMULATION'
       WRITE (6,*) ' Execution terminates'
+
       call exitt
       END
 c-----------------------------------------------------------------------
@@ -374,13 +384,18 @@ C
 C
 C        Pressure mask
 C
-         CALL RONE(PMASK,NTOT)
-         DO 50 IEL=1,NELV
-         DO 50 IFACE=1,NFACES
-            CB=CBC(IFACE,IEL,IFIELD)
-            IF (CB.EQ.'O  ' .OR. CB.EQ.'ON ')
-     $         CALL FACEV(PMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
-   50    CONTINUE
+         call rone(pmask,ntot)
+         do 50 iel=1,nelt
+         do 50 iface=1,nfaces
+            cb=cbc(iface,iel,ifield)
+            if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
+     $          cb.eq.'o  ' .or. cb.eq.'on ')
+     $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
+   50    continue
+         if (nelt.gt.nelv) then
+            nn=nx1*ny1*nz1*(nelt-nelv)
+            call rzero(pmask(1,1,1,nelv+1),nn)
+         endif
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
 C
@@ -609,7 +624,6 @@ c
 c
       ifonbc = .false.
 c
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -617,7 +631,6 @@ c
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
 C
       NFACES=2*NDIM
@@ -708,15 +721,13 @@ C
          ENDIF
          CALL RMASK (V1,V2,V3,NELV)
       ENDIF
-C
+
       CALL ADD2(V1,TMP1,NTOT)
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
-C
 
-#ifndef NOTIMER
+
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 
       RETURN
       END
@@ -740,7 +751,6 @@ C
       common  /nekcb/ cb
       CHARACTER CB*3
 
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -748,7 +758,6 @@ C
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
       IFLD   = 1
       NFACES = 2*NDIM
@@ -780,8 +789,9 @@ C
             IF (CB.EQ.'MLI') CALL FACEV (TMP,IE,IFACE,BC4,NX1,NY1,NZ1)
             IF (CB.EQ.'KD ') CALL FACEV (TMP,IE,IFACE,BCK,NX1,NY1,NZ1)
             IF (CB.EQ.'ED ') CALL FACEV (TMP,IE,IFACE,BCE,NX1,NY1,NZ1)
-            IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .OR. CB.EQ.'ed ') 
-     $         CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
+            IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .or.
+     $          CB.EQ.'ed ' .or. cb.eq.'o  ') 
+     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
  2010    CONTINUE
 C
 C        Take care of Neumann-Dirichlet shared edges...
@@ -795,9 +805,7 @@ C
       CALL COL2(S,TMASK(1,1,1,1,IFIELD-1),NTOT)
       CALL ADD2(S,TMP,NTOT)
 
-#ifndef NOTIMER
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 
       RETURN
       END
@@ -824,7 +832,6 @@ C
       common  /nekcb/ cb
       CHARACTER CB*3
 C
-#ifndef NOTIMER
       if (icalld.eq.0) then
          tusbc=0.0
          nusbc=0
@@ -832,7 +839,6 @@ C
       endif
       nusbc=nusbc+1
       etime1=dnekclock()
-#endif
 C
       NFACES=2*NDIM
       NXYZ  =NX1*NY1*NZ1
@@ -933,9 +939,7 @@ C
  2000    CONTINUE
       ENDIF
 C
-#ifndef NOTIMER
       tusbc=tusbc+(dnekclock()-etime1)
-#endif
 C
       RETURN
       END
@@ -966,8 +970,7 @@ C     Passive scalar term
       ieg = lglel(iel)
       CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX,NY,NZ,IFACE)
 
-      IF (CB.EQ.'t  ') THEN
-
+      if (cb.eq.'t  ') then
          DO 100 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
          DO 100 IY=KY1,KY2                           !  added here so users can leave
          DO 100 IX=KX1,KX2                           !  certain points to be Neumann,
@@ -978,9 +981,19 @@ C     Passive scalar term
             endif
   100    CONTINUE
          RETURN
-C
+
+      elseif (cb.eq.'o  ') then
+         DO 101 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
+         DO 101 IY=KY1,KY2                           !  added here so users can leave
+         DO 101 IX=KX1,KX2                           !  certain points to be Neumann,
+            CALL NEKASGN (IX,IY,IZ,IEL)
+            CALL USERBC  (IX,IY,IZ,IFACE,IEG)
+            S(IX,IY,IZ) = PA
+  101    CONTINUE
+         RETURN
+
       ELSEIF (CB.EQ.'ms ' .OR. CB.EQ.'msi') THEN
-C
+
          DO 200 IZ=KZ1,KZ2
          DO 200 IY=KY1,KY2
          DO 200 IX=KX1,KX2
@@ -1133,7 +1146,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE NEKASGN (IX,IY,IZ,IEL)
+      subroutine nekasgn (ix,iy,iz,e)
 C
 C     Assign NEKTON variables for definition (by user) of
 C     boundary conditions at collocation point (IX,IY,IZ)
@@ -1174,36 +1187,62 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
-c
+
+      INCLUDE 'CMTDATA' ! irho, etc.,            ! JH062414 CMT only
+
+      integer e,eqnum
+
       common  /nekcb/ cb
-      CHARACTER CB*3
-C
+      character cb*3
+
       COMMON /SCREV / SII (LX1,LY1,LZ1,LELT)
      $              , SIII(LX1,LY1,LZ1,LELT)
-C
-        X     = XM1(IX,IY,IZ,IEL)
-        Y     = YM1(IX,IY,IZ,IEL)
-        Z     = ZM1(IX,IY,IZ,IEL)
-        R     = X**2+Y**2
-        IF (R.GT.0.0) R=SQRT(R)
-        IF (X.NE.0.0 .OR. Y.NE.0.0) THETA = ATAN2(Y,X)
-C
-        UX    = VX(IX,IY,IZ,IEL)
-        UY    = VY(IX,IY,IZ,IEL)
-        UZ    = VZ(IX,IY,IZ,IEL)
-        TEMP  = T(IX,IY,IZ,IEL,1)
-        DO 100 IPS=1,NPSCAL
-           PS(IPS) = T(IX,IY,IZ,IEL,IPS+1)
- 100    CONTINUE
-        SI2   = SII (IX,IY,IZ,IEL)
-        SI3   = SIII(IX,IY,IZ,IEL)
-        UDIFF = VDIFF (IX,IY,IZ,IEL,IFIELD)
-        UTRANS= VTRANS(IX,IY,IZ,IEL,IFIELD)
-c
-        cbu   = cb
-C
-      RETURN
-      END
+
+      x     = xm1(ix,iy,iz,e)
+      y     = ym1(ix,iy,iz,e)
+      z     = zm1(ix,iy,iz,e)
+      r     = x**2+y**2
+      if (r.gt.0.0) r=sqrt(r)
+      if (x.ne.0.0 .or. y.ne.0.0) theta = atan2(y,x)
+
+      ux    = vx(ix,iy,iz,e)
+      uy    = vy(ix,iy,iz,e)
+      uz    = vz(ix,iy,iz,e)
+      temp  = t(ix,iy,iz,e,1)
+      do ips=1,npscal
+         ps(ips) = t(ix,iy,iz,e,ips+1)
+      enddo
+      si2   = sii (ix,iy,iz,e)
+      si3   = siii(ix,iy,iz,e)
+      udiff = vdiff (ix,iy,iz,e,ifield)
+      utrans= vtrans(ix,iy,iz,e,ifield)
+
+      cbu   = cb
+
+      if (ifcmt) then                            ! JH081415 CMT only
+
+         do eqnum=1,toteq
+            varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
+         enddo
+         phi  = phig  (ix,iy,iz,e)
+         rho  = vtrans(ix,iy,iz,e,irho)
+         pres = pr    (ix,iy,iz,e)
+         if (rho.ne.0) then
+            cv   = vtrans(ix,iy,iz,e,icv)/rho
+            cp   = vtrans(ix,iy,iz,e,icp)/rho
+         endif
+         asnd = csound(ix,iy,iz,e)
+
+         if (ifvisc) then ! lol stride
+            mu     = vdiff(ix,iy,iz,e,imu)
+            udiff  = vdiff(ix,iy,iz,e,iknd)
+            lambda = vdiff(ix,iy,iz,e,ilam)
+         endif
+
+      endif                                     ! JH081415 CMT only
+
+      return
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE BCNEUTR
 C

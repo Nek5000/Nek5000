@@ -4462,11 +4462,22 @@ c     . Set div U > 0 in elements with 'O  ' bc.
 c
 c     . rq is nominally the ratio of Qout/Qin and is typically 1.5
 c
+c     . uin is normally zero, unless your flow is zero everywhere 
+c
 c     . d and m1 are work arrays of size (lx1,ly1,lz1,lelt), assumed persistant
-
 c
 c     This routine may or may not work with multiple outlets --- it has
 c     not been tested for this case.
+c
+c
+c     TYPICAL USAGE -- ADD THESE LINES TO userchk() in your .usr file:
+c                      (uncommented)
+c
+c     common /myoutflow/ d(lx1,ly1,lz1,lelt),m1(lx1*ly1*lz1,lelt)
+c     real m1
+c     rq  = 2.
+c     uin = 0.
+c     call turb_outflow(d,m1,rq,uin)
 c
 
       include 'SIZE'
@@ -4609,7 +4620,7 @@ c     enddo
 
       nfld=nfield+1
 
-      write(6,*) 'add temp: ',nfld,nfield,istep
+      if (nio.eq.0) write(6,*) 'add temp: ',nfld,nfield,istep
 
       nelfld(nfld) = nelfld(nfield)
       nel = nelfld(nfield)

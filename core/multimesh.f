@@ -108,7 +108,8 @@ C     Intercommunications set up only for 2 sessions
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
       
-         ifneknek  = .true.
+         ifneknek   = .true.
+         ifneknekm  = .false.
 
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
 
@@ -135,6 +136,7 @@ C     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
          call set_intflag
+         call neknekmv()
          icalld = icalld + 1
       endif 
 
@@ -154,17 +156,20 @@ C     Communicate the point info(iList) to the remote processors
 C     Points which are inside the mesh are masked and
 C     their identities are stored in array 
 
+c     write(6,*) nelgv,nid,npoints_all,' npoints_all'
       call intpts_locate (pts,iList_all,npoints_all)
 
       return
-
       end
 C-------------------------------------------------------------
       subroutine set_intflag 
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      CHARACTER CB*3
+      character*3 cb
+      character*2 cb2
+      equivalence (cb2,cb)
+      integer e,f
 
 C     Set interpolation flag: points with boundary condition = 'int' 
 c     get intflag=1. 
@@ -183,19 +188,20 @@ C     Boundary conditions are changed back to 'v' or 't'.
       nflag=nel*nfaces
       call izero(intflag,nflag)
 
-      do 2010 iel=1,nel
-      do 2010 iface=1,nfaces
-         cb=cbc(iface,iel,ifield)
-         if (cb.eq.'int') then
-            intflag(iface,iel)=1
-            if (ifield.eq.1) cbc(iface,iel,ifield)='v'
-            if (ifield.eq.2) cbc(iface,iel,ifield)='t'
+      do e=1,nel
+      do f=1,nfaces
+         cb=cbc(f,e,ifield)
+         if (cb2.eq.'in') then
+            intflag(f,e)=1
+            if (ifield.eq.2) cbc(f,e,ifield)='t  '
+            if (ifield.eq.1) cbc(f,e,ifield)='v  '
+            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
          endif
- 2010 continue
+      enddo
+      enddo
 
       return
       end
-
 c-------------------------------------------------------------
       subroutine exchange_points(pts,iList_all,npoints_all)
       include 'SIZE'
@@ -235,25 +241,24 @@ C     interpolation)
                ip=ip+1
 
                if (if3d) then
-               jsend((ldim+2)*(ip-1)+1)=ix
-               jsend((ldim+2)*(ip-1)+2)=iy
-               jsend((ldim+2)*(ip-1)+3)=iz
-               jsend((ldim+2)*(ip-1)+4)=iel
-               jsend((ldim+2)*(ip-1)+5)=nid
+                 jsend((ldim+2)*(ip-1)+1)=ix
+                 jsend((ldim+2)*(ip-1)+2)=iy
+                 jsend((ldim+2)*(ip-1)+3)=iz
+                 jsend((ldim+2)*(ip-1)+4)=iel
+                 jsend((ldim+2)*(ip-1)+5)=nid
 
-               rsend(ldim*(ip-1)+1)=x
-               rsend(ldim*(ip-1)+2)=y
-               rsend(ldim*(ip-1)+3)=z
+                 rsend(ldim*(ip-1)+1)=x
+                 rsend(ldim*(ip-1)+2)=y
+                 rsend(ldim*(ip-1)+3)=z
                else
-               jsend((ldim+2)*(ip-1)+1)=ix
-               jsend((ldim+2)*(ip-1)+2)=iy
-               jsend((ldim+2)*(ip-1)+3)=iel
-               jsend((ldim+2)*(ip-1)+4)=nid
+                 jsend((ldim+2)*(ip-1)+1)=ix
+                 jsend((ldim+2)*(ip-1)+2)=iy
+                 jsend((ldim+2)*(ip-1)+3)=iel
+                 jsend((ldim+2)*(ip-1)+4)=nid
 
-               rsend(ldim*(ip-1)+1)=x
-               rsend(ldim*(ip-1)+2)=y
+                 rsend(ldim*(ip-1)+1)=x
+                 rsend(ldim*(ip-1)+2)=y
                endif
-
 
                if (ip.gt.nmaxl) then
                   write(6,*) nid,
@@ -362,18 +367,29 @@ C-------------------------------------------------------------------------
       integer status(mpi_status_size)
       logical ifcomm
 
-        call intpts_setup(-1.0,inth_multi) ! use default tolerance
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      if (icalld.le.1) then
+         icalld=icalld+1
+      else
+         call intpts_done(inth_multi)
+      endif
+
+      call intpts_setup(-1.0,inth_multi) ! use default tolerance
         
 
-        call findpts(inth_multi,rcode_all,1,
-     &                 proc_all,1,
-     &                 elid_all,1,
-     &                 rst_all,ndim,
-     &                 dist_all,1,
-     &                 pts(1,1),ndim,
-     &                 pts(2,1),ndim,
-     &                 pts(3,1),ndim,npoints_all)
+      call findpts(inth_multi,rcode_all,1,
+     &             proc_all,1,
+     &             elid_all,1,
+     &             rst_all,ndim,
+     &             dist_all,1,
+     &             pts(1,1),ndim,
+     &             pts(2,1),ndim,
+     &             pts(3,1),ndim,npoints_all)
 
+      ierror=0
 
 c     Rearrange arrays so that only the points which are found within 
 c     the mesh are marked for interpolation: those are truly internal 
@@ -402,70 +418,69 @@ C     Exclude "true" boundary points
          ifield   = 2
       endif 
 
-      NEL    = NELFLD(IFIELD)
-      NXYZ  =NX1*NY1*NZ1
-      NTOT  =NXYZ*NEL
+      nel   = nelfld(ifield)
+      nxyz  = nx1*ny1*nz1
+      ntot  = nxyz*nel
 
       call izero(imask,ntot) 
 
       ip=0
       icount=0
+      ierror=0
 
       do 100 i=1,npoints_all
          
       if (rcode_all(i).lt.2) then
 
-      iel  = elid_all(i) + 1
+        iel  = elid_all(i) + 1
 
-      if (rcode_all(i).eq.1.and.dist_all(i).gt.1e-12) then
-         if (ndim.eq.2) 
-     &   write(6,'(A,3E15.7)') 
-     &   ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
-     &   (pts(k,i),k=1,ndim),dist_all(i)  
-         if (ndim.eq.3) 
-     &   write(6,'(A,4E15.7)') 
-     &   ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
-     &   (pts(k,i),k=1,ndim),dist_all(i)  
-         GOTO 100
-      endif
-      ip=ip+1
-      rcode(ip) = rcode_all(i)
-      elid(ip)  = elid_all(i)
-      proc(ip)  = proc_all(i)
-      do j=1,ndim
-      rst(ndim*(ip-1)+j)   = rst_all(ndim*(i-1)+j)
-      enddo
-      do n=1,ndim+1
-      iList(n,ip) = iList_all(n,i)
-      end do
+        if (rcode_all(i).eq.1.and.dist_all(i).gt.1e-02) then
+           if (ndim.eq.2) write(6,'(A,3E15.7)') 
+     &     'WARNING: point on boundary or outside the mesh xy[z]d^2: ',
+     &     (pts(k,i),k=1,ndim),dist_all(i)  
+           if (ndim.eq.3) write(6,'(A,4E15.7)') 
+     &     'WARNING: point on boundary or outside the mesh xy[z]d^2: ',
+     &     (pts(k,i),k=1,ndim),dist_all(i)  
+           goto 100
+         endif
+         ip=ip+1
+         rcode(ip) = rcode_all(i)
+         elid(ip)  = elid_all(i)
+         proc(ip)  = proc_all(i)
+         do j=1,ndim
+           rst(ndim*(ip-1)+j)   = rst_all(ndim*(i-1)+j)
+         enddo
+         do n=1,ndim+1
+           iList(n,ip) = iList_all(n,i)
+         enddo
 
-c    Check receiving remote processor id information 
-      n=ndim+2
-c     First point 
-      if (ip.eq.1) then
-      icount=1
-      infosend(icount,1)=iList_all(n,i)
-      infosend(icount,2)=ip
-      iprocp=iList_all(n,i)
-      else
-      iproc  = iList_all(n,i)
-      if (iproc.ne.iprocp) then
-      if (iproc.gt.iprocp) then
-      icount=icount+1
-      infosend(icount,1)=iproc
-      infosend(icount,2)=ip
-      iprocp=iproc
-      else
-      write(6,*) 'Attention: intrinsic sorting is not achieved'
-      write(6,'(a7,3i7,1x,a10)') 'switch', ip, 
-     &   iproc,iprocp, session
-      ierror = 1
-      goto 100
-      end if
-      end if
-      end if
+c        Check receiving remote processor id information 
+         n=ndim+2
+c        First point 
+         if (ip.eq.1) then
+            icount=1
+            infosend(icount,1)=iList_all(n,i)
+            infosend(icount,2)=ip
+            iprocp=iList_all(n,i)
+         else
+            iproc  = iList_all(n,i)
+            if (iproc.ne.iprocp) then
+             if (iproc.gt.iprocp) then
+               icount=icount+1
+               infosend(icount,1)=iproc
+               infosend(icount,2)=ip
+               iprocp=iproc
+             else
+               write(6,*) 'Attention: intrinsic sorting is not achieved'
+               write(6,'(a7,3i7,1x,a10)') 'switch', ip, 
+     &         iproc,iprocp, session
+               ierror = 1
+               goto 100
+             endif
+            endif
+         endif
       
-      end if  !  rcode_all
+      endif  !  rcode_all
 
  100  continue
 
@@ -481,10 +496,11 @@ c     Store point counts (infosend(:,2)) instead of pointers
          ip=infosend(n-1,2)
          ic=infosend(n,2)
          infosend(n-1,2)=ic-ip
-      end do
+      enddo
       infosend(npsend,2)=npoints-infosend(npsend,2)+1
 
-      write(6,'(a7,i12,1x,a10)') 'found', npoints, session
+      if (istep.eq.0) write(6,'(a7,i12,1x,a10)') 'found', npoints, 
+     &                     session
 
 c     Sending all processors information about the number 
 c     of receiving points, including zero points
@@ -497,61 +513,65 @@ c     or if we already notified all the relevant processors)
       else
          ifcomm=.true.
          icount=1
-      end if   
+      endif   
 
       il=0
       do id=0,np_neighbor-1
 
          if (ifcomm) then
 
-         idsend=infosend(icount,1)
+            idsend=infosend(icount,1)
 
-         if (id.lt.idsend) then
-         nsend=0
-         else if (id.eq.idsend) then
-            nsend=infosend(icount,2)
-            icount =icount+1
-         end if
+            if (id.lt.idsend) then
+               nsend=0
+            elseif (id.eq.idsend) then
+               nsend=infosend(icount,2)
+               icount =icount+1
+            endif
 
          else   !  not(ifcomm)
             nsend=0
-         end if
+         endif
 
          if (ifcomm.and.(icount.gt.npsend)) ifcomm=.false.
 
-      len=isize   
-      call mpi_send (nsend,len,mpi_byte, id, nid, intercomm, ierr)
+         len=isize   
+         call mpi_send (nsend,len,mpi_byte, id, nid, intercomm, ierr)
 
-      if (nsend.ne.0) then
-c     Send the points identity to communicating processors
-         len=(ldim+1)*nsend*isize
-         do i=1,nsend
-            il=il+1
-            do j=1,ldim+1
-               jsend((ldim+1)*(i-1)+j)=iList(j,il)
-            enddo
-         end do   
+         if (nsend.ne.0) then
+c           Send the points identity to communicating processors
+            len=(ldim+1)*nsend*isize
+               do i=1,nsend
+               il=il+1
+               do j=1,ldim+1
+                  jsend((ldim+1)*(i-1)+j)=iList(j,il)
+               enddo
+            enddo   
 
-      call mpi_send(jsend,len,mpi_byte,id,100+nid, intercomm,ierr)
-      end if
+            call mpi_send(jsend,len,mpi_byte,id,100+nid, intercomm,ierr)
 
-      end do   
+         endif
+
+      enddo   
 
 
 c     Receive information about sending processors
  6    irecvcnt=0
       il=0
       do id=0,np_neighbor-1
-      len=isize
-      call mpi_recv (nrecv,len,mpi_byte,id,id, intercomm, status, ierr)
-      if (nrecv.ne.0) then
-      irecvcnt=irecvcnt+1
-      inforecv(irecvcnt,1)=id
-      inforecv(irecvcnt,2)=nrecv
+         len=isize
+
+         call mpi_recv(nrecv,len,mpi_byte,id,id,intercomm,status,ierr)
+
+         if (nrecv.ne.0) then
+            irecvcnt=irecvcnt+1
+            inforecv(irecvcnt,1)=id
+            inforecv(irecvcnt,2)=nrecv
 
 c     Receive information about point identities
-      len=(ldim+1)*nrecv*isize
-      call mpi_recv(jrecv,len,mpi_byte,id,100+id,intercomm,status,ierr)
+            len=(ldim+1)*nrecv*isize
+            call mpi_recv
+     $        (jrecv,len,mpi_byte,id,100+id,intercomm,status,ierr)
          
 c     Receiving processor nid masks which points he receives from 
 c     remote processor id as interpolation points using the identity 
@@ -572,20 +592,15 @@ c     with imask=1 (imask=0 for all other points).
             imask(ix,iy,iz,ie)=1
          enddo
 
-      end if  !  jrecv.ne.0
+      endif  !  jrecv.ne.0
       
-      end do  !  all remote processors
+      enddo  !  all remote processors
 
       nprecv=irecvcnt
- 1    format (a7,3i7,a7)
 
-      return
-      
       call neknekgsync()
-
       return
       end
-  
 C----------------------------------------------------------------
       subroutine get_values(which_field)
       include 'SIZE'
@@ -593,7 +608,10 @@ C----------------------------------------------------------------
       include 'NEKNEK'
       include 'mpif.h' 
 
-      character*3 which_field(nfld)
+      parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
+      common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
+
+      character*3 which_field(nfld_neknek)
       real field(lx1*ly1*lz1*lelt,nfldmax)
       real rsend(nfldmax*nmaxl), rrecv(nfldmax*nmaxl)
       real fieldout(nfldmax,nmaxl)
@@ -609,21 +627,27 @@ C     iden(3,:) = iz
 C     iden(4,:) = iel
 
 
-c     Put field values for the field ifld=1,nfld to the working array 
-c     field (:,:,:,:,nfld) used byt the findpts_value routine according 
+c     Put field values for the field ifld=1,nfld_neknek to the working array 
+c     field (:,:,:,:,nfld_neknek) used byt the findpts_value routine according 
 c     to the field identificator which_field(ifld) 
 
+      if (nfld_neknek.eq.0) 
+     $ call exitti('Error: set nfld_neknek in usrchk. Session:$',idsess)
+      
+
+      call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
 
       nv = nx1*ny1*nz1*nelv
       nt = nx1*ny1*nz1*nelt
-      do ifld=1,nfld
-        if (which_field(ifld).eq.'t' ) call copy(field(1,ifld),t ,nt)
-        if (which_field(ifld).eq.'vx') call copy(field(1,ifld),vx,nt)
-        if (which_field(ifld).eq.'vy') call copy(field(1,ifld),vy,nt)
-        if (which_field(ifld).eq.'vz') call copy(field(1,ifld),vz,nt)
 
-C     Find interpolation values      
+      do ifld=1,nfld_neknek
+        if (which_field(ifld).eq.'t' ) call copy(field(1,ifld),t  ,nt)
+        if (which_field(ifld).eq.'vx') call copy(field(1,ifld),vx ,nt)
+        if (which_field(ifld).eq.'vy') call copy(field(1,ifld),vy ,nt)
+        if (which_field(ifld).eq.'vz') call copy(field(1,ifld),vz ,nt)
+        if (which_field(ifld).eq.'pr') call copy(field(1,ifld),pm1,nt)
 
+C       Find interpolation values      
          call findpts_eval(inth_multi,fieldout(ifld,1),nfldmax,
      &                     rcode,1,
      &                     proc,1,
@@ -640,40 +664,36 @@ C     of remote session
 
       il=0
       do n=1,npsend   
-      id       = infosend(n,1)
-      nsend    = infosend(n,2)
-          do i=1,nsend
-             il=il+1
-             do ifld=1,nfld
-                rsend(nfld*(i-1)+ifld)=fieldout(ifld,il)
-             enddo
+         id       = infosend(n,1)
+         nsend    = infosend(n,2)
+         do i=1,nsend
+            il=il+1
+            do ifld=1,nfld_neknek
+               rsend(nfld_neknek*(i-1)+ifld)=fieldout(ifld,il)
            enddo
-           len=nfld*nsend*wdsize
-           call mpi_send (rsend,len,mpi_byte, id, nid, intercomm, ierr)
-      end do ! n=1,npsend     
+         enddo
+         len=nfld_neknek*nsend*wdsize
+         call mpi_send (rsend,len,mpi_byte, id, nid, intercomm, ierr)
+      enddo
 
       il=0 
       do n=1,nprecv
-      id    = inforecv(n,1)
-      nrecv = inforecv(n,2)
-      len=nfld*nrecv*wdsize
-      call mpi_recv (rrecv,len,mpi_byte,id,id,intercomm,status,ierr)
-
-C           Extract point identity
-    
-         do i=1,nrecv
+         id    = inforecv(n,1)
+         nrecv = inforecv(n,2)
+         len=nfld_neknek*nrecv*wdsize
+         call mpi_recv (rrecv,len,mpi_byte,id,id,intercomm,status,ierr)
+         do i=1,nrecv ! Extract point identity
             il=il+1
             ix = iden(1,il)
             iy = iden(2,il)
             iz = 1
             if (if3d) iz=iden(3,il)
             ie=iden(ldim+1,il)      
-               do ifld=1,nfld
-                  valint(ix,iy,iz,ie,ifld)=rrecv(nfld*(i-1)+ifld)
-               enddo
-         enddo      ! i=1,nrecv
-
-      enddo ! n=1,nprecv
+            do ifld=1,nfld_neknek
+               valint(ix,iy,iz,ie,ifld)=rrecv(nfld_neknek*(i-1)+ifld)
+            enddo
+         enddo
+      enddo 
 
       call neknekgsync()
 
@@ -685,15 +705,16 @@ C--------------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
       real l2,linf
-      character*3 which_field(nfldmax)
+      character*3 which_field(nfldmax+1)
 
-c     nfld is the number of fields to interpolate.
-c     nfld = 3 for just veliocities, nfld = 4 for velocities + temperature
+c     nfld_neknek is the number of fields to interpolate.
+c     nfld_neknek = 3 for just veliocities, nfld_neknek = 4 for velocities + temperature
 
       which_field(1)='vx'
       which_field(2)='vy'
       which_field(3)='vz'
-      if (nfld.gt.3) which_field(4)='t'
+      which_field(ndim+1)='pr'
+      if (nfld_neknek.gt.ndim+1) which_field(ndim+2)='t'
 
       if (nsessions.gt.1) call get_values(which_field)
 
@@ -707,7 +728,7 @@ c------------------------------------------------------------------------
 
       n    = nx1*ny1*nz1*nelt
 
-      do k=1,nfld
+      do k=1,nfld_neknek
          call copy(bdrylg(1,k,2),bdrylg(1,k,1),n)
          call copy(bdrylg(1,k,1),bdrylg(1,k,0),n)
          call copy(bdrylg(1,k,0),valint(1,1,1,1,k),n)
@@ -733,7 +754,7 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
          c2=1
       endif
      
-      do k=1,nfld
+      do k=1,nfld_neknek
       do i=1,n
          ubc(i,1,1,1,k) = 
      $      c0*bdrylg(i,k,0)+c1*bdrylg(i,k,1)+c2*bdrylg(i,k,2)
@@ -756,7 +777,6 @@ C---------------------------------------------------------------------
 
       return
       end
-
 c-----------------------------------------------------------------------
       subroutine unsetintercomm(nekcommtrue,nptrue)
       include 'SIZE' 
@@ -768,11 +788,9 @@ c-----------------------------------------------------------------------
 
       return
       end
-
 c-----------------------------------------------------------------------
       function uglmin(a,n)
-      REAL A(1)
-      DIMENSION TMP(1),WORK(1)
+      real a(1)
 
       call happy_check(1)
       call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
@@ -780,12 +798,10 @@ c-----------------------------------------------------------------------
       call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
 
       return
-      END
-
+      end
 c-----------------------------------------------------------------------
       function uglamax(a,n)
-      REAL A(1)
-      DIMENSION TMP(1),WORK(1)
+      real a(1)
 
       call happy_check(1)
       call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
@@ -793,7 +809,7 @@ c-----------------------------------------------------------------------
       call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
 
       return
-      END
+      end
 c------------------------------------------------------------------------
       subroutine neknekgsync()
       include 'SIZE' 
@@ -815,16 +831,110 @@ c     Happy check
       call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
       if (ihappy.eq.1.and.iglhappy.eq.0) then
          if (nid.eq.0) then
-         WRITE (6,*) '       '
-         WRITE (6,'(A,1i7,A,1e13.5)') 
+         write (6,*) '       '
+         write (6,'(A,1i7,A,1e13.5)') 
      $   ' Emergency exit due to the other session:',
      $     ISTEP,'   time =',TIME
-         WRITE (6,*)   
-         end if
+         write (6,*)   
+         endif
          icall=1
        call exitt
-      end if 
+      endif 
 
       return
       end
-      
+c------------------------------------------------------------------------
+      subroutine chk_outflow_short ! Assign neighbor velocity to outflow
+
+c
+c     This is just an experimental routine for PnPn only...
+c
+
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      include 'NEKNEK'
+      integer e,eg,f
+
+      n = nx1*ny1*nz1*nelt
+      ipfld=ndim
+c     if (ifsplit) ipfld=ndim+1
+      ipfld=ndim+1                ! Now for both split and nonsplit (12/14/15)
+      itfld=ipfld+1
+
+      do i=1,n ! The below has not been checked for ifheat=.true., pff 6/27/15
+         if (imask(i,1,1,1).eq.1) then
+            vx(i,1,1,1) = ubc(i,1,1,1,1)
+            vy(i,1,1,1) = ubc(i,1,1,1,2)
+            if (if3d)    vz(i,1,1,1)  = ubc(i,1,1,1,3)
+            if (ifsplit) pr(i,1,1,1)  = ubc(i,1,1,1,ipfld)
+            if (ifheat)  t(i,1,1,1,1) = ubc(i,1,1,1,itfld)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chk_outflow ! Assign neighbor velocity to outflow if
+                             ! characteristics are going the wrong way.
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      include 'NEKNEK'
+      integer e,eg,f
+
+      nface = 2*ndim
+      do e=1,nelv
+      do f=1,nface
+         if (cbc(f,e,1).eq.'o  ') then
+           eg = lglel(e)
+           call facind (i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)
+           l=0
+           do k=k0,k1
+           do j=j0,j1
+           do i=i0,i1
+              l=l+1
+              vo=vx(i,j,k,e)*unx(l,1,f,e)
+     $          +vy(i,j,k,e)*uny(l,1,f,e)
+     $          +vz(i,j,k,e)*unz(l,1,f,e)
+              if (vo.lt.0) then            ! We have inflow
+                 cbu = cbc(f,e,1)
+                 call userbc(i,j,k,f,eg)
+                 vx(i,j,k,e) = ux
+                 vy(i,j,k,e) = uy
+                 vz(i,j,k,e) = uz
+              endif
+           enddo
+           enddo
+           enddo
+         endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine neknekmv()
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer imove
+
+      imove=1
+      if (ifmvbd) imove=0
+      call neknekgsync()
+
+      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
+      iglmove=iglmin(imove,1)
+      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+
+      if (iglmove.eq.0) then
+         ifneknekm=.true.
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+

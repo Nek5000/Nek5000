@@ -1523,9 +1523,12 @@ C----------------------------------------------------------------------
       if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
       if (ifmodel)                              call twallsh
 
+c     Adding this call allows prescribed pressure bc for PnPn-2
+c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
+
       return
-      END
-C
+      end
+c
       subroutine makeuf
 C---------------------------------------------------------------------
 C

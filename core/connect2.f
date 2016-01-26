@@ -309,6 +309,7 @@ C
       IFKEPS    = .false.
       IFMVBD    = .false.
       IFCHAR    = .false.
+      IFDG      = .false.
       IFANLS    = .false.
       IFMOAB    = .false.
       IFCOUP    = .false.
@@ -324,6 +325,9 @@ C
       IFEXPLVIS = .false.
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
+      IFCMT     = .false.
+      IFVISC    = .false.
+      IFFLTR    = .false.
 
       ifbase = .true.
       ifpert = .false.
@@ -373,6 +377,8 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFMVBD
          elseif (indx1(string(i),'IFCHAR' ,6).gt.0) then 
               read(string(i),*) IFCHAR
+         elseif (indx1(string(i),'IFDG'   ,4).gt.0) then 
+              read(string(i),*) IFDG
          elseif (indx1(string(i),'IFANLS' ,6).gt.0) then 
               read(string(i),*) IFANLS
          elseif (indx1(string(i),'IFMOAB' ,6).gt.0) then 
@@ -403,6 +409,12 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
+         elseif (indx1(string(i),'IFCMT',5).gt.0) then 
+              read(string(i),*) IFCMT
+         elseif (indx1(string(i),'IFVISC',6).gt.0) then 
+              read(string(i),*) IFVISC
+         elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
+              read(string(i),*) IFFLTR
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -421,6 +433,7 @@ c              read(string,*) IFSPLIT
      &           '   IFKEPS'   ,
      &           '   IFMVBD'   ,
      &           '   IFCHAR'   ,
+     &           '   IFDG'     ,
      &           '   IFANLS'   ,
      &           '   IFUSERVP' ,
      &           '   IFUSERMV' ,
@@ -431,7 +444,10 @@ c              read(string,*) IFSPLIT
      &           '   IFCONS'   ,
      &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'
+     &           '   IFVCOUP'  ,
+     &           '   IFCMT'    ,
+     &           '   IFVISC'   ,
+     &           '   IFFLTR'    
               endif
               call exitt
          endif
@@ -672,6 +688,8 @@ c     endif
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
+
+      if (ifdg) param(59)=1  ! No fast operator eval for DG
 
 #ifndef MOAB
       if (ifmoab) then
