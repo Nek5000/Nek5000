@@ -135,14 +135,14 @@ C     Compute startresidual/right-hand-side in the pressure
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      REAL           RESPR (LX2*LY2*LZ2*LELV)
+      REAL           RESPR (LX2*LY2*LZ2,LELV)
 c
       COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
      $ ,             TA2   (LX1*LY1*LZ1,LELV)
      $ ,             TA3   (LX1*LY1*LZ1,LELV)
-     $ ,             WA1   (LX1*LY1*LZ1*LELV)
-     $ ,             WA2   (LX1*LY1*LZ1*LELV)
-     $ ,             WA3   (LX1*LY1*LZ1*LELV)
+     $ ,             WA1   (LX1*LY1*LZ1,LELV)
+     $ ,             WA2   (LX1*LY1*LZ1,LELV)
+     $ ,             WA3   (LX1*LY1*LZ1,LELV)
       COMMON /SCRMG/ W1    (LX1*LY1*LZ1*LELV)
      $ ,             W2    (LX1*LY1*LZ1*LELV)
       COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
@@ -191,9 +191,9 @@ c     call exitti ('exit in cresps$',ifield)
 c     add explicit (NONLINEAR) terms 
       n = nx1*ny1*nz1*nelv
       do i=1,n
-         ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
-         ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
-         ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
+         ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i,1)
+         ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i,1)
+         ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i,1)
       enddo
       call opdssum (ta1,ta2,ta3)
       do i=1,n
@@ -205,14 +205,18 @@ c     add explicit (NONLINEAR) terms
          call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
          call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
          call cdtp    (wa3,ta3,rzm2,szm2,tzm2,1)
-         do i=1,n
-            respr(i) = respr(i)+wa1(i)+wa2(i)+wa3(i)
+         do i=1,nelv
+           do j = 1, nx1*ny1*nz1
+              respr(j,i) = respr(j,i)+wa1(j,i)+wa2(j,i)+wa3(j,i)
+           enddo
          enddo
       else
          call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
          call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
-         do i=1,n
-            respr(i) = respr(i)+wa1(i)+wa2(i)
+         do i=1,nelv
+           do j = 1, nx1*ny1*nz1
+             respr(j,i) = respr(j,i)+wa1(j,i)+wa2(j,i)
+           enddo
          enddo
       endif
 
@@ -220,31 +224,42 @@ C     add thermal divergence
       dtbd = BD(1)/DT
       call admcol3(respr,QTL,bm1,dtbd,ntot1)
  
-C     surface terms
-      DO 300 IFC=1,NFACES
-         CALL RZERO  (TA1,NTOT1)
-         CALL RZERO  (TA2,NTOT1)
-         IF (NDIM.EQ.3)
-     $   CALL RZERO  (TA3,NTOT1)
-         DO 100 IEL=1,NELV
+c     surface terms
+      DO 100 IEL=1,NELV
+         DO 300 IFC=1,NFACES
+            CALL RZERO  (WA1,NXYZ1)
+            CALL RZERO  (WA2,NXYZ1)
+            IF (NDIM.EQ.3)
+     $         CALL RZERO  (WA3,NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v') THEN
                CALL FACCL3 
-     $         (TA1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
+     $         (WA1,VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3 
-     $         (TA2(1,IEL),VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
+     $         (WA2,VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
                IF (NDIM.EQ.3) 
      $          CALL FACCL3 
-     $         (TA3(1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
+     $         (WA3,VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
+            ELSE IF (CB(1:3).EQ.'SYM') THEN
+               CALL FACCL3 
+     $         (WA1,TA1(1,IEL),UNX(1,1,IFC,IEL),IFC)
+               CALL FACCL3 
+     $         (WA2,TA2(1,IEL),UNY(1,1,IFC,IEL),IFC)
+               IF (NDIM.EQ.3) 
+     $          CALL FACCL3 
+     $         (WA3,TA3(1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ENDIF
-            CALL ADD2   (TA1(1,IEL),TA2(1,IEL),NXYZ1)
+            CALL ADD2   (WA1,WA2,NXYZ1)
             IF (NDIM.EQ.3)
-     $      CALL ADD2   (TA1(1,IEL),TA3(1,IEL),NXYZ1)
-            CALL FACCL2 (TA1(1,IEL),AREA(1,1,IFC,IEL),IFC)
-  100    CONTINUE
-         CALL CMULT(TA1,dtbd,NTOT1)
-         CALL SUB2 (RESPR,TA1,NTOT1)
-  300 CONTINUE
+     $      CALL ADD2   (WA1,WA3,NXYZ1)
+            CALL FACCL2 (WA1,AREA(1,1,IFC,IEL),IFC)
+            IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v') THEN
+              CALL CMULT(WA1,dtbd,NXYZ1)
+            endif
+            CALL SUB2 (RESPR(1,IEL),WA1,NXYZ1)
+  300    CONTINUE
+  100 CONTINUE
+
 
 C     Assure that the residual is orthogonal to (1,1,...,1)T 
 C     (only if all Dirichlet b.c.)
