@@ -30,7 +30,7 @@ c--------------------------------------------------------------------
       real faceq(nx1*nz1,2*ldim,nelt,nvar)
       real bcq(nx1*nz1,2*ldim,nelt,nvar)
       real flux1(nx1*nz1,2*ldim,nelt,*)
-      real sxn,syn,szn,rl,ul,vl,wl,pl,rr,ur,vr,wr,pr
+      real sxn,syn,szn,rhou,rhov,rhow,pl,rhob,rhoub,rhovb,rhowb,rhoeb
       parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
       common /SCRNS/ nxf(lfd1),nyf(lfd1),nzf(lfd1),fs(lfd1),
      >               ufacel(lfd1,5),plc(lfc1),ufacer(lfd1,5),prc(lfc1),
@@ -39,6 +39,7 @@ c--------------------------------------------------------------------
       real nxf,nyf,nzf,fs,ufacel,ufacer,plc,prc,plf,prf,jaco_c,jaco_f
       real philc(lfc1),philf(lfd1),molmlf(lfd1),molmlc(lfc1),cvglc(lfc1)
       real cvglf(lfd1),cpglc(lfc1),cpglf(lfd1)
+
       nxz=nx1*nz1
       nxzd=nxd*nzd
       fdim=ndim-1
@@ -155,7 +156,16 @@ c           write(26,*)'pinfty, ', pinfty, 'pres ', pres
 !-----------------------------------------------------------------------
 ! Inviscid flux at inflow can probably just be hardcoded instead of
 ! derived from a trivial call of CentralInviscid_FluxFunction
-      call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacel,plf,
+c     call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacel,plf,
+c    >                                  ufacer,prf,flx)
+c MS010716 This central flux call is trivial. Flux computation is based 
+c solely on the right state or the ufacer array. 
+c Note that this change was important for inflow BC.
+c Outflow BC is not sensitive to method used to compute the flux. 
+c This was tested for 
+c  ---  uniform flow and subsonic flow over a cylinder. 
+c  (Need to test supersonic uniform flow !)
+      call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacer,prf,
      >                                  ufacer,prf,flx)
 
       do ieq=1,toteq

@@ -33,10 +33,11 @@ c     Solve the Euler equations
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
 
-!        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
-!          dumchars='residue'
-!          call dumpresidue(dumchars,stage)
-!        endif
+c        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
+c          dumchars='residue'
+c          call dumpresidue(dumchars,stage)
+c        endif
+c        call exitt
 c JH061114 this loop may need some work. stride difficulties
 
 ! JH111815 soon....
@@ -243,8 +244,8 @@ c-----------------------------------------------------------------------
             call copy(U(1,1,1,2,e),vx(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,3,e),vy(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,4,e),vz(1,1,1,e),nxyz1) 
-            call copy(U(1,1,1,5,e),t(1,1,1,e,3),nxyz1) 
-            call copy(U(1,1,1,1,e),t(1,1,1,e,2),nxyz1) 
+            call copy(U(1,1,1,5,e),t(1,1,1,e,1),nxyz1) 
+            call copy(U(1,1,1,1,e),pr(1,1,1,e),nxyz1) 
          enddo
       endif
       call rzero(res1,n)

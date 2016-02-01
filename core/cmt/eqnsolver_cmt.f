@@ -324,19 +324,20 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
       include 'CMTDATA'
       include 'TSTEP'
+      include 'PARALLEL'
 
-      integer e
+      integer e,eg
 
       if(istep.eq.1)then
         n = nx1*ny1*nz1*5
         call rzero(usrf,n)
       endif
-
+      eg = lglel(e)
       do k=1,nz1
          do j=1,ny1
             do i=1,nx1
                call NEKASGN(i,j,k,e)
-               call userf(i,j,k,e)
+               call userf(i,j,k,eg)
                usrf(i,j,k,2) = FFX
                usrf(i,j,k,3) = FFY
                usrf(i,j,k,4) = FFZ

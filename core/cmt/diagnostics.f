@@ -208,7 +208,7 @@ c      write(6,*)wfnav(1:i1),'.',citer(is:il)
         enddo
       endif
       close(11)
-101   format(8(3x,f12.5))
+101   format(8(3x,e12.5))
 102   format(7(3x,e14.7))
       return
       end
