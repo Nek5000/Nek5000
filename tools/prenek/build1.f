@@ -2548,7 +2548,7 @@ c     Is this side attached to object iobj ?
       return
       end
 c-----------------------------------------------------------------------
-      subroutine convert_m_to_c_e(f,e)
+      subroutine convert_m_to_c_e(f,e,rad_mx)
       include 'basics.inc'
       integer f,e
 
@@ -2570,10 +2570,10 @@ c-----------------------------------------------------------------------
       ccurve(f,e)=' '
       call rzero(curve(1,f,e),6)
 
-      if (abs(rad).gt.0) then
-         ccurve (f,e)='C'
-         curve  (1,f,e)=rad
-      endif
+      if (rad.eq.0.0 .or. abs(rad).gt.rad_mx) return
+
+      ccurve (f,e)='C'
+      curve  (1,f,e)=rad
 
       return
       end
@@ -2582,10 +2582,13 @@ c-----------------------------------------------------------------------
 
       include 'basics.inc'
       integer edge,e
+
+      call prs('Input maxium radius:$')
+      call rer(rad_mx)
       
       do e=1,nel
       do edge=1,4*(ndim-1)
-         call convert_m_to_c_e(edge,e)
+         call convert_m_to_c_e(edge,e,rad_mx)
       enddo
       enddo
 

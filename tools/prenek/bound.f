@@ -340,6 +340,7 @@ C
       if (ifheat) ifld=2
 C
       iffail = .false.
+      nfail  = 0
       do 400 ie=1,nel
       do 400 iside=1,nsides
          IF (cbc(iside,ie,ifld).eq.'E  '   .or.
@@ -357,28 +358,51 @@ c           Check edges
                 jed = jside+ilev
                 IF (CCURVE(jed,je).ne.CCURVE(ied,ie)    .or.
      $             -CURVE(1,jed,je).ne.CURVE(1,ied,ie)) THEN
-                 call qchk(ie,iside,je,jside,IF)
-                 iffail = .true.
-                 CALL PRS('ERROR: Curve side consistency failure A.$')
-  200            CALL PRS(
-     $          'Enter element number to be changed (other=abort).$')
-                 WRITE(S,210) ie,ied,CCURVE(ied,ie),Curve(1,ied,ie)
-                 CALL PRS(S)
-                 WRITE(S,210) je,jed,CCURVE(jed,je),Curve(1,jed,je)
-                 CALL PRS(S)
-  210            FORMAT(
+
+                 if (ccurve(jed,je).eq.ccurve(ied,ie)) then ! Tolerance issue
+                  diffc= abs(curve(1,jed,je))-abs(curve(1,ied,ie))
+                  tol  =(abs(curve(1,jed,je))+abs(curve(1,ied,ie)))*.001
+                   if (diffc.lt.tol) then
+                      cavg=(abs(curve(1,jed,je))+abs(curve(1,ied,ie)))/2
+                      if (curve(1,ied,ie).gt.0) then
+                         curve(1,ied,ie)= cavg
+                      else
+                         curve(1,ied,ie)=-cavg
+                      endif
+                      if (curve(1,jed,je).gt.0) then
+                         curve(1,jed,je)= cavg
+                      else
+                         curve(1,jed,je)=-cavg
+                      endif
+                   endif
+                   nfail = nfail+1
+                   if (nfail.eq.1) call prs
+     $             ('ERROR: Curve side consistency failure-repaired.$')
+                   call qchk(ie,iside,je,jside,IF)
+                 else
+                   call qchk(ie,iside,je,jside,IF)
+                      
+                   iffail = .true.
+                   CALL PRS('ERROR: Curve side consistency failure A.$')
+  200              CALL PRS(
+     $            'Enter element number to be changed (other=abort).$')
+                   WRITE(S,210) ie,ied,CCURVE(ied,ie),Curve(1,ied,ie)
+                   CALL PRS(S)
+                   WRITE(S,210) je,jed,CCURVE(jed,je),Curve(1,jed,je)
+                   CALL PRS(S)
+  210              FORMAT(
      $           ' El:',I10,3x,'Edge:',I2,3x,'C: ',A3,' Rad:',G14.6,'$')
-cccc             CALL REI(Ke)
-                 IF (Ke.eq.ie) THEN
-                    CCURVE(ied,ie)   = CCURVE(jed,je)
-                    CURVE (1,ied,ie) = -CURVE (1,jed,je)
-                 ELSE IF(Ke.eq.je) THEN
-                    CCURVE(jed,je)   = CCURVE(ied,ie)
-                    CURVE (1,jed,je) = -CURVE (1,ied,ie)
-                 ELSE
+cccc               CALL REI(Ke)
+c                  IF (Ke.eq.ie) THEN
+c                     CCURVE(ied,ie)   = CCURVE(jed,je)
+c                     CURVE (1,ied,ie) = -CURVE (1,jed,je)
+c                  ELSE IF(Ke.eq.je) THEN
+c                     CCURVE(jed,je)   = CCURVE(ied,ie)
+c                     CURVE (1,jed,je) = -CURVE (1,ied,ie)
+c                  ELSE
                   CALL PRS(
      $            'Are you sure you want to keep it this way (A)?$')
-                  je =jed
+c                 je =jed
 c                 call prexit
 cccc              CALL RES(YESNO,1)
 cccc              IF (YESNO.ne.'y'.and.YESNO.ne.'Y') GOTO 200
