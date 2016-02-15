@@ -91,8 +91,6 @@ c        fs = 0.0
          bcq(l,f,e,ipr)=pres
          plc(l)=plc(l)*phi
          prc(l)=phi*pres ! needs phi. U in bcq has phi already
-c        write(27,*)bcq(l,f,e,iu1),bcq(l,f,e,iu2),bcq(l,f,e,iu5)
-c        write(28,*)faceq(l,f,e,iu1),faceq(l,f,e,iu2),faceq(l,f,e,iu5)
       enddo
       enddo
       enddo
@@ -141,12 +139,9 @@ c        fs   = 0.0
          ufacer(l,3) = rhovb*philf(l)
          ufacer(l,4) = rhowb*philf(l)
          ufacer(l,5) = rhoeb*philf(l)
-c        write(37,*)ufacer(l,1),ufacer(l,2),ufacer(l,5),rhoub
-c        write(38,*)ufacel(l,1),ufacel(l,2),ufacel(l,5),rhou
 
          plf(l)      = plf(l)*philf(l)
          prf(l)      = pres*philf(l)
-c           write(26,*)'pinfty, ', pinfty, 'pres ', pres
       enddo
       call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
       call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 

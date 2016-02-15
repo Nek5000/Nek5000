@@ -86,7 +86,6 @@ c                                     ! ux,uy,uz ifvisc
             if (cbc(f,e,2) .eq. 'W  ') bcq(l,f,e,ithm)=temp
          endif
          plc(l)=plc(l)*phi
-         write(66+nid,*)'p,rl,ul,vl,wl',plc(l),rl,ul,vl,wl
       enddo
       enddo
       enddo
@@ -103,10 +102,6 @@ c                                     ! ux,uy,uz ifvisc
       call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs2,dumminus,
      >                                    plf,dumminus,plf,flx)
 
-      do l=1,nxzd
-         write(76+nid,*)'flx ',flx(l,1),flx(l,2)/nxf(l)
-     >       ,flx(l,3)/nyf(l),flx(l,4)/nzf(l),flx(l,5)
-      enddo
       call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
       call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0)
       call col2(jaco_f,wghtf,nxzd)
@@ -117,10 +112,6 @@ c                                     ! ux,uy,uz ifvisc
 
       if (cbc(f,e,2).ne.'I  ') call map_faced(fluxw(1,f,e,toteq),
      >                              flx(1,toteq),nx1,nxd,fdim,1)
-      do l=1,nxz
-         write(86+nid,*)'fluxw ',fluxw(l,f,e,1),fluxw(l,f,e,2)
-     >       ,fluxw(l,f,e,3),fluxw(l,f,e,4),fluxw(l,f,e,5)
-      enddo
       return
       end
 
