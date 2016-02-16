@@ -1,11 +1,11 @@
 c--------------------------------------------------------------------
-      subroutine outflow(nvar,f,e,faceq,bcq,flux)
+      subroutine outflow(nvar,f,e,faceq,bcq,flux) ! don't really need nvar anymore
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
 
       integer  nvar,f,e
-      real faceq(nvar,nx1,nz1,2*ldim,nelt)
-      real bcq(nvar,nx1,nz1,2*ldim,nelt)
+      real faceq(nx1,nz1,2*ldim,nelt,nvar)
+      real bcq(nx1,nz1,2*ldim,nelt,nvar)
       real flux(nx1*nz1,2*ldim,nelt,*)
 
       call outflow_rflu(nvar,f,e,faceq,bcq,flux)
@@ -23,14 +23,26 @@ c--------------------------------------------------------------------
       include 'INPUT'
       include 'GEOM'
       include 'PARALLEL'
+      include 'DG'
+
       integer i,bcOpt
-      integer  f,e
-      real faceq(nvar,nx1*nz1,2*ldim,nelt)
-      real bcq(nvar,nx1*nz1,2*ldim,nelt)
+      integer  f,e,fdim
+      real faceq(nx1*nz1,2*ldim,nelt,nvar)
+      real bcq(nx1*nz1,2*ldim,nelt,nvar)
       real flux1(nx1*nz1,2*ldim,nelt,*)
-      real sxn,syn,szn,rl,ul,vl,wl,pl,rr,ur,vr,wr,pr,flx(5),fs
+      real sxn,syn,szn,rhou,rhov,rhow,pl,rhob,rhoub,rhovb,rhowb,rhoeb
+      parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
+      common /SCRNS/ nxf(lfd1),nyf(lfd1),nzf(lfd1),fs(lfd1),
+     >               ufacel(lfd1,5),plc(lfc1),ufacer(lfd1,5),prc(lfc1),
+     >               flx(lfd1,5),plf(lfd1),prf(lfd1),jaco_c(lfc1),
+     >               jaco_f(lfd1)
+      real nxf,nyf,nzf,fs,ufacel,ufacer,plc,prc,plf,prf,jaco_c,jaco_f
+      real philc(lfc1),philf(lfd1),molmlf(lfd1),molmlc(lfc1),cvglc(lfc1)
+      real cvglf(lfd1),cpglc(lfc1),cpglf(lfd1)
 
       nxz=nx1*nz1
+      nxzd=nxd*nzd
+      fdim=ndim-1
       ieg=lglel(e)
 
       call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
@@ -44,49 +56,116 @@ c--------------------------------------------------------------------
          sxn = unx(l,1,f,e)
          syn = uny(l,1,f,e)
          szn = unz(l,1,f,e)
-         rhou= faceq(iu2,l,f,e)/phi
-         rhov= faceq(iu3,l,f,e)/phi
-         rhow= faceq(iu4,l,f,e)/phi
-         rhoe= faceq(iu5,l,f,e)/phi
-         pl  = faceq(ipr,l,f,e)
-         cpgas=faceq(icpf,l,f,e)/rho
-         cvgas=faceq(icvf,l,f,e)/rho
-         fs = 0.0
+         philc(l) = phi
+         molmlc(l) = molarmass
+         rhou= faceq(l,f,e,iu2)/phi
+         rhov= faceq(l,f,e,iu3)/phi
+         rhow= faceq(l,f,e,iu4)/phi
+         rhoe= faceq(l,f,e,iu5)/phi
+         plc(l)= faceq(l,f,e,ipr)
+         cpglc(l)=faceq(l,f,e,icpf)/rho
+         cvglc(l)=faceq(l,f,e,icvf)/rho
+c        fs = 0.0
          if(outflsub)then
             pres= pinfty
          else
-            pres= pl
+            pres= plc(l)
          endif
-         call BcondOutflowPerf(1,pres,sxn,syn,szn,cpgas,molarmass,
-     >                         rho,rhou,rhov,rhow,rhoe,pl,
+         call BcondOutflowPerf(1,pres,sxn,syn,szn,cpglc(l),molmlc(l),
+     >                         rho,rhou,rhov,rhow,rhoe,plc(l),
      >                         rhob,rhoub,rhovb,rhowb,rhoeb )
-         bcq(irho,l,f,e)=rhob
-         bcq(iux, l,f,e)=rhoub/rhob
-         bcq(iuy, l,f,e)=rhovb/rhob
-         bcq(iuz, l,f,e)=rhowb/rhob
+         bcq(l,f,e,irho)=rhob
+         bcq(l,f,e,iux)=rhoub/rhob
+         bcq(l,f,e,iuy)=rhovb/rhob
+         bcq(l,f,e,iuz)=rhowb/rhob
 ! dammit fix this. tdstate to the rescue?
-         bcq(ithm,l,f,e)=(rhoeb-0.5*(rhoub**2+rhovb**2+rhowb**2)/rhob)/
-     >                   cvgas
+         bcq(l,f,e,ithm)=(rhoeb-0.5*(rhoub**2+rhovb**2+rhowb**2)/rhob)/
+     >                   cvglc(l)
 ! dammit fix that
-         bcq(iu1, l,f,e)=rhob*phi
-         bcq(iu2, l,f,e)=rhoub*phi
-         bcq(iu3, l,f,e)=rhovb*phi
-         bcq(iu4, l,f,e)=rhowb*phi
-         bcq(iu5, l,f,e)=rhoeb*phi
-         bcq(iph, l,f,e)=phi
-         bcq(ipr, l,f,e)=pres
-         fs=0.0
-         pl=pl*phi
-         pres=pres*phi
-         call CentralInviscid_FluxFunction(sxn,syn,szn,fs,
-     >                                     faceq(iu1,l,f,e),pl,! U-
-     >                                     bcq(iu1,l,f,e),pres,! U+,bc
-     >                                     flx)
-         do j=1,5
-            flux1(l,f,e,j)=flx(j)
-         enddo
+         bcq(l,f,e,iu1)=rhob*phi
+         bcq(l,f,e,iu2)=rhoub*phi
+         bcq(l,f,e,iu3)=rhovb*phi
+         bcq(l,f,e,iu4)=rhowb*phi
+         bcq(l,f,e,iu5)=rhoeb*phi
+         bcq(l,f,e,iph)=phi
+         bcq(l,f,e,ipr)=pres
+         plc(l)=plc(l)*phi
+         prc(l)=phi*pres ! needs phi. U in bcq has phi already
       enddo
       enddo
+      enddo
+
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(plf,plc,nx1,nxd,fdim,0)
+      call map_faced(prf,prc,nx1,nxd,fdim,0)
+      call map_faced(philf,philc,nx1,nxd,fdim,0)
+c     call map_faced(cvglf,cvglc,nx1,nxd,fdim,0)
+      call map_faced(cpglf,cpglc,nx1,nxd,fdim,0)
+      call map_faced(molmlf,molmlc,nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,1),bcq(1,f,e,iu1),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,2),bcq(1,f,e,iu2),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,3),bcq(1,f,e,iu3),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,4),bcq(1,f,e,iu4),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,5),bcq(1,f,e,iu5),  nx1,nxd,fdim,0)
+
+      do l=1,lfd1
+         sxn  = nxf(l)
+         syn  = nyf(l)
+         szn  = nzf(l)
+         rho  = ufacel(l,1)/philf(l) 
+         rhou = ufacel(l,2)/philf(l)
+         rhov = ufacel(l,3)/philf(l)
+         rhow = ufacel(l,4)/philf(l)
+         rhoe = ufacel(l,5)/philf(l)
+         plf(l) = plf(l)/philf(l)
+c        fs   = 0.0
+         if(outflsub)then
+            pres= pinfty
+         else
+            pres= plf(l)
+         endif
+         call BcondOutflowPerf(1,pres,sxn,syn,szn,cpglf(l),molmlf(l)
+     >                        ,rho,rhou,rhov,rhow,rhoe,plf(l)
+     >                        ,rhob,rhoub,rhovb,rhowb,rhoeb )
+         ufacer(l,1) = rhob*philf(l)
+         ufacer(l,2) = rhoub*philf(l)
+         ufacer(l,3) = rhovb*philf(l)
+         ufacer(l,4) = rhowb*philf(l)
+         ufacer(l,5) = rhoeb*philf(l)
+
+         plf(l)      = plf(l)*philf(l)
+         prf(l)      = pres*philf(l)
+      enddo
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+      call col2(jaco_f,wghtf,nxzd)
+      call rzero(fs,nxzd)
+
+!-----------------------------------------------------------------------
+! Inviscid flux at inflow can probably just be hardcoded instead of
+! derived from a trivial call of CentralInviscid_FluxFunction
+c     call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacel,plf,
+c    >                                  ufacer,prf,flx)
+c MS010716 This central flux call is trivial. Flux computation is based 
+c solely on the right state or the ufacer array. 
+c Note that this change was important for inflow BC.
+c Outflow BC is not sensitive to method used to compute the flux. 
+c This was tested for 
+c  ---  uniform flow and subsonic flow over a cylinder. 
+c  (Need to test supersonic uniform flow !)
+      call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs,ufacer,prf,
+     >                                  ufacer,prf,flx)
+
+      do ieq=1,toteq
+         call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(flux1(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
       enddo
 
       return

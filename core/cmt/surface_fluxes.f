@@ -24,7 +24,6 @@
       character*32 cname
       nfq=nx1*nz1*2*ndim*nelt
       nstate = nqq
-      ntot1 = nfq*nstate
 ! where different things live
       iqm =1
       iqp =iqm+nstate*nfq
@@ -54,14 +53,6 @@
 
       call face_state_commo(fatface(iqm),fatface(iqp),nfq,nstate
      >                     ,dg_hndl)
-
-! JH091614 Since we don't have a correctly vectorized gs_op_fields here,
-!          I have decided to transpose the q's to get primitive vars
-!          ordered innermost.
-      call transpose(fatface(iflx),nstate,fatface(iqm),nfq)
-      call copy(fatface(iqm),fatface(iflx),ntot1)
-      call transpose(fatface(iflx),nstate,fatface(iqp),nfq)
-      call copy(fatface(iqp),fatface(iflx),ntot1)
 
       call InviscidFlux(fatface(iqm),fatface(iqp),fatface(iflx)
      >                 ,nstate,toteq)
@@ -109,8 +100,6 @@
       call full2face_cmt(nelt,nx1,ny1,nz1,iface_flux,yourface,field)
 
       do i=1,ndg_face
-!        qminus(ivar,i)=yourface(i,1,1,1) ! gs_op_fields no worky yet.
-                                          ! tranpose later
          qminus(i,ivar)=yourface(i,1,1,1)
       enddo
 
@@ -139,7 +128,6 @@
 !-----------------------------------------------------------------------
 ! operation flag is second-to-last arg, an integer
 !                                                1 ==> +
-!     write(6,*) 'face_state_commo ',nstate
       call gs_op_fields(handle,yours,nf,nstate,1,1,0)
       call sub2 (yours,mine,ntot)
       return
@@ -169,39 +157,66 @@
 !      USE ModSpecies, ONLY: t_spec_type
 !#endif
       include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
-      include 'CMTDATA'
+      include 'INPUT' ! do we need this?
+      include 'GEOM' ! for unx
+      include 'CMTDATA' ! do we need this without outflsub?
       include 'DG'
-! ******************************************************************************
-! Definitions and declarations
-! ******************************************************************************
-      real MixtPerf_Ho_CpTUVW
-      external MixtPerf_Ho_CpTUVW
 
 ! ==============================================================================
 ! Arguments
 ! ==============================================================================
       integer nstate,nflux
-      real qminus(nstate,nx1*nz1,2*ndim,nelt),
-     >     qplus(nstate,nx1*nz1,2*ndim,nelt),
+      real qminus(nx1*nz1,2*ndim,nelt,nstate),
+     >     qplus(nx1*nz1,2*ndim,nelt,nstate),
      >     flux(nx1*nz1,2*ndim,nelt,nflux)
 
 ! ==============================================================================
 ! Locals
 ! ==============================================================================
 
-      integer e,f,i,k,nxz,nface,ivoid,ifield
-      REAL al,ar,cpl,cpr,dx,dy,dz,fs,fsu,gcl,gcr,gl,gr,Hl,Hr,irl,irr,
-     >      nm,nTol,nx,ny,nz,pl,pr,rl,rr,tl,tr,ul,ur,vl,vr,wl,wr,rgl,rgr
-      REAL flx(5),vf(3)
+      integer e,f,fdim,i,k,nxz,nface,ifield
+      parameter (lfd=lxd*lzd)
+! JH111815 legacy rocflu names.
+!
+! nx,ny,nz : outward facing unit normal components
+! fs       : face speed. zero until we have moving grid
+! jaco_c   : fdim-D GLL grid Jacobian
+! nm       : jaco_c, fine grid
+!
+! State on the interior (-, "left") side of the face
+! rl       : density
+! ul,vl,wl : velocity
+! tl       : temperature
+! al       : sound speed
+! pl       : pressure, then phi
+! cpl      : rho*cp
+! State on the exterior (+, "right") side of the face
+! rr       : density
+! ur,vr,wr : velocity
+! tr       : temperature
+! ar       : sound speed
+! pr       : pressure
+! cpr      : rho*cp
+
+      COMMON /SCRNS/ nx(lfd), ny(lfd), nz(lfd), rl(lfd), ul(lfd),
+     >               vl(lfd), wl(lfd), pl(lfd), tl(lfd), al(lfd),
+     >               cpl(lfd),rr(lfd), ur(lfd), vr(lfd), wr(lfd),
+     >               pr(lfd),tr(lfd), ar(lfd),cpr(lfd), fs(lfd),
+     >               jaco_f(lfd),flx(lfd,toteq),jaco_c(lx1*lz1)
+      real nx, ny, nz, rl, ul, vl, wl, pl, tl, al, cpl, rr, ur, vr, wr,
+     >                pr,tr, ar,cpr, fs,jaco_f,flx,jaco_c
+
+!     REAL vf(3)
+      real nTol
       character*132 deathmessage
       character*3 cb
 
       nTol = 1.0E-14
 
+      fdim=ndim-1
       nface = 2*ndim
       nxz   = nx1*nz1
+      nxzd  = nxd*nzd
       ifield= 1
 
 !     if (outflsub)then
@@ -217,10 +232,10 @@
 ! compute flux for weakly-enforced boundary condition
 !-----------------------------------------------------------------------
 
-            do i=1,nxz
-               do j=1,nstate
-                  if (abs(qplus(j,i,f,e)) .gt. ntol) then
-                  write(6,*) nid,j,i,qplus(j,i,f,e),qminus(j,i,f,e),cb,
+            do j=1,nstate
+               do i=1,nxz
+                  if (abs(qplus(i,f,e,j)) .gt. ntol) then
+                  write(6,*) nid,j,i,qplus(i,f,e,j),qminus(i,f,e,j),cb,
      > nstate
                   write(deathmessage,*)  'GS hit a bndy,f,e=',f,e,'$'
 ! Make sure you are not abusing this error handler
@@ -243,70 +258,43 @@
 
          else ! cbc(f,e,ifield) == 'E  ' or 'P  ' below; interior face
 
-! ******************************************************************************
-! Compute fluxes through interior faces
-! ******************************************************************************
+! JH111715 now with dealiased surface integrals. I am too lazy to write
+!          something better
+            call map_faced(nx,unx(1,1,f,e),nx1,nxd,fdim,0)
+            call map_faced(ny,uny(1,1,f,e),nx1,nxd,fdim,0)
+            call map_faced(nz,unz(1,1,f,e),nx1,nxd,fdim,0)
 
-            do i=1,nxz
-               do j=1,5
-                  flux(i,f,e,j)=0.0
-               enddo
+            call map_faced(rl,qminus(1,f,e,irho),nx1,nxd,fdim,0)
+            call map_faced(ul,qminus(1,f,e,iux),nx1,nxd,fdim,0)
+            call map_faced(vl,qminus(1,f,e,iuy),nx1,nxd,fdim,0)
+            call map_faced(wl,qminus(1,f,e,iuz),nx1,nxd,fdim,0)
+            call map_faced(pl,qminus(1,f,e,ipr),nx1,nxd,fdim,0)
+            call map_faced(tl,qminus(1,f,e,ithm),nx1,nxd,fdim,0)
+            call map_faced(al,qminus(1,f,e,isnd),nx1,nxd,fdim,0)
+            call map_faced(cpl,qminus(1,f,e,icpf),nx1,nxd,fdim,0)
 
-! ==============================================================================
-!   Get face geometry and, when it exists, grid speed
-! ==============================================================================
+            call map_faced(rr,qplus(1,f,e,irho),nx1,nxd,fdim,0)
+            call map_faced(ur,qplus(1,f,e,iux),nx1,nxd,fdim,0)
+            call map_faced(vr,qplus(1,f,e,iuy),nx1,nxd,fdim,0)
+            call map_faced(wr,qplus(1,f,e,iuz),nx1,nxd,fdim,0)
+            call map_faced(pr,qplus(1,f,e,ipr),nx1,nxd,fdim,0)
+            call map_faced(tr,qplus(1,f,e,ithm),nx1,nxd,fdim,0)
+            call map_faced(ar,qplus(1,f,e,isnd),nx1,nxd,fdim,0)
+            call map_faced(cpr,qplus(1,f,e,icpf),nx1,nxd,fdim,0)
 
-               nx = unx(i,1,f,e)
-               ny = uny(i,1,f,e)
-               nz = unz(i,1,f,e)
-               nm = 1.0 ! multiply by area(i,1,f,e) later
+            call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+            call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+            call col2(jaco_f,wghtf,nxzd)
+            call rzero(fs,nxzd) ! moving grid stuff later
 
-!              fs = pGrid%gs(indGs*ifg) ! face speed
-               fs = 0.0 ! moving grid stuff later
+            call AUSM_FluxFunction(nxzd,nx,ny,nz,jaco_f,fs,rl,ul,vl,wl,
+     >                        pl,al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
 
-! ==============================================================================
-!   Compute left and right states
-! ==============================================================================
-
-! ------------------------------------------------------------------------------
-!   Left state
-! ------------------------------------------------------------------------------
-
-               rl = qminus(irho,i,f,e)
-               ul = qminus(iux,i,f,e)
-               vl = qminus(iuy,i,f,e)
-               wl = qminus(iuz,i,f,e)
-               pl = qminus(ipr,i,f,e)
-               tl = qminus(ithm,i,f,e)
-               al = qminus(isnd,i,f,e)
-               cpl= qminus(icpf,i,f,e)/rl
-               Hl = MixtPerf_Ho_CpTUVW(cpl,tl,ul,vl,wl)
-
-! ------------------------------------------------------------------------------
-!   Right state
-! ------------------------------------------------------------------------------
-
-               rr = qplus(irho,i,f,e)
-               ur = qplus(iux,i,f,e)
-               vr = qplus(iuy,i,f,e)
-               wr = qplus(iuz,i,f,e)
-               pr = qplus(ipr,i,f,e)
-               tr = qplus(ithm,i,f,e)
-               ar = qplus(isnd,i,f,e)
-               cpr= qplus(icpf,i,f,e)/rr
-               Hr = MixtPerf_Ho_CpTUVW(cpr,tr,ur,vr,wr)
-
-! ==============================================================================
-!   Compute fluxes
-! ==============================================================================
-
-               call AUSM_FluxFunction(nx,ny,nz,nm,fs,rl,ul,vl,wl,pl,Hl,
-     >                                   al,rr,ur,vr,wr,pr,Hr,ar,flx,vf)
-               do j=1,5
-                  flux(i,f,e,j)=flx(j) ! put phi here soon
-               enddo
-
-            enddo ! i=1,nxz
+            call map_faced(pl,qminus(1,f,e,iph),nx1,nxd,fdim,0)
+            do j=1,toteq
+               call col2(flx(1,j),pl,nxzd)
+               call map_faced(flux(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
+            enddo
 
          endif ! cbc(f,e,ifield)
       enddo
@@ -326,82 +314,17 @@
       real vol(nx1*ny1*nz1*nelt),flux(*)
       integer e,f
 
-      nxz=nx1*nz1
-      nface=2*ldim
-      k=0
-
-! JH030915 As qminus and qplus grow and get more flexible, throttling by phig
-!          should be done via qminus and NOT the way it is done here. We don't
-!          need icpvars anymore, and, most importantly ViscousFlux ALREADY HAS PHI!!!!!!
-      l = 0
-      do e=1,nelt
-      do f=1,nface
-         call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f) 
-         k = 0
-         do iz=k0,k1
-         do iy=j0,j1
-         do ix=i0,i1
-            l = l + 1
-            k = k + 1
-            flux(l)=flux(l)*area(k,1,f,e)*phig(ix,iy,iz,e)
-         enddo
-         enddo
-         enddo
-      enddo
-      enddo
+! weak form until we get the time loop rewritten
+!     onem=-1.0
+!     ntot=nx1*nz1*2*ndim*nelt
+!     call cmult(flux,onem,ntot)
+! weak form until we get the time loop rewritten
       call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,vol,flux)
 
       return
       end
 
 !-------------------------------------------------------------------------------
-
-      subroutine surface_integral_elm(e,eq)
-! JH062314 surface integrals one element at a time. Only needed because we are
-!          doing all this in strong form
-! JH070214 CMTSURFLX no longer used here. it's just one element, we can afford
-!          to store stuff that lives here only
-! JH091015 this routine had better vanish when we get weak form working
-      include 'SIZE'
-      include 'DG'
-      include 'CMTDATA'
-      include 'INPUT'
-      include 'GEOM'
-
-      real zenorms(lx1,lz1,6,lelt,3)
-      equivalence (zenorms,unx)
-
-      integer lfc1
-      parameter (lfc1=lx1*lz1*2*ldim)
-      real flux(lfc1),yrface(lfc1)
-      integer e,eq
-      integer f
-
-      nface = 2*ndim
-      nxz   = nx1*nz1
-
-      call rzero(flux,lfc1)
-      do j=1,ndim
-         call full2face_cmt(1,nx1,ny1,nz1,iface_flux(1,e),yrface,
-     >                      totalh(1,j))
-! -n-.H
-         k=0
-         do f=1,nface
-            do i=1,nxz
-            k=k+1
-            flux(k) = flux(k)-area(i,1,f,e)*zenorms(i,1,f,e,j)*yrface(k)
-            enddo
-         enddo
-
-      enddo
-
-      call add_face2full_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
-     >                       res1(1,1,1,e,eq),flux)
-
-      return
-      end
-
-!-----------------------------------------------------------------------
 
 ! JH050615 This subroutine's arguments must change if Sij=GdU
 !     subroutine AuxFlux(hsijstar,qminus,ujump,scrf1,gdu,e,eq,j,

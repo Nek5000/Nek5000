@@ -13,61 +13,65 @@
       call add_conv_diff_h
       
       return
-      end subroutine assemble_h
+      end
 
 !-----------------------------------------------------------------------
 
       subroutine evaluate_conv_h(e,eq)
+! computed as products between primitive variables and conserved variables.
+! if you want to write rho u_i u_j as (rho u_i) (rho u_j) (rho^{-1}), this
+! is the place to do it
       include  'SIZE'
       include  'SOLN'
       include  'DEALIAS'
       include  'CMTDATA'
       include  'INPUT'
-     
+
+      parameter (ldd=lxd*lyd*lzd)
+      common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
+      real ju1,ju2
       integer  e,eq
 
-! we add the convective fluxes, pressure and other terms
-      n = nx1*ny1*nz1
+      n=nxd*nyd*nzd
 
-      call copy(convh(1,1),u(1,1,1,eq,e),n)
+      if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
 
-      if (eq .eq. 1) then
-
-         call copy(convh(1,2),convh(1,1),n)
-         if (if3d) then
-            call copy(convh(1,3),convh(1,1),n)
-            call col2(convh(1,3),vz(1,1,1,e),n)
-         endif
-         call col2(convh(1,1),vx(1,1,1,e),n)
-         call col2(convh(1,2),vy(1,1,1,e),n)
-
-      elseif (eq .lt. 5) then
-
-         do j=2,ldim
-            call copy(convh(1,j),convh(1,1),n)
+         do j=1,ndim
+            call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
          enddo
-
-         call col2(convh(1,1),vx(1,1,1,e),n)
-         call col2(convh(1,2),vy(1,1,1,e),n)
-         if (if3d) call col2(convh(1,3),vz(1,1,1,e),n)
-         call add2col2(convh(1,eq-1),phig(1,1,1,e),pr(1,1,1,e),n)
-
-      elseif (eq .eq. 5) then
-
-         call add2col2 (convh(1,1),phig(1,1,1,e),pr(1,1,1,e),n)
-         do j=2,ldim
-            call copy(convh(1,j),convh(1,1),n)
-         enddo
-
-         call col2(convh(1,1),vx(1,1,1,e),n)
-         call col2(convh(1,2),vy(1,1,1,e),n)
-         call col2(convh(1,3),vz(1,1,1,e),n)
 
       else
 
-         if(nio.eq.0) write(6,*) 'eq=',eq,'really must be <= 5'
-         if(nio.eq.0) write(6,*) 'aborting in evaluate_conv_h'
-         call exitt
+         call intp_rstd(ju1,phig(1,1,1,e),nx1,nxd,if3d,0)
+         call intp_rstd(ju2,pr(1,1,1,e),nx1,nxd,if3d,0)
+
+         if (eq .lt. 5) then ! self-advection of rho u_i by rho u_i u_j
+
+            call intp_rstd(convh(1,1),u(1,1,1,eq,e),nx1,nxd,if3d,0)
+            do j=2,ndim
+               call copy(convh(1,j),convh(1,1),n)
+            enddo
+            call col2(convh(1,1),vxd(1,1,1,e),n)
+            call col2(convh(1,2),vyd(1,1,1,e),n)
+            if (if3d) call col2(convh(1,3),vzd(1,1,1,e),n)
+            call add2col2(convh(1,eq-1),ju1,ju2,n)
+
+         elseif (eq .eq. 5) then
+
+            call intp_rstd(convh(1,1),u(1,1,1,eq,e),nx1,nxd,if3d,0)
+            call add2col2(convh(1,1),ju1,ju2,n)
+            do j=2,ndim
+               call copy(convh(1,j),convh(1,1),n)
+            enddo
+            call col2(convh(1,1),vxd(1,1,1,e),n)
+            call col2(convh(1,2),vyd(1,1,1,e),n)
+            call col2(convh(1,3),vzd(1,1,1,e),n)
+
+         else
+            if(nio.eq.0) write(6,*) 'eq=',eq,'really must be <= 5'
+            if(nio.eq.0) write(6,*) 'aborting in evaluate_conv_h'
+            call exitt
+         endif
 
       endif
      
@@ -138,16 +142,18 @@
          do k=1,ndim
             ieijk=0
             if (eq .lt. 5) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
-            if (ieijk .ne. 0) cycle
-            do l=1,toteq
+
+            if (ieijk .eq. 0) then
+              do l=1,toteq
                call copy(jdu(1,l),gradu(1,1,1,l,k),nxyz)
-            enddo
-            call tauij_gdu(totalh(1,j),visco,pvart,pvart,7,jdu,jdu,
+              enddo
+              call tauij_gdu(totalh(1,j),visco,pvart,pvart,7,jdu,jdu,
      >                 toteq,nxyz,.true.,eq,j,k,e,
      >                 vdiff(1,1,1,e,imu),
      >                 vdiff(1,1,1,e,ilam),
      >                 vdiff(1,1,1,e,iknd),
      >                 vtrans(1,1,1,e,icv))
+            endif
          enddo
 
 ! strip faces for numerical flux of Hd. BR1, Sij=gradU
@@ -174,7 +180,7 @@
       call cmult(totalh,-1.0,3*nxyz)
 
       return
-      end subroutine evaluate_diff_h
+      end
 
 !-----------------------------------------------------------------------
 
@@ -190,7 +196,7 @@
       call add2(totalh,convh,n)
 
       return
-      end subroutine add_conv_diff_h
+      end
 
 !----------------------
 
@@ -204,45 +210,54 @@
       integer  e,eq
       integer  dir
       parameter (ldd=lxd*lyd*lzd)
+      parameter (ldg=lxd**3,lwkd=2*ldg)
       common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real ju
+      common /dgrad/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
 
       nrstd=ldd
       nxyz=nx1*ny1*nz1
-      call rzero(ud,nxyz)
+      call get_dgl_ptr(ip,nxd,nxd) ! fills dg, dgt
+      mdm1=nxd-1
 
-      do j=1,ndim ! stride :(
-         call gradl_rst(ur,us,ut,totalh(1,j),lx1,if3d) ! navier1
+      call rzero(ur,nrstd)
+      call rzero(us,nrstd)
+      call rzero(ut,nrstd)
+      call rzero(ud,nrstd)
+      call rzero(tu,nrstd)
 
-         if (if3d) then
-            j0=j+0
-            j3=j+3
-            j6=j+6
-            do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-               ud(i)=ud(i)
-     $              +rx(i,j0,e)*ur(i)+rx(i,j3,e)*us(i)+rx(i,j6,e)*ut(i)
-!    $     +rxgll(i,j0,e)*ur(i)+rxgll(i,j3,e)*us(i)+rxgll(i,j6,e)*ut(i)
-            enddo
-
-         else
-
-            j0=j+0
-            j2=j+2
-            do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-               ud(i)=ud(i)
-     $              +rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i)
-!    $     +rxgll(i,j0,e)*ur(i)+rxgll(i,j3,e)*us(i)+rxgll(i,j6,e)*ut(i)
-            enddo
-         endif
+      j0=0
+      do j=1,ndim
+         j0=j0+1
+         call add2col2(ur,totalh(1,j),rx(1,j0,e),nrstd)
       enddo
-      call col2(ud,jacmi(1,e),nxyz)
+      do j=1,ndim
+         j0=j0+1
+         call add2col2(us,totalh(1,j),rx(1,j0,e),nrstd)
+      enddo
+      if (if3d) then
+         do j=1,ndim
+            j0=j0+1
+            call add2col2(ut,totalh(1,j),rx(1,j0,e),nrstd)
+         enddo
+         call local_grad3_t(ud,ur,us,ut,mdm1,1,dg(ip),dgt(ip),wkd)
+      else
+         call local_grad2_t(ud,ur,us,   mdm1,1,dg(ip),dgt(ip),wkd)
+      endif
+
+      call intp_rstd(tu,ud,nx1,nxd,if3d,1)
 
 ! multiply the residue by mass matrix. Non diagonal B should still be
 ! one block per element
-      call col2(ud,bm1(1,1,1,e),nxyz)  ! res = B*res  --- B=mass matrix
-      call add2(res1(1,1,1,e,eq),ud,nxyz)
+!     call col2(ud,bm1(1,1,1,e),nxyz)  ! res = B*res  --- B=mass matrix
+!     call add2(res1(1,1,1,e,eq),tu,nxyz)
+! weak?
+      call sub2(res1(1,1,1,e,eq),tu,nxyz)
 
       return
-      end subroutine flux_div_integral
+      end
 
 !-----------------------------------------------------------------------
       subroutine compute_forcing(e,eq_num)
@@ -267,6 +282,7 @@
         elseif(eq_num.eq.3)then
            j=2
         elseif(eq_num.eq.4)then
+           j=2
            if(ldim.eq.3) j=3
         endif
 c       write(6,*)'enter  compute_forcing ', j
@@ -308,19 +324,20 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
       include 'CMTDATA'
       include 'TSTEP'
+      include 'PARALLEL'
 
-      integer e
+      integer e,eg
 
       if(istep.eq.1)then
         n = nx1*ny1*nz1*5
         call rzero(usrf,n)
       endif
-
+      eg = lglel(e)
       do k=1,nz1
          do j=1,ny1
             do i=1,nx1
                call NEKASGN(i,j,k,e)
-               call userf(i,j,k,e)
+               call userf(i,j,k,eg)
                usrf(i,j,k,2) = FFX
                usrf(i,j,k,3) = FFY
                usrf(i,j,k,4) = FFZ
@@ -380,17 +397,18 @@ c-----------------------------------------------------------------------
      >                       res1(1,1,1,e,eq),scr)
 
       return
-      end subroutine penalty
+      end
 
 !-----------------------------------------------------------------------
 
       subroutine penalty2(qface,ujump,nstate,flux,e,f,eq)
       include 'SIZE'
+      include 'GEOM'
       include 'CMTDATA'
-      common /GSURF/ ZENORMS(LX1,LZ1,6,lelcmt,3)
-     >             ,SUPAHUGET(LX1*LZ1*6*lelcmt*6)
-     >             ,AREA  (LX1,LZ1,6,lelcmt)
-     >             ,DLAM
+
+      real zenorms(lx1,lz1,6,lelt,3)
+      equivalence (zenorms,unx)
+
       integer ctmp1pad
       parameter (ld2=lxd*lzd,ctmp1pad=(toteq+1)*lxd**3-2*toteq*ld2)
       common /ctmp1/ tmp(ld2*toteq),jdukt(toteq,ld2),notouch(ctmp1pad) ! hardcoded
@@ -445,7 +463,7 @@ c-----------------------------------------------------------------------
       enddo ! j=1,3
 
       return
-      end subroutine penalty2
+      end
 
 ! -----------------------------------------------------------------------
       subroutine compute_aux_var(e)
@@ -489,4 +507,4 @@ c-----------------------------------------------------------------------
       enddo
       enddo
       return
-      end subroutine
+      end

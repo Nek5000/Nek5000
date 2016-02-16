@@ -4,8 +4,8 @@
       include 'CMTBCDATA'
 
       integer nstate,f,e
-      real    faceq(nstate,nx1*nz1,2*ndim,nelt)
-      real    bcq(nstate,nx1*nz1,2*ndim,nelt) 
+      real    faceq(nx1*nz1,2*ndim,nelt,nstate)
+      real    bcq(nx1*nz1,2*ndim,nelt,nstate) 
       real    flux(nx1*nz1,2*ndim,nelt,*)
 
       call slipwall_rflu(nstate,f,e,faceq,bcq,flux) ! calls RindState stuff
@@ -23,16 +23,26 @@
       include 'NEKUSE'
       include 'INPUT'
       include 'PARALLEL'
+      include 'DG'
+      include 'MASS'
       integer  f,e
 ! JH091614 faceq now has intent(inout)...
 ! JH031315 not anymore. nobody changes qminus here. that's dumb
-      real faceq(nvar,nx1*nz1,2*ndim,nelt)
-      real bcq(nvar,nx1*nz1,2*ndim,nelt)
+      real faceq(nx1*nz1,2*ndim,nelt,nvar)
+      real bcq(nx1*nz1,2*ndim,nelt,nvar)
       real fluxw(nx1*nz1,2*ndim,nelt,*)
-      integer i, nxz
-      real nx,ny,nz,rl,ul,vl,wl,pl,fs,dumminus(5),flx(5)
+      integer i, nxz, fdim
+      real nx,ny,nz,rl,ul,vl,wl,pl,fs
+      parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
+      common /SCRNS/ nxf(lfd1),nyf(lfd1),nzf(lfd1),fs2(lfd1),
+     >               ufacel(lfd1,5),plc(lfc1),ufacer(lfd1,5),prc(lfd1),
+     >               flx(lfd1,5),plf(lfd1),jaco_c(lfc1),
+     >               jaco_f(lfd1),dumminus(lfd1,5)
+      real nxf,nyf,nzf,ufacel,ufacer,plc,prc,plf,jaco_c,jaco_f,dumminus
 
       nxz=nx1*nz1
+      nxzd=nxd*nzd
+      fdim=ndim-1
       ieg=lglel(e)
 
 ! I know this says slipwall, but to the inviscid terms all walls are
@@ -43,49 +53,65 @@
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
-         call userbc (ix,iy,iz,f,ieg)
+         call userbc (ix,iy,iz,f,ieg) ! get molarmass, phi
+c                                     ! ux,uy,uz ifvisc
          l=l+1
          nx = unx(l,1,f,e)
          ny = uny(l,1,f,e)
          nz = unz(l,1,f,e)
-         rl = faceq(irho,l,f,e)
-         ul = faceq(iux,l,f,e)
-         vl = faceq(iuy,l,f,e)
-         wl = faceq(iuz,l,f,e)
-         pl = faceq(ipr,l,f,e)
+         rl = faceq(l,f,e,irho)
+         ul = faceq(l,f,e,iux)
+         vl = faceq(l,f,e,iuy)
+         wl = faceq(l,f,e,iuz)
+         plc(l)= faceq(l,f,e,ipr)
          fs = 0.0 ! no moving grid for awhile, and it will not look anything
                   ! like RocFlu
          call RFLU_SetRindStateSlipWallPerf(cp,molarmass,nx,ny,nz,
-     >                                      rl,ul,vl,wl,fs,pl)
-         bcq(irho,l,f,e)=rl
-         bcq(iux,l,f,e)=ul
-         bcq(iuy,l,f,e)=vl
-         bcq(iuz,l,f,e)=wl
-         bcq(ipr,l,f,e)=pl ! from RFLU_SetRindStateSlipWallPerf
-         bcq(iph,l,f,e)=phi
+     >                                      rl,ul,vl,wl,fs,plc(l))
+         bcq(l,f,e,irho)=rl ! probably shouldn't be setting these
+         bcq(l,f,e,iux)=ul  ! on the other hand, it ensures [[]]=0
+         bcq(l,f,e,iuy)=vl  ! THINK!!!
+         bcq(l,f,e,iuz)=wl
+         bcq(l,f,e,ipr)=plc(l)! from RFLU_SetRindStateSlipWallPerf
+         bcq(l,f,e,iph)=phi
+         bcq(l,f,e,iu1)=faceq(l,f,e,iu1)
+         bcq(l,f,e,iu2)=faceq(l,f,e,iu2)
+         bcq(l,f,e,iu3)=faceq(l,f,e,iu3)
+         bcq(l,f,e,iu4)=faceq(l,f,e,iu4)
+         bcq(l,f,e,iu5)=faceq(l,f,e,iu5)
          if (ifvisc) then
-            bcq(iux,l,f,e)=ux
-            bcq(iuy,l,f,e)=uy
-            bcq(iuz,l,f,e)=uz
-            if (cbc(f,e,2) .eq. 'W  ') bcq(ithm,l,f,e)=temp
+            bcq(l,f,e,iux)=ux
+            bcq(l,f,e,iuy)=uy
+            bcq(l,f,e,iuz)=uz
+            if (cbc(f,e,2) .eq. 'W  ') bcq(l,f,e,ithm)=temp
          endif
-! Inviscid flux at walls is due to pressure only. should probably just
-! hardcode that instead of calling CentralInviscid so trivially
-         dumminus(1)=rl
-         dumminus(2)=0.0
-         dumminus(3)=0.0
-         dumminus(4)=0.0
-         dumminus(5)=0.0
-         call CentralInviscid_FluxFunction(nx,ny,nz,fs,dumminus,pl
-     >                                    ,dumminus,pl,flx)
-         do j=1,5
-            fluxw(l,f,e,j)=flx(j)
-         enddo
-         if (cbc(f,e,2) .eq. 'I  ') fluxw(l,f,e,5) = flux
+         plc(l)=plc(l)*phi
       enddo
       enddo
       enddo
 
+! Inviscid flux at walls is due to pressure only. should probably just
+! hardcode that instead of calling CentralInviscid so trivially
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(plf,plc,nx1,nxd,fdim,0)
+      call rzero(dumminus,toteq*nxzd)
+      call map_faced(dumminus(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
+      call rzero(fs2,nxzd)
+      call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs2,dumminus,
+     >                                    plf,dumminus,plf,flx)
+
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0)
+      call col2(jaco_f,wghtf,nxzd)
+      do ieq=1,toteq-1
+         call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(fluxw(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
+      enddo
+
+      if (cbc(f,e,2).ne.'I  ') call map_faced(fluxw(1,f,e,toteq),
+     >                              flx(1,toteq),nx1,nxd,fdim,1)
       return
       end
 
@@ -96,7 +122,7 @@
 !
 ! Description: Torn bleeding from RocFlu. I think "rind" means the same thing as
 !              "ghost," but I gotta admit that it's a better way of putting it.
-!
+!              Not sure if low-order reconstruction lurks here.
 ! Input:
 !   cpGas       Specific heat at constant pressure
 !   mmGas       Molecular mass
