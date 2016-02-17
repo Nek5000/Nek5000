@@ -68,7 +68,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call io_init         ! Initalize io unit
 
       if (ifcvode.and.nsteps.gt.0) 
-     $   call cv_setsize(0,nfield) !Set size for CVODE solver
+     $   call cv_setsize(1,nfield) !Set size for CVODE solver
 
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
@@ -249,14 +249,21 @@ c-----------------------------------------------------------------------
 
       if (ifsplit) then   ! PN/PN formulation
 
-         igeom = 1
-         if (ifheat)          call heat     (igeom)
-         call setprop
-         call qthermal
-         igeom = 1
-         if (ifflow)          call fluid    (igeom)
-         if (param(103).gt.0) call q_filter(param(103))
-         call setup_convect (2) ! Save convective velocity _after_ filter
+         do igeom=1,ngeom
+
+         if (ifgeom) then
+               call gengeom (igeom)
+               call geneig  (igeom)
+         endif
+
+         if (ifheat)            call heat          (igeom)
+         if (igeom.ne.1)        call setprop
+         if (igeom.ne.1)        call qthermal
+         if (ifflow)            call fluid         (igeom)
+         if (ifmvbd)            call meshv         (igeom)
+         if (param(103).gt.0)   call q_filter      (param(103))
+                                call setup_convect (igeom)     ! Save convective velocity _after_ filter 
+         enddo
 
       else                ! PN-2/PN-2 formulation
 

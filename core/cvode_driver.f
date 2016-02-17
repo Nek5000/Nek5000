@@ -85,7 +85,7 @@ c
       include 'CVODE'
 
       ! use TLAG as scratch space (be careful!)
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
+      common /VPTSQL/  dummy(6*lx1*ly1*lz1*lelv)
      &                ,y0(lx1*ly1*lz1*lelt*ldimt+1)
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
@@ -179,7 +179,7 @@ c      endif
         call FCVSPILSSETJAC(1, ier)
         if(nio.eq.0) then 
           write(6,*) '  user-supplied Jacobian enabled'
-          write(6,'(A,4x,e7.1)') '   DQ perturbation scaling factor :',
+          write(6,'(A,4x,e8.1)') '   DQ perturbation scaling factor :',
      &                            CV_SIGS
         endif
       endif
@@ -217,11 +217,14 @@ c
       include 'CVODE'
 
       ! use TLAG as scratch space (be careful!)
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,y   (lx1*ly1*lz1*lelt*ldimt)
+      common /VPTSQL/  dummy(6*lx1*ly1*lz1*lelv)
+     &                ,y   (lx1*ly1*lz1*lelt*ldimt+1)
      &                ,vx_ (lx1,ly1,lz1,lelv)
      &                ,vy_ (lx1,ly1,lz1,lelv)
      &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_ (lx1,ly1,lz1,lelv)
+     &                ,ym1_ (lx1,ly1,lz1,lelv)
+     &                ,zm1_ (lx1,ly1,lz1,lelv)
 
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
@@ -243,6 +246,7 @@ c
       data nfe_sum / 0 /
 
       nxyz = nx1*ny1*nz1
+      ntot = nxyz * nelv
 
       if (.not.ifcvodeinit) then
         write(6,*) 'ABORT: cv_init() was not called!'
@@ -258,9 +262,43 @@ c
       if(ifchar) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
 
       cv_time=0.0
-      call store_vel(vx_,vy_,vz_)
+
+      if(ifmvbd) then
+      ! save coord , only save   coordinates if moving mesh
+        call copy(xm1_,xm1,ntot)           
+        call copy(ym1_,ym1,ntot)           
+        if (if3d) call copy(zm1_,zm1,ntot) 
+      endif
+
+      ! save velocities                  
+      call copy(vx_,vx,ntot)             
+      call copy(vy_,vy,ntot)            
+      if (if3d) call copy(vz_,vz,ntot)  
+      
+      ! call solver
       call fcvode(time,cv_time,y,itask,ier)
-      call set_vel(vx_,vy_,vz_)
+      
+      if(ifmvbd) then ! only update coordinates if moving mesh
+      ! restore geometry data            
+        call copy(xm1,xm1_,ntot)           
+        call copy(ym1,ym1_,ntot)          
+        if (if3d) call copy(zm1,zm1_,ntot) 
+
+      ! re-evalute geometry data    
+C        if(nid.eq.0) write(*,*)  'Re-eval geometry in cvode 2 '
+        call glmapm1                      
+        call geodat1                       
+        call volume                        
+        call setinvm                       
+        call setdef                        
+c      if(ifmvbd) call gengeom(2)        
+      endif
+      
+      ! restore velocities               
+      call copy(vx,vx_,ntot)             
+      call copy(vy,vy_,ntot)             
+      if (if3d) call copy(vz,vz_,ntot) 
+
       call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       ! copy the cvode solution (y) back into internal array (t)
@@ -322,8 +360,8 @@ c
       logical ifcdjv
       data    ifcdjv / .false. /
 
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,FJV_(lx1*ly1*lz1*lelt*ldimt)
+      common /VPTSQL/  dummy(6*lx1*ly1*lz1*lelv)
+     &                ,FJV_(lx1*ly1*lz1*lelt*ldimt+1)
 
       if(abs(PARAM(16)).eq.3.1) ifcdjv = .true.
 
@@ -374,94 +412,143 @@ c           FJV(i) = (FJV(i) - FY(i))*siginv
       return
       end
 c----------------------------------------------------------------------
-      subroutine store_vel(vx_,vy_,vz_)
- 
-      include 'SIZE'
-      include 'TOTAL'
- 
-      real vx_(1),vy_(1),vz_(1)
- 
-      ntot  = nx1*ny1*nz1*nelv
- 
-      ! save velocities
-      call copy(vx_,vx,ntot)
-      call copy(vy_,vy,ntot)
-      if (if3d) call copy(vz_,vz,ntot)
- 
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine set_vel(vx_,vy_,vz_)
- 
-      include 'SIZE'
-      include 'TOTAL'
- 
-      real vx_(1),vy_(1),vz_(1)
- 
-      ntot  = nx1*ny1*nz1*nelv
- 
-      ! save velocities
-      call copy(vx,vx_,ntot)
-      call copy(vy,vy_,ntot)
-      if (if3d) call copy(vz,vz_,ntot)
- 
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine update_vel(time_)
+      subroutine EBDFt(v,vv,vvlag,ntot,mynbd,mytime)
 c
-c     extrapolated volocity at t=time_
+c     evaluate v := vv(t=time_)
 c
       include 'SIZE'
-      include 'TOTAL'
-      ! use TLAG as scratch space (this can get tricky!)
-      common /VPTSOL/  ttmp(6*lx1*ly1*lz1*lelv)
-     &                ,y   (lx1*ly1*lz1*lelt*ldimt)
-     &                ,vx_ (lx1,ly1,lz1,lelt)
-     &                ,vy_ (lx1,ly1,lz1,lelt)
-     &                ,vz_ (lx1,ly1,lz1,lelt)
+      include 'TSTEP'
 
-      real dtlag_(3),ab_(3)
-      real timel
-      save timel
-      data timel /-1.0/
+      real v,vv,vvlag(1,1,1,1,1)
+      real mydtlag(3),myab(3),mytime
       real tmp(lx1,ly1,lz1,lelt)
 
-      if (time_ .eq. timel) return
+      ! restore values from previous time step
+      call copy(v,vv,ntot)
 
-c      if(nio.eq.0) write(6,*) 'recompute extrapolated velocity'
-      timel = time_
+      mydtlag(1) = mytime - (time-dt)
+      mydtlag(2) = dtlag(2)
+      mydtlag(3) = dtlag(3)
+c      N = 2 same ! with NBDINP not N = 3
+      N = NBDINP
+      if(istep.le.2) N = istep
+      call rzero(myab,3)
+      call setabbd (myab,mydtlag,N,mynbd)
+
+      call add3s2(tmp,vvlag(1,1,1,1,1),vvlag(1,1,1,1,2),myab(2),
+     &            myab(3),ntot)
+      call add2s1(v,tmp,myab(1),ntot)
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_update_vel(time_) 
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /VPTSQL/  dummy(6*lx1*ly1*lz1*lelv)
+     &                ,y   (lx1*ly1*lz1*lelt*ldimt+1)
+     &                ,vx_ (lx1,ly1,lz1,lelv)
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_ (lx1,ly1,lz1,lelv)
+     &                ,ym1_ (lx1,ly1,lz1,lelv)
+     &                ,zm1_ (lx1,ly1,lz1,lelv)
+
+c      if(nid.eq.0) then
+c        write(6,*) 'ERROR: cv_update_vel currently broken!'
+c      endif
+c      call exitt
 
       ntot = nx1*ny1*nz1*nelv
-      ! restore velocities from previous time step 
-      call copy(vx,vx_,ntot)
-      call copy(vy,vy_,ntot)
-      if(if3d) call copy(vz,vz_,ntot)
 
-      ! compute extrapolate velocities
-      dt_ = time_ - (time-dt)
-      dtlag_(1) = dt_
-      dtlag_(2) = dtlag(2)
-      dtlag_(3) = dtlag(3)
-      N = 3
-      if(istep.le.2) N = istep
-      call rzero(ab_,3)
-      call setabbd (ab_,dtlag_,N,NBD)
-      ab0 = ab_(1)
-      ab1 = ab_(2)
-      ab2 = ab_(3)
-      call add3s2(tmp,vxlag(1,1,1,1,1),vxlag(1,1,1,1,2),ab1,ab2,ntot)
-      call add2s1(vx,tmp,ab0,ntot)
-      call add3s2(tmp,vylag(1,1,1,1,1),vylag(1,1,1,1,2),ab1,ab2,ntot)
-      call add2s1(vy,tmp,ab0,ntot)
-      if (if3d) then
-         call add3s2(tmp,vzlag(1,1,1,1,1),vzlag(1,1,1,1,2),ab1,ab2,ntot)
-         call add2s1(vz,tmp,ab0,ntot)
+c      call copy (vx,vx_,ntot)
+c      call copy (vy,vy_,ntot)
+c      if(if3d) call copy(vz,vz_,ntot)
+
+      call EBDFt(vx,vx_,vxlag,ntot,nbd,time_)
+      call EBDFt(vy,vy_,vylag,ntot,nbd,time_)
+      if(if3d) call EBDFt(vz,vz_,vzlag,ntot,nbd,time_)
+
+      if(ifmvbd) then
+         call sub2 (vx, wx, ntot)
+         call sub2 (vy, wy, ntot)
+         call sub2 (vz, wz, ntot)
       endif
- 
       ! update fine grid velocity
       if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
- 
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_update_geom(time_)
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      real abm(3)
+      common /VPTSQL/  dummy(6*lx1*ly1*lz1*lelv)
+     &                ,y   (lx1*ly1*lz1*lelt*ldimt+1)
+     &                ,vx_ (lx1,ly1,lz1,lelv)
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_ (lx1,ly1,lz1,lelv)
+     &                ,ym1_ (lx1,ly1,lz1,lelv)
+     &                ,zm1_ (lx1,ly1,lz1,lelv)
+
+c  need to define dtmp
+      real dtmp(lx1,ly1,lz1,lelv)
+
+      ntot = nx1*ny1*nz1*nelv
+
+c      if(nid.eq.0) write(6,*) 'CVODE and moving mesh not supported'
+c      call exitt
+
+      ! update mesh velocity
+      call rzero(abm,3)
+      do i=1,nbd
+        abm(i) = (time_ - (time-dt))*abmsh(i)
+      enddo
+
+      ! update mesh coordinates
+      call cmult2 (dtmp,wx,abm(1),ntot)
+      call add2s2 (dtmp,wxlag(1,1,1,1,1),abm(2),ntot)
+      call add2s2 (dtmp,wxlag(1,1,1,1,2),abm(3),ntot)
+      if(time_ .gt. time) then
+        call add3   (xm1,xm1_,dtmp,ntot)
+      else
+        call add2   (xm1,dtmp,ntot)
+      endif
+
+      call cmult2 (dtmp,wy,abm(1),ntot)
+      call add2s2 (dtmp,wylag(1,1,1,1,1),abm(2),ntot)
+      call add2s2 (dtmp,wylag(1,1,1,1,2),abm(3),ntot)
+      if(time_ .gt. time) then
+        call add3   (ym1,ym1_,dtmp,ntot)
+      else
+        call add2   (ym1,dtmp,ntot)
+      endif
+
+      if(if3d) then
+        call cmult2 (dtmp,wz,abm(1),ntot)
+        call add2s2 (dtmp,wzlag(1,1,1,1,1),abm(2),ntot)
+        call add2s2 (dtmp,wzlag(1,1,1,1,2),abm(3),ntot)
+        if(time_ .gt. time) then
+          call add3   (zm1,zm1_,dtmp,ntot)
+        else
+          call add2   (zm1,dtmp,ntot)
+        endif
+      endif
+
+      ! re-evalute geometry data
+C      if(nid.eq.0) write(*,*)  'Re-eval geometry in cvode 1 '
+      call glmapm1
+      call geodat1
+      call volume
+      call setinvm
+      call setdef
+
       return
       end
 c----------------------------------------------------------------------
@@ -474,7 +561,12 @@ c
       include 'TOTAL'
       include 'CVODE'
 
+      real ta(lx1,ly1,lz1,lelt)
+
       real cv_time,y(1),ydot(1),rpar(1)
+
+      integer ntf,ntflds(nfield-1)      
+
 #ifdef LONGINT8
       integer*8 ipar(1)
 #else
@@ -484,33 +576,45 @@ c
       save timel
 
       nxyz = nx1*ny1*nz1
+      ntotv= nxyz*nelv                  
+      call izero(ntflds,nfield-1)       
+      call cv_unpack_sol(y)          
 
       if (cv_time.ne.timel) then
-        timel = cv_time
-        if(nio.eq.0) write(6,10) cv_time
-  10                 format(14X,'substepping t=',1pE14.7)
+        
+         if(nio.eq.0) write(6,10) cv_time
+  10                  format(14X,'substepping t=',1pE14.7)
+
+         ncv_mode = abs(PARAM(16))                                   
+         if(ifmvbd)         call user_mvel     (cv_time)     ! update mesh vel W        
+         if(ifmvbd .or. ncv_mode.eq.3)  call cv_update_vel (cv_time)   ! extrapokate V and substract W  for mvmesh
+         if(ifmvbd)         call cv_update_geom(cv_time)     ! update mesh geometry based on mesh vel W
+         timel = cv_time          
       endif
 
-      call cv_unpack_sol(y)
-
-      ! extrapolate velocity using CVODE's internal time
-      if(abs(PARAM(16)).eq.3) call update_vel(cv_time)
-
-      ntflds = 0
       j = 1
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
-         if (iftmsh(ifield)) ntflds = ntflds + 1
          call makeq
-         call invcol3(ydot(j),bq(1,1,1,1,ifield-1),
-     &               vtrans(1,1,1,1,ifield),ntot)
+         if (iftmsh(ifield)) then                                
+            ntflds(ifield-1) = 1                                 
+            ntf = 1                                          
+            call col3(ta, vtrans(1,1,1,1,ifield),bm1, ntot)      
+            call dssum(ta, nx1, ny1, nz1)                        
+            call col2(ta, bintm1,ntot)                           
+            call invcol3(ydot(j), bq(1,1,1,1,ifield-1), ta, ntot) 
+         else                                                    
+            call invcol3(ydot(j),bq(1,1,1,1,ifield-1),        
+     &                   vtrans(1,1,1,1,ifield),ntot)           
+         endif     
          j = j + ntot
       enddo
 
+
       j = 1
-      if(ntflds.gt.0) then
+      if(ntf.eq.1) then
         do ifield = 2,cv_nfld
-           call dssum (ydot(j),nx1,ny1,nz1)
+           if (ntflds(ifield-1).eq.0) call dssum (ydot(j),nx1,ny1,nz1)
            j = j + nxyz*nelfld(ifield)
         enddo
       else ! same gs handle; use vector dssum
@@ -522,13 +626,22 @@ c
       j = 1
       do ifield=2,cv_nfld
          ntot = nxyz*nelfld(ifield)
-         if (iftmsh(ifield)) then
-            call col2(ydot(j),bintm1,ntot)
-         else
-            call col2(ydot(j),binvm1,ntot)
-         endif
+         if (ntflds(ifield-1).eq.0) call col2(ydot(j),binvm1,ntot)
          j = j + ntot
       enddo
+
+      if(ifmvbd) then                                              
+         call add2 (vx, wx, ntotv)        ! add back W to V for mvmesh    
+         call add2 (vy, wy, ntotv)                                
+         call add2 (vz, wz, ntotv)                              
+c need to update V bc's so that the total integral of \DEL \dot V is correct  
+c      if(nid.eq.0) write(*,*) 'Going into BCDIRVC in cv_update_geom'   
+           ifield_ = ifield                                         
+           ifield = 1                                             
+           CALL BCDIRVC  (VX,VY,VZ,v1mask,v2mask,v3mask)               
+           ifield = ifield_                                          
+c      if(nid.eq.0) write(*,*) 'Coming out BCDIRVC in cv_update_geom'  
+      endif
 
       call add_fcvfun_usr(ydot,j)
 
@@ -538,6 +651,7 @@ c
          call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
          j = j + ntot
       enddo
+c      write(*,*) 'this ydot for p0 ', j, ydot(j)
 
       ier = 0
 
