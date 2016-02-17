@@ -422,7 +422,8 @@ C
 C            All-Dirichlet boundary conditions
 C
            IF (CB.EQ.'v  ' .OR. CB.EQ.'V  ' .OR. CB.EQ.'vl ' .OR.
-     $       CB.EQ.'VL ' .OR. CB.EQ.'W  ') THEN
+     $         cb.eq.'MV ' .or. cb.eq.'mv '                  .or.
+     $         CB.EQ.'VL ' .OR. CB.EQ.'W  ') THEN
              CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)

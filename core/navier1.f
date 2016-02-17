@@ -1514,7 +1514,8 @@ C----------------------------------------------------------------------
 
                                                 call makeuf
       if (ifnatc)                               call natconv
-      if (ifexplvis.and.ifsplit)                call explstrs
+c      if (ifexplvis.and.ifsplit)                call explstrs
+      if (ifexplvis.and.ifsplit)                call makevis
       if (ifnav.and.(.not.ifchar))              call advab
       if (ifmvbd)                               call admeshv
       if (iftran)                               call makeabf

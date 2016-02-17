@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine plan4
+      subroutine plan4 (igeom)
 
 C     Splitting scheme A.G. Tomboulides et al.
 c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
@@ -13,6 +13,7 @@ c
       INCLUDE 'GEOM'
       INCLUDE 'MASS'
       INCLUDE 'SOLN'
+      INCLUDE 'MVGEOM'
       INCLUDE 'TSTEP'
       INCLUDE 'ORTHOP'
       INCLUDE 'CTIMER'
@@ -37,92 +38,98 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
-      ! add user defined divergence to qtl 
-      call add2 (qtl,usrdiv,ntot1)
+      if (igeom.eq.1) then
 
-      call v_extrap(vext)
+         ! extrapolate velocity
+         call v_extrap(VEXT)
 
-      ! compute explicit contributions bfx,bfy,bfz 
-      call makef 
-      call lagvel
+         ! compute explicit contributions bfx,bfy,bfz 
+         call makef 
+         call lagvel
 
-      ! split viscosity into explicit/implicit part
-      if (ifexplvis) call split_vis
+      else
 
-      ! extrapolate velocity
+         ! add user defined divergence to qtl 
+         call add2 (qtl,usrdiv,ntot1)
 
-      ! mask Dirichlet boundaries
-      call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
+         ! split viscosity into explicit/implicit part
+         if (ifexplvis) call split_vis
 
-C     first, compute pressure
-      if (icalld.eq.0) tpres=0.0
-      icalld=icalld+1
-      npres=icalld
-      etime1=dnekclock()
+         ! mask Dirichlet boundaries
+         call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
-      call crespsp  (respr)
-      call invers2  (h1,vtrans,ntot1)
-      call rzero    (h2,ntot1)
-      call ctolspl  (tolspl,respr)
-      napprox(1) = laxt
-      call hsolve   ('PRES',dpr,respr,h1,h2 
-     $                     ,pmask,vmult
-     $                     ,imesh,tolspl,nmxh,1
-     $                     ,approx,napprox,binvm1)
-      call add2    (pr,dpr,ntot1)
-      call ortho   (pr)
-      tpres=tpres+(dnekclock()-etime1)
+C        first, compute pressure
 
-C     Compute velocity
-      call cresvsp (res1,res2,res3,h1,h2)
-      call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
-      call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+         if (icalld.eq.0) tpres=0.0
+         icalld=icalld+1
+         npres=icalld
+         etime1=dnekclock()
 
-      if (ifexplvis) call redo_split_vis
+         call crespsp  (respr)
+         call invers2  (h1,vtrans,ntot1)
+         call rzero    (h2,ntot1)
+         call ctolspl  (tolspl,respr)
+         napprox(1) = laxt
+         call hsolve   ('PRES',dpr,respr,h1,h2 
+     $                        ,pmask,vmult
+     $                        ,imesh,tolspl,nmxh,1
+     $                        ,approx,napprox,binvm1)
+         call add2    (pr,dpr,ntot1)
+         call ortho   (pr)
+
+         tpres=tpres+(dnekclock()-etime1)
+
+C        Compute velocity
+         call cresvsp (res1,res2,res3,h1,h2)
+         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+
+         if (ifexplvis) call redo_split_vis
 
 c Below is just for diagnostics...
 
-c     Calculate Divergence norms of new VX,VY,VZ
-      CALL OPDIV   (DVC,VX,VY,VZ)
-      CALL DSSUM   (DVC,NX1,NY1,NZ1)
-      CALL COL2    (DVC,BINVM1,NTOT1)
+c        Calculate Divergence norms of new VX,VY,VZ
+         CALL OPDIV   (DVC,VX,VY,VZ)
+         CALL DSSUM   (DVC,NX1,NY1,NZ1)
+         CALL COL2    (DVC,BINVM1,NTOT1)
 
-      CALL COL3    (DV1,DVC,BM1,NTOT1)
-      DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
+         CALL COL3    (DV1,DVC,BM1,NTOT1)
+         DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
 
-      CALL COL3    (DV2,DVC,DVC,NTOT1)
-      CALL COL2    (DV2,BM1   ,NTOT1)
-      DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
-      DIV2 = SQRT  (DIV2)
-c     Calculate Divergence difference norms
-      CALL SUB3    (DFC,DVC,QTL,NTOT1)
-      CALL COL3    (DV1,DFC,BM1,NTOT1)
-      DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
+         CALL COL3    (DV2,DVC,DVC,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
+         DIV2 = SQRT  (DIV2)
+c        Calculate Divergence difference norms
+         CALL SUB3    (DFC,DVC,QTL,NTOT1)
+         CALL COL3    (DV1,DFC,BM1,NTOT1)
+         DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
   
-      CALL COL3    (DV2,DFC,DFC,NTOT1)
-      CALL COL2    (DV2,BM1   ,NTOT1)
-      DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
-      DIF2 = SQRT  (DIF2)
+         CALL COL3    (DV2,DFC,DFC,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
+         DIF2 = SQRT  (DIF2)
 
-      CALL COL3    (DV1,QTL,BM1,NTOT1)
-      QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
+         CALL COL3    (DV1,QTL,BM1,NTOT1)
+         QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
   
-      CALL COL3    (DV2,QTL,QTL,NTOT1)
-      CALL COL2    (DV2,BM1   ,NTOT1)
-      QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
-      QTL2 = SQRT  (QTL2)
+         CALL COL3    (DV2,QTL,QTL,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
+         QTL2 = SQRT  (QTL2)
 
-      IF (NIO.EQ.0) THEN
-         WRITE(6,'(15X,A,1p2e13.4)')
-     &      'L1/L2 DIV(V)    :',DIV1,DIV2
-         WRITE(6,'(15X,A,1p2e13.4)') 
-     &      'L1/L2 QTL       :',QTL1,QTL2
-         WRITE(6,'(15X,A,1p2e13.4)')
-     &      'L1/L2 DIV(V)-QTL:',DIF1,DIF2
-         IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
-     &          'WARNING: DIV(V)-QTL too large!'
-      ENDIF
+         IF (NIO.EQ.0) THEN
+            WRITE(6,'(15X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)    :',DIV1,DIV2
+            WRITE(6,'(15X,A,1p2e13.4)') 
+     &         'L1/L2 QTL       :',QTL1,QTL2
+            WRITE(6,'(15X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)-QTL:',DIF1,DIF2
+            IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
+     &         'WARNING: DIV(V)-QTL too large!'
+         ENDIF
  
+      endif
  
       return
       END
@@ -140,12 +147,19 @@ c
       COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
      $ ,             TA2   (LX1*LY1*LZ1,LELV)
      $ ,             TA3   (LX1*LY1*LZ1,LELV)
-     $ ,             WA1   (LX1*LY1*LZ1,LELV)
-     $ ,             WA2   (LX1*LY1*LZ1,LELV)
-     $ ,             WA3   (LX1*LY1*LZ1,LELV)
-      COMMON /SCRMG/ W1    (LX1*LY1*LZ1*LELV)
-     $ ,             W2    (LX1*LY1*LZ1*LELV)
+     $ ,             WA1   (LX1*LY1*LZ1*LELV)
+     $ ,             WA2   (LX1*LY1*LZ1*LELV)
+     $ ,             WA3   (LX1*LY1*LZ1*LELV)
+      COMMON /SCRMG/ W1    (LX1*LY1*LZ1,LELV)
+     $ ,             W2    (LX1*LY1*LZ1,LELV)
+     $ ,             W3    (LX1*LY1*LZ1,LELV)
       COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
+
+      common /scruz/         sij (lx1*ly1*lz1,6,lelv)
+      parameter (lr=lx1*ly1*lz1)
+      common /scrvz/         ur(lr),us(lr),ut(lr)
+     $                     , vr(lr),vs(lr),vt(lr)
+     $                     , wr(lr),ws(lr),wt(lr)
 
       CHARACTER CB*3
       
@@ -174,6 +188,28 @@ c
       endif
       scale = -4./3. 
       call opadd2cm (wa1,wa2,wa3,ta1,ta2,ta3,scale)
+
+c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
+      if (ifstrs) then
+         call opgrad   (ta1,ta2,ta3,vdiff)
+         call invcol2  (ta1,vdiff,ntot1)
+         call invcol2  (ta2,vdiff,ntot1)
+         call invcol2  (ta3,vdiff,ntot1)
+
+         nij = 3
+         if (if3d.or.ifaxis) nij=6
+
+         call comp_sij   (sij,nij,vext(1,1),vext(1,2),vext(1,3)
+     &                          ,ur,us,ut,vr,vs,vt,wr,ws,wt)
+         call col_mu_sij (w1,w2,w3,ta1,ta2,ta3,sij,nij)
+
+         call opcolv   (ta1,ta2,ta3,QTL)
+         scale2 = -2./3. 
+         call opadd2cm (w1,w2,w3,ta1,ta2,ta3,scale2)
+         call opadd2   (wa1,wa2,wa3,w1,w2,w3)
+
+      endif
+
       call invcol3  (w1,vdiff,vtrans,ntot1)
       call opcolv   (wa1,wa2,wa3,w1)
 
@@ -191,9 +227,9 @@ c     call exitti ('exit in cresps$',ifield)
 c     add explicit (NONLINEAR) terms 
       n = nx1*ny1*nz1*nelv
       do i=1,n
-         ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i,1)
-         ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i,1)
-         ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i,1)
+         ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
+         ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
+         ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
       enddo
       call opdssum (ta1,ta2,ta3)
       do i=1,n
@@ -205,18 +241,14 @@ c     add explicit (NONLINEAR) terms
          call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
          call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
          call cdtp    (wa3,ta3,rzm2,szm2,tzm2,1)
-         do i=1,nelv
-           do j = 1, nx1*ny1*nz1
-              respr(j,i) = respr(j,i)+wa1(j,i)+wa2(j,i)+wa3(j,i)
-           enddo
+         do i=1,n
+            respr(i,1) = respr(i,1)+wa1(i)+wa2(i)+wa3(i)
          enddo
       else
          call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
          call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
-         do i=1,nelv
-           do j = 1, nx1*ny1*nz1
-             respr(j,i) = respr(j,i)+wa1(j,i)+wa2(j,i)
-           enddo
+         do i=1,n
+            respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
       endif
 
@@ -224,42 +256,43 @@ C     add thermal divergence
       dtbd = BD(1)/DT
       call admcol3(respr,QTL,bm1,dtbd,ntot1)
  
-c     surface terms
+C     surface terms
       DO 100 IEL=1,NELV
          DO 300 IFC=1,NFACES
-            CALL RZERO  (WA1,NXYZ1)
-            CALL RZERO  (WA2,NXYZ1)
+            CALL RZERO  (W1(1,IEL),NXYZ1)
+            CALL RZERO  (W2(1,IEL),NXYZ1)
             IF (NDIM.EQ.3)
-     $         CALL RZERO  (WA3,NXYZ1)
+     $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
-            IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v') THEN
-               CALL FACCL3 
-     $         (WA1,VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
-               CALL FACCL3 
-     $         (WA2,VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
-               IF (NDIM.EQ.3) 
-     $          CALL FACCL3 
-     $         (WA3,VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
+            IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
+     $         cb.eq.'MV '.or.cb.eq.'mv ') then
+               CALL FACCL3
+     $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
+               CALL FACCL3
+     $         (W2(1,IEL),VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
+               IF (NDIM.EQ.3)
+     $          CALL FACCL3
+     $         (W3(1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ELSE IF (CB(1:3).EQ.'SYM') THEN
-               CALL FACCL3 
-     $         (WA1,TA1(1,IEL),UNX(1,1,IFC,IEL),IFC)
-               CALL FACCL3 
-     $         (WA2,TA2(1,IEL),UNY(1,1,IFC,IEL),IFC)
-               IF (NDIM.EQ.3) 
-     $          CALL FACCL3 
-     $         (WA3,TA3(1,IEL),UNZ(1,1,IFC,IEL),IFC)
+               CALL FACCL3
+     $         (W1(1,IEL),TA1(1,IEL),UNX(1,1,IFC,IEL),IFC)
+               CALL FACCL3
+     $         (W2(1,IEL),TA2(1,IEL),UNY(1,1,IFC,IEL),IFC)
+               IF (NDIM.EQ.3)
+     $          CALL FACCL3
+     $         (W3(1,IEL),TA3(1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ENDIF
-            CALL ADD2   (WA1,WA2,NXYZ1)
+            CALL ADD2   (W1(1,IEL),W2(1,IEL),NXYZ1)
             IF (NDIM.EQ.3)
-     $      CALL ADD2   (WA1,WA3,NXYZ1)
-            CALL FACCL2 (WA1,AREA(1,1,IFC,IEL),IFC)
-            IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v') THEN
-              CALL CMULT(WA1,dtbd,NXYZ1)
+     $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
+            CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
+            IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
+     $         cb.eq.'MV '.or.cb.eq.'mv ') then
+              CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
             endif
-            CALL SUB2 (RESPR(1,IEL),WA1,NXYZ1)
+            CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
   300    CONTINUE
   100 CONTINUE
-
 
 C     Assure that the residual is orthogonal to (1,1,...,1)T 
 C     (only if all Dirichlet b.c.)
@@ -295,6 +328,8 @@ C     Compute the residual for the velocity
       CALL OPCHSGN (RESV1,RESV2,RESV3)
 
       scale = -1./3.
+      if (ifstrs) scale =  2./3.
+
       call col3    (ta4,vdiff,qtl,ntot)
       call add2s1  (ta4,pr,scale,ntot)    
       call opgrad  (ta1,ta2,ta3,TA4)
@@ -458,6 +493,44 @@ c-----------------------------------------------------------------------
 
       n = nx1*ny1*nz1*nelv
       call add2(vdiff,vdiff_e,n) ! sum up explicit and implicit part
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine col_mu_sij(w1,w2,w3,ta1,ta2,ta3,sij,nij)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lr=lx1*ly1*lz1)
+      real w1 (lr,1),w2 (lr,1),w3 (lr,1)
+      real ta1(lr,1),ta2(lr,1),ta3(lr,1)
+      real sij(lr,nij,1)
+      integer e
+
+      nxyz1 = nx1*ny1*nz1
+
+      if (if3d.or.ifaxis) then
+        do e=1,nelv
+          call vdot3 (w1(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
+     $               ,sij(1,1,e),sij(1,4,e),sij(1,6,e),nxyz1)
+          call vdot3 (w2(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
+     $                  ,sij(1,4,e),sij(1,2,e),sij(1,5,e),nxyz1)
+          call vdot3 (w3(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
+     $                  ,sij(1,6,e),sij(1,5,e),sij(1,3,e),nxyz1)
+        enddo
+
+      else
+
+        do e=1,nelv
+          call vdot2 (w1(1,e),ta1(1,e),ta2(1,e)
+     $               ,sij(1,1,e),sij(1,3,e),nxyz1)
+          call vdot2 (w2,ta1(1,e),ta2(1,e)
+     $               ,sij(1,3,e),sij(1,2,e),nxyz1)
+          call rzero (w3(1,e),nxyz1)
+        enddo
+
+      endif
 
       return
       end
