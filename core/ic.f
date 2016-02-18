@@ -1252,19 +1252,21 @@ C
 C     Parallel code - send data to appropriate processor and map.
 C
          JNID=GLLNID(IEG)
-         MTYPE=3333+IEG
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+         MTYPE=3333+GLLEL(IEG)
          LEN=4*NXYR
          LE1=4
          IF (NID.EQ.0.AND.JNID.NE.0) THEN
 c           hand-shake
             CALL CSEND(MTYPE,TDUMP,LE1,JNID,NULLPID)
-            CALL CRECV(MTYPE,dummy,LE1)
+            CALL CRECV2(MTYPE,dummy,LE1,JNID)
             CALL CSEND(MTYPE,TDUMP,LEN,JNID,NULLPID)
          ELSEIF (NID.NE.0.AND.JNID.EQ.NID) THEN
 C           Receive data from node 0
-            CALL CRECV(MTYPE,dummy,LE1)
+            CALL CRECV2(MTYPE,dummy,LE1,0)
             CALL CSEND(MTYPE,TDUMP,LE1,0,NULLPID)
-            CALL CRECV(MTYPE,TDUMP,LEN)
+            CALL CRECV2(MTYPE,TDUMP,LEN,0)
          ENDIF
 C
 C        If the data is targeted for this processor, then map 
@@ -2094,8 +2096,9 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-            eg = lglel(e)
-            msg_id(e) = irecv(eg,wk(l),len)
+c     Tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+            msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
       endif
@@ -2122,8 +2125,11 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+c     Tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+               jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
             k  = k + nelrr
@@ -2235,8 +2241,9 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-            eg = lglel(e)
-            msg_id(e) = irecv(eg,wk(l),len)
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+            msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
       endif
@@ -2262,8 +2269,11 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+               jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
             k  = k + nelrr
