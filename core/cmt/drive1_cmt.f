@@ -33,11 +33,11 @@ c     Solve the Euler equations
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
 
-c        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
-c          dumchars='residue'
-c          call dumpresidue(dumchars,stage)
-c        endif
-c        call exitt
+!        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
+!          dumchars='residue'
+!          call dumpresidue(dumchars,stage)
+!        endif
+!        call exitt
 c JH061114 this loop may need some work. stride difficulties
 
 ! JH111815 soon....

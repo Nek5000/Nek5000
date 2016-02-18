@@ -248,7 +248,7 @@
 !          imposed states for Dirichlet conditions, and important things
 !          for viscous numerical fluxes.
 ! JH060215 added SYM bc. Just use it as a slip wall hopefully.
-            if (cb.eq.'v  ') then
+            if (cb.eq.'v  ' .or. cb .eq. 'V  ') then
               call inflow(nstate,f,e,qminus,qplus,flux)
             elseif (cb.eq.'O  ') then
               call outflow(nstate,f,e,qminus,qplus,flux)
