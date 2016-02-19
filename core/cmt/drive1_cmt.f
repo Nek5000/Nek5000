@@ -37,7 +37,6 @@ c        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
 c          dumchars='residue'
 c          call dumpresidue(dumchars,stage)
 c        endif
-c        call exitt
 c JH061114 this loop may need some work. stride difficulties
 
 ! JH111815 soon....
