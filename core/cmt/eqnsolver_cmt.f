@@ -26,6 +26,8 @@
       include  'DEALIAS'
       include  'CMTDATA'
       include  'INPUT'
+     
+      integer  e,eq
 
       parameter (ldd=lxd*lyd*lzd)
       common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
