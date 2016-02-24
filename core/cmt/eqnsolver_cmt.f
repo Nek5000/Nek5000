@@ -8,7 +8,11 @@
 !     !This subroutine will compute the convective and diffusive 
 !     !components of h
       call rzero(totalh,3*lxd*lyd*lzd)
-      call evaluate_conv_h(e,eq_num)
+      if (nxd.gt.nx1) then
+         call evaluate_dealiased_conv_h(e,eq_num)
+      else
+         call evaluate_aliased_conv_h(e,eq_num)
+      endif
       if (ifvisc.and.eq_num .gt. 1) call evaluate_diff_h(e,eq_num)
       call add_conv_diff_h
       
@@ -17,7 +21,7 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine evaluate_conv_h(e,eq)
+      subroutine evaluate_dealiased_conv_h(e,eq)
 ! computed as products between primitive variables and conserved variables.
 ! if you want to write rho u_i u_j as (rho u_i) (rho u_j) (rho^{-1}), this
 ! is the place to do it
@@ -32,17 +36,16 @@
       parameter (ldd=lxd*lyd*lzd)
       common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
       real ju1,ju2
-      integer  e,eq
 
       n=nxd*nyd*nzd
 
-      if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
+c     if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
 
-         do j=1,ndim
-            call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
-         enddo
+c        do j=1,ndim
+c           call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
+c        enddo
 
-      else
+c     else
 
          call intp_rstd(ju1,phig(1,1,1,e),nx1,nxd,if3d,0)
          call intp_rstd(ju2,pr(1,1,1,e),nx1,nxd,if3d,0)
@@ -75,8 +78,61 @@
             call exitt
          endif
 
-      endif
+c     endif
      
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine evaluate_aliased_conv_h(e,eq)
+! computed as products between primitive variables and conserved variables.
+! if you want to write rho u_i u_j as (rho u_i) (rho u_j) (rho^{-1}), this
+! is the place to do it
+      include  'SIZE'
+      include  'SOLN'
+      include  'DEALIAS'
+      include  'CMTDATA'
+      include  'INPUT'
+
+      parameter (ldd=lxd*lyd*lzd)
+      common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
+      real ju1,ju2
+      integer  e,eq
+
+      n=nxd*nyd*nzd
+
+      call copy(ju1,phig(1,1,1,e),n)
+      call copy(ju2,pr(1,1,1,e),n)
+
+      if (eq .lt. 5) then ! self-advection of rho u_i by rho u_i u_j
+
+         call copy(convh(1,1),u(1,1,1,eq,e),n)
+         do j=2,ndim
+            call copy(convh(1,j),convh(1,1),n)
+         enddo
+         call col2(convh(1,1),vxd(1,1,1,e),n)
+         call col2(convh(1,2),vyd(1,1,1,e),n)
+         if (if3d) call col2(convh(1,3),vzd(1,1,1,e),n)
+         if(eq. gt. 1) call add2col2(convh(1,eq-1),ju1,ju2,n)
+
+      elseif (eq .eq. 5) then
+
+         call copy(convh(1,1),u(1,1,1,eq,e),n)
+         call add2col2(convh(1,1),ju1,ju2,n)
+         do j=2,ndim
+            call copy(convh(1,j),convh(1,1),n)
+         enddo
+         call col2(convh(1,1),vxd(1,1,1,e),n)
+         call col2(convh(1,2),vyd(1,1,1,e),n)
+         call col2(convh(1,3),vzd(1,1,1,e),n)
+
+      else
+         if(nio.eq.0) write(6,*) 'eq=',eq,'really must be <= 5'
+         if(nio.eq.0) write(6,*) 'aborting in evaluate_conv_h'
+         call exitt
+      endif
+
       return
       end
 
@@ -202,7 +258,7 @@
 
 !----------------------
 
-      subroutine flux_div_integral(e,eq)
+      subroutine flux_div_integral_dealiased(e,eq)
       include  'SIZE'
       include  'INPUT'
       include  'GEOM'
@@ -256,6 +312,63 @@
 !     call col2(ud,bm1(1,1,1,e),nxyz)  ! res = B*res  --- B=mass matrix
 !     call add2(res1(1,1,1,e,eq),tu,nxyz)
 ! weak?
+      call sub2(res1(1,1,1,e,eq),tu,nxyz)
+
+      return
+      end
+
+!----------------------
+
+      subroutine flux_div_integral_aliased(e,eq)
+      include  'SIZE'
+      include  'INPUT'
+      include  'GEOM'
+      include  'MASS'
+      include  'CMTDATA'
+
+      integer  e,eq
+      integer  dir
+      parameter (ldd=lxd*lyd*lzd)
+      parameter (ldg=lxd**3,lwkd=2*ldg)
+      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real ju
+      common /dgradl/ d(ldg),dt(ldg),dg(ldg),dgt(ldg),jgl(ldg),jgt(ldg)
+     $             , wkd(lwkd)
+      real jgl,jgt
+      character*32 cname
+
+      nrstd=ldd
+      nxyz=nx1*ny1*nz1
+      call get_dgll_ptr(ip,nxd,nxd) ! fills dg, dgt
+      mdm1=nxd-1
+
+      call rzero(ur,nrstd)
+      call rzero(us,nrstd)
+      call rzero(ut,nrstd)
+      call rzero(ud,nrstd)
+      call rzero(tu,nrstd)
+
+      j0=0
+      do j=1,ndim
+         j0=j0+1
+         call add2col2(ur,totalh(1,j),rx(1,j0,e),nrstd)
+      enddo
+      do j=1,ndim
+         j0=j0+1
+         call add2col2(us,totalh(1,j),rx(1,j0,e),nrstd)
+      enddo
+      if (if3d) then
+         do j=1,ndim
+            j0=j0+1
+            call add2col2(ut,totalh(1,j),rx(1,j0,e),nrstd)
+         enddo
+         call local_grad3_t(ud,ur,us,ut,mdm1,1,d(ip),dt(ip),wkd)
+      else
+         call local_grad2_t(ud,ur,us,   mdm1,1,d(ip),dt(ip),wkd)
+      endif
+
+      call copy(tu,ud,nxyz)
+
       call sub2(res1(1,1,1,e,eq),tu,nxyz)
 
       return

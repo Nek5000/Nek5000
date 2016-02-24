@@ -21,6 +21,7 @@ c     Solve the Euler equations
       n = nxyz1*lelcmt*toteq
       nfldpart = ndim*npart
 
+c     write (6,*)'rk step start :', istep
       if(istep.eq.1) call set_tstep_coef
       if(istep.eq.1) call cmt_flow_ics(ifrestart)
       if(istep.eq.1) call init_cmt_timers
@@ -32,7 +33,7 @@ c     Solve the Euler equations
          rhst_dum = dnekclock()
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
-
+c        write (6,*)'stage done :', stage
 !        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
 !          dumchars='residue'
 !          call dumpresidue(dumchars,stage)
@@ -68,6 +69,7 @@ c that completely stops working if B become nondiagonal for any reason.
          enddo
       enddo
       call compute_primitive_vars
+c     write (6,*)'rk step done :', istep
       ftime = ftime + dnekclock() - ftime_dum
 
       if (mod(istep,iostep).eq.0.or.istep.eq.1.or.istep.eq.2)then
@@ -100,19 +102,24 @@ c-----------------------------------------------------------------------
       common /CMTSURFLX/ flux(heresize),ViscousStuff(hdsize)
       real ViscousStuff
 
-      COMMON /pnttimers/ pt_time_add, pt_tracking_add
       integer e,eq
       real wkj(lx1+lxd)
       character*32  dumchars
 
-      call set_dealias_face
+      if (nxd.gt.nx1) then
+         call set_dealias_face
+c        write(6,*)'call set dealias face'
+      else
+c        write(6,*)'call set alias rx'
+         call set_alias_rx(istep)
+      endif
+c     write(6,*)'istep :', istep
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
 !     filter the conservative variables before start of each
 !     time step
       if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-
 !        primitive vars = rho, u, v, w, p, T, phi_g
       if (istep.eq.1) then
          call compute_primitive_vars
@@ -174,7 +181,11 @@ c-----------------------------------------------------------------------
          do eq=1,toteq
             call assemble_h(e,eq)
 ! compute the volume integral term and add to res1(:,e,eq)
-            call flux_div_integral(e,eq)
+            if (nxd.gt.nx1) then
+               call flux_div_integral_dealiased(e,eq)
+            else
+               call flux_div_integral_aliased(e,eq)
+            endif
 !------------------------------
 ! JH050615 BR1 ONLY for now
 !           if (.not.ifbr1)
