@@ -5130,8 +5130,8 @@ c                 curve(1,jfac,je) =  r
 
       call copyel(je,ie) ! copy last element generated back onto ie
 
-      write(6,*) 'quit in octsplite'
-      stop
+c     write(6,*) 'quit in octsplite'
+c     stop
 
       return
       end
