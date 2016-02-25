@@ -92,47 +92,26 @@ c                                     ! ux,uy,uz ifvisc
 
 ! Inviscid flux at walls is due to pressure only. should probably just
 ! hardcode that instead of calling CentralInviscid so trivially
-      if (nxd.gt.nx1) then
-         call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(plf,plc,nx1,nxd,fdim,0)
-
-         call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-         call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0)
-         call col2(jaco_f,wghtf,nxzd)
-      else
-         call copy(nxf,unx(1,1,f,e),nxz)
-         call copy(nyf,uny(1,1,f,e),nxz)
-         call copy(nzf,unz(1,1,f,e),nxz)
-         call copy(plf,plc,nxz)
-
-         call copy(jaco_f,area(1,1,f,e),nxz)
-      endif
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(plf,plc,nx1,nxd,fdim,0)
       call rzero(dumminus,toteq*nxzd)
       call map_faced(dumminus(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
       call rzero(fs2,nxzd)
       call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs2,dumminus,
      >                                    plf,dumminus,plf,flx)
 
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0)
+      call col2(jaco_f,wghtf,nxzd)
       do ieq=1,toteq-1
          call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(fluxw(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
       enddo
 
-      if (nxd.gt.nx1) then
-         do j=1,toteq-1
-            call map_faced(fluxw(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
-         enddo
-         if (cbc(f,e,2).ne.'I  ') call map_faced(fluxw(1,f,e,toteq),
+      if (cbc(f,e,2).ne.'I  ') call map_faced(fluxw(1,f,e,toteq),
      >                              flx(1,toteq),nx1,nxd,fdim,1)
-      else
-         do j=1,toteq-1
-            call copy(fluxw(1,f,e,j),flx(1,j),nxz)
-         enddo
-         if (cbc(f,e,2).ne.'I  ') call copy(fluxw(1,f,e,toteq),
-     >                              flx(1,toteq),nxz)
-      endif
-
       return
       end
 

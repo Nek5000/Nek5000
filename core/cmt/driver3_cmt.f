@@ -50,13 +50,7 @@
 !-----------------------------------------------------------------------
 ! to make life easier until we master this stuff and harmonize even better with nek,
 ! I'm including 'DEALIAS' and calling set_convect_cons here
-      if (nxd.gt.nx1) then
-         call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
-      else
-         call copy(vxd,vx,ntot) 
-         call copy(vyd,vy,ntot) 
-         call copy(vzd,vz,ntot) 
-      endif
+      call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
 
       return
       end

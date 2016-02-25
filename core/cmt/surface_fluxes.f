@@ -201,10 +201,10 @@
       COMMON /SCRNS/ nx(lfd), ny(lfd), nz(lfd), rl(lfd), ul(lfd),
      >               vl(lfd), wl(lfd), pl(lfd), tl(lfd), al(lfd),
      >               cpl(lfd),rr(lfd), ur(lfd), vr(lfd), wr(lfd),
-     >               pr(lfd),tr(lfd), ar(lfd),cpr(lfd),phl(lfd),fs(lfd),
+     >               pr(lfd),tr(lfd), ar(lfd),cpr(lfd), fs(lfd),
      >               jaco_f(lfd),flx(lfd,toteq),jaco_c(lx1*lz1)
       real nx, ny, nz, rl, ul, vl, wl, pl, tl, al, cpl, rr, ur, vr, wr,
-     >                pr,tr, ar,cpr,phl,fs,jaco_f,flx,jaco_c
+     >                pr,tr, ar,cpr, fs,jaco_f,flx,jaco_c
 
 !     REAL vf(3)
       real nTol
@@ -260,81 +260,41 @@
 
 ! JH111715 now with dealiased surface integrals. I am too lazy to write
 !          something better
+            call map_faced(nx,unx(1,1,f,e),nx1,nxd,fdim,0)
+            call map_faced(ny,uny(1,1,f,e),nx1,nxd,fdim,0)
+            call map_faced(nz,unz(1,1,f,e),nx1,nxd,fdim,0)
 
-            if (nxd.gt.nx1) then
-               call map_faced(nx,unx(1,1,f,e),nx1,nxd,fdim,0)
-               call map_faced(ny,uny(1,1,f,e),nx1,nxd,fdim,0)
-               call map_faced(nz,unz(1,1,f,e),nx1,nxd,fdim,0)
+            call map_faced(rl,qminus(1,f,e,irho),nx1,nxd,fdim,0)
+            call map_faced(ul,qminus(1,f,e,iux),nx1,nxd,fdim,0)
+            call map_faced(vl,qminus(1,f,e,iuy),nx1,nxd,fdim,0)
+            call map_faced(wl,qminus(1,f,e,iuz),nx1,nxd,fdim,0)
+            call map_faced(pl,qminus(1,f,e,ipr),nx1,nxd,fdim,0)
+            call map_faced(tl,qminus(1,f,e,ithm),nx1,nxd,fdim,0)
+            call map_faced(al,qminus(1,f,e,isnd),nx1,nxd,fdim,0)
+            call map_faced(cpl,qminus(1,f,e,icpf),nx1,nxd,fdim,0)
 
-               call map_faced(rl,qminus(1,f,e,irho),nx1,nxd,fdim,0)
-               call map_faced(ul,qminus(1,f,e,iux),nx1,nxd,fdim,0)
-               call map_faced(vl,qminus(1,f,e,iuy),nx1,nxd,fdim,0)
-               call map_faced(wl,qminus(1,f,e,iuz),nx1,nxd,fdim,0)
-               call map_faced(pl,qminus(1,f,e,ipr),nx1,nxd,fdim,0)
-               call map_faced(tl,qminus(1,f,e,ithm),nx1,nxd,fdim,0)
-               call map_faced(al,qminus(1,f,e,isnd),nx1,nxd,fdim,0)
-               call map_faced(cpl,qminus(1,f,e,icpf),nx1,nxd,fdim,0)
+            call map_faced(rr,qplus(1,f,e,irho),nx1,nxd,fdim,0)
+            call map_faced(ur,qplus(1,f,e,iux),nx1,nxd,fdim,0)
+            call map_faced(vr,qplus(1,f,e,iuy),nx1,nxd,fdim,0)
+            call map_faced(wr,qplus(1,f,e,iuz),nx1,nxd,fdim,0)
+            call map_faced(pr,qplus(1,f,e,ipr),nx1,nxd,fdim,0)
+            call map_faced(tr,qplus(1,f,e,ithm),nx1,nxd,fdim,0)
+            call map_faced(ar,qplus(1,f,e,isnd),nx1,nxd,fdim,0)
+            call map_faced(cpr,qplus(1,f,e,icpf),nx1,nxd,fdim,0)
 
-               call map_faced(rr,qplus(1,f,e,irho),nx1,nxd,fdim,0)
-               call map_faced(ur,qplus(1,f,e,iux),nx1,nxd,fdim,0)
-               call map_faced(vr,qplus(1,f,e,iuy),nx1,nxd,fdim,0)
-               call map_faced(wr,qplus(1,f,e,iuz),nx1,nxd,fdim,0)
-               call map_faced(pr,qplus(1,f,e,ipr),nx1,nxd,fdim,0)
-               call map_faced(tr,qplus(1,f,e,ithm),nx1,nxd,fdim,0)
-               call map_faced(ar,qplus(1,f,e,isnd),nx1,nxd,fdim,0)
-               call map_faced(cpr,qplus(1,f,e,icpf),nx1,nxd,fdim,0)
-
-               call map_faced(phl,qminus(1,f,e,iph),nx1,nxd,fdim,0)
-
-               call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-               call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
-               call col2(jaco_f,wghtf,nxzd)
-            else
-
-               call copy(nx,unx(1,1,f,e),nxz)
-               call copy(ny,uny(1,1,f,e),nxz)
-               call copy(nz,unz(1,1,f,e),nxz)
-
-               call copy(rl,qminus(1,f,e,irho),nxz)
-               call copy(ul,qminus(1,f,e,iux),nxz)
-               call copy(vl,qminus(1,f,e,iuy),nxz)
-               call copy(wl,qminus(1,f,e,iuz),nxz)
-               call copy(pl,qminus(1,f,e,ipr),nxz)
-               call copy(tl,qminus(1,f,e,ithm),nxz)
-               call copy(al,qminus(1,f,e,isnd),nxz)
-               call copy(cpl,qminus(1,f,e,icpf),nxz)
-
-               call copy(rr,qplus(1,f,e,irho),nxz)
-               call copy(ur,qplus(1,f,e,iux),nxz)
-               call copy(vr,qplus(1,f,e,iuy),nxz)
-               call copy(wr,qplus(1,f,e,iuz),nxz)
-               call copy(pr,qplus(1,f,e,ipr),nxz)
-               call copy(tr,qplus(1,f,e,ithm),nxz)
-               call copy(ar,qplus(1,f,e,isnd),nxz)
-               call copy(cpr,qplus(1,f,e,icpf),nxz)
-
-               call copy(phl,qminus(1,f,e,iph),nxz)
-
-               call copy(jaco_f,area(1,1,f,e),nxz) 
-            endif
+            call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+            call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+            call col2(jaco_f,wghtf,nxzd)
             call rzero(fs,nxzd) ! moving grid stuff later
 
             call AUSM_FluxFunction(nxzd,nx,ny,nz,jaco_f,fs,rl,ul,vl,wl,
      >                        pl,al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
 
+            call map_faced(pl,qminus(1,f,e,iph),nx1,nxd,fdim,0)
             do j=1,toteq
-               call col2(flx(1,j),phl,nxzd)
+               call col2(flx(1,j),pl,nxzd)
+               call map_faced(flux(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
             enddo
-
-            if (nxd.gt.nx1) then
-               do j=1,toteq
-                  call map_faced(flux(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
-               enddo
-            else
-               do j=1,toteq
-                  call copy(flux(1,f,e,j),flx(1,j),nxz)
-               enddo
-            endif
 
          endif ! cbc(f,e,ifield)
       enddo
@@ -523,4 +483,3 @@
 
       return
       end
-!-----------------------------------------------------------------------

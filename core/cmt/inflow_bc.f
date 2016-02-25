@@ -36,8 +36,7 @@ c--------------------------------------------------------------------
      >               ufacel(lfd1,5),plc(lfc1),ufacer(lfd1,5),prc(lfd1),
      >               flx(lfd1,5),plf(lfd1),prf(lfd1),jaco_c(lfc1),
      >               jaco_f(lfd1)
-      real nxf,nyf,nzf,fs,ufacel,ufacer,plc,prc,plf,prf,flx
-     >              ,jaco_c,jaco_f
+      real nxf,nyf,nzf,fs,ufacel,ufacer,plc,prc,plf,prf,jaco_c,jaco_f
 
       real phirc(lfc1),phirf(lfd1),molmrf(lfd1),molmrc(lfc1),cvgrc(lfc1)
       real cvgrf(lfd1),cpgrc(lfc1),cpgrf(lfd1),p0inrc(lfc1),p0inrf(lfd1)
@@ -55,6 +54,9 @@ c--------------------------------------------------------------------
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
+! OK I'M HAVING SERIOUS PROBLEMS WITH MY NEW Prandtl-Meyer GRID! THIS IS
+! NOT HOW I SHOULD FIX THEM
+      cbu='v  '
          call userbc (ix,iy,iz,f,ieg) ! get molarmass asnd phi t0in p0in cp cv
 c                                     !     ux,uy,uz
          l=l+1
@@ -73,61 +75,29 @@ c                                     !     ux,uy,uz
       enddo
       enddo
 
-      if (nxd.gt.nx1) then
-         call map_faced(cpgrf,cpgrc,nx1,nxd,fdim,0)
-         call map_faced(cvgrf,cvgrc,nx1,nxd,fdim,0)
-         call map_faced(molmrf,molmrc,nx1,nxd,fdim,0)
-         call map_faced(p0inrf,p0inrc,nx1,nxd,fdim,0)
-         call map_faced(t0inrf,t0inrc,nx1,nxd,fdim,0)
-         call map_faced(phirf,phirc,nx1,nxd,fdim,0)
+      call map_faced(cpgrf,cpgrc,nx1,nxd,fdim,0)
+      call map_faced(cvgrf,cvgrc,nx1,nxd,fdim,0)
+      call map_faced(molmrf,molmrc,nx1,nxd,fdim,0)
+      call map_faced(p0inrf,p0inrc,nx1,nxd,fdim,0)
+      call map_faced(t0inrf,t0inrc,nx1,nxd,fdim,0)
+      call map_faced(phirf,phirc,nx1,nxd,fdim,0)
 
-         call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
 
-         call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
 
-         call map_faced(philf,faceq(1,f,e,iph),nx1,nxd,fdim,0)
+      call map_faced(philf,faceq(1,f,e,iph),nx1,nxd,fdim,0)
 
-         call map_faced(uxrf,bcq(1,f,e,iux), nx1,nxd,fdim,0)
-         call map_faced(uyrf,bcq(1,f,e,iuy), nx1,nxd,fdim,0)
-         call map_faced(uzrf,bcq(1,f,e,iuz), nx1,nxd,fdim,0)
-         call map_faced(csndrf,bcq(1,f,e,isnd), nx1,nxd,fdim,0)
-
-         call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-         call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
-         call col2(jaco_f,wghtf,nxzd)
-      else
-         call copy(cpgrf,cpgrc,nxz)
-         call copy(cvgrf,cvgrc,nxz)
-         call copy(molmrf,molmrc,nxz)
-         call copy(p0inrf,p0inrc,nxz)
-         call copy(t0inrf,t0inrc,nxz)
-         call copy(phirf,phirc,nxz)
-
-         call copy(nxf,unx(1,1,f,e),nxz)
-         call copy(nyf,uny(1,1,f,e),nxz)
-         call copy(nzf,unz(1,1,f,e),nxz)
-
-         call copy(ufacel(1,1),faceq(1,f,e,iu1),nxz)
-         call copy(ufacel(1,2),faceq(1,f,e,iu2),nxz)
-         call copy(ufacel(1,3),faceq(1,f,e,iu3),nxz)
-         call copy(ufacel(1,4),faceq(1,f,e,iu4),nxz)
-         call copy(ufacel(1,5),faceq(1,f,e,iu5),nxz)
-
-         call copy(philf,faceq(1,f,e,iph),nxz)
-
-         call copy(uxrf,bcq(1,f,e,iux), nxz)
-         call copy(uyrf,bcq(1,f,e,iuy), nxz)
-         call copy(uzrf,bcq(1,f,e,iuz), nxz)
-         call copy(csndrf,bcq(1,f,e,isnd), nxz)
-
-         call copy(jaco_f,area(1,1,f,e),nxz) 
-      endif
+      call map_faced(uxrf,bcq(1,f,e,iux), nx1,nxd,fdim,0)
+      call map_faced(uyrf,bcq(1,f,e,iuy), nx1,nxd,fdim,0)
+      call map_faced(uzrf,bcq(1,f,e,iuz), nx1,nxd,fdim,0)
+      call map_faced(csndrf,bcq(1,f,e,isnd), nx1,nxd,fdim,0)
 
       do l=1,lfd1
          bcOptType=0
@@ -163,7 +133,9 @@ c                                     !     ux,uy,uz
          ufacer(l,5) = rhoeb*phirf(l)
          prf(l)      = pres*phirf(l)
       enddo
-
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+      call col2(jaco_f,wghtf,nxzd)
       call rzero(fs,nxzd)
 
 !-----------------------------------------------------------------------
@@ -185,17 +157,8 @@ c Outflow BC is not sensitive to method used to compute the flux.
 
       do ieq=1,toteq
          call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(flux1(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
       enddo
-
-      if (nxd.gt.nx1) then
-         do j=1,toteq
-            call map_faced(flux1(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
-         enddo
-      else
-         do j=1,toteq
-            call copy(flux1(1,f,e,j),flx(1,j),nxz)
-         enddo
-      endif
 
       return
       end

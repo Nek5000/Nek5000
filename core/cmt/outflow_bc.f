@@ -95,53 +95,25 @@ c        fs = 0.0
       enddo
       enddo
 
-      if (nxd.gt.nx1) then
-         call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(plf,plc,nx1,nxd,fdim,0)
-         call map_faced(prf,prc,nx1,nxd,fdim,0)
-         call map_faced(philf,philc,nx1,nxd,fdim,0)
+      call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
+      call map_faced(plf,plc,nx1,nxd,fdim,0)
+      call map_faced(prf,prc,nx1,nxd,fdim,0)
+      call map_faced(philf,philc,nx1,nxd,fdim,0)
 c     call map_faced(cvglf,cvglc,nx1,nxd,fdim,0)
-         call map_faced(cpglf,cpglc,nx1,nxd,fdim,0)
-         call map_faced(molmlf,molmlc,nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
-         call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
-         call map_faced(ufacer(1,1),bcq(1,f,e,iu1),  nx1,nxd,fdim,0)
-         call map_faced(ufacer(1,2),bcq(1,f,e,iu2),  nx1,nxd,fdim,0)
-         call map_faced(ufacer(1,3),bcq(1,f,e,iu3),  nx1,nxd,fdim,0)
-         call map_faced(ufacer(1,4),bcq(1,f,e,iu4),  nx1,nxd,fdim,0)
-         call map_faced(ufacer(1,5),bcq(1,f,e,iu5),  nx1,nxd,fdim,0)
-
-         call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-         call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
-         call col2(jaco_f,wghtf,nxzd)
-      else
-
-         call copy(nxf,unx(1,1,f,e),nxz)
-         call copy(nyf,uny(1,1,f,e),nxz)
-         call copy(nzf,unz(1,1,f,e),nxz)
-         call copy(plf,plc,nxz)
-         call copy(prf,prc,nxz)
-         call copy(philf,philc,nxz)
-         call copy(cpglf,cpglc,nxz)
-         call copy(molmlf,molmlc,nxz)
-         call copy(ufacel(1,1),faceq(1,f,e,iu1),nxz)
-         call copy(ufacel(1,2),faceq(1,f,e,iu2),nxz)
-         call copy(ufacel(1,3),faceq(1,f,e,iu3),nxz)
-         call copy(ufacel(1,4),faceq(1,f,e,iu4),nxz)
-         call copy(ufacel(1,5),faceq(1,f,e,iu5),nxz)
-         call copy(ufacer(1,1),bcq(1,f,e,iu1),  nxz)
-         call copy(ufacer(1,2),bcq(1,f,e,iu2),  nxz)
-         call copy(ufacer(1,3),bcq(1,f,e,iu3),  nxz)
-         call copy(ufacer(1,4),bcq(1,f,e,iu4),  nxz)
-         call copy(ufacer(1,5),bcq(1,f,e,iu5),  nxz)
-
-         call copy(jaco_f,area(1,1,f,e),nxz) 
-      endif
+      call map_faced(cpglf,cpglc,nx1,nxd,fdim,0)
+      call map_faced(molmlf,molmlc,nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,1),faceq(1,f,e,iu1),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,2),faceq(1,f,e,iu2),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,3),faceq(1,f,e,iu3),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,4),faceq(1,f,e,iu4),nx1,nxd,fdim,0)
+      call map_faced(ufacel(1,5),faceq(1,f,e,iu5),nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,1),bcq(1,f,e,iu1),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,2),bcq(1,f,e,iu2),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,3),bcq(1,f,e,iu3),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,4),bcq(1,f,e,iu4),  nx1,nxd,fdim,0)
+      call map_faced(ufacer(1,5),bcq(1,f,e,iu5),  nx1,nxd,fdim,0)
 
       do l=1,lfd1
          sxn  = nxf(l)
@@ -171,7 +143,9 @@ c        fs   = 0.0
          plf(l)      = plf(l)*philf(l)
          prf(l)      = pres*philf(l)
       enddo
-
+      call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
+      call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+      call col2(jaco_f,wghtf,nxzd)
       call rzero(fs,nxzd)
 
 !-----------------------------------------------------------------------
@@ -191,17 +165,8 @@ c  (Need to test supersonic uniform flow !)
 
       do ieq=1,toteq
          call col2(flx(1,ieq),jaco_f,nxzd)
+         call map_faced(flux1(1,f,e,ieq),flx(1,ieq),nx1,nxd,fdim,1)
       enddo
-
-      if (nxd.gt.nx1) then
-         do j=1,toteq
-            call map_faced(flux1(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
-         enddo
-      else
-         do j=1,toteq
-            call copy(flux1(1,f,e,j),flx(1,j),nxz)
-         enddo
-      endif
 
       return
       end
