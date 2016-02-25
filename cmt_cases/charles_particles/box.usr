@@ -1,4 +1,5 @@
 c-----------------------------------------------------------------------
+!testing how commits work in git      
       subroutine userflux  (fluxout)
       include 'SIZE'
       include 'TOTAL'
