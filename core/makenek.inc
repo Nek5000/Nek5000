@@ -689,6 +689,287 @@ c automatically added by makenek
 _ACEOF
 fi
 
+cat $CASENAME.f | grep -i "subroutine.*userq2" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine userq2(q) ! set source term w/ MOAB
+
+#include "NEKMOAB"
+
+      include 'GEOM'
+      include 'TSTEP'
+
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      common /moabqv/   qvola(lx1,ly1,lz1,lelt)     ! vol. heat s. for MOAB
+      integer          mbpcid
+
+      real q(lx1*ly1*lz1,lelt)
+
+      integer e, i, ime, ntot, nxyz
+      real x, y, r, init_power_density
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelt
+
+      if (istep .eq. 0 .or. (.not.ifcoup .and. .not.ifvcoup) ) then
+
+         init_power_density = param(121)
+         call rzero (q,ntot)
+         if (ifnekalone) then
+           do e = 1,nelt
+             do i = 1,nxyz
+               x = xm1(i,1,1,e)
+               y = ym1(i,1,1,e)
+               r = (x-16.d0)**2 + (y-7.4019221593017583d0)**2  ! heat source region
+               r = sqrt(r)
+
+               if (2.0.le.r .and. r.le.4.0) q(i,e) = init_power_density   ! w/ clad
+             enddo
+           enddo
+         else
+           do e = 1,nelt
+             do i = 1,nxyz
+
+c .rea:         4 2 3 5 6       fluid set #4, solid set #2 3 5 6
+c               1 2 3 5 6       ! imatie: fluid fuel clad crod can
+
+               ime = imatie(e)
+
+               if (ime.eq.2) q(i,e) = init_power_density  ! heat source in the solid -- w/ clad
+             enddo
+           enddo
+         endif
+
+      else
+
+         if (ifcoup) then
+            call nekMOAB_import_vars(powTag, 0, q)
+         elseif (ifvcoup) then
+            call nekMOAB_import_vars(vpowTag, 1, q)
+         elseif (istep.lt.10) then
+           write(6,*) "NEKMOAB:userq2: Not importing power density."
+           write(6,*) "NEKMOAB:userq2 *** Enable IFCOUP or IFVCOUP ***"
+         endif
+
+      endif
+
+      call compute_total_power(q)
+
+      call copy(qvola,q,ntot)   ! for output
+
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*compute_total_power" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine compute_total_power(q)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ntot
+      real q(lx1*ly1*lz1,lelt), bmq(lx1*ly1*lz1*lelt)
+
+      ntot = nx1*ny1*nz1*nelt          ! Total power calculation
+      call col3(bmq,q,bm1,ntot)
+      qtot = glsum(bmq,ntot)
+      if (nid.eq.0)  write(6,1) istep,time,qtot
+    1 format (i8,1p2e15.7,' W  Qtot')
+
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*usr_get_current_time" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine usr_get_current_time(current_time)
+      include 'SIZE'
+      include 'TSTEP'
+      real current_time
+      
+      integer ispert, glob_tstep
+      common /usrperturbation/  ispert, glob_tstep  ! perturbation of temperature and density BC
+      
+      if (ispert .eq. 0) then
+        current_time = 0.0
+      else
+        current_time = TIME
+      endif
+      
+      print *, "[COUPE:NEK]...Getting current final time from NEK ",
+     $                        current_time
+
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*nekMOAB_reimport" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine nekMOAB_reimport
+C      implicit none
+C  include "NEKMOAB"
+C      include 'PARALLEL'
+C      include 'GEOM'
+      include 'SIZE'
+      include 'TOTAL'
+      include 'DOMAIN'
+      include 'ZPER'
+      include 'OPCTR'
+
+      integer ierr, igeom
+
+      call mapelpr                        ! create gllel mapping 
+      call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
+      call xml2xc                         ! fill xc,yc,zc
+
+C      call nekMOAB_BC             ! read MOAB BCs 
+
+C      call nekMOAB_compute_diagnostics
+
+C     generate geometry (called after usrdat in case something changed)
+      igeom=2
+      call gengeom (igeom)
+
+      if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
+
+      call geom_reset(igeom)    ! recompute Jacobians, etc.
+
+      call vrdsmsh          ! verify mesh topology
+
+      return
+      end  
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*usr_reset_pseudo_time" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine usr_reset_pseudo_time
+      include 'SIZE'
+      include 'TSTEP'
+
+      ISTEP = 0
+      LASTEP = 0
+C      NSTEPS = 10
+
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*setpid" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+      subroutine setpid(ipid)
+
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      integer          mbpcid,ipid
+
+      mbpcid=ipid
+
+      return
+      end
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*usr_moab_output" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by SHARP makenek
+#ifdef MOAB
+      subroutine usr_moab_output()
+
+      implicit none
+#include "NEKMOAB"
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      integer ierr
+      CHARACTER*20 NAME, STEPSTR
+      CHARACTER*132 wroptions, seroptions, paroptions
+      CHARACTER*1  NUMRL(0:9)
+      DATA NUMRL          /'0','1','2','3','4','5','6','7','8','9'/
+      data seroptions /''/
+      data paroptions /' moab:PARALLEL=WRITE_PART moab:PCOMM=1 '/
+c      data paroptions /' moab:PARALLEL=WRITE_PART moab:PCOMM=0 '/
+      
+      integer ispert, glob_tstep
+      common /usrperturbation/  ispert, glob_tstep  ! perturbation of temperature and density BC
+      
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      integer          mbpcid
+
+      if (np .gt. 1) then
+        mbpcid=1
+        if (mbpcid .ge. 0) then
+          WRITE(wroptions,'(A,A,I1)')' moab:PARALLEL=WRITE_PART ',
+     $        'moab:PCOMM=',mbpcid
+        else
+          wroptions=paroptions
+        endif
+        wroptions=TRIM(wroptions)
+      else
+        wroptions=TRIM(seroptions)
+      endif
+
+c      WRITE(STEPSTR, '(I5.5)') glob_tstep
+      WRITE(STEPSTR,'(A,I5.5,A)') 'sahex',glob_tstep,'.h5m'
+      NAME=TRIM(STEPSTR)
+
+      if (ispert .eq. 0) glob_tstep = glob_tstep + 1
+
+c copy data from nek to MOAB
+      call nekMOAB_export_vars
+
+      ierr = 0
+      if(istep .eq. 0 .or. iostep .eq. 0 .or.
+     $     mod(istep,iostep) .eq. 0) then
+         if (np .gt. 1) then
+c            call iMeshP_saveAll(%VAL(imeshh),%VAL(hPartn),%VAL(fileset),
+c     $           name,wroptions,ierr)
+         else
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,wroptions,
+     $           ierr)
+         endif
+c no check for error, just print something and continue
+         if (ierr .ne. 0 .and. nid .eq. 0) then
+           write(6,*) 'Step:',istep,' Writing to ',
+     $                   TRIM(name),' = failed. ierr=',ierr
+         else if (nid .eq. 0) then
+			     write(6,*) 'Step:',istep,' Writing to ',
+     $                   TRIM(name),' = success'
+         endif
+      endif
+
+      return
+      end
+
+#endif
+_ACEOF
+fi
+
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0
 fi 
