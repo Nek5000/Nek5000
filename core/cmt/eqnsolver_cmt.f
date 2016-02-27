@@ -32,7 +32,7 @@
       parameter (ldd=lxd*lyd*lzd)
       common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
       real ju1,ju2
-      integer  e,eq
+c     integer  e,eq
 
       n=nxd*nyd*nzd
 

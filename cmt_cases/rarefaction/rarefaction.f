@@ -1,0 +1,815 @@
+c     Note - DT is set in usrdat2. 
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+      integer e,eg
+      ifxyo=.true.
+      if (istep.gt.1) ifxyo=.false.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,eg)
+      include 'SIZE'
+      include 'TSTEP'
+      include 'NEKUSE'
+      include 'INPUT'
+      include 'TORO'
+      include 'CMTDATA'
+      flux=0.0
+      molarmass=molmass
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userflux  (fluxout)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE' ! probably want to start following nek convention
+                       ! and use this routine pointwise
+      real fluxout(lx1*lz1)
+
+      integer e,f,eg
+c     e = gllel(eg)
+      do i=1,nx1*nz1
+         fluxout(i)=0.0 ! adiabatic
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'NEKUSE'
+      include 'TORO'
+      include 'PERFECTGAS'
+      COMMON /CMTGASREF/  cvgref,cpgref,gmaref,rgasref,molmass
+      real                cvgref,cpgref,gmaref,rgasref,molmass
+      integer e,eg, eqnum
+
+! JH080614 actual arguments here (and corresponding dummy arguments)
+!          are test3 ("left Woodward & Colella") in e1rpex.ini. They
+!          will be appropriately distributed throughout the commons in
+!          TORO along with the solution star state PMstar and UM.
+! JH073114 Toro e1rpex provides SUBROUTINE SAMPLE and is crudely grafted
+!          to the end of this .usr file.
+        e=gllel(eg)
+
+        s=(x-diaph1)/zerotime
+        CALL SAMPLE(PMstar, UM, S, rho, ux, pres)
+        uy = 0.
+        uz = 0.
+        phi = 1.0
+        varsic(1) = phi*rho
+        varsic(2) = varsic(1)*ux
+        varsic(3) = varsic(1)*uy
+        varsic(4) = varsic(1)*uz
+        varsic(5) = varsic(1)*(cvgref*
+     > MixtPerf_T_DPR(rho,pres,rgasref)+
+     >  0.5*(ux**2+uy**2+uz**2))
+        temp = MixtPerf_T_DPR(rho,pres,rgasref)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+      include 'CMTTIMERS'
+
+      res_freq = 1000000
+      flio_freq=100000
+      NCUT = 7!lx1 - int(lx1/2)
+      NCUTD = 15!lxd
+      wght  = 1.0
+      wghtd = 1.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TORO'
+      include 'INPUT'
+      include 'CMTBCDATA'
+      include 'CMTDATA'
+      include 'PERFECTGAS'   
+
+      outflsub=.true.
+      IFCNTFILT=.false.
+      ifrestart=.false.
+      ifbr1=.false.
+      ifvisc=.false.
+      gasmodel = 1
+! JH080714 Now with parameter space to sweep through
+      open(unit=81,file="riemann.inp",form="formatted")
+      read (81,*) domlen
+      read (81,*) xdiaph
+      read (81,*) gmaref
+      read (81,*) dleft
+      read (81,*) uleft
+      read (81,*) pleft
+      read (81,*) dright
+      read (81,*) uright
+      read (81,*) pright
+      read (81,*) zerotime
+      close(81)
+
+      molmass=8314.3
+      muref=0.0
+      coeflambda=-2.0/3.0
+      suthcoef=1.0
+      prlam = 0.72
+      rgasref    = MixtPerf_R_M(molmass,dum)
+      cvgref     = rgasref/(gmaref-1.0)
+      cpgref     = MixtPerf_Cp_CvR(cvgref,rgasref)
+      gmaref     = MixtPerf_G_CpR(cpgref,rgasref) 
+
+      call e1rpex(domlen,xdiaph,gmaref,dleft,uleft,pleft,dright,uright,
+     >            pright,1.0)
+      CALL SAMPLE(PMstar, UM, 0.0, rhohere, uhere, pinfty)
+      reftemp=pleft/dleft/rgasref
+      aleft=sqrt(gmaref*pleft/dleft)
+      call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
+      if(nio.eq.0)then
+         write(6,*) 'domlen',domlen
+         write(6,*) 'xdiaph',xdiaph
+         write(6,*) 'gamma ',gmaref
+         write(6,*) 'rhol  ',dleft
+         write(6,*) 'ul    ',uleft
+         write(6,*) 'pl    ',pleft
+         write(6,*) 'rhor  ',dright
+         write(6,*) 'ur    ',uright
+         write(6,*) 'pr    ',pright
+         write(6,*) 'sound ',aleft
+         write(6,*) 'ustar ',um
+         write(6,*) 'dt    ',dt
+         write(6,*) 'nsteps',nsteps
+         write(6,*) 'final time ',(xdiaph-xmin)/aleft
+      endif
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine userEOS(ix,iy,iz,eg)
+      include 'SIZE'
+      include 'NEKUSE'
+      include 'PARALLEL'
+      include 'CMTDATA'
+      include 'PERFECTGAS'
+      integer e,eg
+
+      cp=cpgref
+      cv=cvgref
+      temp=e_internal/cv
+      asnd=MixtPerf_C_GRT(gmaref,rgasref,temp)
+      pres=MixtPerf_P_DRT(rho,rgasref,temp)
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine usrdat3
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine e1rpex(DOMin,DIAPHin,GAMMAin,DLin,ULin,PLin,DRin,URin,
+     >                  PRin,PSCALEin)
+*----------------------------------------------------------------------*
+*                                                                      *
+C     Exact Riemann Solver for the Time-Dependent                      *
+C     One Dimensional Euler Equations                                  *
+*                                                                      *
+C     Name of program: HE-E1RPEX                                       *
+*                                                                      *
+C     Purpose: to solve the Riemann problem exactly,                   *
+C              for the time dependent one dimensional                  *
+C              Euler equations for an ideal gas                        *
+*                                                                      *
+C     Input  file: e1rpex.ini                                          *
+C     Output file: e1rpex.out (exact solution)                         *
+*                                                                      *
+C     Programer: E. F. Toro                                            *
+*                                                                      *
+C     Last revision: 31st May 1999                                     *
+*                                                                      *
+C     Theory is found in Ref. 1, Chapt. 4 and in original              *
+C     references therein                                               *
+*                                                                      *
+C     1. Toro, E. F., "Riemann Solvers and Numerical                   *
+C                      Methods for Fluid Dynamics"                     *
+C                      Springer-Verlag, 1997                           *
+C                      Second Edition, 1999                            *
+*                                                                      *
+C     This program is part of                                          *
+*                                                                      *
+C     NUMERICA                                                         *
+C     A Library of Source Codes for Teaching,                          *
+C     Research and Applications,                                       *
+C     by E. F. Toro                                                    *
+C     Published by NUMERITEK LTD, 1999                                 *
+C     Website: www.numeritek.com                                       *
+*                                                                      *
+*----------------------------------------------------------------------*
+*
+      include 'TORO'
+*
+C     Declaration of variables:
+*
+      INTEGER I, CELLS
+*
+*
+C     Input variables
+*
+C     DOMLEN   : Domain length
+C     DIAPH1   : Position of diaphragm 1
+C     CELLS    : Number of computing cells
+C     GAMMA    : Ratio of specific heats
+C     TIMEOU   : Output time
+C     DL       : Initial density  on left state
+C     UL       : Initial velocity on left state
+C     PL       : Initial pressure on left state
+C     DR       : Initial density  on right state
+C     UR       : Initial velocity on right state
+C     PR       : Initial pressure on right state
+C     PSCALE   : Normalising constant
+*
+!     Initial data and parameters are now arguments
+
+           DOMLEN=DOMin
+           DIAPH1=DIAPHin
+           GAMMA =GAMMAin
+           DL    =DLin
+           UL    =ULin
+           PL    =PLin
+           DR    =DRin
+           UR    =URin
+           PRight=PRin
+           PSCALE=PSCALEin
+
+C     Compute gamma related constants
+*
+      G1 = (GAMMA - 1.0)/(2.0*GAMMA)
+      G2 = (GAMMA + 1.0)/(2.0*GAMMA)
+      G3 = 2.0*GAMMA/(GAMMA - 1.0)
+      G4 = 2.0/(GAMMA - 1.0)
+      G5 = 2.0/(GAMMA + 1.0)
+      G6 = (GAMMA - 1.0)/(GAMMA + 1.0)
+      G7 = (GAMMA - 1.0)/2.0
+      G8 = GAMMA - 1.0
+*
+C     Compute sound speeds
+*
+      CL = SQRT(GAMMA*PL/DL)
+      CR = SQRT(GAMMA*PRight/DR)
+*
+C     The pressure positivity condition is tested for
+*
+      IF(G4*(CL+CR).LE.(UR-UL))THEN
+*
+C        The initial data is such that vacuum is generated.
+C        Program stopped.
+*
+         WRITE(6,*)
+         WRITE(6,*)'***Vacuum is generated by data***'
+         WRITE(6,*)'***Program stopped***'
+         WRITE(6,*)
+*
+         call exitt
+      ENDIF
+*
+C     Exact solution for pressure and velocity in star
+C     region is found
+*
+      CALL STARPU(PMstar, UM, PSCALE)
+*
+      return
+      end
+*
+*----------------------------------------------------------------------*
+*
+      SUBROUTINE STARPU(P, U, PSCALE)
+*
+c     IMPLICIT NONE
+*
+C     Purpose: to compute the solution for pressure and
+C              velocity in the Star Region
+*
+C     Declaration of variables
+*
+      INTEGER I, NRITER
+*
+      REAL    DL, UL, PL, CL, DR, UR, PRight, CR,
+     &        CHANGE, FL, FLD, FR, FRD, P, POLD, PSTART,
+     &        TOLPRE, U, UDIFF, PSCALE
+*
+      COMMON /STATES/ DL, UL, PL, CL, DR, UR, PRight, CR
+      DATA TOLPRE, NRITER/1.0E-06, 20/
+*
+C     Guessed value PSTART is computed
+*
+      CALL GUESSP(PSTART)
+*
+      POLD  = PSTART
+      UDIFF = UR - UL
+*
+      WRITE(6,*)'----------------------------------------'
+      WRITE(6,*)'   Iteration number      Change  '
+      WRITE(6,*)'----------------------------------------'
+*
+      DO 10 I = 1, NRITER
+*
+         CALL PREFUN(FL, FLD, POLD, DL, PL, CL)
+         CALL PREFUN(FR, FRD, POLD, DR, PRight, CR)
+         P      = POLD - (FL + FR + UDIFF)/(FLD + FRD)
+         CHANGE = 2.0*ABS((P - POLD)/(P + POLD))
+         WRITE(6, 30)I, CHANGE
+         IF(CHANGE.LE.TOLPRE)GOTO 20
+         IF(P.LT.0.0)P = TOLPRE
+         POLD  = P
+*
+ 10   CONTINUE
+*
+      WRITE(6,*)'Divergence in Newton-Raphson iteration'
+*
+ 20   CONTINUE
+*
+C     Compute velocity in Star Region
+*
+      U = 0.5*(UL + UR + FR - FL)
+*
+      WRITE(6,*)'---------------------------------------'
+      WRITE(6,*)'   Pressure        Velocity'
+      WRITE(6,*)'---------------------------------------'
+      WRITE(6,40)P/PSCALE, U
+      WRITE(6,*)'---------------------------------------'
+*
+ 30   FORMAT(5X, I5,15X, F12.7)
+ 40   FORMAT(2(F14.6, 5X))
+*
+      END
+*
+*----------------------------------------------------------------------*
+*
+      SUBROUTINE GUESSP(PMstar)
+*
+C     Purpose: to provide a guessed value for pressure
+C              PM in the Star Region. The choice is made
+C              according to adaptive Riemann solver using
+C              the PVRS, TRRS and TSRS approximate
+C              Riemann solvers. See Sect. 9.5 of Chapt. 9
+C              of Ref. 1
+*
+c     IMPLICIT NONE
+*
+C     Declaration of variables
+*
+      REAL    DL, UL, PL, CL, DR, UR, PRight, CR,
+     &        GAMMA, G1, G2, G3, G4, G5, G6, G7, G8,
+     &        CUP, GEL, GER, PMstar, PMAX, PMIN, PPV, PQ,
+     &        PTL, PTR, QMAX, QUSER, UM
+*
+      COMMON /GAMMAS/ GAMMA, G1, G2, G3, G4, G5, G6, G7, G8
+      COMMON /STATES/ DL, UL, PL, CL, DR, UR, PRight, CR
+*
+      QUSER = 2.0
+*
+C     Compute guess pressure from PVRS Riemann solver
+*
+      CUP  = 0.25*(DL + DR)*(CL + CR)
+      PPV  = 0.5*(PL + PRight) + 0.5*(UL - UR)*CUP
+      PPV  = MAX(0.0, PPV)
+      PMIN = MIN(PL,  PRight)
+      PMAX = MAX(PL,  PRight)
+      QMAX = PMAX/PMIN
+*
+      IF(QMAX.LE.QUSER.AND.
+     & (PMIN.LE.PPV.AND.PPV.LE.PMAX))THEN
+*
+C        Select PVRS Riemann solver
+*
+         PMstar = PPV
+      ELSE
+         IF(PPV.LT.PMIN)THEN
+*
+C           Select Two-Rarefaction Riemann solver
+*
+            PQ  = (PL/PRight)**G1
+            UM  = (PQ*UL/CL + UR/CR +
+     &            G4*(PQ - 1.0))/(PQ/CL + 1.0/CR)
+            PTL = 1.0 + G7*(UL - UM)/CL
+            PTR = 1.0 + G7*(UM - UR)/CR
+            PMstar  = 0.5*(PL*PTL**G3 + PRight*PTR**G3)
+         ELSE
+*
+C           Select Two-Shock Riemann solver with
+C           PVRS as estimate
+*
+            GEL = SQRT((G5/DL)/(G6*PL + PPV))
+            GER = SQRT((G5/DR)/(G6*PRight + PPV))
+            PMstar=(GEL*PL+GER*PRight-(UR-UL))/(GEL+GER)
+         ENDIF
+      ENDIF
+*
+      END
+*
+*----------------------------------------------------------------------*
+*
+      SUBROUTINE PREFUN(F,FD,P,DK,PK,CK)
+*
+C     Purpose: to evaluate the pressure functions
+C              FL and FR in exact Riemann solver
+C              and their first derivatives
+*
+c     IMPLICIT NONE
+*
+C     Declaration of variables
+*
+      REAL    AK, BK, CK, DK, F, FD, P, PK, PRATIO, QRT,
+     &        GAMMA, G1, G2, G3, G4, G5, G6, G7, G8
+*
+      COMMON /GAMMAS/ GAMMA, G1, G2, G3, G4, G5, G6, G7, G8
+*
+      IF(P.LE.PK)THEN
+*
+C        Rarefaction wave
+*
+         PRATIO = P/PK
+         F    = G4*CK*(PRATIO**G1 - 1.0)
+         FD   = (1.0/(DK*CK))*PRATIO**(-G2)
+      ELSE
+*
+C        Shock wave
+*
+         AK  = G5/DK
+         BK  = G6*PK
+         QRT = SQRT(AK/(BK + P))
+         F   = (P - PK)*QRT
+         FD  = (1.0 - 0.5*(P - PK)/(BK + P))*QRT
+      ENDIF
+*
+      END
+*
+*----------------------------------------------------------------------*
+*
+      SUBROUTINE SAMPLE(PMstar, UM, S, D, U, P)
+*
+C     Purpose: to sample the solution throughout the wave
+C              pattern. Pressure PM and velocity UM in the
+C              Star Region are known. Sampling is performed
+C              in terms of the 'speed' S = X/T. Sampled
+C              values are D, U, P
+*
+C     Input variables : PMstar, UM, S, /GAMMAS/, /STATES/
+C     Output variables: D, U, P
+*
+c     IMPLICIT NONE
+*
+C     Declaration of variables
+*
+      REAL    DL, UL, PL, CL, DR, UR, PRight, CR,
+     &        GAMMA, G1, G2, G3, G4, G5, G6, G7, G8,
+     &        C, CML, CMR, D, P, PMstar, PML, PMR,  S,
+     &        SHL, SHR, SL, SR, STL, STR, U, UM
+*
+      COMMON /GAMMAS/ GAMMA, G1, G2, G3, G4, G5, G6, G7, G8
+      COMMON /STATES/ DL, UL, PL, CL, DR, UR, PRight, CR
+
+      IF(S.LE.UM)THEN
+*
+C        Sampling point lies to the left of the contact
+C        discontinuity
+*
+         IF(PMstar.LE.PL)THEN
+*
+C           Left rarefaction
+*
+            SHL = UL - CL
+*
+            IF(S.LE.SHL)THEN
+*
+C              Sampled point is left data state
+*
+               D = DL
+               U = UL
+               P = PL
+            ELSE
+               CML = CL*(PMstar/PL)**G1
+               STL = UM - CML
+*
+               IF(S.GT.STL)THEN
+*
+C                 Sampled point is Star Left state
+*
+                  D = DL*(PMstar/PL)**(1.0/GAMMA)
+                  U = UM
+                  P = PMstar
+               ELSE
+*
+C                 Sampled point is inside left fan
+*
+                  U = G5*(CL + G7*UL + S)
+                  C = G5*(CL + G7*(UL - S))
+                  D = DL*(C/CL)**G4
+                  P = PL*(C/CL)**G3
+               ENDIF
+            ENDIF
+         ELSE
+*
+C           Left shock
+*
+            PML = PMstar/PL
+            SL  = UL - CL*SQRT(G2*PML + G1)
+*
+            IF(S.LE.SL)THEN
+*
+C              Sampled point is left data state
+*
+               D = DL
+               U = UL
+               P = PL
+*
+            ELSE
+*
+C              Sampled point is Star Left state
+*
+               D = DL*(PML + G6)/(PML*G6 + 1.0)
+               U = UM
+               P = PMstar
+            ENDIF
+         ENDIF
+      ELSE
+*
+C        Sampling point lies to the right of the contact
+C        discontinuity
+*
+         IF(PMstar.GT.PRight)THEN
+*
+C           Right shock
+*
+            PMR = PMstar/PRight
+            SR  = UR + CR*SQRT(G2*PMR + G1)
+*
+            IF(S.GE.SR)THEN
+*
+C              Sampled point is right data state
+*
+               D = DR
+               U = UR
+               P = PRight
+            ELSE
+*
+C              Sampled point is Star Right state
+*
+               D = DR*(PMR + G6)/(PMR*G6 + 1.0)
+               U = UM
+               P = PMstar
+            ENDIF
+         ELSE
+*
+C           Right rarefaction
+*
+            SHR = UR + CR
+*
+            IF(S.GE.SHR)THEN
+*
+C              Sampled point is right data state
+*
+               D = DR
+               U = UR
+               P = PRight
+            ELSE
+               CMR = CR*(PMstar/PRight)**G1
+               STR = UM + CMR
+*
+               IF(S.LE.STR)THEN
+*
+C                 Sampled point is Star Right state
+*
+                  D = DR*(PMstar/PRight)**(1.0/GAMMA)
+                  U = UM
+                  P = PMstar
+               ELSE
+*
+C                 Sampled point is inside left fan
+*
+                  U = G5*(-CR + G7*UR + S)
+                  C = G5*(CR - G7*(UR - S))
+                  D = DR*(C/CR)**G4
+                  P = PRight*(C/CR)**G3
+               ENDIF
+            ENDIF
+         ENDIF
+      ENDIF
+*
+      END
+*
+c----------------------------------------------------------------------c
+*
+      subroutine usrflt(rmult)
+      include 'SIZE'
+      real rmult(lx1)
+      real alpfilt
+      integer sfilt, kut
+      real eta, etac
+      call rone(rmult,lx1)
+      alpfilt=36.0 ! H&W 5.3
+      kut=lx1/2
+      sfilt=8
+      etac=real(kut)/real(nx1)
+      do i=kut,nx1
+         eta=real(i)/real(nx1)
+         rmult(i)=exp(-alpfilt*((eta-etac)/(1.0-etac))**sfilt)
+      enddo
+      return
+      end
+c----------------------------------------------------------------------c
+      subroutine setup_1dprofiles(xloc,yloc,zloc,eps,patches,iwork
+     $              ,mstart,nbuff,np)
+      include 'SIZE'
+      include 'GEOM'
+      integer e,f
+      integer patches(np),iwork(np),mstart(np),isortmap(nbuff)
+      real  xloc,ylox,zloc,eps
+      ifacex = 0
+      do e=1,nelt
+         f = 3
+         call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)
+         do iz=k0,k1
+         do iy=j0,j1
+         do ix=i0,i1
+            if(abs(ym1(ix,iy,iz,e)-yloc).lt.eps)then 
+              ifacex = ifacex + 1
+            endif
+         enddo
+         enddo
+         enddo
+      enddo 
+      patches(nid+1) = ifacex/nx1  
+      call igop(patches,iwork,'+  ',np)
+      mstart(1) = 1
+      do ip=2,np
+         mstart(ip) = mstart(ip-1) + patches(ip-1)*nx1 
+      enddo
+
+      if (nio.eq.0)then
+         write(6,*) 'np ', np, 'nbuff ',nbuff
+         do ip=1,np
+            write(6,*)'nid',ip-1,' patches ',patches(ip),'mstart ',
+     $                  mstart(ip)
+         enddo 
+      endif
+      return
+      end
+c----------------------------------------------------------------------c
+      subroutine write_1dprofiles(xloc,yloc,zloc,eps
+     $                 ,mstart,np,isortmap,nbuff)
+      include 'SIZE'
+      include 'GEOM'
+      include 'TSTEP'
+      include 'TORO'
+      include 'CMTDATA'
+
+      character*22 zefn
+      integer  luout(4),e,f
+      integer mstart(np),isortmap(nbuff)
+      real xloc,yloc,zloc,eps
+      real xprof(nbuff),rhoprof(nbuff),uprof(nbuff),vprof(nbuff)
+     $    ,eprof(nbuff),rhoexact(nbuff),uexact(nbuff),eexact(nbuff)
+     $    ,scratch(1*nbuff),xsort(nbuff)
+
+      luout(1) = 59
+      luout(2) = 60
+      luout(3) = 61
+      luout(4) = 62
+      call rzero(xprof,nbuff)
+      call rzero(rhoprof,nbuff)
+      call rzero(uprof,nbuff)
+      call rzero(vprof,nbuff)
+      call rzero(eprof,nbuff)
+      call rzero(rhoexact,nbuff)
+      call rzero(uexact,nbuff)
+      call rzero(eexact,nbuff)
+      im = mstart(nid+1) 
+      f=3
+      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)
+      do e=1,nelt
+         do iz=k0,k1
+         do iy=j0,j1
+         do ix=i0,i1
+            if (abs(ym1(ix,iy,iz,e)-yloc).lt.eps)then 
+               xprof(im) = xm1(ix,iy,iz,e)                  
+               rhoprof(im) = u(ix,iy,iz,1,e)                  
+               uprof(im) = u(ix,iy,iz,2,e)                  
+               vprof(im) = u(ix,iy,iz,3,e)                  
+               eprof(im) = u(ix,iy,iz,5,e)                  
+               S=(xm1(ix,iy,iz,e)-diaph1)/(time+zerotime)
+               CALL SAMPLE(PMstar, UM, S, rhohere, uhere, prshere)
+               energy=prshere/(gmaref-1.0)+0.5*rhohere*uhere**2
+               rhoexact(im) = rhohere
+               uexact(im)   = rhohere*uhere
+               eexact(im)   = energy 
+               im           = im + 1
+            endif
+         enddo !ix
+         enddo !iy
+         enddo !iz
+      enddo !e
+      call gop(xprof    ,scratch,'+  ',nbuff)
+      call gop(rhoprof  ,scratch,'+  ',nbuff)
+      call gop(uprof    ,scratch,'+  ',nbuff)
+      call gop(vprof    ,scratch,'+  ',nbuff)
+      call gop(eprof    ,scratch,'+  ',nbuff)
+      call gop(rhoexact ,scratch,'+  ',nbuff)
+      call gop(uexact   ,scratch,'+  ',nbuff)
+      call gop(eexact   ,scratch,'+  ',nbuff)
+
+      if (nio.eq.0)then
+         write(zefn,'(a16,i5.5)') 'profiles/rhoprof',istep
+         open(unit=luout(1),file=zefn,form="formatted")
+         write(zefn,'(a17,i5.5)') 'profiles/rhouprof',istep
+         open(unit=luout(2),file=zefn,form="formatted")
+         write(zefn,'(a17,i5.5)') 'profiles/rhovprof',istep
+         open(unit=luout(3),file=zefn,form="formatted")
+         write(zefn,'(a17,i5.5)') 'profiles/rhoeprof',istep
+         open(unit=luout(4),file=zefn,form="formatted")
+
+
+         if (istep.eq.0)then
+            call rzero(xsort,nbuff)
+            call sorts(xsort,xprof,scratch,nbuff)
+            do i = 1,nbuff
+               do j = 1,nbuff
+                  if(abs(xsort(i)-xprof(j)).lt.0.00000001)then
+                     isortmap(i) = j
+                     goto 123
+                  endif
+               enddo !j
+ 123           continue
+            enddo !i
+         endif
+
+         do im = 1,nbuff
+            iloc = isortmap(im)
+            write(luout(1),'(3e25.16)')
+     >               xprof(iloc),rhoprof(iloc),rhoexact(iloc)
+            write(luout(2),'(3e25.16)')
+     >               xprof(iloc),uprof(iloc),uexact(iloc)
+            write(luout(3),'(2e25.16)')
+     >               xprof(iloc),vprof(iloc)
+            write(luout(4),'(3e25.16)')
+     >               xprof(iloc),eprof(iloc),eexact(iloc)
+         enddo 
+
+         do i=1,4
+            close(luout(i))
+         enddo
+      endif
+      return
+      end
+c----------------------------------------------------------------------c
+c
+c automatically added by makenek
+      subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
+      integer*8 glo_num(1)
+      return
+      end
+c
+c automatically added by makenek
+      subroutine cmt_switch ! to set IFCMT logical flag
+      include 'SIZE'
+      include 'INPUT'
+      IFCMT=.true.
+      return
+      end

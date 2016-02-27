@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# use the command ./partview filebase nw nf
+#     where: 
+#            -filebase: could be partxyz, veluvw, etc.
+#            -nw:       is total number of particles
+#            -nf:       number of files you want output
+#     
+
+# to do addition (personal ref)
+#(( x= $NW + 8 ))
+#echo $x 
+
+for (( i=0; i<=$3; i++ ));
+do
+	printf -v thisit "%05d" $i
+
+	echo "#!/bin/bash" > sub && chmod +x sub
+	echo "hexdump -v -e '$2/8 \"%10.5f \"' -e '\"\n\"' $1$thisit.3D > testtmp" > sub
+	./sub && rm sub
+
+	echo "#!/bin/bash" > sub && chmod +x sub
+	echo "awk '{f=\"outfile\"NR;\$2=\$2;print>f;close(f)}' OFS=\"\n\" testtmp" > sub
+	./sub && rm sub
+
+	rm testtmp
+
+	echo "#!/bin/bash" > sub && chmod +x sub
+	echo "paste outfile1 outfile2 outfile3 > n$1$thisit.3D" > sub
+	./sub && rm sub
+
+	rm outfile*
+
+	echo $thisit 
+done
