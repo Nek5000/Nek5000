@@ -68,7 +68,7 @@ c
       integer rdsize
  
       common /fformwrk/ wk
-      real wk(maxpts)
+      real wk(3*maxpts)
       logical iffform   ! .f00000 format flag
       character*4 dummy ! .f00000 hdr read 
       integer er(nelm)  ! .f00000 element mapping 
