@@ -75,7 +75,8 @@ c              - You can also store different times at which the particle positi
 c                are updated in order to support variable timestepping.
 c
 c         o Both arrays are exchanged via the crystal router tuple call.
-      parameter (lr=14*ldim+7,li=5+1)
+c     parameter (lr=14*ldim+8,li=5+1)
+      parameter (lr=14*3+8,li=5+1)
       common  /cpartr/ rpart(lr,lpart) ! Minimal value of lr = 14*ndim+1
       common  /cparti/ ipart(li,lpart) ! Minimal value of li = 5
       common  /iparti/ n,nr,ni
@@ -102,24 +103,8 @@ c         o Both arrays are exchanged via the crystal router tuple call.
 
 c     output particles
       if(mod(istep,iostep).eq.0.or.istep.eq.1) then
-c        serial
-c        scrt_timers(10) = dnekclock()
-c        call output_particles_new       (rpart,nr,ipart,ni,n)
-c        pt_timers(10) = dnekclock() - scrt_timers(10)
-c        call MPI_Barrier(MPI_COMM_WORLD,ierr)
-
-c        parallel
-c        scrt_timers(11) = dnekclock()
          call output_particles_newest    (rpart,nr,ipart,ni,n,istep)
-c        pt_timers(11) = dnekclock() - scrt_timers(11)
-c        call MPI_Barrier(MPI_COMM_WORLD,ierr)
-
-         ptdum = glsum(pt_timers(10),1)
-         if(nid.eq.0) print *, 'serial io            ', ptdum
-     &                        , ptdum/np
-         ptdum = glsum(pt_timers(11),1)
-         if(nid.eq.0) print *, 'mpi    io            ', ptdum
-     &                        , ptdum/np
+c        call output_particles_new       (rpart,nr,ipart,ni,n) ! serial
       endif
       return
       end
@@ -132,31 +117,68 @@ c----------------------------------------------------------------------
       integer ipart(ni,n)
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
 
       integer nw
-      real    rho_p, dp, tau_p
+      real    rho_p, dp, tau_p,mu_0
 
       call set_part_pointers
 
       llpart = lpart
       k  = 0 
-      l  = 0
+c     l  = 0 
+c     nid_last = 0
 
-      rho_p     = 8050       ! example particle density, kg/m^3 (steel)
-      tau_p     = 0.5        ! particle time scale (unit stokes number)
-      visc_init = 10**(-3)   ! inital fluid viscosity (need to change!)
-      dp        = sqrt(18.0*tau_p*visc_init/rho_p)
+      rho_p     = 8050       ! kg/m^3, example particle density (steel)
+      tau_p     = 0.01        ! s, particle time scale (stokes number)
+      mu_0      = 18.27E-6   ! Pa s, inital fluid viscosity
+      dp        = sqrt(18.0*tau_p*mu_0/rho_p)  
 
-      nw = 32000  
-      xstart = -1.9
+      nw = 16  
+      if (mod(nw,np) .ne. 0) then
+         if (nid.eq.0) then 
+         write(6,*)'***Make num. of particles divisible by num. procs)'
+         call exitt
+         endif
+      endif
+
+c     xstart = -1.9
+c     ystart =  0.05
+c     zstart =  0.0         ! not used in 2d simulation
+c     xlen   =  2.3
+c     ylen   =  1.15
+c     zlen   =  0.0       ! not used in 2d simulation
+      xstart = -0.1
       ystart =  0.05
-      zstart =  0.0         ! not used in 2d simulation
-      xlen   =  2.3
+      zstart =  1.0         ! not used in 2d simulation
+      xlen   =  0.0
       ylen   =  1.15
       zlen   =  0.0       ! not used in 2d simulation
 c     dum = ran2(-2) ! use this setting for verification
       dum = rand(-1)
+
+c        do l = 1,nw/np
+c           dumx = ran2(2)
+c           dumy = ran2(2)
+c           dumz = ran2(2)
+
+c           ls = l + nid*nw/np 
+c           if (l.gt.llpart)then 
+c              write(6,*)'Not enough space to store more particles'
+c              call exitt
+c           endif
+c           rpart(jx ,l)   = xstart + dumx*xlen
+c           rpart(jy ,l)   = ystart + dumy*ylen
+c           rpart(jz ,ls)   = zstart + dumz*zlen
+c           rpart(jf0,l)   = 0.0        ! this is the body force
+c           rpart(jtaup,l) = tau_p      ! particle time scale
+c           rpart(jdp,l)   = dp         ! particle diameter
+
+c           ipart(jai,ls)   = ls          ! partid 
+c        enddo
+c           print *, 'nid,ls,l', nid, ls, l
+
+
       do i = 1,nw 
          dumx = ran2(2)
          dumy = ran2(2)
@@ -176,9 +198,10 @@ c     dum = ran2(-2) ! use this setting for verification
 
             ipart(jai,l)   = i          ! partid 
          endif
+
          k = k+1     ! Total count
       enddo
-      lcount = l
+      lcount = nw/np
       npart=0
       npart  = max(npart,lcount)
       n = npart
@@ -193,7 +216,7 @@ c     Minimal value of nr = 14*ndim + 1
       common  /iparti/ n,nr,ni
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
       jrc = 1 ! Pointer to findpts return code
       jpt = 2 ! Pointer to findpts return processor id
       je0 = 3 ! Pointer to findpts return element id
@@ -202,36 +225,61 @@ c     Minimal value of nr = 14*ndim + 1
       nai = ni - (jai-1)  ! Number of auxiliary integers
       if (nai.le.0) call exitti('Error in nai:$',ni)
 
+c     jr  = 1         ! Pointer to findpts return rst variables
+c     jd  = jr + ndim ! Pointer to findpts return distance
+c     jx  = jd + 1    ! Pointer to findpts input x value
+c     jy  = jx + 1    ! Pointer to findpts input y value
+c     jz  = jy + 1    ! Pointer to findpts input z value
+
+c     jx1 = jx + ndim ! Pointer to xyz at t^{n-1}
+c     jx2 = jx1+ ndim ! Pointer to xyz at t^{n-1}
+c     jx3 = jx2+ ndim ! Pointer to xyz at t^{n-1}
+
+c     jv0 = jx3+ ndim ! Pointer to current particle velocity
+c     jv1 = jv0+ ndim ! Pointer to particle velocity at t^{n-1}
+c     jv2 = jv1+ ndim ! Pointer to particle velocity at t^{n-2}
+c     jv3 = jv2+ ndim ! Pointer to particle velocity at t^{n-3}
+
+c     ju0 = jv3+ ndim ! Pointer to current fluid velocity
+c     ju1 = ju0+ ndim ! Pointer to fluid velocity at t^{n-1}
+c     ju2 = ju1+ ndim ! Pointer to fluid velocity at t^{n-2}
+c     ju3 = ju2+ ndim ! Pointer to fluid velocity at t^{n-3}
+
+c     jf0 = ju3+ ndim ! Pointer to forcing at current timestep
+
+
+
       jr  = 1         ! Pointer to findpts return rst variables
-      jd  = jr + ndim ! Pointer to findpts return distance
+      jd  = jr + 3 ! Pointer to findpts return distance
       jx  = jd + 1    ! Pointer to findpts input x value
       jy  = jx + 1    ! Pointer to findpts input y value
       jz  = jy + 1    ! Pointer to findpts input z value
 
-      jx1 = jx + ndim ! Pointer to xyz at t^{n-1}
-      jx2 = jx1+ ndim ! Pointer to xyz at t^{n-1}
-      jx3 = jx2+ ndim ! Pointer to xyz at t^{n-1}
+      jx1 = jx + 3 ! Pointer to xyz at t^{n-1}
+      jx2 = jx1+ 3 ! Pointer to xyz at t^{n-1}
+      jx3 = jx2+ 3 ! Pointer to xyz at t^{n-1}
 
-      jv0 = jx3+ ndim ! Pointer to current particle velocity
-      jv1 = jv0+ ndim ! Pointer to particle velocity at t^{n-1}
-      jv2 = jv1+ ndim ! Pointer to particle velocity at t^{n-2}
-      jv3 = jv2+ ndim ! Pointer to particle velocity at t^{n-3}
+      jv0 = jx3+ 3 ! Pointer to current particle velocity
+      jv1 = jv0+ 3 ! Pointer to particle velocity at t^{n-1}
+      jv2 = jv1+ 3 ! Pointer to particle velocity at t^{n-2}
+      jv3 = jv2+ 3 ! Pointer to particle velocity at t^{n-3}
 
-      ju0 = jv3+ ndim ! Pointer to current fluid velocity
-      ju1 = ju0+ ndim ! Pointer to fluid velocity at t^{n-1}
-      ju2 = ju1+ ndim ! Pointer to fluid velocity at t^{n-2}
-      ju3 = ju2+ ndim ! Pointer to fluid velocity at t^{n-3}
+      ju0 = jv3+ 3 ! Pointer to current fluid velocity
+      ju1 = ju0+ 3 ! Pointer to fluid velocity at t^{n-1}
+      ju2 = ju1+ 3 ! Pointer to fluid velocity at t^{n-2}
+      ju3 = ju2+ 3 ! Pointer to fluid velocity at t^{n-3}
 
-      jf0 = ju3+ ndim ! Pointer to forcing at current timestep
+      jf0 = ju3+ 3 ! Pointer to forcing at current timestep
 
 c     particle force specific parameteres
-      jtaup = jf0+   1 ! particle time scale for standards stokes drag
-      jtemp = jtaup+ 1 ! temperature at particle location
-      jrho  = jtemp+ 1 ! density at particle location
-      ja    = jrho+  1 ! speed of sound at particle location
-      jdp   = ja+    1 ! particle diameter
+      jtaup    = jf0+   1 ! particle time scale for standards stokes d
+      jtemp    = jtaup+ 1 ! temperature at particle location
+      jrho     = jtemp+ 1 ! density at particle location
+      ja       = jrho+  1 ! speed of sound at particle location
+      jdp      = ja+    1 ! particle diameter
+      jstcoeff = jdp+   1 ! particle diameter
 
-      jar = jtaup+1 ! Pointer to auxiliary reals
+      jar = jstcoeff+1 ! Pointer to auxiliary reals
       nar = nr - (jar-1)  ! Number of auxiliary reals
 
       if (nar.le.0) call exitti('Error in nar:$',nr)
@@ -266,8 +314,7 @@ c     is insufficient room.
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
-
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
       integer icalld1
       save    icalld1
       data    icalld1 /0/
@@ -353,7 +400,7 @@ c     Single step of Stokes particle dynamics
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
       jx0 = jx
 
       scrt_timers(8) = dnekclock()
@@ -372,9 +419,12 @@ c     Solve for velocity at time t^n
          rpart(jx1+j,i)=rpart(jx0+j,i)
       enddo
       enddo
+      
+      call qs_force_corrections(rpart,nr,ipart,ni,n) ! qs force correc.
 
       do i=1,n
-        s = 1.0 / rpart(jtaup,i)    ! inverse stokes number
+c       s = 1.0 / rpart(jtaup,i)    ! coeff in front of (u-v), no corr
+        s = rpart(jstcoeff,i)       ! coeff in front of (u-v), w/ corr
         do j=0,ndim-1
           rhs = s*( alpha(1)*rpart(ju1+j,i)
      $            + alpha(2)*rpart(ju2+j,i)
@@ -409,9 +459,124 @@ c
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
+
+      real mu_0,c0,T0
+     >     ,Re_p,mu_p,M_p,M_cr,vel_diff
+     >     ,cd, cd_cr, cd_m1, cd_m175,cd_std
+     >     ,csup(3),fsup(3),xi_sup
+     >     ,csub(3),fsub(3),xi_sub
+     >     ,rep,mag_sq
+
+      csup(1) = 6.48
+      csup(2) = 8.93
+      csup(3) = 12.21
+
+      csub(1) = csup(1)
+      csub(2) = 9.28
+      csub(3) = csub(3)
+
+      M_cr = 0.6         ! critical mach number for sphere
+
+c     Sutherlands law for air (moderate), viscosity at particles location
+      c0   = 120         ! K
+      T0   = 291.15      ! K
+      mu_0 = 18.27E-6    ! Pa s, inital fluid viscosity (need to change!)
+
+      do i=1,n
+c        sutherlands law (air)
+         if (istep.eq.0) then
+            mu_p = mu_0*(T0 + c0)/(rpart(jtemp,i) + c0)*
+     >             (rpart(jtemp,i)/T0)**1.5
+         else
+             mu_p = mu_0
+         endif
+         
+         mag_sq = (rpart(ju0,i)   - rpart(jv0,i))**2 +
+     >            (rpart(ju0+1,i) - rpart(jv0+1,i))**2
+         vel_diff = sqrt(mag_sq)
+
+         Re_p = rpart(jrho,i)*rpart(jdp,i)*vel_diff/mu_p
+         M_p  = vel_diff/rpart(ja,i)
 
 
+            cd_cr   = (24.0/Re_p)*(1 + 0.15*Re_p**0.684) +
+     >               0.513*(1.0 + 483.0*Re_p**-0.669)**-1
+            cd_std  = (24.0/Re_p)*(1 + 0.15*Re_p**0.687) +
+     >               0.420*(1.0 + 42500.0*Re_p**-1.16)**-1
+            cd_m1   = (24.0/Re_p)*(1 + 0.118*Re_p**0.813) +
+     >               0.690*(1.0 + 3550.0*Re_p**-0.793)**-1
+            cd_m175 = (24.0/Re_p)*(1 + 0.107*Re_p**0.867) +
+     >               0.646*(1.0 + 861.0*Re_p**-0.634)**-1
+
+            fsup(1) = -2.963 + 4.392*M_p - 1.169*M_p*M_p
+     >                -0.027*M_p*M_p*M_p - 0.233*exp((1-M_p)/0.011)
+            fsup(2) = -6.617 + 12.11*M_p - 6.501*M_p*M_p
+     >                +1.182*M_p*M_p*M_p - 0.174*exp((1-M_p)/0.010)
+            fsup(3) = -5.866 + 11.57*M_p - 6.665*M_p*M_p
+     >                +1.312*M_p*M_p*M_p - 0.350*exp((1-M_p)/0.012)
+
+            fsub(1) = -1.884 + 8.422*M_p - 13.70*M_p*M_p
+     >                +8.162*M_p*M_p*M_p 
+            fsub(2) = -2.228 + 10.35*M_p - 16.96*M_p*M_p
+     >                +9.840*M_p*M_p*M_p 
+            fsub(3) = 4.362 - 16.91*M_p + 19.84*M_p*M_p
+     >                -6.296*M_p*M_p*M_p 
+
+
+c        set appropriate drag coeffecient
+         if (Re_p .le. 1E-16) then ! Re << 1
+c           print *, 'Re << 1'
+            cd = 0.0
+            rpart(jstcoeff,i) = 1.0/rpart(jtaup,i)
+            cycle
+         else                     ! Finite Re
+c           below critical mach number, but still finite
+            if (M_p .le. M_cr) then
+c               print *, 'M < 0.6'
+                
+                cd = cd_std + (cd_cr - cd_std)*M_p/M_cr
+            elseif ((M_p .gt. M_cr) .and. (M_p .le. 1)) then
+c           intermediate mach number 
+c               print *, '0.6 < M < 1'
+                xi_sub = 0.0
+                do j=1,3
+                do k=1,3
+                   rep = 1.0
+                if (k.ne.j) then
+                   rep = rep*(log(Re_p) - csub(k))/(csub(j) - csub(k))
+                endif
+                enddo 
+                   xi_sub = xi_sub + fsub(k)*rep
+                enddo 
+
+                cd = cd_cr + (cd_m1 - cd_cr)*xi_sub 
+            else 
+c           > 1 mach number, still need to code > 1.75
+c               print *, 'M > 1'
+                xi_sup = 0.0
+                do j=1,3
+                do k=1,3
+                   rep = 1.0
+                if (k.ne.j) then
+                   rep = rep*(log(Re_p) - csup(k))/(csup(j) - csup(k))
+                endif
+                enddo 
+                   xi_sup = xi_sup + fsup(k)*rep
+                enddo 
+
+                cd = cd_m1 + (cd_m175 - cd_m1)*xi_sup 
+            endif
+         endif
+
+         rpart(jar,i) = cd
+         
+c        if (ipart(jai,i) .eq. 2) then
+c           print *, 'Re, M, cd', Re_p, M_p, cd
+c        endif
+
+         rpart(jstcoeff,i) = Re_p*cd/24.0/rpart(jtaup,i)
+      enddo
       end
 c-----------------------------------------------------------------------
       subroutine get_bdf_ext_coefs(beta,alpha,times)
@@ -497,17 +662,18 @@ c----------------------------------------------------------------------
       common /scrns/ x_tmp(ldim+2,lpart),work(ldim+2,lpart)
      $              ,v_tmp(ldim+1,lpart)
       character*128 fname
-      character*15 mystring, velstring
+      character*15 mystring
       integer oldfile, wdata_type, newfile
       integer*8 disp
       integer*8 extent_in_file, lb,extent
-      integer stride_len 
+      integer stride_len , block_len
       integer prevs(0:np-1)
-      integer status(MPI_STATUS_SIZE)
+      logical ifexist
+      integer status_mpi(MPI_STATUS_SIZE)
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
       integer icalld
       save    icalld
       data    icalld  /-1/
@@ -524,7 +690,7 @@ c     write particle data to read into script
          prevs(0) = n
          do i=1,np-1
             call MPI_Recv(prevs(i),1,MPI_INTEGER,i,
-     >                    0,nekcomm,status,ierr)
+     >                    0,nekcomm,status_mpi,ierr)
          enddo
       endif
 
@@ -538,29 +704,35 @@ c     all of the previous mpi ranks from [0, nid-1]
       enddo
       endif
 
+
 c     write to file
       icalld = icalld+1
       write(mystring,'(A7,I5.5,A3)') 'partxyz', icalld, '.3D' 
-      write(velstring,'(A7,I5.5,A3)') 'velsxyz', icalld, '.3D' 
       
       call MPI_FILE_OPEN(nekcomm, mystring,
      >                   MPI_MODE_CREATE + MPI_MODE_WRONLY, 
      >                   MPI_INFO_NULL, oldfile, ierr) 
-      disp = 0
-      call MPI_FILE_SET_VIEW(oldfile, disp, MPI_BYTE,
-     >                       MPI_BYTE, "native", 
-     >                       MPI_INFO_NULL, ierr) 
+c     disp = 0
+c     call MPI_FILE_SET_VIEW(oldfile, disp, MPI_BYTE,
+c    >                       MPI_BYTE, "native", 
+c    >                       MPI_INFO_NULL, ierr) 
 
-      call MPI_Type_vector(n,1,nr,MPI_DOUBLE_PRECISION,
+      if (n .gt. 0) then
+          block_len=1
+      else
+          block_len=0
+      endif
+      call MPI_Type_vector(n,block_len,nr,MPI_DOUBLE_PRECISION,
      >                    wdata_type,ierr)
       call MPI_Type_commit(wdata_type,ierr)
 
 c     write x particle location
       disp = 8*stride_len 
+c     disp = 0 
       call MPI_FILE_SET_VIEW(oldfile, disp, MPI_DOUBLE_PRECISION,
      >                       MPI_DOUBLE_PRECISION, "native", 
      >                       MPI_INFO_NULL, ierr) 
-      call MPI_FILE_WRITE_ALL(oldfile, rpart(jx,1), 1,
+      call MPI_FILE_WRITE(oldfile, rpart(jx,1), block_len,
      >                  wdata_type,
      >                  MPI_STATUS_IGNORE, ierr) 
 
@@ -569,20 +741,22 @@ c     write y particle location
       call MPI_FILE_SET_VIEW(oldfile, disp, MPI_DOUBLE_PRECISION,
      >                       MPI_DOUBLE_PRECISION, "native", 
      >                       MPI_INFO_NULL, ierr) 
-      call MPI_FILE_WRITE_ALL(oldfile, rpart(jy,1), 1,
+      call MPI_FILE_WRITE(oldfile, rpart(jy,1), block_len,
      >                  wdata_type,
      >                  MPI_STATUS_IGNORE, ierr) 
 
 c     close file
       call MPI_FILE_CLOSE(oldfile, ierr) 
 
+
 c     write properties of one particle i.e. particle id number 2
       do i=1,n
          if (ipart(jai,i) .eq. 2) then
-            open(unit=74,file='velhistory')
-            write(74, "(I6,F9.5,F9.5,F9.5)") istep, 
-     >                  rpart(jv0,i), rpart(jv0+1,i), rpart(jv0+2,i)
-            write(*,*) 'vel: ', rpart(jv0,i)
+               open(74,file='velhistory',position='append',
+     >              action='write')
+            write(74, "(I6,F9.5,F9.5,F9.5)") istep
+     >          ,rpart(jx,i)
+     >          ,rpart(ju0,i)
          endif
       enddo
 
@@ -604,7 +778,7 @@ c-----------------------------------------------------------------------
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
 
       nfpts = 0
       do ip = 1,n
@@ -720,12 +894,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'SOLN'
+      include 'CMTDATA'
       real    rpart(nr,n)
       integer ipart(ni,n)
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
 
       common /BARRYREP/ rep, bot
       real              rep(lx1,ly1,lz1), bot
@@ -742,9 +917,15 @@ c-----------------------------------------------------------------------
         do i=1,n
            ie  =  ipart(je0,i) + 1
            call baryinterp(rpart(jr,i),rpart(jr+1,i),vx(1,1,1,ie),
-     >                     rpart(ju0,i))
+     >                     rpart(ju0,i))   ! x velocity interpolation
            call baryinterp(rpart(jr,i),rpart(jr+1,i),vy(1,1,1,ie),
-     >                     rpart(ju0+1,i))
+     >                     rpart(ju0+1,i)) ! y velocity interpolation
+           call baryinterp(rpart(jr,i),rpart(jr+1,i),t(1,1,1,ie,1),
+     >                     rpart(jtemp,i)) ! temperature interpolation
+           call baryinterp(rpart(jr,i),rpart(jr+1,i),vtrans(1,1,1,ie,1),
+     >                     rpart(jrho,i))  ! density interpolation
+           call baryinterp(rpart(jr,i),rpart(jr+1,i),csound(1,1,1,ie),
+     >                     rpart(ja,i))    ! sound speed interpolation
         enddo
       endif
       return
@@ -856,7 +1037,7 @@ c----------------------------------------------------------------------
 
       common /ptpointers/ jrc,jpt,je0,jps,jai,nai,jr,jd,jx,jy,jz,jx1
      $            ,jx2,jx3,jv0,jv1,jv2,jv3,ju0,ju1,ju2,ju3,jf0,jar,nar
-     $            ,jtaup,jtemp,jrho,ja,jdp
+     $            ,jtaup,jtemp,jrho,ja,jdp,jstcoeff
       integer icalld
       save    icalld
       data    icalld  /-1/
