@@ -141,20 +141,20 @@ c----------------------------------------------------------------------
 
       llpart = lpart
       k  = 0 
-      l  = 0 
+      l  = 0
 
       rho_p     = 8050       ! example particle density, kg/m^3 (steel)
       tau_p     = 0.5        ! particle time scale (unit stokes number)
       visc_init = 10**(-3)   ! inital fluid viscosity (need to change!)
       dp        = sqrt(18.0*tau_p*visc_init/rho_p)
 
-      nw = 128   
-      xstart = -0.900
-      ystart = -0.900
-      zstart = -0.9000
-      xlen   = 1.800
-      ylen   = 1.800
-      zlen   = 1.800
+      nw = 32000  
+      xstart = -1.9
+      ystart =  0.05
+      zstart =  0.0         ! not used in 2d simulation
+      xlen   =  2.3
+      ylen   =  1.15
+      zlen   =  0.0       ! not used in 2d simulation
 c     dum = ran2(-2) ! use this setting for verification
       dum = rand(-1)
       do i = 1,nw 
@@ -573,14 +573,6 @@ c     write y particle location
      >                  wdata_type,
      >                  MPI_STATUS_IGNORE, ierr) 
 
-c     write z particle location
-      disp = 8*stride_len + 8*npt_total*2
-      call MPI_FILE_SET_VIEW(oldfile, disp, MPI_DOUBLE_PRECISION,
-     >                       MPI_DOUBLE_PRECISION, "native", 
-     >                       MPI_INFO_NULL, ierr) 
-      call MPI_FILE_WRITE_ALL(oldfile, rpart(jz,1), 1,
-     >                  wdata_type,
-     >                  MPI_STATUS_IGNORE, ierr) 
 c     close file
       call MPI_FILE_CLOSE(oldfile, ierr) 
 
