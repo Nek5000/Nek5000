@@ -1000,6 +1000,7 @@ c             Restore
             endif
          else if (x1.eq.2. .and. y1.eq.2.) then
 c           Scale current coordinates by scale
+            if (x2.eq.0) x2=1.
             scale = 1./x2
             IFZOOM=.TRUE.
             delt =xfac*scale
