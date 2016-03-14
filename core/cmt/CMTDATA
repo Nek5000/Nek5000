@@ -44,6 +44,11 @@ c---------------------------------------------------------------------
       logical            ifbr1
       COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
       real                 WGHT, WGHTD
+! particle stuff
+      common /PARTYORN/ arethereparticles
+        logical arethereparticles
+      common /PARTRK3/ kv_stage_p, kx_stage_p
+        real kv_stage_p(lpart,3,ldim), kx_stage_p(lpart,3,ldim)
 ! index for gas density in vtrans, Q+-
       parameter (irho=1) ! better always be 1
 ! other VTRANS indices

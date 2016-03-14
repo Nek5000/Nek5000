@@ -66,6 +66,10 @@ c that completely stops working if B become nondiagonal for any reason.
             enddo
             enddo
          enddo
+c        update particle rk3 stage, if there are particles
+         if (arethereparticles) then
+            call stokes_particles
+         endif
       enddo
       call compute_primitive_vars
       ftime = ftime + dnekclock() - ftime_dum
