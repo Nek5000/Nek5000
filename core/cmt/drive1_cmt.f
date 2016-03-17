@@ -21,9 +21,14 @@ c     Solve the Euler equations
       n = nxyz1*lelcmt*toteq
       nfldpart = ndim*npart
 
-      if(istep.eq.1) call set_tstep_coef
-      if(istep.eq.1) call cmt_flow_ics(ifrestart)
-      if(istep.eq.1) call init_cmt_timers
+      if(istep.eq.1) then 
+         call set_tstep_coef
+         call cmt_flow_ics(ifrestart)
+         call init_cmt_timers
+c all point particles are initialized and 
+c preprocessing of interpolation step 
+         call usr_particles_init
+      endif
 
       nstage = 3
       do stage=1,nstage
@@ -32,6 +37,11 @@ c     Solve the Euler equations
          rhst_dum = dnekclock()
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
+c At present this call will compute the forces on the particles
+c In future this subroutine may compute the back effect of particles
+c on the fluid and suitably modify the residue computed by 
+c compute_rhs_dt for the 5 conserved variables
+         call usr_particles_forces
 
 !        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
 !          dumchars='residue'
@@ -66,10 +76,8 @@ c that completely stops working if B become nondiagonal for any reason.
             enddo
             enddo
          enddo
-c        update particle rk3 stage, if there are particles
-         if (arethereparticles) then
-            call stokes_particles
-         endif
+c particle equations of motion are solved
+         call usr_particles_solver
       enddo
       call compute_primitive_vars
       ftime = ftime + dnekclock() - ftime_dum
@@ -78,6 +86,8 @@ c        update particle rk3 stage, if there are particles
          call out_pvar_nek
          call out_fld_nek
          call mass_balance(if3d)
+c dump out particle information. 
+         call usr_particles_io
       end if
 
       call print_cmt_timers
