@@ -37,11 +37,11 @@ c preprocessing of interpolation step
          rhst_dum = dnekclock()
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
-c At present this call will compute the forces on the particles
+c particle equations of motion are solved (also includes forcing)
 c In future this subroutine may compute the back effect of particles
 c on the fluid and suitably modify the residue computed by 
 c compute_rhs_dt for the 5 conserved variables
-         call usr_particles_forces
+         call usr_particles_solver
 
 !        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
 !          dumchars='residue'
@@ -76,8 +76,6 @@ c that completely stops working if B become nondiagonal for any reason.
             enddo
             enddo
          enddo
-c particle equations of motion are solved
-         call usr_particles_solver
       enddo
       call compute_primitive_vars
       ftime = ftime + dnekclock() - ftime_dum
@@ -87,7 +85,7 @@ c particle equations of motion are solved
          call out_fld_nek
          call mass_balance(if3d)
 c dump out particle information. 
-         call usr_particles_io
+         call usr_particles_io(istep)
       end if
 
       call print_cmt_timers

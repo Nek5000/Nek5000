@@ -623,6 +623,7 @@ c automatically added by makenek
       include 'SIZE'
       include 'INPUT'
       IFCMT=.true.
+      i = 1
       return
       end
 _ACEOF
@@ -639,6 +640,33 @@ c automatically added by makenek
       IFCMT=.false.
       return
       end
+_ACEOF
+fi
+fi
+
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+if [ -e "cmtparticles.usrp" ]
+then
+echo 'No particles CMT'
+else
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usr_particles_init ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_solver ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_io(istep) ! used for particles
+      integer istep
+      return
+      end
+
 _ACEOF
 fi
 fi
@@ -690,3 +718,4 @@ fi
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0
 fi 
+

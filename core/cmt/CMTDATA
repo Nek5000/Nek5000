@@ -45,8 +45,12 @@ c---------------------------------------------------------------------
       COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
       real                 WGHT, WGHTD
 ! particle stuff for rk3 low storage tvd
+      common /PARTRK3/ kv_stage_p, kx_stage_p
+      real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
+
       common /partrkstuff/ xlocp, vlocp
       real xlocp(lpart,ldim), vlocp(lpart,ldim)
+
 ! index for gas density in vtrans, Q+-
       parameter (irho=1) ! better always be 1
 ! other VTRANS indices
