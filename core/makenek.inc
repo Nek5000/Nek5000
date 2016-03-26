@@ -874,12 +874,12 @@ C      NSTEPS = 10
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*setpid" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*usr_set_pcid" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 c
 c automatically added by SHARP makenek
-      subroutine setpid(ipid)
+      subroutine usr_set_pcid(ipid)
 
       common /usrparl/ ifnekalone,mbpcid
       logical          ifnekalone   ! true for compatibility when p123>0
