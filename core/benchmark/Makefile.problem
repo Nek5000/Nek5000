@@ -1,0 +1,75 @@
+LDADD = 
+# For test problems that create the Physics object, add the NEK case object to link against.
+NEK_CASE_DIR    = $(SHARP_NEK_DIR)/benchmark/$(PROBLEM)
+NEK_LIB_DIR     = $(NEK_CASE_DIR)/build/lib
+SHARP_NEK_LIB   = -L$(NEK_LIB_DIR) -lnek5000
+EXTERNALOBJF    = $(NEK_CASE_DIR)/build/nek/obj/$(NEK_CASE_NAME).o
+NEK_CASE_NAME   = $(PROBLEM)_nek
+NEK_LIBS        = $(EXTERNALOBJF) $(SHARP_NEK_LIB)
+LDADD   += $(SHARP_BUILD_DIR)/modules/coupe/lib/libcoupe_NEK.la $(NEK_LIBS)
+
+$(SHARP_BUILD_DIR)/modules/coupe/lib/libcoupe_NEK.la: 
+	@${MAKE} --no-print-directory -C $(SHARP_BUILD_DIR)/modules/coupe lib/libcoupe_NEK.la
+
+OBJECT_FLAGS = -I${SHARP_BUILD_DIR} ${SHARP_INCLUDES} -I${SHARP_COUPE_DIR}/include
+CPPFLAGS += $(OBJECT_FLAGS)
+LDFLAGS = ${SHARP_LDFLAGS}
+
+LDADD += $(SHARP_BUILD_DIR)/modules/coupe/lib/libcoupe.la $(SHARP_LIBS) $(FLIBS)
+$(SHARP_BUILD_DIR)/modules/coupe/lib/libcoupe.la:
+	@${MAKE} --no-print-directory -C $(SHARP_BUILD_DIR)/modules/coupe lib/libcoupe.la
+
+checkopts:
+	@if test "$(PROBLEM)" = "" ; then \
+		echo " <<< Need to set a PROBLEM variable before compiling the driver >>> " ; exit 2; \
+	fi
+
+DEPTGTS = checkopts build_nek
+
+# Drivers
+bin_PROGRAMS = $(DRIVER)
+
+$(EXTERNALOBJF): build_nek
+
+build_nek:
+	@echo " <<< Compiling/Linking NEK5000 library >>> " ;
+	@echo "     =================================     "
+	@mkdir -p $(NEK_CASE_DIR)/build/nek $(NEK_LIB_DIR) $(NEK_CASE_DIR)/build/bin
+	@cp -lf $(NEK_CASE_DIR)/SIZE $(NEK_CASE_DIR)/build/nek/SIZE
+	@cp -lf $(NEK_CASE_DIR)/$(NEK_CASE_NAME).usr $(NEK_CASE_DIR)/build/nek/$(NEK_CASE_NAME).usr
+	@cp -lf $(NEK_CASE_DIR)/$(NEK_CASE_NAME).rea $(NEK_CASE_DIR)/build/nek/$(NEK_CASE_NAME).rea
+	@cd $(NEK_CASE_DIR)/build/nek &&  $(SHELL) $(SHARP_NEK_DIR)/makenek $(NEK_CASE_NAME) && cd $(NEK_CASE_DIR)
+	-@${MAKE} --no-print-directory lib -s -C $(NEK_CASE_DIR)/build/nek -j
+	@ln -sf $(NEK_CASE_DIR)/build/nek/libnek5000.a $(NEK_LIB_DIR)/libnek5000.a
+	@ln -sf $(NEK_CASE_DIR)/build/nek/nek5000 $(NEK_CASE_DIR)/build/bin/nek5000
+	@echo $(NEK_CASE_NAME) > SESSION.NAME && echo $(NEK_CASE_DIR) >> SESSION.NAME
+
+always_build: $(DEPTGTS)
+
+all: test
+test: $(DRIVER)
+	@echo " "
+	@echo "==============================================================================="
+	@echo "    Performing Nek5000 verification test for $(PROBLEM) ...";
+	@./$(DRIVER) -physics_type nek -session $(PROBLEM) 2>&1 > verify_$(PROBLEM).log
+	@grep "Max" verify_$(PROBLEM).log > test.out 
+	@if diff -q reference.out test.out > /dev/null 2>&1 ; then \
+		echo "       SUCCESS: $(PROBLEM)"; \
+	else \
+		echo "       FAILURE: $(PROBLEM)"; \
+		echo "       See $(NEK_CASE_DIR)/verify_$(PROBLEM).log for details"; \
+  fi
+	@echo "==============================================================================="
+	@echo " "
+
+info:
+	@echo "SHARP_LIBS: ${SHARP_LIBS}"
+
+clean:
+	@rm -rf $(NEK_CASE_DIR)/build
+	@rm -rf SESSION.NAME
+	@for drivername in $(DRIVERS) ; do \
+		rm -rf $$drivername ; \
+	done
+
+#--------------------------------------------------------------------------

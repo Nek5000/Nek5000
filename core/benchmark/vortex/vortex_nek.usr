@@ -1,0 +1,429 @@
+c-----------------------------------------------------------------------
+c
+c     This is the data set for the rotating lid problem of Escudier
+c
+c     Reynolds number determined by setting p2 in the .rea file to, e.g.,
+c     -1492 or -1854.
+c
+c
+c     See, e.g., Sotiropoulos & Ventikos, Int. J. Heat & Fluid Flow 19 (1998)
+c
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      qvol   = 0.0
+      source = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+      real, external :: glmax, glmin 
+      real:: umax, vmax, wmax
+
+      n = lx1*ly1*lz1*lelt
+      if (istep.eq.0) then
+         ifxyo = .true.
+         call outpost(vx,vy,vz,pr,t,'   ')
+         ifxyo = .false.
+      endif
+
+      dd   = 0.2**2
+      vmin = 1.e20
+
+      do i=1,n              ! Find min vz near centerline
+         x = xm1(i,1,1,1)
+         y = ym1(i,1,1,1)
+         rr = x*x + y*y
+         if (rr.lt.dd) vmin = min(vmin,vz(i,1,1,1))
+      enddo
+      vmin = glmin(vmin,1)
+
+      if (nid.eq.0) write(6,1) istep,time,vmin
+    1 format(i9,1p2e14.6,' VMIN')
+       
+       if (mod(istep,16).eq.0) then 
+       umax=glmax(vx,nx1*ny1*nz1*nelt)
+       vmax=glmax(vy,nx1*ny1*nz1*nelt) 
+       wmax=glmax(vz,nx1*ny1*nz1*nelt)
+       if (nid == 0) then
+        write(*,'(A,F12.6)') "Maxu", umax
+        write(*,'(A,F12.6)') "Maxv", vmax
+        write(*,'(A,F12.6)') "Maxw", wmax        
+        endif        
+        endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+c     NOTE ::: This subroutine MAY NOT be called by every process
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+   
+      common /bcdata/ zstart   ! start of top layer of elements
+      az = 0
+      if (z.gt.zstart) az = ((z-zstart)/(2.-zstart))**5   ! polynomial ramp
+      ux = -y*az
+      uy =  x*az
+      uz = 0.0
+      temp=0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /bcdata/ zstart   ! start of top layer of elements
+
+      az = 0
+      if (z.gt.zstart) az = ((z-zstart)/(2.-zstart))**5   ! polynomial ramp
+      ux = -y*az
+      uy =  x*az
+      uz = 0.0
+      temp=0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+      n=nelv*8
+      do i=1,n
+         x=xc(i,1)
+         y=yc(i,1)
+         rr = x*x+y*y
+
+         if (rr.gt.0.99) then  ! project onto unit circle to machine prec.
+            r=sqrt(rr)
+            xc(i,1) = x/r
+            yc(i,1) = y/r
+         endif
+
+      enddo
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /bcdata/ zstart   ! start of top layer of elements
+
+      param(66) = 4.   ! These give the std nek binary i/o and are 
+      param(67) = 4.   ! good default values
+
+
+      zstart = 0
+      ieg = lglel(nelv)
+
+      if (ieg.eq.nelgv) zstart = zm1(1,1,1,nelv) ! min z val in top layer
+
+      zstart = glmax(zstart,1)
+
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq2(q) ! set source term w/ MOAB
+
+#include "NEKMOAB"
+
+      include 'GEOM'
+      include 'TSTEP'
+
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      common /moabqv/   qvola(lx1,ly1,lz1,lelt)     ! vol. heat s. for MOAB
+      integer          mbpcid
+
+      real q(lx1*ly1*lz1,lelt)
+
+      integer e, i, ime, ntot, nxyz
+      real x, y, r, init_power_density
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelt
+
+      if (istep .eq. 0 .or. (.not.ifcoup .and. .not.ifvcoup) ) then
+
+         init_power_density = param(121)
+         call rzero (q,ntot)
+         if (ifnekalone) then
+           do e = 1,nelt
+             do i = 1,nxyz
+               x = xm1(i,1,1,e)
+               y = ym1(i,1,1,e)
+               r = (x-16.d0)**2 + (y-7.4019221593017583d0)**2  ! heat source region
+               r = sqrt(r)
+
+               if (2.0.le.r .and. r.le.4.0) q(i,e) = init_power_density   ! w/ clad
+             enddo
+           enddo
+         else
+           do e = 1,nelt
+             do i = 1,nxyz
+
+c .rea:         4 2 3 5 6       fluid set #4, solid set #2 3 5 6
+c               1 2 3 5 6       ! imatie: fluid fuel clad crod can
+
+               ime = imatie(e)
+
+               if (ime.eq.2) q(i,e) = init_power_density  ! heat source in the solid -- w/ clad
+             enddo
+           enddo
+         endif
+
+      else
+
+         if (ifcoup) then
+            call nekMOAB_import_vars(powTag, 0, q)
+         elseif (ifvcoup) then
+            call nekMOAB_import_vars(vpowTag, 1, q)
+         elseif (istep.lt.10) then
+           write(6,*) "NEKMOAB:userq2: Not importing power density."
+           write(6,*) "NEKMOAB:userq2 *** Enable IFCOUP or IFVCOUP ***"
+         endif
+
+      endif
+
+      call compute_total_power(q)
+
+      call copy(qvola,q,ntot)   ! for output
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine compute_total_power(q)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ntot
+      real q(lx1*ly1*lz1,lelt), bmq(lx1*ly1*lz1*lelt)
+
+      ntot = nx1*ny1*nz1*nelt          ! Total power calculation
+      call col3(bmq,q,bm1,ntot)
+      qtot = glsum(bmq,ntot)
+      if (nid.eq.0)  write(6,1) istep,time,qtot
+    1 format (i8,1p2e15.7,' W  Qtot')
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine usr_get_current_time(current_time)
+      include 'SIZE'
+      include 'TSTEP'
+      real current_time
+      
+      integer ispert, glob_tstep
+      common /usrperturbation/  ispert, glob_tstep  ! perturbation of temperature and density BC
+      
+      if (ispert .eq. 0) then
+        current_time = 0.0
+      else
+        current_time = TIME
+      endif
+      
+      print *, "[COUPE:NEK]...Getting current final time from NEK ",
+     $                        current_time
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine nekMOAB_reimport
+C      implicit none
+C  include "NEKMOAB"
+C      include 'PARALLEL'
+C      include 'GEOM'
+      include 'SIZE'
+      include 'TOTAL'
+      include 'DOMAIN'
+      include 'ZPER'
+      include 'OPCTR'
+
+      integer ierr, igeom
+
+      call mapelpr                        ! create gllel mapping 
+      call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
+      call xml2xc                         ! fill xc,yc,zc
+
+C      call nekMOAB_BC             ! read MOAB BCs 
+
+C      call nekMOAB_compute_diagnostics
+
+C     generate geometry (called after usrdat in case something changed)
+      igeom=2
+      call gengeom (igeom)
+
+      if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
+
+      call geom_reset(igeom)    ! recompute Jacobians, etc.
+
+      call vrdsmsh          ! verify mesh topology
+
+      return
+      end  
+
+C=======================================================================
+
+      subroutine usr_reset_pseudo_time
+      include 'SIZE'
+      include 'TSTEP'
+
+      ISTEP = 0
+      LASTEP = 0
+C      NSTEPS = 10
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine setpid(ipid)
+
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      integer          mbpcid,ipid
+
+      mbpcid=ipid
+
+      return
+      end
+
+C=======================================================================
+
+#ifdef MOAB
+      subroutine usr_moab_output()
+
+      implicit none
+#include "NEKMOAB"
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      integer ierr
+      CHARACTER*20 NAME, STEPSTR
+      CHARACTER*132 wroptions, seroptions, paroptions
+      CHARACTER*1  NUMRL(0:9)
+      DATA NUMRL          /'0','1','2','3','4','5','6','7','8','9'/
+      data seroptions /''/
+      data paroptions /' moab:PARALLEL=WRITE_PART moab:PCOMM=1 '/
+c      data paroptions /' moab:PARALLEL=WRITE_PART moab:PCOMM=0 '/
+      
+      integer ispert, glob_tstep
+      common /usrperturbation/  ispert, glob_tstep  ! perturbation of temperature and density BC
+      
+      common /usrparl/ ifnekalone,mbpcid
+      logical          ifnekalone   ! true for compatibility when p123>0
+      integer          mbpcid
+
+      if (np .gt. 1) then
+        mbpcid=1
+        if (mbpcid .ge. 0) then
+          WRITE(wroptions,'(A,A,I1)')' moab:PARALLEL=WRITE_PART ',
+     $        'moab:PCOMM=',mbpcid
+        else
+          wroptions=paroptions
+        endif
+        wroptions=TRIM(wroptions)
+      else
+        wroptions=TRIM(seroptions)
+      endif
+
+c      WRITE(STEPSTR, '(I5.5)') glob_tstep
+      WRITE(STEPSTR,'(A,I5.5,A)') 'sahex',glob_tstep,'.h5m'
+      NAME=TRIM(STEPSTR)
+
+      if (ispert .eq. 0) glob_tstep = glob_tstep + 1
+
+c copy data from nek to MOAB
+      call nekMOAB_export_vars
+
+      ierr = 0
+      if(istep .eq. 0 .or. iostep .eq. 0 .or.
+     $     mod(istep,iostep) .eq. 0) then
+         if (np .gt. 1) then
+c            call iMeshP_saveAll(%VAL(imeshh),%VAL(hPartn),%VAL(fileset),
+c     $           name,wroptions,ierr)
+         else
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,wroptions,
+     $           ierr)
+         endif
+c no check for error, just print something and continue
+         if (ierr .ne. 0 .and. nid .eq. 0) then
+           write(6,*) 'Step:',istep,' Writing to ',
+     $                   TRIM(name),' = failed. ierr=',ierr
+         else if (nid .eq. 0) then
+			     write(6,*) 'Step:',istep,' Writing to ',
+     $                   TRIM(name),' = success'
+         endif
+      endif
+
+      return
+      end
+
+#endif
+
+c-----------------------------------------------------------------------

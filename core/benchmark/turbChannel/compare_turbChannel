@@ -1,0 +1,5 @@
+if diff -q reference.out test.out > /dev/null; then
+echo "verification for turbChannel is successful!"
+else
+echo "Verification for turbChannel is failing!"
+fi

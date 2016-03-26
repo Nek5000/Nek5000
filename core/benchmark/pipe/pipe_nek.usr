@@ -1,0 +1,290 @@
+C-----------------------------------------------------------------------
+C
+C  USER SPECIFIED ROUTINES:
+C
+C     - boundary conditions
+C     - initial conditions
+C     - variable properties
+C     - forcing function for fluid (f)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.
+C
+C-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,ieg)
+
+C Set user variable properties
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine userf  (ix,iy,iz,ieg)
+
+C Set user forcing function for the momentum
+
+      include 'SIZE'
+      include 'TSTEP'
+      include 'NEKUSE'
+
+      FFY = 0.0
+      FFX = 0.0
+      FFZ = 0.0
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine userq  (ix,iy,iz,ieg)
+
+C Set user forcing function for scalars
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      qvol = 0.0
+
+      return
+      end
+
+C=======================================================================
+      subroutine userq2(q) ! set source term
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      real q(lx1, ly1, lz1, lelt)
+
+c      if (ifcoup) then
+c         call nekMOAB_import_vars(tTag, 0, q)
+c      elseif (ifvcoup) then
+c         call nekMOAB_import_vars(vtTag, 1, q)
+c      endif
+
+      return
+      end
+C=======================================================================
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+      real, external :: glmax, glmin 
+      real:: umax, vmax, wmax	
+#ifdef MOAB
+      call usr_moab_output()
+#endif
+      
+      if (mod(istep,4).eq.0) then 
+       umax=glmax(vx,nx1*ny1*nz1*nelt)
+       vmax=glmax(vy,nx1*ny1*nz1*nelt) 
+       wmax=glmax(vz,nx1*ny1*nz1*nelt)
+       tmax=glmax(t,nx1*ny1*nz1*nelt)
+       if (nid == 0) then
+        write(*,'(A,F12.4)') "Maxu", umax
+        write(*,'(A,F12.4)') "Maxv", vmax
+        write(*,'(A,F12.4)') "Maxw", wmax       
+        endif        
+        endif
+     
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine userbc (ix,iy,iz,iside,ieg)
+
+C  Set user boundary conditions
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      xp  = x/0.5
+      yp  = y/0.5
+      rr  = xp*xp + yp*yp
+
+      ux = 0.0
+      uy = 0.0
+      uz = 1 - rr
+      temp = 0.0 
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine useric (ix,iy,iz,ieg)
+
+C   Set initial conditions
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      xp  = x/0.5
+      yp  = y/0.5
+      rr  = xp*xp + yp*yp
+
+      ux = 0.0
+      uy = 0.0
+      uz = 1 - rr
+      temp = 0.0 
+
+      return
+      end
+
+C=======================================================================
+      subroutine usrdat
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine usrdat2
+
+      return
+      end
+
+C=======================================================================
+      subroutine usrdat3
+
+      return
+      end
+C=======================================================================
+      subroutine usr_get_current_time(current_time)
+      include 'SIZE'
+      include 'TSTEP'
+      real current_time
+      
+      integer ispert, glob_tstep
+      common /usrperturbation/  ispert, glob_tstep  ! perturbation of temperature and density BC
+      
+      if (ispert .eq. 0) then
+        current_time = 0.0
+      else
+        current_time = TIME
+      endif
+      
+      print *, "[COUPE:NEK]...Getting current final time from NEK ",
+     $                        current_time
+
+      return
+      end
+
+C=======================================================================
+
+      subroutine nekMOAB_reimport
+C      implicit none
+C  include "NEKMOAB"
+C      include 'PARALLEL'
+C      include 'GEOM'
+      include 'SIZE'
+      include 'TOTAL'
+      include 'DOMAIN'
+      include 'ZPER'
+      include 'OPCTR'
+
+      integer ierr, igeom
+
+      call mapelpr                        ! create gllel mapping 
+      call moab_geometry(xm1,ym1,zm1)     ! fill xm1,ym1,zm1
+      call xml2xc                         ! fill xc,yc,zc
+
+C      call nekMOAB_BC             ! read MOAB BCs 
+
+C      call nekMOAB_compute_diagnostics
+
+C     generate geometry (called after usrdat in case something changed)
+      igeom=2
+      call gengeom (igeom)
+
+      if (ifmvbd) call setup_mesh_dssum ! Set up dssum for mesh (needs geom)
+
+      call geom_reset(igeom)    ! recompute Jacobians, etc.
+
+      call vrdsmsh          ! verify mesh topology
+
+      return
+      end  
+
+C=======================================================================
+
+      subroutine usr_reset_pseudo_time
+      include 'SIZE'
+      include 'TSTEP'
+
+      ISTEP = 0
+      LASTEP = 0
+C      NSTEPS = 10
+
+      return
+      end
+
+C=======================================================================
+#ifdef MOAB
+      subroutine usr_moab_output()
+
+      implicit none
+#include "NEKMOAB"
+      include 'TSTEP'
+      include 'PARALLEL'
+
+      integer iten, ione, ierr
+      CHARACTER*10 NAME
+      CHARACTER*132 seroptions, paroptions
+      CHARACTER*1   NAM1(10)
+      EQUIVALENCE  (NAME,NAM1)
+      CHARACTER*1  NUMRL(0:9)
+      DATA NUMRL          /'0','1','2','3','4','5','6','7','8','9'/
+      data seroptions /''/
+      data paroptions /' moab:PARALLEL=WRITE_PART '/
+      data name /'pipe00.h5m'/
+
+c name the output files 'zero??.h5m'      
+      iten = istep / 10
+      ione = MOD(istep,10)
+      nam1(5) = numrl(iten)
+      nam1(6) = numrl(ione)
+
+c #define MOAB_MEM
+#ifndef MOAB_MEM
+c copy data from nek to MOAB
+      call nekMOAB_export_vars
+#endif
+
+      if(istep .eq. 0 .or. iostep .eq. 0 .or. 
+     $     mod(istep,iostep) .eq. 0) then
+         if (np .gt. 1) then
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,paroptions, 
+     $           ierr)
+         else
+            call iMesh_save(%VAL(imeshh),%VAL(fileset),name,seroptions, 
+     $           ierr)
+         endif
+c no check for error, just print something and continue
+         if (ierr .ne. 0 .and. nid .eq. 0) then
+            write(6, "('      H5M file write failed on step ', i4)") 
+     *           istep
+         else if (nid .eq. 0) then
+            write(6, "('      Wrote MOAB H5M file for step ', i4)") 
+     *           istep
+         endif
+      endif
+
+      return
+      end
+#endif
+c-----------------------------------------------------------------------
+c automatically added by nekautomake
+      subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
+      integer*8 glo_num(1)
+      return
+      end
+c
