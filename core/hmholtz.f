@@ -675,6 +675,7 @@ C
       IF (IMSH.EQ.2) NEL=NELT
       IF (IMSH.EQ.2) VOL=VOLTM1
       n      = NEL*NXYZ
+
 c
       tol=abs(tin)
       if (param(22).ne.0) tol=abs(param(22))
@@ -695,13 +696,16 @@ C
       elseif(param(100).ne.2) then
          call set_fdm_prec_h1b(d,h1,h2,nel)
       endif
-c
+
       call copy (r,f,n)
       call rzero(x,n)
       call rzero(p,n)
-c
+
+      fmax = glamax(f,n)
+      if (fmax.eq.0.0) return
+
 c     Check for non-trivial null-space
-c
+
       ifmcor = .false.
       h2max = glmax(h2  ,n)
       skmin = glmin(mask,n)
