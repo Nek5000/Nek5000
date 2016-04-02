@@ -40,20 +40,17 @@ c
 
       if (igeom.eq.1) then
 
-c        ! extrapolate velocity
-c        call v_extrap(VEXT)
-
          ! compute explicit contributions bfx,bfy,bfz 
          call makef 
-         call lagvel
 
       else
 
-         ! extrapolate velocity
-         call v_extrap(VEXT)
-
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
+
+c        ! extrapolate velocity
+         call v_extrap(VEXT)
+         call lagvel
 
          ! split viscosity into explicit/implicit part
          if (ifexplvis) call split_vis
