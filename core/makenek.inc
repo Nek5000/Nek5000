@@ -647,7 +647,7 @@ fi
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
 if [ -e "cmtparticles.usrp" ]
 then
-echo 'No particles CMT'
+echo 'Particles found CMT'
 else
 cat >> $CASENAME.f << _ACEOF
 c
