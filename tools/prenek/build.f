@@ -1117,7 +1117,7 @@ c-----------------------------------------------------------------------
       character*70 fname
       equivalence (fname,fnam1)
 
-      logical ifquery_displace,ifdisplace
+      logical ifquery_displace,ifdisplace,iftranslate
       logical iflow,iheat
 
       integer e,f,import_count
@@ -1130,11 +1130,13 @@ c-----------------------------------------------------------------------
       call blank(fname,70)
       call res  (fname,70)
 
-      ifdisplace = .false.
+      ifdisplace  = .false.
+      iftranslate = .false.
       if (nel.gt.0.and.ifquery_displace) then
-       call prs('Would you like to displace existing elements in box?$')
+       call prs('Displace elements in box (y)? Translate?(t) n$')
        call res  (ans,1)
        if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
+       if (ans.eq.'t'.or.ans.eq.'T') iftranslate=.true.
       endif
 
       if (indx1(fname,'.rea',4).eq.0) then !  Append .rea, if not present
@@ -1224,6 +1226,20 @@ c     ALL DONE
 c
       close(47)
 c
+      if (iftranslate) then
+        if (if3d) then
+         call prs('Input translation vector: x,y,z$')
+         call rerrr(xt,yt,zt)
+        else
+         call prs('Input translation vector: x,y$')
+         call rerr (xt,yt)
+        endif
+
+        ie0=nel+1
+        ie1=neln
+        call translate_sub_mesh(ie0,ie1,xt,yt,zt)
+      endif
+
       write(6,*) 'This is nel,ncurve old:',nel,ncurve
       nel  = neln
       ncurve = ncurve + nc
