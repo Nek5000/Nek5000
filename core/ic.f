@@ -2611,7 +2611,8 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = glsum(dnbyte,1)
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
-      if(nio.eq.0) write(6,7) istep,time,
+      if (tio.eq.0) tio=1 ! Avoid division by zero, pff, 11/29/15
+      if (nio.eq.0) write(6,7) istep,time,
      &             nbyte/tio/1024/1024/10,
      &             nfiler
     7 format(/,i9,1pe12.4,' done :: Read checkpoint data',/,

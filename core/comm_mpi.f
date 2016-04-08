@@ -540,7 +540,7 @@ c     Communicate unhappiness to the other session
 
       call mpi_finalize (ierr)
 #ifdef EXTBAR
-     call exit_(0)
+      call exit_(0)
 #else
       call exit(0)
 #endif

@@ -608,7 +608,10 @@ C----------------------------------------------------------------
       include 'NEKNEK'
       include 'mpif.h' 
 
-      character*3 which_field(nfld)
+      parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
+      common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
+
+      character*3 which_field(nfld_neknek)
       real field(lx1*ly1*lz1*lelt,nfldmax)
       real rsend(nfldmax*nmaxl), rrecv(nfldmax*nmaxl)
       real fieldout(nfldmax,nmaxl)
@@ -624,19 +627,25 @@ C     iden(3,:) = iz
 C     iden(4,:) = iel
 
 
-c     Put field values for the field ifld=1,nfld to the working array 
-c     field (:,:,:,:,nfld) used byt the findpts_value routine according 
+c     Put field values for the field ifld=1,nfld_neknek to the working array 
+c     field (:,:,:,:,nfld_neknek) used byt the findpts_value routine according 
 c     to the field identificator which_field(ifld) 
 
+      if (nfld_neknek.eq.0) 
+     $ call exitti('Error: set nfld_neknek in usrchk. Session:$',idsess)
+      
+
+      call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
 
       nv = nx1*ny1*nz1*nelv
       nt = nx1*ny1*nz1*nelt
-      do ifld=1,nfld
-        if (which_field(ifld).eq.'t' ) call copy(field(1,ifld),t ,nt)
-        if (which_field(ifld).eq.'vx') call copy(field(1,ifld),vx,nt)
-        if (which_field(ifld).eq.'vy') call copy(field(1,ifld),vy,nt)
-        if (which_field(ifld).eq.'vz') call copy(field(1,ifld),vz,nt)
-        if (which_field(ifld).eq.'pr') call copy(field(1,ifld),pr,nt)
+
+      do ifld=1,nfld_neknek
+        if (which_field(ifld).eq.'t' ) call copy(field(1,ifld),t  ,nt)
+        if (which_field(ifld).eq.'vx') call copy(field(1,ifld),vx ,nt)
+        if (which_field(ifld).eq.'vy') call copy(field(1,ifld),vy ,nt)
+        if (which_field(ifld).eq.'vz') call copy(field(1,ifld),vz ,nt)
+        if (which_field(ifld).eq.'pr') call copy(field(1,ifld),pm1,nt)
 
 C       Find interpolation values      
          call findpts_eval(inth_multi,fieldout(ifld,1),nfldmax,
@@ -659,11 +668,11 @@ C     of remote session
          nsend    = infosend(n,2)
          do i=1,nsend
             il=il+1
-            do ifld=1,nfld
-               rsend(nfld*(i-1)+ifld)=fieldout(ifld,il)
+            do ifld=1,nfld_neknek
+               rsend(nfld_neknek*(i-1)+ifld)=fieldout(ifld,il)
            enddo
          enddo
-         len=nfld*nsend*wdsize
+         len=nfld_neknek*nsend*wdsize
          call mpi_send (rsend,len,mpi_byte, id, nid, intercomm, ierr)
       enddo
 
@@ -671,7 +680,7 @@ C     of remote session
       do n=1,nprecv
          id    = inforecv(n,1)
          nrecv = inforecv(n,2)
-         len=nfld*nrecv*wdsize
+         len=nfld_neknek*nrecv*wdsize
          call mpi_recv (rrecv,len,mpi_byte,id,id,intercomm,status,ierr)
          do i=1,nrecv ! Extract point identity
             il=il+1
@@ -680,8 +689,8 @@ C     of remote session
             iz = 1
             if (if3d) iz=iden(3,il)
             ie=iden(ldim+1,il)      
-            do ifld=1,nfld
-               valint(ix,iy,iz,ie,ifld)=rrecv(nfld*(i-1)+ifld)
+            do ifld=1,nfld_neknek
+               valint(ix,iy,iz,ie,ifld)=rrecv(nfld_neknek*(i-1)+ifld)
             enddo
          enddo
       enddo 
@@ -698,14 +707,14 @@ C--------------------------------------------------------------------------
       real l2,linf
       character*3 which_field(nfldmax+1)
 
-c     nfld is the number of fields to interpolate.
-c     nfld = 3 for just veliocities, nfld = 4 for velocities + temperature
+c     nfld_neknek is the number of fields to interpolate.
+c     nfld_neknek = 3 for just veliocities, nfld_neknek = 4 for velocities + temperature
 
       which_field(1)='vx'
       which_field(2)='vy'
       which_field(3)='vz'
       which_field(ndim+1)='pr'
-      if (nfld.gt.3) which_field(ndim+2)='t'
+      if (nfld_neknek.gt.ndim+1) which_field(ndim+2)='t'
 
       if (nsessions.gt.1) call get_values(which_field)
 
@@ -719,7 +728,7 @@ c------------------------------------------------------------------------
 
       n    = nx1*ny1*nz1*nelt
 
-      do k=1,nfld
+      do k=1,nfld_neknek
          call copy(bdrylg(1,k,2),bdrylg(1,k,1),n)
          call copy(bdrylg(1,k,1),bdrylg(1,k,0),n)
          call copy(bdrylg(1,k,0),valint(1,1,1,1,k),n)
@@ -745,7 +754,7 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
          c2=1
       endif
      
-      do k=1,nfld
+      do k=1,nfld_neknek
       do i=1,n
          ubc(i,1,1,1,k) = 
      $      c0*bdrylg(i,k,0)+c1*bdrylg(i,k,1)+c2*bdrylg(i,k,2)
@@ -837,6 +846,11 @@ c     Happy check
 c------------------------------------------------------------------------
       subroutine chk_outflow_short ! Assign neighbor velocity to outflow
 
+c
+c     This is just an experimental routine for PnPn only...
+c
+
+
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -845,7 +859,8 @@ c------------------------------------------------------------------------
 
       n = nx1*ny1*nz1*nelt
       ipfld=ndim
-      if (ifsplit) ipfld=ndim+1
+c     if (ifsplit) ipfld=ndim+1
+      ipfld=ndim+1                ! Now for both split and nonsplit (12/14/15)
       itfld=ipfld+1
 
       do i=1,n ! The below has not been checked for ifheat=.true., pff 6/27/15

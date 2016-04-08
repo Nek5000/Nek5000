@@ -271,7 +271,7 @@ C-----------------------------------------------------------------------
 
    
       const = 1./dt
-      call cmult2(h2,vtrans(1,1,1,1,ifield),const,n)
+c      call cmult2(h2,vtrans(1,1,1,1,ifield),const,n)
       do i=1,n
          h2(i)=const*vtrans(i,1,1,1,ifield)
          tb(i)=bd(2)*bm1(i,1,1,1)*t(i,1,1,1,ifield-1)
@@ -289,9 +289,10 @@ C-----------------------------------------------------------------------
          CALL ADD2  (TB,TA,N)
  100  CONTINUE
 
-      do i=1,n
-         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1) + tb(i)*h2(i)
-      enddo
+c      do i=1,n
+c         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1) + tb(i)*h2(i)
+c      enddo
+      call addcol3 (bq(1,1,1,1,ifield-1),tb,h2,n)
 
       return
       end

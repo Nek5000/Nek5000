@@ -580,11 +580,11 @@ C
          endif
       endif
 
-      if (ifmvbd .and. ifsplit) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: Moving boundary in Pn-Pn is not supported'
-         call exitt
-      endif
+c      if (ifmvbd .and. ifsplit) then 
+c         if(nid.eq.0) write(6,*) 
+c     $   'ABORT: Moving boundary in Pn-Pn is not supported'
+c         call exitt
+c      endif
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: MOAB in Pn-Pn-2 is not supported'
@@ -604,11 +604,11 @@ C
       if (ifgfdm.and.lfdm.eq.0) call exitti
      $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
 
-      if (ifsplit .and. ifstrs) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: Stress formulation in Pn-Pn is not supported'
-         call exitt
-      endif
+c      if (ifsplit .and. ifstrs) then
+c         if(nid.eq.0) write(6,*) 
+c     $   'ABORT: Stress formulation in Pn-Pn is not supported'
+c         call exitt
+c      endif
 
       if (ifsplit .and. ifmhd) then
          if(nid.eq.0) write(6,*) 

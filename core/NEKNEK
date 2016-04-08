@@ -13,7 +13,8 @@
 
       common /cgeom/ igeom
 
-      common /mybc/ ubc(lx1,ly1,lz1,lelt,nfldmax), nfld
+      common /mybc/ ubc(lx1,ly1,lz1,lelt,nfldmax)
+      common /inbc/ nfld_neknek
 
       common /mybd/ bdrylg(lx1*ly1*lz1*lelt,nfldmax,0:2)
 

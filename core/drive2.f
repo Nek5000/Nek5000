@@ -750,11 +750,10 @@ c                - Time-dependent Navier-Stokes calculation (Re>>1).
 c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
  
-         call plan4
-         igeom = 2
-         call twalluz (igeom) ! Turbulence model
-         call chkptol         ! check pressure tolerance
-         call vol_flow        ! check for fixed flow rate
+         call plan4 (igeom)                                           
+         if (ifmodel)    call twalluz (igeom) ! Turbulence model              
+         if (igeom.ge.2) call chkptol         ! check pressure tolerance 
+         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
       elseif (iftran) then
 
@@ -813,22 +812,18 @@ C
 
       if (ifcvode) then
 
-         call cdscal_cvode(igeom)
-         igeom = 2
+         if(igeom.eq.1) call cdscal_cvode(igeom)
 
       elseif (ifsplit) then
 
-         do igeo=1,2
          do ifield=2,nfield
             intype        = -1
             if (.not.iftmsh(ifield)) imesh = 1
             if (     iftmsh(ifield)) imesh = 2
             call unorm
             call settolt
-            call cdscal (igeo)
+            call cdscal (igeom)
          enddo
-         enddo
-         igeom = 2
 
       else  ! PN-PN-2
 
