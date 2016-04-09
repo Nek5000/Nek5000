@@ -160,13 +160,17 @@ c     pulling in temperature right now, since we dont have anything else
       n     = nxyz1*nel
 
       do iel=1,nel
-         igrp = igroup(iel)
-         if (matype(igrp,ifield).eq.1) then ! constant source within a group
-            cqvol = cpgrp(igrp,ifield,3)
-            call cfill (bql(1,iel),cqvol,nxyz1)
-         else  !  pff 2/6/96 ............ default is to look at userq
-            call nekuq (bql,iel)
-         endif
+
+         call nekuq (bql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
+
+c        igrp = igroup(iel)
+c        if (matype(igrp,ifield).eq.1) then ! constant source within a group
+c           cqvol = cpgrp(igrp,ifield,3)
+c           call cfill (bql(1,iel),cqvol,nxyz1)
+c        else  !  pff 2/6/96 ............ default is to look at userq
+c           call nekuq (bql,iel)
+c        endif
+
       enddo
 c
 c 101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
