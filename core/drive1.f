@@ -32,9 +32,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call get_session_info(intracomm)
 
-      nio = -1             ! Default io flag 
-      if(nid.eq.0) nio=0   ! Only node 0 writes
-      
       etimes = dnekclock()
       istep  = 0
       tpp    = 0.0
@@ -45,8 +42,16 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call initdat
       call files
 
-      etime1 = dnekclock()
+      etime = dnekclock()
       call readat          ! Read .rea +map file
+      etims0 = dnekclock_sync()
+      if (nio.eq.0) then
+         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+         write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     &                             etims0-etime,' sec'
+ 12      format(1X,A,4I12,/,/)
+      endif 
 
       ifsync_ = ifsync
       ifsync = .true.
@@ -85,7 +90,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
 
-      call echopar ! echo back the parameter stack
       call setlog  ! Initalize logical flags
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
