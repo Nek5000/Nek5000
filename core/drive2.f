@@ -352,7 +352,7 @@ c     error check
       ENDIF
 C
       CALL BLANK(STRING,132)
-      CALL CHCOPY(STRING,REAFLE,132)
+c      CALL CHCOPY(STRING,REAFLE,132)
       Ls=LTRUNC(STRING,132)
       READ(9,*,ERR=400) NPARAM
       WRITE(6,82) NPARAM,(STRING1(j),j=1,Ls)
@@ -492,16 +492,17 @@ C
       EQUIVALENCE  (PATH,PATH1)
       EQUIVALENCE  (NAME,NAM1)
       CHARACTER*1  DMP(4),FLD(4),REA(4),HIS(4),SCH(4) ,ORE(4), NRE(4)
-      CHARACTER*1  RE2(4)
+      CHARACTER*1  RE2(4),PAR(4)
       CHARACTER*4  DMP4  ,FLD4  ,REA4  ,HIS4  ,SCH4   ,ORE4  , NRE4
-      CHARACTER*4  RE24  
+      CHARACTER*4  RE24  ,PAR4
       EQUIVALENCE (DMP,DMP4), (FLD,FLD4), (REA,REA4), (HIS,HIS4)
      $          , (SCH,SCH4), (ORE,ORE4), (NRE,NRE4)
-     $          , (RE2,RE24)
+     $          , (RE2,RE24), (PAR,PAR4)
       DATA DMP4,FLD4,REA4 /'.dmp','.fld','.rea'/
       DATA HIS4,SCH4      /'.his','.sch'/
       DATA ORE4,NRE4      /'.ore','.nre'/
       DATA RE24           /'.re2'       /
+      DATA PAR4           /'.par'       /
       CHARACTER*78  STRING
 C
 C     Find out the session name:
@@ -529,6 +530,7 @@ c      call err_chk(ierr,' Cannot open SESSION.NAME!$')
 c      call bcast(SESSION,132*CSIZE)
 c      call bcast(PATH,132*CSIZE)
 
+      CALL BLANK(PARFLE,132)
       CALL BLANK(REAFLE,132)
       CALL BLANK(RE2FLE,132)
       CALL BLANK(FLDFLE,132)
@@ -555,6 +557,10 @@ c .rea file
       call chcopy(nam1  (l1),rea , 4)
       call chcopy(reafle    ,nam1,ln)
 c      write(6,*) 'reafile:',reafle
+c
+c .par file
+      call chcopy(nam1  (l1),par , 4)
+      call chcopy(parfle    ,nam1,ln)
 c
 c .re2 file
       call chcopy(nam1  (l1),re2 , 4)
@@ -587,13 +593,13 @@ c .nre file
 c
 C     Write the name of the .rea file to the logfile.
 C
-      IF (NIO.EQ.0) THEN
-         CALL CHCOPY(STRING,REAFLE,78)
-         WRITE(6,1000) STRING
-         WRITE(6,1001) 
- 1000    FORMAT(//,2X,'Beginning session:',/,2X,A78)
- 1001    FORMAT(/,' ')
-      ENDIF
+C      IF (NIO.EQ.0) THEN
+C         CALL CHCOPY(STRING,REAFLE,78)
+C         WRITE(6,1000) STRING
+C         WRITE(6,1001) 
+C 1000    FORMAT(//,1X,'Beginning session:',/,2X,A78)
+C 1001    FORMAT(/,' ')
+C      ENDIF
 C
       RETURN
 

@@ -8,32 +8,31 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'ZPER'
  
-      logical ifbswap,ifre2
+      logical ifbswap,ifre2,parfound
       character*132 string
-      real*8 etime_tmp
       integer idum(3*numsts+3)
 
-C     Test timer accuracy
-      edif = 0.0
-      do i = 1,10
-         e1 = dnekclock()
-         e2 = dnekclock()
-         edif = edif + e2-e1
-      enddo
-      edif = edif/10.
-      if(nio.eq.0) write(6,'(A,1pE15.7,A,/)') 
-     &              ' timer accuracy: ', edif, ' sec'
+      ierr = 0
 
-      etime_tmp = dnekclock()
+      ! check if new rea file version exists
+      if(nid.eq.0) inquire(file=parfle, exist=parfound)
+      call bcast(parfound,lsize)
+      if (parfound) then
+         if(nio.eq.0) write(6,'(A,A)') ' Reading ', parfle
+         call readat_new
+         return
+      endif  
 
-C     Open .rea file
       if(nid.eq.0) then
-        write(6,*) 'read .rea file'
-        OPEN (UNIT=9,FILE=REAFLE,STATUS='OLD')
+        write(6,'(A,A)') ' Reading ', reafle
+        open (unit=9,file=reafle,status='old', iostat=ierr)
       endif
 
+      call bcast(ierr,isize)
+      if (ierr .gt. 0) call exitti('Cannot open .rea file!$',1)
+
 C     Read parameters and logical flags
-      CALL RDPARAM
+      call rdparam
 
 C     Read Mesh Info 
       if(nid.eq.0) then
@@ -139,12 +138,6 @@ c pack into long int array and bcast as that
 #endif
       else
         if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
-        if (nio.eq.0) then
-          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 12       format(1X,A,4I12,/,/)
-        endif
-
         call chk_nel  ! make certain sufficient array sizes
 
         if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
@@ -191,17 +184,15 @@ C     Read objects
       call nekgsync()
 
 C     End of input data, close read file.
-      IF(NID.EQ.0) THEN
-        CLOSE(UNIT=9)
-        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
-     &                            dnekclock()-etime_tmp,' sec'
-      ENDIF
+      if(nid.eq.0) then
+        close(unit=9)
+        call echopar
+      endif
 
 c     This is not an excellent place for this check, but will
 c     suffice for now.   5/6/10
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
-
 
       return
       END
@@ -2667,10 +2658,9 @@ c-----------------------------------------------------------------------
       character*5 version
       real*4      test
 
-      if(nio.eq.0) write(6,*) 'read .re2 file'
-
       ierr=0
       if (nid.eq.0) then
+         write(6,'(A,A)') ' Reading ', re2fle
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
@@ -2680,7 +2670,7 @@ c-----------------------------------------------------------------------
          call byte_read(hdr,20,ierr)
          if(ierr.ne.0) goto 100
 
-         read (hdr,1) version,nelgt,ndum,nelgv
+         read (hdr,1) version,nelgt,ndim,nelgv
     1    format(a5,i9,i3,i9)
  
          wdsizi = 4
@@ -2698,6 +2688,7 @@ c-----------------------------------------------------------------------
       call bcast(wdsizi, ISIZE)
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)
+      call bcast(ndim   ,ISIZE)
       call bcast(nelgt  ,ISIZE)
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 
