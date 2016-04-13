@@ -19,7 +19,7 @@ C
      $               ,UPARAM(20)
 C
       COMMON /INPUT2/ MATYPE(-5:10,LDIMT1)
-     $               ,NKTONV,NHIS,LOCHIS(4,lhis)
+     $               ,NKTONV,NHIS,LOCHIS(4,lhis+maxojb)
      $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
      $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
      $               ,NGEOM
