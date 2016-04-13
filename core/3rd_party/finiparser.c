@@ -171,9 +171,10 @@ void finiparser_getToken(char *out,int *id,int out_len)
 
 void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int delim_len)
 {
-    char *str;
+    const char *str;
+    char *newstr;
     char *d;
-    int i = 0;
+    int i;
 
     *icounter = 0;
 
@@ -181,8 +182,15 @@ void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int
     str = iniparser_getstring(dic,addchar0(key,key_len),NULL);
     if (str == NULL) return;
 
-    token[0] = strtok(str,d);
-    while (token[i] != NULL && i <= ntokenmax-1) token[++i] = strtok(NULL,d);
+    newstr = (char *) malloc((strlen(str)+1)*sizeof(char));
+    strncpy(newstr,str,strlen(str)+1);
+
+    i = 0;    
+    token[i] = strtok(newstr,d);
+    while (token[i] != NULL && i <= ntokenmax-1) {
+           strstrip(token[i]);
+           token[++i] = strtok(NULL,d);
+    }
     *icounter = i;
     
    return;

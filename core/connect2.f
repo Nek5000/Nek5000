@@ -13,6 +13,7 @@ C
       integer idum(3*numsts+3)
 
       ierr = 0
+      call flush_io
 
       ! check if new rea file version exists
       if(nid.eq.0) inquire(file=parfle, exist=parfound)

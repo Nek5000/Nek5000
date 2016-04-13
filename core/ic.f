@@ -489,7 +489,8 @@ C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
-            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+C            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+            IF (NIO.EQ.0.) WRITE(6,1010) LINE
  1010       FORMAT(1X,'Checking restart options: ',A132)
 c            IF (NID.EQ.0) WRITE(6,'(A132)') LINE
 C
