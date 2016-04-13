@@ -60,9 +60,10 @@ c
       param(95) = 5    ! turn on projection for pressure solve
       param(99) = 4    ! dealising
 c
-      iftmsh(0) = .false.  
-      do i=1,ldimt1
-         iftmsh(i) = .false.
+      iftmsh(0) = .false. 
+      iftmsh(1) = .false. 
+      do i=1,ldimt
+         iftmsh(1+i) = .false.
       enddo
 
       ifxyo = .true.
@@ -314,8 +315,10 @@ c set advection
       enddo
 
 c set mesh-field mapping
-      call finiparser_getBool(i_out,'temperature:solid',ifnd) ! at least for now
-      if(ifnd .eq. 1) iftmsh(1) = i_out
+conjugateHeatTransfer
+      call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
+     &                        ifnd)
+      if(ifnd .eq. 1) iftmsh(2) = i_out
 
 c set output flags
       call finiparser_getBool(i_out,'mesh:writeToFieldFile',ifnd) 
@@ -350,7 +353,7 @@ c set properties
          write(txt,"('scalar',i2.2)") i
          call finiparser_getDbl(d_out, txt // ':conductivity',ifnd)
          if(ifnd .eq. 1) cpfld(2+i,1) = d_out 
-         if (cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
+         if(cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
          call finiparser_getDbl(d_out, txt // ':rhoCp',ifnd)
          if(ifnd .eq. 1) cpfld(2+i,2) = d_out 
       enddo
@@ -359,12 +362,11 @@ c set restart options
       call finiparser_findTokens('general:startFrom', ',' , ifnd)
       do i = 1,min(ifnd,15)
          call finiparser_getToken(initc(i),i)
+         if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
- 
+
       call finiparser_dump()
       call finiparser_free()
-
-
 
       return
       end
@@ -540,7 +542,8 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (ifmvbd) then
          if (lx1.ne.lx1m.or.ly1.ne.ly1m.or.lz1.ne.lz1m) 
-     $      call exitti('Need lx1m=lx1 etc. in SIZE . $',lx1m)
+     $    call exitti
+     $    ('Mesh motion requires lx1m=lx1 etc. in SIZE . $',lx1m)
       endif
 
       IF(NDIM.NE.LDIM) THEN
