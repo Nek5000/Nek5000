@@ -49,7 +49,7 @@ c
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))
 C
-      COMMON /INPUT4/ HCODE(11,lhis),OCODE(8),RSTV,RSTT,DRIVC(5)
+      COMMON /INPUT4/ HCODE(11,lhis+maxobj),OCODE(8),RSTV,RSTT,DRIVC(5)
      $               ,INITC(15),TEXTSW(100,2)
       CHARACTER*1     HCODE
       CHARACTER*2     OCODE
