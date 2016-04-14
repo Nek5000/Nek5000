@@ -23,16 +23,17 @@
 
 #endif
 
-#define finiparser_dump         FORTRAN_NAME(finiparser_dump,  FINIPARSER_DUMP)
-#define finiparser_findInvalid  FORTRAN_NAME(finiparser_findinvalid,  FINIPARSER_FINDINVALID)
-#define finiparser_load         FORTRAN_NAME(finiparser_load,  FINIPARSER_LOAD)
-#define finiparser_free         FORTRAN_NAME(finiparser_free,  FINIPARSER_FREE)
-#define finiparser_getString    FORTRAN_NAME(finiparser_getstring,  FINIPARSER_GETSTRING)
-#define finiparser_getBool      FORTRAN_NAME(finiparser_getbool,  FINIPARSER_GETBOOL)
-#define finiparser_find         FORTRAN_NAME(finiparser_find,  FINIPARSER_FIND)
-#define finiparser_getDbl       FORTRAN_NAME(finiparser_getdbl,  FINIPARSER_GETDBL)
-#define finiparser_getToken     FORTRAN_NAME(finiparser_gettoken,  FINIPARSER_GETTOKEN)
-#define finiparser_findTokens   FORTRAN_NAME(finiparser_findtokens,  FINIPARSER_FINDTOKENS)
+#define finiparser_dump           FORTRAN_NAME(finiparser_dump,  FINIPARSER_DUMP)
+#define finiparser_getPair        FORTRAN_NAME(finiparser_getpair,  FINIPARSER_GETPAIR)
+#define finiparser_load           FORTRAN_NAME(finiparser_load,  FINIPARSER_LOAD)
+#define finiparser_free           FORTRAN_NAME(finiparser_free,  FINIPARSER_FREE)
+#define finiparser_getString      FORTRAN_NAME(finiparser_getstring,  FINIPARSER_GETSTRING)
+#define finiparser_getDictEntries FORTRAN_NAME(finiparser_getdictentries,  FINIPARSER_GETDICTENTRIES)
+#define finiparser_getBool        FORTRAN_NAME(finiparser_getbool,  FINIPARSER_GETBOOL)
+#define finiparser_find           FORTRAN_NAME(finiparser_find,  FINIPARSER_FIND)
+#define finiparser_getDbl         FORTRAN_NAME(finiparser_getdbl,  FINIPARSER_GETDBL)
+#define finiparser_getToken       FORTRAN_NAME(finiparser_gettoken,  FINIPARSER_GETTOKEN)
+#define finiparser_findTokens     FORTRAN_NAME(finiparser_findtokens,  FINIPARSER_FINDTOKENS)
 
 #define ntokenmax  100 
 
@@ -79,22 +80,34 @@ void finiparser_find(int* out,char *key,int* ifnd,int key_len)
     return;
 }
 
-void finiparser_findInvalid(int* ifnd)
+void finiparser_getDictEntries(int *n)
 {
-    int i;
+    *n = dic->n;
+    return;
+}
 
+
+void finiparser_getPair(char *key,char *val,int *id,int *ifnd,int key_len, int val_len)
+{
     *ifnd = 0;
+    int i;
+    int real_key_len = 0;
+    int real_val_len = 0;
 
-/* cannot be done w/o a reference dictionary containing all the valid keys
-    for (i=0 ; i < dic->size ; i++) {
-        if (dic->key[i]==NULL) continue ;
-        printf("%s = [%s]\n", dic->key[i], dic->val[i]);
-        if (iniparser_find_entry(dic_ref,dic->key[i]) == 0) {
-            printf(" Invalid entry %s = [%s]\n", dic_->key[i], dic->val[i]);
-            *ifnd++;
-        } 
-    }
-*/
+    if (*id > dic->n) return;
+    for (i=0; i<key_len; i++) key[i] = ' ';
+    for (i=0; i<val_len; i++) val[i] = ' ';
+
+    real_key_len = strlen(dic->key[*id-1]);
+    if(dic->val[*id-1] != NULL) real_val_len = strlen(dic->val[*id-1]);
+
+    if(real_key_len > key_len) return;
+    if(real_val_len > val_len) return;
+
+    strncpy(key,dic->key[*id-1],real_key_len);
+    strncpy(val,dic->val[*id-1],real_val_len);
+
+    *ifnd = 1;
     return;
 }
 

@@ -16,7 +16,7 @@ c
 
       call open_bin_file(ifbswap) ! this will also read the header
 
-      if(nid.eq.0) call rdParam_new(ierr)
+      if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
       if(ierr .ne. 0) call exitt
 
@@ -98,6 +98,7 @@ c
       ifpert    = .false. 
       ifaziv    = .false. 
       ifmoab    = .false.  
+      ifcvode   = .false.
 
       ifgtp     = .false.
       ifdg      = .false.
@@ -127,7 +128,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rdParam_new(ierr)
+      subroutine par_read(ierr)
 C
 C     parse .par file and set run parameters
 C
@@ -143,17 +144,13 @@ C
       call finiparser_load(parfle,ierr)
       if(ierr .ne. 0) return
 
-      call finiparser_findInvalid(ifnd)
-      if(ifnd .gt. 0) then
-        ierr = 1
-        return
-      endif 
+      call par_verify(ierr)
+      if(ierr .ne. 0) return
 
 c set parameters
       call finiparser_getString(c_out,'general:stopAt',ifnd)
       call capit(c_out,132)
       if (index(c_out,'ENDTIME') .gt. 0) then
-c add err handling
          call finiparser_getDbl(d_out,'general:endTime',ifnd)
          if(ifnd .eq. 1) param(10) = d_out 
       endif
@@ -178,6 +175,10 @@ c add err handling
          param(14) = 0
          param(15) = d_out
       endif
+
+      call finiparser_getString(c_out,'temperature:solver',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'CVODE') .gt. 0) param(16) = 2 ! for scalars too, at least for now
 
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
       if(ifnd .eq. 1) param(21) = d_out 
@@ -212,14 +213,6 @@ c add err handling
       call capit(c_out,132)
       if (index(c_out,'SCHWARZ') .gt. 0) param(43) = 1
 
-      call finiparser_getBool(i_out,'general:filtering',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) then
-        call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
-        if(ifnd .eq. 1) param(103) = d_out 
-        call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-        if(ifnd .eq. 1) param(101) = d_out 
-      endif
-
       call finiparser_getBool(i_out,'general:write8Byte',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 
 
@@ -234,6 +227,24 @@ c add err handling
 
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
+
+c At the moment we set tolerances for Pressure and ALL Helmholz solves
+c      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
+c      if(ifnd .eq. 1) param(??) = d_out 
+
+c      call finiparser_getDbl(d_out,'temperature:relativeTol',ifnd)
+c      if(ifnd .eq. 1) param(??) = d_out 
+
+c      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
+c      if(ifnd .eq. 1) param(??) = d_out 
+
+      call finiparser_getBool(i_out,'general:filtering',ifnd)
+      if(ifnd .eq. 1 .and. i_out .eq. 1) then
+        call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
+        if(ifnd .eq. 1) param(103) = d_out 
+        call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
+        if(ifnd .eq. 1) param(101) = d_out 
+      endif
 
       do i = 1,20
          call blank(txt,132)
@@ -682,6 +693,39 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitti
       endif
 #endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine par_verify(ierr)
+
+      INCLUDE 'PARDICT'
+
+      character*132 val,key
+
+      character*132 txt
+      character*1   tx1(132)
+      equivalence   (tx1,txt)
+
+      ierr = 0
+
+      call finiparser_getDictEntries(n)
+      do i = 1,n
+         call finiparser_getPair(key,val,i,ifnd)
+         call capit(key,132)
+         do j = 1,PARDICT_NKEYS ! do we find the key in the par-dictionary 
+            if(index(pardictkey(j),key).eq.1) goto 10      
+
+            is = index(key,'SCALAR')
+            if(is .eq. 1) then
+              call chcopy(txt,key,132)
+              call chcopy(tx1(is+6),'%%',2) 
+              if(index(pardictkey(j),txt).eq.1) goto 10
+            endif
+         enddo
+         write(6,*) 'ERROR: Par file contains unknown key ', key
+         ierr = ierr + 1
+   10 enddo
 
       return
       end
