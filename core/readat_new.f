@@ -129,9 +129,15 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine par_read(ierr)
-C
-C     parse .par file and set run parameters
-C
+c
+c     parse .par file and set run parameters
+c
+c     still missing:
+c     - field specific solver for temp+scalars
+c     - field specific tolerances for temp+scalars 
+c     - abs/rel tolerance support for helmholz
+c     - mhd support
+
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'RESTART'
@@ -176,10 +182,10 @@ c set parameters
          param(15) = d_out
       endif
 
-      call finiparser_getString(c_out,'temperature:solver',ifnd)
-      call capit(c_out,132)
-      if (index(c_out,'CVODE') .gt. 0) param(16) = 2 ! for scalars too, at least for now
-
+      ! overrule abs/rel tol
+      param(20) = -1;
+      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
+      if(ifnd .eq. 1) param(20) = d_out 
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
       if(ifnd .eq. 1) param(21) = d_out 
       call finiparser_getDbl(d_out,'velocity:residualTol',ifnd)
@@ -195,6 +201,17 @@ c set parameters
          endif
       enddo
       param(23) = j 
+
+      call finiparser_getDbl(d_out,'temperature:relativeTol',ifnd)
+      if(ifnd .eq. 1) param(24) = d_out 
+      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
+      if(ifnd .eq. 1) param(25) = d_out 
+
+      call finiparser_getString(c_out,'temperature:solver',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'CVODE') .gt. 0) then
+         param(16) = 2
+      endif
 
       call finiparser_getDbl(d_out,'general:maxCFL',ifnd)
       if(ifnd .eq. 1) param(26) = d_out
@@ -227,16 +244,6 @@ c set parameters
 
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
-
-c At the moment we set tolerances for Pressure and ALL Helmholz solves
-c      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
-c      if(ifnd .eq. 1) param(??) = d_out 
-
-c      call finiparser_getDbl(d_out,'temperature:relativeTol',ifnd)
-c      if(ifnd .eq. 1) param(??) = d_out 
-
-c      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
-c      if(ifnd .eq. 1) param(??) = d_out 
 
       call finiparser_getBool(i_out,'general:filtering',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) then
@@ -285,66 +292,117 @@ c set logical flags
       endif
 
       call finiparser_getBool(i_out,'problemType:axiSymmetry',ifnd)
-      if(ifnd .eq. 1) ifaxis = i_out
+      if(ifnd .eq. 1) then
+        ifaxis = .false.
+        if(i_out .eq. 1) ifaxis = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:swirl',ifnd)
-      if(ifnd .eq. 1) ifaziv = i_out
+      if(ifnd .eq. 1) then
+        ifaziv = .false.
+        if(i_out .eq. 1) ifaziv = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:cyclicBoundaries',ifnd)
-      if(ifnd .eq. 1) ifcyclic = i_out
+      if(ifnd .eq. 1) then
+        ifcyclic = .false.
+        if(i_out .eq. 1) ifcyclic = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:perturbations',ifnd)
-      if(ifnd .eq. 1) ifpert = i_out
+      if(ifnd .eq. 1) then
+        ifpert = .false.
+        if(i_out .eq. 1) ifpert = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:solveBaseFlow',ifnd)
-      if(ifnd .eq. 1) ifbase = i_out
+      if(ifnd .eq. 1) then
+        ifbase = .false.
+        if(i_out .eq. 1) ifbase = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:lowMachNumber',ifnd)
-      if(ifnd .eq. 1) iflomach = i_out
+      if(ifnd .eq. 1) then
+        iflomach = .false.
+        if(i_out .eq. 1) iflomach = .true.
+      endif
   
       call finiparser_getBool(i_out,
      &                        'problemType:stressFormulation',ifnd)
-      if(ifnd .eq. 1) ifstrs = i_out
+      if(ifnd .eq. 1) then
+        ifstrs = .false.
+        if(i_out .eq. 1) ifstrs = .true.
+      endif
 
       call finiparser_getBool(i_out,'problemType:userProperties',ifnd)
-      if(ifnd .eq. 1) ifuservp = i_out
-
-      call finiparser_find(i_out,'magnetic',ifnd)
-      if(ifnd .eq. 1) ifmhd = .true.
+      if(ifnd .eq. 1) then
+        ifuservp = .false.
+        if(i_out .eq. 1) ifuservp = .true.
+      endif
 
 c set advection
       call finiparser_getBool(i_out,'velocity:advection',ifnd)
-      if(ifnd .eq. 1) ifadvc(1) = i_out
+      if(ifnd .eq. 1) then
+        ifadvc(1) = .false.
+        if(i_out .eq. 1) ifadvc(1) = .true.
+      endif
  
       call finiparser_getBool(i_out,'temperature:advection',ifnd)
-      if(ifnd .eq. 1) ifadvc(2) = i_out
+      if(ifnd .eq. 1) then
+        ifadvc(2) = .false.
+        if(i_out .eq. 1) ifadvc(2) = .true.
+      endif
 
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_getBool(i_out,txt // ':advection',ifnd)
-         if(ifnd .eq. 1) ifadvc(i+2) = i_out
+         if(ifnd .eq. 1) then
+           ifadvc(i+2) = .false.
+           if(i_out .eq. 1) ifadvc(i+2) = .true.
+         endif
       enddo
 
 c set mesh-field mapping
 conjugateHeatTransfer
       call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
      &                        ifnd)
-      if(ifnd .eq. 1) iftmsh(2) = i_out
+      if(ifnd .eq. 1) then
+        iftmsh(2) = .false.
+        if(i_out .eq. 1) iftmsh(2) = .true.
+      endif
 
 c set output flags
       call finiparser_getBool(i_out,'mesh:writeToFieldFile',ifnd) 
-      if(ifnd .eq. 1) ifxyo = i_out
+      if(ifnd .eq. 1) then
+        ifxyo = .false.
+        if(i_out .eq. 1) ifxyo = .true.
+      endif
+
       call finiparser_getBool(i_out,'velocity:writeToFieldFile',ifnd)
-      if(ifnd .eq. 1) ifvo = i_out
+      if(ifnd .eq. 1) then
+        ifvo = .false.
+        if(i_out .eq. 1) ifvo = .true.
+      endif
+
       call finiparser_getBool(i_out,'pressure:writeToFieldFile',ifnd)
-      if(ifnd .eq. 1) ifpo = i_out
+      if(ifnd .eq. 1) then
+        ifpo = .false.
+        if(i_out .eq. 1) ifpo = .true.
+      endif
+
       call finiparser_getBool(i_out,'temperature:writeToFieldFile',ifnd)
-      if(ifnd .eq. 1) ifto = i_out
+      if(ifnd .eq. 1) then
+        ifto = .false.
+        if(i_out .eq. 1) ifto = .true.
+      endif
 
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_getBool(i_out,txt // ':writeToFieldFile',ifnd)
-         if(ifnd .eq. 1) ifpsco(i) = i_out
+         if(ifnd .eq. 1) then
+           ifpsco(i) = .false.
+           if(i_out .eq. 1) ifpsco(i) = .true.
+         endif
       enddo
 
 c set properties
@@ -685,14 +743,11 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitt
       endif
 
-
-#ifndef MOAB
       if (ifmoab) then
-         print *,"ABORT: ifmoab = .true. in input but this ",
-     $ "version of nek not compiled with MOAB."
-         call exitti
-      endif
-#endif
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: MOAB is not supported!'
+         call exitt
+      endif 
 
       return
       end
