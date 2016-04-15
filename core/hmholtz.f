@@ -678,8 +678,20 @@ C
 
 c
       tol=abs(tin)
+
+c     overrule tolerance for velocity
       if (param(22).ne.0) tol=abs(param(22))
+
+c     set tolerance for temp+scalars
+c     p20<0: use toli tolin 
+c     p20=0: use same tol as for vel
+c     p20>0: use specified tol for temp
+      if (ifield.gt.1 .and. param(20).gt.0) tol=abs(param(20))
+      if (ifield.gt.1 .and. param(20).lt.0) tol=abs(tin)
+
+c     overrule tolerance for velocity
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
+
       if (tin.lt.0)       tol=abs(tin)
       niter = min(maxit,maxcg)
 
