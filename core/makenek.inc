@@ -623,7 +623,6 @@ c automatically added by makenek
       include 'SIZE'
       include 'INPUT'
       IFCMT=.true.
-      i = 1
       return
       end
 _ACEOF
