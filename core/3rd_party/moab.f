@@ -1747,10 +1747,8 @@ c-----------------------------------------------------------------------
       parameter(lx=80)
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, ic, j, ivals, size, count, v_per_e, ntot
-      integer loccount, nv, offset
+      integer ierr, ic, count, v_per_e, loccount
       real vals(lx1,lx1,lx1,*), tag_vals(27), ntag_vals(27)
-      integer gids(27)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(0:1))
 
@@ -1761,29 +1759,34 @@ c-----------------------------------------------------------------------
      $                12, 18, 16, 20, 24, 26, 22, 11, 15, 17, 13,
      $                5, 23, 14 /
   
-      integer jj
-      integer n1, n2, e, ne
+      integer n1, n2, e, cached
       real*8 z1(lx),z2(lx),w(lx)
       real*8 fm12(lx*lx),fm12t(lx*lx)
       real*8 work(lx*lx*lx)
       real*8 fi(lx1,lx1,lx1)
 
+      save cached, fm12, fm12t
+
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
      $     connect_ptr, v_per_e, loccount, ierr)
       IMESH_ASSERT
 
-      n2 = (v_per_e)**(1.0/3) ! quadratic mesh elements; TODO: get from connectivity type
+c only works if nx, ny, nz are equal
+      if (nx1 .ne. ny1 .or. nx1 .ne. nz1) then
+        ierr = iBase_FAILURE
+        IMESH_ASSERT
+      endif
+
+      n2 = (v_per_e)**(1.0/3) ! support linear or quadratic mesh elements
       n1 = lx1
 
+c The caching works with the assumption that we use uniform GLL and discrete mesh orders
+      if (cached .ne. 1) then
 c      if (nid.eq.0) print *, "*** Mapping ..."
-      call zwgll(z1,w,n1)
-      call zwgll(z2,w,n2)
-      call igllm(fm12,fm12t,z1,z2,n1,n2,n1,n2)
-
-c only works if nx, ny, nz are equal, and if v_per_e is 27
-      if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
-         ierr = iBase_FAILURE
-         IMESH_ASSERT
+        call zwgll(z1,w,n1)
+        call zwgll(z2,w,n2)
+        call igllm(fm12,fm12t,z1,z2,n1,n2,n1,n2)
+        cached = 1
       endif
 
       do ic = 0, loccount-1
@@ -1792,11 +1795,11 @@ c only works if nx, ny, nz are equal, and if v_per_e is 27
      $               work)
 
         if (v_per_e .ne. 27) then
-          do e = 1, v_per_e
+          do e = 1, 8
             tag_vals(e) = ntag_vals(l2c8(e))
           enddo
         else
-          do e = 1, v_per_e
+          do e = 1, 27
             tag_vals(e) = ntag_vals(l2c27(e))
           enddo
         endif
@@ -1809,7 +1812,6 @@ c only works if nx, ny, nz are equal, and if v_per_e is 27
       enddo
 
       count = loccount
-
       return
       end
 c-----------------------------------------------------------------------
@@ -1820,7 +1822,7 @@ c-----------------------------------------------------------------------
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
       integer ierr, i, j, size, count, offset, tmpcount
-      real vals(*), tag_vals
+      real vals(*), tag_vals, tmpvals
       pointer(tag_ptr, tag_vals(1))
 
       call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
@@ -1832,8 +1834,9 @@ c assert and break if there is a problem
 
 c set the tag vals
       do i = 1, tmpcount
+        tmpvals = tag_vals(i)/size
         do j = 1, size
-          vals(offset+(i-1)*size+j) = tag_vals(i)
+          vals(offset+(i-1)*size+j) = tmpvals
         enddo
       enddo
 
