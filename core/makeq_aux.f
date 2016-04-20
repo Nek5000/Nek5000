@@ -1,8 +1,7 @@
       subroutine makeq_aux
 
       include 'SIZE'
-      include 'INPUT'
-      include 'TSTEP'
+      include 'TOTAL'
 
       logical  ifturb,if_conv_std
 
@@ -11,7 +10,7 @@
 
       if(ifcvode .and. ifield.eq.2) then  
          call setprop                        
-         call qthermal                        
+         call qthermal(0)                        
       endif                                    
 
       call whatfld (ifturb)

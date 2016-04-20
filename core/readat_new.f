@@ -161,7 +161,7 @@ c set parameters
          if(ifnd .eq. 1) param(10) = d_out 
       endif
 
-      call finiparser_getDbl(d_out,'general:nSteps',ifnd)
+      call finiparser_getDbl(d_out,'general:numSteps',ifnd)
       if(ifnd .eq. 1) param(11) = d_out 
 
       call finiparser_getDbl(d_out,'general:dt',ifnd)
@@ -183,7 +183,7 @@ c set parameters
       endif
 
       ! overrule abs/rel tol
-      param(20) = -1;
+      param(20) = -1
       call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
       if(ifnd .eq. 1) param(20) = d_out 
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
@@ -237,10 +237,16 @@ c set parameters
       if(ifnd .eq. 1) param(65) = d_out 
 
       call finiparser_getBool(i_out,'velocity:residualProj',ifnd) ! for all helmholz solves
-      if(ifnd .eq. 1 .and. i_out .eq. 1) param(94) = 5 
+      if(ifnd .eq. 1) then
+        param(94) = 0
+        if(i_out .eq. 1) param(94) = 5 
+      endif
 
       call finiparser_getBool(i_out,'pressure:residualProj',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) param(95) = 5 
+      if(ifnd .eq. 1) then
+        param(95) = 0
+        if(i_out .eq. 1) param(95) = 5 
+      endif
 
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
@@ -288,7 +294,7 @@ c set logical flags
         ifmvbd = .true.
         call finiparser_getString(c_out,'mesh:meshVelocity',ifnd)
         call capit(c_out,132)
-        if (index(c_out,'MANUAL') .gt. 0) ifusermv = .true.
+        if (index(c_out,'USER') .gt. 0) ifusermv = .true.
       endif
 
       call finiparser_getBool(i_out,'problemType:axiSymmetry',ifnd)

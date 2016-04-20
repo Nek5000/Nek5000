@@ -818,7 +818,7 @@ C
 
       if (ifcvode) then
 
-         if(igeom.eq.1) call cdscal_cvode(igeom)
+         if(igeom.eq.2) call cdscal_cvode(igeom)
 
       elseif (ifsplit) then
 

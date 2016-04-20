@@ -72,9 +72,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call io_init         ! Initalize io unit
 
-      if (ifcvode.and.nsteps.gt.0) 
-     $   call cv_setsize(1,nfield) !Set size for CVODE solver
-
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
@@ -93,6 +90,12 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call setlog  ! Initalize logical flags
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
+
+      if (ifcvode.and.nsteps.gt.0) then
+         n_aux = 0
+         if(iflomach .and. ifvcor) n_aux = 1 ! Thermodynamic pressure
+         call cv_setsize(2,nfield,n_aux)     ! Set size for CVODE solver
+      endif
 
       if (fintim.ne.0.0.or.nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
@@ -255,14 +258,22 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
+         ! within cvode we use the lagged wx for 
+         ! extrapolation, that's why we have to call it before gengeom 
+         if (ifheat .and. ifcvode) call heat       (igeom)   
+
          if (ifgeom) then
                call gengeom (igeom)
                call geneig  (igeom)
          endif
 
-         if (ifheat)            call heat          (igeom)
-         if (igeom.ne.1)        call setprop
-         if (igeom.ne.1)        call qthermal
+         if (ifheat .and. .not.ifcvode) call heat   (igeom)
+
+         if (igeom.eq.2) then  
+                                call setprop
+                                call qthermal(1)
+         endif
+
          if (ifflow)            call fluid         (igeom)
          if (ifmvbd)            call meshv         (igeom)
          if (param(103).gt.0)   call q_filter      (param(103))
