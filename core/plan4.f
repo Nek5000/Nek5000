@@ -27,7 +27,10 @@ C
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
+      common /vext/  vx_e  (lx1*ly1*lz1*lelv)
+     $ ,             vy_e  (lx1,ly1,lz1,lelv)
+     $ ,             vz_e  (lx2,ly2,lz2,lelv)
+ 
       REAL           DPR   (LX2,LY2,LZ2,LELV)
       EQUIVALENCE   (DPR,DV1)
       LOGICAL        IFSTSP
@@ -43,17 +46,21 @@ c
          ! compute explicit contributions bfx,bfy,bfz 
          call makef 
 
+         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
+         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
+         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+
       else
+
+         if(iflomach) call opcolv(bfx,bfy,bfz,vtrans)
 
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
 
-c        ! extrapolate velocity
-         call v_extrap(VEXT)
-         call lagvel
-
          ! split viscosity into explicit/implicit part
          if (ifexplvis) call split_vis
+
+         call lagvel
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
@@ -118,6 +125,9 @@ c        Calculate Divergence difference norms
          QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
          QTL2 = SQRT  (QTL2)
 
+c         call exact_sol(time, volex, vpex, pex, dpdtex, qtlex, ypex)
+c         ypis = GLMIN (ym1,NTOT1)
+
          IF (NIO.EQ.0) THEN
             WRITE(6,'(15X,A,1p2e13.4)')
      &         'L1/L2 DIV(V)    :',DIV1,DIV2
@@ -125,6 +135,9 @@ c        Calculate Divergence difference norms
      &         'L1/L2 QTL       :',QTL1,QTL2
             WRITE(6,'(15X,A,1p2e13.4)')
      &         'L1/L2 DIV(V)-QTL:',DIF1,DIF2
+c            WRITE(6,'(15X,A,1p9e17.8)') 
+c     & 'qtl p0 dp0dt    :',time, QTL1, p0th, dp0thdt, ypis
+c     &                         ,qtlex, pex,  dpdtex,  ypex
             IF (DIF2.GT.0.1) WRITE(6,'(15X,A)') 
      &         'WARNING: DIV(V)-QTL too large!'
          ENDIF
@@ -142,7 +155,7 @@ C     Compute startresidual/right-hand-side in the pressure
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      REAL           RESPR (LX2*LY2*LZ2,LELV)
+      REAL           RESPR (LX1*LY1*LZ1,LELV)
 c
       COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
      $ ,             TA2   (LX1*LY1*LZ1,LELV)
@@ -153,7 +166,10 @@ c
       COMMON /SCRMG/ W1    (LX1*LY1*LZ1,LELV)
      $ ,             W2    (LX1*LY1*LZ1,LELV)
      $ ,             W3    (LX1*LY1*LZ1,LELV)
-      COMMON /SCRSF/ VEXT  (LX1*LY1*LZ1*LELV,3)
+      common /vext/  vx_e  (lx1*ly1*lz1*lelv)
+     $ ,             vy_e  (lx1,ly1,lz1,lelv)
+     $ ,             vz_e  (lx2,ly2,lz2,lelv)
+ 
 
       common /scruz/         sij (lx1*ly1*lz1,6,lelv)
       parameter (lr=lx1*ly1*lz1)
@@ -167,8 +183,10 @@ c
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
 
+c      call lagvel
+
 c     -mu*curl(curl(v))
-      call op_curl (ta1,ta2,ta3,vext(1,1),vext(1,2),vext(1,3),
+      call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,
      &              .true.,w1,w2)
       if(IFAXIS) then  
          CALL COL2 (TA2, OMASK,NTOT1)
@@ -199,8 +217,8 @@ c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
          nij = 3
          if (if3d.or.ifaxis) nij=6
 
-         call comp_sij   (sij,nij,vext(1,1),vext(1,2),vext(1,3)
-     &                          ,ur,us,ut,vr,vs,vt,wr,ws,wt)
+         call comp_sij   (sij,nij,vx_e,vy_e,vz_e,
+     &                    ur,us,ut,vr,vs,vt,wr,ws,wt)
          call col_mu_sij (w1,w2,w3,ta1,ta2,ta3,sij,nij)
 
          call opcolv   (ta1,ta2,ta3,QTL)
@@ -238,15 +256,15 @@ c     add explicit (NONLINEAR) terms
          ta3(i,1) = ta3(i,1)*binvm1(i,1,1,1)
       enddo
       if (if3d) then
-         call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
-         call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
-         call cdtp    (wa3,ta3,rzm2,szm2,tzm2,1)
+         call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
+         call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
+         call cdtp    (wa3,ta3,rzm1,szm1,tzm1,1)
          do i=1,n
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)+wa3(i)
          enddo
       else
-         call cdtp    (wa1,ta1,rxm2,sxm2,txm2,1)
-         call cdtp    (wa2,ta2,rym2,sym2,tym2,1)
+         call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
+         call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
          do i=1,n
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
@@ -435,39 +453,6 @@ c-----------------------------------------------------------------------
       END
 
 c-----------------------------------------------------------------------
-      subroutine v_extrap(vext)
-c
-c     extrapolate velocity
-c
-      include 'SIZE'
-      include 'TOTAL'
-   
-      real vext(lx1*ly1*lz1*lelv,1) 
-
-      NTOT = NX1*NY1*NZ1*NELV
-
-      AB0 = AB(1)
-      AB1 = AB(2)
-      AB2 = AB(3)
-
-c     call copy(vext(1,1),vx,ntot)
-c     call copy(vext(1,2),vy,ntot)
-c     call copy(vext(1,3),vz,ntot)
-c     return
-
-      call add3s2(vext(1,1),vx,vxlag,ab0,ab1,ntot)
-      call add3s2(vext(1,2),vy,vylag,ab0,ab1,ntot)
-      if(if3d) call add3s2(vext(1,3),vz,vzlag,ab0,ab1,ntot)
-
-      if(nab.eq.3) then
-        call add2s2(vext(1,1),vxlag(1,1,1,1,2),ab2,ntot)
-        call add2s2(vext(1,2),vylag(1,1,1,1,2),ab2,ntot)
-        if(if3d) call add2s2(vext(1,3),vzlag(1,1,1,1,2),ab2,ntot)
-      endif
-
-      return
-      end  
-c-----------------------------------------------------------------------
       subroutine split_vis
 
 c     Split viscosity into a constant implicit (VDIFF) and variable 
@@ -535,3 +520,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine sumab(v,vv,vvlag,ntot,ab_,nab_)
+c
+c     sum up AB/BDF contributions 
+c
+      include 'SIZE'
+
+      real vvlag(lx1*ly1*lz1*lelv,1)
+      real ab_(1)
+
+      ab0 = ab_(1)
+      ab1 = ab_(2)
+      ab2 = ab_(3)
+
+      call add3s2(v,vv,vvlag(1,1),ab0,ab1,ntot)
+      if(nab_.eq.3) call add2s2(v,vvlag(1,2),ab2,ntot)
+
+      return
+      end
+

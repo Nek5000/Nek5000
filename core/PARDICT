@@ -10,7 +10,7 @@ c
      &  pardictkey(1)  / 'GENERAL' /
      &  pardictkey(2)  / 'GENERAL:STOPAT' /
      &  pardictkey(3)  / 'GENERAL:ENDTIME' /
-     &  pardictkey(4)  / 'GENERAL:NSTEPS' /
+     &  pardictkey(4)  / 'GENERAL:NUMSTEPS' /
      &  pardictkey(5)  / 'GENERAL:DT' /
      &  pardictkey(6)  / 'GENERAL:VARIABLEDT' /
      &  pardictkey(7)  / 'GENERAL:WRITEINTERVAL' /

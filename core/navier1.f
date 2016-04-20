@@ -1710,7 +1710,13 @@ C
 C
       NTOT1 = NX1*NY1*NZ1*NELV
       CONST = 1./DT
-      CALL CMULT2(H2,vtrans(1,1,1,1,ifield),CONST,NTOT1)
+
+      if(iflomach) then
+        call cfill(h2,CONST,ntot1)
+      else
+        call cmult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
+      endif
+
       CALL OPCOLV3c (TB1,TB2,TB3,VX,VY,VZ,BM1,bd(2))
 C
       DO 100 ILAG=2,NBD
@@ -1736,12 +1742,10 @@ c-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C
 C     Sum up contributions to kth order extrapolation scheme.
-c     NOTE: rho^{n+1} should multiply all the Sum_q{beta_q} term 
-c           if rho is not constant!
-
 C
 C-----------------------------------------------------------------------
       include 'SIZE'
+      include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
 C
@@ -1762,14 +1766,14 @@ C
       CALL COPY   (ABY1,BFY,NTOT1)
       CALL ADD2S1 (BFX,TA1,AB0,NTOT1)
       CALL ADD2S1 (BFY,TA2,AB0,NTOT1)
-      CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
-      CALL COL2   (BFY,VTRANS,NTOT1)
+      if(.not.iflomach) CALL COL2   (BFX,VTRANS,NTOT1)          ! multiply by density
+      if(.not.iflomach) CALL COL2   (BFY,VTRANS,NTOT1)
       IF (NDIM.EQ.3) THEN
          CALL ADD3S2 (TA3,ABZ1,ABZ2,AB1,AB2,NTOT1)
          CALL COPY   (ABZ2,ABZ1,NTOT1)
          CALL COPY   (ABZ1,BFZ,NTOT1)
          CALL ADD2S1 (BFZ,TA3,AB0,NTOT1)
-         CALL COL2   (BFZ,VTRANS,NTOT1)
+         if(.not.iflomach) CALL COL2   (BFZ,VTRANS,NTOT1)
       ENDIF
 C
       return

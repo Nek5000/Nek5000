@@ -1,5 +1,4 @@
-c-------------------------------------------------------------------------
-      subroutine qthermal
+      subroutine qthermal(iflag)
 
 C     Compute the thermal divergence QTL 
 C
@@ -17,9 +16,14 @@ C     energy equation expressed in terms of temperature.
 
       common /scrns/ w1(lx1,ly1,lz1,lelt)
      $              ,w2(lx1,ly1,lz1,lelt)
+     $              ,w3(lx1,ly1,lz1,lelt)
      $              ,tx(lx1,ly1,lz1,lelt)
      $              ,ty(lx1,ly1,lz1,lelt)
      $              ,tz(lx1,ly1,lz1,lelt)
+      common /vext/  vx_e  (lx1*ly1*lz1*lelv)
+     $ ,             vy_e  (lx1,ly1,lz1,lelv)
+     $ ,             vz_e  (lx2,ly2,lz2,lelv)
+
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelv
@@ -53,8 +57,48 @@ c - - Assemble RHS of T-eqn
       call invcol2 (qtl,w2,ntot)
 
       if (ifcvode .and. ifvcor) then
-         call make_p0th
-         call add_qthermal
+
+         ! set v = v_extrapolated 
+         if (iflag .gt. 0) then
+            call copy(tx,vx,ntot)
+            call copy(ty,vy,ntot)
+            if (if3d) call copy(tz,vz,ntot)
+
+            call copy(vx,vx_e,ntot)
+            call copy(vy,vy_e,ntot)
+            if (if3d) call copy(vz,vz_e,ntot)
+         endif
+
+         dp0thdt = 0.0
+         if (ifvcor) then
+            dd = gamma0 ! CVref/CPref ! Note CVref denotes the inverse CPref
+            dd = -1.0*(dd - 1.)/dd
+
+            call rone(w1,ntot)
+            call cmult(w1,dd,ntot)
+            call cadd(w1,1.0,ntot)
+            call copy(w2,w1,ntot)
+            call col2(w1,bm1,ntot)
+  
+            p0alph1 = p0th / glsum(w1,ntot)
+  
+            call copy   (w1,QTL,ntot)
+            call col2   (w1,bm1,ntot)
+            termQ = glsum(w1,ntot)
+            termV = glcflux() 
+            dp0thdt = p0alph1*(termQ - termV)
+         endif
+
+         if (iflag .gt. 0) then
+            call copy(vx,tx,ntot)
+            call copy(vy,ty,ntot)
+            if (if3d) call copy(vz,tz,ntot)
+         endif
+
+         dd =-dp0thdt/p0th
+         call cmult(w2,dd,ntot)
+         call add2 (qtl,w2,ntot)
+
       else
          dp0thdt = 0.0
       endif

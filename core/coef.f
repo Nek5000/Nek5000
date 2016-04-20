@@ -1026,7 +1026,7 @@ C
          endif
       enddo
 
-      if (nio.eq.0) write(6,*) 'vol_t,vol_v:',voltm1,volvm1
+c      if (nio.eq.0) write(6,*) 'vol_t,vol_v:',voltm1,volvm1
 
 
       nxyz = nx1*ny1*nz1
