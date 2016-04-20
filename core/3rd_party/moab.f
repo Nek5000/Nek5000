@@ -1749,15 +1749,17 @@ c-----------------------------------------------------------------------
       iBase_TagHandle tagh
       integer ierr, ic, j, ivals, size, count, v_per_e, ntot
       integer loccount, nv, offset
-      real vals(lx1,lx1,lx1,*), tag_vals(27)
+      real vals(lx1,lx1,lx1,*), tag_vals(27), ntag_vals(27)
       integer gids(27)
-      real avg_vals
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(0:1))
 
-      integer l2c(8)
-      save    l2c
-      data    l2c / 1, 2, 4, 3, 5, 6, 8, 7 /
+      integer l2c8(8), l2c27(27)
+      save    l2c8, l2c27
+      data    l2c8 / 1, 2, 4, 3, 5, 6, 8, 7 /
+      data    l2c27 / 1, 3, 9, 7, 19, 21, 27, 25, 2, 6, 8, 4, 10,
+     $                12, 18, 16, 20, 24, 26, 22, 11, 15, 17, 13,
+     $                5, 23, 14 /
   
       integer jj
       integer n1, n2, e, ne
@@ -1766,17 +1768,17 @@ c-----------------------------------------------------------------------
       real*8 work(lx*lx*lx)
       real*8 fi(lx1,lx1,lx1)
 
-      n2 = 3 ! quadratic mesh elements; TODO: get from connectivity type
+      call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
+     $     connect_ptr, v_per_e, loccount, ierr)
+      IMESH_ASSERT
+
+      n2 = (v_per_e)**(1.0/3) ! quadratic mesh elements; TODO: get from connectivity type
       n1 = lx1
 
 c      if (nid.eq.0) print *, "*** Mapping ..."
       call zwgll(z1,w,n1)
       call zwgll(z2,w,n2)
       call igllm(fm12,fm12t,z1,z2,n1,n2,n1,n2)
-
-      call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
-     $     connect_ptr, v_per_e, loccount, ierr)
-      IMESH_ASSERT
 
 c only works if nx, ny, nz are equal, and if v_per_e is 27
       if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
@@ -1786,8 +1788,18 @@ c only works if nx, ny, nz are equal, and if v_per_e is 27
 
       do ic = 0, loccount-1
         ! compute the local projection from Lobatto to Lagrange points
-        call specmp(tag_vals,n2,vals(1,1,1,ic+count+1),n1,fm12,fm12t,
+        call specmp(ntag_vals,n2,vals(1,1,1,ic+count+1),n1,fm12,fm12t,
      $               work)
+
+        if (v_per_e .ne. 27) then
+          do e = 1, v_per_e
+            tag_vals(e) = ntag_vals(l2c8(e))
+          enddo
+        else
+          do e = 1, v_per_e
+            tag_vals(e) = ntag_vals(l2c27(e))
+          enddo
+        endif
 
         call iMesh_setDblArrData(%VAL(imeshh), 
      $        connect(ic*v_per_e), %VAL(v_per_e), %VAL(tagh),
