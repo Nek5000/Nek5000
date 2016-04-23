@@ -45,6 +45,13 @@ c---------------------------------------------------------------------
       COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
       real                 WGHT, WGHTD
 ! particle stuff for rk3 low storage tvd
+      common /PARTRESTART/ ifpartrestart, partrestartfile
+     >        ,partrestartdata, partrestartno
+      logical ifpartrestart
+      character*15 partrestartfile
+      character*13 partrestartdata
+      integer partrestartno
+
       common /PARTRK3/ kv_stage_p, kx_stage_p
       real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
 
