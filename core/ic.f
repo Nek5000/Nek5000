@@ -256,8 +256,8 @@ c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
 c     enddo
 c     ifield = ifldsave
     
-c     if (ifflow.and..not.ifdg) then  ! Current dg is for scalars only
-      if (ifflow) then                ! pff, 11/4/15
+c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
+      if (ifflow.and..not.ifcmt) then  ! pff, 11/4/15
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
