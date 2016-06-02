@@ -3,8 +3,10 @@
 # (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
 
 # source path 
-SOURCE_ROOT="$HOME/nek5_svn/trunk/nek" 
-SOURCE_ROOT2="$SOURCE_ROOT/cmt" 
+SOURCE_ROOT="$HOME/Nek5000" 
+SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
+SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 
 # Fortran compiler
 F77="mpif77"
@@ -82,9 +84,12 @@ mver=1
 if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT="$2"
   echo "change source code directory to: ", $SOURCE_ROOT
+  SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
+  SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
+  SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 fi
 # do some checks and create makefile
-source $SOURCE_ROOT/makenek.inc
+source $SOURCE_ROOT_CORE/makenek.inc
 # compile
 make -j4 -f makefile 2>&1 | tee compiler.out
 exit 0
