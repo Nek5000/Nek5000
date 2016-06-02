@@ -1515,48 +1515,46 @@ C
      $        , u3 (lx1*ly1*lz1*1)
      $        , h1 (lx1,ly1,lz1,1)
      $        , h2 (lx1,ly1,lz1,1)
-      common /pfjunk/ tu(lx1*ly1*lz1*lelv)
-     $              , tv(lx1*ly1*lz1*lelv)
-     $              , tw(lx1*ly1*lz1*lelv)
 
       nel   = nelfld(ifield)
       ntot1 = nx1*ny1*nz1*nel
 
+      if (ifaxis.and.ifsplit) call exitti(
+     $'Axisymmetric stress w/PnPn not yet supported.$',istep)
 
-      if (.not.ifaxis) then
-       if (ifsplit) then
-         call axhelm(au1,u1,h1,h2,1,1)
-         call axhelm(au2,u2,h1,h2,1,2)
-         if (if3d) call axhelm(au3,u3,h1,h2,1,3)
-         return
-       endif
+c     icase = 1 --- axsf_fast (no axisymmetry)
+c     icase = 2 --- stress formulation and supports axisymmetry
+c     icase = 3 --- 3 separate axhelm calls
 
-       if (matmod.eq.0) then
-         call axsf_fast(au1,au2,au3,u1,u2,u3,h1,h2,ifield)
-         return
-       else
-         call axhelm(au1,u1,h1,h2,1,1)
-         call axhelm(au2,u2,h1,h2,1,2)
-         if (if3d) call axhelm(au3,u3,h1,h2,1,3)
-         return
-       endif
-      endif
+      icase = 1                ! Fast mode for stress
+      if (ifaxis)      icase=2 ! Slow for stress, but supports axisymmetry
+      if (matmod.lt.0) icase=2 ! Elasticity case
+      if (.not.ifstrs) icase=3 ! Block-diagonal Axhelm
 
-C
-C     Calculate coupled  Aij Uj  products
-C
-      IF ( .NOT.IFSOLV ) CALL SETFAST (H1,H2,IMESH)
+      if (icase.eq.1) then
 
-      call stnrate (u1,u2,u3,nel,matmod)
-      call stress  (h1,h2,nel,matmod,ifaxis)
-      call aijuj   (au1,au2,au3,nel,ifaxis)
-C
-C     Add other Helmholtz contributions
-C
-      IF (IFH2 .AND. MATMOD.GE.0) THEN
-         CALL ADDCOL4 (AU1,BM1,H2,U1,NTOT1)
-         CALL ADDCOL4 (AU2,BM1,H2,U2,NTOT1)
-         IF (NDIM.EQ.3) CALL ADDCOL4 (AU3,BM1,H2,U3,NTOT1)
+        call axsf_fast(au1,au2,au3,u1,u2,u3,h1,h2,ifield)
+
+      elseif (icase.eq.3) then
+
+        call axhelm(au1,u1,h1,h2,1,1)
+        call axhelm(au2,u2,h1,h2,1,2)
+        if (if3d) call axhelm(au3,u3,h1,h2,1,3)
+
+      else  !  calculate coupled  Aij Uj  products
+
+        if ( .not.ifsolv ) call setfast (h1,h2,imesh)
+
+        call stnrate (u1,u2,u3,nel,matmod)
+        call stress  (h1,h2,nel,matmod,ifaxis)
+        call aijuj   (au1,au2,au3,nel,ifaxis)
+
+        if (ifh2 .and. matmod.ge.0) then ! add Helmholtz contributions
+           call addcol4 (au1,bm1,h2,u1,ntot1)
+           call addcol4 (au2,bm1,h2,u2,ntot1)
+           if (ndim.eq.3) call addcol4 (au3,bm1,h2,u3,ntot1)
+        endif
+
       endif
 
       return
