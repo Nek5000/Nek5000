@@ -2595,3 +2595,17 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine convert_m_to_c_allr(rmx) ! This works only for 2D at present
+
+      include 'basics.inc'
+      integer edge,e
+
+      do e=1,nel
+      do edge=1,4*(ndim-1)
+         call convert_m_to_c_e(edge,e,rmx)
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------

@@ -3685,6 +3685,13 @@ c
          enddo
       endif
 
+      if (ndim.eq.2) then
+         call get_x27max(xmin,xmax,ymin,ymax,zmin,zmax)
+         diam = (xmax-xmin)+(ymax-ymin)
+         rmx = 1.e3*diam
+         call convert_m_to_c_allr(rmx) ! This works only for 2D at present
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -3764,16 +3771,20 @@ c     Assign / repair curve-side info for edges
      $              , 20 , 24 , 26 , 22
      $              , 10 , 12 , 18 , 16  /  ! preproc. vtx notation
 
-      character m12(12),cct(12)
-      save      m12
+      character m12(12),b12(12),cct(12)
+      save      m12,b12
       data      m12  / 12 * 'm' /
+      data      b12  / 12 * ' ' /
 
+      nedge = 4 + 8*(ndim-2)
+
+      call chcopy(cct,b12,12)
+      do kk=1,nedge
+         if (ccurve(kk,e).ne.' ') call chcopy(cct,m12,12)
+      enddo
 
       call fix_c_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
       call fix_s_curve(e,i,j,k,nxsp,nysp,nzsp,rrx,rry,rrz)
-
-
-      call chcopy(cct,m12,12)
 
       if (if3d) then                      !  NOTE THE SERIOUS CONFLICT:
          if (ccurve(6,e).eq.'s') then     !
@@ -3786,7 +3797,6 @@ c     Assign / repair curve-side info for edges
          endif
       endif
 
-      nedge = 4 + 8*(ndim-2)
       do kk=1,nedge
          if (ccurve(kk,e).eq.'C') then
 c           do nothing
