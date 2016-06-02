@@ -241,7 +241,7 @@ if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
 else
   # default
   IFCMT=false
-  PPLIST="${PPLIST} MPI"
+  PPLIST="${PPLIST}"
 fi
 export IFCMT
 
@@ -642,6 +642,22 @@ c automatically added by makenek
       include 'SIZE'
       include 'INPUT'
       IFCMT=.true.
+      return
+      end
+_ACEOF
+fi
+
+
+else
+cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine cmt_switch ! to set IFCMT logical flag
+      include 'SIZE'
+      include 'INPUT'
+      IFCMT=.false.
       return
       end
 _ACEOF
