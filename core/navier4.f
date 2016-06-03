@@ -982,7 +982,7 @@ c     b <-- b - bbar
       call cmult2(xbar,xx(1,1),alpha(1),n)
       call cmult2(bbar,bb(1,1),alpha(1),n)
 
-      do j=1,m
+      do j=2,m
          call add2s2(xbar,xx(1,j),alpha(j),n)
          call add2s2(bbar,bb(1,j),alpha(j),n)
       enddo
@@ -1052,6 +1052,7 @@ c-----------------------------------------------------------------------
       subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
+      include 'TSTEP'     ! istep
       include 'PARALLEL'  ! wdsize
 
       real xx(n,1),bb(n,1),w(n)
@@ -1102,6 +1103,9 @@ c-----------------------------------------------------------------------
            call cmult(xx(1,k),scale,n)
            call cmult(bb(1,k),scale,n)
            flag(k) = 1
+c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
+    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
+     $           ,1p2e12.4)
          else
            flag(k) = 0
            if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk

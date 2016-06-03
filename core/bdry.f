@@ -422,7 +422,8 @@ C
 C            All-Dirichlet boundary conditions
 C
            IF (CB.EQ.'v  ' .OR. CB.EQ.'V  ' .OR. CB.EQ.'vl ' .OR.
-     $       CB.EQ.'VL ' .OR. CB.EQ.'W  ') THEN
+     $         cb.eq.'MV ' .or. cb.eq.'mv '                  .or.
+     $         CB.EQ.'VL ' .OR. CB.EQ.'W  ') THEN
              CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
@@ -2108,3 +2109,40 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      real function glcflux()
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      character cb*3
+
+      nxyz1= nx1*ny1*nz1
+      ntot1= nxyz1*nelv
+      nfaces = 2*ndim
+
+      termA = 0.0
+      termVL= 0.0
+
+      do 100 iel=1,nelv
+      do 100 iface=1,nfaces
+         cb = cbc(iface,iel,1)
+         if (cb.eq.'v  ' .or. cb.eq.'V  ' .or. cb.eq.'mv ') then
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,iface)
+            ia = 0
+            do 10 iz=kz1,kz2
+            do 10 iy=ky1,ky2
+            do 10 ix=kx1,kx2
+               ia =ia + 1
+               termxyz = vx(ix,iy,iz,iel)*unx(ia,1,iface,iel)
+     $                 + vy(ix,iy,iz,iel)*uny(ia,1,iface,iel)
+     $                 + vz(ix,iy,iz,iel)*unz(ia,1,iface,iel)
+               termA  = termA + area(ia,1,iface,iel)
+               termVL = termVL+ termxyz * area(ia,1,iface,iel)
+ 10         continue
+         endif
+ 100  continue
+
+      glcflux = glsum(termVL,1)  ! sum across processors
+
+      return
+      end

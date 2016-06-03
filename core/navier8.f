@@ -1770,6 +1770,7 @@ c-----------------------------------------------------------------------
          call blank (mapfle,132)
          call chcopy(mapfle,reafle,lfname)
          call chcopy(mapfle1(lfname+1),suffix,4)
+         if(nio.eq.0) write(6,'(A,A)') ' Reading ', mapfle
          open(unit=80,file=mapfle,status='old',err=99)
          read(80,*,err=99) neli,nnzi
          iok = 1

@@ -2,7 +2,7 @@
       subroutine cv_setsize(n_in,nfld_last)
 
       include 'SIZE'
-      if(nid.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
+      if(nio.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
       call exitt
 
       return
@@ -11,7 +11,7 @@ c----------------------------------------------------------------------
       subroutine cv_init
 
       include 'SIZE'
-      if(nid.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
+      if(nio.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
       call exitt
 
       return
@@ -20,13 +20,13 @@ c----------------------------------------------------------------------
       subroutine cdscal_cvode(igeom)
 
       include 'SIZE'
-      if(nid.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
+      if(nio.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
       call exitt
 
       return
       end
 #else
-      subroutine cv_setsize(n_in,nfld_last)
+      subroutine cv_setsize(i1fld,ilfld,n_aux)
 
       include 'SIZE'
       include 'TOTAL'
@@ -41,8 +41,9 @@ c----------------------------------------------------------------------
       data LongIntSize / 4 /
 #endif
       ! cvode will not allocate these arrays
+      integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1)
+      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
 
       integer sizeOfLongInt
       external sizeOfLongInt
@@ -50,7 +51,7 @@ c----------------------------------------------------------------------
       integer*8 nn,i8glsum
 
       if (sizeOfLongInt() .ne. LongIntSize) then
-        if(nid.eq.0) write(6,*)
+        if(nio.eq.0) write(6,*)
      &  'ABORT cv_setsize(): invalid long int size! ', 
      &   sizeOfLongInt(), LongIntSize
         call exitt
@@ -58,14 +59,23 @@ c----------------------------------------------------------------------
 
       nxyz = nx1*ny1*nz1
 
-      cv_nfld = nfld_last
+      cv_1fld = i1fld
+      cv_lfld = ilfld
 
       ! set local ODE size
-      ipar(1) = n_in
-      do i=2,cv_nfld
+      ipar(1) = n_aux
+      do i=cv_1fld,cv_lfld
          ntot = nxyz*nelfld(i)
          ipar(1) = ipar(1) + ntot
       enddo
+
+      ! check array size is large enough
+      if (ipar(1) .gt. cv_lysize) then
+        if(nio.eq.0) write(6,*)
+     &  'ABORT cv_setsize(): workspace for cvode too small! ' 
+        call exitt
+      endif 
+
       ! determine global ODE size 
       nn = ipar(1)
       cv_nglobal = i8glsum(nn,1)
@@ -84,9 +94,8 @@ c
       include 'TOTAL'
       include 'CVODE'
 
-      ! use TLAG as scratch space (be careful!)
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,y0(lx1*ly1*lz1*lelt*ldimt+1)
+      common /CVWRK1/  y0(cv_lysize) 
+
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
 #else
@@ -99,6 +108,9 @@ c
 
       real*8 etime1
 
+      cv_ystart = 1
+      cv_1fld   = 2 
+
       etime1=dnekclock_sync()
 
       nxyz = nx1*ny1*nz1
@@ -107,24 +119,23 @@ c
 
       if(nio.eq.0) write(*,*) 'initializing ODE integrator ...'
 
-      if(cv_nfld.lt.2) then
+      if(cv_lfld-cv_1fld .lt. 0) then
         if(nid.eq.0) write(6,*)
-     &  'ABORT cv_init(): invalid cv_nfld index!', cv_nfld
+     &  'ABORT cv_init(): no fields to integrate!', cv_1fld, cv_lfld
         call exitt
       endif
 
-      if(ldimt.lt.2) then
-        if(nid.eq.0) write(6,*)
-     &  'ABORT cv_init(): ldimt has to be >= 2!', ldimt
-        call exitt
-      endif
-
-      ! set dirichlet BCs
-      ! note: these values will never change in time (ydot=0)
-      !       time varying dirichlet bcs are not supported for now
-      do ifield=2,cv_nfld
-        call bcdirsc (t(1,1,1,1,ifield-1))
-      enddo
+c      ! check to see if lagged arrarys are large enough
+c      if(lorder.lt.3) then
+c        if(nid.eq.0) write(6,*)
+c     &  'ABORT cv_init(): lorder has to be >= 3!', lorder
+c        call exitt
+c      endif
+c      if(ldimt.lt.1) then
+c        if(nid.eq.0) write(6,*)
+c     &  'ABORT cv_init(): ldimt has to be >= 3!', ldimt
+c        call exitt
+c      endif
 
       ! set solver tolerances
       cv_rtol = tolrel
@@ -142,11 +153,14 @@ c
         call exitt
       endif
 
-      ! set initial integrator state
-      call cv_pack_sol(y0)
+      ! enforce dirichlet bcs, time varying bcs are not supported for now
+      do ifield=cv_1fld,cv_lfld
+        call bcdirsc (t(1,1,1,1,ifield-1))
+      enddo
+      call cv_pack_sol(y0(cv_ystart))
 
       ! initialize main solver
-      call fcvmalloc(cv_time, y0, meth, itmeth, iatol,
+      call fcvmalloc(cv_time, y0(cv_ystart), meth, itmeth, iatol,
      &               cv_rtol, cv_atol, iout, rout, ipar, rpar, ier)
       if (ier.ne.0) then
         write(*,'(a,i3)') 'ABORT cv_init(): fcvmalloc ier=', ier
@@ -160,40 +174,38 @@ c
         call exitt
       endif
 
-      ! limit time integration order
-c      call fcvsetiin('MAX_ORD',3,ier)
-c      if (ier .ne. 0) then
-c        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetiin ier=', ier
-c        call exitt
-c      endif
-
-       ! limit maximum integration step size
-c      call fcvsetrin('MAX_STEP',dt,ier)
-c      if (ier .ne. 0) then
-c        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetrin ier=', ier
-c        call exitt
-c      endif
+      ! limit intneral integration step size
+      ! to ensure extrapolation v,w is accurate 
+      call fcvsetrin('MAX_STEP',dt,ier)
+      if (ier .ne. 0) then
+        write(*,'(a,i3)') 'ABORT cv_init(): fcvsetrin ier=', ier
+        call exitt
+      endif
 
       ! check for user-supplied Jacobian routine
       if(abs(PARAM(16)).ge.3) then 
         call FCVSPILSSETJAC(1, ier)
         if(nio.eq.0) then 
           write(6,*) '  user-supplied Jacobian enabled'
-          write(6,'(A,4x,e7.1)') '   DQ perturbation scaling factor :',
+          write(6,'(A,4x,e8.1)') '   DQ perturbation scaling factor :',
      &                            CV_SIGS
         endif
       endif
 
       etime1 = dnekclock_sync() - etime1
       if(nio.eq.0) then
-        write(6,'(A,i11)')     '   degrees of freedom            : ',
+        write(6,'(A,i11)')       '   degrees of freedom             : ',
      &                         cv_nglobal
-        write(6,'(A,7x,i4)')   '   krylov dimension              : ',
+        write(6,'(A,2(1pe8.1))') '   rel/abs tolerances             : ',
+     &                         cv_rtol, cv_atol
+        write(6,'(A,7x,i4)')     '   krylov dimension               : ',
      &                         cv_maxl
-        write(6,'(A,6x,f5.2)') '   linear convergence factor     : ',
+        write(6,'(A,6x,f5.2)')   '   linear convergence factor      : ',
      &                         cv_delt
-        write(6,'(A,7x,i4)')   '   last field index to integrate : ',
-     &                         cv_nfld
+        write(6,'(A,7x,i4)')     '   first field index to integrate : ',
+     &                         cv_1fld
+        write(6,'(A,7x,i4)')     '   last field index to integrate  : ',
+     &                         cv_lfld
         write(6,'(A,g15.3,A,/)') ' done :: initializing ODE integrator',
      &                         etime1, ' sec'
       endif
@@ -216,19 +228,25 @@ c
       include 'TOTAL'
       include 'CVODE'
 
-      ! use TLAG as scratch space (be careful!)
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,y   (lx1*ly1*lz1*lelt*ldimt)
-     &                ,vx_ (lx1,ly1,lz1,lelv)
+      common /CVWRK1/  y(cv_lysize) 
+
+      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
      &                ,vy_ (lx1,ly1,lz1,lelv)
      &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_(lx1,ly1,lz1,lelv)
+     &                ,ym1_(lx1,ly1,lz1,lelv)
+     &                ,zm1_(lx1,ly1,lz1,lelv)
+     &                ,wx_ (lx1,ly1,lz1,lelv)
+     &                ,wy_ (lx1,ly1,lz1,lelv)
+     &                ,wz_ (lx1,ly1,lz1,lelv)
 
 #ifdef LONGINT8
       integer*8 iout,iout_old,ipar
 #else
       integer*4 iout,iout_old,ipar
 #endif
-      common /cv_iout/ iout(21),iout_old(21),ipar(1)
+      integer cvcomm
+      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
 
       real nfe_avg,nli_nni_avg,nli_nni
       save nfe_avg,nli_nni_avg
@@ -243,6 +261,7 @@ c
       data nfe_sum / 0 /
 
       nxyz = nx1*ny1*nz1
+      ntot = nxyz * nelv
 
       if (.not.ifcvodeinit) then
         write(6,*) 'ABORT: cv_init() was not called!'
@@ -258,13 +277,47 @@ c
       if(ifchar) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
 
       cv_time=0.0
-      call store_vel(vx_,vy_,vz_)
-      call fcvode(time,cv_time,y,itask,ier)
-      call set_vel(vx_,vy_,vz_)
+
+
+      ! save coord and mesh vel
+      if(ifmvbd) then
+        call copy(xm1_,xm1,ntot)           
+        call copy(ym1_,ym1,ntot)           
+        if (if3d) call copy(zm1_,zm1,ntot) 
+        call copy(wx_,wx,ntot)           
+        call copy(wy_,wy,ntot)           
+        if (if3d) call copy(wz_,wz,ntot) 
+      endif
+
+      ! save velocities                  
+      call copy(vx_,vx,ntot)             
+      call copy(vy_,vy,ntot)            
+      if (if3d) call copy(vz_,vz,ntot)  
+
+
+      ! call solver
+      call fcvode(time,cv_time,y(cv_ystart),itask,ier)
+
+
+      ! restore velocities               
+      call copy(vx,vx_,ntot)             
+      call copy(vy,vy_,ntot)             
+      if (if3d) call copy(vz,vz_,ntot) 
       call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
+      ! restore coord and mesh vel 
+      if(ifmvbd) then         
+        call copy(xm1,xm1_,ntot)           
+        call copy(ym1,ym1_,ntot)          
+        if (if3d) call copy(zm1,zm1_,ntot) 
+        call copy(wx,wx_,ntot)           
+        call copy(wy,wy_,ntot)           
+        if (if3d) call copy(wz,wz_,ntot) 
+        call cv_eval_geom                      
+      endif
+
       ! copy the cvode solution (y) back into internal array (t)
-      call cv_unpack_sol(y)
+      call cv_unpack_sol(y(cv_ystart))
 
       ! print solver statistics 
       if (nid.eq.0) then
@@ -322,8 +375,7 @@ c
       logical ifcdjv
       data    ifcdjv / .false. /
 
-      common /VPTSOL/  dummy(6*lx1*ly1*lz1*lelv)
-     &                ,FJV_(lx1*ly1*lz1*lelt*ldimt)
+      common /CVWRK1/  FJV_(cv_lysize) 
 
       if(abs(PARAM(16)).eq.3.1) ifcdjv = .true.
 
@@ -374,94 +426,94 @@ c           FJV(i) = (FJV(i) - FY(i))*siginv
       return
       end
 c----------------------------------------------------------------------
-      subroutine store_vel(vx_,vy_,vz_)
- 
-      include 'SIZE'
-      include 'TOTAL'
- 
-      real vx_(1),vy_(1),vz_(1)
- 
-      ntot  = nx1*ny1*nz1*nelv
- 
-      ! save velocities
-      call copy(vx_,vx,ntot)
-      call copy(vy_,vy,ntot)
-      if (if3d) call copy(vz_,vz,ntot)
- 
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine set_vel(vx_,vy_,vz_)
- 
-      include 'SIZE'
-      include 'TOTAL'
- 
-      real vx_(1),vy_(1),vz_(1)
- 
-      ntot  = nx1*ny1*nz1*nelv
- 
-      ! save velocities
-      call copy(vx,vx_,ntot)
-      call copy(vy,vy_,ntot)
-      if (if3d) call copy(vz,vz_,ntot)
- 
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine update_vel(time_)
-c
-c     extrapolated volocity at t=time_
+      subroutine cv_upd_v
 c
       include 'SIZE'
-      include 'TOTAL'
-      ! use TLAG as scratch space (this can get tricky!)
-      common /VPTSOL/  ttmp(6*lx1*ly1*lz1*lelv)
-     &                ,y   (lx1*ly1*lz1*lelt*ldimt)
-     &                ,vx_ (lx1,ly1,lz1,lelt)
-     &                ,vy_ (lx1,ly1,lz1,lelt)
-     &                ,vz_ (lx1,ly1,lz1,lelt)
+      include 'TSTEP'
+      include 'SOLN'
+      include 'INPUT'
+      include 'CVODE'
 
-      real dtlag_(3),ab_(3)
-      real timel
-      save timel
-      data timel /-1.0/
-      real tmp(lx1,ly1,lz1,lelt)
-
-      if (time_ .eq. timel) return
-
-c      if(nio.eq.0) write(6,*) 'recompute extrapolated velocity'
-      timel = time_
+      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_(lx1,ly1,lz1,lelv)
+     &                ,ym1_(lx1,ly1,lz1,lelv)
+     &                ,zm1_(lx1,ly1,lz1,lelv)
+     &                ,wx_ (lx1,ly1,lz1,lelv)
+     &                ,wy_ (lx1,ly1,lz1,lelv)
+     &                ,wz_ (lx1,ly1,lz1,lelv)
 
       ntot = nx1*ny1*nz1*nelv
-      ! restore velocities from previous time step 
-      call copy(vx,vx_,ntot)
-      call copy(vy,vy_,ntot)
-      if(if3d) call copy(vz,vz_,ntot)
 
-      ! compute extrapolate velocities
-      dt_ = time_ - (time-dt)
-      dtlag_(1) = dt_
-      dtlag_(2) = dtlag(2)
-      dtlag_(3) = dtlag(3)
-      N = 3
-      if(istep.le.2) N = istep
-      call rzero(ab_,3)
-      call setabbd (ab_,dtlag_,N,NBD)
-      ab0 = ab_(1)
-      ab1 = ab_(2)
-      ab2 = ab_(3)
-      call add3s2(tmp,vxlag(1,1,1,1,1),vxlag(1,1,1,1,2),ab1,ab2,ntot)
-      call add2s1(vx,tmp,ab0,ntot)
-      call add3s2(tmp,vylag(1,1,1,1,1),vylag(1,1,1,1,2),ab1,ab2,ntot)
-      call add2s1(vy,tmp,ab0,ntot)
-      if (if3d) then
-         call add3s2(tmp,vzlag(1,1,1,1,1),vzlag(1,1,1,1,2),ab1,ab2,ntot)
-         call add2s1(vz,tmp,ab0,ntot)
+      call sumab(vx,vx_,vxlag,ntot,cv_ab,nbd)
+      call sumab(vy,vy_,vylag,ntot,cv_ab,nbd)
+      if(if3d) call sumab(vz,vz_,vzlag,ntot,cv_ab,nbd)
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_upd_w
+c
+      include 'SIZE'
+      include 'TSTEP'
+      include 'MVGEOM'
+      include 'INPUT'
+      include 'CVODE'
+
+      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_(lx1,ly1,lz1,lelv)
+     &                ,ym1_(lx1,ly1,lz1,lelv)
+     &                ,zm1_(lx1,ly1,lz1,lelv)
+     &                ,wx_ (lx1,ly1,lz1,lelv)
+     &                ,wy_ (lx1,ly1,lz1,lelv)
+     &                ,wz_ (lx1,ly1,lz1,lelv)
+
+      ntot = nx1*ny1*nz1*nelv
+
+      call sumab(wx,wx_,wxlag,ntot,cv_ab,nbd)
+      call sumab(wy,wy_,wylag,ntot,cv_ab,nbd)
+      if(if3d) call sumab(wz,wz_,wzlag,ntot,cv_ab,nbd)
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_upd_coor
+c
+      include 'SIZE'
+      include 'TSTEP'
+      include 'GEOM'
+      include 'MVGEOM'
+      include 'INPUT'
+      include 'CVODE'
+
+      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_(lx1,ly1,lz1,lelv)
+     &                ,ym1_(lx1,ly1,lz1,lelv)
+     &                ,zm1_(lx1,ly1,lz1,lelv)
+     &                ,wx_ (lx1,ly1,lz1,lelv)
+     &                ,wy_ (lx1,ly1,lz1,lelv)
+     &                ,wz_ (lx1,ly1,lz1,lelv)
+
+      COMMON /SCRSF/ dtmp(lx1*ly1*lz1*lelv)
+
+      ntot = nx1*ny1*nz1*nelv
+
+      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nab)
+      call add3 (xm1,xm1_,dtmp,ntot)
+
+      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nab)
+      call add3 (ym1,ym1_,dtmp,ntot)
+
+      if(if3d) then
+        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nab)
+        call add3 (zm1,zm1_,dtmp,ntot)
       endif
- 
-      ! update fine grid velocity
-      if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
- 
+
       return
       end
 c----------------------------------------------------------------------
@@ -475,6 +527,10 @@ c
       include 'CVODE'
 
       real cv_time,y(1),ydot(1),rpar(1)
+
+      real ta(lx1,ly1,lz1,lelt)
+      integer ntf,ntflds(nfield-1)      
+
 #ifdef LONGINT8
       integer*8 ipar(1)
 #else
@@ -484,56 +540,68 @@ c
       save timel
 
       nxyz = nx1*ny1*nz1
-
+      ntotv= nxyz*nelv                  
+      call izero(ntflds,nfield-1)       
+      call cv_unpack_sol(y)          
+        
       if (cv_time.ne.timel) then
-        timel = cv_time
-        if(nio.eq.0) write(6,10) cv_time
-  10                 format(14X,'substepping t=',1pE14.7)
+         call cv_settime(cv_time)     
+ 
+         if(nio.eq.0) write(6,10) cv_time,timel,cv_time-timel
+  10       format(14X,'substepping t=',1pE14.7,1pE14.7,1pE14.7)
+
+         call cv_upd_v
+         if (ifmvbd) then
+            call cv_upd_coor 
+            call cv_eval_geom
+            call cv_upd_w
+         endif 
+ 
+         timel = cv_time          
       endif
 
-      call cv_unpack_sol(y)
-
-      ! extrapolate velocity using CVODE's internal time
-      if(abs(PARAM(16)).eq.3) call update_vel(cv_time)
-
-      ntflds = 0
       j = 1
-      do ifield=2,cv_nfld
+      ntf = 0
+      do ifield=cv_1fld,cv_lfld
          ntot = nxyz*nelfld(ifield)
-         if (iftmsh(ifield)) ntflds = ntflds + 1
          call makeq
-         call invcol3(ydot(j),bq(1,1,1,1,ifield-1),
-     &               vtrans(1,1,1,1,ifield),ntot)
+         if (iftmsh(ifield)) then                                
+            ntflds(ifield-1) = 1                                 
+            ntf = 1                                          
+            call col3(ta, vtrans(1,1,1,1,ifield),bm1, ntot)      
+            call dssum(ta, nx1, ny1, nz1)                        
+            call col2(ta, bintm1,ntot)                           
+            call invcol3(ydot(j), bq(1,1,1,1,ifield-1), ta, ntot) 
+         else                                                    
+            call invcol3(ydot(j),bq(1,1,1,1,ifield-1),        
+     &                   vtrans(1,1,1,1,ifield),ntot)           
+         endif     
          j = j + ntot
       enddo
 
+
       j = 1
-      if(ntflds.gt.0) then
-        do ifield = 2,cv_nfld
-           call dssum (ydot(j),nx1,ny1,nz1)
+      if(ntf.eq.1) then
+        do ifield = cv_1fld,cv_lfld
+           if (ntflds(ifield-1).eq.0) call dssum (ydot(j),nx1,ny1,nz1)
            j = j + nxyz*nelfld(ifield)
         enddo
-      else ! same gs handle; use vector dssum
-        ntot = nxyz*nelv
-        if(cv_nfld-1.gt.0) 
-     &    call nvec_dssum (ydot,ntot,cv_nfld-1,gsh_fld(1))
+      else ! if no field is a tmesh, use vector dssum
+        n    = cv_lfld-cv_1fld + 1
+        call nvec_dssum (ydot,ntotv,n,gsh_fld(1))
       endif
 
       j = 1
-      do ifield=2,cv_nfld
+      do ifield=cv_1fld,cv_lfld
          ntot = nxyz*nelfld(ifield)
-         if (iftmsh(ifield)) then
-            call col2(ydot(j),bintm1,ntot)
-         else
-            call col2(ydot(j),binvm1,ntot)
-         endif
+         if (ntflds(ifield-1).eq.0) call col2(ydot(j),binvm1,ntot)
          j = j + ntot
       enddo
 
       call add_fcvfun_usr(ydot,j)
 
-      j = 1
-      do ifield=2,cv_nfld
+      j = 1 ! enforce dirichlet bcs, no time varying bcs support for now
+      do ifield=cv_1fld,cv_lfld
          ntot = nxyz*nelfld(ifield)
          call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
          j = j + ntot
@@ -545,3 +613,39 @@ c
       end
 
 #endif
+c----------------------------------------------------------------------
+      subroutine cv_eval_geom
+
+      call glmapm1
+      call geodat1
+      call geom2
+      call volume
+      call setinvm
+      call setdef
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine cv_settime(cv_time)
+
+      include 'SIZE'
+      include 'TSTEP'
+      include 'CVODE'
+
+      cv_dtNek = cv_time - (time-dt)    
+      cv_dtlag(1) = cv_dtNek 
+      cv_dtlag(2) = dtlag(2)
+      cv_dtlag(3) = dtlag(3)
+
+      call rzero(cv_abmsh,3)
+      call setabbd (cv_abmsh,cv_dtlag,nab,1) ! why is nabmsh wrong, use nab for now
+      do i = 1,3
+         cv_abmsh(i) = cv_dtNek*cv_abmsh(i) 
+      enddo
+
+      call rzero(cv_ab,3)
+      call setabbd (cv_ab,cv_dtlag,nbd,nbd)
+
+      return
+      end
