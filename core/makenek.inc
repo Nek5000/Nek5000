@@ -55,9 +55,12 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
-APATH_SRC=`cd $SOURCE_ROOT; pwd`
-SOURCE_ROOT=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT2; pwd`
+APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
+SOURCE_ROOT_CORE=$APATH_SRC
+APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
+SOURCE_ROOT_JL=$APATH_SRC
+echo "JL root" $SOURCE_ROOT_JL
+APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
 SOURCE_ROOT_CMT=$APATH_SRC
 echo "CMT root" $SOURCE_ROOT_CMT
 
@@ -65,7 +68,7 @@ IFMOAB=false
 IFNEKNEK=false
 
 # do some basic checks
-if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
+if [ "$CASEDIR" == "$SOURCE_ROOT_CORE" ]; then
    echo "FATAL ERROR: Working directory has to be different from the source!"
    exit 1
 fi
@@ -90,8 +93,8 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-if [ ! -f $SOURCE_ROOT/makefile.template ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT/makefile.template!"
+if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
+  echo "FATAL ERROR: Cannot find $SOURCE_ROOT_CORE/makefile.template!"
   exit 1
 fi
 
@@ -376,7 +379,7 @@ fi
 echo $PPLIST | grep 'K10_MXM' >/dev/null 
 if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o k10_mxm.o blas.o" 
-   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT}/libk10_mxm.a"
+   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT_CORE}/libk10_mxm.a"
 fi
 echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
 if [ $? -eq 0 ]; then
@@ -440,8 +443,9 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" \
--e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" $SOURCE_ROOT/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
+-e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
+-e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
 echo $G | grep '\-g' 1>/dev/null
 if [ $? -eq 0 ]; then

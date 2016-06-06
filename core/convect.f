@@ -1009,22 +1009,24 @@ c
 
       call char_conv(phx,vx,vxlag,hmsk,c_vx,ct_vx,gsh_fld(1))
       call char_conv(phy,vy,vylag,hmsk,c_vx,ct_vx,gsh_fld(1))
+      if (if3d) call char_conv(phz,vz,vzlag,hmsk,c_vx,ct_vx,gsh_fld(1))
+
+      call cfill(hmsk,dti,n)
+      if(.not. iflomach) call col2(hmsk,vtrans,n) 
 
       if (if3d) then
 
-        call char_conv(phz,vz,vzlag,hmsk,c_vx,ct_vx,gsh_fld(1))
-
         do i=1,n
-           h2i = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti
+           h2i = bm1(i,1,1,1)*hmsk(i)
            bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
            bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
            bfz(i,1,1,1) = bfz(i,1,1,1)+phz(i)*h2i
         enddo
 
       else
-
+        
         do i=1,n
-           h2i = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti
+           h2i = bm1(i,1,1,1)*hmsk(i)
            bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
            bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
         enddo

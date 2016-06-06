@@ -160,13 +160,17 @@ c     pulling in temperature right now, since we dont have anything else
       n     = nxyz1*nel
 
       do iel=1,nel
-         igrp = igroup(iel)
-         if (matype(igrp,ifield).eq.1) then ! constant source within a group
-            cqvol = cpgrp(igrp,ifield,3)
-            call cfill (bql(1,iel),cqvol,nxyz1)
-         else  !  pff 2/6/96 ............ default is to look at userq
-            call nekuq (bql,iel)
-         endif
+
+         call nekuq (bql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
+
+c        igrp = igroup(iel)
+c        if (matype(igrp,ifield).eq.1) then ! constant source within a group
+c           cqvol = cpgrp(igrp,ifield,3)
+c           call cfill (bql(1,iel),cqvol,nxyz1)
+c        else  !  pff 2/6/96 ............ default is to look at userq
+c           call nekuq (bql,iel)
+c        endif
+
       enddo
 c
 c 101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
@@ -271,7 +275,7 @@ C-----------------------------------------------------------------------
 
    
       const = 1./dt
-      call cmult2(h2,vtrans(1,1,1,1,ifield),const,n)
+c      call cmult2(h2,vtrans(1,1,1,1,ifield),const,n)
       do i=1,n
          h2(i)=const*vtrans(i,1,1,1,ifield)
          tb(i)=bd(2)*bm1(i,1,1,1)*t(i,1,1,1,ifield-1)
@@ -289,9 +293,10 @@ C-----------------------------------------------------------------------
          CALL ADD2  (TB,TA,N)
  100  CONTINUE
 
-      do i=1,n
-         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1) + tb(i)*h2(i)
-      enddo
+c      do i=1,n
+c         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1) + tb(i)*h2(i)
+c      enddo
+      call addcol3 (bq(1,1,1,1,ifield-1),tb,h2,n)
 
       return
       end
