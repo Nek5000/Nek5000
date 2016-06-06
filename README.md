@@ -12,11 +12,11 @@ The examples have been moved into a seperate repository, [nek5000_examples](http
 You can download the latest release of nek5000 as [a zip](https://github.com/Nek5000/nek5000/archive/master.zip) or [a tarball](https://github.com/Nek5000/nek5000/archive/master.tar.gz).
 You can also clone the repository with git:
 ```
-git clone https://github.com/Nek5000/nek5000.git --single-branch
+git clone https://github.com/Nek5000/nek5000.git -b master --single-branch
 ```
 or even check it out with svn!
 ```
-svn co https://github.com/Nek5000/nek5000.git/trunk/ nek5000
+svn co https://github.com/Nek5000/nek5000.git/branches/master nek5000
 ```
 
 ## Use Nek5000
