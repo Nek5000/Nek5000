@@ -12,18 +12,7 @@ RUN apt-get clean && apt-get update && apt-get install -y --fix-missing \
   wget \
 && rm -rf /var/lib/apt/lists/*
 
-# Switch to user-space
 ENV HOME /home/nek
-ENV SOURCE_ROOT /home/nek/nek5000
-ENV TOOLS_ROOT /home/nek/nek5000/tools
-ENV TOOLS_BIN /home/nek/nek5000/tools/bin
-ENV SCRIPT_ROOT /home/nek/nek5000/bin
-ENV EXAMPLES_ROOT /home/nek/nek_tests/examples
-ENV LOG_ROOT /home/nek/nek_tests/examples/TestLogs
-ENV F77 mpif77
-ENV CC mpicc
-ENV IFMPI true
-
 
 # More stuff for testing
 WORKDIR /home/nek
@@ -43,6 +32,18 @@ RUN git clone https://github.com/RonRahaman/NekTests-deprecated.git -b unittests
 WORKDIR /home/nek/nek5000
 ADD . . 
 WORKDIR /home/nek/nek_tests
+
+# Set env 
+ENV SOURCE_ROOT /home/nek/nek5000
+ENV TOOLS_ROOT /home/nek/nek5000/tools
+ENV TOOLS_BIN /home/nek/nek5000/tools/bin
+ENV SCRIPTS_ROOT /home/nek/nek5000/bin
+ENV EXAMPLES_ROOT /home/nek/nek_tests/examples
+ENV LOG_ROOT /home/nek/nek_tests/examples/TestLogs
+ENV F77 mpif77
+ENV CC mpicc
+ENV IFMPI true
+ENV PYTHONPATH "/home/nek/nek_tests/:${PYTHONPATH}"
 
 # Run some tests
 ENTRYPOINT ["py.test", "-v", "-s"] 
