@@ -12,4 +12,4 @@ before_install:
  - docker pull nek5000/nek5000-tester
 
 script: 
- - if [[ "$TRAVIS_PULL_REQUEST" -eq "false" ]]; then docker run -v `pwd`:/home/nek/NekBox maxhutch/nekbox-tester -m "not pr" $TEST_SUITE; else docker run -v `pwd`:/home/nek/NekBox maxhutch/nekbox-tester $TEST_SUITE; fi
+ - if [[ "$TRAVIS_PULL_REQUEST" -eq "false" ]]; then docker run -v `pwd`:/home/nek/nek5000 maxhutch/nek5000-tester -m "not pr" $TEST_SUITE; else docker run -v `pwd`:/home/nek/nek5000 maxhutch/nek5000-tester $TEST_SUITE; fi
