@@ -1,4 +1,6 @@
 # Nek5000 
+![https://travis-ci.org/Nek5000/nek5000](https://travis-ci.org/Nek5000/nek5000.svg?branch=develop)
+[![GPLv3 licensed](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://raw.githubusercontent.com/Nek5000/nek5000/develop/LICENSE)
 
 ## Wait, where did everything go?
 
@@ -22,3 +24,5 @@ svn co https://github.com/Nek5000/nek5000.git/branches/master nek5000
 ## Use Nek5000
 nek5000 works the same way it used to: build cases with `core/makenek` and run them with a script, e.g. `bin/nekmpi`.
 For more information, see the [user guide](https://nek5000.mcs.anl.gov/documentation/).
+
+
