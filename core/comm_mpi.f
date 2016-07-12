@@ -18,7 +18,10 @@ c      endif
       nid  = nid_
       np   = np_
 
-      if(nid.eq.0) call printHeader
+      nio = -1             ! Default io flag 
+      if(nid.eq.0) nio=0   ! Only node 0 writes
+
+      if(nid.eq.nio) call printHeader
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
@@ -72,10 +75,20 @@ c
       NODE0=0
       NODE= NID+1
 
-      if (nid.eq.0) then 
+C     Test timer accuracy
+      edif = 0.0
+      do i = 1,10
+         e1 = dnekclock()
+         e2 = dnekclock()
+         edif = edif + e2-e1
+      enddo
+      edif = edif/10.
+
+      if (nid.eq.nio) then 
          write(6,*) 'Number of processors:',np
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
+         WRITE(6,'(A,1pE8.2)') ' Timer accuracy      : ',edif
       endif
 
       call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
@@ -562,7 +575,7 @@ c     Communicate unhappiness to the other session
 
       call mpi_finalize (ierr)
 #ifdef EXTBAR
-     call exit_(0)
+      call exit_(0)
 #else
       call exit(0)
 #endif

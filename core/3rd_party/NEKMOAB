@@ -63,3 +63,7 @@ c	  Removing the unused variables from NEMOAB interface
 c      iBase_EntityHandle hHexes(*), hParts(*)
 c      real prl, tl, vxl, vyl, vzl, xm1l, ym1l, zm1l
 
+c --- for SOLN @ r1107
+
+      REAL  p0th, dp0thdt, gamma0
+

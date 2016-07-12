@@ -10,7 +10,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  NOTIMER   disable runtime statistics"
   echo "  MPITIMER  enable MPI runtime statistics"
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BG        enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  BGL       enable Blue Gene optimizations (BG/L and BG/P)"
+  echo "  BGQ       enable Blue Gene optimizations (BG/Q)"
   echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
   echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
@@ -53,9 +54,12 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
-APATH_SRC=`cd $SOURCE_ROOT; pwd`
-SOURCE_ROOT=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT2; pwd`
+APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
+SOURCE_ROOT_CORE=$APATH_SRC
+APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
+SOURCE_ROOT_JL=$APATH_SRC
+echo "JL root" $SOURCE_ROOT_JL
+APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
 SOURCE_ROOT_CMT=$APATH_SRC
 echo "CMT root" $SOURCE_ROOT_CMT
 
@@ -63,7 +67,7 @@ IFMOAB=false
 IFNEKNEK=false
 
 # do some basic checks
-if [ "$CASEDIR" == "$SOURCE_ROOT" ]; then
+if [ "$CASEDIR" == "$SOURCE_ROOT_CORE" ]; then
    echo "FATAL ERROR: Working directory has to be different from the source!"
    exit 1
 fi
@@ -88,8 +92,8 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-if [ ! -f $SOURCE_ROOT/makefile.template ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT/makefile.template!"
+if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
+  echo "FATAL ERROR: Cannot find $SOURCE_ROOT_CORE/makefile.template!"
   exit 1
 fi
 
@@ -234,6 +238,16 @@ else
 fi
 export IFMPI
 
+# set preprocessor symbols
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+  IFCMT=true
+else
+  # default
+  IFCMT=false
+  PPLIST="${PPLIST} MPI"
+fi
+export IFCMT
+
 # Check size of long int
 cat > tmp.c << _ACEOF
 #include <stdlib.h>
@@ -345,16 +359,22 @@ if [ "$MXM_USER" != "" ]; then
     exit 1 
 fi
 MXM_USER="mxm_std.o blas.o"
-echo $PPLIST | grep 'BG' >/dev/null 
+echo $PPLIST | grep 'BGL' >/dev/null 
 if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o blas.o" 
    OPT_FLAGS_STD="-qarch=450 -qtune=450"
    OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
 fi
+echo $PPLIST | grep 'BGQ' >/dev/null 
+if [ $? -eq 0 ]; then
+   MXM_USER="mxm_std.o mxm_bgq.o " 
+   OPT_FLAGS_STD="-O3"
+   OPT_FLAGS_MAG="-O3"
+fi
 echo $PPLIST | grep 'K10_MXM' >/dev/null 
 if [ $? -eq 0 ]; then
    MXM_USER="mxm_std.o k10_mxm.o blas.o" 
-   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT}/libk10_mxm.a"
+   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT_CORE}/libk10_mxm.a"
 fi
 echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
 if [ $? -eq 0 ]; then
@@ -418,8 +438,9 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}:" \
--e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" $SOURCE_ROOT/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
+-e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
+-e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
 echo $G | grep '\-g' 1>/dev/null
 if [ $? -eq 0 ]; then
@@ -625,20 +646,6 @@ c automatically added by makenek
       include 'SIZE'
       include 'INPUT'
       IFCMT=.true.
-      return
-      end
-_ACEOF
-fi
-else
-cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
-if [ $? -ne 0 ]; then
-cat >> $CASENAME.f << _ACEOF
-c
-c automatically added by makenek
-      subroutine cmt_switch ! to set IFCMT logical flag
-      include 'SIZE'
-      include 'INPUT'
-      IFCMT=.false.
       return
       end
 _ACEOF
