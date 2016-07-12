@@ -149,7 +149,9 @@ c-----------------------------------------------------------------------
 
          mid   = gllnid(eg)
          e     = gllel (eg)
-         mtype = 2000+eg
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+         mtype = 2000+e
 
          if (nid.eq.0) then
             if (mid.eq.0) then
@@ -157,14 +159,14 @@ c-----------------------------------------------------------------------
                call  copy(buf(2),a(1,e),lda)
             else
                call csend (mtype,dum,wdsize,mid,nullpid)
-               call crecv (mtype,buf,len)
+               call crecv2 (mtype,buf,len,mid)
             endif
             write(49,49) mid,ibuf(1),(buf(k+1),k=1,lda)
    49       format(2i12,1p3e16.7)
          elseif (nid.eq.mid) then
             call icopy(buf(1),ia(e),1)
             call  copy(buf(2),a(1,e),lda)
-            call crecv (mtype,dum,wdsize)
+            call crecv2 (mtype,dum,wdsize,0)
             call csend (mtype,buf,len,node0,nullpid)
          endif
       enddo
