@@ -13,6 +13,8 @@ RUN apt-get clean && apt-get update && apt-get install -y --fix-missing \
 && rm -rf /var/lib/apt/lists/*
 
 ENV HOME /home/nek
+ENV PYTHONUNBUFFERED 1
+ENV VERBOSE_TESTS "True"
 
 # More stuff for testing
 WORKDIR /home/nek
@@ -24,6 +26,7 @@ RUN conda config --set always_yes yes --set changeps1 no
 RUN conda update -q conda
 RUN conda info -a
 RUN conda install pytest
+#RUN pip install unittest
 
 # The tests and tools
 RUN git clone https://github.com/RonRahaman/NekTests-deprecated.git -b unittests_plus_examples --recursive nek_tests
@@ -46,4 +49,4 @@ ENV IFMPI true
 ENV PYTHONPATH "/home/nek/nek_tests/:${PYTHONPATH}"
 
 # Run some tests
-ENTRYPOINT ["py.test", "-v", "-s"] 
+ENTRYPOINT ["py.test", "-s", "-v"] 
