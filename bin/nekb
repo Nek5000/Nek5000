@@ -2,8 +2,8 @@ echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 rm -f ioinfo
 rm -f logfile
-mv -f $1.log $1.log1
-mv -f $1.sch $1.sch1
+mv -f $1.log $1.log1 2>/dev/null
+mv -f $1.sch $1.sch1 2>/dev/null
 touch $1.rea
 nohup time ./nek5000 > $1.log &
 sleep 2
