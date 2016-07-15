@@ -175,12 +175,23 @@ echo $F77comp | grep -i mp >/dev/null
 if [ $? -eq 0 ]; then   
 # trying to figure out which compiler we're using 
   F77ok=0
-  F77comp_=`$F77 -showme 2>/dev/null 1>.tmp` 
+
+  F77comp_=`$F77 -showme 2>/dev/null 1>.tmp`
   F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
-  else
+  fi
+
+  if [ $F77ok -eq 0 ]; then
     F77comp_=`$F77 -show 2>/dev/null 1>.tmp`
+    F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+    if [ -f "`which $F77comp 2>/dev/null`" ]; then
+      F77ok=1
+    fi
+  fi
+
+  if [ $F77ok -eq 0 ]; then
+    F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp`
     F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
     if [ -f "`which $F77comp 2>/dev/null`" ]; then
       F77ok=1
@@ -211,7 +222,7 @@ case $F77comp in
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
-  *ftn*)        P="-r8 -Mpreprocess"
+  *ftn_driver*) P="-r8 -Mpreprocess"
                ;;
   *sunf*)       P="-r8const -xtypemap=real:64 -fpp"
                ;;
