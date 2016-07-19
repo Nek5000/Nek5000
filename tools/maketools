@@ -9,7 +9,7 @@ F77="gfortran"
 CC="gcc"
 
 # linking flags
-USR_LFLAGS="-L/Users/stefanke/lib"
+#USR_LFLAGS="-L$HOME/lib"
 
 # enable BIG MEMORY suuport
 BIGMEM="false"
