@@ -1,7 +1,6 @@
 Reads a exodus II (.exo) file and generates a .re2 file containing the grid,
 curved sides and siteset ids. 
 
-NOTES
    - Requires the 3rd-party Exodus library (and NetCDF with modifications see below) 
    - So far tested with Cubit, but any other package exporting exodusII should work, too
    - Sideset ids are stored in the 5th argument of the fluid bc array
