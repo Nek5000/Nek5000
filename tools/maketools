@@ -12,7 +12,7 @@ CC="gcc"
 #USR_LFLAGS="-L$HOME/lib"
 
 # enable BIG MEMORY suuport
-BIGMEM="false"
+BIGMEM="true"
 
 
 
