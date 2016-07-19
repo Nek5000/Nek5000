@@ -25,10 +25,7 @@ c      endif
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-c     to avoid problems with MPI_TAG_UB on Cray we change
-c     tags from global (eg) to local (e) element number
-c      if (nval.lt.(10000+max(lp,lelg))) then
-      if (nval.lt.(10000+lp)) then
+      if (nval.lt.(10000+max(lp,lelg))) then
          if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
       endif
@@ -227,25 +224,6 @@ C
       real*4 buf(1)
       len = lenm
       jnid = mpi_any_source
-
-      call mpi_recv (buf,len,mpi_byte
-     $              ,jnid,mtype,nekcomm,status,ierr)
-c
-      if (len.gt.lenm) then 
-          write(6,*) nid,'long message in mpi_crecv:',len,lenm
-          call exitt
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine crecv2(mtype,buf,lenm,jnid)
-      include 'mpif.h'
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-      integer status(mpi_status_size)
-C
-      real*4 buf(1)
-      len = lenm
 
       call mpi_recv (buf,len,mpi_byte
      $              ,jnid,mtype,nekcomm,status,ierr)
