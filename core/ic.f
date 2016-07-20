@@ -256,8 +256,8 @@ c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
 c     enddo
 c     ifield = ifldsave
     
-c     if (ifflow.and..not.ifdg) then  ! Current dg is for scalars only
-      if (ifflow) then                ! pff, 11/4/15
+c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
+      if (ifflow.and..not.ifcmt) then  ! pff, 11/4/15
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -273,6 +273,7 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
       endif
 
       if (ifheat.and..not.ifdg) then  ! Don't project if using DG
+       if (.not.ifcmt) then
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -284,6 +285,7 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
               call col2 (t(1,1,1,1,i-1),vmult,ntotv)
             endif
          enddo
+       endif
       endif
 c
 c     if (ifpert.and..not.ifdg) then ! Still not DG
@@ -489,7 +491,8 @@ C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
-            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+C            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
+            IF (NIO.EQ.0.) WRITE(6,1010) LINE
  1010       FORMAT(1X,'Checking restart options: ',A132)
 c            IF (NID.EQ.0) WRITE(6,'(A132)') LINE
 C
@@ -922,7 +925,7 @@ C
      $         (SDUMP(1,6),TDUMP(1,IPOSW),IEG,NXR,NYR,NZR,ifbytsw)
                IF (IFGETP) CALL MAPDMP
      $         (SDUMP(1,7),TDUMP(1,IPOSP),IEG,NXR,NYR,NZR,ifbytsw)
-               IF (IFGETT) CALL MAPDMP
+               if (ifgett) call mapdmp
      $         (SDMP2(1,1),TDUMP(1,IPOST),IEG,NXR,NYR,NZR,ifbytsw)
 
 C              passive scalars
@@ -1173,7 +1176,7 @@ C        Parse field specifications.
          ITO=INDX_CUT(RSOPT,'T',1)
          IF (ITO.NE.0) THEN
             ifdeft=.false.
-            IFGETT=.TRUE.
+            ifgett=.true.
          ENDIF
 
          do 300 i=1,ldimt-1
@@ -1202,13 +1205,17 @@ C     If no fields were explicitly specified, assume getting all fields.
             IFGETU=.TRUE.
             IF (IF3D) IFGETW=.TRUE.
          ENDIF
-         IF (IFFLOW) IFGETP=.TRUE.
-         IF (IFHEAT) IFGETT=.TRUE.
+         if (ifflow) ifgetp=.true.
+         if (ifheat) ifgett=.true.
+         if (ifcmt)  ifgett=.true.
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue
-      ENDIF
-C
+      endif
+
+
+
+
       return
       END
 c-----------------------------------------------------------------------

@@ -32,9 +32,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call get_session_info(intracomm)
 
-      nio = -1             ! Default io flag 
-      if(nid.eq.0) nio=0   ! Only node 0 writes
-      
       etimes = dnekclock()
       istep  = 0
       tpp    = 0.0
@@ -45,8 +42,16 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call initdat
       call files
 
-      etime1 = dnekclock()
+      etime = dnekclock()
       call readat          ! Read .rea +map file
+      etims0 = dnekclock_sync()
+      if (nio.eq.0) then
+         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+         write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     &                             etims0-etime,' sec'
+ 12      format(1X,A,4I12,/,/)
+      endif 
 
       ifsync_ = ifsync
       ifsync = .true.
@@ -67,9 +72,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call io_init         ! Initalize io unit
 
-      if (ifcvode.and.nsteps.gt.0) 
-     $   call cv_setsize(0,nfield) !Set size for CVODE solver
-
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
@@ -85,10 +87,15 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
 
-      call echopar ! echo back the parameter stack
       call setlog  ! Initalize logical flags
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
+
+      if (ifcvode.and.nsteps.gt.0) then
+         n_aux = 0
+         if(iflomach .and. ifvcor) n_aux = 1 ! Thermodynamic pressure
+         call cv_setsize(2,nfield,n_aux)     ! Set size for CVODE solver
+      endif
 
       if (fintim.ne.0.0.or.nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
@@ -249,14 +256,29 @@ c-----------------------------------------------------------------------
 
       if (ifsplit) then   ! PN/PN formulation
 
-         igeom = 1
-         if (ifheat)          call heat     (igeom)
-         call setprop
-         call qthermal
-         igeom = 1
-         if (ifflow)          call fluid    (igeom)
-         if (param(103).gt.0) call q_filter(param(103))
-         call setup_convect (2) ! Save convective velocity _after_ filter
+         do igeom=1,ngeom
+
+         ! within cvode we use the lagged wx for 
+         ! extrapolation, that's why we have to call it before gengeom 
+         if (ifheat .and. ifcvode) call heat       (igeom)   
+
+         if (ifgeom) then
+               call gengeom (igeom)
+               call geneig  (igeom)
+         endif
+
+         if (ifheat .and. .not.ifcvode) call heat   (igeom)
+
+         if (igeom.eq.2) then  
+                                call setprop
+                                call qthermal(1)
+         endif
+
+         if (ifflow)            call fluid         (igeom)
+         if (ifmvbd)            call meshv         (igeom)
+         if (param(103).gt.0)   call q_filter      (param(103))
+                                call setup_convect (igeom)     ! Save convective velocity _after_ filter 
+         enddo
 
       else                ! PN-2/PN-2 formulation
 

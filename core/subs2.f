@@ -1846,10 +1846,10 @@ C
      $        , R2  (LX1,LY1,LZ1,1)
      $        , R3  (LX1,LY1,LZ1,1)
 C
-      if (ifsplit) then
-         call opmask(r1,r2,r3)
-         return
-      endif
+c      if (ifsplit) then
+c         call opmask(r1,r2,r3)
+c         return
+c      endif
 
 c     call outfldro (v1mask,'v1mask rmk',0)
 c     call outfldro (v2mask,'v2mask rmk',1)
