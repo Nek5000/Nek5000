@@ -77,7 +77,7 @@ userf.o    : userf.f	basics.inc basicsp.inc	; $(F77) -c $(FLAGS)  userf.f
 trap.o     : trap.f	basics.inc basicsp.inc	; $(F77) -c $(FLAGS)  trap.f
 xinterface.o	: xinterface.f 	basics.inc	; $(F77) -c $(FLAGS)  xinterface.f
 reverc.o	: revert.f			; $(F77) -c $(FLAGS)  revert.f
-blas.o	   : ../../core/3rd_party/blas.f	; $(F77) -c $(FLAGS)  ../../nek/3rd_party/blas.f
+blas.o	   : ../../core/3rd_party/blas.f	; $(F77) -c $(FLAGS)  ../../core/3rd_party/blas.f
 
 revert.o	: revert.c				; $(CC)  -c $(CFLAGS)  revert.c
 byte.o   : byte.c   					; $(CC)  -c $(CFLAGS)  byte.c
