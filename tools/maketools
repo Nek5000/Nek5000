@@ -8,6 +8,9 @@ bin_nek_tools="$HOME/bin"
 F77="gfortran"
 CC="gcc"
 
+# linking flags
+#USR_LFLAGS="-L$HOME/lib"
+
 # enable BIG MEMORY suuport
 BIGMEM="true"
 
@@ -133,6 +136,8 @@ export CC
 export bin_nek_tools
 export US
 export R8
+LFLAGS_IN=$USR_LFLAGS 
+export LFLAGS_IN  
 
 LIST=`ls -Cd */ | sed 's:\/::g'`
 MODULES=`echo $LIST`
