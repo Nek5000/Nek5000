@@ -64,6 +64,11 @@ c        .and. MOD(LOC(c),tt)==0 &
       endif
 #endif
 
+#ifdef XSMM
+      call libxsmm_dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
+      return
+#endif
+
 #ifdef BLAS_MXM
       call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
       return
