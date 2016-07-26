@@ -439,20 +439,23 @@ C     Dump header
             if (jnid.eq.0) then
                call fill_tmp(tdump,id,ie)
             else
-               mtype=2000+ieg
+c	tag for sending and receiving changed from global (eg) to local (e) element number
+c	to avoid problems with MPI_TAG_UB on Cray
+               mtype=2000+ie
                len=4*id*nxyz
                dum1=0.
                call csend (mtype,dum1,wdsize,jnid,nullpid)
-               call crecv (mtype,tdump,len)
+               call crecv2 (mtype,tdump,len,jnid)
             endif
             if(ierr.eq.0) call out_tmp(id,p66,ierr)
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
-
-            mtype=2000+ieg
+c       tag for sending and receiving changed from global (eg) to local (e) element number
+c       to avoid problems with MPI_TAG_UB on Cray
+            mtype=2000+ie
             len=4*id*nxyz
-            call crecv (mtype,dum1,wdsize)
+            call crecv2 (mtype,dum1,wdsize,node0)
             call csend (mtype,tdump,len,node0,nullpid)
          endif
       enddo

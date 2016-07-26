@@ -2994,15 +2994,17 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) open(unit=29,file='rea.new')
 
       do eg=1,nelgt
-         mtype = eg
          call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+         mtype = e
          if (jnid.eq.0 .and. nid.eq.0) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
             call out_el(xt,eg)
          elseif (nid.eq.0) then
-            call crecv(mtype,xt,len)
+            call crecv2(mtype,xt,len,jnid)
             call out_el(xt,eg)
          elseif (jnid.eq.nid) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
