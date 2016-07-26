@@ -1,24 +1,11 @@
-      program exodus
+      program exo2nek
 
-c Read input name
+      include 'SIZE'
+
       call read_input_name
-      
-c Read exodusII file
       call exodus_read
-
-c Convert elements and bc's
-      call exodus_convert
-
-c Generate the re2 file 
+      call convert
       call gen_re2
-
-c   Output generated mesh to fld file
-c      call outpost(xm1,ym1,zm1,pr,t,'   ')
-
-c  Exit
-      write(6,'(a)') '-------------------------------------'
-      write(6,'(a)') ' Exodus-to-nek conversion finished ! '
-      write(6,'(a)') '-------------------------------------'
 
       end 
 c-----------------------------------------------------------------------
@@ -48,14 +35,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine exodus_read
 c
-c
 c  Subroutine to read an exodusII binary file containing a mesh.
 c  It uses exodus fortran binding subroutines, which depend on
 c  the netcdf library for low level data access.
 c
-c  15.Feb.2016 G.K. Giannakopoulos
-c
-      include 'exodus.inc'
+      include 'exodusII.inc'
       include 'SIZE'
 
       integer exoid, cpu_ws, io_ws
@@ -70,7 +54,7 @@ c
 c
 c open EXODUS II file
 c
-      cpu_ws = 0
+      cpu_ws = 8 ! use real*8 to communicate with exodus
       io_ws  = 0
       exoid  = exopen (exoname, EXREAD, cpu_ws, io_ws, vers, ierr)
       if (ierr.lt.0) then
@@ -232,26 +216,17 @@ c
         endif
       endif
 
-      write(6,*)
-      write(6,'(a)') "-------------------------------"
-      write(6,'(a)') "ExodusII file read succesfully."
-      write(6,'(a)') "-------------------------------"
-
       return
       end
 C-----------------------------------------------------------------
-      subroutine exodus_convert
-c
+      subroutine convert
 c
 c  Subroutine to convert an already read exodusII mesh to a nek
 c  mesh. The idea is to fill each element's node coordinates of
 c  size lx1**3 (3D) or lx1**2 (2D) (lx1=3) with the hex27/quad9
 c  coordinates.
 c
-c  15.Feb.2016 G.K. Giannakopoulos
-c
-c
-      include 'exodus.inc'
+      include 'exodusII.inc'
       include 'SIZE'
 c
 c node and face conversion (it works at least for cubit):
@@ -272,13 +247,13 @@ c
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /          ! symmetric face numbering
 
       write(6,*)
-      write(6,'(A)') 'Converting elements from exodus to nek...'
+      write(6,'(A)') 'Converting elements ...'
       write(6,*)
 
       nvert = 3**num_dim
 
       do iel = 1, num_elem
-        if (mod(iel,5000).eq.0.or.iel.eq.num_elem) then
+        if (mod(iel,100).eq.0.or.iel.eq.num_elem) then
           write(6,'(A,I8)') 'Reading element ',iel
         endif
         do ivert = 1, nvert
@@ -294,26 +269,24 @@ c
           endif
         enddo
       enddo
-      write(6,*)
-      write(6,'(A)') 'Element conversion completed.'
-      write(6,*)
 c zero-out bc and curve sides arrays
-      call blank  (cbc,3*2*ldim*max_num_elem)
-      call rzero  (bc,5*2*ldim*max_num_elem)
-      call blank  (ccurve,(4+8*(ldim-2))*max_num_elem)
-      call rzero  (curve,2*ldim*12*max_num_elem)
+      call blank   (cbc,3*2*ldim*max_num_elem)
+      call rzero   (bc,5*2*ldim*max_num_elem)
+      call blank   (ccurve,(4+8*(ldim-2))*max_num_elem)
+      call rzero   (curve,2*ldim*12*max_num_elem)
 c
 c set bc's
 c
       if (num_side_sets.eq.0) return   ! no sidesets
 
-      write(6,'(a)') "Converting SidSets to BCs of fld(1)...."
+      write(6,'(a)') ""
+      write(6,'(a)') "Converting SidSets ..."
 c the expensive part, improve it...
       do iss=1,num_side_sets   ! loop over ss 
         write(6,'(a)') ""
         write(6,'(a,i2)') "Sideset ",idss(iss)
         do iel=1,num_elem
-          if (mod(iel,5000).eq.0.or.iel.eq.num_elem) then
+          if (mod(iel,100).eq.0.or.iel.eq.num_elem) then
             write(6,'(A,I8)') '  Element ',iel
           endif
           do ifc=1,2*num_dim             ! loop over faces
@@ -333,24 +306,20 @@ c the expensive part, improve it...
         enddo
       enddo
 
-      write(6,*)
-      write(6,'(a)') "BCs conversion completed."
-      write(6,*)
-
       return
       end
 C--------------------------------------------------------------------
       subroutine gen_re2
 
+      include 'SIZE'
+
+      write(6,*)
+      write(6,'(A,A)') 'writing ', re2name
 
       call open_re2
-
       call write_xyz
-    
       call write_curve
-
       call write_bc
- 
       call close_re2
 
       return
@@ -370,14 +339,15 @@ C--------------------------------------------------------------------
       len = ltrunc(re2name,80)
       call chcopy(file,re2name,80)
       call chcopy(file(len+1),char(0),1) 
-      call byte_open(file)
-             
+
+      call byte_open(file,ierr)
+            
 c  Write the header
       call blank     (hdr,80)    
       write(hdr,1) num_elem, num_dim, num_elem
-    1 format('#v002',i9,i3,i9,' this is the hdr')
-      call byte_write(hdr,20)         
-      call byte_write(test,1)     ! write the endian discriminator
+    1 format('#v003',i9,i3,i9,' this is the hdr')
+      call byte_write(hdr,20,ierr)         
+      call byte_write(test,1,ierr)     ! write the endian discriminator
 
       return
       end
@@ -386,8 +356,8 @@ C--------------------------------------------------------------------
 
       include 'SIZE'
 
-      real       xx(8), yy(8), zz(8)
-      real*8     rgroup, buf2(30)
+      real     xx(8), yy(8), zz(8)
+      real*8   rgroup, buf2(30)
 
       integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
       data    isym2pre    / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
@@ -424,20 +394,20 @@ C--------------------------------------------------------------------
           enddo
         endif
 
-        call byte_write(rgroup, 2)
+        call byte_write(rgroup, 2,ierr)
 
         if (num_dim.eq.3) then
-          call copy48      (buf2(1) ,xx,8)
-          call copy48      (buf2(9) ,yy,8)
-          call copy48      (buf2(17),zz,8)
-          call byte_write  (buf2(1) ,16)
-          call byte_write  (buf2(9) ,16)
-          call byte_write  (buf2(17),16)
+          call copy        (buf2(1) ,xx,8)
+          call copy        (buf2(9) ,yy,8)
+          call copy        (buf2(17),zz,8)
+          call byte_write  (buf2(1) ,16, ierr)
+          call byte_write  (buf2(9) ,16, ierr)
+          call byte_write  (buf2(17),16, ierr)
         else
-          call copy48      (buf2(1),xx,4)
-          call copy48      (buf2(5),yy,4)
-          call byte_write  (buf2(1),8)
-          call byte_write  (buf2(5),8)
+          call copy        (buf2(1),xx,4)
+          call copy        (buf2(5),yy,4)
+          call byte_write  (buf2(1),8, ierr)
+          call byte_write  (buf2(5),8, ierr)
         endif
       enddo
 
@@ -454,7 +424,7 @@ C-----------------------------------------------------------------------
       character*1 cc
 
       do iel=1,num_elem
-        call gen_rea_midside_e(iel)
+         call gen_rea_midside_e(iel)
       enddo
 
       nedge = 4 + 8*(num_dim-2)
@@ -466,7 +436,7 @@ C-----------------------------------------------------------------------
       enddo
 
       rcurve = ncurv
-      call byte_write(rcurve,2)
+      call byte_write(rcurve,2, ierr)
 
       do iel=1,num_elem
         do iedge=1,nedge
@@ -476,10 +446,10 @@ C-----------------------------------------------------------------------
             if (ccurve(iedge,iel).eq.'m') cc='m'
             buf2(1) = iel
             buf2(2) = iedge
-            call copy48     (buf2(3),curve(1,iedge,iel),5)
+            call copy       (buf2(3),curve(1,iedge,iel),5)
             call blank      (buf2(8),8)
             call chcopy     (buf2(8),cc,1)
-            call byte_write (buf2,16)
+            call byte_write (buf2,16, ierr)
           endif
         enddo
       enddo
@@ -491,7 +461,7 @@ C-----------------------------------------------------------------------
        
       include 'SIZE'
 
-      real*8  rbc, buf2(30), bc8(5)
+      real*8  rbc, buf2(30)
 
       character*3 ch3
       character*1 chdum
@@ -509,22 +479,22 @@ C-----------------------------------------------------------------------
       enddo
 
       rbc = nbc
-      call byte_write (rbc,2)
+      call byte_write (rbc,2, ierr)
 
       do iel = 1,num_elem
         do ifc = 1,nface
           ch3 = cbc(ifc,iel)
-          if (ch3.ne.'   ') then
+          if (ch3.eq.'EXO') then
             buf2(1)=iel
             buf2(2)=ifc
-            call copy48 (buf2(3),bc(1,ifc,iel),5)
+            call copy   (buf2(3),bc(1,ifc,iel),5)
             call blank  (buf2(8),8)
             call chcopy (buf2(8),ch3,3)
             if (num_elem.ge.1 000 000) then
               ibc     = bc(1,ifc,iel)
               buf2(3) = ibc
             endif
-            call byte_write (buf2,16)
+            call byte_write (buf2,16, ierr)
           endif
         enddo
       enddo
@@ -534,14 +504,7 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
       subroutine close_re2
 
-      include 'SIZE'
-
-      character*1 file(80)
-
-      len = ltrunc(re2name,80)
-      call chcopy(file,re2name,80)
-      call chcopy(file(len+1),char(0),1)
-      call byte_close (file)
+      call byte_close (ierr)
 
       return
       end
@@ -625,33 +588,54 @@ c
 c-----------------------------------------------------------------------
       subroutine map2reg_2di_e(uf,n,uc,m) ! Fine, uniform pt
 
-      real      uf(n,n),uc(m,m)
-      parameter (l=3)
-c      parameter (l=50)
-      integer   j(l*l),jt(l*l),w(l*l),z(l)
+      real uf(n,n),uc(m,m)
 
-      call zwgll     (z,w,m)
-      call zuni      (w,n)
-      call gen_int_gz(j,jt,w,n,z,m)
-      call mxmf2     (j,n,uc,m,w ,m)
-      call mxmf2     (w,n,jt,m,uf,n)
+      parameter (l=50)
+      common /cmap2d/ j(l*l),jt(l*l),w(l*l),z(l)
+
+      integer mo,no
+      save    mo,no
+      data    mo,no / 0,0 /
+
+      if (m.ne.mo .or. n.ne.no ) then
+
+          call zwgll (z,w,m)
+          call zuni  (w,n)
+
+          call gen_int_gz(j,jt,w,n,z,m)
+
+      endif
+
+      call mxmf2(j,n,uc,m,w ,m)
+      call mxmf2(w,n,jt,m,uf,n)
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine map2reg_3di_e(uf,n,uc,m) ! Fine, uniform pt
 
-      real      uf(n,n,n),uc(m,m,m)
-      parameter (l=3)
-c      parameter (l=50)
-      integer   j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
+      real uf(n,n,n),uc(m,m,m)
 
-      call zwgll     (z,w,m)
-      call zuni      (w,n)
-      call gen_int_gz(j,jt,w,n,z,m)
+      parameter (l=50)
+      common /cmap3d/ j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
+
+      integer mo,no
+      save    mo,no
+      data    mo,no / 0,0 /
+
+      if (m.ne.mo .or. n.ne.no ) then
+
+          call zwgll (z,w,m)
+          call zuni  (w,n)
+
+          call gen_int_gz(j,jt,w,n,z,m)
+
+      endif
+
       mm = m*m
       mn = m*n
       nn = n*n
+
       call mxmf2(j,n,uc,m,v ,mm)
       iv=1
       iw=1
@@ -698,25 +682,9 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine rzero(a,n)
-      DIMENSION  A(1)
-      DO 100 I = 1, N
- 100     A(I ) = 0.0
-      return
-      END
-c-----------------------------------------------------------------------
       subroutine exitt
 
       stop
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine copy48(a,b,n)
-
-      real*8 a(1)
-      real*4 b(1)
-      do 100 i = 1, n
- 100     a(i) = b(i)
       return
       end
 c-----------------------------------------------------------------------
@@ -845,3 +813,11 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine rzero(a,n)
+      real A(1)
+      DO 100 I = 1, N
+ 100     A(I ) = 0.0
+      return
+      END
+
