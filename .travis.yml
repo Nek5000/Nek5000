@@ -2,14 +2,61 @@ language: fortran
 
 sudo: required
 
-services:
-  - docker
-
 env:
- - TEST_SUITE=NekUnitTests.py::TurbChannel
+  matrix:
+
+    - TEST_CASE=Axi::test_PnPn_Serial
+    - TEST_CASE=Axi::test_PnPn_Parallel
+    - TEST_CASE=Axi::test_PnPn2_Serial
+    - TEST_CASE=Axi::test_PnPn2_Parallel
+
+    - TEST_CASE=Benard_Ray9::test_PnPn_Serial
+    - TEST_CASE=Benard_Ray9::test_PnPn2_Serial
+    # - TEST_CASE=Benard_RayDD::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    - TEST_CASE=Benard_RayDD::test_PnPn2_Serial
+    # - TEST_CASE=Benard_RayDN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    - TEST_CASE=Benard_RayDN::test_PnPn2_Serial
+    # - TEST_CASE=Benard_RayNN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    # - TEST_CASE=Benard_RayNN::test_PnPn2_Serial  # Exceeds time limit for Travis jobs
+
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial
+    # - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  # Exceeds time limit for Travis jobs
+    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial
+    # - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel # Exceeds time limit for Travis jobs
+
+    - TEST_CASE=KovStState::test_PnPn2_Serial
+    - TEST_CASE=KovStState::test_PnPn2_Parallel
+
+    - TEST_CASE=LowMachTest::test_PnPn_Serial
+    - TEST_CASE=LowMachTest::test_PnPn_Parallel
+    - TEST_CASE=LowMachTest::test_PnPn2_Serial
+    - TEST_CASE=LowMachTest::test_PnPn2_Parallel
+
+    # - TEST_CASE=VarVis::test_PnPn_Serial    # Stdout exceeds Travis' max log length
+    # - TEST_CASE=VarVis::test_PnPn_Parallel  # Stdout exceeds Travis' max log length
+    # - TEST_CASE=VarVis::test_PnPn2_Serial   # Stdout exceeds Travis' max log length
+    # - TEST_CASE=VarVis::test_PnPn2_Parallel # Stdout exceeds Travis' max log length
 
 before_install: 
- - docker pull nek5000/nek5000-tester
+  - export ROOT_DIR=`pwd`
+
+  - export SOURCE_ROOT=$ROOT_DIR
+  - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
+  - export F77=mpif77
+  - export CC=mpicc
+  - export IFMPI=true
+  - export VERBOSE_TESTS=true
+
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libmpich-dev mpich
+
+  - virtualenv -p python2.7 $ROOT_DIR/python2-env
+  - source $ROOT_DIR/python2-env/bin/activate
+  - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
+ 
+install:
+  - pip install --upgrade pip
+  - pip install pytest
 
 script: 
- - if [[ "$TRAVIS_PULL_REQUEST" -eq "false" ]]; then docker run -v `pwd`:/home/nek/nek5000 nek5000/nek5000-tester -m "not pr" $TEST_SUITE; else docker run -v `pwd`:/home/nek/nek5000 nek5000/nek5000-tester $TEST_SUITE; fi
+  - py.test -s -v $ROOT_DIR/short_tests/NekTests.py::$TEST_CASE
