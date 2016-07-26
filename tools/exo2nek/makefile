@@ -1,6 +1,6 @@
 FLAGS =  $(FFLAGS_IN)
 CFLAGS = $(CFLAGS_IN)
-LFLAGS = $(LFLAGS_IN) -lexodus -lnetcdf -lexodus_for
+LFLAGS = $(LFLAGS_IN) -lnetcdf -lexodus -lexoIIv2for32
 prefix = $(bin_nek_tools)
 
 
@@ -16,6 +16,5 @@ clean:
 
 exo2nek.o	: exo2nek.f			;  $(F77) -c $(FLAGS) exo2nek.f
 byte.o		: ../../core/byte.c		;  $(CC)  -c $(CFLAGS) ../../core/byte.c
-mxm_std.o	: ../../core/mxm_std.f		;  $(F77) -c $(FLAGS) ../../core/mxm_std.f
 speclib.o	: ../../core/speclib.f		;  $(F77) -c $(FLAGS) ../../core/speclib.f
 mxm.o		: mxm.f				;  $(F77) -c $(FLAGS) mxm.f
