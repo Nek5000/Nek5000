@@ -25,6 +25,7 @@ curved sides and siteset ids.
 4. mkdir build; cd build;
 5. ../cmake-exodus  
 6. make && make install
-7. Copy exodusII.inc from the exodus source the convert source path
-8. Run maketools 
+7. Add -I.../seacas/libraries/exoIIv2for32/include to the F77 variable in maketools 
+8. Specify location of exodus and netcdf library using USR_FLAGS in maketools e.g. -L$HOME/lib
+9. Run maketools exo2nek
 
