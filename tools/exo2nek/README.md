@@ -26,6 +26,6 @@ curved sides and sideset ids.
 - ```../cmake-exodus```  
 - ```make && make install```
 - Add ```-I.../seacas/libraries/exoIIv2for32/include``` to the ```F77``` variable in maketools 
-- Specify location of exodus and netcdf library using ```USR_FLAGS``` in maketools e.g. ```-L$HOME/lib```
+- Specify location of exodus and netcdf library using ```USR_LFLAGS``` in maketools e.g. ```-L$HOME/lib```
 - Run ```maketools exo2nek```
 
