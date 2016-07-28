@@ -9,6 +9,9 @@ all:
         cd $${i} ;                          \
         export FFLAGS_IN=" ";               \
         export CFLAGS_IN=${US} ;            \
+        if [ "$$i" == "exo2nek" ]; then     \
+           export FFLAGS_IN=${R8} ;         \
+        fi ;                                \
         if [ "$$i" == "genmap" ]; then      \
            export FFLAGS_IN=${R8} ;         \
         fi ;                                \

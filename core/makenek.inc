@@ -218,6 +218,8 @@ case $F77comp in
                ;;
   *pathf*)      P="-r8 -cpp -fno-second-underscore"
                ;;
+  *ftn*)        P="-s default64 -eF"
+               ;;
   *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"

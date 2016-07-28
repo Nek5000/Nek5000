@@ -3370,6 +3370,7 @@ c   80 format(a80)
     1 format(a5,i9,i3,i9)
       wdsizi=4
       if(version.eq.'#v002')wdsizi=8
+      if(version.eq.'#v003')wdsizi=8
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti

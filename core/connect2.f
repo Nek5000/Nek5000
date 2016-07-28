@@ -2676,6 +2676,10 @@ c-----------------------------------------------------------------------
  
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
+         if(version.eq.'#v003') then
+           wdsizi = 8
+           param(32) = 1
+         endif
 
          call byte_read(test,1,ierr)
          if(ierr.ne.0) goto 100
@@ -2691,6 +2695,7 @@ c-----------------------------------------------------------------------
       call bcast(nelgv  ,ISIZE)
       call bcast(ndim   ,ISIZE)
       call bcast(nelgt  ,ISIZE)
+      call bcast(param(32),WDSIZE)
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 
      $   call exitti('wdsize=4 & wdsizi(re2)=8 not compatible$',wdsizi)
