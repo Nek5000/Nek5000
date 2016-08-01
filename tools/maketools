@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # binary path
-mkdir -p $HOME/bin
-bin_nek_tools="$HOME/bin"
+bin_nek_tools=`cd ../bin && pwd`
 
 # specify your compilers here
 F77="gfortran"

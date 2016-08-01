@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       call blank (re2name, 80)
 
       write(6,*) 'Input (.exo) file name:'
-      read (5,'(a80)') exoname
+      read (5,'(a32)') exoname
       len = ltrunc(exoname,32)
 
       call chcopy(re2name        ,exoname,32)
