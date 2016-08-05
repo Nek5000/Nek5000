@@ -29,36 +29,28 @@ c
 
 
 #ifdef BGQ
-      if (n2 == 8 .and. mod(n1,4) == 0 &
-c        .and. MOD(LOC(a),tt)==0 & 
-c        .and. MOD(LOC(b),tt)==0 & 
-c        .and. MOD(LOC(c),tt)==0 & 
-        ) then
+      if (n2 == 8 .and. mod(n1,4) == 0 ) then
         call mxm_bgq_8(a, n1, b, n2, c, n3)  
         return
       endif
-      if (n2 == 16 .and. mod(n1,4) == 0 &
-c        .and. MOD(LOC(a),tt)==0 & 
-c        .and. MOD(LOC(b),tt)==0 & 
-c        .and. MOD(LOC(c),tt)==0 & 
-         ) then
+      if (n2 == 16 .and. mod(n1,4) == 0 ) then
         call mxm_bgq_16(a, n1, b, n2, c, n3)  
         return
       endif
       tt = 32
-      if (n2 == 10 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 &
-        .and. MOD(LOC(a),tt)==0 & 
-        .and. MOD(LOC(b),tt)==0 & 
-        .and. MOD(LOC(c),tt)==0 & 
-          ) then
+      if (n2 == 10 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 
+     +   .and. MOD(LOC(a),tt)==0  
+     +   .and. MOD(LOC(b),tt)==0  
+     +   .and. MOD(LOC(c),tt)==0  
+     +     ) then
         call mxm_bgq_10(a, n1, b, n2, c, n3)  
         return
       endif
-      if (n2 == 6 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 &
-        .and. MOD(LOC(a),tt)==0 & 
-        .and. MOD(LOC(b),tt)==0 & 
-        .and. MOD(LOC(c),tt)==0 & 
-       ) then
+      if (n2 == 6 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 
+     +   .and. MOD(LOC(a),tt)==0 
+     +   .and. MOD(LOC(b),tt)==0  
+     +   .and. MOD(LOC(c),tt)==0  
+     +  ) then
         call mxm_bgq_6(a, n1, b, n2, c, n3)  
         return
       endif
