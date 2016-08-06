@@ -784,8 +784,8 @@ c             - Velocity/stress formulation.
       endif
 
       if(nio.eq.0 .and. igeom.ge.2) 
-     &   write(*,'(4x,i7,a,1p1e12.4,a)') istep,'  Fluid done',
-     &                                   dnekclock()-ts
+     &   write(*,'(11x,a,11x,1p1e12.4,a)') '  Fluid done',
+     &                                     dnekclock()-ts
 
       return
       end
@@ -845,8 +845,8 @@ C
       endif
 
       if (nio.eq.0 .and. igeom.ge.2)
-     &   write(*,'(4x,i7,a,1p1e12.4,a)') istep,'  Heat done',
-     &                                   dnekclock()-ts
+     &   write(*,'(11x,a,12x,1p1e12.4,a)') '  Heat done',
+     &                                     dnekclock()-ts
 
       return
       end

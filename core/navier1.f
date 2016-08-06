@@ -3085,7 +3085,7 @@ c     if (istep.gt.20) CALL EMERXIT
       call ortho(rcg)
 
       etime1 = dnekclock()-etime1
-      IF (NIO.EQ.0) WRITE(6,9999) ISTEP, '  U-Pres std.  ',
+      IF (NIO.EQ.0) WRITE(6,9999) ISTEP, '  U-Press std. ',
      &                            ITER,DIVEX,div0,tolpss,etime1
  9999 FORMAT(I11,a,I7,1p4E13.4)
 19999 FORMAT(I11,'  U-Press 1.e-5: ',I7,1p4E13.4)

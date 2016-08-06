@@ -932,7 +932,7 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
             call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
          enddo
 
-         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
+c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
 
          call proj_ortho    ! Orthogonalize X & B basis sets
      $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
@@ -953,8 +953,8 @@ c    1 format(4x,i7,1p3e13.4,i4,1x,a6,' PROJECT')
 
 
       if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
-     &                         bb4,baf,ratio,m
-    1 format(i11,a,6x,1p3e13.4,i4)
+     &                         bb4,baf,ratio,m,ireset
+    1 format(i11,a,6x,1p3e13.4,i4,i4)
 
 
 
