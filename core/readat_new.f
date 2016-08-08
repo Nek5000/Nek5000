@@ -44,12 +44,19 @@ c
       call rzero(uparam,20)
 
       param(1)  = 1    ! density
-      param(16) = 1    ! helmholz for temperature and scalars
+
+
+      param(20) = 1e-8 ! temperature & passive passive tolerance
       param(21) = 1e-6 ! pressure tolerance
-      param(22) = 1e-8 ! helmholz tolerance
+      param(22) = 1e-8 ! velocity tolerance
 
       param(26) = 0.5  ! max Courant number
       param(27) = 2    ! 2nd order in time
+csk
+csk      param(32) = 2    ! number of BC to read from file
+csk
+      param(42) = 0    ! CG 
+      param(43) = 0    ! SEMG preconitioner
 
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
@@ -77,6 +84,10 @@ c
       ifadvc(1) = .true.  
       do i=1,ldimt1
          ifadvc(i+1) = .true.  
+      enddo 
+
+      do i=1,ldimt
+         idpss(i) = -1
       enddo 
 
       ifflow    = .false.
@@ -117,6 +128,8 @@ c
       ifvisc    = .false. 
       iffltr    = .false.
 
+      ifdp0dt = .false.
+
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 
@@ -132,10 +145,8 @@ c-----------------------------------------------------------------------
 c
 c     parse .par file and set run parameters
 c
-c     still missing:
-c     - field specific solver for temp+scalars
-c     - field specific tolerances for temp+scalars 
-c     - abs/rel tolerance support for helmholz
+c     todo:
+c     - field specific tolerances (for now: ps use the temperature settings) 
 c     - mhd support
 
       INCLUDE 'SIZE'
@@ -182,35 +193,61 @@ c set parameters
          param(15) = d_out
       endif
 
-      ! overrule abs/rel tol
-      param(20) = -1
       call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
       if(ifnd .eq. 1) param(20) = d_out 
+      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
+      if(ifnd .eq. 1) param(25) = d_out 
+
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':residualTol'
+         call finiparser_getDbl(d_out,txt,ifnd)
+         if(ifnd .eq. 1) param(20) = d_out ! for now, one for all 
+      enddo
+
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
       if(ifnd .eq. 1) param(21) = d_out 
       call finiparser_getDbl(d_out,'velocity:residualTol',ifnd)
       if(ifnd .eq. 1) param(22) = d_out 
 
+      call finiparser_find(i_out,'temperature',ifnd)
+      if(ifnd .eq. 1) then
+        ifheat = .true.
+        ifto   = .true.
+        idpss(1) = 0 ! set Helmholtz as default
+      endif
+
       j = 0
-      do i = 1,99
+      do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
          if (ifnd .eq. 1) then
             j = j + 1 
-            ifpso(i) = .true.
+            ifpsco(i) = .true.
+            idpss(i+1) = 0 ! set Helmholtz as default
          endif
       enddo
       param(23) = j 
 
-      call finiparser_getDbl(d_out,'temperature:relativeTol',ifnd)
-      if(ifnd .eq. 1) param(24) = d_out 
-      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
-      if(ifnd .eq. 1) param(25) = d_out 
-
       call finiparser_getString(c_out,'temperature:solver',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'CVODE') .gt. 0) then
-         param(16) = 2
+      if (index(c_out,'CVODE') .gt. 0) idpss(1) = 1
+
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':solver'
+         call finiparser_getString(c_out,txt,ifnd)
+         call capit(c_out,132)
+         if (index(c_out,'CVODE') .gt. 0) idpss(i+1) = 1
+         if (index(c_out,'NONE' ) .gt. 0) idpss(i+1) = -1
+      enddo
+
+      j = 0
+      do i = 1,ldimt
+         if (idpss(i).ge.0) j = j + 1
+      enddo
+      if (j .ge. 1) then
+         ifheat = .true.
+      else
+         ifheat = .false.
       endif
 
       call finiparser_getDbl(d_out,'general:maxCFL',ifnd)
@@ -283,12 +320,6 @@ c set logical flags
         ifpo   = .true.
       endif
 
-      call finiparser_find(i_out,'temperature',ifnd)
-      if(ifnd .eq. 1) then
-        ifheat = .true.
-        ifto   = .true.
-      endif
-
       call finiparser_getBool(i_out,'mesh:motion',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) then
         ifmvbd = .true.
@@ -346,6 +377,11 @@ c set logical flags
         if(i_out .eq. 1) ifuservp = .true.
       endif
 
+      call finiparser_getBool(i_out,'problemType:dp0dt',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) ifdp0dt = .true.
+      endif
+
 c set advection
       call finiparser_getBool(i_out,'velocity:advection',ifnd)
       if(ifnd .eq. 1) then
@@ -360,8 +396,8 @@ c set advection
       endif
 
       do i = 1,ldimt-1
-         write(txt,"('scalar',i2.2)") i
-         call finiparser_getBool(i_out,txt // ':advection',ifnd)
+         write(txt,"('scalar',i2.2,a)") i,':advection'
+         call finiparser_getBool(i_out,txt,ifnd)
          if(ifnd .eq. 1) then
            ifadvc(i+2) = .false.
            if(i_out .eq. 1) ifadvc(i+2) = .true.
@@ -403,8 +439,8 @@ c set output flags
       endif
 
       do i = 1,ldimt-1
-         write(txt,"('scalar',i2.2)") i
-         call finiparser_getBool(i_out,txt // ':writeToFieldFile',ifnd)
+         write(txt,"('scalar',i2.2,a)") i,':writeToFieldFile'
+         call finiparser_getBool(i_out,txt,ifnd)
          if(ifnd .eq. 1) then
            ifpsco(i) = .false.
            if(i_out .eq. 1) ifpsco(i) = .true.
@@ -425,11 +461,12 @@ c set properties
       if(ifnd .eq. 1) cpfld(2,2) = d_out 
 
       do i = 1,ldimt-1
-         write(txt,"('scalar',i2.2)") i
-         call finiparser_getDbl(d_out, txt // ':conductivity',ifnd)
+         write(txt,"('scalar',i2.2,a)") i,':diffusivity'
+         call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,1) = d_out 
          if(cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
-         call finiparser_getDbl(d_out, txt // ':rhoCp',ifnd)
+         write(txt,"('scalar',i2.2,a)") i,':rho'
+         call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,2) = d_out 
       enddo
 
@@ -456,6 +493,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
+      INCLUDE 'CVODE'
 
       call bcast(param , 200*wdsize)
       call bcast(uparam, 20*wdsize)
@@ -468,6 +506,7 @@ C
       call bcast(ifstrs  , lsize)
       call bcast(ifmvbd  , lsize)
       call bcast(ifusermv, lsize)
+      call bcast(ifdp0dt,  lsize)
       call bcast(ifaxis  , lsize)
       call bcast(ifcyclic, lsize)
       call bcast(ifmhd   , lsize)
@@ -477,8 +516,9 @@ C
       call bcast(ifmoab, lsize)
       call bcast(ifaziv, lsize)
 
-      call bcast(ifadvc, ldimt1*lsize)
-      call bcast(iftmsh, (ldimt1+1)*lsize)
+      call bcast(ifadvc ,  ldimt1*lsize)
+      call bcast(idpss  ,  ldimt*isize)
+      call bcast(iftmsh , (ldimt1+1)*lsize)
 
       call bcast(cpfld, 3*ldimt1*wdsize)
 
@@ -535,6 +575,15 @@ c set some internals
             param(19) = 0.0
          endif
       endif
+
+      cv_nfld = 0
+      do i = 1,ldimt
+         if (idpss(i) .gt. 0) then
+           cv_nfld = cv_nfld + 1
+           ifcvfld(i+1) = .true.
+         endif
+      enddo
+      if (cv_nfld.gt.0) ifcvode = .true.
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
 c     This is here because it influence the mesh read, which follows.
@@ -577,7 +626,7 @@ c
          if(nid.eq.0) then
            write(6,21) ldimt,npscal+1
    21      format(//,2x,'Error: Nek has been compiled'
-     $             /,2x,'       for',i4,' scalars. This run'
+     $             /,2x,'       for max.',i4,' scalars. This run'
      $             /,2x,'       requires that ldimt be set to',i4,'.')
          endif
          call exitt
@@ -588,13 +637,11 @@ c
           lelt_needed = nelgt/np
           if (mod(nelgt,np).ne.0) lelt_needed = lelt_needed + 1 
           write(6,82) lelt,lelg,lelt_needed,np,nelgt
-   82         format(//,2X,'ABORT: Problem size too large!'
+   82         format(//,2X,'Error: Nek has has been compiled for'
+     $         ,/,2X,      '       number of elements/proc  (lelt):',i12
+     $         ,/,2X,      '       total number of elements (lelg):',i12
      $         ,/,2X
-     $         ,/,2X,'This solver has been compiled for:'
-     $         ,/,2X,'   number of elements/proc  (lelt):',i12
-     $         ,/,2X,'   total number of elements (lelg):',i12
-     $         ,/,2X
-     $         ,/,2X,'Recompile with the following SIZE  parameters:'
+     $         ,/,2X,'This run requires:'
      $         ,/,2X,'   lelt >= ',i12,'  for np = ',i12
      $         ,/,2X,'   lelg >= ',i12,/)
 c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
@@ -603,30 +650,18 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitt
       endif
 
-      if(nelgt.gt.nelgt_max) then
-        if(nid.eq.0) write(6,*)
-     $               'ABORT: Total number of elements too large!',
-     $               '       nel_max = ', nelgt_max 
-        call exitt
-      endif
-
-      if (nelt.gt.lelt) then
-        write(6,'(A,3I12)') 'ABORT: nelt>lelt!', nid, nelt, lelt
-        call exitt
-      endif
-
       if (ifmvbd) then
          if (lx1.ne.lx1m.or.ly1.ne.ly1m.or.lz1.ne.lz1m) 
      $    call exitti
-     $    ('Mesh motion requires lx1m=lx1 etc. in SIZE . $',lx1m)
+     $    ('Error: Mesh motion requires lx1m=lx1 etc. in SIZE . $',lx1m)
       endif
 
       IF(NDIM.NE.LDIM) THEN
          IF(NID.EQ.0) THEN
            WRITE(6,10) LDIM,NDIM
-   10      FORMAT(//,2X,'ERROR: Nek has been compiled'
+   10      FORMAT(//,2X,'Error: Nek has been compiled'
      $             /,2X,'       for spatial dimension equal to',I2,'.'
-     $             /,2X,'       The data file has dimension',I2,'.')
+     $             /,2X,'       The mesh file has dimension',I2,'.')
          ENDIF
          call exitt
       ENDIF
@@ -687,14 +722,14 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: MOAB in Pn-Pn-2 is not supported'
+     $   'ERROR: No MOAB support for Pn-Pn-2'
          call exitt
       endif
 
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Stress formulation requires lx1m=lx1, etc. in SIZE'
+     $   'ERROR: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
 
@@ -706,7 +741,7 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (ifsplit .and. ifmhd) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: MHD in Pn-Pn is not supported'
+     $   'ABORT: No MHD support for Pn-Pn'
          call exitt
       endif
 
@@ -729,7 +764,19 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (iflomach .and. .not.ifheat) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT For lowMach, need to solve for temperature too!'
+     $   'ABORT: For lowMach, need to solve for temperature too!'
+         call exitt
+      endif
+
+      if (ifdp0dt .and. .not.iflomach) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Varying pth requires lowMach! '
+         call exitt
+      endif
+
+      if (ifdp0dt .and. .not.ifcvode) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Varying pth requires CVODE!'
          call exitt
       endif
 

@@ -289,7 +289,12 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
-      enddo      
+      enddo
+
+      do i=1,NPSCL1
+         IDPSS(i) = 0 ! use Helmholtz for passive scalars 
+      enddo
+
       IFFLOW    = .false.
       IFHEAT    = .false.
       IFTRAN    = .false.
@@ -2196,6 +2201,7 @@ c-----------------------------------------------------------------------
 c
 c     If p32 = 0.1, there will be no bcs read in
 c
+      nfldt0 = nfldt
       if (param(32).gt.0) nfldt = ibc + param(32)-1
 
       lcbc=18*lelt*(ldimt1 + 1)
@@ -2211,6 +2217,18 @@ c
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
+      ! set default bcs
+      ifldcopy = 1
+      if (nfldt.gt.1) ifldcopy = 2
+      do ifield = nfldt+1,nfldt0
+         if (nio.eq.0) write(6,9999) ifield, ifldcopy
+         do iel=1,nelt
+         do ifc=1,2*ndim
+            cbc(ifc,iel,ifield) = cbc(ifc,iel,ifldcopy)
+        enddo
+        enddo
+      enddo
+
       call nekgsync
       ierr=0
       if(nid.eq.0) then
@@ -2219,6 +2237,8 @@ c
         write(6,*) ' '
       endif
       call err_chk(ierr,'Error closing re2 file. Abort $')
+
+ 9999 format('   no bc for ifld ',i4,' specified, copy from ifld ',i4)
 
       return
       end

@@ -821,14 +821,15 @@ C
          if(igeom.eq.2) call cdscal_cvode(igeom)
 
       elseif (ifsplit) then
-
          do ifield=2,nfield
-            intype        = -1
-            if (.not.iftmsh(ifield)) imesh = 1
-            if (     iftmsh(ifield)) imesh = 2
-            call unorm
-            call settolt
-            call cdscal (igeom)
+            if (idpss(ifield-1).eq.0) then
+               intype        = -1
+               if (.not.iftmsh(ifield)) imesh = 1
+               if (     iftmsh(ifield)) imesh = 2
+               call unorm
+               call settolt
+               call cdscal (igeom)
+           endif
          enddo
 
       else  ! PN-PN-2
