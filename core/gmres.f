@@ -222,10 +222,10 @@ c     END DIAGNOSTICS
       call ortho (res)  ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
-      if (nio.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
-     &                            etime1
+      if (nio.eq.0) write(6,9999) istep,'  U-PRES gmres  ', 
+     &                            iter,divex,div0,tolpss,etime_p,etime1
 c     call flush_hack
- 9999 format(i10,' U-PRES gmres:',I7,1p5e12.4)
+ 9999 format(i11,a,I6,1p5e13.4)
 
       return
       end
@@ -519,10 +519,10 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       call ortho   (res) ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
-      if (nio.eq.0) write(6,9999) istep,iter,divex,tolpss,div0,etime_p,
+      if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
      &                            etime1,if_hyb
 c     call flush_hack
- 9999 format(i9,' PRES gmres:',i5,1p5e12.4,1x,l4)
+ 9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
 
       if (outer.le.2) if_hyb = .false.
 
