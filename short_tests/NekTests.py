@@ -1786,13 +1786,13 @@ class LowMachTest(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0, delta=100, label='gmres')
 
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-10, label='VX')
+        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-06, label='VX')
 
         t = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(t, target_val=4.5408E-12, delta=1e-13, label='T')
+        self.assertAlmostEqualDelayed(t, target_val=4.5408E-12, delta=1e-06, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-07, label='QTL')
+        self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-06, label='QTL')
 
         self.assertDelayedFailures()
 

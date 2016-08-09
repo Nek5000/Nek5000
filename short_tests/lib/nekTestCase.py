@@ -10,7 +10,7 @@ from functools import wraps
 def pn_pn_serial(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        self.mpi_procs = 1
+        self.mpi_procs = self.serial_procs
         self.log_suffix = '.pn_pn'
         if self.ifmpi:
             self.log_suffix += '.parallel'
@@ -22,7 +22,7 @@ def pn_pn_serial(method):
 def pn_pn_2_serial(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        self.mpi_procs = 1
+        self.mpi_procs = self.serial_procs
         self.log_suffix = '.pn_pn_2'
         if self.ifmpi:
             self.log_suffix += '.parallel'
@@ -34,7 +34,7 @@ def pn_pn_2_serial(method):
 def pn_pn_parallel(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        self.mpi_procs = 4
+        self.mpi_procs = self.parallel_procs
         if not self.ifmpi:
             self.skipTest("Skipping \"{0}\"; MPI is not enabled.".format(self.id()))
         else:
@@ -49,7 +49,7 @@ def pn_pn_parallel(method):
 def pn_pn_2_parallel(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        self.mpi_procs = 4
+        self.mpi_procs = self.parallel_procs
         if not self.ifmpi:
             self.skipTest("Skipping \"{0}\"; MPI is not enabled.".format(self.id()))
         else:
@@ -114,11 +114,13 @@ class NekTestCase(unittest.TestCase):
         self.tools_bin      = ''
         self.log_root       = ''
         self.makenek        = ''
+        self.serial_procs   = 1
+        self.parallel_procs = 2
 
-        # These can be overridden by method decorators (pn_pn_serial, pn_pn_parallel,
+        # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
         # pn_pn_2_serial, and pn_pn_2_parallel)
         self.log_suffix = ""
-        self.mpi_procs  = 1
+        self.mpi_procs  = None
 
         # Empy list of delayed fails
         self._delayed_failures = []
@@ -167,6 +169,7 @@ class NekTestCase(unittest.TestCase):
         self.cc      = os.environ.get('CC',    self.cc)
         self.ifmpi   = os.environ.get('IFMPI', self.ifmpi)
         self.verbose = os.environ.get('VERBOSE_TESTS', self.verbose)
+        self.parallel_procs = int(os.environ.get('PARALLEL_PROCS', self.parallel_procs))
 
         # String/bool conversions
         self.ifmpi = str(self.ifmpi).lower()
@@ -175,11 +178,14 @@ class NekTestCase(unittest.TestCase):
         self.verbose = str(self.verbose).lower()
         self.verbose = self.verbose == 'yes' or self.verbose == 'true'
 
-        for varname, varval in (('F77', self.f77),
-                          ('CC', self.cc),
-                          ('IFMPI', str(self.ifmpi).lower()),
-                          ('VERBOSE_TESTS', str(self.verbose).lower())):
-            print('    Using {0}="{1}"'.format(varname, varval))
+        for varname, varval in (
+                ('F77', self.f77),
+                ('CC', self.cc),
+                ('IFMPI', str(self.ifmpi).lower()),
+                ('VERBOSE_TESTS', str(self.verbose).lower()),
+                ('PARALLEL_PROCS', self.parallel_procs)
+        ):
+            print('    Using {0}={1}'.format(varname, varval))
 
         # SOURCE_ROOT and EXAMPLES_ROOT must be defined.  Get from env and fail early if they don't exist
         # -----------------------------------------------------------------------------------------------
