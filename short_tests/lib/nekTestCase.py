@@ -238,7 +238,7 @@ class NekTestCase(unittest.TestCase):
 
         print("Finished getting setup options!")
 
-    def build_tools(self, targets=None, tools_root=None, tools_bin=None, f77=None, cc=None, bigmem=None):
+    def build_tools(self, targets=None, tools_root=None, tools_bin=None, f77=None, cc=None, bigmem=None, verbose=None):
         from lib.nekBinBuild import build_tools
         build_tools(
             targets    = targets    if targets    else ('clean', 'genmap'),
@@ -246,7 +246,8 @@ class NekTestCase(unittest.TestCase):
             tools_bin  = tools_bin  if tools_bin  else self.tools_bin,
             f77        = f77        if f77        else 'gfortran',
             cc         = cc         if cc         else 'gcc',
-            bigmem     = bigmem     if bigmem     else 'false'
+            bigmem     = bigmem     if bigmem     else 'false',
+            verbose    = verbose    if verbose    else self.verbose
         )
 
     def config_size(self, infile=None, outfile=None, lx2=None, ly2=None, lz2=None):
@@ -278,6 +279,7 @@ class NekTestCase(unittest.TestCase):
             command = os.path.join(self.tools_bin, 'genmap'),
             stdin   = [rea_file, tol],
             cwd     = os.path.join(self.examples_root, cls.example_subdir),
+            verbose = self.verbose
         )
 
     def run_genbox(self, box_file=None):
@@ -294,6 +296,7 @@ class NekTestCase(unittest.TestCase):
             command = os.path.join(self.tools_bin, 'genbox'),
             stdin   = [box_file],
             cwd     = os.path.join(self.examples_root, self.__class__.example_subdir),
+            verbose = self.verbose
         )
 
     def run_n2to3(self, stdin):
@@ -317,7 +320,8 @@ class NekTestCase(unittest.TestCase):
             cwd         = os.path.join(self.examples_root, cls.example_subdir),
             f77         = self.f77,
             cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower()
+            ifmpi       = str(self.ifmpi).lower(),
+            verbose     = self.verbose
         )
 
     def run_nek(self, rea_file=None, step_limit=None):

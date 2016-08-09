@@ -13,7 +13,7 @@ env:
     - TEST_CASE=Benard_Ray9::test_PnPn_Serial
     - TEST_CASE=Benard_Ray9::test_PnPn2_Serial
     # - TEST_CASE=Benard_RayDD::test_PnPn_Serial   # Exceeds time limit for Travis jobs
-    - TEST_CASE=Benard_RayDD::test_PnPn2_Serial
+    # - TEST_CASE=Benard_RayDD::test_PnPn2_Serial  # Stdout exceeds Travis' max log length
     # - TEST_CASE=Benard_RayDN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
     - TEST_CASE=Benard_RayDN::test_PnPn2_Serial
     # - TEST_CASE=Benard_RayNN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
