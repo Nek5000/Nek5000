@@ -897,6 +897,7 @@ c
       equivalence (file1,file)
 
       ierr = 0
+      ifbinary = .false.
 
 c     Get file name
       len = indx1(prompt,'$',1) - 1
@@ -914,7 +915,6 @@ c     Get file name
          call chcopy(file,session,80)
          len = ltrunc(file,80)
          call chcopy(file1(len+1),'.rea',4)
-         call chcopy(file1(len+1),suffix,lsf)
          open(unit=io, file=file, status='old', iostat=ierr)
 
          if (ierr.gt.0) then
@@ -925,6 +925,8 @@ c     Get file name
             if(ifbinary) ierr = 0
          endif
       endif
+
+      write(6,*) 'reading ', file
 
       return
       end
