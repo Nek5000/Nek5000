@@ -1201,8 +1201,8 @@ c    ................................................................
          alpha2 = sqrt(alpha2/volvm2)
          ratio  = alpha1/alpha2
          n10=min(10,nprev)
-         if (nio.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
-         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
+c         if (nio.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
+c         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
    11    format(2i5,' alpha:',1p10e12.4)
    12    format(i6,i4,1p3e12.4,' alph12')
       endif

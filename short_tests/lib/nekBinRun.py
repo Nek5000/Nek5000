@@ -2,7 +2,7 @@ import os
 import sys
 from subprocess import call, check_call, PIPE, STDOUT, Popen, CalledProcessError
 
-def run_meshgen(command, stdin, cwd):
+def run_meshgen(command, stdin, cwd, verbose=False):
 
     logfile = os.path.join(cwd, '{0}.out'.format(os.path.basename(command)))
     stdin_bytes   = bytes("\n".join(stdin))
@@ -13,8 +13,14 @@ def run_meshgen(command, stdin, cwd):
     print('    Using working directory "{0}"'.format(cwd))
 
     try:
+        (stdoutdata, stderrdata) = Popen([command], stdin=PIPE, stderr=STDOUT, stdout=PIPE, cwd=cwd).communicate(stdin_bytes)
+
         with open(logfile, 'w') as f:
-            Popen([command], stdin=PIPE, stderr=STDOUT, stdout=f, cwd=cwd).communicate(stdin_bytes)
+            f.writelines(stdoutdata)
+
+        if verbose:
+            sys.stdout.write(stdoutdata)
+
     except (OSError, CalledProcessError) as E:
         # TODO: Change to warnings.warn()
         print('Could not complete {0}!  Caught error: "{1}".  Check "{2}" for details.'.format(command, E, logfile))
