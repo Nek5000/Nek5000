@@ -45,6 +45,8 @@ c
 
       param(1)  = 1    ! density
 
+      param(18) = 0    ! cvode absolute tolerance
+      param(19) = 0    ! cvode realtive tolerance
 
       param(20) = 1e-8 ! temperature & passive passive tolerance
       param(21) = 1e-6 ! pressure tolerance
@@ -53,7 +55,7 @@ c
       param(26) = 0.5  ! max Courant number
       param(27) = 2    ! 2nd order in time
 csk
-csk      param(32) = 2    ! number of BC to read from file
+c      param(32) = 2    ! number of BC to read from file
 csk
       param(42) = 0    ! CG 
       param(43) = 0    ! SEMG preconitioner
@@ -193,17 +195,6 @@ c set parameters
          param(15) = d_out
       endif
 
-      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
-      if(ifnd .eq. 1) param(20) = d_out 
-      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
-      if(ifnd .eq. 1) param(25) = d_out 
-
-      do i = 1,ldimt-1
-         write(txt,"('scalar',i2.2,a)") i,':residualTol'
-         call finiparser_getDbl(d_out,txt,ifnd)
-         if(ifnd .eq. 1) param(20) = d_out ! for now, one for all 
-      enddo
-
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
       if(ifnd .eq. 1) param(21) = d_out 
       call finiparser_getDbl(d_out,'velocity:residualTol',ifnd)
@@ -231,6 +222,8 @@ c set parameters
       call finiparser_getString(c_out,'temperature:solver',ifnd)
       call capit(c_out,132)
       if (index(c_out,'CVODE') .gt. 0) idpss(1) = 1
+      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
+      if(ifnd .eq. 1) param(20) = d_out 
 
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2,a)") i,':solver'
@@ -239,6 +232,11 @@ c set parameters
          if (index(c_out,'CVODE') .gt. 0) idpss(i+1) = 1
          if (index(c_out,'NONE' ) .gt. 0) idpss(i+1) = -1
       enddo
+
+      call finiparser_getDbl(d_out,'cvode:absoluteTol',ifnd)
+      if(ifnd .eq. 1) param(18) = d_out 
+      call finiparser_getDbl(d_out,'cvode:relativeTol',ifnd)
+      if(ifnd .eq. 1) param(19) = d_out 
 
       j = 0
       do i = 1,ldimt

@@ -1887,4 +1887,28 @@ c
 c
       return
       end
+cc-----------------------------------------------------------------------
+      subroutine transpose(a,lda,b,ldb)
+      real a(lda,1),b(ldb,1)
+c
+      do j=1,ldb
+         do i=1,lda
+            a(i,j) = b(j,i)
+         enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine transpose1(a,n)
+      real a(n,n)
+c
+      do j=1,n
+      do i=j+1,n
+         ta     = a(i,j)
+         a(i,j) = a(j,i)
+         a(j,i) = ta
+      enddo
+      enddo
+      return
+      end
 c-----------------------------------------------------------------------

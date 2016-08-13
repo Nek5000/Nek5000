@@ -121,6 +121,7 @@ c     Fill up user defined forcing function and collocate will the
 c     mass matrix on the Gauss-Lobatto mesh.
 
       include 'SIZE'
+      include 'INPUT'
       include 'MASS'
       include 'SOLN'
       include 'TSTEP'
@@ -129,9 +130,11 @@ c     mass matrix on the Gauss-Lobatto mesh.
 
       time = time-dt        ! Set time to t^n-1 for user function
 
-      call rzero   ( bq(1,1,1,1,ifield-1) ,    n)
-      call setqvol ( bq(1,1,1,1,ifield-1)          )
-      call col2    ( bq(1,1,1,1,ifield-1) ,bm1,n)
+      call rzero   (bq(1,1,1,1,ifield-1),n)
+      call setqvol (bq(1,1,1,1,ifield-1))
+      if (ifcvfld(ifield)) call copy (tlag(1,1,1,1,1,ifield-1),
+     &                                bq  (1,1,1,1,ifield-1),n)
+      call col2    (bq(1,1,1,1,ifield-1) ,bm1,n)
 
       time = time+dt        ! Restore time
 

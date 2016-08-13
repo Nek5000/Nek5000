@@ -82,6 +82,7 @@ C
 
       NTOT=NX2*NY2*NZ2*LELT
       CALL RZERO(USRDIV,NTOT)
+      CALL RZERO(QTL,NTOT)
 
       RETURN
       END
@@ -240,9 +241,6 @@ C
          call exitt
       endif
 
-      if(abs(PARAM(16)).ge.2) IFCVODE = .true.
-
-C
 C     Check accuracy requested.
 C
       IF (TOLREL.LE.0.) TOLREL = 0.01
@@ -747,7 +745,7 @@ C-----------------------------------------------------------------------
       ts = dnekclock() 
 
       if(nio.eq.0 .and. igeom.eq.2) 
-     &   write(6,'(13x,a)') 'Solving for fluid' !,ifsplit,iftran,ifnav
+     &   write(*,'(13x,a)') 'Solving for fluid'
 
       if (ifsplit) then
 
@@ -784,8 +782,8 @@ c             - Velocity/stress formulation.
       endif
 
       if(nio.eq.0 .and. igeom.ge.2) 
-     &   write(*,'(11x,a,11x,1p1e12.4,a)') '  Fluid done',
-     &                                     dnekclock()-ts
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  Fluid done',time,dnekclock()-ts
 
       return
       end
@@ -813,41 +811,49 @@ C
 
       ts = dnekclock()
 
-      if (nio.eq.0 .and. igeom.eq.1) 
-     &    write(*,'(13x,a)') 'Solving for heat'
+      if (nio.eq.0 .and. igeom.eq.2) 
+     &    write(*,'(13x,a)') 'Solving for Hmholtz scalars'
 
-      if (ifcvode) then
-
-         if(igeom.eq.2) call cdscal_cvode(igeom)
-
-      elseif (ifsplit) then
-         do ifield=2,nfield
-            if (idpss(ifield-1).eq.0) then
-               intype        = -1
-               if (.not.iftmsh(ifield)) imesh = 1
-               if (     iftmsh(ifield)) imesh = 2
-               call unorm
-               call settolt
-               call cdscal (igeom)
-           endif
-         enddo
-
-      else  ! PN-PN-2
-
-         do ifield=2,nfield
+      do ifield = 2,nfield
+         if (idpss(ifield-1).eq.0) then      ! helmholtz
             intype        = -1
             if (.not.iftmsh(ifield)) imesh = 1
             if (     iftmsh(ifield)) imesh = 2
             call unorm
             call settolt
-            call cdscal (igeom)
-         enddo
+            call cdscal(igeom)
+         endif
+      enddo
 
-      endif
+      if (nio.eq.0 .and. igeom.eq.2)
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  Scalars done',time,dnekclock()-ts
 
-      if (nio.eq.0 .and. igeom.ge.2)
-     &   write(*,'(11x,a,12x,1p1e12.4,a)') '  Heat done',
-     &                                     dnekclock()-ts
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine heat_cvode (igeom)
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'TURBO' 
+      include 'DEALIAS'
+
+      real*8 ts, dnekclock
+
+      ts = dnekclock()
+
+      if (igeom.ne.2) return
+
+      if (nio.eq.0) 
+     &    write(*,'(13x,a)') 'Solving for CVODE scalars'
+
+      call cdscal_cvode(igeom)
+
+      if (nio.eq.0)
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  CVODE scalars done',time,dnekclock()-ts
 
       return
       end

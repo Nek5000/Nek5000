@@ -8,11 +8,6 @@
       if_conv_std = .true.
       if (ifmhd.and.ifaxis) if_conv_std = .false. ! conv. treated in induct.f
 
-      if(ifcvode .and. ifield.eq.2) then  
-         call setprop                        
-         call qthermal(0)                        
-      endif                                    
-
       call whatfld (ifturb)
       if (ifturb) call maketq ! zero bq
       if (.not.ifturb .and. if_conv_std)  call makeuq !zero bq

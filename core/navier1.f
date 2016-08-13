@@ -3415,17 +3415,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine transpose(a,lda,b,ldb)
-      real a(lda,1),b(ldb,1)
-c
-      do j=1,ldb
-         do i=1,lda
-            a(i,j) = b(j,i)
-         enddo
-      enddo
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine convop(conv,fi)
 C
 C     Compute the convective term CONV for a passive scalar field FI

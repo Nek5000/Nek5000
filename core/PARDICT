@@ -3,7 +3,7 @@ c     Define all valid keys for .par file here
 c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
-      parameter(PARDICT_NKEYS = 70)
+      parameter(PARDICT_NKEYS = 72)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -74,6 +74,8 @@ c
      &  pardictkey(65) / 'SCALAR%%:DIFFUSIVITY' /
      &  pardictkey(66) / 'SCALAR%%:WRITETOFIELDFILE' /
      &  pardictkey(67) / 'TEMPERATURE:SOLVER' /
-     &  pardictkey(68) / 'TEMPERATURE:ABSOLUTETOL' /
-     &  pardictkey(69) / 'TEMPERATURE:RESIDUALTOL' /
-     &  pardictkey(70) / 'PROBLEMTYPE:DP0DT' /
+     &  pardictkey(68) / 'TEMPERATURE:RESIDUALTOL' /
+     &  pardictkey(69) / 'PROBLEMTYPE:DP0DT' /
+     &  pardictkey(70) / 'CVODE' /
+     &  pardictkey(71) / 'CVODE:ABSOLUTETOL' /
+     &  pardictkey(72) / 'CVODE:RELATIVETOL' /
