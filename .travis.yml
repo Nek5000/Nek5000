@@ -13,16 +13,16 @@ env:
     - TEST_CASE=Benard_Ray9::test_PnPn_Serial
     - TEST_CASE=Benard_Ray9::test_PnPn2_Serial
     # - TEST_CASE=Benard_RayDD::test_PnPn_Serial   # Exceeds time limit for Travis jobs
-    - TEST_CASE=Benard_RayDD::test_PnPn2_Serial
+    # - TEST_CASE=Benard_RayDD::test_PnPn2_Serial  # Stdout exceeds Travis' max log length
     # - TEST_CASE=Benard_RayDN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
     - TEST_CASE=Benard_RayDN::test_PnPn2_Serial
     # - TEST_CASE=Benard_RayNN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
     # - TEST_CASE=Benard_RayNN::test_PnPn2_Serial  # Exceeds time limit for Travis jobs
 
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial
-    # - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  # Exceeds time limit for Travis jobs
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel
     - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial
-    # - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel # Exceeds time limit for Travis jobs
+    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel
 
     - TEST_CASE=KovStState::test_PnPn2_Serial
     - TEST_CASE=KovStState::test_PnPn2_Parallel
@@ -46,6 +46,7 @@ before_install:
   - export CC=mpicc
   - export IFMPI=true
   - export VERBOSE_TESTS=true
+  - export PARALLEL_PROCS=2
 
   - sudo apt-get update -qq
   - sudo apt-get install -y libmpich-dev mpich
