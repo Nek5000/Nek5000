@@ -24,7 +24,7 @@ c
       call chkParam
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call bin_rd1(ifbswap) 
+      call bin_rd1(ifbswap) ! read .re2 data 
 
       call nekgsync()
 
@@ -43,8 +43,9 @@ c
       call rzero(param,200)
       call rzero(uparam,20)
 
-      param(1)  = 1    ! density
 
+      param(16) = 1    ! normal mode in cvode
+      param(17) = 1    ! use adams moulton (non-stiff) in cvode
       param(18) = 0    ! cvode absolute tolerance
       param(19) = 0    ! cvode realtive tolerance
 
@@ -54,10 +55,10 @@ c
 
       param(26) = 0.5  ! max Courant number
       param(27) = 2    ! 2nd order in time
-csk
+
 c      param(32) = 2    ! number of BC to read from file
-csk
-      param(42) = 0    ! CG 
+
+      param(42) = 0    ! GMRES 
       param(43) = 0    ! SEMG preconitioner
 
       param(65) = 1    ! just one i/o node
@@ -65,9 +66,9 @@ csk
       param(67) = 6    ! read in binary
       param(93) = 20   ! number of vectors for projection
 
-      param(94) = 0    ! turn on projection for helmholz solves
+      param(94) = 0    ! turn off projection for helmholz solves
       param(95) = 5    ! turn on projection for pressure solve
-      param(99) = 4    ! dealising
+      param(99) = 4    ! enable dealising
 c
       iftmsh(0) = .false. 
       iftmsh(1) = .false. 
@@ -148,7 +149,9 @@ c
 c     parse .par file and set run parameters
 c
 c     todo:
-c     - field specific tolerances (for now: ps use the temperature settings) 
+c     - check for invalid values for a given key
+c     - print default value to screen
+c     - separate settings for tol, proj, dealiasing for ps
 c     - mhd support
 
       INCLUDE 'SIZE'
@@ -204,7 +207,7 @@ c set parameters
       if(ifnd .eq. 1) then
         ifheat = .true.
         ifto   = .true.
-        idpss(1) = 0 ! set Helmholtz as default
+        idpss(1) = 0 ! Helmholtz is default
       endif
 
       j = 0
@@ -214,7 +217,7 @@ c set parameters
          if (ifnd .eq. 1) then
             j = j + 1 
             ifpsco(i) = .true.
-            idpss(i+1) = 0 ! set Helmholtz as default
+            idpss(i+1) = 0 ! Helmholtz is default
          endif
       enddo
       param(23) = j 
@@ -232,7 +235,6 @@ c set parameters
          if (index(c_out,'CVODE') .gt. 0) idpss(i+1) = 1
          if (index(c_out,'NONE' ) .gt. 0) idpss(i+1) = -1
       enddo
-
       call finiparser_getDbl(d_out,'cvode:absoluteTol',ifnd)
       if(ifnd .eq. 1) param(18) = d_out 
       call finiparser_getDbl(d_out,'cvode:relativeTol',ifnd)
@@ -271,7 +273,7 @@ c set parameters
       call finiparser_getDbl(d_out,'general:writeNParallelFiles',ifnd)
       if(ifnd .eq. 1) param(65) = d_out 
 
-      call finiparser_getBool(i_out,'velocity:residualProj',ifnd) ! for all helmholz solves
+      call finiparser_getBool(i_out,'velocity:residualProj',ifnd)
       if(ifnd .eq. 1) then
         param(94) = 0
         if(i_out .eq. 1) param(94) = 5 
@@ -294,6 +296,11 @@ c set parameters
         if(ifnd .eq. 1) param(101) = d_out 
       endif
 
+      call finiparser_getString(c_out,'cvode:mode',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'NORMAL') .gt. 0) param(16) = 1
+      if (index(c_out,'NORMAL_TSTOP' ) .gt. 0) param(16) = 3
+ 
       do i = 1,20
          call blank(txt,132)
          write(txt,"('general:userParam',i2.2)") i
@@ -380,6 +387,16 @@ c set logical flags
         if(i_out .eq. 1) ifdp0dt = .true.
       endif
 
+      call finiparser_getBool(i_out,'cvode:stiff',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) param(17) = 2 !BDF
+      endif
+
+      call finiparser_getBool(i_out,'cvode:mode',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) param(17) = 2 !BDF
+      endif
+
 c set advection
       call finiparser_getBool(i_out,'velocity:advection',ifnd)
       if(ifnd .eq. 1) then
@@ -403,7 +420,6 @@ c set advection
       enddo
 
 c set mesh-field mapping
-conjugateHeatTransfer
       call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
      &                        ifnd)
       if(ifnd .eq. 1) then
@@ -476,7 +492,7 @@ c set restart options
       enddo
 
       call finiparser_dump()
-      call finiparser_free()
+c      call finiparser_free()
 
       return
       end

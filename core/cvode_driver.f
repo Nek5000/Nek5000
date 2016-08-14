@@ -43,7 +43,7 @@ c----------------------------------------------------------------------
       ! cvode will not allocate these arrays
       integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
+      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
 
       integer sizeOfLongInt
       external sizeOfLongInt
@@ -105,20 +105,24 @@ c
       ! cvode will not allocate these arrays
       integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
+      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
 
       real*8 etime1
-
-      meth = 2 ! 1:non-stiff / 2:stiff
-
-      etime1=dnekclock_sync()
+      character*15 txt_meth,txt_itask
 
       nxyz = nx1*ny1*nz1
       ifcvodeinit   = .false.
 
       if(nio.eq.0) write(*,*) 'Initializing CVODE ...'
 
-      ! set solver tolerances
+      itask = param(16) ! AM or BDF
+      if(itask.eq.1) txt_itask='NORMAL'      
+      if(itask.eq.3) txt_itask='NORMAL_TSTOP'      
+
+      meth = param(17) ! AM or BDF
+      if(meth.eq.1) txt_meth='AM'      
+      if(meth.eq.2) txt_meth='BDF'      
+
       cv_atol = param(18)
       cv_rtol = param(19) 
 
@@ -126,6 +130,8 @@ c
         write(*,'(a,i3)') 'ABORT cv_init(): invalid tolerances!'
         call exitt
       endif
+
+      etime1=dnekclock_sync()
 
       ! initialize vector module
       call create_comm(cvcomm)
@@ -168,6 +174,10 @@ c      endif
 
       etime1 = dnekclock_sync() - etime1
       if(nio.eq.0) then
+        write(6,'(A,A)')        '   integration method              : ',
+     &                         txt_meth
+        write(6,'(A,A)')        '   integration mode                : ',
+     &                         txt_itask
         write(6,'(A,i11)')       '   degrees of freedom             : ',
      &                         cv_nglobal
         write(6,'(A,2(1pe8.1))') '   rel/abs tolerances             : ',
@@ -189,12 +199,16 @@ c      endif
 c----------------------------------------------------------------------
       subroutine cdscal_cvode
 c
-c     Top level driver for the ODE integrator CVODE
+c     Top level driver for CVODE
 c     webpage: https://computation.llnl.gov/casc/sundials 
 c
 c     Integrate the IVP d/dt[y] = f(y(t),t); y(t=t0) := f0
 c     using BDF(stiff) or AM(non-stiff).
 c     f denotes the RHS function and is evaluated in fcvfun().
+c
+c     todo:
+c     - vector tolerances
+c     - preconditioner
 c
       include 'SIZE'
       include 'TOTAL'
@@ -218,7 +232,7 @@ c
       integer*4 iout,iout_old,ipar
 #endif
       integer cvcomm
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
+      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
 
       real nfe_avg,nli_nni_avg,nli_nni
       save nfe_avg,nli_nni_avg
@@ -231,9 +245,6 @@ c
       data nni_sum / 0 /
       data nli_sum / 0 / 
       data nfe_sum / 0 /
-
-
-      itask = 1 ! fixed, at least for now
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz * nelv
