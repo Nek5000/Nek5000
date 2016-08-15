@@ -378,7 +378,7 @@ if [ $? -eq 0 ]; then
 fi
 echo $PPLIST | grep 'BGQ' >/dev/null 
 if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o mxm_bgq.o " 
+   MXM_USER="mxm_std.o mxm_bgq.o blas.o" 
    OPT_FLAGS_STD="-O3"
    OPT_FLAGS_MAG="-O3"
 fi
