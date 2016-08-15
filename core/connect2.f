@@ -2369,6 +2369,8 @@ c-----------------------------------------------------------------------
 
          mid = gllnid(eg)
          e   = gllel (eg)
+!     tag for sending and receiving changed from global (eg) to local (e) element number
+!     to avoid problems with MPI_TAG_UB on CRAY
 #ifdef DEBUG
          if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
 #endif
@@ -2376,20 +2378,20 @@ c-----------------------------------------------------------------------
 
             if(ierr.eq.0) then
               call byte_read  (buf,nwds,ierr)
-              call csend(eg,ierr,len1,mid,0)
-              if(ierr.eq.0) call csend(eg,buf,len,mid,0)
+              call csend(e,ierr,len1,mid,0)
+              if(ierr.eq.0) call csend(e,buf,len,mid,0)
             else
-              call csend(eg,ierr,len1,mid,0)
+              call csend(e,ierr,len1,mid,0)
             endif
 
          elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
 
-            call crecv      (eg,ierr,len1)
+            call crecv      (e,ierr,len1)
             if(ierr.eq.0) then
-              call crecv      (eg,buf,len)
+              call crecv      (e,buf,len)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
- 
+
          elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
 
             if(ierr.eq.0) then
