@@ -45,7 +45,7 @@ genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
-init_plugin.o setprop.o qthermal.o cvode_aux.o makeq_aux.o \
+vprops.o qthermal.o cvode_aux.o makeq_aux.o \
 papi.o nek_in_situ.o \
 readat_new.o finiparser.o iniparser.o dictionary.o
 ################################################################################
@@ -226,8 +226,7 @@ $(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/coef.o	:$S/coef.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/plan4.o	:$S/plan4.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/setprop.o	:$S/setprop.f;	   		$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/init_plugin.o	:$S/init_plugin.f;	 	$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/vprops.o	:$S/vprops.f;	   		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/cvode_driver.o :$S/cvode_driver.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/makeq.o      	:$S/makeq.f;			$(F77) -c $(FL2) $< -o $@

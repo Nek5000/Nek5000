@@ -289,7 +289,12 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
-      enddo      
+      enddo
+
+      do i=1,NPSCL1
+         IDPSS(i) = 0 ! use Helmholtz for passive scalars 
+      enddo
+
       IFFLOW    = .false.
       IFHEAT    = .false.
       IFTRAN    = .false.
