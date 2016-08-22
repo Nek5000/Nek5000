@@ -1,0 +1,16 @@
+*.f0*
+SESSION.NAME
+*.o
+obj
+*.3D
+compiler.out
+*.sch
+.cproject
+.project
+*.swp
+fort.*
+logfile
+makefile
+makenek
+*.log.*
+profiles

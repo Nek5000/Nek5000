@@ -4,6 +4,7 @@
       include 'GEOM'
       include 'CMTDATA'
       include 'SOLN'
+      include 'DEALIAS' ! until we are comfortable with setup_convect
 
       parameter (lxyz=lx1*ly1*lz1)
       common /ctmp1/ energy(lx1,ly1,lz1),scr(lx1,ly1,lz1)
@@ -37,6 +38,25 @@
      >                nxyz)
          call tdstate(e,energy)
       enddo
+
+! setup_convect has the desired effect
+! if IFPART=F
+! if IFCHAR=F
+! if IFCONS=T
+! if igeom .ne. 1
+! if param(99) .ge. 0
+!-----------------------------------------------------------------------
+!     call setup_convect(0)
+!-----------------------------------------------------------------------
+! to make life easier until we master this stuff and harmonize even better with nek,
+! I'm including 'DEALIAS' and calling set_convect_cons here
+      if (nxd.gt.nx1) then
+         call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
+      else
+         call copy(vxd,vx,ntot) 
+         call copy(vyd,vy,ntot) 
+         call copy(vzd,vz,ntot) 
+      endif
 
       return
       end

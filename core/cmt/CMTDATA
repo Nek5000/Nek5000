@@ -21,7 +21,7 @@ c       have explicit temp dependence. At the begining of the time step
 c       a scratch space will be use to iteratively compute Cv and T from 
 c       internal energy.
 c--------------------------------------------------------------------- 
-      COMMON /CMTGASPROP/ CSOUND(lxd,lyd,lzd,lelCMT)
+      COMMON /CMTGASPROP/ CSOUND(lx1,ly1,lz1,lelCMT)
       real                 csound
 
       COMMON /CMTGASREF/  cvgref,cpgref,gmaref,rgasref,molmass
@@ -44,6 +44,13 @@ c---------------------------------------------------------------------
       logical            ifbr1
       COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
       real                 WGHT, WGHTD
+! particle stuff for rk3 low storage tvd
+      common /PARTRK3/ kv_stage_p, kx_stage_p
+      real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
+
+      common /partrkstuff/ xlocp, vlocp
+      real xlocp(lpart,ldim), vlocp(lpart,ldim)
+
 ! index for gas density in vtrans, Q+-
       parameter (irho=1) ! better always be 1
 ! other VTRANS indices

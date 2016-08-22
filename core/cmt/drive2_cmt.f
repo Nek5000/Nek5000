@@ -14,6 +14,9 @@ c-----------------------------------------------------------------------
          if (nio.eq.0) write(6,*) 'lelcmt=',lelcmt,' lelt=',lelt
          call exitt
       endif
+      if (ifrestart) then
+         ifheat = .true.
+      endif
       call setup_cmt_commo
       
 c     call setup_cmt_param

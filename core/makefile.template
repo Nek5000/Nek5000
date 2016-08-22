@@ -91,10 +91,14 @@ ifeq ($(IFMPI),false)
 endif
 
 # IFCMT append *.o files to CORE
-CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
- face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
- bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
- filters_cmt.o diagnostics.o
+ifeq ($(IFCMT),true)
+  CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
+   face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
+   bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
+   filters_cmt.o diagnostics.o
+else
+  CMTCORE := cmt_dummy.o
+endif
 # VISIT ########################################################################
 ifeq ($(IFVISIT),true)
   VISITNEK_INCLUDES:=-I$S/3rd_party
@@ -239,6 +243,7 @@ $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(F77) -c $(FL2) $< -o $@
 # CMT CORE     ##################################################################
+$(OBJDIR)/cmt_dummy.o	:$(S2)/cmt_dummy.f;	        	$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/step.o	:$(S2)/step.f;	        	$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/drive1_cmt.o	:$(S2)/drive1_cmt.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/drive2_cmt.o	:$(S2)/drive2_cmt.f;		$(F77) -c $(FL2) $< -o $@
