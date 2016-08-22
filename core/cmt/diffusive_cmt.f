@@ -301,9 +301,9 @@
          do i=1,nx1
             call nekasgn(i,j,k,e)
             call uservp(i,j,k,ieg)
-            vdiff(i,1,1,e,imu) = mu
-            vdiff(i,1,1,e,ilam) = lambda
-            vdiff(i,1,1,e,iknd) = udiff
+            vdiff(i,j,k,e,imu) = mu
+            vdiff(i,j,k,e,ilam) = lambda
+            vdiff(i,j,k,e,iknd) = udiff
          enddo
          enddo
          enddo

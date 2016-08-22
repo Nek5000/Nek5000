@@ -403,8 +403,8 @@ fi
 
 # set optimization flags
 L0="\$(G) -O0"
-L2="\$(G) -O2"
-L3="\$(G) -O3" 
+L2="\$(G) -O0"
+L3="\$(G) -O0" 
 L4="\$(L3)"
 
 # user specified opt flags

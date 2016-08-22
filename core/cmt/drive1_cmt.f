@@ -21,9 +21,14 @@ c     Solve the Euler equations
       n = nxyz1*lelcmt*toteq
       nfldpart = ndim*npart
 
-      if(istep.eq.1) call set_tstep_coef
-      if(istep.eq.1) call cmt_flow_ics(ifrestart)
-      if(istep.eq.1) call init_cmt_timers
+      if(istep.eq.1) then 
+         call set_tstep_coef
+         call cmt_flow_ics(ifrestart)
+         call init_cmt_timers
+c all point particles are initialized and 
+c preprocessing of interpolation step 
+         call usr_particles_init
+      endif
 
       nstage = 3
       do stage=1,nstage
@@ -32,13 +37,23 @@ c     Solve the Euler equations
          rhst_dum = dnekclock()
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
+c particle equations of motion are solved (also includes forcing)
+c In future this subroutine may compute the back effect of particles
+c on the fluid and suitably modify the residue computed by 
+c compute_rhs_dt for the 5 conserved variables
+         call usr_particles_solver
 
-c        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
-c          dumchars='residue'
-c          call dumpresidue(dumchars,stage)
-c        endif
+!        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
+!          dumchars='residue'
+!          call dumpresidue(dumchars,stage)
+!        endif
+!        call exitt
 c JH061114 this loop may need some work. stride difficulties
 
+! JH111815 soon....
+!        do eq=1,toteq
+!           call fbinvert(res1(1,1,1,1,eq))
+!        enddo
 
          do e=1,nelt
             do eq=1,toteq
@@ -53,6 +68,8 @@ c    >                        (c1*res1(i,1,1,e,eq) + c2*res2(i,1,1,e,eq)
 c    >                       + c3*res3(i,1,1,e,eq))
 c-----------------------------------------------------------------------
 c this completely stops working if B become nondiagonal for any reason.
+! JH111815 in fact, I'd like to redo the time marching stuff above and
+!          have an fbinvert call for res1
                u(i,1,1,eq,e) = u(i,1,1,eq,e)/bm1(i,1,1,e)
 c that completely stops working if B become nondiagonal for any reason.
 !-----------------------------------------------------------------------
@@ -67,6 +84,8 @@ c that completely stops working if B become nondiagonal for any reason.
          call out_pvar_nek
          call out_fld_nek
          call mass_balance(if3d)
+c dump out particle information. 
+         call usr_particles_io(istep)
       end if
 
       call print_cmt_timers
@@ -81,7 +100,7 @@ c-----------------------------------------------------------------------
 !> doxygen comments look like this
       include 'SIZE'
       include 'TOTAL'
-      include 'DG'      ! dg_face is stored
+      include 'DG'
       include 'CMTDATA'
       include 'CTIMER'
 
@@ -89,23 +108,29 @@ c-----------------------------------------------------------------------
       parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*ldim*lfq)
-! not sure yet if viscous surface fluxes can live here yet
+! not sure if viscous surface fluxes can live here yet
       common /CMTSURFLX/ flux(heresize),ViscousStuff(hdsize)
       real ViscousStuff
 
-      COMMON /pnttimers/ pt_time_add, pt_tracking_add
       integer e,eq
       real wkj(lx1+lxd)
       character*32  dumchars
 
-      call set_rxgll
+      if (nxd.gt.nx1) then
+         call set_dealias_face
+c        write(6,*)'call set dealias face'
+      else
+c        write(6,*)'call set alias rx'
+         call set_alias_rx(istep)
+      endif
+c     write(6,*)'istep :', istep
+!     call set_dealias_rx ! done in set_convect_cons,
+! JH113015                ! now called from compute_primitive_variables
 
 !     filter the conservative variables before start of each
 !     time step
       if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-
-! compute primitive vars on the FINE grid. Required to compute conv fluxes.
-!        primitive vars = rho, u, v, w, p, T, phi_p
+!        primitive vars = rho, u, v, w, p, T, phi_g
       if (istep.eq.1) then
          call compute_primitive_vars
       else
@@ -138,7 +163,7 @@ c-----------------------------------------------------------------------
       call rzero(res1,ntot)
 
       nstate=nqq
-      nfq=nx1*nz1*2*ldim*nelt
+      nfq=nx1*nz1*2*ndim*nelt
       iqm =1
       iqp =iqm+nstate*nfq
       iflx=iqp+nstate*nfq
@@ -164,19 +189,19 @@ c-----------------------------------------------------------------------
 !------------------------------
          endif
          do eq=1,toteq
-! Now we can start assembling the flux terms in all 5 eqs
-! Flux terms are decomposed into h_conv and h_diff
             call assemble_h(e,eq)
-! compute the volume integral term and assign to res1
-            call flux_div_integral(e,eq)
-            call surface_integral_elm(e,eq)
+! compute the volume integral term and add to res1(:,e,eq)
+            if (nxd.gt.nx1) then
+               call flux_div_integral_dealiased(e,eq)
+            else
+               call flux_div_integral_aliased(e,eq)
+            endif
 !------------------------------
 ! JH050615 BR1 ONLY for now
 !           if (.not.ifbr1)
 !    >      call penalty(flux(iqm),flux(iqp),flux(iuj),e,eq,nstate)
 !------------------------------
 ! Compute the forcing term in each of the 5 eqs
-! Add this to the residue
             call compute_forcing(e,eq)
          enddo
       enddo
@@ -240,8 +265,8 @@ c-----------------------------------------------------------------------
             call copy(U(1,1,1,2,e),vx(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,3,e),vy(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,4,e),vz(1,1,1,e),nxyz1) 
-            call copy(U(1,1,1,5,e),t(1,1,1,e,3),nxyz1) 
-            call copy(U(1,1,1,1,e),t(1,1,1,e,2),nxyz1) 
+            call copy(U(1,1,1,5,e),t(1,1,1,e,1),nxyz1) 
+            call copy(U(1,1,1,1,e),pr(1,1,1,e),nxyz1) 
          enddo
       endif
       call rzero(res1,n)
