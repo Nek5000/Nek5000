@@ -403,8 +403,8 @@ fi
 
 # set optimization flags
 L0="\$(G) -O0"
-L2="\$(G) -O0"
-L3="\$(G) -O0" 
+L2="\$(G) -O2"
+L3="\$(G) -O3" 
 L4="\$(L3)"
 
 # user specified opt flags
@@ -663,6 +663,47 @@ c automatically added by makenek
       IFCMT=.true.
       return
       end
+_ACEOF
+fi
+else
+cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine cmt_switch ! to set IFCMT logical flag
+      include 'SIZE'
+      include 'INPUT'
+      IFCMT=.false.
+      return
+      end
+_ACEOF
+fi
+fi
+
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+if [ -e "cmtparticles.usrp" ]
+then
+echo 'Particles found CMT'
+else
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usr_particles_init ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_solver ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_io(istep) ! used for particles
+      integer istep
+      return
+      end
+
 _ACEOF
 fi
 fi
