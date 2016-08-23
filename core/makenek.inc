@@ -665,20 +665,6 @@ c automatically added by makenek
       end
 _ACEOF
 fi
-else
-cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
-if [ $? -ne 0 ]; then
-cat >> $CASENAME.f << _ACEOF
-c
-c automatically added by makenek
-      subroutine cmt_switch ! to set IFCMT logical flag
-      include 'SIZE'
-      include 'INPUT'
-      IFCMT=.false.
-      return
-      end
-_ACEOF
-fi
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
