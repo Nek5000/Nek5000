@@ -210,23 +210,23 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  *pgf*)        P="-r8 -Mpreprocess"
+  *pgf*)        P="-r8 -Mpreprocess $FFLAGS"
                ;;
-  *gfortran*)   P="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
+  *gfortran*)   P="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input $FFLAGS"
                ;;
-  *ifort*)      P="-r8 -fpconstant -fpp"
+  *ifort*)      P="-r8 -fpconstant -fpp $FFLAGS"
                ;;
-  *pathf*)      P="-r8 -cpp -fno-second-underscore"
+  *pathf*)      P="-r8 -cpp -fno-second-underscore $FFLAGS"
                ;;
-  *ftn*)        P="-s default64 -eF"
+  *ftn*)        P="-s default64 -eF $FFLAGS"
                ;;
-  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f $FFLAGS"
                PPPO="-WF,"
-               F77="${F77} -qsuppress=cmpmsg"
+               F77="${F77} -qsuppress=cmpmsg $FFLAGS"
                ;;
-  *sunf*)       P="-r8const -xtypemap=real:64 -fpp"
+  *sunf*)       P="-r8const -xtypemap=real:64 -fpp $FFLAGS"
                ;;
-  *open*)       P="-r8 -cpp -fno-second-underscore"
+  *open*)       P="-r8 -cpp -fno-second-underscore $FFLAGS"
                ;;
   *)  echo "ERROR: Unable to detect compiler!"
       echo "        - don't know how to promote datatype REAL to 8 bytes"
