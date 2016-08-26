@@ -58,7 +58,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       icalld=icalld+1
       nprep=icalld
 
-#ifndef NOTIMER
+#ifdef TIMER
       etime1=dnekclock()
 #endif
 
@@ -140,7 +140,7 @@ c      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
 
       if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tprep=tprep+dnekclock()-etime1
 #endif
 
