@@ -869,22 +869,26 @@ C
 
       include 'OPCTR'
 C
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
           myrout=nrout
           rname(myrout) = 'opbinv'
       endif
+#endif
 C
       call opmask  (inp1,inp2,inp3)
       call opdssum (inp1,inp2,inp3)
 C
       NTOT=NX1*NY1*NZ1*NELV
 C
+#ifndef NOTIMER
       isbcnt = ntot*(1+ndim)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 
       call invcol3 (out1,bm1,h2inv,ntot)  ! this is expensive and should
       call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
@@ -927,22 +931,26 @@ C
 
       include 'OPCTR'
 C
+#ifndef NOTIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
           myrout=nrout
           rname(myrout) = 'opbnv1'
       endif
+#endif
 C
       CALL OPMASK  (INP1,INP2,INP3)
       CALL OPDSSUM (INP1,INP2,INP3)
 C
       NTOT=NX1*NY1*NZ1*NELV
 C
+#ifndef NOTIMER
       isbcnt = ntot*(1+ndim)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (IF3D) THEN
          DO 100 I=1,NTOT
@@ -3814,9 +3822,10 @@ c
       real vxn(1),vyn(1),vzn(1)
 c
       include 'OPCTR'
-      integer opct
 
 c     Operation count
+#ifndef NOTIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3825,6 +3834,7 @@ c     Operation count
       endif
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
+#endif
 
       call velchar (vx,vxn,vxlag,nbd,tau,dtlag)
       call velchar (vy,vyn,vylag,nbd,tau,dtlag)
@@ -3849,7 +3859,6 @@ c
      $                  + ty*tym1(i,1,1,1)
      $                  + tz*tzm1(i,1,1,1)
          enddo
-         opct = ntot*21
       else
          do i=1,ntot
 c
@@ -3861,11 +3870,17 @@ c
             vy(i,1,1,1) = tx*sxm1(i,1,1,1)
      $                  + ty*sym1(i,1,1,1)
          enddo
-         opct = ntot*10
       endif
 c
+#ifndef NOTIMER
+      if (ndim.eq.3) then
+         opct = ntot*21
+      else
+         opct = ntot*10
+         endif
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 C
 c
       return
@@ -3886,10 +3901,11 @@ c
       integer mu(0:1)
 c
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifndef NOTIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3897,6 +3913,7 @@ c
           rname(myrout) = 'frkcvv'
       endif
       ncall(myrout) = ncall(myrout) + 1
+#endif
 c
 c
 c     Evaluate right-hand-side for Runge-Kutta scheme in the case of
@@ -3935,9 +3952,11 @@ c
          enddo
       endif
 c
+#ifndef NOTIMER
       opct = ndim*ntot
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 c
       return
       end
@@ -3961,10 +3980,11 @@ c
      $             , dwds(lx1,ly1,lz1)
 C
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifndef NOTIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3973,6 +3993,7 @@ c
       endif
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
+#endif
 c
       nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -4048,6 +4069,7 @@ c
 c
       enddo
 c
+#ifndef NOTIMER
       if (if3d) then
          opct = 21*ntot
       else
@@ -4056,6 +4078,7 @@ c
 c
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 c
       return
       end
@@ -4077,10 +4100,11 @@ c
       integer mu(0:1)
 c
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifndef NOTIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -4088,6 +4112,7 @@ c
           rname(myrout) = 'frkcv2'
       endif
       ncall(myrout) = ncall(myrout) + 1
+#endif
 c
 c
 c     Evaluate right-hand-side for Runge-Kutta scheme in the case of
@@ -4127,9 +4152,11 @@ c
          enddo
       endif
 c
+#ifndef NOTIMER
       opct = ndim*ntot
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 C
       return
       end
