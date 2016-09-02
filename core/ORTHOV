@@ -1,12 +1,18 @@
+      integer ktot
 c     parameter (ktot = lbx1*lby1*lbz1*lbelt)
 c     parameter (ktot = 1)
 
       parameter (ktot = lx1*ly1*lz1*lelt)
 
-      common /vrthoi/ mprev,nprev(ldim)
-      common /vrthov/ vbar(ktot,ldim),vnew(ktot,ldim)
-     $              , sln (ktot*mxprev,ldim)
-      common /vrthos/ alpha(mxprev)
-c
-      common /vrthol/ ifproj
+      integer         mprev,nprev(ldim)
+      common /vrthoi/ mprev,nprev
+
+      real vbar(ktot,ldim),vnew(ktot,ldim)
+     $   , sln (ktot*mxprev,ldim)
+      common /vrthov/ vbar, vnew, sln
+
+      real            alpha(mxprev)
+      common /vrthos/ alpha
+
       logical         ifproj
+      common /vrthol/ ifproj
