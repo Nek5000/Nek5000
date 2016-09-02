@@ -11,7 +11,7 @@ c     INPUT2:  INTEGER         INPUT6: INTEGER   with LELT entries
 c     INPUT3:  LOGICAL         INPUT7: LOGICAL   with LELT entries
 c     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
 c
-     real param(200),rstim,vnekton
+      real param(200),rstim,vnekton
      $    ,cpfld(ldimt1,3)
      $    ,cpgrp(-5:10,ldimt1,3)
      $    ,qinteg(ldimt3,maxobj)
