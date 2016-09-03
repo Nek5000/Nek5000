@@ -18,9 +18,6 @@ CC="mpicc"
 # (set PPLIST=? to get a list of available symbols)
 #PPLIST="?" 
 
-# plug-in list
-#PLUGIN_LIST=""
-
 
 # OPTIONAL SETTINGS
 # -----------------

@@ -131,7 +131,7 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
 
 
-      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
+c      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
       if (ifdoit) call outfld(prefix)
 
       call outhis(ifhis)

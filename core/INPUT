@@ -22,7 +22,7 @@ C
      $               ,NKTONV,NHIS,LOCHIS(4,lhis+maxobj)
      $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
      $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
-     $               ,NGEOM
+     $               ,NGEOM,IDPSS(LDIMT)
 C
       COMMON /INPUT3/ IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
@@ -34,6 +34,7 @@ C
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
      $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
      $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
+     $               ,IFCVFLD(LDIMT1),IFDP0DT
 c
       LOGICAL         IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
      $               ,IFMGRID,IFADVC        ,IFTMSH
@@ -45,6 +46,7 @@ c
      $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
      $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
      $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
+     $               ,IFCVFLD,IFDP0DT
 
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))

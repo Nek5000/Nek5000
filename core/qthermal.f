@@ -1,4 +1,4 @@
-      subroutine qthermal(iflag)
+      subroutine qthermal(ifvext,ifqvol,qvol)
 
 C     Compute the thermal divergence QTL 
 C
@@ -14,6 +14,9 @@ C     energy equation expressed in terms of temperature.
       include 'SIZE'
       include 'TOTAL'
 
+      logical ifvext,ifqvol 
+      real qvol(1)    
+ 
       common /scrns/ w1(lx1,ly1,lz1,lelt)
      $              ,w2(lx1,ly1,lz1,lelt)
      $              ,w3(lx1,ly1,lz1,lelt)
@@ -28,17 +31,17 @@ C     energy equation expressed in terms of temperature.
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelv
 
-      if (.not.iflomach) then
-         call rzero(qtl,ntot)
-         return
-      endif
-
       ifld_save = ifield
 
 c - - Assemble RHS of T-eqn
       ifield=2
-      call setqvol (qtl) ! volumetric heating source
-      call col2    (qtl,bm1,ntot)
+
+      if(ifqvol) then
+        call copy(qtl,qvol,ntot)
+      else
+        call setqvol(qtl) ! volumetric heating source
+      endif
+      call col2(qtl,bm1,ntot)
 
       ifield=1     !set right gs handle (QTL is only defined on the velocity mesh)
       call opgrad  (tx,ty,tz,t)
@@ -56,10 +59,12 @@ c - - Assemble RHS of T-eqn
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
       call invcol2 (qtl,w2,ntot)
 
-      if (ifcvode .and. ifvcor) then
 
-         ! set v = v_extrapolated 
-         if (iflag .gt. 0) then
+      dp0thdt = 0.0
+      if (ifdp0dt) then
+
+         ! extrapolte velocity to compute global mass flux
+         if (ifvext) then
             call copy(tx,vx,ntot)
             call copy(ty,vy,ntot)
             if (if3d) call copy(tz,vz,ntot)
@@ -70,26 +75,24 @@ c - - Assemble RHS of T-eqn
          endif
 
          dp0thdt = 0.0
-         if (ifvcor) then
-            dd = gamma0 ! CVref/CPref ! Note CVref denotes the inverse CPref
-            dd = -1.0*(dd - 1.)/dd
+         dd = gamma0 ! CVref/CPref ! Note CVref denotes the inverse CPref
+         dd = -1.0*(dd - 1.)/dd
 
-            call rone(w1,ntot)
-            call cmult(w1,dd,ntot)
-            call cadd(w1,1.0,ntot)
-            call copy(w2,w1,ntot)
-            call col2(w1,bm1,ntot)
+         call rone(w1,ntot)
+         call cmult(w1,dd,ntot)
+         call cadd(w1,1.0,ntot)
+         call copy(w2,w1,ntot)
+         call col2(w1,bm1,ntot)
   
-            p0alph1 = p0th / glsum(w1,ntot)
+         p0alph1 = p0th / glsum(w1,ntot)
   
-            call copy   (w1,QTL,ntot)
-            call col2   (w1,bm1,ntot)
-            termQ = glsum(w1,ntot)
-            termV = glcflux() 
-            dp0thdt = p0alph1*(termQ - termV)
-         endif
+         call copy   (w1,QTL,ntot)
+         call col2   (w1,bm1,ntot)
+         termQ = glsum(w1,ntot)
+         termV = glcflux() 
+         dp0thdt = p0alph1*(termQ - termV)
 
-         if (iflag .gt. 0) then
+         if (ifvext) then
             call copy(vx,tx,ntot)
             call copy(vy,ty,ntot)
             if (if3d) call copy(vz,tz,ntot)
@@ -98,9 +101,6 @@ c - - Assemble RHS of T-eqn
          dd =-dp0thdt/p0th
          call cmult(w2,dd,ntot)
          call add2 (qtl,w2,ntot)
-
-      else
-         dp0thdt = 0.0
       endif
 
       ifield = ifld_save
