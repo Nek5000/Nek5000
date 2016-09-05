@@ -1355,11 +1355,11 @@ c
 
       call map_f_to_c_h1_bilin(vc,uf)   ! additive Schwarz
 
-#ifndef NOTIMER
+#ifdef TIMER
       etime1=dnekclock()
 #endif
       call crs_solve(xxth(ifield),uc,vc)
-#ifndef NOTIMER
+#ifdef TIMER
       tcrsl=tcrsl+dnekclock()-etime1
 #endif
 

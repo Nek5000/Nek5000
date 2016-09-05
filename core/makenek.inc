@@ -7,12 +7,10 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  NOTIMER   disable runtime statistics"
-  echo "  MPITIMER  enable MPI runtime statistics"
   echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
   echo "  BGQ       enable Blue Gene optimizations (BG/Q)"
   echo "  XSMM      use libxsmm for mxm"
-  echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
+  echo "  CVODE     use ODE solver from Sundials to solve for scalars"
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
   echo "  NEKNEK    enable multidomain support (experimental)"
   echo "  NO_LAPACK disable nek-supplied LAPACK routines"
@@ -279,8 +277,8 @@ if [ "$UNDERSCORE" == "true" ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
-    PPLIST="${PPLIST} NOTIMER"
+if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
+    PPLIST="${PPLIST} TIMER MPITIMER"
 fi
 
 PPLIST="${PPLIST} GLOBAL_LONG_LONG"

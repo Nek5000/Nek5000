@@ -2705,7 +2705,7 @@ C              common /SCREV/ are used in STNRINV and NEKASGN
 C
       common /screv/ sii (lx1,ly1,lz1,lelt),siii(lx1,ly1,lz1,lelt)
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) tspro=0.0
       icalld=icalld+1
       nspro=icalld
@@ -2736,7 +2736,7 @@ C
 
       ifield = ifld
 
-#ifndef NOTIMER
+#ifdef TIMER
       tspro=tspro+(dnekclock()-etime1)
 #endif
 

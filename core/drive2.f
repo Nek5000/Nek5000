@@ -1172,7 +1172,7 @@ C
 c-----------------------------------------------------------------------
       subroutine runstat
 
-#ifndef NOTIMER
+#ifdef TIMER
 
       include 'SIZE'
       include 'TOTAL'
@@ -1311,9 +1311,9 @@ c
 
 c         pcopy=tcopy/tttstp
 c         write(6,*) 'copy time',ncopy,tcopy,pcopy
-c         pmxmf=tmxmf/tttstp
-c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
 
+         pmxmf=tmxmf/tttstp
+         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
          pgop=tgop/tttstp
          write(6,*) 'tgop time',ngop,tgop,pgop
          pinv3=tinv3/tttstp
@@ -1561,7 +1561,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 ntot,ntotp,ntotv
+      integer*8 i8glsum
+      integer*8 ntot,ntotp,ntotv, nn
 
       nxyz  = nx1*ny1*nz1
       nel   = nelv
@@ -1582,7 +1583,8 @@ C
       ntot2=nx2*ny2*nz2*nelv
 
       ntotv = glsc2(tmult,tmask,ntot1)
-      ntotp = i8glsum(ntot2,1)
+      nn = ntot2
+      ntotp = i8glsum(nn,1)
 
       if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
       if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)

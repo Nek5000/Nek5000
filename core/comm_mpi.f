@@ -121,7 +121,7 @@ c     Global vector commutative operation
 
       if (ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
         tgop =0.0d0
         ngop =0
@@ -146,7 +146,7 @@ c
 
       call copy(x,w,n)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tgop =tgop +(dnekclock()-etime1)
 #endif
 
