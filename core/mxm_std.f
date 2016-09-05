@@ -4136,7 +4136,7 @@ c
       include 'OPCTR'
       include 'TOTAL'
 c
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1

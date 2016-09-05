@@ -327,7 +327,7 @@ C
 C
       include 'OPCTR'
 C
-#ifndef NOTIMER
+#ifdef TIMER
 C
       if (isclld.eq.0) then
           isclld=1
