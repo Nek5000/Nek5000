@@ -14,7 +14,7 @@
       integer lfq,heresize,hdsize
       parameter (lfq=lx1*lz1*2*ldim*lelcmt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
-     >                   hdsize=toteq*ldim*lfq)
+     >                   hdsize=toteq*3*lfq) ! might not need ldim
 ! JH070214 OK getting different answers whether or not the variables are
 !          declared locally or in common blocks. switching to a different
 !          method of memory management that is more transparent to me.
@@ -39,11 +39,9 @@
       call fillq(iph, phig,  fatface(iqm),fatface(iqp))
       call fillq(icvf,vtrans(1,1,1,1,icv),fatface(iqm),fatface(iqp))
       call fillq(icpf,vtrans(1,1,1,1,icp),fatface(iqm),fatface(iqp))
-      if (ifvisc) then
-         call fillq(imuf, vdiff(1,1,1,1,imu), fatface(iqm),fatface(iqp))
-         call fillq(ikndf,vdiff(1,1,1,1,iknd),fatface(iqm),fatface(iqp))
-         call fillq(ilamf,vdiff(1,1,1,1,ilam),fatface(iqm),fatface(iqp))
-      endif
+      call fillq(imuf, vdiff(1,1,1,1,imu), fatface(iqm),fatface(iqp))
+      call fillq(ikndf,vdiff(1,1,1,1,iknd),fatface(iqm),fatface(iqp))
+      call fillq(ilamf,vdiff(1,1,1,1,ilam),fatface(iqm),fatface(iqp))
 
       i_cvars=(iu1-1)*nfq+1
       do eq=1,toteq
@@ -366,161 +364,102 @@
 
 !-------------------------------------------------------------------------------
 
-! JH050615 This subroutine's arguments must change if Sij=GdU
-!     subroutine AuxFlux(hsijstar,qminus,ujump,scrf1,gdu,e,eq,j,
-!    >                   nstate)
-      subroutine AuxFlux(hsijstar,qminus,ujump,e,nstate)
-! MS050615 Computes jump penalization on element faces for auxiliary
-!          variable Sij=gradU
+      subroutine diffh2graduf(e,eq,graduf)
+! peels off diffusiveH into contiguous face storage via restriction operator R
+! for now, stores {{gradU}} for igu
       include  'SIZE'
-      include  'MASS'
-      include  'DG'
+      include  'DG' ! iface
       include  'CMTDATA'
-      include  'INPUT'
       include  'GEOM'
-      integer e,nstate
-      real hsijstar(nxd,nzd,2*ndim,toteq,ldim) ! starts life as scratch
-      real qminus(nstate,nx1,nz1,2*ndim,nelt),
-     >        ujump(toteq,nx1,nz1,2*ndim,nelt),
-     >        scrth1(lx1,lz1,2*ldim)
-! JH050615 This subroutine's arguments must change if Sij=GdU
-!     real qminus(nstate,nx1,nz1,2*ndim,nelt),
-!    >        ujump(toteq,nx1,nz1,2*ndim,nelt),scrf1(nx1,nz1,2*ndim),
-!    >        gdu(toteq,nx1,nz1)
-
-      real zenorms(lx1,lz1,6,lelt,3)
-      equivalence (zenorms,unx)
+      integer e,eq
+      real graduf(nx1*nz1*2*ndim,nelt,toteq)
+      common /scrns/ hface(lx1*lz1,2*ldim)
+     >              ,normal(lx1*ly1,2*ldim)
+      real hface, normal
 
       integer f
 
-      nface=2*ndim
-      nxz  =nx1*nz1
-      ntot =nxz*nface
+      nf    = nx1*nz1*2*ndim*nelt
+      nfaces=2*ndim
+      nxz   =nx1*nz1
+      nxzf  =nxz*nfaces
+      nxyz  = nx1*ny1*nz1
 
-      do k=1,ndim
-         do l=1,toteq
-         do f=1,nface
-            do i=1,nxz
-               hsijstar(i,1,f,l,k)=-0.5*ujump(l,i,1,f,e)*area(i,1,f,e)
-     >                                               *zenorms(i,1,f,e,k)
-            enddo
-         enddo
-         enddo
+      call rzero(graduf(1,e,eq),nxzf) !   . dot nhat -> overwrites beginning of flxscr
+      do j =1,ndim
+         if (j .eq. 1) call copy(normal,unx(1,1,1,e),nxzf)
+         if (j .eq. 2) call copy(normal,uny(1,1,1,e),nxzf)
+         if (j .eq. 3) call copy(normal,unz(1,1,1,e),nxzf)
+         call full2face_cmt(1,nx1,ny1,nz1,iface_flux,hface,diffh(1,j)) 
+         call addcol3(graduf(1,e,eq),hface,normal,nxzf)
       enddo
-
-      call full2face_cmt(1,nx1,ny1,nz1,iface_flux(1,e),scrth1(1,1,1),
-     >                   bm1(1,1,1,e))
-      do k=1,ndim
-         do l=1,toteq
-            call invcol2(hsijstar(1,1,1,l,k),scrth1(1,1,1),ntot)
-         enddo 
-      enddo
-      return
-      end
-
-!-----------------------------------------------------------------------
-
-      subroutine store_gdu_hstarsij(gdudxk,hstarsij,e,eq,j)
-      include 'SIZE'
-      include 'DG'
-      include 'CMTDATA'
-      include 'INPUT'
-      integer e,eq,j
-      real gdudxk(nx1,nz1,2*ndim,nelt,toteq,ndim)
-      real hstarsij(nx1,ny1,nz1)
-      integer f
-
-      nface = 2*ndim
-      nxz   = nx1*nz1
-
-      call full2face_cmt(1,nxd,nyd,nzd,iface_flux(1,e),
-     >                   gdudxk(1,1,1,e,eq,j),hstarsij)
-      
-      call cmult(gdudxk(1,1,1,e,eq,j),-1.0,nxz*nface)
+      call col2(graduf(1,e,eq),area(1,1,1,e),nxzf)
 
       return
       end
 
 !-----------------------------------------------------------------------
 
-      subroutine viscousf
+      subroutine igu_cmt(flxscr,gdudxk)
 ! gets central-flux contribution to interior penalty numerical flux
 ! Hij^{d*}
       include 'SIZE'
       include 'CMTDATA'
       include 'DG'
 
-      integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
-     >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
-     >                   hdsize=toteq*ldim*lfq)
-      common /CMTSURFLX/ flux(hcsize),gdudxk(hdsize)
-      real flux
+      real gdudxk(nx1*nz1*2*ndim,nelt,toteq)
+      real flxscr(nx1*nz1*2*ndim*nelt,toteq)
       real const
-      integer e,f
+      integer e,eq,f
 
-      nface=2*ndim
-      nfc =nx1*nz1*nface*nelt
-      nnfc=toteq*ndim
-      ntot=nfc*nnfc
-      const = 0.5
       nxz = nx1*nz1
+      nfaces=2*ndim
+      nxzf=nxz*nfaces
+      nfq =nx1*nz1*nfaces*nelt
+      ntot=nfq*toteq
+
+      call copy (flxscr,gdudxk,ntot) ! save gradU.n
+      const = 0.5
       call cmult(gdudxk,const,ntot)
 !-----------------------------------------------------------------------
 ! supa huge gs_op to get {{gdu}}
 ! operation flag is second-to-last arg, an integer
 !                                                   1 ==> +
-      call gs_op_fields(dg_hndl,gdudxk,nfc,nnfc,1,1,0)
+      call gs_op_fields(dg_hndl,gdudxk,nfq,toteq,1,1,0)
 !-----------------------------------------------------------------------
-
-! now dot with n-
-      call special_dot_n(flux,gdudxk)
-      call bcflux(flux) ! needs work
+      call bcflux(gdudxk)
+      call sub2  (flxscr,gdudxk,ntot) ! overwrite flxscr with a- - {{a}}
+! I wish it were that easy, but [v] changes character on dirichlet boundaries
+      call igu_dirichlet(flxscr,gdudxk)
+      call chsign(flxscr,ntot)
 
       return
       end
 
 !-----------------------------------------------------------------------
 
-      subroutine special_dot_n(fdotn,face)
-! no, I don't feel like making this routine more general
+      subroutine igu_dirichlet(flux,fminus)
       include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-      real fdotn(nx1*nz1*2*ndim*nelt,toteq)
-      real face (nx1*nz1*2*ndim*nelt,toteq,ndim) ! must be 3?
-      integer e,eq
+      include 'TOTAL'
+      integer e,eq,f
+      real flux(nx1*nz1,2*ndim,nelt,toteq)
+      real fminus(nx1*nz1,2*ndim,nelt,toteq)
+      character*3 cb2
 
       nxz=nx1*nz1
-      nface=2*ndim
-      ntot=nxz*nface
+      nfaces=2*ndim
 
-      do eq=1,toteq
-         l=1
-         do e=1,nelt
-            call col3   (fdotn(l,eq),face(l,eq,1),unx(1,1,1,e),ntot)
-            l=l+ntot
+      ifield=1
+      do e=1,nelt
+         do f=1,nfaces
+            cb2=cbc(f, e, ifield)
+            if (cb2 .eq. 'W  ') then
+               do eq=1,toteq
+                  call copy(flux(1,f,e,eq),fminus(1,f,e,eq),nxz)
+               enddo
+            endif
          enddo
       enddo
-
-      do eq=1,toteq
-         l=1
-         do e=1,nelt
-            call addcol3(fdotn(l,eq),face(l,eq,2),uny(1,1,1,e),ntot)
-            l=l+ntot
-         enddo
-      enddo
-
-      if (if3d) then
-         do eq=1,toteq
-            l=1
-            do e=1,nelt
-               call addcol3(fdotn(l,eq),face(l,eq,3),unz(1,1,1,e),ntot)
-               l=l+ntot
-            enddo
-         enddo
-      endif
 
       return
       end
-!-----------------------------------------------------------------------

@@ -1,21 +1,151 @@
-      subroutine assemble_h(e,eq_num)
+      subroutine diffusive_cmt(e,eq)
+      include  'SIZE'
+      include  'CMTDATA'
+      include  'SOLN'
+      include  'DG'
+      include  'INPUT'
+
+      integer lfq,heresize,hdsize
+      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
+     >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
+     >                   hdsize=toteq*3*lfq) ! might not need ldim
+      common /CMTSURFLX/ fatface(heresize),graduf(hdsize)
+      real fatface,graduf
+
+      parameter (ldd=lx1*ly1*lz1)
+      common /ctmp1/ viscscr(lx1,ly1,lz1)
+      real viscscr
+      integer e,eq
+      integer eijk3(3,3,3)
+!     data eijk2 / 0, -1, 1, 0/
+      data eijk3
+     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
+
+      nxyz=nx1*ny1*nz1
+      nfq=nx1*nz1*2*ndim*nelt
+      nstate = nqq
+! where different things live
+      iqm =1
+      iqp =iqm+nstate*nfq
+      iuj =iqp+nstate*nfq
+
+! apply viscous flux jacobian A. This is a disaster that you might
+! want to sweep into a different subroutine
+      do j=1,ndim
+         do k=1,ndim
+            ieijk=0
+            if (eq .lt. 5) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
+
+            if (ieijk .eq. 0) then
+              call tauij_gdu_vol(diffh(1,j),gradu(1,1,k),viscscr,e,
+     >                           eq,j,k)
+            endif
+         enddo
+      enddo
+
+      call diffh2graduf(e,eq,graduf) ! on faces for QQ^T and igu_cmt
+
+! volume integral involving "DG-ish" stiffness operator K
+      call half_iku_cmt(res1(1,1,1,e,eq),diffh,e)
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine igtu_cmt(qminus,ummcu,hface)
+
+!     Vol integral [[u]].{{gradv}}. adapted from Lu's dgf3.f;
+! interior penalty stuff could go
+! here too. Debug subroutine ihu in heat.usr and try to fold it in here.
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'DG'      ! iface
+      include 'CMTDATA'
+
+! arguments
+      real qminus(nx1*nz1,2*ndim,nelt,*)    ! intent(in)
+      real ummcu(nx1*nz1*2*ndim,nelt,toteq) ! intent(in)
+      real hface(nx1*nz1*2*ndim*nelt,toteq,3) ! intent(out) scratch
+
+! commons and scratch
+      common /scrns/ superhugeh(lx1*ly1*lz1*lelt,3) ! like totalh, but super-huge
+      common /scruz/ gradm1_t_overwrites(lx1*ly1*lz1*lelt) ! sigh
+      real superhugeh,gradm1_t_overwrites
+      parameter (lfq=lx1*lz1*2*ldim*lelt)
+      common /ctmp0/ ftmp1(lfq),ftmp2(lfq)
+      real ftmp1,ftmp2
+
+      integer e, eq, n, npl, nf, f, i, k
+
+      nvol = nx1*ny1*nz1*nelt
+
+      nxz    = nx1*nz1
+      nfaces = 2*ndim
+      nf     = nxz*nfaces ! 1 element's face points
+      nfq    = nf*nelt ! all points in a pile of faces
+      if (ifsip) then
+         const=-1.0 ! SIP
+      else
+         const=1.0 ! Baumann-Oden
+      endif
+
+! compute (U-{{U}})_i * n_k
+      l=1
+      do e=1,nelt
+         do eq=1,toteq
+            call col3(hface(l,eq,3),ummcu(1,e,eq),area(1,1,1,e),nf)
+            call col3(hface(l,eq,1),hface(l,eq,3),unx(1,1,1,e), nf)
+            call col3(hface(l,eq,2),hface(l,eq,3),uny(1,1,1,e), nf)
+            if(if3d) call col2(hface(l,eq,3),unz(1,1,1,e),nf)
+         enddo
+         l=l+nf
+      enddo
+
+      do eq=1,toteq
+         call rzero(superhugeh,3*lx1*ly1*lz1*lelt)
+! apply flux jacobian to get Ajac (U-{{U}})_i * n_k
+         do j=1,ndim
+            call rzero(ftmp1,nfq)
+            do k=1,ndim
+              call tauij_gdu_sfc(ftmp1,qminus,hface(1,1,k),ftmp2,eq,j,k)
+            enddo
+            call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,
+     >                      superhugeh(1,j),ftmp1)
+         enddo
+         call gradm1_t(gradm1_t_overwrites,superhugeh(1,1),
+     >                     superhugeh(1,2),superhugeh(1,3))
+         call cmult(gradm1_t_overwrites,const,nvol)
+         call add2(res1(1,1,1,1,eq),gradm1_t_overwrites,nvol)
+      enddo
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine convective_cmt(e,eq)
+! JH081916 convective flux divergence integrated in weak form and
+!          placed in res1.
       include 'SIZE'
       include 'CMTDATA'
-      include 'INPUT'
+      integer e,eq
 
-      integer  e,eq_num
+      n=3*lxd*lyd*lzd
 
-!     !This subroutine will compute the convective and diffusive 
-!     !components of h
-      call rzero(totalh,3*lxd*lyd*lzd)
+      call rzero(convh,n)
       if (nxd.gt.nx1) then
-         call evaluate_dealiased_conv_h(e,eq_num)
+         call evaluate_dealiased_conv_h(e,eq)
+         call copy(totalh,convh,n)
+         call flux_div_integral_dealiased(e,eq)
       else
-         call evaluate_aliased_conv_h(e,eq_num)
+         call evaluate_aliased_conv_h(e,eq)
+         call copy(totalh,convh,n)
+         call flux_div_integral_aliased(e,eq)
       endif
-      if (ifvisc.and.eq_num .gt. 1) call evaluate_diff_h(e,eq_num)
-      call add_conv_diff_h
-      
+
       return
       end
 
@@ -133,126 +263,6 @@ c     endif
          if(nio.eq.0) write(6,*) 'aborting in evaluate_conv_h'
          call exitt
       endif
-
-      return
-      end
-
-!-----------------------------------------------------------------------
-
-      subroutine evaluate_diff_h(e,eq)
-      include  'SIZE'
-      include  'CMTDATA'
-      include  'SOLN'
-      include  'DG'
-      include  'INPUT'
-! diagnostic
-      include 'GEOM'
-      include 'TSTEP'
-! diagnostic
-
-      parameter (ldd=lx1*ly1*lz1)
-! JH090815 need to get rid of this
-      common /primd/ pvart(ldd,lelcmt,7) ! rho,u,v,w,T,P,phi
-
-! JH020215 Congratulations. You can't use this common block once toteq>5
-      common /ctmp1/ jdu(ldd,toteq),visco(lx1,ly1,lz1)
-
-      real jdu,visco
-      integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
-     >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
-     >                   hdsize=toteq*ldim*lfq)
-      common /CMTSURFLX/ oldface(hcsize),fatface(hdsize)
-      integer e,eq
-      integer eijk3(3,3,3)
-!     data eijk2 / 0, -1, 1, 0/
-      data eijk3
-     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
-!     real yrface(nxd*nzd,toteq) ! eh. just chuck yrface in jdu
-! JH012915 I omitted diffh to save some space. totalh should be zeroed
-!         before this routine is called. assemble_h will +=totalh
-!         with convh.
-
-      nxyz=nx1*ny1*nz1
-      nface = 2*ndim
-      nxz   = nx1*nz1
-      nfq=nx1*nz1*2*ndim*nelt
-      nstate=nqq
-
-!-----------------------------------------------------------------------
-! JH090815 must get rid of this
-      if (e .eq. 1) then ! do the worst thing ever
-         call copy(pvart(1,1,1),vtrans,nxyz*nelt)
-         call copy(pvart(1,1,2),vx,nxyz*nelt)
-         call copy(pvart(1,1,3),vy,nxyz*nelt)
-         call copy(pvart(1,1,4),vz,nxyz*nelt)
-         call copy(pvart(1,1,5),t,nxyz*nelt)
-         call copy(pvart(1,1,6),pr,nxyz*nelt)
-         call copy(pvart(1,1,7),phig,nxyz*nelt)
-      endif
-! JH090815 must get rid of that
-!-----------------------------------------------------------------------
-
-! MS050615 gradu contains the the surface integral contribution and
-!          the solution to the DG formulation of Sij=gradU.
-!  AuxFlux call was removed from here and placed outside the equation
-!    loop, rigth after compute_gradients is called.
-      do j=1,ndim
-         do k=1,ndim
-            ieijk=0
-            if (eq .lt. 5) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
-
-            if (ieijk .eq. 0) then
-              do l=1,toteq
-               call copy(jdu(1,l),gradu(1,1,1,l,k),nxyz)
-              enddo
-              call tauij_gdu(totalh(1,j),visco,pvart,pvart,7,jdu,jdu,
-     >                 toteq,nxyz,.true.,eq,j,k,e,
-     >                 vdiff(1,1,1,e,imu),
-     >                 vdiff(1,1,1,e,ilam),
-     >                 vdiff(1,1,1,e,iknd),
-     >                 vtrans(1,1,1,e,icv))
-            endif
-         enddo
-
-! strip faces for numerical flux of Hd. BR1, Sij=gradU
-         call store_gdu_hstarsij(fatface,totalh(1,j),e,eq,j)
-! MS050615 - if the auxiliary variable is GgradU, then the above
-!            store_gdu_hstarsij call is NOT done for BR1!!!
-!            It would be done ONLY for SIP (Hartmann & Houston 2008).
-      enddo
-
-! MS050615 - if the auxiliary variable is GgradU, then AuxFlux must
-!            be called here unless you want gradu to be toteq times
-!            bigger!
-!      do j=1,ndim
-!! get -area/bm1*Gijkl[[Ul]]k refined into fine faces, jdu(:,1)
-!         call AuxFlux(jdu(1,1),oldface(iqm),oldface(iuj),jdu(1,2),
-!     >                jdu(1,3),e,eq,j,nstate)
-!! and add_face2full to turn totalh into Sij, i=eq
-!         call add_face2full_cmt(1,nxd,nyd,nzd,iface_fine(1,e),
-!     >                          totalh(1,j),jdu(1,1))
-!         if (ifbr1)
-!     >   call store_gdu_hstarsij(fatface,totalh(1,j),e,eq,j)
-!      enddo
-
-      call cmult(totalh,-1.0,3*nxyz)
-
-      return
-      end
-
-!-----------------------------------------------------------------------
-
-      subroutine add_conv_diff_h
-      include  'SIZE'
-      include  'CMTDATA'
-
-      n = nxd*nyd*nzd*3
-
-!BLAS is also a possibility here
-
-!     call add3(totalh,convh,diffh,n)
-      call add2(totalh,convh,n)
 
       return
       end
@@ -465,162 +475,3 @@ c-----------------------------------------------------------------------
 
       return
       end 
-
-!-----------------------------------------------------------------------
-
-      subroutine penalty(qminus,qplus,ujump,e,eq,nstate)
-! computes penalty function in Eq.
-! of Hartmann and Houston (2008)
-! This would have been about 100 times easier with the perpetual assumption
-! nx1=nx1, but I decided to do some heavy lifting now.
-      include 'SIZE'
-      include 'CMTDATA'
-      include 'GEOM'
-      include 'DG'
-      include 'INPUT'
-      integer ctmp1pad
-      parameter (ld2=lxd*lzd,ctmp1pad=(toteq+1)*lxd**3-2*toteq*ld2)
-      common /ctmp1/ jduk(ld2,toteq),jdukt(toteq,ld2),scr(ctmp1pad) ! hardcoded
-      integer e,eq,nstate
-
-      real qminus(nstate,nx1,nz1,2*ndim,nelt)
-      real qplus(nstate,nx1,nz1,2*ndim,nelt)
-      real ujump(toteq,nx1,nz1,2*ndim,nelt)
-      real nk
-      integer f
-      real flux(nx1*nz1)
-
-      if (eq .eq. 1) return
-
-      nface=2*ndim
-      nxz  =nx1*nz1
-
-      iff=1
-
-      call rzero(flux,nxz)
-
-      do f=1,nface
-      call penalty2(qminus(1,1,1,f,e),ujump(1,1,1,f,e),nstate,flux,e,f,
-     >              eq)
-      call penalty2(qplus(1,1,1,f,e),ujump(1,1,1,f,e),nstate,flux,e,f,
-     >              eq)
-      call cmult(flux,cip(f,e),nxz)
-      call copy(scr(iff),flux,nxz)
-      iff=iff+nxz
-      enddo ! f=1,nface
-
-      call add_face2full_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
-     >                       res1(1,1,1,e,eq),scr)
-
-      return
-      end
-
-!-----------------------------------------------------------------------
-
-      subroutine penalty2(qface,ujump,nstate,flux,e,f,eq)
-      include 'SIZE'
-      include 'GEOM'
-      include 'CMTDATA'
-
-      real zenorms(lx1,lz1,6,lelt,3)
-      equivalence (zenorms,unx)
-
-      integer ctmp1pad
-      parameter (ld2=lxd*lzd,ctmp1pad=(toteq+1)*lxd**3-2*toteq*ld2)
-      common /ctmp1/ tmp(ld2*toteq),jdukt(toteq,ld2),notouch(ctmp1pad) ! hardcoded
-      real tmp,jdukt,notouch
-
-      integer e,f,eq ! intent(in)
-      real qface(nstate,nx1,nz1)! intent(in)
-      real ujump(toteq,nx1,nz1)! intent(in) 
-      real flux(nx1*nz1)! intent(inout) ::
-      real scr(nx1*nz1)
-      real nk
-
-      nface=2*ndim
-      nxz  =nx1*nz1
-
-      call rzero(tmp,ld2*toteq)
-      call rzero(jdukt,ld2*toteq)
-
-      il=0
-      do iz=1,nz1
-      do ix=1,nx1
-         il=il+1
-         do l=1,toteq
-            jdukt(l,il)=ujump(l,ix,iz)
-         enddo
-      enddo
-      enddo
-
-      do j=1,ndim
-         call rzero(scr,nxz)
-         do k=1,ndim
-! presumably, if nx1 .ne. nx1, we will have figured out how to put the appropriate
-! normals in zenorms
-            do i=1,nxz
-               nk=zenorms(i,1,f,e,k)
-               call cmult(jdukt(1,i),nk,toteq)
-            enddo
-
-! jdukt now has one face of [[Ul]]k, equation innermost. Use scr(iff)
-! for visco scratch because it's huge compared to all small faces.
-!        call tauij_gdu(scr,tmp,qface,qface,nstate,jdukt,jdukt,
-!    >              toteq,nxz,.false.,eq,j,k,e,muf,lambdaf,tcondf,cvgf)
-         enddo ! k=1,ndim
-
-         call copy(tmp,scr,nxz)
-
-         il=0
-         do ixz=1,nxz
-         il=il+1
-         flux(il)=flux(il)+tmp(il)*zenorms(ixz,1,f,e,j)*area(ixz,1,f,e)
-         enddo
-      enddo ! j=1,3
-
-      return
-      end
-
-! -----------------------------------------------------------------------
-      subroutine compute_aux_var(e)
-! this subroutine compute the surface integral contribution to auxiliary
-! variable Sij=gradU and stores it in gradU. It will not be used if
-! Sij=GdU unless you want gradu to be toteq times bigger
-      include 'SIZE'
-      include  'CMTDATA'
-      include  'DG'
-      include  'INPUT'
-! diagnostic
-      include 'GEOM'
-      include 'TSTEP'
-! diagnostic
-
-      parameter (ldd=lxd*lzd*2*ldim)
-
-      real jdu(ldd,toteq,ldim)
-      integer lfq,lfc,hcsize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
-     >                   hcsize=nqq*3*lfq,! guarantees transpose of Q+ fits
-     >                   hdsize=toteq*ldim*lfq)
-      common /CMTSURFLX/ oldface(hcsize),fatface(hdsize)
-
-      integer e ! intent(in)
-      integer eq
-
-      nfq=nx1*nz1*2*ndim*nelt
-      nstate=nqq
-
-      iqm =1
-      iqp =iqm+nstate*nfq
-      iuj =iqp+nstate*nfq
-! get -area/bm1*[[Ul]]k refined into fine faces, jdu(:,1)
-      call AuxFlux(jdu,oldface(iqm),oldface(iuj),e,nstate)
-      do j=1,ndim
-      do eq=1,toteq
-! and add_face2full to turn totalh into Sij, i=eq
-         call add_face2full_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
-     >                          gradu(1,1,1,eq,j),jdu(1,eq,j))
-      enddo
-      enddo
-      return
-      end

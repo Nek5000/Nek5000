@@ -5,14 +5,15 @@
      $               , res2(lx1,ly1,lz1,lelCMT,toteq)
      $               , res3(lx1,ly1,lz1,toteq,lelCMT) 
 
-      COMMON /CMTGRADU/  gradu(lx1,ly1,lz1,toteq,3)
+      COMMON /CMTGRADU/  gradu(lx1*ly1*lz1,toteq,3)
       
       COMMON /CONVECTDATA/ convh (lxd*lyd*lzd,3)
+     $                 ,   diffh (lx1*ly1*lz1,3) ! dealias someday?
      $                 ,   totalh(lxd*lyd*lzd,3)
 
       COMMON /FORCEDATA/   usrf (lx1,ly1,lz1,5)
-c We assume we will be working with one gas. Therefore Rgas need not be 
-c full filed. To begin with we assume calorically perfect gas.
+c We assume we will be working with one gas.
+c To begin with we assume calorically perfect gas.
 c In near future we relax the constraint to thermally perfect gas.
 c------------------------------------------------- -------------------
 c NOTE --- CVG need not be stored on full field... removed in future.
@@ -26,8 +27,6 @@ c---------------------------------------------------------------------
 
       COMMON /CMTGASREF/  cvgref,cpgref,gmaref,rgasref,molmass
       real                cvgref,cpgref,gmaref,rgasref,molmass
-      COMMON /CMTTRANSPROP/ cip(2*ldim,lelCMT)
-      real cip
       COMMON /CMTTRANSREF/ muref
      $                 ,   coeflambda,suthcoef,reftemp,prlam,cip_adhoc
       real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc
@@ -40,8 +39,8 @@ c---------------------------------------------------------------------
       COMMON /CMTIOFLGS/   res_freq
       integer              res_freq
 
-      COMMON /CMTVISCO/  ifbr1
-      logical            ifbr1
+      COMMON /CMTVISCO/  ifsip
+      logical            ifsip
       COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
       real                 WGHT, WGHTD
 ! particle stuff for rk3 low storage tvd

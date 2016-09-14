@@ -65,7 +65,6 @@ c-----------------------------------------------------------------------
       integer   vertex(*)
 
       integer*8 gnv(*),gnf(*),ngv
-      integer*8 nf
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -78,7 +77,7 @@ c-----------------------------------------------------------------------
       if (if3d) mz1 = nz+1
       call iface_vert_int8cmt(nx,ny,nz,gnf,gnv,mz0,mz1,nelt) 
 
-      nf = nx*nz*2*ndim*nelt !total number of points on faces
+      nf = nx*nz*2*ndim*nelt !total number of points on faces BETTA BE 4-byte!
       call gs_setup(dg_hndl,gnf,nf,nekcomm,np)
 
       return
@@ -94,7 +93,7 @@ c-----------------------------------------------------------------------
       parameter(lf=lx1*lz1*2*ldim*lelcmt)
       common /c_is1/ glo_num_face(lf)
      $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelcmt)
-      integer*8 glo_num_face,glo_num_vol,ngv,nf
+      integer*8 glo_num_face,glo_num_vol,ngv
 
       call setup_cmt_gs(dg_hndl,nx1,ny1,nz1,nelt,nelgt,vertex,
      >                  glo_num_vol,glo_num_face)
