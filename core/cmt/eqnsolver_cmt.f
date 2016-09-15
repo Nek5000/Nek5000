@@ -169,13 +169,14 @@
 
       n=nxd*nyd*nzd
 
-c     if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
+      if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
 
-c        do j=1,ndim
-c           call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
-c        enddo
+         do j=1,ndim
+            call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
+         enddo
 
-c     else
+      else
+
 c To be consistent with momentum equation, for mass balance flux vector is 
 c computed by multiplying rho by u_j
          call intp_rstd(ju1,phig(1,1,1,e),nx1,nxd,if3d,0)
@@ -209,7 +210,7 @@ c computed by multiplying rho by u_j
             call exitt
          endif
 
-c     endif
+      endif
      
       return
       end
