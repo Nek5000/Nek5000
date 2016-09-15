@@ -4962,7 +4962,6 @@ c     Output: ur,us,ut         Input:u,N,e,D,Dt
 c-----------------------------------------------------------------------
       subroutine local_grad2_t(u,ur,us,N,e,D,Dt,w)
 c     Output: ur,us         Input:u,N,e,D,Dt
-      include 'SIZE'
       real u (0:N,0:N,1)
       real ur(0:N,0:N),us(0:N,0:N)
       real D (0:N,0:N),Dt(0:N,0:N)
