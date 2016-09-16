@@ -114,7 +114,6 @@ c
       ifschclob = .false. 
 
       ifcmt     = .false. 
-      ifvisc    = .false. 
       iffltr    = .false.
 
       call izero(matype,16*ldimt1)

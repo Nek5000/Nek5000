@@ -1,6 +1,8 @@
 !--------------------------------------------------------------------
 ! JH061914 propose name change to intpdiff since that is what is in
 !          here.
+! JH081816 went to local_grad. redimensioned gradu. wish I could use
+!          gradm11, but stride
 !--------------------------------------------------------------------
 
       subroutine compute_gradients(e)
@@ -11,8 +13,7 @@
       include 'SOLN'
       include 'CMTDATA'
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-      real ju
+      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ud(ldd),tu(ldd)
 
       integer eq,e
 
@@ -21,48 +22,38 @@
       nxy1  = nx1*ny1
       nyz1  = ny1*nz1
       nxyz1 = nx1*ny1*nz1
-!     m0 = nx1-1
+      m0 = nx1-1
 
       do eq=1,toteq
 
          if (if3d) then
-! assumes dxm1=dym1=dzm1, nx1=ny1=nz1
-!           call local_grad3(ur,us,ut,u(1,1,1,eq,e),m0,1,dxm1,dxm1t)
-! eh, why do that?
-            call mxm(dxm1,nx1,u(1,1,1,eq,e),nx1,ur,nyz1)
-            do iz=1,nz1
-               il=(iz-1)*nxy1+1
-               call mxm(u(1,1,iz,eq,e),nx1,dytm1,ny1,us(il),ny1)
-            enddo
-            call mxm(u(1,1,1,eq,e),nxy1,dztm1,nz1,ut,nz1)
+            call local_grad3(ur,us,ut,u(1,1,1,eq,e),m0,1,dxm1,dxtm1)
             do i=1,nxyz1
-               gradu(i,1,1,eq,1) = jacmi(i,e)*(rxm1(i,1,1,e)*ur(i)+
-     >                                         sxm1(i,1,1,e)*us(i)+
-     >                                         txm1(i,1,1,e)*ut(i))
+               gradu(i,eq,1) = jacmi(i,e)*(rxm1(i,1,1,e)*ur(i)+
+     >                                     sxm1(i,1,1,e)*us(i)+
+     >                                     txm1(i,1,1,e)*ut(i))
             enddo
             do i=1,nxyz1
-               gradu(i,1,1,eq,2) = jacmi(i,e)*(rym1(i,1,1,e)*ur(i)+
-     >                                         sym1(i,1,1,e)*us(i)+
-     >                                         tym1(i,1,1,e)*ut(i))
+               gradu(i,eq,2) = jacmi(i,e)*(rym1(i,1,1,e)*ur(i)+
+     >                                     sym1(i,1,1,e)*us(i)+
+     >                                     tym1(i,1,1,e)*ut(i))
             enddo
             do i=1,nxyz1
-               gradu(i,1,1,eq,3) = jacmi(i,e)*(rzm1(i,1,1,e)*ur(i)+
-     >                                         szm1(i,1,1,e)*us(i)+
-     >                                         tzm1(i,1,1,e)*ut(i))
+               gradu(i,eq,3) = jacmi(i,e)*(rzm1(i,1,1,e)*ur(i)+
+     >                                     szm1(i,1,1,e)*us(i)+
+     >                                     tzm1(i,1,1,e)*ut(i))
             enddo
 
          else
 
-!           call local_grad2(ur,us   ,u(1,1,1,eq,e),m0,1,dxm1,dxm1t)
-            call mxm (dxm1,nx1,u(1,1,1,eq,e),nx1,ur,nyz1)
-            call mxm (u(1,1,1,eq,e),nx1,dytm1,ny1,us,ny1)
+            call local_grad2(ur,us   ,u(1,1,1,eq,e),m0,1,dxm1,dxtm1)
             do i=1,nxyz1
-               gradu(i,1,1,eq,1) = jacmi(i,e)*(rxm1(i,1,1,e)*ur(i)+
-     >                                         sxm1(i,1,1,e)*us(i))
+               gradu(i,eq,1) = jacmi(i,e)*(rxm1(i,1,1,e)*ur(i)+
+     >                                     sxm1(i,1,1,e)*us(i))
             enddo
             do i=1,nxyz1
-               gradu(i,1,1,eq,2) = jacmi(i,e)*(rym1(i,1,1,e)*ur(i)+
-     >                                         sym1(i,1,1,e)*us(i))
+               gradu(i,eq,2) = jacmi(i,e)*(rym1(i,1,1,e)*ur(i)+
+     >                                     sym1(i,1,1,e)*us(i))
             enddo
 
          endif
@@ -194,4 +185,113 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
       return
       end
+
 !-----------------------------------------------------------------------
+
+      subroutine gradm11_t(grad,uxyz,csgn,e) ! grad is incremented, not overwritten
+c     source: . gradm1, from navier5.f 
+c             . gradm1, from navier5.f 
+c     Compute divergence^T of ux,uy,uz -- mesh 1 to mesh 1 (vel. to vel.)
+!     single element, but references jacmi and the metrics
+
+      include 'SIZE'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'INPUT'
+
+      parameter (lxyz=lx1*ly1*lz1)
+      real grad(lxyz),uxyz(lxyz,ndim)
+
+      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz),ud(lxyz),tmp(lxyz)
+      real ur,us,ut,tmp
+
+      integer e
+
+      nxyz = nx1*ny1*nz1
+      call rzero(ud,nxyz)
+
+      N = nx1-1
+      if (if3d) then
+
+         do i=1,lxyz
+            ur(i) = jacmi(i,e)*(uxyz(i,1)*rxm1(i,1,1,e)
+     >                        + uxyz(i,2)*rym1(i,1,1,e)
+     >                        + uxyz(i,3)*rzm1(i,1,1,e) )
+            us(i) = jacmi(i,e)*(uxyz(i,1)*sxm1(i,1,1,e)
+     >                        + uxyz(i,2)*sym1(i,1,1,e)
+     >                        + uxyz(i,3)*szm1(i,1,1,e) )
+            ut(i) = jacmi(i,e)*(uxyz(i,1)*txm1(i,1,1,e)
+     >                        + uxyz(i,2)*tym1(i,1,1,e)
+     >                        + uxyz(i,3)*tzm1(i,1,1,e) )
+         enddo
+         call local_grad3_t(ud,ur,us,ut,N,1,dxm1,dxtm1,tmp)
+      else
+         do i=1,lxyz
+            ur(i) =jacmi(i,e)*(uxyz(i,1)*rxm1(i,1,1,e)
+     >                       + uxyz(i,2)*rym1(i,1,1,e) )
+            us(i) =jacmi(i,e)*(uxyz(i,1)*sxm1(i,1,1,e)
+     >                       + uxyz(i,2)*sym1(i,1,1,e) )
+         enddo
+         call local_grad2_t(ud,ur,us,N,1,dxm1,dxtm1,tmp)
+      endif
+      call cmult(ud,csgn,nxyz)
+      call add2(grad,ud,nxyz)
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine gradm1_t(u,ux,uy,uz)
+! JH082516 torn bleeding from Lu's dgf3.f. someday you are going to have
+!          to vectorize cmt-nek properly.
+c     source: . gradm1, from navier5.f 
+c             . gradm1, from navier5.f 
+c
+c     Compute divergence of ux,uy,uz -- mesh 1 to mesh 1 (vel. to vel.)
+c
+      include 'SIZE'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'INPUT'
+c
+      parameter (lxyz=lx1*ly1*lz1)
+      real ux(lxyz,*),uy(lxyz,*),uz(lxyz,*),u(lxyz,*)
+
+      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz),tmp(lxyz)
+      real ur,us,ut,tmp
+
+      integer e
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelt
+
+      N = nx1-1
+      do e=1,nelt
+         if (if3d) then
+
+            do i=1,lxyz
+               ur(i) = jacmi(i,e)*(ux(i,e)*rxm1(i,1,1,e)
+     $                           + uy(i,e)*rym1(i,1,1,e)
+     $                           + uz(i,e)*rzm1(i,1,1,e) )
+               us(i) = jacmi(i,e)*(ux(i,e)*sxm1(i,1,1,e)
+     $                           + uy(i,e)*sym1(i,1,1,e)
+     $                           + uz(i,e)*szm1(i,1,1,e) )
+               ut(i) = jacmi(i,e)*(ux(i,e)*txm1(i,1,1,e)
+     $                           + uy(i,e)*tym1(i,1,1,e)
+     $                           + uz(i,e)*tzm1(i,1,1,e) )
+            enddo
+            call local_grad3_t(u,ur,us,ut,N,e,dxm1,dxtm1,tmp)
+         else
+            do i=1,lxyz
+               ur(i) =jacmi(i,e)*(ux(i,e)*rxm1(i,1,1,e)
+     $                          + uy(i,e)*rym1(i,1,1,e) )
+               us(i) =jacmi(i,e)*(ux(i,e)*sxm1(i,1,1,e)
+     $                          + uy(i,e)*sym1(i,1,1,e) )
+            enddo
+            call local_grad2_t(u,ur,us,N,e,dxm1,dxtm1,tmp)
+         endif
+      enddo
+c
+      return
+      end

@@ -54,7 +54,7 @@
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg) ! get molarmass, phi
-c                                     ! ux,uy,uz ifvisc
+c                                     ! ux,uy,uz
          l=l+1
          nx = unx(l,1,f,e)
          ny = uny(l,1,f,e)
@@ -79,12 +79,11 @@ c                                     ! ux,uy,uz ifvisc
          bcq(l,f,e,iu3)=faceq(l,f,e,iu3)
          bcq(l,f,e,iu4)=faceq(l,f,e,iu4)
          bcq(l,f,e,iu5)=faceq(l,f,e,iu5)
-         if (ifvisc) then
-            bcq(l,f,e,iux)=ux
-            bcq(l,f,e,iuy)=uy
-            bcq(l,f,e,iuz)=uz
-            if (cbc(f,e,2) .eq. 'W  ') bcq(l,f,e,ithm)=temp
-         endif
+! need a different place to set dirichlet BC for viscous fluxes
+!           bcq(l,f,e,iux)=ux ! better b
+!           bcq(l,f,e,iuy)=uy
+!           bcq(l,f,e,iuz)=uz
+!        if (cbc(f,e,2) .eq. 'W  ') bcq(l,f,e,ithm)=temp
          plc(l)=plc(l)*phi
       enddo
       enddo

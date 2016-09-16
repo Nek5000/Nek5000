@@ -153,7 +153,6 @@ C
          WRITE (6,*) 'IFSURT   =',IFSURT
          WRITE (6,*) 'IFWCNO   =',IFWCNO
          WRITE (6,*) 'IFCMT    =',IFCMT
-         WRITE (6,*) 'IFVISC   =',IFVISC
          WRITE (6,*) 'IFFLTR   =',IFFLTR
 
          DO 500 IFIELD=1,NFIELD
@@ -1233,12 +1232,9 @@ C
             cp   = vtrans(ix,iy,iz,e,icp)/rho
          endif
          asnd = csound(ix,iy,iz,e)
-
-         if (ifvisc) then ! lol stride
-            mu     = vdiff(ix,iy,iz,e,imu)
-            udiff  = vdiff(ix,iy,iz,e,iknd)
-            lambda = vdiff(ix,iy,iz,e,ilam)
-         endif
+         mu     = vdiff(ix,iy,iz,e,imu)
+         udiff  = vdiff(ix,iy,iz,e,iknd)
+         lambda = vdiff(ix,iy,iz,e,ilam)
 
       endif                                     ! JH081415 CMT only
 

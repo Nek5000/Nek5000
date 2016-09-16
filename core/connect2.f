@@ -318,7 +318,6 @@ C
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
       IFCMT     = .false.
-      IFVISC    = .false.
       IFFLTR    = .false.
 
       ifbase = .true.
@@ -403,8 +402,6 @@ c             read(string(i),*) IFMGRID
 c              read(string,*) IFSPLIT
          elseif (indx1(string(i),'IFCMT',5).gt.0) then 
               read(string(i),*) IFCMT
-         elseif (indx1(string(i),'IFVISC',6).gt.0) then 
-              read(string(i),*) IFVISC
          elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
               read(string(i),*) IFFLTR
          else
@@ -438,7 +435,6 @@ c              read(string,*) IFSPLIT
      &           '   IFCOUP'   ,
      &           '   IFVCOUP'  ,
      &           '   IFCMT'    ,
-     &           '   IFVISC'   ,
      &           '   IFFLTR'    
               endif
               call exitt

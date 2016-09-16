@@ -1,53 +1,23 @@
-      subroutine compute_cip
+      subroutine imqqtu(ummcu,uminus,uplus)
+! Computes (I-0.5*QQT)U for all five conserved variables.
+! See call in compute_rhs_and_dt for important documentation
+!                                     -
+! Spoiler: for SEM this comes out to U -{{U}}, which when
+!          spoken is "UMinus Minus the Central flux of U" which I
+!          then abbreviate as ummcu
       include 'SIZE'
-      include 'CMTDATA'
-      include 'GEOM'
-      include 'MASS'
-      include 'DG'
-      integer   heresize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt)
-      parameter (heresize=nqq*3*lfq+toteq*2*ldim*lfq-2*lfq)
-      common /CMTSURFLX/ vminus(lx1*lz1,2*ldim,lelcmt),
-     >                    vplus(lx1*lz1,2*ldim,lelcmt),
-     >                   notyet(heresize)
-      real    notyet
 
-      integer e,f
-      real    hk,the_area
+      real ummcu (nx1*nz1*2*ndim*nelt,toteq) ! intent(out)
+      real uminus(nx1*nz1*2*ndim*nelt,toteq) ! intent(in)
+      real uplus (nx1*nz1*2*ndim*nelt,toteq) ! intent(in)
+      integer ivar
 
-      nface=2*ndim
-      nxyz=nx1*ny1*nz1
-      nxz=nx1*nz1
-      nfc =nxz*nface*nelt
-
-! Lol I'm in way to big of a hurry to make this less ridiculously
-! wasteful and code up a new gs_op. It won't be happening more than once
-! until we have a moving mesh
-      do e=1,nelt
-         call copy(notyet,bm1(1,1,1,e),nxyz)
-         call col2(notyet,jacmi(1,e),nxyz)
-         vol=vlsum(notyet,nxyz)
-         do f=1,nface
-            do i=1,nxz
-               vminus(i,f,e)=vol
-            enddo
-         enddo
-      enddo
-
-      call face_state_commo(vminus,vplus,nfc,1,flux_hndl)
-
-      do e=1,nelt
-         do f=1,nface
-            the_area=vlsum(area(1,1,f,e),nxz)
-            if (vplus(1,f,e) .gt. 0.0) then
-               hk=min(vminus(1,f,e),vplus(1,f,e))
-            else
-               hk=vminus(1,f,e)
-            endif
-            hk=hk/the_area
-!           cip(f,e)=cip_adhoc/hk*nx1**2
-            cip(f,e)=cip_adhoc/hk*real(nx1**2)
-         enddo
+      nf = nx1*nz1*2*ndim*nelt
+      const=-0.5
+      do ivar=1,toteq
+         call add3(ummcu(1,ivar),uminus(1,ivar),uplus(1,ivar),nf)
+         call cmult(ummcu(1,ivar),const,nf)        !         -
+         call add2(ummcu(1,ivar),uminus(1,ivar),nf)!ummcu = U -{{U}}
       enddo
 
       return
@@ -55,48 +25,56 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine tauij_gdu(gijklu,visco,gvar,gvart,ngvar,du,dut,nu,npt,
-     >                     xpflag,eq,jflux,kdir,e,mu,lambda,kond,cvg)
+      subroutine tauij_gdu_sfc(gijklu,gvar,du,visco,eq,jflux,kdir)
       include 'SIZE'
+      include 'SOLN'
+      include 'CMTDATA'
 ! subroutine for computing flux of a conserved variable by higher-order
-! differential operators. This one computes viscous fluxes for everything
-! except gas density.
-! ngvar      number of primitive variables to form Gijkl
-! nu         number of conserved variables
+! differential operators.
+! This one is classic Navier-Stokes, that is, it computes viscous fluxes
+! for everything except gas density.
 ! eq         index i; LHS equation
 ! jflux      index j; flux direction
 ! kdir       index k; direction of derivative or jump in U
-      integer  ngvar,nu,npt,eq,jflux,kdir,e
-      real   gvar(ngvar,npt),gvart(npt,lelcmt,*),
-     >                      du(nu,   npt),dut  (npt,nu)
-      real  mu(npt),lambda(npt),kond(npt),cvg(npt)
-      real visco(npt) ! you know, you should probably just
+      parameter (lxyz=lx1*lz1*2*ldim)
+      integer  eq,jflux,kdir
+      real    du(lxyz*nelt,toteq)
+      real visco(lxyz*nelt) ! you know, you should probably just
                          ! pass mu+lambda and mu-k/cv when eq=5
                          ! so you don't have to recompute them
                          ! so many times
+      real gvar(lxyz*nelt,*)    ! intent(in)
 ! variables making up Gjkil terms, viscous stress tensor and total energy
 ! equation, compressible Navier-Stokes equations
-!     gvar(1,:) or gvart(:,e,1) rho
-!     gvar(2,:) or gvart(:,e,2) u
-!     gvar(3,:) or gvart(:,e,3) v
-!     gvar(4,:) or gvart(:,e,4) w
-!     gvar(5,:) or gvart(:,e,5) p
-!     gvar(6,:) or gvart(:,e,6) T
+! assume the following ordering remains in CMTDATA
+!     gvar(:,1)  rho ! especially here
+!     gvar(:,2)  u   ! especially here
+!     gvar(:,3)  v   ! especially here
+!     gvar(:,4)  w   ! especially here
+!     gvar(:,5)  p
+!     gvar(:,6)  T
+!     gvar(:,7)  a
+!     gvar(:,8)  phi_g
+!     gvar(:,9)  rho*cv
+!     gvar(:,10) rho*cp
+!     gvar(:,11) mu
+!     gvar(:,12) thermal conductivity
+!     gvar(:,13) lambda
+!     gvar(:,18) U5 ! FIX THE DAMN ENERGY COMPUTATION I'M SIGHING ABOUT
 ! derivatives or jumps, conserved variables, compressible Navier-Stokes
 ! equations
-!     du(1,:) or dut(:,1) rho
-!     du(2,:) or dut(:,2) rho u
-!     du(3,:) or dut(:,3) rho v
-!     du(4,:) or dut(:,4) rho w
-!     du(5,:) or dut(:,5) rho E
-      real gijklu(npt) !incremented. never give this exclusive intent
-      logical   xpflag ! flag determining if variable is
-                                    ! innermost for both G and dU.
+!     du(1,:)  rho
+!     du(2,:)  rho u
+!     du(3,:)  rho v
+!     du(4,:)  rho w
+!     du(5,:)  rho E
+      real gijklu(lxyz*nelt) !incremented. never give this exclusive intent
       integer eijk3(3,3,3)
 !     data eijk2 / 0, -1, 1, 0/
       data eijk3
      >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
-      parameter (itemp=6)
+
+      npt=lxyz*nelt ! lazy
 
       call rzero(visco,npt)
 
@@ -104,12 +82,12 @@
 
          if (jflux .eq. eq-1) then
             m=kdir
-            call copy(visco,lambda,npt)
+            call copy(visco,gvar(1,ilamf),npt)
             if (kdir .eq. jflux) then
-               call add2s2(visco,mu,2.0,npt)
+               call add2s2(visco,gvar(1,imuf),2.0,npt)
             endif
          else
-            call copy(visco,mu,npt)
+            call copy(visco,gvar(1,imuf),npt)
             if (kdir .eq. jflux) then
                m=eq-1
             else
@@ -119,21 +97,9 @@
 
          m=m+1 ! skip density
 
-         if (xpflag) then ! ipt innermost
-            call invcol2(visco,gvart(1,e,1),npt)
-            call addcol3(gijklu,visco,dut(1,m),npt)
-            call subcol4(gijklu,visco,dut(1,1),gvart(1,e,m),npt)
-         else
-            do ipt=1,npt
-               visco(ipt)=visco(ipt)/gvar(1,ipt)
-            enddo
-            do ipt=1,npt
-               gijklu(ipt)=gijklu(ipt)-visco(ipt)*gvar(m,ipt)*du(1,ipt)
-            enddo
-            do ipt=1,npt
-               gijklu(ipt)=gijklu(ipt)+visco(ipt)*du(m,ipt)
-            enddo
-         endif ! xpflag
+         call invcol2(visco,gvar(1,irho),npt)
+         call subcol4(gijklu,visco,gvar(1,m),du(1,1),npt)
+         call addcol3(gijklu,visco,du(1,m),npt)
 
       else ! energy equation is very different. and could use a rewrite
 
@@ -141,135 +107,62 @@
             kp1=kdir+1
 
             l=1 ! sigh
-            if (xpflag) then ! ipt innermost
-               call copy(visco,gvart(1,e,2),npt)
-               call vsq(visco,npt)
-               do m=3,ndim+1
-                  call addcol3(visco,gvart(1,e,m),gvart(1,e,m),npt)
-               enddo
-! visco now contains uiui=2KE. only happens here
-               call invcol2(visco,gvart(1,e,1),npt)
-               call addcol4(gijklu,visco,kond,dut(1,l),npt)
-! gdu-=(mu-k/cv)uiui*drho
-               call subcol4(gijklu,visco,mu,dut(1,l),npt)
-               call cmult(visco,0.5,npt)
-               do ipt=1,npt
-                  visco(ipt)=visco(ipt)+cvg(ipt)*gvart(ipt,e,itemp)/
-     >                                           gvart(ipt,e,1) ! sigh
-               enddo
-! visco now contains E =(cvg*T+0.5*(ux**2+uy**2+uz**2))/rho
-! gdu-=k/cv*E*drho/rho
-               call subcol4(gijklu,visco,kond,dut(1,l),npt)
+            call vdot3(visco,gvar(1,iux),gvar(1,iux), ! now twoke
+     >                       gvar(1,iuy),gvar(1,iuy),
+     >                       gvar(1,iuz),gvar(1,iuz),npt)
+            do ipt=1,npt ! someone else can make this loop more clever
+               gdu=(gvar(ipt,imuf)-gvar(ipt,ikndf))*twoke
+               energy=gvar(ipt,icvf)*gvar(ipt,ithm)+0.5*twoke ! sigh. iu5?/phi?
+               gdu=gdu+(gvar(ipt,imuf)+gvar(ipt,ilamf))*gvar(ipt,kp1)**2
+               gijklu(ipt)=gijklu(ipt)-(gvar(ipt,ikndf)*energy-gdu)*
+     >                                  du(ipt,l)/gvar(ipt,irho)
+            enddo
 
-               call add3(visco,mu,lambda,npt)
-               call invcol2(visco,gvart(1,e,1),npt)
-! visco now contains mu+lambda. Much better
-! but I've completely given up on doing this through math.f
-               do ipt=1,npt
-               gijklu(ipt)=gijklu(ipt)-visco(ipt)*gvart(ipt,e,kp1)**2*
-     >                                            dut(ipt,l)
-               enddo
-            else ! xpflag
-               do ipt=1,npt ! someone else can make this loop more clever
-                  twoke=gvar(2,ipt)**2+gvar(3,ipt)**2+gvar(4,ipt)**2
-                  gdu=(mu(ipt)-kond(ipt))*twoke
-                  energy=cvg(ipt)*gvar(itemp,ipt)+0.5*twoke
-                  gdu=gdu+(mu(ipt)+lambda(ipt))*gvar(kp1,ipt)**2
-                  gijklu(ipt)=gijklu(ipt)-(kond(ipt)*energy-gdu)*
-     >                                     du(l,ipt)/gvar(1,ipt)
-               enddo
-            endif
-
-            call sub3(visco,mu,kond,npt) ! form mu-K/cv
-            if (xpflag) then ! ipt innermost
-               call invcol2(visco,gvart(1,e,1),npt)
+            call sub3(visco,gvar(1,imuf),gvar(1,ikndf),npt) ! form mu-K/cv
+            do ipt=1,npt
+               visco(ipt)=visco(ipt)/gvar(ipt,1)
+               gdu=0.0
                do l=2,ldim+1 ! both gvar and du are indexed by l
-                  call addcol4(gijklu,visco,gvart(1,e,l),dut(1,l),npt)
+                  gdu=gdu+gvar(ipt,l)*du(ipt,l)
                enddo
-            else
-               do ipt=1,npt
-                  visco(ipt)=visco(ipt)/gvar(1,ipt)
-                  gdu=0.0
-                  do l=2,ldim+1 ! both gvar and du are indexed by l
-                     gdu=gdu+gvar(l,ipt)*du(l,ipt)
-                  enddo
-                  gijklu(ipt)=gijklu(ipt)+gdu*visco(ipt)
-               enddo
-            endif
-            call add3(visco,mu,lambda,npt)
+               gijklu(ipt)=gijklu(ipt)+gdu*visco(ipt)
+            enddo
+            call add3(visco,gvar(1,imuf),gvar(1,ilamf),npt)
             l=jflux+1
-            if (xpflag) then ! ipt innermost
-               call invcol2(visco,gvart(1,e,1),npt)
-               call addcol4(gijklu,visco,gvart(1,e,l),dut(1,l),npt)
-            else
-               do ipt=1,npt
-               gijklu(ipt)=gijklu(ipt)+visco(ipt)*gvar(l,ipt)*du(l,ipt)/
-     >                                            gvar(1,ipt)
-               enddo
-            endif
+            do ipt=1,npt
+               gijklu(ipt)=gijklu(ipt)+visco(ipt)*gvar(ipt,l)*du(ipt,l)/
+     >                                                      gvar(ipt,1)
+            enddo
 
             l=5
-            call copy(visco,kond,npt)
-            if (xpflag) then
-               call invcol2(visco,gvart(1,e,1),npt)
-               call addcol3(gijklu,visco,dut(1,l),npt)
-            else
-               do ipt=1,npt
-                  visco(ipt)=visco(ipt)/gvar(1,ipt)
-               enddo
-               do ipt=1,npt
-                  gijklu(ipt)=gijklu(ipt)+visco(ipt)*du(l,ipt)
-               enddo
-            endif
+            call copy(visco,gvar(1,ikndf),npt)
+            call invcol2(visco,gvar(1,1),npt)
+            call add2col2(gijklu,visco,du(1,l),npt)
 
          else ! dU is off-diagonal
 
-            call add3(visco,mu,lambda,npt)
+            call add3(visco,gvar(1,imuf),gvar(1,ilamf),npt)
             jp1=jflux+1
             kp1=kdir+1
-
-            if (xpflag) then ! ipt innermost
-               call invcol2(visco,gvart(1,e,1),npt)
-! just clobber visco relentlessly
-               call col2(visco,gvart(1,e,jp1),npt)
-               call subcol4(gijklu,visco,gvart(1,e,kp1),dut(1,1),npt)
-            else
-               do ipt=1,npt
-                  visco(ipt)=visco(ipt)/gvar(1,ipt)
-               enddo
-               do ipt=1,npt
-                  gijklu(ipt)=gijklu(ipt)-
-     >                  visco(ipt)*gvar(jp1,ipt)*gvar(kp1,ipt)*du(1,ipt)
-               enddo
-            endif
+            call invcol2(visco,gvar(1,1),npt)
+            do ipt=1,npt
+               gijklu(ipt)=gijklu(ipt)-
+     >                  visco(ipt)*gvar(ipt,jp1)*gvar(ipt,kp1)*du(ipt,1)
+            enddo
 
             do l=2,ldim+1
                lm1=l-1
                if (eijk3(jflux,kdir,lm1) .eq. 0) then
-
-                if (lm1 .eq. kdir) then
-                  call copy(visco,lambda,npt)
-                  m=jflux+1
-                else
-                  call copy(visco,mu,npt)
-                  m=kdir+1
-                endif
-
-                if (xpflag) then
-                  call invcol2(visco,gvart(1,e,1),npt)
-                  call addcol4(gijklu,visco,dut(1,l),gvart(1,e,m),npt)
-                else
-                  do ipt=1,npt
-                     visco(ipt)=visco(ipt)/gvar(1,ipt)
-                  enddo
-                  do ipt=1,npt
-                     gijklu(ipt)=gijklu(ipt)+visco(ipt)*gvar(m,ipt)*
-     >                                                    du(l,ipt)
-                  enddo
-                endif
-
+                  if (lm1 .eq. kdir) then
+                     call copy(visco,gvar(1,ilamf),npt)
+                     m=jflux+1
+                  else
+                     call copy(visco,gvar(1,imuf),npt)
+                     m=kdir+1
+                  endif
+                  call invcol2(visco,gvar(1,1),npt)
+                  call addcol4(gijklu,visco,gvar(1,m),du(1,l),npt)
                endif
-
             enddo ! l
 
          endif ! diagonal?
@@ -281,11 +174,208 @@
 
 !-----------------------------------------------------------------------
 
+      subroutine tauij_gdu_vol(gijklu,dut,visco,e,eq,jflux,kdir)
+      include 'SIZE'
+      include 'SOLN'
+      include 'INPUT'
+      include 'CMTDATA'
+! subroutine for computing flux of a conserved variable by higher-order
+! differential operators.
+! This one is classic Navier-Stokes, that is, it computes viscous fluxes
+! for everything except gas density.
+! eq         index i; LHS equation
+! jflux      index j; flux direction
+! kdir       index k; direction of derivative or jump in U
+      parameter (lxyz=lx1*ly1*lz1)
+      integer  e,eq,jflux,kdir
+      real   dut(lxyz,toteq)
+      real visco(lxyz) ! you know, you should probably just
+                         ! pass mu+lambda and mu-k/cv when eq=5
+                         ! so you don't have to recompute them
+                         ! so many times
+! derivatives or jumps, conserved variables, compressible Navier-Stokes
+! equations
+!     du(1,:) or dut(:,1) rho
+!     du(2,:) or dut(:,2) rho u
+!     du(3,:) or dut(:,3) rho v
+!     du(4,:) or dut(:,4) rho w
+!     du(5,:) or dut(:,5) rho E
+      real gijklu(lxyz) !incremented. never give this exclusive intent
+      integer eijk3(3,3,3)
+!     data eijk2 / 0, -1, 1, 0/
+      data eijk3
+     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
+
+      npt=lxyz !%s/npt/lxyz/g is hard
+
+      call rzero(visco,npt)
+
+      if (eq .lt. 5) then
+
+         if (jflux .eq. eq-1) then
+            m=kdir
+            call copy(visco,vdiff(1,1,1,e,ilam),npt)
+            if (kdir .eq. jflux) then
+               call add2s2(visco,vdiff(1,1,1,e,imu),2.0,npt)
+            endif
+         else
+            call copy(visco,vdiff(1,1,1,e,imu),npt)
+            if (kdir .eq. jflux) then
+               m=eq-1
+            else
+               m=jflux
+            endif
+         endif
+
+         m=m+1 ! skip density
+
+         call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+         call addcol3(gijklu,visco,dut(1,m),npt)
+! sigh. times like this I hate fortran
+         if (m .eq. 2) call subcol4(gijklu,visco,dut,vx(1,1,1,e),npt)
+         if (m .eq. 3) call subcol4(gijklu,visco,dut,vy(1,1,1,e),npt)
+         if (m .eq. 4) call subcol4(gijklu,visco,dut,vz(1,1,1,e),npt)
+
+      else ! energy equation is very different. and could use a rewrite
+
+         if (jflux .eq. kdir) then
+            kp1=kdir+1
+
+            call copy(visco,vx(1,1,1,e),npt)
+            call vsq(visco,npt)
+            call addcol3(visco,vy(1,1,1,e),vy(1,1,1,e),npt)
+            if(if3d) call addcol3(visco,vz(1,1,1,e),vy(1,1,1,e),npt)
+! visco now contains uiui=2KE. only happens here
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+            call addcol4(gijklu,visco,vdiff(1,1,1,e,iknd),dut(1,1),npt)
+! gdu-=(mu-k/cv)uiui*drho
+            call subcol4(gijklu,visco,vdiff(1,1,1,e,imu),dut(1,1),npt)
+            call cmult(visco,0.5,npt)
+            do ipt=1,npt
+                  visco(ipt)=visco(ipt)+
+     >            vtrans(ipt,1,1,e,icv)*t(ipt,1,1,e,1)/
+     >                             vtrans(ipt,1,1,e,irho) ! sigh
+            enddo
+! visco now contains E =(cvg*T+0.5*(ux**2+uy**2+uz**2))/rho
+! gdu-=k/cv*E*drho/rho
+            call subcol4(gijklu,visco,vdiff(1,1,1,e,iknd),dut(1,1),npt)
+
+            call add3(visco,vdiff(1,1,1,e,imu),vdiff(1,1,1,e,ilam),npt)
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+! visco now contains mu+lambda. Much better
+! but I've completely given up on doing this through math.f
+            if (kp1 .eq. 2) then
+               do i=1,npt
+                  gijklu(i)=gijklu(i)-visco(i)*vx(i,1,1,e)**2*dut(i,1)
+               enddo
+            elseif(kp1 .eq. 3) then
+               do i=1,npt
+                  gijklu(i)=gijklu(i)-visco(i)*vy(i,1,1,e)**2*dut(i,1)
+               enddo
+            elseif(kp1 .eq. 4) then
+               do i=1,npt
+                  gijklu(i)=gijklu(i)-visco(i)*vz(i,1,1,e)**2*dut(i,1)
+               enddo
+            endif
+
+! form mu-K/cv
+            call sub3(visco,vdiff(1,1,1,e,imu),vdiff(1,1,1,e,iknd),npt)
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+            call addcol4(gijklu,visco,vx(1,1,1,e),dut(1,2),npt)
+            call addcol4(gijklu,visco,vy(1,1,1,e),dut(1,3),npt)
+            if(if3d) call addcol4(gijklu,visco,vz(1,1,1,e),dut(1,4),npt)
+            call add3(visco,vdiff(1,1,1,e,imu),vdiff(1,1,1,e,ilam),npt)
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+            l=jflux+1
+            if (l.eq.2)
+     >         call addcol4(gijklu,visco,vx(1,1,1,e),dut(1,l),npt)
+            if (l.eq.3)
+     >         call addcol4(gijklu,visco,vy(1,1,1,e),dut(1,l),npt)
+            if (l.eq.4)
+     >         call addcol4(gijklu,visco,vz(1,1,1,e),dut(1,l),npt)
+
+            l=toteq
+            call copy(visco,vdiff(1,1,1,e,iknd),npt)
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+            call addcol3(gijklu,visco,dut(1,l),npt)
+
+         else ! dU is off-diagonal
+
+            call add3(visco,vdiff(1,1,1,e,iknd),vdiff(1,1,1,e,ilam),npt)
+            jp1=jflux+1
+            kp1=kdir+1
+            call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+! just clobber visco relentlessly
+            if (jp1 .eq. 2) call col2(visco,vx(1,1,1,e),npt)
+            if (jp1 .eq. 3) call col2(visco,vy(1,1,1,e),npt)
+            if (jp1 .eq. 4) call col2(visco,vz(1,1,1,e),npt)
+            if (kp1 .eq. 2)
+     >         call subcol4(gijklu,visco,vx(1,1,1,e),dut(1,1),npt)
+            if (kp1 .eq. 3)
+     >         call subcol4(gijklu,visco,vy(1,1,1,e),dut(1,1),npt)
+            if (kp1 .eq. 4)
+     >         call subcol4(gijklu,visco,vz(1,1,1,e),dut(1,1),npt)
+
+            do l=2,ldim+1
+               lm1=l-1
+               if (eijk3(jflux,kdir,lm1) .eq. 0) then
+
+                  if (lm1 .eq. kdir) then
+                     call copy(visco,vdiff(1,1,1,e,ilam),npt)
+                     m=jflux+1
+                  else
+                     call copy(visco,vdiff(1,1,1,e,imu),npt)
+                     m=kdir+1
+                  endif
+
+                  call invcol2(visco,vtrans(1,1,1,e,irho),npt)
+                  if (m .eq. 2)
+     >            call addcol4(gijklu,visco,dut(1,l),vx(1,1,1,e),npt)
+                  if (m .eq. 3)
+     >            call addcol4(gijklu,visco,dut(1,l),vy(1,1,1,e),npt)
+                  if (m .eq. 4)
+     >            call addcol4(gijklu,visco,dut(1,l),vz(1,1,1,e),npt)
+                endif
+            enddo ! l
+         endif ! diagonal?
+
+      endif ! energy equation
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine half_iku_cmt(res,diffh,e)
+      include 'SIZE'
+      include 'MASS'
+! diffh has D AgradU. half_iku_cmt applies D^T BM1 to it and increments
+! the residual res with the result
+      integer e ! lopsided. routine for one element must reference bm1
+      real res(nx1,ny1,nz1),diffh(nx1*ny1*nz1,ndim)
+
+      n=nx1*ny1*nz1
+
+      do j=1,ndim
+         call col2(diffh(1,j),bm1(1,1,1,e),n)
+      enddo
+
+!     const=-1.0 ! I0
+      const=1.0  ! *-1 in time march
+      call gradm11_t(res,diffh,const,e)
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
       subroutine compute_transport_props
 ! get vdiff props (viscosity in imu, second viscosity in ilam, and
 ! thermal conductivity in iknd; second viscosity is usually -2/3
 ! visc, but we refuse to assume Stokes' hypothesis for the user)
 ! via nekasn
+! JH082216 Guermond eddy viscosity method (EVM) regularization starts
+!          here
       include 'SIZE'
       include 'PARALLEL'
       include 'NEKUSE'
@@ -310,34 +400,3 @@
       enddo
       return
       end
-
-! shovel all this into usr files
-!     prrl = 1.0/prlam
-
-!     if(viscmodel.eq.1)then ! constant properties
-!        do i=1,npts
-!           vdiff(i,1,1,e,imu) = muref !defined in <casename>.usr/.rea
-!           vdiff(i,1,1,e,ilam) = coeflambda*muref ! stokes hypothesis
-!           cpg=vtrans(i,1,1,e,icv)+rgasref
-!           vdiff(i,1,1,e,iknd)  = cpg*vdiff(i,1,1,e,imu)*prrl/
-!    >                                  vtrans(i,1,1,e,icv) ! use gamma
-!        enddo
-!     else if (viscmodel.eq.2)then ! sutherland's law
-!        s2 = suthCoef
-!        s1 = reftemp
-!        s12 = 1.0 + s1/s2 
-!        do i=1,npts
-!           rat = sqrt(t(i,1,1,e,1)/s2)*s12/(1.0 
-!    >           +s1/t(i,1,1,e,1))
-
-!           vdiff(i,1,1,e,imu) = muref*rat
-!           cpg=vtrans(i,1,1,e,icv)+rgasref
-!           vdiff(i,1,1,e,ilam) = coeflambda*vdiff(i,1,1,e,imu) ! Stokes hypothesis
-!           vdiff(i,1,1,e,iknd)  = cpg*vdiff(i,1,1,e,imu)*prrl/
-!    >                                 vtrans(i,1,1,e,icv)
-!        enddo
-!     else 
-!        if(nio.eq.0) write(6,*)'Transport model unknown.'
-!    >                         , ' viscmodel = ', viscmodel
-!     endif
-
