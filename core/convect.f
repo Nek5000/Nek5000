@@ -1269,7 +1269,7 @@ c     Global-to-local mapping for gs
       parameter(lf=lx1*lz1*2*ldim*lelt)
       common /c_is1/ glo_num_face(lf)
      $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelt)
-      integer*8 glo_num_face,glo_num_vol,ngv,nf
+      integer*8 glo_num_face,glo_num_vol,ngv
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
