@@ -1,4 +1,4 @@
-      subroutine diffusive_cmt(e,eq)
+      subroutine viscous_cmt(e,eq)
       include  'SIZE'
       include  'CMTDATA'
       include  'SOLN'

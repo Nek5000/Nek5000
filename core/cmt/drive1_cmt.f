@@ -204,7 +204,7 @@ c-----------------------------------------------------------------------
          call compute_gradients(e) ! gradU
          do eq=1,toteq
             call convective_cmt(e,eq)        ! convh & totalh -> res1
-            call  diffusive_cmt(e,eq) ! diffh -> half_iku_cmt
+            call    viscous_cmt(e,eq) ! diffh -> half_iku_cmt -> res1
                                              !       |
                                              !       -> diffh2graduf
 ! Compute the forcing term in each of the 5 eqs
