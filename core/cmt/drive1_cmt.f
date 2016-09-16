@@ -217,7 +217,7 @@ c-----------------------------------------------------------------------
       do eq=1,toteq
          ieq=(eq-1)*ndg_face+iqm
 !Finally add viscous surface flux functions of derivatives to res1.
-!        call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
+         call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
 
       return
