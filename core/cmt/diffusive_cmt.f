@@ -74,6 +74,8 @@
       data eijk3
      >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
 
+      if (eq .eq. 1) return
+
       npt=lxyz*nelt ! lazy
 
       call rzero(visco,npt)
@@ -205,6 +207,8 @@
 !     data eijk2 / 0, -1, 1, 0/
       data eijk3
      >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
+
+      if (eq .eq. 1) return
 
       npt=lxyz !%s/npt/lxyz/g is hard
 
