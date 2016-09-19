@@ -1,4 +1,4 @@
-      subroutine diffusive_cmt(e,eq)
+      subroutine viscous_cmt(e,eq)
       include  'SIZE'
       include  'CMTDATA'
       include  'SOLN'
@@ -21,6 +21,10 @@
       data eijk3
      >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
 
+      if (eq .lt. toteq) then ! not energy
+         if (eq .gt. ndim+1) return ! not if3d
+      endif
+
       nxyz=nx1*ny1*nz1
       nfq=nx1*nz1*2*ndim*nelt
       nstate = nqq
@@ -34,7 +38,7 @@
       do j=1,ndim
          do k=1,ndim
             ieijk=0
-            if (eq .lt. 5) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
+            if (eq .lt. toteq) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
 
             if (ieijk .eq. 0) then
               call tauij_gdu_vol(diffh(1,j),gradu(1,1,k),viscscr,e,
@@ -106,19 +110,22 @@
 
       do eq=1,toteq
          call rzero(superhugeh,3*lx1*ly1*lz1*lelt)
+         if (eq .eq. 4 .and. .not. if3d) goto 133
 ! apply flux jacobian to get Ajac (U-{{U}})_i * n_k
          do j=1,ndim
             call rzero(ftmp1,nfq)
             do k=1,ndim
-              call tauij_gdu_sfc(ftmp1,qminus,hface(1,1,k),ftmp2,eq,j,k)
+               call tauij_gdu_sfc(ftmp1,qminus,hface(1,1,k),
+     >                               ftmp2,eq,j,k)
             enddo
             call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,
      >                      superhugeh(1,j),ftmp1)
          enddo
          call gradm1_t(gradm1_t_overwrites,superhugeh(1,1),
-     >                     superhugeh(1,2),superhugeh(1,3))
+     >                        superhugeh(1,2),superhugeh(1,3))
          call cmult(gradm1_t_overwrites,const,nvol)
          call add2(res1(1,1,1,1,eq),gradm1_t_overwrites,nvol)
+133      continue
       enddo
 
       return
