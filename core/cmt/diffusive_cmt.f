@@ -25,7 +25,155 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine tauij_gdu_sfc(gijklu,gvar,du,visco,eq,jflux,kdir)
+      subroutine fluxj_ns_vol(flux,gradu,e,eq)
+! viscous flux jacobian for compressible Navier-Stokes equations (NS)
+! SOLN and CMTDATA are indexed, assuming vdiff has been filled by uservp
+! somehow. In serious need of debugging and replacement.
+      include 'SIZE'
+      include 'GEOM' ! diagnostic
+
+      parameter (ldd=lx1*ly1*lz1)
+      common /ctmp1/ viscscr(lx1,ly1,lz1)
+      real viscscr
+
+      integer e,eq
+      real flux(nx1*ny1*nz1,ndim),gradu(nx1*ny1*nz1,toteq,ndim)
+      integer eijk3(3,3,3)
+!     data eijk2 / 0, -1, 1, 0/
+      data eijk3
+     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
+
+      n=nx1*ny1*nz1
+      call rzero(flux,n)
+
+! This is a disaster that I might want to program less cleverly
+      do j=1,ndim
+         do k=1,ndim
+            ieijk=0
+            if (eq .lt. toteq) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
+
+            if (ieijk .eq. 0) then
+              call agradu_ns_vol(flux(1,j),gradu(1,1,k),viscscr,e,
+     >                           eq,j,k)
+            endif
+         enddo
+      enddo
+
+      if (eq.eq.2) then
+      pi=4.0*atan(1.0)
+      do i=1,nxyz
+         x=xm1(i,1,1,e)-5.0
+         y=ym1(i,1,1,e)
+         r2=x**2+y**2
+         write(100,'(6e17.8)') x,y,flux(i,1),10.0*x*y/pi*exp(1-r2),
+     >                 flux(i,2),5.0*(y**2-x**2)/pi*exp(1-r2)
+      enddo
+      elseif (eq .eq. 3) then
+      pi=4.0*atan(1.0)
+      do i=1,nxyz
+         x=xm1(i,1,1,e)-5.0
+         y=ym1(i,1,1,e)
+         r2=x**2+y**2
+         write(200,'(6e17.8)') x,y,
+     >                 flux(i,1),5.0*(y**2-x**2)/pi*exp(1-r2),
+     >   flux(i,2),-10.0*x*y/pi*exp(1-r2)
+      enddo
+      endif
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine fluxj_vol(flux,gradu,e,eq)
+      include 'SIZE'
+      include 'GEOM' ! diagnostic
+
+      integer e,eq
+      real flux(nx1*ny1*nz1,ndim),gradu(nx1*ny1*nz1,toteq,ndim)
+
+      n=nx1*ny1*nz1
+      do j=1,ndim
+         call agradu_vol(flux(1,j),gradu(1,1,j),e,eq,j)
+      enddo
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine agradu_sfc(gijklu,gvar,du,eq,jflux)
+      include 'SIZE'
+      include 'SOLN'
+      include 'CMTDATA'
+! subroutine for computing flux of a conserved variable by higher-order
+! differential operators.
+! This one is classic Navier-Stokes, that is, it computes viscous fluxes
+! for everything except gas density.
+! eq         index i; LHS equation
+! jflux      index j; flux direction
+! kdir       index k; direction of derivative or jump in U
+      parameter (lxyz=lx1*lz1*2*ldim)
+      integer  eq,jflux
+      real    du(lxyz*nelt,toteq)
+      real gvar(lxyz*nelt,*)    ! intent(in)
+! variables making up Gjkil terms, viscous stress tensor and total energy
+! equation, compressible Navier-Stokes equations
+! assume the following ordering remains in CMTDATA
+!     gvar(:,1)  rho ! especially here
+!     gvar(:,2)  u   ! especially here
+!     gvar(:,3)  v   ! especially here
+!     gvar(:,4)  w   ! especially here
+!     gvar(:,5)  p
+!     gvar(:,6)  T
+!     gvar(:,7)  a
+!     gvar(:,8)  phi_g
+!     gvar(:,9)  rho*cv
+!     gvar(:,10) rho*cp
+!     gvar(:,11) mu
+!     du(1,:)  rho
+!     du(2,:)  rho u
+!     du(3,:)  rho v
+!     du(4,:)  rho w
+!     du(5,:)  rho E
+
+      real gijklu(lxyz*nelt) !incremented. never give this exclusive intent
+
+      npt=lxyz*nelt ! lazy
+      call col3(gijklu,du(1,eq),gvar(1,imuf),npt)
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine agradu_vol(gijklu,dut,e,eq,jflux)
+      include 'SIZE'
+      include 'SOLN'
+      include 'CMTDATA'
+! monolithic viscous flux jacobian
+! eq         index i; LHS equation and dut variable
+! jflux      index j; flux direction
+      parameter (lxyz=lx1*ly1*lz1)
+      integer  e,eq,jflux
+      real   dut(lxyz,toteq)
+! derivatives of conserved variables gradu
+!     dut(:,1) rho
+!     dut(:,2) rho u
+!     dut(:,3) rho v
+!     dut(:,4) rho w
+!     dut(:,5) rho E
+
+      real gijklu(lxyz)
+
+      call col3(gijklu,dut(1,eq),vdiff(1,1,1,e,imu),npt)
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine agradu_ns_sfc(gijklu,gvar,du,visco,eq,jflux,kdir)
       include 'SIZE'
       include 'SOLN'
       include 'CMTDATA'
@@ -176,14 +324,12 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine tauij_gdu_vol(gijklu,dut,visco,e,eq,jflux,kdir)
+      subroutine agradu_ns_vol(gijklu,dut,visco,e,eq,jflux,kdir)
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
       include 'CMTDATA'
-! subroutine for computing flux of a conserved variable by higher-order
-! differential operators.
-! This one is classic Navier-Stokes, that is, it computes viscous fluxes
+! classic Navier-Stokes flux jacobian that computes viscous fluxes
 ! for everything except gas density.
 ! eq         index i; LHS equation
 ! jflux      index j; flux direction
