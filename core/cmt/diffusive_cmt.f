@@ -166,7 +166,7 @@
 
       real gijklu(lxyz)
 
-      call col3(gijklu,dut(1,eq),vdiff(1,1,1,e,imu),npt)
+      call col3(gijklu,dut(1,eq),vdiff(1,1,1,e,imu),lxyz)
 
       return
       end
