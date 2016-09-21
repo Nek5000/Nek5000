@@ -1,6 +1,7 @@
 import unittest
 import inspect
 import os
+import re
 from functools import wraps
 
 ###############################################################################
@@ -106,6 +107,7 @@ class NekTestCase(unittest.TestCase):
         self.f77            = "gfortran"
         self.cc             = "gcc"
         self.ifmpi          = False
+        self.ifcmt          = False
         self.verbose        = False
         self.source_root    = ''
         #self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
@@ -168,12 +170,16 @@ class NekTestCase(unittest.TestCase):
         self.f77     = os.environ.get('F77',   self.f77)
         self.cc      = os.environ.get('CC',    self.cc)
         self.ifmpi   = os.environ.get('IFMPI', self.ifmpi)
+        self.ifcmt   = os.environ.get('IFCMT', self.ifcmt)
         self.verbose = os.environ.get('VERBOSE_TESTS', self.verbose)
         self.parallel_procs = int(os.environ.get('PARALLEL_PROCS', self.parallel_procs))
 
         # String/bool conversions
         self.ifmpi = str(self.ifmpi).lower()
         self.ifmpi = self.ifmpi == 'yes' or self.ifmpi == 'true'
+
+        self.ifcmt = str(self.ifcmt).lower()
+        self.ifcmt = self.ifcmt == 'yes' or self.ifcmt == 'true'
 
         self.verbose = str(self.verbose).lower()
         self.verbose = self.verbose == 'yes' or self.verbose == 'true'
@@ -182,6 +188,7 @@ class NekTestCase(unittest.TestCase):
                 ('F77', self.f77),
                 ('CC', self.cc),
                 ('IFMPI', str(self.ifmpi).lower()),
+                ('IFCMT', str(self.ifcmt).lower()),
                 ('VERBOSE_TESTS', str(self.verbose).lower()),
                 ('PARALLEL_PROCS', self.parallel_procs)
         ):
@@ -327,6 +334,7 @@ class NekTestCase(unittest.TestCase):
             f77         = self.f77,
             cc          = self.cc,
             ifmpi       = str(self.ifmpi).lower(),
+            ifcmt       = str(self.ifcmt).lower(),
             verbose     = self.verbose
         )
 
@@ -383,7 +391,7 @@ class NekTestCase(unittest.TestCase):
             )
         # Get all lines with label
         with open(logfile, 'r') as f:
-            line_list = [l for l in f if label in l]
+            line_list = [l for l in f if re.search(r'\b{0}\b'.format(label), l)]
         if not line_list:
             raise ValueError("Could not find label \"{0}\" in logfile \"{1}\".  The run may have failed.".format(label, logfile))
         try:
@@ -405,8 +413,7 @@ class NekTestCase(unittest.TestCase):
             )
 
         with open(logfile, 'r') as f:
-            line_list = [l for l in f if label in l]
-
+            line_list = [l for l in f if re.search(r'\b{0}\b'.format(label), l)]
         try:
             line = line_list[row]
         except IndexError:
