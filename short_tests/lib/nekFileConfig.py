@@ -1,6 +1,6 @@
 import os, stat, re
 
-def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None):
+def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None, ifcmt=None):
 
     with open(infile, 'r') as f:
         lines = f.readlines()
@@ -16,6 +16,9 @@ def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=N
                  for l in lines]
     if ifmpi:
         lines = [re.sub(r'^#*IFMPI=\"+.+?\"+', r'IFMPI="{0}"'.format(ifmpi), l)
+                 for l in lines]
+    if ifcmt:
+        lines = [re.sub(r'^#*IFCMT=\"+.+?\"+', r'IFCMT="{0}"'.format(ifcmt), l)
                  for l in lines]
 
     lines = [re.sub(r'(^source\s+\$SOURCE_ROOT/makenek.inc)', r'\g<1> >compiler.out', l)
