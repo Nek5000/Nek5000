@@ -1,7 +1,6 @@
       subroutine viscous_cmt(e,eq)
       include  'SIZE'
       include  'CMTDATA'
-      include  'SOLN'
       include  'DG'
       include  'INPUT'
 
@@ -12,14 +11,7 @@
       common /CMTSURFLX/ fatface(heresize),graduf(hdsize)
       real fatface,graduf
 
-      parameter (ldd=lx1*ly1*lz1)
-      common /ctmp1/ viscscr(lx1,ly1,lz1)
-      real viscscr
       integer e,eq
-      integer eijk3(3,3,3)
-!     data eijk2 / 0, -1, 1, 0/
-      data eijk3
-     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
 
       if (eq .lt. toteq) then ! not energy
          if (eq .gt. ndim+1) return ! not if3d
@@ -33,19 +25,10 @@
       iqp =iqm+nstate*nfq
       iuj =iqp+nstate*nfq
 
-! apply viscous flux jacobian A. This is a disaster that you might
-! want to sweep into a different subroutine
-      do j=1,ndim
-         do k=1,ndim
-            ieijk=0
-            if (eq .lt. toteq) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
-
-            if (ieijk .eq. 0) then
-              call tauij_gdu_vol(diffh(1,j),gradu(1,1,k),viscscr,e,
-     >                           eq,j,k)
-            endif
-         enddo
-      enddo
+! apply viscous flux jacobian A.
+!     call fluxj_ns_vol(diffh,gradu,e,eq)
+! monolithic regularization for now
+      call fluxj_vol(diffh,gradu,e,eq)
 
       call diffh2graduf(e,eq,graduf) ! on faces for QQ^T and igu_cmt
 
@@ -114,10 +97,12 @@
 ! apply flux jacobian to get Ajac (U-{{U}})_i * n_k
          do j=1,ndim
             call rzero(ftmp1,nfq)
-            do k=1,ndim
-               call tauij_gdu_sfc(ftmp1,qminus,hface(1,1,k),
-     >                               ftmp2,eq,j,k)
-            enddo
+            call agradu_sfc(ftmp1,qminus,hface(1,1,j),eq)
+! yes I know I should wrap this. Bite me.
+!           do k=1,ndim
+!              call agradu_ns_sfc(ftmp1,qminus,hface(1,1,k),
+!    >                               ftmp2,eq,j,k)
+!           enddo
             call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,
      >                      superhugeh(1,j),ftmp1)
          enddo
