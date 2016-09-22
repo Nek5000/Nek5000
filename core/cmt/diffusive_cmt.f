@@ -102,7 +102,7 @@
 
 !-----------------------------------------------------------------------
 
-      subroutine agradu_sfc(gijklu,gvar,du,eq,jflux)
+      subroutine agradu_sfc(gijklu,gvar,du,eq)
       include 'SIZE'
       include 'SOLN'
       include 'CMTDATA'
@@ -115,8 +115,8 @@
 ! kdir       index k; direction of derivative or jump in U
       parameter (lxyz=lx1*lz1*2*ldim)
       integer  eq,jflux
-      real    du(lxyz*nelt,toteq)
-      real gvar(lxyz*nelt,*)    ! intent(in)
+      real    du(nx1*nz1*2*ndim*nelt,toteq)
+      real gvar(nx1*nz1*2*ndim*nelt,*)    ! intent(in)
 ! variables making up Gjkil terms, viscous stress tensor and total energy
 ! equation, compressible Navier-Stokes equations
 ! assume the following ordering remains in CMTDATA
@@ -137,7 +137,7 @@
 !     du(4,:)  rho w
 !     du(5,:)  rho E
 
-      real gijklu(lxyz*nelt) !incremented. never give this exclusive intent
+      real gijklu(nx1*nz1*2*ndim*nelt)
 
       npt=lxyz*nelt ! lazy
       call col3(gijklu,du(1,eq),gvar(1,imuf),npt)

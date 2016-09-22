@@ -1,7 +1,6 @@
       subroutine viscous_cmt(e,eq)
       include  'SIZE'
       include  'CMTDATA'
-      include  'SOLN'
       include  'DG'
       include  'INPUT'
 
@@ -97,8 +96,8 @@
          if (eq .eq. 4 .and. .not. if3d) goto 133
 ! apply flux jacobian to get Ajac (U-{{U}})_i * n_k
          do j=1,ndim
-            call agradu_sfc(ftmp1,qminus,hface,eq,j)
-!           call rzero(ftmp1,nfq)
+            call rzero(ftmp1,nfq)
+            call agradu_sfc(ftmp1,qminus,hface(1,1,j),eq)
 ! yes I know I should wrap this. Bite me.
 !           do k=1,ndim
 !              call agradu_ns_sfc(ftmp1,qminus,hface(1,1,k),

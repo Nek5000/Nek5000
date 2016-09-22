@@ -168,8 +168,6 @@ c-----------------------------------------------------------------------
          ieq=(eq-1)*ndg_face+iflx
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
-      dumchars='after_flux'
-      call dumpresidue(dumchars,stage)
 
                !                   -
       iuj=iflx ! overwritten with U -{{U}}
@@ -187,8 +185,6 @@ c-----------------------------------------------------------------------
       iup=(iu1-1)*nfq+iqp
       call   imqqtu(flux(iuj),flux(ium),flux(iup))
       call igtu_cmt(flux(iqm),flux(iuj),graduf) ! [[u]].{{gradv}}
-      dumchars='after_igtu'
-      call dumpresidue(dumchars,stage)
 
       do e=1,nelt
 !-----------------------------------------------------------------------
@@ -215,8 +211,6 @@ c-----------------------------------------------------------------------
             call compute_forcing(e,eq)
          enddo
       enddo
-      dumchars='after_elm'
-      call dumpresidue(dumchars,stage)
 
 ! get the rest of Hij^{d*}
       call igu_cmt(flux(iqm),graduf)
@@ -225,9 +219,6 @@ c-----------------------------------------------------------------------
 !Finally add viscous surface flux functions of derivatives to res1.
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
-      dumchars='after_igu'
-      call dumpresidue(dumchars,stage)
-      call exitt
 
       return
       end
