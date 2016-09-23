@@ -835,6 +835,10 @@ c-----------------------------------------------------------------------
       do i = 1,n
          call finiparser_getPair(key,val,i,ifnd)
          call capit(key,132)
+
+         is = index(key,'_') ! ignore user keys
+         if (is.eq.1) goto 10
+
          do j = 1,PARDICT_NKEYS ! do we find the key in the par-dictionary 
             if(index(pardictkey(j),key).eq.1) goto 10      
 
