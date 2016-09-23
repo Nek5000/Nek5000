@@ -3170,18 +3170,18 @@ class CmtInviscidVortex(NekTestCase):
     case_name = 'pvort'
 
     def diff_l2norms(self):
-        def get_last_line(filename):
+        def get_line(filename, line_num=1):
             with open(filename) as f:
-                line = f.readlines()[-1]
-            return [float(x) for x in line.split()[2:]]
+                line = f.readlines()[line_num]
+            return [float(x) for x in line.split()[1:]]
 
         cls = self.__class__
-        test_vals = get_last_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat'))
-        ref_vals = get_last_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat.ref'))
+        test_vals = get_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat'))
+        ref_vals = get_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat.ref'))
         for t, r in zip(test_vals, ref_vals):
             self.assertAlmostEqual(t, r, delta=0.1*r,
                 msg='FAILURE: Last line of l2norms.dat differed from reference values by > 10%\n  test vals:{0}\n  ref vals: {1}'.format(test_vals, ref_vals))
-        print("SUCCESS: Last line of l2norms.dat was within 10% of reference values")
+        print('SUCCESS: Last line of l2norms.dat was within 10% of reference values\n  test vals:{0}\n  ref vals: {1}'.format(test_vals, ref_vals))
 
     def setUp(self):
         cls = self.__class__
@@ -3195,7 +3195,7 @@ class CmtInviscidVortex(NekTestCase):
         if not self.ifcmt:
             self.skipTest("Skipping \"{0}\"; CMT is not enabled.".format(self.id()))
         self.build_nek()
-        self.run_nek(step_limit=None)
+        self.run_nek(step_limit=1000)
         self.diff_l2norms()
 
     @pn_pn_parallel
@@ -3203,5 +3203,5 @@ class CmtInviscidVortex(NekTestCase):
         if not self.ifcmt:
             self.skipTest("Skipping \"{0}\"; CMT is not enabled.".format(self.id()))
         self.build_nek()
-        self.run_nek(step_limit=None)
+        self.run_nek(step_limit=1000)
         self.diff_l2norms()
