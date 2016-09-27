@@ -385,6 +385,12 @@ C
          do 50 iel=1,nelt
          do 50 iface=1,nfaces
             cb=cbc(iface,iel,ifield)
+            if ((cb.eq.'o  ' .and. IFSPLIT) .or.
+     $          (cb.eq.'on ' .and. IFSPLIT)) then
+               if (nid.eq.0) write(6,*)
+     $              "Error: BC 'o' and 'on' not supported for PN-PN."
+               call exitt
+            endif
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
      $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
@@ -438,7 +444,8 @@ C
      $            CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              GOTO 100
          ENDIF
-         IF (CB.EQ.'ON ' .OR. CB.EQ.'on') THEN
+
+         IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') THEN
              IF ( IFNORY .OR. IFNORZ )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORZ )
