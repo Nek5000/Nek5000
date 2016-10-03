@@ -1,16 +1,24 @@
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,LELCMT) 
+      real                 u(lx1,ly1,lz1,toteq,lelcmt) 
+      common /solnconsvar/ u 
+
+      real               phig(lx1,ly1,lz1,lelcmt)
+      common /otherpvar/ phig
+
+      real res1(lx1,ly1,lz1,lelcmt,toteq)
+     $   , res2(lx1,ly1,lz1,lelcmt,toteq)
+     $   , res3(lx1,ly1,lz1,toteq,lelcmt) 
+      common /cmtres/ res1, res2, res3
  
-      COMMON /otherpvar/ PHIG(LX1,LY1,LZ1,LELCMT)
-      COMMON /CMTRES/ res1(lx1,ly1,lz1,lelCMT,toteq)
-     $               , res2(lx1,ly1,lz1,lelCMT,toteq)
-     $               , res3(lx1,ly1,lz1,toteq,lelCMT) 
+      real              gradu(lx1,ly1,lz1,toteq,3)
+      common /cmtgradu/ gradu     
 
-      COMMON /CMTGRADU/  gradu(lx1,ly1,lz1,toteq,3)
-      
-      COMMON /CONVECTDATA/ convh (lxd*lyd*lzd,3)
-     $                 ,   totalh(lxd*lyd*lzd,3)
+      real convh (lxd*lyd*lzd,3)
+     $   , totalh(lxd*lyd*lzd,3)
+      common /convectdata/ convh, totalh
 
-      COMMON /FORCEDATA/   usrf (lx1,ly1,lz1,5)
+      real               usrf(lx1,ly1,lz1,5)
+      common /forcedata/ usrf 
+
 c We assume we will be working with one gas. Therefore Rgas need not be 
 c full filed. To begin with we assume calorically perfect gas.
 c In near future we relax the constraint to thermally perfect gas.
@@ -21,45 +29,57 @@ c       have explicit temp dependence. At the begining of the time step
 c       a scratch space will be use to iteratively compute Cv and T from 
 c       internal energy.
 c--------------------------------------------------------------------- 
-      COMMON /CMTGASPROP/ CSOUND(lxd,lyd,lzd,lelCMT)
-      real                 csound
+      real                csound(lxd,lyd,lzd,lelcmt)
+      common /cmtgasprop/ csound
 
-      COMMON /CMTGASREF/  cvgref,cpgref,gmaref,rgasref,molmass
       real                cvgref,cpgref,gmaref,rgasref,molmass
-      COMMON /CMTTRANSPROP/ cip(2*ldim,lelCMT)
-      real cip
-      COMMON /CMTTRANSREF/ muref
-     $                 ,   coeflambda,suthcoef,reftemp,prlam,cip_adhoc
-      real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc
+      common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
 
-      COMMON /TSTEPSTAGE/  stage,nstage
-      integer              stage,nstage
+      real                  cip(2*ldim,lelcmt)
+      common /cmttransprop/ cip
 
-      COMMON /TIMESTEPCOEf/ tcoef(3,3)
-      
-      COMMON /CMTIOFLGS/   res_freq
-      integer              res_freq
+      real muref, coeflambda, suthcoef, reftemp, prlam, cip_adhoc
+      common /cmttransref/ muref, coeflambda, suthcoef, reftemp, prlam
+     $                   , cip_adhoc
 
-      COMMON /CMTVISCO/  ifbr1
-      logical            ifbr1
-      COMMON /CMTFLTRP/   NCUT, NCUTD, WGHT, WGHTD
-      real                 WGHT, WGHTD
+      integer             stage,nstage
+      common /tstepstage/ stage,nstage
+
+      real                  tcoef(3,3)     
+      common /timestepcoef/ tcoef
+
+      integer            res_freq
+      common /cmtioflgs/ res_freq
+
+      logical           ifbr1
+      common /cmtvisco/ ifbr1
+
+      integer           ncut, ncutd
+      real              wght, wghtd
+      common /cmtfltrp/ ncut, ncutd, wght, wghtd
+
 ! index for gas density in vtrans, Q+-
+      integer irho
       parameter (irho=1) ! better always be 1
 ! other VTRANS indices
+      integer icp, icv
       parameter (icp =2) ! rho*cp
       parameter (icv =3) ! rho*cv
 ! indices in VDIFF
+      integer imu, iknd, ilam
       parameter (imu =1) ! viscosity
       parameter (iknd=2) ! thermal conductivity
       parameter (ilam=3) ! lambda, 2nd viscosity
 ! indices for fields in U
+      integer irg, irpu, irpv, irpw, iret
       parameter (irg =1)     ! phi_g*rho_g
       parameter (irpu=2)     ! phi_g*rho_g*u
       parameter (irpv=3)     ! phi_g*rho_g*v
       parameter (irpw=4)     ! phi_g*rho_g*w
       parameter (iret=toteq) ! phi_g*rho_g*E
 ! indices for fields in Q-+
+      integer iux, iuy, iuz, ipr, ithm, isnd, iph, icvf, icpf, imuf, 
+     $        ikndf, ilamf, iu1, iu2, iu3, iu4, iu5, nqq
       parameter (iux =2)     ! u
       parameter (iuy =3)     ! v
       parameter (iuz =4)     ! w

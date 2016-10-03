@@ -1,6 +1,11 @@
-      common /cdg_arrays/ iface_flux(lx1*lz1*2*ldim,lelcmt)
+      integer             iface_flux(lx1*lz1*2*ldim,lelcmt)
+      common /cdg_arrays/ iface_flux
+
+      integer           dg_hndl,ndg_face
       common /cdg_ints/ dg_hndl,ndg_face
-      integer dg_hndl,ndg_face
-      common /ivrtx/ vertex ((2**ldim)*lelcmt)
-      integer vertex
+
+      integer        vertex((2**ldim)*lelcmt)
+      common /ivrtx/ vertex
+
+      integer         mid,mp,nekcomm,nekgroup,nekreal
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal

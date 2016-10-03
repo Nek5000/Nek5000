@@ -1,8 +1,9 @@
-C
-C     Eigenvalues
-C
-      COMMON /EIGVAL/ EIGAA, EIGAS, EIGAST, EIGAE
-     $               ,EIGGA, EIGGS, EIGGST, EIGGE
-      COMMON /IFEIG / IFAA,IFAE,IFAS,IFAST,IFGA,IFGE,IFGS,IFGST
-      LOGICAL         IFAA,IFAE,IFAS,IFAST,IFGA,IFGE,IFGS,IFGST
+c
+c     Eigenvalues
+c
+      real eigas,eigaa,eigast,eigae,eigga,eiggs,eiggst,eigge
+      common /eigval/ eigaa, eigas, eigast, eigae
+     $               ,eigga, eiggs, eiggst, eigge
 
+      logical         ifaa,ifae,ifas,ifast,ifga,ifge,ifgs,ifgst
+      common /ifeig / ifaa,ifae,ifas,ifast,ifga,ifge,ifgs,ifgst

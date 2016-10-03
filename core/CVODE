@@ -1,26 +1,29 @@
+c
+c     Variables for the method of characteristics
+c
       integer cv_lysize
       parameter (cv_lysize=lx1*ly1*lz1*lelt*ldimt+1)
 
-      integer cv_nfld, cv_nadd_usr
-      COMMON /ICVODE/ cv_nfld, cv_nadd_usr
+      integer         cv_nfld, cv_nadd_usr
+      common /icvode/ cv_nfld, cv_nadd_usr
 
-      integer*8 cv_nglobal
-      COMMON /ILCVODE/ cv_nglobal
+      integer*8        cv_nglobal
+      common /ilcvode/ cv_nglobal
 
-      logical ifcvodeinit
-      COMMON /LCVODE/ ifcvodeinit
+
+      logical         ifcvodeinit
+      common /lcvode/ ifcvodeinit
 
       real cv_atol,cv_rtol
-      real cv_dtlag,cv_abmsh,cv_ab
+      real cv_dtlag(3),cv_abmsh(3),cv_ab(3)
       real cv_time,cv_timel,cv_dtnek
-      COMMON /RCVODE/ cv_atol,cv_rtol,
-     &                cv_dtlag(3),cv_abmsh(3),cv_ab(3),
-     &                cv_time,cv_timel,cv_dtnek     
+      common /rcvode/ cv_atol, cv_rtol, cv_dtlag, cv_abmsh, cv_ab,
+     &                cv_time, cv_timel, cv_dtnek     
 
-      INTEGER IGSTYPE,ITMETH,IATOL,ITASK
+      integer igstype,itmeth,iatol,itask
 
-      PARAMETER(
-     &     ITMETH  = 2,         ! Newton iter
-     &     IATOL   = 1,         ! 1: CV_SS / 2: CV_SV)
-     &     IGSTYPE = 1          ! GS 1: modified 2: classical
+      parameter(
+     &     itmeth  = 2,         ! newton iter
+     &     iatol   = 1,         ! 1: cv_ss / 2: cv_sv)
+     &     igstype = 1          ! gs 1: modified 2: classical
      &         )
