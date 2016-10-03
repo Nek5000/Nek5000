@@ -1825,7 +1825,7 @@ c-----------------------------------------------------------------------
       integer iosave,save_size,nfld_save
 
 
-      nfld_save=4  ! For full restart
+      nfld_save=3  ! For full restart
       save_size=8  ! For full restart
 
       call restart_save(iosave,save_size,nfld_save)
