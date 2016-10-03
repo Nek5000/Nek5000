@@ -19,6 +19,10 @@ c-----------------------------------------------------------------------
 
 C Set user variable properties
 
+      implicit none
+      
+      integer ix,iy,iz,ieg
+
       INCLUDE 'SIZE'   
       INCLUDE 'TOTAL'  
       INCLUDE 'NEKUSE' 
@@ -34,6 +38,10 @@ C=======================================================================
       SUBROUTINE USERF  (IX,IY,IZ,ieg)                
 
 C Set user forcing function for the momentum
+
+      implicit none
+
+      integer ix,iy,iz,ieg
 
       INCLUDE 'SIZE'   
       INCLUDE 'TSTEP'  
@@ -51,6 +59,10 @@ C=======================================================================
       SUBROUTINE USERQ  (IX,IY,IZ,ieg)                
 
 C Set user forcing function for the energy and species
+
+      implicit none
+
+      integer ix,iy,iz,ieg
 
       INCLUDE 'SIZE'   
       INCLUDE 'TOTAL'  
@@ -71,6 +83,8 @@ C=======================================================================
 
       SUBROUTINE USERCHK
 
+      implicit none
+
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
@@ -78,11 +92,13 @@ C=======================================================================
      $              ,T_err  (LX1,LY1,LZ1,LELT)
      $              ,VX_err (LX1,LY1,LZ1,LELT)
      $              ,QTL_err (LX1,LY1,LZ1,LELT)
+      real w1,T_err,VX_err,QTL_err
 
+      integer i,j,k,iel,ntot
 
-      real sumqw
+      real glsc3,glmax
 
-      real delta,l2_err,exact,max_err,XD,sech
+      real sumqw,delta,l2_err,exact,max_err,XD,sech
       parameter(delta=0.2)
 
       ntot = nx1*ny1*nz1*nelv
@@ -135,11 +151,15 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
 
 C  Set user boundary conditions
 
+      implicit none
+
+      integer ix,iy,iz,iside,ieg
+
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 
-      REAL delta
+      REAL xd,delta
       parameter(delta=0.2)
 
       XD = X/delta
@@ -164,11 +184,15 @@ C=======================================================================
 
 C   Set initial conditions
 
+      implicit none
+
+      integer ix,iy,iz,ieg
+
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 
-      real delta
+      real delta,xd
       parameter(delta=0.2)
 
       XD = X/delta
