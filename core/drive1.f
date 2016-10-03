@@ -185,11 +185,12 @@ c-----------------------------------------------------------------------
       endif
 
       isyc  = 0
-      itime = 0
       if(ifsync) isyc=1
+      itime = 0
+#ifdef TIMER
       itime = 1
+#endif
       call nek_comm_settings(isyc,itime)
-
       call nek_comm_startstat()
 
       istep  = 0

@@ -1,6 +1,5 @@
 #!/bin/bash
 # Nek5000 build config file
-# (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
 
 # source path 
 SOURCE_ROOT="$HOME/Nek5000" 
@@ -14,10 +13,6 @@ F77="mpif77"
 # C compiler
 CC="mpicc"
 
-# pre-processor symbol list 
-# (set PPLIST=? to get a list of available symbols)
-#PPLIST="?" 
-
 
 # OPTIONAL SETTINGS
 # -----------------
@@ -25,17 +20,19 @@ CC="mpicc"
 # enable MPI (default true)
 #IFMPI="false"
 
+# enable profiling (default false)
+#IFPROFILING="true"
+
 # enable CMT (default false)
 #IFCMT="true"
 
-# auxilliary files to compile
-# NOTE: source files have to located in the same directory as makenek
-#       a makefile_usr.inc has to be provided containing the build rules 
-#USR="foo.o"
+# enable AMG coarse grid solver (default XXT)
+#IFAMG="true"
+#IFAMG_DUMP="true"
 
-# linking flags
-#USR_LFLAGS="-L/usr/lib -lfoo"
-
+# pre-processor symbol list 
+# (set PPLIST=? to get a list of available symbols)
+#PPLIST="?" 
 
 # generic compiler flags
 #G="-g"
@@ -44,9 +41,13 @@ CC="mpicc"
 #OPT_FLAGS_STD=""
 #OPT_FLAGS_MAG=""
 
-# enable AMG coarse grid solver (default XXT)
-#IFAMG="true"
-#IFAMG_DUMP="true"
+# auxilliary files to compile
+# NOTE: source files have to located in the same directory as makenek
+#       a makefile_usr.inc has to be provided containing the build rules 
+#USR="foo.o"
+
+# linking flags
+#USR_LFLAGS="-L/usr/lib -lfoo"
 
 # CVODE path
 #CVODE_DIR=$HOME/cvode/lib

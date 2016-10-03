@@ -327,6 +327,8 @@ C
 C
       include 'OPCTR'
 C
+#ifdef TIMER
+C
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -337,6 +339,7 @@ C
       dct(myrout) = dct(myrout) + dfloat(isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + dfloat(isbcnt)
+#endif
 C
       DT = 0.0
       DO 10 I=1,N

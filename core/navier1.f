@@ -370,7 +370,7 @@ c
 
       integer e
 C
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) tcdtp=0.0
       icalld=icalld+1
       ncdtp=icalld
@@ -538,7 +538,7 @@ C
 
       enddo
 C
-#ifndef NOTIMER
+#ifdef TIMER
       tcdtp=tcdtp+(dnekclock()-etime1)
 #endif
       return
@@ -584,7 +584,7 @@ C---------------------------------------------------------------------
 
       integer e
 C
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) tmltd=0.0
       icalld=icalld+1
       nmltd=icalld
@@ -742,7 +742,7 @@ c        NOTE: NZ1=NZ2=1
 C
       enddo
 C
-#ifndef NOTIMER
+#ifdef TIMER
       tmltd=tmltd+(dnekclock()-etime1)
 #endif
       return
@@ -869,22 +869,26 @@ C
 
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
           myrout=nrout
           rname(myrout) = 'opbinv'
       endif
+#endif
 C
       call opmask  (inp1,inp2,inp3)
       call opdssum (inp1,inp2,inp3)
 C
       NTOT=NX1*NY1*NZ1*NELV
 C
+#ifdef TIMER
       isbcnt = ntot*(1+ndim)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 
       call invcol3 (out1,bm1,h2inv,ntot)  ! this is expensive and should
       call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
@@ -927,22 +931,26 @@ C
 
       include 'OPCTR'
 C
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
           myrout=nrout
           rname(myrout) = 'opbnv1'
       endif
+#endif
 C
       CALL OPMASK  (INP1,INP2,INP3)
       CALL OPDSSUM (INP1,INP2,INP3)
 C
       NTOT=NX1*NY1*NZ1*NELV
 C
+#ifdef TIMER
       isbcnt = ntot*(1+ndim)
       dct(myrout) = dct(myrout) + (isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + (isbcnt)
+#endif
 C
       IF (IF3D) THEN
          DO 100 I=1,NTOT
@@ -2397,7 +2405,7 @@ C-------------------------------------------------------------------
       REAL  Y(1),X(1),XMASK(1)
       include 'OPCTR'
 C
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2530,7 +2538,7 @@ C
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2566,7 +2574,7 @@ C
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2813,7 +2821,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2852,7 +2860,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2891,7 +2899,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -2929,7 +2937,7 @@ c-----------------------------------------------------------------------
 C
       NTOT1=NX1*NY1*NZ1*NELV
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3108,7 +3116,7 @@ C
       include 'CTIMER'
       include 'OPCTR'
 C
-#ifndef NOTIMER
+#ifdef TIMER
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3446,7 +3454,7 @@ C
       REAL    CONV (LX1,LY1,LZ1,1) 
       REAL    FI   (LX1,LY1,LZ1,1)
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) tadvc=0.0
       icalld=icalld+1
       nadvc=icalld
@@ -3486,7 +3494,7 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
 
  100  continue
 
-#ifndef NOTIMER
+#ifdef TIMER
       tadvc=tadvc+(dnekclock()-etime1)
 #endif
 
@@ -3803,9 +3811,10 @@ c
       real vxn(1),vyn(1),vzn(1)
 c
       include 'OPCTR'
-      integer opct
 
 c     Operation count
+#ifdef TIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3814,6 +3823,7 @@ c     Operation count
       endif
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
+#endif
 
       call velchar (vx,vxn,vxlag,nbd,tau,dtlag)
       call velchar (vy,vyn,vylag,nbd,tau,dtlag)
@@ -3838,7 +3848,6 @@ c
      $                  + ty*tym1(i,1,1,1)
      $                  + tz*tzm1(i,1,1,1)
          enddo
-         opct = ntot*21
       else
          do i=1,ntot
 c
@@ -3850,11 +3859,17 @@ c
             vy(i,1,1,1) = tx*sxm1(i,1,1,1)
      $                  + ty*sym1(i,1,1,1)
          enddo
-         opct = ntot*10
       endif
 c
+#ifdef TIMER
+      if (ndim.eq.3) then
+         opct = ntot*21
+      else
+         opct = ntot*10
+         endif
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 C
 c
       return
@@ -3875,10 +3890,11 @@ c
       integer mu(0:1)
 c
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifdef TIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3886,6 +3902,7 @@ c
           rname(myrout) = 'frkcvv'
       endif
       ncall(myrout) = ncall(myrout) + 1
+#endif
 c
 c
 c     Evaluate right-hand-side for Runge-Kutta scheme in the case of
@@ -3924,9 +3941,11 @@ c
          enddo
       endif
 c
+#ifdef TIMER
       opct = ndim*ntot
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 c
       return
       end
@@ -3950,10 +3969,11 @@ c
      $             , dwds(lx1,ly1,lz1)
 C
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifdef TIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -3962,6 +3982,7 @@ c
       endif
       ncall(myrout) = ncall(myrout) + 1
       opct = 0
+#endif
 c
       nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -4037,6 +4058,7 @@ c
 c
       enddo
 c
+#ifdef TIMER
       if (if3d) then
          opct = 21*ntot
       else
@@ -4045,6 +4067,7 @@ c
 c
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 c
       return
       end
@@ -4066,10 +4089,11 @@ c
       integer mu(0:1)
 c
       include 'OPCTR'
-      integer opct
 c
 c     Operation count
 c
+#ifdef TIMER
+      integer opct
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -4077,6 +4101,7 @@ c
           rname(myrout) = 'frkcv2'
       endif
       ncall(myrout) = ncall(myrout) + 1
+#endif
 c
 c
 c     Evaluate right-hand-side for Runge-Kutta scheme in the case of
@@ -4116,9 +4141,11 @@ c
          enddo
       endif
 c
+#ifdef TIMER
       opct = ndim*ntot
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
+#endif
 C
       return
       end

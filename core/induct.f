@@ -381,7 +381,9 @@ C
 
       ntot2 = nx2*ny2*nz2*nelv
 
-      if (nbd.eq.3.and.igeom.le.2) then
+      if (nbd.eq.2.and.nbdinp.gt.2) then
+         call copy(plag,p,ntot2)
+      else if (nbd.eq.3.and.igeom.le.2) then
 
          const = dtlag(1)/dtlag(2)
 
