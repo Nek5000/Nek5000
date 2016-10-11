@@ -62,9 +62,9 @@ c
       do while(iconv.eq.0.and.iter.lt.100)
 
          if(iter.eq.0) then
-                                                  !      -1
-            call col3(r,ml_gmres,res,ntot2)       ! r = L  res
-c           call copy(r,res,ntot2)
+                                                        !      -1
+            call col3(r_gmres,ml_gmres,res,ntot2)       ! r = L  res
+c           call copy(r_gmres,res,ntot2)
          else
             !update residual
             call copy(r_gmres,res,ntot2)                      ! r = res
