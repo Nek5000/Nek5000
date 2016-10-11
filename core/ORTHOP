@@ -1,12 +1,12 @@
-      integer ktot, laxt 
-      parameter (ktot = lx1*ly1*lz1*lelt)
-      parameter (laxt = mxprev)
+      integer ktotp, laxtp
+      parameter (ktotp = lx1*ly1*lz1*lelt)
+      parameter (laxtp = mxprev)
 c
-      integer         napprox(2)
-      common /prthoi/ napprox
+      integer         napproxp(2)
+      common /prthoi/ napproxp
 
-      real            approx(ktot,0:laxt)
-      common /orthov/ approx
+      real            approxp(ktotp,0:laxtp)
+      common /orthov/ approxp
 
-      character*4     name4
-      common /prthoc/ name4
+      character*4     name4p
+      common /prthoc/ name4p

@@ -27,7 +27,7 @@ C
       endif
 
 
-      napprox(1) = laxt  ! Fix this... pff 10/10/15
+      napproxt(1) = laxtt  ! Fix this... pff 10/10/15
 
       nel    = nelfld(ifield)
       n   = nx1*ny1*nz1*nel
@@ -52,9 +52,9 @@ C
          ENDIF
          ENDIF
          if1=ifield-1
-         write(name4,1) if1-1
+         write(name4t,1) if1-1
     1    format('PS',i2)
-         if(ifield.eq.2) write(name4,'(A4)') 'TEMP'
+         if(ifield.eq.2) write(name4t,'(A4)') 'TEMP'
 
 C
 C        New geometry
@@ -76,23 +76,23 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          CALL BCNEUSC (TA,1)
          CALL ADD2    (TB,TA,N)
 
-c        CALL HMHOLTZ (name4,TA,TB,H1,H2
+c        CALL HMHOLTZ (name4t,TA,TB,H1,H2
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
 c    $                 ,TMULT(1,1,1,1,IFIELD-1)
 c    $                 ,IMESH,TOLHT(IFIELD),NMXH,isd)
 
          if(iftmsh(ifield)) then
-           call hsolve  (name4,TA,TB,H1,H2 
+           call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approx,napprox,bintm1)
+     $                   ,approxt,napproxt,bintm1)
          else
-           call hsolve  (name4,TA,TB,H1,H2 
+           call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approx,napprox,binvm1)
+     $                   ,approxt,napproxt,binvm1)
          endif 
 
          call add2    (t(1,1,1,1,ifield-1),ta,n)
@@ -511,9 +511,9 @@ C
      $      write (6,*) ' Temperature/Passive scalar solution'
 
          if1=ifield-1
-         write(name4,1) if1-1
+         write(name4t,1) if1-1
     1    format('PS',i2)
-         if(ifield.eq.2) write(name4,'(A4)') 'TEMP'
+         if(ifield.eq.2) write(name4t,'(A4)') 'TEMP'
  
          isd = 1
          if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
@@ -540,17 +540,17 @@ c           enddo
 c        elseif (iftmsh(ifield)) then
 
          if (iftmsh(ifield)) then
-           call hsolve  (name4,ta,tb,h1,h2 
+           call hsolve  (name4t,ta,tb,h1,h2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approx,napprox,bintm1)
+     $                   ,approxt,napproxt,bintm1)
          else
-           call hsolve  (name4,ta,tb,h1,h2 
+           call hsolve  (name4t,ta,tb,h1,h2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approx,napprox,binvm1)
+     $                   ,approxt,napproxt,binvm1)
          endif 
 
          call add2    (t(1,1,1,1,ifield-1),ta,n)

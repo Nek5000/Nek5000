@@ -1246,13 +1246,13 @@ c     call set_up_h1_crs_strs(h1,h2,ifield,matmod)
      $                ,vol,tol,nel)
 
          if (matmod.lt.0) then
-          napprox(1) = 0
+          napproxstrs(1) = 0
           iproj      = param(94)
-          if (iproj.gt.0.and.istep.gt.iproj) napprox(1)=param(93)
-          napprox(1)=min(napprox(1),istep/3)
+          if (iproj.gt.0.and.istep.gt.iproj) napproxstrs(1)=param(93)
+          napproxstrs(1)=min(napproxstrs(1),istep/3)
           call strs_project_a(r1,r2,r3,h1,h2,rmult,ifield,ierr,matmod)
 
-c         call opcopy(y(1,1),y(1,2),y(1,3),x(1),x(1+n),x(1+2*n))
+c         call opcopy(y(1,1),y(1,2),y(1,3),xstrs(1),xstrs(1+n),xstrs(1+2*n))
 
          endif
 
@@ -2514,8 +2514,8 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
       common /ctmp1/ w(lx1*ly1*lz1*lelt,ldim)
       real l2a,l2b
 
-      kmax = napprox(1)
-      k    = napprox(2)
+      kmax = napproxstrs(1)
+      k    = napproxstrs(2)
       n    = nx1*ny1*nz1*nelv
       m    = n*ndim
 
@@ -2525,23 +2525,27 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
       if (k.eq.0.or.kmax.eq.0) return
 
 c     Reorthogonalize basis
-      call strs_ortho_all(x(1+m),b(1+m),n,k,h1,h2,wt,ifld,w,ierr,matmod)
-      napprox(2) = k
+      call strs_ortho_all(xstrs(1+m),bstrs(1+m),n,k,h1,h2,wt,ifld,w
+     $                   ,ierr,matmod)
+      napproxstrs(2) = k
 
-      call opcopy(b(1),b(1+n),b(1+2*n),b1,b2,b3)
-      call opzero(x(1),x(1+n),x(1+2*n))
+      call opcopy(bstrs(1),bstrs(1+n),bstrs(1+2*n),b1,b2,b3)
+      call opzero(xstrs(1),xstrs(1+n),xstrs(1+2*n))
 
       do i=1,k
          i1 = 1 + 0*n + (i-1)*m + m
          i2 = 1 + 1*n + (i-1)*m + m
          i3 = 1 + 2*n + (i-1)*m + m
-         alpha=op_glsc2_wt(b(1),b(1+n),b(1+2*n),x(i1),x(i2),x(i3),wt)
+         alpha=op_glsc2_wt(bstrs(1),bstrs(1+n),bstrs(1+2*n)
+     $                    ,xstrs(i1),xstrs(i2),xstrs(i3),wt)
          alphm=-alpha
-         call opadds(b(1),b(1+n),b(1+2*n),b(i1),b(i2),b(i3),alphm,n,2)
-         call opadds(x(1),x(1+n),x(1+2*n),x(i1),x(i2),x(i3),alpha,n,2)
+         call opadds(bstrs(1),bstrs(1+n),bstrs(1+2*n)
+     $              ,bstrs(i1),bstrs(i2),bstrs(i3),alphm,n,2)
+         call opadds(xstrs(1),xstrs(1+n),xstrs(1+2*n)
+     $              ,xstrs(i1),xstrs(i2),xstrs(i3),alpha,n,2)
       enddo
 
-      call opcopy(b1,b2,b3,b(1),b(1+n),b(1+2*n))
+      call opcopy(b1,b2,b3,bstrs(1),bstrs(1+n),bstrs(1+2*n))
       l2b=opnorm2w(b1,b2,b3,binvm1)
 
       if (nio.eq.0) write(6,6) istep,k,ierr,l2a,l2b
@@ -2561,8 +2565,8 @@ c     Reconstruct solution; don't bother to orthonomalize bases
       real x1(1),x2(1),x3(1),h1(1),h2(1),wt(1)
       common /cptst/ xs(lx1*ly1*lz1*lelt*ldim)
 
-      kmax = napprox(1)
-      k    = napprox(2)
+      kmax = napproxstrs(1)
+      k    = napproxstrs(2)
       n    = nx1*ny1*nz1*nelv
       m    = n*ndim
 
@@ -2571,40 +2575,40 @@ c     Reconstruct solution; don't bother to orthonomalize bases
 c     if (936.le.istep.and.istep.le.948) then
 c     if (16.le.istep.and.istep.le.18) then
 c        call outpost(x1,x2,x3,pr,vdiff,'tst')
-c        call outpost(x(1),x(1+3*n),x(1+2*n),pr,t,'tst')
+c        call outpost(xstrs(1),xstrs(1+3*n),xstrs(1+2*n),pr,t,'tst')
 c     endif
 
-      if (k.eq.0) then                              !      _
-         call opadd2(x1,x2,x3,x(1),x(1+n),x(1+2*n)) ! x=dx+x
+      if (k.eq.0) then                                          !      _
+         call opadd2(x1,x2,x3,xstrs(1),xstrs(1+n),xstrs(1+2*n)) ! x=dx+x
          k=1
          k1 = 1 + 0*n + (k-1)*m + m
          k2 = 1 + 1*n + (k-1)*m + m
          k3 = 1 + 2*n + (k-1)*m + m
-         call opcopy(x(k1),x(k2),x(k3),x1,x2,x3)    ! x1=x^n
-      elseif (k.eq.kmax) then                            !      _
-         call opadd2(x1,x2,x3,x(1),x(1+n),x(1+2*n)) ! x=dx+x
+         call opcopy(xstrs(k1),xstrs(k2),xstrs(k3),x1,x2,x3)    ! x1=x^n
+      elseif (k.eq.kmax) then                                   !      _
+         call opadd2(x1,x2,x3,xstrs(1),xstrs(1+n),xstrs(1+2*n)) ! x=dx+x
          k=1
          k1 = 1 + 0*n + (k-1)*m + m
          k2 = 1 + 1*n + (k-1)*m + m
          k3 = 1 + 2*n + (k-1)*m + m
-         call opcopy(x(k1),x(k2),x(k3),x1,x2,x3)    ! x1=x^n
+         call opcopy(xstrs(k1),xstrs(k2),xstrs(k3),x1,x2,x3)    ! x1=x^n
 c        k=2
 c        k1 = 1 + 0*n + (k-1)*m + m
 c        k2 = 1 + 1*n + (k-1)*m + m
 c        k3 = 1 + 2*n + (k-1)*m + m
-c        call opcopy(x(k1),x(k2),x(k3),xs(1),xs(1+n),xs(1+2*n))
+c        call opcopy(xstrs(k1),xstrs(k2),xstrs(k3),xs(1),xs(1+n),xs(1+2*n))
       else
          k=k+1
          k1 = 1 + 0*n + (k-1)*m + m
          k2 = 1 + 1*n + (k-1)*m + m
          k3 = 1 + 2*n + (k-1)*m + m
-         call opcopy(x(k1),x(k2),x(k3),x1,x2,x3)    ! xk=dx  _
-         call opadd2(x1,x2,x3,x(1),x(1+n),x(1+2*n)) ! x=dx + x
+         call opcopy(xstrs(k1),xstrs(k2),xstrs(k3),x1,x2,x3)    ! xk=dx  _
+         call opadd2(x1,x2,x3,xstrs(1),xstrs(1+n),xstrs(1+2*n)) ! x=dx + x
       endif
 
 c     if (k.eq.kmax) call opcopy(xs(1),xs(1+n),xs(1+2*n),x1,x2,x3) ! presave
 
-      napprox(2)=k
+      napproxstrs(2)=k
 
       return
       end
