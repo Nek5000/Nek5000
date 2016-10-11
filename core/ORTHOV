@@ -1,14 +1,14 @@
-      integer ktot
-c     parameter (ktot = lbx1*lby1*lbz1*lbelt)
-c     parameter (ktot = 1)
+      integer ktotv
+c     parameter (ktotv = lbx1*lby1*lbz1*lbelt)
+c     parameter (ktotv = 1)
 
-      parameter (ktot = lx1*ly1*lz1*lelt)
+      parameter (ktotv = lx1*ly1*lz1*lelt)
 
       integer         mprev,nprev(ldim)
       common /vrthoi/ mprev,nprev
 
-      real vbar(ktot,ldim),vnew(ktot,ldim)
-     $   , sln (ktot*mxprev,ldim)
+      real vbar(ktotv,ldim),vnew(ktotv,ldim)
+     $   , sln (ktotv*mxprev,ldim)
       common /vrthov/ vbar, vnew, sln
 
       real            alpha(mxprev)
