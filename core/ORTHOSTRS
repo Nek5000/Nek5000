@@ -1,11 +1,13 @@
-      integer ktot
-      parameter (ktot = lx1m*ly1m*lz1m*lelt)
+      integer ktotstrs
+      parameter (ktotstrs = lx1m*ly1m*lz1m*lelt)
 
-      real            x(ldim*ktot*(1+mxprev)),b(ldim*ktot*(1+mxprev))
-      common /srthov/ x                      ,b
+      real            xstrs(ldim*ktotstrs*(1+mxprev))
+     $               ,bstrs(ldim*ktotstrs*(1+mxprev))
+      common /srthov/ xstrs                      
+     $               ,bstrs
 
-      integer         napprox(2)
-      common /srthoi/ napprox
+      integer         napproxstrs(2)
+      common /srthoi/ napproxstrs
 
-      character*4     name4
-      common /srthoc/ name4
+      character*4     name4strs
+      common /srthoc/ name4strs
