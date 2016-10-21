@@ -1,149 +1,37 @@
-c     Dimension file to be included
 c
-c     HCUBE array dimensions
+c     Include file to dimension static arrays
+c     and to set some hardwired run-time parameters
 c
-      integer ldim,lx1,ly1,lz1,lelt,lelv,lxd,lyd,lzd,lelx,lely,lelz
-      parameter (ldim=2)
-      parameter (lx1=6,ly1=lx1,lz1=1,lelt=1500,lelv=lelt)
-      parameter (lxd=9,lyd=lxd,lzd=1)
-      parameter (lelx=1,lely=1,lelz=1)
+      integer ldim,lx1,lxd,lx2,lx1m,lelg,lp,lelt,ldimt
+      integer ax1,ax2,lpx1,lpx2,lpelt,lbx1,lbx2,lbelt
+      integer lelcmt,toteq
+      integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
+      integer maxobj,maxmbr,lpert,nsessmax,nmaxl,nfldmax,nmaxcom
 
-      integer lzl
-      parameter (lzl=3 + 2*(ldim-3))
+      ! GENERAL
+      parameter (ldim=3)        ! domain dimension
+      parameter (lx1=8)         ! polynomial order; in 2D set lz1=1
+      parameter (lxd=10)        ! polynomial order for over-integration 
+      parameter (lx2=lx1-2)     ! polynomial order for pressure
+      parameter (lx1m=1)        ! polynomial order mesh solver; =1 no mesh motion
 
-      integer lx2,ly2,lz2,lx3,ly3,lz3
-      parameter (lx2=lx1)
-      parameter (ly2=ly1)
-      parameter (lz2=lz1)
-      parameter (lx3=lx1)
-      parameter (ly3=ly1)
-      parameter (lz3=lz1)
+      parameter (lelg=5000)     ! max total number of elements
+      parameter (lp=1024)       ! max number of MPI ranks
+      parameter (lelt=600)      ! max number of elements per MPI rank 
+      parameter (ldimt=1)       ! max number of auxiliary fields (temperature + scalars)
 
-      integer lp,lelg
-      parameter (lp =   1024)    ! upper limit for number of CPUs
-      parameter (lelg = 5000)    ! upper limit for total number of elements
-c
-      integer lpelv,lpelt,lpert,lpx1,lpy1,lpz1,lpx2,lpy2,lpz2
-c     parameter (lpelv=lelv,lpelt=lelt,lpert=3)  ! perturbation
-c     parameter (lpx1=lx1,lpy1=ly1,lpz1=lz1)     ! array sizes
-c     parameter (lpx2=lx2,lpy2=ly2,lpz2=lz2)
-c
-      parameter (lpelv=1,lpelt=1,lpert=1)        ! perturbation
-      parameter (lpx1=1,lpy1=1,lpz1=1)           ! array sizes
-      parameter (lpx2=1,lpy2=1,lpz2=1)
-c
-      integer lbelv,lbelt,lbx1,lby1,lbz1,lbx2,lby2,lbz2
-c     parameter (lbelv=lelv,lbelt=lelt)          ! MHD
-c     parameter (lbx1=lx1,lby1=ly1,lbz1=lz1)     ! array sizes
-c     parameter (lbx2=lx2,lby2=ly2,lbz2=lz2)
-c
-      parameter (lbelv=1,lbelt=1)                ! MHD
-      parameter (lbx1=1,lby1=1,lbz1=1)           ! array sizes
-      parameter (lbx2=1,lby2=1,lbz2=1)
- 
-c     lx1m=lx1 when there are moving meshes; =1 otherwise
-      integer lx1m,ly1m,lz1m,ldimt,ldimt1,ldimt3
-      parameter (lx1m=1,ly1m=1,lz1m=1)
-      parameter (ldimt= 1)                       ! passive scalars + t limit
-      parameter (ldimt1=ldimt+1)
-      parameter (ldimt3=ldimt+3)
-c
-c     Note:  in the new code, lelgec should be about sqrt(lelg)
-c
-      integer lelgec,lxyz2,lxz21
-      parameter (lelgec = 1)
-      parameter (lxyz2  = 1)
-      parameter (lxz21  = 1)
- 
-      integer lmaxv,lmaxt,lmaxp,lxz,lorder,maxobj,maxmbr,lhis
-      parameter (lmaxv=lx1*ly1*lz1*lelv)
-      parameter (lmaxt=lx1*ly1*lz1*lelt)
-      parameter (lmaxp=lx2*ly2*lz2*lelv)
-      parameter (lxz=lx1*lz1)
-      parameter (lorder=3)
-      parameter (maxobj=4,maxmbr=lelt*6)
-      parameter (lhis=100)         ! # of pts a proc reads from hpts.in
-                                   ! Note: lhis*np > npoints in hpts.in
-c
-c     Common block dimensions
-c
-      integer lctmp0,lctmp1
-      parameter (lctmp0 =2*lx1*ly1*lz1*lelt)
-      parameter (lctmp1 =4*lx1*ly1*lz1*lelt)
-c
-c     The parameter lvec controls whether an additional 42 field arrays
-c     are required for steady state solutions.  if you are not using
-c     steady state, it is recommended that lvec=1.
-c
-      integer lvec
-      parameter (lvec=1)
-c
-c     Uzawa projection array dimensions
-c
-      integer mxprev,lgmres
-      parameter (mxprev = 20)
-      parameter (lgmres = 30)
-c
-c     Split projection array dimensions
-c
-      integer lmvec,lsvec,lstore
-      parameter(lmvec = 1)
-      parameter(lsvec = 1)
-      parameter(lstore=lmvec*lsvec)
-c
-c     Nonconforming stuff
-c
-      integer maxmor
-      parameter (maxmor = lelt)
-c
-c     Array dimensions
-c
-      integer      nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
-     $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
-      common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
-     $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
+      ! OPTIONAL
+      parameter (lelx=1,lely=1,lelz=1)          ! global tensor mesh dimensions
+      parameter (ax1=1,ax2=1)                   ! averages
+      parameter (lbx1=1,lbx2=1,lbelt=1)         ! mhd
+      parameter (lpx1=1,lpx2=1,lpelt=1,lpert=1) ! linear stability
+      parameter (lelcmt=1,toteq=1)              ! cmt
 
-c     Variables for NEKNEK
-      integer nfldmax
-      parameter (nfldmax=1)
-      integer nmaxl
-      parameter (nmaxl=1)
-      integer nmaxcom
-      parameter (nmaxcom=1) 
-      integer nsessmax
-      parameter (nsessmax=1) 
+      parameter (mxprev=20,lgmres=30)           ! projection + Krylov space dimension
+      parameter (lorder=3)                      ! upper limit for order in time
+      parameter (lhis=100)                      ! max intp points per MPI rank
+      parameter (maxobj=4,maxmbr=lelt*6)        ! max number number of objects
+      parameter (nsessmax=1,nmaxl=1,nfldmax=1,nmaxcom=1) ! multimesh parameters
 
-c     Declaration of variables automatically added by makenek
-      integer lxo,lpart,lxs,lys,lzs,lfdm
-      integer nio
-
-c automatically added by makenek
-      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)
-
-c automatically added by makenek
-      parameter(lpart = 1  ) ! max number of particles
-
-c automatically added by makenek
-      integer ax1,ay1,az1,ax2,ay2,az2
-      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages
-
-c automatically added by makenek
-
-c automatically added by makenek
-      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner
-
-c automatically added by makenek
-      parameter (lfdm=0)  ! == 1 for fast diagonalization method
-
-c automatically added by makenek
-      common/IOFLAG/ nio  ! for logfile verbosity control
-
-c automatically added by makenek
-      integer toteq
-      parameter(toteq = 1  ) ! Number of conserved variables 
-c IFCMT=FALSE  then toteq=1
-
-c automatically added by makenek
-      integer lelcmt
-      parameter(lelcmt = 1  ) ! # of cmt elements 
-c IFCMT=FALSE  then lelcmt=1
+      ! INTERNALS
+      include 'SIZE.h'
