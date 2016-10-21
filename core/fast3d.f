@@ -1190,7 +1190,7 @@ c
       include 'SEMHAT'
 c
       nr = nx1-1
-      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,nr,wh)
+      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,nr,wh)
       call do_semhat_weight(jgl,dgl,bgl,nr)
 c
       return

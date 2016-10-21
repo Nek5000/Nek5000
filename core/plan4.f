@@ -76,11 +76,11 @@ C        first, compute pressure
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
          call ctolspl  (tolspl,respr)
-         napprox(1) = laxt
+         napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
-     $                        ,approx,napprox,binvm1)
+     $                        ,approxp,napproxp,binvm1)
          call add2    (pr,dpr,ntot1)
          call ortho   (pr)
 
