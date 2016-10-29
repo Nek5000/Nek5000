@@ -2116,7 +2116,6 @@ c     Set up required dg terms, e.g., alpha, eta, etc.
 
       call gs_op (dg_hndlx,etalph,1,1,0)  ! 1 ==> +
 
-
       return
       end
 c-----------------------------------------------------------------------
