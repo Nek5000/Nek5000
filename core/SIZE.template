@@ -5,6 +5,7 @@ c
       integer ldim,lx1,lxd,lx2,lx1m,lelg,lp,lelt,ldimt
       integer ax1,ax2,lpx1,lpx2,lpelt,lbx1,lbx2,lbelt
       integer lelcmt,toteq
+      integer lcvx1,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
       integer maxobj,maxmbr,lpert,nsessmax,nmaxl,nfldmax,nmaxcom
 
