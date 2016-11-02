@@ -116,6 +116,7 @@ class NekTestCase(unittest.TestCase):
         self.makenek        = ''
         self.serial_procs   = 1
         self.parallel_procs = 2
+        self.size_params    = {}
 
         # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
         # pn_pn_2_serial, and pn_pn_2_parallel)
@@ -256,22 +257,16 @@ class NekTestCase(unittest.TestCase):
             verbose    = verbose    if verbose    else self.verbose
         )
 
-    def config_size(self, infile=None, outfile=None, lx2=None, ly2=None, lz2=None):
+    def config_size(self, infile=None, outfile=None, *args, **kwargs):
         from lib.nekFileConfig import config_size
         cls = self.__class__
 
         if not infile:
-            infile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+            infile = os.path.join(self.source_root, 'core', 'SIZE.template')
         if not outfile:
             outfile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
 
-        config_size(
-            infile  = infile,
-            outfile = outfile,
-            lx2 = lx2,
-            ly2 = ly2,
-            lz2 = lz2
-        )
+        config_size(infile, outfile, *args, **kwargs)
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 

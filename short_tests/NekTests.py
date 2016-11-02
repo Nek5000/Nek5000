@@ -1003,9 +1003,47 @@ class CylRestart_Pb(NekTestCase):
 
 class Eddy_EddyUv(NekTestCase):
     example_subdir  = 'eddy'
-    case_name        = 'eddy_uv'
+    case_name       = 'eddy_uv'
 
     def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim     = 2,
+            lx1      = 8,
+            lxd      = 12,
+            lx2      = None,
+            lx1m     = 1,
+            lelg     = 4100,
+            lp       = 512,
+            lelt     = 300,
+            ldimt    = 2,
+            lelx     = 20,
+            lely     = 20,
+            lelz     = 1,
+            ax1      = 'lx1',
+            ax2      = 'lx2',
+            lbx1     = 'lx1',
+            lbx2     = 'lx2',
+            lbelt    = 'lelt',
+            lpx1     = 'lx1',
+            lpx2     = 'lx2',
+            lpelt    = 'lelt',
+            lpert    = 3,
+            lelecmt  = None,
+            toteq    = None,
+            mxprev   = 20,
+            lgmres   = 30,
+            lorder   = None,
+            lhis     = 100,
+            maxobj   = 4,
+            maxmbr   = 'lelt*6',
+            nsessmax = None,
+            nmaxl    = None,
+            nfldmax  = None,
+            nmaxcom  = None
+        )
+
         self.build_tools(['genmap'])
 
         # Tweak the .rea file and run genmap
@@ -1020,7 +1058,9 @@ class Eddy_EddyUv(NekTestCase):
 
     @pn_pn_serial
     def test_PnPn_Serial(self):
-        self.config_size(lx2='lx1', ly2='ly1', lz2='lz1')
+        # Update SIZE parameters for PnPn
+        self.size_params['lx2'] = 'lx1'
+        self.config_size(**self.size_params)
         self.build_nek()
         self.run_nek(step_limit=None)
 
@@ -1040,7 +1080,8 @@ class Eddy_EddyUv(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        self.config_size(lx2='lx1', ly2='ly1', lz2='lz1')
+        self.size_params['lx2'] = 'lx1'
+        self.config_size(**self.size_params)
         self.build_nek()
         self.run_nek(step_limit=None)
 
@@ -1057,7 +1098,8 @@ class Eddy_EddyUv(NekTestCase):
 
     @pn_pn_2_serial
     def test_PnPn2_Serial(self):
-        self.config_size(lx2='lx1-2', ly2='ly1-2', lz2='lz1')
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size(**self.size_params)
         self.build_nek()
         self.run_nek(step_limit=None)
 
@@ -1077,7 +1119,8 @@ class Eddy_EddyUv(NekTestCase):
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
-        self.config_size(lx2='lx1-2', ly2='ly1-2', lz2='lz1')
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size(**self.size_params)
         self.build_nek()
         self.run_nek(step_limit=None)
 
