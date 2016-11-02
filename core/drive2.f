@@ -1169,6 +1169,7 @@ c
       tspro=0.0
       tadvc=0.0
       ttime=0.0
+      tcvf =0.0
 C
       return
       end
@@ -1346,8 +1347,13 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
+c        Properties timings
          pspro=tspro/tttstp
          write(6,*) 'spro time',nspro,tspro,pspro
+
+c        CVODE solver timings
+         pcvf=tcvf/tttstp
+         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        USERBC timings
          pusbc=tusbc/tttstp

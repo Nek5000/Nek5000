@@ -128,15 +128,13 @@ c     mass matrix on the Gauss-Lobatto mesh.
 
       n = nx1*ny1*nz1*nelfld(ifield)
 
-      time = time-dt        ! Set time to t^n-1 for user function
+      if (.not.ifcvfld(ifield)) time = time-dt ! Set time to t^n-1 for user function
 
       call rzero   (bq(1,1,1,1,ifield-1),n)
       call setqvol (bq(1,1,1,1,ifield-1))
-      if (ifcvfld(ifield)) call copy (tlag(1,1,1,1,1,ifield-1),
-     &                                bq  (1,1,1,1,ifield-1),n)
       call col2    (bq(1,1,1,1,ifield-1) ,bm1,n)
 
-      time = time+dt        ! Restore time
+      if (.not.ifcvfld(ifield)) time = time+dt ! Restore time
 
       return
       end

@@ -13,17 +13,17 @@ c
       integer*8 tt
 
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'mxm   '
-      endif
-      isbcnt = n1*n3*(2*n2-1)
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount = dcount + (isbcnt)
-      etime1 = dnekclock()
+c      if (isclld.eq.0) then
+c          isclld=1
+c          nrout=nrout+1
+c          myrout=nrout
+c          rname(myrout) = 'mxm   '
+c      endif
+c      isbcnt = n1*n3*(2*n2-1)
+c      dct(myrout) = dct(myrout) + (isbcnt)
+c      ncall(myrout) = ncall(myrout) + 1
+c      dcount = dcount + (isbcnt)
+c      etime1 = dnekclock()
 #endif
 
 
@@ -64,8 +64,12 @@ c        .and. MOD(LOC(c),tt)==0 &
 #endif
 
 #ifdef XSMM
-      call libxsmm_dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
-      goto 111
+      if ((n1*n2*n3)**(1./3) .gt. 6) then
+         call libxsmm_dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
+         goto 111
+      else
+         goto 101
+      endif
 #endif
 
 #ifdef BLAS_MXM
@@ -73,11 +77,11 @@ c        .and. MOD(LOC(c),tt)==0 &
       goto 111
 #endif
 
-      call mxmf2(a,n1,b,n2,c,n3)
+ 101  call mxmf2(a,n1,b,n2,c,n3)
 
  111  continue
 #ifdef TIMER
-      tmxmf = tmxmf + dnekclock() - etime1  
+c      tmxmf = tmxmf + dnekclock() - etime1  
 #endif
       return
       end

@@ -112,7 +112,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          endif
       endif
 
-      if(ifcvode) call cv_setsize(0)
+      if(ifcvode) call cv_setsize
 
       if(nio.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
@@ -265,7 +265,7 @@ c-----------------------------------------------------------------------
 
          if (igeom.eq.2) then  
                                    call setprop
-            if (iflomach)          call qthermal(.true.,.false.,dummy)
+            if (iflomach)          call qthermal(.true.)
          endif
 
          if (ifflow)               call fluid         (igeom)

@@ -289,6 +289,7 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
+         IFDIFF(i) = .true. 
       enddo
 
       do i=1,NPSCL1

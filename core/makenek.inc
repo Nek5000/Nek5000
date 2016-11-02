@@ -276,8 +276,8 @@ if [ "$UNDERSCORE" == "true" ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
-    PPLIST="${PPLIST} NOTIMER"
+if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
+    PPLIST="${PPLIST} TIMER MPITIMER"
 fi
 
 PPLIST="${PPLIST} GLOBAL_LONG_LONG"
@@ -307,11 +307,12 @@ do
      fi
    fi
 
-if [ "$i" == "NEKNEK" ]; then
+   if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
-fi
+   fi
 
    if [ "$i" == "CVODE" ]; then
+    IFCVODE=true
     if [ "$CVODE_DIR" == "" ]; then
        echo "ABORT: Please specify path to CVODE in CVODE_DIR!" 
        exit 1
@@ -517,7 +518,7 @@ do
 done
 
 # tweak SIZE file
-cat SIZE | grep 'SIZE.h' >/dev/null
+cat SIZE | grep 'SIZE.inc' >/dev/null
 if [ $? -ne 0 ];  then
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
@@ -545,6 +546,13 @@ if [ $? -ne 0 ];  then
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
+  fi
+  cat SIZE | grep -i 'lcvx1' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lcvx1,lcvy1,lcvz1,lcvelt' >> SIZE
+     echo '      parameter (lcvx1=1,lcvy1=1,lcvz1=1,lcvelt=1) ! cvode arrays' >> SIZE
   fi
   cat SIZE | grep -i 'lfdm' >/dev/null
   if [ $? -ne 0 ]; then
@@ -620,23 +628,51 @@ fi
 # tweak .usr (actually, .f ) file
 rm -f $CASENAME.f
 cp -p $CASENAME.usr $CASENAME.f
+
 cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
       integer*8 glo_num(1)
+
       return
       end
 _ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userqtl" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userqtl(flag)
+      logical flag
+
+      return
+      end
+_ACEOF
+fi
+
+if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
+
+cat $CASENAME.f | grep -i "include*.cvode_aux.h" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_aux.h"
+_ACEOF
+fi
+
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
 cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine cmt_switch ! to set IFCMT logical flag
       include 'SIZE'
@@ -651,7 +687,7 @@ fi
 cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine usrflt(rmult) ! user defined filter
       include 'SIZE'
@@ -665,7 +701,7 @@ fi
 cat $CASENAME.f | grep -i "subroutine.*userflux" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine userflux ! user defined flux
       include 'SIZE'
@@ -680,7 +716,7 @@ fi
 cat $CASENAME.f | grep -i "subroutine.*userEOS" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine userEOS ! user defined EOS 
       include 'SIZE'
