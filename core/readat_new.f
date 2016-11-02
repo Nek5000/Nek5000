@@ -807,13 +807,13 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (ifdp0dt .and. .not.iflomach) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying pth requires lowMach! '
+     $   'ABORT: Varying p0 requires lowMach! '
          call exitt
       endif
 
       if (ifdp0dt .and. .not.ifcvode) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying pth requires CVODE!'
+     $   'ABORT: Varying p0 requires CVODE!'
          call exitt
       endif
 

@@ -578,11 +578,12 @@ C
          endif
       endif
 
-c      if (ifmvbd .and. ifsplit) then 
-c         if(nid.eq.0) write(6,*) 
-c     $   'ABORT: Moving boundary in Pn-Pn is not supported'
-c         call exitt
-c      endif
+      if (ifcvode) then 
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Using CVODE requires .par file!'
+         call exitt
+      endif
+
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: MOAB in Pn-Pn-2 is not supported'

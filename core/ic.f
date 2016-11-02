@@ -374,9 +374,9 @@ c print max values
          endif
       endif
 
-      if (iflomach) then
+      if (iflomach .and. ifdp0dt) then
         if (p0th.le.0) call exitti('Invalid thermodynamic pressure!$',1)
-        if (ifdp0dt .and. gamma0.lt.0) call exitti('Invalid gamma0!$',1)
+        if (gamma0.lt.0) call exitti('Invalid gamma0!$',1)
       endif
 
       if (ifrest(0,jp)) then !  mesh has been read in.

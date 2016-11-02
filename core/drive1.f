@@ -265,7 +265,7 @@ c-----------------------------------------------------------------------
 
          if (igeom.eq.2) then  
                                    call setprop
-            if (iflomach)          call qthermal(.true.)
+            if (iflomach)          call userqtl(.true.)
          endif
 
          if (ifflow)               call fluid         (igeom)

@@ -567,30 +567,6 @@ if [ $? -ne 0 ];  then
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
 
-  echo $PPLIST | grep 'CVODE' >/dev/null
-  if [ $? -eq 0 ]; then
-  cat SIZE | grep -i 'cv_maxl' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer cv_maxl' >> SIZE
-      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>SIZE
-  fi
-  cat SIZE | grep -i 'cv_delt' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      real cv_delt' >> SIZE
-      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor ' >>SIZE
-  fi
-  cat SIZE | grep -i 'cv_sigs' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      real cv_sigs' >> SIZE
-      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>SIZE
-  fi
-  fi
   cat SIZE | grep -i 'toteq' >/dev/null
   if [ $? -ne 0 ]; then
   if [ "$IFCMT" == "true" ]; then
@@ -650,6 +626,8 @@ c automatically added by makenek
       subroutine userqtl(flag)
       logical flag
 
+      call qthermal_ig(flag)
+
       return
       end
 _ACEOF
@@ -657,7 +635,7 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "include*.cvode_aux.h" >/dev/null
+cat $CASENAME.f | grep -i "^#include.*cvode_aux.h" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 

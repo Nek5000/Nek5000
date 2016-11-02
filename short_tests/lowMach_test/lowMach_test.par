@@ -25,6 +25,7 @@ userParam01 = 1 # use in .usr uparam(01)
 [PROBLEMTYPE]
 #stressFormulation = yes
 lowMachNumber = yes 
+#dp0dt = yes
 variableProperties = yes
 
 [PRESSURE]
