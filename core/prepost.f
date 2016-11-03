@@ -1824,8 +1824,14 @@ c-----------------------------------------------------------------------
 
       integer iosave,save_size,nfld_save
 
+      include 'SIZE'
+      include 'INPUT'
 
-      nfld_save=4  ! For full restart
+      if (PARAM(27).lt. 0) then
+          nfld_save=abs(PARAM(27))  ! For full restart
+      else 
+          nfld_save=3
+      endif
       save_size=8  ! For full restart
 
       call restart_save(iosave,save_size,nfld_save)
