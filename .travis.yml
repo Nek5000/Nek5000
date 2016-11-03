@@ -75,6 +75,14 @@ before_install:
   - virtualenv -p python2.7 $ROOT_DIR/python2-env
   - source $ROOT_DIR/python2-env/bin/activate
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
+
+  - wget http://computation.llnl.gov/projects/sundials/download/cvode-2.9.0.tar.gz
+  - tar -zxf cvode-2.9.0.tar.gz
+  - mkdir -p cvode-2.9.0/build
+  - cd cvode-2.9.0/build
+  - cmake -DCMAKE_INSTALL_PREFIX=$HOME/lib/cvode -DEXAMPLES_INSTALL=OFF -DMPI_ENABLE=ON -DFCMIX_ENABLE=ON -DBUILD_SHARED_LIBS=OFF ../
+  - make
+  - make install
  
 install:
   - pip install --upgrade pip
