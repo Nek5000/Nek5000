@@ -2381,6 +2381,7 @@ c-----------------------------------------------------------------------
       subroutine parse_std_hdr(hdr)
       include 'SIZE'
       include 'INPUT'
+      include 'SOLN'
       include 'PARALLEL'
       include 'RESTART'
 
@@ -2391,6 +2392,7 @@ c-----------------------------------------------------------------------
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr
 
 #ifdef MPIIO
       if ((nelr/np + np).gt.lelr) then
@@ -2448,6 +2450,8 @@ c-----------------------------------------------------------------------
      &      'currently used NPSCAL!'
          endif
       endif
+
+      p0th = p0thr
 
       return
 
