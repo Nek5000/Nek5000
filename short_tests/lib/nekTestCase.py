@@ -265,8 +265,11 @@ class NekTestCase(unittest.TestCase):
             infile = os.path.join(self.source_root, 'core', 'SIZE.template')
         if not outfile:
             outfile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+        if not kwargs:
+            config_size(infile, outfile, *args, **self.size_params)
+        else:
+            config_size(infile, outfile, *args, **self.size_params)
 
-        config_size(infile, outfile, *args, **kwargs)
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 
