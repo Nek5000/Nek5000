@@ -99,23 +99,22 @@ class NekTestCase(unittest.TestCase):
     """
     # Defined in subclasses only; declared here to make syntax checker happy
     example_subdir      = ""
-    case_name            = ""
+    case_name           = ""
 
     def __init__(self, *args, **kwargs):
         # These can be overridden by self.get_opts
-        self.f77            = "gfortran"
-        self.cc             = "gcc"
-        self.ifmpi          = False
-        self.verbose        = False
-        self.source_root    = ''
-        #self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
-        self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
+        self.f77            = 'mpif77'
+        self.cc             = 'mpicc'
+        self.ifmpi          = True
+        self.verbose        = True
+        self.source_root    = os.path.dirname(os.path.dirname(inspect.getabsfile(self.__class__)))
+        self.examples_root  = os.path.dirname(inspect.getabsfile(self.__class__))
         self.tools_root     = ''
         self.tools_bin      = ''
         self.log_root       = ''
         self.makenek        = ''
         self.serial_procs   = 1
-        self.parallel_procs = 2
+        self.parallel_procs = 4
         self.size_params    = {}
 
         # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
