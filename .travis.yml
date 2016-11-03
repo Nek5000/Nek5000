@@ -83,6 +83,7 @@ before_install:
   - cmake -DCMAKE_INSTALL_PREFIX=$HOME/lib/cvode -DEXAMPLES_INSTALL=OFF -DMPI_ENABLE=ON -DFCMIX_ENABLE=ON -DBUILD_SHARED_LIBS=OFF ../
   - make
   - make install
+  - ls -R $HOME/lib
  
 install:
   - pip install --upgrade pip
