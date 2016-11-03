@@ -310,26 +310,15 @@ do
    if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
    fi
-
-   if [ "$i" == "CVODE" ]; then
-    IFCVODE=true
-    if [ "$CVODE_DIR" == "" ]; then
-       echo "ABORT: Please specify path to CVODE in CVODE_DIR!" 
-       exit 1
-    else
-       if [ ! -d $CVODE_DIR ]; then
-         echo "ABORT: Cannot find " $CVODE_DIR 
-         exit 1
-       fi
-    fi
-    USR_LFLAGS="${USR_LFLAGS} -L$CVODE_DIR -lsundials_fcvode -lsundials_cvode"
-    if [ "$IFMPI" == "true"  ]; then
-      USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecparallel -lsundials_nvecparallel"
-    else
-        USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecserial -lsundials_nvecserial"
-    fi
-   fi
 done
+
+
+echo $PPLIST | grep 'CVODE' >/dev/null 
+if [ $? -eq 0 ]; then
+   IFCVODE=true 
+else
+   IFCVODE=false
+fi
 
 # AMG setup
 if [ "$IFAMG_DUMP" == "true" ]; then
@@ -635,7 +624,7 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "^#include.*cvode_aux.h" >/dev/null
+cat $CASENAME.f | grep -i "#include.*cvode_aux.h" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 

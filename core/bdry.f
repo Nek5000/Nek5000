@@ -1214,7 +1214,10 @@ C
       do ips=1,npscal
          ps(ips) = t(ix,iy,iz,e,ips+1)
       enddo
-      pres  = p0th 
+
+      pa = pr(ix,iy,iz,e)
+      p0 = p0th
+
       si2   = sii (ix,iy,iz,e)
       si3   = siii(ix,iy,iz,e)
       udiff = vdiff (ix,iy,iz,e,ifield)
