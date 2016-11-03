@@ -44,11 +44,6 @@ c
       call rzero(uparam,20)
 
 
-      param(16) = 1    ! normal mode in cvode
-      param(17) = 1    ! use adams moulton (non-stiff) in cvode
-      param(18) = 0    ! cvode absolute tolerance
-      param(19) = 0    ! cvode realtive tolerance
-
       param(20) = 1e-8 ! temperature & passive passive tolerance
       param(21) = 1e-6 ! pressure tolerance
       param(22) = 1e-8 ! velocity tolerance
@@ -56,7 +51,7 @@ c
       param(26) = 0.5  ! max Courant number
       param(27) = 2    ! 2nd order in time
 
-c      param(32) = 2    ! number of BC to read from file
+      param(32) = 0    ! all BC are defined in .re2
 
       param(42) = 0    ! GMRES 
       param(43) = 0    ! SEMG preconitioner
@@ -69,6 +64,15 @@ c      param(32) = 2    ! number of BC to read from file
       param(94) = 0    ! turn off projection for helmholz solves
       param(95) = 5    ! turn on projection for pressure solve
       param(99) = 4    ! enable dealising
+
+      param(160) = 1    ! cvode use normal mode 
+      param(161) = 1    ! cvode use non-stoff integration 
+      param(162) = 0    ! cvode absolute tolerance
+      param(163) = -1   ! cvode realtive tolerance
+      param(164) = 100  ! cvode don't limit internal dt
+      param(165) = 1    ! cvode increment factor DQJ
+      param(166) = 0    ! cvode use default ratio linear/non-linear tolerances
+      param(167) = 0    ! cvode use no preconditioner
 c
       iftmsh(0) = .false. 
       iftmsh(1) = .false. 
@@ -87,6 +91,11 @@ c
       ifadvc(1) = .true.  
       do i=1,ldimt1
          ifadvc(i+1) = .true.  
+      enddo 
+
+      ifdiff(1) = .true.  
+      do i=1,ldimt1
+         ifdiff(i+1) = .true.  
       enddo 
 
       do i=1,ldimt
@@ -227,6 +236,8 @@ c set parameters
       if (index(c_out,'CVODE') .gt. 0) idpss(1) = 1
       call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
       if(ifnd .eq. 1) param(20) = d_out 
+      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
+      if(ifnd .eq. 1) atol(3) = d_out 
 
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2,a)") i,':solver'
@@ -234,18 +245,30 @@ c set parameters
          call capit(c_out,132)
          if (index(c_out,'CVODE') .gt. 0) idpss(i+1) = 1
          if (index(c_out,'NONE' ) .gt. 0) idpss(i+1) = -1
+
+         write(txt,"('scalar',i2.2,a)") i,':absoluteTol'
+         call finiparser_getDbl(d_out,txt,ifnd)
+         if(ifnd .eq. 1) atol(i+3) = d_out 
       enddo
       call finiparser_getDbl(d_out,'cvode:absoluteTol',ifnd)
-      if(ifnd .eq. 1) param(18) = d_out 
+      if(ifnd .eq. 1) param(162) = d_out 
       call finiparser_getDbl(d_out,'cvode:relativeTol',ifnd)
-      if(ifnd .eq. 1) param(19) = d_out 
+      if(ifnd .eq. 1) param(163) = d_out 
+      call finiparser_getDbl(d_out,'cvode:dtmax',ifnd)
+      if(ifnd .eq. 1) param(164) = d_out 
+      call finiparser_getDbl(d_out,'cvode:DQJincrementFactor',ifnd)
+      if(ifnd .eq. 1) param(165) = d_out 
+      call finiparser_getDbl(d_out,'cvode:ratioLNLtol',ifnd)
+      if(ifnd .eq. 1) param(166) = d_out 
+      call finiparser_getBool(i_out,'cvode:preconditioner',ifnd)
+      if(ifnd .eq. 1 .and. i_out. eq. 1) param(167) = 1
 
       j = 0
       do i = 1,ldimt
          if (idpss(i).ge.0) j = j + 1
       enddo
-      if (j .ge. 1) then
-         ifheat = .true.
+      if (j .ge. 1) then ! we have to solve for temp and/or ps
+         ifheat = .true.  
       else
          ifheat = .false.
       endif
@@ -254,14 +277,17 @@ c set parameters
       if(ifnd .eq. 1) param(26) = d_out
 
       call finiparser_getDbl(d_out,'general:tOrder',ifnd)
-      if(ifnd .eq. 1) param(27) = d_out 
+      if(ifnd .eq. 1) param(27) = int(d_out) 
 
       call finiparser_getDbl(d_out,'magnetic:viscosity',ifnd)
       if(ifnd .eq. 1) param(29) = d_out 
       if(param(29).lt.0.0) param(29) = -1.0/param(29)
 
       call finiparser_getDbl(d_out,'general:perturbationModes',ifnd)
-      if(ifnd .eq. 1) param(31) = d_out 
+      if(ifnd .eq. 1) param(31) = int(d_out) 
+
+      call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
+      if(ifnd .eq. 1) param(32) = int(d_out)
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
@@ -271,7 +297,7 @@ c set parameters
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 
 
       call finiparser_getDbl(d_out,'general:writeNParallelFiles',ifnd)
-      if(ifnd .eq. 1) param(65) = d_out 
+      if(ifnd .eq. 1) param(65) = int(d_out) 
 
       call finiparser_getBool(i_out,'velocity:residualProj',ifnd)
       if(ifnd .eq. 1) then
@@ -293,13 +319,13 @@ c set parameters
         call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
         if(ifnd .eq. 1) param(103) = d_out 
         call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-        if(ifnd .eq. 1) param(101) = d_out 
+        if(ifnd .eq. 1) param(101) = int(d_out) 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'NORMAL') .gt. 0) param(16) = 1
-      if (index(c_out,'NORMAL_TSTOP' ) .gt. 0) param(16) = 3
+      if (index(c_out,'NORMAL') .gt. 0) param(160) = 1
+      if (index(c_out,'NORMAL_TSTOP' ) .gt. 0) param(160) = 3
  
       do i = 1,20
          call blank(txt,132)
@@ -376,7 +402,8 @@ c set logical flags
         if(i_out .eq. 1) ifstrs = .true.
       endif
 
-      call finiparser_getBool(i_out,'problemType:userProperties',ifnd)
+      call finiparser_getBool(i_out,
+     &                        'problemType:variableProperties',ifnd)
       if(ifnd .eq. 1) then
         ifuservp = .false.
         if(i_out .eq. 1) ifuservp = .true.
@@ -389,12 +416,7 @@ c set logical flags
 
       call finiparser_getBool(i_out,'cvode:stiff',ifnd)
       if(ifnd .eq. 1) then
-        if(i_out .eq. 1) param(17) = 2 !BDF
-      endif
-
-      call finiparser_getBool(i_out,'cvode:mode',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) param(17) = 2 !BDF
+        if(i_out .eq. 1) param(161) = 2 !BDF
       endif
 
 c set advection
@@ -511,6 +533,7 @@ C
 
       call bcast(param , 200*wdsize)
       call bcast(uparam, 20*wdsize)
+      call bcast(atol ,  ldimt3*wdsize)
 
       call bcast(ifchar , lsize)
       call bcast(iftran  , lsize)
@@ -784,13 +807,13 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (ifdp0dt .and. .not.iflomach) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying pth requires lowMach! '
+     $   'ABORT: Varying p0 requires lowMach! '
          call exitt
       endif
 
       if (ifdp0dt .and. .not.ifcvode) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying pth requires CVODE!'
+     $   'ABORT: Varying p0 requires CVODE!'
          call exitt
       endif
 
@@ -823,7 +846,9 @@ c-----------------------------------------------------------------------
 
       INCLUDE 'PARDICT'
 
-      character*132 val,key
+      
+      character*132  key
+      character*1024 val
 
       character*132 txt
       character*1   tx1(132)
