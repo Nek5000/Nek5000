@@ -32,12 +32,8 @@ C Set user variable properties
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERF  (IX,IY,IZ,ieg)                
-
-C Set user forcing function for the momentum
 
       implicit none
 
@@ -53,12 +49,9 @@ C Set user forcing function for the momentum
 
       RETURN
       END
-
-C=======================================================================
+C-----------------------------------------------------------------------
 
       SUBROUTINE USERQ  (IX,IY,IZ,ieg)                
-
-C Set user forcing function for the energy and species
 
       implicit none
 
@@ -78,9 +71,7 @@ C Set user forcing function for the energy and species
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERCHK
 
       implicit none
@@ -142,14 +133,8 @@ C=======================================================================
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERBC (IX,IY,IZ,ISIDE,ieg)                
-c     NOTE ::: This subroutine MAY NOT be called by every process
-
-
-C  Set user boundary conditions
 
       implicit none
 
@@ -177,9 +162,7 @@ C  Set user boundary conditions
 
       return
       END   
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERIC (IX,IY,IZ,ieg)
 
 C   Set initial conditions
@@ -207,24 +190,32 @@ C   Set initial conditions
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       subroutine usrdat
 
       return
       end
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       subroutine usrdat2
 
       return
       end
-
-C=======================================================================
+C-----------------------------------------------------------------------
       subroutine usrdat3
 
       return
       end
-C=======================================================================
+C-----------------------------------------------------------------------
+      subroutine userqtl(flag)
+
+      implicit none
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      logical flag
+
+      call qthermal_ig(flag)
+
+      return
+      end
+

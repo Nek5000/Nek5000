@@ -230,7 +230,7 @@ C
       TOLREL = abs(PARAM(24))
       TOLABS = abs(PARAM(25))
       CTARG  = PARAM(26)
-      NBDINP = PARAM(27)
+      NBDINP = abs(PARAM(27))
       NABMSH = PARAM(28)
 
       if (nbdinp.gt.lorder) then
@@ -640,8 +640,12 @@ C
       if (irst.gt.0) nbd = nbdinp
       CALL RZERO (BD,10)
       CALL SETBD (BD,DTLAG,NBD)
-      NAB = 3
-      IF (ISTEP.LE.2 .and. irst.le.0) NAB = ISTEP
+      if (PARAM(27).lt.0) then
+         NAB = NBDINP
+      else
+         NAB = 3
+      endif
+      IF (ISTEP.lt.NAB.and.irst.le.0) NAB = ISTEP
       CALL RZERO   (AB,10)
       CALL SETABBD (AB,DTLAG,NAB,NBD)
       IF (IFMVBD) THEN
@@ -1165,6 +1169,7 @@ c
       tspro=0.0
       tadvc=0.0
       ttime=0.0
+      tcvf =0.0
 C
       return
       end
@@ -1342,8 +1347,13 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
+c        Properties timings
          pspro=tspro/tttstp
          write(6,*) 'spro time',nspro,tspro,pspro
+
+c        CVODE solver timings
+         pcvf=tcvf/tttstp
+         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        USERBC timings
          pusbc=tusbc/tttstp

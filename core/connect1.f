@@ -42,7 +42,7 @@ C
       NZL=1+2*(NDIM-2)
 
       call initds
-      call dsset (nx1,ny1,nz1)
+      call dsset (nxl,nyl,nzl)
       call setedge
 C
 C=================================================

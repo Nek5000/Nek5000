@@ -40,6 +40,9 @@ c     Solution data
       real vx     (lx1,ly1,lz1,lelv)
      $    ,vy     (lx1,ly1,lz1,lelv)
      $    ,vz     (lx1,ly1,lz1,lelv)
+     $    ,vx_e   (lx1*ly1*lz1*lelv)
+     $    ,vy_e   (lx1,ly1,lz1,lelv)
+     $    ,vz_e   (lx1,ly1,lz1,lelv)
      $    ,t      (lx1,ly1,lz1,lelt,ldimt)
      $    ,vtrans (lx1,ly1,lz1,lelt,ldimt1)
      $    ,vdiff  (lx1,ly1,lz1,lelt,ldimt1)
@@ -69,10 +72,12 @@ c     Solution data for magnetic field
      $    ,bylag  (lbx1*lby1*lbz1*lbelv,lorder-1)
      $    ,bzlag  (lbx1*lby1*lbz1*lbelv,lorder-1)
      $    ,pmlag  (lbx2*lby2*lbz2*lbelv,lorder2)
+
       common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
      $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
      $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,
      $     bmnv, bmass, bdivw, bx, by, bz, pm, bmx, bmy, bmz,
+     $     vx_e,vy_e,vz_e,     
      $     bbx1, bby1, bbz1, bbx2, bby2, bbz2, bxlag, bylag, bzlag,
      $     pmlag
 

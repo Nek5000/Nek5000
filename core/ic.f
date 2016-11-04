@@ -370,6 +370,10 @@ c print max values
          endif
       endif
 
+      if (iflomach .and. ifdp0dt) then
+        if (p0th.le.0) call exitti('Invalid thermodynamic pressure!$',1)
+        if (gamma0.lt.0) call exitti('Invalid gamma0!$',1)
+      endif
 
       if (ifrest(0,jp)) then !  mesh has been read in.
          if (nio.eq.0) write(6,*) 'Restart: recompute geom. factors.'
@@ -2369,6 +2373,7 @@ c-----------------------------------------------------------------------
       subroutine parse_std_hdr(hdr)
       include 'SIZE'
       include 'INPUT'
+      include 'SOLN'
       include 'PARALLEL'
       include 'RESTART'
 
@@ -2379,6 +2384,7 @@ c-----------------------------------------------------------------------
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr
 
 #ifdef MPIIO
       if ((nelr/np + np).gt.lelr) then
@@ -2436,6 +2442,8 @@ c-----------------------------------------------------------------------
      &      'currently used NPSCAL!'
          endif
       endif
+
+      p0th = p0thr
 
       return
 

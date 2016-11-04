@@ -67,23 +67,19 @@ def config_basics_inc(infile, outfile, nelm):
         f.writelines(lines)
 
 
-def config_size(infile, outfile, lx2=None, ly2=None, lz2=None):
+def config_size( infile, outfile, **kwargs ):
 
     with open(infile, 'r') as f:
         lines = f.readlines()
 
-    if lx2:
-        lines = [re.sub(r'(^ {6}parameter *\( *lx2 *= *)\S+?( *\))',
-                        r'\g<1>{0}\g<2>'.format(lx2), l, flags=re.I)
-                 for l in lines]
-    if ly2:
-        lines = [re.sub(r'(^ {6}parameter *\( *ly2 *= *)\S+?( *\))',
-                        r'\g<1>{0}\g<2>'.format(ly2), l, flags=re.I)
-                 for l in lines]
-    if lz2:
-        lines = [re.sub(r'(^ {6}parameter *\( *lz2 *= *)\S+?( *\))',
-                        r'\g<1>{0}\g<2>'.format(lz2), l, flags=re.I)
-                 for l in lines]
+    # Substitute all the variables
+    for key, value in kwargs.iteritems():
+        if value:
+            lines = [
+                re.sub(
+                    r'(.*\bparameter\b.*\b{0} *= *)\S+?( *[),])'.format(key),
+                    r'\g<1>{0}\g<2>'.format(value), l, flags=re.I)
+                for l in lines ]
 
     with open(outfile, 'w') as f:
         f.writelines(lines)

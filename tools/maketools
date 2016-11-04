@@ -11,7 +11,7 @@ CC="gcc"
 #USR_LFLAGS="-L$HOME/lib"
 
 # enable BIG MEMORY suuport
-BIGMEM="true"
+#BIGMEM="true"
 
 
 
@@ -145,6 +145,10 @@ export MODULES
 if [ "$1" == "clean" ]; then
    make clean
 else
+   export DOALL=''
+   if [ "$1" == "all" ]; then
+      export DOALL=1
+   fi
    if [ "$1" != "all" ]; then
       LIST=`echo $* | sed 's:\/::g'`
       MODULES=$LIST

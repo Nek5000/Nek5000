@@ -1,28 +1,29 @@
+### makefile automatically created by makenek 11/03/2016 21:53:36 ###
 BINNAME=nek5000
 LIBNAME=libnek5000.a
-CASENAME=
-CASEDIR=
-S=
-S2=
-J=
+CASENAME:=mv_cyl
+CASEDIR:=/Users/stefanke/Nek5000/short_tests/mv_cyl
+S:=/Users/stefanke/Nek5000/core
+S2:=/Users/stefanke/Nek5000/core/cmt
+J:=/Users/stefanke/Nek5000/jl
 OPT_INCDIR:=./
 OBJDIR=obj
-IFMPI= 
-IFCMT= 
-IFAMG= 
-IFAMG_DUMP=
-IFNEKNEK=
-IFMOAB=
-MOAB_DIR=
-F77=
-CC=
-P=
+IFMPI:=true
+IFCMT:=false
+IFAMG:=false
+IFAMG_DUMP:=false
+IFNEKNEK:=false
+IFMOAB:=false
+MOAB_DIR:=
+F77:=mpif77
+CC:=mpicc
+P:=-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input
 PPPO=
-PPS=
-G=
+PPS=CVODE PTRSIZE8 MPI LONGINT8 UNDERSCORE TIMER MPITIMER GLOBAL_LONG_LONG
+G:=
 OPT_FLAGS_STD=
-USR=
-USR_LFLAGS=
+USR:=
+USR_LFLAGS:=-L/Users/stefanke/lib/cvode/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel
 IFVISIT=
 VISIT_IFLAGS=
 VISIT_LFLAGS=
@@ -50,10 +51,10 @@ papi.o nek_in_situ.o \
 readat_new.o finiparser.o iniparser.o dictionary.o
 ################################################################################
 # MXM 
-MXM = mxm_std.o 
+MXM=mxm_std.o blas.o
 ################################################################################
 # LAPACK
-LPACK = dsygv.o ssygv.o
+LPACK=dsygv.o ssygv.o
 # JL Routines ###################################################################
 JO  = jl_
 
@@ -127,10 +128,10 @@ TMP2 = $(JLCORE) $(JLINTP) $(CGS)
 NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
 NOBJS  = $(NOBJS_F) $(NOBJS_C)
 
-L0 = $(G) -O0
-L2 = $(G) $(OPT_FLAGS_STD)
-L3 = $(G) $(OPT_FLAGS_STD)
-L4 = $(L3)
+L0=$(G) -O0
+L2=$(G) -O2
+L3=$(G) -O3
+L4=$(L3)
 
 FL0   = $(L0) $(P) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2i4 = $(L0)      $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)

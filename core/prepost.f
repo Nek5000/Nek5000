@@ -1824,8 +1824,14 @@ c-----------------------------------------------------------------------
 
       integer iosave,save_size,nfld_save
 
+      include 'SIZE'
+      include 'INPUT'
 
-      nfld_save=4  ! For full restart
+      if (PARAM(27).lt. 0) then
+          nfld_save=abs(PARAM(27))  ! For full restart
+      else 
+          nfld_save=3
+      endif
       save_size=8  ! For full restart
 
       call restart_save(iosave,save_size,nfld_save)
@@ -2378,6 +2384,7 @@ c-----------------------------------------------------------------------
       subroutine mfo_write_hdr          ! write hdr, byte key, els.
 
       include 'SIZE'
+      include 'SOLN'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
@@ -2446,9 +2453,9 @@ c-----------------------------------------------------------------------
       ENDIF
  
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
-     $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
+     $            ,(rdcode1(i),i=1,10),p0th
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a)
+     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7)
 
       ! if we want to switch the bytes for output
       ! switch it again because the hdr is in ASCII

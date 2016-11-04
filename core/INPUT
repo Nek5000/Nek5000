@@ -16,7 +16,9 @@ c
      $    ,cpgrp(-5:10,ldimt1,3)
      $    ,qinteg(ldimt3,maxobj)
      $    ,uparam(20)
-      common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam
+     $    ,atol(ldimt3)
+      common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
+     $                atol
 
       integer matype(-5:10,ldimt1)
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)
@@ -28,7 +30,8 @@ c
      $               ,ngeom,idpss
 
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
-     $               ,ifmgrid,ifadvc(ldimt1),iftmsh(0:ldimt1)
+     $               ,ifmgrid,ifadvc(ldimt1),ifdiff(ldimt1)
+     $               ,iftmsh(0:ldimt1)
      $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
@@ -40,7 +43,8 @@ c
      $               ,ifcvfld(ldimt1),ifdp0dt
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
-     $               ,ifmgrid,ifadvc        ,iftmsh
+     $               ,ifmgrid,ifadvc,ifdiff
+     $               ,iftmsh
      $               ,ifmvbd,ifnatc,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
