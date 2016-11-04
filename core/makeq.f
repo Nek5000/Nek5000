@@ -47,15 +47,11 @@ C     !! NOTE: Do not change the content of the array BQ until the current
              call col2(bq,bm1,ntot)
            endif
          else
-           if (ifmvbd) then       ! ifchar is false
-              call admesht
-              call makeabq
-              call makebdq
-           elseif (ifchar.and.ifadvc(ifield)) then
-              call makeabq
+           if (ifmvbd.and..not.ifchar)    call admesht
+           call makeabq
+           if (ifchar.and.ifadvc(ifield)) then
               call convch
            else
-              call makeabq
               call makebdq
            endif
          endif

@@ -236,7 +236,11 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+
       call nekgsync
+
+      call setup_convect(2) ! Save conv vel
+
       if (iftran) call settime
       if (ifmhd ) call cfl_check
       call setsolv
@@ -248,9 +252,12 @@ c-----------------------------------------------------------------------
          return
       endif
 
+
       if (ifsplit) then   ! PN/PN formulation
 
+
          do igeom=1,ngeom
+
 
          ! within cvode we use the lagged wx for 
          ! extrapolation, that's why we have to call it before gengeom 
@@ -271,7 +278,6 @@ c-----------------------------------------------------------------------
          if (ifflow)               call fluid         (igeom)
          if (ifmvbd)               call meshv         (igeom)
          if (param(103).gt.0)      call q_filter      (param(103))
-                                   call setup_convect (igeom)     ! Save convective velocity _after_ filter 
          enddo
 
       else                ! PN-2/PN-2 formulation
@@ -304,9 +310,6 @@ c-----------------------------------------------------------------------
 
             if (igeom.eq.ngeom.and.param(103).gt.0) 
      $          call q_filter(param(103))
-
-            call setup_convect (igeom) ! Save convective velocity _after_ filter
-
          enddo
       endif
 

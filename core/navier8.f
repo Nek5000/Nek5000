@@ -153,10 +153,10 @@ c     ifield=1			!c? avo: set in set_overlap through 'TSTEP'?
          do ie=1,nelv
          do iface=1,nfaces
             cb=cbc(iface,ie,ifield)
-            if (cb.eq.'O  '  .or.  cb.eq.'ON '  .or.  cb.eq.'MM '  .or.
-     $          cb.eq.'mm '  .or.  cb.eq.'ms '  .or.  cb.eq.'MS '  .or.
-     $          cb.eq.'o  ')
-     $          call facev(mask,ie,iface,z,nxc,nxc,nzc) ! 'S* ' & 's* ' ?avo?
+            if (cb.eq.'o  '  .or.  cb.eq.'on '  .or. 
+     $          cb.eq.'O  '  .or.  cb.eq.'ON '  .or.  cb.eq.'MM '  .or.
+     $          cb.eq.'mm '  .or.  cb.eq.'ms '  .or.  cb.eq.'MS ')
+     $           call facev(mask,ie,iface,z,nxc,nxc,nzc) ! 'S* ' & 's* ' ?avo?
          enddo
          enddo
       elseif (ifield.eq.ifldmhd) then   ! no ifmhd ?avo?
