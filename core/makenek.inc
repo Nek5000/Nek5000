@@ -631,12 +631,21 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "#include.*cvode_aux.h" >/dev/null
+cat $CASENAME.f | grep -i "^#include.*cvode_aux.*\.h" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
 #include "cvode_aux.h"
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "^#include.*cvode_preco.*\.h" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_preco_dummy.h"
 _ACEOF
 fi
 
