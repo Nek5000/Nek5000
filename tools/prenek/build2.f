@@ -132,6 +132,201 @@ c     affine transformations.   pff 3/30/13
       return
       end
 c-----------------------------------------------------------------------
+      subroutine cirmesh
+      include 'basics.inc'
+      common /ctmp0/ circtr(3),xcs(3,1),ycs(3,1),zcs(3,1)
+      common /ctmpr/ radii(100)
+      character*1 ctp,cir,YESNO,ctpo
+      character*1 alphabet(52)
+      character*26 alpha(2)
+      equivalence (alphabet,alpha)
+      save         alpha
+      data         alpha
+     $      /'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'/
+      logical ifpsph,if_sph_ctr
+      integer e,f,ifld,iishell
+c
+      real xlat0(3)
+
+      call rzero(circtr,3)
+      nlcr2 = 3
+
+      call prs('This will create the outside of circle mesh$')
+      CALL prs('Enter the (X,Y) coordinates of the center:$')
+      CALL rerr(circtr(1),circtr(2))
+
+      nel = nel
+      do iishell=1,1000
+         CALL prs(
+     $  'Enter S or C for a cylindrical or cartesian layer (E=exit):$')
+         CALL res(ctp,1)
+         CALL capit(ctp,1)
+
+         IF (ctp.EQ.'E') GOTO 9020
+         IF (ctp.EQ.'S') THEN
+            CALL prs('Enter radius:$')
+            CALL rer(RADIUS)
+            call outcirmesh(xcs,ycs,zcs,RADIUS)
+            CALL trans2(xcs,ycs,zcs,circtr,nlcr2)
+         ELSE
+            CALL PRS(
+     $  'Enter minimum distance from center to edge of the box:$')
+            CALL rer(RADIUS)
+            call crtbox2d(xcs,ycs,zcs,RADIUS)
+            CALL trans2(xcs,ycs,zcs,circtr,nlcr2)
+         ENDIF
+
+
+         if (iishell.gt.1) then
+          x(1,nel-1) = xd1
+          y(1,nel-1) = yd1
+          x(2,nel-1) = xcs(1,1)
+          y(2,nel-1) = ycs(1,1)
+          x(3,nel-1) = xcs(2,1)
+          y(3,nel-1) = ycs(2,1)
+          x(4,nel-1) = xd2
+          y(4,nel-1) = yd2
+
+          x(1,nel-0) = xd2
+          y(1,nel-0) = yd2
+          x(2,nel-0) = xcs(2,1)
+          y(2,nel-0) = ycs(2,1)
+          x(3,nel-0) = xcs(3,1)
+          y(3,nel-0) = ycs(3,1)
+          x(4,nel-0) = xd3
+          y(4,nel-0) = yd3
+
+          if (ctp.eq.'S') then
+           ccurve(2,nel-0) = 'C'
+           CURVE(1,2,nel-0) = radius
+           ccurve(2,nel-1) = 'C'
+           CURVE(1,2,nel-1) = radius
+          endif
+          if (ctpo.eq.'S') then
+           ccurve(4,nel-0) = 'C'
+           CURVE(1,4,nel-0) = -rd1
+           ccurve(4,nel-1) = 'C'
+           CURVE(1,4,nel-1) = -rd1
+          endif
+         endif
+          xd1=xcs(1,1)
+          yd1=ycs(1,1)
+          xd2=xcs(2,1)
+          yd2=ycs(2,1)
+          xd3=xcs(3,1)
+          yd3=ycs(3,1)
+          rd1 = radius
+          ctpo = ctp
+          nel = nel+2
+       enddo
+ 9020 CONTINUE
+
+          nel = nel-2
+
+       if (iishell.eq.2) then
+          nel = 2
+          xcs(1,1) = 2*rd1
+          ycs(1,1) = 0.0
+          xcs(2,1) = 2*rd1
+          ycs(2,1) = 2*rd1
+          xcs(3,1) = 0.0
+          ycs(3,1) = 2*rd1
+
+          call trans2(xcs,ycs,zcs,circtr,nlcr2)
+
+          x(1,nel-1) = xd1
+          y(1,nel-1) = yd1
+          x(2,nel-1) = xcs(1,1)
+          y(2,nel-1) = ycs(1,1)
+          x(3,nel-1) = xcs(2,1)
+          y(3,nel-1) = ycs(2,1)
+          x(4,nel-1) = xd2
+          y(4,nel-1) = yd2
+
+          x(1,nel-0) = xd2
+          y(1,nel-0) = yd2
+          x(2,nel-0) = xcs(2,1)
+          y(2,nel-0) = ycs(2,1)
+          x(3,nel-0) = xcs(3,1)
+          y(3,nel-0) = ycs(3,1)
+          x(4,nel-0) = xd3
+          y(4,nel-0) = yd3
+
+          if (ctp.eq.'S') then
+           ccurve(2,nel-0) = 'C'
+           CURVE(1,2,nel-0) = radius
+           ccurve(2,nel-1) = 'C'
+           CURVE(1,2,nel-1) = radius
+          endif
+          if (ctpo.eq.'S') then
+           ccurve(4,nel-0) = 'C'
+           CURVE(1,4,nel-0) = -rd1
+           ccurve(4,nel-1) = 'C'
+           CURVE(1,4,nel-1) = -rd1
+          endif
+       endif
+
+          do ifld=1,maxfld
+          do e=1,nel
+          do f=1,4
+            cbc(f,e,ifld) = 'W  '    ! totally arbitrary default
+          enddo
+          enddo
+          enddo
+
+
+
+
+      NCURVE=0
+      do IE=1,NEL
+      do IEDGE=1,4
+         IF (CCURVE(IEDGE,IE).NE.' ') THEN
+            NCURVE=NCURVE+1
+            WRITE(6,*) 'Curve:',IE,IEDGE,CCURVE(IEDGE,IE)
+         ENDIF
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine outcirmesh(xcs,ycs,zcs,radius)
+      DIMENSION xcs(3,1),ycs(3,1),zcs(3,1)
+      ONE=1.0
+      PI=4*ATAN(ONE)
+      xcs(1,1) = radius
+      ycs(1,1) = 0.
+      zcs(1,1) = 0.
+  
+      xcs(2,1) = radius*cos(pi/4)
+      ycs(2,1) = radius*sin(pi/4)
+      zcs(2,1) = 0.
+
+      xcs(3,1) = 0.
+      ycs(3,1) = radius
+      zcs(3,1) = 0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine crtbox2d(xcs,ycs,zcs,radius)
+      DIMENSION xcs(2,4),ycs(2,4),zcs(2,4)
+
+      xcs(1,1) = radius
+      ycs(1,1) = 0.
+      zcs(1,1) = 0.
+ 
+      xcs(2,1) = radius
+      ycs(2,1) = radius
+      zcs(2,1) = 0.
+
+      xcs(3,1) = 0.
+      ycs(3,1) = radius
+      zcs(3,1) = 0.
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine sphmesh
       include 'basics.inc'
       common /ctmp0/ sphctr(3),xcs(4,24),ycs(4,24),zcs(4,24)
@@ -298,6 +493,7 @@ C
                CURVE(3,5,IEL)=SPHCTR(3)
                CURVE(4,5,IEL)=RADIUS
                CURVE(5,5,IEL)=RATIO
+
             ENDIF
             IF (ISHLL.GT.1) THEN
                IEL=NEL-NELSPH+IE
@@ -315,6 +511,7 @@ C
                   CURVE(3,6,IEL)=SPHCTR(3)
                   CURVE(4,6,IEL)=RADIUS
                   CURVE(5,6,IEL)=RATIO
+
                ENDIF
                NUMAPT(IEL)=ISHLL-1
                ilet = mod1(ie,52)
