@@ -2725,7 +2725,7 @@ C
       ifld = ifield
 
       DO IFIELD=MFIELD,nfldt
-         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
+csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
 
          CALL VPROPS
 
@@ -2733,8 +2733,8 @@ C
          vol = volfld(ifield)
          ntot1 = nxyz1*nel
 
-         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
-         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
+csk         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
+csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
 
       ENDDO
 

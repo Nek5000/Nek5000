@@ -200,7 +200,7 @@ c
       do 10 k=1,nz1
       do 10 j=1,ny1
       do 10 i=1,nx1
-         call nekasgn (i,j,k,iel)
+         if (optlevel.le.2) call nekasgn (i,j,k,iel)
          qvol = 0.0
          call userq   (i,j,k,ielg)
          bql(i,j,k,iel) = qvol

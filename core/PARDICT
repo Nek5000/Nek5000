@@ -3,7 +3,7 @@ c     Define all valid keys for .par file
 c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
-      parameter(PARDICT_NKEYS = 82)
+      parameter(PARDICT_NKEYS = 84)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -89,3 +89,5 @@ c
      &  pardictkey(80) / 'CVODE:RATIOLNLTOL' /
      &  pardictkey(81) / ':PARVERSION' /
      &  pardictkey(82) / 'MESH:NUMBEROFBCFIELDS' /
+     &  pardictkey(83) / 'GENERAL:OPTLEVEL' /
+     &  pardictkey(84) / 'GENERAL:LOGLEVEL' /
