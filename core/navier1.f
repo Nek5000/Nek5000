@@ -1570,7 +1570,7 @@ C
          DO 100 K=1,NZ1
          DO 100 J=1,NY1
          DO 100 I=1,NX1
-            CALL NEKASGN (I,J,K,IEL)
+            if (loglevel.le.2) CALL NEKASGN (I,J,K,IEL)
             CALL USERF   (I,J,K,IELG)
             F1(I,J,K,IEL) = FFX
             F2(I,J,K,IEL) = FFY

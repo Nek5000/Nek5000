@@ -1167,7 +1167,7 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
       DO 10 K=1,NZ1
       DO 10 J=1,NY1
       DO 10 I=1,NX1
-         CALL NEKASGN (I,J,K,IEL)
+         if (optlevel.le.2) CALL NEKASGN (I,J,K,IEL)
          CALL USERVP  (I,J,K,IELG)
          VDIFF (I,J,K,IEL,IFIELD) = UDIFF
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
