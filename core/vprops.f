@@ -90,10 +90,12 @@ C           User specified fortran function
 C
             CALL NEKUVP (IEL)
 C
-            DIFMIN = VLMIN(VDIFF(1,1,1,IEL,IFIELD),NXYZ1)
-            IF (DIFMIN .LE. 0.0) THEN
-               WRITE (6,100) DIFMIN,IFIELD,IGRP
-               CALL EXITT
+            if(optlevel.le.2) then
+              DIFMIN = VLMIN(VDIFF(1,1,1,IEL,IFIELD),NXYZ1)
+              IF (DIFMIN .LE. 0.0) THEN
+                 WRITE (6,100) DIFMIN,IFIELD,IGRP
+                 CALL EXITT
+              endif
             endif
 C
          ELSE IF(MATYPE(IGRP,IFIELD).EQ.0)THEN

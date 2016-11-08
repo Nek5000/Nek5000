@@ -94,6 +94,9 @@ c
       parameter(lcvy1=lcvx1)
       parameter(lcvz1=1 + (ldim-2)*(lcvx1-1))
 
+      integer loglevel,optlevel
+      common /lolevels/ loglevel,optlevel
+
       integer       nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
       common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2

@@ -14,7 +14,7 @@ C-----------------------------------------------------------------------
 
       implicit none
 
-      integer ix,iy,iz,ieg
+      integer ix,iy,iz,eg
      
       include 'SIZE'
       include 'TOTAL'
@@ -36,7 +36,7 @@ c     Thus, ffx will subsequently be multiplied by rho(x,t).
 c
       implicit none
 
-      integer ix,iy,iz,ieg
+      integer ix,iy,iz,eg
 
       include 'SIZE'
       include 'TOTAL'
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
 
       implicit none
 
-      integer ix,iy,iz,ieg
+      integer ix,iy,iz,eg
 
       include 'SIZE'
       include 'TOTAL'
@@ -70,19 +70,19 @@ c     e = gllel(eg)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userbc(ix,iy,iz,iside,ieg) ! set up boundary conditions
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
 c
 c     NOTE ::: This subroutine MAY NOT be called by every process
 c
       implicit none
 
-      integer ix,iy,iz,iside,ieg
+      integer ix,iy,iz,iside,eg
 
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
 
-c      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
+c      if (cbc(iside,gllel(eg),ifield).eq.'v01')
 
       ux   = 0.0
       uy   = 0.0
@@ -92,11 +92,11 @@ c      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
       return
       end
 c-----------------------------------------------------------------------
-      subroutine useric(ix,iy,iz,ieg) ! set up initial conditions
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
 
       implicit none
 
-      integer ix,iy,iz,ieg
+      integer ix,iy,iz,eg
 
       include 'SIZE'
       include 'TOTAL'

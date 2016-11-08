@@ -1167,7 +1167,7 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
       DO 10 K=1,NZ1
       DO 10 J=1,NY1
       DO 10 I=1,NX1
-         CALL NEKASGN (I,J,K,IEL)
+         if (optlevel.le.2) CALL NEKASGN (I,J,K,IEL)
          CALL USERVP  (I,J,K,IELG)
          VDIFF (I,J,K,IEL,IFIELD) = UDIFF
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
@@ -2725,7 +2725,7 @@ C
       ifld = ifield
 
       DO IFIELD=MFIELD,nfldt
-         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
+csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
 
          CALL VPROPS
 
@@ -2733,8 +2733,8 @@ C
          vol = volfld(ifield)
          ntot1 = nxyz1*nel
 
-         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
-         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
+csk         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
+csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
 
       ENDDO
 

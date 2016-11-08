@@ -430,12 +430,12 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
-echo $G | grep '\-g' 1>/dev/null
-if [ $? -eq 0 ]; then
-  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
-  mv .makefile.tmp .makefile
-  echo "Activate DEBUG mode"
-fi
+#echo $G | grep '\-g' 1>/dev/null
+#if [ $? -eq 0 ]; then
+#  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
+#  mv .makefile.tmp .makefile
+#  echo "Activate DEBUG mode"
+#fi
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
   echo ""
@@ -509,6 +509,13 @@ done
 # tweak SIZE file
 cat SIZE | grep 'SIZE.inc' >/dev/null
 if [ $? -ne 0 ];  then
+  cat SIZE | grep -i 'optlevel' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer optlevel,loglevel' >>SIZE
+     echo '      common /lolevels/ optlevel,loglevel' >>SIZE
+  fi
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -592,7 +599,7 @@ fi
 
 # tweak .usr (actually, .f ) file
 rm -f $CASENAME.f
-cp -p $CASENAME.usr $CASENAME.f
+cp -pv $CASENAME.usr $CASENAME.f
 
 cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
 if [ $? -ne 0 ]; then
@@ -624,12 +631,21 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "#include.*cvode_aux.h" >/dev/null
+cat $CASENAME.f | grep -i "^#include.*cvode_aux.*\.h" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
 #include "cvode_aux.h"
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "^#include.*cvode_preco.*\.h" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_preco_dummy.h"
 _ACEOF
 fi
 

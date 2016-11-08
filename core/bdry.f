@@ -874,7 +874,7 @@ C
                   IA = IA + 1
                   TS = T(IX,IY,IZ,IE,IFIELD-1)
                   IF (CB.EQ.'c  ' .OR. CB.EQ.'r  ') THEN
-                     CALL NEKASGN (IX,IY,IZ,IE)
+                     if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IE)
                      CALL USERBC  (IX,IY,IZ,IFACE,IEG)
                   ENDIF
                   IF (CB.EQ.'r  ' .OR. CB.EQ.'R  ') 
@@ -916,16 +916,16 @@ C IA is areal counter, assumes advancing fastest index first. (IX...IY...IZ)
                   IA = IA + 1
                   TS = T(IX,IY,IZ,IE,IFIELD-1)
                   IF (CB.EQ.'f  ') THEN
-                     CALL NEKASGN (IX,IY,IZ,IE)
+                     if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IE)
                      CALL USERBC  (IX,IY,IZ,IFACE,IEG)
                   ENDIF
                   IF (CB.EQ.'c  ') THEN
-                     CALL NEKASGN (IX,IY,IZ,IE)
+                     if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IE)
                      CALL USERBC  (IX,IY,IZ,IFACE,IEG)
                      FLUX = TINF*HC
                   ENDIF
                   IF (CB.EQ.'r  ') THEN
-                     CALL NEKASGN (IX,IY,IZ,IE)
+                     if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IE)
                      CALL USERBC  (IX,IY,IZ,IFACE,IEG)
                   ENDIF
                   IF (CB.EQ.'R  ' .OR. CB.EQ.'r  ') 
@@ -976,7 +976,7 @@ C     Passive scalar term
          DO 100 IY=KY1,KY2                           !  added here so users can leave
          DO 100 IX=KX1,KX2                           !  certain points to be Neumann,
             if (tmask(ix,iy,iz,iel,ifld1).eq.0) then !  if desired.
-               CALL NEKASGN (IX,IY,IZ,IEL)
+               if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
                CALL USERBC  (IX,IY,IZ,IFACE,IEG)
                S(IX,IY,IZ) = TEMP
             endif
@@ -987,7 +987,7 @@ C     Passive scalar term
          DO 101 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
          DO 101 IY=KY1,KY2                           !  added here so users can leave
          DO 101 IX=KX1,KX2                           !  certain points to be Neumann,
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             S(IX,IY,IZ) = PA
   101    CONTINUE
@@ -998,7 +998,7 @@ C     Passive scalar term
          DO 200 IZ=KZ1,KZ2
          DO 200 IY=KY1,KY2
          DO 200 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             S(IX,IY,IZ) = SIGMA
   200    CONTINUE
@@ -1008,7 +1008,7 @@ C
          DO 300 IZ=KZ1,KZ2
          DO 300 IY=KY1,KY2
          DO 300 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             S(IX,IY,IZ) = TURBK
   300    CONTINUE
@@ -1018,7 +1018,7 @@ C
          DO 400 IZ=KZ1,KZ2
          DO 400 IY=KY1,KY2
          DO 400 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             S(IX,IY,IZ) = TURBE
   400    CONTINUE
@@ -1057,7 +1057,7 @@ C
          DO 100 IZ=KZ1,KZ2
          DO 100 IY=KY1,KY2
          DO 100 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = UX
             V2(IX,IY,IZ) = UY
@@ -1070,7 +1070,7 @@ C
          do iz=kz1,kz2
          do iy=ky1,ky2
          do ix=kx1,kx2
-            call nekasgn (ix,iy,iz,iel)
+            if (optlevel.le.2) call nekasgn (ix,iy,iz,iel)
             call userbc  (ix,iy,iz,iface,ieg)
             if (cb1(1).eq.'d') v1(ix,iy,iz) = ux
             if (cb1(2).eq.'d') v2(ix,iy,iz) = uy
@@ -1085,7 +1085,7 @@ C
          DO 120 IZ=KZ1,KZ2
          DO 120 IY=KY1,KY2
          DO 120 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = UN
             V2(IX,IY,IZ) = U1
@@ -1098,7 +1098,7 @@ C
          DO 200 IZ=KZ1,KZ2
          DO 200 IY=KY1,KY2
          DO 200 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = TRX
             V2(IX,IY,IZ) = TRY
@@ -1111,7 +1111,7 @@ C
          DO 220 IZ=KZ1,KZ2
          DO 220 IY=KY1,KY2
          DO 220 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = TRN
             V2(IX,IY,IZ) = TR1
@@ -1123,7 +1123,7 @@ C
          DO 240 IZ=KZ1,KZ2
          DO 240 IY=KY1,KY2
          DO 240 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = -PA
             V2(IX,IY,IZ) = TR1
@@ -1135,7 +1135,7 @@ C
          DO 270 IZ=KZ1,KZ2
          DO 270 IY=KY1,KY2
          DO 270 IX=KX1,KX2
-            CALL NEKASGN (IX,IY,IZ,IEL)
+            if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = -PA
             V2(IX,IY,IZ) = 0.0
