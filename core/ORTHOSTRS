@@ -1,5 +1,13 @@
-      parameter (ktot = lx1m*ly1m*lz1m*lelt)
-      common /srthov/ x(ldim*ktot*(1+mxprev)),b(ldim*ktot*(1+mxprev))
-      common /srthoi/ napprox(2)
-      common /srthoc/ name4
-      character*4     name4
+      integer ktotstrs
+      parameter (ktotstrs = lx1m*ly1m*lz1m*lelt)
+
+      real            xstrs(ldim*ktotstrs*(1+mxprev))
+     $               ,bstrs(ldim*ktotstrs*(1+mxprev))
+      common /srthov/ xstrs                      
+     $               ,bstrs
+
+      integer         napproxstrs(2)
+      common /srthoi/ napproxstrs
+
+      character*4     name4strs
+      common /srthoc/ name4strs

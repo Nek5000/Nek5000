@@ -1,7 +1,5 @@
-
-      common /flowtimers/ rhst,ftime
       real                rhst,ftime
+      common /flowtimers/ rhst,ftime
 
-      COMMON /IOFREQ_FLUID/ flio_freq
       integer               flio_freq
-
+      common /iofreq_fluid/ flio_freq

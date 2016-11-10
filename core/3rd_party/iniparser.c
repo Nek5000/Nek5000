@@ -197,13 +197,8 @@ void iniparser_dump(const dictionary * d, FILE * f)
 
     if (d==NULL || f==NULL) return ;
     for (i=0 ; i<d->size ; i++) {
-        if (d->key[i]==NULL)
-            continue ;
-        if (d->val[i]!=NULL) {
-            fprintf(f, "%s = [%s]\n", d->key[i], d->val[i]);
-        } else {
-            /*fprintf(f, "[%s]=UNDEF\n", d->key[i]);*/
-        }
+        if (d->key[i]==NULL) continue ;
+        fprintf(f, "%s = [%s]\n", d->key[i], d->val[i]);
     }
     return ;
 }
@@ -579,7 +574,8 @@ static line_status iniparser_line(
     } else if (line[0]=='#' || line[0]==';') {
         /* Comment line */
         sta = LINE_COMMENT ;
-    } else if (line[0]=='[' && line[len-1]==']') {
+/*    } else if (line[0]=='[' && line[len-1]==']') { */
+    } else if (line[0]=='[') { 
         /* Section name */
         sscanf(line, "[%[^]]", section);
         strstrip(section);

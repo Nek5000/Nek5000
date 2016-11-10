@@ -1,25 +1,18 @@
-C
-C	ADJOINT VARIABLES
-C
-C
-      COMMON /ADJ_REAL/ VXADJ     (LX1,LY1,LZ1,LELV)
-     $               , VYADJ     (LX1,LY1,LZ1,LELV)
-     $               , VZADJ     (LX1,LY1,LZ1,LELV)
-     $               , VXADJOLD     (LX1,LY1,LZ1,LELV)
-     $               , VYADJOLD     (LX1,LY1,LZ1,LELV)
-     $               , VZADJOLD     (LX1,LY1,LZ1,LELV)
-     $               , ENDTIME, ADJTOL
+c
+c	Adjoint variables
+c
+      real vxadj    (lx1,ly1,lz1,lelv)
+     $   , vyadj    (lx1,ly1,lz1,lelv)
+     $   , vzadj    (lx1,ly1,lz1,lelv)
+     $   , vxadjold (lx1,ly1,lz1,lelv)
+     $   , vyadjold (lx1,ly1,lz1,lelv)
+     $   , vzadjold (lx1,ly1,lz1,lelv)
+     $   , endtime, adjtol
+      common /adj_real/ vxadj, vyadj, vzadj, vxadjold, vyadjold
+     $                , vzadjold, endtime, adjtol
 
-      REAL        ENDTIME,ADJTOL
+      integer              npassadj, maxpassadj
+      common /adj_integer/ npassadj, maxpassadj
 
-      COMMON /ADJ_INTEGER/ NPASSADJ, MAXPASSADJ
-      INTEGER  NPASSADJ, MAXPASSADJ
-
-      COMMON /ADJ_LOGICAL/ IFADJ
-      LOGICAL IFADJ
-
-
-
-
-
-
+      logical              ifadj
+      common /adj_logical/ ifadj

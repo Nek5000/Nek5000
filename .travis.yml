@@ -4,38 +4,41 @@ sudo: required
 
 env:
   matrix:
+    - IFMPI=false F77=gfortran CC=gcc TEST_CASE=Eddy_EddyUv::test_PnPn_Serial
+    - IFMPI=false F77=gfortran CC=gcc TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial
 
-    - TEST_CASE=Axi::test_PnPn_Serial    IFCMT=false
-    - TEST_CASE=Axi::test_PnPn_Parallel  IFCMT=false
-    - TEST_CASE=Axi::test_PnPn2_Serial   IFCMT=false
-    - TEST_CASE=Axi::test_PnPn2_Parallel IFCMT=false
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Axi::test_PnPn_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Axi::test_PnPn_Parallel
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Axi::test_PnPn2_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Axi::test_PnPn2_Parallel
 
-    - TEST_CASE=Benard_Ray9::test_PnPn_Serial
-    - TEST_CASE=Benard_Ray9::test_PnPn2_Serial
-    # - TEST_CASE=Benard_RayDD::test_PnPn_Serial   # Exceeds time limit for Travis jobs
-    # - TEST_CASE=Benard_RayDD::test_PnPn2_Serial  # Stdout exceeds Travis' max log length
-    # - TEST_CASE=Benard_RayDN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
-    - TEST_CASE=Benard_RayDN::test_PnPn2_Serial
-    # - TEST_CASE=Benard_RayNN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
-    # - TEST_CASE=Benard_RayNN::test_PnPn2_Serial  # Exceeds time limit for Travis jobs
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_Ray9::test_PnPn_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_Ray9::test_PnPn2_Serial
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayDD::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayDD::test_PnPn2_Serial  # Stdout exceeds Travis' max log length
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayDN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayDN::test_PnPn2_Serial
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayNN::test_PnPn_Serial   # Exceeds time limit for Travis jobs
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Benard_RayNN::test_PnPn2_Serial  # Exceeds time limit for Travis jobs
 
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial    IFCMT=false
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFCMT=false
-    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial   IFCMT=false
-    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel IFCMT=false
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Eddy_EddyUv::test_PnPn_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel
 
-    - TEST_CASE=KovStState::test_PnPn2_Serial    IFCMT=false
-    - TEST_CASE=KovStState::test_PnPn2_Parallel  IFCMT=false
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=KovStState::test_PnPn2_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=KovStState::test_PnPn2_Parallel
 
-    - TEST_CASE=LowMachTest::test_PnPn_Serial    IFCMT=false
-    - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFCMT=false
-    - TEST_CASE=LowMachTest::test_PnPn2_Serial   IFCMT=false
-    - TEST_CASE=LowMachTest::test_PnPn2_Parallel IFCMT=false
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=LowMachTest::test_PnPn_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=LowMachTest::test_PnPn_Parallel
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=LowMachTest::test_PnPn2_Serial
+    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=LowMachTest::test_PnPn2_Parallel
 
-    # - TEST_CASE=VarVis::test_PnPn_Serial    # Stdout exceeds Travis' max log length
-    # - TEST_CASE=VarVis::test_PnPn_Parallel  # Stdout exceeds Travis' max log length
-    # - TEST_CASE=VarVis::test_PnPn2_Serial   # Stdout exceeds Travis' max log length
- 
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn_Serial    # Stdout exceeds Travis' max log length
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn_Parallel  # Stdout exceeds Travis' max log length
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn2_Serial   # Stdout exceeds Travis' max log length
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn2_Parallel # Stdout exceeds Travis' max log length
+
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Serial   IFCMT=true
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel IFCMT=true
 
@@ -44,9 +47,6 @@ before_install:
 
   - export SOURCE_ROOT=$ROOT_DIR
   - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
-  - export F77=mpif77
-  - export CC=mpicc
-  - export IFMPI=true
   - export VERBOSE_TESTS=true
   - export PARALLEL_PROCS=2
 

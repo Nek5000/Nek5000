@@ -724,7 +724,7 @@ c     Generate fast diagonalization matrices for 1D SEM operator
       call transpose(qt,m,q,ml)
 
       nr = nx-1
-      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,nr,wh)
+      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,nr,wh)
 
       ij=1
       call rzero(wk,nx*nx)

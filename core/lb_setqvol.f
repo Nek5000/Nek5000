@@ -6,7 +6,8 @@ c
       real rdata(1)
       external flocal    
 
-      integer*8 irsum
+      integer*8 i8glsum, i8gl_running_sum
+      integer*8 irsum, nn
 
       common /scrns/ vi(2,lx1*ly1*lz1*lelt)
       integer vi
@@ -24,7 +25,7 @@ c
       endif
 
       ! create processor mapping
-      nn = (i8glsum(n,1)-1)/npp + 1
+      nn = (i8glsum(nn,1)-1)/npp + 1
       irsum = i8gl_running_sum(n) - n 
       do i=1,n
          vi(1,i) = i              ! local id

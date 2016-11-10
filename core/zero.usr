@@ -11,11 +11,16 @@ C     - userchk: general purpose routine for checking errors etc.
 C
 C-----------------------------------------------------------------------
       subroutine uservp(ix,iy,iz,eg) ! set variable properties
+
+      implicit none
+
+      integer ix,iy,iz,eg
+     
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
 
-      integer e,f,eg
+      integer e
 c     e = gllel(eg)
 
       udiff  = 0.0
@@ -29,11 +34,15 @@ c
 c     Note: this is an acceleration term, NOT a force!
 c     Thus, ffx will subsequently be multiplied by rho(x,t).
 c
+      implicit none
+
+      integer ix,iy,iz,eg
+
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
 
-      integer e,f,eg
+      integer e
 c     e = gllel(eg)
 
       ffx = 0.0
@@ -44,42 +53,36 @@ c     e = gllel(eg)
       end
 c-----------------------------------------------------------------------
       subroutine userq(ix,iy,iz,eg) ! set source term
+
+      implicit none
+
+      integer ix,iy,iz,eg
+
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
 
-      integer e,f,eg
+      integer e
 c     e = gllel(eg)
 
       qvol   = 0.0
-      source = 0.0
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userq2(q) ! set source term
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-
-      real q(lx1, ly1, lz1, lelt)
-
-c      if (ifcoup) then
-c         call nekMOAB_import_vars(tTag, 0, q)
-c      elseif (ifvcoup) then
-c         call nekMOAB_import_vars(vtTag, 1, q)
-c      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine userbc(ix,iy,iz,iside,ieg) ! set up boundary conditions
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
+c
 c     NOTE ::: This subroutine MAY NOT be called by every process
+c
+      implicit none
+
+      integer ix,iy,iz,iside,eg
+
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
 
-c      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
+c      if (cbc(iside,gllel(eg),ifield).eq.'v01')
 
       ux   = 0.0
       uy   = 0.0
@@ -89,7 +92,12 @@ c      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
       return
       end
 c-----------------------------------------------------------------------
-      subroutine useric(ix,iy,iz,ieg) ! set up initial conditions
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+
+      implicit none
+
+      integer ix,iy,iz,eg
+
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -103,6 +111,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine userchk()
+
+      implicit none
+
       include 'SIZE'
       include 'TOTAL'
 
@@ -110,6 +121,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine usrdat()   ! This routine to modify element vertices
+
+      implicit none
+
       include 'SIZE'
       include 'TOTAL'
 
@@ -117,6 +131,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine usrdat2()  ! This routine to modify mesh coordinates
+
+      implicit none
+
       include 'SIZE'
       include 'TOTAL'
 
@@ -124,9 +141,11 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine usrdat3()
+
+      implicit none
+
       include 'SIZE'
       include 'TOTAL'
 
       return
       end
-C=======================================================================
