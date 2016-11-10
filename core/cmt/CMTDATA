@@ -9,7 +9,7 @@
      $   , res3(lx1,ly1,lz1,toteq,lelcmt) 
       common /cmtres/ res1, res2, res3
       
-      real              gradu(lx1,ly1,lz1,toteq,3)
+      real              gradu(lx1*ly1*lz1,toteq,3)
       common /cmtgradu/ gradu     
 
       real convh (lxd*lyd*lzd,3)

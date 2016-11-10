@@ -1,39 +1,3 @@
-C
-C     Input parameters from preprocessors.
-C
-C     Note that in parallel implementations, we distinguish between
-C     distributed data (LELT) and uniformly distributed data.
-C
-C     Input common block structure:
-C
-C     INPUT1:  REAL            INPUT5: REAL      with LELT entries
-C     INPUT2:  INTEGER         INPUT6: INTEGER   with LELT entries
-C     INPUT3:  LOGICAL         INPUT7: LOGICAL   with LELT entries
-C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
-C
-      COMMON /INPUT1/ PARAM(200)
-     $               ,RSTIM,VNEKTON
-     $               ,CPFLD(LDIMT1,3)
-     $               ,CPGRP(-5:10,LDIMT1,3)
-     $               ,QINTEG(LDIMT3,MAXOBJ)
-     $               ,UPARAM(20)
-C
-      COMMON /INPUT2/ MATYPE(-5:10,LDIMT1)
-     $               ,NKTONV,NHIS,LOCHIS(4,lhis+maxobj)
-     $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
-     $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
-     $               ,NGEOM
-C
-      COMMON /INPUT3/ IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
-     $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
-     $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
-     $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
-     $               ,IFMODEL,IFKEPS,IFINTQ,IFCONS
-     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
-     $               ,IFBO,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
-     $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
-     $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
 c
 c     Input parameters from preprocessors.
 c
