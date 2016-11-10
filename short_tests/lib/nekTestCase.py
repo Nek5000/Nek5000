@@ -106,6 +106,7 @@ class NekTestCase(unittest.TestCase):
         self.f77            = 'mpif77'
         self.cc             = 'mpicc'
         self.ifmpi          = True
+        self.ifcmt          = False
         self.verbose        = True
         self.source_root    = os.path.dirname(os.path.dirname(inspect.getabsfile(self.__class__)))
         self.examples_root  = os.path.dirname(inspect.getabsfile(self.__class__))
@@ -168,12 +169,16 @@ class NekTestCase(unittest.TestCase):
         self.f77     = os.environ.get('F77',   self.f77)
         self.cc      = os.environ.get('CC',    self.cc)
         self.ifmpi   = os.environ.get('IFMPI', self.ifmpi)
+        self.ifcmt   = os.environ.get('IFCMT', self.ifcmt)
         self.verbose = os.environ.get('VERBOSE_TESTS', self.verbose)
         self.parallel_procs = int(os.environ.get('PARALLEL_PROCS', self.parallel_procs))
 
         # String/bool conversions
         self.ifmpi = str(self.ifmpi).lower()
         self.ifmpi = self.ifmpi == 'yes' or self.ifmpi == 'true'
+
+        self.ifcmt = str(self.ifcmt).lower()
+        self.ifcmt = self.ifcmt == 'yes' or self.ifcmt == 'true'
 
         self.verbose = str(self.verbose).lower()
         self.verbose = self.verbose == 'yes' or self.verbose == 'true'
@@ -182,6 +187,7 @@ class NekTestCase(unittest.TestCase):
                 ('F77', self.f77),
                 ('CC', self.cc),
                 ('IFMPI', str(self.ifmpi).lower()),
+                ('IFCMT', str(self.ifcmt).lower()),
                 ('VERBOSE_TESTS', str(self.verbose).lower()),
                 ('PARALLEL_PROCS', self.parallel_procs)
         ):
@@ -324,6 +330,7 @@ class NekTestCase(unittest.TestCase):
             f77         = self.f77,
             cc          = self.cc,
             ifmpi       = str(self.ifmpi).lower(),
+            ifcmt       = str(self.ifcmt).lower(),
             verbose     = self.verbose
         )
 
