@@ -2388,11 +2388,18 @@ c-----------------------------------------------------------------------
       character*132 hdr
       character*4 dummy
 
-      read(hdr,*,err=99) dummy
+      read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
      $         ,  p0thr
+
+      if (ierr.gt.0) then ! try again without mean pressure
+        read(hdr,*,err=99) dummy
+     $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! 74+20=94
+      endif
 
 #ifdef MPIIO
       if ((nelr/np + np).gt.lelr) then
@@ -2476,7 +2483,6 @@ c                4  7  10  13   23    33    53    62     68     74
      $         , ifiler,nfiler
      $         , (rlcode(k),k=1,20)                   ! 74+20=94
     1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
-
 
       if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
 
