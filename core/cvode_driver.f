@@ -307,6 +307,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       endif
 
       call fcvode(time,tout,y,cv_itask,ier)
+      time = time_
 
       if (ier.lt.0) then
          if (nid.eq.0) then
@@ -317,6 +318,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
          cv_timel = 0
          call cv_rstat
          call fcvode(time,tout,y,cv_itask,ier)
+         time = time_
       endif
         
       if (ier.lt.0) then
@@ -328,9 +330,6 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
 
       cv_istep = cv_istep + 1 
       call cvunpack(t,y)
-
-      ! restore time
-      time = time_
 
       ! restore velocities               
       call copy(vx,vx_,ntot)             
