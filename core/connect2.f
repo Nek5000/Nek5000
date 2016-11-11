@@ -215,6 +215,9 @@ C
 
       VNEKTON = 3 ! dummy not really used anymore
       
+      optlevel = 0! fixed for now
+      loglevel = 3! fixed for now
+      
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
         READ(9,*,ERR=400)
@@ -289,7 +292,13 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
+         IFDIFF(i) = .true. 
       enddo      
+
+      do i=1,NPSCL1
+         IDPSS(i) = 0 ! use Helmholtz for passive scalars 
+      enddo
+
       IFFLOW    = .false.
       IFHEAT    = .false.
       IFTRAN    = .false.
@@ -568,11 +577,12 @@ C
          endif
       endif
 
-c      if (ifmvbd .and. ifsplit) then 
-c         if(nid.eq.0) write(6,*) 
-c     $   'ABORT: Moving boundary in Pn-Pn is not supported'
-c         call exitt
-c      endif
+      if (ifcvode) then 
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Using CVODE requires .par file!'
+         call exitt
+      endif
+
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: MOAB in Pn-Pn-2 is not supported'
@@ -2365,6 +2375,8 @@ c-----------------------------------------------------------------------
 
          mid = gllnid(eg)
          e   = gllel (eg)
+!     tag for sending and receiving changed from global (eg) to local (e) element number
+!     to avoid problems with MPI_TAG_UB on CRAY
 #ifdef DEBUG
          if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
 #endif
@@ -2372,17 +2384,17 @@ c-----------------------------------------------------------------------
 
             if(ierr.eq.0) then
               call byte_read  (buf,nwds,ierr)
-              call csend(eg,ierr,len1,mid,0)
-              if(ierr.eq.0) call csend(eg,buf,len,mid,0)
+              call csend(e,ierr,len1,mid,0)
+              if(ierr.eq.0) call csend(e,buf,len,mid,0)
             else
-              call csend(eg,ierr,len1,mid,0)
+              call csend(e,ierr,len1,mid,0)
             endif
 
          elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
 
-            call crecv      (eg,ierr,len1)
+            call crecv      (e,ierr,len1)
             if(ierr.eq.0) then
-              call crecv      (eg,buf,len)
+              call crecv      (e,buf,len)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
  

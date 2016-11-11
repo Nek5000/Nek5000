@@ -108,7 +108,7 @@ c-----------------------------------------------------------------------
       include 'PERFECTGAS'
 
       integer e,eg, eqnum
-      real r,r2
+      real r2
       real bvort,uxinf,uyinf,tempinf
       common /VORTXSTRN/ bvort,uxinf,uyinf,tempinf
 
@@ -116,7 +116,6 @@ c-----------------------------------------------------------------------
       yctr = 0.0!2.5
       x=x-xctr
       y=y-yctr
-      r=sqrt(x**2+y**2)
       r2=(x**2+y**2)
       bvort = 5.0
       pi = 4.0*atan(1.0)
@@ -258,7 +257,6 @@ c
      >         x = -5.0 + (x-5.0)
             if(x.lt.-5.0)
      >         x = 5.0 - (abs(x) - 5.0)
-            r=sqrt((x)**2+(y)**2)
             r2=(x)**2+(y)**2
             
             temp = Tempinf-(gmaref-1.0)*bvort**2/(16.0*gmaref

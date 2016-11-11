@@ -576,7 +576,7 @@ C
      $              ,H2(LX1,LY1,LZ1,LELT)
 c
       include 'ORTHOT'
-      napprox(1) = laxt
+      napproxt(1) = laxtt
 C
       IF (IGEOM.EQ.1) THEN
 C
@@ -593,7 +593,7 @@ C
             ENDIF
          ENDIF
          if1=ifield-1
-         write(name4,1) if1
+         write(name4t,1) if1
     1    format('TEM',i1)
 C
 C        New geometry
@@ -612,16 +612,16 @@ C
          CALL BCNEUSC (TA,1)
          CALL ADD2    (TB,TA,NTOT)
 c
-         CALL HMHOLTZ (name4,TA,TB,H1,H2
+         CALL HMHOLTZ (name4t,TA,TB,H1,H2
      $                 ,TMASK(1,1,1,1,IFIELD-1)
      $                 ,TMULT(1,1,1,1,IFIELD-1)
      $                 ,IMESH,TOLHT(IFIELD),NMXH,1)
 c
-c        call hsolve  (name4,TA,TB,H1,H2 
+c        call hsolve  (name4t,TA,TB,H1,H2 
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
 c    $                 ,TMULT(1,1,1,1,IFIELD-1)
 c    $                 ,IMESH,TOLHT(IFIELD),NMXH,1
-c    $                 ,approx,napprox,bintm1)
+c    $                 ,approxt,napproxt,bintm1)
 c
          CALL ADD2    (TP(1,IFIELD-1,jp),TA,NTOT)
 C

@@ -91,12 +91,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
 
-      if (ifcvode.and.nsteps.gt.0) then
-         n_aux = 0
-         if(iflomach .and. ifvcor) n_aux = 1 ! Thermodynamic pressure
-         call cv_setsize(2,nfield,n_aux)     ! Set size for CVODE solver
-      endif
-
       if (fintim.ne.0.0.or.nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
 
@@ -118,19 +112,17 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          endif
       endif
 
-      call init_plugin !     Initialize optional plugin
+      if(ifcvode) call cv_setsize
 
       if(nio.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
-
 
       call cmt_switch          ! Check if compiled with cmt
       if (ifcmt) then          ! Initialize CMT branch
         call nek_cmt_init
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
       endif
-
 
       call setics      !     Set initial conditions 
       call setprop     !     Compute field properties
@@ -144,7 +136,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-      if(ifcvode .and. nsteps.gt.0) call cv_init ! Initialize CVODE
+      if (ifcvode .and. nsteps.gt.0) call cv_init
 
       call comment
       call sstest (isss) 
@@ -193,11 +185,12 @@ c-----------------------------------------------------------------------
       endif
 
       isyc  = 0
-      itime = 0
       if(ifsync) isyc=1
+      itime = 0
+#ifdef TIMER
       itime = 1
+#endif
       call nek_comm_settings(isyc,itime)
-
       call nek_comm_startstat()
 
       istep  = 0
@@ -233,6 +226,7 @@ c     check for post-processing mode
 
       RETURN
       END
+
 c-----------------------------------------------------------------------
       subroutine nek_advance
 
@@ -260,24 +254,24 @@ c-----------------------------------------------------------------------
 
          ! within cvode we use the lagged wx for 
          ! extrapolation, that's why we have to call it before gengeom 
-         if (ifheat .and. ifcvode) call heat       (igeom)   
+         if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
                call gengeom (igeom)
                call geneig  (igeom)
          endif
 
-         if (ifheat .and. .not.ifcvode) call heat   (igeom)
+         if (ifheat)               call heat (igeom)
 
          if (igeom.eq.2) then  
-                                call setprop
-                                call qthermal(1)
+                                   call setprop
+            if (iflomach)          call userqtl(.true.)
          endif
 
-         if (ifflow)            call fluid         (igeom)
-         if (ifmvbd)            call meshv         (igeom)
-         if (param(103).gt.0)   call q_filter      (param(103))
-                                call setup_convect (igeom)     ! Save convective velocity _after_ filter 
+         if (ifflow)               call fluid         (igeom)
+         if (ifmvbd)               call meshv         (igeom)
+         if (param(103).gt.0)      call q_filter      (param(103))
+                                   call setup_convect (igeom)     ! Save convective velocity _after_ filter 
          enddo
 
       else                ! PN-2/PN-2 formulation
@@ -318,6 +312,7 @@ c-----------------------------------------------------------------------
 
       return
       end
+
 c-----------------------------------------------------------------------
       subroutine nek_end
 

@@ -1,23 +1,26 @@
-      COMMON /NEKUSE/ X  ,Y  ,Z  ,R  ,THETA
-     $              , UX ,UY ,UZ
-     $              , UN ,U1 ,U2
-     $              , TRX,TRY,TRZ
-     $              , TRN,TR1,TR2,PA
-     $              , FFX,FFY,FFZ
-     $              , TEMP,FLUX,HC,HRAD,TINF,QVOL
-     $              , UDIFF,UTRANS
-     $              , SI2,SI3,SIGMA
-     $              , TURBK,TURBE
-     $              , PS(LDIMT)
+c
+c     Nekuse
+c
+      real x,y,z,r,theta,ux,uy,uz,un,u1,u2,trx,try,trz,trn,tr1,tr2,pa
+     $    ,p0,ffx,ffy,ffz,temp,flux,hc,hrad,tinf,qvol,udiff,utrans
+     $    ,si2,si3,sigma,turbk,turbe,ps(ldimt)
+      common /nekuse/ x  ,y  ,z  ,r  ,theta
+     $              , ux ,uy ,uz
+     $              , un ,u1 ,u2
+     $              , trx,try,trz
+     $              , trn,tr1,tr2,pa,p0
+     $              , ffx,ffy,ffz
+     $              , temp,flux,hc,hrad,tinf,qvol
+     $              , udiff,utrans
+     $              , si2,si3,sigma
+     $              , turbk,turbe
+     $              , ps
 
-      common /nekusc/ cbu
       character*3     cbu
+      common /nekusc/ cbu
 
-
-      common /nekuscmt/ varsic(10),rho,phi,pres,cv,e_internal
+      real              varsic(10),rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
-
-      real              varsic    ,rho,phi,pres,cv,e_internal
+      common /nekuscmt/ varsic    ,rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
 ! let kond=udiff
-

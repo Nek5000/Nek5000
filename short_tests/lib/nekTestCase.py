@@ -1,7 +1,6 @@
 import unittest
 import inspect
 import os
-import re
 from functools import wraps
 
 ###############################################################################
@@ -100,24 +99,24 @@ class NekTestCase(unittest.TestCase):
     """
     # Defined in subclasses only; declared here to make syntax checker happy
     example_subdir      = ""
-    case_name            = ""
+    case_name           = ""
 
     def __init__(self, *args, **kwargs):
         # These can be overridden by self.get_opts
-        self.f77            = "gfortran"
-        self.cc             = "gcc"
-        self.ifmpi          = False
+        self.f77            = 'mpif77'
+        self.cc             = 'mpicc'
+        self.ifmpi          = True
         self.ifcmt          = False
-        self.verbose        = False
-        self.source_root    = ''
-        #self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
-        self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
+        self.verbose        = True
+        self.source_root    = os.path.dirname(os.path.dirname(inspect.getabsfile(self.__class__)))
+        self.examples_root  = os.path.dirname(inspect.getabsfile(self.__class__))
         self.tools_root     = ''
         self.tools_bin      = ''
         self.log_root       = ''
         self.makenek        = ''
         self.serial_procs   = 1
-        self.parallel_procs = 2
+        self.parallel_procs = 4
+        self.size_params    = {}
 
         # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
         # pn_pn_2_serial, and pn_pn_2_parallel)
@@ -263,22 +262,19 @@ class NekTestCase(unittest.TestCase):
             verbose    = verbose    if verbose    else self.verbose
         )
 
-    def config_size(self, infile=None, outfile=None, lx2=None, ly2=None, lz2=None):
+    def config_size(self, infile=None, outfile=None, *args, **kwargs):
         from lib.nekFileConfig import config_size
         cls = self.__class__
 
         if not infile:
-            infile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+            infile = os.path.join(self.source_root, 'core', 'SIZE.template')
         if not outfile:
             outfile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+        if not kwargs:
+            config_size(infile, outfile, *args, **self.size_params)
+        else:
+            config_size(infile, outfile, *args, **self.size_params)
 
-        config_size(
-            infile  = infile,
-            outfile = outfile,
-            lx2 = lx2,
-            ly2 = ly2,
-            lz2 = lz2
-        )
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 
@@ -391,7 +387,7 @@ class NekTestCase(unittest.TestCase):
             )
         # Get all lines with label
         with open(logfile, 'r') as f:
-            line_list = [l for l in f if re.search(r'\b{0}\b'.format(label), l)]
+            line_list = [l for l in f if label in l]
         if not line_list:
             raise ValueError("Could not find label \"{0}\" in logfile \"{1}\".  The run may have failed.".format(label, logfile))
         try:
@@ -413,7 +409,8 @@ class NekTestCase(unittest.TestCase):
             )
 
         with open(logfile, 'r') as f:
-            line_list = [l for l in f if re.search(r'\b{0}\b'.format(label), l)]
+            line_list = [l for l in f if label in l]
+
         try:
             line = line_list[row]
         except IndexError:

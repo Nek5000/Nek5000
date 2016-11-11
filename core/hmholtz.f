@@ -1834,42 +1834,13 @@ c
 c
       if (if3d) then
          call mxm(Dr,nr,u,nr,ur,nst)
-         do k=0,nt
+         do k=1,nt
             call mxm(u(1,1,k),nr,Dst,ns,us(1,1,k),nt)
          enddo
          call mxm(u,nrs,Dtt,nt,ut,nt)
       else
          call mxm(Dr,nr,u  ,nr,ur,ns)
          call mxm(u ,nr,Dst,ns,us,ns)
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gradrt(u,ur,us,ut,Drt,Ds,Dt,nr,ns,nt,if3d)
-c
-c                  T      T      T
-c     Output: u = D ur + D us + D ut         Input: ur,us,ut
-c                  r      s      t
-c
-      real u (nr,ns,nt)
-      real ur(nr,ns,nt),us(nr,ns,nt),ut(nr,ns,nt)
-      real Dr(nr,nr),Dst(ns,ns),Dtt(nt,nt)
-c
-      logical if3d
-c
-      nst = ns*nt
-      nrs = nr*ns
-c
-      if (if3d) then
-         call mxm (Drt,nr,ur,nr,u,nst)
-         do k=0,nt
-            call mxm (us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
-         enddo
-         call mxm (ut,nrs,Dt,nt,u,nt)
-      else
-         call mxm (Drt,nr,ur,nr,u,ns)
-         call mxm (us ,nr,Ds,ns,u,ns)
       endif
 c
       return
@@ -1892,7 +1863,7 @@ c
 c
       if (if3d) then
          call mxma(Drt,nr,ur,nr,u,nst)
-         do k=0,nt
+         do k=1,nt
             call mxma(us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
          enddo
          call mxma(ut,nrs,Dt,nt,u,nt)

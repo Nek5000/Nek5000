@@ -49,7 +49,7 @@ c     write(6,*) ifldt,ifield,gsh_fld(ifldt),imesh,' ifldt'
 
       if (ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -82,7 +82,7 @@ c
 c      call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -174,7 +174,7 @@ c
 
       if(ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) tvdss=0.0d0
       if (icalld.eq.0) tgsum=0.0d0
       icalld=icalld+1
@@ -193,7 +193,7 @@ c     if (ifldt.eq.0)       ifldt = 1
 
       call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tvdss=tvdss+timee
       tdsmx=max(timee,tdsmx)
@@ -265,14 +265,14 @@ c
 
       if(ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       icalld=icalld+1
       nvdss=icalld
       etime1=dnekclock()
 #endif
       call gs_op_fields(gs_handle,u,stride,n,1,1,0)
 
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tvdss=tvdss+timee
       tdsmx=max(timee,tdsmx)
@@ -573,7 +573,7 @@ c
 
       if(ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -610,7 +610,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -635,7 +635,7 @@ c
 
       if(ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -675,7 +675,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
@@ -700,7 +700,7 @@ c
 
       if(ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
          tdsmx=0.
          tdsmn=0.
@@ -742,7 +742,7 @@ c
       call apply_J(u,nx,ny,nz,nel)
 c
 c
-#ifndef NOTIMER
+#ifdef TIMER
       timee=(dnekclock()-etime1)
       tdsum=tdsum+timee
       ndsum=icalld
