@@ -200,18 +200,13 @@ c
       save    iffxdt
       data    iffxdt /.false./
 C
-
       if (param(12).lt.0.or.iffxdt) then
          iffxdt    = .true.
          param(12) = abs(param(12))
          dt        = param(12)
-         dtopf     = dt
-         if (ifmvbd) then
-           call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-           call compute_cfl(umax,cx,cy,cz,1.0)
-         else
-           call compute_cfl(umax,vx,vy,vz,1.0)
-         endif
+         dtopf     = dt 
+         call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+         call compute_cfl(umax,cx,cy,cz,1.0)
          goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
@@ -526,7 +521,6 @@ C
             IF (IFADVC(IPSCAL+2)) ICONV=1
    10    CONTINUE
       endif
-
       IF (ICONV.EQ.0) THEN
          DT=0.
          return
@@ -542,16 +536,12 @@ C
       COLD   = COURNO
       CMAX   = 1.2*CTARG
       CMIN   = 0.8*CTARG
- 
-      if (ifmvbd) then
-        call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-        call cumax  (cx,cy,cz,umax)
-      else
-        call cumax  (vx,vy,vz,umax)
-      endif
 
-c      if (nio.eq.0) write(6,1) istep,time,umax,cmax
-c   1  format(i9,1p3e12.4,' cumax')
+      call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+      call cumax  (cx,cy,cz,cmax)
+c     call cumax  (vx,vy,vz,umax)
+c     if (nio.eq.0) write(6,1) istep,time,umax,cmax
+c   1 format(i9,1p3e12.4,' cumax')
 
 C     Zero DT
 
@@ -1193,7 +1183,7 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
       DO 10 K=1,NZ1
       DO 10 J=1,NY1
       DO 10 I=1,NX1
-         if (optlevel.le.2) CALL NEKASGN (I,J,K,IEL)
+         CALL NEKASGN (I,J,K,IEL)
          CALL USERVP  (I,J,K,IELG)
          VDIFF (I,J,K,IEL,IFIELD) = UDIFF
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
@@ -2751,7 +2741,7 @@ C
       ifld = ifield
 
       DO IFIELD=MFIELD,nfldt
-csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
+         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
 
          CALL VPROPS
 
@@ -2759,8 +2749,8 @@ csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
          vol = volfld(ifield)
          ntot1 = nxyz1*nel
 
-csk         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
-csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
+         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
+         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
 
       ENDDO
 
