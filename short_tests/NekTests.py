@@ -907,6 +907,57 @@ class LowMachTest(NekTestCase):
 
 
 ####################################################################
+#  mv_cyl with CVODE
+####################################################################
+
+class MvCyl_1e3(NekTestCase):
+    example_subdir = 'mv_cyl'
+    case_name = 'mv_cyl'
+
+    def setUp(self):
+        self.size_params = dict (
+            ldim     = '2',
+            lx1      = '8',
+            lxd      = '12',
+            lx2      = 'lx1-0',
+            lx1m     = 'lx1',
+            lelg     = '520',
+            lp       = '64',
+            lelt     = '200',
+            ldimt    = '10',
+            lelx     = '1',
+            lely     = '1',
+            lelz     = '1',
+            ax1      = '1',
+            ax2      = '1',
+            lbx1     = '1',
+            lbx2     = '1',
+            lbelt    = '1',
+            lpx1     = '1',
+            lpx2     = '1',
+            lpelt    = '1',
+            lpert    = '1',
+            lelecmt  = '',
+            toteq    = '1',
+            lcvx1    = 'lx1',
+            lcvelt   = 'lelt',
+            mxprev   = '20',
+            lgmres   = '40',
+            lorder   = '3',
+            lhis     = '100',
+            maxobj   = '4',
+            maxmbr   = 'lelt*6',
+            nsessmax = '1',
+            nmaxl    = '1',
+            nfldmax  = '1',
+            nmaxcom  = '1',
+        )
+
+        self.build_tools(['genmap'])
+        self.config_parfile(general=dict(numSteps='1e3', dt='1e-3'))
+
+
+####################################################################
 #  var_vis; var_vis.rea
 ####################################################################
 

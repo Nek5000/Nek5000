@@ -1,6 +1,6 @@
 import os, stat, re
 
-def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None):
+def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None, pplist=None, usr_lflags=None):
 
     with open(infile, 'r') as f:
         lines = f.readlines()
@@ -16,6 +16,14 @@ def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=N
                  for l in lines]
     if ifmpi:
         lines = [re.sub(r'^#*IFMPI=\"+.+?\"+', r'IFMPI="{0}"'.format(ifmpi), l)
+                 for l in lines]
+
+    if pplist:
+        lines = [re.sub(r'^#*PPLIST=\"+.+?\"+', r'PPLIST="{0}"'.format(pplist), l)
+                 for l in lines]
+
+    if usr_lflags:
+        lines = [re.sub(r'^#*USR_LFLAGS=\"+.+?\"+', r'USR_LFLAGS="{0}"'.format(usr_lflags), l)
                  for l in lines]
 
     lines = [re.sub(r'(^source\s+\$SOURCE_ROOT/makenek.inc)', r'\g<1> >compiler.out', l)
@@ -83,3 +91,44 @@ def config_size( infile, outfile, **kwargs ):
 
     with open(outfile, 'w') as f:
         f.writelines(lines)
+
+
+def config_parfile(infile, outfile, general=None, problemtype=None, mesh=None, pressure=None, velocity=None,
+                   temperature=None, cvode=None):
+    import ConfigParser
+
+    parfile = ConfigParser.SafeConfigParser()
+    parfile.read(infile)
+
+    if general:
+        for k,v in general.iteritems():
+            parfile.set('GENERAL', k, v)
+
+    if problemtype:
+        for k,v in problemtype.iteritems():
+            parfile.set('PROBLEMTYPE', k, v)
+
+    if mesh:
+        for k,v in mesh.iteritems():
+            parfile.set('MESH', k, v)
+
+    if pressure:
+        for k,v in pressure.iteritems():
+            parfile.set('PRESSURE', k, v)
+
+    if velocity:
+        for k,v in velocity.iteritems():
+            parfile.set('VELOCITY', k, v)
+
+    if temperature:
+        for k,v in temperature.iteritems():
+            parfile.set('TEMPERATURE', k, v)
+
+    if cvode:
+        for k,v in cvode.iteritems():
+            parfile.set('CVODE', k, v)
+
+    with open(outfile, 'w') as f:
+        parfile.write(f)
+
+
