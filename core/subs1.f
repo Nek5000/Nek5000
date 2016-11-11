@@ -200,13 +200,18 @@ c
       save    iffxdt
       data    iffxdt /.false./
 C
+
       if (param(12).lt.0.or.iffxdt) then
          iffxdt    = .true.
          param(12) = abs(param(12))
          dt        = param(12)
-         dtopf     = dt 
-         call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-         call compute_cfl(umax,cx,cy,cz,1.0)
+         dtopf     = dt
+         if (ifmvbd) then
+           call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+           call compute_cfl(umax,cx,cy,cz,1.0)
+         else
+           call compute_cfl(umax,vx,vy,vz,1.0)
+         endif
          goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
@@ -521,6 +526,7 @@ C
             IF (IFADVC(IPSCAL+2)) ICONV=1
    10    CONTINUE
       endif
+
       IF (ICONV.EQ.0) THEN
          DT=0.
          return
@@ -536,12 +542,16 @@ C
       COLD   = COURNO
       CMAX   = 1.2*CTARG
       CMIN   = 0.8*CTARG
+ 
+      if (ifmvbd) then
+        call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+        call cumax  (cx,cy,cz,umax)
+      else
+        call cumax  (vx,vy,vz,umax)
+      endif
 
-      call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-      call cumax  (cx,cy,cz,cmax)
-c     call cumax  (vx,vy,vz,umax)
-c     if (nio.eq.0) write(6,1) istep,time,umax,cmax
-c   1 format(i9,1p3e12.4,' cumax')
+c      if (nio.eq.0) write(6,1) istep,time,umax,cmax
+c   1  format(i9,1p3e12.4,' cumax')
 
 C     Zero DT
 
