@@ -33,7 +33,7 @@ c----------------------------------------------------------------------
       include 'CVODE'
 
       integer LongIntSize
-      integer*8 iout,iout_old,ipar
+      integer*8 iout,ipar
 #ifdef LONGINT8
       data LongIntSize / 8 /
 #else
@@ -42,7 +42,7 @@ c----------------------------------------------------------------------
       ! cvode will not allocate these arrays
       integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
       integer sizeOfLongInt
       external sizeOfLongInt
@@ -94,12 +94,12 @@ c
 
       common /CVWRK1/  y0(cv_lysize) 
 
-      integer*8 iout,iout_old,ipar
-
       ! cvode will not allocate these arrays
-      integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
+
+      integer*8 iout,ipar
+      integer cvcomm
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
       integer cv_meth
 
@@ -115,6 +115,7 @@ c
       etime1=dnekclock_sync()
 
       cv_timel = -1
+      call cv_rstat
 
       ! set solver parameters
       cv_itask    = param(160) ! AM or BDF
@@ -252,21 +253,9 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      integer*8 iout,iout_old,ipar
+      integer*8 iout,ipar
       integer cvcomm
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm
-
-      real nfe_avg,nli_nni_avg,nli_nni
-      save nfe_avg,nli_nni_avg
-
-      data nfe_avg / 0 /
-      data nli_nni_avg / 0 /
-
-      real nni_sum,nli_sum,nfe_sum
-      save nni_sum,nli_sum,nfe_sum
-      data nni_sum / 0 /
-      data nli_sum / 0 / 
-      data nfe_sum / 0 /
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz * nelv
@@ -279,7 +268,7 @@ c
       ! save old output values
       if (cv_itask.eq.1) then
         do i=1,21
-           iout_old(i) = iout(i)
+           iout_save(i) = iout(i)
         enddo
       endif
 
@@ -302,6 +291,7 @@ c
       time_ = time
       call fcvsetrin('MAX_STEP',cv_dtmax,ier)
 c      call fcvsetiin('MAX_ORD' ,3       ,ier)
+
       if (cv_itask.eq.3) then
         if(istep.gt.1) then 
           call cvpack(y,t,.false.)
@@ -311,20 +301,35 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
             call exitt
           endif
           cv_timel = 0
+          call cv_rstat
         endif
         call fcvsetrin('STOP_TIME',time,ier)
       endif
+
       call fcvode(time,tout,y,cv_itask,ier)
+      time = time_
+
+      if (ier.lt.0) then
+         if (nid.eq.0) then
+            write(*,'(a)') ' Restart integrator and try again  ...'
+         endif
+         call cvpack(y,t,.false.)
+         call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
+         cv_timel = 0
+         call cv_rstat
+         call fcvode(time,tout,y,cv_itask,ier)
+         time = time_
+      endif
+        
       if (ier.lt.0) then
          if (nid.eq.0) then
             write(*,'(a,i3)') 'ABORT: fcvode returned ier =', ier
          endif
          call exitt
       endif
-      call cvunpack(t,y)
 
-      ! restore time
-      time = time_
+      cv_istep = cv_istep + 1 
+      call cvunpack(t,y)
 
       ! restore velocities               
       call copy(vx,vx_,ntot)             
@@ -346,31 +351,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       endif
 
       ! print solver statistics 
-      if (nid.eq.0) then
-         nstp        = iout(3)-iout_old(3) 
-         nfe         = iout(4)-iout_old(4)+iout(20)-iout_old(20)
-         nni         = iout(7)-iout_old(7)  
-         nli         = iout(20)-iout_old(20)
-         nfe_sum     = nfe_sum + nfe
-         nfe_avg     = (1.-1./istep)*nfe_avg + float(nfe)/istep
-         nli_sum     = nli_sum + nli
-         nni_sum     = nni_sum + nni
-         nli_nni     = float(nli)/max(1,nni)
-         nli_nni_avg = (1.-1./istep)*nli_nni_avg + nli_nni/istep
-         
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
-     &    'nsteps: ',   nstp     ,
-     &    'nfe:    ',   nfe      ,
-     &    '<nfe>:    ', nfe_avg
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
-     &    'nni:    ',   nni      ,
-     &    'nli:    ',   nli      ,
-     &    '<nli/nni>:', nli_nni_avg
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,i5)') 
-     &    'ncfn:   '  ,iout(6)-iout_old(6),
-     &    'ncfl:   '  ,iout(21)-iout_old(21),  
-     &    'netf:     ',iout(5)-iout_old(5) 
-      endif
+      if (nid.eq.0) call cv_pstat
 
       return
       end
@@ -673,5 +654,57 @@ c----------------------------------------------------------------------
       call rzero(cv_ab,3)
       call setabbd (cv_ab,cv_dtlag,nbd,nbd)
 
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_pstat
+
+      include 'SIZE'
+      include 'CVODE'
+
+      integer*8 iout,ipar
+      integer cvcomm
+      common /cv_iout/ iout(21),ipar(1),cvcomm
+
+      real nli_nni
+
+      nstp        = iout(3) - iout_save(3)
+      nfe         = iout(4) - iout_save(4) + iout(20)-iout_save(20)
+      nni         = iout(7) - iout_save(7)
+      nli         = iout(20)- iout_save(20)
+      nli_nni     = float(nli)/max(1,nni)
+
+      nfe_avg     = (1.-1./cv_istep)*nfe_avg     + nfe/cv_istep
+      nli_nni_avg = (1.-1./cv_istep)*nli_nni_avg + nli_nni/cv_istep      
+
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
+     &    'nsteps: ',   nstp     ,
+     &    'nfe:    ',   nfe      ,
+     &    '<nfe>:    ', nfe_avg
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
+     &    'nni:    ',   nni      ,
+     &    'nli:    ',   nli      ,
+     &    '<nli/nni>:', nli_nni_avg
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,i5)') 
+     &    'ncfn:   '  ,iout(6)-iout_save(6),
+     &    'ncfl:   '  ,iout(21)-iout_save(21),  
+     &    'netf:     ',iout(5)-iout_save(5) 
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine cv_rstat
+
+      include 'SIZE'
+      include 'CVODE'
+
+      do i=1,21
+         iout_save(i) = 0.0
+      enddo
+
+      nfe_avg     = 0
+      nli_nni_avg = 0
+      cv_istep    = 0
+ 
       return
       end
