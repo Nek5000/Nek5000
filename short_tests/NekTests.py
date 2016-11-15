@@ -959,15 +959,54 @@ class MvCyl_1e3(NekTestCase):
             nmaxcom  = '1',
         )
 
-        self.build_tools(['genmap'])
-        self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
+        if not self.cvode_dir:
+            self.fail('Must define $CVODE_DIR in environment before running this test.')
 
-    def test_PnPn_Serial(self):
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel_Steps1e3(self):
+        self.log_suffix += 'steps_1e3'
+        self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
         self.size_params['lx2'] = 'lx1'
         self.config_size()
+        self.build_nek(opts=dict(
+            PPLIST="CVODE",
+            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
+        ))
+        self.run_nek()
 
-    def test_dummy(self):
-        self.assertTrue(True)
+        err3 = self.get_value_from_log('err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(err3, target_val=0.1743079E-03, delta=1e-6, label='err (column -3)')
+
+        err2 = self.get_value_from_log('err', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(err2, target_val=0.6348537E-06, delta=1e-9, label='err (column -2)')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel_Steps1e4(self):
+        self.log_suffix += 'steps_1e4'
+        self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek(opts=dict(
+            PPLIST="CVODE",
+            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
+        ))
+        self.run_nek()
+
+        err3 = self.get_value_from_log('err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(err3, target_val=0.1693853E-05, delta=1e-8, label='err (column -3)')
+
+        err2 = self.get_value_from_log('err', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(err2, target_val=0.6344692E-09, delta=1e-12, label='err (column -2)')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
 
 
 ####################################################################
