@@ -60,20 +60,27 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
 def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
 
     if not opts:
-        opts = {}
+        _opts = {}
+    else:
+        _opts = opts.copy()
+    _opts.update(SOURCE_ROOT=source_root)
 
     print('Compiling nek5000...')
     print('    Using source directory "{0}"'.format(source_root))
     print('    Using working directory "{0}"'.format(cwd))
     print('    Using .usr file "{0}"'.format(usr_file))
-    for key, val in opts.iteritems():
+    for key, val in _opts.iteritems():
         print('    Using {0}="{1}"'.format(key, val))
 
     makenek_in  = os.path.join(source_root, 'core', 'makenek')
     makenek_out = os.path.join(source_root, 'core', 'makenek.tests')
     logfile     = os.path.join(cwd, 'compiler.out')
     try:
-        config_makenek(opts=opts, infile=makenek_in, outfile=makenek_out)
+        config_makenek(
+            opts=_opts,
+            infile=makenek_in,
+            outfile=makenek_out
+        )
 
         call([makenek_out, 'clean'], cwd=cwd)
         if verbose:
