@@ -1,7 +1,7 @@
 import os, stat, re
 
-def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None, pplist=None, usr_lflags=None):
 
+def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None, pplist=None, usr_lflags=None):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -37,11 +37,10 @@ def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=N
     os.chmod(outfile,
              stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH |
              stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-             stat.S_IWUSR )
+             stat.S_IWUSR)
 
 
 def config_maketools(infile, outfile, f77=None, cc=None, bigmem=None):
-
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -60,11 +59,10 @@ def config_maketools(infile, outfile, f77=None, cc=None, bigmem=None):
     os.chmod(outfile,
              stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH |
              stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-             stat.S_IWUSR )
+             stat.S_IWUSR)
 
 
 def config_basics_inc(infile, outfile, nelm):
-
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -75,8 +73,7 @@ def config_basics_inc(infile, outfile, nelm):
         f.writelines(lines)
 
 
-def config_size( infile, outfile, **kwargs ):
-
+def config_size(infile, outfile, **kwargs):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -87,48 +84,40 @@ def config_size( infile, outfile, **kwargs ):
                 re.sub(
                     r'(.*\bparameter\b.*\b{0} *= *)\S+?( *[),])'.format(key),
                     r'\g<1>{0}\g<2>'.format(value), l, flags=re.I)
-                for l in lines ]
+                for l in lines]
 
     with open(outfile, 'w') as f:
         f.writelines(lines)
 
 
-def config_parfile(infile, outfile, general=None, problemtype=None, mesh=None, pressure=None, velocity=None,
-                   temperature=None, cvode=None):
+def config_parfile(infile, outfile, opts):
+    """ Set values in a parfile using ConfigParser
+
+    Given a path to infile, substitute the options & values in kwargs, then
+    output to outfile.  The infile and outfile can be the same file.
+
+    opts is interpreted as a nested dict of the form:
+        {section: {optname: value, ...}, ...}
+    where "optname = value" are set in [section]. If 'optname' is not set in
+    infile, then it will be added to outfile.  If 'optname' is already set in
+    infile, then it will be overridden in outfile.  If an option is listed in
+    infile but is not listed in in 'opts', then it will be copied to outfile
+    without modification..
+
+    Args:
+        infile (str): Path to input file
+        outfile (str): Path to output file
+        opts ({section: {optname : value}}): Set each "optname = value" in
+            each "[section]"
+    """
     import ConfigParser
 
     parfile = ConfigParser.SafeConfigParser()
     parfile.read(infile)
 
-    if general:
-        for k,v in general.iteritems():
-            parfile.set('GENERAL', k, v)
-
-    if problemtype:
-        for k,v in problemtype.iteritems():
-            parfile.set('PROBLEMTYPE', k, v)
-
-    if mesh:
-        for k,v in mesh.iteritems():
-            parfile.set('MESH', k, v)
-
-    if pressure:
-        for k,v in pressure.iteritems():
-            parfile.set('PRESSURE', k, v)
-
-    if velocity:
-        for k,v in velocity.iteritems():
-            parfile.set('VELOCITY', k, v)
-
-    if temperature:
-        for k,v in temperature.iteritems():
-            parfile.set('TEMPERATURE', k, v)
-
-    if cvode:
-        for k,v in cvode.iteritems():
-            parfile.set('CVODE', k, v)
+    for section, name_vals in opts.iteritems():
+        for name, val in name_vals.iteritems():
+            parfile.set(section, name, val)
 
     with open(outfile, 'w') as f:
         parfile.write(f)
-
-

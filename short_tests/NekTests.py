@@ -954,7 +954,10 @@ class MvCyl_1e3(NekTestCase):
         )
 
         self.build_tools(['genmap'])
-        self.config_parfile(general=dict(numSteps='1e3', dt='1e-3'))
+        self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
+
+    def test_dummy(self):
+        self.assertTrue(True)
 
 
 ####################################################################

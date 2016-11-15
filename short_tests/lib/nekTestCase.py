@@ -269,8 +269,7 @@ class NekTestCase(unittest.TestCase):
         else:
             config_size(infile, outfile, *args, **self.size_params)
 
-    def config_parfile(self, infile=None, outfile=None, general=None, problemtype=None, mesh=None, pressure=None,
-                       velocity=None, temperature=None, cvode=None):
+    def config_parfile(self, opts=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_parfile
         cls = self.__class__
 
@@ -278,18 +277,10 @@ class NekTestCase(unittest.TestCase):
             infile = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
         if not outfile:
             outfile = infile
+        if not opts:
+            opts = {}
 
-        config_parfile(
-            infile=infile,
-            outfile=outfile,
-            general=general,
-            problemtype=problemtype,
-            mesh=mesh,
-            pressure=pressure,
-            velocity=velocity,
-            temperature=temperature,
-            cvode=cvode,
-        )
+        config_parfile(infile=infile, outfile=outfile, opts=opts)
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 
