@@ -73,12 +73,12 @@ def config_basics_inc(infile, outfile, nelm):
         f.writelines(lines)
 
 
-def config_size(infile, outfile, **kwargs):
+def config_size(infile, outfile, opts):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
     # Substitute all the variables
-    for key, value in kwargs.iteritems():
+    for key, value in opts.iteritems():
         if value:
             lines = [
                 re.sub(
