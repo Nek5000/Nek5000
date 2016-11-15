@@ -57,31 +57,26 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     else:
         print('Successfully compiled tools!')
 
-def build_nek(source_root, usr_file, cwd=None, f77=None, cc=None, ifmpi=None, usr_lflags=None, pplist=None, verbose=False):
+def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
+
+    if not opts:
+        opts = {}
 
     print('Compiling nek5000...')
     print('    Using source directory "{0}"'.format(source_root))
     print('    Using working directory "{0}"'.format(cwd))
     print('    Using .usr file "{0}"'.format(usr_file))
-    print('    Using F77 "{0}"'.format(f77))
-    print('    Using CC "{0}"'.format(cc))
-    print('    Using IFMPI "{0}"'.format(ifmpi))
-    print('    Using PPLIST "{0}"'.format(pplist))
-    print('    Using USR_LFLAGS "{0}"'.format(usr_lflags))
+    for key, val in opts.iteritems():
+        print('    Using {0}="{1}"'.format(key, val))
 
     makenek_in  = os.path.join(source_root, 'core', 'makenek')
     makenek_out = os.path.join(source_root, 'core', 'makenek.tests')
     logfile     = os.path.join(cwd, 'compiler.out')
     try:
         config_makenek(
-            infile      = makenek_in,
-            outfile     = makenek_out,
-            f77         = f77,
-            cc          = cc,
-            source_root = source_root,
-            ifmpi       = ifmpi,
-            pplist      = pplist,
-            usr_lflags  = usr_lflags
+            infile  = makenek_in,
+            outfile = makenek_out,
+            opts    = opts
         )
 
         call([makenek_out, 'clean'], cwd=cwd)

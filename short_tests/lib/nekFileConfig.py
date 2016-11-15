@@ -1,30 +1,12 @@
 import os, stat, re
 
 
-def config_makenek(infile, outfile, source_root=None, f77=None, cc=None, ifmpi=None, pplist=None, usr_lflags=None):
+def config_makenek(infile, outfile, opts):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
-    if source_root:
-        lines = [re.sub(r'^SOURCE_ROOT=\"+.+?\"+', r'SOURCE_ROOT="{0}"'.format(source_root), l)
-                 for l in lines]
-    if f77:
-        lines = [re.sub(r'^F77=\"+.+?\"+', r'F77="{0}"'.format(f77), l)
-                 for l in lines]
-    if cc:
-        lines = [re.sub(r'^CC=\"+.+?\"+', r'CC="{0}"'.format(cc), l)
-                 for l in lines]
-    if ifmpi:
-        lines = [re.sub(r'^#*IFMPI=\"+.+?\"+', r'IFMPI="{0}"'.format(ifmpi), l)
-                 for l in lines]
-
-    if pplist:
-        lines = [re.sub(r'^#*PPLIST=\"+.+?\"+', r'PPLIST="{0}"'.format(pplist), l)
-                 for l in lines]
-
-    if usr_lflags:
-        lines = [re.sub(r'^#*USR_LFLAGS=\"+.+?\"+', r'USR_LFLAGS="{0}"'.format(usr_lflags), l)
-                 for l in lines]
+    for key, val in opts.iteritems():
+        lines = [re.sub(r'^#*{0}=\"+.+?\"+'.format(key), r'{0}="{1}"'.format(key, val), l) for l in lines]
 
     lines = [re.sub(r'(^source\s+\$SOURCE_ROOT/makenek.inc)', r'\g<1> >compiler.out', l)
              for l in lines]

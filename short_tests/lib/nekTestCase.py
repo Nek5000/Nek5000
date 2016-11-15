@@ -333,9 +333,11 @@ class NekTestCase(unittest.TestCase):
             source_root = self.source_root,
             usr_file    = usr_file,
             cwd         = os.path.join(self.examples_root, cls.example_subdir),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower()
+            ),
             verbose     = self.verbose
         )
 
