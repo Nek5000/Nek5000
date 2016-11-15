@@ -116,6 +116,7 @@ class NekTestCase(unittest.TestCase):
         self.serial_procs   = 1
         self.parallel_procs = 4
         self.size_params    = {}
+        self.cvode_dir      = ""
 
         # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
         # pn_pn_2_serial, and pn_pn_2_parallel)
@@ -237,6 +238,10 @@ class NekTestCase(unittest.TestCase):
                     print('    The {0} directory, "{1}" does not exist.  It will be created'.format(varname, varval))
                     os.makedirs(varval)
 
+        # CVODE_DIR doesn't need to be defined.  It defaults to ""
+        #---------------------------------------------------------
+        self.cvode_dir = os.environ.get('CVODE_DIR', self.cvode_dir)
+
         # Default destination of makenek
         # ------------------------------
         if not self.makenek:
@@ -322,23 +327,27 @@ class NekTestCase(unittest.TestCase):
             cwd     = os.path.join(self.examples_root, self.__class__.example_subdir),
         )
 
-    def build_nek(self, usr_file=None):
+    def build_nek(self, opts=None, usr_file=None):
         from lib.nekBinBuild import build_nek
         cls = self.__class__
 
         if not usr_file:
             usr_file = cls.case_name
 
+        all_opts = dict(
+            F77   = self.f77,
+            CC    = self.cc,
+            IFMPI = str(self.ifmpi).lower(),
+        )
+        if opts:
+            all_opts.update(opts)
+
         build_nek(
             source_root = self.source_root,
             usr_file    = usr_file,
             cwd         = os.path.join(self.examples_root, cls.example_subdir),
-            opts        = dict(
-                F77   = self.f77,
-                CC    = self.cc,
-                IFMPI = str(self.ifmpi).lower()
-            ),
-            verbose     = self.verbose
+            opts        = all_opts,
+            verbose     = self.verbose,
         )
 
     def run_nek(self, rea_file=None, step_limit=None):

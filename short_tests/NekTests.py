@@ -265,9 +265,11 @@ class Benard_RayDD(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
         )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
@@ -382,10 +384,12 @@ class Benard_RayDN(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
-            )
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
+        )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
             rea_file   = 'ray_dn',
@@ -394,7 +398,7 @@ class Benard_RayDN(NekTestCase):
             n_procs    = self.mpi_procs,
             verbose    = self.verbose,
             step_limit = None,
-            )
+        )
 
         logfile=os.path.join(
             self.examples_root,
@@ -498,10 +502,12 @@ class Benard_RayNN(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
-            )
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
+        )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
             rea_file   = 'ray_nn',
@@ -510,7 +516,7 @@ class Benard_RayNN(NekTestCase):
             n_procs    = self.mpi_procs,
             verbose    = self.verbose,
             step_limit = None,
-            )
+        )
 
         logfile=os.path.join(
             self.examples_root,
@@ -955,6 +961,10 @@ class MvCyl_1e3(NekTestCase):
 
         self.build_tools(['genmap'])
         self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
+
+    def test_PnPn_Serial(self):
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
 
     def test_dummy(self):
         self.assertTrue(True)
