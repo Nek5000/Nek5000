@@ -1,7 +1,7 @@
 import os, stat, re
 
 
-def config_makenek(infile, outfile, opts):
+def config_makenek(opts, infile, outfile):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -55,7 +55,7 @@ def config_basics_inc(infile, outfile, nelm):
         f.writelines(lines)
 
 
-def config_size(infile, outfile, opts):
+def config_size(opts, infile, outfile):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -72,7 +72,7 @@ def config_size(infile, outfile, opts):
         f.writelines(lines)
 
 
-def config_parfile(infile, outfile, opts):
+def config_parfile(opts, infile, outfile):
     """ Set values in a parfile using ConfigParser
 
     Given a path to infile, substitute the options & values in kwargs, then

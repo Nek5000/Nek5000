@@ -267,7 +267,7 @@ class NekTestCase(unittest.TestCase):
         if not opts:
             opts = self.size_params
 
-        config_size(infile=infile, outfile=outfile, opts=opts)
+        config_size(opts=opts, infile=infile, outfile=outfile)
 
     def config_parfile(self, opts=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_parfile
@@ -280,7 +280,7 @@ class NekTestCase(unittest.TestCase):
         if not opts:
             opts = {}
 
-        config_parfile(infile=infile, outfile=outfile, opts=opts)
+        config_parfile(opts=opts, infile=infile, outfile=outfile)
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 

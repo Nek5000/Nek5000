@@ -73,11 +73,7 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     makenek_out = os.path.join(source_root, 'core', 'makenek.tests')
     logfile     = os.path.join(cwd, 'compiler.out')
     try:
-        config_makenek(
-            infile  = makenek_in,
-            outfile = makenek_out,
-            opts    = opts
-        )
+        config_makenek(opts=opts, infile=makenek_in, outfile=makenek_out)
 
         call([makenek_out, 'clean'], cwd=cwd)
         if verbose:
