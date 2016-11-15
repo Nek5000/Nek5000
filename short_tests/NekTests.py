@@ -916,7 +916,7 @@ class LowMachTest(NekTestCase):
 #  mv_cyl with CVODE
 ####################################################################
 
-class MvCyl_1e3(NekTestCase):
+class MvCylCvode(NekTestCase):
     example_subdir = 'mv_cyl'
     case_name = 'mv_cyl'
 
