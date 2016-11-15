@@ -2,6 +2,21 @@ import os, stat, re
 
 
 def config_makenek(opts, infile, outfile):
+    """ Redefine variables in a makenek file
+
+    Given a path to infile, redefine the variables & values in opts, then
+    output to outfile.  The infile and outfile can be the same file.
+
+    Only the options already available in makenek may be set.  This function
+    doesn't allow you to declare arbitrary variables in makenek.
+    (TODO: Raise warning when attempting to set an unavailable variable.)
+
+    Args:
+        opts ({variable : value}): Set each "variable=value" in makenek
+        infile (): The input makenek file
+        outfile (): The output makenek file
+
+    """
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -55,12 +70,28 @@ def config_basics_inc(infile, outfile, nelm):
         f.writelines(lines)
 
 
-def config_size(opts, infile, outfile):
+def config_size(params, infile, outfile):
+    """ Redefine parameters in a SIZE file
+
+    Given a path to infile, redefine the variables & values in params, then
+    output to outfile.  The infile and outfile can be the same file.
+
+    Only the parameters already declared in infile may be set.  This function
+    doesn't allow you to declare any new parameters.
+    (TODO: Raise warning when attempting to declare a new parameter.)
+
+    Args:
+        params ({variable : value}): Each 'variable' will be set to 'value'
+            in the output SIZE file
+        infile (str): Path to the input SIZE file
+        outfile (str): Path to output SIZE file
+
+    """
     with open(infile, 'r') as f:
         lines = f.readlines()
 
     # Substitute all the variables
-    for key, value in opts.iteritems():
+    for key, value in params.iteritems():
         if value:
             lines = [
                 re.sub(
@@ -75,7 +106,7 @@ def config_size(opts, infile, outfile):
 def config_parfile(opts, infile, outfile):
     """ Set values in a parfile using ConfigParser
 
-    Given a path to infile, substitute the options & values in kwargs, then
+    Given a path to infile, substitute the options & values in opts, then
     output to outfile.  The infile and outfile can be the same file.
 
     opts is interpreted as a nested dict of the form:
@@ -87,10 +118,11 @@ def config_parfile(opts, infile, outfile):
     without modification..
 
     Args:
-        infile (str): Path to input file
-        outfile (str): Path to output file
         opts ({section: {optname : value}}): Set each "optname = value" in
             each "[section]"
+        infile (str): Path to input parfile
+        outfile (str): Path to output parfile
+
     """
     import ConfigParser
 

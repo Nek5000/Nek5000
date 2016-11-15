@@ -256,7 +256,7 @@ class NekTestCase(unittest.TestCase):
             verbose    = verbose    if verbose    else self.verbose
         )
 
-    def config_size(self, opts=None, infile=None, outfile=None):
+    def config_size(self, params=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_size
         cls = self.__class__
 
@@ -264,10 +264,10 @@ class NekTestCase(unittest.TestCase):
             infile = os.path.join(self.source_root, 'core', 'SIZE.template')
         if not outfile:
             outfile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
-        if not opts:
-            opts = self.size_params
+        if not params:
+            params = self.size_params
 
-        config_size(opts=opts, infile=infile, outfile=outfile)
+        config_size(params=params, infile=infile, outfile=outfile)
 
     def config_parfile(self, opts=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_parfile
