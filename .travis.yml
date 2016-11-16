@@ -40,7 +40,7 @@ env:
     # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn2_Parallel # Stdout exceeds Travis' max log length
 
     - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3
-    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e4
+    # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e4 # Exceeds time limit for Travis jobs
 
 before_install: 
   - export ROOT_DIR=`pwd`

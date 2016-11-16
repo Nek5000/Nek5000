@@ -967,7 +967,7 @@ class MvCylCvode(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e3(self):
-        self.log_suffix += 'steps_1e3'
+        self.log_suffix += '.steps_1e3'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
         self.size_params['lx2'] = 'lx1'
         self.config_size()
@@ -987,7 +987,7 @@ class MvCylCvode(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e4(self):
-        self.log_suffix += 'steps_1e4'
+        self.log_suffix += '.steps_1e4'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
         self.size_params['lx2'] = 'lx1'
         self.config_size()
