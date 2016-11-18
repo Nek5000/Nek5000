@@ -1015,7 +1015,7 @@ class CmtInviscidVortex(NekTestCase):
     case_name = 'pvort'
 
     def diff_l2norms(self):
-        def get_line(filename, line_num=1):
+        def get_line(filename, line_num=0):
             with open(filename) as f:
                 line = f.readlines()[line_num]
             return [float(x) for x in line.split()[1:]]
