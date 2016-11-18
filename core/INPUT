@@ -109,12 +109,3 @@ c
 
       character*3 bctyps(numsts)
       common /inputmc/ bctyps
-!
-! flags for CMT are as follows
-!
-      logical          ifcmt,  iffltr,    outflsub
-     $                ,ifvisc, ifcntfilt, ifrestart
-      common /input10/ ifcmt,  iffltr,    outflsub
-     $                ,ifvisc, ifcntfilt, ifrestart
-
-

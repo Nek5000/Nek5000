@@ -39,8 +39,6 @@ C-----------------------------------------------------------------------
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
-      ntotcv=lelt*nxyz1*toteq
-
 
       call rzero(vx,ntott)
       call rzero(vy,ntott)
@@ -244,8 +242,7 @@ c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
 c     enddo
 c     ifield = ifldsave
     
-c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
-      if (ifflow.and..not.ifcmt) then  ! pff, 11/4/15. not long for this world
+      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -261,7 +258,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
       endif
 
       if (ifheat.and..not.ifdg) then  ! Don't project if using DG
-       if (.not.ifcmt) then ! not long for this world
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -273,7 +269,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
               call col2 (t(1,1,1,1,i-1),vmult,ntotv)
             endif
          enddo
-       endif
       endif
 c
 c     if (ifpert.and..not.ifdg) then ! Still not DG
@@ -1199,7 +1194,9 @@ C     If no fields were explicitly specified, assume getting all fields.
          ENDIF
          if (ifflow) ifgetp=.true.
          if (ifheat) ifgett=.true.
-         if (ifcmt)  ifgett=.true. ! not long for this world
+#ifdef CMT
+         ifgett=.true. ! CMT-nek still not compatible with IFHEAT
+#endif
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue

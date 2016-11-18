@@ -326,8 +326,6 @@ C
       IFEXPLVIS = .false.
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
-      IFCMT     = .false.
-      IFFLTR    = .false.
 
       ifbase = .true.
       ifpert = .false.
@@ -409,10 +407,6 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
-         elseif (indx1(string(i),'IFCMT',5).gt.0) then 
-              read(string(i),*) IFCMT
-         elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
-              read(string(i),*) IFFLTR
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -442,9 +436,7 @@ c              read(string,*) IFSPLIT
      &           '   IFCONS'   ,
      &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'  ,
-     &           '   IFCMT'    ,
-     &           '   IFFLTR'    
+     &           '   IFVCOUP'
               endif
               call exitt
          endif

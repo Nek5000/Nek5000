@@ -1,12 +1,21 @@
-      real                 u(lx1,ly1,lz1,toteq,lelcmt) 
+!
+! flags for CMT are as follows
+!
+      logical            iffltr,    outflsub
+     $                , ifcntfilt, ifrestart
+      common /input10/   iffltr,    outflsub
+     $                , ifcntfilt, ifrestart
+
+
+      real                 u(lx1,ly1,lz1,toteq,lelt) 
       common /solnconsvar/ u 
  
-      real               phig(lx1,ly1,lz1,lelcmt)
+      real               phig(lx1,ly1,lz1,lelt)
       common /otherpvar/ phig
 
-      real res1(lx1,ly1,lz1,lelcmt,toteq)
-     $   , res2(lx1,ly1,lz1,lelcmt,toteq)
-     $   , res3(lx1,ly1,lz1,toteq,lelcmt) 
+      real res1(lx1,ly1,lz1,lelt,toteq)
+     $   , res2(lx1,ly1,lz1,lelt,toteq)
+     $   , res3(lx1,ly1,lz1,toteq,lelt) 
       common /cmtres/ res1, res2, res3
       
       real              gradu(lx1*ly1*lz1,toteq,3)
@@ -30,13 +39,13 @@ c       have explicit temp dependence. At the begining of the time step
 c       a scratch space will be use to iteratively compute Cv and T from 
 c       internal energy.
 c--------------------------------------------------------------------- 
-      real                csound(lx1,ly1,lz1,lelcmt)
+      real                csound(lx1,ly1,lz1,lelt)
       common /cmtgasprop/ csound
 
       real                cvgref,cpgref,gmaref,rgasref,molmass
       common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
 
-      real                  cip(2*ldim,lelcmt)
+      real                  cip(2*ldim,lelt)
       common /cmttransprop/ cip
 
       real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc

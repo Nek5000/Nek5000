@@ -9,13 +9,8 @@ c-----------------------------------------------------------------------
          if (nio.eq.0) write(6,*) 'Reset toteq in SIZE to 5'
          call exitt
       endif
-      if (lelcmt.ne.lelt) then
-         if (nio.eq.0) write(6,*)'ERROR! lelcmt is not same as lelt '
-         if (nio.eq.0) write(6,*) 'lelcmt=',lelcmt,' lelt=',lelt
-         call exitt
-      endif
       if (ifrestart) then
-         ifheat = .true.
+         ifheat = .true. ! almost certainly incorrect
       endif
       call setup_cmt_commo
       

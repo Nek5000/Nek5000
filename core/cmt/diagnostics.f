@@ -69,8 +69,8 @@ c----------------------------------------------------------------------
       subroutine out_fld_nek(wfnav)
       include 'SIZE'
       include 'SOLN'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,7)
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,7)
       real                OTVAR
       integer e,f
 
@@ -97,7 +97,7 @@ c----------------------------------------------------------------------
       include 'SOLN'
       include 'CMTDATA'
       include 'PERFECTGAS'
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,6)
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,6)
       real                OTVAR
 
       integer e,f
@@ -218,7 +218,7 @@ c----------------------------------------------------------------------
       INCLUDE 'GEOM'
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
       logical if3d
       integer e
       real msum,total_mass
@@ -279,11 +279,11 @@ c
       real x0(3),w1(0:maxobj)
       logical ifdout,iftout
 c
-      common /scrns/         sij (lx1*ly1*lz1*6*lelcmt)
-      common /scrcg/         pm1 (lx1,ly1,lz1,lelcmt)
-      common /scrsf/         xm0(lx1,ly1,lz1,lelcmt)
-     $,                      ym0(lx1,ly1,lz1,lelcmt)
-     $,                      zm0(lx1,ly1,lz1,lelcmt)
+      common /scrns/         sij (lx1*ly1*lz1*6*lelt)
+      common /scrcg/         pm1 (lx1,ly1,lz1,lelt)
+      common /scrsf/         xm0(lx1,ly1,lz1,lelt)
+     $,                      ym0(lx1,ly1,lz1,lelt)
+     $,                      zm0(lx1,ly1,lz1,lelt)
 c
       parameter (lr=lx1*ly1*lz1)
       common /scruz/         ur(lr),us(lr),ut(lr)
@@ -514,7 +514,7 @@ c
 c
       integer e
 c
-      real sij(lx1*ly1*lz1,nij,lelcmt)
+      real sij(lx1*ly1*lz1,nij,lelt)
       real ur (1) , us (1) , ut (1)
      $   , vr (1) , vs (1) , vt (1)
      $   , wr (1) , ws (1) , wt (1)
