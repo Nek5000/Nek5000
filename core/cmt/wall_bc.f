@@ -53,6 +53,7 @@
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
+         call cmtasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg) ! get molarmass, phi
 c                                     ! ux,uy,uz
          l=l+1

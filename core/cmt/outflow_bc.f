@@ -51,6 +51,7 @@ c--------------------------------------------------------------------
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)     ! gives us phi- and rho-
+         call cmtasgn(ix,iy,iz,e)     ! gives us phi- and rho-
          call userbc (ix,iy,iz,f,ieg) ! just for molarmass
          l=l+1
          sxn = unx(l,1,f,e)
