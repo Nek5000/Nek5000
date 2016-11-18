@@ -456,6 +456,7 @@ c-----------------------------------------------------------------------
          do j=1,ny1
             do i=1,nx1
                call NEKASGN(i,j,k,e)
+               call cmtASGN(i,j,k,e)
                call userf(i,j,k,eg)
                usrf(i,j,k,2) = FFX
                usrf(i,j,k,3) = FFY

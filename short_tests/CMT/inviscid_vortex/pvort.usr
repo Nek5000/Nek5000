@@ -6,8 +6,10 @@
 
       scale = 1.
       nxyz=nx1*ny1*nz1
+      if (istep.gt.0)then
       if (mod(istep,1000).eq.0)
      >   call l2norm_2d_vortex
+      endif
       ifxyo = .true.
 
       if (mod(istep,iostep).eq.0) call comp_vort3(vrt,wk1,wk2,vx,vy,vz)
@@ -137,6 +139,9 @@ c-----------------------------------------------------------------------
       ux = varsic(2)/varsic(1)
       uy = varsic(3)/varsic(1)
       uz = varsic(4)/varsic(1)
+!     call userEOS(ix,iy,iz,eg)
+      cp=cpgref
+      cv=cvgref
       return
       end
 c-----------------------------------------------------------------------
@@ -163,6 +168,8 @@ c-----------------------------------------------------------------------
 
       res_freq  = 5000000
       flio_freq = 10000
+
+      IFDG=.true.
 
       NCUT  = int(lx1/2)
       NCUTD = lxd
@@ -225,7 +232,7 @@ c
       include 'TSTEP'
       include 'CMTDATA'
 
-      real  sumcvars_l2(5), l2_normscvars(5),varsic(5)
+      real  sumcvars_l2(5), l2_normscvars(5)
       integer e,eq
       integer nloop
       real bvort,uxinf,uyinf,tempinf
