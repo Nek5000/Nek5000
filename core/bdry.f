@@ -152,8 +152,6 @@ C
          WRITE (6,*) 'IFGEOM   =',IFGEOM
          WRITE (6,*) 'IFSURT   =',IFSURT
          WRITE (6,*) 'IFWCNO   =',IFWCNO
-         WRITE (6,*) 'IFCMT    =',IFCMT ! not long for this world
-         WRITE (6,*) 'IFFLTR   =',IFFLTR
 
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '

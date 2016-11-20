@@ -15,6 +15,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
   echo "  NO_LAPACK disable nek-supplied LAPACK routines"
   echo "  EXTBAR    adds underscore to exit call(for BGQ)"
+  echo "  CMTNEK    CMT-nek, a DG compressible-flow solver"
   exit 1
 fi
 
@@ -244,15 +245,6 @@ else
 fi
 export IFMPI
 
-# set preprocessor symbols
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-  IFCMT=true
-else
-  # default
-  IFCMT=false
-fi
-export IFCMT
-
 # Check size of long int
 cat > tmp.c << _ACEOF
 #include <stdlib.h>
@@ -283,6 +275,7 @@ fi
 PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 
 # add user defined preprocessor symbols
+IFCMT=false
 for i in $PPLIST
 do
    if [ "$i" == "MOAB" ]; then
@@ -310,7 +303,11 @@ do
    if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
    fi
+   if [ "$i" == "CMTNEK" ]; then
+     IFCMT=true
+   fi
 done
+export IFCMT
 
 
 echo $PPLIST | grep 'CVODE' >/dev/null 
@@ -338,15 +335,6 @@ else
   # default
   IFAMG=false
 fi
-
-# CMT flag
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-  IFCMT=true
-else
-  # default
-  IFCMT=false
-fi
-export IFCMT
 
 # MXM-handling
 if [ "$MXM_USER" != "" ]; then
@@ -579,22 +567,6 @@ if [ $? -ne 0 ];  then
       echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
   fi
   fi
-  cat SIZE | grep -i 'lelcmt' >/dev/null
-  if [ $? -ne 0 ]; then
-  if [ "$IFCMT" == "true" ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = lelt  ) ! # of cmt elements '  >>SIZE
-      echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
-  else
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = 1  ) ! # of cmt elements '  >>SIZE
-      echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
-  fi
-  fi
 fi
 
 # tweak .usr (actually, .f ) file
@@ -652,48 +624,6 @@ fi
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
-if [ $? -ne 0 ]; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_switch ! to set IFCMT logical flag
-      include 'SIZE'
-      include 'INPUT'
-      IFCMT=.true.
-      return
-      end
-_ACEOF
-fi
-fi
-
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-if [ -e "cmtparticles.usrp" ]
-then
-echo 'Particles found CMT'
-else
-cat >> $CASENAME.f << _ACEOF
-c
-c automatically added by makenek
-      subroutine usr_particles_init ! used for particles
-      return
-      end
-c
-c automatically added by makenek
-      subroutine usr_particles_solver ! used for particles
-      return
-      end
-c
-c automatically added by makenek
-      subroutine usr_particles_io(istep) ! used for particles
-      integer istep
-      return
-      end
-
-_ACEOF
-fi
-fi
-
 cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
@@ -737,6 +667,32 @@ c automatically added by makenek
       end
 _ACEOF
 fi
+if [ -e "cmtparticles.usrp" ]
+then
+echo 'Particles found CMT'
+else
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usr_particles_init ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_solver ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_io(istep) ! used for particles
+      integer istep
+      return
+      end
+
+_ACEOF
+fi
+fi
+
 
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0

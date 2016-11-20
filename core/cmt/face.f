@@ -90,9 +90,9 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'DG'
 
-      parameter(lf=lx1*lz1*2*ldim*lelcmt)
+      parameter(lf=lx1*lz1*2*ldim*lelt)
       common /c_is1/ glo_num_face(lf)
-     $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelcmt)
+     $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelt)
       integer*8 glo_num_face,glo_num_vol,ngv
 
       call setup_cmt_gs(dg_hndl,nx1,ny1,nz1,nelt,nelgt,vertex,

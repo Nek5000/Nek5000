@@ -18,7 +18,7 @@ c     Solve the Euler equations
 
       ftime_dum = dnekclock()
       nxyz1=lx1*ly1*lz1
-      n = nxyz1*lelcmt*toteq
+      n = nxyz1*lelt*toteq
       nfldpart = ndim*npart
 
       if(istep.eq.1) then 
@@ -32,7 +32,7 @@ c     Solve the Euler equations
 !        enddo
 !        call exitt
          call set_tstep_coef
-         call cmt_flow_ics(ifrestart)
+         call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
 c preprocessing of interpolation step 
@@ -109,7 +109,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
       integer lfq,heresize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
+      parameter (lfq=lx1*lz1*2*ldim*lelt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
      >                   hdsize=toteq*3*lfq) ! might not need ldim
 ! not sure if viscous surface fluxes can live here yet
@@ -151,7 +151,7 @@ c-----------------------------------------------------------------------
 !          primitive variables. Only then can we compute CFL and/or dt.
 !-----------------------------------------------------------------------
       if(stage.eq.1) call setdtcmt
-      ntot = lx1*ly1*lz1*lelcmt*toteq
+      ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
 
 !     !Total_eqs = 5 (we will set this up so that it can be a user 
@@ -264,15 +264,14 @@ c-----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
 
-      subroutine cmt_flow_ics(ifrestart)
+      subroutine cmt_flow_ics
       include 'SIZE'
       include 'CMTDATA'
       include 'SOLN'
 
-      logical ifrestart
       integer e
       nxyz1 = nx1*ny1*nz1
-      n     = nxyz1*lelcmt*toteq
+      n     = nxyz1*lelt*toteq
       if (ifrestart)then
          do e=1,nelt
             call copy(U(1,1,1,2,e),vx(1,1,1,e),nxyz1) 

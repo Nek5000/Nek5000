@@ -4,7 +4,7 @@ c     and to set some hardwired run-time parameters
 c
       integer ldim,lx1,lxd,lx2,lx1m,lelg,lp,lelt,ldimt
       integer ax1,ax2,lpx1,lpx2,lpelt,lbx1,lbx2,lbelt
-      integer lelcmt,toteq
+      integer toteq
       integer lcvx1,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
       integer maxobj,maxmbr,lpert,nsessmax,nmaxl,nfldmax,nmaxcom
@@ -26,7 +26,7 @@ c
       parameter (ax1=1,ax2=1)                   ! averages
       parameter (lbx1=1,lbx2=1,lbelt=1)         ! mhd
       parameter (lpx1=1,lpx2=1,lpelt=1,lpert=1) ! linear stability
-      parameter (lelcmt=1,toteq=1)              ! cmt
+      parameter (toteq=1)                       ! cmt
       parameter (lcvx1=1,lcvelt=1)              ! cvode
 
       parameter (mxprev=20,lgmres=30)           ! projection + Krylov space dimension
