@@ -158,7 +158,7 @@ c
 c
 c     Set up transfer function
 
-      call usrflt(rmult)
+      call cmt_usrflt(rmult)
       call ident   (diag,nx)
 
       do k=1,nx
@@ -221,7 +221,7 @@ c
 c
 c     Set up transfer function
 
-      call usrflt(rmult)
+      call cmt_usrflt(rmult)
       call ident   (diag,nx)
 
       do k=1,nx
