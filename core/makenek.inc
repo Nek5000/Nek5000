@@ -15,7 +15,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  MOAB      enable MOAB/CUBIT support (experimental)"
   echo "  NO_LAPACK disable nek-supplied LAPACK routines"
   echo "  EXTBAR    adds underscore to exit call(for BGQ)"
-  echo "  CMT       CMT-nek, a DG compressible-flow solver"
+  echo "  CMTNEK    CMT-nek, a DG compressible-flow solver"
   exit 1
 fi
 
@@ -303,7 +303,7 @@ do
    if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
    fi
-   if [ "$i" == "CMT" ]; then
+   if [ "$i" == "CMTNEK" ]; then
      IFCMT=true
    fi
 done

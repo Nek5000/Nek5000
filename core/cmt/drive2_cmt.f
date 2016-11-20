@@ -3,6 +3,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'DG'
+      include 'CMTDATA'
       if (nio.eq.0) write(6,*)'Set up CMT-Nek'    
       if (toteq.ne.5) then
          if (nio.eq.0) write(6,*)'toteq is low ! toteq = ',toteq

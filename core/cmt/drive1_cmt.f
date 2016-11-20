@@ -32,7 +32,7 @@ c     Solve the Euler equations
 !        enddo
 !        call exitt
          call set_tstep_coef
-         call cmt_flow_ics(ifrestart)
+         call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
 c preprocessing of interpolation step 
@@ -264,12 +264,11 @@ c-----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
 
-      subroutine cmt_flow_ics(ifrestart)
+      subroutine cmt_flow_ics
       include 'SIZE'
       include 'CMTDATA'
       include 'SOLN'
 
-      logical ifrestart
       integer e
       nxyz1 = nx1*ny1*nz1
       n     = nxyz1*lelt*toteq
