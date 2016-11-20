@@ -125,7 +125,7 @@
    1.00000       1.00000       1.00000       1.00000
    1.00000       1.00000       1.00000       1.00000       1.00000
    1.00000       1.00000       1.00000       1.00000
-          14   LOGICAL SWITCHES FOLLOW
+          13   LOGICAL SWITCHES FOLLOW
   T     IFFLOW
   F     IFHEAT
  T      IFTRAN
@@ -139,7 +139,6 @@
  F      IFKEPS
  F      IFMVBD
  F      IFCHAR
- F      IFFLTR
    20.0000       20.0000      -3.00000      -10.0000     XFAC,YFAC,XZERO,YZERO
  **MESH DATA** 1st line is X of corner 1,2,3,4. 2nd line is Y.
           16  2          16           NEL,NDIM,NELV
