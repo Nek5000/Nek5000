@@ -80,7 +80,7 @@ c We have perfect gas law. Cvg is stored full field
          call nekasgn(i,j,k,e)
          call cmtasgn(i,j,k,e)
          e_internal=energy(i,j,k) !nekasgn should do this, but can't
-         call userEOS(i,j,k,eg)
+         call cmt_userEOS(i,j,k,eg)
          vtrans(i,j,k,e,icp)= cp*rho
          vtrans(i,j,k,e,icv)= cv*rho
          t(i,j,k,e,1)       = temp

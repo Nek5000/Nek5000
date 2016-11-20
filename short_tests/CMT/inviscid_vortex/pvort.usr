@@ -18,7 +18,7 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine userflux
+      subroutine cmt_userflux
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE' ! probably want to start following nek convention
@@ -32,7 +32,7 @@ c     e = gllel(eg)
       return
       end
 !-----------------------------------------------------------------------
-      subroutine userEOS(ix,iy,iz,eg)
+      subroutine cmt_userEOS(ix,iy,iz,eg)
       include 'SIZE'
       include 'NEKUSE'
       include 'PARALLEL'
@@ -201,7 +201,7 @@ c
       return
       end
 !-----------------------------------------------------------------------
-      subroutine usrflt(rmult)
+      subroutine cmt_usrflt(rmult)
       include 'SIZE'
       real rmult(nx1)
       real alpfilt

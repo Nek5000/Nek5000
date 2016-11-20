@@ -624,12 +624,12 @@ fi
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_usrflt" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine usrflt(rmult) ! user defined filter
+      subroutine cmt_usrflt(rmult) ! user defined filter
       include 'SIZE'
       real rmult(lx1)
       call rone(rmult,lx1)
@@ -638,30 +638,32 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userflux" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_userflux" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine userflux ! user defined flux
+      subroutine cmt_userflux ! user defined flux
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
       real fluxout(lx1*lz1)
       return
       end
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userEOS" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_userEOS" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine userEOS ! user defined EOS 
+      subroutine cmt_userEOS ! user defined EOS 
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
 
       return
       end

@@ -24,7 +24,7 @@
                enddo
                eq=5
                if (cbc(f,e,ifield) .eq. 'I  ') then
-                  call userflux(flux(1,f,e,eq)) ! replace this with userbc
+                  call cmt_userflux(flux(1,f,e,eq)) ! replace this with userbc
                else ! v, O and W
                   call cmult(flux(1,f,e,eq),2.0,nxz)
                endif
