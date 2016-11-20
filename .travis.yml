@@ -39,8 +39,8 @@ env:
     # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn2_Serial   # Stdout exceeds Travis' max log length
     # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=VarVis::test_PnPn2_Parallel # Stdout exceeds Travis' max log length
 
-    - TEST_CASE=CmtInviscidVortex::test_PnPn_Serial   PPLIST=CMTNEK
-    - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel PPLIST=CMTNEK
+    - IFCMT=true TEST_CASE=CmtInviscidVortex::test_PnPn_Serial   PPLIST=CMTNEK
+    - IFCMT=true TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel PPLIST=CMTNEK
 
 before_install: 
   - export ROOT_DIR=`pwd`
@@ -49,6 +49,7 @@ before_install:
   - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
   - export VERBOSE_TESTS=true
   - export PARALLEL_PROCS=2
+  - export PPLIST
 
   - sudo apt-get update -qq
   - sudo apt-get install -y libmpich-dev mpich
