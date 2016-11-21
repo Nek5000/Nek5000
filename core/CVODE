@@ -24,6 +24,11 @@ c
      &                cv_rtol, cv_sigs, cv_delt, 
      &                cv_time, cv_timel, cv_dtnek, cv_dtmax
 
+      real nfe_avg, nli_nni_avg
+      common /cvrstat/ nfe_avg,nli_nni_avg 
+      integer*8 cv_istep, iout_save(21)
+      common /cvistat/ cv_istep, iout_save 
+
       integer igstype,itmeth
       parameter(
      &     itmeth  = 2,         ! newton iter
