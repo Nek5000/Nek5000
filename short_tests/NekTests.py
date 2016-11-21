@@ -265,9 +265,11 @@ class Benard_RayDD(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
         )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
@@ -382,10 +384,12 @@ class Benard_RayDN(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
-            )
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
+        )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
             rea_file   = 'ray_dn',
@@ -394,7 +398,7 @@ class Benard_RayDN(NekTestCase):
             n_procs    = self.mpi_procs,
             verbose    = self.verbose,
             step_limit = None,
-            )
+        )
 
         logfile=os.path.join(
             self.examples_root,
@@ -498,10 +502,12 @@ class Benard_RayNN(NekTestCase):
             source_root = self.source_root,
             usr_file    = 'ray_cr',
             cwd         = os.path.join(self.examples_root, 'benard', 'benard_split'),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
-            )
+            opts        = dict(
+                F77   = self.f77,
+                CC    = self.cc,
+                IFMPI = str(self.ifmpi).lower(),
+            ),
+        )
         lib.nekBinRun.run_nek(
             cwd        = os.path.join(self.examples_root, 'benard', 'benard_split'),
             rea_file   = 'ray_nn',
@@ -510,7 +516,7 @@ class Benard_RayNN(NekTestCase):
             n_procs    = self.mpi_procs,
             verbose    = self.verbose,
             step_limit = None,
-            )
+        )
 
         logfile=os.path.join(
             self.examples_root,
@@ -900,6 +906,103 @@ class LowMachTest(NekTestCase):
 
         phrase = self.get_phrase_from_log("ABORT: For lowMach,")
         self.assertIsNotNullDelayed(phrase, label='ABORT: ')
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+
+####################################################################
+#  mv_cyl with CVODE
+####################################################################
+
+class MvCylCvode(NekTestCase):
+    example_subdir = 'mv_cyl'
+    case_name = 'mv_cyl'
+
+    def setUp(self):
+        self.size_params = dict (
+            ldim     = '2',
+            lx1      = '8',
+            lxd      = '12',
+            lx2      = 'lx1-0',
+            lx1m     = 'lx1',
+            lelg     = '520',
+            lp       = '64',
+            lelt     = '200',
+            ldimt    = '10',
+            lelx     = '1',
+            lely     = '1',
+            lelz     = '1',
+            ax1      = '1',
+            ax2      = '1',
+            lbx1     = '1',
+            lbx2     = '1',
+            lbelt    = '1',
+            lpx1     = '1',
+            lpx2     = '1',
+            lpelt    = '1',
+            lpert    = '1',
+            lelecmt  = '',
+            toteq    = '1',
+            lcvx1    = 'lx1',
+            lcvelt   = 'lelt',
+            mxprev   = '20',
+            lgmres   = '40',
+            lorder   = '3',
+            lhis     = '100',
+            maxobj   = '4',
+            maxmbr   = 'lelt*6',
+            nsessmax = '1',
+            nmaxl    = '1',
+            nfldmax  = '1',
+            nmaxcom  = '1',
+        )
+
+        if not self.cvode_dir:
+            self.fail('Must define $CVODE_DIR in environment before running this test.')
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel_Steps1e3(self):
+        self.log_suffix += '.steps_1e3'
+        self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek(opts=dict(
+            PPLIST="CVODE",
+            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
+        ))
+        self.run_nek()
+
+        err3 = self.get_value_from_log('err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(err3, target_val=0.1743079E-03, delta=1e-6, label='err (column -3)')
+
+        err2 = self.get_value_from_log('err', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(err2, target_val=0.6348537E-06, delta=1e-9, label='err (column -2)')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel_Steps1e4(self):
+        self.log_suffix += '.steps_1e4'
+        self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek(opts=dict(
+            PPLIST="CVODE",
+            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
+        ))
+        self.run_nek()
+
+        err3 = self.get_value_from_log('err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(err3, target_val=0.1693853E-05, delta=1e-8, label='err (column -3)')
+
+        err2 = self.get_value_from_log('err', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(err2, target_val=0.6344692E-09, delta=1e-12, label='err (column -2)')
+
         self.assertDelayedFailures()
 
     def tearDown(self):
