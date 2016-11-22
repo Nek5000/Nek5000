@@ -1127,16 +1127,16 @@ class CmtInviscidVortex(NekTestCase):
 
     @pn_pn_serial
     def test_PnPn_Serial(self):
-        if not self.ifcmt:
-            self.skipTest("Skipping \"{0}\"; CMT is not enabled.".format(self.id()))
+        if "CMTNEK" not in self.pplist:
+            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
         self.build_nek()
         self.run_nek(step_limit=1000)
         self.diff_l2norms()
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        if not self.ifcmt:
-            self.skipTest("Skipping \"{0}\"; CMT is not enabled.".format(self.id()))
+        if "CMTNEK" not in self.pplist:
+            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
         self.build_nek()
         self.run_nek(step_limit=1000)
         self.diff_l2norms()
