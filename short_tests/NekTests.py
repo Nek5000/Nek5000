@@ -964,7 +964,7 @@ class MvCylCvode(NekTestCase):
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e3(self):
         if not "CVODE" in self.pplist:
-            self.skipTest("Skipping \"{0}\"; \"CVODE\" is not listed in $PPLIST.".format(self.id()))
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
 
         self.log_suffix += '.steps_1e3'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
@@ -984,7 +984,7 @@ class MvCylCvode(NekTestCase):
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e4(self):
         if not "CVODE" in self.pplist:
-            self.skipTest("Skipping \"{0}\"; \"CVODE\" is not listed in $PPLIST.".format(self.id()))
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
 
         self.log_suffix += '.steps_1e4'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
