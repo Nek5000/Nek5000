@@ -42,10 +42,10 @@ env:
     - IFCMT=true TEST_CASE=CmtInviscidVortex::test_PnPn_Serial   PPLIST=CMTNEK
     - IFCMT=true TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel PPLIST=CMTNEK
 
-    - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3
+    - IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE" TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3
     # - IFMPI=true F77=mpif77 CC=mpicc TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e4 # Exceeds time limit for Travis jobs
 
-before_install:
+before_install: 
   - export ROOT_DIR=`pwd`
 
   - export SOURCE_ROOT=$ROOT_DIR
@@ -63,17 +63,18 @@ before_install:
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
 
   # Install cvode
-  - export CVODE_DIR=$ROOT_DIR/cvode-2.9.0
-  - mkdir -p $CVODE_DIR
+  - export CVODE_INSTALL_DIR=$ROOT_DIR/cvode-2.9.0-install
+  - export USR_LFLAGS="$USR_LFLAGS -L$CVODE_INSTALL_DIR/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel"
+  - mkdir -p $CVODE_INSTALL_DIR
   - wget http://computation.llnl.gov/projects/sundials/download/cvode-2.9.0.tar.gz
   - tar -zxf cvode-2.9.0.tar.gz
   - mkdir -p cvode-2.9.0/build
   - cd cvode-2.9.0/build
-  - cmake -DCMAKE_INSTALL_PREFIX=$CVODE_DIR -DEXAMPLES_INSTALL=OFF -DMPI_ENABLE=ON -DFCMIX_ENABLE=ON -DBUILD_SHARED_LIBS=OFF ../
+  - cmake -DCMAKE_INSTALL_PREFIX=$CVODE_INSTALL_DIR -DEXAMPLES_INSTALL=OFF -DMPI_ENABLE=ON -DFCMIX_ENABLE=ON -DBUILD_SHARED_LIBS=OFF ../
   - make
   - make install
-  - ls -R $CVODE_DIR
-
+  - ls -R $CVODE_INSTALL_DIR
+ 
 install:
   - pip install --upgrade pip
   - pip install pytest

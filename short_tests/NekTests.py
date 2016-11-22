@@ -849,8 +849,8 @@ class LowMachTest(NekTestCase):
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
         self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-06, label='VX')
 
-        t = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(t, target_val=4.5408E-12, delta=1e-06, label='T')
+        errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-06, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-06, label='QTL')
@@ -870,8 +870,8 @@ class LowMachTest(NekTestCase):
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
         self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-06, label='VX')
 
-        t = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(t, target_val=4.5408E-12, delta=1e-06, label='T')
+        errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-06, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-06, label='QTL')
@@ -950,23 +950,19 @@ class MvCylCvode(NekTestCase):
             nfldmax  = '1',
             nmaxcom  = '1',
         )
-
-        if not self.cvode_dir:
-            self.fail('Must define $CVODE_DIR in environment before running this test.')
-
         self.build_tools(['genmap'])
         self.run_genmap()
 
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e3(self):
+        if not "CVODE" in self.pplist:
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+
         self.log_suffix += '.steps_1e3'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
         self.size_params['lx2'] = 'lx1'
         self.config_size()
-        self.build_nek(opts=dict(
-            PPLIST="CVODE",
-            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
-        ))
+        self.build_nek()
         self.run_nek()
 
         err3 = self.get_value_from_log('err', column=-3, row=-1)
@@ -979,14 +975,14 @@ class MvCylCvode(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel_Steps1e4(self):
+        if not "CVODE" in self.pplist:
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+
         self.log_suffix += '.steps_1e4'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
         self.size_params['lx2'] = 'lx1'
         self.config_size()
-        self.build_nek(opts=dict(
-            PPLIST="CVODE",
-            USR_LFLAGS="-L{0}/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel".format(self.cvode_dir)
-        ))
+        self.build_nek()
         self.run_nek()
 
         err3 = self.get_value_from_log('err', column=-3, row=-1)

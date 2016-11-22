@@ -55,11 +55,19 @@ TwistedTrial, and others.
 
 #### Environment
 
-Before running the tests, these environment variables may be optionally defined:
-* `SOURCE_ROOT`: Points to the top-level Nek5000 repository. 
-* `CC`: The C compiler you wish to use (default: mpicc).
-* `F77`: The Fortran 77 compiler you wish to use (default mpif77).
+Before running the tests, several environment variables may be optionally defined.
+
+Setting the following in your environement (e.g. `export SOURCE_ROOT=$HOME/repos/Nek5000`)
+will set the corresponding variables in makenek.  They affect compilation of Nek5000.
+* `SOURCE_ROOT`: Points to the top-level Nek5000 repository (default: this repository).
+* `F77`: The Fortran 77 compiler (default mpif77).
+* `CC`: The C compiler (default: mpicc).
+* `G`: Generic compiler flags, such as -g (default: none)
+* `PPLIST`: List of pre-processor symbols (default: none)
+* `USR_LFLAGS`: Linking flags (default: none)
 * `IFMPI=[true|false]`: If true, run tests with MPI. (default: true)
+
+Setting the following in your enviroment will affect the execution of NekTests
 * `PARALLEL_PROCS`: The number of processes to use when running with MPI
   (default: 4)
 * `EXAMPLES_ROOT`: Points to an alternate Nek5000 examples directory (default: this directory)
