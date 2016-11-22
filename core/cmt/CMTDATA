@@ -64,9 +64,6 @@ c---------------------------------------------------------------------
       logical           ifsip
       common /cmtvisco/ ifsip
 
-      integer           ncut, ncutd
-      real              wght, wghtd
-      common /cmtfltrp/ ncut, ncutd, wght, wghtd
 ! particle stuff for rk3 low storage tvd
       common /PARTRESTART/ ifpartrestart, partrestartfile
      >        ,partrestartdata, partrestartno

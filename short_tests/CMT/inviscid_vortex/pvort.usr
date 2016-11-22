@@ -171,10 +171,6 @@ c-----------------------------------------------------------------------
 
       IFDG=.true.
 
-      NCUT  = int(lx1/2)
-      NCUTD = lxd
-      wght  = 0.2
-      wghtd = 0.2
       return
       end
 c-----------------------------------------------------------------------
@@ -207,7 +203,6 @@ c
       real alpfilt
       integer sfilt, kut
       real eta, etac
-
 
       call rone(rmult,nx1)
 
