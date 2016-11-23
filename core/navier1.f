@@ -1520,16 +1520,19 @@ C----------------------------------------------------------------------
       include 'INPUT'
       include 'TSTEP'
 
+      include 'MVGEOM'
+
                                                 call makeuf
       if (ifnatc)                               call natconv
 c      if (ifexplvis.and.ifsplit)                call explstrs
       if (ifexplvis.and.ifsplit)                call makevis
-      if (ifnav.and.(.not.ifchar))              call advab
-      if (ifmvbd)                               call admeshv
+      if (ifnav .and..not.ifchar)               call advab
+      if (ifmvbd.and..not.ifchar)               call admeshv
       if (iftran)                               call makeabf
       if ((iftran.and..not.ifchar).or.
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
-      if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
+c     if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
+      if (ifnav.and.ifchar)                     call advchar
       if (ifmodel)                              call twallsh
 
 c     Adding this call allows prescribed pressure bc for PnPn-2

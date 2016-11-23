@@ -100,7 +100,8 @@ C---------------------------------------------------------------------
       NTOT2 = NX2*NY2*NZ2*NELV
       if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
-      IF (IFSTRS)  CALL BCNEUTR
+c      IF (IFSTRS)  CALL BCNEUTR
+      CALL BCNEUTR
 C
       call extrapp (pr,prlag)
       call opgradt (resv1,resv2,resv3,pr)

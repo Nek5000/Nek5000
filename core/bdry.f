@@ -441,7 +441,7 @@ C
      $            CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              GOTO 100
          ENDIF
-         IF (CB.EQ.'ON ') THEN
+         IF (CB.EQ.'ON ' .OR. CB.EQ.'on') THEN
              IF ( IFNORY .OR. IFNORZ )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORZ )
@@ -791,7 +791,7 @@ C
             IF (CB.EQ.'KD ') CALL FACEV (TMP,IE,IFACE,BCK,NX1,NY1,NZ1)
             IF (CB.EQ.'ED ') CALL FACEV (TMP,IE,IFACE,BCE,NX1,NY1,NZ1)
             IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .or.
-     $          CB.EQ.'ed ' .or. cb.eq.'o  ') 
+     $          CB.EQ.'ed ' .or. cb.eq.'o  ' .or. cb.eq.'on ') 
      $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
  2010    CONTINUE
 C
@@ -983,7 +983,7 @@ C     Passive scalar term
   100    CONTINUE
          RETURN
 
-      elseif (cb.eq.'o  ') then
+      elseif (cb.eq.'o  ' .or. cb.eq.'on ') then
          DO 101 IZ=KZ1,KZ2                           !  11/19/2010: The tmask() screen
          DO 101 IY=KY1,KY2                           !  added here so users can leave
          DO 101 IX=KX1,KX2                           !  certain points to be Neumann,
