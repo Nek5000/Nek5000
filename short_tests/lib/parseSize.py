@@ -33,47 +33,49 @@ if __name__ == '__main__':
     params = getSizeParams()
 
     # Print all params in alphabetical order.
-    for x in sorted(params):
-        print "{0} = {1}".format(x, params[x])
+    # for x in sorted(params):
+    #     print "{0} = {1}".format(x, params[x])
 
     # Print only variables in SIZE.template in the order that they appear in SIZE.template
-    # template_params = [
-    #             'ldim',
-    #             'lx1',
-    #             'lxd',
-    #             'lx2',
-    #             'lx1m',
-    #             'lelg',
-    #             'lp',
-    #             'lelt',
-    #             'ldimt',
-    #             'lelx',
-    #             'lely',
-    #             'lelz',
-    #             'ax1',
-    #             'ax2',
-    #             'lbx1',
-    #             'lbx2',
-    #             'lbelt',
-    #             'lpx1',
-    #             'lpx2',
-    #             'lpelt',
-    #             'lpert',
-    #             'lelecmt',
-    #             'toteq',
-    #             'mxprev',
-    #             'lgmres',
-    #             'lorder',
-    #             'lhis',
-    #             'maxobj',
-    #             'maxmbr',
-    #             'nsessmax',
-    #             'nmaxl',
-    #             'nfldmax',
-    #             'nmaxcom',
-    # ]
-    #
-    # for x in template_params:
-    #     print "{0} = {1}".format(x, params.get(x, None))
+    template_params = [
+                'ldim',
+                'lx1',
+                'lxd',
+                'lx2',
+                'lx1m',
+                'lelg',
+                'lp',
+                'lelt',
+                'ldimt',
+                'lelx',
+                'lely',
+                'lelz',
+                'ax1',
+                'ax2',
+                'lbx1',
+                'lbx2',
+                'lbelt',
+                'lpx1',
+                'lpx2',
+                'lpelt',
+                'lpert',
+                'lelecmt',
+                'toteq',
+                'lcvx1',
+                'lcvelt',
+                'mxprev',
+                'lgmres',
+                'lorder',
+                'lhis',
+                'maxobj',
+                'maxmbr',
+                'nsessmax',
+                'nmaxl',
+                'nfldmax',
+                'nmaxcom',
+    ]
+
+    for x in template_params:
+        print "{:<9}= '{}',".format(x, params.get(x, None))
 
 
