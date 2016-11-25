@@ -50,6 +50,9 @@ C-----------------------------------------------------------------------
 
       jp = 0                  ! Set counter for perturbation analysis
 
+      irst = param(46)        ! for lee's restart (rarely used)
+      if (irst.gt.0)  call setup_convect(2)
+
 
 c     If moving geometry then add a perturbation to the
 c     mesh coordinates (see Subroutine INIGEOM)
@@ -364,6 +367,9 @@ c print max values
          call geom_reset(1)  !  recompute geometric factors
       endif
 
+c     ! save velocity on fine mesh for dealiasing
+      call setup_convect(2)
+
 c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitti('setic exit$',nelv)
 
@@ -588,6 +594,7 @@ c use new reader (only binary support)
             call sioflag(ndumps,fname,initc(ifile))
             call mfi(fname,ifile)
          enddo
+         call setup_convect(3)
          if (nid.ne.0) time=0
          time = glmax(time,1) ! Sync time across processors
          return
