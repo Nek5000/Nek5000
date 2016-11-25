@@ -179,8 +179,14 @@ c     Set the new time step. All cases covered.
 c
       include 'SIZE'
       include 'SOLN'
+      include 'MVGEOM'
       include 'INPUT'
       include 'TSTEP'
+
+      common /scruz/ cx(lx1*ly1*lz1*lelt)
+     $ ,             cy(lx1,ly1,lz1,lelt)
+     $ ,             cz(lx1,ly1,lz1,lelt)
+
       common /cprint/ ifprint
       logical         ifprint
       common /udxmax/ umax
@@ -194,12 +200,18 @@ c
       save    iffxdt
       data    iffxdt /.false./
 C
+
       if (param(12).lt.0.or.iffxdt) then
          iffxdt    = .true.
          param(12) = abs(param(12))
          dt        = param(12)
-         dtopf     = dt 
-         call compute_cfl(umax,vx,vy,vz,1.0)
+         dtopf     = dt
+         if (ifmvbd) then
+           call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+           call compute_cfl(umax,cx,cy,cz,1.0)
+         else
+           call compute_cfl(umax,vx,vy,vz,1.0)
+         endif
          goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
@@ -462,6 +474,10 @@ C
       common /ctmp0/ x(lx1,ly1,lz1,lelv)
      $ ,             r(lx1,ly1,lz1,lelv)
       common /udxmax/ umax
+
+      common /scruz/ cx(lx1*ly1*lz1*lelv)
+     $ ,             cy(lx1,ly1,lz1,lelv)
+     $ ,             cz(lx1,ly1,lz1,lelv)
 C
 C
       REAL VCOUR
@@ -510,6 +526,7 @@ C
             IF (IFADVC(IPSCAL+2)) ICONV=1
    10    CONTINUE
       endif
+
       IF (ICONV.EQ.0) THEN
          DT=0.
          return
@@ -525,12 +542,21 @@ C
       COLD   = COURNO
       CMAX   = 1.2*CTARG
       CMIN   = 0.8*CTARG
-      CALL CUMAX (VX,VY,VZ,UMAX)
-C
+ 
+      if (ifmvbd) then
+        call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
+        call cumax  (cx,cy,cz,umax)
+      else
+        call cumax  (vx,vy,vz,umax)
+      endif
+
+c      if (nio.eq.0) write(6,1) istep,time,umax,cmax
+c   1  format(i9,1p3e12.4,' cumax')
+
 C     Zero DT
-C
+
       IF (DT .EQ. 0.0) THEN
-C
+
          IF (UMAX .NE. 0.0) THEN
             DT = CTARG/UMAX
             VCOUR = UMAX
