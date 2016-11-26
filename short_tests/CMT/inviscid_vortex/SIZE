@@ -11,8 +11,8 @@ c
 
       ! GENERAL
       parameter (ldim=2)        ! domain dimension
-      parameter (lx1=21)        ! polynomial order; in 2D set lz1=1
-      parameter (lxd=30)        ! polynomial order for over-integration 
+      parameter (lx1=25)        ! polynomial order; in 2D set lz1=1
+      parameter (lxd=36)        ! polynomial order for over-integration 
       parameter (lx2=lx1)       ! polynomial order for pressure
       parameter (lx1m=1)        ! polynomial order mesh solver; =1 no mesh motion
 

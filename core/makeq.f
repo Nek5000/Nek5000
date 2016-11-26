@@ -41,15 +41,11 @@ C     !! NOTE: Do not change the content of the array BQ until the current
      &                     ifield)
            call add2(bq(1,1,1,1,ifield-1),w1,ntot)
          else
-           if (ifmvbd) then       ! ifchar is false
-              call admesht
-              call makeabq
-              call makebdq
-           elseif (ifchar.and.ifadvc(ifield)) then
-              call makeabq
+           if (ifmvbd.and..not.ifchar)    call admesht
+           call makeabq
+           if (ifchar.and.ifadvc(ifield)) then
               call convch
            else
-              call makeabq
               call makebdq
            endif
          endif

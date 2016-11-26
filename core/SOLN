@@ -50,6 +50,9 @@ c     Solution data
      $    ,bfy    (lx1,ly1,lz1,lelv)
      $    ,bfz    (lx1,ly1,lz1,lelv)
      $    ,cflf   (lx1,ly1,lz1,lelv)
+     $    ,bmnv   (lx1*ly1*lz1*lelv*ldim,lorder+1) ! binv*mask
+     $    ,bmass  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bmass
+     $    ,bdivw  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bdivw*mask
      $    ,c_vx   (lxd*lyd*lzd*lelv*ldim,lorder+1) ! characteristics
 c     Solution data for magnetic field
       real bx     (lbx1,lby1,lbz1,lbelv)
@@ -69,11 +72,12 @@ c     Solution data for magnetic field
      $    ,bylag  (lbx1*lby1*lbz1*lbelv,lorder-1)
      $    ,bzlag  (lbx1*lby1*lbz1*lbelv,lorder-1)
      $    ,pmlag  (lbx2*lby2*lbz2*lbelv,lorder2)
+
       common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
      $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
-     $     vx, vy, vz, vx_e, vy_e, vz_e,
-     $     t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,
-     $     bx, by, bz, pm, bmx, bmy, bmz,
+     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,
+     $     bmnv, bmass, bdivw, bx, by, bz, pm, bmx, bmy, bmz,
+     $     vx_e,vy_e,vz_e,     
      $     bbx1, bby1, bbz1, bbx2, bby2, bbz2, bxlag, bylag, bzlag,
      $     pmlag
 

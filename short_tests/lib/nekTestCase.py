@@ -173,7 +173,7 @@ class NekTestCase(unittest.TestCase):
         self.g              = os.environ.get('G', self.g)
         self.pplist         = os.environ.get('PPLIST', self.pplist)
         self.usr_lflags     = os.environ.get('USR_LFLAGS', self.usr_lflags)
-        self.ifmpi          = os.environ.get('IFMPI', self.ifmpi).lower() == 'true'
+        self.ifmpi          = str(os.environ.get('IFMPI', self.ifmpi)).lower() == 'true'
 
         # Get paths from env
         try:
@@ -194,7 +194,7 @@ class NekTestCase(unittest.TestCase):
         except KeyError:
             pass
 
-        self.verbose        = os.environ.get('VERBOSE_TESTS', self.verbose).lower() == 'true'
+        self.verbose        = str(os.environ.get('VERBOSE_TESTS', self.verbose)).lower() == 'true'
         self.parallel_procs = int(os.environ.get('PARALLEL_PROCS', self.parallel_procs))
 
         # Print everything out
