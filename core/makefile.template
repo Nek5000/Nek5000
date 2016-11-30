@@ -91,10 +91,14 @@ ifeq ($(IFMPI),false)
 endif
 
 # IFCMT append *.o files to CORE
-CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
- face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
- bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
- filters_cmt.o diagnostics.o
+ifeq ($(IFCMT),true)
+  CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
+   face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
+   bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
+   filters_cmt.o diagnostics.o
+else
+  CMTCORE := 
+endif
 # VISIT ########################################################################
 ifeq ($(IFVISIT),true)
   VISITNEK_INCLUDES:=-I$S/3rd_party
@@ -119,7 +123,7 @@ endif
 ifeq ($(IFCMT),true)
 TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
 else
-TMP1 = $(CORE) cmt_dummy.o $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
 endif
 
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -239,7 +243,6 @@ $(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/cmt_dummy.o	:$S/cmt_dummy.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(F77) -c $(FL2) $< -o $@
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(S2)/step.f;	        	$(F77) -c $(FL2) $< -o $@
@@ -255,7 +258,6 @@ $(OBJDIR)/surface_fluxes.o	:$(S2)/surface_fluxes.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/diffusive_cmt.o	:$(S2)/diffusive_cmt.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/MixtPerf.o	:$(S2)/MixtPerf.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/intpdiff.o	:$(S2)/intpdiff.f;		$(F77) -c $(FL2) $< -o $@
-#$(OBJDIR)/numerical_flux_cmt.o	:$(S2)/numerical_flux_cmt.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/inflow_bc.o	:$(S2)/inflow_bc.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/outflow_bc.o	:$(S2)/outflow_bc.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/wall_bc.o	:$(S2)/wall_bc.f;		$(F77) -c $(FL2) $< -o $@
