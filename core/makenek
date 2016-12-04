@@ -30,8 +30,8 @@ CC="mpicc"
 # enable MPI (default true)
 #IFMPI="false"
 
-# enable profiling (default false)
-#IFPROFILING="true"
+# disable/enable profiling (default true`)
+IFPROFILING="true"
 
 # enable AMG coarse grid solver (default XXT)
 #IFAMG="true"
