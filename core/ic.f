@@ -1795,6 +1795,7 @@ C
                      u(i,j,k,eqnum,e)=varsic(eqnum)
                   enddo
                   if (ifvisc) vdiff(i,j,k,e,ifield)=mu
+                  t(i,j,k,e,1) = temp ! this is definitely worth commiting.
                else
                   t(i,j,k,e,ifield-1) = temp
                   if (ifvisc) then

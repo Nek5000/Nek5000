@@ -653,6 +653,33 @@ _ACEOF
 fi
 fi
 
+if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+if [ -e "cmtparticles.usrp" ]
+then
+echo 'Particles found CMT'
+else
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usr_particles_init ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_solver ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_io(istep) ! used for particles
+      integer istep
+      return
+      end
+
+_ACEOF
+fi
+fi
+
 cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
