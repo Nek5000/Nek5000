@@ -269,7 +269,11 @@ if [ "$UNDERSCORE" == "true" ]; then
 fi 
 
 if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
+  if [ "$IFMPI" == "true" -o "IFMPI" == "yes" ]; then
     PPLIST="${PPLIST} TIMER MPITIMER"
+  else
+    PPLIST="${PPLIST} TIMER"
+  fi
 fi
 
 PPLIST="${PPLIST} GLOBAL_LONG_LONG"
