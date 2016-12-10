@@ -26,6 +26,12 @@ c     from instruction file.  - Ed Bullister
       character filold*17
       common/inout/  iext
 
+      common /lfiles/ ifre2,ifpar
+      logical ifre2,ifpar
+
+      common/newfle/ re2fle,parfle
+      character re2fle*80,parfle*80
+
       call data     !  Replaced Data stmts with assignment statements
       call init
       call gnable
@@ -69,25 +75,45 @@ c     from instruction file.  - Ed Bullister
 
          call blank(line,80)
          call res  (line,80)
-         if (indx1(line,'.rea',4).eq.0) then ! Append .rea, if not present
-            len = ltrunc(line,80)
-            call chcopy (lines(len+1),'.rea',4)
-         endif
+        
 
-         ifread=.true.
-         filold=line
-         call openf(9,filold,'OLD',3,ierr)
-
-         if (ierr.ne.0) then
-            call prs(' Can''t open file '//FILOLD//'   Try again.$')
+         call check_inputfile(line,parfle,re2fle,ifpar,ifre2,ierr)
+         if(ierr.ne.0) then 
+            ierr=0        !reset ierr 
+            call prs(' Can''t open file!   Try again.$')
             call prs(' $')
             in=5
             goto 1
          endif
 
-         call read_params
+c        if (indx1(line,'.rea',4).eq.0) then ! Append .rea, if not present
+c           len = ltrunc(line,80)
+c           call chcopy (lines(len+1),'.rea',4)
+c        endif
+
+         ifread=.true.
+
+c        CALL READ_PARAM
+
+         if (ifpar) then
+            call setDefaultParam
+            call param_read_par(parfle)
+         else
+            filold=line
+            call openf(9,filold,'OLD',3,ierr)
+
+            if (ierr.ne.0) then
+               call prs(' Can''t open file '//FILOLD//'   Try again.$')
+               call prs(' $')
+               in=5
+               goto 1
+            endif
+            call read_params
+         endif
 
       endif
+  
+      if (ifre2) filold=re2fle   !this will be default for remaining reads
 
       call build_options
       call build
@@ -184,6 +210,9 @@ c-----------------------------------------------------------------------
 
       common /cfilold/ filold
       character filold*17
+      common /lfiles/ ifre2,ifpar
+      logical ifre2,ifpar
+      logical isthere
 
       if (ifmerge) then        ! No queries - just use existing file
          choice='BUILD FROM FILE'   ! For build routine
@@ -239,12 +268,14 @@ C     How does build know if we are interactive or reading?
 C     On end-of-file on read file, will we always jump to the right place?
 C     Do this interactively independently of whether we read in parameters
 
-      IF(NDIM.EQ.2) then
-          NSIDES=4
-          NEDGES=4
-      elseif (NDIM.EQ.3) then
-          NSIDES=6
-          NEDGES=8
+      IF(.not.ifpar) then
+       IF(NDIM.EQ.2) then
+           NSIDES=4
+           NEDGES=4
+       elseif (NDIM.EQ.3) then
+           NSIDES=6
+           NEDGES=8
+       endif
       endif
       IF(choice.eq.'BUILD INTERACTIVELY') THEN
          IFREAD=.FALSE.
@@ -281,21 +312,29 @@ C           Check How many letters in read name
 19           continue
             m=lastch+1
             n=m+3
-            FILENM(M:N) ='.rea'
+            FILENM(M:N) ='.re2'
+            ifre2=.true.
+            inquire(file=filenm,exist=isthere)
+            if(.not.isthere) then
+               FILENM(M:N) ='.rea'
+               ifre2       =.false.
+            endif               
          else
 C           Use default file
             FILENM=FILOLD
          endif
          CALL PRS(' Will Read Mesh and B.C. data from  '//FILENM//'$')
-         CALL OPENF(9,FILENM,'OLD',3,IERR)
-         IF(IERR.NE.0) then
-            CALL PRS(' Can''t open file $'//FILENM//'   Try again.$')
-            IN=5
-c           GO TO 1080
-            GOTO 310
+
+         if (.not.ifre2) then  !.rea file only
+            CALL OPENF(9,FILENM,'OLD',3,IERR)
+            IF(IERR.NE.0) then
+               CALL PRS(' Can''t open file $'//FILENM//'   Try again.$')
+               IN=5
+c              GO TO 1080
+               GOTO 310
+            endif
          endif
       endif
-
       return
       end
 c-----------------------------------------------------------------------

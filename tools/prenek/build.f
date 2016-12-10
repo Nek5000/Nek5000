@@ -58,6 +58,9 @@ c     Menu-based module that prompts the user to input corners.
       logical iftmp
       common /splitt/ enew(nelm),ind(nelm)
 
+      common /lfiles/ ifre2,ifpar
+      logical ifre2,ifpar
+
       if (ifnoseg) call drcovr(13)
      
       pi=4.0*atan(1.0)
@@ -92,7 +95,7 @@ C     Need legendre points for mesh drawn on screen
      $     CHOICE.EQ.'IMPORT UNIVERSAL FILE')THEN
          if (choice.eq.'BUILD FROM FILE') then
            call readat
-           close(unit=9)
+           if (.not.ifre2) close(unit=9)
            if (.not.if3d) call chk_right_hand(nel)
          endif
 C     Set grid stuff based on old data
@@ -571,9 +574,20 @@ c-----------------------------------------------------------------------
       character*80 string
       real*8 bc8(5)
 
+      common /lfiles/ ifre2,ifpar
+      logical ifre2
+
       NLINF=0
       NLINP=0
       NLINR=0
+      if (ifre2) then
+         call readat_re2
+         NZ=1
+         IF(IF3D)NZ=NX
+         NSIDES=4
+         IF(IF3D)NSIDES=6
+         return
+      endif
      
 C     Read in all the build,bound,curve,history,output,initcond data
 C     Read Dummy Parameters
@@ -719,6 +733,7 @@ C     FIX UP FOR WHICH OF FIELDS TO BE USED
             do 88 IEL=1,NEL
                do 88 ISIDE=1,NSIDES
 C     !Fix to a4,i2 when you make cbc character*4
+C     Sets number of BC expected in the .rea file
                   IF(VNEKOLD .LE. 2.5) NBCREA = 3
                   IF(VNEKOLD .GE. 2.6) NBCREA = 5
                   IF (NEL.LT.1000.and.iffmtin) THEN

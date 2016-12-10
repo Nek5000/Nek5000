@@ -23,9 +23,9 @@ endif
 L     = .
 
 
-NOBJS = prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib.o subs.o zipper2.o postnek6.o screen.o revert.o crs.o mxm.o xdriver.o 
+NOBJS = byte.o prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib.o subs.o zipper2.o postnek6.o screen.o revert.o crs.o mxm.o xdriver.o readinfle.o finiparser.o iniparser.o dictionary.o
 
-TOBJS = prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib_no_graph.o subs.o zipper2.o postnek6.o screen.o revert.o crs.o mxm.o xdriver.o
+TOBJS = byte.o prenek.o curve.o edit.o build.o build1.o build2.o bound.o plot.o xinterface.o glomod.o legend.o vprops.o iolib_no_graph.o subs.o zipper2.o postnek6.o screen.o revert.o crs.o mxm.o xdriver.o readinfle.o finiparser.o iniparser.o dictionary.o
 
 
 all: prex pretex
@@ -40,6 +40,7 @@ pretex:	$(TOBJS)
 clean:
 	'rm' *.o
 	
+byte.o		: byte.c		;  $(CC) -c $(CFLAGS) byte.c
 plot.o		: plot.f 	basics.inc	; $(F77) -c $(FLAGS) plot.f
 iolib_no_graph.o: iolib_no_graph.f basics.inc   ; $(F77) -c $(FLAGS) iolib_no_graph.f
 blas.o		: blas.f 	basics.inc	; $(F77) -c $(FLAGS) blas.f
@@ -48,6 +49,7 @@ mxm.o			: mxm.f		basics.inc	; $(F77) -c $(FLAGS) mxm.f
 crs.o			: crs.f		basics.inc	; $(F77) -c $(FLAGS) crs.f
 bound.o		: bound.f 	basics.inc	; $(F77) -c $(FLAGS) bound.f
 prenek.o		: prenek.f	basics.inc	; $(F77) -c $(FLAGS) prenek.f
+readinfle.o		: readinfle.f	basics.inc	; $(F77) -c $(FLAGS) readinfle.f
 zipper.o		: zipper.f	basics.inc	; $(F77) -c $(FLAGS) zipper.f
 zipper2.o	: zipper2.f	basics.inc	; $(F77) -c $(FLAGS) zipper2.f
 curve.o		: curve.f 	basics.inc	; $(F77) -c $(FLAGS) curve.f
@@ -64,4 +66,7 @@ build1.o		: build1.f	basics.inc	; $(F77) -c $(FLAGS) build1.f
 build2.o		: build2.f	basics.inc	; $(F77) -c $(FLAGS) build2.f
 g3d.o			: g3d.f		basics.inc	; $(F77) -c $(FLAGS) g3d.f
 xdriver.o	: xdriver.c			; $(CC) -c $(CFLAGS) xdriver.c
-revert.o		: revert.c			; $(CC) -c $(CFLAGS) revert.c
+revert.o		: revert.c		; $(CC) -c $(CFLAGS) revert.c
+finiparser.o	:../../core/3rd_party/finiparser.c ; $(CC) -c $(CFLAGS) ../../core/3rd_party/finiparser.c   
+iniparser.o    	:../../core/3rd_party/iniparser.c   ; $(CC) -c $(CFLAGS) ../../core/3rd_party/iniparser.c    
+dictionary.o   	:../../core/3rd_party/dictionary.c  ; $(CC) -c $(CFLAGS) ../../core/3rd_party/dictionary.c   
