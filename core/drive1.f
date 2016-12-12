@@ -235,6 +235,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+      ntot1 = nx1*ny1*nz1*nelt
 
       call nekgsync
 
@@ -271,6 +272,7 @@ c-----------------------------------------------------------------------
 
          if (igeom.eq.2) then  
                                    call setprop
+                                   call rzero(qtl,ntot1)
             if (iflomach)          call userqtl(.true.)
          endif
 
