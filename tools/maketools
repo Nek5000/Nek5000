@@ -11,7 +11,7 @@ CC="gcc"
 #USR_LFLAGS="-L$HOME/lib"
 
 # enable BIG MEMORY suuport
-#BIGMEM="true"
+BIGMEM="true"
 
 
 
