@@ -45,7 +45,7 @@ genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
-vprops.o qthermal.o cvode_aux.o makeq_aux.o \
+vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 readat_new.o finiparser.o iniparser.o dictionary.o
 ################################################################################
@@ -91,10 +91,14 @@ ifeq ($(IFMPI),false)
 endif
 
 # IFCMT append *.o files to CORE
-CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
- face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
- bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
- filters_cmt.o diagnostics.o
+ifeq ($(IFCMT),true)
+  CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
+   face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
+   bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
+   filters_cmt.o diagnostics.o
+else
+  CMTCORE := 
+endif
 # VISIT ########################################################################
 ifeq ($(IFVISIT),true)
   VISITNEK_INCLUDES:=-I$S/3rd_party
@@ -119,7 +123,7 @@ endif
 ifeq ($(IFCMT),true)
 TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
 else
-TMP1 = $(CORE) cmt_dummy.o $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
 endif
 
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -225,10 +229,8 @@ $(OBJDIR)/gfdm_solve.o	:$S/gfdm_solve.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/coef.o	:$S/coef.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/plan4.o	:$S/plan4.f;			$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/qthermal.o	:$S/qthermal.f;   		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/vprops.o	:$S/vprops.f;	   		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/cvode_driver.o :$S/cvode_driver.f;		$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/cvode_aux.o	:$S/cvode_aux.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/makeq.o      	:$S/makeq.f;			$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/makeq_aux.o  	:$S/makeq_aux.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/hmholtz.o	:$S/hmholtz.f;			$(F77) -c $(FL2) $< -o $@
@@ -241,7 +243,6 @@ $(OBJDIR)/math.o	:$S/math.f;			$(F77) -c $(FL4) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/cmt_dummy.o	:$S/cmt_dummy.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(F77) -c $(FL2) $< -o $@
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(S2)/step.f;	        	$(F77) -c $(FL2) $< -o $@
@@ -257,7 +258,6 @@ $(OBJDIR)/surface_fluxes.o	:$(S2)/surface_fluxes.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/diffusive_cmt.o	:$(S2)/diffusive_cmt.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/MixtPerf.o	:$(S2)/MixtPerf.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/intpdiff.o	:$(S2)/intpdiff.f;		$(F77) -c $(FL2) $< -o $@
-#$(OBJDIR)/numerical_flux_cmt.o	:$(S2)/numerical_flux_cmt.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/inflow_bc.o	:$(S2)/inflow_bc.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/outflow_bc.o	:$(S2)/outflow_bc.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/wall_bc.o	:$(S2)/wall_bc.f;		$(F77) -c $(FL2) $< -o $@
@@ -267,11 +267,6 @@ $(OBJDIR)/diagnostics.o	:$(S2)/diagnostics.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
 $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(F77) -c $(FL4) $< -o $@
 $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(F77) -c $(FL4) $< -o $@
-$(OBJDIR)/k10_mxm.o	  :$S/k10_mxm.c;		$(CC)  -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/bg_aligned3.o	  :$S/bg_aligned3.s;		$(CC) -c $< -o $@
-$(OBJDIR)/bg_mxm3.o	  :$S/bg_mxm3.s;		$(CC) -c $< -o $@
-$(OBJDIR)/bg_mxm44.o	  :$S/bg_mxm44.s;		$(CC) -c $< -o $@
-$(OBJDIR)/bg_mxm44_uneven.o :$S/bg_mxm44_uneven.s;	$(CC) -c $< -o $@
 
 # C Files ##################################################################################
 $(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $(JL) $< -o $@

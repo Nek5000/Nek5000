@@ -214,6 +214,9 @@ C
       character*132 string(100)
 
       VNEKTON = 3 ! dummy not really used anymore
+
+      optlevel = 1! fixed for now
+      loglevel = 1! fixed for now
       
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
@@ -289,7 +292,8 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
-      enddo
+         IFDIFF(i) = .true. 
+      enddo      
 
       do i=1,NPSCL1
          IDPSS(i) = 0 ! use Helmholtz for passive scalars 
@@ -322,9 +326,6 @@ C
       IFEXPLVIS = .false.
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
-      IFCMT     = .false.
-      IFVISC    = .false.
-      IFFLTR    = .false.
 
       ifbase = .true.
       ifpert = .false.
@@ -406,12 +407,6 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
-         elseif (indx1(string(i),'IFCMT',5).gt.0) then 
-              read(string(i),*) IFCMT
-         elseif (indx1(string(i),'IFVISC',6).gt.0) then 
-              read(string(i),*) IFVISC
-         elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
-              read(string(i),*) IFFLTR
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -441,10 +436,7 @@ c              read(string,*) IFSPLIT
      &           '   IFCONS'   ,
      &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'  ,
-     &           '   IFCMT'    ,
-     &           '   IFVISC'   ,
-     &           '   IFFLTR'    
+     &           '   IFVCOUP'
               endif
               call exitt
          endif
@@ -577,11 +569,12 @@ C
          endif
       endif
 
-c      if (ifmvbd .and. ifsplit) then 
-c         if(nid.eq.0) write(6,*) 
-c     $   'ABORT: Moving boundary in Pn-Pn is not supported'
-c         call exitt
-c      endif
+      if (ifcvode) then 
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Using CVODE requires .par file!'
+         call exitt
+      endif
+
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: MOAB in Pn-Pn-2 is not supported'
@@ -2396,7 +2389,7 @@ c-----------------------------------------------------------------------
               call crecv      (e,buf,len)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
-
+ 
          elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
 
             if(ierr.eq.0) then

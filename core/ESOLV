@@ -1,4 +1,11 @@
+c
+c     Variables for E-solver
+c
+      integer         iesolv
       common /econst/ iesolv
-      common /efastm/ ifalgn(lelv), ifrsxy(lelv)
-      logical         ifalgn, ifrsxy
-      common /eouter/ volel(lelv) 
+
+      logical         ifalgn(lelv), ifrsxy(lelv)
+      common /efastm/ ifalgn      , ifrsxy
+
+      real            volel(lelv)
+      common /eouter/ volel       

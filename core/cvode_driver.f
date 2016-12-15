@@ -1,5 +1,5 @@
 #ifndef CVODE
-      subroutine cv_setsize(nin)
+      subroutine cv_setsize
 
       include 'SIZE'
       if(nio.eq.0) write(6,*) 'ABORT: not compiled with CVODE support!'
@@ -26,29 +26,28 @@ c----------------------------------------------------------------------
       return
       end
 #else
-      subroutine cv_setsize(nin)
+      subroutine cv_setsize
 
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
 
       integer LongIntSize
+      integer*8 iout,ipar
 #ifdef LONGINT8
-      integer*8 iout,iout_old,ipar
-      data  LongIntSize / 8 /
+      data LongIntSize / 8 /
 #else
-      integer*4 iout,iout_old,ipar
       data LongIntSize / 4 /
 #endif
       ! cvode will not allocate these arrays
       integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
       integer sizeOfLongInt
       external sizeOfLongInt
 
-      integer*8 nn,i8glsum
+      integer*8 i8glsum
 
       if (sizeOfLongInt() .ne. LongIntSize) then
         if(nio.eq.0) write(6,*)
@@ -60,9 +59,8 @@ c----------------------------------------------------------------------
       nxyz = nx1*ny1*nz1
 
       ! set local ODE size
-      nadd = nin
-      if (ifdp0dt) nadd = nadd + 1
-      ipar(1) = nadd 
+      ipar(1) = 0
+      if (ifdp0dt) ipar(1) = 1
       do i = 2,nfield
          if (ifcvfld(i)) then
            ntot = nxyz*nelfld(i)
@@ -73,13 +71,12 @@ c----------------------------------------------------------------------
       ! check array size is large enough
       if (ipar(1) .gt. cv_lysize) then
         if(nio.eq.0) write(6,*)
-     &  'ABORT cv_setsize(): workspace for cvode too small! ' 
+     &  'ABORT cv_setsize(): workspace too small, check SIZE! ' 
         call exitt
       endif 
 
       ! determine global ODE size 
-      nn = ipar(1)
-      cv_nglobal = i8glsum(nn,1)
+      cv_nglobal = i8glsum(ipar(1),1)
 
       return
       end
@@ -97,41 +94,54 @@ c
 
       common /CVWRK1/  y0(cv_lysize) 
 
-#ifdef LONGINT8
-      integer*8 iout,iout_old,ipar
-#else
-      integer*4 iout,iout_old,ipar
-#endif
       ! cvode will not allocate these arrays
-      integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
+
+      integer*8 iout,ipar
+      integer cvcomm
+      common /cv_iout/ iout(21),ipar(1),cvcomm
+
+      integer cv_meth
 
       real*8 etime1
       character*15 txt_meth,txt_itask
+
+      real atol_t(ldimt)
 
       nxyz = nx1*ny1*nz1
       ifcvodeinit   = .false.
 
       if(nio.eq.0) write(*,*) 'Initializing CVODE ...'
-
-      itask = param(16) ! AM or BDF
-      if(itask.eq.1) txt_itask='NORMAL'      
-      if(itask.eq.3) txt_itask='NORMAL_TSTOP'      
-
-      meth = param(17) ! AM or BDF
-      if(meth.eq.1) txt_meth='AM'      
-      if(meth.eq.2) txt_meth='BDF'      
-
-      cv_atol = param(18)
-      cv_rtol = param(19) 
-
-      if (cv_rtol.le.0 .or. cv_atol.le.0) then
-        write(*,'(a,i3)') 'ABORT cv_init(): invalid tolerances!'
-        call exitt
-      endif
-
       etime1=dnekclock_sync()
+
+      cv_timel = -1
+      call cv_rstat
+
+      ! set solver parameters
+      cv_itask    = param(160) ! AM or BDF
+      cv_meth     = param(161) ! AM or BDF
+      cv_rtol     = param(163) 
+      cv_dtmax    = param(164)
+      cv_sigs     = param(165) 
+      cv_delt     = param(166)
+      cv_ipretype = param(167) ! 0: no, 1:left, 2: right
+      cv_maxl     = 20
+      cv_iatol    = 2          ! 1: scalar 2: vector
+
+      ! setup absolute tolerances
+      if (cv_iatol.eq.1) then
+         cv_atol(1) = param(162)
+      else if (cv_iatol.eq.2) then
+         j = 1
+         do i = 2,nfield
+            if (ifcvfld(i)) then
+               ntot = nxyz*nelfld(i)
+               call cfill(cv_atol(j),atol(i+1),ntot)
+               j = j + ntot
+            endif
+         enddo
+         if (ifdp0dt) cv_atol(j) = atol(3) ! same as temperature
+      endif
 
       ! initialize vector module
       call create_comm(cvcomm)
@@ -145,10 +155,9 @@ c
         call exitt
       endif
 
-      call cvpack(y0)
-
-      ! initialize main solver
-      call fcvmalloc(time, y0, meth, itmeth, iatol,
+      ! initialize cvode
+      call cvpack(y0,t,.false.)
+      call fcvmalloc(time, y0, cv_meth, itmeth, cv_iatol,
      &               cv_rtol, cv_atol, iout, rout, ipar, rpar, ier)
       if (ier.ne.0) then
         write(*,'(a,i3)') 'ABORT cv_init(): fcvmalloc ier=', ier
@@ -156,39 +165,61 @@ c
       endif
 
       ! initialize linear solver
-      call fcvspGMR(0,igstype,cv_maxl,cv_delt,ier)
+      call fcvspGMR(cv_ipretype,igstype,cv_maxl,cv_delt,ier)
       if (ier .ne. 0) then
         write(*,'(a,i3)') 'ABORT cv_init(): fcvspgmr ier=', ier
         call exitt
       endif
 
-c      ! check for user-supplied Jacobian routine
-c      if(abs(PARAM(16)).ge.3) then 
-c        call FCVSPILSSETJAC(1, ier)
-c        if(nio.eq.0) then 
-c          write(6,*) '  user-supplied Jacobian enabled'
-c          write(6,'(A,4x,e8.1)') '   DQ perturbation scaling factor :',
-c     &                            CV_SIGS
-c        endif
-c      endif
+      ! preconiditoner
+      if(cv_ipretype.gt.0) call fcvspilssetprec(1, ier)
 
+      ! enable user-supplied Jacobian routine
+      call fcvspilssetjac(1, ier)
+
+      ! print solver settings
       etime1 = dnekclock_sync() - etime1
       if(nio.eq.0) then
-        write(6,'(A,A)')        '   integration method              : ',
+        if(cv_meth.eq.1) txt_meth='AM'      
+        if(cv_meth.eq.2) txt_meth='BDF'      
+        write(6,'(A,A)')         '   integration method             : ',
      &                         txt_meth
-        write(6,'(A,A)')        '   integration mode                : ',
+        if(cv_itask.eq.1) txt_itask='NORMAL'      
+        if(cv_itask.eq.3) txt_itask='NORMAL_TSTOP'      
+        write(6,'(A,A)')         '   integration mode               : ',
      &                         txt_itask
-        write(6,'(A,i11)')       '   degrees of freedom             : ',
+        write(6,'(A,i10)')       '   Nglobal                        : ',
      &                         cv_nglobal
-        write(6,'(A,2(1pe8.1))') '   rel/abs tolerances             : ',
-     &                         cv_rtol, cv_atol
-        write(6,'(A,7x,i4)')     '   krylov dimension               : ',
+        write(6,'(A,1pe8.1)')    '   relative tolerance             : ',
+     &                         cv_rtol
+
+        j = 1
+        do i = 2,nfield
+           if (ifcvfld(i)) then
+              if (cv_iatol.eq.1) then
+                 dd = cv_atol(1)
+              else
+                 ntot = nxyz*nelfld(i)
+                 dd = vlmax(cv_atol(j),ntot)
+                 j = j + ntot
+              endif
+
+              write(6,1000) i, dd
+ 1000         format(3x,'absolute tolerance field ',i3,'   : ',1pe8.1)
+           endif
+        enddo
+
+        write(6,'(A,i3)')     '   krylov dimension               : ',
      &                         cv_maxl
-        write(6,'(A,6x,f5.2)')   '   linear convergence factor      : ',
+        write(6,'(A,f5.3)')   '   ratio linear/non-linear tol    : ',
      &                         cv_delt
-        write(6,'(A,7x,30L2)')   '   fields to integrate            : ',
-     &                         ifcvfld
-        write(6,'(A,g15.3,A,/)') ' done :: initializing ODE integrator',
+        write(6,'(A,i3)')     '   preconditioner                 : ',
+     &                         int(param(167))
+        write(6,'(A,1pe8.1)') '   dt_max                         : ',
+     &                         cv_dtmax
+        write(6,'(A,f5.3)')  '   increment factor         DQJ   : ',
+     &                         cv_sigs
+        write(6,'(A,g15.3,A,/)') ' done :: initializing CVODE',
      &                         etime1, ' sec'
       endif
 
@@ -206,10 +237,6 @@ c     Integrate the IVP d/dt[y] = f(y(t),t); y(t=t0) := f0
 c     using BDF(stiff) or AM(non-stiff).
 c     f denotes the RHS function and is evaluated in fcvfun().
 c
-c     todo:
-c     - vector tolerances
-c     - preconditioner
-c
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
@@ -226,38 +253,22 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-#ifdef LONGINT8
-      integer*8 iout,iout_old,ipar
-#else
-      integer*4 iout,iout_old,ipar
-#endif
+      integer*8 iout,ipar
       integer cvcomm
-      common /cv_iout/ iout(21),iout_old(21),ipar(1),cvcomm,itask
-
-      real nfe_avg,nli_nni_avg,nli_nni
-      save nfe_avg,nli_nni_avg
-
-      data nfe_avg / 0 /
-      data nli_nni_avg / 0 /
-
-      real nni_sum,nli_sum,nfe_sum
-      save nni_sum,nli_sum,nfe_sum
-      data nni_sum / 0 /
-      data nli_sum / 0 / 
-      data nfe_sum / 0 /
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz * nelv
 
       if (.not.ifcvodeinit) then
-        write(6,*) 'ABORT: cv_init() was not called!'
+        write(6,*) 'ABORT: CVODE was not initialized!'
         call exitt
       endif 
 
       ! save old output values
-      if (itask.eq.1) then
+      if (cv_itask.eq.1) then
         do i=1,21
-           iout_old(i) = iout(i)
+           iout_save(i) = iout(i)
         enddo
       endif
 
@@ -276,33 +287,59 @@ c
       call copy(vy_,vy,ntot)            
       if (if3d) call copy(vz_,vz,ntot)  
 
-      ! call solver
+      ! MAIN solver call
       time_ = time
-      if (itask.eq.3) then
+      call fcvsetrin('MAX_STEP',cv_dtmax,ier)
+c      call fcvsetiin('MAX_ORD' ,3       ,ier)
+
+      if (cv_itask.eq.3) then
         if(istep.gt.1) then 
-          call cvpack(y)
-          call fcvreinit(timef,y,iatol,cv_rtol,cv_atol,ier)
+          call cvpack(y,t,.false.)
+          call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
           if (ier .ne. 0) then
-            write(*,'(a,i3)') 'ABORT cv_init(): fcvsetrin ier=', ier
+            write(*,'(a,i3)') 'ABORT: fcvsetrin ier=', ier
             call exitt
           endif
           cv_timel = 0
+          call cv_rstat
         endif
         call fcvsetrin('STOP_TIME',time,ier)
-      else
-        call fcvsetrin('MAX_STEP',2*dt,ier)
       endif
-      call fcvode(time,tout,y,itask,ier)
+
+      call fcvode(time,tout,y,cv_itask,ier)
       time = time_
+
+      if (ier.lt.0) then
+         if (nid.eq.0) then
+            write(*,'(a)') ' Restart integrator and try again  ...'
+         endif
+         call cvpack(y,t,.false.)
+         call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
+         cv_timel = 0
+         call cv_rstat
+         call fcvode(time,tout,y,cv_itask,ier)
+         time = time_
+      endif
+        
+      if (ier.lt.0) then
+         if (nid.eq.0) then
+            write(*,'(a,i3)') 'ABORT: fcvode returned ier =', ier
+         endif
+         call exitt
+      endif
+
+      cv_istep = cv_istep + 1 
+      call cvunpack(t,y)
 
       ! restore velocities               
       call copy(vx,vx_,ntot)             
       call copy(vy,vy_,ntot)             
       if (if3d) call copy(vz,vz_,ntot) 
-      if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+      call setup_convect(2) ! recompute fine grid velocity
+
  
+      ! restore coord and mesh vel 
       if(ifmvbd) then        
-        ! restore coord and mesh vel 
         call copy(xm1,xm1_,ntot)           
         call copy(ym1,ym1_,ntot)          
         if (if3d) call copy(zm1,zm1_,ntot) 
@@ -313,42 +350,8 @@ c
         call cv_eval_geom                      
       endif
 
-      ! copy the cvode solution (y) back into internal array (t)
-      call cvunpack(y)
-
       ! print solver statistics 
-      if (nid.eq.0) then
-         nstp        = iout(3)-iout_old(3) 
-         nfe         = iout(4)-iout_old(4)+iout(20)-iout_old(20)
-         nni         = iout(7)-iout_old(7)  
-         nli         = iout(20)-iout_old(20)
-         nfe_sum     = nfe_sum + nfe
-         nfe_avg     = (1.-1./istep)*nfe_avg + float(nfe)/istep
-         nli_sum     = nli_sum + nli
-         nni_sum     = nni_sum + nni
-         nli_nni     = float(nli)/max(1,nni)
-         nli_nni_avg = (1.-1./istep)*nli_nni_avg + nli_nni/istep
-         
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
-     &    'nsteps: ',   nstp     ,
-     &    'nfe:    ',   nfe      ,
-     &    '<nfe>:    ', nfe_avg
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
-     &    'nni:    ',   nni      ,
-     &    'nli:    ',   nli      ,
-     &    '<nli/nni>:', nli_nni_avg
-         write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,i5)') 
-     &    'ncfn:   '  ,iout(6)-iout_old(6),
-     &    'ncfl:   '  ,iout(21)-iout_old(21),  
-     &    'netf:     ',iout(5)-iout_old(5) 
-      endif
-
-      if (ier.lt.0) then
-         if (nid.eq.0) then
-            write(*,'(a,i3)') 'ABORT: fcvode returned ier =', ier
-         endif
-         call exitt
-      endif
+      if (nid.eq.0) call cv_pstat
 
       return
       end
@@ -356,37 +359,32 @@ c----------------------------------------------------------------------
       SUBROUTINE FCVJTIMES (V,FJV,TT,Y,FY,H,IPAR,RPAR,WORK,IER)
 c
 c     Compute Jacobian Vetor product FJV
+c     approximated by 1st-order fd quotient 
 c
-      REAL V(1), FJV(1), TT, Y(1), FY(1), H, RPAR(1), WORK(1)
+      REAL V(*), FJV(*), TT, Y(*), FY(*), H, RPAR(1), WORK(*)
 
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'CVODE'
 
-#ifdef LONGINT8
       integer*8 ipar(1),neql
-#else
-      integer*4 ipar(1),neql
-#endif
-      logical ifcdjv
-      data    ifcdjv / .false. /
 
-      common /CVWRK1/  FJV_(cv_lysize) 
-
-      ifcdjv = .false. ! fixed for now
-
+      
+      ifdqj = .true.
+  
       ! set local size
       neql = ipar(1)
+
+      call fcvgeterrweights(work,ier)
 
       ! compute weighted rms norm ||v||
       sum = 0.0
       do i = 1,neql
-         EWT = 1./(cv_rtol*abs(Y(i)) + cv_atol)   
-         dnorm = V(i)*EWT
+         dnorm = V(i)*work(i)
          sum = sum + dnorm*dnorm
       enddo
       sum = sqrt(glsum(sum,1)/cv_nglobal)
-     
+
       ! set perturbation sig to 1/||v||
       sig =  1./sum
 
@@ -399,24 +397,12 @@ c
       enddo
       call FCVFUN(TT,WORK,FJV,IPAR,RPAR,IER)
 
-      if(ifcdjv) then ! approximate Jacobian by 2nd-order fd quotient
-        do i = 1,NEQL
-           WORK(i) = Y(i) - sig*V(i)
-        enddo
-        call FCVFUN(TT,WORK,FJV_,IPAR,RPAR,IER)
-         siginv = 1./(2*sig)
-        do i = 1,NEQL
-c           FJV(i) = FJV(i)*siginv - FJV_(i)*siginv
-           FJV(i) = (FJV(i) - FJV_(i))*siginv
-        enddo
-      else ! approximate Jacobian by 1st-order fd quotient 
-        siginv = 1./sig
-        do i = 1,NEQL
-c           FJV(i) = (FJV(i) - FY(i))*siginv
-           FJV(i) = FJV(i)*siginv - FY(i)*siginv
-        enddo
-      endif
+      siginv = 1./sig
+      do i = 1,NEQL
+         FJV(i) = FJV(i)*siginv - FY(i)*siginv
+      enddo
 
+      ifdqj = .false.
       ier = 0
 
       return
@@ -517,26 +503,30 @@ c----------------------------------------------------------------------
       subroutine fcvfun (time_, y, ydot, ipar, rpar, ier)
 c
 c     Compute RHS function f (called within cvode)
-c     NOTE: output is ydot, don't touch y! 
+c     CAUTION: never touch y! 
 c
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
       include 'CVODE'
 
       real time_,y(1),ydot(1),rpar(1)
 
-      real ta(lx1,ly1,lz1,lelt)
+      integer*8 ipar(1)
+      real w1(lx1,ly1,lz1,lelt),
+     $     w2(lx1,ly1,lz1,lelt),
+     $     w3(lx1,ly1,lz1,lelt)
+
+      real ydott(lx1,ly1,lz1,lelt,ldimt)
+c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
+                                   ! use nvec_dssum 
       integer ntf      
 
-#ifdef LONGINT8
-      integer*8 ipar(1)
-#else
-      integer*4 ipar(1)
-#endif
 
-      time = time_ ! set nek time to internal cvode time    
-      nxyz = nx1*ny1*nz1
-      ntotv= nxyz*nelv
+      etime1 = dnekclock()
+      time   = time_   
+      nxyz   = nx1*ny1*nz1
+      ntotv  = nxyz*nelv
        
       if (time.ne.cv_timel) then
          call cv_settime     
@@ -545,84 +535,83 @@ c
   10       format(4x,i7,2x,'t=',1pE14.7,'  stepsize=',1pE13.4)
 
          call cv_upd_v
+         call copy(w1,vx,ntotv)
+         call copy(w2,vy,ntotv)
+         if (if3d) call copy(w3,vz,ntotv)
+
          if (ifmvbd) then
             call cv_upd_coor 
             call cv_eval_geom
             call cv_upd_w
-         endif 
+            call sub2(vx,wx,ntotv)
+            call sub2(vy,wy,ntotv)
+            if (if3d) call sub2(vz,wz,ntotv)
+         endif
+        
+         if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+
+         call copy(vx,w1,ntotv)
+         call copy(vy,w2,ntotv)
+         if (if3d) call copy(vz,w3,ntotv)
+
          cv_timel = time          
       endif
 
-      call cvunpack(y)          
+      call cvunpack(t,y)          
 
-      j = 1
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
+
+      do ifield=2,nfield
+         if (ifcvfld(ifield)) call vprops
+      enddo  
+
       ntf = 0
       do ifield=2,nfield
          if (ifcvfld(ifield)) then
            ntot = nxyz*nelfld(ifield)
-c           call filter_s(t(1,1,1,1,ifield-1))
-           call vprops
            call makeq
+
            if (iftmsh(ifield)) then                                
               ntf = 1                                          
-              call col3(ta, vtrans(1,1,1,1,ifield),bm1, ntot)      
-              call dssum(ta, nx1, ny1, nz1)                        
-              call col2(ta, bintm1,ntot)                           
-              call invcol3(ydot(j), bq(1,1,1,1,ifield-1), ta, ntot) 
+
+              call dssum(bq,nx1,ny1,nz1)
+              call col2(bq,bintm1,ntot)
+
+              call col3(w1,vtrans(1,1,1,1,ifield),bm1,ntot)      
+              call dssum(w1,nx1,ny1,nz1)                        
+              call col2(w1,bintm1,ntot)                           
            else                                                    
-              call invcol3(ydot(j),bq(1,1,1,1,ifield-1),        
-     &                     vtrans(1,1,1,1,ifield),ntot)           
-           endif     
-           j = j + ntot
+              call copy(w1,vtrans(1,1,1,1,ifield),ntot)
+           endif    
+
+           call invcol3(ydott(1,1,1,1,ifield-1),bq(1,1,1,1,ifield-1),
+     &                  w1,ntot)           
          endif
       enddo
 
-      j = 1
-      if(ntf.eq.1) then
-        do ifield = 2,nfield
-           if (ifcvfld(ifield)) then                                
-             if (.not.iftmsh(ifield)) call dssum (ydot(j),nx1,ny1,nz1)
-             j = j + nxyz*nelfld(ifield)
-           endif
-        enddo
-      else ! if no field is a tmesh, use vector dssum
-        call nvec_dssum (ydot,ntotv,cv_nfld,gsh_fld(1))
-      endif
-
-      j = 1
-      do ifield = 2,nfield
-         if (ifcvfld(ifield)) then                                
-           ntot = nxyz*nelfld(ifield)
-           if (.not.iftmsh(ifield)) call col2(ydot(j),binvm1,ntot)
-           j = j + ntot
-         endif
-      enddo
-
-      if (ifdp0dt) then
-         call qthermal(.false.,.true.,tlag) ! compute dp0thdt using the 
-                                            ! cached source terms stored in tlag
-         ydot(j) = dp0thdt
-         j = j + 1
-
-         ! add contribution to temp-eqn (assumed to be stored in ifield=2)
-         dd = gamma0
-         dd = (dd - 1.)/dd
-         xfacr= dd * dp0thdt
-         do i = 1,ntotv
-            ydot(i) = ydot(i) + xfacr/vtrans(i,1,1,1,2)
+      if (ntf.eq.0) then ! all fields are on the v-mesh
+         istride = lx1*ly1*lz1*lelt
+         call nvec_dssum(ydott,istride,nfield-1,gsh_fld(1))
+      else
+         do ifield = 2,nfield
+            if (ifcvfld(ifield) .and. .not.iftmsh(ifield)) then      
+               call dssum(ydott(1,1,1,1,ifield-1),nx1,ny1,nz1)
+            endif
          enddo
       endif
 
-      call fcvfun_usr(ydot,j)
-
-      j = 1 ! mask out dirichlet points 
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
            ntot = nxyz*nelfld(ifield)
-           call col2(ydot(j),tmask(1,1,1,1,ifield-1),ntot)
-           j = j + ntot
+           if (.not.iftmsh(ifield)) call col2(ydott(1,1,1,1,ifield-1),
+     &                                        binvm1,ntot)
          endif
       enddo
+
+      call cvpack(ydot,ydott,.true.)
+
+      tcvf = tcvf + dnekclock()-etime1 
+      ncvf = ncvf + 1 
 
       ier = 0
 
@@ -650,7 +639,7 @@ c----------------------------------------------------------------------
       include 'TSTEP'
       include 'CVODE'
 
-      cv_dtNek = time - timef    
+      cv_dtNek = time - timef ! stepsize between nek and cvode    
 
       cv_dtlag(1) = cv_dtNek 
       cv_dtlag(2) = dtlag(2)
@@ -668,65 +657,54 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine cvunpack(y)
-c
-c     copy the cvode solution (y) back to the internal nek array (t)
-c
+      subroutine cv_pstat
+
       include 'SIZE'
-      include 'TOTAL'
       include 'CVODE'
 
-      real y(1)
+      integer*8 iout,ipar
+      integer cvcomm
+      common /cv_iout/ iout(21),ipar(1),cvcomm
 
-      nxyz = nx1*ny1*nz1
+      real nli_nni
 
-      j = 1
-      do ifield = 2,nfield
-         if (ifcvfld(ifield)) then
-           ntot = nxyz*nelfld(ifield)
-           call copy   (t(1,1,1,1,ifield-1),y(j),ntot)
-           call bcdirsc(t(1,1,1,1,ifield-1))
-           j = j + ntot
-         endif
-      enddo
+      nstp        = iout(3) - iout_save(3)
+      nfe         = iout(4) - iout_save(4) + iout(20)-iout_save(20)
+      nni         = iout(7) - iout_save(7)
+      nli         = iout(20)- iout_save(20)
+      nli_nni     = float(nli)/max(1,nni)
 
-      if (ifdp0dt) then
-         p0th = y(j)
-         j = j + 1 
-      endif
+      nfe_avg     = (1.-1./cv_istep)*nfe_avg     + nfe/cv_istep
+      nli_nni_avg = (1.-1./cv_istep)*nli_nni_avg + nli_nni/cv_istep      
 
-      call cvunpack_usr(y,j) 
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')
+     &    'nsteps: ',   nstp     ,
+     &    'nfe:    ',   nfe      ,
+     &    '<nfe>:    ', nfe_avg
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,f5.1)')  
+     &    'nni:    ',   nni      ,
+     &    'nli:    ',   nli      ,
+     &    '<nli/nni>:', nli_nni_avg
+      write(*,'(13x,a8,i8,3x,a8,i8,3x,a10,i5)') 
+     &    'ncfn:   '  ,iout(6)-iout_save(6),
+     &    'ncfl:   '  ,iout(21)-iout_save(21),  
+     &    'netf:     ',iout(5)-iout_save(5) 
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine cvpack(y)
-c
-c     copy the internal nek array (t) to the cvode solution (y)
-c
+      subroutine cv_rstat
+
       include 'SIZE'
-      include 'TOTAL'
       include 'CVODE'
 
-      real y(1)
-
-      nxyz = nx1*ny1*nz1
-
-      j = 1
-      do ifield = 2,nfield
-         if (ifcvfld(ifield)) then
-           ntot = nxyz*nelfld(ifield)
-           call copy (y(j),t(1,1,1,1,ifield-1),ntot)
-           j = j + ntot
-         endif
+      do i=1,21
+         iout_save(i) = 0.0
       enddo
 
-      if (ifdp0dt) then
-         y(j) = p0th
-         j = j + 1
-      endif
-
-      call cvpack_usr(y,j)
-
+      nfe_avg     = 0
+      nli_nni_avg = 0
+      cv_istep    = 0
+ 
       return
       end

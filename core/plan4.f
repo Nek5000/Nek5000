@@ -6,7 +6,7 @@ c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
 c
 C     NOTE: QTL denotes the so called thermal
 c           divergence and has to be provided
-c           by an external subroutine e.g qthermal
+c           by userqtl. See qthermal_ig()
 c
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
@@ -27,9 +27,6 @@ C
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-      common /vext/  vx_e  (lx1*ly1*lz1*lelv)
-     $ ,             vy_e  (lx1,ly1,lz1,lelv)
-     $ ,             vz_e  (lx2,ly2,lz2,lelv)
  
       REAL           DPR   (LX2,LY2,LZ2,LELV)
       EQUIVALENCE   (DPR,DV1)
@@ -76,11 +73,11 @@ C        first, compute pressure
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
          call ctolspl  (tolspl,respr)
-         napprox(1) = laxt
+         napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
-     $                        ,approx,napprox,binvm1)
+     $                        ,approxp,napproxp,binvm1)
          call add2    (pr,dpr,ntot1)
          call ortho   (pr)
 
@@ -160,10 +157,6 @@ c
       COMMON /SCRMG/ W1    (LX1*LY1*LZ1,LELV)
      $ ,             W2    (LX1*LY1*LZ1,LELV)
      $ ,             W3    (LX1*LY1*LZ1,LELV)
-      common /vext/  vx_e  (lx1*ly1*lz1*lelv)
-     $ ,             vy_e  (lx1,ly1,lz1,lelv)
-     $ ,             vz_e  (lx2,ly2,lz2,lelv)
- 
 
       common /scruz/         sij (lx1*ly1*lz1,6,lelv)
       parameter (lr=lx1*ly1*lz1)
@@ -520,8 +513,8 @@ c     sum up AB/BDF contributions
 c
       include 'SIZE'
 
-      real vvlag(lx1*ly1*lz1*lelv,1)
-      real ab_(1)
+      real vvlag(lx1*ly1*lz1*lelv,*)
+      real ab_(*)
 
       ab0 = ab_(1)
       ab1 = ab_(2)
@@ -532,4 +525,120 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine qthermal_ig(ifvext)
 
+C     Compute the thermal divergence QTL 
+C
+C     QTL := div(v) = -1/rho * Drho/Dt
+c
+c     If we use the ideal gas law and assume
+c     that p,R is const we end up with
+c     QTL = 1/(rho*cp) rho*cp*DT/Dt
+C
+C     where rho*cp*DT/Dt represents the RHS of the
+C     energy equation expressed in terms of temperature.
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifvext,ifqvol 
+      real qvol(1)    
+ 
+      common /scrns/ w1(lx1,ly1,lz1,lelt)
+     $              ,w2(lx1,ly1,lz1,lelt)
+     $              ,w3(lx1,ly1,lz1,lelt)
+     $              ,tx(lx1,ly1,lz1,lelt)
+     $              ,ty(lx1,ly1,lz1,lelt)
+     $              ,tz(lx1,ly1,lz1,lelt)
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelv
+
+      ifld_save = ifield
+
+c - - Assemble RHS of T-eqn
+      ifield=2
+
+      call makeuq
+      call copy(qtl,bq,ntot)
+
+      ifield=1     !set right gs handle (QTL is only defined on the velocity mesh)
+      call opgrad  (tx,ty,tz,t)
+      call opdssum (tx,ty,tz)
+      call opcolv  (tx,ty,tz,binvm1)
+      call opcolv  (tx,ty,tz,vdiff(1,1,1,1,2))
+      call opdiv   (w2,tx,ty,tz)
+
+      call add2    (qtl,w2,ntot)
+      call dssum   (qtl,nx1,ny1,nz1)
+      call col2    (qtl,binvm1,ntot)
+
+      ! QTL = T_RHS/(rho*cp**T)
+
+      call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
+      call invcol2 (qtl,w2,ntot)
+
+
+      dp0thdt = 0.0
+      if (ifdp0dt) then
+
+         ! set v=v(tn+1) using extrapolation
+         if (ifvext) then
+            call copy(tx,vx,ntot)
+            call copy(ty,vy,ntot)
+            if (if3d) call copy(tz,vz,ntot)
+
+            call copy(vx,vx_e,ntot)
+            call copy(vy,vy_e,ntot)
+            if (if3d) call copy(vz,vz_e,ntot)
+         endif
+
+         dp0thdt = 0.0
+         dd = gamma0 ! CVref/CPref ! Note CVref denotes the inverse CPref
+         dd = -1.0*(dd - 1.)/dd
+
+         call rone(w1,ntot)
+         call cmult(w1,dd,ntot)
+         call cadd(w1,1.0,ntot)
+         call copy(w2,w1,ntot)
+         call col2(w1,bm1,ntot)
+  
+         p0alph1 = p0th / glsum(w1,ntot)
+  
+         call copy   (w1,QTL,ntot)
+         call col2   (w1,bm1,ntot)
+         termQ = glsum(w1,ntot)
+         termV = glcflux() 
+         dp0thdt = p0alph1*(termQ - termV)
+
+         if (ifvext) then
+            call copy(vx,tx,ntot)
+            call copy(vy,ty,ntot)
+            if (if3d) call copy(vz,tz,ntot)
+         endif
+
+         dd =-dp0thdt/p0th
+         call cmult(w2,dd,ntot)
+         call add2 (qtl,w2,ntot)
+      endif
+
+      ifield = ifld_save
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qthermal(ifvext)
+
+      INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
+
+      logical ifvext
+
+      ntot = nx1*ny1*nz1*nelv
+      call rzero(qtl,ntot)
+
+      call userqtl(ifvext)
+
+      return
+      end

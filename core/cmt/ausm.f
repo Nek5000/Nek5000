@@ -39,114 +39,136 @@
 !
 ! ******************************************************************************
 
-      SUBROUTINE AUSM_FluxFunction(nx,ny,nz,nm,fs,rl,ul,vl,wl,pl,
-     >                                Hl,al,rr,ur,vr,wr,pr,Hr,ar,flx,vf)
+      SUBROUTINE AUSM_FluxFunction(ntot,nx,ny,nz,nm,fs,rl,ul,vl,wl,pl,
+     >                         al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
 
 !     IMPLICIT NONE ! HAHAHHAHHAHA
+! ******************************************************************************
+! Definitions and declarations
+! ******************************************************************************
+      real MixtPerf_Ho_CpTUVW
+      external MixtPerf_Ho_CpTUVW
 
 ! ==============================================================================
 ! Arguments
 ! ==============================================================================
-
-      REAL al,ar,fs,Hl,Hr,nm,nx,ny,nz,pl,pr,rl,rr,ul,ur,! INTENT(IN) ::
-     >                    vl,vr,wl,wr
-      REAL flx(5),vf(3) ! INTENT(OUT) ::
+      integer ntot
+      REAL al(ntot),ar(ntot),fs(ntot),nm(ntot),nx(ntot),ny(ntot),
+     >     nz(ntot),pl(ntot),pr(ntot),rl(ntot),rr(ntot),ul(ntot),
+     >     ur(ntot),vl(ntot),vr(ntot),wl(ntot),wr(ntot),cpl(ntot),
+     >     cpr(ntot),tl(ntot),tr(ntot)! INTENT(IN) ::
+      REAL flx(ntot,5)!,vf(3) ! INTENT(OUT) ::
 
 ! ==============================================================================
 ! Locals
 ! ==============================================================================
 
       REAL af,mf,mfa,mfm,mfp,ml,mla,mlp,mr,mra,mrm,pf,ql,qr,vml,vmr,
-     >        wtl,wtr
+     >        wtl,wtr,Hl,Hr
 
 ! ******************************************************************************
 ! Start, compute face state
 ! ******************************************************************************
+      call invcol2(cpl,rl,ntot)
+      call invcol2(cpr,rr,ntot)
 
-      ql = ul*nx + vl*ny + wl*nz - fs
-      qr = ur*nx + vr*ny + wr*nz - fs
+      do i=1,ntot
+         Hl = MixtPerf_Ho_CpTUVW(cpl(i),tl(i),ul(i),vl(i),wl(i))
+         Hr = MixtPerf_Ho_CpTUVW(cpr(i),tr(i),ur(i),vr(i),wr(i))
 
-      af = 0.5*(al+ar) ! NOTE not using original formulation, see note
+         ql = ul(i)*nx(i) + vl(i)*ny(i) + wl(i)*nz(i) - fs(i)
+         qr = ur(i)*nx(i) + vr(i)*ny(i) + wr(i)*nz(i) - fs(i)
 
-      ml  = ql/af
-      mla = ABS(ml)
+         af = 0.5*(al(i)+ar(i)) ! NOTE not using original formulation, see note
+         ml  = ql/af
+         mla = ABS(ml)
 
-      mr  = qr/af
-      mra = ABS(mr)    
+         mr  = qr/af
+         mra = ABS(mr)    
 
-      IF ( mla .le. 1.0 ) THEN 
-         mlp = 0.25*(ml+1.0)*(ml+1.0) + 0.125*(ml*ml-1.0)*(ml*ml-1.0)
-         wtl = 0.25*(ml+1.0)*(ml+1.0)*(2.0-ml) +
-     >         0.1875*ml*(ml*ml-1.0)*(ml*ml-1.0)
-      ELSE
-         mlp = 0.5*(ml+mla)
-         wtl = 0.5*(1.0+ml/mla)
-      END IF ! mla
+         IF ( mla .le. 1.0 ) THEN 
+            mlp = 0.25*(ml+1.0)*(ml+1.0) + 0.125*(ml*ml-1.0)*(ml*ml-1.0)
+            wtl = 0.25*(ml+1.0)*(ml+1.0)*(2.0-ml) +
+     >            0.1875*ml*(ml*ml-1.0)*(ml*ml-1.0)
+         ELSE
+            mlp = 0.5*(ml+mla)
+            wtl = 0.5*(1.0+ml/mla)
+         END IF ! mla
 
-      IF ( mra .le. 1.0 ) THEN 
-         mrm = -0.25*(mr-1.0)*(mr-1.0)-0.125*(mr*mr-1.0)*(mr*mr-1.0)
-         wtr = 0.25*(mr-1.0)*(mr-1.0)*(2.0+mr) -
-     >         0.1875*mr*(mr*mr-1.0)*(mr*mr-1.0)
-      ELSE
-         mrm = 0.5*(mr-mra)
-         wtr = 0.5*(1.0-mr/mra)
-      END IF ! mla
+         IF ( mra .le. 1.0 ) THEN 
+            mrm = -0.25*(mr-1.0)*(mr-1.0)-0.125*(mr*mr-1.0)*(mr*mr-1.0)
+            wtr = 0.25*(mr-1.0)*(mr-1.0)*(2.0+mr) -
+     >            0.1875*mr*(mr*mr-1.0)*(mr*mr-1.0)
+         ELSE
+            mrm = 0.5*(mr-mra)
+            wtr = 0.5*(1.0-mr/mra)
+         END IF ! mla
 
-      mf  = mlp + mrm
-      mfa = ABS(mf)
-      mfp = 0.5*(mf+mfa)
-      mfm = 0.5*(mf-mfa)
+         mf  = mlp + mrm
+         mfa = ABS(mf)
+         mfp = 0.5*(mf+mfa)
+         mfm = 0.5*(mf-mfa)
 
-      pf = wtl*pl + wtr*pr 
+         pf = wtl*pl(i) + wtr*pr(i)
 
 ! ******************************************************************************
 ! Compute fluxes
 ! ******************************************************************************
 
-      vf(1) = mfp*ul + mfm*ur
-      vf(2) = mfp*vl + mfm*vr
-      vf(3) = mfp*wl + mfm*wr    
+!        vf(1) = mfp*ul + mfm*ur ! I'm sure we'll need this someday
+!        vf(2) = mfp*vl + mfm*vr
+!        vf(3) = mfp*wl + mfm*wr
 
-      flx(1) = (af*(mfp*rl    + mfm*rr   )        )*nm
-      flx(2) = (af*(mfp*rl*ul + mfm*rr*ur) + pf*nx)*nm
-      flx(3) = (af*(mfp*rl*vl + mfm*rr*vr) + pf*ny)*nm
-      flx(4) = (af*(mfp*rl*wl + mfm*rr*wr) + pf*nz)*nm
-      flx(5) = (af*(mfp*rl*Hl + mfm*rr*Hr) + pf*fs)*nm
+         flx(i,1)=(af*(mfp*rl(i)      +mfm*rr(i)   )        )*nm(i)
+         flx(i,2)=(af*(mfp*rl(i)*ul(i)+mfm*rr(i)*ur(i))+pf*nx(i))*
+     >            nm(i)
+         flx(i,3)=(af*(mfp*rl(i)*vl(i)+mfm*rr(i)*vr(i))+pf*ny(i))*
+     >            nm(i)
+         flx(i,4)=(af*(mfp*rl(i)*wl(i)+mfm*rr(i)*wr(i))+pf*nz(i))*
+     >            nm(i)
+         flx(i,5)=(af*(mfp*rl(i)*Hl   +mfm*rr(i)*Hr) + pf*fs(i))*
+     >            nm(i)
+      enddo
 
-! ******************************************************************************
-! End
-! ******************************************************************************
       return
       END
 
 !-----------------------------------------------------------------------
 
-      SUBROUTINE CentralInviscid_FluxFunction(nx,ny,nz,fs,ul,pl,
+      SUBROUTINE CentralInviscid_FluxFunction(ntot,nx,ny,nz,fs,ul,pl,
      >                                     ur,pr,flx)
 ! JH081915 More general, more obvious
-      real nx,ny,nz,fs,ul(5),pl,ur(5),pr ! intent(in)
-      real flx(5)! intent(out),dimension(5) ::
+! JH111815 HEY GENIUS THIS MAY BE SECOND ORDER AND THUS KILLING YOUR
+!          CONVERGENCE. REPLACE WITH AUSM AND SHITCAN IT
+! JH112015 This isn't why walls aren't converging. There's something
+!          inherently second-order about your wall pressure. Think!
+      real nx(ntot),ny(ntot),nz(ntot),fs(ntot),ul(ntot,5),pl(ntot),
+     >     ur(ntot,5),pr(ntot) ! intent(in)
+      real flx(ntot,5)! intent(out),dimension(5) ::
 
-      rl =ul(1)
-      rul=ul(2)
-      rvl=ul(3)
-      rwl=ul(4)
-      rel=ul(5)
+      do i=1,ntot
+         rl =ul(i,1)
+         rul=ul(i,2)
+         rvl=ul(i,3)
+         rwl=ul(i,4)
+         rel=ul(i,5)
 
-      rr =ur(1)
-      rur=ur(2)
-      rvr=ur(3)
-      rwr=ur(4)
-      rer=ur(5)
+         rr =ur(i,1)
+         rur=ur(i,2)
+         rvr=ur(i,3)
+         rwr=ur(i,4)
+         rer=ur(i,5)
 
-      ql = (rul*nx + rvl*ny + rwl*nz)/rl - fs
-      qr = (rur*nx + rvr*ny + rwr*nz)/rr - fs
+         ql = (rul*nx(i) + rvl*ny(i) + rwl*nz(i))/rl - fs(i)
+         qr = (rur*nx(i) + rvr*ny(i) + rwr*nz(i))/rr - fs(i)
 
-      flx(1) = 0.5*(ql* rl                + qr* rr               )
-      flx(2) = 0.5*(ql* rul       + pl*nx + qr* rur       + pr*nx)
-      flx(3) = 0.5*(ql* rvl       + pl*ny + qr* rvr       + pr*ny)
-      flx(4) = 0.5*(ql* rwl       + pl*nz + qr* rwr       + pr*nz)
-      flx(5) = 0.5*(ql*(rel + pl) + pl*fs + qr*(rer + pr) + pr*fs)
+         flx(i,1) = 0.5*(ql* rl+ qr*rr               )
+         flx(i,2) = 0.5*(ql* rul+pl(i)*nx(i) + qr* rur     +pr(i)*nx(i))
+         flx(i,3) = 0.5*(ql* rvl+pl(i)*ny(i) + qr* rvr     +pr(i)*ny(i))
+         flx(i,4) = 0.5*(ql* rwl+pl(i)*nz(i) + qr* rwr     +pr(i)*nz(i))
+         flx(i,5) = 0.5*(ql*(rel+pl(i))+pl(i)*fs(i)+qr*(rer+pr(i))+
+     >               pr(i)*fs(i))
+      enddo
 
       return
       end

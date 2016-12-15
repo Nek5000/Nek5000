@@ -230,7 +230,7 @@ C
       TOLREL = abs(PARAM(24))
       TOLABS = abs(PARAM(25))
       CTARG  = PARAM(26)
-      NBDINP = PARAM(27)
+      NBDINP = abs(PARAM(27))
       NABMSH = PARAM(28)
 
       if (nbdinp.gt.lorder) then
@@ -640,8 +640,12 @@ C
       if (irst.gt.0) nbd = nbdinp
       CALL RZERO (BD,10)
       CALL SETBD (BD,DTLAG,NBD)
-      NAB = 3
-      IF (ISTEP.LE.2 .and. irst.le.0) NAB = ISTEP
+      if (PARAM(27).lt.0) then
+         NAB = NBDINP
+      else
+         NAB = 3
+      endif
+      IF (ISTEP.lt.NAB.and.irst.le.0) NAB = ISTEP
       CALL RZERO   (AB,10)
       CALL SETABBD (AB,DTLAG,NAB,NBD)
       IF (IFMVBD) THEN
@@ -1165,6 +1169,7 @@ c
       tspro=0.0
       tadvc=0.0
       ttime=0.0
+      tcvf =0.0
 C
       return
       end
@@ -1172,7 +1177,7 @@ C
 c-----------------------------------------------------------------------
       subroutine runstat
 
-#ifndef NOTIMER
+#ifdef TIMER
 
       include 'SIZE'
       include 'TOTAL'
@@ -1311,9 +1316,9 @@ c
 
 c         pcopy=tcopy/tttstp
 c         write(6,*) 'copy time',ncopy,tcopy,pcopy
-c         pmxmf=tmxmf/tttstp
-c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
 
+         pmxmf=tmxmf/tttstp
+         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
          pgop=tgop/tttstp
          write(6,*) 'tgop time',ngop,tgop,pgop
          pinv3=tinv3/tttstp
@@ -1342,8 +1347,13 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
+c        Properties timings
          pspro=tspro/tttstp
          write(6,*) 'spro time',nspro,tspro,pspro
+
+c        CVODE solver timings
+         pcvf=tcvf/tttstp
+         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        USERBC timings
          pusbc=tusbc/tttstp
@@ -1561,7 +1571,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 ntot,ntotp,ntotv
+      integer*8 i8glsum
+      integer*8 ntot,ntotp,ntotv, nn
 
       nxyz  = nx1*ny1*nz1
       nel   = nelv
@@ -1582,7 +1593,8 @@ C
       ntot2=nx2*ny2*nz2*nelv
 
       ntotv = glsc2(tmult,tmask,ntot1)
-      ntotp = i8glsum(ntot2,1)
+      nn = ntot2
+      ntotp = i8glsum(nn,1)
 
       if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
       if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)

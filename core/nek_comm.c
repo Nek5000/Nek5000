@@ -18,9 +18,6 @@
 #endif
 #include <math.h>
 
-#define NTIMER 8
-#define NCOUNTER NTIMER
-
 #ifdef UPCASE
 #  define FORTRAN_NAME(low,up) up
 #else
@@ -35,10 +32,12 @@
 #define nek_comm_getstat   FORTRAN_NAME(nek_comm_getstat, NEK_COMM_GETSTAT)
 #define nek_comm_startstat FORTRAN_NAME(nek_comm_startstat, NEK_COMM_STARTSTAT)
 
+#define NTIMER 8
+#define NCOUNTER NTIMER
 
 int SYNC = 0;
 int TIMING = 1;
-double TIMER[NTIMER] = {(double)0.0};
+double MPI_TIMERS[NTIMER] = {(double)0.0};
 int COUNTER[NCOUNTER] = {0};
 
 
@@ -47,53 +46,52 @@ int COUNTER[NCOUNTER] = {0};
 void nek_comm_settings(int *sync,int *timing)
 {
      SYNC   = *sync;
-     TIMING = *timing; 
+     TIMING = *timing;
 }
 
-void nek_comm_getstat(double *timer, int *counter)
+void nek_comm_getstat(double *timers, int *counters)
 {
      int i;
      double t0,t1;
 
      /* estimate timer overhead */
-     t0 = MPI_Wtime();
-     t1 = MPI_Wtime();
-     while (t1 == t0) t1 = MPI_Wtime();
+     t0 = PMPI_Wtime();
+     t1 = PMPI_Wtime();
+     while (t1 == t0) t1 = PMPI_Wtime();
      t1 -= t0; 
 
 
      /* substract timer overhead */
 
  /*
-     TIMER[0] -= 3*COUNTER[0] * t1; 
-     TIMER[1] -= 2*COUNTER[1] * t1;
-     TIMER[2] -= 2*COUNTER[2] * t1;
-     TIMER[3] -= 2*COUNTER[3] * t1; 
-     TIMER[4] -= 2*COUNTER[4] * t1; 
-     TIMER[5] -= 2*COUNTER[5] * t1; 
-     TIMER[6] -= 2*COUNTER[6] * t1; 
-     TIMER[7] -= 2*COUNTER[7] * t1; 
+     MPI_TIMERS[0] -= 3*COUNTER[0] * t1; 
+     MPI_TIMERS[1] -= 2*COUNTER[1] * t1;
+     MPI_TIMERS[2] -= 2*COUNTER[2] * t1;
+     MPI_TIMERS[3] -= 2*COUNTER[3] * t1; 
+     MPI_TIMERS[4] -= 2*COUNTER[4] * t1; 
+     MPI_TIMERS[5] -= 2*COUNTER[5] * t1; 
+     MPI_TIMERS[6] -= 2*COUNTER[6] * t1; 
+     MPI_TIMERS[7] -= 2*COUNTER[7] * t1; 
  */
 
-     TIMER[1] += TIMER[0];
+     MPI_TIMERS[1] += MPI_TIMERS[0];
      COUNTER[1] = COUNTER[0];
-     for (i = 0; i < NTIMER; i++) timer[i] = fmax(TIMER[i],(double)0.0);
-     for (i = 0; i < NCOUNTER; i++) counter[i] = COUNTER[i];
+     for (i = 0; i < NTIMER; i++) timers[i] = fmax(MPI_TIMERS[i],(double)0.0);
+     for (i = 0; i < NCOUNTER; i++) counters[i] = COUNTER[i];
 }
 
 void nek_comm_startstat(void)
 {
      int i;
-     for (i = 0; i < NTIMER; i++) TIMER[i] = 0.0;
+     for (i = 0; i < NTIMER; i++) MPI_TIMERS[i] = 0.0;
      for (i = 0; i < NCOUNTER; i++) COUNTER[i] = 0;
 }
 
 /* FORTRAN wrappers */
 
-
-#pragma weak MPI_ALLREDUCE   = mpi_allreduce_f
-#pragma weak mpi_allreduce   = mpi_allreduce_f
-#pragma weak mpi_allreduce_  = mpi_allreduce_f
+#pragma weak MPI_ALLREDUCE = mpi_allreduce_f
+#pragma weak mpi_allreduce = mpi_allreduce_f
+#pragma weak mpi_allreduce_ = mpi_allreduce_f
 #pragma weak mpi_allreduce__ = mpi_allreduce_f
 void mpi_allreduce_f(char *sendbuf, char *recvbuf, MPI_Fint *count,
                     MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm,
@@ -106,11 +104,11 @@ void mpi_allreduce_f(char *sendbuf, char *recvbuf, MPI_Fint *count,
 
     COUNTER[0]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     if (SYNC) *ierr = MPI_Barrier(c_comm);
-    if (TIMING) t1 = MPI_Wtime(); 
+    if (TIMING) t1 = PMPI_Wtime(); 
     *ierr = PMPI_Allreduce(sendbuf, recvbuf, *count, c_type, c_op, c_comm);
-    if (TIMING) {TIMER[0] += MPI_Wtime()-t1; TIMER[1] += t1-t0;}
+    if (TIMING) {MPI_TIMERS[0] += PMPI_Wtime()-t1; MPI_TIMERS[1] += t1-t0;}
 }
 
 #pragma weak MPI_BARRIER   = mpi_barrier_f
@@ -124,9 +122,9 @@ void mpi_barrier_f(MPI_Fint *comm, MPI_Fint *ierr)
 
     COUNTER[3]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     *ierr = PMPI_Barrier(c_comm);
-    if (TIMING) TIMER[3] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[3] += PMPI_Wtime()-t0;
 }
 
 #pragma weak MPI_RECV   = mpi_recv_f
@@ -144,9 +142,9 @@ void mpi_recv_f(char *buf, MPI_Fint *count, MPI_Fint *datatype,
 
     COUNTER[6]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     *ierr = PMPI_Recv(buf, *count, c_type, *source, *tag, c_comm, c_status);
-    if (TIMING) TIMER[6] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[6] += PMPI_Wtime()-t0;
 }
 
 #pragma weak MPI_SEND   = mpi_send_f
@@ -162,9 +160,9 @@ void mpi_send_f(char *buf, MPI_Fint *count, MPI_Fint *datatype,
 
     COUNTER[7]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     *ierr = PMPI_Send(buf, *count, c_type, *dest, *tag, c_comm);
-    if (TIMING) TIMER[7] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[7] += PMPI_Wtime()-t0;
 }
 
 
@@ -181,11 +179,11 @@ int mpi_allreduce_c(void *sendbuf, void *recvbuf, int count,
 
     COUNTER[0]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     if (SYNC) ierr = MPI_Barrier(comm);
-    if (TIMING) t1 = MPI_Wtime(); 
+    if (TIMING) t1 = PMPI_Wtime(); 
     ierr = PMPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
-    if (TIMING) {TIMER[0] += MPI_Wtime()-t1; TIMER[1] += t1-t0;}
+    if (TIMING) {MPI_TIMERS[0] += PMPI_Wtime()-t1; MPI_TIMERS[1] += t1-t0;}
     return ierr;
 }
 
@@ -199,9 +197,9 @@ int mpi_waitall_c(int count, MPI_Request *request, MPI_Status *status)
 
     COUNTER[2]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Waitall(count, request, status);
-    if (TIMING) TIMER[2] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[2] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -214,9 +212,9 @@ int mpi_barrier_c(MPI_Comm comm)
 
     COUNTER[3]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Barrier(comm);
-    if (TIMING) TIMER[3] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[3] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -230,9 +228,9 @@ int mpi_irecv_c(void *buf, int count, MPI_Datatype type, int source,
 
     COUNTER[4]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Irecv(buf,count,type,source,tag,comm,request);
-    if (TIMING) TIMER[4] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[4] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -247,9 +245,9 @@ int mpi_isend_c(void *buf, int count, MPI_Datatype type, int dest,
 
     COUNTER[5]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Isend(buf,count,type,dest,tag,comm,request);
-    if (TIMING) TIMER[5] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[5] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -263,9 +261,9 @@ int mpi_recv_c(void *buf, int count, MPI_Datatype type, int source,
 
     COUNTER[6]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Recv(buf,count,type,source,tag,comm,status);
-    if (TIMING) TIMER[6] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[6] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -279,9 +277,9 @@ int mpi_send_c(void *buf, int count, MPI_Datatype type, int dest,
 
     COUNTER[7]++;
 
-    if (TIMING) t0 = MPI_Wtime(); 
+    if (TIMING) t0 = PMPI_Wtime(); 
     ierr = PMPI_Send(buf,count,type,dest,tag,comm);
-    if (TIMING) TIMER[7] += MPI_Wtime()-t0;
+    if (TIMING) MPI_TIMERS[7] += PMPI_Wtime()-t0;
     return ierr;
 }
 
@@ -291,7 +289,7 @@ void nek_comm_settings(int *sync,int *timing){}
 void nek_comm_getstat(double *timer, int *counter)
 {
      int i;
-     for (i = 0; i < NTIMER; i++) timer[i] = TIMER[i];
+     for (i = 0; i < NTIMER; i++) timer[i] = MPI_TIMERS[i];
      for (i = 0; i < NCOUNTER; i++) counter[i] = COUNTER[i];
 }
 void nek_comm_startstat(void){}

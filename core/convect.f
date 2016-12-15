@@ -1,3 +1,18 @@
+c
+c    POTENTIAL BUG:
+c
+c    Before, we called set_char_mask for each field that is advected
+c    by advchar:
+c
+c      call set_char_mask(hmsk,cx,cy,cz) ! mask for hyperbolic system 
+c
+c
+c    NOW, we call it only once.
+c
+c    There is a minor inconsistency in this formulation...
+c
+c
+
 c-----------------------------------------------------------------------
 c
 c    Stability limits:
@@ -20,6 +35,12 @@ c-----------------------------------------------------------------------
 
       common /cchar/ ct_vx(0:lorder+1) ! time for each slice in c_vx()
 
+      common /scruz/ cx  (lx1*ly1*lz1*lelt)
+     $ ,             cy  (lx1*ly1*lz1*lelt)
+     $ ,             cz  (lx1*ly1*lz1*lelt)
+     $ ,             hmsk(lx1*ly1*lz1*lelt)
+
+
       if (igeom.eq.1) return
       if (param(99).lt.0) return ! no dealiasing
 
@@ -32,7 +53,20 @@ c-----------------------------------------------------------------------
          ifnew = .true.
          if (igeom.gt.2) ifnew = .false.
 
-         call set_conv_char(ct_vx,c_vx,vx,vy,vz,nelc,time,ifnew)
+         if (ifgeom) then ! Moving mesh
+            call opsub3(cx,cy,cz,vx,vy,vz,wx,wy,wz)
+            call set_conv_char(ct_vx,c_vx,cx,cy,cz,nelc,time,ifnew)
+            call set_char_mask(hmsk,cx,cy,cz) ! mask for hyperbolic system 
+         else
+            call set_conv_char(ct_vx,c_vx,vx,vy,vz,nelc,time,ifnew)
+            call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
+         endif
+
+         n=nx1*ny1*nz1*nelv
+         call rone(hmsk,n)          ! TEST: TURN OFF MASK
+         call set_binv (bmnv, hmsk,n) ! Store binvm1*(hyperbolic mask)
+         call set_bdivw(bdivw,hmsk,n) ! Store Bdivw *(hyperbolic mask)
+         call set_bmass(bmass,hmsk,n) ! Store binvm1*(hyperbolic mask)
 
       else
 
@@ -46,13 +80,10 @@ c-----------------------------------------------------------------------
 
       endif
 
-c     write(6,*) istep,' conv',ifnew,igeom,' continu? ',time
-c     read(5,*) dum
-
       return
       end
 c-----------------------------------------------------------------------
-      subroutine char_conv(p0,u,ulag,msk,c,cs,gsl)
+      subroutine char_conv(p0,u,ulag,bm,bmlag,msk,c,cs,gsl)
 c
 c
 c     Convect over last NBD steps using characteristics scheme
@@ -63,12 +94,14 @@ c
 c
       include 'SIZE'
       include 'TOTAL'
-      real    p0(1),u(1),ulag(1),msk(1),c(1),cs(0:1)
+      real    p0(1),u(1),ulag(1),bm(1),bmlag(1),msk(1),c(1),cs(0:1)
       integer gsl
 
       common /scrns/ ct  (lxd*lyd*lzd*lelv*ldim)
 
       common /scrvh/ bmsk(lx1*ly1*lz1*lelv)
+     $             , bdwt(lx1*ly1*lz1*lelv)
+     $             , bmst(lx1*ly1*lz1*lelv)
      $             , u1  (lx1*ly1*lz1*lelv)
 
       common /scrmg/ r1  (lx1*ly1*lz1*lelv)
@@ -76,7 +109,6 @@ c
      $             , r3  (lx1*ly1*lz1*lelv)
      $             , r4  (lx1*ly1*lz1*lelv)
       
-c
       nelc = nelv            ! number of elements in convecting field
       if (ifield.eq.ifldmhd) nelc = nelfld(ifield)
 
@@ -86,30 +118,24 @@ c
       n   = nx1*ny1*nz1*nelfld(ifield)
       m   = nxd*nyd*nzd*nelc*ndim
 
-      if (ifield.eq.ifldmhd) then
-         call col3(bmsk,bintm1,msk,n)
-      elseif (ifield.eq.1) then
-         call col3(bmsk,binvm1,msk,n)
-      else ! if (ifield.eq.2) then
-         call col3(bmsk,bintm1,msk,n)
-      endif
-
-      call char_conv1
-     $   (p0,bmsk,u,n,ulag,ln,gsl,c,m,cs(1),nc,ct,u1,r1,r2,r3,r4)
+c      if(nid.eq.0) write(*,*) 'going into char_conv1 '
+      call char_conv1 (p0,u,bmnv,n,ulag,ln,gsl,c,m,cs(1),nc,ct
+     $  ,u1,r1,r2,r3,r4,bmsk,bdivw,bdwt,bmass,bmst,bm,bmlag)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine char_conv1
-     $   (p0,bmsk,u,n,ulag,ln,gsl,c,m,cs,nc,ct,u1,r1,r2,r3,r4)
+      subroutine char_conv1 (p0,u,bmnv,n,ulag,ln,gsl,c,m,cs,nc,ct
+     $  ,u1,r1,r2,r3,r4,bmsk,bdivw,bdwt,bmass,bmst,bm,bmlag)
 
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
 
-      real    p0(n),u(n),ulag(ln,1),bmsk(n),c(m,0:nc),cs(0:nc)
+      real p0(n),u(n),bmnv(n,1),ulag(ln,1),c(m,0:nc),cs(0:nc),bdivw(n,1)
+     $          ,bm(n), bmlag(ln,1)
 
-      real    ct(m),u1(n),r1(n),r2(n),r3(n),r4(n) ! work arrays
+      real ct(m),u1(n),r1(n),r2(n),r3(n),r4(n),bmsk(n),bdwt(n) ! work arrays
 
       integer gsl
 
@@ -131,9 +157,14 @@ c-----------------------------------------------------------------------
 !     -- + C.grad v = 0  t \in [t^n-q,t^n],   v(t^n-q,X) = u(t^n-q,X)
 !     dt
 
+!     n = nx1*ny1*nz1*nelv
+!     m = nxd*nyd*nzd*nelv
 
-      tau = time-vlsum(dtlag,nbd)         ! initialize time for u^n-k
-      call int_vel (ct,tau,c,m,nc,cs,nid) ! ct(t) = sum w_k c(.,k)
+      tau = time-vlsum(dtlag,nbd)              ! initialize time for u^n-k
+      call int_vel (ct  ,tau,c    ,m,nc,cs,nid) ! ct(t) = sum w_k c(.,k)
+      call int_vel (bmsk,tau,bmnv ,n,nc,cs,nid) ! B^-1(t^n-1)
+      call int_vel (bmst,tau,bmass,n,nc,cs,nid) ! B(t^n-1)
+      call int_vel (bdwt,tau,bdivw,n,nc,cs,nid) ! BdivW(t^n-1)
 
       call rzero(p0,n)
 
@@ -142,18 +173,22 @@ c-----------------------------------------------------------------------
          um = 0
          if (ilag.eq.1) then
             do i=1,n
-               p0(i) = p0(i)+bd(ilag+1)*u(i)
+               p0(i) = p0(i)+bd(ilag+1)*u(i)*bm(i)
                um=max(um,u(i))
             enddo
          else
+           if(ifmvbd) then
             do i=1,n
-               p0(i) = p0(i)+bd(ilag+1)*ulag(i,ilag-1)
+               p0(i) = p0(i)+bd(ilag+1)*ulag(i,ilag-1)*bmlag(i,ilag-1)
                um=max(um,ulag(i,ilag-1))
             enddo
+           else
+            do i=1,n
+               p0(i) = p0(i)+bd(ilag+1)*ulag(i,ilag-1)*bm(i)
+               um=max(um,ulag(i,ilag-1))
+            enddo
+           endif
          endif
-
-c        write(6,1) istep,ilag,bd(ilag),bd(ilag+1),um
-c 1      format(i5,i4,1p3e14.5,' bdf')
 
          dtau = dtlag(ilag)/ntaubd
          do itau = 1,ntaubd ! ntaubd=number of RK4 substeps (typ. 1 or 2)
@@ -165,18 +200,34 @@ c 1      format(i5,i4,1p3e14.5,' bdf')
             c3 = -dtau
             th = tau+dtau/2.
 
-            call conv_rhs(r1,p0,ct,bmsk,gsl)         !  STAGE 1
+            call invcol3 (u1,p0,bmst,n)
+            call conv_rhs(r1,u1,ct,bmsk,bmst,bdwt,gsl)          ! STAGE 1
+            call col2    (r1,bmst,n)     !             ! r1 = B(n-1)* r1
 
-            call int_vel (ct,th,c,m,nc,cs,nid)       !  STAGE 2
             call add3s12 (u1,p0,r1,c1,c2,n)
-            call conv_rhs(r2,u1,ct,bmsk,gsl)
+            call int_vel (bmst,th,bmass,n,nc,cs,nid)   ! B(n-1/2)
+            call invcol2 (u1,bmst,n)                   ! u2=B(n-1/2)
 
-            call add3s12 (u1,p0,r2,c1,c2,n)          !  STAGE 3
-            call conv_rhs(r3,u1,ct,bmsk,gsl)
+            call int_vel (ct  ,th,c    ,m,nc,cs,nid)   ! STAGE 2
+            call int_vel (bmsk,th,bmnv ,n,nc,cs,nid)   ! B^-1(n-1/2)
+            call int_vel (bdwt,th,bdivw,n,nc,cs,nid)   ! BdivW(n-1/2)
+            call conv_rhs(r2,u1,ct,bmsk,bmst,bdwt,gsl)
+            call col2    (r2,bmst,n)     !  du = B          * du
 
-            call int_vel (ct,tau1,c,m,nc,cs,nid)     !  STAGE 4
+            call add3s12 (u1,p0,r2,c1,c2,n)           ! STAGE 3
+            call invcol2 (u1,bmst,n)
+            call conv_rhs(r3,u1,ct,bmsk,bmst,bdwt,gsl)          ! B(n-1/2) (still)
+            call col2    (r3,bmst,n)     !  du = B          * du
+
             call add3s12 (u1,p0,r3,c1,c3,n)
-            call conv_rhs(r4,u1,ct,bmsk,gsl)
+            call int_vel (bmst,tau1,bmass,n,nc,cs,nid) ! B^-1(n)
+            call invcol2 (u1,bmst,n)                   ! u2=B(n-1/2)
+
+            call int_vel (ct  ,tau1,c    ,m,nc,cs,nid) ! STAGE 4
+            call int_vel (bmsk,tau1,bmnv ,n,nc,cs,nid) ! B^-1(n)
+            call int_vel (bdwt,tau1,bdivw,n,nc,cs,nid) ! BdivW(n)
+            call conv_rhs(r4,u1,ct,bmsk,bmst,bdwt,gsl)
+            call col2    (r4,bmst,n)     !  du = B          * du
 
             c1 = -dtau/6.
             c2 = -dtau/3.
@@ -200,15 +251,15 @@ c     Ouput:   c_t = sum wt_k * ct_i(k)
 c     Here, t0 is the time of interest
 
       real c_t(n),c(n,0:nc),ct(0:nc)
-c
+
       parameter (lwtmax=10)
       real wt(0:lwtmax)
-c
+
       if (nc.gt.lwtmax) then
          write(6,*) nid,'ERROR int_vel: lwtmax too small',lwtmax,nc
          call exitt
       endif
-c
+
       no = nc-1
       call fd_weights_full(t0,ct(0),no,0,wt)  ! interpolation weights
 
@@ -222,14 +273,14 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine conv_rhs (du,u,c,bmsk,gsl)
+      subroutine conv_rhs (du,u,c,bmsk,bmst,bdwt,gsl)
 c
       include 'SIZE'
       include 'TOTAL'
 c
 c     apply convecting field c(1,ndim) to scalar field u(1)
 c
-      real du(1),u(1),c(1),bmsk(1)
+      real du(1),u(1),c(1),bmsk(1),bdwt(1)
       integer gsl
 c
       logical ifconv
@@ -254,7 +305,8 @@ c
            if (.not.if3d) call convop_fst_2d  (du,u,c,nx1,nxd,nelv)
          endif
 
-         call gs_op(gsl,du,1,1,0)  !  +
+         call subcol3(du,bdwt,u,n)
+         call gs_op (gsl,du,1,1,0)  !  +
 
          call col2 (du,bmsk,n)     !  du = Binv * msk * du
 
@@ -594,7 +646,6 @@ c-----------------------------------------------------------------------
 
       m  = nxd*nyd*nzd*nelc*ndim
 
-c     write(6,*) nelc,ifnew,' set conv_char',istep,nc,nconv_max
       call set_ct_cvx
      $    (ct,c,m,ux,uy,uz,tau,nc,nconv_max,nelc,ifnew)
 
@@ -958,7 +1009,8 @@ c-----------------------------------------------------------------------
       do 100 e=1,nelv
       do 100 f=1,nfaces
          cb=cbc(f,e,ifldv)
-         if (cb(1:1).eq.'v' .or. cb(1:1).eq.'V') then
+         if (cb(1:1).eq.'v' .or. cb(1:1).eq.'V' .or.
+     $       cb.eq.'mv ' .or. cb.eq.'MV ') then
 
            call faccl3 (work(1,e),u(1,e),unx(1,1,f,e),f)
            call faddcl3(work(1,e),v(1,e),uny(1,1,f,e),f)
@@ -972,6 +1024,7 @@ c-----------------------------------------------------------------------
          if (cb(1:2).eq.'ws' .or. cb(1:2).eq.'WS') 
      $   call facev (mask,e,f,0.0,nx1,ny1,nz1)
  100  continue
+      call dsop(mask,'*',nx1,ny1,nz1)
 
       return
       end
@@ -1005,11 +1058,10 @@ c
       dti = 1./dt
       n   = nx1*ny1*nz1*nelv
 
-      call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
-
-      call char_conv(phx,vx,vxlag,hmsk,c_vx,ct_vx,gsh_fld(1))
-      call char_conv(phy,vy,vylag,hmsk,c_vx,ct_vx,gsh_fld(1))
-      if (if3d) call char_conv(phz,vz,vzlag,hmsk,c_vx,ct_vx,gsh_fld(1))
+      call char_conv(phx,vx,vxlag,bm1,bm1lag,hmsk,c_vx,ct_vx,gsh_fld(1))
+      call char_conv(phy,vy,vylag,bm1,bm1lag,hmsk,c_vx,ct_vx,gsh_fld(1))
+      if (if3d) call char_conv
+     $              (phz,vz,vzlag,bm1,bm1lag,hmsk,c_vx,ct_vx,gsh_fld(1))
 
       call cfill(hmsk,dti,n)
       if(.not. iflomach) call col2(hmsk,vtrans,n) 
@@ -1017,7 +1069,7 @@ c
       if (if3d) then
 
         do i=1,n
-           h2i = bm1(i,1,1,1)*hmsk(i)
+           h2i = hmsk(i)
            bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
            bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
            bfz(i,1,1,1) = bfz(i,1,1,1)+phz(i)*h2i
@@ -1026,7 +1078,7 @@ c
       else
         
         do i=1,n
-           h2i = bm1(i,1,1,1)*hmsk(i)
+           h2i = hmsk(i)
            bfx(i,1,1,1) = bfx(i,1,1,1)+phx(i)*h2i
            bfy(i,1,1,1) = bfy(i,1,1,1)+phy(i)*h2i
         enddo
@@ -1064,22 +1116,12 @@ c     operator-integrator-factor method (characteristics).
       n   = nx1*ny1*nz1*nelv
       dti = 1./dt
 
-      if (ifield.eq.2) then  ! set convecting velocity and mask
-c        call setup_convect(1)
-         call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
-      endif
-
-
       call char_conv(phi,t(1,1,1,1,ifield-1),tlag(1,1,1,1,1,ifield-1)
-     $        ,hmsk,c_vx,ct_vx,gsh_fld(1))
-
-c     pmax = glamax(phi,n)
-c     qmax = glamax(vtrans(1,1,1,1,2),n)
-c     write(6,*) istep,dti,pmax,' pmax'
+     $        ,bm1,bm1lag,hmsk,c_vx,ct_vx,gsh_fld(1))
 
       do i=1,n
          bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
-     $          + phi(i)*bm1(i,1,1,1)*vtrans(i,1,1,1,ifield)*dti
+     $          + phi(i)*vtrans(i,1,1,1,ifield)*dti
       enddo
 
       tadvc=tadvc+(dnekclock()-etime1)
@@ -1269,7 +1311,7 @@ c     Global-to-local mapping for gs
       parameter(lf=lx1*lz1*2*ldim*lelt)
       common /c_is1/ glo_num_face(lf)
      $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelt)
-      integer*8 glo_num_face,glo_num_vol,ngv,nf
+      integer*8 glo_num_face,glo_num_vol,ngv
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -1786,6 +1828,102 @@ c        tmp(i)=rhs(i,1,1,1)/bm1(i,1,1,1)   ! MATRIX.   pff, 10/10/15
 c     do i=1,n
 c        rhs(i,1,1,1) = 0.5*(rhs(i,1,1,1)+tmp(i))
 c     enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_binv(bmnv,hmsk,n) ! Store binvm1*(hyperbolic mask)
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'MASS'
+
+      real bmnv(n,lorder),hmsk(n)
+
+      do i=lorder,2,-1
+         call copy(bmnv(1,i),bmnv(1,i-1),n)
+      enddo
+
+      call copy (bmnv,bm1,n)  ! Fill bmnv(1,1)
+
+      call gs_op(gsh_fld(1),bmnv,1,1,0)  ! 1 ==> +; gsh_fld(1) is velocity
+
+      do i=1,n
+         bmnv(i,1)=hmsk(i)/bmnv(i,1)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_bdivw(bdivw,hmsk,n) ! Store binvm1*(hyperbolic mask)
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'MASS'
+      include 'INPUT'
+      include 'MVGEOM'
+      common /scruz/ cx  (lx1*ly1*lz1*lelt)
+     $ ,             cy  (lx1*ly1*lz1*lelt)
+     $ ,             cz  (lx1*ly1*lz1*lelt)
+
+      real bdivw(n,lorder),hmsk(n)
+
+      do i=lorder,2,-1
+         call copy(bdivw(1,i),bdivw(1,i-1),n)
+      enddo
+
+      call gradm1 (bdivw,cy    ,cz   , wx   )
+      call gradm1 (cx   ,cy    ,cz   , wy   )
+      call add2   (bdivw,cy    ,       n    )
+      if (if3d) then
+         call gradm1 (cx   ,cy    ,cz   , wz   )
+         call add2   (bdivw,cz    ,       n    )
+      endif
+      call col2(bdivw,bm1,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_bmass(bmass,hmsk,n) ! Store bmass*(hyperbolic mask)
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'MASS'
+
+      real bmass(n,lorder),hmsk(n)
+
+      do i=lorder,2,-1
+         call copy(bmass(1,i),bmass(1,i-1),n)
+      enddo
+
+      call copy (bmass,bm1,n)  ! Fill bmass(1,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chx(x,n,name6,iin)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real     x(n)
+      character*6 name6
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+c      return
+
+      icalld = icalld+1
+
+      xmn = glmin(x,n)
+      xmx = glmax(x,n)
+      xav = glsum(x,n)/iglsum(n,1)
+
+      if (nio.eq.0) 
+     $ write(6,1) istep,icalld,iin,n,time,xmn,xav,xmx,name6,iftran
+    1 format(2i5,2i8,1p4e12.4,' chx ',a6,1x,l4)
 
       return
       end

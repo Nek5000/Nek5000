@@ -8,12 +8,15 @@
 #include "comm.h"
 
 #define nek_exitt FORTRAN_UNPREFIXED(exitt,EXITT)
+extern void nek_exitt();
+
 void die(int status)
 {
 #ifdef NO_NEK_EXITT
   if(comm_gbl_id==0) exit(status); else for(;;) ;
 #else
   nek_exitt();
+  while(1);
 #endif  
 }
 

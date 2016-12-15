@@ -69,8 +69,8 @@ c----------------------------------------------------------------------
       subroutine out_fld_nek(wfnav)
       include 'SIZE'
       include 'SOLN'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,7)
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,7)
       real                OTVAR
       integer e,f
 
@@ -97,7 +97,7 @@ c----------------------------------------------------------------------
       include 'SOLN'
       include 'CMTDATA'
       include 'PERFECTGAS'
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelcmt,6)
+      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,6)
       real                OTVAR
 
       integer e,f
@@ -208,7 +208,7 @@ c      write(6,*)wfnav(1:i1),'.',citer(is:il)
         enddo
       endif
       close(11)
-101   format(8(3x,f12.5))
+101   format(8(3x,e12.5))
 102   format(7(3x,e14.7))
       return
       end
@@ -217,7 +217,8 @@ c----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'MASS'
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
+      INCLUDE 'TSTEP'
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
       logical if3d
       integer e
       real msum,total_mass
@@ -254,7 +255,7 @@ c          need to add glsum to make it parallel
       total_mass = glsum(msum,1) 
       if(nio.eq.0)
 c    $   write(6,*)'Total mass in the domain ',total_mass
-     $   write(144,*)'Total mass in the domain ',total_mass
+     $   write(144,*)'Time ',time,'Mass ',total_mass
       return
       end
 c-----------------------------------------------------------------------
@@ -278,11 +279,11 @@ c
       real x0(3),w1(0:maxobj)
       logical ifdout,iftout
 c
-      common /scrns/         sij (lx1*ly1*lz1*6*lelcmt)
-      common /scrcg/         pm1 (lx1,ly1,lz1,lelcmt)
-      common /scrsf/         xm0(lx1,ly1,lz1,lelcmt)
-     $,                      ym0(lx1,ly1,lz1,lelcmt)
-     $,                      zm0(lx1,ly1,lz1,lelcmt)
+      common /scrns/         sij (lx1*ly1*lz1*6*lelt)
+      common /scrcg/         pm1 (lx1,ly1,lz1,lelt)
+      common /scrsf/         xm0(lx1,ly1,lz1,lelt)
+     $,                      ym0(lx1,ly1,lz1,lelt)
+     $,                      zm0(lx1,ly1,lz1,lelt)
 c
       parameter (lr=lx1*ly1*lz1)
       common /scruz/         ur(lr),us(lr),ut(lr)
@@ -513,7 +514,7 @@ c
 c
       integer e
 c
-      real sij(lx1*ly1*lz1,nij,lelcmt)
+      real sij(lx1*ly1*lz1,nij,lelt)
       real ur (1) , us (1) , ut (1)
      $   , vr (1) , vs (1) , vt (1)
      $   , wr (1) , ws (1) , wt (1)

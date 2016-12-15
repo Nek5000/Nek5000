@@ -121,7 +121,7 @@ c     Global vector commutative operation
 
       if (ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
         tgop =0.0d0
         ngop =0
@@ -146,7 +146,7 @@ c
 
       call copy(x,w,n)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tgop =tgop +(dnekclock()-etime1)
 #endif
 
@@ -660,8 +660,8 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
 
       parameter  (lt=lx1*ly1*lz1*lelt)
-      parameter (mwd = 3*lt)
-      common /scrns/ x(mwd),y(mwd)
+      parameter (mwd = 3*lt/2)
+      common /scrns/ x(mwd),y(mwd),x1(mwd),y1(mwd)
 
       include 'mpif.h'
       integer status(mpi_status_size)
@@ -692,11 +692,11 @@ c-----------------------------------------------------------------------
          len   = 8*nwds
      
          if (kk.eq.0)
-     $      call ping_loop (t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop (t1,t0,len,nloop,nodea,nodeb,nid,x,y,x1,y1)
          if (kk.eq.1)
-     $      call ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
          if (kk.eq.2)
-     $      call ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
 
          if (nid.eq.nodea) then
             tmsg = (t1-t0)/(2*nloop)   ! 2*nloop--> Double Buffer
