@@ -215,8 +215,8 @@ C
 
       VNEKTON = 3 ! dummy not really used anymore
 
-      optlevel = 0! fixed for now
-      loglevel = 3! fixed for now
+      optlevel = 1! fixed for now
+      loglevel = 1! fixed for now
       
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)

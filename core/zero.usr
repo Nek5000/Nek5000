@@ -1,15 +1,19 @@
-C-----------------------------------------------------------------------
-C  nek5000 user-file template
-C
-C  user specified routines:
-C     - userbc : boundary conditions
-C     - useric : initial conditions
-C     - uservp : variable properties
-C     - userf  : local acceleration term for fluid
-C     - userq  : local source term for scalars
-C     - userchk: general purpose routine for checking errors etc.
-C
-C-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c  nek5000 user-file template
+c
+c  user specified routines:
+c     - uservp  : variable properties
+c     - userf   : local acceleration term for fluid
+c     - userq   : local source term for scalars
+c     - userbc  : boundary conditions
+c     - useric  : initial conditions
+c     - userchk : general purpose routine for checking errors etc.
+c     - userqqtl: thermal divergence for lowMach number flows 
+c     - usrdat  : modify element vertices 
+c     - usrdat2 : modify mesh coordinates
+c     - usrdat3 : general purpose routine for initialization
+c     
+c-----------------------------------------------------------------------
       subroutine uservp(ix,iy,iz,eg) ! set variable properties
 
       implicit none
@@ -116,6 +120,14 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userqtl(flag) ! Set thermal divergence
+      logical flag
+
+      call qthermal_ig(flag)
 
       return
       end

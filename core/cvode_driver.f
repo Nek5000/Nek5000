@@ -559,7 +559,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
 
       call cvunpack(t,y)          
 
-c      if(nid.eq.0) write(6,*) 'calling fcvfun',time
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
 
       do ifield=2,nfield
          if (ifcvfld(ifield)) call vprops
@@ -580,7 +580,7 @@ c      if(nid.eq.0) write(6,*) 'calling fcvfun',time
               call col3(w1,vtrans(1,1,1,1,ifield),bm1,ntot)      
               call dssum(w1,nx1,ny1,nz1)                        
               call col2(w1,bintm1,ntot)                           
-          else                                                    
+           else                                                    
               call copy(w1,vtrans(1,1,1,1,ifield),ntot)
            endif    
 

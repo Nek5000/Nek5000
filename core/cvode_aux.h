@@ -48,7 +48,7 @@ c
       nxyz = nx1*ny1*nz1
 
       if (ifrhs .and. ifdp0dt) then
-         call userqtl(.false.) ! computes dp0thdt  
+         call qthermal(.false.) ! computes dp0thdt  
          dd = (gamma0 - 1.)/gamma0
          dd = dd * dp0thdt
          ntot = nxyz*nelfld(2)

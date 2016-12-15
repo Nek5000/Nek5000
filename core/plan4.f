@@ -513,8 +513,8 @@ c     sum up AB/BDF contributions
 c
       include 'SIZE'
 
-      real vvlag(lx1*ly1*lz1*lelv,1)
-      real ab_(1)
+      real vvlag(lx1*ly1*lz1*lelv,*)
+      real ab_(*)
 
       ab0 = ab_(1)
       ab1 = ab_(2)
@@ -624,6 +624,21 @@ c - - Assemble RHS of T-eqn
       endif
 
       ifield = ifld_save
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qthermal(ifvext)
+
+      INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
+
+      logical ifvext
+
+      ntot = nx1*ny1*nz1*nelv
+      call rzero(qtl,ntot)
+
+      call userqtl(ifvext)
 
       return
       end
