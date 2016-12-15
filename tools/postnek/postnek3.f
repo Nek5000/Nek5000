@@ -827,17 +827,17 @@ C        LABEL Element Center
          xx(2,2)=max(xx(2,2),abs(xx(2,1)-y(iel,j)))
          xx(3,2)=max(xx(3,2),abs(xx(3,1)-z(iel,j)))
       enddo
-      do j=5,8
-         xxm=x(iel,j) + .12*(xx(1,1)-x(iel,j))**2 / xx(1,2)
-         yym=y(iel,j) + .12*(xx(2,1)-x(iel,j))**2 / xx(2,2)
-         zzm=z(iel,j) + .12*(xx(3,1)-x(iel,j))**2 / xx(3,2)
-         xm=xiso(xxm,yym,zzm)
-         ym=yiso(xxm,yym,zzm)
-         if (j.eq.5) call gwrite(xm,ym,1.0,'5$')
-         if (j.eq.6) call gwrite(xm,ym,1.0,'6$')
-         if (j.eq.7) call gwrite(xm,ym,1.0,'7$')
-         if (j.eq.8) call gwrite(xm,ym,1.0,'8$')
-      enddo
+c     do j=5,8
+c        xxm=x(iel,j) + .12*(xx(1,1)-x(iel,j))**2 / xx(1,2)
+c        yym=y(iel,j) + .12*(xx(2,1)-x(iel,j))**2 / xx(2,2)
+c        zzm=z(iel,j) + .12*(xx(3,1)-x(iel,j))**2 / xx(3,2)
+c        xm=xiso(xxm,yym,zzm)
+c        ym=yiso(xxm,yym,zzm)
+c        if (j.eq.5) call gwrite(xm,ym,1.0,'5$')
+c        if (j.eq.6) call gwrite(xm,ym,1.0,'6$')
+c        if (j.eq.7) call gwrite(xm,ym,1.0,'7$')
+c        if (j.eq.8) call gwrite(xm,ym,1.0,'8$')
+c     enddo
 
       return
       END

@@ -1,26 +1,36 @@
+c
+c     Variables for the method of characteristics
+c
       integer cv_lysize
-      parameter (cv_lysize=lx1*ly1*lz1*lelt*ldimt+1)
+      parameter (cv_lysize=lcvx1*lcvy1*lcvz1*lcvelt*ldimt+1)
 
-      integer cv_ystart, cv_1fld, cv_lfld
-      COMMON /ICVODE/ cv_ystart, cv_1fld, cv_lfld
+      integer         cv_nfld, cv_iatol
+      integer         cv_maxl, cv_itask, cv_ipretype
+      common /icvode/ cv_nfld, cv_iatol,
+     &                cv_maxl, cv_itask, cv_ipretype
 
-      integer*8 cv_nglobal
-      COMMON /ILCVODE/ cv_nglobal
+      integer*8        cv_nglobal
+      common /ilcvode/ cv_nglobal
 
-      logical ifcvodeinit
-      COMMON /LCVODE/ ifcvodeinit
+      logical         ifcvodeinit, ifdqj
+      common /lcvode/ ifcvodeinit, ifdqj
 
-      real cv_atol,cv_rtol
-      real cv_dtlag,cv_abmsh,cv_ab,cv_dtnek
-      COMMON /RCVODE/ cv_atol,cv_rtol,
-     &                cv_dtlag(3),cv_abmsh(3),cv_ab(3),cv_dtnek     
+      real cv_atol(cv_lysize)
 
-      INTEGER IGSTYPE,METH,ITMETH,IATOL,ITASK
+      real cv_dtlag(lorder),cv_abmsh(lorder),cv_ab(lorder)
+      real cv_rtol, cv_sigs, cv_delt
+      real cv_time,cv_timel,cv_dtnek,cv_dtmax
+      common /rcvode/ cv_atol, cv_dtlag, cv_abmsh, cv_ab,
+     &                cv_rtol, cv_sigs, cv_delt, 
+     &                cv_time, cv_timel, cv_dtnek, cv_dtmax
 
-      PARAMETER(
-     &     METH    = 2,         ! BDF
-     &     ITMETH  = 2,         ! Newton iter
-     &     IATOL   = 1,         ! 1: CV_SS / 2: CV_SV)
-     &     IGSTYPE = 1,         ! GS 1: modified 2: classical
-     &     ITASK   = 1          ! overshoot + interpolate in time
+      real nfe_avg, nli_nni_avg
+      common /cvrstat/ nfe_avg,nli_nni_avg 
+      integer*8 cv_istep, iout_save(21)
+      common /cvistat/ cv_istep, iout_save 
+
+      integer igstype,itmeth
+      parameter(
+     &     itmeth  = 2,         ! newton iter
+     &     igstype = 1          ! gs 1: modified 2: classical
      &         )

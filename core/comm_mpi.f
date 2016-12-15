@@ -25,7 +25,10 @@ c      endif
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-      if (nval.lt.(10000+max(lp,lelg))) then
+c     to avoid problems with MPI_TAG_UB on Cray we change
+c     tags from global (eg) to local (e) element number
+c      if (nval.lt.(10000+max(lp,lelg))) then
+      if (nval.lt.(10000+lp)) then
          if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
       endif
@@ -118,7 +121,7 @@ c     Global vector commutative operation
 
       if (ifsync) call nekgsync()
 
-#ifndef NOTIMER
+#ifdef TIMER
       if (icalld.eq.0) then
         tgop =0.0d0
         ngop =0
@@ -143,7 +146,7 @@ c
 
       call copy(x,w,n)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tgop =tgop +(dnekclock()-etime1)
 #endif
 
@@ -224,6 +227,25 @@ C
       real*4 buf(1)
       len = lenm
       jnid = mpi_any_source
+
+      call mpi_recv (buf,len,mpi_byte
+     $              ,jnid,mtype,nekcomm,status,ierr)
+c
+      if (len.gt.lenm) then 
+          write(6,*) nid,'long message in mpi_crecv:',len,lenm
+          call exitt
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine crecv2(mtype,buf,lenm,jnid)
+      include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+      integer status(mpi_status_size)
+C
+      real*4 buf(1)
+      len = lenm
 
       call mpi_recv (buf,len,mpi_byte
      $              ,jnid,mtype,nekcomm,status,ierr)
@@ -638,8 +660,8 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
 
       parameter  (lt=lx1*ly1*lz1*lelt)
-      parameter (mwd = 3*lt)
-      common /scrns/ x(mwd),y(mwd)
+      parameter (mwd = 3*lt/2)
+      common /scrns/ x(mwd),y(mwd),x1(mwd),y1(mwd)
 
       include 'mpif.h'
       integer status(mpi_status_size)
@@ -670,11 +692,11 @@ c-----------------------------------------------------------------------
          len   = 8*nwds
      
          if (kk.eq.0)
-     $      call ping_loop (t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop (t1,t0,len,nloop,nodea,nodeb,nid,x,y,x1,y1)
          if (kk.eq.1)
-     $      call ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop1(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
          if (kk.eq.2)
-     $      call ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y,x,y)
+     $      call ping_loop2(t1,t0,len,nloop,nodea,nodeb,nid,x,y)
 
          if (nid.eq.nodea) then
             tmsg = (t1-t0)/(2*nloop)   ! 2*nloop--> Double Buffer

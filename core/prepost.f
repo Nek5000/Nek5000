@@ -58,7 +58,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       icalld=icalld+1
       nprep=icalld
 
-#ifndef NOTIMER
+#ifdef TIMER
       etime1=dnekclock()
 #endif
 
@@ -131,7 +131,7 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
 
 
-      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
+c      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
       if (ifdoit) call outfld(prefix)
 
       call outhis(ifhis)
@@ -140,7 +140,7 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
 
       if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tprep=tprep+dnekclock()-etime1
 #endif
 
@@ -439,20 +439,23 @@ C     Dump header
             if (jnid.eq.0) then
                call fill_tmp(tdump,id,ie)
             else
-               mtype=2000+ieg
+c	tag for sending and receiving changed from global (eg) to local (e) element number
+c	to avoid problems with MPI_TAG_UB on Cray
+               mtype=2000+ie
                len=4*id*nxyz
                dum1=0.
                call csend (mtype,dum1,wdsize,jnid,nullpid)
-               call crecv (mtype,tdump,len)
+               call crecv2 (mtype,tdump,len,jnid)
             endif
             if(ierr.eq.0) call out_tmp(id,p66,ierr)
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
-
-            mtype=2000+ieg
+c       tag for sending and receiving changed from global (eg) to local (e) element number
+c       to avoid problems with MPI_TAG_UB on Cray
+            mtype=2000+ie
             len=4*id*nxyz
-            call crecv (mtype,dum1,wdsize)
+            call crecv2 (mtype,dum1,wdsize,node0)
             call csend (mtype,tdump,len,node0,nullpid)
          endif
       enddo
@@ -1821,8 +1824,14 @@ c-----------------------------------------------------------------------
 
       integer iosave,save_size,nfld_save
 
+      include 'SIZE'
+      include 'INPUT'
 
-      nfld_save=4  ! For full restart
+      if (PARAM(27).lt. 0) then
+          nfld_save=abs(PARAM(27))  ! For full restart
+      else 
+          nfld_save=3
+      endif
       save_size=8  ! For full restart
 
       call restart_save(iosave,save_size,nfld_save)
@@ -2375,6 +2384,7 @@ c-----------------------------------------------------------------------
       subroutine mfo_write_hdr          ! write hdr, byte key, els.
 
       include 'SIZE'
+      include 'SOLN'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
@@ -2443,9 +2453,9 @@ c-----------------------------------------------------------------------
       ENDIF
  
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
-     $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
+     $            ,(rdcode1(i),i=1,10),p0th
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a)
+     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7)
 
       ! if we want to switch the bytes for output
       ! switch it again because the hdr is in ASCII

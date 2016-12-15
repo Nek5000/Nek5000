@@ -262,6 +262,18 @@ c
             bfzp(i,jp) = bfzp(i,jp)+tmp*ta3(i)
          enddo
 c
+         if (ifheat) then       ! dt.(grad T)
+c                               ! term coming from the temperature convection
+            call opcolv3 (ta1,ta2,ta3,dTdx,dTdy,dTdz,tp)
+c
+            do i=1,ntot1
+               tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,2)
+               bfxp(i,jp) = bfxp(i,jp)-tmp*ta1(i)
+               bfyp(i,jp) = bfyp(i,jp)-tmp*ta2(i)
+               bfzp(i,jp) = bfzp(i,jp)-tmp*ta3(i)
+            enddo
+         endif
+c
       else  ! 2D
 
          call opcopy  (tb1,tb2,tb3,vx,vy,vz)                   ! Save velocity
@@ -286,6 +298,17 @@ c
             bfyp(i,jp) = bfyp(i,jp)+tmp*ta2(i)
          enddo
 
+         if (ifheat) then       ! dt.(grad T)^T
+                                ! term coming from the temperature convection
+            call opcolv3 (ta1,ta2,ta3,dTdx,dTdy,dTdz,tp)
+c
+            do i=1,ntot1
+               tmp = bm1(i,1,1,1)*vtrans(i,1,1,1,2)
+               bfxp(i,jp) = bfxp(i,jp)-tmp*ta1(i)
+               bfyp(i,jp) = bfyp(i,jp)-tmp*ta2(i)
+            enddo
+         endif
+         
       endif
 c
       return
@@ -576,7 +599,7 @@ C
      $              ,H2(LX1,LY1,LZ1,LELT)
 c
       include 'ORTHOT'
-      napprox(1) = laxt
+      napproxt(1) = laxtt
 C
       IF (IGEOM.EQ.1) THEN
 C
@@ -593,7 +616,7 @@ C
             ENDIF
          ENDIF
          if1=ifield-1
-         write(name4,1) if1
+         write(name4t,1) if1
     1    format('TEM',i1)
 C
 C        New geometry
@@ -612,16 +635,16 @@ C
          CALL BCNEUSC (TA,1)
          CALL ADD2    (TB,TA,NTOT)
 c
-         CALL HMHOLTZ (name4,TA,TB,H1,H2
+         CALL HMHOLTZ (name4t,TA,TB,H1,H2
      $                 ,TMASK(1,1,1,1,IFIELD-1)
      $                 ,TMULT(1,1,1,1,IFIELD-1)
      $                 ,IMESH,TOLHT(IFIELD),NMXH,1)
 c
-c        call hsolve  (name4,TA,TB,H1,H2 
+c        call hsolve  (name4t,TA,TB,H1,H2 
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
 c    $                 ,TMULT(1,1,1,1,IFIELD-1)
 c    $                 ,IMESH,TOLHT(IFIELD),NMXH,1
-c    $                 ,approx,napprox,bintm1)
+c    $                 ,approxt,napproxt,bintm1)
 c
          CALL ADD2    (TP(1,IFIELD-1,jp),TA,NTOT)
 C
@@ -693,6 +716,7 @@ C     at current time step.
 C
 C---------------------------------------------------------------
       include 'SIZE'
+      include 'ADJOINT'
       include 'SOLN'
       include 'MASS'
       include 'TSTEP'
@@ -701,18 +725,30 @@ c
      $             , ua (lx1,ly1,lz1,lelt)
      $             , ub (lx1,ly1,lz1,lelt)
      $             , uc (lx1,ly1,lz1,lelt)
+      real coeff
 c
       nel = nelfld(ifield)
       ntot1 = nx1*ny1*nz1*nel
 c
-      call opcopy(ua,ub,uc,vx,vy,vz)
-      call opcopy(vx,vy,vz,vxp(1,jp),vyp(1,jp),vyp(1,jp))
-      call convop(ta,t(1,1,1,1,ifield-1))            ! dU.grad T
-      call opcopy(vx,vy,vz,ua,ub,uc)
+      if (.not.ifadj) then
+         call opcopy(ua,ub,uc,vx,vy,vz)
+         call opcopy(vx,vy,vz,vxp(1,jp),vyp(1,jp),vyp(1,jp))
+         call convop(ta,t(1,1,1,1,ifield-1)) ! dU.grad T
+         call opcopy(vx,vy,vz,ua,ub,uc)
+      endif
 c
-      call convop  (ua,tp(1,ifield-1,jp))            ! U.grad dT
-      call add2    (ta,ua,ntot1)
-      call col2    (ta,vtrans(1,1,1,1,ifield),ntot1)
+      call convop  (ua,tp(1,ifield-1,jp)) ! U.grad dT
+c
+      if (.not.ifadj) then
+         call add2 (ta,ua,ntot1)          ! U.grad dT + dU.grad T
+      else
+         call copy (ta,ua,ntot1)
+         coeff=-1.0
+         call cmult(ta,coeff,ntot1)       ! -U.grad dT
+                                          ! the second term depends on the buoyancy
+      endif
+c
+      call col2    (ta,vtrans(1,1,1,1,ifield),ntot1) !vtrans (U.grad dT + dU.grad T)
       call subcol3 (bqp(1,ifield-1,jp),bm1,ta,ntot1)
 c
       return

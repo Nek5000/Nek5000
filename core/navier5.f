@@ -117,7 +117,7 @@ c
      $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
          ifield = 2
-         if (ifheat .and. .not.ifcvode) 
+         if (ifheat .and. .not.ifcvfld(ifield)) 
      $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
         enddo
@@ -1475,19 +1475,6 @@ c
       err (4,2) = sqrt(amp2_h)
       err (5,2) = sqrt(utot)
 c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine transpose1(a,n)
-      real a(n,n)
-c
-      do j=1,n
-      do i=j+1,n
-         ta     = a(i,j)
-         a(i,j) = a(j,i)
-         a(j,i) = ta
-      enddo
-      enddo
       return
       end
 c-----------------------------------------------------------------------
@@ -2994,15 +2981,17 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) open(unit=29,file='rea.new')
 
       do eg=1,nelgt
-         mtype = eg
          call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+         mtype = e
          if (jnid.eq.0 .and. nid.eq.0) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
             call out_el(xt,eg)
          elseif (nid.eq.0) then
-            call crecv(mtype,xt,len)
+            call crecv2(mtype,xt,len,jnid)
             call out_el(xt,eg)
          elseif (jnid.eq.nid) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))

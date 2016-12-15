@@ -28,10 +28,6 @@ C-----------------------------------------------------------------------
      $ ,             ta2 (lx2,ly2,lz1)
       integer*8 ntotg,nn
 
-      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
-      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
-      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
-
       real psmax(ldimt)
 
       if(nio.eq.0) write(6,*) 'set initial conditions'
@@ -43,8 +39,6 @@ C-----------------------------------------------------------------------
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
-      ntotcv=lelt*nxyz1*toteq
-
 
       call rzero(vx,ntott)
       call rzero(vy,ntott)
@@ -56,17 +50,8 @@ C-----------------------------------------------------------------------
 
       jp = 0                  ! Set counter for perturbation analysis
 
-      if (ifcmt) then
-         call rzero(phig,ltott)
-         call rzero(csound,ltott)
-         call rzero(vtrans,ltott*ldimt1)
-         call rzero(vdiff ,ltott*ldimt1)
-         call rzero(u,ntotcv)
-      endif
-
       irst = param(46)        ! for lee's restart (rarely used)
       if (irst.gt.0)  call setup_convect(2)
-
 
 c     If moving geometry then add a perturbation to the
 c     mesh coordinates (see Subroutine INIGEOM)
@@ -256,8 +241,7 @@ c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
 c     enddo
 c     ifield = ifldsave
     
-c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
-      if (ifflow.and..not.ifcmt) then  ! pff, 11/4/15
+      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -273,7 +257,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
       endif
 
       if (ifheat.and..not.ifdg) then  ! Don't project if using DG
-       if (.not.ifcmt) then
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -285,7 +268,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
               call col2 (t(1,1,1,1,i-1),vmult,ntotv)
             endif
          enddo
-       endif
       endif
 c
 c     if (ifpert.and..not.ifdg) then ! Still not DG
@@ -374,14 +356,15 @@ c print max values
          endif
       endif
 
+      if (iflomach .and. ifdp0dt) then
+        if (p0th.le.0) call exitti('Invalid thermodynamic pressure!$',1)
+        if (gamma0.lt.0) call exitti('Invalid gamma0!$',1)
+      endif
 
       if (ifrest(0,jp)) then !  mesh has been read in.
          if (nio.eq.0) write(6,*) 'Restart: recompute geom. factors.'
          call geom_reset(1)  !  recompute geometric factors
       endif
-
-c     ! save velocity on fine mesh for dealiasing
-      call setup_convect(2)
 
 c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitti('setic exit$',nelv)
@@ -607,7 +590,6 @@ c use new reader (only binary support)
             call sioflag(ndumps,fname,initc(ifile))
             call mfi(fname,ifile)
          enddo
-         call setup_convect(3)
          if (nid.ne.0) time=0
          time = glmax(time,1) ! Sync time across processors
          return
@@ -1207,7 +1189,9 @@ C     If no fields were explicitly specified, assume getting all fields.
          ENDIF
          if (ifflow) ifgetp=.true.
          if (ifheat) ifgett=.true.
-         if (ifcmt)  ifgett=.true.
+#ifdef CMTNEK
+         ifgett=.true. ! CMT-nek still not compatible with IFHEAT
+#endif
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue
@@ -1259,19 +1243,21 @@ C
 C     Parallel code - send data to appropriate processor and map.
 C
          JNID=GLLNID(IEG)
-         MTYPE=3333+IEG
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+         MTYPE=3333+GLLEL(IEG)
          LEN=4*NXYR
          LE1=4
          IF (NID.EQ.0.AND.JNID.NE.0) THEN
 c           hand-shake
             CALL CSEND(MTYPE,TDUMP,LE1,JNID,NULLPID)
-            CALL CRECV(MTYPE,dummy,LE1)
+            CALL CRECV2(MTYPE,dummy,LE1,JNID)
             CALL CSEND(MTYPE,TDUMP,LEN,JNID,NULLPID)
          ELSEIF (NID.NE.0.AND.JNID.EQ.NID) THEN
 C           Receive data from node 0
-            CALL CRECV(MTYPE,dummy,LE1)
+            CALL CRECV2(MTYPE,dummy,LE1,0)
             CALL CSEND(MTYPE,TDUMP,LE1,0,NULLPID)
-            CALL CRECV(MTYPE,TDUMP,LEN)
+            CALL CRECV2(MTYPE,TDUMP,LEN,0)
          ENDIF
 C
 C        If the data is targeted for this processor, then map 
@@ -1699,10 +1685,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'NEKUSE'
 
-      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
-      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
-      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
-      integer eqnum,e,eg
+      integer e,eg
 
       nel   = nelfld(ifield)
 
@@ -1768,45 +1751,6 @@ C
 
       endif
 
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!     cmt-nek
-!
-!     User should be responsible for agreement between varsic and
-!     vxyz,rho, prsic, but a consistency check here would be wise.
-
-      if (ifcmt) then
-         do e=1,nel
-            eg = lglel(e)
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1           
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               if (ifield.eq.1) then
-                  vx(i,j,k,e) = ux
-                  vy(i,j,k,e) = uy
-                  vz(i,j,k,e) = uz
-                  vtrans(i,j,k,e,ifield)=rho
-                  phig(i,j,k,e)=phi
-                  pr(i,j,k,e) =pres
-                  do eqnum=1,toteq
-                     u(i,j,k,eqnum,e)=varsic(eqnum)
-                  enddo
-                  if (ifvisc) vdiff(i,j,k,e,ifield)=mu
-               else
-                  t(i,j,k,e,ifield-1) = temp
-                  if (ifvisc) then
-                     if (ifield.eq.2) vdiff(i,j,k,e,ifield)=udiff
-                     if (ifield.eq.3) vdiff(i,j,k,e,ifield)=lambda
-                  endif
-               endif
-            enddo
-            enddo
-            enddo
-         enddo
-      endif
-!     cmt-nek
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       return
       END
@@ -2101,8 +2045,9 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-            eg = lglel(e)
-            msg_id(e) = irecv(eg,wk(l),len)
+c     Tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+            msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
       endif
@@ -2129,8 +2074,11 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+c     Tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+               jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
             k  = k + nelrr
@@ -2242,8 +2190,9 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-            eg = lglel(e)
-            msg_id(e) = irecv(eg,wk(l),len)
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+            msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
       endif
@@ -2269,8 +2218,11 @@ c-----------------------------------------------------------------------
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
+c     tag for sending and receiving changed from global (eg) to 
+c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
+               jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(er(e),w2(l),len,jnid,0)  ! blocking send
+               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
                l = l+nxyzr
             enddo
             k  = k + nelrr
@@ -2367,16 +2319,25 @@ c-----------------------------------------------------------------------
       subroutine parse_std_hdr(hdr)
       include 'SIZE'
       include 'INPUT'
+      include 'SOLN'
       include 'PARALLEL'
       include 'RESTART'
 
       character*132 hdr
       character*4 dummy
 
-      read(hdr,*,err=99) dummy
+      read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr
+
+      if (ierr.gt.0) then ! try again without mean pressure
+        read(hdr,*,err=99) dummy
+     $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! 74+20=94
+      endif
 
 #ifdef MPIIO
       if ((nelr/np + np).gt.lelr) then
@@ -2435,6 +2396,8 @@ c-----------------------------------------------------------------------
          endif
       endif
 
+      p0th = p0thr
+
       return
 
    99 continue   !  If we got here, then the May 2008 variant of std hdr
@@ -2458,7 +2421,6 @@ c                4  7  10  13   23    33    53    62     68     74
      $         , ifiler,nfiler
      $         , (rlcode(k),k=1,20)                   ! 74+20=94
     1 format(4x,i2,3i3,2i10,e20.13,i9,2i6,20a1)
-
 
       if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
 

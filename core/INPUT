@@ -1,99 +1,111 @@
-C
-C     Input parameters from preprocessors.
-C
-C     Note that in parallel implementations, we distinguish between
-C     distributed data (LELT) and uniformly distributed data.
-C
-C     Input common block structure:
-C
-C     INPUT1:  REAL            INPUT5: REAL      with LELT entries
-C     INPUT2:  INTEGER         INPUT6: INTEGER   with LELT entries
-C     INPUT3:  LOGICAL         INPUT7: LOGICAL   with LELT entries
-C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
-C
-      COMMON /INPUT1/ PARAM(200)
-     $               ,RSTIM,VNEKTON
-     $               ,CPFLD(LDIMT1,3)
-     $               ,CPGRP(-5:10,LDIMT1,3)
-     $               ,QINTEG(LDIMT3,MAXOBJ)
-     $               ,UPARAM(20)
-C
-      COMMON /INPUT2/ MATYPE(-5:10,LDIMT1)
-     $               ,NKTONV,NHIS,LOCHIS(4,lhis+maxobj)
-     $               ,IPSCAL,NPSCAL,IPSCO, ifldmhd
-     $               ,IRSTV,IRSTT,IRSTIM,NMEMBER(MAXOBJ),NOBJ
-     $               ,NGEOM
-C
-      COMMON /INPUT3/ IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
-     $               ,IFMGRID,IFADVC(LDIMT1),IFTMSH(0:LDIMT1)
-     $               ,IFMVBD,IFNATC,IFCHAR,IFNONL(LDIMT1)
-     $               ,IFVARP(LDIMT1),IFPSCO(LDIMT1),IFVPS
-     $               ,IFMODEL,IFKEPS,IFINTQ,IFCONS
-     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT1),IFFMTIN
-     $               ,IFBO,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
-     $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
-     $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
 c
-      LOGICAL         IF3D,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
-     $               ,IFMGRID,IFADVC        ,IFTMSH
-     $               ,IFMVBD,IFNATC,IFCHAR,IFNONL
-     $               ,IFVARP        ,IFPSCO        ,IFVPS
-     $               ,IFMODEL,IFKEPS,IFINTQ,IFCONS
-     $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO        ,IFFMTIN
-     $               ,IFBO,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT,IFBASE
-     $               ,IFCVODE,IFLOMACH,IFEXPLVIS,IFSCHCLOB,IFUSERVP
-     $               ,IFCYCLIC,IFMOAB,IFCOUP, IFVCOUP, IFUSERMV,IFREGUO
-     $               ,IFXYO_,ifaziv,IFNEKNEK,IFNEKNEKM,ifdg
+c     Input parameters from preprocessors.
+c
+c     Note that in parallel implementations, we distinguish between
+c     distributed data (LELT) and uniformly distributed data.
+c
+c     Input common block structure:
+c
+c     INPUT1:  REAL            INPUT5: REAL      with LELT entries
+c     INPUT2:  INTEGER         INPUT6: INTEGER   with LELT entries
+c     INPUT3:  LOGICAL         INPUT7: LOGICAL   with LELT entries
+c     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
+c
+      real param(200),rstim,vnekton
+     $    ,cpfld(ldimt1,3)
+     $    ,cpgrp(-5:10,ldimt1,3)
+     $    ,qinteg(ldimt3,maxobj)
+     $    ,uparam(20)
+     $    ,atol(ldimt3)
+      common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
+     $                atol
 
-      LOGICAL         IFNAV
-      EQUIVALENCE    (IFNAV, IFADVC(1))
-C
-      COMMON /INPUT4/ HCODE(11,lhis+maxobj),OCODE(8),RSTV,RSTT,DRIVC(5)
-     $               ,INITC(15),TEXTSW(100,2)
-      CHARACTER*1     HCODE
-      CHARACTER*2     OCODE
-      CHARACTER*10    DRIVC
-      CHARACTER*14    RSTV,RSTT
-      CHARACTER*40    TEXTSW,TURBMOD
-      CHARACTER*132    INITC
-      EQUIVALENCE    (TURBMOD,TEXTSW(1,1))
-C
-      COMMON /CFILES/ REAFLE,FLDFLE,DMPFLE,HISFLE,SCHFLE,OREFLE,NREFLE
-      CHARACTER*132   REAFLE,FLDFLE,DMPFLE,HISFLE,SCHFLE,OREFLE,NREFLE
-      COMMON /CFILE2/ SESSION,PATH,RE2FLE, H5MFLE,PARFLE
-      CHARACTER*132   SESSION,PATH,RE2FLE,H5MFLE,PARFLE
-C
-C proportional to LELT
-C
-      COMMON /INPUT5/ XC(8,LELT),YC(8,LELT),ZC(8,LELT)
-     $               ,BC(5,6,LELT,0:LDIMT1)
-     $               ,CURVE(6,12,LELT)
-     $               ,CERROR(LELT)
-C
-      COMMON /INPUT6/ IGROUP(LELT),OBJECT(MAXOBJ,MAXMBR,2)
-      INTEGER OBJECT
-C
-      COMMON /INPUT8/ CBC(6,LELT,0:LDIMT1),CCURVE(12,LELT)
-     $              , CDOF(6,LELT), solver_type
-      CHARACTER*1     CCURVE,CDOF
-      CHARACTER*3     CBC, solver_type
-      COMMON /INPUT9/ IEACT(LELT),NEACT
-C
-C material set ids, BC set ids, materials (f=fluid, s=solid), bc types
-      PARAMETER (NUMSTS=50)
-      COMMON /INPUTMI/ NUMFLU, NUMOTH, NUMBCS 
-     $	             , MATINDX(NUMSTS),MATIDS(NUMSTS),IMATIE(LELT)
-     $ 	             , IBCSTS (NUMSTS) 
-      COMMON /INPUTMR/ BCF    (NUMSTS)
-      COMMON /INPUTMC/ BCTYPS (NUMSTS)
-      CHARACTER*3 BCTYPS
-      integer     bcf
+      integer matype(-5:10,ldimt1)
+     $       ,nktonv,nhis,lochis(4,lhis+maxobj)
+     $       ,ipscal,npscal,ipsco, ifldmhd
+     $       ,irstv,irstt,irstim,nmember(maxobj),nobj
+     $       ,ngeom,idpss(ldimt)
+      common /input2/ matype,nktonv,nhis,lochis,ipscal,npscal,ipsco
+     $               ,ifldmhd,irstv,irstt,irstim,nmember,nobj
+     $               ,ngeom,idpss
 
-c flags for CMT are as follows
+      logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
+     $               ,ifmgrid,ifadvc(ldimt1),ifdiff(ldimt1)
+     $               ,iftmsh(0:ldimt1)
+     $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
+     $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
+     $               ,ifmodel,ifkeps,ifintq,ifcons
+     $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso(ldimt1),iffmtin
+     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
+     $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
+     $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifdg
+     $               ,ifcvfld(ldimt1),ifdp0dt
 
-      COMMON /INPUT10/ IFCMT,  IFFLTR,    OUTFLSUB
-     $                ,IFVISC, IFCNTFILT, IFRESTART
-      LOGICAL          IFCMT,  IFFLTR,    OUTFLSUB
-     $                ,IFVISC, IFCNTFILT, IFRESTART
+      common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
+     $               ,ifmgrid,ifadvc,ifdiff
+     $               ,iftmsh
+     $               ,ifmvbd,ifnatc,ifchar,ifnonl
+     $               ,ifvarp        ,ifpsco        ,ifvps
+     $               ,ifmodel,ifkeps,ifintq,ifcons
+     $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso        ,iffmtin
+     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
+     $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
+     $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifdg
+     $               ,ifcvfld,ifdp0dt
 
+      logical         ifnav
+      equivalence    (ifnav, ifadvc(1))
+
+      character*1     hcode(11,lhis+maxobj)
+      character*2     ocode(8)
+      character*10    drivc(5)
+      character*14    rstv,rstt
+      character*40    textsw(100,2)
+      character*132   initc(15)
+      common /input4/ hcode,ocode,rstv,rstt,drivc,initc,textsw
+
+      character*40    turbmod
+      equivalence    (turbmod,textsw(1,1))
+
+      character*132   reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
+      common /cfiles/ reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
+
+      character*132   session,path,re2fle,h5mfle,parfle
+      common /cfile2/ session,path,re2fle,h5mfle,parfle
+!
+! proportional to LELT
+!
+      real xc(8,lelt),yc(8,lelt),zc(8,lelt)
+     $    ,bc(5,6,lelt,0:ldimt1)
+     $    ,curve(6,12,lelt)
+     $    ,cerror(lelt)
+      common /input5/ xc,yc,zc,bc,curve,cerror
+
+      integer igroup(lelt),object(maxobj,maxmbr,2)
+      common /input6/ igroup,object
+
+      character*1     ccurve(12,lelt),cdof(6,lelt)
+      character*3     cbc(6,lelt,0:ldimt1), solver_type
+      common /input8/ cbc,ccurve,cdof,solver_type
+
+      integer ieact(lelt),neact
+      common /input9/ ieact,neact
+!
+! material set ids, BC set ids, materials (f=fluid, s=solid), bc types
+!
+      integer numsts
+      parameter (numsts=50)
+      
+      integer numflu,numoth,numbcs 
+     $       ,matindx(numsts),matids(numsts),imatie(lelt)
+     $       ,ibcsts(numsts)
+      common /inputmi/ numflu,numoth,numbcs,matindx,matids,imatie
+     $                ,ibcsts
+      
+      integer bcf(numsts)
+      common /inputmr/ bcf
+
+      character*3 bctyps(numsts)
+      common /inputmc/ bctyps

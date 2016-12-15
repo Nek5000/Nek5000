@@ -6,25 +6,24 @@ c
       real a(n1,n2),b(n2,n3),c(n1,n3)
 c
       include 'SIZE'
+      include 'CTIMER'
       include 'OPCTR'
       include 'TOTAL'
 c
-      integer aligned
-      integer K10_mxm
+      integer*8 tt
 
-      integer(8) tt
-
-#ifndef NOTIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'mxm   '
-      endif
-      isbcnt = n1*n3*(2*n2-1)
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+#ifdef TIMER
+c      if (isclld.eq.0) then
+c          isclld=1
+c          nrout=nrout+1
+c          myrout=nrout
+c          rname(myrout) = 'mxm   '
+c      endif
+c      isbcnt = n1*n3*(2*n2-1)
+c      dct(myrout) = dct(myrout) + (isbcnt)
+c      ncall(myrout) = ncall(myrout) + 1
+c      dcount = dcount + (isbcnt)
+c      etime1 = dnekclock()
 #endif
 
 
@@ -35,7 +34,7 @@ c        .and. MOD(LOC(b),tt)==0 &
 c        .and. MOD(LOC(c),tt)==0 & 
         ) then
         call mxm_bgq_8(a, n1, b, n2, c, n3)  
-        return
+        goto 111
       endif
       if (n2 == 16 .and. mod(n1,4) == 0 &
 c        .and. MOD(LOC(a),tt)==0 & 
@@ -43,7 +42,7 @@ c        .and. MOD(LOC(b),tt)==0 &
 c        .and. MOD(LOC(c),tt)==0 & 
          ) then
         call mxm_bgq_16(a, n1, b, n2, c, n3)  
-        return
+        goto 111
       endif
       tt = 32
       if (n2 == 10 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 &
@@ -52,7 +51,7 @@ c        .and. MOD(LOC(c),tt)==0 &
         .and. MOD(LOC(c),tt)==0 & 
           ) then
         call mxm_bgq_10(a, n1, b, n2, c, n3)  
-        return
+        goto 111
       endif
       if (n2 == 6 .and. mod(n1,4) == 0 .and. mod(n3,2) == 0 &
         .and. MOD(LOC(a),tt)==0 & 
@@ -60,46 +59,29 @@ c        .and. MOD(LOC(c),tt)==0 &
         .and. MOD(LOC(c),tt)==0 & 
        ) then
         call mxm_bgq_6(a, n1, b, n2, c, n3)  
-        return
+        goto 111
+      endif
+#endif
+
+#ifdef XSMM
+      if ((n1*n2*n3)**(1./3) .gt. 6) then
+         call libxsmm_dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
+         goto 111
+      else
+         goto 101
       endif
 #endif
 
 #ifdef BLAS_MXM
       call dgemm('N','N',n1,n3,n2,1.0,a,n1,b,n2,0.0,c,n1)
-      return
-#endif
- 
-#ifdef BG
-      call bg_aligned3(a,b,c,aligned)
-      if (n2.eq.2) then
-         call mxm44_2(a,n1,b,n2,c,n3)
-      else if ((aligned.eq.1) .and.
-     $         (n1.ge.8) .and. (n2.ge.8) .and. (n3.ge.8) .and.
-     $         (modulo(n1,2).eq.0) .and. (modulo(n2,2).eq.0) ) then
-         if (modulo(n3,4).eq.0) then
-            call bg_mxm44(a,n1,b,n2,c,n3)
-         else
-            call bg_mxm44_uneven(a,n1,b,n2,c,n3)
-         endif
-      else if((aligned.eq.1) .and.
-     $        (modulo(n1,6).eq.0) .and. (modulo(n3,6).eq.0) .and.
-     $        (n2.ge.4) .and. (modulo(n2,2).eq.0) ) then
-         call bg_mxm3(a,n1,b,n2,c,n3)
-      else
-         call mxm44_0(a,n1,b,n2,c,n3)
-      endif
-      return
+      goto 111
 #endif
 
-#ifdef K10_MXM
-      ! fow now only supported for lx1=8
-      ! tuned for AMD K10
-      ierr = K10_mxm(a,n1,b,n2,c,n3) 
-      if (ierr.gt.0) call mxmf2(a,n1,b,n2,c,n3)
-      return
+ 101  call mxmf2(a,n1,b,n2,c,n3)
+
+ 111  continue
+#ifdef TIMER
+c      tmxmf = tmxmf + dnekclock() - etime1  
 #endif
-
-      call mxmf2(a,n1,b,n2,c,n3)
-
       return
       end

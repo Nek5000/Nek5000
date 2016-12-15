@@ -1,15 +1,17 @@
 #!/bin/bash
 
 # binary path
-mkdir -p $HOME/bin
-bin_nek_tools="$HOME/bin"
+bin_nek_tools=`cd ../bin && pwd`
 
 # specify your compilers here
 F77="gfortran"
 CC="gcc"
 
+# linking flags
+#USR_LFLAGS="-L$HOME/lib"
+
 # enable BIG MEMORY suuport
-BIGMEM="true"
+#BIGMEM="true"
 
 
 
@@ -133,6 +135,8 @@ export CC
 export bin_nek_tools
 export US
 export R8
+LFLAGS_IN=$USR_LFLAGS 
+export LFLAGS_IN  
 
 LIST=`ls -Cd */ | sed 's:\/::g'`
 MODULES=`echo $LIST`
@@ -141,6 +145,10 @@ export MODULES
 if [ "$1" == "clean" ]; then
    make clean
 else
+   export DOALL=''
+   if [ "$1" == "all" ]; then
+      export DOALL=1
+   fi
    if [ "$1" != "all" ]; then
       LIST=`echo $* | sed 's:\/::g'`
       MODULES=$LIST

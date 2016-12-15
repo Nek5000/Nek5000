@@ -61,7 +61,7 @@ c     taken from filterq in navier5.f
       include 'SIZE'
       include 'TSTEP'
     
-      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelcmt) 
+      COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
       logical if3d
 c
       real w1(1),w2(1)
@@ -158,7 +158,7 @@ c
 c
 c     Set up transfer function
 
-      call usrflt(rmult)
+      call cmt_usrflt(rmult)
       call ident   (diag,nx)
 
       do k=1,nx
@@ -221,7 +221,7 @@ c
 c
 c     Set up transfer function
 
-      call usrflt(rmult)
+      call cmt_usrflt(rmult)
       call ident   (diag,nx)
 
       do k=1,nx

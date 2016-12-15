@@ -214,6 +214,9 @@ C
       character*132 string(100)
 
       VNEKTON = 3 ! dummy not really used anymore
+
+      optlevel = 1! fixed for now
+      loglevel = 1! fixed for now
       
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
@@ -289,7 +292,13 @@ C
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
+         IFDIFF(i) = .true. 
       enddo      
+
+      do i=1,NPSCL1
+         IDPSS(i) = 0 ! use Helmholtz for passive scalars 
+      enddo
+
       IFFLOW    = .false.
       IFHEAT    = .false.
       IFTRAN    = .false.
@@ -317,9 +326,6 @@ C
       IFEXPLVIS = .false.
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
-      IFCMT     = .false.
-      IFVISC    = .false.
-      IFFLTR    = .false.
 
       ifbase = .true.
       ifpert = .false.
@@ -401,12 +407,6 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
-         elseif (indx1(string(i),'IFCMT',5).gt.0) then 
-              read(string(i),*) IFCMT
-         elseif (indx1(string(i),'IFVISC',6).gt.0) then 
-              read(string(i),*) IFVISC
-         elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
-              read(string(i),*) IFFLTR
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -436,10 +436,7 @@ c              read(string,*) IFSPLIT
      &           '   IFCONS'   ,
      &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'  ,
-     &           '   IFCMT'    ,
-     &           '   IFVISC'   ,
-     &           '   IFFLTR'    
+     &           '   IFVCOUP'
               endif
               call exitt
          endif
@@ -572,11 +569,12 @@ C
          endif
       endif
 
-c      if (ifmvbd .and. ifsplit) then 
-c         if(nid.eq.0) write(6,*) 
-c     $   'ABORT: Moving boundary in Pn-Pn is not supported'
-c         call exitt
-c      endif
+      if (ifcvode) then 
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: Using CVODE requires .par file!'
+         call exitt
+      endif
+
       if (ifmoab .and..not. ifsplit) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: MOAB in Pn-Pn-2 is not supported'
@@ -2369,6 +2367,8 @@ c-----------------------------------------------------------------------
 
          mid = gllnid(eg)
          e   = gllel (eg)
+!     tag for sending and receiving changed from global (eg) to local (e) element number
+!     to avoid problems with MPI_TAG_UB on CRAY
 #ifdef DEBUG
          if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
 #endif
@@ -2376,17 +2376,17 @@ c-----------------------------------------------------------------------
 
             if(ierr.eq.0) then
               call byte_read  (buf,nwds,ierr)
-              call csend(eg,ierr,len1,mid,0)
-              if(ierr.eq.0) call csend(eg,buf,len,mid,0)
+              call csend(e,ierr,len1,mid,0)
+              if(ierr.eq.0) call csend(e,buf,len,mid,0)
             else
-              call csend(eg,ierr,len1,mid,0)
+              call csend(e,ierr,len1,mid,0)
             endif
 
          elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
 
-            call crecv      (eg,ierr,len1)
+            call crecv      (e,ierr,len1)
             if(ierr.eq.0) then
-              call crecv      (eg,buf,len)
+              call crecv      (e,buf,len)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
  
@@ -2676,6 +2676,10 @@ c-----------------------------------------------------------------------
  
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
+         if(version.eq.'#v003') then
+           wdsizi = 8
+           param(32) = 1
+         endif
 
          call byte_read(test,1,ierr)
          if(ierr.ne.0) goto 100
@@ -2691,6 +2695,7 @@ c-----------------------------------------------------------------------
       call bcast(nelgv  ,ISIZE)
       call bcast(ndim   ,ISIZE)
       call bcast(nelgt  ,ISIZE)
+      call bcast(param(32),WDSIZE)
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 
      $   call exitti('wdsize=4 & wdsizi(re2)=8 not compatible$',wdsizi)

@@ -233,19 +233,25 @@ c     read nekton .rea file and make a mesh
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       io = 10
-      call getfile2('Input (.rea) file name:$','.rea$',io)
-      if (io.lt.0.0) then
+      call getreafile('Input .rea / .re2 name:$',ifbinary,io,ierr)
+      if (ierr.gt.0) then 
+         write(6,'(A)') 'Error no .rea / .re2 file found!'
          call linearmsh(cell,nelv,nelt,ndim)
          return
       endif
-      
 
       write(6,'(A)') 'Input mesh tolerance (default 0.2):'
       write(6,'(A,A)') 'NOTE: smaller is better, but generous is more ',
      &                 'forgiving for bad meshes.'
-      read(5,*) qin
-      if(qin.gt.0) q = qin
 
+      read(5,'(f7.2)') qin
+      if(qin.gt.0) then
+        q = qin
+      else
+        write(6,'(A,2f7.2)') ' using default value'
+        q = 0.2
+      endif
+  
       call cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
 
       ierr = 0
@@ -379,24 +385,25 @@ c
 
       logical ifbinary,ifbswap
 
-
-      ifbinary = .false.
       ifbswap  = .false.
 
-      write(6,*) 'reading .rea file data ...'
-      call cscan(string,'MESH DATA',9)
-      read (10,*) nelt,ndim,nelv
+      write(6,*) 'reading mesh data ...'
+
+      if (.not. ifbinary) then
+         call cscan(string,'MESH DATA',9)
+         read (10,*) nelt,ndim,nelv
+      endif
        
-      if (nelt.lt.0) then
+      if (nelt.lt.0 .or. ifbinary) then
          ifbinary = .true.
-         write(6,*) 'reading .re2 file data ...'
-         call open_bin_file(ifbswap,nelgtr,nelgvr,wdsizi)
+         call open_bin_file(ifbswap,nelgtr,ndimr,nelgvr,wdsizi)
          if(wdsize.eq.4.and.wdsizi.eq.8) then
              write(6,*) "Double Precision .rea not supported ",
      $                  "in Single Precision mode, compile with -r8"
              call exitt(wdsize)
          endif
          nelt = nelgtr
+         ndim = ndimr
          nelv = nelgvr
          nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
       endif
@@ -877,9 +884,10 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine getfile2(prompt,suffix,io)
+      subroutine getreafile(prompt,ifbinary,io,ierr)
 c
-      character*1 prompt(1),suffix(1)
+      character*1 prompt(1)
+      logical ifbinary
 c
       common /sess/ session
       character*80 session
@@ -887,30 +895,39 @@ c
       character*80 file
       character*1  file1(80)
       equivalence (file1,file)
-      character*80 fout
-      character*1  fout1(80)
-      equivalence (fout1,fout)
-c
-c     Get file name
 
+      ierr = 0
+      ifbinary = .false.
+
+c     Get file name
       len = indx1(prompt,'$',1) - 1
       write(6,81) (prompt(k),k=1,len)
    81 format(80a1)
-
       call blank(session,80)
       read(5,80) session
    80 format(a80)
+
       if (session.eq.'-1') then
          io = -1
+         ierr = 1
          return
       else
          call chcopy(file,session,80)
          len = ltrunc(file,80)
-         lsf = indx1 (suffix,'$',1) - 1
-         call chcopy(file1(len+1),suffix,lsf)
+         call chcopy(file1(len+1),'.rea',4)
+         open(unit=io, file=file, status='old', iostat=ierr)
 
-         open(unit=io, file=file)
+         if (ierr.gt.0) then
+            call chcopy(file,session,80)
+            len = ltrunc(file,80)
+            call chcopy(file1(len+1),'.re2',4)
+            inquire(file=file, exist=ifbinary)
+            if(ifbinary) ierr = 0
+         endif
       endif
+
+      write(6,*) 'reading ', file
+
       return
       end
 c-----------------------------------------------------------------------
@@ -3320,7 +3337,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine open_bin_file(ifbswap,nelgt,nelgv,wdsizi) 
+      subroutine open_bin_file(ifbswap,nelgt,ndim,nelgv,wdsizi) 
 c     open file & chk for byteswap & 8byte reals
 
       logical ifbswap,if_byte_swap_test
@@ -3366,10 +3383,11 @@ c     open file & chk for byteswap & 8byte reals
 c      write(6,80) hdr
 c   80 format(a80)
 
-      read (hdr,1) version,nelgt,ndum,nelgv
+      read (hdr,1) version,nelgt,ndim,nelgv
     1 format(a5,i9,i3,i9)
       wdsizi=4
       if(version.eq.'#v002')wdsizi=8
+      if(version.eq.'#v003')wdsizi=8
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti

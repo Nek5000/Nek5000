@@ -19,8 +19,8 @@ As part of the move to git, the contents of the svn repo have been reorganized t
 `jl` used to live in `nek5_svn/trunk/nek`, but is being promoted to the top level to emphasize its library-like relationship to the rest of the source.
 In fact, `jl` has been extended externally in [gslib](https://github.com/gslib/gslib), which is used in other projects.
 
-### `scripts`
-`scripts` contains bash scripts for running nek5000 and manipulating its output on a variety of platforms, e.g. `nekmpi`.
+### `bin`
+`bin` contains bash scripts for running nek5000 and manipulating its output on a variety of platforms, e.g. `nekmpi`.
 
 ### `tools`
 `tools` contains the sources for the pre- and post-processing tools, e.g. `genmap`, which are stand-alone fortran programs.

@@ -58,8 +58,8 @@ c     if (.not.iffdm) kfldfdm=-1
 C
       call dssum   (rhs,nx1,ny1,nz1)
       call col2    (rhs,mask,ntot)
-      if (nio.eq.0.and.istep.le.10) 
-     $    write(6,*) param(22),' p22 ',istep,imsh
+c      if (nio.eq.0.and.istep.le.10) 
+c     $    write(6,*) param(22),' p22 ',istep,imsh
       if (param(22).eq.0.or.istep.le.10)
      $    call chktcg1 (tol,rhs,h1,h2,mask,mult,imsh,isd)
 
@@ -781,7 +781,8 @@ c
          if (nio.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
 
          if (ifprint_hmh)
-     $      write(6,3002) istep,iter,name,ifmcor,rbn2,tol,h1(1),h2(1)
+     &      write(6,3002) istep,'  Hmholtz ' // name,
+     &                    iter,rbn2,h1(1),tol,h2(1),ifmcor
 
 
 c        Always take at least one iteration   (for projection) pff 11/23/98
@@ -796,7 +797,8 @@ c        IF (rbn2.LE.TOL) THEN
             NITER = ITER-1
 c           IF(NID.EQ.0.AND.((.NOT.IFHZPC).OR.IFPRINT))
             if (nio.eq.0)
-     $         write(6,3000) istep,name,niter,rbn2,rbn0,tol
+     &         write(6,3000) istep,'  Hmholtz ' // name,
+     &                       niter,rbn2,rbn0,tol
             goto 9999
          ENDIF
 c
@@ -826,10 +828,13 @@ c        Generate tridiagonal matrix for Lanczos scheme
  1000 enddo
       niter = iter-1
 c
-      if (nio.eq.0) write (6,3001) istep,niter,name,rbn2,rbn0,tol
- 3000 format(4x,i7,4x,'Hmholtz ',a4,': ',I6,1p6E13.4)
- 3001 format(2i6,' **ERROR**: Failed in HMHOLTZ: ',a4,1p6E13.4)
- 3002 format(i3,i6,' Helmholtz ',a4,1x,l4,':',1p6E13.4)
+      if (nio.eq.0) write (6,3001) istep, '  Error Hmholtz ' // name,
+     &                             niter,rbn2,rbn0,tol
+
+
+ 3000 format(i11,a,1x,I7,1p4E13.4)
+ 3001 format(i11,a,1x,I7,1p4E13.4)
+ 3002 format(i11,a,1x,I7,1p4E13.4,l4)
  9999 continue
       niterhm = niter
       ifsolv = .false.
@@ -1829,42 +1834,13 @@ c
 c
       if (if3d) then
          call mxm(Dr,nr,u,nr,ur,nst)
-         do k=0,nt
+         do k=1,nt
             call mxm(u(1,1,k),nr,Dst,ns,us(1,1,k),nt)
          enddo
          call mxm(u,nrs,Dtt,nt,ut,nt)
       else
          call mxm(Dr,nr,u  ,nr,ur,ns)
          call mxm(u ,nr,Dst,ns,us,ns)
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gradrt(u,ur,us,ut,Drt,Ds,Dt,nr,ns,nt,if3d)
-c
-c                  T      T      T
-c     Output: u = D ur + D us + D ut         Input: ur,us,ut
-c                  r      s      t
-c
-      real u (nr,ns,nt)
-      real ur(nr,ns,nt),us(nr,ns,nt),ut(nr,ns,nt)
-      real Dr(nr,nr),Dst(ns,ns),Dtt(nt,nt)
-c
-      logical if3d
-c
-      nst = ns*nt
-      nrs = nr*ns
-c
-      if (if3d) then
-         call mxm (Drt,nr,ur,nr,u,nst)
-         do k=0,nt
-            call mxm (us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
-         enddo
-         call mxm (ut,nrs,Dt,nt,u,nt)
-      else
-         call mxm (Drt,nr,ur,nr,u,ns)
-         call mxm (us ,nr,Ds,ns,u,ns)
       endif
 c
       return
@@ -1887,7 +1863,7 @@ c
 c
       if (if3d) then
          call mxma(Drt,nr,ur,nr,u,nst)
-         do k=0,nt
+         do k=1,nt
             call mxma(us(1,1,k),nr,Ds,ns,u(1,1,k),nt)
          enddo
          call mxma(ut,nrs,Dt,nt,u,nt)

@@ -82,6 +82,7 @@ C
 
       NTOT=NX2*NY2*NZ2*LELT
       CALL RZERO(USRDIV,NTOT)
+      CALL RZERO(QTL,NTOT)
 
       RETURN
       END
@@ -229,7 +230,7 @@ C
       TOLREL = abs(PARAM(24))
       TOLABS = abs(PARAM(25))
       CTARG  = PARAM(26)
-      NBDINP = PARAM(27)
+      NBDINP = abs(PARAM(27))
       NABMSH = PARAM(28)
 
       if (nbdinp.gt.lorder) then
@@ -240,9 +241,6 @@ C
          call exitt
       endif
 
-      if(abs(PARAM(16)).ge.2) IFCVODE = .true.
-
-C
 C     Check accuracy requested.
 C
       IF (TOLREL.LE.0.) TOLREL = 0.01
@@ -642,8 +640,12 @@ C
       if (irst.gt.0) nbd = nbdinp
       CALL RZERO (BD,10)
       CALL SETBD (BD,DTLAG,NBD)
-      NAB = 3
-      IF (ISTEP.LE.2 .and. irst.le.0) NAB = ISTEP
+      if (PARAM(27).lt.0) then
+         NAB = NBDINP
+      else
+         NAB = 3
+      endif
+      IF (ISTEP.lt.NAB.and.irst.le.0) NAB = ISTEP
       CALL RZERO   (AB,10)
       CALL SETABBD (AB,DTLAG,NAB,NBD)
       IF (IFMVBD) THEN
@@ -746,8 +748,8 @@ C-----------------------------------------------------------------------
 
       ts = dnekclock() 
 
-      if(nio.eq.0 .and. igeom.eq.1) 
-     &   write(6,*) 'Solving for fluid',ifsplit,iftran,ifnav
+      if(nio.eq.0 .and. igeom.eq.2) 
+     &   write(*,'(13x,a)') 'Solving for fluid'
 
       if (ifsplit) then
 
@@ -784,8 +786,8 @@ c             - Velocity/stress formulation.
       endif
 
       if(nio.eq.0 .and. igeom.ge.2) 
-     &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
-     &   istep,time,dnekclock()-ts,' Fluid done'
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  Fluid done',time,dnekclock()-ts
 
       return
       end
@@ -813,41 +815,49 @@ C
 
       ts = dnekclock()
 
-      if (nio.eq.0 .and. igeom.eq.1) 
-     &    write(*,'(13x,a)') 'Solving for heat'
+      if (nio.eq.0 .and. igeom.eq.2) 
+     &    write(*,'(13x,a)') 'Solving for Hmholtz scalars'
 
-      if (ifcvode) then
-
-         if(igeom.eq.2) call cdscal_cvode(igeom)
-
-      elseif (ifsplit) then
-
-         do ifield=2,nfield
+      do ifield = 2,nfield
+         if (idpss(ifield-1).eq.0) then      ! helmholtz
             intype        = -1
             if (.not.iftmsh(ifield)) imesh = 1
             if (     iftmsh(ifield)) imesh = 2
             call unorm
             call settolt
-            call cdscal (igeom)
-         enddo
+            call cdscal(igeom)
+         endif
+      enddo
 
-      else  ! PN-PN-2
+      if (nio.eq.0 .and. igeom.eq.2)
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  Scalars done',time,dnekclock()-ts
 
-         do ifield=2,nfield
-            intype        = -1
-            if (.not.iftmsh(ifield)) imesh = 1
-            if (     iftmsh(ifield)) imesh = 2
-            call unorm
-            call settolt
-            call cdscal (igeom)
-         enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine heat_cvode (igeom)
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'TURBO' 
+      include 'DEALIAS'
 
-      endif
+      real*8 ts, dnekclock
 
-      if (nio.eq.0 .and. igeom.ge.2)
-     &   write(*,'(4x,i7,1x,1p2e12.4,a)') 
-     &   istep,time,dnekclock()-ts,' Heat done'
+      ts = dnekclock()
 
+      if (igeom.ne.2) return
+
+      if (nio.eq.0) 
+     &    write(*,'(13x,a)') 'Solving for CVODE scalars'
+
+      call cdscal_cvode(igeom)
+
+      if (nio.eq.0)
+     &   write(*,'(4x,i7,a,1p2e12.4)') 
+     &   istep,'  CVODE scalars done',time,dnekclock()-ts
 
       return
       end
@@ -1159,6 +1169,7 @@ c
       tspro=0.0
       tadvc=0.0
       ttime=0.0
+      tcvf =0.0
 C
       return
       end
@@ -1166,7 +1177,7 @@ C
 c-----------------------------------------------------------------------
       subroutine runstat
 
-#ifndef NOTIMER
+#ifdef TIMER
 
       include 'SIZE'
       include 'TOTAL'
@@ -1305,9 +1316,9 @@ c
 
 c         pcopy=tcopy/tttstp
 c         write(6,*) 'copy time',ncopy,tcopy,pcopy
-c         pmxmf=tmxmf/tttstp
-c         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
 
+         pmxmf=tmxmf/tttstp
+         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
          pgop=tgop/tttstp
          write(6,*) 'tgop time',ngop,tgop,pgop
          pinv3=tinv3/tttstp
@@ -1336,8 +1347,13 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
+c        Properties timings
          pspro=tspro/tttstp
          write(6,*) 'spro time',nspro,tspro,pspro
+
+c        CVODE solver timings
+         pcvf=tcvf/tttstp
+         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        USERBC timings
          pusbc=tusbc/tttstp
@@ -1555,7 +1571,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 ntot,ntotp,ntotv
+      integer*8 i8glsum
+      integer*8 ntot,ntotp,ntotv, nn
 
       nxyz  = nx1*ny1*nz1
       nel   = nelv
@@ -1576,7 +1593,8 @@ C
       ntot2=nx2*ny2*nz2*nelv
 
       ntotv = glsc2(tmult,tmask,ntot1)
-      ntotp = i8glsum(ntot2,1)
+      nn = ntot2
+      ntotp = i8glsum(nn,1)
 
       if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
       if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)

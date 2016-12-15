@@ -80,8 +80,8 @@ C      Diag.
          if (alpha2.gt.0) ALPHA2 = sqrt(alpha2/volvm2)
          ratio  = alpha1/alpha2
          n10=min(10,nprev)
-         IF (NIO.EQ.0) WRITE(6,11)ISTEP,Nprev,(ALPHA(I),I=1,N10)
-         IF (NIO.EQ.0) WRITE(6,12) ISTEP,nprev,ALPHA1,ALPHA2,ratio
+c         IF (NIO.EQ.0) WRITE(6,11)ISTEP,Nprev,(ALPHA(I),I=1,N10)
+c         IF (NIO.EQ.0) WRITE(6,12) ISTEP,nprev,ALPHA1,ALPHA2,ratio
    11    FORMAT(2I5,' alpha:',1p10e12.4)
    12    FORMAT(I6,i4,1p3e12.4,' alph12')
 C
@@ -327,6 +327,8 @@ C
 C
       include 'OPCTR'
 C
+#ifdef TIMER
+C
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -337,6 +339,7 @@ C
       dct(myrout) = dct(myrout) + dfloat(isbcnt)
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + dfloat(isbcnt)
+#endif
 C
       DT = 0.0
       DO 10 I=1,N
@@ -932,7 +935,7 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
             call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
          enddo
 
-         if (nio.eq.0) write(6,*) 'Reorthogonalize Basis:'
+c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
 
          call proj_ortho    ! Orthogonalize X & B basis sets
      $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
@@ -948,8 +951,15 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
       baf = sqrt(baf)
       ratio = bb4/baf
 
-      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
-    1 format(i8,1p3e14.5,i4,1x,a6,' PROJECT')
+c      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
+c    1 format(4x,i7,1p3e13.4,i4,1x,a6,' PROJECT')
+
+
+      if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
+     &                         bb4,baf,ratio,m,ireset
+    1 format(i11,a,6x,1p3e13.4,i4,i4)
+
+
 
       return
       end

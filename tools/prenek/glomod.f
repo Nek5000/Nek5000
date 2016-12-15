@@ -37,8 +37,6 @@ c     if (.not.if3d) then          ! pff 8/10/05 (make room in menu)
          ITEM(NCHOIC)='PICTURE FRAME'
               NCHOIC=NCHOIC+1
          ITEM(NCHOIC)='CORNER FRAME'
-c           NCHOIC=NCHOIC+1
-c        ITEM(NCHOIC)='SMOOTH'
 c     endif
 c
       IF(IF3D)THEN
@@ -70,6 +68,10 @@ c     endif
       ITEM(NCHOIC)='STRETCH'
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='CLIP DOMAIN'
+      if (ndim.eq.2) then
+           NCHOIC=NCHOIC+1
+        ITEM(NCHOIC)='SMOOTH'
+      endif
            NCHOIC=NCHOIC+1
       ITEM(NCHOIC)='Clean up vertices'
 
@@ -1503,6 +1505,402 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine smoother2(ncell)
+c
+      include 'basics.inc'
+      include 'basicsp.inc'
+      real ww(0:1)
+      integer eln(4,ncell),i,ncell
+      real x4(4,ncell),y4(4,ncell)
+      real x4b(4,ncell),y4b(4,ncell)
+      real bndr(ncell*4),shrf,nodc(ncell*4)
+      real bndrl(ncell*4),nodcl(ncell*4)
+      real d(4,ncell)
+      integer nv,nouter,nlap,nopt,nnpts
+      parameter(lpts=8*nelm)
+      common /arrayi/ i_n(lpts)   , j_n(4*lpts)
+     $              , j_o(4*lpts)
+     $              , ee(lpts)   , cell(lpts)
+      integer cell,ee
+
+      common /arrayr/ wk (lpts),dx(4*lpts)
+
+      integer clist_i(lpts),clist_j(4*lpts)
+      equivalence (clist_i,i_n)
+      equivalence (clist_j,j_n)
+ 
+      nvc = 2**ndim
+      call set_d2a(dx,x,y,z,nvc,ncell,ndim)
+      call makecell  (eln,nvc,ncell,dx,ndim,wk,i_n,j_n,j_o)
+      call chker2    (eln,nvc,ncell)
+
+      n=0
+      nv = 0
+      do i=1,nel
+      do j=1,4
+        nv = max(nv,eln(j,i))
+      enddo
+      enddo
+      write(6,*) 'Element connectivity formed'
+
+      nfaces=2**ndim
+      call rone(bndr,nv)
+      call find_bc_crv2(bndr,nv,eln,nvc,ncell)
+
+      write(6,*) 'Smoother - boundary points identified'
+
+c     eln is preproc notation right now
+c     b is based on global node numbering from map file.. the number of 
+c     values in b is equivalent to nv
+
+c     so far the boundary points and elnod matrix have been constructed
+c     need to be able to construct the Q matrix
+
+c     Start generation Q
+c     Q has nel*4 rows and nv columns
+
+      call gennodc(nodc,eln,nv,ncell)      
+      nvv = nv 
+      write(6,*) 'Starting smoother'
+
+      call prs ('Input the number of iterations outer,lap,opt:$')
+      call prs ('suggested values are 20,10,10:$')
+      call reiii(nouter,nlap,nopt)
+
+      call xtox4(x4,y4,ncell,0)
+      call copy(x4b,x4,ncell*4)
+      call copy(y4b,y4,ncell*4)
+      nnpts = 4
+      call globtoloc(eln,nvv,ncell,nodcl,nodc,nnpts)
+      call globtoloc(eln,nvv,ncell,bndrl,bndr,nnpts)
+
+      call cheap_dist(d,1,'W  ',2,eln,nvv,ncell,nnpts)
+      call disfun(d,0.1,nnpts,ncell)
+
+      do i=1,nouter
+       call runlapsm2d(x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,nlap)
+       call runoptsm2d(x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,1,nopt)
+      enddo
+
+      call restbndrlay(x4,y4,x4b,y4b,d,ncell)
+      call xtox4(x4,y4,ncell,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine 
+     $       runlapsm2d(x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,itmax)
+      include 'basics.inc'
+      integer nvv,ncell
+      integer eln(4,ncell)
+      real x4(4,ncell),y4(4,ncell)
+      real bndrl(ncell*4),nodcl(ncell*4)
+      real xa(4,ncell),ya(4,ncell)
+      real dxl(ncell*4),xpm,ypm,dyl(ncell*4),d(4,ncell)
+      real dxg(nvv),shrf
+      integer n1,n2,i,j,k,e,itmax,nnpts
+
+      nnpts = 4
+      shrf = 0.99
+
+      n1 = ncell*4 
+      call rzero(dxl,n1)
+      call rzero(dyl,n1)
+      call rzero(dxg,nvv)
+
+      do k=1,itmax
+      call rzero(xa,n1)
+      call rzero(ya,n1)
+      n1 = 0
+      do e=1,ncell
+        xpm = vlsum(x4(1,e),4)/4.
+        ypm = vlsum(y4(1,e),4)/4.
+        do i=1,4
+          n1 = n1+1
+          dxl(n1) = xpm+shrf*(x4(i,e)-xpm)-x4(i,e) 
+          dyl(n1) = ypm+shrf*(y4(i,e)-ypm)-y4(i,e)
+        enddo
+      enddo
+
+      n1 = ncell*4
+       call col2(dxl,bndrl,n1)
+       call col2(dxl,d,n1)
+       call qqtavg(eln,nvv,ncell,dxl,nodcl,nnpts)
+       call add2(x4,dxl,n1)
+
+       call col2(dyl,bndrl,n1)
+       call col2(dyl,d,n1)
+       call qqtavg(eln,nvv,ncell,dyl,nodcl,nnpts)
+       call add2(y4,dyl,n1)
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine runoptsm2d
+     $      (x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,opt,itmax)
+      include 'basics.inc'
+      integer nvv,ncell,opt
+      integer eln(4,ncell),d(4,ncell)
+      real bndrl(ncell*4),x4(4,ncell),y4(4,ncell)
+      real nodcl(ncell*4),xa(4,ncell),ya(4,ncell)
+      real scalek,hval
+      real dxl(ncell*4),dyl(ncell*4),dval(4,ncell)
+      integer n1,n2,i,j,k,e,itmax,iter,nnpts
+      real f2,dfdx(4,ncell,2)
+
+      n1 = 2**2
+      n2 = ncell*n1
+
+      nnpts = 4
+ 
+
+      call get_nodscale(scalek,x4,y4,ncell)
+      hval = scalek
+      siz = 4 !same for jacobian and len^2 for 2D :) 
+
+      do iter=1,itmax
+        call gradf2d(f2,dfdx,x4,y4,siz,opt,hval,ncell,nvv,eln)
+        dumc1 =  glamax(dfdx(1,1,1),2*n2)
+
+        do e=1,ncell
+        do j=1,nnpts
+           dval(j,e) = max(abs(dfdx(j,e,1)),abs(dfdx(j,e,2)))
+           if (dval(j,e).eq.0) dval(j,e) = (1.e+6)*(dumc1)
+        enddo
+        enddo
+
+        call invcol1(dval,n2)
+        call cmult(dval,scalek,n2)
+        one = -1.
+        call cmult(dval,one,n2)
+
+        call col2(dfdx(1,1,1),bndrl,n2)
+        call col2(dfdx(1,1,2),bndrl,n2)
+  
+        call col2(dfdx(1,1,1),d,n2)
+        call col2(dfdx(1,1,2),d,n2)
+
+        call add2col2(x4,dfdx(1,1,1),dval,n2)
+        call add2col2(y4,dfdx(1,1,2),dval,n2)
+
+      enddo
+        write(6,*) f2,'globsum'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gradf2d(f1,dfdx,x4,y4,siz,opt,hval,ncell,nvv,eln)
+      include 'basics.inc'
+      integer n1,n2,i,j,k,e,opt,siz,nvv
+      integer eln(4,ncell)
+      real par(siz)
+      real f1,f2,dfdx(4,ncell,2),fl
+      real x4(4,ncell),y4(4,ncell)
+      real xt(4),yt(4)
+      integer nnpts
+
+      nnpts = 2**2
+
+      f1 = 0
+      do e=1,ncell
+       if (opt.eq.1) call get_jac2d(fl,x4(1,e),y4(1,e),siz)
+       f1 = f1+fl
+       call copy(xt,x4(1,e),4)
+       call copy(yt,y4(1,e),4)
+       do j=1,4
+         xt(j) = x4(j,e)+hval
+         if (opt.eq.1) call get_jac2d(f2,xt,yt,siz)
+         dfdx(j,e,1) = (f2-fl)/hval
+         xt(j) = x4(j,e)
+         
+         yt(j) = y4(j,e)+hval
+         if (opt.eq.1) call get_jac2d(f2,xt,yt,siz)
+         dfdx(j,e,2) = (f2-fl)/hval
+         yt(j) = y4(j,e)
+       enddo
+      enddo
+
+      call qqt(eln,nvv,ncell,dfdx(1,1,1),nnpts) 
+      call qqt(eln,nvv,ncell,dfdx(1,1,2),nnpts) 
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_jac2d(val,xx,yy,siz)
+      include 'basics.inc'
+      real fl,xx(4),yy(4)
+      real fr1,fr2,jac(4),jm(2,2),jin(2,2)
+      real frn(4),sum1,par(4)
+      real val
+      integer siz,i,j,ind1,ind2
+      integer bzindx(24),czindx(24)
+      SAVE bzindx
+      DATA bzindx / 2,3,5, 1,4,6, 4,1,7, 3,2,8,
+     $             6,7,1, 5,8,2, 8,5,3, 7,6,4 /
+c     bzindx tells which node is node connected to in r,s,t direction
+c     example: node 1 is connected to 2,3,5; 2 to 1,4,6 and so on
+      SAVE czindx
+      DATA czindx / 1,1,1,  -1,1,1, 1,-1,1, -1,-1,1,
+     $              1,1,-1, -1,1,-1, 1,-1,-1, -1,-1,-1 /
+
+
+      do i=1,4
+        ind1=(i-1)*3
+        do j=1,2
+         ind2 = ind1+j
+         jm(1,j) = 0.5*czindx(ind2)*(xx(bzindx(ind2))-xx(i))
+         jm(2,j) = 0.5*czindx(ind2)*(yy(bzindx(ind2))-yy(i))
+        enddo
+        jac(i)=jm(1,1)*jm(2,2)-jm(2,1)*jm(1,2)
+        jin(1,1) = jm(2,2)
+        jin(2,1) = -jm(2,1)
+
+        jin(1,2) = -jm(1,2)
+        jin(2,2) = jm(1,1)
+ 
+        dumc = 1./jac(i)
+        call cmult(jin,dumc,4)
+
+        call rzero(frn,4)
+        call col3(frn,jm,jm,4) !square the entries
+        sum1 = vlsum(frn,4)
+        fr1 = SQRT(sum1)           !squareroot
+
+        call rzero(frn,4)
+        call col3(frn,jin,jin,4)
+        sum1 = vlsum(frn,4)
+        fr2 = SQRT(sum1)
+
+        par(i) = fr1*fr2
+        par(i) = (par(i)/2)**2
+
+      enddo
+
+      val = vlsum(par,4)
+      val = val/4
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_nodscale(scalek,x4,y4,ncell)
+      include 'basics.inc'
+      integer ncell
+      real x4(4,ncell),y4(4,ncell)
+      real scalek
+      integer i,e,nod1,nod2
+      real dlmin,lv,dx,dy
+      integer efc2(2,4)
+      data    efc2 / 1,2
+     $             , 2,3
+     $             , 3,4
+     $             , 4,1 /
+
+      dlmin = 1.e+7
+      do e=1,ncell
+      do i=1,4
+         nod1 = efc2(1,i)
+         nod2 = efc2(2,i)
+         dx = x4(nod1,e)-x4(nod2,e)
+         dy = y4(nod1,e)-y4(nod2,e)
+         lv = (dx**2+dy**2)**0.5
+         if (lv.lt.dlmin) dlmin=lv 
+      enddo
+      enddo
+
+      scalek = 0.01*dlmin
+      
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xtox4(x4,y4,ncell,flag)
+      include 'basics.inc'
+      integer ncell,flag
+      real x4(4,ncell),y4(4,ncell)
+      integer i,e
+c  if flag is 0, x to x4, otherwise x4 to x
+
+      if (flag.eq.0) then
+       do e=1,ncell
+       do i=1,4
+            x4(i,e) = x(i,e)
+            y4(i,e) = y(i,e)
+       enddo
+       enddo
+      else
+       do e=1,ncell
+       do i=1,4
+            x(i,e) = x4(i,e)
+            y(i,e) = y4(i,e)
+       enddo
+       enddo
+      endif
+       
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gennodc(nodc,eln,nv,ncell)
+      include 'basics.inc'
+      integer eln(4,ncell)
+      integer nv,ncell,n1,n2,n3,i,k
+      real nodc(nv)
+
+      n1 = ncell*(4)
+      call izero(nodc,nv)
+      n2 = 0
+      do i=1,ncell
+      do k=1,2**ndim
+         n2 = n2+1
+         j1 = eln(k,i)
+         n3 = (j1-1)*n1      !this puts at the end of previous column 
+         nodc(j1) = nodc(j1)+1.
+      enddo
+      enddo 
+      write(6,*) 'Q matrix generated'
+       
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_bc_crv2(b,nv,eln,nvc,ncell)
+c
+      include 'basics.inc'
+      integer eln(nvc,ncell)
+      real b(nv)
+c
+      integer efc2(2,4)
+      save    efc2
+      data    efc2 / 1,2
+     $             , 2,3
+     $             , 3,4
+     $             , 4,1 /
+c
+c
+c     Identify any elements on the boundary or having curved sides
+c
+      call rone(b,nv)
+c
+      nfaces = 2*ndim
+      ifld = 2
+      if (ifflow) ifld = 1
+c
+      do ie=1,ncell
+      do is=1,nfaces
+c         write(6,*) is,ie,'k10faceel'
+         if (cbc(is,ie,ifld).ne.'E  ') then
+            do iv=1,2
+               b(eln(efc2(iv,is),ie)) =  0*b(eln(efc2(iv,is),ie))
+            enddo
+         endif
+       enddo
+       enddo
+c
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine smoother(cell,nvc,ia,ja,ww,b,g,x0,x1,y0,y1,z0,z1)
 c
       include 'basics.inc'
@@ -1533,12 +1931,13 @@ c     use connectivity graph to smooth mesh
 c
       n1 = nvc*nel
       call get_gxyz(nv,cell,nvc,ncell,ww(n1),ww,ierr)
-c
+c 
 c     Identify boundary and curve side vertices
       nvc=2**ndim
       nfaces=2*ndim
       call izero(b,nv)
       call find_bc_crv(b,nv,cell,nvc,ncell)
+      
 c
 c     Identify dof's inside smoothing box
       call find_sm_box(b,nv,x0,x1,y0,y1,z0,z1)
@@ -1644,19 +2043,19 @@ c
             enddo
          endif
 c
-         if (cbc(is,ie,ifld).eq.'SYM') then
+c         if (cbc(is,ie,ifld).eq.'SYM') then
 c           Later this will be fixed to handle each spatial dimension
-            do iv=1,ncrnf
-               b(cell(efc(iv,is),ie)) = -2
-            enddo
-         endif
+c            do iv=1,ncrnf
+c               b(cell(efc(iv,is),ie)) = -2
+c            enddo
+c         endif
 c
 c        Check for curve sides (spherical in particular)
-         if (ccurve(is,ie).eq.'s') then
-            do iv=1,ncrnf
-               b(cell(efc(iv,is),ie)) =  1
-            enddo
-         endif
+c         if (ccurve(is,ie).eq.'s') then
+c            do iv=1,ncrnf
+c               b(cell(efc(iv,is),ie)) =  1
+c            enddo
+c         endif
        enddo
        enddo
 c
@@ -2145,6 +2544,11 @@ c-----------------------------------------------------------------------
       subroutine smooth
       include 'basics.inc'
       include 'basicsp.inc'
+      real xback(4,nelm),yback(4,nelm)
+      integer ncell
+      integer smflag
+      SAVE smflag
+      data smflag /0/
 c
       x0 = -9.e19
       y0 = -9.e19
@@ -2154,17 +2558,19 @@ c
       z1 =  9.e19
 C
     1 CONTINUE
+c      call xtox4(xback,yback,nel,0)  !creates a backup of the mesh
 c
       nchoic = 0
       nchoic = nchoic+1
       ITEM(nchoic)       =             'UP MENU'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Redraw mesh'
-      nchoic = nchoic+1
-      ITEM(nchoic)       =             'Set smoothing box'
+c      nchoic = nchoic+1
+c      ITEM(nchoic)       =             'Set smoothing box'
       nchoic = nchoic+1
       ITEM(nchoic)       =             'Smooth'
       nchoic = nchoic+1
+      ITEM(nchoic)       =             'Undo'
 c
 C     Menu's all set, prompt for user input:
       CALL MENU(XMOUSE,YMOUSE,BUTTON,'NOCOVER')
@@ -2185,12 +2591,20 @@ C
          if (if3d) CALL RERR(z0,z1)
 c
       ELSEIF (CHOICE.EQ.'Smooth') THEN
-       nvc = 2**ndim
-c      call smoother(cell,nvc,ia ,ja  ,ww        ,b    )
-c     subroutine smoother(cell,nvc,ia,ja,ww,b,g,x0,x1,y0,y1,z0,z1)
-       call smoother
-     $      (rxm1,nvc,wv1,wkv1,sdump(1,4),sdump(1,5),jacm1
-     $                                         ,x0,x1,y0,y1,z0,z1)
+       smflag = 1
+        call xtox4(xback,yback,nel,0)
+        ncell = nel
+        call convert_m_to_c_allr(10000000.)
+        call smoother2(ncell)
+        call redraw_mesh
+      ELSEIF (CHOICE.EQ.'Undo') THEN
+       if (smflag.eq.0) then
+         write(6,*) 'Nothing to undo here'
+       else
+         write(6,*) 'Undoing mesh smoothing'
+         call xtox4(xback,yback,nel,1)
+       endif
+       call redraw_mesh
       ENDIF
 c
       GOTO 1
@@ -2969,6 +3383,7 @@ c
       if (ans.eq.'2'.and.ndim.eq.3) call rotate_mesh_3d
       if (ans.eq.'3') call rep_rotate_mesh
       if (ans.eq.'4') call template_mesh
+c      if (ans.eq.'4') call template_mesh2
 
       return
       end
@@ -3459,8 +3874,8 @@ c     Result:   nel_form x nel_tmpl elements
          e0 = e0+1
          e  = e0 ! mold a copy of et into ef counterpart, put in e
          do ef=eform0,eform1 
-            call template_shape(e,et,ef) 
-            e=e+nel_templ
+               call template_shape(e,et,ef) 
+               e=e+nel_templ
          enddo
       enddo
 
@@ -3494,7 +3909,6 @@ c
 c
 c     Because The transformation matrix is expensive to generate, we
 c     precompute it on the first call.
-
       if (et.ne.etl) call gen_jrst(jr,js,jt,et)
       etl = et
 
@@ -3627,6 +4041,7 @@ c     Process:  nel_tmpl = number of elements in template
 c               nel_form = number of elements in form
 c
 c     Result:   nel_form x nel_tmpl elements
+
 
       call get_template
 
@@ -3844,3 +4259,459 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gencen2(nel1,nel2)
+      include 'basics.inc'
+c     added by k10 here to do gencen for specific element range
+
+      integer e,nel1,nel2
+
+      common /ctmp2/ xp(nxm,nxm,nxm),yp(nxm,nxm,nxm),zp(nxm,nxm,nxm)
+
+      if (mod(nxm,2).eq.0) then
+         write(6,*) 'ERROR: Recompile with nxm odd in basics.inc'
+         call prexit
+      endif
+
+      nxh = (nxm+1)/2
+      nh1 = nxh-1
+
+      write(6,*) 'inside gencen ',nel,if3d,nxh
+
+C     Generate the element centers
+      do e=nel1,nel2
+         call genxyz_e (xp,yp,zp,e,nxm,nxm,nxm)
+
+         if (if3d) then
+            xcen(e)=xp(nxh,nxh,nxh)
+            ycen(e)=yp(nxh,nxh,nxh)
+            zcen(e)=zp(nxh,nxh,nxh)
+            l=0
+            do k=1,nxm,nh1
+            do j=1,nxm,nh1
+            do i=1,nxm,nh1
+               l=l+1
+               x27(l,e) = xp(i,j,k)
+               y27(l,e) = yp(i,j,k)
+               z27(l,e) = zp(i,j,k)
+            enddo
+            enddo
+            enddo
+         else
+            xcen(e)=xp(nxh,nxh,1)
+            ycen(e)=yp(nxh,nxh,1)
+            zcen(e)=0
+            l=0
+            do j=1,nxm,nh1
+            do i=1,nxm,nh1
+               l=l+1
+               x27(l,e) = xp(i,j,1)
+               y27(l,e) = yp(i,j,1)
+               z27(l,e) = 0
+            enddo
+            enddo
+         endif
+
+      enddo
+
+C     Compute the maximum radius from the center
+
+      call rzero(rcen,nel2)
+      if (if3d) then
+         do 300 e=nel1,nel2
+         do 300 j=1,8
+            rad=(x(j,e)-xcen(e))**2 + (y(j,e)-ycen(e))**2
+     $         +(z(j,e)-zcen(e))**2
+            rcen(e)=max(rcen(e),rad)
+  300    continue
+      else
+         do 400 e=nel1,nel2
+         do 400 j=1,4
+            rad=(x(j,e)-xcen(e))**2 + (y(j,e)-ycen(e))**2
+            rcen(e)=max(rcen(e),rad)
+  400    CONTINUE
+      ENDIF
+      call vsqrt(rcen,nel)
+
+      write(6,*) 'done gencen ',nel2-nel1+1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fix_internal_bcs
+      include 'basics.inc'
+      integer n,e,i,f,j,ef,et
+      integer n1,e1,e2,f1,f2
+
+      write(6,*) nel,'neigh being found for these many elements'
+      call gen_neigh
+      n1 = nel 
+      n=0
+      write(6,*) 'Trying to fix internal boundary conditions'
+      do j=1,1 
+      do e=1,nel
+      do f=1,6
+       if(cbc (f,e,j).ne.'E  ') then
+         call get_neigh(e,f,e2,f2)
+         if (e2.ne.0) cbc(f,e,j) = 'E  '
+       endif
+      enddo
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2col2(a,b,c,n)
+      real a(1),b(1),c(1)
+c
+      do i=1,n
+         a(i) = a(i) + b(i)*c(i)
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      SUBROUTINE INVCOL1 (A,N)
+      REAL A(1)
+      do I=1,N
+         A(I)=1./A(I)
+      enddo
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      subroutine cheap_dist(d,ifld,b,dims,eln,nvv,ncell,nnpts)
+c     added by k10
+
+c     Finds a pseudo-distance function.
+
+c     INPUT:  ifld - field type for which distance function is to be found.
+c             ifld = 1 for velocity
+c             ifld = 2 for temperature, etc.
+
+c     OUTPUT: d = "path" distance to nearest wall
+
+c     This approach has a significant advantage that it works for
+c     periodict boundary conditions, whereas most other approaches
+c     will not.
+
+      include 'basics.inc'   ! gather-scatter handle for field "ifld"
+
+      integer e,eg,f,nx1,ny1,nz1,i,j,nnods,nnpts,nchange,nnface,nvv
+      integer dims,ncell,ifld,eln(nnpts,ncell),ipass
+      real d(2*2*(dims-1),ncell)
+      character*3 b  ! Boundary condition of interest
+      integer efc3(4,6)
+      data    efc3 / 1,2,6,5
+     $             , 2,3,7,6
+     $             , 3,4,8,7
+     $             , 4,1,5,8
+     $             , 1,2,3,4
+     $             , 5,6,7,8 /
+
+      nx1 = 2
+      ny1 = 2
+      nz1 = dims-1
+      n = nx1*ny1*nz1*ncell
+      call domain_sizek(xmin,xmax,ymin,ymax,zmin,zmax,dims,ncell)
+
+      xmn = min(xmin,ymin)
+      xmx = max(xmax,ymax)
+      if (dims.eq.3) xmn = min(xmn ,zmin)
+      if (dims.eq.3) xmx = max(xmx ,zmax)
+
+      big = 10*(xmx-xmn)
+      call rone(d,n) 
+      call cmult(d,big,n)
+
+      nnface = 2*dims
+      nnods = 2+(dims-2)*2 !number of nodes per edge/face
+
+       do e=1,ncell     ! Set d=0 on walls
+       do f=1,nnface
+          if (cbc(f,e,ifld).eq.b) then
+            do j=1,nnods
+              d(efc3(j,f),e) = 0.*d(efc3(j,f),e)
+            enddo
+          endif
+       enddo
+       enddo
+
+      do ipass=1,10000
+         dmax    = 0
+         nchange = 0
+         do e=1,nel
+          do i=1,nnpts
+           do j=1,nnpts
+             if (dims.eq.3) then
+         dtmp = d(j,e)+dist3d(x(j,e),y(j,e),z(j,e),x(i,e),y(i,e),z(i,e))
+             else
+         dtmp = d(j,e)+dist2d(x(j,e),y(j,e),x(i,e),y(i,e))
+             endif
+             if (dtmp.lt.d(i,e)) then
+               d(i,e) = dtmp
+               nchange = nchange+1
+               dmax = max(dmax,d(i,e))
+              endif
+           enddo
+          enddo
+        enddo
+
+
+         call qqtmin(eln,nvv,ncell,d,nnpts)
+         dmax = glmax(dmax,1)
+         write(6,1) ipass,nchange,dmax,b
+    1    format(i9,i12,1pe12.4,' max distance b: ',a3)
+         if (nchange.eq.0) goto 1000
+      enddo
+ 1000 return
+      end
+c-----------------------------------------------------------------------
+      subroutine domain_sizek(xmin,xmax,ymin,ymax,zmin,zmax,dims,ncell)
+      include 'basics.inc'
+      integer n,dims,e,i
+      real xvv,yvv,xmin,xmax,ymin,ymax,zmin,zmax 
+
+      n = 2*2*(dims-1)*ncell
+
+      if (dims.eq.3) then 
+        xmin = glmin(x,n)
+        xmax = glmax(x,n)
+        ymin = glmin(y,n)
+        ymax = glmax(y,n)
+        zmin = glmin(zm1,n)
+        zmax = glmax(zm1,n)
+      else
+         xmin = 1.e+7
+         xmax = -1.e+7
+         ymin = 1.e+7
+         ymax = -1.e+7
+         do e=1,ncell
+         do i=1,4
+           xvv = x(i,e)
+           yvv = y(i,e)
+           if (xvv.gt.xmax) xmax = xvv
+           if (yvv.gt.ymax) ymax = yvv
+           if (xvv.lt.xmin) xmin = xvv
+           if (yvv.lt.ymin) ymin = yvv
+         enddo
+         enddo
+         zmin = 0.
+         zmax = 0.
+      endif
+
+      return
+      end
+c-------------------------------------------------------------------------
+      function dist3d(a,b,c,x,y,z)
+
+      d = (a-x)**2 + (b-y)**2 + (c-z)**2
+
+      dist3d = 0.
+      if (d.gt.0) dist3d = sqrt(d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dist2d(a,b,x,y)
+
+      d = (a-x)**2 + (b-y)**2
+
+      dist2d = 0.
+      if (d.gt.0) dist2d = sqrt(d)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qqt(eln,nv,ncell,qloc,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+
+      call loctoglob(eln,nv,ncell,qloc,qglob,nnpts)
+      call globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qqtavg(eln,nv,ncell,qloc,nodcl,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell),nodcl(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+
+      call loctoglob(eln,nv,ncell,qloc,qglob,nnpts)
+      call globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
+      call invcol2(qloc,nodcl,ncell*nnpts)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine loctoglob(eln,nv,ncell,qloc,qglob,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+      call rzero(qglob,nv)
+      do e=1,ncell
+      do i=1,nnpts
+            igl = eln(i,e)
+            qglob(igl) = qglob(igl)+qloc(i,e)
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+
+      call rzero(qloc,nnpts*ncell)
+
+      do e=1,ncell
+      do i=1,nnpts
+            igl = eln(i,e)
+            qloc(i,e) = qglob(igl)
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine loctoglobmin(eln,nv,ncell,qloc,qglob,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv),maxv
+      maxv = 1.e+11
+      call rone(qglob,nv)
+      call cmult(qglob,maxv,nv)
+      do e=1,ncell
+      do i=1,nnpts
+            igl = eln(i,e)
+            qglob(igl) = min(qglob(igl),qloc(i,e))
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine loctoglobmax(eln,nv,ncell,qloc,qglob,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv),minv
+      minv = -1.e+11
+      call rone(qglob,nv)
+      call cmult(qglob,minv,nv)
+
+      do e=1,ncell
+      do i=1,nnpts
+            igl = eln(i,e)
+            qglob(igl) = max(qglob(igl),qloc(i,e))
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qqtmin(eln,nv,ncell,qloc,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+
+      call loctoglobmin(eln,nv,ncell,qloc,qglob,nnpts)
+      call globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine qqtmax(eln,nv,ncell,qloc,nnpts)
+      include 'basics.inc'
+      integer nv,ncell,i,e,nnpts
+      integer eln(nnpts,ncell)
+      real qloc(nnpts,ncell)
+      real qglob(nv)
+
+      call loctoglobmax(eln,nv,ncell,qloc,qglob,nnpts)
+      call globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine disfun(d,delta,nnpts,ncell)
+      include 'basics.inc'
+      integer nnpts,ncell
+      real d(ncell*nnpts),dd2(ncell*nnpts)
+      real dis(ncell*nnpts),delta
+      integer i,n
+      real dscale,dmax
+
+      write(6,*) 'distance function being calculated'
+
+      n = nnpts*ncell
+      dmax   = glamax(d,n)
+      dscale = 1./dmax
+      call cmult(d,dscale,n)
+ 
+      do i=1,ncell*nnpts
+        dd2(i) = (1-EXP(-d(i)/delta))
+c        dd2(i) = 0.5*(tanh(10.*(dis(i)-0.3))+1)
+      enddo
+      call copy(d,dd2,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine restbndrlay(x4,y4,x4b,y4b,d,ncell)
+      include 'basics.inc'
+      integer nnpts,ncell
+      real x4(4,ncell),y4(4,ncell),x4b(4,ncell),y4b(4,ncell)
+      real d(4,ncell)
+      integer i,j,n
+! x4b is the original mesh
+! x4 is the smooth mesh
+! d is the weightin function
+
+      n = 4*ncell
+      call sub2(x4,x4b,n) !x4 = x4-x4b
+      call sub2(y4,y4b,n)
+
+      call col2(x4,d,n)  !x4 = x4*d = d(x4-x4b)
+      call col2(y4,d,n)
+
+      call add2(x4,x4b,n) !x4 = d(x4-x4b)+x4b
+      call add2(y4,y4b,n) !x4 = d(x4) + (1-d)x4b
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_neigh(e1,f1,e2,f2)
+      include 'basics.inc'
+      integer j,e,e1,f1,e2,f2
+
+      f2 = 0
+      e2 = neighb(f1,e1)
+      do j=1,6
+         if (neighb(j,e2).eq.e1) f2=j
+      enddo
+c     
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine col2(a,b,n)
+      real a(1),b(1)
+
+      do i=1,n
+         a(i)=a(i)*b(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+

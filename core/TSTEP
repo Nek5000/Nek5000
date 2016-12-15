@@ -1,23 +1,44 @@
-      COMMON /TSTEP1/ TIME,TIMEF,FINTIM,TIMEIO
-     $               ,DT,DTLAG(10),DTINIT,DTINVM,COURNO,CTARG
-     $               ,AB(10),BD(10),ABMSH(10)
-     $               ,AVDIFF(LDIMT1),AVTRAN(LDIMT1),VOLFLD(0:LDIMT1)
-     $               ,TOLREL,TOLABS,TOLHDF,TOLPDF,TOLEV,TOLNL,PRELAX
-     $               ,TOLPS,TOLHS,TOLHR,TOLHV,TOLHT(LDIMT1),TOLHE
-     $               ,VNRMH1,VNRMSM,VNRML2,VNRML8,VMEAN
-     $               ,TNRMH1(LDIMT),TNRMSM(LDIMT),TNRML2(LDIMT)
-     $               ,TNRML8(LDIMT),TMEAN(LDIMT)
-C
-      COMMON /ISTEP2/ IFIELD,IMESH,ISTEP,NSTEPS,IOSTEP,LASTEP,IOCOMM
-     $               ,INSTEP
-     $               ,NAB,NBD,NBDINP,NTAUBD 
-     $               ,NMXH,NMXP,NMXE,NMXNL,NINTER
-     $               ,NELFLD(0:LDIMT1)
-     $               ,nconv,nconv_max
-C
-      COMMON /TSTEP3/ PI,BETAG,GTHETA
-      COMMON /TSTEP4/ IFPRNT,if_full_pres
-      LOGICAL IFPRNT,if_full_pres
+c 
+c     Variables related to time integration
 c
-      COMMON /TSTEP5/ lyap(3,lpert)  !  lyapunov simulation history
-      real lyap
+      real time,timef,fintim,timeio
+     $    ,dt,dtlag(10),dtinit,dtinvm,courno,ctarg
+     $    ,ab(10),bd(10),abmsh(10)
+     $    ,avdiff(ldimt1),avtran(ldimt1),volfld(0:ldimt1)
+     $    ,tolrel,tolabs,tolhdf,tolpdf,tolev,tolnl,prelax
+     $    ,tolps,tolhs,tolhr,tolhv,tolht(ldimt1),tolhe
+     $    ,vnrmh1,vnrmsm,vnrml2,vnrml8,vmean
+     $    ,tnrmh1(ldimt),tnrmsm(ldimt),tnrml2(ldimt)
+     $    ,tnrml8(ldimt),tmean(ldimt)
+      common /tstep1/ time,timef,fintim,timeio
+     $               ,dt,dtlag,dtinit,dtinvm,courno,ctarg
+     $               ,ab,bd,abmsh
+     $               ,avdiff,avtran,volfld
+     $               ,tolrel,tolabs,tolhdf,tolpdf,tolev,tolnl,prelax
+     $               ,tolps,tolhs,tolhr,tolhv,tolht,tolhe
+     $               ,vnrmh1,vnrmsm,vnrml2,vnrml8,vmean
+     $               ,tnrmh1,tnrmsm,tnrml2
+     $               ,tnrml8,tmean
+
+      integer ifield,imesh,istep,nsteps,iostep,lastep,iocomm
+     $       ,instep
+     $       ,nab,nbd,nbdinp,ntaubd 
+     $       ,nmxh,nmxp,nmxe,nmxnl,ninter
+     $       ,nelfld(0:ldimt1)
+     $       ,nconv,nconv_max
+      common /istep2/ ifield,imesh,istep,nsteps,iostep,lastep,iocomm
+     $               ,instep
+     $               ,nab,nbd,nbdinp,ntaubd 
+     $               ,nmxh,nmxp,nmxe,nmxnl,ninter
+     $               ,nelfld
+     $               ,nconv,nconv_max
+
+      real pi,betag,gtheta
+      common /tstep3/ pi,betag,gtheta
+      
+      logical ifprnt,if_full_pres
+      common /tstep4/ ifprnt,if_full_pres
+      
+
+      real lyap(3,lpert)
+      common /tstep5/ lyap  !  lyapunov simulation history
