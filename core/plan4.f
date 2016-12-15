@@ -211,7 +211,7 @@ c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
          call opcolv   (ta1,ta2,ta3,QTL)
          scale2 = -2./3. 
          call opadd2cm (w1,w2,w3,ta1,ta2,ta3,scale2)
-         call opadd2   (wa1,wa2,wa3,w1,w2,w3)
+         call opsub2   (wa1,wa2,wa3,w1,w2,w3)
 
       endif
 

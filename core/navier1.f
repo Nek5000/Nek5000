@@ -3479,6 +3479,8 @@ c     write(6,*) istep,param(99),' CONVOP',ifpert
 c     ip99 = param(99)
 c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
 
+      if (.not. ifdeal(ifield)) goto 101
+     
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
@@ -3492,7 +3494,7 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
          call convect_cons(conv,fi,.false.,vx,vy,vz,.false.)
          call invcol2     (conv,bm1,ntot1)  ! local mass inverse
       else
-         call conv1 (conv,fi)  !    use the convective form
+ 101     call conv1 (conv,fi)  !    use the convective form
       endif
 
  100  continue
