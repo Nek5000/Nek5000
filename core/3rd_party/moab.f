@@ -1505,18 +1505,18 @@ c     vertex-based temperature
      $           t, ierr)
             endif
 c     vertex-based density
-            if (vdTag .ne. 0) then
-                tmpcount = count
-                call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount,
-     $           density, ierr)
-            endif
+c            if (vdTag .ne. 0) then
+c                tmpcount = count
+c                call nekMOAB_set_vertex_tag(ieiter(i), vdTag, tmpcount,
+c     $           density, ierr)
+c            endif
 c     vertex-based pressure, but only if its there
-            if (vpTag .ne. 0 .and.
-     $           nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
-                tmpcount = count
-                call nekMOAB_set_vertex_tag(ieiter(i), vpTag,
-     $           tmpcount, pr, ierr)
-            endif
+c            if (vpTag .ne. 0 .and.
+c     $           nx2.eq.nx1 .and. ny2.eq.ny1 .and. nz2.eq.nz1) then
+c                tmpcount = count
+c                call nekMOAB_set_vertex_tag(ieiter(i), vpTag,
+c     $           tmpcount, pr, ierr)
+c            endif
 
 c     step the iterator
             call iMesh_stepEntArrIter(%VAL(imeshh), %VAL(ieiter(i)), 
@@ -1711,68 +1711,107 @@ c set the tag vals
       return
       end
 c-----------------------------------------------------------------------
+      subroutine nekMOAB_get_consistent_vtag_internal(fo,fi,n2,n1,ne)
+      include 'SIZE'
+C     Params: [output array], [input array], [output order], [input order], [n. of elements]
+      parameter(lx=80)
+      real*8 z1(lx),z2(lx),w(lx)
+      real*8 fm12(lx*lx),fm12t(lx*lx)
+      real*8 work(lx*lx*lx)
+      real*8 fo(n2,n2,n2,lelt), fi(n1,n1,n1,lelt)
+      integer n1, n2, e, ne
+
+      if (n1.gt.lx.or.n2.gt.lx) then
+         write(6,*)'ERROR: increase lx in setmap to max:',n1,n2
+         call exitt
+      endif
+
+c      if (nid.eq.0) print *, "*** Mapping ..."
+      call zwgll(z1,w,n1)
+      call zwgll(z2,w,n2)
+      call igllm(fm12,fm12t,z1,z2,n1,n2,n1,n2)
+
+c      if (nid.eq.0) print *, "*** SPECMP ..."
+      do e=1,ne
+        call specmp(fo(1,1,1,e),n2,fi(1,1,1,e),n1,fm12,fm12t,work)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine nekMOAB_set_vertex_tag(iter, tagh, count, vals, ierr)
       implicit none
 
 #include "NEKMOAB"      
+      integer lx
+      parameter(lx=80)
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
-      integer ierr, ic, j, ivals, size, count, v_per_e, ntot
-      integer loccount, nv
-      real vals(*), tag_vals(27)
-      integer gids(27)
-      real avg_vals
+      integer ierr, ic, count, v_per_e, loccount
+      real vals(lx1,lx1,lx1,*), tag_vals(27), ntag_vals(27)
       iBase_EntityHandle connect
       pointer (connect_ptr, connect(0:1))
 
-      integer l2c(8)
-      save    l2c
-      data    l2c / 1, 2, 4, 3, 5, 6, 8, 7 /
+      integer l2c8(8), l2c27(27)
+      save    l2c8, l2c27
+      data    l2c8 / 1, 2, 4, 3, 5, 6, 8, 7 /
+      data    l2c27 / 1, 3, 9, 7, 19, 21, 27, 25, 2, 6, 8, 4, 10,
+     $                12, 18, 16, 20, 24, 26, 22, 11, 15, 17, 13,
+     $                5, 23, 14 /
   
-      integer jj
+      integer n1, n2, e, cached
+      real*8 z1(lx),z2(lx),w(lx)
+      real*8 fm12(lx*lx),fm12t(lx*lx)
+      real*8 work(lx*lx*lx)
+      real*8 fi(lx1,lx1,lx1)
+
+      save cached, fm12, fm12t
 
       call iMesh_connectIterate(%VAL(imeshh), %VAL(iter), 
      $     connect_ptr, v_per_e, loccount, ierr)
       IMESH_ASSERT
 
-c only works if nx, ny, nz are equal, and if v_per_e is 27
-      if (nx1 .ne. ny1 .or. nx1 .ne. nz1 .or. v_per_e .ne. 27) then
-         ierr = iBase_FAILURE
-         IMESH_ASSERT
+c only works if nx, ny, nz are equal
+      if (nx1 .ne. ny1 .or. nx1 .ne. nz1) then
+        ierr = iBase_FAILURE
+        IMESH_ASSERT
       endif
 
-      ntot = nx1 * ny1 * nz1
+      n2 = (v_per_e)**(1.0/3) ! support linear or quadratic mesh elements
+      n1 = lx1
 
-c set the tag vals
-      nv = 8
+c The caching works with the assumption that we use uniform GLL and discrete mesh orders
+      if (cached .ne. 1) then
+c      if (nid.eq.0) print *, "*** Mapping ..."
+        call zwgll(z1,w,n1)
+        call zwgll(z2,w,n2)
+        call igllm(fm12,fm12t,z1,z2,n1,n2,n1,n2)
+        cached = 1
+      endif
+
       do ic = 0, loccount-1
-        do jj = 1,v_per_e
-           tag_vals(jj) = 0.0
-        enddo
+        ! compute the local projection from Lobatto to Lagrange points
+        call specmp(ntag_vals,n2,vals(1,1,1,ic+count+1),n1,fm12,fm12t,
+     $               work)
 
-c        write(*,*) '--', ic, '--'
-c     permute into vertex array
-         avg_vals = 0
-        do j=1, nv
-          tag_vals(j) = vals((count+ic)*ntot+l2c(j))
-            avg_vals = avg_vals + tag_vals(j)
-c          print *, ((count+ic)*ntot+l2c(j)), tag_vals(j)
-         enddo
-c        write(*,*) '--'
+        if (v_per_e .ne. 27) then
+          do e = 1, 8
+            tag_vals(e) = ntag_vals(l2c8(e))
+          enddo
+        else
+          do e = 1, 27
+            tag_vals(e) = ntag_vals(l2c27(e))
+          enddo
+        endif
 
-        avg_vals = avg_vals/nv
-        do j = nv+1, v_per_e
-            tag_vals(j) = avg_vals
-         enddo
-
-         call iMesh_setDblArrData(%VAL(imeshh), 
+        call iMesh_setDblArrData(%VAL(imeshh), 
      $        connect(ic*v_per_e), %VAL(v_per_e), %VAL(tagh),
      $        tag_vals(1), %VAL(v_per_e), ierr)
-         IMESH_ASSERT
+        IMESH_ASSERT
+
       enddo
 
       count = loccount
-
       return
       end
 c-----------------------------------------------------------------------
@@ -1783,7 +1822,7 @@ c-----------------------------------------------------------------------
       iBase_EntityArrIterator iter
       iBase_TagHandle tagh
       integer ierr, i, j, size, count, offset, tmpcount
-      real vals(*), tag_vals
+      real vals(*), tag_vals, tmpvals
       pointer(tag_ptr, tag_vals(1))
 
       call iMesh_tagIterate(%VAL(imeshh), %VAL(tagh), 
@@ -1795,8 +1834,9 @@ c assert and break if there is a problem
 
 c set the tag vals
       do i = 1, tmpcount
+        tmpvals = tag_vals(i)/size
         do j = 1, size
-          vals(offset+(i-1)*size+j) = tag_vals(i)
+          vals(offset+(i-1)*size+j) = tmpvals
         enddo
       enddo
 
