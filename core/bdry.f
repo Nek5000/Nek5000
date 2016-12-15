@@ -2161,7 +2161,7 @@ c
             do 10 iy=ky1,ky2
             do 10 ix=kx1,kx2
                ia =ia + 1
-               dtmp = tx(ix,iy,iz,iel)*unx(ia,1,iface,iel)
+               dtmp =   tx(ix,iy,iz,iel)*unx(ia,1,iface,iel)
      $                + ty(ix,iy,iz,iel)*uny(ia,1,iface,iel)
      $                + tz(ix,iy,iz,iel)*unz(ia,1,iface,iel)
                flux(ix,iy,iz,iel) = flux(ix,iy,iz,iel)

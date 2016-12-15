@@ -40,8 +40,8 @@ C
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
 
-      loglevel = 3
-      optlevel = 0
+      loglevel = 1
+      optlevel = 1
 
       call rzero(param,200)
       call rzero(uparam,20)
