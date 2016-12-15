@@ -8,7 +8,7 @@ from unittest import skip
 
 class Axi(NekTestCase):
     example_subdir  = 'axi'
-    case_name       = 'axi'
+    case_name        = 'axi'
 
     def setUp(self):
 
@@ -35,7 +35,6 @@ class Axi(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '80',
             lgmres    = '40',
@@ -142,7 +141,6 @@ class Benard_Ray9(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '20',
@@ -236,7 +234,6 @@ class Benard_RayDD(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '20',
@@ -355,7 +352,6 @@ class Benard_RayDN(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '20',
@@ -473,7 +469,6 @@ class Benard_RayNN(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '20',
@@ -571,7 +566,7 @@ class Benard_RayNN(NekTestCase):
 
 class Eddy_EddyUv(NekTestCase):
     example_subdir  = 'eddy'
-    case_name       = 'eddy_uv'
+    case_name        = 'eddy_uv'
 
     def setUp(self):
 
@@ -598,7 +593,6 @@ class Eddy_EddyUv(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '30',
@@ -738,7 +732,6 @@ class KovStState(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '40',
@@ -816,7 +809,6 @@ class LowMachTest(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '1',
             mxprev    = '20',
             lgmres    = '30',
@@ -1036,7 +1028,6 @@ class VarVis(NekTestCase):
             lpx2      = '1',
             lpelt     = '1',
             lpert     = '1',
-            lelecmt   = '',
             toteq     = '',
             mxprev    = '20',
             lgmres    = '30',
@@ -1107,6 +1098,49 @@ class VarVis(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
+
+
+class CmtInviscidVortex(NekTestCase):
+    example_subdir = os.path.join('CMT', 'inviscid_vortex')
+    case_name = 'pvort'
+
+    def diff_l2norms(self):
+        def get_line(filename, line_num=0):
+            with open(filename) as f:
+                line = f.readlines()[line_num]
+            return [float(x) for x in line.split()[1:]]
+
+        cls = self.__class__
+        test_vals = get_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat'))
+        ref_vals = get_line(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat.ref'))
+        for t, r in zip(test_vals, ref_vals):
+            self.assertAlmostEqual(t, r, delta=0.1*r,
+                msg='FAILURE: Last line of l2norms.dat differed from reference values by > 10%\n  test vals:{0}\n  ref vals: {1}'.format(test_vals, ref_vals))
+        print('SUCCESS: Last line of l2norms.dat was within 10% of reference values\n  test vals:{0}\n  ref vals: {1}'.format(test_vals, ref_vals))
+
+    def setUp(self):
+        cls = self.__class__
+        try:
+            os.remove(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat'))
+        except OSError:
+            pass
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+        if "CMTNEK" not in self.pplist:
+            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+        self.diff_l2norms()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        if "CMTNEK" not in self.pplist:
+            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+        self.diff_l2norms()
+
 
 if __name__ == '__main__':
     import unittest, argparse, os

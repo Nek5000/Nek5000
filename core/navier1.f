@@ -3869,7 +3869,7 @@ c
          opct = ntot*21
       else
          opct = ntot*10
-         endif
+      endif
       dct(myrout) = dct(myrout) + opct
       dcount      =      dcount + opct
 #endif

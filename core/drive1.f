@@ -118,11 +118,10 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
-      call cmt_switch          ! Check if compiled with cmt
-      if (ifcmt) then          ! Initialize CMT branch
+#ifdef CMTNEK
         call nek_cmt_init
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
-      endif
+#endif
 
       call setics      !     Set initial conditions 
       call setprop     !     Compute field properties
@@ -246,11 +245,11 @@ c-----------------------------------------------------------------------
       call setsolv
       call comment
 
-      if (ifcmt) then
-         if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
-         call cmt_nek_advance
-         return
-      endif
+#ifdef CMTNEK
+      if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
+      call cmt_nek_advance
+      return
+#endif
 
 
       if (ifsplit) then   ! PN/PN formulation

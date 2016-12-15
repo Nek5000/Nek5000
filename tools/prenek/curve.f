@@ -39,6 +39,8 @@ c     ITEM(5)='MAKE SINE WAVE'
 C     ITEM(6)='FORTRAN FUNCTION'
       ITEM(8)='Convert Midside to Circle'
       NCHOIC=8
+      nchoic=nchoic+1
+      ITEM(nchoic)='Circular-Cartesian'
       if (if3d) then
          nchoic=nchoic+1
          ITEM(nchoic)='SPHERICAL MESH'
@@ -142,6 +144,10 @@ c          GOTO 1
           endif
 
           call redraw_mesh
+          goto 1
+
+      elseif (choice.eq.'Circular-Cartesian') then
+             call cirmesh
           goto 1
 
       ELSE IF(CHOICE.EQ.'MAKE CIRCLE')THEN

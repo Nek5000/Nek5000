@@ -28,10 +28,6 @@ C-----------------------------------------------------------------------
      $ ,             ta2 (lx2,ly2,lz1)
       integer*8 ntotg,nn
 
-      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
-      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
-      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
-
       real psmax(ldimt)
 
       if(nio.eq.0) write(6,*) 'set initial conditions'
@@ -43,8 +39,6 @@ C-----------------------------------------------------------------------
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
-      ntotcv=lelt*nxyz1*toteq
-
 
       call rzero(vx,ntott)
       call rzero(vy,ntott)
@@ -56,13 +50,8 @@ C-----------------------------------------------------------------------
 
       jp = 0                  ! Set counter for perturbation analysis
 
-      if (ifcmt) then
-         call rzero(phig,ltott)
-         call rzero(csound,ltott)
-         call rzero(vtrans,ltott*ldimt1)
-         call rzero(vdiff ,ltott*ldimt1)
-         call rzero(u,ntotcv)
-      endif
+      irst = param(46)        ! for lee's restart (rarely used)
+      if (irst.gt.0)  call setup_convect(2)
 
 c     If moving geometry then add a perturbation to the
 c     mesh coordinates (see Subroutine INIGEOM)
@@ -252,8 +241,7 @@ c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
 c     enddo
 c     ifield = ifldsave
     
-c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
-      if (ifflow.and..not.ifcmt) then  ! pff, 11/4/15
+      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -269,7 +257,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
       endif
 
       if (ifheat.and..not.ifdg) then  ! Don't project if using DG
-       if (.not.ifcmt) then
          ifield = 2
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
@@ -281,7 +268,6 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
               call col2 (t(1,1,1,1,i-1),vmult,ntotv)
             endif
          enddo
-       endif
       endif
 c
 c     if (ifpert.and..not.ifdg) then ! Still not DG
@@ -1203,7 +1189,9 @@ C     If no fields were explicitly specified, assume getting all fields.
          ENDIF
          if (ifflow) ifgetp=.true.
          if (ifheat) ifgett=.true.
-         if (ifcmt)  ifgett=.true.
+#ifdef CMTNEK
+         ifgett=.true. ! CMT-nek still not compatible with IFHEAT
+#endif
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue
@@ -1697,10 +1685,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'NEKUSE'
 
-      common /solnconsvar/ u(lx1,ly1,lz1,toteq,lelcmt) ! cmt only
-      common /otherpvar/   phig(lx1,ly1,lz1,lelcmt)    ! cmt only
-      common /cmtgasprop/  csound(lx1,ly1,lz1,lelcmt)  ! cmt only
-      integer eqnum,e,eg
+      integer e,eg
 
       nel   = nelfld(ifield)
 
@@ -1766,45 +1751,6 @@ C
 
       endif
 
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!     cmt-nek
-!
-!     User should be responsible for agreement between varsic and
-!     vxyz,rho, prsic, but a consistency check here would be wise.
-
-      if (ifcmt) then
-         do e=1,nel
-            eg = lglel(e)
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1           
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               if (ifield.eq.1) then
-                  vx(i,j,k,e) = ux
-                  vy(i,j,k,e) = uy
-                  vz(i,j,k,e) = uz
-                  vtrans(i,j,k,e,ifield)=rho
-                  phig(i,j,k,e)=phi
-                  pr(i,j,k,e) =pres
-                  do eqnum=1,toteq
-                     u(i,j,k,eqnum,e)=varsic(eqnum)
-                  enddo
-                  if (ifvisc) vdiff(i,j,k,e,ifield)=mu
-               else
-                  t(i,j,k,e,ifield-1) = temp
-                  if (ifvisc) then
-                     if (ifield.eq.2) vdiff(i,j,k,e,ifield)=udiff
-                     if (ifield.eq.3) vdiff(i,j,k,e,ifield)=lambda
-                  endif
-               endif
-            enddo
-            enddo
-            enddo
-         enddo
-      endif
-!     cmt-nek
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       return
       END

@@ -18,12 +18,26 @@ c     Solve the Euler equations
 
       ftime_dum = dnekclock()
       nxyz1=lx1*ly1*lz1
-      n = nxyz1*lelcmt*toteq
+      n = nxyz1*lelt*toteq
       nfldpart = ndim*npart
 
-      if(istep.eq.1) call set_tstep_coef
-      if(istep.eq.1) call cmt_flow_ics(ifrestart)
-      if(istep.eq.1) call init_cmt_timers
+      if(istep.eq.1) then 
+         call cmt_ics
+!        do e=1,nelt
+!           do i=1,nxyz1
+!              write(401,'(7e17.8)')  xm1(i,1,1,1),ym1(i,1,1,1),
+!    >      u(i,1,1,1,e),u(i,1,1,2,e),u(i,1,1,3,e),u(i,1,1,4,e),
+!    >      u(i,1,1,5,e)
+!           enddo
+!        enddo
+!        call exitt
+         call set_tstep_coef
+         call cmt_flow_ics
+         call init_cmt_timers
+c all point particles are initialized and 
+c preprocessing of interpolation step 
+         call usr_particles_init
+      endif
 
       nstage = 3
       do stage=1,nstage
@@ -32,13 +46,17 @@ c     Solve the Euler equations
          rhst_dum = dnekclock()
          call compute_rhs_and_dt
          rhst = rhst + dnekclock() - rhst_dum
+c particle equations of motion are solved (also includes forcing)
+c In future this subroutine may compute the back effect of particles
+c on the fluid and suitably modify the residue computed by 
+c compute_rhs_dt for the 5 conserved variables
+         call usr_particles_solver
 
-c        if (mod(istep,res_freq).eq.0.or.istep.eq.1)then
-c          dumchars='residue'
-c          call dumpresidue(dumchars,stage)
-c        endif
-c JH061114 this loop may need some work. stride difficulties
-
+! JH111815 soon....
+! JH082316 someday...maybe?
+!        do eq=1,toteq
+!           call fbinvert(res1(1,1,1,1,eq))
+!        enddo
 
          do e=1,nelt
             do eq=1,toteq
@@ -53,6 +71,8 @@ c    >                        (c1*res1(i,1,1,e,eq) + c2*res2(i,1,1,e,eq)
 c    >                       + c3*res3(i,1,1,e,eq))
 c-----------------------------------------------------------------------
 c this completely stops working if B become nondiagonal for any reason.
+! JH111815 in fact, I'd like to redo the time marching stuff above and
+!          have an fbinvert call for res1
                u(i,1,1,eq,e) = u(i,1,1,eq,e)/bm1(i,1,1,e)
 c that completely stops working if B become nondiagonal for any reason.
 !-----------------------------------------------------------------------
@@ -60,13 +80,16 @@ c that completely stops working if B become nondiagonal for any reason.
             enddo
          enddo
       enddo
+
       call compute_primitive_vars
       ftime = ftime + dnekclock() - ftime_dum
 
-      if (mod(istep,iostep).eq.0.or.istep.eq.1.or.istep.eq.2)then
+      if (mod(istep,iostep).eq.0.or.istep.eq.1)then
          call out_pvar_nek
          call out_fld_nek
          call mass_balance(if3d)
+c dump out particle information. 
+         call usr_particles_io(istep)
       end if
 
       call print_cmt_timers
@@ -81,44 +104,55 @@ c-----------------------------------------------------------------------
 !> doxygen comments look like this
       include 'SIZE'
       include 'TOTAL'
-      include 'DG'      ! dg_face is stored
+      include 'DG'
       include 'CMTDATA'
       include 'CTIMER'
 
       integer lfq,heresize,hdsize
-      parameter (lfq=lx1*lz1*2*ldim*lelcmt,
+      parameter (lfq=lx1*lz1*2*ldim*lelt,
      >                   heresize=nqq*3*lfq,! guarantees transpose of Q+ fits
-     >                   hdsize=toteq*ldim*lfq)
-! not sure yet if viscous surface fluxes can live here yet
-      common /CMTSURFLX/ flux(heresize),ViscousStuff(hdsize)
-      real ViscousStuff
+     >                   hdsize=toteq*3*lfq) ! might not need ldim
+! not sure if viscous surface fluxes can live here yet
+      common /CMTSURFLX/ flux(heresize),graduf(hdsize)
+      real graduf
 
-      COMMON /pnttimers/ pt_time_add, pt_tracking_add
       integer e,eq
       real wkj(lx1+lxd)
       character*32  dumchars
 
-      call set_rxgll
+      if (nxd.gt.nx1) then
+         call set_dealias_face
+      else
+         call set_alias_rx(istep)
+      endif
+!     call set_dealias_rx ! done in set_convect_cons,
+! JH113015                ! now called from compute_primitive_variables
 
 !     filter the conservative variables before start of each
 !     time step
-      if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-
-! compute primitive vars on the FINE grid. Required to compute conv fluxes.
-!        primitive vars = rho, u, v, w, p, T, phi_p
+!     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
+!        primitive vars = rho, u, v, w, p, T, phi_g
       if (istep.eq.1) then
          call compute_primitive_vars
+!-----------------------------------------------------------------------
+! JH082216 Transport properties are for the higher-derivative operators.
+!          Artificial viscosity is now computed in the branches of
+!          compute_transport_props
+!-----------------------------------------------------------------------
+         call compute_transport_props
       else
-         if(stage.gt.1) call compute_primitive_vars
+         if(stage.gt.1) then
+            call compute_primitive_vars
+            call compute_transport_props
+         endif
       endif
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
 !          primitive variables. Only then can we compute CFL and/or dt.
-!          I know this isn't an ideal place for it, but it avoids some
-!          repeated work. If we ever go to RK, an if(isubstage==1) will
-!          be needed here.
 !-----------------------------------------------------------------------
       if(stage.eq.1) call setdtcmt
+      ntot = lx1*ly1*lz1*lelt*toteq
+      call rzero(res1,ntot)
 
 !     !Total_eqs = 5 (we will set this up so that it can be a user 
 !     !defined value. 5 will be its default value)
@@ -129,16 +163,13 @@ c-----------------------------------------------------------------------
 !     !eq = 5 -------- Energy Equation 
 
 !-----------------------------------------------------------------------
-! JH060314 Compute face fluxes now that we have the primitive
-!          variables. As face selection gets smarter (e.g.: interior
-!          faces only), surface_fluxes_inviscid's argument list may grow
+! JH060314 Compute inviscid surface fluxes now that we have the
+!          primitive variables.
 !-----------------------------------------------------------------------
       call fluxes_full_field
-      ntot = lx1*ly1*lz1*lelcmt*toteq
-      call rzero(res1,ntot)
 
       nstate=nqq
-      nfq=nx1*nz1*2*ldim*nelt
+      nfq=nx1*nz1*2*ndim*nelt
       iqm =1
       iqp =iqm+nstate*nfq
       iflx=iqp+nstate*nfq
@@ -146,50 +177,57 @@ c-----------------------------------------------------------------------
          ieq=(eq-1)*ndg_face+iflx
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
-      iuj=iflx ! overwritten with [[U]]
 
-!     if (ifvisc) call ujump ! need to write something that goes from
-!     U+- in fatface to ujump
-      if (ifvisc) call compute_transport_props
+               !                   -
+      iuj=iflx ! overwritten with U -{{U}}
+!-----------------------------------------------------------------------
+!                          /     1  T \
+! JH082316 imqqtu computes | I - -QQ  | U for all 5 conserved variables
+!                          \     2    /
+! which I now make the following be'neon-billboarded assumption:
+!***********************************************************************
+! ASSUME CONSERVED VARS U1 THROUGH U5 ARE CONTIGUOUSLY STORED
+! SEQUENTIALLY IN /CMTSURFLX/ i.e. that iu2=iu1+1, etc.
+! CMTDATA BETTA REFLECT THIS!!!
+!***********************************************************************
+      ium=(iu1-1)*nfq+iqm
+      iup=(iu1-1)*nfq+iqp
+      call   imqqtu(flux(iuj),flux(ium),flux(iup))
+      call igtu_cmt(flux(iqm),flux(iuj),graduf) ! [[u]].{{gradv}}
 
       do e=1,nelt
+!-----------------------------------------------------------------------
+! JH082216 Since the dawn of CMT-nek we have called this particular loop
+!***********************************************************************
+!*         "THE" ELEMENT LOOP                                          *
+!***********************************************************************
+!          since it does several operations, mostly for volume integrals,
+!          for all equations, one element at a time. If we get memory
+!          under control and GPUs really need to act on gigabytes all
+!          at once, then this and its dependents can still have their
+!          loop order flipped and things like totalh declared for
+!          15 full fields or more.
+!-----------------------------------------------------------------------
 ! Get user defined forcing from userf defined in usr file
          call cmtusrf(e)
-         if (ifvisc)then
-             call compute_gradients(e)
-! compute_aux_var will likely not be called if Sij=GdU
-             call compute_aux_var(e)
-!------------------------------
-! NB!!!!! gradu=Sij, NOT dUl/dxk!!!!
-!------------------------------
-         endif
+         call compute_gradients(e) ! gradU
          do eq=1,toteq
-! Now we can start assembling the flux terms in all 5 eqs
-! Flux terms are decomposed into h_conv and h_diff
-            call assemble_h(e,eq)
-! compute the volume integral term and assign to res1
-            call flux_div_integral(e,eq)
-            call surface_integral_elm(e,eq)
-!------------------------------
-! JH050615 BR1 ONLY for now
-!           if (.not.ifbr1)
-!    >      call penalty(flux(iqm),flux(iqp),flux(iuj),e,eq,nstate)
-!------------------------------
+            call convective_cmt(e,eq)        ! convh & totalh -> res1
+            call    viscous_cmt(e,eq) ! diffh -> half_iku_cmt -> res1
+                                             !       |
+                                             !       -> diffh2graduf
 ! Compute the forcing term in each of the 5 eqs
-! Add this to the residue
             call compute_forcing(e,eq)
          enddo
       enddo
 
-! get the other half of Hij^{d*}
-      if (ifvisc)then
-         call viscousf
-         do eq=2,toteq ! no viscous flux of mass
-            ieq=(eq-1)*ndg_face+1
+! get the rest of Hij^{d*}
+      call igu_cmt(flux(iqm),graduf)
+      do eq=1,toteq
+         ieq=(eq-1)*ndg_face+iqm
 !Finally add viscous surface flux functions of derivatives to res1.
-            call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
-         enddo
-      endif
+         call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
+      enddo
 
       return
       end
@@ -226,22 +264,21 @@ c-----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
 
-      subroutine cmt_flow_ics(ifrestart)
+      subroutine cmt_flow_ics
       include 'SIZE'
       include 'CMTDATA'
       include 'SOLN'
 
-      logical ifrestart
       integer e
       nxyz1 = nx1*ny1*nz1
-      n     = nxyz1*lelcmt*toteq
+      n     = nxyz1*lelt*toteq
       if (ifrestart)then
          do e=1,nelt
             call copy(U(1,1,1,2,e),vx(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,3,e),vy(1,1,1,e),nxyz1) 
             call copy(U(1,1,1,4,e),vz(1,1,1,e),nxyz1) 
-            call copy(U(1,1,1,5,e),t(1,1,1,e,3),nxyz1) 
-            call copy(U(1,1,1,1,e),t(1,1,1,e,2),nxyz1) 
+            call copy(U(1,1,1,5,e),t(1,1,1,e,1),nxyz1) 
+            call copy(U(1,1,1,1,e),pr(1,1,1,e),nxyz1) 
          enddo
       endif
       call rzero(res1,n)

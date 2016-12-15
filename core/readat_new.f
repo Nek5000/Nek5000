@@ -138,10 +138,6 @@ c
       ifkeps    = .false.
       ifschclob = .false. 
 
-      ifcmt     = .false. 
-      ifvisc    = .false. 
-      iffltr    = .false.
-
       ifdp0dt = .false.
 
       call izero(matype,16*ldimt1)

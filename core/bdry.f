@@ -152,9 +152,6 @@ C
          WRITE (6,*) 'IFGEOM   =',IFGEOM
          WRITE (6,*) 'IFSURT   =',IFSURT
          WRITE (6,*) 'IFWCNO   =',IFWCNO
-         WRITE (6,*) 'IFCMT    =',IFCMT
-         WRITE (6,*) 'IFVISC   =',IFVISC
-         WRITE (6,*) 'IFFLTR   =',IFFLTR
 
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '
@@ -1189,9 +1186,7 @@ C
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 
-      INCLUDE 'CMTDATA' ! irho, etc.,            ! JH062414 CMT only
-
-      integer e,eqnum
+      integer e
 
       common  /nekcb/ cb
       character cb*3
@@ -1224,28 +1219,6 @@ C
       utrans= vtrans(ix,iy,iz,e,ifield)
 
       cbu   = cb
-
-      if (ifcmt) then                            ! JH081415 CMT only
-
-         do eqnum=1,toteq
-            varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
-         enddo
-         phi  = phig  (ix,iy,iz,e)
-         rho  = vtrans(ix,iy,iz,e,irho)
-         pres = pr    (ix,iy,iz,e)
-         if (rho.ne.0) then
-            cv   = vtrans(ix,iy,iz,e,icv)/rho
-            cp   = vtrans(ix,iy,iz,e,icp)/rho
-         endif
-         asnd = csound(ix,iy,iz,e)
-
-         if (ifvisc) then ! lol stride
-            mu     = vdiff(ix,iy,iz,e,imu)
-            udiff  = vdiff(ix,iy,iz,e,iknd)
-            lambda = vdiff(ix,iy,iz,e,ilam)
-         endif
-
-      endif                                     ! JH081415 CMT only
 
       return
       end

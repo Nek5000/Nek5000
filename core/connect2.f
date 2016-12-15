@@ -293,7 +293,7 @@ C
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
          IFDIFF(i) = .true. 
-      enddo
+      enddo      
 
       do i=1,NPSCL1
          IDPSS(i) = 0 ! use Helmholtz for passive scalars 
@@ -326,9 +326,6 @@ C
       IFEXPLVIS = .false.
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
-      IFCMT     = .false.
-      IFVISC    = .false.
-      IFFLTR    = .false.
 
       ifbase = .true.
       ifpert = .false.
@@ -410,12 +407,6 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
-         elseif (indx1(string(i),'IFCMT',5).gt.0) then 
-              read(string(i),*) IFCMT
-         elseif (indx1(string(i),'IFVISC',6).gt.0) then 
-              read(string(i),*) IFVISC
-         elseif (indx1(string(i),'IFFLTR',6).gt.0) then 
-              read(string(i),*) IFFLTR
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -445,10 +436,7 @@ c              read(string,*) IFSPLIT
      &           '   IFCONS'   ,
      &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'  ,
-     &           '   IFCMT'    ,
-     &           '   IFVISC'   ,
-     &           '   IFFLTR'    
+     &           '   IFVCOUP'
               endif
               call exitt
          endif
@@ -2401,7 +2389,7 @@ c-----------------------------------------------------------------------
               call crecv      (e,buf,len)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
-
+ 
          elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
 
             if(ierr.eq.0) then
