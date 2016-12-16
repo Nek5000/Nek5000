@@ -1,6 +1,5 @@
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
-touch $1.rea
 rm ioinfo
 mv $1.log $1.log1 2>/dev/null
 mv $1.fld $1.fld1 2>/dev/null

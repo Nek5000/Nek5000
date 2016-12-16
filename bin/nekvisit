@@ -83,7 +83,6 @@ export VISIT_MESA_LIB=${VISIT}/lib/libOSMesa.so
 
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
-touch $1.rea
 rm -f ioinfo logfile
 if [[ -f ${1}.log ]] ; then
    mv -f $1.log $1.log1

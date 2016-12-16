@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# first do some checks ...
+if [ $# -ne 2 ]; then
+  echo "creates a new branch and updates files in the current"
+  echo "working tree to match origin"
+  echo "usage: nekgit_co <your branch name> <origin branch name>"
+  echo "       e.g. nekgit_co fix123 develop"
+  echo ""
+  exit 1
+fi
+
+git checkout -b $1 --track origin/$2
+if [ $? -eq 0 ]; then
+  git pull;
+fi
