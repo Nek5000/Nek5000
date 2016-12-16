@@ -1,5 +1,6 @@
 cp $1.real $2.real
 cp $1.rea $2.rea
+cp $1.par $2.par
 cp $1.usr $2.usr
 cp $1.map $2.map
 cp $1.sep $2.sep
