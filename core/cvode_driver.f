@@ -520,8 +520,6 @@ c
       real ydott(lx1,ly1,lz1,lelt,ldimt)
 c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
                                    ! use nvec_dssum 
-      integer ntf      
-
 
       etime1 = dnekclock()
       time   = time_   
@@ -565,15 +563,12 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          if (ifcvfld(ifield)) call vprops
       enddo  
 
-      ntf = 0
       do ifield=2,nfield
          if (ifcvfld(ifield)) then
            ntot = nxyz*nelfld(ifield)
            call makeq
 
            if (iftmsh(ifield)) then                                
-              ntf = 1                                          
-
               call dssum(bq,nx1,ny1,nz1)
               call col2(bq,bintm1,ntot)
 
@@ -589,7 +584,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          endif
       enddo
 
-      if (ntf.eq.0) then ! all fields are on the v-mesh
+      if (ifgsh_fld_same) then ! all fields are on the v-mesh
          istride = lx1*ly1*lz1*lelt
          call nvec_dssum(ydott,istride,nfield-1,gsh_fld(1))
       else
@@ -603,8 +598,9 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
            ntot = nxyz*nelfld(ifield)
-           if (.not.iftmsh(ifield)) call col2(ydott(1,1,1,1,ifield-1),
-     &                                        binvm1,ntot)
+           if (.not.iftmsh(ifield)) then
+              call col2(ydott(1,1,1,1,ifield-1),binvm1,ntot)
+           endif
          endif
       enddo
 

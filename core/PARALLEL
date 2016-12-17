@@ -31,6 +31,9 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer cr_h,gsh,gsh_fld(0:ldimt3),xxth(ldimt3)
       common /comm_handles/ cr_h,gsh,gsh_fld,xxth
 
+      logical ifgsh_fld_same
+      common /lcomm_handles/ ifgsh_fld_same
+
 !     These arrays need to be reconciled with cmt (pff, 11/03/15)
 
       integer              dg_face(lx1*lz1*2*ldim*lelt)

@@ -73,7 +73,10 @@ c
 c                 ~ ~T
 c     This is the Q Q  part
 c
-      call gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
+      write(6,*) 'dssum', ifldt, gsh_fld(ifldt)
+      if (gsh_fld(ifldt).lt.0) then
+         call gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
+      endif
 c
 c
 c 
