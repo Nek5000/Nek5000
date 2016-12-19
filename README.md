@@ -60,7 +60,7 @@ Nek5000 is hosted on GitHub and all bugs are reported and tracked through the Is
 
 ## Contributing
 
-First off, thanks for taking the time to contribute! Our project is hosed on [GibHub](https://github.com/Nek5000/Nek5000). The main repository will always hold two evergreen branches:
+First off, thanks for taking the time to contribute! Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). The main repository will always hold two evergreen branches:
 
 * `develop`
 * `master`
