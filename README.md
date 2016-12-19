@@ -17,7 +17,8 @@ Written in Fortran 77 and C, it relies on MPI for parallelization. Nek5000 outpu
 
 * High-order spatial discretization using spectral elements
 * High-order semi-implicit timestepping
-* Incompressible + low Mach number (variable density) flows
+* Incompressible + low Mach number flows
+* RANS and LES turbulence models (experimental)
 * Low memory footprint and scalable memory design
 * Scales to over a million processes
 * Efficient preconditioners 
@@ -89,7 +90,7 @@ Consider `master` to always represent the latest code deployed to production. Du
 2. Implement your changes. Make sure your change is atomic and consistent. You can work on multiple branches simultaneously. Just do a `git checkout <your branch name>` to change the branch. Note, this will update the files in your working directory (~/Nek5000). To compare your branch with our develop repo use `git diff origin/develop`.
 3. Commit the changes to your local repo using `git commit -a -m 'a descriptive comment'`. Do this frequently to save your work (otherwise you cannot switch branches). 
 4. Periodically, changes made in our Nek5000 repo should be pulled back into your branch by `git pull`. You may have to resolve potential merge conflicts. In this case edit the files in question. Merge conflicts are indicated  by the conflict marker `<<<<<<<` in your file. If you are done with all files, run `git add .` and do a `git commit` to indicate that all conflicts have been resolved.  
-5. Finally, run `nekgit_push` to create a request on GitHub to merge your changes.  The core developers will review your change and discuss potential modifications.
+5. When you are happy with your change, run `nekgit_push` to create a request on GitHub to merge your changes. The core developers will review your change and discuss potential modifications. We cannot consider your merge request if it is outdated or does not pass the regression tests. Please include a short-test in case of a new feature.
 
 
 ## Code Structure
