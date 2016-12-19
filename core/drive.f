@@ -1,5 +1,6 @@
       program NEKTON
 c
+c GIT TEST
 c NEK5000: Spectral Element Computational Fluid Dynamics Solver
 c COPYRIGHT (c) 2008-2010 UCHICAGO ARGONNE, LLC
 c
