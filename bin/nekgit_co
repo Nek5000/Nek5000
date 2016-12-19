@@ -9,6 +9,7 @@ if [ $# -ne 2 -o "$1" == "-h" ]; then
   exit 1
 fi
 
+git fetch origin
 git checkout -b $1 --track origin/$2
 if [ $? -eq 0 ]; then
   git pull;
