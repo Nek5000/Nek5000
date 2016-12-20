@@ -30,7 +30,8 @@ c
      $               ,ngeom,idpss
 
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
-     $               ,ifmgrid,ifadvc(ldimt1),ifdiff(ldimt1)
+     $               ,ifmgrid
+     $               ,ifadvc(ldimt1),ifdiff(ldimt1),ifdeal(ldimt1)
      $               ,iftmsh(0:ldimt1)
      $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
@@ -43,7 +44,8 @@ c
      $               ,ifcvfld(ldimt1),ifdp0dt
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
-     $               ,ifmgrid,ifadvc,ifdiff
+     $               ,ifmgrid 
+     $               ,ifadvc,ifdiff,ifdeal
      $               ,iftmsh
      $               ,ifmvbd,ifnatc,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps

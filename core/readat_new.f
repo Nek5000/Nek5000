@@ -100,6 +100,11 @@ c
          ifdiff(i+1) = .true.  
       enddo 
 
+      ifdeal(1) = .true.  
+      do i=1,ldimt1
+         ifdeal(i+1) = .true.  
+      enddo 
+
       do i=1,ldimt
          idpss(i) = -1
       enddo 

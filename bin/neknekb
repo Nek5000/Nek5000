@@ -6,7 +6,6 @@ echo  $3      >>   SESSION.NAME 2>/dev/null
 echo  $2      >>   SESSION.NAME 2>/dev/null 
 echo `pwd`'/' >>   SESSION.NAME 2>/dev/null 
 echo  $4      >>   SESSION.NAME 2>/dev/null 
-touch $1.rea
 rm ioinfo
 mv $1.log $1.log1 2>/dev/null
 mv $1.his $1.his1 2>/dev/null
