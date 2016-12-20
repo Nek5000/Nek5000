@@ -50,10 +50,10 @@ papi.o nek_in_situ.o \
 readat_new.o finiparser.o iniparser.o dictionary.o
 ################################################################################
 # MXM 
-MXM = mxm_std.o 
+MXM =  
 ################################################################################
-# LAPACK
-LPACK = dsygv.o ssygv.o
+# BLAS
+BLAS = 
 # JL Routines ###################################################################
 JO  = jl_
 
@@ -121,9 +121,9 @@ else
 endif
 
 ifeq ($(IFCMT),true)
-TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
+TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 else
-TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(LPACK)
+TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 endif
 
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
