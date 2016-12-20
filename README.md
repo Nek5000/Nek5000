@@ -92,6 +92,8 @@ Consider `master` to always represent the latest code deployed to production. Du
 4. Periodically, changes made in our Nek5000 repo should be pulled back into your branch by `git pull`.
 5. If there are no merge conflicts, go to the next step. In case of conflicts edit the unmerged files in question. Merge conflicts are indicated  by the conflict marker `<<<<<<<` in your file. If you are done with all files, run `git add .` and do a `git commit` to indicate that all conflicts have been resolved.  
 6. When you are happy with your change, run `nekgit_push` to create a request on GitHub to merge your changes. Now you should be able to see your pull request on GitHub. The core developers will review your change and discuss potential modifications. We cannot consider your merge request if it is outdated or does not pass the regression tests. Please include a short-test in case of a new feature.
+7. Sync your local repo and your fork on GitHub with the Nek5000 repo using `nekgit_sync`.
+8. When your pull request was merged or closed, you may want to delete your branch (of step 1) with `nekgit_rm <my branch name>`.
 
 
 ## Code Structure
