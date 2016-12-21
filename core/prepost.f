@@ -73,8 +73,6 @@ c     Check for io request in file 'ioinfo'
       ioinfodmp=tdmp(1)
       if (ioinfodmp.lt.0) maxstep=abs(ioinfodmp)
       if (istep.ge.maxstep.or.ioinfodmp.eq.-2) lastep=1
-      if (ioinfodmp.eq.-2) return
-      if (ioinfodmp.lt.0) ioinfodmp = 0
 
       return
       end
@@ -136,6 +134,8 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
       endif
 
       call prepost_map(0) ! map pr and axisymm. arrays
+
+      if (ioinfodmp.eq.-2) return
 
       if (ifdoin) call outfld(prefix)
 
