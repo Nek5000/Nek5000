@@ -285,7 +285,7 @@ C
 C
 C     Put limits on how much DT can change.
 C
-      IF (DTOLD.NE.0.0) THEN
+      IF (DTOLD.NE.0.0 .AND. LASTEP.NE.1) THEN
          DTMIN=0.8*DTOLD
          DTMAX=1.2*DTOLD
          DT = MIN(DTMAX,DT)
