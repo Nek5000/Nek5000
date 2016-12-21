@@ -1,5 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
+c
 
       include 'SIZE'
       include 'TOTAL'
