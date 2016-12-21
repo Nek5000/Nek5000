@@ -1,5 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
+c
 
       include 'SIZE'
       include 'TOTAL'
@@ -25,6 +26,8 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
   
+      common /rdump/ ntdump
+
       real kwave2
       real*8 t0, tpp
 
@@ -148,6 +151,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call time00       !     Initalize timers to ZERO
       call opcount(2)
+
+      ntdump=0
+      if (timeio.ne.0.0) ntdump = int( time/timeio )
 
       etims0 = dnekclock_sync()
       if (nio.eq.0) then
