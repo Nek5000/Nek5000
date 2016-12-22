@@ -203,8 +203,10 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         call check_ioinfo  
+         call set_outfld
          call userchk
-         call prepost (.false.,'his')
+         call prepost (ifoutfld,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001
       enddo
