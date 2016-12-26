@@ -12,8 +12,8 @@ c
       integer*8        cv_nglobal
       common /ilcvode/ cv_nglobal
 
-      logical         ifcvodeinit, ifdqj
-      common /lcvode/ ifcvodeinit, ifdqj
+      logical         ifcvodeinit, ifdqj, ifcvfun
+      common /lcvode/ ifcvodeinit, ifdqj, ifcvfun
 
       real cv_atol(cv_lysize)
 

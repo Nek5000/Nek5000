@@ -124,10 +124,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userqtl(flag) ! Set thermal divergence
-      logical flag
+      subroutine userqtl ! Set thermal divergence
 
-      call qthermal_ig(flag)
+      call qthermal_ig
 
       return
       end

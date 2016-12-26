@@ -2094,10 +2094,14 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      real function glcflux()
+      real function glcflux(tx,ty,tz)
 c
       include 'SIZE'
       include 'TOTAL'
+
+      real tx(lx1,ly1,lz1,lelv)
+      real ty(lx1,ly1,lz1,lelv)
+      real tz(lx1,ly1,lz1,lelv)
 
       character cb*3
 
@@ -2118,9 +2122,9 @@ c
             do 10 iy=ky1,ky2
             do 10 ix=kx1,kx2
                ia =ia + 1
-               termxyz = vx(ix,iy,iz,iel)*unx(ia,1,iface,iel)
-     $                 + vy(ix,iy,iz,iel)*uny(ia,1,iface,iel)
-     $                 + vz(ix,iy,iz,iel)*unz(ia,1,iface,iel)
+               termxyz = tx(ix,iy,iz,iel)*unx(ia,1,iface,iel)
+     $                 + ty(ix,iy,iz,iel)*uny(ia,1,iface,iel)
+     $                 + tz(ix,iy,iz,iel)*unz(ia,1,iface,iel)
                termA  = termA + area(ia,1,iface,iel)
                termVL = termVL+ termxyz * area(ia,1,iface,iel)
  10         continue

@@ -241,6 +241,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+      ntot = nx1*ny1*nz1*nelv
 
       call nekgsync
 
@@ -269,20 +270,21 @@ c-----------------------------------------------------------------------
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
-               call gengeom (igeom)
-               call geneig  (igeom)
+            call gengeom (igeom)
+            call geneig  (igeom)
          endif
 
-         if (ifheat)               call heat (igeom)
+         if (ifheat) call heat (igeom)
 
          if (igeom.eq.2) then  
-                                   call setprop
-            if (iflomach)          call qthermal(.true.)
+            call setprop
+            call rzero(qtl,ntot)
+            if (iflomach) call qthermal
          endif
 
-         if (ifflow)               call fluid         (igeom)
-         if (ifmvbd)               call meshv         (igeom)
-         if (param(103).gt.0)      call q_filter      (param(103))
+         if (ifflow)          call fluid    (igeom)
+         if (ifmvbd)          call meshv    (igeom)
+         if (param(103).gt.0) call q_filter (param(103))
          enddo
 
       else                ! PN-2/PN-2 formulation

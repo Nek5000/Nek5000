@@ -587,10 +587,9 @@ if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine userqtl(flag)
-      logical flag
+      subroutine userqtl
 
-      call qthermal_ig(flag)
+      call qthermal_ig
 
       return
       end

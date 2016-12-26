@@ -518,10 +518,11 @@ c
 c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
                                    ! use nvec_dssum 
 
-      etime1 = dnekclock()
-      time   = time_   
-      nxyz   = nx1*ny1*nz1
-      ntotv  = nxyz*nelv
+      ifcvfun = .true.
+      etime1  = dnekclock()
+      time    = time_   
+      nxyz    = nx1*ny1*nz1
+      ntotv   = nxyz*nelv
        
       if (time.ne.cv_timel) then
          call cv_settime     
@@ -607,6 +608,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
       ncvf = ncvf + 1 
 
       ier = 0
+      ifcvfun = .false.
 
       return
       end

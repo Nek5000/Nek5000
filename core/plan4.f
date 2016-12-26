@@ -526,25 +526,20 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine qthermal_ig(ifvext)
+      subroutine qthermal_ig
 
-C     Compute the thermal divergence QTL 
+C     Compute the thermal divergence QTL for an ideal one component gas 
 C
 C     QTL := div(v) = -1/rho * Drho/Dt
-c
-c     If we use the ideal gas law and assume
-c     that p,R is const we end up with
-c     QTL = 1/(rho*cp) rho*cp*DT/Dt
+c                   = 1/(rho*cp) rho*cp*DT/Dt
 C
 C     where rho*cp*DT/Dt represents the RHS of the
 C     energy equation expressed in terms of temperature.
 c
       include 'SIZE'
       include 'TOTAL'
+      include 'CVODE'
 
-      logical ifvext,ifqvol 
-      real qvol(1)    
- 
       common /scrns/ w1(lx1,ly1,lz1,lelt)
      $              ,w2(lx1,ly1,lz1,lelt)
      $              ,w3(lx1,ly1,lz1,lelt)
@@ -575,48 +570,34 @@ c - - Assemble RHS of T-eqn
       call col2    (qtl,binvm1,ntot)
 
       ! QTL = T_RHS/(rho*cp**T)
-
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
       call invcol2 (qtl,w2,ntot)
 
-
       dp0thdt = 0.0
       if (ifdp0dt) then
-
-         ! set v=v(tn+1) using extrapolation
-         if (ifvext) then
-            call copy(tx,vx,ntot)
-            call copy(ty,vy,ntot)
-            if (if3d) call copy(tz,vz,ntot)
-
-            call copy(vx,vx_e,ntot)
-            call copy(vy,vy_e,ntot)
-            if (if3d) call copy(vz,vz_e,ntot)
-         endif
-
-         dp0thdt = 0.0
-         dd = gamma0 ! CVref/CPref ! Note CVref denotes the inverse CPref
-         dd = -1.0*(dd - 1.)/dd
-
+         dd = (1.0 - gamma0)/gamma0
          call rone(w1,ntot)
          call cmult(w1,dd,ntot)
+
+         call invcol3(w2,vtrans(1,1,1,1,2),vtrans(1,1,1,1,1),ntot)
+         call invcol2(w1,w2,ntot)
+
          call cadd(w1,1.0,ntot)
          call copy(w2,w1,ntot)
          call col2(w1,bm1,ntot)
   
          p0alph1 = p0th / glsum(w1,ntot)
   
-         call copy   (w1,QTL,ntot)
+         call copy   (w1,qtl,ntot)
          call col2   (w1,bm1,ntot)
-         termQ = glsum(w1,ntot)
-         termV = glcflux() 
-         dp0thdt = p0alph1*(termQ - termV)
 
-         if (ifvext) then
-            call copy(vx,tx,ntot)
-            call copy(vy,ty,ntot)
-            if (if3d) call copy(vz,tz,ntot)
+         termQ = glsum(w1,ntot)
+         if (ifcvfun) then
+            termV = glcflux(vx,vy,vz)
+         else
+            termV = glcflux(vx_e,vy_e,vz_e)
          endif
+         dp0thdt = p0alph1*(termQ - termV)
 
          dd =-dp0thdt/p0th
          call cmult(w2,dd,ntot)
@@ -628,17 +609,15 @@ c - - Assemble RHS of T-eqn
       return
       end
 c-----------------------------------------------------------------------
-      subroutine qthermal(ifvext)
+      subroutine qthermal
 
       INCLUDE 'SIZE'
-      INCLUDE 'SOLN'
-
-      logical ifvext
+      INCLUDE 'TOTAL'
 
       ntot = nx1*ny1*nz1*nelv
-      call rzero(qtl,ntot)
 
-      call userqtl(ifvext)
+      call rzero(qtl,ntot)
+      call userqtl
 
       return
       end
