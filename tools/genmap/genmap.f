@@ -3256,8 +3256,9 @@ c-----------------------------------------------------------------------
          call copyi4(f,buf(3),1) !3-4
          call copy  (bl(1,f,e),buf(5),5) !5--14
          call chcopy(cbl( f,e),buf(15),3)!15-16
-         if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
-     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+c     the following is not needed since buf(5)-buf(6) are already real
+c         if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ') 
+c     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
       else
          e  = buf(1)
          f  = buf(2)

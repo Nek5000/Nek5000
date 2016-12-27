@@ -1,5 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
+c
 
       include 'SIZE'
       include 'TOTAL'
@@ -25,6 +26,8 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
   
+      common /rdump/ ntdump
+
       real kwave2
       real*8 t0, tpp
 
@@ -149,6 +152,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call time00       !     Initalize timers to ZERO
       call opcount(2)
 
+      ntdump=0
+      if (timeio.ne.0.0) ntdump = int( time/timeio )
+
       etims0 = dnekclock_sync()
       if (nio.eq.0) then
         write (6,*) ' '
@@ -197,8 +203,10 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         call check_ioinfo  
+         call set_outfld
          call userchk
-         call prepost (.false.,'his')
+         call prepost (ifoutfld,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001
       enddo

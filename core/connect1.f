@@ -160,6 +160,15 @@ C========================================================================
          endif
       enddo
 
+      ifgsh_fld_same = .true.
+      do ifield=2,nfield
+         if (gsh_fld(ifield).ne.gsh_fld(1)) then
+            ifgsh_fld_same = .false.
+            goto 100
+         endif
+      enddo
+ 100  continue
+
       if(nio.eq.0) then
         write(6,*) 'done :: setup mesh topology'
         write(6,*) ' '

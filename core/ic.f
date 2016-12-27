@@ -21,7 +21,6 @@ C-----------------------------------------------------------------------
      $       , ifprsl(  ldimt1,0:lpert)
  
       LOGICAL  IFANYP
-      common /rdump/ ntdump
       common /inelr/ nelrr
       common /ctmp1/ work(lx1,ly1,lz1,lelv)
      $ ,             ta1 (lx2,ly1,lz1)
@@ -188,8 +187,6 @@ C     the time-stepping procedure (no flow calculation) (01/18/91 -EMR).
 C     Ensure that all processors have the same time as node 0.
       if (nid.ne.0) time=0.0
       time=glsum(time,1)
-      ntdump=0
-      if (timeio.ne.0.0) ntdump = int( time/timeio )
 
 C     Ensure that initial field is continuous!
 
