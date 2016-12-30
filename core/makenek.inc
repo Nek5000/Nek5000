@@ -7,14 +7,14 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BGQ       use BGQ optimized mxm"
-  echo "  XSMM      use libxsmm for mxm"
-  echo "  CVODE     enable CVODE solver for scalars"
-  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
-  echo "  BLAS      link against external BLAS/LAPACK"
-  echo "  EXTBAR    adds underscore to exit call(for BGQ)"
-  echo "  CMTNEK    CMT-nek, a DG compressible-flow solver"
+  echo "  MPIIO       use MPI-IO I/O kernel"
+  echo "  BGQ         use BGQ optimized mxm"
+  echo "  XSMM        use libxsmm for mxm"
+  echo "  CVODE       enable CVODE solver for scalars"
+  echo "  MOAB        enable MOAB/CUBIT support (experimental)"
+  echo "  VENDOR_BLAS link against external BLAS/LAPACK"
+  echo "  EXTBAR      adds underscore to exit call (for BGQ)"
+  echo "  CMTNEK      enable DG compressible-flow solver"
   exit 1
 fi
 
@@ -353,7 +353,7 @@ if [ $? -eq 0 ]; then
 fi
 
 BLAS="blas.o dsygv.o ssygv.o"
-echo $PPLIST | grep 'BLAS' >/dev/null 
+echo $PPLIST | grep 'VENDOR_BLAS' >/dev/null 
 if [ $? -eq 0 ]; then
    BLAS=" "
 fi
