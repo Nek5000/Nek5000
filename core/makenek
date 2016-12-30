@@ -6,10 +6,8 @@
 # installation path 
 SOURCE_ROOT="$HOME/Nek5000" 
 
-# Fortran compiler
+# Fortran/C compiler
 F77="mpif77"
-
-# C compiler
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
