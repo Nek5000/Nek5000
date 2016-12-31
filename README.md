@@ -4,11 +4,10 @@
 
 Nek5000 is an open source, highly scalable and portable spectral element code designed to simulate:
 
-* unsteady Stokes
-* unsteady incompressible Navier-Stokes
+* unsteady incompressible Navier-Stokes and Stokes flows
 * low Mach-number flows
-* heat transfer and species transport
 * incompressible magnetohydrodynamics (MHD)
+* heat transfer and scalar transport
 
 Written in Fortran 77 and C, it relies on MPI for parallelization. Nek5000 output formats can be read by the parallel visualization package VisIt developed at LLNL/LBNL. 
 
@@ -16,18 +15,14 @@ Written in Fortran 77 and C, it relies on MPI for parallelization. Nek5000 outpu
 ## Features
 
 * High-order spatial discretization using spectral elements
-* High-order semi-implicit timestepping
-* Incompressible + low Mach number flows
-* RANS and LES turbulence models (experimental)
-* Low memory footprint and scalable memory design
+* 3rd order timestepping
 * Scales to over a million processes
-* Efficient preconditioners 
-* Highly optimized computational kernels 
-* High performance parallel I/O
+* Efficient preconditioners  
+* Parallel I/O
 * ALE / moving meshes and free surface flow
 * Accurate Lagrangian particle tracking
 * Conjugate fluid-solid heat transfer
-* Built-in profiling analysis
+* uRANS and LES turbulence models
 * Interface to VisIt for parallel data analysis and visualization
 
 
@@ -45,7 +40,7 @@ You can download the latest release of Nek5000 [here](https://github.com/Nek5000
 5. Go to `~/nekcases/eddy` and run `./makenek eddy` (see makenek for build options)
 5. You can run the case using two processes with `nekmpi eddy 2`
 
-**Note:** Here you'll find more [examples](https://github.com/Nek5000/NekExamples)
+**Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
 
 ## Documentation
 
