@@ -2,7 +2,7 @@
 ![https://travis-ci.org/Nek5000/Nek5000](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)
 [![GPLv3 licensed](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://raw.githubusercontent.com/Nek5000/nek5000/develop/LICENSE)
 
-Nek5000 is an open source, highly scalable and portable spectral element code designed to simulate:
+Nek5000 is an open source, fast and scalable spectral element code designed to simulate:
 
 * unsteady incompressible Navier-Stokes flows and magnetohydrodynamics (MHD)
 * low Mach-number flows
