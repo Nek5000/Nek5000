@@ -9,18 +9,19 @@ Nek5000 is an open source, highly scalable and portable spectral element code de
 * incompressible magnetohydrodynamics (MHD)
 * heat transfer and scalar transport
 
-Written in Fortran 77 and C, it relies on MPI for parallelization. Nek5000 output formats can be read by the parallel visualization package VisIt developed at LLNL/LBNL. 
 
+## Highlights
 
-## Features
-
-* High-order spatial discretization using spectral elements
-* 3rd order timestepping
-* Scales to over a million processes
+* Written in Fortran 77 and C
+* Pure MPI for parallelization
+* Proven scalability to over a million processes
+* Easy-to-build and easy-to-use
+* High-order conforming curved hexahedral meshes
+* 3rd order CFL adaptive semi-implicit timestepping
 * Efficient preconditioners  
 * Parallel I/O
-* ALE / moving meshes and free surface flow
-* Accurate Lagrangian particle tracking
+* Moving meshes and free surface flow
+* Lagrangian particle tracking
 * Conjugate fluid-solid heat transfer
 * uRANS and LES turbulence models
 * Interface to VisIt for parallel data analysis and visualization
