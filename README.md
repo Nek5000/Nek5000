@@ -15,7 +15,7 @@ Nek5000 is an open source, fast and scalable spectral element code designed to s
 * Pure MPI for parallelization
 * Proven scalability to over a million processes
 * Easy-to-build and easy-to-use
-* High-order conforming curved hexahedral meshes
+* High-order conforming curved quadrilateral/hexahedral meshes
 * 3rd order CFL adaptive semi-implicit timestepping
 * Efficient preconditioners  
 * Parallel I/O
