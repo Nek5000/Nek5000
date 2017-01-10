@@ -73,8 +73,8 @@ c----------------------------------------------------------------------
 c     generate the SEM hat matrices for each level
 c     top level
       n = mg_nx(mg_lmax)
-      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,n,wh)
-      call copy(mg_zh(1,mg_lmax),zgl,n-1) !top level based on gl points
+      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,n,wh)
+      call copy(mg_zh(1,mg_lmax),zglhat,n-1) !top level based on gl points
       mg_nh(mg_lmax)=n-1
       mg_nhz(mg_lmax)=n-1
       if(.not.if3d) mg_nhz(mg_lmax)=1
@@ -82,7 +82,7 @@ c     lower levels
       do l=1,mg_lmax-1
          n = mg_nx(l)
          if(n.gt.1) then
-            call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,n,wh)
+            call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,n,wh)
             call copy(mg_ah(1,l),ah,(n+1)*(n+1))
             call copy(mg_bh(1,l),bh,n+1)
             call copy(mg_dh(1,l),dh,(n+1)*(n+1))
@@ -2363,7 +2363,7 @@ c----------------------------------------------------------------------
 
       do l=1,mg_h1_lmax
          n = mg_nx(l)     ! polynomial order
-         call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,n,wh)
+         call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,n,wh)
          call copy(mg_ah(1,l),ah,(n+1)*(n+1))
          call copy(mg_bh(1,l),bh,n+1)
          call copy(mg_dh(1,l),dh,(n+1)*(n+1))

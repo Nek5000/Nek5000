@@ -1,22 +1,44 @@
 c-----------------------------------------------------------------------
-      subroutine prepost(ifdoin,prefin)
+      subroutine set_outfld
 
-c     Store results for later postprocessing
-c
-c     Recent updates:
-c
-c     p65 now indicates the number of parallel i/o files; iff p66 >= 6
-
+c     Check if we are going to checkpoint at this timestep
+c     and set ifoutfld accordingly
 
       include 'SIZE'
       include 'TOTAL'
-      include 'CTIMER'
 
-C     Work arrays and temporary arrays
+      common /rdump/ ntdump
 
-      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
+      ifoutfld = .false.
 
-c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
+      if (iostep.lt.0 .or. timeio.lt.0) return
+
+      if (istep.ge.nsteps) lastep=1
+
+      timdump=0
+      if (timeio.ne.0.0) then
+         if (time.ge.(ntdump + 1)*timeio) then
+            timdump=1.
+            ntdump=ntdump+1
+         endif
+      endif
+
+      if (istep.gt.0 .and. iostep.gt.0) then
+         if(mod(istep,iostep) .eq. 0) ifoutfld=.true.
+      endif
+
+      if(ioinfodmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifoutfld=.true.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine check_ioinfo
+
+c     Check for io request in file 'ioinfo'
+
+      include 'SIZE'
+      include 'TSTEP'
+
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
       common /ctmp1/ tdump(lxyz,lpsc9)
@@ -24,41 +46,67 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       real           tdmp(4)
       equivalence   (tdump,tdmp)
 
-      real*4         test_pattern
-
-      character*3    prefin,prefix
-      character*1    fhdfle1(132)
-      character*132   fhdfle
-      equivalence   (fhdfle,fhdfle1)
-      character*1    fldfile2(120)
-      integer        fldfilei( 60)
-      equivalence   (fldfilei,fldfile2)
-
-      common /doit/ ifdoit
-      logical       ifdoit
-      logical       ifdoin
-
-      real hdump(25)
-      real xpart(10),ypart(10),zpart(10)
-      character*10 frmat
-      integer nopen(99)
-      save    nopen
-      data    nopen /99*0/
-      common /rdump/ ntdump
-      data ndumps / 0 /
-
-      logical ifhis
-
       integer maxstep
       save    maxstep
       data    maxstep /999999999/
 
       if (iostep.lt.0 .or. timeio.lt.0) return
 
+      ioinfodmp=0
+      if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
+         open(unit=87,file='ioinfo',status='old',err=88)
+         read(87,*,end=87,err=87) idummy
+         if (ioinfodmp.eq.0) ioinfodmp=idummy
+         if (idummy.ne.0) then  ! overwrite last i/o request
+            rewind(87)
+            write(87,86)
+   86       format(' 0')
+         endif
+   87    continue
+         close(unit=87)
+   88    continue
+         if (ioinfodmp.ne.0) write(6,*) 'Output:',ioinfodmp
+      endif
+
+      tdmp(1)=ioinfodmp
+      call gop(tdmp,tdmp(3),'+  ',1)
+      ioinfodmp=tdmp(1)
+      if (ioinfodmp.lt.0) maxstep=abs(ioinfodmp)
+      if (istep.ge.maxstep.or.ioinfodmp.eq.-2) lastep=1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine prepost(ifdoin,prefin)
+
+c     Store results for later postprocessing
+c
+c     Recent updates:
+c
+c     p65 now indicates the number of parallel i/o files; iff p66 >= 6
+c
+c     we now check whether we are going to checkpoint in set_outfld
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+
+      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
+
+      character*3    prefin,prefix
+
+      logical  ifdoin
+      logical  ifhis
+
+      common /rdump/ ntdump
+      data ndumps / 0 /
+   
+      if (iostep.lt.0 .or. timeio.lt.0) return
+
       icalld=icalld+1
       nprep=icalld
 
-#ifndef NOTIMER
+#ifdef TIMER
       etime1=dnekclock()
 #endif
 
@@ -87,52 +135,9 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
 
       call prepost_map(0) ! map pr and axisymm. arrays
 
-      if(istep .ge. nsteps) lastep=1
+      if (ioinfodmp.eq.-2) return
 
-      timdump=0
-      if(timeio.ne.0.0)then
-         if(time .ge. (ntdump + 1) * timeio) then
-            timdump=1.
-            ntdump=ntdump+1
-         endif
-      endif
-
-      if (istep.gt.0 .and. iostep.gt.0) then
-         if(mod(istep,iostep) .eq. 0) ifdoit=.true.
-      endif
-
-
-      ! check for io request in file 'ioinfo'
-      iiidmp=0
-      if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then 
-         open(unit=87,file='ioinfo',status='old',err=88)
-         read(87,*,end=87,err=87) idummy
-         if (iiidmp.eq.0) iiidmp=idummy
-         if (idummy.ne.0) then  ! overwrite last i/o request
-            rewind(87)
-            write(87,86)
-   86       format(' 0')
-         endif
-   87    continue
-         close(unit=87)
-   88    continue
-         if (iiidmp.ne.0) write(6,*) 'Output:',iiidmp
-      endif
-
-      tdmp(1)=iiidmp
-      call gop(tdmp,tdmp(3),'+  ',1)
-      iiidmp= tdmp(1)
-      if (iiidmp.lt.0) maxstep=abs(iiidmp)
-      if (istep.ge.maxstep.or.iiidmp.eq.-2) lastep=1
-      if (iiidmp.eq.-2) return
-      if (iiidmp.lt.0) iiidmp = 0
-
-      if (ifdoin) ifdoit=.true.
-      if (iiidmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifdoit=.true.
-
-
-      if (ifdoit.and.nio.eq.0)write(6,*)'call outfld: ifpsco:',ifpsco(1)
-      if (ifdoit) call outfld(prefix)
+      if (ifdoin) call outfld(prefix)
 
       call outhis(ifhis)
 
@@ -140,13 +145,11 @@ c     Trigger history output only if prefix = 'his'   pff 8/18/05
 
       if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
 
-#ifndef NOTIMER
+#ifdef TIMER
       tprep=tprep+dnekclock()-etime1
 #endif
 
-      ifdoit=.false.
       return
-
       end
 c-----------------------------------------------------------------------
       subroutine prepost_map(isave) ! isave=0-->fwd, isave=1-->bkwd
@@ -1824,8 +1827,14 @@ c-----------------------------------------------------------------------
 
       integer iosave,save_size,nfld_save
 
+      include 'SIZE'
+      include 'INPUT'
 
-      nfld_save=4  ! For full restart
+      if (PARAM(27).lt. 0) then
+          nfld_save=abs(PARAM(27))  ! For full restart
+      else 
+          nfld_save=3
+      endif
       save_size=8  ! For full restart
 
       call restart_save(iosave,save_size,nfld_save)
@@ -2378,6 +2387,7 @@ c-----------------------------------------------------------------------
       subroutine mfo_write_hdr          ! write hdr, byte key, els.
 
       include 'SIZE'
+      include 'SOLN'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
@@ -2446,9 +2456,9 @@ c-----------------------------------------------------------------------
       ENDIF
  
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
-     $         ,   (rdcode1(i),i=1,10)        ! 74+20=94
+     $            ,(rdcode1(i),i=1,10),p0th
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a)
+     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7)
 
       ! if we want to switch the bytes for output
       ! switch it again because the hdr is in ASCII

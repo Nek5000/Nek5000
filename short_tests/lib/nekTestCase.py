@@ -99,23 +99,27 @@ class NekTestCase(unittest.TestCase):
     """
     # Defined in subclasses only; declared here to make syntax checker happy
     example_subdir      = ""
-    case_name            = ""
+    case_name           = ""
 
     def __init__(self, *args, **kwargs):
         # These can be overridden by self.get_opts
-        self.f77            = "gfortran"
-        self.cc             = "gcc"
-        self.ifmpi          = False
-        self.verbose        = False
-        self.source_root    = ''
-        #self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
-        self.examples_root  = os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)), 'examples')
-        self.tools_root     = ''
-        self.tools_bin      = ''
-        self.log_root       = ''
-        self.makenek        = ''
+        self.f77            = 'mpif77'
+        self.cc             = 'mpicc'
+        self.g              = ""
+        self.pplist         = ""
+        self.usr_lflags     = ""
+        self.ifmpi          = True
+
+        self.source_root    = os.path.dirname(os.path.dirname(inspect.getabsfile(self.__class__)))
+        self.examples_root  = os.path.dirname(inspect.getabsfile(self.__class__))
+        self.makenek        = os.path.join(self.source_root, 'core', 'makenek')
+        self.tools_root     = os.path.join(self.source_root, 'tools')
+        self.tools_bin      = os.path.join(self.source_root, 'bin')
+        self.log_root       = ""
+        self.verbose        = True
         self.serial_procs   = 1
-        self.parallel_procs = 2
+        self.parallel_procs = 4
+        self.size_params    = {}
 
         # These are overridden by method decorators (pn_pn_serial, pn_pn_parallel,
         # pn_pn_2_serial, and pn_pn_2_parallel)
@@ -163,84 +167,65 @@ class NekTestCase(unittest.TestCase):
 
         print("Getting setup options...")
 
-        # Get compilers from env, default to GNU
-        # --------------------------------------
-        self.f77     = os.environ.get('F77',   self.f77)
-        self.cc      = os.environ.get('CC',    self.cc)
-        self.ifmpi   = os.environ.get('IFMPI', self.ifmpi)
-        self.verbose = os.environ.get('VERBOSE_TESTS', self.verbose)
+        # Get compiler options from env
+        self.f77            = os.environ.get('F77', self.f77)
+        self.cc             = os.environ.get('CC', self.cc)
+        self.g              = os.environ.get('G', self.g)
+        self.pplist         = os.environ.get('PPLIST', self.pplist)
+        self.usr_lflags     = os.environ.get('USR_LFLAGS', self.usr_lflags)
+        self.ifmpi          = str(os.environ.get('IFMPI', self.ifmpi)).lower() == 'true'
+
+        # Get paths from env
+        try:
+            self.source_root = os.path.abspath(os.environ['SOURCE_ROOT'])
+        except KeyError:
+            pass
+        else:
+            self.makenek        = os.path.join(self.source_root, 'core', 'makenek')
+            self.tools_root     = os.path.join(self.source_root, 'tools')
+            self.tools_bin      = os.path.join(self.source_root, 'bin')
+
+        self.examples_root = os.path.abspath(os.environ.get('EXAMPLES_ROOT', self.examples_root))
+        self.tools_root    = os.path.abspath(os.environ.get('TOOLS_ROOT', self.tools_root))
+        self.tools_bin     = os.path.abspath(os.environ.get('TOOLS_BIN', self.tools_bin))
+
+        try:
+            self.log_root = os.path.abspath(os.environ['LOG_ROOT'])
+        except KeyError:
+            pass
+
+        self.verbose        = str(os.environ.get('VERBOSE_TESTS', self.verbose)).lower() == 'true'
         self.parallel_procs = int(os.environ.get('PARALLEL_PROCS', self.parallel_procs))
 
-        # String/bool conversions
-        self.ifmpi = str(self.ifmpi).lower()
-        self.ifmpi = self.ifmpi == 'yes' or self.ifmpi == 'true'
-
-        self.verbose = str(self.verbose).lower()
-        self.verbose = self.verbose == 'yes' or self.verbose == 'true'
-
+        # Print everything out
         for varname, varval in (
                 ('F77', self.f77),
                 ('CC', self.cc),
-                ('IFMPI', str(self.ifmpi).lower()),
-                ('VERBOSE_TESTS', str(self.verbose).lower()),
+                ('G', self.g),
+                ('PPLIST', self.pplist),
+                ('USR_LFLAGS', self.usr_lflags),
+                ('IFMPI', self.ifmpi),
+                ('SOURCE_ROOT', self.source_root),
+                ('EXAMPLES_ROOT', self.examples_root),
+                ('LOG_ROOT', self.log_root),
+                ('TOOLS_ROOT', self.tools_root),
+                ('TOOLS_BIN', self.tools_bin),
+                ('VERBOSE_TESTS', self.verbose),
                 ('PARALLEL_PROCS', self.parallel_procs)
         ):
-            print('    Using {0}={1}'.format(varname, varval))
-
-        # SOURCE_ROOT and EXAMPLES_ROOT must be defined.  Get from env and fail early if they don't exist
-        # -----------------------------------------------------------------------------------------------
-        self.source_root   = os.path.abspath(os.environ.get('SOURCE_ROOT',   self.source_root))
-        self.examples_root = os.path.abspath(os.environ.get('EXAMPLES_ROOT', self.examples_root))
-
-        for (varname, varval) in (('SOURCE_ROOT', self.source_root), ('EXAMPLES_ROOT', self.examples_root)):
-            if os.path.isdir(varval):
-                print('    Using {0} at {1}'.format(varname, varval))
-            else:
-                raise ValueError(
-                    'The {0} directory "{1}" does not exist. Please provide a valid directory using the env variable {0} ROOT.'.format(varname, varval))
-
-        # TOOLS_ROOT and TOOLS_BIN have default values, if not defined.  Raise error if they don't exist
-        # ------------------------------------------------------------------------------------------------
-        self.tools_root = os.environ.get('TOOLS_ROOT', self.tools_root)
-        if self.tools_root:
-            self.tools_root = os.path.abspath(self.tools_root)
-        else:
-            self.tools_root = os.path.abspath(os.path.join(self.source_root, 'tools'))
-
-        if os.path.isdir(self.tools_root):
-            print('    Using {0} at {1}'.format('TOOLS_ROOT', self.tools_root))
-        else:
-            raise ValueError(
-                'The {0} directory "{1}" does not exist. Please provide a valid directory using the env variable {0} ROOT.'.format('TOOLS_ROOT', self.tools_root))
-
-        # TOOLS_BIN has a default value.
-        # -----------------------------
-        self.tools_bin = os.environ.get('TOOLS_BIN', self.tools_bin)
-        if self.tools_bin:
-            self.tools_bin = os.path.abspath(self.tools_bin)
-        else:
-            self.tools_bin = os.path.abspath(os.path.join(self.source_root, 'bin'))
-
-        # LOG_ROOT has no default value and can remain undefined
-        # ------------------------------------------------------
-        self.log_root = os.environ.get('LOG_ROOT', '')
-        if self.log_root:
-            self.log_root = os.path.abspath(self.log_root)
-
-        # If TOOLS_BIN or LOG_ROOT don't exist, make them
-        #------------------------------------------------
-        for varval, varname in ((self.tools_bin, 'TOOLS_BIN'), (self.log_root,  'LOG_ROOT')):
             if varval:
-                if os.path.isdir(varval):
-                    print('    Using {0} at {1}'.format(varname, varval))
-                else:
-                    print('    The {0} directory, "{1}" does not exist.  It will be created'.format(varname, varval))
-                    os.makedirs(varval)
+                print('    Using {0:14} = "{1}"'.format(varname, varval))
 
-        # Default destination of makenek
-        # ------------------------------
-        if not self.makenek:
-            self.makenek   = os.path.join(self.source_root, 'core', 'makenek')
+        # Verify that pathnames are valid
+        for varname, varval in (
+                ('SOURCE_ROOT', self.source_root),
+                ('EXAMPLES_ROOT', self.examples_root),
+                ('LOG_ROOT', self.log_root),
+                ('TOOLS_ROOT', self.tools_root),
+                ('TOOLS_BIN', self.tools_bin),
+        ):
+            if varval and not os.path.isdir(varval):
+                raise OSError('The {0} directory "{1}" does not exist. Please the env variable ${0} to a valid directory.'.format(varname, varval))
 
         print("Finished getting setup options!")
 
@@ -256,22 +241,31 @@ class NekTestCase(unittest.TestCase):
             verbose    = verbose    if verbose    else self.verbose
         )
 
-    def config_size(self, infile=None, outfile=None, lx2=None, ly2=None, lz2=None):
+    def config_size(self, params=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_size
         cls = self.__class__
 
         if not infile:
-            infile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+            infile = os.path.join(self.source_root, 'core', 'SIZE.template')
         if not outfile:
             outfile = os.path.join(self.examples_root, cls.example_subdir, 'SIZE')
+        if not params:
+            params = self.size_params
 
-        config_size(
-            infile  = infile,
-            outfile = outfile,
-            lx2 = lx2,
-            ly2 = ly2,
-            lz2 = lz2
-        )
+        config_size(params=params, infile=infile, outfile=outfile)
+
+    def config_parfile(self, opts=None, infile=None, outfile=None):
+        from lib.nekFileConfig import config_parfile
+        cls = self.__class__
+
+        if not infile:
+            infile = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
+        if not outfile:
+            outfile = infile
+        if not opts:
+            opts = {}
+
+        config_parfile(opts=opts, infile=infile, outfile=outfile)
 
     def run_genmap(self, rea_file=None, tol='0.5'):
 
@@ -313,21 +307,30 @@ class NekTestCase(unittest.TestCase):
             cwd     = os.path.join(self.examples_root, self.__class__.example_subdir),
         )
 
-    def build_nek(self, usr_file=None):
+    def build_nek(self, opts=None, usr_file=None):
         from lib.nekBinBuild import build_nek
         cls = self.__class__
 
         if not usr_file:
             usr_file = cls.case_name
 
+        all_opts = dict(
+            F77 = self.f77,
+            CC = self.cc,
+            G = self.g,
+            PPLIST = self.pplist,
+            USR_LFLAGS = self.usr_lflags,
+            IFMPI = str(self.ifmpi).lower(),
+        )
+        if opts:
+            all_opts.update(opts)
+
         build_nek(
             source_root = self.source_root,
             usr_file    = usr_file,
             cwd         = os.path.join(self.examples_root, cls.example_subdir),
-            f77         = self.f77,
-            cc          = self.cc,
-            ifmpi       = str(self.ifmpi).lower(),
-            verbose     = self.verbose
+            opts        = all_opts,
+            verbose     = self.verbose,
         )
 
     def run_nek(self, rea_file=None, step_limit=None):

@@ -1633,7 +1633,7 @@ c
       character*80 hdr
       character*5 ver
       integer wdsizi
-      logical ifbswap
+      logical ifbswap,if_byte_swap_test
       real*4 test
       real*8 rtemp
 
