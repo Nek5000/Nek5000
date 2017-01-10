@@ -23,19 +23,10 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then 
          call cmt_ics
-!        do e=1,nelt
-!           do i=1,nxyz1
-!              write(401,'(7e17.8)')  xm1(i,1,1,1),ym1(i,1,1,1),
-!    >      u(i,1,1,1,e),u(i,1,1,2,e),u(i,1,1,3,e),u(i,1,1,4,e),
-!    >      u(i,1,1,5,e)
-!           enddo
-!        enddo
-!        call exitt
          call set_tstep_coef
          call cmt_flow_ics
          call init_cmt_timers
-c all point particles are initialized and 
-c preprocessing of interpolation step 
+c all point particles are initialized
          call usr_particles_init
       endif
 
@@ -128,24 +119,12 @@ c-----------------------------------------------------------------------
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-!     filter the conservative variables before start of each
-!     time step
-!     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-!        primitive vars = rho, u, v, w, p, T, phi_g
-      if (istep.eq.1) then
-         call compute_primitive_vars
 !-----------------------------------------------------------------------
 ! JH082216 Transport properties are for the higher-derivative operators.
-!          Artificial viscosity is now computed in the branches of
-!          compute_transport_props
 !-----------------------------------------------------------------------
+         call compute_primitive_vars
          call compute_transport_props
-      else
-         if(stage.gt.1) then
-            call compute_primitive_vars
-            call compute_transport_props
-         endif
-      endif
+
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
 !          primitive variables. Only then can we compute CFL and/or dt.
