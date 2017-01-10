@@ -117,7 +117,7 @@ c
      $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
          ifield = 2
-         if (ifheat .and. .not.ifcvode) 
+         if (ifheat .and. .not.ifcvfld(ifield)) 
      $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
 
         enddo
@@ -1475,19 +1475,6 @@ c
       err (4,2) = sqrt(amp2_h)
       err (5,2) = sqrt(utot)
 c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine transpose1(a,n)
-      real a(n,n)
-c
-      do j=1,n
-      do i=j+1,n
-         ta     = a(i,j)
-         a(i,j) = a(j,i)
-         a(j,i) = ta
-      enddo
-      enddo
       return
       end
 c-----------------------------------------------------------------------

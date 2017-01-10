@@ -19,6 +19,10 @@ c-----------------------------------------------------------------------
 
 C Set user variable properties
 
+      implicit none
+      
+      integer ix,iy,iz,ieg
+
       INCLUDE 'SIZE'   
       INCLUDE 'TOTAL'  
       INCLUDE 'NEKUSE' 
@@ -28,12 +32,12 @@ C Set user variable properties
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERF  (IX,IY,IZ,ieg)                
 
-C Set user forcing function for the momentum
+      implicit none
+
+      integer ix,iy,iz,ieg
 
       INCLUDE 'SIZE'   
       INCLUDE 'TSTEP'  
@@ -45,12 +49,13 @@ C Set user forcing function for the momentum
 
       RETURN
       END
-
-C=======================================================================
+C-----------------------------------------------------------------------
 
       SUBROUTINE USERQ  (IX,IY,IZ,ieg)                
 
-C Set user forcing function for the energy and species
+      implicit none
+
+      integer ix,iy,iz,ieg
 
       INCLUDE 'SIZE'   
       INCLUDE 'TOTAL'  
@@ -66,10 +71,10 @@ C Set user forcing function for the energy and species
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERCHK
+
+      implicit none
 
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
@@ -78,11 +83,13 @@ C=======================================================================
      $              ,T_err  (LX1,LY1,LZ1,LELT)
      $              ,VX_err (LX1,LY1,LZ1,LELT)
      $              ,QTL_err (LX1,LY1,LZ1,LELT)
+      real w1,T_err,VX_err,QTL_err
 
+      integer i,j,k,iel,ntot
 
-      real sumqw
+      real glsc3,glmax
 
-      real delta,l2_err,exact,max_err,XD,sech
+      real sumqw,delta,l2_err,exact,max_err,XD,sech
       parameter(delta=0.2)
 
       ntot = nx1*ny1*nz1*nelv
@@ -126,20 +133,18 @@ C=======================================================================
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERBC (IX,IY,IZ,ISIDE,ieg)                
-c     NOTE ::: This subroutine MAY NOT be called by every process
 
+      implicit none
 
-C  Set user boundary conditions
+      integer ix,iy,iz,iside,ieg
 
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 
-      REAL delta
+      REAL xd,delta
       parameter(delta=0.2)
 
       XD = X/delta
@@ -157,18 +162,20 @@ C  Set user boundary conditions
 
       return
       END   
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       SUBROUTINE USERIC (IX,IY,IZ,ieg)
 
 C   Set initial conditions
+
+      implicit none
+
+      integer ix,iy,iz,ieg
 
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
       INCLUDE 'NEKUSE'
 
-      real delta
+      real delta,xd
       parameter(delta=0.2)
 
       XD = X/delta
@@ -183,24 +190,32 @@ C   Set initial conditions
 
       RETURN
       END
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       subroutine usrdat
 
       return
       end
-
-C=======================================================================
-
+C-----------------------------------------------------------------------
       subroutine usrdat2
 
       return
       end
-
-C=======================================================================
+C-----------------------------------------------------------------------
       subroutine usrdat3
 
       return
       end
-C=======================================================================
+C-----------------------------------------------------------------------
+      subroutine userqtl(flag)
+
+      implicit none
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      logical flag
+
+      call qthermal_ig(flag)
+
+      return
+      end
+

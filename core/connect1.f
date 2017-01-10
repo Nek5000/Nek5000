@@ -42,7 +42,7 @@ C
       NZL=1+2*(NDIM-2)
 
       call initds
-      call dsset (nx1,ny1,nz1)
+      call dsset (nxl,nyl,nzl)
       call setedge
 C
 C=================================================
@@ -159,6 +159,15 @@ C========================================================================
             call copy (tmult(1,1,1,1,ifield-1),tmult,ntott)
          endif
       enddo
+
+      ifgsh_fld_same = .true.
+      do ifield=2,nfield
+         if (gsh_fld(ifield).ne.gsh_fld(1)) then
+            ifgsh_fld_same = .false.
+            goto 100
+         endif
+      enddo
+ 100  continue
 
       if(nio.eq.0) then
         write(6,*) 'done :: setup mesh topology'
@@ -1602,185 +1611,6 @@ c-----------------------------------------------------------------------
          enddo
          enddo
          enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gs_counter(glo_num,gsh_std)
-      include 'SIZE'
-      include 'TOTAL'
-
-      integer glo_num(lx1,ly1,lz1,lelt)
-
-      common /dsstst/
-     $    x(lx1*ly1*lz1*lelt)   ! signal
-     $  , c(lx1*ly1*lz1*lelt)   ! counter
-      integer c
-
-      integer gsh_std
-
-      if (nio.eq.0) write(6,*) 'dstat test'
-
-      ifield = 1
-
-      n = nx1*ny1*nz1*nelv
-
-      call izero(c,n)
-
-      call rone (x,n)
-      call dssum(x,nx1,ny1,nz1)
-      nround = glmax(x,n) + 1
-
-      rnid = nid
-      call cfill(x,rnid,n)
-
-      do iround = 1,nround
-
-         nch = 0
-
-         call dsop (x,'M  ',nx1,ny1,nz1)  ! max Proc id.
-
-         do i=1,n
-
-            if (x(i).ne.rnid.and.x(i).ge.0) then
-               c(i) = c(i) + 1
-               nch  = nch  + 1
-            endif
-            if (x(i).le.rnid) then
-               x(i) = -1.
-            else
-               x(i) = rnid
-            endif
-
-         enddo
-         nch = iglmax(nch,1)
-         if (nch.eq.0) goto 10
-
-      enddo
-   10 continue
-
-c
-c     Process data
-c
-
-      
-      n2 = 0  ! num pairwise
-      no = 0  ! num otherwise
-
-      do i=1,n
-         if (c(i).gt.1) then
-            no = no+1
-         elseif (c(i).gt.0) then
-            n2 = n2+1
-         endif
-      enddo
-
-      do mid=0,np-1
-         call nekgsync()
-         if (mid.eq.nid) write(6,1) nid,n2,no
-    1    format(3i12,' dstata')
-         call nekgsync()
-      enddo
-
-      call gs_new_tstr(glo_num,x,c,gsh_std)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gs_new_tstr(glo_num,x,c,gsh_std)
-      include 'SIZE'
-      include 'TOTAL'
-
-      integer gsh_std,gsh_pair,gsh_mlti
-
-      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-
-      integer glo_num(lx1,ly1,lz1,lelt)
-
-      integer c(lx1*ly1*lz1*lelt)   ! counter
-      integer x(lx1*ly1*lz1*lelt)   ! glonum
-
-
-      n = nx1*ny1*nz1*nelv
-
-      do ipass = 1,2
-
-         call icopy(x,glo_num,n)
-
-         if (ipass.eq.1) then  ! set up pairwise-only handle
-            do i=1,n
-               if (c(i).eq.0.or.c(i).gt.1) x(i) = 0
-            enddo
-            call gs_setup(gsh_pair,x,n,nekcomm,mp)
-         else
-            do i=1,n
-               if (c(i).eq.0.or.c(i).le.1) x(i) = 0
-            enddo
-            call gs_setup(gsh_mlti,x,n,nekcomm,mp)
-         endif
-
-      enddo
-
-      call xfill(x,c,n)
-      call nekgsync()
-      t0 = dnekclock()
-      do ipass = 1,20
-         call gs_op(gsh_std,x,1,1,0)  ! 1 ==> +
-      enddo
-      call nekgsync()
-      t1 = (dnekclock() - t0)/20
-
-      call xfill(x,c,n)
-      call nekgsync()
-      t0 = dnekclock()
-      do ipass = 1,20
-         call gs_op(gsh_pair,x,1,1,0)  ! 1 ==> +
-      enddo
-      call nekgsync()
-      t2 = (dnekclock() - t0)/20
-
-      call xfill(x,c,n)
-      call nekgsync()
-      t0 = dnekclock()
-      do ipass = 1,20
-         call gs_op(gsh_mlti,x,1,1,0)  ! 1 ==> +
-      enddo
-      call nekgsync()
-      t3 = (dnekclock() - t0)/20
-
-      call xfill(x,c,n)
-      call nekgsync()
-      t0 = dnekclock()
-      do ipass = 1,20
-         call gs_op(gsh_mlti,x,1,1,0)  ! 1 ==> +
-         call gs_op(gsh_pair,x,1,1,0)  ! 1 ==> +
-      enddo
-      call nekgsync()
-      t4 = (dnekclock() - t0)/20
-
-      call xfill(x,c,n)
-      call nekgsync()
-      t0 = dnekclock()
-      do ipass = 1,20
-         call gs_op(gsh_std,x,1,1,0)  ! 1 ==> +
-      enddo
-      call nekgsync()
-      t5 = (dnekclock() - t0)/20
-
-      if (nio.eq.0) write(6,1) t1,t2,t3,t4,t5
-    1 format(5e12.4,' dstatb')
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine xfill(x,c,n)
-      real x(1)
-
-      tiny = 1.e-14
-      do i=1,n
-         a = i
-         x(i) = tiny*sin(a)
       enddo
 
       return

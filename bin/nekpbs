@@ -8,9 +8,9 @@ echo  "echo \`pwd\`'/' >> SESSION.NAME"                         >> $1.batch
 echo  rm -f  $1.his1                                            >> $1.batch
 echo  rm -f  $1.sch1                                            >> $1.batch
 echo  rm -f  $1.log1                                            >> $1.batch
-echo  mv $1.log $1.log1                                         >> $1.batch
-echo  mv $1.his $1.his1                                         >> $1.batch
-echo  mv $1.sch $1.sch1                                         >> $1.batch
+echo  mv $1.log $1.log1 2>/dev/null                             >> $1.batch
+echo  mv $1.his $1.his1 2>/dev/null                             >> $1.batch
+echo  mv $1.sch $1.sch1 2>/dev/null                             >> $1.batch
 echo  rm -f logfile                                             >> $1.batch
 echo  rm -f ioinfo                                              >> $1.batch
 echo  sleep 5                                                   >> $1.batch

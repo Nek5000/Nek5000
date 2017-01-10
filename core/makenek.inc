@@ -7,19 +7,14 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  NOTIMER   disable runtime statistics"
-  echo "  MPITIMER  enable MPI runtime statistics"
-  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BGL       enable Blue Gene optimizations (BG/L and BG/P)"
-  echo "  BGQ       enable Blue Gene optimizations (BG/Q)"
-  echo "  XSMM      use libxsmm for mxm"
-  echo "  K10_MXM   use optimized MxM kernel for AMD Family 10h processors" 
-  echo "  CVODE     use ODE solver from Sundials to solve for IFIELD>1 (experimental)"
-  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
-  echo "  NEKNEK    enable multidomain support (experimental)"
-  echo "  NO_LAPACK disable nek-supplied LAPACK routines"
-  echo "  BLAS_MXM  disable nek-supplied BLAS routines"
-  echo "  EXTBAR    adds underscore to exit call(for BGQ)"
+  echo "  MPIIO       use MPI-IO I/O kernel"
+  echo "  BGQ         use BGQ optimized mxm"
+  echo "  XSMM        use libxsmm for mxm"
+  echo "  CVODE       enable CVODE solver for scalars"
+  echo "  MOAB        enable MOAB/CUBIT support (experimental)"
+  echo "  VENDOR_BLAS link against external BLAS/LAPACK"
+  echo "  EXTBAR      adds underscore to exit call (for BGQ)"
+  echo "  CMTNEK      enable DG compressible-flow solver"
   exit 1
 fi
 
@@ -249,16 +244,6 @@ else
 fi
 export IFMPI
 
-# set preprocessor symbols
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-  IFCMT=true
-else
-  # default
-  IFCMT=false
-  PPLIST="${PPLIST} MPI"
-fi
-export IFCMT
-
 # Check size of long int
 cat > tmp.c << _ACEOF
 #include <stdlib.h>
@@ -282,13 +267,18 @@ if [ "$UNDERSCORE" == "true" ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFTIMING" == "false" -o "$IFTIMING" == "no" ]; then
-    PPLIST="${PPLIST} NOTIMER"
+if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
+  if [ "$IFMPI" == "true" -o "IFMPI" == "yes" ]; then
+    PPLIST="${PPLIST} TIMER MPITIMER"
+  else
+    PPLIST="${PPLIST} TIMER"
+  fi
 fi
 
 PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 
 # add user defined preprocessor symbols
+IFCMT=false
 for i in $PPLIST
 do
    if [ "$i" == "MOAB" ]; then
@@ -313,28 +303,22 @@ do
      fi
    fi
 
-if [ "$i" == "NEKNEK" ]; then
+   if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
-fi
-
-   if [ "$i" == "CVODE" ]; then
-    if [ "$CVODE_DIR" == "" ]; then
-       echo "ABORT: Please specify path to CVODE in CVODE_DIR!" 
-       exit 1
-    else
-       if [ ! -d $CVODE_DIR ]; then
-         echo "ABORT: Cannot find " $CVODE_DIR 
-         exit 1
-       fi
-    fi
-    USR_LFLAGS="${USR_LFLAGS} -L$CVODE_DIR -lsundials_fcvode -lsundials_cvode"
-    if [ "$IFMPI" == "true"  ]; then
-      USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecparallel -lsundials_nvecparallel"
-    else
-        USR_LFLAGS="${USR_LFLAGS} -lsundials_fnvecserial -lsundials_nvecserial"
-    fi
+   fi
+   if [ "$i" == "CMTNEK" ]; then
+     IFCMT=true
    fi
 done
+export IFCMT
+
+
+echo $PPLIST | grep 'CVODE' >/dev/null 
+if [ $? -eq 0 ]; then
+   IFCVODE=true 
+else
+   IFCVODE=false
+fi
 
 # AMG setup
 if [ "$IFAMG_DUMP" == "true" ]; then
@@ -355,50 +339,23 @@ else
   IFAMG=false
 fi
 
-# CMT flag
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-  IFCMT=true
-else
-  # default
-  IFCMT=false
-fi
-export IFCMT
-
 # MXM-handling
 if [ "$MXM_USER" != "" ]; then
     echo "ABORT: makenek version is too old! Update with latest from source!"
     exit 1 
 fi
-MXM_USER="mxm_std.o blas.o"
-echo $PPLIST | grep 'BGL' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o bg_aligned3.o bg_mxm44.o bg_mxm44_uneven.o bg_mxm3.o blas.o" 
-   OPT_FLAGS_STD="-qarch=450 -qtune=450"
-   OPT_FLAGS_MAG="-O5 -qarch=450d -qtune=450"
-fi
+MXM_USER="mxm_std.o"
 echo $PPLIST | grep 'BGQ' >/dev/null 
 if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o mxm_bgq.o " 
+   MXM_USER+=" mxm_bgq.o" 
    OPT_FLAGS_STD="-O3"
    OPT_FLAGS_MAG="-O3"
 fi
-echo $PPLIST | grep 'XSMM' >/dev/null 
+
+BLAS="blas.o dsygv.o ssygv.o"
+echo $PPLIST | grep 'VENDOR_BLAS' >/dev/null 
 if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o blas.o " 
-fi
-echo $PPLIST | grep 'K10_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o k10_mxm.o blas.o" 
-   USR_LFLAGS="${USR_LFLAGS} ${SOURCE_ROOT_CORE}/libk10_mxm.a"
-fi
-echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o" 
-fi
-LPACK="dsygv.o ssygv.o"
-echo $PPLIST | grep 'NO_LAPACK' >/dev/null 
-if [ $? -eq 0 ]; then
-   LPACK=" "
+   BLAS=" "
 fi
 
 # set optimization flags
@@ -443,7 +400,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
--e "s:^LPACK[ ]*=.*:LPACK=$LPACK:" \
+-e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
@@ -457,12 +414,12 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
-echo $G | grep '\-g' 1>/dev/null
-if [ $? -eq 0 ]; then
-  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
-  mv .makefile.tmp .makefile
-  echo "Activate DEBUG mode"
-fi
+#echo $G | grep '\-g' 1>/dev/null
+#if [ $? -eq 0 ]; then
+#  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
+#  mv .makefile.tmp .makefile
+#  echo "Activate DEBUG mode"
+#fi
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
   echo ""
@@ -534,7 +491,15 @@ do
 done
 
 # tweak SIZE file
-if [ -f "./SIZE" ]; then
+cat SIZE | grep 'SIZE.inc' >/dev/null
+if [ $? -ne 0 ];  then
+  cat SIZE | grep -i 'optlevel' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer optlevel,loglevel' >>SIZE
+     echo '      common /lolevels/ optlevel,loglevel' >>SIZE
+  fi
   cat SIZE | grep -i 'lxo' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -562,6 +527,13 @@ if [ -f "./SIZE" ]; then
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
+  cat SIZE | grep -i 'lcvx1' >/dev/null
+  if [ $? -ne 0 ]; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lcvx1,lcvy1,lcvz1,lcvelt' >> SIZE
+     echo '      parameter (lcvx1=1,lcvy1=1,lcvz1=1,lcvelt=1) ! cvode arrays' >> SIZE
+  fi
   cat SIZE | grep -i 'lfdm' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -575,30 +547,6 @@ if [ -f "./SIZE" ]; then
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
 
-  echo $PPLIST | grep 'CVODE' >/dev/null
-  if [ $? -eq 0 ]; then
-  cat SIZE | grep -i 'cv_maxl' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer cv_maxl' >> SIZE
-      echo '      parameter(cv_maxl = 20  ) ! Size of Krylov Space'  >>SIZE
-  fi
-  cat SIZE | grep -i 'cv_delt' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      real cv_delt' >> SIZE
-      echo '      parameter(cv_delt = 0.1 ) ! linear convergence factor ' >>SIZE
-  fi
-  cat SIZE | grep -i 'cv_sigs' >/dev/null
-  if [ $? -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      real cv_sigs' >> SIZE
-      echo '      parameter(cv_sigs = 0.01) ! Jacobian DQ perturbation scaling factor'  >>SIZE
-  fi
-  fi
   cat SIZE | grep -i 'toteq' >/dev/null
   if [ $? -ne 0 ]; then
   if [ "$IFCMT" == "true" ]; then
@@ -615,64 +563,69 @@ if [ -f "./SIZE" ]; then
       echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
   fi
   fi
-  cat SIZE | grep -i 'lelcmt' >/dev/null
-  if [ $? -ne 0 ]; then
-  if [ "$IFCMT" == "true" ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = lelt  ) ! # of cmt elements '  >>SIZE
-      echo 'c IFCMT=TRUE  then lelcmt=lelt'  >>SIZE
-  else
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer lelcmt' >> SIZE
-      echo '      parameter(lelcmt = 1  ) ! # of cmt elements '  >>SIZE
-      echo 'c IFCMT=FALSE  then lelcmt=1'  >>SIZE
-  fi
-  fi
-else
-  echo "FATAL ERROR: Cannot find SIZE"
-  exit 1
 fi
 
 # tweak .usr (actually, .f ) file
 rm -f $CASENAME.f
-cp -p $CASENAME.usr $CASENAME.f
+cp -pv $CASENAME.usr $CASENAME.f
+
 cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
       subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
       integer*8 glo_num(1)
+
       return
       end
 _ACEOF
+fi
+
+cat $CASENAME.f | grep -i "subroutine.*userqtl" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userqtl(flag)
+      logical flag
+
+      call qthermal_ig(flag)
+
+      return
+      end
+_ACEOF
+fi
+
+if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
+
+cat $CASENAME.f | grep -i "^#include.*cvode_aux.*\.h" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_aux.h"
+_ACEOF
+fi
+
+cat $CASENAME.f | grep -i "^#include.*cvode_preco.*\.h" >/dev/null
+if [ $? -ne 0 ]; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_preco_dummy.h"
+_ACEOF
+fi
+
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-cat $CASENAME.f | grep -i "subroutine.*cmt_switch" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_usrflt" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
-c automatically added by makenek
-      subroutine cmt_switch ! to set IFCMT logical flag
-      include 'SIZE'
-      include 'INPUT'
-      IFCMT=.true.
-      return
-      end
-_ACEOF
-fi
-fi
 
-cat $CASENAME.f | grep -i "subroutine.*usrflt" >/dev/null
-if [ $? -ne 0 ]; then
-cat >> $CASENAME.f << _ACEOF
-c
 c automatically added by makenek
-      subroutine usrflt(rmult) ! user defined filter
+      subroutine cmt_usrflt(rmult) ! user defined filter
       include 'SIZE'
       real rmult(lx1)
       call rone(rmult,lx1)
@@ -681,35 +634,63 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userflux" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_userflux" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
-      subroutine userflux ! user defined flux
+      subroutine cmt_userflux ! user defined flux
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
       real fluxout(lx1*lz1)
       return
       end
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userEOS" >/dev/null
+cat $CASENAME.f | grep -i "subroutine.*cmt_userEOS" >/dev/null
 if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
-c
+
 c automatically added by makenek
-      subroutine userEOS ! user defined EOS 
+      subroutine cmt_userEOS ! user defined EOS 
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
 
       return
       end
 _ACEOF
 fi
+if [ -e "cmtparticles.usrp" ]
+then
+echo 'Particles found CMT'
+else
+cat >> $CASENAME.f << _ACEOF
+c
+c automatically added by makenek
+      subroutine usr_particles_init ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_solver ! used for particles
+      return
+      end
+c
+c automatically added by makenek
+      subroutine usr_particles_io(istep) ! used for particles
+      integer istep
+      return
+      end
+
+_ACEOF
+fi
+fi
+
 
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0

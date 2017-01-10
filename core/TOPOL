@@ -1,23 +1,24 @@
-C
-C     Arrays for direct stiffness summation
-C
-      COMMON /CFACES/ NOMLIS(2,3),NMLINV(6),GROUP(6),SKPDAT(6,6)
-     $               ,EFACE(6),EFACE1(6)
 c
-      INTEGER NOMLIS,NMLINV,GROUP,SKPDAT,EFACE,EFACE1
-      COMMON /CEDGES/ ESKIP(-12:12,3),NEDG(3)    ,NCMP
-     $               ,IXCN(8),NOFFST(3,0:LDIMT1)
-     $               ,MAXMLT,NSPMAX(0:LDIMT1)
-     $               ,NGSPCN(0:LDIMT1),NGSPED(3,0:LDIMT1)
-     $               ,NUMSCN(LELT,0:LDIMT1),NUMSED(LELT,0:LDIMT1)
-     $               ,GCNNUM( 8,LELT,0:LDIMT1),LCNNUM( 8,LELT,0:LDIMT1)
-     $               ,GEDNUM(12,LELT,0:LDIMT1),LEDNUM(12,LELT,0:LDIMT1)
-     $               ,GEDTYP(12,LELT,0:LDIMT1)
-     $               ,NGCOMM(2,0:LDIMT1)
-      INTEGER ESKIP,NEDG,IXCN,MAXMLT,NSPMAX,NOFFST,NGSPCN,NGSPED
-     $       ,NUMSCN,NUMSED,GCNNUM,LCNNUM,GEDNUM,LEDNUM,GEDTYP
-     $       ,NGCOMM
-      COMMON /EDGES/ IEDGE(20),IEDGEF(2,4,6,0:1)
-     $              ,ICEDG(3,16),IEDGFC(4,6),ICFACE(4,10)
-     $              ,INDX(8),INVEDG(27)
+c     Arrays for direct stiffness summation
+c
+      integer nomlis(2,3),nmlinv(6),group(6),skpdat(6,6),eface(6)
+     $       ,eface1(6)
+      common /cfaces/ nomlis,nmlinv,group,skpdat,eface,eface1
 
+      integer eskip(-12:12,3),nedg(3),ncmp
+     $       ,ixcn(8),noffst(3,0:ldimt1)
+     $       ,maxmlt,nspmax(0:ldimt1)
+     $       ,ngspcn(0:ldimt1),ngsped(3,0:ldimt1)
+     $       ,numscn(lelt,0:ldimt1),numsed(lelt,0:ldimt1)
+     $       ,gcnnum( 8,lelt,0:ldimt1),lcnnum( 8,lelt,0:ldimt1)
+     $       ,gednum(12,lelt,0:ldimt1),lednum(12,lelt,0:ldimt1)
+     $       ,gedtyp(12,lelt,0:ldimt1)
+     $       ,ngcomm(2,0:ldimt1)
+      common /cedges/ eskip,nedg,ncmp,ixcn,noffst,maxmlt,nspmax
+     $               ,ngspcn,ngsped,numscn,numsed,gcnnum,lcnnum
+     $               ,gednum,lednum,gedtyp,ngcomm
+
+      integer iedge(20),iedgef(2,4,6,0:1)
+     $       ,icedg(3,16),iedgfc(4,6),icface(4,10)
+     $       ,indx(8),invedg(27)
+      common /edges/ iedge,iedgef,icedg,iedgfc,icface,indx,invedg

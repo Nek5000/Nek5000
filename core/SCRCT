@@ -16,28 +16,34 @@ C
 C
 C     ring pass arrays
 C
-      COMMON /SCRMG/ RMXS(LELT),RMAX(LELT)
-     $              ,XCG(LELT),YCG(LELT),ZCG(LELT)
-     $              ,XGS(LELT),YGS(LELT),ZGS(LELT)
-     $              ,XML(3,3,LZL,LELT),XMS(3,3,LZL,LELT)
-     $              ,YML(3,3,LZL,LELT),YMS(3,3,LZL,LELT)
-     $              ,ZML(3,3,LZL,LELT),ZMS(3,3,LZL,LELT)
-      COMMON /SCREV/ SIDE(4,6,LELT),SIDES(4,6,LELT)
-      COMMON /CTMP1/ FLAG(3,3,LZL,LELT),TMP2(3,3,LZL,LELT)
-     $              ,LMULT(3,3,LZL,LELT),BCS(5,6,LELT)
-     $              ,XYZ(3,8,LELT)
-      REAL           LMULT
-C
-C     Nested dissection arrays
-C
-      COMMON /SCRVH/ CBCS(6,LELT)
-      COMMON /SCRCH/ IBRNCH(LELT),NBRNCH(LELT)
-     $              ,LIST(LELT),LIST1(LELT) ,LIST2(LELT)
-     $              ,IFCNST(6,LELT)
-C
-      DIMENSION XYZL(3,8,LELT),CG(3,LELT)
-      EQUIVALENCE (XYZL,XMS)
-      EQUIVALENCE (CG,XGS)
-      CHARACTER*3    CBCS
-      LOGICAL        IFCNST
-C
+      real rmxs(lelt),rmax(lelt)
+     $    ,xcg(lelt),ycg(lelt),zcg(lelt)
+     $    ,xgs(lelt),ygs(lelt),zgs(lelt)
+     $    ,xml(3,3,lzl,lelt),xms(3,3,lzl,lelt)
+     $    ,yml(3,3,lzl,lelt),yms(3,3,lzl,lelt)
+     $    ,zml(3,3,lzl,lelt),zms(3,3,lzl,lelt)
+      common /scrmg/ rmxs,rmax,xcg,ycg,zcg,xgs,ygs,zgs,xml,xms,yml,yms
+     $              ,zml,zms   
+
+      real           side(4,6,lelt),sides(4,6,lelt)
+      common /screv/ side          ,sides
+
+      real flag(3,3,lzl,lelt),tmp2(3,3,lzl,lelt)
+     $    ,lmult(3,3,lzl,lelt),bcs(5,6,lelt)
+     $    ,xyz(3,8,lelt)
+      common /ctmp1/ flag,tmp2,lmult,bcs,xyz
+
+c
+c     nested dissection arrays
+c
+      character*3    cbcs(6,lelt)
+      common /scrvh/ cbcs
+
+      integer ibrnch(lelt), nbrnch(lelt), list(lelt), list1(lelt)
+     $       ,list2(lelt)
+      logical ifcnst(6,lelt)
+      common /scrch/ ibrnch, nbrnch, list, list1, list2, ifcnst
+
+      real      xyzl(3,8,lelt),cg(3,lelt)
+      equivalence (xyzl,xms)
+      equivalence (cg,xgs)
