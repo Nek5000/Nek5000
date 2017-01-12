@@ -12,7 +12,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  XSMM        use libxsmm for mxm"
   echo "  CVODE       enable CVODE solver for scalars"
   echo "  MOAB        enable MOAB/CUBIT support (experimental)"
-  echo "  VENDOR_BLAS link against external BLAS/LAPACK"
+  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      adds underscore to exit call (for BGQ)"
   echo "  CMTNEK      enable DG compressible-flow solver"
   exit 1
@@ -589,7 +589,7 @@ cat >> $CASENAME.f << _ACEOF
 c automatically added by makenek
       subroutine userqtl
 
-      call qthermal_ig
+      call userqtl_scig
 
       return
       end

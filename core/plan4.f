@@ -6,7 +6,7 @@ c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
 c
 C     NOTE: QTL denotes the so called thermal
 c           divergence and has to be provided
-c           by userqtl. See qthermal_ig()
+c           by userqtl.
 c
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
@@ -526,15 +526,10 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine qthermal_ig
-
-C     Compute the thermal divergence QTL for an ideal one component gas 
-C
-C     QTL := div(v) = -1/rho * Drho/Dt
-c                   = 1/(rho*cp) rho*cp*DT/Dt
-C
-C     where rho*cp*DT/Dt represents the RHS of the
-C     energy equation expressed in terms of temperature.
+      subroutine userqtl_scig
+c
+c     Compute the thermal divergence QTL for an ideal single component gas 
+c     QTL := div(v) = -1/rho * Drho/Dt
 c
       include 'SIZE'
       include 'TOTAL'
@@ -610,14 +605,16 @@ c - - Assemble RHS of T-eqn
       end
 c-----------------------------------------------------------------------
       subroutine qthermal
-
+c
+c     generic qtl wrapper
+c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
       ntot = nx1*ny1*nz1*nelv
 
       call rzero(qtl,ntot)
-      call userqtl
+      call userqtl()
 
       return
       end

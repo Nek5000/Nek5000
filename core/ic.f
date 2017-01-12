@@ -2336,17 +2336,17 @@ c-----------------------------------------------------------------------
      $         ,  rdcode      ! 74+20=94
       endif
 
-#ifdef MPIIO
-      if ((nelr/np + np).gt.lelr) then
-        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
-        call exitt
-      endif
-#else
-      if (nelr.gt.lelr) then
-        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
-        call exitt
-      endif
-#endif
+c#ifdef MPIIO
+c      if ((nelr/np + np).gt.lelr) then
+c        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
+c        call exitt
+c      endif
+c#else
+c      if (nelr.gt.lelr) then
+c        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
+c        call exitt
+c      endif
+c#endif
 
       ifgtim  = .true.  ! always get time
       ifgetxr = .false.
