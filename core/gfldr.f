@@ -60,6 +60,8 @@ c
       else
         ndims = 2
       endif
+      if (ifgtim) time = timer
+
 
       if_full_pres_tmp = if_full_pres
       if (wdsizr.eq.8) if_full_pres = .true.
