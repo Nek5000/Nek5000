@@ -68,9 +68,9 @@ Consider `master` to always represent the latest code deployed to production. Du
 1. Sign up on [GibHub](https://github.com/)
 2. Fork our [project](https://github.com/Nek5000/Nek5000) on GitHub
 3. Download fork with `git clone -o myfork https://github.com/<username>/Nek5000.git ~/Nek5000`
-4. Add our repo `git remote add origin https://github.com/Nek5000/Nek5000.git`
+4. Add our repo `cd ~/Nek5000; git remote add origin https://github.com/Nek5000/Nek5000.git`
 5. Download our repo `git fetch origin`
-6. Set upstream for local develop branch `git branch --set-upstream-to origin/develop develop`
+6. Set upstream for local develop branch `git branch --set-upstream develop remotes/origin/develop`
 7. Run `~/Nek5000/bin/git-hub setup —u <your username on GitHub> --global`
 8. Add this to your [hub] section in `~/.gitconfig`:
 
