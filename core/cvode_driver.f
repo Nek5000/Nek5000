@@ -557,6 +557,8 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
 
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
 
+      ifield = 1
+      call vprops
       do ifield=2,nfield
          if (ifcvfld(ifield)) call vprops
       enddo  

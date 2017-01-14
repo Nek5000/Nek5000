@@ -574,7 +574,7 @@ c - - Assemble RHS of T-eqn
          call rone(w1,ntot)
          call cmult(w1,dd,ntot)
 
-         call invcol3(w2,vtrans(1,1,1,1,2),vtrans(1,1,1,1,1),ntot)
+         call invcol3(w2,vtrans(1,1,1,1,2),vtrans,ntot)
          call invcol2(w1,w2,ntot)
 
          call cadd(w1,1.0,ntot)
