@@ -8,6 +8,9 @@ c
       include 'GEOM'
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+      common /intp/   tol
+      common /intp_h/ ih_intp
+
 
       tol = tolin
       if (tolin.lt.0) tol = 1e-13 ! default tolerance 
@@ -30,25 +33,26 @@ c
 c-----------------------------------------------------------------------
       subroutine intp_do(fieldout,fieldin,nfld,xp,yp,zp,n,ifpts)
 c
-c wrapper to interpolate input field at given points
+c wrapper to interpolate input fields at given points
 c
-c in:
-c fieldin   ... source field(s)
+c fieldout  ... output field(s) (:,1:nfld)
+c fieldin   ... source field(s) (:,1:nfld)
 c nfld      ... number of fields in fieldin
 c xp,yp,zp  ... interpolation xp(n),yp(n),zp(n)
 c n         ... dim of xp,yp,zp
 c ifpts     ... find interpolation points
-c ih        ... interpolation handle
-c
-c out:
-c fieldout  ... target (interpolated) field(s) (:,1:nfld)
 c
       include 'SIZE'
 
+      common /intp/   tol
+      common /intp_h/ ih_intp
+
       real    fieldin(*),fieldout(*)
       real    xp(*),yp(*),zp(*)
+      logical ifpts
 
-      real    dist(lpts) ! squared distance
+      parameter (lpts=100000)
+      real    dist(lpts)
       real    rst(lpts*ldim)
       common /intp_r/ rst,dist
 
@@ -56,7 +60,8 @@ c
       common /intp_i/ rcode,elid,proc
 
       integer nn(2)
-      logical ifot,ifpts
+      logical ifot
+
 
       ifot = .false.
 
@@ -64,7 +69,7 @@ c
 
       if(n.gt.lpts) then
         write(6,*)
-     &   'ABORT: intpts() n>lpts, increase lelt in SIZE', n, lpts
+     &   'ABORT: n>lpts, increase lelt in intp_do', n, lpts
         call exitt
       endif
 
@@ -83,7 +88,7 @@ c
         do in=1,n
            ! check return code
            if(rcode(in).eq.1) then
-             if(dist(in).gt.1e-12) then
+             if(dist(in).gt.10*tol) then
                nfail = nfail + 1
                if (nfail.le.5) write(6,'(a,1p4e15.7)')
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
@@ -128,6 +133,9 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine intp_free()
+
+      common /intp_h/ ih_intp
+
 
       call findpts_free(ih_intp)
 
