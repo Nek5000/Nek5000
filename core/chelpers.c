@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 #include "name.h"
 
 #define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
