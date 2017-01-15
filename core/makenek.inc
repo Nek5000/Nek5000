@@ -14,6 +14,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  MOAB        enable MOAB/CUBIT support (experimental)"
   echo "  VENDOR_BLAS link against external BLAS/LAPACK"
   echo "  EXTBAR      adds underscore to exit call (for BGQ)"
+  echo "  NEKNEK      enable overlapping mesh implementation"
   echo "  CMTNEK      enable DG compressible-flow solver"
   exit 1
 fi
