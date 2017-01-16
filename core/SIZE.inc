@@ -91,6 +91,9 @@ c
       parameter(lcvy1=lcvx1)
       parameter(lcvz1=1 + (ldim-2)*(lcvx1-1))
 
+      integer lpart
+      parameter (lpart=lhis)
+
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel
 
