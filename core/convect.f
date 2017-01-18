@@ -65,7 +65,11 @@ c-----------------------------------------------------------------------
          n=nx1*ny1*nz1*nelv
          call rone(hmsk,n)          ! TEST: TURN OFF MASK
          call set_binv (bmnv, hmsk,n) ! Store binvm1*(hyperbolic mask)
-         call set_bdivw(bdivw,hmsk,n) ! Store Bdivw *(hyperbolic mask)
+         if(ifmvbd) then
+            call set_bdivw(bdivw,hmsk,n) ! Store Bdivw *(hyperbolic mask)
+         else
+            call rzero(bdivw,n*lorder)
+         endif
          call set_bmass(bmass,hmsk,n) ! Store binvm1*(hyperbolic mask)
 
       else
