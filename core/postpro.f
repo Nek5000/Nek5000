@@ -1696,7 +1696,7 @@ c
         goto 101
  100    ierr = 1
  101  endif
-      call byte_open_mpi(geofld,igh,ierr)
+      call byte_open_mpi(geofld,igh,.TRUE.,ierr)
       call err_chk(ierr,' Cannot open geometry file!$')
 
       ierr = 0
@@ -1738,7 +1738,7 @@ c
       call load_fld(infld)
       call chcopy(rdcode_save,rdcode,10)
       ! create new fld file
-      call byte_open_mpi(outfld,ifh,ierr)
+      call byte_open_mpi(outfld,ifh,.FALSE.,ierr)
       call err_chk(ierr,' Cannot open new fld file, g2gi!$')
       if(indx2(rdcode,10,'X',1).le.0) then
         rdcode1(1) = 'X'

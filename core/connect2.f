@@ -2174,7 +2174,7 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine bin_rd1(ifbswap)  ! read mesh, curve, and bc info
+      subroutine bin_rd1(ifbswap)  ! .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
@@ -2200,9 +2200,29 @@ c
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
+#ifdef MPIIO
+      pid0r = nid
+      call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
+      call err_chk(ierr,' Cannot open .re2 file!$')
+
       if (nio.eq.0) write(6,*)    '  reading mesh '
-      call bin_rd1_mesh  (ifbswap)   ! version 1 of binary reader
-      if (nio.eq.0) write(6,*) '  reading curved sides '
+      call readp_re2_mesh(ifbswap)
+
+      if (nio.eq.0) write(6,*)    '  reading curved sides '
+      call readp_re2_curve(ifbswap)
+
+      do ifield = ibc,nfldt
+         if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
+         call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
+      enddo
+
+      call byte_close_mpi(fh_re2,ierr)
+      call crystal_free  (cr_re2) 
+#else
+      if (nio.eq.0) write(6,*)    '  reading mesh '
+      call bin_rd1_mesh  (ifbswap)
+
+      if (nio.eq.0) write(6,*)    '  reading curved sides '
       call bin_rd1_curve (ifbswap)
 
       do ifield = ibc,nfldt
@@ -2210,14 +2230,14 @@ c
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
-      call nekgsync
-      ierr=0
-      if(nid.eq.0) then
-        call byte_close(ierr)
-        write(6,*) 'done :: read .re2 file'
-        write(6,*) ' '
-      endif
-      call err_chk(ierr,'Error closing re2 file. Abort $')
+      call byte_close(ierr)
+#endif
+
+      call err_chk(ierr,'Error closing re2 file!$')
+      etime_t = dnekclock_sync() - etime1
+      if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
+     &                   'done :: read .re2 file   ',
+     &                   etime_t, ' sec'
 
       return
       end
@@ -2228,6 +2248,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       logical ifbswap
 
+c      integer e,eg,buf(0:49)
       integer e,eg,buf(0:49)
 
       nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
@@ -2787,5 +2808,290 @@ c
    80 format(a132)
       return
 
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_mesh(ifbswap) ! version 2 of .re2 reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=1+ldim*(2**ldim))
+
+      real*4          bufr(2*lrs,lelt)
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,lelt)
+      common /vrthov/ vr
+      integer         vi  (2    ,lelt)
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+
+
+      ! set initial offset
+      re2off_b = 84 ! hdr + endian
+
+      ! read coordinates from file
+      nrg      = nelgt
+      nr       = nelt
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+
+      ! pack buffer
+      do i = 1,nr
+         ielg    = irankoff + i
+         vi(1,i) = ielg
+         vi(2,i) = gllnid(ielg)
+
+         if(wdsizi.eq.8) then  
+           call copy  (vr(1,i),bufr(1,i),lrs)
+         else
+           jj = (i-1)*lrs + 1
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+      call crystal_setup(cr_re2,nekcomm,np)
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(2,l)
+      n    = nr
+      nmax = lelt ! max size of receive buffer
+      key  = 2    ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,2,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.eq.nelt) then
+         do i = 1,n
+            jj = (i-1)*lrs + 1
+            if(wdsizi.eq.8) then  
+              call copy  (bufr(1 ,i),vr(1,i),lrs)
+            else
+              call copy84(bufr(jj,1),vr(1,i),lrs)
+            endif
+
+            iel = gllel(vi(1,i)) 
+            call buf_to_xyz(bufr(jj,1),iel,ifbswap,ierr)
+         enddo
+      else
+         ierr = 1
+      endif
+      call err_chk(ierr,'Error reading .re2 mesh$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_curve(ifbswap)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=2+1+5) !eg+iside+ccurve+curve(6,:,:) !only 5 in rea
+
+      real*4          bufr(2*lrs,12*(lelt+1))
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,12*(lelt+1))
+      common /vrthov/ vr
+      integer         vi  (1    ,12*(lelt+1))
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+
+
+      ! read total number of curved sides
+      call byte_set_view(re2off_b,fh_re2)
+      nread4 = wdsizi/4
+      if(wdsizi.eq.8) then
+        call byte_read_mpi(nrg ,nread4,ierr)
+        if (ifbswap) call byte_reverse8(nrg ,2,ierr)
+      else
+        call byte_read_mpi(nrg4,nread4,ierr)
+        if (ifbswap) call byte_reverse (nrg4,1,ierr)
+        nrg = nrg4
+      endif
+      re2off_b = re2off_b + 4*nread4
+ 
+      ! read curved side data from file
+      nr = nrg/np
+      do i = 0,mod(nrg,np)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+
+      ! pack buffer
+      do i = 1,nr
+         if(wdsizi.eq.8) then
+           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4-2,ierr)
+           call copyi4(ielg,bufr(1,1),1)  !1,2
+         else
+           jj = (i-1)*lrs + 1
+           if (ifbswap) call byte_reverse(bufr(jj,1),nwds4-1,ierr) ! last is char
+           ielg = bufr(1,1)
+         endif
+
+         vi(1,i) = gllnid(ielg)
+
+         if(wdsizi.eq.8) then
+           call copy  (vr(1,i),bufr(1 ,i),lrs)
+         else
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(key,l)
+      n    = nr
+      nmax = 12*lelt ! max size of receive buffer
+      key  = 1       ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,1,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.le.nmax) then
+         do i = 1,n
+            jj = (i-1)*lrs + 1
+            if(wdsizi.eq.8) then  
+              call copy  (bufr(1 ,i),vr(1,i),lxyz)
+            else
+              call copy84(bufr(jj,1),vr(1,i),lxyz)
+            endif
+
+            call buf_to_curve(bufr(1,i))
+         enddo
+      else
+         ierr = 1
+      endif
+      call err_chk(ierr,'Error reading .re2 curved data$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_bc(cbl,bl,ifbswap)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3  cbl(  6,lelt)
+      real         bl (5,6,lelt)
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=2+1+5) ! eg + iside + cbc + bc(5,:,:)
+
+      real*4          bufr(2*lrs,12*(lelt+1))
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,12*(lelt+1))
+      common /vrthov/ vr
+      integer         vi  (1    ,12*(lelt+1))
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+
+
+      do iel=1,nelt   ! fill up cbc w/ default
+      do k=1,6
+         cbl(k,iel) = 'E  '
+      enddo
+      enddo
+
+      ! read total number of BCs
+      call byte_set_view(re2off_b,fh_re2)
+      nread4 = wdsizi/4
+      if(wdsizi.eq.8) then
+        call byte_read_mpi(nrg,nread4,ierr)
+        if (ifbswap) call byte_reverse8(nrg ,2,ierr)
+      else
+        call byte_read_mpi(nrg4,nread4,ierr)
+        if (ifbswap) call byte_reverse (nrg4,1,ierr)
+        nrg = nrg4
+      endif
+      re2off_b = re2off_b + 4*nread4
+ 
+      ! read curved side data from file
+      nr = nrg/np
+      do i = 0,mod(nrg,np)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+
+      ! pack buffer
+      do i = 1,nr
+         if(wdsizi.eq.8) then
+           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4-2,ierr)
+           call copyi4(ielg,bufr(1,1),1)  !1,2
+         else
+           jj = (i-1)*lrs + 1
+           if (ifbswap) call byte_reverse(bufr(jj,1),nwds4-1,ierr) ! last is char
+           ielg = bufr(1,1)
+         endif
+
+         vi(1,i) = gllnid(ielg)
+
+         if(wdsizi.eq.8) then
+           call copy  (vr(1,i),bufr(1 ,i),lrs)
+         else
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(key,l)
+      n    = nr
+      nmax = 6*lelt ! max size of receive buffer
+      key  = 1      ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,1,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.le.nmax) then
+         do i = 1,n
+            jj = (i-1)*lrs + 1
+            if(wdsizi.eq.8) then  
+              call copy  (bufr(1 ,i),vr(1,i),lxyz)
+            else
+              call copy84(bufr(jj,1),vr(1,i),lxyz)
+            endif
+
+            call buf_to_bc(cbl,bl,bufr(1,i))
+         enddo
+      else
+         ierr = 1
+      endif
+
+      call err_chk(ierr,'Error reading .re2 boundary data$')
+
+      return
       end
 c-----------------------------------------------------------------------

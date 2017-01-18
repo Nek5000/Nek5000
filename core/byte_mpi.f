@@ -8,7 +8,7 @@
       return
       end
 C--------------------------------------------------------------------------
-      subroutine byte_open_mpi(fname,mpi_fh,ierr)
+      subroutine byte_open_mpi(fname,mpi_fh,ifro,ierr)
 
       include 'SIZE'
       include 'RESTART'
@@ -17,11 +17,16 @@ C--------------------------------------------------------------------------
       include 'mpif.h'
 
       character*132 fname
+      logical ifro 
+
+      imode = MPI_MODE_WRONLY+MPI_MODE_CREATE
+      if(ifro) then
+        imode = MPI_MODE_RDONLY 
+      endif
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-c        write(*,*) nid, 'call MPI_file_open',fname
-        call MPI_file_open(nekcomm_io,fname,
-     &                     MPI_MODE_RDWR+MPI_MODE_CREATE,
+        write(*,*) nid, 'call MPI_file_open',fname
+        call MPI_file_open(nekcomm_io,fname,imode,
      &                     MPI_INFO_NULL,mpi_fh,ierr)
         if(ierr.ne.0) then
           write(6,*) 'ABORT: Error in byte_open_mpi ', ierr
