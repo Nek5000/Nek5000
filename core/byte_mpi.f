@@ -25,7 +25,7 @@ C--------------------------------------------------------------------------
       endif
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        write(*,*) nid, 'call MPI_file_open',fname
+c        write(*,*) nid, 'call MPI_file_open',fname
         call MPI_file_open(nekcomm_io,fname,imode,
      &                     MPI_INFO_NULL,mpi_fh,ierr)
 c        if(ierr.ne.0) then
