@@ -1,0 +1,802 @@
+c-----------------------------------------------------------------------
+      subroutine bin_rd1(ifbswap)  ! .re2 reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+      include 'CTIMER'
+
+      logical ifbswap
+
+  
+      etime1 = dnekclock()
+
+                  ibc = 2
+      if (ifflow) ibc = 1
+
+                  nfldt = 1
+      if (ifheat) nfldt = 2+npscal
+      if (ifmhd ) nfldt = 2+npscal+1
+
+c
+c     If p32 = 0.1, there will be no bcs read in
+c
+      if (param(32).gt.0) nfldt = ibc + param(32)-1
+
+      lcbc=18*lelt*(ldimt1 + 1)
+      call blank(cbc,lcbc)
+
+c#ifdef MPIIO
+c      pid0r = nid
+c      call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
+c      call err_chk(ierr,' Cannot open .re2 file!$')
+c
+c      if (nio.eq.0) write(6,*)    '  reading mesh '
+c      call readp_re2_mesh(ifbswap)
+c
+c      if (nio.eq.0) write(6,*)    '  reading curved sides '
+c      call readp_re2_curve(ifbswap)
+c
+c      do ifield = ibc,nfldt
+c         if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
+c         call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
+c      enddo
+c
+c      call byte_close_mpi(fh_re2,ierr)
+c      call crystal_free  (cr_re2) 
+c#else
+
+      pid0r = nid
+      call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
+      call err_chk(ierr,' Cannot open .re2 file!$')
+
+      if (nio.eq.0) write(6,*)    '  reading mesh '
+c      call bin_rd1_mesh  (ifbswap)
+      call readp_re2_mesh(ifbswap)
+
+      if (nio.eq.0) write(6,*)    '  reading curved sides '
+      call readp_re2_curve(ifbswap)
+c      call bin_rd1_curve (ifbswap)
+
+      do ifield = ibc,nfldt
+         if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
+c         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
+         call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
+      enddo
+c#endif
+
+      call byte_close(ierr)
+      call err_chk(ierr,'Error closing re2 file!$')
+      etime_t = dnekclock_sync() - etime1
+      if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
+     &                   'done :: read .re2 file   ',
+     &                   etime_t, ' sec'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_mesh(ifbswap) ! version 2 of .re2 reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=1+ldim*(2**ldim))
+
+      real*4          bufr(2*lrs,lelt)
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,lelt)
+      common /vrthov/ vr
+      integer         vi  (2    ,lelt)
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+
+
+      ! set initial offset
+      re2off_b = 84 ! hdr + endian
+
+      ! read coordinates from file
+      nrg      = nelgt
+      nr       = nelt
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+
+      ! pack buffer
+      do i = 1,nr
+         ielg    = irankoff + i
+         vi(1,i) = ielg
+         vi(2,i) = gllnid(ielg)
+
+         if(wdsizi.eq.8) then  
+           call copy  (vr(1,i),bufr(1,i),lrs)
+c           write(10+nid,*) (vr(j,i),j=1,lrs) 
+         else
+           jj = (i-1)*lrs + 1
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+      call crystal_setup(cr_re2,nekcomm,np)
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(2,l)
+      n    = nr
+      nmax = lelt ! max size of receive buffer
+      key  = 2    ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,2,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.eq.nelt) then
+         do i = 1,n
+            jj = (i-1)*lrs + 1
+            if(wdsizi.eq.8) then  
+              call copy  (bufr(1 ,i),vr(1,i),lrs)
+            else
+              call copy84(bufr(jj,1),vr(1,i),lrs)
+            endif
+
+            iel = gllel(vi(1,i)) 
+            call buf_to_xyz(bufr(1,i),iel,ifbswap,ierr)
+c            write(10+nid,*) (xc(j,i),j=1,lrs) 
+         enddo
+      else
+         ierr = 1
+      endif
+      call err_chk(ierr,'Error reading .re2 mesh$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_curve(ifbswap)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=2+1+5) !eg+iside+curve(6,:,:)+ccurve !only 5 in rea
+
+      real*4          bufr(2*lrs,12*(lelt+1))
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,12*(lelt+1))
+      common /vrthov/ vr
+      integer         vi  (1    ,12*(lelt+1))
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+      integer*4 nrg4(2)
+ 
+
+      nread4 = wdsizi/4
+      call byte_set_view(re2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nread4,-1,fh_re2,ierr)
+      if (wdsizi.eq.8) then
+         if (ifbswap) call byte_reverse8(nrg4,2,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if (ifbswap) call byte_reverse (nrg4,1,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nread4
+
+      write(6,*) 'cur ', nid,nrg
+      return
+ 
+      ! read curved side data from file
+      nr = nrg/np
+      do i = 0,mod(nrg,np)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+
+      ! pack buffer
+      do i = 1,nr
+         if(wdsizi.eq.8) then
+           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4-2,ierr)
+           call copyi4(ielg,bufr(1,i),1)
+         else
+           jj = (i-1)*lrs + 1
+           if (ifbswap) call byte_reverse(bufr(jj,1),nwds4-1,ierr)
+           ielg = bufr(jj,1)
+         endif
+
+         vi(1,i) = gllnid(ielg)
+
+         if(wdsizi.eq.8) then
+           call copy  (vr(1,i),bufr(1 ,i),lrs)
+         else
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(key,l)
+      n    = nr
+      nmax = 12*lelt ! max size of receive buffer
+      key  = 1       ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,1,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.le.nmax) then
+         do i = 1,n
+            jj = (i-1)*lrs + 1
+            if(wdsizi.eq.8) then  
+              call copy  (bufr(1 ,i),vr(1,i),lrs)
+            else
+              call copy84(bufr(jj,1),vr(1,i),lrs)
+            endif
+
+            call buf_to_curve(bufr(1,i))
+         enddo
+      else
+         ierr = 1
+      endif
+      call err_chk(ierr,'Error reading .re2 curved data$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readp_re2_bc(cbl,bl,ifbswap)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3  cbl(  6,lelt)
+      real         bl (5,6,lelt)
+      logical ifbswap
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs=2+1+5) ! eg + iside + cbc + bc(5,:,:)
+
+      real*4          bufr(2*lrs,12*(lelt+1))
+      common /scrns/  bufr
+
+      real            vr  (lrs  ,12*(lelt+1))
+      common /vrthov/ vr
+      integer         vi  (1    ,12*(lelt+1))
+      common /ctmp1/  vi
+
+      integer*8 ioff_b,dtmp8
+      integer*8 nrg
+      integer*4 nrg4(2)
+      
+
+      do iel=1,nelt   ! fill up cbc w/ default
+      do k=1,6
+         cbl(k,iel) = 'E  '
+      enddo
+      enddo
+
+      ! read total number of BCs
+      nread4 = wdsizi/4
+      call byte_set_view(re2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nread4,-1,fh_re2,ierr)
+      if (wdsizi.eq.8) then
+         if (ifbswap) call byte_reverse8(nrg4,2,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if (ifbswap) call byte_reverse (nrg4,1,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nread4
+      if (ierr.gt.0) goto 100
+
+c      write(6,*) 'bc ', nid,re2off_b, nrg,nread4
+c      call exitt
+
+      ! read curved side data from file
+      nr = nrg/np
+      do i = 0,mod(nrg,np)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      irankoff = igl_running_sum(nr) - nr
+      dtmp8    = irankoff
+      ioff_b   = re2off_b + dtmp8*lrs*wdsizi
+      nwds4    = lrs*wdsizi/4
+      nread4   = nr*nwds4
+
+      call byte_set_view(ioff_b,fh_re2)
+      call byte_read_mpi(bufr,nread4,-1,fh_re2,ierr)
+      re2off_b = re2off_b + 4*nrg*nwds4
+      if (ierr.gt.0) goto 100
+
+      ! pack buffer
+      do i = 1,nr
+         if(wdsizi.eq.8) then
+           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4-2,ierr)
+           call copyi4(ielg,bufr(1,i),1)  !1,2
+         else
+           jj = (i-1)*lrs + 1
+           if (ifbswap) call byte_reverse(bufr(jj,1),nwds4-1,ierr) ! last is char
+           ielg = bufr(jj,1)
+         endif
+         if(ielg.le.0 .or. ielg.gt.nelgt) goto 100
+
+         vi(1,i) = gllnid(ielg)
+c         write(6,*) nid,ielg,vi(1,i)
+
+         if(wdsizi.eq.8) then
+           call copy  (vr(1,i),bufr(1 ,i),lrs)
+         else
+           call copy48(vr(1,i),bufr(jj,1),lrs)
+         endif
+      enddo
+
+
+
+      ! crystal route vr(k=1:nr,l=1:n) to rank vi(key,l)
+      n    = nr
+      nmax = 6*lelt ! max size of receive buffer
+      key  = 1      ! rank id is in vi(:,2)
+      call crystal_tuple_transfer(cr_re2,n,nmax,vi,1,vl,0,vr,lrs,key)
+
+      ! unpack buffer
+      if (n.gt.nmax) goto 100
+      do i = 1,n
+         jj = (i-1)*lrs + 1
+         if(wdsizi.eq.8) then  
+           call copy  (bufr(1 ,i),vr(1,i),lrs)
+         else
+           call copy84(bufr(jj,1),vr(1,i),lrs)
+         endif
+
+         call buf_to_bc(cbl,bl,bufr(1,i))
+c         write(6,*)
+      enddo
+
+c      call exitt
+
+      return
+
+ 100  ierr = 1
+      call err_chk(ierr,'Error reading .re2 boundary data$')
+
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_xyz(buf,e,ifbswap,ierr)! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      logical ifbswap
+
+c      integer e,eg,buf(0:49)
+      integer e,eg,buf(0:49)
+
+      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+
+      if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
+          call byte_reverse8(buf,nwds,ierr)
+      elseif (ifbswap.and.ierr.eq.0.and.wdsizi.eq.4) then
+          call byte_reverse (buf,nwds,ierr)
+      endif
+      if(ierr.ne.0) return
+
+      if(wdsizi.eq.8) then
+         call copyi4(igroup(e),buf(0),1) !0-1
+         if (ndim.eq.3) then
+            call copy  (xc(1,e),buf( 2),8) !2 --17
+            call copy  (yc(1,e),buf(18),8) !18--33
+            call copy  (zc(1,e),buf(34),8) !34--49
+         else
+            call copy  (xc(1,e),buf( 2),4) !2 --9
+            call copy  (yc(1,e),buf(10),4) !10--17
+          endif
+      else
+         igroup(e) = buf(0)
+         if (if3d) then
+            call copy4r(xc(1,e),buf( 1),8)
+            call copy4r(yc(1,e),buf( 9),8)
+            call copy4r(zc(1,e),buf(17),8)
+         else
+            call copy4r(xc(1,e),buf( 1),4)
+            call copy4r(yc(1,e),buf( 5),4)
+         endif
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_curve(buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+        e  = gllel(eg)
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  ( curve(1,f,e),buf(5) ,5) !5--14
+        call chcopy(ccurve(  f,e),buf(15),1)!15
+      else
+        eg = buf(1)
+        e  = gllel(eg)
+        f  = buf(2)
+
+        call copy4r( curve(1,f,e),buf(3),5)
+        call chcopy(ccurve(f,e)  ,buf(8),1)
+      endif
+
+c     write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
+c   1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc(cbl,bl,buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(6,lelt)
+      real         bl(5,6,lelt)
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+        e  = gllel(eg)
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  (bl(1,f,e),buf(5),5) !5--14
+        call chcopy(cbl( f,e),buf(15),3)!15-16
+
+        if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+
+      else
+        eg = buf(1)
+        e  = gllel(eg)
+        f  = buf(2)
+
+        call copy4r ( bl(1,f,e),buf(3),5)
+        call chcopy (cbl(  f,e),buf(8),3)
+
+        if (nelgt.ge.1 000 000.and.cbl(f,e).eq.'P  ') 
+     $     bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+      endif
+
+
+
+c     write(6,1) eg,e,f,cbl(f,e),' CBC',nid
+c  1  format(2i8,i4,2x,a3,a4,i8)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bin_rd1_mesh(ifbswap)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      logical ifbswap
+
+      integer e,eg,buf(55)
+
+      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      len  = 4*nwds                          ! 4 bytes / wd
+
+c dummy read for testing
+      if(nid.eq.0) then
+        do eg=1,nelgt 
+           call byte_read  (buf,nwds,ierr)
+        enddo
+      endif
+      return
+
+      if (nwds.gt.55.or.isize.gt.4) then
+         write(6,*) nid,' Error in bin_rd1_mesh: buf size',nwds,isize
+         call exitt
+      endif
+
+      call nekgsync()
+
+      niop = 10
+      do k=1,8
+         if (nelgt/niop .lt. 100) goto 10
+         niop = niop*10
+      enddo
+   10 continue
+
+      ierr  = 0
+      ierr2 = 0
+      len1  = 4
+      do eg=1,nelgt             ! sync NOT needed here
+
+         mid = gllnid(eg)
+         e   = gllel (eg)
+#ifdef DEBUG
+         if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
+#endif
+         if (mid.ne.nid.and.nid.eq.0) then              ! read & send
+
+            if(ierr.eq.0) then
+              call byte_read  (buf,nwds,ierr)
+              call csend(e,ierr,len1,mid,0)
+              if(ierr.eq.0) call csend(e,buf,len,mid,0)
+            else
+              call csend(e,ierr,len1,mid,0)
+            endif
+
+         elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
+
+            call crecv      (e,ierr,len1)
+            if(ierr.eq.0) then
+              call crecv      (e,buf,len)
+              call buf_to_xyz (buf,e,ifbswap,ierr2)
+            endif
+ 
+         elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
+
+            if(ierr.eq.0) then
+              call byte_read  (buf,nwds,ierr)
+              call buf_to_xyz (buf,e,ifbswap,ierr2)
+            endif
+         endif
+
+      enddo
+      ierr = ierr + ierr2
+      call err_chk(ierr,'Error reading .re2 mesh. Abort. $')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bin_rd1_curve (ifbswap) ! v. 1 of curve side reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      logical ifbswap
+
+      integer e,eg,buf(55)
+      real rcurve
+
+      nwds = (2 + 1 + 5)*(wdsizi/4) !eg+iside+ccurve+curve(6,:,:) !only 5 in rea
+      len  = 4*nwds      ! 4 bytes / wd
+
+      if (nwds.gt.55.or.isize.gt.4) then
+         write(6,*)nid,' Error in bin_rd1_curve: buf size',nwds,isize
+         call exitt
+      endif
+
+      call nekgsync()
+
+      ierr = 0
+      len1 = 4
+      if (nid.eq.0) then  ! read & send/process
+
+         if(wdsizi.eq.8) then
+           call byte_read(rcurve,2,ierr)
+           if (ifbswap) call byte_reverse8(rcurve,2,ierr)
+           ncurve = rcurve
+         else
+           call byte_read(ncurve,1,ierr)
+           if (ifbswap) call byte_reverse(ncurve,1,ierr)
+         endif
+
+         do k=1,ncurve
+           if(ierr.eq.0) then
+              call byte_read(buf,nwds,ierr)
+              if(wdsizi.eq.8) then
+                if(ifbswap) call byte_reverse8(buf,nwds-2,ierr)
+                call copyi4(eg,buf(1),1)  !1,2
+              else
+                if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+                eg  = buf(1)
+              endif
+
+              mid = gllnid(eg)
+              if (mid.eq.0.and.ierr.eq.0) then
+                 call buf_to_curve(buf)
+              else
+                 if(ierr.eq.0) then
+                   call csend(mid,buf,len,mid,0)
+                 else
+                   goto 98
+                 endif
+              endif
+           else
+              goto 98
+           endif
+         enddo
+  98     call buf_close_out  ! notify all procs: no more data
+
+      else               ! wait for data from node 0
+
+         ncurve_mx = 12*nelt
+         do k=1,ncurve_mx+1   ! +1 to make certain we receive the close-out
+
+            call crecv(nid,buf,len)
+            if(wdsizi.eq.8) then 
+               call copyi4(ichk,buf(1),1)
+               if(ichk.eq.0) goto 99
+               call buf_to_curve(buf)
+            elseif (buf(1).eq.0) then
+               goto 99
+            else
+               call buf_to_curve(buf)
+            endif
+            
+         enddo
+   99    call buf_close_out
+
+      endif
+      call err_chk(ierr,'Error reading .re2 curved data. Abort.$')
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bin_rd1_bc (cbl,bl,ifbswap) ! v. 1 of bc reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      logical ifbswap
+
+      character*3 cbl(6,lelt)
+      real         bl(5,6,lelt)
+
+      integer e,eg,buf(55)
+      real rbc_max
+
+      nwds = (2 + 1 + 5)*(wdsizi/4)   ! eg + iside + cbc + bc(5,:,:)
+      len  = 4*nwds      ! 4 bytes / wd
+
+      if (nwds.gt.55.or.isize.gt.4) then
+         write(6,*) nid,' Error in bin_rd1_bc: buf size',nwds,isize
+         call exitt
+      endif
+
+      do e=1,nelt   ! fill up cbc w/ default
+      do k=1,6
+         cbl(k,e) = 'E  '
+      enddo
+      enddo
+
+      call nekgsync()
+      ierr=0
+      len1=4
+      if (nid.eq.0) then  ! read & send/process
+  
+         if(wdsizi.eq.8) then
+           call byte_read(rbc_max,2,ierr)
+           if (ifbswap) call byte_reverse8(rbc_max,2,ierr) ! last is char
+           nbc_max = rbc_max
+         else
+           call byte_read(nbc_max,1,ierr)
+           if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
+         endif
+
+         do k=1,nbc_max
+c           write(6,*) k,' dobc1 ',nbc_max
+            if(ierr.eq.0) then
+               call byte_read(buf,nwds,ierr)
+               if(wdsizi.eq.8) then
+                 if (ifbswap) call byte_reverse8(buf,nwds-2,ierr)
+                 call copyi4(eg,buf(1),1) !1&2 of buf
+               else
+                 if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
+                 eg  = buf(1)
+               endif
+               mid = gllnid(eg)
+c              write(6,*) k,' dobc3 ',eg,mid
+
+               if (mid.eq.0.and.ierr.eq.0) then
+                   call buf_to_bc(cbl,bl,buf)
+               else
+c                  write(6,*) mid,' sendbc1 ',eg
+                   if(ierr.eq.0) then
+                     call csend(mid,buf,len,mid,0)
+                   else
+                     goto 98
+                   endif
+c                  write(6,*) mid,' sendbc2 ',eg
+               endif
+c              write(6,*) k,' dobc2 ',nbc_max,eg
+            else
+               goto 98
+            endif
+         enddo
+c        write(6,*) mid,' bclose ',eg,nbc_max
+  98     call buf_close_outv ! notify all procs: no more data
+
+      else               ! wait for data from node 0
+
+         nbc_max = 2*ndim*nelt
+         do k=1,nbc_max+1  ! Need one extra !
+
+c           write(6,*) nid,' recvbc1',k
+            call crecv(nid,buf,len)
+c           write(6,*) nid,' recvbc2',k,buf(1)
+
+            if(wdsizi.eq.8) then 
+               call copyi4(ichk,buf(1),1)
+               if(ichk.eq.0) goto 99
+               call buf_to_bc(cbl,bl,buf)
+            elseif (buf(1).eq.0) then
+                goto 99
+            else
+                call buf_to_bc(cbl,bl,buf)
+            endif
+            
+         enddo
+   99    call buf_close_outv
+
+      endif
+
+      call err_chk(ierr,'Error reading boundary data for re2. Abort.$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_close_outv  ! this is the stupid O(P) formulation
+
+      include 'SIZE'
+      include 'PARALLEL'
+      integer*4 zero
+      real      rzero
+
+      len   = wdsizi
+      rzero = 0
+      zero  = 0
+c     write(6,*) nid,' bufclose'
+      if (nid.eq.0) then
+         do mid=1,np-1
+            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
+            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
+c           write(6,*) mid,' sendclose'
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_close_out  ! this is the stupid O(P) formulation
+
+      include 'SIZE'
+      include 'PARALLEL'
+      integer*4 zero
+      real      rzero
+
+c     len  = 4
+      len   = wdsizi
+      zero = 0
+      rzero = 0
+      if (nid.eq.0) then
+         do mid=1,np-1
+            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
+            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
+         enddo
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------

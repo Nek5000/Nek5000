@@ -47,7 +47,7 @@ byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
-readat_new.o finiparser.o iniparser.o dictionary.o
+readat_new.o readre2.o finiparser.o iniparser.o dictionary.o
 ################################################################################
 # MXM 
 MXM =  
@@ -244,6 +244,7 @@ $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/readre2.o	:$S/readre2.f;			$(F77) -c $(FL2) $< -o $@
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(S2)/step.f;	        	$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/drive1_cmt.o	:$(S2)/drive1_cmt.f;		$(F77) -c $(FL2) $< -o $@
