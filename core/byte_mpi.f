@@ -28,10 +28,10 @@ C--------------------------------------------------------------------------
         write(*,*) nid, 'call MPI_file_open',fname
         call MPI_file_open(nekcomm_io,fname,imode,
      &                     MPI_INFO_NULL,mpi_fh,ierr)
-        if(ierr.ne.0) then
-          write(6,*) 'ABORT: Error in byte_open_mpi ', ierr
-          return
-        endif
+c        if(ierr.ne.0) then
+c          write(6,*) 'ABORT: Error in byte_open_mpi ', ierr
+c          return
+c        endif
       endif
 #else
       write(6,*) 'byte_open_mpi: No MPI-IO support!'
@@ -63,10 +63,10 @@ c        write(*,*) 'byte_read_mpi', nid, iout/4
         call MPI_file_read_all(mpi_fh,buf,iout,MPI_BYTE,
      &                         MPI_STATUS_IGNORE,ierr)
 #endif
-        if(ierr.ne.0) then
-          write(6,*) 'ABORT: Error in byte_read_mpi ', ierr
-          return
-        endif
+c        if(ierr.ne.0) then
+c          write(6,*) 'ABORT: Error in byte_read_mpi ', ierr
+c          return
+c        endif
       endif
 #else
       write(6,*) 'byte_read_mpi: No MPI-IO support!'
@@ -100,10 +100,10 @@ c        write(*,*) 'byte_write', nid, iout/4
         call MPI_file_write_all(mpi_fh,buf,iout,MPI_BYTE,
      &                          MPI_STATUS_IGNORE,ierr)
 #endif
-        if(ierr.ne.0) then
-          write(6,*) 'ABORT: Error in byte_write_mpi ', ierr
-          return
-        endif
+c        if(ierr.ne.0) then
+c          write(6,*) 'ABORT: Error in byte_write_mpi ', ierr
+c          return
+c        endif
       endif
 #else
       write(6,*) 'byte_write_mpi: No MPI-IO support!'
@@ -124,10 +124,10 @@ C--------------------------------------------------------------------------
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
         call MPI_file_close(mpi_fh,ierr)
       endif
-      if(ierr.ne.0) then
-         write(6,*) 'ABORT: Error in byte_close_mpi ', ierr
-         return
-      endif
+c      if(ierr.ne.0) then
+c         write(6,*) 'ABORT: Error in byte_close_mpi ', ierr
+c         return
+c      endif
 #else
       if(nio.eq.0) write(6,*) 'byte_close_mpi: No MPI-IO support!'
       ierr=1
@@ -154,10 +154,10 @@ C--------------------------------------------------------------------------
 c         write(*,*) 'dataoffset', nid, ioff_in
          call MPI_file_set_view(mpi_fh,ioff_in,MPI_BYTE,MPI_BYTE,
      &                          'native',MPI_INFO_NULL,ierr)
-         if(ierr.ne.0) then
-           write(6,*) 'ABORT: Error in byte_set_view ', ierr
-           call exitt
-         endif
+c         if(ierr.ne.0) then
+c           write(6,*) 'ABORT: Error in byte_set_view ', ierr
+c           call exitt
+c         endif
       endif
 #endif
 
