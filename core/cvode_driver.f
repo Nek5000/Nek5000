@@ -481,14 +481,14 @@ c
 
       ntot = nx1*ny1*nz1*nelv
 
-      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nabmsh)
       call add3 (xm1,xm1_,dtmp,ntot)
 
-      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nabmsh)
       call add3 (ym1,ym1_,dtmp,ntot)
 
       if(if3d) then
-        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nab)
+        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nabmsh)
         call add3 (zm1,zm1_,dtmp,ntot)
       endif
 
@@ -638,7 +638,7 @@ c----------------------------------------------------------------------
       cv_dtlag(3) = dtlag(3)
 
       call rzero(cv_abmsh,3)
-      call setabbd (cv_abmsh,cv_dtlag,nab,1) ! why is nabmsh wrong, use nab for now
+      call setabbd (cv_abmsh,cv_dtlag,nabmsh,1)
       do i = 1,3
          cv_abmsh(i) = cv_dtNek*cv_abmsh(i) 
       enddo
