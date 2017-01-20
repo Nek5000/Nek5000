@@ -77,65 +77,55 @@ c-----------------------------------------------------------------------
 
       logical ifbswap
 
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-
       parameter(nrmax = lelt)             ! maximum number of records
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
 
-      real*4          bufr(2*lrs,nrmax)
+      integer         bufr(li-2,nrmax)
       common /scrns/  bufr
 
-      real            vr  (lrs  ,nrmax)
-      common /vrthov/ vr
-      integer         vi  (2    ,nrmax)
+      integer         vi  (li  ,nrmax)
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
 
 
-      re2off_b = 84 ! set initial offset (hdr + endian)
-
-      ! read coordinates from file
       nrg       = nelgt
       nr        = nelt
       irankoff  = igl_running_sum(nr) - nr
       dtmp8     = irankoff
+      re2off_b  = 84 ! set initial offset (hdr + endian)
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
-      nwds4     = lrs*wdsizi/4
-      nwds4r    = nr*nwds4
+      lrs4      = lrs*wdsizi/4
 
+      ! read coordinates from file
+      nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      re2off_b = re2off_b + 4*nrg*nwds4
+      re2off_b = re2off_b + nrg*4*lrs4
       if(ierr.gt.0) goto 100
 
       ! pack buffer
       do i = 1,nr
-         jj      = (i-1)*lrs + 1
+         jj      = (i-1)*lrs4 + 1
          ielg    = irankoff + i ! elements are stored in global order
          vi(1,i) = gllnid(ielg)
          vi(2,i) = ielg
-
-         if(wdsizi.eq.8) call copy  (vr(1,i),bufr(1 ,i),lrs)
-         if(wdsizi.eq.4) call copy48(vr(1,i),bufr(jj,1),lrs)
+         call icopy(vi(3,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-      n    = nr
-      key  = 1 
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,2,vl,0,vr,lrs,key)
+      n   = nr
+      key = 1 
+      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
       do i = 1,n
-         jj = (i-1)*lrs + 1
-         if(wdsizi.eq.8) call copy  (bufr(1 ,i),vr(1,i),lrs)
-         if(wdsizi.eq.4) call copy84(bufr(jj,1),vr(1,i),lrs)
-
          iel = gllel(vi(2,i)) 
-         call buf_to_xyz(bufr(1,i),iel,ifbswap,ierr)
-c         write(10+nid,*) (xc(j,i),j=1,lrs) 
+         call icopy     (bufr,vi(3,i),lrs4)
+         call buf_to_xyz(bufr,iel,ifbswap,ierr)
       enddo
 
       return
@@ -156,13 +146,12 @@ c-----------------------------------------------------------------------
 
       parameter(nrmax = 12*lelt) ! maximum number of records
       parameter(lrs   = 2+1+5)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+1)
 
-      real*4          bufr(2*lrs,nrmax)
+      integer         bufr(li-1,nrmax)
       common /scrns/  bufr
 
-      real            vr  (lrs  ,nrmax)
-      common /vrthov/ vr
-      integer         vi  (1    ,nrmax)
+      integer         vi  (li  ,nrmax)
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
@@ -195,46 +184,44 @@ c-----------------------------------------------------------------------
       irankoff  = igl_running_sum(nr) - nr
       dtmp8     = irankoff
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
-      nwds4     = lrs*wdsizi/4
-      nwds4r    = nr*nwds4
+      lrs4      = lrs*wdsizi/4
 
+      nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      re2off_b = re2off_b + nrg*4*nwds4
+
+      re2off_b = re2off_b + nrg*4*lrs4
       if(ierr.gt.0) goto 100
 
       ! pack buffer
       do i = 1,nr
-         jj = (i-1)*lrs + 1
-         nwds4s = nwds4 - wdsizi/4 ! words to swap (last is char)
-         if(wdsizi.eq.8) then
-           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4s,ierr)
-           call copyi4(ielg,bufr(1,i),1)
-         else
-           if(ifbswap) call byte_reverse (bufr(jj,1),nwds4s,ierr)
-           ielg = bufr(jj,1)
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then 
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
          endif
+
+         ielg = bufr(jj,1)
+         if(wdsizi.eq.8) call copyi4(ielg,bufr(jj,1),1)
 
          if(ielg.le.0 .or. ielg.gt.nelgt) goto 100
          vi(1,i) = gllnid(ielg)
 
-         if(wdsizi.eq.8) call copy  (vr(1,i),bufr(1 ,i),lrs)
-         if(wdsizi.eq.4) call copy48(vr(1,i),bufr(jj,1),lrs)
+         call icopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,1,vl,0,vr,lrs,key)
+      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
       do i = 1,n
-         jj = (i-1)*lrs + 1
-         if(wdsizi.eq.8) call copy  (bufr(1 ,i),vr(1,i),lrs)
-         if(wdsizi.eq.4) call copy84(bufr(jj,1),vr(1,i),lrs)
-
-         call buf_to_curve(bufr(1,i))
+         call icopy       (bufr,vi(2,i),lrs4)
+         call buf_to_curve(bufr)
       enddo
 
       return
@@ -253,17 +240,14 @@ c-----------------------------------------------------------------------
       real         bl (5,6,lelt)
       logical      ifbswap
 
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-
       parameter(nrmax = 6*lelt) ! maximum number of records
       parameter(lrs   = 2+1+5)  ! record size: eg iside bl(5) cbl
+      parameter(li    = 2*lrs+1)
 
-      real*4          bufr(2*lrs,nrmax)
+      integer         bufr(li-1,nrmax)
       common /scrns/  bufr
 
-      real            vr  (lrs  ,nrmax)
-      common /vrthov/ vr
-      integer         vi  (1    ,nrmax)
+      integer         vi  (li  ,nrmax)
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
@@ -303,46 +287,44 @@ c-----------------------------------------------------------------------
       irankoff  = igl_running_sum(nr) - nr
       dtmp8     = irankoff
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
-      nwds4     = lrs*wdsizi/4
-      nwds4r    = nr*nwds4
+      lrs4      = lrs*wdsizi/4
 
+      nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      re2off_b = re2off_b + nrg*4*nwds4
+
+      re2off_b = re2off_b + nrg*4*lrs4
       if(ierr.gt.0) goto 100
 
       ! pack buffer
       do i = 1,nr
-         jj = (i-1)*lrs + 1
-         nwds4s = nwds4 - wdsizi/4 ! words to swap (last is char)
-         if(wdsizi.eq.8) then
-           if(ifbswap) call byte_reverse8(bufr(1 ,i),nwds4s,ierr)
-           call copyi4(ielg,bufr(1,i),1)
-         else
-           if(ifbswap) call byte_reverse (bufr(jj,1),nwds4s,ierr)
-           ielg = bufr(jj,1)
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then 
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
          endif
+
+         ielg = bufr(jj,1)
+         if(wdsizi.eq.8) call copyi4(ielg,bufr(jj,1),1)
 
          if(ielg.le.0 .or. ielg.gt.nelgt) goto 100
          vi(1,i) = gllnid(ielg)
 
-         if(wdsizi.eq.8) call copy  (vr(1,i),bufr(1 ,i),lrs)
-         if(wdsizi.eq.4) call copy48(vr(1,i),bufr(jj,1),lrs)
+         call icopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,1,vl,0,vr,lrs,key)
+      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
       do i = 1,n
-         jj = (i-1)*lrs + 1
-         if(wdsizi.eq.8) call copy  (bufr(1 ,i),vr(1,i),lrs)
-         if(wdsizi.eq.4) call copy84(bufr(jj,1),vr(1,i),lrs)
-
-         call buf_to_bc(cbl,bl,bufr(1,i))
+         call icopy    (bufr,vi(2,i),lrs4)
+         call buf_to_bc(cbl,bl,bufr)
       enddo
 
       return
