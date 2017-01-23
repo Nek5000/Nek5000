@@ -29,9 +29,9 @@ c
       etime_t = dnekclock_sync()
       if(nio.eq.0) write(6,*) 'call gfldr' 
 
-c#ifndef MPIIO
-c      call exitti('ABORT: Requires MPIIO to be enabled!$',0)
-c#endif
+#ifndef MPIIO
+      call exitti('ABORT: Requires MPIIO to be enabled!$',0)
+#endif
 
       ! open source field file
       ierr = 0
