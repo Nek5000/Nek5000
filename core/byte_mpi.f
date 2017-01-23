@@ -53,14 +53,14 @@ C--------------------------------------------------------------------------
       real*4 buf(1)          ! buffer
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = 4*icount ! icount is in 4-byte words
+        iout = icount ! icount is in 4-byte words
         if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
 c        write(*,*) 'byte_read_mpi', nid, iout/4
 #ifdef MPIIO_NOCOL
-        call MPI_file_read(mpi_fh,buf,iout,MPI_BYTE,
+        call MPI_file_read(mpi_fh,buf,iout,MPI_REAL,
      &                     MPI_STATUS_IGNORE,ierr)
 #else
-        call MPI_file_read_all(mpi_fh,buf,iout,MPI_BYTE,
+        call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
      &                         MPI_STATUS_IGNORE,ierr)
 #endif
 c        if(ierr.ne.0) then
@@ -90,14 +90,14 @@ C--------------------------------------------------------------------------
       real*4 buf(1)          ! buffer
 
       if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = 4*icount ! icount is in 4-byte words
+        iout = icount ! icount is in 4-byte words
         if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
 c        write(*,*) 'byte_write', nid, iout/4
 #ifdef MPIIO_NOCOL
-        call MPI_file_write(mpi_fh,buf,iout,MPI_BYTE,
+        call MPI_file_write(mpi_fh,buf,iout,MPI_REAL,
      &                      MPI_STATUS_IGNORE,ierr)
 #else
-        call MPI_file_write_all(mpi_fh,buf,iout,MPI_BYTE,
+        call MPI_file_write_all(mpi_fh,buf,iout,MPI_REAL,
      &                          MPI_STATUS_IGNORE,ierr)
 #endif
 c        if(ierr.ne.0) then

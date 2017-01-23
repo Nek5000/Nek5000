@@ -23,10 +23,11 @@ env:
     # - TEST_CASE=Benard_RayNN::test_PnPn_Serial  IFMPI=true F77=mpif77 CC=mpicc # Exceeds time limit for Travis jobs
     # - TEST_CASE=Benard_RayNN::test_PnPn2_Serial IFMPI=true F77=mpif77 CC=mpicc # Exceeds time limit for Travis jobs
 
-    # - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    # - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+
+    - TEST_CASE=Eddy_LegacySize::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
     # - TEST_CASE=KovStState::test_PnPn2_Serial IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=KovStState::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc

@@ -355,7 +355,10 @@ C-------------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      include 'mpif.h'  
+      include 'mpif.h' 
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+ 
       integer jsend((ldim+1)*nmaxl),jrecv((ldim+1)*nmaxl)
       integer rcode_all(nmaxcom),elid_all(nmaxcom),proc_all(nmaxcom)
       real    dist(nmaxcom)
@@ -374,11 +377,21 @@ C-------------------------------------------------------------------------
       if (icalld.le.1) then
          icalld=icalld+1
       else
-         call intpts_done(inth_multi)
+         call findpts_free(inth_multi)
       endif
 
-      call intpts_setup(-1.0,inth_multi) ! use default tolerance
-        
+      tol     = 1e-13
+      n       = lx1*ly1*lz1*lelt
+      npt_max = 256
+      nxf     = 2*nx1 ! fine mesh for bb-test
+      nyf     = 2*ny1
+      nzf     = 2*nz1
+      bb_t    = 0.1 ! relative size to expand bounding boxes by
+
+      call findpts_setup(inth_multi,nekcomm,np,ndim,
+     &                   xm1,ym1,zm1,nx1,ny1,nz1,
+     &                   nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                   npt_max,tol)
 
       call findpts(inth_multi,rcode_all,1,
      &             proc_all,1,
