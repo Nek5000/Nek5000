@@ -51,7 +51,7 @@ c
       real    xp(*),yp(*),zp(*)
       logical ifpts
 
-      parameter (lpts=100000)
+      parameter (lpts=?) ! max points per rank
       real    dist(lpts)
       real    rst(lpts*ldim)
       common /intp_r/ rst,dist

@@ -1,4 +1,4 @@
-      parameter(tol=1e-12)
+      parameter(tol=1e-13)
       parameter(ltots=4*lx1*ly1*lz1*lelt) ! max possible source mesh size
 
       integer                fldh_gfldr,inth_gfldr
