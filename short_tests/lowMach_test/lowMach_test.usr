@@ -205,17 +205,3 @@ C-----------------------------------------------------------------------
 
       return
       end
-C-----------------------------------------------------------------------
-      subroutine userqtl(flag)
-
-      implicit none
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-
-      logical flag
-
-      call qthermal_ig(flag)
-
-      return
-      end
-

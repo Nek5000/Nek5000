@@ -12,7 +12,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  XSMM        use libxsmm for mxm"
   echo "  CVODE       enable CVODE solver for scalars"
   echo "  MOAB        enable MOAB/CUBIT support (experimental)"
-  echo "  VENDOR_BLAS link against external BLAS/LAPACK"
+  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      adds underscore to exit call (for BGQ)"
   echo "  NEKNEK      enable overlapping mesh implementation"
   echo "  CMTNEK      enable DG compressible-flow solver"
@@ -507,12 +507,6 @@ if [ $? -ne 0 ];  then
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
-  cat SIZE | grep -i 'lpart' >/dev/null
-  if [ $? -ne 0 ]; then
-     echo >>SIZE
-     echo 'c automatically added by makenek' >>SIZE
-     echo '      parameter(lpart = 1  ) ! max number of particles/proc' >>SIZE
-  fi
   cat SIZE | grep -i 'ax1' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -588,10 +582,9 @@ if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine userqtl(flag)
-      logical flag
+      subroutine userqtl
 
-      call qthermal_ig(flag)
+      call userqtl_scig
 
       return
       end
