@@ -331,8 +331,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       call copy(vx,vx_,ntot)             
       call copy(vy,vy_,ntot)             
       if (if3d) call copy(vz,vz_,ntot) 
-      call setup_convect(2) ! recompute fine grid velocity
-
+      if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       ! restore coord and mesh vel 
       if(ifmvbd) then        
