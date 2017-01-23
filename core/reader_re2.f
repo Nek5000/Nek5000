@@ -29,6 +29,8 @@ c
       call blank(cbc,lcbc)
 
 #ifdef MPIIO
+      call byte_close(ierr)
+
       call crystal_setup(cr_re2,nekcomm,np)
 
       pid0r = nid ! every ranks reads
@@ -59,9 +61,10 @@ c
          if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
-#endif
 
       call byte_close(ierr)
+#endif
+
       etime_t = dnekclock_sync() - etime1
       if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
      &                   'done :: read .re2 file   ',
