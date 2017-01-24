@@ -106,6 +106,8 @@ c
       icalld=icalld+1
       nprep=icalld
 
+      if (ioinfodmp.eq.-2) return
+
 #ifdef TIMER
       etime1=dnekclock()
 #endif
@@ -113,37 +115,17 @@ c
 c     Trigger history output only if prefix = 'his'   pff 8/18/05
       ifhis  = .false.
       prefix = prefin
-      if (prefin.eq.'his') ifhis  = .true.
-      if (prefix.eq.'his') prefix = '   '
-
-      if(icalld.eq.1) then
-        ierr = 0
-        if (nid.eq.0) then
-           write(6,*) 'schfile:',schfle
-           if (ifschclob) then
-              open(unit=26,file=schfle,err=44,form='formatted')
-           else
-              open(unit=26,file=schfle,err=44,form='formatted',
-     &             status='new')
-           endif
-           goto 45
-  44       ierr = 1
- 45     endif 
-        call err_chk(ierr,'.sch file already exists. Use IFSCHCLOB=F to
-     $disable this check BUT BEWARE!!!!!!$')
+      if (prefin.eq.'his') then
+         ifhis  = .true.
+         prefix = '   '
       endif
 
       call prepost_map(0) ! map pr and axisymm. arrays
 
-      if (ioinfodmp.eq.-2) return
-
       if (ifdoin) call outfld(prefix)
-
       call outhis(ifhis)
 
       call prepost_map(1) ! map back axisymm. arrays
-
-      if (lastep.eq.1 .and. nid.eq.0) close(unit=26)
 
 #ifdef TIMER
       tprep=tprep+dnekclock()-etime1
