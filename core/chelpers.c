@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 #include "name.h"
 
 #define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
 #define sizeOfLongInt FORTRAN_UNPREFIXED(sizeoflongint, SIZEOFLONGINT)
+#define getmaxrss FORTRAN_UNPREFIXED(getmaxrss, GETMAXRSS)
 
 #if defined __GLIBC__
 
@@ -23,6 +25,18 @@ void print_stack(void)
 #else
 void print_stack(){};
 #endif
+
+double getmaxrss()
+{
+  struct rusage r_usage;
+
+  getrusage(RUSAGE_SELF,&r_usage);
+#if defined(__APPLE__) && defined(__MACH__)
+    return (double)r_usage.ru_maxrss;
+#else
+    return (double)(r_usage.ru_maxrss * 1024L);
+#endif
+}
 
 int sizeOfLongInt()
 {
