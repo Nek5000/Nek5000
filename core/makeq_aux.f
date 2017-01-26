@@ -11,6 +11,8 @@
       call whatfld (ifturb)
       if (ifturb) call maketq ! zero bq
       if (.not.ifturb .and. if_conv_std)  call makeuq !zero bq
-    
+
+      call addhpf_q  ! Add high pass filtered fld for passive scalar   
+   
       return
       end
