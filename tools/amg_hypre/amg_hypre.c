@@ -4,7 +4,6 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include "mpi.h"
 #include "_hypre_utilities.h"
 #include "_hypre_parcsr_ls.h"
 #include "HYPRE_parcsr_ls.h"
@@ -26,18 +25,6 @@
 
 int main(int argc, char *argv[])
 {   
-    /* Initialize MPI */
-    MPI_Init(&argc,&argv);
-    int rank;
-    int size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if (size > 1)
-    {
-        printf("Only one MPI process supported.\n"); 
-        return 0;
-    }
-
     /* Get user's input for coarsening strategy */
     int coars_strat, ret;
     char scoars[30];
@@ -89,14 +76,6 @@ int main(int argc, char *argv[])
 
     /* Verbose level */
     int print_level = 3;  // Print solve info + parameters
-
-    /* Initialize timers */
-    double tinit1, tinit2;     // Time to read data and setup matrices
-    double tsetup1, tsetup2;   // Time to perform setup
-    double tsmooth1, tsmooth2; // Time to compute smoother and extracting data
-    double texport1, texport2; // Time to export data
-    
-    tinit1 = MPI_Wtime(); 
 
     /* Read data and convert rows and columns to integers */
     int n = filesize("amgdmp_i.dat");
@@ -167,7 +146,7 @@ int main(int argc, char *argv[])
     /* Build Hypre IJ matrix */
     HYPRE_IJMatrix ij_matrix;
 	/* Init matrix */
-    HYPRE_IJMatrixCreate(MPI_COMM_WORLD, ilower, iupper, ilower, iupper, 
+    HYPRE_IJMatrixCreate(0, ilower, iupper, ilower, iupper, 
                          &ij_matrix);
     HYPRE_IJMatrixSetObjectType(ij_matrix, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(ij_matrix);
@@ -211,17 +190,11 @@ int main(int argc, char *argv[])
     HYPRE_BoomerAMGSetMaxLevels(solver, maxlvls);  // maximum number of levels
     HYPRE_BoomerAMGSetMaxCoarseSize (solver, 1);
 
-    tinit2 = MPI_Wtime(); 
-
     /* Perform setup */
-    tsetup1 = MPI_Wtime(); 
     HYPRE_BoomerAMGSetup(solver, A, b, x);
-    tsetup2 = MPI_Wtime(); 
 
-	/* Access solver data */
-    tsmooth1 = MPI_Wtime();
-
-	hypre_ParAMGData *amg_data = (hypre_ParAMGData*) solver; 
+    /* Access solver data */
+    hypre_ParAMGData *amg_data = (hypre_ParAMGData*) solver; 
             // structure hypre_ParAMGData is described in parcsr_lspar_amg.h
     int numlvl = (amg_data)->num_levels; // number of levels
     hypre_ParCSRMatrix **A_array = (amg_data)->A_array; 
@@ -429,11 +402,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    tsmooth2 = MPI_Wtime();
-    texport1 = MPI_Wtime();
     printf("Setup finished... Exporting data.\n");
     amg_export(data);
-    texport2 = MPI_Wtime();
 
     /* Destroy matrix ij */
     HYPRE_IJMatrixDestroy(ij_matrix);
@@ -441,17 +411,7 @@ int main(int argc, char *argv[])
     /* Destroy solver */
     HYPRE_BoomerAMGDestroy(solver);
 
-    /* Print timers */
-    printf("Timers:\n"); 
-    printf(" Total time = %lf seconds\n", MPI_Wtime() - tinit1 ); 
-    printf(" Init time = %lf seconds\n", tinit2 - tinit1); 
-    printf(" Setup time = %lf seconds\n", tsetup2 - tsetup1); 
-    printf(" Smoother time = %lf seconds\n", tsmooth2 - tsmooth1); 
-    printf(" Export time = %lf seconds\n", texport2 - texport1); 
-
-    MPI_Finalize();
-
-	return 1;
+    return 1;
 }
 
 /* 
@@ -1070,7 +1030,7 @@ static void dpm(hypre_CSRMatrix **AD, hypre_CSRMatrix *A, const double *D,
     /* Build Hypre IJ diagonal matrix */
     HYPRE_IJMatrix D_ij;
 	/* Init matrix */
-    HYPRE_IJMatrixCreate(MPI_COMM_WORLD, 0, rn-1, 0, rn-1, &D_ij);
+    HYPRE_IJMatrixCreate(0, 0, rn-1, 0, rn-1, &D_ij);
     HYPRE_IJMatrixSetObjectType(D_ij, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(D_ij);
 
