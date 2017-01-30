@@ -548,6 +548,7 @@ c     Communicate unhappiness to the other session
          dtmp1 = 0
          dtmp2 = 0
          dtmp3 = 0
+         dtmp4 = getmaxrss()/1000/1000
          if(istep.gt.0) then
            dgp   = nvtot
            dgp   = max(dgp,1.)
@@ -560,11 +561,12 @@ c     Communicate unhappiness to the other session
          write(6,*) ' '
          call print_stack()
          write(6,*) ' '
-         write(6,'(4(A,1p1e13.5,A,/))') 
+         write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
      &      ,'total solver time incl. I/O    : ',ttime , ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
      &      ,'CPU seconds/timestep/gridpt    : ',dtmp1 , ' sec'
+     &      ,'max resident memory            : ',dtmp4 , ' MB'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 
      &       'Gflops                         : ',dtmp3/1000.
@@ -1261,6 +1263,9 @@ c-----------------------------------------------------------------------
       integer*8 function i8gl_running_sum(in)
 c
       include 'mpif.h'
+
+      integer*8 in
+
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
       integer status(mpi_status_size)
       integer*8 x,r

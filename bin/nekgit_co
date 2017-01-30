@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # first do some checks ...
-if [ $# -ne 2 -o "$1" == "-h" ]; then
+if [ $# -eq 0 -o "$1" == "-h" ]; then
   echo "creates a new branch and updates files in the current working tree to match origin"
   echo "usage: nekgit_co <your branch name> <origin branch name>"
   echo "       e.g. nekgit_co fix123 develop"
@@ -9,7 +9,14 @@ if [ $# -ne 2 -o "$1" == "-h" ]; then
   exit 1
 fi
 
-git checkout -b $1 --track origin/$2
+rbr=$2
+if [ $# -eq 1 ]; then
+  echo "set origin branch to develop"
+  rbr="develop"
+fi
+
+git fetch origin
+git checkout -b $1 --track origin/$rbr
 if [ $? -eq 0 ]; then
   git pull;
 fi

@@ -700,6 +700,121 @@ class Eddy_EddyUv(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+
+class Eddy_LegacySize(NekTestCase):
+    example_subdir  = 'eddy'
+    case_name       = 'eddy_uv'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            lx2       = '',
+            ly2       = '',
+            lz2       = '',
+        )
+
+        self.build_tools(['genmap'])
+
+        # Tweak the .rea file and run genmap
+        from re import sub
+        cls = self.__class__
+        rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.rea')
+        with open(rea_path, 'r') as f:
+            lines = [sub(r'^.*DIVERGENCE$', '      0.10000E-08', l) for l in f]
+        with open(rea_path, 'w') as f:
+            f.writelines(lines)
+        self.run_genmap()
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+        # Update SIZE parameters for PnPn
+        self.size_params['lx2'] = 'lx1'
+        self.size_params['ly2'] = 'ly1'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres ', column=-7,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
+
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=6.007702E-07, delta=1E-06, label='X err')
+
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-06, label='Y err')
+
+        # solver_time = self.get_value_from_log('total solver time', column=-2)
+        # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2'] = 'lx1'
+        self.size_params['ly2'] = 'ly1'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres ', column=-7,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
+
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=6.007702E-07, delta=1E-06, label='X err')
+
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-06, label='Y err')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_serial
+    def test_PnPn2_Serial(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.size_params['ly2'] = 'ly1-2'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres ', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=22., label='gmres')
+
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
+
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        # solver_time = self.get_value_from_log('total solver time', column=-2)
+        # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.size_params['ly2'] = 'ly1-2'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres ', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=22., label='gmres')
+
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
+
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
 ####################################################################
 #  kov_st_state; kov_st_stokes.rea
 ####################################################################

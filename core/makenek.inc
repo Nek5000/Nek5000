@@ -7,15 +7,15 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  MPIIO     use MPI-IO I/O kernel (experimental)"
-  echo "  BGQ       use BGQ optimized mxm"
-  echo "  XSMM      use libxsmm for mxm"
-  echo "  BLAS_MXM  disable nek-supplied BLAS routines"
-  echo "  CVODE     enable CVODE solver for scalars"
-  echo "  MOAB      enable MOAB/CUBIT support (experimental)"
-  echo "  NO_LAPACK disable nek-supplied LAPACK routines"
-  echo "  EXTBAR    adds underscore to exit call(for BGQ)"
-  echo "  CMTNEK    CMT-nek, a DG compressible-flow solver"
+  echo "  MPIIO       use MPI-IO I/O kernel"
+  echo "  BGQ         use BGQ optimized mxm"
+  echo "  XSMM        use libxsmm for mxm"
+  echo "  CVODE       enable CVODE solver for scalars"
+  echo "  MOAB        enable MOAB/CUBIT support (experimental)"
+  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
+  echo "  EXTBAR      adds underscore to exit call (for BGQ)"
+  echo "  NEKNEK      enable overlapping mesh implementation"
+  echo "  CMTNEK      enable DG compressible-flow solver"
   exit 1
 fi
 
@@ -345,25 +345,18 @@ if [ "$MXM_USER" != "" ]; then
     echo "ABORT: makenek version is too old! Update with latest from source!"
     exit 1 
 fi
-MXM_USER="mxm_std.o blas.o"
+MXM_USER="mxm_std.o"
 echo $PPLIST | grep 'BGQ' >/dev/null 
 if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o mxm_bgq.o " 
+   MXM_USER+=" mxm_bgq.o" 
    OPT_FLAGS_STD="-O3"
    OPT_FLAGS_MAG="-O3"
 fi
-echo $PPLIST | grep 'XSMM' >/dev/null 
+
+BLAS="blas.o dsygv.o ssygv.o"
+echo $PPLIST | grep 'VENDOR_BLAS' >/dev/null 
 if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o blas.o " 
-fi
-echo $PPLIST | grep 'BLAS_MXM' >/dev/null 
-if [ $? -eq 0 ]; then
-   MXM_USER="mxm_std.o" 
-fi
-LPACK="dsygv.o ssygv.o"
-echo $PPLIST | grep 'NO_LAPACK' >/dev/null 
-if [ $? -eq 0 ]; then
-   LPACK=" "
+   BLAS=" "
 fi
 
 # set optimization flags
@@ -408,7 +401,7 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
--e "s:^LPACK[ ]*=.*:LPACK=$LPACK:" \
+-e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
@@ -514,12 +507,6 @@ if [ $? -ne 0 ];  then
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
-  cat SIZE | grep -i 'lpart' >/dev/null
-  if [ $? -ne 0 ]; then
-     echo >>SIZE
-     echo 'c automatically added by makenek' >>SIZE
-     echo '      parameter(lpart = 1  ) ! max number of particles/proc' >>SIZE
-  fi
   cat SIZE | grep -i 'ax1' >/dev/null
   if [ $? -ne 0 ]; then
      echo >>SIZE
@@ -595,10 +582,9 @@ if [ $? -ne 0 ]; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
-      subroutine userqtl(flag)
-      logical flag
+      subroutine userqtl
 
-      call qthermal_ig(flag)
+      call userqtl_scig
 
       return
       end

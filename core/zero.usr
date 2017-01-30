@@ -8,7 +8,7 @@ c     - userq   : local source term for scalars
 c     - userbc  : boundary conditions
 c     - useric  : initial conditions
 c     - userchk : general purpose routine for checking errors etc.
-c     - userqqtl: thermal divergence for lowMach number flows 
+c     - userqtl : thermal divergence for lowMach number flows 
 c     - usrdat  : modify element vertices 
 c     - usrdat2 : modify mesh coordinates
 c     - usrdat3 : general purpose routine for initialization
@@ -124,10 +124,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine userqtl(flag) ! Set thermal divergence
-      logical flag
+      subroutine userqtl ! Set thermal divergence
 
-      call qthermal_ig(flag)
+      call userqtl_scig
 
       return
       end

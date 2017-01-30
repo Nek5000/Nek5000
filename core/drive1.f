@@ -1,5 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
+c
 
       include 'SIZE'
       include 'TOTAL'
@@ -25,6 +26,8 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
   
+      common /rdump/ ntdump
+
       real kwave2
       real*8 t0, tpp
 
@@ -149,6 +152,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call time00       !     Initalize timers to ZERO
       call opcount(2)
 
+      ntdump=0
+      if (timeio.ne.0.0) ntdump = int( time/timeio )
+
       etims0 = dnekclock_sync()
       if (nio.eq.0) then
         write (6,*) ' '
@@ -197,8 +203,10 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         call check_ioinfo  
+         call set_outfld
          call userchk
-         call prepost (.false.,'his')
+         call prepost (ifoutfld,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001
       enddo
@@ -235,6 +243,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+      ntot = nx1*ny1*nz1*nelv
 
       call nekgsync
 
@@ -263,20 +272,21 @@ c-----------------------------------------------------------------------
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
-               call gengeom (igeom)
-               call geneig  (igeom)
+            call gengeom (igeom)
+            call geneig  (igeom)
          endif
 
-         if (ifheat)               call heat (igeom)
+         if (ifheat) call heat (igeom)
 
          if (igeom.eq.2) then  
-                                   call setprop
-            if (iflomach)          call qthermal(.true.)
+            call setprop
+            call rzero(qtl,ntot)
+            if (iflomach) call qthermal
          endif
 
-         if (ifflow)               call fluid         (igeom)
-         if (ifmvbd)               call meshv         (igeom)
-         if (param(103).gt.0)      call q_filter      (param(103))
+         if (ifflow)          call fluid    (igeom)
+         if (ifmvbd)          call meshv    (igeom)
+         if (param(103).gt.0) call q_filter (param(103))
          enddo
 
       else                ! PN-2/PN-2 formulation

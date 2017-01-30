@@ -25,6 +25,7 @@ c----------------------------------------------------------------------
 
       return
       end
+c----------------------------------------------------------------------
 #else
       subroutine cv_setsize
 
@@ -60,13 +61,13 @@ c----------------------------------------------------------------------
 
       ! set local ODE size
       ipar(1) = 0
-      if (ifdp0dt) ipar(1) = 1
       do i = 2,nfield
          if (ifcvfld(i)) then
            ntot = nxyz*nelfld(i)
            ipar(1) = ipar(1) + ntot
          endif
       enddo
+      if (ifdp0dt) ipar(1) = ipar(1) + 1
 
       ! check array size is large enough
       if (ipar(1) .gt. cv_lysize) then
@@ -82,12 +83,7 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine cv_init
-c
-c     Initialize CVODE
-c
-c     Note:  In contrast to the default CVODE version
-c            cv_nglobal is defined as 'long long int'
-c 
+
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
@@ -101,12 +97,16 @@ c
       integer cvcomm
       common /cv_iout/ iout(21),ipar(1),cvcomm
 
+      real cv_atol_(lx1,ly1,lz1,lelt,ldimt)
+      common /CV_YDOT/ cv_atol_ ! used as scratch
+
       integer cv_meth
 
       real*8 etime1
       character*15 txt_meth,txt_itask
 
       real atol_t(ldimt)
+
 
       nxyz = nx1*ny1*nz1
       ifcvodeinit   = .false.
@@ -118,7 +118,7 @@ c
       call cv_rstat
 
       ! set solver parameters
-      cv_itask    = param(160) ! AM or BDF
+      cv_itask    = param(160)
       cv_meth     = param(161) ! AM or BDF
       cv_rtol     = param(163) 
       cv_dtmax    = param(164)
@@ -132,15 +132,13 @@ c
       if (cv_iatol.eq.1) then
          cv_atol(1) = param(162)
       else if (cv_iatol.eq.2) then
-         j = 1
          do i = 2,nfield
             if (ifcvfld(i)) then
                ntot = nxyz*nelfld(i)
-               call cfill(cv_atol(j),atol(i+1),ntot)
-               j = j + ntot
+               call cfill(cv_atol_(1,1,1,1,i-1),atol(i+1),ntot)
             endif
          enddo
-         if (ifdp0dt) cv_atol(j) = atol(3) ! same as temperature
+         call cvpack(cv_atol,cv_atol_,atol(3),.false.)
       endif
 
       ! initialize vector module
@@ -156,7 +154,7 @@ c
       endif
 
       ! initialize cvode
-      call cvpack(y0,t,.false.)
+      call cvpack(y0,t,p0th,.false.)
       call fcvmalloc(time, y0, cv_meth, itmeth, cv_iatol,
      &               cv_rtol, cv_atol, iout, rout, ipar, rpar, ier)
       if (ier.ne.0) then
@@ -193,15 +191,13 @@ c
         write(6,'(A,1pe8.1)')    '   relative tolerance             : ',
      &                         cv_rtol
 
-        j = 1
         do i = 2,nfield
            if (ifcvfld(i)) then
               if (cv_iatol.eq.1) then
                  dd = cv_atol(1)
               else
                  ntot = nxyz*nelfld(i)
-                 dd = vlmax(cv_atol(j),ntot)
-                 j = j + ntot
+                 dd = vlmax(cv_atol_(1,1,1,1,i-1),ntot)
               endif
 
               write(6,1000) i, dd
@@ -294,7 +290,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
 
       if (cv_itask.eq.3) then
         if(istep.gt.1) then 
-          call cvpack(y,t,.false.)
+          call cvpack(y,t,p0th,.false.)
           call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
           if (ier .ne. 0) then
             write(*,'(a,i3)') 'ABORT: fcvsetrin ier=', ier
@@ -313,7 +309,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
          if (nid.eq.0) then
             write(*,'(a)') ' Restart integrator and try again  ...'
          endif
-         call cvpack(y,t,.false.)
+         call cvpack(y,t,p0th,.false.)
          call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
          cv_timel = 0
          call cv_rstat
@@ -329,14 +325,13 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       endif
 
       cv_istep = cv_istep + 1 
-      call cvunpack(t,y)
+      call cvunpack(t,p0th,y)
 
       ! restore velocities               
       call copy(vx,vx_,ntot)             
       call copy(vy,vy_,ntot)             
       if (if3d) call copy(vz,vz_,ntot) 
-      call setup_convect(2) ! recompute fine grid velocity
-
+      if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       ! restore coord and mesh vel 
       if(ifmvbd) then        
@@ -486,14 +481,14 @@ c
 
       ntot = nx1*ny1*nz1*nelv
 
-      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nabmsh)
       call add3 (xm1,xm1_,dtmp,ntot)
 
-      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nabmsh)
       call add3 (ym1,ym1_,dtmp,ntot)
 
       if(if3d) then
-        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nab)
+        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nabmsh)
         call add3 (zm1,zm1_,dtmp,ntot)
       endif
 
@@ -518,15 +513,15 @@ c
      $     w3(lx1,ly1,lz1,lelt)
 
       real ydott(lx1,ly1,lz1,lelt,ldimt)
+      common /CV_YDOT/ ydott
 c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
                                    ! use nvec_dssum 
-      integer ntf      
 
-
-      etime1 = dnekclock()
-      time   = time_   
-      nxyz   = nx1*ny1*nz1
-      ntotv  = nxyz*nelv
+      ifcvfun = .true.
+      etime1  = dnekclock()
+      time    = time_   
+      nxyz    = nx1*ny1*nz1
+      ntotv   = nxyz*nelv
        
       if (time.ne.cv_timel) then
          call cv_settime     
@@ -557,23 +552,22 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          cv_timel = time          
       endif
 
-      call cvunpack(t,y)          
+      call cvunpack(t,p0th,y)          
 
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
 
+      ifield = 1
+      call vprops ! we may use fluid properties somewhere
       do ifield=2,nfield
          if (ifcvfld(ifield)) call vprops
       enddo  
 
-      ntf = 0
       do ifield=2,nfield
          if (ifcvfld(ifield)) then
            ntot = nxyz*nelfld(ifield)
            call makeq
 
            if (iftmsh(ifield)) then                                
-              ntf = 1                                          
-
               call dssum(bq,nx1,ny1,nz1)
               call col2(bq,bintm1,ntot)
 
@@ -589,7 +583,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          endif
       enddo
 
-      if (ntf.eq.0) then ! all fields are on the v-mesh
+      if (ifgsh_fld_same) then ! all fields are on the v-mesh
          istride = lx1*ly1*lz1*lelt
          call nvec_dssum(ydott,istride,nfield-1,gsh_fld(1))
       else
@@ -603,17 +597,19 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
            ntot = nxyz*nelfld(ifield)
-           if (.not.iftmsh(ifield)) call col2(ydott(1,1,1,1,ifield-1),
-     &                                        binvm1,ntot)
+           if (.not.iftmsh(ifield)) then
+              call col2(ydott(1,1,1,1,ifield-1),binvm1,ntot)
+           endif
          endif
       enddo
 
-      call cvpack(ydot,ydott,.true.)
+      call cvpack(ydot,ydott,dp0thdt,.true.)
 
       tcvf = tcvf + dnekclock()-etime1 
       ncvf = ncvf + 1 
 
       ier = 0
+      ifcvfun = .false.
 
       return
       end
@@ -646,7 +642,7 @@ c----------------------------------------------------------------------
       cv_dtlag(3) = dtlag(3)
 
       call rzero(cv_abmsh,3)
-      call setabbd (cv_abmsh,cv_dtlag,nab,1) ! why is nabmsh wrong, use nab for now
+      call setabbd (cv_abmsh,cv_dtlag,nabmsh,1)
       do i = 1,3
          cv_abmsh(i) = cv_dtNek*cv_abmsh(i) 
       enddo
