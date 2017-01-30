@@ -76,9 +76,15 @@ c
 
       character*132   session,path,re2fle,h5mfle,parfle
       common /cfile2/ session,path,re2fle,h5mfle,parfle
-!
-! proportional to LELT
-!
+
+      integer cr_re2,fh_re2
+      common /handles_re2/ cr_re2,fh_re2
+
+      integer*8 re2off_b
+      common /off_re2/ re2off_b
+c
+c proportional to LELT
+c
       real xc(8,lelt),yc(8,lelt),zc(8,lelt)
      $    ,bc(5,6,lelt,0:ldimt1)
      $    ,curve(6,12,lelt)
@@ -94,9 +100,9 @@ c
 
       integer ieact(lelt),neact
       common /input9/ ieact,neact
-!
-! material set ids, BC set ids, materials (f=fluid, s=solid), bc types
-!
+c
+c material set ids, BC set ids, materials (f=fluid, s=solid), bc types
+c
       integer numsts
       parameter (numsts=50)
       
