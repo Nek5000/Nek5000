@@ -1,0 +1,10 @@
+!    Definitions for Relaxation term filtering
+
+      real hpfx(lx1,ly1,lz1,lelt)
+      real hpfy(lx1,ly1,lz1,lelt)
+      real hpfz(lx1,ly1,lz1,lelt)
+      real hpft(lx1,ly1,lz1,lelt,ldimt)
+      real hpf_op(lx1,lx1)
+
+      common /RTFILrv/ hpfx, hpfy, hpfz, hpft, hpf_op 
+

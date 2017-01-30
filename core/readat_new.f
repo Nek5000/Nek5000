@@ -67,6 +67,11 @@ C
       param(95) = 5    ! turn on projection for pressure solve
       param(99) = 4    ! enable dealising
 
+      param(110) = 0   ! High-pass filter shape. No of additional modes
+      param(111) = -0.0 ! High-pass filter strength. 0 ==> turned off
+      param(112) = 0   ! High-pass filter ifboyd transform. 0 ==> legendre basis. 
+
+
       param(160) = 1    ! cvode use normal mode 
       param(161) = 1    ! cvode use non-stoff integration 
       param(162) = 0    ! cvode absolute tolerance
@@ -521,6 +526,18 @@ c set restart options
          call finiparser_getToken(initc(i),i)
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
+
+c set High-Pass filter options
+      call finiparser_getDbl(d_out,'hpfilter:AddModes',ifnd)
+      if (ifnd .eq. 1) param(110) = d_out
+
+      call finiparser_getDbl(d_out,'hpfilter:kai',ifnd)
+      if (ifnd .eq. 1) param(111) = d_out
+
+      call finiparser_getBool(i_out,'hpfilter:ifboyd',ifnd)
+      if (ifnd .eq. 1) param(112) = i_out+0.
+
+
 
       call finiparser_dump()
 c      call finiparser_free()
