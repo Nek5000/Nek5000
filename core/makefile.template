@@ -10,7 +10,6 @@ OBJDIR=obj
 IFMPI= 
 IFCMT= 
 IFAMG= 
-IFAMG_DUMP=
 IFNEKNEK=
 IFMOAB=
 MOAB_DIR=
@@ -81,9 +80,6 @@ CGS = $(JO)sparse_cholesky.o $(JO)xxt.o $(JO)fcrs.o
 endif
 
 JL := -DPREFIX=jl_
-ifeq ($(IFAMG_DUMP),true)
-   JL  := ${JL} -DAMG_DUMP
-endif
 
 COMM_MPI := comm_mpi.o
 ifeq ($(IFMPI),false)
