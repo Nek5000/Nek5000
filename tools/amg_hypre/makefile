@@ -1,5 +1,5 @@
 CFLAGS    = -DHAVE_CONFIG_H -DHYPRE_TIMING 
-LFLAGS    = $(LFLAGS_IN) -lHYPRE -lm
+LFLAGS    = $(LFLAGS_IN) -lm
 PREFIX    = $(bin_nek_tools)
 
 all: amg_hypre
