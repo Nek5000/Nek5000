@@ -2323,6 +2323,8 @@ c-----------------------------------------------------------------------
       character*132 hdr
       character*4 dummy
 
+      p0thr = -1
+
       read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
@@ -2393,7 +2395,8 @@ c#endif
          endif
       endif
 
-      p0th = p0thr
+      p0th = 1 
+      if (p0thr.gt.0) p0th = p0thr
 
       return
 

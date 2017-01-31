@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
     /* Get user's input for coarsening strategy */
     int coars_strat, ret;
     char scoars[30];
+
+    setbuf(stdout, NULL);
+
     printf("Choose a coarsening method. Available options are:\n");
     printf(" - 0: CLJP,\n");
     printf(" - 3: Ruege-Stuben (default),\n");
@@ -78,6 +81,8 @@ int main(int argc, char *argv[])
     int print_level = 3;  // Print solve info + parameters
 
     /* Read data and convert rows and columns to integers */
+
+    printf("Reading AMG dump files... ");
     int n = filesize("amgdmp_i.dat");
     double *v   = malloc( n    * sizeof(double));
     double *Aid = malloc((n-1) * sizeof(double));
@@ -90,7 +95,7 @@ int main(int argc, char *argv[])
     memcpy(Ajd, v+1, (n-1) * sizeof (double));
     readfile(v,n,"amgdmp_p.dat");
     memcpy(Av , v+1, (n-1) * sizeof (double));
-    printf("Successfully read data\n");
+    printf("done\n");
 
     int *Ai = malloc((n-1) * sizeof (int));
     int *Aj = malloc((n-1) * sizeof (int));
@@ -191,7 +196,9 @@ int main(int argc, char *argv[])
     HYPRE_BoomerAMGSetMaxCoarseSize (solver, 1);
 
     /* Perform setup */
+    printf("BoomerAMGSetup... ");
     HYPRE_BoomerAMGSetup(solver, A, b, x);
+    printf("done\n");
 
     /* Access solver data */
     hypre_ParAMGData *amg_data = (hypre_ParAMGData*) solver; 
@@ -1208,7 +1215,7 @@ static long readfile(double *data, long max, const char *name)
   fclose(f);
   if(n>0 && fabs(data[0]-magic)>0.000001) {
     long i;
-    printf("swapping byte order");
+    /*printf("swapping byte order"); */
     if(fabs(byteswap(data[0])-magic)>0.000001) {
       printf("magic number for endian test not found");
     } else
