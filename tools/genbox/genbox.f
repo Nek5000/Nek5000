@@ -103,10 +103,11 @@ c------------------------------------------------------------------------------
       real   buf2(30)
       equivalence (buf,buf2)
 
-
       character*80 hdr
       real*4 test
       data   test  / 6.54321 /
+    
+      logical isnum
 
 
 
@@ -128,21 +129,27 @@ c     Get the input file, which specifies the base .rea file
       read (5,132) string
   132 format(a132)
       open (unit=7,file=string,status='old')
-c
-C     Read in name of previously generated NEKTON data set.
-C     (Must have same dimension and number of fields as current run)
-C
+
+c     Read in name of previously generated NEKTON data set.
       call gets(string,132,iend,7)
- 
-      open (unit=8,file=string,status='old')
-      open (unit=9,file='box.rea')
+c     if string is int, should be ndim and .re2 case(no.rea needed)
+      call check_string(string,isnum,ndim)   !check if file name or ndim
 c-----------------------------------------------------------------------
-c     here is where the 2d/3d determination is made....
+c     2d/3d and rea/re2 determination 
       if3d = .false.
       iffo = .false.
-      call geti1(ndim,iend,7)
+      if(.not.isnum) call geti1(ndim,iend,7)
+c     Error check for missing .rea file name
+      if(ndim.gt.0.and.isnum) then
+         write(6,*) "NO ASCII input file was given for .rea case"
+         write(6,*) "Edit .box file to continue" 
+         write(6,*) string
+         call exitt
+      endif
       if(ndim.gt.0) then  ! default is ascii
         iffo = .true.
+        open (unit=8,file=string,status='old') !open .rea for old data
+        open (unit=9,file='box.rea')
       else
         call byte_open('box.re2' // char(0))
       endif
@@ -150,13 +157,13 @@ c     here is where the 2d/3d determination is made....
       if (ndim.eq.3) then 
           if3d = .true.
       elseif(ndim.ne.2) then
-          write(6,*) "Original .rea file has invalid NDIM -- ",ndim
+          write(6,*) "Input file has invalid NDIM -- ",ndim
           write(6,*) "********Setting new NDIM = 2************* "
           ndim = 2
       endif
       
 c-----------------------------------------------------------------------
-c     here is where the fluid, fluid+heat, mhd determination is made....
+c     fluid, fluid+heat, mhd determination is made
       call getr1(rfld,iend,7)
       nfld = int(rfld)
 
@@ -176,15 +183,20 @@ c     here is where the fluid, fluid+heat, mhd determination is made....
       endif
       write(6,*) ifflow,ifheat,ifmhd,nfld,rfld
 c-----------------------------------------------------------------------
-      call scanout(string,'PARAMETERS FOLLOW',17,8,9)
-      read(string,*) nparam
-      call scanparam(string,string1,nparam,nfld,ifflow,ifheat,ifmhd,8,9)
+      if(iffo) then
+         call scanout(string,'NEKTON VERSION',14,8,9)
+         read(8,*) string !dummy rea ndim
+         write(9,30) ndim
+   30    format(i3,'  DIMENSIONAL RUN')
+         call scanout(string,'PARAMETERS FOLLOW',17,8,9)
+         read(string,*) nparam
+         call scanparam(string,string1,nparam,nfld,
+     $                  ifflow,ifheat,ifmhd,8,9)
 
-      call scanout(string,'LOGICAL SWITCHES',16,8,9)
-      read(string,*) nlogic
-      call set_logical(ifflow,ifheat,8,9,nlogic)
- 
-c     call scanout(string,'MESH DATA',9,8,9)
+         call scanout(string,'LOGICAL SWITCHES',16,8,9)
+         read(string,*) nlogic
+         call set_logical(ifflow,ifheat,8,9,nlogic)
+      endif
 c-----------------------------------------------------------------------
       
       nel  = 0
@@ -457,7 +469,7 @@ c           write(998,*) (y(i,1),i=0,nely)
       if(iffo) then
         write(6,*) 'Beginning construction of box.rea'
       else
-        write(6,*) 'Beginning construction of box.rea/box.re2'
+        write(6,*) 'Beginning construction of box.re2'
       endif
       write(6,*) nel,' elements will be created for ',nbox,' boxes.'
       write(6,*) 
@@ -468,7 +480,6 @@ c
         write(9,10) nel,ndim,nel
    10   format(i12,i3,i12,'           NEL,NDIM,NELV')
       else
-        write(9,10) -nel,ndim,nel
         call blank(hdr,80)
         if(wdsize.ne.8) then       !8byte decision!!
           write(hdr,111) nel,ndim,nel
@@ -1434,39 +1445,25 @@ c
            enddo
          endif
       enddo
-c
-c     Scan through .rea file until end of bcs
-c
-c     if (ifflow) then
-c        if (nfld.eq.1) call nekscan(string,'THERMAL BOUNDARY',16,8)
-c        if (nfld.ge.2) call nekscan(string,'PRESOLVE',8,8)
-c     else !  heat only
-c        call nekscan(string,'PRESOLVE',8,8)
-c     endif
 
-c     lout = ltrunc(string1,132)
-c     write (9,81) (string1(j),j=1,lout)
-c  81 format(132a1)
-
-      if(iffo.and.ifflow) then
-        if (nfld.eq.1) write(9,*) 
+      if(iffo) then
+        if (ifflow.and.nfld.eq.1) write(9,*) 
      &     ' ***** NO THERMAL BOUNDARY CONDITIONS *****'
-      endif
  
-c     Scan through .rea file until end of bcs
- 
-      call nekscan(string,'RESTART',7,8)
-      lout = ltrunc(string1,132)
-      write (9,81) (string1(j),j=1,lout)
-   81 format(132a1)
+c       Scan through .rea file until end of bcs
+        call nekscan(string,'RESTART',7,8)
+        lout = ltrunc(string1,132)
+        write (9,81) (string1(j),j=1,lout)
+   81   format(132a1)
 
-      call scanout(string,'xxxx',4,8,9)
-      if(.not.iffo)  call byte_close()
-c
-c     Scan through and output .rea file until end of file
-c
-      close(8)
-      close(9)
+c       Scan through and output .rea file until end of file
+        call scanout(string,'xxxx',4,8,9)
+
+        close(8)
+        close(9)
+      else
+        call byte_close()
+      endif
 
       end
 c-----------------------------------------------------------------------
@@ -2960,6 +2957,22 @@ c-----------------------------------------------------------------------
          endif
       enddo
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine check_string(string,isint,inum)
+      ! If string is an integer, should be ndim and .re2 case
+      character*132 string
+      logical isint
+      integer inum
+      
+      isint=.false.
+
+      read(string,*,err=100,end=100) inum
+
+      if(inum.lt.10.and.inum.gt.-10) isint=.true.
+
+ 100  continue 
       return
       end
 c-----------------------------------------------------------------------
