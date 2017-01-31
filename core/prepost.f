@@ -1693,7 +1693,7 @@ c-----------------------------------------------------------------------
       call chcopy(fnam1(k),str,5)
       k = k + 5
 
-      call mbyte_open(fname,fid0,ierr)                  !  Open blah000.fnnnn
+      call mbyte_open(fname,fid0,.FALSE.,ierr)          !  Open blah000.fnnnn
 c      write(6,*) nid,fid0,' FILE:',fname
  
       return

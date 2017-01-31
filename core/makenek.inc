@@ -7,15 +7,15 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  MPIIO       use MPI-IO I/O kernel"
+  echo "  AMG         use AMG instead of XXT solver"
+  echo "  MPIIO       use MPI-IO for I/O"
   echo "  BGQ         use BGQ optimized mxm"
   echo "  XSMM        use libxsmm for mxm"
-  echo "  CVODE       enable CVODE solver for scalars"
-  echo "  MOAB        enable MOAB/CUBIT support (experimental)"
+  echo "  CVODE       compile with CVODE support for scalars"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
-  echo "  EXTBAR      adds underscore to exit call (for BGQ)"
-  echo "  NEKNEK      enable overlapping mesh implementation"
-  echo "  CMTNEK      enable DG compressible-flow solver"
+  echo "  EXTBAR      add underscore to exit call (for BGQ)"
+  echo "  NEKNEK      activate overlapping mesh solver"
+  echo "  CMTNEK      activate DG compressible-flow solver"
   exit 1
 fi
 
@@ -27,16 +27,10 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-if [ "$mver" == "" ]; then
-  echo "ERROR: Your makenek is too old!"
-  echo "Please upgrade to last version shipped with the Nek source."
+if [ "$mver" != "17.0.0" ]; then
+  echo "ERROR: Your makenek is incompatible!"
+  echo "Please upgrade to the version shipped with your Nek source."
   exit 1
-else
-  if [ $mver -lt 1 ]; then
-    echo "ERROR: Your makenek is too old!"
-    echo "Please upgrade to last version shipped with the Nek source."
-    exit 1
-  fi
 fi
 
 if [ $1 = "clean" ]; then
@@ -313,7 +307,6 @@ do
 done
 export IFCMT
 
-
 echo $PPLIST | grep 'CVODE' >/dev/null 
 if [ $? -eq 0 ]; then
    IFCVODE=true 
@@ -322,22 +315,11 @@ else
 fi
 
 # AMG setup
-if [ "$IFAMG_DUMP" == "true" ]; then
-    if [ "$IFAMG" != "true" -a "$IFAMG" != "yes" ]; then
-      echo "ABORT: Cannot dump AMG files if AMG is disabled!"
-      exit 1
-    fi
-    IFAMG_DUMP=true
+echo $PPLIST | grep 'AMG' >/dev/null 
+if [ $? -eq 0 ]; then
+   IFAMG=true 
 else
-    IFAMG_DUMP=false
-fi
-export IFAMG_DUMP
-
-if [ "$IFAMG" == "true" -o "$IFAMG" == "yes" ]; then
-  IFAMG=true
-else
-  # default
-  IFAMG=false
+   IFAMG=false
 fi
 
 # MXM-handling
@@ -403,7 +385,6 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
--e "s/^IFAMG_DUMP[ ]*=.*/IFAMG_DUMP:=$IFAMG_DUMP/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
 -e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
