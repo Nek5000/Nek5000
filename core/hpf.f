@@ -3,7 +3,7 @@
 !!   Author: Prabal Negi
 !!   Email : negi@mech.kth.se 
 !!   Description: High pass filtering for stabilization of SEM
-!!   Last Modified: 30/01/2017 
+!!   Last Modified: 31/01/2017 
 !!
 !!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 !!----------------------------------------------------------------------  
@@ -52,19 +52,14 @@
       n = nxyz*nel
 
       if (hpf_kai.eq.0) then
-        if (ifield.eq.1) then
-          call opzero(hpfx,hpfy,hpfz)
-        else
-          call rzero(hpft(1,1,1,1,ifield-1),n)
-        endif
-
-        return
+!       High-pass filtering switched off  
+        return 
       endif
 
       if (icalld.eq.0) then
 
         if (hpf_kai.gt.0) then
-          if (nio.eq.0) then
+          if (nid.eq.0) then
             write(6,*) 'Positive filtering is Numerically Unstable.'
             write(6,*) 'Remove check in hpf.f if this was intentional.'
           endif
@@ -239,7 +234,6 @@ c----------------------------------------------------------------------
       implicit none
 
       include 'SIZE'
-!      include 'INPUT'
       include 'PARALLEL'
 
       real diag(lx1*lx1)

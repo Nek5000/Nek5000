@@ -528,15 +528,14 @@ c set restart options
       enddo
 
 c set High-Pass filter options
-      call finiparser_getDbl(d_out,'hpfilter:AddModes',ifnd)
+      call finiparser_getDbl(d_out,'general:hpfAddModes',ifnd)
       if (ifnd .eq. 1) param(110) = d_out
 
-      call finiparser_getDbl(d_out,'hpfilter:kai',ifnd)
+      call finiparser_getDbl(d_out,'general:hpfKai',ifnd)
       if (ifnd .eq. 1) param(111) = d_out
 
-      call finiparser_getBool(i_out,'hpfilter:ifboyd',ifnd)
+      call finiparser_getBool(i_out,'general:hpfIfBoyd',ifnd)
       if (ifnd .eq. 1) param(112) = i_out+0.
-
 
 
       call finiparser_dump()
