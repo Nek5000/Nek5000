@@ -4,7 +4,7 @@ Read the AMG data files and produce solver input files.
 
 #INSTALLATION
 
-This tool requires [Hypre](http://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods). Make sure that the library is installed on your machine.
+To compile the code you need to link against the [HYPRE](http://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods) library. Make sure to build HYPRE with `--without-MPI` as the tool works in serial only.
 
 Edit `maketools`
 
