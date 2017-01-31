@@ -38,10 +38,6 @@
       save icalld
       data icalld /0/
 
-!     prabal
-      real hpfcx(lx1,ly1,lz1,lelt), hpfcy(lx1,ly1,lz1,lelt)
-      real hpfcz(lx1,ly1,lz1,lelt)
-
 !---------------------------------------- 
 
       hpf_kut = int(param(110))+1
@@ -75,9 +71,6 @@
           call exitt   
         endif
 
-!       prabal
-        call err_est_init
-
 !       Create the filter transfer function
         call hpf_trns_fcn(hpf_filter,hpf_kut)
 
@@ -101,19 +94,9 @@
         call cmult(hpfy,hpf_kai,n)    
         if (if3d) call cmult(hpfz,hpf_kai,n)    
 
-!       prabal
-        call get_spectra(hpfcx,hpfx)
-        call get_spectra(hpfcy,hpfy)
-        if (if3d) call get_spectra(hpfcz,hpfz)
-
 !       Multiply by Mass matrix 
 !       and add to forcing term 
         call opadd2col (bfx,bfy,bfz,hpfx,hpfy,hpfz,bm1)
-
-!       prabal. Testing
-        if (mod(ISTEP,IOSTEP).eq.0) then
-          call outpost(hpfcx,hpfcy,hpfcz,pr,t,'hpf')
-        endif      
 
       else
 
