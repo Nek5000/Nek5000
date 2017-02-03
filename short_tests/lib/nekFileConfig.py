@@ -21,7 +21,7 @@ def config_makenek(opts, infile, outfile):
         lines = f.readlines()
 
     for key, val in opts.iteritems():
-        lines = [re.sub(r'^#*{0}=\"+.+?\"+'.format(key), r'{0}="{1}"'.format(key, val), l) for l in lines]
+        lines = [re.sub(r'^#*{0}=\"+.*?\"+'.format(key), r'{0}="{1}"'.format(key, val), l) for l in lines]
 
     lines = [re.sub(r'(^source\s+\$SOURCE_ROOT/makenek.inc)', r'\g<1> >compiler.out', l)
              for l in lines]

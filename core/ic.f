@@ -2323,6 +2323,8 @@ c-----------------------------------------------------------------------
       character*132 hdr
       character*4 dummy
 
+      p0thr = -1
+
       read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
@@ -2393,7 +2395,8 @@ c#endif
          endif
       endif
 
-      p0th = p0thr
+      p0th = 1 
+      if (p0thr.gt.0) p0th = p0thr
 
       return
 
@@ -2594,13 +2597,14 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mbyte_open(hname,fid,ierr) ! open  blah000.fldnn
+      subroutine mbyte_open(hname,fid,ifro,ierr) ! open  blah000.fldnn
       include 'SIZE'
       include 'TSTEP'
       include 'RESTART'
  
       integer fid
       character*132 hname
+      logical ifro
 
       character*8  eight,fmt,s8
       save         eight
@@ -2632,7 +2636,7 @@ c-----------------------------------------------------------------------
       enddo
       
 #ifdef MPIIO
-      call byte_open_mpi(fname,ifh_mbyte,ierr)
+      call byte_open_mpi(fname,ifh_mbyte,ifro,ierr)
       if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
     6 format(1i8,' OPEN: ',132a1)
 #else
@@ -2665,7 +2669,7 @@ c-----------------------------------------------------------------------
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
-         call mbyte_open(hname,0,ierr) ! open  blah000.fldnn
+         call mbyte_open(hname,0,.TRUE.,ierr) ! open  blah000.fldnn
          if(ierr.ne.0) goto 101
          call blank     (hdr,iHeaderSize)
          call byte_read (hdr, iHeaderSize/4,ierr)
@@ -2696,7 +2700,7 @@ c-----------------------------------------------------------------------
          fid0r = nid / stride
          if (nid.ne.0) then ! don't do it again for rank0
             call blank     (hdr,iHeaderSize)
-            call mbyte_open(hname,fid0r,ierr) ! open  blah000.fldnn
+            call mbyte_open(hname,fid0r,.TRUE.,ierr) ! open  blah000.fldnn
             if(ierr.ne.0) goto 102
             call byte_read (hdr, iHeaderSize/4,ierr)  
             if(ierr.ne.0) goto 102
@@ -2711,7 +2715,7 @@ c-----------------------------------------------------------------------
       pid0r = nid
       pid1r = nid
       offs0 = iHeaderSize + 4
-      call mbyte_open(hname,0,ierr)
+      call mbyte_open(hname,0,.TRUE.,ierr)
       ierr=iglmax(ierr,1)
       if(ierr.ne.0) goto 103
 

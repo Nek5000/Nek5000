@@ -1,7 +1,7 @@
 #!/bin/bash
-###############################################################################
+#-------------------------------------------------------------------------------
 # Nek5000 build file
-###############################################################################
+#-------------------------------------------------------------------------------
 
 # installation path 
 SOURCE_ROOT="$HOME/Nek5000" 
@@ -11,7 +11,7 @@ F77="mpif77"
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-#PPLIST="?" 
+#PPLIST="" 
 
 # generic compiler flags
 #G="-g"
@@ -26,10 +26,6 @@ CC="mpicc"
 # MPI (default true)
 #IFMPI="false"
 
-# AMG coarse grid solver (default false)
-#IFAMG="true"
-#IFAMG_DUMP="true"
-
 # profiling (default false)
 IFPROFILING="true"
 
@@ -37,19 +33,6 @@ IFPROFILING="true"
 # NOTE: source files have to located in the same directory as makenek
 #       a makefile_usr.inc has to be provided containing the build rules 
 #USR="foo.o"
-
-# MOAB/iMESH path
-#MOAB_DIR="$HOME/moab"
-
-# For linking to MOAB, the following might be needed:
-# NOTE: compiler specific, use the appropriate one depending on your compiler
-# GNU:
-# USR_LFLAGS="-lmpi_cxx -lstdc++"
-# Intel:
-# USR_LFLAGS="-cxxlib"
-# PGI:
-# USR_LFLAGS="-pgcpplibs"
-# USR_LFLAGS=" -lmpi_cxx -lstdc++"
 
 # enable VisIt in situ
 #  Note: you can override the lib and include paths. VISIT_LIB and VISIT_INC
@@ -68,7 +51,7 @@ SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 # assign version tag
-mver=1
+mver=17.0.0
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT="$2"
