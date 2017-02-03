@@ -1,6 +1,9 @@
 # Nek5000 
-![https://travis-ci.org/Nek5000/Nek5000](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+| **`Short Tests`** | **`Examples`** |
+|-----------------|---------------------|------------------|-------------------|---------------|
+| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000) | 
 
 Nek5000 is an open source, fast and scalable spectral element code designed to simulate:
 

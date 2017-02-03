@@ -10,7 +10,6 @@ OBJDIR=obj
 IFMPI= 
 IFCMT= 
 IFAMG= 
-IFAMG_DUMP=
 IFNEKNEK=
 IFMOAB=
 MOAB_DIR=
@@ -47,7 +46,7 @@ byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
-readat_new.o finiparser.o iniparser.o dictionary.o
+readat_new.o reader_re2.o finiparser.o iniparser.o dictionary.o
 ################################################################################
 # MXM 
 MXM =  
@@ -81,9 +80,6 @@ CGS = $(JO)sparse_cholesky.o $(JO)xxt.o $(JO)fcrs.o
 endif
 
 JL := -DPREFIX=jl_
-ifeq ($(IFAMG_DUMP),true)
-   JL  := ${JL} -DAMG_DUMP
-endif
 
 COMM_MPI := comm_mpi.o
 ifeq ($(IFMPI),false)
@@ -245,6 +241,7 @@ $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/reader_re2.o	:$S/reader_re2.f;		$(F77) -c $(FL2) $< -o $@
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(S2)/step.f;	        	$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/drive1_cmt.o	:$(S2)/drive1_cmt.f;		$(F77) -c $(FL2) $< -o $@

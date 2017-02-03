@@ -5,6 +5,11 @@ all:
 	if test -f $${i}/makefile ; then    \
         export FFLAGS_IN=" ";               \
         export CFLAGS_IN=${US} ;            \
+        if [ "$$i" == "amg_hypre" ]; then   \
+           if [ ! -z $(DOALL) ]; then       \
+              continue;                     \
+           fi ;                             \
+        fi ;                                \
         if [ "$$i" == "exo2nek" ]; then     \
            export FFLAGS_IN=${R8} ;         \
            if [ ! -z $(DOALL) ]; then       \
