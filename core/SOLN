@@ -54,6 +54,7 @@ c     Solution data
      $    ,bmass  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bmass
      $    ,bdivw  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bdivw*mask
      $    ,c_vx   (lxd*lyd*lzd*lelv*ldim,lorder+1) ! characteristics
+     $    ,fw     (2*ldim,lelt)                    ! face weights for DG
 c     Solution data for magnetic field
       real bx     (lbx1,lby1,lbz1,lbelv)
      $    ,by     (lbx1,lby1,lbz1,lbelv)
@@ -75,7 +76,7 @@ c     Solution data for magnetic field
 
       common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
      $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
-     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,
+     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,fw,
      $     bmnv, bmass, bdivw, bx, by, bz, pm, bmx, bmy, bmz,
      $     vx_e,vy_e,vz_e,     
      $     bbx1, bby1, bbz1, bbx2, bby2, bbz2, bxlag, bylag, bzlag,
