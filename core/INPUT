@@ -32,7 +32,7 @@ c
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid
      $               ,ifadvc(ldimt1),ifdiff(ldimt1),ifdeal(ldimt1)
-     $               ,iftmsh(0:ldimt1)
+     $               ,iftmsh(0:ldimt1),ifdgfld(0:ldimt1),ifdg
      $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
@@ -40,13 +40,13 @@ c
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifdg
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
      $               ,ifcvfld(ldimt1),ifdp0dt
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
      $               ,ifadvc,ifdiff,ifdeal
-     $               ,iftmsh
+     $               ,iftmsh,ifdgfld,ifdg
      $               ,ifmvbd,ifnatc,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
@@ -54,7 +54,7 @@ c
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifdg
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
      $               ,ifcvfld,ifdp0dt
 
       logical         ifnav
