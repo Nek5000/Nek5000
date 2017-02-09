@@ -3,7 +3,7 @@
 
 | **`Short Tests`** | **`Examples`** |
 |-----------------|---------------------|------------------|-------------------|---------------|
-| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000) | 
+| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) | 
 
 Nek5000 is an open source, fast and scalable spectral element code designed to simulate:
 
@@ -58,7 +58,7 @@ Nek5000 is hosted on GitHub and all bugs are reported and tracked through the Is
 
 ## Contributing
 
-First off, thanks for taking the time to contribute! Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). The main repository will always hold two evergreen branches:
+If you have improvements to Nek5000, send us your pull requests! If you are planning a large contribution, we encourage you to discuss the concept here on GitHub (just open a pull-reqest) and interact with us frequently to ensure that your effort is well-directed. Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). The main repository will always hold two evergreen branches:
 
 * `develop`
 * `master`
@@ -67,7 +67,9 @@ The main branch should be considered `develop` and will be the main branch where
 
 Consider `master` to always represent the latest code deployed to production. During day to day development, the `master` branch will not be interacted with. When the source code in the `develop` branch is stable and has been deployed, all of the changes will be merged into `master` and tagged with a release number. 
 
-### One Time Setup
+For those just getting started with GitHub, here a short how-to:
+
+### One-time Setup
 1. Sign up on [GibHub](https://github.com/)
 2. Fork our [project](https://github.com/Nek5000/Nek5000) on GitHub
 3. Download fork with `git clone -o myfork https://github.com/<username>/Nek5000.git ~/Nek5000`
@@ -84,7 +86,7 @@ Consider `master` to always represent the latest code deployed to production. Du
         forkremote = myfork 
 ``` 
 
-### How It Works
+### Typical Workflow
 1. Create a branch hosting your changes with `nekgit_co <my branch name> develop`. The core idea is that all development should take place in a _dedicated_ branch instead of the local development branch.
 2. Implement your changes. Make sure your change is atomic and consistent. You can work on multiple branches simultaneously. Just do a `git checkout <your branch name>` to change the branch. Note, this will update the files in your working directory (~/Nek5000). To compare your files with our develop repo use `git diff origin/develop`.
 3. Commit the changes to your local repo using `git commit -a -m 'a descriptive comment'`. Do this frequently to save your work (otherwise you cannot switch branches). 
