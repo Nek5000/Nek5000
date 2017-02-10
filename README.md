@@ -1,47 +1,51 @@
 # Nek5000 
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 | **`Short Tests`** | **`Examples`** |
 |-----------------|---------------------|------------------|-------------------|---------------|
 | [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) | 
 
-Nek5000 is an open source, fast and scalable spectral element code designed to simulate:
-
-* unsteady incompressible Navier-Stokes flows and magnetohydrodynamics (MHD)
-* low Mach-number flows
-* heat transfer and scalar transport
-
+Nek5000 is an open source, fast and scalable spectral element CFD code designed to simulate unsteady incompressible and low Mach-number Navier-Stokes flows.
 
 ## Highlights
 
-* Written in Fortran 77 and C
+* Runs on all POSIX compliant operating systems
+* Written in Fortran77 and C
 * Pure MPI for parallelization
-* Proven scalability to over a million processes
-* Easy-to-build and easy-to-use
-* High-order conforming curved quadrilateral/hexahedral meshes
-* 3rd order CFL adaptive semi-implicit timestepping
-* Efficient preconditioners  
+* Proven scalability to over a million ranks
+* Easy-to-build with minimal dependencies
+* High-order conformal curved quadrilateral/hexahedral meshes
+* 2nd/3rd order adaptive semi-implicit timestepping
+* Efficient multigrid preconditioners  
 * Parallel I/O
-* Moving meshes and free surface flow
+* Moving mesh and free surface flow
 * Lagrangian particle tracking
+* Magnetohydrodynamics (MHD)
 * Conjugate fluid-solid heat transfer
 * uRANS and LES turbulence models
-* Interface to VisIt for parallel data analysis and visualization
+* Meshing tools and converters
+* [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit) & [Paraview](http://www.paraview.org/) support for data analysis and visualization
 
 
 ## Download
 
-You can download the latest release of Nek5000 [here](https://github.com/Nek5000/nek5000/archive/master.tar.gz).
+You can download the latest release [here](https://github.com/Nek5000/nek5000/archive/master.tar.gz).
 
 
 ## Getting Started
 
-1. Unpack the tarball to `~/Nek5000`
-2. Add `~/Nek5000/bin` to your shell search path
-3. Copy `~/Nek5000/short-tests/eddy` to `~/nekcases/eddy`
-4. Copy `~/Nek5000/core/makenek ` to `~/nekcases/eddy`
-5. Go to `~/nekcases/eddy` and run `./makenek eddy` (see makenek for build options)
-5. You can run the case using two processes with `nekmpi eddy 2`
+Hold your horses in less than 5min you have performed your first simulation
+
+```
+cd ~
+wget https://nek5000.org/release/Nek5000.tar.gz
+tar -xvzf Nek5000.tar.gz
+export PATH=~/Nek5000/bin:$PATH
+cd ~/Nek5000/tools; ./maketools genmap
+cd ~/Nek5000/run; cp -r ~/Nek5000/short-tests/eddy .
+makenek eddy_uv 
+genmap             # on input type eddy_uv
+nekmpi eddy_uv 2   # to run on 2 ranks
+``` 
 
 **Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
 
@@ -58,26 +62,23 @@ Nek5000 is hosted on GitHub and all bugs are reported and tracked through the Is
 
 ## Contributing
 
-If you have improvements to Nek5000, send us your pull requests! If you are planning a large contribution, we encourage you to discuss the concept here on GitHub (just open a pull-reqest) and interact with us frequently to ensure that your effort is well-directed. Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). The main repository will always hold two evergreen branches:
+Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). If you are planning a large contribution, we encourage you to discuss the concept here on GitHub and interact with us frequently to ensure that your effort is well-directed. 
 
-* `develop`
-* `master`
-
-The main branch should be considered `develop` and will be the main branch where the source code of `HEAD` always reflects a state with the latest delivered development changes for the next release. As a developer, you will you typically be branching and merging from `develop`.
-
-Consider `master` to always represent the latest code deployed to production. During day to day development, the `master` branch will not be interacted with. When the source code in the `develop` branch is stable and has been deployed, all of the changes will be merged into `master` and tagged with a release number. 
-
-For those just getting started with GitHub, here a short how-to:
+### How we do it
+- Anything in master is always deployable
+- Upcoming feature release get their own tags or branch that are branched out of master
+- All development happens on the master branch.
+- To work on something new, create a short lived local branch off of master
+- When you need feedback or help, or your change is ready for merging, open a pull request. 
 
 ### One-time Setup
-1. Sign up on [GibHub](https://github.com/)
-2. Fork our [project](https://github.com/Nek5000/Nek5000) on GitHub
-3. Download fork with `git clone -o myfork https://github.com/<username>/Nek5000.git ~/Nek5000`
-4. Add our repo `cd ~/Nek5000; git remote add origin https://github.com/Nek5000/Nek5000.git`
-5. Download our repo `git fetch origin`
-6. Set upstream for local develop branch `git branch --set-upstream develop remotes/origin/develop`
-7. Run `~/Nek5000/bin/git-hub setup —u <your username on GitHub> --global`
-8. Add this to your [hub] section in `~/.gitconfig`:
+1. Fork our [GitHub project](https://github.com/Nek5000/Nek5000) 
+2. Download fork with `git clone -o myfork https://github.com/<username>/Nek5000.git ~/Nek5000`
+3. Add our repo `cd ~/Nek5000; git remote add origin https://github.com/Nek5000/Nek5000.git`
+4. Download our repo `git fetch origin`
+5. Set upstream for local develop branch `git branch --set-upstream develop remotes/origin/develop`
+6. Run `~/Nek5000/bin/git-hub setup —u <your username on GitHub> --global`
+7. Add this to your [hub] section in `~/.gitconfig`:
 
 ```
 [hub]
@@ -87,14 +88,12 @@ For those just getting started with GitHub, here a short how-to:
 ``` 
 
 ### Typical Workflow
-1. Create a branch hosting your changes with `nekgit_co <my branch name> develop`. The core idea is that all development should take place in a _dedicated_ branch instead of the local development branch.
-2. Implement your changes. Make sure your change is atomic and consistent. You can work on multiple branches simultaneously. Just do a `git checkout <your branch name>` to change the branch. Note, this will update the files in your working directory (~/Nek5000). To compare your files with our develop repo use `git diff origin/develop`.
-3. Commit the changes to your local repo using `git commit -a -m 'a descriptive comment'`. Do this frequently to save your work (otherwise you cannot switch branches). 
-4. Periodically, changes made in our Nek5000 repo should be pulled back into your branch by `git pull`.
+1. Create a feature branch hosting your change with `nekgit_co <descriptive name>`. Using a dedicated branch for every feature helps you to move between different developments while some are work in progress or under review.
+2. Implement your code changes. To reset your branch and discard any changes run `git reset --hard origin/master`. To revert a set of files run `git checkout <file1 file2 ...>`
+3. Commit your changes to your local repo using e.g. `git commit -a`. Do this frequently to save your work.
+4. Periodically, changes made in our master should be pulled back into your local branch by `git pull`. This ensures that we do not end up in integration hell that will happen when many feature branches need to be combined at once.
 5. If there are no merge conflicts, go to the next step. In case of conflicts edit the unmerged files in question. Merge conflicts are indicated  by the conflict marker `<<<<<<<` in your file. If you are done with all files, run `git add .` and do a `git commit` to indicate that all conflicts have been resolved.  
-6. Assuming you are happy with your change, run `nekgit_push`. Now you should be able to see your pull request on GitHub. The core developers will review your change and discuss potential modifications. We cannot consider your merge request if it is outdated or does not pass the regression tests. Please include a short-test in case of a new feature. When your pull request was merged or closed, you can delete your branch (created in step 1) with `nekgit_rm <my branch name>`.
-7. You may want to set your working directory back to our latest develop branch. To do this just run `git checkout develop; git pull`. After your pull reqest was merged, you have to update your local develop branch again (git pull) to see your change. 
-
+6.  Check with `git diff origin/master` what your push will do. Assuming you are happy run `nekgit_push`. This will create a pull request on GitHub and set your current branch back to master. When your pull request was merged, make sure you are on your local master branch. Then, delete the branch created in step (1) with `nekgit_rm <my branch name>` and update the current master branch using `git pull`.
 
 ## Code Structure
 
@@ -115,7 +114,10 @@ contains the sources for the pre- and post-processing tools which are stand-alon
 #### `short-tests` 
 contains light-weight regression tests for validation.  
 
+#### `run`
+contains nothing. Its purpose it to provide a consistent place for users to place their cases.
+
 #### `3rd_party`
-contains nothing. Its purpose it to provide a consistent place for 3rd part plugin/toolbox developers to place their code.
+contains nothing. Its purpose it to provide a consistent place for 3rd part developers to place their code.
 
 
