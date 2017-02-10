@@ -239,25 +239,6 @@ else
 fi
 export IFMPI
 
-# Check size of long int
-cat > tmp.c << _ACEOF
-#include <stdlib.h>
-#include <stdio.h>
-int main()
-{
-  int i;
-  i=sizeof(long int);
-  printf("%i\n",i);
-}
-_ACEOF
-$CC tmp.c 2>&1>/dev/null
-longIntTest=`./a.out`
-rm tmp.c a.out
-if [ "$longIntTest" == "8" ]
-then
-  PPLIST="${PPLIST} LONGINT8"
-fi
-
 if [ "$UNDERSCORE" == "true" ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
