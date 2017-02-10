@@ -1554,24 +1554,11 @@ c-----------------------------------------------------------------------
       ifdiro = .false.
 
 #ifdef MPIIO
-
-#ifdef MPIIO_NOCOL
-       nfileo  = abs(param(65))
-       if(nfileo.eq.0) nfileo = 1
-       if(np.lt.nfileo) nfileo=np   
-       nproc_o = np / nfileo              !  # processors pointing to pid0
-       fid0    = nid/nproc_o              !  file id
-       pid0    = nproc_o*fid0             !  my parent i/o node
-       pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
-       fid0    = 0 
-#else
       nfileo  = np
       nproc_o = 1
       fid0    = 0
       pid0    = nid
       pid1    = 0
-#endif
-
 #else
       if(param(65).lt.0) ifdiro = .true. !  p65 < 0 --> multi subdirectories
       nfileo  = abs(param(65))
@@ -1582,8 +1569,6 @@ c-----------------------------------------------------------------------
       pid0    = nproc_o*fid0             !  my parent i/o node
       pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
 #endif
-
-      call nek_comm_io(nfileo)
 
       wdsizo = 4                             ! every proc needs this
       if (param(63).gt.0) wdsizo = 8         ! 64-bit .fld file

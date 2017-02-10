@@ -34,7 +34,6 @@ if [ "$mver" != "17.0.0" ]; then
 fi
 
 if [ $1 = "clean" ]; then
-  rm -rf makefile 2>/dev/null
   make clean
   exit 0
 fi
