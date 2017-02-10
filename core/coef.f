@@ -1810,56 +1810,56 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'GEOM'
       include 'TOPOL'
-c
-      integer e,f,ef
-c
+
+      integer e,f,pf
+
       nface = 2*ndim
       call dsset(nx1,ny1,nz1)
-c
-      do e=1,nelt
-      do ef=1,nface
 
-         f      = eface1(ef)
-         js1    = skpdat(1,f)
-         jf1    = skpdat(2,f)
-         jskip1 = skpdat(3,f)
-         js2    = skpdat(4,f)
-         jf2    = skpdat(5,f)
-         jskip2 = skpdat(6,f)
+      do e=1,nelt
+      do f=1,nface
+
+         pf     = eface1(f)
+         js1    = skpdat(1,pf)
+         jf1    = skpdat(2,pf)
+         jskip1 = skpdat(3,pf)
+         js2    = skpdat(4,pf)
+         jf2    = skpdat(5,pf)
+         jskip2 = skpdat(6,pf)
 
          i = 0
          if (if3d) then
             do j2=js2,jf2,jskip2
             do j1=js1,jf1,jskip1
                i = i+1
-               a = 1./jacm1(j1,j2,1,e)
-               unr(i,ef,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,ef,e)
-     $                           + rym1(j1,j2,1,e)*uny(i,1,ef,e)
-     $                           + rzm1(j1,j2,1,e)*unz(i,1,ef,e) )
-               uns(i,ef,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,ef,e)
-     $                           + sym1(j1,j2,1,e)*uny(i,1,ef,e)
-     $                           + szm1(j1,j2,1,e)*unz(i,1,ef,e) )
-               unt(i,ef,e) = a * ( txm1(j1,j2,1,e)*unx(i,1,ef,e)
-     $                           + tym1(j1,j2,1,e)*uny(i,1,ef,e)
-     $                           + tzm1(j1,j2,1,e)*unz(i,1,ef,e) )
+               a = area(i,1,f,e)/jacm1(j1,j2,1,e)
+               unr(i,f,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,f,e)
+     $                          + rym1(j1,j2,1,e)*uny(i,1,f,e)
+     $                          + rzm1(j1,j2,1,e)*unz(i,1,f,e) )
+               uns(i,f,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,f,e)
+     $                          + sym1(j1,j2,1,e)*uny(i,1,f,e)
+     $                          + szm1(j1,j2,1,e)*unz(i,1,f,e) )
+               unt(i,f,e) = a * ( txm1(j1,j2,1,e)*unx(i,1,f,e)
+     $                          + tym1(j1,j2,1,e)*uny(i,1,f,e)
+     $                          + tzm1(j1,j2,1,e)*unz(i,1,f,e) )
             enddo
             enddo
          else
             do j2=js2,jf2,jskip2
             do j1=js1,jf1,jskip1
                i = i+1
-               a = 1./jacm1(j1,j2,1,e)
-               unr(i,ef,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,ef,e)
-     $                           + rym1(j1,j2,1,e)*uny(i,1,ef,e) )
-               uns(i,ef,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,ef,e)
-     $                           + sym1(j1,j2,1,e)*uny(i,1,ef,e) )
-               unt(i,ef,e) = 0.
+               a = area(i,1,f,e)/jacm1(j1,j2,1,e)
+               unr(i,f,e) = a * ( rxm1(j1,j2,1,e)*unx(i,1,f,e)
+     $                          + rym1(j1,j2,1,e)*uny(i,1,f,e) )
+               uns(i,f,e) = a * ( sxm1(j1,j2,1,e)*unx(i,1,f,e)
+     $                          + sym1(j1,j2,1,e)*uny(i,1,f,e) )
+               unt(i,f,e) = 0.
             enddo
             enddo
          endif
       enddo
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------

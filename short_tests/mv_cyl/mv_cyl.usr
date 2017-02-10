@@ -175,18 +175,6 @@ c         if (yy.eq.ymin) wym = wy(i,1,1,1)
       return
       end
 C-----------------------------------------------------------------------
-      subroutine userqtl(flag)
-
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-
-      logical flag
-
-      call qthermal_ig(flag)
-
-      return
-      end
-c =======================================================================
       subroutine exact_sol (time_, volex, vpex,pex,dpdtex,qtlex,ypex)
 
       gam0   = 1.4
@@ -212,10 +200,12 @@ c
       include 'SIZE'
       include 'TOTAL'
 
+      real glcflux
+
       nxyz  = nx1*ny1*nz1
       ntotv = nxyz*nelv
 
-      termV = -1.*glcflux()
+      termV = -1.*glcflux(vx,vy,vz)
       ypist = glmin(ym1,ntotv)
 
       call exact_sol (time,volex,vpex,pex,dpdtex,qtlex,ypex)

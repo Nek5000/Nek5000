@@ -7,5 +7,6 @@ c
      $    ,bm1lag(lx1,ly1,lz1,lelt,lorder-1)
      $    ,volvm1,volvm2,voltm1,voltm2
      $    ,yinvm1(lx1,ly1,lz1,lelt)
+     $    ,binvdg(lx1*ly1*lz1,lelt)
       common /mass/ bm1,bm2,binvm1,bintm1,bm2inv,baxm1,bm1lag
-     $      ,volvm1,volvm2,voltm1,voltm2,yinvm1
+     $      ,volvm1,volvm2,voltm1,voltm2,yinvm1,binvdg

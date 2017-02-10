@@ -331,8 +331,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       call copy(vx,vx_,ntot)             
       call copy(vy,vy_,ntot)             
       if (if3d) call copy(vz,vz_,ntot) 
-      call setup_convect(2) ! recompute fine grid velocity
-
+      if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
  
       ! restore coord and mesh vel 
       if(ifmvbd) then        
@@ -482,14 +481,14 @@ c
 
       ntot = nx1*ny1*nz1*nelv
 
-      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nabmsh)
       call add3 (xm1,xm1_,dtmp,ntot)
 
-      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nab)
+      call sumab(dtmp,wy_,wylag,ntot,cv_abmsh,nabmsh)
       call add3 (ym1,ym1_,dtmp,ntot)
 
       if(if3d) then
-        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nab)
+        call sumab(dtmp,wz_,wzlag,ntot,cv_abmsh,nabmsh)
         call add3 (zm1,zm1_,dtmp,ntot)
       endif
 
@@ -518,10 +517,11 @@ c
 c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
                                    ! use nvec_dssum 
 
-      etime1 = dnekclock()
-      time   = time_   
-      nxyz   = nx1*ny1*nz1
-      ntotv  = nxyz*nelv
+      ifcvfun = .true.
+      etime1  = dnekclock()
+      time    = time_   
+      nxyz    = nx1*ny1*nz1
+      ntotv   = nxyz*nelv
        
       if (time.ne.cv_timel) then
          call cv_settime     
@@ -556,6 +556,8 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
 
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
 
+      ifield = 1
+      call vprops ! we may use fluid properties somewhere
       do ifield=2,nfield
          if (ifcvfld(ifield)) call vprops
       enddo  
@@ -607,6 +609,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
       ncvf = ncvf + 1 
 
       ier = 0
+      ifcvfun = .false.
 
       return
       end
@@ -639,7 +642,7 @@ c----------------------------------------------------------------------
       cv_dtlag(3) = dtlag(3)
 
       call rzero(cv_abmsh,3)
-      call setabbd (cv_abmsh,cv_dtlag,nab,1) ! why is nabmsh wrong, use nab for now
+      call setabbd (cv_abmsh,cv_dtlag,nabmsh,1)
       do i = 1,3
          cv_abmsh(i) = cv_dtNek*cv_abmsh(i) 
       enddo

@@ -31,6 +31,7 @@
 #endif
 
 #define byte_reverse FORTRAN_NAME(byte_reverse, BYTE_REVERSE)
+#define byte_reverse8 FORTRAN_NAME(byte_reverse8, BYTE_REVERSE8)
 #define byte_open    FORTRAN_NAME(byte_open,    BYTE_OPEN   )
 #define byte_close   FORTRAN_NAME(byte_close,   BYTE_CLOSE  )
 #define byte_rewind  FORTRAN_NAME(byte_rewind,  BYTE_REWIND )
@@ -89,6 +90,33 @@ void byte_reverse(float *buf, int *nn)
   }
 }
 
+void byte_reverse8(float *buf, int *nn,int *ierr)
+{
+  int n;
+  char temp, *ptr;
+
+  if (*nn<0)
+  {
+    printf("byte_reverse8() :: n must be positive\n");
+    *ierr=1;
+    return;
+  }
+  if(*nn % 2 != 0)
+  {
+    printf("byte_reverse8() :: n must be multiple of 2\n");
+    *ierr=1;
+    return;
+  }
+
+  for (ptr=(char *)buf,n=*nn,n=n+2; n-=2; ptr+=8)
+  {
+     SWAP(ptr[0],ptr[7])
+     SWAP(ptr[1],ptr[6])
+     SWAP(ptr[2],ptr[5])
+     SWAP(ptr[3],ptr[4])
+  }
+  *ierr=0;
+}
 
 void byte_open(char *n)
 {

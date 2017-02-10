@@ -50,12 +50,13 @@ c
       nxyz = nx1*ny1*nz1
 
       if (ifrhs .and. ifdp0dt) then
-         call qthermal(.false.) ! computes dp0thdt  
+         call qthermal ! computes dp0thdt  
          dd = (gamma0 - 1.)/gamma0
          dd = dd * dp0thdt
          ntot = nxyz*nelfld(2)
          call invers2(dtmp,vtrans(1,1,1,1,2),ntot)
          call cmult(dtmp,dd,ntot)
+         call add2 (w1,dtmp,ntot)
       endif
 
       j = 1
@@ -63,10 +64,7 @@ c
          if (ifcvfld(ifield)) then
             ntot = nxyz*nelfld(ifield)
             call copy (y(j),w1(1,1,1,1,ifield-1),ntot)
-            if (ifrhs) then
-               if (ifdp0dt .and. ifield.eq.2) call add2(y(j),dtmp,ntot) 
-               call col2(y(j),tmask(1,1,1,1,ifield-1),ntot)
-            endif
+            if (ifrhs) call col2(y(j),tmask(1,1,1,1,ifield-1),ntot)
             j = j + ntot
          endif
       enddo
