@@ -6,7 +6,7 @@
 * Added generic `fld` reader to restart from arbitrary mesh
 * Added `OIFS` for `moving mesh`.
 * Added `Moving mesh` for `PN/PN`.
-* Each scalar field can be solved by `Helmholtz` or `CVODE`.
+* Added support for mixed `Helmholtz/CVODE` solves.
 * Improved `.re2` reader (reading in parallel).
 * Added `HPF-RT` (high pass filter relaxation term) for stabilization.
 * Added `k-omega` turbulence model.
@@ -17,12 +17,13 @@
 * Added DG for scalars
 * Added support for `implicit none`
 
-## Breaking Changes to the API
+## Backwards-Incompatible Changes 
 
 * Optional `intp.h` module replaced old interpolation routines `intpts()`
 * New generic fld reader `gfldr.h` replaced grid-to-grid interpolation `g2gi()`
 * Moved `makenek` to bin folder
-* New `SIZE` file with explicit declarations and improved readability
+* New `SIZE` file required to use `implicit none`
+* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed   
 
 ## Bug Fixes and Other Changes
 
