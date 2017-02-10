@@ -9,7 +9,7 @@ Nek5000 is an open source, fast and scalable spectral element code designed to s
 
 * unsteady incompressible Navier-Stokes flows and magnetohydrodynamics (MHD)
 * low Mach-number flows
-* heat transfer and scalar transport
+* heat transfer and scalar transport 
 
 
 ## Highlights
