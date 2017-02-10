@@ -2,18 +2,14 @@
 
 # first do some checks ...
 if [ $# -eq 0 -o "$1" == "-h" ]; then
-  echo "creates a new branch and updates files in the current working tree to match origin"
-  echo "usage: nekgit_co <your branch name> <origin branch name>"
-  echo "       e.g. nekgit_co fix123 develop"
+  echo "creates a new branch based on our MASTER and updates files in the current working copy"
+  echo "usage: nekgit_co <your branch name>"
+  echo "       e.g. nekgit_co fix123"
   echo ""
   exit 1
 fi
 
-rbr=$2
-if [ $# -eq 1 ]; then
-  echo "set origin branch to develop"
-  rbr="develop"
-fi
+rbr=master
 
 git fetch origin
 git checkout -b $1 --track origin/$rbr
