@@ -37,12 +37,12 @@ Hold your horses in less than 5min you have performed your first simulation
 
 ```
 cd ~
-wget https://nek5000.org/release/Nek5000.tar.gz
 tar -xvzf Nek5000.tar.gz
 export PATH=~/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
 cd ~/Nek5000/run; cp -r ~/Nek5000/short-tests/eddy .
-makenek eddy_uv 
+cp /Nek5000/core/makenek .
+./makenek eddy_uv 
 genmap             # on input type eddy_uv
 nekmpi eddy_uv 2   # to run on 2 ranks
 ``` 
