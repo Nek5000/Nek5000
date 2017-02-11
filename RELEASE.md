@@ -1,4 +1,4 @@
-# Release 17.0.0
+# Release 17.?.?
 
 ## Major Features and Improvements
 
@@ -8,8 +8,6 @@
 * Added `Moving mesh` for `PN/PN`.
 * Added support for mixed `Helmholtz/CVODE` solves.
 * Improved `.re2` reader (reading in parallel).
-* Added `HPF-RT` (high pass filter relaxation term) for stabilization.
-* Added `k-omega` turbulence model.
 * New `AMG setup` tool based on HYPRE. 
 * New `EXODUSII` mesh converter.
 * New interface to `libxsmm` (fast MATMUL library).
