@@ -11,8 +11,6 @@ IFMPI=
 IFCMT= 
 IFAMG= 
 IFNEKNEK=
-IFMOAB=
-MOAB_DIR=
 F77=
 CC=
 P=
@@ -102,14 +100,6 @@ ifeq ($(IFVISIT),true)
   lFLAGS := ${lFLAGS} $(VISIT_LFLAGS)
 endif
 
-# MOAB #########################################################################
-ifeq ($(IFMOAB),true)
-  MOABNEK_INCLUDES:=-I$S/3rd_party
-  include $(MOAB_DIR)/lib/iMesh-Defs.inc
-  MOABO := moab.o imeshutil.o imeshcutil.o
-  lFLAGS := $(IMESH_LFLAGS) $(IMESH_LIBS) ${lFLAGS} 
-endif
-
 ifeq ($(IFMPI),false)
 	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
 else
@@ -117,9 +107,9 @@ else
 endif
 
 ifeq ($(IFCMT),true)
-TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(CMTCORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 else
-TMP1 = $(CORE) $(MXM) $(USR) $(MOABO) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 endif
 
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -150,7 +140,7 @@ objdir:
 	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
 
 nek5000:	objdir $(NOBJS)
-	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(MOABNEK_INCLUDES) $(VISITNEK_INCLUDES) $(IMESH_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
+	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) $(IMESH_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
 	$(F77) -o ${BINNAME} $G ${OBJDIR}/${CASENAME}.o $(NOBJS) $(lFLAGS)
 	@if test -f ${BINNAME}; then \
 	echo "#############################################################"; \

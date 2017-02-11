@@ -49,12 +49,9 @@ APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
 SOURCE_ROOT_CORE=$APATH_SRC
 APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
 SOURCE_ROOT_JL=$APATH_SRC
-echo "JL root" $SOURCE_ROOT_JL
 APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
 SOURCE_ROOT_CMT=$APATH_SRC
-echo "CMT root" $SOURCE_ROOT_CMT
 
-IFMOAB=false
 IFNEKNEK=false
 
 # do some basic checks
@@ -88,62 +85,23 @@ if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
   exit 1
 fi
 
-# test F77 compiler
+# test if F77 compiler exists
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
   exit 1
 fi
-\rm test_f77.o 2>/dev/null
-# basic compiler test
-cat > test_f77.f << _ACEOF
-      subroutine test
-      end
-_ACEOF
-$F77 -c test_f77.f >/dev/null
-if [ ! -f test_f77.o ]; then
-  echo "FATAL ERROR: Basic compiler test for $F77 failed!"
-  exit 1
-fi
-\rm test_f77.* 2>/dev/null
 
-# test C compiler
+# test if C compiler exists
 which `echo $CC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $CC!"
   exit 1
 fi
-\rm test_cc.o 2>/dev/null
-cat > test_cc.c << _ACEOF
-      void function(){}
-_ACEOF
-$CC -c test_cc.c 1>/dev/null
-if [ ! -f test_cc.o ]; then
-  echo "FATAL ERROR: Basic compiler test for $CC failed!"
-  exit 1
-fi
-\rm test_cc.* 2>/dev/null
 
 # initial clean-up
 rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
-
-# Check ptr size
-cat > tmp.c << _ACEOF
-#include <stdlib.h>
-#include <stdio.h>
-int main()
-{
-  int *p;printf("%li\n",sizeof(p));
-}
-_ACEOF
-$CC tmp.c 2>&1>/dev/null
-ptrSize=`./a.out`
-rm tmp.c a.out
-if [ "$ptrSize" == "8" ]
-then
-  PPLIST="${PPLIST} PTRSIZE8"
-fi
 
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=false
@@ -257,28 +215,6 @@ PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 IFCMT=false
 for i in $PPLIST
 do
-   if [ "$i" == "MOAB" ]; then
-     IFMOAB=true
-     echo $F77comp | grep 'gfort' >/dev/null 
-     if [ $? -eq 0 ]; then
-       P="${P} -fcray-pointer"
-     fi
-     if [ "$MOAB_DIR" == "" ]; then
-       echo "ABORT: Please specify path to MOAB in MOAB_DIR!" 
-       exit 1
-     else
-       if [ ! -d $MOAB_DIR ]; then
-         echo "ABORT: Cannot find " $MOAB_DIR 
-         exit 1
-       fi 
-       if [ ! -f $MOAB_DIR/lib/iMesh-Defs.inc ]; then
-         echo "ABORT: Cannot find iMesh-Defs.inc in" $MOAB_DIR"/lib; make sure MOAB is installed."
-	 echo "       (to install, use 'make install' in" $MOAB_DIR")"
-         exit 1
-       fi 
-     fi
-   fi
-
    if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
    fi
@@ -368,8 +304,6 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
--e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
--e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
