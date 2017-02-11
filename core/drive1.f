@@ -61,10 +61,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call setvar          ! Initialize most variables
 
-#ifdef MOAB
-      if (ifmoab) call nekMOAB_bcs  !   Map BCs
-#endif
-
       instep=1             ! Check for zero steps
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
 
