@@ -1,6 +1,5 @@
 # This include file is used by the makenek script
 # to automatically create a makefile for Nek5000 
-# (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
 # ------------------------------------------------
 
 echo "makenek - automatic build tool for Nek5000"
@@ -14,8 +13,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
-  echo "  NEKNEK      activate overlapping mesh solver"
-  echo "  CMTNEK      activate DG compressible-flow solver"
+  echo "  NEKNEK      activate overlapping mesh solver (experimental)"
+  echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   exit 1
 fi
 
@@ -86,14 +85,14 @@ if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
 fi
 
 # test if F77 compiler exists
-if ! which -s `echo $F77` ; then
-  echo "FATAL ERROR: Cannot find $F77!"
+if ! which -s `echo $F77 | awk '{print $1}'` ; then
+  echo "FATAL ERROR: Cannot find `echo $F77 | awk '{print $1}'`!"
   exit 1
 fi
 
 # test if C compiler exists
-if ! which -s `echo $CC` ; then 
-  echo "FATAL ERROR: Cannot find $CC!"
+if ! which -s `echo $CC | awk '{print $1}'` ; then 
+  echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   exit 1
 fi
 
@@ -105,36 +104,36 @@ rm -f ./obj/subuser.o        2>/dev/null
 UNDERSCORE=false
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
-        call byte_rewind
+        call test
       end
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
-if nm test_underscore.o | grep -q byte_rewind_ ; then
+if nm test_underscore.o | grep -q test_ ; then
   UNDERSCORE=true
 fi
 \rm test_underscore.* 2>/dev/null
 
 
-# trying to figure out which compiler we're using 
+# trying to figure which compiler the wrapper is using 
 F77ok=0
 
-F77comp_=`$F77 -showme 2>/dev/null 1>.tmp`
-F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+F77comp_=`$F77 -showme 2>/dev/null 1>.tmp || true`
+F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
 if [ -f "`which $F77comp 2>/dev/null`" ]; then
   F77ok=1
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show 2>/dev/null 1>.tmp`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+  F77comp_=`$F77 -show 2>/dev/null 1>.tmp || true`
+  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   fi
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+  F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp || true`
+  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   fi
@@ -154,26 +153,23 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  *pgf*)        P="-r8 -Mpreprocess"
+  *pgf*)        FFLAGS="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   P="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
+  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
                ;;
-  *ifort*)      P="-r8 -fpconstant -fpp"
+  *ifort*)      FFLAGS="-r8 -fpconstant -fpp"
                ;;
-  *pathf*)      P="-r8 -cpp -fno-second-underscore"
+  *pathf*)      FFLAGS="-r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        P="-s default64 -eF"
+  *ftn*)        FFLAGS="-s default64 -eF"
                ;;
-  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
   *)  echo "ERROR: Unable to detect compiler!"
-      echo "        - don't know how to promote datatype REAL to 8 bytes"
-      echo "        - don't know how to invoke the C pre-processor (CPP) before compilation"
-      echo "       Please edit the makefile and specify the requested compiler flags using the P variable."
+      echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
       echo ""
-      P="<specify your compiler flags here>"
       NOCOMPILE=1
       read;;
 esac
@@ -232,20 +228,12 @@ fi
 MXM_USER="mxm_std.o"
 if echo $PPLIST | grep -q 'BGQ' ; then 
    MXM_USER+=" mxm_bgq.o" 
-   OPT_FLAGS_STD="-O3"
-   OPT_FLAGS_MAG="-O3"
 fi
 
 BLAS="blas.o dsygv.o ssygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
-
-# set optimization flags
-L0="\$(G) -O0"
-L2="\$(G) -O2"
-L3="\$(G) -O3" 
-L4="\$(L3)"
 
 if [ "$USR_LIB" != "" ]; then
     USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
@@ -255,15 +243,11 @@ fi
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
-sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
+sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
--e "s:^OPT_FLAGS[ ]*=.*:OPT_FLAGS\:=$OPT_FLAGS:" \
--e "s/^P[ ]*=.*/P:=$P/" \
--e "s/^L0[ ]*=.*/L0=$L0/" \
--e "s/^L2[ ]*=.*/L2=$L2/" \
--e "s/^L3[ ]*=.*/L3=$L3/" \
--e "s/^L4[ ]*=.*/L4=$L4/" \
+-e "s/^FFLAGS[ ]*=.*/FFLAGS:=$FFLAGS/" \
+-e "s/^CFLAGS[ ]*=.*/CFLAGS:=$CFLAGS/" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
