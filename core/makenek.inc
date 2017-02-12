@@ -155,7 +155,7 @@ fi
 case $F77comp in
   *pgf*)        FFLAGS="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
+  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
   *ifort*)      FFLAGS="-r8 -fpconstant -fpp"
                ;;
