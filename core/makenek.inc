@@ -86,15 +86,13 @@ if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
 fi
 
 # test if F77 compiler exists
-which `echo $F77 | awk '{print $1}'` 1>/dev/null
-if [ $? -ne 0 ]; then
+if ! which -s `echo $F77` ; then
   echo "FATAL ERROR: Cannot find $F77!"
   exit 1
 fi
 
 # test if C compiler exists
-which `echo $CC | awk '{print $1}'` 1>/dev/null
-if [ $? -ne 0 ]; then
+if ! which -s `echo $CC` ; then 
   echo "FATAL ERROR: Cannot find $CC!"
   exit 1
 fi
@@ -111,9 +109,7 @@ cat > test_underscore.f << _ACEOF
       end
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
-nm test_underscore.o | grep byte_rewind_ 1>/dev/null
-if [ $? -eq 0 ] 
-then
+if nm test_underscore.o | grep -q byte_rewind_ ; then
   UNDERSCORE=true
 fi
 \rm test_underscore.* 2>/dev/null
@@ -172,10 +168,6 @@ case $F77comp in
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
-  *sunf*)       P="-r8const -xtypemap=real:64 -fpp"
-               ;;
-  *open*)       P="-r8 -cpp -fno-second-underscore"
-               ;;
   *)  echo "ERROR: Unable to detect compiler!"
       echo "        - don't know how to promote datatype REAL to 8 bytes"
       echo "        - don't know how to invoke the C pre-processor (CPP) before compilation"
@@ -224,37 +216,28 @@ do
 done
 export IFCMT
 
-echo $PPLIST | grep 'CVODE' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'CVODE' ; then 
    IFCVODE=true 
 else
    IFCVODE=false
 fi
 
 # AMG setup
-echo $PPLIST | grep 'AMG' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'AMG' ; then 
    IFAMG=true 
 else
    IFAMG=false
 fi
 
-# MXM-handling
-if [ "$MXM_USER" != "" ]; then
-    echo "ABORT: makenek version is too old! Update with latest from source!"
-    exit 1 
-fi
 MXM_USER="mxm_std.o"
-echo $PPLIST | grep 'BGQ' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'BGQ' ; then 
    MXM_USER+=" mxm_bgq.o" 
    OPT_FLAGS_STD="-O3"
    OPT_FLAGS_MAG="-O3"
 fi
 
 BLAS="blas.o dsygv.o ssygv.o"
-echo $PPLIST | grep 'VENDOR_BLAS' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
 
@@ -263,22 +246,6 @@ L0="\$(G) -O0"
 L2="\$(G) -O2"
 L3="\$(G) -O3" 
 L4="\$(L3)"
-
-# user specified opt flags
-if [ "$OPT_FLAGS_STD" != "" ]; then
-  echo $OPT_FLAGS_STD | grep "\-O." 1>/dev/null
-  if [ $? -eq 0 ]; then
-    L2="\$(G) $OPT_FLAGS_STD"
-    L3="\$(G) $OPT_FLAGS_STD" 
-  else
-    L2="\$(G) -O2 $OPT_FLAGS_STD"
-    L3="\$(G) -O3 $OPT_FLAGS_STD"
-  fi
-fi
-
-if [ "$OPT_FLAGS_MAG" != "" ]; then
-    L4="\$(G) $OPT_FLAGS_MAG"
-fi
 
 if [ "$USR_LIB" != "" ]; then
     USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
@@ -310,13 +277,6 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
 -e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
-
-#echo $G | grep '\-g' 1>/dev/null
-#if [ $? -eq 0 ]; then
-#  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
-#  mv .makefile.tmp .makefile
-#  echo "Activate DEBUG mode"
-#fi
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
   echo ""
@@ -388,70 +348,54 @@ do
 done
 
 # tweak SIZE file
-cat SIZE | grep 'SIZE.inc' >/dev/null
-if [ $? -ne 0 ];  then
-  cat SIZE | grep -i 'optlevel' >/dev/null
-  if [ $? -ne 0 ]; then
+if ! cat SIZE | grep -q 'SIZE.inc' ; then
+  if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer optlevel,loglevel' >>SIZE
      echo '      common /lolevels/ optlevel,loglevel' >>SIZE
   fi
-  cat SIZE | grep -i 'lxo' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lxo' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
-  cat SIZE | grep -i 'ax1' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'ax1' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZE
      echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZE
   fi
-  cat SIZE | grep -i 'lys=lxs' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lys=lxs' ; then
      cat SIZE | grep -iv lxs > SIZE.x; mv SIZE.x SIZE  # Clean existing SIZE file of old version
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
-  cat SIZE | grep -i 'lcvx1' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lcvx1' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer lcvx1,lcvy1,lcvz1,lcvelt' >> SIZE
      echo '      parameter (lcvx1=1,lcvy1=1,lcvz1=1,lcvelt=1) ! cvode arrays' >> SIZE
   fi
-  cat SIZE | grep -i 'lfdm' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lfdm' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
-  cat SIZE | grep -i 'nio' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
 
-  cat SIZE | grep -i 'toteq' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'toteq' ; then
   if [ "$IFCMT" == "true" ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
       echo '      integer toteq' >> SIZE
       echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
-      echo 'c IFCMT=TRUE  then toteq=5'  >>SIZE
-  else
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer toteq' >> SIZE
-      echo '      parameter(toteq = 1  ) ! Number of conserved variables '  >>SIZE
-      echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
   fi
   fi
 fi
@@ -460,8 +404,7 @@ fi
 rm -f $CASENAME.f
 cp -pv $CASENAME.usr $CASENAME.f
 
-cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -473,8 +416,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userqtl" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userqtl" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -489,8 +431,7 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "^#include.*cvode_aux.*\.h" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -498,8 +439,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "^#include.*cvode_preco.*\.h" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "^#include.*cvode_preco.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -510,8 +450,7 @@ fi
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-cat $CASENAME.f | grep -i "subroutine.*cmt_usrflt" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -524,8 +463,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*cmt_userflux" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userflux" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -540,8 +478,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*cmt_userEOS" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userEOS" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
