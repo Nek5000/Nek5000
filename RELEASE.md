@@ -14,19 +14,23 @@
 * Extended `lowMach` solver for time varying thermodynamic pressure.
 * Added DG for scalars
 * Added support for `implicit none`
+* New `generic fld` reader allows restarts from an arbitrary mesh
 
 ## Backwards-Incompatible Changes 
 
 * Optional `intp.h` module replaced old interpolation routines `intpts()`
-* New generic fld reader `gfldr.h` replaced grid-to-grid interpolation `g2gi()`
+* Replcaed `g2gi()` by new generic fld reader `gfldr.h`
 * Moved `makenek` to bin folder
 * New `SIZE` file required to use `implicit none`
-* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed   
+* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
+* Removed `MOAB` 
+* Replaced `hpts.in` & `hpts.out` by `his.in` & `<casename>.his` 
+
 
 ## Bug Fixes and Other Changes
 
 * Use rank id to tag MPI message instead of global element 
-* Fix periodic BC bug of `genmap`.
+* Fix periodic BC bug of `genmap` when using more than 1M elemtents
 * Many bug fixes
 
 ## Thanks to our Contributors

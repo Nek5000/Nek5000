@@ -31,7 +31,7 @@ c
 
       parameter (mxprev=20,lgmres=30)           ! projection + Krylov space dimension
       parameter (lorder=3)                      ! upper limit for order in time
-      parameter (lhis=100)                      ! max intp points per MPI rank
+      parameter (lhis=1000)                     ! max history points per MPI rank
       parameter (maxobj=4,maxmbr=lelt*6)        ! max number number of objects
       parameter (nsessmax=1,nmaxl=1,nfldmax=1,nmaxcom=1) ! multimesh parameters
 

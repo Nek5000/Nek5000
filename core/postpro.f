@@ -1638,22 +1638,21 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       call prepost_map(1)  ! maps back axisymm arrays
 
-      if(nio.eq.0) write(6,*) 'done :: dump history points'
-
       return
       end
 c-----------------------------------------------------------------------
       subroutine buffer_in(buffer,npp,npoints,nbuf)
         
       include 'SIZE'
+      include 'INPUT'
       include 'PARALLEL'
 
       real    buffer(ldim,nbuf)  
 
       ierr = 0
       if(nid.eq.0) then
-        write(6,*) 'reading hpts.in'
-        open(50,file='hpts.in',status='old',err=100)
+        write(6,*) 'reading his.in'
+        open(50,file='his.in',status='old',err=100)
         read(50,*,err=100) npoints
         goto 101
  100    ierr = 1
@@ -1661,7 +1660,8 @@ c-----------------------------------------------------------------------
       endif
       ierr=iglsum(ierr,1)
       if(ierr.gt.0) then
-        write(6,*) 'Cannot open hpts.in in subroutine hpts()'
+        if(nio.eq.0) 
+     &   write(6,*) 'Cannot open his.in in subroutine hpts()'
         call exitt
       endif
       
@@ -1696,9 +1696,9 @@ c-----------------------------------------------------------------------
         enddo
         close(50)
         npp = n0
-        open(50,file='hpts.out',status='new')
+        open(50,file=hisfle)
         write(50,'(A)') 
-     &      '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
+     &      '# time  vx  vy  [vz]  pr  T  S01  S02  ...'
       elseif (nid.lt.npass)  then !processors receiving data
         call msgwait(msg_id)
         npp=nbuf

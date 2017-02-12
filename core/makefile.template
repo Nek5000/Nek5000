@@ -143,10 +143,10 @@ nek5000:	objdir $(NOBJS)
 	$(F77) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) $(IMESH_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
 	$(F77) -o ${BINNAME} $G ${OBJDIR}/${CASENAME}.o $(NOBJS) $(lFLAGS)
 	@if test -f ${BINNAME}; then \
+        echo ""; \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
-        size ${BINNAME}; \
         echo ""; \
         echo "$(NEK_WARN)"; \
 	else \
@@ -162,7 +162,7 @@ lib:	objdir $(NOBJS)
 	ranlib ${LIBNAME}
 
 clean:
-	rm -rf ./obj ${BINNAME}
+	rm -rf ${CASENAME}.f obj ${BINNAME}
 ifeq ($(IFMPI),false) 
 	@rm -rf $S/mpif.h
 endif
@@ -286,8 +286,8 @@ $(OBJDIR)/$(JO)findpts_el_2.o    :$(J)/findpts_el_2.c;    $(CC) -c $(cFL2) $(JL)
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(F77) -c $(FL2i4) $< -o $@
 $(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(F77) -c $(FL2i4) $< -o $@
-$(OBJDIR)/visit.o        :$S/3rd_party/visit.f;			$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
+$(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(F77) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
-$(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/iniparser.o    :$S/3rd_party/iniparser.c;     $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/dictionary.o   :$S/3rd_party/dictionary.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/iniparser.o    :$S/3rd_party/iniparser.c;     $(CC)  -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/dictionary.o   :$S/3rd_party/dictionary.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
