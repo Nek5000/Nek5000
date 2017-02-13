@@ -108,6 +108,8 @@ c
       etime1=dnekclock()
 #endif
 
+      prefix = prefin
+
       if (ifdoin) then
          call prepost_map(0) ! map pr and axisymm. arrays
          call outfld(prefix)
