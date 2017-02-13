@@ -1,6 +1,5 @@
 # This include file is used by the makenek script
 # to automatically create a makefile for Nek5000 
-# (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
 # ------------------------------------------------
 
 echo "makenek - automatic build tool for Nek5000"
@@ -14,8 +13,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
-  echo "  NEKNEK      activate overlapping mesh solver"
-  echo "  CMTNEK      activate DG compressible-flow solver"
+  echo "  NEKNEK      activate overlapping mesh solver (experimental)"
+  echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   exit 1
 fi
 
@@ -49,12 +48,9 @@ APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
 SOURCE_ROOT_CORE=$APATH_SRC
 APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
 SOURCE_ROOT_JL=$APATH_SRC
-echo "JL root" $SOURCE_ROOT_JL
 APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
 SOURCE_ROOT_CMT=$APATH_SRC
-echo "CMT root" $SOURCE_ROOT_CMT
 
-IFMOAB=false
 IFNEKNEK=false
 
 # do some basic checks
@@ -88,99 +84,56 @@ if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
   exit 1
 fi
 
-# test F77 compiler
-which `echo $F77 | awk '{print $1}'` 1>/dev/null
-if [ $? -ne 0 ]; then
-  echo "FATAL ERROR: Cannot find $F77!"
+# test if F77 compiler exists
+if ! which `echo $F77 | awk '{print $1}'` 1>/dev/null ; then
+  echo "FATAL ERROR: Cannot find `echo $F77 | awk '{print $1}'`!"
   exit 1
 fi
-\rm test_f77.o 2>/dev/null
-# basic compiler test
-cat > test_f77.f << _ACEOF
-      subroutine test
-      end
-_ACEOF
-$F77 -c test_f77.f >/dev/null
-if [ ! -f test_f77.o ]; then
-  echo "FATAL ERROR: Basic compiler test for $F77 failed!"
-  exit 1
-fi
-\rm test_f77.* 2>/dev/null
 
-# test C compiler
-which `echo $CC | awk '{print $1}'` 1>/dev/null
-if [ $? -ne 0 ]; then
-  echo "FATAL ERROR: Cannot find $CC!"
+# test if C compiler exists
+if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
+  echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   exit 1
 fi
-\rm test_cc.o 2>/dev/null
-cat > test_cc.c << _ACEOF
-      void function(){}
-_ACEOF
-$CC -c test_cc.c 1>/dev/null
-if [ ! -f test_cc.o ]; then
-  echo "FATAL ERROR: Basic compiler test for $CC failed!"
-  exit 1
-fi
-\rm test_cc.* 2>/dev/null
 
 # initial clean-up
 rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
 
-# Check ptr size
-cat > tmp.c << _ACEOF
-#include <stdlib.h>
-#include <stdio.h>
-int main()
-{
-  int *p;printf("%li\n",sizeof(p));
-}
-_ACEOF
-$CC tmp.c 2>&1>/dev/null
-ptrSize=`./a.out`
-rm tmp.c a.out
-if [ "$ptrSize" == "8" ]
-then
-  PPLIST="${PPLIST} PTRSIZE8"
-fi
-
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=false
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
-        call byte_rewind
+        call test
       end
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
-nm test_underscore.o | grep byte_rewind_ 1>/dev/null
-if [ $? -eq 0 ] 
-then
+if nm test_underscore.o | grep -q test_ ; then
   UNDERSCORE=true
 fi
 \rm test_underscore.* 2>/dev/null
 
 
-# trying to figure out which compiler we're using 
+# trying to figure which compiler the wrapper is using 
 F77ok=0
 
-F77comp_=`$F77 -showme 2>/dev/null 1>.tmp`
-F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+F77comp_=`$F77 -showme 2>/dev/null 1>.tmp || true`
+F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
 if [ -f "`which $F77comp 2>/dev/null`" ]; then
   F77ok=1
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show 2>/dev/null 1>.tmp`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+  F77comp_=`$F77 -show 2>/dev/null 1>.tmp || true`
+  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   fi
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}'`
+  F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp || true`
+  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
   fi
@@ -200,30 +153,23 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  *pgf*)        P="-r8 -Mpreprocess"
+  *pgf*)        FFLAGS="-r8 -Mpreprocess"
                ;;
-  *gfortran*)   P="-fdefault-real-8 -fdefault-double-8 -x f77-cpp-input"
+  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
-  *ifort*)      P="-r8 -fpconstant -fpp"
+  *ifort*)      FFLAGS="-r8 -fpconstant -fpp"
                ;;
-  *pathf*)      P="-r8 -cpp -fno-second-underscore"
+  *pathf*)      FFLAGS="-r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        P="-s default64 -eF"
+  *ftn*)        FFLAGS="-s default64 -eF"
                ;;
-  *xlf*)       P="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
-  *sunf*)       P="-r8const -xtypemap=real:64 -fpp"
-               ;;
-  *open*)       P="-r8 -cpp -fno-second-underscore"
-               ;;
   *)  echo "ERROR: Unable to detect compiler!"
-      echo "        - don't know how to promote datatype REAL to 8 bytes"
-      echo "        - don't know how to invoke the C pre-processor (CPP) before compilation"
-      echo "       Please edit the makefile and specify the requested compiler flags using the P variable."
+      echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
       echo ""
-      P="<specify your compiler flags here>"
       NOCOMPILE=1
       read;;
 esac
@@ -257,28 +203,6 @@ PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 IFCMT=false
 for i in $PPLIST
 do
-   if [ "$i" == "MOAB" ]; then
-     IFMOAB=true
-     echo $F77comp | grep 'gfort' >/dev/null 
-     if [ $? -eq 0 ]; then
-       P="${P} -fcray-pointer"
-     fi
-     if [ "$MOAB_DIR" == "" ]; then
-       echo "ABORT: Please specify path to MOAB in MOAB_DIR!" 
-       exit 1
-     else
-       if [ ! -d $MOAB_DIR ]; then
-         echo "ABORT: Cannot find " $MOAB_DIR 
-         exit 1
-       fi 
-       if [ ! -f $MOAB_DIR/lib/iMesh-Defs.inc ]; then
-         echo "ABORT: Cannot find iMesh-Defs.inc in" $MOAB_DIR"/lib; make sure MOAB is installed."
-	 echo "       (to install, use 'make install' in" $MOAB_DIR")"
-         exit 1
-       fi 
-     fi
-   fi
-
    if [ "$i" == "NEKNEK" ]; then
      IFNEKNEK=true
    fi
@@ -288,60 +212,27 @@ do
 done
 export IFCMT
 
-echo $PPLIST | grep 'CVODE' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'CVODE' ; then 
    IFCVODE=true 
 else
    IFCVODE=false
 fi
 
 # AMG setup
-echo $PPLIST | grep 'AMG' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'AMG' ; then 
    IFAMG=true 
 else
    IFAMG=false
 fi
 
-# MXM-handling
-if [ "$MXM_USER" != "" ]; then
-    echo "ABORT: makenek version is too old! Update with latest from source!"
-    exit 1 
-fi
 MXM_USER="mxm_std.o"
-echo $PPLIST | grep 'BGQ' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'BGQ' ; then 
    MXM_USER+=" mxm_bgq.o" 
-   OPT_FLAGS_STD="-O3"
-   OPT_FLAGS_MAG="-O3"
 fi
 
 BLAS="blas.o dsygv.o ssygv.o"
-echo $PPLIST | grep 'VENDOR_BLAS' >/dev/null 
-if [ $? -eq 0 ]; then
+if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
-fi
-
-# set optimization flags
-L0="\$(G) -O0"
-L2="\$(G) -O2"
-L3="\$(G) -O3" 
-L4="\$(L3)"
-
-# user specified opt flags
-if [ "$OPT_FLAGS_STD" != "" ]; then
-  echo $OPT_FLAGS_STD | grep "\-O." 1>/dev/null
-  if [ $? -eq 0 ]; then
-    L2="\$(G) $OPT_FLAGS_STD"
-    L3="\$(G) $OPT_FLAGS_STD" 
-  else
-    L2="\$(G) -O2 $OPT_FLAGS_STD"
-    L3="\$(G) -O3 $OPT_FLAGS_STD"
-  fi
-fi
-
-if [ "$OPT_FLAGS_MAG" != "" ]; then
-    L4="\$(G) $OPT_FLAGS_MAG"
 fi
 
 if [ "$USR_LIB" != "" ]; then
@@ -352,15 +243,11 @@ fi
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
-sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
+sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
--e "s:^OPT_FLAGS[ ]*=.*:OPT_FLAGS\:=$OPT_FLAGS:" \
--e "s/^P[ ]*=.*/P:=$P/" \
--e "s/^L0[ ]*=.*/L0=$L0/" \
--e "s/^L2[ ]*=.*/L2=$L2/" \
--e "s/^L3[ ]*=.*/L3=$L3/" \
--e "s/^L4[ ]*=.*/L4=$L4/" \
+-e "s/^FFLAGS[ ]*=.*/FFLAGS:=$FFLAGS/" \
+-e "s/^CFLAGS[ ]*=.*/CFLAGS:=$CFLAGS/" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
@@ -368,21 +255,12 @@ sed -e "s:^F77[ ]*=.*:F77\:=$F77:" \
 -e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
--e "s/^IFMOAB[ ]*=.*/IFMOAB:=$IFMOAB/" \
--e "s:^MOAB_DIR[ ]*=.*:MOAB_DIR\:=${MOAB_DIR}:" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
 -e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
-
-#echo $G | grep '\-g' 1>/dev/null
-#if [ $? -eq 0 ]; then
-#  sed 's/-O[1-4]/-O0/g' .makefile > .makefile.tmp
-#  mv .makefile.tmp .makefile
-#  echo "Activate DEBUG mode"
-#fi
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
   echo ""
@@ -454,70 +332,54 @@ do
 done
 
 # tweak SIZE file
-cat SIZE | grep 'SIZE.inc' >/dev/null
-if [ $? -ne 0 ];  then
-  cat SIZE | grep -i 'optlevel' >/dev/null
-  if [ $? -ne 0 ]; then
+if ! cat SIZE | grep -q 'SIZE.inc' ; then
+  if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer optlevel,loglevel' >>SIZE
      echo '      common /lolevels/ optlevel,loglevel' >>SIZE
   fi
-  cat SIZE | grep -i 'lxo' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lxo' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
-  cat SIZE | grep -i 'ax1' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'ax1' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer ax1,ay1,az1,ax2,ay2,az2' >> SIZE
      echo '      parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages' >> SIZE
   fi
-  cat SIZE | grep -i 'lys=lxs' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lys=lxs' ; then
      cat SIZE | grep -iv lxs > SIZE.x; mv SIZE.x SIZE  # Clean existing SIZE file of old version
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
-  cat SIZE | grep -i 'lcvx1' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lcvx1' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer lcvx1,lcvy1,lcvz1,lcvelt' >> SIZE
      echo '      parameter (lcvx1=1,lcvy1=1,lcvz1=1,lcvelt=1) ! cvode arrays' >> SIZE
   fi
-  cat SIZE | grep -i 'lfdm' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'lfdm' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
-  cat SIZE | grep -i 'nio' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
 
-  cat SIZE | grep -i 'toteq' >/dev/null
-  if [ $? -ne 0 ]; then
+  if ! cat SIZE | grep -qi 'toteq' ; then
   if [ "$IFCMT" == "true" ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
       echo '      integer toteq' >> SIZE
       echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
-      echo 'c IFCMT=TRUE  then toteq=5'  >>SIZE
-  else
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer toteq' >> SIZE
-      echo '      parameter(toteq = 1  ) ! Number of conserved variables '  >>SIZE
-      echo 'c IFCMT=FALSE  then toteq=1'  >>SIZE
   fi
   fi
 fi
@@ -526,8 +388,7 @@ fi
 rm -f $CASENAME.f
 cp -pv $CASENAME.usr $CASENAME.f
 
-cat $CASENAME.f | grep -i "subroutine.*usrsetvert" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -539,8 +400,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*userqtl" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userqtl" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -555,8 +415,7 @@ fi
 
 if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
 
-cat $CASENAME.f | grep -i "^#include.*cvode_aux.*\.h" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -564,8 +423,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "^#include.*cvode_preco.*\.h" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "^#include.*cvode_preco.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -576,8 +434,7 @@ fi
 fi
 
 if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
-cat $CASENAME.f | grep -i "subroutine.*cmt_usrflt" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -590,8 +447,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*cmt_userflux" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userflux" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -606,8 +462,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-cat $CASENAME.f | grep -i "subroutine.*cmt_userEOS" >/dev/null
-if [ $? -ne 0 ]; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userEOS" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek

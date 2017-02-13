@@ -72,8 +72,8 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     for key, val in _opts.iteritems():
         print('    Using {0}="{1}"'.format(key, val))
 
-    makenek_in  = os.path.join(source_root, 'core', 'makenek')
-    makenek_out = os.path.join(source_root, 'core', 'makenek.tests')
+    makenek_in  = os.path.join(source_root, 'bin', 'makenek')
+    makenek_out = os.path.join(source_root, 'bin', 'makenek.tests')
     logfile     = os.path.join(cwd, 'compiler.out')
     try:
         config_makenek(

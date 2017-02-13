@@ -28,37 +28,28 @@ c
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
-#ifdef MPIIO
+#ifdef PRE2
       call byte_close(ierr)
-
       call crystal_setup(cr_re2,nekcomm,np)
 
+      isave = pid0r
       pid0r = nid ! every ranks reads
       call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
-      if (nio.eq.0) write(6,*)    '  preading mesh '
-      call readp_re2_mesh(ifbswap)
-
-      if (nio.eq.0) write(6,*)    '  preading curved sides '
+      call readp_re2_mesh (ifbswap)
       call readp_re2_curve(ifbswap)
-
       do ifield = ibc,nfldt
-         if (nio.eq.0) write(6,*) '  preading bc for ifld',ifield
          call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
+      call crystal_free  (cr_re2)
       call byte_close_mpi(fh_re2,ierr)
-      call crystal_free  (cr_re2) 
+      pid0r = isave 
 #else
-      if (nio.eq.0) write(6,*)    '  reading mesh '
-      call bin_rd1_mesh  (ifbswap)
-
-      if (nio.eq.0) write(6,*)    '  reading curved sides '
-      call bin_rd1_curve (ifbswap)
-
+      call bin_rd1_mesh (ifbswap)
+      call bin_rd1_curve(ifbswap)
       do ifield = ibc,nfldt
-         if (nio.eq.0) write(6,*) '  reading bc for ifld',ifield
          call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
@@ -93,6 +84,7 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
 
+      if (nio.eq.0) write(6,*) '  preading mesh '
 
       nrg       = nelgt
       nr        = nelt
@@ -178,6 +170,9 @@ c-----------------------------------------------------------------------
          nrg = nrg4(1)
       endif
       re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+      if(nio.eq.0) write(6,*) '  preading curved sides '
 
       ! read data from file
       nr = nrg/np
@@ -281,6 +276,9 @@ c-----------------------------------------------------------------------
          nrg = nrg4(1)
       endif
       re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+      if(nio.eq.0) write(6,*) '  preading bc for ifld',ifield
 
       ! read data from file
       nr = nrg/np
@@ -460,6 +458,8 @@ c-----------------------------------------------------------------------
 
       integer e,eg,buf(55)
 
+      if (nio.eq.0) write(6,*)    '  reading mesh '
+
       nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
       len  = 4*nwds                          ! 4 bytes / wd
 
@@ -552,6 +552,7 @@ c-----------------------------------------------------------------------
            if (ifbswap) call byte_reverse(ncurve,1,ierr)
          endif
 
+         if(ncurve.ne.0) write(6,*) '  reading curved sides '
          do k=1,ncurve
            if(ierr.eq.0) then
               call byte_read(buf,nwds,ierr)
@@ -645,6 +646,7 @@ c-----------------------------------------------------------------------
            if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
          endif
 
+         if(nbc_max.ne.0) write(6,*) '  reading bc for ifld',ifield
          do k=1,nbc_max
 c           write(6,*) k,' dobc1 ',nbc_max
             if(ierr.eq.0) then

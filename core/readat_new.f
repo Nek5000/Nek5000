@@ -58,6 +58,8 @@ C
       param(42) = 0    ! GMRES 
       param(43) = 0    ! SEMG preconitioner
 
+      param(59) = 1    ! No fast operator eval
+
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
@@ -649,8 +651,6 @@ c     This is here because it influence the mesh read, which follows.
          if (nelx.gt.0) ifzper=.false.
       endif
 
-      if (ifdg) param(59)=1  ! No fast operator eval for DG
-
       return
       END
 c-----------------------------------------------------------------------
@@ -769,12 +769,6 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          endif
       endif
 
-      if (ifmoab .and..not. ifsplit) then
-         if(nid.eq.0) write(6,*) 
-     $   'ERROR: No MOAB support for Pn-Pn-2'
-         call exitt
-      endif
-
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
          if(nid.eq.0) write(6,*) 
@@ -844,12 +838,6 @@ c           write(6,*)'help:',lelt,lelv,lelgv
      &   'ABORT: Dealiasing space too small; Check lxd,lyd,lzd in SIZE '
          call exitt
       endif
-
-      if (ifmoab) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: MOAB is not supported!'
-         call exitt
-      endif 
 
       return
       end

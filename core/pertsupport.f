@@ -263,83 +263,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-
-      subroutine writehist(v1,v2,v3,temp,jpp)
-      INCLUDE 'SIZE'
-      INCLUDE 'TSTEP'
-      INCLUDE 'GEOM'
-      INCLUDE 'CTIMER'
-      INCLUDE 'IXYZ'
-      INCLUDE 'INPUT'
-      INCLUDE 'MASS'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'SOLN'
-      real hdump(25)
-      real  v1(nx1,ny1,nz1,nelv), v2(nx1,ny1,nz1,nelv)
-     $    , v3(nx1,ny1,nz1,nelv), temp(nx1,ny1,nz1,nelv)
-
-      IF (NHIS.GT.0) THEN
-         IPART=0
-         DO I=1,NHIS
-            NVAR=0
-            IX =LOCHIS(1,I)
-            IY =LOCHIS(2,I)
-            IZ =LOCHIS(3,I)
-            IEG=LOCHIS(4,I)
-            JNID=GLLNID(IEG)
-            IE  =GLLEL(IEG)
-            
-            IF(HCODE(1,I).EQ.'U')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=V1(IX,IY,IZ,IE)
-            ELSEIF(HCODE(1,I).EQ.'X')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=XM1(IX,IY,IZ,IE)
-            ENDIF
-            IF(HCODE(2,I).EQ.'V')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=V2(IX,IY,IZ,IE)
-            ELSEIF(HCODE(2,I).EQ.'Y')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=YM1(IX,IY,IZ,IE)
-            ENDIF
-            IF(HCODE(3,I).EQ.'W')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=V3(IX,IY,IZ,IE)
-            ELSEIF(HCODE(3,I).EQ.'Z')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=ZM1(IX,IY,IZ,IE)
-            ENDIF
-            IF(HCODE(5,I).EQ.'T')THEN
-               NVAR=NVAR+1
-               HDUMP(NVAR)=temp (IX,IY,IZ,IE)
-            ENDIF
-
-C--------------------------------------------------------------
-C     Dump out the NVAR values for this history point
-C--------------------------------------------------------------
-            MTYPE=7000+I
-            LEN=WDSIZE*NVAR
-C     
-C     If point on this processor, send data to node 0
-            IF (NVAR.GT.0.AND.NID.NE.0.AND.JNID.EQ.NID) 
-     $           CALL CSEND(MTYPE,HDUMP,LEN,NODE0,NULLPID)
-C     
-C     If processor 0, recv data (unless point resides on node0).
-            IF (NVAR.GT.0.AND.NID.EQ.0.AND.JNID.NE.NID)
-     $           CALL CRECV(MTYPE,HDUMP,LEN)
-C     
-            IF (NVAR.GT.0.AND.NID.EQ.0) then
-               WRITE(146,'(1p8e16.8)')TIME,(HDUMP(II),II=1,NVAR)
-               call flushBuffer(146)
-            endif
-C     
-         enddo
-      endif
-      return
-      end
-
-c----------------------------------------------------------------------
       subroutine initialize
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
@@ -541,8 +464,6 @@ c
          call outpost2
      $     (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),prp(1,jpp),tp(1,1,jpp),
      $     1,s3)
-         call writehist
-     $     (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),jpp)
       enddo
 c
       return
