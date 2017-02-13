@@ -85,13 +85,13 @@ if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
 fi
 
 # test if F77 compiler exists
-if ! which -s `echo $F77 | awk '{print $1}'` ; then
+if ! which `echo $F77 | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $F77 | awk '{print $1}'`!"
   exit 1
 fi
 
 # test if C compiler exists
-if ! which -s `echo $CC | awk '{print $1}'` ; then 
+if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   exit 1
 fi
