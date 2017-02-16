@@ -259,7 +259,7 @@ sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
--e "s:^S2[ ]*=.*:S2\:=${SOURCE_ROOT_CMT}:" \
+-e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then

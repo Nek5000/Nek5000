@@ -3,9 +3,9 @@ LIBNAME=libnek5000.a
 CASENAME=
 CASEDIR=
 S=
-S2=
+SCMT=
 J=
-OPT_INCDIR:=./
+OPT_INCDIR=./
 OBJDIR=obj
 IFMPI= 
 IFCMT= 
@@ -110,6 +110,7 @@ TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 
 ifeq ($(IFCMT),true)
 TMP1 += $(CMTCORE)
+OPT_INCDIR += -I $(SCMT)
 endif
 
 NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -121,8 +122,8 @@ L0 = $(G) -O0
 L2 = $(G) -O2
 L3 = $(G) -O3
 
-FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
-FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(S2) -I$(OPT_INCDIR)
+FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR) 
+FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
 cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$J
@@ -228,25 +229,27 @@ $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/readat_new.o	:$S/readat_new.f $S/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/reader_re2.f;		$(FC) -c $(FL2) $< -o $@
+
 # CMT CORE     ##################################################################
-$(OBJDIR)/step.o	:$(S2)/step.f;	        	$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/drive1_cmt.o	:$(S2)/drive1_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/drive2_cmt.o	:$(S2)/drive2_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/driver3_cmt.o	:$(S2)/driver3_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gradient_solver.o	:$(S2)/gradient_solver.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/eqnsolver_cmt.o	:$(S2)/eqnsolver_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/ausm.o	:$(S2)/ausm.f;   		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/face.o	:$(S2)/face.f;  		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/bc.o		:$(S2)/bc.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/surface_fluxes.o	:$(S2)/surface_fluxes.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/diffusive_cmt.o	:$(S2)/diffusive_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/MixtPerf.o	:$(S2)/MixtPerf.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/intpdiff.o	:$(S2)/intpdiff.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/inflow_bc.o	:$(S2)/inflow_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/outflow_bc.o	:$(S2)/outflow_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/wall_bc.o	:$(S2)/wall_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/filters_cmt.o	:$(S2)/filters_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/diagnostics.o	:$(S2)/diagnostics.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/drive1_cmt.o	:$(SCMT)/drive1_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/drive2_cmt.o	:$(SCMT)/drive2_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/driver3_cmt.o	:$(SCMT)/driver3_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/gradient_solver.o	:$(SCMT)/gradient_solver.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/eqnsolver_cmt.o	:$(SCMT)/eqnsolver_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/ausm.o	:$(SCMT)/ausm.f;   		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/face.o	:$(SCMT)/face.f;  		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/bc.o		:$(SCMT)/bc.f;			$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/surface_fluxes.o	:$(SCMT)/surface_fluxes.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/diffusive_cmt.o	:$(SCMT)/diffusive_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/MixtPerf.o	:$(SCMT)/MixtPerf.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/intpdiff.o	:$(SCMT)/intpdiff.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/inflow_bc.o	:$(SCMT)/inflow_bc.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/outflow_bc.o	:$(SCMT)/outflow_bc.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/wall_bc.o	:$(SCMT)/wall_bc.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/filters_cmt.o	:$(SCMT)/filters_cmt.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/diagnostics.o	:$(SCMT)/diagnostics.f;		$(FC) -c $(FL2) $< -o $@
+
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(FC) -c $(FL2) $< -o $@ 
 $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(FC) -c $(FL3) $< -o $@
@@ -279,9 +282,9 @@ $(OBJDIR)/$(JO)findpts_el_3.o    :$(J)/findpts_el_3.c;    $(CC) -c $(cFL2) $(JL)
 $(OBJDIR)/$(JO)findpts_el_2.o    :$(J)/findpts_el_2.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L2) $(PPS_F) $< -o $@
+$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(FC) -c $(L2) $(PPS_F) $< -o $@
+$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L2) $(PPS_F) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
