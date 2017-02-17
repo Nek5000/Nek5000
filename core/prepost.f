@@ -109,6 +109,7 @@ c
 #endif
 
       prefix = prefin
+      if (prefix.eq.'his') prefix = '   '
 
       if (ifdoin) then
          call prepost_map(0) ! map pr and axisymm. arrays
