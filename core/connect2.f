@@ -39,136 +39,49 @@ C     Read Mesh Info
       if(nid.eq.0) then
         read(9,*)    ! xfac,yfac,xzero,yzero
         read(9,*)    ! dummy
-        if (ifmoab) then
-           read(9,*) h5mfle
-           ! read fluid/solid material set ids
-           read(9,*) numflu, numoth
-           if (numflu+numoth .gt. numsts) then
-              write(6,'(A)') 
-     $             'Number of fluid+other material sets too large.'
-              write(6, '(A)') 
-     $             'Need to increase NUMSTS in file INPUT.'
-              call exitt
-           else if (numoth .gt. 0 .and. .not. ifheat) then 
-              call exitt(
-     $       'Error: no. of other sets is non-zero but ifheat = false.')
-           endif
-           read(9,*) (matids(i), i = 1, numflu+numoth)
-           do i = numflu+numoth+1, numsts
-              matids(i) = -1
-           enddo
-           read(9,*) (matindx(i), i = 1, numflu+numoth)
-           do i = numflu+numoth+1, numsts
-              matindx(i) = -1
-           enddo
-           do i = 1, lelt
-              imatie(i) = -1
-           enddo
-           read(9,*) numbcs
-           if (numbcs .gt. numsts) then
-              write(6,'(A)') 
-     $             'Number of BC sets too large.'
-              write(6, '(A)') 
-     $             'Need to increase NUMSTS in file INPUT.'
-              call exitti
-           endif
-           do iset = 1, numbcs
-              read(9,'(2I5,A3)') ibcsts(iset), bcf(iset), bctyps(iset)
-
-           enddo
-           nelgs = 0
-           do iset = numbcs+1, numsts
-              bcf(iset) = -1
-              bctyps(iset) = 'E  '
-              ibcsts(iset) = -1
-           enddo
-        else
-           read(9,*)  nelgs,ndim,nelgv
-           nelgt = abs(nelgs)
-        endif
+        read(9,*)  nelgs,ndim,nelgv
+        nelgt = abs(nelgs)
       endif
       call bcast(nelgs,ISIZE)
       call bcast(ndim ,ISIZE)
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
-      call bcast(h5mfle,132)
-      if (ifmoab) then
-c pack into long int array and bcast as that
-         if (nid .eq. 0) then
-            idum(1) = numflu
-            idum(2) = numoth
-            idum(3) = numbcs
-            do iset = 1, numsts
-               idum(3+iset) = matids(iset)
-            enddo
-            do iset = 1, numsts
-               idum(3+numflu+numoth+iset) = ibcsts(iset)
-            enddo
-            do iset = 1, numsts
-               idum(3+numflu+numoth+numbcs+iset) = matindx(iset)
-            enddo
-         endif
-         call bcast(idum, ISIZE*(3+3*numsts))
-         call bcast(bctyps, 3*numsts)
-         call bcast(bcf, ISIZE*numsts)
-
-         if (nid .ne. 0) then
-            numflu = idum(1)
-            numoth = idum(2)
-            numbcs = idum(3)
-            do iset = 1, numsts
-               matids(iset) = idum(3+iset)
-            enddo
-            do iset = 1, numsts
-               ibcsts(iset) = idum(3+numflu+numoth+iset)
-            enddo
-            do iset = 1, numsts
-               matindx(iset) = idum(3+numflu+numoth+numbcs+iset)
-            enddo
-         endif
-      endif
       ifre2 = .false.
       if(nelgs.lt.0) ifre2 = .true.     ! use new .re2 reader
 
       ifgtp = .false.
       if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
-      if (ifmoab) then
-#ifdef MOAB
-         call nekMOAB_import
-#endif
-      else
-        if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
-        call chk_nel  ! make certain sufficient array sizes
+      if (ifre2) call open_bin_file(ifbswap) ! rank0 will open and read
+      call chk_nel  ! make certain sufficient array sizes
 
-        if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
-        if (ifre2) then
-          call bin_rd1(ifbswap) ! rank0 will read mesh data + distribute
-        else
-          maxrd = 32               ! max # procs to read at once
-          mread = (np-1)/maxrd+1   ! mod param
-          iread = 0                ! mod param
-          x     = 0
-          do i=0,np-1,maxrd
-             call nekgsync()
-             if (mod(nid,mread).eq.iread) then
-                if (nid.ne.0) then
-                  open(UNIT=9,FILE=REAFLE,STATUS='OLD')
-                  call cscan(string,'MESH DATA',9)
-                  read(9,*) string
-                endif 
-                if (ifgtp) then
-                   call genbox
-                else
-                   call rdmesh
-                   call rdcurve !  Curved side data
-                   call rdbdry  !  Boundary Conditions
-                endif
-                if (nid.ne.0) close(unit=9)
-             endif
-             iread = iread + 1
-          enddo
-        endif
+      if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+      if (ifre2) then
+        call bin_rd1(ifbswap) ! rank0 will read mesh data + distribute
+      else
+        maxrd = 32               ! max # procs to read at once
+        mread = (np-1)/maxrd+1   ! mod param
+        iread = 0                ! mod param
+        x     = 0
+        do i=0,np-1,maxrd
+           call nekgsync()
+           if (mod(nid,mread).eq.iread) then
+              if (nid.ne.0) then
+                open(UNIT=9,FILE=REAFLE,STATUS='OLD')
+                call cscan(string,'MESH DATA',9)
+                read(9,*) string
+              endif 
+              if (ifgtp) then
+                 call genbox
+              else
+                 call rdmesh
+                 call rdcurve !  Curved side data
+                 call rdbdry  !  Boundary Conditions
+              endif
+              if (nid.ne.0) close(unit=9)
+           endif
+           iread = iread + 1
+        enddo
       endif
 
 C     Read Restart options / Initial Conditions / Drive Force
@@ -380,8 +293,6 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFDG
          elseif (indx1(string(i),'IFANLS' ,6).gt.0) then 
               read(string(i),*) IFANLS
-         elseif (indx1(string(i),'IFMOAB' ,6).gt.0) then 
-              read(string(i),*) IFMOAB
          elseif (indx1(string(i),'IFCOUP' ,6).gt.0) then 
               read(string(i),*) IFCOUP
          elseif (indx1(string(i),'IFVCOUP' ,7).gt.0) then 
@@ -435,7 +346,6 @@ c              read(string,*) IFSPLIT
      &           '   IFSPLIT'  ,
      &           '   IFEXPLVIS',
      &           '   IFCONS'   ,
-     &           '   IFMOAB'   ,
      &           '   IFCOUP'   ,
      &           '   IFVCOUP'
               endif
@@ -576,12 +486,6 @@ C
          call exitt
       endif
 
-      if (ifmoab .and..not. ifsplit) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: MOAB in Pn-Pn-2 is not supported'
-         call exitt
-      endif
-
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
          if(nid.eq.0) write(6,*) 
@@ -680,15 +584,7 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
 
-      if (ifdg) param(59)=1  ! No fast operator eval for DG
-
-#ifndef MOAB
-      if (ifmoab) then
-         print *,"ABORT: ifmoab = .true. in input but this ",
-     $ "version of nek not compiled with MOAB."
-         call exitti
-      endif
-#endif
+      param(59) = 1 ! No fast operator eval
 
       return
 

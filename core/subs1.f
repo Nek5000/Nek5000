@@ -123,8 +123,8 @@ c     call copy (dpc,binv,n)
          if (rbnorm.lt.tol) then
             ifin = iter
             if (nio.eq.0) then
-               if (matmod.ge.0) write(6,3000) istep,ifin,rbnorm,tol,r0
-               if (matmod.lt.0) write(6,3010) istep,ifin,rbnorm,tol,r0
+               if (matmod.ge.0) write(6,3000) istep,ifin,rbnorm,r0,tol
+               if (matmod.lt.0) write(6,3010) istep,ifin,rbnorm,r0,tol
             endif
             goto 9999
          endif
@@ -163,12 +163,12 @@ c     call copy (dpc,binv,n)
       ifsolv = .false.
 
 
- 2000 format(i12,1x,'Helmholtz3/fluid: no iteration - rbnorm =', 2E13.4)
- 2010 format(i12,1x,'Helmholtz3/ mesh: no iteration - rbnorm =', 2E13.4)
- 3000 format(i12,1x,'Helmholtz3/fluid: ',I6,5E13.4)
- 3010 format(i12,1x,'Helmholtz3/ Mesh: ',I6,5E13.4)
- 3001 format(2i6,' Unconverged Helmholtz3/Fluid: rbnorm =',2E13.6)
- 3011 format(2i6,' Unconverged Helmholtz3/Mesh : rbnorm =',2E13.6)
+ 2000 format(i11,1x,' Helmh3 fluid no iteration - rbnorm =',2E13.4)
+ 2010 format(i11,1x,' Helmh3 mesh  no iteration - rbnorm =',2E13.4)
+ 3000 format(i11,1x,' Helmh3 fluid ',I7,1p4E13.4)
+ 3010 format(i11,1x,' Helmh3 mesh ' ,I7,1p4E13.4)
+ 3001 format(2i6,' Unconverged Helmh3 fluid rbnorm =',2E13.6)
+ 3011 format(2i6,' Unconverged Helmh3 mesh  rbnorm =',2E13.6)
 
       return
       end

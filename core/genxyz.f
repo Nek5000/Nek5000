@@ -574,11 +574,6 @@ C     Note : CTMP1 is used in this format in several subsequent routines
 
       character*1 ccv
 
-#ifdef MOAB
-c already read/initialized vertex positions
-      if (ifmoab) return
-#endif
-
 c     Initialize geometry arrays with bi- triquadratic deformations
       call linquad(xml,yml,zml,nxl,nyl,nzl)
 

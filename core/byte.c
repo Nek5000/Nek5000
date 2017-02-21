@@ -120,9 +120,9 @@ void byte_open(char *n,int *ierr)
 
   len = strlen(n);
   
-  if (len<0)
+  if (len<=0)
   {
-    printf("byte_open() :: file name has negative length!\n"); 
+    printf("byte_open() :: file name has invalid length!\n"); 
     *ierr=1;
     return;
   }

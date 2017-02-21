@@ -2,17 +2,18 @@
 
 # first do some checks ...
 if [ "$1" == "-h" ]; then
-  echo "creates a pull request to update remote branch using current branch"
-  echo "usage: nekgit_push [<remote branch name>]"
-  echo "       e.g. nekgit_push develop"
+  echo "creates a pull request to merge current branch into our MASTER branch"
+  echo "usage: nekgit_push"
   echo ""
   exit 1
 fi
 
 if [ $# -eq 0 ]; then
-git-hub pull new -c `git rev-parse --abbrev-ref HEAD`;
+  git-hub pull new -c `git rev-parse --abbrev-ref HEAD`;
+
+  if [ $? -eq 0 ]; then
+    echo "switching back to MASTER ..." 
+    git checkout master
+  fi
 fi
 
-if [ $# -eq 1 ]; then
-git-hub pull new -b $1 -c `git rev-parse --abbrev-ref HEAD`;
-fi

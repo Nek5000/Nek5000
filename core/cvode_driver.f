@@ -33,13 +33,8 @@ c----------------------------------------------------------------------
       include 'TOTAL'
       include 'CVODE'
 
-      integer LongIntSize
       integer*8 iout,ipar
-#ifdef LONGINT8
-      data LongIntSize / 8 /
-#else
-      data LongIntSize / 4 /
-#endif
+      
       ! cvode will not allocate these arrays
       integer cvcomm
       common /cv_rout/ rout(6),rpar(1)
@@ -49,13 +44,6 @@ c----------------------------------------------------------------------
       external sizeOfLongInt
 
       integer*8 i8glsum
-
-      if (sizeOfLongInt() .ne. LongIntSize) then
-        if(nio.eq.0) write(6,*)
-     &  'ABORT cv_setsize(): invalid long int size! ', 
-     &   sizeOfLongInt(), LongIntSize
-        call exitt
-      endif
 
       nxyz = nx1*ny1*nz1
 

@@ -112,7 +112,7 @@ class NekTestCase(unittest.TestCase):
 
         self.source_root    = os.path.dirname(os.path.dirname(inspect.getabsfile(self.__class__)))
         self.examples_root  = os.path.dirname(inspect.getabsfile(self.__class__))
-        self.makenek        = os.path.join(self.source_root, 'core', 'makenek')
+        self.makenek        = os.path.join(self.source_root, 'bin', 'makenek')
         self.tools_root     = os.path.join(self.source_root, 'tools')
         self.tools_bin      = os.path.join(self.source_root, 'bin')
         self.log_root       = ""
@@ -181,7 +181,7 @@ class NekTestCase(unittest.TestCase):
         except KeyError:
             pass
         else:
-            self.makenek        = os.path.join(self.source_root, 'core', 'makenek')
+            self.makenek        = os.path.join(self.source_root, 'bin', 'makenek')
             self.tools_root     = os.path.join(self.source_root, 'tools')
             self.tools_bin      = os.path.join(self.source_root, 'bin')
 
