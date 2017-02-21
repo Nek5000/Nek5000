@@ -3279,7 +3279,7 @@ c-----------------------------------------------------------------------
       call dssum (tmlt,nx1,ny1,nz1)  ! denominator
 
       call rone  (tmsk,n)
-      do e=1,nelfld(ifield)      ! fill mask where bc is periodic
+      do e=1,nelt                ! fill mask where bc is periodic
       do f=1,nfaces              ! so we don't translate periodic bcs (z only)
          cb =cbc(f,e,ifield)
          if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
@@ -3302,7 +3302,7 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
          ym = 0.
          zm = 0.
 
-         do e=1,nelfld(ifield)
+         do e=1,nelt
             do i=1,nxyz                       ! compute averages of geometry
                s     = 1./tmlt(i,e)
                xb(i,e) = s*xb(i,e)

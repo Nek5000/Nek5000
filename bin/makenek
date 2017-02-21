@@ -50,6 +50,7 @@ SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
+set -e
 # assign version tag
 mver=17.0.0
 # overwrite source path with optional 2nd argument
