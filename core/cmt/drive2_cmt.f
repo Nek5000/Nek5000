@@ -1,3 +1,4 @@
+C> @file drive2_cmt.f mid-level initialization drivers. Not long for this world.
 c-----------------------------------------------------------------------
       subroutine nek_cmt_init
       include 'SIZE'

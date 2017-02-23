@@ -1,3 +1,4 @@
+C> @file ausm.f Riemann solvers and other rocflu miscellany
 ! ******************************************************************************
 !
 ! Purpose: Compute convective fluxes using AUSM+ scheme.
@@ -134,6 +135,7 @@
       END
 
 !-----------------------------------------------------------------------
+! NOT LONG FOR THIS WORLD
 
       SUBROUTINE CentralInviscid_FluxFunction(ntot,nx,ny,nz,fs,ul,pl,
      >                                     ur,pr,flx)
