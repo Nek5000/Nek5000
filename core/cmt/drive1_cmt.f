@@ -1,6 +1,8 @@
-c-----------------------------------------------------------------------
+C> @file drive1_cmt.f high-level driver for CMT-nek
+C> \defgroup convhvol Volume integral terms for inviscid fluxes
+C> Branch from subroutine nek_advance in core/drive1.f
+C> Advance CMT-nek one time step within nek5000 time loop
       subroutine cmt_nek_advance
-c
 c     Solve the Euler equations
 
       include 'SIZE'
@@ -26,7 +28,8 @@ c     Solve the Euler equations
          call set_tstep_coef
          call cmt_flow_ics
          call init_cmt_timers
-c all point particles are initialized
+c all point particles are initialized and 
+c preprocessing of interpolation step 
          call usr_particles_init
       endif
 
@@ -61,18 +64,16 @@ c              u(i,1,1,eq,e) = bm1(i,1,1,e)*u(i,1,1,eq,e) - DT *
 c    >                        (c1*res1(i,1,1,e,eq) + c2*res2(i,1,1,e,eq)
 c    >                       + c3*res3(i,1,1,e,eq))
 c-----------------------------------------------------------------------
-c this completely stops working if B become nondiagonal for any reason.
 ! JH111815 in fact, I'd like to redo the time marching stuff above and
 !          have an fbinvert call for res1
                u(i,1,1,eq,e) = u(i,1,1,eq,e)/bm1(i,1,1,e)
-c that completely stops working if B become nondiagonal for any reason.
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
             enddo
             enddo
          enddo
       enddo
 
-      call compute_primitive_vars
+      call compute_primitive_vars ! for next time step? Not sure anymore
       ftime = ftime + dnekclock() - ftime_dum
 
       if (mod(istep,iostep).eq.0.or.istep.eq.1)then
@@ -83,7 +84,7 @@ c dump out particle information.
          call usr_particles_io(istep)
       end if
 
-      call print_cmt_timers
+!     call print_cmt_timers ! NOT NOW
 
  101  format(4(2x,e18.9))
       return
@@ -91,8 +92,9 @@ c dump out particle information.
 
 c-----------------------------------------------------------------------
 
+C> Compute right-hand-side of the semidiscrete conservation law
+C> Store it in res1
       subroutine compute_rhs_and_dt
-!> doxygen comments look like this
       include 'SIZE'
       include 'TOTAL'
       include 'DG'
@@ -111,19 +113,32 @@ c-----------------------------------------------------------------------
       real wkj(lx1+lxd)
       character*32  dumchars
 
+      call compute_grid_h(gridh,xm1,ym1,zm1)
+      call compute_mesh_h(meshh,xm1,ym1,zm1)
+
       if (nxd.gt.nx1) then
          call set_dealias_face
       else
          call set_alias_rx(istep)
       endif
+
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-!-----------------------------------------------------------------------
-! JH082216 Transport properties are for the higher-derivative operators.
-!-----------------------------------------------------------------------
-         call compute_primitive_vars
-         call compute_transport_props
+!     filter the conservative variables before start of each
+!     time step
+!     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
+!        primitive vars = rho, u, v, w, p, T, phi_g
+
+      call compute_primitive_vars
+      if(stage.eq.1) then ! I would put this in userchk, but we are open to more
+                          ! "accurate" computations of residual
+         call entropy_viscosity ! accessed through uservp. computes
+                                ! entropy residual and max wave speed
+      endif
+      call compute_transport_props ! inside rk stage or not? So far so good
+!     call smoothing(vdiff(1,1,1,1,imu))
+! you have GOT to figure out where phig goes!!!!
 
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
@@ -132,6 +147,8 @@ c-----------------------------------------------------------------------
       if(stage.eq.1) call setdtcmt
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
+      call rzero(flux,heresize)
+      call rzero(graduf,hdsize)
 
 !     !Total_eqs = 5 (we will set this up so that it can be a user 
 !     !defined value. 5 will be its default value)
@@ -141,21 +158,23 @@ c-----------------------------------------------------------------------
 !     !eq = 4 -------- z  momentum 
 !     !eq = 5 -------- Energy Equation 
 
-!-----------------------------------------------------------------------
-! JH060314 Compute inviscid surface fluxes now that we have the
-!          primitive variables.
-!-----------------------------------------------------------------------
+C> Restrict via \f$\mathbf{E}\f$ to get primitive and conserved variables
+C> on interior faces \f$\mathbf{U}^-\f$ and neighbor faces
+C> \f$\mathbf{U}^+\f$; store in CMTSURFLX
       call fluxes_full_field
 
+C> res1+=\f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
       nstate=nqq
       nfq=nx1*nz1*2*ndim*nelt
-      iqm =1
-      iqp =iqm+nstate*nfq
-      iflx=iqp+nstate*nfq
+      iwm =1
+      iwp =iwm+nstate*nfq
+      iflx=iwp+nstate*nfq
       do eq=1,toteq
          ieq=(eq-1)*ndg_face+iflx
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
+      dumchars='after_inviscid'
+!     call dumpresidue(dumchars,999)
 
                !                   -
       iuj=iflx ! overwritten with U -{{U}}
@@ -169,11 +188,17 @@ c-----------------------------------------------------------------------
 ! SEQUENTIALLY IN /CMTSURFLX/ i.e. that iu2=iu1+1, etc.
 ! CMTDATA BETTA REFLECT THIS!!!
 !***********************************************************************
-      ium=(iu1-1)*nfq+iqm
-      iup=(iu1-1)*nfq+iqp
+C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\mathbf{U}\right] dA\f$
+      ium=(iu1-1)*nfq+iwm
+      iup=(iu1-1)*nfq+iwp
       call   imqqtu(flux(iuj),flux(ium),flux(iup))
-      call igtu_cmt(flux(iqm),flux(iuj),graduf) ! [[u]].{{gradv}}
+      call   imqqtu_dirichlet(flux(iuj),flux(iwm),flux(iwp))
+      call igtu_cmt(flux(iwm),flux(iuj),graduf) ! [[u]].{{gradv}}
+      dumchars='after_igtu'
+!     call dumpresidue(dumchars,999)
 
+C> res1+=\f$\int \left(\nabla v\right) \cdot \left(\mathbf{H}^c+\mathbf{H}^d\right)dV\f$ 
+C> for each equation (inner), one element at a time (outer)
       do e=1,nelt
 !-----------------------------------------------------------------------
 ! JH082216 Since the dawn of CMT-nek we have called this particular loop
@@ -199,19 +224,23 @@ c-----------------------------------------------------------------------
             call compute_forcing(e,eq)
          enddo
       enddo
+      dumchars='after_elm'
+!     call dumpresidue(dumchars,999)
 
-! get the rest of Hij^{d*}
-      call igu_cmt(flux(iqm),graduf)
+C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\right] dA\f$
+      call igu_cmt(flux(iwp),graduf,flux(iwm))
       do eq=1,toteq
-         ieq=(eq-1)*ndg_face+iqm
+         ieq=(eq-1)*ndg_face+iwp
 !Finally add viscous surface flux functions of derivatives to res1.
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
+      dumchars='end_of_rhs'
+!     call dumpresidue(dumchars,999)
 
       return
       end
 !-----------------------------------------------------------------------
-
+C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
       subroutine set_tstep_coef
       include 'SIZE'
       include 'TSTEP'

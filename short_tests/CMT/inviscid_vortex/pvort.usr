@@ -17,7 +17,16 @@
 
       return
       end
+
 !-----------------------------------------------------------------------
+
+      subroutine entropy_viscosity
+      include 'SIZE'
+      return
+      end
+
+!-----------------------------------------------------------------------
+
       subroutine cmt_userflux
       include 'SIZE'
       include 'TOTAL'
@@ -31,7 +40,9 @@ c     e = gllel(eg)
       enddo
       return
       end
+
 !-----------------------------------------------------------------------
+
       subroutine cmt_userEOS(ix,iy,iz,eg)
       include 'SIZE'
       include 'NEKUSE'
@@ -50,11 +61,14 @@ c     e = gllel(eg)
 
       return
       end
+
 c-----------------------------------------------------------------------
+
       subroutine uservp (ix,iy,iz,eg)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
 
       integer e,f,eg
 c     e = gllel(eg)
@@ -63,9 +77,12 @@ c     e = gllel(eg)
       lambda=-2.0/3.0*mu
       udiff =0.
       utrans=0.
+      nu_s=0.0
       return
       end
+
 c-----------------------------------------------------------------------
+
       subroutine userf  (ix,iy,iz,eg)
       include 'SIZE'
       include 'TOTAL'
@@ -95,6 +112,7 @@ c-----------------------------------------------------------------------
       subroutine userbc (ix,iy,iz,iside,ieg)
       include 'SIZE'
       include 'NEKUSE'
+      include 'CMTDATA'
      
       integer f,e,eg
       flux=0.0
@@ -139,7 +157,7 @@ c-----------------------------------------------------------------------
       ux = varsic(2)/varsic(1)
       uy = varsic(3)/varsic(1)
       uz = varsic(4)/varsic(1)
-!     call userEOS(ix,iy,iz,eg)
+!     call cmt_userEOS(ix,iy,iz,eg)
       cp=cpgref
       cv=cvgref
       return
