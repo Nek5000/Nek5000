@@ -33,6 +33,9 @@ c
       call exitti('ABORT: Requires MPIIO to be enabled!$',0)
 #endif
 
+      isave = pid0r
+      pid0r = nid ! every ranks reads
+
       ! open source field file
       ierr = 0
       if(nid.eq.0) then
@@ -42,7 +45,7 @@ c
  100    ierr = 1
  101  endif
       call err_chk(ierr,' Cannot open source fld file!$')
-      call byte_open_mpi(sourcefld,fldh_gfldr,ierr)
+      call byte_open_mpi(sourcefld,fldh_gfldr,.true.,ierr)
 
       ! read and parse header
       call byte_read_mpi(hdr,iHeaderSize/4,0,fldh_gfldr,ierr)
@@ -137,6 +140,8 @@ c
 
       call byte_close_mpi(fldh_gfldr,ierr)
       call findpts_free(inth_gfldr)
+
+      pid0r = isave
 
       etime_t = dnekclock_sync() - etime_t
       if(nio.eq.0) write(6,'(A,1(1g8.2),A)')

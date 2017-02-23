@@ -282,9 +282,9 @@ $(OBJDIR)/$(JO)findpts_el_3.o    :$(J)/findpts_el_3.c;    $(CC) -c $(cFL2) $(JL)
 $(OBJDIR)/$(JO)findpts_el_2.o    :$(J)/findpts_el_2.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L2) $(PPS_F) $< -o $@
-$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(FC) -c $(L2) $(PPS_F) $< -o $@
-$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L2) $(PPS_F) $< -o $@
+$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
+$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
+$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L0) $(PPS_F) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
