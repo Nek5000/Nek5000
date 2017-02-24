@@ -188,6 +188,7 @@ C> @file bc.f Routines for boundary conditions
       real wstate(nx1*nz1,2*ndim,nelt,nqq)
       common /scrns/ flxscr(lx1*lz1)
       real flxscr
+      integer e,f
 
       nxz=nx1*nz1
 
@@ -346,11 +347,11 @@ C> @file bc.f Routines for boundary conditions
          lambdamu=lambda+mu
          kmcvmu=K-cv*mu
          flux(i)=
-     >(K*(dU5z-E*dU1z)+c_v*u3*(lambda*dU4z+2*mu*dU4z+lambda*dU3y+lambda
-     1   *dU2x)-K*u3*dU4z+c_v*mu*u2*(dU4y+dU3z)+c_v*mu*u1*(dU4x+dU2z)-
-     2   K*u2*dU3z-K*u1*dU2z-c_v*(lambda+2*mu)*u3**2*dU1z+K*u3**2*dU1z+
-     3   K*u2**2*dU1z-c_v*mu*u2**2*dU1z+K*u1**2*dU1z-c_v*mu*u1**2*dU1z-c
-     4   _v*(lambda+mu)*u2*u3*dU1y-c_v*(lambda+mu)*u1*u3*dU1x)/(c_v*rho)
+     >(K*(dU5z-E*dU1z)+cv*u3*(lambda*dU4z+2*mu*dU4z+lambda*dU3y+lambda
+     1   *dU2x)-K*u3*dU4z+cv*mu*u2*(dU4y+dU3z)+cv*mu*u1*(dU4x+dU2z)-
+     2   K*u2*dU3z-K*u1*dU2z-cv*(lambda+2*mu)*u3**2*dU1z+K*u3**2*dU1z+
+     3   K*u2**2*dU1z-cv*mu*u2**2*dU1z+K*u1**2*dU1z-cv*mu*u1**2*dU1z-c
+     4   _v*(lambda+mu)*u2*u3*dU1y-cv*(lambda+mu)*u1*u3*dU1x)/(cv*rho)
       enddo
       return
       end
