@@ -12,11 +12,11 @@
    1.00000     p008 CONDUCT
    0.00000     p009
    0.00000     p010 FINTIME
-  10000.0     p011 NSTEPS
- -0.100000E-02 p012 DT
+  10000.0      p011 NSTEPS
+ 1.000000E-03 p012 DT
    0.00000     p013 IOCOMM
    0.00000     p014 IOTIME
-   10000.00     p015 IOSTEP
+  1000.00     p015 IOSTEP
    0.00000     p016 PSSOLVER: 0=default
    1.00000     p017
   0.500000E-01 p018 GRID < 0 --> # cells on screen
@@ -27,7 +27,7 @@
   0              p23 NPSCAL
   0.100000E-09 p024 TOLREL
   0.100000E-04 p025 TOLABS
-   1.00000     p026 COURANT/NTAU
+   0.00000     p026 COURANT/NTAU
    3.00000     p027 TORDER
    0.00000     p028 TORDER: mesh velocity (0: p28=p27)
    0.00000     p029 = magnetic visc if > 0, = -1/Rm if < 0
@@ -133,7 +133,7 @@
  F F T T T T T T T T T T  IFTMSH (IF mesh for this field is T mesh)
  F      IFAXIS
  F      IFSTRS
- F      IFSPLIT
+ T      IFSPLIT
  F      IFMGRID
  F      IFMODEL
  F      IFKEPS

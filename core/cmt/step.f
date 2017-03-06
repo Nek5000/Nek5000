@@ -13,59 +13,47 @@ C> @file step.f time stepping and mesh spacing routines
       include 'GEOM'
       include 'MVGEOM'
       include 'MASS'
+      include 'TSTEP'
       include 'INPUT'
       include 'SOLN'
-      include 'TSTEP'
       include 'CMTDATA'
 
 !--------------------------------------------------------------
 ! YOU REALLY PROBABLY WANT YOUR OWN SCRATCH SPACE FOR THIS
-      common /scrsf/ u1(lx1,ly1,lz1,lelt) ! mind if I borrow this?
-     $ ,             v(lx1,ly1,lz1,lelt) ! as long as the mesh
-     $ ,             w(lx1,ly1,lz1,lelt) ! doesn't move
+      common /scrsf/ utmp(lx1,ly1,lz1,lelt) ! mind if I borrow this?
+     $ ,             vtmp(lx1,ly1,lz1,lelt) ! as long as the mesh
+     $ ,             wtmp(lx1,ly1,lz1,lelt) ! doesn't move
 ! YOU REALLY PROBABLY WANT YOUR OWN SCRATCH SPACE FOR THAT
 !--------------------------------------------------------------
-
       common /udxmax/ umax
-      REAL VCOUR
-      SAVE VCOUR
-      REAL mdr
-      SAVE mdr
 
       NTOT   = NX1*NY1*NZ1*NELV
-      NTOTL  = LX1*LY1*LZ1*lelt
-      NTOTD  = NTOTL*NDIM
-      COLD   = COURNO
-      CMAX   = 1.2*CTARG
-      CMIN   = 0.8*CTARG
       do i=1,ntot
-         u1(i,1,1,1) = abs(vx(i,1,1,1))+csound(i,1,1,1)
-         v (i,1,1,1) = abs(vy(i,1,1,1))+csound(i,1,1,1)
-         w (i,1,1,1) = abs(vz(i,1,1,1))+csound(i,1,1,1)
+         utmp(i,1,1,1) = abs(vx(i,1,1,1))+csound(i,1,1,1)
+         vtmp(i,1,1,1) = abs(vy(i,1,1,1))+csound(i,1,1,1)
+         wtmp(i,1,1,1) = abs(vz(i,1,1,1))+csound(i,1,1,1)
       enddo
-      CALL CUMAX (u1,v,w,UMAX)
-      COURNO = DT*UMAX
-      VOLD   = VCOUR
-      VCOUR  = UMAX
+      if (ctarg .gt.0.0) then
+         call compute_cfl (umax,utmp,vtmp,wtmp,1.0)
+         dt_cmt=ctarg/umax
+      else
+         dt_cmt=dt
+      endif
+      call compute_cfl (courno,utmp,vtmp,wtmp,dt_cmt) ! sanity?
 
 ! diffusion number based on viscosity.
 
 !     call mindr(mdr,diffno2)
-      call glinvcol2max(diffno1,vdiff(1,1,1,1,imu), gridh,ntot,dt)
-      call glinvcol2max(diffno2,vdiff(1,1,1,1,iknd),gridh,ntot,dt)
-      call glinvcol2max(diffno3,vdiff(1,1,1,1,inus),gridh,ntot,dt)
+      call glinvcol2max(diffno1,vdiff(1,1,1,1,imu), gridh,ntot,dt_cmt)
+      call glinvcol2max(diffno2,vdiff(1,1,1,1,iknd),gridh,ntot,dt_cmt)
+      call glinvcol2max(diffno3,vdiff(1,1,1,1,inus),gridh,ntot,dt_cmt)
 !     diffno=max(diffno1,diffno2,diffno3)
-      if (nio.eq.0) WRITE(6,100)ISTEP,TIME,DT,COURNO,diffno1,diffno2,
-     >   diffno3
+      time_cmt=time_cmt+dt_cmt
+      if (nio.eq.0) WRITE(6,100)ISTEP,TIME_CMT,DT_CMT,COURNO,
+     >   diffno1,diffno2,umax
  100  FORMAT('CMT ',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',1pE12.5,', Dmu,knd,art=',3(1pE11.4))
-!     Zero DT
-!
-!     IF (DT .EQ. 0.0) THEN
-!
-!        IF (UMAX .NE. 0.0) THEN
-!           DT = CTARG/UMAX
-!           VCOUR = UMAX
+
       return
       end
 
