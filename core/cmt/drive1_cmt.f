@@ -25,7 +25,7 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then 
          call cmt_ics
-         call set_tstep_coef
+         time_cmt=0.0 ! until we can get settime to behave
          call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
@@ -74,10 +74,10 @@ c-----------------------------------------------------------------------
       enddo
 
       call compute_primitive_vars ! for next time step? Not sure anymore
+      call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
       ftime = ftime + dnekclock() - ftime_dum
 
       if (mod(istep,iostep).eq.0.or.istep.eq.1)then
-         call out_pvar_nek
          call out_fld_nek
          call mass_balance(if3d)
 c dump out particle information. 
@@ -144,7 +144,11 @@ C> Store it in res1
 ! JH072914 We can really only proceed with dt once we have current
 !          primitive variables. Only then can we compute CFL and/or dt.
 !-----------------------------------------------------------------------
-      if(stage.eq.1) call setdtcmt
+      if(stage.eq.1) then
+         call setdtcmt
+         call set_tstep_coef
+      endif
+
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
       call rzero(flux,heresize)
@@ -242,32 +246,20 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\righ
 !-----------------------------------------------------------------------
 C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
       subroutine set_tstep_coef
-      include 'SIZE'
-      include 'TSTEP'
 
-      COMMON /TIMESTEPCOEf/ tcoef(3,3)
+      real tcoef(3,3),dt_cmt,time_cmt
+      COMMON /TIMESTEPCOEF/ tcoef,dt_cmt,time_cmt
 
-      COMMON /TSTEPSTAGE/  stage,nstage
-      integer              stage,nstage
+      tcoef(1,1) = 0.0
+      tcoef(2,1) = 1.0 
+      tcoef(3,1) = dt_cmt
+      tcoef(1,2) = 3.0/4.0
+      tcoef(2,2) = 1.0/4.0 
+      tcoef(3,2) = dt_cmt/4.0 
+      tcoef(1,3) = 1.0/3.0
+      tcoef(2,3) = 2.0/3.0 
+      tcoef(3,3) = dt_cmt*2.0/3.0 
 
-      nstage = 3
-      do stage=1,nstage
-         if(stage.eq.1)then
-            tcoef(1,stage) = 0.0
-            tcoef(2,stage) = 1.0 
-            tcoef(3,stage) = dt 
-         endif
-         if(stage.eq.2)then
-            tcoef(1,stage) = 3.0/4.0
-            tcoef(2,stage) = 1.0/4.0 
-            tcoef(3,stage) = dt/4.0 
-         endif
-         if(stage.eq.3)then
-            tcoef(1,stage) = 1.0/3.0
-            tcoef(2,stage) = 2.0/3.0 
-            tcoef(3,stage) = dt*2.0/3.0 
-         endif
-      enddo
       return
       end
 !-----------------------------------------------------------------------

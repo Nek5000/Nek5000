@@ -58,8 +58,8 @@ c---------------------------------------------------------------------
       integer              stage,nstage
       common /tstepstage/ stage,nstage
 
-      real                  tcoef(3,3)     
-      common /timestepcoef/ tcoef
+      real                  tcoef(3,3),dt_cmt,time_cmt
+      common /timestepcoef/ tcoef,dt_cmt,time_cmt
       
       integer            res_freq
       common /cmtioflgs/ res_freq
