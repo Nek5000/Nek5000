@@ -26,6 +26,8 @@ C> @file step.f time stepping and mesh spacing routines
 ! YOU REALLY PROBABLY WANT YOUR OWN SCRATCH SPACE FOR THAT
 !--------------------------------------------------------------
       common /udxmax/ umax
+      real strof
+      data strof /1.0e-5/
 
       NTOT   = NX1*NY1*NZ1*NELV
       do i=1,ntot
@@ -39,6 +41,22 @@ C> @file step.f time stepping and mesh spacing routines
       else
          dt_cmt=dt
       endif
+      if (timeio .gt. 0.0) then ! adjust dt for timeio
+         zetime1=time_cmt
+         zetime2=time_cmt+dt_cmt
+         it1=zetime1/timeio
+         it2=zetime2/timeio
+         ita=it1
+         itb=ita+1
+         if (abs(zetime1-itb*timeio).le.strof) it1=itb
+         ita=it2
+         itb=ita+1
+         if (abs(zetime2-itb*timeio).le.strof) it2=itb
+         if (it2.gt.it1) then
+            ifoutfld=.true.
+            dt_cmt=(it2*timeio)-time_cmt
+         endif
+      endif
       call compute_cfl (courno,utmp,vtmp,wtmp,dt_cmt) ! sanity?
 
 ! diffusion number based on viscosity.
@@ -50,7 +68,7 @@ C> @file step.f time stepping and mesh spacing routines
 !     diffno=max(diffno1,diffno2,diffno3)
       time_cmt=time_cmt+dt_cmt
       if (nio.eq.0) WRITE(6,100)ISTEP,TIME_CMT,DT_CMT,COURNO,
-     >   diffno1,diffno2,umax
+     >   diffno1,diffno2,diffno3
  100  FORMAT('CMT ',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',1pE12.5,', Dmu,knd,art=',3(1pE11.4))
 
