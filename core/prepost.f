@@ -282,7 +282,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       if(nio.eq.0) then 
         WRITE(6,1001) istep,time
- 1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
+ 1001   FORMAT(/,i9,1pe12.4,' Write checkpoint')
       endif
       call nekgsync()      
 
@@ -854,6 +854,14 @@ c-----------------------------------------------------------------------
 
       tiostart=dnekclock_sync()
 
+      ifmpiio = .true.
+      if(param(65).gt.1) ifmpiio = .false.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+
+      call io_init
+
       ifxyo_s = ifxyo 
       ifxyo_  = ifxyo
       nout = nelt
@@ -994,12 +1002,13 @@ c     call exitti('this is wdsizo A:$',wdsizo)
       endif
 
       ierr = 0
-      if (nid.eq.pid0) 
-#ifdef MPIIO
-     &   call byte_close_mpi(ifh_mbyte,ierr)
-#else
-     &   call byte_close(ierr)
-#endif
+      if (nid.eq.pid0) then 
+         if(ifmpiio) then
+           call byte_close_mpi(ifh_mbyte,ierr)
+         else
+           call byte_close(ierr)
+         endif
+      endif
       call err_chk(ierr,'Error closing file in mfo_outfld. Abort. $')
 
       tio = dnekclock_sync()-tiostart
@@ -1030,22 +1039,22 @@ c-----------------------------------------------------------------------
 
       ifdiro = .false.
 
-#ifdef MPIIO
-      nfileo  = np
-      nproc_o = 1
-      fid0    = 0
-      pid0    = nid
-      pid1    = 0
-#else
-      if(param(65).lt.0) ifdiro = .true. !  p65 < 0 --> multi subdirectories
-      nfileo  = abs(param(65))
-      if(nfileo.eq.0) nfileo = 1
-      if(np.lt.nfileo) nfileo=np   
-      nproc_o = np / nfileo              !  # processors pointing to pid0
-      fid0    = nid/nproc_o              !  file id
-      pid0    = nproc_o*fid0             !  my parent i/o node
-      pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
-#endif
+      if(ifmpiio) then
+        nfileo  = np
+        nproc_o = 1
+        fid0    = 0
+        pid0    = nid
+        pid1    = 0
+      else
+        if(param(65).lt.0) ifdiro = .true. !  p65 < 0 --> multi subdirectories
+        nfileo  = abs(param(65))
+        if(nfileo.eq.0) nfileo = 1
+        if(np.lt.nfileo) nfileo=np   
+        nproc_o = np / nfileo              !  # processors pointing to pid0
+        fid0    = nid/nproc_o              !  file id
+        pid0    = nproc_o*fid0             !  my parent i/o node
+        pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
+      endif
 
       wdsizo = 4                             ! every proc needs this
       if (param(63).gt.0) wdsizo = 8         ! 64-bit .fld file
@@ -1054,7 +1063,6 @@ c-----------------------------------------------------------------------
          call exitt
       endif
 
-      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
       nrg = lxo
 
       ! how many elements are present up to rank nid
@@ -1111,11 +1119,11 @@ c-----------------------------------------------------------------------
       call restart_nfld( nfld, prefix ) ! Check for Restart option.
       if (prefx.eq.'   '.and.nfld.eq.1) ifxyo_ = .true. ! 1st file
 
-#ifdef MPIIO
-      rfileo = 1
-#else
-      rfileo = nfileo
-#endif
+      if(ifmpiio) then
+        rfileo = 1
+      else
+        rfileo = nfileo
+      endif
       ndigit = log10(rfileo) + 1
      
       k = 1
@@ -1496,12 +1504,13 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
-         if(ierr.eq.0) 
-#ifdef MPIIO
-     &    call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
-#else
-     &    call byte_write(buffer,nout,ierr)
-#endif
+         if(ierr.eq.0) then
+           if(ifmpiio) then
+             call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
+           else
+             call byte_write(buffer,nout,ierr)
+           endif
+         endif
 
          ! write out the data of my childs
          idum  = 1
@@ -1511,12 +1520,13 @@ c-----------------------------------------------------------------------
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
             nout  = n*inelp
-            if(ierr.eq.0) 
-#ifdef MPIIO
-     &       call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
-#else
-     &       call byte_write(buffer(2),nout,ierr)
-#endif
+            if(ierr.eq.0) then 
+              if(ifmpiio) then 
+                call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
+              else
+                call byte_write(buffer(2),nout,ierr)
+              endif
+            endif
          enddo
       else
          j = 1
@@ -1578,12 +1588,14 @@ c-----------------------------------------------------------------------
 
          ! write out my data
          nout = n*nel
-         if(ierr.eq.0) 
-#ifdef MPIIO
-     &     call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
-#else
-     &     call byte_write(buffer,nout,ierr)
-#endif
+         if(ierr.eq.0) then 
+           if(ifmpiio) then
+             call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
+           else
+             call byte_write(buffer,nout,ierr)
+           endif
+         endif
+
          ! write out the data of my childs
          idum  = 1
          do k=pid0+1,pid1
@@ -1592,12 +1604,13 @@ c-----------------------------------------------------------------------
             call crecv(mtype,buffer,len)
             inelp = buffer(1)
             nout  = n*inelp
-            if(ierr.eq.0) 
-#ifdef MPIIO
-     &        call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
-#else
-     &        call byte_write(buffer(2),nout,ierr)
-#endif
+            if(ierr.eq.0) then 
+              if(ifmpiio) then
+                call byte_write_mpi(buffer(2),nout,-1,ifh_mbyte,ierr)
+              else
+                call byte_write(buffer(2),nout,ierr)
+              endif
+            endif
          enddo
       else
          j = 1
@@ -1658,12 +1671,13 @@ c-----------------------------------------------------------------------
              call copy   (u8,u,ntot)
          endif
          nout = wdsizo/4 * ntot
-         if(ierr.eq.0) 
-#ifdef MPIIO
-     &     call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
-#else
-     &     call byte_write(u4,nout,ierr)          ! u4 :=: u8
-#endif
+         if(ierr.eq.0) then 
+           if(ifmpiio) then
+             call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
+           else
+             call byte_write(u4,nout,ierr)          ! u4 :=: u8
+           endif
+         endif
 
          ! write out the data of my childs
          idum  = 1
@@ -1673,17 +1687,17 @@ c-----------------------------------------------------------------------
             call crecv(mtype,u4,len)
             nout  = wdsizo/4 * nxyz * u8(1)
             if (wdsizo.eq.4.and.ierr.eq.0) then
-#ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
-#else
-               call byte_write(u4(3),nout,ierr)
-#endif
+               if(ifmpiio) then
+                 call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
+               else
+                 call byte_write(u4(3),nout,ierr)
+               endif
             elseif(ierr.eq.0) then
-#ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
-#else
-               call byte_write(u8(2),nout,ierr)
-#endif
+               if(ifmpiio) then
+                 call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
+               else
+                 call byte_write(u8(2),nout,ierr)
+               endif
             endif
          enddo
 
@@ -1762,12 +1776,14 @@ c-----------------------------------------------------------------------
              enddo
          endif
          nout = wdsizo/4 * ndim*nel * nxyz
-         if(ierr.eq.0) 
-#ifdef MPIIO
-     &     call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
-#else
-     &     call byte_write(u4,nout,ierr)          ! u4 :=: u8
-#endif
+         if(ierr.eq.0) then 
+           if(ifmpiio) then
+             call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
+           else
+             call byte_write(u4,nout,ierr)          ! u4 :=: u8
+           endif
+         endif
+
          ! write out the data of my childs
          do k=pid0+1,pid1
             mtype = k
@@ -1776,17 +1792,17 @@ c-----------------------------------------------------------------------
             nout  = wdsizo/4 * ndim*nxyz * u8(1)
 
             if (wdsizo.eq.4.and.ierr.eq.0) then
-#ifdef MPIIO
-               call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
-#else
-               call byte_write(u4(3),nout,ierr)
-#endif
+               if(ifmpiio) then
+                 call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
+               else
+                 call byte_write(u4(3),nout,ierr)
+               endif
             elseif(ierr.eq.0) then
-#ifdef MPIIO
-               call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
-#else
-               call byte_write(u8(2),nout,ierr)
-#endif
+               if(ifmpiio) then
+                 call byte_write_mpi(u8(2),nout,-1,ifh_mbyte,ierr)
+               else
+                 call byte_write(u8(2),nout,ierr)
+               endif
             endif
          enddo
       else
@@ -1845,25 +1861,25 @@ c-----------------------------------------------------------------------
       call nekgsync()
       idum = 1
 
-#ifdef MPIIO
-      nfileoo = 1   ! all data into one file
-      nelo = nelgt
-#else
-      nfileoo = nfileo
-      if(nid.eq.pid0) then                ! how many elements to dump
-        nelo = nelt
-        do j = pid0+1,pid1
-           mtype = j
-           call csend(mtype,idum,4,j,0)   ! handshake
-           call crecv(mtype,inelp,4)
-           nelo = nelo + inelp
-        enddo
+      if(ifmpiio) then
+        nfileoo = 1   ! all data into one file
+        nelo = nelgt
       else
-        mtype = nid
-        call crecv(mtype,idum,4)          ! hand-shake
-        call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
-      endif 
-#endif
+        nfileoo = nfileo
+        if(nid.eq.pid0) then                ! how many elements to dump
+          nelo = nelt
+          do j = pid0+1,pid1
+             mtype = j
+             call csend(mtype,idum,4,j,0)   ! handshake
+             call crecv(mtype,inelp,4)
+             nelo = nelo + inelp
+          enddo
+        else
+          mtype = nid
+          call crecv(mtype,idum,4)          ! hand-shake
+          call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
+        endif 
+      endif
 
       ierr = 0
       if(nid.eq.pid0) then
@@ -1912,14 +1928,14 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
       test_pattern = 6.54321           ! write test pattern for byte swap
 
-#ifdef MPIIO
-      ! only rank0 (pid00) will write hdr + test_pattern
-      call byte_write_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
-      call byte_write_mpi(test_pattern,1,pid00,ifh_mbyte,ierr)
-#else
-      call byte_write(hdr,iHeaderSize/4,ierr)
-      call byte_write(test_pattern,1,ierr)
-#endif
+      if(ifmpiio) then
+        ! only rank0 (pid00) will write hdr + test_pattern
+        call byte_write_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
+        call byte_write_mpi(test_pattern,1,pid00,ifh_mbyte,ierr)
+      else
+        call byte_write(hdr,iHeaderSize/4,ierr)
+        call byte_write(test_pattern,1,ierr)
+      endif
 
       endif
 
@@ -1927,24 +1943,25 @@ c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
 
       ! write global element numbering for this group
       if(nid.eq.pid0) then
-#ifdef MPIIO
-      ioff = iHeaderSize + 4 + nelB*isize
-      call byte_set_view (ioff,ifh_mbyte)
-      call byte_write_mpi(lglel,nelt,-1,ifh_mbyte,ierr)
-#else
-      call byte_write(lglel,nelt,ierr)
-#endif
+        if(ifmpiio) then
+          ioff = iHeaderSize + 4 + nelB*isize
+          call byte_set_view (ioff,ifh_mbyte)
+          call byte_write_mpi(lglel,nelt,-1,ifh_mbyte,ierr)
+        else
+          call byte_write(lglel,nelt,ierr)
+        endif
+
         do j = pid0+1,pid1
            mtype = j
            call csend(mtype,idum,4,j,0)   ! handshake
            len = 4*(lelt+1)
            call crecv(mtype,lglist,len)
            if(ierr.eq.0) then
-#ifdef MPIIO
-      call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte,ierr)
-#else
-      call byte_write(lglist(1),lglist(0),ierr)
-#endif
+             if(ifmpiio) then
+              call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte,ierr)
+             else
+              call byte_write(lglist(1),lglist(0),ierr)
+             endif
            endif
         enddo
       else

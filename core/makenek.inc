@@ -7,7 +7,7 @@ echo "makenek - automatic build tool for Nek5000"
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
   echo "  AMG         use AMG instead of XXT solver"
-  echo "  MPIIO       use MPI-IO for I/O"
+  echo "  NOMPIIO     deactivate MPI-IO support"
   echo "  BGQ         use BGQ optimized mxm"
   echo "  XSMM        use libxsmm for mxm"
   echo "  CVODE       compile with CVODE support for scalars"
@@ -178,6 +178,7 @@ export PPPO
 # set preprocessor symbols
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
   IFMPI=false
+  PPLIST="${PPLIST} NOMPIIO"
 else
   # default
   IFMPI=true
