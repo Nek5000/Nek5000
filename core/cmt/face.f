@@ -1,3 +1,5 @@
+C> @file face.f low-level initialization drivers. Eventually to be
+C> superceded by nek5000 core DG handles and operators.
 c-----------------------------------------------------------------------
       subroutine iface_vert_int8cmt(nx,ny,nz,fa,va,jz0,jz1,nel)
       include 'SIZE'

@@ -19,7 +19,7 @@ c
       parameter (lelg=5000)     ! max total number of elements
       parameter (lp=1024)       ! max number of MPI ranks
       parameter (lelt=50)       ! max number of elements per MPI rank 
-      parameter (ldimt=4)       ! max number of auxiliary fields (temperature + scalars)
+      parameter (ldimt=3)       ! max number of auxiliary fields (temperature + scalars)
 
       ! OPTIONAL
       parameter (lelx=1,lely=1,lelz=1)          ! global tensor mesh dimensions

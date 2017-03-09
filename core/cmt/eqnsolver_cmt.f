@@ -1,3 +1,7 @@
+C> @file eqnsolver_cmt.f Routines for entire terms on RHS. Mostly volume integrals
+
+C> Volume integral for diffusive terms. Compute \f$\mathbf{H}^d\f$
+C> and store it for one element. Store faces of \f$\mathbf{H}^d\f$ for IGU. 
       subroutine viscous_cmt(e,eq)
       include  'SIZE'
       include  'CMTDATA'
@@ -25,10 +29,9 @@
       iqp =iqm+nstate*nfq
       iuj =iqp+nstate*nfq
 
-! apply viscous flux jacobian A.
-!     call fluxj_ns_vol(diffh,gradu,e,eq)
-! monolithic regularization for now
-      call fluxj_vol(diffh,gradu,e,eq)
+      call rzero(diffh,3*nxyz)
+
+      call agradu(diffh,gradu,e,eq)
 
       call diffh2graduf(e,eq,graduf) ! on faces for QQ^T and igu_cmt
 
@@ -40,6 +43,7 @@
 
 !-----------------------------------------------------------------------
 
+C> \f$G^T U\f$
       subroutine igtu_cmt(qminus,ummcu,hface)
 
 !     Vol integral [[u]].{{gradv}}. adapted from Lu's dgf3.f;
@@ -51,6 +55,7 @@
       include 'GEOM'
       include 'DG'      ! iface
       include 'CMTDATA'
+      include 'SOLN' ! for vz. goes away when agradu_ns works
 
 ! arguments
       real qminus(nx1*nz1,2*ndim,nelt,*)    ! intent(in)
@@ -61,13 +66,18 @@
       common /scrns/ superhugeh(lx1*ly1*lz1*lelt,3) ! like totalh, but super-huge
       common /scruz/ gradm1_t_overwrites(lx1*ly1*lz1*lelt) ! sigh
       real superhugeh,gradm1_t_overwrites
-      parameter (lfq=lx1*lz1*2*ldim*lelt)
-      common /ctmp0/ ftmp1(lfq),ftmp2(lfq)
-      real ftmp1,ftmp2
+!     common /ctmp0/ viscscr(lx1,ly1,lz1)
+!     real viscscr
+!     parameter (lfq=lx1*lz1*2*ldim*lelt)
+!     common /ctmp0/ ftmp1(lfq),ftmp2(lfq)
+!     real ftmp1,ftmp2
 
-      integer e, eq, n, npl, nf, f, i, k
+      integer eijk3(3,3,3)
+!     data eijk2 / 0, -1, 1, 0/
+      data eijk3
+     >/0,0,0,0,0,-1,0,1,0,0,0,1,0,0,0,-1,0,0,0,-1,0,1,0,0,0,0,0/
 
-      nvol = nx1*ny1*nz1*nelt
+      integer e, eq, n, npl, nf, f, i, k, eq2
 
       nxz    = nx1*nz1
       nfaces = 2*ndim
@@ -80,6 +90,7 @@
       endif
 
 ! compute (U-{{U}})_i * n_k
+! OK FOLKS GIANT BUG UMMCU IS BAD AT INFLOW
       l=1
       do e=1,nelt
          do eq=1,toteq
@@ -91,33 +102,67 @@
          l=l+nf
       enddo
 
+      nxyz  =nx1*ny1*nz1
+      nvol  =nxyz*nelt
+      ngradu=nxyz*toteq*3
       do eq=1,toteq
          call rzero(superhugeh,3*lx1*ly1*lz1*lelt)
          if (eq .eq. 4 .and. .not. if3d) goto 133
-! apply flux jacobian to get Ajac (U-{{U}})_i * n_k
-         do j=1,ndim
-            call rzero(ftmp1,nfq)
-            call agradu_sfc(ftmp1,qminus,hface(1,1,j),eq)
-! yes I know I should wrap this. Bite me.
-!           do k=1,ndim
-!              call agradu_ns_sfc(ftmp1,qminus,hface(1,1,k),
-!    >                               ftmp2,eq,j,k)
-!           enddo
-            call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,
-     >                      superhugeh(1,j),ftmp1)
-         enddo
+         l=1
+         m=1
+         do e=1,nelt
+            call rzero(diffh,3*nxyz)
+            call rzero(gradu,ngradu) ! this too goes away when gradu is global
+            do j=1,ndim
+               do eq2=1,toteq ! sigh
+                  call add_face2full_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
+     >                                gradu(1,eq2,j),hface(l,eq2,j))
+               enddo
+            enddo
+
+            l=l+nf ! index for hface, which is global. this all goes away
+                ! once you get rid of that execrable "element loop" in
+                ! compute_rhs_and_dt
+!           call fluxj_ns(superhugeh,... THIS will be correctly strided as well
+! JH110716 AND someday it will work
+!!            do j=1,ndim    ! flux direction
+!!               do k=1,ndim ! dU   direction
+!!                  ieijk=0
+!!                  if (eq .lt. toteq) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
+!!                  if (ieijk .eq. 0) then
+!!                     call agradu_ns(superhugeh(m,j),gradu(1,1,k),viscscr
+!!     >                             ,e,eq,j,k) ! the worst stride ever
+!!                  endif
+!!               enddo
+!!            enddo
+! JH110716 but not today. for now, let maxima do my thinking in the fluxj* routines
+
+            call agradu(diffh,gradu,e,eq)
+
+            do j=1,ndim
+               call copy(superhugeh(m,j),diffh(1,j),nxyz)
+            enddo
+
+            m=m+nxyz
+
+         enddo ! element loop
+
+! gradm1_t uses /ctmp1/
          call gradm1_t(gradm1_t_overwrites,superhugeh(1,1),
      >                        superhugeh(1,2),superhugeh(1,3))
          call cmult(gradm1_t_overwrites,const,nvol)
          call add2(res1(1,1,1,1,eq),gradm1_t_overwrites,nvol)
 133      continue
-      enddo
+      enddo ! equation loop
 
       return
       end
 
 !-----------------------------------------------------------------------
 
+C> \ingroup convhvol
+C> @{
+C> Convective volume terms formed and differentiated^T here
       subroutine convective_cmt(e,eq)
 ! JH081916 convective flux divergence integrated in weak form and
 !          placed in res1.
@@ -140,9 +185,11 @@
 
       return
       end
+C> @}
 
-!-----------------------------------------------------------------------
-
+C> \ingroup convhvol
+C> @{
+C> Convective pointwise flux function \f$\mathbf{H}^c\f$ on fine grid.
       subroutine evaluate_dealiased_conv_h(e,eq)
 ! computed as products between primitive variables and conserved variables.
 ! if you want to write rho u_i u_j as (rho u_i) (rho u_j) (rho^{-1}), this
@@ -207,8 +254,6 @@ c computed by multiplying rho by u_j
       return
       end
 
-!-----------------------------------------------------------------------
-
       subroutine evaluate_aliased_conv_h(e,eq)
 ! computed as products between primitive variables and conserved variables.
 ! if you want to write rho u_i u_j as (rho u_i) (rho u_j) (rho^{-1}), this
@@ -259,9 +304,11 @@ c computed by multiplying rho by u_j
 
       return
       end
+C> @}
 
-!----------------------
-
+C> \ingroup convhvol
+C> @{
+C> \f$(\nabla v)\cdot \mathbf{H}^c=\mathcal{I}^{\intercal}\mathbf{D}^{\intercal}\cdots\f$ for equation eq, element e
       subroutine flux_div_integral_dealiased(e,eq)
       include  'SIZE'
       include  'INPUT'
@@ -321,7 +368,7 @@ c computed by multiplying rho by u_j
       return
       end
 
-!----------------------
+C> @}
 
       subroutine flux_div_integral_aliased(e,eq)
       include  'SIZE'
@@ -373,6 +420,7 @@ c computed by multiplying rho by u_j
 
       call copy(tu,ud,nxyz)
 
+! needs fleg or removal altogether. not good modularity
       call sub2(res1(1,1,1,e,eq),tu,nxyz)
 
       return
@@ -456,7 +504,6 @@ c-----------------------------------------------------------------------
          do j=1,ny1
             do i=1,nx1
                call NEKASGN(i,j,k,e)
-               call cmtASGN(i,j,k,e)
                call userf(i,j,k,eg)
                usrf(i,j,k,2) = FFX
                usrf(i,j,k,3) = FFY
