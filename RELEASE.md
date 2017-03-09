@@ -3,29 +3,30 @@
 ## Major Features and Improvements
 
 * New paramater file `.par`
-* Added generic `fld` reader to restart from arbitrary mesh
-* Added `OIFS` for `moving mesh`.
-* Added `Moving mesh` for `PN/PN`.
-* Added support for mixed `Helmholtz/CVODE` solves.
-* Improved `.re2` reader (reading in parallel).
-* New `AMG setup` tool based on HYPRE. 
-* New `EXODUSII` mesh converter.
+* Added `OIFS` for `moving mesh`
+* Added `Moving mesh` for `PN/PN`
+* Added support for mixed `Helmholtz/CVODE` solves
+* New `AMG setup` tool based on HYPRE
+* New `EXODUSII` mesh converter
 * New interface to `libxsmm` (fast MATMUL library).
-* Extended `lowMach` solver for time varying thermodynamic pressure.
+* Extended `lowMach` solver for time varying thermodynamic pressure
 * Added DG for scalars
 * Added support for `implicit none`
 * New `generic fld` reader allows restarts from an arbitrary mesh
+* Read `.re2` in parallel
+* Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 
 ## Backwards-Incompatible Changes 
 
 * Optional `intp.h` module replaced old interpolation routines `intpts()`
-* Replcaed `g2gi()` by new generic fld reader `gfldr.h`
+* Replaced `g2gi()` by new generic fld reader `gfldr.h`
 * Moved `makenek` to bin folder
 * New `SIZE` file required to use `implicit none`
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
 * Removed `MOAB` 
 * Replaced `hpts.in` & `hpts.out` by `his.in` & `<casename>.his` 
-
+* Print real memory footprint on exit instead of using `size` in `makenek`
+* Eliminated PPLIST symbol `MPIIO` and added `NOMPIIO`
 
 ## Bug Fixes and Other Changes
 

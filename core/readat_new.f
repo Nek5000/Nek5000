@@ -145,7 +145,8 @@ c
       ifkeps    = .false.
       ifschclob = .false. 
 
-      ifdp0dt = .false.
+      ifdp0dt   = .false.
+      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)

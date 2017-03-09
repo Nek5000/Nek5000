@@ -69,8 +69,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call genwz           ! Compute GLL points, weights, etc.
 
-      call io_init         ! Initalize io unit
-
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
