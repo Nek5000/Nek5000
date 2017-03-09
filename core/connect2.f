@@ -244,6 +244,7 @@ c     IFSPLIT   = .false.
       ifbase = .true.
       ifpert = .false.
 
+      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
 
       IF(NID.EQ.0) READ(9,*,ERR=500) NLOGIC
       call bcast(NLOGIC,ISIZE)

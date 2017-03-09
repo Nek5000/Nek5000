@@ -1,10 +1,11 @@
       subroutine byte_sync_mpi(mpi_fh)
 
-#ifdef MPIIO
       include 'mpif.h'
+#ifndef NOMPIIO
       call MPI_file_sync(mpi_fh,ierr)
+#else
+      call exitti('MPI_file_sync unsupported!$',0)
 #endif
-
       return
       end
 C--------------------------------------------------------------------------
@@ -15,7 +16,6 @@ C--------------------------------------------------------------------------
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
-#ifdef MPIIO
       include 'mpif.h'
 
       character*132 fname
@@ -26,17 +26,13 @@ C--------------------------------------------------------------------------
         imode = MPI_MODE_RDONLY 
       endif
 
-      if(nid.eq.pid0 .or. nid.eq.pid0r) then
-c        write(*,*) nid, 'call MPI_file_open',fname
-        call MPI_file_open(nekcomm,fname,imode,
-     &                     MPI_INFO_NULL,mpi_fh,ierr)
-      endif
+#ifndef NOMPIIO
+      call MPI_file_open(nekcomm,fname,imode,
+     &                   MPI_INFO_NULL,mpi_fh,ierr)
 #else
-      write(6,*) 'byte_open_mpi: No MPI-IO support!'
-      ierr=1
-      return
+      call exitti('MPI_file_open unsupported!$',0)
 #endif
-      ierr=0
+
       return
       end
 C--------------------------------------------------------------------------
@@ -45,25 +41,17 @@ C--------------------------------------------------------------------------
       include 'SIZE'
       include 'RESTART'
 
-#ifdef MPIIO
       include 'mpif.h'
 
       real*4 buf(1)          ! buffer
 
-      if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = icount ! icount is in 4-byte words
-        if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
-c        write(*,*) 'byte_read_mpi', nid, iout/4
-        call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
-     &                           MPI_STATUS_IGNORE,ierr)
-      endif
+      iout = icount ! icount is in 4-byte words
+#ifndef NOMPIIO
+      call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
+     &                       MPI_STATUS_IGNORE,ierr)
 #else
-      write(6,*) 'byte_read_mpi: No MPI-IO support!'
-      ierr=1
-      return
+      call exitti('MPI_file_read_all unsupported!$',0)
 #endif
-     
-      ierr=0
 
       return
       end
@@ -73,24 +61,18 @@ C--------------------------------------------------------------------------
       include 'SIZE'
       include 'RESTART'
 
-#ifdef MPIIO
       include 'mpif.h'
 
       real*4 buf(1)          ! buffer
 
-      if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        iout = icount ! icount is in 4-byte words
-        if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
-c        write(*,*) 'byte_write', nid, iout/4
-        call MPI_file_write_all(mpi_fh,buf,iout,MPI_REAL,
-     &                          MPI_STATUS_IGNORE,ierr)
-      endif
+      iout = icount ! icount is in 4-byte words
+#ifndef NOMPIIO
+      call MPI_file_write_all(mpi_fh,buf,iout,MPI_REAL,
+     &                        MPI_STATUS_IGNORE,ierr)
 #else
-      write(6,*) 'byte_write_mpi: No MPI-IO support!'
-      ierr=1
-      return
+      call exitti('MPI_file_write_all unsupported!$',0)
 #endif
-      ierr=0
+
       return
       end
 C--------------------------------------------------------------------------
@@ -99,15 +81,12 @@ C--------------------------------------------------------------------------
       include 'SIZE'
       include 'RESTART'
 
-#ifdef MPIIO
       include 'mpif.h'
-      if(nid.eq.pid0 .or. nid.eq.pid0r) then
-        call MPI_file_close(mpi_fh,ierr)
-      endif
+
+#ifndef NOMPIIO
+      call MPI_file_close(mpi_fh,ierr)
 #else
-      if(nio.eq.0) write(6,*) 'byte_close_mpi: No MPI-IO support!'
-      ierr=1
-      return
+      call exitti('MPI_file_close unsupported!$',0)
 #endif
 
       return
@@ -118,19 +97,14 @@ C--------------------------------------------------------------------------
       include 'SIZE'
       include 'RESTART'
 
-#ifdef MPIIO
       include 'mpif.h'
       integer*8 ioff_in
     
-      if(nid.eq.pid0 .or. nid.eq.pid0r) then
-         if(ioff_in.lt.0) then
-           write(6,*) 'byte_set_view: offset<0!'
-           call exitt
-         endif
-c         write(*,*) 'dataoffset', nid, ioff_in
-         call MPI_file_set_view(mpi_fh,ioff_in,MPI_BYTE,MPI_BYTE,
-     &                          'native',MPI_INFO_NULL,ierr)
-      endif
+      if(ioff_in.lt.0) 
+     & call exitti('Invalid index in MPI_file_set_view!$',ioff_in)
+#ifndef NOMPIIO
+      call MPI_file_set_view(mpi_fh,ioff_in,MPI_BYTE,MPI_BYTE,
+     &                       'native',MPI_INFO_NULL,ierr)
 #endif
 
       return

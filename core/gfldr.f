@@ -1,3 +1,5 @@
+#ifndef NOMPIIO
+
       subroutine gfldr(sourcefld)
 c
 c     generic field file reader
@@ -25,16 +27,12 @@ c
 
       logical if_full_pres_tmp
 
+      logical ifbswp, if_byte_swap_test
+      real*4 bytetest
+
 
       etime_t = dnekclock_sync()
       if(nio.eq.0) write(6,*) 'call gfldr' 
-
-#ifndef MPIIO
-      call exitti('ABORT: Requires MPIIO to be enabled!$',0)
-#endif
-
-      isave = pid0r
-      pid0r = nid ! every ranks reads
 
       ! open source field file
       ierr = 0
@@ -49,11 +47,12 @@ c
 
       ! read and parse header
       call byte_read_mpi(hdr,iHeaderSize/4,0,fldh_gfldr,ierr)
-      call err_chk(ierr,' Cannot read header!$')
-
-      call bcast(hdr,iHeaderSize)
       call mfi_parse_hdr(hdr,ierr)
       call err_chk(ierr,' Invalid header!$')
+      call byte_read_mpi(bytetest,1,0,fldh_gfldr,ierr)
+      ifbswp = if_byte_swap_test(bytetest,ierr)
+      call err_chk(ierr,' Invalid endian tag!$')
+
       nelgs   = nelgr
       nxs     = nxr
       nys     = nyr
@@ -98,13 +97,12 @@ c
       endif
 
       ! read source mesh coordinates
-      call gfldr_getxyz(xm1s,ym1s,zm1s)
+      call gfldr_getxyz(xm1s,ym1s,zm1s,ifbswp)
 
       ! initialize interpolation tool using source mesh
       nxf   = 2*nxs
       nyf   = 2*nys
       nzf   = 2*nzs
-      bb_t  = 0.1
       nhash = nxs*nys*nzs 
       nmax  = 256
 
@@ -116,22 +114,22 @@ c
       ! read source fields and interpolate
       ifldpos = ndim
       if(ifgetur .and. ifflow) then
-        call gfldr_getfld(vx,vy,vz,ndim,ifldpos+1)
+        call gfldr_getfld(vx,vy,vz,ndim,ifldpos+1,ifbswp)
         ifldpos = ifldpos + ndim
       endif
       if(ifgetpr) then
-        call gfldr_getfld(pm1,dum,dum,1,ifldpos+1)
+        call gfldr_getfld(pm1,dum,dum,1,ifldpos+1,ifbswp)
         ifldpos = ifldpos + 1
         if (ifaxis) call axis_interp_ic(pm1)
         if (ifgetpr) call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
-        call gfldr_getfld(t(1,1,1,1,1),dum,dum,1,ifldpos+1)
+        call gfldr_getfld(t(1,1,1,1,1),dum,dum,1,ifldpos+1,ifbswp)
         ifldpos = ifldpos + 1
       endif
       do i = 1,ldimt-1
          if(ifgtpsr(i)) then
-           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,1,ifldpos+1) 
+           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,1,ifldpos+1,ifbswp) 
            ifldpos = ifldpos + 1
          endif
       enddo
@@ -141,8 +139,6 @@ c
       call byte_close_mpi(fldh_gfldr,ierr)
       call findpts_free(inth_gfldr)
 
-      pid0r = isave
-
       etime_t = dnekclock_sync() - etime_t
       if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
      &                   ' done :: gfldr  ', etime_t, ' sec'
@@ -150,7 +146,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_getxyz(xout,yout,zout)
+      subroutine gfldr_getxyz(xout,yout,zout,ifbswp)
 
       include 'SIZE'
       include 'GFLDR'
@@ -159,6 +155,7 @@ c-----------------------------------------------------------------------
       real xout(*)
       real yout(*)
       real zout(*)
+      logical ifbswp
 
       integer*8 ioff_b
 
@@ -168,7 +165,7 @@ c-----------------------------------------------------------------------
 
       nread = ndim*ntots_b/4
       call byte_read_mpi(bufr,nread,-1,fldh_gfldr,ierr)
-      if(if_byte_sw) then
+      if(ifbswp) then
         if(wdsizr.eq.4) call byte_reverse (bufr,nread,ierr)
         if(wdsizr.eq.8) call byte_reverse8(bufr,nread,ierr)
       endif
@@ -181,7 +178,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_getfld(out1,out2,out3,nndim,ifldpos)
+      subroutine gfldr_getfld(out1,out2,out3,nndim,ifldpos,ifbswp)
 
       include 'SIZE'
       include 'GEOM'
@@ -191,6 +188,7 @@ c-----------------------------------------------------------------------
       real out1(*)
       real out2(*)
       real out3(*)
+      logical ifbswp
 
       integer*8 ioff_b
 
@@ -213,7 +211,7 @@ c-----------------------------------------------------------------------
       call byte_set_view(ioff_b,fldh_gfldr)
       nread = nndim*ntots_b/4
       call byte_read_mpi(bufr,nread,-1,fldh_gfldr,ierr)
-      if(if_byte_sw) then
+      if(ifbswp) then
         if(wdsizr.eq.4) call byte_reverse (bufr,nread,ierr)
         if(wdsizr.eq.8) call byte_reverse8(bufr,nread,ierr)
       endif
@@ -307,3 +305,5 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+#endif

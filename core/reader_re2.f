@@ -28,12 +28,10 @@ c
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)
 
-#ifdef PRE2
+#ifndef NOMPIIO
       call byte_close(ierr)
       call crystal_setup(cr_re2,nekcomm,np)
 
-      isave = pid0r
-      pid0r = nid ! every ranks reads
       call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
@@ -45,7 +43,6 @@ c
 
       call crystal_free  (cr_re2)
       call byte_close_mpi(fh_re2,ierr)
-      pid0r = isave 
 #else
       call bin_rd1_mesh (ifbswap)
       call bin_rd1_curve(ifbswap)
