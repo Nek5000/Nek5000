@@ -14,7 +14,7 @@ c
       include 'RESTART'
       include 'GFLDR'
 
-      character*132 sourcefld
+      character(*) sourcefld
 
       common /scrcg/  pm1(lx1*ly1*lz1,lelv)
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
@@ -47,9 +47,10 @@ c
 
       ! read and parse header
       call byte_read_mpi(hdr,iHeaderSize/4,0,fldh_gfldr,ierr)
+      call byte_read_mpi(bytetest,1,0,fldh_gfldr,ierr)
+
       call mfi_parse_hdr(hdr,ierr)
       call err_chk(ierr,' Invalid header!$')
-      call byte_read_mpi(bytetest,1,0,fldh_gfldr,ierr)
       ifbswp = if_byte_swap_test(bytetest,ierr)
       call err_chk(ierr,' Invalid endian tag!$')
 
@@ -63,7 +64,6 @@ c
         ndims = 2
       endif
       if (ifgtim) time = timer
-
 
       if_full_pres_tmp = if_full_pres
       if (wdsizr.eq.8) if_full_pres = .true.
@@ -84,9 +84,7 @@ c
 
       ! do some checks
       if(ndims.ne.ndim) 
-     $ call exitti('ABORT: ndim of source does not match target!$',0)
-      if(indx2(rdcode,10,'X',1).le.0) 
-     $ call exitti('ABORT: source does not contain a mesh!$',0)
+     $ call exitti('ndim of source does not match target!$',0)
       if(ntots_b/wdsize .gt. ltots) then
         dtmp8 = nelgs
         lelt_req = dtmp8*nxs*nys*nzs / (np*ltots/lelt)
@@ -96,8 +94,14 @@ c
         call exitt
       endif
 
-      ! read source mesh coordinates
-      call gfldr_getxyz(xm1s,ym1s,zm1s,ifbswp)
+      ifldpos = 0
+      if(ifgetxr) then
+        ! read source mesh coordinates
+        call gfldr_getxyz(xm1s,ym1s,zm1s,ifbswp)
+        ifldpos = ndim
+      else
+        call exitti('source does not contain a mesh!$',0)
+      endif
 
       ! initialize interpolation tool using source mesh
       nxf   = 2*nxs
@@ -112,7 +116,6 @@ c
      &                   nhash,nhash,nmax,tol)
 
       ! read source fields and interpolate
-      ifldpos = ndim
       if(ifgetur .and. ifflow) then
         call gfldr_getfld(vx,vy,vz,ndim,ifldpos+1,ifbswp)
         ifldpos = ifldpos + ndim

@@ -18,7 +18,7 @@ C--------------------------------------------------------------------------
 
       include 'mpif.h'
 
-      character*132 fname
+      character(*) fname
       logical ifro 
 
       imode = MPI_MODE_WRONLY+MPI_MODE_CREATE
@@ -66,6 +66,7 @@ C--------------------------------------------------------------------------
       real*4 buf(1)          ! buffer
 
       iout = icount ! icount is in 4-byte words
+      if(iorank.ge.0 .and. nid.ne.iorank) iout = 0
 #ifndef NOMPIIO
       call MPI_file_write_all(mpi_fh,buf,iout,MPI_REAL,
      &                        MPI_STATUS_IGNORE,ierr)

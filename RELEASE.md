@@ -3,7 +3,6 @@
 ## Major Features and Improvements
 
 * New paramater file `.par`
-* Added generic `fld` reader to restart from arbitrary mesh
 * Added `OIFS` for `moving mesh`
 * Added `Moving mesh` for `PN/PN`
 * Added support for mixed `Helmholtz/CVODE` solves
@@ -14,7 +13,8 @@
 * Added DG for scalars
 * Added support for `implicit none`
 * New `generic fld` reader allows restarts from an arbitrary mesh
-* Added parallel `.re2` reader
+* Read `.re2` in parallel
+* Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 
 ## Backwards-Incompatible Changes 
 
