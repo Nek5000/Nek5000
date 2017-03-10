@@ -536,7 +536,8 @@ C
 c        write(6,*) 'chkj1'
 c        call outxm3j(xm3,ym3,jacm3)
 
-         CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3,ym3,zm3,ndim,ierr)
+         CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
+     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ndim,ierr)
          if (ierr.eq.1) kerr = kerr+1
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
@@ -645,7 +646,8 @@ C
 C
       kerr = 0
       DO 500 ie=1,NELT
-         CALL CHKJAC(JACM1(1,1,1,ie),NXYZ1,ie,xm1,ym1,zm1,ndim,ierr)
+         CALL CHKJAC(JACM1(1,1,1,ie),NXYZ1,ie,xm1(1,1,1,ie),
+     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ndim,ierr)
          if (ierr.ne.0) kerr = kerr+1
   500 CONTINUE
       kerr = iglsum(kerr,1)
