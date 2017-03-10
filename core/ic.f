@@ -2031,7 +2031,7 @@ c-----------------------------------------------------------------------
       if (nid.eq.pid0r) then
          nread = nxyzr*nelr/lrbs
          if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
-         if(ifmpiio) read = iglmax(nread,1) ! needed because of collective read
+         if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
       call bcast(nelrr,4)
