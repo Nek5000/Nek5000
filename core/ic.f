@@ -2015,11 +2015,11 @@ c--------------------------------------------------------
 !MJO - 3/15/17 - ACC version of col2
 !     a little hack to make dsavg work easily
 
-      !$ACC PARALLEL LOOP GANG VECTOR PRESENT(a,b)
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(a,b)
       do i=1,n
          a(i) = a(i) * b(i)
       enddo
-      !$ACC END PARALLEL LOOP
+!$ACC END PARALLEL LOOP
       end
 c-----------------------------------------------------------------------
       subroutine map13_all(x3,x1)
