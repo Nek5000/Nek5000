@@ -1986,7 +1986,8 @@ c
 c
       include 'SIZE'
       include 'TOTAL'
-      real u(lx1*ly1*lz1*lelt)
+      real u(lx1,ly1,lz1,lelt)
+
 c
 c
 c     Take direct stiffness avg of u
@@ -1997,26 +1998,28 @@ c
          ifield = 1
          ntot = nx1*ny1*nz1*nelv
          call dssum(u,nx1,ny1,nz1)
-!     call col2 (u,vmult,ntot)
-         !$ACC PARALLEL LOOP GANG VECTOR PRESENT(u,vmult)
-         do i=1,ntot
-            u(i) = u(i)*vmult(i)
-         enddo
-         !$ACC END PARALLEL LOOP
+         call col2_acc (u,vmult,ntot)
       else
          ifield = 2
          ntot = nx1*ny1*nz1*nelt
          call dssum(u,nx1,ny1,nz1)
-         !call col2 (u,tmult,ntot)
-         !$ACC PARALLEL LOOP GANG VECTOR PRESENT(u,tmult)
-         do i=1,ntot
-            u(i) = u(i)*tmult(i)
-         enddo
-         !$ACC END PARALLEL LOOP
+         call col2_acc (u,tmult,ntot)
       endif
       ifield = ifieldo
 c
       return
+      end
+c--------------------------------------------------------
+      subroutine col2_acc(a,b,n)
+      real a(n),b(n)
+!MJO - 3/15/17 - ACC version of col2
+!     a little hack to make dsavg work easily
+
+      !$ACC PARALLEL LOOP GANG VECTOR PRESENT(a,b)
+      do i=1,n
+         a(i) = a(i) * b(i)
+      enddo
+      !$ACC END PARALLEL LOOP
       end
 c-----------------------------------------------------------------------
       subroutine map13_all(x3,x1)
