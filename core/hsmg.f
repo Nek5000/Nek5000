@@ -2394,29 +2394,35 @@ c-----------------------------------------------------------------------
       integer mask(1)        ! Pointer to Dirichlet BCs
       integer e
 
-!$ACC DATA PRESENT(mask,w) if(is_present)
-!$ACC PARALLEL LOOP if(is_present)
+! ROR 2017-03-15:
+! FIXME: Might crash because size of w is not explicitly declared
+!        Maybe w(nel), mask(lx1*ly1*lz1*lelt)?
+! This was inlined b/c ACC ROUTINE complained on MCS servers (pgf90
+! v16.9)
+!$ACC PARALLEL LOOP PRESENT(mask,w)
       do e=1,nel
          im = mask(e)
-         call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
+         !call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
+         n=mask(im)
+         do i=1,n
+c           write(6,*) i,mask(i),n,' MG_MASK'
+            w(mask(im+i)) = 0.
+         enddo
       enddo
 !$ACC END PARALLEL
       return
       end
 c----------------------------------------------------------------------
       subroutine mg_mask_e(w,mask) ! Zero out Dirichlet conditions
-!$ACC ROUTINE SEQ
       include 'SIZE'
       real w(1)
       integer mask(0:1)
 
       n=mask(0)
-!$ACC LOOP SEQ
       do i=1,n
 c        write(6,*) i,mask(i),n,' MG_MASK'
          w(mask(i)) = 0.
       enddo
-!$ACC END LOOP
 
       return
       end
