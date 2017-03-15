@@ -1981,6 +1981,44 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine dsavg_acc(u)
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      real u(lx1*ly1*lz1*lelt)
+c
+c
+c     Take direct stiffness avg of u
+c
+c
+      ifieldo = ifield
+      if (ifflow) then
+         ifield = 1
+         ntot = nx1*ny1*nz1*nelv
+         call dssum(u,nx1,ny1,nz1)
+!     call col2 (u,vmult,ntot)
+         !$ACC PARALLEL LOOP GANG VECTOR PRESENT(u,vmult)
+         do i=1,ntot
+            u(i) = u(i)*vmult(i)
+         enddo
+         !$ACC END PARALLEL LOOP
+      else
+         ifield = 2
+         ntot = nx1*ny1*nz1*nelt
+         call dssum(u,nx1,ny1,nz1)
+         !call col2 (u,tmult,ntot)
+         !$ACC PARALLEL LOOP GANG VECTOR PRESENT(u,tmult)
+         do i=1,ntot
+            u(i) = u(i)*tmult(i)
+         enddo
+         !$ACC END PARALLEL LOOP
+      endif
+      ifield = ifieldo
+c
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine map13_all(x3,x1)
 c
       include 'SIZE'

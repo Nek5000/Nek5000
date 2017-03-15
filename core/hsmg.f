@@ -388,12 +388,13 @@ c----------------------------------------------------------------------
       integer l1,l2,nx,ny,nz
       real arr1(nx,ny,nz,nelv),arr2(nx,ny,nz,nelv)
       real f1,f2
-      
+
       integer i,j,k,ie,i0,i1
       i0=2
       i1=nx-1
-      
+
       if(.not.if3d) then
+         !MJO - 3/15/17 - 2D not implemented for GPU
          do ie=1,nelv
             do j=i0,i1
                arr1(l1+1 ,j,1,ie) = f1*arr1(l1+1 ,j,1,ie)
@@ -409,7 +410,10 @@ c----------------------------------------------------------------------
             enddo
          enddo
       else
+         !FIXME: Possibly rewrite as 3 loops of collapse(3)
+         !$ACC PARALLEL LOOP GANG PRESENT(arr1)
          do ie=1,nelv
+            !$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do j=i0,i1
                arr1(l1+1 ,j,k,ie) = f1*arr1(l1+1 ,j,k,ie)
@@ -418,6 +422,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(nx-l2,j,k,ie)
             enddo
             enddo
+            !$ACC END LOOP
+
+            !$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do i=i0,i1
                arr1(i,l1+1 ,k,ie) = f1*arr1(i,l1+1 ,k,ie)
@@ -426,6 +433,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,nx-l2,k,ie)
             enddo
             enddo
+            !$ACC END LOOP
+
+           !$ACC LOOP VECTOR COLLAPSE(2)
             do j=i0,i1
             do i=i0,i1
                arr1(i,j,l1+1 ,ie) = f1*arr1(i,j,l1+1 ,ie)
@@ -434,6 +444,7 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,j,nx-l2,ie)
             enddo
             enddo
+            !$ACC END LOOP
          enddo
       endif
       return
@@ -473,7 +484,8 @@ c----------------------------------------------------------------------
 
       call h1mg_mask  (r,mg_imask(pm),nelfld(ifield))  ! Zero Dirichlet nodes
 
-      if (if3d) then ! extended array 
+      if (if3d) then            ! extended array
+        !MJO - 3/15/17 Only put 3d on GPU
          call hsmg_schwarz_toext3d(mg_work,r,mg_nh(l))
       else
          call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
@@ -484,7 +496,7 @@ c----------------------------------------------------------------------
       enz=mg_nh(l)+2
       if(.not.if3d) enz=1
       i = enx*eny*enz*nelv+1
- 
+
 c     exchange interior nodes
       call hsmg_extrude(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
       call hsmg_schwarz_dssum(mg_work,l)
@@ -505,7 +517,7 @@ c     Sum overlap region (border excluded)
       endif
 
       call hsmg_dssum(e,l)                           ! sum border nodes
-      call h1mg_mask (e,mg_imask(pm),nelfld(ifield)) ! apply mask 
+      call h1mg_mask (e,mg_imask(pm),nelfld(ifield)) ! apply mask
 
       return
       end
@@ -528,14 +540,14 @@ c     apply mask (zeros Dirichlet nodes)
       !!!!! uncommenting
       call hsmg_do_wt(r,mg_mask(mg_mask_index(l,mg_fld)),
      $                mg_nh(l),mg_nh(l),mg_nhz(l))
-      
-c     go to extended size array (room for overlap)      
+
+c     go to extended size array (room for overlap)
       if (if3d) then
          call hsmg_schwarz_toext3d(mg_work,r,mg_nh(l))
       else
          call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
       endif
-      
+
       enx=mg_nh(l)+2
       eny=mg_nh(l)+2
       enz=mg_nh(l)+2
@@ -573,7 +585,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       integer n
       real a(0:n+1,0:n+1,nelv),b(n,n,nelv)
-      
+
       integer i,j,ie
 c      call rzero(a,(n+2)*(n+2)*nelv)
       do ie=1,nelv
@@ -598,9 +610,27 @@ c----------------------------------------------------------------------
       include 'SIZE'
       integer n
       real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
-      
+
       integer i,j,k,ie
-      call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+
+!     call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+!MJO - 3/15/17 Inlined to avoid rearchitecting
+!              rzero
+
+      !$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a)
+      do ie=1,nelv
+        do k=0,n+1 !FIXME: make n-1,n+1
+          do j=0,n+1
+            do i=0,n+1
+              a(i,j,k,ie)=b(i,j,k,ie)
+            enddo
+          enddo
+        enddo
+      enddo
+      !$ACC END LOOP
+
+      !$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+      !$ACC&              GANG WORKER VECTOR
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -610,6 +640,8 @@ c----------------------------------------------------------------------
       enddo
       enddo
       enddo
+      !$ACC END LOOP
+
       return
       end
 c----------------------------------------------------------------------
@@ -617,7 +649,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       integer n
       real a(0:n+1,0:n+1,nelv),b(n,n,nelv)
-      
+
       integer i,j,ie
       do ie=1,nelv
       do j=1,n
@@ -633,8 +665,10 @@ c----------------------------------------------------------------------
       include 'SIZE'
       integer n
       real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
-      
+
       integer i,j,k,ie
+      !$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
+      !$ACC&  PRESENT_OR_COPY(a,b)
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -903,12 +937,182 @@ c     clobbers r
       include 'SIZE'
       include 'INPUT'
       include 'HSMG'
+#ifdef _OPENACC
+      call hsmg_do_fast_acc(e,r,
+     $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
+     $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
+     $     mg_nh(l)+2)
+#else
       call hsmg_do_fast(e,r,
      $      mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $      mg_fast_d(mg_fast_d_index(l,mg_fld)),
-     $      mg_nh(l)+2)
+     $     mg_nh(l)+2)
+#endif
       return
       end
+c----------------------------------------------------------------------
+c     clobbers r
+      subroutine hsmg_do_fast_acc(e,r,s,d,nl)
+      implicit none
+      include 'SIZE'
+      include 'INPUT'
+      integer nl,lwk
+      real e(nl**ndim,nelt)
+      real r(nl**ndim,nelt)
+      real s(nl*nl,2,ndim,nelt)
+      real d(nl**ndim,nelt)
+      integer ie,nn,i,j,k,l,i0,j0,k0,je,nu,nv
+      parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
+      common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+      real work,work2,tmp
+
+      nn=nl**ndim
+      nu=nl
+      nv=nl
+!FIXME - 2D should be done later, in a similar fashion
+      if(.not.if3d) then
+         do ie=1,nelt
+            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+     $                         ,s(1,2,1,ie),s(1,1,2,ie))
+            do i=1,nn
+               r(i,je)=d(i,ie)*e(i,ie)
+            enddo
+            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+     $                         ,s(1,1,1,ie),s(1,2,2,ie))
+         enddo
+      else
+
+         !$ACC PARALLEL LOOP GANG
+         !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
+         do ie=1,nelt
+!            call mxm(A,nv,u,nu,work,nu*nu)
+            !$ACC LOOP COLLAPSE(2) WORKER VECTOR
+            do j=1,nu*nu
+               do i=1,nv
+                  i0 = i + nv*(j-1)
+                  tmp = 0.0
+                  !$ACC LOOP SEQ
+                  do k=1,nu
+!                    work(i,j) = work(i,j) + A(i,k) * u(k,j)
+                     j0 = i + nv*(k-1)
+                     k0 = k + nu*(j-1)
+                     tmp = tmp + s(j0,2,1,ie) * r(k0,ie)
+                  enddo
+                  !$ACC END LOOP
+                  work(i0) = tmp
+               enddo
+            enddo
+            !$ACC END LOOP
+
+            !$ACC LOOP COLLAPSE(3) WORKER VECTOR
+            do i=1,nu
+!              call mxm(work(nv*nu*i),nv,Bt,nu,work2(nv*nv*i),nv)
+               do j=1,nv
+                  do l=1,nv
+                     i0 = l + nv*(j-1) + nv*nv*(i-1)
+                     tmp = 0.0
+                     !$ACC LOOP SEQ
+                     do k=1,nu
+                        j0 = l + nv*(k-1) + nv*nu*(i-1)
+                        k0 = k + nu*(j-1)
+!                       work2(j,l,i) = work2(j,l,i) + work(l,k,i)*Bt(k,j)
+                        tmp = tmp + work(j0)*s(k0,1,2,ie)
+                     enddo
+                     !$ACC END LOOP
+                     work2(i0) = tmp
+                  enddo
+               enddo
+            enddo
+            !$ACC END LOOP
+            !$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!            call mxm(work2,nv*nv,Ct,nu,v,nv)
+            do j=1,nv
+               do i=1,nv*nv
+                  j0 = i + nv*nv*(j-1)
+                  tmp = 0.0
+                  !$ACC LOOP SEQ
+                  do k=1,nu
+                     i0 = i + nv*nv*(k-1)
+                     k0 = k + nu*(j-1)
+!                   v(i,j) = v(i,j) + work2(i,k)*Ct(k,j)
+                     tmp = tmp + work2(i0)*s(k0,1,3,ie)
+                  enddo
+                  !$ACC END LOOP
+                  e(j0,ie) = tmp
+               enddo
+            enddo
+            !$ACC END LOOP
+            !$ACC LOOP WORKER VECTOR
+            do i=1,nn
+               r(i,ie)=d(i,ie)*e(i,ie)
+            enddo
+            !$ACC END LOOP
+!            call hsmg_tnsr3d_el(e(1,ie),nl,r(1,ie),nl
+!     $                         ,s(1,1,1,ie),s(1,2,2,ie),s(1,2,3,ie))
+!            call mxm(A,nv,u,nu,work,nu*nu)
+            !$ACC LOOP COLLAPSE(2) WORKER VECTOR
+            do j=1,nu*nu
+               do i=1,nv
+                  i0 = i + nv*(j-1)
+                  tmp = 0
+                  !$ACC LOOP SEQ
+                  do k=1,nu
+!                    work(i,j) = work(i,j) + A(i,k) * u(k,j)
+                     j0 = i + nv*(k-1)
+                     k0 = k + nu*(j-1)
+                     tmp = tmp + s(j0,1,1,ie) * r(k0,ie)
+                  enddo
+                  !$ACC END LOOP
+                  work(i0) = tmp
+               enddo
+            enddo
+            !$ACC END LOOP
+
+            !$ACC LOOP COLLAPSE(3) WORKER VECTOR
+            do i=1,nu
+!              call mxm(work(nv*nu*i),nv,Bt,nu,work2(nv*nv*i),nv)
+               do j=1,nv
+                  do l=1,nv
+                     i0 = l + nv*(j-1) + nv*nv*(i-1)
+                     tmp = 0.0
+                     !$ACC LOOP SEQ
+                     do k=1,nu
+                        j0 = l + nv*(k-1) + nv*nu*(i-1)
+                        k0 = k + nu*(j-1)
+!                       work2(j,l,i) = work2(j,l,i) + work(l,k,i)*Bt(k,j)
+                        tmp = tmp + work(j0)*s(k0,2,2,ie)
+                     enddo
+                     !$ACC END LOOP
+                     work2(i0) = tmp
+                  enddo
+               enddo
+            enddo
+            !$ACC END LOOP
+            !$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!            call mxm(work2,nv*nv,Ct,nu,v,nv)
+            do j=1,nv
+               do i=1,nv*nv
+                  j0 = i + nv*nv*(j-1)
+                  tmp = 0.0
+                  !$ACC LOOP SEQ
+                  do k=1,nu
+                     i0 = i + nv*nv*(k-1)
+                     k0 = k + nu*(j-1)
+!                   v(i,j) = v(i,j) + work2(i,k)*Ct(k,j)
+                     tmp = tmp + work2(i0)*s(k0,2,3,ie)
+                  enddo
+                  !$ACC END LOOP
+                  e(j0,ie) = tmp
+               enddo
+            enddo
+            !$ACC END LOOP
+         enddo
+         !$ACC END PARALLEL LOOP
+
+      endif
+      return
+      end
+
 c----------------------------------------------------------------------
 c     clobbers r
       subroutine hsmg_do_fast(e,r,s,d,nl)
@@ -918,7 +1122,7 @@ c     clobbers r
       real r(nl**ndim,nelv)
       real s(nl*nl,2,ndim,nelv)
       real d(nl**ndim,nelv)
-      
+
       integer ie,nn,i
       nn=nl**ndim
       if(.not.if3d) then
@@ -952,7 +1156,7 @@ c     u = wt .* u
       integer nx,ny,nz
       real u(nx,ny,nz,nelv)
       real wt(nx,nz,2,ndim,nelv)
-      
+
       integer e
 
 c     if (nx.eq.2) then
@@ -977,26 +1181,34 @@ c     endif
             enddo
          enddo
       else
+         !$ACC PARALLEL LOOP GANG PRESENT(u,wt)
          do ie=1,nelv
+            !$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do j=1,ny
                u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
                u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
             enddo
             enddo
+            !$ACC END LOOP
+            !$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do i=2,nx-1
                u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
                u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
             enddo
             enddo
+            !$ACC END LOOP
+            !$ACC LOOP VECTOR COLLAPSE(2)
             do j=2,ny-1
             do i=2,nx-1
                u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
                u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
             enddo
             enddo
+            !$ACC END LOOP
          enddo
+         !$ACC END PARALLEL LOOP
       endif
       return
       end
@@ -1375,7 +1587,7 @@ c----------------------------------------------------------------------
       subroutine hsmg_setup_solve
       include 'SIZE'
       include 'HSMG'
-      
+
       integer l,i,nl,nlz
       i = mg_solve_index(mg_lmax+1,mg_fld-1)
       do l=1,mg_lmax
@@ -1403,7 +1615,7 @@ c----------------------------------------------------------------------
       include 'TSTEP'
       include 'CTIMER'
       include 'PARALLEL'
-      
+
       common /quick/ ecrs  (2)  ! quick work array
      $             , ecrs2 (2)  ! quick work array
 c     common /quick/ ecrs  (lx2*ly2*lz2*lelv)  ! quick work array
@@ -1412,7 +1624,7 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv),
      $               h2    (lx1,ly1,lz1,lelv)
-      
+
       integer ilstep,iter
       save    ilstep,iter
       data    ilstep,iter /0,0/
@@ -1438,7 +1650,7 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       n = nx2*ny2*nz2*nelv
 c     call copy(e,r,n)
 c     return
- 
+
       if (icalld.eq.0) then
 
          tddsl=0.0
@@ -1455,12 +1667,12 @@ c     return
       nddsl  = nddsl  + 1
       etime1 = dnekclock()
 
-      
+
 c     n = nx2*ny2*nz2*nelv
 c     rmax = glmax(r,n)
 c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
-       
-      iter = iter + 1      
+
+      iter = iter + 1
 
       l = mg_lmax
       nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
@@ -1471,7 +1683,7 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
 
       time_1 = dnekclock()
 
-c     if (param(41).eq.1) if_hybrid = .true.
+c     if (param(41).eq.1)y if_hybrid = .true.
       if_hybrid = .false.
 
       if (if_hybrid) then
@@ -1505,7 +1717,7 @@ c     if (param(41).eq.1) if_hybrid = .true.
          enddo
          time_2 = dnekclock()
       endif
- 
+
       do l = mg_lmax-1,2,-1
 
 c        rmax = glmax(mg_work2,nt)
@@ -1514,14 +1726,14 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          !          T
          ! r   :=  J w
-         !  l         
+         !  l
          call hsmg_rstr(mg_solve_r(mg_solve_index(l,mg_fld)),mg_work2,l)
 
          ! w  := r
          !        l
          call copy(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
          ! e  := M        w
-         !  l     Schwarz  
+         !  l     Schwarz
          call hsmg_schwarz(
      $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
 
@@ -1886,7 +2098,7 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       include 'TSTEP'
       include 'CTIMER'
       include 'PARALLEL'
-      
+
       common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv),
      $               h2    (lx1,ly1,lz1,lelv)
@@ -2051,7 +2263,7 @@ c
 
          call axe(w(1,e),p(1,e),h1(1,e),h2(1,e),g(1,e),ng,b(1,e)
      $            ,nx,ny,nz,ur,us,ut,ifh2,ifrzer(e),e)
-   
+
          im = mask(e)
          call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
 
@@ -2066,25 +2278,30 @@ c-----------------------------------------------------------------------
       real    w   (1)
       integer mask(1)        ! Pointer to Dirichlet BCs
       integer e
-      
+
+      !$ACC DATA PRESENT(mask,w) if(is_present)
+      !$ACC PARALLEL LOOP if(is_present)
       do e=1,nel
          im = mask(e)
          call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
       enddo
-
+      !$ACC END PARALLEL
       return
       end
 c----------------------------------------------------------------------
       subroutine mg_mask_e(w,mask) ! Zero out Dirichlet conditions
+      !$ACC ROUTINE SEQ
       include 'SIZE'
       real w(1)
       integer mask(0:1)
 
       n=mask(0)
+      !$ACC LOOP SEQ
       do i=1,n
 c        write(6,*) i,mask(i),n,' MG_MASK'
          w(mask(i)) = 0.
       enddo
+      !$ACC END LOOP
 
       return
       end
@@ -3087,7 +3304,7 @@ c----------------------------------------------------------------------
       i  = ns+1
 
       call rone(mg_work(i),ns)
- 
+
 c     Sum overlap region (border excluded)
       call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
       call hsmg_schwarz_dssum(mg_work(i),l)
