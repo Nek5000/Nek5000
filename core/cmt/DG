@@ -10,5 +10,5 @@
       integer         mid,mp,nekcomm,nekgroup,nekreal
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      common /facewz/ wghtc(lx1*lz1), wghtf(lxd*lzd)
-     >              , zptf(lxd),wgtf(lxd)
+      real wghtc(lx1*lz1), wghtf(lxd*lzd), zptf(lxd), wgtf(lxd)
+      common /facewz/ wghtc, wghtf, zptf, wgtf

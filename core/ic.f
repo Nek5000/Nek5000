@@ -2623,13 +2623,14 @@ c-----------------------------------------------------------------------
       
       if(ifmpiio) then
         call byte_open_mpi(fname,ifh_mbyte,ifro,ierr)
-c        if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
+        if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
       else
         call byte_open(fname,ierr)
-c        if(nio.eq.0)write(6,6) nid,istep,(fname1(k),k=1,len)
+        if(nio.eq.0)write(6,7) nid,istep,(fname1(k),k=1,len)
       endif
 
    6  format(1i8,' OPEN: ',132a1)
+   7  format(2i8,' OPEN: ',132a1)
       return
       end
 c-----------------------------------------------------------------------
@@ -2654,6 +2655,7 @@ c-----------------------------------------------------------------------
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
+         ifmpiio = .false.
          call mbyte_open(hname,0,.TRUE.,ierr) ! open  blah000.fldnn
 c         call byte_open(hdname,ierr)
 
