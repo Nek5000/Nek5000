@@ -44,7 +44,6 @@ IFPROFILING="true"
 
 # paths
 SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
-SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
 SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 
 ###############################################################################
@@ -58,7 +57,6 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT="$2"
   echo "change source code directory to: ", $SOURCE_ROOT
   SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
-  SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
   SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 fi
 # do some checks and create makefile

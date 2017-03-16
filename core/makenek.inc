@@ -15,6 +15,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
   echo "  NEKNEK      activate overlapping mesh solver (experimental)"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
+  echo "  ACC         compile with OpenACC (experimental)"
   exit 1
 fi
 
@@ -41,6 +42,13 @@ NOCOMPILE=0
 if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
 fi 
+
+if echo $PPLIST | grep -q 'ACC' ; then 
+  SOURCE_ROOT_JL="$SOURCE_ROOT/jl_acc"
+  PPLIST="NEW_GS_LOOPS $PPLIST"
+else
+  SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
+fi
 
 CASENAME=$1
 CASEDIR=`pwd`
@@ -235,6 +243,7 @@ BLAS="blas.o dsygv.o ssygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
+  
 
 if [ "$USR_LIB" != "" ]; then
     USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
