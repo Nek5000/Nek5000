@@ -18,7 +18,7 @@ C--------------------------------------------------------------------------
 
       include 'mpif.h'
 
-      character(*) fname
+      character fname*(*)
       logical ifro 
 
       imode = MPI_MODE_WRONLY+MPI_MODE_CREATE

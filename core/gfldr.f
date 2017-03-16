@@ -14,7 +14,7 @@ c
       include 'RESTART'
       include 'GFLDR'
 
-      character(*) sourcefld
+      character sourcefld*(*)
 
       common /scrcg/  pm1(lx1*ly1*lz1,lelv)
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
