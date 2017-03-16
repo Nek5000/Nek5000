@@ -21,11 +21,15 @@ curved sides and sideset ids.
 -  ```./configure --prefix=$HOME/lib/netcdf CC=gcc --disable-netcdf-4 --disable-fsync --disable-dap```
 -  ```make && make install```
 - Download latest exodus release from https://github.com/gsjaardema/seacas/archive/exodus.zip
-- Ensure ```NetCDF_DIR:PATH``` in cmake-exodus points to the netcdf source
+- Edit cmake-exodus and specify the installation directory, C compiler, and...
+- Ensure ```NetCDF_DIR:PATH``` in cmake-exodus points to the netcdf source (e.g.,```NetCDF_DIR:PATH="$HOME/lib/netcdf"``` )
 - ```mkdir build; cd build;```
 - ```../cmake-exodus```  
 - ```make && make install```
-- Add ```-I.../seacas/libraries/exoIIv2for32/include``` to the ```F77``` variable in maketools 
-- Specify location of exodus and netcdf library using ```USR_LFLAGS``` in maketools e.g. ```-L$HOME/lib```
+- Add ```-I<path-to-exodus-lib>/include``` to the ```F77``` variable in maketools 
+- Specify the location of exodus and netcdf libraries using ```USR_LFLAGS``` in maketools e.g. ```USR_LFLAGS="-L$HOME/lib/netcdf/lib -L$HOME/lib/exodus/lib"```
+- Consider uncommenting the ```BIGMEM="TRUE"``` flag to enable big memory support.
 - Run ```maketools exo2nek```
+- Assumming that the Nek5000 bin directory is in your path, execute ```exo2nek``` to use the tool.
+- In some machines it may be needed to add the location of the exodus library in ``LD_LIBRARY_PATH`` env. variable (or ``DYLD_LIBRARY_PATH`` for OSX). For example, add the following line in your `.bashrc` file: ```export LD_LIBRARY_PATH=$HOME/lib/exodus/lib:$LD_LIBRARY_PATH```
 
