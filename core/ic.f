@@ -2596,13 +2596,6 @@ c-----------------------------------------------------------------------
       save         eight
       data         eight / "????????" /
 
-      character*1  ftmp(132)
-
-      call chcopy (ftmp,fname,132)
-      call chzero (fname,132)
-      len = ltrunc(ftmp,132)
-      call chcopy (fname,ftmp,len)
-
       do ipass=1,2      ! 2nd pass, in case 1 file/directory
          do k=8,1,-1
             i1 = indx1(fname,eight,k)

@@ -552,7 +552,7 @@ c     Communicate unhappiness to the other session
          if(istep.gt.0) then
            dgp   = nvtot
            dgp   = max(dgp,1.)
-           dtmp1 = np*ttime/(dgp*max(istep,1))
+           dtmp1 = dgp/(ttime/max(istep,1))/np
            dtmp2 = ttime/max(istep,1)
            dtmp3 = 1.*papi_flops/1e6
          endif 
@@ -565,7 +565,7 @@ c     Communicate unhappiness to the other session
      &       'total elapsed time             : ',ttotal, ' sec'
      &      ,'total solver time incl. I/O    : ',ttime , ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
-     &      ,'CPU seconds/timestep/gridpt    : ',dtmp1 , ' sec'
+     &      ,'avg throughput per timestep    : ',dtmp1 , ' gridpts/CPUs'
      &      ,'max resident memory            : ',dtmp4 , ' MB'
 #ifdef PAPI
          write(6,'(2(A,1g13.5,/))') 

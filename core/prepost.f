@@ -1034,7 +1034,7 @@ c-----------------------------------------------------------------------
       ifdiro = .false.
 
       ifmpiio = .true.
-      if(param(65).gt.1) ifmpiio = .false.
+      if(abs(param(65)).gt.1) ifmpiio = .false.
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif
