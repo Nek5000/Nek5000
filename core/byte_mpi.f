@@ -1,19 +1,3 @@
-      subroutine byte_open(fnamei,ierr)
-
-      character fnamei*(*)
-      integer   ierr
-
-      character*132 fname
-
-      call chzero(fname,132)
-      l = ltrunc(fnamei,len(fnamei))
-      call chcopy(fname,fnamei,l) 
-
-      call bytec_open(fname,ierr)
-
-      return
-      end
-C--------------------------------------------------------------------------
       subroutine byte_sync_mpi(mpi_fh)
 
       include 'mpif.h'

@@ -1170,6 +1170,7 @@ c      if(nid.eq.pid0) write(6,*) '      FILE:',fname
         call byte_open_mpi(fname,ifh_mbyte,.false.,ierr) 
       else
         call byte_open(fname,ierr)
+c        call byte_open('test.fd',ierr)
       endif
  
       return
