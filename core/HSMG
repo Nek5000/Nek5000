@@ -62,7 +62,7 @@ c
      $   , mg_b         (0:lmg_g*lelt-1)
      $   , mg_g         (0:lmg_g*((ldim-1)*3)*lelt-1) !metrics matrices
 c
-     $   , mg_work      (2*lxm*lym*lzm*lelt) ! must be able to hold 
+     $   , mg_work      (2*lxm*lym*lzm*lelt) ! must be able to hold
      $   , mg_work2     (lxm*lym*lzm*lelt)   ! two lower level extended
      $   , mg_worke     (lxm*lym*lzm,6)      ! schwarz arrays
 

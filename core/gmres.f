@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine uzawa_gmres(res,h1,h2,h2inv,intype,iter)
 
-c     Solve the pressure equation by right-preconditioned 
+c     Solve the pressure equation by right-preconditioned
 c     GMRES iteration.
 c     intype =  0  (steady)
 c     intype =  1  (explicit)
@@ -303,10 +303,10 @@ c
 c-----------------------------------------------------------------------
       subroutine hmh_gmres(res,h1,h2,wt,iter)
 
-c     Solve the Helmholtz equation by right-preconditioned 
+c     Solve the Helmholtz equation by right-preconditioned
 c     GMRES iteration.
 
-     
+
       include 'SIZE'
       include 'TOTAL'
       include 'FDMH1'
@@ -354,7 +354,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       if (param(100).ne.2) call set_fdm_prec_h1b(d,h1,h2,nelv)
 
       call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
-      if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
+      if (param(21).gt.0.and.tolps.gt.abs(param(21)))
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
       tolpss = tolps
@@ -378,7 +378,7 @@ c           call copy(r,res,n)
             call col2(r_gmres,ml_gmres,n)        ! r = L   r
          endif
                                                             !            ______
-         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r) 
+         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
                                                             !      1
          if(iter.eq.0) then
             div0 = gamma_gmres(1)*norm_fac
@@ -390,7 +390,7 @@ c           call copy(r,res,n)
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
          call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
-                                                  !  1            1
+                                                   !  1            1
          do j=1,m
             iter = iter+1
                                                        !       -1
@@ -403,7 +403,9 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
+!$ACC DATA COPY(w_gmres) COPYOUT(z_gmres)
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
+!$ACC END DATA
             else                                            !  j
                kfldfdm = ndim+1
                if (param(100).eq.2) then
@@ -414,18 +416,18 @@ c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
      $                ktype(1,1,kfldfdm),wk)
                endif
                call crs_solve_h1 (wk,w_gmres)        ! z  = M   w
-               call add2         (z_gmres(1,j),wk,n) !  j        
+               call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
 
             call ortho        (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
             etime_p = etime_p + dnekclock()-etime2
-c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-     
+
             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
                                                     !        j
-     
+
                                                     !      -1
             call col2(w_gmres,ml_gmres,n)           ! w = L   w
 

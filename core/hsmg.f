@@ -1966,18 +1966,18 @@ c     if (lx1.eq.6)  mgnx2 = 3
       if (lx1.eq.8)  mgnx2 = 4
       if (lx1.eq.8)  mgnx2 = 3
 
-c     mgnx2 = min(3,mgnx2)  
-      
+c     mgnx2 = min(3,mgnx2)
+
 
       mg_nx(2) = mgnx2
       mg_ny(2) = mgnx2
       mg_nz(2) = mgnx2
-      if (.not.if3d) mg_nz(2) = 0 
+      if (.not.if3d) mg_nz(2) = 0
 
       mg_nx(3) = mgnx2+1
       mg_ny(3) = mgnx2+1
       mg_nz(3) = mgnx2+1
-      if (.not.if3d) mg_nz(3) = 0 
+      if (.not.if3d) mg_nz(3) = 0
 
       mg_nx(mg_lmax) = lx1-1
       mg_ny(mg_lmax) = ly1-1
@@ -2002,7 +2002,7 @@ c----------------------------------------------------------------------
       call izero( mg_fast_s_index       , n )
       call izero( mg_fast_d_index       , n )
       call izero( mg_schwarz_wt_index   , n )
-      
+
       return
       end
 c----------------------------------------------------------------------
@@ -2293,7 +2293,7 @@ c     call exitt
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
 !                col2 within dsavg_acc
       call dsavg_acc(z)
-
+      call acc_copy_all_out()
       return
       end
 c-----------------------------------------------------------------------
