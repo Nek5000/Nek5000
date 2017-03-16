@@ -301,7 +301,7 @@ c     v = [C (x) B (x) A] u
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer ie, i
 
-!$ACC PARALLEL LOOP PRESENT(v,u,A,Bt,Ct) GANG WORKER
+!$ACC PARALLEL LOOP PRESENT_OR_COPY(v,u,A,Bt,Ct) GANG WORKER
 !$ACC&              PRIVATE(work,work2)
       do ie=1,nelt
 !     call mxm(A,nv,u,nu,work,nu*nu)
@@ -495,7 +495,7 @@ c----------------------------------------------------------------------
          enddo
       else
          !FIXME: Possibly rewrite as 3 loops of collapse(3)
-!$ACC PARALLEL LOOP GANG PRESENT(arr1)
+!$ACC PARALLEL LOOP GANG PRESENT_OR_COPY(arr1,arr2)
          do ie=1,nelv
 !$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
@@ -707,7 +707,7 @@ c----------------------------------------------------------------------
 !MJO - 3/15/17 Inlined to avoid rearchitecting
 !              rzero
 
-!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a)
+!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
       do ie=1,nelv
         do k=0,n+1 !FIXME: make n-1,n+1
           do j=0,n+1
@@ -720,7 +720,7 @@ c----------------------------------------------------------------------
 !$ACC END LOOP
 
 !$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-!$ACC&              GANG WORKER VECTOR
+!$ACC&              GANG VECTOR
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -775,7 +775,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'HSMG'
-      
+
       integer l,i,j,nl
       i = mg_fast_s_index(mg_lmax,mg_fld-1)
       j = mg_fast_d_index(mg_lmax,mg_fld-1)
@@ -809,7 +809,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'HSMG'
-      
+
       integer l,i,j,nl
       i = mg_fast_s_index(mg_lmax,mg_fld-1)
       j = mg_fast_d_index(mg_lmax,mg_fld-1)
@@ -854,12 +854,12 @@ c----------------------------------------------------------------------
       real llr,lls,llt
       real lmr,lms,lmt
       real lrr,lrs,lrt
-      
+
       integer i,j,k
       integer ie,il,nr,ns,nt
       integer lbr,rbr,lbs,rbs,lbt,rbt,two
       real eps,diag
-      
+
       two  = 2
       ierr = 0
       do ie=1,nelv
@@ -925,21 +925,21 @@ c----------------------------------------------------------------------
       integer nl,lbc,rbc,n
       real s(nl,nl,2),lam(nl),ll,lm,lr
       real ah(0:n,0:n),bh(0:n)
-      
+
       include 'SIZE'
       parameter(lxm=lx1+2)
       common /ctmp0/ b(2*lxm*lxm),w(2*lxm*lxm)
-      
+
       call hsmg_setup_fast1d_a(s,lbc,rbc,ll,lm,lr,ah,n)
       call hsmg_setup_fast1d_b(b,lbc,rbc,ll,lm,lr,bh,n)
-      
+
 c     if (nid.eq.0) write(6,*) 'THIS is generalev call',nl,lbc
       call generalev(s,b,lam,nl,w)
       if(lbc.gt.0) call row_zero(s,nl,nl,1)
       if(lbc.eq.1) call row_zero(s,nl,nl,2)
       if(rbc.gt.0) call row_zero(s,nl,nl,nl)
       if(rbc.eq.1) call row_zero(s,nl,nl,nl-1)
-      
+
       call transpose(s(1,1,2),nl,s,nl)
       return
       end
@@ -1076,7 +1076,7 @@ c     clobbers r
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
          do ie=1,nelt
 !            call mxm(A,nv,u,nu,work,nu*nu)
-!$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!$ACC LOOP COLLAPSE(2) VECTOR
             do j=1,nu*nu
                do i=1,nv
                   i0 = i + nv*(j-1)
@@ -1094,7 +1094,7 @@ c     clobbers r
             enddo
 !$ACC END LOOP
 
-!$ACC LOOP COLLAPSE(3) WORKER VECTOR
+!$ACC LOOP COLLAPSE(3) VECTOR
             do i=1,nu
 !              call mxm(work(nv*nu*i),nv,Bt,nu,work2(nv*nv*i),nv)
                do j=1,nv
@@ -1114,7 +1114,7 @@ c     clobbers r
                enddo
             enddo
 !$ACC END LOOP
-!$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!$ACC LOOP COLLAPSE(2) VECTOR
 !            call mxm(work2,nv*nv,Ct,nu,v,nv)
             do j=1,nv
                do i=1,nv*nv
@@ -1140,7 +1140,7 @@ c     clobbers r
 !            call hsmg_tnsr3d_el(e(1,ie),nl,r(1,ie),nl
 !     $                         ,s(1,1,1,ie),s(1,2,2,ie),s(1,2,3,ie))
 !            call mxm(A,nv,u,nu,work,nu*nu)
-!$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!$ACC LOOP COLLAPSE(2) VECTOR
             do j=1,nu*nu
                do i=1,nv
                   i0 = i + nv*(j-1)
@@ -1158,7 +1158,7 @@ c     clobbers r
             enddo
 !$ACC END LOOP
 
-!$ACC LOOP COLLAPSE(3) WORKER VECTOR
+!$ACC LOOP COLLAPSE(3) VECTOR
             do i=1,nu
 !              call mxm(work(nv*nu*i),nv,Bt,nu,work2(nv*nv*i),nv)
                do j=1,nv
@@ -1178,7 +1178,7 @@ c     clobbers r
                enddo
             enddo
 !$ACC END LOOP
-!$ACC LOOP COLLAPSE(2) WORKER VECTOR
+!$ACC LOOP COLLAPSE(2) VECTOR
 !            call mxm(work2,nv*nv,Ct,nu,v,nv)
             do j=1,nv
                do i=1,nv*nv
@@ -1509,7 +1509,7 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'HSMG'
-      
+
       integer l,i,nl,nlz
 
       i = mg_schwarz_wt_index(mg_lmax,mg_fld-1)
@@ -2206,6 +2206,8 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       integer p_msk,p_b
       logical if_hybrid
 
+      call acc_copy_all_in()
+
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
 
@@ -2251,7 +2253,8 @@ c     if_hybrid = .false.   ! to convergence efficiency
       call h1mg_rstr(r,1,.false.)                     ! r  :=  J  r
                                                       !  l         l+1
       p_msk = p_mg_msk(l,mg_fld)
-      call h1mg_mask(r,mg_imask(p_msk),nel)           !        -1
+      call h1mg_mask(r,mg_imask(p_msk),nel) !        -1
+
 !$ACC UPDATE HOST(e,r)
       call hsmg_coarse_solve ( e(is) , r ) ! e  := A   r
 !$ACC UPDATE DEVICE(e,r)
