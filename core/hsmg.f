@@ -2386,6 +2386,23 @@ c
 
       return
       end
+c----------------------------------------------------------------------
+      subroutine mg_mask_e(w,mask) ! Zero out Dirichlet conditions
+!$ACC ROUTINE SEQ
+      include 'SIZE'
+      real w(1)
+      integer mask(0:1)
+
+      n=mask(0)
+!$ACC LOOP SEQ
+      do i=1,n
+c        write(6,*) i,mask(i),n,' MG_MASK'
+         w(mask(i)) = 0.
+      enddo
+!$ACC END LOOP
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine h1mg_mask(w,mask,nel)
       include 'SIZE'
@@ -2393,6 +2410,7 @@ c-----------------------------------------------------------------------
       real    w   (1)
       integer mask(1)        ! Pointer to Dirichlet BCs
       integer e
+!$ACC ROUTINE(mg_mask_e) SEQ
 
 ! ROR 2017-03-15:
 ! FIXME: Might crash because size of w is not explicitly declared
@@ -2402,28 +2420,9 @@ c-----------------------------------------------------------------------
 !$ACC PARALLEL LOOP PRESENT(mask,w)
       do e=1,nel
          im = mask(e)
-         !call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
-         n=mask(im)
-         do i=1,n
-c           write(6,*) i,mask(i),n,' MG_MASK'
-            w(mask(im+i)) = 0.
-         enddo
+         call mg_mask_e(w,mask(im)) ! Zero out Dirichlet conditions
       enddo
 !$ACC END PARALLEL
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine mg_mask_e(w,mask) ! Zero out Dirichlet conditions
-      include 'SIZE'
-      real w(1)
-      integer mask(0:1)
-
-      n=mask(0)
-      do i=1,n
-c        write(6,*) i,mask(i),n,' MG_MASK'
-         w(mask(i)) = 0.
-      enddo
-
       return
       end
 c-----------------------------------------------------------------------
