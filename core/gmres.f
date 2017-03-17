@@ -403,7 +403,7 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
-!$ACC DATA COPY(w_gmres) COPYOUT(z_gmres)
+!$ACC DATA COPY(w_gmres) COPY(z_gmres)
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
 !$ACC END DATA
             else                                            !  j

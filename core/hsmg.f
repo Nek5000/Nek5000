@@ -301,7 +301,7 @@ c     v = [C (x) B (x) A] u
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer ie, i
 
-!$ACC PARALLEL LOOP PRESENT_OR_COPY(v,u,A,Bt,Ct) GANG WORKER
+!$ACC PARALLEL LOOP PRESENT_OR_COPY(v,u,A,Bt,Ct) GANG
 !$ACC&              PRIVATE(work,work2)
       do ie=1,nelt
 !     call mxm(A,nv,u,nu,work,nu*nu)
@@ -405,7 +405,7 @@ c
       end
 c----------------------------------------------------------------------
 c     computes
-c              
+c
 c     v = [C (x) B (x) A] u
       subroutine hsmg_tnsr3d_el(v,nv,u,nu,A,Bt,Ct)
       integer nv,nu
@@ -436,6 +436,23 @@ c----------------------------------------------------------------------
       call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
       tdadd =tdadd + dnekclock()-etime1
 
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine hsmg_dssum2(u,l,u_size)
+      include 'SIZE'
+      include 'HSMG'
+      include 'CTIMER'
+      integer u_size
+      real u(u_size)
+
+      if (ifsync) call nekgsync()
+      etime1=dnekclock()
+
+!$ACC UPDATE HOST(u)
+      call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
+!$ACC UPDATE DEVICE(u)
+      tdadd =tdadd + dnekclock()-etime1
 
       return
       end
@@ -451,6 +468,35 @@ c----------------------------------------------------------------------
       call gs_op(mg_gsh_handle(l,mg_fld),u,1,2,0)
       return
       end
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_dssum2(u,l,u_size)
+      include 'SIZE'
+      include 'HSMG'
+      include 'CTIMER'
+      integer u_size
+      real u(u_size)
+
+      if (ifsync) call nekgsync()
+      etime1=dnekclock()
+
+!MJO - 3/16/17 - added explicit size of u argument because
+!     OpenACC assumed a seemingly arbitrary size of array
+!     u of 1000, when we really needed a much larger array
+!     (size enx*eny*enz*nelv) - UPDATE HOST seems to not
+!     want to accept subarray notation, i.e.:
+!     HOST(u(1:u_size)) - this gives 'symbol not
+!     recognized' error.
+
+!$ACC UPDATE HOST(u)
+      call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
+!$ACC UPDATE DEVICE(u)
+
+      tdadd =tdadd + dnekclock()-etime1
+
+      return
+      end
+c----------------------------------------------------------------------
+
 c----------------------------------------------------------------------
       subroutine hsmg_schwarz_dssum(u,l)
       include 'SIZE'
@@ -541,10 +587,9 @@ c----------------------------------------------------------------------
       real e(1),r(1)
 
       n = mg_h1_n(l,mg_fld)
-
       call h1mg_schwarz_part1 (e,r,l)
       call hsmg_schwarz_wt    (e,l)          ! e  := W e
-      call cmult              (e,sigma,n)    !  l       l
+      !call cmult              (e,sigma,n)    !  l       l
 
       !FIXME: Might not work because e is declared e(1)
 !$ACC PARALLEL LOOP GANG VECTOR PRESENT(e)
@@ -560,10 +605,10 @@ c----------------------------------------------------------------------
       include 'INPUT'  ! if3d
       include 'TSTEP'  ! ifield
       include 'HSMG'
-
+      parameter (lt=lx1*ly1*lz1*lelt)
       real e(1),r(1)
 
-      integer enx,eny,enz,pm
+      integer enx,eny,enz,pm,mg_work_size,lt
 
       zero =  0
       one  =  1
@@ -581,22 +626,27 @@ c----------------------------------------------------------------------
          call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
       endif
 
+
       enx=mg_nh(l)+2
       eny=mg_nh(l)+2
       enz=mg_nh(l)+2
       if(.not.if3d) enz=1
       i = enx*eny*enz*nelv+1
+      mg_work_size = enx*eny*enz*nelv
 
 c     exchange interior nodes
       call hsmg_extrude(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
-      call hsmg_schwarz_dssum(mg_work,l)
+      call hsmg_schwarz_dssum2(mg_work,l,mg_work_size)
+
       call hsmg_extrude(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
 
       call hsmg_fdm(mg_work(i),mg_work,l) ! Do the local solves
 
 c     Sum overlap region (border excluded)
       call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
-      call hsmg_schwarz_dssum(mg_work(i),l)
+
+      call hsmg_schwarz_dssum2(mg_work(i),l,mg_work_size)
+
       call hsmg_extrude(mg_work(i),0,one ,mg_work,0,onem,enx,eny,enz)
       call hsmg_extrude(mg_work(i),2,one,mg_work(i),0,one,enx,eny,enz)
 
@@ -606,7 +656,8 @@ c     Sum overlap region (border excluded)
          call hsmg_schwarz_toreg3d(e,mg_work(i),mg_nh(l))
       endif
 
-      call hsmg_dssum(e,l)                           ! sum border nodes
+
+      call hsmg_dssum2(e,l,lt)  ! sum border nodes
       call h1mg_mask (e,mg_imask(pm),nelfld(ifield)) ! apply mask
 
       return
@@ -990,14 +1041,14 @@ c----------------------------------------------------------------------
       integer lbc,rbc,n
       real b(0:n+2,0:n+2),ll,lm,lr
       real bh(0:n)
-      
+
       real fac
       integer i,j,i0,i1
       i0=0
       if(lbc.eq.1) i0=1
       i1=n
       if(rbc.eq.1) i1=n-1
-      
+
       call rzero(b,(n+3)*(n+3))
       fac = 0.5*lm
       b(1,1)=1.0
@@ -1033,7 +1084,7 @@ c     clobbers r
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
 #else
-      call hsmg_do_fast(e,r,
+      call hsmg_do_fast_acc(e,r,
      $      mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $      mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
@@ -1043,7 +1094,6 @@ c     clobbers r
 c----------------------------------------------------------------------
 c     clobbers r
       subroutine hsmg_do_fast_acc(e,r,s,d,nl)
-
       include 'SIZE'
       include 'INPUT'
       integer nl,lwk
@@ -1071,7 +1121,6 @@ c     clobbers r
      $                         ,s(1,1,1,ie),s(1,2,2,ie))
          enddo
       else
-
 !$ACC PARALLEL LOOP GANG
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
          do ie=1,nelt
@@ -1132,7 +1181,7 @@ c     clobbers r
                enddo
             enddo
 !$ACC END LOOP
-!$ACC LOOP WORKER VECTOR
+!$ACC LOOP VECTOR
             do i=1,nn
                r(i,ie)=d(i,ie)*e(i,ie)
             enddo
@@ -1198,7 +1247,6 @@ c     clobbers r
 !$ACC END LOOP
          enddo
 !$ACC END PARALLEL LOOP
-
       endif
       return
       end
@@ -2221,9 +2269,8 @@ c     if_hybrid = .false.   ! to convergence efficiency
       l     = mg_h1_lmax
       n     = mg_h1_n(l,mg_fld)
       is    = 1                                       ! solve index
-
       call h1mg_schwarz(z,rhs,sigma,l)                ! z := sigma W M       rhs
-                                                      !               Schwarz
+!     Schwarz
 
 !      call copy(r,rhs,n)        ! r  := rhs
       !FIXME: Might not work because rhs declared size 1 (rhs(1))
@@ -2232,6 +2279,7 @@ c     if_hybrid = .false.   ! to convergence efficiency
          r(i) = rhs(i)
       enddo
 !$ACC END PARALLEL LOOP
+
       if (if_hybrid) call h1mg_axm(r,z,op,om,l,w) ! r  := rhs - A z
                                                       !  l
 
@@ -2240,24 +2288,44 @@ c     if_hybrid = .false.   ! to convergence efficiency
          n  = mg_h1_n(l,mg_fld)
                                                       !          T
          call h1mg_rstr(r,l,.true.)                   ! r   :=  J r
-                                                      !  l         l+1
-!        OVERLAPPING Schwarz exchange and solve:
+!  l         l+1
+         !call print_acc(r,n,'rrr1',1)
+         !stop
+
+!FIXME MJO 3/16/17 Potential bug below because
+!     we call hsmg_*dssum2 using lt as the size for
+!     e, but we are passing e(is) which is some farther
+!     part of e. Potential to read out of memory
+!     Should be solved by use of jl_acc
+!     OVERLAPPING Schwarz exchange and solve:
          call h1mg_schwarz(e(is),r,sigma,l)           ! e := sigma W M       r
                                                       !  l            Schwarz l
 
          if(if_hybrid)call h1mg_axm(r,e(is),op,om,l,w)! r  := r - A e
                                                       !  l           l
+!         call print_acc(r,10000,'rrr2',1)
+         !stop
       enddo
+
       is = is+n
                                                       !         T
       call h1mg_rstr(r,1,.false.)                     ! r  :=  J  r
                                                       !  l         l+1
+
       p_msk = p_mg_msk(l,mg_fld)
       call h1mg_mask(r,mg_imask(p_msk),nel) !        -1
 
+
+!     FIXME
+
 !$ACC UPDATE HOST(e,r)
+!      call print_acc(e(is),1000,'eee1',0)
+      !stop
       call hsmg_coarse_solve ( e(is) , r ) ! e  := A   r
 !$ACC UPDATE DEVICE(e,r)
+      !call print_acc(e(is),1000,'eee2',1)
+      !stop
+
       call h1mg_mask(e(is),mg_imask(p_msk),nel)       !  1     1   1
 
 c     nx = mg_nh(1)
@@ -2669,16 +2737,18 @@ c------------------------------------------   T  -----------------------
       include 'SIZE'
       include 'HSMG'
       logical ifdssum
-
+      parameter (lt=lx1*ly1*lz1*lelt)
       real r(1)
-      integer l
+      integer l,integer,lt
+
 
       call hsmg_do_wt(r,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
 
       call hsmg_tnsr1(r,mg_nh(l),mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
 
-      if (ifdssum) call hsmg_dssum(r,l)
+
+      if (ifdssum) call hsmg_dssum2(r,l,lt)
 
       return
       end
