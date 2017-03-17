@@ -547,7 +547,7 @@ c
       include 'TOTAL' 
  
       common /c_is1/ glo_num(lxs*lys*lzs*lelv)  
-      integer*8 glo_nump
+      integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /handle/ gsh_dd
       integer vertex,gsh_dd
