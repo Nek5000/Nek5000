@@ -854,12 +854,6 @@ c-----------------------------------------------------------------------
 
       tiostart=dnekclock_sync()
 
-      ifmpiio = .true.
-      if(param(65).gt.1) ifmpiio = .false.
-#ifdef NOMPIIO
-      ifmpiio = .false.
-#endif
-
       call io_init
 
       ifxyo_s = ifxyo 
@@ -1039,6 +1033,12 @@ c-----------------------------------------------------------------------
 
       ifdiro = .false.
 
+      ifmpiio = .true.
+      if(abs(param(65)).gt.1) ifmpiio = .false.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+
       if(ifmpiio) then
         nfileo  = np
         nproc_o = 1
@@ -1086,8 +1086,8 @@ c-----------------------------------------------------------------------
       character*3 prefx
 
       character*132  fname
-      character*1   fnam1(132)
-      equivalence  (fnam1,fname)
+      character*1    fnam1(132)
+      equivalence   (fnam1,fname)
 
       character*6  six,str
       save         six
@@ -1163,8 +1163,15 @@ c-----------------------------------------------------------------------
       call chcopy(fnam1(k),str,5)
       k = k + 5
 
-      call mbyte_open(fname,fid0,.FALSE.,ierr)          !  Open blah000.fnnnn
-c      write(6,*) nid,fid0,' FILE:',fname
+      call addfid(fname,fid0)
+
+      if(ifmpiio) then
+        if(nio.eq.0)    write(6,*) '      FILE:',fname 
+        call byte_open_mpi(fname,ifh_mbyte,.false.,ierr) 
+      else
+        if(nid.eq.pid0) write(6,*) '      FILE:',fname 
+        call byte_open(fname,ierr)
+      endif
  
       return
       end

@@ -14,7 +14,7 @@ c
 
       call setDefaultParam
 
-      call open_bin_file(ifbswap) ! this will also read the header
+      call open_re2(ifbswap) ! this will also read the header
 
       if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
@@ -24,7 +24,7 @@ c
       call chkParam
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call bin_rd1(ifbswap) ! read .re2 data 
+      call read_re2(ifbswap) ! read .re2 data 
 
       call nekgsync()
 
@@ -155,6 +155,8 @@ c
       call izero (lochis, 4*lhis)
 
       call blank (initc,15*132)
+
+      nhis = 0
 
       return
       end
