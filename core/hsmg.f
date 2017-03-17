@@ -605,10 +605,11 @@ c----------------------------------------------------------------------
       include 'INPUT'  ! if3d
       include 'TSTEP'  ! ifield
       include 'HSMG'
+      integer enx,eny,enz,pm,mg_work_size,lt
       parameter (lt=lx1*ly1*lz1*lelt)
+
       real e(1),r(1)
 
-      integer enx,eny,enz,pm,mg_work_size,lt
 
       zero =  0
       one  =  1
@@ -2837,9 +2838,9 @@ c------------------------------------------   T  -----------------------
       include 'SIZE'
       include 'HSMG'
       logical ifdssum
+      integer l,integer,lt
       parameter (lt=lx1*ly1*lz1*lelt)
       real r(1)
-      integer l,integer,lt
 
       call hsmg_do_wt(r,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))

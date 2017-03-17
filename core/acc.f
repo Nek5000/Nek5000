@@ -70,7 +70,7 @@ c     if (nid.eq.0) write(6,*) text,(a(i),i=300,n) ! prints data on host
          do i=1,n
             write(6,10) text,i,a(i)
          enddo
- 10      format(a4,i,1p1e15.4)
+ 10      format(a4,i300,1p1e15.4)
       endif
 
       return
