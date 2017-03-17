@@ -554,6 +554,7 @@ c-----------------------------------------------------------------------
 c
 c     Sets up the gather scatter and the SEM operators
 c
+
       include 'SIZE'
       include 'TOTAL'
 
