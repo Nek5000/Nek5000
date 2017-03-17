@@ -12,7 +12,7 @@
        1.000000         p08 CONDUCT
       0.0000000E+00
       0.0000000E+00     p10 FINTIME
-10       1000.000         p11 NSTEPS
+       1000.000         p11 NSTEPS
      -1.0000000E-04     p12 DT
       0.0000000E+00     p13 IOCOMM
       0.0000000E+00     p14 IOTIME
@@ -66,7 +66,7 @@
       0.0000000E+00     p62 >0 --> force byte_swap for output
       0.0000000E+00     p63 =8 --> force 8-byte output
       0.0000000E+00     p64 =1 --> perturbation restart
--2      0.0000000E+00     p65 #iofile(eg,0 or 64); <0 --> sep. dirs
+      0.0000000E+00     p65 #iofile(eg,0 or 64); <0 --> sep. dirs
        6.000000         p66 write fmt:ONLY postx uses rea value
        6.000000         p67 read fmt: same modes as p66
       0.0000000E+00     p68 iastep: freq for avg_all
