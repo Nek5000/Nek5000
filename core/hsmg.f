@@ -2255,7 +2255,6 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       integer p_msk,p_b
       logical if_hybrid
 
-      call acc_copy_all_in()
 
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
@@ -2354,8 +2353,7 @@ c     call exitt
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
 !                col2 within dsavg_acc
       call dsavg_acc(z)
-   
-      call acc_copy_all_out()
+
       return
       end
 c-----------------------------------------------------------------------

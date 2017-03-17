@@ -281,6 +281,9 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       real respr (lx2*ly2*lz2*lelv)
       integer*8 ntotg,nxyz2
 
+!FIXME ortho_acc doesn't work currently. The result of glsum_acc
+!     is different on the gpu and on the cpu - it is a bug and
+!     has yet to be solved
       nxyz2 = nx2*ny2*nz2
       ntot  = nxyz2*nelv
       ntotg = nxyz2*nelgv
@@ -288,7 +291,6 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       if (ifield.eq.1) then
          if (ifvcor) then
             rlam  = glsum_acc (respr,ntot)/ntotg
-
             !call cadd (respr,-rlam,ntot)
 !$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
             do i=1,ntot

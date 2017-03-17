@@ -50,7 +50,7 @@ c     if (.not.iffdm) kfldfdm=-1
 C
       call dssum   (rhs,nx1,ny1,nz1)
       call col2    (rhs,mask,ntot)
-c      if (nio.eq.0.and.istep.le.10) 
+c      if (nio.eq.0.and.istep.le.10)
 c     $    write(6,*) param(22),' p22 ',istep,imsh
       if (param(22).eq.0.or.istep.le.10)
      $    call chktcg1 (tol,rhs,h1,h2,mask,mult,imsh,isd)
@@ -241,7 +241,7 @@ c
 C               if (ym1(i,j,1,e).ne.0.) then
                   if (ifrzer(e)) then
                      term1 = 0.0
-                     if(j.ne.1) 
+                     if(j.ne.1)
      $             term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
                      term2 =  wxm1(i)*wam1(1)*dam1(1,j)*duax(i)
      $                       *jacm1(i,1,1,e)/ysm1(i)
@@ -321,6 +321,10 @@ c
 c
       if (ifaxis) call setaxdy ( ifrzer(e) )
 c
+!$ACC DATA CREATE(dudr,duds,dudt,tmp1,tmp2,tmp3)
+!$ACC&           PRESENT(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
+!$ACC&           PRESENT(dxm1,dxtm1,au,u,helm1,helm2)
+
       if (ndim.eq.2) then
 c
 c     2-d case ...............
@@ -387,6 +391,7 @@ c
 c
          CALL GLO_GRAD(DXM1,U,DUDR,DUDS,DUDT)
 
+!$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
             tmp1(i) = helm1(i)*(
      $           + dudr(i)*g1m1(i,1,1,1)
@@ -403,6 +408,7 @@ c
      $           + dudr(i)*g5m1(i,1,1,1)
      $           + duds(i)*g6m1(i,1,1,1))
          enddo
+!$ACC END PARALLEL LOOP
 
 c$$$  CALL COL3    (TMP1,DUDR,G1M1,NTOT)
 c$$$  CALL ADDCOL3 (TMP1,DUDS,G4M1,NTOT)
@@ -420,11 +426,15 @@ c$$$  CALL ADDCOL3 (TMP3,DUDS,G6M1,NTOT)
 c$$$  CALL COL2    (TMP3,HELM1,NTOT)
 
          CALL GLO_2GRAD(DXTM1,TMP1,TMP2,TMP3,TM1,TM2,TM3)
+
 !$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
             au(i) = tm1(i)+tm2(i)+tm3(i)
          enddo
 !$ACC END PARALLEL LOOP
+
+
+
 c$$$  CALL RZERO(AU,NTOT)
 c$$$  CALL ADD2 (AU,TM1,NTOT)
 c$$$  CALL ADD2 (AU,TM2,NTOT)
@@ -441,6 +451,7 @@ c
             au(i) = au(i) + helm2(i)*bm1(i,1,1,1)*u(i)
          enddo
       endif
+!$ACC END DATA
 c
 c     if axisymmetric, add a diagonal term in the radial direction (isd=2)
 c

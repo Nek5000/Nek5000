@@ -2,6 +2,7 @@
       subroutine acc_copy_all_in()
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
+      include 'DXYZ'
       include 'GEOM'
       include 'INPUT'
       include 'MASS'
@@ -24,7 +25,7 @@
 !$ACC ENTER DATA CREATE(e,w,r)
 !$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$ACC ENTER DATA COPYIN(mg_work,mg_fast_s,mg_fast_d)
-
+!$ACC ENTER DATA COPYIN(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
       return
       end
 
@@ -52,6 +53,7 @@
 !$ACC EXIT DATA DELETE(e,w,r)
 !$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$ACC EXIT DATA DELETE(mg_work,mg_mask,mg_fast_s,mg_fast_d)
+!$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
 
       return
       end
