@@ -1164,13 +1164,13 @@ c-----------------------------------------------------------------------
       k = k + 5
 
       call addfid(fname,fid0)
-c      if(nid.eq.pid0) write(6,*) '      FILE:',fname 
 
       if(ifmpiio) then
+        if(nio.eq.0)    write(6,*) '      FILE:',fname 
         call byte_open_mpi(fname,ifh_mbyte,.false.,ierr) 
       else
+        if(nid.eq.pid0) write(6,*) '      FILE:',fname 
         call byte_open(fname,ierr)
-c        call byte_open('test.fd',ierr)
       endif
  
       return

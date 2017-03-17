@@ -2676,7 +2676,7 @@ c-----------------------------------------------------------------------
            call blank     (hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
-c           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
+           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
            call byte_open(hname,ierr)
 
            if(ierr.ne.0) goto 102
@@ -2705,7 +2705,7 @@ c           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
         offs = offs0 + nelBr*isize
 
         call addfid(hname,fid0r)
-c        if(nid.eq.pid0r) write(6,*) '      FILE:',hname
+        if(nio.eq.0) write(6,*) '      FILE:',hname
         call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
 
         if(ierr.ne.0) goto 102

@@ -1,11 +1,3 @@
-      SUBROUTINE CHZERO(A,N)
-      CHARACTER*1 A(1)
-C
-      DO 10 I=1,N
-         A(I)=char(0)
-   10 CONTINUE
-      RETURN
-      END
 c-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
       CHARACTER*1 A(1)

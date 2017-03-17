@@ -16,13 +16,18 @@ C--------------------------------------------------------------------------
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
       character fnamei*(*)
-      logical ifro 
+      logical ifro
+ 
+      character*132 fname
+      character*1   fname1(132)
+      equivalence  (fname1,fname)
 
-      character*1000 fname
-
-      call chzero(fname,1000)
       l = ltrunc(fnamei,len(fnamei))
-      call chcopy(fname,fnamei,l) 
+      if(l+1.gt.len(fname))
+     $ call exitti('invalid string length$',l)
+ 
+      call chcopy(fname1     ,fnamei ,l) 
+      call chcopy(fname1(l+1),char(0),1)
 
       imode = MPI_MODE_WRONLY+MPI_MODE_CREATE
       if(ifro) then
