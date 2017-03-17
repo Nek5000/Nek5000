@@ -2289,8 +2289,7 @@ c     if_hybrid = .false.   ! to convergence efficiency
                                                       !          T
          call h1mg_rstr(r,l,.true.)                   ! r   :=  J r
 !  l         l+1
-         !call print_acc(r,n,'rrr1',1)
-         !stop
+
 
 !FIXME MJO 3/16/17 Potential bug below because
 !     we call hsmg_*dssum2 using lt as the size for
@@ -2303,8 +2302,6 @@ c     if_hybrid = .false.   ! to convergence efficiency
 
          if(if_hybrid)call h1mg_axm(r,e(is),op,om,l,w)! r  := r - A e
                                                       !  l           l
-!         call print_acc(r,10000,'rrr2',1)
-         !stop
       enddo
 
       is = is+n
@@ -2316,15 +2313,9 @@ c     if_hybrid = .false.   ! to convergence efficiency
       call h1mg_mask(r,mg_imask(p_msk),nel) !        -1
 
 
-!     FIXME
-
 !$ACC UPDATE HOST(e,r)
-!      call print_acc(e(is),1000,'eee1',0)
-      !stop
       call hsmg_coarse_solve ( e(is) , r ) ! e  := A   r
 !$ACC UPDATE DEVICE(e,r)
-      !call print_acc(e(is),1000,'eee2',1)
-      !stop
 
       call h1mg_mask(e(is),mg_imask(p_msk),nel)       !  1     1   1
 
@@ -2351,6 +2342,7 @@ c     call exitt
       n  = mg_h1_n(l,mg_fld)
       im = is  ! solve index
       call hsmg_intp(w,e(im),l-1)                     ! w   :=  J e
+
 !$ACC PARALLEL LOOP GANG VECTOR PRESENT(z,w)
       do i = 1,n                !            l-1
          z(i) = z(i) + w(i)                           ! z := z + w
@@ -2361,6 +2353,7 @@ c     call exitt
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
 !                col2 within dsavg_acc
       call dsavg_acc(z)
+   
       call acc_copy_all_out()
       return
       end
@@ -2571,9 +2564,9 @@ c
          call hsmg_tnsr1_2d(v,nv,nu,A,At)
       else
 #ifdef _OPENACC
-         call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
 #else
-         call hsmg_tnsr1_3d     (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
 #endif
       endif
       return
@@ -2618,7 +2611,9 @@ c----------------------------------------------------------------------
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
-
+!FIXME This version has better parallelism because it is parallelized
+!     over the nelt dimension, but it does not give the correct
+!     answer due to some bug? Using slower version *_acc2
       e0=1
       es=1
       ee=nelt
@@ -2677,6 +2672,7 @@ c----------------------------------------------------------------------
          enddo
 !$ACC END LOOP
 !     call mxm(work2,nv*nv,Ct,nu,v(iv),nv)
+
 !$ACC LOOP COLLAPSE(2) VECTOR
          do j=1,nv
             do i=1,nv*nv
@@ -2696,6 +2692,98 @@ c----------------------------------------------------------------------
 !$ACC END LOOP
       enddo
 !$ACC END PARALLEL LOOP
+
+      return
+      end
+c----------------------------------------------------------------------
+c----------------------------------------------------------------------
+      subroutine hsmg_tnsr1_3d_acc2(v,nv,nu,A,Bt,Ct) ! v = [C (x) B (x) A] u
+      include 'SIZE'
+      integer nv,nu
+      real A(nv,nu),Bt(nu,nv),Ct(nu,nv)
+      real v(nv*nv*nv*nelt),tmp
+      parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
+      common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+      integer e,e0,ee,es
+
+      e0=1
+      es=1
+      ee=nelt
+
+      if (nv.gt.nu) then
+         e0=nelt
+         es=-1
+         ee=1
+      endif
+
+      nu3 = nu**3
+      nv3 = nv**3
+
+!$ACC DATA PRESENT(v,A,Bt,Ct,work,work2)
+      do e=e0,ee,es
+         iu = (e-1)*nu3
+         iv = (e-1)*nv3
+!     call mxm(A,nv,v(iu),nu,work,nu*nu)
+!$ACC PARALLEL LOOP COLLAPSE(2) VECTOR
+         do j=1,nu*nu
+            do i=1,nv
+               i0 = i + nv*(j-1)
+               tmp = 0.0
+!$ACC LOOP SEQ
+               do k=1,nu
+!     work(i,j) = work(i,j) + A(i,k) * v(k,j)
+!     nv  x (nu nu)          nv x nu    nu x (nu nu)
+                  k0 = k + nu*(j-1) + iu
+                  tmp = tmp + A(i,k) * v(k0)
+               enddo
+!$ACC END LOOP
+               work(i0) = tmp
+            enddo
+         enddo
+!$ACC END PARALLEL LOOP
+
+!$ACC PARALLEL LOOP COLLAPSE(3) VECTOR
+         do i=1,nu
+!     call mxm(work(nv*nu*i),nv,Bt,nu,work2(nv*nv*i),nv)
+            do j=1,nv
+               do l=1,nv
+                  i0 = l + nv*(j-1) + nv*nv*(i-1)
+                  tmp = 0.0
+!$ACC LOOP SEQ
+                  do k=1,nu
+                     j0 = l + nv*(k-1) + nv*nu*(i-1)
+                     k0 = k + nu*(j-1)
+!     work2(j,l,i) = work2(j,l,i) + work(l,k,i)*Bt(k,j)
+                     tmp = tmp + work(j0)*Bt(k,j)
+                  enddo
+!$ACC END LOOP
+                  work2(i0) = tmp
+               enddo
+            enddo
+         enddo
+!$ACC END PARALLEL LOOP
+!     call mxm(work2,nv*nv,Ct,nu,v(iv),nv)
+
+!$ACC PARALLEL LOOP COLLAPSE(2) VECTOR
+         do j=1,nv
+            do i=1,nv*nv
+               j0 = i + nv*nv*(j-1) + iv
+               tmp = 0.0
+!$ACC LOOP SEQ
+               do k=1,nu
+                  i0 = i + nv*nv*(k-1)
+                  k0 = k + nu*(j-1)
+!     v(i,j) = v(i,j) + work2(i,k)*Ct(k,j)
+                  tmp = tmp + work2(i0)*Ct(k,j)
+               enddo
+!$ACC END LOOP
+               v(j0) = tmp
+            enddo
+         enddo
+!$ACC END PARALLEL LOOP
+      enddo
+!$ACC END DATA
+
       return
       end
 c----------------------------------------------------------------------
@@ -2741,15 +2829,12 @@ c------------------------------------------   T  -----------------------
       real r(1)
       integer l,integer,lt
 
-
       call hsmg_do_wt(r,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
 
       call hsmg_tnsr1(r,mg_nh(l),mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
 
-
       if (ifdssum) call hsmg_dssum2(r,l,lt)
-
       return
       end
 c----------------------------------------------------------------------

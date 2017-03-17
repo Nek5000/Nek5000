@@ -16,7 +16,9 @@
      $     h2    (lx1,ly1,lz1,lelv)
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
-
+      parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
+      common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+!$ACC ENTER DATA COPYIN(work,work2)
 !$ACC ENTER DATA COPYIN(mg_imask)
 !$ACC ENTER DATA COPYIN(tmult,vmult)
 !$ACC ENTER DATA CREATE(e,w,r)
@@ -43,7 +45,9 @@
      $     h2    (lx1,ly1,lz1,lelv)
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
-
+      parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
+      common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+!$ACC EXIT DATA DELETE(work,work2)
 !$ACC EXIT DATA DELETE(mg_imask)
 !$ACC EXIT DATA DELETE(e,w,r)
 !$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)

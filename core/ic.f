@@ -1997,12 +1997,16 @@ c
       if (ifflow) then
          ifield = 1
          ntot = nx1*ny1*nz1*nelv
+!$ACC UPDATE HOST(u)
          call dssum(u,nx1,ny1,nz1)
+!$ACC UPDATE DEVICE(u)
          call col2_acc (u,vmult,ntot)
       else
          ifield = 2
          ntot = nx1*ny1*nz1*nelt
+!$ACC UPDATE HOST(u)
          call dssum(u,nx1,ny1,nz1)
+!$ACC UPDATE DEVICE(u)
          call col2_acc (u,tmult,ntot)
       endif
       ifield = ifieldo
