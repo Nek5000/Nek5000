@@ -2564,9 +2564,9 @@ c
          call hsmg_tnsr1_2d(v,nv,nu,A,At)
       else
 #ifdef _OPENACC
-         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #else
-         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #endif
       endif
       return
@@ -2608,12 +2608,16 @@ c----------------------------------------------------------------------
       integer nv,nu
       real A(nv,nu),Bt(nu,nv),Ct(nu,nv)
       real v(nv*nv*nv*nelt),tmp
+      real local_work(nv*nv*nv*nelt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
 !FIXME This version has better parallelism because it is parallelized
-!     over the nelt dimension, but it does not give the correct
-!     answer due to some bug? Using slower version *_acc2
+!     over the element array compared to the *_acc2 version.
+!     We had to create a local array on the stack (local_work)
+!     so that we weren't reading and writing into v at the same
+!     time.
+
       e0=1
       es=1
       ee=nelt
@@ -2626,7 +2630,7 @@ c----------------------------------------------------------------------
 
       nu3 = nu**3
       nv3 = nv**3
-
+!$ACC DATA CREATE(local_work)
 !$ACC PARALLEL LOOP GANG
 !$ACC&         PRESENT(v,A,Bt,Ct) PRIVATE(work,work2)
       do e=e0,ee,es
@@ -2686,13 +2690,19 @@ c----------------------------------------------------------------------
                   tmp = tmp + work2(i0)*Ct(k,j)
                enddo
 !$ACC END LOOP
-               v(j0) = tmp
+               local_work(j0) = tmp
             enddo
          enddo
 !$ACC END LOOP
       enddo
 !$ACC END PARALLEL LOOP
 
+!$ACC PARALLEL LOOP GANG VECTOR
+      do i=1,nv*nv*nv*nelt
+         v(i) = local_work(i)
+      enddo
+!$ACC END PARALLEL LOOP
+!$ACC END DATA
       return
       end
 c----------------------------------------------------------------------
@@ -2705,7 +2715,9 @@ c----------------------------------------------------------------------
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
-
+!     This version does not use a local stack array, but gets
+!     no parallelism on the element dimension. Would not recommend
+!     using.
       e0=1
       es=1
       ee=nelt

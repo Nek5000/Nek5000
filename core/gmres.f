@@ -401,11 +401,10 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
             etime2 = dnekclock()
 
-c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
-            if (ifmgrid) then
+c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 !$ACC DATA COPY(w_gmres) COPY(z_gmres)
+            if (ifmgrid) then
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
-!$ACC END DATA
             else                                            !  j
                kfldfdm = ndim+1
                if (param(100).eq.2) then
@@ -421,6 +420,7 @@ c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 
 
             call ortho        (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+!$ACC END DATA
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -468,10 +468,10 @@ c           enddo
 
             !apply Givens rotations to new column
             do i=1,j-1
-               temp = h_gmres(i,j)                   
-               h_gmres(i  ,j)=  c_gmres(i)*temp 
-     $                        + s_gmres(i)*h_gmres(i+1,j)  
-               h_gmres(i+1,j)= -s_gmres(i)*temp 
+               temp = h_gmres(i,j)
+               h_gmres(i  ,j)=  c_gmres(i)*temp
+     $                        + s_gmres(i)*h_gmres(i+1,j)
+               h_gmres(i+1,j)= -s_gmres(i)*temp
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
                                                       !            ______
@@ -488,7 +488,7 @@ c           enddo
 
             rnorm = abs(gamma_gmres(j+1))*norm_fac
             ratio = rnorm/div0
-            if (ifprint.and.nio.eq.0) 
+            if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
@@ -501,7 +501,7 @@ c           enddo
 
             temp = 1./alpha
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
-                                                       !  j+1            
+                                                       !  j+1
          enddo
   900    iconv = 1
  1000    continue
@@ -547,7 +547,7 @@ c
       include 'TOTAL' 
  
       common /c_is1/ glo_num(lxs*lys*lzs*lelv)  
-      integer*8 glo_num
+      integer*8 glo_nump
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /handle/ gsh_dd
       integer vertex,gsh_dd
