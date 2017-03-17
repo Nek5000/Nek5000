@@ -418,9 +418,8 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
+            call ortho_acc   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
 
-            call ortho        (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
-!$ACC END DATA
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -428,6 +427,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
                                                     !        j
 
+!$ACC END DATA
                                                     !      -1
             call col2(w_gmres,ml_gmres,n)           ! w = L   w
 

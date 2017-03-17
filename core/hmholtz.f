@@ -194,6 +194,7 @@ C
               call mxm(u(1,1,iz,e),nx1,dytm1,ny1,duds(1,1,iz),ny1)
    10      continue
            call mxm     (u(1,1,1,e),nxy,dztm1,nz1,dudt,nz1)
+
            call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
@@ -259,6 +260,227 @@ C               endif
       return
       end
 C
+c=======================================================================
+      subroutine axhelm_acc (au,u,helm1,helm2,imesh,isd)
+c------------------------------------------------------------------
+c
+c     Compute the (Helmholtz) matrix-vector product,
+c     AU = helm1*[A]u + helm2*[B]u, for NEL elements.
+c
+c------------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'CTIMER'
+c
+      common /fastax/ wddx(lx1,lx1),wddyt(ly1,ly1),wddzt(lz1,lz1)
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+c
+      real           au    (lx1*ly1*lz1*lelt)
+     $ ,             u     (lx1*ly1*lz1*lelt)
+     $ ,             helm1 (lx1*ly1*lz1*lelt)
+     $ ,             helm2 (lx1*ly1*lz1*lelt)
+
+      real           dudr  (lx1*ly1*lz1*lelt)
+     $ ,             duds  (lx1*ly1*lz1*lelt)
+     $ ,             dudt  (lx1*ly1*lz1*lelt)
+     $ ,             tmp1  (lx1*ly1*lz1*lelt)
+     $ ,             tmp2  (lx1*ly1*lz1*lelt)
+     $ ,             tmp3  (lx1*ly1*lz1*lelt)
+
+      real           tm1   (lx1*ly1*lz1)
+      real           tm2   (lx1*ly1*lz1)
+      real           tm3   (lx1*ly1*lz1)
+      real           duax  (lx1)
+      real           ysm1  (lx1)
+      equivalence    (dudr,tm1),(duds,tm2),(dudt,tm3)
+
+      integer e
+
+      nel=nelt
+      if (imesh.eq.1) nel=nelv
+
+      nxy=nx1*ny1
+      nyz=ny1*nz1
+      nxz=nx1*nz1
+      nxyz=nx1*ny1*nz1
+      ntot=nxyz*nel
+
+      if (icalld.eq.0) taxhm=0.0
+      icalld=icalld+1
+      naxhm=icalld
+      etime1=dnekclock()
+
+      if (.not.ifsolv) call setfast(helm1,helm2,imesh)
+
+c
+      if (ifaxis) call setaxdy ( ifrzer(e) )
+c
+      if (ndim.eq.2) then
+c
+c     2-d case ...............
+c
+c$$$         if (iffast(e)) then
+c$$$c
+c$$$c     fast 2-d mode: constant properties and undeformed element
+c$$$c
+c$$$            h1 = helm1(1,1,1,e)
+c$$$            call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
+c$$$            call mxm   (u(1,1,1,e),nx1,wddyt,ny1,tm2,ny1)
+c$$$            call col2  (tm1,g4m1(1,1,1,e),nxyz)
+c$$$            call col2  (tm2,g5m1(1,1,1,e),nxyz)
+c$$$            call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+c$$$            call cmult (au(1,1,1,e),h1,nxyz)
+c$$$c
+c$$$         else
+c$$$c
+c$$$c
+c$$$            call mxm  (dxm1,nx1,u(1,1,1,e),nx1,dudr,nyz)
+c$$$            call mxm  (u(1,1,1,e),nx1,dytm1,ny1,duds,ny1)
+c$$$            call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+c$$$            call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
+c$$$            if (ifdfrm(e)) then
+c$$$               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+c$$$               call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+c$$$            endif
+c$$$            call col2 (tmp1,helm1(1,1,1,e),nxyz)
+c$$$            call col2 (tmp2,helm1(1,1,1,e),nxyz)
+c$$$            call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
+c$$$            call mxm  (tmp2,nx1,dym1,ny1,tm2,ny1)
+c$$$            call add2 (au(1,1,1,e),tm1,nxyz)
+c$$$            call add2 (au(1,1,1,e),tm2,nxyz)
+c$$$
+c$$$         endif
+c$$$  c
+         if(nid.eq.0) write(6,*)
+     $        '2D Not currently implemented on for OpenACC'
+         call exitt()
+      else
+c
+c     3-d case ...............
+c
+c     MJO - 3-17-17 - iffast not supported on OpenACC right now
+c$$$  if (iffast(e)) then
+c$$$  c
+c$$$  c     fast 3-d mode: constant properties and undeformed element
+c$$$  c
+c$$$  h1 = helm1(1,1,1,e)
+c$$$  call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
+c$$$  do 5 iz=1,nz1
+c$$$  call mxm   (u(1,1,iz,e),nx1,wddyt,ny1,tm2(1,1,iz),ny1)
+c$$$  5            continue
+c$$$  call mxm   (u(1,1,1,e),nxy,wddzt,nz1,tm3,nz1)
+c$$$  call col2  (tm1,g4m1(1,1,1,e),nxyz)
+c$$$  call col2  (tm2,g5m1(1,1,1,e),nxyz)
+c$$$  call col2  (tm3,g6m1(1,1,1,e),nxyz)
+c$$$  call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+c$$$  call add2  (au(1,1,1,e),tm3,nxyz)
+c$$$  call cmult (au(1,1,1,e),h1,nxyz)
+c$$$  c
+c$$$  else
+c
+c
+         CALL GLO_GRAD(DXM1,U,DUDR,DUDS,DUDT)
+
+         do i=1,ntot
+            tmp1(i) = helm1(i)*(
+     $           + dudr(i)*g1m1(i,1,1,1)
+     $           + duds(i)*g4m1(i,1,1,1)
+     $           + dudt(i)*g5m1(i,1,1,1))
+
+            tmp2(i) = helm1(i)*(
+     $           + duds(i)*g2m1(i,1,1,1)
+     $           + dudr(i)*g4m1(i,1,1,1)
+     $           + dudt(i)*g6m1(i,1,1,1))
+
+            tmp3(i) = helm1(i)*(
+     $           + dudt(i)*g3m1(i,1,1,1)
+     $           + dudr(i)*g5m1(i,1,1,1)
+     $           + duds(i)*g6m1(i,1,1,1))
+         enddo
+
+c$$$  CALL COL3    (TMP1,DUDR,G1M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP1,DUDS,G4M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP1,DUDT,G5M1,NTOT)
+c$$$  CALL COL2    (TMP1,HELM1,NTOT)
+c$$$
+c$$$  CALL COL3    (TMP2,DUDS,G2M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP2,DUDR,G4M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP2,DUDT,G6M1,NTOT)
+c$$$  CALL COL2    (TMP2,HELM1,NTOT)
+c$$$
+c$$$  CALL COL3    (TMP3,DUDT,G3M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP3,DUDR,G5M1,NTOT)
+c$$$  CALL ADDCOL3 (TMP3,DUDS,G6M1,NTOT)
+c$$$  CALL COL2    (TMP3,HELM1,NTOT)
+
+         CALL GLO_2GRAD(DXTM1,TMP1,TMP2,TMP3,TM1,TM2,TM3)
+!$ACC PARALLEL LOOP GANG VECTOR
+         do i=1,ntot
+            au(i) = tm1(i)+tm2(i)+tm3(i)
+         enddo
+!$ACC END PARALLEL LOOP
+c$$$  CALL RZERO(AU,NTOT)
+c$$$  CALL ADD2 (AU,TM1,NTOT)
+c$$$  CALL ADD2 (AU,TM2,NTOT)
+c$$$  CALL ADD2 (AU,TM3,NTOT)
+c
+c
+      endif
+
+c
+c
+      if (ifh2) then
+!call addcol4 (au,helm2,bm1,u,ntot)
+         do i=1,ntot
+            au(i) = au(i) + helm2(i)*bm1(i,1,1,1)*u(i)
+         enddo
+      endif
+c
+c     if axisymmetric, add a diagonal term in the radial direction (isd=2)
+c
+      if (ifaxis.and.(isd.eq.2)) then
+         if(nid.eq.0)
+     $        write(6,*) 'ifaxis not currently supported for OpenACC'
+         call exitt()
+c$$$         do 200 e=1,nel
+c$$$c
+c$$$            if (ifrzer(e)) then
+c$$$               call mxm(u  (1,1,1,e),nx1,datm1,ny1,duax,1)
+c$$$               call mxm(ym1(1,1,1,e),nx1,datm1,ny1,ysm1,1)
+c$$$            endif
+c$$$c
+c$$$            do 190 j=1,ny1
+c$$$            do 190 i=1,nx1
+c$$$c               if (ym1(i,j,1,e).ne.0.) then
+c$$$                  if (ifrzer(e)) then
+c$$$                     term1 = 0.0
+c$$$                     if(j.ne.1)
+c$$$     $             term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
+c$$$                     term2 =  wxm1(i)*wam1(1)*dam1(1,j)*duax(i)
+c$$$     $                       *jacm1(i,1,1,e)/ysm1(i)
+c$$$                  else
+c$$$                   term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
+c$$$                     term2 = 0.
+c$$$                  endif
+c$$$                  au(i,j,1,e) = au(i,j,1,e)
+c$$$     $                          + helm1(i,j,1,e)*(term1+term2)
+c$$$C               endif
+c$$$  190       continue
+c$$$  200    continue
+      endif
+
+      taxhm=taxhm+(dnekclock()-etime1)
+      return
+      end
+C
+c=======================================================================
+
 c=======================================================================
       subroutine setfast (helm1,helm2,imesh)
 C-------------------------------------------------------------------
