@@ -1,0 +1,37 @@
+c-----------------------------------------------------------------------------
+c     This is an example of using the linear elasticity steady 3D solid solver 
+c     in Nek5000
+c   
+c     The test case corresponds to a thick-wall hollow sphere under an internal 
+c     pressure P (and zero external pressure) which has the analytical solution 
+c  
+c     u_r=P*r1^3*[(1-2nu)r+(1+nu)r2^3/(2r^2)]/E/(r2^3-r1^3)
+c     u_theta=u_phi=0
+c     (see, for example, Fung "Foundations of Solid Mechanics")    
+c
+c     E is Young's modulus, nu is Poisson's ratio
+c     r1=0.5-inner radius, r2=1-outer radius 
+c
+c     Traction boundary conditions are used in the current example: 
+c     normal stress = -P at the inner sphere (b.c. option 'S'), 
+c     stress-free at the outer sphere (b.c. option 'O')
+c     IFSTRS=T is necessary to use traction boundary conditions 
+c
+c     Displacement (Dirichlet) boundary conditions can be used as well
+c     (corresponding boundary values for displacements are also in userbc)
+c     To use - change 'S' and 'O' to 'v' in .rea file 
+c
+c     Standard NEK arrays for velocities (vx,vy,vz) in fluid formulation
+c     contain displacements in solid formulation
+c
+c     Description of the SEM method for linear elasticity and convergence 
+c     results for the current test case, as well as for the other cases, 
+c     can be found at http://www.mcs.anl.gov/~peet/solid.pdf
+c
+c     All additional subroutines necessary for using linear elasticity 
+c       solver are currently in .usr file and include
+c     - steady_elast_solve, elast, elast2d_e, elast3d_e (elasticity routines)
+c     - cg, solveM, axcg (conjugate gradient routines)
+c     - getstress (traction boundary conditions routine)
+c     - energy_norm (routine for calculating error in the energy norm)
+c-----------------------------------------------------------------------------

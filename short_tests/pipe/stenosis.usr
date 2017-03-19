@@ -1,0 +1,164 @@
+c-----------------------------------------------------------------------
+C
+C  USER SPECIFIED ROUTINES:
+C
+C     - boundary conditions
+C     - initial conditions
+C     - variable properties
+C     - local acceleration for fluid (a)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.
+C
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      qvol   = 0.0
+      source = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+
+      ifxyo = .true. 
+      if (iostep.gt.0.and.istep.gt.iostep) ifxyo = .false. 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      xp  = x/0.5
+      yp  = y/0.5
+      rr  = xp*xp + yp*yp
+
+      ux  = 0.0
+      uy  = 0.0
+      uz  = 1 - rr   ! Hagen-Poiseiulle flow, pipe diamter = 1.
+      temp= 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      ux=0.0
+      uy=0.0
+      uz=0.0
+      temp=0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2  !  Modify geometry 
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifstenosis
+      save    ifstenosis
+
+
+      x0 = -.5
+      x1 =  .5
+      call rescale_x (xm1,x0,x1)  ! Rescale x & y so pipe diameter is 1.
+      call rescale_x (ym1,x0,x1)
+
+      ifstenosis = .false.
+      ifstenosis = .true.
+      if (.not.ifstenosis) return
+
+      one = 1.0
+      pi  = 4.*atan(one)
+      n   = nx1*ny1*nz1*nelv
+
+
+      z_outflow =  10.
+      z_inflow  = -3.0
+      call rescale_x(zm1,z_inflow,z_outflow)
+
+      stenosis_length = 1.
+      do i=1,n
+         x = xm1(i,1,1,1)
+         y = ym1(i,1,1,1)
+         z = zm1(i,1,1,1)/stenosis_length
+
+         arg = pi
+         amp = .25    ! 75% stenosis for 3D case
+         if (abs(z).le.1) then
+            shift        =   .1*amp*(1.+cos(arg*z))
+	    xm1(i,1,1,1) = x*(1.-amp*(1.+cos(arg*z)))
+            ym1(i,1,1,1) = y*(1.-amp*(1.+cos(arg*z))) + shift
+c           write(6,1) i,x,y,z,xm1(i,1,1,1),ym1(i,1,1,1),zm1(i,1,1,1)
+c 1         format(i7,1p6e11.3,' shift')
+         endif
+      enddo
+
+      param(59) = 1         ! Force ifdfrm=.true. ( 8/26/03 )
+      ifxyo     = .true.
+
+c     call outpost(xm1,ym1,zm1,pr,t,'   ')
+c     call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
