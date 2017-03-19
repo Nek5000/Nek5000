@@ -1085,7 +1085,7 @@ c     clobbers r
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
 #else
-      call hsmg_do_fast_acc(e,r,
+      call hsmg_do_fast    (e,r,
      $      mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $      mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
@@ -2565,7 +2565,7 @@ c
 #ifdef _OPENACC
          call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #else
-         call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d     (v,nv,nu,A,At,At)
 #endif
       endif
       return
