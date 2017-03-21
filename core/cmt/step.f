@@ -27,7 +27,7 @@ C> @file step.f time stepping and mesh spacing routines
 !--------------------------------------------------------------
       common /udxmax/ umax
       real strof
-      data strof /1.0e-5/
+      data strof /1.0e-8/
 
       NTOT   = NX1*NY1*NZ1*NELV
       do i=1,ntot
@@ -37,11 +37,20 @@ C> @file step.f time stepping and mesh spacing routines
       enddo
       if (ctarg .gt.0.0) then
          call compute_cfl (umax,utmp,vtmp,wtmp,1.0)
-         dt_cmt=ctarg/umax
+         dt_cfl=ctarg/umax
+         call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
+         call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
+         call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
+         dt_cmt=min(dt_cfl,dt1,dt2,dt3)
+         if (dt_cmt .gt. 10.0) then
+            if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
+     >         dt_cmt
+            call exitt
+         endif
       else
          dt_cmt=dt
       endif
-      if (timeio .gt. 0.0) then ! adjust dt for timeio
+      if (timeio .gt. 0.0) then ! adjust dt for timeio. 
          zetime1=time_cmt
          zetime2=time_cmt+dt_cmt
          it1=zetime1/timeio
@@ -253,6 +262,20 @@ c
          tmp=max(tmp,abs(s*a(i)/b(i)/b(i)))
       enddo
       col2m=glamax(tmp,1)
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine glsqinvcolmin(col2m,a,b,n,s)
+      real col2m
+      real s
+      real a(*),b(*)
+      tmp=1.0e36
+      do i=1,n
+         if (a(i).gt.1.0e-36) tmp=min(tmp,abs(s*b(i)**2/a(i)))
+      enddo
+      col2m=glamin(tmp,1)
       return
       end
 

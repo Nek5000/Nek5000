@@ -23,7 +23,9 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
 ! JH112116
 ! rind state for inviscid fluxes is different from viscous fluxes? not
 ! sure what the right thing to do is.
-! JH111416 read books, stupid. For now EVM SHOCKS OR BUST!!!!
+! JH031617 Collis (CTR 2002-ish), Hartmann & Houston (2006-8) probably BR
+!          and Dolejsi and Feistatuer (2015) (check that)
+!          all say YES, inviscid rind and viscous rind are different.
       call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
       ieg=lglel(e)
       l=0
@@ -31,40 +33,53 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
+         call cmtasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg)
          l=l+1
+
+! bring this outside of the face point loop you moron
          if (abs(vdiff(ix,iy,iz,e,ilam)) .gt. tol) then ! physical not artvisc
-         wbc(l,f,e,iux)=ux
-         wbc(l,f,e,iuy)=uy
-         wbc(l,f,e,iuz)=uz
+
+            wbc(l,f,e,iux)=ux
+            wbc(l,f,e,iuy)=uy
+            wbc(l,f,e,iuz)=uz
 !-----------------------------------------------------------------
 ! JH112116 I need to check wbc(:,ipr) to make sure it is unchanced
 !          from inviscid computation (assuming that's the right
 !          answer for general viscous BC).
 !-----------------------------------------------------------------
-         wbc(l,f,e,iph) =phi
-         wbc(l,f,e,ithm)=temp
-         wbc(l,f,e,iu1) =facew(l,f,e,iu1)
-         wbc(l,f,e,iu2) =wbc(l,f,e,iu1)*ux
-         wbc(l,f,e,iu3) =wbc(l,f,e,iu1)*uy
-         wbc(l,f,e,iu4) =wbc(l,f,e,iu1)*uz
-         if (cb .eq. 'W  ') then ! consider taking properties from userbc too
+            wbc(l,f,e,iph) =phi
+            wbc(l,f,e,ithm)=temp
+            wbc(l,f,e,iu1) =facew(l,f,e,iu1)
+            wbc(l,f,e,iu2) =wbc(l,f,e,iu1)*ux
+            wbc(l,f,e,iu3) =wbc(l,f,e,iu1)*uy
+            wbc(l,f,e,iu4) =wbc(l,f,e,iu1)*uz
+            if (cb .eq. 'W  ') then ! consider taking properties from userbc too
 !           wbc(l,f,e,iu5)=wbc(l,f,e,iu1)*facew(l,f,e,icvf)
-            wbc(l,f,e,iu5)=phi*facew(l,f,e,icvf)*temp+
-     >      0.5/wbc(l,f,e,iu1)*(wbc(l,f,e,iu2)**2+wbc(l,f,e,iu3)**2+
+               wbc(l,f,e,iu5)=phi*facew(l,f,e,icvf)*temp+
+     >         0.5/wbc(l,f,e,iu1)*(wbc(l,f,e,iu2)**2+wbc(l,f,e,iu3)**2+
      >                          wbc(l,f,e,iu4)**2)
-         else ! BETTA JUST BE 'I  '
+            else ! BETTA JUST BE 'I  '
 !-------------------------------------------------------------
 ! JH111516 HARDCODING ADIABATIC WALL. DO SMARTER SOON
 !          METHOD "B"
 !           wbc(l,f,e,iu5)=facew(l,f,e,iu5)-0.5/facew(l,f,e,iu1)*
 !    >     (facew(l,f,e,iu2)**2+facew(l,f,e,iu3)**2+facew(l,f,e,iu4)**2)
 !          METHOD "A"
-            wbc(l,f,e,iu5)=facew(l,f,e,iu5)
-         endif
+               wbc(l,f,e,iu5)=facew(l,f,e,iu5)
+            endif
 ! JH111516 INVISCID HARDCODING ADIABATIC WALL. DO SMARTER SOON
 !-------------------------------------------------------------
-         endif
+         else ! artvisc only
+
+! JH031617 For now, artificial viscosity does not directly contribute to
+!          boundary fluxes at all. This means dU=0 for IGTU and gradU is
+!          strictly interior for IGU
+            do m=1,nqq ! TEST FOR vDIFF OUTSIDE WHAT THE EHLLO IS WRONG WITH YOU
+               wbc(l,f,e,m)=facew(l,f,e,m)
+            enddo
+
+         endif ! physical viscosity or artvisc
       enddo
       enddo
       enddo
