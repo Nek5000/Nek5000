@@ -63,14 +63,9 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
 fi
 
 # create makefile
-if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljls"
-else
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljlp"
-fi
 source $SOURCE_ROOT_CORE/makenek.inc
 
 # compile
-make -j4 -C $SOURCE_ROOT_JL CC=$CC CFLAGS=$CFLAGS MPI=$IFMPI ADDUS=$UNDERSCORE
-make -j4 -f makefile 2>&1 | tee compiler.out
+make -j4 -C $SOURCE_ROOT_JL CC=$CC CFLAGS=$CFLAGS MPI=$IFMPI ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
+make -j4 -f makefile 2>&1 | tee -a compiler.out
 exit 0

@@ -20,7 +20,6 @@ G+=-DGLOBAL_LONG_LONG
 
 CCCMD=$(CC) $(G) $(CFLAGS)
 LINKCMD=$(CC) $(G) $(LDFLAGS)
-.PHONY: lib cmds deps tests clean objects odepinfo
 
 TESTS=sort_test sort_test2 sarray_sort_test spchol_test \
       comm_test crystal_test sarray_transfer_test \
@@ -38,6 +37,7 @@ AMG=amg.o
 FWRAPPER=fcrystal.o fcrs.o findpts.o
 INTP=findpts_local.o obbox.o poly.o lob_bnd.o findpts_el_3.o findpts_el_2.o
 
+.PHONY: lib cmds deps tests clean objects odepinfo
 
 lib: $(GS) $(XXT) $(AMG) $(FWRAPPER) $(INTP)
 	ar cr $(LIBNAME) $?
@@ -53,8 +53,8 @@ odepinfo: deps objects; @./odep_info.py *.o
 
 -include makefile.cdep
 
-%.o: %.c ; @echo CC $<; $(CCCMD) -c $< -o $@
-%.s: %.c ; @echo CC -S $<; $(CCCMD) -S $< -o $@
+%.o: %.c ; $(CCCMD) -c $< -o $@
+%.s: %.c ; $(CCCMD) -S $< -o $@
 objects: $(OBJECTS) ;
 
 poly_imp.h: gen_poly_imp.c
