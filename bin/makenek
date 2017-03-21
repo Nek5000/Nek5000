@@ -17,7 +17,7 @@ CC="mpicc"
 #G="-g"
 
 # linking flags
-#USR_LFLAGS="-L/usr/lib -lfoo"
+#USR_LFLAGS=" -L/usr/lib -lfoo"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -26,8 +26,8 @@ CC="mpicc"
 # MPI (default true)
 #IFMPI="false"
 
-# profiling (default false)
-IFPROFILING="true"
+# profiling (default true)
+#IFPROFILING="false"
 
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek
@@ -61,8 +61,16 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
   SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 fi
-# do some checks and create makefile
+
+# create makefile
+if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
+  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljls"
+else
+  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljlp"
+fi
 source $SOURCE_ROOT_CORE/makenek.inc
+
 # compile
+make -j4 -C $SOURCE_ROOT_JL CC=$CC CFLAGS=$CFLAGS MPI=$IFMPI ADDUS=$UNDERSCORE
 make -j4 -f makefile 2>&1 | tee compiler.out
 exit 0

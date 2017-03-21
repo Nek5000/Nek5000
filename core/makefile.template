@@ -4,12 +4,10 @@ CASENAME=
 CASEDIR=
 S=
 SCMT=
-J=
 OPT_INCDIR=./
 OBJDIR=obj
 IFMPI= 
 IFCMT= 
-IFAMG= 
 IFNEKNEK=
 FC=
 CC=
@@ -26,7 +24,7 @@ VISIT_LFLAGS=
 
 ################################################################################
 
-LDFLAGS = $(USR_LFLAGS)
+LDFLAGS := ${LDFLAGS} $(USR_LFLAGS)
 
 PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
 PPS_C = $(patsubst %,-D%,$(PPS))
@@ -51,41 +49,21 @@ MXM =
 ################################################################################
 # BLAS
 BLAS = 
-# JL Routines ###################################################################
-JO  = jl_
-
-JLCORE = $(JO)gs.o $(JO)sort.o $(JO)sarray_transfer.o $(JO)sarray_sort.o \
-$(JO)gs_local.o $(JO)crystal.o $(JO)comm.o $(JO)tensor.o $(JO)fail.o \
-$(JO)fcrystal.o
-
-# JL INTERPOLATION
-JLINTP = $(JO)findpts.o $(JO)findpts_local.o \
-$(JO)obbox.o $(JO)poly.o $(JO)lob_bnd.o \
-$(JO)findpts_el_3.o $(JO)findpts_el_2.o
 
 # YP NEKNEK SOLVER
-ifeq ($(IFNEKNEK),true)
+ifeq ($(IFNEKNEK),1)
 NEKNEKO := multimesh.o
 else
 NEKNEKO := singlmesh.o
 endif
 
-# JL CRS GRID SOLVER
-ifeq ($(IFAMG),true)
-CGS := $(JO)amg.o $(JO)fcrs.o
-else
-CGS = $(JO)sparse_cholesky.o $(JO)xxt.o $(JO)fcrs.o
-endif
-
-JL := -DPREFIX=jl_
-
 COMM_MPI := comm_mpi.o
-ifeq ($(IFMPI),false)
+ifeq ($(IFMPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
 # IFCMT append *.o files to CORE
-ifeq ($(IFCMT),true)
+ifeq ($(IFCMT),1)
   CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
    face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
@@ -94,13 +72,13 @@ else
   CMTCORE := 
 endif
 # VISIT ########################################################################
-ifeq ($(IFVISIT),true)
+ifeq ($(IFVISIT),1)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
   LDFLAGS := ${LDFLAGS} $(VISIT_LFLAGS)
 endif
 
-ifeq ($(IFMPI),false)
+ifeq ($(IFMPI),0)
 	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
 else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
@@ -108,15 +86,12 @@ endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 
-ifeq ($(IFCMT),true)
+ifeq ($(IFCMT),1)
 TMP1 += $(CMTCORE)
 OPT_INCDIR += -I $(SCMT)
 endif
 
-NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
-TMP2 = $(JLCORE) $(JLINTP) $(CGS) 
-NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
-NOBJS  = $(NOBJS_F) $(NOBJS_C)
+NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
 L0 = $(G) -O0
 L2 = $(G) -O2
@@ -126,9 +101,9 @@ FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$J
-cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$J
-cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$J
+cFL0   = $(L0) $(CFLAGS) $(PPS_C)
+cFL2   = $(L2) $(CFLAGS) $(PPS_C)
+cFL3   = $(L3) $(CFLAGS) $(PPS_C)
 
 ################################################################################
 all : nek5000
@@ -150,7 +125,7 @@ nek5000:	objdir $(NOBJS)
 	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
 	echo -e "\033[0m"; \
 	fi
-ifeq ($(IFMPI),false) 
+ifeq ($(IFMPI),0) 
 	@rm -rf $S/mpif.h
 endif
 
@@ -160,7 +135,7 @@ lib:	objdir $(NOBJS)
 
 clean:
 	rm -rf ${CASENAME}.f obj ${BINNAME}
-ifeq ($(IFMPI),false) 
+ifeq ($(IFMPI),0) 
 	@rm -rf $S/mpif.h
 endif
 
@@ -191,7 +166,6 @@ $(OBJDIR)/gmres.o	:$S/gmres.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/papi.o	:$S/papi.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/bdry.o	:$S/bdry.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/ic.o		:$S/ic.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfldr.o	:$S/gfldr.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/conduct.o	:$S/conduct.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/navier0.o	:$S/navier0.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/navier2.o	:$S/navier2.f;			$(FC) -c $(FL2) $< -o $@
@@ -257,30 +231,9 @@ $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(FC) -c $(FL3) $< -o $@
 
 # C Files ##################################################################################
-$(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/byte.o                 :$S/byte.c;              $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)fail.o            :$(J)/fail.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)tensor.o          :$(J)/tensor.c;          $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sort.o            :$(J)/sort.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sarray_sort.o     :$(J)/sarray_sort.c;     $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)comm.o            :$(J)/comm.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)crystal.o         :$(J)/crystal.c;         $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sarray_transfer.o :$(J)/sarray_transfer.c; $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)fcrystal.o        :$(J)/fcrystal.c;        $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)gs.o              :$(J)/gs.c;              $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)gs_local.o        :$(J)/gs_local.c;        $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)fcrs.o            :$(J)/fcrs.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)xxt.o             :$(J)/xxt.c;             $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)sparse_cholesky.o :$(J)/sparse_cholesky.c; $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)amg.o             :$(J)/amg.c;             $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpts.o         :$(J)/findpts.c;         $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpts_local.o   :$(J)/findpts_local.c;   $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)obbox.o           :$(J)/obbox.c;           $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)poly.o            :$(J)/poly.c;            $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)lob_bnd.o         :$(J)/lob_bnd.c;         $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpts_el_3.o    :$(J)/findpts_el_3.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
-$(OBJDIR)/$(JO)findpts_el_2.o    :$(J)/findpts_el_2.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
+$(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/byte.o                 :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@

@@ -6,7 +6,6 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  AMG         use AMG instead of XXT solver"
   echo "  NOMPIIO     deactivate MPI-IO support"
   echo "  BGQ         use BGQ optimized mxm"
   echo "  XSMM        use libxsmm for mxm"
@@ -70,7 +69,6 @@ if [ -f SIZEu ]; then
       exit 1
    fi
    NEK_WARN="WARNING: SIZEu will be deprecated in a future release. Please rename to SIZE!"
-   export NEK_WARN 
    mv -v SIZEu SIZE
 fi
 
@@ -101,7 +99,7 @@ rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
-UNDERSCORE=false
+UNDERSCORE=0
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
         call test
@@ -109,7 +107,7 @@ cat > test_underscore.f << _ACEOF
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
 if nm test_underscore.o | grep -q test_ ; then
-  UNDERSCORE=true
+  UNDERSCORE=1
 fi
 \rm test_underscore.* 2>/dev/null
 
@@ -153,17 +151,17 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  *pgf*)        FFLAGS="-r8 -Mpreprocess"
+  *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
-  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)   FFLAGS+=" -fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
-  *ifort*)      FFLAGS="-r8 -fpconstant -fpp"
+  *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
-  *pathf*)      FFLAGS="-r8 -cpp -fno-second-underscore"
+  *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        FFLAGS="-s default64 -eF"
+  *ftn*)        FFLAGS+=" -s default64 -eF"
                ;;
-  *xlf*)       FFLAGS="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
@@ -173,57 +171,50 @@ case $F77comp in
       NOCOMPILE=1
       read;;
 esac
-export PPPO
 
 # set preprocessor symbols
 if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
-  IFMPI=false
+  IFMPI=0
   PPLIST="${PPLIST} NOMPIIO"
 else
   # default
-  IFMPI=true
+  IFMPI=1
   PPLIST="${PPLIST} MPI"
 fi
-export IFMPI
 
-if [ "$UNDERSCORE" == "true" ]; then
+if [ $UNDERSCORE -eq 1 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
-  if [ "$IFMPI" == "true" -o "IFMPI" == "yes" ]; then
+if [ "$IFPROFILING" == "false" -o "$IFPROFILING" == "no" ]; then
+  echo "Profiling disabled"
+else
+  if [ $IFMPI -eq 1 ]; then
     PPLIST="${PPLIST} TIMER MPITIMER"
   else
     PPLIST="${PPLIST} TIMER"
   fi
 fi
 
-PPLIST="${PPLIST} GLOBAL_LONG_LONG"
+PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
-IFCMT=false
+IFCMT=0
+IFNEKNEK=0
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
-     IFNEKNEK=true
+     IFNEKNEK=1
    fi
    if [ "$i" == "CMTNEK" ]; then
-     IFCMT=true
+     IFCMT=1
    fi
 done
-export IFCMT
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
    IFCVODE=true 
 else
    IFCVODE=false
-fi
-
-# AMG setup
-if echo $PPLIST | grep -q 'AMG' ; then 
-   IFAMG=true 
-else
-   IFAMG=false
 fi
 
 MXM_USER="mxm_std.o"
@@ -236,10 +227,6 @@ if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then
    BLAS=" "
 fi
 
-if [ "$USR_LIB" != "" ]; then
-    USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
-fi
-
 # tweak makefile template 
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
@@ -247,13 +234,12 @@ rm -rf makefile 2>/dev/null
 sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^G[ ]*=.*:G\:=$G:" \
--e "s/^FFLAGS[ ]*=.*/FFLAGS:=$FFLAGS/" \
--e "s/^CFLAGS[ ]*=.*/CFLAGS:=$CFLAGS/" \
+-e "s:^FFLAGS[ ]*=.*:FFLAGS\:=$FFLAGS:" \
+-e "s:^CFLAGS[ ]*=.*:CFLAGS\:=$CFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
--e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
 -e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
 -e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
@@ -261,12 +247,12 @@ sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
 -e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
--e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
+$SOURCE_ROOT_CORE/makefile.template >.makefile
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
   echo ""
   echo "Activate VisIt Sim Mode"
-  IFVISIT=true
+  IFVISIT=1
 
   if [ -z "$VISIT_INC" ]; then
     VISIT_INC=${VISIT_INSTALL}/libsim/V2/include
@@ -503,6 +489,11 @@ _ACEOF
 fi
 fi
 
+export NEK_WARN 
+export IFMPI
+export FFLAGS
+export CFLAGS
+export UNDERSCORE
 
 if [ $NOCOMPILE -eq 1 ]; then
   exit 0
