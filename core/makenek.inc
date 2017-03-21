@@ -20,7 +20,7 @@ fi
 # first do some checks ...
 if [ $# -eq 0 ]; then
   echo ""
-  echo "usage: makenek [.usr filename | clean] < -nocompile >"
+  echo "usage: makenek [.usr filename | clean | realclean] < -nocompile >"
   echo ""
   exit 1
 fi
@@ -36,6 +36,12 @@ if [ $1 = "clean" ]; then
   exit 0
 fi
 
+if [ $1 = "realclean" ]; then
+  make -C $SOURCE_ROOT_JL clean
+  make clean
+  exit 0
+fi
+
 NOCOMPILE=0
 if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
@@ -43,20 +49,6 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
-APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
-SOURCE_ROOT_CORE=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
-SOURCE_ROOT_JL=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
-SOURCE_ROOT_CMT=$APATH_SRC
-
-IFNEKNEK=false
-
-# do some basic checks
-if [ "$CASEDIR" == "$SOURCE_ROOT_CORE" ]; then
-   echo "FATAL ERROR: Working directory has to be different from the source!"
-   exit 1
-fi
 
 if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
@@ -77,8 +69,8 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT_CORE/makefile.template!"
+if [ ! -f $SOURCE_ROOT/core/makefile.template ]; then
+  echo "FATAL ERROR: Cannot find $SOURCE_ROOT/core/makefile.template!"
   exit 1
 fi
 
@@ -173,12 +165,11 @@ case $F77comp in
 esac
 
 # set preprocessor symbols
-if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
-  IFMPI=0
+if [ $MPI -eq 0 ]; then
   PPLIST="${PPLIST} NOMPIIO"
 else
   # default
-  IFMPI=1
+  MPI=1
   PPLIST="${PPLIST} MPI"
 fi
 
@@ -186,10 +177,10 @@ if [ $UNDERSCORE -eq 1 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFPROFILING" == "false" -o "$IFPROFILING" == "no" ]; then
+if [ $PROFILING -eq 0 ]; then
   echo "Profiling disabled"
 else
-  if [ $IFMPI -eq 1 ]; then
+  if [ $MPI -eq 1 ]; then
     PPLIST="${PPLIST} TIMER MPITIMER"
   else
     PPLIST="${PPLIST} TIMER"
@@ -199,22 +190,22 @@ fi
 PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
-IFCMT=0
-IFNEKNEK=0
+CMT=0
+NEKNEK=0
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
-     IFNEKNEK=1
+     NEKNEK=1
    fi
    if [ "$i" == "CMTNEK" ]; then
-     IFCMT=1
+     CMT=1
    fi
 done
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
-   IFCVODE=true 
+   CVODE=1 
 else
-   IFCVODE=false
+   CVODE=0
 fi
 
 MXM_USER="mxm_std.o"
@@ -225,12 +216,6 @@ fi
 BLAS="blas.o dsygv.o ssygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
-fi
-
-if [ $IFMPI -eq 1 ]; then
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljlp"
-else
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljls"
 fi
 
 # tweak makefile template 
@@ -246,19 +231,18 @@ sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
--e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
--e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
--e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
+-e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
+-e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
+-e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
--e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
-$SOURCE_ROOT_CORE/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}/core:" \
+-e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT}/core/cmt:" \
+$SOURCE_ROOT/core/makefile.template >.makefile
 
-if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
+if [ $VISIT -eq 1 ]; then
   echo ""
   echo "Activate VisIt Sim Mode"
-  IFVISIT=1
 
   if [ -z "$VISIT_INC" ]; then
     VISIT_INC=${VISIT_INSTALL}/libsim/V2/include
@@ -273,7 +257,7 @@ if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
     echo "  VISIT_STOP is defined. Nek5000 will wait for VisIt to Connect."
   fi
 
-  sed -e "s/^IFVISIT[ ]*=.*/IFVISIT:=${IFVISIT}/" \
+  sed -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
       -e "s:^VISIT_IFLAGS[ ]*=.*:VISIT_IFLAGS\:=-I${VISIT_INC}:" \
       -e "s:^VISIT_LFLAGS[ ]*=.*:VISIT_LFLAGS\:=-L${VISIT_LIB} -lsimV2 -lsimV2f -ldl -lstdc++:" \
       -e "s/^PPS[ ]*=.*/PPS=${PPLIST} VISIT ${VISIT_STOP}/" \
@@ -368,7 +352,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 
   if ! cat SIZE | grep -qi 'toteq' ; then
-  if [ "$IFCMT" == "true" ]; then
+  if [ $CMT -eq 1 ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
       echo '      integer toteq' >> SIZE
@@ -406,7 +390,8 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
+
+if [ $CVODE -eq 1 ]; then
 
 if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
@@ -426,7 +411,7 @@ fi
 
 fi
 
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+if [ $CMT -eq 1 ]; then
 if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
@@ -496,7 +481,7 @@ fi
 fi
 
 export NEK_WARN 
-export IFMPI
+export MPI
 export FFLAGS
 export CFLAGS
 export UNDERSCORE
