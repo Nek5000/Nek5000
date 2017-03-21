@@ -6,9 +6,9 @@ S=
 SCMT=
 OPT_INCDIR=./
 OBJDIR=obj
-IFMPI= 
-IFCMT= 
-IFNEKNEK=
+MPI= 
+CMT= 
+NEKNEK=
 FC=
 CC=
 FFLAGS=
@@ -18,13 +18,11 @@ PPS=
 G=
 USR=
 USR_LFLAGS=
-IFVISIT=
+VISIT=
 VISIT_IFLAGS=
 VISIT_LFLAGS=
 
 ################################################################################
-
-LDFLAGS := ${LDFLAGS} $(USR_LFLAGS)
 
 PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
 PPS_C = $(patsubst %,-D%,$(PPS))
@@ -51,19 +49,19 @@ MXM =
 BLAS = 
 
 # YP NEKNEK SOLVER
-ifeq ($(IFNEKNEK),1)
+ifeq ($(NEKNEK),1)
 NEKNEKO := multimesh.o
 else
 NEKNEKO := singlmesh.o
 endif
 
 COMM_MPI := comm_mpi.o
-ifeq ($(IFMPI),0)
+ifeq ($(MPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
-# IFCMT append *.o files to CORE
-ifeq ($(IFCMT),1)
+# CMT append *.o files to CORE
+ifeq ($(CMT),1)
   CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
    face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
@@ -72,13 +70,13 @@ else
   CMTCORE := 
 endif
 # VISIT ########################################################################
-ifeq ($(IFVISIT),1)
+ifeq ($(VISIT),1)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
-  LDFLAGS := ${LDFLAGS} $(VISIT_LFLAGS)
+  USR_LFLAGS := ${USR_LFLAGS} $(VISIT_LFLAGS)
 endif
 
-ifeq ($(IFMPI),0)
+ifeq ($(MPI),0)
 	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
 else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
@@ -86,7 +84,7 @@ endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 
-ifeq ($(IFCMT),1)
+ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
 OPT_INCDIR += -I $(SCMT)
 endif
@@ -113,7 +111,7 @@ objdir:
 
 nek5000:	objdir $(NOBJS)
 	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
-	$(FC) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(LDFLAGS)
+	$(FC) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
 	echo "#############################################################"; \
@@ -125,7 +123,7 @@ nek5000:	objdir $(NOBJS)
 	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
 	echo -e "\033[0m"; \
 	fi
-ifeq ($(IFMPI),0) 
+ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
 endif
 
@@ -135,7 +133,7 @@ lib:	objdir $(NOBJS)
 
 clean:
 	rm -rf ${CASENAME}.f obj ${BINNAME}
-ifeq ($(IFMPI),0) 
+ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
 endif
 

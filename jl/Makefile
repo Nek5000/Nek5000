@@ -1,9 +1,9 @@
 MPI ?= 0
 ADDUS ?= 0
-LIBNAME ?= libjls.a
+LIBNAME ?= libjlserial.a
 
 ifeq (1,$(MPI))
-  LIBNAME = libjlp.a
+  LIBNAME = libjl.a
   G+=-DMPI
 endif
 
@@ -43,7 +43,7 @@ lib: $(GS) $(XXT) $(AMG) $(FWRAPPER) $(INTP)
 	ar cr $(LIBNAME) $?
 	ranlib $(LIBNAME)
 tests: $(TESTS) ;
-clean: ; @$(RM) $(TESTS) *.o *.s *.a
+clean: ; $(RM) *.o *.s *.a
 
 cmds: ; @echo CC = $(CCCMD); echo LINK = $(LINKCMD);
 
