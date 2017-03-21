@@ -12,7 +12,6 @@
 * Extended `lowMach` solver for time varying thermodynamic pressure
 * Added DG for scalars
 * Added support for `implicit none`
-* New `generic fld` reader allows restarts from an arbitrary mesh
 * Read `.re2` in parallel
 * Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 
@@ -26,7 +25,8 @@
 * Removed `MOAB` 
 * Replaced `hpts.in` & `hpts.out` by `his.in` & `<casename>.his` 
 * Print real memory footprint on exit instead of using `size` in `makenek`
-* Eliminated PPLIST symbol `MPIIO` and added `NOMPIIO`
+* Eliminated PPLIST symbol `MPIIO` as it is a runtime parameter (p65=1 or nfiler=1) now 
+* Eliminated PPLIST symbol `AMG` as it is a runtime parameter (p40) now 
 
 ## Bug Fixes and Other Changes
 
