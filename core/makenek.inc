@@ -227,6 +227,12 @@ if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then
    BLAS=" "
 fi
 
+if [ $IFMPI -eq 1 ]; then
+  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljlp"
+else
+  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljls"
+fi
+
 # tweak makefile template 
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
