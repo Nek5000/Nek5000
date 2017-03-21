@@ -19,9 +19,7 @@ c
       common /scrcg/  pm1(lx1*ly1*lz1,lelv)
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
-      character*132 hdr
-      character*1   hdr1(132)
-      equivalence   (hdr1,hdr)
+      character*1   hdr(iHeaderSize)
 
       integer*8 dtmp8
 
@@ -29,7 +27,6 @@ c
 
       logical ifbswp, if_byte_swap_test
       real*4 bytetest
-
 
       etime_t = dnekclock_sync()
       if(nio.eq.0) write(6,*) 'call gfldr' 

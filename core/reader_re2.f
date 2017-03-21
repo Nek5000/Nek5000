@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine bin_rd1(ifbswap)  ! .re2 reader
+      subroutine read_re2(ifbswap)  ! .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
@@ -745,6 +745,65 @@ c     len  = 4
             if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
          enddo
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine open_re2(ifbswap) ! open file & chk for byteswap
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap,if_byte_swap_test
+
+      integer fnami (33)
+      character*132 fname
+      equivalence (fname,fnami)
+
+      character*132 hdr
+      character*5 version
+      real*4      test
+
+      ierr=0
+      if (nid.eq.0) then
+         write(6,'(A,A)') ' Reading ', re2fle
+         call izero(fnami,33)
+         m = indx2(re2fle,132,' ',1)-1
+         call chcopy(fname,re2fle,m)
+   
+         call byte_open(fname,ierr)
+         if(ierr.ne.0) goto 100
+         call byte_read(hdr,20,ierr)
+         if(ierr.ne.0) goto 100
+
+         read (hdr,1) version,nelgt,ndim,nelgv
+    1    format(a5,i9,i3,i9)
+ 
+         wdsizi = 4
+         if(version.eq.'#v002') wdsizi = 8
+         if(version.eq.'#v003') then
+           wdsizi = 8
+           param(32) = 1
+         endif
+
+         call byte_read(test,1,ierr)
+         if(ierr.ne.0) goto 100
+         ifbswap = if_byte_swap_test(test,ierr)
+         if(ierr.ne.0) goto 100
+
+      endif
+ 
+ 100  call err_chk(ierr,'Error opening or reading .re2 header. Abort.$')
+
+      call bcast(wdsizi, ISIZE)
+      call bcast(ifbswap,LSIZE)
+      call bcast(nelgv  ,ISIZE)
+      call bcast(ndim   ,ISIZE)
+      call bcast(nelgt  ,ISIZE)
+      call bcast(param(32),WDSIZE)
+
+      if(wdsize.eq.4.and.wdsizi.eq.8) 
+     $   call exitti('wdsize=4 & wdsizi(re2)=8 not compatible$',wdsizi)
 
       return
       end

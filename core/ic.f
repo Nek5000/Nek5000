@@ -2582,30 +2582,19 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mbyte_open(hname,fid,ifro,ierr) ! open  blah000.fldnn
+      subroutine addfid(fname,fid)
       include 'SIZE'
       include 'TSTEP'
       include 'INPUT'
       include 'RESTART'
- 
+
+
+      character*1 fname(132)
       integer fid
-      character*132 hname
-      logical ifro
 
       character*8  eight,fmt,s8
       save         eight
       data         eight / "????????" /
-
-      character*132 fname
-      character*1  fname1(132)
-      equivalence (fname1,fname)
-
-      integer      iname(33)
-      equivalence (iname,fname)
-
-      call izero  (iname,33)
-      len = ltrunc(hname,132)
-      call chcopy (fname,hname,len)
 
       do ipass=1,2      ! 2nd pass, in case 1 file/directory
          do k=8,1,-1
@@ -2614,23 +2603,13 @@ c-----------------------------------------------------------------------
                write(fmt,1) k,k
     1          format('(i',i1,'.',i1,')')
                write(s8,fmt) fid
-               call chcopy(fname1(i1),s8,k)
+               call chcopy(fname(i1),s8,k)
                goto 10
             endif
          enddo
    10    continue
       enddo
       
-      if(ifmpiio) then
-        call byte_open_mpi(fname,ifh_mbyte,ifro,ierr)
-        if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
-      else
-        call byte_open(fname,ierr)
-        if(nio.eq.0)write(6,7) nid,istep,(fname1(k),k=1,len)
-      endif
-
-   6  format(1i8,' OPEN: ',132a1)
-   7  format(2i8,' OPEN: ',132a1)
       return
       end
 c-----------------------------------------------------------------------
@@ -2643,21 +2622,19 @@ c-----------------------------------------------------------------------
       include 'INPUT'
 
       integer stride
-      character*132 hdr
+      character*132 hdr, hname_
       logical if_byte_swap_test
       real*4 bytetest
 
       integer*8 offs0,offs
 
-      integer sum
-
       ierr = 0
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
-         ifmpiio = .false.
-         call mbyte_open(hname,0,.TRUE.,ierr) ! open  blah000.fldnn
-c         call byte_open(hdname,ierr)
+         call chcopy(hname_,hname,132)
+         call addfid(hname_,0)
+         call byte_open(hname_,ierr)
 
          if(ierr.ne.0) goto 101
          call blank     (hdr,iHeaderSize)
@@ -2697,7 +2674,11 @@ c         call byte_open(hdname,ierr)
            pid1r = nid + stride
            fid0r = nid / stride
            call blank     (hdr,iHeaderSize)
-           call mbyte_open(hname,fid0r,.TRUE.,ierr) ! open  blah000.fldnn
+
+           call addfid(hname,fid0r)
+           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
+           call byte_open(hname,ierr)
+
            if(ierr.ne.0) goto 102
            call byte_read (hdr, iHeaderSize/4,ierr)  
            if(ierr.ne.0) goto 102
@@ -2723,7 +2704,10 @@ c         call byte_open(hdname,ierr)
         nelBr = igl_running_sum(nelr) - nelr 
         offs = offs0 + nelBr*isize
 
-        call mbyte_open(hname,0,.TRUE.,ierr) 
+        call addfid(hname,fid0r)
+        if(nio.eq.0) write(6,*) '      FILE:',hname
+        call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
+
         if(ierr.ne.0) goto 102
         call byte_set_view(offs,ifh_mbyte)
         call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
