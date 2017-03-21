@@ -333,6 +333,7 @@ C> the compressible Navier-Stokes equations (NS).
          do j=1,ny1
          do i=1,nx1
             call nekasgn(i,j,k,e)
+            call cmtasgn(i,j,k,e)
             call uservp(i,j,k,ieg)
             vdiff(i,j,k,e,imu)  = mu   ! NEKUSE
             vdiff(i,j,k,e,ilam) = lambda!NEKUSE
