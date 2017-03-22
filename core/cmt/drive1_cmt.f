@@ -31,6 +31,7 @@ c     Solve the Euler equations
 c all point particles are initialized and 
 c preprocessing of interpolation step 
          call usr_particles_init
+         call userchk ! need more ifdefs
       endif
 
       nstage = 3
