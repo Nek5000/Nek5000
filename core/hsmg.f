@@ -1112,15 +1112,18 @@ c     clobbers r
       nv=nl
 !FIXME - 2D should be done later, in a similar fashion
       if(.not.if3d) then
-         do ie=1,nelt
-            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,2,1,ie),s(1,1,2,ie))
-            do i=1,nn
-               r(i,je)=d(i,ie)*e(i,ie)
-            enddo
-            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,1,1,ie),s(1,2,2,ie))
-         enddo
+         if(nid.eq.0) write(6,*)
+     $        '2D Not currently implemented on for OpenACC'
+         call exitt()
+!         do ie=1,nelt
+!            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+!     $                         ,s(1,2,1,ie),s(1,1,2,ie))
+!            do i=1,nn
+!               r(i,je)=d(i,ie)*e(i,ie)
+!            enddo
+!            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+!     $                         ,s(1,1,1,ie),s(1,2,2,ie))
+!         enddo
       else
 !$ACC PARALLEL LOOP GANG
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
