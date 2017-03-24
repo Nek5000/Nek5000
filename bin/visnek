@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 #
 #  Shell script that generated VisIt metafile blah.nek5000 either from SESSION.NAME or from the first command line argument
 #
 
 nfld=0					# # of field files
 
-if [[ $# -eq 0 ]]; then
-    if [[ -f SESSION.NAME ]]; then
+if [ $# -eq 0 ]; then
+    if [ -f SESSION.NAME ]; then
         base=$(head -1 SESSION.NAME)	# case name
     else
        nfld=-1				# exit
@@ -19,7 +19,7 @@ else
 fi
 
 
-if [[ "$nfld" != -1 ]]; then
+if [ $nfld -ne -1 ]; then
 
     echo
     echo "  Generating $base.nek5000 file ..."
@@ -28,38 +28,38 @@ if [[ "$nfld" != -1 ]]; then
     #echo 'endian little'			>  $base.nek5000
     #echo 'endian big'			>  $base.nek5000
 
-    if [[ -e $base.fld01 ]]; then
-        nfld=$(ls -1 $base.fld[0-9][0-9]* | wc -l)
-        echo "filetemplate:	${base}.fld%02d" > $base.nek5000
-    elif [[ -e "A0/${base}0.f00001" ]]; then
-        nfld=$(ls -1 A0/${base}0.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	A%01d/${base}%01d.f%05d" > $base.nek5000
-    elif [[ -e "${base}00.f00001" ]]; then
-        nfld=$(ls -1 ${base}00.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	${base}%02d.f%05d" > $base.nek5000
-    elif [[ -e "A00/${base}00.f00001" ]]; then
-        nfld=$(ls -1 A00/${base}00.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo 'filetemplate:	A%02d/'$base'%02d.f%05d' > $base.nek5000
-    elif [[ -e "${base}000.f00001" ]]; then
-        nfld=$(ls -1 ${base}000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	${base}%03d.f%05d" > $base.nek5000
-    elif [[ -e "A000/${base}000.f00001" ]]; then
-        nfld=$(ls -1 A000/${base}000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	A%03d/${base}%03d.f%05d" > $base.nek5000
-    elif [[ -e "A0000/${base}0000.f00001" ]]; then
-        nfld=$(ls -1 A0000/${base}0000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	A%04d/${base}%04d.f%05d" > $base.nek5000
+    if [ -e "$base.fld01" ]; then
+        nfld=$(ls -1 "$base".fld[0-9][0-9]* | wc -l)
+        echo "filetemplate: ${base}.fld%02d" > "$base.nek5000"
+    elif [ -e "A0/${base}0.f00001" ]; then
+        nfld=$(ls -1 A0/"${base}"0.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: A%01d/${base}%01d.f%05d" > "$base.nek5000"
+    elif [ -e "${base}00.f00001" ]; then
+        nfld=$(ls -1 "${base}"00.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: ${base}%02d.f%05d" > "$base.nek5000"
+    elif [ -e "A00/${base}00.f00001" ]; then
+        nfld=$(ls -1 A00/"${base}"00.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: A%02d/${base}%02d.f%05d" > "$base.nek5000"
+    elif [ -e "${base}000.f00001" ]; then
+        nfld=$(ls -1 "${base}"000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: ${base}%03d.f%05d" > "$base.nek5000"
+    elif [ -e "A000/${base}000.f00001" ]; then
+        nfld=$(ls -1 A000/"${base}"000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: A%03d/${base}%03d.f%05d" > "$base.nek5000"
+    elif [ -e "A0000/${base}0000.f00001" ]; then
+        nfld=$(ls -1 A0000/"${base}"0000.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: A%04d/${base}%04d.f%05d" > "$base.nek5000"
     else
-        nfld=$(ls -1 ${base}0.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
-        echo "filetemplate:	${base}%01d.f%05d" > $base.nek5000
+        nfld=$(ls -1 "${base}"0.f[0-9][0-9][0-9][0-9][0-9] | wc -l)
+        echo "filetemplate: ${base}%01d.f%05d" > "$base.nek5000"
     fi
 fi
 
 
-echo 'firsttimestep: 1' >> $base.nek5000
-echo "numtimesteps: $nfld" >> $base.nek5000
+echo 'firsttimestep: 1' >> "$base.nek5000"
+echo "numtimesteps: $nfld" >> "$base.nek5000"
 
-#echo 'meshcoords: 1'			>> $base.nek5000
+#echo 'meshcoords: 1'			>> "$base.nek5000"
 
 
 echo
