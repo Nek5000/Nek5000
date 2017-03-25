@@ -156,12 +156,12 @@ c
                endif
     5       continue
             if (ifflow) then
-               ntotm1 = nx1*ny1*nelv
-               ntotm2 = nx2*ny2*nelv
+               ntotm1 = nx1*ny1*nelt
+               ntotm2 = nx2*ny2*nelt
                call copy (vxax,vx,ntotm1)
                call copy (vyax,vy,ntotm1)
                call copy (prax,pr,ntotm2)
-               do 10 e=1,nelv
+               do 10 e=1,nelt
                   if (ifrzer(e)) then
                      call mxm  (vx(1,1,1,e),nx1,iatjl1,ny1,pb,ny1)
                      call copy (vx(1,1,1,e),pb,nx1*ny1)
@@ -191,7 +191,7 @@ c
 C        Map the pressure onto the velocity mesh
 C
          ntott = nx1*ny1*nz1*nelt
-         ntot1 = nx1*ny1*nz1*nelv
+         ntot1 = nx1*ny1*nz1*nelt
          nyz2  = ny2*nz2
          nxy1  = nx1*ny1
          nxyz  = nx1*ny1*nz1
@@ -203,11 +203,11 @@ C
             call copy(pm1,pr,ntot1)
          elseif (if_full_pres) then
             call rzero(pm1,ntot1)
-            do e=1,nelv
+            do e=1,nelt
                call copy(pm1(1,1,1,e),pr(1,1,1,e),nxyz2)
             enddo
          else
-            do 1000 e=1,nelv
+            do 1000 e=1,nelt
                call mxm (ixm21,nx1,pr(1,1,1,e),nx2,pa(1,1,1),nyz2)        
                do 100 iz=1,nz2
                   call mxm (pa(1,1,iz),nx1,iytm21,ny2,pb(1,1,iz),ny1)
@@ -222,8 +222,8 @@ C
             ntot1 = nx1*ny1*nelt
             call copy (ym1,yax,ntot1)
             if (ifflow) then
-               ntot1 = nx1*ny1*nelv
-               ntot2 = nx2*ny2*nelv
+               ntot1 = nx1*ny1*nelt
+               ntot2 = nx2*ny2*nelt
                call copy (vx,vxax,ntot1)
                call copy (vy,vyax,ntot1)
                call copy (pr,prax,ntot2)
@@ -718,7 +718,7 @@ c
       ENDIF
 c
       IF(IFVO)then
-         IF (IE.LE.NELV) then
+         IF (IE.LE.NELT) then
             ID=ID+1
             CALL COPYx4(TDUMP(1,ID),VX(1,1,1,IE),NXYZ)
             ID=ID+1
@@ -739,7 +739,7 @@ c
          ENDIF
       ENDIF
       IF(IFPO)then
-         IF (IE.LE.NELV) then
+         IF (IE.LE.NELT) then
             ID=ID+1
             CALL COPYx4(TDUMP(1,ID),PM1(1,1,1,IE),NXYZ)
          ELSE
@@ -1416,9 +1416,9 @@ c
       character*3 name3
       logical if_save(ldimt)
 c
-      ntot1  = nx1*ny1*nz1*nelv
+      ntot1  = nx1*ny1*nz1*nelt
       ntot1t = nx1*ny1*nz1*nelt
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot2  = nx2*ny2*nz2*nelt
 
       if(nfldt.gt.ldimt) then
         write(6,*) 'ABORT: outpost data too large (nfldt>ldimt)!'
