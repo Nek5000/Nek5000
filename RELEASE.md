@@ -14,6 +14,7 @@
 * Added support for `implicit none`
 * Read `.re2` in parallel
 * Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
+* Refactored `makenek` for faster builds
 
 ## Backwards-Incompatible Changes 
 
