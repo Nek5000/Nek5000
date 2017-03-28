@@ -19,8 +19,8 @@ PPLIST=""
 #-------------------------------------------------------------------------------
 
 # optional compiler flags
-#FFLAGS="-g"
-#CFLAGS="-g"
+#FFLAGS=""
+#CFLAGS=""
 
 # optional linking flags
 #USR_LFLAGS+=" -L/usr/lib -lfoo"
@@ -30,14 +30,14 @@ PPLIST=""
 #       a makefile_usr.inc has to be provided containing the build rules 
 #USR="foo.o"
 
-# MPI 
-MPI=1
+# MPI (default 0) 
+#MPI=0
 
-# profiling
-PROFILING=1
+# profiling (default 1)
+#PROFILING=0
 
-# VisIt in situ
-VISIT=0
+# VisIt in situ (default 0)
+#VISIT=1
 #  Note: you can override the lib and include paths. VISIT_LIB and VISIT_INC
 #  If VISIT_STOP is set the simulation will stop after first step and wait
 #  for VisIt to connect.
@@ -49,6 +49,9 @@ VISIT=0
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 set -e
+: ${MPI:=1}
+: ${PROFILING:=1}
+: ${VISIT:=0}
 
 # assign version tag
 mver=17.0.0
@@ -59,26 +62,20 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
   echo "change source code directory to: ", $SOURCE_ROOT
 fi
 
-if [ $MPI -eq 1 ]; then
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljl"
+if [ $MPI -eq 0 ]; then
+  jllib="jlserial" 
 else
-  USR_LFLAGS+=" -L$SOURCE_ROOT_JL -ljlserial"
+  jllib="jl" 
 fi
+USR_LFLAGS+=" -L$SOURCE_ROOT_JL -l$jllib"
 
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
 # compile libjl if needed
-if [ $MPI -eq 1 ]; then
-  if [ ! -f "$SOURCE_ROOT_JL/libjl.a" ]; then
-    make -C $SOURCE_ROOT_JL clean
-    make -j4 -C $SOURCE_ROOT_JL CC=$CC CFLAGS=$CFLAGS MPI=1 ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
-  fi
-else
-  if [ ! -f "$SOURCE_ROOT_JL/libjlserial.a" ]; then
-    make -C $SOURCE_ROOT_JL clean
-    make -j4 -C $SOURCE_ROOT_JL CC=$CC CFLAGS=$CFLAGS MPI=0 ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
-  fi
+if [ ! -f "$SOURCE_ROOT_JL/lib$jllib.a" ]; then
+  make -j4 -B -C $SOURCE_ROOT_JL MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
+  make -j4 -B -C $SOURCE_ROOT_JL MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
 fi
 
 # compile nek
