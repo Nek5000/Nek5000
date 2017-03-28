@@ -30,7 +30,7 @@ PPLIST=""
 #       a makefile_usr.inc has to be provided containing the build rules 
 #USR="foo.o"
 
-# MPI (default 0) 
+# MPI (default 1) 
 #MPI=0
 
 # profiling (default 1)
@@ -74,8 +74,12 @@ source $SOURCE_ROOT/core/makenek.inc
 
 # compile libjl if needed
 if [ ! -f "$SOURCE_ROOT_JL/lib$jllib.a" ]; then
-  make -j4 -B -C $SOURCE_ROOT_JL MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
-  make -j4 -B -C $SOURCE_ROOT_JL MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE 2>&1 | tee compiler.out
+  make -j4 -B -C $SOURCE_ROOT_JL MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+   2>&1 | tee compiler.out
+  if [ $MPI -ne 0 ]; then 
+    make -j4 -B -C $SOURCE_ROOT_JL MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+     2>&1 | tee compiler.out 
+  fi
 fi
 
 # compile nek
