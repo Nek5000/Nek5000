@@ -18,7 +18,7 @@ G+=-DGLOBAL_LONG_LONG
 #G+=-DUSE_NAIVE_BLAS
 #G+=-DUSE_CBLAS
 
-CCCMD=$(CC) -O2 -g $(G) $(CFLAGS)
+CCCMD=$(CC) -g -O2 $(G) $(CFLAGS)
 LINKCMD=$(CC) $(G) $(LDFLAGS)
 
 TESTS=sort_test sort_test2 sarray_sort_test spchol_test \
