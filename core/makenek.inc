@@ -168,19 +168,16 @@ esac
 if [ $MPI -eq 0 ]; then
   PPLIST="${PPLIST} NOMPIIO"
 else
-  # default
   MPI=1
   PPLIST="${PPLIST} MPI"
 fi
 
-if [ $UNDERSCORE -eq 1 ]; then
+if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ $PROFILING -eq 0 ]; then
-  echo "Profiling disabled"
-else
-  if [ $MPI -eq 1 ]; then
+if [ $PROFILING -ne 0 ]; then
+  if [ $MPI -ne 0 ]; then
     PPLIST="${PPLIST} TIMER MPITIMER"
   else
     PPLIST="${PPLIST} TIMER"
@@ -224,7 +221,6 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
--e "s:^G[ ]*=.*:G\:=$G:" \
 -e "s:^FFLAGS[ ]*=.*:FFLAGS\:=$FFLAGS:" \
 -e "s:^CFLAGS[ ]*=.*:CFLAGS\:=$CFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
@@ -234,13 +230,14 @@ sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
 -e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
+-e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}/core:" \
 -e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT}/core/cmt:" \
 $SOURCE_ROOT/core/makefile.template >.makefile
 
-if [ $VISIT -eq 1 ]; then
+if [ $VISIT -ne 0 ]; then
   echo ""
   echo "Activate VisIt Sim Mode"
 
@@ -282,31 +279,6 @@ else
   exit 1 
 fi
 \rm .makefile 2>/dev/null
-
-# add plugins
-for i in $PLUGIN_LIST
-do
-  if [ ! -f makenek_plugin_$i ]; then
-     echo "ABORT: cannot find plug-in config file" makenek_plugin_$i
-     exit 1
-  fi
-  source makenek_plugin_$i
-
-  plugindir="SRC_PLUGIN"
-  plugindir=`echo ${!plugindir}`
-
-  if [ ! -f $plugindir/makenek.inc ]; then
-     echo "ABORT: Cannot find plug-in include file file" $plugindir/makenek.inc
-     exit 1
-  fi
-  source $plugindir/makenek.inc
-  if [ $ierr -ne 0 ]; then
-     echo "ABORT: plug-in config failed!"
-     exit 1
-  else
-    echo "found plug-in" $i in $plugindir
-  fi
-done
 
 # tweak SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
@@ -352,7 +324,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 
   if ! cat SIZE | grep -qi 'toteq' ; then
-  if [ $CMT -eq 1 ]; then
+  if [ $CMT -ne 0 ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
       echo '      integer toteq' >> SIZE
@@ -391,7 +363,7 @@ _ACEOF
 fi
 
 
-if [ $CVODE -eq 1 ]; then
+if [ $CVODE -ne 0 ]; then
 
 if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
@@ -411,7 +383,7 @@ fi
 
 fi
 
-if [ $CMT -eq 1 ]; then
+if [ $CMT -ne 0 ]; then
 if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
@@ -486,6 +458,6 @@ export FFLAGS
 export CFLAGS
 export UNDERSCORE
 
-if [ $NOCOMPILE -eq 1 ]; then
+if [ $NOCOMPILE -ne 0 ]; then
   exit 0
 fi 

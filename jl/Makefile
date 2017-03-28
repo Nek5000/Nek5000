@@ -2,12 +2,12 @@ MPI ?= 0
 ADDUS ?= 0
 LIBNAME ?= libjlserial.a
 
-ifeq (1,$(MPI))
+ifneq (0,$(MPI))
   LIBNAME = libjl.a
   G+=-DMPI
 endif
 
-ifeq (1,$(ADDUS))
+ifneq (0,$(ADDUS))
   G+=-DUNDERSCORE
 endif
 
@@ -18,7 +18,7 @@ G+=-DGLOBAL_LONG_LONG
 #G+=-DUSE_NAIVE_BLAS
 #G+=-DUSE_CBLAS
 
-CCCMD=$(CC) $(G) $(CFLAGS)
+CCCMD=$(CC) -O2 -g $(G) $(CFLAGS)
 LINKCMD=$(CC) $(G) $(LDFLAGS)
 
 TESTS=sort_test sort_test2 sarray_sort_test spchol_test \

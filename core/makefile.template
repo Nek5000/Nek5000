@@ -6,8 +6,8 @@ S=
 SCMT=
 OPT_INCDIR=./
 OBJDIR=obj
-MPI= 
-CMT= 
+MPI=0 
+CMT=0 
 NEKNEK=
 FC=
 CC=
@@ -15,10 +15,9 @@ FFLAGS=
 CFLAGS=
 PPPO=
 PPS=
-G=
 USR=
 USR_LFLAGS=
-VISIT=
+VISIT=0
 VISIT_IFLAGS=
 VISIT_LFLAGS=
 
@@ -49,10 +48,10 @@ MXM =
 BLAS = 
 
 # YP NEKNEK SOLVER
-ifeq ($(NEKNEK),1)
-NEKNEKO := multimesh.o
-else
+ifeq ($(NEKNEK),0)
 NEKNEKO := singlmesh.o
+else
+NEKNEKO := multimesh.o
 endif
 
 COMM_MPI := comm_mpi.o
@@ -61,16 +60,16 @@ ifeq ($(MPI),0)
 endif
 
 # CMT append *.o files to CORE
-ifeq ($(CMT),1)
+ifeq ($(CMT),0)
+  CMTCORE := 
+else
   CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
    face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o
-else
-  CMTCORE := 
 endif
 # VISIT ########################################################################
-ifeq ($(VISIT),1)
+ifneq ($(VISIT),0)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
   USR_LFLAGS := ${USR_LFLAGS} $(VISIT_LFLAGS)
@@ -91,9 +90,9 @@ endif
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
-L0 = $(G) -O0
-L2 = $(G) -O2
-L3 = $(G) -O3
+L0 = $(G) -O0 -g
+L2 = $(G) -O2 -g
+L3 = $(G) -O3 -g
 
 FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR) 
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
@@ -117,7 +116,8 @@ nek5000:	objdir $(NOBJS)
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
-        echo ""; \
+	size ${BINNAME}; \
+	echo ""; \
         echo "$(NEK_WARN)"; \
 	else \
 	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
