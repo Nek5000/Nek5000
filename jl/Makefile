@@ -57,11 +57,11 @@ odepinfo: deps objects; @./odep_info.py *.o
 %.s: %.c ; $(CCCMD) -S $< -o $@
 objects: $(OBJECTS) ;
 
-poly_imp.h: gen_poly_imp.c
-	$(RM) poly_imp.h;
-	$(CC) -lgmp -lm gen_poly_imp.c -o gen_poly_imp;
-	./gen_poly_imp > poly_imp.h;
-	$(RM) gen_poly_imp
+#poly_imp.h: gen_poly_imp.c
+#	$(RM) poly_imp.h;
+#	$(CC) -lgmp -lm gen_poly_imp.c -o gen_poly_imp;
+#	./gen_poly_imp > poly_imp.h;
+#	$(RM) gen_poly_imp
 
 CRS=$(AMG)
 
