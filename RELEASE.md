@@ -18,7 +18,7 @@
 
 ## Backwards-Incompatible Changes 
 
-* Optional `intp.h` module replaced old interpolation routines `intpts()`
+* Optional `intp.f` module replaced old interpolation routines `intpts()`
 * Replaced `g2gi()` by new generic fld reader `gfldr.h`
 * Moved `makenek` to bin folder
 * New `SIZE` file required to use `implicit none`
