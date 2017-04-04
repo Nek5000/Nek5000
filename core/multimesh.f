@@ -195,6 +195,7 @@ C     Boundary conditions are changed back to 'v' or 't'.
             intflag(f,e)=1
             if (ifield.eq.2) cbc(f,e,ifield)='t  '
             if (ifield.eq.1) cbc(f,e,ifield)='v  '
+c           if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
             if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
          endif
       enddo
@@ -661,19 +662,32 @@ c     to the field identificator which_field(ifld)
         if (which_field(ifld).eq.'pr') call copy(field(1,ifld),pm1,nt)
 
 C       Find interpolation values      
+         write(6,*) 'call findpts_eval ',ifld,nelv
          call findpts_eval(inth_multi,fieldout(ifld,1),nfldmax,
      &                     rcode,1,
      &                     proc,1,
      &                     elid,1,
      &                     rst,ndim,npoints,
      &                     field(1,ifld))
+         write(6,*) 'DONE findpts_eval ',ifld,nelv
 
        enddo  
 
 C     Send interpolation values to the corresponding processors 
 C     of remote session
 
+
+      il=0 
+      do n=1,nprecv
+         id    = inforecv(n,1)
+         nrecv = inforecv(n,2)
+         len=nfld_neknek*nrecv*wdsize
+         call mpi_irecv(rrecv,len,mpi_byte,id,id
+     $                          ,intercomm,status,msg(n),ierr)
+      enddo 
+
       call neknekgsync()
+
 
       il=0
       do n=1,npsend   
@@ -691,10 +705,10 @@ C     of remote session
 
       il=0 
       do n=1,nprecv
+         call mpi_wait (msg(n),status,ierr)
          id    = inforecv(n,1)
          nrecv = inforecv(n,2)
          len=nfld_neknek*nrecv*wdsize
-         call mpi_recv (rrecv,len,mpi_byte,id,id,intercomm,status,ierr)
          do i=1,nrecv ! Extract point identity
             il=il+1
             ix = iden(1,il)
@@ -950,4 +964,3 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-
