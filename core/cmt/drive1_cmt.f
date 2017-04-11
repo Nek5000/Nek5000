@@ -132,14 +132,6 @@ C> Store it in res1
 !        primitive vars = rho, u, v, w, p, T, phi_g
 
       call compute_primitive_vars
-      if(stage.eq.1) then ! I would put this in userchk, but we are open to more
-                          ! "accurate" computations of residual
-         call entropy_viscosity ! accessed through uservp. computes
-                                ! entropy residual and max wave speed
-      endif
-      call compute_transport_props ! inside rk stage or not? So far so good
-!     call smoothing(vdiff(1,1,1,1,imu))
-! you have GOT to figure out where phig goes!!!!
 
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
@@ -149,6 +141,12 @@ C> Store it in res1
          call setdtcmt
          call set_tstep_coef
       endif
+
+      call entropy_viscosity ! accessed through uservp. computes
+                             ! entropy residual and max wave speed
+      call compute_transport_props ! everything inside rk stage
+!     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
+! you have GOT to figure out where phig goes!!!!
 
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
