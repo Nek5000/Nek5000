@@ -204,6 +204,10 @@ c      endif
 
       nz=ncr*ncr*nelv
       imode = param(40) 
+
+      if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
+     $ 'Problem size requires AMG solver$',1)
+
       call crs_setup(xxth(ifield),imode,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
       call crs_stats(xxth(ifield))
