@@ -1,6 +1,9 @@
 c
 c SIZE INTERNALS
 c
+      integer lelt
+      parameter(lelt=lelg/lpmin + 4)
+
       integer lelv
       parameter(lelv=lelt)
 
@@ -30,8 +33,9 @@ c
       parameter(az2=1 + (ldim-2)*(ax2-1))
 
       ! Adjoint
-      integer lpelv
+      integer lpelt,lpelv
       integer lpy1,lpz1
+      parameter(lpelt=lelt)
       parameter(lpelv=lpelt)
       parameter(lpy1=lpx1)
       parameter(lpz1=1 + (ldim-2)*(lpx1-1))
@@ -41,8 +45,9 @@ c
       parameter(lpz2=1 + (ldim-2)*(lpx2-1))
 
       ! MHD
-      integer lbelv
+      integer lbelt,lbelv
       integer lby1,lbz1
+      parameter(lbelt=lelt)
       parameter(lbelv=lbelt)
       parameter(lby1=lbx1)
       parameter(lbz1=1 + (ldim-2)*(lbx1-1))
@@ -93,6 +98,20 @@ c
 
       integer lpart
       parameter (lpart=lhis)
+
+      integer lp, maxmbr
+      parameter (lp=lpmax)
+      parameter (maxmbr=lelt*6)
+
+      integer lcvelt
+      parameter (lcvelt=lelt)   ! cvode
+
+      ! nek-nek
+      integer nsessmax,nmaxl,nfldmax,nmaxcom
+      parameter (nsessmax=2)
+      parameter (nmaxl=lx1*lz1*lelt)
+      parameter (nfldmax=4+ldimt)
+      parameter (nmaxcom=nmaxl*lpratio)
 
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel
