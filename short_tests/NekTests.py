@@ -962,10 +962,10 @@ class LowMachTest(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0, delta=100, label='gmres')
 
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-06, label='VX')
+        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-09, label='VX')
 
         errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-06, label='T')
+        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-12, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-06, label='QTL')
@@ -983,36 +983,14 @@ class LowMachTest(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0, delta=100, label='gmres')
 
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-06, label='VX')
+        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-09, label='VX')
 
         errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-06, label='T')
+        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-12, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-06, label='QTL')
 
-        self.assertDelayedFailures()
-
-    @pn_pn_2_serial
-    def test_PnPn2_Serial(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=200)
-
-        phrase = self.get_phrase_from_log("ABORT: For lowMach,")
-        self.assertIsNotNullDelayed(phrase, label='ABORT: ')
-        self.assertDelayedFailures()
-
-    @pn_pn_2_parallel
-    def test_PnPn2_Parallel(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=200)
-
-        phrase = self.get_phrase_from_log("ABORT: For lowMach,")
-        self.assertIsNotNullDelayed(phrase, label='ABORT: ')
         self.assertDelayedFailures()
 
     def tearDown(self):
