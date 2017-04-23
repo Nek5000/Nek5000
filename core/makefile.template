@@ -90,9 +90,9 @@ endif
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
-L0 = $(G) -g -O0
-L2 = $(G) -g -O2
-L3 = $(G) -g -O3
+L0 = $(G) -O0
+L2 = $(G) -O2
+L3 = $(G) -O3
 
 FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR) 
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
@@ -235,7 +235,6 @@ $(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
-$(OBJDIR)/ssygv.o     	:$S/3rd_party/ssygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
 $(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L0) $(PPS_F) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@

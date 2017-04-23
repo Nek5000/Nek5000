@@ -39,6 +39,7 @@ fi
 if [ $1 = "realclean" ]; then
   make -C $SOURCE_ROOT_JL clean
   make clean
+  rm -rf makefile
   exit 0
 fi
 
@@ -178,7 +179,7 @@ fi
 
 if [ $PROFILING -ne 0 ]; then
   if [ $MPI -ne 0 ]; then
-    PPLIST="${PPLIST} TIMER MPITIMER"
+    PPLIST="${PPLIST} TIMER"
   else
     PPLIST="${PPLIST} TIMER"
   fi
@@ -210,7 +211,7 @@ if echo $PPLIST | grep -q 'BGQ' ; then
    MXM_USER+=" mxm_bgq.o" 
 fi
 
-BLAS="blas.o dsygv.o ssygv.o"
+BLAS="blas.o dsygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
