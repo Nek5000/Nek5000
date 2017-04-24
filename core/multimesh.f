@@ -529,8 +529,12 @@ c     or if we already notified all the relevant processors)
          icount=1
       endif   
 
-      il=0
+
+      irecvcnt=0
       do id=0,np_neighbor-1
+         len = isize
+         call mpi_irecv(nrecv,len,mpi_byte,id,id,intercomm,
+     $                                                 msg,ierr)
 
          if (ifcomm) then
 
@@ -549,68 +553,64 @@ c     or if we already notified all the relevant processors)
 
          if (ifcomm.and.(icount.gt.npsend)) ifcomm=.false.
 
-         len=isize   
          call mpi_send (nsend,len,mpi_byte, id, nid, intercomm, ierr)
 
-         if (nsend.ne.0) then
-c           Send the points identity to communicating processors
-            len=(ldim+1)*nsend*isize
-               do i=1,nsend
-               il=il+1
-               do j=1,ldim+1
-                  jsend((ldim+1)*(i-1)+j)=iList(j,il)
-               enddo
-            enddo   
-
-            call mpi_send(jsend,len,mpi_byte,id,100+nid, intercomm,ierr)
-
-         endif
-
-      enddo   
-
-
-c     Receive information about sending processors
- 6    irecvcnt=0
-      il=0
-      do id=0,np_neighbor-1
-         len=isize
-
-         call mpi_recv(nrecv,len,mpi_byte,id,id,intercomm,status,ierr)
+         call mpi_wait (msg,status,ierr)
 
          if (nrecv.ne.0) then
             irecvcnt=irecvcnt+1
             inforecv(irecvcnt,1)=id
             inforecv(irecvcnt,2)=nrecv
+         endif
 
-c     Receive information about point identities
-            len=(ldim+1)*nrecv*isize
-            call mpi_recv
-     $        (jrecv,len,mpi_byte,id,100+id,intercomm,status,ierr)
-         
-c     Receiving processor nid masks which points he receives from 
-c     remote processor id as interpolation points using the identity 
-c     information contained in array 'jrecv'. Those points are masked 
-c     with imask=1 (imask=0 for all other points). 
+      enddo
 
-      do ii=1,nrecv
-         ix=jrecv((ldim+1)*(ii-1)+1)
-         iy=jrecv((ldim+1)*(ii-1)+2)
-         iz = 1
-         if (if3d) iz=jrecv((ldim+1)*(ii-1)+3)
-         ie=jrecv((ldim+1)*(ii-1)+ldim+1)
-         il=il+1
+      nprecv=irecvcnt
+
+      iaddress=1
+      do i=1,nprecv
+         idrecv=inforecv(i,1)
+         nrecv=inforecv(i,2)
+         len=(ldim+1)*nrecv*isize
+         call mpi_irecv (jrecv(iaddress),len,mpi_byte,idrecv,idrecv,
+     $                                         intercomm,msg(i),ierr)
+         iaddress=iaddress+(ldim+1)*nrecv
+      enddo
+
+      call neknekgsync()
+
+      il=0
+      do i=1,npsend
+         idsend=infosend(i,1)
+         nsend=infosend(i,2)
+         len=(ldim+1)*nsend*isize
+         do j=1,nsend
+            il=il+1
+            do k=1,ldim+1
+               jsend((ldim+1)*(j-1)+k)=iList(k,il)
+            enddo
+         enddo
+         call mpi_send (jsend,len,mpi_byte,idsend,nid,intercomm,ierr)
+      enddo
+
+      il=0
+      do i=1,nprecv
+         call mpi_wait (msg(i),status,ierr)
+         nrecv=inforecv(i,2)
+         do ii=1,nrecv
+            il=il+1
+            ix=jrecv((ldim+1)*(il-1)+1)
+            iy=jrecv((ldim+1)*(il-1)+2)
+            iz = 1
+            if (if3d) iz=jrecv((ldim+1)*(il-1)+3)
+            ie=jrecv((ldim+1)*(il-1)+ldim+1)
             iden(1,il)=ix
             iden(2,il)=iy
             if (if3d) iden(3,il)=iz
             iden(ldim+1,il)=ie
             imask(ix,iy,iz,ie)=1
          enddo
-
-      endif  !  jrecv.ne.0
-      
-      enddo  !  all remote processors
-
-      nprecv=irecvcnt
+      enddo
 
       call neknekgsync()
       return
@@ -631,7 +631,7 @@ C----------------------------------------------------------------
       real fieldout(nfldmax,nmaxl)
 
       integer status(mpi_status_size)
-
+      
 c     Information about communication of points is contained in common 
 c     block /proclist/.
  
@@ -662,32 +662,32 @@ c     to the field identificator which_field(ifld)
         if (which_field(ifld).eq.'pr') call copy(field(1,ifld),pm1,nt)
 
 C       Find interpolation values      
-         write(6,*) 'call findpts_eval ',ifld,nelv
+c         write(6,*) 'call findpts_eval ',ifld,nelv
          call findpts_eval(inth_multi,fieldout(ifld,1),nfldmax,
      &                     rcode,1,
      &                     proc,1,
      &                     elid,1,
      &                     rst,ndim,npoints,
      &                     field(1,ifld))
-         write(6,*) 'DONE findpts_eval ',ifld,nelv
+c         write(6,*) 'DONE findpts_eval ',ifld,nelv
 
        enddo  
 
 C     Send interpolation values to the corresponding processors 
 C     of remote session
 
-
-      il=0 
+      il=0
+      iaddress=1
       do n=1,nprecv
          id    = inforecv(n,1)
          nrecv = inforecv(n,2)
          len=nfld_neknek*nrecv*wdsize
-         call mpi_irecv(rrecv,len,mpi_byte,id,id
-     $                          ,intercomm,status,msg(n),ierr)
+         call mpi_irecv(rrecv(iaddress),len,mpi_byte,id,id
+     $                          ,intercomm,msg(n),ierr)
+         iaddress = iaddress + nfld_neknek*nrecv
       enddo 
 
       call neknekgsync()
-
 
       il=0
       do n=1,npsend   
@@ -717,7 +717,7 @@ C     of remote session
             if (if3d) iz=iden(3,il)
             ie=iden(ldim+1,il)      
             do ifld=1,nfld_neknek
-               valint(ix,iy,iz,ie,ifld)=rrecv(nfld_neknek*(i-1)+ifld)
+               valint(ix,iy,iz,ie,ifld)=rrecv(nfld_neknek*(il-1)+ifld)
             enddo
          enddo
       enddo 
