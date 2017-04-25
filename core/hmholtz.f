@@ -389,8 +389,9 @@ c$$$  c
 c$$$  else
 c
 c
-         CALL GLO_GRAD(DXM1,U,DUDR,DUDS,DUDT)
+         call global_grad3(dxm1,u,dudr,duds,dudt)
 
+!FIXME: Create a new subroutine for this kernel
 !$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
             tmp1(i) = helm1(i)*(
@@ -425,7 +426,8 @@ c$$$  CALL ADDCOL3 (TMP3,DUDR,G5M1,NTOT)
 c$$$  CALL ADDCOL3 (TMP3,DUDS,G6M1,NTOT)
 c$$$  CALL COL2    (TMP3,HELM1,NTOT)
 
-         CALL GLO_2GRAD(DXTM1,TMP1,TMP2,TMP3,TM1,TM2,TM3)
+!FIXME: Div should also include summation
+         CALL global_div3(dxtm1,tmp1,tmp2,tmp3,tm1,tm2,tm3)
 
 !$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
