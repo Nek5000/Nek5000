@@ -2,39 +2,38 @@ c
 c     Include file to dimension static arrays
 c     and to set some hardwired run-time parameters
 c
-      integer ldim,lx1,lxd,lx2,lx1m,lelg,lpmin,lpmax,ldimt
-      integer ax1,ax2,lpx1,lpx2,lbx1,lbx2
-      integer toteq,lcvx1
+      integer ldim,lx1,lxd,lx2,lx1m,lelg,lelt,lpmin,lpmax,ldimt
+      integer lpelt,lbelt,toteq,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
-      integer maxobj,lpert,lpratio
+      integer maxobj,lpert,nsessmax,lxo
 
-      ! GENERAL
-      parameter (ldim=3)        ! domain dimension
-      parameter (lx1=8)         ! polynomial order
-      parameter (lxd=12)        ! polynomial order for over-integration (dealiasing) 
-      parameter (lx2=lx1-0)     ! polynomial order for pressure (lx1 or lx1-2)
-
-      parameter (lelg=10000)    ! max total number of elements
-      parameter (lpmin=1)       ! min MPI ranks
-      parameter (lpmax=1024)    ! max MPI ranks
-      parameter (ldimt=1)       ! max auxiliary fields (temperature + scalars)
+      ! BASIC
+      parameter (ldim=3)               ! domain dimension (2 or 3)
+      parameter (lx1=8)                ! p-order (avoid uneven and values <6)
+      parameter (lxd=12)               ! p-order for over-integration (dealiasing) 
+      parameter (lx2=lx1-0)            ! p-order for pressure (lx1 or lx1-2)
+                                     
+      parameter (lelg=10000)           ! max total number of elements
+      parameter (lpmin=1)              ! min MPI ranks
+      parameter (lpmax=1024)           ! max MPI ranks
+      parameter (ldimt=1)              ! max auxiliary fields (temperature + scalars)
 
       ! OPTIONAL
-      parameter (lhis=1000)                     ! max history points
-      parameter (maxobj=4)                      ! max number number of objects
-      parameter (lpratio=5)                     ! max ratio of ranks between sessions 
-      parameter (lpert=1)                       ! max perturbation modes
-      parameter (toteq=5)                       ! number of conserved scalars in cmt
+      parameter (lhis=1000)            ! max history points
+      parameter (maxobj=4)             ! max number of objects
+      parameter (lpert=3)              ! max perturbation modes
+      parameter (toteq=5)              ! max number of conserved scalars in cmt
+      parameter (nsessmax=2)           ! max sessions
+      parameter (lxo=lx1)              ! max grid size on output (lxo>=lx1)
+      parameter (lelx=1,lely=1,lelz=1) ! global tensor mesh dimensions
+      parameter (mxprev=20,lgmres=30)  ! max dim of projection & Krylov space
+      parameter (lorder=3)             ! max order in time
 
-      parameter (lelx=1,lely=1,lelz=1)          ! global tensor mesh dimensions
-      parameter (lx1m=lx1)                      ! polynomial order mesh solver
-      parameter (ax1=lx1,ax2=lx2)               ! averages
-      parameter (lbx1=lx1,lbx2=lx2)             ! mhd
-      parameter (lpx1=lx1,lpx2=lx2)             ! linear stability
-      parameter (lcvx1=lx1)                     ! cvode
-
-      parameter (mxprev=20,lgmres=30)           ! projection + Krylov space dimension
-      parameter (lorder=3)                      ! upper limit for order in time
+      parameter (lelt=lelg/lpmin + 4)  ! max number of local elements per MPI rank
+      parameter (lx1m=lx1)             ! polynomial order mesh solver
+      parameter (lbelt=lelt)           ! mhd
+      parameter (lpelt=lelt)           ! linear stability
+      parameter (lcvelt=lelt)          ! cvode
 
       ! INTERNALS
       include 'SIZE.inc'
