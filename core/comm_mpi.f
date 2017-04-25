@@ -533,7 +533,7 @@ c     Communicate unhappiness to the other session
 
 
 #ifdef PAPI
-      call nek_flops(papi_flops,papi_mflops)
+      call nek_mflops(papi_flops,papi_mflops)
 #endif
 
       tstop  = dnekclock()
