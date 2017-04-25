@@ -4,11 +4,8 @@ Read the AMG data files and produce solver input files.
 
 #Build Instructions
 
-* Run `hypre/install`
-* Edit `maketools` and add include path to `CC` e.g. `CC=gcc -I./hypre/include`
-* Use `USR_LFLAGS` to link against HYPRE e.g. `USR_LFLAGS=-L./hypre/lib -lHYPRE`
-* Finally run `maketools amg_hypre`
-
+* Build Hypre with `hypre/install`
+* Run `maketools amg_hypre`
 
 #Workflow
 
