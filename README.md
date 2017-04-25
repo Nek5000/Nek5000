@@ -75,7 +75,7 @@ Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). If you ar
 2. Download fork with `git clone -o myfork https://github.com/<username>/Nek5000.git ~/Nek5000`
 3. Add our repo `cd ~/Nek5000; git remote add origin https://github.com/Nek5000/Nek5000.git`
 4. Download our repo `git fetch origin`
-5. Set upstream for local develop branch `git branch --set-upstream develop remotes/origin/develop`
+5. Set upstream for local master branch `git branch --set-upstream master remotes/origin/master`
 6. Run `~/Nek5000/bin/git-hub setup —u <your username on GitHub> --global`
 7. Add this to your [hub] section in `~/.gitconfig`:
 
