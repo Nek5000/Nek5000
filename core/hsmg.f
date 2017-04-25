@@ -605,10 +605,11 @@ c----------------------------------------------------------------------
       include 'INPUT'  ! if3d
       include 'TSTEP'  ! ifield
       include 'HSMG'
+      integer enx,eny,enz,pm,mg_work_size,lt
       parameter (lt=lx1*ly1*lz1*lelt)
+
       real e(1),r(1)
 
-      integer enx,eny,enz,pm,mg_work_size,lt
 
       zero =  0
       one  =  1
@@ -1084,7 +1085,7 @@ c     clobbers r
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
 #else
-      call hsmg_do_fast_acc(e,r,
+      call hsmg_do_fast    (e,r,
      $      mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $      mg_fast_d(mg_fast_d_index(l,mg_fld)),
      $     mg_nh(l)+2)
@@ -1111,15 +1112,18 @@ c     clobbers r
       nv=nl
 !FIXME - 2D should be done later, in a similar fashion
       if(.not.if3d) then
-         do ie=1,nelt
-            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,2,1,ie),s(1,1,2,ie))
-            do i=1,nn
-               r(i,je)=d(i,ie)*e(i,ie)
-            enddo
-            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,1,1,ie),s(1,2,2,ie))
-         enddo
+         if(nid.eq.0) write(6,*)
+     $        '2D Not currently implemented on for OpenACC'
+         call exitt()
+!         do ie=1,nelt
+!            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+!     $                         ,s(1,2,1,ie),s(1,1,2,ie))
+!            do i=1,nn
+!               r(i,je)=d(i,ie)*e(i,ie)
+!            enddo
+!            call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
+!     $                         ,s(1,1,1,ie),s(1,2,2,ie))
+!         enddo
       else
 !$ACC PARALLEL LOOP GANG
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
@@ -2254,7 +2258,6 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       integer p_msk,p_b
       logical if_hybrid
 
-      call acc_copy_all_in()
 
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
@@ -2353,8 +2356,7 @@ c     call exitt
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
 !                col2 within dsavg_acc
       call dsavg_acc(z)
-   
-      call acc_copy_all_out()
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2564,9 +2566,9 @@ c
          call hsmg_tnsr1_2d(v,nv,nu,A,At)
       else
 #ifdef _OPENACC
-         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #else
-         call hsmg_tnsr1_3d_acc2 (v,nv,nu,A,At,At)
+         call hsmg_tnsr1_3d     (v,nv,nu,A,At,At)
 #endif
       endif
       return
@@ -2608,12 +2610,16 @@ c----------------------------------------------------------------------
       integer nv,nu
       real A(nv,nu),Bt(nu,nv),Ct(nu,nv)
       real v(nv*nv*nv*nelt),tmp
+      real local_work(nv*nv*nv*nelt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
 !FIXME This version has better parallelism because it is parallelized
-!     over the nelt dimension, but it does not give the correct
-!     answer due to some bug? Using slower version *_acc2
+!     over the element array compared to the *_acc2 version.
+!     We had to create a local array on the stack (local_work)
+!     so that we weren't reading and writing into v at the same
+!     time.
+
       e0=1
       es=1
       ee=nelt
@@ -2626,7 +2632,7 @@ c----------------------------------------------------------------------
 
       nu3 = nu**3
       nv3 = nv**3
-
+!$ACC DATA CREATE(local_work)
 !$ACC PARALLEL LOOP GANG
 !$ACC&         PRESENT(v,A,Bt,Ct) PRIVATE(work,work2)
       do e=e0,ee,es
@@ -2686,13 +2692,19 @@ c----------------------------------------------------------------------
                   tmp = tmp + work2(i0)*Ct(k,j)
                enddo
 !$ACC END LOOP
-               v(j0) = tmp
+               local_work(j0) = tmp
             enddo
          enddo
 !$ACC END LOOP
       enddo
 !$ACC END PARALLEL LOOP
 
+!$ACC PARALLEL LOOP GANG VECTOR
+      do i=1,nv*nv*nv*nelt
+         v(i) = local_work(i)
+      enddo
+!$ACC END PARALLEL LOOP
+!$ACC END DATA
       return
       end
 c----------------------------------------------------------------------
@@ -2705,7 +2717,9 @@ c----------------------------------------------------------------------
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
-
+!     This version does not use a local stack array, but gets
+!     no parallelism on the element dimension. Would not recommend
+!     using.
       e0=1
       es=1
       ee=nelt
@@ -2825,9 +2839,9 @@ c------------------------------------------   T  -----------------------
       include 'SIZE'
       include 'HSMG'
       logical ifdssum
+      integer l,integer,lt
       parameter (lt=lx1*ly1*lz1*lelt)
       real r(1)
-      integer l,integer,lt
 
       call hsmg_do_wt(r,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))

@@ -1,0 +1,220 @@
+c-----------------------------------------------------------------------
+c
+c     8/27/03
+c
+c     This is the .usr file for a 3D Hagen-Poiseiulle flow, assuming
+c     a unit-radius pipe (in the x-y plane) with flow in the z direction.
+c
+c     Periodic boundary conditions in z are assumed.
+c
+c     A unit-amplitude parabolic profile is specified as U = 1-r^2.
+c
+c     The required forcing function, dp/dz, is given by:
+c
+c     A*dx*dp/dz = -2 mu * 2piR*dx      ( R = 1 )
+c
+c
+c          dp
+c     ==>  -- = - 4 mu
+c          dz
+c
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+C
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+c
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+C
+      qvol   = 0.0
+      source = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk    ! called once per step
+      include 'SIZE'
+      include 'TOTAL'
+c
+      n = nx1*ny1*nz1*nelv
+
+      if (mod(istep,10).eq.0 .or. istep.le.100) then
+         vx2 = glsc3(vx,vx,bm1,n) / volvm1
+         vy2 = glsc3(vy,vy,bm1,n) / volvm1
+         vz2 = glsc3(vz,vz,bm1,n) / volvm1
+         if (vx2.gt.0) vx2 = sqrt(vx2)
+         if (vy2.gt.0) vy2 = sqrt(vy2)
+         if (vz2.gt.0) vz2 = sqrt(vz2)
+         vxm = glamax(vx,n)
+         vym = glamax(vy,n)
+         vzm = glamax(vz,n)
+         if (nid.eq.0) write(6,1) istep,time,vx2,vy2,vz2,vxm,vym,vzm
+    1    format(i7,1p7e14.7,' err2')
+      endif
+
+      if (istep.gt.iostep) ifxyo = .false.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (i,j,k,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      common /ogeom/ ox(lx1,ly1,lz1,lelv)
+     $             , oy(lx1,ly1,lz1,lelv)
+      integer e,eg
+c
+      e = gllel(eg)
+
+      xo = ox(i,j,k,e)
+      yo = oy(i,j,k,e)
+
+      ux = 0.0
+      uy = 0.0
+
+      r2 = xo*xo + yo*yo
+      uz = 2.*(1 - 4.*r2) ! ubar = 1.
+
+      temp=0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (i,j,k,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      common /ogeom/ ox(lx1,ly1,lz1,lelv)
+     $             , oy(lx1,ly1,lz1,lelv)
+      integer e,eg
+c
+      e = gllel(eg)
+
+      xo = ox(i,j,k,e)
+      yo = oy(i,j,k,e)
+
+      ux = 0.0
+      uy = 0.0
+
+      r2 = xo*xo + yo*yo
+      uz = 2.*(1 - 4.*r2) ! ubar = 1.
+
+      temp = 0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+c
+c     Force exterior points to unit circle in working precision
+c
+      e1 = 1.0
+      e1 = e1 - 1.e-4
+      do ie=1,nelt
+      do i=1,8
+        rr = xc(i,ie)*xc(i,ie) + yc(i,ie)*yc(i,ie)
+        if (rr.gt.e1) then
+           rr = sqrt(rr)
+           rn = 1./rr
+           xc(i,ie) = rn*xc(i,ie)
+           yc(i,ie) = rn*yc(i,ie)
+c          write(6,1) ie,i,rn,xc(i,ie),yc(i,ie),' rnew'
+        endif
+      enddo
+      enddo
+    1 format(2i5,1p3e18.9,a5)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+      common /ogeom/ ox(lx1,ly1,lz1,lelv)
+     $             , oy(lx1,ly1,lz1,lelv)
+
+c     Geometry modification for helical pipe
+
+      diam  = 1.0
+      amp   = 0.5000
+      pitch = 6.0
+
+
+      z0 = 0.
+      z1 = pitch
+      call rescale_x (zm1,z0,z1)
+
+      one  = 1.
+      pi   = 4.*atan(one)
+      dtdz = 2.*pi/pitch
+
+      rad  = diam/2.
+      radm = -rad
+      call rescale_x (xm1,radm,rad)
+      call rescale_x (ym1,radm,rad)
+
+      n = nx1*ny1*nz1*nelv
+      call copy(ox,xm1,n)
+      call copy(oy,ym1,n)
+
+c     account for elliptic shape, and induce offset
+
+      a2pi = 2*pi*amp
+      gamm = atan2(pitch,a2pi)
+      dpd  = 1./cos(gamm)      ! D' / D (eccentricity of ellipse)
+
+      do i=1,n                  ! preset offset twist
+         x  = xm1(i,1,1,1)
+         y  = ym1(i,1,1,1)
+         z  = zm1(i,1,1,1)
+         th = -dtdz*z
+         c  = cos(th)
+         s  = sin(th)
+         xm1(i,1,1,1) = c*x - s*y
+         ym1(i,1,1,1) = s*x + c*y
+      enddo
+
+      call cadd ( xm1, amp, n ) ! offset center
+c     call cmult( ym1, dpd, n )
+
+      do i=1,n                  ! make helix
+         x  = xm1(i,1,1,1)
+         y  = ym1(i,1,1,1)
+         z  = zm1(i,1,1,1)
+         th = dtdz*z
+         c  = cos(th)
+         s  = sin(th)
+         xm1(i,1,1,1) = c*x - s*y
+         ym1(i,1,1,1) = s*x + c*y
+      enddo
+
+      param(59) = 1.   !  All elements deformed
+      ifxyo     = .true.
+      
+      return
+      end
+c-----------------------------------------------------------------------

@@ -1168,6 +1168,29 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      function glsum_acc (x,n)
+      DIMENSION X(n)
+      DIMENSION TMP(1),WORK(1)
+
+      TSUM = 0.
+
+!$ACC PARALLEL LOOP GANG VECTOR REDUCTION(+:tsum)
+!$ACC&              PRESENT(X)
+      DO I=1,N
+         TSUM = TSUM+X(I)
+      ENDDO
+!$ACC END PARALLEL LOOP
+
+      TMP(1)=TSUM
+
+      CALL GOP(TMP,WORK,'+  ',1)
+
+      GLSUM = TMP(1)
+
+      return
+      END
+c-----------------------------------------------------------------------
       real function glamax(a,n)
       REAL A(1)
       DIMENSION TMP(1),WORK(1)

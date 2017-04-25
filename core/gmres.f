@@ -294,7 +294,14 @@ c
 
       imsh = 1
       isd  = 1
+#ifdef _OPENACC
+!FIXME when it is fixed, call axhelm_acc here. The routine is
+!     untested because of a bug in ortho_acc, but the implementation
+!     is there
       call axhelm (w,x,h1,h2,imsh,isd)
+#else
+      call axhelm (w,x,h1,h2,imsh,isd)
+#endif
       call dssum  (w,nx1,ny1,nz1)
       call col2   (w,pmask,n)
 
@@ -401,11 +408,17 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
             etime2 = dnekclock()
 
-c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
+c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
+
+!MJO - 3/17/17 - for variable h1, h2 in time
+
             if (ifmgrid) then
-!$ACC DATA COPY(w_gmres) COPY(z_gmres)
+!FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
+               call acc_copy_all_in()
+!$ACC DATA COPY(w_gmres,z_gmres,h1,h2)
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
 !$ACC END DATA
+               call acc_copy_all_out()
             else                                            !  j
                kfldfdm = ndim+1
                if (param(100).eq.2) then
@@ -419,14 +432,12 @@ c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
+            call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
 
-            call ortho        (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
-
-            call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
-                                                    !        j
 
                                                     !      -1
             call col2(w_gmres,ml_gmres,n)           ! w = L   w
@@ -468,10 +479,10 @@ c           enddo
 
             !apply Givens rotations to new column
             do i=1,j-1
-               temp = h_gmres(i,j)                   
-               h_gmres(i  ,j)=  c_gmres(i)*temp 
-     $                        + s_gmres(i)*h_gmres(i+1,j)  
-               h_gmres(i+1,j)= -s_gmres(i)*temp 
+               temp = h_gmres(i,j)
+               h_gmres(i  ,j)=  c_gmres(i)*temp
+     $                        + s_gmres(i)*h_gmres(i+1,j)
+               h_gmres(i+1,j)= -s_gmres(i)*temp
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
                                                       !            ______
@@ -488,7 +499,7 @@ c           enddo
 
             rnorm = abs(gamma_gmres(j+1))*norm_fac
             ratio = rnorm/div0
-            if (ifprint.and.nio.eq.0) 
+            if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
@@ -501,7 +512,7 @@ c           enddo
 
             temp = 1./alpha
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
-                                                       !  j+1            
+                                                       !  j+1
          enddo
   900    iconv = 1
  1000    continue
@@ -543,10 +554,11 @@ c-----------------------------------------------------------------------
 c
 c     Sets up the gather scatter and the SEM operators
 c
-      include 'SIZE'  
-      include 'TOTAL' 
- 
-      common /c_is1/ glo_num(lxs*lys*lzs*lelv)  
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /c_is1/ glo_num(lxs*lys*lzs*lelv)
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /handle/ gsh_dd

@@ -1,7 +1,7 @@
       subroutine plan1 (igeom)
 C-------------------------------------------------------------------------
 C
-C     Compute pressure and velocity using consistent approximation spaces.     
+C     Compute pressure and velocity using consistent approximation spaces.
 C
 C-------------------------------------------------------------------------
       include 'SIZE'
@@ -231,7 +231,7 @@ C
 c------------------------------------------------------------------------
       subroutine ortho (respr)
 
-C     Orthogonalize the residual in the pressure solver with respect 
+C     Orthogonalize the residual in the pressure solver with respect
 C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
 
       include 'SIZE'
@@ -240,7 +240,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       include 'PARALLEL'
       include 'SOLN'
       include 'TSTEP'
-      real respr (lx2,ly2,lz2,lelv)
+      real respr (lx2*ly2*lz2*lelv)
       integer*8 ntotg,nxyz2
 
       nxyz2 = nx2*ny2*nz2
@@ -255,7 +255,58 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
        elseif (ifield.eq.ifldmhd) then
          if (ifbcor) then
             rlam = glsum (respr,ntot)/ntotg
-            call cadd (respr,-rlam,ntot)
+           call cadd (respr,-rlam,ntot)
+         endif
+       else
+         call exitti('ortho: unaccounted ifield = $',ifield)
+      endif
+
+      return
+      end
+
+c------------------------------------------------------------------------
+      subroutine ortho_acc (respr)
+!FIXME Temporarily made acc version of this routine to avoid
+!     crash in setup. Adding better version of glsum that
+!     checks for data locality will solve it
+C     Orthogonalize the residual in the pressure solver with respect
+C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'TSTEP'
+      real respr (lx2*ly2*lz2*lelv)
+      integer*8 ntotg,nxyz2
+
+!FIXME ortho_acc doesn't work currently. The result of glsum_acc
+!     is different on the gpu and on the cpu - it is a bug and
+!     has yet to be solved
+      nxyz2 = nx2*ny2*nz2
+      ntot  = nxyz2*nelv
+      ntotg = nxyz2*nelgv
+! MJO - 3-17-17 - Inlined cadd function for acc
+      if (ifield.eq.1) then
+         if (ifvcor) then
+            rlam  = glsum_acc (respr,ntot)/ntotg
+            !call cadd (respr,-rlam,ntot)
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+         endif
+       elseif (ifield.eq.ifldmhd) then
+         if (ifbcor) then
+            rlam = glsum_acc (respr,ntot)/ntotg
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+!           call cadd (respr,-rlam,ntot)
          endif
        else
          call exitti('ortho: unaccounted ifield = $',ifield)
