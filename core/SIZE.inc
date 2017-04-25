@@ -101,3 +101,7 @@ c
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
       common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
+
+      integer nmaxl
+      parameter 
+     $  (nmaxl=min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))
