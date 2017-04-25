@@ -1,5 +1,4 @@
 #!/bin/bash
-cd hypre
 wget https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz 
 tar -zxvf *.tar.gz
 cd hypre*/src
