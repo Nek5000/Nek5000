@@ -682,7 +682,7 @@ c     overrule tolerance for velocity
       niter = min(maxit,maxcg)
 
       if (.not.ifsolv) then
-         call setfast(h1,h2,imesh)
+         call setfast(h1,h2,imsh)
          ifsolv = .true.
       endif
 C
