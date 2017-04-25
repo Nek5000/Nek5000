@@ -3,7 +3,7 @@ c     Multimesh variables
 c
       include 'GLOBALCOM' 	
 
-      integer intflag(6,lelt)
+      integer intflag(2*ldim,lelt)
       common /intflag/ intflag
 
       integer imask(lx1,ly1,lz1,lelt)
@@ -11,13 +11,6 @@ c
 
       real             valint(lx1,ly1,lz1,lelt,nfldmax)
       common /valmask/ valint
-
-      integer npsend,nprecv,infosend(nmaxcom,2),inforecv(nmaxcom,2)
-     $        ,msg(nmaxcom)
-      common /proclist/ npsend, nprecv, infosend, inforecv, msg
-
-      integer iden(ldim+1,nmaxl)
-      common /pointiden/ iden
 
       integer igeom
       common /cgeom/ igeom
@@ -31,12 +24,13 @@ c
       real bdrylg(lx1*ly1*lz1*lelt,nfldmax,0:2)
       common /mybd/ bdrylg
 
-      real    rst(nmaxcom*ldim)
+      real    rst(nmaxl*ldim)
       common /multipts_r/ rst
 
-      integer rcode(nmaxcom),elid(nmaxcom),proc(nmaxcom)
-     $      , ilist(ldim+1,nmaxcom),npoints
+      integer rcode(nmaxl),elid(nmaxl),proc(nmaxl)
+     $      , ilist(1,nmaxl),npoints
       common /multipts_i/ rcode,elid,proc,ilist,npoints
 
-      integer inth_multi
-      save    inth_multi
+      integer inth_multi2
+      save    inth_multi2
+
