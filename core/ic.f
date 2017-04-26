@@ -2655,8 +2655,8 @@ c-----------------------------------------------------------------------
       call bcast(hdr,iHeaderSize)  
       call mfi_parse_hdr(hdr,ierr)
 
-      ifmpiio = .true.
-      if (nfiler.gt.1) ifmpiio = .false.
+      ifmpiio = .false.
+      if (nfiler.eq.1 .and. abs(param(67)).eq.6) ifmpiio = .true.
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif

@@ -266,9 +266,6 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       character*1    fhdfle1(132)
       character*132   fhdfle
       equivalence   (fhdfle,fhdfle1)
-      character*1    fldfile2(120)
-      integer        fldfilei( 60)
-      equivalence   (fldfilei,fldfile2)
 
       character*1 excode(30)
       character*10 frmat
@@ -312,10 +309,7 @@ c       Open new file for each dump on /cfs
         if (p66.lt.1.0) then
            open(unit=24,file=fldfle,form='formatted',status='unknown')
         else
-           call  izero    (fldfilei,33)
-           len = ltrunc   (fldfle,131)
-           call chcopy    (fldfile2,fldfle,len)
-           call byte_open (fldfile2,ierr)
+           call byte_open (fldfle,ierr)
 c          write header as character string
            call blank(fhdfle,132)
         endif
@@ -1033,8 +1027,8 @@ c-----------------------------------------------------------------------
 
       ifdiro = .false.
 
-      ifmpiio = .true.
-      if(abs(param(65)).gt.1) ifmpiio = .false.
+      ifmpiio = .false.
+      if(abs(param(65)).eq.1 .and. abs(param(66)).eq.6) ifmpiio=.true.
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif
