@@ -102,6 +102,8 @@ c
       common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
 
-      integer nmaxl
+      integer nmaxl,nfldmax
       parameter 
      $  (nmaxl=min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))
+      parameter 
+     $  (nfldmax=min(1+(nsessmax-1)*(4+ldimt),4+ldimt))

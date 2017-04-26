@@ -7,7 +7,7 @@ c
       integer toteq
       integer lcvx1,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
-      integer maxobj,maxmbr,lpert,nsessmax,nfldmax
+      integer maxobj,maxmbr,lpert,nsessmax
 
       ! GENERAL
       parameter (ldim=3)        ! domain dimension
@@ -34,7 +34,6 @@ c
       parameter (lhis=1000)                     ! max history points per MPI rank
       parameter (maxobj=4,maxmbr=lelt*6)        ! max number number of objects
       parameter (nsessmax=1)                    ! multimesh - max number of sessions
-      parameter (nfldmax=1)                     ! multimesh - max number of fields to interpolate
 
       ! INTERNALS
       include 'SIZE.inc'

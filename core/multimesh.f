@@ -506,10 +506,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
       include 'NEKNEK'
-      include 'mpif.h'
       integer i,j,k,n
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-      integer status(mpi_status_size)
       integer jsend(nmaxl)
       common /exchr/ rsend(ldim*nmaxl)
       integer rcode_all(nmaxl),elid_all(nmaxl),proc_all(nmaxl)
@@ -642,14 +640,12 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      include 'mpif.h'
 
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
       common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
 
       character*3 which_field(nfld_neknek)
       real fieldout(nmaxl,nfldmax)
-      integer status(mpi_status_size)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
 
       call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
@@ -679,7 +675,6 @@ c     Interpolate using findpts_eval
 
       ifld = 5
       call field_eval(fieldout(1,ifld),1,t)
-      if (ifld.eq.nfld_neknek) goto 300
 
  300  continue
          
@@ -701,7 +696,6 @@ C--------------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      include 'mpif.h'
       real fieldout(1)
       real fieldin(1)
       integer fieldstride

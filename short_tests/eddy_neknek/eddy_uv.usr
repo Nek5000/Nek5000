@@ -245,12 +245,12 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
          ux = ubc(ix,iy,iz,ie,1)
          uy = ubc(ix,iy,iz,ie,2)
          uz = ubc(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = ubc(ix,iy,iz,ie,4)
+         if (nfld_neknek.gt.3) temp = ubc(ix,iy,iz,ie,5)
       else
          ux = valint(ix,iy,iz,ie,1)
          uy = valint(ix,iy,iz,ie,2)
          uz = valint(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,4)
+         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,5)
       endif
 
       end if
