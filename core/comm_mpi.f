@@ -57,9 +57,6 @@ c      if (nval.lt.(10000+max(lp,lelg))) then
       nekreal = mpi_real
       if (wdsize.eq.8) nekreal = mpi_double_precision
 
-      ifdblas = .false.
-      if (wdsize.eq.8) ifdblas = .true.
-
       ! set word size for INTEGER
       ! HARDCODED since there is no secure way to detect an int overflow
       isize = 4
@@ -536,7 +533,7 @@ c     Communicate unhappiness to the other session
 
 
 #ifdef PAPI
-      call nek_flops(papi_flops,papi_mflops)
+      call nek_mflops(papi_flops,papi_mflops)
 #endif
 
       tstop  = dnekclock()

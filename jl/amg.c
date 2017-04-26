@@ -17,10 +17,10 @@
 #include "sarray_transfer.h"
 #include "gs.h"
 
-#define crs_setup PREFIXED_NAME(crs_setup)
-#define crs_solve PREFIXED_NAME(crs_solve)
-#define crs_stats PREFIXED_NAME(crs_stats)
-#define crs_free  PREFIXED_NAME(crs_free )
+#define crs_setup PREFIXED_NAME(crs_amg_setup)
+#define crs_solve PREFIXED_NAME(crs_amg_solve)
+#define crs_stats PREFIXED_NAME(crs_amg_stats)
+#define crs_free  PREFIXED_NAME(crs_amg_free )
 
 #ifndef AMG_BLOCK_ROWS
 #  define AMG_BLOCK_ROWS 1200

@@ -317,10 +317,11 @@ class NekTestCase(unittest.TestCase):
         all_opts = dict(
             F77 = self.f77,
             CC = self.cc,
-            G = self.g,
+            FFLAGS = self.g,
+            CFLAGS = self.g,
             PPLIST = self.pplist,
             USR_LFLAGS = self.usr_lflags,
-            IFMPI = str(self.ifmpi).lower(),
+            MPI = int(self.ifmpi),
         )
         if opts:
             all_opts.update(opts)

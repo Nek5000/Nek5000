@@ -3,66 +3,86 @@
 # Nek5000 build file
 #-------------------------------------------------------------------------------
 
-# installation path 
+# source path 
 SOURCE_ROOT="$HOME/Nek5000" 
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl" 
 
 # Fortran/C compiler
 F77="mpif77"
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-#PPLIST="" 
+PPLIST="" 
 
-# generic compiler flags
-#G="-g"
-
-# linking flags
-#USR_LFLAGS="-L/usr/lib -lfoo"
-
-###############################################################################
+#-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
-###############################################################################
+#-------------------------------------------------------------------------------
 
-# MPI (default true)
-#IFMPI="false"
+# optional compiler flags
+#FFLAGS=""
+#CFLAGS=""
 
-# profiling (default false)
-IFPROFILING="true"
+# optional linking flags
+#USR_LFLAGS+=" -L/usr/lib -lfoo"
 
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek
 #       a makefile_usr.inc has to be provided containing the build rules 
 #USR="foo.o"
 
-# enable VisIt in situ
+# MPI (default 1) 
+#MPI=0
+
+# profiling (default 1)
+#PROFILING=0
+
+# VisIt in situ (default 0)
+#VISIT=1
 #  Note: you can override the lib and include paths. VISIT_LIB and VISIT_INC
 #  If VISIT_STOP is set the simulation will stop after first step and wait
 #  for VisIt to connect.
-#IFVISIT=true
 #VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
 #VISIT_STOP=true
 
-# paths
-SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
-SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
-SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 set -e
+: ${MPI:=1}
+: ${PROFILING:=1}
+: ${VISIT:=0}
+
 # assign version tag
 mver=17.0.0
+
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
   SOURCE_ROOT="$2"
   echo "change source code directory to: ", $SOURCE_ROOT
-  SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
-  SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
-  SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
 fi
-# do some checks and create makefile
-source $SOURCE_ROOT_CORE/makenek.inc
-# compile
-make -j4 -f makefile 2>&1 | tee compiler.out
+
+if [ $MPI -eq 0 ]; then
+  jllib="jlserial" 
+else
+  jllib="jl" 
+fi
+USR_LFLAGS+=" -L$SOURCE_ROOT_JL -l$jllib"
+
+# create makefile
+source $SOURCE_ROOT/core/makenek.inc
+
+# compile libjl if needed
+if [ ! -f "$SOURCE_ROOT_JL/lib$jllib.a" ]; then
+  make -j4 -B -C $SOURCE_ROOT_JL MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+   2>&1 | tee compiler.out
+  if [ $MPI -ne 0 ]; then 
+    make -j4 -B -C $SOURCE_ROOT_JL MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+     2>&1 | tee compiler.out 
+  fi
+fi
+
+# compile nek
+make -j4 -f makefile 2>&1 | tee -a compiler.out
+
 exit 0

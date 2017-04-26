@@ -1,29 +1,26 @@
-CC=mpicc -std=c99 --pedantic
-CFLAGS+=-DMPI
-CFLAGS+=-DPREFIX=jl_
-CFLAGS+=-DNO_NEK_EXITT
-CFLAGS+=-DGLOBAL_LONG
-LDFLAGS+=-lm
+MPI ?= 0
+ADDUS ?= 0
+LIBNAME ?= libjlserial.a
 
-#CFLAGS+=-DPRINT_MALLOCS=1
+ifneq (0,$(MPI))
+  LIBNAME = libjl.a
+  G+=-DMPI
+endif
 
-CFLAGS+=-DUSE_NAIVE_BLAS
-#CFLAGS+=-DUSE_CBLAS
-#LDFLAGS+=-lcblas
+ifneq (0,$(ADDUS))
+  G+=-DUNDERSCORE
+endif
 
-#CFLAGS+=-DAMG_DUMP
-CFLAGS+=-DGS_TIMING -DGS_BARRIER
+G+=-DPREFIX=jl_
+G+=-DGLOBAL_LONG_LONG
+G+=-DAMG_BLOCK_ROWS=2400
+#G+=-DPRINT_MALLOCS=1
+#G+=-DGS_TIMING -DGS_BARRIER
+#G+=-DUSE_NAIVE_BLAS
+#G+=-DUSE_CBLAS
 
-#CFLAGS+=-O0 -g
-CFLAGS+=-O3 -march=native
-
-CFLAGS+=-W -Wall -Wno-unused-function -Wno-unused-parameter
-#CFLAGS+=-Minform=warn
-
-CCCMD=$(CC) $(G) $(CFLAGS)
+CCCMD=$(CC) -O2 $(G) $(CFLAGS)
 LINKCMD=$(CC) $(G) $(LDFLAGS)
-#RLINKCMD = $(LD) -r
-.PHONY: cmds deps tests clean objects odepinfo
 
 TESTS=sort_test sort_test2 sarray_sort_test spchol_test \
       comm_test crystal_test sarray_transfer_test \
@@ -34,10 +31,20 @@ TESTS=sort_test sort_test2 sarray_sort_test spchol_test \
       findpts_el_3_test findpts_el_3_test2 \
       findpts_local_test findpts_test
 
-CRS=$(AMG)
+GS=gs.o sort.o sarray_transfer.o sarray_sort.o \
+   gs_local.o fail.o crystal.o comm.o tensor.o
+XXT=sparse_cholesky.o xxt.o
+AMG=amg.o
+FWRAPPER=fcrystal.o fcrs.o findpts.o
+INTP=findpts_local.o obbox.o poly.o lob_bnd.o findpts_el_3.o findpts_el_2.o
 
+.PHONY: lib cmds deps tests clean objects odepinfo
+
+lib: $(GS) $(XXT) $(AMG) $(FWRAPPER) $(INTP)
+	ar cr $(LIBNAME) $?
+	ranlib $(LIBNAME)
 tests: $(TESTS) ;
-clean: ; @$(RM) $(TESTS) *.o *.s
+clean: ; $(RM) *.o *.s *.a
 
 cmds: ; @echo CC = $(CCCMD); echo LINK = $(LINKCMD);
 
@@ -47,21 +54,17 @@ odepinfo: deps objects; @./odep_info.py *.o
 
 -include makefile.cdep
 
-%.o: %.c ; @echo CC $<; $(CCCMD) -c $< -o $@
-%.s: %.c ; @echo CC -S $<; $(CCCMD) -S $< -o $@
+%.o: %.c ; $(CCCMD) -c $< -o $@
+%.s: %.c ; $(CCCMD) -S $< -o $@
 objects: $(OBJECTS) ;
 
-poly_imp.h: gen_poly_imp.c
-	$(RM) poly_imp.h;
-	$(CC) -lgmp -lm gen_poly_imp.c -o gen_poly_imp;
-	./gen_poly_imp > poly_imp.h;
-	$(RM) gen_poly_imp
+#poly_imp.h: gen_poly_imp.c
+#	$(RM) poly_imp.h;
+#	$(CC) -lgmp -lm gen_poly_imp.c -o gen_poly_imp;
+#	./gen_poly_imp > poly_imp.h;
+#	$(RM) gen_poly_imp
 
-GS_OBJECTS=gs.o sort.o sarray_transfer.o sarray_sort.o \
-           gs_local.o fail.o crystal.o comm.o tensor.o
-
-XXT=sparse_cholesky.o xxt.o
-AMG=amg.o
+CRS=$(AMG)
 
 sort_test: sort.o fail.o comm.o tensor.o gs_local.o sort_test.o ; @echo LINK $@; $(LINKCMD) $^ -o $@
 sort_test2: sort.o fail.o comm.o tensor.o gs_local.o sort_test2.o ; @echo LINK $@; $(LINKCMD) $^ -o $@

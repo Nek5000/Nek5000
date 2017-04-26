@@ -1,6 +1,10 @@
+c
+c interpolation wrapper for usage in .usr file
+c note: don't call outside
+c
+c-----------------------------------------------------------------------
       subroutine intp_setup(tolin)
 c
-c setup routine for interpolation tool
 c tolin ... stop point seach interation if 1-norm of the step in (r,s,t) 
 c           is smaller than tolin 
 c
@@ -31,70 +35,68 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_do(fieldout,fieldin,nfld,xp,yp,zp,n,ifpts)
+      subroutine intp_do(fldout,fldin,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp)
 c
-c wrapper to interpolate input fields at given points
-c
-c fieldout  ... output field(s) (:,1:nfld)
-c fieldin   ... source field(s) (:,1:nfld)
-c nfld      ... number of fields in fieldin
-c xp,yp,zp  ... interpolation xp(n),yp(n),zp(n)
-c n         ... dim of xp,yp,zp
-c ifpts     ... find interpolation points
+c fldout    ... output field(s) dim (*,nfld)
+c fldin     ... source field(s) dim (*,nfld)
+c nfld      ... number of fields
+c xp,yp,zp  ... interpolation points dim (n)
+c n         ... number of points
+c iwk       ... integer working array dim > (nmax,3)
+c rwk       ... real working array dim > (nmax,ldim+1)
+c nmax      ... maximum number of points per MPI rank
+c iflp      ... look-up interpolation points
 c
       include 'SIZE'
 
       common /intp/   tol
       common /intp_h/ ih_intp
 
-      real    fieldin(*),fieldout(*)
+      real    fldin(*),fldout(*)
       real    xp(*),yp(*),zp(*)
-      logical ifpts
 
-      parameter (lpts=INTP_MAXPTS) ! max points per rank
-      real    dist(lpts)
-      real    rst(lpts*ldim)
-      common /intp_r/ rst,dist
+      real    rwk(nmax,*)
+      integer iwk(nmax,*) 
 
-      integer rcode(lpts),elid(lpts),proc(lpts)
-      common /intp_i/ rcode,elid,proc
+      logical iflp
 
       integer nn(2)
       logical ifot
 
 
-      ifot = .false.
+      ifot = .false. ! transpose output field
 
       if(nio.eq.0) write(6,*) 'call intp_do'
 
-      if(n.gt.lpts) then
+      if(n.gt.nmax) then
         write(6,*)
-     &   'ABORT: n>lpts, increase lelt in intp_do', n, lpts
+     &   'ABORT: n>nmax in intp_do', n, nmax
         call exitt
       endif
 
       ! locate points (iel,iproc,r,s,t)
       nfail = 0
-      if(ifpts) then
+      if(iflp) then
         if(nio.eq.0) write(6,*) 'call findpts'
-        call findpts(ih_intp,rcode,1,
-     &               proc,1,
-     &               elid,1,
-     &               rst,ndim,
-     &               dist,1,
+        call findpts(ih_intp,
+     &               iwk(1,1),1,
+     &               iwk(1,3),1,
+     &               iwk(1,2),1,
+     &               rwk(1,2),ndim,
+     &               rwk(1,1),1,
      &               xp,1,
      &               yp,1,
      &               zp,1,n)
         do in=1,n
            ! check return code
-           if(rcode(in).eq.1) then
-             if(dist(in).gt.10*tol) then
+           if(iwk(in,1).eq.1) then
+             if(rwk(in,1).gt.10*tol) then
                nfail = nfail + 1
                if (nfail.le.5) write(6,'(a,1p4e15.7)')
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2: ',
-     &     xp(in),yp(in),zp(in),dist(in)
+     &     xp(in),yp(in),zp(in),rwk(in,1)
              endif
-           elseif(rcode(in).eq.2) then
+           elseif(iwk(in,1).eq.2) then
              nfail = nfail + 1
              if (nfail.le.5) write(6,'(a,1p3e15.7)')
      &        ' WARNING: point not within mesh xy[z]: !',
@@ -113,12 +115,12 @@ c
            iout   = ifld
            is_out = nfld
          endif
-         call findpts_eval(ih_intp,fieldout(iout),is_out,
-     &                     rcode,1,
-     &                     proc,1,
-     &                     elid,1,
-     &                     rst,ndim,n,
-     &                     fieldin(iin))
+         call findpts_eval(ih_intp,fldout(iout),is_out,
+     &                     iwk(1,1),1,
+     &                     iwk(1,3),1,
+     &                     iwk(1,2),1,
+     &                     rwk(1,2),ndim,n,
+     &                     fldin(iin))
       enddo
 
       nn(1) = iglsum(n,1)
