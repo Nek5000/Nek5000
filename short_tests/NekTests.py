@@ -670,6 +670,19 @@ class CmtInviscidVortex(NekTestCase):
         print('SUCCESS: Last line of l2norms.dat was within 10% of reference values\n  test vals:{0}\n  ref vals: {1}'.format(test_vals, ref_vals))
 
     def setUp(self):
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '25',
+            lxd       = '36',
+            lx2       = 'lx1-0',
+            lelg      = '50',
+            ldimt     = '3',
+            toteq     = '5',
+        )
+        self.config_size()
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
         cls = self.__class__
         try:
             os.remove(os.path.join(self.examples_root, cls.example_subdir, 'l2norms.dat'))
