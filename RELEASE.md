@@ -20,11 +20,11 @@
 ## Backwards-Incompatible Changes 
 
 * When p20>0 use it as solver tolerance for temperature instead of p22 (only for Helmholtz) 
-* Replaced interpolation wrapper `intpts()` by `intp()` with a different interface
-* Replaced `g2gi()` by new generic fld reader `gfldr.h`
-* Moved `makenek` from core to bin folder
+* Replaced usr interpolation wrapper `intpts()` by `intp()` with a different interface
+* Replaced `g2gi()` by new generic fld reader `gfldr()`
+* Moved `makenek` from `core` to `bin` folder
 * Removed `MOAB` support 
-* Replaced `hpts.in` by `his.in`  and `hpts.out` by `<casename>.his` 
+* Replaced `hpts.in/hpts.out` by `<casename>.his` 
 * Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
 * Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:solver=amg) 
