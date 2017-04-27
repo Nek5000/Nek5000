@@ -815,6 +815,76 @@ class Eddy_LegacySize(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
+
+# ####################################################################
+#   eddy_neknek: eddy_neknek.rea
+# ####################################################################
+
+class Eddy_Neknek(NekTestCase):
+    example_subdir  = 'eddy_neknek'
+    case_name       = 'eddy_uv'
+
+    def setUp(self):
+        cls = self.__class__
+
+        self.size_params = dict(
+            ldim='2',
+            lx1='8',
+            lxd='12',
+            lx2='lx1-2',
+            lelg='1000',
+            nsessmax='2',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap(os.path.join(self.examples_root, cls.example_subdir, 'inside'))
+        self.run_genmap(os.path.join(self.examples_root, cls.example_subdir, 'outside'))
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        from lib.nekBinRun import run_neknek
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'outside',
+            np_inside = 1,
+            np_outside = 1,
+            step_limit = 1000,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        from lib.nekBinRun import run_neknek
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'outside',
+            np_inside = 1,
+            np_outside = 1,
+            step_limit = 1000,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+    def tearDown(self):
+        self.move_logs()
+#
 ####################################################################
 #  kov_st_state; kov_st_stokes.rea
 ####################################################################
