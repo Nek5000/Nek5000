@@ -793,9 +793,10 @@ c-----------------------------------------------------------------------
      $    ,wr(lx),ws(lx),wt(lx)
       common /ctmp0/ ur,us,ut,vr,vs,vt,wr,ws,wt
 
-      integer e,j
+      integer e
+      real j
  
-      n     = lx1*ly1*lz1*nelt
+      ntot  = lx1*ly1*lz1*nelt
       nxyz  = lx1*ly1*lz1
       nx    = nx1 - 1      ! Polynomial degree
 
@@ -843,9 +844,6 @@ c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
         enddo
        enddo
       endif
-
-      return
-
 c
 c    Avg at bndry
 c
