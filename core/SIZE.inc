@@ -100,11 +100,11 @@ c - - SIZE internals
       parameter(lcvz1=1 + (ldim-2)*(lcvx1-1))
 
       ! nek-nek
-      integer lpratio,nmaxl,nfldmax,nmaxcom
-      parameter (lpratio=5)
-      parameter (nmaxl=lx1*lz1*lelt)
-      parameter (nfldmax=ldim+1+ldimt)
-      parameter (nmaxcom=nmaxl*lpratio)
+      integer nmaxl_nn,nfldmax_nn
+      parameter (nmaxl_nn=
+     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))
+      parameter (nfldmax_nn=
+     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))
 
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel
@@ -113,9 +113,3 @@ c - - SIZE internals
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
       common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
      $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
-
-      integer nmaxl_nn,nfldmax_nn
-      parameter (nmaxl_nn=
-     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))
-      parameter (nfldmax_nn=
-     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))
