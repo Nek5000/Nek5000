@@ -1,6 +1,4 @@
-c
-c SIZE INTERNALS
-c
+c - - SIZE internals
       integer lelv
       parameter(lelv=lelt)
 
