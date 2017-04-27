@@ -37,7 +37,7 @@ if [ $1 = "clean" ]; then
 fi
 
 if [ $1 = "realclean" ]; then
-  make -C $SOURCE_ROOT_JL clean
+  make -C $SOURCE_ROOT_GSLIB clean
   make clean
   rm -rf makefile
   exit 0

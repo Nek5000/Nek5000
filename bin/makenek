@@ -5,7 +5,7 @@
 
 # source path 
 SOURCE_ROOT="$HOME/Nek5000" 
-SOURCE_ROOT_JL="$SOURCE_ROOT/jl" 
+SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src" 
 
 # Fortran/C compiler
 F77="mpif77"
@@ -63,21 +63,21 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
 fi
 
 if [ $MPI -eq 0 ]; then
-  jllib="jlserial" 
+  gslib="gsserial" 
 else
-  jllib="jl" 
+  gslib="gs" 
 fi
-USR_LFLAGS+=" -L$SOURCE_ROOT_JL -l$jllib"
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -l$gslib"
 
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
-# compile libjl if needed
-if [ ! -f "$SOURCE_ROOT_JL/lib$jllib.a" ]; then
-  make -j4 -B -C $SOURCE_ROOT_JL MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+# compile gslib if needed
+if [ ! -f "$SOURCE_ROOT_GSLIB/lib$gslib.a" ]; then
+  make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
    2>&1 | tee compiler.out
   if [ $MPI -ne 0 ]; then 
-    make -j4 -B -C $SOURCE_ROOT_JL MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE \
+    make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
      2>&1 | tee compiler.out 
   fi
 fi
