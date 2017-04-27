@@ -1,0 +1,5 @@
+----------------------
+Make genmap...
+----------------------
+gfortran -fdefault-real-8 -o /Users/K10/Nek5000/bin/genmap genmap.o byte.o  
+
