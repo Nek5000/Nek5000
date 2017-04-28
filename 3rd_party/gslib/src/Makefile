@@ -49,7 +49,7 @@ INTP=findpts_local.o obbox.o poly.o lob_bnd.o findpts_el_3.o findpts_el_2.o
 
 .PHONY: all lib cmds deps tests clean objects odepinfo
 
-all : lib tests
+all : lib
 
 lib: $(GS) $(XXT) $(AMG) $(FWRAPPER) $(INTP)
 	ar cr lib$(LIBNAME).a $?
@@ -57,7 +57,7 @@ lib: $(GS) $(XXT) $(AMG) $(FWRAPPER) $(INTP)
 
 tests: $(TESTS) ;
 
-clean: ; $(RM) *.o *.s *.a $(TESTS)
+clean: ; $(RM) *.o *.s *.a
 
 cmds: ; @echo CC = $(CCCMD); echo LINK = $(LINKCMD);
 
