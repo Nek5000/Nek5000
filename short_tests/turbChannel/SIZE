@@ -9,9 +9,9 @@ C
  
       parameter (lzl=3 + 2*(ldim-3))
  
-      parameter (lx2=lx1-0)
-      parameter (ly2=ly1-0)
-      parameter (lz2=lz1-0)
+      parameter (lx2=lx1-2)
+      parameter (ly2=ly1-2)
+      parameter (lz2=lz1-2)
       parameter (lx3=lx2)
       parameter (ly3=ly2)
       parameter (lz3=lz2)
