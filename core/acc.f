@@ -4,6 +4,7 @@
       include 'HSMG'            ! Same array space as HSMG
       include 'DXYZ'
       include 'GEOM'
+      include 'GMRES'
       include 'INPUT'
       include 'MASS'
       include 'SOLN'
@@ -26,6 +27,7 @@
 !$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$ACC ENTER DATA COPYIN(mg_work,mg_fast_s,mg_fast_d)
 !$ACC ENTER DATA COPYIN(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
+!$ACC ENTER DATA COPYIN(w_gmres,z_gmres,h1,h2)
       return
       end
 
@@ -54,6 +56,7 @@
 !$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$ACC EXIT DATA DELETE(mg_work,mg_mask,mg_fast_s,mg_fast_d)
 !$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
+!$ACC EXIT DATA COPYOUT(w_gmres,z_gmres,h1,h2)
 
       return
       end
@@ -92,23 +95,23 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine GLO_GRAD(D,U,U1,U2,U3)
+      subroutine global_grad3(d,u,u1,u2,u3)
 
       include 'SIZE'
       integer i,j,k,l,e
-      real D (lx1,lx1)
-      real U (lx1,ly1,lz1,lelt)
-      real U1(lx1,ly1,lz1,lelt)
-      real U2(lx1,ly1,lz1,lelt)
-      real U3(lx1,ly1,lz1,lelt)
+      real d (lx1,lx1)
+      real u (lx1,ly1,lz1,lelt)
+      real u1(lx1,ly1,lz1,lelt)
+      real u2(lx1,ly1,lz1,lelt)
+      real u3(lx1,ly1,lz1,lelt)
       real tmpu1,tmpu2,tmpu3
 
-!$ACC DATA PRESENT (D(NX1,NX1))
-!$ACC&     PRESENT (U(NX1,NY1,NZ1,NELT))
-!$ACC&     PRESENT (U1(NX1,NY1,NZ1,NELT),U2(NX1,NY1,NZ1,NELT))
-!$ACC&     PRESENT (U3(NX1,NY1,NZ1,NELT))
+!$ACC DATA PRESENT (d(nx1,nx1))
+!$ACC&     PRESENT (u(nx1,ny1,nz1,nelt))
+!$ACC&     PRESENT (u1(nx1,ny1,nz1,nelt),u2(nx1,ny1,nz1,nelt))
+!$ACC&     PRESENT (u3(nx1,ny1,nz1,nelt))
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-!$ACC&    private(tmpu1,tmpu2,tmpu3)
+!$ACC&    PRIVATE(tmpu1,tmpu2,tmpu3)
 !dir$ NOBLOCKING
       do e=1,nelt
          do k=1,nz1
@@ -119,13 +122,13 @@ c-----------------------------------------------------------------------
                   tmpu3 = 0.0
 !$ACC LOOP SEQ
                   do l=1,nx1
-                     tmpu1 = tmpu1 + D(i,l)*U(l,j,k,e)
-                     tmpu2 = tmpu2 + D(j,l)*U(i,l,k,e)
-                     tmpu3 = tmpu3 + D(k,l)*U(i,j,l,e)
+                     tmpu1 = tmpu1 + d(i,l)*u(l,j,k,e)
+                     tmpu2 = tmpu2 + d(j,l)*u(i,l,k,e)
+                     tmpu3 = tmpu3 + d(k,l)*u(i,j,l,e)
                   enddo
-                  U1(i,j,k,e) = tmpu1
-                  U2(i,j,k,e) = tmpu2
-                  U3(i,j,k,e) = tmpu3
+                  u1(i,j,k,e) = tmpu1
+                  u2(i,j,k,e) = tmpu2
+                  u3(i,j,k,e) = tmpu3
                enddo
             enddo
          enddo
@@ -135,26 +138,26 @@ c-----------------------------------------------------------------------
       return
       end
 c---------------------------------------------------------------
-      subroutine GLO_2GRAD(D,U1,U2,U3,V1,V2,V3)
+      subroutine global_div3(d,u1,u2,u3,v1,v2,v3)
 
       include 'SIZE'
       integer i,j,k,l,e
-      real D (lx1,ly1)
-      real U1(lx1,ly1,lz1,lelt)
-      real U2(lx1,ly1,lz1,lelt)
-      real U3(lx1,ly1,lz1,lelt)
-      real V1(lx1,ly1,lz1,lelt)
-      real V2(lx1,ly1,lz1,lelt)
-      real V3(lx1,ly1,lz1,lelt)
+      real d (lx1,ly1)
+      real u1(lx1,ly1,lz1,lelt)
+      real u2(lx1,ly1,lz1,lelt)
+      real u3(lx1,ly1,lz1,lelt)
+      real v1(lx1,ly1,lz1,lelt)
+      real v2(lx1,ly1,lz1,lelt)
+      real v3(lx1,ly1,lz1,lelt)
       real tmpu1,tmpu2,tmpu3
 
-!$ACC DATA PRESENT (D (NX1,NX1))
-!$ACC&     PRESENT (U1(NX1,NY1,NZ1,NELT))
-!$ACC&     PRESENT (U2(NX1,NY1,NZ1,NELT),U3(NX1,NY1,NZ1,NELT))
-!$ACC$     PRESENT (V1(NX1,NY1,NZ1,NELT),V2(NX1,NY1,NZ1,NELT))
-!$ACC&     PRESENT (V3(NX1,NY1,NZ1,NELT))
+!$ACC DATA PRESENT (d (nx1,nx1))
+!$ACC&     PRESENT (u1(nx1,ny1,nz1,nelt))
+!$ACC&     PRESENT (u2(nx1,ny1,nz1,nelt),u3(nx1,ny1,nz1,nelt))
+!$ACC$     PRESENT (v1(nx1,ny1,nz1,nelt),v2(nx1,ny1,nz1,nelt))
+!$ACC&     PRESENT (v3(nx1,ny1,nz1,nelt))
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-!$ACC&    private(tmpu1,tmpu2,tmpu3)
+!$ACC&    PRIVATE(tmpu1,tmpu2,tmpu3)
 !dir$ NOBLOCKING
       do e=1,nelt
          do k=1,nz1
@@ -165,13 +168,13 @@ c---------------------------------------------------------------
                   tmpu3 = 0.0
 !$ACC LOOP SEQ
                   do l=1,nx1
-                     tmpu1 = tmpu1 + D(i,l)*U1(l,j,k,e)
-                     tmpu2 = tmpu2 + D(j,l)*U2(i,l,k,e)
-                     tmpu3 = tmpu3 + D(k,l)*U3(i,j,l,e)
+                     tmpu1 = tmpu1 + d(i,l)*u1(l,j,k,e)
+                     tmpu2 = tmpu2 + d(j,l)*u2(i,l,k,e)
+                     tmpu3 = tmpu3 + d(k,l)*u3(i,j,l,e)
                   enddo
-                  V1(i,j,k,e) = tmpu1
-                  V2(i,j,k,e) = tmpu2
-                  V3(i,j,k,e) = tmpu3
+                  v1(i,j,k,e) = tmpu1
+                  v2(i,j,k,e) = tmpu2
+                  v3(i,j,k,e) = tmpu3
                enddo
             enddo
          enddo

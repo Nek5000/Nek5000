@@ -415,11 +415,10 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
 !FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
                call acc_copy_all_in()
-!$ACC DATA COPY(w_gmres,z_gmres,h1,h2)
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
-!$ACC END DATA
                call acc_copy_all_out()
             else                                            !  j
+!FIXME: Only mgrid portion is implemented in ACC so far
                kfldfdm = ndim+1
                if (param(100).eq.2) then
                    call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
