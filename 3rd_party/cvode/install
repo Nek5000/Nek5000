@@ -1,0 +1,24 @@
+#!/bin/bash
+
+rm -rf *.tar.gz* cvode-* 2>/dev/null
+wget https://computation.llnl.gov/projects/sundials/download/cvode-2.9.0.tar.gz
+tar -zxvf *.tar.gz
+
+cd cvode*
+mkdir build
+cd build
+
+cmake \
+-DEXAMPLES_INSTALL=OFF \
+-DEXAMPLES_ENABLE=OFF \
+-DCMAKE_INSTALL_PREFIX=`pwd`/../.. \
+-DMPI_ENABLE=ON \
+-DFCMIX_ENABLE=ON \
+-DBUILD_SHARED_LIBS=OFF \
+-DCMAKE_C_COMPILER=gcc \
+-DCMAKE_Fortran_COMPILER=gfortran \
+-DMPI_MPICC=`which mpicc` \
+-DMPI_MPIF77=`which mpif77` \
+..
+
+make install -j4

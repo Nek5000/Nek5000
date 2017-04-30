@@ -1,19 +1,11 @@
 c
 c     Main storage of simulation variables
 c
-      integer lvt1,lvt2,lbt1,lbt2,lptmsk,lptsol,lorder2
+      integer lvt1,lvt2,lbt1,lbt2,lorder2
       parameter (lvt1  = lx1*ly1*lz1*lelv)
       parameter (lvt2  = lx2*ly2*lz2*lelv)
       parameter (lbt1  = lbx1*lby1*lbz1*lbelv)
       parameter (lbt2  = lbx2*lby2*lbz2*lbelv)
-
-      parameter (lptmsk = lvt1*(5+2*ldimt) + 4*lbt1)
-      parameter (lptsol
-     $         = lvt1*(12 + 4*ldimt + 2*ldimt1 + (3+ldimt)*(lorder-1))
-     $         + lvt2*(lorder-1)
-     $         + lbt1*(12 + 3*(lorder-1))
-     $         + lbt2*(lorder-1) )
-c    $         + lptmsk )
 
       parameter (lorder2 = max(1,lorder-2) )
 c
@@ -36,6 +28,7 @@ c     Can be used for post-processing runs (SIZE .gt. 10+3*LDIMT flds)
      $    ,aby2   (lx1,ly1,lz1,lelv)
      $    ,abz2   (lx1,ly1,lz1,lelv)
      $    ,vdiff_e(lx1,ly1,lz1,lelt)
+
 c     Solution data
       real vx     (lx1,ly1,lz1,lelv)
      $    ,vy     (lx1,ly1,lz1,lelv)
@@ -55,6 +48,13 @@ c     Solution data
      $    ,bdivw  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bdivw*mask
      $    ,c_vx   (lxd*lyd*lzd*lelv*ldim,lorder+1) ! characteristics
      $    ,fw     (2*ldim,lelt)                    ! face weights for DG
+
+      common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
+     $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
+     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,fw,
+     $     bmnv, bmass, bdivw,
+     $     vx_e,vy_e,vz_e
+
 c     Solution data for magnetic field
       real bx     (lbx1,lby1,lbz1,lbelv)
      $    ,by     (lbx1,lby1,lbz1,lbelv)
@@ -74,11 +74,8 @@ c     Solution data for magnetic field
      $    ,bzlag  (lbx1*lby1*lbz1*lbelv,lorder-1)
      $    ,pmlag  (lbx2*lby2*lbz2*lbelv,lorder2)
 
-      common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
-     $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
-     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,fw,
-     $     bmnv, bmass, bdivw, bx, by, bz, pm, bmx, bmy, bmz,
-     $     vx_e,vy_e,vz_e,     
+      common /vptsolm/
+     $     bx, by, bz, pm, bmx, bmy, bmz,
      $     bbx1, bby1, bbz1, bbx2, bby2, bbz2, bxlag, bylag, bzlag,
      $     pmlag
 
