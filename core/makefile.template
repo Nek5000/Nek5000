@@ -88,7 +88,10 @@ TMP1 += $(CMTCORE)
 OPT_INCDIR += -I $(SCMT)
 endif
 
-NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
+NOBJS_F = $(patsubst %,$(OBJDIR)/%,$(TMP1))
+TMP2 = $(JLCORE) $(JLINTP) $(CGS) 
+NOBJS_C = $(patsubst %,$(OBJDIR)/%,$(TMP2))
+NOBJS  = $(NOBJS_F) $(NOBJS_C)
 
 L0 = $(G) -O0
 L2 = $(G) -O2
