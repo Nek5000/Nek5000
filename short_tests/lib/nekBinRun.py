@@ -121,7 +121,7 @@ def run_neknek(cwd, inside, np_inside, outside, np_outside, step_limit=None, log
 
     # Paths to executables, files
     nek5000 = os.path.join(cwd, 'nek5000')
-    logfile      = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log.{sfx}'.format(
+    logfile      = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
         inside = inside,
         outside = outside,
         np_in = np_inside,

@@ -833,6 +833,7 @@ class Eddy_Neknek(NekTestCase):
             lxd='12',
             lx2='lx1-2',
             lelg='1000',
+            lpert='1',
             nsessmax='2',
         )
 
@@ -860,6 +861,34 @@ class Eddy_Neknek(NekTestCase):
             log_suffix = self.log_suffix,
             verbose = self.verbose,
         )
+
+        logfile  = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+            inside = 'inside',
+            outside = 'outside',
+            np_in = 1,
+            np_out = 1,
+            sfx = self.log_suffix
+        ))
+
+        xerr_inside = self.get_value_from_log('X err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_inside, target_val=4.541932E-04, delta=1E-05, label='X err  inside')
+
+        xerr_global = self.get_value_from_log('X err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_global, target_val=4.576819E-04, delta=1E-05, label='X err   global')
+
+        xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=4.576819E-04, delta=1E-05, label='X err  outside')
+
+        yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_inside, target_val=6.717742E-04, delta=1E-05, label='Y err  inside')
+
+        yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_global, target_val=6.871191E-04, delta=1E-05, label='Y err   global')
+
+        yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=6.871191E-04, delta=1E-05, label='Y err  outside')
+
+        self.assertDelayedFailures()
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
