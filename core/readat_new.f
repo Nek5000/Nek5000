@@ -55,6 +55,8 @@ C
 
       param(32) = 0    ! all BC are defined in .re2
 
+      param(40) = 0    ! XXT 
+
       param(42) = 0    ! GMRES 
       param(43) = 0    ! SEMG preconitioner
 
@@ -302,6 +304,10 @@ c set parameters
 
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
+
+      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'AMG') .gt. 0) param(40) = 1
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
