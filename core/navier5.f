@@ -793,9 +793,10 @@ c-----------------------------------------------------------------------
      $    ,wr(lx),ws(lx),wt(lx)
       common /ctmp0/ ur,us,ut,vr,vs,vt,wr,ws,wt
 
-      integer e,j
+      integer e
+      real jacmil
  
-      n     = lx1*ly1*lz1*nelt
+      ntot  = lx1*ly1*lz1*nelt
       nxyz  = lx1*ly1*lz1
       nx    = nx1 - 1      ! Polynomial degree
 
@@ -806,7 +807,7 @@ c-----------------------------------------------------------------------
         call local_grad3(vr,vs,vt,v,nx,e,dxm1,dxtm1)
         call local_grad3(wr,ws,wt,w,nx,e,dxm1,dxtm1)
         do i=1,lx
-         j = jacmi(i,e)
+         jacmil = jacmi(i,e)
 c        vux=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)+ut(i)*txm1(i,1,1,e)
          vuy=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e)
          vuz=ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e)
@@ -818,10 +819,10 @@ c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
 c        vwz=wr(i)*rzm1(i,1,1,e)+ws(i)*szm1(i,1,1,e)+wt(i)*tzm1(i,1,1,e)
 
          k = k+1
-         vort(k,1) = (vwy-vvz)*j
-         vort(k,2) = (vuz-vwx)*j
-         vort(k,3) = (vvx-vuy)*j
-c        write(6,*) i,j,vuy,vvx,k,e,' vort'
+         vort(k,1) = (vwy-vvz)*jacmil
+         vort(k,2) = (vuz-vwx)*jacmil
+         vort(k,3) = (vvx-vuy)*jacmil
+c        write(6,*) i,jacmil,vuy,vvx,k,e,' vort'
         enddo
        enddo
 
@@ -832,20 +833,16 @@ c        write(6,*) i,j,vuy,vvx,k,e,' vort'
         call local_grad2(ur,us,u,nx,e,dxm1,dxtm1)
         call local_grad2(vr,vs,v,nx,e,dxm1,dxtm1)
         do i=1,lx
-         j = jacmi(i,e)
 c        vux=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)+ut(i)*txm1(i,1,1,e)
          vuy=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e)
          vvx=vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e)
 c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
 
          k = k+1
-         vort(k,1) = (vvx-vuy)*j
+         vort(k,1) = (vvx-vuy)*jacmi(i,e)
         enddo
        enddo
       endif
-
-      return
-
 c
 c    Avg at bndry
 c
