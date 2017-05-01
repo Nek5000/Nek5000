@@ -30,6 +30,8 @@ env:
 
     - TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3   IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
+    - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+
 before_install: 
   - export ROOT_DIR=`pwd`
 
