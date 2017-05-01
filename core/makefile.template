@@ -137,7 +137,7 @@ ifeq ($(MPI),0)
 	@rm -rf $S/mpif.h
 endif
 
-$(NOBJS_F) : SIZE
+$(NOBJS) : ./SIZE
 
 # NEK CORE     ##################################################################
 $(OBJDIR)/drive.o	:$S/drive.f;			$(FC) -c $(FL2) $< -o $@
