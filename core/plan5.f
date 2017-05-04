@@ -185,7 +185,7 @@ C
       ELSEIF (IGEOM.EQ.2) THEN
          CALL LAGMASS
          IF (ISTEP.EQ.0) CALL GENCOOR (XM3,YM3,ZM3)
-         if (istep.ge.1) call updcooro1
+         if (istep.ge.1) call updcoor1
          CALL GEOM1 (XM3,YM3,ZM3)
          CALL GEOM2
          CALL UPDMSYS (1)
@@ -239,7 +239,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine updcooro1
+      subroutine updcoor1
 C-----------------------------------------------------------------------
 C
 C     Subroutine to update geometry for moving boundary problems
@@ -253,7 +253,7 @@ C
 C
 C     Update collocation points coordinates
 C
-      call updxyzo1(nel)
+      call updxyz1(nel)
 C
 C     Shift lagged mesh velocity
 C
@@ -262,7 +262,7 @@ C
       return
       end
 C-----------------------------------------------------------------------
-      subroutine updxyzo1(nel)
+      subroutine updxyz1(nel)
 C
       include 'SIZE'
       include 'TSTEP'
