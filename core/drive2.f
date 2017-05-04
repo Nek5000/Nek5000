@@ -768,7 +768,7 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 c        call plan1 (igeom)       !  Orig. NEKTON time stepper
 
          if (ifrich) then
-            call plan5(igeom)
+            call plan5_basic(igeom)
          else
             call plan3 (igeom)    !  Same as PLAN 1 w/o nested iteration
                                   !  Std. NEKTON time stepper  !
