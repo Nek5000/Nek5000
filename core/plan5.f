@@ -17,20 +17,8 @@ c     Operator splitting technique.
 
       if (ifmvbd) call opcopy
      $  (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2),xm1,ym1,zm1)
-      do i=1,n
-         s = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti  ! Add  density*mass/dt,
-         vxlag(i,1,1,1,2)=s*vx(i,1,1,1)          ! equivalent to using
-         vylag(i,1,1,1,2)=s*vy(i,1,1,1)          ! density*mass/(dt/2)
-         vzlag(i,1,1,1,2)=s*vz(i,1,1,1)          ! in the first place...
-      enddo
 
       call pn2_step(vxlag,vylag,vzlag,prlag,0,dt)  ! One step of Pn-Pn-2
-
-      do i=1,n                                          ! Add  density*mass/dt,
-         bfx(i,1,1,1)=bfx(i,1,1,1)+vxlag(i,1,1,1,2)     ! equivalent to using
-         bfy(i,1,1,1)=bfy(i,1,1,1)+vylag(i,1,1,1,2)     ! density*mass/(dt/2)
-         bfz(i,1,1,1)=bfz(i,1,1,1)+vzlag(i,1,1,1,2)     ! in the first place...
-      enddo
 
       if (ifmvbd) then
          write (*,*) 'ifmbvd is true'
@@ -40,7 +28,8 @@ c     Operator splitting technique.
       endif
 
       time = time-dt2
-      call pn2_step(vx,vy,vz,pr,1,dt2)      ! One step of Pn-Pn-2, dt/2
+
+      call pn2_step(vx,vy,vz,pr,0,dt2)      ! One step of Pn-Pn-2, dt/2
 
       time = time+dt2
       call setup_convect(2)  ! Map vx --> vxd
