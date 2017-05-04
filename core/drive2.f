@@ -767,8 +767,12 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
 c        call plan1 (igeom)       !  Orig. NEKTON time stepper
 
-         call plan3 (igeom)       !  Same as PLAN 1 w/o nested iteration
+         if (ifrich) then
+            call plan5(igeom)
+         else
+            call plan3 (igeom)    !  Same as PLAN 1 w/o nested iteration
                                   !  Std. NEKTON time stepper  !
+         endif
 
          if (ifmodel)    call twalluz (igeom) ! Turbulence model
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
