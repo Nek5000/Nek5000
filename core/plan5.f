@@ -21,15 +21,6 @@ c     Operator splitting technique.
       if (ifmvbd) call opcopy
      $  (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2),xm1,ym1,zm1)
 
-      call pn2_step(vxlag,vylag,vzlag,prlag,0,dt)  ! One step of Pn-Pn-2
-
-      if (ifmvbd) then
-         write (*,*) 'ifmbvd is true'
-        call opcopy
-     $  (xm1,ym1,zm1,wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2))
-        call geom_reset(0)
-      endif
-
       time = time-dt2
 
       call pn2_step(vx,vy,vz,pr,0,dt2)      ! One step of Pn-Pn-2, dt/2
@@ -39,6 +30,18 @@ c     Operator splitting technique.
       call setprop
 
       call pn2_step(vx,vy,vz,pr,0,dt2)      ! One step of Pn-Pn-2, dt/2
+
+      if (ifmvbd) then
+         write (*,*) 'ifmbvd is true'
+        call opcopy
+     $  (xm1,ym1,zm1,wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2))
+        call geom_reset(0)
+      endif
+
+      call setup_convect(2)  ! Map vx --> vxd
+      call setprop
+
+      call pn2_step(vxlag,vylag,vzlag,prlag,0,dt)  ! One step of Pn-Pn-2
 
       do i=1,n
          vx(i,1,1,1)=2*vx(i,1,1,1)-vxlag(i,1,1,1,1)
