@@ -7,6 +7,8 @@ c     Operator splitting technique.
       include 'TOTAL'
 
       common /scrns/  resv  (lx1*ly1*lz1*lelv,3)
+      common /p5var/  rhs2  (lx1*ly1*lz1*lelv,3)
+      common /p5var/  rhs2e  (lx1*ly1*lz1*lelv,3)
 
       n   = nx1*ny1*nz1*nelv
       n2  = nx2*ny2*nz2*nelv
@@ -129,6 +131,8 @@ c-----------------------------------------------------------------------
       parameter (lv=lx1*ly1*lz1*lelt)
       real ux(1),uy(1),uz(1),pu(1)
 
+      common /p5var/ rhs2   (lx1*ly1*lz1*lelv,3)
+
       common /scrns/  resv  (lx1*ly1*lz1*lelv,3)
      $ ,              dv1   (lx1*ly1*lz1*lelv)
      $ ,              dv2   (lx1*ly1*lz1*lelv)
@@ -170,8 +174,11 @@ c-----------------------------------------------------------------------
       call adv_geom(dtl) ! Advance the geometry
 
       call opcopy  (ux,uy,uz,vx,vy,vz)
+
       call bcdirvc (ux,uy,uz,v1mask,v2mask,v3mask) ! Don't forget bcneutr !
       call ophx    (resv(1,1),resv(1,2),resv(1,3),ux,uy,uz,h1,h2)
+
+      call copy(rhs2,resv,lx1*ly1*lz1*lelv*3)
 
       do i=1,n
          resv(i,1)=bfx(i,1,1,1)-resv(i,1) ! rhs = rhs - H*u
@@ -184,7 +191,7 @@ c-----------------------------------------------------------------------
       call ophinv_pr(dv1,dv2,dv3
      $   ,resv(1,1),resv(1,2),resv(1,3),h1,h2,tolhv,nmxh)
 
-      call opadd2  (ux,uy,uz,dv1,dv2,dv3)
+      call opadd2(ux,uy,uz,dv1,dv2,dv3)
 
       bd(1) = 1.0
       call rzero(pu,n2)
