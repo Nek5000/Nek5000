@@ -1,3 +1,4 @@
+c-----------------------------------------------------------------------
       subroutine plan5_basic(igeom)
 
 c     Two-step Richardson Extrapolation.
@@ -55,7 +56,6 @@ c     Operator splitting technique.
 
       return
       end
-c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine plan5(igeom)
 
