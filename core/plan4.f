@@ -57,8 +57,6 @@ c
          ! split viscosity into explicit/implicit part
          if (ifexplvis) call split_vis
 
-         call lagvel
-
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
@@ -84,6 +82,7 @@ C        first, compute pressure
          tpres=tpres+(dnekclock()-etime1)
 
 C        Compute velocity
+         call lagvel
          call cresvsp (res1,res2,res3,h1,h2)
          call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
@@ -169,8 +168,6 @@ c
       NXYZ1  = NX1*NY1*NZ1
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
-
-c      call lagvel
 
 c     -mu*curl(curl(v))
       call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,

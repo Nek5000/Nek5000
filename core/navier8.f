@@ -210,7 +210,7 @@ c      endif
 
       call crs_setup(xxth(ifield),imode,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
-      call crs_stats(xxth(ifield))
+c      call crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then
