@@ -280,7 +280,9 @@ c-----------------------------------------------------------------------
 
          if (ifflow)          call fluid    (igeom)
          if (ifmvbd)          call meshv    (igeom)
-         if (param(103).gt.0) call q_filter (param(103))
+         if (igeom.eq.ngeom.and.param(103).gt.0)
+     $                        call q_filter(param(103))
+
          enddo
 
       else                ! PN-2/PN-2 formulation

@@ -203,9 +203,14 @@ c      endif
       endif
 
       nz=ncr*ncr*nelv
-      call crs_setup(xxth(ifield),nekcomm,mp, ntot,se_to_gcrs,
+      imode = param(40) 
+
+      if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
+     $ 'Problem size requires AMG solver$',1)
+
+      call crs_setup(xxth(ifield),imode,nekcomm,mp, ntot,se_to_gcrs,
      $               nz,ia,ja,a, null_space)
-c     call crs_stats(xxth(ifield))
+c      call crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then

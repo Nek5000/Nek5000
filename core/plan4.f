@@ -170,8 +170,6 @@ c
       NTOT1  = NXYZ1*NELV
       NFACES = 2*NDIM
 
-c      call lagvel
-
 c     -mu*curl(curl(v))
       call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,
      &              .true.,w1,w2)

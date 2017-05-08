@@ -2018,8 +2018,9 @@ c-----------------------------------------------------------------------
 
       call nekgsync() ! clear outstanding message queues.
 
-      nxyzr = nxr*nyr*nzr   
-      len   = nxyzr*wdsizr  ! message length
+      nxyzr  = nxr*nyr*nzr  
+      dnxyzr = nxyzr 
+      len    = nxyzr*wdsizr  ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
@@ -2029,8 +2030,9 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-         nread = nxyzr*nelr/lrbs
-         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
+         dtmp  = dnxyzr*nelr 
+         nread = dtmp/lrbs
+         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2160,8 +2162,9 @@ c-----------------------------------------------------------------------
 
       call nekgsync() ! clear outstanding message queues.
 
-      nxyzr = ndim*nxr*nyr*nzr
-      len   = nxyzr*wdsizr             ! message length in bytes
+      nxyzr  = ndim*nxr*nyr*nzr
+      dnxyzr = nxyzr
+      len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
@@ -2171,8 +2174,9 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         nread = nxyzr*nelr/lrbs
-         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
+         dtmp  = dnxyzr*nelr
+         nread = dtmp/lrbs
+         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2655,8 +2659,8 @@ c-----------------------------------------------------------------------
       call bcast(hdr,iHeaderSize)  
       call mfi_parse_hdr(hdr,ierr)
 
-      ifmpiio = .true.
-      if (nfiler.gt.1) ifmpiio = .false.
+      ifmpiio = .false.
+      if (nfiler.eq.1 .and. abs(param(67)).eq.6) ifmpiio = .true.
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif

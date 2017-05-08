@@ -1,0 +1,6 @@
+#!/bin/bash
+wget https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz 
+tar -zxvf *.tar.gz
+cd hypre*/src
+./configure --prefix=`pwd`/../.. CC=gcc FC=gfortran --without-MPI
+make -j4 install
