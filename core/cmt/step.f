@@ -67,6 +67,7 @@ C> @file step.f time stepping and mesh spacing routines
          endif
       endif
       call compute_cfl (courno,utmp,vtmp,wtmp,dt_cmt) ! sanity?
+      dt=dt_cmt
 
 ! diffusion number based on viscosity.
 
