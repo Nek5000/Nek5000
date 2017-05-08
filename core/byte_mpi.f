@@ -13,7 +13,7 @@ C--------------------------------------------------------------------------
 
       include 'mpif.h'
 
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
       character fnamei*(*)
       logical ifro
@@ -64,6 +64,7 @@ C--------------------------------------------------------------------------
       subroutine byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
 
       include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
       real*4 buf(1)          ! buffer
 

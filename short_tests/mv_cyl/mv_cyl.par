@@ -3,7 +3,7 @@
 #
 [GENERAL] 
 #startFrom = restart.fld 
-stopAt = nSteps
+stopAt = numSteps
 endTime = 50
 numSteps = 1000
 

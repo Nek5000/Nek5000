@@ -6,6 +6,8 @@ all:
         export FFLAGS_IN=" ";               \
         export CFLAGS_IN=${US} ;            \
         if [ "$$i" == "amg_hypre" ]; then   \
+           export CFLAGS="-I./hypre/include"; \
+           export LFLAGS="-L./hypre/lib -lHYPRE"; \
            if [ ! -z $(DOALL) ]; then       \
               continue;                     \
            fi ;                             \

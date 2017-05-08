@@ -28,7 +28,7 @@ Nek5000 is an open source, fast and scalable spectral element CFD code designed 
 
 ## Download
 
-For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) once it available. All developers please read the `Contributing` section below.
+For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) once it available. All developers should checkout the code on [GibHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
 
 ## Getting Started
 
@@ -40,8 +40,7 @@ tar -xvzf Nek5000.tar.gz
 export PATH=~/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
 cd ~/Nek5000/run; cp -r ~/Nek5000/short-tests/eddy .
-cp /Nek5000/core/makenek .
-./makenek eddy_uv
+makenek eddy_uv
 genmap             # on input type eddy_uv
 nekmpi eddy_uv 2   # to run on 2 ranks
 ```
@@ -88,11 +87,11 @@ Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). If you ar
 
 ### Typical Workflow
 1. Create a feature branch hosting your change with `nekgit_co <descriptive name>`. Using a dedicated branch for every feature helps you to move between different developments while some are work in progress or under review.
-2. Implement your code changes. To reset your branch and discard any changes run `git reset --hard origin/master`. To revert a set of files run `git checkout <file1 file2 ...>`
-3. Commit your changes to your local repo using e.g. `git commit -a`. Do this frequently to save your work.
+2. Implement your code changes. To reset your branch and discard any changes run `git reset --hard origin/master`. To revert a set of files run `git checkout file1 file2 ...`
+3. Commit your changes to your local repo using e.g. `git commit file1 file2 ...`. Do this frequently to save your work.
 4. Periodically, changes made in our master should be pulled back into your local branch by `git pull -r`. This ensures that we do not end up in integration hell that will happen when many feature branches need to be combined at once.
 5. If there are no merge conflicts, go to the next step. In case of conflicts edit the unmerged files in question. Merge conflicts are indicated  by the conflict marker `<<<<<<<` in your file.
-6. Check with `git diff origin/master` what your push will do. Assuming you are happy run `nekgit_push`. This will create a pull request on GitHub and set your current branch back to master. When your pull request was merged, make sure you are on your local master branch. Then, delete the branch created in step (1) with `nekgit_rm <my branch name>` and update the current master branch using `git pull`.
+6. Assuming you are happy run `nekgit_push`. This will create a pull request on GitHub. You can check with `git diff origin/master` what your push will do. When your pull request was merged, run `git pull` on your local master branch to see your change. You can delete the branch created in step (1) with `nekgit_rm <my branch name>`.
 
 ## Code Structure
 
