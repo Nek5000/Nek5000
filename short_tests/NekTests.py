@@ -417,7 +417,7 @@ class Eddy_Neknek(NekTestCase):
         for rea_file in ('inside', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
             with open(rea_path, 'r') as f:
-                lines = [sub(r'^.*DIVERGENCE$', '      0.10000E-06', l) for l in f]
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-06     p21 DIVERGENCE', l) for l in f]
             with open(rea_path, 'w') as f:
                 f.writelines(lines)
             self.run_genmap(os.path.join(cwd, rea_file))
@@ -476,7 +476,7 @@ class Eddy_Neknek(NekTestCase):
         for rea_file in ('inside', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
             with open(rea_path, 'r') as f:
-                lines = [sub(r'^.*DIVERGENCE$', '      0.10000E-11', l) for l in f]
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-11     p21 DIVERGENCE', l) for l in f]
             with open(rea_path, 'w') as f:
                 f.writelines(lines)
             self.run_genmap(os.path.join(cwd, rea_file))
