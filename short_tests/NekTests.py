@@ -1444,6 +1444,62 @@ class TurbChannel(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+class TurbChannelAcc(TurbChannel):
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+
+        self.size_params['lx2'] = 'lx1'
+        self.size_params['ly2'] = 'ly1'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE'))
+
+        # Build and run w/ ACC
+        self.log_suffix = "{0}.acc".format(self.log_suffix)
+        self.build_nek(
+            opts = dict(
+                G="-acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo",
+                USR_LFLAGS="-acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo"
+            )
+        )
+        self.run_nek(step_limit=10)
+
+        gmres = self.get_value_from_log('gmres', column=-7)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=95., label='gmres')
+
+        self.assertDelayedFailures()
+
+class TurbChannelCompareAccCpu(TurbChannel):
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+
+        self.size_params['lx2'] = 'lx1'
+        self.size_params['ly2'] = 'ly1'
+        self.size_params['lz2'] = 'lz1'
+        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE'))
+
+        # Build and run w/ ACC
+        self.log_suffix = "{0}.acc".format(self.log_suffix)
+        self.build_nek(
+            opts = dict(
+                G="-acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo",
+                USR_LFLAGS="-acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo"
+            )
+        )
+        self.run_nek(step_limit=10)
+        gmres_acc = self.get_value_from_log('gmres', column=-7)
+
+        # Build and run w/ CPU
+        self.log_suffix = "{0}.cpu".format(self.log_suffix)
+        self.build_nek()
+        self.run_nek(step_limit=10)
+        gmres_cpu = self.get_value_from_log('gmres', column=-7)
+
+        self.assertAlmostEqualDelayed(gmres_acc, gmres_cpu, delta=1e-14, label='gmres_acc')
+
+        self.assertDelayedFailures()
+
 ####################################################################
 #  var_vis; var_vis.rea
 ####################################################################
