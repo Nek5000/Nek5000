@@ -34,7 +34,9 @@
       subroutine acc_copy_all_out()
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
+      include 'DXYZ'
       include 'GEOM'
+      include 'GMRES'
       include 'INPUT'
       include 'MASS'
       include 'SOLN'

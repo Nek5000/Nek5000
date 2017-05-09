@@ -2352,10 +2352,17 @@ c     call exitt
       enddo
 !$ACC END PARALLEL LOOP
 
-      !call dsavg(z) ! Emergency hack --- to ensure continuous z!
+!ROR - 5/9/17 - Reverted to CPU version of dsavg because we were getting
+! the following runtime error in dsavg_acc -> col2_acc:
+! call to cuMemcpyDtoHAsync returned error 1: Invalid value
+
+!$ACC UPDATE HOST(z)
+      call dsavg(z)
+!$ACC UPDATE DEVICE(z)
+
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
 !                col2 within dsavg_acc
-      call dsavg_acc(z)
+      !call dsavg_acc(z)
 
       return
       end
