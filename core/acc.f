@@ -21,7 +21,7 @@
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
 !$ACC ENTER DATA COPYIN(work,work2)
-!$ACC ENTER DATA COPYIN(mg_imask)
+!$ACC ENTER DATA COPYIN(mg_mask,mg_imask)
 !$ACC ENTER DATA COPYIN(tmult,vmult)
 !$ACC ENTER DATA CREATE(e,w,r)
 !$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
