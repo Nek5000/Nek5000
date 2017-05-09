@@ -255,9 +255,9 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
--e "s:^G[ ]*=.*:G\:=$G:" \
--e "s/^FFLAGS[ ]*=.*/FFLAGS:=$FFLAGS/" \
--e "s/^CFLAGS[ ]*=.*/CFLAGS:=$CFLAGS/" \
+-e "s?^G[ ]*=.*?G\:=$G?" \
+-e "s?^FFLAGS[ ]*=.*?FFLAGS:=$FFLAGS?" \
+-e "s?^CFLAGS[ ]*=.*?CFLAGS:=$CFLAGS?" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
@@ -267,7 +267,7 @@ sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
 -e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
--e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
+-e "s?^USR_LFLAGS[ ]*=.*?USR_LFLAGS\:=$USR_LFLAGS?" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
 -e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
