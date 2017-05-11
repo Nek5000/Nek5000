@@ -297,14 +297,17 @@ c
 #ifdef _OPENACC
 !FIXME: in axhelm_acc, ortho is now run on host
       call axhelm_acc (w,x,h1,h2,imsh,isd)
-#else
-      call axhelm (w,x,h1,h2,imsh,isd)
-#endif
 !$ACC UPDATE HOST(w)
       call dssum  (w,nx1,ny1,nz1)
-!FIXME: col2 is now run on host
-      call col2   (w,pmask,n)
 !$ACC UPDATE DEVICE(w)
+!$ACC DATA PRESENT(w,pmask)
+      call col2_acc   (w,pmask,n)
+!$ACC END DATA
+#else
+      call dssum  (w,nx1,ny1,nz1)
+      call axhelm (w,x,h1,h2,imsh,isd)
+      call col2   (w,pmask,n)
+#endif
 
       return
       end

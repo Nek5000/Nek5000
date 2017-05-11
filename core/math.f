@@ -1168,29 +1168,6 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-      function glsum_acc (x,n)
-      DIMENSION X(n)
-      DIMENSION TMP(1),WORK(1)
-
-      TSUM = 0.
-
-!$ACC PARALLEL LOOP GANG VECTOR REDUCTION(+:tsum)
-!$ACC&              PRESENT(X)
-      DO I=1,N
-         TSUM = TSUM+X(I)
-      ENDDO
-!$ACC END PARALLEL LOOP
-
-      TMP(1)=TSUM
-
-      CALL GOP(TMP,WORK,'+  ',1)
-
-      GLSUM = TMP(1)
-
-      return
-      END
-c-----------------------------------------------------------------------
       real function glamax(a,n)
       REAL A(1)
       DIMENSION TMP(1),WORK(1)
@@ -1935,3 +1912,36 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      function glsum_acc (x,n)
+      DIMENSION X(n)
+      DIMENSION TMP(1),WORK(1)
+
+      TSUM = 0.
+
+!$ACC PARALLEL LOOP GANG VECTOR REDUCTION(+:tsum)
+!$ACC&              PRESENT(X)
+      DO I=1,N
+         TSUM = TSUM+X(I)
+      ENDDO
+!$ACC END PARALLEL LOOP
+
+      TMP(1)=TSUM
+
+      CALL GOP(TMP,WORK,'+  ',1)
+
+      GLSUM = TMP(1)
+
+      return
+      END
+c--------------------------------------------------------
+      subroutine col2_acc(a,b,n)
+      real a(n),b(n)
+!MJO - 3/15/17 - ACC version of col2
+!     a little hack to make dsavg work easily
+
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(a,b)
+      do i=1,n
+         a(i) = a(i) * b(i)
+      enddo
+!$ACC END PARALLEL LOOP
+      end
