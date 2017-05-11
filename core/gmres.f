@@ -443,10 +443,9 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
-            call acc_copy_all_out()
+            call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
 
-                                                    !      -1
-            call col2(w_gmres,ml_gmres,n)           ! w = L   w
+            call acc_copy_all_out()
 
 c           !modified Gram-Schmidt
 
