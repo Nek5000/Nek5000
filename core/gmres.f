@@ -295,19 +295,14 @@ c
       imsh = 1
       isd  = 1
 #ifdef _OPENACC
-!FIXME when it is fixed, call axhelm_acc here. The routine is
-!     untested because of a bug in ortho_acc, but the implementation
-!     is there
-!$ACC DATA PRESENT(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$ACC&     PRESENT(dxm1,dxtm1,h1,h2)
-!$ACC&     PRESENT(w,x,h1,h2)
+!FIXME: in axhelm_acc, ortho is now run on host
       call axhelm_acc (w,x,h1,h2,imsh,isd)
-!$ACC END DATA
 #else
       call axhelm (w,x,h1,h2,imsh,isd)
 #endif
 !$ACC UPDATE HOST(w)
       call dssum  (w,nx1,ny1,nz1)
+!FIXME: col2 is now run on host
       call col2   (w,pmask,n)
 !$ACC UPDATE DEVICE(w)
 
@@ -437,12 +432,9 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             endif
 
 ! FIXME: ortho() is performed on the host.  Need to implement in ACC
-!$ACC DATA PRESENT(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$ACC&     PRESENT(dxm1,dxtm1,h1,h2)
 !$ACC UPDATE HOST(z_gmres)
             call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
 !$ACC UPDATE DEVICE(z_gmres)
-!$ACC END DATA
 
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
