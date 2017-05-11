@@ -304,8 +304,8 @@ c
       call col2_acc   (w,pmask,n)
 !$ACC END DATA
 #else
-      call dssum  (w,nx1,ny1,nz1)
       call axhelm (w,x,h1,h2,imsh,isd)
+      call dssum  (w,nx1,ny1,nz1)
       call col2   (w,pmask,n)
 #endif
 
