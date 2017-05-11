@@ -295,15 +295,16 @@ c
       imsh = 1
       isd  = 1
 #ifdef _OPENACC
-!FIXME when it is fixed, call axhelm_acc here. The routine is
-!     untested because of a bug in ortho_acc, but the implementation
-!     is there
-      call axhelm (w,x,h1,h2,imsh,isd)
+!FIXME: in axhelm_acc, ortho is now run on host
+      call axhelm_acc (w,x,h1,h2,imsh,isd)
 #else
       call axhelm (w,x,h1,h2,imsh,isd)
 #endif
+!$ACC UPDATE HOST(w)
       call dssum  (w,nx1,ny1,nz1)
+!FIXME: col2 is now run on host
       call col2   (w,pmask,n)
+!$ACC UPDATE DEVICE(w)
 
       return
       end
@@ -416,7 +417,6 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 !FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
                call acc_copy_all_in()
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
-               call acc_copy_all_out()
             else                                            !  j
 !FIXME: Only mgrid portion is implemented in ACC so far
                kfldfdm = ndim+1
@@ -431,12 +431,16 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
+! FIXME: ortho() is performed on the host.  Need to implement in ACC
+!$ACC UPDATE HOST(z_gmres)
             call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+!$ACC UPDATE DEVICE(z_gmres)
 
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
+            call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
+            call acc_copy_all_out()
 
                                                     !      -1
             call col2(w_gmres,ml_gmres,n)           ! w = L   w
