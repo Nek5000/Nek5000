@@ -300,9 +300,7 @@ c
 !$ACC UPDATE HOST(w)
       call dssum  (w,nx1,ny1,nz1)
 !$ACC UPDATE DEVICE(w)
-!$ACC DATA PRESENT(w,pmask)
       call col2_acc   (w,pmask,n)
-!$ACC END DATA
 #else
       call axhelm (w,x,h1,h2,imsh,isd)
       call dssum  (w,nx1,ny1,nz1)
@@ -443,20 +441,13 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
+#ifdef _OPENACC
             call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
+#else
+            call col2    (w_gmres,ml_gmres,n)           ! w = L   w
+#endif
 
             call acc_copy_all_out()
-
-c           !modified Gram-Schmidt
-
-c           do i=1,j
-c              h_gmres(i,j)=glsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-c                                                            !  i,j       i
-
-c              call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
-c           enddo                                                !          i,j  i
-
-c           2-PASS GS, 1st pass:
 
             do i=1,j
                h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
