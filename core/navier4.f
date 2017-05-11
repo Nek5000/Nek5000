@@ -351,6 +351,40 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
+      FUNCTION VLSC3_ACC(X,Y,B,N)
+C
+C     local inner product, with weight
+C
+      DIMENSION X(N),Y(N),B(N)
+      REAL DT
+C
+      include 'OPCTR'
+C
+#ifdef TIMER
+C
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC3 '
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + dfloat(isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + dfloat(isbcnt)
+#endif
+C
+      DT = 0.0
+!$ACC PARALLEL LOOP PRESENT(X,Y,B) REDUCTION(+:DT)
+      DO I=1,N
+         DT = DT+X(I)*Y(I)*B(I)
+      ENDDO
+!$ACC END PARALLEL LOOP
+      T=DT
+      VLSC3 = T
+      RETURN
+      END
+c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
 C     Update rhs's if E-matrix has changed
