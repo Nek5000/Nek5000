@@ -12,11 +12,11 @@
        1.000000         p08 CONDUCT
       0.0000000E+00
       0.0000000E+00     p10 FINTIME
-       2000.000         p11 NSTEPS
+       1000.000         p11 NSTEPS
      -1.0000000E-04     p12 DT
       0.0000000E+00     p13 IOCOMM
       0.0000000E+00     p14 IOTIME
-       1000.0000         p15 IOSTEP
+       100.0000         p15 IOSTEP
       0.0000000E+00     p16 PSSOLVER
       0.0000000E+00
       0.0000000E+00

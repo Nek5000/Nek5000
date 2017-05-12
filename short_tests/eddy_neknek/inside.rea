@@ -1,7 +1,7 @@
  ****** PARAMETERS *****
    2.60999990      NEKTON VERSION 
            2  DIMENSIONAL RUN
-         118  PARAMETERS FOLLOW
+         103  PARAMETERS FOLLOW
    1.00000     p001 DENSITY
   -20.0000     p002 VISCOS
    0.00000     p003 
@@ -13,7 +13,7 @@
    0.00000     p009 
    0.00000     p010 FINTIME
    1000.00     p011 NSTEPS
- -0.100000E-03 p012 DT
+ -1.000000E-04 p012 DT
    0.00000     p013 IOCOMM
    0.00000     p014 IOTIME
    100.000     p015 IOSTEP
@@ -25,8 +25,8 @@
   0.100000E-10 p021 DIVERGENCE
   0.100000E-11 p022 HELMHOLTZ
    0.00000     p023 NPSCAL
-  0.100000E-09 p024 TOLREL
-  0.100000E-09 p025 TOLABS
+  0.100000E-10 p024 TOLREL
+  0.100000E-10 p025 TOLABS
    1.00000     p026 COURANT/NTAU
    3.00000     p027 TORDER
    0.00000     p028 TORDER: mesh velocity (0: p28=p27)
@@ -105,21 +105,6 @@
    0.00000     p101 Number of additional modes to filter
    0.00000     p102 Dump out divergence at each time step
    0.00000     p103 weight of stabilizing filter (.01)
-   0.00000     p104 
-   0.00000     p105 
-   0.00000     p106 
-   0.00000     p107 !=0 --> add to h2 array in hlmhotz eqn
-   0.00000     p108 
-   0.00000     p109 
-   0.00000     p110 
-   0.00000     p111 
-   0.00000     p112 
-   0.00000     p113 
-   0.00000     p114 
-   0.00000     p115 
-   0.00000     p116 !=0: x elements for fast tensor product
-   0.00000     p117 !=0: y elements for fast tensor product
-   0.00000     p118 !=0: z elements for fast tensor product
       4  Lines of passive scalar data follows2 CONDUCT; 2RHOCP
    1.00000       1.00000       1.00000       1.00000       1.00000    
    1.00000       1.00000       1.00000       1.00000    
