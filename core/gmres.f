@@ -449,18 +449,27 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
 
 #ifdef _OPENACC
-C ROR, 05-12-2017: Though we attempted to implement vlsc3_acc(), it did
-C not give the correct results (see comments in vlsc3_acc).  
-C Our workaround is to inline VLSC_ACC in gmres.f and use ACC KERNELS.
-!$ACC KERNELS
+
+c ROR, 05-12-2017: Though we attempted to implement vlsc3_acc() with an
+c ACC REDUCTION clause, it did not give the correct results (see
+c comments in vlsc3_acc).  This working implementation is based on
+c dependency analysis from the compiler.  
+
+!$ACC PARALLEL PRESENT(h_gmres, w_gmres, v_gmres, wt)
+!$ACC LOOP GANG, VECTOR
             do i=1,j
               h_gmres(i,j) = 0.0
-              do k=1,n
+            enddo
+!$ACC LOOP SEQ
+            do k=1,n
+!$ACC LOOP GANG, VECTOR
+              do i=1,j
                 h_gmres(i,j) = h_gmres(i,j) + w_gmres(k) 
      $            * v_gmres(k,i) *  wt(k)
               enddo
             enddo                                            !  i,j       i
-!$ACC END KERNELS
+!$ACC END PARALLEL
+
 #else
             do i=1,j
                h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
