@@ -432,10 +432,11 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
-! FIXME: ortho() is performed on the host.  Need to implement in ACC
-!$ACC UPDATE HOST(z_gmres)
+#ifdef _OPENACC
+            call ortho_acc   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+#else
             call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
-!$ACC UPDATE DEVICE(z_gmres)
+#endif
 
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

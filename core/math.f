@@ -1918,12 +1918,11 @@ c-----------------------------------------------------------------------
 
       TSUM = 0.
 
-!$ACC PARALLEL LOOP GANG VECTOR REDUCTION(+:tsum)
-!$ACC&              PRESENT(X)
+!$ACC KERNELS
       DO I=1,N
          TSUM = TSUM+X(I)
       ENDDO
-!$ACC END PARALLEL LOOP
+!$ACC END KERNELS
 
       TMP(1)=TSUM
 
