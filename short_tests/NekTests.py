@@ -392,7 +392,6 @@ class Eddy_Neknek(NekTestCase):
     case_name       = 'eddy_uv'
 
     def setUp(self):
-        cls = self.__class__
 
         self.size_params = dict(
             ldim='2',
@@ -405,15 +404,23 @@ class Eddy_Neknek(NekTestCase):
         )
 
         self.build_tools(['genmap'])
-        self.run_genmap(os.path.join(self.examples_root, cls.example_subdir, 'inside'))
-        self.run_genmap(os.path.join(self.examples_root, cls.example_subdir, 'outside'))
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
         from lib.nekBinRun import run_neknek
+        from re import sub
 
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        # Tweak the .rea files and run genmap
+        for rea_file in ('inside', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            with open(rea_path, 'r') as f:
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-06     p21 DIVERGENCE', l) for l in f]
+            with open(rea_path, 'w') as f:
+                f.writelines(lines)
+            self.run_genmap(os.path.join(cwd, rea_file))
 
         self.size_params['lx2'] = 'lx1'
         self.config_size()
@@ -460,9 +467,19 @@ class Eddy_Neknek(NekTestCase):
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
         from lib.nekBinRun import run_neknek
+        from re import sub
 
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        # Tweak the .rea files and run genmap
+        for rea_file in ('inside', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            with open(rea_path, 'r') as f:
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-11     p21 DIVERGENCE', l) for l in f]
+            with open(rea_path, 'w') as f:
+                f.writelines(lines)
+            self.run_genmap(os.path.join(cwd, rea_file))
 
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
