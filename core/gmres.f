@@ -447,11 +447,26 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call col2    (w_gmres,ml_gmres,n)           ! w = L   w
 #endif
 
-            call acc_copy_all_out()
-
+#ifdef _OPENACC
+C ROR, 05-12-2017: Though we attempted to implement vlsc3_acc(), it did
+C not give the correct results (see comments in vlsc3_acc).  
+C Our workaround is to inline VLSC_ACC in gmres.f and use ACC KERNELS.
+!$ACC KERNELS
+            do i=1,j
+              h_gmres(i,j) = 0.0
+              do k=1,n
+                h_gmres(i,j) = h_gmres(i,j) + w_gmres(k) 
+     $            * v_gmres(k,i) *  wt(k)
+              enddo
+            enddo                                            !  i,j       i
+!$ACC END KERNELS
+#else
             do i=1,j
                h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
             enddo                                            !  i,j       i
+#endif
+
+            call acc_copy_all_out()
 
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
 
