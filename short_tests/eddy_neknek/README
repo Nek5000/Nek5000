@@ -31,11 +31,9 @@ c     and NP2 is the number of processors for the 'outside' session.
 c     For example, if NP1=2 and NP2=4, you would type 
 c     'neknek inside outside 2 4'.  
 c
-c     eddy_uv.usr uses 1st order extrapolation in time for the interface
-c     terms between the two meshes. An addition usr file eddy_uv_ext3.usr
-c     is also provided which uses 3rd order extrapolation (ninter=3) in time
-c     with 5 iterations per time-step (ngeom = 5) used to converge the 
-c     interface values between the two meshes. 
+c     eddy_uv.usr uses 3rd order extrapolation (ninter=3) in time
+c     with 5 iterations per time-step (ngeom = 5) used to converge the
+c     interface values between the two meshes.
 c
 c     The case monitors the error for an exact 2D solution
 c     to the Navier-Stokes equations based on the paper of Walsh [1],
