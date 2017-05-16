@@ -87,8 +87,6 @@ c - - SIZE internals
 
       integer lxs,lys,lzs
       parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner
-      integer lfdm
-      parameter (lfdm=0)  ! == 1 for fast diagonalization method
 
       integer maxmbr
       parameter (maxmbr=lelt*6)
