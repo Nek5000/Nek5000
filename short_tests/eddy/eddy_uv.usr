@@ -132,6 +132,36 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exactp(pe,x2,y2,n2,time,visc,u0,v0)
+
+c     This routine, complementary to the exact routine above, returns
+c     the exact pressure, given the pressure counterpart to the
+c     arguments for the exact routine i.e., xx -> x2, yy -> y2, n -> n2
+c
+c     Brandon E. Merrill, Yulia T. Peet, Paul F. Fischer, and
+c     James W. Lottes. "A Spectrally Accurate Method for Overlapping
+c     Grid Solution of Incompressible Navier-Stokes Equations." Journal
+c     of Computational Physics 307 (2016), 60--93.
+
+      real x2(n),y2(n),pe(n)
+      real x,y,e
+
+      e   = exp(-50*time*visc)
+
+      do i=1,n2
+         x = x2(i) - u0*time
+         y = y2(i) - v0*time
+
+         pe(i) = (1.0/64.0)*e*(16*cos(6*x) + 8*cos(8*x-4*y)
+     $         - 32*cos(2*(x-2*y)) + 9*cos(8*y) - 8*cos(4*(2*x+y))
+     $         + 32*cos(2*(x+2*y)) - 4*sin(3*(x-3*y)) + 32*sin(5*(x-y))
+     $         + 36*sin(3*x-y) - 32*sin(5*(x+y)) + 36*sin(3*x+y)
+     $         - 4*sin(3*(x+3*y)))
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,ieg)
       include 'SIZE'
       include 'TOTAL'
