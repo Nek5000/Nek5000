@@ -1943,4 +1943,18 @@ c--------------------------------------------------------
          a(i) = a(i) * b(i)
       enddo
 !$ACC END PARALLEL LOOP
+      return
       end
+c-----------------------------------------------------------------------
+      subroutine col3_acc(a,b,c,n)
+      real a(n),b(n),c(n)
+
+!$ACC PARALLEL LOOP PRESENT(a,b,c)
+      do i=1,n
+         a(i)=b(i)*c(i)
+      enddo
+!$ACC END PARALLEL
+
+      return
+      end
+c-----------------------------------------------------------------------

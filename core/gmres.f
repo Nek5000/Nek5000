@@ -401,9 +401,16 @@ c           call copy(r,res,n)
          call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
                                                    !  1            1
          do j=1,m
+
+            call acc_copy_all_in()
+
             iter = iter+1
                                                        !       -1
+#ifdef _OPENACC
+            call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
+#else
             call col3(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
+#endif
                                                        !           j
 
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
@@ -416,7 +423,6 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 
             if (ifmgrid) then
 !FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
-               call acc_copy_all_in()
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
             else                                            !  j
 !FIXME: Only mgrid portion is implemented in ACC so far
@@ -476,13 +482,25 @@ c dependency analysis from the compiler.
             enddo                                            !  i,j       i
 #endif
 
-            call acc_copy_all_out()
-
+!$ACC UPDATE HOST(h_gmres)
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
+!$ACC UPDATE DEVICE(h_gmres)
 
+#ifdef _OPENACC
+!$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
+            do i=1,j
+               do k=1,n
+                  w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
+               enddo
+            enddo                                                !          i,j  i
+!$ACC END KERNELS
+#else
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
             enddo                                                !          i,j  i
+#endif
+
+            call acc_copy_all_out()
 
 
 c           2-PASS GS, 2nd pass:
