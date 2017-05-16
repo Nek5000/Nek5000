@@ -495,12 +495,9 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
       include 'mpif.h'
 
-      real*4 papi_mflops
-      integer*8 papi_flops
-
       write(6,*) 'Emergency exit'
 
-      call print_stack()
+c      call print_stack()
       call flush_io
 
       call mpi_finalize (ierr)
@@ -556,7 +553,7 @@ c     Communicate unhappiness to the other session
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '
-         call print_stack()
+c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'

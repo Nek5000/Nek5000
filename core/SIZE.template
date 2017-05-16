@@ -6,6 +6,7 @@ c
       integer lpelt,lbelt,toteq,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
       integer maxobj,lpert,nsessmax,lxo
+      integer lfdm
 
       ! BASIC
       parameter (ldim=3)               ! domain dimension (2 or 3)
@@ -34,6 +35,7 @@ c
       parameter (lbelt=lelt)           ! mhd
       parameter (lpelt=lelt)           ! linear stability
       parameter (lcvelt=lelt)          ! cvode
+      parameter (lfdm=0)  ! == 1 for fast diagonalization method
 
       ! INTERNALS
       include 'SIZE.inc'
