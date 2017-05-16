@@ -456,23 +456,14 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 #ifdef _OPENACC
 
-c ROR, 05-12-2017: Though we attempted to implement vlsc3_acc() with an
-c ACC REDUCTION clause, it did not give the correct results (see
-c comments in vlsc3_acc).  This working implementation is based on
-c dependency analysis from the compiler.  
-
 !$ACC PARALLEL PRESENT(h_gmres, w_gmres, v_gmres, wt)
-!$ACC LOOP GANG, VECTOR
-            do i=1,j
-              h_gmres(i,j) = 0.0
-            enddo
-!$ACC LOOP SEQ
-            do k=1,n
-!$ACC LOOP GANG, VECTOR
-              do i=1,j
-                h_gmres(i,j) = h_gmres(i,j) + w_gmres(k) 
-     $            * v_gmres(k,i) *  wt(k)
-              enddo
+!$ACC LOOP PRIVATE(temp)
+            do i=1,j 
+               temp = 0.0
+               do k=1,n
+                  temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
+               enddo
+               h_gmres(i,j) = temp
             enddo                                            !  i,j       i
 !$ACC END PARALLEL
 
