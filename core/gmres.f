@@ -460,6 +460,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !$ACC LOOP PRIVATE(temp)
             do i=1,j 
                temp = 0.0
+!$ACC LOOP
                do k=1,n
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
@@ -479,13 +480,12 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 #ifdef _OPENACC
 !$ACC PARALLEL PRESENT(w_gmres, h_gmres, v_gmres)
-!$ACC LOOP PRIVATE(temp)
-            do k=1,n
-               temp = w_gmres(k)
-               do i=1,j
-                  temp = temp - h_gmres(i,j) * v_gmres(k,i)
+!$ACC LOOP SEQ
+            do i=1,j
+!$ACC LOOP
+               do k=1,n
+                  w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
-               w_gmres(k) = temp
             enddo                                                !          i,j  i
 !$ACC END PARALLEL
 #else
