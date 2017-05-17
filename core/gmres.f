@@ -478,13 +478,16 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !$ACC UPDATE DEVICE(h_gmres)
 
 #ifdef _OPENACC
-!$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
-            do i=1,j
-               do k=1,n
-                  w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
+!$ACC PARALLEL PRESENT(w_gmres, h_gmres, v_gmres)
+!$ACC LOOP PRIVATE(temp)
+            do k=1,n
+               temp = w_gmres(k)
+               do i=1,j
+                  temp = temp - h_gmres(i,j) * v_gmres(k,i)
                enddo
+               w_gmres(k) = temp
             enddo                                                !          i,j  i
-!$ACC END KERNELS
+!$ACC END PARALLEL
 #else
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
