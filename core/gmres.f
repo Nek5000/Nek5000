@@ -401,9 +401,16 @@ c           call copy(r,res,n)
          call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
                                                    !  1            1
          do j=1,m
+
+            call acc_copy_all_in()
+
             iter = iter+1
                                                        !       -1
+#ifdef _OPENACC
+            call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
+#else
             call col3(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
+#endif
                                                        !           j
 
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
@@ -416,7 +423,6 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 
             if (ifmgrid) then
 !FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
-               call acc_copy_all_in()
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
             else                                            !  j
 !FIXME: Only mgrid portion is implemented in ACC so far
@@ -449,31 +455,46 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
 
 #ifdef _OPENACC
-C ROR, 05-12-2017: Though we attempted to implement vlsc3_acc(), it did
-C not give the correct results (see comments in vlsc3_acc).  
-C Our workaround is to inline VLSC_ACC in gmres.f and use ACC KERNELS.
-!$ACC KERNELS
-            do i=1,j
-              h_gmres(i,j) = 0.0
-              do k=1,n
-                h_gmres(i,j) = h_gmres(i,j) + w_gmres(k) 
-     $            * v_gmres(k,i) *  wt(k)
-              enddo
+
+!$ACC PARALLEL PRESENT(h_gmres, w_gmres, v_gmres, wt)
+!$ACC LOOP PRIVATE(temp)
+            do i=1,j 
+               temp = 0.0
+!$ACC LOOP
+               do k=1,n
+                  temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
+               enddo
+               h_gmres(i,j) = temp
             enddo                                            !  i,j       i
-!$ACC END KERNELS
+!$ACC END PARALLEL
+
 #else
             do i=1,j
                h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
             enddo                                            !  i,j       i
 #endif
 
-            call acc_copy_all_out()
-
+!$ACC UPDATE HOST(h_gmres)
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
+!$ACC UPDATE DEVICE(h_gmres)
 
+#ifdef _OPENACC
+!$ACC PARALLEL PRESENT(w_gmres, h_gmres, v_gmres)
+!$ACC LOOP SEQ
+            do i=1,j
+!$ACC LOOP
+               do k=1,n
+                  w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
+               enddo
+            enddo                                                !          i,j  i
+!$ACC END PARALLEL
+#else
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
             enddo                                                !          i,j  i
+#endif
+
+            call acc_copy_all_out()
 
 
 c           2-PASS GS, 2nd pass:
