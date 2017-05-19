@@ -505,9 +505,8 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
 !$ACC END PARALLEL
-
-            call acc_copy_all_out()
                                                       !            ______
+!$ACC UPDATE HOST(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
             rnorm = 0.
             if(alpha.eq.0.) goto 900  !converged
@@ -524,6 +523,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
+!$ACC UPDATE DEVICE(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
@@ -532,15 +532,22 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
             if (j.eq.m) goto 1000 !not converged, restart
 
+#ifdef _OPENACC
+            call cmult2_acc(v_gmres(1,j+1),w_gmres,1./alpha,n) ! v    = w / alpha
+#else
             temp = 1./alpha
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
+#endif
                                                        !  j+1
+         call acc_copy_all_out()
+
          enddo
   900    iconv = 1
  1000    continue
          !back substitution
          !     -1
          !c = H   gamma
+         call acc_copy_all_out()
          do k=j,1,-1
             temp = gamma_gmres(k)
             do i=j,k+1,-1
