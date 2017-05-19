@@ -494,23 +494,9 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             enddo                                                !          i,j  i
 #endif
 
-            call acc_copy_all_out()
-
-
-c           2-PASS GS, 2nd pass:
-c
-c           do i=1,j
-c              wk1(i)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-c           enddo                                      !  i,j       i
-c                                                      !
-c           call gop(wk1,wk2,'+  ',j)                  ! sum over P procs
-c
-c           do i=1,j
-c              call add2s2(w_gmres,v_gmres(1,i),-wk1(i),n)    ! w = w - h    v
-c              h_gmres(i,j) = h_gmres(i,j) + wk1(i)           !          i,j  i
-c           enddo
-
-            !apply Givens rotations to new column
+! Apply Givens rotations to new column
+!$ACC PARALLEL LOOP PRESENT(h_gmres,c_gmres,s_gmres) NUM_GANGS(1)
+!$ACC&              VECTOR_LENGTH(64)
             do i=1,j-1
                temp = h_gmres(i,j)
                h_gmres(i  ,j)=  c_gmres(i)*temp
@@ -518,7 +504,9 @@ c           enddo
                h_gmres(i+1,j)= -s_gmres(i)*temp
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
+!$ACC END PARALLEL
                                                       !            ______
+!$ACC UPDATE HOST(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
             rnorm = 0.
             if(alpha.eq.0.) goto 900  !converged
@@ -535,6 +523,7 @@ c           enddo
             if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
+!$ACC UPDATE DEVICE(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
@@ -543,27 +532,52 @@ c           enddo
 #endif
             if (j.eq.m) goto 1000 !not converged, restart
 
+#ifdef _OPENACC
+            call cmult2_acc(v_gmres(1,j+1),w_gmres,1./alpha,n) ! v    = w / alpha
+#else
             temp = 1./alpha
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
+#endif
                                                        !  j+1
+         call acc_copy_all_out()
+
          enddo
   900    iconv = 1
  1000    continue
          !back substitution
          !     -1
          !c = H   gamma
+
+!$ACC PARALLEL PRESENT(gamma_gmres, h_gmres, c_gmres)
+!$ACC LOOP SEQ
          do k=j,1,-1
             temp = gamma_gmres(k)
+!$ACC LOOP
             do i=j,k+1,-1
                temp = temp - h_gmres(k,i)*c_gmres(i)
             enddo
             c_gmres(k) = temp/h_gmres(k,k)
          enddo
-         !sum up Arnoldi vectors
+!$ACC END PARALLEL
+
+! Sum of Arnoldi vectors
+#ifdef _OPENACC
+!$ACC PARALLEL PRESENT(x_gmres, z_gmres, c_gmres)
+!$ACC LOOP SEQ
+            do i=1,j
+!$ACC LOOP
+               do k=1,n
+                  x_gmres(k) = x_gmres(k) + z_gmres(k,i)*c_gmres(i)
+               enddo
+            enddo                                                !          i,j  i
+!$ACC END PARALLEL
+#else
          do i=1,j
             call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
          enddo                                             !          i  i
+#endif
 c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
+         call acc_copy_all_out()
       enddo
  9000 continue
 

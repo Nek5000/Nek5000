@@ -2310,3 +2310,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine cmult2_acc (a,b,const,n)
+      dimension a(n),b(n)
+!$ACC PARALLEL LOOP
+      do i=1,n
+         a(i)=b(i)*const
+      enddo
+!$ACC END PARALLEL
+      return
+      end
