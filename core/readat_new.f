@@ -469,6 +469,15 @@ c set mesh-field mapping
         if(i_out .eq. 1) iftmsh(2) = .true.
       endif
 
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':conjugateHeatTransfer'
+         call finiparser_getBool(i_out,txt,ifnd)
+         if(ifnd .eq. 1) then
+           iftmsh(i+2) = .false.
+           if(i_out .eq. 1) iftmsh(i+2) = .true.
+         endif
+      enddo
+
 c set output flags
       call finiparser_getBool(i_out,'mesh:writeToFieldFile',ifnd) 
       if(ifnd .eq. 1) then
@@ -521,7 +530,7 @@ c set properties
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,1) = d_out 
          if(cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
-         write(txt,"('scalar',i2.2,a)") i,':rho'
+         write(txt,"('scalar',i2.2,a)") i,':density'
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,2) = d_out 
       enddo
