@@ -1,4 +1,5 @@
 C> @file bc.f Boundary condition routines
+
 C> \ingroup bcond
 C> @{
 C> Determining rind state for Dirichlet boundary conditions
@@ -116,6 +117,7 @@ C> Determining rind state for Dirichlet boundary conditions
       enddo
       enddo
 
+C> @}
       return
       end
 
@@ -180,6 +182,7 @@ C> viscosity, and strictly interior for physical viscosity.
          enddo
       enddo
 
+C> @}
       return
       end
 
