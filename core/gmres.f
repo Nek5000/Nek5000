@@ -547,14 +547,18 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
          !back substitution
          !     -1
          !c = H   gamma
-         call acc_copy_all_out()
+!$ACC PARALLEL PRESENT(gamma_gmres, h_gmres, c_gmres)
+!$ACC LOOP SEQ
          do k=j,1,-1
             temp = gamma_gmres(k)
+!$ACC LOOP
             do i=j,k+1,-1
                temp = temp - h_gmres(k,i)*c_gmres(i)
             enddo
             c_gmres(k) = temp/h_gmres(k,k)
          enddo
+!$ACC END PARALLEL
+         call acc_copy_all_out()
          !sum up Arnoldi vectors
          do i=1,j
             call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
