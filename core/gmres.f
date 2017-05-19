@@ -494,23 +494,9 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             enddo                                                !          i,j  i
 #endif
 
-            call acc_copy_all_out()
-
-
-c           2-PASS GS, 2nd pass:
-c
-c           do i=1,j
-c              wk1(i)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-c           enddo                                      !  i,j       i
-c                                                      !
-c           call gop(wk1,wk2,'+  ',j)                  ! sum over P procs
-c
-c           do i=1,j
-c              call add2s2(w_gmres,v_gmres(1,i),-wk1(i),n)    ! w = w - h    v
-c              h_gmres(i,j) = h_gmres(i,j) + wk1(i)           !          i,j  i
-c           enddo
-
-            !apply Givens rotations to new column
+! Apply Givens rotations to new column
+!$ACC PARALLEL LOOP PRESENT(h_gmres,c_gmres,s_gmres) NUM_GANGS(1)
+!$ACC&              VECTOR_LENGTH(64)
             do i=1,j-1
                temp = h_gmres(i,j)
                h_gmres(i  ,j)=  c_gmres(i)*temp
@@ -518,6 +504,9 @@ c           enddo
                h_gmres(i+1,j)= -s_gmres(i)*temp
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
+!$ACC END PARALLEL
+
+            call acc_copy_all_out()
                                                       !            ______
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
             rnorm = 0.
