@@ -548,17 +548,15 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
          !     -1
          !c = H   gamma
 
-!$ACC PARALLEL PRESENT(gamma_gmres, h_gmres, c_gmres)
-!$ACC LOOP SEQ
+!$ACC KERNELS PRESENT(gamma_gmres, h_gmres, c_gmres)
          do k=j,1,-1
             temp = gamma_gmres(k)
-!$ACC LOOP
             do i=j,k+1,-1
                temp = temp - h_gmres(k,i)*c_gmres(i)
             enddo
             c_gmres(k) = temp/h_gmres(k,k)
          enddo
-!$ACC END PARALLEL
+!$ACC END KERNELS
 
 ! Sum of Arnoldi vectors
 #ifdef _OPENACC
