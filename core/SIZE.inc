@@ -71,9 +71,9 @@ c - - SIZE internals
       parameter (ldimt3=ldimt+3)
 
       integer lx3,ly3,lz3
-      parameter (lx3=lx1)
-      parameter (ly3=ly1)
-      parameter (lz3=lz1)
+      parameter (lx3=lx2)
+      parameter (ly3=ly2)
+      parameter (lz3=lz2)
 
       integer lctmp0,lctmp1
       parameter (lctmp0 =2*lx1*ly1*lz1*lelt)
