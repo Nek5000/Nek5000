@@ -399,10 +399,10 @@ c           call copy(r,res,n)
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
          call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+
+         call acc_copy_all_in()
                                                    !  1            1
          do j=1,m
-
-            call acc_copy_all_in()
 
             iter = iter+1
                                                        !       -1
@@ -538,8 +538,6 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             temp = 1./alpha
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
 #endif
-                                                       !  j+1
-         call acc_copy_all_out()
 
          enddo
   900    iconv = 1
@@ -575,8 +573,8 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
          enddo                                             !          i  i
 #endif
 c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
-         call acc_copy_all_out()
       enddo
+      call acc_copy_all_out()
  9000 continue
 
       divex = rnorm
