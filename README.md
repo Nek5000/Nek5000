@@ -100,9 +100,6 @@ Here's a brief description of each top-level directory:
 #### `core`
 contains the majority of the Nek5000 application sources.
 
-#### `jl`
-contains gather/scatter communication ([gslib](https://github.com/gslib/gslib)), interpolation, and preconditioners written in highly general C code.
-
 #### `bin`
 contains scripts for running nek5000 and manipulating its output.
 
