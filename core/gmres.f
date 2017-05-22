@@ -375,32 +375,63 @@ c
       do while (iconv.eq.0.and.iter.lt.500)
          outer = outer+1
 
+c        ROR 2017-05-22: Separate copyin/copyout statements are used for
+c        res, h1, h2, and wt, since they are local variables.  
+         call acc_copy_all_in()
+!$ACC ENTER DATA COPYIN(res)
+
          if(iter.eq.0) then                   !      -1
-            call col3(r_gmres,ml_gmres,res,n) ! r = L  res
+#ifdef _OPENACC
+!$ACC PARALLEL PRESENT(r_gmres, ml_gmres, res)
+            do k=1,n
+               r_gmres(k) = ml_gmres(k) * res(k)
+            enddo
+!$ACC END PARALLEL
+#else
+            call col3    (r_gmres,ml_gmres,res,n) ! r = L  res
+#endif
 c           call copy(r,res,n)
          else
             !update residual
-            call copy  (r_gmres,res,n)           ! r = res
-            call ax    (w_gmres,x_gmres,h1,h2,n) ! w = A x
-            call add2s2(r_gmres,w_gmres,-1.,n)   ! r = r - w
-                                                 !      -1
-            call col2(r_gmres,ml_gmres,n)        ! r = L   r
+#ifdef _OPENACC
+!$ACC PARALLEL PRESENT(r_gmres, res)
+            do k=1,n
+               r_gmres(k) = res(k)
+            enddo
+!$ACC END PARALLEL
+c           ax() is implemented to run on device when needed
+            call ax        (w_gmres,x_gmres,h1,h2,n)
+!$ACC PARALLEL PRESENT(r_gmres, w_gmres, ml_gmres)
+            do k=1,n
+               r_gmres(k) = (r_gmres(k) - w_gmres(k)) * ml_gmres(k)
+            enddo
+!$ACC END PARALLEL
+#else
+            call copy  (r_gmres,res,n)               ! r = res
+            call ax    (w_gmres,x_gmres,h1,h2,n)     ! w = A x
+            call add2s2(r_gmres,w_gmres,-1.,n)       ! r = r - w
+                                                     !      -1
+            call col2  (r_gmres,ml_gmres,n)          ! r = L   r
+#endif
          endif
-                                                            !            ______
+
+!$ACC UPDATE HOST(gamma_gmres, r_gmres, wt)
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
-                                                            !      1
          if(iter.eq.0) then
             div0 = gamma_gmres(1)*norm_fac
             if (param(21).lt.0) tolpss=abs(param(21))*div0
          endif
+!$ACC UPDATE DEVICE(gamma_gmres, r_gmres, wt)
 
          !check for lucky convergence
          rnorm = 0.
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
-         call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
-
-         call acc_copy_all_in()
+#ifdef _OPENACC
+         call cmult2_acc(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+#else
+         call cmult2(v_gmres(1,1),r_gmres,temp,n)     ! v  = r / gamma
+#endif
                                                    !  1            1
          do j=1,m
 
@@ -532,10 +563,10 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
             if (j.eq.m) goto 1000 !not converged, restart
 
-#ifdef _OPENACC
-            call cmult2_acc(v_gmres(1,j+1),w_gmres,1./alpha,n) ! v    = w / alpha
-#else
             temp = 1./alpha
+#ifdef _OPENACC
+            call cmult2_acc(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
+#else
             call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
 #endif
 
@@ -574,8 +605,10 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
 c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       enddo
-      call acc_copy_all_out()
  9000 continue
+
+!$ACC EXIT DATA COPYOUT(res)
+      call acc_copy_all_out()
 
       divex = rnorm
       call copy(res,x_gmres,n)
