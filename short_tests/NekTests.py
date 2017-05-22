@@ -456,6 +456,58 @@ class KovStState(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
+####################################################################
+#  kov_st_state; kov_st_stokes.rea
+####################################################################
+
+class Ethier(NekTestCase):
+    example_subdir = 'ethier'
+    case_name = 'ethier'
+
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '3',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-2',
+            lelg      = '50',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(vxerr, target_val=3.635317e-05, delta=1e-07, label='VX err')
+
+        prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(prerr, target_val=1.127384e-04, delta=1e-06, label='PR err')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(vxerr, target_val=2.407549E-006, delta=1e-08, label='VX err')
+
+        prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(prerr, target_val=7.554325E-005, delta=1e-08, label='PR err')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
 
 ####################################################################
 #  lowMach_test; lowMach_test.rea
