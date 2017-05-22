@@ -371,14 +371,14 @@ c
       iconv = 0
       call rzero(x_gmres,n)
 
+c     ROR 2017-05-22: Separate copyin/copyout statements are used for
+c     res, h1, h2, and wt, since they are local variables.  
+      call acc_copy_all_in()
+!$ACC ENTER DATA COPYIN(res)
+
       outer = 0
       do while (iconv.eq.0.and.iter.lt.500)
          outer = outer+1
-
-c        ROR 2017-05-22: Separate copyin/copyout statements are used for
-c        res, h1, h2, and wt, since they are local variables.  
-         call acc_copy_all_in()
-!$ACC ENTER DATA COPYIN(res)
 
          if(iter.eq.0) then                   !      -1
 #ifdef _OPENACC
@@ -607,13 +607,23 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       enddo
  9000 continue
 
+      divex = rnorm
+
+#ifdef _OPENACC
+!$ACC PARALLEL PRESENT(res, x_gmres)
+      do k=1,n
+         res(k) = x_gmres(k)
+      enddo
+!$ACC END PARALLEL
+c     ortho_acc is implemented to run on the accellerator
+      call ortho_acc(res)
+#else
+      call copy(res,x_gmres,n)
+      call ortho   (res) ! Orthogonalize wrt null space, if present
+#endif
+
 !$ACC EXIT DATA COPYOUT(res)
       call acc_copy_all_out()
-
-      divex = rnorm
-      call copy(res,x_gmres,n)
-
-      call ortho   (res) ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
