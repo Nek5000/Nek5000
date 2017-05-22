@@ -327,18 +327,13 @@ C--------------------------------------------------------------------
 
       include 'SIZE'
 
-      character*1 file(80)
       character*80  hdr
 
 
       real*4 test
       data   test  / 6.54321 /
 
-      len = ltrunc(re2name,80)
-      call chcopy(file,re2name,80)
-      call chcopy(file(len+1),char(0),1) 
-
-      call byte_open(file,ierr)
+      call byte_open(re2name,ierr)
             
 c  Write the header
       call blank     (hdr,80)    
