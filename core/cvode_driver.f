@@ -556,8 +556,8 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
            call makeq
 
            if (iftmsh(ifield)) then                                
-              call dssum(bq,nx1,ny1,nz1)
-              call col2(bq,bintm1,ntot)
+              call dssum(bq(1,1,1,1,ifield-1),nx1,ny1,nz1)
+              call col2(bq(1,1,1,1,ifield-1),bintm1,ntot)
 
               call col3(w1,vtrans(1,1,1,1,ifield),bm1,ntot)      
               call dssum(w1,nx1,ny1,nz1)                        

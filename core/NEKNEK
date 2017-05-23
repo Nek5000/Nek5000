@@ -12,8 +12,9 @@ c
       real             valint(lx1,ly1,lz1,lelt,nfldmax)
       common /valmask/ valint
 
-      integer npsend, nprecv, infosend(nmaxcom,2), inforecv(nmaxcom,2)
-      common /proclist/ npsend, nprecv, infosend, inforecv
+      integer npsend,nprecv,infosend(nmaxcom,2),inforecv(nmaxcom,2)
+     $        ,msg(nmaxcom)
+      common /proclist/ npsend, nprecv, infosend, inforecv, msg
 
       integer iden(ldim+1,nmaxl)
       common /pointiden/ iden

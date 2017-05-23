@@ -682,7 +682,7 @@ c     overrule tolerance for velocity
       niter = min(maxit,maxcg)
 
       if (.not.ifsolv) then
-         call setfast(h1,h2,imesh)
+         call setfast(h1,h2,imsh)
          ifsolv = .true.
       endif
 C
@@ -1392,11 +1392,7 @@ c
       call copy(aa,a,100)
       call copy(bb,b,100)
 c
-      if (ifdblas) then
-         call dsygv(1,'V','U',n,a,n,b,n,lam,bw,lbw,info)
-      else
-         call ssygv(1,'V','U',n,a,n,b,n,lam,bw,lbw,info)
-      endif
+      call dsygv(1,'V','U',n,a,n,b,n,lam,bw,lbw,info)
 c
 c     call outmat2(a,n,n,n,'Aeig')
 c     call outmat2(lam,1,n,n,'Deig')

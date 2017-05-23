@@ -82,11 +82,11 @@ Setting the following in your enviroment will affect the execution of NekTests
 #### unittest
 
 To run all the tests, first `cd` into this directory and then run:
-`$ python -m 'unittest' NekUnitTests`
+`$ python -m 'unittest' NekTests`
 
 If you wish to run tests for one example problem (for example, "TurbChannel"), run:
-`$ python -m 'unittest' NekUnitTests.TurbChannel`
+`$ python -m 'unittest' NekTests.Eddy_EddyUv`
 
 If you wish to run tests for one example problem and one
 formulation/parallelization (for example, test_PnPn_Serial), run:
-`$ python -m 'unittest' NekUnitTests.TurbChannel.test_PnPn_Serial`
+`$ python -m 'unittest' NekTests.Eddy_EddyUv.test_PnPn_Serial`

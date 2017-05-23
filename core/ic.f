@@ -258,11 +258,11 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
          do ifield=3,nfield
-            call dssum(t(1,1,1,1,i-1),nx1,ny1,nz1)
+            call dssum(t(1,1,1,1,ifield-1),nx1,ny1,nz1)
             if(iftmsh(ifield)) then
-              call col2 (t(1,1,1,1,i-1),tmult,ntott)
+              call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
             else
-              call col2 (t(1,1,1,1,i-1),vmult,ntotv)
+              call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
             endif
          enddo
       endif
@@ -273,11 +273,18 @@ c     if (ifpert.and..not.ifdg) then ! Still not DG
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
             call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
-            ifield = 2
 
 c           note... must be updated for addl pass. scal's. pff 4/26/04
-            if (.not.ifdg) call dssum(tp(1,1,jp),nx1,ny1,nz1)
-            if (.not.ifdg) call col2 (tp(1,1,jp),tmult,ntotv)
+            if (.not.ifdg) then
+               do ifield=2,nfield
+                  call dssum(tp(1,ifield-1,jp),nx1,ny1,nz1)
+                  if(iftmsh(ifield)) then
+                     call col2 (tp(1,ifield-1,jp),tmult,ntott)
+                  else
+                     call col2 (tp(1,ifield-1,jp),vmult,ntotv)
+                  endif
+               enddo
+            endif
 
             vxmax = glamax(vxp(1,jp),ntotv)
             vymax = glamax(vyp(1,jp),ntotv)
@@ -578,7 +585,8 @@ c
       ifbytsw = .false.
 
       if(nfiles.lt.1) return
-      if(nio.eq.0) write(6,*) 'Reading checkpoint data'
+
+      if(nio.eq.0) write(6,*) 'Reading checkpoint data '
 
 c use new reader (only binary support)
       p67 = abs(param(67))
@@ -2017,8 +2025,9 @@ c-----------------------------------------------------------------------
 
       call nekgsync() ! clear outstanding message queues.
 
-      nxyzr = nxr*nyr*nzr   
-      len   = nxyzr*wdsizr  ! message length
+      nxyzr  = nxr*nyr*nzr  
+      dnxyzr = nxyzr 
+      len    = nxyzr*wdsizr  ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
@@ -2028,11 +2037,10 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-         nread = nxyzr*nelr/lrbs
-         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
-#ifdef MPIIO 
-         nread = iglmax(nread,1) ! needed because of collective read
-#endif
+         dtmp  = dnxyzr*nelr 
+         nread = dtmp/lrbs
+         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
       call bcast(nelrr,4)
@@ -2060,11 +2068,11 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             endif
             
             if(ierr.eq.0) then
-#ifdef MPIIO 
-              call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
-#else
-              call byte_read (w2,nxyzr*nelrr,ierr)
-#endif
+              if(ifmpiio) then
+                call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
+              else
+                call byte_read (w2,nxyzr*nelrr,ierr)
+              endif
             endif
 
             ! distribute data across target processors
@@ -2081,11 +2089,11 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
-#ifdef MPIIO 
-         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
-#else
-         call byte_read(wk,nxyzr*nelr,ierr)
-#endif
+         if(ifmpiio) then
+           call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
+         else
+           call byte_read(wk,nxyzr*nelr,ierr)
+         endif
       endif
 
 
@@ -2161,8 +2169,9 @@ c-----------------------------------------------------------------------
 
       call nekgsync() ! clear outstanding message queues.
 
-      nxyzr = ndim*nxr*nyr*nzr
-      len   = nxyzr*wdsizr             ! message length in bytes
+      nxyzr  = ndim*nxr*nyr*nzr
+      dnxyzr = nxyzr
+      len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer
@@ -2172,11 +2181,10 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         nread = nxyzr*nelr/lrbs
-         if(mod(nxyzr*nelr,lrbs).ne.0) nread = nread + 1
-#ifdef MPIIO 
-         nread = iglmax(nread,1) ! needed because of collective read
-#endif
+         dtmp  = dnxyzr*nelr
+         nread = dtmp/lrbs
+         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
       call bcast(nelrr,4)
@@ -2204,11 +2212,11 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             endif
 
             if(ierr.eq.0) then
-#ifdef MPIIO 
-              call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
-#else
-              call byte_read (w2,nxyzr*nelrr,ierr)
-#endif
+              if(ifmpiio) then 
+                call byte_read_mpi(w2,nxyzr*nelrr,-1,ifh_mbyte,ierr)
+              else
+                call byte_read (w2,nxyzr*nelrr,ierr)
+              endif
             endif
 
             ! redistribute data based on the current el-proc map
@@ -2225,11 +2233,11 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
-#ifdef MPIIO 
-         call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
-#else
-         call byte_read(wk,nxyzr*nelr,ierr)
-#endif
+         if(ifmpiio) then 
+           call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
+         else
+           call byte_read(wk,nxyzr*nelr,ierr)
+         endif
       endif
 
 c     if (if_byte_sw.and.wdsizr.eq.8) then
@@ -2337,18 +2345,6 @@ c-----------------------------------------------------------------------
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
       endif
-
-c#ifdef MPIIO
-c      if ((nelr/np + np).gt.lelr) then
-c        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
-c        call exitt
-c      endif
-c#else
-c      if (nelr.gt.lelr) then
-c        write(6,'(A,I6)') 'ABORT: nelr>lelr on rank',nid
-c        call exitt
-c      endif
-c#endif
 
       ifgtim  = .true.  ! always get time
       ifgetxr = .false.
@@ -2568,11 +2564,11 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 
       if (ifgtim) time = timer
 
-#ifdef MPIIO
-      if (nid.eq.pid0r) call byte_close_mpi(ifh_mbyte,ierr)
-#else
-      if (nid.eq.pid0r) call byte_close(ierr)
-#endif
+      if(ifmpiio) then
+        if(nid.eq.pid0r) call byte_close_mpi(ifh_mbyte,ierr)
+      else
+        if(nid.eq.pid0r) call byte_close(ierr)
+      endif
       call err_chk(ierr,'Error closing restart file, in mfi.$')
       tio = dnekclock()-tiostart
 
@@ -2597,29 +2593,19 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mbyte_open(hname,fid,ifro,ierr) ! open  blah000.fldnn
+      subroutine addfid(fname,fid)
       include 'SIZE'
       include 'TSTEP'
+      include 'INPUT'
       include 'RESTART'
- 
+
+
+      character*1 fname(132)
       integer fid
-      character*132 hname
-      logical ifro
 
       character*8  eight,fmt,s8
       save         eight
       data         eight / "????????" /
-
-      character*132 fname
-      character*1  fname1(132)
-      equivalence (fname1,fname)
-
-      integer      iname(33)
-      equivalence (iname,fname)
-
-      call izero  (iname,33)
-      len = ltrunc(hname,132)
-      call chcopy (fname,hname,len)
 
       do ipass=1,2      ! 2nd pass, in case 1 file/directory
          do k=8,1,-1
@@ -2628,23 +2614,13 @@ c-----------------------------------------------------------------------
                write(fmt,1) k,k
     1          format('(i',i1,'.',i1,')')
                write(s8,fmt) fid
-               call chcopy(fname1(i1),s8,k)
+               call chcopy(fname(i1),s8,k)
                goto 10
             endif
          enddo
    10    continue
       enddo
       
-#ifdef MPIIO
-      call byte_open_mpi(fname,ifh_mbyte,ifro,ierr)
-      if(nio.eq.0) write(6,6) istep,(fname1(k),k=1,len)
-    6 format(1i8,' OPEN: ',132a1)
-#else
-      call byte_open(fname,ierr)
-      if(nio.eq.0)write(6,6) nid,istep,(fname1(k),k=1,len)
-    6 format(2i8,' OPEN: ',132a1)
-#endif
-
       return
       end
 c-----------------------------------------------------------------------
@@ -2654,31 +2630,33 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'PARALLEL'
       include 'RESTART'
+      include 'INPUT'
 
       integer stride
-      character*132 hdr
+      character*132 hdr, hname_
       logical if_byte_swap_test
       real*4 bytetest
 
       integer*8 offs0,offs
 
-      integer sum
-
       ierr = 0
-#ifndef MPIIO
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
-         call mbyte_open(hname,0,.TRUE.,ierr) ! open  blah000.fldnn
+         call chcopy(hname_,hname,132)
+         call addfid(hname_,0)
+         call byte_open(hname_,ierr)
+
          if(ierr.ne.0) goto 101
          call blank     (hdr,iHeaderSize)
-         call byte_read (hdr, iHeaderSize/4,ierr)
+         call byte_read (hdr,iHeaderSize/4,ierr)
          if(ierr.ne.0) goto 101
          call byte_read (bytetest,1,ierr)
          if(ierr.ne.0) goto 101
          if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
          if(ierr.ne.0) goto 101
-         call mfi_parse_hdr(hdr,ierr)
+
+         call byte_close(ierr)
       endif
 
  101  continue
@@ -2686,71 +2664,69 @@ c-----------------------------------------------------------------------
 
       call bcast(if_byte_sw,lsize) 
       call bcast(hdr,iHeaderSize)  
-      if(nid.ne.0) call mfi_parse_hdr(hdr,ierr)
-
-      stride = np / nfiler
-      if (stride.lt.1) then
-         write(6,*) nfiler,np,'  TOO MANY FILES, mfi_prepare'
-         call exitt
-      endif
-
-      if (mod(nid,stride).eq.0) then ! i/o clients
-         pid0r = nid
-         pid1r = nid + stride
-         fid0r = nid / stride
-         if (nid.ne.0) then ! don't do it again for rank0
-            call blank     (hdr,iHeaderSize)
-            call mbyte_open(hname,fid0r,.TRUE.,ierr) ! open  blah000.fldnn
-            if(ierr.ne.0) goto 102
-            call byte_read (hdr, iHeaderSize/4,ierr)  
-            if(ierr.ne.0) goto 102
-            call byte_read (bytetest,1,ierr) 
-            if(ierr.ne.0) goto 102
-            call mfi_parse_hdr (hdr,ierr)  ! replace hdr with correct one 
-         endif
-         call byte_read (er,nelr,ierr)     ! get element mapping
-         if (if_byte_sw) call byte_reverse(er,nelr,ierr)
-      endif
-#else
-      pid0r = nid
-      pid1r = nid
-      offs0 = iHeaderSize + 4
-      call mbyte_open(hname,0,.TRUE.,ierr)
-      ierr=iglmax(ierr,1)
-      if(ierr.ne.0) goto 103
-
-      call byte_read_mpi(hdr,iHeaderSize/4,pid00,ifh_mbyte,ierr)
-      ierr=iglmax(ierr,1)
-      if(ierr.ne.0) goto 103
-
-      call byte_read_mpi(bytetest,1,pid00,ifh_mbyte,ierr)
-
- 103  continue 
-      call err_chk(ierr,'Error reading header/element map.$')
-      
-      call bcast(hdr,iHeaderSize) 
-      call bcast(bytetest,4) 
-
-      if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
       call mfi_parse_hdr(hdr,ierr)
-      if(nfiler.ne.1) then
-        if(nid.eq.0) write(6,*) 'ABORT: too many restart files!'
-        call exitt
-      endif
-      nfiler = np
 
-      ! number of elements to read 
-      nelr = nelgr/np
-      do i = 0,mod(nelgr,np)-1
-         if(i.eq.nid) nelr = nelr + 1
-      enddo
-      nelBr = igl_running_sum(nelr) - nelr 
-      offs = offs0 + nelBr*isize
-
-      call byte_set_view(offs,ifh_mbyte)
-      call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
-      if (if_byte_sw) call byte_reverse(er,nelr,ierr)
+      ifmpiio = .false.
+      if (nfiler.eq.1 .and. abs(param(67)).eq.6) ifmpiio = .true.
+#ifdef NOMPIIO
+      ifmpiio = .false.
 #endif
+
+      if(.not.ifmpiio) then
+
+        stride = np / nfiler
+        if (stride.lt.1) then
+           write(6,*) nfiler,np,'  TOO MANY FILES, mfi_prepare'
+           call exitt
+        endif
+ 
+        if (mod(nid,stride).eq.0) then ! i/o clients
+           pid0r = nid
+           pid1r = nid + stride
+           fid0r = nid / stride
+           call blank     (hdr,iHeaderSize)
+
+           call addfid(hname,fid0r)
+           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
+           call byte_open(hname,ierr)
+
+           if(ierr.ne.0) goto 102
+           call byte_read (hdr, iHeaderSize/4,ierr)  
+           if(ierr.ne.0) goto 102
+           call byte_read (bytetest,1,ierr) 
+           if(ierr.ne.0) goto 102
+           call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
+           call byte_read (er,nelr,ierr)     ! get element mapping
+           if(if_byte_sw) call byte_reverse(er,nelr,ierr)
+        endif
+
+      else
+
+        pid0r  = nid
+        pid1r  = nid
+        offs0  = iHeaderSize + 4
+        nfiler = np
+ 
+        ! number of elements to read 
+        nelr = nelgr/np
+        do i = 0,mod(nelgr,np)-1
+           if(i.eq.nid) nelr = nelr + 1
+        enddo
+        nelBr = igl_running_sum(nelr) - nelr 
+        offs = offs0 + nelBr*isize
+
+        call addfid(hname,fid0r)
+        if(nio.eq.0) write(6,*) '      FILE:',hname
+        call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
+
+        if(ierr.ne.0) goto 102
+        call byte_set_view(offs,ifh_mbyte)
+        call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
+        if(ierr.ne.0) goto 102
+        if(if_byte_sw) call byte_reverse(er,nelr,ierr)
+
+      endif
+
  102  continue
       call err_chk(ierr,'Error reading header/element map.$')
 

@@ -1,3 +1,8 @@
+C> @file driver3_cmt.f routines for primitive variables, usr-file interfaces
+C> and properties
+
+C> Compute primitive variables (velocity, thermodynamic state) from 
+C> conserved unknowns U
       subroutine compute_primitive_vars
       include 'SIZE'
       include 'INPUT'
@@ -62,6 +67,8 @@
       end
 !-----------------------------------------------------------------------
 
+C> Compute thermodynamic state for element e from internal energy.
+C> usr file.
       subroutine tdstate(e,energy)!,energy)
 c compute the gas properties. We will have option to add real gas models
 c We have perfect gas law. Cvg is stored full field

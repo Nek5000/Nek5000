@@ -62,8 +62,9 @@ c
         STOP
       endif
       write(6,*)
-      write(6,'(2a,f4.2)') exoname," is an EXODUSII file; version ",vers
-      write(6,'(a,i2)')            "I/O word size", io_ws
+      write(6,'(a32,a,f4.2)') 
+     &      exoname," is an EXODUSII file; version ",vers
+      write(6,'(a,i2)') "I/O word size", io_ws
 c
 c read database parameters
 c
@@ -74,12 +75,12 @@ c
         STOP
       endif
       write (6,    '(/"database parameters:"/ /
-     &               "title = ", a81 / /
-     &               "num_dim = ", i8 /
-     &               "num_nodes = ", i8 /
-     &               "num_elem = ", i8 /
-     &               "num_elem_blk = ", i8 /
-     &               "num_side_sets = ", i3)')
+     &               "title         = ", a81 / /
+     &               "num_dim       = ", i8 /
+     &               "num_nodes     = ", i8 /
+     &               "num_elem      = ", i8 /
+     &               "num_elem_blk  = ", i8 /
+     &               "num_side_sets = ", i8)')
      &               titl,num_dim, num_nodes, num_elem,
      &               num_elem_blk, num_side_sets
       write (6,*)
@@ -117,10 +118,10 @@ c
      &    "ERROR: cannot read parameters for block ",i," (exgelb)"
           STOP
         endif
-        write (6, '("element block id = ", i2,/
-     &              "element type = ", a9,/
-     &              "num_elem_in_block = ", i8,/
-     &              "num_nodes_per_elem = ", i2)')
+        write (6, '("element block id   = ", i8,/
+     &              "element type       = ", a8,/
+     &              "num_elem_in_block  = ", i8,/
+     &              "num_nodes_per_elem = ", i8)')
      &              idblk(i), typ, num_elem_in_block(i),
      &              num_nodes_per_elem(i)
         if (num_dim.eq.3.and.num_nodes_per_elem(i).ne.27) then
@@ -246,16 +247,11 @@ c
       integer exo_to_nek_face2D(4)
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /          ! symmetric face numbering
 
-      write(6,*)
-      write(6,'(A)') 'Converting elements ...'
-      write(6,*)
-
       nvert = 3**num_dim
 
+      write(6,'(A)') ' '
+      write(6,'(A)') 'Converting elements ... '
       do iel = 1, num_elem
-        if (mod(iel,100).eq.0.or.iel.eq.num_elem) then
-          write(6,'(A,I8)') 'Reading element ',iel
-        endif
         do ivert = 1, nvert
           if (num_dim.eq.2) then
             jvert = exo_to_nek_vert2D(ivert)
@@ -269,6 +265,8 @@ c
           endif
         enddo
       enddo
+      write(6,'(A)') 'done :: Converting elements '
+c
 c zero-out bc and curve sides arrays
       call blank   (cbc,3*2*ldim*max_num_elem)
       call rzero   (bc,5*2*ldim*max_num_elem)
@@ -279,20 +277,17 @@ c set bc's
 c
       if (num_side_sets.eq.0) return   ! no sidesets
 
-      write(6,'(a)') ""
-      write(6,'(a)') "Converting SidSets ..."
+      write(6,'(a)') ''
+      write(6,'(a)') 'Converting SideSets ...'
 c the expensive part, improve it...
       do iss=1,num_side_sets   ! loop over ss 
-        write(6,'(a)') ""
-        write(6,'(a,i2)') "Sideset ",idss(iss)
+        write(6,'(a)') ''
+        write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
         do iel=1,num_elem
-          if (mod(iel,100).eq.0.or.iel.eq.num_elem) then
-            write(6,'(A,I8)') '  Element ',iel
-          endif
           do ifc=1,2*num_dim             ! loop over faces
             do i=1,num_sides_in_set(iss) ! loop over sides in ss
-              if      ( (iel.eq.elem_list(i,iss))
-     &        .and.   (ifc.eq.side_list(i,iss)) ) then
+              if    ( (iel.eq.elem_list(i,iss))
+     &        .and. (ifc.eq.side_list(i,iss)) ) then
                 if (num_dim.eq.2) then
                   jfc = exo_to_nek_face2D(ifc)
                 else
@@ -304,7 +299,10 @@ c the expensive part, improve it...
             enddo
           enddo
         enddo
+        write(6,'(A,I2)') 'done :: Sideset ',idss(iss)
       enddo
+      write(6,'(a)') ''
+      write(6,'(a)') 'done :: Converting SideSets '
 
       return
       end
@@ -329,18 +327,13 @@ C--------------------------------------------------------------------
 
       include 'SIZE'
 
-      character*1 file(80)
       character*80  hdr
 
 
       real*4 test
       data   test  / 6.54321 /
 
-      len = ltrunc(re2name,80)
-      call chcopy(file,re2name,80)
-      call chcopy(file(len+1),char(0),1) 
-
-      call byte_open(file,ierr)
+      call byte_open(re2name,ierr)
             
 c  Write the header
       call blank     (hdr,80)    

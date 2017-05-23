@@ -69,8 +69,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call genwz           ! Compute GLL points, weights, etc.
 
-      call io_init         ! Initalize io unit
-
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
@@ -282,7 +280,9 @@ c-----------------------------------------------------------------------
 
          if (ifflow)          call fluid    (igeom)
          if (ifmvbd)          call meshv    (igeom)
-         if (param(103).gt.0) call q_filter (param(103))
+         if (igeom.eq.ngeom.and.param(103).gt.0)
+     $                        call q_filter(param(103))
+
          enddo
 
       else                ! PN-2/PN-2 formulation

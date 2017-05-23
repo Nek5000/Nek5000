@@ -1,6 +1,7 @@
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+      include 'CMTDATA'
       parameter (lt=lx1*ly1*lz1*lelt)
       common /mystuff/ vrt(lt,3),wk1(lt),wk2(lt)
 
@@ -12,26 +13,25 @@
       endif
       ifxyo = .true.
 
+! sigh. need settime to bend to my will
+      time=time_cmt
+      dt=dt_cmt
+
       if (mod(istep,iostep).eq.0) call comp_vort3(vrt,wk1,wk2,vx,vy,vz)
       if (mod(istep,iostep).eq.0) call outpost(vx,vy,vz,vrt,t,'vrt')
 
       return
       end
+
 !-----------------------------------------------------------------------
-      subroutine cmt_userflux
+
+      subroutine entropy_viscosity
       include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE' ! probably want to start following nek convention
-                       ! and use this routine pointwise
-      real fluxout(lx1*lz1)
-      integer e,f,eg
-c     e = gllel(eg)
-      do i=1,nx1*nz1
-         fluxout(i)=0.0 ! adiabatic
-      enddo
       return
       end
+
 !-----------------------------------------------------------------------
+
       subroutine cmt_userEOS(ix,iy,iz,eg)
       include 'SIZE'
       include 'NEKUSE'
@@ -50,11 +50,14 @@ c     e = gllel(eg)
 
       return
       end
+
 c-----------------------------------------------------------------------
+
       subroutine uservp (ix,iy,iz,eg)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
 
       integer e,f,eg
 c     e = gllel(eg)
@@ -63,9 +66,12 @@ c     e = gllel(eg)
       lambda=-2.0/3.0*mu
       udiff =0.
       utrans=0.
+      nu_s=0.0
       return
       end
+
 c-----------------------------------------------------------------------
+
       subroutine userf  (ix,iy,iz,eg)
       include 'SIZE'
       include 'TOTAL'
@@ -95,6 +101,7 @@ c-----------------------------------------------------------------------
       subroutine userbc (ix,iy,iz,iside,ieg)
       include 'SIZE'
       include 'NEKUSE'
+      include 'CMTDATA'
      
       integer f,e,eg
       flux=0.0
@@ -139,7 +146,7 @@ c-----------------------------------------------------------------------
       ux = varsic(2)/varsic(1)
       uy = varsic(3)/varsic(1)
       uz = varsic(4)/varsic(1)
-!     call userEOS(ix,iy,iz,eg)
+!     call cmt_userEOS(ix,iy,iz,eg)
       cp=cpgref
       cv=cvgref
       return
@@ -169,7 +176,12 @@ c-----------------------------------------------------------------------
       res_freq  = 5000000
       flio_freq = 10000
 
-      IFDG=.true.
+      nbc=0
+      do i=1,2 ! get density output
+         call add_temp(f2tbc,nbc,1)
+      enddo
+      igeom=2
+      call setup_topo
 
       return
       end
@@ -241,10 +253,10 @@ c
       enddo
       pi = 4.0*atan(1.0)
       phigic = 1.0
-      num_steps = int(1/dt)
-      xctrnew = xctr + uxinf*time
-      yctrnew = yctr + uyinf*time
-      nloop = int(int(uxinf*time)/10) + 1
+      num_steps = int(1/dt_cmt)
+      xctrnew = xctr + uxinf*time_cmt
+      yctrnew = yctr + uyinf*time_cmt
+      nloop = int(int(uxinf*time_cmt)/10) + 1
       if(xctrnew.gt.10.0)then
          xctrnew = (xctrnew - nloop*10.0)
       endif
@@ -293,10 +305,10 @@ c
          open(unit=22,file="l2norms.dat",form="formatted",
      >        access="append")
          write(22,'(a12,6e17.8)')
-     >          'L2err_norms ',time,(sqrt(sumcvars_l2(i)),i=1,5)
+     >          'L2err_norms ',time_cmt,(sqrt(sumcvars_l2(i)),i=1,5)
          close(22)
       endif
-      if(nio.eq.0) write(6,*)'center location ', time,xctrnew,yctrnew
+      if(nio.eq.0) write(6,*)'center location ',time_cmt,xctrnew,yctrnew
       return
       end
 !-----------------------------------------------------------------------

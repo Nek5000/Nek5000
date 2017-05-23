@@ -6,8 +6,7 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  AMG         use AMG instead of XXT solver"
-  echo "  MPIIO       use MPI-IO for I/O"
+  echo "  NOMPIIO     deactivate MPI-IO support"
   echo "  BGQ         use BGQ optimized mxm"
   echo "  XSMM        use libxsmm for mxm"
   echo "  CVODE       compile with CVODE support for scalars"
@@ -21,7 +20,7 @@ fi
 # first do some checks ...
 if [ $# -eq 0 ]; then
   echo ""
-  echo "usage: makenek [.usr filename | clean] < -nocompile >"
+  echo "usage: makenek [.usr filename | clean | realclean] < -nocompile >"
   echo ""
   exit 1
 fi
@@ -37,6 +36,13 @@ if [ $1 = "clean" ]; then
   exit 0
 fi
 
+if [ $1 = "realclean" ]; then
+  make -C $SOURCE_ROOT_GSLIB clean
+  make clean
+  rm -rf makefile
+  exit 0
+fi
+
 NOCOMPILE=0
 if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
@@ -44,20 +50,6 @@ fi
 
 CASENAME=$1
 CASEDIR=`pwd`
-APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
-SOURCE_ROOT_CORE=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
-SOURCE_ROOT_JL=$APATH_SRC
-APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
-SOURCE_ROOT_CMT=$APATH_SRC
-
-IFNEKNEK=false
-
-# do some basic checks
-if [ "$CASEDIR" == "$SOURCE_ROOT_CORE" ]; then
-   echo "FATAL ERROR: Working directory has to be different from the source!"
-   exit 1
-fi
 
 if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
@@ -70,7 +62,6 @@ if [ -f SIZEu ]; then
       exit 1
    fi
    NEK_WARN="WARNING: SIZEu will be deprecated in a future release. Please rename to SIZE!"
-   export NEK_WARN 
    mv -v SIZEu SIZE
 fi
 
@@ -79,8 +70,8 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-if [ ! -f $SOURCE_ROOT_CORE/makefile.template ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT_CORE/makefile.template!"
+if [ ! -f $SOURCE_ROOT/core/makefile.template ]; then
+  echo "FATAL ERROR: Cannot find $SOURCE_ROOT/core/makefile.template!"
   exit 1
 fi
 
@@ -101,7 +92,7 @@ rm -f nek5000 2>/dev/null
 rm -f ./obj/subuser.o        2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
-UNDERSCORE=false
+UNDERSCORE=0
 cat > test_underscore.f << _ACEOF
       subroutine underscore_test
         call test
@@ -109,7 +100,7 @@ cat > test_underscore.f << _ACEOF
 _ACEOF
 $F77 -c test_underscore.f 2>&1 >/dev/null 
 if nm test_underscore.o | grep -q test_ ; then
-  UNDERSCORE=true
+  UNDERSCORE=1
 fi
 \rm test_underscore.* 2>/dev/null
 
@@ -153,17 +144,17 @@ fi
 
 # assign F77 compiler specific flags
 case $F77comp in
-  *pgf*)        FFLAGS="-r8 -Mpreprocess"
+  *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
-  *gfortran*)   FFLAGS="-fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)   FFLAGS+=" -fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
-  *ifort*)      FFLAGS="-r8 -fpconstant -fpp"
+  *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
-  *pathf*)      FFLAGS="-r8 -cpp -fno-second-underscore"
+  *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        FFLAGS="-s default64 -eF"
+  *ftn*)        FFLAGS+=" -s default64 -eF"
                ;;
-  *xlf*)       FFLAGS="-qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f"
                PPPO="-WF,"
                F77="${F77} -qsuppress=cmpmsg"
                ;;
@@ -173,56 +164,46 @@ case $F77comp in
       NOCOMPILE=1
       read;;
 esac
-export PPPO
 
 # set preprocessor symbols
-if [ "$IFMPI" == "false" -o "$IFMPI" == "no" ]; then
-  IFMPI=false
+if [ $MPI -eq 0 ]; then
+  PPLIST="${PPLIST} NOMPIIO"
 else
-  # default
-  IFMPI=true
+  MPI=1
   PPLIST="${PPLIST} MPI"
 fi
-export IFMPI
 
-if [ "$UNDERSCORE" == "true" ]; then
+if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ "$IFPROFILING" == "true" -o "$IFPROFILING" == "yes" ]; then
-  if [ "$IFMPI" == "true" -o "IFMPI" == "yes" ]; then
-    PPLIST="${PPLIST} TIMER MPITIMER"
+if [ $PROFILING -ne 0 ]; then
+  if [ $MPI -ne 0 ]; then
+    PPLIST="${PPLIST} TIMER"
   else
     PPLIST="${PPLIST} TIMER"
   fi
 fi
 
-PPLIST="${PPLIST} GLOBAL_LONG_LONG"
+PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
-IFCMT=false
+CMT=0
+NEKNEK=0
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
-     IFNEKNEK=true
+     NEKNEK=1
    fi
    if [ "$i" == "CMTNEK" ]; then
-     IFCMT=true
+     CMT=1
    fi
 done
-export IFCMT
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
-   IFCVODE=true 
+   CVODE=1 
 else
-   IFCVODE=false
-fi
-
-# AMG setup
-if echo $PPLIST | grep -q 'AMG' ; then 
-   IFAMG=true 
-else
-   IFAMG=false
+   CVODE=0
 fi
 
 MXM_USER="mxm_std.o"
@@ -230,13 +211,9 @@ if echo $PPLIST | grep -q 'BGQ' ; then
    MXM_USER+=" mxm_bgq.o" 
 fi
 
-BLAS="blas.o dsygv.o ssygv.o"
+BLAS="blas.o dsygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
-fi
-
-if [ "$USR_LIB" != "" ]; then
-    USR_LFLAGS="${USR_LFLAGS} ${USR_LIB}"
 fi
 
 # tweak makefile template 
@@ -245,27 +222,25 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
--e "s:^G[ ]*=.*:G\:=$G:" \
--e "s/^FFLAGS[ ]*=.*/FFLAGS:=$FFLAGS/" \
--e "s/^CFLAGS[ ]*=.*/CFLAGS:=$CFLAGS/" \
+-e "s:^FFLAGS[ ]*=.*:FFLAGS\:=$FFLAGS:" \
+-e "s:^CFLAGS[ ]*=.*:CFLAGS\:=$CFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
--e "s/^IFAMG[ ]*=.*/IFAMG:=$IFAMG/" \
--e "s/^IFMPI[ ]*=.*/IFMPI:=$IFMPI/" \
--e "s/^IFCMT[ ]*=.*/IFCMT:=$IFCMT/" \
--e "s/^IFNEKNEK[ ]*=.*/IFNEKNEK:=$IFNEKNEK/" \
+-e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
+-e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
+-e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
+-e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
--e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
--e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT}/core:" \
+-e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT}/core/cmt:" \
+$SOURCE_ROOT/core/makefile.template >.makefile
 
-if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
+if [ $VISIT -ne 0 ]; then
   echo ""
   echo "Activate VisIt Sim Mode"
-  IFVISIT=true
 
   if [ -z "$VISIT_INC" ]; then
     VISIT_INC=${VISIT_INSTALL}/libsim/V2/include
@@ -280,7 +255,7 @@ if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then
     echo "  VISIT_STOP is defined. Nek5000 will wait for VisIt to Connect."
   fi
 
-  sed -e "s/^IFVISIT[ ]*=.*/IFVISIT:=${IFVISIT}/" \
+  sed -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
       -e "s:^VISIT_IFLAGS[ ]*=.*:VISIT_IFLAGS\:=-I${VISIT_INC}:" \
       -e "s:^VISIT_LFLAGS[ ]*=.*:VISIT_LFLAGS\:=-L${VISIT_LIB} -lsimV2 -lsimV2f -ldl -lstdc++:" \
       -e "s/^PPS[ ]*=.*/PPS=${PPLIST} VISIT ${VISIT_STOP}/" \
@@ -305,31 +280,6 @@ else
   exit 1 
 fi
 \rm .makefile 2>/dev/null
-
-# add plugins
-for i in $PLUGIN_LIST
-do
-  if [ ! -f makenek_plugin_$i ]; then
-     echo "ABORT: cannot find plug-in config file" makenek_plugin_$i
-     exit 1
-  fi
-  source makenek_plugin_$i
-
-  plugindir="SRC_PLUGIN"
-  plugindir=`echo ${!plugindir}`
-
-  if [ ! -f $plugindir/makenek.inc ]; then
-     echo "ABORT: Cannot find plug-in include file file" $plugindir/makenek.inc
-     exit 1
-  fi
-  source $plugindir/makenek.inc
-  if [ $ierr -ne 0 ]; then
-     echo "ABORT: plug-in config failed!"
-     exit 1
-  else
-    echo "found plug-in" $i in $plugindir
-  fi
-done
 
 # tweak SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
@@ -375,7 +325,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 
   if ! cat SIZE | grep -qi 'toteq' ; then
-  if [ "$IFCMT" == "true" ]; then
+  if [ $CMT -ne 0 ]; then
       echo >>SIZE
       echo 'c automatically added by makenek' >>SIZE
       echo '      integer toteq' >> SIZE
@@ -413,7 +363,8 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if [ "$IFCVODE" == "true" -o "$IFCVODE" == "yes" ]; then
+
+if [ $CVODE -ne 0 ]; then
 
 if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
 cat >> $CASENAME.f << _ACEOF
@@ -433,7 +384,7 @@ fi
 
 fi
 
-if [ "$IFCMT" == "true" -o "$IFCMT" == "yes" ]; then
+if [ $CMT -ne 0 ]; then
 if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
@@ -502,7 +453,12 @@ _ACEOF
 fi
 fi
 
+export NEK_WARN 
+export MPI
+export FFLAGS
+export CFLAGS
+export UNDERSCORE
 
-if [ $NOCOMPILE -eq 1 ]; then
+if [ $NOCOMPILE -ne 0 ]; then
   exit 0
 fi 

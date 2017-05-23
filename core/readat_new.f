@@ -14,7 +14,7 @@ c
 
       call setDefaultParam
 
-      call open_bin_file(ifbswap) ! this will also read the header
+      call open_re2(ifbswap) ! this will also read the header
 
       if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
@@ -24,7 +24,7 @@ c
       call chkParam
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call bin_rd1(ifbswap) ! read .re2 data 
+      call read_re2(ifbswap) ! read .re2 data 
 
       call nekgsync()
 
@@ -54,6 +54,8 @@ C
       param(27) = 2    ! 2nd order in time
 
       param(32) = 0    ! all BC are defined in .re2
+
+      param(40) = 0    ! XXT 
 
       param(42) = 0    ! GMRES 
       param(43) = 0    ! SEMG preconitioner
@@ -149,7 +151,8 @@ c
       ifkeps    = .false.
       ifschclob = .false. 
 
-      ifdp0dt = .false.
+      ifdp0dt   = .false.
+      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
@@ -158,6 +161,8 @@ c
       call izero (lochis, 4*lhis)
 
       call blank (initc,15*132)
+
+      nhis = 0
 
       return
       end
@@ -303,6 +308,10 @@ c set parameters
 
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
+
+      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'AMG') .gt. 0) param(40) = 1
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
@@ -464,6 +473,15 @@ c set mesh-field mapping
         if(i_out .eq. 1) iftmsh(2) = .true.
       endif
 
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':conjugateHeatTransfer'
+         call finiparser_getBool(i_out,txt,ifnd)
+         if(ifnd .eq. 1) then
+           iftmsh(i+2) = .false.
+           if(i_out .eq. 1) iftmsh(i+2) = .true.
+         endif
+      enddo
+
 c set output flags
       call finiparser_getBool(i_out,'mesh:writeToFieldFile',ifnd) 
       if(ifnd .eq. 1) then
@@ -516,7 +534,7 @@ c set properties
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,1) = d_out 
          if(cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
-         write(txt,"('scalar',i2.2,a)") i,':rho'
+         write(txt,"('scalar',i2.2,a)") i,':density'
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,2) = d_out 
       enddo

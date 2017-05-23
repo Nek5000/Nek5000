@@ -21,6 +21,9 @@ c
       parameter ( mpi_tag = 2 )
       integer mpi_count
       parameter ( mpi_count = 3 )
+      integer mpi_status_ignore(mpi_status_size)
+      integer mpi_info_null
+      parameter (mpi_info_null=0)
 c
 c  recv flags
 c
@@ -43,6 +46,8 @@ c
       parameter ( mpi_logical = 4 )
       integer mpi_character
       parameter ( mpi_character = 5 )
+      integer mpi_byte
+      parameter (mpi_byte=1)
 c
 c  allreduce operations
 c
@@ -58,3 +63,12 @@ c
 c  timer
 c
       double precision mpi_wtime
+c
+c  I/O
+c
+      integer mpi_mode_create
+      parameter (mpi_mode_create=1)
+      integer mpi_mode_rdonly
+      parameter (mpi_mode_rdonly=2)
+      integer mpi_mode_wronly
+      parameter (mpi_mode_wronly=4)

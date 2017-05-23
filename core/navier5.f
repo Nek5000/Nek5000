@@ -780,32 +780,68 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine comp_vort3(vort,work1,work2,u,v,w)
-c
+
       include 'SIZE'
       include 'TOTAL'
-c
+
       parameter(lt=lx1*ly1*lz1*lelv)
       real vort(lt,3),work1(1),work2(1),u(1),v(1),w(1)
-c
-      ntot  = nx1*ny1*nz1*nelv
-      if (if3d) then
-c        work1=dw/dy ; work2=dv/dz
-           call dudxyz(work1,w,rym1,sym1,tym1,jacm1,1,2)
-           call dudxyz(work2,v,rzm1,szm1,tzm1,jacm1,1,3)
-           call sub3(vort(1,1),work1,work2,ntot)
-c        work1=du/dz ; work2=dw/dx
-           call dudxyz(work1,u,rzm1,szm1,tzm1,jacm1,1,3)
-           call dudxyz(work2,w,rxm1,sxm1,txm1,jacm1,1,1)
-           call sub3(vort(1,2),work1,work2,ntot)
-c        work1=dv/dx ; work2=du/dy
-           call dudxyz(work1,v,rxm1,sxm1,txm1,jacm1,1,1)
-           call dudxyz(work2,u,rym1,sym1,tym1,jacm1,1,2)
-           call sub3(vort(1,3),work1,work2,ntot)
-      else
-c        work1=dv/dx ; work2=du/dy
-           call dudxyz(work1,v,rxm1,sxm1,txm1,jacm1,1,1)
-           call dudxyz(work2,u,rym1,sym1,tym1,jacm1,1,2)
-           call sub3(vort,work1,work2,ntot)
+
+      parameter(lx=lx1*ly1*lz1)
+      real ur(lx),us(lx),ut(lx)
+     $    ,vr(lx),vs(lx),vt(lx)
+     $    ,wr(lx),ws(lx),wt(lx)
+      common /ctmp0/ ur,us,ut,vr,vs,vt,wr,ws,wt
+
+      integer e
+      real jacmil
+ 
+      ntot  = lx1*ly1*lz1*nelt
+      nxyz  = lx1*ly1*lz1
+      nx    = nx1 - 1      ! Polynomial degree
+
+      if (ldim.eq.3) then
+       k=0
+       do e=1,nelt
+        call local_grad3(ur,us,ut,u,nx,e,dxm1,dxtm1)
+        call local_grad3(vr,vs,vt,v,nx,e,dxm1,dxtm1)
+        call local_grad3(wr,ws,wt,w,nx,e,dxm1,dxtm1)
+        do i=1,lx
+         jacmil = jacmi(i,e)
+c        vux=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)+ut(i)*txm1(i,1,1,e)
+         vuy=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e)
+         vuz=ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e)
+         vvx=vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e)
+c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
+         vvz=vr(i)*rzm1(i,1,1,e)+vs(i)*szm1(i,1,1,e)+vt(i)*tzm1(i,1,1,e)
+         vwx=wr(i)*rxm1(i,1,1,e)+ws(i)*sxm1(i,1,1,e)+wt(i)*txm1(i,1,1,e)
+         vwy=wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e)+wt(i)*tym1(i,1,1,e)
+c        vwz=wr(i)*rzm1(i,1,1,e)+ws(i)*szm1(i,1,1,e)+wt(i)*tzm1(i,1,1,e)
+
+         k = k+1
+         vort(k,1) = (vwy-vvz)*jacmil
+         vort(k,2) = (vuz-vwx)*jacmil
+         vort(k,3) = (vvx-vuy)*jacmil
+c        write(6,*) i,jacmil,vuy,vvx,k,e,' vort'
+        enddo
+       enddo
+
+      else      ! 2D
+
+       k=0
+       do e=1,nelt
+        call local_grad2(ur,us,u,nx,e,dxm1,dxtm1)
+        call local_grad2(vr,vs,v,nx,e,dxm1,dxtm1)
+        do i=1,lx
+c        vux=ur(i)*rxm1(i,1,1,e)+us(i)*sxm1(i,1,1,e)+ut(i)*txm1(i,1,1,e)
+         vuy=ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e)
+         vvx=vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e)
+c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
+
+         k = k+1
+         vort(k,1) = (vvx-vuy)*jacmi(i,e)
+        enddo
+       enddo
       endif
 c
 c    Avg at bndry

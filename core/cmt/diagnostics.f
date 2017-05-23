@@ -66,7 +66,7 @@ c-----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine out_fld_nek(wfnav)
+      subroutine out_fld_nek
       include 'SIZE'
       include 'SOLN'
       COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
@@ -92,7 +92,7 @@ c     ifxyo=.true.
       return
       end
 c----------------------------------------------------------------------
-      subroutine out_pvar_nek(wfnav)
+      subroutine out_pvar_nek
       include 'SIZE'
       include 'SOLN'
       include 'CMTDATA'

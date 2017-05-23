@@ -1,3 +1,5 @@
+C> @file intpdiff.f interpolation and differentiation routines not already provided
+C> by nek5000
 !--------------------------------------------------------------------
 ! JH061914 propose name change to intpdiff since that is what is in
 !          here.

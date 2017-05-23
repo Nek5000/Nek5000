@@ -3,29 +3,31 @@
 ## Major Features and Improvements
 
 * New paramater file `.par`
-* Added generic `fld` reader to restart from arbitrary mesh
-* Added `OIFS` for `moving mesh`.
-* Added `Moving mesh` for `PN/PN`.
-* Added support for mixed `Helmholtz/CVODE` solves.
-* Improved `.re2` reader (reading in parallel).
-* New `AMG setup` tool based on HYPRE. 
-* New `EXODUSII` mesh converter.
+* Added `OIFS` for `moving mesh`
+* Added `Moving mesh` for `PN/PN`
+* Added support for mixed `Helmholtz/CVODE` solves
+* New `AMG setup` tool based on HYPRE
+* New `EXODUSII` mesh converter
 * New interface to `libxsmm` (fast MATMUL library).
-* Extended `lowMach` solver for time varying thermodynamic pressure.
+* Extended `lowMach` solver for time varying thermodynamic pressure
 * Added DG for scalars
-* Added support for `implicit none`
-* New `generic fld` reader allows restarts from an arbitrary mesh
+* Added support for `implicit none` in .usr file
+* Read `.re2` in parallel
+* Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
+* Optional new user friendly `SIZE` file format (see SIZE.template)
+* Refactored `makenek` for faster builds
 
 ## Backwards-Incompatible Changes 
 
-* Optional `intp.h` module replaced old interpolation routines `intpts()`
-* Replcaed `g2gi()` by new generic fld reader `gfldr.h`
-* Moved `makenek` to bin folder
-* New `SIZE` file required to use `implicit none`
+* When p20>0 use it as solver tolerance for temperature instead of p22 (only for Helmholtz) 
+* Replaced usr interpolation wrapper `intpts()` by `intp()` with a different interface
+* Replaced `g2gi()` by new generic fld reader `gfldr()`
+* Moved `makenek` from `core` to `bin` folder
+* Removed `MOAB` support 
+* Replaced `hpts.in/hpts.out` by `<casename>.his` 
+* Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
-* Removed `MOAB` 
-* Replaced `hpts.in` & `hpts.out` by `his.in` & `<casename>.his` 
-
+* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:solver=amg) 
 
 ## Bug Fixes and Other Changes
 
