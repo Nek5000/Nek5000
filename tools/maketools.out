@@ -1,7 +1,0 @@
-----------------------
-Make genmap...
-----------------------
-make[1]: Entering directory '/home/prabal/workstation/git_me/Nek5000/tools/genmap'
-gfortran -fdefault-real-8 -o /home/prabal/workstation/git_me/Nek5000/bin/genmap genmap.o byte.o  
-make[1]: Leaving directory '/home/prabal/workstation/git_me/Nek5000/tools/genmap'
-
