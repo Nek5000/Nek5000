@@ -132,6 +132,36 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine exactp(pe,x2,y2,n2,time,visc,u0,v0)
+
+c     This routine, complementary to the exact routine above, returns
+c     the exact pressure, given the pressure counterpart to the
+c     arguments for the exact routine i.e., xx -> x2, yy -> y2, n -> n2
+c
+c     Brandon E. Merrill, Yulia T. Peet, Paul F. Fischer, and
+c     James W. Lottes. "A Spectrally Accurate Method for Overlapping
+c     Grid Solution of Incompressible Navier-Stokes Equations." Journal
+c     of Computational Physics 307 (2016), 60--93.
+
+      real x2(n2),y2(n2),pe(n2)
+      real x,y,e
+
+      e = exp(-50*time*visc)
+
+      do i=1,n2
+         x = x2(i) - u0*time
+         y = y2(i) - v0*time
+
+         pe(i) = (1.0/64.0)*e*(16*cos(6*x) + 8*cos(8*x-4*y)
+     $         - 32*cos(2*(x-2*y)) + 9*cos(8*y) - 8*cos(4*(2*x+y))
+     $         + 32*cos(2*(x+2*y)) - 4*sin(3*(x-3*y)) + 32*sin(5*(x-y))
+     $         + 36*sin(3*x-y) - 32*sin(5*(x+y)) + 36*sin(3*x+y)
+     $         - 4*sin(3*(x+3*y)))
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,ieg)
       include 'SIZE'
       include 'TOTAL'
@@ -168,39 +198,47 @@ c-----------------------------------------------------------------------
       include 'TOTAL' 
 c
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
+      common /exacp/ pe(lx2,ly2,lz2,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
-
+     $              ,pd(lx2,ly2,lz2,lelt)
 
       ifield = 1  ! for outpost
 
       n    = nx1*ny1*nz1*nelv
+      n2   = nx2*ny2*nz2*nelv
       visc = param(2)
       u0   = param(96)
       v0   = param(97)
       call exact  (ue,ve,xm1,ym1,n,time,visc,u0,v0)
-      if (istep.eq.0     ) call outpost(ue,ve,vx,pr,t,'   ')
+      call exactp (pe,xm2,ym2,n2,time,visc,u0,v0)
+      if (istep.eq.0) call outpost(ue,ve,vx,pe,t,'   ')
 
       call sub3   (ud,ue,vx,n)
       call sub3   (vd,ve,vy,n)
-      if (istep.eq.nsteps) call outpost(ud,vd,vx,pr,t,'err')
+      call sub3   (pd,pe,pr,n2)
+      if (istep.eq.nsteps) call outpost(ud,vd,vx,pd,t,'err')
 
       umx = glamax(vx,n)
       vmx = glamax(vy,n)
+      pmx = glamax(pr,n2)
       uex = glamax(ue,n)
       vex = glamax(ve,n)
+      pex = glamax(pe,n2)
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
+      pdx = glamax(pd,n2)
 
       if (nid.eq.0) then
-          write(6,11) istep,time,udx,umx,uex,u0,'  X err'
-          write(6,11) istep,time,vdx,vmx,vex,v0,'  Y err'
-   11     format(i5,1p5e14.6,a7)
+         write(6,11) istep,time,udx,umx,uex,u0,'  X err'
+         write(6,11) istep,time,vdx,vmx,vex,v0,'  Y err'
+         write(6,'(i5,1p4e14.6,a7)') istep,time,pdx,pmx,pex,'  P err'
+   11    format(i5,1p5e14.6,a7)
       endif
 
-
-      if (istep.le.5) then        !  Reset velocity to eliminate 
+      if (istep.le.5) then        !  Reset velocity & pressure to eliminate
          call copy (vx,ue,n)      !  start-up contributions to
          call copy (vy,ve,n)      !  temporal-accuracy behavior.
+         call copy (pr,pe,n2)
       endif
 
       return
@@ -224,7 +262,9 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
 
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
+      common /exacp/ pe(lx2,ly2,lz2,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
+     $              ,pd(lx2,ly2,lz2,lelt)
 
       integer icalld
       save    icalld
