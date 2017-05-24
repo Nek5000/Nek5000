@@ -202,6 +202,9 @@ class Eddy_EddyUv(NekTestCase):
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
 
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
+
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
 
@@ -223,6 +226,9 @@ class Eddy_EddyUv(NekTestCase):
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
 
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
+
         self.assertDelayedFailures()
 
     @pn_pn_2_serial
@@ -240,6 +246,9 @@ class Eddy_EddyUv(NekTestCase):
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=6.927878E-05, delta=1E-06, label='P err')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
@@ -261,6 +270,9 @@ class Eddy_EddyUv(NekTestCase):
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=6.896211E-05, delta=1E-06, label='P err')
 
         self.assertDelayedFailures()
 
@@ -312,6 +324,9 @@ class Eddy_LegacySize(NekTestCase):
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
 
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
+
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
 
@@ -335,6 +350,9 @@ class Eddy_LegacySize(NekTestCase):
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
 
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
+
         self.assertDelayedFailures()
 
     @pn_pn_2_serial
@@ -354,6 +372,9 @@ class Eddy_LegacySize(NekTestCase):
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=6.927878E-05, delta=1E-06, label='P err')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
@@ -377,6 +398,9 @@ class Eddy_LegacySize(NekTestCase):
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
         self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=6.896211E-05, delta=1E-06, label='P err')
 
         self.assertDelayedFailures()
 
@@ -432,6 +456,58 @@ class KovStState(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
+####################################################################
+#  kov_st_state; kov_st_stokes.rea
+####################################################################
+
+class Ethier(NekTestCase):
+    example_subdir = 'ethier'
+    case_name = 'ethier'
+
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '3',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-2',
+            lelg      = '50',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(vxerr, target_val=3.635317e-05, delta=1e-07, label='VX err')
+
+        prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(prerr, target_val=1.127384e-04, delta=1e-06, label='PR err')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(vxerr, target_val=2.407549E-006, delta=1e-08, label='VX err')
+
+        prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(prerr, target_val=7.554325E-005, delta=1e-08, label='PR err')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
 
 ####################################################################
 #  lowMach_test; lowMach_test.rea
@@ -451,15 +527,6 @@ class LowMachTest(NekTestCase):
             lelg      = '500',
         )
         self.build_tools(['genmap'])
-
-        # Tweak the .rea file and run genmap
-        from re import sub
-        cls = self.__class__
-        rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.rea')
-        with open(rea_path, 'r') as f:
-            lines = [sub(r'^.*IFNAV.*$', '  T T IFNAV & IFADVC', l) for l in f]
-        with open(rea_path, 'w') as f:
-            f.writelines(lines)
         self.run_genmap()
 
     @pn_pn_serial
@@ -650,6 +717,69 @@ class VarVis(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+# ####################################################################
+# #  conj_ht: conj_ht.rea
+# ####################################################################
+
+class ConjHt(NekTestCase):
+    example_subdir  = 'conj_ht'
+    case_name        = 'conj_ht'
+
+    def setUp(self):
+        self.build_tools(['genmap'])
+        self.run_genmap()
+        self.size_params = dict (
+            ldim     = '2',
+            lx1      = '4',
+            lxd      = '7',
+            lx2      = 'lx1-0',
+            lelg     = '100',
+            ldimt    = '2',
+            lcvelt   = 'lelt',
+        )
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        if not "CVODE" in self.pplist:
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres', column=-7,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
+
+        tmax = self.get_value_from_log('tmax', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(tmax, target_val=1.31208E+01, delta=1E-03, label='tmax')
+
+        terr = self.get_value_from_log('tmax', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(terr, target_val=3.11620E-04, delta=1E-04, label='terr')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        if not "CVODE" in self.pplist:
+            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        gmres = self.get_value_from_log('gmres', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=16., label='gmres')
+
+        tmax = self.get_value_from_log('tmax', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(tmax, target_val=13.1208, delta=1E-03, label='tmax')
+
+        terr = self.get_value_from_log('tmax', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(terr, target_val=2.70054E-04, delta=1E-04, label='terr')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
 
 class CmtInviscidVortex(NekTestCase):
     example_subdir = os.path.join('CMT', 'inviscid_vortex')
