@@ -1,5 +1,11 @@
 C> @file drive1_cmt.f high-level driver for CMT-nek
-C> \defgroup convhvol Volume integral terms for inviscid fluxes
+C> \defgroup convhvol Volume integral for inviscid fluxes
+C> \defgroup bcond Surface integrals due to boundary conditions
+C> \defgroup diffhvol Volume integral for viscous fluxes
+C> \defgroup vfjac Jacobians for viscous fluxes
+C> \defgroup isurf Inviscid surface terms
+C> \defgroup vsurf Viscous surface terms
+C> \defgroup faceops utility functions for manipulating face data
 C> Branch from subroutine nek_advance in core/drive1.f
 C> Advance CMT-nek one time step within nek5000 time loop
       subroutine cmt_nek_advance
@@ -25,7 +31,7 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then 
          call cmt_ics
-         time_cmt=0.0 ! until we can get settime to behave
+         time_cmt=0.0 !time !0.0 ! until we can get settime to behave
          call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
@@ -286,7 +292,8 @@ C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
          enddo
       endif
       call rzero(res1,n)
-      call rzero(res2,n)
+!     call copy(res2,t(1,1,1,1,5),n) ! art visc hardcoding. old entropy resid
+      call rzero(res2,n) ! Actually,...
       return
       end
 !-----------------------------------------------------------------------

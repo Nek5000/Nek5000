@@ -1,4 +1,9 @@
 C> @file surface_fluxes.f Routines for surface terms on RHS.
+
+C> \ingroup isurf
+C> @{
+C> Restrict and copy face data and compute inviscid numerical flux 
+C> \f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
       subroutine fluxes_full_field
 !-----------------------------------------------------------------------
 ! JH060314 First, compute face fluxes now that we have the primitive variables
@@ -60,6 +65,8 @@ C> @file surface_fluxes.f Routines for surface terms on RHS.
 
 !     call face_flux_commo(fatface(iflx),fatface(iflx),ndg_face,toteq,
 !    >                     flux_hndl) ! for non-symmetric gs_op someday
+
+C> @}
 
       return
       end
