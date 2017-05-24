@@ -610,6 +610,10 @@ c----------------------------------------------------------------------
 
       real e(1),r(1)
 
+      write(*,*), ''
+      write(*,*), 
+     $'================================================================'
+
 
       zero =  0
       one  =  1
@@ -622,6 +626,15 @@ c----------------------------------------------------------------------
 
       if (if3d) then            ! extended array
         !MJO - 3/15/17 Only put 3d on GPU
+
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** BEFORE hsmg_schwarz_toext3d ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+
          call hsmg_schwarz_toext3d(mg_work,r,mg_nh(l))
       else
          call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
@@ -635,13 +648,55 @@ c----------------------------------------------------------------------
       i = enx*eny*enz*nelv+1
       mg_work_size = enx*eny*enz*nelv
 
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** AFTER hsmg_schwarz_toext3d ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+
 c     exchange interior nodes
+
       call hsmg_extrude(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
+
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** AFTER hsmg_extrude, 1/5 ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+
       call hsmg_schwarz_dssum2(mg_work,l,mg_work_size)
+
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** AFTER hsmg_schwarz_dssum2 ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
 
       call hsmg_extrude(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
 
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** AFTER hsmg_extrude, 2/5 ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+
       call hsmg_fdm(mg_work(i),mg_work,l) ! Do the local solves
+
+!$ACC UPDATE HOST(mg_work)
+        write(*,*), ''
+        write(*,*), '**** AFTER hsmg_fdm ****'
+        write(*,*), 'mg_nh(l)',  (mg_nh(l))
+        write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
 
 c     Sum overlap region (border excluded)
       call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
