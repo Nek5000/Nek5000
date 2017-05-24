@@ -1523,7 +1523,7 @@ C----------------------------------------------------------------------
       include 'MVGEOM'
 
                                                 call makeuf
-                                                call make_hpf
+      if (.not.ifchar)                          call make_hpf
       if (ifnatc)                               call natconv
 c      if (ifexplvis.and.ifsplit)                call explstrs
       if (ifexplvis.and.ifsplit)                call makevis

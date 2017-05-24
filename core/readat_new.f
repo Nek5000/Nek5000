@@ -550,7 +550,7 @@ c set High-Pass filter options
       call finiparser_getDbl(d_out,'general:hpfAddModes',ifnd)
       if (ifnd .eq. 1) param(110) = d_out
 
-      call finiparser_getDbl(d_out,'general:hpfKai',ifnd)
+      call finiparser_getDbl(d_out,'general:hpfChi',ifnd)
       if (ifnd .eq. 1) param(111) = d_out
 
       call finiparser_getBool(i_out,'general:hpfIfBoyd',ifnd)

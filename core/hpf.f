@@ -3,14 +3,17 @@ cc
 cc   Author: Prabal Negi
 cc   Email : negi@mech.kth.se 
 cc   Description: High pass filtering for stabilization of SEM
-cc   Last Modified: 31/01/2017 
+cc   Last Modified: 24/05/2017 
+cc
+cc   Note: 'implicit none' have been commented out from all routines
+cc          to maintain backward compatibility.
 cc
 cc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 cc----------------------------------------------------------------------  
 c     Main interface for high-pass filter
       subroutine MAKE_HPF
 
-      implicit none
+c      implicit none
 
       include 'SIZE'
       include 'SOLN'
@@ -28,7 +31,7 @@ c     Main interface for high-pass filter
       real hpf_filter(lm2)
 
       integer hpf_kut
-      real hpf_kai
+      real hpf_chi
       logical hpf_ifboyd
 
       integer nel
@@ -48,7 +51,7 @@ c     Main interface for high-pass filter
 c---------------------------------------- 
 
       hpf_kut = int(param(110))+1
-      hpf_kai = param(111)
+      hpf_chi = param(111)
       if (param(112).eq.0.) then
         hpf_ifboyd = .false.
       else
@@ -58,13 +61,13 @@ c----------------------------------------
       nel = nelv
       n = nxyz*nel
 
-      if (hpf_kai.eq.0) then
+      if (hpf_chi.eq.0) then
 c       High-pass filtering switched off  
         return 
       endif
 
       if (icalld.eq.0) then
-        if (hpf_kai.gt.0) then
+        if (hpf_chi.gt.0) then
           if (nid.eq.0) then
             write(6,*) 'Positive filtering is Numerically Unstable.'
             write(6,*) 'Remove check in hpf.f if this was intentional.'
@@ -90,10 +93,10 @@ c       to velocity fields
         call build_hpf_fld(ta2,vy,hpf_op,nx1,nz1)
         if (if3d) call build_hpf_fld(ta3,vz,hpf_op,nx1,nz1)
 
-c       Multiply by filter weight (kai)
-        call cmult(ta1,hpf_kai,n)    
-        call cmult(ta2,hpf_kai,n)    
-        if (if3d) call cmult(ta3,hpf_kai,n)    
+c       Multiply by filter weight (chi)
+        call cmult(ta1,hpf_chi,n)    
+        call cmult(ta2,hpf_chi,n)    
+        if (if3d) call cmult(ta3,hpf_chi,n)    
 
 c       Multiply by Mass matrix 
 c       and add to forcing term 
@@ -105,8 +108,8 @@ c       Apply filter to temp/passive scalar fields
         call build_hpf_fld(ta1,t(1,1,1,1,ifield-1),
      $       hpf_op,nx1,nz1)
 
-c       Multiply by filter weight (kai)
-        call cmult(ta1,hpf_kai,n)    
+c       Multiply by filter weight (chi)
+        call cmult(ta1,hpf_chi,n)    
 
 c       Multiply by Mass matrix    
 c       and add to source term
@@ -128,7 +131,7 @@ c     Transforms back to nodal space
 c     Operation: V * f_filter * V^(-1)
 c     Where V is the transformation matrix from modal to nodal space
 
-      implicit none
+c      implicit none
 
       include 'SIZE'
 
@@ -174,7 +177,7 @@ c     Appies the operator f to field u
 c     using tensor operations
 c     v = f*u
 
-      implicit none
+c      implicit none
 
       include 'SIZE'
       include 'TSTEP'         ! ifield
@@ -238,7 +241,7 @@ c----------------------------------------------------------------------
 
       subroutine hpf_trns_fcn(diag,kut)
 
-      implicit none
+c      implicit none
 
       include 'SIZE'
       include 'PARALLEL'
@@ -277,7 +280,7 @@ c----------------------------------------------------------------------
 c     Initialise spectral coefficients
 c     For legendre transform
 
-      implicit none
+c      implicit none
 
       include 'SIZE'
       include 'WZ'
