@@ -614,7 +614,6 @@ c----------------------------------------------------------------------
       write(*,*), 
      $'================================================================'
 
-
       zero =  0
       one  =  1
       onem = -1
@@ -655,6 +654,8 @@ c----------------------------------------------------------------------
         write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
      $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
      $     k=1,mg_nh(l))
+        write(*,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
 
 c     exchange interior nodes
 
@@ -667,6 +668,8 @@ c     exchange interior nodes
         write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
      $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
      $     k=1,mg_nh(l))
+        write(*,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
 
       call hsmg_schwarz_dssum2(mg_work,l,mg_work_size)
 
@@ -677,6 +680,8 @@ c     exchange interior nodes
         write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
      $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
      $     k=1,mg_nh(l))
+        write(*,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
 
       call hsmg_extrude(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
 
@@ -687,6 +692,8 @@ c     exchange interior nodes
         write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
      $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
      $     k=1,mg_nh(l))
+        write(*,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
 
       call hsmg_fdm(mg_work(i),mg_work,l) ! Do the local solves
 
@@ -697,6 +704,8 @@ c     exchange interior nodes
         write(*,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
      $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
      $     k=1,mg_nh(l))
+        write(*,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
 
 c     Sum overlap region (border excluded)
       call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
@@ -810,21 +819,11 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-!     call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
-!MJO - 3/15/17 Inlined to avoid rearchitecting
-!              rzero
-
-!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-      do ie=1,nelv
-        do k=0,n+1 !FIXME: make n-1,n+1
-          do j=0,n+1
-            do i=0,n+1
-              a(i,j,k,ie)=b(i,j,k,ie)
-            enddo
-          enddo
-        enddo
-      enddo
-!$ACC END LOOP
+#ifdef _OPENACC
+      call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
+#else
+      call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+#endif
 
 !$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
 !$ACC&              GANG VECTOR
