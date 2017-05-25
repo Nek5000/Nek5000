@@ -95,5 +95,5 @@ c
      &  pardictkey(85) / 'GENERAL:LOGLEVEL' /
      &  pardictkey(86) / 'PRESSURE:SOLVER' /
      &  pardictkey(87) / 'GENERAL:HPFADDMODES' /
-     &  pardictkey(88) / 'GENERAL:HPFKAI' /
+     &  pardictkey(88) / 'GENERAL:HPFCHI' /
      &  pardictkey(89) / 'GENERAL:HPFIFBOYD' /
