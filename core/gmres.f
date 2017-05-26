@@ -405,6 +405,15 @@ c           call copy(r,res,n)
             call acc_copy_all_in()
 
             iter = iter+1
+
+#ifdef DEBUG
+            write(0,*), ''
+            write(0,*), 
+     $'================================================================'
+            write(0,*), ''
+            write(0,*), 'outer: ', outer
+            write(0,*), 'iter:  ', iter
+#endif
                                                        !       -1
 #ifdef _OPENACC
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
@@ -479,15 +488,13 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !$ACC UPDATE DEVICE(h_gmres)
 
 #ifdef _OPENACC
-!$ACC PARALLEL PRESENT(w_gmres, h_gmres, v_gmres)
-!$ACC LOOP SEQ
+!$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
-!$ACC LOOP
                do k=1,n
                   w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
             enddo                                                !          i,j  i
-!$ACC END PARALLEL
+!$ACC END KERNELS
 #else
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
@@ -495,8 +502,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 #endif
 
 ! Apply Givens rotations to new column
-!$ACC PARALLEL LOOP PRESENT(h_gmres,c_gmres,s_gmres) NUM_GANGS(1)
-!$ACC&              VECTOR_LENGTH(64)
+!$ACC KERNELS PRESENT(h_gmres,c_gmres,s_gmres)
             do i=1,j-1
                temp = h_gmres(i,j)
                h_gmres(i  ,j)=  c_gmres(i)*temp
@@ -504,7 +510,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
                h_gmres(i+1,j)= -s_gmres(i)*temp
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
-!$ACC END PARALLEL
+!$ACC END KERNELS
                                                       !            ______
 !$ACC UPDATE HOST(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
@@ -560,15 +566,13 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 ! Sum of Arnoldi vectors
 #ifdef _OPENACC
-!$ACC PARALLEL PRESENT(x_gmres, z_gmres, c_gmres)
-!$ACC LOOP SEQ
+!$ACC KERNELS PRESENT(x_gmres, z_gmres, c_gmres)
             do i=1,j
-!$ACC LOOP
                do k=1,n
                   x_gmres(k) = x_gmres(k) + z_gmres(k,i)*c_gmres(i)
                enddo
             enddo                                                !          i,j  i
-!$ACC END PARALLEL
+!$ACC END KERNELS
 #else
          do i=1,j
             call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
