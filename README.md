@@ -2,7 +2,7 @@
 
 | **`Short Tests`** | **`Examples`** |
 |-----------------|---------------------|
-| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
+| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=master)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
 
 Nek5000 is an open source, fast and scalable spectral element CFD code designed to simulate unsteady incompressible and low Mach-number Navier-Stokes flows.
 
