@@ -16,6 +16,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  NEKNEK      activate overlapping mesh solver (experimental)"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   echo "  ACC         compile with OpenACC (experimental)"
+  echo "  DEBUG       print debugging messages (severely limits performance)"
   exit 1
 fi
 

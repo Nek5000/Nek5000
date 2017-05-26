@@ -1958,3 +1958,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine rzero_acc(a,n)
+      real  a(n)
+!$ACC PARALLEL LOOP PRESENT(a)
+      do i = 1, n
+         a(i ) = 0.0
+      enddo
+!$ACC END PARALLEL
+      return
+      end
