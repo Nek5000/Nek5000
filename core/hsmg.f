@@ -610,7 +610,6 @@ c----------------------------------------------------------------------
 
       real e(1),r(1)
 
-
       zero =  0
       one  =  1
       onem = -1
@@ -620,13 +619,24 @@ c----------------------------------------------------------------------
 
       call h1mg_mask  (r,mg_imask(pm),nelfld(ifield))  ! Zero Dirichlet nodes
 
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER h1mg_mask ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
+
       if (if3d) then            ! extended array
         !MJO - 3/15/17 Only put 3d on GPU
          call hsmg_schwarz_toext3d(mg_work,r,mg_nh(l))
       else
          call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
       endif
-
 
       enx=mg_nh(l)+2
       eny=mg_nh(l)+2
@@ -635,13 +645,74 @@ c----------------------------------------------------------------------
       i = enx*eny*enz*nelv+1
       mg_work_size = enx*eny*enz*nelv
 
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER hsmg_schwarz_toext3d ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
+
 c     exchange interior nodes
       call hsmg_extrude(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
+
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER hsmg_extrude, 1/5 ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
+
       call hsmg_schwarz_dssum2(mg_work,l,mg_work_size)
+
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER hsmg_schwarz_dssum2 ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
 
       call hsmg_extrude(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
 
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER hsmg_extrude, 2/5 ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
+
       call hsmg_fdm(mg_work(i),mg_work,l) ! Do the local solves
+
+#ifdef DEBUG
+!$ACC UPDATE HOST(mg_work)
+        write(0,*), ''
+        write(0,*), '**** AFTER hsmg_fdm ****'
+        write(0,*), 'mg_nh(l)',  (mg_nh(l))
+        write(0,*), 'mg_work(', mg_nh(l)+1, ',2,2,1): ', 
+     $     (mg_work(1 + (mg_nh(l)+2)**2 + (mg_nh(l)+2) +  k), 
+     $     k=1,mg_nh(l))
+        write(0,*), 'mg_work(1,1:mg_nh(l)', nl**ndim, ',1): ', 
+     $     (mg_work(k + l**ndim), k=1,mg_nh(l))
+#endif
 
 c     Sum overlap region (border excluded)
       call hsmg_extrude(mg_work,0,zero,mg_work(i),0,one ,enx,eny,enz)
@@ -755,21 +826,11 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-!     call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
-!MJO - 3/15/17 Inlined to avoid rearchitecting
-!              rzero
-
-!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-      do ie=1,nelv
-        do k=0,n+1 !FIXME: make n-1,n+1
-          do j=0,n+1
-            do i=0,n+1
-              a(i,j,k,ie)=b(i,j,k,ie)
-            enddo
-          enddo
-        enddo
-      enddo
-!$ACC END LOOP
+#ifdef _OPENACC
+      call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
+#else
+      call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+#endif
 
 !$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
 !$ACC&              GANG VECTOR
@@ -2463,7 +2524,7 @@ c----------------------------------------------------------------------
       n=mask(0)
 !$ACC LOOP SEQ
       do i=1,n
-c        write(6,*) i,mask(i),n,' MG_MASK'
+c        write(0,*) i,mask(i),n,' MG_MASK'
          w(mask(i)) = 0.
       enddo
 !$ACC END LOOP
