@@ -29,6 +29,7 @@
 !$ACC ENTER DATA COPYIN(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
 !$ACC ENTER DATA COPYIN(h_gmres,w_gmres,v_gmres,z_gmres)
 !$ACC ENTER DATA COPYIN(c_gmres,s_gmres,x_gmres,gamma_gmres)
+!$ACC ENTER DATA COPYIN(r_gmres)
 !$ACC ENTER DATA COPYIN(ml_gmres,mu_gmres)
 !$ACC ENTER DATA COPYIN(h1,h2)
 
@@ -65,6 +66,7 @@
 !$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
 !$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
 !$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
+!$ACC EXIT DATA COPYOUT(r_gmres)
 !$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
 !$ACC EXIT DATA COPYOUT(h1,h2)
 

@@ -1938,11 +1938,11 @@ c--------------------------------------------------------
 !MJO - 3/15/17 - ACC version of col2
 !     a little hack to make dsavg work easily
 
-!$ACC PARALLEL LOOP GANG VECTOR PRESENT(a,b)
+!$ACC PARALLEL LOOP PRESENT(a,b)
       do i=1,n
          a(i) = a(i) * b(i)
       enddo
-!$ACC END PARALLEL LOOP
+!$ACC END PARALLEL
       return
       end
 c-----------------------------------------------------------------------
@@ -1957,6 +1957,31 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine copy_acc(a,b,n)
+      real a(n),b(n)
+
+!$ACC PARALLEL LOOP PRESENT(a,b)
+      do i=1,n
+         a(i)=b(i)
+      enddo
+!$ACC END PARALLEL
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2s2_acc(a,b,c1,n)
+      real a(1),b(1)
+
+!$ACC PARALLEL LOOP PRESENT(a,b)
+      do i=1,n
+        a(i)=a(i)+c1*b(i)
+      enddo
+!$ACC END PARALLEL
+
+      return
+      end
+
 c-----------------------------------------------------------------------
       subroutine rzero_acc(a,n)
       real  a(n)
