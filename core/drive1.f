@@ -294,8 +294,8 @@ c-----------------------------------------------------------------------
             if (ifgeom) then
                if (ifrich) then
                   if (ifmvbd.and.igeom.eq.2) call opcopy
-        $            (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2),
-        $             xm1,ym1,zm1)
+     $               (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2)
+     $               ,xm1,ym1,zm1)
                else
                   call gengeom (igeom)
                endif
