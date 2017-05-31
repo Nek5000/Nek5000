@@ -254,8 +254,8 @@ fi
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
-sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
--e "s:^CC[ ]*=.*:CC\:=$CC:" \
+sed -e "s?^FC[ ]*=.*?FC\:=$F77?" \
+-e "s?^CC[ ]*=.*?CC\:=$CC?" \
 -e "s?^G[ ]*=.*?G\:=$G?" \
 -e "s?^FFLAGS[ ]*=.*?FFLAGS:=$FFLAGS?" \
 -e "s?^CFLAGS[ ]*=.*?CFLAGS:=$CFLAGS?" \
