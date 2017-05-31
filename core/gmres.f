@@ -312,242 +312,6 @@ c
 c-----------------------------------------------------------------------
       subroutine hmh_gmres(res,h1,h2,wt,iter)
 
-c     Solve the Helmholtz equation by right-preconditioned 
-c     GMRES iteration.
-
-     
-      include 'SIZE'
-      include 'TOTAL'
-      include 'FDMH1'
-      include 'GMRES'
-      common  /ctolpr/ divex
-      common  /cprint/ ifprint
-      logical          ifprint
-      real             res  (lx1*ly1*lz1*lelv)
-      real             h1   (lx1,ly1,lz1,lelv)
-      real             h2   (lx1,ly1,lz1,lelv)
-      real             wt   (lx1,ly1,lz1,lelv)
-
-      common /scrcg/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
-
-      common /cgmres1/ y(lgmres)
-      common /ctmp0/   wk1(lgmres),wk2(lgmres)
-      real alpha, l, temp
-      integer outer
-
-      logical iflag,if_hyb
-      save    iflag,if_hyb
-c     data    iflag,if_hyb  /.false. , .true. /
-      data    iflag,if_hyb  /.false. , .false. /
-      real    norm_fac
-      save    norm_fac
-
-      real*8 etime1,dnekclock
-
-
-      n = nx1*ny1*nz1*nelv
-
-      etime1 = dnekclock()
-      etime_p = 0.
-      divex = 0.
-      iter  = 0
-      m     = lgmres
-
-      if(.not.iflag) then
-         iflag=.true.
-         call uzawa_gmres_split(ml_gmres,mu_gmres,bm1,binvm1,
-     $                          nx1*ny1*nz1*nelv)
-         norm_fac = 1./sqrt(volvm1)
-      endif
-
-      if (param(100).ne.2) call set_fdm_prec_h1b(d,h1,h2,nelv)
-
-      call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
-      if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
-     $   tolps = abs(param(21))
-      if (istep.eq.0) tolps = 1.e-4
-      tolpss = tolps
-c
-      iconv = 0
-      call rzero(x_gmres,n)
-
-      outer = 0
-      do while (iconv.eq.0.and.iter.lt.500)
-         outer = outer+1
-
-         if(iter.eq.0) then                   !      -1
-            call col3(r_gmres,ml_gmres,res,n) ! r = L  res
-c           call copy(r,res,n)
-         else
-            !update residual
-            call copy  (r_gmres,res,n)           ! r = res
-            call ax    (w_gmres,x_gmres,h1,h2,n) ! w = A x
-            call add2s2(r_gmres,w_gmres,-1.,n)   ! r = r - w
-                                                 !      -1
-            call col2(r_gmres,ml_gmres,n)        ! r = L   r
-         endif
-                                                            !            ______
-         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r) 
-                                                            !      1
-         if(iter.eq.0) then
-            div0 = gamma_gmres(1)*norm_fac
-            if (param(21).lt.0) tolpss=abs(param(21))*div0
-         endif
-
-         !check for lucky convergence
-         rnorm = 0.
-         if(gamma_gmres(1) .eq. 0.) goto 9000
-         temp = 1./gamma_gmres(1)
-         call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
-                                                  !  1            1
-         do j=1,m
-            iter = iter+1
-                                                       !       -1
-            call col3(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
-                                                       !           j
-
-c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
-
-            etime2 = dnekclock()
-
-c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
-            if (ifmgrid) then
-               call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
-            else                                            !  j
-               kfldfdm = ndim+1
-               if (param(100).eq.2) then
-                   call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
-               else
-                   call fdm_h1
-     $               (z_gmres(1,j),w_gmres,d,pmask,vmult,nelv,
-     $                ktype(1,1,kfldfdm),wk)
-               endif
-               call crs_solve_h1 (wk,w_gmres)        ! z  = M   w
-               call add2         (z_gmres(1,j),wk,n) !  j        
-            endif
-
-
-            call ortho        (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
-            etime_p = etime_p + dnekclock()-etime2
-c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-
-     
-            call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
-                                                    !        j
-     
-                                                    !      -1
-            call col2(w_gmres,ml_gmres,n)           ! w = L   w
-
-c           !modified Gram-Schmidt
-
-c           do i=1,j
-c              h_gmres(i,j)=glsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-c                                                            !  i,j       i
-
-c              call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
-c           enddo                                                !          i,j  i
-
-c           2-PASS GS, 1st pass:
-
-            do i=1,j
-               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-            enddo                                            !  i,j       i
-
-            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
-
-            do i=1,j
-               call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
-            enddo                                                !          i,j  i
-
-
-c           2-PASS GS, 2nd pass:
-c
-c           do i=1,j
-c              wk1(i)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-c           enddo                                      !  i,j       i
-c                                                      !
-c           call gop(wk1,wk2,'+  ',j)                  ! sum over P procs
-c
-c           do i=1,j
-c              call add2s2(w_gmres,v_gmres(1,i),-wk1(i),n)    ! w = w - h    v
-c              h_gmres(i,j) = h_gmres(i,j) + wk1(i)           !          i,j  i
-c           enddo
-
-            !apply Givens rotations to new column
-            do i=1,j-1
-               temp = h_gmres(i,j)                   
-               h_gmres(i  ,j)=  c_gmres(i)*temp 
-     $                        + s_gmres(i)*h_gmres(i+1,j)  
-               h_gmres(i+1,j)= -s_gmres(i)*temp 
-     $                        + c_gmres(i)*h_gmres(i+1,j)
-            enddo
-                                                      !            ______
-            alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
-            rnorm = 0.
-            if(alpha.eq.0.) goto 900  !converged
-            l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
-            temp = 1./l
-            c_gmres(j) = h_gmres(j,j) * temp
-            s_gmres(j) = alpha  * temp
-            h_gmres(j,j) = l
-            gamma_gmres(j+1) = -s_gmres(j) * gamma_gmres(j)
-            gamma_gmres(j)   =  c_gmres(j) * gamma_gmres(j)
-
-            rnorm = abs(gamma_gmres(j+1))*norm_fac
-            ratio = rnorm/div0
-            if (ifprint.and.nio.eq.0) 
-     $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
-   66       format(i5,1p4e12.5,i8,' Divergence')
-
-#ifndef TST_WSCAL
-            if (rnorm .lt. tolpss) goto 900  !converged
-#else
-            if (iter.gt.param(151)-1) goto 900
-#endif
-            if (j.eq.m) goto 1000 !not converged, restart
-
-            temp = 1./alpha
-            call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
-                                                       !  j+1            
-         enddo
-  900    iconv = 1
- 1000    continue
-         !back substitution
-         !     -1
-         !c = H   gamma
-         do k=j,1,-1
-            temp = gamma_gmres(k)
-            do i=j,k+1,-1
-               temp = temp - h_gmres(k,i)*c_gmres(i)
-            enddo
-            c_gmres(k) = temp/h_gmres(k,k)
-         enddo
-         !sum up Arnoldi vectors
-         do i=1,j
-            call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
-         enddo                                             !          i  i
-c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
-      enddo
- 9000 continue
-
-      divex = rnorm
-      call copy(res,x_gmres,n)
-
-      call ortho   (res) ! Orthogonalize wrt null space, if present
-
-      etime1 = dnekclock()-etime1
-      if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
-     &                            etime1,if_hyb
-c     call flush_hack
- 9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
-
-      if (outer.le.2) if_hyb = .false.
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine hmh_gmres_acc(res,h1,h2,wt,iter)
-
 c     Solve the Helmholtz equation by right-preconditioned
 c     GMRES iteration.
 
@@ -603,7 +367,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
       tolpss = tolps
-
+c
       iconv = 0
       call rzero(x_gmres,n)
 
@@ -616,22 +380,20 @@ c     res, h1, h2, and wt, since they are local variables.
       do while (iconv.eq.0.and.iter.lt.500)
          outer = outer+1
 
-         if(iter.eq.0) then
-            call col3_acc  (r_gmres,ml_gmres,res,n)
+         if(iter.eq.0) then                   !      -1
+            call col3_acc    (r_gmres,ml_gmres,res,n) ! r = L  res
 c           call copy(r,res,n)
          else
-            ! update residual
-            ! ax() is implemented to run on device when needed
-            call copy_acc  (r_gmres,res,n)
-            call ax        (w_gmres,x_gmres,h1,h2,n)
-            call add2s2_acc(r_gmres,w_gmres,-1.,n)
-
-            call col2_acc  (r_gmres,ml_gmres,n)
+            !update residual
+            call copy_acc  (r_gmres,res,n)               ! r = res
+            call ax    (w_gmres,x_gmres,h1,h2,n)     ! w = A x
+            call add2s2_acc(r_gmres,w_gmres,-1.,n)       ! r = r - w
+                                                     !      -1
+            call col2_acc  (r_gmres,ml_gmres,n)          ! r = L   r
          endif
 
 !$ACC UPDATE HOST(gamma_gmres, r_gmres, wt)
-         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n))
-
+         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
          if(iter.eq.0) then
             div0 = gamma_gmres(1)*norm_fac
             if (param(21).lt.0) tolpss=abs(param(21))*div0
@@ -642,9 +404,10 @@ c           call copy(r,res,n)
          rnorm = 0.
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
-         call cmult2_acc(v_gmres(1,1),r_gmres,temp,n)
-
+         call cmult2_acc(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+                                                   !  1            1
          do j=1,m
+
             iter = iter+1
 
 #ifdef DEBUG
@@ -655,19 +418,22 @@ c           call copy(r,res,n)
             write(0,*), 'outer: ', outer
             write(0,*), 'iter:  ', iter
 #endif
-
-            call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n)
+                                                       !       -1
+            call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
+                                                       !           j
 
 c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
             etime2 = dnekclock()
 
 c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
-c MJO - 3/17/17 - for variable h1, h2 in time
+
+c           MJO - 3/17/17 - for variable h1, h2 in time
+
             if (ifmgrid) then
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
             else                                            !  j
-               !FIXME: Only mgrid portion is implemented in ACC so far
+c              FIXME: Only mgrid portion is implemented in ACC so far
                kfldfdm = ndim+1
                if (param(100).eq.2) then
                    call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
@@ -680,38 +446,61 @@ c MJO - 3/17/17 - for variable h1, h2 in time
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
-
+c           ROR: 2016-06-13: Calling ortho_acc() on CPU fails for
+c           certain 2D test cases (such as eddy_uv).  This is not
+c           entirely unexpected, since ortho_acc() hasn't been
+c           implemented for 2D test cases.
+#ifdef _OPENACC
             call ortho_acc   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+#else
+            call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+#endif
+
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+            call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
-            call ax  (w_gmres,z_gmres(1,j),h1,h2,n)
+            call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
 
-            call col2_acc(w_gmres,ml_gmres,n)
-
-!$ACC PARALLEL PRESENT(h_gmres, w_gmres, v_gmres, wt)
-!$ACC LOOP PRIVATE(temp)
+c           ROR: 2016-06-13: For OpenACC, we inlined the call to
+c           vlsc3() so the compiler could infer some nested
+c           parallelism.
+#ifdef _OPENACC
+!$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
             do i=1,j 
                temp = 0.0
-!$ACC LOOP
                do k=1,n
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
                h_gmres(i,j) = temp
-            enddo
-!$ACC END PARALLEL
+            enddo                                            !  i,j       i
+!$ACC END KERNELS
+#else
+            do i=1,j
+               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+            enddo                                            !  i,j       i
+#endif
 
 !$ACC UPDATE HOST(h_gmres)
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
 !$ACC UPDATE DEVICE(h_gmres)
 
+c           ROR: 2016-06-13: For OpenACC, we inlined the call to
+c           add2s2() so the compiler could infer some nested
+c           parallelism.
+#ifdef _OPENACC
 !$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
                do k=1,n
                   w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
-            enddo
+            enddo                                                !          i,j  i
 !$ACC END KERNELS
+#else
+            do i=1,j
+               call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
+            enddo                                                !          i,j  i
+#endif
 
 ! Apply Givens rotations to new column
 !$ACC KERNELS PRESENT(h_gmres,c_gmres,s_gmres)
@@ -771,21 +560,40 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
          enddo
 !$ACC END KERNELS
 
-! Sum of Arnoldi vectors
+c        Sum of Arnoldi vectors
+c
+c        ROR: 2016-06-13: For OpenACC, we inlined the call to
+c        add2s2() so the compiler could infer some nested
+c        parallelism.
+#ifdef _OPENACC
 !$ACC KERNELS PRESENT(x_gmres, z_gmres, c_gmres)
-            do i=1,j
-               do k=1,n
-                  x_gmres(k) = x_gmres(k) + z_gmres(k,i)*c_gmres(i)
-               enddo
+         do i=1,j
+            do k=1,n
+               x_gmres(k) = x_gmres(k) + z_gmres(k,i)*c_gmres(i)
             enddo
+         enddo                                                !          i,j  i
 !$ACC END KERNELS
+#else
+         do i=1,j
+            call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
+         enddo                                             !          i  i
+#endif
+c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       enddo
  9000 continue
 
       divex = rnorm
-      call copy_acc (res,x_gmres,n)
 
+      call copy_acc(res,x_gmres,n)
+
+c     ROR: 2016-06-13: Calling ortho_acc() on CPU fails for certain 2D
+c     test cases (such as eddy_uv).  This is not entirely unexpected,
+c     since ortho_acc() hasn't been implemented for 2D test cases.
+#ifdef _OPENACC
       call ortho_acc(res)
+#else
+      call ortho   (res) ! Orthogonalize wrt null space, if present
+#endif
 
 !$ACC EXIT DATA COPYOUT(res)
       call acc_copy_all_out()
