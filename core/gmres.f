@@ -428,12 +428,12 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 
-!MJO - 3/17/17 - for variable h1, h2 in time
+c           MJO - 3/17/17 - for variable h1, h2 in time
 
             if (ifmgrid) then
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
             else                                            !  j
-!FIXME: Only mgrid portion is implemented in ACC so far
+c              FIXME: Only mgrid portion is implemented in ACC so far
                kfldfdm = ndim+1
                if (param(100).eq.2) then
                    call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
@@ -446,6 +446,10 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
+c           ROR: 2016-06-13: Calling ortho_acc() on CPU fails for
+c           certain 2D test cases (such as eddy_uv).  This is not
+c           entirely unexpected, since ortho_acc() hasn't been
+c           implemented for 2D test cases.
 #ifdef _OPENACC
             call ortho_acc   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
 #else
@@ -458,9 +462,9 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
             call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
 
-            ! ROR: 2016-06-13: For OpenACC, we inlined the call to
-            ! vlsc3() so the compiler could infer some nested
-            ! parallelism.
+c           ROR: 2016-06-13: For OpenACC, we inlined the call to
+c           vlsc3() so the compiler could infer some nested
+c           parallelism.
 #ifdef _OPENACC
 !$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
             do i=1,j 
@@ -481,9 +485,9 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
 !$ACC UPDATE DEVICE(h_gmres)
 
-            ! ROR: 2016-06-13: For OpenACC, we inlined the call to
-            ! add2s2() so the compiler could infer some nested
-            ! parallelism.
+c           ROR: 2016-06-13: For OpenACC, we inlined the call to
+c           add2s2() so the compiler could infer some nested
+c           parallelism.
 #ifdef _OPENACC
 !$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
@@ -556,11 +560,11 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
          enddo
 !$ACC END KERNELS
 
-            ! Sum of Arnoldi vectors
-
-            ! ROR: 2016-06-13: For OpenACC, we inlined the call to
-            ! add2s2() so the compiler could infer some nested
-            ! parallelism.
+c        Sum of Arnoldi vectors
+c
+c        ROR: 2016-06-13: For OpenACC, we inlined the call to
+c        add2s2() so the compiler could infer some nested
+c        parallelism.
 #ifdef _OPENACC
 !$ACC KERNELS PRESENT(x_gmres, z_gmres, c_gmres)
          do i=1,j
@@ -582,6 +586,9 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
 
       call copy_acc(res,x_gmres,n)
 
+c     ROR: 2016-06-13: Calling ortho_acc() on CPU fails for certain 2D
+c     test cases (such as eddy_uv).  This is not entirely unexpected,
+c     since ortho_acc() hasn't been implemented for 2D test cases.
 #ifdef _OPENACC
       call ortho_acc(res)
 #else
