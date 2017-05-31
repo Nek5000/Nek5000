@@ -79,6 +79,7 @@ c     Operator splitting technique.
 
       if (ifmvbd) call opcopy
      $  (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2),xm1,ym1,zm1)
+
       do i=1,n
          s = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti  ! Add  density*mass/dt,
          vxlag(i,1,1,1,2)=s*vx(i,1,1,1)          ! equivalent to using

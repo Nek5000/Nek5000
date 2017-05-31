@@ -292,13 +292,14 @@ c-----------------------------------------------------------------------
             if (igeom.gt.2) call userchk_set_xfer
 
             if (ifgeom) then
-               if (ifrich) then
-                  if (ifmvbd.and.igeom.eq.2) call opcopy
-     $               (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2)
-     $               ,xm1,ym1,zm1)
-               else
-                  call gengeom (igeom)
-               endif
+c              if (ifrich) then
+c                 if (ifmvbd.and.igeom.eq.2) call opcopy
+c    $               (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2)
+c    $               ,xm1,ym1,zm1)
+c              else
+c                 call gengeom (igeom)
+c              endif
+               call gengeom (igeom)
                call geneig  (igeom)
             endif
 
