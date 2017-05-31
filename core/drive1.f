@@ -299,7 +299,7 @@ c    $               ,xm1,ym1,zm1)
 c              else
 c                 call gengeom (igeom)
 c              endif
-               call gengeom (igeom)
+               if (.not.ifrich) call gengeom (igeom)
                call geneig  (igeom)
             endif
 
