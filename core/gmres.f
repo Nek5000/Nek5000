@@ -431,7 +431,6 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 !MJO - 3/17/17 - for variable h1, h2 in time
 
             if (ifmgrid) then
-!FIXME h1mg_solve works on the gpu, ortho_acc doesn't. axhelm_acc might
                call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
             else                                            !  j
 !FIXME: Only mgrid portion is implemented in ACC so far
@@ -447,7 +446,11 @@ c     if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
 
+#ifdef _OPENACC
             call ortho_acc   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+#else
+            call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
+#endif
 
             etime_p = etime_p + dnekclock()-etime2
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -578,7 +581,12 @@ c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
       divex = rnorm
 
       call copy_acc(res,x_gmres,n)
-      call ortho_acc   (res) ! Orthogonalize wrt null space, if present
+
+#ifdef _OPENACC
+      call ortho_acc(res)
+#else
+      call ortho   (res) ! Orthogonalize wrt null space, if present
+#endif
 
 !$ACC EXIT DATA COPYOUT(res)
       call acc_copy_all_out()
