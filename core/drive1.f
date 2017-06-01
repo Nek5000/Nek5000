@@ -266,7 +266,7 @@ c-----------------------------------------------------------------------
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
-            if (.not.ifrich) call gengeom (igeom)
+            call gengeom (igeom)
             call geneig  (igeom)
          endif
 
