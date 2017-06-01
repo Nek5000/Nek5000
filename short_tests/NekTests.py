@@ -438,13 +438,13 @@ class Eddy_Rich(NekTestCase):
             f.writelines(lines)
         self.run_genmap()
 
-    @pn_pn_serial
-    def test_PnPn_Serial(self):
-        # Update SIZE parameters for PnPn
-        self.size_params['lx2'] = 'lx1'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=None)
+#   @pn_pn_serial
+#   def test_PnPn_Serial(self):
+#       # Update SIZE parameters for PnPn
+#       self.size_params['lx2'] = 'lx1'
+#       self.config_size()
+#       self.build_nek()
+#       self.run_nek(step_limit=None)
 
 #       gmres = self.get_value_from_log('gmres ', column=-7,)
 #       self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
@@ -461,14 +461,14 @@ class Eddy_Rich(NekTestCase):
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
 
-        self.assertDelayedFailures()
+#       self.assertDelayedFailures()
 
-    @pn_pn_parallel
-    def test_PnPn_Parallel(self):
-        self.size_params['lx2'] = 'lx1'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=None)
+#   @pn_pn_parallel
+#   def test_PnPn_Parallel(self):
+#       self.size_params['lx2'] = 'lx1'
+#       self.config_size()
+#       self.build_nek()
+#       self.run_nek(step_limit=None)
 
 #       gmres = self.get_value_from_log('gmres ', column=-7,)
 #       self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
@@ -482,7 +482,7 @@ class Eddy_Rich(NekTestCase):
 #       perr = self.get_value_from_log('P err', column=-5, row=-1)
 #       self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
 
-        self.assertDelayedFailures()
+#       self.assertDelayedFailures()
 
     @pn_pn_2_serial
     def test_PnPn2_Serial(self):
