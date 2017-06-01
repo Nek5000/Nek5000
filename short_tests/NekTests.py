@@ -438,31 +438,6 @@ class Eddy_Rich(NekTestCase):
             f.writelines(lines)
         self.run_genmap()
 
-#   @pn_pn_serial
-#   def test_PnPn_Serial(self):
-#       # Update SIZE parameters for PnPn
-#       self.size_params['lx2'] = 'lx1'
-#       self.config_size()
-#       self.build_nek()
-#       self.run_nek(step_limit=None)
-
-#       gmres = self.get_value_from_log('gmres ', column=-7,)
-#       self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
-
-#       xerr = self.get_value_from_log('X err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(xerr, target_val=6.007702E-07, delta=1E-08, label='X err')
-
-#       yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
-
-#       perr = self.get_value_from_log('P err', column=-5, row=-1)
-#       self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
-
-        # solver_time = self.get_value_from_log('total solver time', column=-2)
-        # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
-
-#       self.assertDelayedFailures()
-
 #   @pn_pn_parallel
 #   def test_PnPn_Parallel(self):
 #       self.size_params['lx2'] = 'lx1'
@@ -483,30 +458,6 @@ class Eddy_Rich(NekTestCase):
 #       self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
 
 #       self.assertDelayedFailures()
-
-    @pn_pn_2_serial
-    def test_PnPn2_Serial(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=None)
-
-        gmres = self.get_value_from_log('gmres ', column=-6,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
-
-        xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=5.497982E-05, delta=1E-06, label='X err')
-
-        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=8.064398E-05, delta=1E-06, label='Y err')
-
-        perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=2.650561E-03, delta=1E-04, label='P err')
-
-        # solver_time = self.get_value_from_log('total solver time', column=-2)
-        # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
-
-        self.assertDelayedFailures()
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
