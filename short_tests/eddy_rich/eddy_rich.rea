@@ -11,12 +11,12 @@
       0.0000000E+00     p07 RHOCP
        1.000000         p08 CONDUCT
       0.0000000E+00
-      0.1050000E+00     p10 FINTIME
-      000.000         p11 NSTEPS
+      0.0000000E+00     p10 FINTIME
+      1000.000          p11 NSTEPS
       -1.00000E-04
       0.0000000E+00     p13 IOCOMM
       0.0000000E+00     p14 IOTIME
-      25.0000          p15 IOSTEP
+       100.0000         p15 IOSTEP
       0.0000000E+00     p16 PSSOLVER
       0.0000000E+00
       0.0000000E+00
@@ -94,7 +94,7 @@
       0.0000000E+00
       0.0000000E+00
       0.0000000E+00
-       50.00000         p93 Numbr of prev pressure solns saved
+       20.00000         p93 Numbr of prev pressure solns saved
        5.000000         p94 start projecting vel. after p94 step
        5.000000         p95 start projecting pr after p95 step
        1.00000          p96 u0 translational velocity (in .usr)
@@ -103,7 +103,7 @@
        3.000000         p99    dealiasing:if <0 disable
       0.0000000E+00     p100 reserved
       0.0000000E+00     p101   No. of additional filter modes
-      1.0000000E+00     p102   print divergence
+      0.0000000E+00     p102   print divergence
       0.0000000E+00     p103   weight of stabilizing filter (.01)
       4  Lines of passive scalar data follows2 CONDUCT; 2RHOCP
    1.00000       1.00000       1.00000       1.00000       1.00000
