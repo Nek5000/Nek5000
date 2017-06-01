@@ -1,9 +1,10 @@
 c
 c     This case monitors the error for an exact 2D solution
 c     to the Navier-Stokes equations based on the paper of Walsh [1],
-c     with an additional translational velocity (u0,v0).
+c     with an additional translational velocity (u0,v0) and a moving
+c     domain.
 c     
-c     The computational domain is [0,2pi]^2 with doubly-periodic 
+c     The initial computational domain is [0,2pi]^2 with doubly-periodic
 c     boundary conditions.
 c     
 c     Walsh's solution consists of an array of vortices determined 
