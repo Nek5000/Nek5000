@@ -352,6 +352,11 @@ c-----------------------------------------------------------------------
       ifusermv = .true.
       ifrich = .true.
 
+      if (ifsplit) then
+         write(*,*) 'ERROR: pn,pn-2 is not supported for ifrich == true'
+         call exitt
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
