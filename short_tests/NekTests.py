@@ -491,17 +491,17 @@ class Eddy_Rich(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-#       gmres = self.get_value_from_log('gmres ', column=-6,)
-#       self.assertAlmostEqualDelayed(gmres, target_val=0., delta=22., label='gmres')
+        gmres = self.get_value_from_log('gmres ', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
-#       xerr = self.get_value_from_log('X err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=1.639203E-04, delta=1E-05, label='X err')
 
-#       yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=1.096478E-04, delta=1E-05, label='Y err')
 
-#       perr = self.get_value_from_log('P err', column=-5, row=-1)
-#       self.assertAlmostEqualDelayed(perr, target_val=6.927878E-05, delta=1E-06, label='P err')
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=9.640786E-04, delta=1E-05, label='P err')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
@@ -515,18 +515,17 @@ class Eddy_Rich(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-#       gmres = self.get_value_from_log('gmres ', column=-6,)
-#       self.assertAlmostEqualDelayed(gmres, target_val=0., delta=22., label='gmres')
+        gmres = self.get_value_from_log('gmres ', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
-#       xerr = self.get_value_from_log('X err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
+        xerr = self.get_value_from_log('X err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=1.639203E-04, delta=1E-05, label='X err')
 
-#       yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-#       self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
+        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=1.096478E-04, delta=1E-05, label='Y err')
 
-#       perr = self.get_value_from_log('P err', column=-5, row=-1)
-#       self.assertAlmostEqualDelayed(perr, target_val=6.896211E-05, delta=1E-06, label='P err')
-
+        perr = self.get_value_from_log('P err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(perr, target_val=9.640786E-04, delta=1E-05, label='P err')
         self.assertDelayedFailures()
 
     def tearDown(self):
