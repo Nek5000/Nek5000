@@ -495,13 +495,13 @@ class Eddy_Rich(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
         xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=1.639203E-04, delta=1E-05, label='X err')
+        self.assertAlmostEqualDelayed(xerr, target_val=5.497982E-05, delta=1E-06, label='X err')
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=1.096478E-04, delta=1E-05, label='Y err')
+        self.assertAlmostEqualDelayed(yerr, target_val=8.064398E-05, delta=1E-06, label='Y err')
 
         perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=9.640786E-04, delta=1E-05, label='P err')
+        self.assertAlmostEqualDelayed(perr, target_val=2.650561E-03, delta=1E-04, label='P err')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
@@ -519,13 +519,14 @@ class Eddy_Rich(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
         xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=1.639203E-04, delta=1E-05, label='X err')
+        self.assertAlmostEqualDelayed(xerr, target_val=5.497982E-05, delta=1E-06, label='X err')
 
         yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=1.096478E-04, delta=1E-05, label='Y err')
+        self.assertAlmostEqualDelayed(yerr, target_val=8.064398E-05, delta=1E-06, label='Y err')
 
         perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=9.640786E-04, delta=1E-05, label='P err')
+        self.assertAlmostEqualDelayed(perr, target_val=2.650561E-03, delta=1E-04, label='P err')
+
         self.assertDelayedFailures()
 
     def tearDown(self):
