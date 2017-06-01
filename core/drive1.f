@@ -313,7 +313,7 @@ c-----------------------------------------------------------------------
             endif
 
             if (igeom.eq.ngeom.and.param(103).gt.0)
-     $             call q_filter(param(103))
+     $         call q_filter(param(103))
          enddo
       endif
 
