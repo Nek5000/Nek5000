@@ -26,7 +26,7 @@ c     Operator splitting technique.
          vzlag(i,1,1,1,2)=s*vz(i,1,1,1)          ! in the first place...
       enddo
 
-      call pn2_step(vxlag,vylag,vzlag,prlag,0,dt)  ! One step of Pn-Pn-2
+      call midstep(vxlag,vylag,vzlag,prlag,0,dt)  ! One step of Pn-Pn-2
 
       do i=1,n                                          ! Add  density*mass/dt,
          bfx(i,1,1,1)=bfx(i,1,1,1)+vxlag(i,1,1,1,2)     ! equivalent to using
@@ -41,13 +41,13 @@ c     Operator splitting technique.
       endif
 
       time = time-dt2
-      call pn2_step(vx,vy,vz,pr,1,dt2)      ! One step of Pn-Pn-2, dt/2
+      call midstep(vx,vy,vz,pr,1,dt2)      ! One step of Pn-Pn-2, dt/2
 
       time = time+dt2
       call setup_convect(2)  ! Map vx --> vxd
       call setprop
 
-      call pn2_step(vx,vy,vz,pr,0,dt2)      ! One step of Pn-Pn-2, dt/2
+      call midstep(vx,vy,vz,pr,0,dt2)      ! One step of Pn-Pn-2, dt/2
 
       do i=1,n
          vx(i,1,1,1)=2*vx(i,1,1,1)-vxlag(i,1,1,1,1)
@@ -66,7 +66,7 @@ c     Operator splitting technique.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine pn2_step(ux,uy,uz,pu,iresv,dtl)
+      subroutine midstep(ux,uy,uz,pu,iresv,dtl)
       include 'SIZE'
       include 'TOTAL'
 
@@ -84,7 +84,7 @@ c-----------------------------------------------------------------------
 
 
       if (nx1.eq.nx2) 
-     $   call exitti('pn2_step requires lx2=lx1-2 in SIZE$',nx2)
+     $   call exitti('midstep requires lx2=lx1-2 in SIZE$',nx2)
 
       ifield = 1                ! Set field for velocity
       n   = nx1*ny1*nz1*nelv
