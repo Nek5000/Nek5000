@@ -2,7 +2,7 @@
 
 | **`Short Tests`** | **`Examples`** |
 |-----------------|---------------------|
-| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=develop)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
+| [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=master)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
 
 Nek5000 is an open source, fast and scalable spectral element CFD code designed to simulate unsteady incompressible and low Mach-number Navier-Stokes flows.
 
@@ -28,7 +28,7 @@ Nek5000 is an open source, fast and scalable spectral element CFD code designed 
 
 ## Download
 
-For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) once it available. All developers should checkout the code on [GibHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
+For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) once it available. All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
 
 ## Getting Started
 
@@ -37,9 +37,10 @@ Hold your horses in less than 5min you have performed your first simulation
 ```
 cd ~
 tar -xvzf Nek5000.tar.gz
-export PATH=~/Nek5000/bin:$PATH
+export PATH=$HOME/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
-cd ~/Nek5000/run; cp -r ~/Nek5000/short-tests/eddy .
+cd ~/Nek5000/run; cp -r ~/Nek5000/short_tests/eddy .
+cd eddy
 makenek eddy_uv
 genmap             # on input type eddy_uv
 nekmpi eddy_uv 2   # to run on 2 ranks
@@ -60,7 +61,7 @@ Nek5000 is hosted on GitHub and all bugs are reported and tracked through the Is
 
 ## Contributing
 
-Our project is hosted on [GibHub](https://github.com/Nek5000/Nek5000). If you are planning a large contribution, we encourage you to discuss the concept here on GitHub and interact with us frequently to ensure that your effort is well-directed.
+Our project is hosted on [GitHub](https://github.com/Nek5000/Nek5000). If you are planning a large contribution, we encourage you to discuss the concept here on GitHub and interact with us frequently to ensure that your effort is well-directed.
 
 ### How we do it
 - Anything in master is always deployable

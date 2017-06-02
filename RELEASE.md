@@ -27,7 +27,7 @@
 * Replaced `hpts.in/hpts.out` by `<casename>.his` 
 * Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
-* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:solver=amg) 
+* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditioner=amg) 
 
 ## Bug Fixes and Other Changes
 
