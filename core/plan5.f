@@ -35,7 +35,6 @@ c     Operator splitting technique.
       enddo
 
       if (ifmvbd) then
-         write (*,*) 'ifmbvd is true'
         call opcopy
      $  (xm1,ym1,zm1,wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2))
         call geom_reset(0)
