@@ -39,11 +39,11 @@ cd ~
 tar -xvzf Nek5000.tar.gz
 export PATH=$HOME/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
-cd ~/Nek5000/run; cp -r ~/Nek5000/short_tests/eddy .
-cd eddy
-makenek eddy_uv
-genmap             # on input type eddy_uv
-nekmpi eddy_uv 2   # to run on 2 ranks
+cd ~/Nek5000/run; cp -r ~/Nek5000/short_tests/ethier .
+cd ethier
+makenek ethier     # you may want edit this file
+genmap             # on input type ethier
+nekmpi ethier 2    # to run on 2 ranks
 ```
 
 **Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
