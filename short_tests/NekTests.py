@@ -2,6 +2,8 @@
 from lib.nekTestCase import *
 from unittest import skip
 
+import re
+
 ###############################################################################
 #  axi: axi.rea
 ###############################################################################
@@ -483,6 +485,9 @@ class Ethier(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
+        gmres = self.get_value_from_log('gmres ', column=-6)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=7., label='gmres')
+
         vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
         self.assertAlmostEqualDelayed(vxerr, target_val=3.635317e-05, delta=1e-07, label='VX err')
 
@@ -496,7 +501,19 @@ class Ethier(NekTestCase):
         self.size_params['lx2'] = 'lx1'
         self.config_size()
         self.build_nek()
+
+        from re import sub
+        cls = self.__class__
+        rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
+        with open(rea_path, 'r') as f:
+            lines = [sub(r'.*preconditioner.*', 'preconditioner = amg', l, flags=re.I) for l in f]
+        with open(rea_path, 'w') as f:
+            f.writelines(lines)
+
         self.run_nek(step_limit=1000)
+
+        gmres = self.get_value_from_log('gmres ', column=-7)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
 
         vxerr = self.get_value_from_log(label='L2 err', column=-4, row=-1)
         self.assertAlmostEqualDelayed(vxerr, target_val=2.407549E-006, delta=1e-08, label='VX err')
