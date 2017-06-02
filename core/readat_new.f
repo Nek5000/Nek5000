@@ -305,7 +305,7 @@ c set parameters
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
 
-      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
       if (index(c_out,'AMG') .gt. 0) param(40) = 1
 

@@ -37,7 +37,7 @@ Hold your horses in less than 5min you have performed your first simulation
 ```
 cd ~
 tar -xvzf Nek5000.tar.gz
-export PATH=~/Nek5000/bin:$PATH
+export PATH=$HOME/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
 cd ~/Nek5000/run; cp -r ~/Nek5000/short_tests/eddy .
 cd eddy
