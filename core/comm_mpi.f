@@ -157,6 +157,8 @@ c-----------------------------------------------------------------------
 
 c     Global vector commutative operation
 
+      include 'CTIMER'
+
       include 'mpif.h'
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 
@@ -164,6 +166,16 @@ c     Global vector commutative operation
       character*3 op
 
       if (ifsync) call nekgsync()
+
+#ifdef TIMER
+      if (icalld.eq.0) then
+        tgop =0.0d0
+        ngop =0
+        icalld=1
+      endif
+      ngop = ngop + 1
+      etime1=dnekclock()
+#endif
 
 #ifdef MPI
 
