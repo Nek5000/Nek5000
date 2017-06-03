@@ -374,7 +374,7 @@ c
 c     ROR 2017-05-22: Separate copyin/copyout statements are used for
 c     res, h1, h2, and wt, since they are local variables.  
       call acc_copy_all_in()
-!$ACC ENTER DATA COPYIN(res)
+!$ACC ENTER DATA COPYIN(res,wk1)
 
       outer = 0
       do while (iconv.eq.0.and.iter.lt.500)
@@ -462,10 +462,11 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
             call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
 
-c           ROR: 2016-06-13: For OpenACC, we inlined the call to
-c           vlsc3() so the compiler could infer some nested
-c           parallelism.
 #ifdef _OPENACC
+c           ROR: 2016-06-13: For OpenACC, we inlined the calls to
+c           vlsc3() add2s2() so the compiler could infer some nested
+c           parallelism.
+
 !$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
             do i=1,j 
                temp = 0.0
@@ -473,30 +474,27 @@ c           parallelism.
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
                h_gmres(i,j) = temp
-            enddo                                            !  i,j       i
+            enddo
 !$ACC END KERNELS
-#else
-            do i=1,j
-               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-            enddo                                            !  i,j       i
-#endif
 
-!$ACC UPDATE HOST(h_gmres)
-            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
-!$ACC UPDATE DEVICE(h_gmres)
+            call gop_acc(h_gmres(1,j),wk1,'+  ',j)
 
-c           ROR: 2016-06-13: For OpenACC, we inlined the call to
-c           add2s2() so the compiler could infer some nested
-c           parallelism.
-#ifdef _OPENACC
 !$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
                do k=1,n
                   w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
-            enddo                                                !          i,j  i
+            enddo
 !$ACC END KERNELS
+
 #else
+
+            do i=1,j
+               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+            enddo                                            !  i,j       i
+
+            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
+
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
             enddo                                                !          i,j  i
@@ -595,7 +593,7 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       call ortho   (res) ! Orthogonalize wrt null space, if present
 #endif
 
-!$ACC EXIT DATA COPYOUT(res)
+!$ACC EXIT DATA COPYOUT(res,wk1)
       call acc_copy_all_out()
 
       etime1 = dnekclock()-etime1
