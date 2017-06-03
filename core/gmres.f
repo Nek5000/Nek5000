@@ -332,7 +332,7 @@ c     GMRES iteration.
 
       common /cgmres1/ y(lgmres)
       common /ctmp0/   wk1(lgmres),wk2(lgmres)
-      real alpha, l, temp
+      real alpha, l, temp, temp_ptr(1)
       integer outer
 
       logical iflag,if_hyb
@@ -391,19 +391,39 @@ c           call copy(r,res,n)
             call col2_acc  (r_gmres,ml_gmres,n)          ! r = L   r
          endif
 
-!$ACC UPDATE HOST(gamma_gmres, r_gmres, wt)
+#ifdef _OPENACC
+c        ROR: 2017-06-03: I inlined glsc3_acc because I couldn't figure
+c        out how to call glsc3_acc from inside a kernel.  I kept getting
+c        the error: "Unsupported nested compute construct in compute
+c        construct or acc routine"
+
+!$ACC KERNELS PRESENT(gamma_gmres) COPY(temp)
+         temp = 0.0
+         do  k=1,n
+           temp = temp + r_gmres(k)*r_gmres(k)*wt(k)
+         enddo
+         temp = sqrt(temp)
+!$ACC END KERNELS
+
+      call gop_acc(temp,temp_ptr,'+  ',1)
+
+!$ACC KERNELS PRESENT(gamma_gmres) COPYIN(temp)
+      gamma_gmres(1) = temp
+!$ACC END KERNELS
+
+#else
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
+         temp = gamma_gmres(1)
+#endif
          if(iter.eq.0) then
-            div0 = gamma_gmres(1)*norm_fac
+            div0 = temp*norm_fac
             if (param(21).lt.0) tolpss=abs(param(21))*div0
          endif
-!$ACC UPDATE DEVICE(gamma_gmres, r_gmres, wt)
 
          !check for lucky convergence
          rnorm = 0.
-         if(gamma_gmres(1) .eq. 0.) goto 9000
-         temp = 1./gamma_gmres(1)
-         call cmult2_acc(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+         if(temp .eq. 0.) goto 9000
+         call cmult2_acc(v_gmres(1,1),r_gmres,1./temp,n) ! v  = r / gamma
                                                    !  1            1
          do j=1,m
 
@@ -521,7 +541,7 @@ c           parallelism.
 
 !$ACC    KERNELS 
 !$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres) 
-!$ACC&   COPY(alpha, rnorm, ratio)
+!$ACC&   COPY(alpha, rnorm, ratio, div0)
 !$ACC&   CREATE(temp)
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
             temp = 1./l
