@@ -344,7 +344,6 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
       real*8 etime1,dnekclock
 
-
       n = nx1*ny1*nz1*nelv
 
       etime1 = dnekclock()
@@ -511,10 +510,19 @@ c           parallelism.
             enddo
 !$ACC END KERNELS
                                                       !            ______
-!$ACC UPDATE HOST(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
+#ifdef _OPENACC
+            alpha = sqrt(glsc3_acc(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
+#else
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
+#endif
             rnorm = 0.
+
             if(alpha.eq.0.) goto 900  !converged
+
+!$ACC    KERNELS 
+!$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres) 
+!$ACC&   COPY(alpha, rnorm, ratio)
+!$ACC&   CREATE(temp)
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
             temp = 1./l
             c_gmres(j) = h_gmres(j,j) * temp
@@ -525,10 +533,11 @@ c           parallelism.
 
             rnorm = abs(gamma_gmres(j+1))*norm_fac
             ratio = rnorm/div0
+!$ACC END KERNELS
+
             if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
-!$ACC UPDATE DEVICE(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
