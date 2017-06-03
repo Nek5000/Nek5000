@@ -153,6 +153,67 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gop_acc( x, w, op, n)
+
+c     Global vector commutative operation
+
+      include 'CTIMER'
+
+      include 'mpif.h'
+      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
+
+      real x(n), w(n)
+      character*3 op
+
+      if (ifsync) call nekgsync()
+
+#ifdef TIMER
+      if (icalld.eq.0) then
+        tgop =0.0d0
+        ngop =0
+        icalld=1
+      endif
+      ngop = ngop + 1
+      etime1=dnekclock()
+#endif
+
+#ifdef MPI
+
+c     ROR: 2017-06-03: This implementation updates host and does
+c     communication through host.  
+
+c     It may be possible to use the HOST_DATA clause so that
+c     mpi_allreduce will (if I understand correctly) be able to use GPU
+c     direct, if available.  However, I have not tested it.  This is
+c     based on demonstrations from:
+c     https://www.olcf.ornl.gov/tutorials/gpudirect-mpich-enabled-cuda/#OpenACC_Fortran
+
+!$ACC UPDATE HOST(x)
+      if (op.eq.'+  ') then
+         call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
+      elseif (op.EQ.'M  ') then
+         call mpi_allreduce (x,w,n,nekreal,mpi_max ,nekcomm,ierr)
+      elseif (op.EQ.'m  ') then
+         call mpi_allreduce (x,w,n,nekreal,mpi_min ,nekcomm,ierr)
+      elseif (op.EQ.'*  ') then
+         call mpi_allreduce (x,w,n,nekreal,mpi_prod,nekcomm,ierr)
+      else
+         write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
+         call exitt
+      endif
+!$ACC UPDATE DEVICE(w)
+
+      call copy_acc(x,w,n)
+
+#else
+
+c     ROR: 2017-06-03:  On a single-node, allreduce is a null op.
+
+#endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine igop( x, w, op, n)
 c
 c     Global vector commutative operation

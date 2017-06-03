@@ -1090,6 +1090,33 @@ C
       GLSC3 = TMP
       return
       END
+
+C----------------------------------------------------------------------------
+
+
+      function glsc3_acc(a,b,mult,n)
+C
+C     Perform inner-product in double precision
+C
+      real a(n),b(n),mult(n)
+      real tmp,work(1)
+
+      tmp = 0.0
+
+!$ACC KERNELS PRESENT(a,b,mult)
+      do  i=1,n
+         tmp = tmp + a(i)*b(i)*mult(i)
+      enddo
+!$ACC END KERNELS
+
+!$ACC ENTER DATA CREATE(work)
+      call gop_acc(tmp,work,'+  ',1)
+!$ACC EXIT DATA DELETE(work)
+
+      glsc3_acc = tmp
+      return
+      end
+
 c-----------------------------------------------------------------------
       function glsc2(x,y,n)
 C

@@ -332,7 +332,7 @@ c     GMRES iteration.
 
       common /cgmres1/ y(lgmres)
       common /ctmp0/   wk1(lgmres),wk2(lgmres)
-      real alpha, l, temp
+      real alpha, l, temp, temp_ptr(1)
       integer outer
 
       logical iflag,if_hyb
@@ -343,7 +343,6 @@ c     data    iflag,if_hyb  /.false. , .true. /
       save    norm_fac
 
       real*8 etime1,dnekclock
-
 
       n = nx1*ny1*nz1*nelv
 
@@ -374,7 +373,7 @@ c
 c     ROR 2017-05-22: Separate copyin/copyout statements are used for
 c     res, h1, h2, and wt, since they are local variables.  
       call acc_copy_all_in()
-!$ACC ENTER DATA COPYIN(res)
+!$ACC ENTER DATA COPYIN(res,wk1)
 
       outer = 0
       do while (iconv.eq.0.and.iter.lt.500)
@@ -392,19 +391,39 @@ c           call copy(r,res,n)
             call col2_acc  (r_gmres,ml_gmres,n)          ! r = L   r
          endif
 
-!$ACC UPDATE HOST(gamma_gmres, r_gmres, wt)
+#ifdef _OPENACC
+c        ROR: 2017-06-03: I inlined glsc3_acc because I couldn't figure
+c        out how to call glsc3_acc from inside a kernel.  I kept getting
+c        the error: "Unsupported nested compute construct in compute
+c        construct or acc routine"
+
+!$ACC KERNELS PRESENT(gamma_gmres) COPY(temp)
+         temp = 0.0
+         do  k=1,n
+           temp = temp + r_gmres(k)*r_gmres(k)*wt(k)
+         enddo
+         temp = sqrt(temp)
+!$ACC END KERNELS
+
+      call gop_acc(temp,temp_ptr,'+  ',1)
+
+!$ACC KERNELS PRESENT(gamma_gmres) COPYIN(temp)
+      gamma_gmres(1) = temp
+!$ACC END KERNELS
+
+#else
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
+         temp = gamma_gmres(1)
+#endif
          if(iter.eq.0) then
-            div0 = gamma_gmres(1)*norm_fac
+            div0 = temp*norm_fac
             if (param(21).lt.0) tolpss=abs(param(21))*div0
          endif
-!$ACC UPDATE DEVICE(gamma_gmres, r_gmres, wt)
 
          !check for lucky convergence
          rnorm = 0.
-         if(gamma_gmres(1) .eq. 0.) goto 9000
-         temp = 1./gamma_gmres(1)
-         call cmult2_acc(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+         if(temp .eq. 0.) goto 9000
+         call cmult2_acc(v_gmres(1,1),r_gmres,1./temp,n) ! v  = r / gamma
                                                    !  1            1
          do j=1,m
 
@@ -462,10 +481,11 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
             call col2_acc(w_gmres,ml_gmres,n)           ! w = L   w
 
-c           ROR: 2016-06-13: For OpenACC, we inlined the call to
-c           vlsc3() so the compiler could infer some nested
-c           parallelism.
 #ifdef _OPENACC
+c           ROR: 2016-06-13: For OpenACC, we inlined the calls to
+c           vlsc3() add2s2() so the compiler could infer some nested
+c           parallelism.
+
 !$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
             do i=1,j 
                temp = 0.0
@@ -473,30 +493,27 @@ c           parallelism.
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
                h_gmres(i,j) = temp
-            enddo                                            !  i,j       i
+            enddo
 !$ACC END KERNELS
-#else
-            do i=1,j
-               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
-            enddo                                            !  i,j       i
-#endif
 
-!$ACC UPDATE HOST(h_gmres)
-            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
-!$ACC UPDATE DEVICE(h_gmres)
+            call gop_acc(h_gmres(1,j),wk1,'+  ',j)
 
-c           ROR: 2016-06-13: For OpenACC, we inlined the call to
-c           add2s2() so the compiler could infer some nested
-c           parallelism.
-#ifdef _OPENACC
 !$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
                do k=1,n
                   w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
-            enddo                                                !          i,j  i
+            enddo
 !$ACC END KERNELS
+
 #else
+
+            do i=1,j
+               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+            enddo                                            !  i,j       i
+
+            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
+
             do i=1,j
                call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
             enddo                                                !          i,j  i
@@ -513,10 +530,19 @@ c           parallelism.
             enddo
 !$ACC END KERNELS
                                                       !            ______
-!$ACC UPDATE HOST(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
+#ifdef _OPENACC
+            alpha = sqrt(glsc3_acc(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
+#else
             alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
+#endif
             rnorm = 0.
+
             if(alpha.eq.0.) goto 900  !converged
+
+!$ACC    KERNELS 
+!$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres) 
+!$ACC&   COPY(alpha, rnorm, ratio, div0)
+!$ACC&   CREATE(temp)
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
             temp = 1./l
             c_gmres(j) = h_gmres(j,j) * temp
@@ -527,10 +553,11 @@ c           parallelism.
 
             rnorm = abs(gamma_gmres(j+1))*norm_fac
             ratio = rnorm/div0
+!$ACC END KERNELS
+
             if (ifprint.and.nio.eq.0)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
-!$ACC UPDATE DEVICE(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
 
 #ifndef TST_WSCAL
             if (rnorm .lt. tolpss) goto 900  !converged
@@ -595,7 +622,7 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       call ortho   (res) ! Orthogonalize wrt null space, if present
 #endif
 
-!$ACC EXIT DATA COPYOUT(res)
+!$ACC EXIT DATA COPYOUT(res,wk1)
       call acc_copy_all_out()
 
       etime1 = dnekclock()-etime1
