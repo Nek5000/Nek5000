@@ -844,6 +844,91 @@ C
       return
       end
 c=======================================================================
+      subroutine chktcg1_acc (tol,res,h1,h2,mask,mult,imesh,isd)
+C-------------------------------------------------------------------
+C
+C     Check that the tolerances are not too small for the CG-solver.
+C     Important when calling the CG-solver (Gauss-Lobatto mesh) with
+C     zero Neumann b.c.
+C
+C-------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'EIGEN'
+      common  /cprint/ ifprint
+      logical          ifprint
+      common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
+     $ ,             w2   (lx1,ly1,lz1,lelt)
+      real res  (lx1,ly1,lz1,1)
+      real h1   (lx1,ly1,lz1,1)
+      real h2   (lx1,ly1,lz1,1)
+      real mult (lx1,ly1,lz1,1)
+      real mask (lx1,ly1,lz1,1)
+c
+      if (eigaa.ne.0.) then
+         acondno = eigga/eigaa
+      else
+         acondno = 10.
+      endif
+c
+c     single or double precision???
+c
+      delta = 1.e-9
+      x     = 1.+delta
+      y     = 1.
+      diff  = abs(x-y)
+      if (diff.eq.0.) eps = 1.e-6
+      if (diff.gt.0.) eps = 1.e-13
+c
+      if (imesh.eq.1) then
+          nl  = nelv
+          vol = volvm1
+      elseif (imesh.eq.2) then
+          nl  = nelt
+          vol = voltm1
+      endif
+      ntot1 = nx1*ny1*nz1*nl
+
+      call copy_acc (w1,res,ntot1)
+c
+      if (imesh.eq.1) then
+         call col3_acc (w2,binvm1,w1,ntot1)
+         rinit  = sqrt(glsc3_acc (w2,w1,mult,ntot1)/volvm1)
+      else
+         call col3_acc (w2,bintm1,w1,ntot1)
+         rinit  = sqrt(glsc3_acc (w2,w1,mult,ntot1)/voltm1)
+      endif
+      rmin   = eps*rinit
+      if (tol.lt.rmin) then
+         if (nio.eq.0.and.ifprint)
+     $   write (6,*) 'new cg1-tolerance (rinit*epsm) = ',rmin,tol
+         tol = rmin
+      endif
+c
+      call rone_acc (w1,ntot1)
+      bcneu1 = glsc3_acc(w1,mask,mult,ntot1)
+      bcneu2 = glsc3_acc(w1,w1  ,mult,ntot1)
+      bctest = abs(bcneu1-bcneu2)
+c
+      call axhelm_acc (w2,w1,h1,h2,imesh,isd)
+      call col2_acc   (w2,w2,ntot1)
+      call col2_acc   (w2,bm1,ntot1)
+      bcrob  = sqrt(glsum_acc(w2,ntot1)/vol)
+c
+      if ((bctest .lt. .1).and.(bcrob.lt.(eps*acondno))) then
+c         otr = glsc3 (w1,res,mult,ntot1)
+         tolmin = rinit*eps*10.
+         if (tol .lt. tolmin) then
+             tol = tolmin
+             if (nio.eq.0.and.ifprint)
+     $       write(6,*) 'new cg1-tolerance (neumann) = ',tolmin
+         endif
+      endif
+C
+      return
+      end
+c=======================================================================
       subroutine cggo(x,f,h1,h2,mask,mult,imsh,tin,maxit,isd,binv,name)
 C-------------------------------------------------------------------------
 C

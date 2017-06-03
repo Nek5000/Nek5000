@@ -1938,27 +1938,6 @@ c
       enddo
       return
       end
-c-----------------------------------------------------------------------
-      function glsum_acc (x,n)
-      DIMENSION X(n)
-      DIMENSION TMP(1),WORK(1)
-
-      TSUM = 0.
-
-!$ACC KERNELS
-      DO I=1,N
-         TSUM = TSUM+X(I)
-      ENDDO
-!$ACC END KERNELS
-
-      TMP(1)=TSUM
-
-      CALL GOP(TMP,WORK,'+  ',1)
-
-      GLSUM = TMP(1)
-
-      return
-      END
 c--------------------------------------------------------
       subroutine col2_acc(a,b,n)
       real a(n),b(n)
@@ -1987,28 +1966,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine copy_acc(a,b,n)
       real a(n),b(n)
-
 !$ACC PARALLEL LOOP PRESENT(a,b)
       do i=1,n
          a(i)=b(i)
       enddo
 !$ACC END PARALLEL
-
       return
       end
 c-----------------------------------------------------------------------
       subroutine add2s2_acc(a,b,c1,n)
       real a(1),b(1)
-
 !$ACC PARALLEL LOOP PRESENT(a,b)
       do i=1,n
         a(i)=a(i)+c1*b(i)
       enddo
 !$ACC END PARALLEL
-
       return
       end
-
 c-----------------------------------------------------------------------
       subroutine rzero_acc(a,n)
       real  a(n)
@@ -2019,3 +1993,27 @@ c-----------------------------------------------------------------------
 !$ACC END PARALLEL
       return
       end
+c-----------------------------------------------------------------------
+      subroutine rone_acc(a,n)
+      dimension  a(n)
+!$ACC PARALLEL LOOP PRESENT(a)
+      do i = 1, n
+         a(i) = 1.0
+      enddo
+!$ACC END PARALLEL
+      END
+c-----------------------------------------------------------------------
+      function glsum_acc (x,n)
+      dimension x(n)
+      dimension tmp(1),work(1)
+      tsum = 0.
+!$ACC KERNELS PRESENT(x)
+      do i=1,n
+         tsum = tsum+x(i)
+      enddo
+!$ACC END KERNELS
+      tmp(1)=tsum
+      call gop_acc(tmp,work,'+  ',1)
+      glsum = tmp(1)
+      return
+      END

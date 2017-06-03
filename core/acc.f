@@ -20,6 +20,8 @@
       common /scrmg/ e(2*lt),w(lt),r(lt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+      common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
+     $ ,             w2   (lx1,ly1,lz1,lelt)
 !$ACC ENTER DATA COPYIN(work,work2)
 !$ACC ENTER DATA COPYIN(mg_mask,mg_imask,pmask)
 !$ACC ENTER DATA COPYIN(tmult,vmult)
@@ -32,6 +34,8 @@
 !$ACC ENTER DATA COPYIN(r_gmres)
 !$ACC ENTER DATA COPYIN(ml_gmres,mu_gmres)
 !$ACC ENTER DATA COPYIN(h1,h2)
+!$ACC ENTER DATA COPYIN(bm1,binvm1,bintm1)
+!$ACC ENTER DATA CREATE(w1,w2)
 
 
       return
@@ -58,6 +62,8 @@
       common /scrmg/ e(2*lt),w(lt),r(lt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
+      common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
+     $ ,             w2   (lx1,ly1,lz1,lelt)
 !$ACC EXIT DATA DELETE(work,work2)
 !$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
 !$ACC EXIT DATA DELETE(e,w,r)
@@ -69,6 +75,8 @@
 !$ACC EXIT DATA COPYOUT(r_gmres)
 !$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
 !$ACC EXIT DATA COPYOUT(h1,h2)
+!$ACC EXIT DATA COPYOUT(binvm1,bintm1)
+!$ACC EXIT DATA DELETE(w1,w2)
 
       return
       end

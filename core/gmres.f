@@ -361,19 +361,26 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
       if (param(100).ne.2) call set_fdm_prec_h1b(d,h1,h2,nelv)
 
+c     ROR 2017-05-22: Separate copyin/copyout statements are used for
+c     res, h1, h2, and wt, since they are local variables.  
+
+      call acc_copy_all_in()
+!$ACC ENTER DATA COPYIN(res,h1,h2,wk1)
+
+#ifdef _OPENACC
+      call chktcg1_acc(tolps,res,h1,h2,pmask,vmult,1,1)
+#else
       call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
+#endif
+
       if (param(21).gt.0.and.tolps.gt.abs(param(21)))
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
       tolpss = tolps
 c
       iconv = 0
-      call rzero(x_gmres,n)
 
-c     ROR 2017-05-22: Separate copyin/copyout statements are used for
-c     res, h1, h2, and wt, since they are local variables.  
-      call acc_copy_all_in()
-!$ACC ENTER DATA COPYIN(res,wk1)
+      call rzero_acc(x_gmres,n)
 
       outer = 0
       do while (iconv.eq.0.and.iter.lt.500)
