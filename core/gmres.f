@@ -628,7 +628,7 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       call ortho   (res) ! Orthogonalize wrt null space, if present
 #endif
 
-!$ACC EXIT DATA COPYOUT(res,wk1)
+!$ACC EXIT DATA COPYOUT(res)
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
