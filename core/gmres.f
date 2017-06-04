@@ -364,7 +364,8 @@ c     data    iflag,if_hyb  /.false. , .true. /
 c     ROR 2017-05-22: Separate copyin/copyout statements are used for
 c     res, h1, h2, and wt, since they are local variables.  
 
-      call acc_copy_all_in()
+      call hmh_gmres_acc_data_copyin()
+
 !$ACC ENTER DATA COPYIN(res,h1,h2,wk1)
 
 #ifdef _OPENACC
@@ -630,7 +631,6 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
 #endif
 
 !$ACC EXIT DATA COPYOUT(res,wk1)
-      call acc_copy_all_out()
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,

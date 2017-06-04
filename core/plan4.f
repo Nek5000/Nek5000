@@ -38,6 +38,10 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
+
+      call plan4_acc_data_copyin()
+
+
       if (igeom.eq.1) then
 
          ! compute explicit contributions bfx,bfy,bfz 

@@ -1,5 +1,40 @@
+c-----------------------------------------------------------------------
+      subroutine plan4_acc_data_copyin()
+c-----------------------------------------------------------------------
+#ifdef _OPENACC
+      include 'SIZE'
+      include 'HSMG'    
+      include 'DXYZ'
+      include 'GEOM'
+      include 'GMRES'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'CTIMER'
+      include 'PARALLEL'
 
-      subroutine acc_copy_all_in()
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      if (icalld.eq.0) then
+
+!$ACC ENTER DATA COPYIN(pmult,tmult,vmult)
+!$ACC ENTER DATA COPYIN(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
+!$ACC ENTER DATA COPYIN(bm1,binvm1,bintm1)
+
+      icalld=1
+
+      endif
+
+#endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hmh_gmres_acc_data_copyin()
+c-----------------------------------------------------------------------
+#ifdef _OPENACC
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
       include 'DXYZ'
@@ -12,36 +47,43 @@
       include 'CTIMER'
       include 'PARALLEL'
 
-
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
-     $     h2    (lx1,ly1,lz1,lelv)
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
-     $ ,             w2   (lx1,ly1,lz1,lelt)
+     $             , w2   (lx1,ly1,lz1,lelt)
+
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      if (icalld.eq.0) then
+
 !$ACC ENTER DATA COPYIN(work,work2)
 !$ACC ENTER DATA COPYIN(mg_mask,mg_imask,pmask)
-!$ACC ENTER DATA COPYIN(tmult,vmult)
-!$ACC ENTER DATA CREATE(e,w,r)
 !$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$ACC ENTER DATA COPYIN(mg_work,mg_fast_s,mg_fast_d)
-!$ACC ENTER DATA COPYIN(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
 !$ACC ENTER DATA COPYIN(h_gmres,w_gmres,v_gmres,z_gmres)
 !$ACC ENTER DATA COPYIN(c_gmres,s_gmres,x_gmres,gamma_gmres)
 !$ACC ENTER DATA COPYIN(r_gmres)
 !$ACC ENTER DATA COPYIN(ml_gmres,mu_gmres)
-!$ACC ENTER DATA COPYIN(h1,h2)
-!$ACC ENTER DATA COPYIN(bm1,binvm1,bintm1)
+
+!$ACC ENTER DATA CREATE(e,w,r)
 !$ACC ENTER DATA CREATE(w1,w2)
+!$ACC ENTER DATA CREATE(wk1,wk2)
 
+      icalld=1
 
+      endif
+
+#endif
       return
       end
-
-      subroutine acc_copy_all_out()
+c-----------------------------------------------------------------------
+      subroutine gmres_acc_data_copyout()
+c-----------------------------------------------------------------------
+#ifdef _OPENACC
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
       include 'DXYZ'
@@ -54,34 +96,33 @@
       include 'CTIMER'
       include 'PARALLEL'
 
-
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
-     $     h2    (lx1,ly1,lz1,lelv)
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
-!$ACC EXIT DATA DELETE(work,work2)
-!$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
-!$ACC EXIT DATA DELETE(e,w,r)
-!$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-!$ACC EXIT DATA DELETE(mg_work,mg_fast_s,mg_fast_d)
-!$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
-!$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
-!$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
-!$ACC EXIT DATA COPYOUT(r_gmres)
-!$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
-!$ACC EXIT DATA COPYOUT(h1,h2)
-!$ACC EXIT DATA COPYOUT(binvm1,bintm1)
-!$ACC EXIT DATA DELETE(w1,w2)
 
+cc!$ACC EXIT DATA DELETE(work,work2)
+cc!$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
+cc!$ACC EXIT DATA DELETE(e,w,r)
+cc!$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
+cc!$ACC EXIT DATA DELETE(mg_work,mg_fast_s,mg_fast_d)
+cc!$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
+cc!$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
+cc!$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
+cc!$ACC EXIT DATA COPYOUT(r_gmres)
+cc!$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
+cc!$ACC EXIT DATA COPYOUT(h1,h2)
+cc!$ACC EXIT DATA COPYOUT(binvm1,bintm1)
+cc!$ACC EXIT DATA DELETE(w1,w2)
+
+#endif
       return
       end
-
+c-----------------------------------------------------------------------
       subroutine print_acc(a,n,text,mode)
+c-----------------------------------------------------------------------
       include 'SIZE'
       integer n,i,mode
       real    a(n)
@@ -102,6 +143,7 @@ c     if (nid.eq.0) write(6,*) text,(a(i),i=300,n) ! prints data on host
       end
 c-----------------------------------------------------------------------
       subroutine print_acc_int(a,n,text,mode)
+c-----------------------------------------------------------------------
       include 'SIZE'
       integer n,i,mode
       integer a(n)
@@ -116,6 +158,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine global_grad3(d,u,u1,u2,u3)
+c-----------------------------------------------------------------------
 
       include 'SIZE'
       integer i,j,k,l,e
@@ -157,8 +200,9 @@ c-----------------------------------------------------------------------
 !$ACC END DATA
       return
       end
-c---------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine global_div3(d,u1,u2,u3,v1,v2,v3)
+c-----------------------------------------------------------------------
 
       include 'SIZE'
       integer i,j,k,l,e
@@ -201,6 +245,6 @@ c---------------------------------------------------------------
       enddo
 !$ACC END LOOP
 !$ACC END DATA
-      return
       end
 
+c-----------------------------------------------------------------------
