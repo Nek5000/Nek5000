@@ -405,7 +405,7 @@ c        out how to call glsc3_acc from inside a kernel.  I kept getting
 c        the error: "Unsupported nested compute construct in compute
 c        construct or acc routine"
 
-!$ACC KERNELS PRESENT(gamma_gmres) COPY(temp)
+!$ACC KERNELS PRESENT(r_gmres,wt) 
          temp = 0.0
          do  k=1,n
            temp = temp + r_gmres(k)*r_gmres(k)*wt(k)
@@ -415,7 +415,7 @@ c        construct or acc routine"
 
       call gop_acc(temp,temp_ptr,'+  ',1)
 
-!$ACC KERNELS PRESENT(gamma_gmres) COPYIN(temp)
+!$ACC KERNELS PRESENT(gamma_gmres)
       gamma_gmres(1) = temp
 !$ACC END KERNELS
 
@@ -549,8 +549,6 @@ c           parallelism.
 
 !$ACC    KERNELS 
 !$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres) 
-!$ACC&   COPY(alpha, rnorm, ratio, div0)
-!$ACC&   CREATE(temp)
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
             temp = 1./l
             c_gmres(j) = h_gmres(j,j) * temp
