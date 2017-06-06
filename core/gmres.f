@@ -324,9 +324,9 @@ c     GMRES iteration.
       common  /cprint/ ifprint
       logical          ifprint
       real             res  (lx1*ly1*lz1*lelv)
-      real             h1   (lx1,ly1,lz1,lelv)
-      real             h2   (lx1,ly1,lz1,lelv)
-      real             wt   (lx1,ly1,lz1,lelv)
+      real             h1   (lx1*ly1*lz1*lelv)
+      real             h2   (lx1*ly1*lz1*lelv)
+      real             wt   (lx1*ly1*lz1*lelv)
 
       common /scrcg/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
 
