@@ -2379,9 +2379,9 @@ c     if_hybrid = .false.   ! to convergence efficiency
       call h1mg_mask(r,mg_imask(p_msk),nel) !        -1
 
 
-!$ACC UPDATE HOST(e,r)
+!$ACC UPDATE HOST(r(1:nelt*ldim**2))
       call hsmg_coarse_solve ( e(is) , r ) ! e  := A   r
-!$ACC UPDATE DEVICE(e,r)
+!$ACC UPDATE DEVICE(e(is:is-1+nelt*ldim**2))
 
       call h1mg_mask(e(is),mg_imask(p_msk),nel)       !  1     1   1
 
