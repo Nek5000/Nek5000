@@ -332,7 +332,7 @@ c     GMRES iteration.
 
       common /cgmres1/ y(lgmres)
       common /ctmp0/   wk1(lgmres),wk2(lgmres)
-      real alpha, l, temp, temp_ptr(1)
+      real alpha, l, temp, temp_ptr1(1), temp_ptr2(1)
       integer outer
 
       logical iflag,if_hyb
@@ -400,24 +400,31 @@ c           call copy(r,res,n)
          endif
 
 #ifdef _OPENACC
+
 c        ROR: 2017-06-03: I inlined glsc3_acc because I couldn't figure
 c        out how to call glsc3_acc from inside a kernel.  I kept getting
 c        the error: "Unsupported nested compute construct in compute
 c        construct or acc routine"
 
-!$ACC KERNELS PRESENT(r_gmres,wt) 
-         temp = 0.0
+!$ACC DATA CREATE(temp_ptr1,temp_ptr2)
+
+!$ACC KERNELS PRESENT(r_gmres,wt)
+         temp_ptr1(1) = 0.0
          do  k=1,n
-           temp = temp + r_gmres(k)*r_gmres(k)*wt(k)
+           temp_ptr1(1) = temp_ptr1(1) + r_gmres(k)*r_gmres(k)*wt(k)
          enddo
-         temp = sqrt(temp)
 !$ACC END KERNELS
 
-      call gop_acc(temp,temp_ptr,'+  ',1)
+      call gop_acc(temp_ptr1,temp_ptr2,'+  ',1)
 
-!$ACC KERNELS PRESENT(gamma_gmres)
-      gamma_gmres(1) = temp
+!$ACC KERNELS
+      gamma_gmres(1) = sqrt(temp_ptr1(1))
 !$ACC END KERNELS
+
+!$ACC END DATA
+
+!$ACC UPDATE HOST(gamma_gmres(1))
+      temp = gamma_gmres(1)
 
 #else
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
