@@ -2007,14 +2007,17 @@ c-----------------------------------------------------------------------
       function glsum_acc (x,n)
       dimension x(n)
       dimension tmp(1),work(1)
-      tsum = 0.
-!$ACC KERNELS PRESENT(x)
+
+!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(x)
+!$ACC KERNELS 
+      tmp(1) = 0.
       do i=1,n
-         tsum = tsum+x(i)
+         tmp(1) = tmp(1)+x(i)
       enddo
 !$ACC END KERNELS
-      tmp(1)=tsum
       call gop_acc(tmp,work,'+  ',1)
+!$ACC END DATA
+
       glsum = tmp(1)
       return
       END
