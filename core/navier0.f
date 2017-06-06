@@ -36,6 +36,7 @@ c     write(6,*) solver_type,' solver type',iesolv
                CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
             else
                call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
+c               call uzawa_lgmres(res,h1,h2,h2inv,intype,icg)
             endif
          endif
       else
