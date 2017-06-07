@@ -501,25 +501,25 @@ c           ROR: 2016-06-13: For OpenACC, we inlined the calls to
 c           vlsc3() add2s2() so the compiler could infer some nested
 c           parallelism.
 
-!$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
-            do i=1,j
+            do i=1,j 
                temp = 0.0
+!$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
                do k=1,n
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
+!$ACC END KERNELS
                h_gmres(i,j) = temp
             enddo
-!$ACC END KERNELS
 
             call gop_acc(h_gmres(1,j),wk1,'+  ',j)
 
-!$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
             do i=1,j
+!$ACC KERNELS PRESENT(w_gmres, h_gmres, v_gmres)
                do k=1,n
                   w_gmres(k) = w_gmres(k) - h_gmres(i,j) * v_gmres(k,i)
                enddo
-            enddo
 !$ACC END KERNELS
+            enddo
 
 #else
 
