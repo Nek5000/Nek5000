@@ -54,12 +54,6 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
-      integer icalld
-      save    icalld
-      data    icalld/0/
-
-      if (icalld.eq.0) then
-
 !$ACC ENTER DATA COPYIN(work,work2)
 !$ACC ENTER DATA COPYIN(mg_mask,mg_imask,pmask)
 !$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
@@ -73,15 +67,11 @@ c-----------------------------------------------------------------------
 !$ACC ENTER DATA CREATE(w1,w2)
 !$ACC ENTER DATA CREATE(wk1,wk2)
 
-      icalld=1
-
-      endif
-
 #endif
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gmres_acc_data_copyout()
+      subroutine hmh_gmres_acc_data_copyout()
 c-----------------------------------------------------------------------
 #ifdef _OPENACC
       include 'SIZE'
@@ -103,19 +93,16 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
 
-cc!$ACC EXIT DATA DELETE(work,work2)
-cc!$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
-cc!$ACC EXIT DATA DELETE(e,w,r)
-cc!$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-cc!$ACC EXIT DATA DELETE(mg_work,mg_fast_s,mg_fast_d)
-cc!$ACC EXIT DATA DELETE(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1,dxm1,dxtm1)
-cc!$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
-cc!$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
-cc!$ACC EXIT DATA COPYOUT(r_gmres)
-cc!$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
-cc!$ACC EXIT DATA COPYOUT(h1,h2)
-cc!$ACC EXIT DATA COPYOUT(binvm1,bintm1)
-cc!$ACC EXIT DATA DELETE(w1,w2)
+!$ACC EXIT DATA DELETE(work,work2)
+!$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
+!$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
+!$ACC EXIT DATA DELETE(mg_work,mg_fast_s,mg_fast_d)
+!$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
+!$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
+!$ACC EXIT DATA COPYOUT(r_gmres)
+!$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
+!$ACC EXIT DATA DELETE(w1,w2)
+!$ACC EXIT DATA DELETE(e,w,r)
 
 #endif
       return

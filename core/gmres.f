@@ -297,9 +297,7 @@ c
 #ifdef _OPENACC
 !FIXME: in axhelm_acc, ortho is now run on host
       call axhelm_acc (w,x,h1,h2,imsh,isd)
-!$ACC UPDATE HOST(w)
       call dssum  (w,nx1,ny1,nz1)
-!$ACC UPDATE DEVICE(w)
       call col2_acc   (w,pmask,n)
 #else
       call axhelm (w,x,h1,h2,imsh,isd)
@@ -479,7 +477,6 @@ c              FIXME: Only mgrid portion is implemented in ACC so far
                call crs_solve_h1 (wk,w_gmres)        ! z  = M   w
                call add2         (z_gmres(1,j),wk,n) !  j
             endif
-
 c           ROR: 2016-06-13: Calling ortho_acc() on CPU fails for
 c           certain 2D test cases (such as eddy_uv).  This is not
 c           entirely unexpected, since ortho_acc() hasn't been
@@ -490,7 +487,9 @@ c           implemented for 2D test cases.
             call ortho   (z_gmres(1,j)) ! Orthogonalize wrt null space, if present
 #endif
 
+
             etime_p = etime_p + dnekclock()-etime2
+
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
 
@@ -502,7 +501,7 @@ c           vlsc3() add2s2() so the compiler could infer some nested
 c           parallelism.
 
 !$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
-            do i=1,j 
+            do i=1,j
                temp = 0.0
                do k=1,n
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
@@ -554,8 +553,8 @@ c           parallelism.
 
             if(alpha.eq.0.) goto 900  !converged
 
-!$ACC    KERNELS 
-!$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres) 
+!$ACC    KERNELS
+!$ACC&   PRESENT(w_gmres, wt, h_gmres, c_gmres, s_gmres, gamma_gmres)
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
             temp = 1./l
             c_gmres(j) = h_gmres(j,j) * temp
@@ -642,7 +641,7 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
      &                            etime1,if_hyb
 c     call flush_hack
  9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
-
+      call hmh_gmres_acc_data_copyout()
       if (outer.le.2) if_hyb = .false.
 
       return
