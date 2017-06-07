@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <sys/stat.h>
 #include "c99.h"
 #include "name.h"
 #include "types.h"
@@ -527,20 +526,14 @@ struct crs_data *crs_setup(
   uint null_space, const struct comm *comm)
 {
   struct crs_data *data = tmalloc(struct crs_data,1);
-  struct stat info;
-  int dump;
-
+  
+#ifdef AMG_DUMP
+  int dump=1;
+#else
+  int dump=0;
+#endif
+  
   comm_dup(&data->comm,comm);
-
-  if(data->comm.id==0) {
-    dump = 0;
-    if(stat("amg.dat"    ,&info)!=0) dump++;
-    if(stat("amg_W.dat"  ,&info)!=0) dump++;
-    if(stat("amg_AfP.dat",&info)!=0) dump++;
-    if(stat("amg_Aff.dat",&info)!=0) dump++;
-    if(dump!=0) printf("AMG files not found, dumping data ...\n"), fflush(stdout);
-  }
-  comm_bcast(&data->comm,&dump,sizeof(int),0); 
 
   data->gs_top = gs_setup((const slong*)id,n, &data->comm, 1,
     dump?gs_crystal_router:gs_auto, !dump);

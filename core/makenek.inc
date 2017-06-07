@@ -6,17 +6,17 @@ echo "makenek - automatic build tool for Nek5000"
 
 if [ "$PPLIST" == "?" ]; then
   echo "available pre-processor symbols:" 
-  echo "  AMG         use AMG instead of XXT solver"
-  echo "  NOMPIIO     deactivate MPI-IO support"
-  echo "  BGQ         use BGQ optimized mxm"
-  echo "  XSMM        use libxsmm for mxm"
-  echo "  CVODE       compile with CVODE support for scalars"
-  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
-  echo "  EXTBAR      add underscore to exit call (for BGQ)"
-  echo "  NEKNEK      activate overlapping mesh solver (experimental)"
-  echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
-  echo "  ACC         compile with OpenACC (experimental)"
-  echo "  DEBUG       print debugging messages (severely limits performance)"
+  echo "  AMG           use AMG instead of XXT solver"
+  echo "  NOMPIIO       deactivate MPI-IO support"
+  echo "  BGQ           use BGQ optimized mxm"
+  echo "  XSMM          use libxsmm for mxm"
+  echo "  CVODE         compile with CVODE support for scalars"
+  echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
+  echo "  EXTBAR        add underscore to exit call (for BGQ)"
+  echo "  NEKNEK        activate overlapping mesh solver (experimental)"
+  echo "  CMTNEK        activate DG compressible-flow solver (experimental)"
+  echo "  NEW_GS_LOOPS  compile gslib with vectorizable loops (experimental)"
+  echo "  DEBUG         print debugging messages (severely limits performance)"
   exit 1
 fi
 
@@ -43,13 +43,6 @@ NOCOMPILE=0
 if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
 fi 
-
-if echo $PPLIST | grep -q 'ACC' ; then 
-  SOURCE_ROOT_JL="$SOURCE_ROOT/jl_acc"
-  PPLIST="NEW_GS_LOOPS $PPLIST"
-else
-  SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
-fi
 
 CASENAME=$1
 CASEDIR=`pwd`

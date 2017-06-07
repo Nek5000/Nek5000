@@ -117,6 +117,9 @@
 */  
 
 #define gs         PREFIXED_NAME(gs       )
+#define gs_irecv   PREFIXED_NAME(gs_irecv )
+#define gs_isend   PREFIXED_NAME(gs_isend )
+#define gs_wait    PREFIXED_NAME(gs_wait  )
 #define gs_vec     PREFIXED_NAME(gs_vec   )
 #define gs_many    PREFIXED_NAME(gs_many  )
 #define gs_setup   PREFIXED_NAME(gs_setup )
@@ -128,6 +131,16 @@ typedef enum {gs_auto, gs_pairwise, gs_crystal_router, gs_all_reduce} gs_method;
 
 void gs(void *u, gs_dom dom, gs_op op, unsigned transpose,
         struct gs_data *gsh, buffer *buf);
+
+void gs_irecv(void *u, gs_dom dom, gs_op op, unsigned transpose,
+        struct gs_data *gsh, buffer *buf);
+
+void gs_isend(void *u, gs_dom dom, gs_op op, unsigned transpose,
+        struct gs_data *gsh, buffer *buf);
+
+void gs_wait(void *u, gs_dom dom, gs_op op, unsigned transpose,
+        struct gs_data *gsh, buffer *buf);
+
 void gs_vec(void *u, unsigned vn, gs_dom dom, gs_op op,
             unsigned transpose, struct gs_data *gsh, buffer *buf);
 void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,

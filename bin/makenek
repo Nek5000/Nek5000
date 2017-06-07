@@ -45,6 +45,7 @@ IFPROFILING="true"
 # paths
 SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
 SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -62,5 +63,5 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -j4 -f makefile 2>&1 | tee compiler.out
+make -f makefile 2>&1 | tee compiler.out
 exit 0
