@@ -110,7 +110,7 @@
   T     IFFLOW
   T     IFTRAN
   T     IFADVC (one entry per field)
-  T     IFCHAR
+  F     IFCHAR
    8.00000   8.00000  -0.500000   -4.00000     XFAC,YFAC,XZERO,YZERO
  ** MESH DATA **
        -1 3        1 NEL,NDIM,NELV
