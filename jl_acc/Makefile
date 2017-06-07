@@ -3,9 +3,8 @@ CFLAGS+=-DMPI
 #CFLAGS+= -acc -ta=nvidia -Minfo=accel
 CFLAGS+=-DPREFIX=jl_
 CFLAGS+=-DNO_NEK_EXITT
-#CFLAGS+= -DNEW_GS_LOOPS #Enable this to use the new loops
 CFLAGS+=-DGLOBAL_LONG
-LDFLAGS+=-lm -pg#-acc
+LDFLAGS+=-lm #-acc
 
 #CFLAGS+=-DPRINT_MALLOCS=1
 
@@ -16,7 +15,7 @@ CFLAGS+=-DUSE_NAIVE_BLAS
 #CFLAGS+=-DAMG_DUMP
 CFLAGS+=-DGS_TIMING -DGS_BARRIER
 
-CFLAGS+=-O3 -pg
+CFLAGS+=-O0 -g
 #CFLAGS+=-O3 #-march=native
 
 #CFLAGS+=-W #-Wall -Wno-unused-function -Wno-unused-parameter

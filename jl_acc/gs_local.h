@@ -34,8 +34,8 @@ typedef void gs_scatter_fun(
   int *mapf, int m_size, int acc);
 typedef void gs_init_fun(
   void *out, const unsigned vn,
-  const uint *map, gs_dom dom, gs_op op, int dstride, int mf_nt,
-  int *mapf, int m_size, int acc);
+  const uint *map, gs_dom dom, gs_op op, int dstride,
+  int m_size, int acc);
 
 extern gs_gather_fun gs_gather, gs_gather_vec, gs_gather_many,
                      gs_gather_vec_to_many;
