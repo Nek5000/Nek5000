@@ -423,6 +423,7 @@ c
 c
       return
       end
+
 c----------------------------------------------------------------------
       subroutine hsmg_dssum(u,l)
       include 'SIZE'
@@ -449,9 +450,7 @@ c----------------------------------------------------------------------
       if (ifsync) call nekgsync()
       etime1=dnekclock()
 
-!$ACC UPDATE HOST(u)
       call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
-!$ACC UPDATE DEVICE(u)
       tdadd =tdadd + dnekclock()-etime1
 
       return
@@ -487,10 +486,7 @@ c----------------------------------------------------------------------
 !     HOST(u(1:u_size)) - this gives 'symbol not
 !     recognized' error.
 
-!$ACC UPDATE HOST(u)
       call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
-!$ACC UPDATE DEVICE(u)
-
       tdadd =tdadd + dnekclock()-etime1
 
       return
@@ -507,6 +503,7 @@ c----------------------------------------------------------------------
       etime1=dnekclock()
 
       call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
+
       tdadd =tdadd + dnekclock()-etime1
 
       return
@@ -730,6 +727,7 @@ c     Sum overlap region (border excluded)
 
 
       call hsmg_dssum2(e,l,lt)  ! sum border nodes
+
       call h1mg_mask (e,mg_imask(pm),nelfld(ifield)) ! apply mask
 
       return
@@ -2324,7 +2322,6 @@ c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
 
       nel   = nelfld(ifield)
-
       op    =  1.                                     ! Coefficients for h1mg_ax
       om    = -1.
       sigma =  1.
@@ -2378,7 +2375,6 @@ c     if_hybrid = .false.   ! to convergence efficiency
       p_msk = p_mg_msk(l,mg_fld)
       call h1mg_mask(r,mg_imask(p_msk),nel) !        -1
 
-
 !$ACC UPDATE HOST(r(1:nelt*ldim**2))
       call hsmg_coarse_solve ( e(is) , r ) ! e  := A   r
 !$ACC UPDATE DEVICE(e(is:is-1+nelt*ldim**2))
@@ -2416,7 +2412,8 @@ c     call exitt
 !$ACC END PARALLEL LOOP
 
 !MJO - 3/15/17 - Use dsavg_acc because of unrolling
-!                col2 within dsavg_acc
+!     col2 within dsavg_acc
+
       call dsavg_acc(z)
 
       return
