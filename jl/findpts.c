@@ -187,24 +187,12 @@ static uint count_bits(unsigned char *p, uint n)
       or x(2) for ym, x(3) for zm
 
 
-  --------------------------------------------------------------------------
-  call findpts_eval_local(h,
-                        out_base,  out_stride,
-                         el_base,   el_stride,
-                          r_base,    r_stride, npt,
-                    input_field)
-
-    just like findpts_eval, but does assumes all points are local,
-    and does no communication. will use matrix-matrix products if
-    points are grouped by element.
-
   --------------------------------------------------------------------------*/
 
-#define ffindpts_setup      FORTRAN_NAME(findpts_setup     ,FINDPTS_SETUP     )
-#define ffindpts_free       FORTRAN_NAME(findpts_free      ,FINDPTS_FREE      )
-#define ffindpts            FORTRAN_NAME(findpts           ,FINDPTS           )
-#define ffindpts_eval       FORTRAN_NAME(findpts_eval      ,FINDPTS_EVAL      )
-#define ffindpts_eval_local FORTRAN_NAME(findpts_eval_local,FINDPTS_EVAL_LOCAL)
+#define ffindpts_setup FORTRAN_NAME(findpts_setup,FINDPTS_SETUP)
+#define ffindpts_free  FORTRAN_NAME(findpts_free ,FINDPTS_FREE )
+#define ffindpts       FORTRAN_NAME(findpts      ,FINDPTS      )
+#define ffindpts_eval  FORTRAN_NAME(findpts_eval ,FINDPTS_EVAL )
 
 struct handle { void *data; unsigned ndim; };
 static struct handle *handle_array = 0;
@@ -345,25 +333,4 @@ void ffindpts_eval(const sint *const handle,
       (uint*)  el_base,(*  el_stride)*sizeof(sint  ),
                 r_base,(*   r_stride)*sizeof(double),
       *npt, in, h->data);
-}
-
-void ffindpts_eval_local(const sint *const handle,
-        double *const  out_base, const sint *const  out_stride,
-  const   sint *const   el_base, const sint *const   el_stride,
-  const double *const    r_base, const sint *const    r_stride,
-  const sint *const npt, const double *const in)
-{
-  CHECK_HANDLE("findpts_eval_local");
-  if(h->ndim==2)
-    findpts_local_eval_2(
-              out_base,(* out_stride)*sizeof(double),
-      (uint*)  el_base,(*  el_stride)*sizeof(sint  ),
-                r_base,(*   r_stride)*sizeof(double),
-      *npt, in, &((struct findpts_data_2 *)h->data)->local);
-  else
-    findpts_local_eval_3(
-              out_base,(* out_stride)*sizeof(double),
-      (uint*)  el_base,(*  el_stride)*sizeof(sint  ),
-                r_base,(*   r_stride)*sizeof(double),
-      *npt, in, &((struct findpts_data_3 *)h->data)->local);
 }
