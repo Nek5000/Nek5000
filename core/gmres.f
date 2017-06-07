@@ -409,10 +409,11 @@ c        construct or acc routine"
 !$ACC DATA CREATE(temp_ptr1,temp_ptr2)
 
 !$ACC KERNELS PRESENT(r_gmres,wt)
-         temp_ptr1(1) = 0.0
+         temp = 0.0
          do  k=1,n
-           temp_ptr1(1) = temp_ptr1(1) + r_gmres(k)*r_gmres(k)*wt(k)
+           temp = temp + r_gmres(k)*r_gmres(k)*wt(k)
          enddo
+         temp_ptr1(1) = temp
 !$ACC END KERNELS
 
       call gop_acc(temp_ptr1,temp_ptr2,'+  ',1)
