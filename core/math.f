@@ -2006,8 +2006,9 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       function glsum_acc (x,n)
-      dimension x(n)
-      dimension tmp, tmp_ptr(1),work(1)
+      real x(n)
+      integer n
+      real tmp, tmp_ptr(1),work(1)
 
 !$ACC DATA COPYOUT(tmp_ptr) CREATE(work) PRESENT(x)
 !$ACC KERNELS 
