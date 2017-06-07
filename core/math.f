@@ -1099,22 +1099,23 @@ C
 C     Perform inner-product in double precision
 C
       real a(n),b(n),mult(n)
-      real tmp(1),work(1)
+      real tmp,tmp_ptr(1),work(1)
 
-!$ACC DATA CREATE(work) COPYOUT(tmp) PRESENT(a,b,mult)
+!$ACC DATA CREATE(work) COPYOUT(tmp_ptr) PRESENT(a,b,mult)
 
 !$ACC KERNELS
-      tmp(1) = 0.0
+      tmp = 0.0
       do  i=1,n
-         tmp(1) = tmp(1) + a(i)*b(i)*mult(i)
+         tmp = tmp + a(i)*b(i)*mult(i)
       enddo
+      tmp_ptr(1) = tmp
 !$ACC END KERNELS
 
-      call gop_acc(tmp,work,'+  ',1)
+      call gop_acc(tmp_ptr,work,'+  ',1)
 
 !$ACC END DATA
 
-      glsc3_acc = tmp(1)
+      glsc3_acc = tmp_ptr(1)
       return
       end
 
@@ -2006,18 +2007,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       function glsum_acc (x,n)
       dimension x(n)
-      dimension tmp(1),work(1)
+      dimension tmp, tmp_ptr(1),work(1)
 
-!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(x)
+!$ACC DATA COPYOUT(tmp_ptr) CREATE(work) PRESENT(x)
 !$ACC KERNELS 
-      tmp(1) = 0.
+      tmp = 0.
       do i=1,n
-         tmp(1) = tmp(1)+x(i)
+         tmp = tmp+x(i)
       enddo
+      tmp_ptr(1) = tmp
 !$ACC END KERNELS
-      call gop_acc(tmp,work,'+  ',1)
+      call gop_acc(tmp_ptr,work,'+  ',1)
 !$ACC END DATA
 
-      glsum = tmp(1)
+      glsum = tmp_ptr(1)
       return
       END
