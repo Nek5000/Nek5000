@@ -7,17 +7,21 @@
 SOURCE_ROOT="../.." 
 
 # Fortran/C compiler
-F77="pgfortran"
-CC="pgcc"
+F77="mpif77"
+CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
 PPLIST="" 
 
 # generic compiler flags
-G="-g -acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo"
+G=""
+# For GPU profiling tools:
+#G="-Minfo=ccff"
 
 # linking flags
-USR_LFLAGS="-g -acc -Minfo=accel,ccff -ta=nvidia:cc50,lineinfo"
+USR_LFLAGS=""
+# linking flags
+#USR_LFLAGS="-Minfo=ccff"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -62,5 +66,5 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -j4 -f makefile 
+make -f makefile 2>&1 | tee compiler.gpu.output
 exit 0
