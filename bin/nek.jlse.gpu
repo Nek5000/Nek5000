@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -e
+
+REQ_WALLTIME="00:10:00"
+
+   rm -rf *cobalt*
+   REAFILE=$1
+   NODECOUNT=$2
+
+SESSION=${REAFILE%.[rR][eE][aA]}
+echo "*** running session $SESSION"
+
+echo $1        >  SESSION.NAME
+echo `pwd`'/' >>  SESSION.NAME
+
+  rm -f $SESSION.output
+  rm -f logfile
+  rm -f xxt_map.rea
+
+OUTFILE="`pwd`/$SESSION.np=$NODECOUNT-jlse-gpu-`date "+%F_%H_%M_%S"`"
+  touch $SESSION.rea
+  touch $OUTFILE.output
+  ln $OUTFILE.output $SESSION.output
+  ln $OUTFILE.output logfile
+
+echo "qsub  -q "gpu_mules" -n $NODECOUNT -t $REQ_WALLTIME -o logfile  ./nek5000 "
+COBALTJOB=`qsub -q "gpu_mules" --env "PGI_ACC_NOTIFY=1" -n $NODECOUNT -t $REQ_WALLTIME -o logfile  ./nek5000`
+echo "=== cobalt job $COBALTJOB submitted to JLSE/Neddy"
+
