@@ -14,14 +14,11 @@ CC="mpicc"
 PPLIST="" 
 
 # generic compiler flags
-G="-acc -Minfo=accel -ta=nvidia:cc50,cc60,cuda8.0"
+G="-acc -Mipa -Minfo=accel,ipa -ta=nvidia:cc50,cc60,cuda8.0,O1,unroll,beta,host"
 # For GPU profiling tools:
-#G="-acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0,lineinfo"
 
 # linking flags
-USR_LFLAGS="-acc -Minfo=accel -ta=nvidia:cc50,cc60,cuda8.0"
-# linking flags
-#USR_LFLAGS="-acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0"
+USR_LFLAGS="-acc -Mipa -Minfo=accel,ipa -ta=nvidia:cc50,cc60,cuda8.0,O1,unroll,beta,host"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS

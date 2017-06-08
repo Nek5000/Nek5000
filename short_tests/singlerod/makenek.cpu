@@ -14,14 +14,10 @@ CC="mpicc"
 PPLIST="" 
 
 # generic compiler flags
-G="-mcmodel=medium"
-# For GPU profiling tools:
-#G="-mcmodel=medium -Minfo=ccff"
+G="-mcmodel=medium -Mipa -Minfo=ipa"
 
 # linking flags
-USR_LFLAGS="-mcmodel=medium"
-# linking flags
-#USR_LFLAGS="-mcmodel=medium -Minfo=ccff"
+USR_LFLAGS="-mcmodel=medium -Mipa -Minfo=ipa"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
