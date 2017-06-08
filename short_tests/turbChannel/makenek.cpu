@@ -14,17 +14,17 @@ CC="mpicc"
 PPLIST="" 
 
 # generic compiler flags
-G="-Mipa -Minfo=ipa"
+G="-mcmodel=medium"
 
 # linking flags
-USR_LFLAGS="-Mipa -Minfo=ipa"
+USR_LFLAGS="-mcmodel=medium"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
 ###############################################################################
 
 # MPI (default true)
-IFMPI="false"
+IFMPI="true"  
 
 # profiling (default false)
 IFPROFILING="true"
@@ -45,6 +45,7 @@ IFPROFILING="true"
 # paths
 SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
 SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
