@@ -1,4 +1,293 @@
 c=======================================================================
+      subroutine hmholtz_acc
+     $                   (name,u,rhs,h1,h2,mask,mult,imsh,tli,maxit,isd)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'FDMH1'
+      include 'CTIMER'
+
+      CHARACTER      NAME*4
+      REAL           U    (LX1,LY1,LZ1,1)
+      REAL           RHS  (LX1,LY1,LZ1,1)
+      REAL           H1   (LX1,LY1,LZ1,1)
+      REAL           H2   (LX1,LY1,LZ1,1)
+      REAL           MASK (LX1,LY1,LZ1,1)
+      REAL           MULT (LX1,LY1,LZ1,1)
+
+      logical iffdm
+      character*3 nam3
+
+      tol = abs(tli)
+
+      if (icalld.eq.0) thmhz=0.0
+
+      iffdm = .false.
+c     iffdm = .true.
+      if (ifsplit) iffdm = .true.
+
+      if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
+
+      icalld=icalld+1
+      nhmhz=icalld
+      etime1=dnekclock()
+
+      ntot = nx1*ny1*nz1*nelfld(ifield)
+      if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
+      if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
+
+
+C     Determine which field is being computed for FDM based preconditioner bc's
+c
+      call chcopy(nam3,name,3)
+c
+                          kfldfdm = -1
+c     if (nam3.eq.'TEM' ) kfldfdm =  0
+c     if (name.eq.'TEM1') kfldfdm =  0  ! hardcode for temp only, for mpaul
+c     if (name.eq.'VELX') kfldfdm =  1
+c     if (name.eq.'VELY') kfldfdm =  2
+c     if (name.eq.'VELZ') kfldfdm =  3
+      if (name.eq.'PRES') kfldfdm =  ndim+1
+c     if (.not.iffdm) kfldfdm=-1
+C
+      call dssum   (rhs,nx1,ny1,nz1)
+      call col2    (rhs,mask,ntot)
+c      if (nio.eq.0.and.istep.le.10)
+c     $    write(6,*) param(22),' p22 ',istep,imsh
+      if (param(22).eq.0.or.istep.le.10)
+     $    call chktcg1 (tol,rhs,h1,h2,mask,mult,imsh,isd)
+
+      if (tli.lt.0) tol=tli ! caller-specified relative tolerance
+
+      if (imsh.eq.1) call cggo_acc
+     $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+      if (imsh.eq.2) call cggo_acc
+     $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
+
+
+      thmhz=thmhz+(dnekclock()-etime1)
+      return
+      END
+C
+c=======================================================================
+      subroutine cggo_acc
+     $                (x,f,h1,h2,mask,mult,imsh,tin,maxit,isd,binv,name)
+C-----------------------------------------------------------------------
+C
+C     Solve the Helmholtz equation, H*U = RHS,
+C     using preconditioned conjugate gradient iteration.
+C     Preconditioner: diag(H).
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      include 'FDMH1'
+ 
+      COMMON  /CPRINT/ IFPRINT, IFHZPC
+      LOGICAL          IFPRINT, IFHZPC
+ 
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+
+      logical ifmcor,ifprint_hmh
+ 
+      real x(1),f(1),h1(1),h2(1),mask(1),mult(1),binv(1)
+      parameter        (lg=lx1*ly1*lz1*lelt)
+      COMMON /SCRCG/ d (lg) , scalar(2)
+      common /SCRMG/ r (lg) , w (lg) , p (lg) , z (lg)
+c
+      parameter (maxcg=900)
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+      common /iterhm/ niterhm
+      character*4 name
+c
+      if (ifsplit.and.name.eq.'PRES'.and.param(42).eq.0) then
+         n = nx1*ny1*nz1*nelv
+         call copy      (x,f,n)
+         call hmh_gmres (x,h1,h2,mult,iter)
+         niterhm = iter
+         return
+      endif
+c      write(6,*) ifsplit,name,param(44),' P44 C'
+
+c **  zero out stuff for Lanczos eigenvalue estimator
+      call rzero(diagt,maxcg)
+      call rzero(upper,maxcg)
+      rho = 0.00
+C
+C     Initialization
+C
+      NXYZ   = NX1*NY1*NZ1
+      NEL    = NELV
+      VOL    = VOLVM1
+      IF (IMSH.EQ.2) NEL=NELT
+      IF (IMSH.EQ.2) VOL=VOLTM1
+      n      = NEL*NXYZ
+
+c
+      tol=abs(tin)
+
+c     overrule tolerance for velocity
+      if (param(22).ne.0) tol=abs(param(22))
+
+c     set tolerance for temp+scalars
+c     p20<0: use toli tolin 
+c     p20=0: use same tol as for vel
+c     p20>0: use specified tol for temp
+      if (ifield.gt.1 .and. param(20).gt.0) tol=abs(param(20))
+      if (ifield.gt.1 .and. param(20).lt.0) tol=abs(tin)
+
+c     overrule tolerance for velocity
+      if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
+
+      if (tin.lt.0)       tol=abs(tin)
+      niter = min(maxit,maxcg)
+
+      if (.not.ifsolv) then
+         call setfast(h1,h2,imesh)
+         ifsolv = .true.
+      endif
+C
+C     Set up diag preconditioner.
+C
+      if (kfldfdm.lt.0) then
+         call setprec(D,h1,h2,imsh,isd)
+      elseif(param(100).ne.2) then
+         call set_fdm_prec_h1b(d,h1,h2,nel)
+      endif
+
+      call copy (r,f,n)
+      call rzero(x,n)
+      call rzero(p,n)
+
+      fmax = glamax(f,n)
+      if (fmax.eq.0.0) return
+
+c     Check for non-trivial null-space
+
+      ifmcor = .false.
+      h2max = glmax(h2  ,n)
+      skmin = glmin(mask,n)
+      if (skmin.gt.0.and.h2max.eq.0) ifmcor = .true.
+C
+      if (name.eq.'PRES') then
+c        call ortho (r)           ! Commented out March 15, 2011,pff
+      elseif (ifmcor) then
+
+         smean = -1./glsum(bm1,n) ! Modified 5/4/12 pff
+         rmean = smean*glsc2(r,mult,n)
+         call copy(x,bm1,n)
+         call dssum(x,nx1,ny1,nz1)
+         call add2s2(r,x,rmean,n)
+         call rzero(x,n)
+      endif
+C
+      krylov = 0
+      rtz1=1.0
+      niterhm = 0
+
+      do iter=1,niter
+C
+         if (kfldfdm.lt.0) then  ! Jacobi Preconditioner
+c           call copy(z,r,n)
+            call col3(z,r,d,n)
+         else                                       ! Schwarz Preconditioner
+            if (name.eq.'PRES'.and.param(100).eq.2) then
+               call h1_overlap_2(z,r,mask)
+               call crs_solve_h1 (w,r)  ! Currently, crs grd only for P
+               call add2         (z,w,n)
+            else   
+               call fdm_h1(z,r,d,mask,mult,nel,ktype(1,1,kfldfdm),w)
+               if (name.eq.'PRES') then 
+                 call crs_solve_h1 (w,r)  ! Currently, crs grd only for P
+                 call add2         (z,w,n)
+               endif
+            endif
+         endif
+c
+         if (name.eq.'PRES') then
+            call ortho (z)
+         elseif (ifmcor) then
+            rmean = smean*glsc2(z,bm1,n)
+            call cadd(z,rmean,n)
+         endif
+c        write(6,*) rmean,ifmcor,' ifmcor'
+c
+         rtz2=rtz1
+         scalar(1)=vlsc3 (z,r,mult,n)
+         scalar(2)=vlsc32(r,mult,binv,n)
+         call gop(scalar,w,'+  ',2)
+         rtz1=scalar(1)
+         rbn2=sqrt(scalar(2)/vol)
+         if (iter.eq.1) rbn0 = rbn2
+         if (param(22).lt.0) tol=abs(param(22))*rbn0
+         if (tin.lt.0)       tol=abs(tin)*rbn0
+
+         ifprint_hmh = .false.
+         if (nio.eq.0.and.ifprint.and.param(74).ne.0) ifprint_hmh=.true.
+         if (nio.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
+
+         if (ifprint_hmh)
+     &      write(6,3002) istep,'  Hmholtz ' // name,
+     &                    iter,rbn2,h1(1),tol,h2(1),ifmcor
+
+
+c        Always take at least one iteration   (for projection) pff 11/23/98
+#ifndef TST_WSCAL
+         IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.5)) THEN
+#else
+         iter_max = param(150)
+         if (name.eq.'PRES') iter_max = param(151)
+         if (iter.gt.iter_max) then
+#endif
+c        IF (rbn2.LE.TOL) THEN
+            NITER = ITER-1
+c           IF(NID.EQ.0.AND.((.NOT.IFHZPC).OR.IFPRINT))
+            if (nio.eq.0)
+     &         write(6,3000) istep,'  Hmholtz ' // name,
+     &                       niter,rbn2,rbn0,tol
+            goto 9999
+         ENDIF
+c
+         beta = rtz1/rtz2
+         if (iter.eq.1) beta=0.0
+         call add2s1 (p,z,beta,n)
+         call axhelm (w,p,h1,h2,imsh,isd)
+         call dssum  (w,nx1,ny1,nz1)
+         call col2   (w,mask,n)
+c
+         rho0 = rho
+         rho  = glsc3(w,p,mult,n)
+         alpha=rtz1/rho
+         alphm=-alpha
+         call add2s2(x,p ,alpha,n)
+         call add2s2(r,w ,alphm,n)
+c
+c        Generate tridiagonal matrix for Lanczos scheme
+         if (iter.eq.1) then
+            krylov = krylov+1
+            diagt(iter) = rho/rtz1
+         elseif (iter.le.maxcg) then
+            krylov = krylov+1
+            diagt(iter)    = (beta**2 * rho0 + rho ) / rtz1
+            upper(iter-1)  = -beta * rho0 / sqrt(rtz2 * rtz1)
+         endif
+ 1000 enddo
+      niter = iter-1
+c
+      if (nio.eq.0) write (6,3001) istep, '  Error Hmholtz ' // name,
+     &                             niter,rbn2,rbn0,tol
+
+
+ 3000 format(i11,a,1x,I7,1p4E13.4)
+ 3001 format(i11,a,1x,I7,1p4E13.4)
+ 3002 format(i11,a,1x,I7,1p4E13.4,l4)
+ 9999 continue
+      niterhm = niter
+      ifsolv = .false.
+ 
+      return
+      end
+c=======================================================================
       subroutine hmholtz(name,u,rhs,h1,h2,mask,mult,imsh,tli,maxit,isd)
       include 'SIZE'
       include 'TOTAL'

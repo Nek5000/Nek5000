@@ -57,7 +57,6 @@ C
 
       else
 !$ACC  DATA COPY(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
-
          ! add user defined divergence to qtl 
          call add2_acc (qtl,usrdiv,ntot1)
 
@@ -77,12 +76,12 @@ C        first, compute pressure
          call crespsp  (respr)
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
-!$ACC  DATA COPY(respr)
-         call ctolspl  (tolspl,respr)
+!$ACC DATA COPY(respr)
+         call ctolspl_acc(tolspl,respr)
 !$ACC END DATA 
 
          napproxp(1) = laxtp
-         call hsolve   ('PRES',dpr,respr,h1,h2 
+         call hsolve('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
      $                        ,approxp,napproxp,binvm1)

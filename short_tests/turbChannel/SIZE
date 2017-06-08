@@ -97,3 +97,20 @@ c automatically added by makenek
 c automatically added by makenek
       integer ax1,ay1,az1,ax2,ay2,az2
       parameter (ax1=lx1,ay1=ly1,az1=lz1,ax2=lx2,ay2=ly2,az2=lz2) ! running averages
+
+c automatically added by makenek
+      integer optlevel,loglevel
+      common /lolevels/ optlevel,loglevel
+
+c automatically added by makenek
+      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner
+
+c automatically added by makenek
+      integer lcvx1,lcvy1,lcvz1,lcvelt
+      parameter (lcvx1=1,lcvy1=1,lcvz1=1,lcvelt=1) ! cvode arrays
+
+c automatically added by makenek
+      parameter (lfdm=0)  ! == 1 for fast diagonalization method
+
+c automatically added by makenek
+      common/IOFLAG/nio  ! for logfile verbosity control
