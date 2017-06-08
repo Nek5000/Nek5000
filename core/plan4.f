@@ -56,13 +56,13 @@ C
          if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
 
       else
-!$ACC ENTER DATA COPYIN(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
+!$ACC  DATA COPY(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
 
          ! add user defined divergence to qtl 
          call add2_acc (qtl,usrdiv,ntot1)
 
          call lagvel_acc
-!$ACC EXIT DATA COPYOUT(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
+!$ACC END DATA
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
@@ -77,9 +77,9 @@ C        first, compute pressure
          call crespsp  (respr)
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
-!$ACC ENTER DATA COPYIN(respr)
+!$ACC  DATA COPY(respr)
          call ctolspl  (tolspl,respr)
-!$ACC EXIT DATA COPYOUT(respr)
+!$ACC END DATA 
 
          napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
@@ -87,10 +87,10 @@ C        first, compute pressure
      $                        ,imesh,tolspl,nmxh,1
      $                        ,approxp,napproxp,binvm1)
 
-!$ACC ENTER DATA COPYIN(pr,dpr)
+!$ACC  DATA COPY(pr,dpr)
          call add2_acc (pr,dpr,ntot1)
          call ortho_acc(pr)
-!$ACC EXIT DATA COPYOUT(pr,dpr)
+!$ACC END DATA 
 
          tpres=tpres+(dnekclock()-etime1)
 
@@ -101,11 +101,11 @@ C        Compute velocity
   
 c below gives correct values in iterations
 c but printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310  
-!$ACC ENTER DATA COPYIN(vx,vy,vz,dv1,dv2,dv3)
+!$ACC DATA COPY(vx,vy,vz,dv1,dv2,dv3)
          call add2_acc  (vx,dv1,n)      
          call add2_acc  (vy,dv2,n)
          call add2_acc  (vz,dv3,n)
-!$ACC EXIT DATA COPYOUT(vx,vy,vz,dv1,dv2,dv3)
+!$ACC END DATA 
 
          IF (NIO.EQ.0) THEN
             WRITE(6,'(13X,A,1p2e13.4)')
