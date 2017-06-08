@@ -340,7 +340,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       real    norm_fac
       save    norm_fac
 
-      real*8 etime1,dnekclock
+      real*8 etime1,acctime1,dnekclock
 
       n = nx1*ny1*nz1*nelv
 
@@ -365,6 +365,8 @@ c     res, h1, h2, and wt, since they are local variables.
       call hmh_gmres_acc_data_copyin()
 
 !$ACC ENTER DATA COPYIN(res,h1,h2,wk1)
+
+      acctime1 = dnekclock()
 
 #ifdef _OPENACC
       call chktcg1_acc(tolps,res,h1,h2,pmask,vmult,1,1)
@@ -502,13 +504,13 @@ c           vlsc3() add2s2() so the compiler could infer some nested
 c           parallelism.
 
             do i=1,j 
-               temp = 0.0
 !$ACC KERNELS PRESENT(h_gmres, w_gmres, v_gmres, wt)
+               temp = 0.0
                do k=1,n
                   temp = temp + w_gmres(k) * v_gmres(k,i) *  wt(k)
                enddo
-!$ACC END KERNELS
                h_gmres(i,j) = temp
+!$ACC END KERNELS
             enddo
 
             call gop_acc(h_gmres(1,j),wk1,'+  ',j)
@@ -635,11 +637,14 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       call ortho   (res) ! Orthogonalize wrt null space, if present
 #endif
 
+      acctime1 = dnekclock()-acctime1
+
 !$ACC EXIT DATA COPYOUT(res)
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
      &                            etime1,if_hyb
+      if (nio.eq.0) write(6,*) 'acc_time: ', acctime1
 c     call flush_hack
  9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
       call hmh_gmres_acc_data_copyout()
