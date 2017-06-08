@@ -197,7 +197,40 @@ C
 C
       return
       END
+c-----------------------------------------------------------------------
+      subroutine ctolspl_acc (tolspl,respr)
+C
+C     Compute the pressure tolerance
+C
+      include 'SIZE'
+      include 'MASS'
+      include 'TSTEP'
+      REAL           RESPR (LX2,LY2,LZ2,LELV)
+      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
 
+!$ACC DATA CREATE(work)  
+      call invcol3_acc (WORK,RESPR,BM1,NTOT1)
+      CALL col2_acc    (WORK,RESPR,NTOT1)
+      RINIT  = SQRT (GLSUM (WORK,NTOT1)/VOLVM1)
+      IF (TOLPDF.GT.0.) THEN
+         TOLSPL = TOLPDF
+         TOLMIN = TOLPDF
+      ELSE
+         TOLSPL = TOLPS/DT
+         TOLMIN = RINIT*PRELAX
+      ENDIF
+      IF (TOLSPL.LT.TOLMIN) THEN
+         TOLOLD = TOLSPL
+         TOLSPL = TOLMIN
+         IF (NIO.EQ.0)
+     $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
+      ENDIF
+!$ACC END DATA
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine ctolspl (tolspl,respr)
 C
@@ -2159,6 +2192,33 @@ C
       return
       END
 C
+      subroutine lagvel_acc
+C-----------------------------------------------------------------------
+C
+C     Keep old velocity field(s) 
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
+C
+c      DO 100 ILAG=NBDINP-1,2,-1
+      DO 100 ILAG=3-1,2,-1
+         call copy_acc(VXLAG(1,1,1,1,ILAG),VXLAG(1,1,1,1,ILAG-1),NTOT1)
+         call copy_acc(VYLAG(1,1,1,1,ILAG),VYLAG(1,1,1,1,ILAG-1),NTOT1)
+         IF (NDIM.EQ.3)
+     $   call copy_acc(VZLAG(1,1,1,1,ILAG),VZLAG(1,1,1,1,ILAG-1),NTOT1)
+ 100  CONTINUE
+C
+      call opcopy_acc (VXLAG,VYLAG,VZLAG,VX,VY,VZ)
+C
+      return
+      END
+C
+
       subroutine hypmsk3 (hv1msk,hv2msk,hv3msk)
 C---------------------------------------------------------------------
 C
@@ -2677,6 +2737,17 @@ C
       return
       END
 c
+
+      subroutine opcopy_acc (a1,a2,a3,b1,b2,b3)
+      include 'SIZE'
+      REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1)
+      NTOT1=NX1*NY1*NZ1*NELV
+      CALL copy_acc(A1,B1,NTOT1)
+      CALL copy_acc(A2,B2,NTOT1)
+      IF(NDIM.EQ.3)CALL copy_acc(A3,B3,NTOT1)
+      return
+      END
+
       subroutine opcopy (a1,a2,a3,b1,b2,b3)
       include 'SIZE'
       REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1)

@@ -1,4 +1,150 @@
 c-----------------------------------------------------------------------
+      subroutine plan4_acc (igeom)
+
+C     Splitting scheme A.G. Tomboulides et al.
+c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
+c
+C     NOTE: QTL denotes the so called thermal
+c           divergence and has to be provided
+c           by userqtl.
+c
+      INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
+      INCLUDE 'GEOM'
+      INCLUDE 'MASS'
+      INCLUDE 'SOLN'
+      INCLUDE 'MVGEOM'
+      INCLUDE 'TSTEP'
+      INCLUDE 'ORTHOP'
+      INCLUDE 'CTIMER'
+C
+      COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
+     $ ,             RES2  (LX1,LY1,LZ1,LELV)
+     $ ,             RES3  (LX1,LY1,LZ1,LELV)
+     $ ,             DV1   (LX1,LY1,LZ1,LELV)
+     $ ,             DV2   (LX1,LY1,LZ1,LELV)
+     $ ,             DV3   (LX1,LY1,LZ1,LELV)
+     $ ,             RESPR (LX2,LY2,LZ2,LELV)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
+ 
+      REAL           DPR   (LX2,LY2,LZ2,LELV)
+      EQUIVALENCE   (DPR,DV1)
+      LOGICAL        IFSTSP
+
+      REAL DVC (LX1,LY1,LZ1,LELV), DFC(LX1,LY1,LZ1,LELV)
+      REAL DIV1, DIV2, DIF1, DIF2, QTL1, QTL2
+
+      if (icalld.eq.0) tpres=0.0
+      icalld=icalld+1
+      npres=icalld
+
+      intype = -1
+      ntot1  = nx1*ny1*nz1*nelv
+      n      = ntot1
+
+      call plan4_acc_data_copyin()
+
+
+      if (igeom.eq.1) then
+
+         ! compute explicit contributions bfx,bfy,bfz 
+         call makef 
+
+         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
+         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
+         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+
+      else
+!$ACC ENTER DATA COPYIN(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
+
+         ! add user defined divergence to qtl 
+         call add2_acc (qtl,usrdiv,ntot1)
+
+         call lagvel_acc
+!$ACC EXIT DATA COPYOUT(qtl,usrdiv,vx,vy,vz,vxlag,vylag,vzlag)
+
+         ! mask Dirichlet boundaries
+         call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
+
+C        first, compute pressure
+
+         if (icalld.eq.0) tpres=0.0
+         icalld=icalld+1
+         npres=icalld
+         etime1=dnekclock()
+
+         call crespsp  (respr)
+         call invers2  (h1,vtrans,ntot1)
+         call rzero    (h2,ntot1)
+!$ACC ENTER DATA COPYIN(respr)
+         call ctolspl  (tolspl,respr)
+!$ACC EXIT DATA COPYOUT(respr)
+         napproxp(1) = laxtp
+         call hsolve   ('PRES',dpr,respr,h1,h2 
+     $                        ,pmask,vmult
+     $                        ,imesh,tolspl,nmxh,1
+     $                        ,approxp,napproxp,binvm1)
+         call add2    (pr,dpr,ntot1)
+         call ortho   (pr)
+
+         tpres=tpres+(dnekclock()-etime1)
+
+C        Compute velocity
+         call cresvsp (res1,res2,res3,h1,h2)
+         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+
+         if (ifexplvis) call redo_split_vis
+
+c Below is just for diagnostics...
+
+c        Calculate Divergence norms of new VX,VY,VZ
+         CALL OPDIV   (DVC,VX,VY,VZ)
+         CALL DSSUM   (DVC,NX1,NY1,NZ1)
+         CALL COL2    (DVC,BINVM1,NTOT1)
+
+         CALL COL3    (DV1,DVC,BM1,NTOT1)
+         DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
+
+         CALL COL3    (DV2,DVC,DVC,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
+         DIV2 = SQRT  (DIV2)
+c        Calculate Divergence difference norms
+         CALL SUB3    (DFC,DVC,QTL,NTOT1)
+         CALL COL3    (DV1,DFC,BM1,NTOT1)
+         DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
+  
+         CALL COL3    (DV2,DFC,DFC,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
+         DIF2 = SQRT  (DIF2)
+
+         CALL COL3    (DV1,QTL,BM1,NTOT1)
+         QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
+  
+         CALL COL3    (DV2,QTL,QTL,NTOT1)
+         CALL COL2    (DV2,BM1   ,NTOT1)
+         QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
+         QTL2 = SQRT  (QTL2)
+
+         IF (NIO.EQ.0) THEN
+            WRITE(6,'(13X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)        ',DIV1,DIV2
+            WRITE(6,'(13X,A,1p2e13.4)') 
+     &         'L1/L2 QTL           ',QTL1,QTL2
+            WRITE(6,'(13X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)-QTL    ',DIF1,DIF2
+            IF (DIF2.GT.0.1) WRITE(6,'(13X,A)') 
+     &         'WARNING: DIV(V)-QTL too large!'
+         ENDIF
+ 
+      endif
+ 
+      return
+      END
+c-----------------------------------------------------------------------
       subroutine plan4 (igeom)
 
 C     Splitting scheme A.G. Tomboulides et al.

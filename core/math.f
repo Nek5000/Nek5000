@@ -140,6 +140,43 @@ C
       return
       END
 c-----------------------------------------------------------------------
+      subroutine invcol3_acc(a,b,c,n)
+      REAL A(n),B(n),C(n)
+C
+      include 'OPCTR'
+      include 'CTIMER'
+
+#ifdef TIMER
+      if (icalld.eq.0) tinv3=0.0
+      icalld=icalld+1
+      ninv3=icalld
+      etime1=dnekclock()
+C
+C
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'invcl3'
+      endif
+      isbcnt = n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+ 
+!$ACC PARALLEL LOOP PRESENT(a,b,c)
+      DO 100 I=1,N
+         A(I)=B(I)/C(I)
+ 100  CONTINUE
+!$ACC END PARALLEL
+
+#ifdef TIMER
+      tinv3=tinv3+(dnekclock()-etime1)
+#endif
+      return
+      END
+c-----------------------------------------------------------------------
       subroutine invcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
 C
@@ -847,6 +884,33 @@ c-----------------------------------------------------------------------
       do i=1,n
          a(i)=a(i)+b(i)
       enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2_acc(a,b,n)
+      real a(n),b(n)
+      include 'OPCTR'
+
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'ADD2  '
+      endif
+      isbcnt = N
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+!$ACC PARALLEL LOOP PRESENT(a,b)
+      do i=1,n
+         a(i)=a(i)+b(i)
+      enddo
+!$ACC END PARALLEL
+
       return
       end
 c-----------------------------------------------------------------------
