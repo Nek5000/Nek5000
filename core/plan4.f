@@ -80,54 +80,32 @@ C        first, compute pressure
 !$ACC ENTER DATA COPYIN(respr)
          call ctolspl  (tolspl,respr)
 !$ACC EXIT DATA COPYOUT(respr)
+
          napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
      $                        ,approxp,napproxp,binvm1)
-         call add2    (pr,dpr,ntot1)
-         call ortho   (pr)
+
+!$ACC ENTER DATA COPYIN(pr,dpr)
+         call add2_acc (pr,dpr,ntot1)
+         call ortho_acc(pr)
+!$ACC EXIT DATA COPYOUT(pr,dpr)
 
          tpres=tpres+(dnekclock()-etime1)
 
 C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
          call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
-         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
-
-         if (ifexplvis) call redo_split_vis
-
-c Below is just for diagnostics...
-
-c        Calculate Divergence norms of new VX,VY,VZ
-         CALL OPDIV   (DVC,VX,VY,VZ)
-         CALL DSSUM   (DVC,NX1,NY1,NZ1)
-         CALL COL2    (DVC,BINVM1,NTOT1)
-
-         CALL COL3    (DV1,DVC,BM1,NTOT1)
-         DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
-
-         CALL COL3    (DV2,DVC,DVC,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
-         DIV2 = SQRT  (DIV2)
-c        Calculate Divergence difference norms
-         CALL SUB3    (DFC,DVC,QTL,NTOT1)
-         CALL COL3    (DV1,DFC,BM1,NTOT1)
-         DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
+ 
   
-         CALL COL3    (DV2,DFC,DFC,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
-         DIF2 = SQRT  (DIF2)
-
-         CALL COL3    (DV1,QTL,BM1,NTOT1)
-         QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
-  
-         CALL COL3    (DV2,QTL,QTL,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
-         QTL2 = SQRT  (QTL2)
+c below gives correct values in iterations
+c but printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310  
+!$ACC ENTER DATA COPYIN(vx,vy,vz,dv1,dv2,dv3)
+         call add2_acc  (vx,dv1,n)      
+         call add2_acc  (vy,dv2,n)
+         call add2_acc  (vz,dv3,n)
+!$ACC EXIT DATA COPYOUT(vx,vy,vz,dv1,dv2,dv3)
 
          IF (NIO.EQ.0) THEN
             WRITE(6,'(13X,A,1p2e13.4)')
