@@ -131,6 +131,7 @@ C-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 c   Do some sanity checks - just once at setup
+      call neknekgsync()
       call nekneksanchk(1)
 C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
