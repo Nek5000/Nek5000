@@ -1,0 +1,28 @@
+[GENERAL]
+stopat = numSteps #endTime
+numsteps = 25000
+perturbationmodes = -1
+userparam01 = 1
+dt = -1.0e-02
+timestepper = bdf #char #steady
+torder = 2
+writecontrol = timeStep #runTime
+writeinterval = 90000
+dealiasing = yes
+filtering = no
+filterweight = 1e-02
+
+[PROBLEMTYPE]
+perturbations = yes
+solvebaseflow = no
+
+[PRESSURE]
+preconditioner = semg
+residualtol = 1e-08
+residualproj = no
+
+[VELOCITY]
+residualtol = 1e-08
+residualproj = no
+density = 1
+viscosity = -2000.0

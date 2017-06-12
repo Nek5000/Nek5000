@@ -950,14 +950,42 @@ class LinChan_Dir(NekTestCase):
         )
 
         self.build_tools(['genmap'])
-        self.run_genmap()
+        self.run_genmap(rea_file='lin_chan')
 
     @pn_pn_2_serial
     def test_PnPn2_Serial(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
         self.build_nek(usr_file='lin_chan')
-        self.run_nek(step_limit=None)
+        filein = os.path.join(self.examples_root, self.example_subdir, 'lin_chan.par')
+        self.config_parfile(opts={'GENERAL' : {'userparam01' : '0'}}, infile=filein)
+        self.run_nek(rea_file='lin_chan', step_limit=None)
+
+        # Move log file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format('lin_chan', self.mpi_procs, self.log_suffix)
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format(self.case_name, self.mpi_procs, self.log_suffix)
+        )
+        os.rename(filein, fileout)
+
+        # Move perturbation plot file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format('lin_chan')
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format(self.case_name)
+        )
+        os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
         self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
@@ -969,7 +997,35 @@ class LinChan_Dir(NekTestCase):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
         self.build_nek(usr_file='lin_chan')
-        self.run_nek(step_limit=None)  
+        filein = os.path.join(self.examples_root, self.example_subdir, 'lin_chan.par')
+        self.config_parfile(opts={'GENERAL' : {'userparam01' : '0'}}, infile=filein)
+        self.run_nek(rea_file='lin_chan', step_limit=None)  
+
+        # Move log file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format('lin_chan', self.mpi_procs, self.log_suffix)
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format(self.case_name, self.mpi_procs, self.log_suffix)
+        )
+        os.rename(filein, fileout)
+
+        # Move perturbation plot file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format('lin_chan')
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format(self.case_name)
+        )
+        os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
         self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
@@ -994,14 +1050,42 @@ class LinChan_Adj(NekTestCase):
         )
 
         self.build_tools(['genmap'])
-        self.run_genmap()
+        self.run_genmap(rea_file='lin_chan')
 
     @pn_pn_2_serial
     def test_PnPn2_Serial(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
         self.build_nek(usr_file='lin_chan')
-        self.run_nek(step_limit=None)
+        filein = os.path.join(self.examples_root, self.example_subdir, 'lin_chan.par')
+        self.config_parfile(opts={'GENERAL' : {'userparam01' : '1'}}, infile=filein)
+        self.run_nek(rea_file='lin_chan', step_limit=None)
+
+        # Move log file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format('lin_chan', self.mpi_procs, self.log_suffix)
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format(self.case_name, self.mpi_procs, self.log_suffix)
+        )
+        os.rename(filein, fileout)
+
+        # Move perturbation plot file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format('lin_chan')
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format(self.case_name)
+        )
+        os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
         self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
@@ -1013,7 +1097,35 @@ class LinChan_Adj(NekTestCase):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
         self.build_nek(usr_file='lin_chan')
-        self.run_nek(step_limit=None)  
+        filein = os.path.join(self.examples_root, self.example_subdir, 'lin_chan.par')
+        self.config_parfile(opts={'GENERAL' : {'userparam01' : '1'}}, infile=filein)
+        self.run_nek(rea_file='lin_chan', step_limit=None)  
+
+        # Move log file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format('lin_chan', self.mpi_procs, self.log_suffix)
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            '{0}.log.{1}{2}'.format(self.case_name, self.mpi_procs, self.log_suffix)
+        )
+        os.rename(filein, fileout)
+
+        # Move perturbation plot file
+        filein = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format('lin_chan')
+        )
+        fileout = os.path.join(
+            self.examples_root,
+            self.example_subdir,
+            'prt{0}0.f00001'.format(self.case_name)
+        )
+        os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
         self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
