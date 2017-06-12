@@ -1156,34 +1156,6 @@ C
       END
 
 C----------------------------------------------------------------------------
-
-
-      function glsc3_acc(a,b,mult,n)
-C
-C     Perform inner-product in double precision
-C
-      real a(n),b(n),mult(n)
-      real tmp,tmp_ptr(1),work(1)
-
-!$ACC DATA CREATE(work) COPYOUT(tmp_ptr) PRESENT(a,b,mult)
-
-!$ACC KERNELS
-      tmp = 0.0
-      do  i=1,n
-         tmp = tmp + a(i)*b(i)*mult(i)
-      enddo
-      tmp_ptr(1) = tmp
-!$ACC END KERNELS
-
-      call gop_acc(tmp_ptr,work,'+  ',1)
-
-!$ACC END DATA
-
-      glsc3_acc = tmp_ptr(1)
-      return
-      end
-
-c-----------------------------------------------------------------------
       function glsc2(x,y,n)
 C
 C     Perform inner-product in double precision
@@ -2085,6 +2057,184 @@ c-----------------------------------------------------------------------
       call gop_acc(tmp_ptr,work,'+  ',1)
 !$ACC END DATA
 
-      glsum = tmp_ptr(1)
+      glsum_acc = tmp_ptr(1)
+
       return
       END
+C-----------------------------------------------------------------------
+      function glmax_acc(a,n)
+      real a(n)
+      real tmp(1),work(1)      
+
+!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(a)
+!$ACC KERNELS
+      tmax=-99.0e20
+      do i=1,n
+         tmax=max(tmax,a(i))
+      enddo    
+      TMP(1)=TMAX
+!$ACC END KERNELS
+
+      call gop_acc(tmp,work,'M  ',1)
+!$ACC END DATA
+
+      glmax_acc=tmp(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glmin_acc(a,n)
+      real a(n) 
+      real tmp(1),work(1) 
+
+!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(a)
+!$ACC KERNELS
+      TMIN=99.0e20
+      do i=1,n     
+         tmin=min(tmin,a(i)) 
+      enddo
+      tmp(1)= tmin    
+!$ACC END KERNELS
+
+      call gop_acc(tmp,work,'m  ',1)
+!$ACC END DATA
+
+      glmin_acc=tmp(1)
+
+      return
+      end     
+c-----------------------------------------------------------------------
+      real function glamax_acc(a,n)
+      real a(n)
+      integer n
+      real tmax,tmp(1),work(1)
+
+!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(a)
+!$ACC KERNELS
+      tmax = 0.0
+      do i = 1,n
+         tmax = max(tmax,abs(a(i)))
+      enddo
+      tmp(1)=tmax
+!$ACC END KERNELS
+
+      call gop_acc(tmp,work,'M  ',1)
+!$ACC END DATA
+
+      glamax_acc=abs(tmp(1))
+
+      return
+      end
+c-----------------------------------------------------------------------
+      real function glamin_acc(a,n)
+      real a(n)
+      integer n
+      real tmax,tmp(1),work(1)
+
+!$ACC DATA COPYOUT(tmp) CREATE(work) PRESENT(a)
+!$ACC KERNELS
+      tmin = 9.e28
+      do i = 1,n
+         tmin = min(tmin,abs(a(i)))
+      enddo
+      tmp(1)=tmin
+!$ACC END KERNELS
+
+      call gop_acc(tmp,work,'m  ',1)
+!$ACC END DATA
+
+      glamin_acc=abs(tmp(1))
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc3_acc(a,b,mult,n)
+C
+C     Perform inner-product in double precision
+C
+      real a(n),b(n),mult(n)
+      real tmp,tmp_ptr(1),work(1)
+
+!$ACC DATA CREATE(work) COPYOUT(tmp_ptr) PRESENT(a,b,mult)
+
+!$ACC KERNELS
+      tmp = 0.0
+      do i= 1,n
+         tmp = tmp + a(i)*b(i)*mult(i)
+      enddo
+      tmp_ptr(1) = tmp
+!$ACC END KERNELS
+
+      call gop_acc(tmp_ptr,work,'+  ',1)
+
+!$ACC END DATA
+
+      glsc3_acc = tmp_ptr(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc2_acc(x,y,n)
+C
+C     Perform inner-product in double precision
+C
+      include 'OPCTR'
+
+      real x(n),y(n)
+      real tmp,tmp_ptr(1),work(1)
+
+!$ACC DATA CREATE(work) COPYOUT(tmp_ptr) PRESENT(x,y)
+
+!$ACC KERNELS
+      tmp = 0.0
+      do i = 1,n
+         tmp = tmp+ x(i)*y(i)
+      enddo
+      tmp_ptr(1) = tmp
+!$ACC END KERNELS
+
+      call gop_acc(tmp_ptr,work,'+  ',1)
+
+!$ACC END DATA
+
+      glsc2_acc = tmp_ptr(1)
+
+      return
+      END
+c-----------------------------------------------------------------------
+      function glsc23_acc(x,y,z,n)
+c
+C     Perform inner-product  x*x*y*z
+c
+      real x(n),y(n),z(n)
+      real ds,tmp_ptr(1),work(1)
+
+!$ACC DATA CREATE(work) COPYOUT(tmp_ptr) PRESENT(x,y,z)
+
+!$ACC KERNELS
+      ds = 0.0
+      do i = 1,n
+         ds = ds+x(i)*x(i)*y(i)*z(i)
+      enddo
+      tmp_ptr(1) = ds
+!$ACC END KERNELS
+
+!$ACC END DATA
+
+      glsc23_acc = tmp
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2s1_acc(a,b,c1,n)
+      real a(n),b(n),c1     
+  
+!$ACC PARALLEL LOOP PRESENT(a,b,c1)
+      do i=1,n
+        a(i)=c1*a(i)+b(i)
+      enddo    
+!$ACC END PARALLEL
+
+      return
+      END
+c-----------------------------------------------------------------------
