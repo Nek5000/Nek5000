@@ -1,6 +1,6 @@
 [GENERAL]
 stopat = numSteps #endTime
-numsteps = 25000
+numsteps = 1000
 perturbationmodes = -1
 userparam01 = 1
 dt = -1.0e-02
