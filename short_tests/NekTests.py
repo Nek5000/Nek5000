@@ -945,7 +945,7 @@ class LinChan_Dir(NekTestCase):
             lx1       = '10',
             lxd       = '15',
             lx2       = 'lx1-2',
-            lelg      = '500',
+            lelg      = '50',
             lpelt     = 'lelt',
         )
 
@@ -988,7 +988,7 @@ class LinChan_Dir(NekTestCase):
         os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
 
         self.assertDelayedFailures()
         
@@ -1028,7 +1028,7 @@ class LinChan_Dir(NekTestCase):
         os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
 
         self.assertDelayedFailures()
 
@@ -1045,7 +1045,7 @@ class LinChan_Adj(NekTestCase):
             lx1       = '10',
             lxd       = '15',
             lx2       = 'lx1-2',
-            lelg      = '500',
+            lelg      = '50',
             lpelt     = 'lelt',
         )
 
@@ -1088,7 +1088,7 @@ class LinChan_Adj(NekTestCase):
         os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
 
         self.assertDelayedFailures()
         
@@ -1128,7 +1128,7 @@ class LinChan_Adj(NekTestCase):
         os.rename(filein, fileout)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=1E-05, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
 
         self.assertDelayedFailures()
 

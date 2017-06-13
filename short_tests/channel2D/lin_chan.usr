@@ -49,22 +49,48 @@ c-----------------------------------------------------------------------
       include 'SIZE'            ! NX1, NY1, NZ1, NELV, NIO
       include 'INPUT'           ! UPARAM
       include 'TSTEP'           ! ISTEP, IOSTEP, TIME, LASTEP
-      include 'SOLN'            ! V[XYZ]P, PRP, JP, VMULT
+      include 'SOLN'            ! V[XYZ], V[XYZ]P, PRP, JP, VMULT
       include 'MASS'            ! BM1
       include 'ADJOINT'         ! IFADJ
 
       integer n, nit
       real Ek(2),timel(2), omega(2), domega
       save EK, timel, omega
+      real vtmp(lx1*ly1*lz1*lelv,ldim)
+      character*132 restartf
 
-c     set direct/adjoint mode
+c     set direct/adjoint mode and load restart field
       if (ISTEP.eq.0) then
          if (int(UPARAM(1)).eq.1) then
             if (NIO.eq.0) write(*,*) 'Simulation in adjoint mode'
             IFADJ = .TRUE.
+c     keep current base flow
+            call opcopy(vtmp(1,1),vtmp(1,2),vtmp(1,ndim),VX,VY,VZ)
+c     read the field
+            restartf = 'prtlin_chan_adj0.restart'
+            call load_fld(restartf)
+c     copy fileds
+            call opcopy(VXP,VYP,VZP,VX,VY,VZ)
+            n = NX2*NY2*NZ2*NELV
+            call copy(PRP,PR,n)
+c     put back base flow
+            call opcopy(VX,VY,VZ,vtmp(1,1),vtmp(1,2),vtmp(1,ndim))
+            call rzero(PR,n)
          else
             if (NIO.eq.0) write(*,*) 'Simulation in direct mode'
             IFADJ = .FALSE.
+c     keep current base flow
+            call opcopy(vtmp(1,1),vtmp(1,2),vtmp(1,ndim),VX,VY,VZ)
+c     read the field
+            restartf = 'prtlin_chan_dir0.restart'
+            call load_fld(restartf)
+c     copy fileds
+            call opcopy(VXP,VYP,VZP,VX,VY,VZ)
+            n = NX2*NY2*NZ2*NELV
+            call copy(PRP,PR,n)
+c     put back base flow
+            call opcopy(VX,VY,VZ,vtmp(1,1),vtmp(1,2),vtmp(1,ndim))
+            call rzero(PR,n)
          endif
       endif
 
@@ -84,7 +110,8 @@ c     get growthrate
             domega = abs((omega(1)-omega(2))/omega(1))
          endif
 c     set logs
-         if (NIO.eq.0) write(*,*) 'Energy ',Ek(1),omega(1),domega,TIME
+         if (NIO.eq.0.and.ISTEP.gt.2*nit)
+     $        write(*,*) 'Energy ',Ek(1),omega(1),domega,TIME
       endif
 
 c     converged field
