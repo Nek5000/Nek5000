@@ -314,7 +314,7 @@ c----------------------------------------------------------------------
       ns = ny1-1
       nt = nz1-1
 
-      if(param(31).eq.0) return !param(31) is number of exponents
+      if(.not.iflin) return !done for linear solver only
       
       tinitial = time
 

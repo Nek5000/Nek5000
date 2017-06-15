@@ -814,7 +814,14 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       if (iflin .and. lpx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
-     $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZE '
+     $   'ABORT: For linear solver, need lpx1=lx1, etc.; Change SIZE '
+         call exitt
+      endif
+
+      if (iflin .and. npert.eq.0) then
+         if(nid.eq.0) write(6,*)
+     $   'ABORT: For linear solver, need npert>0; Change .par '
+         call exitt
       endif
 
       if (iflomach .and. .not.ifsplit) then
