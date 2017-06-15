@@ -285,9 +285,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-c
 c     w = A*x for pressure iteration
-c
 
       integer n
       real w(n),x(n),h1(n),h2(n)
@@ -295,7 +293,6 @@ c
       imsh = 1
       isd  = 1
 #ifdef _OPENACC
-!FIXME: in axhelm_acc, ortho is now run on host
       call axhelm_acc (w,x,h1,h2,imsh,isd)
       call dssum  (w,nx1,ny1,nz1)
       call col2_acc   (w,pmask,n)
@@ -335,7 +332,6 @@ c     GMRES iteration.
 
       logical iflag,if_hyb
       save    iflag,if_hyb
-c     data    iflag,if_hyb  /.false. , .true. /
       data    iflag,if_hyb  /.false. , .false. /
       real    norm_fac
       save    norm_fac
@@ -364,7 +360,7 @@ c     res, h1, h2, and wt, since they are local variables.
 
       call hmh_gmres_acc_data_copyin()
 
-!$ACC ENTER DATA COPYIN(res,h1,h2,wk1)
+!$ACC ENTER DATA COPYIN(res,h1,h2)
 
       acctime1 = dnekclock()
 
@@ -639,7 +635,7 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
 
       acctime1 = dnekclock()-acctime1
 
-!$ACC EXIT DATA COPYOUT(res)
+!$ACC EXIT DATA COPYOUT(h1,h2,res)
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,

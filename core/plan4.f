@@ -43,14 +43,11 @@ C
       ntot1  = nx1*ny1*nz1*nelv
       n      = ntot1
 
-      call plan4_acc_data_copyin()
-
 
       if (igeom.eq.1) then
 
-         ! compute explicit contributions bfx,bfy,bfz 
+         call plan4_acc_data_copyin()
          call makef 
-
          call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
          call sumab(vy_e,vy,vylag,ntot1,ab,nab)
          if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
@@ -74,9 +71,9 @@ C        first, compute pressure
          etime1=dnekclock()
 
          call crespsp  (respr)
-         call invers2  (h1,vtrans,ntot1)
-         call rzero    (h2,ntot1)
-!$ACC DATA COPY(respr)
+!$ACC DATA COPY(h1,h2,vtrans,respr)   
+         call invers2_acc (h1,vtrans,ntot1)
+         call rzero_acc   (h2,ntot1)
          call ctolspl_acc(tolspl,respr)
 !$ACC END DATA 
 
@@ -85,7 +82,7 @@ C        first, compute pressure
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
      $                        ,approxp,napproxp,binvm1)
-
+ 
 !$ACC  DATA COPY(pr,dpr)
          call add2_acc (pr,dpr,ntot1)
          call ortho_acc(pr)
@@ -93,7 +90,6 @@ C        first, compute pressure
 
          tpres=tpres+(dnekclock()-etime1)
 
-C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
          call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
  

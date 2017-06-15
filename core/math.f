@@ -2144,6 +2144,7 @@ c-----------------------------------------------------------------------
 !$ACC END DATA
 
       glamin_acc=abs(tmp(1))
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2218,10 +2219,11 @@ c
       tmp_ptr(1) = ds
 !$ACC END KERNELS
 
+      call gop_acc(tmp_ptr,work,'+  ',1)
+
 !$ACC END DATA
 
-      glsc23_acc = tmp
-
+      glsc23_acc = tmp_ptr(1)
 
       return
       end
@@ -2238,3 +2240,38 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
+      subroutine invers2_acc(a,b,n)
+      real a(n),b(n)
+!$acc parallel loop present(a,b)
+      do i=1,n
+         a(i)=1./b(i)
+      enddo
+!$acc end parallel
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add2col2_acc(a,b,c,n)
+      real a(n),b(n),c(n)
+
+!$ACC PARALLEL LOOP PRESENT(a,b,c)
+      do i=1,n
+         a(i) = a(i) + b(i)*c(i)
+      enddo
+!$ACC END PARALLEL
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine add3s2_acc(a,b,c,c1,c2,n)
+      real a(n),b(n),c(n)
+!$ACC PARALLEL LOOP PRESENT(a,b)
+      do i=1,n
+        a(i)=c1*b(i)+c2*c(i)
+      enddo
+!$ACC END PARALLEL
+      return
+      end
+c-----------------------------------------------------------------------
+
+
+
