@@ -940,6 +940,8 @@ c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
          call proj_ortho    ! Orthogonalize X & B basis sets
      $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
 
+         ivar(2) = m ! Update number of saved vectors
+
       endif
 
 c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
@@ -1089,24 +1091,26 @@ c-----------------------------------------------------------------------
          normk=sqrt(normk)
 
          do j=m,k+1,-1   ! Modified GS
-            alpha = 0.
-            if (ifwt) then
-               alpha = alpha + .5*(vlsc3(xx(1,j),w,bb(1,k),n)
+            if(flag(j).eq.1) then
+               alpha = 0.
+               if (ifwt) then
+                  alpha = alpha + .5*(vlsc3(xx(1,j),w,bb(1,k),n)
      $                       +     vlsc3(bb(1,j),w,xx(1,k),n))
-            else
-               alpha = alpha + .5*(vlsc2(xx(1,j),bb(1,k),n)
+               else
+                  alpha = alpha + .5*(vlsc2(xx(1,j),bb(1,k),n)
      $                       +     vlsc2(bb(1,j),xx(1,k),n))
+               endif
+               scale = -glsum(alpha,1)
+               call add2s2(xx(1,k),xx(1,j),scale,n)
+               call add2s2(bb(1,k),bb(1,j),scale,n)
             endif
-            scale = -glsum(alpha,1)
-            call add2s2(xx(1,k),xx(1,j),scale,n)
-            call add2s2(bb(1,k),bb(1,j),scale,n)
          enddo
          if (      ifwt) normp = glsc3(xx(1,k),w,bb(1,k),n)
          if (.not. ifwt) normp = glsc2(xx(1,k),bb(1,k),n)
-         normp=sqrt(normp)
+         if (normp.gt.0.0) normp=sqrt(normp)
 
-         tol = 1.e-12
-         if (wdsize.eq.4) tol=1.e-6
+         tol = 1.e-7
+         if (wdsize.eq.4) tol=1.e-3
 
          if (normp.gt.tol*normk) then ! linearly independent vectors
            scale = 1./normp
@@ -1169,12 +1173,12 @@ c-----------------------------------------------------------------------
       nn = n
       if (ifvec) nn=ndim*n
 
-      call add2        (x,xbar,n)      ! Restore desired solution
+      if (m.gt.0) call add2(x,xbar,n)      ! Restore desired solution
 
       if (m.eq.mmx) then ! Push old vector off the stack
          do k=2,mmx
-            call copy     (xx(1,k-1),xx(1,k),nn)
-            call copy     (bb(1,k-1),bb(1,k),nn)
+            call copy (xx(1,k-1),xx(1,k),nn)
+            call copy (bb(1,k-1),bb(1,k),nn)
          enddo
       endif
 
