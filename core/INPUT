@@ -37,7 +37,7 @@ c
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso(ldimt1),iffmtin
-     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
+     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,iflin,ifNlin
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
@@ -52,7 +52,7 @@ c
      $               ,ifvarp        ,ifpsco        ,ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso        ,iffmtin
-     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
+     $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,iflin,ifNlin
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm

@@ -241,8 +241,8 @@ C
       IFSCHCLOB = .false.
 c     IFSPLIT   = .false.
 
-      ifbase = .true.
-      ifpert = .false.
+      ifNlin = .true.
+      iflin  = .false.
 
       ifreguo = .false.   ! by default we dump the data based on the GLL mesh
 
@@ -310,10 +310,10 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFUSERMV
          elseif (indx1(string(i),'IFCYCLIC',8).gt.0) then 
               read(string(i),*) IFCYCLIC
-         elseif (indx1(string(i),'IFPERT'  ,6).gt.0) then 
-              read(string(i),*) IFPERT
-         elseif (indx1(string(i),'IFBASE'  ,6).gt.0) then 
-              read(string(i),*) IFBASE
+         elseif (indx1(string(i),'IFLIN'  ,6).gt.0) then
+              read(string(i),*) IFLIN
+         elseif (indx1(string(i),'IFNLIN'  ,6).gt.0) then
+              read(string(i),*) IFNLIN
          elseif (indx1(string(i),'IFSYNC'  ,6).gt.0) then 
               read(string(i),*) IFSYNC
          elseif (indx1(string(i),'IFEXPLVIS',9).gt.0) then 
@@ -371,8 +371,8 @@ c              read(string,*) IFSPLIT
       if (ifmhd)           ifessr = .true.
       if (ifmhd)           npscl1 = npscl1 + 1
       if (param(30).gt.0)  ifuservp = .true.
-      if (param(31).ne.0.) ifpert = .true.
-      if (param(31).lt.0.) ifbase = .false.   ! don't time adv base flow
+      if (param(31).ne.0.) iflin  = .true.
+      if (param(31).lt.0.) ifNlin = .false.   ! don't time adv base flow
       npert = abs(param(31)) 
 
       IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
@@ -520,7 +520,7 @@ c      endif
          call exitt
       endif
 
-      if (ifpert .and. lpx1.ne.lx1) then
+      if (iflin .and. lpx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZE '
       endif

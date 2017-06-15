@@ -301,9 +301,9 @@ c-----------------------------------------------------------------------
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
                                 call induct   (igeom)
-            elseif (ifpert) then
-               if (ifbase.and.ifheat)  call heat          (igeom)
-               if (ifbase.and.ifflow)  call fluid         (igeom)
+            elseif (iflin) then
+               if (ifNlin.and.ifheat)  call heat          (igeom)
+               if (ifNlin.and.ifflow)  call fluid         (igeom)
                if (ifflow)             call fluidp        (igeom)
                if (ifheat)             call heatp         (igeom)
             else  ! std. nek case

@@ -32,7 +32,7 @@ C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
      $               ,IFINTQ
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO(LDIMT),IFFMTIN
      $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFLIN
      $               ,IFCVODE,IFLOMACH,IFEXPL
       LOGICAL         IF3D
      $               ,IFFLOW,IFHEAT,IFTRAN,IFAXIS,IFSTRS,IFSPLIT
@@ -43,7 +43,7 @@ C     INPUT4:  CHARACTER       INPUT8: CHARACTER with LELT entries
      $               ,IFINTQ
      $               ,IFXYO,IFPO,IFVO,IFTO,IFTGO,IFPSO,IFFMTIN
      $               ,IFBO
-     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFPERT
+     $               ,IFANLS,IFANL2,IFMHD,IFESSR,IFLIN
      $               ,IFCVODE,IFLOMACH,IFEXPL
       LOGICAL         IFNAV
       EQUIVALENCE    (IFNAV, IFADVC(1))

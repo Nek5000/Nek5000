@@ -128,8 +128,8 @@ c
       ifmgrid   = .false.
       ifessr    = .false.
       ifreguo   = .false.
-      ifbase    = .true.   
-      ifpert    = .false. 
+      ifNlin    = .true.
+      iflin    = .false.
       ifaziv    = .false. 
       ifmoab    = .false.  
       ifcvode   = .false.
@@ -397,16 +397,16 @@ c set logical flags
         if(i_out .eq. 1) ifcyclic = .true.
       endif
 
-      call finiparser_getBool(i_out,'problemType:perturbations',ifnd)
+      call finiparser_getBool(i_out,'problemType:solveLinear',ifnd)
       if(ifnd .eq. 1) then
-        ifpert = .false.
-        if(i_out .eq. 1) ifpert = .true.
+        iflin = .false.
+        if(i_out .eq. 1) iflin = .true.
       endif
 
-      call finiparser_getBool(i_out,'problemType:solveBaseFlow',ifnd)
+      call finiparser_getBool(i_out,'problemType:solveNonLinear',ifnd)
       if(ifnd .eq. 1) then
-        ifbase = .false.
-        if(i_out .eq. 1) ifbase = .true.
+        ifNlin = .false.
+        if(i_out .eq. 1) ifNlin = .true.
       endif
 
       call finiparser_getBool(i_out,'problemType:lowMachNumber',ifnd)
@@ -580,8 +580,8 @@ C
       call bcast(ifcyclic, lsize)
       call bcast(ifmhd   , lsize)
       call bcast(ifuservp, lsize)
-      call bcast(ifpert, lsize)
-      call bcast(ifbase, lsize)
+      call bcast(iflin, lsize)
+      call bcast(ifNlin, lsize)
       call bcast(ifmoab, lsize)
       call bcast(ifaziv, lsize)
 
@@ -812,7 +812,7 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitt
       endif
 
-      if (ifpert .and. lpx1.ne.lx1) then
+      if (iflin .and. lpx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZE '
       endif

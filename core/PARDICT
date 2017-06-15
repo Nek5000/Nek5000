@@ -28,8 +28,8 @@ c
      &  pardictkey(19) / 'PROBLEMTYPE:AXISYMMETRY' /
      &  pardictkey(20) / 'PROBLEMTYPE:SWIRL' /
      &  pardictkey(21) / 'PROBLEMTYPE:CYCLICBOUNDARIES' /
-     &  pardictkey(22) / 'PROBLEMTYPE:PERTURBATIONS' /
-     &  pardictkey(23) / 'PROBLEMTYPE:SOLVEBASEFLOW' /
+     &  pardictkey(22) / 'PROBLEMTYPE:SOLVELINEAR' /
+     &  pardictkey(23) / 'PROBLEMTYPE:SOLVENONLINEAR' /
      &  pardictkey(24) / 'PROBLEMTYPE:LOWMACHNUMBER' /
      &  pardictkey(25) / 'PROBLEMTYPE:VARIABLEPROPERTIES' /
      &  pardictkey(26) / 'MESH' /
