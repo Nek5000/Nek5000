@@ -230,6 +230,7 @@ C
 C-----------------------------------------------------------------------
       include 'SIZE'
       include 'TSTEP'
+      include 'INPUT'
 C
       IFIELD = 0
       NEL    = NELFLD(IFIELD)
@@ -240,7 +241,7 @@ C
 C
 C     Shift lagged mesh velocity
 C
-      CALL LAGMSHV (NEL)
+      if (.not.ifrich) call lagmshv (nel)
 C
       return
       end
@@ -867,6 +868,7 @@ C
       include 'TSTEP'
       include 'MVGEOM'
       include 'GEOM'
+      include 'INPUT'
       COMMON /SCRSF/ UX(LX1,LY1,LZ1,LELT)
      $             , UY(LX1,LY1,LZ1,LELT)
      $             , UZ(LX1,LY1,LZ1,LELT)
@@ -881,16 +883,22 @@ C
          CALL COPY (UX,WX,NTOT1)
          CALL COPY (UY,WY,NTOT1)
          IF (NDIM.EQ.3) CALL COPY (UZ,WZ,NTOT1)
-      ELSE
-         CALL CMULT2 (UX,WX,ABM(1),NTOT1)
-         CALL CMULT2 (UY,WY,ABM(1),NTOT1)
-         IF (NDIM.EQ.3) CALL CMULT2 (UZ,WZ,ABM(1),NTOT1)
-         DO 100 ILAG=2,NBD
-            CALL ADD2S2 (UX,WXLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
-            CALL ADD2S2 (UY,WYLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
-            IF (NDIM.EQ.3) 
-     $      CALL ADD2S2 (UZ,WZLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
-  100    CONTINUE
+      else
+         if (ifrich) then
+            call cmult2(ux,wx,dt,ntot1)
+            call cmult2(uy,wy,dt,ntot1)
+            if (ldim.eq.3) call cmult2(uz,wz,dt,ntot1)
+         else
+            CALL CMULT2 (UX,WX,ABM(1),NTOT1)
+            CALL CMULT2 (UY,WY,ABM(1),NTOT1)
+            IF (NDIM.EQ.3) CALL CMULT2 (UZ,WZ,ABM(1),NTOT1)
+            DO 100 ILAG=2,NBD
+               CALL ADD2S2 (UX,WXLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
+               CALL ADD2S2 (UY,WYLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
+               IF (NDIM.EQ.3)
+     $         CALL ADD2S2 (UZ,WZLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
+  100       CONTINUE
+         endif
       ENDIF
 C
       CALL ADD2 (XM1,UX,NTOT1)

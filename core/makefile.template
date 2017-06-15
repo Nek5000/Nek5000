@@ -28,6 +28,7 @@ PPS_C = $(patsubst %,-D%,$(PPS))
 
 # CORE##########################################################################
 CORE = drive.o drive1.o drive2.o \
+plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
@@ -187,6 +188,7 @@ $(OBJDIR)/gfdm_solve.o	:$S/gfdm_solve.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/coef.o	:$S/coef.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/plan4.o	:$S/plan4.f;			$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/plan5.o	:$S/plan5.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/vprops.o	:$S/vprops.f;	   		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/cvode_driver.o :$S/cvode_driver.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/makeq.o      	:$S/makeq.f;			$(FC) -c $(FL2) $< -o $@
