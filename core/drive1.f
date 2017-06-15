@@ -286,14 +286,13 @@ c-----------------------------------------------------------------------
          enddo
 
       else                ! PN-2/PN-2 formulation
-
          call setprop
          do igeom=1,ngeom
 
             if (igeom.gt.2) call userchk_set_xfer
 
             if (ifgeom) then
-               call gengeom (igeom)
+               if (.not.ifrich) call gengeom (igeom)
                call geneig  (igeom)
             endif
 
@@ -313,8 +312,8 @@ c-----------------------------------------------------------------------
                if (ifmvbd)             call meshv         (igeom)
             endif
 
-            if (igeom.eq.ngeom.and.param(103).gt.0) 
-     $          call q_filter(param(103))
+            if (igeom.eq.ngeom.and.param(103).gt.0)
+     $         call q_filter(param(103))
          enddo
       endif
 
