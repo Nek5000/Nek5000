@@ -562,6 +562,9 @@ class Ethier(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
+        herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
+        self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
+
         gmres = self.get_value_from_log('gmres ', column=-6)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=7., label='gmres')
 
@@ -588,6 +591,9 @@ class Ethier(NekTestCase):
             f.writelines(lines)
 
         self.run_nek(step_limit=1000)
+
+        herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
+        self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
 
         gmres = self.get_value_from_log('gmres ', column=-7)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
