@@ -929,7 +929,101 @@ class CmtInviscidVortex(NekTestCase):
         self.run_nek(step_limit=1000)
         self.diff_l2norms()
 
+    def tearDown(self):
+        self.move_logs()
+        
+####################################################################
+#  channel2D; lin_chan_dir.par, lin_chan_adj.par
+####################################################################
+class LinChan_Dir(NekTestCase):
+    example_subdir = 'channel2D'
+    case_name = 'lin_chan_dir'
 
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '10',
+            lxd       = '15',
+            lx2       = 'lx1-2',
+            lelg      = '50',
+            lpelt     = 'lelt',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_2_serial
+    def test_PnPn2_Serial(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(usr_file='lin_chan')
+        self.run_nek(step_limit=None)
+
+        omega = self.get_value_from_log('Energy', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+
+        self.assertDelayedFailures()
+        
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(usr_file='lin_chan')
+        self.run_nek(step_limit=None)  
+
+        omega = self.get_value_from_log('Energy', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+class LinChan_Adj(NekTestCase):
+    example_subdir = 'channel2D'
+    case_name = 'lin_chan_adj'
+
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '10',
+            lxd       = '15',
+            lx2       = 'lx1-2',
+            lelg      = '50',
+            lpelt     = 'lelt',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_2_serial
+    def test_PnPn2_Serial(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(usr_file='lin_chan')
+        self.run_nek(step_limit=None)
+
+        omega = self.get_value_from_log('Energy', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+
+        self.assertDelayedFailures()
+        
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(usr_file='lin_chan')
+        self.run_nek(step_limit=None)  
+
+        omega = self.get_value_from_log('Energy', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+        
+###############################################################
 if __name__ == '__main__':
     import unittest, argparse, os
 
