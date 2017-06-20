@@ -1375,7 +1375,7 @@ c-----------------------------------------------------------------------
       subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
-      integer cont ! 0 -> write and end, 1 -> write and resume
+      integer cont ! 0 -> write and end, 1 -> write and continue
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
