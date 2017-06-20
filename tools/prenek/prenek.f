@@ -1669,6 +1669,8 @@ C     Sort so that integrals are last
 C
       CLOSE(UNIT=10)
 
+      if (dest.eq.1) return
+
       call session_exit
 
       return
