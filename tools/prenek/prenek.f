@@ -582,7 +582,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine wrtpar(cflag)
+      subroutine wrtpar(cflag,cont)
       include 'basics.inc'
 
       CHARACTER FILE*10,CFLAG*10
@@ -1382,13 +1382,12 @@ c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
 
-
       write(6,*) nel,' this is nel in prexit'
       call curcnt  ! Recount number of curved sides
 
       if (cont.eq.0) call cleara
 
-      CALL WRTPAR('FULL DUMP ')
+      call wrtpar('FULL DUMP ',cont)
       sesion(11:14) ='   '
       WRITE(10,'(4G14.6,'' XFAC,YFAC,XZERO,YZERO'')')
      $XFACO,YFACO,XZEROO,YZEROO
