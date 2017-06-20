@@ -587,7 +587,10 @@ c-----------------------------------------------------------------------
 
       CHARACTER FILE*10,CFLAG*10
       CHARACTER*1 s401(40)
+      character*4 fext
+      integer cont
       COMMON/INOUT/  IEXT
+      common /fsave/ itsave
 C
 C     Write out parameter stuff
 C     First check B.C.'s to set logical switches
@@ -608,9 +611,21 @@ C              Test for moving mesh in solid
 C
       M=IEXT
       n=m+3
+
       filenm = sesion
+
+      if (cont.eq.2) then
+         itsave=itsave+1
+         if (itsave.le.9) then
+            write(fext,'(A3,I1)') '.t0',itsave
+         else ! assume itsave.le.99
+            write(fext,'(A2,I2)') '.t',itsave
+         endif
+         filenm(m:n) = fext
+      else
+         filenm(m:n) ='.rea'
+      endif
 C
-      FILENM(M:N) ='.rea'
       CALL OPENF(10,FILENM,'NEW',1,IERR)
       CALL PRS('Writing Parameters to file$')
       write(10,*,err=60)'****** PARAMETERS *****'
