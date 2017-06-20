@@ -1384,8 +1384,8 @@ c      LOGICAL IFMVBD
       write(6,*) nel,' this is nel in prexit'
       call curcnt  ! Recount number of curved sides
 
+      if (cont.eq.0) call cleara
 
-      CALL CLEARA
       CALL WRTPAR('FULL DUMP ')
       sesion(11:14) ='   '
       WRITE(10,'(4G14.6,'' XFAC,YFAC,XZERO,YZERO'')')
