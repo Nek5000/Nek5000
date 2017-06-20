@@ -380,7 +380,7 @@ c     ITEM(NCHOIC)='RSB'
 
       IF(choice.eq.'EXIT') then
 C        Exit Prenek
-         call prexit
+         call prexit(0)
 c        call rsb_xxt_set(2,nel)
          call session_exit
 c     elseif(choice.eq.'RSB') then
@@ -1372,9 +1372,10 @@ c      WRITE(10,'(A70)',ERR=60)  LINE
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine prexit
+      subroutine prexit(dest)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
+      integer dest ! 0 -> write and end, 1 -> write and resume
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
