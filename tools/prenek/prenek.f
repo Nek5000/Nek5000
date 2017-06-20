@@ -1375,7 +1375,9 @@ c-----------------------------------------------------------------------
       subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
-      integer cont ! 0 -> write and end, 1 -> write and continue
+      integer cont ! 0 -> write and end,
+                   ! 1 -> write and continue,
+                   ! 2 -> autosave
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
@@ -1669,7 +1671,7 @@ C     Sort so that integrals are last
 C
       CLOSE(UNIT=10)
 
-      if (cont.eq.1) return
+      if (cont.ne.0) return
 
       call session_exit
 
