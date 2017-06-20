@@ -170,10 +170,13 @@ c     Menu-based module that prompts the user to input corners.
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
+      logical ifautosave
       common /splitt/ enew(nelm),ind(nelm)
 
 
       if (ifmerge) return
+
+      ifautosave=.true.
 
 C     Just in case it didn't get set in setscl
       IFGRID=.TRUE.
@@ -454,7 +457,11 @@ C     Go down one level.  Erase old mesh& draw new
  310        CONTINUE
          ELSE
             CALL PRS('CHOICE:'//CHOICE//'NOT IN MENU$')
+            ifautosave=.false.
          ENDIF
+
+         if (ifautosave) call prexit(2)
+
          goto 1000
  320     CONTINUE
  330     CONTINUE
