@@ -1717,12 +1717,14 @@ c-----------------------------------------------------------------------
       character*80 file_prefix
       COMMON/INOUT/  IEXT
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
+      common /fsave/ itsave
 C
       XPHY0=0.0
       YPHY0=0.0
       ILGRNG=0
       ISCND =0
       IENTRP=0
+      itsave=0
 
       ifmerge        = .false.
       ifconj_merge   = .false.
