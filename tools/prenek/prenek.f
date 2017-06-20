@@ -1372,10 +1372,10 @@ c      WRITE(10,'(A70)',ERR=60)  LINE
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine prexit(dest)
+      subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
-      integer dest ! 0 -> write and end, 1 -> write and resume
+      integer cont ! 0 -> write and end, 1 -> write and resume
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
@@ -1669,7 +1669,7 @@ C     Sort so that integrals are last
 C
       CLOSE(UNIT=10)
 
-      if (dest.eq.1) return
+      if (cont.eq.1) return
 
       call session_exit
 
