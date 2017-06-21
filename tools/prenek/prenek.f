@@ -622,7 +622,7 @@ C
          else ! assume itsave.le.999
             write(fext,'(I3)') itsave
          endif
-         filenm(5:8) = fext
+         filenm(5:7) = fext
          filenm(9:12) = '.rea'
       else
          filenm = sesion
