@@ -587,7 +587,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER FILE*10,CFLAG*10
       CHARACTER*1 s401(40)
-      character*4 fext
+      character*4 ntsave
       integer cont
       COMMON/INOUT/  IEXT
       common /fsave/ itsave
@@ -616,13 +616,13 @@ C
          itsave=itsave+1
          filenm = 'tmp.          '
          if (itsave.le.9) then
-            write(fext,'(A2,I1)') '00',itsave
+            write(ntsave,'(A2,I1)') '00',itsave
          else if (itsave.le.99) then
-            write(fext,'(A1,I2)') '0',itsave
+            write(ntsave,'(A1,I2)') '0',itsave
          else ! assume itsave.le.999
-            write(fext,'(I3)') itsave
+            write(ntsave,'(I3)') itsave
          endif
-         filenm(5:7) = fext
+         filenm(5:7) = ntsave
          filenm(9:12) = '.rea'
       else
          filenm = sesion
