@@ -623,6 +623,7 @@ C
             write(fext,'(I3)') itsave
          endif
          filenm(5:8) = fext
+         filenm(9:12) = '.rea'
       else
          filenm = sesion
          filenm(m:n) ='.rea'
