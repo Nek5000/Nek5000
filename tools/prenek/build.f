@@ -280,6 +280,7 @@ C        MODEL and CURVE know about it, too
       else if(choice.eq.'SAVE') then
          call save_mesh
          call prexit(1)
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
          if (.not.if3d) call chk_right_hand(nel)
