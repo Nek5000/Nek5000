@@ -612,17 +612,17 @@ C
       M=IEXT
       n=m+3
 
-      filenm = sesion
-
       if (cont.eq.2) then
          itsave=itsave+1
+         filenm = 'tmp.          '
          if (itsave.le.9) then
-            write(fext,'(A3,I1)') '.t0',itsave
+            write(fext,'(A1,I1)') '0',itsave
          else ! assume itsave.le.99
-            write(fext,'(A2,I2)') '.t',itsave
+            write(fext,'(I2)') itsave
          endif
-         filenm(m:n) = fext
+         filenm(5:7) = fext
       else
+         filenm = sesion
          filenm(m:n) ='.rea'
       endif
 C
