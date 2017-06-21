@@ -616,11 +616,13 @@ C
          itsave=itsave+1
          filenm = 'tmp.          '
          if (itsave.le.9) then
-            write(fext,'(A1,I1)') '0',itsave
-         else ! assume itsave.le.99
-            write(fext,'(I2)') itsave
+            write(fext,'(A2,I1)') '00',itsave
+         else if (itsave.le.99) then
+            write(fext,'(A1,I2)') '0',itsave
+         else ! assume itsave.le.999
+            write(fext,'(I3)') itsave
          endif
-         filenm(5:7) = fext
+         filenm(5:8) = fext
       else
          filenm = sesion
          filenm(m:n) ='.rea'
