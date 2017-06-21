@@ -2932,6 +2932,39 @@ C
       return
       end
 c-----------------------------------------------------------------------
+      subroutine save_mesh
+
+      include 'basics.inc'
+
+      character*50 p1
+      character*70 p2
+
+      common /inout/ iext
+
+      p1 = ' Choose a session name for this save (default:'
+      write(p2,'(A50,A,A2)') p1,sesion,')$'
+
+      call prs(p2)
+      call res(line,70)
+
+      if (line.ne.'          ') then
+         call blank(sesion,14)
+         sesion=line
+         do i=10,1,-1
+             if(sesion(i:i).ne.' ')then
+                lastch=i
+                go to 1
+             endif
+         enddo
+1        continue
+         iext=lastch+1
+         open(unit=4,file='session.name')
+         write(4,'(a14)') sesion
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine helper(routine,ientry)
       include 'basics.inc'
       CHARACTER ROUTINE*(*)

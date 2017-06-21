@@ -275,6 +275,7 @@ C        MODEL and CURVE know about it, too
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
       else if(choice.eq.'SAVE') then
+         call save_mesh
          call prexit(1)
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
