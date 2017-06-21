@@ -623,7 +623,7 @@ C
             write(ntsave,'(I3)') itsave
          endif
          filenm(5:7) = ntsave
-         filenm(9:12) = '.rea'
+         filenm(8:11) = '.rea'
       else
          filenm = sesion
          filenm(m:n) ='.rea'
