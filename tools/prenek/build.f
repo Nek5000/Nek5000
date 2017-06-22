@@ -176,8 +176,6 @@ c     Menu-based module that prompts the user to input corners.
 
       if (ifmerge) return
 
-      ifautosave=.true.
-
 C     Just in case it didn't get set in setscl
       IFGRID=.TRUE.
       IF(NLEVEL.EQ.0)NLEVEL=1
@@ -217,6 +215,8 @@ C     IF(NUMAPT(IEL).EQ.ILEVEL)CALL DRAWEL(IEL)
 C     ! ??!!
 C     
  1000 CONTINUE
+
+      ifautosave = .true.
 
       call gencen
       call mkside
