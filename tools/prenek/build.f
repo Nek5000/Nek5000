@@ -277,9 +277,12 @@ C        MODEL and CURVE know about it, too
          call redraw_mesh_small
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
-      else if(choice.eq.'SAVE') then
+      else if (choice.eq.'SAVE') then
          call save_mesh
          call prexit(1)
+         ifautosave = .false.
+      else if (choice.eq.'UNDO') then
+         ! undo code here
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
@@ -2690,6 +2693,8 @@ c        nchoic = nchoic+1
          ITEM(nchoic)       =       'REFLECT MESH '
          nchoic = nchoic+1
          ITEM(nchoic)       =       'SAVE'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'UNDO'
       ENDIF
      
       return   ! End of menu-driven query
