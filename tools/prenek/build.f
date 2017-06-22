@@ -1142,11 +1142,31 @@ c-----------------------------------------------------------------------
       save import_count
       data import_count /0/
 
+      character*3 ntsave
+
+      common /fsave/ itsave
+
       real    xyzbox(6)
 
-      call prs('input name of new .rea file$')
       call blank(fname,70)
-      call res  (fname,70)
+
+      write(*,*) '(imp_mesh)itsave=',itsave
+      if (ifundo) then
+         itsave=itsave-1
+         if (itsave.le.9) then
+            write(ntsave,'(A2,I1)') '00',itsave
+         else if (itsave.le.99) then
+            write(ntsave,'(A1,I2)') '0',itsave
+         else ! assume itsave.le.999
+            write(ntsave,'(I3)') itsave
+         endif
+         write(fname,'(A4,A3)') 'tmp.',ntsave
+      else
+         call prs('input name of new .rea file$')
+         call res  (fname,70)
+      endif
+
+      write(*,*) 'fname=',fname
 
       ifdisplace  = .false.
       iftranslate = .false.
@@ -1155,6 +1175,11 @@ c-----------------------------------------------------------------------
        call res  (ans,1)
        if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
        if (ans.eq.'t'.or.ans.eq.'T') iftranslate=.true.
+      endif
+
+      if (ifundo) then
+         ifdisplace = .true.
+         iftranslate = .false.
       endif
 
       if (indx1(fname,'.rea',4).eq.0) then !  Append .rea, if not present
