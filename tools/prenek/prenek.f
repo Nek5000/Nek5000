@@ -182,6 +182,8 @@ c-----------------------------------------------------------------------
       subroutine build_options
       include 'basics.inc'
 
+      character*32 cpcommand
+
       common /cfilold/ filold
       character filold*17
 
@@ -295,6 +297,9 @@ c           GO TO 1080
             GOTO 310
          endif
       endif
+
+      write(cpcommand,'(A3,A17,A12)') 'cp ',filenm,' tmp.000.rea'
+      call system(cpcommand)
 
       return
       end
