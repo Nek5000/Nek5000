@@ -249,6 +249,7 @@ C     Turn on Keypad
          if (ierr.eq.1) then
             call drawel(-nel)
             nel=nel-1
+            ifautosave = .false.
          endif
 
       ELSE IF(CHOICE.EQ.'CEILING') THEN
@@ -326,17 +327,21 @@ C     Only floor of elevator hilighted during modify
          do 160 i=1,nel
             call drawis(isrt(i))
  160     continue
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
          call redraw_mesh
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
          call setzoom
          call redraw_mesh
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'SET GRID')THEN
          call setgrd
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'Edit Mesh')THEN
          call mesh_edit
       ELSE IF(CHOICE.EQ.'DEFINE OBJECT')THEN
          CALL SETOBJ
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'END    ELEMENTS')THEN
 C      WHAT ELSE TO DO WHEN 2-D PROBLEM?
          IF(NEL.EQ.0) THEN
