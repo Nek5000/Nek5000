@@ -283,6 +283,10 @@ C        MODEL and CURVE know about it, too
          ifautosave = .false.
       else if (choice.eq.'UNDO') then
          ! undo code here
+         ifundo = .true.
+         call imp_mesh(.false.)
+         call redraw_mesh_small
+         ifundo = .false.
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
