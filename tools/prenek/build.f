@@ -172,7 +172,7 @@ c     Menu-based module that prompts the user to input corners.
       logical iftmp
       logical ifautosave
       common /splitt/ enew(nelm),ind(nelm)
-
+      common /fsave/ itsave
 
       if (ifmerge) return
 
@@ -283,11 +283,16 @@ C        MODEL and CURVE know about it, too
          ifautosave = .false.
       else if (choice.eq.'UNDO') then
          ! undo code here
-         ifundo = .true.
-         call delete
-         call imp_mesh(.false.)
-         call redraw_mesh_small
-         ifundo = .false.
+         if (itsave.gt.0) then
+            ifundo = .true.
+            call delete
+            call imp_mesh(.false.)
+            call redraw_mesh_small
+            ifundo = .false.
+         else
+            call prs('ERROR: Already at the original mesh$')
+            write(*,*) '(build)itsave=',itsave
+         endif
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
