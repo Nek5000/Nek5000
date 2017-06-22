@@ -284,6 +284,7 @@ C        MODEL and CURVE know about it, too
       else if (choice.eq.'UNDO') then
          ! undo code here
          ifundo = .true.
+         call delete
          call imp_mesh(.false.)
          call redraw_mesh_small
          ifundo = .false.
