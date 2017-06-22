@@ -3526,6 +3526,14 @@ c-----------------------------------------------------------------------
       if (nel.eq.0) call prs('ERROR: No elements to delete$')
       if (nel.eq.0) return
 
+      if (ifundo) then
+         nelt = nel
+         do jel=1,nelt
+            call delel(jel)
+         enddo
+         return
+      endif
+
 C     Find out which element to delete
 
       if (.not.ifgraf) then
