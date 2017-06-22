@@ -281,6 +281,7 @@ C        MODEL and CURVE know about it, too
       else if (choice.eq.'SAVE') then
          call save_mesh
          call prexit(1)
+         call prs('Finished saving$')
          ifautosave = .false.
       else if (choice.eq.'UNDO') then
          ! undo code here
