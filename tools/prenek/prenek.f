@@ -636,7 +636,7 @@ C
       endif
 C
       CALL OPENF(10,FILENM,'NEW',1,IERR)
-      CALL PRS('Writing Parameters to file$')
+      if (cont.ne.2) call prs('Writing Parameters to file$')
       write(10,*,err=60)'****** PARAMETERS *****'
       WRITE(10,*,err=60)VNEKTON,' NEKTON VERSION '
       WRITE(10,*,err=60)NDIM,   ' DIMENSIONAL RUN'
