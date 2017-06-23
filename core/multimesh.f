@@ -231,6 +231,7 @@ c------------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
+      integer k,i,n
 
       n    = nx1*ny1*nz1*nelt
 
@@ -639,6 +640,11 @@ c     Make sure rcode_all is fine
 
       npoints_nn = ip
 
+c     zero out valint
+      do i=1,nfld_neknek
+       call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
+      enddo
+
       call iglmax(ierror,1)
       if (ierror.eq.1) call exitt
  
@@ -776,6 +782,7 @@ c     Some sanity checks for neknek
      $  ifflow,ifheat,'Neknek log'
 c     idsess - session number
 c     nfld_neknek - fields to interpolate
+      if (nid.eq.0) write(6,*) ngeom,ninter,'Neknek log ngeom ninter' 
       return
       end
 C--------------------------------------------------------------------------

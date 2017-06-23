@@ -420,7 +420,7 @@ class Eddy_Neknek(NekTestCase):
                 lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-06     p21 DIVERGENCE', l) for l in f]
             with open(rea_path, 'w') as f:
                 f.writelines(lines)
-            self.run_genmap(os.path.join(cwd, rea_file))
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params['lx2'] = 'lx1'
         self.config_size()
@@ -479,7 +479,7 @@ class Eddy_Neknek(NekTestCase):
                 lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-11     p21 DIVERGENCE', l) for l in f]
             with open(rea_path, 'w') as f:
                 f.writelines(lines)
-            self.run_genmap(os.path.join(cwd, rea_file))
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
