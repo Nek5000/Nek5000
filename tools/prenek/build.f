@@ -216,7 +216,7 @@ C     ! ??!!
 C     
  1000 CONTINUE
 
-      ifautosave = .true.
+      ifautosave = .true. ! set to .false. to disable autosave
 
       call gencen
       call mkside
