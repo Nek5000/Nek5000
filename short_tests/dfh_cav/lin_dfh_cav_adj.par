@@ -16,8 +16,8 @@ filtering = no
 filterweight = 1e-02
 
 [PROBLEMTYPE]
-solveLinear = yes
-solveNonLinear = no
+perturbations = yes
+solveBaseflow = no
 variableProperties = yes
 
 [PRESSURE]
