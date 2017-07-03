@@ -939,19 +939,19 @@ class CmtInviscidVortex(NekTestCase):
         self.move_logs()
         
 ####################################################################
-#  channel2D; lin_chan_dir.par, lin_chan_adj.par
+#  dfh_cav; lin_dfh_cav_dir.par, lin_dfh_cav_adj.par
 ####################################################################
-class LinChan_Dir(NekTestCase):
-    example_subdir = 'channel2D'
-    case_name = 'lin_chan_dir'
+class LinCav_Dir(NekTestCase):
+    example_subdir = 'dfh_cav'
+    case_name = 'lin_dfh_cav_dir'
 
     def setUp(self):
         self.size_params = dict(
             ldim      = '2',
-            lx1       = '10',
-            lxd       = '15',
+            lx1       = '9',
+            lxd       = '13',
             lx2       = 'lx1-2',
-            lelg      = '50',
+            lelg      = '500',
             lpelt     = 'lelt',
         )
 
@@ -962,11 +962,11 @@ class LinChan_Dir(NekTestCase):
     def test_PnPn2_Serial(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(usr_file='lin_chan')
+        self.build_nek(usr_file='lin_dfh_cav')
         self.run_nek(step_limit=None)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-7.57304E-03, delta=1E-06, label='growth rate')
 
         self.assertDelayedFailures()
         
@@ -974,28 +974,28 @@ class LinChan_Dir(NekTestCase):
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(usr_file='lin_chan')
+        self.build_nek(usr_file='lin_dfh_cav')
         self.run_nek(step_limit=None)  
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-7.57304E-03, delta=1E-06, label='growth rate')
 
         self.assertDelayedFailures()
 
     def tearDown(self):
         self.move_logs()
 
-class LinChan_Adj(NekTestCase):
-    example_subdir = 'channel2D'
-    case_name = 'lin_chan_adj'
+class LinCav_Adj(NekTestCase):
+    example_subdir = 'dfh_cav'
+    case_name = 'lin_dfh_cav_adj'
 
     def setUp(self):
         self.size_params = dict(
             ldim      = '2',
-            lx1       = '10',
-            lxd       = '15',
+            lx1       = '9',
+            lxd       = '13',
             lx2       = 'lx1-2',
-            lelg      = '50',
+            lelg      = '500',
             lpelt     = 'lelt',
         )
 
@@ -1006,11 +1006,11 @@ class LinChan_Adj(NekTestCase):
     def test_PnPn2_Serial(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(usr_file='lin_chan')
+        self.build_nek(usr_file='lin_dfh_cav')
         self.run_nek(step_limit=None)
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-7.57304E-03, delta=1E-06, label='growth rate')
 
         self.assertDelayedFailures()
         
@@ -1018,11 +1018,11 @@ class LinChan_Adj(NekTestCase):
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(usr_file='lin_chan')
+        self.build_nek(usr_file='lin_dfh_cav')
         self.run_nek(step_limit=None)  
 
         omega = self.get_value_from_log('Energy', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(omega, target_val=-1.2337E-03, delta=2E-06, label='growth rate')
+        self.assertAlmostEqualDelayed(omega, target_val=-7.57304E-03, delta=1E-06, label='growth rate')
 
         self.assertDelayedFailures()
 
