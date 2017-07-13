@@ -456,7 +456,7 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
 
       nrstd=ldd
       nxyz=nx1*ny1*nz1
-      call rzero(ud,nxyz)
+c     call rzero(ud,nxyz)
       if(eq_num.ne.1.and.eq_num.ne.5)then
 
         call gradl_rst(urst(1,1,1,2),urst(1,1,1,3),urst(1,1,1,4),
