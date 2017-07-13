@@ -445,44 +445,64 @@ C> @}
       
       integer e,eq_num
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-      real ju
-      nrstd=ldd
+c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real ur(lx1,ly1,lz1),us(lx1,ly1,lz1),ut(lx1,ly1,lz1),
+     >    rdumz(lx1,ly1,lz1)
+
       nxyz=nx1*ny1*nz1
-      call rzero(ud,nxyz)
       if(eq_num.ne.1.and.eq_num.ne.5)then
-        if(eq_num.eq.2)then
-           j=1
-        elseif(eq_num.eq.3)then
-           j=2
-        elseif(eq_num.eq.4)then
-           j=2
-           if(ldim.eq.3) j=3
-        endif
-c       write(6,*)'enter  compute_forcing ', j
-        call gradl_rst(ur,us,ut,phig(1,1,1,e),lx1,if3d) ! navier1
-        if (if3d) then
-           j0=j+0
-           j3=j+3
-           j6=j+6
-           do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-              ud(i)=rx(i,j0,e)*ur(i)+rx(i,j3,e)*us(i)+rx(i,j6,e)*ut(i)
-           enddo
-        else
-           j0=j+0
-           j2=j+2
-           do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-              ud(i)=rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i)
-           enddo
-        endif
+
+        call gradl_rst(ur(1,1,1),us(1,1,1),ut(1,1,1),
+     >                                        phig(1,1,1,e),lx1,if3d)
+        if(if3d) then ! 3d
+          if(eq_num.eq.2) then
+            do i=1,nxyz
+              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (ur(i,1,1)*RXM1(i,1,1,e) +
+     >              us(i,1,1)*SXM1(i,1,1,e) +
+     >              ut(i,1,1)*TXM1(i,1,1,e))
+            enddo
+          elseif(eq_num.eq.3) then
+            do i=1,nxyz
+              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (ur(i,1,1)*RYM1(i,1,1,e) +
+     >              us(i,1,1)*SYM1(i,1,1,e) +
+     >              ut(i,1,1)*TYM1(i,1,1,e))
+            enddo
+          elseif(eq_num.eq.4) then
+            do i=1,nxyz
+              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (ur(i,1,1)*RZM1(i,1,1,e) +
+     >              us(i,1,1)*SZM1(i,1,1,e) +
+     >              ut(i,1,1)*TZM1(i,1,1,e))
+            enddo
+          endif
+        else ! end 3d, 2d
+          if(eq_num.eq.2) then
+            do i=1,nxyz
+              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (ur(i,1,1)*RXM1(i,1,1,e) +
+     >              us(i,1,1)*SXM1(i,1,1,e))
+            enddo
+          elseif(eq_num.eq.3) then
+            do i=1,nxyz
+              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (ur(i,1,1)*RYM1(i,1,1,e) +
+     >              us(i,1,1)*SYM1(i,1,1,e))
+            enddo
+          endif ! end 2d
+      endif ! eqn nums 2-4
+
+c     multiply by pressure
+      do i=1,nxyz
+         rdumz(i,1,1) = rdumz(i,1,1)*pr(i,1,1,e)
+      enddo
+
         if (eq_num.eq.4.and.ldim.eq.2)then
 
         else
-           call col2(ud,pr(1,1,1,e),nxyz)
-           call copy(convh(1,1),ud,nxyz)
-           call col2(convh(1,1),jacmi(1,e),nxyz)
-           call col2(convh(1,1),bm1(1,1,1,e),nxyz)  ! res = B*res
-           call sub2(res1(1,1,1,e,eq_num),convh(1,1),nxyz)
+           call subcol3(res1(1,1,1,e,eq_num),rdumz(1,1,1)
+     >                  ,bm1(1,1,1,e),nxyz)
            call subcol3(res1(1,1,1,e,eq_num),usrf(1,1,1,eq_num)
      $                  ,bm1(1,1,1,e),nxyz) 
         endif
