@@ -445,44 +445,66 @@ C> @}
       
       integer e,eq_num
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-      real ju
+c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      real urst(lx1,ly1,lz1,2:4),dum(lx1,ly1,lz1),pcheat
+
+      common /throttle_output/ grad_phig ! both not needed but for debg
+      real grad_phig(lx1,ly1,lz1,lelt,3) !
+
+      pcheat = 1.
+      if (if3d) pcheat = 0.
+
       nrstd=ldd
       nxyz=nx1*ny1*nz1
       call rzero(ud,nxyz)
       if(eq_num.ne.1.and.eq_num.ne.5)then
-        if(eq_num.eq.2)then
-           j=1
-        elseif(eq_num.eq.3)then
-           j=2
-        elseif(eq_num.eq.4)then
-           j=2
-           if(ldim.eq.3) j=3
-        endif
-c       write(6,*)'enter  compute_forcing ', j
-        call gradl_rst(ur,us,ut,phig(1,1,1,e),lx1,if3d) ! navier1
-        if (if3d) then
-           j0=j+0
-           j3=j+3
-           j6=j+6
-           do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-              ud(i)=rx(i,j0,e)*ur(i)+rx(i,j3,e)*us(i)+rx(i,j6,e)*ut(i)
-           enddo
-        else
-           j0=j+0
-           j2=j+2
-           do i=1,nrstd   ! rx has mass matrix and Jacobian on fine mesh
-              ud(i)=rx(i,j0,e)*ur(i)+rx(i,j2,e)*us(i)
-           enddo
-        endif
+
+        call gradl_rst(urst(1,1,1,2),urst(1,1,1,3),urst(1,1,1,4),
+     >                                        phig(1,1,1,e),lx1,if3d)
+      if(eq_num.eq.2) then
+         do i=1,nxyz
+            dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (urst(i,1,1,2)*RXM1(i,1,1,e) +
+     >              urst(i,1,1,3)*SXM1(i,1,1,e) +
+     >              pcheat*urst(i,1,1,4)*TXM1(i,1,1,e))
+         enddo
+      elseif(eq_num.eq.3) then
+         do i=1,nxyz
+            dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (urst(i,1,1,2)*RYM1(i,1,1,e) +
+     >              urst(i,1,1,3)*SYM1(i,1,1,e) +
+     >              pcheat*urst(i,1,1,4)*TYM1(i,1,1,e))
+         enddo
+      elseif(eq_num.eq.4) then
+      if (if3d) then
+         do i=1,nxyz
+            dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
+     >             (urst(i,1,1,2)*RZM1(i,1,1,e) +
+     >              urst(i,1,1,3)*SZM1(i,1,1,e) +
+     >              urst(i,1,1,4)*TZM1(i,1,1,e))
+         enddo
+      endif
+      endif
+
+c     not needed, but used for debuging grad phi field
+      do k=1,lz1
+      do j=1,ly1
+      do i=1,lx1
+         grad_phig(i,j,k,e,eq_num-1) = dum(i,j,k)
+      enddo
+      enddo
+      enddo
+
+c     multiply by pressure
+      do i=1,nxyz
+         dum(i,1,1) = dum(i,1,1)*pr(i,1,1,e)
+      enddo
+
         if (eq_num.eq.4.and.ldim.eq.2)then
 
         else
-           call col2(ud,pr(1,1,1,e),nxyz)
-           call copy(convh(1,1),ud,nxyz)
-           call col2(convh(1,1),jacmi(1,e),nxyz)
-           call col2(convh(1,1),bm1(1,1,1,e),nxyz)  ! res = B*res
-           call sub2(res1(1,1,1,e,eq_num),convh(1,1),nxyz)
+           call subcol3(res1(1,1,1,e,eq_num),dum(1,1,1)
+     >                  ,bm1(1,1,1,e),nxyz)
            call subcol3(res1(1,1,1,e,eq_num),usrf(1,1,1,eq_num)
      $                  ,bm1(1,1,1,e),nxyz) 
         endif
