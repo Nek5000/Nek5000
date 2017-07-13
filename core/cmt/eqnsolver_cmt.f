@@ -446,7 +446,8 @@ C> @}
       integer e,eq_num
       parameter (ldd=lxd*lyd*lzd)
 c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-      real urst(lx1,ly1,lz1,2:4),dum(lx1,ly1,lz1),pcheat
+      real ur(lx1,ly1,lz1),us(lx1,ly1,lz1),ut(lx1,ly1,lz1),
+     >                    dum(lx1,ly1,lz1),pcheat
 
       common /throttle_output/ grad_phig ! both not needed but for debg
       real grad_phig(lx1,ly1,lz1,lelt,3) !
@@ -459,29 +460,29 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
 c     call rzero(ud,nxyz)
       if(eq_num.ne.1.and.eq_num.ne.5)then
 
-        call gradl_rst(urst(1,1,1,2),urst(1,1,1,3),urst(1,1,1,4),
+        call gradl_rst(ur(1,1,1),us(1,1,1),ut(1,1,1),
      >                                        phig(1,1,1,e),lx1,if3d)
       if(eq_num.eq.2) then
          do i=1,nxyz
             dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (urst(i,1,1,2)*RXM1(i,1,1,e) +
-     >              urst(i,1,1,3)*SXM1(i,1,1,e) +
-     >              pcheat*urst(i,1,1,4)*TXM1(i,1,1,e))
+     >             (ur(i,1,1)*RXM1(i,1,1,e) +
+     >              us(i,1,1)*SXM1(i,1,1,e) +
+     >              pcheat*ut(i,1,1)*TXM1(i,1,1,e))
          enddo
       elseif(eq_num.eq.3) then
          do i=1,nxyz
             dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (urst(i,1,1,2)*RYM1(i,1,1,e) +
-     >              urst(i,1,1,3)*SYM1(i,1,1,e) +
-     >              pcheat*urst(i,1,1,4)*TYM1(i,1,1,e))
+     >             (ur(i,1,1)*RYM1(i,1,1,e) +
+     >              us(i,1,1)*SYM1(i,1,1,e) +
+     >              pcheat*ut(i,1,1)*TYM1(i,1,1,e))
          enddo
       elseif(eq_num.eq.4) then
       if (if3d) then
          do i=1,nxyz
             dum(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (urst(i,1,1,2)*RZM1(i,1,1,e) +
-     >              urst(i,1,1,3)*SZM1(i,1,1,e) +
-     >              urst(i,1,1,4)*TZM1(i,1,1,e))
+     >             (ur(i,1,1)*RZM1(i,1,1,e) +
+     >              us(i,1,1)*SZM1(i,1,1,e) +
+     >              ut(i,1,1)*TZM1(i,1,1,e))
          enddo
       endif
       endif
