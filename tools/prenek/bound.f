@@ -403,7 +403,7 @@ c                  ELSE
                   CALL PRS(
      $            'Are you sure you want to keep it this way (A)?$')
 c                 je =jed
-c                 call prexit
+c                 call prexit(0)
 cccc              CALL RES(YESNO,1)
 cccc              IF (YESNO.ne.'y'.and.YESNO.ne.'Y') GOTO 200
                  ENDIF
@@ -1186,7 +1186,7 @@ c-----------------------------------------------------------------------
          call menu(xmouse,ymouse,button,'MIDWAY BREAK')
          if (choice.eq.'ABORT') then
              call mesgen
-             call prexit
+             call prexit(0)
          endif
       else
          item(1)='ACCEPT B.C.''s'
