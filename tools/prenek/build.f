@@ -274,6 +274,9 @@ C        MODEL and CURVE know about it, too
          call redraw_mesh_small
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
+      else if(choice.eq.'SAVE') then
+         call save_mesh
+         call prexit(1)
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
          if (.not.if3d) call chk_right_hand(nel)
@@ -2677,6 +2680,8 @@ c        nchoic = nchoic+1
          ITEM(nchoic)       =       'IMPORT vtx MESH'
          nchoic = nchoic+1
          ITEM(nchoic)       =       'REFLECT MESH '
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'SAVE'
       ENDIF
      
       return   ! End of menu-driven query
@@ -2748,7 +2753,7 @@ c     stop
 
       if (nelt.gt.nel) then
          call prs('FIX CHT CASE FOR find_ee. ABORT.$')
-         call prexit
+         call prexit(0)
       endif
 
       return
@@ -2864,7 +2869,7 @@ c
 
       if (nfail.eq.0) return
       write(6,*) 'FAIL in find_ee: nfail=',nfail
-      call prexit
+      call prexit(0)
 
       end
 c-----------------------------------------------------------------------
@@ -3190,7 +3195,7 @@ c-----------------------------------------------------------------------
 
                call outmatti  (cell,nv,n10,'slfchk',nel,flag)
 
-               call prexit
+               call prexit(0)
                call exitt(flag)
 
             endif
@@ -3286,7 +3291,7 @@ c
     1    format(' ERROR: nic too small in cell2v:',6i10)
          i0 = 0 ! error return code
          i1 = 0 ! error return code
-         call prexit
+         call prexit(0)
       endif
 
       call cell2v1(ic,i0,i1,jc,njc,cell,nv,ncell,type,wk)
