@@ -1,0 +1,35 @@
+#
+# nek parameter file
+#
+[GENERAL] 
+#startFrom = restart.fld 
+stopAt = numSteps #endTime
+numSteps = 1000
+
+dt = -1E-04
+timeStepper = bdf #char #steady
+tOrder = 3
+
+writeControl = timeStep #runTime
+writeInterval = 100
+
+dealiasing = yes
+
+maxCFL = 1
+
+userParam01 = 1 #u0 transational velocity (formerly param(96))
+userParam02 = 0.3 #v0 translational velocity (formerly param(97))
+
+[PROBLEMTYPE]
+#stressFormulation = yes
+
+[PRESSURE]
+preconditioner = schwarz #semg #amg
+residualTol = 1E-09
+residualProj = yes
+
+[VELOCITY]
+residualTol = 1E-12
+residualProj = yes
+density = 1
+viscosity = -20 
