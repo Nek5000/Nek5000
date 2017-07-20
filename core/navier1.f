@@ -3335,7 +3335,7 @@ C
          goto 100
       endif
 
-c     write(6,*) istep,param(99),' CONVOP',ifpert
+c     write(6,*) istep,param(99),' CONVOP',iflin
 c     ip99 = param(99)
 c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
 
@@ -3344,7 +3344,7 @@ c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
       if (param(99).eq.2.or.param(99).eq.3) then  
          call conv1d(conv,fi)  !    use dealiased form
       elseif (param(99).eq.4) then
-         if (ifpert) then
+         if (iflin) then
            call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
          else
            call convect_new (conv,fi,.false.,vxd,vyd,vzd,.true.)

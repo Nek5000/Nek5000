@@ -907,7 +907,7 @@ C******************************************************************
       if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
 
       ! Most likely, the following can be commented out. (pff, 1/6/2010)
-      if (npert.gt.1.or.ifbase)            ifprjp=.false.
+      if (npert.gt.1.or.ifNlin)            ifprjp=.false.
 
       if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
                     call esolver (dp,h1,h2,h2inv,intype)

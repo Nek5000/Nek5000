@@ -88,8 +88,8 @@ c     ifield = 1
       if ( ifflow .and. .not. ifmhd ) if_fltv = .true.
       if ( ifield.eq.1  .and. ifmhd ) if_fltv = .true.
 
-c     Adam Peplinski; to take into account freezing of base flow
-      if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
+c     to take into account freezing of base flow
+      if (.not.ifNlin) if_fltv = .false. ! base-flow frozen
 
       if ( if_fltv ) then
          call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
@@ -107,7 +107,7 @@ c
      $   call filterq(bz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
       endif
 c
-      if (ifpert) then
+      if (iflin) then
         do j=1,npert
 
          ifield = 1

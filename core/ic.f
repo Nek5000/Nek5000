@@ -107,7 +107,7 @@ C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
          endif
  200  continue
 
-      if (ifpert) then
+      if (iflin) then
          ifield=2
          do jp=1,npert
          if (nio.eq.0) write(6,*) 'nekuicP',ifield,jp,iffort(ifield,jp)
@@ -137,7 +137,7 @@ C     Fortran function initial conditions for velocity.
          call nekuic
       endif
 c
-      if (ifpert) then
+      if (iflin) then
          ifield=1
          do jp=1,npert
             if (iffort(ifield,jp)) call nekuic
@@ -267,8 +267,8 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
          enddo
       endif
 c
-c     if (ifpert.and..not.ifdg) then ! Still not DG
-      if (ifpert) then
+c     if (iflin.and..not.ifdg) then ! Still not DG
+      if (iflin) then
          do jp=1,npert
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
@@ -471,7 +471,7 @@ C     Check for restart options
 C
       jp = 0
       DO 2000 ILINE=1,15
-         if (ifpert) jp=iline-1
+         if (iflin) jp=iline-1
          LINE=INITC(ILINE)
          IF (LTRUNC(LINE,132).NE.0) THEN
 C           found a filename
@@ -954,7 +954,7 @@ C
                endif
                if (ifaxis.and.ifgett) 
      $            call copy(t(1,1,1,1,2),sdmp2(1,1),ntott)
-            elseif (ifpert.and.ifile.ge.2) then
+            elseif (iflin.and.ifile.ge.2) then
                j=ifile-1  ! pointer to perturbation field
                if (ifgetu) call copy(vxp(1,j),sdump(1,4),ntotv)
                if (ifgetu) call copy(vyp(1,j),sdump(1,5),ntotv)

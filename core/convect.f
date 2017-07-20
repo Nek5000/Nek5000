@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
 
       else
 
-         if (.not.ifpert) then
+         if (.not.iflin) then
             if (ifcons) then
                call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
             else
