@@ -170,10 +170,13 @@ c     Menu-based module that prompts the user to input corners.
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
+      logical ifautosave
       common /splitt/ enew(nelm),ind(nelm)
 
 
       if (ifmerge) return
+
+      ifautosave=.true.
 
 C     Just in case it didn't get set in setscl
       IFGRID=.TRUE.
@@ -277,6 +280,7 @@ C        MODEL and CURVE know about it, too
       else if(choice.eq.'SAVE') then
          call save_mesh
          call prexit(1)
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
          if (.not.if3d) call chk_right_hand(nel)
@@ -454,7 +458,11 @@ C     Go down one level.  Erase old mesh& draw new
  310        CONTINUE
          ELSE
             CALL PRS('CHOICE:'//CHOICE//'NOT IN MENU$')
+            ifautosave=.false.
          ENDIF
+
+         if (ifautosave) call prexit(2)
+
          goto 1000
  320     CONTINUE
  330     CONTINUE

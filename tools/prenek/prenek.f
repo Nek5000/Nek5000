@@ -582,12 +582,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine wrtpar(cflag)
+      subroutine wrtpar(cflag,cont)
       include 'basics.inc'
 
       CHARACTER FILE*10,CFLAG*10
       CHARACTER*1 s401(40)
+      character*4 ntsave
+      integer cont
       COMMON/INOUT/  IEXT
+      common /fsave/ itsave
 C
 C     Write out parameter stuff
 C     First check B.C.'s to set logical switches
@@ -608,9 +611,24 @@ C              Test for moving mesh in solid
 C
       M=IEXT
       n=m+3
-      filenm = sesion
+
+      if (cont.eq.2) then
+         itsave=itsave+1
+         filenm = 'tmp.          '
+         if (itsave.le.9) then
+            write(ntsave,'(A2,I1)') '00',itsave
+         else if (itsave.le.99) then
+            write(ntsave,'(A1,I2)') '0',itsave
+         else ! assume itsave.le.999
+            write(ntsave,'(I3)') itsave
+         endif
+         filenm(5:7) = ntsave
+         filenm(8:11) = '.rea'
+      else
+         filenm = sesion
+         filenm(m:n) ='.rea'
+      endif
 C
-      FILENM(M:N) ='.rea'
       CALL OPENF(10,FILENM,'NEW',1,IERR)
       CALL PRS('Writing Parameters to file$')
       write(10,*,err=60)'****** PARAMETERS *****'
@@ -1375,18 +1393,19 @@ c-----------------------------------------------------------------------
       subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
-      integer cont ! 0 -> write and end, 1 -> write and continue
+      integer cont ! 0 -> write and end,
+                   ! 1 -> write and continue,
+                   ! 2 -> autosave
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
-
 
       write(6,*) nel,' this is nel in prexit'
       call curcnt  ! Recount number of curved sides
 
       if (cont.eq.0) call cleara
 
-      CALL WRTPAR('FULL DUMP ')
+      call wrtpar('FULL DUMP ',cont)
       sesion(11:14) ='   '
       WRITE(10,'(4G14.6,'' XFAC,YFAC,XZERO,YZERO'')')
      $XFACO,YFACO,XZEROO,YZEROO
@@ -1669,7 +1688,7 @@ C     Sort so that integrals are last
 C
       CLOSE(UNIT=10)
 
-      if (cont.eq.1) return
+      if (cont.ne.0) return
 
       call session_exit
 
@@ -1715,12 +1734,14 @@ c-----------------------------------------------------------------------
       character*80 file_prefix
       COMMON/INOUT/  IEXT
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
+      common /fsave/ itsave
 C
       XPHY0=0.0
       YPHY0=0.0
       ILGRNG=0
       ISCND =0
       IENTRP=0
+      itsave=0
 
       ifmerge        = .false.
       ifconj_merge   = .false.
