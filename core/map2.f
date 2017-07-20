@@ -440,6 +440,7 @@ c-----------------------------------------------------------------------
 
       logical ifma2,ifmap
       integer e,eg,eg0,eg1
+      integer itmp20(20)
 
       ierr   = 0
       ifma2  = .false.
@@ -510,10 +511,11 @@ c-----------------------------------------------------------------------
                if (ierr.ne.0) goto 200
                if (ifbswap) call byte_reverse(wk,nwds,ierr)
 
-               m = eg1 - eg0 
+               m = eg1 - eg0
                do eg=eg1,eg0+1,-1 ! reshuffle array
-                  jj = (m-1)*(mdw-1) + 1 
-                  call icopy(wk(1,m),wk(jj,1),mdw-1)
+                  jj = (m-1)*(mdw-1) + 1
+                  call icopy(itmp20,wk(jj,1),mdw-1)
+                  call icopy(wk(1,m),itmp20 ,mdw-1)
                   m = m - 1
                enddo
             else
@@ -521,6 +523,7 @@ c-----------------------------------------------------------------------
                do eg=eg0+1,eg1
                   m = m+1
                   read(80,*,err=200) (wk(k,m),k=1,mdw-1)
+                  write(912,*) (wk(k,m),k=1,mdw-1)
                enddo
             endif
             
