@@ -13,18 +13,18 @@ c
       logical ifbswap
 
       call setDefaultParam
-
-      call open_re2(ifbswap) ! this will also read the header
-
       if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
       if(ierr .ne. 0) call exitt
-
       call bcastParam
+
+      call read_re2_hdr(ifbswap)
+
       call chkParam
+
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call read_re2(ifbswap) ! read .re2 data 
+      call read_re2_data(ifbswap)
 
       call nekgsync()
 
