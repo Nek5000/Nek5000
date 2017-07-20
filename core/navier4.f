@@ -905,14 +905,11 @@ c     keeping the number of vectors, m, small.
 
       include 'SIZE'   ! For nid/nio
       include 'TSTEP'  ! For istep
-      include 'CTIMER'
 
       real b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
       integer ivar(1)
       character*6 name6
       logical ifwt,ifvec
-
-      etime0 = dnekclock() 
 
       nn = n
       if (ifvec) nn = n*ndim
@@ -957,8 +954,6 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
 c      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
 c    1 format(4x,i7,1p3e13.4,i4,1x,a6,' PROJECT')
 
-
-      tproj = tproj + dnekclock() - etime0
 
       if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
      &                         bb4,baf,ratio,m,ireset
@@ -1146,16 +1141,10 @@ c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
       end
 c-----------------------------------------------------------------------
       subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
-
-      include 'SIZE'
-      include 'CTIMER'
-
       real x(n),b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
       integer ivar(1)
       character*6 name6
       logical ifwt,ifvec
-
-      etime0 = dnekclock()
 
       call proj_get_ivar(m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
 
@@ -1166,8 +1155,6 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
      $              ,n,m,mmx,h1,h2,msk,w,ifwt,ifvec,name6)
 
       ivar(2) = m ! Update number of saved vectors
-
-      tproj = tproj + dnekclock() - etime0
 
       return
       end

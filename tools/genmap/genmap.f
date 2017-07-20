@@ -233,8 +233,6 @@ c     read nekton .rea file and make a mesh
       data    eface / 4 , 2 , 1 , 3 , 5 , 6 /
          
       io = 10
-      ifma2 = .false.
-
       call getreafile('Input .rea / .re2 name:$',ifbinary,io,ierr)
       if (ierr.gt.0) then 
          write(6,'(A)') 'Error no .rea / .re2 file found!'
@@ -258,7 +256,6 @@ c     read nekton .rea file and make a mesh
 
       ierr = 0
       if (ifbinary) then
-         ifma2 = .true.
          ! skip curved side data
          if(wdsizi.eq.8) then 
            call byte_read(rcurve,2,ierr)
@@ -1664,8 +1661,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine dmp_mapfile (pmap,nel,depth,cell,nv,nrnk,npts,noutflow)
 
-      include 'SIZE'
-
       common /sess/ session
       character*80 session
       character*80 fname
@@ -1673,18 +1668,9 @@ c-----------------------------------------------------------------------
       equivalence (fnam1,fname)
 
       integer pmap(nel),depth,cell(nv,nel)
-
       integer d2,e,p0
-      common /arrayi2/ iwrk((1+8)*lelm)
-
-      character*132 hdr
-      character*5   version
-      real*4 test
-      data   test  / 6.54321 /
 
       d2 = 2**depth
-
-      version = '#v001'
 
 c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
 
@@ -1692,40 +1678,19 @@ c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
 
       len = ltrunc(session,80)
       call chcopy(fname,session,80)
-      if (ifma2) then
-         call chcopy(fnam1(len+1),'.ma2',4)
-      else
-         call chcopy(fnam1(len+1),'.map',4)
-      endif
-
+      call chcopy(fnam1(len+1),'.map',4)
       if (nv.ne.2)  then 
+         open (unit=29,file=fname)
          write(6,'(A,A)') 'writing ', fname
-         if (ifma2) then
-            call byte_open(fname,ierr)
-            call blank(hdr,132)
-            write(hdr,1) version,nel,nactive,depth,d2,npts,nrnk,noutflow
-    1       format(a5,7i12)
-            call byte_write(hdr,132/4,ierr)
-            call byte_write(test,1,ierr) ! write the endian discriminator
-         else
-            open (unit=29,file=fname)
-            write(29,2) nel,nactive,depth,d2,npts,nrnk,noutflow
-    2       format(9i12)
-        endif
       endif
 
-      if (ifma2) then
-         do e=1,nel
-            iwrk(1) = pmap(e)-1
-            call icopy(iwrk(2),cell(1,e),nv)
-            call byte_write(iwrk,nv+1,ierr)
-         enddo
-      else
-         do e=1,nel
-            p0 = pmap(e)-1
-            write(29,2) p0,(cell(k,e),k=1,nv)
-         enddo
-      endif
+      write(29,1) nel,nactive,depth,d2,npts,nrnk,noutflow
+    1 format(9i12)
+
+      do e=1,nel
+         p0 = pmap(e)-1
+         write(29,1) p0,(cell(k,e),k=1,nv)
+      enddo
 
       return
       end

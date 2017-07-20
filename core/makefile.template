@@ -40,8 +40,7 @@ byte.o chelpers.o byte_mpi.o postpro.o intp_usr.o \
 cvode_driver.o nek_comm.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
-readat_new.o reader_re2.o \
-finiparser.o iniparser.o dictionary.o
+readat_new.o reader_re2.o finiparser.o iniparser.o dictionary.o
 ################################################################################
 # MXM 
 MXM =  

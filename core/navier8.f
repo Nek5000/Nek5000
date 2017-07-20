@@ -1637,6 +1637,261 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
+c
+      integer gllnid(1),iunsort(1),nelgt,np 
+      integer e,eg
+
+
+      log2p = log2(np)
+      np2   = 2**log2p
+      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+
+         npstar = ivlmax(gllnid,nelgt)+1
+         nnpstr = npstar/np
+         do eg=1,nelgt
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         return
+
+      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
+
+c        Assign fluid elements
+         npstar = max(np,ivlmax(gllnid,nelgv)+1)
+         nnpstr = npstar/np
+         do eg=1,nelgv
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+c        Assign solid elements
+         nelgs  = nelgt-nelgv  ! number of solid elements
+         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
+         nnpstr = npstar/np
+         do eg=nelgv+1,nelgt
+            gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         return
+
+      elseif (nelgv.ne.nelgt) then
+         call exitti
+     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+      endif
+
+
+c  Below is the code for P a non-power of two:
+
+c  Split the sorted gllnid array (read from .map file) 
+c  into np contiguous partitions. 
+
+c  To load balance the partitions in case of mod(nelgt,np)>0 
+c  add 1 contiguous entry out of the sorted list to NODE_i 
+c  where i = np-mod(nelgt,np) ... np
+
+
+      nel   = nelgt/np       ! number of elements per processor
+      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
+      npp   = np - nmod      ! how many paritions of size nel 
+ 
+      ! sort gllnid  
+      call isort(gllnid,iunsort,nelgt)
+
+      ! setup partitions of size nel 
+      k   = 0
+      do ip = 0,npp-1
+         do e = 1,nel  
+            k = k + 1 
+            gllnid(k) = ip
+         enddo
+      enddo
+      ! setup partitions of size nel+1
+      if(nmod.gt.0) then 
+        do ip = npp,np-1
+           do e = 1,nel+1  
+              k = k + 1 
+              gllnid(k) = ip
+           enddo
+        enddo 
+      endif
+
+      ! unddo sorting to restore initial ordering by
+      ! global element number
+      call iswapt_ip(gllnid,iunsort,nelgt)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vert
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      common /ivrtx/ vertex ((2**ldim),lelt)
+      integer vertex
+
+      integer e,eg
+
+      integer icalld
+      save    icalld
+      data    icalld  /0/
+      if (icalld.gt.0) return
+      icalld = 1
+
+      ncrnr = 2**ndim
+
+      call get_vert_map(vertex, ncrnr, nelgt, '.map', ifgfdm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vert_map(vertex, nlv, nel, suffix, ifgfdm)
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      logical ifgfdm
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      integer vertex(nlv,1)
+      character*4 suffix
+
+      parameter(mdw=2+2**ldim)
+      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      common /scrns/ wk(mdw,ndw)   ! room for long ints, if desired
+      integer wk,e,eg,eg0,eg1
+
+      character*132 mapfle
+      character*1   mapfle1(132)
+      equivalence  (mapfle,mapfle1)
+
+      iok = 0
+      if (nid.eq.0) then
+         lfname = ltrunc(reafle,132) - 4
+         call blank (mapfle,132)
+         call chcopy(mapfle,reafle,lfname)
+         call chcopy(mapfle1(lfname+1),suffix,4)
+         if(nio.eq.0) write(6,'(A,A)') ' Reading ', mapfle
+         open(unit=80,file=mapfle,status='old',err=99)
+         read(80,*,err=99) neli,nnzi
+         iok = 1
+      endif
+   99 continue
+      iok = iglmax(iok,1)
+      if (iok.eq.0) goto 999     ! Mapfile not found
+
+      if (nid.eq.0) then
+         neli = iglmax(neli,1)   ! communicate to all procs
+      else
+         neli = 0
+         neli = iglmax(neli,1)   ! communicate neli to all procs
+      endif
+
+      npass = 1 + (neli/ndw)
+      if (npass.gt.np) then
+         if (nid.eq.0) write(6,*) npass,np,neli,ndw,'Error get_vert_map'
+         call exitt
+      endif 
+
+      len = 4*mdw*ndw
+      if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
+      call nekgsync
+
+      if (nid.eq.0) then
+         eg0 = 0
+         do ipass=1,npass
+            eg1 = min(eg0+ndw,neli)
+            m   = 0
+            do eg=eg0+1,eg1
+               m = m+1
+               read(80,*,end=998) (wk(k,m),k=2,mdw)
+               if(.not.ifgfdm)  gllnid(eg) = wk(2,m)  !proc map,  must still be divided
+               wk(1,m)    = eg
+            enddo
+            if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
+            eg0 = eg1
+         enddo
+         close(80)
+         ntuple = m
+      elseif (nid.lt.npass) then
+         call msgwait(msg_id)
+         ntuple = ndw
+      else
+         ntuple = 0
+      endif
+
+c     Distribute and assign partitions
+      if (.not.ifgfdm) then             ! gllnid is already assigned for gfdm
+        lng = isize*neli
+        call bcast(gllnid,lng)
+        call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
+
+c       if(nid.eq.0) then
+c         write(99,*) (gllnid(i),i=1,nelgt)
+c       endif
+c       call exitt
+      endif
+
+      nelt=0 !     Count number of elements on this processor
+      nelv=0
+      do eg=1,neli
+         if (gllnid(eg).eq.nid) then
+            if (eg.le.nelgv) nelv=nelv+1
+            if (eg.le.nelgt) nelt=nelt+1
+         endif
+      enddo
+      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
+
+c     NOW: crystal route vertex by processor id
+
+      do i=1,ntuple
+         eg=wk(1,i)
+         wk(2,i)=gllnid(eg)        ! processor id for element eg
+      enddo
+
+      key = 2  ! processor id is in wk(2,:)
+      call crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
+
+      if (.not.ifgfdm) then            ! no sorting for gfdm?
+         key = 1  ! Sort tuple list by eg := wk(1,:)
+         nkey = 1
+         call crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
+      endif
+
+      iflag = 0
+      if (ntuple.ne.nelt) then
+         write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FAIL'
+         write(6,*) 'Check that .map file and .rea file agree'
+         iflag=1
+      else
+         nv = 2**ndim
+         do e=1,nelt
+            call icopy(vertex(1,e),wk(3,e),nv)
+         enddo
+      endif
+
+      iflag = iglmax(iflag,1)
+      if (iflag.gt.0) then
+         do mid=0,np-1
+            call nekgsync
+            if (mid.eq.nid)
+     $      write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FB'
+            call nekgsync
+         enddo
+         call nekgsync
+         call exitt
+      endif
+
+      return
+
+  999 continue
+      if (nid.eq.0) write(6,*) 'ABORT: Could not find map file ',mapfle
+      call exitt
+
+  998 continue
+      if (nid.eq.0) write(6,*)ipass,npass,eg0,eg1,mdw,m,eg,'get v fail'
+      call exitt0  ! Emergency exit
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine irank_vecn(ind,nn,a,m,n,key,nkey,aa)
 c

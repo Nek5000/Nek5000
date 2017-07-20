@@ -1909,7 +1909,7 @@ c-----------------------------------------------------------------------
  
       test2 = bytetest
       call byte_reverse(test2,1,ierr)
-      if (nid.eq.0 .and. loglevel.gt.2) 
+      if (nid.eq.0) 
      $   write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
       end

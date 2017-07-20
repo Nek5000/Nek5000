@@ -51,6 +51,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+         write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     &                             etims0-etime,' sec'
  12      format(1X,A,4I12,/,/)
       endif 
 
