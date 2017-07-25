@@ -172,11 +172,9 @@ c     Menu-based module that prompts the user to input corners.
       logical iftmp
       logical ifautosave
       common /splitt/ enew(nelm),ind(nelm)
-
+      common /fsave/ itsave
 
       if (ifmerge) return
-
-      ifautosave=.true.
 
 C     Just in case it didn't get set in setscl
       IFGRID=.TRUE.
@@ -218,6 +216,8 @@ C     ! ??!!
 C     
  1000 CONTINUE
 
+      ifautosave = .true. ! set to .false. to disable autosave
+
       call gencen
       call mkside
 
@@ -249,6 +249,7 @@ C     Turn on Keypad
          if (ierr.eq.1) then
             call drawel(-nel)
             nel=nel-1
+            ifautosave = .false.
          endif
 
       ELSE IF(CHOICE.EQ.'CEILING') THEN
@@ -277,9 +278,23 @@ C        MODEL and CURVE know about it, too
          call redraw_mesh_small
       ELSE IF(CHOICE.EQ.'REFLECT MESH')THEN
          CALL REFLECT_MESH
-      else if(choice.eq.'SAVE') then
+      else if (choice.eq.'SAVE') then
          call save_mesh
          call prexit(1)
+         call prs('Finished saving$')
+         ifautosave = .false.
+      else if (choice.eq.'UNDO') then
+         ! undo code here
+         if (itsave.gt.0) then
+            ifundo = .true.
+            call delete
+            call imp_mesh(.false.)
+            call redraw_mesh_small
+            ifundo = .false.
+         else
+            call prs('ERROR: Already at the original mesh$')
+            write(*,*) '(build)itsave=',itsave
+         endif
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
          call imp_mesh_vtk
@@ -313,17 +328,21 @@ C     Only floor of elevator hilighted during modify
          do 160 i=1,nel
             call drawis(isrt(i))
  160     continue
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
          call redraw_mesh
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
          call setzoom
          call redraw_mesh
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'SET GRID')THEN
          call setgrd
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'Edit Mesh')THEN
          call mesh_edit
       ELSE IF(CHOICE.EQ.'DEFINE OBJECT')THEN
          CALL SETOBJ
+         ifautosave = .false.
       ELSE IF(CHOICE.EQ.'END    ELEMENTS')THEN
 C      WHAT ELSE TO DO WHEN 2-D PROBLEM?
          IF(NEL.EQ.0) THEN
@@ -1135,11 +1154,31 @@ c-----------------------------------------------------------------------
       save import_count
       data import_count /0/
 
+      character*3 ntsave
+
+      common /fsave/ itsave
+
       real    xyzbox(6)
 
-      call prs('input name of new .rea file$')
       call blank(fname,70)
-      call res  (fname,70)
+
+      write(*,*) '(imp_mesh)itsave=',itsave
+      if (ifundo) then
+         itsave=itsave-1
+         if (itsave.le.9) then
+            write(ntsave,'(A2,I1)') '00',itsave
+         else if (itsave.le.99) then
+            write(ntsave,'(A1,I2)') '0',itsave
+         else ! assume itsave.le.999
+            write(ntsave,'(I3)') itsave
+         endif
+         write(fname,'(A4,A3)') 'tmp.',ntsave
+      else
+         call prs('input name of new .rea file$')
+         call res  (fname,70)
+      endif
+
+      write(*,*) 'fname=',fname
 
       ifdisplace  = .false.
       iftranslate = .false.
@@ -1148,6 +1187,11 @@ c-----------------------------------------------------------------------
        call res  (ans,1)
        if (ans.eq.'y'.or.ans.eq.'Y') ifdisplace = .true.
        if (ans.eq.'t'.or.ans.eq.'T') iftranslate=.true.
+      endif
+
+      if (ifundo) then
+         ifdisplace = .true.
+         iftranslate = .false.
       endif
 
       if (indx1(fname,'.rea',4).eq.0) then !  Append .rea, if not present
@@ -2690,6 +2734,8 @@ c        nchoic = nchoic+1
          ITEM(nchoic)       =       'REFLECT MESH '
          nchoic = nchoic+1
          ITEM(nchoic)       =       'SAVE'
+         nchoic = nchoic+1
+         ITEM(nchoic)       =       'UNDO'
       ENDIF
      
       return   ! End of menu-driven query
@@ -3516,6 +3562,15 @@ c-----------------------------------------------------------------------
 
       if (nel.eq.0) call prs('ERROR: No elements to delete$')
       if (nel.eq.0) return
+
+      if (ifundo) then
+         nelt = nel
+         do jel=1,nelt
+            call delel(jel)
+         enddo
+         nel = 0
+         return
+      endif
 
 C     Find out which element to delete
 

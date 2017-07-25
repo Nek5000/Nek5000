@@ -182,6 +182,8 @@ c-----------------------------------------------------------------------
       subroutine build_options
       include 'basics.inc'
 
+      character*32 cpcommand
+
       common /cfilold/ filold
       character filold*17
 
@@ -295,6 +297,9 @@ c           GO TO 1080
             GOTO 310
          endif
       endif
+
+      write(cpcommand,'(A3,A17,A12)') 'cp ',filenm,' tmp.000.rea'
+      call system(cpcommand)
 
       return
       end
@@ -614,6 +619,7 @@ C
 
       if (cont.eq.2) then
          itsave=itsave+1
+         write(*,*) '(wrtpar)itsave=',itsave
          filenm = 'tmp.          '
          if (itsave.le.9) then
             write(ntsave,'(A2,I1)') '00',itsave
@@ -630,7 +636,7 @@ C
       endif
 C
       CALL OPENF(10,FILENM,'NEW',1,IERR)
-      CALL PRS('Writing Parameters to file$')
+      if (cont.ne.2) call prs('Writing Parameters to file$')
       write(10,*,err=60)'****** PARAMETERS *****'
       WRITE(10,*,err=60)VNEKTON,' NEKTON VERSION '
       WRITE(10,*,err=60)NDIM,   ' DIMENSIONAL RUN'
