@@ -40,6 +40,9 @@ C> @file ausm.f Riemann solvers and other rocflu miscellany
 !
 ! ******************************************************************************
 
+C> \ingroup isurf
+C> @{
+C> Computes inviscid numerical surface flux from AUSM+ Riemann solver
       SUBROUTINE AUSM_FluxFunction(ntot,nx,ny,nz,nm,fs,rl,ul,vl,wl,pl,
      >                         al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
 
@@ -130,7 +133,7 @@ C> @file ausm.f Riemann solvers and other rocflu miscellany
          flx(i,5)=(af*(mfp*rl(i)*Hl   +mfm*rr(i)*Hr) + pf*fs(i))*
      >            nm(i)
       enddo
-
+C> @}
       return
       END
 

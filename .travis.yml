@@ -16,10 +16,18 @@ env:
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
 #    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+#   - TEST_CASE=Eddy_Rich::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+
+    - TEST_CASE=Ethier::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Ethier::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
     - TEST_CASE=KovStState::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
     - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+
+    - TEST_CASE=ConjHt::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
+    # - TEST_CASE=ConjHt::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
     # - TEST_CASE=VarVis::test_PnPn_Serial    IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
     # - TEST_CASE=VarVis::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length

@@ -258,11 +258,11 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
          do ifield=3,nfield
-            call dssum(t(1,1,1,1,i-1),nx1,ny1,nz1)
+            call dssum(t(1,1,1,1,ifield-1),nx1,ny1,nz1)
             if(iftmsh(ifield)) then
-              call col2 (t(1,1,1,1,i-1),tmult,ntott)
+              call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
             else
-              call col2 (t(1,1,1,1,i-1),vmult,ntotv)
+              call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
             endif
          enddo
       endif
@@ -273,11 +273,18 @@ c     if (ifpert.and..not.ifdg) then ! Still not DG
             ifield = 1
             call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
             call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
-            ifield = 2
 
 c           note... must be updated for addl pass. scal's. pff 4/26/04
-            if (.not.ifdg) call dssum(tp(1,1,jp),nx1,ny1,nz1)
-            if (.not.ifdg) call col2 (tp(1,1,jp),tmult,ntotv)
+            if (.not.ifdg) then
+               do ifield=2,nfield
+                  call dssum(tp(1,ifield-1,jp),nx1,ny1,nz1)
+                  if(iftmsh(ifield)) then
+                     call col2 (tp(1,ifield-1,jp),tmult,ntott)
+                  else
+                     call col2 (tp(1,ifield-1,jp),vmult,ntotv)
+                  endif
+               enddo
+            endif
 
             vxmax = glamax(vxp(1,jp),ntotv)
             vymax = glamax(vyp(1,jp),ntotv)
@@ -1902,7 +1909,7 @@ c-----------------------------------------------------------------------
  
       test2 = bytetest
       call byte_reverse(test2,1,ierr)
-      if (nid.eq.0) 
+      if (nid.eq.0 .and. loglevel.gt.2) 
      $   write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
       end

@@ -182,6 +182,8 @@ c-----------------------------------------------------------------------
       subroutine build_options
       include 'basics.inc'
 
+      character*32 cpcommand
+
       common /cfilold/ filold
       character filold*17
 
@@ -296,6 +298,9 @@ c           GO TO 1080
          endif
       endif
 
+      write(cpcommand,'(A3,A17,A12)') 'cp ',filenm,' tmp.000.rea'
+      call system(cpcommand)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -380,7 +385,7 @@ c     ITEM(NCHOIC)='RSB'
 
       IF(choice.eq.'EXIT') then
 C        Exit Prenek
-         call prexit
+         call prexit(0)
 c        call rsb_xxt_set(2,nel)
          call session_exit
 c     elseif(choice.eq.'RSB') then
@@ -582,12 +587,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine wrtpar(cflag)
+      subroutine wrtpar(cflag,cont)
       include 'basics.inc'
 
       CHARACTER FILE*10,CFLAG*10
       CHARACTER*1 s401(40)
+      character*4 ntsave
+      integer cont
       COMMON/INOUT/  IEXT
+      common /fsave/ itsave
 C
 C     Write out parameter stuff
 C     First check B.C.'s to set logical switches
@@ -608,11 +616,27 @@ C              Test for moving mesh in solid
 C
       M=IEXT
       n=m+3
-      filenm = sesion
+
+      if (cont.eq.2) then
+         itsave=itsave+1
+         write(*,*) '(wrtpar)itsave=',itsave
+         filenm = 'tmp.          '
+         if (itsave.le.9) then
+            write(ntsave,'(A2,I1)') '00',itsave
+         else if (itsave.le.99) then
+            write(ntsave,'(A1,I2)') '0',itsave
+         else ! assume itsave.le.999
+            write(ntsave,'(I3)') itsave
+         endif
+         filenm(5:7) = ntsave
+         filenm(8:11) = '.rea'
+      else
+         filenm = sesion
+         filenm(m:n) ='.rea'
+      endif
 C
-      FILENM(M:N) ='.rea'
       CALL OPENF(10,FILENM,'NEW',1,IERR)
-      CALL PRS('Writing Parameters to file$')
+      if (cont.ne.2) call prs('Writing Parameters to file$')
       write(10,*,err=60)'****** PARAMETERS *****'
       WRITE(10,*,err=60)VNEKTON,' NEKTON VERSION '
       WRITE(10,*,err=60)NDIM,   ' DIMENSIONAL RUN'
@@ -1372,20 +1396,22 @@ c      WRITE(10,'(A70)',ERR=60)  LINE
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine prexit
+      subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
+      integer cont ! 0 -> write and end,
+                   ! 1 -> write and continue,
+                   ! 2 -> autosave
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
 
-
       write(6,*) nel,' this is nel in prexit'
       call curcnt  ! Recount number of curved sides
 
+      if (cont.eq.0) call cleara
 
-      CALL CLEARA
-      CALL WRTPAR('FULL DUMP ')
+      call wrtpar('FULL DUMP ',cont)
       sesion(11:14) ='   '
       WRITE(10,'(4G14.6,'' XFAC,YFAC,XZERO,YZERO'')')
      $XFACO,YFACO,XZEROO,YZEROO
@@ -1668,6 +1694,8 @@ C     Sort so that integrals are last
 C
       CLOSE(UNIT=10)
 
+      if (cont.ne.0) return
+
       call session_exit
 
       return
@@ -1712,12 +1740,14 @@ c-----------------------------------------------------------------------
       character*80 file_prefix
       COMMON/INOUT/  IEXT
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
+      common /fsave/ itsave
 C
       XPHY0=0.0
       YPHY0=0.0
       ILGRNG=0
       ISCND =0
       IENTRP=0
+      itsave=0
 
       ifmerge        = .false.
       ifconj_merge   = .false.
@@ -2926,6 +2956,39 @@ c        kludge city
          GOTO 10
       endif
 C
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine save_mesh
+
+      include 'basics.inc'
+
+      character*50 p1
+      character*70 p2
+
+      common /inout/ iext
+
+      p1 = ' Choose a session name for this save (default:'
+      write(p2,'(A50,A,A2)') p1,sesion,')$'
+
+      call prs(p2)
+      call res(line,70)
+
+      if (line.ne.'          ') then
+         call blank(sesion,14)
+         sesion=line
+         do i=10,1,-1
+             if(sesion(i:i).ne.' ')then
+                lastch=i
+                go to 1
+             endif
+         enddo
+1        continue
+         iext=lastch+1
+         open(unit=4,file='session.name')
+         write(4,'(a14)') sesion
+      endif
+
       return
       end
 c-----------------------------------------------------------------------

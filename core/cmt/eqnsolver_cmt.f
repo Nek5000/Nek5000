@@ -1,5 +1,7 @@
 C> @file eqnsolver_cmt.f Routines for entire terms on RHS. Mostly volume integrals
 
+C> \ingroup diffhvol
+C> @{
 C> Volume integral for diffusive terms. Compute \f$\mathbf{H}^d\f$
 C> and store it for one element. Store faces of \f$\mathbf{H}^d\f$ for IGU. 
       subroutine viscous_cmt(e,eq)
@@ -38,11 +40,14 @@ C> and store it for one element. Store faces of \f$\mathbf{H}^d\f$ for IGU.
 ! volume integral involving "DG-ish" stiffness operator K
       call half_iku_cmt(res1(1,1,1,e,eq),diffh,e)
 
+C> @}
       return
       end
 
 !-----------------------------------------------------------------------
 
+C> \ingroup vsurf
+C> @{
 C> \f$G^T U\f$
       subroutine igtu_cmt(qminus,ummcu,hface)
 
@@ -154,6 +159,8 @@ C> \f$G^T U\f$
          call add2(res1(1,1,1,1,eq),gradm1_t_overwrites,nvol)
 133      continue
       enddo ! equation loop
+
+C> @}
 
       return
       end

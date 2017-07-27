@@ -86,6 +86,7 @@ C     Test timer accuracy
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
          WRITE(6,'(A,1pE8.2)') ' Timer accuracy      : ',edif
+         WRITE(6,*) ' '
       endif
 
       call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
@@ -495,12 +496,9 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
       include 'mpif.h'
 
-      real*4 papi_mflops
-      integer*8 papi_flops
-
       write(6,*) 'Emergency exit'
 
-      call print_stack()
+c      call print_stack()
       call flush_io
 
       call mpi_finalize (ierr)
@@ -556,7 +554,7 @@ c     Communicate unhappiness to the other session
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
          write(6,*) ' '
-         call print_stack()
+c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'

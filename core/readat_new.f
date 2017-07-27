@@ -13,18 +13,18 @@ c
       logical ifbswap
 
       call setDefaultParam
-
-      call open_re2(ifbswap) ! this will also read the header
-
       if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
       if(ierr .ne. 0) call exitt
-
       call bcastParam
+
+      call read_re2_hdr(ifbswap)
+
       call chkParam
+
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call read_re2(ifbswap) ! read .re2 data 
+      call read_re2_data(ifbswap)
 
       call nekgsync()
 
@@ -305,7 +305,7 @@ c set parameters
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
 
-      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
       if (index(c_out,'AMG') .gt. 0) param(40) = 1
 
@@ -469,6 +469,15 @@ c set mesh-field mapping
         if(i_out .eq. 1) iftmsh(2) = .true.
       endif
 
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':conjugateHeatTransfer'
+         call finiparser_getBool(i_out,txt,ifnd)
+         if(ifnd .eq. 1) then
+           iftmsh(i+2) = .false.
+           if(i_out .eq. 1) iftmsh(i+2) = .true.
+         endif
+      enddo
+
 c set output flags
       call finiparser_getBool(i_out,'mesh:writeToFieldFile',ifnd) 
       if(ifnd .eq. 1) then
@@ -521,7 +530,7 @@ c set properties
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,1) = d_out 
          if(cpfld(2+i,1) .lt.0.0) cpfld(2+i,1)  = -1.0/cpfld(2+i,1)
-         write(txt,"('scalar',i2.2,a)") i,':rho'
+         write(txt,"('scalar',i2.2,a)") i,':density'
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) cpfld(2+i,2) = d_out 
       enddo

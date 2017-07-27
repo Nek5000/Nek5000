@@ -115,7 +115,7 @@ if [ -f "`which $F77comp 2>/dev/null`" ]; then
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show 2>/dev/null 1>.tmp || true`
+  F77comp_=`$F77 -show | head -1 2>/dev/null 1>.tmp || true`
   F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
