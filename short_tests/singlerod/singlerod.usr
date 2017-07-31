@@ -68,8 +68,8 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
       integer e,f,eg
 
-      ux   = 0.0
-      uy   = 0.0
+      ux   = cos(x)*cos(y)*cos(z)
+      uy   = sin(x)*sin(y)*sin(z)
       uz   = 1.0
       temp = 0.0
 
@@ -79,6 +79,8 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+
+      ifxyo = .true.
 
       return
       end
@@ -93,6 +95,8 @@ c-----------------------------------------------------------------------
       subroutine usrdat2  ! This routine to modify mesh coordinates
       include 'SIZE'
       include 'TOTAL'
+
+      param(66) = 0
 
       return
       end

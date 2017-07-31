@@ -87,6 +87,9 @@ c
 c
 c proportional to LELT
 c
+      integer ibc_acc(6,lelt)
+      common /inputi/ ibc_acc
+
       real xc(8,lelt),yc(8,lelt),zc(8,lelt)
      $    ,bc(5,6,lelt,0:ldimt1)
      $    ,curve(6,12,lelt)

@@ -1233,6 +1233,19 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
+      function glasum (x,n)
+      DIMENSION X(1)
+      DIMENSION TMP(1),WORK(1)
+      TSUM = 0.
+      DO 100 I=1,N
+         TSUM = TSUM+ABS(X(I))
+ 100  CONTINUE
+      TMP(1)=TSUM
+      CALL GOP(TMP,WORK,'+  ',1)
+      GLSUM = TMP(1)
+      return
+      END
+c-----------------------------------------------------------------------
       real function glamax(a,n)
       REAL A(1)
       DIMENSION TMP(1),WORK(1)
@@ -2047,7 +2060,7 @@ c-----------------------------------------------------------------------
       real tmp, tmp_ptr(1),work(1)
 
 !$ACC DATA COPYOUT(tmp_ptr) CREATE(work) PRESENT(x)
-!$ACC KERNELS 
+!$ACC KERNELS
       tmp = 0.
       do i=1,n
          tmp = tmp+x(i)
@@ -2058,6 +2071,27 @@ c-----------------------------------------------------------------------
 !$ACC END DATA
 
       glsum_acc = tmp_ptr(1)
+
+      return
+      END
+c-----------------------------------------------------------------------
+      function glasum_acc (x,n)
+      real x(n)
+      integer n
+      real tmp, tmp_ptr(1),work(1)
+
+!$ACC DATA COPYOUT(tmp_ptr) CREATE(work) PRESENT(x)
+!$ACC KERNELS
+      tmp = 0.
+      do i=1,n
+         tmp = tmp+abs(x(i))
+      enddo
+      tmp_ptr(1) = tmp
+!$ACC END KERNELS
+      call gop_acc(tmp_ptr,work,'+  ',1)
+!$ACC END DATA
+
+      glasum_acc = tmp_ptr(1)
 
       return
       END
@@ -2231,7 +2265,7 @@ c-----------------------------------------------------------------------
       subroutine add2s1_acc(a,b,c1,n)
       real a(n),b(n),c1     
   
-!$ACC PARALLEL LOOP PRESENT(a,b,c1)
+!$ACC PARALLEL LOOP PRESENT(a,b)
       do i=1,n
         a(i)=c1*a(i)+b(i)
       enddo    
@@ -2271,6 +2305,16 @@ c-----------------------------------------------------------------------
 !$ACC END PARALLEL
       return
       end
+c-----------------------------------------------------------------------
+      subroutine chsign_acc(a,n)
+      REAL A(n)
+C
+      DO I=1,N
+         A(I) = -A(I)
+      END DO
+      return
+      END
+C
 c-----------------------------------------------------------------------
 
 
