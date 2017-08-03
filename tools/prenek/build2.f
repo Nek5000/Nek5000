@@ -4009,7 +4009,7 @@ c-----------------------------------------------------------------------
 
       write(6,*) e0,e1,nrefine,' in skin',nel,rt,r0
 
-c     call prexit  ! Definitely messed up
+c     call prexit(0)  ! Definitely messed up
 
       do e=e0,e1
          do f=1,4
@@ -4306,7 +4306,7 @@ c     enddo
       if (ifsix) then
          call sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
          call sc_set_bc_etc
-c        call prexit
+c        call prexit(0)
       endif
 
       return

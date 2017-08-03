@@ -380,7 +380,7 @@ c     ITEM(NCHOIC)='RSB'
 
       IF(choice.eq.'EXIT') then
 C        Exit Prenek
-         call prexit
+         call prexit(0)
 c        call rsb_xxt_set(2,nel)
          call session_exit
 c     elseif(choice.eq.'RSB') then
@@ -1372,9 +1372,10 @@ c      WRITE(10,'(A70)',ERR=60)  LINE
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine prexit
+      subroutine prexit(cont)
       include 'basics.inc'
       CHARACTER CTEMP*80,CHAR1*1,CHTEMP*3
+      integer cont ! 0 -> write and end, 1 -> write and continue
 c      LOGICAL IFMVBD
       COMMON/FORTRN/ IDRIVF,INITCS,IPFLAG,IFFLAG,IQFLAG
       COMMON/INOUT/  IEXT
@@ -1383,8 +1384,8 @@ c      LOGICAL IFMVBD
       write(6,*) nel,' this is nel in prexit'
       call curcnt  ! Recount number of curved sides
 
+      if (cont.eq.0) call cleara
 
-      CALL CLEARA
       CALL WRTPAR('FULL DUMP ')
       sesion(11:14) ='   '
       WRITE(10,'(4G14.6,'' XFAC,YFAC,XZERO,YZERO'')')
@@ -1667,6 +1668,8 @@ C     Sort so that integrals are last
       WRITE(10,'(2X,I6,A17)')NPOBJS, ' Point   Objects '
 C
       CLOSE(UNIT=10)
+
+      if (cont.eq.1) return
 
       call session_exit
 
@@ -2926,6 +2929,39 @@ c        kludge city
          GOTO 10
       endif
 C
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine save_mesh
+
+      include 'basics.inc'
+
+      character*50 p1
+      character*70 p2
+
+      common /inout/ iext
+
+      p1 = ' Choose a session name for this save (default:'
+      write(p2,'(A50,A,A2)') p1,sesion,')$'
+
+      call prs(p2)
+      call res(line,70)
+
+      if (line.ne.'          ') then
+         call blank(sesion,14)
+         sesion=line
+         do i=10,1,-1
+             if(sesion(i:i).ne.' ')then
+                lastch=i
+                go to 1
+             endif
+         enddo
+1        continue
+         iext=lastch+1
+         open(unit=4,file='session.name')
+         write(4,'(a14)') sesion
+      endif
+
       return
       end
 c-----------------------------------------------------------------------
