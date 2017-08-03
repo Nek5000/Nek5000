@@ -20,17 +20,16 @@
     his Ph. D. thesis "Towards Robust Algebraic Multigrid Methods for 
     Nonsymmetric Problems".
 
-    - Last update: 25 January, 2017
+    - Last update: 30 June, 2017
 */
 
 int main(int argc, char *argv[])
 {   
-    /* Get user's input for coarsening strategy */
-    int coars_strat, ret;
-    char scoars[30];
-
+    /* Get user's input for the setup */
+    int coars_strat, interp_strat, ret;
     setbuf(stdout, NULL);
 
+    /* Coarsening strategy */
     printf("Choose a coarsening method. Available options are:\n");
     printf(" - 0: CLJP,\n");
     printf(" - 3: Ruege-Stuben (default),\n");
@@ -40,6 +39,7 @@ int main(int argc, char *argv[])
     printf(" - 21: CGC,\n");
     printf(" - 22: CGC-E.\n");
     printf("Choice: ");
+    char scoars[30];
     fgets(scoars, sizeof scoars, stdin);
     ret = sscanf(scoars, "%d", &coars_strat);
     if (ret == -1)
@@ -65,6 +65,48 @@ int main(int argc, char *argv[])
     {
         maxlvls = 30; // default
     }
+
+    /* Interpolation strategy */
+    printf("Choose an interpolation method. Available options are:\n");
+    printf(" - 0: classical modified interpolation (default),\n");
+    printf(" - 1: LS interpolation,\n");
+    printf(" - 2: classical modified interpolation for hyperbolic PDEs,\n");
+    printf(" - 3: direct interpolation,\n");
+    printf(" - 4: multipass interpolation,\n");
+    printf(" - 5: multipass interpolation (with separation of weights),\n");
+    printf(" - 6: extended + i interpolation,\n");
+    printf(" - 7: extended + i (if no common C neighbour) interpolation,\n");
+    printf(" - 8: standard interpolation,\n");
+    printf(" - 9: standard interpolation (with separation of weights),\n");
+    printf(" - 10: classical block interpolation,\n");
+    printf(" - 11: classical block interpolation with diagonalized diagonal blocks,\n");
+    printf(" - 12: FF interpolation,\n");
+    printf(" - 13: FF1 interpolation,\n");
+    printf(" - 14: extended interpolation,\n");
+    printf("Choice: ");
+    char sinterp[30];
+    fgets(sinterp, sizeof sinterp, stdin);
+    ret = sscanf(sinterp, "%d", &interp_strat);
+    if (ret == -1)
+    {
+        interp_strat = 0; // default
+    }
+    if (interp_strat == 0) printf("classical modified interpolation\n");
+    else if (interp_strat == 1) printf("LS interpolation\n");
+    else if (interp_strat == 2) printf("classical modified interpolation for hyperbolic PDEs\n");
+    else if (interp_strat == 3) printf("direct interpolation\n");
+    else if (interp_strat == 4) printf("multipass interpolation\n");
+    else if (interp_strat == 5) printf("multipass interpolation (with separation of weights)\n");
+    else if (interp_strat == 6) printf("extended + i interpolation\n");
+    else if (interp_strat == 7) printf("extended + i (if no common C neighbour) interpolation\n");
+    else if (interp_strat == 8) printf("standard interpolation\n");
+    else if (interp_strat == 9) printf("standard interpolation (with separation of weights)\n");
+    else if (interp_strat == 10) printf("classical block interpolation\n");
+    else if (interp_strat == 11) printf("classical block interpolation with diagonalized diagonal blocks\n");
+    else if (interp_strat == 12) printf("FF interpolation\n");
+    else if (interp_strat == 13) printf("FF1 interpolation\n");
+    else if (interp_strat == 14) printf("extended interpolation\n");
+    else {printf("Not a valid choice.\n"); exit(0);}
 
     /* Smoother tolerance */
     double tol;
@@ -191,7 +233,9 @@ int main(int argc, char *argv[])
  
     /* Set parameters (See Reference Manual for more parameters) */
     HYPRE_BoomerAMGSetPrintLevel(solver, print_level);
+    //    HYPRE_BoomerAMGSetOldDefault(solver);
     HYPRE_BoomerAMGSetCoarsenType(solver, coars_strat);
+    HYPRE_BoomerAMGSetInterpType(solver, interp_strat); 
     HYPRE_BoomerAMGSetMaxLevels(solver, maxlvls);  // maximum number of levels
     HYPRE_BoomerAMGSetMaxCoarseSize (solver, 1);
 

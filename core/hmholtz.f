@@ -672,7 +672,7 @@ c     set tolerance for temp+scalars
 c     p20<0: use toli tolin 
 c     p20=0: use same tol as for vel
 c     p20>0: use specified tol for temp
-      if (ifield.gt.1 .and. param(20).gt.0) tol=abs(param(20))
+      if (ifield.gt.1 .and. abs(param(20)).le.1e-1) tol=abs(param(20))
       if (ifield.gt.1 .and. param(20).lt.0) tol=abs(tin)
 
 c     overrule tolerance for velocity

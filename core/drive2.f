@@ -1174,6 +1174,7 @@ c
       tadvc=0.0
       ttime=0.0
       tcvf =0.0
+      tproj=0.0
 C
       return
       end
@@ -1351,9 +1352,17 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
-c        Properties timings
+c        Resiual projection timings
+         pproj=tproj/tttstp
+         write(6,*) 'proj time',0,tproj,pproj
+
+c        Variable properties timings
          pspro=tspro/tttstp
-         write(6,*) 'spro time',nspro,tspro,pspro
+         write(6,*) 'usvp time',nspro,tspro,pspro
+
+c        User q and f timings
+         pusfq=tusfq/tttstp
+         write(6,*) 'usfq time',0,tusfq,pusfq
 
 c        CVODE solver timings
          pcvf=tcvf/tttstp
