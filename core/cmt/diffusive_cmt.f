@@ -142,8 +142,8 @@ C> \f$\nu_s \nabla \rho\f$, \f$\nu_s \left(\nabla \rho \right) \otimes \mathbf{u
 C> and \f$\nu_s \nabla \left(\rho e\right)\f$.  \f$\nu_s=0\f$ for Navier-Stokes
       call fluxj_evm(flux,du,e,eq)
 
-! no idea where phi goes
-      if (eq .lt. toteq) call col2(flux,phig(1,1,1,e),nx1*ny1*nz1)
+! no idea where phi goes. put it out front
+      call col2(flux,phig(1,1,1,e),nx1*ny1*nz1)
 
 C> @}
       return
@@ -251,7 +251,7 @@ C> the compressible Navier-Stokes equations (NS).
 
 ! diffusion due to grad rho
       if (eq .eq. 1) then
-         do j=1,ndim ! flux+= viscscr*nu_s*grad (phig*rho)
+         do j=1,ndim ! flux+= viscscr*nu_s*grad (rho)
             call addcol3(flux(1,j),vdiff(1,1,1,e,inus),du(1,1,j),n)
          enddo
       else
@@ -271,7 +271,6 @@ C> the compressible Navier-Stokes equations (NS).
                call vdot2(viscscr,vx(1,1,1,e),vy(1,1,1,e),
      >                            vx(1,1,1,e),vy(1,1,1,e),n)
             endif
-            call col2(viscscr,phig(1,1,1,e),n)
             call col2(viscscr,vdiff(1,1,1,e,inus),n)
             do j=1,ndim
                call addcol3(flux(1,j),du(1,1,j),viscscr,n)
@@ -299,6 +298,7 @@ C> the compressible Navier-Stokes equations (NS).
       subroutine half_iku_cmt(res,diffh,e)
       include 'SIZE'
       include 'MASS'
+      include 'CMTDATA'
 ! diffh has D AgradU. half_iku_cmt applies D^T BM1 to it and increments
 ! the residual res with the result
       integer e ! lopsided. routine for one element must reference bm1
@@ -308,6 +308,7 @@ C> the compressible Navier-Stokes equations (NS).
 
       do j=1,ndim
          call col2(diffh(1,j),bm1(1,1,1,e),n)
+         call col2(diffh(1,j),phig(1,1,1,e),n)
       enddo
 
 !     const=-1.0 ! I0
