@@ -50,13 +50,13 @@ nekmpi ethier 2    # to run on 2 ranks
 
 **Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
 
-## Examples
+## Example Problems
 
 [Here](https://github.com/Nek5000/NekExamples) you'll find various examples to play with.
 
 ## Documentation
 
-Visit our [website](https://nek5000.mcs.anl.gov/documentation)
+Visit our [User's Guide](http://nek5000.github.io/NekDoc/Nek_users.pdf).
 
 ## Troubleshooting
 
