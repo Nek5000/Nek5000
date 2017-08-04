@@ -143,7 +143,7 @@ C> and \f$\nu_s \nabla \left(\rho e\right)\f$.  \f$\nu_s=0\f$ for Navier-Stokes
       call fluxj_evm(flux,du,e,eq)
 
 ! no idea where phi goes. put it out front
-      call col2(flux,phig(1,1,1,e),nx1*ny1*nz1)
+!     call col2(flux,phig(1,1,1,e),nx1*ny1*nz1)
 
 C> @}
       return
@@ -308,7 +308,7 @@ C> the compressible Navier-Stokes equations (NS).
 
       do j=1,ndim
          call col2(diffh(1,j),bm1(1,1,1,e),n)
-         call col2(diffh(1,j),phig(1,1,1,e),n)
+!        call col2(diffh(1,j),phig(1,1,1,e),n) ! still no idea where phi goes
       enddo
 
 !     const=-1.0 ! I0
