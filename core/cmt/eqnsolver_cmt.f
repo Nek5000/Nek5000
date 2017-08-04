@@ -494,9 +494,7 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
       endif ! eqn nums 2-4
 
 c     multiply by pressure
-      do i=1,nxyz
-         rdumz(i,1,1) = rdumz(i,1,1)*pr(i,1,1,e)
-      enddo
+      call col2(rdumz,pr(1,1,1,e),nxyz)
 
 c     gradphi.tauij
       do i=1,nxyz !   ????????????SiGN??????
