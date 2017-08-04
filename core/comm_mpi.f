@@ -86,6 +86,7 @@ C     Test timer accuracy
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
          WRITE(6,'(A,1pE8.2)') ' Timer accuracy      : ',edif
+         WRITE(6,*) ' '
       endif
 
       call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance

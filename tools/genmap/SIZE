@@ -4,3 +4,6 @@ c       parameter(lelm=3 000 000)
 
        common/percsn/wdsize,wdsizi
        integer wdsize,wdsizi
+
+       logical ifma2
+       common/lvar/ ifma2

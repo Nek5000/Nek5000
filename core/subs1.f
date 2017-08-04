@@ -1761,7 +1761,7 @@ c-----------------------------------------------------------------------
       asum = 0
 
       nface = 2*ndim
-      do e=1,nelv
+      do e=1,nelfld(ifld)
       do f=1,nface
          if (cbc(f,e,ifld).eq.bc_in) then
             call fcsum2(usum_f,asum_f,u,e,f)

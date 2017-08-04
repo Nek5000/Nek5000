@@ -28,7 +28,9 @@ Nek5000 is an open source, fast and scalable spectral element CFD code designed 
 
 ## Download
 
-For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) once it available. All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
+For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) (not available yet). Make sure to read the [Release Notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code.
+
+All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
 
 ## Getting Started
 
@@ -47,6 +49,10 @@ nekmpi ethier 2    # to run on 2 ranks
 ```
 
 **Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
+
+## Examples
+
+[Here](https://github.com/Nek5000/NekExamples) you'll find various examples to play with.
 
 ## Documentation
 
