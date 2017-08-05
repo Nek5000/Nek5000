@@ -1418,17 +1418,25 @@ C
       nel   = nelfld(ifield)
       ntot1 = nx1*ny1*nz1*nel
 
-      if (ifaxis.and.ifsplit) call exitti(
-     $'Axisymmetric stress w/PnPn not yet supported.$',istep)
+C      if (ifaxis.and.ifsplit) call exitti(
+C     $'Axisymmetric stress w/PnPn not yet supported.$',istep)
+C
+Cc     icase = 1 --- axsf_fast (no axisymmetry)
+Cc     icase = 2 --- stress formulation and supports axisymmetry
+Cc     icase = 3 --- 3 separate axhelm calls
+C
+C      icase = 1                ! Fast mode for stress
+C      if (ifaxis)      icase=2 ! Slow for stress, but supports axisymmetry
+C      if (matmod.lt.0) icase=2 ! Elasticity case
+C      if (.not.ifstrs) icase=3 ! Block-diagonal Axhelm
 
-c     icase = 1 --- axsf_fast (no axisymmetry)
-c     icase = 2 --- stress formulation and supports axisymmetry
-c     icase = 3 --- 3 separate axhelm calls
-
-      icase = 1                ! Fast mode for stress
-      if (ifaxis)      icase=2 ! Slow for stress, but supports axisymmetry
-      if (matmod.lt.0) icase=2 ! Elasticity case
-      if (.not.ifstrs) icase=3 ! Block-diagonal Axhelm
+      if (ifaxis) then
+         icase=2
+      else if(ifsplit.or.matmod.ne.0) then
+         icase=3
+      else if (matmod.eq.0) then
+         icase = 1
+      endif
 
       if (icase.eq.1) then
 
