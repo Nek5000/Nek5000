@@ -4,7 +4,10 @@
       include 'CMTDATA'
       parameter (lt=lx1*ly1*lz1*lelt)
       common /mystuff/ vrt(lt,3),wk1(lt),wk2(lt)
-
+      integer e
+      ntot2=nxyz2*nelv
+      ntott=nelt*nxyz1
+      ntotv=nelv*nxyz1
       scale = 1.
       nxyz=nx1*ny1*nz1
       if (istep.gt.0)then
@@ -12,13 +15,63 @@
      >   call l2norm_2d_vortex
       endif
       ifxyo = .true.
+c     call my_full_restart
 
 ! sigh. need settime to bend to my will
       time=time_cmt
       dt=dt_cmt
-
       if (mod(istep,iostep).eq.0) call comp_vort3(vrt,wk1,wk2,vx,vy,vz)
       if (mod(istep,iostep).eq.0) call outpost(vx,vy,vz,vrt,t,'vrt')
+c     if (mod(istep,iostep).eq.0)then
+      if ((istep.eq.1).or.(istep.ge.500))then
+
+
+       rmin = 1.0e36
+       rumin = 1.0e36
+       rvmin = 1.0e36
+       rzmin = 1.0e36
+       rtmin = 1.0e36
+       rmax = -1.0e36
+       rumax = -1.0e36
+       rvmax = -1.0e36
+       rzmax = -1.0e36
+       rtmax = -1.0e36
+      do e=1,nelt
+C print min values
+       rmin = min(rmin,vlmin(u(1,1,1,1,e),nxyz))
+       rumin = min(rumin,vlmin(u(1,1,1,2,e),nxyz))
+       rvmin = min(rvmin,vlmin(u(1,1,1,3,e),nxyz))
+       rzmin = min(rzmin,vlmin(u(1,1,1,4,e),nxyz))
+       rtmin = min(rtmin,vlmin(u(1,1,1,5,e),nxyz))
+
+c print max values
+       rmax = max(rmax,vlmax(u(1,1,1,1,e),nxyz))
+       rumax = max(rumax,vlmax(u(1,1,1,2,e),nxyz))
+       rvmax = max(rvmax,vlmax(u(1,1,1,3,e),nxyz))
+       rzmax = max(rzmax,vlmax(u(1,1,1,4,e),nxyz))
+       rtmax = max(rtmax,vlmax(u(1,1,1,5,e),nxyz))
+      enddo
+
+       rmin = glmin(rmin,1)
+       rumin = glmin(rumin,1)
+       rvmin = glmin(rvmin,1)
+       rzmin = glmin(rzmin,1)
+       rtmin = glmin(rtmin,1)
+
+       rmax = glmax(rmax,1)
+       rumax = glmax(rumax,1)
+       rvmax = glmax(rvmax,1)
+       rzmax = glmax(rzmax,1)
+       rtmax = glmax(rtmax,1)
+      if (nio.eq.0) then
+         write(6,317) rmin,rumin,rvmin,rzmin,rtmin
+      endif
+      if (nio.eq.0) then
+         write(6,318) rmax,rumax,rvmax,rzmax,rtmax
+      endif
+      endif
+ 317   format('Gruvwt min',5g25.18)
+ 318   format('Gruvwt max',5g25.18)
 
       return
       end
@@ -195,7 +248,7 @@ c-----------------------------------------------------------------------
       call fix_geom
 
       outflsub=.true.
-      IFRESTART=.false.
+      IFRESTART=.true.
       IFCNTFILT=.false.
       ifsip=.false.
       gasmodel=1
@@ -311,4 +364,20 @@ c
       if(nio.eq.0) write(6,*)'center location ',time_cmt,xctrnew,yctrnew
       return
       end
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------   
+      subroutine my_full_restart
+      include 'SIZE'
+      include 'TOTAL'
+      character*80 s80(2)
+
+      call blank(s80,2*80)
+      s80(1) ='rs6pvort0.f00001'
+      s80(2) ='rs6pvort0.f00001'
+      call full_restart(s80,2) 
+
+      iosave = iostep           ! Trigger save based on iostep
+      call full_restart_save(iosave)
+
+      return
+      end
+c-----------------------------------------------------------------------
