@@ -29,7 +29,7 @@ c     Solve the Euler equations
       n = nxyz1*lelt*toteq
       nfldpart = ndim*npart
 
-      if(istep.eq.1) then 
+      if(istep.eq.1) then
          call cmt_ics
          time_cmt=0.0 !time !0.0 ! until we can get settime to behave
          call cmt_flow_ics
@@ -43,6 +43,7 @@ c preprocessing of interpolation step
          call compute_primitive_vars ! get good mu
          call entropy_viscosity      ! for high diffno
          call compute_transport_props! at t=0
+
       endif
 
       nstage = 3
