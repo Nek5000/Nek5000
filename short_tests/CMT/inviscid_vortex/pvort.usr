@@ -248,7 +248,7 @@ c-----------------------------------------------------------------------
       call fix_geom
 
       outflsub=.true.
-      IFRESTART=.true.
+      IFRESTART=.false.
       IFCNTFILT=.false.
       ifsip=.false.
       gasmodel=1
