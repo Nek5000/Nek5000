@@ -559,13 +559,19 @@ C---------------------------------------------------------------
      $   , ta3 (lx1*ly1*lz1*lelv)
 
 
-!$acc data create(ta1,ta2,ta3) present(vx,vy,vz,bfx,bfy,bfz,bm1)
-
+ccc!$acc data create(ta1,ta2,ta3) present(vx,vy,vz,bfx,bfy,bfz,bm1)
       n = lx1*ly1*lz1*nelv
+c     call convop_acc  (ta1,vx)
+c     call convop_acc  (ta2,vy)
+c     call convop_acc  (ta3,vz)
 
-      call convop_acc  (ta1,vx)
-      call convop_acc  (ta2,vy)
-      call convop_acc  (ta3,vz)
+!$acc update host(vx,vy,vz)
+      call convop  (ta1,vx)
+      call convop  (ta2,vy)
+      call convop  (ta3,vz)
+!$acc update device(ta1,ta2,ta3)
+
+!$acc data create(ta1,ta2,ta3) present(vx,vy,vz,bfx,bfy,bfz,bm1)
 
 !$acc parallel loop
       do i=1,n
