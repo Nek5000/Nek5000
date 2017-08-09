@@ -666,7 +666,7 @@ c-----------------------------------------------------------------------
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
 
-      if (.not. IFSPLIT) call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
+      call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
       nv = nx1*ny1*nz1*nelv
       nt = nx1*ny1*nz1*nelt
 
