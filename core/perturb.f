@@ -732,7 +732,7 @@ c
 c
       if (.not.ifadj) then
          call opcopy(ua,ub,uc,vx,vy,vz)
-         call opcopy(vx,vy,vz,vxp(1,jp),vyp(1,jp),vyp(1,jp))
+         call opcopy(vx,vy,vz,vxp(1,jp),vyp(1,jp),vzp(1,jp))
          call convop(ta,t(1,1,1,1,ifield-1)) ! dU.grad T
          call opcopy(vx,vy,vz,ua,ub,uc)
       endif
