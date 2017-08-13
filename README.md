@@ -52,6 +52,40 @@ contains nothing. Its purpose it to provide a consistent place for users to plac
 #### `3rd_party`
 Its purpose it to provide a consistent place for 3rd party code.
 
+## Case Files
+
+#### `SIZE`
+contains some hardwired runtime parameters to dimension static arrays
+
+#### `foo.par`
+contains runtime parameters 
+
+#### `foo.re2`
+contains mesh and boundary data
+
+#### `foo.ma2`
+contains partioning data
+
+#### `foo.usr`
+contains user specific code to initialize solver, set source terms and boundary conditions or to manipulate solver internals. 
+
+#### `foo.his`
+contains probing points
+
+#### `foo.f00000`
+contains checkpoint data
+
+#### `foo.nek5000`
+contains metadata for VisIt
+
+#### `foo.rea` (legacy)
+contains runtime parameters and mesh in ASCII. Replaced by .par and .re2 file
+
+#### `foo.map` (legacy)
+contains partioning data in ASCII
+
+**Note:** The old legacy files (.rea & .map) are only recommended for debugging purposes. 
+
 ## Scripts
 
 Let's walk us through some useful batch scripts:
@@ -92,11 +126,11 @@ Nek5000 is mainly a solver. However, simple box type meshes can be generated wit
 
 ## Visualization
 
-Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView (https://www.paraview.org/). There is also an build-in postprocessor called `POSTNEK`.
+Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView] (https://www.paraview.org/). There is also an build-in postprocessor called `POSTNEK`.
 
 ## Documentation
 
-Visit our [User's Guide](http://nek5000.github.io/NekDoc/Nek_users.pdf).
+Visit our [User's Guide](http://nek5000.github.io/NekDoc/Nek_users.pdf). An online version is comming soon. 
 
 ## Troubleshooting
 
