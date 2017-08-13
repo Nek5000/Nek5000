@@ -12,11 +12,11 @@
    1.00000     p008 CONDUCT
    0.00000     p009
    0.00000     p010 FINTIME
-  10000.0      p011 NSTEPS
+   10000.0     p011 NSTEPS
  1.000000E-03 p012 DT
    0.00000     p013 IOCOMM
    0.00000     p014 IOTIME
-  1000.00     p015 IOSTEP
+   1000.00     p015 IOSTEP
    0.00000     p016 PSSOLVER: 0=default
    1.00000     p017
   0.500000E-01 p018 GRID < 0 --> # cells on screen
@@ -64,7 +64,7 @@
    0.00000     p060 !=0 --> init. velocity to small nonzero
    0.00000     p061
    0.00000     p062 >0 --> force byte_swap for output
-   0.00000     p063 =8 --> force 8-byte output
+   0.00000     p063 =8 --> force 8-byte output !change to 8 for full_restart
    0.00000     p064 =1 --> perturbation restart
    1.00000     p065 #iofiles (eg, 0 or 64); <0 --> sep. dirs
    6.00000     p066 output : <0=ascii, else binary
