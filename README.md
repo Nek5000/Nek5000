@@ -28,16 +28,14 @@ In the mid-eighties Paul Fischer, Lee Ho, and Einar Ronquist (M.I.T) developed t
 
 ## Download
 
-For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) (not available yet). Make sure to read the [Release Notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code.
-
-All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
+For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) (not available yet). Make sure to read the [Release Notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code. All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
 
 ## Directory Structure
 
 Here's a brief description of each top-level directory:
 
 #### `core`
-contains the majority of the Nek5000 application sources.
+contains the Nek5000 application sources.
 
 #### `bin`
 contains scripts for running nek5000 and manipulating its output.
@@ -46,13 +44,25 @@ contains scripts for running nek5000 and manipulating its output.
 contains the sources for the pre- and post-processing tools which are stand-alone.
 
 #### `short-tests`
-contains light-weight regression tests for validation.
+contains light-weight regression tests for verification.
 
 #### `run`
 contains nothing. Its purpose it to provide a consistent place for users to place their cases.
 
 #### `3rd_party`
-contains nothing. Its purpose it to provide a consistent place for 3rd part developers to place their code.
+Its purpose it to provide a consistent place for 3rd party code.
+
+## Scripts
+
+Let's walk us through some useful batch scripts:
+
+* `makenek <case>` compiles your case
+* `nek/nekb <case>` runs a serial job in foreground or background
+* `nekmpi/nekbmpi <case> <number of ranks>` runs a parallel job
+* `neknek <case1> <cas2> <ranks 1> <ranks 2>` runs two jobs coupled together
+* `visnek <case>` creates metadata file required by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/)
+* `mvn <old name> <new name>` renames all case files
+* `cpn <old name> <new name>` copies all case files
 
 ## Getting Started
 
@@ -80,16 +90,9 @@ nekmpi ethier 2    # to run on 2 ranks
 
 Nek5000 is mainly a solver. However, simple box type meshes can be generated with `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3` which are quite handy in some situations. You can use your favorite mesh generator provided that mesh format is supported by our mesh converters `exo2nek` and `msh2nek`. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party tools. 
 
-## Scripts
+## Visualization
 
-Let's walk us through some useful batch scripts:
-
-* `nek/nekb <case>` runs a serial job in foreground or background
-* `nekmpi/nekbmpi <case> <number of ranks>` runs a parallel job
-* `neknek <case1> <cas2> <ranks 1> <ranks 2>` runs two jobs coupled together
-* `visnek <case>` creates metadata file required by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/)
-* `mvn <old name> <new name>` renames all case files
-* `cpn <old name> <new name>` copies all case files
+Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView (https://www.paraview.org/). There is also an build-in postprocessor called `POSTNEK`.
 
 ## Documentation
 
