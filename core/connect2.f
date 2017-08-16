@@ -495,6 +495,8 @@ C
          call exitt
       endif
 
+      if (ifsplit .and. ifuservp) ifstrs=.true. 
+
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
          if(nid.eq.0) write(6,*) 
