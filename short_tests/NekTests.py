@@ -640,13 +640,13 @@ class LowMachTest(NekTestCase):
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=40, label='total solver time')
 
         gmres = self.get_value_from_log(label='gmres', column=-7)
-        self.assertAlmostEqualDelayed(gmres, target_val=0, delta=100, label='gmres')
+        self.assertAlmostEqualDelayed(gmres, target_val=0, delta=35, label='gmres')
 
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-10, label='VX')
+        self.assertAlmostEqualDelayed(vx, target_val=2.6938e-09, delta=1e-10, label='VX')
 
         errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-13, label='T')
+        self.assertAlmostEqualDelayed(errt, target_val=4.5532e-12, delta=1e-13, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-07, label='QTL')
@@ -661,13 +661,13 @@ class LowMachTest(NekTestCase):
         self.run_nek(step_limit=200)
 
         gmres = self.get_value_from_log(label='gmres', column=-7)
-        self.assertAlmostEqualDelayed(gmres, target_val=0, delta=100, label='gmres')
+        self.assertAlmostEqualDelayed(gmres, target_val=0, delta=35, label='gmres')
 
         vx = self.get_value_from_log(label='ERROR VX', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(vx, target_val=2.4635E-09, delta=1e-10, label='VX')
+        self.assertAlmostEqualDelayed(vx, target_val=2.6938e-09, delta=1e-10, label='VX')
 
         errt = self.get_value_from_log(label='ERROR T', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(errt, target_val=4.5408E-12, delta=1e-13, label='T')
+        self.assertAlmostEqualDelayed(errt, target_val=4.5532e-12, delta=1e-13, label='T')
 
         qtl = self.get_value_from_log(label='ERROR QTL', column=-5, row=-1)
         self.assertAlmostEqualDelayed(qtl, target_val=2.6557E-06, delta=1e-07, label='QTL')
@@ -851,10 +851,10 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
         tmax = self.get_value_from_log('tmax', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(tmax, target_val=1.31208E+01, delta=1E-03, label='tmax')
+        self.assertAlmostEqualDelayed(tmax, target_val=13.109, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=3.11620E-04, delta=1E-04, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=2.66077e-04, delta=1E-04, label='terr')
 
         self.assertDelayedFailures()
 
