@@ -4,7 +4,7 @@
       include 'CMTDATA'
       parameter (lt=lx1*ly1*lz1*lelt)
       common /mystuff/ vrt(lt,3),wk1(lt),wk2(lt)
-
+      
       scale = 1.
       nxyz=nx1*ny1*nz1
       if (istep.gt.0)then
@@ -311,4 +311,20 @@ c
       if(nio.eq.0) write(6,*)'center location ',time_cmt,xctrnew,yctrnew
       return
       end
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------   
+      subroutine my_full_restart
+      include 'SIZE'
+      include 'TOTAL'
+      character*80 s80(2)
+
+      call blank(s80,2*80)
+      s80(1) ='rs6pvort0.f00001'
+      s80(2) ='rs6pvort0.f00001'
+      call full_restart(s80,2) 
+
+      iosave = iostep           ! Trigger save based on iostep
+      call full_restart_save(iosave)
+
+      return
+      end
+c-----------------------------------------------------------------------

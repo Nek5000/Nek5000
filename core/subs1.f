@@ -47,7 +47,7 @@ c     ifcrsl = .true.
 
       tol=tin
       if (param(22).ne.0) tol=abs(param(22))
-      if (matmod.lt.0) tol = 1.e-4
+c     if (matmod.lt.0) tol = 1.e-4
 c     if (matmod.lt.0) tol = tin
 c     tol = 1.e-10
 
@@ -1428,6 +1428,8 @@ c     icase = 3 --- 3 separate axhelm calls
       icase = 1                ! Fast mode for stress
       if (ifaxis)      icase=2 ! Slow for stress, but supports axisymmetry
       if (matmod.lt.0) icase=2 ! Elasticity case
+c     if (matmod.lt.0) icase=3 ! Block-diagonal Axhelm
+      if (matmod.lt.0) icase=1 ! Elasticity case (faster, 7/28/17,pff)
       if (.not.ifstrs) icase=3 ! Block-diagonal Axhelm
 
       if (icase.eq.1) then

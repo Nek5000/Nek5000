@@ -1899,7 +1899,6 @@ C
 C
 C     (1) Face Mask
 C
-c     write(6,*) 'iflmsf:',iflmsf(ifield),ifield
       IF (IFLMSF(IFIELD)) THEN
          IF (NDIM.EQ.2) THEN
             CALL FCMSK2 (R1,R2,S1,S2,R1MASK,R2MASK,NEL)
