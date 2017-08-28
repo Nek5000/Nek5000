@@ -41,6 +41,8 @@ C     LX1M=LX1 when there are moving meshes; =1 otherwise
       parameter (ldimt1=ldimt+1)
       parameter (ldimt3=ldimt+3)
 c
+      parameter (luparam = 20) ! size of user runtime parameter space
+c
 c     Note:  In the new code, LELGEC should be about sqrt(LELG)
 c
       PARAMETER (LELGEC = 1)

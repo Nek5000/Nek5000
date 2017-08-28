@@ -44,7 +44,7 @@ C
       optlevel = 1
 
       call rzero(param,200)
-      call rzero(uparam,20)
+      call rzero(uparam,luparam)
 
       param(20) = 1e-8 ! temperature & passive passive tolerance
       param(21) = 1e-6 ! pressure tolerance
@@ -347,7 +347,7 @@ c set parameters
       if (index(c_out,'NORMAL') .gt. 0) param(160) = 1
       if (index(c_out,'NORMAL_TSTOP' ) .gt. 0) param(160) = 3
  
-      do i = 1,20
+      do i = 1,luparam
          call blank(txt,132)
          write(txt,"('general:userParam',i2.2)") i
          call finiparser_getDbl(d_out,txt,ifnd)
@@ -564,7 +564,7 @@ C
       call bcast(optlevel, isize)
 
       call bcast(param , 200*wdsize)
-      call bcast(uparam, 20*wdsize)
+      call bcast(uparam, luparam*wdsize)
       call bcast(atol ,  ldimt3*wdsize)
 
       call bcast(ifchar , lsize)
@@ -864,6 +864,8 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 c-----------------------------------------------------------------------
       subroutine par_verify(ierr)
 
+      INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
       INCLUDE 'PARDICT'
 
       
@@ -883,6 +885,17 @@ c-----------------------------------------------------------------------
 
          is = index(key,'_') ! ignore user keys
          if (is.eq.1) goto 10
+
+         is = index(key,'GENERAL:USERPARAM') ! check if it is user parameter
+         if (is.eq.1) then
+            do j = 1,luparam ! check if user parameter stays in uparam bounds
+                call blank(txt,132)
+                write(txt,"('GENERAL:USERPARAM',i2.2)") j
+                if(index(txt,key).eq.1) goto 10
+            enddo
+            write(6,*) 'ERROR: userParam exceeds uparam size ', key
+            ierr = ierr + 1
+         endif
 
          do j = 1,PARDICT_NKEYS ! do we find the key in the par-dictionary 
             if(index(pardictkey(j),key).eq.1) goto 10      

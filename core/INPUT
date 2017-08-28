@@ -15,7 +15,7 @@ c
      $    ,cpfld(ldimt1,3)
      $    ,cpgrp(-5:10,ldimt1,3)
      $    ,qinteg(ldimt3,maxobj)
-     $    ,uparam(20)
+     $    ,uparam(luparam)
      $    ,atol(ldimt3)
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
      $                atol
