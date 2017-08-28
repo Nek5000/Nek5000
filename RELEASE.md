@@ -1,21 +1,28 @@
-# Release 17.?.?
+# Release 17.0.0-beta1
+
+Please keep in mind that this release of Nek5000 is beta software. It still has some incomplete features and bugs and
+At some point – sooner or later – it will probably break!
+Beta is all about fixing these issues and improving. We’re busy working hard to make Nek5000 better, so we ask that you:
+
+Don’t use it in production. And upgrading to subsequent versions might involve getting your hands dirty. 
 
 ## Major Features and Improvements
 
-* New paramater file `.par`
+* New paramater file `.par` (replacing .rea)
 * Added `OIFS` for `moving mesh`
 * Added `Moving mesh` for `PN/PN`
+* Improved stability for varying visosity and `PN/PN`
 * Added support for mixed `Helmholtz/CVODE` solves
-* New `AMG setup` tool based on HYPRE
+* New fast `AMG setup` tool based on HYPRE
 * New `EXODUSII` mesh converter
 * New interface to `libxsmm` (fast MATMUL library).
 * Extended `lowMach` solver for time varying thermodynamic pressure
 * Added DG for scalars
 * Added support for `implicit none` in .usr file
-* Read `.re2` in parallel
+* Reduced solver initilization time (parallel binary reader for .re2 and .ma2)
 * Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 * Optional new user friendly `SIZE` file format (see SIZE.template)
-* Refactored `makenek` for faster builds
+* Refactored `NEKNEK`
 
 ## Backwards-Incompatible Changes 
 
@@ -26,8 +33,8 @@
 * Removed `MOAB` support 
 * Replaced `hpts.in/hpts.out` by `<casename>.his` 
 * Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
-* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if needed  
-* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditioner=amg) 
+* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if they don't exist
+* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=amg in PRESSURE section) 
 
 ## Bug Fixes and Other Changes
 
@@ -38,7 +45,7 @@
 ## Thanks to our Contributors
 This release contains contributions from the Nek5000 core developers, as well as:
 
-@ggiannako, @nicooff, @kmittal2, @cliosaglietti, @EvelynOtero, @adampep, @mattiabr, @maxhutch, @hackljf, @negips 
+@ggiannako, @nicooff, @kmittal2, @cliosaglietti, @EvelynOtero, @mattiabr, @maxhutch, @hackljf, @negips 
 
 
 We are also grateful to all who filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.
