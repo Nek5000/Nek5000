@@ -334,12 +334,9 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 
   if ! cat SIZE | grep -qi 'luparam' ; then
-  if [ $CMT -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer luparam' >> SIZE
-      echo '      parameter(luparam = 20  ) ! size of user runtime parameter space '  >>SIZE
-  fi
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter(luparam = 20  ) ! size of user runtime parameter space '  >>SIZE
   fi
 fi
 
