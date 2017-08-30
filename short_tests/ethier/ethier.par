@@ -19,7 +19,7 @@ dealiasing = yes
 #stressFormulation = yes
 
 [PRESSURE]
-preconditioner = semg
+preconditioner = semg #amg
 residualTol = 1e-08
 residualProj = no
 

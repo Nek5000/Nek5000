@@ -1,6 +1,8 @@
 C> @file diffusive_cmt.f routines for diffusive fluxes.
 C> Some surface. Some volume. All pain. Jacobians and other factorizations.
 
+C> \ingroup vsurf
+C> @{
 C> ummcu = \f$\mathbf{U}^--\{\{\mathbf{U}\}\}\f$
       subroutine imqqtu(ummcu,uminus,uplus)
 ! Computes (I-0.5*QQT)U for all five conserved variables.
@@ -26,11 +28,14 @@ C> ummcu = \f$\mathbf{U}^--\{\{\mathbf{U}\}\}\f$
          call add2(ummcu(1,ivar),uminus(1,ivar),nf)!ummcu = U -{{U}}
       enddo
 
+C> @}
       return
       end
 
 !-----------------------------------------------------------------------
 
+C> \ingroup bcond
+C> @{
 C> umubc = \f$\mathbf{U}^--\mathbf{U}^D\f$
       subroutine imqqtu_dirichlet(umubc,wminus,wplus)
 ! v+ undefined on boundary faces, so (I-0.5QQ^T) degenerates to 
@@ -89,11 +94,14 @@ C> umubc = \f$\mathbf{U}^--\mathbf{U}^D\f$
       enddo
       enddo
 
+C> @}
       return
       end
 
 !-----------------------------------------------------------------------
 
+C> \ingroup vfjac
+C> @{
 C> flux = \f$\mathscr{A}\f$ dU = \f$\left(\mathscr{A}^{\mbox{NS}}+\mathscr{A}^{\mbox{EVM}}\right) \f$dU 
       subroutine agradu(flux,du,e,eq)
       include 'SIZE'
@@ -137,6 +145,7 @@ C> and \f$\nu_s \nabla \left(\rho e\right)\f$.  \f$\nu_s=0\f$ for Navier-Stokes
 ! no idea where phi goes
       if (eq .lt. toteq) call col2(flux,phig(1,1,1,e),nx1*ny1*nz1)
 
+C> @}
       return
       end
 
@@ -333,6 +342,7 @@ C> the compressible Navier-Stokes equations (NS).
          do j=1,ny1
          do i=1,nx1
             call nekasgn(i,j,k,e)
+            call cmtasgn(i,j,k,e)
             call uservp(i,j,k,ieg)
             vdiff(i,j,k,e,imu)  = mu   ! NEKUSE
             vdiff(i,j,k,e,ilam) = lambda!NEKUSE
@@ -342,6 +352,7 @@ C> the compressible Navier-Stokes equations (NS).
          enddo
          enddo
       enddo
+
       return
       end
 

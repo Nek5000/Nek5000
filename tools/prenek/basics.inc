@@ -27,10 +27,10 @@ C     BASICS.INC
 
       LOGICAL      IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
-     $            ,IFFMTIN,ifptplt,ifauto,if_unstructure
+     $            ,IFFMTIN,ifptplt,ifauto,if_unstructure,ifundo
       COMMON /LOGO/IFXYO,IFXYH,IFPO,IFVO,IFTO,IFTGO,IFMOVB,IFPLAN
      $            ,IFPROJ,IFDMSH,IFZOOM,IFGNGM,IFCFBD,IFCLRB,IFMLTI
-     $            ,IFFMTIN,ifptplt,ifauto,if_unstructure
+     $            ,IFFMTIN,ifptplt,ifauto,if_unstructure,ifundo
 
       common /nek2r/ curve(6,12,nelm),bc(5,6,nelm,0:maxfld)
      $         ,pi,theta,phi,vhobs(3),xhobs(3),yhobs(3)

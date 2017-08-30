@@ -51,8 +51,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
-         write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
-     &                             etims0-etime,' sec'
  12      format(1X,A,4I12,/,/)
       endif 
 
@@ -257,12 +255,9 @@ c-----------------------------------------------------------------------
 
       if (ifsplit) then   ! PN/PN formulation
 
-
          do igeom=1,ngeom
 
-
-         ! within cvode we use the lagged wx for 
-         ! extrapolation, that's why we have to call it before gengeom 
+         ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
@@ -286,14 +281,16 @@ c-----------------------------------------------------------------------
          enddo
 
       else                ! PN-2/PN-2 formulation
-
          call setprop
          do igeom=1,ngeom
 
             if (igeom.gt.2) call userchk_set_xfer
 
+            ! call here before we overwrite wx 
+            if (ifheat .and. ifcvode) call heat_cvode (igeom)   
+
             if (ifgeom) then
-               call gengeom (igeom)
+               if (.not.ifrich) call gengeom (igeom)
                call geneig  (igeom)
             endif
 
@@ -313,8 +310,8 @@ c-----------------------------------------------------------------------
                if (ifmvbd)             call meshv         (igeom)
             endif
 
-            if (igeom.eq.ngeom.and.param(103).gt.0) 
-     $          call q_filter(param(103))
+            if (igeom.eq.ngeom.and.param(103).gt.0)
+     $         call q_filter(param(103))
          enddo
       endif
 

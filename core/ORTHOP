@@ -6,7 +6,7 @@ c
       common /prthoi/ napproxp
 
       real            approxp(ktotp,0:laxtp)
-      common /orthov/ approxp
+      common /prthov/ approxp
 
       character*4     name4p
       common /prthoc/ name4p

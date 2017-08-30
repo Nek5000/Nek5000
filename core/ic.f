@@ -258,11 +258,13 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
          call dssum(t ,nx1,ny1,nz1)
          call col2 (t ,tmult,ntott)
          do ifield=3,nfield
-            call dssum(t(1,1,1,1,ifield-1),nx1,ny1,nz1)
-            if(iftmsh(ifield)) then
-              call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
-            else
-              call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
+            if(gsh_fld(ifield).ge.0) then
+              call dssum(t(1,1,1,1,ifield-1),nx1,ny1,nz1)
+              if(iftmsh(ifield)) then
+                call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
+              else
+                call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
+              endif
             endif
          enddo
       endif
@@ -1909,7 +1911,7 @@ c-----------------------------------------------------------------------
  
       test2 = bytetest
       call byte_reverse(test2,1,ierr)
-      if (nid.eq.0) 
+      if (nid.eq.0 .and. loglevel.gt.2) 
      $   write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
       end

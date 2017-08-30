@@ -1522,6 +1522,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       parameter(nfldm=ldim+ldimt+1)
 
+      real pts, fieldout, dist, rst
       common /c_hptsr/ pts      (ldim,lhis)
      $               , fieldout (nfldm,lhis)
      $               , dist     (lhis)
@@ -1529,6 +1530,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
+      integer rcode, elid, proc
       common /c_hptsi/ rcode(lhis),elid(lhis),proc(lhis)
 
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
@@ -1603,7 +1605,8 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
      &                 pts(1,1),ndim,
      &                 pts(2,1),ndim,
      &                 pts(3,1),ndim,npts)
-      
+     
+        nfail = 0 
         do i=1,npts
            ! check return code 
            if(rcode(i).eq.1) then
@@ -1622,6 +1625,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         enddo
         icalld = 1
       endif
+
 
       ! evaluate input field at given points
       do ifld = 1,nflds

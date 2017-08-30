@@ -71,9 +71,9 @@ c - - SIZE internals
       parameter (ldimt3=ldimt+3)
 
       integer lx3,ly3,lz3
-      parameter (lx3=lx2)
-      parameter (ly3=ly2)
-      parameter (lz3=lz2)
+      parameter (lx3=lx1)
+      parameter (ly3=ly1)
+      parameter (lz3=lz1)
 
       integer lctmp0,lctmp1
       parameter (lctmp0 =2*lx1*ly1*lz1*lelt)
@@ -98,11 +98,11 @@ c - - SIZE internals
       parameter(lcvz1=1 + (ldim-2)*(lcvx1-1))
 
       ! nek-nek
-      integer lpratio,nmaxl,nfldmax,nmaxcom
-      parameter (lpratio=5)
-      parameter (nmaxl=lx1*lz1*lelt)
-      parameter (nfldmax=ldim+1+ldimt)
-      parameter (nmaxcom=nmaxl*lpratio)
+      integer nmaxl_nn,nfldmax_nn
+      parameter (nmaxl_nn=
+     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))
+      parameter (nfldmax_nn=
+     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))
 
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel

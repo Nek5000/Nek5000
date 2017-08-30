@@ -1,5 +1,11 @@
 C> @file drive1_cmt.f high-level driver for CMT-nek
-C> \defgroup convhvol Volume integral terms for inviscid fluxes
+C> \defgroup convhvol Volume integral for inviscid fluxes
+C> \defgroup bcond Surface integrals due to boundary conditions
+C> \defgroup diffhvol Volume integral for viscous fluxes
+C> \defgroup vfjac Jacobians for viscous fluxes
+C> \defgroup isurf Inviscid surface terms
+C> \defgroup vsurf Viscous surface terms
+C> \defgroup faceops utility functions for manipulating face data
 C> Branch from subroutine nek_advance in core/drive1.f
 C> Advance CMT-nek one time step within nek5000 time loop
       subroutine cmt_nek_advance
@@ -23,14 +29,21 @@ c     Solve the Euler equations
       n = nxyz1*lelt*toteq
       nfldpart = ndim*npart
 
-      if(istep.eq.1) then 
+      if(istep.eq.1) then
          call cmt_ics
-         time_cmt=0.0 ! until we can get settime to behave
+         time_cmt=0.0 !time !0.0 ! until we can get settime to behave
          call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
 c preprocessing of interpolation step 
          call usr_particles_init
+         call userchk ! need more ifdefs
+         call compute_grid_h(gridh,xm1,ym1,zm1)
+         call compute_mesh_h(meshh,xm1,ym1,zm1)
+         call compute_primitive_vars ! get good mu
+         call entropy_viscosity      ! for high diffno
+         call compute_transport_props! at t=0
+
       endif
 
       nstage = 3
@@ -131,14 +144,6 @@ C> Store it in res1
 !        primitive vars = rho, u, v, w, p, T, phi_g
 
       call compute_primitive_vars
-      if(stage.eq.1) then ! I would put this in userchk, but we are open to more
-                          ! "accurate" computations of residual
-         call entropy_viscosity ! accessed through uservp. computes
-                                ! entropy residual and max wave speed
-      endif
-      call compute_transport_props ! inside rk stage or not? So far so good
-!     call smoothing(vdiff(1,1,1,1,imu))
-! you have GOT to figure out where phig goes!!!!
 
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
@@ -148,6 +153,12 @@ C> Store it in res1
          call setdtcmt
          call set_tstep_coef
       endif
+
+      call entropy_viscosity ! accessed through uservp. computes
+                             ! entropy residual and max wave speed
+      call compute_transport_props ! everything inside rk stage
+!     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
+! you have GOT to figure out where phig goes!!!!
 
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
@@ -282,7 +293,8 @@ C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
          enddo
       endif
       call rzero(res1,n)
-      call rzero(res2,n)
+!     call copy(res2,t(1,1,1,1,5),n) ! art visc hardcoding. old entropy resid
+      call rzero(res2,n) ! Actually,...
       return
       end
 !-----------------------------------------------------------------------

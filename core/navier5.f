@@ -3321,6 +3321,9 @@ c-----------------------------------------------------------------------
          if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
       enddo
       enddo
+      call dsop(tmsk,'*  ',nx1,ny1,nz1)
+      call dsop(tmsk,'*  ',nx1,ny1,nz1)
+      call dsop(tmsk,'*  ',nx1,ny1,nz1)
 
       do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
                             ! Extra pass is just to test convergence
