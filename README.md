@@ -4,31 +4,9 @@
 |-----------------|---------------------|
 | [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=master)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
 
-In the mid-eighties Paul Fischer, Lee Ho, and Einar Ronquist (M.I.T) developed the spectral element incompressible fluid flow solver NEKTON, with technical input from A. Patera and Y. Maday. A commercial version was brought to market by Fluent, Inc, as NEKTON 2.0, in 1996. Paul Fischer branched off a research version of the code. Today, Nek5000 is an open source project released under a BSD license.
-
-## Highlights
-
-* Runs on all POSIX compliant operating systems
-* Written in Fortran77 and C
-* Pure MPI for parallelization
-* Proven scalability to over a million ranks
-* Easy-to-build with minimal dependencies
-* High-order conformal curved quadrilateral/hexahedral meshes
-* 2nd/3rd order adaptive semi-implicit timestepping
-* Efficient multigrid preconditioners
-* Parallel I/O
-* Lagrangian particle tracking
-* Moving mesh and free surface flow
-* Efficient Low Mach-number formulation
-* Magnetohydrodynamics (MHD)
-* Conjugate fluid-solid heat transfer
-* Meshing tools and converters
-* [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit) & [Paraview](http://www.paraview.org/) support for data analysis and visualization
-
-
-## Download
-
-For a typical user we recommend to download the [latest release](https://github.com/Nek5000/nek5000/archive/tbd.tar.gz) (not available yet). Make sure to read the [Release Notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code. All developers should checkout the code on [GitHub](https://github.com/Nek5000/Nek5000). See `Contributing` section below for more informations.
+Nek5000 is a fast and scalable open source CFD solver. 
+Make sure to read the [release notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code.
+. 
 
 ## Directory Structure
 
@@ -47,10 +25,16 @@ contains the sources for the pre- and post-processing tools which are stand-alon
 contains light-weight regression tests for verification.
 
 #### `run`
-contains nothing. Its purpose it to provide a consistent place for users to place their cases.
+consistent place for users to place their problem cases.
+
+#### `examples`
+reserved for the Nek5000 example problems.
+
+#### `doc`
+contains the user documentation in HTML and PDF.
 
 #### `3rd_party`
-Its purpose it to provide a consistent place for 3rd party code.
+its purpose it to provide a consistent place for 3rd party code.
 
 ## Case Files
 
@@ -84,7 +68,7 @@ contains runtime parameters and mesh in ASCII. Replaced by .par and .re2 file
 #### `foo.map` (legacy)
 contains partioning data in ASCII
 
-**Note:** The old legacy files (.rea & .map) are only recommended for debugging purposes. 
+**Note:** The old legacy files (.rea & .map) are recommended for debugging purposes only. 
 
 ## Scripts
 
@@ -93,55 +77,53 @@ Let's walk us through some useful batch scripts:
 * `makenek <case>` compiles your case
 * `nek/nekb <case>` runs a serial job in foreground or background
 * `nekmpi/nekbmpi <case> <number of ranks>` runs a parallel job
-* `neknek <case1> <cas2> <ranks 1> <ranks 2>` runs two jobs coupled together
+* `neknek <case1> <cas2> <ranks 1> <ranks 2>` runs Nek5000 with two overlapping component grids
 * `visnek <case>` creates metadata file required by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/)
 * `mvn <old name> <new name>` renames all case files
 * `cpn <old name> <new name>` copies all case files
 
-## Getting Started
+## Running your very first simulation
 
-Hold your horses in less than 5min you have performed your first simulation
+Hold your horses, this needs less than 5 min.
 
 ```
 cd ~
-tar -xvzf Nek5000.tar.gz
+tar -xvzf Nek5000_17.0.0.tar.gz
 export PATH=$HOME/Nek5000/bin:$PATH
 cd ~/Nek5000/tools; ./maketools genmap
-cd ~/Nek5000/run; cp -r ~/Nek5000/short_tests/ethier .
-cd ethier
-makenek ethier     # you may want edit this file
-genmap             # on input type ethier
-nekmpi ethier 2    # to run on 2 ranks
+cd ~/Nek5000/run
+cp -r ../examples/turbChannel .
+cd turbChannel
+genmap                    # run partioner, on input type ethier
+makenek turbChannel       # build case, edit script to change settings
+nekbmpi turbChannel 2     # run Nek5000 on 2 ranks in the background
+echo -2 >ioinfo           # stop Nek5000 run and dump checkpoint
+visnek turbChannel; visit -o turbChannel.nek5000 # requires a VisIt installation
+
 ```
-
-**Note:** For more information see [here](http://nek5000.github.io/NekDoc/Nek_usersch2.html)
-
-## Example Problems
-
-[Here](https://github.com/Nek5000/NekExamples) you'll find various examples to play with.
 
 ## Meshing
 
-Nek5000 is mainly a solver. However, simple box type meshes can be generated with `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3` which are quite handy in some situations. You can use your favorite mesh generator provided that mesh format is supported by our mesh converters `exo2nek` and `msh2nek`. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party tools. 
+Nek5000 is mainly a solver. However, simple box type meshes can be generated with the `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3`. We provide mesh converters like `exo2nek` and `msh2nek` which are quite handy if you want to use your favorite mesh generator. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party meshing tools. 
 
 ## Visualization
 
-Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView] (https://www.paraview.org/). There is also an build-in postprocessor called `POSTNEK`.
+Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView](https://www.paraview.org/). There is also an build-in X-Window based postprocessor called `POSTNEK` located in tools.
 
 ## Documentation
 
-Visit our [User's Guide](http://nek5000.github.io/NekDoc/Nek_users.pdf). An online version is comming soon. 
+Visit our online [User's Guide](http://Nek5000.github.io/NekDoc/) which is also available in [PDF](http://nek5000.github.io/NekDoc/Nek_users.pdf).
 
 ## Troubleshooting
 
-If you run into problems compiling, installing, or running Nek5000, first check the [User's Guide](http://nek5000.github.io/NekDoc/Nek_users.pdf). If you are not able to find a solution to your problem there, please send a message to the User's Group [mailing list](https://lists.mcs.anl.gov/mailman/listinfo/nek5000-users).
+If you run into problems compiling, installing, or running Nek5000, first check the User's Guide. If you are not able to find a solution to your problem there, please send a message to the User's Group [mailing list](https://lists.mcs.anl.gov/mailman/listinfo/nek5000-users).
 
 ## Reporting Bugs
 Nek5000 is hosted on GitHub and all bugs are reported and tracked through the [Issues](https://github.com/Nek5000/Nek5000/issues) feature on GitHub. However, GitHub Issues should not be used for common troubleshooting purposes. If you are having trouble installing the code or getting your model to run properly, you should first send a message to the User's Group mailing list. If it turns out your issue really is a bug in the code, an issue will then be created on GitHub. If you want to request that a feature be added to the code, you may create an Issue on GitHub.
 
 ## Contributing
 
-Our project is hosted on [GitHub](https://github.com/Nek5000/Nek5000). If you are planning a large contribution, we encourage you to discuss the concept here on GitHub and interact with us frequently to ensure that your effort is well-directed.
+Our project is hosted on [GitHub](https://github.com/Nek5000). If you are planning a large contribution, we encourage you to discuss the concept here on GitHub and interact with us frequently to ensure that your effort is well-directed.
 
 ### How we do it
 - Anything in master is always deployable
