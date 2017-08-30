@@ -1,10 +1,4 @@
-# Release 17.0.0-beta1
-
-Please keep in mind that this release of Nek5000 is beta software. It still has some incomplete features and bugs and
-At some point – sooner or later – it will probably break!
-Beta is all about fixing these issues and improving. We’re busy working hard to make Nek5000 better, so we ask that you:
-
-Don’t use it in production. And upgrading to subsequent versions might involve getting your hands dirty. 
+# Release 17.0.0-dev
 
 ## Major Features and Improvements
 
