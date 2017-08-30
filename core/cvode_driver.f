@@ -576,8 +576,9 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          call nvec_dssum(ydott,istride,nfield-1,gsh_fld(1))
       else
          do ifield = 2,nfield
-            if (ifcvfld(ifield) .and. .not.iftmsh(ifield)) then      
-               call dssum(ydott(1,1,1,1,ifield-1),nx1,ny1,nz1)
+            if (ifcvfld(ifield) .and. gsh_fld(ifield).ge.0) then
+               if(.not.iftmsh(ifield))       
+     &         call dssum(ydott(1,1,1,1,ifield-1),nx1,ny1,nz1)
             endif
          enddo
       endif
@@ -585,7 +586,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
            ntot = nxyz*nelfld(ifield)
-           if (.not.iftmsh(ifield)) then
+           if (.not.iftmsh(ifield) .and. gsh_fld(ifield).ge.0) then
               call col2(ydott(1,1,1,1,ifield-1),binvm1,ntot)
            endif
          endif

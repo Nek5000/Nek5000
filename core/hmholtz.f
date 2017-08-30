@@ -672,8 +672,15 @@ c     set tolerance for temp+scalars
 c     p20<0: use toli tolin 
 c     p20=0: use same tol as for vel
 c     p20>0: use specified tol for temp
-      if (ifield.gt.1 .and. param(20).gt.0) tol=abs(param(20))
-      if (ifield.gt.1 .and. param(20).lt.0) tol=abs(tin)
+      if (ifield.gt.1) then
+         if (abs(param(20)).le.1e-1) then ! to avoid confusion with NORDER in historical .rea
+            if (param(20).lt.0.0) then
+               tol=abs(tin)
+            elseif (param(20).gt.0.0) then
+               tol=abs(param(20))
+            endif
+         endif
+      endif
 
 c     overrule tolerance for velocity
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))

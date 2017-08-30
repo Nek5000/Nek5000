@@ -255,12 +255,9 @@ c-----------------------------------------------------------------------
 
       if (ifsplit) then   ! PN/PN formulation
 
-
          do igeom=1,ngeom
 
-
-         ! within cvode we use the lagged wx for 
-         ! extrapolation, that's why we have to call it before gengeom 
+         ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
          if (ifgeom) then
@@ -288,6 +285,9 @@ c-----------------------------------------------------------------------
          do igeom=1,ngeom
 
             if (igeom.gt.2) call userchk_set_xfer
+
+            ! call here before we overwrite wx 
+            if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
             if (ifgeom) then
                if (.not.ifrich) call gengeom (igeom)

@@ -28,7 +28,6 @@ curved sides and sideset ids.
 - ```make && make install```
 - Add ```-I<path-to-exodus-lib>/include``` to the ```F77``` variable in maketools 
 - Specify the location of exodus and netcdf libraries using ```USR_LFLAGS``` in maketools e.g. ```USR_LFLAGS="-L$HOME/lib/netcdf/lib -L$HOME/lib/exodus/lib"```
-- Consider uncommenting the ```BIGMEM="TRUE"``` flag to enable big memory support.
 - Run ```maketools exo2nek```
 - Assumming that the Nek5000 bin directory is in your path, execute ```exo2nek``` to use the tool.
 - In some machines it may be needed to add the location of the exodus library in ``LD_LIBRARY_PATH`` env. variable (or ``DYLD_LIBRARY_PATH`` for OSX). For example, add the following line in your `.bashrc` file: ```export LD_LIBRARY_PATH=$HOME/lib/exodus/lib:$LD_LIBRARY_PATH```
