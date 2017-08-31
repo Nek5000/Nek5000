@@ -408,6 +408,13 @@ c
       common /ivrtx/ vertex ((2**ldim),lelt)
       integer vertex
 
+      integer icalld
+      save    icalld
+      data    icalld  /0/
+
+      if (icalld.gt.0) return
+      icalld = 1
+
       ncrnr = 2**ndim
       call get_vert_map(vertex,ncrnr,wk,mdw,ndw,ifgfdm)
 
@@ -488,7 +495,12 @@ c-----------------------------------------------------------------------
       endif
  
       call bcast(neli, ISIZE)
-      call bcast(nnzi, ISIZE)
+c      if (nid.eq.0) then
+c         neli = iglmax(neli,1)   ! communicate to all procs
+c      else
+c         neli = 0
+c         neli = iglmax(neli,1)   ! communicate neli to all procs
+c      endif
 
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then

@@ -77,9 +77,9 @@ c
       common /gvolm/ vnx,vny,vnz,v1x,v1y,v1z,v2x,v2y,v2z
 
       logical ifgeom,ifgmsh3,ifvcor,ifsurt,ifmelt,ifwcno
-     $       ,ifrzer(lelt),ifqinp(6,lelv),ifeppm(6,lelv)
+     $       ,ifrzer(lelt),ifqinp(2*ldim,lelv),ifeppm(2*ldim,lelv)
      $       ,iflmsf(0:1),iflmse(0:1),iflmsc(0:1)
-     $       ,ifmsfc(6,lelt,0:1)
+     $       ,ifmsfc(2*ldim,lelt,0:1)
      $       ,ifmseg(12,lelt,0:1)
      $       ,ifmscr(8,lelt,0:1)
      $       ,ifnskp(8,lelt)

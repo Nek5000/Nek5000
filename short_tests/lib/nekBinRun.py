@@ -117,6 +117,79 @@ def run_nek(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, step_limit=None, ver
     else:
         print('Finished running nek5000!')
 
+def run_neknek(cwd, inside, np_inside, outside, np_outside, step_limit=None, log_suffix='', verbose=False):
+
+    # Paths to executables, files
+    nek5000 = os.path.join(cwd, 'nek5000')
+    logfile      = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+        inside = inside,
+        outside = outside,
+        np_in = np_inside,
+        np_out = np_outside,
+        sfx = log_suffix
+    ))
+
+    inside_log = os.path.join(cwd, '{0}.log'.format(inside))
+    inside_his = os.path.join(cwd, '{0}.his'.format(inside))
+    inside_sch = os.path.join(cwd, '{0}.sch'.format(inside))
+
+    outside_log = os.path.join(cwd, '{0}.log'.format(outside))
+    outside_his = os.path.join(cwd, '{0}.his'.format(outside))
+
+    session_name = os.path.join(cwd, 'SESSION.NAME')
+    ioinfo       = os.path.join(cwd, 'ioinfo')
+
+    command = ['mpiexec', '-np', str(int(np_inside) + int(np_outside)), nek5000]
+
+    print("Running nek5000...")
+    print('    Using command "{0}"'.format(' '.join(command)))
+    print('    Using working directory "{0}"'.format(cwd))
+    print('    Using .rea files "{0}", "{1}"'.format(inside, outside))
+
+    # An OSError here can be expected, if directory is clean and inside_sch or ioinfo don't exist
+    for f in (inside_sch, ioinfo):
+        try:
+            os.remove(f)
+        except OSError as E:
+            # TODO: Change to warnings.warning
+            print("    Could not remove {0}: {1}".format(f, E))
+
+    # Any error here is unexpected
+    try:
+
+        # Create SESSION.NAME
+        with open(session_name, 'w') as f:
+            f.writelines([
+                "{0}\n".format(2),
+                "{0}\n".format(inside),
+                "{0}\n".format(cwd),
+                "{0}\n".format(np_inside),
+                "{0}\n".format(outside),
+                "{0}\n".format(cwd),
+                "{0}\n".format(np_outside),
+            ])
+
+        # Write step limit
+        if step_limit:
+            with open(ioinfo, 'w') as f:
+                f.writelines(['-{0}'.format(step_limit)])
+
+        if verbose:
+            with open(logfile, 'w') as f:
+                proc =Popen(command, cwd=cwd, stderr=STDOUT, stdout=PIPE)
+                for line in proc.stdout:
+                    sys.stdout.write(line)
+                    f.write(line)
+        else:
+            with open(logfile, 'w') as f:
+                call(command, cwd=cwd, stdout=f)
+
+    except Exception as E:
+        # TODO: Change to warnings.warn()
+        print('Could not successfully run nek5000! Caught error: {0}'.format(E))
+    else:
+        print('Finished running nek5000!')
+
 
 def mvn(src_prefix, dst_prefix, cwd):
     exts = ('.box', '.rea', '.usr', '.map', '.sep', '.re2')

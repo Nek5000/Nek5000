@@ -18,25 +18,38 @@ if [ "$PPLIST" == "?" ]; then
 fi
 
 # first do some checks ...
-if [ $# -eq 0 ]; then
+if [ "$1" == "-h" ]; then
   echo ""
   echo "usage: makenek [.usr filename | clean | realclean] < -nocompile >"
   echo ""
   exit 1
 fi
 
+CASEDIR=`pwd`
+CASENAME=$1
+if [ $# -eq 0 ]; then
+   NCASEFILES=`find *.usr | wc -l`
+   if [ $NCASEFILES != "1" ]; then
+     echo "FATAL ERROR: Found multiple .usr files!"
+     echo "Please use makenek [.usr filename]"
+     exit 1
+   else
+     CASENAME=`find *.usr | sed 's/\.usr$//g'`
+   fi
+fi
+
 if [ "$mver" != "17.0.0" ]; then
-  echo "ERROR: Your makenek is incompatible!"
+  echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1
 fi
 
-if [ $1 = "clean" ]; then
+if [[ $1 = "clean" ]]; then
   make clean
   exit 0
 fi
 
-if [ $1 = "realclean" ]; then
+if [[ $1 = "realclean" ]]; then
   make -C $SOURCE_ROOT_GSLIB clean
   make clean
   rm -rf makefile
@@ -44,12 +57,9 @@ if [ $1 = "realclean" ]; then
 fi
 
 NOCOMPILE=0
-if [ "$2" == "-nocompile" ]; then
+if [[ "$2" == "-nocompile" ]]; then
   NOCOMPILE=1
 fi 
-
-CASENAME=$1
-CASEDIR=`pwd`
 
 if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
