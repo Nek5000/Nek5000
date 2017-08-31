@@ -485,6 +485,149 @@ class Eddy_Rich(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+# ####################################################################
+#   eddy_neknek: eddy_neknek.rea
+# ####################################################################
+
+class Eddy_Neknek(NekTestCase):
+    example_subdir  = 'eddy_neknek'
+    case_name       = 'eddy_uv'
+
+    def setUp(self):
+
+        self.size_params = dict(
+            ldim='2',
+            lx1='8',
+            lxd='12',
+            lx2='lx1-2',
+            lelg='1000',
+            lpert='1',
+            nsessmax='2',
+        )
+
+        self.build_tools(['genmap'])
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        from lib.nekBinRun import run_neknek
+        from re import sub
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        # Tweak the .rea files and run genmap
+        for rea_file in ('inside', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            with open(rea_path, 'r') as f:
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-06     p21 DIVERGENCE', l) for l in f]
+            with open(rea_path, 'w') as f:
+                f.writelines(lines)
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
+
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'outside',
+            np_inside = 1,
+            np_outside = 1,
+            step_limit = 1000,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+        logfile  = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+            inside = 'inside',
+            outside = 'outside',
+            np_in = 1,
+            np_out = 1,
+            sfx = self.log_suffix
+        ))
+
+        xerr_inside = self.get_value_from_log('X err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_inside, target_val=7.163001E-04, delta=1E-05, label='X err  inside')
+
+        xerr_global = self.get_value_from_log('X err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_global, target_val=8.580050E-04, delta=1E-05, label='X err   global')
+
+        xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.580050E-04, delta=1E-05, label='X err  outside')
+
+        yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_inside, target_val=9.012947E-04, delta=1E-05, label='Y err  inside')
+
+        yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_global, target_val=9.877146E-04, delta=1E-05, label='Y err   global')
+
+        yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=9.877146E-04, delta=1E-05, label='Y err  outside')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        from lib.nekBinRun import run_neknek
+        from re import sub
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        # Tweak the .rea files and run genmap
+        for rea_file in ('inside', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            with open(rea_path, 'r') as f:
+                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-11     p21 DIVERGENCE', l) for l in f]
+            with open(rea_path, 'w') as f:
+                f.writelines(lines)
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
+
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'outside',
+            np_inside = 1,
+            np_outside = 1,
+            step_limit = 1000,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+        logfile  = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+            inside = 'inside',
+            outside = 'outside',
+            np_in = 1,
+            np_out = 1,
+            sfx = self.log_suffix
+        ))
+
+        xerr_inside = self.get_value_from_log('X err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_inside, target_val=7.431657E-04, delta=1E-04, label='X err  inside')
+
+        xerr_global = self.get_value_from_log('X err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_global, target_val=8.696332E-04, delta=1E-04, label='X err   global')
+
+        xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.696332E-04, delta=1E-05, label='X err  outside')
+
+        yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_inside, target_val=9.250194E-04, delta=1E-04, label='Y err  inside')
+
+        yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_global, target_val=9.878329E-04, delta=1E-04, label='Y err   global')
+
+        yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=9.878329E-04, delta=1E-05, label='Y err  outside')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
 ####################################################################
 #  kov_st_state; kov_st_stokes.rea
 ####################################################################

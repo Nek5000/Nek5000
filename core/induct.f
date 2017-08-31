@@ -892,7 +892,7 @@ c
       ifield = 1
       call sethlm   (h1,h2,intype)
 
-      call ophinvpr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
@@ -904,7 +904,7 @@ c
       ifield = ifldmhd
       call sethlm   (h1,h2,intype)
 
-      call ophinvpr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
+      call ophinv_pr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
 
 
@@ -1021,7 +1021,6 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ophinv_pr(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
-c   not used.  use ophinvpr instead
 C
 C     Ok = (H1*A+H2*B)-1 * Ik  (implicit)
 C
