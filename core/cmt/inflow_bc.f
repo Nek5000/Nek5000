@@ -44,6 +44,7 @@ C> @file Dirichlet states for inflow boundary conditions
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
+         call cmtasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg) ! get molarmass asnd phi t0in p0in cp cv
 c                                     !     ux,uy,uz
          l=l+1
@@ -127,6 +128,7 @@ c                                     !     ux,uy,uz
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)
+         call cmtasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg) ! get molarmass asnd phi t0in p0in cp cv
 c                                     !     ux,uy,uz
          l=l+1

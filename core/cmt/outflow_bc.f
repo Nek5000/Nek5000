@@ -42,6 +42,7 @@ C> @file outflow_bc.f Dirichlet states for outflow boundary conditions
       do iy=j0,j1
       do ix=i0,i1
          call nekasgn(ix,iy,iz,e)     ! gives us phi- and rho-
+         call cmtasgn(ix,iy,iz,e)
          call userbc (ix,iy,iz,f,ieg) ! just for molarmass, and
                                       ! pres
          l=l+1
