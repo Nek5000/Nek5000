@@ -494,9 +494,30 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
       endif ! eqn nums 2-4
 
 c     multiply by pressure
-      do i=1,nxyz
-         rdumz(i,1,1) = rdumz(i,1,1)*pr(i,1,1,e)
-      enddo
+      call col2(rdumz,pr(1,1,1,e),nxyz)
+
+c     gradphi.tauij !NOPE
+!     do i=1,nxyz !   ????????????SiGN??????
+!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,1)*
+!              (1.0d+0/JACM1(i,1,1,e)*
+!    >             (ur(i,1,1)*RXM1(i,1,1,e) +
+!    >              us(i,1,1)*SXM1(i,1,1,e) +
+!    >              ut(i,1,1)*TXM1(i,1,1,e)))
+!     enddo
+!     do i=1,nxyz !   ????????????SiGN??????
+!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,2)*
+!              (1.0d+0/JACM1(i,1,1,e)*
+!    >             (ur(i,1,1)*RYM1(i,1,1,e) +
+!    >              us(i,1,1)*SYM1(i,1,1,e) +
+!    >              ut(i,1,1)*TYM1(i,1,1,e)))
+!     enddo
+!     do i=1,nxyz !   ????????????SiGN??????
+!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,3)*
+!              (1.0d+0/JACM1(i,1,1,e)*
+!    >             (ur(i,1,1)*RZM1(i,1,1,e) +
+!    >              us(i,1,1)*SZM1(i,1,1,e) +
+!    >              ut(i,1,1)*TZM1(i,1,1,e)))
+!     enddo
 
         if (eq_num.eq.4.and.ldim.eq.2)then
 
