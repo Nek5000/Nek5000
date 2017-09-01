@@ -298,7 +298,6 @@ C> the compressible Navier-Stokes equations (NS).
       subroutine half_iku_cmt(res,diffh,e)
       include 'SIZE'
       include 'MASS'
-      include 'CMTDATA'
 ! diffh has D AgradU. half_iku_cmt applies D^T BM1 to it and increments
 ! the residual res with the result
       integer e ! lopsided. routine for one element must reference bm1
