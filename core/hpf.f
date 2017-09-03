@@ -17,7 +17,7 @@ c      implicit none
 
       include 'SIZE'
       include 'SOLN'
-      include 'INPUT'         ! param(110),(111),(112)
+      include 'INPUT'         ! param(110),(111)
       include 'TSTEP'         ! ifield
       include 'MASS'          ! BM1
 
@@ -52,11 +52,9 @@ c----------------------------------------
 
       hpf_kut = int(param(110))+1
       hpf_chi = param(111)
-      if (param(112).eq.0.) then
-        hpf_ifboyd = .false.
-      else
-        hpf_ifboyd = .true.
-      endif
+c     Boyd transform to preserve element values in unstable when used as forcing.
+c     keep parameter as false unless you know what you are doing      
+      hpf_ifboyd = .false.      
 
       nel = nelv
       n = nxyz*nel

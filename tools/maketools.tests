@@ -10,8 +10,8 @@ CC="gcc"
 # linking flags
 #USR_LFLAGS="-L$HOME/lib"
 
-# enable BIG MEMORY suuport
-#BIGMEM="false"
+# BIG MEMORY (>2GB) support
+BIGMEM="false"
 
 
 
@@ -126,8 +126,12 @@ fi
 F77="gfortran" 
 CC="gcc" 
 if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
-  F77="$F77 $BIGMEM_FLAG" 
-  CC="$CC $BIGMEM_FLAG" 
+  if [[ $OSTYPE == darwin* ]]; then
+    echo "BIGMEM not supported on this system!"
+  else
+    F77="$F77 $BIGMEM_FLAG" 
+    CC="$CC $BIGMEM_FLAG" 
+  fi
 fi
 
 export F77

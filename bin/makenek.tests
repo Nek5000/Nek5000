@@ -1,0 +1,88 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# Nek5000 build file
+#-------------------------------------------------------------------------------
+
+# source path 
+SOURCE_ROOT="/home/prabal/workstation/git_me/Nek5000" 
+SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src" 
+
+# Fortran/C compiler
+F77="mpif77"
+CC="mpicc"
+
+# pre-processor list (set to "?" to get a list of available symbols)
+PPLIST="" 
+
+#-------------------------------------------------------------------------------
+# WHAT FOLLOWS ARE OPTIONAL SETTINGS
+#-------------------------------------------------------------------------------
+
+# optional compiler flags
+FFLAGS=""
+CFLAGS=""
+
+# optional linking flags
+#USR_LFLAGS+=" -L/usr/lib -lfoo"
+
+# auxilliary files to compile
+# NOTE: source files have to located in the same directory as makenek
+#       a makefile_usr.inc has to be provided containing the build rules 
+#USR="foo.o"
+
+# MPI (default 1) 
+MPI="1"
+
+# profiling (default 1)
+#PROFILING=0
+
+# VisIt in situ (default 0)
+#VISIT=1
+#  Note: you can override the lib and include paths. VISIT_LIB and VISIT_INC
+#  If VISIT_STOP is set the simulation will stop after first step and wait
+#  for VisIt to connect.
+#VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
+#VISIT_STOP=true
+
+
+###############################################################################
+# DONT'T TOUCH WHAT FOLLOWS !!!
+###############################################################################
+set -e
+: ${MPI:=1}
+: ${PROFILING:=1}
+: ${VISIT:=0}
+
+# assign version tag
+mver=17.0.0
+
+# overwrite source path with optional 2nd argument
+if [ -d $2 ] && [ $# -eq 2 ]; then
+  SOURCE_ROOT="$2"
+  echo "change source code directory to: ", $SOURCE_ROOT
+fi
+
+if [ $MPI -eq 0 ]; then
+  gslib="gsserial" 
+else
+  gslib="gs" 
+fi
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -l$gslib"
+
+# create makefile
+source $SOURCE_ROOT/core/makenek.inc
+
+# compile gslib if needed
+if [ ! -f "$SOURCE_ROOT_GSLIB/lib$gslib.a" ]; then
+  make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
+   
+  if [ $MPI -ne 0 ]; then 
+    make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
+      
+  fi
+fi
+
+# compile nek
+make -j4 -f makefile 2>&1 | tee -a compiler.out
+
+exit 0
