@@ -14,7 +14,7 @@ variableDt = No
 maxCFL = 0.4
 
 writeControl = timeStep #runTime
-writeInterval = 1000
+writeInterval = 5000
 
 dealiasing = no
 filtering = no 
