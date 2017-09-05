@@ -247,20 +247,21 @@ c     is activated. It is unconditionally stable.  If you want to use
 c     higher-order interface extrapolation schemes, you need to increase 
 c     ngeom to ngeom=3-5 for scheme to be stable.
 
+
       if (NINTER.eq.1.or.istep.eq.0) then
-       c0=1
-       c1=0
-       c2=0
+       c0=1.
+       c1=0.
+       c2=0.
        else if (NINTER.eq.2.or.istep.eq.1) then
-         c0=2
-         c1=-1
-         c2=0
+         c0=2.
+         c1=-1.
+         c2=0.
        else 
-         c0=3
-         c1=-3
-         c2=1
+         c0=3.
+         c1=-3.
+         c2=1.
       endif
-     
+
       do k=1,nfld_neknek
       do i=1,n
          ubc(i,1,1,1,k) = 
