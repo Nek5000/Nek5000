@@ -135,8 +135,7 @@ lib:	objdir $(NOBJS)
 	ranlib ${LIBNAME}
 
 clean:
-#	rm -rf ${CASENAME}.f obj ${BINNAME}
-	rm -rf obj ${BINNAME}
+	rm -rf ${CASENAME}.f obj ${BINNAME}
 ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
 endif
