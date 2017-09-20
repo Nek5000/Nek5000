@@ -147,13 +147,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       ntdump=0
       if (timeio.ne.0.0) ntdump = int( time/timeio )
 
-      etims0 = dnekclock_sync()
+      tinit = dnekclock_sync() - etimes
       if (nio.eq.0) then
         write (6,*) ' '
         if (time.ne.0.0) write (6,'(a,e14.7)') ' Initial time:',time
         write (6,'(a,g13.5,a)') 
      &              ' Initialization successfully completed ',
-     &              etims0-etimes, ' sec'
+     &              tinit, ' sec'
       endif
 
       ifsync = ifsync_ ! restore initial value
@@ -167,9 +167,6 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'INPUT'
       include 'CTIMER'
-
-      real*4 papi_mflops
-      integer*8 papi_flops
 
       call nekgsync()
 
@@ -189,6 +186,10 @@ c-----------------------------------------------------------------------
 #endif
       call nek_comm_settings(isyc,itime)
       call nek_comm_startstat()
+
+#ifdef PAPI
+      dtmp = dnekgflpops() ! start measurement
+#endif
 
       istep  = 0
       msteps = 1

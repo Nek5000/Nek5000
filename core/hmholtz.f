@@ -18,7 +18,14 @@ c=======================================================================
 
       tol = abs(tli)
 
+#ifdef TIMER
       if (icalld.eq.0) thmhz=0.0
+      if (name.ne.'PRES') then
+        icalld=icalld+1
+        nhmhz=icalld
+        etime1=dnekclock()
+      endif
+#endif
 
       iffdm = .false.
 c     iffdm = .true.
@@ -26,14 +33,9 @@ c     iffdm = .true.
 
       if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
 
-      icalld=icalld+1
-      nhmhz=icalld
-      etime1=dnekclock()
-
       ntot = nx1*ny1*nz1*nelfld(ifield)
       if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
       if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
-
 
 C     Determine which field is being computed for FDM based preconditioner bc's
 c
@@ -62,8 +64,10 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
       if (imsh.eq.2) call cggo
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
+#ifdef TIMER
+      if (name.ne.'PRES') thmhz=thmhz+(dnekclock()-etime1)
+#endif
 
-      thmhz=thmhz+(dnekclock()-etime1)
       return
       END
 C

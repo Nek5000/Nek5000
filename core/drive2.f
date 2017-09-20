@@ -1137,6 +1137,7 @@ C
       nbsol=0
       nadvc=0
       nspro=0
+      ncvf =0
 c
       tmxmf=0.0
       tmxms=0.0
@@ -1317,25 +1318,11 @@ c
       tttstp = tttstp + 1e-7
       if (nio.eq.0) then
          write(6,'(A)') 'runtime statistics:'
-         write(6,*) 'total time',tttstp
 
-c         pcopy=tcopy/tttstp
-c         write(6,*) 'copy time',ncopy,tcopy,pcopy
-
-         pmxmf=tmxmf/tttstp
-         write(6,*) 'mxmf time',nmxmf,tmxmf,pmxmf
-         pgop=tgop/tttstp
-         write(6,*) 'tgop time',ngop,tgop,pgop
-         pinv3=tinv3/tttstp
-         write(6,*) 'inv3 time',ninv3,tinv3,pinv3
-         pinvc=tinvc/tttstp
-         write(6,*) 'invc time',ninvc,tinvc,pinvc
-         pmltd=tmltd/tttstp
-         write(6,*) 'mltd time',nmltd,tmltd,pmltd
-         pcdtp=tcdtp/tttstp
-         write(6,*) 'cdtp time',ncdtp,tcdtp,pcdtp
-         peslv=teslv/tttstp 
-         write(6,*) 'eslv time',neslv,teslv,peslv
+         pinit=tinit/tttstp
+         write(6,*) 'init time',tinit,pinit
+         pprep=tprep/tttstp
+         write(6,*) 'prep time',nprep,tprep,pprep
 
 c        Pressure solver timings
          ppres=tpres/tttstp
@@ -1352,6 +1339,14 @@ c        Helmholz solver timings
          phmhz=thmhz/tttstp
          write(6,*) 'hmhz time',nhmhz,thmhz,phmhz
 
+c        E solver timings
+         peslv=teslv/tttstp 
+         write(6,*) 'eslv time',neslv,teslv,peslv
+
+c        CVODE RHS timings
+         pcvf=tcvf/tttstp
+         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
+
 c        Resiual projection timings
          pproj=tproj/tttstp
          write(6,*) 'proj time',0,tproj,pproj
@@ -1364,10 +1359,6 @@ c        User q and f timings
          pusfq=tusfq/tttstp
          write(6,*) 'usfq time',0,tusfq,pusfq
 
-c        CVODE solver timings
-         pcvf=tcvf/tttstp
-         if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
-
 c        USERBC timings
          pusbc=tusbc/tttstp
          write(6,*) 'usbc time',nusbc,tusbc,pusbc
@@ -1375,14 +1366,41 @@ c        USERBC timings
          write(6,*) 'usbc max ',max_usbc 
          write(6,*) 'usb  avg ',avg_usbc 
 
-c        Axhelm timings 
+c        Operator timings
+         pmltd=tmltd/tttstp
+         write(6,*) 'mltd time',nmltd,tmltd,pmltd
+         pcdtp=tcdtp/tttstp
+         write(6,*) 'cdtp time',ncdtp,tcdtp,pcdtp
          paxhm=taxhm/tttstp
          write(6,*) 'axhm time',naxhm,taxhm,paxhm
-
-c        Convection timings
          padvc=tadvc/tttstp
          write(6,*) 'advc time',nadvc,tadvc,padvc
 
+c        Low-level routines
+         pmxmf=tmxmf/tttstp
+         write(6,*) 'mxmf time',tmxmf,pmxmf
+         padc3=tadc3/tttstp
+         write(6,*) 'adc3 time',tadc3,padc3
+         pcol2=tcol2/tttstp
+         write(6,*) 'col2 time',tcol2,pcol2
+         pcol3=tcol3/tttstp
+         write(6,*) 'col3 time',tcol3,pcol3
+         pa2s2=ta2s2/tttstp
+         write(6,*) 'a2s2 time',ta2s2,pa2s2
+         padd2=tadd2/tttstp
+         write(6,*) 'add2 time',tadd2,padd2
+         pinvc=tinvc/tttstp
+         write(6,*) 'invc time',tinvc,pinvc
+
+c         pinv3=tinv3/tttstp
+c         write(6,*) 'inv3 time',ninv3,tinv3,pinv3
+
+         pgop=tgop/tttstp
+         write(6,*) 'tgop time',ngop,tgop,pgop
+
+         pdadd=tdadd/tttstp
+         write(6,*) 'dadd time',ndadd,tdadd,pdadd
+ 
 c        Vector direct stiffness summuation timings
          pvdss=tvdss/tttstp
          write(6,*) 'vdss time',nvdss,tvdss,pvdss
@@ -1403,9 +1421,6 @@ c         write(6,*) 'gsum time',ngsum,tgsum,pgsum
 c         pdsnd=tdsnd/tttstp
 c         write(6,*) 'dsnd time',ndsnd,tdsnd,pdsnd
 
-         pdadd=tdadd/tttstp
-         write(6,*) 'dadd time',ndadd,tdadd,pdadd
-
 c         pdsmx=tdsmx/tttstp
 c         write(6,*) 'dsmx time',ndsmx,tdsmx,pdsmx
 c         pdsmn=tdsmn/tttstp
@@ -1415,15 +1430,7 @@ c         write(6,*) 'slvb time',nslvb,tslvb,pslvb
          pddsl=tddsl/tttstp
          write(6,*) 'ddsl time',nddsl,tddsl,pddsl
 c
-         psolv=tsolv/tttstp
-         write(6,*) 'solv time',nsolv,tsolv,psolv
-
-c         psett=tsett/tttstp
-c         write(6,*) 'sett time',nsett,tsett,psett
-
-         pprep=tprep/tttstp
-         write(6,*) 'prep time',nprep,tprep,pprep
-c         pbsol=tbsol/tttstp
+c          pbsol=tbsol/tttstp
 c         write(6,*) 'bsol time',nbsol,tbsol,pbsol
 c         pbso2=tbso2/tttstp
 c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
@@ -1431,10 +1438,10 @@ c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
 #ifdef MPITIMER
          write(6,'(/,A)') 'MPI timings'
 c        MPI timings         
-         write(6,*) 'total comm time',tcomm, max_comm/ttime
          write(6,*) 'comm min ',min_comm
          write(6,*) 'comm max ',max_comm 
          write(6,*) 'comm avg ',avg_comm 
+         write(6,*) 'total comm %',max_comm/ttime
 
 c        MPI_Barrier timings
          psyc=tsyc/tcomm
