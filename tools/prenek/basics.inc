@@ -1,7 +1,7 @@
 C     Utilities to be included in all subroutines in Preprocessor Program
 C     BASICS.INC
 
-      parameter (nelm=0 500 000,nxm=7,nym=7,nzm=7,maxfld=5)
+      parameter (nelm=1 000 000,nxm=7,nym=7,nzm=7,maxfld=5)
       parameter (lx1=nxm,ly1=nym,lz1=nzm)
 
       PARAMETER ( MAXCRV=4,MAXIBC=4,MAXHIS=2,MPSCAL=4)

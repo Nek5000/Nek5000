@@ -9,6 +9,6 @@ amg_hypre: amg_hypre.o
 	$(CC) -DHAVE_CONFIG_H -DHYPRE_TIMING $(CFLAGS) -c $<
 
 clean:
-	-rm amg_hypre *.o
+	@rm -f amg_hypre *.o
 
 .PHONY: clean

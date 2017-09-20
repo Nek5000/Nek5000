@@ -126,9 +126,7 @@ fi
 F77="$F77" 
 CC="$CC" 
 if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
-  if [[ $OSTYPE == darwin* ]]; then
-    echo "BIGMEM not supported on this system!"
-  else
+  if [[ $OSTYPE != darwin* ]]; then
     F77="$F77 $BIGMEM_FLAG" 
     CC="$CC $BIGMEM_FLAG" 
   fi

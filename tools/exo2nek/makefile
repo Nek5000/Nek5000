@@ -12,7 +12,7 @@ exo2nek:$(OBJS)
 	$(F77) $(FLAGS) -o $(prefix)/exo2nek $(OBJS) $(LFLAGS)
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 exo2nek.o	: exo2nek.f			;  $(F77) -c $(FLAGS) exo2nek.f
 byte.o		: ../../core/byte.c		;  $(CC)  -c $(CFLAGS) ../../core/byte.c

@@ -1,4 +1,4 @@
-      parameter(nelxym=53000) ! Max number of elements in x-y plane
+      parameter(nelxym=100 000) ! Max number of elements in x-y plane
 
       common /array/ x(4,nelxym),y(4,nelxym)
      $             , bc(5,6,nelxym),curve(6,12,nelxym)

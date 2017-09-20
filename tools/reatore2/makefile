@@ -16,7 +16,7 @@ re2torea:	$(NOBJ2)
 
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 reatore2.o  	: reatore2.f		 ; $(F77) -c $(FLAGS)  reatore2.f 
 re2torea.o  	: re2torea.f	 	 ; $(F77) -c $(FLAGS)  re2torea.f 

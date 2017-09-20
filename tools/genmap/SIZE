@@ -1,6 +1,5 @@
        ! max number of elements
-       parameter(lelm=500 000) 
-c       parameter(lelm=3 000 000)
+       parameter(lelm=10 000 000)
 
        common/percsn/wdsize,wdsizi
        integer wdsize,wdsizi
