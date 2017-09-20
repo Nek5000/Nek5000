@@ -206,6 +206,8 @@ c
       common /exacg/ xo(lx1,ly1,lz1,lelt),yo(lx1,ly1,lz1,lelt),
      $               zo(lx1,ly1,lz1,lelt)
 
+      real inv2pi
+
       ifield = 1  ! for outpost
 
       n    = nx1*ny1*nz1*nelv
@@ -213,6 +215,10 @@ c
       visc = param(2)
       u0   = param(96)
       v0   = param(97)
+
+      one = 1.
+      pi = 4.*atan(one)
+
       call exact  (ue,ve,xm1,ym1,n,time,visc,u0,v0)
       call exactp (pe,xm2,ym2,n2,time,visc,u0,v0)
 
@@ -259,14 +265,14 @@ c
 
       if (istep.eq.0) call opcopy(xo,yo,zo,xm1,ym1,zm1)
 
-      do i=1,n
+      inv2pi = 1./(2.*pi)
 
-         arx = xo(i,1,1,1)/(8.*atan(1.))  ! in [0 1]
-         ary = yo(i,1,1,1)/(8.*atan(1.))  ! in [0 1]
+      do i=1,n
+         arx = xo(i,1,1,1)*inv2pi  ! in [0 1]
+         ary = yo(i,1,1,1)*inv2pi  ! in [0 1]
 
          wy(i,1,1,1) = amp*sin(pi*arx)*ary - amp*sin(pi*arx)*(1-ary)
          wx(i,1,1,1) = am2*sin(pi*ary)
-
       enddo
 
       return
