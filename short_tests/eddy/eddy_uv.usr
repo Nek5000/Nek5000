@@ -210,13 +210,16 @@ c
       visc = param(2)
       u0   = param(96)
       v0   = param(97)
+
       call exact  (ue,ve,xm1,ym1,n,time,visc,u0,v0)
       call exactp (pe,xm2,ym2,n2,time,visc,u0,v0)
+
       if (istep.eq.0) call outpost(ue,ve,vx,pe,t,'   ')
 
       call sub3   (ud,ue,vx,n)
       call sub3   (vd,ve,vy,n)
       call sub3   (pd,pe,pr,n2)
+
       if (istep.eq.nsteps) call outpost(ud,vd,vx,pd,t,'err')
 
       umx = glamax(vx,n)
@@ -232,8 +235,9 @@ c
       if (nid.eq.0) then
          write(6,11) istep,time,udx,umx,uex,u0,'  X err'
          write(6,11) istep,time,vdx,vmx,vex,v0,'  Y err'
-         write(6,'(i5,1p4e14.6,a7)') istep,time,pdx,pmx,pex,'  P err'
+         write(6,12) istep,time,pdx,pmx,pex,'                P err'
    11    format(i5,1p5e14.6,a7)
+   12    format(i5,1p4e14.6,a21)
       endif
 
       if (istep.le.5) then        !  Reset velocity & pressure to eliminate
