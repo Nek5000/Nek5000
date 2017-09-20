@@ -44,7 +44,8 @@ c
 
 C     Output the processor-element map:
       ifverbm=.true.
-      if (np.gt.2050.or.nelgt.gt.40000) ifverbm=.false.
+      if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
+      if (loglevel .gt. 2) ifverbm=.true.
 
       if(ifverbm) then
         idum = 1
@@ -57,9 +58,6 @@ C     Output the processor-element map:
               call csend(mtype,idum,4,inid,0)            ! handshake
               call crecv(mtype,inelt,4)               ! nelt of other cpus
               N8 = min(8,inelt)
-c             write(6 ,1310) inid+1,(lglel(ie,inid+1),ie=1,n8)
-c             IF (inelt.gt.8) 
-c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            ENDDO
  1310      FORMAT(' RANK',I6,' IEG',8I8)
  1315      FORMAT('     ',6X,'    ',8I8)
@@ -67,6 +65,11 @@ c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
            call csend(mtype,nelt,4,0,0)            ! nelt
+           if (loglevel .gt. 2) then
+              N8 = min(8,nelt)
+              write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
+              if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
+           endif
         endif
       endif
 
