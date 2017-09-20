@@ -145,7 +145,6 @@ c     Grid Solution of Incompressible Navier-Stokes Equations." Journal
 c     of Computational Physics 307 (2016), 60--93.
 
       real x2(n2),y2(n2),pe(n2)
-      real x,y,e
 
       e = exp(-50*time*visc)
 
@@ -159,6 +158,8 @@ c     of Computational Physics 307 (2016), 60--93.
      $         + 36*sin(3*x-y) - 32*sin(5*(x+y)) + 36*sin(3*x+y)
      $         - 4*sin(3*(x+3*y)))
       enddo
+
+      call ortho(pe)
 
       return
       end
