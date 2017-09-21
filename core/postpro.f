@@ -1857,7 +1857,7 @@ c-----------------------------------------------------------------------
       character*132 string
       character*72 string2
       integer idum(3*numsts+3)
-      integer NPARAM
+      integer paramval
 
       ierr = 0
       call flush_io
@@ -1881,10 +1881,10 @@ c-----------------------------------------------------------------------
         READ(9,'(a)') string2
         write(10,*) string2
 
-        READ(string2,*) NPARAM
+        READ(string2,*) paramval
 
 c       WRITE PARAMETERS
-        DO 20 I=1,NPARAM
+        DO 20 I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
    20   CONTINUE
@@ -1893,9 +1893,9 @@ c       LINES OF PASSIVE SCALARS
         read(9,'(a)') string2
         write(10,*) string2
 
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
          enddo
@@ -1905,9 +1905,9 @@ c       LINES OF LOGICAL SWITCHES
         read(9,'(a)') string2
         write(10,*) string2
 
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
          enddo
@@ -1938,7 +1938,7 @@ c-----------------------------------------------------------------------
       character*132 string
       character*72 string2
       integer idum(3*numsts+3)
-      integer NPARAM,i,j
+      integer paramval,i,j
 
 c     IGNORE ELEMENT DATA
 c     IGNORE XY DATA
@@ -1954,9 +1954,9 @@ c     IGNORE XY DATA
 c     CURVE SIDE DATA
         READ(9,'(a)') string2
         write(6,*) string2
-        READ(9,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        READ(9,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
          enddo
         endif
@@ -1984,9 +1984,9 @@ c     PRESOLVE
 c     INITIAL CONDITIONS
         READ(9,'(a)') string2
         write(10,*) string2
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-        do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+        do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
         enddo
@@ -1996,10 +1996,10 @@ c       DRIVE FORCE
         write(10,*) string2
         READ(9,'(a)') string2
         write(10,*) string2
-        read(string2,*) NPARAM
+        read(string2,*) paramval
 
-        if (NPARAM.gt.0) then
-        do I=1,NPARAM
+        if (paramval.gt.0) then
+        do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
         enddo
@@ -2010,9 +2010,9 @@ c       VARIABLE PROPERTY DATA
         write(10,*) string2
         read(9,'(a)') string2
         write(10,*) string2
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
          enddo
@@ -2024,9 +2024,9 @@ c       HISTORY AND INTEGRAL DATA
         read(9,'(a)') string2
         write(10,*) string2
 
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
          enddo
@@ -2038,9 +2038,9 @@ c      OUPUT FIELD SPECIFICATION
 
         read(9,'(a)') string2
         write(10,*) string2
-        read(string2,*) NPARAM
-        if (NPARAM.gt.0) then
-         do I=1,NPARAM
+        read(string2,*) paramval
+        if (paramval.gt.0) then
+         do I=1,paramval
           READ(9,'(a)') string2
           write(10,*) string2
          enddo
