@@ -1816,3 +1816,247 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gen_rea2(imid)  ! Generate and output essential parts of .rea
+                                ! Clobbers ccurve()
+      include 'SIZE'
+      include 'TOTAL'
+
+c     imid = 0  ! No midside node defs
+c     imid = 1  ! Midside defs where current curve sides don't exist
+c     imid = 2  ! All nontrivial midside node defs
+
+      if (nid.eq.0) open(unit=10,file='newrea.out',status='unknown') ! clobbers existing file
+
+      call gen_rea_top
+
+      call gen_rea_xyz
+
+      call gen_rea_curve(imid)  ! Clobbers ccurve()
+
+      if (nid.eq.0) write(10,*)' ***** BOUNDARY CONDITIONS *****'
+      do ifld=1,nfield
+         call gen_rea_bc   (ifld)
+      enddo
+
+      call gen_rea_bottom
+
+      if (nid.eq.0) close(10)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_top
+      
+      INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+      INCLUDE 'CTIMER'
+      INCLUDE 'ZPER'
+
+      logical ifbswap,ifre2,parfound
+      character*132 string
+      character*72 string2
+      integer idum(3*numsts+3)
+      integer NPARAM
+
+      ierr = 0
+      call flush_io
+
+      if(nid.eq.0) then
+        write(6,'(A,A)') ' Reading ', reafle
+        open (unit=9,file=reafle,status='old', iostat=ierr)
+      endif
+
+      call bcast(ierr,isize)
+      if (ierr .gt. 0) call exitti('Cannot open .rea file!$',1)
+
+
+      IF(NID.EQ.0) THEN
+        READ(9,'(a)') string2
+        write(10,'(a)') string2
+        READ(9,'(a)') string2
+        write(10,*) string2
+        READ(9,'(a)') string2
+        write(10,*) string2
+        READ(9,'(a)') string2
+        write(10,*) string2
+
+        READ(string2,*) NPARAM
+
+c       WRITE PARAMETERS
+        DO 20 I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+   20   CONTINUE
+
+c       LINES OF PASSIVE SCALARS
+        read(9,'(a)') string2
+        write(10,*) string2
+
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+        endif
+
+c       LINES OF LOGICAL SWITCHES
+        read(9,'(a)') string2
+        write(10,*) string2
+
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+        endif
+
+c         LAST TWO LINES BEFORE ELEMENT DATA BEGINS
+         do I=1,2
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+
+
+       ENDIF
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_rea_bottom
+      
+      INCLUDE 'SIZE'
+      INCLUDE 'INPUT'
+      INCLUDE 'PARALLEL'
+      INCLUDE 'CTIMER'
+      INCLUDE 'ZPER'
+
+      logical ifbswap,ifre2,parfound
+      character*132 string
+      character*72 string2
+      integer idum(3*numsts+3)
+      integer NPARAM,i,j
+
+c     IGNORE ELEMENT DATA
+c     IGNORE XY DATA
+
+      IF(NID.EQ.0) THEN
+        READ(9,'(a)') string2
+      do i=1,nelgt
+        READ(9,'(a)') string2
+        do j=1,2+(ndim-2)*4
+           READ(9,'(a)') string2
+        enddo
+      enddo
+c     CURVE SIDE DATA
+        READ(9,'(a)') string2
+        write(6,*) string2
+        READ(9,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+         enddo
+        endif
+c      BOUNDARY CONDITIONS
+        READ(9,'(a)') string2
+        READ(9,'(a)') string2
+c      FLUID
+       do i=1,nelv*2*ndim
+        READ(9,'(a)') string2
+       enddo
+c      Thermal
+       if (ifheat) then
+        READ(9,'(a)') string2
+        do i=1,nelt*2*ndim
+         READ(9,'(a)') string2
+        enddo
+       else
+        READ(9,'(a)') string2
+        write(10,*) string2
+       endif
+
+c     PRESOLVE
+        READ(9,'(a)') string2
+        write(10,*) string2
+c     INITIAL CONDITIONS
+        READ(9,'(a)') string2
+        write(10,*) string2
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+        do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+        enddo
+        endif
+c       DRIVE FORCE
+        READ(9,'(a)') string2
+        write(10,*) string2
+        READ(9,'(a)') string2
+        write(10,*) string2
+        read(string2,*) NPARAM
+
+        if (NPARAM.gt.0) then
+        do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+        enddo
+        endif
+
+c       VARIABLE PROPERTY DATA
+        read(9,'(a)') string2
+        write(10,*) string2
+        read(9,'(a)') string2
+        write(10,*) string2
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+        endif
+
+c       HISTORY AND INTEGRAL DATA
+        read(9,'(a)') string2
+        write(10,*) string2
+        read(9,'(a)') string2
+        write(10,*) string2
+
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+        endif
+
+c      OUPUT FIELD SPECIFICATION
+        read(9,'(a)') string2
+        write(10,*) string2
+
+        read(9,'(a)') string2
+        write(10,*) string2
+        read(string2,*) NPARAM
+        if (NPARAM.gt.0) then
+         do I=1,NPARAM
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+        endif
+
+c         LAST FOUR LINES
+         do I=1,5
+          READ(9,'(a)') string2
+          write(10,*) string2
+         enddo
+
+
+       ENDIF
+
+      if (nid.eq.0) close(9)
+
+      return
+      end
+c-----------------------------------------------------------------------
