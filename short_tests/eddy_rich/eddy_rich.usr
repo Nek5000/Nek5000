@@ -145,7 +145,6 @@ c     Grid Solution of Incompressible Navier-Stokes Equations." Journal
 c     of Computational Physics 307 (2016), 60--93.
 
       real x2(n2),y2(n2),pe(n2)
-      real x,y,e
 
       e = exp(-50*time*visc)
 
@@ -159,6 +158,8 @@ c     of Computational Physics 307 (2016), 60--93.
      $         + 36*sin(3*x-y) - 32*sin(5*(x+y)) + 36*sin(3*x+y)
      $         - 4*sin(3*(x+3*y)))
       enddo
+
+      call ortho(pe)
 
       return
       end
@@ -205,6 +206,8 @@ c
       common /exacg/ xo(lx1,ly1,lz1,lelt),yo(lx1,ly1,lz1,lelt),
      $               zo(lx1,ly1,lz1,lelt)
 
+      real inv2pi
+
       ifield = 1  ! for outpost
 
       n    = nx1*ny1*nz1*nelv
@@ -212,13 +215,19 @@ c
       visc = param(2)
       u0   = param(96)
       v0   = param(97)
+
+      one = 1.
+      pi = 4.*atan(one)
+
       call exact  (ue,ve,xm1,ym1,n,time,visc,u0,v0)
       call exactp (pe,xm2,ym2,n2,time,visc,u0,v0)
+
       if (istep.eq.0) call outpost(ue,ve,vx,pe,t,'   ')
 
       call sub3   (ud,ue,vx,n)
       call sub3   (vd,ve,vy,n)
       call sub3   (pd,pe,pr,n2)
+
       if (istep.eq.nsteps) call outpost(ud,vd,vx,pd,t,'err')
 
       umx = glamax(vx,n)
@@ -238,8 +247,9 @@ c
       if (nid.eq.0) then
          write(6,11) istep,time,udx,umx,unm,u0,'  X err'
          write(6,11) istep,time,vdx,vmx,vnm,v0,'  Y err'
-         write(6,'(i5,1p4e14.6,a7)') istep,time,pdx,pmx,pnm,'  P err'
+         write(6,12) istep,time,pdx,pmx,pnm,'                P err'
    11    format(i5,1p5e14.6,a7)
+   12    format(i5,1p4e14.6,a21)
       endif
 
       if (istep.le.5) then        !  Reset velocity & pressure to eliminate
@@ -255,14 +265,14 @@ c
 
       if (istep.eq.0) call opcopy(xo,yo,zo,xm1,ym1,zm1)
 
-      do i=1,n
+      inv2pi = 1./(2.*pi)
 
-         arx = xo(i,1,1,1)/(8.*atan(1.))  ! in [0 1]
-         ary = yo(i,1,1,1)/(8.*atan(1.))  ! in [0 1]
+      do i=1,n
+         arx = xo(i,1,1,1)*inv2pi  ! in [0 1]
+         ary = yo(i,1,1,1)*inv2pi  ! in [0 1]
 
          wy(i,1,1,1) = amp*sin(pi*arx)*ary - amp*sin(pi*arx)*(1-ary)
          wx(i,1,1,1) = am2*sin(pi*ary)
-
       enddo
 
       return
