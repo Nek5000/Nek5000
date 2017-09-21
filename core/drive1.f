@@ -257,6 +257,8 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
+         if (igeom.gt.2) call userchk_set_xfer
+
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
