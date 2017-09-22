@@ -753,7 +753,7 @@ C     Add contributions to F from lagged BD terms.
 
 c     INLINED:
 c     call cmult2_acc(h2,vtrans(1,1,1,1,ifield),const,ntot1)
-!$acc parallel loop
+!$acc parallel loop collapse(4)
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
@@ -773,7 +773,7 @@ c     call outpost(vx,vy,vz,bm1,t,'wso')
 
 !$acc update host(bd)
 c     write (6,*) 'bd2=',bd(2)
-!$acc parallel loop
+!$acc parallel loop collapse(4)
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
@@ -795,7 +795,7 @@ c           CALL opcolv3c_acc(TA1,TA2,TA3,VXLAG (1,1,1,1,ILAG-1),
 c    $                                VYLAG (1,1,1,1,ILAG-1),
 c    $                                VZLAG (1,1,1,1,ILAG-1),
 c    $                                BM1LAG(1,1,1,1,ILAG-1),bd(ilag+1))
-!$acc parallel loop
+!$acc parallel loop collapse(4)
             do e = 1, nelv
             do k = 1, lz1
             do j = 1, ly1
@@ -820,7 +820,7 @@ c           CALL opcolv3c_acc(TA1,TA2,TA3,VXLAG (1,1,1,1,ILAG-1),
 c    $                                VYLAG (1,1,1,1,ILAG-1),
 c    $                                VZLAG (1,1,1,1,ILAG-1),
 c    $                                BM1                   ,bd(ilag+1))
-!$acc parallel
+!$acc parallel loop collapse(4)
             do e = 1, nelv
             do k = 1, lz1
             do j = 1, ly1
@@ -858,7 +858,7 @@ c         =
 c          CALL ADD2(TB1,TA1,NTOT1)
 c          CALL ADD2(TB2,TA2,NTOT1)
 c          IF(NDIM.EQ.3)CALL ADD2(TB3,TA3,NTOT1)
-!$acc parallel
+!$acc parallel loop collapse(4)
          do e = 1, nelv
          do k = 1, lz1
          do j = 1, ly1
@@ -876,7 +876,7 @@ c           tb3(i,j,k,e) = tb3(i,j,k,e) + ta1(i,j,k,e)
 
 c     INLINED:
 c     call opadd2col_acc(BFX,BFY,BFZ,TB1,TB2,TB3,h2)
-!$acc parallel
+!$acc parallel loop collapse(4)
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
