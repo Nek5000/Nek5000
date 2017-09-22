@@ -3075,8 +3075,8 @@ C-------------------------------------------------------------------
       include 'MASS'
       include 'EIGEN'
 
-c     common  /cprint/ ifprint
-c     logical          ifprint
+      common  /cprint/ ifprint
+      logical          ifprint
 
       real w1   (lx1,ly1,lz1,lelt),
      $     w2   (lx1,ly1,lz1,lelt)
@@ -3364,9 +3364,9 @@ c
      $ ,             tmp2  (lx1*ly1*lz1*lelt)
      $ ,             tmp3  (lx1*ly1*lz1*lelt)
 
-      real           tm1   (lx1*ly1*lz1,lelt)
-      real           tm2   (lx1*ly1*lz1,lelt)
-      real           tm3   (lx1*ly1*lz1,lelt)
+      real           tm1   (lx1*ly1*lz1*lelt)
+      real           tm2   (lx1*ly1*lz1*lelt)
+      real           tm3   (lx1*ly1*lz1*lelt)
       real           duax  (lx1)
       real           ysm1  (lx1)
 
