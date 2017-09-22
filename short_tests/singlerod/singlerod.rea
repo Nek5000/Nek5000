@@ -12,11 +12,11 @@
    1.00000     p008 CONDUCT
    0.00000     p009 
    000.000     p010 FINTIME
-   5 .00000     p011 NSTEPS
-  -0.30000E-02 p012 DT
-   0.00000     p013 IOCOMM
+ 1000.00000     p011 NSTEPS
+  -0.150000E-02 p012 DT
+ 100 00000     p013 IOCOMM
    0.00000     p014 IOTIME
-   1.00     p015 IOSTEP
+   0000.00     p015 IOSTEP
    0.00000     p016 PSSOLVER: 0=default
    0.00000     p017 
   0.250000E-01 p018 GRID < 0 --> # cells on screen
@@ -67,7 +67,7 @@
    0.00000     p063 =8 --> force 8-byte output
    0.00000     p064 =1 --> perturbation restart
    1.00000     p065 #iofiles (eg, 0 or 64); <0 --> sep. dirs
-   4.00000     p066 output : <0=ascii, else binary
+   0 4.00000     p066 output : <0=ascii, else binary
    4.00000     p067 restart: <0=ascii, else binary
    0.00000     p068 iastep: freq for avg_all (0=iostep)
    0.00000     p069    : : : frequency of srf dump
@@ -94,7 +94,7 @@
    0.00000     p090    : : :
    0.00000     p091    : : :
    0.00000     p092 
-   20.0000     p093 Number of previous pressure solns saved
+   0.0000     p093 Number of previous pressure solns saved
    0.00000     p094 start projecting velocity after p94 step
    0.00000     p095 start projecting pressure after p95 step
    0.00000     p096    : : :   which saving algorithm 1 = di
@@ -53930,8 +53930,8 @@ C
   ***** OUTPUT FIELD SPECIFICATION *****
            6  SPECIFICATIONS FOLLOW
  F       COORDINATES
- F       VELOCITY
- F       PRESSURE
+ T       VELOCITY
+ T       PRESSURE
  F       TEMPERATURE
  F       TEMPERATURE GRADIENT
            0       PASSIVE SCALARS

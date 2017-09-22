@@ -740,7 +740,7 @@ C-----------------------------------------------------------------------
       include 'TSTEP'
 
       real*8 ts, dnekclock
- 
+
       ifield = 1
       imesh  = 1
       call unorm
@@ -789,7 +789,7 @@ c             - Velocity/stress formulation.
 
       endif
 
-      if(nio.eq.0 .and. igeom.ge.2) 
+      if (nio.eq.0 .and. igeom.ge.2) 
      &   write(*,'(4x,i7,a,1p2e12.4)') 
      &   istep,'  Fluid done',time,dnekclock()-ts
 

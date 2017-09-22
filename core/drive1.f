@@ -254,12 +254,9 @@ c-----------------------------------------------------------------------
       return
 #endif
 
-
       if (ifsplit) then   ! PN/PN formulation
 
-
          do igeom=1,ngeom
-
 
          ! within cvode we use the lagged wx for 
          ! extrapolation, that's why we have to call it before gengeom 
@@ -278,8 +275,8 @@ c-----------------------------------------------------------------------
             if (iflomach) call qthermal
          endif
 
-         if (ifflow)          call fluid    (igeom)
-         if (ifmvbd)          call meshv    (igeom)
+         if (ifflow)          call fluid(igeom)
+         if (ifmvbd)          call meshv(igeom)
          if (param(103).gt.0) call q_filter (param(103))
          enddo
 

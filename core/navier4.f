@@ -284,12 +284,12 @@ C--------------------------------------------------------------------
 C
       COMMON /SCRUZ/  DIVV (LX2,LY2,LZ2,LELV)
      $ ,              BDIVV(LX2,LY2,LZ2,LELV)
-C
+
       if (ifsplit) return
       IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) RETURN
       five = 5.0
       if (param(102).ne.0.0) five=param(102)
-C
+
       NTOT2 = NX2*NY2*NZ2*NELV
       if (ifield.eq.1) then     ! avo: sub arguments?
          CALL OPDIV (BDIVV,VX,VY,VZ)
@@ -298,9 +298,9 @@ C
       endif
       CALL COL3 (DIVV,BDIVV,BM2INV,NTOT2)
       DNORM = SQRT(GLSC2(DIVV,BDIVV,NTOT2)/VOLVM2) 
-C
+
       if (nio.eq.0) WRITE (6,*) istep,' DNORM, DIVEX',DNORM,DIVEX
-C
+
 c     IF (istep.gt.10.and.DNORM.GT.(1.01*DIVEX).AND.DIVEX.GT.0.) then
 c        if (DNORM.gt.1e-8) then
 c           if (nid.eq.0) WRITE(6,*) 'DNORM-DIVEX div. ... aborting'
@@ -315,20 +315,20 @@ c     IF (DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) TOLPDF = 5.*DNORM
       IF (istep.gt.5.and.tolpdf.eq.0.0.and.
      $    DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) 
      $     TOLPDF = FIVE*DNORM
-C
+
       RETURN
       END
       FUNCTION VLSC3(X,Y,B,N)
-C
+
 C     local inner product, with weight
-C
+
       DIMENSION X(1),Y(1),B(1)
       REAL DT
-C
+
       include 'OPCTR'
-C
+
 #ifdef TIMER
-C
+
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -340,7 +340,7 @@ C
       ncall(myrout) = ncall(myrout) + 1
       dcount      =      dcount + dfloat(isbcnt)
 #endif
-C
+
       DT = 0.0
       DO 10 I=1,N
          T = X(I)*Y(I)*B(I)
@@ -351,7 +351,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      FUNCTION VLSC3_ACC(X,Y,B,N)
+      function vlsc3_acc(x,y,b,n)
 C ROR, 05-12-2017: This does not give the correct results on GPU.
 C Inside the reduction clause, the values of X, Y, and B were simply
 C 0, rather than the correct values. This was confimred with cuda-gdb
@@ -359,8 +359,8 @@ C Our workaround was to inline VLSC_ACC in gmres.f and use ACC KERNELS.
 C
 C     local inner product, with weight
 C
-      DIMENSION X(N),Y(N),B(N)
-      REAL DT
+      dimension x(n),y(n),b(n)
+      real dt
 C
       include 'OPCTR'
 C
@@ -378,16 +378,16 @@ C
       dcount      =      dcount + dfloat(isbcnt)
 #endif
 C
-      DT = 0.0
-!$ACC PARALLEL LOOP PRESENT(X,Y,B) REDUCTION(+:DT)
-      DO I=1,N
-         DT = DT+X(I)*Y(I)*B(I)
-      ENDDO
-!$ACC END PARALLEL LOOP
-      T=DT
-      VLSC3 = T
-      RETURN
-      END
+      dt = 0.0
+!$acc parallel loop present(x,y,b) reduction(+:dt)
+      do i=1,n
+         dt = dt+x(i)*y(i)*b(i)
+      enddo
+!$acc end parallel loop
+      t=dt
+      vlsc3_acc = t
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
@@ -1340,6 +1340,106 @@ c
 
       call add2(u,ub,n)
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hsolve_debug(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd
+     $                 ,approx,napprox,bi)
+c
+c     Either std. Helmholtz solve, or a projection + Helmholtz solve
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+c
+      CHARACTER*4    NAME
+      REAL           U    (LX1,LY1,LZ1,1)
+      REAL           R    (LX1,LY1,LZ1,1)
+      REAL           H1   (LX1,LY1,LZ1,1)
+      REAL           H2   (LX1,LY1,LZ1,1)
+      REAL           vmk  (LX1,LY1,LZ1,1)
+      REAL           vml  (LX1,LY1,LZ1,1)
+      REAL           bi   (LX1,LY1,LZ1,1)
+      REAL           approx (1)
+      integer        napprox(1)
+      common /ctmp2/ w1   (lx1,ly1,lz1,lelt)
+      common /ctmp3/ w2   (2+2*mxprev)
+
+      logical ifstdh
+      character*4  cname
+      character*6  name6
+
+      logical ifwt,ifvec
+
+      call chcopy(cname,name,4)
+      call capit (cname,4)
+
+
+      p945 = param(94)
+      if (cname.eq.'PRES') p945 = param(95)
+
+                          ifstdh = .false.
+      if (param(93).eq.0) ifstdh = .true.
+      if (p945.eq.0)      ifstdh = .true.
+      if (istep.lt.p945)  ifstdh = .true.
+
+      if (ifstdh) then
+         call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
+      else
+
+         n = nx1*ny1*nz1*nelfld(ifield)
+
+         call col2   (r,vmk,n)
+!$acc    update device(r)
+         call dssum  (r,nx1,ny1,nz1)
+!$acc    update host(r)
+
+         call blank (name6,6)
+         call chcopy(name6,name,4)
+         ifwt  = .true.
+         ifvec = .false.
+
+         call hmhzpf (name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd,bi)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function vlsc3_acc2(x,y,b,n)
+C ROR, 05-12-2017: This does not give the correct results on GPU.
+C Inside the reduction clause, the values of X, Y, and B were simply
+C 0, rather than the correct values. This was confimred with cuda-gdb
+C Our workaround was to inline VLSC_ACC in gmres.f and use ACC KERNELS.
+C
+C     local inner product, with weight
+C
+      dimension x(n),y(n),b(n)
+      real dt
+C
+      include 'OPCTR'
+C
+#ifdef TIMER
+C
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC3 '
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + dfloat(isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + dfloat(isbcnt)
+#endif
+C
+      dt = 0.0
+!$acc parallel loop present(x,y,b) reduction(+:dt)
+      do i=1,n
+         dt = dt+x(i)*y(i)*b(i)
+      enddo
+!$acc end parallel loop
+      t=dt
+      vlsc3_acc2 = t
       return
       end
 c-----------------------------------------------------------------------

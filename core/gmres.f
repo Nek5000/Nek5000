@@ -318,6 +318,7 @@ c     GMRES iteration.
       common  /ctolpr/ divex
       common  /cprint/ ifprint
       logical          ifprint
+
       real             res  (lx1*ly1*lz1*lelv)
       real             h1   (lx1*ly1*lz1*lelv)
       real             h2   (lx1*ly1*lz1*lelv)
@@ -360,8 +361,6 @@ c     res, h1, h2, and wt, since they are local variables.
 
       call hmh_gmres_acc_data_copyin()
 
-!$ACC ENTER DATA COPYIN(res,h1,h2)
-
       acctime1 = dnekclock()
 
 #ifdef _OPENACC
@@ -374,7 +373,7 @@ c     res, h1, h2, and wt, since they are local variables.
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
       tolpss = tolps
-c
+
       iconv = 0
 
       call rzero_acc(x_gmres,n)
@@ -394,6 +393,7 @@ c           call copy(r,res,n)
                                                      !      -1
             call col2_acc  (r_gmres,ml_gmres,n)          ! r = L   r
          endif
+
 
 #ifdef _OPENACC
 
@@ -420,8 +420,10 @@ c        construct or acc routine"
 
 !$ACC END DATA
 
-!$ACC UPDATE HOST(gamma_gmres(1))
+c!$acc update host(gamma_gmres(1))
+!$acc update host(gamma_gmres)
       temp = gamma_gmres(1)
+c     write (6,*) 'temp=',temp
 
 #else
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
@@ -441,14 +443,6 @@ c        construct or acc routine"
 
             iter = iter+1
 
-#ifdef DEBUG
-            write(0,*), ''
-            write(0,*), 
-     $'================================================================'
-            write(0,*), ''
-            write(0,*), 'outer: ', outer
-            write(0,*), 'iter:  ', iter
-#endif
                                                        !       -1
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),n) ! w  = U   v
                                                        !           j
@@ -467,7 +461,7 @@ c           MJO - 3/17/17 - for variable h1, h2 in time
 c              FIXME: Only mgrid portion is implemented in ACC so far
                kfldfdm = ndim+1
                if (param(100).eq.2) then
-                   call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
+                  call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
                else
                    call fdm_h1
      $               (z_gmres(1,j),w_gmres,d,pmask,vmult,nelv,
@@ -635,7 +629,6 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
 
       acctime1 = dnekclock()-acctime1
 
-!$ACC EXIT DATA COPYOUT(h1,h2,res)
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,

@@ -1041,7 +1041,12 @@ C
       if (param(94).gt.0) ifproj = .true.
 
       if (.not.ifproj) then
-         if (ifield.eq.1) call ophinv
+c        if (ifield.eq.1) call ophinv
+         do i=1,lx1*ly1*lz1*nelv
+c           write (6,*) 'i1=',i1(i,1,1,1)
+         enddo
+c        stop
+         if (ifield.eq.1) call ophinv_acc
      $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
          if (ifield.eq.ifldmhd) call ophinv
      $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
@@ -1108,7 +1113,9 @@ C
  
       ifproj = .false.
       if (param(94).gt.0) ifproj = .true.
- 
+
+      write (6,*) 'tolh=',tolh
+
       if (.not.ifproj) then
          if (ifield.eq.1) call ophinv
      $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
@@ -1116,14 +1123,14 @@ C
      $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
          return
       endif
- 
+
       mtmp        = param(93)
       do i=1,2*ndim
          ivproj(1,i) = min(mxprev,mtmp) - 1
       enddo
- 
+
       imesh = 1
- 
+
       if (ifstrs) then
          matmod = 0
          call hmhzsf  ('nomg',o1,o2,o3,i1,i2,i3,h1,h2,
@@ -1700,4 +1707,29 @@ c
 
       return
       end
-c--------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      subroutine ophinv_pr_debug(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+c   not used.  use ophinvpr instead
+
+C     Ok = (H1*A+H2*B)-1 * Ik  (implicit)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'ORTHOV'
+      include 'VPROJ'
+      include 'TSTEP'
+
+      real o1 (lx1,ly1,lz1,1) , o2 (lx1,ly1,lz1,1) , o3 (lx1,ly1,lz1,1)
+      real i1 (lx1,ly1,lz1,1) , i2 (lx1,ly1,lz1,1) , i3 (lx1,ly1,lz1,1)
+      real h1 (lx1,ly1,lz1,1) , h2 (lx1,ly1,lz1,1)
+
+      ifproj = .false.
+      if (param(94).gt.0) ifproj = .true.
+
+      call ophinv_debug(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+
+      return
+      end
+c-----------------------------------------------------------------------

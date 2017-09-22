@@ -17,7 +17,7 @@ c
       INCLUDE 'TSTEP'
       INCLUDE 'ORTHOP'
       INCLUDE 'CTIMER'
-C
+
       COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
      $ ,             RES2  (LX1,LY1,LZ1,LELV)
      $ ,             RES3  (LX1,LY1,LZ1,LELV)
@@ -27,7 +27,7 @@ C
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
- 
+
       REAL           DPR   (LX2,LY2,LZ2,LELV)
       EQUIVALENCE   (DPR,DV1)
       LOGICAL        IFSTSP
@@ -37,6 +37,8 @@ C
 
       INTEGER e
 
+      ifxyo = .true.
+
       if (icalld.eq.0) tpres=0.0
       icalld=icalld+1
       npres=icalld
@@ -45,62 +47,148 @@ C
       ntot1  = nx1*ny1*nz1*nelv
       n      = ntot1
 
+c     write (6,*) 'top of plan4_acc'
 
       if (igeom.eq.1) then
+         if (istep.eq.1) then
+            call plan4_acc_data_copyin
+            call hsmg_acc_data_copyin
+         else
+            call plan4_acc_update_device
+            call hsmg_acc_update_device
+         endif
 
-         call plan4_acc_data_copyin()
          call makef_acc
 
-!$acc update host(bfx,bfy,bfz)
+c!$acc    update host(bfx,bfy,bfz)
+c         do k=1,lz1
+c         do j=1,ly1
+c         do i=1,lx1
+c            write (6,*) 'p4bf bfx=',bfx(i,j,k,1),i,j,k
+c            write (6,*) 'p4bf bfy=',bfy(i,j,k,1)
+c            write (6,*) 'p4bf bfz=',bfz(i,j,k,1)
+c         enddo
+c         enddo
+c         enddo
+cc        stop
 
-         call sumab_acc(vx_e,vx,vxlag,ntot1,ab,nab)
-         call sumab_acc(vy_e,vy,vylag,ntot1,ab,nab)
-         call sumab_acc(vz_e,vz,vzlag,ntot1,ab,nab)
+         call sumab_acc(vx_e,vx,vxlag,n,ab,nab)
+         call sumab_acc(vy_e,vy,vylag,n,ab,nab)
+         call sumab_acc(vz_e,vz,vzlag,n,ab,nab)
+
+!$acc    update host(vx_e,vy_e,vz_e)
 
       else
+         ! add user defined divergence to qtl 
+         call add2_acc (qtl,usrdiv,n)
 
-         call add2_acc (qtl,usrdiv,ntot1)
          call lagvel_acc
 
-!$acc update host(vx,vy,vz,v1mask,v2mask,v3mask)
+!$acc    update host(vx,vy,vz,v1mask,v2mask,v3mask)
+         ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
-!$acc update device(vx,vy,vz)
+!$acc    update device(vx,vy,vz)
+
+c        call outpost(vx,vy,vz,pr,t,'w_v')
+c        call outpost(v1mask,v2mask,v3mask,pr,t,'wma')
+c        stop
+
+c        first, compute pressure
 
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
          etime1=dnekclock()
 
-
-!$ACC DATA COPY(h1,h2,vtrans,respr,pr,vx,vy,vz) 
-!$ACC& COPY(res1,res2,res3,dv1,dv2,dv3)
+         if (istep.eq.1) then
+!$acc       enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
+!$acc       enter data copyin(dv1,dv2,dv3)
+         endif
 
          call crespsp_acc(respr)
-         call invers2_acc (h1,vtrans,ntot1)
-         call rzero_acc   (h2,ntot1)
+
+c!$acc    update host(respr)
+c        do i=1,lx1*ly1*lz1*nelv
+c           write (6,*) 'respr',i,respr(i,1,1,1)
+c        enddo
+c        stop
+
+         call invers2_acc (h1,vtrans,n)
+         call rzero_acc   (h2,n)
          call ctolspl_acc(tolspl,respr)
 
          call dssum     (respr,nx1,ny1,nz1)
          call col2_acc  (respr,pmask,n)
-         call hmh_gmres (respr,h1,h2,vmult,nmxh)
+
+         iter=nmxh
+         call hmh_gmres (respr,h1,h2,vmult,iter)
+
          call add2_acc (pr,respr,n)
          call ortho_acc(pr)
 
          tpres=tpres+(dnekclock()-etime1)
 
-         call cresvsp_acc (res1,res2,res3,h1,h2)
-!$ACC END DATA 
+         call cresvsp_acc(res1,res2,res3,h1,h2)
 
-         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         ! ophinv_pr starts here
+         call dssum(res1,nx1,ny1,nz1)
+         call dssum(res2,nx1,ny1,nz1)
+         call dssum(res3,nx1,ny1,nz1)
 
-!$ACC DATA COPY (vx,vy,vz,dv1,dv2,dv3)
+         call col2_acc(res1,v1mask,ntot1)
+         call col2_acc(res2,v2mask,ntot1)
+         call col2_acc(res3,v3mask,ntot1)
+
+         call chktcg1_acc(tol1,res1,h1,h2,v1mask,vmult,imesh,1)
+         call chktcg1_acc(tol2,res1,h1,h2,v2mask,vmult,imesh,2)
+         call chktcg1_acc(tol3,res1,h1,h2,v3mask,vmult,imesh,3)
+
+         call cggo_acc(dv1,res1,h1,h2,v1mask,vmult,imesh,tol1,nmxh,1,
+     $                 binvm1)
+         call cggo_acc(dv2,res2,h1,h2,v2mask,vmult,imesh,tol2,nmxh,2,
+     $                 binvm1)
+         call cggo_acc(dv3,res3,h1,h2,v3mask,vmult,imesh,tol3,nmxh,3,
+     $                 binvm1)
+         ! ophinv_pr ends here
+
+c below gives correct values in iterations
+c but printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310  
+
          call add2_acc  (vx,dv1,n)      
          call add2_acc  (vy,dv2,n)
          call add2_acc  (vz,dv3,n)
-!$ACC END DATA 
 
+c        write (6,*) 'syncing point'
 
-c printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310  
+!$acc update host(vx,vy,vz,pr)
+
+c        if (mod(istep,iostep).eq.0) then
+c        write (6,*) 'sol dev',istep
+c        do e=1,nelv
+c        do k=1,lz1
+c        do j=1,ly1
+c        do i=1,lx1
+c           write (6,*) 'sol pr=',pr(i,1,1,1),i,j,k
+c        enddo
+c        enddo
+c        enddo
+c        enddo
+c        do e=1,nelv
+c        do k=1,lz1
+c        do j=1,ly1
+c        do i=1,lx1
+c           write (6,*) 'sol vx=',vx(i,j,k,e),i,j,k
+c           write (6,*) 'sol vy=',vy(i,j,k,e)
+c           write (6,*) 'sol vz=',vz(i,j,k,e)
+c        enddo
+c        enddo
+c        enddo
+c        enddo
+c        call outpost(vx,vy,vz,pr,t,'wp4')
+c        endif
+
+         call plan4_acc_update_host
+
          IF (NIO.EQ.0) THEN
             WRITE(6,'(13X,A,1p2e13.4)')
      &         'L1/L2 DIV(V)        ',DIV1,DIV2
@@ -115,7 +203,7 @@ c printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310
       endif
  
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine plan4 (igeom)
 
@@ -207,7 +295,9 @@ C        first, compute pressure
 
 C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
-         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+c        call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call ophinv_pr_debug(dv1,dv2,dv3,res1,res2,res3,
+     $                        h1,h2,tolhv,nmxh)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
@@ -290,29 +380,24 @@ c
       
       NXYZ1  = NX1*NY1*NZ1
       NTOT1  = NXYZ1*NELV
-      ntot2  = LX1*LY1*LZ1*LELV
       NFACES = 2*NDIM
 
 c      call lagvel
 
 c     -mu*curl(curl(v))
-      call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,
-     &              .true.,w1,w2)
-
+      call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,.true.,w1,w2)
       if(IFAXIS) then  
          CALL COL2 (TA2, OMASK,NTOT1)
          CALL COL2 (TA3, OMASK,NTOT1)
       endif
       call op_curl  (wa1,wa2,wa3,ta1,ta2,ta3,.true.,w1,w2)
-
       if(IFAXIS) then  
          CALL COL2  (WA2, OMASK,NTOT1)
          CALL COL2  (WA3, OMASK,NTOT1)
       endif
       call opcolv   (wa1,wa2,wa3,bm1)
-
+c
       call opgrad   (ta1,ta2,ta3,QTL)
-
       if(IFAXIS) then  
          CALL COL2  (ta2, OMASK,ntot1)
          CALL COL2  (ta3, OMASK,ntot1)
@@ -342,7 +427,6 @@ c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
       endif
 
       call invcol3  (w1,vdiff,vtrans,ntot1)
-
       call opcolv   (wa1,wa2,wa3,w1)
 
 c     add old pressure term because we solve for delta p 
@@ -452,48 +536,76 @@ C     Compute the residual for the velocity
       NTOT = NX1*NY1*NZ1*NELV
       INTYPE = -1
 
+c     call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       CALL SETHLM  (H1,H2,INTYPE)
+c     call outpost(vx,vy,vz,h1,h2,'gv_')
 
       CALL OPHX    (RESV1,RESV2,RESV3,VX,VY,VZ,H1,H2)
+c     call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       CALL OPCHSGN (RESV1,RESV2,RESV3)
 
       scale = -1./3.
       if (ifstrs) scale =  2./3.
 
-      call col3    (ta4,vdiff,qtl,ntot)
-      call add2s1  (ta4,pr,scale,ntot)    
-      call opgrad  (ta1,ta2,ta3,TA4)
+      call col3(ta4,vdiff,qtl,ntot)
+
+      do i=1,ntot/nelv
+c        write (6,*) 'pr=',pr(i,1,1,1)
+      enddo
+
+c     call outpost(ta4,vdiff,qtl,pr,t,'gv_')
+      call add2s1 (ta4,pr,scale,ntot)    
+
+      call outpost(resv1,resv2,resv3,ta4,h2,'gcv')
+c     call opgrad (ta1,ta2,ta3,ta4)
+c     do i=1,ntot/nelv
+c        write (6,*) 'ta4=',ta4(i,1,1,1)
+c     enddo
+      call wgradm1(ta1,ta2,ta3,ta4,nelv)
+c     call exitti('exit after wgradm1 in cresvsp$',1)
+c     call outpost(ta1,ta2,ta3,ta4,h2,'gcv')
+
+c     do i=1,ntot/nelv
+c        write (6,*) 'ta1=',ta1(i,1,1,1)
+c        write (6,*) 'ta2=',ta2(i,1,1,1)
+c        write (6,*) 'ta3=',ta3(i,1,1,1)
+c     enddo
+
       if(IFAXIS) then
          CALL COL2 (TA2, OMASK,NTOT)
          CALL COL2 (TA3, OMASK,NTOT)
       endif
-c
+
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
+      call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
-C
+      call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       return
       end
 
 c-----------------------------------------------------------------------
       subroutine op_curl(w1,w2,w3,u1,u2,u3,ifavg,work1,work2)
-c
+
       include 'SIZE'
       include 'TOTAL'
-c
+
       real duax(lx1), ta(lx1,ly1,lz1,lelv)
 
       logical ifavg
-c
+
       real w1(1),w2(1),w3(1),work1(1),work2(1),u1(1),u2(1),u3(1)
-c
+
       ntot  = nx1*ny1*nz1*nelv
       nxyz  = nx1*ny1*nz1
+
+ccc!$acc update host   (u1(1:ntot),u2(1:ntot),u3(1:ntot))
+
 c     work1=dw/dy ; work2=dv/dz
-        call dudxyz(work1,u3,rym1,sym1,tym1,jacm1,1,2)
-        if (if3d) then
-           call dudxyz(work2,u2,rzm1,szm1,tzm1,jacm1,1,3)
-           call sub3(w1,work1,work2,ntot)
-        else
+      call dudxyz(work1,u3,rym1,sym1,tym1,jacm1,1,2)
+      if (if3d) then
+         call dudxyz(work2,u2,rzm1,szm1,tzm1,jacm1,1,3)
+         call sub3(w1,work1,work2,ntot)
+      else
            call copy(w1,work1,ntot)
 
            if(ifaxis) then
@@ -501,7 +613,7 @@ c     work1=dw/dy ; work2=dv/dz
               do iel = 1,nelv
                 if(IFRZER(iel)) then
                   call rzero (ta(1,1,1,iel),nx1)
-                  call MXM   (ta(1,1,1,iel),nx1,DATM1,ny1,duax,1)
+                  call mxm   (ta(1,1,1,iel),nx1,DATM1,ny1,duax,1)
                   call copy  (ta(1,1,1,iel),duax,nx1)
                 endif
                 call col2    (ta(1,1,1,iel),yinvm1(1,1,1,iel),nxyz)
@@ -524,26 +636,28 @@ c     work1=dv/dx ; work2=du/dy
         call dudxyz(work1,u2,rxm1,sxm1,txm1,jacm1,1,1)
         call dudxyz(work2,u1,rym1,sym1,tym1,jacm1,1,2)
         call sub3(w3,work1,work2,ntot)
-c
-c    Avg at bndry
-c
-c     if (ifavg) then
-      if (ifavg .and. .not. ifcyclic) then
+
+      if (ifavg .and. .not. ifcyclic) then ! average between elements
 
          ifielt = ifield
          ifield = 1
-       
-         call opcolv  (w1,w2,w3,bm1)
-         call opdssum (w1,w2,w3)
-         call opcolv  (w1,w2,w3,binvm1)
+
+         call opcolv(w1,w2,w3,bm1)
+
+!$acc update device(w1(1:ntot),w2(1:ntot),w3(1:ntot))
+         call dssum   (w1,nx1,ny1,nz1)
+         call dssum   (w2,nx1,ny1,nz1)
+         call dssum   (w3,nx1,ny1,nz1)
+!$acc update host(w1(1:ntot),w2(1:ntot),w3(1:ntot))
+         call opcolv(w1,w2,w3,binvm1)
 
          ifield = ifielt
 
       endif
-c
+
+
       return
       end
-
 c-----------------------------------------------------------------------
       subroutine opadd2cm (a1,a2,a3,b1,b2,b3,c)
       INCLUDE 'SIZE'
@@ -771,7 +885,6 @@ c     call add2s2_acc(v,vvlag(1,2),ab2,ntot)
       return
       end
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
       subroutine crespsp_face_update(respr,ta1,ta2,ta3,dtbd,w1,w2,w3)
 c
       include 'SIZE'
@@ -786,8 +899,6 @@ c
       integer e,f
 
       nfaces = 2*ndim
-
-!$ACC UPDATE HOST(respr,ta1,ta2,ta3)
 
       do e=1,nelv
       do f=1,nfaces
@@ -810,21 +921,358 @@ c
             if (ldim.eq.3)
      $       call faccl3(w3,ta3(1,e),unz(1,1,f,e),f)
          endif
+
          call add2   (w1,w2,lz)
          if (ldim.eq.3) call add2   (w1,w3,lz)
 
          call faccl2 (w1,area(1,1,f,e),f)
 
-         if (c1.eq.'V'.or.c1.eq.'v'.or.cb.eq.'MV '.or.cb.eq.'mv ')
+         if (c1.eq.'V'.or.c1.eq.'v'.or.cb.eq.'MV '.or.cb.eq.'mv ') 
      $     call cmult(w1,dtbd,lz)
-
+         
          call sub2 (respr(1,e),w1,lz)
       enddo
       enddo
 
-!$ACC UPDATE DEVICE(respr)
-
       return
       end
 c-----------------------------------------------------------------------
+      subroutine crespsp_acc(respr)
 
+C     Compute startresidual/right-hand-side in the pressure
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real           respr (lx1,ly1,lz1,lelv)
+c
+      real           ta1   (lx1,ly1,lz1,lelv)
+     $ ,             ta2   (lx1,ly1,lz1,lelv)
+     $ ,             ta3   (lx1,ly1,lz1,lelv)
+     $ ,             wa1   (lx1*ly1*lz1*lelv)
+     $ ,             wa2   (lx1*ly1*lz1*lelv)
+     $ ,             wa3   (lx1*ly1*lz1*lelv)
+     $ ,             wa4   (lx1*ly1*lz1*lelv*ldimt1)
+      real           w1    (lx1,ly1,lz1,lelv)
+     $ ,             w2    (lx1,ly1,lz1,lelv)
+     $ ,             w3    (lx1,ly1,lz1,lelv)
+
+      character cb*3,c1*1
+      integer e,f
+
+!$acc routine(facind) seq
+      
+      nxyz1  = lx1*ly1*lz1
+      ntot1  = nxyz1*nelv
+      nfaces = 2*ndim
+
+!$acc enter data create(ta1,ta2,ta3,wa1,wa2,wa3,wa4,w1,w2,w3)
+c     -mu*curl(curl(v))
+
+c!$acc update host(ta1,ta2,ta3,vx_e,vy_e,vz_e)
+
+c     write (6,*) 'synchronize'
+c     do i=1,lx1*ly1*lz1*nelv
+c        write (6,*) 'v_e',vx_e(i)
+c        write (6,*) 'v_e',vy_e(i)
+c        write (6,*) 'v_e',vz_e(i)
+c     enddo
+c     stop
+c     call op_curl(ta1,ta2,ta3,vx_e,vy_e,vz_e,.true.,w1,w2)
+c     call op_curl(wa1,wa2,wa3,ta1,ta2,ta3,.true.,w1,w2)
+c!$acc update device(wa1,wa2,wa3)
+
+      call op_curl_acc(ta1,ta2,ta3,vx_e,vy_e,vz_e,.true.,w1,w2)
+      call op_curl_acc(wa1,wa2,wa3,ta1,ta2,ta3,.true.,w1,w2)
+
+c     write (6,*) 'synchronize'
+
+c!$acc update host(ta1,ta2,ta3,wa1,wa2,wa3)
+
+c     do i=1,lx1*ly1*lz1*nelv
+c        write (6,*) 'taa1 sync',i
+c        write (6,*) 'taa1',wa1(i)
+c        write (6,*) 'taa1',wa2(i)
+c        write (6,*) 'taa1',wa3(i)
+c     enddo
+
+      call opcolv_acc(wa1,wa2,wa3,bm1)
+      call wgradm1_acc(ta1,ta2,ta3,qtl,nelv)
+
+      scale = -4./3. 
+      call opadd2cm_acc(wa1,wa2,wa3,ta1,ta2,ta3,scale)
+
+c!$acc update host(wa1,wa2,wa3)
+c     do i=1,lx1*ly1*lz1*nelv
+c        write (6,*) 'wa iii',i
+c        write (6,*) 'wa1=',wa1(i)
+c        write (6,*) 'wa2=',wa2(i)
+c        write (6,*) 'wa3=',wa3(i)
+c     enddo 
+
+c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
+      if (ifstrs) 
+     $   call exitti('ifstrs not yet support on gpu$',nelv)
+
+      call invcol3_acc(w1,vdiff,vtrans,ntot1)
+
+c!$acc update host(w1,wa1,wa2,wa3)
+c
+c      do i=1,lx1*ly1*lz1*nelv
+c        write (6,*) 'w1=',w1(i,1,1,1)
+c      enddo
+
+      call opcolv_acc   (wa1,wa2,wa3,w1)
+
+c     add old pressure term because we solve for delta p 
+
+      call invers2_acc (ta1,vtrans,ntot1)
+      call rzero_acc   (ta2,ntot1)
+
+!$acc update host  (pr)
+      call bcdirsc (pr)
+!$acc update device(pr)
+
+c!$acc update host(pr,ta1,ta2,respr)
+c
+c      call outpost(pr,ta1,ta2,respr,t,'wpa')
+
+      call axhelm_acc_debug(respr,pr,ta1,ta2,1,1)
+
+c      call outpost(respr,pr,ta1,ta2,t,'woa')
+
+      call chsign_acc  (respr,ntot1)
+
+c      call outpost(bfx,bfy,bfz,pr,t,'wb2')
+
+c     add explicit (NONLINEAR) terms 
+
+      n = nx1*ny1*nz1*nelv
+!$acc parallel loop present(ta1,ta2,ta3,wa1,wa2,wa3)
+      do i=1,n
+         ta1(i,1,1,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
+         ta2(i,1,1,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
+         ta3(i,1,1,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
+      enddo
+!$acc end parallel
+c!$acc end paranvllel
+
+
+
+c!$acc update host(ta1,ta2,ta3)
+c      do i=1,n
+c         write (6,*) 'taa1',ta1(i,1,1,1)
+c         write (6,*) 'taa2',ta2(i,1,1,1)
+c         write (6,*) 'taa3',ta3(i,1,1,1)
+c      enddo
+c      call outpost(ta1,ta2,ta3,pr,t,'wc0')
+
+      call dssum (ta1,nx1,ny1,nz1)
+      call dssum (ta2,nx1,ny1,nz1)
+      call dssum (ta3,nx1,ny1,nz1)
+
+c     call outpost(ta1,ta2,ta3,vtrans,t,'gc_')
+c     call outpost(bm1,binvm1,wa1,wa2,wa3,'gc_')
+
+!$acc parallel loop present(ta1,ta2,ta3,binvm1)
+      do i=1,n
+         ta1(i,1,1,1) = ta1(i,1,1,1)*binvm1(i,1,1,1)
+         ta2(i,1,1,1) = ta2(i,1,1,1)*binvm1(i,1,1,1)
+         ta3(i,1,1,1) = ta3(i,1,1,1)*binvm1(i,1,1,1)
+      enddo
+!$acc end parallel
+
+      dtbd = bd(1)/dt  !! FOR NOW, no QTL support (pff, 7/31/17)
+c     call admcol3(respr,qtl,bm1,dtbd,ntot1)
+
+!$acc update host(ta1,ta2,ta3)
+c******************************************
+c TODO: still done on the cpu
+
+c!$acc parallel loop gang
+c!$acc& private(w1,w2,w3)
+c!$acc parallel loop
+c!$acc& present(ta1,ta2,ta3,w3m1,rxm1,rym1,rzm1)
+c!$acc& present(sxm1,sym1,szm1,txm1,tym1,tzm1)
+c!$acc& present(dxtm1,bm1,qtl,respr)
+
+      do e=1,nelv
+c!$acc  loop vector
+       do i=1,lx1*ly1*lz1
+         w1(i,1,1,e) = (rxm1(i,1,1,e)*ta1(i,1,1,e) ! Jacobian
+     $               +rym1(i,1,1,e)*ta2(i,1,1,e) ! included
+     $               +rzm1(i,1,1,e)*ta3(i,1,1,e))*w3m1(i,1,1)
+         w2(i,1,1,e) = (sxm1(i,1,1,e)*ta1(i,1,1,e)
+     $               +sym1(i,1,1,e)*ta2(i,1,1,e)
+     $               +szm1(i,1,1,e)*ta3(i,1,1,e))*w3m1(i,1,1)
+         w3(i,1,1,e) = (txm1(i,1,1,e)*ta1(i,1,1,e)
+     $               +tym1(i,1,1,e)*ta2(i,1,1,e)
+     $               +tzm1(i,1,1,e)*ta3(i,1,1,e))*w3m1(i,1,1)
+       enddo
+
+c!$acc  loop vector collapse(3)
+       do k=1,nz1
+       do j=1,ny1
+       do i=1,nx1
+          t1 = 0.0
+c!$acc     loop seq
+          do l=1,nx1
+             t1 = t1 + dxm1(l,i)*w1(l,j,k,e) ! D^T
+     $               + dxm1(l,j)*w2(i,l,k,e)
+     $               + dxm1(l,k)*w3(i,j,l,e)
+          enddo
+          respr(i,j,k,e) = respr(i,j,k,e) + t1
+     $                   + dtbd*bm1(i,j,k,e)*qtl(i,j,k,e)
+       enddo
+       enddo
+       enddo
+
+      enddo
+c!$acc end parallel
+c******************************************
+
+c     call outpost(respr,wa1,wa2,wa3,t,'wc2')
+c     stop
+
+c!$acc update host(wa1,wa2,wa3,ta1,ta2,ta3,respr)
+c      if (if3d) then
+c         call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
+c         call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
+c         call cdtp    (wa3,ta3,rzm1,szm1,tzm1,1)
+c         do i=1,n
+c            respr(i,1,1,1) = respr(i,1,1,1)+wa1(i)+wa2(i)+wa3(i)
+c         enddo
+c      else
+c         call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
+c         call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
+c         do i=1,n
+c            respr(i,1,1,1) = respr(i,1,1,1)+wa1(i)+wa2(i)
+c         enddo
+c      endif
+c!$acc update device(respr)
+
+      dtbd = bd(1)/dt  !! FOR NOW, no QTL support (pff, 7/31/17)
+c     call admcol3_acc(respr,qtl,bm1,dtbd,ntot1)
+
+      call crespsp_face_update(respr,ta1,ta2,ta3,dtbd,w1,w2,w3)
+c     call outpost(respr,wa1,wa2,wa3,t,'wc3')
+c     stop
+!$acc update device(respr)
+
+C     Orthogonalize to (1,1,...,1)T for all-Dirichlet case
+
+      call ortho_acc (respr)
+
+!$acc update host(respr)
+
+!$acc exit data
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine invcol1_acc(a,n)
+      real a(n)
+!$acc parallel loop present(a)
+      do i=1,n
+         a(i)=1./a(i)
+      enddo
+!$acc end parallel
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine chktcg1_acc2(tol,res,h1,h2,mask,mult,imesh,isd)
+C-------------------------------------------------------------------
+C
+C     Check that the tolerances are not too small for the CG-solver.
+C     Important when calling the CG-solver (Gauss-Lobatto mesh) with
+C     zero Neumann b.c.
+C
+C-------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'EIGEN'
+
+c     common  /cprint/ ifprint
+c     logical          ifprint
+
+      real w1   (lx1,ly1,lz1,lelt),
+     $     w2   (lx1,ly1,lz1,lelt)
+
+      real res  (lx1,ly1,lz1,lelt)
+      real h1   (lx1,ly1,lz1,lelt)
+      real h2   (lx1,ly1,lz1,lelt)
+      real mult (lx1,ly1,lz1,lelt)
+      real mask (lx1,ly1,lz1,lelt)
+
+!$acc data create(w1,w2) present(res,h1,h2,mult,mask)
+
+      if (eigaa.ne.0.) then
+         acondno = eigga/eigaa
+      else
+         acondno = 10.
+      endif
+
+c     Single or double precision???
+
+      delta = 1.e-9
+      x     = 1.+delta
+      y     = 1.
+      diff  = abs(x-y)
+      if (diff.eq.0.) eps = 1.e-6
+      if (diff.gt.0.) eps = 1.e-13
+
+      if (imesh.eq.1) then
+          nl  = nelv
+          vol = volvm1
+      elseif (imesh.eq.2) then
+          nl  = nelt
+          vol = voltm1
+      endif
+
+      ntot1 = nx1*ny1*nz1*nl
+      call copy (w1,res,ntot1)
+
+      if (imesh.eq.1) then
+         call col3_acc(w2,binvm1,w1,ntot1)
+         rinit  = sqrt(glsc3_acc(w2,w1,mult,ntot1)/volvm1)
+      else
+         call col3_acc(w2,bintm1,w1,ntot1)
+         rinit  = sqrt(glsc3_acc(w2,w1,mult,ntot1)/voltm1)
+      endif
+
+c     write (6,*) 'rinit=',rinit
+c     stop
+
+      rmin   = eps*rinit
+
+c     if (tol.lt.rmin) then
+c        if (nio.eq.0.and.ifprint)
+c    $   write (6,*) 'New CG1-tolerance (RINIT*epsm) = ',rmin,tol
+c        tol = rmin
+c     endif
+
+      call rone_acc(w1,ntot1)
+      bcneu1 = glsc3_acc(w1,mask,mult,ntot1)
+      bcneu2 = glsc3_acc(w1,w1  ,mult,ntot1)
+      bctest = abs(bcneu1-bcneu2)
+
+      call axhelm_acc(w2,w1,h1,h2,imesh,isd)
+      call col2_acc(w2,w2,ntot1)
+      call col2_acc(w2,bm1,ntot1)
+      bcrob  = sqrt(glsum_acc(w2,ntot1)/vol)
+
+      if ((bctest .lt. .1).and.(bcrob.lt.(eps*acondno))) then
+c         OTR = GLSC3 (W1,RES,MULT,NTOT1)
+         tolmin = rinit*eps*10.
+         if (tol .lt. tolmin) then
+             tol = tolmin
+c            if (nio.eq.0.and.ifprint)
+c    $       write(6,*) 'New CG1-tolerance (Neumann) = ',tolmin
+         endif
+      endif
+
+!$acc end data
+
+      return
+      end
