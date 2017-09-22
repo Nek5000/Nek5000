@@ -757,7 +757,7 @@ c        PLAN 4: TOMBO SPLITTING
 c                - Time-dependent Navier-Stokes calculation (Re>>1).
 c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
- 
+
          call plan4 (igeom)                                           
          if (ifmodel)    call twalluz (igeom) ! Turbulence model              
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
