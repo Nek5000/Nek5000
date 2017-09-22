@@ -61,15 +61,15 @@ c     stop
 c!$acc update host(rhs)
 
       do i=1,lx1*ly1*lz1*nelv
-         write (6,*) 'rhs=',rhs(i,1,1,1)
+c        write (6,*) 'rhs=',rhs(i,1,1,1)
       enddo
       stop
 !$acc end data
 
       do i=1,lx1*ly1*lz1*nelv
-         write (6,*) 'rhs=',rhs(i,1,1,1)
+c        write (6,*) 'rhs=',rhs(i,1,1,1)
       enddo
-      write (6,*) 'after dssum'
+c     write (6,*) 'after dssum'
       stop
 
       call col2    (rhs,mask,ntot)
@@ -2807,7 +2807,7 @@ c     if (.not.iffdm) kfldfdm=-1
       call dssum(rhs,nx1,ny1,nz1)
 
       do i=1,lx1*ly1*lz1*nelv
-         write (6,*) 'rhs=',rhs(i,1,1,1)
+c        write (6,*) 'rhs=',rhs(i,1,1,1)
       enddo
       stop
 !$acc end data
@@ -2821,7 +2821,7 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
       if (tli.lt.0) tol=tli ! caller-specified relative tolerance
 
       do i=1,lx1*ly1*lz1*nelv
-         write (6,*) 'rhs=',rhs(i,1,1,1)
+c        write (6,*) 'rhs=',rhs(i,1,1,1)
       enddo
       stop
 
