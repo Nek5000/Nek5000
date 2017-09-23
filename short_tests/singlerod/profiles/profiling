@@ -1,0 +1,42 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% pgprof on JLSE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% grab node interactively, say 10min
+  qsub -I -n 1 -t 00:10:00 -q 'gpu_mules'
+
+% run code
+  pgprof ./nek5000 singlerod 1 2&>profile
+
+% then, find profile data in profile
+  look for Time(%), like in short history
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+short history 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+==9/22/2017 version on JLSE == Profiling result(singlerod):
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 46.79%  3.02642s      5994  504.91us  1.0230us  1.4490ms  [CUDA memcpy DtoH]
+ 36.39%  2.35371s      4637  507.59us     863ns  1.5183ms  [CUDA memcpy HtoD]
+  3.08%  199.18ms       186  1.0708ms  252.54us  1.8975ms  hsmg_do_fast_acc_1109_gpu
+  1.45%  93.762ms       939  99.853us  36.992us  178.97us  hsmg_extrude_541_gpu
+  1.33%  86.198ms        15  5.7466ms  5.7137ms  5.7935ms  sumab_acc_879_gpu
+  0.95%  61.317ms       218  281.27us  275.10us  289.63us  global_div3_306_gpu
+  0.91%  58.868ms      2004  29.375us  1.1840us  112.03us  gather_double_add_144_gpu
+
+==9/19/2017 version on JLSE == Profiling result (singlerod):
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 36.64%  3.02521s      5994  504.71us     992ns  1.4369ms  [CUDA memcpy DtoH]
+ 28.49%  2.35215s      4637  507.26us     864ns  1.5451ms  [CUDA memcpy HtoD]
+ 11.87%  979.93ms         5  195.99ms  194.82ms  200.46ms  makebdf_acc_879_gpu
+  9.44%  778.97ms         4  194.74ms  192.61ms  201.08ms  makebdf_acc_861_gpu
+  2.33%  192.44ms       186  1.0346ms  230.75us  1.8461ms  hsmg_do_fast_acc_1109_gpu
+  1.10%  90.834ms       939  96.735us  33.279us  176.22us  hsmg_extrude_541_gpu
+
+
+
