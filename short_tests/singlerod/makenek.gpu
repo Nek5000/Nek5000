@@ -14,13 +14,14 @@ CC="mpicc"
 PPLIST="" 
 
 # generic compiler flags
-G="-mcmodel=medium -acc -ta=nvidia:cc50,cuda8.0"
+#G="-mcmodel=medium -acc -ta=nvidia:cc50,cuda8.0"
 CFLAGS="-DNEW_GS_LOOPS"
+
 # For GPU profiling tools:
-#G="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0,lineinfo"
+G="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0,lineinfo"
 
 # linking flags
-USR_LFLAGS="-mcmodel=medium -acc -ta=nvidia:cc50,cuda8.0"
+USR_LFLAGS="-mcmodel=medium -acc -ta=nvidia:cc50,cc60,cuda8.0"
 # linking flags
 #USR_LFLAGS="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0"
 

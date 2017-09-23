@@ -1,0 +1,14 @@
+
+Tesla:
+  ./makenek.gpu singlerod
+  ./nek singlerod 
+
+JLSE:
+  ./makenek.gpu singlerod
+  ./nekgpu singlerod 1 (qsub)
+
+  Profiling, we can do interactively
+  See ./profile/profiling
+  Profling, we run 5 steps
+
+
