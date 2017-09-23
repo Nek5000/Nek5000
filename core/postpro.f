@@ -1816,7 +1816,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gen_rea2(imid)  ! Generate and output essential parts of .rea
+      subroutine gen_rea_full(imid)  ! Generate and output essential parts of .rea
                                 ! Clobbers ccurve()
       include 'SIZE'
       include 'TOTAL'
@@ -1953,7 +1953,6 @@ c     IGNORE XY DATA
       enddo
 c     CURVE SIDE DATA
         READ(9,'(a)') string2
-        write(6,*) string2
         READ(9,*) paramval
         if (paramval.gt.0) then
          do I=1,paramval
