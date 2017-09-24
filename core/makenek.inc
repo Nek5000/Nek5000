@@ -342,6 +342,12 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
       echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
   fi
   fi
+
+  if ! cat SIZE | grep -qi 'luparam' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter(luparam = 20  ) ! size of user runtime parameter space '  >>SIZE
+  fi
 fi
 
 # tweak .usr (actually, .f ) file

@@ -91,6 +91,9 @@ c - - SIZE internals
       integer maxmbr
       parameter (maxmbr=lelt*6)
 
+      integer luparam ! size of user runtime parameter space
+      parameter (luparam = 20)
+
       ! cvode
       integer lcvx1,lcvy1,lcvz1
       parameter(lcvx1=lx1)
