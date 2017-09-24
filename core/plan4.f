@@ -9,14 +9,7 @@ c           divergence and has to be provided
 c           by userqtl.
 c
       INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'GEOM'
-      INCLUDE 'MASS'
-      INCLUDE 'SOLN'
-      INCLUDE 'MVGEOM'
-      INCLUDE 'TSTEP'
-      INCLUDE 'ORTHOP'
-      INCLUDE 'CTIMER'
+      INCLUDE 'TOTAL'
 
       COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
      $ ,             RES2  (LX1,LY1,LZ1,LELV)
@@ -47,30 +40,13 @@ c
       ntot1  = nx1*ny1*nz1*nelv
       n      = ntot1
 
-c     write (6,*) 'top of plan4_acc'
-
       if (igeom.eq.1) then
-         if (istep.eq.1) then
-            call plan4_acc_data_copyin
-            call hsmg_acc_data_copyin
-         else
-            call plan4_acc_update_device
-            call hsmg_acc_update_device
-         endif
+
+         call plan4_acc_data_copyin
+         call plan4_acc_update_device
+         call hsmg_acc_update_device
 
          call makef_acc
-
-c!$acc    update host(bfx,bfy,bfz)
-c         do k=1,lz1
-c         do j=1,ly1
-c         do i=1,lx1
-c            write (6,*) 'p4bf bfx=',bfx(i,j,k,1),i,j,k
-c            write (6,*) 'p4bf bfy=',bfy(i,j,k,1)
-c            write (6,*) 'p4bf bfz=',bfz(i,j,k,1)
-c         enddo
-c         enddo
-c         enddo
-cc        stop
 
          call sumab_acc(vx_e,vx,vxlag,n,ab,nab)
          call sumab_acc(vy_e,vy,vylag,n,ab,nab)
@@ -85,16 +61,11 @@ cc        stop
          call lagvel_acc
 
 !$acc    update host(vx,vy,vz,v1mask,v2mask,v3mask)
-         ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 !$acc    update device(vx,vy,vz)
 
-c        call outpost(vx,vy,vz,pr,t,'w_v')
-c        call outpost(v1mask,v2mask,v3mask,pr,t,'wma')
-c        stop
 
 c        first, compute pressure
-
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
@@ -106,12 +77,6 @@ c        first, compute pressure
          endif
 
          call crespsp_acc(respr)
-
-c!$acc    update host(respr)
-c        do i=1,lx1*ly1*lz1*nelv
-c           write (6,*) 'respr',i,respr(i,1,1,1)
-c        enddo
-c        stop
 
          call invers2_acc (h1,vtrans,n)
          call rzero_acc   (h2,n)
@@ -157,35 +122,6 @@ c but printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310
          call add2_acc  (vx,dv1,n)      
          call add2_acc  (vy,dv2,n)
          call add2_acc  (vz,dv3,n)
-
-c        write (6,*) 'syncing point'
-
-!$acc update host(vx,vy,vz,pr)
-
-c        if (mod(istep,iostep).eq.0) then
-c        write (6,*) 'sol dev',istep
-c        do e=1,nelv
-c        do k=1,lz1
-c        do j=1,ly1
-c        do i=1,lx1
-c           write (6,*) 'sol pr=',pr(i,1,1,1),i,j,k
-c        enddo
-c        enddo
-c        enddo
-c        enddo
-c        do e=1,nelv
-c        do k=1,lz1
-c        do j=1,ly1
-c        do i=1,lx1
-c           write (6,*) 'sol vx=',vx(i,j,k,e),i,j,k
-c           write (6,*) 'sol vy=',vy(i,j,k,e)
-c           write (6,*) 'sol vz=',vz(i,j,k,e)
-c        enddo
-c        enddo
-c        enddo
-c        enddo
-c        call outpost(vx,vy,vz,pr,t,'wp4')
-c        endif
 
          call plan4_acc_update_host
 

@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine plan4_acc_data_copyin()
+      subroutine plan4_acc_data_copyin_onetime()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'    
@@ -8,33 +8,13 @@ c-----------------------------------------------------------------------
       parameter (maxcg=900)
 
       common /tdarray/ diagt(maxcg),upper(maxcg)
-
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
-      integer icalld
-      save    icalld
-      data    icalld/0/
-      if (icalld.eq.0) then ! ONE TIME ONLY
-
-        icalld=1
-!$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
-!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,c_vx,fw)
-!$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
-!$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
-!$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-!$acc enter data copyin(pmlag,prlag)
-!$acc enter data copyin(qtl,usrdiv)
-!$acc enter data copyin(v1mask,v2mask,v3mask,pmask,tmask,omask,vmult)
-!$acc enter data copyin(tmult,b1mask,b2mask,b3mask,bpmask)
-!$acc enter data copyin(v1mask,v2mask,v3mask,pmask,tmask,omask)
-!$acc enter data copyin(tmult,vmult)
+!$acc enter data copyin(xm1,ym1,zm1)
 !$acc enter data copyin(dxm1,dxtm1,w3m1)
 !$acc enter data copyin(bm1,bm1lag,binvm1,bintm1)
 !$acc enter data copyin(jacm1,jacmi)
-!$acc enter data copyin(xm1,ym1,zm1)
-!$acc enter data copyin(unx,uny,unz,area)
 !$acc enter data copyin(rxm1,sxm1,txm1)
 !$acc enter data copyin(rym1,sym1,tym1)
 !$acc enter data copyin(rzm1,szm1,tzm1)
@@ -42,81 +22,126 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(rym2,sym2,tym2)
 !$acc enter data copyin(rzm2,szm2,tzm2)
 !$acc enter data copyin(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
+!$acc enter data copyin(v1mask,v2mask,v3mask,pmask,tmask,omask)
+!$acc enter data copyin(b1mask,b2mask,b3mask,bpmask)
+!$acc enter data copyin(tmult,vmult)
+!$acc enter data copyin(unx,uny,unz,area)
 !$acc enter data copyin(cbc,bc)
-!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2)
-!$acc enter data copyin(ab)
-!$acc enter data copyin(vtrans)
-!$acc enter data copyin(vxlag,vylag,vzlag)
-!$acc enter data copyin(bd)
-!$acc enter data copyin(pr,prlag,qtl,usrdiv)
-!$acc enter data copyin(vtrans,vdiff)
 !$acc enter data copyin(param,nelfld)
-!$acc enter data copyin(vxd,vyd,vzd)
-!$acc enter data copyin(diagt,upper)
-!$acc enter data copyin(d,scalar,r,w,p,z)
-
-!$acc   enter data create (ibc_acc)
-
-c!$acc   enter data copyin (tlag,vgradt1,vgradt2)
-c!$acc   enter data copyin (vdiff_e)
-c!$acc   enter data copyin (bq,usrdiv)
-
-
-      endif
-
-!$acc enter data copyin (c_vx)
 
       return
       end
 c-----------------------------------------------------------------------
-c     subroutine hmh_gmres_acc_data_copyin()
-      subroutine hsmg_acc_data_copyin
+      subroutine plan4_acc_data_copyout_onetime()
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+!$acc exit data copyout(xm1,ym1,zm1)
+!$acc exit data copyout(dxm1,dxtm1,w3m1)
+!$acc exit data copyout(bm1,bm1lag,binvm1,bintm1)
+!$acc exit data copyout(jacm1,jacmi)
+!$acc exit data copyout(rxm1,sxm1,txm1)
+!$acc exit data copyout(rym1,sym1,tym1)
+!$acc exit data copyout(rzm1,szm1,tzm1)
+!$acc exit data copyout(rxm2,sxm2,txm2)
+!$acc exit data copyout(rym2,sym2,tym2)
+!$acc exit data copyout(rzm2,szm2,tzm2)
+!$acc exit data copyout(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
+!$acc exit data copyout(v1mask,v2mask,v3mask,pmask,tmask,omask)
+!$acc exit data copyout(b1mask,b2mask,b3mask,bpmask)
+!$acc exit data copyout(tmult,vmult)
+!$acc exit data copyout(unx,uny,unz,area)
+!$acc exit data copyout(cbc,bc)
+!$acc enter data copyin(param,nelfld)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hsmg_acc_data_copyin_onetime()
+c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
-!$ACC ENTER DATA COPYIN(mg_nx)
-!$ACC ENTER DATA COPYIN(mg_ny,mg_nz)
-!$ACC ENTER DATA COPYIN(mg_nh,mg_nhz)
-!$ACC ENTER DATA COPYIN(mg_gsh_schwarz_handle)
-!$ACC ENTER DATA COPYIN(mg_gsh_handle)
-!$ACC ENTER DATA COPYIN(mg_rstr_wt_index)
-!$ACC ENTER DATA COPYIN(mg_mask_index)
-!$ACC ENTER DATA COPYIN(mg_solve_index)
-!$ACC ENTER DATA COPYIN(mg_fast_s_index)
-!$ACC ENTER DATA COPYIN(mg_fast_d_index)
-!$ACC ENTER DATA COPYIN(mg_schwarz_wt_index)
-!$ACC ENTER DATA COPYIN(mg_g_index)
+!$acc enter data copyin(mg_nx)
+!$acc enter data copyin(mg_ny,mg_nz)
+!$acc enter data copyin(mg_nh,mg_nhz)
+!$acc enter data copyin(mg_gsh_schwarz_handle)
+!$acc enter data copyin(mg_gsh_handle)
+!$acc enter data copyin(mg_rstr_wt_index)
+!$acc enter data copyin(mg_mask_index)
+!$acc enter data copyin(mg_solve_index)
+!$acc enter data copyin(mg_fast_s_index)
+!$acc enter data copyin(mg_fast_d_index)
+!$acc enter data copyin(mg_schwarz_wt_index)
+!$acc enter data copyin(mg_g_index)
 
-!$ACC ENTER DATA COPYIN(mg_jh)
-!$ACC ENTER DATA COPYIN(mg_jht)
-!$ACC ENTER DATA COPYIN(mg_jhfc )
-!$ACC ENTER DATA COPYIN(mg_jhfct)
-!$ACC ENTER DATA COPYIN(mg_ah)
-!$ACC ENTER DATA COPYIN(mg_bh)
-!$ACC ENTER DATA COPYIN(mg_dh)
-!$ACC ENTER DATA COPYIN(mg_dht)
-!$ACC ENTER DATA COPYIN(mg_zh)
-!$ACC ENTER DATA COPYIN(mg_rstr_wt)
-!$ACC ENTER DATA COPYIN(mg_mask)
-!$ACC ENTER DATA COPYIN(mg_fast_s)
-!$ACC ENTER DATA COPYIN(mg_fast_d)
-!$ACC ENTER DATA COPYIN(mg_schwarz_wt)
-!$ACC ENTER DATA COPYIN(mg_solve_e)
-!$ACC ENTER DATA COPYIN(mg_solve_r)
-!$ACC ENTER DATA COPYIN(mg_h1)
-!$ACC ENTER DATA COPYIN(mg_h2)
-!$ACC ENTER DATA COPYIN(mg_b)
-!$ACC ENTER DATA COPYIN(mg_g)
-!$ACC ENTER DATA COPYIN(mg_work)
-!$ACC ENTER DATA COPYIN(mg_work2)
-!$ACC ENTER DATA COPYIN(mg_worke)
+!$acc enter data copyin(mg_jh)
+!$acc enter data copyin(mg_jht)
+!$acc enter data copyin(mg_jhfc )
+!$acc enter data copyin(mg_jhfct)
+!$acc enter data copyin(mg_ah)
+!$acc enter data copyin(mg_bh)
+!$acc enter data copyin(mg_dh)
+!$acc enter data copyin(mg_dht)
+!$acc enter data copyin(mg_zh)
+!$acc enter data copyin(mg_rstr_wt)
+!$acc enter data copyin(mg_mask)
+!$acc enter data copyin(mg_fast_s)
+!$acc enter data copyin(mg_fast_d)
+!$acc enter data copyin(mg_schwarz_wt)
+!$acc enter data copyin(mg_solve_e)
+!$acc enter data copyin(mg_solve_r)
+!$acc enter data copyin(mg_h1)
+!$acc enter data copyin(mg_h2)
+!$acc enter data copyin(mg_b)
+!$acc enter data copyin(mg_g)
+!$acc enter data copyin(mg_work)
+!$acc enter data copyin(mg_work2)
+!$acc enter data copyin(mg_worke)
+!$acc enter data copyin(mg_imask)
+!$acc enter data copyin(mg_h1_n)
+!$acc enter data copyin(p_mg_h1)
+!$acc enter data copyin(p_mg_b)
+!$acc enter data copyin(p_mg_msk)
 
-!$ACC ENTER DATA COPYIN(mg_imask)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine plan4_acc_data_copyin()
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
 
-!$ACC ENTER DATA COPYIN(mg_h1_n)
-!$ACC ENTER DATA COPYIN(p_mg_h1)
-!$ACC ENTER DATA COPYIN(p_mg_b)
-!$ACC ENTER DATA COPYIN(p_mg_msk)
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+!$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
+!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,c_vx,fw)
+!$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
+!$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
+!$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
+
+!$acc enter data copyin(ab,bd)
+!$acc enter data copyin(pr,pmlag,prlag,qtl,usrdiv)
+!$acc enter data copyin(vxd,vyd,vzd)
+!$acc enter data copyin(diagt,upper)
+!$acc enter data copyin(d,scalar,r,w,p,z)
+
+!$acc enter data create (ibc_acc)
+!$acc enter data copyin (c_vx)
 
       return
       end
@@ -143,14 +168,14 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
-!$ACC ENTER DATA COPYIN(work,work2)
-!$ACC ENTER DATA COPYIN(mg_mask,mg_imask,pmask)
-!$ACC ENTER DATA COPYIN(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-!$ACC ENTER DATA COPYIN(mg_work,mg_fast_s,mg_fast_d)
-!$ACC ENTER DATA COPYIN(h_gmres,w_gmres,v_gmres,z_gmres)
-!$ACC ENTER DATA COPYIN(c_gmres,s_gmres,x_gmres,gamma_gmres)
-!$ACC ENTER DATA COPYIN(r_gmres)
-!$ACC ENTER DATA COPYIN(ml_gmres,mu_gmres)
+!$acc enter data copyin(work,work2)
+!$acc enter data copyin(mg_mask,mg_imask,pmask)
+!$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
+!$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
+!$acc enter data copyin(h_gmres,w_gmres,v_gmres,z_gmres)
+!$acc enter data copyin(c_gmres,s_gmres,x_gmres,gamma_gmres)
+!$acc enter data copyin(r_gmres)
+!$acc enter data copyin(ml_gmres,mu_gmres)
 
 !$ACC ENTER DATA CREATE(e,w,r)
 !$ACC ENTER DATA CREATE(w1,w2)
@@ -1491,35 +1516,13 @@ c-----------------------------------------------------------------------
 !$acc update device(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc update device(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc update device(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-!$acc update device(pmlag,prlag)
-!$acc update device(qtl,usrdiv)
-!$acc update device(v1mask,v2mask,v3mask,pmask,tmask,omask,vmult)
-!$acc update device(tmult,b1mask,b2mask,b3mask,bpmask)
-!$acc update device(v1mask,v2mask,v3mask,pmask,tmask,omask)
-!$acc update device(tmult,vmult)
-!$acc update device(dxm1,dxtm1,w3m1)
-!$acc update device(bm1,bm1lag,binvm1,bintm1)
-!$acc update device(jacm1,jacmi)
-!$acc update device(xm1,ym1,zm1)
-!$acc update device(unx,uny,unz,area)
-!$acc update device(rxm1,sxm1,txm1)
-!$acc update device(rym1,sym1,tym1)
-!$acc update device(rzm1,szm1,tzm1)
-!$acc update device(rxm2,sxm2,txm2)
-!$acc update device(rym2,sym2,tym2)
-!$acc update device(rzm2,szm2,tzm2)
-!$acc update device(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$acc update device(cbc,bc)
+
 !$acc update device(abx1,aby1,abz1,abx2,aby2,abz2)
-!$acc update device(ab)
-!$acc update device(vtrans)
-!$acc update device(vxlag,vylag,vzlag)
-!$acc update device(bd)
-!$acc update device(pr,prlag,qtl,usrdiv)
-!$acc update device(vtrans,vdiff)
-!$acc update device(param,nelfld)
+!$acc update device(ab,bd)
+!$acc update device(pr,pmlag,prlag,qtl,usrdiv)
+
 !$acc update device(vxd,vyd,vzd)
-!$acc update device(diagt,upper)
+
 !$acc update device(d,scalar,r,w,p,z)
 !$acc update device(ibc_acc)
 !$acc update device(c_vx)
@@ -1578,7 +1581,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine plan4_acc_update_host
+      subroutine plan4_acc_update_host  
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'    
@@ -1597,33 +1600,9 @@ c-----------------------------------------------------------------------
 !$acc update host(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc update host(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc update host(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-!$acc update host(pmlag,prlag)
-!$acc update host(qtl,usrdiv)
-!$acc update host(v1mask,v2mask,v3mask,pmask,tmask,omask,vmult)
-!$acc update host(tmult,b1mask,b2mask,b3mask,bpmask)
-!$acc update host(v1mask,v2mask,v3mask,pmask,tmask,omask)
-!$acc update host(tmult,vmult)
-!$acc update host(dxm1,dxtm1,w3m1)
-!$acc update host(bm1,bm1lag,binvm1,bintm1)
-!$acc update host(jacm1,jacmi)
-!$acc update host(xm1,ym1,zm1)
-!$acc update host(unx,uny,unz,area)
-!$acc update host(rxm1,sxm1,txm1)
-!$acc update host(rym1,sym1,tym1)
-!$acc update host(rzm1,szm1,tzm1)
-!$acc update host(rxm2,sxm2,txm2)
-!$acc update host(rym2,sym2,tym2)
-!$acc update host(rzm2,szm2,tzm2)
-!$acc update host(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$acc update host(cbc,bc)
-!$acc update host(abx1,aby1,abz1,abx2,aby2,abz2)
-!$acc update host(ab)
-!$acc update host(vtrans)
-!$acc update host(vxlag,vylag,vzlag)
-!$acc update host(bd)
-!$acc update host(pr,prlag,qtl,usrdiv)
-!$acc update host(vtrans,vdiff)
-!$acc update host(param,nelfld)
+
+!$acc update host(ab,bd)
+!$acc update host(pr,pmlag,prlag,qtl,usrdiv)
 !$acc update host(vxd,vyd,vzd)
 !$acc update host(diagt,upper)
 !$acc update host(d,scalar,r,w,p,z)
