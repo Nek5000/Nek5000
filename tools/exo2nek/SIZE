@@ -2,7 +2,7 @@ c
 c GLOBAL sizing parameters:
 c
       parameter (ldim = 3)                       ! max number of dimensions (2D/3D)
-      parameter (max_num_elem     = 10 000 000)  ! max total number of elements
+      parameter (max_num_elem     = 1 000 000)   ! max total number of elements
       parameter (max_num_sidesets =        10)   ! max number of sidesets in exodus file
       parameter (max_num_elem_blk = 1 000 000)   ! max number of elemets per block in exodus file
 
