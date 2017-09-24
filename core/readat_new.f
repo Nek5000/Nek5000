@@ -57,8 +57,10 @@ C
 
       param(40) = 0    ! XXT 
 
-      param(42) = 0    ! GMRES 
-      param(43) = 0    ! SEMG preconitioner
+      param(41) = 0    ! additive SEMG
+      param(42) = 0    ! GMRES for iterative solver w/ nonsymmetric weighting
+      param(43) = 0    ! additive multilevel scheme (requires param(42).eq.0)
+      param(44) = 0    ! base top-level additive Schwarz on restrictions of E
 
       param(59) = 1    ! No fast operator eval
 

@@ -582,24 +582,21 @@ c     set dealiasing handling
          call exitt
       endif
 
-c     set I/O format handling
-c     if (param(67).lt.0) then
-c        param(67) = 0        ! ASCII
-c     else ! elseif (param(67).ne.4) then
-c        param(67) = 6        ! binary is default
-c     endif
-
-c     if (param(66).lt.0) then
-c        param(66) = 0        ! ASCII
-c     else ! elseif (param(66).ne.4) then
-c        param(66) = 6        ! binary is default
-c     endif
+c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
+      param(41) = 0 ! use additive SEMG
+                ! 1 use hybrid SEMG (not yet working... but coming soon!)
+      param(42) = 0 ! use GMRES for iterative solver w/ nonsymmetric weighting
+                ! 1 use PCG for iterative solver, do not use weighting
+      param(43) = 0 ! use additive multilevel scheme (requires param(42).eq.0)
+                ! 1 use original 2 level scheme
+      param(44) = 0 ! base top-level additive Schwarz on restrictions of E
+                ! 1 base top-level additive Schwarz on restrictions of A
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
 
-      param(59) = 1 ! No fast operator eval
+      param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
       return
 
