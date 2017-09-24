@@ -515,6 +515,8 @@ c      endif
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
 
+      write(6,*) 'npass', npass
+
       if (nid.eq.0) then
          eg0 = 0
          do ipass=1,npass
@@ -549,11 +551,11 @@ c                  write(912,*) (wk(k,m),k=1,mdw-1)
                wk(mdw,m) = eg
             enddo
     
-            if (ipass.lt.npass) then
-               call csend(ipass,wk,len,ipass,0) !send to ipass
-               eg0 = eg1
-            endif
+            if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
+            eg0 = eg1
          enddo
+
+         ntuple = m
 
          if (ifma2) then
             call byte_close(ierr)
@@ -561,23 +563,22 @@ c                  write(912,*) (wk(k,m),k=1,mdw-1)
             close(80)
          endif
 
-         ntuple = eg1 - eg0
       elseif (nid.lt.npass) then
+
+         write(6,*) 'wait ', nid
          call msgwait(msg_id)
          ntuple = ndw
+
       else
+
          ntuple = 0
+
       endif
 
       if (.not.ifgfdm) then ! gllnid is already assigned for gfdm
         lng = isize*neli
         call bcast(gllnid,lng)
         call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
-
-c       if(nid.eq.0) then
-c         write(99,*) (gllnid(i),i=1,nelgt)
-c       endif
-c       call exitt
       endif
 
       nelt=0 !     Count number of elements on this processor
