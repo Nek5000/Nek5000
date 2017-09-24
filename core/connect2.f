@@ -7,6 +7,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'ZPER'
+      INCLUDE 'CTIMER'
  
       logical ifbswap,ifre2,parfound
       character*132 string
@@ -24,13 +25,15 @@ C
          return
       endif  
 
+      etime0 = dnekclock_sync()
+
       if(nid.eq.0) then
         write(6,'(A,A)') ' Reading ', reafle
         open (unit=9,file=reafle,status='old', iostat=ierr)
       endif
 
       call bcast(ierr,isize)
-      if (ierr .gt. 0) call exitti('Cannot open .rea file!$',1)
+      if (ierr .gt. 0) call exitti('Cannot open rea file!$',1)
 
 C     Read parameters and logical flags
       call rdparam
@@ -47,17 +50,18 @@ C     Read Mesh Info
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
       ifre2 = .false.
-      if(nelgs.lt.0) ifre2 = .true.     ! use new .re2 reader
+      if(nelgs.lt.0) ifre2 = .true.
 
       ifgtp = .false.
-      if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
+      if (ndim.lt.0) ifgtp = .true.
 
-      if (ifre2) call open_re2(ifbswap) ! rank0 will open and read
+      if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes
 
       if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+
       if (ifre2) then
-        call read_re2(ifbswap) ! rank0 will read mesh data + distribute
+        call read_re2_data(ifbswap)
       else
         maxrd = 32               ! max # procs to read at once
         mread = (np-1)/maxrd+1   ! mod param
@@ -101,6 +105,8 @@ C     End of input data, close read file.
       if(nid.eq.0) then
         close(unit=9)
         call echopar
+        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     $                             dnekclock()-etime0,' sec'
       endif
 
 c     This is not an excellent place for this check, but will
@@ -245,6 +251,8 @@ c     IFSPLIT   = .false.
       ifpert = .false.
 
       ifreguo = .false.   ! by default we dump the data based on the GLL mesh
+
+      ifrich = .false.
 
       IF(NID.EQ.0) READ(9,*,ERR=500) NLOGIC
       call bcast(NLOGIC,ISIZE)
@@ -487,6 +495,12 @@ C
          call exitt
       endif
 
+      if (ifsplit .and. ifuservp) then
+         if(nid.eq.0) write(6,*)
+     $   'Switch on stress formulation to support PN/PN and IFUSERVP=T'
+         ifstrs = .true.
+      endif
+
       ktest = (lx1-lx1m) + (ly1-ly1m) + (lz1-lz1m)
       if (ifstrs.and.ktest.ne.0) then
          if(nid.eq.0) write(6,*) 
@@ -568,24 +582,21 @@ c     set dealiasing handling
          call exitt
       endif
 
-c     set I/O format handling
-c     if (param(67).lt.0) then
-c        param(67) = 0        ! ASCII
-c     else ! elseif (param(67).ne.4) then
-c        param(67) = 6        ! binary is default
-c     endif
-
-c     if (param(66).lt.0) then
-c        param(66) = 0        ! ASCII
-c     else ! elseif (param(66).ne.4) then
-c        param(66) = 6        ! binary is default
-c     endif
+c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
+      param(41) = 0 - use additive SEMG
+                ! 1 - use hybrid SEMG (not yet working... but coming soon!)
+      param(42) = 0 - use GMRES for iterative solver w/ nonsymmetric weighting
+                ! 1 - use PCG for iterative solver, do not use weighting
+      param(43) = 0 - use additive multilevel scheme (requires param(42).eq.0)
+                ! 1 - use original 2 level scheme
+      param(44) = 0 - base top-level additive Schwarz on restrictions of E
+                ! 1 - base top-level additive Schwarz on restrictions of A
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
 
-      param(59) = 1 ! No fast operator eval
+      param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
       return
 
@@ -2165,3 +2176,28 @@ c
 
       end
 c-----------------------------------------------------------------------
+uuuuu
+uuuuu
+uuuuu
+uuuuu
+c-----------------------------------------------------------------------
+c
+c  To do:
+c
+c  1)  Why does hsmg_schwarz_toext2d not zero out a, whereas 3d does??  DONE
+c  2)  Convert all nelv refs to nelfld(ifield) or (nelmg?)  DONE
+c  3)  Define mg_schwarz_wt for up to and including mg_h1_lmax   DONE
+c  4)  MAKE CERTAIN common /hsmgw/ is LARGE enough in hsmg_tnsr and  DONE
+c      elsewhere!
+c  5)  Devise and implement UNIT tests, now, so that you can test
+c      pieces of the setup code in stages.
+c  6)  Start developing and testing, in a linear fashion, the SETUP driver.
+c  7)  Make certain dssum flags declared for all levels  DONE
+c  8)  Need TWO masks for each level:  one for A*x, and one for Schwarz!
+c      NO -- one is fine.
+c  9)  Modify axml so addition comes after dssum.  DONE
+c
+c-----------------------------------------------------------------------
+c
+c Some relevant parameters
+c
