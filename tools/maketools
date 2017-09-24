@@ -10,8 +10,6 @@ CC="gcc"
 # linking flags
 #USR_LFLAGS="-L$HOME/lib"
 
-# BIG MEMORY (>2GB) support
-BIGMEM="true"
 
 
 
@@ -125,11 +123,9 @@ fi
 
 F77="$F77" 
 CC="$CC" 
-if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
-  if [[ $OSTYPE != darwin* ]]; then
-    F77="$F77 $BIGMEM_FLAG" 
-    CC="$CC $BIGMEM_FLAG" 
-  fi
+if [[ $OSTYPE != darwin* ]]; then
+  F77="$F77 $BIGMEM_FLAG" 
+  CC="$CC $BIGMEM_FLAG" 
 fi
 
 export F77
