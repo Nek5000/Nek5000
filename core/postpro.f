@@ -1979,7 +1979,7 @@ c      Thermal
         write(10,*) string2
        endif
 
- 1001 continue
+ 1001 continue 
 
 c     PRESOLVE
         READ(9,'(a)') string2
