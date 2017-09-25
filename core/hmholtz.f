@@ -135,7 +135,7 @@ c    $     scalar(2)
 
       common /tdarray/ diagt(maxcg),upper(maxcg)
       common /iterhm/ niterhm
-c     character*4 name
+      character*4 name
  
 c **  zero out stuff for Lanczos eigenvalue estimator
 
@@ -180,9 +180,6 @@ c     Set up diag preconditioner.
       call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
 
 !$acc update host(scrd)
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'd=',scrd(i)
-      enddo
 
       call copy_acc(r,f,n)
 
@@ -218,18 +215,10 @@ c     Check for non-trivial null-space
 
          call col3_acc(z,r,scrd,n)
 !$acc    update host(z)
-         do i=1,lx1*ly1*lz1*nelv
-c           write (6,*) 'z=',z(i)
-         enddo
-c        stop
 
          rtz2=rtz1
          scalar(1)=vlsc3_acc(z,r,mult,n)
          scalar(2)=vlsc32_acc(r,mult,binv,n)
-
-c!$acc    update device(scalar)
-cc        call gop_acc(scalar,w,'+  ',2)
-c!$acc    update host(scalar)
 
          call gop(scalar,w,'+  ',2)
 
@@ -240,22 +229,20 @@ c!$acc    update host(scalar)
          if (param(22).lt.0) tol=abs(param(22))*rbn0
          if (tin.lt.0)       tol=abs(tin)*rbn0
 
-c        write (6,*) 'tol=',tol
-
          ifprint_hmh = .false.
          if (nio.eq.0.and.ifprint.and.param(74).ne.0) ifprint_hmh=.true.
          if (nio.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
 
-c        if (ifprint_hmh)
-c    &      write(6,3002) istep,'  Hmholtz ' // name,
-c    &                    iter,rbn2,h1(1),tol,h2(1),ifmcor
+         if (ifprint_hmh)
+     &      write(6,3002) istep,'  Hmholtz ' // name,
+     &                    iter,rbn2,h1(1),tol,h2(1),ifmcor
 
 c        Always take at least one iteration   (for projection) pff 11/23/98
          if (rbn2.le.tol.and.(iter.gt.1 .or. istep.le.5)) then
             niter = iter-1
-c           if (nio.eq.0)
-c    &         write(6,3000) istep,'  Hmholtz ' // name,
-c    &                       niter,rbn2,rbn0,tol
+            if (nio.eq.0)
+     &         write(6,3000) istep,'  Hmholtz ' // name,
+     &                       niter,rbn2,rbn0,tol
             goto 9999
          endif
  
@@ -268,27 +255,14 @@ c    &                       niter,rbn2,rbn0,tol
          call col2_acc   (w,mask,n)
 
 !$acc    update host(w)
-         do i=1,lx1*ly1*lz1*nelv
-c           write (6,*) 'w=',w(i)
-         enddo
-c        stop
-c
+ 
          rho0 = rho
          rho  = glsc3_acc(w,p,mult,n)
          alpha=rtz1/rho
          alphm=-alpha
-c        write (6,*) 'rtz1=',rtz1
-c        write (6,*) 'rho=',rho
-c        stop
          call add2s2_acc(x,p ,alpha,n)
          call add2s2_acc(r,w ,alphm,n)
 
-c!$acc    update host(r)
-         do i=1,lx1*ly1*lz1*nelv
-c           write (6,*) 'r=',r(i)
-         enddo
-c        stop
- 
 c        Generate tridiagonal matrix for Lanczos scheme
          if (iter.eq.1) then
             krylov = krylov+1
@@ -305,16 +279,15 @@ c           stop
          endif
  1000 enddo
 
-c!$acc end data
       niter = iter-1
 c
-c     if (nio.eq.0) write (6,3001) istep, '  Error Hmholtz ' // name,
-c    &                             niter,rbn2,rbn0,tol
+      if (nio.eq.0) write (6,3001) istep, '  Error Hmholtz ' // name,
+     &                             niter,rbn2,rbn0,tol
 
 
-c3000 format(i11,a,1x,I7,1p4E13.4)
-c3001 format(i11,a,1x,I7,1p4E13.4)
-c3002 format(i11,a,1x,I7,1p4E13.4,l4)
+ 3000 format(i11,a,1x,I7,1p4E13.4)
+ 3001 format(i11,a,1x,I7,1p4E13.4)
+ 3002 format(i11,a,1x,I7,1p4E13.4,l4)
  9999 continue
       niterhm = niter
       ifsolv = .false.
@@ -640,10 +613,6 @@ c
       naxhm=icalld
       etime1=dnekclock()
 
-      do i=1,lx1*ly1*lz1
-c        write (6,*) 'helm2=',helm2(i)
-      enddo
-c     stop
 
 !$acc update host(helm1,helm2)
       if (.not.ifsolv) call setfast(helm1,helm2,imesh)
@@ -3114,28 +3083,16 @@ c     single or double precision???
       ntot1 = nx1*ny1*nz1*nl
 
 !$acc update host(res)
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'res=',res(i,1,1,1)
-      enddo
-c     stop
 
       call copy_acc (w1,res,ntot1)
 
       if (imesh.eq.1) then
          call col3_acc (w2,binvm1,w1,ntot1)
-c!$acc    update host(w2)
-         do i=1,lx1*ly1*lz1*nelv
-c           write (6,*) 'w2=',w2(i,1,1,1)
-         enddo
-c        stop
          rinit  = sqrt(glsc3_acc (w2,w1,mult,ntot1)/volvm1)
       else
          call col3_acc (w2,bintm1,w1,ntot1)
          rinit  = sqrt(glsc3_acc (w2,w1,mult,ntot1)/voltm1)
       endif
-
-c     write (6,*) 'rinit=',rinit
-c     stop
 
       rmin   = eps*rinit
       if (tol.lt.rmin) then
@@ -3144,24 +3101,16 @@ c     stop
          tol = rmin
       endif
 
-c     write (6,*) 'epsi',eps
-c     write (6,*) 'tol=',tol
-c     stop
-c
       call rone_acc (w1,ntot1)
       bcneu1 = glsc3_acc(w1,mask,mult,ntot1)
       bcneu2 = glsc3_acc(w1,w1  ,mult,ntot1)
       bctest = abs(bcneu1-bcneu2)
 
-c     write (6,*) 'bctest=',bctest
-c
       call axhelm_acc (w2,w1,h1,h2,imesh,isd)
       call col2_acc   (w2,w2,ntot1)
       call col2_acc   (w2,bm1,ntot1)
       bcrob  = sqrt(glsum_acc(w2,ntot1)/vol)
 
-c     write (6,*) 'bcrob=',bcrob
-c
       if ((bctest .lt. .1).and.(bcrob.lt.(eps*acondno))) then
 c         otr = glsc3 (w1,res,mult,ntot1)
          tolmin = rinit*eps*10.
@@ -3171,9 +3120,6 @@ c         otr = glsc3 (w1,res,mult,ntot1)
      $       write(6,*) 'new cg1-tolerance (neumann) = ',tolmin
          endif
       endif
-
-c     write (6,*) 'tol=',tol
-c     stop
 
 !$acc end data
 
@@ -3388,24 +3334,11 @@ c
       naxhm=icalld
       etime1=dnekclock()
 
-      do i=1,lx1*ly1*lz1
-c        write (6,*) 'helm2=',helm2(i)
-      enddo
-c     stop
-c     write (6,*) 'before setfast'
 
 !$acc update host(helm1,helm2)
       if (.not.ifsolv) call setfast(helm1,helm2,imesh)
 !$acc update device(helm1,helm2)
-c     write (6,*) 'after setfast'
-      if (ifh2) then
-c        write (6,*) 'ifh2 = .true.'
-      else
-c        write (6,*) 'ifh2 = .false.'
-      endif
-c     stop
 
-c
       if (ifaxis) call setaxdy ( ifrzer(e) )
 c
 !$ACC DATA CREATE(dudr,duds,dudt,tmp1,tmp2,tmp3)

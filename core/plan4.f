@@ -55,17 +55,15 @@ c
 !$acc    update host(vx_e,vy_e,vz_e)
 
       else
-         ! add user defined divergence to qtl 
-         call add2_acc (qtl,usrdiv,n)
 
+         call add2_acc (qtl,usrdiv,n)
          call lagvel_acc
 
-!$acc    update host(vx,vy,vz,v1mask,v2mask,v3mask)
+!$acc    update host(vx,vy,vz) 
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 !$acc    update device(vx,vy,vz)
 
 
-c        first, compute pressure
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
@@ -108,12 +106,12 @@ c        first, compute pressure
          call chktcg1_acc(tol2,res1,h1,h2,v2mask,vmult,imesh,2)
          call chktcg1_acc(tol3,res1,h1,h2,v3mask,vmult,imesh,3)
 
-         call cggo_acc(dv1,res1,h1,h2,v1mask,vmult,imesh,tol1,nmxh,1,
-     $                 binvm1)
-         call cggo_acc(dv2,res2,h1,h2,v2mask,vmult,imesh,tol2,nmxh,2,
-     $                 binvm1)
-         call cggo_acc(dv3,res3,h1,h2,v3mask,vmult,imesh,tol3,nmxh,3,
-     $                 binvm1)
+         call cggo_acc(dv1,res1,h1,h2,v1mask,vmult,imesh,tol1,
+     $                 nmxh,1,binvm1,'VELX')
+         call cggo_acc(dv2,res2,h1,h2,v2mask,vmult,imesh,tol2,
+     $                 nmxh,2,binvm1,'VELY')
+         call cggo_acc(dv3,res3,h1,h2,v3mask,vmult,imesh,tol3,
+     $                 nmxh,3,binvm1,'VELZ')
          ! ophinv_pr ends here
 
 c below gives correct values in iterations
