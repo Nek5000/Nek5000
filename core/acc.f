@@ -28,6 +28,8 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(unx,uny,unz,area)
 !$acc enter data copyin(cbc,bc)
 !$acc enter data copyin(param,nelfld)
+!$acc enter data copyin(diagt,upper)
+!$acc enter data copyin(d,scalar,r,w,p,z)
 
       return
       end
@@ -60,7 +62,9 @@ c-----------------------------------------------------------------------
 !$acc exit data copyout(tmult,vmult)
 !$acc exit data copyout(unx,uny,unz,area)
 !$acc exit data copyout(cbc,bc)
-!$acc enter data copyin(param,nelfld)
+!$acc exit data copyout(param,nelfld)
+!$acc exit data copyout(diagt,upper)
+!$acc exit data copyout(d,scalar,r,w,p,z)
 
       return
       end
@@ -135,10 +139,8 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
 
 !$acc enter data copyin(ab,bd)
-!$acc enter data copyin(pr,pmlag,prlag,qtl,usrdiv)
+!$acc enter data copyin(pmlag,prlag,qtl,usrdiv)
 !$acc enter data copyin(vxd,vyd,vzd)
-!$acc enter data copyin(diagt,upper)
-!$acc enter data copyin(d,scalar,r,w,p,z)
 
 !$acc enter data create (ibc_acc)
 !$acc enter data copyin (c_vx)
@@ -148,7 +150,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine hmh_gmres_acc_data_copyin()
 c-----------------------------------------------------------------------
-#ifdef _OPENACC
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
       include 'DXYZ'
@@ -160,6 +161,7 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'CTIMER'
       include 'PARALLEL'
+
 
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
@@ -181,13 +183,11 @@ c-----------------------------------------------------------------------
 !$ACC ENTER DATA CREATE(w1,w2)
 !$ACC ENTER DATA CREATE(wk1,wk2)
 
-#endif
       return
       end
 c-----------------------------------------------------------------------
       subroutine hmh_gmres_acc_data_copyout()
 c-----------------------------------------------------------------------
-#ifdef _OPENACC
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
       include 'DXYZ'
@@ -218,7 +218,6 @@ c-----------------------------------------------------------------------
 !$ACC EXIT DATA DELETE(w1,w2)
 !$ACC EXIT DATA DELETE(e,w,r)
 
-#endif
       return
       end
 c-----------------------------------------------------------------------
@@ -318,10 +317,6 @@ c-----------------------------------------------------------------------
       real v3(lx1,ly1,lz1,lelt)
       real tmpu1,tmpu2,tmpu3
 
-!$acc update host(d,u1,u2,u3,v1)
-c     call outpost(u1,u2,u3,d,v1,'wgd')
-c     stop
-
 !$acc data present (d (nx1,nx1))
 !$acc&     present (u1(nx1,ny1,nz1,nelv))
 !$acc&     present (u2(nx1,ny1,nz1,nelv),u3(nx1,ny1,nz1,nelv))
@@ -330,9 +325,6 @@ c     stop
 
 !$acc parallel loop collapse(4) gang worker vector
 !$acc&    private(tmpu1,tmpu2,tmpu3)
-
-cc!dir$ noblocking
-c!$acc kernels
       do e=1,nelv
       do k=1,nz1
       do j=1,ny1
@@ -354,7 +346,6 @@ c!$acc kernels
       enddo
       enddo
       enddo
-c!$acc end kernels
 !$acc end parallel loop
 
 !$acc end data
@@ -395,38 +386,8 @@ c-----------------------------------------------------------------------
 !$acc end parallel loop 
 
       call ophx_acc(resv1,resv2,resv3,vx,vy,vz,h1,h2)
-c!$acc update host(resv1,resv2,resv3)
-
-      do i=1,lx1*ly1*lz1
-c        write (6,*) 'resv1=',resv1(i)
-c        write (6,*) 'resv2=',resv2(i)
-c        write (6,*) 'resv3=',resv3(i)
-      enddo
-c     stop
-
-!$acc update host(ta4)
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'ta4=',ta4(i)
-      enddo
-c     stop
 
       call wgradm1_acc(ta1,ta2,ta3,ta4,nelv)
-
-c!$acc update host(ta1,ta2,ta3)
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'ta1=',ta1(i)
-c        write (6,*) 'ta2=',ta2(i)
-c        write (6,*) 'ta3=',ta3(i)
-      enddo
-c     stop
-
-c!$acc update host(resv1,resv2,resv3)
-      do i=1,lx1*ly1*lz1
-c        write (6,*) 'resv1=',resv1(i)
-c        write (6,*) 'resv2=',resv2(i)
-c        write (6,*) 'resv3=',resv3(i)
-      enddo
-c     stop
 
 !$acc parallel loop
       do i=1,n
@@ -435,14 +396,6 @@ c     stop
          resv3(i)=bfz(i,1,1,1)-resv3(i)-ta3(i)
       enddo
 !$acc end parallel loop 
-
-c!$acc update host(resv1,resv2,resv3)
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'resv1=',resv1(i)
-c        write (6,*) 'resv2=',resv2(i)
-c        write (6,*) 'resv3=',resv3(i)
-      enddo
-c     stop
 
 !$acc end data
 
@@ -543,13 +496,6 @@ c     Later - we can make this fast
       call axhelm_acc(out2,inp2,h1,h2,imesh,2)
       call axhelm_acc(out3,inp3,h1,h2,imesh,3)
 !$acc end data
-
-c!$acc update host(out3)
-
-      do i=1,lx1*ly1*lz1*nelv
-c        write (6,*) 'out3=',out3(i)
-      enddo
-c     stop
 
       return
       end
@@ -661,7 +607,6 @@ C---------------------------------------------------------------
 
       n = lx1*ly1*lz1*nelv
 
-c!$acc update host(vxd,vyd,vzd)
       call chck('a11')
       call convop_acc(ta1,vx)
       call chck('b11')
@@ -669,7 +614,6 @@ c!$acc update host(vxd,vyd,vzd)
       call chck('c11')
       call convop_acc(ta3,vz)
 
-c     call outpost(ta1,ta2,ta3,pr,t,'wta')
 
 !$acc parallel loop
       do i=1,n
@@ -681,6 +625,7 @@ c        bfz(i,1,1,1)=bfz(i,1,1,1)-ta3(i)*bm1(i,1,1,1)
          bfz(i,1,1,1)=bfz(i,1,1,1)-ta3(i)
       enddo
 !$acc end loop
+
 !$acc end data 
 
       return
@@ -774,11 +719,11 @@ C     Add contributions to F from lagged BD terms.
 
       NTOT1 = NX1*NY1*NZ1*NELV
       const = 1./DT
+
 !$acc enter data create(ta1,ta2,ta3,tb1,tb2,tb3,h2)
 
-c     INLINED:
 c     call cmult2_acc(h2,vtrans(1,1,1,1,ifield),const,ntot1)
-!$acc parallel loop collapse(4)
+!$acc parallel loop collapse(4) gang worker vector
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
@@ -790,15 +735,9 @@ c     call cmult2_acc(h2,vtrans(1,1,1,1,ifield),const,ntot1)
       enddo
 !$acc end parallel
 
-c     INLINED:
-c     CALL opcolv3c_acc (tb1,tb2,tb3,vx,vy,vz,bm1,bd(2))
 
-!$acc update host(vx,vy,vz,bm1)
-c     call outpost(vx,vy,vz,bm1,t,'wso')
-
-!$acc update host(bd)
-c     write (6,*) 'bd2=',bd(2)
-!$acc parallel loop collapse(4)
+c     call opcolv3c_acc (tb1,tb2,tb3,vx,vy,vz,bm1,bd(2))
+!$acc parallel loop collapse(4) gang worker vector
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
@@ -820,7 +759,7 @@ c           CALL opcolv3c_acc(TA1,TA2,TA3,VXLAG (1,1,1,1,ILAG-1),
 c    $                                VYLAG (1,1,1,1,ILAG-1),
 c    $                                VZLAG (1,1,1,1,ILAG-1),
 c    $                                BM1LAG(1,1,1,1,ILAG-1),bd(ilag+1))
-!$acc parallel loop collapse(4)
+!$acc parallel loop collapse(4) gang worker vector
             do e = 1, nelv
             do k = 1, lz1
             do j = 1, ly1
@@ -845,21 +784,18 @@ c           CALL opcolv3c_acc(TA1,TA2,TA3,VXLAG (1,1,1,1,ILAG-1),
 c    $                                VYLAG (1,1,1,1,ILAG-1),
 c    $                                VZLAG (1,1,1,1,ILAG-1),
 c    $                                BM1                   ,bd(ilag+1))
-!$acc parallel loop collapse(4)
+!$acc parallel loop collapse(4) gang worker vector
             do e = 1, nelv
             do k = 1, lz1
             do j = 1, ly1
             do i = 1, lx1
                ta1(i,j,k,e) = vxlag(i,j,k,e,ilag-1)  * 
-c    $                        bm1(i,j,k,ilag-1+e) *
      $                        bm1(i,j,k,e) *
      $                        bd(ilag+1)
                ta2(i,j,k,e) = vylag(i,j,k,e,ilag-1)  * 
-c    $                        bm1(i,j,k,ilag-1+e) *
      $                        bm1(i,j,k,e) *
      $                        bd(ilag+1)
                ta3(i,j,k,e) = vzlag(i,j,k,e,ilag-1)  * 
-c    $                        bm1(i,j,k,ilag-1+e) *
      $                        bm1(i,j,k,e) *
      $                        bd(ilag+1)
             enddo
@@ -867,15 +803,6 @@ c    $                        bm1(i,j,k,ilag-1+e) *
             enddo
             enddo
 !$acc end parallel
-c!$acc update host(vxlag,vylag,vzlag)
-c            write (6,*) 'vlag dev',istep
-c            do i=1,lx1*ly1*lz1
-c               write (6,*) 'vlag vxlag=',vxlag(i,1,1,1,ilag-1),ilag
-c               write (6,*) 'vlag vylag=',vylag(i,1,1,1,ilag-1),ilag
-c               write (6,*) 'vlag vzlag=',vzlag(i,1,1,1,ilag-1),ilag
-c               write (6,*) 'vlag bm1=',bm1(i,1,1,1)
-c               write (6,*) 'vlag bd=',bd(ilag+1)
-c            enddo
          endif
 c        INLINED:
 c        call opadd2_acc(TB1,TB2,TB3,TA1,TA2,TA3)
@@ -883,14 +810,13 @@ c         =
 c          CALL ADD2(TB1,TA1,NTOT1)
 c          CALL ADD2(TB2,TA2,NTOT1)
 c          IF(NDIM.EQ.3)CALL ADD2(TB3,TA3,NTOT1)
-!$acc parallel loop collapse(4)
+!$acc parallel loop collapse(4) gang worker vector
          do e = 1, nelv
          do k = 1, lz1
          do j = 1, ly1
          do i = 1, lx1
             tb1(i,j,k,e) = tb1(i,j,k,e) + ta1(i,j,k,e)
             tb2(i,j,k,e) = tb2(i,j,k,e) + ta2(i,j,k,e)
-c           tb3(i,j,k,e) = tb3(i,j,k,e) + ta1(i,j,k,e)
             tb3(i,j,k,e) = tb3(i,j,k,e) + ta3(i,j,k,e)
          enddo
          enddo
@@ -901,7 +827,7 @@ c           tb3(i,j,k,e) = tb3(i,j,k,e) + ta1(i,j,k,e)
 
 c     INLINED:
 c     call opadd2col_acc(BFX,BFY,BFZ,TB1,TB2,TB3,h2)
-!$acc parallel loop collapse(4)
+!$acc parallel loop collapse(4) gang worker vector
       do e = 1, nelv
       do k = 1, lz1
       do j = 1, ly1
@@ -914,7 +840,7 @@ c     call opadd2col_acc(BFX,BFY,BFZ,TB1,TB2,TB3,h2)
       enddo
       enddo
 !$acc end parallel
-!$acc exit data
+!$acc exit data  !FIXME
 
       return
       end
@@ -928,7 +854,7 @@ c
 
       n = lx1*ly1*lz1*nelv
 
-!$acc update device(ab)
+!$acc update device(ab) !FIXME
 !$acc data present(vx,vy,vz,vxlag,vylag,vzlag,vx_e,vy_e,vz_e)
 
       if (nab.eq.3) then
@@ -1106,7 +1032,6 @@ c     flop_a = flop_a + (18.*nxyz*lx1)*nelt
 
       return
       end
-c---------------------------------------------------------------------------           
 c-----------------------------------------------------------------------
       subroutine global_curl_grad3_acc
      $           (u1r,u1s,u1t,u2r,u2s,u2t,u3r,u3s,u3t,u1,u2,u3,d)
@@ -1134,19 +1059,6 @@ c-----------------------------------------------------------------------
       real tmpr3,tmps3,tmpt3
       integer i,j,k,l,e
 
-c     tempo = 0.0
-
-c     do i=1,lx1
-c        write (6,*) 'u3=',u3(i,1,1,1)
-c        write (6,*) 'd=',d(1,i)
-c        tempo=tempo+u3(i,1,1,1)*d(1,i)
-c     enddo
-
-c     write (6,*) 'u3r(1,1,1,1)=',tempo
-
-c     call exitti('exit before mxm$',1)
-
-!$acc update device(u3,d)
 
 !$ACC DATA PRESENT(u1r,u1s,u1t,u2r,u2s,u2t,u3r,u3s,u3t)
 !$ACC&    PRESENT(u1,u2,u3,d)
@@ -1200,11 +1112,7 @@ c     call exitti('exit before mxm$',1)
       enddo
                                                                      
 !$ACC END PARALLEL LOOP
-!$acc update host(u3r)
 !$ACC END DATA
-
-c     write (6,*) 'u3r(1,1,1,1)=',u3r(1,1,1,1)
-c     call exitti('exit after mxm$',1)
 
       return
       end
@@ -1230,7 +1138,7 @@ c-----------------------------------------------------------------------
      $     u1(lx1*ly1*lz1*lelt),
      $     u2(lx1*ly1*lz1*lelt),
      $     u3(lx1*ly1*lz1*lelt)
-c
+ 
 
 !$ACC DATA PRESENT(w1,w2,w3,u1,u2,u3)
 !$ACC& PRESENT(jacmi,rxm1,sxm1,txm1,rym1,sym1,tym1,rzm1,szm1,tzm1)
@@ -1244,38 +1152,17 @@ c
      $               rxm1,sxm1,txm1,rym1,sym1,tym1,rzm1,szm1,tzm1,
      $               w1,w2,w3,jacmi)
 
-!$acc update host(w1,w2,w3)
       ifielt = ifield
       ifield = 1
+
       call opcolv_acc (w1,w2,w3,bm1)
-c!$acc update host(w1,w2,w3)
-c      do i=1,lx1*ly1*lz1*nelv
-c         write (6,*) 'dst1 ',w1(i)
-c         write (6,*) 'dst1 ',w2(i)
-c         write (6,*) 'dst1 ',w3(i)
-c      enddo
       call dssum      (w1,nx1,ny1,nz1)
       call dssum      (w2,nx1,ny1,nz1)
       call dssum      (w3,nx1,ny1,nz1)
-c!$acc update host(w1,w2,w3)
-c      do i=1,lx1*ly1*lz1*nelv
-c         write (6,*) 'dst2 ',w1(i)
-c         write (6,*) 'dst2 ',w2(i)
-c         write (6,*) 'dst2 ',w3(i)
-c      enddo
-c     stop
-c!$acc update host(binvm1)
-c      do i=1,lx1*ly1*lz1*nelv
-c         write (6,*) 'binvm',binvm1(i,1,1,1)
-c      enddo
-c      stop
       call opcolv_acc (w1,w2,w3,binvm1)
-!$acc update host(w1,w2,w3) !<- necessary
-c      do i=1,lx1*ly1*lz1*nelv
-c         write (6,*) 'opcolv',w1(i)
-c         write (6,*) 'opcolv',w1(i)
-c         write (6,*) 'opcolv',w1(i)
-c      enddo
+
+cccc!$acc update host(w1,w2,w3) !<- necessary  ! FIXME, not necessary?
+
       ifield = ifielt
 
 !$ACC END DATA
@@ -1523,7 +1410,7 @@ c-----------------------------------------------------------------------
 
 !$acc update device(vxd,vyd,vzd)
 
-!$acc update device(d,scalar,r,w,p,z)
+c!$acc update device(d,scalar,r,w,p,z)
 !$acc update device(ibc_acc)
 !$acc update device(c_vx)
 
@@ -1602,10 +1489,10 @@ c-----------------------------------------------------------------------
 !$acc update host(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
 
 !$acc update host(ab,bd)
-!$acc update host(pr,pmlag,prlag,qtl,usrdiv)
+!$acc update host(pmlag,prlag,qtl,usrdiv)
 !$acc update host(vxd,vyd,vzd)
-!$acc update host(diagt,upper)
-!$acc update host(d,scalar,r,w,p,z)
+c!$acc update host(diagt,upper)
+c!$acc update host(d,scalar,r,w,p,z)
 !$acc update host(ibc_acc)
 !$acc update host(c_vx)
 

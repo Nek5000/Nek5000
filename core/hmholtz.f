@@ -126,21 +126,11 @@ C-----------------------------------------------------------------------
       common /scrcg/ scrd(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
-c     real r(lx1*ly1*lz1*lelt),
-c    $     w(lx1*ly1*lz1*lelt),
-c    $     p(lx1*ly1*lz1*lelt),
-c    $     z(lx1*ly1*lz1*lelt),
-c    $     scrd(lx1*ly1*lz1*lelt),
-c    $     scalar(2)   
-
       common /tdarray/ diagt(maxcg),upper(maxcg)
       common /iterhm/ niterhm
       character*4 name
  
 c **  zero out stuff for Lanczos eigenvalue estimator
-
-c!$acc data present(r,w,p,z,scrd,scalar)
-c!$acc&     present(f,h1,h2,mask,mult,binv)
 
       call rzero_acc(diagt,maxcg)
       call rzero_acc(upper,maxcg)
@@ -182,7 +172,6 @@ c     Set up diag preconditioner.
 !$acc update host(scrd)
 
       call copy_acc(r,f,n)
-
       call rzero_acc(x,n)
       call rzero_acc(p,n)
 
@@ -214,7 +203,6 @@ c     Check for non-trivial null-space
       do iter=1,niter
 
          call col3_acc(z,r,scrd,n)
-!$acc    update host(z)
 
          rtz2=rtz1
          scalar(1)=vlsc3_acc(z,r,mult,n)
@@ -254,8 +242,6 @@ c        Always take at least one iteration   (for projection) pff 11/23/98
          call dssum  (w,nx1,ny1,nz1)
          call col2_acc   (w,mask,n)
 
-!$acc    update host(w)
- 
          rho0 = rho
          rho  = glsc3_acc(w,p,mult,n)
          alpha=rtz1/rho
@@ -267,15 +253,10 @@ c        Generate tridiagonal matrix for Lanczos scheme
          if (iter.eq.1) then
             krylov = krylov+1
             diagt(iter) = rho/rtz1
-c           write (6,*) 'krylov,diagt(1)',krylov,diagt(1)
-c           stop
          elseif (iter.le.maxcg) then
             krylov = krylov+1
             diagt(iter)    = (beta**2 * rho0 + rho ) / rtz1
             upper(iter-1)  = -beta * rho0 / sqrt(rtz2 * rtz1)
-c           write (6,*)
-c    $      'krylov,diagt(2),upper(1)',krylov,diagt(2),upper(1)
-c           stop
          endif
  1000 enddo
 
