@@ -887,6 +887,59 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      real function vlmin_acc(vec,n)
+      real vec(n)
+      real tmp(1) 
+
+!$acc data copyout(tmp) present(vec)
+!$acc kernels
+      tmin= 99.0E20
+      do i=1,n 
+         tmin = min(tmin,vec(i))
+      enddo   
+      tmp(1)=tmin
+!$acc end kernels
+!$acc end data
+      vlmin_acc = tmp(1)
+      return
+      end
+c-----------------------------------------------------------------------
+      real function vlmax_acc(vec,n)
+      real vec(n)
+      real tmp(1)
+
+!$acc data copyout(tmp) present(vec)
+!$acc kernels
+      tmax=-99.0e20
+      do i=1,n
+         tmax=max(tmax,vec(i))
+      enddo
+      tmp(1)=tmax
+!$acc end kernels
+!$acc end data
+      vlmax_acc = tmp(1)
+      return
+      end
+c----------------------------------------------------------------------
+      real function vlamax_acc(vec,n)
+      real vec(n)
+      real tmp(1)
+
+!$acc data copyout(tmp) present(vec)
+!$acc kernels
+      tmax=0
+      do i=1,n
+         tmax=max(tmax,abs(vec(i)))
+      enddo
+      tmp(1)=tmax
+!$acc end kernels
+!$acc end data
+
+      vlamax_acc = tmp(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine add2_acc(a,b,n)
       real a(n),b(n)
       include 'OPCTR'

@@ -195,8 +195,8 @@ c-----------------------------------------------------------------------
       istep  = 0
       msteps = 1
 
-      call plan4_acc_data_copyin_onetime  
-      call hsmg_acc_data_copyin_onetime  
+      call plan4_acc_data_copyin_istep0
+      call hsmg_acc_data_copyin_istep0
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
@@ -209,7 +209,7 @@ c-----------------------------------------------------------------------
       enddo
  1001 lastep=1
 
-      call plan4_acc_data_copyout_onetime   
+      call plan4_acc_data_copyout_nstep
       call nek_comm_settings(isyc,0)
 
       call comment

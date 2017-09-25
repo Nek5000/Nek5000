@@ -359,7 +359,7 @@ c     GMRES iteration.
 c     ROR 2017-05-22: Separate copyin/copyout statements are used for
 c     res, h1, h2, and wt, since they are local variables.  
 
-      call hmh_gmres_acc_data_copyin()
+      call hmh_gmres_acc_data_copyin_isteps()
 
       acctime1 = dnekclock()
 
@@ -636,7 +636,9 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       if (nio.eq.0) write(6,*) 'acc_time: ', acctime1
 c     call flush_hack
  9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
-      call hmh_gmres_acc_data_copyout()
+
+      call hmh_gmres_acc_data_copyout_isteps()
+
       if (outer.le.2) if_hyb = .false.
 
       return

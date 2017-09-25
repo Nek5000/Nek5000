@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine plan4_acc_data_copyin_onetime()
+      subroutine plan4_acc_data_copyin_istep0()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'    
@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine plan4_acc_data_copyout_onetime()
+      subroutine plan4_acc_data_copyout_nstep()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
@@ -69,7 +69,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hsmg_acc_data_copyin_onetime()
+      subroutine hsmg_acc_data_copyin_istep0()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
@@ -119,7 +119,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine plan4_acc_data_copyin()
+      subroutine plan4_acc_data_copyin_istep1
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
@@ -127,11 +127,18 @@ c-----------------------------------------------------------------------
       parameter (lg=lx1*ly1*lz1*lelt)
       parameter (maxcg=900)
 
-      common /tdarray/ diagt(maxcg),upper(maxcg)
-      common /scrcg/ d(lg), scalar(2)
-      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+      common /scrns/ res1  (lx1,ly1,lz1,lelv)
+     $ ,             res2  (lx1,ly1,lz1,lelv)
+     $ ,             res3  (lx1,ly1,lz1,lelv)
+     $ ,             dv1   (lx1,ly1,lz1,lelv)
+     $ ,             dv2   (lx1,ly1,lz1,lelv)
+     $ ,             dv3   (lx1,ly1,lz1,lelv)
+     $ ,             respr (lx2,ly2,lz2,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
 
-      if (istep.gt.1) return
+!$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
+!$acc enter data copyin(dv1,dv2,dv3)
 
 !$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
@@ -150,7 +157,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hmh_gmres_acc_data_copyin()
+      subroutine hmh_gmres_acc_data_copyin_isteps()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
@@ -172,24 +179,21 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
-
-!$acc enter data copyin(work,work2)
-!$acc enter data copyin(mg_mask,mg_imask,pmask)
-!$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-!$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
+      if (istep.eq.1) then
 !$acc enter data copyin(h_gmres,w_gmres,v_gmres,z_gmres)
 !$acc enter data copyin(c_gmres,s_gmres,x_gmres,gamma_gmres)
 !$acc enter data copyin(r_gmres)
 !$acc enter data copyin(ml_gmres,mu_gmres)
+      endif
 
-!$ACC ENTER DATA CREATE(e,w,r)
-!$ACC ENTER DATA CREATE(w1,w2)
-!$ACC ENTER DATA CREATE(wk1,wk2)
+!$acc enter data create(work,work2)
+!$acc enter data create(e,w,r)
+!$acc enter data create(w1,w2)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hmh_gmres_acc_data_copyout()
+      subroutine hmh_gmres_acc_data_copyout_isteps()
 c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'            ! Same array space as HSMG
@@ -210,17 +214,129 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
 
+!$acc exit data delete(work,work2)
+!$acc exit data delete(w1,w2)
+!$acc exit data delete(e,w,r)
 
-!$ACC EXIT DATA DELETE(work,work2)
-!$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
-!$ACC EXIT DATA DELETE(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-!$ACC EXIT DATA DELETE(mg_work,mg_fast_s,mg_fast_d)
-!$ACC EXIT DATA COPYOUT(h_gmres,w_gmres,v_gmres,z_gmres)
-!$ACC EXIT DATA COPYOUT(c_gmres,s_gmres,x_gmres,gamma_gmres)
-!$ACC EXIT DATA COPYOUT(r_gmres)
-!$ACC EXIT DATA COPYOUT(ml_gmres,mu_gmres)
-!$ACC EXIT DATA DELETE(w1,w2)
-!$ACC EXIT DATA DELETE(e,w,r)
+      if (istep.eq.nstep) then
+!$acc exit data copyout(h_gmres,w_gmres,v_gmres,z_gmres)
+!$acc exit data copyout(c_gmres,s_gmres,x_gmres,gamma_gmres)
+!$acc exit data copyout(r_gmres)
+!$acc exit data copyout(ml_gmres,mu_gmres)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine plan4_acc_update_device_isteps
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'    
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+!$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
+!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
+!$acc update device(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
+!$acc update device(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
+!$acc update device(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
+
+!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2)
+!$acc update device(ab,bd)
+!$acc update device(pr,pmlag,prlag,qtl,usrdiv)
+
+!$acc update device(vxd,vyd,vzd)
+
+!$acc update device(ibc_acc)
+!$acc update device(c_vx)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hsmg_acc_update_device_isteps
+      include 'SIZE'
+      include 'HSMG'
+
+!$acc update device(mg_nx)
+!$acc update device(mg_ny,mg_nz)
+!$acc update device(mg_nh,mg_nhz)
+!$acc update device(mg_gsh_schwarz_handle)
+!$acc update device(mg_gsh_handle)
+!$acc update device(mg_rstr_wt_index)
+!$acc update device(mg_mask_index)
+!$acc update device(mg_solve_index)
+!$acc update device(mg_fast_s_index)
+!$acc update device(mg_fast_d_index)
+!$acc update device(mg_schwarz_wt_index)
+!$acc update device(mg_g_index)
+
+!$acc update device(mg_jh)
+!$acc update device(mg_jht)
+!$acc update device(mg_jhfc )
+!$acc update device(mg_jhfct)
+!$acc update device(mg_ah)
+!$acc update device(mg_bh)
+!$acc update device(mg_dh)
+!$acc update device(mg_dht)
+!$acc update device(mg_zh)
+!$acc update device(mg_rstr_wt)
+!$acc update device(mg_mask)
+!$acc update device(mg_fast_s)
+!$acc update device(mg_fast_d)
+!$acc update device(mg_schwarz_wt)
+!$acc update device(mg_solve_e)
+!$acc update device(mg_solve_r)
+!$acc update device(mg_h1)
+!$acc update device(mg_h2)
+!$acc update device(mg_b)
+!$acc update device(mg_g)
+!$acc update device(mg_work)
+!$acc update device(mg_work2)
+!$acc update device(mg_worke)
+
+!$acc update device(mg_imask)
+
+!$acc update device(mg_h1_n)
+!$acc update device(p_mg_h1)
+!$acc update device(p_mg_b)
+!$acc update device(p_mg_msk)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine plan4_acc_update_host_isteps  
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'    
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+!$acc update host(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+!$acc update host(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
+!$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
+!$acc update host(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
+!$acc update host(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
+!$acc update host(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
+
+!$acc update host(ab,bd)
+!$acc update host(pmlag,prlag,qtl,usrdiv)
+!$acc update host(vxd,vyd,vzd)
+
+!$acc update host(ibc_acc)
+!$acc update host(c_vx)
 
       return
       end
@@ -1383,120 +1499,6 @@ c           du(i,j,1,e) = w1*b(i,j,1,e)
 !$acc    end loop
       enddo
 !$acc end parallel loop
-
-      return
-      end
-
-c-------------------------------------------------------------------
-      subroutine plan4_acc_update_device
-c-----------------------------------------------------------------------
-      include 'SIZE'
-      include 'TOTAL'    
-
-      parameter (lg=lx1*ly1*lz1*lelt)
-      parameter (maxcg=900)
-
-      common /tdarray/ diagt(maxcg),upper(maxcg)
-
-      common /scrcg/ d(lg), scalar(2)
-      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
-
-!$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
-!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
-!$acc update device(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
-!$acc update device(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
-!$acc update device(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-
-!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2)
-!$acc update device(ab,bd)
-!$acc update device(pr,pmlag,prlag,qtl,usrdiv)
-
-!$acc update device(vxd,vyd,vzd)
-
-!$acc update device(ibc_acc)
-!$acc update device(c_vx)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine hsmg_acc_update_device
-      include 'SIZE'
-      include 'HSMG'
-
-!$acc update device(mg_nx)
-!$acc update device(mg_ny,mg_nz)
-!$acc update device(mg_nh,mg_nhz)
-!$acc update device(mg_gsh_schwarz_handle)
-!$acc update device(mg_gsh_handle)
-!$acc update device(mg_rstr_wt_index)
-!$acc update device(mg_mask_index)
-!$acc update device(mg_solve_index)
-!$acc update device(mg_fast_s_index)
-!$acc update device(mg_fast_d_index)
-!$acc update device(mg_schwarz_wt_index)
-!$acc update device(mg_g_index)
-
-!$acc update device(mg_jh)
-!$acc update device(mg_jht)
-!$acc update device(mg_jhfc )
-!$acc update device(mg_jhfct)
-!$acc update device(mg_ah)
-!$acc update device(mg_bh)
-!$acc update device(mg_dh)
-!$acc update device(mg_dht)
-!$acc update device(mg_zh)
-!$acc update device(mg_rstr_wt)
-!$acc update device(mg_mask)
-!$acc update device(mg_fast_s)
-!$acc update device(mg_fast_d)
-!$acc update device(mg_schwarz_wt)
-!$acc update device(mg_solve_e)
-!$acc update device(mg_solve_r)
-!$acc update device(mg_h1)
-!$acc update device(mg_h2)
-!$acc update device(mg_b)
-!$acc update device(mg_g)
-!$acc update device(mg_work)
-!$acc update device(mg_work2)
-!$acc update device(mg_worke)
-
-!$acc update device(mg_imask)
-
-!$acc update device(mg_h1_n)
-!$acc update device(p_mg_h1)
-!$acc update device(p_mg_b)
-!$acc update device(p_mg_msk)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine plan4_acc_update_host  
-c-----------------------------------------------------------------------
-      include 'SIZE'
-      include 'TOTAL'    
-
-      parameter (lg=lx1*ly1*lz1*lelt)
-      parameter (maxcg=900)
-
-      common /tdarray/ diagt(maxcg),upper(maxcg)
-
-      common /scrcg/ d(lg), scalar(2)
-      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
-
-!$acc update host(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
-!$acc update host(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
-!$acc update host(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
-!$acc update host(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
-!$acc update host(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-
-!$acc update host(ab,bd)
-!$acc update host(pmlag,prlag,qtl,usrdiv)
-!$acc update host(vxd,vyd,vzd)
-
-!$acc update host(ibc_acc)
-!$acc update host(c_vx)
 
       return
       end

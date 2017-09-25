@@ -11,22 +11,22 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
-     $ ,             RES2  (LX1,LY1,LZ1,LELV)
-     $ ,             RES3  (LX1,LY1,LZ1,LELV)
-     $ ,             DV1   (LX1,LY1,LZ1,LELV)
-     $ ,             DV2   (LX1,LY1,LZ1,LELV)
-     $ ,             DV3   (LX1,LY1,LZ1,LELV)
-     $ ,             RESPR (LX2,LY2,LZ2,LELV)
+      common /scrns/ res1  (lx1,ly1,lz1,lelv)
+     $ ,             res2  (lx1,ly1,lz1,lelv)
+     $ ,             res3  (lx1,ly1,lz1,lelv)
+     $ ,             dv1   (lx1,ly1,lz1,lelv)
+     $ ,             dv2   (lx1,ly1,lz1,lelv)
+     $ ,             dv3   (lx1,ly1,lz1,lelv)
+     $ ,             respr (lx2,ly2,lz2,lelv)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
 
-      REAL           DPR   (LX2,LY2,LZ2,LELV)
-      EQUIVALENCE   (DPR,DV1)
-      LOGICAL        IFSTSP
+      REAL           dpr   (lx2,ly2,lz2,lelv)
+      EQUIVALENCE   (dpr,dv1)
+      LOGICAL        ifstsp
 
-      REAL DVC (LX1,LY1,LZ1,LELV), DFC(LX1,LY1,LZ1,LELV)
-      REAL DIV1, DIV2, DIF1, DIF2, QTL1, QTL2
+      REAL dvc(lx1,ly1,lz1,lelv), dfc(lx1,ly1,lz1,lelv)
+      REAL div1, div2, dif1, dif2, qtlq, qtl2
 
       INTEGER e
 
@@ -39,20 +39,20 @@ c
       intype = -1
       ntot1  = nx1*ny1*nz1*nelv
       n      = ntot1
+      
+      if (istep.eq.1.and.igeom.eq.1) then
+          call plan4_acc_data_copyin_istep1
+      endif
 
       if (igeom.eq.1) then
 
-         call plan4_acc_data_copyin
-         call plan4_acc_update_device
-         call hsmg_acc_update_device
+         call plan4_acc_update_device_isteps
 
          call makef_acc
 
          call sumab_acc(vx_e,vx,vxlag,n,ab,nab)
          call sumab_acc(vy_e,vy,vylag,n,ab,nab)
          call sumab_acc(vz_e,vz,vzlag,n,ab,nab)
-
-!$acc    update host(vx_e,vy_e,vz_e)
 
       else
 
@@ -63,16 +63,10 @@ c
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 !$acc    update device(vx,vy,vz)
 
-
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
          etime1=dnekclock()
-
-         if (istep.eq.1) then
-!$acc       enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
-!$acc       enter data copyin(dv1,dv2,dv3)
-         endif
 
          call crespsp_acc(respr)
 
@@ -84,6 +78,7 @@ c
          call col2_acc  (respr,pmask,n)
 
          iter=nmxh
+         call hsmg_acc_update_device_isteps
          call hmh_gmres (respr,h1,h2,vmult,iter)
 
          call add2_acc (pr,respr,n)
@@ -114,15 +109,13 @@ c
      $                 nmxh,3,binvm1,'VELZ')
          ! ophinv_pr ends here
 
-c below gives correct values in iterations
-c but printed values are wierd  L1/L2 DIV(V) 6.9034-310   6.9034-310  
-
          call add2_acc  (vx,dv1,n)      
          call add2_acc  (vy,dv2,n)
          call add2_acc  (vz,dv3,n)
 
-         call plan4_acc_update_host
+         call plan4_acc_update_host_isteps
 
+c FIXME printed values currenty L1/L2 DIV(V) 6.9034-310   6.9034-310  
          IF (NIO.EQ.0) THEN
             WRITE(6,'(13X,A,1p2e13.4)')
      &         'L1/L2 DIV(V)        ',DIV1,DIV2
@@ -177,9 +170,6 @@ C
 c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
-
-
-      call plan4_acc_data_copyin()
 
 
       if (igeom.eq.1) then
