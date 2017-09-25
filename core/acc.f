@@ -131,9 +131,11 @@ c-----------------------------------------------------------------------
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
+      if (istep.gt.1) return
+
 !$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,c_vx,fw)
+!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
 !$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
@@ -169,6 +171,7 @@ c-----------------------------------------------------------------------
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
+
 
 !$acc enter data copyin(work,work2)
 !$acc enter data copyin(mg_mask,mg_imask,pmask)
@@ -206,6 +209,7 @@ c-----------------------------------------------------------------------
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
+
 
 !$ACC EXIT DATA DELETE(work,work2)
 !$ACC EXIT DATA DELETE(mg_mask,mg_imask,pmask)
@@ -1399,7 +1403,7 @@ c-----------------------------------------------------------------------
 
 !$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,c_vx,fw)
+!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
 !$acc update device(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc update device(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc update device(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
@@ -1410,7 +1414,6 @@ c-----------------------------------------------------------------------
 
 !$acc update device(vxd,vyd,vzd)
 
-c!$acc update device(d,scalar,r,w,p,z)
 !$acc update device(ibc_acc)
 !$acc update device(c_vx)
 
@@ -1483,7 +1486,7 @@ c-----------------------------------------------------------------------
 
 !$acc update host(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update host(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-!$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,c_vx,fw)
+!$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
 !$acc update host(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc update host(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc update host(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
@@ -1491,8 +1494,7 @@ c-----------------------------------------------------------------------
 !$acc update host(ab,bd)
 !$acc update host(pmlag,prlag,qtl,usrdiv)
 !$acc update host(vxd,vyd,vzd)
-c!$acc update host(diagt,upper)
-c!$acc update host(d,scalar,r,w,p,z)
+
 !$acc update host(ibc_acc)
 !$acc update host(c_vx)
 
