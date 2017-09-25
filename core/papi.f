@@ -8,7 +8,7 @@
       return
       end
 
-      subroutine getflops_papi(flops,mflops)
+      subroutine getflops_papi(flpops,mflops)
 #ifdef PAPI
       include 'f77papi.h'
       real*4 rtime,ptime,mflops
@@ -16,7 +16,7 @@
 
       call papif_flops(rtime,ptime,flpops,mflops,ierr)
       if(ierr.ne.0) then
-        flops = -1
+        flpops = -1
         mflops = -1
       endif
 #endif

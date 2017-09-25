@@ -39,7 +39,6 @@ CC="gcc"
 
 
 
-
 ### don't touch this section ###############################
 
 if [ $# -eq 0 ]; then
@@ -62,9 +61,6 @@ if [ $# -eq 2 ]; then
   bin_nek_tools="$2"
 fi
 
-
-
-
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
@@ -84,18 +80,18 @@ fi
 
 
 case $F77 in
-  *pgf*)       R8="-r8"
+  *pgf*)       R8="-r8 -Mpreprocess"
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
-  *gfortran*)  R8="-fdefault-real-8"
+  *gfortran*)  R8="-fdefault-real-8 -cpp"
                BIGMEM_FLAG="-mcmodel=medium"
                ;;
-  *ifort*)     R8="-r8"
+  *ifort*)     R8="-r8 -fpp"
                BIGMEM_FLAG="-mcmodel=medium -shared-intel"
                ;;
-  *pathf*)     R8="-r8"
+  *pathf*)     R8="-r8 -cpp"
                ;;
-  *xlf*)       R8="-qrealsize=8"
+  *xlf*)       R8="-qrealsize=8 -qsuffix=cpp=f"
                BIGMEM_FLAG="-q64"
                ;;
   *ftn*)       R8="-r8"
@@ -127,6 +123,12 @@ if [[ $OSTYPE != darwin* ]]; then
   F77="$F77 $BIGMEM_FLAG" 
   CC="$CC $BIGMEM_FLAG" 
 fi
+
+#if [ "$BIGMEM" == "true" ]; then
+#  F77="$F77 -DBIGMEM" 
+#  CC="$CC -DBIGMEM" 
+#fi
+
 
 export F77
 export CC

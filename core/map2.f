@@ -498,12 +498,6 @@ c-----------------------------------------------------------------------
       endif
  
       call bcast(neli, ISIZE)
-c      if (nid.eq.0) then
-c         neli = iglmax(neli,1)   ! communicate to all procs
-c      else
-c         neli = 0
-c         neli = iglmax(neli,1)   ! communicate neli to all procs
-c      endif
 
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
@@ -514,8 +508,6 @@ c      endif
       len = 4*mdw*ndw
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
-
-      write(6,*) 'npass', npass
 
       if (nid.eq.0) then
          eg0 = 0
@@ -538,9 +530,8 @@ c      endif
             else
                m = 0
                do eg=eg0+1,eg1
-                  m = m+1
+                  m = m + 1
                   read(80,*,err=200) (wk(k,m),k=1,mdw-1)
-c                  write(912,*) (wk(k,m),k=1,mdw-1)
                enddo
             endif
             
@@ -565,7 +556,6 @@ c                  write(912,*) (wk(k,m),k=1,mdw-1)
 
       elseif (nid.lt.npass) then
 
-         write(6,*) 'wait ', nid
          call msgwait(msg_id)
          ntuple = ndw
 
