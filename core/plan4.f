@@ -98,8 +98,8 @@ c
          call col2_acc(res3,v3mask,ntot1)
 
          call chktcg1_acc(tol1,res1,h1,h2,v1mask,vmult,imesh,1)
-         call chktcg1_acc(tol2,res1,h1,h2,v2mask,vmult,imesh,2)
-         call chktcg1_acc(tol3,res1,h1,h2,v3mask,vmult,imesh,3)
+         call chktcg1_acc(tol2,res2,h1,h2,v2mask,vmult,imesh,2)
+         call chktcg1_acc(tol3,res3,h1,h2,v3mask,vmult,imesh,3)
 
          call cggo_acc(dv1,res1,h1,h2,v1mask,vmult,imesh,tol1,
      $                 nmxh,1,binvm1,'VELX')
@@ -171,7 +171,6 @@ c
       INTYPE = -1
       NTOT1  = NX1*NY1*NZ1*NELV
 
-
       if (igeom.eq.1) then
 
          ! compute explicit contributions bfx,bfy,bfz 
@@ -182,8 +181,6 @@ c
          if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
 
       else
-
-         if(iflomach) call opcolv(bfx,bfy,bfz,vtrans)
 
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
@@ -207,7 +204,9 @@ C        first, compute pressure
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
          call ctolspl  (tolspl,respr)
+
          napproxp(1) = laxtp
+
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
      $                        ,imesh,tolspl,nmxh,1
@@ -219,9 +218,7 @@ C        first, compute pressure
 
 C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
-c        call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
-         call ophinv_pr_debug(dv1,dv2,dv3,res1,res2,res3,
-     $                        h1,h2,tolhv,nmxh)
+         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
@@ -460,53 +457,27 @@ C     Compute the residual for the velocity
       NTOT = NX1*NY1*NZ1*NELV
       INTYPE = -1
 
-c     call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       CALL SETHLM  (H1,H2,INTYPE)
-c     call outpost(vx,vy,vz,h1,h2,'gv_')
 
       CALL OPHX    (RESV1,RESV2,RESV3,VX,VY,VZ,H1,H2)
-c     call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       CALL OPCHSGN (RESV1,RESV2,RESV3)
 
       scale = -1./3.
       if (ifstrs) scale =  2./3.
 
-      call col3(ta4,vdiff,qtl,ntot)
-
-      do i=1,ntot/nelv
-c        write (6,*) 'pr=',pr(i,1,1,1)
-      enddo
-
-c     call outpost(ta4,vdiff,qtl,pr,t,'gv_')
-      call add2s1 (ta4,pr,scale,ntot)    
-
-      call outpost(resv1,resv2,resv3,ta4,h2,'gcv')
-c     call opgrad (ta1,ta2,ta3,ta4)
-c     do i=1,ntot/nelv
-c        write (6,*) 'ta4=',ta4(i,1,1,1)
-c     enddo
-      call wgradm1(ta1,ta2,ta3,ta4,nelv)
-c     call exitti('exit after wgradm1 in cresvsp$',1)
-c     call outpost(ta1,ta2,ta3,ta4,h2,'gcv')
-
-c     do i=1,ntot/nelv
-c        write (6,*) 'ta1=',ta1(i,1,1,1)
-c        write (6,*) 'ta2=',ta2(i,1,1,1)
-c        write (6,*) 'ta3=',ta3(i,1,1,1)
-c     enddo
-
+      call col3    (ta4,vdiff,qtl,ntot)
+      call add2s1  (ta4,pr,scale,ntot)
+      call opgrad  (ta1,ta2,ta3,TA4)
       if(IFAXIS) then
          CALL COL2 (TA2, OMASK,NTOT)
          CALL COL2 (TA3, OMASK,NTOT)
       endif
-
+c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
-      call outpost(resv1,resv2,resv3,h1,h2,'gv_')
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
-      call outpost(resv1,resv2,resv3,h1,h2,'gv_')
+C
       return
       end
-
 c-----------------------------------------------------------------------
       subroutine op_curl(w1,w2,w3,u1,u2,u3,ifavg,work1,work2)
 

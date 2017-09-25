@@ -1114,8 +1114,6 @@ C
       ifproj = .false.
       if (param(94).gt.0) ifproj = .true.
 
-      write (6,*) 'tolh=',tolh
-
       if (.not.ifproj) then
          if (ifield.eq.1) call ophinv
      $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
