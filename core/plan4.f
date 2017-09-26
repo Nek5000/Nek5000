@@ -77,11 +77,8 @@ c
          call dssum     (respr,nx1,ny1,nz1)
          call col2_acc  (respr,pmask,n)
 
-         iter=nmxh
-         call hsmg_acc_update_device_isteps
-
 !$acc    update host(h1,h2)    
-         call hmh_gmres (respr,h1,h2,vmult,iter)
+         call hmh_gmres (respr,h1,h2,vmult,nmxh)
 
          call add2_acc (pr,respr,n)
          call ortho_acc(pr)
