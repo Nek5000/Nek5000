@@ -79,6 +79,8 @@ c
 
          iter=nmxh
          call hsmg_acc_update_device_isteps
+
+!$acc    update host(h1,h2)    
          call hmh_gmres (respr,h1,h2,vmult,iter)
 
          call add2_acc (pr,respr,n)
@@ -97,6 +99,7 @@ c
          call col2_acc(res2,v2mask,ntot1)
          call col2_acc(res3,v3mask,ntot1)
 
+!$acc    update host(h1,h2)    
          call chktcg1_acc(tol1,res1,h1,h2,v1mask,vmult,imesh,1)
          call chktcg1_acc(tol2,res2,h1,h2,v2mask,vmult,imesh,2)
          call chktcg1_acc(tol3,res3,h1,h2,v3mask,vmult,imesh,3)
@@ -493,8 +496,6 @@ c-----------------------------------------------------------------------
       ntot  = nx1*ny1*nz1*nelv
       nxyz  = nx1*ny1*nz1
 
-ccc!$acc update host   (u1(1:ntot),u2(1:ntot),u3(1:ntot))
-
 c     work1=dw/dy ; work2=dv/dz
       call dudxyz(work1,u3,rym1,sym1,tym1,jacm1,1,2)
       if (if3d) then
@@ -855,8 +856,6 @@ c
       character cb*3,c1*1
       integer e,f
 
-cc!$acc routine(facind) seq
-      
       nxyz1  = lx1*ly1*lz1
       ntot1  = nxyz1*nelv
       nfaces = 2*ndim
@@ -964,9 +963,8 @@ c******************************************
 c     call admcol3_acc(respr,qtl,bm1,dtbd,ntot1)
 
       call crespsp_face_update(respr,ta1,ta2,ta3,dtbd,w1,w2,w3)
+
 !$acc update device(respr)
-
-
       call ortho_acc (respr)
 
 !$acc exit data
@@ -1044,9 +1042,6 @@ c     Single or double precision???
          call col3_acc(w2,bintm1,w1,ntot1)
          rinit  = sqrt(glsc3_acc(w2,w1,mult,ntot1)/voltm1)
       endif
-
-c     write (6,*) 'rinit=',rinit
-c     stop
 
       rmin   = eps*rinit
 

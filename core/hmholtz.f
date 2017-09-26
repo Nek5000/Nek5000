@@ -578,8 +578,6 @@ c
       naxhm=icalld
       etime1=dnekclock()
 
-
-!$acc update host(helm1,helm2) !FIXME
       if (.not.ifsolv) call setfast(helm1,helm2,imesh)
 
       if (ifaxis) call setaxdy ( ifrzer(e) )
