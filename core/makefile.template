@@ -68,7 +68,7 @@ else
   CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
    face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
-   filters_cmt.o diagnostics.o
+   filters_cmt.o diagnostics.o artvisc.o
 endif
 # VISIT ########################################################################
 ifneq ($(VISIT),0)
@@ -215,6 +215,7 @@ $(OBJDIR)/driver3_cmt.o	:$(SCMT)/driver3_cmt.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gradient_solver.o	:$(SCMT)/gradient_solver.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/eqnsolver_cmt.o	:$(SCMT)/eqnsolver_cmt.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/ausm.o	:$(SCMT)/ausm.f;   		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/artvisc.o	:$(SCMT)/artvisc.f;   		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/face.o	:$(SCMT)/face.f;  		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/bc.o		:$(SCMT)/bc.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/surface_fluxes.o	:$(SCMT)/surface_fluxes.f;		$(FC) -c $(FL2) $< -o $@
