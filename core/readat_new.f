@@ -309,7 +309,7 @@ c set parameters
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'AMG') .gt. 0) param(40) = 1
+      if (index(c_out,'SEMG_AMG') .gt. 0) param(40) = 1
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)

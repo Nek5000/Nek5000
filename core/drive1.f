@@ -185,11 +185,10 @@ c-----------------------------------------------------------------------
       itime = 1
 #endif
       call nek_comm_settings(isyc,itime)
-      call nek_comm_startstat()
 
-#ifdef PAPI
-      dtmp = dnekgflpops() ! start measurement
-#endif
+      ! start measurements
+      call nek_comm_startstat()
+      dtmp = dnekgflops()
 
       istep  = 0
       msteps = 1

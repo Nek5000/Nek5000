@@ -94,7 +94,7 @@ C      ENDIF
         write(6,*) ' '
         write(6,*) 'element load imbalance: ',nm-nn,nn,nm
         if((nm-nn)/float(nn).gt.0.2) 
-     $    write(6,*) 'WARNING: load imbalance >20% !!!'
+     $    write(6,*) 'WARNING: imbalance >20% !!!'
         write(6,'(A,g13.5,A,/)')  ' done :: mapping ',dt,' sec'
         write(6,*) ' '
       endif

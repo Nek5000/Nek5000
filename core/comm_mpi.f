@@ -528,8 +528,7 @@ c     Communicate unhappiness to the other session
       call nekgsync()
 
 #ifdef PAPI
-      gflopss = glsum(dnekgflpops(),1)/1e9
-      gflopss = gflopss/(ttime-tprep) ! w/o init&IO
+      gflops = glsum(dnekgflops(),1)
 #endif
 
       tstop  = dnekclock()
@@ -542,13 +541,11 @@ c     Communicate unhappiness to the other session
          call close_files(ifopen)
          dtmp1 = 0
          dtmp2 = 0
-         dtmp3 = 0
          if(istep.gt.0) then
            dgp   = nvtot
            dgp   = max(dgp,1.)*max(istep,1)
            dtmp1 = dgp/(np*(ttime-tprep))
            dtmp2 = (ttime-tprep)/max(istep,1)
-           dtmp3 = 1.*papi_flops/1e6
          endif 
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
@@ -563,7 +560,7 @@ c         call print_stack()
      &      ,'total max memory usage         : ',dtmp4 , ' GB'
 #ifdef PAPI
          write(6,'(1(A,1p1e13.5,/))') 
-     &      ,'total Gflops/s                 : ',gflopss
+     &      ,'total Gflops/s                 : ',gflops
 #endif
       endif 
       call flush_io
