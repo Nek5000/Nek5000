@@ -80,22 +80,28 @@ fi
 
 
 case $F77 in
-  *pgf*)       R8="-r8 -Mpreprocess"
-               BIGMEM_FLAG="-mcmodel=medium"
+  *pgf*)       R8="-r8"
+               CPPF="-Mpreprocess"
+               BIGMEM="-mcmodel=medium"
                ;;
-  *gfortran*)  R8="-fdefault-real-8 -cpp"
-               BIGMEM_FLAG="-mcmodel=medium"
+  *gfortran*)  R8="-fdefault-real-8"
+               CPPF="-cpp"
+               BIGMEM="-mcmodel=medium"
                ;;
-  *ifort*)     R8="-r8 -fpp"
-               BIGMEM_FLAG="-mcmodel=medium -shared-intel"
+  *ifort*)     R8="-r8"
+               CPPF="-fpp"
+               BIGMEM="-mcmodel=medium -shared-intel"
                ;;
-  *pathf*)     R8="-r8 -cpp"
+  *pathf*)     R8="-r8"
+               CPPF="-cpp"
                ;;
-  *xlf*)       R8="-qrealsize=8 -qsuffix=cpp=f"
-               BIGMEM_FLAG="-q64"
+  *xlf*)       R8="-qrealsize=8"
+               CPPF="-qsuffix=cpp=f"
+               BIGMEM="-q64"
                ;;
   *ftn*)       R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-eF"
+               BIGMEM="-mcmodel=medium"
                ;;
   *)           echo "Error: Unable to detect compiler!"
                exit 1
@@ -119,22 +125,18 @@ fi
 
 F77="$F77" 
 CC="$CC" 
-if [[ $OSTYPE != darwin* ]]; then
-  F77="$F77 $BIGMEM_FLAG" 
-  CC="$CC $BIGMEM_FLAG" 
+if [[ $OSTYPE == darwin* ]]; then
+  BIGMEM="" 
 fi
-
-#if [ "$BIGMEM" == "true" ]; then
-#  F77="$F77 -DBIGMEM" 
-#  CC="$CC -DBIGMEM" 
-#fi
-
 
 export F77
 export CC
 export bin_nek_tools
+
 export US
 export R8
+export CPPF
+export BIGMEM
 LFLAGS_IN=$USR_LFLAGS 
 export LFLAGS_IN  
 

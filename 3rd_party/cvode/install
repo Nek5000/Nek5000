@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 rm -rf *.tar.gz* cvode-* 2>/dev/null
 wget https://computation.llnl.gov/projects/sundials/download/cvode-2.9.0.tar.gz
