@@ -1176,7 +1176,7 @@ C        Parse field specifications.
                ifgtps(i)=.true.
             endif
   300    continue
-  301    format('P',i1)
+  301    format('S',i1)
 
 C        Get number of dumps from remainder of user supplied line.
          if (ifgtrl(tdumps,rsopt)) ndumps=int(tdumps)
