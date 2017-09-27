@@ -283,8 +283,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       endif
       call nekgsync()      
 
-      p66 = abs(param(66))
-      if (p66.eq.6) then
+      p66 = param(66)
+      if (abs(p66).eq.6) then
          call mfo_outfld(prefix)
          call nekgsync                ! avoid race condition w/ outfld
          return
