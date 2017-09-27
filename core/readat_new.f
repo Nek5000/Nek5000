@@ -57,8 +57,10 @@ C
 
       param(40) = 0    ! XXT 
 
-      param(42) = 0    ! GMRES 
-      param(43) = 0    ! SEMG preconitioner
+      param(41) = 0    ! additive SEMG
+      param(42) = 0    ! GMRES for iterative solver w/ nonsymmetric weighting
+      param(43) = 0    ! additive multilevel scheme (requires param(42).eq.0)
+      param(44) = 0    ! base top-level additive Schwarz on restrictions of E
 
       param(59) = 1    ! No fast operator eval
 
@@ -70,9 +72,6 @@ C
       param(94) = 0    ! turn off projection for helmholz solves
       param(95) = 5    ! turn on projection for pressure solve
       param(99) = 4    ! enable dealising
-
-      param(110) = 0   ! High-pass filter shape. No of additional modes
-      param(111) = -0.0 ! High-pass filter strength. 0 ==> turned off
 
       param(160) = 1    ! cvode use normal mode 
       param(161) = 1    ! cvode use non-stoff integration 
@@ -310,7 +309,7 @@ c set parameters
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'AMG') .gt. 0) param(40) = 1
+      if (index(c_out,'SEMG_AMG') .gt. 0) param(40) = 1
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       call capit(c_out,132)
@@ -337,12 +336,22 @@ c set parameters
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
 
-      call finiparser_getBool(i_out,'general:filtering',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) then
-        call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
-        if(ifnd .eq. 1) param(103) = d_out 
-        call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-        if(ifnd .eq. 1) param(101) = int(d_out) 
+c     stabilization parameters
+      call finiparser_getString(c_out,'general:filtering',ifnd)
+      if (ifnd .eq. 1) then
+c        stabilization type: none, explicit or hpfrt    
+         call capit(c_out,132)
+         if (index(c_out,'EXPLICIT') .gt. 0) then
+            param(104) = 1
+         else if (index(c_out,'HPFRT') .gt. 0) then
+            param(104) = 2
+         else
+            param(104) = 0
+         endif
+         call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
+         if(ifnd .eq. 1.and.param(104).gt.0) param(103) = d_out 
+         call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
+         if(ifnd .eq. 1.and.param(104).gt.0) param(101) = int(d_out) 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
@@ -544,13 +553,6 @@ c set restart options
          call finiparser_getToken(initc(i),i)
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
-
-c set High-Pass filter options
-      call finiparser_getDbl(d_out,'general:hpfAddModes',ifnd)
-      if (ifnd .eq. 1) param(110) = d_out
-
-      call finiparser_getDbl(d_out,'general:hpfChi',ifnd)
-      if (ifnd .eq. 1) param(111) = d_out
 
       call finiparser_dump()
 c      call finiparser_free()

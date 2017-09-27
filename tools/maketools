@@ -10,9 +10,6 @@ CC="gcc"
 # linking flags
 #USR_LFLAGS="-L$HOME/lib"
 
-# BIG MEMORY (>2GB) support
-BIGMEM="true"
-
 
 
 
@@ -64,9 +61,6 @@ if [ $# -eq 2 ]; then
   bin_nek_tools="$2"
 fi
 
-
-
-
 which `echo $F77 | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
   echo "FATAL ERROR: Cannot find $F77!"
@@ -87,21 +81,27 @@ fi
 
 case $F77 in
   *pgf*)       R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-Mpreprocess"
+               BIGMEM="-mcmodel=medium"
                ;;
   *gfortran*)  R8="-fdefault-real-8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-cpp"
+               BIGMEM="-mcmodel=medium"
                ;;
   *ifort*)     R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium -shared-intel"
+               CPPF="-fpp"
+               BIGMEM="-mcmodel=medium -shared-intel"
                ;;
   *pathf*)     R8="-r8"
+               CPPF="-cpp"
                ;;
   *xlf*)       R8="-qrealsize=8"
-               BIGMEM_FLAG="-q64"
+               CPPF="-qsuffix=cpp=f"
+               BIGMEM="-q64"
                ;;
   *ftn*)       R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-eF"
+               BIGMEM="-mcmodel=medium"
                ;;
   *)           echo "Error: Unable to detect compiler!"
                exit 1
@@ -125,20 +125,18 @@ fi
 
 F77="$F77" 
 CC="$CC" 
-if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
-  if [[ $OSTYPE == darwin* ]]; then
-    echo "BIGMEM not supported on this system!"
-  else
-    F77="$F77 $BIGMEM_FLAG" 
-    CC="$CC $BIGMEM_FLAG" 
-  fi
+if [[ $OSTYPE == darwin* ]]; then
+  BIGMEM="" 
 fi
 
 export F77
 export CC
 export bin_nek_tools
+
 export US
 export R8
+export CPPF
+export BIGMEM
 LFLAGS_IN=$USR_LFLAGS 
 export LFLAGS_IN  
 

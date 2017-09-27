@@ -17,10 +17,6 @@ writeControl = timeStep #runTime
 writeInterval = 500
 
 dealiasing = yes
-filtering = no  
-filterWeight = 5e-02
-
-userParam01 = 1 # use in .usr uparam(01)
 
 [PROBLEMTYPE]
 #stressFormulation = yes
@@ -29,7 +25,6 @@ lowMachNumber = yes
 variableProperties = yes
 
 [PRESSURE]
-preconditioner = semg
 residualTol = 1e-08
 residualProj = yes
 

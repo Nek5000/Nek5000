@@ -3,7 +3,7 @@ cc
 cc   Author: Prabal Negi
 cc   Email : negi@mech.kth.se 
 cc   Description: High pass filtering for stabilization of SEM
-cc   Last Modified: 24/05/2017 
+cc   Last Modified: 27/09/2017 
 cc
 cc   Note: 'implicit none' have been commented out from all routines
 cc          to maintain backward compatibility.
@@ -50,16 +50,17 @@ c      implicit none
 
 c---------------------------------------- 
 
-      hpf_kut = int(param(110))+1
-      hpf_chi = param(111)
-c     Boyd transform to preserve element values in unstable when used as forcing.
-c     keep parameter as false unless you know what you are doing      
+      hpf_kut = int(param(101))+1
+      hpf_chi = param(103)
+c     Boyd transform to preserve element boundary values is 
+c     linearly unstable when used as forcing.
+c     keep parameter as false unless you know what you are doing.
       hpf_ifboyd = .false.      
 
       nel = nelv
       n = nxyz*nel
 
-      if (hpf_chi.eq.0) then
+      if (hpf_chi.eq.0.or.param(104).ne.2) then
 c       High-pass filtering switched off  
         return 
       endif
@@ -68,7 +69,7 @@ c       High-pass filtering switched off
         if (hpf_chi.gt.0) then
           if (nid.eq.0) then
             write(6,*) 'Positive filtering is Numerically Unstable.'
-            write(6,*) 'Remove check in hpf.f if this was intentional.'
+            write(6,*) 'Remove this check if this was intentional.'
           endif
           call exitt   
         endif

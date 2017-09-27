@@ -62,8 +62,8 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('U-Press ', column=-5)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=104., label='U-Press')
+        u_press = self.get_value_from_log('U-PRES ', column=-5)
+        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=4, label='total solver time')
@@ -77,8 +77,8 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('U-Press ', column=-5)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=104., label='U-Press')
+        u_press = self.get_value_from_log('U-PRES ', column=-5)
+        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
 
         self.assertDelayedFailures()
 
@@ -478,7 +478,7 @@ class Eddy_Rich(NekTestCase):
         self.assertAlmostEqualDelayed(yerr, target_val=8.064398E-05, delta=1E-06, label='Y err')
 
         perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=2.650561E-03, delta=1E-04, label='P err')
+        self.assertAlmostEqualDelayed(perr, target_val=2.272926E-04, delta=1E-04, label='P err')
 
         self.assertDelayedFailures()
 

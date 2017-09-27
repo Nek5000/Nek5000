@@ -44,7 +44,7 @@ print:
 	size postx
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 postnek.o  : postnek.f	basics.inc basicsp.inc	; $(F77) -c $(FLAGS)  postnek.f 
 postnek2.o : postnek2.f	basics.inc basicsp.inc	; $(F77) -c $(FLAGS)  postnek2.f

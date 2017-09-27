@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 88)
+      parameter(PARDICT_NKEYS = 85)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -93,6 +93,4 @@ c
      &  pardictkey(83) / 'MESH:NUMBEROFBCFIELDS' /
      &  pardictkey(84) / 'GENERAL:OPTLEVEL' /
      &  pardictkey(85) / 'GENERAL:LOGLEVEL' /
-     &  pardictkey(86) / 'PRESSURE:SOLVER' /
-     &  pardictkey(87) / 'GENERAL:HPFADDMODES' /
-     &  pardictkey(88) / 'GENERAL:HPFCHI' /
+

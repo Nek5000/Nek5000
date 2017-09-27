@@ -1,5 +1,17 @@
 c-----------------------------------------------------------------------
-c    2D Vortex roll up with doubly periodic BCs.
+c    2D Double Shear layer with doubly periodic BCs.
+c    This a test for the high-pass filtered relaxation-term forcing (hprtf) stabilization method. 
+c    The test case used is from (https://doi.org/10.1016/S0764-4442(00)01763-8)
+c    with a reduced resolution to create a smaller test case.
+c    Without over-integration the simulation is unstable.
+c    The following stabilization parameters are used for the test case:
+c    param(101) == addFiltermodes = 0           :No of Additional filter modes.
+c    param(103) == filterWeight   = -50         :weight of the filter   
+c    param(104) == filtering      = hpfrt       :stabilization type
+c    
+c    The short test checks the total kinetic energy in the flow at the end of simulation
+c    as a quantitative test.
+c    The simulation undergoes numerical instbility if no stabilization is used.
 c
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,ieg)

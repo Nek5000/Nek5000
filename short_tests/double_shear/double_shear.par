@@ -17,12 +17,9 @@ writeControl = timeStep #runTime
 writeInterval = 5000
 
 dealiasing = no
-filtering = no 
-filterWeight = 0e-02
-
-# high pass filter parameters
-hpfAddModes = 0         # No of additional modes
-hpfChi = -50           # filter strength
+filtering = hpfrt        
+filterWeight = -50      # filterweight
+addFilterModes = 0      # No of additional modes
 
 userParam01 = 1 # use in .usr uparam(01)
 
