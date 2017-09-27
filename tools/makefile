@@ -3,11 +3,9 @@ SHELL = /bin/bash
 all:
 	@for i in $(MODULES) ; do           \
 	if test -f $${i}/makefile ; then    \
-        export FFLAGS_IN=" ";               \
-        export CFLAGS_IN=${US} ;            \
+        export FFLAGS_IN=${CPPF} ${BIGMEM} ; \
+        export CFLAGS_IN=${US} ${BIGMEM}  ; \
         if [ "$$i" == "amg_hypre" ]; then   \
-           export CFLAGS="-I./hypre/include"; \
-           export LFLAGS="-L./hypre/lib -lHYPRE"; \
            if [ ! -z $(DOALL) ]; then       \
               continue;                     \
            fi ;                             \

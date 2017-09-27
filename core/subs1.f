@@ -1239,6 +1239,7 @@ C-----------------------------------------------------------------------
       include 'SOLN'   ! For outpost diagnostic call
       include 'TSTEP'
       include 'ORTHOSTRS'
+      include 'CTIMER'
 
       DIMENSION U1(LX1,LY1,LZ1,1)
      $        , U2(LX1,LY1,LZ1,1)
@@ -1256,6 +1257,13 @@ C-----------------------------------------------------------------------
 
       common /cpfjunk/ y(lx1*ly1*lz1*lelt,3)
       common /cpfjun2/ v(lx1*ly1*lz1*lelt,3)
+
+#ifdef TIMER
+      if (icalld.eq.0) thmhz=0.0
+      icalld=icalld+1
+      nhmhz=icalld
+      etime1=dnekclock()
+#endif
 
       nel = nelfld(ifield)
       vol = volfld(ifield)
@@ -1306,8 +1314,13 @@ c        endif
      $                ,vol,tol,maxit,matmod)
       endif
 
+#ifdef TIMER
+      thmhz=thmhz+(dnekclock()-etime1)
+#endif
+
       return
       end
+
       subroutine chktcgs (r1,r2,r3,rmask1,rmask2,rmask3,rmult,binv,
      $                    vol,tol,nel)
 C-------------------------------------------------------------------

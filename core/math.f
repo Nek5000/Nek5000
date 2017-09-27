@@ -110,33 +110,23 @@ C
       REAL A(1),B(1)
       include 'CTIMER'
       include 'OPCTR'
-C
+
 #ifdef TIMER
-      if (icalld.eq.0) tinvc=0.0
-      icalld=icalld+1
-      ninvc=icalld
-      etime1=dnekclock()
-C
-C
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'invcl2'
+      if (icalld.eq.0) then
+         tinvc=0.0
+         icalld=icalld+1
       endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
-C
+
       DO 100 I=1,N
          A(I)=A(I)/B(I)
  100  CONTINUE
+
 #ifdef TIMER
       tinvc=tinvc+(dnekclock()-etime1)
 #endif
+
       return
       END
 c-----------------------------------------------------------------------
@@ -770,24 +760,23 @@ c-----------------------------------------------------------------------
       subroutine col2(a,b,n)
       real a(1),b(1)
       include 'OPCTR'
+      include 'CTIMER'
 
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'col2  '
+      if (icalld.eq.0) then
+          icalld=1
+          tcol2=0
       endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
 
-!xbm* unroll (10)
       do i=1,n
          a(i)=a(i)*b(i)
       enddo
+
+#ifdef TIMER
+      tcol2=tcol2+(dnekclock()-etime1)
+#endif
 
       return
       end
@@ -805,48 +794,46 @@ c-----------------------------------------------------------------------
       subroutine col3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
+      include 'CTIMER'
 
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'col3  '
+      if (icalld.eq.0) then
+          icalld=1
+          tcol3=0
       endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
 
-!xbm* unroll (10)
       do i=1,n
          a(i)=b(i)*c(i)
       enddo
+
+#ifdef TIMER
+      tcol3=tcol3+(dnekclock()-etime1)
+#endif
+
       return
       end
 c-----------------------------------------------------------------------
       subroutine add2(a,b,n)
       real a(1),b(1)
       include 'OPCTR'
+      include 'CTIMER'
 
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'ADD2  '
+      if (icalld.eq.0) then
+          icalld=1
+          tadd2=0
       endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
-
-!xbm* unroll (10)
       do i=1,n
          a(i)=a(i)+b(i)
       enddo
+
+#ifdef TIMER
+      tadd2=tadd2+(dnekclock()-etime1)
+#endif
       return
       end
 c-----------------------------------------------------------------------
@@ -867,7 +854,6 @@ c-----------------------------------------------------------------------
       dcount      =      dcount + (isbcnt)
 #endif
 
-!xbm* unroll (10)
       do i=1,n
          a(i)=b(i)+c(i)
       enddo
@@ -877,24 +863,24 @@ c-----------------------------------------------------------------------
       subroutine addcol3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
+      include 'CTIMER'
 
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'addcl3'
+      if (icalld.eq.0) then
+          icalld=1
+          tadc3=0
       endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
 
-!xbm* unroll (10)
       do i=1,n
          a(i)=a(i)+b(i)*c(i)
       enddo
+
+#ifdef TIMER
+      tadc3=tadc3+(dnekclock()-etime1)
+#endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -927,23 +913,24 @@ c-----------------------------------------------------------------------
       real a(1),b(1)
 C
       include 'OPCTR'
+      include 'CTIMER'
 C
 #ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'add2s2'
+      if (icalld.eq.0) then
+          icalld=1
+          ta2s2=0
       endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
+      etime1=dnekclock()
 #endif
 C
       DO 100 I=1,N
         A(I)=A(I)+C1*B(I)
   100 CONTINUE
+
+#ifdef TIMER
+      ta2s2=ta2s2+(dnekclock()-etime1)
+#endif
+
       return
       END
 C
