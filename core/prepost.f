@@ -870,9 +870,7 @@ c-----------------------------------------------------------------------
       offs0 = iHeaderSize + 4 + isize*nelgt
 
       ierr=0
-      if (nid.eq.pid0) then
-         call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
-      endif
+      call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
       call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_

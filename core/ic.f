@@ -2690,6 +2690,10 @@ c-----------------------------------------------------------------------
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
            call byte_read (er,nelr,ierr)     ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
+        else
+           pid0r = 0
+           pid1r = 0
+           fid0r = 0
         endif
 
       else
