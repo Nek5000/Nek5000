@@ -100,7 +100,9 @@ c     mpiio
          call write_read_mpiio_file_test(ifile,eps4,eps8)
 
 c     multiple files
-         call write_read_multipe_file_test(ifile,eps4,eps8)
+         if (NP.gt.1) then
+            call write_read_multipe_file_test(ifile,eps4,eps8)
+         endif
          
 c     .fld format
          ifile = 0
@@ -440,6 +442,7 @@ c     for mpiio number of files is equal number of processes
       endif
 
 c     multiple files
+      if (NP.gt.1) then
       if (NIO.eq.0) then
          write(*,*) ' '
          write(*,*) 'Testing reading of multiple old .f files'
@@ -516,7 +519,6 @@ c     check reading options (only master)
      $        if_full_pres
       endif
 
-#if 1
 c     multiple files double precision with byte swap
       if (NIO.eq.0) then
          write(*,*) ' '
@@ -557,7 +559,7 @@ c     check reading options (only master)
          if (if_full_pres)     write(*,12) 'if_full_pres',
      $        if_full_pres
       endif
-#endif
+      endif
       
 c     fld binary
       if (NIO.eq.0) then

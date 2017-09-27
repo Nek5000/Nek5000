@@ -1153,7 +1153,7 @@ c-----------------------------------------------------------------------
 
       call col3 (w1,a,a,n)
       call col2 (w1,bm2,n)
-      gl2norm = sqrt(glsum (w1,n)/volvm2)
+      gl2norm2 = sqrt(glsum (w1,n)/volvm2)
 
       return
       end
