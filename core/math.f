@@ -1142,6 +1142,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      real function gl2norm2(a,n)
+
+      include 'SIZE'
+      include 'MASS'
+
+      real a(n)
+
+      common /scrsf/ w1 (lx2*ly2*lz2*lelt)
+
+      call col3 (w1,a,a,n)
+      call col2 (w1,bm2,n)
+      gl2norm = sqrt(glsum (w1,n)/volvm2)
+
+      return
+      end
+c-----------------------------------------------------------------------
       function glsum (x,n)
       DIMENSION X(1)
       DIMENSION TMP(1),WORK(1)
