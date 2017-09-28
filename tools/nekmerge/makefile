@@ -11,7 +11,7 @@ nekmerge:	$(NOBJ1)
 	$(F77) $(FLAGS) -o  $(prefix)/nekmerge $(NOBJ1) $(LFLAGS)
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 nekmerge.o	: nekmerge.f; $(F77) -c $(FLAGS)  nekmerge.f 
 reader.o  	: reader.f	; $(F77) -c $(FLAGS)  reader.f 

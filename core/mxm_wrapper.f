@@ -13,17 +13,17 @@ c
       integer*8 tt
 
 #ifdef TIMER
-c      if (isclld.eq.0) then
-c          isclld=1
-c          nrout=nrout+1
-c          myrout=nrout
-c          rname(myrout) = 'mxm   '
-c      endif
-c      isbcnt = n1*n3*(2*n2-1)
-c      dct(myrout) = dct(myrout) + (isbcnt)
-c      ncall(myrout) = ncall(myrout) + 1
-c      dcount = dcount + (isbcnt)
-c      etime1 = dnekclock()
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'mxm   '
+      endif
+      isbcnt = n1*n3*(2*n2-1)
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount = dcount + (isbcnt)
+      etime1 = dnekclock()
 #endif
 
 
@@ -81,7 +81,7 @@ c        .and. MOD(LOC(c),tt).eq.0 &
 
  111  continue
 #ifdef TIMER
-c      tmxmf = tmxmf + dnekclock() - etime1  
+      tmxmf = tmxmf + dnekclock() - etime1  
 #endif
       return
       end

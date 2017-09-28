@@ -22,7 +22,6 @@ filterWeight = 1e-02
 variableProperties = yes
 
 [PRESSURE]
-preconditioner = semg
 residualTol = 1e-06
 residualProj = no
 
