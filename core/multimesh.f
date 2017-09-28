@@ -120,6 +120,8 @@ C-----------------------------------------------------------------------
       integer icalld
       save    icalld
       data    icalld  /0/
+
+      call neknekgsync()
 c   Do some sanity checks - just once at setup
 C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
@@ -494,6 +496,7 @@ c     Setup findpts
       nzf     = 2*nz1
       bb_t    = 0.1 ! relative size to expand bounding boxes by
 
+      if (istep.gt.1) call findpts_free(inth_multi2)
       call findpts_setup(inth_multi2,mpi_comm_world,npall,ndim,
      &                   xm1,ym1,zm1,nx1,ny1,nz1,
      &                   nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
