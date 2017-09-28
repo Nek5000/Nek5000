@@ -96,19 +96,9 @@ C     Intercommunications set up only for 2 sessions
 
       if (nsessions.gt.1) then
 
-         if (idsess.eq.0) idsess_neighbor=1
-         if (idsess.eq.1) idsess_neighbor=0
- 
-         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
-     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
-
-         np_neighbor=npsess(idsess_neighbor)
-      
          call iniproc(intracomm)
+         iglobalcomm = mpi_comm_world
 
-         ifhigh=.true.
-         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
-      
          ifneknek   = .true.
          ifneknekm  = .false.
 
@@ -131,12 +121,11 @@ C-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 c   Do some sanity checks - just once at setup
-      call neknekgsync()
-      call nekneksanchk(1)
 C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
+         call nekneksanchk(1)
          call set_intflag
          call neknekmv()
          icalld = icalld + 1
