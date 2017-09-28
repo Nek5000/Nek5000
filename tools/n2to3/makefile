@@ -12,7 +12,7 @@ n2to3:	$(OBJS)
 	$(F77) $(FLAGS) -o $(prefix)/n2to3 $(OBJS) $(LFLAGS) 
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 n2to3.o          : n2to3.f		 ;  $(F77) -c $(FLAGS) n2to3.f 
 byte.o           : byte.c      		 ;  $(CC)  -c $(CFLAGS) byte.c

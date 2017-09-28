@@ -99,9 +99,6 @@ c
 
       if (iostep.lt.0 .or. timeio.lt.0) return
 
-      icalld=icalld+1
-      nprep=icalld
-
       if (ioinfodmp.eq.-2) return
 
 #ifdef TIMER
@@ -112,14 +109,17 @@ c
       if (prefix.eq.'his') prefix = '   '
 
       if (ifdoin) then
+         icalld=icalld+1
+         nprep=icalld
+
          call prepost_map(0) ! map pr and axisymm. arrays
          call outfld(prefix)
          call prepost_map(1) ! map back axisymm. arrays
-      endif
 
 #ifdef TIMER
-      tprep=tprep+dnekclock()-etime1
+         tprep=tprep+dnekclock_sync()-etime1
 #endif
+      endif
 
       return
       end

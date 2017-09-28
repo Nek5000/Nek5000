@@ -38,7 +38,7 @@ pretex:	$(TOBJS)
 	$(F77) -o $(prefix)/pretex $(TOBJS) -L$(X) -lX11 -lm
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 	
 plot.o		: plot.f 	basics.inc	; $(F77) -c $(FLAGS) plot.f
 iolib_no_graph.o: iolib_no_graph.f basics.inc   ; $(F77) -c $(FLAGS) iolib_no_graph.f
