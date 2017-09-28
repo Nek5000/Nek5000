@@ -33,8 +33,6 @@ C     and path (PATH_MULT(n-1))
       nid=nid_global
       nekcomm=mpi_comm_world
 
-      call mpi_comm_dup(mpi_comm_world,iglobalcomm,ierr)
-
       ierr = 0
       if (nid_global.eq.0) then
          open (unit=8,file='SESSION.NAME',status='old',err=24)
@@ -98,7 +96,20 @@ C     Intercommunications set up only for 2 sessions
 
       if (nsessions.gt.1) then
 
+         if (idsess.eq.0) idsess_neighbor=1
+         if (idsess.eq.1) idsess_neighbor=0
+ 
+         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
+     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
+
+         np_neighbor=npsess(idsess_neighbor)
+      
          call iniproc(intracomm)
+
+         ifhigh=.true.
+         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
+
+c         call iniproc(intracomm)
 c         iglobalcomm = mpi_comm_world
 
          ifneknek   = .true.
@@ -109,7 +120,6 @@ c         iglobalcomm = mpi_comm_world
          icall = 0  ! Emergency exit call flag
 
       endif 
-      write(6,*) 'iglobalcomm created'
 
       return
       end
@@ -124,9 +134,7 @@ C-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 
-      write(6,*) 'multimesh_create begin'
       call neknekgsync()
-      write(6,*) 'multimesh_create sync done'
 c   Do some sanity checks - just once at setup
 C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
