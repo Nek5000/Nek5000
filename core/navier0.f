@@ -20,6 +20,9 @@ C
       real kwave2
 
       if (icalld.eq.0) teslv=0.0
+
+      call ortho(res) !Ensure that residual is orthogonal to null space
+
       icalld=icalld+1
       neslv=icalld
       etime1=dnekclock()
