@@ -45,14 +45,19 @@ if [ "$mver" != "17.0.0" ]; then
 fi
 
 if [[ $1 = "clean" ]]; then
-  make clean
-  exit 0
-fi
-
-if [[ $1 = "realclean" ]]; then
-  make -C $SOURCE_ROOT_GSLIB clean
-  make clean
   rm -rf makefile
+  while true; do
+    read -p "Clean all 3rd party code? [N]" yn
+    case $yn in
+      [Yy]* ) 
+        make -C $SOURCE_ROOT_GSLIB clean;
+        make clean;
+        break ;;
+      * ) 
+        make clean;
+        reak ;;
+    esac
+  done
   exit 0
 fi
 
