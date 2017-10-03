@@ -1,0 +1,81 @@
+c     timer stuff ---------------------------------------------------
+      parameter (iptlen=37)
+      real pttime(iptlen),ptdum(iptlen)
+      common /pt_timers/ pttime,ptdum
+
+c     main common blocks - rpart and ipart --------------------------
+      parameter (lr=81,li=12)
+      common  /cpartr/ rpart(lr,llpart) 
+      common  /cparti/ ipart(li,llpart) 
+      common  /iparti/ n,nr,ni
+
+      common /ptpointers/ jrc,jpt,je0,je00,jps,jpid1,jpid2,jpid3,jpnn
+     >                   ,jpid,jrco,jai,nai
+     >                   ,jr,jd,jx,jy,jz,jv0,ju0,jf0,jfusr
+     >                   ,jfqs,jfun,jfiu,jtaup,jcd,jdrhodt,jre,jDuDt
+     >                   ,jtemp,jrho,jrhop,ja,jvol,jdp,jar,jx1,jx2,jx3
+     >                   ,jv1,jv2,jv3,ju1,ju2,ju3,nar,jvol1,jgam,jspl
+     >                   ,jtempf,jq0,jg0,jqqs,jquu,jcmiu
+
+
+c     particle options ----------------------------------------------
+      common /part_options/ bc_part, two_way, red_interp,time_integ,
+     >                      part_force,time_delay,nitspl,inject_rate,
+     >                      ipart_restart,nrect_assume
+      integer bc_part(6),two_way, red_interp,time_integ,part_force(6)
+     >       ,time_delay,nitspl,inject_rate,ipart_restart,nrect_assume
+
+c     particle parameters -------------------------------------------
+      common /part_paramsr/ deltaf, dp, deltax, rho_p, tau_p,mu_0,
+     >                     phi_desire,vol_distrib,rsig,df_dp,df_dx,
+     >                     ralphdecay,rxbo,cp_p,kappa_g,rleng,nrandseed
+      common /part_paramsi/ nw
+      real   deltaf,dp(2),deltax,rho_p,tau_p,mu_0,phi_desire,
+     >       vol_distrib,rsig,df_dp,df_dx,ralphdecay,rxbo(2,3),
+     >       cp_p,kappa_g,rleng
+      integer nw,nrandseed
+
+c     barycentric interpolation -------------------------------------
+      common /BARYPARAMS/ xgll, ygll, zgll, wxgll, wygll, wzgll,nx1r
+      real xgll(lx1), ygll(ly1), zgll(lz1),
+     >     wxgll(lx1), wygll(ly1), wzgll(lz1)
+      integer nx1r
+
+c     ghost particles -----------------------------------------------
+      parameter (lrgp=14,ligp=6)
+      common /gp_pointsr/ rptsgp(lrgp,llpart)
+      common /gp_pointsi/ iptsgp(ligp,llpart)
+      common /gp_lens/ nfptsgp,nigp,nrgp
+
+      real    d2chk(3)
+      common /gp_points_h/ d2chk
+
+      common /gp_ptpointers/ jgppid1,jgppid2,jgppid3,jgpps,jgppt,jgpes
+     >                      ,jgpx,jgpy,jgpz,jgpfh,jgpvol,jgpgam,jgpspl
+     >                      ,jgpg0,jgpq0,jgpv0
+
+c     ghost particle element mapping --------------------------------
+      integer el_face_proc_map(lelt,6)  ,el_face_el_map(lelt,6),
+     >        el_edge_proc_map(lelt,12) ,el_edge_el_map(lelt,12),
+     >        el_corner_proc_map(lelt,8),el_corner_el_map(lelt,8),
+     >        el_face_num(18),el_edge_num(36),el_corner_num(24)
+      common /neighbor_proc/ el_face_proc_map,el_face_el_map,
+     >                       el_edge_proc_map,el_edge_el_map,
+     >                       el_corner_proc_map,el_corner_el_map
+      common /neighbor_el_number/ el_face_num,el_edge_num,el_corner_num,
+     >                            nfacegp, nedgegp, ncornergp
+      
+c     two-way coupled values on eulerian mesh -----------------------
+      common /part_two_way/  ptw
+      real                   ptw(lx1,ly1,lz1,lelt,8)
+
+c     some grid values used in force calculations -------------------
+      common /fundpart/ rhs_fluidp
+      real rhs_fluidp(lx1,ly1,lz1,lelt,7)
+
+c     move particles between procs ----------------------------------
+      parameter (lrf=7,lif=12)
+      common /fptspartr/ rfpts(lrf,llpart)
+      common /fptsparti/ ifpts(lif,llpart),ifptsmap(llpart)
+      common /fptspartn/ nfpts,nrf,nif
+
