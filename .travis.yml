@@ -58,19 +58,7 @@ before_install:
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
 
   # Install cvode
-  - if ["$IFCVODE" = "true"]; then
-      export CVODE_INSTALL_DIR=$ROOT_DIR/cvode-2.7.0-install
-      export USR_LFLAGS="$USR_LFLAGS -L$CVODE_INSTALL_DIR/lib -lsundials_fcvode -lsundials_cvode -lsundials_fnvecparallel -lsundials_nvecparallel"
-      mkdir -p $CVODE_INSTALL_DIR
-      wget http://computation.llnl.gov/projects/sundials/download/cvode-2.7.0.tar.gz
-      tar -zxf cvode-2.7.0.tar.gz
-      mkdir -p cvode-2.7.0/build
-      cd cvode-2.7.0/build
-      cmake -DCMAKE_INSTALL_PREFIX=$CVODE_INSTALL_DIR -DEXAMPLES_INSTALL=OFF -DMPI_ENABLE=ON -DFCMIX_ENABLE=ON -DBUILD_SHARED_LIBS=OFF ../
-      make
-      make install
-      ls -R $CVODE_INSTALL_DIR
-    fi
+  - if ["$IFCVODE" = "true"]; then 3rd_party/cvode/install; fi
  
 install:
   - pip install --upgrade pip
