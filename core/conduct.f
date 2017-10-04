@@ -63,7 +63,6 @@ C
          if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
 c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
 
-         write(6,*) nmxnl,'k10nmx'
          do 1000 iter=1,nmxnl ! iterate for nonlin. prob. (e.g. radiation b.c.)
 
          intype = 0
