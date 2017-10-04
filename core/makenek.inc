@@ -216,7 +216,9 @@ do
 done
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
-   CVODE=1 
+   CVODE=1
+   USR_LFLAGS+=" -L$SOURCE_ROOT/3rd_party/cvode/lib -lsundials_fcvode -lsundials_cvode"
+   USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
 else
    CVODE=0
 fi
