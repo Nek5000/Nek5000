@@ -82,16 +82,14 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
             outfile=makenek_out
         )
 
-        call([makenek_out, 'clean'], cwd=cwd)
+        (stdoutdata, stderrdata) = Popen(
+            [makenek_out, usr_file], cwd=cwd, stdin=PIPE, stderr=STDOUT, stdout=PIPE).communicate(bytes("\n"))
+
+        with open(logfile, 'w') as f:
+            f.writelines(stdoutdata)
+
         if verbose:
-            with open(logfile, 'w') as f:
-                proc = Popen([makenek_out, usr_file], cwd=cwd, stderr=STDOUT, stdout=PIPE)
-                for line in proc.stdout:
-                    sys.stdout.write(line)
-                    f.write(line)
-        else:
-            with open(logfile, 'w') as f:
-                call([makenek_out, usr_file], cwd=cwd, stdout=f)
+            sys.stdout.write(stdoutdata)
 
     except:
         print('Could not compile nek5000!')
