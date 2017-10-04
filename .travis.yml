@@ -58,7 +58,7 @@ before_install:
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
 
   # Install cvode
-  - if [ "$IFCVODE" = "true" ]; then cd 3rd_party/cvode/ && source install; fi
+  - if [ "$IFCVODE" = "true" ]; then cd 3rd_party/cvode/ && source ./install; fi
  
 install:
   - pip install --upgrade pip
