@@ -44,6 +44,8 @@ PPLIST=""
 #VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
 #VISIT_STOP=true
 
+# CVODE library path
+#LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -54,7 +56,7 @@ set -e
 : ${VISIT:=0}
 
 # assign version tag
-mver=17.0.0
+mver=17.0.1
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then

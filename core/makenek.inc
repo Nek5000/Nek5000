@@ -20,7 +20,7 @@ fi
 # first do some checks ...
 if [ "$1" == "-h" ]; then
   echo ""
-  echo "usage: makenek [.usr filename | clean | realclean] < -nocompile >"
+  echo "usage: makenek [.usr filename | clean] < -nocompile >"
   echo ""
   exit 1
 fi
@@ -38,14 +38,13 @@ if [ $# -eq 0 ]; then
    fi
 fi
 
-if [ "$mver" != "17.0.0" ]; then
+if [ "$mver" != "17.0.1" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1
 fi
 
 if [[ $1 = "clean" ]]; then
-  rm -rf makefile
   while true; do
     read -p "Clean all 3rd party code? [N]" yn
     case $yn in
@@ -58,6 +57,7 @@ if [[ $1 = "clean" ]]; then
         reak ;;
     esac
   done
+  rm -rf makefile
   exit 0
 fi
 
@@ -123,14 +123,14 @@ fi
 # trying to figure which compiler the wrapper is using 
 F77ok=0
 
-F77comp_=`$F77 -showme 2>/dev/null 1>.tmp || true`
+F77comp_=`$F77 -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
 F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
 if [ -f "`which $F77comp 2>/dev/null`" ]; then
   F77ok=1
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show | head -1 2>/dev/null 1>.tmp || true`
+  F77comp_=`$F77 -show 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
   F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
@@ -217,8 +217,16 @@ done
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
    CVODE=1
-   USR_LFLAGS+=" -L$SOURCE_ROOT/3rd_party/cvode/lib -lsundials_fcvode -lsundials_cvode"
-   USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+   if [ ! "$LIBPATH_CVODE" ]; then
+     LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib 
+   fi
+   if [ $MPI -eq 1 ]; then
+     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
+     USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+   else
+     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
+     USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
+   fi
 else
    CVODE=0
 fi
