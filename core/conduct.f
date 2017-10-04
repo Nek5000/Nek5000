@@ -63,6 +63,7 @@ C
          if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
 c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
 
+         write(6,*) nmxnl,'k10nmx'
          do 1000 iter=1,nmxnl ! iterate for nonlin. prob. (e.g. radiation b.c.)
 
          intype = 0
@@ -107,7 +108,6 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
  1000    continue
  2000    continue
          call bcneusc (ta,1)
-         call add2 (bq(1,1,1,1,ifield-1),ta,n) ! no idea why... pf
 
       endif
 
