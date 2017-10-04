@@ -18,13 +18,7 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
 
     try:
 
-        config_maketools(
-            infile  = maketools_in,
-            outfile = maketools_out,
-            f77     = f77,
-            cc      = cc,
-            bigmem  = bigmem
-        )
+        config_maketools(infile=maketools_in, outfile=maketools_out, f77=f77, cc=cc)
 
         config_basics_inc(
             infile  = os.path.join(tools_root, 'prenek', 'basics.inc'),
