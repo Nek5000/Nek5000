@@ -54,7 +54,7 @@ if [[ $1 = "clean" ]]; then
         break ;;
       * ) 
         make clean;
-        reak ;;
+        break ;;
     esac
   done
   rm -rf makefile
