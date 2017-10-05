@@ -106,7 +106,6 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
 
  1000    continue
  2000    continue
-         call bcneusc (ta,1)
 
       endif
 
