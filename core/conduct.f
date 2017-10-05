@@ -146,13 +146,12 @@ c     Set user specified volumetric forcing function (e.g. heat source).
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
+      include 'CTIMER'
 
       real bql(lx1*ly1*lz1,lelt)
 
-#ifdef MOAB
-c     pulling in temperature right now, since we dont have anything else
-      call userq2(bql)
-      return
+#ifdef TIMER
+      etime1=dnekclock()
 #endif
 
       nel   = nelfld(ifield)
@@ -175,7 +174,12 @@ c        endif
 c
 c 101 FORMAT(' Wrong material type (',I3,') for group',I3,', field',I2
 c    $    ,/,' Aborting in SETQVOL.')
-C   
+C  
+
+#ifdef TIMER
+      tusfq=tusfq+(dnekclock()-etime1)
+#endif
+ 
       return
       end
 C
