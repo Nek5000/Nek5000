@@ -502,12 +502,12 @@ c     Displace MESH 1
       call neknekgsync()
 ccccc
 c     Setup findpts    
-      tol     = 1e-13
+      tol     = 5e-13
       npt_max = 256
       nxf     = 2*nx1 ! fine mesh for bb-test
       nyf     = 2*ny1
       nzf     = 2*nz1
-      bb_t    = 0.1 ! relative size to expand bounding boxes by
+      bb_t    = 0.01 ! relative size to expand bounding boxes by
 
       if (istep.gt.1) call findpts_free(inth_multi2)
       call findpts_setup(inth_multi2,mpi_comm_world,npall,ndim,

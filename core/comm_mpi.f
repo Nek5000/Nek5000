@@ -533,6 +533,7 @@ c     Communicate unhappiness to the other session
 
       tstop  = dnekclock()
       ttotal = tstop-etimes
+      tsol   = max(ttime - tprep,0.0)
       nxyz   = nx1*ny1*nz1
 
       dtmp4 = glsum(getmaxrss(),1)/1e9
@@ -554,7 +555,7 @@ c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
-     &      ,'total solver time w/o IO       : ',ttime-tprep, ' sec'
+     &      ,'total solver time w/o IO       : ',tsol,   ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
      &      ,'avg throughput per timestep    : ',dtmp1 , ' gridpts/CPUs'
      &      ,'total max memory usage         : ',dtmp4 , ' GB'
