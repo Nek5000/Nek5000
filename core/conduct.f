@@ -106,8 +106,6 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
 
  1000    continue
  2000    continue
-         call bcneusc (ta,1)
-         call add2 (bq(1,1,1,1,ifield-1),ta,n) ! no idea why... pf
 
       endif
 
