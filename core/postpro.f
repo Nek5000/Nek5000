@@ -1945,6 +1945,8 @@ c     IGNORE XY DATA
 
       IF(NID.EQ.0) THEN
         READ(9,'(a)') string2
+        READ(string2,*) paramval
+        if (paramval.lt.0) goto 1001
       do i=1,nelgt
         READ(9,'(a)') string2
         do j=1,2+(ndim-2)*4
@@ -1976,6 +1978,8 @@ c      Thermal
         READ(9,'(a)') string2
         write(10,*) string2
        endif
+
+ 1001 continue 
 
 c     PRESOLVE
         READ(9,'(a)') string2

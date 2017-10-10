@@ -12,7 +12,7 @@ genmap:	$(OBJS)
 	$(F77) $(FLAGS) -o $(prefix)/genmap $(OBJS) $(LFLAGS)
 
 clean:
-	'rm' *.o
+	@rm -f *.o
 
 genmap.o          : genmap.f		 		;  $(F77) -c $(FLAGS) genmap.f
 byte.o				: ../../core/byte.c	;  $(CC)  -c $(CFLAGS) ../../core/byte.c
