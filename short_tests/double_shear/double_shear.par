@@ -2,32 +2,16 @@
 # nek parameter file
 #
 [GENERAL] 
-#startFrom = restart.fld 
-stopAt = numSteps # or endTime
-#endTime = 1.0
-numSteps = 2.0e+3
+stopAt = numSteps 
+numSteps = 2000
 
 dt = 1e-03
-timeStepper = bdf #char #steady
-tOrder = 3
-variableDt = No
-maxCFL = 0.4
-
-writeControl = timeStep #runTime
-writeInterval = 5000
+timeStepper = bdf   #char #steady
 
 dealiasing = no
-filtering = hpfrt        
-filterWeight = -50      # filterweight
-addFilterModes = 0      # No of additional modes
-
-userParam01 = 1 # use in .usr uparam(01)
-
-#[PROBLEMTYPE]
-#stressFormulation = yes
-#lowMachNumber = yes 
-#dp0dt = yes
-#variableProperties = yes
+filtering = hpfrt   #explicit        
+filterWeight = 50   #0.05
+addFilterModes = 0
 
 [PRESSURE]
 preconditioner = semg
@@ -36,22 +20,5 @@ residualProj = yes
 
 [VELOCITY]
 residualTol = 1e-8
-residualProj = yes
 density = 1.
 viscosity = -1.0E+5
-#writeToFieldFile = no 
-
-#[TEMPERATURE] 
-#solver= cvode
-#residualTol = 1e-12
-#absoluteTol = 1e-12
-#conjugateHeatTransfer = yes 
-
-#[CVODE]
-#relativeTol = 1e-12
-#stiff = no
-#dtmax = 1e-3
-
-
-
-

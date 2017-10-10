@@ -598,6 +598,9 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
 
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
+      filterType = 0
+      if(param(103).gt.0) filterType = 1
+
       return
 
 C
