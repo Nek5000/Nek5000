@@ -89,7 +89,7 @@ C     Test timer accuracy
          WRITE(6,*) ' '
       endif
 
-      call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
+      call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
 
       return
       end

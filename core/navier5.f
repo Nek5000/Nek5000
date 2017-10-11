@@ -4332,7 +4332,7 @@ c     will not.
            enddo
            enddo
          enddo
-         call gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
+         call fgslib_gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
          nchange = iglsum(nchange,1)
          dmax = glmax(dmax,1)
          if (nio.eq.0) write(6,1) ipass,nchange,dmax,b
@@ -4443,7 +4443,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
          enddo
          nchange = iglsum(nchange,1)
 
-         call gs_op(gsh_fld(ifld),dmin,1,3,0) ! min over all elements
+         call fgslib_gs_op(gsh_fld(ifld),dmin,1,3,0) ! min over all elements
 
 
          nchange2=0
@@ -4458,7 +4458,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
          call copy(d,dmin,n)                !   Ensure updated distance
          nchange2 = iglsum(nchange2,1)
          nchange  = nchange + nchange2
-         call gs_op(gsh_fld(ifld),emin,1,4,0) ! max over all elements
+         call fgslib_gs_op(gsh_fld(ifld),emin,1,4,0) ! max over all elements
 
          do e=1,nel    ! Propagate nearest wall points
          do i=1,nxyz
@@ -4470,9 +4470,9 @@ c     Work arrays:  dmin,emin,xn,yn,zn
           endif
          enddo
          enddo
-         call gs_op(gsh_fld(ifld),xn,1,1,0) !   Sum over all elements to
-         call gs_op(gsh_fld(ifld),yn,1,1,0) !   convey nearest point
-         call gs_op(gsh_fld(ifld),zn,1,1,0) !   to shared neighbor.
+         call fgslib_gs_op(gsh_fld(ifld),xn,1,1,0) !   Sum over all elements to
+         call fgslib_gs_op(gsh_fld(ifld),yn,1,1,0) !   convey nearest point
+         call fgslib_gs_op(gsh_fld(ifld),zn,1,1,0) !   to shared neighbor.
 
          dmax = glmax(dmax,1)
          if (nio.eq.0) write(6,1) ipass,nchange,dmax
