@@ -44,6 +44,11 @@ if [ "$mver" != "17.0.2" ]; then
   exit 1
 fi
 
+if [ ! "$SOURCE_ROOT_GSLIB" ]; then
+  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
+  export SOURCE_ROOT_GSLIB
+fi
+
 if [[ $1 = "clean" ]]; then
   while true; do
     read -p "Clean all 3rd party code? [N]" yn
@@ -205,6 +210,7 @@ PPLIST="${PPLIST}"
 # add user defined preprocessor symbols
 CMT=0
 NEKNEK=0
+MPIIO=1
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
@@ -212,6 +218,9 @@ do
    fi
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
+   fi
+   if [ "$i" == "NOMPIIO" ]; then
+     MPIIO=0
    fi
 done
 
@@ -240,6 +249,19 @@ BLAS="blas.o dsygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
+
+# gslib build options
+echo $MPIIO
+GSLIB_OPT+="MPI=$MPI MPIIO=$MPIIO"
+GSLIB_OPT+=" CC=$CC CFLAGS=$CFLAGS"
+GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
+
+if [ $MPI -eq 0 ]; then
+  gslib="gsserial"
+else
+  gslib="gs"
+fi
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -l$gslib"
 
 # tweak makefile template 
 echo "generating makefile ..."
@@ -478,11 +500,15 @@ _ACEOF
 fi
 fi
 
+
+
 export NEK_WARN 
 export MPI
+export MPIO
 export FFLAGS
 export CFLAGS
 export UNDERSCORE
+export GSLIB_OPT
 
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0

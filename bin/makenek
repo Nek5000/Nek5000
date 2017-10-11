@@ -1,18 +1,17 @@
 #!/bin/bash
 #-------------------------------------------------------------------------------
-# Nek5000 build file
+# Nek5000 config file
 #-------------------------------------------------------------------------------
 
 # source path 
 SOURCE_ROOT="$HOME/Nek5000" 
-SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src" 
 
 # Fortran/C compiler
 F77="mpif77"
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-PPLIST="" 
+#PPLIST="" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -44,8 +43,9 @@ PPLIST=""
 #VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
 #VISIT_STOP=true
 
-# CVODE library path
+# 3rd party paths
 #LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib
+#SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src" 
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -64,24 +64,11 @@ if [ -d $2 ] && [ $# -eq 2 ]; then
   echo "change source code directory to: ", $SOURCE_ROOT
 fi
 
-if [ $MPI -eq 0 ]; then
-  gslib="gsserial" 
-else
-  gslib="gs" 
-fi
-USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -l$gslib"
-
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
-# compile gslib if needed
-if [ ! -f "$SOURCE_ROOT_GSLIB/lib$gslib.a" ]; then
-  CONF_OPT="CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
-  make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=0 $CONF_OPT lib 2>&1 | tee compiler.out
-  if [ $MPI -ne 0 ]; then 
-    make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=1 $CONF_OPT lib 2>&1 | tee compiler.out
-  fi
-fi
+# compile gslib
+make -j4 -C $SOURCE_ROOT_GSLIB $GSLIB_OPT lib 2>&1 | tee compiler.out
 
 # compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out
