@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
 
       nt=nx1*ny1*nz1*nelv
 
-      if (istep.eq.nsteps) then
+      if (lastep.eq.1) then
         enx = gl2norm(vx,nt)
         eny = gl2norm(vy,nt)
         en = enx**2 + eny**2    
