@@ -1550,19 +1550,21 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       ntot  = nxyz*nelt 
       nbuff = lhis      ! point to be read in on 1 proc.
 
+      toldist = 5e-6
+
       if(nio.eq.0) write(6,*) 'dump history points'
 
       if(icalld.eq.0) then
         npts  = lhis      ! number of points per proc
         call hpts_in(pts,npts,npoints)
 
-        tol     = 1e-13
+        tol     = 5e-13
         n       = lx1*ly1*lz1*lelt
         npt_max = 256
         nxf     = 2*nx1 ! fine mesh for bb-test
         nyf     = 2*ny1
         nzf     = 2*nz1
-        bb_t    = 0.1 ! relative size to expand bounding boxes by
+        bb_t    = 0.01 ! relative size to expand bounding boxes by
         call findpts_setup(inth_hpts,nekcomm,np,ndim,
      &                     xm1,ym1,zm1,nx1,ny1,nz1,
      &                     nelt,nxf,nyf,nzf,bb_t,n,n,
@@ -1610,9 +1612,9 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         do i=1,npts
            ! check return code 
            if(rcode(i).eq.1) then
-             if (dist(i).gt.10*tol) then
-                nfail = nfail + 1
-                IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
+             if(sqrt(dist(i)).gt.toldist) then
+               nfail = nfail + 1
+               IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
      &     ,(pts(k,i),k=1,ndim),dist(i)
              endif   

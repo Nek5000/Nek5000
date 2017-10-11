@@ -108,7 +108,10 @@ C     Intercommunications set up only for 2 sessions
 
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
-      
+
+c         call iniproc(intracomm)
+c         iglobalcomm = mpi_comm_world
+
          ifneknek   = .true.
          ifneknekm  = .false.
 
@@ -130,13 +133,14 @@ C-----------------------------------------------------------------------
       integer icalld
       save    icalld
       data    icalld  /0/
-c   Do some sanity checks - just once at setup
+
       call neknekgsync()
-      call nekneksanchk(1)
+c   Do some sanity checks - just once at setup
 C     Set interpolation flag: points with bc = 'int' get intflag=1. 
 C     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
+         call nekneksanchk(1)
          call set_intflag
          call neknekmv()
          icalld = icalld + 1
@@ -247,20 +251,21 @@ c     is activated. It is unconditionally stable.  If you want to use
 c     higher-order interface extrapolation schemes, you need to increase 
 c     ngeom to ngeom=3-5 for scheme to be stable.
 
+
       if (NINTER.eq.1.or.istep.eq.0) then
-       c0=1
-       c1=0
-       c2=0
+       c0=1.
+       c1=0.
+       c2=0.
        else if (NINTER.eq.2.or.istep.eq.1) then
-         c0=2
-         c1=-1
-         c2=0
+         c0=2.
+         c1=-1.
+         c2=0.
        else 
-         c0=3
-         c1=-3
-         c2=1
+         c0=3.
+         c1=-3.
+         c2=1.
       endif
-     
+
       do k=1,nfld_neknek
       do i=1,n
          ubc(i,1,1,1,k) = 
@@ -497,13 +502,14 @@ c     Displace MESH 1
       call neknekgsync()
 ccccc
 c     Setup findpts    
-      tol     = 1e-13
+      tol     = 5e-13
       npt_max = 256
       nxf     = 2*nx1 ! fine mesh for bb-test
       nyf     = 2*ny1
       nzf     = 2*nz1
-      bb_t    = 0.1 ! relative size to expand bounding boxes by
+      bb_t    = 0.01 ! relative size to expand bounding boxes by
 
+      if (istep.gt.1) call findpts_free(inth_multi2)
       call findpts_setup(inth_multi2,mpi_comm_world,npall,ndim,
      &                   xm1,ym1,zm1,nx1,ny1,nz1,
      &                   nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
