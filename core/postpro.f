@@ -1957,30 +1957,33 @@ c     IGNORE XY DATA
         enddo
       enddo
 c     CURVE SIDE DATA
+      READ(9,'(a)') string2
+      READ(9,*) paramval
+      if (paramval.gt.0) then
+       do I=1,paramval
         READ(9,'(a)') string2
-        READ(9,*) paramval
-        if (paramval.gt.0) then
-         do I=1,paramval
-          READ(9,'(a)') string2
-         enddo
-        endif
-c      BOUNDARY CONDITIONS
-        READ(9,'(a)') string2
-        READ(9,'(a)') string2
-c      FLUID
+       enddo
+      endif
+c     BOUNDARY CONDITIONS
+      READ(9,'(a)') string2
+c     FLUID
+      READ(9,'(a)') string2
+      if (ifflow) then
        do i=1,nelgv*2*ndim
         READ(9,'(a)') string2
        enddo
+      else
+       write(10,*) string2
+      endif
 c      Thermal
-       if (ifheat) then
+      READ(9,'(a)') string2
+      if (ifheat) then
+       do i=1,nelgt*2*ndim
         READ(9,'(a)') string2
-        do i=1,nelgt*2*ndim
-         READ(9,'(a)') string2
-        enddo
-       else
-        READ(9,'(a)') string2
-        write(10,*) string2
-       endif
+       enddo
+      else
+       write(10,*) string2
+      endif
 
  1001 continue 
 
