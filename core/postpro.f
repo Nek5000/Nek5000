@@ -1565,10 +1565,10 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         nyf     = 2*ny1
         nzf     = 2*nz1
         bb_t    = 0.01 ! relative size to expand bounding boxes by
-        call findpts_setup(inth_hpts,nekcomm,np,ndim,
-     &                     xm1,ym1,zm1,nx1,ny1,nz1,
-     &                     nelt,nxf,nyf,nzf,bb_t,n,n,
-     &                     npt_max,tol)
+        call fgslib_findpts_setup(inth_hpts,nekcomm,np,ndim,
+     &                            xm1,ym1,zm1,nx1,ny1,nz1,
+     &                            nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                            npt_max,tol)
       endif
 
 
@@ -1599,14 +1599,14 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       
       ! interpolate
       if(icalld.eq.0) then
-        call findpts(inth_hpts,rcode,1,
-     &                 proc,1,
-     &                 elid,1,
-     &                 rst,ndim,
-     &                 dist,1,
-     &                 pts(1,1),ndim,
-     &                 pts(2,1),ndim,
-     &                 pts(3,1),ndim,npts)
+        call fgslib_findpts(inth_hpts,rcode,1,
+     &                      proc,1,
+     &                      elid,1,
+     &                      rst,ndim,
+     &                      dist,1,
+     &                      pts(1,1),ndim,
+     &                      pts(2,1),ndim,
+     &                      pts(3,1),ndim,npts)
      
         nfail = 0 
         do i=1,npts
@@ -1631,12 +1631,12 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       ! evaluate input field at given points
       do ifld = 1,nflds
-         call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
-     &                     rcode,1,
-     &                     proc,1,
-     &                     elid,1,
-     &                     rst,ndim,npts,
-     &                     wrk(1,ifld))
+         call fgslib_findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
+     &                            rcode,1,
+     &                            proc,1,
+     &                            elid,1,
+     &                            rst,ndim,npts,
+     &                            wrk(1,ifld))
       enddo
       ! write interpolation results to hpts.out
       call hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
@@ -1758,7 +1758,7 @@ c                        npts=local count; npoints=total count
             endif
          enddo
 
-         call crystal_tuple_transfer 
+         call fgslib_crystal_tuple_transfer 
      &      (cr_h,npp,lt2,mid,1,pts,0,xyz,ldim,1)
 
          call copy(pts,xyz,ldim*npp)

@@ -38,7 +38,7 @@ if [ $# -eq 0 ]; then
    fi
 fi
 
-if [ "$mver" != "17.0.1" ]; then
+if [ "$mver" != "17.0.2" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1

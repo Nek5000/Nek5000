@@ -56,7 +56,7 @@ set -e
 : ${VISIT:=0}
 
 # assign version tag
-mver=17.0.1
+mver=17.0.2
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
@@ -76,11 +76,10 @@ source $SOURCE_ROOT/core/makenek.inc
 
 # compile gslib if needed
 if [ ! -f "$SOURCE_ROOT_GSLIB/lib$gslib.a" ]; then
-  make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=0 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
-   2>&1 | tee compiler.out
+  CONF_OPT="CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
+  make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=0 $CONF_OPT lib 2>&1 | tee compiler.out
   if [ $MPI -ne 0 ]; then 
-    make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=1 CC="$CC" CFLAGS="$CFLAGS" ADDUS=$UNDERSCORE lib \
-     2>&1 | tee compiler.out 
+    make -j4 -B -C $SOURCE_ROOT_GSLIB MPI=1 $CONF_OPT lib 2>&1 | tee compiler.out
   fi
 fi
 
