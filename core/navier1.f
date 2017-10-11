@@ -1523,7 +1523,7 @@ C----------------------------------------------------------------------
       include 'MVGEOM'
 
                                                 call makeuf
-      if (filterType.eq.2 .and. .not.ifchar)    call make_hpf
+      if (filterType.eq.2)                      call make_hpf
       if (ifnatc)                               call natconv
       if (ifexplvis.and.ifsplit)                call makevis
       if (ifnav .and..not.ifchar)               call advab
@@ -1531,7 +1531,6 @@ C----------------------------------------------------------------------
       if (iftran)                               call makeabf
       if ((iftran.and..not.ifchar).or.
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
-c     if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
       if (ifnav.and.ifchar)                     call advchar
       if (ifmodel)                              call twallsh
 
