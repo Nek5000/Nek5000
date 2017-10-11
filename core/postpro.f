@@ -1972,8 +1972,6 @@ c     FLUID
        do i=1,nelgv*2*ndim
         READ(9,'(a)') string2
        enddo
-      else
-       write(10,*) string2
       endif
 c      Thermal
       READ(9,'(a)') string2
