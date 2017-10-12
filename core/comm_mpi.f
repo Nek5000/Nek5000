@@ -575,6 +575,13 @@ c         call print_stack()
       return
       end
 c-----------------------------------------------------------------------
+      subroutine fgslib_userExitHandler(istatus)
+
+      call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine printHeader
 
       INCLUDE 'HEADER'

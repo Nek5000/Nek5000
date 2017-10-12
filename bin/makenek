@@ -45,7 +45,7 @@ CC="mpicc"
 
 # 3rd party paths
 #LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib
-#SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src" 
+#SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -68,7 +68,8 @@ fi
 source $SOURCE_ROOT/core/makenek.inc
 
 # compile gslib
-make -j4 -C $SOURCE_ROOT_GSLIB $GSLIB_OPT lib 2>&1 | tee compiler.out
+make -j4 -C $SOURCE_ROOT_GSLIB CC="$CC" CFLAGS="-O2 $CFLAGS" $GSLIB_OPT lib \
+            2>&1 | tee compiler.out
 
 # compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out
