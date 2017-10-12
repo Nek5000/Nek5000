@@ -104,7 +104,7 @@ fi
 
 # initial clean-up
 rm -f nek5000 2>/dev/null
-rm -f ./obj/subuser.o        2>/dev/null
+rm -f ./obj/subuser.o 2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=0

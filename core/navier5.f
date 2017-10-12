@@ -47,6 +47,9 @@ c     outpost arrays
 
       logical if_fltv
 
+      if(wght.le.0) return
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',wght
+
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)

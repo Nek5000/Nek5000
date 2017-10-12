@@ -277,7 +277,7 @@ c-----------------------------------------------------------------------
 
          if (ifflow)          call fluid    (igeom)
          if (ifmvbd)          call meshv    (igeom)
-         if (igeom.eq.ngeom.and.param(103).gt.0)
+         if (igeom.eq.ngeom.and.filterType.eq.1)
      $                        call q_filter(param(103))
 
          enddo
@@ -311,8 +311,7 @@ c-----------------------------------------------------------------------
                if (ifflow)             call fluid         (igeom)
                if (ifmvbd)             call meshv         (igeom)
             endif
-
-            if (igeom.eq.ngeom.and.param(103).gt.0)
+            if (igeom.eq.ngeom.and.filterType.eq.1)
      $         call q_filter(param(103))
          enddo
       endif
