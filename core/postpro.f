@@ -1827,7 +1827,7 @@ c     imid = 0  ! No midside node defs
 c     imid = 1  ! Midside defs where current curve sides don't exist
 c     imid = 2  ! All nontrivial midside node defs
 
-      if (nid.eq.0) open(unit=10,file='newrea.out',status='unknown') ! clobbers existing file
+      if (nid.eq.0) open(unit=10,file='newrea.rea',status='unknown') ! clobbers existing file
 
       call gen_rea_top
 
@@ -1941,14 +1941,15 @@ c-----------------------------------------------------------------------
       character*72 string2
       integer idum(3*numsts+3)
       integer paramval,i,j
+      integer n1,n2,n3
 
 c     IGNORE ELEMENT DATA
 c     IGNORE XY DATA
 
       IF(NID.EQ.0) THEN
         READ(9,'(a)') string2
-        READ(string2,*) paramval
-        if (paramval.lt.0) goto 1001
+        READ(string2,*) n1,n2,n3
+        if (n1.lt.0) goto 1001
       do i=1,nelgt
         READ(9,'(a)') string2
         do j=1,2+(ndim-2)*4
@@ -1956,30 +1957,31 @@ c     IGNORE XY DATA
         enddo
       enddo
 c     CURVE SIDE DATA
-        READ(9,'(a)') string2
-        READ(9,*) paramval
-        if (paramval.gt.0) then
-         do I=1,paramval
-          READ(9,'(a)') string2
-         enddo
-        endif
-c      BOUNDARY CONDITIONS
-        READ(9,'(a)') string2
-        READ(9,'(a)') string2
-c      FLUID
-       do i=1,nelv*2*ndim
+      READ(9,'(a)') string2
+      READ(9,*) paramval
+      if (paramval.gt.0) then
+       do I=1,paramval
         READ(9,'(a)') string2
        enddo
+      endif
+c     BOUNDARY CONDITIONS
+      READ(9,'(a)') string2
+c     FLUID
+      READ(9,'(a)') string2
+      if (ifflow) then
+       do i=1,nelgv*2*ndim
+        READ(9,'(a)') string2
+       enddo
+      endif
 c      Thermal
-       if (ifheat) then
+      READ(9,'(a)') string2
+      if (ifheat) then
+       do i=1,nelgt*2*ndim
         READ(9,'(a)') string2
-        do i=1,nelt*2*ndim
-         READ(9,'(a)') string2
-        enddo
-       else
-        READ(9,'(a)') string2
-        write(10,*) string2
-       endif
+       enddo
+      else
+       write(10,*) string2
+      endif
 
  1001 continue 
 
