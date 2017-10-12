@@ -336,12 +336,22 @@ c set parameters
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
 
-      call finiparser_getBool(i_out,'general:filtering',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) then
-        call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
-        if(ifnd .eq. 1) param(103) = d_out 
-        call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-        if(ifnd .eq. 1) param(101) = int(d_out) 
+c     stabilization parameters
+      call finiparser_getString(c_out,'general:filtering',ifnd)
+      if (ifnd .eq. 1) then
+c        stabilization type: none, explicit or hpfrt    
+         call capit(c_out,132)
+         if (index(c_out,'EXPLICIT') .gt. 0) then
+            param(104) = 1
+         else if (index(c_out,'HPFRT') .gt. 0) then
+            param(104) = 2
+         else
+            param(104) = 0
+         endif
+         call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
+         if(ifnd .eq. 1.and.param(104).gt.0) param(103) = d_out 
+         call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
+         if(ifnd .eq. 1.and.param(104).gt.0) param(101) = int(d_out) 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
