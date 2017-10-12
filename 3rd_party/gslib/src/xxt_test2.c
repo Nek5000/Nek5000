@@ -45,8 +45,8 @@ int main(int narg, char* arg[])
   if(id==np-1) A[n-1]=1;
   for(i=M;i<nz;++i) Ai[i]=i-M,Aj[i]=i-M+1,A[i]=-1;
 
-  crs = crs_setup(n,xid, nz,Ai,Aj,A, 1, &comm);
-  crs_stats(crs);
+  crs = crs_xxt_setup(n,xid, nz,Ai,Aj,A, 1, &comm);
+  crs_xxt_stats(crs);
   
   {
     double tn = M*np, mean = 1*(tn+1)/2;
@@ -57,8 +57,8 @@ int main(int narg, char* arg[])
                 - (i+1<n || id!=np-1 ? (xid[i]+1-mean)*(xid[i]+1-mean)-avg : 0);
     if(id!=np-1) b[n-1]=0;
   }
-  crs_solve(x2,crs,b);
-  crs_free(crs);
+  crs_xxt_solve(x2,crs,b);
+  crs_xxt_free(crs);
   comm_free(&comm);
   
   { double dif=0;
