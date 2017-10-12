@@ -107,23 +107,6 @@ if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
   exit 1
 fi
 
-# initial clean-up
-rm -f nek5000 2>/dev/null
-rm -f ./obj/subuser.o        2>/dev/null
-
-# Check if the compiler adds an underscore to external functions
-UNDERSCORE=0
-cat > test_underscore.f << _ACEOF
-      subroutine underscore_test
-        call test
-      end
-_ACEOF
-$F77 -c test_underscore.f 2>&1 >/dev/null 
-if nm test_underscore.o | grep -q test_ ; then
-  UNDERSCORE=1
-fi
-\rm test_underscore.* 2>/dev/null
-
 
 # trying to figure which compiler the wrapper is using 
 F77ok=0
@@ -184,6 +167,23 @@ case $F77comp in
       NOCOMPILE=1
       read;;
 esac
+
+# initial clean-up
+rm -f nek5000 2>/dev/null
+rm -f ./obj/subuser.o 2>/dev/null
+
+# Check if the compiler adds an underscore to external functions
+UNDERSCORE=0
+cat > test_underscore.f << _ACEOF
+      subroutine underscore_test
+        call test
+      end
+_ACEOF
+$F77comp -c test_underscore.f 2>&1 >/dev/null 
+if nm test_underscore.o | grep -q test_ ; then
+  UNDERSCORE=1
+fi
+\rm test_underscore.* 2>/dev/null
 
 # set preprocessor symbols
 if [ $MPI -eq 0 ]; then
@@ -251,17 +251,10 @@ if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then
 fi
 
 # gslib build options
-echo $MPIIO
-GSLIB_OPT+="MPI=$MPI MPIIO=$MPIIO"
-GSLIB_OPT+=" CC=$CC CFLAGS=$CFLAGS"
+GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
-
-if [ $MPI -eq 0 ]; then
-  gslib="gsserial"
-else
-  gslib="gs"
-fi
-USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -l$gslib"
+GSLIB_OPT+=" PREFIX=gslib_ FPREFIX=fgslib_"
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -lgs"
 
 # tweak makefile template 
 echo "generating makefile ..."
