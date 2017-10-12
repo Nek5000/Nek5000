@@ -729,7 +729,7 @@ class Ethier(NekTestCase):
         cls = self.__class__
         rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
         with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = amg', l, flags=re.I) for l in f]
+            lines = [sub(r'.*preconditioner.*', 'preconditioner = semg_amg', l, flags=re.I) for l in f]
         with open(rea_path, 'w') as f:
             f.writelines(lines)
 

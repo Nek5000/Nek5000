@@ -80,7 +80,7 @@ c-----------------------------------------------------------------------
       call iface_vert_int8cmt(nx,ny,nz,gnf,gnv,mz0,mz1,nelt) 
 
       nf = nx*nz*2*ndim*nelt !total number of points on faces BETTA BE 4-byte!
-      call gs_setup(dg_hndl,gnf,nf,nekcomm,np)
+      call fgslib_gs_setup(dg_hndl,gnf,nf,nekcomm,np)
 
       return
       end
