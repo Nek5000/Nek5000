@@ -1,0 +1,44 @@
+language: c
+
+before_install: 
+   - export ROOT_DIR=`pwd`
+   - sudo apt-get update -qq
+   - sudo apt-get install -y mpich2 libmpich2-dev 
+
+env:
+  matrix:
+    - TEST=comm_test             NP=2
+    - TEST=crs_test              NP=2
+    - TEST=crystal_test          NP=2
+    - TEST=findpts_el_2_test     NP=2
+    - TEST=findpts_el_2_test2    NP=2
+    - TEST=findpts_el_3_test     NP=2
+    - TEST=findpts_el_3_test2    NP=2
+    - TEST=findpts_local_test    NP=2
+    - TEST=findpts_test          NP=2
+    - TEST=gs_test               NP=2
+    - TEST=gs_test_old           NP=2
+    - TEST=gs_unique_test        NP=2
+    - TEST=lob_bnd_test          NP=2
+    - TEST=obbox_test            NP=2
+    - TEST=poly_test             NP=2
+    - TEST=poly_test2            NP=2
+    - TEST=sarray_sort_test      NP=2
+    - TEST=sarray_transfer_test  NP=2
+    - TEST=sort_test             NP=2
+    - TEST=sort_test2            NP=2
+    - TEST=spchol_test           NP=2
+    - TEST=xxt_test              NP=3
+    - TEST=xxt_test2             NP=2
+
+matrix:
+  allow_failures:
+    - env: TEST=findpts_el_2_test2    NP=2
+    - env: TEST=gs_test_old           NP=2
+
+install: true
+
+script:
+  - cd $ROOT_DIR/src
+  - make CC=mpicc $TEST
+  - mpiexec -np $NP ./$TEST

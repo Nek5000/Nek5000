@@ -38,10 +38,15 @@ if [ $# -eq 0 ]; then
    fi
 fi
 
-if [ "$mver" != "17.0.1" ]; then
+if [ "$mver" != "17.0.2" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1
+fi
+
+if [ ! "$SOURCE_ROOT_GSLIB" ]; then
+  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
+  export SOURCE_ROOT_GSLIB
 fi
 
 if [[ $1 = "clean" ]]; then
@@ -101,24 +106,6 @@ if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   exit 1
 fi
-
-# initial clean-up
-rm -f nek5000 2>/dev/null
-rm -f ./obj/subuser.o 2>/dev/null
-
-# Check if the compiler adds an underscore to external functions
-UNDERSCORE=0
-cat > test_underscore.f << _ACEOF
-      subroutine underscore_test
-        call test
-      end
-_ACEOF
-$F77 -c test_underscore.f 2>&1 >/dev/null 
-if nm test_underscore.o | grep -q test_ ; then
-  UNDERSCORE=1
-fi
-\rm test_underscore.* 2>/dev/null
-
 
 # trying to figure which compiler the wrapper is using 
 F77ok=0
@@ -180,6 +167,23 @@ case $F77comp in
       read;;
 esac
 
+# initial clean-up
+rm -f nek5000 2>/dev/null
+rm -f ./obj/subuser.o 2>/dev/null
+
+# Check if the compiler adds an underscore to external functions
+UNDERSCORE=0
+cat > test_underscore.f << _ACEOF
+      subroutine underscore_test
+        call test
+      end
+_ACEOF
+$F77comp -c test_underscore.f 2>&1 >/dev/null 
+if nm test_underscore.o | grep -q test_ ; then
+  UNDERSCORE=1
+fi
+\rm test_underscore.* 2>/dev/null
+
 # set preprocessor symbols
 if [ $MPI -eq 0 ]; then
   PPLIST="${PPLIST} NOMPIIO"
@@ -205,6 +209,7 @@ PPLIST="${PPLIST}"
 # add user defined preprocessor symbols
 CMT=0
 NEKNEK=0
+MPIIO=1
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
@@ -212,6 +217,9 @@ do
    fi
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
+   fi
+   if [ "$i" == "NOMPIIO" ]; then
+     MPIIO=0
    fi
 done
 
@@ -240,6 +248,12 @@ BLAS="blas.o dsygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
+
+# gslib build options
+GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
+GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
+GSLIB_OPT+=" PREFIX=gslib_ FPREFIX=fgslib_"
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -lgs"
 
 # tweak makefile template 
 echo "generating makefile ..."
@@ -478,11 +492,15 @@ _ACEOF
 fi
 fi
 
+
+
 export NEK_WARN 
 export MPI
+export MPIO
 export FFLAGS
 export CFLAGS
 export UNDERSCORE
+export GSLIB_OPT
 
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0

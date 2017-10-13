@@ -631,7 +631,7 @@ c
 c                 ~ ~T
 c     This is the Q Q  part
 c
-      call gs_op(gsh_dd,v1,1,1,0)  ! 1 ==> +         ! swap v1 & add vals
+      call fgslib_gs_op(gsh_dd,v1,1,1,0)  ! 1 ==> +         ! swap v1 & add vals
 
       do e =1,nelv
          call dface_add1si_g  (v1,-1.,2,e,nx,nz)
@@ -641,7 +641,7 @@ c
 c
 c     Exchange/add elemental solutions
 c
-      call gs_op              (gsh_dd,v1,1,1,0)
+      call fgslib_gs_op              (gsh_dd,v1,1,1,0)
       do e =1,nelv
          call s_face_to_int2_g(v1,1.,2,e,nx,nz)
       enddo
@@ -1309,7 +1309,7 @@ c     zero out corners
       ntot = nx*ny*nz*nel
 
       t0 = dnekclock()
-      call gs_setup(gs_h,glo_num,ntot,nekcomm,mp) ! initialize gs code
+      call fgslib_gs_setup(gs_h,glo_num,ntot,nekcomm,mp) ! initialize gs code
       t1 = dnekclock()
 
       et = t1-t0
