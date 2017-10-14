@@ -40,17 +40,10 @@ C
       else                   ! geometry at t^n
 
          IF (IFPRINT) THEN
-         IF (IFMODEL .AND. IFKEPS) THEN
-            NFLDT = NFIELD - 1
-            IF (IFIELD.EQ.NFLDT.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Turbulence Model - k/epsilon solution'
-            ENDIF
-         ELSE
-            IF (IFIELD.EQ.2.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Temperature/Passive scalar solution'
-            ENDIF
+            IF (IFIELD.EQ.2.AND.NID.EQ.0)
+     $          WRITE (6,*) ' Temperature/Passive scalar solution'
          ENDIF
-         ENDIF
+
          if1=ifield-1
          write(name4t,1) if1-1
     1    format('PS',i2)

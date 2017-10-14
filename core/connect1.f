@@ -63,7 +63,6 @@ C     .Construct the element to processor map and
       CALL SETCDOF 
       IF (IFAXIS            ) CALL SETRZER
       IF (IFMVBD            ) CALL CBCMESH
-      IF (IFMODEL.AND.IFKEPS) CALL CBCTURB
       CALL CHKAXCB
 C
 C========================================================================

@@ -183,19 +183,6 @@ c
          nfldtm = nfldtm + 1
       endif
 c
-      IF (IFMODEL) CALL SETTMC
-      IF (IFMODEL.AND.IFKEPS) THEN
-         NPSCAL = 1
-         NFLDTM = NPSCAL + 1
-         IF (LDIMT.LT.NFLDTM) THEN
-            WRITE (6,*) 'k-e turbulence model activated'
-            WRITE (6,*) 'Insufficient number of field arrays'
-            WRITE (6,*) 'Rerun through PRE or change SIZE file'
-            call exitt
-         ENDIF
-         NFIELD = NFIELD + 2
-         CALL SETTURB
-      ENDIF
       MFIELD = 1
       IF (IFMVBD) MFIELD = 0
 C
@@ -759,7 +746,6 @@ c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model              
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
@@ -774,7 +760,6 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
                                   !  Std. NEKTON time stepper  !
          endif
 
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
@@ -1000,10 +985,6 @@ c
           endif
 c
           iread = 3
-          if (ifmodel .and. .not.ifkeps) then
-             read (iru,1100,end=9000) tlmax,tlimul
-             read (iru,1100,end=9000) (turbl(i,1,1,1),i=1,ntov1)
-          endif
           if (ifcwuz) then
              read (iru,1100,end=9000) (zwall (i,1,1,1),i=1,ntfc1)
              read (iru,1100,end=9000) (uwall(i,1,1,1),i=1,ntfc1)
@@ -1082,10 +1063,6 @@ c
             endif
           endif
 c
-          if (ifmodel .and. .not.ifkeps) then
-             write (iwu,1100) tlmax,tlimul
-             write (iwu,1100) (turbl(i,1,1,1),i=1,ntov1)
-          endif
           if (ifcwuz) then
              write (iwu,1100) (zwall(i,1,1,1),i=1,ntfc1)
              write (iwu,1100) (uwall(i,1,1,1),i=1,ntfc1)

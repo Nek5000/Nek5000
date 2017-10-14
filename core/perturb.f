@@ -669,8 +669,6 @@ C----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       include 'SOLN'
-      LOGICAL  IFTURB
-C
                                                        CALL MAKEUQP
       IF (IFADVC(IFIELD).AND.(.NOT.IFCHAR))            CALL CONVABP
       IF (IFTRAN)                                      CALL MAKEABQP
