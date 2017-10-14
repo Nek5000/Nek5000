@@ -1259,10 +1259,8 @@ C-----------------------------------------------------------------------
       common /cpfjun2/ v(lx1*ly1*lz1*lelt,3)
 
 #ifdef TIMER
-      if (icalld.eq.0) thmhz=0.0
-      icalld=icalld+1
-      nhmhz=icalld
-      etime1=dnekclock()
+      nhmhz = nhmhz + 1
+      etime1 = dnekclock()
 #endif
 
       nel = nelfld(ifield)

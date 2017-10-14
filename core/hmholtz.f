@@ -18,20 +18,17 @@ c=======================================================================
 
       tol = abs(tli)
 
+      iffdm = .false.
+      if (ifsplit) iffdm = .true.
+      if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
+      icalld = icalld+1
+
 #ifdef TIMER
-      if (icalld.eq.0) thmhz=0.0
       if (name.ne.'PRES') then
-        icalld=icalld+1
-        nhmhz=icalld
-        etime1=dnekclock()
+        nhmhz = nhmhz + 1
+        etime1 = dnekclock()
       endif
 #endif
-
-      iffdm = .false.
-c     iffdm = .true.
-      if (ifsplit) iffdm = .true.
-
-      if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
 
       ntot = nx1*ny1*nz1*nelfld(ifield)
       if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
