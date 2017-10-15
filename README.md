@@ -94,7 +94,7 @@ cd ~/Nek5000/tools; ./maketools genmap
 cd ~/Nek5000/run
 cp -r ../examples/turbChannel .
 cd turbChannel
-genmap                    # run partioner, on input type ethier
+genmap                    # run partioner, on input type turbChannel
 makenek turbChannel       # build case, edit script to change settings
 nekbmpi turbChannel 2     # run Nek5000 on 2 ranks in the background
 echo -2 >ioinfo           # stop Nek5000 run and dump checkpoint

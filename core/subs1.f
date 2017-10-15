@@ -1259,10 +1259,8 @@ C-----------------------------------------------------------------------
       common /cpfjun2/ v(lx1*ly1*lz1*lelt,3)
 
 #ifdef TIMER
-      if (icalld.eq.0) thmhz=0.0
-      icalld=icalld+1
-      nhmhz=icalld
-      etime1=dnekclock()
+      nhmhz = nhmhz + 1
+      etime1 = dnekclock()
 #endif
 
       nel = nelfld(ifield)
@@ -2083,7 +2081,7 @@ c     Given an input vector v, this generates the H1 coarse-grid solution
       endif
 
       etime1=dnekclock()
-      call crs_solve(xxth_strs,uc1,vc1)
+      call fgslib_crs_solve(xxth_strs,uc1,vc1)
       tcrsl=tcrsl+dnekclock()-etime1
 
 c     mm=m*ndim
@@ -2191,8 +2189,8 @@ c     stop
       if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
      $ 'Problem size requires AMG solver$',1)
 
-      call crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
-     $               nnz,ia,ja,a,null_space)
+      call fgslib_crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
+     $                      nnz,ia,ja,a,null_space)
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then

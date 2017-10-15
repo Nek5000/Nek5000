@@ -1,5 +1,6 @@
 c-----------------------------------------------------------------------
 c    2D Double Shear layer with doubly periodic BCs.
+<<<<<<< HEAD
 c    This a test for the high-pass filtered relaxation-term forcing (hprtf) stabilization method. 
 c    The test case used is from (https://doi.org/10.1016/S0764-4442(00)01763-8)
 c    with a reduced resolution to create a smaller test case.
@@ -13,12 +14,28 @@ c    The short test checks the total kinetic energy in the flow at the end of si
 c    as a quantitative test.
 c    The simulation undergoes numerical instbility if no stabilization is used.
 c
+=======
+c    This a test for the high-pass filtered relaxation-term forcing 
+c    (hprtf) stabilization method. 
+c    The test case used is from: 
+c    https://doi.org/10.1016/S0764-4442(00)01763-8
+c    with a reduced resolution to create a smaller test case.
+c    Without over-integration the simulation is unstable.
+c    The following stabilization parameters are used for the test case:
+c    
+c    The short test checks the total kinetic energy in the flow at the 
+c    end of simulation as a quantitative test.
+c    The simulation undergoes numerical instbility if no stabilization is used.
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,ieg)
       include 'SIZE'
       include 'NEKUSE'
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
       return
       end
 c-----------------------------------------------------------------------
@@ -69,7 +86,10 @@ c-----------------------------------------------------------------------
 
       real en, enx, eny
       real gl2norm
+<<<<<<< HEAD
       
+=======
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
 
       ifto =.true.
 
@@ -78,6 +98,7 @@ c-----------------------------------------------------------------------
 
       nt=nx1*ny1*nz1*nelv
 
+<<<<<<< HEAD
       if (istep.eq.nsteps) then
         enx = gl2norm(vx,nt)
         eny = gl2norm(vy,nt)
@@ -87,6 +108,15 @@ c-----------------------------------------------------------------------
       endif
 
 
+=======
+      if (lastep.eq.1) then
+        enx = gl2norm(vx,nt)
+        eny = gl2norm(vy,nt)
+        en = enx**2 + eny**2    
+        if (nid.eq.0) write(6,*) 'L2 norm: ', en
+      endif
+
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
       return
       end
 c-----------------------------------------------------------------------
@@ -164,6 +194,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+<<<<<<< HEAD
 
 
 
@@ -181,3 +212,5 @@ c automatically added by makenek
 
       return
       end
+=======
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd

@@ -1550,23 +1550,25 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       ntot  = nxyz*nelt 
       nbuff = lhis      ! point to be read in on 1 proc.
 
+      toldist = 5e-6
+
       if(nio.eq.0) write(6,*) 'dump history points'
 
       if(icalld.eq.0) then
         npts  = lhis      ! number of points per proc
         call hpts_in(pts,npts,npoints)
 
-        tol     = 1e-13
+        tol     = 5e-13
         n       = lx1*ly1*lz1*lelt
         npt_max = 256
         nxf     = 2*nx1 ! fine mesh for bb-test
         nyf     = 2*ny1
         nzf     = 2*nz1
-        bb_t    = 0.1 ! relative size to expand bounding boxes by
-        call findpts_setup(inth_hpts,nekcomm,np,ndim,
-     &                     xm1,ym1,zm1,nx1,ny1,nz1,
-     &                     nelt,nxf,nyf,nzf,bb_t,n,n,
-     &                     npt_max,tol)
+        bb_t    = 0.01 ! relative size to expand bounding boxes by
+        call fgslib_findpts_setup(inth_hpts,nekcomm,np,ndim,
+     &                            xm1,ym1,zm1,nx1,ny1,nz1,
+     &                            nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                            npt_max,tol)
       endif
 
 
@@ -1597,22 +1599,22 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       
       ! interpolate
       if(icalld.eq.0) then
-        call findpts(inth_hpts,rcode,1,
-     &                 proc,1,
-     &                 elid,1,
-     &                 rst,ndim,
-     &                 dist,1,
-     &                 pts(1,1),ndim,
-     &                 pts(2,1),ndim,
-     &                 pts(3,1),ndim,npts)
+        call fgslib_findpts(inth_hpts,rcode,1,
+     &                      proc,1,
+     &                      elid,1,
+     &                      rst,ndim,
+     &                      dist,1,
+     &                      pts(1,1),ndim,
+     &                      pts(2,1),ndim,
+     &                      pts(3,1),ndim,npts)
      
         nfail = 0 
         do i=1,npts
            ! check return code 
            if(rcode(i).eq.1) then
-             if (dist(i).gt.10*tol) then
-                nfail = nfail + 1
-                IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
+             if(sqrt(dist(i)).gt.toldist) then
+               nfail = nfail + 1
+               IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
      &     ,(pts(k,i),k=1,ndim),dist(i)
              endif   
@@ -1629,12 +1631,12 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       ! evaluate input field at given points
       do ifld = 1,nflds
-         call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
-     &                     rcode,1,
-     &                     proc,1,
-     &                     elid,1,
-     &                     rst,ndim,npts,
-     &                     wrk(1,ifld))
+         call fgslib_findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
+     &                            rcode,1,
+     &                            proc,1,
+     &                            elid,1,
+     &                            rst,ndim,npts,
+     &                            wrk(1,ifld))
       enddo
       ! write interpolation results to hpts.out
       call hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
@@ -1756,7 +1758,7 @@ c                        npts=local count; npoints=total count
             endif
          enddo
 
-         call crystal_tuple_transfer 
+         call fgslib_crystal_tuple_transfer 
      &      (cr_h,npp,lt2,mid,1,pts,0,xyz,ldim,1)
 
          call copy(pts,xyz,ldim*npp)
@@ -1825,7 +1827,7 @@ c     imid = 0  ! No midside node defs
 c     imid = 1  ! Midside defs where current curve sides don't exist
 c     imid = 2  ! All nontrivial midside node defs
 
-      if (nid.eq.0) open(unit=10,file='newrea.out',status='unknown') ! clobbers existing file
+      if (nid.eq.0) open(unit=10,file='newrea.rea',status='unknown') ! clobbers existing file
 
       call gen_rea_top
 
@@ -1939,14 +1941,15 @@ c-----------------------------------------------------------------------
       character*72 string2
       integer idum(3*numsts+3)
       integer paramval,i,j
+      integer n1,n2,n3
 
 c     IGNORE ELEMENT DATA
 c     IGNORE XY DATA
 
       IF(NID.EQ.0) THEN
         READ(9,'(a)') string2
-        READ(string2,*) paramval
-        if (paramval.lt.0) goto 1001
+        READ(string2,*) n1,n2,n3
+        if (n1.lt.0) goto 1001
       do i=1,nelgt
         READ(9,'(a)') string2
         do j=1,2+(ndim-2)*4
@@ -1954,30 +1957,31 @@ c     IGNORE XY DATA
         enddo
       enddo
 c     CURVE SIDE DATA
-        READ(9,'(a)') string2
-        READ(9,*) paramval
-        if (paramval.gt.0) then
-         do I=1,paramval
-          READ(9,'(a)') string2
-         enddo
-        endif
-c      BOUNDARY CONDITIONS
-        READ(9,'(a)') string2
-        READ(9,'(a)') string2
-c      FLUID
-       do i=1,nelv*2*ndim
+      READ(9,'(a)') string2
+      READ(9,*) paramval
+      if (paramval.gt.0) then
+       do I=1,paramval
         READ(9,'(a)') string2
        enddo
+      endif
+c     BOUNDARY CONDITIONS
+      READ(9,'(a)') string2
+c     FLUID
+      READ(9,'(a)') string2
+      if (ifflow) then
+       do i=1,nelgv*2*ndim
+        READ(9,'(a)') string2
+       enddo
+      endif
 c      Thermal
-       if (ifheat) then
+      READ(9,'(a)') string2
+      if (ifheat) then
+       do i=1,nelgt*2*ndim
         READ(9,'(a)') string2
-        do i=1,nelt*2*ndim
-         READ(9,'(a)') string2
-        enddo
-       else
-        READ(9,'(a)') string2
-        write(10,*) string2
-       endif
+       enddo
+      else
+       write(10,*) string2
+      endif
 
  1001 continue 
 

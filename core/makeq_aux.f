@@ -12,9 +12,7 @@
       if (ifturb) call maketq ! zero bq
       if (.not.ifturb .and. if_conv_std)  call makeuq !zero bq
 
-      if (.not.ifcvode) call make_hpf     ! Add high-pass filtered fld to bq field.
-                                          ! When solving without using characteristics
-                                          ! solver
+      if(filterType.eq.2) call make_hpf
     
       return
       end

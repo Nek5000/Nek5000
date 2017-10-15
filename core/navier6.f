@@ -220,7 +220,7 @@ c
          call faces(y,scale,ce,cf,nx1,ny1,nz1)
          if (if3d) call faces(z,scale,ce,cf,nx1,ny1,nz1)
       enddo
-      call gs_op_many(gsh_fld(ifield), x,y,z,x,x,x,ndim, 1,1,0)
+      call fgslib_gs_op_many(gsh_fld(ifield), x,y,z,x,x,x,ndim, 1,1,0)
 c
       ifield = ifielt
 c

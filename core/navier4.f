@@ -977,34 +977,39 @@ c     xbar is best fit in xx, bbar = A*xbar
 c     b <-- b - bbar
 
       include 'SIZE'
+      include 'TSTEP'
+      include 'INPUT'
+      include 'PARALLEL'
+      parameter(lt=lx1*ly1*lz1*lelv)
       real xbar(n),bbar(n),b(n),xx(n,m),bb(n,m),w(n)
       logical ifwt,ifvec
+      integer e,eg
+      parameter(lxyz=lx1*ly1*lz1)
+      real tt(lxyz,lelt)
 
       real alpha(mxprev),work(mxprev)
 
 
       if (m.le.0) return
 
-      if (ifwt) then
-         do j=1,m
-            alpha(j)=vlsc3(xx(1,j),w,b,n)
-         enddo
-      else
-         do j=1,m
-            alpha(j)=vlsc2(xx(1,j),b,n)
-         enddo
-      endif
-      call gop(alpha,work,'+  ',m)
+      call rzero(xbar,n)
+      call rzero(bbar,n)
 
-      call cmult2(xbar,xx(1,1),alpha(1),n)
-      call cmult2(bbar,bb(1,1),alpha(1),n)
+      do j=m,1,-1
 
-      do j=2,m
+         if (ifwt) then
+            alpha(j)=glsc3(xx(1,j),w,b,n)
+         else
+            alpha(j)=glsc2(xx(1,j),b,n)
+         endif
+
          call add2s2(xbar,xx(1,j),alpha(j),n)
          call add2s2(bbar,bb(1,j),alpha(j),n)
-      enddo
 
-      call sub2(b,bbar,n)
+         alpham = -alpha(j)
+         call add2s2(b,bb(1,j),alpham,n)
+
+      enddo
 
       return
       end

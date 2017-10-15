@@ -51,7 +51,7 @@ c      implicit none
 c---------------------------------------- 
 
       hpf_kut = int(param(101))+1
-      hpf_chi = param(103)
+      hpf_chi = -1.0*abs(param(103))
 c     Boyd transform to preserve element boundary values is 
 c     linearly unstable when used as forcing.
 c     keep parameter as false unless you know what you are doing.
@@ -60,20 +60,11 @@ c     keep parameter as false unless you know what you are doing.
       nel = nelv
       n = nxyz*nel
 
-      if (hpf_chi.eq.0.or.param(104).ne.2) then
-c       High-pass filtering switched off  
-        return 
-      endif
+      if (hpf_chi.eq.0) return
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply hpf ',
+     $                                 ifield, hpf_chi
 
       if (icalld.eq.0) then
-        if (hpf_chi.gt.0) then
-          if (nid.eq.0) then
-            write(6,*) 'Positive filtering is Numerically Unstable.'
-            write(6,*) 'Remove this check if this was intentional.'
-          endif
-          call exitt   
-        endif
-
 c       Create the filter transfer function
         call hpf_trns_fcn(hpf_filter,hpf_kut)
 

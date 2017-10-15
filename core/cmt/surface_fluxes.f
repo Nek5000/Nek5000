@@ -139,7 +139,7 @@ C> @}
 !-----------------------------------------------------------------------
 ! operation flag is second-to-last arg, an integer
 !                                                1 ==> +
-      call gs_op_fields(handle,yours,nf,nstate,1,1,0)
+      call fgslib_gs_op_fields(handle,yours,nf,nstate,1,1,0)
       call sub2 (yours,mine,ntot)
       return
       end
@@ -426,7 +426,7 @@ C> @}
 ! supa huge gs_op to get {{AgradU}}
 ! operation flag is second-to-last arg, an integer
 !                                                   1 ==> +
-      call gs_op_fields(dg_hndl,gdudxk,nfq,toteq,1,1,0)
+      call fgslib_gs_op_fields(dg_hndl,gdudxk,nfq,toteq,1,1,0)
 !-----------------------------------------------------------------------
       call sub2  (flxscr,gdudxk,ntot) ! overwrite flxscr with
                                       !           -

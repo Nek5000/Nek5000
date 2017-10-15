@@ -7,17 +7,24 @@
 #include "types.h"
 #include "comm.h"
 
-#define nek_exitt FORTRAN_UNPREFIXED(exitt,EXITT)
-extern void nek_exitt();
+#ifdef USE_USR_EXIT
+#define userExitHandler FORTRAN_NAME(userexithandler,USEREXITHANDLER)
+#define USEREXIT 1
+extern void userExitHandler(int status);
+#else
+#define USEREXIT 0
+void userExitHandler(int status) {};
+#endif
 
 void die(int status)
 {
-#ifndef NEK_EXITT
-  if(comm_gbl_id==0) exit(status); else for(;;) ;
-#else
-  nek_exitt();
-  while(1);
-#endif  
+  if (USEREXIT) {
+  	userExitHandler(status);
+    	while(1);
+  } else {
+    	exit(status); 
+    	while(1);
+  }
 }
 
 void vdiagnostic(const char *prefix, const char *file, unsigned line,

@@ -2,6 +2,7 @@
 # nek parameter file
 #
 [GENERAL] 
+<<<<<<< HEAD
 #startFrom = restart.fld 
 stopAt = numSteps # or endTime
 #endTime = 1.0
@@ -28,6 +29,18 @@ userParam01 = 1 # use in .usr uparam(01)
 #lowMachNumber = yes 
 #dp0dt = yes
 #variableProperties = yes
+=======
+stopAt = numSteps 
+numSteps = 2000
+
+dt = 1e-03
+timeStepper = bdf   #char #steady
+
+dealiasing = no
+filtering = hpfrt   #explicit        
+filterWeight = 50   #0.05
+addFilterModes = 0
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
 
 [PRESSURE]
 preconditioner = semg
@@ -36,6 +49,7 @@ residualProj = yes
 
 [VELOCITY]
 residualTol = 1e-8
+<<<<<<< HEAD
 residualProj = yes
 density = 1.
 viscosity = -1.0E+5
@@ -55,3 +69,7 @@ viscosity = -1.0E+5
 
 
 
+=======
+density = 1.
+viscosity = -1.0E+5
+>>>>>>> c41dfc157e74077c439da0f95028d579b68d3bfd
