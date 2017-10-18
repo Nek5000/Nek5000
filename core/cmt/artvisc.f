@@ -266,7 +266,8 @@ c-----------------------------------------------------------------------
          call cmult(residual,c_sub_e,nxyz*nelt)
 
          if (maxdiff .ne. 0) then
-            const=1.0/maxdiff
+!           const=1.0/maxdiff
+            const=1.0/50.0 ! better living through HARDCODING
             call cmult(residual,const,nxyz*nelt)
          endif
       endif

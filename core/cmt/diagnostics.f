@@ -89,7 +89,7 @@ c----------------------------------------------------------------------
 c     ifxyo=.true.
       if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
 
-      itmp = 2
+      itmp = 3
       call outpost2(otvar(1,1,1,1,5),otvar(1,1,1,1,6),otvar(1,1,1,1,7)
      $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'fld')
       return

@@ -31,7 +31,11 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then
          call cmt_ics
-         time_cmt=0.0 !time !0.0 ! until we can get settime to behave
+         if (ifrestart) then
+            time_cmt=time
+         else
+            time_cmt=0.0 !time !0.0 ! until we can get settime to behave
+         endif
          call cmt_flow_ics
          call init_cmt_timers
 c all point particles are initialized and 
