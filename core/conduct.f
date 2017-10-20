@@ -106,8 +106,6 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
 
  1000    continue
  2000    continue
-         call bcneusc (ta,1)
-         call add2 (bq(1,1,1,1,ifield-1),ta,n) ! no idea why... pf
 
       endif
 
@@ -520,7 +518,7 @@ c           write(6,*) i,j1,j2,e,f,a,etalph(i,f,e)
       enddo
       enddo
 
-      call gs_op (dg_hndlx,etalph,1,1,0)  ! 1 ==> +
+      call fgslib_gs_op (dg_hndlx,etalph,1,1,0)  ! 1 ==> +
 
       return
       end
@@ -540,7 +538,7 @@ c-----------------------------------------------------------------------
       do i=1,lf
          uf(i,1,1)=1.
       enddo
-      call gs_op (dg_hndlx,uf,1,1,0)  ! 1 ==> +
+      call fgslib_gs_op (dg_hndlx,uf,1,1,0)  ! 1 ==> +
 
       nface = 2*ldim
       do e=1,nelt

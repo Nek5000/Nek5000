@@ -109,23 +109,23 @@ int main(int narg, char* arg[])
   if(np!=3) { puts("run with 3 procs"); exit(1); }
   id = comm.id;
 
-  crs = crs_setup(nx[id], &x_id[id][0],
+  crs = crs_xxt_setup(nx[id], &x_id[id][0],
                   nz[id], &Ai[id][0], &Aj[id][0], &Ar[id][0],
                   0, &comm);
 
-  crs_stats(crs);
+  crs_xxt_stats(crs);
   
   if(1) {
     uint i,j; double xv[8];
     for(i=0;i<8;++i) {
-      crs_solve(xv,crs,&bv[id][i][0]);
+      crs_xxt_solve(xv,crs,&bv[id][i][0]);
       printf("%d col %d:",id,i);
       for(j=0;j<nx[id];++j) printf("\t%.4g",xv[j]);
       printf("\n");
     }
   }
 
-  crs_free(crs);
+  crs_xxt_free(crs);
   comm_free(&comm);
 
 #ifdef MPI

@@ -502,18 +502,18 @@ c     Displace MESH 1
       call neknekgsync()
 ccccc
 c     Setup findpts    
-      tol     = 1e-13
+      tol     = 5e-13
       npt_max = 256
       nxf     = 2*nx1 ! fine mesh for bb-test
       nyf     = 2*ny1
       nzf     = 2*nz1
-      bb_t    = 0.1 ! relative size to expand bounding boxes by
+      bb_t    = 0.01 ! relative size to expand bounding boxes by
 
-      if (istep.gt.1) call findpts_free(inth_multi2)
-      call findpts_setup(inth_multi2,mpi_comm_world,npall,ndim,
-     &                   xm1,ym1,zm1,nx1,ny1,nz1,
-     &                   nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
-     &                   npt_max,tol)
+      if (istep.gt.1) call fgslib_findpts_free(inth_multi2)
+      call fgslib_findpts_setup(inth_multi2,mpi_comm_world,npall,ndim,
+     &                          xm1,ym1,zm1,nx1,ny1,nz1,
+     &                          nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
+     &                          npt_max,tol)
 
       return
       end
@@ -597,19 +597,18 @@ c     points in jsend
 
       call neknekgsync()
 
-cccc
 c     JL's routine to find which points these procs are on
-      call findpts(inth_multi2,rcode_all,1,
-     &             proc_all,1,
-     &             elid_all,1,
-     &             rst_all,ndim,
-     &             dist_all,1,
-     &             rsend(1),ndim,
-     &             rsend(2),ndim,
-     &             rsend(3),ndim,nbp)
+      call fgslib_findpts(inth_multi2,rcode_all,1,
+     &                    proc_all,1,
+     &                    elid_all,1,
+     &                    rst_all,ndim,
+     &                    dist_all,1,
+     &                    rsend(1),ndim,
+     &                    rsend(2),ndim,
+     &                    rsend(3),ndim,nbp)
 
       call neknekgsync()
-cccc
+
 c     Move mesh 1 back to its original position
       if (idsess.eq.0) then
         call cadd(xm1,-dxf,lx1*ly1*lz1*nelt)
@@ -618,7 +617,7 @@ c     Move mesh 1 back to its original position
       ip=0
       icount=0
       ierror=0
-cccc
+
 c     Make sure rcode_all is fine
       do 200 i=1,nbp
 
@@ -713,12 +712,12 @@ C--------------------------------------------------------------------------
       integer fieldstride
 cccc
 c     Used for findpts_eval of various fields
-      call findpts_eval(inth_multi2,fieldout,fieldstride,
-     &                     rcode,1,
-     &                     proc,1,
-     &                     elid,1,
-     &                     rst,ndim,npoints_nn,
-     &                     fieldin)
+      call fgslib_findpts_eval(inth_multi2,fieldout,fieldstride,
+     &                         rcode,1,
+     &                         proc,1,
+     &                         elid,1,
+     &                         rst,ndim,npoints_nn,
+     &                         fieldin)
 
       return
       end
