@@ -17,8 +17,9 @@ c
      $    ,qinteg(ldimt3,maxobj)
      $    ,uparam(20)
      $    ,atol(ldimt3)
+     $    ,filterType
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
-     $                atol
+     $                atol,filterType
 
       integer matype(-5:10,ldimt1)
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)

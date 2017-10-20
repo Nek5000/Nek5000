@@ -3,15 +3,16 @@
 # binary path
 bin_nek_tools=`cd ../bin && pwd`
 
-# specify your compilers here
-F77="gfortran"
+# Fortran compiler
+FC="gfortran"
+#FFLAGS=""
+
+# C compiler
 CC="gcc"
+#CFLAGS=""
 
 # linking flags
-#USR_LFLAGS="-L$HOME/lib"
-
-# BIG MEMORY (>2GB) support
-BIGMEM="true"
+#LDFLAGS="-L$HOME/lib -lm"
 
 
 
@@ -49,7 +50,7 @@ if [ $# -eq 0 ]; then
    exit 1
 fi
 
-if [ "$F77" == "" ]; then
+if [ "$FC" == "" ]; then
   echo "FATAL ERROR: Specify your Fortran compiler in maketools!"
   exit 1
 fi
@@ -59,17 +60,9 @@ if [ "$CC" == "" ]; then
   exit 1
 fi
 
-# overwrite source path with optional 2nd argument
-if [ $# -eq 2 ]; then
-  bin_nek_tools="$2"
-fi
-
-
-
-
-which `echo $F77 | awk '{print $1}'` 1>/dev/null
+which `echo $FC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
-  echo "FATAL ERROR: Cannot find $F77!"
+  echo "FATAL ERROR: Cannot find $FC!"
   exit 1
 fi
 
@@ -85,23 +78,29 @@ if [ ! -d $bin_nek_tools  ]; then
 fi
 
 
-case $F77 in
+case $FC in
   *pgf*)       R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-Mpreprocess"
+               BIGMEM="-mcmodel=medium"
                ;;
   *gfortran*)  R8="-fdefault-real-8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-cpp"
+               BIGMEM="-mcmodel=medium"
                ;;
   *ifort*)     R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium -shared-intel"
+               CPPF="-fpp"
+               BIGMEM="-mcmodel=medium -shared-intel"
                ;;
   *pathf*)     R8="-r8"
+               CPPF="-cpp"
                ;;
   *xlf*)       R8="-qrealsize=8"
-               BIGMEM_FLAG="-q64"
+               CPPF="-qsuffix=cpp=f"
+               BIGMEM="-q64"
                ;;
   *ftn*)       R8="-r8"
-               BIGMEM_FLAG="-mcmodel=medium"
+               CPPF="-eF"
+               BIGMEM="-mcmodel=medium"
                ;;
   *)           echo "Error: Unable to detect compiler!"
                exit 1
@@ -115,32 +114,27 @@ cat > test_underscore.f << _ACEOF
       end
 _ACEOF
 
-$F77 -c test_underscore.f 2>&1 >/dev/null 
+$FC -c test_underscore.f 2>&1 >/dev/null 
 nm test_underscore.o | grep byte_write_ 1>/dev/null
 if [ $? -eq 0 ]; then 
   US="-DUNDERSCORE"
 fi
 \rm test_underscore.* 2>/dev/null
 
-
-F77="$F77" 
-CC="$CC" 
-if [ "$BIGMEM" == "true" ] || [ "$BIGMEM" == "TRUE" ]; then
-  if [[ $OSTYPE == darwin* ]]; then
-    echo "BIGMEM not supported on this system!"
-  else
-    F77="$F77 $BIGMEM_FLAG" 
-    CC="$CC $BIGMEM_FLAG" 
-  fi
+if [[ $OSTYPE == darwin* ]]; then
+  BIGMEM="" 
 fi
 
-export F77
-export CC
+export FC=`which $FC`
+export FFLAGS
+export CC=`which $CC`
+export CFLAGS
 export bin_nek_tools
 export US
 export R8
-LFLAGS_IN=$USR_LFLAGS 
-export LFLAGS_IN  
+export CPPF
+export BIGMEM
+export LDFLAGS
 
 LIST=`ls -Cd */ | sed 's:\/::g'`
 MODULES=`echo $LIST`

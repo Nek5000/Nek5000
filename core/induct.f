@@ -896,8 +896,10 @@ c
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
-      if (param(103).gt.0) alpha_filt=param(103)      ! Optional Filtering
-      if (param(103).gt.0) call q_filter(alpha_filt)
+      if (filterType.eq.1) then
+         alpha_filt=param(103)                        ! Optional Filtering
+         call q_filter(alpha_filt)
+      endif
 
       call incomprn (vx,vy,vz,pr) ! project U onto div-free space
 
@@ -906,9 +908,6 @@ c
 
       call ophinv_pr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
-
-
-c     if (param(103).gt.0) call q_filter(alpha_filt)
 
       call incomprn (bx,by,bz,pm) ! project B onto div-free space
 

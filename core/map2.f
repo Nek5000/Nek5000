@@ -44,7 +44,8 @@ c
 
 C     Output the processor-element map:
       ifverbm=.true.
-      if (np.gt.2050.or.nelgt.gt.40000) ifverbm=.false.
+      if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
+      if (loglevel .gt. 2) ifverbm=.true.
 
       if(ifverbm) then
         idum = 1
@@ -57,9 +58,6 @@ C     Output the processor-element map:
               call csend(mtype,idum,4,inid,0)            ! handshake
               call crecv(mtype,inelt,4)               ! nelt of other cpus
               N8 = min(8,inelt)
-c             write(6 ,1310) inid+1,(lglel(ie,inid+1),ie=1,n8)
-c             IF (inelt.gt.8) 
-c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            ENDDO
  1310      FORMAT(' RANK',I6,' IEG',8I8)
  1315      FORMAT('     ',6X,'    ',8I8)
@@ -67,6 +65,11 @@ c    &           write(6 ,1315) (lglel(ie,inid+1),ie=9,inelt)
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
            call csend(mtype,nelt,4,0,0)            ! nelt
+           if (loglevel .gt. 2) then
+              N8 = min(8,nelt)
+              write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
+              if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
+           endif
         endif
       endif
 
@@ -91,7 +94,7 @@ C      ENDIF
         write(6,*) ' '
         write(6,*) 'element load imbalance: ',nm-nn,nn,nm
         if((nm-nn)/float(nn).gt.0.2) 
-     $    write(6,*) 'WARNING: load imbalance >20% !!!'
+     $    write(6,*) 'WARNING: imbalance >20% !!!'
         write(6,'(A,g13.5,A,/)')  ' done :: mapping ',dt,' sec'
         write(6,*) ' '
       endif
@@ -495,12 +498,6 @@ c-----------------------------------------------------------------------
       endif
  
       call bcast(neli, ISIZE)
-c      if (nid.eq.0) then
-c         neli = iglmax(neli,1)   ! communicate to all procs
-c      else
-c         neli = 0
-c         neli = iglmax(neli,1)   ! communicate neli to all procs
-c      endif
 
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
@@ -533,9 +530,8 @@ c      endif
             else
                m = 0
                do eg=eg0+1,eg1
-                  m = m+1
+                  m = m + 1
                   read(80,*,err=200) (wk(k,m),k=1,mdw-1)
-c                  write(912,*) (wk(k,m),k=1,mdw-1)
                enddo
             endif
             
@@ -546,11 +542,11 @@ c                  write(912,*) (wk(k,m),k=1,mdw-1)
                wk(mdw,m) = eg
             enddo
     
-            if (ipass.lt.npass) then
-               call csend(ipass,wk,len,ipass,0) !send to ipass
-               eg0 = eg1
-            endif
+            if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
+            eg0 = eg1
          enddo
+
+         ntuple = m
 
          if (ifma2) then
             call byte_close(ierr)
@@ -558,23 +554,21 @@ c                  write(912,*) (wk(k,m),k=1,mdw-1)
             close(80)
          endif
 
-         ntuple = eg1 - eg0
       elseif (nid.lt.npass) then
+
          call msgwait(msg_id)
          ntuple = ndw
+
       else
+
          ntuple = 0
+
       endif
 
       if (.not.ifgfdm) then ! gllnid is already assigned for gfdm
         lng = isize*neli
         call bcast(gllnid,lng)
         call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
-
-c       if(nid.eq.0) then
-c         write(99,*) (gllnid(i),i=1,nelgt)
-c       endif
-c       call exitt
       endif
 
       nelt=0 !     Count number of elements on this processor
@@ -602,12 +596,12 @@ c     NOW: crystal route vertex by processor id
       enddo
 
       key = 1  ! processor id is in wk(1,:)
-      call crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
+      call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
       if (.not.ifgfdm) then            ! no sorting for gfdm?
          key = mdw  ! Sort tuple list by eg
          nkey = 1
-         call crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
+         call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
       endif
 
       iflag = 0

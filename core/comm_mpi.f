@@ -89,7 +89,7 @@ C     Test timer accuracy
          WRITE(6,*) ' '
       endif
 
-      call crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
+      call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
 
       return
       end
@@ -519,8 +519,6 @@ c-----------------------------------------------------------------------
       include 'mpif.h'
       common /happycallflag/ icall
 
-      real*4 papi_mflops
-      integer*8 papi_flops
       logical ifopen              !check for opened files
 c
 
@@ -529,27 +527,26 @@ c     Communicate unhappiness to the other session
 
       call nekgsync()
 
-
 #ifdef PAPI
-      call nek_mflops(papi_flops,papi_mflops)
+      gflops = glsum(dnekgflops(),1)
 #endif
 
       tstop  = dnekclock()
       ttotal = tstop-etimes
+      tsol   = max(ttime - tprep,0.0)
       nxyz   = nx1*ny1*nz1
+
+      dtmp4 = glsum(getmaxrss(),1)/1e9
 
       if (nid.eq.0) then 
          call close_files(ifopen)
          dtmp1 = 0
          dtmp2 = 0
-         dtmp3 = 0
-         dtmp4 = getmaxrss()/1000/1000
          if(istep.gt.0) then
            dgp   = nvtot
-           dgp   = max(dgp,1.)
-           dtmp1 = dgp/(ttime/max(istep,1))/np
-           dtmp2 = ttime/max(istep,1)
-           dtmp3 = 1.*papi_flops/1e6
+           dgp   = max(dgp,1.)*max(istep,1)
+           dtmp1 = dgp/(np*(ttime-tprep))
+           dtmp2 = (ttime-tprep)/max(istep,1)
          endif 
          write(6,*) ' '
          write(6,'(A)') 'call exitt: dying ...'
@@ -558,14 +555,13 @@ c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
-     &      ,'total solver time incl. I/O    : ',ttime , ' sec'
+     &      ,'total solver time w/o IO       : ',tsol,   ' sec'
      &      ,'time/timestep                  : ',dtmp2 , ' sec'
      &      ,'avg throughput per timestep    : ',dtmp1 , ' gridpts/CPUs'
-     &      ,'max resident memory            : ',dtmp4 , ' MB'
+     &      ,'total max memory usage         : ',dtmp4 , ' GB'
 #ifdef PAPI
-         write(6,'(2(A,1g13.5,/))') 
-     &       'Gflops                         : ',dtmp3/1000.
-     &      ,'Gflops/s                       : ',papi_mflops/1000.
+         write(6,'(1(A,1p1e13.5,/))') 
+     &      ,'total Gflops/s                 : ',gflops
 #endif
       endif 
       call flush_io
@@ -576,6 +572,13 @@ c         call print_stack()
 #else
       call exit(0)
 #endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fgslib_userExitHandler(istatus)
+
+      call exitt
+
       return
       end
 c-----------------------------------------------------------------------

@@ -17,20 +17,20 @@ c
 
 
       tol = tolin
-      if (tolin.lt.0) tol = 1e-13 ! default tolerance 
+      if (tolin.lt.0) tol = 5e-13 ! default tolerance 
 
       n       = lx1*ly1*lz1*lelt 
       npt_max = 256
       nxf     = 2*nx1 ! fine mesh for bb-test
       nyf     = 2*ny1
       nzf     = 2*nz1
-      bb_t    = 0.1 ! relative size to expand bounding boxes by
+      bb_t    = 0.01 ! relative size to expand bounding boxes by
 c
       if(nidd.eq.0) write(6,*) 'call intp_setup(), tol=', tol
-      call findpts_setup(ih_intp,nekcomm,npp,ndim,
-     &                     xm1,ym1,zm1,nx1,ny1,nz1,
-     &                     nelt,nxf,nyf,nzf,bb_t,n,n,
-     &                     npt_max,tol)
+      call fgslib_findpts_setup(ih_intp,nekcomm,npp,ndim,
+     &                          xm1,ym1,zm1,nx1,ny1,nz1,
+     &                          nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                          npt_max,tol)
 c       
       return
       end
@@ -78,15 +78,15 @@ c
       nfail = 0
       if(iflp) then
         if(nio.eq.0) write(6,*) 'call findpts'
-        call findpts(ih_intp,
-     &               iwk(1,1),1,
-     &               iwk(1,3),1,
-     &               iwk(1,2),1,
-     &               rwk(1,2),ndim,
-     &               rwk(1,1),1,
-     &               xp,1,
-     &               yp,1,
-     &               zp,1,n)
+        call fgslib_findpts(ih_intp,
+     &                      iwk(1,1),1,
+     &                      iwk(1,3),1,
+     &                      iwk(1,2),1,
+     &                      rwk(1,2),ndim,
+     &                      rwk(1,1),1,
+     &                      xp,1,
+     &                      yp,1,
+     &                      zp,1,n)
         do in=1,n
            ! check return code
            if(iwk(in,1).eq.1) then
@@ -115,12 +115,12 @@ c
            iout   = ifld
            is_out = nfld
          endif
-         call findpts_eval(ih_intp,fldout(iout),is_out,
-     &                     iwk(1,1),1,
-     &                     iwk(1,3),1,
-     &                     iwk(1,2),1,
-     &                     rwk(1,2),ndim,n,
-     &                     fldin(iin))
+         call fgslib_findpts_eval(ih_intp,fldout(iout),is_out,
+     &                            iwk(1,1),1,
+     &                            iwk(1,3),1,
+     &                            iwk(1,2),1,
+     &                            rwk(1,2),ndim,n,
+     &                            fldin(iin))
       enddo
 
       nn(1) = iglsum(n,1)
@@ -139,7 +139,7 @@ c-----------------------------------------------------------------------
       common /intp_h/ ih_intp
 
 
-      call findpts_free(ih_intp)
+      call fgslib_findpts_free(ih_intp)
 
       return
       end

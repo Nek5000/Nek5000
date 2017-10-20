@@ -1690,6 +1690,8 @@ c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
 
       nactive = nrnk - noutflow
 
+c      ifma2 = .false. ! force .map
+ 
       len = ltrunc(session,80)
       call chcopy(fname,session,80)
       if (ifma2) then

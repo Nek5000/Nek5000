@@ -75,13 +75,13 @@ void test(const struct comm *const comm)
   if(comm->id==0) for(i=0;i<gn;++i) printf("b[%u] = %g\n",i,xg[i]);
   for(i=0;i<4;++i) b[i]=xid[i]-bmean/x[i];
 
-  crs = crs_setup(4, xid, 16,Ai,Aj,A, 1, comm);
+  crs = crs_xxt_setup(4, xid, 16,Ai,Aj,A, 1, comm);
 
-  crs_solve(x,crs,b);
+  crs_xxt_solve(x,crs,b);
 
-  crs_stats(crs);
+  crs_xxt_stats(crs);
 
-  crs_free(crs);
+  crs_xxt_free(crs);
 
   if(comm->id==0) for(i=0;i<4;++i) xg[xid[i]-1]=x[i];
   gs(comm->id?x:xg,gs_double,gs_add, 0, gsh, 0);
