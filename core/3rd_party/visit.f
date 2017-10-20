@@ -734,3 +734,15 @@ c---------------------------------------------------------------------
       visitgetdomainnesting = VISIT_INVALID_HANDLE
       end
 
+c---------------------------------------------------------------------
+c     visitgetmixedvariable
+c     This is needed to run with newer version of Visit (2.12.0 tested).
+c     TODO: The comment should be changed
+c---------------------------------------------------------------------
+      integer function visitgetmixedvariable(domain, name, lname)
+      implicit none
+      character*8 name
+      integer     domain, lname
+      include "visitfortransimV2interface.inc"
+      visitgetmixedvariable = VISIT_ERROR
+      end
