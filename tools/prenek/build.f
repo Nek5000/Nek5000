@@ -1174,7 +1174,11 @@ c-----------------------------------------------------------------------
          endif
          write(fname,'(A4,A3)') 'tmp.',ntsave
       else
-         call prs('input name of new .rea file$')
+         if (ifconj_merge) then
+            call prs('Enter name of the solid session$')
+         else
+            call prs('input name of new .rea file$')
+         endif
          call res  (fname,70)
       endif
 
