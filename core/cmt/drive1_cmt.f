@@ -31,7 +31,11 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then
          call cmt_ics
-         time_cmt=0.0 !time !0.0 ! until we can get settime to behave
+         if (ifrestart) then
+            time_cmt=time
+         else
+            time_cmt=0.0 !time !0.0 ! until we can get settime to behave
+         endif
          call cmt_flow_ics
          call init_cmt_timers
          call userchk ! need more ifdefs
@@ -288,6 +292,8 @@ C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
             call copy(U(1,1,1,5,e),t(1,1,1,e,1),nxyz1) 
             call copy(U(1,1,1,1,e),pr(1,1,1,e),nxyz1) 
          enddo
+         call copy(tlag(1,1,1,1,1,2),t(1,1,1,1,2),nxyz1*nelt) ! s_{n-1}
+         call copy(tlag(1,1,1,1,2,1),t(1,1,1,1,3),nxyz1*nelt) ! s_n
       endif
       call rzero(res1,n)
 !     call copy(res2,t(1,1,1,1,5),n) ! art visc hardcoding. old entropy resid
