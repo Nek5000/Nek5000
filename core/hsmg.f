@@ -349,7 +349,7 @@ c----------------------------------------------------------------------
       if (ifsync) call nekgsync()
       etime1=dnekclock()
 
-      call gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
+      call fgslib_gs_op(mg_gsh_handle(l,mg_fld),u,1,1,0)
       tdadd =tdadd + dnekclock()-etime1
 
 
@@ -364,7 +364,7 @@ c----------------------------------------------------------------------
 
       if (ifsync) call nekgsync()
 
-      call gs_op(mg_gsh_handle(l,mg_fld),u,1,2,0)
+      call fgslib_gs_op(mg_gsh_handle(l,mg_fld),u,1,2,0)
       return
       end
 c----------------------------------------------------------------------
@@ -376,7 +376,7 @@ c----------------------------------------------------------------------
       if (ifsync) call nekgsync()
       etime1=dnekclock()
 
-      call gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
+      call fgslib_gs_op(mg_gsh_schwarz_handle(l,mg_fld),u,1,1,0)
       tdadd =tdadd + dnekclock()-etime1
 
       return
@@ -1364,7 +1364,7 @@ c
       etime1=dnekclock()
 
 
-      call crs_solve(xxth(ifield),e,r)
+      call fgslib_crs_solve(xxth(ifield),e,r)
 
       tcrsl=tcrsl+dnekclock()-etime1
 

@@ -62,8 +62,8 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('U-Press ', column=-5)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=104., label='U-Press')
+        u_press = self.get_value_from_log('U-PRES ', column=-5)
+        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
 
         # solver_time = self.get_value_from_log('total solver time', column=-2)
         # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=4, label='total solver time')
@@ -77,8 +77,8 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('U-Press ', column=-5)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=104., label='U-Press')
+        u_press = self.get_value_from_log('U-PRES ', column=-5)
+        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
 
         self.assertDelayedFailures()
 
@@ -729,7 +729,7 @@ class Ethier(NekTestCase):
         cls = self.__class__
         rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
         with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = amg', l, flags=re.I) for l in f]
+            lines = [sub(r'.*preconditioner.*', 'preconditioner = semg_amg', l, flags=re.I) for l in f]
         with open(rea_path, 'w') as f:
             f.writelines(lines)
 
@@ -1171,6 +1171,82 @@ class LinCav_Adj(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
+
+# ####################################################################
+# #  double_shear: Testing relaxation-term filtering.
+# ####################################################################
+
+class DoubleShear(NekTestCase):
+    example_subdir  = 'double_shear'
+    case_name        = 'double_shear'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '6',
+            lxd       = '9',
+            lx2       = 'lx1-2',
+            lelg      = '500',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genbox()
+        self.mvn('box', self.__class__.case_name)
+        self.run_genmap()
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+        self.size_params['lx2']='lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        en = self.get_value_from_log('L2 norm: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=0.86147612200488166, delta=1e-8, label='Energy')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2']='lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        en = self.get_value_from_log('L2 norm: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=0.86147612200488166, delta=1e-8, label='Energy')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_serial
+    def test_PnPn2_Serial(self):
+        self.size_params['lx2']='lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        en = self.get_value_from_log('L2 norm: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=0.85973996057622892, delta=1e-8, label='Energy')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2']='lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        en = self.get_value_from_log('L2 norm: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=0.85973996057622892, delta=1e-8, label='Energy')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+#
         
 ###############################################################
 if __name__ == '__main__':
@@ -1207,7 +1283,8 @@ if __name__ == '__main__':
                LowMachTest, 
                MvCylCvode, 
                VarVis, 
-               CmtInviscidVortex
+               CmtInviscidVortex,
+               DoubleShear   
                ) 
 
     suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(t) for t in testList])

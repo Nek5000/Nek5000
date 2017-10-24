@@ -24,7 +24,7 @@ c     an ascii rea file for just the parameters
  
       character*80 sstring
 
-      parameter(nelm=1000000)
+      parameter(nelm=1 000 000)
       real*8 x(8),y(8),z(8)
       real*8 bc(5,6,nelm)
       integer id, jd, wdsizi
@@ -44,14 +44,14 @@ c     for workstation:
       in = 5
  
 c     Get file name
-      write(6,*) 'Input old (source) file name:'      
+      write(6,*) 'Input old .rea and .re2 (source) file name:'      
       call blank(fin,80)
       read(in,80) fin
       len = ltrunc(fin,80)
    80 format(a80)
  
 c     Get file name
-      write(6,*) 'Input new (output) file name:'      
+      write(6,*) 'Input new .rea (output) file name:'      
       call blank(fout,80)
       read(in,80) fout
       lou = ltrunc(fout,80)

@@ -37,7 +37,7 @@ def config_makenek(opts, infile, outfile):
              stat.S_IWUSR)
 
 
-def config_maketools(infile, outfile, f77=None, cc=None, bigmem=None):
+def config_maketools(infile, outfile, f77=None, cc=None):
     with open(infile, 'r') as f:
         lines = f.readlines()
 
@@ -46,9 +46,6 @@ def config_maketools(infile, outfile, f77=None, cc=None, bigmem=None):
                  for l in lines]
     if cc:
         lines = [re.sub(r'^CC=\"+.+?\"+', r'CC="{0}"'.format(cc), l)
-                 for l in lines]
-    if bigmem:
-        lines = [re.sub(r'BIGMEM=\"+.+?\"+', r'BIGMEM="{0}"'.format(bigmem), l)
                  for l in lines]
 
     with open(outfile, 'w') as f:

@@ -47,10 +47,8 @@ c
       real uf(1),vf(1)
       common /scrpre/ uc(lcr*lelt),w(2*lx1*ly1*lz1)
 
-
-
       call map_f_to_c_l2_bilin(uf,vf,w)
-      call crs_solve(xxth(ifield),uc,uf)
+      call fgslib_crs_solve(xxth(ifield),uc,uf)
       call map_c_to_f_l2_bilin(uf,uc,w)
 
       return
@@ -171,10 +169,10 @@ c     ifield=1			!c? avo: set in set_overlap through 'TSTEP'?
 
 c     Set global index of dirichlet nodes to zero; xxt will ignore them
 
-      call gs_setup(gs_handle,se_to_gcrs,ntot,nekcomm,mp)
-      call gs_op   (gs_handle,mask,1,2,0)  !  "*"
-      call gs_op   (gs_handle,cmlt,1,1,0)  !  "+"
-      call gs_free (gs_handle)
+      call fgslib_gs_setup(gs_handle,se_to_gcrs,ntot,nekcomm,mp)
+      call fgslib_gs_op   (gs_handle,mask,1,2,0)  !  "*"
+      call fgslib_gs_op   (gs_handle,cmlt,1,1,0)  !  "+"
+      call fgslib_gs_free (gs_handle)
       call set_jl_crs_mask(ntot,mask,se_to_gcrs)
 
       call invcol1(cmlt,ntot)
@@ -208,9 +206,9 @@ c      endif
 !     if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
 !    $ 'Problem size requires AMG solver$',1)
 
-      call crs_setup(xxth(ifield),imode,nekcomm,mp, ntot,se_to_gcrs,
-     $               nz,ia,ja,a, null_space)
-c      call crs_stats(xxth(ifield))
+      call fgslib_crs_setup(xxth(ifield),imode,nekcomm,mp,ntot,
+     $                      se_to_gcrs,nz,ia,ja,a, null_space)
+c      call fgslib_crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then
@@ -1363,7 +1361,7 @@ c
 #ifdef TIMER
       etime1=dnekclock()
 #endif
-      call crs_solve(xxth(ifield),uc,vc)
+      call fgslib_crs_solve(xxth(ifield),uc,vc)
 #ifdef TIMER
       tcrsl=tcrsl+dnekclock()-etime1
 #endif
@@ -1709,7 +1707,7 @@ c
 
       ni= n
       ky=1  ! Assumes crystal_new already called
-      call crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
+      call fgslib_crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
 
       nimx = iglmax(ni,1)
       if (ni.gt.nmax)   write(6,*) ni,nmax,n,'cr_xfer problem, A'
@@ -1730,7 +1728,7 @@ c
          tuple(3,i) = ind(i) + nu_prior  ! global ranking
       enddo
 
-      call crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
+      call fgslib_crystal_ituple_transfer(cr_h, tuple,m,ni,nmax, ky)
 
       nk = 1  ! restore to original order, local rank: 2; global: 3
       ky = 2

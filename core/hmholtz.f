@@ -18,22 +18,21 @@ c=======================================================================
 
       tol = abs(tli)
 
-      if (icalld.eq.0) thmhz=0.0
-
       iffdm = .false.
-c     iffdm = .true.
       if (ifsplit) iffdm = .true.
-
       if (icalld.eq.0.and.iffdm) call set_fdm_prec_h1A
+      icalld = icalld+1
 
-      icalld=icalld+1
-      nhmhz=icalld
-      etime1=dnekclock()
+#ifdef TIMER
+      if (name.ne.'PRES') then
+        nhmhz = nhmhz + 1
+        etime1 = dnekclock()
+      endif
+#endif
 
       ntot = nx1*ny1*nz1*nelfld(ifield)
       if (imsh.eq.1) ntot = nx1*ny1*nz1*nelv
       if (imsh.eq.2) ntot = nx1*ny1*nz1*nelt
-
 
 C     Determine which field is being computed for FDM based preconditioner bc's
 c
@@ -62,8 +61,10 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
       if (imsh.eq.2) call cggo
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
+#ifdef TIMER
+      if (name.ne.'PRES') thmhz=thmhz+(dnekclock()-etime1)
+#endif
 
-      thmhz=thmhz+(dnekclock()-etime1)
       return
       END
 C
@@ -1789,7 +1790,7 @@ c-----------------------------------------------------------------------
          do i=1,n
             w(i,j) = u(i,j)
          enddo
-         call gs_op (gsh_loc,w(1,j),1,1,0)  ! 1 ==> +
+         call fgslib_gs_op (gsh_loc,w(1,j),1,1,0)  ! 1 ==> +
 
          do i=1,n
             u(i,j) = 2*u(i,j)-w(i,j)

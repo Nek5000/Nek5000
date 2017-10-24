@@ -30,7 +30,7 @@ c
       call blank(cbc,lcbc)
 
 #ifndef NOMPIIO
-      call crystal_setup(cr_re2,nekcomm,np)
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
       call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
@@ -41,7 +41,7 @@ c
          call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
-      call crystal_free  (cr_re2)
+      call fgslib_crystal_free(cr_re2)
       call byte_close_mpi(fh_re2,ierr)
 #else
       call byte_open(re2fle,ierr)
@@ -113,7 +113,8 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n   = nr
       key = 1 
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
+     &                                   key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
@@ -213,7 +214,8 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
+     &                                   key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
@@ -319,7 +321,8 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
-      call crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,key)
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
+     &                                   key)
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100

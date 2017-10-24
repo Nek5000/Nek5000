@@ -107,10 +107,10 @@ c
       nhash = nxs*nys*nzs 
       nmax  = 256
 
-      call findpts_setup(inth_gfldr,nekcomm,np,ndim,
-     &                   xm1s,ym1s,zm1s,nxs,nys,nzs,
-     &                   nels,nxf,nyf,nzf,bb_t,
-     &                   nhash,nhash,nmax,tol)
+      call fgslib_findpts_setup(inth_gfldr,nekcomm,np,ndim,
+     &                          xm1s,ym1s,zm1s,nxs,nys,nzs,
+     &                          nels,nxf,nyf,nzf,bb_t,
+     &                          nhash,nhash,nmax,tol)
 
       ! read source fields and interpolate
       if(ifgetur .and. ifflow) then
@@ -137,7 +137,7 @@ c
       if_full_pres = if_full_pres_tmp
 
       call byte_close_mpi(fldh_gfldr,ierr)
-      call findpts_free(inth_gfldr)
+      call fgslib_findpts_free(inth_gfldr)
 
       etime_t = dnekclock_sync() - etime_t
       if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
@@ -258,6 +258,7 @@ c-----------------------------------------------------------------------
       subroutine gfldr_intp(fieldout,fieldin,iffpts)
 
       include 'SIZE'
+      include 'RESTART'
       include 'GEOM'
       include 'GFLDR'
 
@@ -270,38 +271,44 @@ c-----------------------------------------------------------------------
       nfail = 0
       ntot  = nx1*ny1*nz1*nelt
 
+      toldist = 5e-6
+      if(wdsizr.eq.8) toldist = 5e-14
+
       if(iffpts) then ! locate points (iel,iproc,r,s,t)
 
-        call findpts(inth_gfldr,
-     &               rcode,1,
-     &               proc,1,
-     &               elid,1,
-     &               rst,ndim,
-     &               dist,1,
-     &               xm1,1,
-     &               ym1,1,
-     &               zm1,1,ntot)
+        call fgslib_findpts(inth_gfldr,
+     &                      rcode,1,
+     &                      proc,1,
+     &                      elid,1,
+     &                      rst,ndim,
+     &                      dist,1,
+     &                      xm1,1,
+     &                      ym1,1,
+     &                      zm1,1,ntot)
 
         do i=1,ntot
-           if(rcode(i).eq.1 .and. dist(i).gt.10*tol) nfail = nfail + 1
+           if(rcode(i).eq.1 .and. sqrt(dist(i)).gt.toldist)
+     &       nfail = nfail + 1
            if(rcode(i).eq.2) nfail = nfail + 1
         enddo
 
         nfail_sum = i8glsum(nfail,1)
-        if(nio.eq.0 .and. nfail_sum.gt.0) write(6,*) 
-     &   ' WARNING: Unable to find all mesh points in source fld ',
-     &   nfail_sum
+        if(nfail_sum.gt.0) then
+          if(nio.eq.0) write(6,*)
+     &      ' WARNING: Unable to find all mesh points in source fld ',
+     &      nfail_sum
+        endif
 
       endif
 
       ! evaluate inut field at given points
-      call findpts_eval(inth_gfldr,
-     &                  fieldout,1,
-     &                  rcode,1,
-     &                  proc,1,
-     &                  elid,1,
-     &                  rst,ndim,ntot,
-     &                  fieldin)
+      call fgslib_findpts_eval(inth_gfldr,
+     &                         fieldout,1,
+     &                         rcode,1,
+     &                         proc,1,
+     &                         elid,1,
+     &                         rst,ndim,ntot,
+     &                         fieldin)
 
       return
       end

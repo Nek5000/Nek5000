@@ -17,6 +17,9 @@
 * Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 * Optional new user friendly `SIZE` file format (see SIZE.template)
 * Refactored `NEKNEK`
+* Added high-pass filter relaxation (alternative to our existing explicit filter)
+* Added parallel readers for .re2 and AMG .dat files
+* Introduced new binary map (.ma2) format
 
 ## Backwards-Incompatible Changes 
 
@@ -28,7 +31,8 @@
 * Replaced `hpts.in/hpts.out` by `<casename>.his` 
 * Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if they don't exist
-* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=amg in PRESSURE section) 
+* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=semg_amg in PRESSURE section) 
+* Renamed preconditioner value in .par from `amg` to `semg_amg` 
 
 ## Bug Fixes and Other Changes
 

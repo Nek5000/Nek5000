@@ -44,25 +44,25 @@ void tensor_mtxv(double *y, uint ny, const double *A, const double *x, uint nx);
 void tensor_mxm(double *C, uint nc,
                 const double *A, uint na, const double *B, uint nb);
 #  else
-#    define nek_mxm FORTRAN_UNPREFIXED(mxm,MXM)
+#    define mxm FORTRAN_NAME(mxm,MXM)
 /* C (na x nc) = A (na x nb) * B (nb x nc); all column-major */
-void nek_mxm(const double *A, const uint *na,
-             const double *B, const uint *nb,
-             double *C, const uint *nc);
+void mxm(const double *A, const uint *na,
+         const double *B, const uint *nb,
+         double *C, const uint *nc);
 /* C (nc x nb) = A (nc x na) * B (na x nb); all column-major */
 static void tensor_mxm(double *C, uint nc,
                        const double *A, uint na, const double *B, uint nb)
-{ nek_mxm(A,&nc,B,&na,C,&nb); }
+{ mxm(A,&nc,B,&na,C,&nb); }
 
 /* y = A x */
 static void tensor_mxv(double *y, uint ny,
                        const double *A, const double *x, uint nx)
-{ uint one=1; nek_mxm(A,&ny,x,&nx,y,&one); }
+{ uint one=1; mxm(A,&ny,x,&nx,y,&one); }
 
 /* y = A^T x */
 static void tensor_mtxv(double *y, uint ny,
                         const double *A, const double *x, uint nx)
-{ uint one=1; nek_mxm(x,&one,A,&nx,y,&ny); }
+{ uint one=1; mxm(x,&one,A,&nx,y,&ny); }
 
 #  endif
 #endif

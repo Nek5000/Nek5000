@@ -23,8 +23,14 @@
 #define crs_free  PREFIXED_NAME(crs_amg_free )
 
 #ifndef AMG_BLOCK_ROWS
-#  define AMG_BLOCK_ROWS 1200
+#  define AMG_BLOCK_ROWS 2400
 #endif
+
+#ifndef AMG_MAX_ROWS
+#  define AMG_MAX_ROWS 12000 
+#endif
+
+#include "amg_io.h"
 
 static double get_time(void)
 {
@@ -445,6 +451,12 @@ static void read_data(
   struct crystal *const cr,
   const ulong *uid, const uint uid_n);
 
+static void read_data_mpiio(
+  struct crs_data *const data,
+  struct array *ids, struct array mats[3],
+  struct crystal *const cr,
+  const ulong *uid, const uint uid_n);
+
 static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
 {
   struct crystal cr;
@@ -460,7 +472,11 @@ static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
   sarray_permute(ulong,uid.ptr   ,uid.n, cr.data.ptr, &temp_long);
   sarray_permute(uint ,data->umap,uid.n, cr.data.ptr, &max_e);
 
+#ifdef USEMPIIO
+  read_data_mpiio(data, &ids, mat, &cr, uid.ptr,uid.n);
+#else
   read_data(data, &ids, mat, &cr, uid.ptr,uid.n);
+#endif
   
   /* we should have data for every uid;
      if not, then the data is for a smaller problem than we were given */
@@ -682,124 +698,6 @@ static int find_id(
 
 /*==========================================================================
 
-  File I/O
-  
-  small wrappers to read/write files consisting of doubles
-  first double is 3.14159 --- a marker to test for endianness
-
-  ==========================================================================*/
-
-/* reverse the byte order of the given double
-   portable up to 129-byte doubles, standards conforming */
-#define N sizeof(double)
-static double byteswap(double x)
-{
-  char t, buf[N];
-  memcpy(buf,&x,N);
-#define SWAP1(i) if(N>2*(i)+1) t=buf[i],buf[i]=buf[N-1-(i)],buf[N-1-(i)]=t
-#define SWAP2(i) SWAP1(i); SWAP1((i)+0x01); SWAP1((i)+0x02); SWAP1((i)+0x03)
-#define SWAP3(i) SWAP2(i); SWAP2((i)+0x04); SWAP2((i)+0x08); SWAP2((i)+0x0c)
-#define SWAP4(i) SWAP3(i); SWAP3((i)+0x10); SWAP3((i)+0x20); SWAP3((i)+0x30)
-  SWAP4(0);
-#undef SWAP1
-#undef SWAP2
-#undef SWAP3
-#undef SWAP4
-  memcpy(&x,buf,N);
-  return x;
-}
-#undef N
-
-struct file {
-  FILE *fptr;
-  int swap;
-};
-
-static int rfread(void *ptr, size_t n, FILE *const fptr)
-{
-  size_t na; char *p=ptr;
-  while(n && (na=fread (p,1,n,fptr))) n-=na, p+=na;
-  return n!=0;
-}
-
-static int rfwrite(FILE *const fptr, const void *ptr, size_t n)
-{
-  size_t na; const char *p=ptr;
-  while(n && (na=fwrite(p,1,n,fptr))) n-=na, p+=na;
-  return n!=0;
-}
-
-
-static struct file dopen(const char *filename, const char mode,int *code)
-{
-  const double magic = 3.14159;
-  double t;
-  struct file f;
-  f.fptr = fopen(filename,mode=='r'?"r":"w");
-  f.swap = 0;
-  if(f.fptr==0) {
-   diagnostic("ERROR ",__FILE__,__LINE__,
-              "AMG: could not open %s for %s",
-              filename,mode=='r'?"reading":"writing");
-   *code=1;
-   return f;
-  }
-  if(mode=='r') {
-    if(rfread(&t,sizeof(double), f.fptr)){
-      diagnostic("ERROR ",__FILE__,__LINE__,
-                 "AMG: could not read from %s",filename);
-      *code=1;
-      return f;
-    }
-    if(fabs(t-magic)>0.000001) {
-      t=byteswap(t);
-      if(fabs(t-magic)>0.000001) {
-         diagnostic("ERROR ",__FILE__,__LINE__,
-                    "AMG: magic number for endian test not found in %s",
-                     filename);
-         *code=1;
-         return f;
-      }
-      f.swap = 1;
-    }
-  } else {
-    if(rfwrite(f.fptr, &magic,sizeof(double))){
-      fail("ERROR ",__FILE__,__LINE__,
-           "AMG: could not write to %s",filename);
-      *code=1;
-      return f;
-    }
-  }
-  return f;
-}
-
-static void dread(double *p, size_t n, const struct file f,int *code)
-{
-  if(rfread(p,n*sizeof(double),f.fptr)) {
-     diagnostic("ERROR ",__FILE__,__LINE__,
-                "AMG: failed reading %u doubles from disk",(unsigned)n);
-     *code=1;
-     return;
-  }
-  if(f.swap) while(n) *p=byteswap(*p), ++p, --n;
-}
-
-static void dwrite(const struct file f, const double *p, size_t n,int *code)
-{
-  if(rfwrite(f.fptr, p,n*sizeof(double))) {
-     diagnostic("ERROR ",__FILE__,__LINE__,
-                "AMG: failed writing %u doubles to disk",(unsigned)n);
-     *code=1;
-  }
-}
-
-static void dclose(const struct file f)
-{
-  fclose(f.fptr);
-}
-
-/*==========================================================================
-
   Read amg.dat, amg_*.dat
   
   The function read_data is responsible for reading these files,
@@ -988,6 +886,177 @@ static void read_data(
   }
   find_id_free(&fid);
 }
+
+#ifdef USEMPIIO
+static void read_data_mpiio(struct crs_data *const data,
+                            struct array *ids, struct array mat[3],
+                            struct crystal *const cr,
+                            const ulong *uid, const uint uid_n)
+{
+  int code;
+  struct find_id_data fid;
+  const uint pid = data->comm.id;
+  struct array read_buffer=null_array;
+  struct array id_buffer = null_array, mat_buffer = null_array;
+  uint *row_lens=0, *id_proc=0, *id_perm=0;
+  struct array mat_proc = null_array;
+  ulong scan_in, scan_buf[2];
+  uint mat_size[3] = {0,0,0};
+  unsigned i,m;
+
+  ids->ptr = 0;
+  ids->n = 0;
+  ids->max = 0;
+  for(m = 0; m < 3; ++m) {
+    mat[m].ptr = 0;
+    mat[m].n = 0;
+    mat[m].max = 0;
+  }
+  find_id_setup(&fid, uid,uid_n, cr);
+  code = 0;
+
+  struct file f = {0,0};
+  f = dopen("amg.dat", 'r', &code);
+  if(code != 0) die(1);
+  ulong tn = read_level_data(data, f);
+  dclose(f);
+
+  if(pid==0) 
+    printf("AMG: preading through rows ... ");
+
+  struct sfile fs = {0,0};
+  struct sfile fsm[3] = {{0,0},{0,0},{0,0}};
+  fs     = dopen_mpi("amg.dat"    ,'r', &data->comm, &code);
+  fsm[0] = dopen_mpi("amg_W.dat"  ,'r', &data->comm, &code);
+  fsm[1] = dopen_mpi("amg_AfP.dat",'r', &data->comm, &code);
+  fsm[2] = dopen_mpi("amg_Aff.dat",'r', &data->comm, &code);
+  code = comm_reduce_int(&data->comm, gs_max, &code, 1);
+  if(code != 0) 
+    die(1);
+
+  array_init(double, &read_buffer, 6*AMG_MAX_ROWS);
+  row_lens = tmalloc(uint, 5*AMG_MAX_ROWS);
+  id_proc = row_lens + 3*AMG_MAX_ROWS;
+  id_perm = id_proc + AMG_MAX_ROWS;
+  array_reserve(struct id_data, &id_buffer, AMG_MAX_ROWS);
+
+  /* assign rows to proc */
+  unsigned nr = tn/data->comm.np;
+  for(i = 0; i < tn%data->comm.np;++i)
+    if(i == pid) nr++; 
+
+  if(nr>AMG_MAX_ROWS) {
+    if(pid==0)
+      fail(1,__FILE__,__LINE__,"AMG: AMG_MAX_ROWS too small!");
+    die(1);
+  }
+
+  /* read id data */
+  ulong nr_off[2];
+  scan_in = (ulong)nr; 
+  comm_scan(nr_off, &data->comm, gs_long, gs_add, &scan_in, 1, scan_buf);
+  const ulong off0 = 1+1+1+2*(data->levels-1)+1; 
+  dview_mpi(off0+nr_off[0]*6, fs, &code);
+  code = comm_reduce_int(&data->comm, gs_max, &code,1);
+  if(code != 0) 
+    die(1);
+
+  double *b = read_buffer.ptr;
+  dread_mpi(b, nr*6, fs, &code);
+  code = comm_reduce_int(&data->comm, gs_max, &code,1);
+  if (code != 0) 
+    die(1);
+
+  struct id_data *idp = id_buffer.ptr;
+  for (i = 0; i < nr; ++i) {
+    idp[i].id = *b++;
+    idp[i].level = (uint)(*b++) - 1;
+    mat_size[0] += row_lens[3*i+0] = *b++; /* W   row length */
+    mat_size[1] += row_lens[3*i+1] = *b++; /* AfP row length */
+    mat_size[2] += row_lens[3*i+2] = *b++; /* Aff row length */
+    idp[i].D = *b++;
+  }
+  id_buffer.n = nr;
+
+  /* sort id_buffer, remember how to undo */
+  sarray_sort(struct id_data,idp,nr, id,1, &cr->data);
+  sarray_perm_invert(id_perm, cr->data.ptr, nr);
+  if (find_id(id_proc,sizeof(uint), &fid,
+      (const ulong*)((const char*)id_buffer.ptr+offsetof(struct id_data,id)),
+      sizeof(struct id_data), id_buffer.n))
+    code = 1;
+  if (comm_reduce_int(&data->comm, gs_max, &code, 1)) {
+    if (pid==0)
+      fail(1,__FILE__,__LINE__,"AMG: data has more rows than given problem");
+    die(1);
+  }
+
+  /* undo sorting of id_buffer */
+  buffer_reserve(&cr->data,sizeof(struct id_data)+sizeof(uint));
+  sarray_permute(struct id_data,id_buffer.ptr,nr, id_perm, cr->data.ptr);
+  sarray_permute(uint, id_proc, nr, id_perm, cr->data.ptr);
+
+  /* read matrix data */
+  for (m = 0; m < 3; ++m) {
+    ulong mat_size_off[2];
+    scan_in = (ulong)mat_size[m];
+    comm_scan(mat_size_off, &data->comm, gs_long, gs_add, &scan_in, 1, scan_buf);
+    dview_mpi(1+2*mat_size_off[0], fsm[m], &code);
+    code = comm_reduce_int(&data->comm, gs_max, &code, 1);
+    if (code != 0)
+      die(1);
+
+    double *b = array_reserve(double, &read_buffer, 2*mat_size[m]);
+    dread_mpi(b, 2*mat_size[m], fsm[m], &code);
+    code = comm_reduce_int(&data->comm, gs_max, &code, 1);
+    if (code != 0)
+      die(1);
+
+    const struct id_data *const idp = id_buffer.ptr;
+    struct gnz *p = array_reserve(struct gnz, &mat_buffer, mat_size[m]);
+    uint *proc = array_reserve(uint, &mat_proc, mat_size[m]);
+    unsigned i; 
+    for (i = 0; i < nr; ++i) {
+      const ulong i_id = idp[i].id; 
+      const uint i_p = id_proc[i];
+      unsigned j,rl; 
+      for (rl = row_lens[3*i+m], j=0; j < rl; ++j) {
+        p->i = i_id;
+        p->j = *b++;
+        p->a = *b++;
+        *proc++ = i_p;
+        ++p;
+      }
+    }
+    mat_buffer.n = mat_size[m];
+    sarray_transfer_ext(struct gnz, &mat_buffer, mat_proc.ptr, sizeof(uint), cr);
+    array_cat(struct gnz, &mat[m], mat_buffer.ptr, mat_buffer.n);
+    sarray_sort(struct gnz, (struct gnz*)mat[m].ptr, mat[m].n, i, 1, &cr->data);
+  }
+
+  /* send id_data to owner */
+  sarray_transfer_ext(struct id_data, &id_buffer, id_proc, sizeof(uint), cr);
+  array_cat(struct id_data,ids, id_buffer.ptr, id_buffer.n);
+  sarray_sort(struct id_data, ids->ptr, ids->n, id, 1, &cr->data);
+
+  /* clean-up */
+  array_free(&id_buffer);
+  array_free(&mat_buffer);
+  array_free(&read_buffer);
+  free(row_lens);
+  array_free(&mat_proc);
+  dclose_mpi(fsm[2]);
+  dclose_mpi(fsm[1]);
+  dclose_mpi(fsm[0]);
+  dclose_mpi(fs);
+  find_id_free(&fid);
+
+  if (pid == 0) 
+    printf("done\n");
+}
+#endif
+
+
 
 /*==========================================================================
 

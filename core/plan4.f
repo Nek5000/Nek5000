@@ -57,7 +57,7 @@ c
          ! split viscosity into explicit/implicit part
          if (ifexplvis) call split_vis
 
-         call lagvel
+         if (igeom.eq.2) call lagvel
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 

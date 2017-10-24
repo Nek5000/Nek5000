@@ -1523,15 +1523,14 @@ C----------------------------------------------------------------------
       include 'MVGEOM'
 
                                                 call makeuf
+      if (filterType.eq.2)                      call make_hpf
       if (ifnatc)                               call natconv
-c      if (ifexplvis.and.ifsplit)                call explstrs
       if (ifexplvis.and.ifsplit)                call makevis
       if (ifnav .and..not.ifchar)               call advab
       if (ifmvbd.and..not.ifchar)               call admeshv
       if (iftran)                               call makeabf
       if ((iftran.and..not.ifchar).or.
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
-c     if (ifnav.and.ifchar.and.(.not.ifmvbd))   call advchar
       if (ifnav.and.ifchar)                     call advchar
       if (ifmodel)                              call twallsh
 
@@ -1564,9 +1563,16 @@ C
       include 'SIZE'
       include 'PARALLEL'
       include 'NEKUSE'
+      include 'CTIMER'
+
       REAL F1 (LX1,LY1,LZ1,LELV)
       REAL F2 (LX1,LY1,LZ1,LELV)
       REAL F3 (LX1,LY1,LZ1,LELV)
+
+#ifdef TIMER
+      etime1=dnekclock()
+#endif
+
       CALL OPRZERO (F1,F2,F3)
       DO 100 IEL=1,NELV
          ielg = lglel(iel)
@@ -1579,6 +1585,11 @@ C
             F2(I,J,K,IEL) = FFY
             F3(I,J,K,IEL) = FFZ
  100  CONTINUE
+
+#ifdef TIMER
+      tusfq=tusfq+(dnekclock()-etime1)
+#endif
+
       return
       END
 C
