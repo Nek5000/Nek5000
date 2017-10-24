@@ -293,7 +293,6 @@ C        MODEL and CURVE know about it, too
             ifundo = .false.
          else
             call prs('ERROR: Already at the original mesh$')
-            write(*,*) '(build)itsave=',itsave
          endif
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
@@ -1162,7 +1161,6 @@ c-----------------------------------------------------------------------
 
       call blank(fname,70)
 
-      write(*,*) '(imp_mesh)itsave=',itsave
       if (ifundo) then
          itsave=itsave-1
          if (itsave.le.9) then
@@ -1181,8 +1179,6 @@ c-----------------------------------------------------------------------
          endif
          call res  (fname,70)
       endif
-
-      write(*,*) 'fname=',fname
 
       ifdisplace  = .false.
       iftranslate = .false.
