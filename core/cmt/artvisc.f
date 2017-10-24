@@ -75,13 +75,7 @@
 !        if (nio .eq. 0) write (6,*) 'max(s-<s>)=',maxdiff, meshh(1)
       endif
       call entropy_residual(tlag) ! fill res2
-
-!-----------------------------------------------------------------------
-! diagnostic
       call copy(res2(1,1,1,1,2),res2,ntot) ! raw residual in res2
-! diagnostic
-!-----------------------------------------------------------------------
-
       call wavevisc(t(1,1,1,1,3))
       call resvisc(res2) ! overwrite res2
       call evmsmooth(res2,t(1,1,1,1,3),.true.) ! endpoints=.false.
@@ -243,33 +237,25 @@ c-----------------------------------------------------------------------
 ! ensure continuity at faces. doing this before |abs| causes some cancellation that,
 ! so far, appears to beneficially reduce spikiness at faces.
 
-! default to wave viscosity (and smooth it instead) at first RK Stage
-      if (istep.le.1) then
-         call copy(residual,t(1,1,1,1,3),nxyz*nelt)
-      else
-         do e=1,nelt
-            do i=1,nxyz
-               residual(i,e)=residual(i,e)*meshh(e)**2
-            enddo
+      do e=1,nelt
+         do i=1,nxyz
+            residual(i,e)=residual(i,e)*meshh(e)**2
          enddo
-      endif
+      enddo
 
       call dsavg(residual) ! signed, can cancel at faces. Hope it does
 
-      if (istep.gt.1) then
-         do e=1,nelt
-            do i=1,nxyz
-               residual(i,e)=abs(residual(i,e))
-            enddo
+      do e=1,nelt
+         do i=1,nxyz
+            residual(i,e)=abs(residual(i,e))
          enddo
+      enddo
 
-         call cmult(residual,c_sub_e,nxyz*nelt)
+      call cmult(residual,c_sub_e,nxyz*nelt)
 
-         if (maxdiff .ne. 0) then
-!           const=1.0/maxdiff
-            const=1.0/50.0 ! better living through HARDCODING
-            call cmult(residual,const,nxyz*nelt)
-         endif
+      if (maxdiff .ne. 0) then
+         const=1.0/maxdiff
+         call cmult(residual,const,nxyz*nelt)
       endif
 
       return
@@ -406,7 +392,7 @@ c-----------------------------------------------------------------------
          enddo
       enddo
 
-!     call max_to_trilin(numax) ! doesn't work in 3D
+      call max_to_trilin(numax)
 
       return
       end
