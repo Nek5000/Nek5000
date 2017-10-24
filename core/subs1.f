@@ -2186,8 +2186,8 @@ c     stop
 
       imode = param(40)
 
-      if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
-     $ 'Problem size requires AMG solver$',1)
+!     if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
+!    $ 'Problem size requires AMG solver$',1)
 
       call fgslib_crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
      $                      nnz,ia,ja,a,null_space)
