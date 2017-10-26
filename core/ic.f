@@ -2319,17 +2319,28 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       include 'PARALLEL'
       include 'RESTART'
+      include 'TSTEP'
 
       character*132 hdr
       character*4 dummy
+      logical if_press_mesh
 
       p0thr = -1
+      if_press_mesh = .false.
 
       read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr, if_press_mesh
+
+      if (ierr.gt.0) then ! try again without pressure format flag
+        read(hdr,*,iostat=ierr) dummy
+     $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! 74+20=94
      $         ,  p0thr
+      endif
 
       if (ierr.gt.0) then ! try again without mean pressure
         read(hdr,*,err=99) dummy
@@ -2337,6 +2348,10 @@ c-----------------------------------------------------------------------
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
       endif
+
+c     set if_full_pres flag
+      if_full_pres = .false.
+      if (.not.ifsplit) if_full_pres = if_press_mesh
 
       ifgtim  = .true.  ! always get time
       ifgetxr = .false.

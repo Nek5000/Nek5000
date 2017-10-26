@@ -1856,6 +1856,7 @@ c-----------------------------------------------------------------------
 
       character*132 hdr
       integer*8 ioff
+      logical if_press_mesh
 
       call nekgsync()
       idum = 1
@@ -1913,11 +1914,15 @@ c-----------------------------------------------------------------------
             WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
          ENDIF
       ENDIF
+
+c     check pressure format
+      if_press_mesh = .false.
+      if (.not.ifsplit.and.if_full_pres) if_press_mesh = .true.
  
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
-     $            ,(rdcode1(i),i=1,10),p0th
+     $            ,(rdcode1(i),i=1,10),p0th,if_press_mesh
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7)
+     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1)
 
       ! if we want to switch the bytes for output
       ! switch it again because the hdr is in ASCII
