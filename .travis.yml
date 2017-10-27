@@ -39,6 +39,9 @@ env:
     # The Eddy_Neknek test methods include NEKENK in the PPLIST.  No need to specify as env vars here.
     - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
     - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    
+    - TEST_CASE=IO_Test::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+
 
 before_install: 
   - export ROOT_DIR=`pwd`

@@ -283,8 +283,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       endif
       call nekgsync()      
 
-      p66 = abs(param(66))
-      if (p66.eq.6) then
+      p66 = param(66)
+      if (abs(p66).eq.6) then
          call mfo_outfld(prefix)
          call nekgsync                ! avoid race condition w/ outfld
          return
@@ -870,9 +870,7 @@ c-----------------------------------------------------------------------
       offs0 = iHeaderSize + 4 + isize*nelgt
 
       ierr=0
-      if (nid.eq.pid0) then
-         call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
-      endif
+      call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
       call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_

@@ -151,6 +151,13 @@ class NekTestCase(unittest.TestCase):
             self._delayed_failures.append(msg)
         print(msg)
 
+    def assertIsNullDelayed(self, test_val, label):
+        if test_val:
+            msg = 'FAILURE: Found phrase "{0}" in logfile.'.format(label)
+            self._delayed_failures.append(msg)
+        else:
+            msg = 'SUCCESS: Did not find phrase "{0}" in logfile'.format(label)
+        print(msg)
 
     def assertDelayedFailures(self):
         if self._delayed_failures:

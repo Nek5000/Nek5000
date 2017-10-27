@@ -1176,7 +1176,7 @@ C        Parse field specifications.
                ifgtps(i)=.true.
             endif
   300    continue
-  301    format('P',i1)
+  301    format('S',i1)
 
 C        Get number of dumps from remainder of user supplied line.
          if (ifgtrl(tdumps,rsopt)) ndumps=int(tdumps)
@@ -2112,7 +2112,6 @@ c     endif
       endif
 
       nxyzr = nxr*nyr*nzr
-      nxyzv = nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2125,11 +2124,7 @@ c     endif
             ei = er(e)
          endif
          if (if_byte_sw) then
-            if(wdsizr.eq.8) then
-              call byte_reverse8(wk(l),nxyzv*2,ierr)
-            else
-              call byte_reverse(wk(l),nxyzv,ierr)
-            endif
+            call byte_reverse(wk(l),nxyzw,ierr)
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2255,7 +2250,6 @@ c     endif
       endif
 
       nxyzr = nxr*nyr*nzr
-      nxyzv = ndim*nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2268,11 +2262,7 @@ c     endif
             ei = er(e) 
          endif
          if (if_byte_sw) then
-            if(wdsizr.eq.8) then
-               call byte_reverse8(wk(l),nxyzv*2,ierr)
-            else
-               call byte_reverse(wk(l),nxyzv,ierr)
-            endif
+            call byte_reverse(wk(l),nxyzw*ndim,ierr)
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2715,6 +2705,10 @@ c-----------------------------------------------------------------------
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
            call byte_read (er,nelr,ierr)     ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
+        else
+           pid0r = 0
+           pid1r = 0
+           fid0r = 0
         endif
 
       else
