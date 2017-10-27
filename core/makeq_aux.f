@@ -11,6 +11,8 @@
       call whatfld (ifturb)
       if (ifturb) call maketq ! zero bq
       if (.not.ifturb .and. if_conv_std)  call makeuq !zero bq
+
+      if(filterType.eq.2) call make_hpf
     
       return
       end

@@ -17,7 +17,7 @@ c     Global-to-local mapping for gs
 
 c     Initialize gather-scatter code
       ntot      = nx*ny*nz*nel
-      call gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
+      call fgslib_gs_setup(gs_handle,glo_num,ntot,nekcomm,mp)
 
 c     call gs_chkr(glo_num)
 
@@ -74,7 +74,7 @@ c                 ~ ~T
 c     This is the Q Q  part
 c
       if (gsh_fld(ifldt).ge.0) then
-         call gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
+         call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
       endif
 c
 c
@@ -135,25 +135,25 @@ c    $   write(6,*) istep,' dsop: ',op,ifield,ifldt,gsh_fld(ifldt)
 
       if(ifsync) call nekgsync()
 
-      if (op.eq.'+  ') call gs_op(gsh_fld(ifldt),u,1,1,0)
-      if (op.eq.'sum') call gs_op(gsh_fld(ifldt),u,1,1,0)
-      if (op.eq.'SUM') call gs_op(gsh_fld(ifldt),u,1,1,0)
+      if (op.eq.'+  ') call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)
+      if (op.eq.'sum') call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)
+      if (op.eq.'SUM') call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)
 
-      if (op.eq.'*  ') call gs_op(gsh_fld(ifldt),u,1,2,0)
-      if (op.eq.'mul') call gs_op(gsh_fld(ifldt),u,1,2,0)
-      if (op.eq.'MUL') call gs_op(gsh_fld(ifldt),u,1,2,0)
+      if (op.eq.'*  ') call fgslib_gs_op(gsh_fld(ifldt),u,1,2,0)
+      if (op.eq.'mul') call fgslib_gs_op(gsh_fld(ifldt),u,1,2,0)
+      if (op.eq.'MUL') call fgslib_gs_op(gsh_fld(ifldt),u,1,2,0)
 
-      if (op.eq.'m  ') call gs_op(gsh_fld(ifldt),u,1,3,0)
-      if (op.eq.'min') call gs_op(gsh_fld(ifldt),u,1,3,0)
-      if (op.eq.'mna') call gs_op(gsh_fld(ifldt),u,1,3,0)
-      if (op.eq.'MIN') call gs_op(gsh_fld(ifldt),u,1,3,0)
-      if (op.eq.'MNA') call gs_op(gsh_fld(ifldt),u,1,3,0)
+      if (op.eq.'m  ') call fgslib_gs_op(gsh_fld(ifldt),u,1,3,0)
+      if (op.eq.'min') call fgslib_gs_op(gsh_fld(ifldt),u,1,3,0)
+      if (op.eq.'mna') call fgslib_gs_op(gsh_fld(ifldt),u,1,3,0)
+      if (op.eq.'MIN') call fgslib_gs_op(gsh_fld(ifldt),u,1,3,0)
+      if (op.eq.'MNA') call fgslib_gs_op(gsh_fld(ifldt),u,1,3,0)
 
-      if (op.eq.'M  ') call gs_op(gsh_fld(ifldt),u,1,4,0)
-      if (op.eq.'max') call gs_op(gsh_fld(ifldt),u,1,4,0)
-      if (op.eq.'mxa') call gs_op(gsh_fld(ifldt),u,1,4,0)
-      if (op.eq.'MAX') call gs_op(gsh_fld(ifldt),u,1,4,0)
-      if (op.eq.'MXA') call gs_op(gsh_fld(ifldt),u,1,4,0)
+      if (op.eq.'M  ') call fgslib_gs_op(gsh_fld(ifldt),u,1,4,0)
+      if (op.eq.'max') call fgslib_gs_op(gsh_fld(ifldt),u,1,4,0)
+      if (op.eq.'mxa') call fgslib_gs_op(gsh_fld(ifldt),u,1,4,0)
+      if (op.eq.'MAX') call fgslib_gs_op(gsh_fld(ifldt),u,1,4,0)
+      if (op.eq.'MXA') call fgslib_gs_op(gsh_fld(ifldt),u,1,4,0)
 c
       return
       end
@@ -193,7 +193,7 @@ c
 c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
-      call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
+      call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
 #ifdef TIMER
       timee=(dnekclock()-etime1)
@@ -235,21 +235,21 @@ c     write(6,*) 'opdsop: ',op,ifldt,ifield
       if(ifsync) call nekgsync()
 
       if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
-     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
 
 
       if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL')
-     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,2,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,2,0)
 
 
       if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
      $                .or. op.eq.'MIN' .or. op.eq.'MNA')
-     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,3,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,3,0)
 
 
       if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
      $                .or. op.eq.'MAX' .or. op.eq.'MXA')
-     $   call gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,4,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,4,0)
 
 
       return
@@ -272,7 +272,7 @@ c
       nvdss=icalld
       etime1=dnekclock()
 #endif
-      call gs_op_fields(gs_handle,u,stride,n,1,1,0)
+      call fgslib_gs_op_fields(gs_handle,u,stride,n,1,1,0)
 
 #ifdef TIMER
       timee=(dnekclock()-etime1)
@@ -604,7 +604,7 @@ c
 c                 ~ ~T
 c     This is the Q Q  part
 c
-      call gs_op(gsh_fld(ifldt),u,1,1,0) 
+      call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0) 
 c
 c 
 c     This is the J  part,  interpolating parent solution onto child
@@ -668,7 +668,7 @@ c
 c                 ~ ~T
 c     This is the Q Q  part
 c
-      call gs_op(gsh_fld(ifldt),u,1,1,0) 
+      call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0) 
       call col2  (u,mask,ntot)
 c
 c 
@@ -735,7 +735,7 @@ c
 c                 ~ ~T
 c     This is the Q Q  part
 c
-      call gs_op(gsh_fld(ifldt),u,1,1,0) 
+      call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0) 
       call col3  (u,mask,binv,ntot)
 c
 c 

@@ -257,6 +257,8 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
+         if (igeom.gt.2) call userchk_set_xfer
+
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
@@ -275,7 +277,7 @@ c-----------------------------------------------------------------------
 
          if (ifflow)          call fluid    (igeom)
          if (ifmvbd)          call meshv    (igeom)
-         if (igeom.eq.ngeom.and.param(103).gt.0)
+         if (igeom.eq.ngeom.and.filterType.eq.1)
      $                        call q_filter(param(103))
 
          enddo
@@ -309,8 +311,7 @@ c-----------------------------------------------------------------------
                if (ifflow)             call fluid         (igeom)
                if (ifmvbd)             call meshv         (igeom)
             endif
-
-            if (igeom.eq.ngeom.and.param(103).gt.0)
+            if (igeom.eq.ngeom.and.filterType.eq.1)
      $         call q_filter(param(103))
          enddo
       endif
@@ -327,7 +328,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
 
       if(instep.ne.0)  call runstat
-      if(xxth(1).gt.0) call crs_stats(xxth(1))
+      if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
 
    
       call in_situ_end()

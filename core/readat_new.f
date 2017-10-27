@@ -73,14 +73,18 @@ C
       param(95) = 5    ! turn on projection for pressure solve
       param(99) = 4    ! enable dealising
 
-      param(160) = 1    ! cvode use normal mode 
-      param(161) = 1    ! cvode use non-stoff integration 
-      param(162) = 0    ! cvode absolute tolerance
-      param(163) = -1   ! cvode realtive tolerance
-      param(164) = 100  ! cvode don't limit internal dt
-      param(165) = 1    ! cvode increment factor DQJ
-      param(166) = 0    ! cvode use default ratio linear/non-linear tolerances
-      param(167) = 0    ! cvode use no preconditioner
+      param(101) = 0   ! no additional modes
+      param(103) = 0   ! filter weight
+      filterType = 0   ! no filtering
+
+      param(160) = 1   ! cvode use normal mode 
+      param(161) = 1   ! cvode use non-stoff integration 
+      param(162) = 0   ! cvode absolute tolerance
+      param(163) = -1  ! cvode realtive tolerance
+      param(164) = 100 ! cvode don't limit internal dt
+      param(165) = 1   ! cvode increment factor DQJ
+      param(166) = 0   ! cvode use default ratio linear/non-linear tolerances
+      param(167) = 0   ! cvode use no preconditioner
 c
       iftmsh(0) = .false. 
       iftmsh(1) = .false. 
@@ -336,12 +340,20 @@ c set parameters
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
 
-      call finiparser_getBool(i_out,'general:filtering',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) then
-        call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
-        if(ifnd .eq. 1) param(103) = d_out 
-        call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-        if(ifnd .eq. 1) param(101) = int(d_out) 
+c     stabilization parameters
+      call finiparser_getString(c_out,'general:filtering',ifnd)
+      if (ifnd .eq. 1) then
+c        stabilization type: none, explicit or hpfrt    
+         call capit(c_out,132)
+         if (index(c_out,'EXPLICIT') .gt. 0) then
+            filterType = 1
+         else if (index(c_out,'HPFRT') .gt. 0) then
+            filterType = 2
+         endif
+         call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
+         if(ifnd .eq. 1 .and. filterType.gt.0) param(103) = d_out 
+         call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
+         if(ifnd .eq. 1.and. filterType.gt.0) param(101) = int(d_out) 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
@@ -567,7 +579,9 @@ C
 
       call bcast(param , 200*wdsize)
       call bcast(uparam, 20*wdsize)
+
       call bcast(atol ,  ldimt3*wdsize)
+      call bcast(filterType, wdsize)
 
       call bcast(ifchar , lsize)
       call bcast(iftran  , lsize)

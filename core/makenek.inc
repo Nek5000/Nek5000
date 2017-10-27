@@ -20,7 +20,7 @@ fi
 # first do some checks ...
 if [ "$1" == "-h" ]; then
   echo ""
-  echo "usage: makenek [.usr filename | clean | realclean] < -nocompile >"
+  echo "usage: makenek [.usr filename | clean] < -nocompile >"
   echo ""
   exit 1
 fi
@@ -38,20 +38,30 @@ if [ $# -eq 0 ]; then
    fi
 fi
 
-if [ "$mver" != "17.0.0" ]; then
+if [ "$mver" != "17.0.2" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1
 fi
 
-if [[ $1 = "clean" ]]; then
-  make clean
-  exit 0
+if [ ! "$SOURCE_ROOT_GSLIB" ]; then
+  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
+  export SOURCE_ROOT_GSLIB
 fi
 
-if [[ $1 = "realclean" ]]; then
-  make -C $SOURCE_ROOT_GSLIB clean
-  make clean
+if [[ $1 = "clean" ]]; then
+  while true; do
+    read -p "Clean all 3rd party code? [N]" yn
+    case $yn in
+      [Yy]* ) 
+        make -C $SOURCE_ROOT_GSLIB clean;
+        make clean;
+        break ;;
+      * ) 
+        make clean;
+        break ;;
+    esac
+  done
   rm -rf makefile
   exit 0
 fi
@@ -97,35 +107,17 @@ if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
   exit 1
 fi
 
-# initial clean-up
-rm -f nek5000 2>/dev/null
-rm -f ./obj/subuser.o        2>/dev/null
-
-# Check if the compiler adds an underscore to external functions
-UNDERSCORE=0
-cat > test_underscore.f << _ACEOF
-      subroutine underscore_test
-        call test
-      end
-_ACEOF
-$F77 -c test_underscore.f 2>&1 >/dev/null 
-if nm test_underscore.o | grep -q test_ ; then
-  UNDERSCORE=1
-fi
-\rm test_underscore.* 2>/dev/null
-
-
 # trying to figure which compiler the wrapper is using 
 F77ok=0
 
-F77comp_=`$F77 -showme 2>/dev/null 1>.tmp || true`
+F77comp_=`$F77 -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
 F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
 if [ -f "`which $F77comp 2>/dev/null`" ]; then
   F77ok=1
 fi
 
 if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show | head -1 2>/dev/null 1>.tmp || true`
+  F77comp_=`$F77 -show 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
   F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
   if [ -f "`which $F77comp 2>/dev/null`" ]; then
     F77ok=1
@@ -175,6 +167,23 @@ case $F77comp in
       read;;
 esac
 
+# initial clean-up
+rm -f nek5000 2>/dev/null
+rm -f ./obj/subuser.o 2>/dev/null
+
+# Check if the compiler adds an underscore to external functions
+UNDERSCORE=0
+cat > test_underscore.f << _ACEOF
+      subroutine underscore_test
+        call test
+      end
+_ACEOF
+$F77comp -c test_underscore.f 2>&1 >/dev/null 
+if nm test_underscore.o | grep -q test_ ; then
+  UNDERSCORE=1
+fi
+\rm test_underscore.* 2>/dev/null
+
 # set preprocessor symbols
 if [ $MPI -eq 0 ]; then
   PPLIST="${PPLIST} NOMPIIO"
@@ -200,6 +209,7 @@ PPLIST="${PPLIST}"
 # add user defined preprocessor symbols
 CMT=0
 NEKNEK=0
+MPIIO=1
 for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
@@ -208,10 +218,23 @@ do
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
    fi
+   if [ "$i" == "NOMPIIO" ]; then
+     MPIIO=0
+   fi
 done
 
 if echo $PPLIST | grep -q 'CVODE' ; then 
-   CVODE=1 
+   CVODE=1
+   if [ ! "$LIBPATH_CVODE" ]; then
+     LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib 
+   fi
+   if [ $MPI -eq 1 ]; then
+     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
+     USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+   else
+     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
+     USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
+   fi
 else
    CVODE=0
 fi
@@ -225,6 +248,12 @@ BLAS="blas.o dsygv.o"
 if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
    BLAS=" "
 fi
+
+# gslib build options
+GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
+GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
+GSLIB_OPT+=" PREFIX=gslib_ FPREFIX=fgslib_"
+USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -lgs"
 
 # tweak makefile template 
 echo "generating makefile ..."
@@ -463,11 +492,15 @@ _ACEOF
 fi
 fi
 
+
+
 export NEK_WARN 
 export MPI
+export MPIO
 export FFLAGS
 export CFLAGS
 export UNDERSCORE
+export GSLIB_OPT
 
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0

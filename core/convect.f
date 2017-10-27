@@ -310,7 +310,7 @@ c
          endif
 
          call subcol3(du,bdwt,u,n)
-         call gs_op (gsl,du,1,1,0)  !  +
+         call fgslib_gs_op (gsl,du,1,1,0)  !  +
 
          call col2 (du,bmsk,n)     !  du = Binv * msk * du
 
@@ -1317,7 +1317,7 @@ c-----------------------------------------------------------------------
 
       call copy (bmnv,bm1,n)  ! Fill bmnv(1,1)
 
-      call gs_op(gsh_fld(1),bmnv,1,1,0)  ! 1 ==> +; gsh_fld(1) is velocity
+      call fgslib_gs_op(gsh_fld(1),bmnv,1,1,0)  ! 1 ==> +; gsh_fld(1) is velocity
 
       do i=1,n
          bmnv(i,1)=hmsk(i)/bmnv(i,1)
@@ -1398,7 +1398,7 @@ c     Global-to-local mapping for gs
       call iface_vert_int8 (glo_num_face,glo_num_vol,mz0,mz1,nelt) 
 
       nf = nx1*nz1*2*ndim*nelt !total number of points on faces
-      call gs_setup(dgh,glo_num_face,nf,nekcomm,np)
+      call fgslib_gs_setup(dgh,glo_num_face,nf,nekcomm,np)
 
       return
       end
@@ -1567,7 +1567,7 @@ c     Apply convecting field c(1,ndim) to scalar field u(1).
       enddo
       enddo
       
-      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
+      call fgslib_gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
       call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
                                     ! Should be combined with
       call add_face2full( du , uf)  ! <--- this stmt.
@@ -1784,7 +1784,7 @@ c     Apply convecting field c(1,ndim) to scalar field u(1).
       enddo
       enddo
 
-      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
+      call fgslib_gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +
 
       call col2 (uf,upwind_wgt,nf)  ! Inefficient, but ok for now.
                                     ! Should be combined with
@@ -2022,7 +2022,7 @@ c     Apply convecting field c(1,ndim) to scalar field u(1).
       enddo
       enddo
 
-      call gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +  :   uf <-- uf^- + uf^+
+      call fgslib_gs_op(dg_hndlx,uf,1,1,0)  ! 1 ==> +  :   uf <-- uf^- + uf^+
 
       do j=1,ndg_facex
          i=dg_face(j)

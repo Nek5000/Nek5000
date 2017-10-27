@@ -113,7 +113,7 @@ c----------------------------------------------------------------------
       cv_sigs     = param(165) 
       cv_delt     = param(166)
       cv_ipretype = param(167) ! 0: no, 1:left, 2: right
-      cv_maxl     = 20
+      cv_maxl     = 10         ! max dimension of Krylov subspace
       cv_iatol    = 2          ! 1: scalar 2: vector
 
       ! setup absolute tolerances
