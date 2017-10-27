@@ -619,7 +619,6 @@ C
 
       if (cont.eq.2) then
          itsave=itsave+1
-         write(*,*) '(wrtpar)itsave=',itsave
          filenm = 'tmp.          '
          if (itsave.le.9) then
             write(ntsave,'(A2,I1)') '00',itsave
