@@ -33,8 +33,6 @@ C
       CALL LFALSE (IFEPPM,NMXV)
       CALL LFALSE (IFQINP,NMXV)
 C
-      IF (IFMODEL) CALL SETSHL
-C
       IF (IFMVBD) THEN
          IFGEOM = .TRUE.
          IF ( IFFLOW .AND. .NOT.IFNAV )       IFWCNO          = .TRUE.
@@ -139,8 +137,6 @@ C
          WRITE (6,*) 'IFAXIS   =',IFAXIS
          WRITE (6,*) 'IFMVBD   =',IFMVBD
          WRITE (6,*) 'IFMELT   =',IFMELT
-         WRITE (6,*) 'IFMODEL  =',IFMODEL
-         WRITE (6,*) 'IFKEPS   =',IFKEPS
          WRITE (6,*) 'IFMOAB   =',IFMOAB
          WRITE (6,*) 'IFNEKNEK =',IFNEKNEK
          WRITE (6,*) 'IFSYNC   =',IFSYNC
@@ -468,10 +464,7 @@ C
 C
       ENDIF
 C
-C     Masks for passive scalars +
-C     k and e if k-e turbulence modem:
-C     k = nfield-1
-C     e = nfield
+C     Masks for passive scalars
 C
       IF (IFHEAT) THEN
 C
@@ -718,12 +711,6 @@ C
             if (if3d) call antimsk1(tmp3,mask3,ntot)
          endif
       ELSE
-         IF (IFMODEL) THEN
-             CALL COPY (TMQ1,TMP1,NTOT)
-             CALL COPY (TMQ2,TMP2,NTOT)
-             IF (NDIM.EQ.3) CALL COPY (TMQ3,TMP3,NTOT)
-             CALL AMASK (TMP1,TMP2,TMP3,TMQ1,TMQ2,TMQ3,NELV)
-         ENDIF
          CALL RMASK (V1,V2,V3,NELV)
       ENDIF
 
@@ -776,9 +763,6 @@ C
 C     Temperature boundary condition
 C
       DO 2100 ISWEEP=1,2
-C
-         IF (IFMODEL .AND. IFKEPS .AND. IFIELD.GE.NFLDT)
-     $       CALL TURBWBC (TMP,TMA,SMU)
 C
          DO 2010 IE=1,NEL
          DO 2010 IFACE=1,NFACES
@@ -1874,55 +1858,6 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE SETSHL
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'SOLN'
-      INCLUDE 'TSTEP'
-      COMMON /SCRMG/ V1(LX1,LY1,LZ1,LELV)
-     $             , V2(LX1,LY1,LZ1,LELV)
-     $             , V3(LX1,LY1,LZ1,LELV)
-     $             , VV(LX1,LY1,LZ1,LELV)
-C
-      common  /nekcb/ cb
-      CHARACTER CB*3
-C
-      IFIELD = 1
-      NFACE  = 2*NDIM
-      NTOT1  = NX1*NY1*NZ1*NELV
-      DELTA  = 1.E-9
-      X      = 1.+DELTA
-      Y      = 1.
-      DIFF   = ABS(X-Y)
-      IF (DIFF.EQ.0.) EPSA = 1.E-06
-      IF (DIFF.GT.0.) EPSA = 1.E-13
-C
-      CALL RZERO3  (V1,V2,V3,NTOT1)
-      CALL BCTWALL (V1,V2,V3)
-      CALL OPDOT   (VV,V1,V2,V3,V1,V2,V3,NTOT1)
-      VDOT  = GLMAX(VV,NTOT1)
-      VMAX  = SQRT(VDOT)
-      IF (VMAX .LT. EPSA) VMAX = -EPSA
-C
-      DO 100 IEL=1,NELV
-      DO 100 IFC=1,NFACE
-         CB=CBC(IFC,IEL,IFIELD)
-         IF (CB.NE.'V  ' .AND. CB.NE.'v  '  .AND. CB.NE.'VL ' .AND. 
-     $       CB.NE.'vl ') GOTO 100
-             IF (VMAX .GT. 0.0) THEN
-                 CALL CHKZVN (VMAX,IEL,IFC,IVNORL)
-                 IF (IVNORL.EQ.1) GOTO 100
-             ENDIF
-             IF (CB.EQ.'V  ') CBC(IFC,IEL,IFIELD)='WS '
-             IF (CB.EQ.'VL ') CBC(IFC,IEL,IFIELD)='WSL'
-             IF (CB.EQ.'v  ') CBC(IFC,IEL,IFIELD)='ws '
-             IF (CB.EQ.'vl ') CBC(IFC,IEL,IFIELD)='wsl'
- 100  CONTINUE
-C
-      RETURN
-      END
-c-----------------------------------------------------------------------
       SUBROUTINE CHKZVN (VMAX,IEL,IFC,IVNORL)
 C
       INCLUDE 'SIZE'
@@ -2176,3 +2111,20 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      SUBROUTINE FACIND2 (JS1,JF1,JSKIP1,JS2,JF2,JSKIP2,IFC)
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'TOPOL'
+C
+      CALL DSSET (NX1,NY1,NZ1)
+      IFACE  = EFACE1(IFC)
+      JS1    = SKPDAT(1,IFACE)
+      JF1    = SKPDAT(2,IFACE)
+      JSKIP1 = SKPDAT(3,IFACE)
+      JS2    = SKPDAT(4,IFACE)
+      JF2    = SKPDAT(5,IFACE)
+      JSKIP2 = SKPDAT(6,IFACE)
+C
+      RETURN
+      END

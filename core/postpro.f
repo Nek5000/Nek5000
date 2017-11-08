@@ -4,21 +4,13 @@
       include 'INPUT'
       include 'RESTART'
 
-      character*1 string(1),fout(132),BLNK
-      character*6 ext
-      DATA BLNK/' '/
+      character string*(*)
+
+      l = ltrunc(string,len(string))
+      if(l.gt.132) call exitti('invalid string length$',l)
 
       call blank  (initc(1),132)
-
-      L1=0
-      DO 100 I=1,132
-         IF (STRING(I).EQ.BLNK) GOTO 200
-         L1=I
-  100 CONTINUE
-  200 CONTINUE
-      LEN=L1
-
-      call chcopy (initc(1),string,len)
+      call chcopy (initc(1),string,l)
       call setics
 
       return

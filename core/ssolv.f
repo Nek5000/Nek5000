@@ -38,10 +38,8 @@ C
       IFTRAN    = .TRUE.
       IFCHAR    = .TRUE.
       CTARG     = 3.
-      IF (IFMODEL) CTARG = 2.
       IF (NX1.GE.10) THEN
          CTARG = 5.
-         IF (IFMODEL) CTARG = 3.
       ENDIF
       CALL SETPROP
       TAUMIN = 1.E20
@@ -63,7 +61,6 @@ C
 C
                    IFMODP = .TRUE.
       IF (IFNATC)  IFMODP = .FALSE.
-      IF (IFMODEL) IFMODP = .FALSE.
                    IFSKIP = .TRUE.
                    NSSKIP = 1
 C
@@ -419,7 +416,6 @@ C
 C
          KMAX   = 5
          NBDINP = 3
-         IF (IFMODEL) NBDINP = 2
          NSSKIP = 2
          IFSKIP = .TRUE.
          IFMODP = .FALSE.
@@ -438,7 +434,6 @@ C
 C
          KMAX   = 5
          NBDINP = 3
-         IF (IFMODEL) NBDINP = 2
          NSSKIP = 2
          IFSKIP = .TRUE.
          IFMODP = .FALSE.

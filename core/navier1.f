@@ -1532,7 +1532,6 @@ C----------------------------------------------------------------------
       if ((iftran.and..not.ifchar).or.
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
       if (ifnav.and.ifchar)                     call advchar
-      if (ifmodel)                              call twallsh
 
 c     Adding this call allows prescribed pressure bc for PnPn-2
 c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr

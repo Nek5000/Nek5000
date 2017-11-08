@@ -32,7 +32,7 @@ plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
-map2.o turb.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
+map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \

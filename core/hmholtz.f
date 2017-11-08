@@ -287,7 +287,7 @@ C
 C
       DO 100 ie=1,NEL
          IFFAST(ie) = .FALSE.
-         IF (IFDFRM(ie).OR.IFAXIS .OR. IFMODEL ) THEN
+         IF (IFDFRM(ie).OR.IFAXIS) THEN
             IFFAST(ie) = .FALSE.
          ELSE
            H1MIN  = VLMIN(HELM1(1,1,1,ie),NXYZ)

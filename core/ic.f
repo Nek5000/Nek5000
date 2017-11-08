@@ -69,9 +69,6 @@ C     restart file(s) together with the associated dump number
 
       call slogic (iffort,ifrest,ifprsl,nfiles)
 
-C     Set up proper initial values for turbulence model arrays
-      IF (IFMODEL) CALL PRETMIC
-
 C      ***** TEMPERATURE AND PASSIVE SCALARS ******
 C
 C     Check if any pre-solv necessary for temperature/passive scalars
@@ -87,7 +84,6 @@ C     Check if any pre-solv necessary for temperature/passive scalars
 
 C     Fortran function initial conditions for temp/pass. scalars.
       maxfld = nfield
-      if (ifmodel.and.ifkeps) maxfld = nfield-2
       if (ifmhd) maxfld = npscal+3
 
 c     Always call nekuic (pff, 12/7/11)
@@ -148,21 +144,9 @@ c
 
       ntotv = nx1*ny1*nz1*nelv
 
-C     Fortran function initial conditions for turbulence k-e model
-      if (ifmodel .and. ifkeps) then
-         mfldt = nfield - 1
-         do 300 ifield=mfldt,nfield
-            if (iffort(ifield,jp)) call nekuic
- 300     continue
-      endif
-
 C     Initial mesh velocities
       if (ifmvbd) call opcopy (wx,wy,wz,vx,vy,vz)
       if (ifmvbd.and..not.ifrest(0,jp)) call meshv (2)
-
-C     Compute additional initial values for turbulence model arrays
-C     based on I.C.
-      if (ifmodel) call postmic
 
 C     If convection-diffusion of a passive scalar with a fixed velocity field,
 C     make sure to fill up lagged arrays since this will not be done in
@@ -1696,68 +1680,38 @@ c-----------------------------------------------------------------------
 
       nel   = nelfld(ifield)
 
-      if (ifmodel .and. ifkeps .and. ifield.eq.ifldk) then
+      do e=1,nel
+         eg = lglel(e)
+         do 300 k=1,nz1
+         do 300 j=1,ny1
+         do 300 i=1,nx1
+           call nekasgn (i,j,k,e)
+           call useric  (i,j,k,eg)
+           if (jp.eq.0) then
+             if (ifield.eq.1) then
+               vx(i,j,k,e) = ux
+               vy(i,j,k,e) = uy
+               vz(i,j,k,e) = uz
+             elseif (ifield.eq.ifldmhd) then
+               bx(i,j,k,e) = ux
+               by(i,j,k,e) = uy
+               bz(i,j,k,e) = uz
+             else
+               t(i,j,k,e,ifield-1) = temp
+             endif
+           else
+             ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
+             if (ifield.eq.1) then
+               vxp(ijke,JP) = ux
+               vyp(ijke,JP) = uy
+               vzp(ijke,JP) = uz
+             else
+               tp(ijke,ifield-1,JP) = temp
+             endif
+           endif
 
-         do e=1,nel
-            eg = lglel(e)
-            do 100 k=1,nz1
-            do 100 j=1,ny1
-            do 100 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbk
- 100        continue
-         enddo
-
-      elseif (ifmodel .and. ifkeps .and. ifield.eq.iflde) then
-
-         do e=1,nel
-            eg = lglel(e)
-            do 200 k=1,nz1
-            do 200 j=1,ny1
-            do 200 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbe
- 200        continue
-         enddo
-C
-      else
-         do e=1,nel
-            eg = lglel(e)
-            do 300 k=1,nz1
-            do 300 j=1,ny1
-            do 300 i=1,nx1
-              call nekasgn (i,j,k,e)
-              call useric  (i,j,k,eg)
-              if (jp.eq.0) then
-                if (ifield.eq.1) then
-                  vx(i,j,k,e) = ux
-                  vy(i,j,k,e) = uy
-                  vz(i,j,k,e) = uz
-                elseif (ifield.eq.ifldmhd) then
-                  bx(i,j,k,e) = ux
-                  by(i,j,k,e) = uy
-                  bz(i,j,k,e) = uz
-                else
-                  t(i,j,k,e,ifield-1) = temp
-                endif
-              else
-                ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
-                if (ifield.eq.1) then
-                  vxp(ijke,JP) = ux
-                  vyp(ijke,JP) = uy
-                  vzp(ijke,JP) = uz
-                else
-                  tp(ijke,ifield-1,JP) = temp
-                endif
-              endif
-
- 300        continue
-         enddo
-
-      endif
-
+ 300     continue
+      enddo
 
       return
       END
