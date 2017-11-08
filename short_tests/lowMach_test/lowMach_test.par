@@ -2,26 +2,13 @@
 # nek parameter file
 #
 [GENERAL] 
-#startFrom = restart.fld 
 stopAt = numSteps #endTime
-endTime = 1.0
 numSteps = 500
-
 dt = 1e-03
-timeStepper = bdf #char #steady
-tOrder = 3
-variableDt = No
-maxCFL = 2.0
-
-writeControl = timeStep #runTime
-writeInterval = 500
-
-dealiasing = yes
+timeStepper = bdf3
 
 [PROBLEMTYPE]
-#stressFormulation = yes
-lowMachNumber = yes 
-#dp0dt = yes
+equation = lowMachNS
 variableProperties = yes
 
 [PRESSURE]
@@ -31,15 +18,11 @@ residualProj = yes
 [VELOCITY]
 residualTol = 1e-12
 residualProj = no
-#density = 1
-#viscosity = 1
-#writeToFieldFile = no 
 
 [TEMPERATURE] 
-#solver= cvode
-residualTol = 1e-12
-#absoluteTol = 1e-12
-#conjugateHeatTransfer = yes 
+#residualTol = 1e-12
+solver= cvode
+absoluteTol = 1e-12
 
 [CVODE]
 relativeTol = 1e-12

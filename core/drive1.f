@@ -118,8 +118,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics      !     Set initial conditions 
-      call setprop     !     Compute field properties
+      call setics   !     Set initial conditions 
+      call setprop  !     Compute field properties
 
       if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'

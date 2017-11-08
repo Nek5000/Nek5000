@@ -3,23 +3,15 @@
 #
 [GENERAL] 
 #startFrom = restart.fld 
-stopAt = numSteps #endTime
 numSteps = 1000
-
 dt = 1e-04
-timeStepper = bdf #char #steady
-tOrder = 3
-
-writeControl = timeStep #runTime
-writeInterval = 1000
-
-dealiasing = yes
+timeStepper = bdf3 #bdf2
+writeInterval = 0
 
 [PROBLEMTYPE]
-#stressFormulation = yes
+equation = incompNS
 
 [PRESSURE]
-preconditioner = semg_xxt #semg_amg
 residualTol = 1e-08
 residualProj = no
 

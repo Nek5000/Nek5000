@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine readat_new
+      subroutine readat_par
 C
 C     Read in run parameters from .par file
 C
@@ -13,6 +13,7 @@ c
       logical ifbswap
 
       call setDefaultParam
+
       if(nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
       if(ierr .ne. 0) call exitt
@@ -46,13 +47,18 @@ C
       call rzero(param,200)
       call rzero(uparam,20)
 
-      param(20) = 1e-8 ! temperature & passive passive tolerance
+      param(10) = 0    ! stop at numSteps
+      param(14) = 0    ! iostep
+      param(15) = 0    ! iotime 
+
       param(21) = 1e-6 ! pressure tolerance
       param(22) = 1e-8 ! velocity tolerance
 
-      param(26) = 0.5  ! max Courant number
+      param(26) = 0.5  ! target Courant number
       param(27) = 2    ! 2nd order in time
+      param(28) = 0    ! use same torder for mesh solver
 
+      param(31) = 0    ! zero perturbations
       param(32) = 0    ! all BC are defined in .re2
 
       param(40) = 0    ! XXT 
@@ -61,6 +67,8 @@ C
       param(42) = 0    ! GMRES for iterative solver w/ nonsymmetric weighting
       param(43) = 0    ! additive multilevel scheme (requires param(42).eq.0)
       param(44) = 0    ! base top-level additive Schwarz on restrictions of E
+
+      param(47) = 0.4  ! viscosity for mesh elasticity solver
 
       param(59) = 1    ! No fast operator eval
 
@@ -85,7 +93,13 @@ C
       param(165) = 1   ! cvode increment factor DQJ
       param(166) = 0   ! cvode use default ratio linear/non-linear tolerances
       param(167) = 0   ! cvode use no preconditioner
-c
+
+      restol(0) = param(22)
+      restol(1) = param(22)
+      do i=1,ldimt
+         restol(1+i) = param(22) 
+      enddo
+
       iftmsh(0) = .false. 
       iftmsh(1) = .false. 
       do i=1,ldimt
@@ -101,17 +115,17 @@ c
       enddo 
 
       ifadvc(1) = .true.  
-      do i=1,ldimt1
+      do i=1,ldimt
          ifadvc(i+1) = .true.  
       enddo 
 
       ifdiff(1) = .true.  
-      do i=1,ldimt1
+      do i=1,ldimt
          ifdiff(i+1) = .true.  
       enddo 
 
       ifdeal(1) = .true.  
-      do i=1,ldimt1
+      do i=1,ldimt
          ifdeal(i+1) = .true.  
       enddo 
 
@@ -154,7 +168,7 @@ c
       ifschclob = .false. 
 
       ifdp0dt   = .false.
-      ifreguo = .false.   ! by default we dump the data based on the GLL mesh
+      ifreguo   = .false.   ! dump on the GLL mesh
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
@@ -181,13 +195,14 @@ c     - mhd support
 
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'ADJOINT'
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
 
-      character*132 c_out,txt
- 
+      character*132 c_out,txt, txt2
+
       call finiparser_load(parfle,ierr)
       if(ierr .ne. 0) return
 
@@ -202,37 +217,87 @@ c set parameters
       if(ifnd .eq. 1) optlevel = d_out
 
       call finiparser_getString(c_out,'general:stopAt',ifnd)
-      call capit(c_out,132)
-      if (index(c_out,'ENDTIME') .gt. 0) then
-         call finiparser_getDbl(d_out,'general:endTime',ifnd)
-         if(ifnd .eq. 1) param(10) = d_out 
+      if (ifnd .eq. 1) then
+         call capit(c_out,132)
+         if (index(c_out,'ENDTIME') .eq. 1) then
+            call finiparser_getDbl(d_out,'general:endTime',ifnd)
+            if (ifnd .eq. 1) then
+               param(10) = d_out
+            else
+               write(6,*) 'general:endTime'
+               write(6,*) 'is required for general:stopAt = endTime!'
+               goto 999
+            endif
+         else if (index(c_out,'NUMSTEPS') .eq. 1) then
+            call finiparser_getDbl(d_out,'general:numSteps',ifnd)
+            if (ifnd .eq. 1) then
+               param(11) = d_out 
+            else
+               write(6,*) 'general:numSteps'
+               write(6,*) 'is required for general:stopAt = numSteps!'
+               goto 999
+            endif
+         else
+            write(6,*) 'value: ',c_out
+            write(6,*) 'is invalid for general:stopAt!'
+            goto 999
+         endif
+      else
+         call finiparser_getDbl(d_out,'general:numSteps',ifnd)
+         if (ifnd .eq. 1) then 
+            param(11) = d_out 
+         else
+            write(6,*) 'general:numSteps not found!'
+            goto 999
+         endif
       endif
 
-      call finiparser_getDbl(d_out,'general:numSteps',ifnd)
-      if(ifnd .eq. 1) param(11) = d_out 
-
       call finiparser_getDbl(d_out,'general:dt',ifnd)
-      if(ifnd .eq. 1) param(12) = d_out
+      if (ifnd .eq. 1) then
+         param(12) = d_out
+      endif
 
       param(12) = -1*abs(param(12))
       call finiparser_getBool(i_out,'general:variableDt',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) param(12) = abs(param(12)) 
+      if (ifnd .eq. 1) then
+         if (i_out .eq. 1) then
+            param(12) = abs(param(12)) 
+            call finiparser_getDbl(d_out,'general:targetCFL',ifnd)
+            if (ifnd .eq. 1) then
+               param(26) = d_out
+            else
+               write(6,*) 'general:targetCFL'
+               write(6,*) 'is required for general:variableDt!'
+               goto 999
+            endif
+         endif
+      endif
 
-      d_out = param(15)
       call finiparser_getDbl(d_out,'general:writeInterval',ifnd)
+      if (ifnd .eq. 1) param(15) = d_out
       call finiparser_getString(c_out,'general:writeControl',ifnd)
-      call capit(c_out,132)
-      if (index(c_out,'RUNTIME') .gt. 0) then
-         param(14) = d_out
-      else
-         param(14) = 0
-         param(15) = d_out
+      if (ifnd .eq. 1) then
+         call capit(c_out,132)
+         if (index(c_out,'RUNTIME') .eq. 1) then
+            param(14) = d_out
+            param(15) = 0
+         else if (index(c_out,'TIMESTEP') .eq. 1) then
+            param(14) = 0
+            param(15) = d_out
+         else
+            write(6,*) 'value: ',c_out
+            write(6,*) 'is invalid for general:writeControl!'
+            goto 999
+         endif
       endif
 
       call finiparser_getDbl(d_out,'pressure:residualTol',ifnd)
       if(ifnd .eq. 1) param(21) = d_out 
       call finiparser_getDbl(d_out,'velocity:residualTol',ifnd)
-      if(ifnd .eq. 1) param(22) = d_out 
+      if(ifnd .eq. 1) then
+        restol(1) = d_out 
+        param(22) = d_out
+      endif
 
       call finiparser_find(i_out,'temperature',ifnd)
       if(ifnd .eq. 1) then
@@ -251,27 +316,50 @@ c set parameters
             idpss(i+1) = 0 ! Helmholtz is default
          endif
       enddo
-      param(23) = j 
+      param(23) = j ! number of scalars 
 
-      call finiparser_getString(c_out,'temperature:solver',ifnd)
+      n = param(23)
+      if (ifheat) n = n+1 
+       
+      do i = 1,n
+
+      if (ifheat .and. i.eq.1) then
+        txt = 'temperature'
+      else
+        write(txt,"('scalar',i2.2)") i-1
+      endif
+
+      call finiparser_getString(c_out,trim(txt)//':solver',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'CVODE') .gt. 0) idpss(1) = 1
-      call finiparser_getDbl(d_out,'temperature:residualTol',ifnd)
-      if(ifnd .eq. 1) param(20) = d_out 
-      call finiparser_getDbl(d_out,'temperature:absoluteTol',ifnd)
-      if(ifnd .eq. 1) atol(3) = d_out 
+      if(ifnd .eq. 1) then 
+        if (index(c_out,'CVODE') .eq. 1) then
+          idpss(i) = 1
+          call finiparser_getDbl(d_out,trim(txt)//':absoluteTol',ifnd)
+          if (ifnd .eq. 1) then
+             atol(i+1) = d_out 
+          else
+             write(6,*) trim(txt) // ':absoluteTol' 
+             write(6,*) 'is required for ',trim(txt)//':solver = CVODE'
+             goto 999
+          endif
+        else if (index(c_out,'HELM') .eq. 1) then
+          continue
+        else if (index(c_out,'NONE') .eq. 1) then
+          idpss(i) = -1
+        else
+           write(6,*) 'value: ',c_out
+           write(6,*) 'is invalid for ',trim(txt)//':solver!' 
+           goto 999
+        endif
+      else
+        call finiparser_getDbl(d_out,trim(txt)//':residualTol',ifnd)
+        if (ifnd .eq. 1) then
+           restol(i+1) = d_out 
+        endif
+      endif
 
-      do i = 1,ldimt-1
-         write(txt,"('scalar',i2.2,a)") i,':solver'
-         call finiparser_getString(c_out,txt,ifnd)
-         call capit(c_out,132)
-         if (index(c_out,'CVODE') .gt. 0) idpss(i+1) = 1
-         if (index(c_out,'NONE' ) .gt. 0) idpss(i+1) = -1
-
-         write(txt,"('scalar',i2.2,a)") i,':absoluteTol'
-         call finiparser_getDbl(d_out,txt,ifnd)
-         if(ifnd .eq. 1) atol(i+3) = d_out 
       enddo
+
       call finiparser_getDbl(d_out,'cvode:absoluteTol',ifnd)
       if(ifnd .eq. 1) param(162) = d_out 
       call finiparser_getDbl(d_out,'cvode:relativeTol',ifnd)
@@ -295,34 +383,31 @@ c set parameters
          ifheat = .false.
       endif
 
-      call finiparser_getDbl(d_out,'general:maxCFL',ifnd)
-      if(ifnd .eq. 1) param(26) = d_out
-
-      call finiparser_getDbl(d_out,'general:tOrder',ifnd)
-      if(ifnd .eq. 1) param(27) = int(d_out) 
-
       call finiparser_getDbl(d_out,'magnetic:viscosity',ifnd)
       if(ifnd .eq. 1) param(29) = d_out 
       if(param(29).lt.0.0) param(29) = -1.0/param(29)
-
-      call finiparser_getDbl(d_out,'general:perturbationModes',ifnd)
-      if(ifnd .eq. 1) param(31) = int(d_out) 
 
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
-      call capit(c_out,132)
-      if (index(c_out,'SEMG_AMG') .gt. 0) param(40) = 1
+      if (ifnd .eq. 1) then 
+         call capit(c_out,132)
+         if (index(c_out,'SEMG_AMG') .eq. 1) then
+            param(40) = 1
+         else if (index(c_out,'SEMG_XXT') .eq. 1) then
+            param(40) = 0
+         else
+           write(6,*) 'value: ',c_out
+           write(6,*) 'is invalid for pressure:preconditioner!'
+           goto 999
+         endif
+      endif 
 
-      call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
-      call capit(c_out,132)
-      if (index(c_out,'SCHWARZ') .gt. 0) param(43) = 1
-
-      call finiparser_getBool(i_out,'general:write8Byte',ifnd)
+      call finiparser_getBool(i_out,'general:writeDoublePrecision',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 
 
-      call finiparser_getDbl(d_out,'general:writeNParallelFiles',ifnd)
+      call finiparser_getDbl(d_out,'general:writeNFiles',ifnd)
       if(ifnd .eq. 1) param(65) = int(d_out) 
 
       call finiparser_getBool(i_out,'velocity:residualProj',ifnd)
@@ -340,26 +425,45 @@ c set parameters
       call finiparser_getBool(i_out,'general:dealiasing',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 0) param(99) = -1 
 
-c     stabilization parameters
+c     filtering parameters
       call finiparser_getString(c_out,'general:filtering',ifnd)
       if (ifnd .eq. 1) then
 c        stabilization type: none, explicit or hpfrt    
          call capit(c_out,132)
-         if (index(c_out,'EXPLICIT') .gt. 0) then
+         if (index(c_out,'NONE') .eq. 1) then
+            filterType = 0
+         else if (index(c_out,'EXPLICIT') .eq. 1) then
             filterType = 1
-         else if (index(c_out,'HPFRT') .gt. 0) then
+         else if (index(c_out,'HPFRT') .eq. 1) then
             filterType = 2
+         else
+           write(6,*) 'value: ',c_out
+           write(6,*) 'is invalid for general:filtering!'
+           goto 999
          endif
          call finiparser_getDbl(d_out,'general:filterWeight',ifnd)
-         if(ifnd .eq. 1 .and. filterType.gt.0) param(103) = d_out 
-         call finiparser_getDbl(d_out,'general:addFilterModes',ifnd)
-         if(ifnd .eq. 1.and. filterType.gt.0) param(101) = int(d_out) 
+         if (ifnd .eq. 1) then
+            param(103) = d_out 
+         else
+            write(6,*) 'general:filterWeight'
+            write(6,*) 'is required for general:filtering!'
+            goto 999
+         endif
+         call finiparser_getDbl(d_out,'general:filterCutoffRatio',ifnd)
+         if (ifnd .eq. 1) then
+            dtmp = anint(nx1*(1.0 - d_out)) 
+            param(101) = max(dtmp-1,0.0)
+         else
+            write(6,*) 'general:filterCutoffRatio'
+            write(6,*) 'is required for general:filtering!'
+            goto 999
+         endif 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'NORMAL') .gt. 0) param(160) = 1
-      if (index(c_out,'NORMAL_TSTOP' ) .gt. 0) param(160) = 3
+      if (index(c_out,'NORMAL') .eq. 1) param(160) = 1
+      if (index(c_out,'NORMAL_TSTOP' ) .eq. 1) param(160) = 3
  
       do i = 1,20
          call blank(txt,132)
@@ -370,12 +474,32 @@ c        stabilization type: none, explicit or hpfrt
 
 c set logical flags
       call finiparser_getString(c_out,'general:timeStepper',ifnd)
-      call capit(c_out,132)
+      if (ifnd .eq. 1) then
+        call capit(c_out,132)
 
-      if (index(c_out,'CHAR') .gt. 0) then
-         ifchar = .true.
-      else if (index(c_out,'STEADY') .gt. 0) then
-         iftran = .false.
+        if (index(c_out,'BDF2') .eq. 1) then
+           param(27) = 2 
+        else if (index(c_out,'BDF3') .eq. 1) then
+           param(27) = 3 
+        else
+           write(6,*) 'value: ',c_out
+           write(6,*) 'is invalid for general:timeStepper!'
+           goto 999
+        endif
+      endif
+
+      call finiparser_getString(c_out,'general:extrapolation',ifnd)
+      if (ifnd .eq. 1) then
+        call capit(c_out,132)
+        if (index(c_out,'OIFS') .eq. 1) then
+           ifchar = .true.
+        else if (index(c_out,'STANDARD') .eq. 1) then
+           continue
+        else
+           write(6,*) 'value: ',c_out
+           write(6,*) 'is invalid for general:extrapolation!'
+           goto 999
+        endif
       endif
 
       call finiparser_find(i_out,'velocity',ifnd)
@@ -385,13 +509,26 @@ c set logical flags
         ifpo   = .true.
       endif
 
-      call finiparser_getBool(i_out,'mesh:motion',ifnd)
-      if(ifnd .eq. 1 .and. i_out .eq. 1) then
-        ifmvbd = .true.
-        call finiparser_getString(c_out,'mesh:meshVelocity',ifnd)
-        call capit(c_out,132)
-        if (index(c_out,'USER') .gt. 0) ifusermv = .true.
+      call finiparser_getString(c_out,'mesh:motion',ifnd)
+      if (ifnd .eq. 1) then
+       call capit(c_out,132)
+       if (index(c_out,'ELASTICITY') .eq. 1) then
+          ifmvbd = .true.
+          call finiparser_getDbl(d_out,'mesh:viscosity',ifnd)
+          if (ifnd .eq. 1) param(47) = d_out
+        else if (index(c_out,'USER') .eq. 1) then
+          ifmvbd = .true.
+          ifusermv = .true.
+        else if (index(c_out,'NONE') .eq. 1) then
+          continue
+        else
+          write(6,*) 'value: ',c_out
+          write(6,*) 'is invalid for mesh:motion!'
+          goto 999
+        endif
       endif
+      call finiparser_getDbl(d_out,'mesh:residualTol',ifnd)
+      if(ifnd .eq. 1) restol(0) = d_out 
 
       call finiparser_getBool(i_out,'problemType:axiSymmetry',ifnd)
       if(ifnd .eq. 1) then
@@ -406,29 +543,55 @@ c set logical flags
       endif
 
       call finiparser_getBool(i_out,'problemType:cyclicBoundaries',ifnd)
-      if(ifnd .eq. 1) then
+      if(ifnd.eq.1) then
         ifcyclic = .false.
         if(i_out .eq. 1) ifcyclic = .true.
       endif
 
-      call finiparser_getBool(i_out,'problemType:perturbations',ifnd)
-      if(ifnd .eq. 1) then
-        ifpert = .false.
-        if(i_out .eq. 1) ifpert = .true.
+      call finiparser_getString(c_out,'problemType:equation',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'STEADYSTOKES').eq.1) then
+         iftran = .false.
+      else if (index(c_out,'INCOMPNS').eq.1) then
+         continue
+      else if (index(c_out,'LOWMACHNS').eq.1) then
+         iflomach = .true.
+      else if (index(c_out,'INCOMPLINNS').eq.1 .or.
+     $         index(c_out,'INCOMPLINADJNS').eq.1) then
+         ifpert = .true.
+         if (index(c_out,'INCOMPLINADJNS').eq.1) ifadj  = .true.
+         call finiparser_getDbl
+     $        (d_out,'problemType:numberOfPerturbations',ifnd)
+         if (ifnd .eq. 1) then
+            param(31) = int(d_out) 
+         else
+            param(31) = 1 
+         endif
+         call finiparser_getBool
+     $        (i_out,'problemType:solveBaseFlow',ifnd)
+         if (ifnd .eq. 1) then
+            ifbase = .false.
+            if(i_out .eq. 1) ifbase = .true.
+         else
+            write(6,*) 'problemType:solveBaseFlow'
+            write(6,*) 'is required for ', trim(c_out) 
+            goto 999
+         endif
+      else if (index(c_out,'COMPNS') .eq. 1) then
+#ifdef CMTNEK
+         continue
+#else
+         write(6,*) 'value: ',trim(c_out)
+         write(6,*) 'not supported for problemType:equation!'
+         write(6,*) 'Recompile with CMTNEK ...'
+         goto 999
+#endif
+      else if (index(c_out,'INCOMPMHD') .eq. 1) then
+         write(6,*) 'value: ',trim(c_out)
+         write(6,*) 'not yet supported for problemType:equation!'
+         goto 999
       endif
 
-      call finiparser_getBool(i_out,'problemType:solveBaseFlow',ifnd)
-      if(ifnd .eq. 1) then
-        ifbase = .false.
-        if(i_out .eq. 1) ifbase = .true.
-      endif
-
-      call finiparser_getBool(i_out,'problemType:lowMachNumber',ifnd)
-      if(ifnd .eq. 1) then
-        iflomach = .false.
-        if(i_out .eq. 1) iflomach = .true.
-      endif
-  
       call finiparser_getBool(i_out,
      &                        'problemType:stressFormulation',ifnd)
       if(ifnd .eq. 1) then
@@ -479,8 +642,10 @@ c set mesh-field mapping
       call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
      &                        ifnd)
       if(ifnd .eq. 1) then
-        iftmsh(2) = .false.
-        if(i_out .eq. 1) iftmsh(2) = .true.
+        if(i_out .eq. 1) then
+          iftmsh(0) = .true.
+          iftmsh(2) = .true.
+        endif
       endif
 
       do i = 1,ldimt-1
@@ -556,10 +721,15 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
-      call finiparser_dump()
-c      call finiparser_free()
 
+100   if(ierr.eq.0) call finiparser_dump()
       return
+
+c error handling
+ 999  continue
+      ierr = 1
+      goto 100
+
       end
 c-----------------------------------------------------------------------
       subroutine bcastParam
@@ -572,6 +742,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
+      INCLUDE 'ADJOINT'
       INCLUDE 'CVODE'
 
       call bcast(loglevel, isize)
@@ -580,8 +751,10 @@ C
       call bcast(param , 200*wdsize)
       call bcast(uparam, 20*wdsize)
 
-      call bcast(atol ,  ldimt3*wdsize)
       call bcast(filterType, wdsize)
+
+      call bcast(atol ,  (ldimt1+1)*wdsize)
+      call bcast(restol, (ldimt1+1)*wdsize)
 
       call bcast(ifchar , lsize)
       call bcast(iftran  , lsize)
@@ -600,8 +773,12 @@ C
       call bcast(ifbase, lsize)
       call bcast(ifmoab, lsize)
       call bcast(ifaziv, lsize)
+      call bcast(ifadj , lsize)
 
       call bcast(ifadvc ,  ldimt1*lsize)
+      call bcast(ifdiff ,  ldimt1*lsize)
+      call bcast(ifdeal ,  ldimt1*lsize)
+
       call bcast(idpss  ,  ldimt*isize)
       call bcast(iftmsh , (ldimt1+1)*lsize)
 
@@ -749,6 +926,12 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitt
       ENDIF
 
+      if (lpert.lt.npert) then
+         if(nid.eq.0) write(6,*) 
+     $   'ERROR: Increase lpert in SIZE to', npert
+         call exitt
+      endif
+
       IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
            WRITE(6,22) LDIMT,NPSCL1
@@ -838,6 +1021,11 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          if(nid.eq.0) write(6,*) 
      $   'ABORT: For Lyapunov, need lpx1=lx1, etc.; Change SIZE '
       endif
+
+      if (ifpert .and. ifsplit) then
+         if(nid.eq.0) write(6,*) 
+     $   'ABORT: For Lyapunov, need lx2=lx1-2, etc. in SIZE'
+      endif 
 
       if (iflomach .and. .not.ifsplit) then
          if(nid.eq.0) write(6,*) 

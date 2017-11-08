@@ -18,7 +18,7 @@ c
 C
 C     Set up screen characteristics, zoom, ifdmsh, etc.
 C     16 Feb 1989 23:14:22  pff
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       LOGICAL IFDSPL
@@ -263,7 +263,7 @@ c
 c-----------------------------------------------------------------------
 C
       SUBROUTINE SETGRD
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*26 CCART,CPOLAR,CGRIDX,CGRIDY,CGRIDN,CGRIDR,BLNK
       CHARACTER*26 CGRDX,CGRDY,COBJCT
       CHARACTER*1  BLNK1(26)
@@ -412,7 +412,7 @@ C        GRIDDY=YFAC*GRIDT  kludge for now
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DRGRID
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       PI = 4.0*ATAN(1.0)
       CALL GINGRD(GRID)
       CALL COLOR(14)
@@ -548,7 +548,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE REFRESH
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
 C     Draw big red box
 c
@@ -730,7 +730,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE FILTER(XMOUSE,YMOUSE,XSCREEN,YSCREEN)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       XMSE0 = XPHY(XSCREEN)
       YMSE0 = YPHY(YSCREEN)
@@ -814,7 +814,7 @@ C     grid filtering complete
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DRWOBJ(IOBJ)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       IOFF=1
       DO 100 I=1,IOBJ-1
@@ -827,7 +827,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE LATCHOB(X0,Y0,Z0,DIST2,IOBJ)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       IF (.NOT.IFOBJS) RETURN
 C
@@ -854,7 +854,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETOBJ
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*80 OBJFLE
 C
 C     Set up object, first pass, just get an object from a file.
@@ -885,7 +885,7 @@ c
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETZOOM
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -1125,7 +1125,7 @@ c.old    CALL RESCAL
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETRANS
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -1192,7 +1192,7 @@ C              reset clipping window
       END
 c-----------------------------------------------------------------------
       SUBROUTINE RESCAL
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c
       if (ifzoom) return
 c
@@ -1408,7 +1408,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine refresh2
-      include 'basics.inc'
+#     include "basics.inc"
 c
       call clear
       call hard

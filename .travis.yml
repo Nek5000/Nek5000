@@ -4,43 +4,41 @@ sudo: required
 
 env:
   matrix:
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  IFMPI=false F77=gfortran CC=gcc IFCVODE=false
-    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial IFMPI=false F77=gfortran CC=gcc IFCVODE=false
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  IFMPI=false F77=gfortran CC=gcc
+    - TEST_CASE=Eddy_EddyUv::test_PnPn2_Serial IFMPI=false F77=gfortran CC=gcc
 
-    - TEST_CASE=Axi::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Axi::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=Axi::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Axi::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=Benard_Ray9::test_PnPn_Parallel   IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=Benard_Ray9::test_PnPn_Parallel   IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=Ethier::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Ethier::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=Ethier::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Ethier::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=KovStState::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=KovStState::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=ConjHt::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE" IFCVODE=true
+    - TEST_CASE=ConjHt::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
     # - TEST_CASE=ConjHt::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
-    # - TEST_CASE=VarVis::test_PnPn_Serial    IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
-    # - TEST_CASE=VarVis::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
     # - TEST_CASE=VarVis::test_PnPn2_Serial   IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
     # - TEST_CASE=VarVis::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
 
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CMTNEK"
 
-    - TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3   IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE" IFCVODE=true
+    - TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3   IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
     # The Eddy_Neknek test methods include NEKENK in the PPLIST.  No need to specify as env vars here.
-    - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
-    - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
     
-    - TEST_CASE=IO_Test::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc IFCVODE=false
+    # - TEST_CASE=IO_Test::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
 
 before_install: 
@@ -60,9 +58,6 @@ before_install:
   - source $ROOT_DIR/python2-env/bin/activate
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
 
-  # Install cvode
-  - if [ "$IFCVODE" = "true" ]; then cd 3rd_party/cvode/ && source ./install; fi
- 
 install:
   - pip install --upgrade pip
   - pip install pytest

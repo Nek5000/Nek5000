@@ -23,8 +23,6 @@ c
 
       integer*8 dtmp8
 
-      logical if_full_pres_tmp
-
       logical ifbswp, if_byte_swap_test
       real*4 bytetest
 
@@ -62,9 +60,6 @@ c
       endif
       if (ifgtim) time = timer
 
-      if_full_pres_tmp = if_full_pres
-      if (wdsizr.eq.8) if_full_pres = .true.
-
       ! distribute elements across all ranks
       nels = nelgs/np
       do i = 0,mod(nelgs,np)-1
@@ -100,6 +95,14 @@ c
         call exitti('source does not contain a mesh!$',0)
       endif
 
+      if(if_full_pres) then
+        call exitti('no support for if_full_pres!$',0)
+      endif
+
+      if(nelt.ne.nelv) then
+        call exitti('no support for conj/HT!$',0)
+      endif
+
       ! initialize interpolation tool using source mesh
       nxf   = 2*nxs
       nyf   = 2*nys
@@ -121,7 +124,7 @@ c
         call gfldr_getfld(pm1,dum,dum,1,ifldpos+1,ifbswp)
         ifldpos = ifldpos + 1
         if (ifaxis) call axis_interp_ic(pm1)
-        if (ifgetpr) call map_pm1_to_pr(pm1,1)
+        call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
         call gfldr_getfld(t(1,1,1,1,1),dum,dum,1,ifldpos+1,ifbswp)
@@ -133,8 +136,6 @@ c
            ifldpos = ifldpos + 1
          endif
       enddo
-
-      if_full_pres = if_full_pres_tmp
 
       call byte_close_mpi(fldh_gfldr,ierr)
       call fgslib_findpts_free(inth_gfldr)

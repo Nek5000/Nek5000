@@ -152,8 +152,6 @@ c-----------------------------------------------------------------------
 
          mid   = gllnid(eg)
          e     = gllel (eg)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          mtype = 2000+e
 
          if (nid.eq.0) then

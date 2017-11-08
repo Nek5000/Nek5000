@@ -47,15 +47,17 @@ c     outpost arrays
 
       logical if_fltv
 
+      ncut = param(101)+1
+
       if(wght.le.0) return
-      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',wght
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
+     $                                            ifield, ncut, wght
 
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
       if (icalld.eq.0) then
          icalld = 1
-         ncut = param(101)+1
          call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
       elseif (icalld.lt.0) then   ! old (std.) filter
          icalld = 1
@@ -3023,8 +3025,6 @@ c-----------------------------------------------------------------------
          call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          mtype = e
          if (jnid.eq.0 .and. nid.eq.0) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))

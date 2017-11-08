@@ -69,9 +69,6 @@ C     restart file(s) together with the associated dump number
 
       call slogic (iffort,ifrest,ifprsl,nfiles)
 
-C     Set up proper initial values for turbulence model arrays
-      IF (IFMODEL) CALL PRETMIC
-
 C      ***** TEMPERATURE AND PASSIVE SCALARS ******
 C
 C     Check if any pre-solv necessary for temperature/passive scalars
@@ -87,7 +84,6 @@ C     Check if any pre-solv necessary for temperature/passive scalars
 
 C     Fortran function initial conditions for temp/pass. scalars.
       maxfld = nfield
-      if (ifmodel.and.ifkeps) maxfld = nfield-2
       if (ifmhd) maxfld = npscal+3
 
 c     Always call nekuic (pff, 12/7/11)
@@ -148,21 +144,9 @@ c
 
       ntotv = nx1*ny1*nz1*nelv
 
-C     Fortran function initial conditions for turbulence k-e model
-      if (ifmodel .and. ifkeps) then
-         mfldt = nfield - 1
-         do 300 ifield=mfldt,nfield
-            if (iffort(ifield,jp)) call nekuic
- 300     continue
-      endif
-
 C     Initial mesh velocities
       if (ifmvbd) call opcopy (wx,wy,wz,vx,vy,vz)
       if (ifmvbd.and..not.ifrest(0,jp)) call meshv (2)
-
-C     Compute additional initial values for turbulence model arrays
-C     based on I.C.
-      if (ifmodel) call postmic
 
 C     If convection-diffusion of a passive scalar with a fixed velocity field,
 C     make sure to fill up lagged arrays since this will not be done in
@@ -1250,8 +1234,6 @@ C
 C     Parallel code - send data to appropriate processor and map.
 C
          JNID=GLLNID(IEG)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          MTYPE=3333+GLLEL(IEG)
          LEN=4*NXYR
          LE1=4
@@ -1688,7 +1670,6 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
-      include 'TURBO'
       include 'PARALLEL'
       include 'NEKUSE'
 
@@ -1696,68 +1677,38 @@ c-----------------------------------------------------------------------
 
       nel   = nelfld(ifield)
 
-      if (ifmodel .and. ifkeps .and. ifield.eq.ifldk) then
+      do e=1,nel
+         eg = lglel(e)
+         do 300 k=1,nz1
+         do 300 j=1,ny1
+         do 300 i=1,nx1
+           call nekasgn (i,j,k,e)
+           call useric  (i,j,k,eg)
+           if (jp.eq.0) then
+             if (ifield.eq.1) then
+               vx(i,j,k,e) = ux
+               vy(i,j,k,e) = uy
+               vz(i,j,k,e) = uz
+             elseif (ifield.eq.ifldmhd) then
+               bx(i,j,k,e) = ux
+               by(i,j,k,e) = uy
+               bz(i,j,k,e) = uz
+             else
+               t(i,j,k,e,ifield-1) = temp
+             endif
+           else
+             ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
+             if (ifield.eq.1) then
+               vxp(ijke,JP) = ux
+               vyp(ijke,JP) = uy
+               vzp(ijke,JP) = uz
+             else
+               tp(ijke,ifield-1,JP) = temp
+             endif
+           endif
 
-         do e=1,nel
-            eg = lglel(e)
-            do 100 k=1,nz1
-            do 100 j=1,ny1
-            do 100 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbk
- 100        continue
-         enddo
-
-      elseif (ifmodel .and. ifkeps .and. ifield.eq.iflde) then
-
-         do e=1,nel
-            eg = lglel(e)
-            do 200 k=1,nz1
-            do 200 j=1,ny1
-            do 200 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbe
- 200        continue
-         enddo
-C
-      else
-         do e=1,nel
-            eg = lglel(e)
-            do 300 k=1,nz1
-            do 300 j=1,ny1
-            do 300 i=1,nx1
-              call nekasgn (i,j,k,e)
-              call useric  (i,j,k,eg)
-              if (jp.eq.0) then
-                if (ifield.eq.1) then
-                  vx(i,j,k,e) = ux
-                  vy(i,j,k,e) = uy
-                  vz(i,j,k,e) = uz
-                elseif (ifield.eq.ifldmhd) then
-                  bx(i,j,k,e) = ux
-                  by(i,j,k,e) = uy
-                  bz(i,j,k,e) = uz
-                else
-                  t(i,j,k,e,ifield-1) = temp
-                endif
-              else
-                ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
-                if (ifield.eq.1) then
-                  vxp(ijke,JP) = ux
-                  vyp(ijke,JP) = uy
-                  vzp(ijke,JP) = uz
-                else
-                  tp(ijke,ifield-1,JP) = temp
-                endif
-              endif
-
- 300        continue
-         enddo
-
-      endif
-
+ 300     continue
+      enddo
 
       return
       END
@@ -2024,6 +1975,7 @@ c-----------------------------------------------------------------------
 
       integer e,ei,eg,msg_id(lelt)
       logical iskip
+      integer*8 i8tmp
 
       call nekgsync() ! clear outstanding message queues.
 
@@ -2039,9 +1991,12 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-         dtmp  = dnxyzr*nelr 
-         nread = dtmp/lrbs
-         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+c         dtmp  = dnxyzr*nelr 
+c         nread = dtmp/lrbs
+c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         i8tmp = int(nxyzr,8)*int(nelr,8)
+         nread = i8tmp/int(lrbs,8)
+         if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2052,8 +2007,6 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-c     Tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
@@ -2081,8 +2034,6 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
-c     Tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
                jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
                call csend(jeln,w2(l),len,jnid,0)  ! blocking send
@@ -2112,6 +2063,7 @@ c     endif
       endif
 
       nxyzr = nxr*nyr*nzr
+      nxyzv = nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2124,7 +2076,11 @@ c     endif
             ei = er(e)
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzw,ierr)
+            if(wdsizr.eq.8) then
+              call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+              call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2163,7 +2119,8 @@ c-----------------------------------------------------------------------
       real*4 w2
 
       integer e,ei,eg,msg_id(lelt)
-
+      integer*8 i8tmp
+ 
       call nekgsync() ! clear outstanding message queues.
 
       nxyzr  = ndim*nxr*nyr*nzr
@@ -2178,9 +2135,12 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         dtmp  = dnxyzr*nelr
-         nread = dtmp/lrbs
-         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+c         dtmp  = dnxyzr*nelr
+c         nread = dtmp/lrbs
+c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         i8tmp = int(nxyzr,8)*int(nelr,8)
+         nread = i8tmp/int(lrbs,8)
+         if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2192,8 +2152,6 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
@@ -2220,8 +2178,6 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
                jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
                call csend(jeln,w2(l),len,jnid,0)  ! blocking send
@@ -2237,19 +2193,13 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          endif
       endif
 
-c     if (if_byte_sw.and.wdsizr.eq.8) then
-c        if(nid.eq.0) 
-c    &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
-c    &                'not supported'
-c        call exitt
-c     endif
-
       if (iskip) then
          call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't assign the data we just read
       endif
 
       nxyzr = nxr*nyr*nzr
+      nxyzv = ndim*nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2262,7 +2212,11 @@ c     endif
             ei = er(e) 
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzw*ndim,ierr)
+            if(wdsizr.eq.8) then
+               call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+               call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
          if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
             if (wdsizr.eq.4) then         ! COPY
@@ -2476,8 +2430,6 @@ c
       character*132 hdr
       character*132  fname
 
-      logical if_full_pres_tmp
-
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
@@ -2494,9 +2446,6 @@ c
       nxyzr8  = nxr*nyr*nzr
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
-
-      if_full_pres_tmp = if_full_pres
-      if (wdsizr.eq.8) if_full_pres = .true. !Preserve mesh 2 pressure
 
       iofldsr = 0
       if (ifgetxr) then      ! if available
@@ -2595,8 +2544,6 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
-      if_full_pres = if_full_pres_tmp
-
       return
       end
 c-----------------------------------------------------------------------
@@ -2662,7 +2609,6 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 101
          if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
          if(ierr.ne.0) goto 101
-
          call byte_close(ierr)
       endif
 
@@ -2801,8 +2747,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
-
-      logical if_full_pres_tmp
 
       real pm1(lx1*ly1*lz1,lelv)
       integer e

@@ -45,16 +45,15 @@ c     ifcrsl = .true.
 
       if (istep.le.1.and.iffdm) call set_fdm_prec_h1A
 
-      tol=tin
-      if (param(22).ne.0) tol=abs(param(22))
-c     if (matmod.lt.0) tol = 1.e-4
-c     if (matmod.lt.0) tol = tin
-c     tol = 1.e-10
+      tol  = tin
+
+c     overrule input tolerance
+      if (restol(ifield).ne.0) tol=restol(ifield)
 
       if (ifcrsl) call set_up_h1_crs_strs(h1,h2,ifield,matmod)
 
-      if (nio.eq.0.and.istep.eq.1) write(6,6) matmod,tol,tin,param(22)
-   6  format(i3,1p3e12.4,' tol,matmod')
+c      if (nio.eq.0.and.istep.eq.1) write(6,6) ifield,tol,tin
+c   6  format(i3,1p2e12.4,' ifield, tol, tol_in')
 
       if ( .not.ifsolv ) then           !     Set logical flags
          call setfast (h1,h2,imesh)
@@ -65,9 +64,13 @@ c     tol = 1.e-10
       rbnorm = glsc3(wa,binv,rmult,n)
       rbnorm = sqrt ( rbnorm / vol )
       if (rbnorm .lt. tol**2) then
+         iter = 0
+         r0 = rbnorm
 c        if ( .not.ifprint )  goto 9999
-         if (matmod.ge.0.and.nio.eq.0) write (6,2000) istep,rbnorm,tol
-         if (matmod.lt.0.and.nio.eq.0) write (6,2010) istep,rbnorm,tol
+         if (matmod.ge.0.and.nio.eq.0) write (6,3000) 
+     $                                 istep,iter,rbnorm,r0,tol
+         if (matmod.lt.0.and.nio.eq.0) write (6,3010) 
+     $                                 istep,iter,rbnorm,r0,tol
          goto 9999
       endif
 
@@ -155,20 +158,19 @@ c     call copy (dpc,binv,n)
          call opadds (p1,p2,p3,pp1,pp2,pp3,beta,n,1)
 
  1000 continue
- 
-      if (matmod.ge.0.and.nio.eq.0) write (6,3001) istep,iter,rbnorm,tol
-      if (matmod.lt.0.and.nio.eq.0) write (6,3011) istep,iter,rbnorm,tol
+      if (matmod.ge.0.and.nio.eq.0) write (6,3001) 
+     $                              istep,iter,rbnorm,r0,tol
+      if (matmod.lt.0.and.nio.eq.0) write (6,3011) 
+     $                              istep,iter,rbnorm,r0,tol
 
  9999 continue
       ifsolv = .false.
 
 
- 2000 format(i11,1x,' Helmh3 fluid no iteration - rbnorm =',2E13.4)
- 2010 format(i11,1x,' Helmh3 mesh  no iteration - rbnorm =',2E13.4)
- 3000 format(i11,1x,' Helmh3 fluid ',I7,1p4E13.4)
- 3010 format(i11,1x,' Helmh3 mesh ' ,I7,1p4E13.4)
- 3001 format(2i6,' Unconverged Helmh3 fluid rbnorm =',2E13.6)
- 3011 format(2i6,' Unconverged Helmh3 mesh  rbnorm =',2E13.6)
+ 3000 format(i11,'  Helmh3 fluid  ',I6,1p3E13.4)
+ 3010 format(i11,'  Helmh3 mesh   ',I6,1p3E13.4)
+ 3001 format(i11,'  Helmh3 fluid unconverged! ',I6,1p3E13.4)
+ 3011 format(i11,'  Helmh3 mesh unconverged! ',I6,1p3E13.4)
 
       return
       end
@@ -2752,6 +2754,9 @@ C     Caution: 2nd and 3rd strainrate invariants residing in scratch
 C              common /SCREV/ are used in STNRINV and NEKASGN
 C
       common /screv/ sii (lx1,ly1,lz1,lelt),siii(lx1,ly1,lz1,lelt)
+
+      if (nio.eq.0.and.loglevel.gt.2)
+     $   write(6,*) 'setprop'
 
 #ifdef TIMER
       if (icalld.eq.0) tspro=0.0

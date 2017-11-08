@@ -155,9 +155,6 @@ C------------------------------------------------------------------------
       include 'DEALIAS'
       include 'TSTEP'
 C
-C     Enforce splitting/Uzawa according to the way the code was compiled
-C
-c
       nxd = lxd
       nyd = lyd
       nzd = lzd
@@ -183,19 +180,6 @@ c
          nfldtm = nfldtm + 1
       endif
 c
-      IF (IFMODEL) CALL SETTMC
-      IF (IFMODEL.AND.IFKEPS) THEN
-         NPSCAL = 1
-         NFLDTM = NPSCAL + 1
-         IF (LDIMT.LT.NFLDTM) THEN
-            WRITE (6,*) 'k-e turbulence model activated'
-            WRITE (6,*) 'Insufficient number of field arrays'
-            WRITE (6,*) 'Rerun through PRE or change SIZE file'
-            call exitt
-         ENDIF
-         NFIELD = NFIELD + 2
-         CALL SETTURB
-      ENDIF
       MFIELD = 1
       IF (IFMVBD) MFIELD = 0
 C
@@ -276,11 +260,6 @@ C
          NABMSH    = NBDINP
          PARAM(28) = (NABMSH)
       ENDIF
-C
-C     Set default for mixing length factor
-C
-      TLFAC = 0.14
-c     IF (PARAM(49) .LE. 0.0) PARAM(49) = TLFAC
 C
 C     Courant number only applicable if convection in ANY field.
 C
@@ -372,12 +351,6 @@ c         write(6,*) 'Note VISCOS not equal to CONDUCT!'
 c         write(6,*) 'Note VISCOS  =',PARAM(2)
 c         write(6,*) 'Note CONDUCT =',PARAM(8)
 c      endif
-
-      if (param(62).gt.0) then
-         if(nio.eq.0) write(6,*)
-     &      'enable byte swap for output'
-         call set_bytesw_write(1)
-      endif
 c
       return
 C
@@ -759,7 +732,6 @@ c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model              
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
@@ -774,7 +746,6 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
                                   !  Std. NEKTON time stepper  !
          endif
 
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
@@ -812,7 +783,6 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO' 
       include 'DEALIAS'
 
       real*8 ts, dnekclock
@@ -845,7 +815,6 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO' 
       include 'DEALIAS'
 
       real*8 ts, dnekclock
@@ -999,16 +968,6 @@ c
             endif
           endif
 c
-          iread = 3
-          if (ifmodel .and. .not.ifkeps) then
-             read (iru,1100,end=9000) tlmax,tlimul
-             read (iru,1100,end=9000) (turbl(i,1,1,1),i=1,ntov1)
-          endif
-          if (ifcwuz) then
-             read (iru,1100,end=9000) (zwall (i,1,1,1),i=1,ntfc1)
-             read (iru,1100,end=9000) (uwall(i,1,1,1),i=1,ntfc1)
-          endif 
-c
           if (ifgeom) then
              call geom1 (xm3,ym3,zm3)
              call geom2
@@ -1081,15 +1040,6 @@ c
              write (iwu,1100) (tlag(i,1,1,1,1,1),i=1,ntotf*nlag)
             endif
           endif
-c
-          if (ifmodel .and. .not.ifkeps) then
-             write (iwu,1100) tlmax,tlimul
-             write (iwu,1100) (turbl(i,1,1,1),i=1,ntov1)
-          endif
-          if (ifcwuz) then
-             write (iwu,1100) (zwall(i,1,1,1),i=1,ntfc1)
-             write (iwu,1100) (uwall(i,1,1,1),i=1,ntfc1)
-          endif 
 c
       endif
 c

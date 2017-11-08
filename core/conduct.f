@@ -40,17 +40,10 @@ C
       else                   ! geometry at t^n
 
          IF (IFPRINT) THEN
-         IF (IFMODEL .AND. IFKEPS) THEN
-            NFLDT = NFIELD - 1
-            IF (IFIELD.EQ.NFLDT.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Turbulence Model - k/epsilon solution'
-            ENDIF
-         ELSE
-            IF (IFIELD.EQ.2.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Temperature/Passive scalar solution'
-            ENDIF
+            IF (IFIELD.EQ.2.AND.NID.EQ.0)
+     $          WRITE (6,*) ' Temperature/Passive scalar solution'
          ENDIF
-         ENDIF
+
          if1=ifield-1
          write(name4t,1) if1-1
     1    format('PS',i2)
@@ -128,8 +121,10 @@ c     mass matrix on the Gauss-Lobatto mesh.
 
       if (.not.ifcvfld(ifield)) time = time-dt ! Set time to t^n-1 for user function
 
-      call setqvol (bq(1,1,1,1,ifield-1))
-      call col2    (bq(1,1,1,1,ifield-1) ,bm1,n)
+      if (nio.eq.0.and.loglevel.gt.2) 
+     $   write(6,*) 'makeuq', ifield, time
+      call setqvol(bq(1,1,1,1,ifield-1))
+      call col2   (bq(1,1,1,1,ifield-1) ,bm1,n)
 
       if (.not.ifcvfld(ifield)) time = time+dt ! Restore time
 

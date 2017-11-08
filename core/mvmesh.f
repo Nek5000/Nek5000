@@ -788,7 +788,6 @@ C     Solve for interior mesh velocities
       CALL MESHTOL (AW1,TOLMSH,NEL,IMSOLV)
       IF (IMSOLV.EQ.1) return
 
-
       CALL AXHMSF  (AW1,AW2,AW3,WX,WY,WZ,H1,H2,MATMOD)
 
 c     if (istep.eq.2) then

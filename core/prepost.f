@@ -11,23 +11,20 @@ c     and set ifoutfld accordingly
 
       ifoutfld = .false.
 
-      if (iostep.lt.0 .or. timeio.lt.0) return
+      if (iostep.le.0 .and. timeio.le.0) return
 
       if (istep.ge.nsteps) lastep=1
 
-      timdump=0
-      if (timeio.ne.0.0) then
+      if (iostep.gt.0) then
+         if(mod(istep,iostep).eq.0) ifoutfld=.true.
+      else if (timeio.ne.0.0) then
          if (time.ge.(ntdump + 1)*timeio) then
-            timdump=1.
             ntdump=ntdump+1
+            ifoutfld=.true.
          endif
       endif
 
-      if (istep.gt.0 .and. iostep.gt.0) then
-         if(mod(istep,iostep) .eq. 0) ifoutfld=.true.
-      endif
-
-      if(ioinfodmp.ne.0.or.lastep.eq.1.or.timdump.eq.1.) ifoutfld=.true.
+      if (ioinfodmp.ne.0 .or. lastep.eq.1) ifoutfld=.true. 
 
       return
       end
@@ -102,7 +99,7 @@ c
       if (ioinfodmp.eq.-2) return
 
 #ifdef TIMER
-      etime1=dnekclock()
+      etime1=dnekclock_sync()
 #endif
 
       prefix = prefin
@@ -286,7 +283,6 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       p66 = param(66)
       if (abs(p66).eq.6) then
          call mfo_outfld(prefix)
-         call nekgsync                ! avoid race condition w/ outfld
          return
       endif
 
@@ -408,8 +404,6 @@ C     Dump header
             if (jnid.eq.0) then
                call fill_tmp(tdump,id,ie)
             else
-c	tag for sending and receiving changed from global (eg) to local (e) element number
-c	to avoid problems with MPI_TAG_UB on Cray
                mtype=2000+ie
                len=4*id*nxyz
                dum1=0.
@@ -420,8 +414,6 @@ c	to avoid problems with MPI_TAG_UB on Cray
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
-c       tag for sending and receiving changed from global (eg) to local (e) element number
-c       to avoid problems with MPI_TAG_UB on Cray
             mtype=2000+ie
             len=4*id*nxyz
             call crecv2 (mtype,dum1,wdsize,node0)
@@ -870,7 +862,9 @@ c-----------------------------------------------------------------------
       offs0 = iHeaderSize + 4 + isize*nelgt
 
       ierr=0
-      call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
+      if (nid.eq.pid0) then
+         call mfo_open_files(prefix,ierr)         ! open files on i/o nodes
+      endif
       call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_
@@ -1923,12 +1917,6 @@ c     check pressure format
      $            ,(rdcode1(i),i=1,10),p0th,if_press_mesh
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1)
-
-      ! if we want to switch the bytes for output
-      ! switch it again because the hdr is in ASCII
-      call get_bytesw_write(ibsw_out)
-c      if (ibsw_out.ne.0) call set_bytesw_write(ibsw_out)
-      if (ibsw_out.ne.0) call set_bytesw_write(0)  
 
       test_pattern = 6.54321           ! write test pattern for byte swap
 

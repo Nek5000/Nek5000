@@ -62,7 +62,7 @@ c     keep parameter as false unless you know what you are doing.
 
       if (hpf_chi.eq.0) return
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply hpf ',
-     $                                 ifield, hpf_chi
+     $                                 ifield, hpf_kut, hpf_chi
 
       if (icalld.eq.0) then
 c       Create the filter transfer function

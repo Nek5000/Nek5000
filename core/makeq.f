@@ -13,6 +13,9 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelv
 
+      if (nio.eq.0.and.loglevel.gt.2)
+     $   write(6,*) 'makeq', ifield
+
       if_conv_std = .true.
       if (ifmhd.and.ifaxis) if_conv_std = .false. ! conv. treated in induct.f
 

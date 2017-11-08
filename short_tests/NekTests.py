@@ -1269,21 +1269,6 @@ class IO_Test(NekTestCase):
         self.build_tools(['genmap'])
         self.run_genmap()
 
-    @pn_pn_2_serial
-    def test_PnPn2_Serial(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek(usr_file='io_test')
-        self.run_nek(step_limit=None)
-
-        phrase = self.get_phrase_from_log('FAILED:')
-        self.assertIsNullDelayed(phrase, label='FAILED:')
-
-        phrase = self.get_phrase_from_log('All I/O test finished')
-        self.assertIsNotNullDelayed(phrase, label='All I/O test finished')     
-
-        self.assertDelayedFailures()
-        
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
@@ -1291,11 +1276,8 @@ class IO_Test(NekTestCase):
         self.build_nek(usr_file='io_test')
         self.run_nek(step_limit=None)  
         
-        phrase = self.get_phrase_from_log('FAILED:')
-        self.assertIsNullDelayed(phrase, label='FAILED:')
-
-        phrase = self.get_phrase_from_log('All I/O test finished')
-        self.assertIsNotNullDelayed(phrase, label='All I/O test finished')
+        phrase = self.get_phrase_from_log('All I/O tests PASSED')
+        self.assertIsNotNullDelayed(phrase, label='All I/O tests PASSED')
 
         self.assertDelayedFailures()
 
@@ -1318,7 +1300,7 @@ if __name__ == '__main__':
 
     # # Set environment
     os.environ['CC'] = args.cc
-    os.environ['F77'] = args.f77
+    os.environ['FC'] = args.f77
     os.environ['IFMPI'] = args.ifmpi
     os.environ['PARALLEL_PROCS'] = args.nprocs
     if args.verbose:

@@ -9,7 +9,7 @@ C     (Note: this algorithm is inherently CONFORMING, as constant r-s-t
 C            planes have little significance in a non-conforming
 C            discretization where the continuum assumption is not honored.)
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 C
 C     Algorithm:  Set up indices, e.g:
@@ -243,7 +243,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine drquad
-      include 'basics.inc'
+#     include "basics.inc"
 C
       NFACES=6
       DO 600 IE=1,NEL
@@ -261,7 +261,7 @@ C
 c-----------------------------------------------------------------------
       subroutine xdiam3(xyz)
 c     draws a diamond around XX,YY
-      include 'basics.inc'
+#     include "basics.inc"
 C
       DIMENSION XYZ(3)
       XX=XISO(XYZ(1),XYZ(2),XYZ(3))
@@ -276,7 +276,7 @@ C
 c-----------------------------------------------------------------------
       subroutine mapxc(xyz,ie)
 C     Map the element corner points (x,y,z) to standard vector.
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION INDX(8)
       DIMENSION XYZ(3,8)
       INDX(1)=1
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
       CHARACTER*1 SRFQAL(1)
       CHARACTER*1 CB1,CB
 C
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Select a list of planes according to the specified boundary
 C     qualifications given in SRFQAL.  If the number of qualifications,
@@ -403,7 +403,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine sortl
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       COMMON /CTMPS1/ IND(NELM,6),WK(NELM,6)
 C
@@ -457,7 +457,7 @@ C     with this plane, and assign the sign of the dot product of that
 C     component with the normal to Lplane.
 C     11/92 pff.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       DIMENSION VEC0(3),VEC1(3),VEC2(3),VEC3(3)
 C
@@ -515,7 +515,7 @@ c     write(6,*) ie,vec0(imax),lplane,' signpl'
       end
 c-----------------------------------------------------------------------
       subroutine gencen
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Generate the element centers
 C
@@ -560,7 +560,7 @@ C
 c-----------------------------------------------------------------------
       subroutine clip_plane
 C     Set up list of candidate RST planes
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
       DIMENSION VEC(3),VEC1(3),VEC2(3),VEC3(3)
@@ -665,7 +665,7 @@ c
 c-----------------------------------------------------------------------
       subroutine outvtx(ie,ifce,io)
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer fv3(4,6)
       save    fv3
@@ -697,7 +697,7 @@ c-----------------------------------------------------------------------
 c     
 c     prompt user for new bc to be applied to currently selected planes
 c     
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       return
@@ -801,7 +801,7 @@ c-----------------------------------------------------------------------
 c     
 c     prompt user for new cg and translate geometry to this location
 c     
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real cgx,cgy,cgz
@@ -873,7 +873,7 @@ c-----------------------------------------------------------------------
 c     
 c     prompt user for new cg and translate geometry to this location
 c     
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ixx,iyy,izz,ixy,ixz,iyz
@@ -1023,7 +1023,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine mapz(f,regdir)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real f(nxm*nym*nzm*nelm)
       real gll_pts(nxm),gll_wts(nxm),i(nxm*nxm),it(nxm*nxm)
@@ -1076,7 +1076,7 @@ c
 c-----------------------------------------------------------------------
       subroutine setsrfp_periodic(e,f,e1,f1,ifld)
  
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,f,e1,f1,e0,f0
 c
@@ -1116,7 +1116,7 @@ c
 c-----------------------------------------------------------------------
       subroutine periodic_check
  
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,f,e1,f1,e0,f0
 c

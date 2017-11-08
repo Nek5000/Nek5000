@@ -42,7 +42,7 @@ def config_maketools(infile, outfile, f77=None, cc=None):
         lines = f.readlines()
 
     if f77:
-        lines = [re.sub(r'^F77=\"+.+?\"+', r'F77="{0}"'.format(f77), l)
+        lines = [re.sub(r'^FC=\"+.+?\"+', r'FC="{0}"'.format(f77), l)
                  for l in lines]
     if cc:
         lines = [re.sub(r'^CC=\"+.+?\"+', r'CC="{0}"'.format(cc), l)

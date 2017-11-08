@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine interp(val,xex,yex,zex,ieo,tt,ierr)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       common /findri/ ixyzmin,ixyzemn,iexyzmn  ! location of closest point
@@ -119,7 +119,7 @@ c-----------------------------------------------------------------------
 C
 C     Evaluate a scalar, SCAL, at position RRL and return the result in X0.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION SCAL(1)
       DIMENSION RRL(3)
       COMMON  /ceval/ HR(NXM),HS(NXM),HT(NXM)
@@ -179,7 +179,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine findl(txy,level,tmin,tmax)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
 C
@@ -200,7 +200,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine histry
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       REAL SPEEDH(MAXS)
       CHARACTER KEY,STRING*5,ANS2*2,LABEL*40,CVEL*20
@@ -400,7 +400,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine setann
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*40 LABEL
 C
@@ -489,7 +489,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine value
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       IF(QUANTY .EQ.'VORTICITY' )THEN
@@ -532,7 +532,7 @@ C        SCALAR
       END
 c-----------------------------------------------------------------------
       subroutine values_std  ! Changed to dump only WORK() in routine at end
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       CHARACTER FILE*40
@@ -821,7 +821,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine nekprofil
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ANS2*2,LABEL*40,CVEL*20
 C
@@ -870,7 +870,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ezxyp(dum,pingrl,icode)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       LOGICAL IFTMP
       PARAMETER (LXYZ=NXM*NYM*NZM)
@@ -897,7 +897,7 @@ C
 c-----------------------------------------------------------------------
       subroutine drbox(iel,k)
 C     Draws box around element IEL at plane K
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
       CALL COLOR(1)
@@ -928,7 +928,7 @@ C     Draws box around element IEL at plane K
 C**************************************************************end of postnek
 c-----------------------------------------------------------------------
       subroutine stream
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common /ws_comm/ wscale,wmin
@@ -1394,7 +1394,7 @@ C
 C     Compute Lagrangian movement of particles for the current time
 C     step.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       LOGICAL IFCOND
@@ -1426,7 +1426,7 @@ c-----------------------------------------------------------------------
 C
 C     Set up some basic arrays for the tracking of Lagrangian particles
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
@@ -1442,7 +1442,7 @@ c-----------------------------------------------------------------------
 C
 C     Update XXL and RRL according to new time step.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       REAL  DTL,DTOLD,UOLD,VOLD,WOLD,DTLMIN,DTLMAX,DXCHAR,Fintinv
@@ -1578,7 +1578,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine diamda(xx,yy)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws a diamond around XX,YY
       CALL MOVEC(XX+.0005*XFAC ,YY+.0005*YFAC)
       CALL DRAWC(XX-.0005*XFAC ,YY+.0005*YFAC)
@@ -1593,7 +1593,7 @@ C
 C     Compute the integral of U*ds around a (supposedly) closed curve
 C     starting at (x0,y0)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DATA XLMAX,YLMAX,ZLMAX,XLMIN,YLMIN,ZLMIN,ULAST,ULMAX,
      $VLAST,VLMAX,WLAST,WLMAX,ULMIN,VLMIN,WLMIN,SLMAX,SLMIN /17*0.0/
@@ -1725,7 +1725,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine project(v0,v1,v2,iset)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION V0(3),V1(3),V2(3)
       DIMENSION VT(3),VT1(3),VT2(3)
       SAVE VT,VT1,VT2
@@ -1829,7 +1829,7 @@ C
       subroutine calcerr(tt,iferr)
 C
 C----------------------------------------------------
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       return
       END
@@ -1842,7 +1842,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine strfct(psi)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       REAL PSI(1)
       real psimxx,psimnn
@@ -1982,7 +1982,7 @@ c
 c-----------------------------------------------------------------------
       subroutine strem2(psi,ie)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       REAL PSI(1)
@@ -2111,7 +2111,7 @@ C
 c-----------------------------------------------------------------------
       logical function ifcond(xyzlg)
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       DIMENSION XYZLG(3)
 C
@@ -2551,7 +2551,7 @@ c-----------------------------------------------------------------------
       real w0(1),w1(1)
       real d(4)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real est_fintime
@@ -2619,7 +2619,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute RHS of ODE:
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c
@@ -2646,7 +2646,7 @@ c-----------------------------------------------------------------------
       subroutine out_w(xpos,t_str,dt_str,dto,i,nstep,iclr)
       real xpos(3),r(3)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       common /ws_comm/ wscale,wmin
 c
@@ -2743,7 +2743,7 @@ c
 c     Take as input unformatted (param(66)=4) .fld file and put it as 
 c     output
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       character*40 fname
@@ -2903,7 +2903,7 @@ c
 c     Take as input unformatted (param(66)=4) .fld file and put it as 
 c     output
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       character*40 fname
@@ -2952,7 +2952,7 @@ c
 c     Take as input unformatted (param(66)=4) .fld file and put it as 
 c     output
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common /findri/ ixyzmin,ixyzemn,iexyzmn  ! location of closest point
@@ -3137,7 +3137,7 @@ c
 c-----------------------------------------------------------------------
       function user_flow(xi,yi,zi)
 c
-      include 'basics.inc'
+#     include "basics.inc"
 C
       user_flow=0.
 c
@@ -3205,7 +3205,7 @@ c
 c     Take as input unformatted (param(66)=4) .fld file and put it as 
 c     output
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       character*40 fname
@@ -3510,7 +3510,7 @@ c-----------------------------------------------------------------------
 c
 c     Find an element with minimal "y" value
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       n    = nx*ny*nz*nel
@@ -3631,7 +3631,7 @@ c-----------------------------------------------------------------------
 C
 C     Find (r,s,t) given (x,y,z)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       logical ifcurv(nelm)
 c
       do ie=1,nelm
@@ -3665,7 +3665,7 @@ c-----------------------------------------------------------------------
 C
 C     Find (r,s,t) given (x,y,z)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       DIMENSION RRL(3),XXL(3)
@@ -3712,7 +3712,7 @@ c-----------------------------------------------------------------------
 C
 C     Find (ie,rl) pair which minimizes the distance from x(r,ie) to xl
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       integer ie_last
@@ -3822,7 +3822,7 @@ c
       common /findri/ ixyzmin,ixyzemn,iexyzmn  ! location of closest point
       common /findrr/ dxyzmin
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       DIMENSION RRL(3),XXL(3)
@@ -4130,7 +4130,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine values
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       CHARACTER FILE*40

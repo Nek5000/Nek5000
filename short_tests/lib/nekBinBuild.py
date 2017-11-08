@@ -9,7 +9,7 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     print('Compiling tools... ')
     print('    Using source directory "{0}"'.format(tools_root))
     print('    Using output directory "{0}"'.format(tools_bin))
-    print('    Using F77 "{0}"'.format(f77))
+    print('    Using FC "{0}"'.format(f77))
     print('    Using CC "{0}"'.format(cc))
 
     maketools_in  = os.path.join(tools_root, 'maketools')

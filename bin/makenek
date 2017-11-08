@@ -7,7 +7,7 @@
 SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
-F77="mpif77"
+FC="mpif77"
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
@@ -56,7 +56,7 @@ set -e
 : ${VISIT:=0}
 
 # assign version tag
-mver=17.0.2
+mver=17.0.3
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
@@ -67,9 +67,8 @@ fi
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
-# compile gslib
-make -j4 -C $SOURCE_ROOT_GSLIB CC="$CC" CFLAGS="-O2 $CFLAGS" $GSLIB_OPT lib \
-            2>&1 | tee compiler.out
+# compile 3rd_party dependencies
+make_3rd_party
 
 # compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out

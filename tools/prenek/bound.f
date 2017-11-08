@@ -17,7 +17,7 @@ C
 c-----------------------------------------------------------------------
       subroutine overlap(iel,iside,ielo,isideo)
 C
-      include 'basics.inc'
+#     include "basics.inc"
 
 C     Find closest element, side we want to duplicate, If there is no overlap,
 C     returns original element and side
@@ -60,7 +60,7 @@ C
 c-----------------------------------------------------------------------
       subroutine INFLOW(IEL,ISIDE,IF,cbcI)
 C! REAL KLUDGE USED NOT TO CORRUPT LINE  !!??DO THE POINTERS GET READ IN RIGHT?
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER*3 cbcI
 C
 C     Don't read inline stuff anymore... pff 8/30/93.
@@ -261,7 +261,7 @@ C        EXPORT B.C. FOR INTERNAL Boundary
 C
 c-----------------------------------------------------------------------
       subroutine letbc(f,e,ifld,bclab)
-      include 'basics.inc'
+#     include "basics.inc"
       character bclab,bclab2*2
       integer e,f
 
@@ -293,7 +293,7 @@ C     call prsii(' B.C.?$',e,f)
       end
 c-----------------------------------------------------------------------
       subroutine chkbcs
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 cbctmp
       character*1 yesno
       logical iffaiL
@@ -462,7 +462,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine fndsida(kside,ke,iside,ie,if)
-      include 'basics.inc'
+#     include "basics.inc"
       real vec1(3),vec2(3),vec3(3)
 C
 C     Find a side JSIDE,JEL which corresponds to ISIDE,IE and doesn't
@@ -576,7 +576,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine qchk(ie,iside,je,jside,ifld)
-      include 'basics.inc'
+#     include "basics.inc"
       write(6,9) ie,iside,cbc(iside,ie,ifld),
      $            (bc(j,iside,ie,ifld),j=1,5)
       write(6,9) je,jside,cbc(jside,je,ifld),
@@ -589,7 +589,7 @@ c-----------------------------------------------------------------------
 c
 c     Assign periodic-auto bc
 c
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 bclab(2)
 c
       i_periodic=0
@@ -699,7 +699,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine out_cent
-      include 'basics.inc'
+#     include "basics.inc"
 c
 c     Dump element centroids, w/ element numbers for positional sorting
 c                                   pff 4/8/99
@@ -719,7 +719,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine user_bc1
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 bclab(2)
 c
 c     set all non E-E bc's
@@ -770,7 +770,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine user_bc2
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 bclab(2)
 c
 c     set all non E-E bc's
@@ -833,7 +833,7 @@ c     grep " 5 " b.3 | wc 96           576          7104
 c     grep " 6 " b.3 | wc 48           288          3552
 c
 
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 bclab(2)
 c
 c     set all non E-E bc's
@@ -884,7 +884,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_match_p(je,jf,ie,if)
-      include 'basics.inc'
+#     include "basics.inc"
 
       if1=1
       if(.not. ifflow) if1=2
@@ -949,7 +949,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine autoperiodz(dir,tol,cb_clear,xyz,m) ! dir=X,Y, or Z.
-      include 'basics.inc'
+#     include "basics.inc"
       common /domainr/ scal(nelm),list_e(2*nelm)
       character*1 dir
       character*3 cb,ck,cb_clear
@@ -1063,7 +1063,7 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       end
 c-----------------------------------------------------------------------
       subroutine bound ! Set boundary conditions
-      include 'basics.inc'
+#     include "basics.inc"
       character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
      $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
       logical iftmp
@@ -1105,7 +1105,7 @@ c     call out_cent ! dump element centroids, w/ element numbers for positional 
       end
 c-----------------------------------------------------------------------
       subroutine semi_init_bcs(maxlev,needbc,if1)
-      include 'basics.inc'
+#     include "basics.inc"
       character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
      $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
       logical iftmp
@@ -1174,7 +1174,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine first_bc_menu(needbc,if1)
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       if (needbc.eq.1) then ! Ya gotta have b.c.'s
          call prs('              *** MIDWAY BREAK MENU ***$')
@@ -1212,7 +1212,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rehighlight(e,f,jlevel)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 c
 c     Re-highlight the current element boundaries
@@ -1245,7 +1245,7 @@ c        Flash mesh sides
       end
 c-----------------------------------------------------------------------
       subroutine rezoom
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       call setzoom
@@ -1261,7 +1261,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine black_out_level
-      include 'basics.inc'
+#     include "basics.inc"
 
       call color(0)
       call fillp(0)
@@ -1276,7 +1276,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine set_up_level(num_on_this_level,ifld,jlevel)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 
       call black_out_level  ! Black out whole level
@@ -1307,7 +1307,7 @@ c     Draw mesh OR WHOLE ELEMENT?  ??Delete previous mesh(+bclabels?)
       end
 c-----------------------------------------------------------------------
       subroutine check_end_level(icontinue,jlevel,ifld)
-      include 'basics.inc'
+#     include "basics.inc"
       character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
      $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
       logical iftmp
@@ -1368,7 +1368,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine flash_side_a (ifade,iflash,e,f,fcorns,jlevel,ifld)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
       integer fcorns (4,6)
 
@@ -1405,7 +1405,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine flash_element_b(ifade,iflash,e,f,jlevel,ifld,fcorns)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
       integer fcorns (4,6)
       character bclab(2)
@@ -1457,7 +1457,7 @@ c        call draw (x(ff,e),y(ff,e))
       end
 c-----------------------------------------------------------------------
       subroutine set_bc_fld(ifld)  ! Set BCs for each field
-      include 'basics.inc'
+#     include "basics.inc"
       character heatbc,velbc,key,string*5,ele(4),bclab(2),reply,ques(2)
      $         ,reply2,ipapt,bcchoice*26,mode*15,cmenu*15,cc*3
       logical iftmp
@@ -2113,7 +2113,7 @@ c               Retain old elemental connectivity for internal B.C.'s
       end
 c-----------------------------------------------------------------------
       subroutine autoperiod
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 cb_clear
  
       tol=1.e-1
@@ -2159,7 +2159,7 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       end
 c-----------------------------------------------------------------------
       subroutine autoperiod1(nfail,tol)
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 cb,ck
 c
 c     Set any remaining candidate bcs to P
@@ -2244,7 +2244,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine autoperiod2(nfail,tol)
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 cb,ck,bclab
 c
 c     Set any remaining candidate bcs to P
@@ -2314,7 +2314,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine get_vec_side(vec3,iside,ie)
-      include 'basics.inc'
+#     include "basics.inc"
       real vec1(3),vec2(3),vec3(3)
 
       ic1 = icrn(1,iside)
@@ -2348,7 +2348,7 @@ c     if (nel.lt.500.or.mod(ie,100).eq.0) call prs(s)
       end
 c-----------------------------------------------------------------------
       subroutine fndsidb(kside,ke,iside,ie,if,tol)
-      include 'basics.inc'
+#     include "basics.inc"
       real vec1(3),vec2(3),vec3(3),vecj(3)
 C
 C     Find a side JSIDE,JEL which corresponds to ISIDE,IE and doesn't

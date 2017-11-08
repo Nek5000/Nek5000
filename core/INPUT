@@ -16,10 +16,11 @@ c
      $    ,cpgrp(-5:10,ldimt1,3)
      $    ,qinteg(ldimt3,maxobj)
      $    ,uparam(20)
-     $    ,atol(ldimt3)
+     $    ,atol(0:ldimt1)
+     $    ,restol(0:ldimt1)
      $    ,filterType
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
-     $                atol,filterType
+     $                atol,restol,filterType
 
       integer matype(-5:10,ldimt1)
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)

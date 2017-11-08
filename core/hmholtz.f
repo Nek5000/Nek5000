@@ -287,7 +287,7 @@ C
 C
       DO 100 ie=1,NEL
          IFFAST(ie) = .FALSE.
-         IF (IFDFRM(ie).OR.IFAXIS .OR. IFMODEL ) THEN
+         IF (IFDFRM(ie).OR.IFAXIS) THEN
             IFFAST(ie) = .FALSE.
          ELSE
            H1MIN  = VLMIN(HELM1(1,1,1,ie),NXYZ)
@@ -647,7 +647,6 @@ c
          niterhm = iter
          return
       endif
-c      write(6,*) ifsplit,name,param(44),' P44 C'
 
 c **  zero out stuff for Lanczos eigenvalue estimator
       call rzero(diagt,maxcg)
@@ -663,30 +662,13 @@ C
       IF (IMSH.EQ.2) VOL=VOLTM1
       n      = NEL*NXYZ
 
-c
       tol=abs(tin)
 
-c     overrule tolerance for velocity
-      if (param(22).ne.0) tol=abs(param(22))
-
-c     set tolerance for temp+scalars
-c     p20<0: use toli tolin 
-c     p20=0: use same tol as for vel
-c     p20>0: use specified tol for temp
-      if (ifield.gt.1) then
-         if (abs(param(20)).le.1e-1) then ! to avoid confusion with NORDER in historical .rea
-            if (param(20).lt.0.0) then
-               tol=abs(tin)
-            elseif (param(20).gt.0.0) then
-               tol=abs(param(20))
-            endif
-         endif
-      endif
-
-c     overrule tolerance for velocity
+c     overrule input tolerance
+      if (restol(ifield).ne.0) tol=restol(ifield)
       if (name.eq.'PRES'.and.param(21).ne.0) tol=abs(param(21))
 
-      if (tin.lt.0)       tol=abs(tin)
+      if (tin.lt.0) tol=abs(tin)
       niter = min(maxit,maxcg)
 
       if (.not.ifsolv) then

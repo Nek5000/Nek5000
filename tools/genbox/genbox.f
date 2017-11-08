@@ -65,7 +65,9 @@ c
 c
 c------------------------------------------------------------------------------
       program genbox
-      include 'SIZE'
+
+#     include "SIZE"
+
       character*132 string
       character*1  string1(132)
       equivalence (string,string1)
@@ -2065,7 +2067,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine cyl(if3d,ifflow,nfld,string,string1)
 
-      include 'SIZE'
+#     include "SIZE"
 
       character*132 string
       character*1  string1(132)

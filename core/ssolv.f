@@ -38,10 +38,8 @@ C
       IFTRAN    = .TRUE.
       IFCHAR    = .TRUE.
       CTARG     = 3.
-      IF (IFMODEL) CTARG = 2.
       IF (NX1.GE.10) THEN
          CTARG = 5.
-         IF (IFMODEL) CTARG = 3.
       ENDIF
       CALL SETPROP
       TAUMIN = 1.E20
@@ -63,7 +61,6 @@ C
 C
                    IFMODP = .TRUE.
       IF (IFNATC)  IFMODP = .FALSE.
-      IF (IFMODEL) IFMODP = .FALSE.
                    IFSKIP = .TRUE.
                    NSSKIP = 1
 C
@@ -419,7 +416,6 @@ C
 C
          KMAX   = 5
          NBDINP = 3
-         IF (IFMODEL) NBDINP = 2
          NSSKIP = 2
          IFSKIP = .TRUE.
          IFMODP = .FALSE.
@@ -438,7 +434,6 @@ C
 C
          KMAX   = 5
          NBDINP = 3
-         IF (IFMODEL) NBDINP = 2
          NSSKIP = 2
          IFSKIP = .TRUE.
          IFMODP = .FALSE.
@@ -761,18 +756,17 @@ C----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
+
+      REAL MAX_CFL_RK4
+      DATA MAX_CFL_RK4 /2.0/ ! stability limit for RK4 including safety factor
 C
       IF (IFCHAR) THEN
-         ICT    = INT(CTARG)
-         RICT   = (ICT)
-         DCT    = CTARG-RICT
-         IF (DCT.EQ.0.) NTAUBD = ICT
-         IF (DCT.GT.0.) NTAUBD = ICT+1
-c        if (param(78).ne.0) then
-c             ntaupf=int(param(78))
-c             if (nid.eq.0) write(6,*) ' new ntaubd:',ntaubd,ntaupf
-c             ntaubd=max(ntaubd,ntaupf)
-c        endif
+         ICT    = MAX(INT(CTARG/MAX_CFL_RK4),1)
+         NTAUBD = ICT
+         DCT    = CTARG - ICT*MAX_CFL_RK4
+         IF (DCT.GT.0.1) NTAUBD = NTAUBD+1
+         IF (NIO.EQ.0 .AND. LOGLEVEL.GT.2) 
+     $      write(6,*) 'RK4 substeps:', ntaubd
       ELSE
          NTAUBD = 0
          IF (CTARG.GT.0.5) THEN

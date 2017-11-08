@@ -1532,7 +1532,6 @@ C----------------------------------------------------------------------
       if ((iftran.and..not.ifchar).or.
      $    (iftran.and..not.ifnav.and.ifchar))   call makebdf
       if (ifnav.and.ifchar)                     call advchar
-      if (ifmodel)                              call twallsh
 
 c     Adding this call allows prescribed pressure bc for PnPn-2
 c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
@@ -1553,7 +1552,7 @@ C----------------------------------------------------------------------
 C
       TIME = TIME-DT
       CALL NEKUF   (BFX,BFY,BFZ)
-      CALL OPCOLV (BFX,BFY,BFZ,BM1)
+      CALL OPCOLV  (BFX,BFY,BFZ,BM1)
       TIME = TIME+DT
 C
       return
@@ -1570,7 +1569,7 @@ C
       REAL F3 (LX1,LY1,LZ1,LELV)
 
 #ifdef TIMER
-      etime1=dnekclock()
+      etime1=dnekclock_sync()
 #endif
 
       CALL OPRZERO (F1,F2,F3)
@@ -3324,6 +3323,9 @@ C
       REAL    CONV (LX1,LY1,LZ1,1) 
       REAL    FI   (LX1,LY1,LZ1,1)
 
+      if (nio.eq.0.and.loglevel.gt.2)
+     $   write(6,*) 'convop', ifield, ifdeal(ifield)
+
 #ifdef TIMER
       if (icalld.eq.0) tadvc=0.0
       icalld=icalld+1
@@ -3345,10 +3347,6 @@ C
          call convopo(conv,fi)
          goto 100
       endif
-
-c     write(6,*) istep,param(99),' CONVOP',ifpert
-c     ip99 = param(99)
-c     if (istep.gt.5) call exitti(' CONVOP dbg: $',ip99)
 
       if (.not. ifdeal(ifield)) goto 101
      

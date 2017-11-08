@@ -6,7 +6,6 @@ c
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO'
       include 'SOLN'
 
       do jp=1,npert
@@ -556,7 +555,6 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
-      INCLUDE 'TURBO'
       INCLUDE 'SOLN'
 C
       do jp=1,npert
@@ -669,8 +667,6 @@ C----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       include 'SOLN'
-      LOGICAL  IFTURB
-C
                                                        CALL MAKEUQP
       IF (IFADVC(IFIELD).AND.(.NOT.IFCHAR))            CALL CONVABP
       IF (IFTRAN)                                      CALL MAKEABQP
