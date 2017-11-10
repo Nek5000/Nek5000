@@ -1,135 +1,39 @@
-C==============================================================================
-C
-C     LIBRARY ROUTINES FOR SPECTRAL METHODS
-C
-C     March 1989
-C
-C     For questions, comments or suggestions, please contact:
-C
-C     Einar Malvin Ronquist
-C     Room 3-243
-C     Department of Mechanical Engineering
-C     Massachusetts Institute of Technology
-C     77 Massachusetts Avenue
-C     Cambridge, MA 0299
-C     U.S.A.
-C
-C------------------------------------------------------------------------------
-C
-C     ABBRIVIATIONS:
-C
-C     M   - Set of mesh points
-C     Z   - Set of collocation/quadrature points
-C     W   - Set of quadrature weights
-C     H   - Lagrangian interpolant
-C     D   - Derivative operator
-C     I   - Interpolation operator
-C     GL  - Gauss Legendre
-C     GLL - Gauss-Lobatto Legendre
-C     GJ  - Gauss Jacobi
-C     GLJ - Gauss-Lobatto Jacobi
-C
-C
-C     MAIN ROUTINES:
-C
-C     Points and weights:
-C
-C     ZWGL      Compute Gauss Legendre points and weights
-C     ZWGLL     Compute Gauss-Lobatto Legendre points and weights
-C     ZWGJ      Compute Gauss Jacobi points and weights (general)
-C     ZWGLJ     Compute Gauss-Lobatto Jacobi points and weights (general)
-C
-C     Lagrangian interpolants:
-C
-C     HGL       Compute Gauss Legendre Lagrangian interpolant
-C     HGLL      Compute Gauss-Lobatto Legendre Lagrangian interpolant
-C     HGJ       Compute Gauss Jacobi Lagrangian interpolant (general)
-C     HGLJ      Compute Gauss-Lobatto Jacobi Lagrangian interpolant (general)
-C
-C     Derivative operators:
-C
-C     DGLL      Compute Gauss-Lobatto Legendre derivative matrix
-C     DGLLGL    Compute derivative matrix for a staggered mesh (GLL->GL)
-C     DGJ       Compute Gauss Jacobi derivative matrix (general)
-C     DGLJ      Compute Gauss-Lobatto Jacobi derivative matrix (general)
-C     DGLJGJ    Compute derivative matrix for a staggered mesh (GLJ->GJ) (general)
-C
-C     Interpolation operators:
-C
-C     IGLM      Compute interpolation operator GL  -> M
-C     IGLLM     Compute interpolation operator GLL -> M
-C     IGJM      Compute interpolation operator GJ  -> M  (general)
-C     IGLJM     Compute interpolation operator GLJ -> M  (general)
-C
-C     Other:
-C
-C     PNLEG     Compute Legendre polynomial of degree N
-C     PNDLEG    Compute derivative of Legendre polynomial of degree N
-C
-C     Comments:
-C
-C     Note that many of the above routines exist in both single and
-C     double precision. If the name of the single precision routine is
-C     SUB, the double precision version is called SUBD. In most cases
-C     all the "low-level" arithmetic is done in double precision, even
-C     for the single precsion versions.
-C
-C     Useful references:
-C
-C [1] Gabor Szego: Orthogonal Polynomials, American Mathematical Society,
-C     Providence, Rhode Island, 1939.
-C [2] Abramowitz & Stegun: Handbook of Mathematical Functions,
-C     Dover, New York, 1972.
-C [3] Canuto, Hussaini, Quarteroni & Zang: Spectral Methods in Fluid
-C     Dynamics, Springer-Verlag, 1988.
-C
-C
-C==============================================================================
-C
-C--------------------------------------------------------------------
+c> @file speclib.f
+c> @ingroup SEM
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss Legendre points and weights
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
       SUBROUTINE ZWGL (Z,W,NP)
-C--------------------------------------------------------------------
-C
-C     Generate NP Gauss Legendre points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha=0,beta=0).
-C     The polynomial degree N=NP-1.
-C     Z and W are in single precision, but all the arithmetic
-C     operations are done in double precision.
-C
-C--------------------------------------------------------------------
       REAL Z(1),W(1)
       ALPHA = 0.
       BETA  = 0.
       CALL ZWGJ (Z,W,NP,ALPHA,BETA)
       RETURN
       END
-C
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss-Lobatto Legendre points and weights
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
       SUBROUTINE ZWGLL (Z,W,NP)
-C--------------------------------------------------------------------
-C
-C     Generate NP Gauss-Lobatto Legendre points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha=0,beta=0).
-C     The polynomial degree N=NP-1.
-C     Z and W are in single precision, but all the arithmetic
-C     operations are done in double precision.
-C
-C--------------------------------------------------------------------
       REAL Z(1),W(1)
       ALPHA = 0.
       BETA  = 0.
       CALL ZWGLJ (Z,W,NP,ALPHA,BETA)
       RETURN
       END
-C
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss Jacobi points and weights
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
+c> @param[in]  alpha, beta polynomial coefficient
       SUBROUTINE ZWGJ (Z,W,NP,ALPHA,BETA)
-C--------------------------------------------------------------------
-C
-C     Generate NP GAUSS JACOBI points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha>-1,beta>-1).
-C     The polynomial degree N=NP-1.
-C     Single precision version.
-C
-C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
       REAL*8  ZD(NZD),WD(NZD),APHAD,BETAD
@@ -151,16 +55,14 @@ C
  100  CONTINUE
       RETURN
       END
-C
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss Jacobi points and weights (double precision)
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
+c> @param[in]  alpha, beta polynomial coefficient
       SUBROUTINE ZWGJD (Z,W,NP,ALPHA,BETA)
-C--------------------------------------------------------------------
-C
-C     Generate NP GAUSS JACOBI points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha>-1,beta>-1).
-C     The polynomial degree N=NP-1.
-C     Double precision version.
-C
-C--------------------------------------------------------------------
       IMPLICIT REAL*8  (A-H,O-Z)
       REAL*8  Z(1),W(1),ALPHA,BETA
 C
@@ -203,16 +105,15 @@ C
  100  CONTINUE
       RETURN
       END
-C
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss-Lobatto Jacobi points and weights
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
+c> @param[in]  alpha, beta polynomial coefficient
       SUBROUTINE ZWGLJ (Z,W,NP,ALPHA,BETA)
-C--------------------------------------------------------------------
-C
-C     Generate NP GAUSS LOBATTO JACOBI points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha>-1,beta>-1).
-C     The polynomial degree N=NP-1.
-C     Single precision version.
-C
-C--------------------------------------------------------------------
+
       PARAMETER (NMAX=84)
       PARAMETER (NZD = NMAX)
       REAL*8  ZD(NZD),WD(NZD),ALPHAD,BETAD
@@ -234,16 +135,15 @@ C
  100  CONTINUE
       RETURN
       END
-C
+C-----------------------------------------------------------------------
+c> @brief Compute Gauss-Lobatto Jacobi points and weights (double precision)
+c> @ingroup SEM
+c> @param[out] z   collocation/quadrature points
+c> @param[out] w   quadrature weights
+c> @param[in]  np  number of points
+c> @param[in]  alpha, beta polynomial coefficient
       SUBROUTINE ZWGLJD (Z,W,NP,ALPHA,BETA)
-C--------------------------------------------------------------------
-C
-C     Generate NP GAUSS LOBATTO JACOBI points (Z) and weights (W)
-C     associated with Jacobi polynomial P(N)(alpha>-1,beta>-1).
-C     The polynomial degree N=NP-1.
-C     Double precision version.
-C
-C--------------------------------------------------------------------
+
       IMPLICIT REAL*8  (A-H,O-Z)
       REAL*8  Z(NP),W(NP),ALPHA,BETA
 C

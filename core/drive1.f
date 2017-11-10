@@ -1,4 +1,7 @@
 c-----------------------------------------------------------------------
+c> @brief Main initialisation routine
+c> @ingroup nek5000
+c> @param[out]  intracomm  mpi communicator
       subroutine nek_init(intracomm)
 c
 
@@ -161,6 +164,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       return
       end
 c-----------------------------------------------------------------------
+c> @brief Main time loop
+c> @ingroup nek5000
       subroutine nek_solve
 
       include 'SIZE'
@@ -227,6 +232,8 @@ c     check for post-processing mode
       END
 
 c-----------------------------------------------------------------------
+c> @brief Perform single step
+c> @ingroup nek5000
       subroutine nek_advance
 
       include 'SIZE'
@@ -320,6 +327,8 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
+c> @brief Finalisation routine
+c> @ingroup nek5000
       subroutine nek_end
 
       include 'SIZE'
@@ -335,6 +344,10 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+c> @brief Perform number of steps
+c> @ingroup nek5000
+c> @param[in]  kstep   main iteration count
+c> @param[in]  msteps  number of steps to perform
       subroutine nek__multi_advance(kstep,msteps)
 
       include 'SIZE'

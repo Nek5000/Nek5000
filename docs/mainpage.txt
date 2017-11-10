@@ -1,0 +1,43 @@
+/**
+@brief Documentation file to be used in Doxygen pages.
+@author Adam Peplinski
+@file
+
+@mainpage Nek5000 CFD solver
+
+@section intro Introduction
+This is an doxygen documentation of the CFD solver [Nek5000] (https://nek5000.mcs.anl.gov/). 
+Its main goal is to provide deeper insight inot the code structure and the computational 
+method itself, so we focuse here on the code under @a ./core and @a ./3rd_party directories.
+Describing the code we do not follow exacly distribution of routines between different files 
+focusing rather on their functionality and grouping them in so called modules(using Doxygen 
+nomenclature). An example is @ref opdssum located in @ref navier1.f, but is part of communication
+module. This should help the user not only in understanding the general code workflow, but 
+at the same time help in finding proper tools for the operation thay want to perform. 
+
+This documentation is build using [Doxygen](http://www.stack.nl/~dimitri/doxygen/). However, to 
+minimise number of changes to the code itself most of the information is located in txt files under
+@a ./docs directory. Files in this directory represent different modules and provide more extensive 
+description of the numerical method. In the code only short description of the routine is left including
+module designator and arguments description.
+
+This documentation will be available online as part of [KTH framework] 
+(https://adampep.github.io/KTH_Framework/index.html) documentation through GitHub Pages (gh-pages bfranch). 
+It can be generated locally by executing at the top level of the local copy of Nek5000 repository:
+@verbatim
+mkdir html
+doxygen ./docs/Doxyfile
+rm doxygen.warning
+@endverbatim
+It requires doxygen 1.8.11 or newer and the dot tool from [Graphviz] (http://www.graphviz.org/). 
+All files required by doxygen are located under ./docs/. It includes configuration file (Doxyfile), bibliography
+(doxy.bib) and web pages contents (mainpage.dox)
+
+@section structure Repository structure 
+Here one can describe shortly repository structure, but this would be possibly repeating other documentation
+files, so left under discussion.
+
+@page runtime_parameters_page Runtime parameters.
+Other information e.g. runtime parameters can be added as well, but we should avoid repetition.
+
+*/

@@ -1,0 +1,22 @@
+# Doxygen style documentation file for Nek5000
+/**
+@defgroup SEM Spectral Element Method
+@ingroup nek5000
+
+@brief Routines for spectral methods
+
+@details In this section we describe the basic building blocs of
+SEM staritng from the base functions related routiens stored in
+@ref speclib.f. These functions genereate set of collocation/quadrature
+points and quadrature weights for Legendre polynimials.
+
+Place for more information + rest of the functions 
+
+In general one could add here not only functions from @ref speclib.f, 
+but as well e.g. gradinet calculations @ref local_grad2, @ref local_grad3 from
+@ref navier5.f, interpolation routiens and many more.
+
+More information can be found in: @cite Abramowitz1974 @cite Canuto1988 @cite Szegoe1939
+
+
+*/
