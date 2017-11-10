@@ -47,7 +47,7 @@ C     First call, we have no vectors to orthogonalize against.
 C
 C     Diag to see how much reduction in the residual is attained.
 C
-      NTOT2  = NX2*NY2*NZ2*NELV
+      NTOT2  = lx2*ly2*lz2*NELV
       ALPHA1 = GLSC3(p,p,bm2inv,NTOT2)
       if (alpha1.gt.0) ALPHA1 = sqrt(alpha1/volvm2)
 C
@@ -126,7 +126,7 @@ C
       REAL             H2   (LX1,LY1,LZ1,LELV)
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
-      NTOT2=NX2*NY2*NZ2*NELV
+      NTOT2=lx2*ly2*lz2*NELV
 C
 C     First, save current solution
 C
@@ -173,7 +173,7 @@ C
       REAL             H2   (LX1,LY1,LZ1,LELV)
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
-      NTOT2=NX2*NY2*NZ2*NELV
+      NTOT2=lx2*ly2*lz2*NELV
 C
       IF (Nprev.EQ.Mprev) THEN
          CALL COPY(Pnew,P,NTOT2)
@@ -221,7 +221,7 @@ C
 C
 C
       ierr  = 0
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       INTETYPE=1
 C
 C     Gram Schmidt, w re-orthogonalization
@@ -290,7 +290,7 @@ C
       five = 5.0
       if (param(102).ne.0.0) five=param(102)
 C
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       if (ifield.eq.1) then     ! avo: sub arguments?
          CALL OPDIV (BDIVV,VX,VY,VZ)
       else
@@ -380,7 +380,7 @@ C
       save    icalld
       data    icalld/0/
 
-      ntot2=nx2*ny2*nz2*nelv
+      ntot2=lx2*ly2*lz2*nelv
 
 
 C     First, we have to decide if the E matrix has changed.
@@ -451,7 +451,7 @@ C
       REAL Alphad
 C
 C
-      NTOT2=NX2*NY2*NZ2*NELV
+      NTOT2=lx2*ly2*lz2*NELV
 C
 C     Compute part of the norm
 C
@@ -504,7 +504,7 @@ c
       n_sav = napprox(2)
       if (n_sav.eq.0) return
       nel =nelfld(ifield)
-      ntot=nx1*ny1*nz1*nel
+      ntot=lx1*ly1*lz1*nel
 
       vol = voltm1
       if (nel.eq.nelv) vol = volvm1
@@ -532,7 +532,7 @@ c
 c
       call axhelm  (wl,approx(1,0),h1,h2,1,1)
       call col2    (wl,vmk,ntot)
-      call dssum   (wl,nx1,ny1,nz1)
+      call dssum   (wl,lx1,ly1,lz1)
       call sub2    (r ,wl,ntot)
 c ................................................................
 c   Diag.
@@ -572,7 +572,7 @@ c
 c
       n_max = napprox(1)
       n_sav = napprox(2)
-      ntot=nx1*ny1*nz1*nelfld(ifield)
+      ntot=lx1*ly1*lz1*nelfld(ifield)
 c
 c     Reconstruct solution and save current du
 c
@@ -623,7 +623,7 @@ c
       character*4 name4
 c
       ierr=0
-      ntot=nx1*ny1*nz1*nelfld(ifield)
+      ntot=lx1*ly1*lz1*nelfld(ifield)
 c
       call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
       call col2    (approx(1,0),vmk,ntot)
@@ -739,7 +739,7 @@ c
          do k=1,n_sav
 c           Orthogonalize kth vector against {v_1,...,v_k-1}
             if (k.ne.l) then
-               ntot = nx1*ny1*nz1*nelfld(ifield)
+               ntot = lx1*ly1*lz1*nelfld(ifield)
                call copy(approx(1,l),approx(1,k),ntot)
             endif
             call hconj(approx,l,h1,h2,vml,vmk,ws,name4,ierr)
@@ -771,8 +771,8 @@ c
 c
       etime1=dnekclock()
 c
-      IF (IMESH.EQ.1) NTOT = NX1*NY1*NZ1*NELV
-      IF (IMESH.EQ.2) NTOT = NX1*NY1*NZ1*NELT
+      IF (IMESH.EQ.1) NTOT = lx1*ly1*lz1*NELV
+      IF (IMESH.EQ.2) NTOT = lx1*ly1*lz1*NELT
 c
       tol = tli
       if (param(22).ne.0) tol = abs(param(22))
@@ -786,7 +786,7 @@ c     if (name.eq.'TEMP') kfldfdm =  0
 c     if (name.eq.'VELX') kfldfdm =  1
 c     if (name.eq.'VELY') kfldfdm =  2
 c     if (name.eq.'VELZ') kfldfdm =  3
-      if (name.eq.'PRES') kfldfdm =  ndim+1
+      if (name.eq.'PRES') kfldfdm =  ldim+1
 
       if (ifdg) then
          call cggo_dg (u,r,h1,h2,bi,mask,name,tol,maxit)
@@ -848,10 +848,10 @@ c
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
       else
 
-         n = nx1*ny1*nz1*nelfld(ifield)
+         n = lx1*ly1*lz1*nelfld(ifield)
 
          call col2   (r,vmk,n)
-         call dssum  (r,nx1,ny1,nz1)
+         call dssum  (r,lx1,ly1,lz1)
 
          call blank (name6,6)
          call chcopy(name6,name,4)
@@ -919,7 +919,7 @@ c     keeping the number of vectors, m, small.
       etime0 = dnekclock() 
 
       nn = n
-      if (ifvec) nn = n*ndim
+      if (ifvec) nn = n*ldim
 
       call proj_get_ivar
      $   (m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
@@ -1102,7 +1102,7 @@ c     string "name6"
       imsh = 1
       isd  = 1
       call axhelm  (b,x,h1,h2,imsh,isd)       ! b = A x
-      call dssum   (b,nx1,ny1,nz1)
+      call dssum   (b,lx1,ly1,lz1)
       call col2    (b,msk,n)
 
       return
@@ -1395,7 +1395,7 @@ c-----------------------------------------------------------------------
       logical ifwt,ifvec
 
       nn = n
-      if (ifvec) nn=ndim*n
+      if (ifvec) nn=ldim*n
 
       if (m.gt.0) call add2(x,xbar,n)      ! Restore desired solution
 
@@ -1436,7 +1436,7 @@ c-----------------------------------------------------------------------
       ivar(1) = mmx
 
       nn = n
-      if (ifvec) nn = n*ndim  ! Number of entries in a vector
+      if (ifvec) nn = n*ldim  ! Number of entries in a vector
 
 
       ih1  = 1
@@ -1503,7 +1503,7 @@ c
       imsh  = 1
       nel   = nelfld(ifld)
 
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call copy (ub,u,n)             ! ub = u on boundary
       call dsavg(ub)                 ! Make certain ub is in H1
@@ -1516,7 +1516,7 @@ c
          r(i)=-r(i)*mask(i)          ! r = -M*A*ub
       enddo
 
-      call dssum  (r,nx1,ny1,nz1)    ! dssum rhs
+      call dssum  (r,lx1,ly1,lz1)    ! dssum rhs
 
       call project1
      $    (r,n,approx,napprox,h1,h2,mask,mult,ifwt,ifvec,name6)

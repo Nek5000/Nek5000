@@ -347,7 +347,7 @@ c-----------------------------------------------------------------------
 c      integer e,eg,buf(0:49)
       integer e,eg,buf(0:49)
 
-      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 
       if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
           call byte_reverse8(buf,nwds,ierr)
@@ -358,7 +358,7 @@ c      integer e,eg,buf(0:49)
 
       if(wdsizi.eq.8) then
          call copyi4(igroup(e),buf(0),1) !0-1
-         if (ndim.eq.3) then
+         if (ldim.eq.3) then
             call copy  (xc(1,e),buf( 2),8) !2 --17
             call copy  (yc(1,e),buf(18),8) !18--33
             call copy  (zc(1,e),buf(34),8) !34--49
@@ -463,7 +463,7 @@ c-----------------------------------------------------------------------
 
       if (nio.eq.0) write(6,*)    '  reading mesh '
 
-      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
       len  = 4*nwds                          ! 4 bytes / wd
 
       if (nwds.gt.55.or.isize.gt.4) then
@@ -685,7 +685,7 @@ c        write(6,*) mid,' bclose ',eg,nbc_max
 
       else               ! wait for data from node 0
 
-         nbc_max = 2*ndim*nelt
+         nbc_max = 2*ldim*nelt
          do k=1,nbc_max+1  ! Need one extra !
 
 c           write(6,*) nid,' recvbc1',k
@@ -791,7 +791,7 @@ c-----------------------------------------------------------------------
          call byte_read(hdr,20,ierr)
          if(ierr.ne.0) goto 100
 
-         read (hdr,1) version,nelgt,ndim,nelgv
+         read (hdr,1) version,nelgt,ldimr,nelgv
     1    format(a5,i9,i3,i9)
  
          wdsizi = 4
@@ -814,7 +814,6 @@ c-----------------------------------------------------------------------
       call bcast(wdsizi, ISIZE)
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)
-      call bcast(ndim   ,ISIZE)
       call bcast(nelgt  ,ISIZE)
       call bcast(param(32),WDSIZE)
 

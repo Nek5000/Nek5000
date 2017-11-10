@@ -462,7 +462,7 @@ c        stabilization type: none, explicit or hpfrt
          endif
          call finiparser_getDbl(d_out,'general:filterCutoffRatio',ifnd)
          if (ifnd .eq. 1) then
-            dtmp = anint(nx1*(1.0 - d_out)) 
+            dtmp = anint(lx1*(1.0 - d_out)) 
             param(101) = max(dtmp-1,0.0)
          else
             write(6,*) 'general:filterCutoffRatio'
@@ -810,9 +810,9 @@ C
       call bcast(initc, 15*132*csize) 
 
 c set some internals 
-      if (ndim.eq.3) if3d=.true.
-      if (ndim.ne.3) if3d=.false.
-      if (ndim.lt.0) ifgtp = .true.     ! domain is a global tensor product
+      if (ldim.eq.3) if3d=.true.
+      if (ldim.ne.3) if3d=.false.
+      if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
       if (ifsplit) ifmgrid   = .true.
 
       param(1) = cpfld(1,2)
@@ -933,9 +933,9 @@ c           write(6,*)'help:',lelt,lelv,lelgv
      $    ('Error: Mesh motion requires lx1m=lx1 etc. in SIZE . $',lx1m)
       endif
 
-      IF(NDIM.NE.LDIM) THEN
+      IF(ldim.NE.LDIM) THEN
          IF(NID.EQ.0) THEN
-           WRITE(6,10) LDIM,NDIM
+           WRITE(6,10) LDIM,ldim
    10      FORMAT(//,2X,'Error: Nek has been compiled'
      $             /,2X,'       for spatial dimension equal to',I2,'.'
      $             /,2X,'       The mesh file has dimension',I2,'.')

@@ -20,11 +20,11 @@ C> and store it for one element. Store faces of \f$\mathbf{H}^d\f$ for IGU.
       integer e,eq
 
       if (eq .lt. toteq) then ! not energy
-         if (eq .gt. ndim+1) return ! not if3d
+         if (eq .gt. ldim+1) return ! not if3d
       endif
 
-      nxyz=nx1*ny1*nz1
-      nfq=nx1*nz1*2*ndim*nelt
+      nxyz=lx1*ly1*lz1
+      nfq=lx1*lz1*2*ldim*nelt
       nstate = nqq
 ! where different things live
       iqm =1
@@ -63,9 +63,9 @@ C> \f$G^T U\f$
       include 'SOLN' ! for vz. goes away when agradu_ns works
 
 ! arguments
-      real qminus(nx1*nz1,2*ndim,nelt,*)    ! intent(in)
-      real ummcu(nx1*nz1*2*ndim,nelt,toteq) ! intent(in)
-      real hface(nx1*nz1*2*ndim*nelt,toteq,3) ! intent(out) scratch
+      real qminus(lx1*lz1,2*ldim,nelt,*)    ! intent(in)
+      real ummcu(lx1*lz1*2*ldim,nelt,toteq) ! intent(in)
+      real hface(lx1*lz1*2*ldim*nelt,toteq,3) ! intent(out) scratch
 
 ! commons and scratch
       common /scrns/ superhugeh(lx1*ly1*lz1*lelt,3) ! like totalh, but super-huge
@@ -84,8 +84,8 @@ C> \f$G^T U\f$
 
       integer e, eq, n, npl, nf, f, i, k, eq2
 
-      nxz    = nx1*nz1
-      nfaces = 2*ndim
+      nxz    = lx1*lz1
+      nfaces = 2*ldim
       nf     = nxz*nfaces ! 1 element's face points
       nfq    = nf*nelt ! all points in a pile of faces
       if (ifsip) then
@@ -107,7 +107,7 @@ C> \f$G^T U\f$
          l=l+nf
       enddo
 
-      nxyz  =nx1*ny1*nz1
+      nxyz  =lx1*ly1*lz1
       nvol  =nxyz*nelt
       ngradu=nxyz*toteq*3
       do eq=1,toteq
@@ -118,9 +118,9 @@ C> \f$G^T U\f$
          do e=1,nelt
             call rzero(diffh,3*nxyz)
             call rzero(gradu,ngradu) ! this too goes away when gradu is global
-            do j=1,ndim
+            do j=1,ldim
                do eq2=1,toteq ! sigh
-                  call add_face2full_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
+                  call add_face2full_cmt(1,lx1,ly1,lz1,iface_flux(1,e),
      >                                gradu(1,eq2,j),hface(l,eq2,j))
                enddo
             enddo
@@ -130,8 +130,8 @@ C> \f$G^T U\f$
                 ! compute_rhs_and_dt
 !           call fluxj_ns(superhugeh,... THIS will be correctly strided as well
 ! JH110716 AND someday it will work
-!!            do j=1,ndim    ! flux direction
-!!               do k=1,ndim ! dU   direction
+!!            do j=1,ldim    ! flux direction
+!!               do k=1,ldim ! dU   direction
 !!                  ieijk=0
 !!                  if (eq .lt. toteq) ieijk=eijk3(eq-1,j,k) ! does this work in 2D?
 !!                  if (ieijk .eq. 0) then
@@ -144,7 +144,7 @@ C> \f$G^T U\f$
 
             call agradu(diffh,gradu,e,eq)
 
-            do j=1,ndim
+            do j=1,ldim
                call copy(superhugeh(m,j),diffh(1,j),nxyz)
             enddo
 
@@ -180,7 +180,7 @@ C> Convective volume terms formed and differentiated^T here
       n=3*lxd*lyd*lzd
 
       call rzero(convh,n)
-      if (nxd.gt.nx1) then
+      if (lxd.gt.lx1) then
          call evaluate_dealiased_conv_h(e,eq)
          call copy(totalh,convh,n)
          call flux_div_integral_dealiased(e,eq)
@@ -213,25 +213,25 @@ C> Convective pointwise flux function \f$\mathbf{H}^c\f$ on fine grid.
       common /ctmp1/ ju1(ldd),ju2(ldd)!,ur(ldd),us(ldd),ud(ldd),tu(ldd)
       real ju1,ju2
 
-      n=nxd*nyd*nzd
+      n=lxd*lyd*lzd
 
       if (eq .eq. 1) then ! convective flux of mass=rho u_j=U_{j+1}
 
-         do j=1,ndim
-            call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),nx1,nxd,if3d,0)
+         do j=1,ldim
+            call intp_rstd(convh(1,j),u(1,1,1,eq+j,e),lx1,lxd,if3d,0)
          enddo
 
       else
 
 c To be consistent with momentum equation, for mass balance flux vector is 
 c computed by multiplying rho by u_j
-         call intp_rstd(ju1,phig(1,1,1,e),nx1,nxd,if3d,0)
-         call intp_rstd(ju2,pr(1,1,1,e),nx1,nxd,if3d,0)
+         call intp_rstd(ju1,phig(1,1,1,e),lx1,lxd,if3d,0)
+         call intp_rstd(ju2,pr(1,1,1,e),lx1,lxd,if3d,0)
 
          if (eq .lt. 5) then ! self-advection of rho u_i by rho u_i u_j
 
-            call intp_rstd(convh(1,1),u(1,1,1,eq,e),nx1,nxd,if3d,0)
-            do j=2,ndim
+            call intp_rstd(convh(1,1),u(1,1,1,eq,e),lx1,lxd,if3d,0)
+            do j=2,ldim
                call copy(convh(1,j),convh(1,1),n)
             enddo
             call col2(convh(1,1),vxd(1,1,1,e),n)
@@ -241,9 +241,9 @@ c computed by multiplying rho by u_j
 
          elseif (eq .eq. 5) then
 
-            call intp_rstd(convh(1,1),u(1,1,1,eq,e),nx1,nxd,if3d,0)
+            call intp_rstd(convh(1,1),u(1,1,1,eq,e),lx1,lxd,if3d,0)
             call add2col2(convh(1,1),ju1,ju2,n)
-            do j=2,ndim
+            do j=2,ldim
                call copy(convh(1,j),convh(1,1),n)
             enddo
             call col2(convh(1,1),vxd(1,1,1,e),n)
@@ -276,7 +276,7 @@ c computed by multiplying rho by u_j
       real ju1,ju2
       integer  e,eq
 
-      n=nxd*nyd*nzd
+      n=lxd*lyd*lzd
 
       call copy(ju1,phig(1,1,1,e),n)
       call copy(ju2,pr(1,1,1,e),n)
@@ -284,7 +284,7 @@ c computed by multiplying rho by u_j
       if (eq .lt. 5) then ! self-advection of rho u_i by rho u_i u_j
 
          call copy(convh(1,1),u(1,1,1,eq,e),n)
-         do j=2,ndim
+         do j=2,ldim
             call copy(convh(1,j),convh(1,1),n)
          enddo
          call col2(convh(1,1),vxd(1,1,1,e),n)
@@ -296,7 +296,7 @@ c computed by multiplying rho by u_j
 
          call copy(convh(1,1),u(1,1,1,eq,e),n)
          call add2col2(convh(1,1),ju1,ju2,n)
-         do j=2,ndim
+         do j=2,ldim
             call copy(convh(1,j),convh(1,1),n)
          enddo
          call col2(convh(1,1),vxd(1,1,1,e),n)
@@ -334,9 +334,9 @@ C> \f$(\nabla v)\cdot \mathbf{H}^c=\mathcal{I}^{\intercal}\mathbf{D}^{\intercal}
       real jgl,jgt
 
       nrstd=ldd
-      nxyz=nx1*ny1*nz1
-      call get_dgl_ptr(ip,nxd,nxd) ! fills dg, dgt
-      mdm1=nxd-1
+      nxyz=lx1*ly1*lz1
+      call get_dgl_ptr(ip,lxd,lxd) ! fills dg, dgt
+      mdm1=lxd-1
 
       call rzero(ur,nrstd)
       call rzero(us,nrstd)
@@ -345,16 +345,16 @@ C> \f$(\nabla v)\cdot \mathbf{H}^c=\mathcal{I}^{\intercal}\mathbf{D}^{\intercal}
       call rzero(tu,nrstd)
 
       j0=0
-      do j=1,ndim
+      do j=1,ldim
          j0=j0+1
          call add2col2(ur,totalh(1,j),rx(1,j0,e),nrstd)
       enddo
-      do j=1,ndim
+      do j=1,ldim
          j0=j0+1
          call add2col2(us,totalh(1,j),rx(1,j0,e),nrstd)
       enddo
       if (if3d) then
-         do j=1,ndim
+         do j=1,ldim
             j0=j0+1
             call add2col2(ut,totalh(1,j),rx(1,j0,e),nrstd)
          enddo
@@ -363,7 +363,7 @@ C> \f$(\nabla v)\cdot \mathbf{H}^c=\mathcal{I}^{\intercal}\mathbf{D}^{\intercal}
          call local_grad2_t(ud,ur,us,   mdm1,1,dg(ip),dgt(ip),wkd)
       endif
 
-      call intp_rstd(tu,ud,nx1,nxd,if3d,1)
+      call intp_rstd(tu,ud,lx1,lxd,if3d,1)
 
 ! multiply the residue by mass matrix. Non diagonal B should still be
 ! one block per element
@@ -396,9 +396,9 @@ C> @}
       character*32 cname
 
       nrstd=ldd
-      nxyz=nx1*ny1*nz1
-      call get_dgll_ptr(ip,nxd,nxd) ! fills dg, dgt
-      mdm1=nxd-1
+      nxyz=lx1*ly1*lz1
+      call get_dgll_ptr(ip,lxd,lxd) ! fills dg, dgt
+      mdm1=lxd-1
 
       call rzero(ur,nrstd)
       call rzero(us,nrstd)
@@ -407,16 +407,16 @@ C> @}
       call rzero(tu,nrstd)
 
       j0=0
-      do j=1,ndim
+      do j=1,ldim
          j0=j0+1
          call add2col2(ur,totalh(1,j),rx(1,j0,e),nrstd)
       enddo
-      do j=1,ndim
+      do j=1,ldim
          j0=j0+1
          call add2col2(us,totalh(1,j),rx(1,j0,e),nrstd)
       enddo
       if (if3d) then
-         do j=1,ndim
+         do j=1,ldim
             j0=j0+1
             call add2col2(ut,totalh(1,j),rx(1,j0,e),nrstd)
          enddo
@@ -449,7 +449,7 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
       real ur(lx1,ly1,lz1),us(lx1,ly1,lz1),ut(lx1,ly1,lz1),
      >    rdumz(lx1,ly1,lz1)
 
-      nxyz=nx1*ny1*nz1
+      nxyz=lx1*ly1*lz1
       if(eq_num.ne.1.and.eq_num.ne.5)then
 
         call gradl_rst(ur(1,1,1),us(1,1,1),ut(1,1,1),
@@ -544,13 +544,13 @@ c-----------------------------------------------------------------------
       integer e,eg
 
       if(istep.eq.1)then
-        n = nx1*ny1*nz1*5
+        n = lx1*ly1*lz1*5
         call rzero(usrf,n)
       endif
       eg = lglel(e)
-      do k=1,nz1
-         do j=1,ny1
-            do i=1,nx1
+      do k=1,lz1
+         do j=1,ly1
+            do i=1,lx1
                call NEKASGN(i,j,k,e)
                call userf(i,j,k,eg)
                usrf(i,j,k,2) = FFX

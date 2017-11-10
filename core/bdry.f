@@ -15,7 +15,7 @@ C
       CHARACTER CB*3
       LOGICAL IFALGN,IFNORX,IFNORY,IFNORZ,IFPRINT
 C
-      NFACE  = 2*NDIM
+      NFACE  = 2*ldim
       NMXV   = NFACE*NELV
       NMXT   = NFACE*NELT
 C
@@ -213,10 +213,10 @@ C
       IFNORY  = .FALSE.
       IFNORZ  = .FALSE.
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
 C
-         NCPF = NX1
-         DO 100 IX=1,NX1
+         NCPF = lx1
+         DO 100 IX=1,lx1
             SUMX = SUMX + ABS( ABS(UNX(IX,1,IFC,IEL)) - 1.0 )
             SUMY = SUMY + ABS( ABS(UNY(IX,1,IFC,IEL)) - 1.0 )
   100    CONTINUE
@@ -233,9 +233,9 @@ C
 C
       ELSE
 C
-         NCPF = NX1*NX1
-         DO 200 IX=1,NX1
-         DO 200 IY=1,NY1
+         NCPF = lx1*lx1
+         DO 200 IX=1,lx1
+         DO 200 IY=1,ly1
             SUMX = SUMX + ABS( ABS(UNX(IX,IY,IFC,IEL)) - 1.0 )
             SUMY = SUMY + ABS( ABS(UNY(IX,IY,IFC,IEL)) - 1.0 )
             SUMZ = SUMZ + ABS( ABS(UNZ(IX,IY,IFC,IEL)) - 1.0 )
@@ -268,7 +268,7 @@ C
       CHARACTER CB*3
 C
       IFLD  = 1
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
 C
       DO 100 IEL=1,NELV
       DO 100 IFC=1,NFACE
@@ -339,8 +339,8 @@ C
       logical ifalgn,ifnorx,ifnory,ifnorz
       integer e,f
 
-      NFACES=2*NDIM
-      NXYZ  =NX1*NY1*NZ1
+      NFACES=2*ldim
+      NXYZ  =lx1*ly1*lz1
 
 C
 C     Masks for moving mesh
@@ -351,9 +351,9 @@ C
          do e=1,nelv
          do f=1,nfaces
             if (cbc(f,e,1).eq.'msi'.or.cbc(f,e,1).eq.'msi') then
-               call facev(w1mask,e,f,0.0,nx1,ny1,nz1)
-               call facev(w2mask,e,f,0.0,nx1,ny1,nz1)
-               call facev(w3mask,e,f,0.0,nx1,ny1,nz1)
+               call facev(w1mask,e,f,0.0,lx1,ly1,lz1)
+               call facev(w2mask,e,f,0.0,lx1,ly1,lz1)
+               call facev(w3mask,e,f,0.0,lx1,ly1,lz1)
             endif
          enddo
          enddo
@@ -380,16 +380,16 @@ C
             endif
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
-     $         call facev(pmask,iel,iface,0.0,nx1,ny1,nz1)
+     $         call facev(pmask,iel,iface,0.0,lx1,ly1,lz1)
    50    continue
          if (nelt.gt.nelv) then
-            nn=nx1*ny1*nz1*(nelt-nelv)
+            nn=lx1*ly1*lz1*(nelt-nelv)
             call rzero(pmask(1,1,1,nelv+1),nn)
          endif
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
 C
-         CALL DSOP(PMASK,'MUL',NX1,NY1,NZ1)
+         CALL DSOP(PMASK,'MUL',lx1,ly1,lz1)
 C
 C        Velocity masks
 C
@@ -414,9 +414,9 @@ C
            IF (CB.EQ.'v  ' .OR. CB.EQ.'V  ' .OR. CB.EQ.'vl ' .OR.
      $         cb.eq.'MV ' .or. cb.eq.'mv '                  .or.
      $         CB.EQ.'VL ' .OR. CB.EQ.'W  ') THEN
-             CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
-             CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
-             CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+             CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
+             CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
+             CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
          ENDIF
 C
@@ -424,30 +424,30 @@ C        Mixed-Dirichlet-Neumann boundary conditions
 C
          IF (CB.EQ.'SYM') THEN
              IF ( .NOT.IFALGN .OR. IFNORX )
-     $            CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( IFNORY )
-     $            CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( IFNORZ )
-     $            CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
          ENDIF
 
          IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') THEN
              IF ( IFNORY .OR. IFNORZ )
-     $            CALL FACEV (V1MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORZ )
-     $            CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORY )
-     $            CALL FACEV (V3MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $            CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
          ENDIF
          IF (CB.EQ.'A  ') THEN
-             CALL FACEV (V2MASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
-             CALL FACEV ( OMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+             CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
+             CALL FACEV ( OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
          ENDIF
   100    CONTINUE
 
-         CALL DSOP  ( OMASK,'MUL',NX1,NY1,NZ1)
+         CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
          call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
 
 
@@ -477,9 +477,9 @@ C
      $           CB.EQ.'ED ' .OR. CB.EQ.'ed ' .OR.
      $           CB.EQ.'KW ' .OR. CB.EQ.'KWS' .OR. CB.EQ.'EWS')
      $           CALL FACEV (TMASK(1,1,1,1,IPSCAL),
-     $                       IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $                       IEL,IFACE,0.0,lx1,ly1,lz1)
  1100       CONTINUE
-         CALL DSOP (TMASK(1,1,1,1,IPSCAL),'MUL',NX1,NY1,NZ1)
+         CALL DSOP (TMASK(1,1,1,1,IPSCAL),'MUL',lx1,ly1,lz1)
  1200    CONTINUE
 C
       ENDIF
@@ -498,13 +498,13 @@ C
          do iface=1,nfaces
             cb=cbc(iface,iel,ifield)
             if (cb.eq.'O  ' .or. cb.eq.'ON ')
-     $         call facev(bpmask,iel,iface,0.0,nx1,ny1,nz1)
+     $         call facev(bpmask,iel,iface,0.0,lx1,ly1,lz1)
          enddo
          enddo
 C
 C        Zero out mask at Neumann-Dirichlet interfaces
 C
-         call dsop(bpmask,'MUL',nx1,ny1,nz1)
+         call dsop(bpmask,'MUL',lx1,ly1,lz1)
 C
 C        B-field masks
 C
@@ -526,54 +526,54 @@ c
 c
 c               All-Dirichlet boundary conditions
 c
-                call facev (b1mask,iel,iface,0.0,nx1,ny1,nz1)
-                call facev (b2mask,iel,iface,0.0,nx1,ny1,nz1)
-                call facev (b3mask,iel,iface,0.0,nx1,ny1,nz1)
+                call facev (b1mask,iel,iface,0.0,lx1,ly1,lz1)
+                call facev (b2mask,iel,iface,0.0,lx1,ly1,lz1)
+                call facev (b3mask,iel,iface,0.0,lx1,ly1,lz1)
 c
               elseif (cb.eq.'SYM') then
 c
 c               Mixed-Dirichlet-Neumann boundary conditions
 c
                 if ( .not.ifalgn .or. ifnorx )
-     $            call facev (b1mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b1mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( ifnory )
-     $            call facev (b2mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b2mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( ifnorz )
-     $            call facev (b3mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b3mask,iel,iface,0.0,lx1,ly1,lz1)
 c
               elseif (cb.eq.'ON ') then
 c
 c               Mixed-Dirichlet-Neumann boundary conditions
 c
                 if ( ifnory .or. ifnorz )
-     $            call facev (b1mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b1mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( .not.ifalgn .or. ifnorx .or. ifnorz )
-     $            call facev (b2mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b2mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( .not.ifalgn .or. ifnorx .or. ifnory )
-     $            call facev (b3mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b3mask,iel,iface,0.0,lx1,ly1,lz1)
 c
               elseif (cb.eq.'A  ') then
 c
 c               axisymmetric centerline
 c
-                call facev (b2mask,iel,iface,0.0,nx1,ny1,nz1)
+                call facev (b2mask,iel,iface,0.0,lx1,ly1,lz1)
 c
               else
 c
                 if ( cb1(1).eq.'d' ) 
-     $            call facev (b1mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b1mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( cb1(2).eq.'d' ) 
-     $            call facev (b2mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b2mask,iel,iface,0.0,lx1,ly1,lz1)
                 if ( cb1(3).eq.'d' .and. if3d ) 
-     $            call facev (b3mask,iel,iface,0.0,nx1,ny1,nz1)
+     $            call facev (b3mask,iel,iface,0.0,lx1,ly1,lz1)
 c
               endif
            enddo
            enddo
 c
-           call dsop(b1mask,'MUL',nx1,ny1,nz1)
-           call dsop(b2mask,'MUL',nx1,ny1,nz1)
-           if (ndim.eq.3) call dsop(b3mask,'MUL',nx1,ny1,nz1)
+           call dsop(b1mask,'MUL',lx1,ly1,lz1)
+           call dsop(b2mask,'MUL',lx1,ly1,lz1)
+           if (ldim.eq.3) call dsop(b3mask,'MUL',lx1,ly1,lz1)
          endif
       endif
 C
@@ -599,10 +599,10 @@ C
      $             , TMQ2(LX1,LY1,LZ1,LELV)
      $             , TMQ3(LX1,LY1,LZ1,LELV)
 C
-      REAL V1(NX1,NY1,NZ1,LELV),V2(NX1,NY1,NZ1,LELV)
-     $    ,V3(NX1,NY1,NZ1,LELV)
-      real mask1(nx1,ny1,nz1,lelv),mask2(nx1,ny1,nz1,lelv)
-     $    ,mask3(nx1,ny1,nz1,lelv)
+      REAL V1(lx1,ly1,lz1,LELV),V2(lx1,ly1,lz1,LELV)
+     $    ,V3(lx1,ly1,lz1,LELV)
+      real mask1(lx1,ly1,lz1,lelv),mask2(lx1,ly1,lz1,lelv)
+     $    ,mask3(lx1,ly1,lz1,lelv)
 c
       common  /nekcb/ cb
       character cb*3
@@ -622,8 +622,8 @@ c
       etime1=dnekclock()
 C
 C
-      NFACES=2*NDIM
-      NXYZ  =NX1*NY1*NZ1
+      NFACES=2*ldim
+      NXYZ  =lx1*ly1*lz1
       NEL   =NELFLD(IFIELD)
       NTOT  =NXYZ*NEL
 C
@@ -644,9 +644,9 @@ c     write(6,*) 'BCDIRV: ifield',ifield
 
             IF (CB.EQ.'V  ' .OR. CB.EQ.'VL '  .OR.
      $          CB.EQ.'WS ' .OR. CB.EQ.'WSL') THEN
-               CALL FACEV (TMP1,IE,IFACE,BC1,NX1,NY1,NZ1)
-               CALL FACEV (TMP2,IE,IFACE,BC2,NX1,NY1,NZ1)
-               IF (IF3D) CALL FACEV (TMP3,IE,IFACE,BC3,NX1,NY1,NZ1)
+               CALL FACEV (TMP1,IE,IFACE,BC1,lx1,ly1,lz1)
+               CALL FACEV (TMP2,IE,IFACE,BC2,lx1,ly1,lz1)
+               IF (IF3D) CALL FACEV (TMP3,IE,IFACE,BC3,lx1,ly1,lz1)
                IF ( IFQINP(IFACE,IE) )
      $         CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
      $                       TMP3(1,1,1,IE),IE,IFACE)
@@ -658,7 +658,7 @@ c     write(6,*) 'BCDIRV: ifield',ifield
      $          cb1(1).eq.'d'.or.cb1(2).eq.'d'.or.cb1(3).eq.'d') then
 
                 call faceiv (cb,tmp1(1,1,1,ie),tmp2(1,1,1,ie),
-     $                       tmp3(1,1,1,ie),ie,iface,nx1,ny1,nz1)
+     $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
 
                 IF ( IFQINP(IFACE,IE) )
      $          CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
@@ -668,16 +668,16 @@ c     write(6,*) 'BCDIRV: ifield',ifield
             IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') then   ! 5/21/01 pff
                 ifonbc =.true.
                 CALL FACEIV ('v  ',TMP1(1,1,1,IE),TMP2(1,1,1,IE),
-     $                       TMP3(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
+     $                       TMP3(1,1,1,IE),IE,IFACE,lx1,ly1,lz1)
             ENDIF
 
  2000    CONTINUE
          DO 2010 IE=1,NEL
          DO 2010 IFACE=1,NFACES
             IF (CBC(IFACE,IE,IFIELD).EQ.'W  ') THEN
-               CALL FACEV (TMP1,IE,IFACE,0.0,NX1,NY1,NZ1)
-               CALL FACEV (TMP2,IE,IFACE,0.0,NX1,NY1,NZ1)
-               IF (IF3D) CALL FACEV (TMP3,IE,IFACE,0.0,NX1,NY1,NZ1)
+               CALL FACEV (TMP1,IE,IFACE,0.0,lx1,ly1,lz1)
+               CALL FACEV (TMP2,IE,IFACE,0.0,lx1,ly1,lz1)
+               IF (IF3D) CALL FACEV (TMP3,IE,IFACE,0.0,lx1,ly1,lz1)
             ENDIF
  2010    CONTINUE
 C
@@ -743,8 +743,8 @@ C
       etime1=dnekclock()
 C
       IFLD   = 1
-      NFACES = 2*NDIM
-      NXYZ   = NX1*NY1*NZ1
+      NFACES = 2*ldim
+      NXYZ   = lx1*ly1*lz1
       NEL    = NELFLD(IFIELD)
       NTOT   = NXYZ*NEL
       NFLDT  = NFIELD - 1
@@ -764,20 +764,20 @@ C
             BC4=BC(4,IFACE,IE,IFIELD)
             BCK=BC(4,IFACE,IE,IFLD)
             BCE=BC(5,IFACE,IE,IFLD)
-            IF (CB.EQ.'T  ') CALL FACEV (TMP,IE,IFACE,BC1,NX1,NY1,NZ1)
-            IF (CB.EQ.'MCI') CALL FACEV (TMP,IE,IFACE,BC4,NX1,NY1,NZ1)
-            IF (CB.EQ.'MLI') CALL FACEV (TMP,IE,IFACE,BC4,NX1,NY1,NZ1)
-            IF (CB.EQ.'KD ') CALL FACEV (TMP,IE,IFACE,BCK,NX1,NY1,NZ1)
-            IF (CB.EQ.'ED ') CALL FACEV (TMP,IE,IFACE,BCE,NX1,NY1,NZ1)
+            IF (CB.EQ.'T  ') CALL FACEV (TMP,IE,IFACE,BC1,lx1,ly1,lz1)
+            IF (CB.EQ.'MCI') CALL FACEV (TMP,IE,IFACE,BC4,lx1,ly1,lz1)
+            IF (CB.EQ.'MLI') CALL FACEV (TMP,IE,IFACE,BC4,lx1,ly1,lz1)
+            IF (CB.EQ.'KD ') CALL FACEV (TMP,IE,IFACE,BCK,lx1,ly1,lz1)
+            IF (CB.EQ.'ED ') CALL FACEV (TMP,IE,IFACE,BCE,lx1,ly1,lz1)
             IF (CB.EQ.'t  ' .OR. CB.EQ.'kd ' .or.
      $          CB.EQ.'ed ' .or. cb.eq.'o  ' .or. cb.eq.'on ') 
-     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,NX1,NY1,NZ1)
+     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,lx1,ly1,lz1)
  2010    CONTINUE
 C
 C        Take care of Neumann-Dirichlet shared edges...
 C
-         IF (ISWEEP.EQ.1) CALL DSOP(TMP,'MXA',NX1,NY1,NZ1)
-         IF (ISWEEP.EQ.2) CALL DSOP(TMP,'MNA',NX1,NY1,NZ1)
+         IF (ISWEEP.EQ.1) CALL DSOP(TMP,'MXA',lx1,ly1,lz1)
+         IF (ISWEEP.EQ.2) CALL DSOP(TMP,'MNA',lx1,ly1,lz1)
  2100 CONTINUE
 C
 C     Copy temporary array to temperature array.
@@ -820,8 +820,8 @@ C
       nusbc=nusbc+1
       etime1=dnekclock()
 C
-      NFACES=2*NDIM
-      NXYZ  =NX1*NY1*NZ1
+      NFACES=2*ldim
+      NXYZ  =lx1*ly1*lz1
       NEL   =NELFLD(IFIELD)
       NTOT  =NXYZ*NEL
       CALL RZERO(S,NTOT)
@@ -846,7 +846,7 @@ C
 C
 C IA is areal counter, assumes advancing fastest index first. (IX...IY...IZ)
 C
-               CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX1,NY1,NZ1,IFACE)
+               CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,IFACE)
                DO 100 IZ=KZ1,KZ2
                DO 100 IY=KY1,KY2
                DO 100 IX=KX1,KX2
@@ -888,7 +888,7 @@ C              Add local weighted flux values to rhs, S.
 C
 C IA is areal counter, assumes advancing fastest index first. (IX...IY...IZ)
                IA=0
-               CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX1,NY1,NZ1,IFACE)
+               CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,IFACE)
                DO 200 IZ=KZ1,KZ2
                DO 200 IY=KY1,KY2
                DO 200 IX=KX1,KX2
@@ -1222,9 +1222,9 @@ C
       CHARACTER CB*3
 C
       IFLD  = 1
-      NFACE = 2*NDIM
-      NXY1  = NX1*NY1
-      NXYZ1 = NX1*NY1*NZ1
+      NFACE = 2*ldim
+      NXY1  = lx1*ly1
+      NXYZ1 = lx1*ly1*lz1
 C
       DO 100 IEL=1,NELV
       DO 100 IFC=1,NFACE
@@ -1246,7 +1246,7 @@ C
          ENDIF
          IF (CB.EQ.'s  ' .OR. CB.EQ.'sl ' .OR.
      $       CB.EQ.'sh ' .OR. CB.EQ.'shl' ) THEN
-             CALL FACEIV (CB,TRX,TRY,TRZ,IEL,IFC,NX1,NY1,NZ1)
+             CALL FACEIV (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
              CALL FACCVS (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
              IF (IFQINP(IFC,IEL)) CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
              GOTO 120
@@ -1263,7 +1263,7 @@ C
              GOTO 120
          ENDIF
          IF (CB.EQ.'on ' .OR. CB.EQ.'o  ') THEN
-             CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,NX1,NY1,NZ1)
+             CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
              CALL FACCVS  (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
              CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
              GOTO 120
@@ -1281,19 +1281,19 @@ C
              ENDIF
 c            IF (CB.EQ.'ms '.or.cb.eq.'mm ') THEN
              IF (CB.EQ.'ms '.or.cb.eq.'msi') THEN
-                CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,NX1,NY1,NZ1)
+                CALL FACEIV  (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
                 CALL FACCVS  (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
                 CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
              ENDIF
              IF (CB(1:1).EQ.'M') THEN
                 CALL CFILL  (SIGST,BC4,NXY1)
              ELSE
-                CALL FACEIS (CB,STC,IEL,IFC,NX1,NY1,NZ1)
+                CALL FACEIS (CB,STC,IEL,IFC,lx1,ly1,lz1)
                 CALL FACEXS (SIGST,STC,IFC,0)
              ENDIF
              IF (IFAXIS) THEN
                 CALL TRSTAX (TRX,TRY,SIGST,IEL,IFC)
-             ELSEIF (NDIM.EQ.2) THEN
+             ELSEIF (ldim.EQ.2) THEN
                 CALL TRST2D (TRX,TRY,SIGST,IEL,IFC)
              ELSE
                 CALL TRST3D (TRX,TRY,TRZ,SIGST,IEL,IFC)
@@ -1302,7 +1302,7 @@ c            IF (CB.EQ.'ms '.or.cb.eq.'mm ') THEN
 C
   120    CALL ADD2 (BFX(1,1,1,IEL),TRX,NXYZ1)
          CALL ADD2 (BFY(1,1,1,IEL),TRY,NXYZ1)
-         IF (NDIM.EQ.3) CALL ADD2 (BFZ(1,1,1,IEL),TRZ,NXYZ1)
+         IF (ldim.EQ.3) CALL ADD2 (BFZ(1,1,1,IEL),TRZ,NXYZ1)
 C
   100 CONTINUE
 C
@@ -1319,7 +1319,7 @@ C
      $        , TRY(LX1,LY1,LZ1)
      $        , TRZ(LX1,LY1,LZ1)
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -1329,7 +1329,7 @@ C
       JSKIP2 = SKPDAT(6,IFACE)
       I = 0
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          DO 100 J2=JS2,JF2,JSKIP2
          DO 100 J1=JS1,JF1,JSKIP1
             I = I + 1
@@ -1364,26 +1364,26 @@ C
       DIMENSION CANG(2),SANG(2)
       DIMENSION IXN(2),IYN(2),IAN(2)
 C
-      DO 100 IX=1,NX1
+      DO 100 IX=1,lx1
          AA = SIGST(IX,1) * WXM1(IX)
          STX(IX) = T1X(IX,1,IFC,IEL) * AA
          STY(IX) = T1Y(IX,1,IFC,IEL) * AA
   100 CONTINUE
 C 
       IF (IFC.EQ.3 .OR. IFC.EQ.4) THEN
-         CALL CHSIGN (STX,NX1)
-         CALL CHSIGN (STY,NX1)
+         CALL CHSIGN (STX,lx1)
+         CALL CHSIGN (STY,lx1)
       ENDIF
 C
       IF (IFC.EQ.1 .OR. IFC.EQ.3) THEN
-         CALL MXM (DXTM1,NX1,STX,NX1,A1X,1)
-         CALL MXM (DXTM1,NX1,STY,NX1,A1Y,1)
+         CALL MXM (DXTM1,lx1,STX,lx1,A1X,1)
+         CALL MXM (DXTM1,lx1,STY,lx1,A1Y,1)
       ELSE
-         CALL MXM (DYTM1,NY1,STX,NY1,A1X,1)
-         CALL MXM (DYTM1,NY1,STY,NY1,A1Y,1)
+         CALL MXM (DYTM1,ly1,STX,ly1,A1X,1)
+         CALL MXM (DYTM1,ly1,STY,ly1,A1Y,1)
       ENDIF
 C
-      CALL DSSET (NX1,NY1,NZ1)
+      CALL DSSET (lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -1437,30 +1437,30 @@ C
       CALL FACEC2 (XFM1,YFM1,XM1(1,1,1,IEL),YM1(1,1,1,IEL),IFC)
 C
       IF (IFGLJ) THEN
-         CALL MXM (DAM1,NY1,XFM1,NY1,T1XF,1)
-         CALL MXM (DAM1,NY1,YFM1,NY1,T1YF,1)
+         CALL MXM (DAM1,ly1,XFM1,ly1,T1XF,1)
+         CALL MXM (DAM1,ly1,YFM1,ly1,T1YF,1)
          YS0 = T1YF(1)
       ELSE
-         CALL MXM (DXM1,NX1,XFM1,NX1,T1XF,1)
-         CALL MXM (DXM1,NX1,YFM1,NX1,T1YF,1)
+         CALL MXM (DXM1,lx1,XFM1,lx1,T1XF,1)
+         CALL MXM (DXM1,lx1,YFM1,lx1,T1YF,1)
       ENDIF
 C
-      DO 10 IX=1,NX1
+      DO 10 IX=1,lx1
          XJM1(IX)=SQRT( T1XF(IX)**2 + T1YF(IX)**2 )
          T1XF(IX)=T1XF(IX) / XJM1(IX)
          T1YF(IX)=T1YF(IX) / XJM1(IX)
    10 CONTINUE
 C
       IF ( IFGLJ ) THEN
-         CALL MXM (DAM1,1,T1XF,NY1,T1XS0,1)
-         CALL MXM (DAM1,1,UNY(1,1,IFC,IEL),NY1,UNYS0,1)
+         CALL MXM (DAM1,1,T1XF,ly1,T1XS0,1)
+         CALL MXM (DAM1,1,UNY(1,1,IFC,IEL),ly1,UNYS0,1)
          DDX    = WAM1(1)*SIGST(1,1)*T1XS0*YS0
          DDY    = WAM1(1)*SIGST(1,1)*T1YF(1)*YS0*2.0
          A2X(1) = WAM1(1)*SIGST(1,1)*XJM1(1)*UNX(1,1,IFC,IEL)*UNYS0
          A2Y(1) = 0.0
          STX(1) = 0.0
          STY(1) = 0.0
-         DO 100 IY=2,NY1
+         DO 100 IY=2,ly1
             AA = WAM1(IY) * SIGST(IY,1) / (1.0 + ZAM1(IY))
             STX(IY) = T1XF(IY) * AA
             STY(IY) = T1YF(IY) * AA
@@ -1469,7 +1469,7 @@ C
             A2Y(IY) = UNY(IY,1,IFC,IEL) * AA
   100    CONTINUE
       ELSE
-         DO 200 IX=1,NX1
+         DO 200 IX=1,lx1
             AA = SIGST(IX,1) * WXM1(IX)
             STX(IX) = T1XF(IX) * AA
             STY(IX) = T1YF(IX) * AA
@@ -1480,14 +1480,14 @@ C
       ENDIF
 C
       IF (IFGLJ) THEN
-         DO 220 IY=1,NY1
+         DO 220 IY=1,ly1
             YSIY = T1YF(IY)*XJM1(IY)
             DTX1 = 0.0
             DTY1 = DATM1(IY,1)*DDY
             DTX2 = YSIY*STX(IY)
             DTY2 = YSIY*STY(IY)
             DTY3 = 0.0
-            DO 240 J=2,NY1
+            DO 240 J=2,ly1
                DTYS = DATM1(IY,J)*YFM1(J)
                DTX1 = DTX1 + DTYS*STX(J)
                DTY3 = DTY3 + DTYS*STY(J)
@@ -1497,13 +1497,13 @@ C
   220    CONTINUE
             A1X(1)  = A1X(1) + DDX
       ELSE
-         CALL MXM  (DXTM1,NX1,STX,NX1,A1X,1)
-         CALL MXM  (DXTM1,NX1,STY,NX1,A1Y,1)
-         CALL COL2 (A1X,YFM1,NX1)
-         CALL COL2 (A1Y,YFM1,NX1)
+         CALL MXM  (DXTM1,lx1,STX,lx1,A1X,1)
+         CALL MXM  (DXTM1,lx1,STY,lx1,A1Y,1)
+         CALL COL2 (A1X,YFM1,lx1)
+         CALL COL2 (A1Y,YFM1,lx1)
       ENDIF
 C
-      CALL DSSET (NX1,NY1,NZ1)
+      CALL DSSET (lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -1563,10 +1563,10 @@ C
      $       CBN(1:1).EQ.'M' .OR. CBN(1:1).EQ.'m') GOTO 100
          NC = IFC
          IF (I.EQ.2) NC=IFCN
-         IF (NC  .EQ.2 .OR. NC  .EQ.3) IXN(I) = NX1
-         IF (NC  .EQ.3 .OR. NC  .EQ.4) IYN(I) = NY1
-         IF (IFC .EQ.2 .OR. IFC .EQ.3) ISN(I) = NX1
-         IF (IFCN.EQ.2 .OR. IFCN.EQ.3) IAN(I) = NX1
+         IF (NC  .EQ.2 .OR. NC  .EQ.3) IXN(I) = lx1
+         IF (NC  .EQ.3 .OR. NC  .EQ.4) IYN(I) = ly1
+         IF (IFC .EQ.2 .OR. IFC .EQ.3) ISN(I) = lx1
+         IF (IFCN.EQ.2 .OR. IFCN.EQ.3) IAN(I) = lx1
          IX = IXN(I)
          IY = IYN(I)
          IA = IAN(I)
@@ -1618,7 +1618,7 @@ C
       DIMENSION TRX(LX1,LY1,LZ1),TRY(LX1,LY1,LZ1),TRZ(LX1,LY1,LZ1)
       DIMENSION SIGST(LX1,LY1)
 C
-      NXY1 = NX1*NY1
+      NXY1 = lx1*ly1
 C
       CALL RZERO3 (S1X,S1Y,S1Z,NXY1)
       CALL RZERO3 (S2X,S2Y,S2Z,NXY1)
@@ -1626,15 +1626,15 @@ C
      $             ZM1(1,1,1,IEL),IFC,0)
       CALL SETDRS (DRM1,DRTM1,DSM1,DSTM1,IFC)
 C
-      CALL MXM (DRM1,NX1, XFM1,NX1,XRM1,NY1)
-      CALL MXM (DRM1,NX1, YFM1,NX1,YRM1,NY1)
-      CALL MXM (DRM1,NX1, ZFM1,NX1,ZRM1,NY1)
-      CALL MXM (XFM1,NX1,DSTM1,NY1,XSM1,NY1)
-      CALL MXM (YFM1,NX1,DSTM1,NY1,YSM1,NY1)
-      CALL MXM (ZFM1,NX1,DSTM1,NY1,ZSM1,NY1)
+      CALL MXM (DRM1,lx1, XFM1,lx1,XRM1,ly1)
+      CALL MXM (DRM1,lx1, YFM1,lx1,YRM1,ly1)
+      CALL MXM (DRM1,lx1, ZFM1,lx1,ZRM1,ly1)
+      CALL MXM (XFM1,lx1,DSTM1,ly1,XSM1,ly1)
+      CALL MXM (YFM1,lx1,DSTM1,ly1,YSM1,ly1)
+      CALL MXM (ZFM1,lx1,DSTM1,ly1,ZSM1,ly1)
 C
-      DO 100 IX=1,NX1
-      DO 100 IY=1,NY1
+      DO 100 IX=1,lx1
+      DO 100 IY=1,ly1
          GB1X=XRM1(IX,IY)
          GB1Y=YRM1(IX,IY)
          GB1Z=ZRM1(IX,IY)
@@ -1662,13 +1662,13 @@ C
          G2Z(IX,IY) = BB * ( GT12*GB1Z + GT22*GB2Z )
   100    CONTINUE
 C
-      CALL MXM (DRTM1,NX1,G1X,NX1,S1X,NY1)
-      CALL MXM (DRTM1,NX1,G1Y,NX1,S1Y,NY1)
-      CALL MXM (DRTM1,NX1,G1Z,NX1,S1Z,NY1)
+      CALL MXM (DRTM1,lx1,G1X,lx1,S1X,ly1)
+      CALL MXM (DRTM1,lx1,G1Y,lx1,S1Y,ly1)
+      CALL MXM (DRTM1,lx1,G1Z,lx1,S1Z,ly1)
 C
-      CALL MXM (G2X,NX1,DSM1,NY1,S2X,NY1)
-      CALL MXM (G2Y,NX1,DSM1,NY1,S2Y,NY1)
-      CALL MXM (G2Z,NX1,DSM1,NY1,S2Z,NY1)
+      CALL MXM (G2X,lx1,DSM1,ly1,S2X,ly1)
+      CALL MXM (G2Y,lx1,DSM1,ly1,S2Y,ly1)
+      CALL MXM (G2Z,lx1,DSM1,ly1,S2Z,ly1)
 C
       CALL ADD2 (S1X,S2X,NXY1)
       CALL ADD2 (S1Y,S2Y,NXY1)
@@ -1680,8 +1680,8 @@ C      ICONTAC=INT(BC2)
 C      IF (ICONTAC.NE.0) THEN
 C         IX=1
 C         IY=1
-C         IF (ICONTAC.GE.3) IY=NY1
-C         IF (ICONTAC.EQ.2 .OR. ICONTAC.EQ.3) IX=NX1
+C         IF (ICONTAC.GE.3) IY=ly1
+C         IF (ICONTAC.EQ.2 .OR. ICONTAC.EQ.3) IX=lx1
 C         ANG = BC3 * PI / 180.00
 C         RR  = YM1(IX,IY,IZ,IEL)
 C         TRX(IX,IY,IZ)=TRX(IX,IY,IZ) + RR*SIGST*COS( ANG )
@@ -1705,7 +1705,7 @@ C
       DIMENSION DRM1(LX1,LX1),DRTM1(LX1,LX1)
      $        , DSM1(LY1,LY1),DSTM1(LY1,LY1)
 C
-      NXY1=NX1*NY1
+      NXY1=lx1*ly1
 C
       IF (IFC.EQ.5 .OR. IFC.EQ.6) THEN
          CALL COPY (DRM1 ,DXM1 ,NXY1)
@@ -1744,7 +1744,7 @@ C
      $        , R2(LX1,LY1,LZ1)
      $        , R3(LX1,LY1,LZ1)
 C
-      CALL DSSET (NX1,NY1,NZ1)
+      CALL DSSET (lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -1754,7 +1754,7 @@ C
       JSKIP2 = SKPDAT(6,IFACE)
       I = 0
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          DO 200 J2=JS2,JF2,JSKIP2
          DO 200 J1=JS1,JF1,JSKIP1
             I = I+1
@@ -1792,8 +1792,8 @@ C
 C     2-D Geometry only
 C     Extract A1,A2 from B1,B2 on surface IFC.
 C
-C     A1, A2 have the (NX1,  1,NFACE) data structure
-C     B1, B2 have the (NX1,NY1,    1) data structure
+C     A1, A2 have the (lx1,  1,NFACE) data structure
+C     B1, B2 have the (lx1,ly1,    1) data structure
 C
       INCLUDE 'SIZE'
 C
@@ -1802,14 +1802,14 @@ C
       IX=1
       IY=1
       IF (IFC.EQ.1 .OR. IFC.EQ.3) THEN
-         IF (IFC.EQ.3) IY = NY1
-         DO 10 IX=1,NX1
+         IF (IFC.EQ.3) IY = ly1
+         DO 10 IX=1,lx1
             A1(IX)=B1(IX,IY)
             A2(IX)=B2(IX,IY)
    10    CONTINUE
       ELSE
-         IF (IFC.EQ.2) IX = NX1
-         DO 20 IY=1,NY1
+         IF (IFC.EQ.2) IX = lx1
+         DO 20 IY=1,ly1
             A1(IY)=B1(IX,IY)
             A2(IY)=B2(IX,IY)
    20   CONTINUE
@@ -1859,13 +1859,13 @@ C
      $             , V3(LX1,LY1,LZ1,LELV)
      $             , VV(LX1,LY1,LZ1,LELV)
 C
-      NXZ1  = NX1*NZ1
+      NXZ1  = lx1*lz1
       TOLV  = 0.01*VMAX
 C
       VNOR1 = FACDOT(V1(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
       VNOR2 = FACDOT(V2(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
       VNOR  = VNOR1 + VNOR2
-      IF (NDIM.EQ.3) THEN
+      IF (ldim.EQ.3) THEN
           VNOR3 = FACDOT(V3(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
           VNOR  = VNOR + VNOR3
       ENDIF
@@ -1887,14 +1887,14 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
 C
-      DIMENSION TMP1(NX1,NY1,NZ1,1)
-     $        , TMP2(NX1,NY1,NZ1,1)
-     $        , TMP3(NX1,NY1,NZ1,1)
+      DIMENSION TMP1(lx1,ly1,lz1,1)
+     $        , TMP2(lx1,ly1,lz1,1)
+     $        , TMP3(lx1,ly1,lz1,1)
       common  /nekcb/ cb
       CHARACTER CB*3
 C
-      NFACE = 2*NDIM
-      NTOT1 = NX1*NY1*NZ1*NELV
+      NFACE = 2*ldim
+      NTOT1 = lx1*ly1*lz1*NELV
 C
       CALL RZERO (TMP1,NTOT1)
       CALL RZERO (TMP2,NTOT1)
@@ -1908,9 +1908,9 @@ C
          BC3 = BC(3,IFC,IEL,IFIELD)
          IF (CB.EQ.'V  ' .OR. CB.EQ.'VL '  .OR.
      $       CB.EQ.'WS ' .OR. CB.EQ.'WSL') THEN
-             CALL FACEV (TMP1,IEL,IFC,BC1,NX1,NY1,NZ1)
-             CALL FACEV (TMP2,IEL,IFC,BC2,NX1,NY1,NZ1)
-             IF (NDIM.EQ.3) CALL FACEV (TMP3,IEL,IFC,BC3,NX1,NY1,NZ1)
+             CALL FACEV (TMP1,IEL,IFC,BC1,lx1,ly1,lz1)
+             CALL FACEV (TMP2,IEL,IFC,BC2,lx1,ly1,lz1)
+             IF (ldim.EQ.3) CALL FACEV (TMP3,IEL,IFC,BC3,lx1,ly1,lz1)
              IF (CB.EQ.'VL ' .OR. CB.EQ.'WSL')
      $       CALL GLOBROT (TMP1(1,1,1,IEL),TMP2(1,1,1,IEL),
      $                     TMP3(1,1,1,IEL),IEL,IFC)
@@ -1919,7 +1919,7 @@ C
      $       CB.EQ.'ws ' .OR. CB.EQ.'wsl' .OR.
      $       CB.EQ.'mv ' .OR. CB.EQ.'mvn') THEN
              CALL FACEIV (CB,TMP1(1,1,1,IEL),TMP2(1,1,1,IEL),
-     $                    TMP3(1,1,1,IEL),IEL,IFC,NX1,NY1,NZ1)
+     $                    TMP3(1,1,1,IEL),IEL,IFC,lx1,ly1,lz1)
              IF (CB.EQ.'vl ' .OR. CB.EQ.'wsl')
      $       CALL GLOBROT (TMP1(1,1,1,IEL),TMP2(1,1,1,IEL),
      $                     TMP3(1,1,1,IEL),IEL,IFC)
@@ -1954,9 +1954,9 @@ c-----------------------------------------------------------------------
 
       integer e,f
 
-      nface = 2*ndim
+      nface = 2*ldim
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       call rzero(v1,n)
       call rzero(v2,n)
       call rzero(v3,n)
@@ -1985,14 +1985,14 @@ c-----------------------------------------------------------------------
       call opdssum(v1,v2,v3)
 
       eps = 1.e-4
-      if (ndim.eq.2) call rzero(v3,n)
+      if (ldim.eq.2) call rzero(v3,n)
 
       do e=1,nelt   ! Check for turning angle
       do f=1,nface
 
          if (cbc(f,e,ifield).eq.'P  '.or.cbc(f,e,ifield).eq.'p  ') then
 
-            call facindr(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f) ! restricted indx
+            call facindr(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f) ! restricted indx
             snorm = 0.
             dnorm = 0.
             do k=k0,k1
@@ -2031,9 +2031,9 @@ c
 
       character cb*3
 
-      nxyz1= nx1*ny1*nz1
+      nxyz1= lx1*ly1*lz1
       ntot1= nxyz1*nelv
-      nfaces = 2*ndim
+      nfaces = 2*ldim
 
       termA = 0.0
       termVL= 0.0
@@ -2042,7 +2042,7 @@ c
       do 100 iface=1,nfaces
          cb = cbc(iface,iel,1)
          if (cb.eq.'v  ' .or. cb.eq.'V  ' .or. cb.eq.'mv ') then
-            call facind(kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,iface)
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
             ia = 0
             do 10 iz=kz1,kz2
             do 10 iy=ky1,ky2
@@ -2075,9 +2075,9 @@ c
       character cb*3
 
       nel    = nelfld(ifld)
-      nxyz   = nx1*ny1*nz1
+      nxyz   = lx1*ly1*lz1
       ntot   = nxyz*nel
-      nfaces = 2*ndim
+      nfaces = 2*ldim
 
       call rzero(flux,ntot)
 
@@ -2085,7 +2085,7 @@ c
       do 100 iface=1,nfaces
          cb = cbc(iface,iel,ifld)
          if (cb.ne.'E  ') then
-            call facind(kx1,kx2,ky1,ky2,kz1,kz2,nx1,ny1,nz1,iface)
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
             ia = 0
             do 10 iz=kz1,kz2
             do 10 iy=ky1,ky2
@@ -2108,7 +2108,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'TOPOL'
 C
-      CALL DSSET (NX1,NY1,NZ1)
+      CALL DSSET (lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)

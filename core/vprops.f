@@ -17,7 +17,7 @@ C
       if (nio.eq.0.and.loglevel.gt.2)
      $   write(6,*) 'vprops', ifield
 
-      NXYZ1 = NX1*NY1*NZ1
+      NXYZ1 = lx1*ly1*lz1
       NEL   = NELFLD(IFIELD)
       NTOT1 = NXYZ1*NEL
 C

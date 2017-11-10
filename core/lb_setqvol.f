@@ -18,7 +18,7 @@ c
 
       lqvol = lx1*ly1*lz1*lelv
       lin   = lx1*ly1*lz1*lelt
-      ntot  = nx1*ny1*nz1*nelv
+      ntot  = lx1*ly1*lz1*nelv
 
       ! pack input data
       n = 0

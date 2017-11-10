@@ -17,7 +17,7 @@ c
       real v1(1),v2(1),v3(1),weight(1)
       real normsq1,normsq2,normsq3,opnormOld,opnorm
 c
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
       normsq1=glsc3(v1,weight,v1,ntotv)
       normsq2=glsc3(v2,weight,v2,ntotv)
       if(if3d) then
@@ -39,7 +39,7 @@ c
       real v1(1) , v2(1), v3(1)
       real normsq1,normsq2,normsq3,opnorm
 c
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
       normsq1=glsc3(v1,bm1,v1,ntotv)
       normsq2=glsc3(v2,bm1,v2,ntotv)
       if(if3d) then
@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
 
       real temp(*)
 c
-      ntotv = nx1*ny1*nz1*nelv
+      ntotv = lx1*ly1*lz1*nelv
       Tnorm = sqrt( glsc3(temp,BM1,temp,ntotv) /voltm1)
 c
       return
@@ -75,7 +75,7 @@ c     Norm weighted by mass matrix
       real normsq1,normsq2,normsq3,normsqT,dMnorm
       common/normset/pran, ray, rayc
 
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
       normsq1=(rayc)*glsc3(v1,BM1,v1,ntotv)
       normsq2=(rayc)*glsc3(v2,BM1,v2,ntotv)
       if(if3d) then
@@ -123,7 +123,7 @@ c     v =  alpha*v
       real alpha
       real v1(*),v2(*),v3(*)
 
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
 
       call cmult(v1,alpha,ntotv)
       call cmult(v2,alpha,ntotv)
@@ -236,7 +236,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      ntotp = nx2*ny2*nz2*nelv
+      ntotp = lx2*ly2*lz2*nelv
 
       call opscale                     !normalize vectors to unit norm
      $      (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),pertinvnorm)
@@ -302,17 +302,17 @@ c----------------------------------------------------------------------
       logical ifdebug
       common/debug/ ifdebug
 
-      ntotv     = nx1*ny1*nz1*nelv
-      ntotp     = nx2*ny2*nz2*nelv
+      ntotv     = lx1*ly1*lz1*nelv
+      ntotp     = lx2*ly2*lz2*nelv
       nconv_max = nbdinp
       nconv     = nconv_max 
       nconv     = 1
       nprex     = 0
       nprex_max = max(0,nbdinp-2)
      
-      nr = nx1-1
-      ns = ny1-1
-      nt = nz1-1
+      nr = lx1-1
+      ns = ly1-1
+      nt = lz1-1
 
       if(param(31).eq.0) return !param(31) is number of exponents
       
@@ -430,9 +430,9 @@ c
          l = 0
          do iel=1,nelv
             ielg = lglel(iel)     ! Global element number
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1
+            do k=1,lz1
+            do j=1,ly1
+            do i=1,lx1
                l = l+1
 c              call set_nekuse (l)
                call nekasgnp (i,j,k,iel,l)
@@ -473,9 +473,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      ntotp = nx2*ny2*nz2*nelv
-      ntotv = nx1*ny1*nz1*nelv
-      ntott = nx1*ny1*nz1*nelt
+      ntotp = lx2*ly2*lz2*nelv
+      ntotv = lx1*ly1*lz1*nelv
+      ntott = lx1*ly1*lz1*nelt
 
       call add2s2(vxp(1,i),vxp(1,j),scale,ntotv)
       call add2s2(vyp(1,i),vyp(1,j),scale,ntotv)
@@ -500,7 +500,7 @@ c-----------------------------------------------------------------------
       if (ifheat) then
         do k=0,npscal
           k1=k+1
-          ntotk = nx1*ny1*nz1*nelfld(k+2)
+          ntotk = lx1*ly1*lz1*nelfld(k+2)
           call add2s2(tp(1,k1,i),tp(1,k1,j),scale,ntotk)
           do l=1,lorder-1
             call add2s2(tlagp(1,l,k1,i),tlagp(1,l,k1,j),scale,ntotk)
@@ -519,8 +519,8 @@ c-----------------------------------------------------------------------
 
       common/normset/pran, ray, rayc
 
-      ntotv=nx1*ny1*nz1*nelv
-      ntott=nx1*ny1*nz1*nelt
+      ntotv=lx1*ly1*lz1*nelv
+      ntott=lx1*ly1*lz1*nelt
 
       s1 = rayc*glsc3(vxp(1,i),bm1,vxp(1,j),ntotv)
       s2 = rayc*glsc3(vyp(1,i),bm1,vyp(1,j),ntotv)

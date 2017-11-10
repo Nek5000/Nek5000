@@ -22,13 +22,12 @@ C
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
         READ(9,*,ERR=400)
-        READ(9,*,ERR=400) NDIM
+        READ(9,*,ERR=400) ldimr
         READ(9,*,ERR=400) NPARAM
         DO 20 I=1,NPARAM
            READ(9,*,ERR=400) PARAM(I)
    20   CONTINUE
       ENDIF
-      call bcast(NDIM  ,ISIZE)
       call bcast(NPARAM,ISIZE)
       call bcast(PARAM ,200*WDSIZE)
 
@@ -323,17 +322,17 @@ c     This is here because it influence the mesh read, which follows.
 C
 C     Do some checks
 C
-      IF(NDIM.NE.LDIM)THEN
+      IF(ldimr.NE.LDIM)THEN
          IF(NID.EQ.0) THEN
-           WRITE(6,10) LDIM,NDIM
+           WRITE(6,10) LDIM,ldimr
    10      FORMAT(//,2X,'ERROR: This NEKTON Solver has been compiled'
      $             /,2X,'       for spatial dimension equal to',I2,'.'
      $             /,2X,'       The data file has dimension',I2,'.')
          ENDIF
          call exitt
       ENDIF
-      IF (NDIM.EQ.3) IF3D=.TRUE.
-      IF (NDIM.NE.3) IF3D=.FALSE.
+      IF (ldim.EQ.3) IF3D=.TRUE.
+      IF (ldim.NE.3) IF3D=.FALSE.
 
       if (if3d) then
          if (ly1.ne.lx1.or.lz1.ne.lx1) then
@@ -534,7 +533,7 @@ C
 c     Read elemental mesh data, formatted
       iffmtin = .true.
 
-      NSIDES=NDIM*2
+      NSIDES=ldim*2
       DO 40 IEG=1,NELGT
          IF (GLLNID(IEG).EQ.NID) THEN
             IEL=GLLEL(IEG)
@@ -546,11 +545,11 @@ c           read(9,*,err=31,end=600) adum
    31       continue
 
 C           Read Corner data
-            IF(NDIM.EQ.2)THEN
+            IF(ldim.EQ.2)THEN
                READ(9,*,ERR=500,END=600) (XC(IC,IEL),IC=1,4)
                READ(9,*,ERR=500,END=600) (YC(IC,IEL),IC=1,4)
                               call rzero (zc(1 ,iel)     ,4)
-            ELSE IF(NDIM.EQ.3)THEN
+            ELSE IF(ldim.EQ.3)THEN
                READ(9,*,ERR=500,END=600) (XC(IC,IEL),IC=1,4)
                READ(9,*,ERR=500,END=600) (YC(IC,IEL),IC=1,4)
                READ(9,*,ERR=500,END=600) (ZC(IC,IEL),IC=1,4)
@@ -562,10 +561,10 @@ C           Read Corner data
 C           Skip over this data for element NOT on this processor
             READ(9,41,ERR=500,END=600) ADUM
 C           Read Corner data
-            IF(NDIM.EQ.2)THEN
+            IF(ldim.EQ.2)THEN
                READ(9,41,ERR=500,END=600) ADUM
                READ(9,41,ERR=500,END=600) ADUM
-            ELSE IF(NDIM.EQ.3)THEN
+            ELSE IF(ldim.EQ.3)THEN
                READ(9,41,ERR=500,END=600) ADUM
                READ(9,41,ERR=500,END=600) ADUM
                READ(9,41,ERR=500,END=600) ADUM
@@ -720,7 +719,7 @@ C
       NBCS      = NFLDT
       IBCS      = 2
       IF (IFFLOW) IBCS = 1
-      NSIDES    = 2*NDIM
+      NSIDES    = 2*ldim
 C
 C     Read boundary conditions for all fields
 C
@@ -1033,15 +1032,15 @@ c           threshold lochis locations to allow easy specification of "NX,NY,NZ"
 c           pff 1/7/97
 c
               if (hcode(10,i).eq.'H') then
-                 lochis(1,i) = min(lochis(1,i),nx1)
-                 lochis(2,i) = min(lochis(2,i),ny1)
-                 lochis(3,i) = min(lochis(3,i),nz1)
+                 lochis(1,i) = min(lochis(1,i),lx1)
+                 lochis(2,i) = min(lochis(2,i),ly1)
+                 lochis(3,i) = min(lochis(3,i),lz1)
 c
 c              if lochis_k = -1, set it to nxk/2   pff 8/21/03
 c
-                 if (lochis(1,i).eq.-1) lochis(1,i) = (nx1+1)/2
-                 if (lochis(2,i).eq.-1) lochis(2,i) = (ny1+1)/2
-                 if (lochis(3,i).eq.-1) lochis(3,i) = (nz1+1)/2
+                 if (lochis(1,i).eq.-1) lochis(1,i) = (lx1+1)/2
+                 if (lochis(2,i).eq.-1) lochis(2,i) = (ly1+1)/2
+                 if (lochis(3,i).eq.-1) lochis(3,i) = (lz1+1)/2
               endif
            enddo
         endif

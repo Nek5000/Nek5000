@@ -42,18 +42,17 @@ C     Read Mesh Info
       if(nid.eq.0) then
         read(9,*)    ! xfac,yfac,xzero,yzero
         read(9,*)    ! dummy
-        read(9,*)  nelgs,ndim,nelgv
+        read(9,*)  nelgs,ldimr,nelgv
         nelgt = abs(nelgs)
       endif
       call bcast(nelgs,ISIZE)
-      call bcast(ndim ,ISIZE)
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
       ifre2 = .false.
       if(nelgs.lt.0) ifre2 = .true.
 
       ifgtp = .false.
-      if (ndim.lt.0) ifgtp = .true.
+      if (ldim.lt.0) ifgtp = .true.
 
       if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes
@@ -135,9 +134,9 @@ c      call  vrdsmshx  ! verify mesh topology
       EPS       = 1.0e-03
       IFIELD    = 1
       IF (IFHEAT) IFIELD = 2
-      NXYZ1     = NX1*NY1*NZ1
-      NTOT      = NX1*NY1*NZ1*NELT
-      NFACES    = 2*NDIM
+      NXYZ1     = lx1*ly1*lz1
+      NTOT      = lx1*ly1*lz1*NELT
+      NFACES    = 2*ldim
 
       xmx = glmax(xm1,ntot)
       xmn = glmin(xm1,ntot)
@@ -159,21 +158,21 @@ C
       ENDIF
 c
 c     write(6,1) 
-c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
 c   1 format(i3,a4,i3,16f5.2)
 c
-      CALL DSSUM(TA,NX1,NY1,NZ1)
+      CALL DSSUM(TA,lx1,ly1,lz1)
 c
 c     write(6,1) 
-c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
 c
       CALL RONE (TB,NTOT)
       CALL SUB2 (TB,TA,NTOT)
       DO 1000 IE=1,NELT
       ieg=lglel(ie)
-      DO 1000 IZ=1,NZ1
-      DO 1000 IY=1,NY1
-      DO 1000 IX=1,NX1
+      DO 1000 IZ=1,lz1
+      DO 1000 IY=1,ly1
+      DO 1000 IX=1,lx1
          IF (ABS(TB(IX,IY,IZ,IE)).GT.EPS ) THEN
             WRITE(6,1005) IX,IY,IZ,IEG
      $      ,XM1(IX,IY,IZ,IE),YM1(IX,IY,IZ,IE),ZM1(IX,IY,IZ,IE)
@@ -195,9 +194,9 @@ C
       DO 100 IFACE=1,NFACES
          CB =CBC(IFACE,IEL,IFIELD)
          IF (CB.EQ.'P  '.or.cb.eq.'p  ') 
-     $         CALL FACEV(QMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $         CALL FACEV(QMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
   100 CONTINUE
-      CALL DSOP(QMASK,'MUL',NX1,NY1,NZ1)
+      CALL DSOP(QMASK,'MUL',lx1,ly1,lz1)
 
 c      xxmin = glmin(xm1,ntot)
 c      yymin = glmin(ym1,ntot)
@@ -215,8 +214,8 @@ C     X-component
 C
       CALL COPY(TA,XM1,NTOT)
       CALL COPY(TB,XM1,NTOT)
-      CALL DSOP(TA,'MIN',NX1,NY1,NZ1)
-      CALL DSOP(TB,'MAX',NX1,NY1,NZ1)
+      CALL DSOP(TA,'MIN',lx1,ly1,lz1)
+      CALL DSOP(TB,'MAX',lx1,ly1,lz1)
       CALL SUB2(TA,XM1,NTOT)
       CALL SUB2(TB,XM1,NTOT)
       CALL COL2(TA,QMASK,NTOT)
@@ -231,9 +230,9 @@ C
          SCAL1=MAX(SCAL1,SCAL3)
          XSCALE = 1./SCAL1
          ieg=lglel(ie)
-         DO 1100 IZ=1,NZ1
-         DO 1100 IY=1,NY1
-         DO 1100 IX=1,NX1
+         DO 1100 IZ=1,lz1
+         DO 1100 IY=1,ly1
+         DO 1100 IX=1,lx1
          if (abs(ta(ix,iy,iz,ie)*xscale).gt.eps .or.
      $       abs(tb(ix,iy,iz,ie)*xscale).gt.eps ) then
             write(6,1105) ix,iy,iz,ieg
@@ -250,8 +249,8 @@ C     Y-component
 C
       CALL COPY(TA,YM1,NTOT)
       CALL COPY(TB,YM1,NTOT)
-      CALL DSOP(TA,'MIN',NX1,NY1,NZ1)
-      CALL DSOP(TB,'MAX',NX1,NY1,NZ1)
+      CALL DSOP(TA,'MIN',lx1,ly1,lz1)
+      CALL DSOP(TB,'MAX',lx1,ly1,lz1)
       CALL SUB2(TA,YM1,NTOT)
       CALL SUB2(TB,YM1,NTOT)
       CALL COL2(TA,QMASK,NTOT)
@@ -266,9 +265,9 @@ C
          SCAL1=MAX(SCAL1,SCAL3)
          YSCALE = 1./SCAL1
          ieg=lglel(ie)
-         DO 1200 IZ=1,NZ1
-         DO 1200 IY=1,NY1
-         DO 1200 IX=1,NX1
+         DO 1200 IZ=1,lz1
+         DO 1200 IY=1,ly1
+         DO 1200 IX=1,lx1
          IF (ABS(TA(IX,IY,IZ,IE)*YSCALE).GT.EPS .OR.
      $       ABS(TB(IX,IY,IZ,IE)*YSCALE).GT.EPS ) THEN
             WRITE(6,1205) IX,IY,IZ,IEG
@@ -286,8 +285,8 @@ C
       IF (IF3D) THEN
        CALL COPY(TA,ZM1,NTOT)
        CALL COPY(TB,ZM1,NTOT)
-       CALL DSOP(TA,'MIN',NX1,NY1,NZ1)
-       CALL DSOP(TB,'MAX',NX1,NY1,NZ1)
+       CALL DSOP(TA,'MIN',lx1,ly1,lz1)
+       CALL DSOP(TB,'MAX',lx1,ly1,lz1)
        CALL SUB2(TA,ZM1,NTOT)
        CALL SUB2(TB,ZM1,NTOT)
        CALL COL2(TA,QMASK,NTOT)
@@ -302,9 +301,9 @@ C
           SCAL1=MAX(SCAL1,SCAL3)
           ZSCALE = 1./SCAL1
           ieg=lglel(ie)
-          DO 1300 IZ=1,NZ1
-          DO 1300 IY=1,NY1
-          DO 1300 IX=1,NX1
+          DO 1300 IZ=1,lz1
+          DO 1300 IY=1,ly1
+          DO 1300 IX=1,lx1
           IF (ABS(TA(IX,IY,IZ,IE)*ZSCALE).GT.EPS .OR.
      $        ABS(TB(IX,IY,IZ,IE)*ZSCALE).GT.EPS ) THEN
            WRITE(6,1305) IX,IY,IZ,IEG
@@ -362,9 +361,9 @@ C
       EPS       = 1.0e-03
       IFIELD    = 1
       IF (IFHEAT) IFIELD = 2
-      NXYZ1     = NX1*NY1*NZ1
-      NTOT      = NX1*NY1*NZ1*NELT
-      NFACES    = 2*NDIM
+      NXYZ1     = lx1*ly1*lz1
+      NTOT      = lx1*ly1*lz1*NELT
+      NFACES    = 2*ldim
 
       xmx = glmax(xm1,ntot)
       xmn = glmin(xm1,ntot)
@@ -386,21 +385,21 @@ C
       ENDIF
 c
 c     write(6,1) 
-c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'tab4',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
 c   1 format(i3,a4,i3,16f5.2)
 c
-      CALL DSSUM(TA,NX1,NY1,NZ1)
+      CALL DSSUM(TA,lx1,ly1,lz1)
 c
 c     write(6,1) 
-c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,nx1*ny1),ie=1,nelt)
+c    $(nid,'taaf',lglel(ie),(ta(k,1,1,ie),k=1,lx1*ly1),ie=1,nelt)
 c
       CALL RONE (TB,NTOT)
       CALL SUB2 (TB,TA,NTOT)
       DO 1000 IE=1,NELT
       ieg=lglel(ie)
-      DO 1000 IZ=1,NZ1
-      DO 1000 IY=1,NY1
-      DO 1000 IX=1,NX1
+      DO 1000 IZ=1,lz1
+      DO 1000 IY=1,ly1
+      DO 1000 IX=1,lx1
          IF (ABS(TB(IX,IY,IZ,IE)).GT.EPS ) THEN
             WRITE(6,1005) IX,IY,IZ,IEG
      $      ,XM1(IX,IY,IZ,IE),YM1(IX,IY,IZ,IE),ZM1(IX,IY,IZ,IE)
@@ -422,9 +421,9 @@ C
       DO 100 IFACE=1,NFACES
          CB =CBC(IFACE,IEL,IFIELD)
          IF (CB.EQ.'P  '.or.cb.eq.'p  ') 
-     $         CALL FACEV(QMASK,IEL,IFACE,0.0,NX1,NY1,NZ1)
+     $         CALL FACEV(QMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
   100 CONTINUE
-      call dsop(QMASK,'MUL',NX1,NY1,NZ1)
+      call dsop(QMASK,'MUL',lx1,ly1,lz1)
 
       xxmin = glmin(xm1,ntot)
       yymin = glmin(ym1,ntot)
@@ -441,13 +440,13 @@ C     X-component
 C
       call copy(ta,xm1,ntot)
       call copy(tb,xm1,ntot)
-      call dsop(ta,'min',nx1,ny1,nz1)
-      call dsop(tb,'max',nx1,ny1,nz1)
+      call dsop(ta,'min',lx1,ly1,lz1)
+      call dsop(tb,'max',lx1,ly1,lz1)
 
       call copy(tc,xm1,ntot)
       call copy(td,xm1,ntot)
-      call dsop(tc,'min',nx1,ny1,nz1)
-      call dsop(td,'max',nx1,ny1,nz1)
+      call dsop(tc,'min',lx1,ly1,lz1)
+      call dsop(td,'max',lx1,ly1,lz1)
 
       xxmin = glmin(xm1,ntot)
       xxmax = glmax(xm1,ntot)
@@ -492,9 +491,9 @@ C
          SCAL1=MAX(SCAL1,SCAL3)
          XSCALE = 1./SCAL1
          ieg=lglel(ie)
-         DO 1100 IZ=1,NZ1
-         DO 1100 IY=1,NY1
-         DO 1100 IX=1,NX1
+         DO 1100 IZ=1,lz1
+         DO 1100 IY=1,ly1
+         DO 1100 IX=1,lx1
          if (abs(ta(ix,iy,iz,ie)*xscale).gt.eps .or.
      $       abs(tb(ix,iy,iz,ie)*xscale).gt.eps ) then
             write(6,1105) nid,ix,iy,iz,ie,ieg
@@ -592,7 +591,7 @@ C
 C
 C     Compute (weighted) average inertia for each element.
 C
-      NCRNR=2**NDIM
+      NCRNR=2**ldim
       CALL RZERO(TI,6)
       DO 100 IL=1,NL
          VO0 = VO(IL)/VTOT
@@ -729,7 +728,7 @@ C
       INCLUDE 'SIZE'
       DIMENSION CG(3,1),XYZ(3,8,1)
 C
-      NCRNR=2**NDIM
+      NCRNR=2**ldim
       CALL RZERO(CG,3*N)
       DO 100 I =1,N
       DO 100 IC=1,NCRNR

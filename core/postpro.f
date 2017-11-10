@@ -31,7 +31,7 @@ c
       real vv(ldim,ldim),ss(ldim,ldim),oo(ldim,ldim),w(ldim,ldim)
       real lam(ldim)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       n    = nxyz*nelv
 
       do ie=1,nelv
@@ -40,17 +40,17 @@ c
 
          do l=1,nxyz
             ! decompose into symm. and antisymm. part
-            do j=1,ndim
-            do i=1,ndim
+            do j=1,ldim
+            do i=1,ldim
                ss(i,j) = 0.5*(gije(l,i,j)+gije(l,j,i))
                oo(i,j) = 0.5*(gije(l,i,j)-gije(l,j,i))
             enddo
             enddo
          
             call rzero(vv,ldim*ldim)
-            do j=1,ndim
-            do i=1,ndim
-            do k=1,ndim
+            do j=1,ldim
+            do i=1,ldim
+            do k=1,ldim
                vv(i,j) = vv(i,j) + ss(i,k)*ss(k,j) + oo(i,k)*oo(k,j)
             enddo
             enddo
@@ -58,7 +58,7 @@ c
 
 c           Solve eigenvalue problemand sort 
 c           eigenvalues in ascending order.
-            call find_lam3(lam,vv,w,ndim,ierr)
+            call find_lam3(lam,vv,w,ldim,ierr)
 
             l2(l,1,1,ie) = lam(2)
          enddo
@@ -72,8 +72,8 @@ c           eigenvalues in ascending order.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine find_lam3(lam,aa,w,ndim,ierr)
-      real aa(ndim,ndim),lam(ndim),w(ndim,ndim),lam2
+      subroutine find_lam3(lam,aa,w,ldim,ierr)
+      real aa(ldim,ldim),lam(ldim),w(ldim,ldim),lam2
 c
 c     Use cubic eqn. to compute roots
 c
@@ -89,7 +89,7 @@ c
 c     2D case....
 c
 c
-      if (ndim.eq.2) then
+      if (ldim.eq.2) then
          a = aa(1,1)
          b = aa(1,2)
          c = aa(2,1)
@@ -266,8 +266,8 @@ c
 
       integer e
 
-      n    = nx1-1      ! Polynomial degree
-      nxyz = nx1*ny1*nz1
+      n    = lx1-1      ! Polynomial degree
+      nxyz = lx1*ly1*lz1
 
       if (if3d) then     ! 3D CASE
 
@@ -330,7 +330,7 @@ c     Build 1D-filter based on the transfer function (tf)
 c     Filter scalar
       call copy(w1,scalar,lxyz*nel)
       do ie=1,nel
-         call tens3d1(scalar(1,ie),w1(1,ie),fh,fht,nx1,nx1)  ! fh x fh x fh x scalar
+         call tens3d1(scalar(1,ie),w1(1,ie),fh,fht,lx1,lx1)  ! fh x fh x fh x scalar
       enddo
 
       return
@@ -368,12 +368,12 @@ c-----------------------------------------------------------------------
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
 
-c    if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
-      call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
+c    if (icall.eq.0) call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
+      call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
 
       icall = 1
 
-      call filterq(scalar,intv,nx1,nz1,wk1,wk2,intt,if3d,fmax)
+      call filterq(scalar,intv,lx1,lz1,wk1,wk2,intt,if3d,fmax)
       fmax = glmax(fmax,1)
 
       if (nio.eq.0) write(6,1) istep,fmax,name5
@@ -384,7 +384,7 @@ c    if (icall.eq.0) call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
 c-----------------------------------------------------------------------
       subroutine tens3d1(v,u,f,ft,nv,nu)  ! v = F x F x F x u
 
-c     Note: this routine assumes that nx1=ny1=nz1
+c     Note: this routine assumes that lx1=ly1=lz1
 c
       include 'SIZE'
       include 'INPUT'
@@ -496,12 +496,12 @@ c
       REAL mag (lx1*ly1*lz1)
       REAL aije(lx1*ly1*lz1,ldim,ldim)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       call rzero(mag,nxyz)
  
-      do 100 j=1,ndim
-      do 100 i=1,ndim
+      do 100 j=1,ldim
+      do 100 i=1,ldim
       do 100 l=1,nxyz 
          mag(l) = mag(l) + 0.5*aije(l,i,j)*aije(l,i,j)
  100  continue
@@ -520,12 +520,12 @@ c
 
       real gije(lx1*ly1*lz1,ldim,ldim)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       k = 1
 
-      do j=1,ndim
-      do i=k,ndim
+      do j=1,ldim
+      do i=k,ldim
          do l=1,nxyz
             gije(l,i,j) = 0.5*(gije(l,i,j)+gije(l,j,i))
             gije(l,j,i) = gije(l,i,j)
@@ -546,12 +546,12 @@ c
 
       integer e
 
-      ldr = n**ndim
+      ldr = n**ldim
 
       k=1
       do e=1,nel
-         if (ndim.eq.2) call map2reg_2di_e(ur(k),n,u(1,e),nx1) 
-         if (ndim.eq.3) call map2reg_3di_e(ur(k),n,u(1,e),nx1) 
+         if (ldim.eq.2) call map2reg_2di_e(ur(k),n,u(1,e),lx1) 
+         if (ldim.eq.3) call map2reg_3di_e(ur(k),n,u(1,e),lx1) 
          k = k + ldr
       enddo
 
@@ -687,9 +687,9 @@ c     imid = 2  ! All nontrivial midside node defs
          call byte_open('newre2.re2' // char(0), ierr)
          call blank(hdr,80)
          if(wdsize.eq.8) then 
-            write(hdr,112) nelgt,ndim,nelgv 
+            write(hdr,112) nelgt,ldim,nelgv 
          else
-            write(hdr,111) nelgt,ndim,nelgv
+            write(hdr,111) nelgt,ldim,nelgv
          endif
   111    format('#v001',i9,i3,i9,' hdr')
   112    format('#v002',i9,i3,i9,' hdr')
@@ -730,9 +730,9 @@ c-----------------------------------------------------------------------
       equivalence (buf,buf2)
 
 
-      nxs = nx1-1
-      nys = ny1-1
-      nzs = nz1-1
+      nxs = lx1-1
+      nys = ly1-1
+      nzs = lz1-1
  
       wdsiz2=4
       if(wdsize.eq.8) wdsiz2=8
@@ -928,7 +928,7 @@ c        imid = 2  ! All nontrivial midside node defs
          enddo
 
       endif
-      nedge = 4 + 8*(ndim-2)
+      nedge = 4 + 8*(ldim-2)
 
       ncurvn = 0
       do e=1,nelt
@@ -1038,7 +1038,7 @@ c-----------------------------------------------------------------------
       equivalence (buf,buf2)
 
 
-      nface = 2*ndim
+      nface = 2*ldim
       ierr = 0
       nbc  = 0
       rbc  = 0
@@ -1174,13 +1174,13 @@ c-----------------------------------------------------------------------
       letapt = 'a'
       numapt = 1
 
-      nxs = nx1-1
-      nys = ny1-1
-      nzs = nz1-1
+      nxs = lx1-1
+      nys = ly1-1
+      nzs = lz1-1
       nblock = lv*ldim*lblock
 
       if (nid.eq.0) 
-     $  write(10,'(i12,i3,i12,'' NEL,NDIM,NELV'')') nelgt,ndim,nelgv
+     $  write(10,'(i12,i3,i12,'' NEL,ldim,NELV'')') nelgt,ldim,nelgv
 
       do eb=1,nelgt,lblock
          nemax = min(eb+lblock-1,nelgt)
@@ -1283,7 +1283,7 @@ c        imid = 2  ! All nontrivial midside node defs
 
       endif
 
-      nedge = 4 + 8*(ndim-2)
+      nedge = 4 + 8*(ldim-2)
 
       ncurvn = 0
       do e=1,nelt
@@ -1375,7 +1375,7 @@ c-----------------------------------------------------------------------
       save        chtemp
       data        chtemp /' '/   ! For mesh bcs
 
-      nface = 2*ndim
+      nface = 2*ldim
 
       nlg = nelg(ifld)
 
@@ -1477,7 +1477,7 @@ c     Take care of spherical curved face defn
 
       tol   = 1.e-4
       tol2  = tol**2
-      nedge = 4 + 8*(ndim-2)
+      nedge = 4 + 8*(ldim-2)
 
       do i=1,nedge
          if (ccrve(i).eq.' ') then
@@ -1488,13 +1488,13 @@ c     Take care of spherical curved face defn
             enddo
             len = 0.
             h   = 0.
-            do j=1,ndim
+            do j=1,ldim
                xmid = .5*(xyz(j,1)+xyz(j,3))
                h    = h   + (xyz(j,2)-xmid)**2
                len  = len + (xyz(j,3)-xyz(j,1))**2
             enddo
             if (h.gt.tol2*len) ccurve(i,e) = 'm'
-            if (h.gt.tol2*len) call copy(curve(1,i,e),xyz(1,2),ndim)
+            if (h.gt.tol2*len) call copy(curve(1,i,e),xyz(1,2),ldim)
          endif
       enddo
 
@@ -1538,7 +1538,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       save    inth_hpts
 
-      nxyz  = nx1*ny1*nz1
+      nxyz  = lx1*ly1*lz1
       ntot  = nxyz*nelt 
       nbuff = lhis      ! point to be read in on 1 proc.
 
@@ -1553,12 +1553,12 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         tol     = 5e-13
         n       = lx1*ly1*lz1*lelt
         npt_max = 256
-        nxf     = 2*nx1 ! fine mesh for bb-test
-        nyf     = 2*ny1
-        nzf     = 2*nz1
+        nxf     = 2*lx1 ! fine mesh for bb-test
+        nyf     = 2*ly1
+        nzf     = 2*lz1
         bb_t    = 0.01 ! relative size to expand bounding boxes by
-        call fgslib_findpts_setup(inth_hpts,nekcomm,np,ndim,
-     &                            xm1,ym1,zm1,nx1,ny1,nz1,
+        call fgslib_findpts_setup(inth_hpts,nekcomm,np,ldim,
+     &                            xm1,ym1,zm1,lx1,ly1,lz1,
      &                            nelt,nxf,nyf,nzf,bb_t,n,n,
      &                            npt_max,tol)
       endif
@@ -1572,7 +1572,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         call copy(wrk(1,1),vx,ntot)
         call copy(wrk(1,2),vy,ntot)
         if(if3d) call copy(wrk(1,3),vz,ntot)
-        nflds = ndim
+        nflds = ldim
       endif
       if(ifpo) then
         nflds = nflds + 1
@@ -1594,11 +1594,11 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         call fgslib_findpts(inth_hpts,rcode,1,
      &                      proc,1,
      &                      elid,1,
-     &                      rst,ndim,
+     &                      rst,ldim,
      &                      dist,1,
-     &                      pts(1,1),ndim,
-     &                      pts(2,1),ndim,
-     &                      pts(3,1),ndim,npts)
+     &                      pts(1,1),ldim,
+     &                      pts(2,1),ldim,
+     &                      pts(3,1),ldim,npts)
      
         nfail = 0 
         do i=1,npts
@@ -1608,13 +1608,13 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
                nfail = nfail + 1
                IF (NFAIL.LE.5) WRITE(6,'(a,1p4e15.7)') 
      &     ' WARNING: point on boundary or outside the mesh xy[z]d^2:'
-     &     ,(pts(k,i),k=1,ndim),dist(i)
+     &     ,(pts(k,i),k=1,ldim),dist(i)
              endif   
            elseif(rcode(i).eq.2) then
              nfail = nfail + 1
              if (nfail.le.5) write(6,'(a,1p3e15.7)') 
      &        ' WARNING: point not within mesh xy[z]: !',
-     &        (pts(k,i),k=1,ndim)
+     &        (pts(k,i),k=1,ldim)
            endif
         enddo
         icalld = 1
@@ -1627,7 +1627,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
      &                            rcode,1,
      &                            proc,1,
      &                            elid,1,
-     &                            rst,ndim,npts,
+     &                            rst,ldim,npts,
      &                            wrk(1,ifld))
       enddo
       ! write interpolation results to hpts.out
@@ -1677,7 +1677,7 @@ c-----------------------------------------------------------------------
          n0    = nbuf
       endif
 
-      len = wdsize*ndim*nbuf
+      len = wdsize*ldim*nbuf
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,buffer,len)
       call nekgsync
       
@@ -1687,7 +1687,7 @@ c-----------------------------------------------------------------------
         do ipass = 1,npass
            if(ipass.eq.npass) i1 = n0
            do i = 1,i1
-              read(50,*) (buffer(j,i),j=1,ndim) 
+              read(50,*) (buffer(j,i),j=1,ldim) 
            enddo
            if(ipass.lt.npass)call csend(ipass,buffer,len,ipass,0)
         enddo
@@ -1944,7 +1944,7 @@ c     IGNORE XY DATA
         if (n1.lt.0) goto 1001
       do i=1,nelgt
         READ(9,'(a)') string2
-        do j=1,2+(ndim-2)*4
+        do j=1,2+(ldim-2)*4
            READ(9,'(a)') string2
         enddo
       enddo
@@ -1961,14 +1961,14 @@ c     BOUNDARY CONDITIONS
 c     FLUID
       READ(9,'(a)') string2
       if (ifflow) then
-       do i=1,nelgv*2*ndim
+       do i=1,nelgv*2*ldim
         READ(9,'(a)') string2
        enddo
       endif
 c      Thermal
       READ(9,'(a)') string2
       if (ifheat) then
-       do i=1,nelgt*2*ndim
+       do i=1,nelgt*2*ldim
         READ(9,'(a)') string2
        enddo
       else

@@ -7,7 +7,7 @@ c     reads sourcefld and interpolates all avaiable fields
 c     onto current mesh
 c
 c     memory requirement: 
-c     nelgs*nxs**ndim < np*(4*lelt*lx1**ldim)
+c     nelgs*nxs**ldim < np*(4*lelt*lx1**ldim)
 c
       include 'SIZE'
       include 'TOTAL'
@@ -54,9 +54,9 @@ c
       nys     = nyr
       nzs     = nzr
       if(nzs.gt.1) then 
-        ndims = 3
+        ldims = 3
       else
-        ndims = 2
+        ldims = 2
       endif
       if (ifgtim) time = timer
 
@@ -75,8 +75,8 @@ c
       noff0_b    = iHeaderSize + iSize + iSize*dtmp8
 
       ! do some checks
-      if(ndims.ne.ndim) 
-     $ call exitti('ndim of source does not match target!$',0)
+      if(ldims.ne.ldim) 
+     $ call exitti('ldim of source does not match target!$',0)
       if(ntots_b/wdsize .gt. ltots) then
         dtmp8 = nelgs
         lelt_req = dtmp8*nxs*nys*nzs / (np*ltots/lelt)
@@ -90,7 +90,7 @@ c
       if(ifgetxr) then
         ! read source mesh coordinates
         call gfldr_getxyz(xm1s,ym1s,zm1s,ifbswp)
-        ifldpos = ndim
+        ifldpos = ldim
       else
         call exitti('source does not contain a mesh!$',0)
       endif
@@ -110,15 +110,15 @@ c
       nhash = nxs*nys*nzs 
       nmax  = 256
 
-      call fgslib_findpts_setup(inth_gfldr,nekcomm,np,ndim,
+      call fgslib_findpts_setup(inth_gfldr,nekcomm,np,ldim,
      &                          xm1s,ym1s,zm1s,nxs,nys,nzs,
      &                          nels,nxf,nyf,nzf,bb_t,
      &                          nhash,nhash,nmax,tol)
 
       ! read source fields and interpolate
       if(ifgetur .and. ifflow) then
-        call gfldr_getfld(vx,vy,vz,ndim,ifldpos+1,ifbswp)
-        ifldpos = ifldpos + ndim
+        call gfldr_getfld(vx,vy,vz,ldim,ifldpos+1,ifbswp)
+        ifldpos = ifldpos + ldim
       endif
       if(ifgetpr) then
         call gfldr_getfld(pm1,dum,dum,1,ifldpos+1,ifbswp)
@@ -161,25 +161,25 @@ c-----------------------------------------------------------------------
       integer*8 ioff_b
 
  
-      ioff_b = noff0_b + ndim*rankoff_b
+      ioff_b = noff0_b + ldim*rankoff_b
       call byte_set_view(ioff_b,fldh_gfldr)
 
-      nread = ndim*ntots_b/4
+      nread = ldim*ntots_b/4
       call byte_read_mpi(bufr,nread,-1,fldh_gfldr,ierr)
       if(ifbswp) then
         if(wdsizr.eq.4) call byte_reverse (bufr,nread,ierr)
         if(wdsizr.eq.8) call byte_reverse8(bufr,nread,ierr)
       endif
 
-      call gfldr_buf2vi (xout,1,bufr,ndim,wdsizr,nels,nxyzs)
-      call gfldr_buf2vi (yout,2,bufr,ndim,wdsizr,nels,nxyzs)
-      if(ndim.eq.3)
-     $ call gfldr_buf2vi(zout,3,bufr,ndim,wdsizr,nels,nxyzs)
+      call gfldr_buf2vi (xout,1,bufr,ldim,wdsizr,nels,nxyzs)
+      call gfldr_buf2vi (yout,2,bufr,ldim,wdsizr,nels,nxyzs)
+      if(ldim.eq.3)
+     $ call gfldr_buf2vi(zout,3,bufr,ldim,wdsizr,nels,nxyzs)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_getfld(out1,out2,out3,nndim,ifldpos,ifbswp)
+      subroutine gfldr_getfld(out1,out2,out3,nldim,ifldpos,ifbswp)
 
       include 'SIZE'
       include 'GEOM'
@@ -208,9 +208,9 @@ c-----------------------------------------------------------------------
 
       ! read field data from source fld file
       ioff_b = noff0_b + (ifldpos-1)*nSizeFld_b
-      ioff_b = ioff_b  + nndim*rankoff_b
+      ioff_b = ioff_b  + nldim*rankoff_b
       call byte_set_view(ioff_b,fldh_gfldr)
-      nread = nndim*ntots_b/4
+      nread = nldim*ntots_b/4
       call byte_read_mpi(bufr,nread,-1,fldh_gfldr,ierr)
       if(ifbswp) then
         if(wdsizr.eq.4) call byte_reverse (bufr,nread,ierr)
@@ -218,17 +218,17 @@ c-----------------------------------------------------------------------
       endif
 
       ! interpolate onto current mesh
-      ntot = nx1*ny1*nz1*nelt
-      call gfldr_buf2vi  (buffld,1,bufr,nndim,wdsizr,nels,nxyzs)
+      ntot = lx1*ly1*lz1*nelt
+      call gfldr_buf2vi  (buffld,1,bufr,nldim,wdsizr,nels,nxyzs)
       call gfldr_intp    (out1,buffld,ifpts)
-      if(nndim.eq.1) return
+      if(nldim.eq.1) return
 
-      call gfldr_buf2vi  (buffld,2,bufr,nndim,wdsizr,nels,nxyzs)
+      call gfldr_buf2vi  (buffld,2,bufr,nldim,wdsizr,nels,nxyzs)
       call gfldr_intp    (out2,buffld,.false.)
-      if(nndim.eq.2) return
+      if(nldim.eq.2) return
 
-      if(nndim.eq.3) then
-        call gfldr_buf2vi(buffld,3,bufr,nndim,wdsizr,nels,nxyzs)
+      if(nldim.eq.3) then
+        call gfldr_buf2vi(buffld,3,bufr,nldim,wdsizr,nels,nxyzs)
         call gfldr_intp  (out3,buffld,.false.)
       endif
 
@@ -270,7 +270,7 @@ c-----------------------------------------------------------------------
 
 
       nfail = 0
-      ntot  = nx1*ny1*nz1*nelt
+      ntot  = lx1*ly1*lz1*nelt
 
       toldist = 5e-6
       if(wdsizr.eq.8) toldist = 5e-14
@@ -281,7 +281,7 @@ c-----------------------------------------------------------------------
      &                      rcode,1,
      &                      proc,1,
      &                      elid,1,
-     &                      rst,ndim,
+     &                      rst,ldim,
      &                      dist,1,
      &                      xm1,1,
      &                      ym1,1,
@@ -308,7 +308,7 @@ c-----------------------------------------------------------------------
      &                         rcode,1,
      &                         proc,1,
      &                         elid,1,
-     &                         rst,ndim,ntot,
+     &                         rst,ldim,ntot,
      &                         fieldin)
 
       return

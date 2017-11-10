@@ -526,7 +526,7 @@ c     Communicate unhappiness to the other session
       tstop  = dnekclock()
       ttotal = tstop-etimes
       tsol   = max(ttime - tprep,0.0)
-      nxyz   = nx1*ny1*nz1
+      nxyz   = lx1*ly1*lz1
 
       dtmp4 = glsum(getmaxrss(),1)/1e9
 

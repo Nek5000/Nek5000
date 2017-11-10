@@ -31,8 +31,7 @@ c        write(6,*) string
 c
 c        here is where the 2d/3d determination is made....
 c
-         call geti1(ndim,iend,7)
-         ndim = iabs(ndim)
+         call geti1(ldimr,iend,7)
          call getrv(rfld,1,iend,7)
          nfld = int(rfld)                  ! Determine number of fields
          if(rfld.ne.nfld) nfld = nfld +1
@@ -54,7 +53,7 @@ c
       param(118) = nelz
 c
       if3d = .false.
-      if (ndim.eq.3) if3d=.true.
+      if (ldim.eq.3) if3d=.true.
 c
       return
 
@@ -90,7 +89,7 @@ c
       ifld = 2                                          ! ifield.gt.2?
       if (ifflow) ifld = 1
 c
-      nbc = 2*ndim
+      nbc = 2*ldim
       write(6,6) nid,ifld,(gtp_cbc(k,ifld),k=1,nbc)
    6  format(2i4,'  GTP BC:',6(2x,a3))
 c
@@ -175,7 +174,7 @@ c
          ifld0 = 2
          if (ifflow) ifld0 = 1
          ifld1 = ifld0-1 + nfld
-         nbc = 2*ndim
+         nbc = 2*ldim
          do ifld=ifld0,ifld1
             call getcv(gtp_cbc(1,ifld),3,6,iend,7)
             write(6,*) 'CBC1',(gtp_cbc(k,ifld),k=1,nbc),ifld
@@ -256,7 +255,7 @@ c
          ifld0 = 2
          if (ifflow) ifld0 = 1
          ifld1 = ifld0-1 + nfld
-         nbc   = 2*ndim
+         nbc   = 2*ldim
          write(6,*) 'this is ifld01:',ifld0,ifld1
          do ifld=ifld0,ifld1
             call getcv(gtp_cbc(1,ifld),3,6,iend,7)
@@ -319,7 +318,7 @@ c
          ifld0 = 2
          if (ifflow) ifld0 = 1
          ifld1 = ifld0-1 + nfld
-         nbc   = 2*ndim
+         nbc   = 2*ldim
          do ifld=ifld0,ifld1
             call getcv(gtp_cbc(1,ifld),3,4,iend,7)
             write(6,*) 'CBC3',(gtp_cbc(k,ifld),k=1,nbc),ifld
@@ -755,10 +754,10 @@ c     a distribution determined by gain_e.   Uniform spacing
 c     corresponds to gain_e = 1, otherwise, a geometric sequence
 c     is generated, with dx_i+1 = dx_i * gain_e
 c
-      ndim = 2
-      if (if3d) ndim=3
+      ldim = 2
+      if (if3d) ldim=3
 c
-      do id=1,ndim
+      do id=1,ldim
 c
          call geti1(nseg,iend,7)
          call getiv(nels ,nseg  ,iend,7)
@@ -901,7 +900,7 @@ c
       include 'ZPER'
       include 'PARALLEL'
 c
-      call bcast(ndim,isize)
+      call bcast(ldim,isize)
       call bcast(nfld,isize)
       call bcast(nelx,isize)
       call bcast(nely,isize)
@@ -932,7 +931,7 @@ c-----------------------------------------------------------------------
       integer e
 c
       if (np.gt.1) return
-      if (ndim.eq.2) return
+      if (ldim.eq.2) return
 c
       do e=1,nelv
          write(88,1) e

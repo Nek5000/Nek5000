@@ -79,9 +79,9 @@ c       Only initialize once
       if (ifield.eq.1) then
 c       Apply the filter
 c       to velocity fields
-        call build_hpf_fld(ta1,vx,hpf_op,nx1,nz1)
-        call build_hpf_fld(ta2,vy,hpf_op,nx1,nz1)
-        if (if3d) call build_hpf_fld(ta3,vz,hpf_op,nx1,nz1)
+        call build_hpf_fld(ta1,vx,hpf_op,lx1,lz1)
+        call build_hpf_fld(ta2,vy,hpf_op,lx1,lz1)
+        if (if3d) call build_hpf_fld(ta3,vz,hpf_op,lx1,lz1)
 
 c       Multiply by filter weight (chi)
         call cmult(ta1,hpf_chi,n)    
@@ -96,7 +96,7 @@ c       and add to forcing term
 
 c       Apply filter to temp/passive scalar fields      
         call build_hpf_fld(ta1,t(1,1,1,1,ifield-1),
-     $       hpf_op,nx1,nz1)
+     $       hpf_op,lx1,lz1)
 
 c       Multiply by filter weight (chi)
         call cmult(ta1,hpf_chi,n)    
@@ -192,7 +192,7 @@ c
 c
       call transpose(ft,nx,f,nx)
 c
-      if (ndim.eq.3) then
+      if (ldim.eq.3) then
         do e=1,nel
 c         Filter
           call copy(w2,v(1,e),nxyz)

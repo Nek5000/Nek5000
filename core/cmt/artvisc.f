@@ -16,7 +16,7 @@
       data icalld /0/
       save icalld
 
-      n=nx1*ny1*nz1
+      n=lx1*ly1*lz1
       ntot=n*nelt
       ntol=1.0e-10
 
@@ -58,7 +58,7 @@
 
       pi=4.0*atan(1.0)
 
-      n=nx1*ny1*nz1
+      n=lx1*ly1*lz1
       ntot=n*nelt
 
 ! entropy at this and lorder prior steps
@@ -105,7 +105,7 @@ c-----------------------------------------------------------------------
       data dsdtcoef /1.0,1.0,0.5/
       real s(lx1*ly1*lz1*lelt,lorder-1,ldimt) ! because it's really tlag
 
-      n=nx1*ny1*nz1
+      n=lx1*ly1*lz1
       ntot=n*nelt
 
       if (istep .eq. 1) return
@@ -142,8 +142,8 @@ c-----------------------------------------------------------------------
       include 'CMTDATA'
       integer e
 
-      call rzero(totalh,3*nxd*nyd*nzd)
-      n=nx1*ny1*nz1
+      call rzero(totalh,3*lxd*lyd*lzd)
+      n=lx1*ly1*lz1
 
       call col3(totalh(1,1),vx(1,1,1,e),tlag(1,1,1,e,1,1),n)
       call col3(totalh(1,2),vy(1,1,1,e),tlag(1,1,1,e,1,1),n)
@@ -169,8 +169,8 @@ c-----------------------------------------------------------------------
       integer e
 
       nrstd=ldd
-      nxyz=nx1*ny1*nz1
-      mdm1=nx1-1
+      nxyz=lx1*ly1*lz1
+      mdm1=lx1-1
 
       call rzero(ur,nrstd)
       call rzero(us,nrstd)
@@ -228,9 +228,9 @@ c-----------------------------------------------------------------------
       real residual(lxyz,nelt)
       integer e,f
 
-      nxyz =nx1*ny1*nz1
-      nxz  =nx1*nz1
-      nface=2*ndim
+      nxyz =lx1*ly1*lz1
+      nxz  =lx1*lz1
+      nface=2*ldim
       nxzf =nxz*nface
       nfq  =nxzf*nelt
 
@@ -266,7 +266,7 @@ c-----------------------------------------------------------------------
       subroutine evmsmooth(resvisc,wavevisc,endpoints)
       include 'SIZE'
       include 'INPUT'
-      real resvisc(nx1,ny1,nz1,nelt),wavevisc(nx1,ny1,nz1,nelt)
+      real resvisc(lx1,ly1,lz1,nelt),wavevisc(lx1,ly1,lz1,nelt)
       real rtmp
       common /ctmp1/ rtmp(lx1,ly1,lz1)
 ! are faces included in smoothing? if not (say they're fixed by dsavg) then
@@ -278,24 +278,24 @@ c-----------------------------------------------------------------------
 ! weight the neighbors according to GLL-spacing instead of uniform-grid
 ! at a later date.
 
-      nxyz=nx1*ny1*nz1
+      nxyz=lx1*ly1*lz1
       kstart=1
-      kend=nz1
-      rndim=1.0/ndim
+      kend=lz1
+      rldim=1.0/ldim
 
       if (endpoints) then
          istart=1
          jstart=1
-         iend=nx1
-         jend=ny1
+         iend=lx1
+         jend=ly1
       else
          istart=2
          jstart=2
-         iend=nx1-1
-         jend=ny1-1
+         iend=lx1-1
+         jend=ly1-1
          if (if3d) then
             kstart=2
-            kend=nz1-1
+            kend=lz1-1
          endif
       endif
 
@@ -314,8 +314,8 @@ c-----------------------------------------------------------------------
 !              if (km1 .lt. 1) izm=iz ! bias towards {{face point}}
                if (km1 .lt. 1) izm=kp1 ! Guermond symmetry
                izp=kp1
-!              if (kp1 .gt. nz1) izp=iz ! bias towards {{face point}}
-               if (kp1 .gt. nz1) izp=km1 ! Guermond symmetry
+!              if (kp1 .gt. lz1) izp=iz ! bias towards {{face point}}
+               if (kp1 .gt. lz1) izp=km1 ! Guermond symmetry
             else
                izm=iz
                izp=iz
@@ -327,8 +327,8 @@ c-----------------------------------------------------------------------
 !              if (jm1 .lt. 1) iym=iy ! bias towards {{face point}}
                if (jm1 .lt. 1) iym=jp1 ! Guermond symmetry
                iyp=jp1
-!              if (jp1 .gt. ny1) iyp=iy ! bias toward {{face point}}
-               if (jp1 .gt. ny1) iyp=jm1 ! Guermond symmetry
+!              if (jp1 .gt. ly1) iyp=iy ! bias toward {{face point}}
+               if (jp1 .gt. ly1) iyp=jm1 ! Guermond symmetry
                do ix=istart,iend
                   im1=ix-1
                   ip1=ix+1
@@ -336,8 +336,8 @@ c-----------------------------------------------------------------------
 !                 if (im1 .lt. 1) ixm=ix ! bias towards {{face point}}
                   if (im1 .lt. 1) ixm=ip1 ! Guermond symmetry
                   ixp=ip1
-!                 if (ip1 .gt. nx1) ixp=ix ! bias towards {{face point}}
-                  if (ip1 .gt. nx1) ixp=im1 ! Guermond symmetry
+!                 if (ip1 .gt. lx1) ixp=ix ! bias towards {{face point}}
+                  if (ip1 .gt. lx1) ixp=im1 ! Guermond symmetry
                   x0 = resvisc(ix ,iy ,iz ,e)
                   x1 = resvisc(ixm,iy ,iz ,e)
                   x2 = resvisc(ixp,iy ,iz ,e)
@@ -350,8 +350,8 @@ c-----------------------------------------------------------------------
                      x5=0.0
                      x6=0.0
                   endif
-                  rtmp(ix,iy,iz)=0.25*(2.0*ndim*x0+x1+x2+x3+x4+x5+x6)
-     >                               *rndim
+                  rtmp(ix,iy,iz)=0.25*(2.0*ldim*x0+x1+x2+x3+x4+x5+x6)
+     >                               *rldim
                enddo
             enddo
          enddo
@@ -378,7 +378,7 @@ c-----------------------------------------------------------------------
       real numax(lxyz,nelt)
       integer e
 
-      nxyz=nx1*ny1*nz1
+      nxyz=lx1*ly1*lz1
 
       do e=1,nelt
          do i=1,nxyz
@@ -409,21 +409,21 @@ c-----------------------------------------------------------------------
 
       character*32 fname ! diagnostic
 
-      nxyz=nx1*ny1*nz1
+      nxyz=lx1*ly1*lz1
 
 ! get maxima on faces
-      call dsop(field,'MAX',nx1,ny1,nz1)
+      call dsop(field,'MAX',lx1,ly1,lz1)
 
 ! trilinear interpolation. you should adapt xyzlin to your needs instead
       do e=1,nelt
          p000=field(1,  1,  1,  e)
-         p100=field(nx1,1,  1,  e)
-         p010=field(1,  ny1,1,  e)
-         p110=field(nx1,ny1,1,  e)
-         p001=field(1,  1,  nz1,e)
-         p101=field(nx1,1,  nz1,e)
-         p011=field(1,  ny1,nz1,e)
-         p111=field(nx1,ny1,nz1,e)
+         p100=field(lx1,1,  1,  e)
+         p010=field(1,  ly1,1,  e)
+         p110=field(lx1,ly1,1,  e)
+         p001=field(1,  1,  lz1,e)
+         p101=field(lx1,1,  lz1,e)
+         p011=field(1,  ly1,lz1,e)
+         p111=field(lx1,ly1,lz1,e)
          c1=p100-p000
          c2=p010-p000
          c3=p001-p000
@@ -431,10 +431,10 @@ c-----------------------------------------------------------------------
          c5=p011-p001-p010+p000
          c6=p101-p001-p100+p000
          c7=p111-p011-p101-p110+p100+p001+p010-p000
-         rdx=1.0/(xm1(nx1,1,1,e)-xm1(1,1,1,e)) ! cubes only!!!
-         rdy=1.0/(ym1(1,ny1,1,e)-ym1(1,1,1,e))
+         rdx=1.0/(xm1(lx1,1,1,e)-xm1(1,1,1,e)) ! cubes only!!!
+         rdy=1.0/(ym1(1,ly1,1,e)-ym1(1,1,1,e))
          rdz=0.0
-         if(if3d) rdz=1.0/(zm1(1,1,nz1,e)-zm1(1,1,1,e))
+         if(if3d) rdz=1.0/(zm1(1,1,lz1,e)-zm1(1,1,1,e))
          do i=1,nxyz
             deltax=rdx*(xm1(i,1,1,e)-xm1(1,1,1,e)) ! cubes only!!!
             deltay=rdy*(ym1(i,1,1,e)-ym1(1,1,1,e))

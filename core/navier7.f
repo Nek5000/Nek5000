@@ -160,10 +160,10 @@ c
 c     3 D
 c
       if (if3d) then
-         do iz=1,nz1
+         do iz=1,lz1
             write(6,*) 
-            do j=ny1,1,-1
-               write(6,3) (x(k,j,iz,1),k=1,nx1),(x(k,j,iz,2),k=1,nx1)
+            do j=ly1,1,-1
+               write(6,3) (x(k,j,iz,1),k=1,lx1),(x(k,j,iz,2),k=1,lx1)
             enddo
          enddo
          write(6,*)
@@ -175,15 +175,15 @@ c     2 D
 c
       if (nelv.gt.2) then
          write(6,*) 
-         do j=ny1,1,-1
-            write(6,6) (x(k,j,1,3),k=1,nx1),(x(k,j,1,4),k=1,nx1)
+         do j=ly1,1,-1
+            write(6,6) (x(k,j,1,3),k=1,lx1),(x(k,j,1,4),k=1,lx1)
          enddo
          write(6,*)
          write(6,*)
       endif
 c
-      do j=ny1,1,-1
-         write(6,6) (x(k,j,1,1),k=1,nx1),(x(k,j,1,2),k=1,nx1)
+      do j=ly1,1,-1
+         write(6,6) (x(k,j,1,1),k=1,lx1),(x(k,j,1,2),k=1,lx1)
       enddo
       write(6,*)
     3 format(4f6.2,5x,4f6.2)
@@ -206,10 +206,10 @@ c
 c     3 D
 c
       if (if3d) then
-         do iz=1,nz1
+         do iz=1,lz1
             write(6,*) 
-            do j=ny1,1,-1
-               write(6,3) (x(k,j,iz,1),k=1,nx1),(x(k,j,iz,2),k=1,nx1)
+            do j=ly1,1,-1
+               write(6,3) (x(k,j,iz,1),k=1,lx1),(x(k,j,iz,2),k=1,lx1)
             enddo
          enddo
          write(6,*)
@@ -221,15 +221,15 @@ c     2 D
 c
       if (nelv.gt.2) then
          write(6,*) 
-         do j=ny1,1,-1
-            write(6,6) (x(k,j,1,3),k=1,nx1),(x(k,j,1,4),k=1,nx1)
+         do j=ly1,1,-1
+            write(6,6) (x(k,j,1,3),k=1,lx1),(x(k,j,1,4),k=1,lx1)
          enddo
          write(6,*)
          write(6,*)
       endif
 c
-      do j=ny1,1,-1
-         write(6,6) (x(k,j,1,1),k=1,nx1),(x(k,j,1,2),k=1,nx1)
+      do j=ly1,1,-1
+         write(6,6) (x(k,j,1,1),k=1,lx1),(x(k,j,1,2),k=1,lx1)
       enddo
       write(6,*)
     3 format(4i5,5x,4i5)
@@ -249,15 +249,15 @@ c
     1 format(a13)
       if (nelv.gt.2) then
          write(6,*) 
-         do j=ny2,1,-1
-            write(6,6) (x(k,j,1,3),k=1,nx2),(x(k,j,1,4),k=1,nx2)
+         do j=ly2,1,-1
+            write(6,6) (x(k,j,1,3),k=1,lx2),(x(k,j,1,4),k=1,lx2)
          enddo
          write(6,*)
          write(6,*)
       endif
 c
-      do j=ny2,1,-1
-         write(6,6) (x(k,j,1,1),k=1,nx2),(x(k,j,1,2),k=1,nx2)
+      do j=ly2,1,-1
+         write(6,6) (x(k,j,1,1),k=1,lx2),(x(k,j,1,2),k=1,lx2)
       enddo
       write(6,*)
     6 format(3i5,5x,3i5)

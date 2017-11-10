@@ -30,7 +30,7 @@ C
 c     write(6,*) solver_type,' solver type',iesolv
       if (iesolv.eq.1) then
          if (solver_type.eq.'fdm') then
-            ntot2 = nx2*ny2*nz2*nelv
+            ntot2 = lx2*ly2*lz2*nelv
             kwave2 = 0.
             call gfdm_pres_solv  (wk1,res,wk2,wk3,kwave2)
             call copy            (res,wk1,ntot2)
@@ -111,18 +111,18 @@ c
 
       integer e,eg
 
-      nxb = (nx1+1)/2
-      nyb = (ny1+1)/2
-      nzb = (nz1+1)/2
+      nxb = (lx1+1)/2
+      nyb = (ly1+1)/2
+      nzb = (lz1+1)/2
       
       do e=1,nelt
-         xbar(ndim,e) = zm1(nxb,nyb,nzb,e)
+         xbar(ldim,e) = zm1(nxb,nyb,nzb,e)
          xbar(1   ,e) = xm1(nxb,nyb,nzb,e)
          xbar(2   ,e) = ym1(nxb,nyb,nzb,e)
          eg           = lglel(e)
          ibar(e)      = imap(eg)
       enddo
-      call p_outvec_ir(ibar,xbar,ndim,'mpxyz.dat')
+      call p_outvec_ir(ibar,xbar,ldim,'mpxyz.dat')
 
       return
       end

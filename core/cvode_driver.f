@@ -35,7 +35,7 @@ c----------------------------------------------------------------------
 
       integer*8 i8glsum
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       ! set local ODE size
       cv_nlocal = 0
@@ -86,7 +86,7 @@ c----------------------------------------------------------------------
       real atol_t(ldimt)
 
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ifcvodeinit   = .false.
 
       if(nio.eq.0) write(*,*) 'Initializing CVODE ...'
@@ -231,7 +231,7 @@ c
       integer cvcomm
       common /cv_iout/ iout(21),ipar(1),cvcomm
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz * nelv
 
       if (.not.ifcvodeinit) then
@@ -348,7 +348,7 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(vx,vx_,vxlag,ntot,cv_ab,nbd)
       call sumab(vy,vy_,vylag,ntot,cv_ab,nbd)
@@ -375,7 +375,7 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(wx,wx_,wxlag,ntot,cv_ab,nbd)
       call sumab(wy,wy_,wylag,ntot,cv_ab,nbd)
@@ -405,7 +405,7 @@ c
 
       COMMON /SCRSF/ dtmp(lx1*ly1*lz1*lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nabmsh)
       call add3 (xm1,xm1_,dtmp,ntot)
@@ -444,7 +444,7 @@ c
       ifcvfun = .true.
       etime1  = dnekclock()
       time    = time_   
-      nxyz    = nx1*ny1*nz1
+      nxyz    = lx1*ly1*lz1
       ntotv   = nxyz*nelv
        
       if (time.ne.cv_timel) then
@@ -493,11 +493,11 @@ c
            call makeq
 
            if (iftmsh(ifield)) then                                
-              call dssum(bq(1,1,1,1,ifield-1),nx1,ny1,nz1)
+              call dssum(bq(1,1,1,1,ifield-1),lx1,ly1,lz1)
               call col2(bq(1,1,1,1,ifield-1),bintm1,ntot)
 
               call col3(w1,vtrans(1,1,1,1,ifield),bm1,ntot)      
-              call dssum(w1,nx1,ny1,nz1)                        
+              call dssum(w1,lx1,ly1,lz1)                        
               call col2(w1,bintm1,ntot)                           
            else                                                    
               call copy(w1,vtrans(1,1,1,1,ifield),ntot)
@@ -515,7 +515,7 @@ c
          do ifield = 2,nfield
             if (ifcvfld(ifield) .and. gsh_fld(ifield).ge.0) then
                if(.not.iftmsh(ifield))       
-     &         call dssum(ydott(1,1,1,1,ifield-1),nx1,ny1,nz1)
+     &         call dssum(ydott(1,1,1,1,ifield-1),lx1,ly1,lz1)
             endif
          enddo
       endif
