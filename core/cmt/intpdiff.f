@@ -21,10 +21,10 @@ C> by nek5000
 
 !     !  Compute d/dx, d/dy and d/dz of all the cons vars
 
-      nxy1  = nx1*ny1
-      nyz1  = ny1*nz1
-      nxyz1 = nx1*ny1*nz1
-      m0 = nx1-1
+      nxy1  = lx1*ly1
+      nyz1  = ly1*lz1
+      nxyz1 = lx1*ly1*lz1
+      m0 = lx1-1
 
       do eq=1,toteq
          call invcol3(ud,u(1,1,1,eq,e),phig(1,1,1,e),nxyz1)
@@ -89,26 +89,26 @@ C> by nek5000
       if (ifgeom.and.ilstep.eq.istep)  return  ! already computed
       ilstep = istep
 
-      call zwgl(zptf,wgtf,nxd)
+      call zwgl(zptf,wgtf,lxd)
 
       if (if3d) then
          k=0
-         do j=1,ny1
-         do i=1,nx1
+         do j=1,ly1
+         do i=1,lx1
             k=k+1
             wghtc(k)=wxm1(i)*wzm1(j)
          enddo
          enddo
          k=0
-         do j=1,nyd
-         do i=1,nxd
+         do j=1,lyd
+         do i=1,lxd
             k=k+1
             wghtf(k)=wgtf(i)*wgtf(j)
          enddo
          enddo
       else
-         call copy(wghtc,wxm1,nx1)
-         call copy(wghtf,wgtf,nxd)
+         call copy(wghtc,wxm1,lx1)
+         call copy(wghtf,wgtf,lxd)
       endif
 
       return
@@ -116,7 +116,7 @@ C> by nek5000
 !-----------------------------------------------------------------------
 
       subroutine set_alias_rx(istp)
-! note that set_alias_rx will be called only when nxd = nx1
+! note that set_alias_rx will be called only when lxd = lx1
       include 'SIZE'
       include 'INPUT'
       include 'GEOM'
@@ -132,8 +132,8 @@ c     include 'TSTEP' ! for istep
       if (.not.ifgeom.and.ilsp.gt.1) return  ! already computed
       if (ifgeom.and.ilsp.eq.istp)  return  ! already computed
       ilsp = istp
-      nxyz = nx1*ny1*nz1
-      call zwgll (zd,wd,nx1)  
+      nxyz = lx1*ly1*lz1
+      call zwgll (zd,wd,lx1)  
 
       if (if3d)then
          do e=1,nelv
@@ -149,9 +149,9 @@ c     include 'TSTEP' ! for istep
             call copy(rx(1,9,e),tzm1(1,1,1,e),nxyz) 
 
             l = 0
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1
+            do k=1,lz1
+            do j=1,ly1
+            do i=1,lx1
                l = l+1
                w = wd(i)*wd(j)*wd(k)
                do ii=1,9
@@ -173,8 +173,8 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
             call copy(rx(1,4,e),sym1(1,1,1,e),nxyz) 
 
             l = 0
-            do j=1,ny1
-            do i=1,nx1
+            do j=1,ly1
+            do i=1,lx1
                l = l+1
                w = wd(i)*wd(j)
                do ii=1,4
@@ -203,17 +203,17 @@ c     Compute divergence^T of ux,uy,uz -- mesh 1 to mesh 1 (vel. to vel.)
       include 'INPUT'
 
       parameter (lxyz=lx1*ly1*lz1)
-      real grad(lxyz),uxyz(lxyz,ndim)
+      real grad(lxyz),uxyz(lxyz,ldim)
 
       common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz),ud(lxyz),tmp(lxyz)
       real ur,us,ut,tmp
 
       integer e
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       call rzero(ud,nxyz)
 
-      N = nx1-1
+      N = lx1-1
       if (if3d) then
 
          do i=1,lxyz
@@ -266,10 +266,10 @@ c
 
       integer e
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz*nelt
 
-      N = nx1-1
+      N = lx1-1
       do e=1,nelt
          if (if3d) then
 

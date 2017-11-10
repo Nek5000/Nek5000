@@ -1,26 +1,10 @@
 [GENERAL]
-#startFrom = baseflow.restart
-stopat = numSteps #endTime
-numsteps = 10
-#userparam01 = 1 # 0-direct; 1-adjoint
-
-dt = 5.0e-03
-timestepper = bdf #char #steady
-torder = 3
-variableDt = no
-
-writecontrol = timeStep #runTime
-writeinterval = 5
-
-dealiasing = yes
-filtering = no
-filterweight = 1e-02
-
-[PROBLEMTYPE]
-variableProperties = no
+numsteps = 0
+writeInterval = 0
+#writeDoublePrecision = yes
+#writeNFiles = 2
 
 [PRESSURE]
-preconditioner = semg
 residualtol = 1e-08
 residualproj = no
 
@@ -30,23 +14,18 @@ residualproj = no
 density = 1
 viscosity = 1.0
 
-[TEMPERATURE] # temperature with Hmholtz 
-conjugateHeatTransfer = no
+[TEMPERATURE]
 rhoCp = 1.0
 conductivity = 0.5
 residualTol = 1e-08
-writetofieldfile = yes
+#writetofieldfile = yes
 
 [SCALAR01]
-conjugateHeatTransfer = no
 residualTol = 1e-08
-writetofieldfile = yes
 density = 1.0
 diffusivity = 0.1
 
 [SCALAR02]
-conjugateHeatTransfer = no
 residualTol = 1e-08
-writetofieldfile = yes
 density = 1.0
 diffusivity = 0.1

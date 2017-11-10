@@ -47,40 +47,42 @@ c     outpost arrays
 
       logical if_fltv
 
+      ncut = param(101)+1
+
       if(wght.le.0) return
-      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',wght
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
+     $                                            ifield, ncut, wght
 
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
       if (icalld.eq.0) then
          icalld = 1
-         ncut = param(101)+1
-         call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
+         call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
       elseif (icalld.lt.0) then   ! old (std.) filter
          icalld = 1
          call zwgll(zgmv,wgtv,lxv)
-         call igllm(intuv,intw,zgmv,zgm1,lxv,nx1,lxv,nx1)
-         call igllm(intdv,intw,zgm1,zgmv,nx1,lxv,nx1,lxv)
+         call igllm(intuv,intw,zgmv,zgm1,lxv,lx1,lxv,lx1)
+         call igllm(intdv,intw,zgm1,zgmv,lx1,lxv,lx1,lxv)
 c
          call zwgl (zgmp,wgtp,lxp)
-         call iglm (intup,intw,zgmp,zgm2,lxp,nx2,lxp,nx2)
-         call iglm (intdp,intw,zgm2,zgmp,nx2,lxp,nx2,lxp)
+         call iglm (intup,intw,zgmp,zgm2,lxp,lx2,lxp,lx2)
+         call iglm (intdp,intw,zgm2,zgmp,lx2,lxp,lx2,lxp)
 c
 c        Multiply up and down interpolation into single operator
 c
-         call mxm(intup,nx2,intdp,lxp,intp,nx2)
-         call mxm(intuv,nx1,intdv,lxv,intv,nx1)
+         call mxm(intup,lx2,intdp,lxp,intp,lx2)
+         call mxm(intuv,lx1,intdv,lxv,intv,lx1)
 c
 c        Weight the filter to make it a smooth (as opposed to truncated)
 c        decay in wave space
 
          w0 = 1.-wght
-         call ident(intup,nx2)
-         call add2sxy(intp,wght,intup,w0,nx2*nx2)
+         call ident(intup,lx2)
+         call add2sxy(intp,wght,intup,w0,lx2*lx2)
 
-         call ident   (intuv,nx1)
-         call add2sxy (intv ,wght,intuv,w0,nx1*nx1)
+         call ident   (intuv,lx1)
+         call add2sxy (intv ,wght,intuv,w0,lx1*lx1)
 
       endif
 
@@ -95,33 +97,33 @@ c     Adam Peplinski; to take into account freezing of base flow
       if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
 
       if ( if_fltv ) then
-         call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vy,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
+         call filterq(vx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+         call filterq(vy,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $      call filterq(vz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $      call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
          if (ifsplit.and..not.iflomach) 
-     $      call filterq(pr,intv,nx1,nz1,wk1,wk2,intt,if3d,pmax)
+     $      call filterq(pr,intv,lx1,lz1,wk1,wk2,intt,if3d,pmax)
       endif
 c
       if (ifmhd.and.ifield.eq.ifldmhd) then
-         call filterq(bx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(by,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
+         call filterq(bx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+         call filterq(by,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $   call filterq(bz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(bz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
       endif
 c
       if (ifpert) then
         do j=1,npert
 
          ifield = 1
-         call filterq(vxp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vyp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
+         call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+         call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
 
          ifield = 2
          if (ifheat .and. .not.ifcvfld(ifield)) 
-     $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
 
         enddo
       endif
@@ -132,7 +134,7 @@ c        pmax    = glmax(pmax,1)
          omax(1) = glmax(umax,1)
          omax(2) = glmax(vmax,1)
          omax(3) = glmax(wmax,1)
-         mmax = ndim
+         mmax = ldim
       endif
          
 c
@@ -141,7 +143,7 @@ c
          do ifld=1,nfldt
             ifield = ifld + 1
             call filterq(t(1,1,1,1,ifld),intv
-     $                  ,nx1,nz1,wk1,wk2,intt,if3d,tmax(ifld))
+     $                  ,lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
             mmax = mmax+1
             omax(mmax) = glmax(tmax(ifld),1)
          enddo
@@ -275,7 +277,7 @@ c
       common /cvflow_r/ flow_rate,base_flow,domain_length,xsec
      $                , scale_vf(3)
 
-      ntot1  = nx1*ny1*nz1*nelv
+      ntot1  = lx1*ly1*lz1*nelv
 
 c    Map pressure onto mesh 1   (vxx and vyy are used as work arrays)
       call mappr(pm1,pr,vxx,vyy)
@@ -515,25 +517,25 @@ c
 c
 C     Map the pressure onto the velocity mesh
 C
-      NGLOB1 = NX1*NY1*NZ1*NELV
-      NYZ2   = NY2*NZ2
-      NXY1   = NX1*NY1
-      NXYZ   = NX1*NY1*NZ1
+      NGLOB1 = lx1*ly1*lz1*NELV
+      NYZ2   = ly2*lz2
+      NXY1   = lx1*ly1
+      NXYZ   = lx1*ly1*lz1
 C
       IF (IFSPLIT) THEN
          CALL COPY(PM1,PM2,NGLOB1)
       ELSE
          DO 1000 IEL=1,NELV
-            CALL MXM (IXM21,NX1,PM2(1,1,1,IEL),NX2,pa (1,1,1),NYZ2)
-            DO 100 IZ=1,NZ2
-               CALL MXM (PA(1,1,IZ),NX1,IYTM21,NY2,PB(1,1,IZ),NY1)
+            CALL MXM (IXM21,lx1,PM2(1,1,1,IEL),lx2,pa (1,1,1),NYZ2)
+            DO 100 IZ=1,lz2
+               CALL MXM (PA(1,1,IZ),lx1,IYTM21,ly2,PB(1,1,IZ),ly1)
  100        CONTINUE
-            CALL MXM (PB(1,1,1),NXY1,IZTM21,NZ2,PM1(1,1,1,IEL),NZ1)
+            CALL MXM (PB(1,1,1),NXY1,IZTM21,lz2,PM1(1,1,1,IEL),lz1)
  1000    CONTINUE
 
 C     Average the pressure on elemental boundaries
        IFIELD=1
-       CALL DSSUM (PM1,NX1,NY1,NZ1)
+       CALL DSSUM (PM1,lx1,ly1,lz1)
        CALL COL2  (PM1,VMULT,NGLOB1)
 
       ENDIF
@@ -577,7 +579,7 @@ c        27 June, 2012            PFF
 
       integer e,f,fd
 
-      call dsset(nx1,ny1,nz1) ! set counters
+      call dsset(lx1,ly1,lz1) ! set counters
       fd     = eface1(f)
       js1    = skpdat(1,fd)
       jf1    = skpdat(2,fd)
@@ -616,7 +618,7 @@ C
 C
 C     Set up counters
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -646,7 +648,7 @@ c-----------------------------------------------------------------------
      $        , b    (lx1,lz1,6,lelv)
      $        , c    (lx1,lz1,6,lelv)
      $        , area (lx1,lz1,6,lelv) 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
       iface  = eface1(ifc)
       js1    = skpdat(1,iface)
       jf1    = skpdat(2,iface)
@@ -749,10 +751,10 @@ c
 
       integer e
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz*nelt
 
-      N = nx1-1
+      N = lx1-1
       do e=1,nelt
          if (if3d) then
             call local_grad3(ur,us,ut,u,N,e,dxm1,dxtm1)
@@ -801,7 +803,7 @@ c-----------------------------------------------------------------------
  
       ntot  = lx1*ly1*lz1*nelt
       nxyz  = lx1*ly1*lz1
-      nx    = nx1 - 1      ! Polynomial degree
+      nx    = lx1 - 1      ! Polynomial degree
 
       if (ldim.eq.3) then
        k=0
@@ -852,14 +854,14 @@ c
       ifielt = ifield
       ifield = 1
       if (if3d) then
-         do idim=1,ndim
+         do idim=1,ldim
             call col2  (vort(1,idim),bm1,ntot)
-            call dssum (vort(1,idim),nx1,ny1,nz1)
+            call dssum (vort(1,idim),lx1,ly1,lz1)
             call col2  (vort(1,idim),binvm1,ntot)
          enddo
       else
          call col2  (vort,bm1,ntot)
-         call dssum (vort,nx1,ny1,nz1)
+         call dssum (vort,lx1,ly1,lz1)
          call col2  (vort,binvm1,ntot)
       endif
       ifield = ifielt
@@ -877,7 +879,7 @@ C
 
       integer e,f
 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
 
       iface  = eface1(f)
       js1    = skpdat(1,iface)
@@ -917,7 +919,7 @@ c-----------------------------------------------------------------------
       call           faddcl3 (w,qy(1,e),uny(1,1,f,e),f)
       if (if3d) call faddcl3 (w,qz(1,e),unz(1,1,f,e),f)
 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
       iface  = eface1(f)
       js1    = skpdat(1,iface)
       jf1    = skpdat(2,iface)
@@ -1190,9 +1192,9 @@ c
          call exitt
       endif
 
-      ntot  = nx1*ny1*nz1*nelv
-      ntott = nx1*ny1*nz1*nelt
-      nto2  = nx2*ny2*nz2*nelv
+      ntot  = lx1*ly1*lz1*nelv
+      ntott = lx1*ly1*lz1*nelt
+      nto2  = lx2*ly2*lz2*nelv
 
       ! initialization
       if (icalld.eq.0) then
@@ -1392,7 +1394,7 @@ c
 c
       call rzero(err,10)
 c
-      nxyz = nx**ndim
+      nxyz = nx**ldim
       utot = vlsc2(u,u,nxyz)
       if (utot.eq.0) return
 c
@@ -1765,12 +1767,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nz1,nelz),u(nx1*ny1,nz1,nelv),w1(nz1,nelz),w2(nz1,nelz)
+      real ua(lz1,nelz),u(lx1*ly1,lz1,nelv),w1(lz1,nelz),w2(lz1,nelz)
       integer e,eg,ez
 c
       melxy = nelx*nely
 c
-      nz = nz1*nelz
+      nz = lz1*nelz
       call rzero(ua,nz)
       call rzero(w1,nz)
 c
@@ -1779,9 +1781,9 @@ c
          eg = lglel(e)
          ez = 1 + (eg-1)/melxy
 c
-         do k=1,nz1
-         do i=1,nx1*ny1
-            zz = (1.-zgm1(k,3))/2.  ! = 1 for k=1, = 0 for k=nz1
+         do k=1,lz1
+         do i=1,lx1*ly1
+            zz = (1.-zgm1(k,3))/2.  ! = 1 for k=1, = 0 for k=lz1
             aa = zz*area(i,1,5,e) + (1-zz)*area(i,1,6,e)  ! wgtd jacobian
             w1(k,ez) = w1(k,ez) + aa
             ua(k,ez) = ua(k,ez) + aa*u(i,k,e)
@@ -1820,7 +1822,7 @@ c
       integer f,e,pf
       real    n1,n2,n3
 c
-      call dsset(nx1,ny1,nz1)    ! set up counters
+      call dsset(lx1,ly1,lz1)    ! set up counters
       pf     = eface1(f)         ! convert from preproc. notation
       js1    = skpdat(1,pf)
       jf1    = skpdat(2,pf)
@@ -1974,7 +1976,7 @@ c
      $             , dgtq(3,4)
 c
 c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 c
       call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
 c
@@ -2184,8 +2186,8 @@ c
 
       real j ! Inverse Jacobian
 
-      n    = nx1-1      ! Polynomial degree
-      nxyz = nx1*ny1*nz1
+      n    = lx1-1      ! Polynomial degree
+      nxyz = lx1*ly1*lz1
 
       if (if3d) then     ! 3D CASE
        do e=1,nelv
@@ -2332,8 +2334,8 @@ c
       if (nid.eq.0) open(77,file=fname127,status='old',err=199)
       ierr = iglmax(ierr,1)
       if (ierr.gt.0) goto 199
-      n = nx1*ny1*nz1*nelt
-      n2= nx2*ny2*nz2*nelt
+      n = lx1*ly1*lz1*nelt
+      n2= lx2*ly2*lz2*nelt
 
       call rzero (ua,n)
       call rzero (va,n)
@@ -2405,8 +2407,8 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(ny1,nz1,nely,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(ny1,nz1,nely,nelz),w2(ny1,nz1,nely,nelz)
+      real ua(ly1,lz1,nely,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(ly1,lz1,nely,nelz),w2(ly1,lz1,nely,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 
@@ -2414,7 +2416,7 @@ c
       if (nelyz.gt.lely*lelz) call exitti
      $  ('ABORT IN x_average. Increase lely*lelz in SIZE:$',nelyz)
 
-      myz = nely*nelz*ny1*nz1
+      myz = nely*nelz*ly1*lz1
       call rzero(ua,myz)
       call rzero(w1,myz)
 
@@ -2423,9 +2425,9 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-            do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+            do i=1,lx1
                dx2 = 1.0  !  Assuming uniform element size in "x" direction
                ua(j,k,ey,ez) = ua(j,k,ey,ez)+dx2*wzm1(i)*u(i,j,k,e)
                w1(j,k,ey,ez) = w1(j,k,ey,ez)+dx2*wzm1(i) ! redundant but clear
@@ -2452,7 +2454,7 @@ c-----------------------------------------------------------------------
       include 'WZ'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(ny1,nz1,nely,nelz)
+      real u(lx1,ly1,lz1,nelv),ua(ly1,lz1,nely,nelz)
 
       integer e,eg,ex,ey,ez
 
@@ -2462,9 +2464,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-            do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+            do i=1,lx1
                u(i,j,k,e) = ua(j,k,ey,ez)
             enddo
          enddo
@@ -2533,12 +2535,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,nz1,nelx,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,nz1,nelx,nelz),w2(nx1,nz1,nelx,nelz)
+      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxz = nelx*nelz*nx1*nz1
+      mxz = nelx*nelz*lx1*lz1
       call rzero(ua,mxz)
 c
       do e=1,nelt
@@ -2548,8 +2550,8 @@ c
 
          j = 1
          if (ey.eq.1) then
-            do k=1,nz1
-            do i=1,nx1
+            do k=1,lz1
+            do i=1,lx1
                ua(i,k,ex,ez) = u(i,j,k,e)
             enddo
             enddo
@@ -2570,9 +2572,9 @@ c             as would be produced by n2to3 or genbox.
 c
 c     Arguments:
 c
-c     uz(nx1,ny1,nlxy):       extracted z-slice data
-c     u (nx1,ny1,nz1,nelt):   input data
-c     w1(nx1,ny1,nlxy):       work array
+c     uz(lx1,ly1,nlxy):       extracted z-slice data
+c     u (lx1,ly1,lz1,nelt):   input data
+c     w1(lx1,ly1,nlxy):       work array
 c     kz:                     z-plane within element ezi to be extracted
 c     ezi:                    elemental z-slab to be extracted
 c     nx,ny,nz:               dimensions for 3D spectral element input
@@ -2616,12 +2618,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
+      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxy = nelx*nely*nx1*ny1
+      mxy = nelx*nely*lx1*ly1
       call rzero(ua,mxy)
 c
       do e=1,nelt
@@ -2631,8 +2633,8 @@ c
 
          k = 1
          if (ez.eq.1) then
-            do j=1,ny1
-            do i=1,nx1
+            do j=1,ly1
+            do i=1,lx1
                ua(i,j,ex,ey) = u(i,j,k,e)
             enddo
             enddo
@@ -2654,12 +2656,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,nz1,nelx,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,nz1,nelx,nelz),w2(nx1,nz1,nelx,nelz)
+      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxz = nelx*nelz*nx1*nz1
+      mxz = nelx*nelz*lx1*lz1
       call rzero(ua,mxz)
       call rzero(w1,mxz)
 c
@@ -2668,11 +2670,11 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 c
-         do k=1,nz1
-         do i=1,nx1
-c           dy2 = .5*( ym1(i,ny1,k,e) - ym1(i,1,k,e) )
+         do k=1,lz1
+         do i=1,lx1
+c           dy2 = .5*( ym1(i,ly1,k,e) - ym1(i,1,k,e) )
             dy2 = 1.0  !  Assuming uniform in "y" direction
-            do j=1,ny1
+            do j=1,ly1
                ua(i,k,ex,ez) = ua(i,k,ex,ez)+dy2*wym1(j)*u(i,j,k,e)
                w1(i,k,ex,ez) = w1(i,k,ex,ez)+dy2*wym1(j) ! redundant but clear
             enddo
@@ -2712,7 +2714,7 @@ c
       call y_average(v,uy,w1,w2)
       call y_average(w,uz,w1,w2)
 
-      call buff_2d_out(u,v,w,nx1,nz1,nelx,nelz,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
 
       return
       end
@@ -2739,7 +2741,7 @@ c
       call z_average(v,uy,w1,w2)
       call z_average(w,uz,w1,w2)
 
-      call buff_2d_out(u,v,w,nx1,ny1,nelx,nely,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
 
       return
       end
@@ -2766,7 +2768,7 @@ c
       call y_slice  (v,uy,w1,w2)
       call y_slice  (w,uz,w1,w2)
 c
-      call buff_2d_out(u,v,w,nx1,nz1,nelx,nelz,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
 c
       return
       end
@@ -2793,7 +2795,7 @@ c
       call z_slice  (v,uy,w1,w2)
       call z_slice  (w,uz,w1,w2)
 c
-      call buff_2d_out(u,v,w,nx1,ny1,nelx,nely,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
 c
       return
       end
@@ -2868,7 +2870,7 @@ c
 c
 c     Convert velocities to poloidal-toroidal
 c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       do i=1,n
          rr = xm1(i,1,1,1)*xm1(i,1,1,1)+ym1(i,1,1,1)*ym1(i,1,1,1)
          rr = sqrt(rr)
@@ -2918,7 +2920,7 @@ c
 c
 c     Convert velocities to poloidal-toroidal
 c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       do i=1,n
          wr(i) = u (i)**2
          wt(i) = v (i)**2
@@ -3015,7 +3017,7 @@ c-----------------------------------------------------------------------
 
       common /cmesh/ xt(2**ldim,ldim)
 
-      len = wdsize*ndim*(2**ndim)
+      len = wdsize*ldim*(2**ldim)
 
       if (nid.eq.0) open(unit=29,file='rea.new')
 
@@ -3023,8 +3025,6 @@ c-----------------------------------------------------------------------
          call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          mtype = e
          if (jnid.eq.0 .and. nid.eq.0) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
@@ -3058,8 +3058,8 @@ c-----------------------------------------------------------------------
       data    ed  / 1,2,4,3 , 5,6,8,7 /
 
       write(29,1) e
-      write(29,2) ((xt(ed(k),j),k=1,4),j=1,ndim)
-      write(29,2) ((xt(ed(k),j),k=5,8),j=1,ndim)
+      write(29,2) ((xt(ed(k),j),k=1,4),j=1,ldim)
+      write(29,2) ((xt(ed(k),j),k=5,8),j=1,ldim)
 
     1 format(12x,'ELEMENT',i6,' [    1 ]    GROUP     0')
     2 format(1p4e18.10)
@@ -3072,12 +3072,12 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       real xt(2**ldim,ldim)
-      real x(nx1,ny1,nz1),y(nx1,ny1,nz1),z(nx1,ny1,nz1)
+      real x(lx1,ly1,lz1),y(lx1,ly1,lz1),z(lx1,ly1,lz1)
 
       l = 0
-      do k=1,nz1,nz1-1
-      do j=1,ny1,ny1-1
-      do i=1,nx1,nx1-1
+      do k=1,lz1,max(lz1-1,1)
+      do j=1,ly1,ly1-1
+      do i=1,lx1,lx1-1
          l = l+1
          xt(l,1) = x(i,j,k)
          xt(l,2) = y(i,j,k)
@@ -3119,7 +3119,7 @@ c
      $                     , wr(lr),ws(lr),wt(lr)
 
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 
       call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
 
@@ -3220,7 +3220,7 @@ c
       integer f,e,pf
       real    n1,n2,n3
 
-      call dsset(nx1,ny1,nz1)    ! set up counters
+      call dsset(lx1,ly1,lz1)    ! set up counters
       pf     = eface1(f)         ! convert from preproc. notation
       js1    = skpdat(1,pf)
       jf1    = skpdat(2,pf)
@@ -3307,28 +3307,28 @@ c-----------------------------------------------------------------------
       integer e,f
       character*3 cb
 
-      n      = nx1*ny1*nz1*nelt
-      nxyz   = nx1*ny1*nz1
-      nfaces = 2*ndim
+      n      = lx1*ly1*lz1*nelt
+      nxyz   = lx1*ly1*lz1
+      nfaces = 2*ldim
       ifield = 1                   ! velocity field
       if (ifheat) ifield = 2       ! temperature field
 
 
       call rone  (tmlt,n)
-      call dssum (tmlt,nx1,ny1,nz1)  ! denominator
+      call dssum (tmlt,lx1,ly1,lz1)  ! denominator
 
       call rone  (tmsk,n)
       do e=1,nelt                ! fill mask where bc is periodic
       do f=1,nfaces              ! so we don't translate periodic bcs (z only)
          cb =cbc(f,e,ifield)
-         if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
+         if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,lx1,ly1,lz1)
       enddo
       enddo
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
 
-      do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
+      do kpass = 1,ldim+1   ! This doesn't work for 2D, yet.
                             ! Extra pass is just to test convergence
 
 c        call opcopy (xb,yb,zb,xm1,ym1,zm1) ! Must use WHOLE field,
@@ -3336,9 +3336,9 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
          call copy   (xb,xm1,n)
          call copy   (yb,ym1,n)
          call copy   (zb,zm1,n)
-         call dssum  (xb,nx1,ny1,nz1)
-         call dssum  (yb,nx1,ny1,nz1)
-         call dssum  (zb,nx1,ny1,nz1)
+         call dssum  (xb,lx1,ly1,lz1)
+         call dssum  (yb,lx1,ly1,lz1)
+         call dssum  (zb,lx1,ly1,lz1)
 
          xm = 0.
          ym = 0.
@@ -3363,15 +3363,15 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
                zm = max(zm,abs(zb(i,e)))
             enddo
 
-            if (kpass.le.ndim) then
-               call gh_face_extend(xb(1,e),zgm1,nx1,kpass,w1,w2)
-               call gh_face_extend(yb(1,e),zgm1,nx1,kpass,w1,w2)
-               call gh_face_extend(zb(1,e),zgm1,nx1,kpass,w1,w2)
+            if (kpass.le.ldim) then
+               call gh_face_extend(xb(1,e),zgm1,lx1,kpass,w1,w2)
+               call gh_face_extend(yb(1,e),zgm1,lx1,kpass,w1,w2)
+               call gh_face_extend(zb(1,e),zgm1,lx1,kpass,w1,w2)
             endif
 
          enddo
 
-         if (kpass.le.ndim) then
+         if (kpass.le.ldim) then
             call add2(xm1,xb,n)
             call add2(ym1,yb,n)
             call add2(zm1,zb,n)
@@ -3402,7 +3402,7 @@ c-----------------------------------------------------------------------
       real x(1),zg(1),e(1),v(1)
       integer gh_type
 
-      if (ndim.eq.2) then
+      if (ldim.eq.2) then
          call gh_face_extend_2d(x,zg,n,gh_type,e,v)
       else
          call gh_face_extend_3d(x,zg,n,gh_type,e,v)
@@ -3666,7 +3666,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       real x(1)
 
-      n=nx1*ny1*nz1*nelt
+      n=lx1*ly1*lz1*nelt
       id = n
       do i=1,n
          x(i) = ran1(id)
@@ -3680,7 +3680,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       real x(1)
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       xmin = glmin(x,n)
       xmax = glmax(x,n)
 
@@ -3730,8 +3730,8 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
+      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
       integer e,eg,ex,ey,ez
       real dy2
 
@@ -3739,7 +3739,7 @@ c
       if (nelxy.gt.lelx*lely) call exitti
      $  ('ABORT IN z_average. Increase lelx*lely in SIZE:$',nelxy)
 
-      mxy = nelx*nely*nx1*ny1
+      mxy = nelx*nely*lx1*ly1
       call rzero(ua,mxy)
       call rzero(w1,mxy)
 
@@ -3748,10 +3748,10 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do j=1,ny1
-         do i=1,nx1
+         do j=1,ly1
+         do i=1,lx1
             dz2 = 1.0  !  Assuming uniform in "z" direction
-            do k=1,nz1
+            do k=1,lz1
                ua(i,j,ex,ey) = ua(i,j,ex,ey)+dz2*wzm1(k)*u(i,j,k,e)
                w1(i,j,ex,ey) = w1(i,j,ex,ey)+dz2*wzm1(k) ! redundant but clear
             enddo
@@ -3777,7 +3777,7 @@ c-----------------------------------------------------------------------
       include 'WZ'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(nx1,ny1,nelx,nely)
+      real u(lx1,ly1,lz1,nelv),ua(lx1,ly1,nelx,nely)
 
       integer e,eg,ex,ey,ez
 
@@ -3787,9 +3787,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do j=1,ny1
-         do i=1,nx1
-            do k=1,nz1
+         do j=1,ly1
+         do i=1,lx1
+            do k=1,lz1
                u(i,j,k,e) = ua(i,j,ex,ey)
             enddo
          enddo
@@ -3822,7 +3822,7 @@ c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
       call z_profile          (ua,u,w1,w2)
       call z_profile_transpose(ub,ua) ! distribute ua to each z-plane
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call sub2(u,ub,n)
 
       return
@@ -3838,11 +3838,11 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
      $    ,w1(lz1,lelz),w2(lz1,lelz)
       integer e,eg,ex,ey,ez
 
-      mz = nz1*nelz
+      mz = lz1*nelz
       call rzero(ua,mz)
       call rzero(w1,mz)
 
@@ -3851,8 +3851,8 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do i=1,nx1*ny1
+         do k=1,lz1
+         do i=1,lx1*ly1
             ua(k,ez) = ua(k,ez) + area(i,1,5,e)*u(i,1,k,e)
             w1(k,ez) = w1(k,ez) + area(i,1,5,e)
          enddo
@@ -3876,7 +3876,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
       integer e,eg,ex,ey,ez
 
       do e=1,nelt
@@ -3884,8 +3884,8 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do i=1,nx1*ny1
+         do k=1,lz1
+         do i=1,lx1*ly1
             u(i,1,k,e) = ua(k,ez)
          enddo
          enddo
@@ -3918,7 +3918,7 @@ c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
       call y_profile          (ua,u,w1,w2)
       call y_profile_transpose(ub,ua) ! distribute ua to each y-plane
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call sub2(u,ub,n)
 
       return
@@ -3934,11 +3934,11 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
      $    ,w1(lz1,lelz),w2(lz1,lelz)
       integer e,eg,ex,ey,ez
 
-      my = ny1*nely
+      my = ly1*nely
       call rzero(ua,my)
       call rzero(w1,my)
 
@@ -3947,9 +3947,9 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1
             ua(j,ey) = ua(j,ey) + area(i,k,1,e)*u(i,j,k,e)
             w1(j,ey) = w1(j,ey) + area(i,k,1,e)
          enddo
@@ -3974,7 +3974,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
       integer e,eg,ex,ey,ez
 
       do e=1,nelt
@@ -3982,9 +3982,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1
             u(i,j,k,e) = ua(j,ey)
          enddo
          enddo
@@ -4068,8 +4068,8 @@ c
       ifldt = ifield
       ifield = ifld
 
-      call build_filter(f,diag,nx1)
-      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+      call build_filter(f,diag,lx1)
+      call filterq(u,f,lx1,lz1,wk1,wk2,wk3,if3d,umax)
 
       ifield = ifldt
 
@@ -4091,13 +4091,13 @@ c
       ifldt = ifield
       ifield = ifld
 
-      call rone(diag,nx1)
-      do i=mx+1,nx1
+      call rone(diag,lx1)
+      do i=mx+1,lx1
          diag(i)=0.
       enddo
 
-      call build_filter(f,diag,nx1)
-      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+      call build_filter(f,diag,lx1)
+      call filterq(u,f,lx1,lz1,wk1,wk2,wk3,if3d,umax)
 
       ifield = ifldt
 
@@ -4117,7 +4117,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      n   = nx1*ny1*nz1*nelt
+      n   = lx1*ly1*lz1*nelt
       nn  = nx-1
       nel = nelfld(ifield)
 
@@ -4136,7 +4136,7 @@ c-----------------------------------------------------------------------
         call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
 
         if (ifd4) then
-           wght = 20./(nx1**4)
+           wght = 20./(lx1**4)
            do e=1,nel
              do i=1,lt
                w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
@@ -4152,7 +4152,7 @@ c-----------------------------------------------------------------------
            call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
         endif
 
-        wght = wgt/(nx1**4)
+        wght = wgt/(lx1**4)
         do e=1,nel
           do i=1,lt
             v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
@@ -4172,7 +4172,7 @@ c-----------------------------------------------------------------------
         call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
 
         if (ifd4) then
-           wght = 200./(nx1**4)
+           wght = 200./(lx1**4)
            do e=1,nel
              do i=1,lt
                w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
@@ -4187,7 +4187,7 @@ c-----------------------------------------------------------------------
            call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
         endif
 
-        wght = wgt/(nx1**4)
+        wght = wgt/(lx1**4)
         do e=1,nel
           do i=1,lt
             v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
@@ -4228,7 +4228,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
 
       xmin = glmin(xm1,n)
       xmax = glmax(xm1,n)
@@ -4272,7 +4272,7 @@ c     will not.
       integer e,eg,f
 
       nel = nelfld(ifld)
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
 
@@ -4285,10 +4285,10 @@ c     will not.
       call cfill(d,big,n)
 
 
-      nface = 2*ndim
+      nface = 2*ldim
       do e=1,nel     ! Set d=0 on walls
       do f=1,nface
-         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,0.,lx1,ly1,lz1)
       enddo
       enddo
 
@@ -4296,15 +4296,15 @@ c     will not.
          dmax    = 0
          nchange = 0
          do e=1,nel
-           do k=1,nz1
-           do j=1,ny1
-           do i=1,nx1
+           do k=1,lz1
+           do j=1,ly1
+           do i=1,lx1
              i0=max(  1,i-1)
              j0=max(  1,j-1)
              k0=max(  1,k-1)
-             i1=min(nx1,i+1)
-             j1=min(ny1,j+1)
-             k1=min(nz1,k+1)
+             i1=min(lx1,i+1)
+             j1=min(ly1,j+1)
+             k1=min(lz1,k+1)
              do kk=k0,k1
              do jj=j0,j1
              do ii=i0,i1
@@ -4372,7 +4372,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
       integer e,eg,f
 
       nel = nelfld(ifld)
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
 
@@ -4386,28 +4386,28 @@ c     Work arrays:  dmin,emin,xn,yn,zn
 
       call opcopy(xn,yn,zn,xm1,ym1,zm1)
 
-      nface = 2*ndim
+      nface = 2*ldim
       do e=1,nel     ! Set d=0 on walls
       do f=1,nface
-         if (cbc(f,e,1).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,1).eq.b) call facev(d,e,f,0.,lx1,ly1,lz1)
       enddo
       enddo
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       do ipass=1,10000
          dmax    = 0
          nchange = 0
          do e=1,nel
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1
+            do k=1,lz1
+            do j=1,ly1
+            do i=1,lx1
               i0=max(  1,i-1)
               j0=max(  1,j-1)
               k0=max(  1,k-1)
-              i1=min(nx1,i+1)
-              j1=min(ny1,j+1)
-              k1=min(nz1,k+1)
+              i1=min(lx1,i+1)
+              j1=min(ly1,j+1)
+              k1=min(lz1,k+1)
               do kk=k0,k1
               do jj=j0,j1
               do ii=i0,i1
@@ -4482,7 +4482,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
  1000 continue
 
 c     wgt = 0.3
-c     call filter_d2(d,nx1,nz1,wgt,.true.)
+c     call filter_d2(d,lx1,lz1,wgt,.true.)
 
       return
       end
@@ -4529,10 +4529,10 @@ c
 
       character*3 b
 
-      n     = nx1*ny1*nz1*nelv
-      n2    = nx2*ny2*nz2*nelv
-      nxyz  = nx1*ny1*nz1
-      nxyz2 = nx2*ny2*nz2
+      n     = lx1*ly1*lz1*nelv
+      n2    = lx2*ly2*lz2*nelv
+      nxyz  = lx1*ly1*lz1
+      nxyz2 = lx2*ly2*lz2
 
       if (icalld.eq.0) then
          icalld = 1
@@ -4547,13 +4547,13 @@ c
 
          do e=1,nelv
            ifout = .false.
-           do f=1,2*ndim
+           do f=1,2*ldim
              if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
              if (cbc(f,e,1).eq.b) noutf = noutf+1
            enddo
            if (ifout) then
             if (lx2.lt.lx1) then ! Map distance function to Gauss
-             call maph1_to_l2(d(1,1,1,e),nx2,m1(1,e),nx1,if3d,w,lw)
+             call maph1_to_l2(d(1,1,1,e),lx2,m1(1,e),lx1,if3d,w,lw)
             else
              call copy(d(1,1,1,e),m1(1,e),nxyz)
             endif
@@ -4569,7 +4569,7 @@ c
 
          do e=1,nelv
            ifout = .false.
-           do f=1,2*ndim
+           do f=1,2*ldim
              if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
            enddo
            if (ifout) then
@@ -4678,7 +4678,7 @@ c     enddo
 
       nfield = nfld
 
-      nface = 2*ndim
+      nface = 2*ldim
       do k=1,nbc               ! BC conversion
         do e=1,nelfld(nfld)
         do f=1,nface

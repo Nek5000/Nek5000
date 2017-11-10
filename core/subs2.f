@@ -6,9 +6,9 @@ C
       LOGICAL IFAXWG
 C
       IF (IFAXWG) THEN
-         CALL COPY (W3M1,W2AM1,NX1*NY1)
+         CALL COPY (W3M1,W2AM1,lx1*ly1)
       ELSE
-         CALL COPY (W3M1,W2CM1,NX1*NY1)
+         CALL COPY (W3M1,W2CM1,lx1*ly1)
       ENDIF
 C
       RETURN
@@ -21,9 +21,9 @@ C
       LOGICAL IFAXWG
 C
       IF (IFAXWG) THEN
-         CALL COPY (W3M2,W2AM2,NX2*NY2)
+         CALL COPY (W3M2,W2AM2,lx2*ly2)
       ELSE
-         CALL COPY (W3M2,W2CM2,NX2*NY2)
+         CALL COPY (W3M2,W2CM2,lx2*ly2)
       ENDIF
 C
       RETURN
@@ -44,7 +44,7 @@ C
       common /ctmp0/ exz(lx1,ly1,lz1,lelt)
      $             , eyz(lx1,ly1,lz1,lelt)
 c
-      NTOT1  = NX1*NY1*NZ1*NELV
+      NTOT1  = lx1*ly1*lz1*NELV
       CALL RZERO (EI2,NTOT1)
       CALL RZERO (EI3,NTOT1)
       IF (ISTEP.EQ.0) RETURN
@@ -52,7 +52,7 @@ C
       MATMOD = 0
       CALL STNRATE (VX,VY,VZ,NELV,MATMOD)
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
           CALL COL3    (EI2,EXX,EYY,NTOT1)
           CALL SUBCOL3 (EI2,EXY,EXY,NTOT1)
           CALL RZERO   (EI3,NTOT1)
@@ -86,7 +86,7 @@ C
      $        , B2(LX1,LY1,LZ1,1)
      $        , B3(LX1,LY1,LZ1,1)
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL VDOT2 (DP,A1,A2,B1,B2,N)
       ELSE
          CALL VDOT3 (DP,A1,A2,A3,B1,B2,B3,N)
@@ -108,11 +108,11 @@ C
       IF (ISC.EQ.1) THEN
          CALL ADD2S1 (A1,B1,CONST,N)
          CALL ADD2S1 (A2,B2,CONST,N)
-         IF (NDIM.EQ.3) CALL ADD2S1 (A3,B3,CONST,N)
+         IF (ldim.EQ.3) CALL ADD2S1 (A3,B3,CONST,N)
       ELSEIF (ISC.EQ.2) THEN
          CALL ADD2S2 (A1,B1,CONST,N)
          CALL ADD2S2 (A2,B2,CONST,N)
-         IF (NDIM.EQ.3) CALL ADD2S2 (A3,B3,CONST,N)
+         IF (ldim.EQ.3) CALL ADD2S2 (A3,B3,CONST,N)
       ENDIF
 C
       RETURN
@@ -135,7 +135,7 @@ C
 C
       DIMENSION A(LX1,LY1),B(LX1,LY1,LZ1)
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFACE1)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -180,7 +180,7 @@ C
       DIMENSION A1(LX1,LY1),A2(LX1,LY1),A3(LX1,LY1),
      $          B1(LX1,LY1,LZ1),B2(LX1,LY1,LZ1),B3(LX1,LY1,LZ1)
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFACE1)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -225,7 +225,7 @@ C
       DIMENSION A1(LX1,LY1,LZ1),A2(LX1,LY1,LZ1),A3(LX1,LY1,LZ1),
      $          B1(LX1,LY1),B2(LX1,LY1),B3(LX1,LY1)
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFACE1)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -268,7 +268,7 @@ C-----------------------------------------------------------------------
 C
       DIMENSION H1(LX1,LY1,LZ1,1),H2(LX1,LY1,LZ1,1)
 C
-      NTOT1  = NX1*NY1*NZ1*NELV
+      NTOT1  = lx1*ly1*lz1*NELV
       IMESH  = 1
       MATMOD = 0
 C
@@ -278,7 +278,7 @@ C
       ELSE
          CALL COPY (E1,EV1,NTOT1)
          CALL COPY (E2,EV2,NTOT1)
-         IF (NDIM.EQ.3) CALL COPY (E3,EV3,NTOT1)
+         IF (ldim.EQ.3) CALL COPY (E3,EV3,NTOT1)
       ENDIF
 C
       EVNEW = EIGGA
@@ -291,21 +291,21 @@ C
 C
       EVOLD = EVNEW
       EVNEW = GLSC3(E1,AE1,VMULT,NTOT1) + GLSC3(E2,AE2,VMULT,NTOT1)
-      IF (NDIM.EQ.3) EVNEW = EVNEW + GLSC3(E3,AE3,VMULT,NTOT1)
+      IF (ldim.EQ.3) EVNEW = EVNEW + GLSC3(E3,AE3,VMULT,NTOT1)
       CRIT = ABS( (EVNEW - EVOLD)/EVNEW )
       IF ( CRIT .LT. TOLEV ) GOTO 2000
 C
       CALL COL3 (E1,BINVM1,AE1,NTOT1)
       CALL COL3 (E2,BINVM1,AE2,NTOT1)
-      IF (NDIM.EQ.3) CALL COL3 (E3,BINVM1,AE3,NTOT1)
+      IF (ldim.EQ.3) CALL COL3 (E3,BINVM1,AE3,NTOT1)
       XX = GLSC3(E1,AE1,VMULT,NTOT1) + GLSC3(E2,AE2,VMULT,NTOT1)
-      IF (NDIM.EQ.3) XX = XX + GLSC3(E3,AE3,VMULT,NTOT1)
+      IF (ldim.EQ.3) XX = XX + GLSC3(E3,AE3,VMULT,NTOT1)
       IF (XX .LT. 0.0) GO TO 9000
 C
       XNORM=1./SQRT( XX )
       CALL CMULT (E1,XNORM,NTOT1)
       CALL CMULT (E2,XNORM,NTOT1)
-      IF (NDIM.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
+      IF (ldim.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
 C
  1000 CONTINUE
 C
@@ -316,7 +316,7 @@ C
       IF (IFMVBD) THEN
          CALL COPY (EV1,E1,NTOT1)
          CALL COPY (EV2,E2,NTOT1)
-         IF (NDIM.EQ.3) CALL COPY (EV3,E3,NTOT1)
+         IF (ldim.EQ.3) CALL COPY (EV3,E3,NTOT1)
       ENDIF
 C
       RETURN
@@ -394,7 +394,7 @@ C
 C
 C     Set up counters
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFACE1)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -404,7 +404,7 @@ C
       JSKIP2 = SKPDAT(6,IFACE)
       I = 0
 C
-      IF (NDIM.EQ.2) THEN    
+      IF (ldim.EQ.2) THEN    
          DO 100 J2=JS2,JF2,JSKIP2
          DO 100 J1=JS1,JF1,JSKIP1
             I = I+1
@@ -440,27 +440,27 @@ C------------------------------------------------------------------
      $             , e2(lx1,ly1,lz1,lelv)
      $             , e3(lx1,ly1,lz1,lelv)
 C
-      NTOT1 = NX1*NY1*NZ1*NELV
+      NTOT1 = lx1*ly1*lz1*NELV
       CALL RZERO3 (E1 ,E2 ,E3 ,NTOT1)
       CALL RZERO3 (AE1,AE2,AE3,NTOT1)
 C
       CALL COPY  (E1,BM1,NTOT1)
       CALL COPY  (E2,BM1,NTOT1)
-      IF (NDIM.EQ.3) CALL COPY  (E3,BM1,NTOT1)
+      IF (ldim.EQ.3) CALL COPY  (E3,BM1,NTOT1)
 C
       CALL RMASK (E1,E2,E3,NELV)
       CALL COL3  (AE1,BM1,E1,NTOT1)
       CALL COL3  (AE2,BM1,E2,NTOT1)
-      IF (NDIM.EQ.3) CALL COL3  (AE3,BM1,E3,NTOT1)
+      IF (ldim.EQ.3) CALL COL3  (AE3,BM1,E3,NTOT1)
 C
       CALL OPDSSUM (AE1,AE2,AE3)
 C
       XX = GLSC3 (E1,AE1,VMULT,NTOT1) + GLSC3 (E2,AE2,VMULT,NTOT1)
-      IF (NDIM.EQ.3) XX = XX + GLSC3 (E3,AE3,VMULT,NTOT1)      
+      IF (ldim.EQ.3) XX = XX + GLSC3 (E3,AE3,VMULT,NTOT1)      
       XNORM  = 1./SQRT(XX)
       CALL CMULT (E1,XNORM,NTOT1)
       CALL CMULT (E2,XNORM,NTOT1)
-      IF (NDIM.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
+      IF (ldim.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
 
 c     call exitti   ('quit in stx1sf$,',nel)
 
@@ -476,9 +476,9 @@ C
       INCLUDE 'TSTEP'
 C
       DO 100 IEL=1,NELV
-      DO 100 K=1,NZ1
-      DO 100 J=1,NY1
-      DO 100 I=1,NX1
+      DO 100 K=1,lz1
+      DO 100 J=1,ly1
+      DO 100 I=1,lx1
          CALL VSOLN (VX (I,J,K,IEL),VY (I,J,K,IEL),VZ (I,J,K,IEL),
      $               XM1(I,J,K,IEL),YM1(I,J,K,IEL),ZM1(I,J,K,IEL),PI)
   100 CONTINUE
@@ -510,9 +510,9 @@ C
       INCLUDE 'TSTEP'
 C
       DO 100 IEL=1,NELV
-      DO 100 K=1,NZ2
-      DO 100 J=1,NY2
-      DO 100 I=1,NX2
+      DO 100 K=1,lz2
+      DO 100 J=1,ly2
+      DO 100 I=1,lx2
          CALL PRSOLN (PR (I,J,K,IEL),XM2(I,J,K,IEL),YM2(I,J,K,IEL),
      *                ZM2(I,J,K,IEL),PI)
   100 CONTINUE
@@ -531,95 +531,19 @@ C
 C
       RETURN
       END
-      SUBROUTINE STORE
-C-----------------------------------------------------------------------
-C
-C     Store the results
-C
-C-----------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-      LOGICAL IFPREL(LELT)      
-C
-      NZ1I   =  1
-      NZ1J   = NZ1
-      NZ1INC =  1
-      NZ2I   =  1
-      NZ2J   = NZ2
-      NZ2INC =  1
-      NFACE  = 2*NDIM
-C
-      CALL LFALSE (IFPREL,NELTOT)
-C
-      IFPREL(1)=.TRUE.
-      IFPREL(2)=.TRUE.
-C
-      IF (IFFLOW) THEN
-         WRITE (21,*) ' '
-         WRITE (21,*) 'FLUID FLOW FIELD'
-         DO 9001 IEL = 1,NELV
-            IF ( .NOT.IFPREL(IEL) ) GOTO 9001
-            WRITE (21,*) 'ELEMENT NUMBER ',IEL
-            DO 101 IPL=NZ1I,NZ1J,NZ1INC
-               CALL OUTM1 (VX,'VX        ',NZ1,IEL,IPL)
- 101        CONTINUE
-            DO 102 IPL=NZ1I,NZ1J,NZ1INC
-               CALL OUTM1 (VY,'VY        ',NZ1,IEL,IPL)
- 102        CONTINUE
-C           DO 103 IPL=NZ1I,NZ1J,NZ1INC
-C              CALL OUTM1 (VZ,'VZ        ',NZ1,IEL,IPL)
-C 103       CONTINUE
-C
-C           DO 310 IPL=NZ2I,NZ2J,NZ2INC
-C              CALL OUTM2 (PR,'PR        ',NZ2,IEL,IPL)
-C 310       CONTINUE
-C
-         IF (IFMODEL .AND. IFSWALL) THEN
-            DO 410 IFC=1,NFACE
-               CALL OUTF1 (UWALL,'U*-(1)    ',IEL,IFC)
-  410       CONTINUE
-            DO 430 IFC=1,NFACE
-               CALL OUTF1 (ZWALL,'Z0        ',IEL,IFC)
-  430       CONTINUE
-         ENDIF
-         IF (IFMODEL .AND. .NOT.IFKEPS) THEN
-            DO 450 IPL=NZ1I,NZ1J,NZ1INC
-               CALL OUTM1 (TURBL,'TURBLENGTH',NZ1,IEL,IPL)
-  450       CONTINUE
-         ENDIF
-C
-9001  CONTINUE
-      ENDIF
-C
-      IF (IFHEAT) THEN
-         DO 500 IFIELD=2,NFIELD
-            DO 9002 IEL = 1,NELT
-            IF ( .NOT.IFPREL(IEL) ) GOTO 9002
-               WRITE (21,*) ' '
-               WRITE (21,*) 'FIELD   NUMBER ',IFIELD
-               WRITE (21,*) 'ELEMENT NUMBER ',IEL
-            DO 601 IPL=NZ1I,NZ1J,NZ1INC
-               CALL OUTM1 (T(1,1,1,1,IFIELD-1),'T         ',NZ1,IEL,IPL)
- 601        CONTINUE
-9002        CONTINUE
- 500     CONTINUE
-      ENDIF
-C
-      RETURN
-      END
       SUBROUTINE PRINTEL (TA,A,IEL)
 C
       INCLUDE 'SIZE'
       DIMENSION TA(LX1,LY1,LZ1,LELT)
       CHARACTER A*10
 C
-      NZ1I   =  1
-      NZ1J   = NZ1
-      NZ1INC =  1
+      lz1I   =  1
+      lz1J   = lz1
+      lz1INC =  1
 C
       WRITE (21,*) 'ELEMENT NUMBER ',IEL
-      DO 101 IPL=NZ1I,NZ1J,NZ1INC
-         CALL OUTM1 (TA,A,NZ1,IEL,IPL)
+      DO 101 IPL=lz1I,lz1J,lz1INC
+         CALL OUTM1 (TA,A,lz1,IEL,IPL)
  101  CONTINUE
 C
       RETURN
@@ -634,14 +558,14 @@ C-----------------------------------------------------------------------
       DIMENSION TA(LX1,LY1,LZ1,LELT)
       CHARACTER A*10
 C
-      NZ1I   =  1
-      NZ1J   = NZ1
-      NZ1INC =  1
+      lz1I   =  1
+      lz1J   = lz1
+      lz1INC =  1
 C
       DO 9001 IEL = 1,NEL
          WRITE (21,*) 'ELEMENT NUMBER ',IEL
-         DO 101 IPL=NZ1I,NZ1J,NZ1INC
-            CALL OUTM1 (TA,A,NZ1,IEL,IPL)
+         DO 101 IPL=lz1I,lz1J,lz1INC
+            CALL OUTM1 (TA,A,lz1,IEL,IPL)
  101     CONTINUE
  9001 CONTINUE
 C
@@ -652,12 +576,12 @@ C
       DIMENSION X(LX1,LZ1,6,LELT)
       CHARACTER*10 TXT
 C
-         NFACE = 2*NDIM
-         NZI   = NZ1
+         NFACE = 2*ldim
+         NZI   = lz1
          NZJ   =  1
          NZINC = -1
          NXI   =  1
-         NXJ   = NX1
+         NXJ   = lx1
          NXINC =  1
 C
          WRITE(21,106) TXT,IFC,NFACE
@@ -679,11 +603,11 @@ C
       DIMENSION X(LX1,LY1,LZ1,LELT)
       CHARACTER*10 TXT
 C
-         NYI   = NY1
+         NYI   = ly1
          NYJ   =  1
          NYINC = -1
          NXI   =  1
-         NXJ   = NX1
+         NXJ   = lx1
          NXINC =  1
 C
          WRITE(6,106) TXT,IP,NP
@@ -706,11 +630,11 @@ C
       DIMENSION X(LX2,LY2,LZ2,LELV)
       CHARACTER*10 TXT
 C
-         NYI   = NY2
+         NYI   = ly2
          NYJ   =  1
          NYINC = -1
          NXI   =  1
-         NXJ   = NX2
+         NXJ   = lx2
          NXINC =  1
 C
          WRITE(21,106) TXT,IP,NP
@@ -788,10 +712,10 @@ C
      $        , HFMASK(LX1,LZ1,6,1)
       CHARACTER CB*3
 C
-      NTOT1 = NX1*NY1*NZ1*NEL
-      NXZ1  = NX1*NZ1
+      NTOT1 = lx1*ly1*lz1*NEL
+      NXZ1  = lx1*lz1
       NTOTF = NXZ1*6*NEL
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
       CONST = 5.0
       CALL CFILL (HVMASK,CONST,NTOT1)
       CALL CFILL (HFMASK,CONST,NTOTF)
@@ -803,7 +727,7 @@ C
          CB=CBC(IFC,IEL,IFLD)
          IF (CB.EQ.'ON ' .OR. CB.EQ.'on ' .or.
      $       CB.EQ.'MM ' .OR. CB.EQ.'mm ' ) THEN
-             CALL FACEV (HVMASK,IEL,IFC,3.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,3.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),3.0,NXZ1)
          ENDIF
   110 CONTINUE
@@ -815,7 +739,7 @@ C
      $       CB.EQ.'ws ' .OR. CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR. 
      $       CB.EQ.'SH ' .OR. CB.EQ.'sh ' .OR. CB.EQ.'SHL' .OR. 
      $       CB.EQ.'shl')                                  THEN
-             CALL FACEV (HVMASK,IEL,IFC,2.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,2.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),2.0,NXZ1)
          ENDIF
   120 CONTINUE
@@ -825,7 +749,7 @@ C
          CB=CBC(IFC,IEL,IFLD)
          IF (CB.EQ.'MF ' .OR. CB.EQ.'V  ' .OR. CB.EQ.'v  ' .OR.
      $       CB.EQ.'VL ' .OR. CB.EQ.'vl ' .OR. CB(1:2).EQ.'mv') THEN
-             CALL FACEV (HVMASK,IEL,IFC,1.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,1.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),1.0,NXZ1)
          ENDIF
   130 CONTINUE
@@ -834,7 +758,7 @@ C
       DO 140 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
          IF (CB.EQ.'W  ') THEN
-             CALL FACEV (HVMASK,IEL,IFC,0.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,0.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),0.0,NXZ1)
          ENDIF
   140 CONTINUE
@@ -845,7 +769,7 @@ C
       DO 210 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
          IF (CB.EQ.'SYM') THEN
-             CALL FACEV (HVMASK,IEL,IFC,2.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,2.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),2.0,NXZ1)
          ENDIF
   210 CONTINUE
@@ -855,9 +779,9 @@ c     write(6,*) 'MASK this is ifield:',ifield
       DO 220 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
          IF (CB(1:1).EQ.'M' .OR. CB(1:1).EQ.'m') THEN
-c            CALL FACEV (HVMASK,IEL,IFC,1.0,NX1,NY1,NZ1)
+c            CALL FACEV (HVMASK,IEL,IFC,1.0,lx1,ly1,lz1)
 c            CALL CFILL (HFMASK(1,1,IFC,IEL),1.0,NXZ1)
-             CALL FACEV (HVMASK,IEL,IFC,2.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,2.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),2.0,NXZ1)
          ENDIF
   220 CONTINUE
@@ -866,14 +790,14 @@ C
       DO 230 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
          IF (CB.EQ.'FIX') THEN
-             CALL FACEV (HVMASK,IEL,IFC,0.0,NX1,NY1,NZ1)
+             CALL FACEV (HVMASK,IEL,IFC,0.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),0.0,NXZ1)
          ENDIF
   230 CONTINUE
 C
       ENDIF
 C
-      CALL DSOP (HVMASK,'MNA',NX1,NY1,NZ1)
+      CALL DSOP (HVMASK,'MNA',lx1,ly1,lz1)
 C
       RETURN
       END
@@ -894,7 +818,7 @@ C
      $              , NTEFC(2,12)
      $              , NTCRF(2,3)     
 C
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
       NCRFC = NFACE - 2
       NMXCR = 8*NEL
       CALL LFALSE (IFNSKP,NMXCR)
@@ -933,13 +857,13 @@ C
      $        , C2MASK(LX1,LY1,LZ1,1)
      $        , C3MASK(LX1,LY1,LZ1,1)
 C
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
       CALL RZERO3  (C1MASK,C2MASK,C3MASK,NTOT1)
 C
       DO 100 IEL=1,NEL
-      DO 100 IZ=1,NZ1
-      DO 100 IY=1,NY1
-      DO 100 IX=1,NX1
+      DO 100 IZ=1,lz1
+      DO 100 IY=1,ly1
+      DO 100 IX=1,lx1
          HMV=ABS( HVMASK(IX,IY,IZ,IEL) )
          IF (HMV .GT. 2.9) THEN
              C1MASK(IX,IY,IZ,IEL) = 1.0
@@ -949,7 +873,7 @@ C
          ENDIF
   100 CONTINUE
 C
-      IF (NDIM.EQ.3) CALL COPY (C3MASK,C2MASK,NTOT1)
+      IF (ldim.EQ.3) CALL COPY (C3MASK,C2MASK,NTOT1)
 C
       RETURN
       END
@@ -972,9 +896,9 @@ C
       DIMENSION HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
       NEDGE = 12
-      NCRNR = 2**NDIM
+      NCRNR = 2**ldim
       NTOTF = NFACE*NEL
       NTOTS = NEDGE*NEL
       NTOTC = NCRNR*NEL
@@ -997,7 +921,7 @@ C
  100  CONTINUE
       CALL GLLOG(IFLMSF(IFLD),.TRUE.)
 C
-      IF (NDIM.EQ.3) THEN
+      IF (ldim.EQ.3) THEN
          DO 200 IEL=1,NEL
          DO 200 ISD=1,NEDGE
             IX  = MIDRST(1,ISD)
@@ -1027,13 +951,13 @@ C
          HMV = ABS( HVMASK(IX,IY,IZ,IEL) )
          IF (HMV .LT. 1.9  .OR.  HMV .GT. 3.1) GOTO 300
          IDIFF = 0
-         DO 330 II=1,NDIM
+         DO 330 II=1,ldim
             IFC = MFCCR(II,ICR)
             HMF = ABS( HFMASK(1,1,IFC,IEL) )
             IF (ABS(HMV - HMF) .GT. EPSA) IDIFF=IDIFF + 1
  330     CONTINUE
-         IF (NDIM.EQ.3) THEN
-            DO 360 II=1,NDIM
+         IF (ldim.EQ.3) THEN
+            DO 360 II=1,ldim
                ISD = MEGCR(II,ICR)
                IXS = MIDRST(1,ISD)
                IYS = MIDRST(2,ISD)
@@ -1042,8 +966,8 @@ C
                IF (ABS(HMV - HMS) .GT. EPSA) IDIFF=IDIFF + 1
  360        CONTINUE
          ENDIF
-         IF ( (NDIM.EQ.2 .AND. IDIFF.EQ.2)   .OR.
-     $        (NDIM.EQ.3 .AND. IDIFF.EQ.6) ) THEN
+         IF ( (ldim.EQ.2 .AND. IDIFF.EQ.2)   .OR.
+     $        (ldim.EQ.3 .AND. IDIFF.EQ.6) ) THEN
               IFLMSC(IFLD)         = .TRUE.
               IFMSCR(ICR,IEL,IFLD) = .TRUE.
          ENDIF
@@ -1060,8 +984,8 @@ C
       DIMENSION HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NFACE  = 2*NDIM
-      NTOT1  = NX1*NY1*NZ1*NEL
+      NFACE  = 2*ldim
+      NTOT1  = lx1*ly1*lz1*NEL
 C
       CALL RZERO3  (VNX,VNY,VNZ,NTOT1)
       CALL RZERO3  (V1X,V1Y,V1Z,NTOT1)
@@ -1075,7 +999,7 @@ C
      $               VNX(1,1,1,IEL),VNY(1,1,1,IEL),VNZ(1,1,1,IEL),IFC,1)
    10 CONTINUE
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
           CALL COMAVN2 (HVMASK,HFMASK,NEL)
       ELSE
           CALL COMAVN3 (HVMASK,HFMASK,NEL)
@@ -1102,9 +1026,9 @@ C
       DIMENSION HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NTOT1  = NX1*NY1*NZ1*NEL
-      NFACE  = 2*NDIM
-      NCRNR  = 2**NDIM
+      NTOT1  = lx1*ly1*lz1*NEL
+      NFACE  = 2*ldim
+      NCRNR  = 2**ldim
       EPSA   = 1.0E-06
       CALL RZERO (VNZ,NTOT1)
 C
@@ -1137,8 +1061,8 @@ C
   220    CONTINUE
   200 CONTINUE
 C
-      CALL DSSUM   (VNX,NX1,NY1,NZ1)
-      CALL DSSUM   (VNY,NX1,NY1,NZ1)
+      CALL DSSUM   (VNX,lx1,ly1,lz1)
+      CALL DSSUM   (VNY,lx1,ly1,lz1)
       CALL UNITVEC (VNX,VNY,VNZ,NTOT1)
 C
       CALL COPY   (V1Y,VNX,NTOT1)
@@ -1167,12 +1091,12 @@ C
       DIMENSION HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NTOT1  = NX1*NY1*NZ1*NEL
-      NFACE  = 2*NDIM
-      NCRNR  = 2**NDIM
+      NTOT1  = lx1*ly1*lz1*NEL
+      NFACE  = 2*ldim
+      NCRNR  = 2**ldim
       NEDGE  = 12
-      NMID   =(NX1 + 1)/2
-      NXM1   = NX1 - 1
+      NMID   =(lx1 + 1)/2
+      NXM1   = lx1 - 1
       EPSA   = 1.0E-06
       EPSN   = 1.0E-03
 C
@@ -1254,9 +1178,9 @@ C
   320    CONTINUE
   300 CONTINUE
 C
-      CALL DSSUM   (VNX,NX1,NY1,NZ1)
-      CALL DSSUM   (VNY,NX1,NY1,NZ1)
-      CALL DSSUM   (VNZ,NX1,NY1,NZ1)
+      CALL DSSUM   (VNX,lx1,ly1,lz1)
+      CALL DSSUM   (VNY,lx1,ly1,lz1)
+      CALL DSSUM   (VNZ,lx1,ly1,lz1)
       CALL UNITVEC (VNX,VNY,VNZ,NTOT1)
       CALL VDOT3   (VNMAG,VNX,VNY,VNZ,VNX,VNY,VNZ,NTOT1)
 C
@@ -1268,8 +1192,8 @@ C
          DO 520 J2=JS2,JF2,JSKIP2
          DO 520 J1=JS1,JF1,JSKIP1
             IF (VNMAG(J1,J2,1,IEL) .LT. EPSA) GOTO 520
-            VNZDIF = ABS(VNZ(J1,J2,1,IEL)) - 1.0
-            IF (ABS(VNZDIF) .LT. EPSN) THEN
+            VlzdIF = ABS(VNZ(J1,J2,1,IEL)) - 1.0
+            IF (ABS(VlzdIF) .LT. EPSN) THEN
                 V1X(J1,J2,1,IEL) = 1.0
                 V1Y(J1,J2,1,IEL) = 0.0
                 V1Z(J1,J2,1,IEL) = 0.0
@@ -1282,9 +1206,9 @@ C
   520    CONTINUE
   500 CONTINUE
 C
-      CALL DSSUM   (V1X,NX1,NY1,NZ1)
-      CALL DSSUM   (V1Y,NX1,NY1,NZ1)
-      CALL DSSUM   (V1Z,NX1,NY1,NZ1)
+      CALL DSSUM   (V1X,lx1,ly1,lz1)
+      CALL DSSUM   (V1Y,lx1,ly1,lz1)
+      CALL DSSUM   (V1Z,lx1,ly1,lz1)
       CALL UNITVEC (V1X,V1Y,V1Z,NTOT1)
 C
       CALL VCROSS (V2X,V2Y,V2Z,VNX,VNY,VNZ,V1X,V1Y,V1Z,NTOT1)
@@ -1300,14 +1224,14 @@ C
       DIMENSION W2MASK(LX1,LY1,LZ1,1)
      $        , W3MASK(LX1,LY1,LZ1,1)
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL FXWMS2 (W2MASK,HVMASK,HFMASK,NEL)
       ELSE
          CALL FXWMS3 (W2MASK,W3MASK,HVMASK,HFMASK,NEL)
       ENDIF
 C
-      CALL DSOP(W2MASK,'MUL',NX1,NY1,NZ1)
-      IF (NDIM.EQ.3) CALL DSOP(W3MASK,'MUL',NX1,NY1,NZ1)
+      CALL DSOP(W2MASK,'MUL',lx1,ly1,lz1)
+      IF (ldim.EQ.3) CALL DSOP(W3MASK,'MUL',lx1,ly1,lz1)
 C 
       RETURN
       END
@@ -1331,7 +1255,7 @@ C
      $        , HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NCRNR  = 2**NDIM
+      NCRNR  = 2**ldim
       EPSA   = 1.0E-06
 C
       IZ = 1
@@ -1379,9 +1303,9 @@ C
      $        , HVMASK(LX1,LY1,LZ1,1)
      $        , HFMASK(LX1,LZ1,6,1)
 C
-      NCRNR = 2**NDIM
+      NCRNR = 2**ldim
       NEDGE = 12
-      NMID  = (NX1 + 1)/2
+      NMID  = (lx1 + 1)/2
       EPSA  = 1.0E-06
 C
       DO 100 IEL=1,NEL
@@ -1455,7 +1379,7 @@ C
      $              , NTEFC(2,12)
      $              , NTCRF(2,3)     
 C
-      NMID = (NX1 +1)/2
+      NMID = (lx1 +1)/2
 C
 C     Corners on faces
 C
@@ -1597,62 +1521,62 @@ C
       MCRRST(1,1) = 1
       MCRRST(2,1) = 1
       MCRRST(3,1) = 1
-      MCRRST(1,2) = NX1
+      MCRRST(1,2) = lx1
       MCRRST(2,2) = 1
       MCRRST(3,2) = 1
-      MCRRST(1,3) = NX1
-      MCRRST(2,3) = NX1
+      MCRRST(1,3) = lx1
+      MCRRST(2,3) = lx1
       MCRRST(3,3) = 1
       MCRRST(1,4) = 1
-      MCRRST(2,4) = NX1
+      MCRRST(2,4) = lx1
       MCRRST(3,4) = 1
       MCRRST(1,5) = 1
       MCRRST(2,5) = 1
-      MCRRST(3,5) = NX1
-      MCRRST(1,6) = NX1
+      MCRRST(3,5) = lx1
+      MCRRST(1,6) = lx1
       MCRRST(2,6) = 1
-      MCRRST(3,6) = NX1
-      MCRRST(1,7) = NX1
-      MCRRST(2,7) = NX1
-      MCRRST(3,7) = NX1
+      MCRRST(3,6) = lx1
+      MCRRST(1,7) = lx1
+      MCRRST(2,7) = lx1
+      MCRRST(3,7) = lx1
       MCRRST(1,8) = 1
-      MCRRST(2,8) = NX1
-      MCRRST(3,8) = NX1
+      MCRRST(2,8) = lx1
+      MCRRST(3,8) = lx1
 C
 C     Mid-edge indcies (Vol array)
 C 
       MIDRST(1,1)  = NMID
-      MIDRST(1,2)  = NX1
+      MIDRST(1,2)  = lx1
       MIDRST(1,3)  = NMID
       MIDRST(1,4)  = 1
       MIDRST(1,5)  = NMID
-      MIDRST(1,6)  = NX1
+      MIDRST(1,6)  = lx1
       MIDRST(1,7)  = NMID
       MIDRST(1,8)  = 1
       MIDRST(1,9)  = 1
-      MIDRST(1,10) = NX1
-      MIDRST(1,11) = NX1
+      MIDRST(1,10) = lx1
+      MIDRST(1,11) = lx1
       MIDRST(1,12) = 1
       MIDRST(2,1)  = 1
       MIDRST(2,2)  = NMID
-      MIDRST(2,3)  = NX1
+      MIDRST(2,3)  = lx1
       MIDRST(2,4)  = NMID
       MIDRST(2,5)  = 1
       MIDRST(2,6)  = NMID
-      MIDRST(2,7)  = NX1
+      MIDRST(2,7)  = lx1
       MIDRST(2,8)  = NMID
       MIDRST(2,9)  = 1
       MIDRST(2,10) = 1
-      MIDRST(2,11) = NX1
-      MIDRST(2,12) = NX1
+      MIDRST(2,11) = lx1
+      MIDRST(2,12) = lx1
       MIDRST(3,1)  = 1
       MIDRST(3,2)  = 1
       MIDRST(3,3)  = 1
       MIDRST(3,4)  = 1
-      MIDRST(3,5)  = NX1
-      MIDRST(3,6)  = NX1
-      MIDRST(3,7)  = NX1
-      MIDRST(3,8)  = NX1
+      MIDRST(3,5)  = lx1
+      MIDRST(3,6)  = lx1
+      MIDRST(3,7)  = lx1
+      MIDRST(3,8)  = lx1
       MIDRST(3,9)  = NMID
       MIDRST(3,10) = NMID
       MIDRST(3,11) = NMID
@@ -1661,24 +1585,24 @@ C
 C     1-D corners indices (Vol array)
 C
       MCRIND(1) = 1
-      MCRIND(2) = NX1
-      MCRIND(3) = NX1**2
-      MCRIND(7) = NX1**3
-      MCRIND(4) = MCRIND(3) - NX1 + 1
+      MCRIND(2) = lx1
+      MCRIND(3) = lx1**2
+      MCRIND(7) = lx1**3
+      MCRIND(4) = MCRIND(3) - lx1 + 1
       MCRIND(5) = MCRIND(7) - MCRIND(3) + 1
-      MCRIND(6) = MCRIND(5) + NX1 - 1
-      MCRIND(8) = MCRIND(7) - NX1 + 1
+      MCRIND(6) = MCRIND(5) + lx1 - 1
+      MCRIND(8) = MCRIND(7) - lx1 + 1
 C
 C     1-D  edge indices (Face array)
 C
       MEDIND(1,1) = 1
-      MEDIND(2,1) = NX1
-      MEDIND(1,2) = NX1**2 - NX1 + 1
-      MEDIND(2,2) = NX1**2
+      MEDIND(2,1) = lx1
+      MEDIND(1,2) = lx1**2 - lx1 + 1
+      MEDIND(2,2) = lx1**2
       MEDIND(1,3) = 1
       MEDIND(2,3) = MEDIND(1,2)
-      MEDIND(1,4) = NX1
-      MEDIND(2,4) = NX1**2
+      MEDIND(1,4) = lx1
+      MEDIND(2,4) = lx1**2
 C
 C     1-D edge index type (Face array)
 C
@@ -1739,7 +1663,7 @@ C
       LF2 = MEDIND(2,ITYP)
 C
       LFSKIP = 1
-      IF (ITYP .GE. 3) LFSKIP = NX1
+      IF (ITYP .GE. 3) LFSKIP = lx1
 C
       RETURN
       END
@@ -1766,10 +1690,10 @@ C
       LV2  = MCRIND(ICR2)
 C
       IF (ISD .GE. 9) THEN
-         LVSKIP = NX1**2
+         LVSKIP = lx1**2
       ELSE
          IF (IODD.EQ.0) THEN
-            LVSKIP = NX1
+            LVSKIP = lx1
          ELSE
             LVSKIP = 1
          ENDIF
@@ -1782,7 +1706,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
 C
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
 C
       DO 100 IEL=1,NELT
       DO 100 IFC=1,NFACE
@@ -1810,24 +1734,24 @@ C
      $        , V2(LX1,LY1,LZ1,1)
      $        , V3(LX1,LY1,LZ1,1)
 C
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
       CALL RONE (WA,NTOT1)
       CALL COPY (VB1,V1,NTOT1)
       CALL COPY (VB2,V2,NTOT1)
-      IF (NDIM.EQ.3) CALL COPY (VB3,V3,NTOT1)
+      IF (ldim.EQ.3) CALL COPY (VB3,V3,NTOT1)
 C
       IF (IFIELD.EQ.1) THEN
          CALL SUB3  (A1MASK,WA,V1MASK,NTOT1)
          CALL SUB3  (A2MASK,WA,V2MASK,NTOT1)
-         IF (NDIM.EQ.3) CALL SUB3 (A3MASK,WA,V3MASK,NTOT1)
+         IF (ldim.EQ.3) CALL SUB3 (A3MASK,WA,V3MASK,NTOT1)
       ELSEIF (IFIELD.EQ.ifldmhd) THEN
          CALL SUB3  (A1MASK,WA,B1MASK,NTOT1)
          CALL SUB3  (A2MASK,WA,B2MASK,NTOT1)
-         IF (NDIM.EQ.3) CALL SUB3 (A3MASK,WA,B3MASK,NTOT1)
+         IF (ldim.EQ.3) CALL SUB3 (A3MASK,WA,B3MASK,NTOT1)
       ELSE
          CALL SUB3  (A1MASK,WA,W1MASK,NTOT1)
          CALL SUB3  (A2MASK,WA,W2MASK,NTOT1)
-         IF (NDIM.EQ.3) CALL SUB3 (A3MASK,WA,W3MASK,NTOT1)
+         IF (ldim.EQ.3) CALL SUB3 (A3MASK,WA,W3MASK,NTOT1)
       ENDIF
 C
       CALL QMASK (VB1,VB2,VB3,A1MASK,A2MASK,A3MASK,NEL)
@@ -1884,7 +1808,7 @@ C
      $        , R2MASK(LX1,LY1,LZ1,1)
      $        , R3MASK(LX1,LY1,LZ1,1)
 C
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
 C
 C     (0) Collocate Volume Mask
 C
@@ -1892,7 +1816,7 @@ C
       CALL COPY  (S2,R2,NTOT1)
       CALL COL2  (R1,R1MASK,NTOT1)
       CALL COL2  (R2,R2MASK,NTOT1)
-      IF (NDIM.EQ.3) THEN
+      IF (ldim.EQ.3) THEN
          CALL COPY (S3,R3,NTOT1)
          CALL COL2 (R3,R3MASK,NTOT1)
       ENDIF
@@ -1900,7 +1824,7 @@ C
 C     (1) Face Mask
 C
       IF (IFLMSF(IFIELD)) THEN
-         IF (NDIM.EQ.2) THEN
+         IF (ldim.EQ.2) THEN
             CALL FCMSK2 (R1,R2,S1,S2,R1MASK,R2MASK,NEL)
          ELSE
             CALL FCMSK3 (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
@@ -1909,13 +1833,13 @@ C
 C
 C     (2) Edge Mask  (3-D only)
 C
-      IF (NDIM.EQ.3 .AND. IFLMSE(IFIELD)) 
+      IF (ldim.EQ.3 .AND. IFLMSE(IFIELD)) 
      $   CALL EGMASK (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
 C
 C     (3) Corner Mask
 C
       IF (IFLMSC(IFIELD)) THEN
-         IF (NDIM.EQ.2) THEN
+         IF (ldim.EQ.2) THEN
             CALL CRMSK2 (R1,R2,S1,S2,R1MASK,R2MASK,NEL)
          ELSE
             CALL CRMSK3 (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
@@ -1936,7 +1860,7 @@ C
      $        , R1MASK(LX1,LY1,LZ1,1)
      $        , R2MASK(LX1,LY1,LZ1,1)
 C
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
 C
       DO 100 IEL=1,NEL
       DO 100 IFC=1,NFACE
@@ -1974,7 +1898,7 @@ C
      $        , R2MASK(LX1,LY1,LZ1,1)
      $        , R3MASK(LX1,LY1,LZ1,1)
 C
-      NFACE = 2*NDIM
+      NFACE = 2*ldim
 C
       DO 100 IEL=1,NEL
       DO 100 IFC=1,NFACE
@@ -2079,7 +2003,7 @@ C
      $        , R1MASK(LX1,LY1,LZ1,1)
      $        , R2MASK(LX1,LY1,LZ1,1)
 C
-      NCRNR = 2**NDIM
+      NCRNR = 2**ldim
 C
       DO 100 IEL=1,NEL
       DO 100 ICR=1,NCRNR
@@ -2127,7 +2051,7 @@ C
      $        , R2MASK(LX1,LY1,LZ1,1)
      $        , R3MASK(LX1,LY1,LZ1,1)
 C
-      NCRNR = 2**NDIM
+      NCRNR = 2**ldim
 C
       DO 100 IEL=1,NEL
       DO 100 ICR=1,NCRNR
@@ -2207,23 +2131,23 @@ c     fixes masks for A/SYM face corners
 
       character*3 cb
 
-      n = nx1*ny1*nz1
+      n = lx1*ly1*lz1
 
-      nface = 2*ndim
+      nface = 2*ldim
 
       do e=1,nelv
          call izero (im1,n)
          call izero (im2,n)
          do f=1,nface
             cb  = cbc (f,e,1)
-            if (cb.eq.'SYM')  call iface_e(im1,f,1,nx1,ny1,nz1)
-            if (cb.eq.'A  ')  call iface_e(im2,f,2,nx1,ny1,nz1)
+            if (cb.eq.'SYM')  call iface_e(im1,f,1,lx1,ly1,lz1)
+            if (cb.eq.'A  ')  call iface_e(im2,f,2,lx1,ly1,lz1)
          enddo
          call icol2(im2,im1,n)
 
          k = 1
-         do j=1,ny1,ny1-1
-         do i=1,nx1,nx1-1
+         do j=1,ly1,ly1-1
+         do i=1,lx1,lx1-1
             if  ( im2(i,j,k) .eq. 2) then  ! corner of SYM & 'A  ' faces
                c1mask(i,j,k,e) = 0. 
                c2mask(i,j,k,e) = 0. 
@@ -2268,7 +2192,7 @@ c-----------------------------------------------------------------------
       real b1(1),b2(1),b3(1),x1(1),x2(1),x3(1),wt(1)
 
       nel = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       s = 0
       if (if3d) then
@@ -2292,7 +2216,7 @@ c-----------------------------------------------------------------------
       real b1(1),b2(1),b3(1),x1(1),x2(1),x3(1),wt(1)
 
       nel = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       s = 0
       if (if3d) then

@@ -152,7 +152,7 @@ C
      $ ,             ta2 (lx1,ly1,lz1,lelv)
      $ ,             ta3 (lx1,ly1,lz1,lelv)
 c
-      ntot1 = nx1*ny1*nz1*nelv
+      ntot1 = lx1*ly1*lz1*nelv
 c
       ab0 = ab(1)
       ab1 = ab(2)
@@ -165,7 +165,7 @@ c
       call copy   (bby1,bmy,ntot1)
       call add2s1 (bmx,ta1,ab0,ntot1)
       call add2s1 (bmy,ta2,ab0,ntot1)
-      if (ndim.eq.3) then
+      if (ldim.eq.3) then
          call add3s2 (ta3,bbz1,bbz2,ab1,ab2,ntot1)
          call copy   (bbz2,bbz1,ntot1)
          call copy   (bbz1,bmz,ntot1)
@@ -194,7 +194,7 @@ C
      $ ,             TB3(LX1,LY1,LZ1,LELV)
      $ ,             H2 (LX1,LY1,LZ1,LELV)
 C
-      NTOT1 = NX1*NY1*NZ1*NELV
+      NTOT1 = lx1*ly1*lz1*NELV
       CONST = 1./DT
       CALL CMULT2(H2,vtrans(1,1,1,1,ifield),CONST,NTOT1)
       CALL OPCOLV3c (TB1,TB2,TB3,BX,BY,BZ,BM1,bd(2))
@@ -326,8 +326,8 @@ c
       npres  = icalld
       etime1 = dnekclock()
 
-      ntot1  = nx1*ny1*nz1*nelv
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot1  = lx1*ly1*lz1*nelv
+      ntot2  = lx2*ly2*lz2*nelv
       intype = 1
 
       call rzero   (h1,ntot1)
@@ -379,7 +379,7 @@ C
 
       common /cgeom/ igeom
 
-      ntot2 = nx2*ny2*nz2*nelv
+      ntot2 = lx2*ly2*lz2*nelv
 
       if (nbd.eq.2.and.nbdinp.gt.2.and.igeom.le.2) then
          call copy(plag,p,ntot2)
@@ -407,7 +407,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       real ux(1),uy(1),uz(1)
 c
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
       call rzero(ux,n)
       call rzero(uy,n)
       if (if3d) call rzero(uz,n)
@@ -422,7 +422,7 @@ c-----------------------------------------------------------------------
       real ux(1),uy(1),uz(1)
       real un(3),wn(3)
 c
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
       if (type3.eq.'L2 ') then
          if (if3d) then
             un(1) = vlsc3(ux,ux,bm1,n)
@@ -468,7 +468,7 @@ c
 c
       call curl(lf,b1,b2,b3,.false.,w1,w2)
 c
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 c
       do i=1,ntot
          c1 = lf(i,2)*b3(i) - lf(i,3)*b2(i)
@@ -492,7 +492,7 @@ c
       parameter(lt=lx1*ly1*lz1*lelv)
       real vort(lt,3),work1(1),work2(1),u(1),v(1),w(1)
 c
-      ntot  = nx1*ny1*nz1*nelv
+      ntot  = lx1*ly1*lz1*nelv
       if (if3d) then
 c        work1=dw/dy ; work2=dv/dz
            call dudxyz(work1,w,rym1,sym1,tym1,jacm1,1,2)
@@ -519,14 +519,14 @@ c
          ifielt = ifield
          ifield = 1
          if (if3d) then
-            do idim=1,ndim
+            do idim=1,ldim
                call col2  (vort(1,idim),bm1,ntot)
-               call dssum (vort(1,idim),nx1,ny1,nz1)
+               call dssum (vort(1,idim),lx1,ly1,lz1)
                call col2  (vort(1,idim),binvm1,ntot)
             enddo
          else
             call col2  (vort(1,3),bm1,ntot)    ! NOTE:  This differs from
-            call dssum (vort(1,3),nx1,ny1,nz1) ! "comp_vort", which returns
+            call dssum (vort(1,3),lx1,ly1,lz1) ! "comp_vort", which returns
             call col2  (vort(1,3),binvm1,ntot) ! vorticity as 1st entry in vort
          endif
          ifield = ifielt
@@ -629,9 +629,9 @@ c
       real lfd
 
       if (icalld .eq. 0) then
-          write(6,*) 'CALL SET PROJ',nx1,nxd
-          call setmap (nx1,nxd)   ! Set up interpolation operators
-          call setproj(nx1,nxd)   ! Set up interpolation operators
+          write(6,*) 'CALL SET PROJ',lx1,lxd
+          call setmap (lx1,lxd)   ! Set up interpolation operators
+          call setproj(lx1,lxd)   ! Set up interpolation operators
           icalld = icalld + 1
       endif
 c
@@ -640,14 +640,14 @@ c
      $                 , sxm1(1,1,1,e),sym1(1,1,1,e),szm1(1,1,1,e)
      $                 , txm1(1,1,1,e),tym1(1,1,1,e),tzm1(1,1,1,e) )
 c
-      do d=1,ndim                                   ! interpolate to M points
-         call specmp(cbd(1,d),nxd,cb(1,d),nx1,im1d,im1dt,bd)
+      do d=1,ldim                                   ! interpolate to M points
+         call specmp(cbd(1,d),lxd,cb(1,d),lx1,im1d,im1dt,bd)
       enddo
-      call specmp(bd(1,1),nxd,b1,nx1,im1d,im1dt,lfd)
-      call specmp(bd(1,2),nxd,b2,nx1,im1d,im1dt,lfd)
-      call specmp(bd(1,3),nxd,b3,nx1,im1d,im1dt,lfd)
+      call specmp(bd(1,1),lxd,b1,lx1,im1d,im1dt,lfd)
+      call specmp(bd(1,2),lxd,b2,lx1,im1d,im1dt,lfd)
+      call specmp(bd(1,3),lxd,b3,lx1,im1d,im1dt,lfd)
 c
-      nxyzd = nxd*nyd*nzd
+      nxyzd = lxd*lyd*lzd
       do i=1,nxyzd
          lfd(i,1) = cbd(i,2)*bd(i,3) - cbd(i,3)*bd(i,2) ! Curl B x B
          lfd(i,2) = cbd(i,3)*bd(i,1) - cbd(i,1)*bd(i,3)
@@ -664,14 +664,14 @@ c           ~            M
 c     where B = diag (rho  )
 c                        i
 c
-      call specmp(lf(1,1),nx1,lfd(1,1),nxd,pmd1,pmd1t,cbd)
-      call specmp(lf(1,2),nx1,lfd(1,2),nxd,pmd1,pmd1t,cbd)
-      call specmp(lf(1,3),nx1,lfd(1,3),nxd,pmd1,pmd1t,cbd)
+      call specmp(lf(1,1),lx1,lfd(1,1),lxd,pmd1,pmd1t,cbd)
+      call specmp(lf(1,2),lx1,lfd(1,2),lxd,pmd1,pmd1t,cbd)
+      call specmp(lf(1,3),lx1,lfd(1,3),lxd,pmd1,pmd1t,cbd)
 c
 c     Finally, divide by local mass matrix in anticipation of subsequent
 c     multiply by BM1.
 c
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       do i=1,nxyz
 c        scale = 1./(w3m1(i,1,1)*jacm1(i,1,1,e))
          scale = 1./jacm1(i,1,1,e)
@@ -724,9 +724,9 @@ c              etc.
 c
 c
 c
-      nxyz = nx1*ny1*nz1 
+      nxyz = lx1*ly1*lz1 
 c
-      N=nx1-1
+      N=lx1-1
       call local_grad3(br,bs,bt,b1,N,1,dxm1,dxtm1)
       do i=1,nxyz
          cb(i,2) =  (br(i)*rz(i)+bs(i)*sz(i)+bt(i)*tz(i))
@@ -874,7 +874,7 @@ C
       COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
      $ ,              H2    (LX1,LY1,LZ1,LELV)
 c
-      n  = nx1*ny1*nz1*nelv
+      n  = lx1*ly1*lz1*nelv
 c
 c     New geometry, new velocity
 c
@@ -924,7 +924,7 @@ c
       include 'WZ'
       include 'SOLN'
 c
-      real u(nx1,ny1,nz1,nelv),v(nx1,ny1,nz1,nelv),w(nx1,ny1,nz1,nelv)
+      real u(lx1,ly1,lz1,nelv),v(lx1,ly1,lz1,nelv),w(lx1,ly1,lz1,nelv)
 c
 c     Store the inverse jacobian to speed up this operation
 c
@@ -938,20 +938,20 @@ c
 c
       if (icalld.eq.0) then
          icalld=1
-         call getdr(dri,zgm1(1,1),nx1)
-         call getdr(dsi,zgm1(1,2),ny1)
-         if (if3d) call getdr(dti,zgm1(1,3),nz1)
+         call getdr(dri,zgm1(1,1),lx1)
+         call getdr(dsi,zgm1(1,2),ly1)
+         if (if3d) call getdr(dti,zgm1(1,3),lz1)
       endif
 
       cfl = 0.
       l   = 0
 
       if (if3d) then
-         nxyz = nx1*ny1*nz1
+         nxyz = lx1*ly1*lz1
          do e=1,nelv
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1
+            do k=1,lz1
+            do j=1,ly1
+            do i=1,lx1
                l = l+1
                ur = ( u(i,j,k,e)*rxm1(i,j,k,e)
      $            +   v(i,j,k,e)*rym1(i,j,k,e)
@@ -977,10 +977,10 @@ c
             enddo
          enddo
       else
-         nxyz = nx1*ny1
+         nxyz = lx1*ly1
          do e=1,nelv
-            do j=1,ny1
-            do i=1,nx1
+            do j=1,ly1
+            do i=1,lx1
                l = l+1
                ur = ( u(i,j,1,e)*rxm1(i,j,1,e)
      $            +   v(i,j,1,e)*rym1(i,j,1,e) ) * jacmi(l,1)
@@ -1005,16 +1005,16 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine getdr(dri,zgm1,nx1)
-      real dri(nx1),zgm1(nx1)
+      subroutine getdr(dri,zgm1,lx1)
+      real dri(lx1),zgm1(lx1)
 c
       dri(1) = zgm1(2) - zgm1(1)   !  Compute 1/Dx
-      do i=2,nx1-1
+      do i=2,lx1-1
          dri(i) = 0.5*( zgm1(i+1) - zgm1(i-1) )
       enddo
-      dri(nx1) = zgm1(nx1) - zgm1(nx1-1)
+      dri(lx1) = zgm1(lx1) - zgm1(lx1-1)
 c
-      call invcol1(dri,nx1)
+      call invcol1(dri,lx1)
 c
       return
       end
@@ -1047,7 +1047,7 @@ C
       endif
  
       mtmp        = param(93)
-      do i=1,2*ndim
+      do i=1,2*ldim
          ivproj(1,i) = min(mxprev,mtmp) - 1
       enddo
  
@@ -1099,7 +1099,7 @@ c     include 'TSTEP'   ! ifield?
       ifbcor = .true.
       ifield = ifldmhd
 
-      nface  = 2*ndim
+      nface  = 2*ldim
       do iel=1,nelv
       do ifc=1,nface
          cb = cbc(ifc,iel,ifield)
@@ -1131,7 +1131,7 @@ c
 c      itest = 0
 c
 c      do e=1,nelv
-c      do f=1,2*ndim
+c      do f=1,2*ldim
 c         call chcopy(cb1,cbc(f,e,ifldmhd),3)
 c         if (cb1(3).eq.'n'.or.cb1(3).eq.'N') itest = 1
 c      enddo
@@ -1170,7 +1170,7 @@ C
       if (nprev.eq.0) return
 
 c     Diag to see how much reduction in the residual is attained.
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot2  = lx2*ly2*lz2*nelv
       alpha1 = glsc3(p,p,bm2inv,ntot2)
       if (alpha1.gt.0) then
          alpha1 = sqrt(alpha1/volvm2)
@@ -1232,7 +1232,7 @@ C
       mprev=param(93)
       mprev=min(mprev,mxprev)
 
-      ntot2=nx2*ny2*nz2*nelv
+      ntot2=lx2*ly2*lz2*nelv
 
       if (nprev.lt.mprev) then
          nprev = nprev+1
@@ -1276,7 +1276,7 @@ c     know the soln.
 
       ierr  = 0
 
-      ntot2=nx2*ny2*nz2*nelv
+      ntot2=lx2*ly2*lz2*nelv
 
 C
 C     Gram Schmidt, w re-orthogonalization
@@ -1342,8 +1342,8 @@ c
       if (icalld.eq.0) call set_dealias_rx
       icalld = icalld + 1
 
-      nxyz1 = nx1*ny1*nz1
-      nxyzd = nxd*nyd*nzd
+      nxyz1 = lx1*ly1*lz1
+      nxyzd = lxd*lyd*lzd
 
 
       if (if3d) then
@@ -1355,22 +1355,22 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 c           write(6,*) nid,' inside fast',e,nxyz1
 
             call add3(wk,vx(1,1,1,e),bx(1,1,1,e),nxyz1)
-            call intp_rstd(zp(1,1),wk,nx1,nxd,if3d,0) ! 0 --> forward
+            call intp_rstd(zp(1,1),wk,lx1,lxd,if3d,0) ! 0 --> forward
 
             call add3(wk,vy(1,1,1,e),by(1,1,1,e),nxyz1)
-            call intp_rstd(zp(1,2),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zp(1,2),wk,lx1,lxd,if3d,0)
 
             call add3(wk,vz(1,1,1,e),bz(1,1,1,e),nxyz1)
-            call intp_rstd(zp(1,3),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zp(1,3),wk,lx1,lxd,if3d,0)
 
             call sub3(wk,vx(1,1,1,e),bx(1,1,1,e),nxyz1)
-            call intp_rstd(zm(1,1),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zm(1,1),wk,lx1,lxd,if3d,0)
 
             call sub3(wk,vy(1,1,1,e),by(1,1,1,e),nxyz1)
-            call intp_rstd(zm(1,2),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zm(1,2),wk,lx1,lxd,if3d,0)
 
             call sub3(wk,vz(1,1,1,e),bz(1,1,1,e),nxyz1)
-            call intp_rstd(zm(1,3),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zm(1,3),wk,lx1,lxd,if3d,0)
 
             do i=1,nxyzd  ! Convert convector (zm) to r-s-t coordinates
                tr(i,1)=
@@ -1382,23 +1382,23 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             enddo
 
 
-            call grad_rst(zr,zs,zt,zp(1,1),nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,1),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(fx,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(fx,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,2),nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,2),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(fy,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(fy,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,3),nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,3),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(fz,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(fz,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
 
             do i=1,nxyzd  ! Convert convector (zp) to r-s-t coordinates
@@ -1411,23 +1411,23 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             enddo
 
 
-            call grad_rst(zr,zs,zt,zm(1,1),nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,1),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(gx,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(gx,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,2),nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,2),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(gy,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(gy,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,3),nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,3),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)+tr(i,3)*zt(i)
             enddo
-            call intp_rstd(gz,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(gz,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
             tmp = -0.5 ! vtrans() assumed to be 1.0 !
             do i=1,nxyz1
@@ -1450,16 +1450,16 @@ c
 c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
             call add3(wk,vx(1,1,1,e),bx(1,1,1,e),nxyz1)
-            call intp_rstd(zp(1,1),wk,nx1,nxd,if3d,0) ! 0 --> forward
+            call intp_rstd(zp(1,1),wk,lx1,lxd,if3d,0) ! 0 --> forward
 
             call add3(wk,vy(1,1,1,e),by(1,1,1,e),nxyz1)
-            call intp_rstd(zp(1,2),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zp(1,2),wk,lx1,lxd,if3d,0)
 
             call sub3(wk,vx(1,1,1,e),bx(1,1,1,e),nxyz1)
-            call intp_rstd(zm(1,1),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zm(1,1),wk,lx1,lxd,if3d,0)
 
             call sub3(wk,vy(1,1,1,e),by(1,1,1,e),nxyz1)
-            call intp_rstd(zm(1,2),wk,nx1,nxd,if3d,0)
+            call intp_rstd(zm(1,2),wk,lx1,lxd,if3d,0)
 
             do i=1,nxyzd  ! Convert convector (zm) to r-s-t coordinates
                tr(i,1)=
@@ -1468,17 +1468,17 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
      $            rx(i,3,e)*zm(i,1)+rx(i,4,e)*zm(i,2)
             enddo
 
-            call grad_rst(zr,zs,zt,zp(1,1),nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,1),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
-            call intp_rstd(fx,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(fx,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zp(1,2),nxd,if3d)
+            call grad_rst(zr,zs,zt,zp(1,2),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
-            call intp_rstd(fy,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(fy,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
             do i=1,nxyzd  ! Convert convector (zp) to r-s-t coordinates
                tr(i,1)=
@@ -1487,17 +1487,17 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
      $            rx(i,3,e)*zp(i,1)+rx(i,4,e)*zp(i,2)
             enddo
 
-            call grad_rst(zr,zs,zt,zm(1,1),nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,1),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
-            call intp_rstd(gx,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(gx,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-            call grad_rst(zr,zs,zt,zm(1,2),nxd,if3d)
+            call grad_rst(zr,zs,zt,zm(1,2),lxd,if3d)
             do i=1,nxyzd ! mass matrix included, per DFM (4.8.5)
                wk(i) = tr(i,1)*zr(i)+tr(i,2)*zs(i)
             enddo
-            call intp_rstd(gy,wk,nx1,nxd,if3d,1) ! Project back to coarse
+            call intp_rstd(gy,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
             tmp = -0.5 ! vtrans() assumed to be 1.0 !
             do i=1,nxyz1
@@ -1534,10 +1534,10 @@ C
       if (ifgeom.and.ilstep.eq.istep)  return  ! already computed
       ilstep = istep
 
-      nxyz1 = nx1*ny1*nz1
-      nxyzd = nxd*nyd*nzd
+      nxyz1 = lx1*ly1*lz1
+      nxyzd = lxd*lyd*lzd
 
-      call zwgl (zd,wd,nxd)  ! zwgl -- NOT zwgll!
+      call zwgl (zd,wd,lxd)  ! zwgl -- NOT zwgll!
 
       if (if3d) then
 c
@@ -1545,20 +1545,20 @@ c
 
 c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
-            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,3,e),rzm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,4,e),sxm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,5,e),sym1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,6,e),szm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,7,e),txm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,8,e),tym1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,9,e),tzm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,3,e),rzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,4,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,5,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,6,e),szm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,7,e),txm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,8,e),tym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,9,e),tzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
 
             l = 0
-            do k=1,nzd
-            do j=1,nyd
-            do i=1,nxd
+            do k=1,lzd
+            do j=1,lyd
+            do i=1,lxd
                l = l+1
                w = wd(i)*wd(j)*wd(k)
                do ii=1,9
@@ -1575,14 +1575,14 @@ c
 
 c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
-            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,3,e),sxm1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,4,e),sym1(1,1,1,e),nx1,nxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,3,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,4,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
 
             l = 0
-            do j=1,nyd
-            do i=1,nxd
+            do j=1,lyd
+            do i=1,lxd
                l = l+1
                w = wd(i)*wd(j)
                do ii=1,4
@@ -1616,7 +1616,7 @@ c
       call opcopy(ta1,ta2,ta3,vx,vy,vz)
       call opcopy(tb1,tb2,tb3,bx,by,bz)
 
-      ntot1 = nx1*ny1*nz1*nelv
+      ntot1 = lx1*ly1*lz1*nelv
       call phys_to_elsasser(ta1,ta2,ta3,tb1,tb2,tb3,ntot1) ! crude, but effective
 
       call compute_cfl(cflp,ta1,ta2,ta3,dt)   !  vx = U+B

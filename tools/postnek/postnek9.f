@@ -16,7 +16,7 @@ C------------------------------------------------------------------------------
 C
       subroutine mltiplt2
 c     For hmt's movies.... pff 2/28/98.
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp,iftmh
@@ -185,7 +185,7 @@ c
       end
 C-----------------------------------------------------------------------
       subroutine mltiplt
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp,iftmh
@@ -229,7 +229,7 @@ C-----------------------------------------------------------------------
 C
 C     Set up the currnet plotting state
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm
@@ -398,7 +398,7 @@ c-----------------------------------------------------------------------
 C
 C     SAVE the currnet plotting state
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       character*4 name
@@ -572,7 +572,7 @@ c-----------------------------------------------------------------------
 C
 C     Generate Stress Vectors on selected planes
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
       PARAMETER (NXM2=NXM*NYM)
@@ -783,7 +783,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine dudrst(dudr,duds,dudt,U)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       dimension    u(nx,ny,nz),dudr(nx,ny,nz)
       dimension duds(nx,ny,nz),dudt(nx,ny,nz)
@@ -800,7 +800,7 @@ c
 c-----------------------------------------------------------------------
       subroutine mltiplt3
 c     For creating 100 vtk files    pff 10/12/98
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp,iftmh
@@ -903,7 +903,7 @@ c
 c     Dump subwindow and convert it to gif file
 c
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       integer icalld
@@ -1002,7 +1002,7 @@ c
 C-----------------------------------------------------------------------
       subroutine auto_size_pixel_window
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       call quick_get_box(xmse1,ymse1,xmse2,ymse2)
 c
@@ -1049,7 +1049,7 @@ c     This routine specifies a rectangular box based on object size
 c
 c     xmsei,ymsei  are returned in screen coordinates  (0,1)
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       call quickscan_xy(x1,y1,x2,y2)
 c  
@@ -1094,7 +1094,7 @@ c
 c     For creating 100 vtk files    pff 10/12/98;  Updated 12/4/98 to
 c     dump full vtk files
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp
@@ -1206,7 +1206,7 @@ C
 c-----------------------------------------------------------------------
       subroutine particle_paths
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cpathr/ time_0,time_1,time_2,time_3
@@ -1411,7 +1411,7 @@ c
 c         time0  <  time1  =<  t_str  =<  time2  <  time
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cpathr/ time_0,time_1,time_2,time_3
@@ -1526,7 +1526,7 @@ c
 c-----------------------------------------------------------------------
       subroutine get_part(isel)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (maxpart=500)
@@ -1568,7 +1568,7 @@ c
 c     For creating 100 vtk files    pff 10/12/98;  Updated 12/4/98 to
 c     dump full vtk files
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp
@@ -1669,7 +1669,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine scrn_out
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifbigwindow
@@ -1726,7 +1726,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine userchk
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 
       l   = 0

@@ -19,7 +19,7 @@ c     PROGRAM POSTNK
 C23456789012345678901234567890123456789012345678901234567890123456789012
 C     PostProcessor for Spectral element code.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common /quantc/ quanto
@@ -512,7 +512,7 @@ c        call scrn_out
       END
 c-----------------------------------------------------------------------
       subroutine PLOTIT(iprompt)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER CVEL*20
 C
@@ -688,7 +688,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine READLN(LOCATN)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 C       Reads a line of text.  Jumps to appropriate place on help.
@@ -729,7 +729,7 @@ C
 c-----------------------------------------------------------------------
       subroutine DRMESH
 C     Draws Mesh.  Draws walls white.
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION ICRVS(4),IWBC(4,NELM)
       INTEGER FCORNS (4,6)
@@ -836,7 +836,7 @@ C
       LOGICAL GAP
       INTEGER IAS(50),IES(50)
       CHARACTER*5 STRING
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 200   FORMAT(G11.4)
@@ -862,7 +862,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine SETATT
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
 c
@@ -1066,7 +1066,7 @@ c     return
       END
 c-----------------------------------------------------------------------
       subroutine SETRES
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 13    ITEM(1)='MAIN MENU'
       ITEM(2)='FISHNET GRID'
@@ -1211,7 +1211,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine setloc
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       INTEGER FCORNS (4,6)
@@ -1498,7 +1498,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine GETPT(POINT1,POINT2,POINT3,FLAG)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*26 FLAG
       INTEGER FCORNS (4,6)
       DATA FCORNS / 1,2,6,5,
@@ -1583,7 +1583,7 @@ C           Menu area; use keypad
       END
 c-----------------------------------------------------------------------
       subroutine DRAXIS
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       IF(.NOT.IFDRAX)return
       CALL COLOR(8)
@@ -1603,14 +1603,14 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine SHOW(ARG,IA)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       return
       END
 c-----------------------------------------------------------------------
       subroutine INIT
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
 c
@@ -2699,7 +2699,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine tem
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -2960,7 +2960,7 @@ c-----------------------------------------------------------------------
  
 c     fill color bar
  
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
 
@@ -2984,7 +2984,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw and label color bar
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -3125,7 +3125,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRFRAM
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CALL COLOR(1)
 C     Draw Title
@@ -3180,7 +3180,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRISO
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       logical ifcbdr,ifcbdn
@@ -3396,7 +3396,7 @@ C      Draw only if draw mesh is .TRUE.
       END
 c-----------------------------------------------------------------------
       subroutine plerr
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
       CHARACTER LABEL1*10,LABEL2*10,C*20
@@ -3509,7 +3509,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRERR(IEL,ICOLOR)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
       CALL COLOR(1)
@@ -3596,7 +3596,7 @@ C              Draw curved sides for hardcopy
 c-----------------------------------------------------------------------
       subroutine MESPOS
 C     Generates mesh in postprocessor
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION DXCHEB(20),DYCHEB(20)
       REAL CSPACE(100),XCRVED(100),YCRVED(100),XFRAC(20)
@@ -3757,7 +3757,7 @@ c-----------------------------------------------------------------------
 C
 C     Subroutine that draws velocity arrow plots
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
       PARAMETER (NXM2=NXM*NYM)
@@ -3973,7 +3973,7 @@ C
 c-----------------------------------------------------------------------
       subroutine FINDNAM(CHOICES,NCC)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       CHARACTER*26 CHOICES(1)
@@ -3994,7 +3994,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine relite
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       do 100 ihi=1,nhi
          ie = ieh(ihi)
          CALL HILIGHT(IE,9)
@@ -4006,7 +4006,7 @@ c-----------------------------------------------------------------------
 c
 c     See if there is a state array...
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4048,7 +4048,7 @@ c-----------------------------------------------------------------------
 c
 c     dump out last state array
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4069,7 +4069,7 @@ c-----------------------------------------------------------------------
 c
 c     See if there is a state array...
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4104,7 +4104,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine INIT0
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       REAL PN(NXM)
@@ -4125,7 +4125,7 @@ c
 c-----------------------------------------------------------------------
       subroutine post_reset_window
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       call devini('GENERIC')
@@ -4139,7 +4139,7 @@ c-----------------------------------------------------------------------
 c
 c     Set location based on boundary conditions
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       INTEGER FCORNS (4,6)
@@ -4329,7 +4329,7 @@ c-----------------------------------------------------------------------
 c
 c     See if noncon is true
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       logical ifnc
@@ -4368,7 +4368,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine TEMVEL
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -4679,7 +4679,7 @@ c     return
 c     end
 c-----------------------------------------------------------------------
       subroutine get_subset_list
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       integer e,e0,e1,es
 
@@ -4729,7 +4729,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine quickfill(pp)
-      include 'basics.inc'
+#     include "basics.inc"
       real   pp(nx,ny,nz)
       do k = 1, nz
       do j = 1, ny

@@ -32,9 +32,9 @@ C-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'set initial conditions'
 
 
-      nxyz2=nx2*ny2*nz2       ! Initialize all fields:
+      nxyz2=lx2*ly2*lz2       ! Initialize all fields:
       ntot2=nxyz2*nelv
-      nxyz1=nx1*ny1*nz1
+      nxyz1=lx1*ly1*lz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
@@ -69,9 +69,6 @@ C     restart file(s) together with the associated dump number
 
       call slogic (iffort,ifrest,ifprsl,nfiles)
 
-C     Set up proper initial values for turbulence model arrays
-      IF (IFMODEL) CALL PRETMIC
-
 C      ***** TEMPERATURE AND PASSIVE SCALARS ******
 C
 C     Check if any pre-solv necessary for temperature/passive scalars
@@ -87,7 +84,6 @@ C     Check if any pre-solv necessary for temperature/passive scalars
 
 C     Fortran function initial conditions for temp/pass. scalars.
       maxfld = nfield
-      if (ifmodel.and.ifkeps) maxfld = nfield-2
       if (ifmhd) maxfld = npscal+3
 
 c     Always call nekuic (pff, 12/7/11)
@@ -146,23 +142,11 @@ c
       endif
       jp = 0
 
-      ntotv = nx1*ny1*nz1*nelv
-
-C     Fortran function initial conditions for turbulence k-e model
-      if (ifmodel .and. ifkeps) then
-         mfldt = nfield - 1
-         do 300 ifield=mfldt,nfield
-            if (iffort(ifield,jp)) call nekuic
- 300     continue
-      endif
+      ntotv = lx1*ly1*lz1*nelv
 
 C     Initial mesh velocities
       if (ifmvbd) call opcopy (wx,wy,wz,vx,vy,vz)
       if (ifmvbd.and..not.ifrest(0,jp)) call meshv (2)
-
-C     Compute additional initial values for turbulence model arrays
-C     based on I.C.
-      if (ifmodel) call postmic
 
 C     If convection-diffusion of a passive scalar with a fixed velocity field,
 C     make sure to fill up lagged arrays since this will not be done in
@@ -190,7 +174,7 @@ C     Ensure that all processors have the same time as node 0.
 
 C     Ensure that initial field is continuous!
 
-      nxyz1=nx1*ny1*nz1
+      nxyz1=lx1*ly1*lz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       nn = nxyz1
@@ -201,7 +185,7 @@ C     Ensure that initial field is continuous!
          if (ifflow) ifield = 1
          call rone(work,ntotv)
          ifield = 1
-         call dssum  (work,nx1,ny1,nz1)
+         call dssum  (work,lx1,ly1,lz1)
          call col2   (work,vmult,ntotv)
          rdif  = glsum(work,ntotv)
          rtotg = ntotg
@@ -221,7 +205,7 @@ C     Ensure that initial field is continuous!
       ttmax = glamax(t ,ntot)
 
       do i=1,NPSCAL
-         ntot = nx1*ny1*nz1*nelfld(i+2)
+         ntot = lx1*ly1*lz1*nelfld(i+2)
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
 
@@ -255,11 +239,11 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
 
       if (ifheat.and..not.ifdg) then  ! Don't project if using DG
          ifield = 2
-         call dssum(t ,nx1,ny1,nz1)
+         call dssum(t ,lx1,ly1,lz1)
          call col2 (t ,tmult,ntott)
          do ifield=3,nfield
             if(gsh_fld(ifield).ge.0) then
-              call dssum(t(1,1,1,1,ifield-1),nx1,ny1,nz1)
+              call dssum(t(1,1,1,1,ifield-1),lx1,ly1,lz1)
               if(iftmsh(ifield)) then
                 call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
               else
@@ -279,7 +263,7 @@ c     if (ifpert.and..not.ifdg) then ! Still not DG
 c           note... must be updated for addl pass. scal's. pff 4/26/04
             if (.not.ifdg) then
                do ifield=2,nfield
-                  call dssum(tp(1,ifield-1,jp),nx1,ny1,nz1)
+                  call dssum(tp(1,ifield-1,jp),lx1,ly1,lz1)
                   if(iftmsh(ifield)) then
                      call col2 (tp(1,ifield-1,jp),tmult,ntott)
                   else
@@ -730,7 +714,7 @@ c                call byte_read2(bytetest,1,ierr)
 
 C              Bounds checking on mapped data.
                IF (NXR.GT.LXR) THEN
-                  WRITE(6,20) NXR,NX1
+                  WRITE(6,20) NXR,lx1
    20             FORMAT(//,2X,
      $            'ABORT:  Attempt to map from',I3,
      $            ' to N=',I3,'.',/,2X,
@@ -893,7 +877,7 @@ C
                call lbcast(ifok)
                IF (.NOT.IFOK) GOTO 1600
 C
-C              MAPDMP maps data from NXR to NX1
+C              MAPDMP maps data from NXR to lx1
 C              (and sends data to the appropriate processor.)
 C
 C              The buffer SDUMP is used so that if an incomplete dump
@@ -933,8 +917,8 @@ C
                if (mid.eq.nid) nerr = nerr+1
             enddo
 
-            nxyz2=nx2*ny2*nz2
-            nxyz1=nx1*ny1*nz1
+            nxyz2=lx2*ly2*lz2
+            nxyz1=lx1*ly1*lz1
             ntott=nerr*nxyz1
             ntotv=nerr*nxyz1   ! Problem for differing Vel. and Temp. counts!
                                ! for now we read nelt dataset
@@ -1228,7 +1212,7 @@ C
 c
       logical if_byte_sw
 c
-      NXYZ=NX1*NY1*NZ1
+      NXYZ=lx1*ly1*lz1
       NXYR=NXR*NYR*NZR
       ierr=0
 C
@@ -1238,7 +1222,7 @@ C
 
          IF (if_byte_sw) call byte_reverse(TDUMP,NXYR,ierr)
          if(ierr.ne.0) call exitti("Error in mapdmp")
-         IF (NXR.EQ.NX1.AND.NYR.EQ.NY1.AND.NZR.EQ.NZ1) THEN
+         IF (NXR.EQ.lx1.AND.NYR.EQ.ly1.AND.NZR.EQ.lz1) THEN
             CALL COPY4r(SDUMP(1,IEG),TDUMP,NXYZ)
          ELSE
 C           do the map    (assumes that NX=NY=NZ, or NX=NY, NZ=1)
@@ -1250,8 +1234,6 @@ C
 C     Parallel code - send data to appropriate processor and map.
 C
          JNID=GLLNID(IEG)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          MTYPE=3333+GLLEL(IEG)
          LEN=4*NXYR
          LE1=4
@@ -1273,7 +1255,7 @@ C
          IF (JNID.EQ.NID) THEN
             IE=GLLEL(IEG)
             IF (if_byte_sw) call byte_reverse(TDUMP,NXYR,ierr)
-            IF (NXR.EQ.NX1.AND.NYR.EQ.NY1.AND.NZR.EQ.NZ1) THEN
+            IF (NXR.EQ.lx1.AND.NYR.EQ.ly1.AND.NZR.EQ.lz1) THEN
                CALL COPY4r(SDUMP(1,IE),TDUMP,NXYZ)
             ELSE
                call mapab4r(sdump(1,ie),tdump,nxr,1)
@@ -1290,7 +1272,7 @@ c-----------------------------------------------------------------------
       subroutine mapab(x,y,nxr,nel)
 C---------------------------------------------------------------
 C
-C     Interpolate Y(NXR,NYR,NZR,NEL) to X(NX1,NY1,NZ1,NEL)
+C     Interpolate Y(NXR,NYR,NZR,NEL) to X(lx1,ly1,lz1,NEL)
 C     (assumes that NXR=NYR=NZR, or NXR=NYR, NZR=1)
 C---------------------------------------------------------------
 C
@@ -1303,7 +1285,7 @@ C
       PARAMETER (LZR=LZ1+6)
       PARAMETER (LXYZR=LXR*LYR*LZR)
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
-      DIMENSION X(NX1,NY1,NZ1,NEL)
+      DIMENSION X(lx1,ly1,lz1,NEL)
       DIMENSION Y(NXR,NXR,NXR,NEL)
 
       common /ctmp0/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
@@ -1316,27 +1298,27 @@ C
       DATA    NOLD /0/
 C
       NZR = NXR
-      IF(NZ1.EQ.1) NZR=1
+      IF(lz1.EQ.1) NZR=1
       NYZR = NXR*NZR
-      NXY1 = NX1*NY1
+      NXY1 = lx1*ly1
 C
       IF (NXR.NE.NOLD) THEN
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
-         CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,NX1,NXR,NX1)      
-         IF (NIO.EQ.0) WRITE(6,10) NXR,NX1
+         CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,lx1,NXR,lx1)      
+         IF (NIO.EQ.0) WRITE(6,10) NXR,lx1
    10       FORMAT(2X,'Mapping restart data from Nold=',I2
      $               ,' to Nnew=',I2,'.')
       ENDIF
 C
       DO 1000 IE=1,NEL
-         CALL MXM (IRES,NX1,Y(1,1,1,IE),NXR,XA,NYZR)
+         CALL MXM (IRES,lx1,Y(1,1,1,IE),NXR,XA,NYZR)
          DO 100 IZ=1,NZR
-            IZOFF = 1 + (IZ-1)*NX1*NXR
-            CALL MXM (XA(IZOFF),NX1,ITRES,NXR,XB(1,1,IZ),NY1)
+            IZOFF = 1 + (IZ-1)*lx1*NXR
+            CALL MXM (XA(IZOFF),lx1,ITRES,NXR,XB(1,1,IZ),ly1)
   100    CONTINUE
-         IF (NDIM.EQ.3) THEN
-            CALL MXM (XB,NXY1,ITRES,NZR,X(1,1,1,IE),NZ1)
+         IF (ldim.EQ.3) THEN
+            CALL MXM (XB,NXY1,ITRES,NZR,X(1,1,1,IE),lz1)
          ELSE
             CALL COPY(X(1,1,1,IE),XB,NXY1)
          ENDIF
@@ -1348,7 +1330,7 @@ c-----------------------------------------------------------------------
       subroutine mapab4R(x,y,nxr,nel)
 C---------------------------------------------------------------
 C
-C     Interpolate Y(NXR,NYR,NZR,NEL) to X(NX1,NY1,NZ1,NEL)
+C     Interpolate Y(NXR,NYR,NZR,NEL) to X(lx1,ly1,lz1,NEL)
 C     (assumes that NXR=NYR=NZR, or NXR=NYR, NZR=1)
 c
 c     Input:  real*4,  Output:  default precision
@@ -1364,7 +1346,7 @@ C
       PARAMETER (LZR=LZ1+6)
       PARAMETER (LXYZR=LXR*LYR*LZR)
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
-      REAL*4 X(NX1,NY1,NZ1,NEL)
+      REAL*4 X(lx1,ly1,lz1,NEL)
       REAL   Y(NXR,NXR,NXR,NEL)
 
       common /ctmp0/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
@@ -1377,29 +1359,29 @@ C
       DATA    NOLD /0/
 
       NZR = NXR
-      IF(NZ1.EQ.1) NZR=1
+      IF(lz1.EQ.1) NZR=1
       NYZR = NXR*NZR
-      NXY1 = NX1*NY1
+      NXY1 = lx1*ly1
       nxyzr = nxr*nxr*nzr
 C
       IF (NXR.NE.NOLD) THEN
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
-         CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,NX1,NXR,NX1)      
-         IF (NIO.EQ.0) WRITE(6,10) NXR,NX1
+         CALL IGLLM   (IRES,ITRES,ZGMR,ZGM1,NXR,lx1,NXR,lx1)      
+         IF (NIO.EQ.0) WRITE(6,10) NXR,lx1
    10       FORMAT(2X,'Mapping restart data from Nold=',I2
      $               ,' to Nnew=',I2,'.')
       ENDIF
 C
       DO 1000 IE=1,NEL
          call copy4r(xc,y(1,1,1,ie),nxyzr)
-         CALL MXM (IRES,NX1,xc,NXR,XA,NYZR)
+         CALL MXM (IRES,lx1,xc,NXR,XA,NYZR)
          DO 100 IZ=1,NZR
-            IZOFF = 1 + (IZ-1)*NX1*NXR
-            CALL MXM (XA(IZOFF),NX1,ITRES,NXR,XB(1,1,IZ),NY1)
+            IZOFF = 1 + (IZ-1)*lx1*NXR
+            CALL MXM (XA(IZOFF),lx1,ITRES,NXR,XB(1,1,IZ),ly1)
   100    CONTINUE
-         IF (NDIM.EQ.3) THEN
-            CALL MXM (XB,NXY1,ITRES,NZR,X(1,1,1,IE),NZ1)
+         IF (ldim.EQ.3) THEN
+            CALL MXM (XB,NXY1,ITRES,NZR,X(1,1,1,IE),lz1)
          ELSE
             CALL COPY(X(1,1,1,IE),XB,NXY1)
          ENDIF
@@ -1688,7 +1670,6 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
-      include 'TURBO'
       include 'PARALLEL'
       include 'NEKUSE'
 
@@ -1696,68 +1677,38 @@ c-----------------------------------------------------------------------
 
       nel   = nelfld(ifield)
 
-      if (ifmodel .and. ifkeps .and. ifield.eq.ifldk) then
+      do e=1,nel
+         eg = lglel(e)
+         do 300 k=1,lz1
+         do 300 j=1,ly1
+         do 300 i=1,lx1
+           call nekasgn (i,j,k,e)
+           call useric  (i,j,k,eg)
+           if (jp.eq.0) then
+             if (ifield.eq.1) then
+               vx(i,j,k,e) = ux
+               vy(i,j,k,e) = uy
+               vz(i,j,k,e) = uz
+             elseif (ifield.eq.ifldmhd) then
+               bx(i,j,k,e) = ux
+               by(i,j,k,e) = uy
+               bz(i,j,k,e) = uz
+             else
+               t(i,j,k,e,ifield-1) = temp
+             endif
+           else
+             ijke = i+lx1*((j-1)+ly1*((k-1) + lz1*(e-1)))
+             if (ifield.eq.1) then
+               vxp(ijke,JP) = ux
+               vyp(ijke,JP) = uy
+               vzp(ijke,JP) = uz
+             else
+               tp(ijke,ifield-1,JP) = temp
+             endif
+           endif
 
-         do e=1,nel
-            eg = lglel(e)
-            do 100 k=1,nz1
-            do 100 j=1,ny1
-            do 100 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbk
- 100        continue
-         enddo
-
-      elseif (ifmodel .and. ifkeps .and. ifield.eq.iflde) then
-
-         do e=1,nel
-            eg = lglel(e)
-            do 200 k=1,nz1
-            do 200 j=1,ny1
-            do 200 i=1,nx1
-               call nekasgn (i,j,k,e)
-               call useric  (i,j,k,eg)
-               t(i,j,k,e,ifield-1) = turbe
- 200        continue
-         enddo
-C
-      else
-         do e=1,nel
-            eg = lglel(e)
-            do 300 k=1,nz1
-            do 300 j=1,ny1
-            do 300 i=1,nx1
-              call nekasgn (i,j,k,e)
-              call useric  (i,j,k,eg)
-              if (jp.eq.0) then
-                if (ifield.eq.1) then
-                  vx(i,j,k,e) = ux
-                  vy(i,j,k,e) = uy
-                  vz(i,j,k,e) = uz
-                elseif (ifield.eq.ifldmhd) then
-                  bx(i,j,k,e) = ux
-                  by(i,j,k,e) = uy
-                  bz(i,j,k,e) = uz
-                else
-                  t(i,j,k,e,ifield-1) = temp
-                endif
-              else
-                ijke = i+nx1*((j-1)+ny1*((k-1) + nz1*(e-1)))
-                if (ifield.eq.1) then
-                  vxp(ijke,JP) = ux
-                  vyp(ijke,JP) = uy
-                  vzp(ijke,JP) = uz
-                else
-                  tp(ijke,ifield-1,JP) = temp
-                endif
-              endif
-
- 300        continue
-         enddo
-
-      endif
-
+ 300     continue
+      enddo
 
       return
       END
@@ -1854,10 +1805,10 @@ c
 
       ifield = ifld
 
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
       call vcospf(tt,bm1,n)
       call cmult(tt,eps,n)
-      call dssum(tt,nx1,ny1,nz1)
+      call dssum(tt,lx1,ly1,lz1)
 
       return
       end
@@ -1934,7 +1885,7 @@ C
 c
       if(nio.eq.0) write(6,*) 'regenerate geometry data',icall
 
-      ntot = nx1*ny1*nz1*nelt
+      ntot = lx1*ly1*lz1*nelt
 c
       if (lx3.eq.lx1) then
          call copy(xm3,xm1,ntot)
@@ -1976,13 +1927,13 @@ c
       ifieldo = ifield
       if (ifflow) then
          ifield = 1
-         ntot = nx1*ny1*nz1*nelv
-         call dssum(u,nx1,ny1,nz1)
+         ntot = lx1*ly1*lz1*nelv
+         call dssum(u,lx1,ly1,lz1)
          call col2 (u,vmult,ntot)
       else
          ifield = 2
-         ntot = nx1*ny1*nz1*nelt
-         call dssum(u,nx1,ny1,nz1)
+         ntot = lx1*ly1*lz1*nelt
+         call dssum(u,lx1,ly1,lz1)
          call col2 (u,tmult,ntot)
       endif
       ifield = ifieldo
@@ -2024,6 +1975,7 @@ c-----------------------------------------------------------------------
 
       integer e,ei,eg,msg_id(lelt)
       logical iskip
+      integer*8 i8tmp
 
       call nekgsync() ! clear outstanding message queues.
 
@@ -2039,9 +1991,12 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-         dtmp  = dnxyzr*nelr 
-         nread = dtmp/lrbs
-         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+c         dtmp  = dnxyzr*nelr 
+c         nread = dtmp/lrbs
+c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         i8tmp = int(nxyzr,8)*int(nelr,8)
+         nread = i8tmp/int(lrbs,8)
+         if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2052,8 +2007,6 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-c     Tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
@@ -2081,8 +2034,6 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
-c     Tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
                jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
                call csend(jeln,w2(l),len,jnid,0)  ! blocking send
@@ -2112,6 +2063,7 @@ c     endif
       endif
 
       nxyzr = nxr*nyr*nzr
+      nxyzv = nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2124,9 +2076,13 @@ c     endif
             ei = er(e)
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzw,ierr)
+            if(wdsizr.eq.8) then
+              call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+              call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
-         if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
+         if (nxr.eq.lx1.and.nyr.eq.ly1.and.nzr.eq.lz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
             else
@@ -2163,10 +2119,11 @@ c-----------------------------------------------------------------------
       real*4 w2
 
       integer e,ei,eg,msg_id(lelt)
-
+      integer*8 i8tmp
+ 
       call nekgsync() ! clear outstanding message queues.
 
-      nxyzr  = ndim*nxr*nyr*nzr
+      nxyzr  = ldim*nxr*nyr*nzr
       dnxyzr = nxyzr
       len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
@@ -2178,9 +2135,12 @@ c-----------------------------------------------------------------------
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-         dtmp  = dnxyzr*nelr
-         nread = dtmp/lrbs
-         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+c         dtmp  = dnxyzr*nelr
+c         nread = dtmp/lrbs
+c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
+         i8tmp = int(nxyzr,8)*int(nelr,8)
+         nread = i8tmp/int(lrbs,8)
+         if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
          if(ifmpiio) nread = iglmax(nread,1) ! needed because of collective read
          nelrr = nelr/nread
       endif
@@ -2192,8 +2152,6 @@ c-----------------------------------------------------------------------
       if (np.gt.1) then
          l = 1
          do e=1,nelt
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             msg_id(e) = irecv(e,wk(l),len)
             l = l+nxyzr
          enddo
@@ -2220,8 +2178,6 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
             l = 1
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
                jeln = gllel(er(e))
                if(ierr.ne.0) call rzero(w2(l),len)
                call csend(jeln,w2(l),len,jnid,0)  ! blocking send
@@ -2237,19 +2193,13 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          endif
       endif
 
-c     if (if_byte_sw.and.wdsizr.eq.8) then
-c        if(nid.eq.0) 
-c    &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
-c    &                'not supported'
-c        call exitt
-c     endif
-
       if (iskip) then
          call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't assign the data we just read
       endif
 
       nxyzr = nxr*nyr*nzr
+      nxyzv = ldim*nxr*nyr*nzr
       nxyzw = nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
@@ -2262,9 +2212,13 @@ c     endif
             ei = er(e) 
          endif
          if (if_byte_sw) then
-            call byte_reverse(wk(l),nxyzw*ndim,ierr)
+            if(wdsizr.eq.8) then
+               call byte_reverse8(wk(l),nxyzv*2,ierr)
+            else
+               call byte_reverse(wk(l),nxyzv,ierr)
+            endif
          endif
-         if (nxr.eq.nx1.and.nyr.eq.ny1.and.nzr.eq.nz1) then
+         if (nxr.eq.lx1.and.nyr.eq.ly1.and.nzr.eq.lz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
                call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
@@ -2289,7 +2243,7 @@ c     endif
      $         call mapab  (w(1,ei),wk(l+2*nxyzw),nxr,1)
             endif
          endif
-         l = l+ndim*nxyzw
+         l = l+ldim*nxyzw
       enddo
 
  100  call err_chk(ierr,'Error reading restart data, in getv.$')
@@ -2476,8 +2430,6 @@ c
       character*132 hdr
       character*132  fname
 
-      logical if_full_pres_tmp
-
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
       common /scrcg/ pm1(lx1*ly1*lz1,lelv)
@@ -2495,12 +2447,9 @@ c
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
 
-      if_full_pres_tmp = if_full_pres
-      if (wdsizr.eq.8) if_full_pres = .true. !Preserve mesh 2 pressure
-
       iofldsr = 0
       if (ifgetxr) then      ! if available
-         offs = offs0 + ndim*strideB
+         offs = offs0 + ldim*strideB
          call byte_set_view(offs,ifh_mbyte)
          if (ifgetx) then
 c            if(nid.eq.0) write(6,*) 'Reading mesh'
@@ -2508,11 +2457,11 @@ c            if(nid.eq.0) write(6,*) 'Reading mesh'
          else                ! skip the data
             call mfi_getv(xm1,ym1,zm1,wk,lwk,.true.)
          endif
-         iofldsr = iofldsr + ndim
+         iofldsr = iofldsr + ldim
       endif
 
       if (ifgetur) then
-         offs = offs0 + iofldsr*stride + ndim*strideB
+         offs = offs0 + iofldsr*stride + ldim*strideB
          call byte_set_view(offs,ifh_mbyte)
          if (ifgetu) then
             if (ifmhd.and.ifile.eq.2) then
@@ -2525,7 +2474,7 @@ c               if(nid.eq.0) write(6,*) 'Reading velocity field'
          else
             call mfi_getv(vx,vy,vz,wk,lwk,.true.)
          endif
-         iofldsr = iofldsr + ndim
+         iofldsr = iofldsr + ldim
       endif
 
       if (ifgetpr) then
@@ -2595,8 +2544,6 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
-      if_full_pres = if_full_pres_tmp
-
       return
       end
 c-----------------------------------------------------------------------
@@ -2662,7 +2609,6 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 101
          if_byte_sw = if_byte_swap_test(bytetest,ierr) ! determine endianess
          if(ierr.ne.0) goto 101
-
          call byte_close(ierr)
       endif
 
@@ -2760,34 +2706,34 @@ c-----------------------------------------------------------------------
       do e=1,nelv
          if (ifrzer(e)) then
            if (ifgetx) then
-             call mxm   (xm1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy  (xm1(1,1,1,e),axism1,nx1*ny1)
-             call mxm   (ym1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy  (ym1(1,1,1,e),axism1,nx1*ny1)
+             call mxm   (xm1(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy  (xm1(1,1,1,e),axism1,lx1*ly1)
+             call mxm   (ym1(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy  (ym1(1,1,1,e),axism1,lx1*ly1)
            endif
            if (ifgetu) then
-             call mxm    (vx(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy   (vx(1,1,1,e),axism1,nx1*ny1)
-             call mxm    (vy(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy   (vy(1,1,1,e),axism1,nx1*ny1)
+             call mxm    (vx(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy   (vx(1,1,1,e),axism1,lx1*ly1)
+             call mxm    (vy(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy   (vy(1,1,1,e),axism1,lx1*ly1)
            endif
            if (ifgetw) then
-             call mxm    (vz(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy   (vz(1,1,1,e),axism1,nx1*ny1)
+             call mxm    (vz(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy   (vz(1,1,1,e),axism1,lx1*ly1)
            endif
            if (ifgetp) then
-             call mxm    (pm1(1,1,1,e),nx1,iatlj1,ny1,axism1,ny1)
-             call copy   (pm1(1,1,1,e),axism1,nx1*ny1)
+             call mxm    (pm1(1,1,1,e),lx1,iatlj1,ly1,axism1,ly1)
+             call copy   (pm1(1,1,1,e),axism1,lx1*ly1)
            endif
            if (ifgett) then
-             call mxm  (t (1,1,1,e,1),nx1,iatlj1,ny1,axism1,ny1)
-             call copy (t (1,1,1,e,1),axism1,nx1*ny1)
+             call mxm  (t (1,1,1,e,1),lx1,iatlj1,ly1,axism1,ly1)
+             call copy (t (1,1,1,e,1),axism1,lx1*ly1)
            endif
            do ips=1,npscal
             is1 = ips + 1
             if (ifgtps(ips)) then
-             call mxm (t(1,1,1,e,is1),nx1,iatlj1,ny1,axism1,ny1)
-             call copy(t(1,1,1,e,is1),axism1,nx1*ny1)
+             call mxm (t(1,1,1,e,is1),lx1,iatlj1,ly1,axism1,ly1)
+             call copy(t(1,1,1,e,is1),axism1,lx1*ly1)
             endif
            enddo
          endif
@@ -2802,12 +2748,10 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'RESTART'
 
-      logical if_full_pres_tmp
-
       real pm1(lx1*ly1*lz1,lelv)
       integer e
 
-      nxyz2 = nx2*ny2*nz2
+      nxyz2 = lx2*ly2*lz2
 
       if (ifmhd.and.ifile.eq.2) then
          do e=1,nelv
@@ -2818,7 +2762,7 @@ c-----------------------------------------------------------------------
             endif
          enddo
       elseif (ifsplit) then
-         call copy (pr,pm1,nx1*ny1*nz1*nelv)
+         call copy (pr,pm1,lx1*ly1*lz1*nelv)
       else
          do e=1,nelv
             if (if_full_pres) then

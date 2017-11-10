@@ -15,7 +15,7 @@ c
       END
 c-----------------------------------------------------------------------
       SUBROUTINE READER(VALUE,IERR)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       IERR=0
       REWIND(13)
       WRITE(13,'(A70)')LINE        
@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
         END
 c-----------------------------------------------------------------------
         SUBROUTINE MOUSE(XMOUSE,YMOUSE,BUTTON)
-        INCLUDE 'basics.inc'
+#     include "basics.inc"
 	INTEGER*4 RECORD(3),SIZE,PET
 	INTEGER ERRIND,MODE,ESW,XFORM,LDR,RETSIZ,ISTAT,DEVNO
 	REAL LOCX,LOCY,EAREA(4)
@@ -396,7 +396,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DEVINI(DEVICE)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       
       IFNOSEG= .TRUE.
 
@@ -661,19 +661,19 @@ C     white text
       END
 c-----------------------------------------------------------------------
       function scoordx(worldx)
-      include 'basics.inc'
+#     include "basics.inc"
       scoordx=worldx/1.3*windoww
       return
       end
 c-----------------------------------------------------------------------
       function scoordy(worldy)
-      include 'basics.inc'
+#     include "basics.inc"
       scoordy=abs(worldy-1.0)*(windowh - 180.0)
       return
       end
 c-----------------------------------------------------------------------
       function scoordx_inv(pix)
-      include 'basics.inc'
+#     include "basics.inc"
 c     scoordx=worldx/1.3*windoww
       scoordx_inv=0.
       if (windoww.ne.0) scoordx_inv=1.3*pix/windoww
@@ -681,7 +681,7 @@ c     scoordx=worldx/1.3*windoww
       end
 c-----------------------------------------------------------------------
       function scoordy_inv(pix)
-      include 'basics.inc'
+#     include "basics.inc"
 c     scoordy=abs(worldy-1.0)*(windowh - 180.0)
       scoordy_inv=1. +   pix/(windowh - 180.0)
       return

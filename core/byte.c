@@ -37,10 +37,6 @@
 #define byte_rewind   FORTRAN_NAME(byte_rewind,   BYTE_REWIND )
 #define byte_read     FORTRAN_NAME(byte_read,     BYTE_READ   )
 #define byte_write    FORTRAN_NAME(byte_write,    BYTE_WRITE  )
-#define set_bytesw_write FORTRAN_NAME(set_bytesw_write,SET_BYTESW_WRITE)
-#define set_bytesw_read  FORTRAN_NAME(set_bytesw_read ,SET_BYTESW_READ )
-#define get_bytesw_write FORTRAN_NAME(get_bytesw_write,GET_BYTESW_WRITE)
-#define get_bytesw_read  FORTRAN_NAME(get_bytesw_read ,GET_BYTESW_READ )
 
 #define READ     1
 #define WRITE    2

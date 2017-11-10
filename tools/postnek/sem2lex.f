@@ -11,7 +11,7 @@ that all of the data can fit in memory.
 c-----------------------------------------------------------------------
       subroutine sem2lex(ul,us,nelx,nely,nelz)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
 c

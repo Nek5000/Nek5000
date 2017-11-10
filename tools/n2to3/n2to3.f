@@ -19,7 +19,7 @@ c     Run n2to3.   Enter blah,  enter out, enter nlev and zmax.
 c     
 c
 
-      include 'SIZE'
+#     include "SIZE"
       character*80 file,fname
       character*1  file1(80)
       equivalence (file1,file)
@@ -159,7 +159,7 @@ c     write(6,*) len,(file1(k),k=1,len+4)
       end
 c-----------------------------------------------------------------------
       subroutine rea23(dzi,zmin,neln,itype)
-      include 'SIZE'
+#     include "SIZE"
       real dzi(1)
       character*80 string
       character*1  string1(80)
@@ -580,7 +580,7 @@ c        if (cb6.eq.'v  ') cb6='t  '
 c-----------------------------------------------------------------------
       subroutine rea2re2(dzi,zmin,cb5,cb6,ifflow,ifheat,ifper,ifmhd)
 
-      include 'SIZE'
+#     include "SIZE"
 
       real dzi(1)
       character*3  cb5(2),cb6(2)
@@ -621,7 +621,7 @@ c     Boundary conditions!
 c-----------------------------------------------------------------------
       subroutine re2_bc(nbc,cb5,cb6,ifflow,ifheat,ifper)
 
-      include 'SIZE'
+#     include "SIZE"
 
       common /arral/ ifcirc
       logical ifcirc
@@ -1103,7 +1103,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine rdcurve
 
-      include 'SIZE'
+#     include "SIZE"
       character*1 ans
       integer e
 
@@ -1150,7 +1150,7 @@ C
 c-----------------------------------------------------------------------
       subroutine out_curve(itype)
 
-      include 'SIZE'
+#     include "SIZE"
       common /arraz/ zmin,zmax,dz(nelxym)
       character*1 ans
       real*8 buf(20)
@@ -1339,7 +1339,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine newcurve(itype)
 
-      include 'SIZE'
+#     include "SIZE"
       logical ifflow,ifheat
       common /arraz/ zmin,zmax,dz(nelxym)
 
@@ -1460,7 +1460,7 @@ c-----------------------------------------------------------------------
       subroutine get_midside(xm,ym,edge,e) ! Works only for edge=1,...,4
       integer edge,e
 
-      include 'SIZE'
+#     include "SIZE"
       logical ifflow,ifheat
 
       real l
@@ -1550,7 +1550,8 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rdparam(ifflow,ifheat,ifmhd) ! Read parameters from .rea file
-      include 'SIZE'
+
+#     include "SIZE"
 
       character*80 string
       character*1  string1(80)
