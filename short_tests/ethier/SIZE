@@ -10,7 +10,7 @@ c
 
       ! BASIC
       parameter (ldim=3)               ! domain dimension (2 or 3)
-      parameter (lx1=8)                ! p-order (avoid uneven and values <6)
+      parameter (lx1=10)               ! p-order (avoid uneven and values <6)
       parameter (lxd=12)               ! p-order for over-integration (dealiasing) 
       parameter (lx2=lx1-0)            ! p-order for pressure (lx1 or lx1-2)
                                      

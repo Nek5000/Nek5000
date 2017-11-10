@@ -34,6 +34,7 @@ c
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid
      $               ,ifadvc(ldimt1),ifdiff(ldimt1),ifdeal(ldimt1)
+     $               ,ifprojfld(0:ldimt1)
      $               ,iftmsh(0:ldimt1),ifdgfld(0:ldimt1),ifdg
      $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
@@ -49,6 +50,7 @@ c
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
      $               ,ifadvc,ifdiff,ifdeal
+     $               ,ifprojfld
      $               ,iftmsh,ifdgfld,ifdg
      $               ,ifmvbd,ifnatc,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps

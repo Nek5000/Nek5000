@@ -831,14 +831,18 @@ c
       call chcopy(cname,name,4)
       call capit (cname,4)
 
+      if (cname.eq.'PRES') then
+         ifstdh = .false.
+         p945 = param(95)
+      else
+         ifstdh = .true. ! no projection
+         if (ifprojfld(ifield)) ifstdh = .false.
+         p945 = param(94)
+      endif
 
-      p945 = param(94)
-      if (cname.eq.'PRES') p945 = param(95)
-
-                          ifstdh = .false.
-      if (param(93).eq.0) ifstdh = .true.
-      if (p945.eq.0)      ifstdh = .true.
-      if (istep.lt.p945)  ifstdh = .true.
+      if (param(93).eq.0)     ifstdh = .true.
+      if (p945.eq.0)          ifstdh = .true.
+      if (istep.lt.p945)      ifstdh = .true.
 
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
@@ -933,15 +937,17 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
       if (ireset.eq.1) then
 
          do j=0,m-1         ! First, set B := A*X
-            jb = ib+j*nn
+            jb = ib+j*nn    !Iterate through xs and bs
             jx = ix+j*nn
             call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
          enddo
 
 c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
 
-         call proj_ortho    ! Orthogonalize X & B basis sets
-     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
+         call proj_ortho
+     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)      
+c         call proj_ortho2
+c     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6) 
 
          ivar(2) = m ! Update number of saved vectors
 
@@ -987,29 +993,60 @@ c     b <-- b - bbar
       parameter(lxyz=lx1*ly1*lz1)
       real tt(lxyz,lelt)
 
-      real alpha(mxprev),work(mxprev)
-
+      real work(mxprev),alpha(mxprev)
 
       if (m.le.0) return
 
-      call rzero(xbar,n)
-      call rzero(bbar,n)
-
-      do j=m,1,-1
-
-         if (ifwt) then
-            alpha(j)=glsc3(xx(1,j),w,b,n)
-         else
-            alpha(j)=glsc2(xx(1,j),b,n)
-         endif
-
-         call add2s2(xbar,xx(1,j),alpha(j),n)
-         call add2s2(bbar,bb(1,j),alpha(j),n)
-
-         alpham = -alpha(j)
-         call add2s2(b,bb(1,j),alpham,n)
-
-      enddo
+      if(ifwt) then  
+         !First round of CGS
+         do k = 1, m 
+            alpha(k) = vlsc3(xx(1,k),w,b,n)
+         enddo
+         !First one outside loop to avoid zeroing xbar and bbar
+         call gop(alpha,work,'+  ',m)
+         call cmult2(xbar,xx(1,1),alpha(1),n)
+         call cmult2(bbar,bb(1,1),alpha(1),n)
+         call add2s2(b,bb(1,1),-alpha(1),n)
+         do k = 2,m
+            call add2s2(xbar,xx(1,k),alpha(k),n)
+            call add2s2(bbar,bb(1,k),alpha(k),n)
+            call add2s2(b,bb(1,k),-alpha(k),n)
+         enddo
+         !Second round of CGS
+         do k = 1, m
+            alpha(k) = vlsc3(xx(1,k),w,b,n)
+         enddo
+         call gop(alpha,work,'+  ',m) 
+         do k = 1,m
+            call add2s2(xbar,xx(1,k),alpha(k),n)
+            call add2s2(bbar,bb(1,k),alpha(k),n)
+            call add2s2(b,bb(1,k),-alpha(k),n)
+         enddo 
+      else       
+         !First round of CGS
+         do k = 1, m 
+            alpha(k) = vlsc2(xx(1,k),b,n)
+         enddo
+         call gop(alpha,work,'+  ',m)
+         call cmult2(xbar,xx(1,1),alpha(1),n)
+         call cmult2(bbar,bb(1,1),alpha(1),n)
+         call add2s2(b,bb(1,1),-alpha(1),n)
+         do k = 2,m
+            call add2s2(xbar,xx(1,k),alpha(k),n)
+            call add2s2(bbar,bb(1,k),alpha(k),n)
+            call add2s2(b,bb(1,k),-alpha(k),n)
+         enddo
+         !Second round of CGS
+         do k = 1, m 
+            alpha(k) = vlsc2(xx(1,k),b,n)
+         enddo
+         call gop(alpha,work,'+  ',m)
+         do k = 1,m
+            call add2s2(xbar,xx(1,k),alpha(k),n)
+            call add2s2(bbar,bb(1,k),alpha(k),n)
+            call add2s2(b,bb(1,k),-alpha(k),n)
+         enddo
+      endif
 
       return
       end
@@ -1071,7 +1108,138 @@ c     string "name6"
       return
       end
 c-----------------------------------------------------------------------
+c     New proj_ortho version
       subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
+
+      include 'SIZE'      ! nio
+      include 'TSTEP'     ! istep
+      include 'PARALLEL'  ! wdsize
+
+      real xbar(n), bbar(n), xx(n,1), bb(n,1),w(n)
+      character*6 name6
+      logical ifwt, ifvec
+      real tol, norm
+      real work(mxprev), alpha(mxprev), beta(mxprev)
+      real c(mxprev), s(mxprev)
+      integer h
+
+      if(m.le.0) return !No vectors to ortho-normalize 
+
+      ! AX = B
+      ! Calculate dx, db: dx = x-XX^Tb, db=b-BX^Tb     
+      if(ifwt) then
+         
+         do k = 1, m !First round CGS
+            alpha(k) = 0.5*(vlsc3(xx(1,k),w,bb(1,m),n)
+     $                    +    vlsc3(bb(1,k),w,xx(1,m),n))
+         enddo
+         call gop(alpha,work,'+  ',m)
+         norm = sqrt(alpha(m)) !Calculate A-norm of new vector
+         do k = 1,m-1
+            call add2s2(xx(1,m),xx(1,k),-alpha(k),n)
+            call add2s2(bb(1,m),bb(1,k),-alpha(k),n)
+         enddo
+         
+         !Second round CGS
+         do k = 1, m-1
+            beta(k) = 0.5*(vlsc3(xx(1,k),w,bb(1,m),n)
+     $                    +    vlsc3(bb(1,k),w,xx(1,m),n))
+         enddo
+         call gop(beta,work,'+  ',m-1)
+         do k = 1,m-1
+            call add2s2(xx(1,m),xx(1,k),-beta(k),n)
+            call add2s2(bb(1,m),bb(1,k),-beta(k),n)
+            !While we're at it,
+            !Sum weights from each round to get the total alpha
+            alpha(k) = alpha(k) + beta(k)
+         enddo
+         alpha(m) = glsc3(xx(1,m), w, bb(1,m), n) 
+
+      else
+
+         !First round CGS
+         do k = 1, m
+            alpha(k) = 0.5*(vlsc2(xx(1,k),bb(1,m),n)
+     $                    +    vlsc2(bb(1,k),xx(1,m),n))
+         enddo
+         call gop(alpha,work,'+  ',m)
+         norm = sqrt(alpha(m))
+         do k = 1,m-1
+            call add2s2(xx(1,m),xx(1,k),-alpha(k),n)
+            call add2s2(bb(1,m),bb(1,k),-alpha(k),n)
+         enddo
+         
+         !Second round CGS
+         do k = 1, m-1
+            beta(k) = 0.5*(vlsc2(xx(1,k),bb(1,m),n)
+     $                    +    vlsc2(bb(1,k),xx(1,m),n))
+         enddo
+         call gop(beta,work,'+  ',m-1)
+         do k = 1,m-1
+            call add2s2(xx(1,m),xx(1,k),-beta(k),n)
+            call add2s2(bb(1,m),bb(1,k),-beta(k),n)
+            !Sum alpha from each round to get the total alpha
+            alpha(k) = alpha(k) + beta(k)
+         enddo         
+         alpha(m) = glsc2(xx(1,m), bb(1,m), n) 
+
+      endif
+      !Done calculating dx and db, stored in last column of xx and bb
+
+      norm = sqrt(norm)
+      alpha(m) = sqrt(alpha(m))
+
+c     Set tolerance for linear independence
+      tol = 1.e-7
+      if (wdsize.eq.4) tol=1.e-3
+
+c     Check for linear independence.
+      if(alpha(m).gt.tol*norm) then !New vector is linearly independent    
+       
+         !Normalize dx and db
+         scale = 1.0/alpha(m) 
+         call cmult(xx(1,m), scale, n)   
+         call cmult(bb(1,m), scale, n)   
+
+         !We want to throw away the oldest information
+         !The below propagates newest information to first vector.
+         !This will make the first vector a scalar 
+         !multiple of x.
+         do k = m, 2, -1
+             call givens_rotation(alpha(k-1),alpha(k),
+     $                           c(k),s(k),alpha(k-1))
+         enddo
+         !Apply rotations to xx and bb
+         do k = m, 2, -1 
+            h = k - 1        
+            do i = 1, n
+               scale = c(k)*xx(i,h) + s(k)*xx(i,k)
+               xx(i,k) = -s(k)*xx(i,h) + c(k)*xx(i,k)
+               xx(i,h) = scale       
+               scale = c(k)*bb(i,h) + s(k)*bb(i,k)
+               bb(i,k) = -s(k)*bb(i,h) + c(k)*bb(i,k)    
+               bb(i,h) = scale        
+            enddo
+         enddo
+
+    2    format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
+     $           ,1p2e12.4)
+   
+      else !New vector is not linearly independent, forget about it
+         k = m !location of rank deficient column
+
+         if (nio.eq.0) write(6,1) istep,k,m,name6,alpha(m),tol
+    1    format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:',
+     $          1p2e12.4)
+         
+         m = m - 1 !Remove column
+      endif   
+
+      return
+      end
+c-----------------------------------------------------------------------
+c     Old version, modified to be more efficient
+      subroutine proj_ortho2(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
       include 'TSTEP'     ! istep
@@ -1081,12 +1249,60 @@ c-----------------------------------------------------------------------
       character*6 name6
       logical ifwt,ifvec
       integer flag(mxprev)
-      real normk,normp
+      real normk,normp,alpha
 
       if (m.le.0) return
 
-      if (      ifwt) alpha = glsc3(xx(1,m),w,bb(1,m),n)
-      if (.not. ifwt) alpha = glsc2(xx(1,m),bb(1,m),n)
+      if(ifwt) then
+
+      alpha = glsc3(xx(1,m),w,bb(1,m),n)
+
+      if (alpha.eq.0) return
+
+      scale = 1./sqrt(alpha)
+      call cmult(xx(1,m),scale,n)
+      call cmult(bb(1,m),scale,n)
+      flag(m) = 1
+      
+      do k=m-1,1,-1  ! Reorthogonalize, starting with latest solution
+
+         normk = glsc3(xx(1,k),w,bb(1,k),n)
+         do j=m,k+1,-1   ! Modified GS
+            alpha = .5*(vlsc3(xx(1,j),w,bb(1,k),n)
+     $                  +  vlsc3(bb(1,j),w,xx(1,k),n))
+            scale = -glsum(alpha,1)
+            call add2s2(xx(1,k),xx(1,j),scale,n)
+            call add2s2(bb(1,k),bb(1,j),scale,n)
+         enddo
+         normp = glsc3(xx(1,k),w,bb(1,k),n)
+         normk=sqrt(normk)
+         normp=sqrt(normp)
+
+         tol = 1.e-12
+         if (wdsize.eq.4) tol=1.e-6
+
+         if (normp.gt.tol*normk) then ! linearly independent vectors
+           scale = 1./normp
+           call cmult(xx(1,k),scale,n)
+           call cmult(bb(1,k),scale,n)
+           flag(k) = 1
+c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
+c    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
+c     $           ,1p2e12.4) 
+
+         else
+           flag(k) = 0
+c           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
+c    1      format(i9,'proj_ortho: ',2i4,1x,a6,
+c     $           ' Detect rank deficiency:',1p2e12.4)
+         endif
+
+      enddo
+
+      else
+
+      alpha = glsc2(xx(1,m),bb(1,m),n)
+
       if (alpha.eq.0) return
 
       scale = 1./sqrt(alpha)
@@ -1095,29 +1311,17 @@ c-----------------------------------------------------------------------
       flag(m) = 1
 
       do k=m-1,1,-1  ! Reorthogonalize, starting with latest solution
-
-         if (      ifwt) normk = glsc3(xx(1,k),w,bb(1,k),n)
-         if (.not. ifwt) normk = glsc2(xx(1,k),bb(1,k),n)
-         normk=sqrt(normk)
-
+         normk = glsc2(xx(1,k),bb(1,k),n)
          do j=m,k+1,-1   ! Modified GS
-            if(flag(j).eq.1) then
-               alpha = 0.
-               if (ifwt) then
-                  alpha = alpha + .5*(vlsc3(xx(1,j),w,bb(1,k),n)
-     $                       +     vlsc3(bb(1,j),w,xx(1,k),n))
-               else
-                  alpha = alpha + .5*(vlsc2(xx(1,j),bb(1,k),n)
-     $                       +     vlsc2(bb(1,j),xx(1,k),n))
-               endif
-               scale = -glsum(alpha,1)
-               call add2s2(xx(1,k),xx(1,j),scale,n)
-               call add2s2(bb(1,k),bb(1,j),scale,n)
-            endif
+            alpha = .5*(vlsc2(xx(1,j),bb(1,k),n)
+     $                 +   vlsc2(bb(1,j),xx(1,k),n))
+            scale = -glsum(alpha,1)
+            call add2s2(xx(1,k),xx(1,j),scale,n)
+            call add2s2(bb(1,k),bb(1,j),scale,n)
          enddo
-         if (      ifwt) normp = glsc3(xx(1,k),w,bb(1,k),n)
-         if (.not. ifwt) normp = glsc2(xx(1,k),bb(1,k),n)
-         if (normp.gt.0.0) normp=sqrt(normp)
+         normp = glsc2(xx(1,k),bb(1,k),n)
+         normk=sqrt(normk)
+         normp=sqrt(normp)
 
          tol = 1.e-7
          if (wdsize.eq.4) tol=1.e-3
@@ -1139,6 +1343,8 @@ c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
 
       enddo
 
+      endif
+
       k=0
       do j=1,m
          if (flag(j).eq.1) then
@@ -1156,7 +1362,7 @@ c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
 c-----------------------------------------------------------------------
       subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
 
-      include 'SIZE'
+
       include 'CTIMER'
 
       real x(n),b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
@@ -1193,17 +1399,19 @@ c-----------------------------------------------------------------------
 
       if (m.gt.0) call add2(x,xbar,n)      ! Restore desired solution
 
-      if (m.eq.mmx) then ! Push old vector off the stack
-         do k=2,mmx
-            call copy (xx(1,k-1),xx(1,k),nn)
-            call copy (bb(1,k-1),bb(1,k),nn)
-         enddo
-      endif
+c      if (m.eq.mmx) then ! Push old vector off the stack
+c         do k=2,mmx
+c            call copy (xx(1,k-1),xx(1,k),nn)
+c            call copy (bb(1,k-1),bb(1,k),nn)
+c         enddo
+c      endif
 
       m = min(m+1,mmx)
+      !print *, "m", m
       call copy        (xx(1,m),x,nn)   ! Update (X,B)
       call proj_matvec (bb(1,m),xx(1,m),n,h1,h2,msk,name6)
-      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) ! w=mult array
+      call proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6) !New version
+!      call proj_ortho2  (xx,bb,n,m,w,ifwt,ifvec,name6) !Old version (sort of, optimized a bit)
 
       return
       end
@@ -1327,3 +1535,40 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine givens_rotation(a, b, c, s, r)
+
+      real a, b, c, s, r
+      real h, d
+
+      if(b.ne.0.0) then
+         h = hypot(a,b)
+         d = 1.0/h
+         r = sign(1.0,a)*h
+         c = abs(a)*d
+         s = sign(d,a)*b
+      else
+         c = 1.0
+         s = 0.0
+         r = a
+      endif
+        
+      return
+      end
+c-----------------------------------------------------------------------
+      function hypot(a, b)
+
+      real a, b
+      real t, x, c, d, ix, hypot
+
+      c = abs(a)
+      d = abs(b)
+      x = max(c,d)
+      ix = 1.0/x      
+      t = min(c,d)
+      t = ix*t
+
+      hypot = x*sqrt(1.0+t*t) 
+
+      return
+      end
+c-----------------------------------------------------------------------      

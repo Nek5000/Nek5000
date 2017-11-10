@@ -77,8 +77,8 @@ C
       param(67) = 6    ! read in binary
       param(93) = 20   ! number of vectors for projection
 
-      param(94) = 0    ! turn off projection for helmholz solves
-      param(95) = 5    ! turn on projection for pressure solve
+      param(94) = 5    ! projection for helmholz solves 
+      param(95) = 5    ! projection for pressure solve
       param(99) = 4    ! enable dealising
 
       param(101) = 0   ! no additional modes
@@ -132,6 +132,12 @@ C
       do i=1,ldimt
          idpss(i) = -1
       enddo 
+
+      ifprojfld(0) = .false. 
+      ifprojfld(1) = .false. 
+      do i=1,ldimt
+         ifprojfld(1+i) = .false.
+      enddo
 
       ifflow    = .false.
       ifheat    = .false.  
@@ -357,7 +363,12 @@ c set parameters
            restol(i+1) = d_out 
         endif
       endif
-
+      call finiparser_getBool(i_out,trim(txt)//':residualProj',ifnd)
+      if (ifnd .eq. 1) then
+         ifprojfld(i+1) = .false.
+         if(i_out .eq. 1) ifprojfld(i+1) = .true.
+      endif
+ 
       enddo
 
       call finiparser_getDbl(d_out,'cvode:absoluteTol',ifnd)
@@ -412,8 +423,8 @@ c set parameters
 
       call finiparser_getBool(i_out,'velocity:residualProj',ifnd)
       if(ifnd .eq. 1) then
-        param(94) = 0
-        if(i_out .eq. 1) param(94) = 5 
+        ifprojfld(1) = .false.
+        if(i_out .eq. 1) ifprojfld(1) = .true. 
       endif
 
       call finiparser_getBool(i_out,'pressure:residualProj',ifnd)
@@ -516,6 +527,11 @@ c set logical flags
           ifmvbd = .true.
           call finiparser_getDbl(d_out,'mesh:viscosity',ifnd)
           if (ifnd .eq. 1) param(47) = d_out
+          call finiparser_getBool(i_out,'mesh:residualProj',ifnd)
+          if (ifnd .eq. 1) then
+             ifprojfld(0) = .false.
+             if(i_out .eq. 1) ifprojfld(0) = .true. 
+          endif
         else if (index(c_out,'USER') .eq. 1) then
           ifmvbd = .true.
           ifusermv = .true.
@@ -779,8 +795,9 @@ C
       call bcast(ifdiff ,  ldimt1*lsize)
       call bcast(ifdeal ,  ldimt1*lsize)
 
-      call bcast(idpss  ,  ldimt*isize)
-      call bcast(iftmsh , (ldimt1+1)*lsize)
+      call bcast(idpss    ,  ldimt*isize)
+      call bcast(iftmsh   , (ldimt1+1)*lsize)
+      call bcast(ifprojfld, (ldimt1+1)*lsize)
 
       call bcast(cpfld, 3*ldimt1*wdsize)
 

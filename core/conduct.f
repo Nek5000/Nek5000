@@ -27,7 +27,8 @@ C
       endif
 
 
-      napproxt(1) = laxtt  ! Fix this... pff 10/10/15
+      ifld1 = ifield-1
+      napproxt(1,ifld1) = laxtt
 
       nel    = nelfld(ifield)
       n   = nx1*ny1*nz1*nel
@@ -79,13 +80,13 @@ c    $                 ,imesh,tolht(ifield),nmxh,isd)
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approxt,napproxt,bintm1)
+     $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
          else
            call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approxt,napproxt,binvm1)
+     $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
          endif 
 
          call add2    (t(1,1,1,1,ifield-1),ta,n)

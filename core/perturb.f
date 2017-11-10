@@ -597,7 +597,8 @@ C
      $              ,H2(LX1,LY1,LZ1,LELT)
 c
       include 'ORTHOT'
-      napproxt(1) = laxtt
+      ifld1 = ifield-1
+      napproxt(1,ifld1) = laxtt
 C
       IF (IGEOM.EQ.1) THEN
 C
@@ -642,7 +643,7 @@ c        call hsolve  (name4t,TA,TB,H1,H2
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
 c    $                 ,TMULT(1,1,1,1,IFIELD-1)
 c    $                 ,IMESH,TOLHT(IFIELD),NMXH,1
-c    $                 ,approxt,napproxt,bintm1)
+c    $                 ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
 c
          CALL ADD2    (TP(1,IFIELD-1,jp),TA,NTOT)
 C
