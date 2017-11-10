@@ -441,7 +441,7 @@ C          Add cross terms if element is deformed.
 C
            IF (IFDFRM(IE)) THEN
               DO 600 IY=1,ly1,ly1-1
-              DO 600 IZ=1,lz1,lz1-1
+              DO 600 IZ=1,lz1,max(1,lz1-1)
               DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
      $            + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
      $            + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
@@ -450,7 +450,7 @@ C
      $            + G5M1(lx1,IY,IZ,IE) * DXTM1(lx1,lx1)*DZTM1(IZ,IZ)
   600         CONTINUE
               DO 700 IX=1,lx1,lx1-1
-              DO 700 IZ=1,lz1,lz1-1
+              DO 700 IZ=1,lz1,max(1,lz1-1)
                  DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
      $            + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
      $            + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)

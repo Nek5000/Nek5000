@@ -1353,13 +1353,13 @@ C--------------------------------------------------------------------
 
       ifld = ifield
 
-      IF (IFFLOW) THEN ! Velocity mass matrix
+csk      IF (IFFLOW) THEN ! Velocity mass matrix
          IFIELD = 1
          NTOT   = NXYZ1*NELV
          CALL COPY    (BINVM1,BM1,NTOT)
          CALL DSSUM   (BINVM1,lx1,ly1,lz1)
          CALL INVCOL1 (BINVM1,NTOT)
-      ENDIF
+csk      ENDIF
 
 
       IF (IFHEAT) THEN ! Temperature mass matrix
