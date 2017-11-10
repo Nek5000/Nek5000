@@ -28,6 +28,7 @@ C
            READ(9,*,ERR=400) PARAM(I)
    20   CONTINUE
       ENDIF
+      call bcast(ldimr,ISIZE)
       call bcast(NPARAM,ISIZE)
       call bcast(PARAM ,200*WDSIZE)
 

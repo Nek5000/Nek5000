@@ -45,6 +45,7 @@ C     Read Mesh Info
         read(9,*)  nelgs,ldimr,nelgv
         nelgt = abs(nelgs)
       endif
+      call bcast(ldimr,ISIZE)
       call bcast(nelgs,ISIZE)
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)

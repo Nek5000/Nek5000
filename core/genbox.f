@@ -900,7 +900,7 @@ c
       include 'ZPER'
       include 'PARALLEL'
 c
-      call bcast(ldim,isize)
+      call bcast(ldimr,isize)
       call bcast(nfld,isize)
       call bcast(nelx,isize)
       call bcast(nely,isize)

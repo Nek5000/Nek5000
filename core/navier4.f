@@ -942,7 +942,8 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
             call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
          enddo
 
-c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
+         if (nio.eq.0 .and. loglevel.gt.2) 
+     $      write(6,'(13x,A)') 'Reorthogonalize Basis'
 
          call proj_ortho
      $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)      
@@ -962,17 +963,11 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
       baf = sqrt(baf)
       ratio = bb4/baf
 
-c      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
-c    1 format(4x,i7,1p3e13.4,i4,1x,a6,' PROJECT')
-
-
       tproj = tproj + dnekclock() - etime0
 
       if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
-     &                         bb4,baf,ratio,m,ireset
+     &                         baf,bb4,ratio,m,ireset
     1 format(i11,a,6x,1p3e13.4,i4,i4)
-
-
 
       return
       end
@@ -1222,15 +1217,14 @@ c     Check for linear independence.
             enddo
          enddo
 
-    2    format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
-     $           ,1p2e12.4)
-   
       else !New vector is not linearly independent, forget about it
          k = m !location of rank deficient column
 
-         if (nio.eq.0) write(6,1) istep,k,m,name6,alpha(m),tol
-    1    format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:',
-     $          1p2e12.4)
+         if (nio.eq.0 .and. loglevel.gt.2) 
+     $      write(6,1) istep,k,m,name6,alpha(m),tol
+
+    1       format(i9,'proj_ortho: ',2i4,1x,a6,
+     $             ' Detect rank deficiency:',1p2e12.4)
          
          m = m - 1 !Remove column
       endif   
@@ -1332,13 +1326,13 @@ c     $           ' Detect rank deficiency:',1p2e12.4)
            call cmult(bb(1,k),scale,n)
            flag(k) = 1
 c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
-    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
-     $           ,1p2e12.4)
+c    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
+c     $           ,1p2e12.4)
          else
            flag(k) = 0
-           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
-    1      format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:'
-     $           ,1p2e12.4)
+c           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
+c    1      format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:'
+c     $           ,1p2e12.4)
          endif
 
       enddo

@@ -933,7 +933,7 @@ c           write(6,*)'help:',lelt,lelv,lelgv
      $    ('Error: Mesh motion requires lx1m=lx1 etc. in SIZE . $',lx1m)
       endif
 
-      IF(ldim.NE.LDIM) THEN
+      IF(ldimr.NE.LDIM) THEN
          IF(NID.EQ.0) THEN
            WRITE(6,10) LDIM,ldim
    10      FORMAT(//,2X,'Error: Nek has been compiled'

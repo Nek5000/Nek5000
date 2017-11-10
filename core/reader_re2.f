@@ -815,6 +815,7 @@ c-----------------------------------------------------------------------
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)
       call bcast(nelgt  ,ISIZE)
+      call bcast(ldimr  ,ISIZE)
       call bcast(param(32),WDSIZE)
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 
