@@ -89,4 +89,4 @@ If you wish to run tests for one example problem (for example, "TurbChannel"), r
 
 If you wish to run tests for one example problem and one
 formulation/parallelization (for example, test_PnPn_Serial), run:
-`$ python -m 'unittest' NekTests.Eddy_EddyUv.test_PnPn_Serial`
+`$ python -m 'unittest' NekTests.Ethier.test_PnPn_Parallel`

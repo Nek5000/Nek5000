@@ -12,11 +12,10 @@ variableProperties = yes
 
 [PRESSURE]
 residualTol = 1e-06
-#residualProj = no #yes
+residualProj = no
 
 [VELOCITY]
-residualTol = 1e-07
-residualProj = no
+residualTol = 1e-08
 density = 1
 viscosity = 0.5
 
@@ -24,15 +23,13 @@ viscosity = 0.5
 conjugateHeatTransfer = yes 
 rhoCp = 1.0
 conductivity = 0.5
-residualTol = 1e-10
+residualTol = 1e-08
 residualProj = yes
 
 [SCALAR01] # temperature with CVODE
 conjugateHeatTransfer = yes 
-residualTol = 1e-10
-#solver = cvode
-#absoluteTol = 1e-09
-#residualProj = yes
+solver = cvode
+absoluteTol = 1e-08
 
 [CVODE]
 relativeTol = 1e-04
