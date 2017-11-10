@@ -12,7 +12,7 @@ writeInterval = 0
 equation = incompNS
 
 [PRESSURE]
-residualTol = 1e-10
+residualTol = 1e-08
 residualProj = no
 
 [VELOCITY]
