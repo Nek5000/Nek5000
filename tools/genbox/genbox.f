@@ -2073,9 +2073,15 @@ c-----------------------------------------------------------------------
       character*1  string1(132)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
-      real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
+c     this line is consistent with the rest part of the code
+c     but does not provide enough space for cyl_box, as this
+c     routine stores 2D slice not 1D line
+c      real x(0:maxx,mbox),y(0:maxx,mbox),z(0:maxx,mbox)
+      real x(4,maxx*maxx),y(4,maxx*maxx),z(0:maxx,mbox)
       real xc(mbox),yc(mbox),zc(mbox)
-      real curve(8,maxel)
+c     once again cyl part is inconsistent with the rest of the code
+c      real curve(8,maxel)
+      real curve(5,8,maxel)
       character*3 cbc(6,mbox,3)
       character*1 boxcirc(mbox)
  
@@ -2084,7 +2090,7 @@ c-----------------------------------------------------------------------
  
       integer nels(3)
       real rad(0:maxx),tht(0:maxx)
-      character*1 cob(0:maxx),ccurve(8,maxx)
+      character*1 cob(0:maxx),ccurve(8,maxel)
  
       logical if3d,ifflow
       integer e
@@ -2100,7 +2106,11 @@ c-----------------------------------------------------------------------
  
       call out_xy_box    (x,y,z,nels,maxx,if3d)
       call out_xy_curves (curve,ccurve,nels,if3d)
-      call out_tens_bcs  (cbc,nelx,nely,nelz,1,nfld,if3d,ifflow)
+
+      nlx(1) = nelx
+      nly(1) = nely
+      nlz(1) = nelz
+      call out_tens_bcs  (cbc,nlx,nly,nlz,1,nfld,if3d,ifflow)
 c     call out_tens_bcs  (cbc,nlx,nly,nlz,nbox,nfld,if3d) ! > 1 box, later
  
       call nekscan(string,'RESTART',7,8)
@@ -2503,7 +2513,7 @@ c
 c
       real        curve(5,8,1)
       character*1 ccurve(8,1)
-      integer nels(3)
+      integer nels(3), nel
       logical if3d
       integer e
  
@@ -2512,6 +2522,7 @@ c
       nelz = abs(nels(3))
       nel2 = nelx*nely
       if (.not.if3d) nelz = 1
+      nel = nel2*nelz
 c
 c     First, count number of nontrivial curves
 c
@@ -2556,7 +2567,7 @@ c
 c     output bcs for multi-box tensor-product mesh
 c
       character*3 cbc(6,nbox,nfld)
-      integer     nlx(nbox),nly(nbox),nlz(nbox)
+      integer     nlx(nbox),nly(nbox),nlz(nbox), nel
       logical     if3d,ifflow
  
       character*3 cbc1,   cbc2,   cbc3,   cbc4,   cbc5,   cbc6
@@ -2611,6 +2622,7 @@ c
                nelx = nlx(ibx)
                nely = nly(ibx)
                nelz = nlz(ibx)
+               nel  = nelx*nely*nelz
                ilftz = mod1(iez-1+nelz,nelz)
                irgtz = mod1(iez+1+nelz,nelz)
                ilfty = mod1(iey-1+nely,nely)
@@ -2752,6 +2764,7 @@ c
  
                nelx = nlx(ibx)
                nely = nly(ibx)
+               nel  = nelx*nely
                ilfty = mod1(iey-1+nely,nely)
                irgty = mod1(iey+1+nely,nely)
                ilftx = mod1(iex-1+nelx,nelx)
