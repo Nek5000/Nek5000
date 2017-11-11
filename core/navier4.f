@@ -831,15 +831,18 @@ c
       call chcopy(cname,name,4)
       call capit (cname,4)
 
+      ifstdh = .true. ! default is no projection
+      if (ifprojfld(ifield)) then
+         ifstdh = .false.
+      endif
+
+      p945 = param(94)
       if (cname.eq.'PRES') then
          ifstdh = .false.
          p945 = param(95)
-      else
-         ifstdh = .true. ! no projection
-         if (ifprojfld(ifield)) ifstdh = .false.
-         p945 = param(94)
       endif
 
+      if (ifield.gt.2)        ifstdh = .true.
       if (param(93).eq.0)     ifstdh = .true.
       if (p945.eq.0)          ifstdh = .true.
       if (istep.lt.p945)      ifstdh = .true.

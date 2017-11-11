@@ -8,7 +8,8 @@ c
       integer         napproxt(2,ldimt)
       common /trthoi/ napproxt
 
-      real            approxt(ktott,0:laxtt,ldimt)
+c      real            approxt(ktott,0:laxtt,ldimt) ! consumes too much memory 
+      real            approxt(ktott,0:laxtt,1)
       common /trthov/ approxt
 
       character*4     name4t

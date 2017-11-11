@@ -98,13 +98,14 @@ C
 C     Read logical equation type descriptors....
 C
       IFTMSH(0) = .false.
-      IFPROJFLD(0) = .true.
+      IFPROJFLD(0) = .false.
       do i=1,NPSCL2
          IFTMSH(i) = .false.
          IFADVC(i) = .false. 
          IFDIFF(i) = .true.
-         IFDEAL(i) = .true.    ! still depends on param(99)
-         IFPROJFLD(i) = .true. ! still controlled by param(94) 
+         IFDEAL(i) = .true. ! still depends on param(99)
+         IFPROJFLD(i) = .false. 
+         if (param(94).gt.0) IFPROJFLD(i) = .true. 
       enddo      
 
       do i=1,NPSCL1
