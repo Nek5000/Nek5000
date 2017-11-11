@@ -21,10 +21,11 @@ c-----------------------------------------------------------------------
       if (ifheat) nfldt = 2+npscal
       if (ifmhd ) nfldt = 2+npscal+1
 
-c
-c     If p32 = 0.1, there will be no bcs read in
-c
-      if (param(32).gt.0) nfldt = ibc + param(32)-1
+      ! first field to read
+      if (param(33).gt.0) ibc = int(param(33))
+
+      ! number of fields to read
+      if (param(32).gt.0) nfldt = ibc + int(param(32)) - 1
 
       lcbc=18*lelt*(ldimt1 + 1)
       call blank(cbc,lcbc)

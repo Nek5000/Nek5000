@@ -216,7 +216,7 @@ C
       if (nbdinp.gt.lorder) then
          if (nid.eq.0) then
            write(6,*) 'ERROR: torder > lorder.',nbdinp,lorder
-           write(6,*) 'Change SIZEu and recompile entire code.'
+           write(6,*) 'Change SIZE and recompile entire code.'
          endif
          call exitt
       endif

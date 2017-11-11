@@ -1094,8 +1094,10 @@ c     The code can later be updated to support different matvec
 c     implementations, which would be discriminated by the character
 c     string "name6"
 
+      isd  = 1    ! This probably won't work for axisymmetric
       imsh = 1
-      isd  = 1
+      if (iftmsh(ifield)) imsh=2
+
       call axhelm  (b,x,h1,h2,imsh,isd)       ! b = A x
       call dssum   (b,lx1,ly1,lz1)
       call col2    (b,msk,n)

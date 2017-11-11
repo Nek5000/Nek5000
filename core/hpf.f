@@ -108,7 +108,7 @@ c       and add to source term
       endif
 
       return
-      end subroutine MAKE_HPF
+      end
 
 c----------------------------------------------------------------------
 
@@ -157,7 +157,7 @@ c      implicit none
       call mxm  (wk_xmap,lx1,wk2,lx1,op_mat,lx1)      !     V D V
 
       return
-      end subroutine build_hpf_mat
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -225,7 +225,7 @@ c          call copy(v(1,e),w1,nxyz)
       endif
 c
       return
-      end subroutine build_hpf_fld
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -262,7 +262,7 @@ c     Output normalized transfer function
       endif
 
       return
-      end subroutine hpf_trns_fcn
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -318,7 +318,4 @@ c----------------------------------------
       call transpose (ref_xmap,nx,pht,nx)
 
       return
-      end subroutine spec_coeff_init
-
-c=======================================================================
-
+      end

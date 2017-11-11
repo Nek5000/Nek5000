@@ -20,7 +20,6 @@
 * Added high-pass filter relaxation (alternative to explicit filter)
 * Added parallel readers for .re2 and AMG .dat files
 * Introduced new binary map (.ma2) format
-* Added faster and more robust residual projection scheme
 
 ## Backwards-Incompatible Changes 
 
@@ -37,7 +36,9 @@
 
 ## Known Bugs 
 
-* Residual Projection in case of conjugate heat transfer fails 
+[65](https://github.com/Nek5000/Nek5000/issues/65),
+[407](https://github.com/Nek5000/Nek5000/issues/407)
+
 
 ## Thanks to our Contributors
 This release contains contributions from the Nek5000 core developers, as well as:

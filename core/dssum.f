@@ -74,7 +74,7 @@ c                 ~ ~T
 c     This is the Q Q  part
 c
       if (gsh_fld(ifldt).ge.0) then
-         if (nio.eq.0.and.loglevel.gt.2)
+         if (nio.eq.0.and.loglevel.gt.3)
      $   write(6,*) 'dssum', ifldt 
          call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
       endif

@@ -59,7 +59,8 @@ C
       param(28) = 0    ! use same torder for mesh solver
 
       param(31) = 0    ! zero perturbations
-      param(32) = 0    ! all BC are defined in .re2
+      param(32) = 0    ! read all BC from .re2 
+      param(33) = 0    ! use default field index for BCs to read from .re2 
 
       param(40) = 0    ! XXT 
 
@@ -400,6 +401,9 @@ c set parameters
 
       call finiparser_getDbl(d_out,'mesh:numberOfBCFields',ifnd)
       if(ifnd .eq. 1) param(32) = int(d_out)
+
+      call finiparser_getDbl(d_out,'mesh:firstBCFieldIndex',ifnd)
+      if(ifnd .eq. 1) param(33) = int(d_out)
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
