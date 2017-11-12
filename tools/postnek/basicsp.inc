@@ -145,6 +145,9 @@ c
 c
       common/imgc_log/if_img_imcopy,if_img_convert,if_img_tif,if_img_rgb
       logical         if_img_imcopy,if_img_convert,if_img_tif,if_img_rgb
+
+      common /finfo/  ifnorea
+      logical         ifnorea
 c
 c     End of basicsp.inc**********
 c-----------------------------------------------------------------------
