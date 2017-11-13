@@ -2031,6 +2031,7 @@ c          READ(9,*,ERR=59)
 c053     CONTINUE
 c     ENDIF
 C
+  234 continue
       NFLDS=1
       IF(IFHEAT)NFLDS=2+NPSCAL
 c     NX=PARAM(20)
