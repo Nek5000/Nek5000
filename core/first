@@ -1469,7 +1469,7 @@ c-----------------------------------------------------------------------
       real h, d
 
       if(b.ne.0.0) then
-         h = hypot(a,b)
+         h = hypot(a,b) !
          d = 1.0/h
          c = abs(a)*d
          s = sign(d,a)*b
@@ -1483,6 +1483,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      ! Most compilers probably have this implemented as a 
+      ! library function (gfortran and ifort do)
+      ! so this is probably not actually necessary.
       real function hypot(a, b)
 
       real a, b, t, x, c, d, ix
