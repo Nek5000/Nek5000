@@ -1214,7 +1214,7 @@ c     Old version of projection code
       character*6 name6
       logical ifwt,ifvec
       integer flag(mxprev)
-      real normk,normp
+      real normk,normp,alpha
 
       if (m.le.0) return
 
