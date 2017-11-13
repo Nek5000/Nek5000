@@ -2076,7 +2076,7 @@ C     Preserve original coordinates for 2D case
       XZEROO=XZERO
       YZEROO=YZERO
 C     Read Elemental Mesh data
-      if (ifnorea)
+      if (ifnorea) then
          ! prompt user for nelr,ndim
       else
          read(9,*,err=41,end=41)
