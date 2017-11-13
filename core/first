@@ -1126,9 +1126,8 @@ c     New proj_ortho version
          call add2s2(xx(1,m),xx(1,k),-alpha(k),n)
          call add2s2(bb(1,m),bb(1,k),-alpha(k),n)
       enddo
-     
-      !Second round CGS
-      do k = 1, m-1 !First round CGS
+      
+      do k = 1, m-1 !Second round CGS
          if(ifwt) then
             beta(k) = 0.5*(vlsc3(xx(1,k),w,bb(1,m),n)
      $                 +   vlsc3(bb(1,k),w,xx(1,m),n))
