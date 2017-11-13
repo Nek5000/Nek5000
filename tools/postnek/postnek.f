@@ -1867,48 +1867,110 @@ C
       filenm(m:n)='.re2'
       if (ifnorea) then
          ! prompt user for parameters and flags
-c     READ(9,'(a1)',ERR=59)ans
-c     READ(9,*,ERR=59) VNEKOLD
-c     NKTONV=VNEKTON
-c     READ(9,*,ERR=59) NDIM
-c     IF(NDIM.EQ.3)IF3D=.TRUE.
-c     IF(NDIM.EQ.2)IF3D=.FALSE.
+         
+c        READ(9,'(a1)',ERR=59)ans
+         call prs('Enter ans$')
+         call res(ans,70)
 
-c     READ(9,*,ERR=59) NPARAM
-c     DO 1051 IP=1,NPARAM
-c        READ(9,*,ERR=59) PARAM(IP)
-c051  CONTINUE
-c     param(20) = 5    ! default from .rea file
-c     NPSCAL=PARAM(23)
+c        READ(9,*,ERR=59) VNEKOLD
+         call prs('Enter vnekold$')
+         call rer(vnekold)
 
-c     READ(9,*,ERR=59)NSKIP
-c     if(NSKIP.ne.0) then
-c       READ(9,*,ERR=59) (PCOND (I),I=3,11)
-c       READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
-c     endif
+         nktonv=vnekton
 
-c     ifflow    = .false.
-c     ifheat    = .false.
-c     iftran    = .false.
-c     ifnav     = .false.
-c     ifaxis    = .false.
-c     READ(9,*,ERR=59) NLOGIC
-c     DO I = 1,NLOGIC
-c        call blank(s40,40)
-c        call capit(s40,40)
-c        READ(9,'(a40)',ERR=59) s40
-c        if    (indx1(s40,'IFFLOW',6).ne.0) then
-c                 read(s40,*) ifflow
-c        elseif(indx1(s40,'IFHEAT',6).ne.0) then
-c                 read(s40,*) ifheat
-c        elseif(indx1(s40,'IFTRAN',6).ne.0) then
-c                 read(s40,*) iftran
-c        elseif(indx1(s40,'IFADVC',6).ne.0) then
-c                 read(s40,*) ifnav 
-c        elseif(indx1(s40,'IFAXIS',6).ne.0) then
-c                 read(s40,*) ifaxis
-c        endif
-      ENDDO
+c        READ(9,*,ERR=59) NDIM
+         call prs('Enter ndim$')
+         call rei(ndim,70)
+
+         if (ndim.eq.3) if3d = .true.
+         if (ndim.eq.2) if3d = .false.
+
+         call prs('Enter parameter(1) RHO$')
+         call rer(param(1))
+
+         call prs('Enter parameter(2) VISC$')
+         call rer(param(2))
+
+         call prs('Enter parameter(7) RHOCP$')
+         call rer(param(7))
+
+         call prs('Enter parameter(8) CONDUCT$')
+         call rer(param(8))
+
+         call prs('Enter parameter(10) FINTIM$')
+         call rer(param(10))
+
+         call prs('Enter parameter(11) NSTEPS$')
+         call rer(param(11))
+
+         call prs('Enter parameter(12) DT    $')
+         call rer(param(12))
+
+         call prs('Enter parameter(15) IOSTEP$')
+         call rer(param(15))
+
+         call prs('Enter parameter(18) GRID$')
+         call rer(param(18))
+
+         call prs('Enter parameter(20) NX$')
+         call rer(param(20))
+
+         call prs('Enter parameter(23) NPSCAL$')
+         call rer(param(23)) 
+
+         call prs('Enter parameter(66)$')
+         call rer(param(66))
+
+         call prs('Enter parameter(68)$')
+         call rer(param(68))
+
+         call prs('Enter parameter(116) MELX$')
+         call rer(param(116))
+
+         call prs('Enter parameter(117) MELY$')
+         call rer(param(117))
+
+         call prs('Enter parameter(118) MELZ$')
+         call rer(param(118))
+
+         call prs('Enter nskip$')
+         call rei(nskip)
+
+         ! initialize pcond & prhocp
+         do i=3,11
+            pcond(i)  = 1.
+            prhocp(i) = 1.
+         enddo
+
+         if (nskip.ne.0) then
+            do i=3,11
+               write (6,*) 'i=',i
+               call prs('Enter pcond(i) and prhocp(i)$')
+               call rerr(pcond(i),prhocp(i))
+            enddo
+         endif
+
+         ifflow    = .false.
+         ifheat    = .false.
+         iftran    = .false.
+         ifnav     = .false.
+         ifaxis    = .false.
+
+         call prs('Enter ifflow$')
+         call rel(ifflow)
+
+         call prs('Enter ifheat$')
+         call rel(ifheat)
+
+         call prs('enter iftran$')
+         call rel(iftran)
+
+         call prs('enter ifadvc$')
+         call rel(ifadvc)
+
+         call prs('enter ifaxis$')
+         call rel(ifaxis)
+
          goto 234
       endif
 C     Read in stuff
