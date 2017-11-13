@@ -1865,6 +1865,52 @@ c
       ENDIF
 C
       filenm(m:n)='.re2'
+      if (ifnorea) then
+         ! prompt user for parameters and flags
+c     READ(9,'(a1)',ERR=59)ans
+c     READ(9,*,ERR=59) VNEKOLD
+c     NKTONV=VNEKTON
+c     READ(9,*,ERR=59) NDIM
+c     IF(NDIM.EQ.3)IF3D=.TRUE.
+c     IF(NDIM.EQ.2)IF3D=.FALSE.
+
+c     READ(9,*,ERR=59) NPARAM
+c     DO 1051 IP=1,NPARAM
+c        READ(9,*,ERR=59) PARAM(IP)
+c051  CONTINUE
+c     param(20) = 5    ! default from .rea file
+c     NPSCAL=PARAM(23)
+
+c     READ(9,*,ERR=59)NSKIP
+c     if(NSKIP.ne.0) then
+c       READ(9,*,ERR=59) (PCOND (I),I=3,11)
+c       READ(9,*,ERR=59) (PRHOCP(I),I=3,11)
+c     endif
+
+c     ifflow    = .false.
+c     ifheat    = .false.
+c     iftran    = .false.
+c     ifnav     = .false.
+c     ifaxis    = .false.
+c     READ(9,*,ERR=59) NLOGIC
+c     DO I = 1,NLOGIC
+c        call blank(s40,40)
+c        call capit(s40,40)
+c        READ(9,'(a40)',ERR=59) s40
+c        if    (indx1(s40,'IFFLOW',6).ne.0) then
+c                 read(s40,*) ifflow
+c        elseif(indx1(s40,'IFHEAT',6).ne.0) then
+c                 read(s40,*) ifheat
+c        elseif(indx1(s40,'IFTRAN',6).ne.0) then
+c                 read(s40,*) iftran
+c        elseif(indx1(s40,'IFADVC',6).ne.0) then
+c                 read(s40,*) ifnav 
+c        elseif(indx1(s40,'IFAXIS',6).ne.0) then
+c                 read(s40,*) ifaxis
+c        endif
+      ENDDO
+         goto 234
+      endif
 C     Read in stuff
       READ(9,'(a1)',ERR=59)ans
       READ(9,*,ERR=59) VNEKOLD
@@ -1957,16 +2003,23 @@ C           Default if it can't read from end of history file
          NDUMPS=1
       ENDIF
 c
-      READ(9,*,ERR=40,end=34)XFAC,YFAC,XZERO,YZERO
+      if (ifnorea) then
+         ! prompt user for xfac,yfac,xzero,yzero
+      else
+         read(9,*,err=40,end=34) xfac,yfac,xzero,yzero
+      endif
 C     Preserve original coordinates for 2D case
       XFACO=XFAC
       YFACO=YFAC
       XZEROO=XZERO
       YZEROO=YZERO
 C     Read Elemental Mesh data
-      READ(9,*,ERR=41,end=41)
-
-      read(9,*,err=41,end=41)nelr,ndim
+      if (ifnorea)
+         ! prompt user for nelr,ndim
+      else
+         read(9,*,err=41,end=41)
+         read(9,*,err=41,end=41) nelr,ndim
+      endif
 
       ifsubset = .false.
       IFFMTIN  = .TRUE.
