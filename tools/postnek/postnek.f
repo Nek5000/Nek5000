@@ -1825,6 +1825,7 @@ c         if(int.ge.65 .and. int.le.90) int=int+32
    9  continue
       m=lastch+1
       n=m+3
+      ifnorea = .false.
 c
 C     Read file
       filenm(m:n)='.rea'
@@ -1834,7 +1835,6 @@ C     Read file
          ! check for re2
          filenm(m:n)='.re2'
          call openf(9,filenm,'OLD',1,ierr)
-         ifnorea = .false.
          if (ierr.eq.0) then ! <- found re2
             ifnorea = .true.
             goto 123
