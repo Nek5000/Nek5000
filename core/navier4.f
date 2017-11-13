@@ -1101,7 +1101,7 @@ c     New proj_ortho version
       real xbar(n), bbar(n), xx(n,1), bb(n,1),w(n)
       character*6 name6
       logical ifwt, ifvec
-      real tol, norm, r
+      real tol, nrm, scl1, scl2
       real work(mxprev), alpha(mxprev), beta(mxprev)
       real c(mxprev), s(mxprev)
       integer h
@@ -1121,7 +1121,7 @@ c     New proj_ortho version
          endif
       enddo
       call gop(alpha,work,'+  ',m)
-      norm = sqrt(alpha(m)) !Calculate A-norm of new vector
+      nrm = sqrt(alpha(m)) !Calculate A-norm of new vector
       do k = 1,m-1
          call add2s2(xx(1,m),xx(1,k),-alpha(k),n)
          call add2s2(bb(1,m),bb(1,k),-alpha(k),n)
@@ -1160,31 +1160,31 @@ c     Set tolerance for linear independence
       if (wdsize.eq.4) tol=1.e-3
 
 c     Check for linear independence.
-      if(alpha(m).gt.tol*norm) then !New vector is linearly independent    
+      if(alpha(m).gt.tol*nrm) then !New vector is linearly independent    
        
          !Normalize dx and db
-         scale = 1.0/alpha(m) 
-         call cmult(xx(1,m), scale, n)   
-         call cmult(bb(1,m), scale, n)   
+         scl1 = 1.0/alpha(m) 
+         call cmult(xx(1,m), scl1, n)   
+         call cmult(bb(1,m), scl1, n)   
 
          !We want to throw away the oldest information
          !The below propagates newest information to first vector.
          !This will make the first vector a scalar 
          !multiple of x.
          do k = m, 2, -1 !Sequential portion
-              call givens_rotation(alpha(k-1),alpha(k),c(k),s(k),r)
-              alpha(k-1) = r
+              call givens_rotation(alpha(k-1),alpha(k),
+     $                               c(k),s(k),alpha(k-1))
          enddo
          !Apply rotations to xx and bb
          do k = m, 2, -1 !Parallelizable portion 
             h = k - 1        
             do i = 1, n !Reuse scale and r as convient variables
-               scale = c(k)*xx(i,h) + s(k)*xx(i,k)
+               scl1 = c(k)*xx(i,h) + s(k)*xx(i,k)
                xx(i,k) = -s(k)*xx(i,h) + c(k)*xx(i,k)
-               xx(i,h) = scale       
-               r = c(k)*bb(i,h) + s(k)*bb(i,k)
+               xx(i,h) = scl1       
+               scl2 = c(k)*bb(i,h) + s(k)*bb(i,k)
                bb(i,k) = -s(k)*bb(i,h) + c(k)*bb(i,k)    
-               bb(i,h) = r        
+               bb(i,h) = scl2        
             enddo
          enddo
 
@@ -1472,9 +1472,9 @@ c-----------------------------------------------------------------------
       if(b.ne.0.0) then
          h = hypot(a,b)
          d = 1.0/h
-         r = sign(1.0,a)*h
          c = abs(a)*d
          s = sign(d,a)*b
+         r = sign(1.0,a)*h
       else
          c = 1.0
          s = 0.0
