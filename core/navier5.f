@@ -4691,3 +4691,145 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
+      subroutine plan_avg_tensr(ua,u,gs_hndl,nelx,nely,nelz,ifld,idir)
+      include 'SIZE'
+      include 'TOTAL'
+      real u (lx1,ly1,lz1,lelt)
+      real ua(lx1,ly1,lz1,lelt)
+      integer gs_hndl,e,ex,ey,ez,eg
+c     this routine does planar averaging for 'u' and outputs 'ua'
+c     for box type meshes with structure - nelx x nely x nelz
+c     Input: u       - variable to be averaged
+c            gs_hndl - handle for gs_setup            
+c            nelx    - number of elements in x-direction
+c            nely    - number of elements in y-direction
+c            nelz    - number of elements in z-direction
+c            ifld    - 1 for velocity, 2 for passive-scalar
+c            idir    - direction for averaging, 1-x,2-y,3-z
+c     Output ua      - averaged variable
+c     TYPICAL USAGE:
+c      integer gs_avg_hndl
+c      save    gs_avg_hndl
+c      data    gs_avg_hndl / 0 /
+c      real vxa(lx1,ly1,lz1,lelt)
+c      real vya(lx1,ly1,lz1,lelt)
+c      real vza(lx1,ly1,lz1,lelt)
+c      nelx = 18
+c      nely = 12
+c      nelz = 10
+c      ifld = 1  !velocity field
+c      idir = 2  !y_direction
+c
+c      call plan_avg_tensr(vxa,vx,gs_avg_hndl,nelx,nely,nelz,ifld,idir)
+c      call plan_avg_tensr(vya,vy,gs_avg_hndl,nelx,nely,nelz,ifld,idir)
+c      call plan_avg_tensr(vza,vz,gs_avg_hndl,nelx,nely,nelz,ifld,idir)
+
+      nelxy = nelx*nely
+      nelyz = nely*nelz
+      nelzx = nelz*nelx
+
+      if (gs_hndl.eq.0) then
+       if (idir.eq.1) call set_gs_xavg_hndl(gs_hndl,nelx,nelyz,ifld)
+       if (idir.eq.2) call set_gs_yavg_hndl(gs_hndl,nelx,nely,nelz,ifld)
+       if (idir.eq.3) call set_gs_zavg_hndl(gs_hndl,nelxy,ifld)
+      endif
+
+      nel = nelfld(ifld)
+      n   = nx1*ny1*nz1*nel
+
+      call copy(ua,bm1,n)              ! Set the averaging weights
+      call fgslib_gs_op(gs_hndl,ua,1,1,0) ! Sum weights over columns
+
+      do i=1,n                          ! ua = (w_j*u_j)/( sum_i w_i)
+         ua(i,1,1,1) = bm1(i,1,1,1)*u(i,1,1,1)/ua(i,1,1,1)
+      enddo
+
+      call fgslib_gs_op(gs_hndl,ua,1,1,0) ! Sum weighted values
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_gs_xavg_hndl(gs_avg_hndl,nelx,nelyz,ifld)
+c     Set the x-average handle
+      include 'SIZE'
+      include 'TOTAL'
+      integer gs_avg_hndl,e,ex,ey,ez,eg,nelyz,nelx
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
+      integer*8 glo_num,ex_g
+
+      nel = nelfld(ifld)
+      do e=1,nel
+       eg = lglel(e)
+       call get_exyz(ex,ey,ez,eg,nelx,nelyz,1)
+       ex_g = ey       ! Ensure int*8 promotion
+       do k=1,nz1      ! Enumerate points in the y-z plane
+       do j=1,ny1
+       do i=1,nx1
+          glo_num(i,j,k,e) = j+ny1*(k-1) + ny1*nz1*(ex_g-1)
+       enddo
+       enddo
+       enddo
+      enddo
+      n = nel*nx1*ny1*nz1
+      call fgslib_gs_setup(gs_avg_hndl,glo_num,n,nekcomm,mp)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_gs_yavg_hndl(gs_avg_hndl,nelx,nely,nelz,ifld)
+c     Set the y-average handle
+      include 'SIZE'
+      include 'TOTAL'
+      integer gs_avg_hndl,e,ex,ey,ez,eg,nelyz,nelx
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
+      integer*8 glo_num,ex_g
+
+      nel = nelfld(ifld)
+      do e=1,nel
+       eg = lglel(e)
+       call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)            
+       ex_g = (ez-1)*nelx+ex       ! Ensure int*8 promotion
+       do k=1,nz1      ! Enumerate points in the x-z plane
+       do j=1,ny1
+       do i=1,nx1
+           glo_num(i,j,k,e) = k+nz1*(i-1) + nx1*nz1*(ex_g-1) 
+       enddo
+       enddo
+       enddo
+      enddo
+      n = nel*nx1*ny1*nz1
+      call fgslib_gs_setup(gs_avg_hndl,glo_num,n,nekcomm,mp)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_gs_zavg_hndl(gs_avg_hndl,nelxy,ifld)
+c     Set the z-average handle
+      include 'SIZE'
+      include 'TOTAL'
+      integer gs_avg_hndl,e,ex,ey,ez,eg
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
+      integer*8 glo_num,ex_g
+
+      nel = nelfld(ifld)
+      do e=1,nel
+       eg = lglel(e)
+       call get_exyz(ex,ey,ez,eg,nelxy,1,1)
+       ex_g = ex       ! Ensure int*8 promotion
+       do k=1,nz1      ! Enumerate points in the x-y plane
+       do j=1,ny1
+       do i=1,nx1
+          glo_num(i,j,k,e) = i+nx1*(j-1) + nx1*ny1*(ex_g-1)
+       enddo
+       enddo
+       enddo
+      enddo
+      n = nel*nx1*ny1*nz1
+      call fgslib_gs_setup(gs_avg_hndl,glo_num,n,nekcomm,mp)
+
+      return
+      end
+c-----------------------------------------------------------------------
