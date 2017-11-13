@@ -1171,8 +1171,8 @@ c     Check for linear independence.
          !This will make the first vector a scalar 
          !multiple of x.
          do k = m, 2, -1 !Sequential portion
-              call givens_rotation(alpha(k-1),alpha(k),
-     $                               c(k),s(k),alpha(k-1))
+              call givens_rotation(alpha(k-1),alpha(k),c(k),s(k),nrm)
+              alpha(k-1) = nrm
          enddo
          !Apply rotations to xx and bb
          do k = m, 2, -1 !Parallelizable portion 
