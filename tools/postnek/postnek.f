@@ -1831,8 +1831,17 @@ C     Read file
       CALL OPENF( 9,FILENM,'OLD',1,IERR)
       IF(IERR.NE.0) THEN
          CALL PRS(' ** ERROR **  Can''t open file '//filenm//'$')
+         ! check for re2
+         filenm(m:n)='.re2'
+         call openf(9,filenm,'OLD',1,ierr)
+         ifnorea = .false.
+         if (ierr.eq.0) then ! <- found re2
+            ifnorea = .true.
+            goto 123
+         endif
          GOTO 13
       ENDIF
+  123 continue
 c     if(IERR.NE.0)STOP
 C     Field Data  (we move this to AFTER reading in read file)
 C     Streamline Data
