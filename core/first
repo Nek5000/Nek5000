@@ -1469,7 +1469,7 @@ c-----------------------------------------------------------------------
       real h, d
 
       if(b.ne.0.0) then
-         h = hypot(a,b) !
+         h = hypot(a,b) !Can use local or local implementation
          d = 1.0/h
          c = abs(a)*d
          s = sign(d,a)*b
