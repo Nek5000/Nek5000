@@ -1178,7 +1178,7 @@ c     Check for linear independence.
          !Apply rotations to xx and bb
          do k = m, 2, -1 !Parallelizable portion 
             h = k - 1        
-            do i = 1, n !Reuse scale and r as convient variables
+            do i = 1, n
                scl1 = c(k)*xx(i,h) + s(k)*xx(i,k)
                xx(i,k) = -s(k)*xx(i,h) + c(k)*xx(i,k)
                xx(i,h) = scl1       
