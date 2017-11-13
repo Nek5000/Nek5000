@@ -1098,7 +1098,7 @@ c     New proj_ortho version
       include 'TSTEP'     ! istep
       include 'PARALLEL'  ! wdsize
 
-      real xbar(n), bbar(n), xx(n,1), bb(n,1),w(n)
+      real xx(n,1), bb(n,1), w(n)
       character*6 name6
       logical ifwt, ifvec
       real tol, nrm, scl1, scl2
