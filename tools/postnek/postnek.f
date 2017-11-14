@@ -1754,6 +1754,7 @@ c     CALL RZERO(PSC,MAXPTS)
       CALL RZERO(RR    ,3*NPRT)
       CALL RZERO(XLG   ,4*NPRT)
       CALL RZERO(SCALLG,5*NPRT)
+      call rzero(param,500)
 C
       CALL IZERO(ICRV,NELM)
 C
