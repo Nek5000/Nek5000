@@ -1838,6 +1838,9 @@ C     Read file
          filenm(m:n)='.re2'
          call openf(9,filenm,'OLD',1,ierr)
          if (ierr.eq.0) then ! <- found re2
+            filenm(m:n)='.par'
+            call openf(55,filenm,'OLD',1,ierr)
+            if (ierr.eq.0) ifpar = .true. ! <- found par
             ifnorea = .true.
             goto 123
          endif
