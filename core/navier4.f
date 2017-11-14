@@ -1101,9 +1101,8 @@ c     New proj_ortho version
       real xx(n,1), bb(n,1), w(n)
       character*6 name6
       logical ifwt, ifvec
-      real tol, nrm, scl1, scl2
+      real tol, nrm, scl1, scl2, c, s
       real work(mxprev), alpha(mxprev), beta(mxprev)
-      real c(mxprev), s(mxprev)
       integer h
 
       if(m.le.0) return !No vectors to ortho-normalize 
@@ -1170,19 +1169,16 @@ c     Check for linear independence.
          !The below propagates newest information to first vector.
          !This will make the first vector a scalar 
          !multiple of x.
-         do k = m, 2, -1 !Sequential portion
-              call givens_rotation(alpha(k-1),alpha(k),
-     $                               c(k),s(k),alpha(k-1))
-         enddo
-         !Apply rotations to xx and bb
-         do k = m, 2, -1 !Parallelizable portion 
-            h = k - 1        
-            do i = 1, n
-               scl1 = c(k)*xx(i,h) + s(k)*xx(i,k)
-               xx(i,k) = -s(k)*xx(i,h) + c(k)*xx(i,k)
+         do k = m, 2, -1
+            h = k - 1   
+            call givens_rotation(alpha(h),alpha(k),c,s,nrm)
+            alpha(h) = nrm     
+            do i = 1, n !Apply rotation to xx and bb
+               scl1 = c*xx(i,h) + s*xx(i,k)
+               xx(i,k) = -s*xx(i,h) + c*xx(i,k)
                xx(i,h) = scl1       
-               scl2 = c(k)*bb(i,h) + s(k)*bb(i,k)
-               bb(i,k) = -s(k)*bb(i,h) + c(k)*bb(i,k)    
+               scl2 = c*bb(i,h) + s*bb(i,k)
+               bb(i,k) = -s*bb(i,h) + c*bb(i,k)    
                bb(i,h) = scl2        
             enddo
          enddo
