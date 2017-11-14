@@ -506,6 +506,22 @@ C
  13   CALL PRS('Error reading input.  Enter 4 Real Values$')
       GO TO 1
       END
+
+      subroutine rel(l)
+c     Read Logical
+      logical l
+      character*80 s
+ 1    call res(s,80)
+      rewind(13)
+      write (13,'(a80)')s
+      rewind(13)
+      read(13,*,err=13,end=13) l
+      write (6,*) l
+      rewind(13)
+      return
+ 13   call prs('Error reading input.  Enter Logical Value$')
+      go to 1
+      end
 C
       SUBROUTINE PUTSOLD(S,NCHARS)
 C     PUTSOLD is the one device-dependent output subroutine.
