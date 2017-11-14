@@ -606,3 +606,157 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine read_par(parfle,ierr)
+c
+c     parse .par file and set run parameters
+c
+c     todo:
+c     - check for invalid values for a given key
+c     - print default value to screen
+c     - separate settings for tol, proj, dealiasing for ps
+c     - mhd support
+
+      include 'basics.inc'
+      include 'basicsp.inc'
+
+      character*132 c_out,txt
+
+      call finiparser_load(parfle,ierr)
+      if(ierr .ne. 0) return
+
+      call par_verify(ierr)
+      if(ierr .ne. 0) return
+
+c***********************************************************************      
+c     par read for postnek
+
+      call finiparser_getDbl(d_out,'velocity:density',ifnd)
+      if(ifnd .eq. 1) param(1) = d_out
+
+      call finiparser_getDbl(d_out,'velocity:viscosity',ifnd)
+      if(ifnd .eq. 1) param(2) = d_out
+      if (param(2) .lt.0.0) param(2)  = -1.0/param(2)
+
+      call finiparser_getDbl(d_out,'temperature:rhoCp',ifnd)
+      if(ifnd .eq. 1) cpfld(2,2) = d_out
+
+      call finiparser_getDbl(d_out,'temperature:conductivity',ifnd)
+      if(ifnd .eq. 1) cpfld(2,1) = d_out
+      if (cpfld(2,1) .lt.0.0) cpfld(2,1)  = -1.0/cpfld(2,1)
+
+      call finiparser_getString(c_out,'general:stopAt',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'ENDTIME') .gt. 0) then
+         call finiparser_getDbl(d_out,'general:endTime',ifnd)
+         if(ifnd .eq. 1) param(10) = d_out
+      endif
+
+      call finiparser_getDbl(d_out,'general:numSteps',ifnd)
+      if(ifnd .eq. 1) param(11) = d_out
+
+      call finiparser_getDbl(d_out,'general:dt',ifnd)
+      if(ifnd .eq. 1) param(12) = d_out
+
+      call finiparser_getDbl(d_out,'general:writeInterval',ifnd)
+      if(ifnd .eq. 1) param(15) = d_out
+
+      ! counts number of scalars
+      j = 0
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2)") i
+         call finiparser_find(i_out,txt,ifnd)
+         if (ifnd .eq. 1) then
+            j = j + 1
+            ifpsco(i) = .true.
+            idpss(i+1) = 0 ! Helmholtz is default
+         endif
+      enddo
+      param(23) = j
+
+      j = 0
+      do i = 1,ldimt
+         if (idpss(i).ge.0) j = j + 1
+      enddo
+      if (j .ge. 1) then ! we have to solve for temp and/or ps
+         ifheat = .true.
+      else
+         ifheat = .false.
+      endif
+c***********************************************************************      
+
+c set parameters
+      d_out = param(15)
+      call finiparser_getString(c_out,'general:writeControl',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'RUNTIME') .gt. 0) then
+         param(14) = d_out
+      else
+         param(14) = 0
+         param(15) = d_out
+      endif
+
+      call finiparser_find(i_out,'temperature',ifnd)
+      if(ifnd .eq. 1) then
+        ifheat = .true.
+        ifto   = .true.
+        idpss(1) = 0 ! Helmholtz is default
+      endif
+
+      call finiparser_getBool(i_out,'general:write8Byte',ifnd)
+      if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1
+
+      call finiparser_getDbl(d_out,'general:writeNParallelFiles',ifnd)
+      if(ifnd .eq. 1) param(65) = int(d_out)
+
+c set logical flags
+      call finiparser_getString(c_out,'general:timeStepper',ifnd)
+      call capit(c_out,132)
+
+      if (index(c_out,'CHAR') .gt. 0) then
+         ifchar = .true.
+      else if (index(c_out,'STEADY') .gt. 0) then
+         iftran = .false.
+      endif
+
+      call finiparser_find(i_out,'velocity',ifnd)
+      if(ifnd .eq. 1) then
+        ifflow = .true.
+        ifvo   = .true.
+        ifpo   = .true.
+      endif
+
+      call finiparser_getBool(i_out,'problemType:axiSymmetry',ifnd)
+      if(ifnd .eq. 1) then
+        ifaxis = .false.
+        if(i_out .eq. 1) ifaxis = .true.
+      endif
+
+c set advection
+      call finiparser_getBool(i_out,'velocity:advection',ifnd)
+      if(ifnd .eq. 1) then
+        ifadvc(1) = .false.
+        if(i_out .eq. 1) ifadvc(1) = .true.
+      endif
+
+c set mesh-field mapping
+      call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
+     &                        ifnd)
+      if(ifnd .eq. 1) then
+        iftmsh(2) = .false.
+        if(i_out .eq. 1) iftmsh(2) = .true.
+      endif
+
+      do i = 1,ldimt-1
+         write(txt,"('scalar',i2.2,a)") i,':writeToFieldFile'
+         call finiparser_getBool(i_out,txt,ifnd)
+         if(ifnd .eq. 1) then
+           ifpsco(i) = .false.
+           if(i_out .eq. 1) ifpsco(i) = .true.
+         endif
+      enddo
+
+      call finiparser_dump()
+
+      return
+      end
+c-----------------------------------------------------------------------
