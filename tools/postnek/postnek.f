@@ -1827,6 +1827,7 @@ c         if(int.ge.65 .and. int.le.90) int=int+32
       m=lastch+1
       n=m+3
       ifnorea = .false.
+      ifpar   = .false.
 c
 C     Read file
       filenm(m:n)='.rea'
