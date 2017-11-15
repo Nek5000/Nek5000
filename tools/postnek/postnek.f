@@ -1985,6 +1985,7 @@ c        READ(9,*,ERR=59) NDIM
 
          goto 234
       endif
+
 C     Read in stuff
       READ(9,'(a1)',ERR=59)ans
       READ(9,*,ERR=59) VNEKOLD
@@ -2044,6 +2045,11 @@ c053     CONTINUE
 c     ENDIF
 C
   234 continue
+      filenm(m:n)='.re2'
+      param(66) = 6
+      do i=1,66
+         write (6,*) i,param(i)
+      enddo
       NFLDS=1
       IF(IFHEAT)NFLDS=2+NPSCAL
 c     NX=PARAM(20)
