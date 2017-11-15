@@ -1869,11 +1869,17 @@ c
          IF(IFLASE ) CALL INITQMS
          IF(IFPOSTS) CALL INITPS
       ENDIF
-C
-      filenm(m:n)='.re2'
-      if (ifnorea) then
+
+      if (ifpar) then
+         write (6,*) 'testing1'
+         filenm(m:n)='.par'
+         call read_par(filenm,ierr)
+         filenm(m:n)='.re2'
+         write (6,*) 'testing2'
+         goto 234
+      else if (ifnorea) then
          ! prompt user for parameters and flags
-         
+
 c        READ(9,'(a1)',ERR=59)ans
          call prs('Enter ans$')
          call res(ans,70)
