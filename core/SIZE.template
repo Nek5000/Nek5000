@@ -6,7 +6,7 @@ c
       integer lpelt,lbelt,toteq,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
       integer maxobj,lpert,nsessmax,lxo
-      integer lfdm, integer ldimt_proj
+      integer lfdm, ldimt_proj
 
       ! BASIC
       parameter (ldim=3)               ! domain dimension (2 or 3)
