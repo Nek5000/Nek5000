@@ -1841,7 +1841,6 @@ C     Read file
             filenm(m:n)='.par'
             call openf(55,filenm,'OLD',1,ierr)
             if (ierr.eq.0) ifpar = .true. ! <- found par
-            iffmtin = .false.
             ifnorea = .true.
             goto 123
          endif
@@ -2108,7 +2107,7 @@ C     Read Elemental Mesh data
 
       ifsubset = .false.
       IFFMTIN  = .TRUE.
-      IF (NELR.LT.0) IFFMTIN=.FALSE.
+      IF (NELR.LT.0.or.ifpar) IFFMTIN=.FALSE.
 c     OPEN .re2
       if (.not.iffmtin) then
          ilen= ltrunc(filenm,40)
