@@ -43,9 +43,6 @@ CC="mpicc"
 #VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
 #VISIT_STOP=true
 
-# 3rd party paths
-#LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib
-#SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!

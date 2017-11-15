@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+VER=1.0.1
+
+if [ "$1" == "clean" ]; then
+  rm -rf gslib-$VER lib 2>/dev/null 
+  exit 0
+fi
+
+if [ -f ./gslib-$VER/src/libgs.a ]; then
+  exit 0
+fi
+
+if [ ! -f v$VER.tar.gz ]; then
+  wget https://github.com/gslib/gslib/archive/v$VER.tar.gz
+fi
+
+tar -zxf *.tar.gz
+
+cd gslib-$VER
+make -j4 CC="$CC" CFLAGS="$CFLAGS" $GSLIB_OPT lib
+mkdir `pwd`/../lib 
+make PREFIX="`pwd`/../lib" install

@@ -445,13 +445,6 @@ c      endif
          call exitt
       endif
 
-c     if (ifsplit .and. param(55).ne.0) then
-c        if(nid.eq.0) write(6,*) 
-c    $   'ABORT: Fixed mass flux not supported for Pn-Pn'
-c        call exitt
-c     endif
-
-
       if (ifmhd)           ifchar = .false.   ! For now, at least.
 
 c     set dealiasing handling

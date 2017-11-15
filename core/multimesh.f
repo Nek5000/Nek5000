@@ -1,4 +1,20 @@
 c-----------------------------------------------------------------------
+c
+c     Routines for multidomain (neknek) simulations.
+c
+c     References:
+c
+c     "A spectrally accurate method for overlapping grid solution of 
+c     incompressible Navier–Stokes equations" Brandon E. Merrill, 
+c     Yulia T. Peet, Paul F. Fischer, and James W. Lottes, J. Comp. Phys.
+c     307 (2016) 60-93.
+c
+c     "Stability analysis of interface temporal discretization in grid 
+c      overlapping methods," Y. Peet, P.F. Fischer, SIAM J. Numer. Anal. 
+c      50 (6) (2012) 3375–3401.
+c
+c
+c-----------------------------------------------------------------------
       subroutine get_session_info(intracomm)
       include 'mpif.h'
       include 'SIZE'
