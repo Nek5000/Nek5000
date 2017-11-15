@@ -11,7 +11,7 @@ c       fb2io_test.fld01   - binary .fld file
 c       fa2io_test.fld01   - ascii .fld file
 c     - writing and reading single .f file using mpiio
 c       single precision writing/reading
-c       test of the restart flags set in sioflag routine (TIME option disabled for .f format)
+c       test of the restart flags set in sioflag routine
 c       double precision writing/reading testing if_full_pres option
 c     - writing and reading multiple .f files
 c       single precision writing/reading
@@ -1096,11 +1096,10 @@ c     check string restart options
       call fields_compare(eps4)
 c     check reading options (only master)
       if (NID.eq.0) then
-c     For now don't test time option as it is disabled for mfo
-c         if (abs(time-5.0).gt.eps8) then
-c            test_pass = .false.
-c            write(*,10) 'time      : ',time
-c         endif
+         if (abs(time-5.0).gt.eps8) then
+            test_pass = .false.
+            write(*,10) 'time      : ',time
+         endif
 c     for mpiio number of files is equal number of processes
          if (nfiler.ne.np) then
             test_pass = .false.
@@ -1118,7 +1117,7 @@ c     for mpiio number of files is equal number of processes
             test_pass = .false.
             write(*,12) 'if_byte_sw: ',if_byte_sw
          endif
-         if (.not.ifgtim) then
+         if (ifgtim) then
             test_pass = .false.
             write(*,12) 'ifgtim    : ',ifgtim
          endif
