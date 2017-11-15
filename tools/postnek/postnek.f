@@ -2085,7 +2085,11 @@ C           Default if it can't read from end of history file
       ENDIF
 c
       if (ifnorea) then
-         ! prompt user for xfac,yfac,xzero,yzero
+         if (ifpar) then
+
+         else
+            ! prompt user for xfac,yfac,xzero,yzero
+         endif
       else
          read(9,*,err=40,end=34) xfac,yfac,xzero,yzero
       endif
