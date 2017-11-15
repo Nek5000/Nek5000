@@ -522,6 +522,15 @@ c set logical flags
         call capit(c_out,132)
         if (index(c_out,'OIFS') .eq. 1) then
            ifchar = .true.
+
+           call finiparser_getDbl(d_out,'general:targetCFL',ifnd)
+           if (ifnd .eq. 1) then
+              param(26) = d_out
+           else
+              write(6,*) 'general:targetCFL'
+              write(6,*) 'is required for general:extrapolation!'
+              goto 999
+           endif
         else if (index(c_out,'STANDARD') .eq. 1) then
            continue
         else

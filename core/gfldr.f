@@ -27,7 +27,7 @@ c
       real*4 bytetest
 
       etime_t = dnekclock_sync()
-      if(nio.eq.0) write(6,*) 'call gfldr' 
+      if(nio.eq.0) write(6,*) 'call gfldr ',trim(sourcefld) 
 
       ! open source field file
       ierr = 0
@@ -116,22 +116,27 @@ c
      &                          nhash,nhash,nmax,tol)
 
       ! read source fields and interpolate
-      if(ifgetur .and. ifflow) then
+      if(ifgetur) then
+        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
         call gfldr_getfld(vx,vy,vz,ldim,ifldpos+1,ifbswp)
         ifldpos = ifldpos + ldim
       endif
       if(ifgetpr) then
+        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
         call gfldr_getfld(pm1,dum,dum,1,ifldpos+1,ifbswp)
         ifldpos = ifldpos + 1
         if (ifaxis) call axis_interp_ic(pm1)
         call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
+        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
         call gfldr_getfld(t(1,1,1,1,1),dum,dum,1,ifldpos+1,ifbswp)
         ifldpos = ifldpos + 1
       endif
       do i = 1,ldimt-1
          if(ifgtpsr(i)) then
+           if(nid.eq.0 .and. loglevel.gt.2) 
+     $       write(6,*) 'reading scalar',i
            call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,1,ifldpos+1,ifbswp) 
            ifldpos = ifldpos + 1
          endif
