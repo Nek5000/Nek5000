@@ -1841,6 +1841,7 @@ C     Read file
             filenm(m:n)='.par'
             call openf(55,filenm,'OLD',1,ierr)
             if (ierr.eq.0) ifpar = .true. ! <- found par
+            iffmtin = .false.
             ifnorea = .true.
             goto 123
          endif
@@ -1860,7 +1861,7 @@ c
       iplotnum        = 1
       iplotnam        = m
       fplotnam(m:n+2) = '.plt01'
-c
+
       IF (IFGRAF) THEN
          CALL DEVINI('GENERIC')
          CALL SETENV
