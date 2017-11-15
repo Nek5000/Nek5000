@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" == "clean" ]; then
-  rm -rf sundials-* lib include *.tar.gz 2>/dev/null 
+  rm -rf sundials-* lib include 2>/dev/null 
   exit 0
 fi
 
@@ -14,6 +14,8 @@ if [ ! -f sundials-2.7.0.tar.gz ]; then
   wget https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
   tar -zxvf *.tar.gz
 fi
+
+tar -zxf *.tar.gz
 
 cd sundials*
 mkdir -p build

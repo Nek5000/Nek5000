@@ -7,7 +7,7 @@ if [ ! -f v2.11.2.tar.gz ]; then
   wget https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz 
 fi
 
-tar -zxvf *.tar.gz
+tar -zxf *.tar.gz
 cd hypre*/src
 ./configure --prefix=`pwd`/../.. --without-MPI
 make -j4 install

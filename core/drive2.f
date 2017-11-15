@@ -1588,7 +1588,6 @@ c     Swap the comments on these two lines if you don't want to fix the
 c     flow rate for periodic-in-X (or Z) flow problems.
 c
       parameter (kx1=lx1,ky1=ly1,kz1=lz1,kx2=lx2,ky2=ly2,kz2=lz2)
-c     parameter (kx1=1,ky1=1,kz1=1,kx2=1,ky2=1,kz2=1)
 c
       common /cvflow_a/ vxc(kx1,ky1,kz1,lelv)
      $                , vyc(kx1,ky1,kz1,lelv)

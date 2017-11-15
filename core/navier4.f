@@ -842,10 +842,10 @@ c
          p945 = param(95)
       endif
 
-      if (ifield.gt.2)        ifstdh = .true.
-      if (param(93).eq.0)     ifstdh = .true.
-      if (p945.eq.0)          ifstdh = .true.
-      if (istep.lt.p945)      ifstdh = .true.
+      if (ifield.gt.ldimt_proj+1) ifstdh = .true.
+      if (param(93).eq.0)         ifstdh = .true.
+      if (p945.eq.0)              ifstdh = .true.
+      if (istep.lt.p945)          ifstdh = .true.
 
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)

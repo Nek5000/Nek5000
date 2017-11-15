@@ -1120,6 +1120,7 @@ c     operator-integrator-factor method (characteristics).
       n   = lx1*ly1*lz1*nelv
       dti = 1./dt
 
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'convch', ifield
       call char_conv(phi,t(1,1,1,1,ifield-1),tlag(1,1,1,1,1,ifield-1)
      $        ,bm1,bm1lag,hmsk,c_vx,ct_vx,gsh_fld(1))
 

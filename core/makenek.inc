@@ -4,7 +4,10 @@ function make_3rd_party() {
   fi
   echo "build 3rd-party code ..."
 
-  make -j4 -C $SOURCE_ROOT_GSLIB CC="$CC" CFLAGS="-O2 $CFLAGS" $GSLIB_OPT lib
+  cd $SOURCE_ROOT/3rd_party/gslib
+  ./install
+  cd $CASEDIR 
+
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT/3rd_party/cvode
      ./install
@@ -13,7 +16,8 @@ function make_3rd_party() {
 }
 
 function clean_3rd_party() {
-  make -C $SOURCE_ROOT_GSLIB clean 2>/dev/null
+  cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
+  rm -rf $SOURCE_ROOT/3rd_party/gslib/lib
   cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
   cd $CASEDIR
 }
@@ -65,7 +69,7 @@ if [ "$mver" != "17.0.3" ]; then
 fi
 
 if [ ! "$SOURCE_ROOT_GSLIB" ]; then
-  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
+  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/lib"
   export SOURCE_ROOT_GSLIB
 fi
 
@@ -341,7 +345,7 @@ else
 fi
 \rm .makefile 2>/dev/null
 
-# tweak SIZE file
+# tweak leagacy SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
@@ -392,6 +396,14 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
       echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
   fi
   fi
+fi
+
+# tweak all SIZE file versions
+if ! cat SIZE | grep -qi 'ldimt_proj' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer ldimt_proj' >>SIZE
+     echo '      parameter(ldimt_proj = 1) ! max auxiliary fields residual projection ' >>SIZE
 fi
 
 # tweak .usr (actually, .f ) file

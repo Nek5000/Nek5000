@@ -6,7 +6,7 @@ if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then
   if [ ! -f netcdf-4.4.1.1.tar.gz ]; then
     wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
   fi
-  tar -zxvf *.tar.gz
+  tar -zxf *.tar.gz
   mv netcdf-4.4.1.1 netcdf || ture
   cd netcdf
   mkdir install || true
