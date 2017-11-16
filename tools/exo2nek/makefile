@@ -13,7 +13,7 @@ exo2nek: $(OBJS)
 
 clean:
 	@rm -f *.o 
-	@cd ./3rd_party ; rm -rf seacas-exo* netcdf* *.tar* *.zip*
+	@cd ./3rd_party ; rm -rf seacas-exodus netcdf
 
 lib:
 	@cd 3rd_party; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install

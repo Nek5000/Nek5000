@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" == "clean" ]; then
-  rm -rf sundials-* lib include 2>/dev/null 
+  rm -rf sundials-2.7.0 lib include 2>/dev/null 
   exit 0
 fi
 

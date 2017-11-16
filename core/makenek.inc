@@ -180,9 +180,8 @@ case $FCcomp in
                ;;
   *ftn*)        FFLAGS+=" -s default64 -eF"
                ;;
-  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
-               FC="${FC} -qsuppress=cmpmsg"
                ;;
   *)  echo "ERROR: Unable to detect compiler!"
       echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
