@@ -1362,6 +1362,7 @@ c
 c
       parameter (lm=90)
       integer   indr(lm),indc(lm),ipiv(lm)
+      real rmult(lm)
 c
       if (nx.gt.lm) then
          write(6,*) 'ABORT in build_legend_transform:',nx,lm
