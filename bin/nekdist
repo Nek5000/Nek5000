@@ -19,7 +19,7 @@ find . -name ".git*" -exec rm -rf {} \;
 VER=`printf "$VER %-45s"`
 sed -e "s/Version:.*/Version:  $VER/g" core/HEADER >.tmp; mv .tmp core/HEADER
 sed "13s/./\|\'/68" core/HEADER >.tmp; mv .tmp core/HEADER
-sed -e "s/# Release.*/# Release $VER/g" RELEASE.md >.tmp; mv .tmp core/RELEASE.md 
+sed -e "s/# Release.*/# Release $VER/g" RELEASE.md >.tmp; mv .tmp RELEASE.md 
 
 cd examples
 rm -rf *.py lib
