@@ -106,6 +106,8 @@ c-----------------------------------------------------------------------
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
 
+      if (mod(istep,100).ne.0) return
+
       call exactu(uxe,uye,uze,xm1,ym1,zm1,n)
       call exactp(pre,xm2,ym2,zm2,n2)
 

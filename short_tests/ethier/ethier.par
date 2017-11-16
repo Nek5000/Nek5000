@@ -12,6 +12,7 @@ writeInterval = 0
 equation = incompNS
 
 [PRESSURE]
+preconditioner = semg_amg
 residualTol = 1e-08
 residualProj = no
 
