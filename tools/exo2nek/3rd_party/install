@@ -4,7 +4,7 @@ set -e
 # NETCDF
 if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then 
   if [ ! -f netcdf-4.4.1.1.tar.gz ]; then
-    wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
+    wget -O netcdf-4.4.1.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
   fi
   tar -zxf *.tar.gz
   mv netcdf-4.4.1.1 netcdf || ture
@@ -27,7 +27,7 @@ export NETCDFPATH=`pwd`/netcdf/install
 if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] ||
    [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exoIIv2for32/libexoIIv2for32.a ]; then
   if [ ! -f exodus.zip ]; then
-    wget https://github.com/gsjaardema/seacas/archive/exodus.zip
+    wget -O exodus.zip https://github.com/gsjaardema/seacas/archive/exodus.zip
   fi
   unzip exodus.zip
   cd sea*

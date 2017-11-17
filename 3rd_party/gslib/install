@@ -13,7 +13,7 @@ if [ -f ./gslib-$VER/src/libgs.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  wget https://github.com/gslib/gslib/archive/v$VER.tar.gz
+  wget -O v$VER.tar.gz https://github.com/gslib/gslib/archive/v$VER.tar.gz
 fi
 
 tar -zxf *.tar.gz

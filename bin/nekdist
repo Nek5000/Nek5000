@@ -26,20 +26,20 @@ rm -rf *.py lib
 cd ..
 
 cd 3rd_party/gslib
-wget https://github.com/gslib/gslib/archive/v1.0.1.tar.gz
+wget -O v1.0.1.tar.gz https://github.com/gslib/gslib/archive/v1.0.1.tar.gz
 cd ../../
 
 cd 3rd_party/cvode
-wget https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
+wget -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
 cd ../..
 
 cd tools/amg_hypre/hypre
-wget https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz
+wget -O v2.11.2.tar.gz https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz
 cd ../../..
 
 cd tools/exo2nek/3rd_party
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
-wget https://github.com/gsjaardema/seacas/archive/exodus.zip
+wget -O netcdf-4.4.1.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
+wget -O exodus.zip https://github.com/gsjaardema/seacas/archive/exodus.zip
 cd ../../..
 
 cd ..

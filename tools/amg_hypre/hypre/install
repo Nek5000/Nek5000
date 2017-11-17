@@ -4,7 +4,7 @@ if [ -f ./lib/libHYPRE.a ]; then
   exit 0
 fi
 if [ ! -f v2.11.2.tar.gz ]; then
-  wget https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz 
+  wget -O v2.11.2.tar.gz https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz 
 fi
 
 tar -zxf *.tar.gz

@@ -11,7 +11,7 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
 fi
 
 if [ ! -f sundials-2.7.0.tar.gz ]; then
-  wget https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
+  wget -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
   tar -zxvf *.tar.gz
 fi
 
