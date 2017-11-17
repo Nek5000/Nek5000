@@ -1,0 +1,9 @@
+
+/**
+@defgroup nek5000  Nek5000 solver
+
+@brief Some short description
+
+@details Here we describe the most fundamental workflow.
+
+*/

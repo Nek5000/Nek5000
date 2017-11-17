@@ -1,3 +1,4 @@
+c> @ingroup nek5000
       program NEKTON
 c
       call nek_init(intracomm)
