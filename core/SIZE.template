@@ -31,12 +31,12 @@ c
       parameter (lorder=3)             ! max order in time
 
       parameter (lx1m=lx1)             ! polynomial order mesh solver
+      parameter (lelt=lelg/lpmin + 3)  ! max number of local elements per MPI rank
+      parameter (lcvelt=lelt)          ! working space for cvode
       parameter (lbelt=1)              ! set to lelt for mhd
       parameter (lpelt=1)              ! set to lelt for linear stability
       parameter (lfdm=0)               ! set to 1 for fast diagonalization method
       parameter (lelx=1,lely=1,lelz=1) ! global tensor mesh dimensions
 
       ! INTERNALS
-      parameter (lelt=lelg/lpmin + 3)  ! max number of local elements per MPI rank
-      parameter (lcvelt=lelt)          ! working space for cvode
       include 'SIZE.inc'
