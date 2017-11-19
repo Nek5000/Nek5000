@@ -948,11 +948,8 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
          if (nio.eq.0 .and. loglevel.gt.2) 
      $      write(6,'(13x,A)') 'Reorthogonalize Basis'
 
-         call proj_ortho
+         call proj_ortho_full
      $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)      
-         !Old version
-c         call proj_ortho2
-c     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6) 
 
          ivar(2) = m ! Update number of saved vectors
 
@@ -1199,7 +1196,7 @@ c     Check for linear independence.
       end
 c-----------------------------------------------------------------------
 c     Old version of projection code
-      subroutine proj_ortho2(xx,bb,n,m,w,ifwt,ifvec,name6)
+      subroutine proj_ortho_full(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
       include 'TSTEP'     ! istep
