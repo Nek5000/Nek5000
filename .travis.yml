@@ -25,16 +25,11 @@ env:
     - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
     - TEST_CASE=ConjHt::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
-    # - TEST_CASE=ConjHt::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
-
-    # - TEST_CASE=VarVis::test_PnPn2_Serial   IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
-    # - TEST_CASE=VarVis::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc # Stdout exceeds Travis' max log length
 
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CMTNEK"
 
     - TEST_CASE=MvCylCvode::test_PnPn_Parallel_Steps1e3   IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
 
-    # The Eddy_Neknek test methods include NEKENK in the PPLIST.  No need to specify as env vars here.
     - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
     
