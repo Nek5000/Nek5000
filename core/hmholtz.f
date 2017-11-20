@@ -3068,41 +3068,51 @@ c     if (ifield.eq.1) call copy(dpcm1,binvm1,ntot)
 c     if (ifield.eq.2) call copy(dpcm1,bintm1,ntot)
 c     return
 
-      call rzero(dpcm1,ntot)
-      do ie=1,nel
+      if (ldim.eq.2) then
+         if(nid.eq.0) write(6,*)
+     $        '2D Not currently implemented on for OpenACC'
+         call exitt()
+      else if (ifaxis) then
+         if(nid.eq.0) write(6,*)
+     $        'Axisymmetric not currently implemented on for OpenACC'
+         call exitt()
+      else
 
-        if (ifaxis) call setaxdy ( ifrzer(ie) )
+         call rzero(dpcm1,ntot)
+         do ie=1,nel
 
-        do iq=1,nx1
-        do iz=1,nz1
-        do iy=1,ny1
-        do ix=1,nx1
-           dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                          g1m1(iq,iy,iz,ie) * dxtm1(ix,iq)**2
-        enddo
-        enddo
-        enddo
-        enddo
+           do iq=1,nx1
+           do iz=1,nz1
+           do iy=1,ny1
+           do ix=1,nx1
+              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
+     $                             g1m1(iq,iy,iz,ie) * 
+     $                             dxtm1(ix,iq)**2
+           enddo
+           enddo
+           enddo
+           enddo
 
-        do iq=1,ny1
-        do iz=1,nz1
-        do iy=1,ny1
-        do ix=1,nx1
-           dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                          g2m1(ix,iq,iz,ie) * dytm1(iy,iq)**2
+           do iq=1,ny1
+           do iz=1,nz1
+           do iy=1,ny1
+           do ix=1,nx1
+              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
+     $                             g2m1(ix,iq,iz,ie) * 
+     $                             dytm1(iy,iq)**2
 
-        enddo
-        enddo
-        enddo
-        enddo
+           enddo
+           enddo
+           enddo
+           enddo
 
-        if (ldim.eq.3) then
            do iq=1,nz1
            do iz=1,nz1
            do iy=1,ny1
            do ix=1,nx1
               dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                             g3m1(ix,iy,iq,ie) * dztm1(iz,iq)**2
+     $                             g3m1(ix,iy,iq,ie) * 
+     $                             dztm1(iz,iq)**2
            enddo
            enddo
            enddo
@@ -3115,11 +3125,11 @@ c
               do iy=1,ny1,ny1-1
               do iz=1,nz1,nz1-1
                  dpcm1(1,iy,iz,ie) = dpcm1(1,iy,iz,ie)
-     $               + g4m1(1,iy,iz,ie) * dxtm1(1,1)*dytm1(iy,iy)
-     $               + g5m1(1,iy,iz,ie) * dxtm1(1,1)*dztm1(iz,iz)
+     $            + g4m1(1,iy,iz,ie) * dxtm1(1,1)*dytm1(iy,iy)
+     $            + g5m1(1,iy,iz,ie) * dxtm1(1,1)*dztm1(iz,iz)
                  dpcm1(nx1,iy,iz,ie) = dpcm1(nx1,iy,iz,ie)
-     $               + g4m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dytm1(iy,iy)
-     $               + g5m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dztm1(iz,iz)
+     $            + g4m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dytm1(iy,iy)
+     $            + g5m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dztm1(iz,iz)
               enddo
               enddo
 
@@ -3137,72 +3147,22 @@ c
               do ix=1,nx1,nx1-1
               do iy=1,ny1,ny1-1
                  dpcm1(ix,iy,1,ie) = dpcm1(ix,iy,1,ie)
-     $                + g5m1(ix,iy,1,ie) * dztm1(1,1)*dxtm1(ix,ix)
-     $                + g6m1(ix,iy,1,ie) * dztm1(1,1)*dytm1(iy,iy)
+     $            + g5m1(ix,iy,1,ie) * dztm1(1,1)*dxtm1(ix,ix)
+     $            + g6m1(ix,iy,1,ie) * dztm1(1,1)*dytm1(iy,iy)
                  dpcm1(ix,iy,nz1,ie) = dpcm1(ix,iy,nz1,ie)
-     $                + g5m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dxtm1(ix,ix)
-     $                + g6m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dytm1(iy,iy)
+     $            + g5m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dxtm1(ix,ix)
+     $            + g6m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dytm1(iy,iy)
               enddo
               enddo
 
            endif
-
-        else  ! 2d
-
-           iz=1
-           if (ifdfrm(ie)) then
-
-              do iy=1,ny1,ny1-1
-                 dpcm1(1,iy,iz,ie) = dpcm1(1,iy,iz,ie)
-     $                + g4m1(1,iy,iz,ie) * dxtm1(1,1)*dytm1(iy,iy)
-                 dpcm1(nx1,iy,iz,ie) = dpcm1(nx1,iy,iz,ie)
-     $                + g4m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dytm1(iy,iy)
-              enddo
-
-              do ix=1,nx1,nx1-1
-                 dpcm1(ix,1,iz,ie) = dpcm1(ix,1,iz,ie)
-     $                + g4m1(ix,1,iz,ie) * dytm1(1,1)*dxtm1(ix,ix)
-                 dpcm1(ix,ny1,iz,ie) = dpcm1(ix,ny1,iz,ie)
-     $                + g4m1(ix,ny1,iz,ie) * dytm1(ny1,ny1)*dxtm1(ix,ix)
-              enddo
-
-           endif
-
-        endif
-
-      enddo
-c
-      call col2    (dpcm1,helm1,ntot)
-      call addcol3 (dpcm1,helm2,bm1,ntot)
-c
-c     if axisymmetric, add a diagonal term in the radial direction (isd=2)
-c
-      if (ifaxis.and.(isd.eq.2)) then
-         do iel=1,nel
-c
-            if (ifrzer(iel)) then
-               call mxm(ym1(1,1,1,iel),nx1,datm1,ny1,ysm1,1)
-            endif
-c
-            do j=1,ny1
-            do i=1,nx1
-               if (ym1(i,j,1,iel).ne.0.) then
-                  term1 = bm1(i,j,1,iel)/ym1(i,j,1,iel)**2
-                  if (ifrzer(iel)) then
-                     term2 =  wxm1(i)*wam1(1)*dam1(1,j)
-     $                       *jacm1(i,1,1,iel)/ysm1(i)
-                  else
-                     term2 = 0.
-                  endif
-                  dpcm1(i,j,1,iel) = dpcm1(i,j,1,iel)
-     $                             + helm1(i,j,1,iel)*(term1+term2)
-               endif
-            enddo
-            enddo
 
          enddo
+c
+         call col2    (dpcm1,helm1,ntot)
+         call addcol3 (dpcm1,helm2,bm1,ntot)
 
-      endif
+      endif ! (ldim.eq.2)
 
       return
       end
