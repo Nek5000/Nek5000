@@ -3068,116 +3068,142 @@ c     if (ifield.eq.1) call copy(dpcm1,binvm1,ntot)
 c     if (ifield.eq.2) call copy(dpcm1,bintm1,ntot)
 c     return
 
-      CALL RZERO(DPCM1,NTOT)
-      DO 1000 IE=1,NEL
+      call rzero(dpcm1,ntot)
+      do ie=1,nel
 
-        IF (IFAXIS) CALL SETAXDY ( IFRZER(IE) )
+        if (ifaxis) call setaxdy ( ifrzer(ie) )
 
-        DO 320 IQ=1,NX1
-        DO 320 IZ=1,NZ1
-        DO 320 IY=1,NY1
-        DO 320 IX=1,NX1
-           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                          G1M1(IQ,IY,IZ,IE) * DXTM1(IX,IQ)**2
-  320   CONTINUE
-        DO 340 IQ=1,NY1
-        DO 340 IZ=1,NZ1
-        DO 340 IY=1,NY1
-        DO 340 IX=1,NX1
-           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                          G2M1(IX,IQ,IZ,IE) * DYTM1(IY,IQ)**2
-  340   CONTINUE
-        IF (LDIM.EQ.3) THEN
-           DO 360 IQ=1,NZ1
-           DO 360 IZ=1,NZ1
-           DO 360 IY=1,NY1
-           DO 360 IX=1,NX1
-              DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                             G3M1(IX,IY,IQ,IE) * DZTM1(IZ,IQ)**2
-  360      CONTINUE
-C
-C          Add cross terms if element is deformed.
-C
-           IF (IFDFRM(IE)) THEN
-              DO 600 IY=1,NY1,ny1-1
-              DO 600 IZ=1,NZ1,nz1-1
-              DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
-     $            + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
-     $            + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
-              DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
-     $            + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
-     $            + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
-  600         CONTINUE
-              DO 700 IX=1,NX1,nx1-1
-              DO 700 IZ=1,NZ1,nz1-1
-                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
-     $            + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
-     $            + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
-                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
-     $            + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
-     $            + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
-  700         CONTINUE
-              DO 800 IX=1,NX1,nx1-1
-              DO 800 IY=1,NY1,ny1-1
-                 DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
-     $                + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
-     $                + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
-                 DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
-     $                + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
-     $                + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
-  800         CONTINUE
-           ENDIF
+        do iq=1,nx1
+        do iz=1,nz1
+        do iy=1,ny1
+        do ix=1,nx1
+           dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
+     $                          g1m1(iq,iy,iz,ie) * dxtm1(ix,iq)**2
+        enddo
+        enddo
+        enddo
+        enddo
 
-        ELSE  ! 2D
+        do iq=1,ny1
+        do iz=1,nz1
+        do iy=1,ny1
+        do ix=1,nx1
+           dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
+     $                          g2m1(ix,iq,iz,ie) * dytm1(iy,iq)**2
 
-           IZ=1
-           IF (IFDFRM(IE)) THEN
-              DO 602 IY=1,NY1,ny1-1
-                 DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
-     $                + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
-                 DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
-     $                + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
-  602         CONTINUE
-              DO 702 IX=1,NX1,nx1-1
-                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
-     $                + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
-                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
-     $                + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
-  702         CONTINUE
-           ENDIF
+        enddo
+        enddo
+        enddo
+        enddo
 
-        ENDIF
- 1000 CONTINUE
-C
-      CALL COL2    (DPCM1,HELM1,NTOT)
-      CALL ADDCOL3 (DPCM1,HELM2,BM1,NTOT)
-C
-C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
-C
-      IF (IFAXIS.AND.(ISD.EQ.2)) THEN
-         DO 1200 IEL=1,NEL
-C
-            IF (IFRZER(IEL)) THEN
-               CALL MXM(YM1(1,1,1,IEL),NX1,DATM1,NY1,YSM1,1)
-            ENDIF
-C
-            DO 1190 J=1,NY1
-            DO 1190 I=1,NX1
-               IF (YM1(I,J,1,IEL).NE.0.) THEN
-                  TERM1 = BM1(I,J,1,IEL)/YM1(I,J,1,IEL)**2
-                  IF (IFRZER(IEL)) THEN
-                     TERM2 =  WXM1(I)*WAM1(1)*DAM1(1,J)
-     $                       *JACM1(I,1,1,IEL)/YSM1(I)
-                  ELSE
-                     TERM2 = 0.
-                  ENDIF
-                  DPCM1(I,J,1,IEL) = DPCM1(I,J,1,IEL)
-     $                             + HELM1(I,J,1,IEL)*(TERM1+TERM2)
-               ENDIF
- 1190       CONTINUE
- 1200    CONTINUE
-      ENDIF
+        if (ldim.eq.3) then
+           do iq=1,nz1
+           do iz=1,nz1
+           do iy=1,ny1
+           do ix=1,nx1
+              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
+     $                             g3m1(ix,iy,iq,ie) * dztm1(iz,iq)**2
+           enddo
+           enddo
+           enddo
+           enddo
+c
+c          add cross terms if element is deformed.
+c
+           if (ifdfrm(ie)) then
+
+              do iy=1,ny1,ny1-1
+              do iz=1,nz1,nz1-1
+                 dpcm1(1,iy,iz,ie) = dpcm1(1,iy,iz,ie)
+     $               + g4m1(1,iy,iz,ie) * dxtm1(1,1)*dytm1(iy,iy)
+     $               + g5m1(1,iy,iz,ie) * dxtm1(1,1)*dztm1(iz,iz)
+                 dpcm1(nx1,iy,iz,ie) = dpcm1(nx1,iy,iz,ie)
+     $               + g4m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dytm1(iy,iy)
+     $               + g5m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dztm1(iz,iz)
+              enddo
+              enddo
+
+              do ix=1,nx1,nx1-1
+              do iz=1,nz1,nz1-1
+                 dpcm1(ix,1,iz,ie) = dpcm1(ix,1,iz,ie)
+     $            + g4m1(ix,1,iz,ie) * dytm1(1,1)*dxtm1(ix,ix)
+     $            + g6m1(ix,1,iz,ie) * dytm1(1,1)*dztm1(iz,iz)
+                 dpcm1(ix,ny1,iz,ie) = dpcm1(ix,ny1,iz,ie)
+     $            + g4m1(ix,ny1,iz,ie) * dytm1(ny1,ny1)*dxtm1(ix,ix)
+     $            + g6m1(ix,ny1,iz,ie) * dytm1(ny1,ny1)*dztm1(iz,iz)
+              enddo
+              enddo
+
+              do ix=1,nx1,nx1-1
+              do iy=1,ny1,ny1-1
+                 dpcm1(ix,iy,1,ie) = dpcm1(ix,iy,1,ie)
+     $                + g5m1(ix,iy,1,ie) * dztm1(1,1)*dxtm1(ix,ix)
+     $                + g6m1(ix,iy,1,ie) * dztm1(1,1)*dytm1(iy,iy)
+                 dpcm1(ix,iy,nz1,ie) = dpcm1(ix,iy,nz1,ie)
+     $                + g5m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dxtm1(ix,ix)
+     $                + g6m1(ix,iy,nz1,ie) * dztm1(nz1,nz1)*dytm1(iy,iy)
+              enddo
+              enddo
+
+           endif
+
+        else  ! 2d
+
+           iz=1
+           if (ifdfrm(ie)) then
+
+              do iy=1,ny1,ny1-1
+                 dpcm1(1,iy,iz,ie) = dpcm1(1,iy,iz,ie)
+     $                + g4m1(1,iy,iz,ie) * dxtm1(1,1)*dytm1(iy,iy)
+                 dpcm1(nx1,iy,iz,ie) = dpcm1(nx1,iy,iz,ie)
+     $                + g4m1(nx1,iy,iz,ie) * dxtm1(nx1,nx1)*dytm1(iy,iy)
+              enddo
+
+              do ix=1,nx1,nx1-1
+                 dpcm1(ix,1,iz,ie) = dpcm1(ix,1,iz,ie)
+     $                + g4m1(ix,1,iz,ie) * dytm1(1,1)*dxtm1(ix,ix)
+                 dpcm1(ix,ny1,iz,ie) = dpcm1(ix,ny1,iz,ie)
+     $                + g4m1(ix,ny1,iz,ie) * dytm1(ny1,ny1)*dxtm1(ix,ix)
+              enddo
+
+           endif
+
+        endif
+
+      enddo
+c
+      call col2    (dpcm1,helm1,ntot)
+      call addcol3 (dpcm1,helm2,bm1,ntot)
+c
+c     if axisymmetric, add a diagonal term in the radial direction (isd=2)
+c
+      if (ifaxis.and.(isd.eq.2)) then
+         do iel=1,nel
+c
+            if (ifrzer(iel)) then
+               call mxm(ym1(1,1,1,iel),nx1,datm1,ny1,ysm1,1)
+            endif
+c
+            do j=1,ny1
+            do i=1,nx1
+               if (ym1(i,j,1,iel).ne.0.) then
+                  term1 = bm1(i,j,1,iel)/ym1(i,j,1,iel)**2
+                  if (ifrzer(iel)) then
+                     term2 =  wxm1(i)*wam1(1)*dam1(1,j)
+     $                       *jacm1(i,1,1,iel)/ysm1(i)
+                  else
+                     term2 = 0.
+                  endif
+                  dpcm1(i,j,1,iel) = dpcm1(i,j,1,iel)
+     $                             + helm1(i,j,1,iel)*(term1+term2)
+               endif
+            enddo
+            enddo
+
+         enddo
+
+      endif
 
       return
-      END
+      end
 c-----------------------------------------------------------------------
