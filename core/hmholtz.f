@@ -3056,6 +3056,7 @@ C-------------------------------------------------------------------
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
       REAL YSM1(LY1)
+      real temp
 
       nel=nelt
       if (imsh.eq.1) nel=nelv
@@ -3080,47 +3081,20 @@ c     return
 
          do ie=1,nel
 
-            do iz=1,nz1
-            do iy=1,ny1
-            do ix=1,nx1
-               dpcm1(ix,iy,iz,ie) = 0.0
-            enddo
-            enddo
-            enddo
-
-           do iq=1,nx1
            do iz=1,nz1
            do iy=1,ny1
            do ix=1,nx1
-              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                             g1m1(iq,iy,iz,ie) * 
-     $                             dxtm1(ix,iq)**2
-           enddo
-           enddo
-           enddo
-           enddo
-
-           do iq=1,ny1
-           do iz=1,nz1
-           do iy=1,ny1
-           do ix=1,nx1
-              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                             g2m1(ix,iq,iz,ie) * 
-     $                             dytm1(iy,iq)**2
-
-           enddo
-           enddo
-           enddo
-           enddo
-
-           do iq=1,nz1
-           do iz=1,nz1
-           do iy=1,ny1
-           do ix=1,nx1
-              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) + 
-     $                             g3m1(ix,iy,iq,ie) * 
-     $                             dztm1(iz,iq)**2
-           enddo
+              temp = 0.0
+              do iq=1,nx1
+                 temp = temp + g1m1(iq,iy,iz,ie) * dxtm1(ix,iq)**2
+              enddo
+              do iq=1,ny1
+                 temp = temp + g2m1(ix,iq,iz,ie) * dytm1(iy,iq)**2
+              enddo
+              do iq=1,nz1
+                 temp = temp + g3m1(ix,iy,iq,ie) * dztm1(iz,iq)**2
+              enddo
+              dpcm1(ix,iy,iz,ie) = temp
            enddo
            enddo
            enddo
@@ -3168,15 +3142,7 @@ c
            do iy=1,ny1
            do ix=1,nx1
               dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) *
-     $           helm1(ix,iy,iz,ie)
-           enddo
-           enddo
-           enddo
-
-           do iz=1,nz1
-           do iy=1,ny1
-           do ix=1,nx1
-              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) +
+     $           helm1(ix,iy,iz,ie) +
      $           helm2(ix,iy,iz,ie) * bm1(ix,iy,iz,ie)
            enddo
            enddo
