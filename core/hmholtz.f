@@ -146,9 +146,7 @@ c     overrule tolerance for velocity
 
 c     Set up diag preconditioner.
 
-!$acc update host(scrd)
-      call setprec_acc(scrd,h1,h2,imsh,isd) ! needs to be ported
-!$acc update device(scrd)
+      call setprec_acc(scrd,h1,h2,imsh,isd)
 
       call dssum(scrd,nx1,ny1,nz1)
       call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
@@ -3078,18 +3076,31 @@ c     return
          call exitt()
       else
 
+
+!$acc parallel
+!$acc&  present(dpcm1)
+!$acc&  present(ifdfrm)
+!$acc&  present(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
+!$acc&  present(dxm1,dym1,dzm1)
+!$acc&  present(helm1,helm2,bm1)
+
+!$acc loop gang
          do e=1,nel
 
+!$acc loop vector collapse(3)
            do k=1,nz1
            do j=1,ny1
            do i=1,nx1
               temp = 0.0
+!$acc loop seq
               do q=1,nx1
                  temp = temp + g1m1(q,j,k,e) * dxm1(q,i)**2
               enddo
+!$acc loop seq
               do q=1,ny1
                  temp = temp + g2m1(i,q,k,e) * dym1(q,j)**2
               enddo
+!$acc loop seq
               do q=1,nz1
                  temp = temp + g3m1(i,j,q,e) * dzm1(q,k)**2
               enddo
@@ -3168,6 +3179,7 @@ c
 
            endif
 
+!$acc loop vector collapse(3)
            do k=1,nz1
            do j=1,ny1
            do i=1,nx1
@@ -3179,6 +3191,7 @@ c
            enddo
 
          enddo
+!$acc end parallel
 
       endif ! (ldim.eq.2)
 
