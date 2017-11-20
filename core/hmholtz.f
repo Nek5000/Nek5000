@@ -3078,8 +3078,15 @@ c     return
          call exitt()
       else
 
-         call rzero(dpcm1,ntot)
          do ie=1,nel
+
+            do iz=1,nz1
+            do iy=1,ny1
+            do ix=1,nx1
+               dpcm1(ix,iy,iz,ie) = 0.0
+            enddo
+            enddo
+            enddo
 
            do iq=1,nx1
            do iz=1,nz1
@@ -3157,10 +3164,25 @@ c
 
            endif
 
+           do iz=1,nz1
+           do iy=1,ny1
+           do ix=1,nx1
+              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) *
+     $           helm1(ix,iy,iz,ie)
+           enddo
+           enddo
+           enddo
+
+           do iz=1,nz1
+           do iy=1,ny1
+           do ix=1,nx1
+              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) +
+     $           helm2(ix,iy,iz,ie) * bm1(ix,iy,iz,ie)
+           enddo
+           enddo
+           enddo
+
          enddo
-c
-         call col2    (dpcm1,helm1,ntot)
-         call addcol3 (dpcm1,helm2,bm1,ntot)
 
       endif ! (ldim.eq.2)
 
