@@ -3057,6 +3057,7 @@ C-------------------------------------------------------------------
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
       REAL YSM1(LY1)
       real temp
+      integer i, j, k, e, q
 
       nel=nelt
       if (imsh.eq.1) nel=nelv
@@ -3079,128 +3080,128 @@ c     return
          call exitt()
       else
 
-         do ie=1,nel
+         do e=1,nel
 
-           do iz=1,nz1
-           do iy=1,ny1
-           do ix=1,nx1
+           do k=1,nz1
+           do j=1,ny1
+           do i=1,nx1
               temp = 0.0
-              do iq=1,nx1
-                 temp = temp + g1m1(iq,iy,iz,ie) * dxtm1(ix,iq)**2
+              do q=1,nx1
+                 temp = temp + g1m1(q,j,k,e) * dxtm1(i,q)**2
               enddo
-              do iq=1,ny1
-                 temp = temp + g2m1(ix,iq,iz,ie) * dytm1(iy,iq)**2
+              do q=1,ny1
+                 temp = temp + g2m1(i,q,k,e) * dytm1(j,q)**2
               enddo
-              do iq=1,nz1
-                 temp = temp + g3m1(ix,iy,iq,ie) * dztm1(iz,iq)**2
+              do q=1,nz1
+                 temp = temp + g3m1(i,j,q,e) * dztm1(k,q)**2
               enddo
-              dpcm1(ix,iy,iz,ie) = temp
+              dpcm1(i,j,k,e) = temp
            enddo
            enddo
            enddo
 c
 c          add cross terms if element is deformed.
 c
-           if (ifdfrm(ie)) then
+           if (ifdfrm(e)) then
 
               ! y and z directions
 
-              dpcm1(1,1,1,ie) = dpcm1(1,1,1,ie)
-     $         + g4m1(1,1,1,ie) * dxtm1(1,1)*dytm1(1,1)
-     $         + g5m1(1,1,1,ie) * dxtm1(1,1)*dztm1(1,1)
-              dpcm1(nx1,1,1,ie) = dpcm1(nx1,1,1,ie)
-     $         + g4m1(nx1,1,1,ie) * dxtm1(nx1,nx1)*dytm1(1,1)
-     $         + g5m1(nx1,1,1,ie) * dxtm1(nx1,nx1)*dztm1(1,1)
+              dpcm1(1,1,1,e) = dpcm1(1,1,1,e)
+     $         + g4m1(1,1,1,e) * dxtm1(1,1)*dytm1(1,1)
+     $         + g5m1(1,1,1,e) * dxtm1(1,1)*dztm1(1,1)
+              dpcm1(nx1,1,1,e) = dpcm1(nx1,1,1,e)
+     $         + g4m1(nx1,1,1,e) * dxtm1(nx1,nx1)*dytm1(1,1)
+     $         + g5m1(nx1,1,1,e) * dxtm1(nx1,nx1)*dztm1(1,1)
 
-              dpcm1(1,1,nz1,ie) = dpcm1(1,1,nz1,ie)
-     $         + g4m1(1,1,nz1,ie) * dxtm1(1,1)*dytm1(1,1)
-     $         + g5m1(1,1,nz1,ie) * dxtm1(1,1)*dztm1(nz1,nz1)
-              dpcm1(nx1,1,nz1,ie) = dpcm1(nx1,1,nz1,ie)
-     $         + g4m1(nx1,1,nz1,ie) * dxtm1(nx1,nx1)*dytm1(1,1)
-     $         + g5m1(nx1,1,nz1,ie) * dxtm1(nx1,nx1)*dztm1(nz1,nz1)
+              dpcm1(1,1,nz1,e) = dpcm1(1,1,nz1,e)
+     $         + g4m1(1,1,nz1,e) * dxtm1(1,1)*dytm1(1,1)
+     $         + g5m1(1,1,nz1,e) * dxtm1(1,1)*dztm1(nz1,nz1)
+              dpcm1(nx1,1,nz1,e) = dpcm1(nx1,1,nz1,e)
+     $         + g4m1(nx1,1,nz1,e) * dxtm1(nx1,nx1)*dytm1(1,1)
+     $         + g5m1(nx1,1,nz1,e) * dxtm1(nx1,nx1)*dztm1(nz1,nz1)
 
-              dpcm1(1,ny1,1,ie) = dpcm1(1,ny1,1,ie)
-     $         + g4m1(1,ny1,1,ie) * dxtm1(1,1)*dytm1(ny1,ny1)
-     $         + g5m1(1,ny1,1,ie) * dxtm1(1,1)*dztm1(1,1)
-              dpcm1(nx1,ny1,1,ie) = dpcm1(nx1,ny1,1,ie)
-     $         + g4m1(nx1,ny1,1,ie) * dxtm1(nx1,nx1)*dytm1(ny1,ny1)
-     $         + g5m1(nx1,ny1,1,ie) * dxtm1(nx1,nx1)*dztm1(1,1)
+              dpcm1(1,ny1,1,e) = dpcm1(1,ny1,1,e)
+     $         + g4m1(1,ny1,1,e) * dxtm1(1,1)*dytm1(ny1,ny1)
+     $         + g5m1(1,ny1,1,e) * dxtm1(1,1)*dztm1(1,1)
+              dpcm1(nx1,ny1,1,e) = dpcm1(nx1,ny1,1,e)
+     $         + g4m1(nx1,ny1,1,e) * dxtm1(nx1,nx1)*dytm1(ny1,ny1)
+     $         + g5m1(nx1,ny1,1,e) * dxtm1(nx1,nx1)*dztm1(1,1)
 
-              dpcm1(1,ny1,nz1,ie) = dpcm1(1,ny1,nz1,ie)
-     $         + g4m1(1,ny1,nz1,ie) * dxtm1(1,1)*dytm1(ny1,ny1)
-     $         + g5m1(1,ny1,nz1,ie) * dxtm1(1,1)*dztm1(nz1,nz1)
-              dpcm1(nx1,ny1,nz1,ie) = dpcm1(nx1,ny1,nz1,ie)
-     $         + g4m1(nx1,ny1,nz1,ie) * dxtm1(nx1,nx1)*dytm1(ny1,ny1)
-     $         + g5m1(nx1,ny1,nz1,ie) * dxtm1(nx1,nx1)*dztm1(nz1,nz1)
+              dpcm1(1,ny1,nz1,e) = dpcm1(1,ny1,nz1,e)
+     $         + g4m1(1,ny1,nz1,e) * dxtm1(1,1)*dytm1(ny1,ny1)
+     $         + g5m1(1,ny1,nz1,e) * dxtm1(1,1)*dztm1(nz1,nz1)
+              dpcm1(nx1,ny1,nz1,e) = dpcm1(nx1,ny1,nz1,e)
+     $         + g4m1(nx1,ny1,nz1,e) * dxtm1(nx1,nx1)*dytm1(ny1,ny1)
+     $         + g5m1(nx1,ny1,nz1,e) * dxtm1(nx1,nx1)*dztm1(nz1,nz1)
 
               ! x and z directions
 
-              dpcm1(1,1,1,ie) = dpcm1(1,1,1,ie)
-     $         + g4m1(1,1,1,ie) * dytm1(1,1)*dxtm1(1,1)
-     $         + g6m1(1,1,1,ie) * dytm1(1,1)*dztm1(1,1)
-              dpcm1(1,ny1,1,ie) = dpcm1(1,ny1,1,ie)
-     $         + g4m1(1,ny1,1,ie) * dytm1(ny1,ny1)*dxtm1(1,1)
-     $         + g6m1(1,ny1,1,ie) * dytm1(ny1,ny1)*dztm1(1,1)
+              dpcm1(1,1,1,e) = dpcm1(1,1,1,e)
+     $         + g4m1(1,1,1,e) * dytm1(1,1)*dxtm1(1,1)
+     $         + g6m1(1,1,1,e) * dytm1(1,1)*dztm1(1,1)
+              dpcm1(1,ny1,1,e) = dpcm1(1,ny1,1,e)
+     $         + g4m1(1,ny1,1,e) * dytm1(ny1,ny1)*dxtm1(1,1)
+     $         + g6m1(1,ny1,1,e) * dytm1(ny1,ny1)*dztm1(1,1)
 
-              dpcm1(1,1,nz1,ie) = dpcm1(1,1,nz1,ie)
-     $         + g4m1(1,1,nz1,ie) * dytm1(1,1)*dxtm1(1,1)
-     $         + g6m1(1,1,nz1,ie) * dytm1(1,1)*dztm1(nz1,nz1)
-              dpcm1(1,ny1,nz1,ie) = dpcm1(1,ny1,nz1,ie)
-     $         + g4m1(1,ny1,nz1,ie) * dytm1(ny1,ny1)*dxtm1(1,1)
-     $         + g6m1(1,ny1,nz1,ie) * dytm1(ny1,ny1)*dztm1(nz1,nz1)
+              dpcm1(1,1,nz1,e) = dpcm1(1,1,nz1,e)
+     $         + g4m1(1,1,nz1,e) * dytm1(1,1)*dxtm1(1,1)
+     $         + g6m1(1,1,nz1,e) * dytm1(1,1)*dztm1(nz1,nz1)
+              dpcm1(1,ny1,nz1,e) = dpcm1(1,ny1,nz1,e)
+     $         + g4m1(1,ny1,nz1,e) * dytm1(ny1,ny1)*dxtm1(1,1)
+     $         + g6m1(1,ny1,nz1,e) * dytm1(ny1,ny1)*dztm1(nz1,nz1)
 
-              dpcm1(nx1,1,1,ie) = dpcm1(nx1,1,1,ie)
-     $         + g4m1(nx1,1,1,ie) * dytm1(1,1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,1,1,ie) * dytm1(1,1)*dztm1(1,1)
-              dpcm1(nx1,ny1,1,ie) = dpcm1(nx1,ny1,1,ie)
-     $         + g4m1(nx1,ny1,1,ie) * dytm1(ny1,ny1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,1,ie) * dytm1(ny1,ny1)*dztm1(1,1)
+              dpcm1(nx1,1,1,e) = dpcm1(nx1,1,1,e)
+     $         + g4m1(nx1,1,1,e) * dytm1(1,1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,1,1,e) * dytm1(1,1)*dztm1(1,1)
+              dpcm1(nx1,ny1,1,e) = dpcm1(nx1,ny1,1,e)
+     $         + g4m1(nx1,ny1,1,e) * dytm1(ny1,ny1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,ny1,1,e) * dytm1(ny1,ny1)*dztm1(1,1)
 
-              dpcm1(nx1,1,nz1,ie) = dpcm1(nx1,1,nz1,ie)
-     $         + g4m1(nx1,1,nz1,ie) * dytm1(1,1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,1,nz1,ie) * dytm1(1,1)*dztm1(nz1,nz1)
-              dpcm1(nx1,ny1,nz1,ie) = dpcm1(nx1,ny1,nz1,ie)
-     $         + g4m1(nx1,ny1,nz1,ie) * dytm1(ny1,ny1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,nz1,ie) * dytm1(ny1,ny1)*dztm1(nz1,nz1)
+              dpcm1(nx1,1,nz1,e) = dpcm1(nx1,1,nz1,e)
+     $         + g4m1(nx1,1,nz1,e) * dytm1(1,1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,1,nz1,e) * dytm1(1,1)*dztm1(nz1,nz1)
+              dpcm1(nx1,ny1,nz1,e) = dpcm1(nx1,ny1,nz1,e)
+     $         + g4m1(nx1,ny1,nz1,e) * dytm1(ny1,ny1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,ny1,nz1,e) * dytm1(ny1,ny1)*dztm1(nz1,nz1)
 
               ! x and y directions
 
-              dpcm1(1,1,1,ie) = dpcm1(1,1,1,ie)
-     $         + g5m1(1,1,1,ie) * dztm1(1,1)*dxtm1(1,1)
-     $         + g6m1(1,1,1,ie) * dztm1(1,1)*dytm1(1,1)
-              dpcm1(1,1,nz1,ie) = dpcm1(1,1,nz1,ie)
-     $         + g5m1(1,1,nz1,ie) * dztm1(nz1,nz1)*dxtm1(1,1)
-     $         + g6m1(1,1,nz1,ie) * dztm1(nz1,nz1)*dytm1(1,1)
+              dpcm1(1,1,1,e) = dpcm1(1,1,1,e)
+     $         + g5m1(1,1,1,e) * dztm1(1,1)*dxtm1(1,1)
+     $         + g6m1(1,1,1,e) * dztm1(1,1)*dytm1(1,1)
+              dpcm1(1,1,nz1,e) = dpcm1(1,1,nz1,e)
+     $         + g5m1(1,1,nz1,e) * dztm1(nz1,nz1)*dxtm1(1,1)
+     $         + g6m1(1,1,nz1,e) * dztm1(nz1,nz1)*dytm1(1,1)
 
-              dpcm1(1,ny1,1,ie) = dpcm1(1,ny1,1,ie)
-     $         + g5m1(1,ny1,1,ie) * dztm1(1,1)*dxtm1(1,1)
-     $         + g6m1(1,ny1,1,ie) * dztm1(1,1)*dytm1(ny1,ny1)
-              dpcm1(1,ny1,nz1,ie) = dpcm1(1,ny1,nz1,ie)
-     $         + g5m1(1,ny1,nz1,ie) * dztm1(nz1,nz1)*dxtm1(1,1)
-     $         + g6m1(1,ny1,nz1,ie) * dztm1(nz1,nz1)*dytm1(ny1,ny1)
+              dpcm1(1,ny1,1,e) = dpcm1(1,ny1,1,e)
+     $         + g5m1(1,ny1,1,e) * dztm1(1,1)*dxtm1(1,1)
+     $         + g6m1(1,ny1,1,e) * dztm1(1,1)*dytm1(ny1,ny1)
+              dpcm1(1,ny1,nz1,e) = dpcm1(1,ny1,nz1,e)
+     $         + g5m1(1,ny1,nz1,e) * dztm1(nz1,nz1)*dxtm1(1,1)
+     $         + g6m1(1,ny1,nz1,e) * dztm1(nz1,nz1)*dytm1(ny1,ny1)
 
-              dpcm1(nx1,1,1,ie) = dpcm1(nx1,1,1,ie)
-     $         + g5m1(nx1,1,1,ie) * dztm1(1,1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,1,1,ie) * dztm1(1,1)*dytm1(1,1)
-              dpcm1(nx1,1,nz1,ie) = dpcm1(nx1,1,nz1,ie)
-     $         + g5m1(nx1,1,nz1,ie) * dztm1(nz1,nz1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,1,nz1,ie) * dztm1(nz1,nz1)*dytm1(1,1)
+              dpcm1(nx1,1,1,e) = dpcm1(nx1,1,1,e)
+     $         + g5m1(nx1,1,1,e) * dztm1(1,1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,1,1,e) * dztm1(1,1)*dytm1(1,1)
+              dpcm1(nx1,1,nz1,e) = dpcm1(nx1,1,nz1,e)
+     $         + g5m1(nx1,1,nz1,e) * dztm1(nz1,nz1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,1,nz1,e) * dztm1(nz1,nz1)*dytm1(1,1)
 
-              dpcm1(nx1,ny1,1,ie) = dpcm1(nx1,ny1,1,ie)
-     $         + g5m1(nx1,ny1,1,ie) * dztm1(1,1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,1,ie) * dztm1(1,1)*dytm1(ny1,ny1)
-              dpcm1(nx1,ny1,nz1,ie) = dpcm1(nx1,ny1,nz1,ie)
-     $         + g5m1(nx1,ny1,nz1,ie) * dztm1(nz1,nz1)*dxtm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,nz1,ie) * dztm1(nz1,nz1)*dytm1(ny1,ny1)
+              dpcm1(nx1,ny1,1,e) = dpcm1(nx1,ny1,1,e)
+     $         + g5m1(nx1,ny1,1,e) * dztm1(1,1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,ny1,1,e) * dztm1(1,1)*dytm1(ny1,ny1)
+              dpcm1(nx1,ny1,nz1,e) = dpcm1(nx1,ny1,nz1,e)
+     $         + g5m1(nx1,ny1,nz1,e) * dztm1(nz1,nz1)*dxtm1(nx1,nx1)
+     $         + g6m1(nx1,ny1,nz1,e) * dztm1(nz1,nz1)*dytm1(ny1,ny1)
 
            endif
 
-           do iz=1,nz1
-           do iy=1,ny1
-           do ix=1,nx1
-              dpcm1(ix,iy,iz,ie) = dpcm1(ix,iy,iz,ie) *
-     $           helm1(ix,iy,iz,ie) +
-     $           helm2(ix,iy,iz,ie) * bm1(ix,iy,iz,ie)
+           do k=1,nz1
+           do j=1,ny1
+           do i=1,nx1
+              dpcm1(i,j,k,e) = dpcm1(i,j,k,e) *
+     $           helm1(i,j,k,e) +
+     $           helm2(i,j,k,e) * bm1(i,j,k,e)
            enddo
            enddo
            enddo
