@@ -36,7 +36,7 @@ c
      $               ,ifadvc(ldimt1),ifdiff(ldimt1),ifdeal(ldimt1)
      $               ,ifprojfld(0:ldimt1)
      $               ,iftmsh(0:ldimt1),ifdgfld(0:ldimt1),ifdg
-     $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
+     $               ,ifmvbd,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso(ldimt1),iffmtin
@@ -52,7 +52,7 @@ c
      $               ,ifadvc,ifdiff,ifdeal
      $               ,ifprojfld
      $               ,iftmsh,ifdgfld,ifdg
-     $               ,ifmvbd,ifnatc,ifchar,ifnonl
+     $               ,ifmvbd,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso        ,iffmtin

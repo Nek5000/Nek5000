@@ -1524,7 +1524,6 @@ C----------------------------------------------------------------------
 
                                                 call makeuf
       if (filterType.eq.2)                      call make_hpf
-      if (ifnatc)                               call natconv
       if (ifexplvis.and.ifsplit)                call makevis
       if (ifnav .and..not.ifchar)               call advab
       if (ifmvbd.and..not.ifchar)               call admeshv
@@ -1589,92 +1588,6 @@ C
       tusfq=tusfq+(dnekclock()-etime1)
 #endif
 
-      return
-      END
-C
-      subroutine natconv 
-C-----------------------------------------------------------------------
-C
-C     Compute driving force (in x- and y-direction) 
-C     due to natural convection (Boussinesq approximation).
-C
-C-----------------------------------------------------------------------
-      include 'SIZE'
-      include 'SOLN'
-      include 'MASS'
-      include 'TSTEP'
-C
-      COMMON /SCRUZ/ TA1 (LX1,LY1,LZ1,LELV)
-     $ ,             TA2 (LX1,LY1,LZ1,LELV)
-     $ ,             TA3 (LX1,LY1,LZ1,LELV)
-C
-      NTOT1   = lx1*ly1*lz1*NELV
-      RGTHETA = GTHETA*PI/180.
-      BOUSS1  = -BETAG*SIN(RGTHETA)
-      BOUSS2  =  BETAG*COS(RGTHETA)
-      CALL SETTBAR (TBAR)
-      CALL CADD2   (TA1,T,-TBAR,NTOT1)
-      CALL COPY    (TA2,TA1,NTOT1)
-      CALL CMULT   (TA1,BOUSS1,NTOT1)
-      CALL CMULT   (TA2,BOUSS2,NTOT1)
-C
-      CALL ADDCOL3 (BFX,BM1,TA1,NTOT1)
-      CALL ADDCOL3 (BFY,BM1,TA2,NTOT1)
-C
-      return
-      END
-C
-      subroutine settbar (tbar)
-C----------------------------------------------------------------
-C
-C     Find reasonable Tbar in the buoyancy term, beta*(T-Tbar)...
-C
-C----------------------------------------------------------------
-      include 'SIZE'
-      include 'MASS'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'SOLN'
-      include 'TSTEP'
-C
-      CHARACTER CB*1
-      DIMENSION TEMP(2)
-
-      integer*8 ntotg,nxyz
-
-      IF (BETAG.EQ.0.0) return
-
-      TBAR   = 0.
-      NNOUT  = 0
-      NFACES = 2*ldim
-
-      nxyz   = lx1*ly1*lz1
-      ntot1  = nxyz*nelv
-      ntotg  = nxyz*nelgv
-
-      DO 100 IEL=1,NELV
-      DO 100 IFACE=1,NFACES
-         CB = CBC(IFACE,IEL,IFIELD)
-         IF (CB.EQ.'O' .OR. CB.EQ.'o') THEN
-            CALL FACIND(KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,IFACE)
-            DO 10 IZ=KZ1,KZ2
-            DO 10 IY=KY1,KY2
-            DO 10 IX=KX1,KX2
-               NNOUT  = NNOUT + 1
-               TBAR   = TBAR + T(IX,IY,IZ,IEL,1)
- 10         CONTINUE
-         ENDIF
- 100  CONTINUE
-      TEMP(1)=TBAR
-      TEMP(2)=NNOUT
-      TBAR =     GLSUM(TEMP(1),1)
-      NNOUT=INT( GLSUM(TEMP(2),1) )
-      IF (NNOUT.GT.0) THEN
-         TBAR = TBAR/(NNOUT)
-      ELSE
-         tbar = glsum(t,ntot1)/ntotg
-      ENDIF
-C
       return
       END
 C

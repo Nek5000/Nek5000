@@ -35,8 +35,8 @@ c
      $               ,nconv,nconv_max
      $               ,ioinfodmp
 
-      real pi,betag,gtheta
-      common /tstep3/ pi,betag,gtheta
+      real pi
+      common /tstep3/ pi
       
       logical ifprnt,if_full_pres,ifoutfld
       common /tstep4/ ifprnt,if_full_pres,ifoutfld

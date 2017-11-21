@@ -195,8 +195,6 @@ C
 C
       PARAM(86) = 0 ! No skew-symm. convection for now
 C
-      BETAG  = 0 ! PARAM(3)
-      GTHETA = 0 ! PARAM(4)
       DT     = abs(PARAM(12))
       DTINIT = DT
       FINTIM = PARAM(10)
@@ -242,13 +240,6 @@ C
 C     Print interval defaults to 1
 C
       IF (IOCOMM.EQ.0)  IOCOMM = nsteps+1
-
-C
-C     Set logical for Boussinesq approx (natural convection)
-C
-      IFNATC = .FALSE.
-      IF (BETAG.GT.0.) IFNATC=.TRUE.
-      IF(IFLOMACH) IFNATC = .FALSE.
 C
 C     Set default for mesh integration scheme
 C

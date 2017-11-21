@@ -1645,13 +1645,11 @@ C
 C
       CALL SETPROP
       CALL SETSOLV
-      IF (IFNATC) GTHETA = GTHETA+10.
 C
       IF (NIO.EQ.0) WRITE (6,*) 'Steady Stokes problem'
       DO 100 IGEOM=1,2
          IF (.NOT.IFSPLIT) CALL FLUID (IGEOM)
  100  CONTINUE
-      IF (IFNATC) GTHETA = GTHETA-10.
 C
 C     Set IFTRAN to true again
 C     Turn convection on again
