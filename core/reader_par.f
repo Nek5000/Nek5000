@@ -87,7 +87,7 @@ C
       filterType = 0   ! no filtering
 
       param(160) = 1   ! cvode use normal mode 
-      param(161) = 1   ! cvode use non-stoff integration 
+      param(161) = 2   ! cvode use stiff integration 
       param(162) = 0   ! cvode absolute tolerance
       param(163) = -1  ! cvode realtive tolerance
       param(164) = 100 ! cvode don't limit internal dt
@@ -656,6 +656,7 @@ c set logical flags
 
       call finiparser_getBool(i_out,'cvode:stiff',ifnd)
       if(ifnd .eq. 1) then
+        param(161) = 1 ! AM
         if(i_out .eq. 1) param(161) = 2 !BDF
       endif
 
