@@ -60,7 +60,6 @@ C
       IOSTEP    = 10000
 C
                    IFMODP = .TRUE.
-      IF (IFNATC)  IFMODP = .FALSE.
                    IFSKIP = .TRUE.
                    NSSKIP = 1
 C
@@ -474,9 +473,6 @@ C
          IF(.NOT.IFSTST(IFIELD)) IFSSVT = .FALSE.
          IF(.NOT.IFEXTR(IFIELD)) IFEXVT = .FALSE.
  200  CONTINUE
-      IF (IFNATC) THEN
-         IF (IFSTST(2).AND.(.NOT.IFSTST(1))) IFSTST(2) = .FALSE.
-      ENDIF
       RETURN
       END
 C
