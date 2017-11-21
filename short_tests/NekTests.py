@@ -1006,7 +1006,7 @@ class DoubleShear(NekTestCase):
         self.run_nek(step_limit=None)
 
         en = self.get_value_from_log('L2 norm: ', column=-1)
-        self.assertAlmostEqualDelayed(en, target_val=0.86147612200488166, delta=1e-8, label='Energy')
+        self.assertAlmostEqualDelayed(en, target_val=0.86147612200488166, delta=1e-5, label='Energy')
 
         self.assertDelayedFailures()
 
@@ -1018,7 +1018,7 @@ class DoubleShear(NekTestCase):
         self.run_nek(step_limit=None)
 
         en = self.get_value_from_log('L2 norm: ', column=-1)
-        self.assertAlmostEqualDelayed(en, target_val=0.85973996057622892, delta=1e-8, label='Energy')
+        self.assertAlmostEqualDelayed(en, target_val=0.85973996057622892, delta=1e-5, label='Energy')
 
         self.assertDelayedFailures()
 
