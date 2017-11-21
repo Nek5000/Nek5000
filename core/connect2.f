@@ -50,7 +50,10 @@ C     Read Mesh Info
       call bcast(nelgv,ISIZE)
       call bcast(nelgt,ISIZE)
       ifre2 = .false.
-      if(nelgs.lt.0) ifre2 = .true.
+      if (nelgs.lt.0) ifre2 = .true.
+
+      if (nelgt.gt.350000 .and. .not.ifre2) 
+     $   call exitti('Problem size requires .re2!$',1)
 
       ifgtp = .false.
       if (ldim.lt.0) ifgtp = .true.
