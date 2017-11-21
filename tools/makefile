@@ -2,14 +2,19 @@ SHELL = /bin/bash
 
 all:
 	@for i in $(MODULES) ; do                \
+	  if [ "$$i" == "amg_matlab2" ]; then    \
+             continue;                           \
+          fi ;                                   \
 	  if test ! -f $${i}/makefile ; then     \
            echo "" ;                             \
            echo "ERROR: $${i} does not exist!" ; \
            echo "" ;                             \
             exit 1 ;                             \
           fi ;                                   \
+	  export FFLAGS="${NEK_FFLAGS}" ;        \
           export FFLAGS+=" ${CPPF}" ;            \
           export FFLAGS+=" ${BIGMEM}" ;          \
+	  export CFLAGS="${NEK_CFLAGS}" ;        \
           export CFLAGS+=" ${US}" ;              \
           export CFLAGS+=" ${BIGMEM}" ;          \
           if [ "$$i" == "exo2nek" ]; then        \
@@ -17,6 +22,15 @@ all:
              if [ ! -z $(DOALL) ]; then          \
                 continue;                        \
              fi ;                                \
+          fi ;                                   \
+          if [ "$$i" == "nekmerge" ]; then       \
+             export FFLAGS+=" ${R8}" ;           \
+          fi ;                                   \
+          if [ "$$i" == "n2to3" ]; then          \
+             export FFLAGS+=" ${R8}" ;           \
+          fi ;                                   \
+          if [ "$$i" == "reatore2" ]; then       \
+             export FFLAGS+=" ${R8}" ;           \
           fi ;                                   \
           if [ "$$i" == "genmap" ]; then         \
              export FFLAGS+=" ${R8}" ;           \
