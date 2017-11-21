@@ -3,12 +3,12 @@
 # Nek5000 config file
 #-------------------------------------------------------------------------------
 
-# source path 
-SOURCE_ROOT="$HOME/Nek5000" 
+# source path (default $HOME/Nek5000) 
+#SOURCE_ROOT="change me" 
 
-# Fortran/C compiler
-FC="mpif77"
-CC="mpicc"
+# Fortran/C compiler (default mpif77/mpicc)
+#FC="change me"
+#CC="change me"
 
 # pre-processor list (set to "?" to get a list of available symbols)
 #PPLIST="" 
@@ -48,12 +48,17 @@ CC="mpicc"
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 set -e
+
+# assign version tag
+mver=17.0.4
+
+# set defaults
+: ${SOURCE_ROOT:="$HOME/Nek5000"}
+: ${FC:="mpif77"}
+: ${CC:="mpicc"}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
-
-# assign version tag
-mver=17.0.3
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
@@ -64,8 +69,8 @@ fi
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
-# compile 3rd_party dependencies
-make_3rd_party
+# compile 3rd_party code
+make_3rd_party 2>&1 | tee -a compiler.out
 
 # compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out
