@@ -117,10 +117,10 @@ c-----------------------------------------------------------------------
          close(50)
 
          if(nid.eq.0) then
-           open(100,file='ethier.his')
-           read(100,*) nhpts
+           open(50,file='ethier.his')
+           read(50,*) nhpts
            do i = 1,nhpts
-              read(100,*) (hxyz(k,i),k=1,ndim)
+              read(50,*) (hxyz(k,i),k=1,ndim)
            enddo
 
            errhpts = 0.0
@@ -128,14 +128,14 @@ c-----------------------------------------------------------------------
               x = hxyz(1,i)
               y = hxyz(2,i)
               z = hxyz(3,i)
-              read(100,*) tt, ux_,uy_,uz_
+              read(50,*) tt, ux_,uy_,uz_
               call exactu(ux,uy,uz,x,y,z,1)
               errhpts = max(abs(ux_-ux),errhpts)
               errhpts = max(abs(uy_-uy),errhpts)
               errhpts = max(abs(uz_-uz),errhpts)
            enddo
            write(6,*) 'hpts err:', errhpts
-           close(100)
+           close(50)
          endif
       endif
 
