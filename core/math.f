@@ -1915,3 +1915,16 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      real function difmax(a,b,n)
+      real a(1),b(1)
+
+      d=0
+      do i=1,n
+         diff = abs(a(i)-b(i))
+         d    = max(d,diff)
+      enddo
+      difmax = glamax(d,1)
+
+      return
+      end
+c-----------------------------------------------------------------------

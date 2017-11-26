@@ -76,7 +76,7 @@ C
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
-      param(93) = 20   ! number of vectors for projection
+      param(93) = mxprev ! number of vectors for projection
 
       param(94) = 5    ! projection for helmholz solves 
       param(95) = 5    ! projection for pressure solve

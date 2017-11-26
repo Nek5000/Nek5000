@@ -43,7 +43,7 @@ C     First call, we have no vectors to orthogonalize against.
          Nprev=0
          Mprev=param(93)
          Mprev=min(Mprev,Mxprev)
-      ENDIF
+      endif
 C
 C     Diag to see how much reduction in the residual is attained.
 C
@@ -104,8 +104,8 @@ C    ................................................................
       endif
 C
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine gensoln(p,h1,h2,h2inv)
 C
@@ -141,8 +141,8 @@ C
       CALL UPDTSET(P,H1,H2,H2INV,ierr)
       if (ierr.eq.1) Nprev = 0
 c
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine updtset(p,h1,h2,h2inv,IERR)
 C
@@ -178,7 +178,7 @@ C
       IF (Nprev.EQ.Mprev) THEN
          CALL COPY(Pnew,P,NTOT2)
          Nprev=0
-      ENDIF
+      endif
 C
 C     Increment solution set
       Nprev = Nprev+1
@@ -193,8 +193,8 @@ C
 c     Save last sol'n
       CALL COPY(Pnew,P,NTOT2)
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine econj(kprev,h1,h2,h2inv,ierr)
 C
@@ -260,8 +260,8 @@ C
       ALPHAN = Alphad
       CALL CMULT(RHS (1,Kprev),alphan,NTOT2)
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine chkptol
 C--------------------------------------------------------------------
@@ -286,7 +286,7 @@ C
      $ ,              BDIVV(LX2,LY2,LZ2,LELV)
 C
       if (ifsplit) return
-      IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) RETURN
+      IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) return
       five = 5.0
       if (param(102).ne.0.0) five=param(102)
 C
@@ -316,8 +316,8 @@ c     IF (DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) TOLPDF = 5.*DNORM
      $    DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) 
      $     TOLPDF = FIVE*DNORM
 C
-      RETURN
-      END
+      return
+      end
       FUNCTION VLSC3(X,Y,B,N)
 C
 C     local inner product, with weight
@@ -348,8 +348,8 @@ C
  10   CONTINUE
       T=DT
       VLSC3 = T
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
@@ -422,188 +422,8 @@ C           Orthogonalize this rhs w.r.t. previous rhs's
             endif
   100    CONTINUE
 C
-      ENDIF
-C
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      subroutine echeck(kprev,h1,h2,h2inv,intetype)
-C
-C     Orthogonalize the rhs wrt previous rhs's for which we already
-C     know the soln.
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-C
-      REAL             H1   (LX1,LY1,LZ1,LELV)
-      REAL             H2   (LX1,LY1,LZ1,LELV)
-      REAL             H2INV(LX1,LY1,LZ1,LELV)
-C
-      PARAMETER (LTOT2=LX2*LY2*LZ2*LELV)
-      COMMON /ORTHOV/ RHS(LTOT2,MXPREV)
-      COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
-      COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
-      COMMON /ORTHOI/ Nprev,Mprev
-      REAL ALPHA,WORK,GLSC2
-      REAL Alphad
-C
-C
-      NTOT2=lx2*ly2*lz2*NELV
-C
-C     Compute part of the norm
-C
-      do 20 j=1,kprev
-         CALL CDABDTP(Pbar,rhs(1,j),H1,H2,H2INV,INTETYPE)
-         do 10 i=1,kprev
-            Alphad = GLSC2(RHS(1,i),Pbar,NTOT2)
-            Alphas = alphad
-            if (nio.eq.0) then
-               write(6,5) i,j,alphad,alphas,istep,kprev
-    5          format(' E-check:',2i4,e16.8,g12.5,i6,i4)
-            endif
-   10    continue
-   20 continue
-      return
-      end
-c-----------------------------------------------------------------------
-c     THE ROUTINES BELOW ARE THE NEW Helmholtz projectors
-c-----------------------------------------------------------------------
-      subroutine projh(r,h1,h2,bi,vml,vmk,approx,napprox,wl,ws,name4)
-C
-C     Orthogonalize the rhs wrt previous rhs's for which we already
-C     know the soln.
-c
-c     Input:   r         -- residual
-c              h1,h2     -- Helmholtz arrays
-c              bi        -- inverse mass matrix
-c              vml,vmk   -- multiplicity and mask arrays
-c              approx    -- approximation space
-c              napprox   -- (1) = max vecs,  (2) = current number of vecs
-c              wl        -- large work array of size lx1*ly1*lz1*nelv
-c              ws        -- small work array of size 2*max vecs
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-c
-      parameter(lt=lx1*ly1*lz1*lelt)
-C
-      real r(1),h1(1),h2(1),vml(1),vmk(1)
-      real bi(1)
-      real wl(1),ws(1)
-      real approx(lt,0:1)
-      integer napprox(2)
-      character*4 name4
-c
-      n_max = napprox(1)
-      n_sav = napprox(2)
-      if (n_sav.eq.0) return
-      nel =nelfld(ifield)
-      ntot=lx1*ly1*lz1*nel
-
-      vol = voltm1
-      if (nel.eq.nelv) vol = volvm1
-c
-c     Diag to see how much reduction in the residual is attained.
-c
-      alpha1 = glsc23(r,bi,vml,ntot)
-      if (alpha1.gt.0) alpha1 = sqrt(alpha1/vol)
-c
-c     Update approximation space if dt has changed
-      call updrhsh(approx,napprox,h1,h2,vml,vmk,ws,name4)
-c
-c
-c     Perform Gram-Schmidt for previous soln's
-c
-      do i=1,n_sav
-         ws(i) = vlsc3(r,approx(1,i),vml,ntot)
-      enddo
-      call gop    (ws,ws(n_sav+1),'+  ',n_sav)
-c
-      call cmult2   (approx(1,0),approx(1,1),ws(1),ntot)
-      do i=2,n_sav
-         call add2s2(approx(1,0),approx(1,i),ws(i),ntot)
-      enddo
-c
-      call axhelm  (wl,approx(1,0),h1,h2,1,1)
-      call col2    (wl,vmk,ntot)
-      call dssum   (wl,lx1,ly1,lz1)
-      call sub2    (r ,wl,ntot)
-c ................................................................
-c   Diag.
-      alpha2 = glsc23(r,bi,vml,ntot)
-      if (alpha2.gt.0) alpha2 = sqrt(alpha2/vol)
-      ratio  = alpha1/alpha2
-      n10=min(10,n_sav)
-c
-      if (nio.eq.0) write(6,10) istep,name4,alpha1,alpha2,ratio,n_sav
-   10 format(4X,I7,4x,a4,' alph1n',1p3e12.4,i6)
-c
-      if (nio.eq.0) write(6,11) istep,name4,n_sav,(ws(i),i=1,n10)
-   11 format(4X,I7,4x,a4,' halpha',i6,10(1p10e12.4,/,17x))
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gensh(v1,h1,h2,vml,vmk,approx,napprox,wl,ws,name4)
-c
-c     Reconstruct the solution to the original problem by adding back
-c     the previous solutions
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-c
-      common /iterhm/ niterhm
-c
-      parameter(lt=lx1*ly1*lz1*lelt)
-      real v1(1),h1(1),h2(1),vml(1),vmk(1)
-      real wl(1),ws(1)
-      real approx(lt,0:1)
-      integer napprox(2)
-      character*4 name4
-c
-      n_max = napprox(1)
-      n_sav = napprox(2)
-      ntot=lx1*ly1*lz1*nelfld(ifield)
-c
-c     Reconstruct solution and save current du
-c
-      if (n_sav.lt.n_max) then
-c
-         if (niterhm.gt.0) then      ! new vector not in space
-            n_sav = n_sav+1
-            call copy(approx(1,n_sav),v1,ntot)
-            call add2(v1,approx(1,0),ntot)
-c           orthogonalize rhs against previous rhs and normalize
-            call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
-
-c           if (ierr.ne.0) n_sav = n_sav-1
-            if (ierr.ne.0) n_sav = 0
-
-         else
-
-            call add2(v1,approx(1,0),ntot)
-
-         endif
-      else
-         n_sav = 1
-         call add2(v1,approx(1,0),ntot)
-         call copy(approx(1,n_sav),v1,ntot)
-c        normalize
-         call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
-         if (ierr.ne.0) n_sav = 0
       endif
-
-      napprox(2)=n_sav
-
+C
       return
       end
 c-----------------------------------------------------------------------
@@ -682,70 +502,6 @@ c
          alpha = 1.0/sqrt(alpha)
          call cmult(approx(1,k),alpha,ntot)
          ierr = 0
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine updrhsh(approx,napprox,h1,h2,vml,vmk,ws,name4)
-c
-c     Reorthogonalize approx if dt has changed
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'TSTEP'
-c
-c
-      parameter  (lt=lx1*ly1*lz1*lelt)
-      real approx(lt,0:1),h1(1),h2(1),vml(1),vmk(1),ws(1)
-      integer napprox(2)
-      character*4 name4
-c
-      logical ifupdate
-      logical ifnewdt
-      save    ifnewdt
-      data    ifnewdt /.false./
-c
-      character*4 name_old
-      save    name_old
-      data    name_old/'DMIR'/
-c
-      real    dtold
-      save    dtold
-      data    dtold/0.0/
-c
-c     First, we have to decide if the dt has changed.
-c
-      ifupdate = .false.
-      if (dt.ne.dtold) then
-         dtold    = dt
-         name_old = name4
-         ifnewdt  = .true.
-         ifupdate = .true.
-      elseif (ifnewdt) then
-         if (name4.eq.name_old) then
-            ifnewdt = .false.
-         else
-            ifupdate = .true.
-         endif
-      endif
-      if (ifvarp(ifield)) ifupdate = .true.
-      if (iflomach)       ifupdate = .true.
-
-      if (ifupdate) then    ! reorthogonalize 
-         n_sav = napprox(2)
-         l     = 1
-         do k=1,n_sav
-c           Orthogonalize kth vector against {v_1,...,v_k-1}
-            if (k.ne.l) then
-               ntot = lx1*ly1*lz1*nelfld(ifield)
-               call copy(approx(1,l),approx(1,k),ntot)
-            endif
-            call hconj(approx,l,h1,h2,vml,vmk,ws,name4,ierr)
-            if (ierr.eq.0) l=l+1
-         enddo
-         napprox(2)=min(l,n_sav)
       endif
 c
       return
@@ -967,7 +723,7 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
       tproj = tproj + dnekclock() - etime0
 
       if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
-     &                         baf,bb4,ratio,m,ireset
+     &                         baf,bb4,ratio,m,mmx
     1 format(i11,a,6x,1p3e13.4,i4,i4)
 
       return
