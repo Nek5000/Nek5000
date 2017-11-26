@@ -178,8 +178,6 @@ case $FCcomp in
                ;;
   *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        FFLAGS+=" -s real64 -eF"
-               ;;
   *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
                ;;
