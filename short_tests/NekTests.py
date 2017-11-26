@@ -5,8 +5,6 @@ from unittest import skip
 import re
 
 ###############################################################################
-#  axi: axi.rea
-###############################################################################
 
 class Axi(NekTestCase):
     example_subdir  = 'axi'
@@ -54,10 +52,8 @@ class Axi(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
-#
-# ####################################################################
-# #  benard: ray_9.rea
-# ####################################################################
+
+#####################################################################
 
 class Benard_Ray9(NekTestCase):
     example_subdir = 'benard'
@@ -104,11 +100,7 @@ class Benard_Ray9(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
-# ####################################################################
-# #  eddy; eddy_uv.rea, amg_eddy.rea, htps_ed.rea
-# ####################################################################
-
-# TODO: implement eddy for amg_eddy.rea, htps_ed.rea
+#####################################################################
 
 class Eddy_EddyUv(NekTestCase):
     example_subdir  = 'eddy'
@@ -237,6 +229,7 @@ class Eddy_EddyUv(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+#####################################################################
 
 class Eddy_LegacySize(NekTestCase):
     example_subdir  = 'eddy'
@@ -366,8 +359,6 @@ class Eddy_LegacySize(NekTestCase):
         self.move_logs()
 
 ######################################################################
-#    rich; eddy_rich.rea
-######################################################################
 
 class Eddy_Rich(NekTestCase):
     example_subdir  = 'eddy_rich'
@@ -420,9 +411,7 @@ class Eddy_Rich(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
-# ####################################################################
-#   eddy_neknek: eddy_neknek.rea
-# ####################################################################
+#####################################################################
 
 class Eddy_Neknek(NekTestCase):
     example_subdir  = 'eddy_neknek'
@@ -564,13 +553,11 @@ class Eddy_Neknek(NekTestCase):
         self.move_logs()
 
 ####################################################################
-#  kov_st_state; kov_st_stokes.rea
-####################################################################
 
-class KovStState(NekTestCase):
+class KovStokes(NekTestCase):
     # Note: Legacy Analysis.py script only checked Pn-Pn-2 test cases
-    example_subdir = 'kov_st_state'
-    case_name = 'kov_st_stokes'
+    example_subdir = 'kov_stokes'
+    case_name = 'kov_stokes'
 
     def setUp(self):
         self.size_params = dict(
@@ -592,14 +579,25 @@ class KovStState(NekTestCase):
         self.run_nek(step_limit=None)
 
         err = self.get_value_from_log(label='err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(err, target_val=8.55641E-10, delta=1e-11, label='err')
+        self.assertAlmostEqualDelayed(err, target_val= 3.93249E-08, delta=1e-09, label='err')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2'] = 'lx1-0'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        err = self.get_value_from_log(label='err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(err, target_val=5.05960E-13 , delta=1e-14, label='err')
 
         self.assertDelayedFailures()
 
     def tearDown(self):
         self.move_logs()
-####################################################################
-#  kov_st_state; kov_st_stokes.rea
+
 ####################################################################
 
 class Ethier(NekTestCase):
@@ -673,8 +671,6 @@ class Ethier(NekTestCase):
         self.move_logs()
 
 ####################################################################
-#  lowMach_test; lowMach_test.rea
-####################################################################
 
 class LowMachTest(NekTestCase):
     example_subdir = 'lowMach_test'
@@ -716,9 +712,6 @@ class LowMachTest(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
-
-####################################################################
-#  mv_cyl with CVODE
 ####################################################################
 
 class MvCylCvode(NekTestCase):
@@ -779,10 +772,7 @@ class MvCylCvode(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
-
-# ####################################################################
-# #  conj_ht: conj_ht.rea
-# ####################################################################
+#####################################################################
 
 class ConjHt(NekTestCase):
     example_subdir  = 'conj_ht'
@@ -908,8 +898,7 @@ class CmtInviscidVortex(NekTestCase):
         self.move_logs()
         
 ####################################################################
-#  dfh_cav; lin_dfh_cav_dir.par, lin_dfh_cav_adj.par
-####################################################################
+
 class LinCav_Dir(NekTestCase):
     example_subdir = 'dfh_cav'
     case_name = 'lin_dfh_cav_dir'
@@ -974,9 +963,7 @@ class LinCav_Adj(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
-# ####################################################################
-# #  double_shear: Testing relaxation-term filtering.
-# ####################################################################
+#####################################################################
 
 class DoubleShear(NekTestCase):
     example_subdir  = 'double_shear'
@@ -1024,12 +1011,9 @@ class DoubleShear(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
-#
 
 ####################################################################
-#  io_test; io_test.par
-#  For serial run tests with multiple files are omitted
-####################################################################
+
 class IO_Test(NekTestCase):
     example_subdir = 'io_test'
     case_name = 'io_test'
@@ -1063,6 +1047,7 @@ class IO_Test(NekTestCase):
         self.move_logs()
         
 ###############################################################
+
 if __name__ == '__main__':
     import unittest, argparse, os
 
@@ -1094,7 +1079,7 @@ if __name__ == '__main__':
                Eddy_EddyUv,
                Eddy_LegacySize, 
                Benard_Ray9, 
-               KovStState, 
+               KovStokes, 
                LowMachTest, 
                MvCylCvode, 
                CmtInviscidVortex,
