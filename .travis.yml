@@ -10,6 +10,8 @@ env:
     - TEST_CASE=Axi::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Axi::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
+    - TEST_CASE=FsHydro::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+
     # - TEST_CASE=Benard_Ray9::test_PnPn_Parallel   IFMPI=true F77=mpif77 CC=mpicc
     # - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc
 

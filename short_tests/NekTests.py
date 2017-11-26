@@ -6,6 +6,50 @@ import re
 
 ###############################################################################
 
+class FsHydro(NekTestCase):
+    example_subdir = 'fs_hydro'
+    case_name       = 'fs_hydro'
+
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '12',
+            lxd       = '18',
+            lx2       = 'lx1-2',
+            lelg      = '100',
+            ldimt     = '1',
+            lhis      = '100',
+            lelx      = '20',
+            lely      = '60',
+            lelz      = '1',
+            lx1m      = 'lx1',
+            lbelt     = '1',
+            lpelt     = '1',
+            lcvelt    = '1',
+        )
+        self.build_tools(['genmap'])
+        self.run_genmap(tol='0.01')
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2']='lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        gmres = self.get_value_from_log('gmres', column=-6,)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=108., label='gmres')
+
+        amp = self.get_value_from_log('AMP', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(amp, target_val=-6.4616452E-05, delta=6e-06, label='AMP')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+###############################################################################
+
 class Axi(NekTestCase):
     example_subdir  = 'axi'
     case_name        = 'axi'
@@ -1074,6 +1118,7 @@ if __name__ == '__main__':
         ut_verbose = 1
 
     testList = (
+               FsHydro,
                Axi, 
                Eddy_Neknek,
                Eddy_EddyUv,
