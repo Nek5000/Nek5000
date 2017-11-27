@@ -4,39 +4,39 @@ sudo: required
 
 env:
   matrix:
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  IFMPI=false F77=gfortran CC=gcc
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  MPI=0 FC=gfortran CC=gcc
 
-    - TEST_CASE=Axi::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=Axi::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Axi::test_PnPn_Parallel
+    - TEST_CASE=Axi::test_PnPn2_Parallel
 
-    - TEST_CASE=FsHydro::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=FsHydro::test_PnPn2_Parallel
 
-    # - TEST_CASE=Benard_Ray9::test_PnPn_Parallel   IFMPI=true F77=mpif77 CC=mpicc
-    # - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel  IFMPI=true F77=mpif77 CC=mpicc
+    # - TEST_CASE=Benard_Ray9::test_PnPn_Parallel
+    # - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel
 
-    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel
+    - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel
+    - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel
 
-    - TEST_CASE=Ethier::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=Ethier::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=Ethier::test_PnPn_Parallel
+    - TEST_CASE=Ethier::test_PnPn2_Parallel
 
-    - TEST_CASE=KovStokes::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=KovStokes::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=KovStokes::test_PnPn2_Parallel
+    - TEST_CASE=KovStokes::test_PnPn_Parallel
 
-    - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
+    - TEST_CASE=LowMachTest::test_PnPn_Parallel
 
-    - TEST_CASE=ConjHt::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
+    - TEST_CASE=ConjHt::test_PnPn_Parallel
 
-    - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CMTNEK"
+    - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel
 
-    - TEST_CASE=MvCylCvode::test_PnPn_Parallel   IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CVODE"
-    - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=MvCylCvode::test_PnPn_Parallel
+    - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel
+    - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel
     
-    - TEST_CASE=IO_Test::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=IO_Test::test_PnPn2_Parallel
 
-    - TEST_CASE=InclDef::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc
+    - TEST_CASE=InclDef::test_PnPn_Parallel
 
 before_install: 
   - export ROOT_DIR=`pwd`

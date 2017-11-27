@@ -41,10 +41,10 @@ class FsHydro(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=90., label='gmres')
 
         axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=14100., label='axhm')
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=14150., label='axhm')
 
         amp = self.get_value_from_log('AMP', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=5e-06, label='AMP')
+        self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=4e-05, label='AMP')
 
         self.assertDelayedFailures()
 
@@ -547,7 +547,7 @@ class KovStokes(NekTestCase):
         self.run_nek(step_limit=None)
 
         err = self.get_value_from_log(label='err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(err, target_val= 3.93249E-08, delta=1e-09, label='err')
+        self.assertAlmostEqualDelayed(err, target_val= 3.93249E-08, delta=6e-08, label='err')
 
         self.assertDelayedFailures()
 

@@ -14,7 +14,7 @@ Before running the tests, several environment variables may be optionally define
 * `CC`: The C compiler (default: mpicc).
 * `PPLIST`: List of pre-processor symbols (default: none)
 * `USR_LFLAGS`: Linking flags (default: none)
-* `IFMPI=[true|false]`: If true, run tests with MPI. (default: true)
+* `MPI=[0|1]`: If 1, run tests with MPI. (default: 1)
 
 Setting the following in your enviroment will affect the execution
 

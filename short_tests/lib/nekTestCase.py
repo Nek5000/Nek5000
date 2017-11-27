@@ -178,7 +178,7 @@ class NekTestCase(unittest.TestCase):
         self.cc             = os.environ.get('CC', self.cc)
         self.pplist         = os.environ.get('PPLIST', self.pplist)
         self.usr_lflags     = os.environ.get('USR_LFLAGS', self.usr_lflags)
-        self.ifmpi          = str(os.environ.get('IFMPI', self.ifmpi)).lower() == 'true'
+        self.ifmpi          = os.environ.get('MPI', self.ifmpi)
 
         # Get paths from env
         try:
