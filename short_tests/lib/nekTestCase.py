@@ -103,9 +103,8 @@ class NekTestCase(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         # These can be overridden by self.get_opts
-        self.f77            = 'mpif77'
-        self.cc             = 'mpicc'
-        self.g              = ""
+        self.f77            = ""
+        self.cc             = ""
         self.pplist         = ""
         self.usr_lflags     = ""
         self.ifmpi          = True
@@ -177,7 +176,6 @@ class NekTestCase(unittest.TestCase):
         # Get compiler options from env
         self.f77            = os.environ.get('FC', self.f77)
         self.cc             = os.environ.get('CC', self.cc)
-        self.g              = os.environ.get('G', self.g)
         self.pplist         = os.environ.get('PPLIST', self.pplist)
         self.usr_lflags     = os.environ.get('USR_LFLAGS', self.usr_lflags)
         self.ifmpi          = str(os.environ.get('IFMPI', self.ifmpi)).lower() == 'true'
@@ -208,7 +206,6 @@ class NekTestCase(unittest.TestCase):
         for varname, varval in (
                 ('FC', self.f77),
                 ('CC', self.cc),
-                ('G', self.g),
                 ('PPLIST', self.pplist),
                 ('USR_LFLAGS', self.usr_lflags),
                 ('IFMPI', self.ifmpi),
@@ -242,8 +239,8 @@ class NekTestCase(unittest.TestCase):
             targets    = targets    if targets    else ('clean', 'genmap'),
             tools_root = tools_root if tools_root else self.tools_root,
             tools_bin  = tools_bin  if tools_bin  else self.tools_bin,
-            f77        = f77        if f77        else 'gfortran',
-            cc         = cc         if cc         else 'gcc',
+            f77        = f77        ,
+            cc         = cc         ,
             bigmem     = bigmem     if bigmem     else 'false',
             verbose    = verbose    if verbose    else self.verbose
         )
@@ -324,8 +321,6 @@ class NekTestCase(unittest.TestCase):
         all_opts = dict(
             FC = self.f77,
             CC = self.cc,
-            FFLAGS = self.g,
-            CFLAGS = self.g,
             PPLIST = self.pplist,
             USR_LFLAGS = self.usr_lflags,
             MPI = int(self.ifmpi),

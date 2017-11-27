@@ -1,7 +1,6 @@
 import os
 import sys
 from subprocess import call, check_call, Popen, PIPE, STDOUT
-from lib.nekFileConfig import config_makenek, config_maketools, config_basics_inc
 
 def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
                 targets=('clean', 'all'), verbose=False):
@@ -13,41 +12,31 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     print('    Using CC "{0}"'.format(cc))
 
     maketools_in  = os.path.join(tools_root, 'maketools')
-    maketools_out = os.path.join(tools_root, 'maketools.tests')
     maketools_log = os.path.join(tools_root, 'maketools.out')
 
-    try:
+    my_env = os.environ.copy()
+    if f77: my_env["FC"] = f77
+    if cc:  my_env["CC"] = cc 
+    my_env["bin_nek_tools"] = tools_bin 
 
-        config_maketools(infile=maketools_in, outfile=maketools_out, f77=f77, cc=cc)
+    with open(maketools_log, 'w') as f:
+        for t in targets:
+            proc = Popen(
+                [maketools_in, t],
+                env=my_env,
+                cwd=tools_root,
+                stderr=STDOUT,
+                stdout=PIPE
+            )
+            for line in proc.stdout:
+                sys.stdout.write(line)
+                f.write(line)
 
-        config_basics_inc(
-            infile  = os.path.join(tools_root, 'prenek', 'basics.inc'),
-            outfile = os.path.join(tools_root, 'prenek', 'basics.inc'),
-            nelm    = '10 000'
-        )
+    proc.wait()
 
-        with open(maketools_log, 'w') as f:
-            for t in targets:
-                if verbose:
-                    proc = Popen(
-                        [maketools_out, t, tools_bin],
-                        cwd=tools_root,
-                        stderr=STDOUT,
-                        stdout=PIPE
-                    )
-                    for line in proc.stdout:
-                        sys.stdout.write(line)
-                        f.write(line)
-                else:
-                    check_call(
-                        [maketools_out, t, tools_bin],
-                        stderr=STDOUT,
-                        stdout=f,
-                        cwd=tools_root
-                    )
-    except:
+    if proc.returncode != 0:
         print('Could not compile tools! Check "{0}" for details.'.format(maketools_log))
-        raise
+        #exit(-1)
     else:
         print('Successfully compiled tools!')
 
@@ -66,29 +55,33 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     for key, val in _opts.iteritems():
         print('    Using {0}="{1}"'.format(key, val))
 
+    my_env = os.environ.copy()
+    if source_root      : my_env["SOURCE_ROOT"] = source_root
+    if _opts.get('F77')   : my_env["FC"] = _opts.get('F77') 
+    if _opts.get('CC')    : my_env["CC"] = _opts.get('CC')
+    if _opts.get('PPLIST') : my_env["PPLIST"] = _opts.get('PPLIST') 
+
     makenek_in  = os.path.join(source_root, 'bin', 'makenek')
-    makenek_out = os.path.join(source_root, 'bin', 'makenek.tests')
     logfile     = os.path.join(cwd, 'compiler.out')
-    try:
-        config_makenek(
-            opts=_opts,
-            infile=makenek_in,
-            outfile=makenek_out
-        )
 
-        (stdoutdata, stderrdata) = Popen(
-            [makenek_out, usr_file], cwd=cwd, stdin=PIPE, stderr=STDOUT, stdout=PIPE).communicate(bytes("\n"))
+    proc = Popen(
+        [makenek_in, usr_file], 
+        cwd=cwd,
+        env=my_env,
+        stdin=PIPE, 
+        stderr=STDOUT, 
+        stdout=PIPE)
 
-        with open(logfile, 'w') as f:
-            f.writelines(stdoutdata)
-
+    f = open(logfile, 'w')
+    for line in proc.stdout:
+        f.write(line)
         if verbose:
-            sys.stdout.write(stdoutdata)
+           sys.stdout.write(line)
 
-    except:
-        print('Could not compile nek5000!')
-        raise
+    proc.wait()
+
+    if proc.returncode != 0:
+        print('Could not compile nek5000! Check "{0}" for details.'.format(logfile))
+        exit(-1)
     else:
         print('Successfully compiled nek5000!')
-
-
