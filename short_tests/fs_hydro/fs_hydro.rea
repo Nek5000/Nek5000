@@ -94,9 +94,9 @@
       0.0000000E+00
       0.0000000E+00
       0.0000000E+00
-      0.0000000E+00     p93 Numbr of prev pressure solns saved
-      0.0000000E+00     p94 start projecting vel. after p94 step
-      0.0000000E+00     p95 start projecting pr after p95 step
+      20.000000E+00     p93 Numbr of prev pressure solns saved
+      5.0000000E+00     p94 start projecting vel. after p94 step
+      5.0000000E+00     p95 start projecting pr after p95 step
       0.0000000E+00
       0.0000000E+00
       0.0000000E+00

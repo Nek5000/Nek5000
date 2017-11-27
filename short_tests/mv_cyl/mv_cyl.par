@@ -30,6 +30,5 @@ absolutetol = 1e-12
 
 [CVODE]
 relativetol = 1e-12
-stiff = no
-dtmax = 1e-2
+dtmax = 1e-3
 
