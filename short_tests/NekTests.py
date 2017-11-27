@@ -222,30 +222,6 @@ class Eddy_EddyUv(NekTestCase):
 
         self.assertDelayedFailures()
 
-    @pn_pn_2_serial
-    def test_PnPn2_Serial(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=None)
-
-        gmres = self.get_value_from_log('gmres ', column=-6,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=8., label='gmres')
-
-        crsl = self.get_value_from_log('crsl ', column=-3,)
-        self.assertAlmostEqualDelayed(crsl, target_val=0., delta=1050., label='crsl')
-
-        xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
-
-        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
-
-        perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=6.927878E-05, delta=1E-06, label='P err')
-
-        self.assertDelayedFailures()
-
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
@@ -300,33 +276,6 @@ class Eddy_LegacySize(NekTestCase):
             f.writelines(lines)
         self.run_genmap()
 
-    @pn_pn_serial
-    def test_PnPn_Serial(self):
-        # Update SIZE parameters for PnPn
-        self.size_params['lx2'] = 'lx1'
-        self.size_params['ly2'] = 'ly1'
-        self.size_params['lz2'] = 'lz1'
-        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
-        self.build_nek()
-        self.run_nek(step_limit=None)
-
-        gmres = self.get_value_from_log('gmres ', column=-7,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
-
-        xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=6.007702E-07, delta=1E-08, label='X err')
-
-        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=6.489061E-07, delta=1E-08, label='Y err')
-
-        perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
-
-        # solver_time = self.get_value_from_log('total solver time', column=-2)
-        # self.assertAlmostEqualDelayed(solver_time, target_val=0.1, delta=80, label='total solver time')
-
-        self.assertDelayedFailures()
-
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
         self.size_params['lx2'] = 'lx1'
@@ -347,32 +296,6 @@ class Eddy_LegacySize(NekTestCase):
 
         perr = self.get_value_from_log('P err', column=-5, row=-1)
         self.assertAlmostEqualDelayed(perr, target_val=1.448024E-05, delta=1E-06, label='P err')
-
-        self.assertDelayedFailures()
-
-    @pn_pn_2_serial
-    def test_PnPn2_Serial(self):
-        self.size_params['lx2'] = 'lx1-2'
-        self.size_params['ly2'] = 'ly1-2'
-        self.size_params['lz2'] = 'lz1'
-        self.config_size(infile=os.path.join(self.examples_root, self.__class__.example_subdir, 'SIZE.legacy'))
-        self.build_nek()
-        self.run_nek(step_limit=None)
-
-        gmres = self.get_value_from_log('gmres ', column=-6,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=22., label='gmres')
-
-        xerr = self.get_value_from_log('X err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=6.759103E-05, delta=1E-06, label='X err')
-
-        yerr = self.get_value_from_log('Y err', column=-6, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=7.842019E-05, delta=1E-06, label='Y err')
-
-        perr = self.get_value_from_log('P err', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(perr, target_val=6.927878E-05, delta=1E-06, label='P err')
-
-        # solver_time = self.get_value_from_log('total solver time', column=-2)
-        # self.assertAlmostEqualDelayed(solver_time, 0.1, delta=80, label='total solver time')
 
         self.assertDelayedFailures()
 
@@ -922,14 +845,6 @@ class CmtInviscidVortex(NekTestCase):
         except OSError:
             pass
 
-    @pn_pn_serial
-    def test_PnPn_Serial(self):
-        if "CMTNEK" not in self.pplist:
-            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
-        self.build_nek()
-        self.run_nek(step_limit=1000)
-        self.diff_l2norms()
-
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
         if "CMTNEK" not in self.pplist:
@@ -1089,7 +1004,50 @@ class IO_Test(NekTestCase):
 
     def tearDown(self):
         self.move_logs()
-        
+
+####################################################################
+
+class InclDef(NekTestCase):
+    example_subdir = 'incl_def'
+    case_name = 'incl_def'
+
+    def setUp(self):
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1',
+            lelg      = '100',
+            ldimt     = '2',
+            lhis      = '100',
+            lpert     = '1',
+            toteq     = '1',
+            lelx      = '1',
+            lely      = '1',
+            lelz      = '1',
+            lx1m      = '1',
+            lbelt     = '1',
+            lpelt     = '1',
+            lcvelt    = '1',
+        )
+        self.build_tools(['genmap'])
+        self.run_genmap(tol='0.01')
+
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+        self.size_params['lx2']='lx1'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        phrase = self.get_phrase_from_log('All include files added with success')
+        self.assertIsNotNullDelayed(phrase, label='All include files added with success')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
 ###############################################################
 
 if __name__ == '__main__':
@@ -1132,7 +1090,8 @@ if __name__ == '__main__':
                Ethier,
                LinCav_Dir,
                LinCav_Adj,
-               IO_Test   
+               IO_Test,
+               InclDef   
                ) 
 
     suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(t) for t in testList])
