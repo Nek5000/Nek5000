@@ -38,10 +38,13 @@ class FsHydro(NekTestCase):
         self.run_nek(step_limit=1000)
 
         gmres = self.get_value_from_log('gmres', column=-6,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=108., label='gmres')
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=90., label='gmres')
+
+        axhm = self.get_value_from_log('axhm', column=-3,)
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=14100., label='axhm')
 
         amp = self.get_value_from_log('AMP', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(amp, target_val=-6.4616452E-05, delta=6e-06, label='AMP')
+        self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=5e-06, label='AMP')
 
         self.assertDelayedFailures()
 
@@ -65,9 +68,7 @@ class Axi(NekTestCase):
             lelg      = '500',
         )
 
-        self.build_tools(['genbox', 'genmap'])
-        self.run_genbox()
-        self.mvn('box', self.__class__.case_name)
+        self.build_tools(['genmap'])
         self.run_genmap()
 
     @pn_pn_parallel
@@ -77,7 +78,7 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        pres = self.get_value_from_log('PRES ', column=-4)
+        pres = self.get_value_from_log('gmres ', column=-7)
         self.assertAlmostEqualDelayed(pres, target_val=0., delta=76., label='PRES')
 
         self.assertDelayedFailures()
@@ -89,7 +90,7 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('U-PRES ', column=-5)
+        u_press = self.get_value_from_log('gmres ', column=-6)
         self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
 
         self.assertDelayedFailures()
@@ -701,38 +702,17 @@ class MvCylCvode(NekTestCase):
         self.run_genmap()
 
     @pn_pn_parallel
-    def test_PnPn_Parallel_Steps1e3(self):
-        if not "CVODE" in self.pplist:
-            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
-
+    def test_PnPn_Parallel(self):
         self.log_suffix += '.steps_1e3'
         self.config_parfile({'GENERAL' : {'numSteps' : '1e3', 'dt' : '1e-3'}})
-        self.build_nek()
+        self.build_nek(opts={'PPLIST':'CVODE'})
         self.run_nek()
 
         err3 = self.get_value_from_log('err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(err3, target_val=0.1743079E-03, delta=1e-6, label='err (column -3)')
+        self.assertAlmostEqualDelayed(err3, target_val=4.128154e-05, delta=1e-6, label='err p0th')
 
         err2 = self.get_value_from_log('err', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(err2, target_val=0.6348537E-06, delta=1e-9, label='err (column -2)')
-
-        self.assertDelayedFailures()
-
-    @pn_pn_parallel
-    def test_PnPn_Parallel_Steps1e4(self):
-        if not "CVODE" in self.pplist:
-            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
-
-        self.log_suffix += '.steps_1e4'
-        self.config_parfile({'GENERAL' : {'numSteps' : '1e4', 'dt' : '1e-4'}})
-        self.build_nek()
-        self.run_nek()
-
-        err3 = self.get_value_from_log('err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(err3, target_val=0.1693853E-05, delta=1e-8, label='err (column -3)')
-
-        err2 = self.get_value_from_log('err', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(err2, target_val=0.6344692E-09, delta=1e-12, label='err (column -2)')
+        self.assertAlmostEqualDelayed(err2, target_val=0.6348537E-06, delta=1e-7, label='err dp/dt')
 
         self.assertDelayedFailures()
 
@@ -760,47 +740,43 @@ class ConjHt(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        if not "CVODE" in self.pplist:
-            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
         self.size_params['lx2'] = 'lx1'
         self.config_size()
-        self.build_nek()
+        self.build_nek(opts={'PPLIST':'CVODE'})
         self.run_nek(step_limit=None)
 
         gmres = self.get_value_from_log('gmres', column=-7,)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=20., label='gmres')
 
         axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=16100., label='axhm')
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=25800., label='axhm')
 
         tmax = self.get_value_from_log('tmax', column=-3, row=-1)
         self.assertAlmostEqualDelayed(tmax, target_val=13.109, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=2.66077e-04, delta=1E-04, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=3.88933e-06, delta=5E-07, label='terr')
 
         self.assertDelayedFailures()
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
-        if not "CVODE" in self.pplist:
-            self.fail("\"CVODE\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek()
+        self.build_nek(opts={'PPLIST':'CVODE'})
         self.run_nek(step_limit=None)
 
         gmres = self.get_value_from_log('gmres', column=-6,)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=16., label='gmres')
 
         axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=24550.0, label='axhm')
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=30600.0, label='axhm')
 
         tmax = self.get_value_from_log('tmax', column=-3, row=-1)
         self.assertAlmostEqualDelayed(tmax, target_val=13.1208, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=2.70054E-04, delta=1E-04, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=8.53943e-06, delta=5E-07, label='terr')
 
         self.assertDelayedFailures()
 
@@ -847,9 +823,7 @@ class CmtInviscidVortex(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        if "CMTNEK" not in self.pplist:
-            self.fail("\"CMTNEK\" is not listed in $PPLIST. This test cannot be run.".format(self.id()))
-        self.build_nek()
+        self.build_nek(opts={'PPLIST':'CMTNEK'})
         self.run_nek(step_limit=1000)
         self.diff_l2norms()
 
@@ -940,8 +914,6 @@ class DoubleShear(NekTestCase):
         )
 
         self.build_tools(['genmap'])
-        self.run_genbox()
-        self.mvn('box', self.__class__.case_name)
         self.run_genmap()
 
     @pn_pn_parallel
@@ -1033,8 +1005,8 @@ class InclDef(NekTestCase):
         self.build_tools(['genmap'])
         self.run_genmap(tol='0.01')
 
-    @pn_pn_serial
-    def test_PnPn_Serial(self):
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
         self.size_params['lx2']='lx1'
         self.config_size()
         self.build_nek()
