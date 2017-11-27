@@ -1379,6 +1379,8 @@ C-----------------------------------------------------------------------
       include 'GEOM'
       include 'MASS'
       include 'TSTEP'
+      include 'CTIMER'
+
       common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
       logical ifdfrm, iffast, ifh2, ifsolv
 C
@@ -1390,6 +1392,9 @@ C
      $        , u3 (lx1*ly1*lz1*1)
      $        , h1 (lx1,ly1,lz1,1)
      $        , h2 (lx1,ly1,lz1,1)
+
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
 
       nel   = nelfld(ifield)
       ntot1 = lx1*ly1*lz1*nel
@@ -1433,6 +1438,8 @@ c     if (matmod.lt.0) icase=3 ! Block-diagonal Axhelm
         endif
 
       endif
+
+      taxhm=taxhm+(dnekclock()-etime1)
 
       return
       end
