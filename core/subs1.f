@@ -630,8 +630,8 @@ C           -C IS Target Courant number
             DISCR=B**2-4*A*C
             DTOLD=DT
             IF(DISCR.LE.0.0)THEN
-               if (nio.eq.0) 
-     $         PRINT*,'Problem calculating new DT Discriminant=',discr
+c               if (nio.eq.0) 
+c     $         PRINT*,'Problem calculating new DT Discriminant=',discr
                DT=DT*(CTARG/COURNO)
 C               IF(DT.GT.DTOLD) DT=DTOLD
             ELSE IF(ABS((VCOUR-VOLD)/VCOUR).LT.0.001)THEN
@@ -1335,8 +1335,8 @@ C
       IF (TOL.LT.RMIN) THEN
        TOLOLD = TOL
        TOL = RMIN
-       IF (NIO.EQ.0 .AND. IFPRINT)
-     $ WRITE(6,*)'New CG1(stress)-tolerance (RINIT*epsm) = ',TOL,TOLOLD
+c       IF (NIO.EQ.0 .AND. IFPRINT)
+c     $ WRITE(6,*)'New CG1(stress)-tolerance (RINIT*epsm) = ',TOL,TOLOLD
       endif
 C
       IF (ldim.EQ.2) THEN
@@ -1358,8 +1358,8 @@ C
          IF (TOL .LT. TOLMIN) THEN
             TOLOLD = TOL
             TOL = TOLMIN
-            IF (NIO.EQ.0)
-     $      WRITE (6,*) 'New CG1(stress)-tolerance (OTR) = ',TOL,TOLOLD
+c            IF (NIO.EQ.0)
+c     $      WRITE (6,*) 'New CG1(stress)-tolerance (OTR) = ',TOL,TOLOLD
          endif
       endif
 C
