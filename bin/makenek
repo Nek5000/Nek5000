@@ -11,7 +11,7 @@
 #CC="change me"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-#PPLIST="" 
+#PPLIST="?" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -59,6 +59,7 @@ mver=17.0.4
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
+: ${PPLIST:=""}
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
