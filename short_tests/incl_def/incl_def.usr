@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c   
-c     Add all include files in userchk
+c     Tests if all variables in INLCUDE files are defined
 c
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,ieg)
@@ -74,7 +74,6 @@ c      include 'GLOBALCOM' ! already inclued in NEKNEK
       include 'ORTHOP'
       include 'ORTHOSTRS'
       include 'ORTHOT'
-      include 'ORTHOV'
       include 'PARALLEL'
       include 'PARDICT'
       include 'RESTART'
@@ -89,10 +88,6 @@ c      include 'GLOBALCOM' ! already inclued in NEKNEK
       include 'WZF'
       include 'ZPER'
 
-c     3rd party ! cannot be included yet
-c      include '3rd_party/MOABCORE'
-c      include '3rd_party/NEKMOAB'
-
 c     cmt
       include 'cmt/CMTBCDATA'
       include 'cmt/CMTDATA'
@@ -100,10 +95,12 @@ c     cmt
       include 'cmt/DG'
       include 'cmt/PERFECTGAS'
 
-      write(6,*) '-------------------------------------'
-      write(6,*) 'All include files added with success.'
-      write(6,*) 'Exiting.'
-      write(6,*) '-------------------------------------'
+      if (nid.eq.0) then
+        write(6,*) '-------------------------------------'
+        write(6,*) 'All include files added with success.'
+        write(6,*) 'Exiting.'
+        write(6,*) '-------------------------------------'
+      endif
 
       call exitt
 
