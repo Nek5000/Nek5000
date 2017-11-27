@@ -68,7 +68,6 @@ c     an ascii rea file for just the parameters
          call open_file_in  (ifile,iend)
          if (iend.eq.1) goto 99
 
-
          nelo = nelt_all
          call rw_param(nelt,nelv,ndim,nelt_all,nelv_all,nfld,ifile)
          nel  = nelt
@@ -128,7 +127,7 @@ c-----------------------------------------------------------------------
       call chcopy(file1(len+1),'.rea',4)
 
       len = ltrunc(file,80)
-c      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
+      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
 
       open(unit=10, file=file)
       iend = 0
@@ -555,18 +554,14 @@ c-----------------------------------------------------------------------
 
       integer e
 
-
-      call blank(string,80)
-      write(string,1)
-c             123456789 123456789 123456789 123456789 123456789 
-    1 format('        E:         1 [    1a]    GROUP     0')
-      len = ltrunc(string,80)
-
+      igroup = 0
       do e=1,nelt
-
-         write(string1(15),'(i12)') e
-         write(11,81) (string1(k),k=1,len)
-   81    format(80a1)
+         if(nelt.lt.100000) then
+           write (11,12) e, e, 'a', igroup
+         else
+           write (11,'(A,I12,A,I1)')
+     &        '  ELEMENT ', e, '  GROUP  ', igroup
+         endif
 
          if (ndim.eq.2) then
             write(11,90)  (x(k,e),k=1,4)
@@ -580,7 +575,9 @@ c             123456789 123456789 123456789 123456789 123456789
             write(11,90)  (z(k,e),k=5,8)
          endif
       enddo
-c  90 format(1p4e14.6)
+
+   12 format(
+     $     '            ELEMENT',i12,' [',i5,a1,']    GROUP     ',i1)
    90 format(4e14.6)
 
       return
