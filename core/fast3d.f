@@ -1241,7 +1241,7 @@ c
       real bgl(1:n-1),zgl(1:n-1)
       real dgl(1:n-1,0:n),jgl(1:n-1,0:n)
 c
-      real w(0:1)
+      real w(0:2*n+1)
 c
       np = n+1
       nm = n-1

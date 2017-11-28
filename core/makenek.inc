@@ -179,7 +179,9 @@ case $FCcomp in
                ;;
   *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
+  *ftn*)        FFLAGS+=" -s real64 -eT"
+               ;;
+  *xlf*)        FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
                ;;
   *)  echo "ERROR: Unable to detect compiler!"
