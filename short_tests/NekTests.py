@@ -79,7 +79,13 @@ class Axi(NekTestCase):
         self.run_nek(step_limit=None)
 
         pres = self.get_value_from_log('gmres ', column=-7)
-        self.assertAlmostEqualDelayed(pres, target_val=0., delta=76., label='PRES')
+        self.assertAlmostEqualDelayed(pres, target_val=0., delta=70., label='PRES')
+
+        errmx = self.get_value_from_log('err ', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(errmx, target_val=6.849547e-08, delta=1E-09, label='L2 err')
+
+        errl2 = self.get_value_from_log('err ', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(errl2, target_val=3.091788e-07, delta=1E-08, label='MAX err')
 
         self.assertDelayedFailures()
 
@@ -91,7 +97,13 @@ class Axi(NekTestCase):
         self.run_nek(step_limit=None)
 
         u_press = self.get_value_from_log('gmres ', column=-6)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=82., label='U-PRES')
+        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=90., label='U-PRES')
+
+        errmx = self.get_value_from_log('err ', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(errmx, target_val=7.904719e-08, delta=1E-09, label='L2 err')
+
+        errl2 = self.get_value_from_log('err ', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(errl2, target_val=3.510415e-07, delta=1E-08, label='MAX err')
 
         self.assertDelayedFailures()
 
