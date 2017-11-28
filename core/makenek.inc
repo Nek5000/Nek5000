@@ -17,6 +17,7 @@ function make_3rd_party() {
 
 function clean_3rd_party() {
   cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
+  cd $CASEDIR
   cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
   cd $CASEDIR
 }
