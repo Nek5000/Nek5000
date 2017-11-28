@@ -195,7 +195,10 @@ class Eddy_EddyUv(NekTestCase):
         self.run_nek(step_limit=None)
 
         gmres = self.get_value_from_log('gmres ', column=-7,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=34., label='gmres')
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=12., label='gmres')
+
+        runtime = self.get_value_from_log('total solver time w/o IO ', column=-2,)
+        self.assertAlmostEqualDelayed(runtime, target_val=0., delta=60., label='runtime')
 
         crsl = self.get_value_from_log('crsl ', column=-3,)
         self.assertAlmostEqualDelayed(crsl, target_val=0., delta=1500., label='crsl')
