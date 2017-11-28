@@ -179,13 +179,10 @@ case $FCcomp in
                ;;
   *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        FFLAGS+=" -s real64 -eT"
-               ;;
   *xlf*)        FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
                ;;
-  *)  echo "ERROR: Unable to detect compiler!"
-      echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
+  *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
       NOCOMPILE=1
       read;;
