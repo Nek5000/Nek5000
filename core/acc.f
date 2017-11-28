@@ -136,24 +136,24 @@ c-----------------------------------------------------------------------
      $ ,             respr (lx2,ly2,lz2,lelv)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-
+ 
 !$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
 !$acc enter data copyin(dv1,dv2,dv3)
-
+ 
 !$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
 !$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
 !$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 !$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
-
+ 
 !$acc enter data copyin(ab,bd)
 !$acc enter data copyin(pmlag,prlag,qtl,usrdiv)
 !$acc enter data copyin(vxd,vyd,vzd)
-
+ 
 !$acc enter data create (ibc_acc)
 !$acc enter data copyin (c_vx)
-
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -179,16 +179,20 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
-      if (istep.eq.1) then
+!$acc enter data create(work,work2)
+!$acc enter data copyin(mg_mask,mg_imask,pmask)
+!$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
+!$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
+c     if (istep.eq.1) then
 !$acc enter data copyin(h_gmres,w_gmres,v_gmres,z_gmres)
 !$acc enter data copyin(c_gmres,s_gmres,x_gmres,gamma_gmres)
 !$acc enter data copyin(r_gmres)
 !$acc enter data copyin(ml_gmres,mu_gmres)
-      endif
+c     endif
 
-!$acc enter data create(work,work2)
 !$acc enter data create(e,w,r)
 !$acc enter data create(w1,w2)
+!$acc enter data create(wk1,wk2)
 
       return
       end
@@ -240,6 +244,7 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
 
 !$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
