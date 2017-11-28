@@ -1,17 +1,17 @@
 #!/bin/bash
 
 # maximum number of elements
-MAXNEL=100000
+#MAXNEL=100000
 
-# binary path (../bin)
-#bin_nek_tools="change me"
+# binary path
+#bin_nek_tools=`cd ../bin && pwd`
 
-# Fortran compiler (default gfortran)
-#FC="change me"
+# Fortran compiler
+#FC="gfortran"
 #FFLAGS=""
 
-# C compiler (default gcc)
-#CC="change me"
+# C compiler
+#CC="gcc"
 #CFLAGS=""
 
 # linking flags
@@ -51,6 +51,7 @@ MAXNEL=100000
 : ${FC:="gfortran"}
 : ${CC:="gcc"}
 : ${bin_nek_tools:=`cd ../bin && pwd`}
+: ${MAXNEL:=100000}
 
 if [ $# -eq 0 ]; then
    echo "Usage: maketools [clean|all|tool(s)]"
