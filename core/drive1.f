@@ -195,6 +195,7 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
          call userchk
