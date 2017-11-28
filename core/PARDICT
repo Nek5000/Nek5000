@@ -30,7 +30,6 @@ c
      &  pardictkey(21) / 'PROBLEMTYPE:CYCLICBOUNDARIES' /
      &  pardictkey(22) / 'PROBLEMTYPE:PERTURBATIONS' /
      &  pardictkey(23) / 'PROBLEMTYPE:SOLVEBASEFLOW' /
-     &  pardictkey(24) / 'PROBLEMTYPE:LOWMACHNUMBER' /
      &  pardictkey(25) / 'PROBLEMTYPE:VARIABLEPROPERTIES' /
      &  pardictkey(26) / 'MESH' /
      &  pardictkey(27) / 'MESH:MOTION' /
