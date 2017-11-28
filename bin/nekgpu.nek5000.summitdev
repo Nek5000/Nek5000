@@ -39,5 +39,5 @@ echo " jsrun -n$CORECOUNT -a1 -g1 ./nek5000  ">> $bsubfile
 
 bsub  $bsubfile
 rm $bsubfile
-echo "job submitted on OLCF Summitdev, #GPUs=$CORECOUNT"
+echo "job submitted on OLCF Summitdev, #GPUs=$CORECOUNT, #nodes=$NODECOUNT"
 

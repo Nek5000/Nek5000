@@ -1,0 +1,45 @@
+#! /bin/bash
+set -e
+
+PROJECT="CSC235"
+#PROJECT="CSC262"
+REQ_WALLTIME="00:10:00"
+REAFILE=$1
+CORECOUNT=$2
+NODECOUNT=$3
+
+
+SESSION=${REAFILE%.[rR][eE][aA]}
+echo "*** running session $SESSION"
+
+echo $1        >  SESSION.NAME
+echo `pwd`'/' >>  SESSION.NAME
+
+OUTFILE="`pwd`/$SESSION.np=$CORECOUNT-titan-gpu-`date "+%F_%H_%M_%S"`"
+touch $SESSION.rea
+
+if ! pbsfile=`mktemp $SESSION.pbs.XXXXXX` ; then
+   echo "Failed to create temp file for qsub! Exiting"
+   exit 1
+fi
+
+chmod 777 $pbsfile
+
+echo "#!/bin/bash -l" >> $pbsfile
+echo "#PBS -A $PROJECT" >> $pbsfile
+echo "#PBS -N $SESSION" >> $pbsfile
+echo "#PBS -o $PWD/$SESSION.np=$CORECOUNT-titan-gpu-`date "+%F_%H_%M_%S"`.output" >> $pbsfile
+echo "#PBS -e $PWD/$SESSION.np=$CORECOUNT-titan-gpu-`date "+%F_%H_%M_%S"`.error" >> $pbsfile
+echo "#PBS -l walltime=$REQ_WALLTIME,nodes=$3" >> $pbsfile
+echo "#PBS -j oe" >> $pbsfile
+echo " cd `pwd`">> $pbsfile
+echo " export MPICH_RDMA_ENABLED_CUDA=1" >> $pbsfile
+#echo " export CRAY_ACC_NO_ASYNC=1" >> $pbsfile #cray compiler specific
+echo " export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH" >> $pbsfile
+echo " CUDA_PROFILE=1 ">> $pbsfile
+echo " aprun -n $CORECOUNT -N 1 ./nek5000 ">> $pbsfile
+
+qsub -V $pbsfile
+rm $pbsfile
+echo "job submitted on OLCF Cray, #GPUs=$CORECOUNT, #nodes=$NODECOUNT"
+

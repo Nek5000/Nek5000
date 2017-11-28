@@ -3,21 +3,28 @@
 # Nek5000 build file
 #-------------------------------------------------------------------------------
 
-module unload cuda
-module load pgi
+# Needed modules on Titan
+# module unload cudatoolkit
+# module unload perftools
+# module unload PrgEnv-cray
+# module unload cray-libsci_acc
+# module unload craype-accel-nvidia35
+# module load PrgEnv-pgi
+# module load pgi
+
 
 # installation path 
 SOURCE_ROOT="../.."
 
 # Fortran/C compiler
-F77="mpif77"
-CC="mpicc"
+F77="ftn"
+CC="cc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
 PPLIST="" 
 
 # generic compiler flags
-G="-mcmodel=medium" 
+G="-mcmodel=medium"
 
 # linking flags
 USR_LFLAGS="-mcmodel=medium"
@@ -27,7 +34,7 @@ USR_LFLAGS="-mcmodel=medium"
 ###############################################################################
 
 # MPI (default true)
-IFMPI="true"  
+IFMPI="true"
 
 # profiling (default false)
 IFPROFILING="true"
@@ -66,5 +73,7 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -f makefile 2>&1 | tee compiler.mpi.output
+make -f makefile 2>&1 | tee compiler.acc.output
 exit 0
+
+

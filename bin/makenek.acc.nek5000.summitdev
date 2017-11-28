@@ -7,7 +7,7 @@ module load cuda
 module load pgi
 
 # installation path 
-SOURCE_ROOT="/lustre/atlas2/csc235/scratch/mmin/Nek5000"
+SOURCE_ROOT="../.."
 
 # Fortran/C compiler
 F77="mpif77"
@@ -68,5 +68,5 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -f makefile 2>&1 | tee compiler.gpu.output
+make -f makefile 2>&1 | tee compiler.acc.output
 exit 0
