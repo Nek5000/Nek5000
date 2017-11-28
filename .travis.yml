@@ -18,9 +18,6 @@ env:
     - TEST_CASE=Benard_Ray9::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
     - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
 
-    - TEST_CASE=LowMachTest::test_PnPn_Parallel  IFMPI=true F77=mpif77 CC=mpicc
-    - TEST_CASE=LowMachTest::test_PnPn2_Parallel IFMPI=true F77=mpif77 CC=mpicc
-
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel IFMPI=true F77=mpif77 CC=mpicc PPLIST="$PPLIST CMTNEK"
 
       # 3D tests
