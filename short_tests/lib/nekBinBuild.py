@@ -65,6 +65,14 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     logfile     = os.path.join(cwd, 'compiler.out')
 
     proc = Popen(
+        [makenek_in, 'clean'], 
+        cwd=cwd,
+        env=my_env,
+        stdin=PIPE)
+    proc.communicate(input='Y\n')
+    proc.wait()
+
+    proc = Popen(
         [makenek_in, usr_file], 
         cwd=cwd,
         env=my_env,
