@@ -54,8 +54,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
  12      format(1X,A,4I12,/,/)
       endif 
 
-      ifsync_ = ifsync
-      ifsync = .true.
+c      ifsync_ = ifsync
+c      ifsync = .true.
 
       call setvar          ! Initialize most variables
 
@@ -156,7 +156,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
      &              tinit, ' sec'
       endif
 
-      ifsync = ifsync_ ! restore initial value
+c      ifsync = ifsync_ ! restore initial value
 
       return
       end
@@ -195,6 +195,7 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
          call userchk

@@ -13,7 +13,7 @@ c     and set ifoutfld accordingly
 
       if (iostep.le.0 .and. timeio.le.0) return
 
-      if (istep.ge.nsteps) lastep=1
+c      if (istep.ge.nsteps) lastep=1
 
       if (iostep.gt.0) then
          if(mod(istep,iostep).eq.0) ifoutfld=.true.

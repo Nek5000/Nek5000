@@ -14,21 +14,21 @@ Before running the tests, several environment variables may be optionally define
 * `CC`: The C compiler (default: mpicc).
 * `PPLIST`: List of pre-processor symbols (default: none)
 * `USR_LFLAGS`: Linking flags (default: none)
-* `IFMPI=[true|false]`: If true, run tests with MPI. (default: true)
+* `MPI=[0|1]`: If 1, run tests with MPI. (default: 1)
 
 Setting the following in your enviroment will affect the execution
 
 * `PARALLEL_PROCS`: The number of processes to use when running with MPI
   (default: 4)
 * `LOG_ROOT`: If defined, move complted logs into this directory.  If not defined,
-  leave logs in the example folders.  (default: undefined)
+  leave logs in the case folders.  (default: undefined)
 * `VERBOSE_TESTS=[true|false]`: If true, display standard output from compiler and
    Nek5000 to terminal window.  Standard output will always be recorded in
    logfiles, whether VERBOSE_TESTS is true or false.  (default: false)
 
 
 To run all the tests, first `cd` into this directory and then run:
-`$ python -m 'unittest' NekTests`
+`$ python -m 'unittest' NekTests >log`
 
 If you wish to run tests for one short run e.g.:
 `$ python -m 'unittest' NekTests.Eddy_EddyUv.test_PnPn2_Parallel`

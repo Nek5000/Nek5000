@@ -60,6 +60,36 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+
+      parameter (lxyz=lx1*ly1*lz1)
+
+      real ue  (lx1,ly1,lz1,lelv)
+     $    ,du  (lx1,ly1,lz1,lelv)
+     $    ,du2 (lx1,ly1,lz1,lelv)
+
+      ntot1 = nx1*ny1*nz1*nelv
+      Rad = 0.5
+
+      do i=1,ntot1
+         rr = ym1(i,1,1,1)/Rad
+         ue(i,1,1,1) = 1.0 - rr*rr
+      enddo
+
+
+c  Calculate parabolic velocity difference norms
+      call sub3 (du,VX,ue,ntot1)
+      dumax = glmax(du,ntot1)
+
+      call col3    (du2,du ,du ,ntot1)
+      call col2    (du2,bm1   ,ntot1)
+      du2s = GLSUM (du2,ntot1)/VOLVM1
+      du2s = SQRT  (du2s)
+
+      if (nid.eq.0 .and. lastep.eq.1) then
+         write(6,2) istep,dt,time,dumax,du2s,'err '
+      endif
+ 2    format(i9,4e17.7,a8)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -112,3 +142,18 @@ c
       return
       end
 c-----------------------------------------------------------------------
+
+c automatically added by makenek
+      subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
+      integer*8 glo_num(1)
+
+      return
+      end
+
+c automatically added by makenek
+      subroutine userqtl
+
+      call userqtl_scig
+
+      return
+      end
