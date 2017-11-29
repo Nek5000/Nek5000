@@ -111,7 +111,10 @@ all : nek5000
 objdir: 
 	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
 
-nek5000:	objdir $(NOBJS)
+usrfile:
+	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
+
+nek5000:	objdir $(NOBJS) usrfile
 	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
 	$(FC) $(FL2) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
@@ -135,7 +138,8 @@ lib:	objdir $(NOBJS)
 	ranlib ${LIBNAME}
 
 clean:
-	rm -rf ${CASENAME}.f obj ${BINNAME}
+	@echo "cleaning ..."
+	@rm -rf obj ${BINNAME}
 ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
 endif
