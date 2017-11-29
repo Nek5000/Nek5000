@@ -85,7 +85,7 @@ if [ ! -d $bin_nek_tools  ]; then
   exit 1
 fi
 
-
+PPPO=""
 case $FC in
   *pgf*)       R8="-r8"
                CPPF="-Mpreprocess"
@@ -99,18 +99,12 @@ case $FC in
                CPPF="-fpp"
                BIGMEM="-mcmodel=medium -shared-intel"
                ;;
-  *pathf*)     R8="-r8"
-               CPPF="-cpp"
-               ;;
   *xlf*)       R8="-qrealsize=8"
                CPPF="-qsuffix=cpp=f"
                BIGMEM="-q64"
+               PPPO="-WF,"
                ;;
-  *ftn*)       R8="-r8"
-               CPPF="-eF"
-               BIGMEM="-mcmodel=medium"
-               ;;
-  *)           echo "Error: Unable to detect compiler!"
+  *)           echo "ERROR: Cannot find a supported compiler!"
                exit 1
                ;;
 esac
@@ -134,6 +128,7 @@ if [[ $OSTYPE == darwin* ]]; then
 fi
 
 FFLAGS+=" -DMAXNEL=$MAXNEL"
+FFLAGS=`echo $FFLAGS | sed -e "s/-D/$PPPO-D/g"`
 
 export FC=`which $FC`
 export NEK_FFLAGS="$FFLAGS"

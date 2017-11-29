@@ -1622,7 +1622,7 @@ c
    3     format(2i8,1x,a6,20(10i9,/,10x))
       endif
       if (ic.eq.0) then
-         write(6,*) 'cont: ',name6,nid,'  ??'
+         write(6,*) 'cont: ',name6,nid
 c        read (5,*) adum
       endif
 
