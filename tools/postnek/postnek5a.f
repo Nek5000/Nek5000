@@ -4,7 +4,7 @@ C
 c     This subroutine is called when cutting_plane is chosen from the 
 c     main menu.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     dimension xxyy(4,4000)
@@ -65,7 +65,7 @@ C
 c     This routine prompts the user for the xzero point and coordinates
 c     of x_twidle, which define the cutting plane.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     real ptx,pty,ptz,xnor,ynor,znor,dx,dy,dz,vnrm
@@ -128,7 +128,7 @@ c     This routine normalize the unit normal vector, which defines the
 c     cutting plane.  Also, finds contour through the selected planes
 c     and use them to find the interpolated values of x,y,z,t,p....etc.
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       LOGICAL IFCRV(4)
 c     common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
@@ -272,7 +272,7 @@ c
 c     This routine maps and interpolate gauss labatto info into regular
 c     grid of size nxx.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real w_gll   (ldwg,0:n_gll)
@@ -301,7 +301,7 @@ C     This routine finds the contour on the regular grid (w_interp).
 C     NOTE: There might be some internal contours; this routine checks 
 c     for such contours.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       LOGICAL   IFCRV(4)
 c
@@ -358,7 +358,7 @@ C
 C     Plot a contour given by CRS which denotes the Contour points
 C     in the (R,S) plane.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common/Cutting/ptx,pty,ptz,xnor,ynor,znor,cntval(0:15,40)
@@ -371,7 +371,7 @@ c-----------------------------------------------------------------------
       subroutine contour_setup
 C
 C 
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common/Cutting/ptx,pty,ptz,xnor,ynor,znor,cntval(0:15,40)
@@ -455,7 +455,7 @@ C
 C     Plot a contour given by CRS which denotes the Contour points
 C     in the (R,S) plane.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       dimension wpp(ldw,0:15)
 c
@@ -508,7 +508,7 @@ c
 c-----------------------------------------------------------------------
       subroutine out_contour(nsect,stepval,is) 
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       dimension empty(0:15)
@@ -596,7 +596,7 @@ c
 c     This routine calculates the progress variable theta, choosing 
 c     the center of gravity as the origin.
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       common/Cutting/ptx,pty,ptz,xnor,ynor,znor,cntval(0:15,40)
       common/CuttinI/ncntval
@@ -759,7 +759,7 @@ c-----------------------------------------------------------------------
 C
 C     This routine will generate a volume on X - Y - or Z planes
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 C     Select what type of plane
@@ -802,7 +802,7 @@ c-----------------------------------------------------------------------
 C
 C     This routine will generate a volume on X - Y - or Z planes
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       LOGICAL  IFSAME,IFTMP1,IFTMP2
 C
@@ -847,7 +847,7 @@ C
 c-----------------------------------------------------------------------
       subroutine SETRSTV(XPT1,YPT1,ZPT1,IVEC,IFSAME)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
       DIMENSION VEC(3),VEC1(3),VEC2(3),VEC3(3)
@@ -1039,7 +1039,7 @@ c-----------------------------------------------------------------------
 C
 C     Plot a diamond on each point read in from file
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       character*40 infile
       logical ifnewplt
@@ -1094,7 +1094,7 @@ c
 c     Generate an FEM input file based on Nekton .rea file
 c
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       integer iwork(maxpts),loc(maxpts),ind(maxpts)
       equivalence (iwork,work)

@@ -101,7 +101,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
             ifemati = .true.
             kwave2  = 0.0
             if (ifsplit) ifemati = .false.
-            call gfdm_init(nx2,ny2,nz2,ifemati,kwave2)
+            call gfdm_init(lx2,ly2,lz2,ifemati,kwave2)
          elseif (solver_type.eq.'25D') then
             call g25d_init
          endif
@@ -118,8 +118,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics      !     Set initial conditions 
-      call setprop     !     Compute field properties
+      call setics   !     Set initial conditions 
+      call setprop  !     Compute field properties
 
       if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'
@@ -235,7 +235,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call nekgsync
 

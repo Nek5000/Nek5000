@@ -151,6 +151,13 @@ class NekTestCase(unittest.TestCase):
             self._delayed_failures.append(msg)
         print(msg)
 
+    def assertIsNullDelayed(self, test_val, label):
+        if test_val:
+            msg = 'FAILURE: Found phrase "{0}" in logfile.'.format(label)
+            self._delayed_failures.append(msg)
+        else:
+            msg = 'SUCCESS: Did not find phrase "{0}" in logfile'.format(label)
+        print(msg)
 
     def assertDelayedFailures(self):
         if self._delayed_failures:
@@ -168,7 +175,7 @@ class NekTestCase(unittest.TestCase):
         print("Getting setup options...")
 
         # Get compiler options from env
-        self.f77            = os.environ.get('F77', self.f77)
+        self.f77            = os.environ.get('FC', self.f77)
         self.cc             = os.environ.get('CC', self.cc)
         self.g              = os.environ.get('G', self.g)
         self.pplist         = os.environ.get('PPLIST', self.pplist)
@@ -199,7 +206,7 @@ class NekTestCase(unittest.TestCase):
 
         # Print everything out
         for varname, varval in (
-                ('F77', self.f77),
+                ('FC', self.f77),
                 ('CC', self.cc),
                 ('G', self.g),
                 ('PPLIST', self.pplist),
@@ -315,7 +322,7 @@ class NekTestCase(unittest.TestCase):
             usr_file = cls.case_name
 
         all_opts = dict(
-            F77 = self.f77,
+            FC = self.f77,
             CC = self.cc,
             FFLAGS = self.g,
             CFLAGS = self.g,

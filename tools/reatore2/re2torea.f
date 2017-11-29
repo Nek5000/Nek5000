@@ -24,7 +24,7 @@ c     an ascii rea file for just the parameters
  
       character*80 sstring
 
-      parameter(nelm=1 000 000)
+      parameter(nelm=MAXNEL)
       real*8 x(8),y(8),z(8)
       real*8 bc(5,6,nelm)
       integer id, jd, wdsizi

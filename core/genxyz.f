@@ -546,9 +546,9 @@ C
 C     Select appropriate mesh
 C
       IF ( IFGMSH3 ) THEN
-         CALL GENXYZ (XM3,YM3,ZM3,NX3,NY3,NZ3)
+         CALL GENXYZ (XM3,YM3,ZM3,lx3,ly3,lz3)
       ELSE
-         CALL GENXYZ (XM1,YM1,ZM1,NX1,NY1,NZ1)
+         CALL GENXYZ (XM1,YM1,ZM1,lx1,ly1,lz1)
       ENDIF
 C
       return
@@ -585,7 +585,7 @@ c     Initialize geometry arrays with bi- triquadratic deformations
 
 c        Deform surfaces - general 3D deformations
 c                        - extruded geometry deformations
-         nfaces = 2*ndim
+         nfaces = 2*ldim
          do iface=1,nfaces
            ccv = ccurve(iface,ie)
            if (ccv.eq.'s') 
@@ -647,7 +647,7 @@ c-----------------------------------------------------------------------
       integer e
       logical ifaxl
 
-      call rzero (zgml,3*nx1)
+      call rzero (zgml,3*lx1)
 
 
       if (nxl.eq.3 .and. .not. ifaxl) then
@@ -656,16 +656,16 @@ c-----------------------------------------------------------------------
             zgml(2,k) =  0
             zgml(3,k) =  1
          enddo
-      elseif (ifgmsh3.and.nxl.eq.nx3) then
-         call copy(zgml(1,1),zgm3(1,1),nx3)
-         call copy(zgml(1,2),zgm3(1,2),ny3)
-         call copy(zgml(1,3),zgm3(1,3),nz3)
-         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam3,ny3)
-      elseif (nxl.eq.nx1) then
-         call copy(zgml(1,1),zgm1(1,1),nx1)
-         call copy(zgml(1,2),zgm1(1,2),ny1)
-         call copy(zgml(1,3),zgm1(1,3),nz1)
-         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam1,ny1)
+      elseif (ifgmsh3.and.nxl.eq.lx3) then
+         call copy(zgml(1,1),zgm3(1,1),lx3)
+         call copy(zgml(1,2),zgm3(1,2),ly3)
+         call copy(zgml(1,3),zgm3(1,3),lz3)
+         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam3,ly3)
+      elseif (nxl.eq.lx1) then
+         call copy(zgml(1,1),zgm1(1,1),lx1)
+         call copy(zgml(1,2),zgm1(1,2),ly1)
+         call copy(zgml(1,3),zgm1(1,3),lz1)
+         if (ifaxl .and. ifrzer(e)) call copy(zgml(1,2),zam1,ly1)
       else
          call exitti('ABORT setzgml! $',nxl)
       endif
@@ -989,11 +989,11 @@ C-----------------------------------------------------------------------
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
 C
       IF (IFMVBD)    return
-      IF (NDIM.EQ.3) return
+      IF (ldim.EQ.3) return
 C
       EPS    = 1.E-6
       EPSINV = 1./EPS
-      NXYZ1 = NX1*NY1*NZ1
+      NXYZ1 = lx1*ly1*lz1
       DO 100 IEL=1,NELV
          IF (.NOT.IFDFRM(IEL)) THEN
             RXAVER = VLSUM(RXM1(1,1,1,IEL),NXYZ1)/(NXYZ1)
@@ -1245,7 +1245,7 @@ c-----------------------------------------------------------------------
       integer e
       logical ifmid
 
-      nedge = 4 + 8*(ndim-2)
+      nedge = 4 + 8*(ldim-2)
 
       do e=1,nelt ! Loop over all elements
 
@@ -1311,8 +1311,8 @@ c        5+-----+6    t                      5+-----+6    t
       enddo
       call transpose(jx,nxl,jxt,2)
 
-      ndim2 = 2**ndim
-      do ix=1,ndim2          ! Convert prex notation to lexicographical
+      ldim2 = 2**ldim
+      do ix=1,ldim2          ! Convert prex notation to lexicographical
          i=indx(ix)
          xcb(ix,1,1)=xc(i,e)
          ycb(ix,1,1)=yc(i,e)
@@ -1358,7 +1358,7 @@ c     Note : CTMP1 is used in this format in several subsequent routines
 
       call xyzlin(xq,yq,zq,3,3,3,e,.false.) ! map bilin to 3x3x3
 
-      nedge = 4 + 8*(ndim-2)
+      nedge = 4 + 8*(ldim-2)
 
       do k=1,nedge
          if (ccurve(k,e).eq.'m') then

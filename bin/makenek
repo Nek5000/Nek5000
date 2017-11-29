@@ -3,12 +3,12 @@
 # Nek5000 config file
 #-------------------------------------------------------------------------------
 
-# source path 
-SOURCE_ROOT="$HOME/Nek5000" 
+# source path (default $HOME/Nek5000) 
+#SOURCE_ROOT="change me" 
 
-# Fortran/C compiler
-F77="mpif77"
-CC="mpicc"
+# Fortran/C compiler (default mpif77/mpicc)
+#FC="change me"
+#CC="change me"
 
 # pre-processor list (set to "?" to get a list of available symbols)
 #PPLIST="" 
@@ -43,20 +43,22 @@ CC="mpicc"
 #VISIT_INSTALL="/path/to/visit/current/linux-x86_64/"
 #VISIT_STOP=true
 
-# 3rd party paths
-#LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib
-#SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 set -e
+
+# assign version tag
+mver=17.0.4
+
+# set defaults
+: ${SOURCE_ROOT:="$HOME/Nek5000"}
+: ${FC:="mpif77"}
+: ${CC:="mpicc"}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
-
-# assign version tag
-mver=17.0.2
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
@@ -67,9 +69,8 @@ fi
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
-# compile gslib
-make -j4 -C $SOURCE_ROOT_GSLIB CC="$CC" CFLAGS="-O2 $CFLAGS" $GSLIB_OPT lib \
-            2>&1 | tee compiler.out
+# compile 3rd_party code
+make_3rd_party 2>&1 | tee -a compiler.out
 
 # compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out

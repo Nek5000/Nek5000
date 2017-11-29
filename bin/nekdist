@@ -1,0 +1,48 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then
+  echo ""
+  echo "usage: nekdist [version tag]"
+  echo ""
+  exit 1
+fi
+
+VER=$1
+
+mkdir Nek5000-$VER
+cd Nek5000-$VER
+
+git clone https://github.com/Nek5000/Nek5000.git -b master
+cd ./Nek5000
+git clone https://github.com/Nek5000/NekExamples -b master
+mv NekExamples examples
+find . -name ".git*" -exec rm -rf {} \;
+VER=`printf "$VER %-45s"`
+sed -e "s/Version:.*/Version:  $VER/g" core/HEADER >.tmp; mv .tmp core/HEADER
+sed "13s/./\|\'/68" core/HEADER >.tmp; mv .tmp core/HEADER
+sed -e "s/# Release.*/# Release $VER/g" RELEASE.md >.tmp; mv .tmp RELEASE.md 
+
+cd examples
+rm -rf *.py lib
+cd ..
+
+cd 3rd_party/gslib
+wget -O v1.0.1.tar.gz https://github.com/gslib/gslib/archive/v1.0.1.tar.gz
+cd ../../
+
+cd 3rd_party/cvode
+wget -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
+cd ../..
+
+cd tools/amg_hypre/hypre
+wget -O v2.11.2.tar.gz https://github.com/LLNL/hypre/archive/v2.11.2.tar.gz
+cd ../../..
+
+cd tools/exo2nek/3rd_party
+wget -O netcdf-4.4.1.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
+wget -O exodus.zip https://github.com/gsjaardema/seacas/archive/exodus.zip
+cd ../../..
+
+cd ..
+
+VER=$1
+tar -zcf ../Nek5000-$VER.tar.gz Nek5000

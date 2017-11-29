@@ -21,7 +21,7 @@ c     etc.
 c
 c
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       character*1 ans
@@ -44,7 +44,7 @@ c     this program will take a nek all-ascii rea file and
 c     extract geometry, bcs, and curve data to a new binary re2 file, plus
 c     an ascii rea file for just the parameters
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f
@@ -184,7 +184,7 @@ c         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
 c-----------------------------------------------------------------------
       subroutine set_ee_bcs ! connectivity 
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       parameter (lf = 6*lelt)
@@ -409,7 +409,7 @@ c-----------------------------------------------------------------------
 
 c     output remainder of mesh: .rea/.re2 format
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       character*80 hdr
@@ -528,7 +528,7 @@ c-----------------------------------------------------------------------
 
 c     output remainder of mesh: ascii format
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       write(11,11) nelt, ndim, nelv
@@ -550,7 +550,7 @@ c     output remainder of mesh: ascii format
 c-----------------------------------------------------------------------
       subroutine out_xyz_ascii
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e
@@ -590,7 +590,7 @@ c-----------------------------------------------------------------------
 
 c     .Ouput curve side data in ascii to unit 11
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f
@@ -631,7 +631,7 @@ c-----------------------------------------------------------------------
 
 c     .Ouput bdry data
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f,fld

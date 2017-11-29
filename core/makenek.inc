@@ -1,3 +1,26 @@
+function make_3rd_party() {
+  if [ $NOCOMPILE -ne 0 ]; then
+    return 0
+  fi
+  echo "build 3rd-party code ..."
+
+  cd $SOURCE_ROOT/3rd_party/gslib
+  ./install
+  cd $CASEDIR 
+
+  if [ $CVODE -ne 0 ]; then
+     cd $SOURCE_ROOT/3rd_party/cvode
+     ./install
+  fi
+  cd $CASEDIR
+}
+
+function clean_3rd_party() {
+  cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
+  cd $CASEDIR
+}
+
 # This include file is used by the makenek script
 # to automatically create a makefile for Nek5000 
 # ------------------------------------------------
@@ -38,14 +61,14 @@ if [ $# -eq 0 ]; then
    fi
 fi
 
-if [ "$mver" != "17.0.2" ]; then
+if [ "$mver" != "17.0.4" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
   exit 1
 fi
 
 if [ ! "$SOURCE_ROOT_GSLIB" ]; then
-  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/src"
+  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib/lib"
   export SOURCE_ROOT_GSLIB
 fi
 
@@ -53,8 +76,8 @@ if [[ $1 = "clean" ]]; then
   while true; do
     read -p "Clean all 3rd party code? [N]" yn
     case $yn in
-      [Yy]* ) 
-        make -C $SOURCE_ROOT_GSLIB clean;
+      [Yy]* )
+        clean_3rd_party; 
         make clean;
         break ;;
       * ) 
@@ -62,6 +85,7 @@ if [[ $1 = "clean" ]]; then
         break ;;
     esac
   done
+  rm -rf compiler.out
   rm -rf makefile
   exit 0
 fi
@@ -95,9 +119,9 @@ if [ ! -f $SOURCE_ROOT/core/makefile.template ]; then
   exit 1
 fi
 
-# test if F77 compiler exists
-if ! which `echo $F77 | awk '{print $1}'` 1>/dev/null ; then
-  echo "FATAL ERROR: Cannot find `echo $F77 | awk '{print $1}'`!"
+# test if FC compiler exists
+if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
+  echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
   exit 1
 fi
 
@@ -108,44 +132,44 @@ if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
 fi
 
 # trying to figure which compiler the wrapper is using 
-F77ok=0
+FCok=0
 
-F77comp_=`$F77 -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
-F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
-if [ -f "`which $F77comp 2>/dev/null`" ]; then
-  F77ok=1
+FCcomp_=`$FC -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
+FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+  FCok=1
 fi
 
-if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -show 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
-  if [ -f "`which $F77comp 2>/dev/null`" ]; then
-    F77ok=1
+if [ $FCok -eq 0 ]; then
+  FCcomp_=`$FC -show 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
+  FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
   fi
 fi
 
-if [ $F77ok -eq 0 ]; then
-  F77comp_=`$F77 -craype-verbose 2>/dev/null 1>.tmp || true`
-  F77comp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
-  if [ -f "`which $F77comp 2>/dev/null`" ]; then
-    F77ok=1
+if [ $FCok -eq 0 ]; then
+  FCcomp_=`$FC -craype-verbose 2>/dev/null 1>.tmp || true`
+  FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
   fi
 fi
 
-if [ $F77ok -eq 0 ]; then
-  F77comp=`echo $F77 | awk '{print $1}'`
-  if [ -f "`which $F77comp 2>/dev/null`" ]; then
-    F77ok=1
+if [ $FCok -eq 0 ]; then
+  FCcomp=`echo $FC | awk '{print $1}'`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
   fi
 fi
 
 \rm -f .tmp
-if [ $F77ok -eq 0 ]; then
-  F77comp="unknown"
+if [ $FCok -eq 0 ]; then
+  FCcomp="unknown"
 fi
 
-# assign F77 compiler specific flags
-case $F77comp in
+# assign FC compiler specific flags
+case $FCcomp in
   *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
   *gfortran*)   FFLAGS+=" -fdefault-real-8 -fdefault-double-8 -cpp"
@@ -154,11 +178,10 @@ case $F77comp in
                ;;
   *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
                ;;
-  *ftn*)        FFLAGS+=" -s default64 -eF"
+  *ftn*)        FFLAGS+=" -s real64 -eF"
                ;;
-  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f"
+  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
-               F77="${F77} -qsuppress=cmpmsg"
                ;;
   *)  echo "ERROR: Unable to detect compiler!"
       echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
@@ -178,7 +201,7 @@ cat > test_underscore.f << _ACEOF
         call test
       end
 _ACEOF
-$F77comp -c test_underscore.f 2>&1 >/dev/null 
+$FCcomp -c test_underscore.f 2>&1 >/dev/null 
 if nm test_underscore.o | grep -q test_ ; then
   UNDERSCORE=1
 fi
@@ -259,7 +282,7 @@ USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB -lgs"
 echo "generating makefile ..."
 rm -rf makefile 2>/dev/null
 
-sed -e "s:^FC[ ]*=.*:FC\:=$F77:" \
+sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s:^CC[ ]*=.*:CC\:=$CC:" \
 -e "s:^FFLAGS[ ]*=.*:FFLAGS\:=$FFLAGS:" \
 -e "s:^CFLAGS[ ]*=.*:CFLAGS\:=$CFLAGS:" \
@@ -320,7 +343,7 @@ else
 fi
 \rm .makefile 2>/dev/null
 
-# tweak SIZE file
+# tweak leagacy SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
@@ -373,6 +396,14 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 fi
 
+# tweak all SIZE file versions
+if ! cat SIZE | grep -qi 'ldimt_proj' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer ldimt_proj' >>SIZE
+     echo '      parameter(ldimt_proj = 1) ! max auxiliary fields residual projection ' >>SIZE
+fi
+
 # tweak .usr (actually, .f ) file
 rm -f $CASENAME.f
 cp -pv $CASENAME.usr $CASENAME.f
@@ -410,6 +441,14 @@ cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
 #include "cvode_aux.h"
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "^#include.*cvode_jtimes.*\.h" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+#include "cvode_jtimes.h"
 _ACEOF
 fi
 
@@ -492,8 +531,8 @@ _ACEOF
 fi
 fi
 
-
-
+export FC
+export CC
 export NEK_WARN 
 export MPI
 export MPIO
@@ -502,6 +541,7 @@ export CFLAGS
 export UNDERSCORE
 export GSLIB_OPT
 
+
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0
-fi 
+fi

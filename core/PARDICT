@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 85)
+      parameter(PARDICT_NKEYS = 92)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -16,14 +16,13 @@ c
      &  pardictkey(6)  / 'GENERAL:VARIABLEDT' /
      &  pardictkey(7)  / 'GENERAL:WRITEINTERVAL' /
      &  pardictkey(8)  / 'GENERAL:WRITECONTROL' /
-     &  pardictkey(9)  / 'GENERAL:PERTURBATIONMODES' /
-     &  pardictkey(10) / 'GENERAL:MAXCFL' /
-     &  pardictkey(11) / 'GENERAL:TORDER' /
+     &  pardictkey(9)  / 'PROBLEMTYPE:NUMBEROFPERTURBATIONS' /
+     &  pardictkey(10) / 'GENERAL:TARGETCFL' /
      &  pardictkey(12) / 'GENERAL:FILTERING' /
      &  pardictkey(13) / 'GENERAL:FILTERWEIGHT' /
-     &  pardictkey(14) / 'GENERAL:ADDFILTERMODES' /
-     &  pardictkey(15) / 'GENERAL:WRITE8BYTE' /
-     &  pardictkey(16) / 'GENERAL:WRITENPARALLELFILES' /
+     &  pardictkey(14) / 'GENERAL:FILTERCUTOFFRATIO' /
+     &  pardictkey(15) / 'GENERAL:WRITEDOUBLEPRECISION' /
+     &  pardictkey(16) / 'GENERAL:WRITENFILES' /
      &  pardictkey(17) / 'GENERAL:DEALIASING' /
      &  pardictkey(18) / 'GENERAL:TIMESTEPPER' /
      &  pardictkey(19) / 'PROBLEMTYPE:AXISYMMETRY' /
@@ -35,7 +34,6 @@ c
      &  pardictkey(25) / 'PROBLEMTYPE:VARIABLEPROPERTIES' /
      &  pardictkey(26) / 'MESH' /
      &  pardictkey(27) / 'MESH:MOTION' /
-     &  pardictkey(28) / 'MESH:MESHVELOCITY' /
      &  pardictkey(29) / 'MESH:WRITETOFIELDFILE' /
      &  pardictkey(30) / 'VELOCITY' /
      &  pardictkey(31) / 'VELOCITY:RESIDUALTOL' /
@@ -93,4 +91,10 @@ c
      &  pardictkey(83) / 'MESH:NUMBEROFBCFIELDS' /
      &  pardictkey(84) / 'GENERAL:OPTLEVEL' /
      &  pardictkey(85) / 'GENERAL:LOGLEVEL' /
-
+     &  pardictkey(86) / 'MESH:VISCOSITY' /
+     &  pardictkey(87) / 'MESH:RESIDUALTOL' /
+     &  pardictkey(88) / 'GENERAL:EXTRAPOLATION' /
+     &  pardictkey(89) / 'PROBLEMTYPE:EQUATION' /
+     &  pardictkey(90) / 'TEMPERATURE:RESIDUALPROJ' /
+     &  pardictkey(91) / 'SCALAR%%:RESIDUALPROJ' /
+     &  pardictkey(92) / 'MESH:FIRSTBCFIELDINDEX' /

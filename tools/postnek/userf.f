@@ -2,7 +2,7 @@ c-----------------------------------------------------------------------
       subroutine userf
 c     Driver for user-defined functions
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /quantc/ quanto
@@ -160,7 +160,7 @@ c-----------------------------------------------------------------------
       subroutine rad_vel
 c     Driver for user-defined functions
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c
@@ -235,7 +235,7 @@ c     Velocity, pressure and temperature are stored in a similar
 c     manner:  (u,v,w,p,t).
 c     
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -264,7 +264,7 @@ c-----------------------------------------------------------------------
 c
 c     01-08-99 Driver routine to track vortices
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer icalld
@@ -368,7 +368,7 @@ c     NVE is the # elements in this set.
 c     The arrays are in common VRTXTRK in basicsp.inc
 c     NVE,IEV(),IXV(),IYV(),IZV(),LAM2()
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 C  LOCAL
       INTEGER ie,ix,iy,iz,ntot,nc,m
@@ -447,7 +447,7 @@ c
 c     Take the set of elements identified to have a negative
 c     lam2 values and cluster them by neighbor-neighbor associations.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c   Local
@@ -718,7 +718,7 @@ c
 c     01-13-99 : For each cluster,calculates the position of the
 c                "center" of the cluster.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     LOCAL
@@ -743,7 +743,7 @@ c
 c     01-13-99 : Calculates the vorticity vector :
 c                (vrt1,vrt2,vrt3)(m) 
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ WORK1(LXYZ),WORK2(LXYZ)
@@ -800,7 +800,7 @@ c     01-13-99 : For each cluster,calculates the enstrophy of the
 c                cluster. That is the integral of the square modulus
 c                of the vorticity.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     LOCAL
@@ -840,7 +840,7 @@ c
 c     Compute stresses on desired objects, over desired number 
 c     of .fld files
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real tdrag(3),vdrag(3),pdrag(3),sarea
@@ -902,7 +902,7 @@ C-----------------------------------------------------------------------
 c
 c     Compute stresses on hemisphere
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real vdrag(3),pdrag(3),sarea
       real mu
@@ -983,7 +983,7 @@ c     area        - surface jacobian
 c
 c     ifc         - face being computed (1-6, in preprocessor notation)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       common /draghemi/ tau
 c
       real s1,s2,s3
@@ -1104,7 +1104,7 @@ c     Right now this is just hacked to compute the mean pressure around
 c     a hemisphere.   pff 3/19/99
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     Line objects are defined as an ordered set of points in R^d, d=2 or 3.
@@ -1196,7 +1196,7 @@ c
 c     Find hemispheres, using currently available surface finding
 c     routines.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     Find hemispheres, using currently available surface finding
@@ -1229,7 +1229,7 @@ c
 c     routine to compute average quantities along a line, x0---x1.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real uvw(13)
@@ -1267,7 +1267,7 @@ c
 c     routine to compute average quantities along a line, x0---x1.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real uvwavg(9,1),x0(3),x1(3)
@@ -1354,7 +1354,7 @@ c      .compute Nu_b(x), using trapezoidal rule + Richardson
 c      .compute Fanning friction factor, avg'd over x
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real uvw(13)
@@ -1409,7 +1409,7 @@ c
 c-----------------------------------------------------------------------
       subroutine integrate_uut(q1i,q2i,q3i,x0,x1,q1,q2,q3)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real x0(3),x1(3),q1(1),q2(1),q3(1)
@@ -1463,7 +1463,7 @@ c
 c-----------------------------------------------------------------------
       subroutine get_component
 c   
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       CALL PRS(' ENTER COMPONENT (For scalar plots)$')
@@ -1498,7 +1498,7 @@ c
 c-----------------------------------------------------------------------
       subroutine add_const
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     Add a constant to the x-component of velocity (for hemi paper)
@@ -1524,7 +1524,7 @@ c
 c-----------------------------------------------------------------------
       subroutine compute_miles
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (mopts=9) ! = 9000)
@@ -1808,7 +1808,7 @@ c
 c-----------------------------------------------------------------------
       subroutine compute_miles2
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       character*10 pname
 c
@@ -1993,7 +1993,7 @@ c     Thus, no "<uT>" file is required.
 c
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (mopts=9) ! = 9000)
@@ -2281,7 +2281,7 @@ c     Output is a 2D .fld file with u,v,p,t at those points,
 c     computed as the integrated azimuthal average.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c
@@ -2435,7 +2435,7 @@ c
 c
       real uint(6),ss(6),olds(6),wk1(6),wk2(6)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real rmin,rmax
@@ -2511,7 +2511,7 @@ c     Azimuthal function evaluation
 c     Anil's problem.    2/28/00  pff.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ss(m)
@@ -2579,7 +2579,7 @@ c     .Get asci 2D .fld file for meridional average
 c
 c     .Output header info to io
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       CHARACTER FILE*40
       CHARACTER*1 FILE1(40)
@@ -2615,7 +2615,7 @@ c-----------------------------------------------------------------------
 c
 c     Driver for anil's problem
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       CALL PRS(' ENTER CHOICE for spherical analysis$')
@@ -2641,7 +2641,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine interp_new(val,xex,yex,zex,idum,tt,IERR,rrl,ieo)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX,isdiag
       REAL TT(1)
@@ -2744,7 +2744,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine strfct_spec(psi)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       REAL PSI(1)
 C
@@ -2845,7 +2845,7 @@ c
 c-----------------------------------------------------------------------
       subroutine strem2_spec(psi,ie)
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 C
       REAL PSI(1)
@@ -2918,7 +2918,7 @@ c-----------------------------------------------------------------------
 c
 c     Find an element with minimal "x" value
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       n    = nx*ny*nz*nel
@@ -2943,7 +2943,7 @@ c
 c-----------------------------------------------------------------------
       subroutine integrate_uut6(wint,x0,x1,q1,q2,q3,q4,q5,q6)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real x0(3),x1(3)
@@ -3007,7 +3007,7 @@ c
 c-----------------------------------------------------------------------
       subroutine integrate_uut2(wint,x0,x1,q1,q2)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real x0(3),x1(3)
@@ -3071,7 +3071,7 @@ c
 c-----------------------------------------------------------------------
       subroutine integrate_uut9(wint,x0,x1,q1,q2,q3,q4,q5,q6,q7,q8,q9)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real x0(3),x1(3)
@@ -3149,7 +3149,7 @@ c
 c     ALSO -- Note that T is now scaled by user supplied "c" value
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (lxyz=nxm*nym*nzm)
@@ -3555,7 +3555,7 @@ c
 c     ALSO -- Note that T is now scaled by user supplied "c" value
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (lxyz=nxm*nym*nzm)
@@ -3970,7 +3970,7 @@ c
 c     ALSO -- Note that T is now scaled by user supplied "c" value
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (lxyz=nxm*nym*nzm)
@@ -4287,7 +4287,7 @@ c
 c-----------------------------------------------------------------------
       subroutine shift_comp
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       CALL PRS(' ENTER component to be shifted (x,y, or z)$')
@@ -4311,7 +4311,7 @@ c
 c-----------------------------------------------------------------------
       subroutine scale_comp
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       CALL PRS(' ENTER component to be scaled (x,y, or z)$')
@@ -4453,7 +4453,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine mkside1(xs,ys,zs,iside,ie)
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Find side midpoint
 C
@@ -4491,7 +4491,7 @@ c     This stuff only relevant for 3d
 c-----------------------------------------------------------------------
       subroutine set_element_cluster_param(par_cluster,nbface)
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real par_cluster       (9,nelm)
 c
@@ -4632,7 +4632,7 @@ c
 c-----------------------------------------------------------------------
       subroutine cluster_bc
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter(max_clusters=10)
@@ -4788,7 +4788,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute current work array into wave-space (Az,Bz)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /ctmp1/ wwz(nxm*nym*nzm),bfh(nzm*nzm),lam(nzm)
@@ -4849,7 +4849,7 @@ c-----------------------------------------------------------------------
       subroutine read_fld
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       call get_fname80_open_old (80,ierr)
@@ -4901,7 +4901,7 @@ c
 c-----------------------------------------------------------------------
       subroutine big_image
 c     
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm,iftmp,iftmh
@@ -5031,7 +5031,7 @@ c-----------------------------------------------------------------------
 c     
 c     Dump out enstrophy
 c     
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm,iftmp,iftmh
@@ -5081,7 +5081,7 @@ c
 c-----------------------------------------------------------------------
       subroutine sem2lex(ul,us,nelx,nely,nelz)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
 c
@@ -5109,7 +5109,7 @@ c
 c-----------------------------------------------------------------------
       subroutine outlex (ul,nelx,nely,nelz,idim,name5)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
 c
@@ -5148,7 +5148,7 @@ c-----------------------------------------------------------------------
 c
 c     read a constant for each element from a file and put into work
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       nxyz = nx*ny*nz
@@ -5194,7 +5194,7 @@ c        read(io,*,end=99,err=99) pmap(e),(cell(h2s(k),e),k=1,nv)
 c-----------------------------------------------------------------------
       subroutine view_map
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       character*80 fname
       character*4  c4
@@ -5255,7 +5255,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute current work array into wave-space (Az,Bz)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /ctmp1/ uavg(nxm*nelm),vavg(nxm*nelm),wavg(nxm*nelm)
@@ -5330,7 +5330,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine xz_average
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /ctmp1/ uavg(nxm*nelm),vavg(nxm*nelm),wavg(nxm*nelm)
@@ -5388,7 +5388,7 @@ c-----------------------------------------------------------------------
 c
 c     6-way average of hex-fuel pin flow variables
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 
       integer kely
@@ -5582,7 +5582,7 @@ c-----------------------------------------------------------------------
 c
 c     Shell-based error distribution
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       integer e
       common /ctmp1/ ue(nxm*nym*nzm),ve(nxm*nym*nzm),we(nxm*nym*nzm)

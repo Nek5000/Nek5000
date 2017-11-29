@@ -10,7 +10,7 @@ c
       real w1p
       real y(*)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       j = 1
         do ifield = 2,nfield
@@ -47,7 +47,7 @@ c
       common /scrsf/ dtmp(lx1,ly1,lz1,lelt)
 
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       if (ifrhs .and. ifdp0dt) then
          call qthermal ! computes dp0thdt  

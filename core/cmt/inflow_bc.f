@@ -4,8 +4,8 @@ C> @file Dirichlet states for inflow boundary conditions
       INCLUDE 'INPUT'
       INCLUDE 'CMTBCDATA'
       integer nvar,f,e
-      real facew(nx1,nz1,2*ldim,nelt,nvar)
-      real wbc(nx1,nz1,2*ldim,nelt,nvar)
+      real facew(lx1,lz1,2*ldim,nelt,nvar)
+      real wbc(lx1,lz1,2*ldim,nelt,nvar)
 
 ! JH021717 compare
 !     call inflow_rflu(nvar,f,e,facew,wbc)
@@ -28,17 +28,17 @@ C> @file Dirichlet states for inflow boundary conditions
 
       integer f,e,fdim ! intent(in)
       integer i,bcOptType
-      real facew(nx1*nz1,2*ldim,nelt,nvar) ! intent(in)
-      real wbc  (nx1*nz1,2*ldim,nelt,nvar)   ! intent(out)
+      real facew(lx1*lz1,2*ldim,nelt,nvar) ! intent(in)
+      real wbc  (lx1*lz1,2*ldim,nelt,nvar)   ! intent(out)
       real snx,sny,snz,rhou,rhov,rhow,pl,rhob,rhoub,rhovb,rhowb
      >     ,rhoeb, mach
 
-      nxz=nx1*nz1
-      nxzd=nxd*nzd
-      fdim=ndim-1
+      nxz=lx1*lz1
+      nxzd=lxd*lzd
+      fdim=ldim-1
       ieg=lglel(e)
 
-      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
+      call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)    
       l=0
       do iz=k0,k1
       do iy=j0,j1
@@ -112,17 +112,17 @@ c                                     !     ux,uy,uz
 
       integer f,e,fdim ! intent(in)
       integer i
-      real facew(nx1*nz1,2*ldim,nelt,nvar) ! intent(in)
-      real wbc  (nx1*nz1,2*ldim,nelt,nvar)   ! intent(out)
+      real facew(lx1*lz1,2*ldim,nelt,nvar) ! intent(in)
+      real wbc  (lx1*lz1,2*ldim,nelt,nvar)   ! intent(out)
       real snx,sny,snz,rhou,rhov,rhow,pl,rhob,rhoub,rhovb,rhowb
      >     ,rhoeb, mach
 
-      nxz=nx1*nz1
-      nxzd=nxd*nzd
-      fdim=ndim-1
+      nxz=lx1*lz1
+      nxzd=lxd*lzd
+      fdim=ldim-1
       ieg=lglel(e)
 
-      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
+      call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)    
       l=0
       do iz=k0,k1
       do iy=j0,j1

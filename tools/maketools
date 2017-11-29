@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# maximum number of elements
+MAXNEL=100000
+
 # binary path
 bin_nek_tools=`cd ../bin && pwd`
 
@@ -125,10 +128,13 @@ if [[ $OSTYPE == darwin* ]]; then
   BIGMEM="" 
 fi
 
+FFLAGS+=" -DMAXNEL=$MAXNEL"
+
 export FC=`which $FC`
-export FFLAGS
+export NEK_FFLAGS="$FFLAGS"
+export FFLAGS_
 export CC=`which $CC`
-export CFLAGS
+export NEK_CFLAGS="$CFLAGS"
 export bin_nek_tools
 export US
 export R8

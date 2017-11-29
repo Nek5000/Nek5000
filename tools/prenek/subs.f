@@ -438,7 +438,7 @@ C     Convert the input value
       return
       end
       subroutine deltmp
-      include  'basics.inc'
+#     include "basics.inc"
       character*80 command
 C     Remove all tmp.* files
 C

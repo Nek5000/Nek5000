@@ -1,4 +1,4 @@
-# Release 17.0.0-dev
+# Release v17.0-rc1
 
 ## Major Features and Improvements
 
@@ -17,13 +17,12 @@
 * Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
 * Optional new user friendly `SIZE` file format (see SIZE.template)
 * Refactored `NEKNEK`
-* Added high-pass filter relaxation (alternative to our existing explicit filter)
+* Added high-pass filter relaxation (alternative to explicit filter)
 * Added parallel readers for .re2 and AMG .dat files
 * Introduced new binary map (.ma2) format
 
 ## Backwards-Incompatible Changes 
 
-* When p20>0 use it as solver tolerance for temperature instead of p22 (only for Helmholtz) 
 * Replaced usr interpolation wrapper `intpts()` by `intp()` with a different interface
 * Replaced `g2gi()` by new generic fld reader `gfldr()`
 * Moved `makenek` from `core` to `bin` folder
@@ -32,13 +31,14 @@
 * Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
 * Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if they don't exist
 * Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=semg_amg in PRESSURE section) 
-* Renamed preconditioner value in .par from `amg` to `semg_amg` 
+* Changed various key/values for `.par`
+* Changed meaning of param(26) to be the targetCFL instead of OIFS substeps
 
-## Bug Fixes and Other Changes
+## Known Bugs 
 
-* Use rank id to tag MPI message instead of global element 
-* Fix periodic BC bug of `genmap` when using more than 1M elemtents
-* Many bug fixes
+[65](https://github.com/Nek5000/Nek5000/issues/65),
+[407](https://github.com/Nek5000/Nek5000/issues/407)
+
 
 ## Thanks to our Contributors
 This release contains contributions from the Nek5000 core developers, as well as:

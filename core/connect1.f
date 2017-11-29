@@ -39,7 +39,7 @@ C     Initialize key arrays for Direct Stiffness SUM.
 C
       NXL=3
       NYL=3
-      NZL=1+2*(NDIM-2)
+      NZL=1+2*(ldim-2)
 
       call initds
       call dsset (nxl,nyl,nzl)
@@ -63,7 +63,6 @@ C     .Construct the element to processor map and
       CALL SETCDOF 
       IF (IFAXIS            ) CALL SETRZER
       IF (IFMVBD            ) CALL CBCMESH
-      IF (IFMODEL.AND.IFKEPS) CALL CBCTURB
       CALL CHKAXCB
 C
 C========================================================================
@@ -74,7 +73,7 @@ C
       if (ifflow) mfield=1
       if (ifmvbd) mfield=0
 
-      ncrnr = 2**ndim
+      ncrnr = 2**ldim
 
       if (nelgv.eq.nelgt) then
          if (ifgtp) then
@@ -82,7 +81,7 @@ C
          else
             call get_vert
          endif
-         call setupds(gsh_fld(1),nx1,ny1,nz1,nelv,nelgv,vertex,glo_num)
+         call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
 
 c        call gs_counter(glo_num,gsh_fld(1))
@@ -100,11 +99,11 @@ c
 
          call get_vert
 c        call outmati(vertex,4,nelv,'vrtx V')
-         call setupds(gsh_fld(1),nx1,ny1,nz1,nelv,nelgv,vertex,glo_num)
+         call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
 
 c        call get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
 c        call outmati(vertex,4,nelt,'vrtx T')
-         call setupds(gsh_fld(2),nx1,ny1,nz1,nelt,nelgt,vertex,glo_num)
+         call setupds(gsh_fld(2),lx1,ly1,lz1,nelt,nelgt,vertex,glo_num)
 
 c
 c        Feb 20, 2012:  It appears that we do not need this restriction: (pff)
@@ -128,15 +127,15 @@ C========================================================================
 C     Set up multiplicity and direct stiffness arrays for each IFIELD
 C========================================================================
 
-      ntotv = nx1*ny1*nz1*nelv
-      ntott = nx1*ny1*nz1*nelt
+      ntotv = lx1*ly1*lz1*nelv
+      ntott = lx1*ly1*lz1*nelt
 
 
 
       if (ifflow) then
          ifield = 1
          call rone    (vmult,ntotv)
-         call dssum   (vmult,nx1,ny1,nz1)
+         call dssum   (vmult,lx1,ly1,lz1)
          vmltmax=glmax(vmult,ntotv)
          ivmltmax=vmltmax
          if (nio.eq.0) write(6,*) ivmltmax,' max multiplicity'
@@ -145,7 +144,7 @@ C========================================================================
       if (ifheat) then
          ifield = 2
          call rone    (tmult,ntott)
-         call dssum   (tmult,nx1,ny1,nz1)
+         call dssum   (tmult,lx1,ly1,lz1)
          call invcol1 (tmult,ntott)
       endif
       if (.not.ifflow) call copy(vmult,tmult,ntott)
@@ -189,7 +188,7 @@ C
 C     Nominal ordering for direct stiffness summation of faces
 C
       J=0
-      DO 5 IDIM=1,NDIM
+      DO 5 IDIM=1,ldim
       DO 5 IFACE=1,2
         J=J+1
          NOMLIS(IFACE,IDIM)=J
@@ -324,10 +323,10 @@ C
 C
       NXL=3
       NYL=3
-      NZL=1+2*(NDIM-2)
+      NZL=1+2*(ldim-2)
       NXY   =NXL*NYL
       NXYZ  =NXL*NYL*NZL
-      NFACES=2*NDIM
+      NFACES=2*ldim
 C
 C----------------------------------------------------------------------
 C     Set up edge arrays (temporary - required only for defining DS)
@@ -336,7 +335,7 @@ C
 C     Fill corners - 1 through 8.
 C
       I3D=1
-      IF (NDIM.EQ.2) I3D=0
+      IF (ldim.EQ.2) I3D=0
 C
       I=0
       DO 10 I3=0,I3D
@@ -373,7 +372,7 @@ C
 C
 C     Fill Z-direction edges.
 C
-      IF (NDIM.EQ.3) THEN
+      IF (ldim.EQ.3) THEN
          DO 40 I2=0,1
             IY=1+(NYL-1)*I2
             DO 40 I1=0,1
@@ -393,7 +392,7 @@ C
 C
 C     GENERAL FACE, GENERAL ROTATION EDGE NUMBERS.
 C
-      IF (NDIM.EQ.3) THEN
+      IF (ldim.EQ.3) THEN
 C
 C        Pack 3-D edge numbering:
 C   
@@ -729,7 +728,7 @@ C
 C
       NXL=3
       NYL=3
-      NZL=1+2*(NDIM-2)
+      NZL=1+2*(ldim-2)
       NTOT3=NXL*NYL*NZL*NELT
 C
 C   Preprocessor Corner notation:      Symmetric Corner notation:
@@ -773,8 +772,8 @@ C
 C
       DO 5000 IE=1,NELT
 C
-         NDIM2 = 2**NDIM
-         DO 50 IX=1,NDIM2
+         ldim2 = 2**ldim
+         DO 50 IX=1,ldim2
             I=INDX(IX)
             XCB(IX,1,1)=XC(I,IE)
             YCB(IX,1,1)=YC(I,IE)
@@ -783,7 +782,7 @@ C
 C
 C        Map R-S-T space into physical X-Y-Z space.
 C
-         DO 100 IZT=1,ndim-1
+         DO 100 IZT=1,ldim-1
          DO 100 IYT=1,2
          DO 100 IXT=1,2
 C
@@ -867,8 +866,8 @@ c   1       format(3i5,1p3e12.4,a4)
 C
 C     Compute location of center and "diameter" of each element side.
 C
-      NFACES=NDIM*2
-      NCRNR =2**(NDIM-1)
+      NFACES=ldim*2
+      NCRNR =2**(ldim-1)
       CALL RZERO(SIDE,24*NELT)
       DO 500 ICRN=1,NCRNR
       DO 500 IFAC=1,NFACES
@@ -877,7 +876,7 @@ C
          ICR1 = MOD1(ICR1,NCRNR)
          IVT1 = ICFACE(ICR1,IFAC)
          DO 400 IE=1,NELT
-            DO 300 IDIM=1,NDIM
+            DO 300 IDIM=1,ldim
                SIDE(IDIM,IFAC,IE)=SIDE(IDIM,IFAC,IE)+XYZ(IDIM,IVTX,IE)
                SIDE(   4,IFAC,IE)=SIDE(   4,IFAC,IE)+
      $                     ( XYZ(IDIM,IVTX,IE)-XYZ(IDIM,IVT1,IE) )**2
@@ -1141,13 +1140,13 @@ c-----------------------------------------------------------------------
       character*10 txt10
 C
       do ie=1,nelv,2
-         do iz=1,nz1,1
+         do iz=1,lz1,1
             if (iz.eq.1) write(6,106) txt10,iz,ie
             if (iz.gt.1) write(6,107) 
             i1 = ie+1
-            do j=ny1,1,-1
-               write(6,105) (x(i,j,iz,ie),i=1,nx1)
-     $                    , (x(i,j,iz,i1),i=1,nx1)
+            do j=ly1,1,-1
+               write(6,105) (x(i,j,iz,ie),i=1,lx1)
+     $                    , (x(i,j,iz,i1),i=1,lx1)
             enddo
          enddo
       enddo
@@ -1194,9 +1193,9 @@ C
          endif
 c
          i=istart
-         do iy=ny1,1,-1
+         do iy=ly1,1,-1
             j=jstart
-            do ix=1,nx1
+            do ix=1,lx1
                write(s(i,j),6) x(ix,iy,1,ie)
                j=j+1
             enddo
@@ -1244,9 +1243,9 @@ C
          endif
 c
          i=istart
-         do iy=ny1,1,-1
+         do iy=ly1,1,-1
             j=jstart
-            do ix=1,nx1
+            do ix=1,lx1
                write(s(i,j),6) x(ix,iy,1,ie)
                j=j+1
             enddo
@@ -1274,7 +1273,7 @@ c-----------------------------------------------------------------------
       subroutine outfldro (x,txt10,ichk)
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
-      real x(nx1,ny1,nz1,lelt)
+      real x(lx1,ly1,lz1,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -1283,8 +1282,8 @@ c
       if (idum.lt.0) return
 c
 C
-      mtot = nx1*ny1*nz1*nelv
-      if (nx1.gt.8.or.nelv.gt.16) return
+      mtot = lx1*ly1*lz1*nelv
+      if (lx1.gt.8.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 
@@ -1293,14 +1292,14 @@ C
          do k=1,1
             write(6,116) txt10,k,ie,xmin,xmax,istep,time
             write(6,117) 
-            do j=ny1,1,-1
-              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
-              if (nx1.eq.8) write(6,118) ((x(i,j,k,e+1),i=1,nx1),e=0,ne)
+            do j=ly1,1,-1
+              if (lx1.eq.2) write(6,102) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.3) write(6,103) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.4) write(6,104) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.5) write(6,105) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.6) write(6,106) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.7) write(6,107) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
+              if (lx1.eq.8) write(6,118) ((x(i,j,k,e+1),i=1,lx1),e=0,ne)
             enddo
          enddo
       enddo
@@ -1328,7 +1327,7 @@ c-----------------------------------------------------------------------
       subroutine outfldrv (x,txt10,ichk) ! writes to unit=40+ifield
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
-      real x(nx1,ny1,nz1,lelt)
+      real x(lx1,ly1,lz1,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -1338,8 +1337,8 @@ c
       m = 40 + ifield
 c
 C
-      mtot = nx1*ny1*nz1*nelv
-      if (nx1.gt.7.or.nelv.gt.16) return
+      mtot = lx1*ly1*lz1*nelv
+      if (lx1.gt.7.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 c
@@ -1352,14 +1351,14 @@ c
          do k=1,1
             if (ie.eq.ne1) write(m,116) txt10,k,ie,xmin,xmax,istep,time
             write(m,117) 
-            do j=ny1,1,-1
-              if (nx1.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+            do j=ly1,1,-1
+              if (lx1.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
             enddo
          enddo
       enddo
@@ -1387,7 +1386,7 @@ c-----------------------------------------------------------------------
       subroutine outfldrv0 (x,txt10,ichk)
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
-      real x(nx1,ny1,nz1,lelt)
+      real x(lx1,ly1,lz1,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -1396,8 +1395,8 @@ c
       if (idum.lt.0) return
 c
 C
-      mtot = nx1*ny1*nz1*nelv
-      if (nx1.gt.7.or.nelv.gt.16) return
+      mtot = lx1*ly1*lz1*nelv
+      if (lx1.gt.7.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 c
@@ -1410,14 +1409,14 @@ c
          do k=1,1
             if (ie.eq.ne1) write(6,116) txt10,k,ie,xmin,xmax,istep,time
             write(6,117) 
-            do j=ny1,1,-1
-              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
-              if (nx1.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,nx1),e=1,ne)
+            do j=ly1,1,-1
+              if (lx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
+              if (lx1.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,lx1),e=1,ne)
             enddo
          enddo
       enddo
@@ -1445,7 +1444,7 @@ c-----------------------------------------------------------------------
       subroutine outfldrp0 (x,txt10,ichk)
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
-      real x(nx2,ny2,nz2,lelt)
+      real x(lx2,ly2,lz2,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -1454,8 +1453,8 @@ c
       if (idum.lt.0) return
 c
 C
-      mtot = nx2*ny2*nz2*nelv
-      if (nx2.gt.7.or.nelv.gt.16) return
+      mtot = lx2*ly2*lz2*nelv
+      if (lx2.gt.7.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 c
@@ -1468,14 +1467,14 @@ c
          do k=1,1
             if (ie.eq.ne1) write(6,116) txt10,k,ie,xmin,xmax,istep,time
             write(6,117) 
-            do j=ny2,1,-1
-              if (nx2.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+            do j=ly2,1,-1
+              if (lx2.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.8) write(6,108) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
             enddo
          enddo
       enddo
@@ -1503,7 +1502,7 @@ c-----------------------------------------------------------------------
       subroutine outfldrp (x,txt10,ichk) ! writes out into unit = 40+ifield 
       INCLUDE 'SIZE'
       INCLUDE 'TSTEP'
-      real x(nx2,ny2,nz2,lelt)
+      real x(lx2,ly2,lz2,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -1514,8 +1513,8 @@ c
 c
 c
 C
-      mtot = nx2*ny2*nz2*nelv
-      if (nx2.gt.7.or.nelv.gt.16) return
+      mtot = lx2*ly2*lz2*nelv
+      if (lx2.gt.7.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 c
@@ -1528,14 +1527,14 @@ c
          do k=1,1
             if (ie.eq.ne1) write(m,116) txt10,k,ie,xmin,xmax,istep,time
             write(6,117) 
-            do j=ny2,1,-1
-              if (nx2.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
-              if (nx2.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,nx2),e=1,ne)
+            do j=ly2,1,-1
+              if (lx2.eq.2) write(m,102) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.3) write(m,103) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.4) write(m,104) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.5) write(m,105) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.6) write(m,106) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.7) write(m,107) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
+              if (lx2.eq.8) write(m,108) ((x(i,j,k,e+l),i=1,lx2),e=1,ne)
             enddo
          enddo
       enddo
@@ -1598,9 +1597,9 @@ c-----------------------------------------------------------------------
          iquick = iglmax(iquick,1)
 
          do e=1,nelv
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1
            if (glo_num(i,j,k,e).eq.iquick) then
             eg = lglel(e)
             write(6,1) nid,i,j,k,e,eg,iquick,ipass
@@ -1643,10 +1642,10 @@ c-----------------------------------------------------------------------
 
       ifield = 0
       nel    = nelfld(0)
-      nxyz   = nx1*ny1*nz1
-      nxz    = nx1*nz1
+      nxyz   = lx1*ly1*lz1
+      nxz    = lx1*lz1
       n      = nel*nxyz
-      nface  = 2*ndim
+      nface  = 2*ldim
 
 
       iflag=0
@@ -1701,24 +1700,24 @@ c     element that both have cbc = msi!
 
       call opdssum(rnx,rny,rnz)
 
-      nv = nel*(2**ndim)
+      nv = nel*(2**ldim)
       call icopy(jvrtex,vertex,nv)  ! Save vertex
       mvertx=iglmax(jvrtex,nv)
 
 
 c     Now, check to see if normal is aligned with incoming normal
 
-      nsx=nx1-1
-      nsy=ny1-1
-      nsz=max(1,nz1-1)
+      nsx=lx1-1
+      nsy=ly1-1
+      nsz=max(1,lz1-1)
 
       do e=1,nel
          l=0
-         do k=1,nz1,nsz
-         do j=1,ny1,nsy
-         do i=1,nx1,nsx
+         do k=1,lz1,nsz
+         do j=1,ly1,nsy
+         do i=1,lx1,nsx
             l=l+1
-            m=i + nx1*(j-1) + nx1*ny1*(k-1)
+            m=i + lx1*(j-1) + lx1*ly1*(k-1)
             dot = tnx(m,e)*rnx(m,e)+tny(m,e)*rny(m,e)+tnz(m,e)*rnz(m,e)
             if (dot.lt.-.5) jvrtex(l,e)=jvrtex(l,e)+mvertx
          enddo
@@ -1727,7 +1726,7 @@ c     Now, check to see if normal is aligned with incoming normal
       enddo
 
 
-      call setupds(gsh_fld(0),nx1,ny1,nz1,nelv,nelgv,jvrtex,glo_num)
+      call setupds(gsh_fld(0),lx1,ly1,lz1,nelv,nelgv,jvrtex,glo_num)
 
       return
       end

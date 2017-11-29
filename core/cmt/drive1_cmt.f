@@ -27,7 +27,7 @@ c     Solve the Euler equations
       ftime_dum = dnekclock()
       nxyz1=lx1*ly1*lz1
       n = nxyz1*lelt*toteq
-      nfldpart = ndim*npart
+      nfldpart = ldim*npart
 
       if(istep.eq.1) then
          call cmt_ics
@@ -130,7 +130,7 @@ C> Store it in res1
       call compute_mesh_h(meshh,xm1,ym1,zm1)
       call compute_grid_h(gridh,xm1,ym1,zm1)
 
-      if (nxd.gt.nx1) then
+      if (lxd.gt.lx1) then
          call set_dealias_face
       else
          call set_alias_rx(istep)
@@ -181,7 +181,7 @@ C> \f$\mathbf{U}^+\f$; store in CMTSURFLX
 
 C> res1+=\f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
       nstate=nqq
-      nfq=nx1*nz1*2*ndim*nelt
+      nfq=lx1*lz1*2*ldim*nelt
       iwm =1
       iwp =iwm+nstate*nfq
       iflx=iwp+nstate*nfq
@@ -282,7 +282,7 @@ C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
       include 'SOLN'
 
       integer e
-      nxyz1 = nx1*ny1*nz1
+      nxyz1 = lx1*ly1*lz1
       n     = nxyz1*lelt*toteq
       if (ifrestart)then
          do e=1,nelt

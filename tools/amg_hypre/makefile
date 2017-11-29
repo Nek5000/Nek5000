@@ -13,6 +13,6 @@ lib:
 	@cd hypre; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install
 
 clean:
-	@rm -rf amg_hypre *.o hypre/lib hypre/include hypre/hypre* hypre/*.tar*
+	@rm -rf amg_hypre *.o hypre/lib hypre/include hypre/hypre*
 
 .PHONY: clean

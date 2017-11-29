@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine octspl
-      include 'basics.inc'
+#     include "basics.inc"
       COMMON /SPLITT/ ENEW(NELM),IND(NELM)
       DIMENSION XPT(3),VEC(3),LISTE(8)
 c
@@ -106,7 +106,7 @@ c-----------------------------------------------------------------------
 C
 C     Generate a set of corner window refinements in 3D
 C
-      include 'basics.inc'
+#     include "basics.inc"
       common /cenewi/ enew(nelm),ind(nelm)
       DIMENSION XPT(3),VEC(3)
       common /wierd/ list1(nelm),list2(nelm)
@@ -344,7 +344,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine zip2
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION ENEW(NELM),IND(NELM)
       DIMENSION XPT(3),VEC(3)
 C
@@ -690,7 +690,7 @@ C
 C     Program to generate spherical shell elements for NEKTON
 C     input.  Paul F. Fischer
 C
-      include 'basics.inc'
+#     include "basics.inc"
       real xml(mx,my,mz),yml(mx,my,mz),zml(mx,my,mz),xysrf(3,mx,mz)
       integer e
 
@@ -817,7 +817,7 @@ c-----------------------------------------------------------------------
 C
 C     Generate XYZ vector along an edge of a surface.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       common /ctmpg/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
      $             , work(3,lx1,lz1)
 C
@@ -945,7 +945,7 @@ c            CALL EXITT
       end
 c-----------------------------------------------------------------------
       subroutine dsset2(js1,jf1,jskip1,js2,jf2,jskip2,iface,mx,my,mz)
-      include 'basics.inc'
+#     include "basics.inc"
 
       call dsset(mx,my,mz)
 
@@ -963,7 +963,7 @@ c-----------------------------------------------------------------------
 C
 C     Set up arrays ESKIP,SKPDAT,NEDG,NOFFST for new MX,MY,MZ
 C
-      include 'basics.inc'
+#     include "basics.inc"
       INTEGER MXO,MYO,MZO
       SAVE    MXO,MYO,MZO
       DATA    MXO,MYO,MZO /3*0/
@@ -1041,7 +1041,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine arcsrf_e(xml,yml,zml,nxl,nyl,nzl,e,isid)
-      include 'basics.inc'
+#     include "basics.inc"
       real xml(nxl,nyl,nzl),yml(nxl,nyl,nzl),zml(nxl,nyl,nzl)
       integer e
 
@@ -1182,7 +1182,7 @@ C
 c-----------------------------------------------------------------------
       subroutine setrst2(xpt,vec)
 C     Set up list of candidate RST planes
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3)
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
@@ -1296,7 +1296,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine finde(ie,xpt1,ypt1,zpt1)
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Find element which is closest to the point xpt1
 C
@@ -1330,7 +1330,7 @@ c-----------------------------------------------------------------------
 C
 C     Evaluate a scalar, SCAL, at position RRL and return the result in X0.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION SCAL(1)
       DIMENSION RRL(3)
       COMMON  /qTMP0q/ HR(NXM),HS(NXM),HT(NXM)
@@ -1441,7 +1441,7 @@ C
 C     Renumber elements so that the lowest numbered elements are
 C     in the user specified box.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION IEIN(NELM),IEOUT(NELM) 
       logical iftmp
       NELM1=NELM-1
@@ -1543,7 +1543,7 @@ C
 c-----------------------------------------------------------------------
       subroutine getpt3(xpt,ie,text)
 C     Set up list of candidate RST planes
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER*1 YESNO
       CHARACTER*80 TEXT
       DIMENSION XPT(3)
@@ -1575,7 +1575,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine fndpln(ijkpln,iplan,vec3,vec,xpt,ie)
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       DIMENSION VEC(3) ,VEC3(3),XPT(3)
@@ -1655,7 +1655,7 @@ C                  |
 C                  splitting plane 2
 C
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       INTEGER   ITRANS(3,6,6)
@@ -1904,7 +1904,7 @@ c-----------------------------------------------------------------------
 C
 C     Perform a unit rotation about the specified axis.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER*1 CROT,CCTMP
       DIMENSION TMP(6)
       INTEGER FCRN2 (4,6)
@@ -1972,7 +1972,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw ISOMETRIC view of general 3D object.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER*1 CB1
       INTEGER ICALLD,NCSOLD,NCSEG1,NCSGM1
       INTEGER ICEDG(3,16),IEDGFC(4,6),ICFACE(4,10)
@@ -2121,7 +2121,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine evline(uv,uvp,hik,n1,n1d,npt,nskip)
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Evaluate vector uv <== uvp, @ k=1,npts
 C
@@ -2150,7 +2150,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine setebc(ifld)
-      include 'basics.inc'
+#     include "basics.inc"
 C     Find Sides' Midpoints
       call mkside
       call gencen
@@ -2231,7 +2231,7 @@ C     input.  Paul F. Fischer
 C
 C     Updated 7/30/92 to compute prolate spheroids
 C
-      include 'basics.inc'
+#     include "basics.inc"
       real xml(mx,my,mz),yml(mx,my,mz),zml(mx,my,mz)
       real xysrf(3,mx,mz)
       integer e
@@ -2387,7 +2387,7 @@ c-----------------------------------------------------------------------
 C
 C     High-light just the side of the element
 C
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Flash element side
 C     Hilight side with Blinking lights
@@ -2417,7 +2417,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine shift
-      include 'basics.inc'
+#     include "basics.inc"
 
       real x0(3),p1(3),p2(3),p3(3)
 
@@ -2529,7 +2529,7 @@ c        call drawline(Ysep,Xmax,Ysep,Xmin)
       end
 c-----------------------------------------------------------------------
       subroutine shifter(Shift,Sep,dir,pts,coord)
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
@@ -2635,7 +2635,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       subroutine curcnt  !     Recount the number of curved sides
-      include 'basics.inc'
+#     include "basics.inc"
 
       ncurve=0
       do 9001 ie=1,nel
@@ -2656,7 +2656,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
       INTEGER INV(8)
@@ -2844,7 +2844,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
      $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
@@ -3082,7 +3082,7 @@ c     This routine is like "shift" except that the shifted points
 c     are moved a scaled distance, proportional to the distance from
 c     the selected point.
 
-      include 'basics.inc'
+#     include "basics.inc"
 
     1 continue
 
@@ -3168,7 +3168,7 @@ c
 c     In this pass, we just figure out range of geometry in shifted 
 c     section
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       CHARACTER*1 dir,coord
       LOGICAL IFG,IFL
@@ -3199,7 +3199,7 @@ c-----------------------------------------------------------------------
 c
 c     Standard linear stretch -- unity gain.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
@@ -3292,7 +3292,7 @@ c-----------------------------------------------------------------------
 
 c     Geometric gain
 
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
@@ -3401,7 +3401,7 @@ c-----------------------------------------------------------------------
 c
 c     Standard linear stretch -- unity gain.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       character*1 dir,coord
       logical ifg,ifl
@@ -3431,7 +3431,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      include 'basics.inc'
+#     include "basics.inc"
       parameter (nxm3=nxm*nym*nzm)
       common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),rrl(3)
       integer inv(8)
@@ -3546,7 +3546,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      include 'basics.inc'
+#     include "basics.inc"
       parameter (nxm3=nxm*nym*nzm)
       common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),rrl(3)
       integer inv(8)
@@ -3599,7 +3599,7 @@ c
       end
 c-----------------------------------------------------------------------
       function ie_click(prompt)  ! element that is clicked upon
-      include 'basics.inc'
+#     include "basics.inc"
       character*80 prompt
 C
 1     call prs(prompt)
@@ -3645,7 +3645,7 @@ c
 C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
-      include 'basics.inc'
+#     include "basics.inc"
       real rax(1000),ray(1000),raz(1000)
 c
       ie = ie_click('Click on element to refine:$')
@@ -3759,7 +3759,7 @@ c-----------------------------------------------------------------------
 
 c     Assign / repair curve-side info for edges
 
-      include 'basics.inc'
+#     include "basics.inc"
       real rrx(1),rry(1),rrz(1)
       real xl(3,3,3),yl(3,3,3),zl(3,3,3)
 
@@ -3813,7 +3813,7 @@ c           do nothing
       end
 c-----------------------------------------------------------------------
       subroutine fix_c_curve(e,ii,jj,kk,nxsp,nysp,nzsp,rrx,rry,rrz)
-      include 'basics.inc'
+#     include "basics.inc"
       real rrx(1),rry(1),rrz(1)
 
       integer c_pair(2,4)
@@ -3891,7 +3891,7 @@ c     read (5,*) c0
       end
 c-----------------------------------------------------------------------
       subroutine fix_s_curve(e,ii,jj,kk,nxsp,nysp,nzsp,rrx,rry,rrz)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real rrx(1),rry(1),rrz(1)
 
@@ -3957,7 +3957,7 @@ c     Check "a" curve on edge 9
       end
 c-----------------------------------------------------------------------
       subroutine arcsph_e(xml,yml,zml,nxl,nyl,nzl,e,isid)
-      include 'basics.inc'
+#     include "basics.inc"
       real xml(nxl,nyl,nzl),yml(nxl,nyl,nzl),zml(nxl,nyl,nzl)
       integer e
 
@@ -4085,7 +4085,7 @@ c
 c-----------------------------------------------------------------------
       subroutine el_bc_swap_ip(p,n)
       integer p(1),xstart
-      include 'basics.inc'
+#     include "basics.inc"
       common /wierd/ list1(nelm),list2(nelm)
       integer e,f,e_old,e_new
       character*3 cb
@@ -4117,7 +4117,7 @@ c-----------------------------------------------------------------------
 C
 C     Renumber elements 
 C
-      include 'basics.inc'
+#     include "basics.inc"
       common /cenewi/ enew(nelm),ind(nelm)
       integer enew,e,v
 
@@ -4152,7 +4152,7 @@ c              call res(ans,1)
 c-----------------------------------------------------------------------
       function dist_solid(e) ! distance of element from solid
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,v
 
       nv = 2**ndim
@@ -4432,7 +4432,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_zgml (nxi)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nxo
       save    nxo
       data    nxo / 0 /
@@ -4456,7 +4456,7 @@ c
 C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
-      include 'basics.inc'
+#     include "basics.inc"
 
       real raxi(0:1),rayi(0:1),razi(0:1)
 
@@ -4563,7 +4563,7 @@ C
 c-----------------------------------------------------------------------
       subroutine linquad(xl,yl,zl,nxl,nyl,nzl,e)
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(nxl*nyl*nzl),yl(nxl*nyl*nzl),zl(nxl*nyl*nzl)
       integer e
@@ -4589,7 +4589,7 @@ c-----------------------------------------------------------------------
       subroutine xyzlin(xl,yl,zl,nxl,nyl,nzl,e)
 c     Generate bi- or trilinear mesh
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
       integer e
@@ -4659,7 +4659,7 @@ c-----------------------------------------------------------------------
       subroutine xyzquad(xl,yl,zl,nxl,nyl,nzl,e)
 c     Generate bi- or triquadratic mesh
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
       real xq(27),yq(27),zq(27)
@@ -4718,7 +4718,7 @@ c        Map R-S-T space into physical X-Y-Z space.
 c-----------------------------------------------------------------------
       subroutine genxyz_e (xl,yl,zl,e,nxl,nyl,nzl)
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(nxl,nyl,nzl),yl(nxl,nyl,nzl),zl(nxl,nyl,nzl)
 
@@ -4777,7 +4777,7 @@ c           write(6,1) x27(l,e),y27(l,e),z27(l,e),l,i,j,k,e,'x27'
       end
 c-----------------------------------------------------------------------
       subroutine set_hlin(h,mx) ! linear to mx mapping
-      include 'basics.inc'
+#     include "basics.inc"
       real h(mx,3,2)
 
       call set_zgml (mx)
@@ -4839,7 +4839,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine plane_project_mesh(x0,p1,p2,p3,e0,e1,tol)
-      include 'basics.inc'
+#     include "basics.inc"
       real x0(3),p1(3),p2(3),p3(3)
       real nh(3),v0(3),v2(3),v3(3)
       integer e,e0,e1
@@ -4938,7 +4938,7 @@ C     appropriate fraction to element JE.   IPLN indicates the
 C     type of split.   FRAC indicates the sub-division point on
 C     the range [0,1].
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (NXM3=NXM*NYM*NZM)
       COMMON /CTMP2/ XP(NXM3),YP(NXM3),ZP(NXM3),RRL(3)
      $              ,XVAL(-1:1,-1:1,-1:1),YVAL(-1:1,-1:1,-1:1)
@@ -5154,7 +5154,7 @@ c
 C     It simply modifies in the X-Y plane, but doesn't refine in Z.
 C
 C
-      include 'basics.inc'
+#     include "basics.inc"
       real rax(1000),ray(1000),raz(1000)
 
       nxsp=2

@@ -16,7 +16,7 @@ C------------------------------------------------------------------------------
 C
       SUBROUTINE VPROPS
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*26 OLDCHOICE
       CHARACTER*80 LINE80,ITEMD
 C       Sets the elements that are used for conduction only

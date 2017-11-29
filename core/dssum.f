@@ -74,6 +74,8 @@ c                 ~ ~T
 c     This is the Q Q  part
 c
       if (gsh_fld(ifldt).ge.0) then
+         if (nio.eq.0.and.loglevel.gt.3)
+     $   write(6,*) 'dssum', ifldt 
          call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
       endif
 c
@@ -193,7 +195,7 @@ c
 c     if (ifldt.eq.0)       ifldt = 1
       if (ifldt.eq.ifldmhd) ifldt = 1
 
-      call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
+      call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ldim,1,1,0)
 
 #ifdef TIMER
       timee=(dnekclock()-etime1)
@@ -235,21 +237,21 @@ c     write(6,*) 'opdsop: ',op,ifldt,ifield
       if(ifsync) call nekgsync()
 
       if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
-     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,1,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ldim,1,1,0)
 
 
       if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL')
-     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,2,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ldim,1,2,0)
 
 
       if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
      $                .or. op.eq.'MIN' .or. op.eq.'MNA')
-     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,3,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ldim,1,3,0)
 
 
       if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
      $                .or. op.eq.'MAX' .or. op.eq.'MXA')
-     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ndim,1,4,0)
+     $   call fgslib_gs_op_many(gsh_fld(ifldt),u,v,w,u,u,u,ldim,1,4,0)
 
 
       return
@@ -296,7 +298,7 @@ c
 c
       common /matvtmp/ utmp(lx1,ly1)
 c
-      if (ndim.eq.2) then
+      if (ldim.eq.2) then
          call mxm (Jmat(1,1,1),n1,uin,n1,uout,n2)
       else
          if (iftrsp) then
@@ -353,7 +355,7 @@ c      real a(1),b(1),c(1)
 c
 c      call q_in_place(a)
 c      call q_in_place(b)
-c      if (ndim .eq.3) call q_in_place(c)
+c      if (ldim .eq.3) call q_in_place(c)
 c
 c      return
 c      end
@@ -503,13 +505,13 @@ c
 c        Note, we zero out u() on this face after extracting, for
 c        consistency reasons discovered during Jerry's thesis. 
 c        Thus,  "ftovec_0" rather than ftovec().   (iface -- Ed notation)
-         do iface = 1 , 2*ndim
+         do iface = 1 , 2*ldim
             im = mortar(iface,ie)
             if (im.ne.0) then
                call ftovec_0(uin(1,iface),u,ie,iface,nx,ny,nz)
             endif
          enddo
-         do iface=1,2*ndim
+         do iface=1,2*ldim
             im = mortar(iface,ie)
             if (im.ne.0) then
                if (if3d) then
@@ -542,13 +544,13 @@ c     This is the J  part,  interpolating parent solution onto child
 c
 c
       do ie = 1 , nel
-         do iface = 1 , 2*ndim
+         do iface = 1 , 2*ldim
             im = mortar(iface,ie)
             if (im.ne.0) then
                call ftovec(uin(1,iface),u,ie,iface,nx,ny,nz)
             endif
          enddo
-         do iface=1,2*ndim
+         do iface=1,2*ldim
             im = mortar(iface,ie)
             if (im.ne.0) then
                call matvec3

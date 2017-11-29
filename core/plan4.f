@@ -36,7 +36,7 @@ C
       REAL DIV1, DIV2, DIF1, DIF2, QTL1, QTL2
 c
       INTYPE = -1
-      NTOT1  = NX1*NY1*NZ1*NELV
+      NTOT1  = lx1*ly1*lz1*NELV
 
       if (igeom.eq.1) then
 
@@ -94,7 +94,7 @@ c Below is just for diagnostics...
 
 c        Calculate Divergence norms of new VX,VY,VZ
          CALL OPDIV   (DVC,VX,VY,VZ)
-         CALL DSSUM   (DVC,NX1,NY1,NZ1)
+         CALL DSSUM   (DVC,lx1,ly1,lz1)
          CALL COL2    (DVC,BINVM1,NTOT1)
 
          CALL COL3    (DV1,DVC,BM1,NTOT1)
@@ -166,9 +166,9 @@ c
 
       CHARACTER CB*3
       
-      NXYZ1  = NX1*NY1*NZ1
+      NXYZ1  = lx1*ly1*lz1
       NTOT1  = NXYZ1*NELV
-      NFACES = 2*NDIM
+      NFACES = 2*ldim
 
 c     -mu*curl(curl(v))
       call op_curl (ta1,ta2,ta3,vx_e,vy_e,vz_e,
@@ -228,7 +228,7 @@ c     call exitti ('exit in cresps$',ifield)
       call chsign  (respr,ntot1)
 
 c     add explicit (NONLINEAR) terms 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       do i=1,n
          ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
          ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
@@ -264,7 +264,7 @@ C     surface terms
          DO 300 IFC=1,NFACES
             CALL RZERO  (W1(1,IEL),NXYZ1)
             CALL RZERO  (W2(1,IEL),NXYZ1)
-            IF (NDIM.EQ.3)
+            IF (ldim.EQ.3)
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
@@ -273,7 +273,7 @@ C     surface terms
      $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
      $         (W2(1,IEL),VY(1,1,1,IEL),UNY(1,1,IFC,IEL),IFC)
-               IF (NDIM.EQ.3)
+               IF (ldim.EQ.3)
      $          CALL FACCL3
      $         (W3(1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ELSE IF (CB(1:3).EQ.'SYM') THEN
@@ -281,12 +281,12 @@ C     surface terms
      $         (W1(1,IEL),TA1(1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
      $         (W2(1,IEL),TA2(1,IEL),UNY(1,1,IFC,IEL),IFC)
-               IF (NDIM.EQ.3)
+               IF (ldim.EQ.3)
      $          CALL FACCL3
      $         (W3(1,IEL),TA3(1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ENDIF
             CALL ADD2   (W1(1,IEL),W2(1,IEL),NXYZ1)
-            IF (NDIM.EQ.3)
+            IF (ldim.EQ.3)
      $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
@@ -322,7 +322,7 @@ C     Compute the residual for the velocity
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
      $ ,             TA4   (LX1,LY1,LZ1,LELV)
 
-      NTOT = NX1*NY1*NZ1*NELV
+      NTOT = lx1*ly1*lz1*NELV
       INTYPE = -1
 
       CALL SETHLM  (H1,H2,INTYPE)
@@ -359,8 +359,8 @@ c
 c
       real w1(1),w2(1),w3(1),work1(1),work2(1),u1(1),u2(1),u3(1)
 c
-      ntot  = nx1*ny1*nz1*nelv
-      nxyz  = nx1*ny1*nz1
+      ntot  = lx1*ly1*lz1*nelv
+      nxyz  = lx1*ly1*lz1
 c     work1=dw/dy ; work2=dv/dz
         call dudxyz(work1,u3,rym1,sym1,tym1,jacm1,1,2)
         if (if3d) then
@@ -373,9 +373,9 @@ c     work1=dw/dy ; work2=dv/dz
               call copy (ta,u3,ntot)
               do iel = 1,nelv
                 if(IFRZER(iel)) then
-                  call rzero (ta(1,1,1,iel),nx1)
-                  call MXM   (ta(1,1,1,iel),nx1,DATM1,ny1,duax,1)
-                  call copy  (ta(1,1,1,iel),duax,nx1)
+                  call rzero (ta(1,1,1,iel),lx1)
+                  call MXM   (ta(1,1,1,iel),lx1,DATM1,ly1,duax,1)
+                  call copy  (ta(1,1,1,iel),duax,lx1)
                 endif
                 call col2    (ta(1,1,1,iel),yinvm1(1,1,1,iel),nxyz)
               enddo
@@ -421,8 +421,8 @@ c-----------------------------------------------------------------------
       subroutine opadd2cm (a1,a2,a3,b1,b2,b3,c)
       INCLUDE 'SIZE'
       REAL A1(1),A2(1),A3(1),B1(1),B2(1),B3(1),C
-      NTOT1=NX1*NY1*NZ1*NELV
-      if (ndim.eq.3) then
+      NTOT1=lx1*ly1*lz1*NELV
+      if (ldim.eq.3) then
          do i=1,ntot1
             a1(i) = a1(i) + b1(i)*c
             a2(i) = a2(i) + b2(i)*c
@@ -446,7 +446,7 @@ c     explicit (VDIFF_E) part.
       include 'SIZE'
       include 'TOTAL'
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 
       dnu_star = -nu_star
       call cadd2 (vdiff_e,vdiff,dnu_star,n)   ! set explicit part
@@ -461,7 +461,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call add2(vdiff,vdiff_e,n) ! sum up explicit and implicit part
 
       return
@@ -478,7 +478,7 @@ c-----------------------------------------------------------------------
       real sij(lr,nij,1)
       integer e
 
-      nxyz1 = nx1*ny1*nz1
+      nxyz1 = lx1*ly1*lz1
 
       if (if3d.or.ifaxis) then
         do e=1,nelv
@@ -540,7 +540,7 @@ c
      $              ,ty(lx1,ly1,lz1,lelt)
      $              ,tz(lx1,ly1,lz1,lelt)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
 
       ifld_save = ifield
@@ -559,7 +559,7 @@ c - - Assemble RHS of T-eqn
       call opdiv   (w2,tx,ty,tz)
 
       call add2    (qtl,w2,ntot)
-      call dssum   (qtl,nx1,ny1,nz1)
+      call dssum   (qtl,lx1,ly1,lz1)
       call col2    (qtl,binvm1,ntot)
 
       ! QTL = T_RHS/(rho*cp**T)
@@ -609,7 +609,7 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call rzero(qtl,ntot)
       call userqtl()

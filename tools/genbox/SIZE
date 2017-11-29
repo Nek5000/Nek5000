@@ -1,6 +1,6 @@
       parameter (mbox  = 10)            ! Max number of Boxes in .box file
       parameter (maxx  = 1000)          ! Max elements in one direction
-      parameter (maxel = 1 000 000)     ! Max Total Elements 
+      parameter (maxel = MAXNEL)        ! Max Total Elements 
 
       common/percsn/wdsize
       integer wdsize

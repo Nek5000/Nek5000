@@ -15,7 +15,7 @@ C------------------------------------------------------------------------------
 C
 c-----------------------------------------------------------------------
       subroutine glomod
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 
       common /cisplit/ isplit(nelm)
@@ -155,7 +155,7 @@ c
 c-----------------------------------------------------------------------
       subroutine frame(isplit,nframe)
 C     Refines corner elements
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION IOVER(2),IOSIDE(2),IFEL(2),ICIN(2),ISPLIT(NELM)
       IF(NFRAME.EQ.1)THEN
          CALL PRS('Enter Element to be divided:$')
@@ -428,7 +428,7 @@ C
 c-----------------------------------------------------------------------
       subroutine splitf
 C     Splits floor in mesh
-      include 'basics.inc'
+#     include "basics.inc"
       CALL PRS('Which floor do you wish to split?$')
       call rer(floor)
       ISPLIT=FLOOR
@@ -509,7 +509,7 @@ C
 c-----------------------------------------------------------------------
       subroutine parker(isplit)
 C     Makes spider web
-      include 'basics.inc'
+#     include "basics.inc"
       INTEGER ISPLIT(NELM)
 C
       CALL PRS('Push left button to enter element to be split:$')
@@ -633,7 +633,7 @@ c-----------------------------------------------------------------------
       subroutine crack(ielcrk,ifacrk,sfrac)
 C     Initiates crack in 1st element of split.  Output is Element #, Side#, and
 C     Fraction away from side.
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION IELMOV(NELM),IELAB(2),ICORAB(2),ICOMON(2,2,16)
       REAL XCHECK(8),YCHECK(8),XAB(2),YAB(2)
       CHARACTER KEY,STRING*6,MOVPAR*9
@@ -694,7 +694,7 @@ c
 c-----------------------------------------------------------------------
       subroutine mark (ielcrk,ifacrk,sfrac,isplit)
 C     Mark where CRACK propagates in vector ISPLIT
-      include 'basics.inc'
+#     include "basics.inc"
       INTEGER ISPLIT(NELM)
 
 c     write(6,*) ielcrk,ifacrk,sfrac,nel,' Cracking mark'
@@ -818,7 +818,7 @@ C        We're done if no new elements got split
 c-----------------------------------------------------------------------
       subroutine mark2(ielcrk,ifacrk,sfrac,isplit)
 C     Mark where CRACK propagates in vector ISPLIT
-      include 'basics.inc'
+#     include "basics.inc"
       INTEGER ISPLIT(NELM)
 C
       DO 10 I=1,NELM
@@ -831,7 +831,7 @@ C
 c-----------------------------------------------------------------------
       subroutine split(sfrac,isplit)
 C     Split elements marked in vector ISPLIT
-      include 'basics.inc'
+#     include "basics.inc"
       integer isplit(1000),iipoint(2,3,2),aface
       character letnew(1000)
       logical if_special_curve
@@ -1008,7 +1008,7 @@ c        CALL DRAWIS(ISRT(IEL))
 c-----------------------------------------------------------------------
       subroutine vertadj
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer icalld,nelold,ff,e
       save    icalld,nelold
@@ -1130,7 +1130,7 @@ c
 c-----------------------------------------------------------------------
       subroutine vertadj_old
 C
-      include 'basics.inc'
+#     include "basics.inc"
       integer nelold
       save    nelold
       data    nelold /0/
@@ -1275,7 +1275,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine clpdom
-      include 'basics.inc'
+#     include "basics.inc"
       integer  del_list(nelm)
       real     xyznorm(3),xyzclip(3)
 C
@@ -1373,7 +1373,7 @@ c        CALL DRAWLINE(Yclip,Xmax,Yclip,Xmin)
       end
 c-----------------------------------------------------------------------
       subroutine clipper(Clip,DIR,pts)
-      include 'basics.inc'
+#     include "basics.inc"
       real pts(8,nelm)
       character*1 dir,yesno
       common /ctmp0/ idel(nelm),edel(nelm)
@@ -1435,7 +1435,7 @@ C     Recount the number of curved sides
       end
 c-----------------------------------------------------------------------
       subroutine clipper_r(xcyl,ycyl,rcyl,dir)
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 dir,yesno
       common /ctmp0/ idel(nelm),edel(nelm)
       integer edel,slot,e
@@ -1507,7 +1507,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine smoother2(ncell)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real ww(0:1)
       integer eln(4,ncell),i,ncell
@@ -1590,7 +1590,7 @@ c     Q has nel*4 rows and nv columns
 c-----------------------------------------------------------------------
       subroutine 
      $       runlapsm2d(x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,itmax)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nvv,ncell
       integer eln(4,ncell)
       real x4(4,ncell),y4(4,ncell)
@@ -1640,7 +1640,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine runoptsm2d
      $      (x4,y4,eln,Q,nvv,bndrl,nodcl,d,ncell,opt,itmax)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nvv,ncell,opt
       integer eln(4,ncell),d(4,ncell)
       real bndrl(ncell*4),x4(4,ncell),y4(4,ncell)
@@ -1692,7 +1692,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine gradf2d(f1,dfdx,x4,y4,siz,opt,hval,ncell,nvv,eln)
-      include 'basics.inc'
+#     include "basics.inc"
       integer n1,n2,i,j,k,e,opt,siz,nvv
       integer eln(4,ncell)
       real par(siz)
@@ -1730,7 +1730,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine get_jac2d(val,xx,yy,siz)
-      include 'basics.inc'
+#     include "basics.inc"
       real fl,xx(4),yy(4)
       real fr1,fr2,jac(4),jm(2,2),jin(2,2)
       real frn(4),sum1,par(4)
@@ -1786,7 +1786,7 @@ c     example: node 1 is connected to 2,3,5; 2 to 1,4,6 and so on
       end
 c-----------------------------------------------------------------------
       subroutine get_nodscale(scalek,x4,y4,ncell)
-      include 'basics.inc'
+#     include "basics.inc"
       integer ncell
       real x4(4,ncell),y4(4,ncell)
       real scalek
@@ -1817,7 +1817,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine xtox4(x4,y4,ncell,flag)
-      include 'basics.inc'
+#     include "basics.inc"
       integer ncell,flag
       real x4(4,ncell),y4(4,ncell)
       integer i,e
@@ -1843,7 +1843,7 @@ c  if flag is 0, x to x4, otherwise x4 to x
       end
 c-----------------------------------------------------------------------
       subroutine gennodc(nodc,eln,nv,ncell)
-      include 'basics.inc'
+#     include "basics.inc"
       integer eln(4,ncell)
       integer nv,ncell,n1,n2,n3,i,k
       real nodc(nv)
@@ -1867,7 +1867,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine find_bc_crv2(b,nv,eln,nvc,ncell)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer eln(nvc,ncell)
       real b(nv)
 c
@@ -1903,7 +1903,7 @@ c
 c-----------------------------------------------------------------------
       subroutine smoother(cell,nvc,ia,ja,ww,b,g,x0,x1,y0,y1,z0,z1)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ww(0:1)
@@ -2012,7 +2012,7 @@ c
 c-----------------------------------------------------------------------
       subroutine find_bc_crv(b,nv,cell,nvc,ncell)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer cell(nvc,ncell),b(nv)
 c
       integer efc(4,6)
@@ -2433,7 +2433,7 @@ c-----------------------------------------------------------------------
 c
 c     Read a file until "key" is found or eof is found.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cfilold/ filold
@@ -2542,7 +2542,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine smooth
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real xback(4,nelm),yback(4,nelm)
       integer ncell
@@ -2612,7 +2612,7 @@ c
 c-----------------------------------------------------------------------
       subroutine find_sm_box(b,nv,x0,x1,y0,y1,z0,z1)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer b(1)
@@ -2655,7 +2655,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine chk_jacob(nebad,iebad,b,xp,yp,zp,cell,nvc)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer iebad(1),cell(nvc,1),b(1)
       real xp(1),yp(1),zp(1)
@@ -2838,7 +2838,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine mult_del(del_list)
-      include 'basics.inc'
+#     include "basics.inc"
       character*40 list_file
       integer del_list(nelm)
       character*1 yesno
@@ -3141,7 +3141,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine clipperN(xyzc,xyzn,DIR,xcl,ycl,zcl,del_list)
-      include 'basics.inc'
+#     include "basics.inc"
       real xyzc(3),xyzn(3)
       real xcl(8,1),ycl(8,1),zcl(8,1)
       integer del_list(1)
@@ -3247,7 +3247,7 @@ c        compress list
       end
 c-----------------------------------------------------------------------
       subroutine stretch_rad
-      include 'basics.inc'
+#     include "basics.inc"
 c
       logical if_sph_str
 C
@@ -3325,7 +3325,7 @@ C           cylindrical side, rad = curve(1,is,ie)
       end
 c-----------------------------------------------------------------------
       subroutine stretch_theta
-      include 'basics.inc'
+#     include "basics.inc"
 c
       logical if_sph_str
 C
@@ -3353,7 +3353,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine clean_spheres
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 c
 c     see routine crn3d ...
@@ -3372,7 +3372,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine rep_rot  !  replication (translation) rotation option
-      include 'basics.inc'
+#     include "basics.inc"
 c
       call prs
      $ ('Rep. (1), Rot. (2), Rep/Rot (3) Template (4)? (0=abort)$')
@@ -3389,7 +3389,7 @@ c      if (ans.eq.'4') call template_mesh2
       end
 c-----------------------------------------------------------------------
       subroutine replicate_mesh
-      include 'basics.inc'
+#     include "basics.inc"
 c
       if (if3d) then
          call prs('Input translation vector: x,y,z$')
@@ -3416,7 +3416,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine rep_rotate_mesh
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 axisr
 
       call prs('Input rotation angle (deg):$')
@@ -3457,7 +3457,7 @@ c        call rotate_submesh_2d(ie2,ie3,angle_deg_i)
       end
 c-----------------------------------------------------------------------
       subroutine copy_sub_mesh(ie0,ie1,inew)
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     Map (ie0:ie1) to (inew:inew+nie)
 
@@ -3471,7 +3471,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine translate_sub_mesh(e0,e1,xt,yt,zt)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e0,e1,f
 c
       do e=e0,e1
@@ -3585,7 +3585,7 @@ c-----------------------------------------------------------------------
 
 c     Rotate element e about axis normal emanating from origin
 
-      include 'basics.inc'
+#     include "basics.inc"
       real normal(3)
       integer e
       real a(3,3)
@@ -3597,7 +3597,7 @@ c     Rotate element e about axis normal emanating from origin
       end
 c-----------------------------------------------------------------------
       subroutine rotate_el_3d(e,a)
-      include 'basics.inc'
+#     include "basics.inc"
       real a(3,3)
       integer e,f
 
@@ -3634,7 +3634,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rotate_mesh_3d_mat
-      include 'basics.inc'
+#     include "basics.inc"
       real a(3,3)
       integer e,f
 c
@@ -3686,7 +3686,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine rotate_mesh_3d
-      include 'basics.inc'
+#     include "basics.inc"
       real normal(3)
       integer e,f
 
@@ -3704,7 +3704,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rotate_mesh_2d
-      include 'basics.inc'
+#     include "basics.inc"
       real a(3,3)
       integer e,f
 c
@@ -3747,7 +3747,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine rotate_submesh_2d(e0,e1,angle_deg)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f,e0,e1
       real a(3,3)
 
@@ -3788,7 +3788,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rotate_submesh_3d(e0,e1,angle_deg,axisr)
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 axisr
       integer e,f,e0,e1
       real a(3,3)
@@ -3847,7 +3847,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine template_to_forms
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,ef,et,e0
 
 c     Form each element within Template into each element within a 
@@ -3885,7 +3885,7 @@ c     Result:   nel_form x nel_tmpl elements
       end
 c-----------------------------------------------------------------------
       subroutine template_shape(e,et,ef) ! Transform et to ef; Store in e
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,ef,et
 
       real jr(27*3),js(27*3),jt(27*3)
@@ -3965,7 +3965,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine gen_jrst(jr,js,jt,et)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real jr(27*3),js(27*3),jt(27*3)
       integer et
@@ -3998,7 +3998,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine get_template
-      include 'basics.inc'
+#     include "basics.inc"
 
       nelo = nel
       call imp_mesh(.false.)     ! Get template as imported mesh
@@ -4023,7 +4023,7 @@ c     write(6 ,*) etemplate0,etemplate1,nel_templ,nelo,nel,' etm'
       end
 c-----------------------------------------------------------------------
       subroutine template_mesh
-      include 'basics.inc'
+#     include "basics.inc"
 c
 c     Form each element within Template into each element within a 2D/3D 
 c     block comprising elements in the subset "Form"
@@ -4155,7 +4155,7 @@ c     Compte barycentric coordinates
       end
 c-----------------------------------------------------------------------
       subroutine stretch_outside_circ
-      include 'basics.inc'
+#     include "basics.inc"
 
       call gencen  ! Generate x27
 
@@ -4195,7 +4195,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine stretch_outside_circ2(r0,x0,x1,y0,y1,xmn,xmx,ymn,ymx)
-      include 'basics.inc'
+#     include "basics.inc"
 
       n = 27*nel
 
@@ -4236,7 +4236,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine flatten_edges_outside_circle(r0)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       nedge = 4 + 8*(ndim-2)
@@ -4260,7 +4260,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine gencen2(nel1,nel2)
-      include 'basics.inc'
+#     include "basics.inc"
 c     added by k10 here to do gencen for specific element range
 
       integer e,nel1,nel2
@@ -4338,7 +4338,7 @@ C     Compute the maximum radius from the center
       end
 c-----------------------------------------------------------------------
       subroutine fix_internal_bcs
-      include 'basics.inc'
+#     include "basics.inc"
       integer n,e,i,f,j,ef,et
       integer n1,e1,e2,f1,f2
 
@@ -4392,7 +4392,7 @@ c     This approach has a significant advantage that it works for
 c     periodict boundary conditions, whereas most other approaches
 c     will not.
 
-      include 'basics.inc'   ! gather-scatter handle for field "ifld"
+#     include "basics.inc"
 
       integer e,eg,f,nx1,ny1,nz1,i,j,nnods,nnpts,nchange,nnface,nvv
       integer dims,ncell,ifld,eln(nnpts,ncell),ipass
@@ -4465,7 +4465,7 @@ c     will not.
       end
 c-----------------------------------------------------------------------
       subroutine domain_sizek(xmin,xmax,ymin,ymax,zmin,zmax,dims,ncell)
-      include 'basics.inc'
+#     include "basics.inc"
       integer n,dims,e,i
       real xvv,yvv,xmin,xmax,ymin,ymax,zmin,zmax 
 
@@ -4521,7 +4521,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine qqt(eln,nv,ncell,qloc,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4534,7 +4534,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine qqtavg(eln,nv,ncell,qloc,nodcl,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell),nodcl(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4548,7 +4548,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine loctoglob(eln,nv,ncell,qloc,qglob,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4564,7 +4564,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine globtoloc(eln,nv,ncell,qloc,qglob,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4582,7 +4582,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine loctoglobmin(eln,nv,ncell,qloc,qglob,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4600,7 +4600,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine loctoglobmax(eln,nv,ncell,qloc,qglob,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4619,7 +4619,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine qqtmin(eln,nv,ncell,qloc,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4632,7 +4632,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine qqtmax(eln,nv,ncell,qloc,nnpts)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nv,ncell,i,e,nnpts
       integer eln(nnpts,ncell)
       real qloc(nnpts,ncell)
@@ -4645,7 +4645,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine disfun(d,delta,nnpts,ncell)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nnpts,ncell
       real d(ncell*nnpts),dd2(ncell*nnpts)
       real dis(ncell*nnpts),delta
@@ -4669,7 +4669,7 @@ c        dd2(i) = 0.5*(tanh(10.*(dis(i)-0.3))+1)
       end
 c-----------------------------------------------------------------------
       subroutine restbndrlay(x4,y4,x4b,y4b,d,ncell)
-      include 'basics.inc'
+#     include "basics.inc"
       integer nnpts,ncell
       real x4(4,ncell),y4(4,ncell),x4b(4,ncell),y4b(4,ncell)
       real d(4,ncell)
@@ -4692,7 +4692,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine get_neigh(e1,f1,e2,f2)
-      include 'basics.inc'
+#     include "basics.inc"
       integer j,e,e1,f1,e2,f2
 
       f2 = 0

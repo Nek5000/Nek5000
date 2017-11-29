@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine gradient(a,b,c,b1,b2)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       call prs('Descent alg? (1=GS, 2=S.D., 3=c.g.$')
@@ -17,7 +17,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine procmap
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       character*80 logfile
       return 
@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
 C 
 C     Find connectivity of elements via sort + hash table
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       dimension cen(nelm),ind(nelm)
 c
@@ -289,7 +289,7 @@ c
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       FUNCTION TRAP(PRO,YPT,DS,NPTPR)
-      include 'basics.inc'
+#     include "basics.inc"
 C     Trapeziodal integration scheme
       REAL PRO(0:500),YPT(0:500)
       ONE = 1.0
@@ -317,7 +317,7 @@ c
 c     Give file output options
 c     19 Sep 1998   pff
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer iname(10)
@@ -508,7 +508,7 @@ c     This routine allows the user to specify a rectangular box
 c
 c     xmsei,ymsei  are returned in screen coordinates  (0,1)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -712,7 +712,7 @@ c
 c     Give file output options
 c     19 Sep 1998   pff
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer      iname(10)
       character*40 fname
@@ -741,7 +741,7 @@ c
 c     Generate an FEM input file based on Nekton .rea file
 c
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifout
@@ -1072,7 +1072,7 @@ c
 c-----------------------------------------------------------------------
       subroutine vtk_out_sca (ww,n,ifout,ivtk_dump)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifout
@@ -1393,7 +1393,7 @@ c
 c     Output scalar data
 c
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifout
@@ -1770,7 +1770,7 @@ c
 c     This routine dumps the GLL coordinates of surfaces marked with
 c     boundary condition "cbv".
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /bigvtkl/ ifclip,ifillt,iffmt_vtk,ifdouble
@@ -1850,7 +1850,7 @@ c-----------------------------------------------------------------------
 c
 c     dump the GLL coordinates of specified face (ifce in prenek format)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real xf(nx,ny,nz,1)
@@ -2010,7 +2010,7 @@ c
 c     This routine dumps the GLL coordinates of surfaces marked with
 c     boundary condition "cbv".
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (lvtk=2000000)  !  8530000)
@@ -2110,7 +2110,7 @@ c-----------------------------------------------------------------------
 c
 c     dump the GLL coordinates of specified face (ifce in prenek format)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real xf(nx,ny,nz,1)
@@ -2150,7 +2150,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine quickscan_xy(x1,y1,x2,y2)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       XMAX = -1.0E20
       YMAX = -1.0E20
@@ -2177,7 +2177,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine s3to2_regular
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the z-direction and produces a 
@@ -2227,7 +2227,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine slab_sum(ua,va,pa,ta,uin,vin,pin,tin,nxy,nelxy,zlen)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ua(nxy,1),va(nxy,1),pa(nxy,1),ta(nxy,1)
@@ -2253,7 +2253,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_uvwpt_regular
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /sfldwrk/ odumpw,odump
@@ -2283,7 +2283,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_u_regular(uin)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the z-direction and stuffs it back
@@ -2359,7 +2359,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_u_regular_OLD(uin)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the z-direction and stuffs it back
@@ -2413,7 +2413,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine slab_sum1(ua,uin,nxy,nelxy,zlen)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ua(nxy,1)
@@ -2436,7 +2436,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine get_tprd(tprd,xrc,yrc,zrc)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     Get theta, phi, r,  dtheta, dphi, dr
@@ -2531,7 +2531,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_uvwpt_radial
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /sfldwrk/ odumpw,odump
@@ -2567,7 +2567,7 @@ c     ux,uy,uz
 c     wx,wy,wz
 c
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifout
@@ -2744,7 +2744,7 @@ ccc   c
 c-----------------------------------------------------------------------
       subroutine vtk_out_vec (uu,vv,ww,n,ifout,ivtk_dump)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifout
@@ -2798,7 +2798,7 @@ c
 c     This routine dumps the GLL coordinates of surfaces marked with
 c     boundary condition "cbv".
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (lvtk=2000000)  !  8530000)
@@ -2896,7 +2896,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine clrc(str11)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       character*11 str11
 c
@@ -2914,7 +2914,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_cluster(cluster,ncl,nelzz,tprd)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the R-direction and stuffs it back
@@ -2996,7 +2996,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_u_radial(uin)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the R-direction and stuffs it back
@@ -3037,7 +3037,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_u_radial2(uin,wk,rmin,rmax,dr,cluster,ncl,nelzz)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c     This routine averages data in the r-direction and stuffs it back
@@ -3103,7 +3103,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute cylinder average of uin -- assumes tensor-product geometry
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real ur(1),uin(1)
 c
@@ -3158,7 +3158,7 @@ c-----------------------------------------------------------------------
 c
 c     Get 1D Jacobian in "r" direction, assuming tensor-product mesh
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real jac1di(nx,melx),rad1d(nx,melx)
 c
@@ -3185,7 +3185,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute cylinder average of uin -- assumes tensor-product geometry
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cylav1/ ru(nxm*nelm),rv(nxm*nelm),rw(nxm*nelm)
@@ -3235,7 +3235,7 @@ c
 c     Take as input unformatted (param(66)=4) .fld file and put it as 
 c     output
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       character*40 fname

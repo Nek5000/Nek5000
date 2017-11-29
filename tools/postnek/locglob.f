@@ -18,7 +18,7 @@ c             . jacobians/metrics are used for workspace,
 c                    so these are recomputed before return
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (l8=8*nelm)
@@ -64,7 +64,7 @@ c             . jacobians/metrics are used for workspace,
 c                    so these are recomputed before return
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer jglb(1)
@@ -126,7 +126,7 @@ C     NOTES:  . Periodic boundary conditions NOT supported
 C             . Does not currently support message passing parallelism
 C
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       integer locglob(1)
@@ -312,7 +312,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine dssum(uin,wk)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real uin(1),wk(1)
@@ -332,7 +332,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine dsavg(uin,wk)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real uin(1),wk(1)
