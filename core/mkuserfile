@@ -1,7 +1,5 @@
 #!/bin/bash
 # tweak .usr (actually, .f ) file
-set -x
-
 if echo $PPS | grep -q 'CVODE' ; then
    CVODE=1
 else
