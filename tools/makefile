@@ -23,15 +23,6 @@ all:
                 continue;                        \
              fi ;                                \
           fi ;                                   \
-          if [ "$$i" == "nekmerge" ]; then       \
-             export FFLAGS+=" ${R8}" ;           \
-          fi ;                                   \
-          if [ "$$i" == "n2to3" ]; then          \
-             export FFLAGS+=" ${R8}" ;           \
-          fi ;                                   \
-          if [ "$$i" == "reatore2" ]; then       \
-             export FFLAGS+=" ${R8}" ;           \
-          fi ;                                   \
           if [ "$$i" == "genmap" ]; then         \
              export FFLAGS+=" ${R8}" ;           \
           fi ;                                   \
