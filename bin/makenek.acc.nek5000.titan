@@ -3,8 +3,17 @@
 # Nek5000 build file
 #-------------------------------------------------------------------------------
 
+# Needed modules on Titan
+# module load cudatoolkit
+# module unload cray-libsci_acc
+# module unload PrgEnv-cray
+# module unload cce
+# module load PrgEnv-pgi
+# module load craype-accel-nvidia35
+# module load pgi
+
 # installation path 
-SOURCE_ROOT="../.." 
+SOURCE_ROOT="../.."
 
 # Fortran/C compiler
 F77="ftn"
@@ -15,12 +24,10 @@ PPLIST=""
 
 # generic compiler flags
 G="-mcmodel=medium -acc -Minfo=accel -ta=nvidia:cc35,cc50,cc60"
-# For GPU profiling tools:
 #G="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0,lineinfo"
 
 # linking flags
 USR_LFLAGS="-mcmodel=medium -acc -Minfo=accel -ta=nvidia:cc35,cc50,cc60"
-# linking flags
 #USR_LFLAGS="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0"
 
 ###############################################################################
@@ -49,6 +56,7 @@ IFPROFILING="true"
 # paths
 SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
 SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -66,5 +74,7 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -f makefile 2>&1 | tee compiler.gpu.output
+make -f makefile 2>&1 | tee compiler.acc.output
 exit 0
+
+

@@ -3,32 +3,31 @@
 # Nek5000 build file
 #-------------------------------------------------------------------------------
 
+module unload cuda
+module load pgi
+
 # installation path 
-SOURCE_ROOT="../.." 
+SOURCE_ROOT="../.."
 
 # Fortran/C compiler
-F77="ftn"
-CC="cc"
+F77="mpif77"
+CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
 PPLIST="" 
 
 # generic compiler flags
-G="-mcmodel=medium"
-# For GPU profiling tools:
-#G="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0,lineinfo"
+G="-mcmodel=medium" 
 
 # linking flags
 USR_LFLAGS="-mcmodel=medium"
-# linking flags
-#USR_LFLAGS="-mcmodel=medium -acc -Minfo=accel,ccff -ta=nvidia:cc50,cc60,cuda8.0"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
 ###############################################################################
 
 # MPI (default true)
-IFMPI="true"
+IFMPI="true"  
 
 # profiling (default false)
 IFPROFILING="true"
@@ -49,6 +48,7 @@ IFPROFILING="true"
 # paths
 SOURCE_ROOT_CORE="$SOURCE_ROOT/core"
 SOURCE_ROOT_CMT="$SOURCE_ROOT/core/cmt"
+SOURCE_ROOT_JL="$SOURCE_ROOT/jl"
 
 ###############################################################################
 # DONT'T TOUCH WHAT FOLLOWS !!!
@@ -66,5 +66,5 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -f makefile 2>&1 | tee compiler.gpu.output
+make -f makefile 2>&1 | tee compiler.mpi.output
 exit 0

@@ -54,6 +54,7 @@ c
          call sumab_acc(vy_e,vy,vylag,n,ab,nab)
          call sumab_acc(vz_e,vz,vzlag,n,ab,nab)
 
+!$acc    update host(vx_e,vy_e,vz_e)
       else
 
          call add2_acc (qtl,usrdiv,n)
@@ -68,6 +69,11 @@ c
          npres=icalld
          etime1=dnekclock()
 
+c        if (istep.eq.1) then
+c!$acc       enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
+c!$acc       enter data copyin(dv1,dv2,dv3)
+c        endif
+
          call crespsp_acc(respr)
 
          call invers2_acc (h1,vtrans,n)
@@ -77,7 +83,7 @@ c
          call dssum     (respr,nx1,ny1,nz1)
          call col2_acc  (respr,pmask,n)
 
-!$acc    update host(h1,h2)    
+c!$acc    update host(h1,h2)    
          call hmh_gmres (respr,h1,h2,vmult,nmxh)
 
          call add2_acc (pr,respr,n)

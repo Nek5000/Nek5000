@@ -2,9 +2,11 @@
 set -e
 
 PROJECT="CSC235"
+#PROJECT="CSC262"
 REQ_WALLTIME="00:10:00"
 REAFILE=$1
 CORECOUNT=$2
+NODECOUNT=$3
 
 
 SESSION=${REAFILE%.[rR][eE][aA]}
@@ -13,13 +15,8 @@ echo "*** running session $SESSION"
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 
-rm -f logfile
-rm -f $SESSION.np=$CORECOUNT.output
 OUTFILE="`pwd`/$SESSION.np=$CORECOUNT-titan-gpu-`date "+%F_%H_%M_%S"`"
 touch $SESSION.rea
-touch $OUTFILE.output
-ln $OUTFILE.output $SESSION.np=$CORECOUNT.output
-ln $OUTFILE.output logfile
 
 if ! pbsfile=`mktemp $SESSION.pbs.XXXXXX` ; then
    echo "Failed to create temp file for qsub! Exiting"
@@ -44,5 +41,5 @@ echo " aprun -n $CORECOUNT -N 1 ./nek5000 ">> $pbsfile
 
 qsub -V $pbsfile
 rm $pbsfile
-echo "job submitted on OLCF Cray, #GPUs=$CORECOUNT, #Cray_nodes=$3"
+echo "job submitted on OLCF Cray, #GPUs=$CORECOUNT, #nodes=$NODECOUNT"
 

@@ -2,9 +2,11 @@
 set -e
 
 PROJECT="CSC235"
+#PROJECT="CSC262"
 REQ_WALLTIME="10"
 REAFILE=$1
 CORECOUNT=$2
+NODECOUNT=$3
 
 SESSION=${REAFILE%.rea}
 
@@ -13,13 +15,8 @@ echo "*** running session $SESSION"
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 
-rm -f logfile
-rm -f $SESSION.np=$CORECOUNT.output
 OUTFILE="`pwd`/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`"
 touch $SESSION.rea
-touch $OUTFILE.output
-ln $OUTFILE.output $SESSION.np=$CORECOUNT.output
-ln $OUTFILE.output logfile
 
 if ! bsubfile=`mktemp $SESSION.pbs.XXXXXX` ; then
    echo "Failed to create temp file for qsub! Exiting"
@@ -31,14 +28,16 @@ chmod 777 $bsubfile
 echo "#!/bin/bash" >> $bsubfile
 echo "#BSUB -P $PROJECT" >> $bsubfile
 echo "#BSUB -J $SESSION" >> $bsubfile
-echo "#BSUB -o $PWD/$SESSION.np=$CORECOUNT-summitdev-mpi-`date "+%F_%H_%M_%S"`.output" >> $bsubfile
-echo "#BSUB -e $PWD/$SESSION.np=$CORECOUNT-summitdev-mpi-`date "+%F_%H_%M_%S"`.error" >> $bsubfile
+echo "#BSUB -o $PWD/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`.output" >> $bsubfile
+echo "#BSUB -e $PWD/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`.error" >> $bsubfile
 echo "#BSUB -W $REQ_WALLTIME" >> $bsubfile
-echo "#BSUB -n $CORECOUNT " >> $bsubfile
-echo " cd `pwd`">> $bsubfile
-echo " mpirun -np $CORECOUNT --map-by node ./nek5000 ">> $bsubfile
+echo "#BSUB -nnodes $NODECOUNT " >> $bsubfile
+#echo "export PGI_ACC_NOTIFY=1" >> $bsubfile
 
-bsub < $bsubfile
+echo " cd `pwd`">> $bsubfile
+echo " jsrun -n$CORECOUNT ./nek5000  ">> $bsubfile
+
+bsub  $bsubfile
 rm $bsubfile
-echo "job submitted on OLCF Summitdev, #CPUs=$CORECOUNT"
+echo "job submitted on OLCF Summitdev, #CPU Cores=$CORECOUNT, #nodes=$NODECOUNT"
 

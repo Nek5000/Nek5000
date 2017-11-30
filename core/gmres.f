@@ -633,7 +633,6 @@ c     since ortho_acc() hasn't been implemented for 2D test cases.
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
      &                            etime1,if_hyb
-      if (nio.eq.0) write(6,*) 'acc_time: ', acctime1
 c     call flush_hack
  9999 format(4x,i7,'  PRES gmres ',4x,i5,1p5e13.4,1x,l4)
 
