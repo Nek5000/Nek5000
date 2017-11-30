@@ -1,6 +1,8 @@
 Reads a exodus II (.exo) file and generates a .re2 file containing the grid,
 curved sides and sideset ids. 
 
+To build exo2nek executable, go one level up to tools directory and issue command ./maketools exo2nek
+
    - Requires the 3rd-party Exodus library (and NetCDF with modifications see below) 
    - So far tested with Cubit, but any other package exporting exodusII should work, too
    - Supported are HEX27 (3D) and QUAD9 (2D)
