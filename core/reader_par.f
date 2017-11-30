@@ -480,6 +480,7 @@ c        stabilization type: none, explicit or hpfrt
          if (ifnd .eq. 1) then
             dtmp = anint(lx1*(1.0 - d_out)) 
             param(101) = max(dtmp-1,0.0)
+            if (abs(1.0 - d_out).lt.0.01) filterType = 0
          else
             write(6,*) 'general:filterCutoffRatio'
             write(6,*) 'is required for general:filtering!'
