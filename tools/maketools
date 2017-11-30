@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # maximum number of elements
-#MAXNEL=100000
+#MAXNEL=150000
 
 # binary path
 #bin_nek_tools=`cd ../bin && pwd`
@@ -51,7 +51,7 @@
 : ${FC:="gfortran"}
 : ${CC:="gcc"}
 : ${bin_nek_tools:=`cd ../bin && pwd`}
-: ${MAXNEL:=100000}
+: ${MAXNEL:=150000}
 
 if [ $# -eq 0 ]; then
    echo "Usage: maketools [clean|all|tool(s)]"
