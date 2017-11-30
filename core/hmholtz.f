@@ -543,26 +543,22 @@ c
       common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
       logical ifdfrm, iffast, ifh2, ifsolv
 c
-      real           au    (lx1*ly1*lz1*lelt)
-     $ ,             u     (lx1*ly1*lz1*lelt)
-     $ ,             helm1 (lx1*ly1*lz1*lelt)
-     $ ,             helm2 (lx1*ly1*lz1*lelt)
+      real           au    (lx1,ly1,lz1,lelt)
+     $ ,             u     (lx1,ly1,lz1,lelt)
+     $ ,             helm1 (lx1,ly1,lz1,lelt)
+     $ ,             helm2 (lx1,ly1,lz1,lelt)
 
-      real           dudr  (lx1*ly1*lz1*lelt)
-     $ ,             duds  (lx1*ly1*lz1*lelt)
-     $ ,             dudt  (lx1*ly1*lz1*lelt)
-     $ ,             tmp1  (lx1*ly1*lz1*lelt)
-     $ ,             tmp2  (lx1*ly1*lz1*lelt)
-     $ ,             tmp3  (lx1*ly1*lz1*lelt)
+      real           tmp3  (lx1,ly1,lz1,lelt)
 
-      real           tm1   (lx1*ly1*lz1)
-      real           tm2   (lx1*ly1*lz1)
-      real           tm3   (lx1*ly1*lz1)
       real           duax  (lx1)
       real           ysm1  (lx1)
-      equivalence    (dudr,tm1),(duds,tm2),(dudt,tm3)
+
+      real s_dxm1(lx1+1,ly1)
+      real s_u_ur(lx1+1,ly1)
+      real s_us(lx1+1,ly1)
 
       integer e
+      real tmpu1,tmpu2,tmpu3
 
       nel=nelt
       if (imesh.eq.1) nel=nelv
@@ -581,58 +577,106 @@ c
       if (.not.ifsolv) call setfast(helm1,helm2,imesh)
 
       if (ifaxis) call setaxdy ( ifrzer(e) )
- 
-!$ACC DATA CREATE(dudr,duds,dudt,tmp1,tmp2,tmp3)
-!$ACC&           PRESENT(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$ACC&           PRESENT(dxm1,dxtm1,au,u,helm1,helm2)
 
+!$ACC DATA CREATE(tmp3)
+!$ACC& PRESENT(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
+!$ACC& PRESENT(dxm1,au,u,helm1,helm2)
       if (ndim.eq.2) then
          if(nid.eq.0) write(6,*)
      $        '2D Not currently implemented on for OpenACC'
          call exitt()
       else
-
-         call global_grad3(dxm1,u,dudr,duds,dudt)
-
-!$ACC PARALLEL LOOP GANG VECTOR
-         do i=1,ntot
-            tmp1(i) = helm1(i)*(
-     $           + dudr(i)*g1m1(i,1,1,1)
-     $           + duds(i)*g4m1(i,1,1,1)
-     $           + dudt(i)*g5m1(i,1,1,1))
-
-            tmp2(i) = helm1(i)*(
-     $           + duds(i)*g2m1(i,1,1,1)
-     $           + dudr(i)*g4m1(i,1,1,1)
-     $           + dudt(i)*g6m1(i,1,1,1))
-
-            tmp3(i) = helm1(i)*(
-     $           + dudt(i)*g3m1(i,1,1,1)
-     $           + dudr(i)*g5m1(i,1,1,1)
-     $           + duds(i)*g6m1(i,1,1,1))
-         enddo
-!$ACC END PARALLEL LOOP
-
-!FIXME: Div should also include summation
-         CALL global_div3(dxtm1,tmp1,tmp2,tmp3,tm1,tm2,tm3)
-
-!$ACC PARALLEL LOOP GANG VECTOR
-         do i=1,ntot
-            au(i) = tm1(i)+tm2(i)+tm3(i)
-         enddo
-!$ACC END PARALLEL LOOP
-
-      endif
-
-      if (ifh2) then
-!$acc parallel loop gang vector
-         do i=1,ntot
-            au(i) = au(i) + helm2(i)*bm1(i,1,1,1)*u(i)
+!$acc parallel num_gangs(lelt)
+!$acc loop gang private(s_dxm1,s_u_ur,s_us)
+         do e=1,lelt
+!$acc cache(s_dxm1,s_u_ur,s_us)
+!$acc loop vector tile(lx1,ly1)
+            do j=1,ly1
+               do i=1,lx1
+                  s_dxm1(i,j) = dxm1(i,j)
+               enddo
+            enddo
+!$acc loop seq
+            do k=1,lz1
+!$acc loop vector tile(lx1,ly1)
+               do j=1,ly1
+                  do i=1,lx1
+                     s_u_ur(i,j) = u(i,j,k,e)
+                  enddo
+               enddo
+!$acc loop vector tile(lx1,ly1) private(tmpu1,tmpu2,tmpu3)
+               do j=1,ly1
+                  do i=1,lx1
+                     tmpu1 = 0.0
+                     tmpu2 = 0.0
+                     tmpu3 = 0.0
+!$acc loop seq
+                     do l=1,lx1
+                        tmpu1 = tmpu1 + s_dxm1(i,l)*s_u_ur(l,j)
+                        tmpu2 = tmpu2 + s_dxm1(j,l)*s_u_ur(i,l)
+                        tmpu3 = tmpu3 + s_dxm1(k,l)*u(i,j,l,e)
+                     enddo
+                     s_u_ur(i,j)   = helm1(i,j,k,e)*(
+     $                             + tmpu1*g1m1(i,j,k,e)
+     $                             + tmpu2*g4m1(i,j,k,e)
+     $                             + tmpu3*g5m1(i,j,k,e))
+                     s_us(i,j)     = helm1(i,j,k,e)*(
+     $                             + tmpu2*g2m1(i,j,k,e)
+     $                             + tmpu1*g4m1(i,j,k,e)
+     $                             + tmpu3*g6m1(i,j,k,e))
+                     tmp3(i,j,k,e) = helm1(i,j,k,e)*(
+     $                             + tmpu3*g3m1(i,j,k,e)
+     $                             + tmpu1*g5m1(i,j,k,e)
+     $                             + tmpu2*g6m1(i,j,k,e))
+                  enddo
+               enddo
+!$acc loop vector tile(lx1,ly1) private(tmpu1)
+               do j=1,ly1
+                  do i=1,lx1
+                     tmpu1 = 0.0
+!$acc loop seq
+                     do l=1,lx1
+                        tmpu1 = tmpu1 + s_dxm1(l,i)*s_u_ur(l,j)
+     $                                + s_dxm1(l,j)*s_us(i,l)
+                     enddo
+                     au(i,j,k,e) = tmpu1
+                  enddo
+               enddo
+            enddo
+!$acc loop seq
+            do k=1,lz1
+!$acc loop vector tile(lx1,ly1) private(tmpu3)
+               do j=1,ly1
+                  do i=1,lx1
+                     tmpu3 = au(i,j,k,e)
+                     do l=1,lx1
+                        tmpu3 = tmpu3 + s_dxm1(l,k)*tmp3(i,j,l,e)
+                     enddo
+                     au(i,j,k,e) = tmpu3
+                  enddo
+               enddo
+            enddo
          enddo
 !$acc end parallel
       endif
-
-!$ACC END DATA
+      if (ifh2) then
+!$acc parallel num_gangs(lelt)
+!$acc loop gang
+         do e=1,lelt
+!$acc loop seq
+            do k=1,lz1
+!$acc loop vector tile(lx1,ly1)
+               do j=1,ly1
+                  do i=1,lx1
+                     au(i,j,k,e) = au(i,j,k,e) +
+     $                  helm2(i,j,k,e)*bm1(i,j,k,e)*u(i,j,k,e)
+                  enddo
+               enddo
+            enddo
+         enddo
+!$acc end parallel
+      endif
+!$acc end data
  
 c     if axisymmetric, add a diagonal term in the radial direction (isd=2)
  
