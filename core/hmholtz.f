@@ -146,7 +146,9 @@ c     overrule tolerance for velocity
 
 c     Set up diag preconditioner.
 
-      call setprec_acc(scrd,h1,h2,imsh,isd)
+!$acc update host(scrd)
+      call setprec_acc(scrd,h1,h2,imsh,isd) ! needs to be ported
+!$acc update device(scrd)
 
       call dssum(scrd,nx1,ny1,nz1)
       call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
@@ -3054,11 +3056,11 @@ C-------------------------------------------------------------------
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
       REAL YSM1(LY1)
-      real temp
-      integer i, j, k, e, q
 
       nel=nelt
       if (imsh.eq.1) nel=nelv
+
+      ntot = nel*nx1*ny1*nz1
 
 c     The following lines provide a convenient debugging option
 c     call rone(dpcm1,ntot)
@@ -3066,135 +3068,116 @@ c     if (ifield.eq.1) call copy(dpcm1,binvm1,ntot)
 c     if (ifield.eq.2) call copy(dpcm1,bintm1,ntot)
 c     return
 
-      if (ldim.eq.2) then
-         if(nid.eq.0) write(6,*)
-     $        '2D Not currently implemented on for OpenACC'
-         call exitt()
-      else if (ifaxis) then
-         if(nid.eq.0) write(6,*)
-     $        'Axisymmetric not currently implemented on for OpenACC'
-         call exitt()
-      else
+      CALL RZERO(DPCM1,NTOT)
+      DO 1000 IE=1,NEL
 
+        IF (IFAXIS) CALL SETAXDY ( IFRZER(IE) )
 
-!$acc parallel
-!$acc&  present(dpcm1)
-!$acc&  present(ifdfrm)
-!$acc&  present(g1m1,g2m1,g3m1,g4m1,g5m1,g6m1)
-!$acc&  present(dxm1,dym1,dzm1)
-!$acc&  present(helm1,helm2,bm1)
+        DO 320 IQ=1,NX1
+        DO 320 IZ=1,NZ1
+        DO 320 IY=1,NY1
+        DO 320 IX=1,NX1
+           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
+     $                          G1M1(IQ,IY,IZ,IE) * DXTM1(IX,IQ)**2
+  320   CONTINUE
+        DO 340 IQ=1,NY1
+        DO 340 IZ=1,NZ1
+        DO 340 IY=1,NY1
+        DO 340 IX=1,NX1
+           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
+     $                          G2M1(IX,IQ,IZ,IE) * DYTM1(IY,IQ)**2
+  340   CONTINUE
+        IF (LDIM.EQ.3) THEN
+           DO 360 IQ=1,NZ1
+           DO 360 IZ=1,NZ1
+           DO 360 IY=1,NY1
+           DO 360 IX=1,NX1
+              DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
+     $                             G3M1(IX,IY,IQ,IE) * DZTM1(IZ,IQ)**2
+  360      CONTINUE
+C
+C          Add cross terms if element is deformed.
+C
+           IF (IFDFRM(IE)) THEN
+              DO 600 IY=1,NY1,ny1-1
+              DO 600 IZ=1,NZ1,nz1-1
+              DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $            + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+     $            + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
+              DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $            + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+     $            + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
+  600         CONTINUE
+              DO 700 IX=1,NX1,nx1-1
+              DO 700 IZ=1,NZ1,nz1-1
+                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $            + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+     $            + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
+                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $            + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+     $            + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
+  700         CONTINUE
+              DO 800 IX=1,NX1,nx1-1
+              DO 800 IY=1,NY1,ny1-1
+                 DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
+     $                + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
+     $                + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
+                 DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
+     $                + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
+     $                + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
+  800         CONTINUE
+           ENDIF
 
-!$acc loop gang
-         do e=1,nel
+        ELSE  ! 2D
 
-!$acc loop vector collapse(3)
-           do k=1,nz1
-           do j=1,ny1
-           do i=1,nx1
-              temp = 0.0
-!$acc loop seq
-              do q=1,nx1
-                 temp = temp + g1m1(q,j,k,e) * dxm1(q,i)**2
-              enddo
-!$acc loop seq
-              do q=1,ny1
-                 temp = temp + g2m1(i,q,k,e) * dym1(q,j)**2
-              enddo
-!$acc loop seq
-              do q=1,nz1
-                 temp = temp + g3m1(i,j,q,e) * dzm1(q,k)**2
-              enddo
-              dpcm1(i,j,k,e) = temp
-           enddo
-           enddo
-           enddo
-c
-c          add cross terms if element is deformed.
-c
-           if (ifdfrm(e)) then
+           IZ=1
+           IF (IFDFRM(IE)) THEN
+              DO 602 IY=1,NY1,ny1-1
+                 DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $                + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+                 DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $                + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+  602         CONTINUE
+              DO 702 IX=1,NX1,nx1-1
+                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $                + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $                + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+  702         CONTINUE
+           ENDIF
 
-              dpcm1(1,1,1,e) = dpcm1(1,1,1,e)
-     $         + g4m1(1,1,1,e) * dxm1(1,1)*dym1(1,1)
-     $         + g5m1(1,1,1,e) * dxm1(1,1)*dzm1(1,1)
-     $         + g4m1(1,1,1,e) * dym1(1,1)*dxm1(1,1)
-     $         + g6m1(1,1,1,e) * dym1(1,1)*dzm1(1,1)
-     $         + g5m1(1,1,1,e) * dzm1(1,1)*dxm1(1,1)
-     $         + g6m1(1,1,1,e) * dzm1(1,1)*dym1(1,1)
-
-              dpcm1(nx1,1,1,e) = dpcm1(nx1,1,1,e)
-     $         + g4m1(nx1,1,1,e) * dxm1(nx1,nx1)*dym1(1,1)
-     $         + g5m1(nx1,1,1,e) * dxm1(nx1,nx1)*dzm1(1,1)
-     $         + g5m1(nx1,1,1,e) * dzm1(1,1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,1,1,e) * dzm1(1,1)*dym1(1,1)
-     $         + g4m1(nx1,1,1,e) * dym1(1,1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,1,1,e) * dym1(1,1)*dzm1(1,1)
-
-              dpcm1(1,1,nz1,e) = dpcm1(1,1,nz1,e)
-     $         + g4m1(1,1,nz1,e) * dxm1(1,1)*dym1(1,1)
-     $         + g5m1(1,1,nz1,e) * dxm1(1,1)*dzm1(nz1,nz1)
-     $         + g5m1(1,1,nz1,e) * dzm1(nz1,nz1)*dxm1(1,1)
-     $         + g6m1(1,1,nz1,e) * dzm1(nz1,nz1)*dym1(1,1)
-     $         + g4m1(1,1,nz1,e) * dym1(1,1)*dxm1(1,1)
-     $         + g6m1(1,1,nz1,e) * dym1(1,1)*dzm1(nz1,nz1)
-
-              dpcm1(nx1,1,nz1,e) = dpcm1(nx1,1,nz1,e)
-     $         + g4m1(nx1,1,nz1,e) * dxm1(nx1,nx1)*dym1(1,1)
-     $         + g5m1(nx1,1,nz1,e) * dxm1(nx1,nx1)*dzm1(nz1,nz1)
-     $         + g5m1(nx1,1,nz1,e) * dzm1(nz1,nz1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,1,nz1,e) * dzm1(nz1,nz1)*dym1(1,1)
-     $         + g4m1(nx1,1,nz1,e) * dym1(1,1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,1,nz1,e) * dym1(1,1)*dzm1(nz1,nz1)
-
-              dpcm1(1,ny1,1,e) = dpcm1(1,ny1,1,e)
-     $         + g4m1(1,ny1,1,e) * dxm1(1,1)*dym1(ny1,ny1)
-     $         + g5m1(1,ny1,1,e) * dxm1(1,1)*dzm1(1,1)
-     $         + g4m1(1,ny1,1,e) * dym1(ny1,ny1)*dxm1(1,1)
-     $         + g6m1(1,ny1,1,e) * dym1(ny1,ny1)*dzm1(1,1)
-     $         + g5m1(1,ny1,1,e) * dzm1(1,1)*dxm1(1,1)
-     $         + g6m1(1,ny1,1,e) * dzm1(1,1)*dym1(ny1,ny1)
-
-              dpcm1(nx1,ny1,1,e) = dpcm1(nx1,ny1,1,e)
-     $         + g4m1(nx1,ny1,1,e) * dxm1(nx1,nx1)*dym1(ny1,ny1)
-     $         + g5m1(nx1,ny1,1,e) * dxm1(nx1,nx1)*dzm1(1,1)
-     $         + g5m1(nx1,ny1,1,e) * dzm1(1,1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,1,e) * dzm1(1,1)*dym1(ny1,ny1)
-     $         + g4m1(nx1,ny1,1,e) * dym1(ny1,ny1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,1,e) * dym1(ny1,ny1)*dzm1(1,1)
-
-              dpcm1(1,ny1,nz1,e) = dpcm1(1,ny1,nz1,e)
-     $         + g4m1(1,ny1,nz1,e) * dxm1(1,1)*dym1(ny1,ny1)
-     $         + g5m1(1,ny1,nz1,e) * dxm1(1,1)*dzm1(nz1,nz1)
-     $         + g5m1(1,ny1,nz1,e) * dzm1(nz1,nz1)*dxm1(1,1)
-     $         + g6m1(1,ny1,nz1,e) * dzm1(nz1,nz1)*dym1(ny1,ny1)
-     $         + g4m1(1,ny1,nz1,e) * dym1(ny1,ny1)*dxm1(1,1)
-     $         + g6m1(1,ny1,nz1,e) * dym1(ny1,ny1)*dzm1(nz1,nz1)
-
-              dpcm1(nx1,ny1,nz1,e) = dpcm1(nx1,ny1,nz1,e)
-     $         + g4m1(nx1,ny1,nz1,e) * dxm1(nx1,nx1)*dym1(ny1,ny1)
-     $         + g5m1(nx1,ny1,nz1,e) * dxm1(nx1,nx1)*dzm1(nz1,nz1)
-     $         + g5m1(nx1,ny1,nz1,e) * dzm1(nz1,nz1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,nz1,e) * dzm1(nz1,nz1)*dym1(ny1,ny1)
-     $         + g4m1(nx1,ny1,nz1,e) * dym1(ny1,ny1)*dxm1(nx1,nx1)
-     $         + g6m1(nx1,ny1,nz1,e) * dym1(ny1,ny1)*dzm1(nz1,nz1)
-
-           endif
-
-!$acc loop vector collapse(3)
-           do k=1,nz1
-           do j=1,ny1
-           do i=1,nx1
-              dpcm1(i,j,k,e) = dpcm1(i,j,k,e) *
-     $           helm1(i,j,k,e) +
-     $           helm2(i,j,k,e) * bm1(i,j,k,e)
-           enddo
-           enddo
-           enddo
-
-         enddo
-!$acc end parallel
-
-      endif ! (ldim.eq.2)
+        ENDIF
+ 1000 CONTINUE
+C
+      CALL COL2    (DPCM1,HELM1,NTOT)
+      CALL ADDCOL3 (DPCM1,HELM2,BM1,NTOT)
+C
+C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
+C
+      IF (IFAXIS.AND.(ISD.EQ.2)) THEN
+         DO 1200 IEL=1,NEL
+C
+            IF (IFRZER(IEL)) THEN
+               CALL MXM(YM1(1,1,1,IEL),NX1,DATM1,NY1,YSM1,1)
+            ENDIF
+C
+            DO 1190 J=1,NY1
+            DO 1190 I=1,NX1
+               IF (YM1(I,J,1,IEL).NE.0.) THEN
+                  TERM1 = BM1(I,J,1,IEL)/YM1(I,J,1,IEL)**2
+                  IF (IFRZER(IEL)) THEN
+                     TERM2 =  WXM1(I)*WAM1(1)*DAM1(1,J)
+     $                       *JACM1(I,1,1,IEL)/YSM1(I)
+                  ELSE
+                     TERM2 = 0.
+                  ENDIF
+                  DPCM1(I,J,1,IEL) = DPCM1(I,J,1,IEL)
+     $                             + HELM1(I,J,1,IEL)*(TERM1+TERM2)
+               ENDIF
+ 1190       CONTINUE
+ 1200    CONTINUE
+      ENDIF
 
       return
-      end
+      END
 c-----------------------------------------------------------------------
