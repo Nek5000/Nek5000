@@ -14,7 +14,7 @@ c
       real ar(1)
       real xx(9)
 c
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 c
       if (if3d) then
         do ie=1,nelv
@@ -156,16 +156,16 @@ c
       if (iel.eq.0) then
          do ie=1,nelv
             write(33,33) xm1(  1,  1,1,ie),ym1(  1,  1,1,ie)
-            write(33,33) xm1(nx1,  1,1,ie),ym1(nx1,  1,1,ie)
-            write(33,33) xm1(nx1,ny1,1,ie),ym1(nx1,ny1,1,ie)
-            write(33,33) xm1(  1,ny1,1,ie),ym1(  1,ny1,1,ie)
+            write(33,33) xm1(lx1,  1,1,ie),ym1(lx1,  1,1,ie)
+            write(33,33) xm1(lx1,ly1,1,ie),ym1(lx1,ly1,1,ie)
+            write(33,33) xm1(  1,ly1,1,ie),ym1(  1,ly1,1,ie)
          enddo
       else
          ie = iel
          write(33,33) xm1(  1,  1,1,ie),ym1(  1,  1,1,ie)
-         write(33,33) xm1(nx1,  1,1,ie),ym1(nx1,  1,1,ie)
-         write(33,33) xm1(nx1,ny1,1,ie),ym1(nx1,ny1,1,ie)
-         write(33,33) xm1(  1,ny1,1,ie),ym1(  1,ny1,1,ie)
+         write(33,33) xm1(lx1,  1,1,ie),ym1(lx1,  1,1,ie)
+         write(33,33) xm1(lx1,ly1,1,ie),ym1(lx1,ly1,1,ie)
+         write(33,33) xm1(  1,ly1,1,ie),ym1(  1,ly1,1,ie)
       endif
    33 format(f14.6)
       close(unit=33)
@@ -192,7 +192,7 @@ c
       integer e
 
 c
-      N = nx1-1
+      N = lx1-1
       if (if3d) then
          call local_grad3(ur,us,ut,u,N,e,dxm1,dxtm1)
          do i=1,lxyz

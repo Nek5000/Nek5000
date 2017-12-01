@@ -13,7 +13,7 @@ c---------------------------------------------------------------------
       real                 intv, intt, intvd, inttd
 !     real ::  intv(lx1,lx1),intt(lx1,lx1)
 
-      real zgmd(nxd),wxmd(nxd)
+      real zgmd(lxd),wxmd(lxd)
       logical continuous
 c     declare ncut and wght are declared in input
 c     ncut is param(101) 
@@ -29,16 +29,16 @@ c     write(6,*)'Enter filter subroutine'
                               ! manner similar to nek5000
             if(nio.eq.0)  
      $         write(6,*)'Build new filter with bubble functions'
-            call userfilt_bubble(intv,zgm1,nx1,nio)
-c           call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
-c           if (nx1.eq.nxd)then
-c              nxyz = nxd*nyd*nzd
+            call userfilt_bubble(intv,zgm1,lx1,nio)
+c           call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
+c           if (lx1.eq.lxd)then
+c              nxyz = lxd*lyd*lzd
 c              if(nio.eq.0) write(6,*)'Copy newly built filter built'
 c              call copy(intvd,intv,nxyz)
 c           else
 c              if(nio.eq.0)write(6,*)'build new filter with',ncutd,wghtd
-c              call zwgll(zgmd,wxmd,nxd)
-c              call build_new_filter(intvd,zgmd,nxd,ncutd,wghtd,nio)
+c              call zwgll(zgmd,wxmd,lxd)
+c              call build_new_filter(intvd,zgmd,lxd,ncutd,wghtd,nio)
 c           endif
 c           do i=1,lx1*lx1
 c              if(nio.eq.0) write(669,*)'filter',intv(i,1)
@@ -46,11 +46,11 @@ c           enddo
          else ! dg filter using Legendre basis instead of Lk-Lkm2
             if(nio.eq.0)  
      $         write(6,*)'Build new filter with Legendre basis'
-            call userfilt(intv,zgm1,nx1,nio)
+            call userfilt(intv,zgm1,lx1,nio)
          endif
       endif
 
-      call filtercv(intv,nx1,nz1,wk1,wk2,intt,if3d,u1max)
+      call filtercv(intv,lx1,lz1,wk1,wk2,intt,if3d,u1max)
 
       return
       end

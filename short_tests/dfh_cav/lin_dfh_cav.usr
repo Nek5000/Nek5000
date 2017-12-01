@@ -142,9 +142,8 @@ c     keep current base flow
          n = NX1*NY1*NZ1*NELV
          call copy(ttmp,T,n)
 
-         if (int(UPARAM(1)).eq.1) then
+         if (IFADJ) then
             if (NIO.eq.0) write(*,*) 'Simulation in adjoint mode'
-            IFADJ = .TRUE.
 c     restart file name
             restartf = 'egvcavity_adj.restart'
          else

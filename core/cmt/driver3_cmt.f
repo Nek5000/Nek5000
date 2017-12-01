@@ -15,7 +15,7 @@ C> conserved unknowns U
       common /ctmp1/ energy(lx1,ly1,lz1),scr(lx1,ly1,lz1)
       integer e, eq
 
-      nxyz= nx1*ny1*nz1
+      nxyz= lx1*ly1*lz1
       ntot=nxyz*nelt
 
       do e=1,nelt
@@ -55,7 +55,7 @@ C> conserved unknowns U
 !-----------------------------------------------------------------------
 ! to make life easier until we master this stuff and harmonize even better with nek,
 ! I'm including 'DEALIAS' and calling set_convect_cons here
-      if (nxd.gt.nx1) then
+      if (lxd.gt.lx1) then
          call set_convect_cons (vxd,vyd,vzd,vx,vy,vz)
       else
          call copy(vxd,vx,ntot) 
@@ -78,12 +78,12 @@ c We have perfect gas law. Cvg is stored full field
       include 'PARALLEL'
       include 'NEKUSE'
       integer   e,eg
-      real energy(nx1,ny1,nz1)
+      real energy(lx1,ly1,lz1)
 
       eg = lglel(e)
-      do k=1,nz1
-      do j=1,ny1
-      do i=1,nx1
+      do k=1,lz1
+      do j=1,ly1
+      do i=1,lx1
          call nekasgn(i,j,k,e)
          call cmtasgn(i,j,k,e)
          e_internal=energy(i,j,k) !nekasgn should do this, but can't
@@ -139,9 +139,9 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'CMTDATA'
       include 'NEKUSE'
-      nxyz2=nx2*ny2*nz2       ! Initialize all fields:
+      nxyz2=lx2*ly2*lz2       ! Initialize all fields:
       ntot2=nxyz2*nelv
-      nxyz1=nx1*ny1*nz1
+      nxyz1=lx1*ly1*lz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
@@ -221,9 +221,9 @@ c     ! save velocity on fine mesh for dealiasing
       integer e,eg
       do e=1,nelt
          eg = lglel(e)
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1           
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1           
             call nekasgn (i,j,k,e)
             call cmtasgn (i,j,k,e)
             call useric  (i,j,k,eg)

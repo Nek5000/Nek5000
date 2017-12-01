@@ -33,39 +33,29 @@ c----------------------------------------------------------------------
       include 'TOTAL'
       include 'CVODE'
 
-      integer*8 iout,ipar
-      
-      ! cvode will not allocate these arrays
-      integer cvcomm
-      common /cv_rout/ rout(6),rpar(1)
-      common /cv_iout/ iout(21),ipar(1),cvcomm
-
-      integer sizeOfLongInt
-      external sizeOfLongInt
-
       integer*8 i8glsum
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       ! set local ODE size
-      ipar(1) = 0
+      cv_nlocal = 0
       do i = 2,nfield
          if (ifcvfld(i)) then
            ntot = nxyz*nelfld(i)
-           ipar(1) = ipar(1) + ntot
+           cv_nlocal = cv_nlocal + ntot
          endif
       enddo
-      if (ifdp0dt) ipar(1) = ipar(1) + 1
+      if (ifdp0dt) cv_nlocal = cv_nlocal + 1
 
       ! check array size is large enough
-      if (ipar(1) .gt. cv_lysize) then
+      if (cv_nlocal .gt. cv_lysize) then
         if(nio.eq.0) write(6,*)
      &  'ABORT cv_setsize(): workspace too small, check SIZE! ' 
         call exitt
       endif 
 
-      ! determine global ODE size 
-      cv_nglobal = i8glsum(ipar(1),1)
+      ! determine global ODE size
+      cv_nglobal = i8glsum(cv_nlocal,1)
 
       return
       end
@@ -96,7 +86,7 @@ c----------------------------------------------------------------------
       real atol_t(ldimt)
 
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ifcvodeinit   = .false.
 
       if(nio.eq.0) write(*,*) 'Initializing CVODE ...'
@@ -113,7 +103,7 @@ c----------------------------------------------------------------------
       cv_sigs     = param(165) 
       cv_delt     = param(166)
       cv_ipretype = param(167) ! 0: no, 1:left, 2: right
-      cv_maxl     = 10         ! max dimension of Krylov subspace
+      cv_maxl     = 20         ! max dimension of Krylov subspace
       cv_iatol    = 2          ! 1: scalar 2: vector
 
       ! setup absolute tolerances
@@ -123,18 +113,18 @@ c----------------------------------------------------------------------
          do i = 2,nfield
             if (ifcvfld(i)) then
                ntot = nxyz*nelfld(i)
-               call cfill(cv_atol_(1,1,1,1,i-1),atol(i+1),ntot)
+               call cfill(cv_atol_(1,1,1,1,i-1),atol(i),ntot)
             endif
          enddo
-         call cvpack(cv_atol,cv_atol_,atol(3),.false.)
+         call cvpack(cv_atol,cv_atol_,atol(2),.false.)
       endif
 
       ! initialize vector module
       call create_comm(cvcomm)
 #ifdef MPI
-      call fnvinitp(cvcomm, 1, ipar(1), cv_nglobal, ier)
+      call fnvinitp(cvcomm, 1, cv_nlocal, cv_nglobal, ier)
 #else
-      call fnvinits(1, ipar(1), ier)
+      call fnvinits(1, cv_nlocal, ier)
 #endif
       if (ier.ne.0) then
         write(*,'(a,i3)') 'ABORT cv_init(): fnvinitp ier=', ier
@@ -241,7 +231,7 @@ c
       integer cvcomm
       common /cv_iout/ iout(21),ipar(1),cvcomm
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz * nelv
 
       if (.not.ifcvodeinit) then
@@ -339,58 +329,6 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       return
       end
 c----------------------------------------------------------------------
-      SUBROUTINE FCVJTIMES (V,FJV,TT,Y,FY,H,IPAR,RPAR,WORK,IER)
-c
-c     Compute Jacobian Vetor product FJV
-c     approximated by 1st-order fd quotient 
-c
-      REAL V(*), FJV(*), TT, Y(*), FY(*), H, RPAR(1), WORK(*)
-
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'CVODE'
-
-      integer*8 ipar(1),neql
-
-      
-      ifdqj = .true.
-  
-      ! set local size
-      neql = ipar(1)
-
-      call fcvgeterrweights(work,ier)
-
-      ! compute weighted rms norm ||v||
-      sum = 0.0
-      do i = 1,neql
-         dnorm = V(i)*work(i)
-         sum = sum + dnorm*dnorm
-      enddo
-      sum = sqrt(glsum(sum,1)/cv_nglobal)
-
-      ! set perturbation sig to 1/||v||
-      sig =  1./sum
-
-      ! scale perturbation with user supplied constant
-      sig = cv_sigs * sig
-
-      ! set FJV = f(t, y + sigs*v/||v||)
-      do i = 1,NEQL
-         WORK(i) = Y(i) + sig*V(i)
-      enddo
-      call FCVFUN(TT,WORK,FJV,IPAR,RPAR,IER)
-
-      siginv = 1./sig
-      do i = 1,NEQL
-         FJV(i) = FJV(i)*siginv - FY(i)*siginv
-      enddo
-
-      ifdqj = .false.
-      ier = 0
-
-      return
-      end
-c----------------------------------------------------------------------
       subroutine cv_upd_v
 c
       include 'SIZE'
@@ -410,7 +348,7 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(vx,vx_,vxlag,ntot,cv_ab,nbd)
       call sumab(vy,vy_,vylag,ntot,cv_ab,nbd)
@@ -437,7 +375,7 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(wx,wx_,wxlag,ntot,cv_ab,nbd)
       call sumab(wy,wy_,wylag,ntot,cv_ab,nbd)
@@ -467,7 +405,7 @@ c
 
       COMMON /SCRSF/ dtmp(lx1*ly1*lz1*lelv)
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call sumab(dtmp,wx_,wxlag,ntot,cv_abmsh,nabmsh)
       call add3 (xm1,xm1_,dtmp,ntot)
@@ -493,22 +431,20 @@ c
       include 'CTIMER'
       include 'CVODE'
 
-      real time_,y(1),ydot(1),rpar(1)
+      real time_,y(*),ydot(*),rpar(*)
+      integer*8 ipar(*)
 
-      integer*8 ipar(1)
       real w1(lx1,ly1,lz1,lelt),
      $     w2(lx1,ly1,lz1,lelt),
      $     w3(lx1,ly1,lz1,lelt)
 
       real ydott(lx1,ly1,lz1,lelt,ldimt)
       common /CV_YDOT/ ydott
-c      equivalence (ydott,vgradt2) ! this would save memory but we cannot 
-                                   ! use nvec_dssum 
 
       ifcvfun = .true.
       etime1  = dnekclock()
       time    = time_   
-      nxyz    = nx1*ny1*nz1
+      nxyz    = lx1*ly1*lz1
       ntotv   = nxyz*nelv
        
       if (time.ne.cv_timel) then
@@ -542,7 +478,8 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
 
       call cvunpack(t,p0th,y)          
 
-      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun'
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun',
+     $                                 ifdqj
 
       ifield = 1
       call vprops ! we may use fluid properties somewhere
@@ -556,11 +493,11 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
            call makeq
 
            if (iftmsh(ifield)) then                                
-              call dssum(bq(1,1,1,1,ifield-1),nx1,ny1,nz1)
+              call dssum(bq(1,1,1,1,ifield-1),lx1,ly1,lz1)
               call col2(bq(1,1,1,1,ifield-1),bintm1,ntot)
 
               call col3(w1,vtrans(1,1,1,1,ifield),bm1,ntot)      
-              call dssum(w1,nx1,ny1,nz1)                        
+              call dssum(w1,lx1,ly1,lz1)                        
               call col2(w1,bintm1,ntot)                           
            else                                                    
               call copy(w1,vtrans(1,1,1,1,ifield),ntot)
@@ -578,7 +515,7 @@ c      equivalence (ydott,vgradt2) ! this would save memory but we cannot
          do ifield = 2,nfield
             if (ifcvfld(ifield) .and. gsh_fld(ifield).ge.0) then
                if(.not.iftmsh(ifield))       
-     &         call dssum(ydott(1,1,1,1,ifield-1),nx1,ny1,nz1)
+     &         call dssum(ydott(1,1,1,1,ifield-1),lx1,ly1,lz1)
             endif
          enddo
       endif
@@ -693,3 +630,4 @@ c----------------------------------------------------------------------
  
       return
       end
+c----------------------------------------------------------------------

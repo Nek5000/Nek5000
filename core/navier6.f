@@ -160,10 +160,10 @@ c
 c
 c     First, copy local geometry to temporary, expanded, arrays
 c
-      nxy1  = nx1*ny1
-      nxy2  = nx2*ny2
-      nxyz1 = nx1*ny1*nz1
-      nxyz2 = nx2*ny2*nz2
+      nxy1  = lx1*ly1
+      nxy2  = lx2*ly2
+      nxyz1 = lx1*ly1*lz1
+      nxyz2 = lx2*ly2*lz2
       ntot1 = nelv*nxyz1
       ntot2 = nelv*nxyz2
 c
@@ -182,9 +182,9 @@ c
       iz1 = 0
       if (if3d) iz1=1
       do ie=1,nelv
-         do iz=1,nz2
-         do iy=1,ny2
-         do ix=1,nx2
+         do iz=1,lz2
+         do iy=1,ly2
+         do ix=1,lx2
             x(ix+1,iy+1,iz+iz1,ie) = xm2(ix,iy,iz,ie)
             y(ix+1,iy+1,iz+iz1,ie) = ym2(ix,iy,iz,ie)
             z(ix+1,iy+1,iz+iz1,ie) = zm2(ix,iy,iz,ie)
@@ -204,9 +204,9 @@ c     Sum this distance
 c
       ifielt = ifield
       ifield = 1
-c     call dssum(x,nx1,ny1,nz1)
-c     call dssum(y,nx1,ny1,nz1)
-c     call dssum(z,nx1,ny1,nz1)
+c     call dssum(x,lx1,ly1,lz1)
+c     call dssum(y,lx1,ly1,lz1)
+c     call dssum(z,lx1,ly1,lz1)
 c
 c     Scale children values by 0.5.  This is a hack, based on assumption
 c     that number of children sharing a parent edge is 2
@@ -216,11 +216,11 @@ c
       do im   = 1 , mort_m
          cf = noncon_f(im)
          ce = noncon_e(im)
-         call faces(x,scale,ce,cf,nx1,ny1,nz1)
-         call faces(y,scale,ce,cf,nx1,ny1,nz1)
-         if (if3d) call faces(z,scale,ce,cf,nx1,ny1,nz1)
+         call faces(x,scale,ce,cf,lx1,ly1,lz1)
+         call faces(y,scale,ce,cf,lx1,ly1,lz1)
+         if (if3d) call faces(z,scale,ce,cf,lx1,ly1,lz1)
       enddo
-      call fgslib_gs_op_many(gsh_fld(ifield), x,y,z,x,x,x,ndim, 1,1,0)
+      call fgslib_gs_op_many(gsh_fld(ifield), x,y,z,x,x,x,ldim, 1,1,0)
 c
       ifield = ifielt
 c
@@ -248,10 +248,10 @@ c-----------------------------------------------------------------------
       include 'IXYZ'
 c
 c     Interpolate iface of x1 (GLL pts) onto x2 (GL pts).
-c     Work arrays should be of size nx1*nx1 each.
+c     Work arrays should be of size lx1*lx1 each.
 c
-      real x2(nx1*ny1*nz1,1)
-      real x1(nx1*ny1*nz1,1)
+      real x2(lx1*ly1*lz1,1)
+      real x1(lx1*ly1*lz1,1)
       real w1(1),w2(1)
 c
 c
@@ -279,17 +279,17 @@ c-----------------------------------------------------------------------
       include 'INPUT'
 c
 c     Interpolate iface of x1 (GLL pts) onto interior of face of x2 (GL pts).
-c     Work arrays should be of size nx1*nx1 each.
+c     Work arrays should be of size lx1*lx1 each.
 c
-      real x2(nx1,ny1,nz1)
-      real x1(nx1,ny1,nz1)
+      real x2(lx1,ly1,lz1)
+      real x1(lx1,ly1,lz1)
       real w1(1),w2(1)
       real i12(1),i12t(1)
 c
 c
 c     Extract surface data from x1
 c
-      CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,NX1,NY1,NZ1,IFACE)
+      CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,IFACE)
       i=0
       do iz=kz1,kz2
       do iy=ky1,ky2
@@ -303,20 +303,20 @@ c
 c     Interpolate from mesh 1 to 2
 c
       if (if3d) then
-         call mxm(i12 ,nx2,w1,nx1,w2,nx1)
-         call mxm(w2,nx2,i12t,nx1,w1,nx2)
+         call mxm(i12 ,lx2,w1,lx1,w2,lx1)
+         call mxm(w2,lx2,i12t,lx1,w1,lx2)
       else
-         call mxm(i12 ,nx2,w1,nx1,w2,  1)
-         call copy(w1,w2,nx2)
+         call mxm(i12 ,lx2,w1,lx1,w2,  1)
+         call copy(w1,w2,lx2)
       endif
 c
 c     Write to interior points on face of x2
 c
-      kx1=min(kx1+1,nx1,kx2)
+      kx1=min(kx1+1,lx1,kx2)
       kx2=max(kx2-1,  1,kx1)
-      ky1=min(ky1+1,ny1,ky2)
+      ky1=min(ky1+1,ly1,ky2)
       ky2=max(ky2-1,  1,ky1)
-      kz1=min(kz1+1,nz1,kz2)
+      kz1=min(kz1+1,lz1,kz2)
       kz2=max(kz2-1,  1,kz1)
 c
       i=0
@@ -337,30 +337,30 @@ c     Compute |face-interior|
 c
       include 'SIZE'
       include 'INPUT'
-      real x(nx1,ny1,nz1,1)
+      real x(lx1,ly1,lz1,1)
 c
       do ie=1,nelv
 c
         if (if3d) then
 c
-          do iz=2,nz1-1
-          do ix=2,nx1-1
+          do iz=2,lz1-1
+          do ix=2,lx1-1
             x(ix,1  ,iz,ie)=abs(x(ix,1  ,iz,ie) - x(ix,2    ,iz,ie))
-            x(ix,ny1,iz,ie)=abs(x(ix,ny1,iz,ie) - x(ix,ny1-1,iz,ie))
+            x(ix,ly1,iz,ie)=abs(x(ix,ly1,iz,ie) - x(ix,ly1-1,iz,ie))
           enddo
           enddo
 c
-          do iz=2,nz1-1
-          do iy=2,ny1-1
+          do iz=2,lz1-1
+          do iy=2,ly1-1
             x(1  ,iy,iz,ie)=abs(x(1  ,iy,iz,ie) - x(2    ,iy,iz,ie))
-            x(nx1,iy,iz,ie)=abs(x(nx1,iy,iz,ie) - x(nx1-1,iy,iz,ie))
+            x(lx1,iy,iz,ie)=abs(x(lx1,iy,iz,ie) - x(lx1-1,iy,iz,ie))
           enddo
           enddo
 c
-          do iy=2,ny1-1
-          do ix=2,nx1-1
+          do iy=2,ly1-1
+          do ix=2,lx1-1
             x(ix,iy,1  ,ie)=abs(x(ix,iy,1  ,ie) - x(ix,iy,2    ,ie))
-            x(ix,iy,nz1,ie)=abs(x(ix,iy,nz1,ie) - x(ix,iy,nz1-1,ie))
+            x(ix,iy,lz1,ie)=abs(x(ix,iy,lz1,ie) - x(ix,iy,lz1-1,ie))
           enddo
           enddo
 c
@@ -368,13 +368,13 @@ c
 c
 c         2D
 c
-          do ix=2,nx1-1
+          do ix=2,lx1-1
             x(ix,1  ,1,ie)=abs(x(ix,1  ,1,ie) - x(ix,2    ,1,ie))
-            x(ix,ny1,1,ie)=abs(x(ix,ny1,1,ie) - x(ix,ny1-1,1,ie))
+            x(ix,ly1,1,ie)=abs(x(ix,ly1,1,ie) - x(ix,ly1-1,1,ie))
           enddo
-          do iy=2,ny1-1
+          do iy=2,ly1-1
             x(1  ,iy,1,ie)=abs(x(1  ,iy,1,ie) - x(2    ,iy,1,ie))
-            x(nx1,iy,1,ie)=abs(x(nx1,iy,1,ie) - x(nx1-1,iy,1,ie))
+            x(lx1,iy,1,ie)=abs(x(lx1,iy,1,ie) - x(lx1-1,iy,1,ie))
           enddo
 c
         endif

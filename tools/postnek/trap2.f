@@ -64,7 +64,7 @@ c-----------------------------------------------------------------------
 c
 c     For creating multiple tecplot files   pff 10/12/07;
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INCLUDE 'state.inc'
       logical ifdrm,iftmp
@@ -121,7 +121,7 @@ c
 c     Generate an FEM input file based on Nekton .rea file
 c
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 
       parameter (lvtk=2600000)

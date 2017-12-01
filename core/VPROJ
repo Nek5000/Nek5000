@@ -8,4 +8,4 @@ c
       common /wrthoi/ ivproj
 
       real             vproj(ktop*mxprev,2*ldim)
-      common /wrthov/  vproj
+      common /wrthov/  vproj     ! OVERLAPS WITH ORTHOSTRS

@@ -1,6 +1,6 @@
       program exo2nek
 
-      include 'SIZE'
+#     include "SIZE"
 
       call read_input_name
       call exodus_read
@@ -11,7 +11,7 @@
 c-----------------------------------------------------------------------
       subroutine read_input_name
 
-      include 'SIZE'
+#     include "SIZE"
 
       character*1 re2nam1(80)
       character*1 exonam1(32)
@@ -40,7 +40,7 @@ c  It uses exodus fortran binding subroutines, which depend on
 c  the netcdf library for low level data access.
 c
       include 'exodusII.inc'
-      include 'SIZE'
+#     include "SIZE"
 
       integer exoid, cpu_ws, io_ws
 
@@ -228,10 +228,9 @@ c  size lx1**3 (3D) or lx1**2 (2D) (lx1=3) with the hex27/quad9
 c  coordinates.
 c
       include 'exodusII.inc'
-      include 'SIZE'
-c
+#     include "SIZE"
+
 c node and face conversion (it works at least for cubit):
-c
       integer exo_to_nek_vert3D(27)
       data    exo_to_nek_vert3D
      &      / 19,  1,  7, 25, 21,  3,  9, 27, 10                  ! hex27 to nek numbering
@@ -309,7 +308,7 @@ c the expensive part, improve it...
 C--------------------------------------------------------------------
       subroutine gen_re2
 
-      include 'SIZE'
+#     include "SIZE"
 
       write(6,*)
       write(6,'(A,A)') 'writing ', re2name
@@ -325,7 +324,7 @@ C--------------------------------------------------------------------
 C--------------------------------------------------------------------
       subroutine open_re2
 
-      include 'SIZE'
+#     include "SIZE"
 
       character*80  hdr
 
@@ -347,7 +346,7 @@ c  Write the header
 C--------------------------------------------------------------------
       subroutine write_xyz
 
-      include 'SIZE'
+#     include "SIZE"
 
       real     xx(8), yy(8), zz(8)
       real*8   rgroup, buf2(30)
@@ -409,7 +408,7 @@ C--------------------------------------------------------------------
 C-----------------------------------------------------------------------
       subroutine write_curve
 
-      include 'SIZE'
+#     include "SIZE"
 
       real*8     buf2(30)
       real*8     rcurve
@@ -451,8 +450,8 @@ C-----------------------------------------------------------------------
       end
 C-----------------------------------------------------------------------
       subroutine write_bc
-       
-      include 'SIZE'
+      
+#     include "SIZE"
 
       real*8  rbc, buf2(30)
 
@@ -504,7 +503,7 @@ C-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine gen_rea_midside_e(e)
 
-      include 'SIZE'
+#     include "SIZE"
 
       real        len
       real        x3(27),y3(27),z3(27),xyz(3,3)
@@ -561,8 +560,8 @@ c-----------------------------------------------------------------------
       subroutine map2reg(ur,n,u,nel)
 c
 c     Map scalar field u() to regular n x n x n array ur
-c
-      include 'SIZE'
+
+#     include "SIZE"
 
       real    ur(1), u(3*3*3,1)
       integer e

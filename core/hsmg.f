@@ -151,7 +151,7 @@ c----------------------------------------------------------------------
       integer l
       
 c     set up direct stiffness summation for each level
-      ncrnr = 2**ndim
+      ncrnr = 2**ldim
       call get_vert
 
 c++   write(6,*) mg_fld,' mgfld in hsmg_setup_dssum'
@@ -179,7 +179,7 @@ c----------------------------------------------------------------------
       do l=1,mg_lmax
          mg_rstr_wt_index(l,mg_fld)=i
          mg_mask_index   (l,mg_fld)=i
-         i=i+mg_nh(l)*mg_nhz(l)*2*ndim*nelv
+         i=i+mg_nh(l)*mg_nhz(l)*2*ldim*nelv
          if(i .gt. lmgs*lmg_rwt*2*ldim*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'parameter lmg_rwt too small',i,itmp,lmg_rwt
@@ -203,7 +203,7 @@ c----------------------------------------------------------------------
       do l=1,mg_lmax-1
          mg_rstr_wt_index(l,mg_fld)=i
          mg_mask_index   (l,mg_fld)=i
-         i=i+mg_nh(l)*mg_nhz(l)*2*ndim*nelv
+         i=i+mg_nh(l)*mg_nhz(l)*2*ldim*nelv
          if(i .gt. lmgs*lmg_rwt*2*ldim*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'parameter lmg_rwt too small',i,itmp,lmg_rwt
@@ -658,14 +658,14 @@ c----------------------------------------------------------------------
       do l=2,mg_lmax
          mg_fast_s_index(l,mg_fld)=i
          nl = mg_nh(l)+2
-         i=i+nl*nl*2*ndim*nelv
+         i=i+nl*nl*2*ldim*nelv
          if(i .gt. lmg_fasts*2*ldim*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'lmg_fasts too small',i,itmp,lmg_fasts,l
             call exitt
          endif
          mg_fast_d_index(l,mg_fld)=j
-         j=j+(nl**ndim)*nelv
+         j=j+(nl**ldim)*nelv
          if(j .gt. lmg_fastd*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'lmg_fastd too small',i,itmp,lmg_fastd,l
@@ -692,14 +692,14 @@ c----------------------------------------------------------------------
       do l=2,mg_lmax-1
          mg_fast_s_index(l,mg_fld)=i
          nl = mg_nh(l)+2
-         i=i+nl*nl*2*ndim*nelv
+         i=i+nl*nl*2*ldim*nelv
          if(i .gt. lmg_fasts*2*ldim*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'lmg_fasts too small',i,itmp,lmg_fasts,l
             call exitt
          endif
          mg_fast_d_index(l,mg_fld)=j
-         j=j+(nl**ndim)*nelv
+         j=j+(nl**ldim)*nelv
          if(j .gt. lmg_fastd*lelv) then
             itmp = i/(2*ldim*lelv)
             write(6,*) 'lmg_fastd too small',i,itmp,lmg_fastd,l
@@ -719,8 +719,8 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'HSMG'
-      real s(nl*nl,2,ndim,nelv)
-      real d(nl**ndim,nelv)
+      real s(nl*nl,2,ldim,nelv)
+      real d(nl**ldim,nelv)
       real ah(1),bh(1)
       common /ctmpf/  lr(2*lx1+4),ls(2*lx1+4),lt(2*lx1+4)
      $              , llr(lelt),lls(lelt),llt(lelt)
@@ -914,13 +914,13 @@ c     clobbers r
       subroutine hsmg_do_fast(e,r,s,d,nl)
       include 'SIZE'
       include 'INPUT'
-      real e(nl**ndim,nelv)
-      real r(nl**ndim,nelv)
-      real s(nl*nl,2,ndim,nelv)
-      real d(nl**ndim,nelv)
+      real e(nl**ldim,nelv)
+      real r(nl**ldim,nelv)
+      real s(nl*nl,2,ldim,nelv)
+      real d(nl**ldim,nelv)
       
       integer ie,nn,i
-      nn=nl**ndim
+      nn=nl**ldim
       if(.not.if3d) then
          do ie=1,nelv
             call hsmg_tnsr2d_el(e(1,ie),nl,r(1,ie),nl
@@ -951,7 +951,7 @@ c     u = wt .* u
       include 'INPUT'
       integer nx,ny,nz
       real u(nx,ny,nz,nelv)
-      real wt(nx,nz,2,ndim,nelv)
+      real wt(nx,nz,2,ldim,nelv)
       
       integer e
 
@@ -1006,7 +1006,7 @@ c----------------------------------------------------------------------
       include 'INPUT'
       integer nx,ny,nz,l
       real w(nx,ny,nz,nelv)
-      real wt(nx,nz,2,ndim,nelv)
+      real wt(nx,nz,2,ldim,nelv)
       
       integer ie
       !init border nodes to 1
@@ -1088,7 +1088,7 @@ c----------------------------------------------------------------------
       include 'INPUT'
       integer nx,ny,nz,l
       real w(nx,ny,nz,nelv)
-      real wt(nx,nz,2,ndim,nelv)
+      real wt(nx,nz,2,ldim,nelv)
       
       integer ie
       integer lbr,rbr,lbs,rbs,lbt,rbt,two
@@ -1215,7 +1215,7 @@ c----------------------------------------------------------------------
          nl = mg_nh(l)
          nlz = mg_nh(l)
          if(.not.if3d) nlz=1
-         i=i+nl*nlz*4*ndim*nelv
+         i=i+nl*nlz*4*ldim*nelv
          if(i .gt. lmg_swt*4*ldim*lelv) then
             itmp = i/(4*ldim*lelv)
             write(6,*) 'lmg_swt too small',i,itmp,lmg_swt,l
@@ -1245,7 +1245,7 @@ c----------------------------------------------------------------------
          mg_schwarz_wt_index(l,mg_fld)=i
          nl  = mg_nh(l)
          nlz = mg_nhz(l)
-         i   = i+nl*nlz*4*ndim*nelv
+         i   = i+nl*nlz*4*ldim*nelv
 
          if (i .gt. lmg_swt*4*ldim*lelv) then
             itmp = i/(4*ldim*lelv)
@@ -1431,11 +1431,11 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
 
       if (istep.ne.ilstep) then
          ilstep = istep
-         ntot1  = nx1*ny1*nz1*nelv
+         ntot1  = lx1*ly1*lz1*nelv
          rhoavg = glsc2(vtrans,bm1,ntot1)/volvm1
       endif
 
-      n = nx2*ny2*nz2*nelv
+      n = lx2*ly2*lz2*nelv
 c     call copy(e,r,n)
 c     return
  
@@ -1456,7 +1456,7 @@ c     return
       etime1 = dnekclock()
 
       
-c     n = nx2*ny2*nz2*nelv
+c     n = lx2*ly2*lz2*nelv
 c     rmax = glmax(r,n)
 c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
        
@@ -1542,7 +1542,7 @@ c        call exitti('quit in mg$',l)
       call hsmg_rstr_no_dssum(
      $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
 
-      nzw = ndim-1
+      nzw = ldim-1
 
       call hsmg_do_wt(mg_solve_r(mg_solve_index(1,mg_fld)),
      $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
@@ -1642,30 +1642,30 @@ c     if (np.eq.1)        param(82)=2  ! single proc. too slow
 c     mg_lmax = 4
       if (lx1.eq.4) mg_lmax = 2
 c     if (param(79).ne.0) mg_lmax = param(79)
-      mgnx1    = p82-1 !1
-      mg_nx(1) = mgnx1
-      mg_ny(1) = mgnx1
-      mg_nz(1) = mgnx1
+      mglx1    = p82-1 !1
+      mg_nx(1) = mglx1
+      mg_ny(1) = mglx1
+      mg_nz(1) = mglx1
       if (.not.if3d) mg_nz(1) = 0 
 
-      mgnx2 = 2*(lx2/4) + 1
-      if (lx1.eq.5)  mgnx2 = 3
-c     if (lx1.eq.6)  mgnx2 = 3
-      if (lx1.le.10) mgnx2 = mgn2(nx1)
-      if (lx1.eq.8)  mgnx2 = 4
-      if (lx1.eq.8)  mgnx2 = 3
+      mglx2 = 2*(lx2/4) + 1
+      if (lx1.eq.5)  mglx2 = 3
+c     if (lx1.eq.6)  mglx2 = 3
+      if (lx1.le.10) mglx2 = mgn2(lx1)
+      if (lx1.eq.8)  mglx2 = 4
+      if (lx1.eq.8)  mglx2 = 3
 
-c     mgnx2 = min(3,mgnx2)  
+c     mglx2 = min(3,mglx2)  
       
 
-      mg_nx(2) = mgnx2
-      mg_ny(2) = mgnx2
-      mg_nz(2) = mgnx2
+      mg_nx(2) = mglx2
+      mg_ny(2) = mglx2
+      mg_nz(2) = mglx2
       if (.not.if3d) mg_nz(2) = 0 
 
-      mg_nx(3) = mgnx2+1
-      mg_ny(3) = mgnx2+1
-      mg_nz(3) = mgnx2+1
+      mg_nx(3) = mglx2+1
+      mg_ny(3) = mglx2+1
+      mg_nz(3) = mglx2+1
       if (.not.if3d) mg_nz(3) = 0 
 
       mg_nx(mg_lmax) = lx1-1
@@ -1826,7 +1826,7 @@ C
       m    = 6
       if (p130.gt.9)  m = p130 + ifield
 
-      ntot = nx1*ny1*nz1*nelfld(ifield)
+      ntot = lx1*ly1*lz1*nelfld(ifield)
 
       xmin = glmin(x,ntot)
       xmax = glmax(x,ntot)
@@ -2005,7 +2005,7 @@ c
       nx = mg_nh(l)
       ny = mg_nh(l)
       nz = mg_nhz(l)
-      ng = 3*ndim-3
+      ng = 3*ldim-3
 
 
       call h1mg_axml (wk,p
@@ -2265,7 +2265,7 @@ c----------------------------------------------------------------------
       param(59) = 1
       call geom_reset(1)  ! Recompute g1m1 etc. with deformed only
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       call rone (h1   ,n)
       call rzero(h2   ,n)
       call rzero(h2inv,n)
@@ -2311,29 +2311,29 @@ c     if (np.eq.1)        param(82)=2  ! single proc. too slow
 c     mg_h1_lmax = 4
       if (lx1.eq.4) mg_h1_lmax = 2
 c     if (param(79).ne.0) mg_h1_lmax = param(79)
-      mgnx1    = p82-1 !1
-      mg_nx(1) = mgnx1
-      mg_ny(1) = mgnx1
-      mg_nz(1) = mgnx1
+      mglx1    = p82-1 !1
+      mg_nx(1) = mglx1
+      mg_ny(1) = mglx1
+      mg_nz(1) = mglx1
       if (.not.if3d) mg_nz(1) = 0 
 
-      mgnx2 = 2*(lx2/4) + 1
-      if (lx1.eq.5)  mgnx2 = 3
-c     if (lx1.eq.6)  mgnx2 = 3
-      if (lx1.le.10) mgnx2 = mgn2(nx1)
-      if (lx1.eq.8)  mgnx2 = 4
-      if (lx1.eq.8)  mgnx2 = 3
+      mglx2 = 2*(lx2/4) + 1
+      if (lx1.eq.5)  mglx2 = 3
+c     if (lx1.eq.6)  mglx2 = 3
+      if (lx1.le.10) mglx2 = mgn2(lx1)
+      if (lx1.eq.8)  mglx2 = 4
+      if (lx1.eq.8)  mglx2 = 3
 
-      mgnx2 = min(3,mgnx2)  ! This choice seems best (9/24/12)
+      mglx2 = min(3,mglx2)  ! This choice seems best (9/24/12)
 
-      mg_nx(2) = mgnx2
-      mg_ny(2) = mgnx2
-      mg_nz(2) = mgnx2
+      mg_nx(2) = mglx2
+      mg_ny(2) = mglx2
+      mg_nz(2) = mglx2
       if (.not.if3d) mg_nz(2) = 0 
 
-      mg_nx(3) = mgnx2+1
-      mg_ny(3) = mgnx2+1
-      mg_nz(3) = mgnx2+1
+      mg_nx(3) = mglx2+1
+      mg_ny(3) = mglx2+1
+      mg_nz(3) = mglx2+1
       if (.not.if3d) mg_nz(3) = 0 
 
       mg_nx(mg_h1_lmax) = lx1-1
@@ -2390,7 +2390,7 @@ c----------------------------------------------------------------------
       integer nx,ny,nz
       integer l
       
-      ncrnr = 2**ndim
+      ncrnr = 2**ldim
       call get_vert
 
 
@@ -2812,7 +2812,7 @@ c-----------------------------------------------------------------------
       n                 = mg_h1_n(l,mg_fld)
 
 
-      ng = 3*(ndim-1)  ! 3 or 6 elements to symm dxd tensor
+      ng = 3*(ldim-1)  ! 3 or 6 elements to symm dxd tensor
 
       do l=mg_h1_lmax-1,1,-1
 
@@ -2882,7 +2882,7 @@ c-----------------------------------------------------------------------
       real g(ng,1)
       integer e
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
 c     ifdfrm(e) = .true.  ! TOO LATE
 
@@ -2972,8 +2972,8 @@ c-----------------------------------------------------------------------
       real wt(1),work(1)
       logical ifsqrt
 
-      if (ndim.eq.2) call h1mg_setup_schwarz_wt2d_2(wt,ie,n,work,ifsqrt)
-      if (ndim.eq.3) call h1mg_setup_schwarz_wt3d_2(wt,ie,n,work,ifsqrt)
+      if (ldim.eq.2) call h1mg_setup_schwarz_wt2d_2(wt,ie,n,work,ifsqrt)
+      if (ldim.eq.3) call h1mg_setup_schwarz_wt3d_2(wt,ie,n,work,ifsqrt)
 
       return
       end

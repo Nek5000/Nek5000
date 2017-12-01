@@ -131,11 +131,11 @@ C     Single precision version.
 C
 C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZD = NMAX)
-      REAL*8  ZD(NZD),WD(NZD),APHAD,BETAD
+      PARAMETER (lzd = NMAX)
+      REAL*8  ZD(lzd),WD(lzd),APHAD,BETAD
       REAL Z(1),W(1),ALPHA,BETA
 C
-      NPMAX = NZD
+      NPMAX = lzd
       IF (NP.GT.NPMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in ZWGJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
@@ -214,11 +214,11 @@ C     Single precision version.
 C
 C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZD = NMAX)
-      REAL*8  ZD(NZD),WD(NZD),ALPHAD,BETAD
+      PARAMETER (lzd = NMAX)
+      REAL*8  ZD(lzd),WD(lzd),ALPHAD,BETAD
       REAL Z(1),W(1),ALPHA,BETA
 C
-      NPMAX = NZD
+      NPMAX = lzd
       IF (NP.GT.NPMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in ZWGLJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
@@ -526,10 +526,10 @@ C     Single precision version.
 C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGJD(NZD),HGJD,ALPHAD,BETAD
+      PARAMETER (lzd = NMAX)
+      REAL*8  ZD,ZGJD(lzd),HGJD,ALPHAD,BETAD
       REAL Z,ZGJ(1),ALPHA,BETA
-      NPMAX = NZD
+      NPMAX = lzd
       IF (NP.GT.NPMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in HGJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
@@ -579,10 +579,10 @@ C     Single precision version.
 C
 C---------------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZD = NMAX)
-      REAL*8  ZD,ZGLJD(NZD),HGLJD,ALPHAD,BETAD
+      PARAMETER (lzd = NMAX)
+      REAL*8  ZD,ZGLJD(lzd),HGLJD,ALPHAD,BETAD
       REAL Z,ZGLJ(1),ALPHA,BETA
-      NPMAX = NZD
+      NPMAX = lzd
       IF (NP.GT.NPMAX) THEN
          WRITE (6,*) 'Too large polynomial degree in HGLJ'
          WRITE (6,*) 'Maximum polynomial degree is',NMAX
@@ -627,7 +627,7 @@ C---------------------------------------------------------------------
       RETURN
       END
 C
-      SUBROUTINE DGJ (D,DT,Z,NZ,NZD,ALPHA,BETA)
+      SUBROUTINE DGJ (D,DT,Z,NZ,lzd,ALPHA,BETA)
 C-----------------------------------------------------------------
 C
 C     Compute the derivative matrix D and its transpose DT
@@ -638,9 +638,9 @@ C     Single precision version.
 C
 C-----------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZDD = NMAX)
-      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD),ALPHAD,BETAD
-      REAL D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
+      PARAMETER (lzdD = NMAX)
+      REAL*8  DD(lzdD,lzdD),DTD(lzdD,lzdD),ZD(lzdD),ALPHAD,BETAD
+      REAL D(lzd,lzd),DT(lzd,lzd),Z(1),ALPHA,BETA
 C
       IF (NZ.LE.0) THEN
          WRITE (6,*) 'DGJ: Minimum number of Gauss points is 1'
@@ -661,7 +661,7 @@ C
       DO 100 I=1,NZ
          ZD(I) = Z(I)
  100  CONTINUE
-      CALL DGJD (DD,DTD,ZD,NZ,NZDD,ALPHAD,BETAD)
+      CALL DGJD (DD,DTD,ZD,NZ,lzdD,ALPHAD,BETAD)
       DO 200 I=1,NZ
       DO 200 J=1,NZ
          D(I,J)  = DD(I,J)
@@ -670,7 +670,7 @@ C
       RETURN
       END
 C
-      SUBROUTINE DGJD (D,DT,Z,NZ,NZD,ALPHA,BETA)
+      SUBROUTINE DGJD (D,DT,Z,NZ,lzd,ALPHA,BETA)
 C-----------------------------------------------------------------
 C
 C     Compute the derivative matrix D and its transpose DT
@@ -681,7 +681,7 @@ C     Double precision version.
 C
 C-----------------------------------------------------------------
       IMPLICIT REAL*8  (A-H,O-Z)
-      REAL*8  D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
+      REAL*8  D(lzd,lzd),DT(lzd,lzd),Z(1),ALPHA,BETA
       N    = NZ-1
       DN   = ((N))
       ONE  = 1.
@@ -708,7 +708,7 @@ C
       RETURN
       END
 C
-      SUBROUTINE DGLJ (D,DT,Z,NZ,NZD,ALPHA,BETA)
+      SUBROUTINE DGLJ (D,DT,Z,NZ,lzd,ALPHA,BETA)
 C-----------------------------------------------------------------
 C
 C     Compute the derivative matrix D and its transpose DT
@@ -719,9 +719,9 @@ C     Single precision version.
 C
 C-----------------------------------------------------------------
       PARAMETER (NMAX=84)
-      PARAMETER (NZDD = NMAX)
-      REAL*8  DD(NZDD,NZDD),DTD(NZDD,NZDD),ZD(NZDD),ALPHAD,BETAD
-      REAL D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
+      PARAMETER (lzdD = NMAX)
+      REAL*8  DD(lzdD,lzdD),DTD(lzdD,lzdD),ZD(lzdD),ALPHAD,BETAD
+      REAL D(lzd,lzd),DT(lzd,lzd),Z(1),ALPHA,BETA
 C
       IF (NZ.LE.1) THEN
        WRITE (6,*) 'DGLJ: Minimum number of Gauss-Lobatto points is 2'
@@ -742,7 +742,7 @@ C
       DO 100 I=1,NZ
          ZD(I) = Z(I)
  100  CONTINUE
-      CALL DGLJD (DD,DTD,ZD,NZ,NZDD,ALPHAD,BETAD)
+      CALL DGLJD (DD,DTD,ZD,NZ,lzdD,ALPHAD,BETAD)
       DO 200 I=1,NZ
       DO 200 J=1,NZ
          D(I,J)  = DD(I,J)
@@ -751,7 +751,7 @@ C
       RETURN
       END
 C
-      SUBROUTINE DGLJD (D,DT,Z,NZ,NZD,ALPHA,BETA)
+      SUBROUTINE DGLJD (D,DT,Z,NZ,lzd,ALPHA,BETA)
 C-----------------------------------------------------------------
 C
 C     Compute the derivative matrix D and its transpose DT
@@ -762,7 +762,7 @@ C     Double precision version.
 C
 C-----------------------------------------------------------------
       IMPLICIT REAL*8  (A-H,O-Z)
-      REAL*8  D(NZD,NZD),DT(NZD,NZD),Z(1),ALPHA,BETA
+      REAL*8  D(lzd,lzd),DT(lzd,lzd),Z(1),ALPHA,BETA
       N    = NZ-1
       DN   = ((N))
       ONE  = 1.
@@ -797,7 +797,7 @@ C
       RETURN
       END
 C
-      SUBROUTINE DGLL (D,DT,Z,NZ,NZD)
+      SUBROUTINE DGLL (D,DT,Z,NZ,lzd)
 C-----------------------------------------------------------------
 C
 C     Compute the derivative matrix D and its transpose DT
@@ -807,7 +807,7 @@ C     Note: D and DT are square matrices.
 C
 C-----------------------------------------------------------------
       PARAMETER (NMAX=84)
-      REAL D(NZD,NZD),DT(NZD,NZD),Z(1)
+      REAL D(lzd,lzd),DT(lzd,lzd),Z(1)
       N  = NZ-1
       IF (NZ .GT. NMAX) THEN
          WRITE (6,*) 'Subroutine DGLL'
@@ -1073,103 +1073,103 @@ C
       RETURN
       END
 C
-      SUBROUTINE IGLM (I12,IT12,Z1,Z2,NZ1,NZ2,ND1,ND2)
+      SUBROUTINE IGLM (I12,IT12,Z1,Z2,lz1,lz2,ND1,ND2)
 C----------------------------------------------------------------------
 C
 C     Compute the one-dimensional interpolation operator (matrix) I12
 C     ands its transpose IT12 for interpolating a variable from a
 C     Gauss Legendre mesh (1) to a another mesh M (2).
-C     Z1 : NZ1 Gauss Legendre points.
-C     Z2 : NZ2 points on mesh M.
+C     Z1 : lz1 Gauss Legendre points.
+C     Z2 : lz2 points on mesh M.
 C
 C--------------------------------------------------------------------
       REAL I12(ND2,ND1),IT12(ND1,ND2),Z1(ND1),Z2(ND2)
-      IF (NZ1 .EQ. 1) THEN
+      IF (lz1 .EQ. 1) THEN
          I12 (1,1) = 1.
          IT12(1,1) = 1.
          RETURN
       ENDIF
-      DO 10 I=1,NZ2
+      DO 10 I=1,lz2
          ZI = Z2(I)
-         DO 10 J=1,NZ1
-            I12 (I,J) = HGL(J,ZI,Z1,NZ1)
+         DO 10 J=1,lz1
+            I12 (I,J) = HGL(J,ZI,Z1,lz1)
             IT12(J,I) = I12(I,J)
  10   CONTINUE
       RETURN
       END
 c
-      SUBROUTINE IGLLM (I12,IT12,Z1,Z2,NZ1,NZ2,ND1,ND2)
+      SUBROUTINE IGLLM (I12,IT12,Z1,Z2,lz1,lz2,ND1,ND2)
 C----------------------------------------------------------------------
 C
 C     Compute the one-dimensional interpolation operator (matrix) I12
 C     ands its transpose IT12 for interpolating a variable from a
 C     Gauss-Lobatto Legendre mesh (1) to a another mesh M (2).
-C     Z1 : NZ1 Gauss-Lobatto Legendre points.
-C     Z2 : NZ2 points on mesh M.
+C     Z1 : lz1 Gauss-Lobatto Legendre points.
+C     Z2 : lz2 points on mesh M.
 C
 C--------------------------------------------------------------------
       REAL I12(ND2,ND1),IT12(ND1,ND2),Z1(ND1),Z2(ND2)
-      IF (NZ1 .EQ. 1) THEN
+      IF (lz1 .EQ. 1) THEN
          I12 (1,1) = 1.
          IT12(1,1) = 1.
          RETURN
       ENDIF
-      DO 10 I=1,NZ2
+      DO 10 I=1,lz2
          ZI = Z2(I)
-         DO 10 J=1,NZ1
-            I12 (I,J) = HGLL(J,ZI,Z1,NZ1)
+         DO 10 J=1,lz1
+            I12 (I,J) = HGLL(J,ZI,Z1,lz1)
             IT12(J,I) = I12(I,J)
  10   CONTINUE
       RETURN
       END
 C
-      SUBROUTINE IGJM (I12,IT12,Z1,Z2,NZ1,NZ2,ND1,ND2,ALPHA,BETA)
+      SUBROUTINE IGJM (I12,IT12,Z1,Z2,lz1,lz2,ND1,ND2,ALPHA,BETA)
 C----------------------------------------------------------------------
 C
 C     Compute the one-dimensional interpolation operator (matrix) I12
 C     ands its transpose IT12 for interpolating a variable from a
 C     Gauss Jacobi mesh (1) to a another mesh M (2).
-C     Z1 : NZ1 Gauss Jacobi points.
-C     Z2 : NZ2 points on mesh M.
+C     Z1 : lz1 Gauss Jacobi points.
+C     Z2 : lz2 points on mesh M.
 C     Single precision version.
 C
 C--------------------------------------------------------------------
       REAL I12(ND2,ND1),IT12(ND1,ND2),Z1(ND1),Z2(ND2)
-      IF (NZ1 .EQ. 1) THEN
+      IF (lz1 .EQ. 1) THEN
          I12 (1,1) = 1.
          IT12(1,1) = 1.
          RETURN
       ENDIF
-      DO 10 I=1,NZ2
+      DO 10 I=1,lz2
          ZI = Z2(I)
-         DO 10 J=1,NZ1
-            I12 (I,J) = HGJ(J,ZI,Z1,NZ1,ALPHA,BETA)
+         DO 10 J=1,lz1
+            I12 (I,J) = HGJ(J,ZI,Z1,lz1,ALPHA,BETA)
             IT12(J,I) = I12(I,J)
  10   CONTINUE
       RETURN
       END
 c
-      SUBROUTINE IGLJM (I12,IT12,Z1,Z2,NZ1,NZ2,ND1,ND2,ALPHA,BETA)
+      SUBROUTINE IGLJM (I12,IT12,Z1,Z2,lz1,lz2,ND1,ND2,ALPHA,BETA)
 C----------------------------------------------------------------------
 C
 C     Compute the one-dimensional interpolation operator (matrix) I12
 C     ands its transpose IT12 for interpolating a variable from a
 C     Gauss-Lobatto Jacobi mesh (1) to a another mesh M (2).
-C     Z1 : NZ1 Gauss-Lobatto Jacobi points.
-C     Z2 : NZ2 points on mesh M.
+C     Z1 : lz1 Gauss-Lobatto Jacobi points.
+C     Z2 : lz2 points on mesh M.
 C     Single precision version.
 C
 C--------------------------------------------------------------------
       REAL I12(ND2,ND1),IT12(ND1,ND2),Z1(ND1),Z2(ND2)
-      IF (NZ1 .EQ. 1) THEN
+      IF (lz1 .EQ. 1) THEN
          I12 (1,1) = 1.
          IT12(1,1) = 1.
          RETURN
       ENDIF
-      DO 10 I=1,NZ2
+      DO 10 I=1,lz2
          ZI = Z2(I)
-         DO 10 J=1,NZ1
-            I12 (I,J) = HGLJ(J,ZI,Z1,NZ1,ALPHA,BETA)
+         DO 10 J=1,lz1
+            I12 (I,J) = HGLJ(J,ZI,Z1,lz1,ALPHA,BETA)
             IT12(J,I) = I12(I,J)
  10   CONTINUE
       RETURN

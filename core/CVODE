@@ -9,8 +9,8 @@ c
       common /icvode/ cv_nfld, cv_iatol,
      &                cv_maxl, cv_itask, cv_ipretype
 
-      integer*8        cv_nglobal
-      common /ilcvode/ cv_nglobal
+      integer*8        cv_nlocal, cv_nglobal
+      common /ilcvode/ cv_nlocal, cv_nglobal
 
       logical         ifcvodeinit, ifdqj, ifcvfun
       common /lcvode/ ifcvodeinit, ifdqj, ifcvfun

@@ -76,7 +76,7 @@ C     Output the processor-element map:
 C     Check elemental distribution
 C
 C      IF (IPASS.EQ.2.AND.PARAM(156).eq.9) THEN
-C         NXYZ=NX1*NY1*NZ1
+C         NXYZ=lx1*ly1*lz1
 C         DO 1400 IE=1,NELT
 C            VTMP1=NODE
 c            VTMP2=IE
@@ -184,7 +184,7 @@ c
       common /vptsol/ iwork(0:lp)
       integer nelbox(3),nstride_box(3)
 c
-      call gfdm_set_pst(ip,is,it,nelbox,nstride_box,nx2,ny2,nz2)
+      call gfdm_set_pst(ip,is,it,nelbox,nstride_box,lx2,ly2,lz2)
 c
       nep = nelbox(ip)
       nes = nelbox(is)
@@ -418,7 +418,7 @@ c
       if (icalld.gt.0) return
       icalld = 1
 
-      ncrnr = 2**ndim
+      ncrnr = 2**ldim
       call get_vert_map(vertex,ncrnr,wk,mdw,ndw,ifgfdm)
 
       return

@@ -43,11 +43,11 @@ C     First call, we have no vectors to orthogonalize against.
          Nprev=0
          Mprev=param(93)
          Mprev=min(Mprev,Mxprev)
-      ENDIF
+      endif
 C
 C     Diag to see how much reduction in the residual is attained.
 C
-      NTOT2  = NX2*NY2*NZ2*NELV
+      NTOT2  = lx2*ly2*lz2*NELV
       ALPHA1 = GLSC3(p,p,bm2inv,NTOT2)
       if (alpha1.gt.0) ALPHA1 = sqrt(alpha1/volvm2)
 C
@@ -104,8 +104,8 @@ C    ................................................................
       endif
 C
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine gensoln(p,h1,h2,h2inv)
 C
@@ -126,7 +126,7 @@ C
       REAL             H2   (LX1,LY1,LZ1,LELV)
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
-      NTOT2=NX2*NY2*NZ2*NELV
+      NTOT2=lx2*ly2*lz2*NELV
 C
 C     First, save current solution
 C
@@ -141,8 +141,8 @@ C
       CALL UPDTSET(P,H1,H2,H2INV,ierr)
       if (ierr.eq.1) Nprev = 0
 c
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine updtset(p,h1,h2,h2inv,IERR)
 C
@@ -173,12 +173,12 @@ C
       REAL             H2   (LX1,LY1,LZ1,LELV)
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
-      NTOT2=NX2*NY2*NZ2*NELV
+      NTOT2=lx2*ly2*lz2*NELV
 C
       IF (Nprev.EQ.Mprev) THEN
          CALL COPY(Pnew,P,NTOT2)
          Nprev=0
-      ENDIF
+      endif
 C
 C     Increment solution set
       Nprev = Nprev+1
@@ -193,8 +193,8 @@ C
 c     Save last sol'n
       CALL COPY(Pnew,P,NTOT2)
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine econj(kprev,h1,h2,h2inv,ierr)
 C
@@ -221,7 +221,7 @@ C
 C
 C
       ierr  = 0
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       INTETYPE=1
 C
 C     Gram Schmidt, w re-orthogonalization
@@ -260,8 +260,8 @@ C
       ALPHAN = Alphad
       CALL CMULT(RHS (1,Kprev),alphan,NTOT2)
 C
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine chkptol
 C--------------------------------------------------------------------
@@ -286,11 +286,11 @@ C
      $ ,              BDIVV(LX2,LY2,LZ2,LELV)
 C
       if (ifsplit) return
-      IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) RETURN
+      IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) return
       five = 5.0
       if (param(102).ne.0.0) five=param(102)
 C
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       if (ifield.eq.1) then     ! avo: sub arguments?
          CALL OPDIV (BDIVV,VX,VY,VZ)
       else
@@ -316,8 +316,8 @@ c     IF (DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) TOLPDF = 5.*DNORM
      $    DNORM.GT.(1.2*DIVEX).AND.DIVEX.GT.0.) 
      $     TOLPDF = FIVE*DNORM
 C
-      RETURN
-      END
+      return
+      end
       FUNCTION VLSC3(X,Y,B,N)
 C
 C     local inner product, with weight
@@ -348,8 +348,8 @@ C
  10   CONTINUE
       T=DT
       VLSC3 = T
-      RETURN
-      END
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
@@ -380,7 +380,7 @@ C
       save    icalld
       data    icalld/0/
 
-      ntot2=nx2*ny2*nz2*nelv
+      ntot2=lx2*ly2*lz2*nelv
 
 
 C     First, we have to decide if the E matrix has changed.
@@ -422,188 +422,8 @@ C           Orthogonalize this rhs w.r.t. previous rhs's
             endif
   100    CONTINUE
 C
-      ENDIF
-C
-      RETURN
-      END
-c-----------------------------------------------------------------------
-      subroutine echeck(kprev,h1,h2,h2inv,intetype)
-C
-C     Orthogonalize the rhs wrt previous rhs's for which we already
-C     know the soln.
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-C
-      REAL             H1   (LX1,LY1,LZ1,LELV)
-      REAL             H2   (LX1,LY1,LZ1,LELV)
-      REAL             H2INV(LX1,LY1,LZ1,LELV)
-C
-      PARAMETER (LTOT2=LX2*LY2*LZ2*LELV)
-      COMMON /ORTHOV/ RHS(LTOT2,MXPREV)
-      COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
-      COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
-      COMMON /ORTHOI/ Nprev,Mprev
-      REAL ALPHA,WORK,GLSC2
-      REAL Alphad
-C
-C
-      NTOT2=NX2*NY2*NZ2*NELV
-C
-C     Compute part of the norm
-C
-      do 20 j=1,kprev
-         CALL CDABDTP(Pbar,rhs(1,j),H1,H2,H2INV,INTETYPE)
-         do 10 i=1,kprev
-            Alphad = GLSC2(RHS(1,i),Pbar,NTOT2)
-            Alphas = alphad
-            if (nio.eq.0) then
-               write(6,5) i,j,alphad,alphas,istep,kprev
-    5          format(' E-check:',2i4,e16.8,g12.5,i6,i4)
-            endif
-   10    continue
-   20 continue
-      return
-      end
-c-----------------------------------------------------------------------
-c     THE ROUTINES BELOW ARE THE NEW Helmholtz projectors
-c-----------------------------------------------------------------------
-      subroutine projh(r,h1,h2,bi,vml,vmk,approx,napprox,wl,ws,name4)
-C
-C     Orthogonalize the rhs wrt previous rhs's for which we already
-C     know the soln.
-c
-c     Input:   r         -- residual
-c              h1,h2     -- Helmholtz arrays
-c              bi        -- inverse mass matrix
-c              vml,vmk   -- multiplicity and mask arrays
-c              approx    -- approximation space
-c              napprox   -- (1) = max vecs,  (2) = current number of vecs
-c              wl        -- large work array of size lx1*ly1*lz1*nelv
-c              ws        -- small work array of size 2*max vecs
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-c
-      parameter(lt=lx1*ly1*lz1*lelt)
-C
-      real r(1),h1(1),h2(1),vml(1),vmk(1)
-      real bi(1)
-      real wl(1),ws(1)
-      real approx(lt,0:1)
-      integer napprox(2)
-      character*4 name4
-c
-      n_max = napprox(1)
-      n_sav = napprox(2)
-      if (n_sav.eq.0) return
-      nel =nelfld(ifield)
-      ntot=nx1*ny1*nz1*nel
-
-      vol = voltm1
-      if (nel.eq.nelv) vol = volvm1
-c
-c     Diag to see how much reduction in the residual is attained.
-c
-      alpha1 = glsc23(r,bi,vml,ntot)
-      if (alpha1.gt.0) alpha1 = sqrt(alpha1/vol)
-c
-c     Update approximation space if dt has changed
-      call updrhsh(approx,napprox,h1,h2,vml,vmk,ws,name4)
-c
-c
-c     Perform Gram-Schmidt for previous soln's
-c
-      do i=1,n_sav
-         ws(i) = vlsc3(r,approx(1,i),vml,ntot)
-      enddo
-      call gop    (ws,ws(n_sav+1),'+  ',n_sav)
-c
-      call cmult2   (approx(1,0),approx(1,1),ws(1),ntot)
-      do i=2,n_sav
-         call add2s2(approx(1,0),approx(1,i),ws(i),ntot)
-      enddo
-c
-      call axhelm  (wl,approx(1,0),h1,h2,1,1)
-      call col2    (wl,vmk,ntot)
-      call dssum   (wl,nx1,ny1,nz1)
-      call sub2    (r ,wl,ntot)
-c ................................................................
-c   Diag.
-      alpha2 = glsc23(r,bi,vml,ntot)
-      if (alpha2.gt.0) alpha2 = sqrt(alpha2/vol)
-      ratio  = alpha1/alpha2
-      n10=min(10,n_sav)
-c
-      if (nio.eq.0) write(6,10) istep,name4,alpha1,alpha2,ratio,n_sav
-   10 format(4X,I7,4x,a4,' alph1n',1p3e12.4,i6)
-c
-      if (nio.eq.0) write(6,11) istep,name4,n_sav,(ws(i),i=1,n10)
-   11 format(4X,I7,4x,a4,' halpha',i6,10(1p10e12.4,/,17x))
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gensh(v1,h1,h2,vml,vmk,approx,napprox,wl,ws,name4)
-c
-c     Reconstruct the solution to the original problem by adding back
-c     the previous solutions
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'SOLN'
-      include 'TSTEP'
-c
-      common /iterhm/ niterhm
-c
-      parameter(lt=lx1*ly1*lz1*lelt)
-      real v1(1),h1(1),h2(1),vml(1),vmk(1)
-      real wl(1),ws(1)
-      real approx(lt,0:1)
-      integer napprox(2)
-      character*4 name4
-c
-      n_max = napprox(1)
-      n_sav = napprox(2)
-      ntot=nx1*ny1*nz1*nelfld(ifield)
-c
-c     Reconstruct solution and save current du
-c
-      if (n_sav.lt.n_max) then
-c
-         if (niterhm.gt.0) then      ! new vector not in space
-            n_sav = n_sav+1
-            call copy(approx(1,n_sav),v1,ntot)
-            call add2(v1,approx(1,0),ntot)
-c           orthogonalize rhs against previous rhs and normalize
-            call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
-
-c           if (ierr.ne.0) n_sav = n_sav-1
-            if (ierr.ne.0) n_sav = 0
-
-         else
-
-            call add2(v1,approx(1,0),ntot)
-
-         endif
-      else
-         n_sav = 1
-         call add2(v1,approx(1,0),ntot)
-         call copy(approx(1,n_sav),v1,ntot)
-c        normalize
-         call hconj(approx,n_sav,h1,h2,vml,vmk,ws,name4,ierr)
-         if (ierr.ne.0) n_sav = 0
       endif
-
-      napprox(2)=n_sav
-
+C
       return
       end
 c-----------------------------------------------------------------------
@@ -623,7 +443,7 @@ c
       character*4 name4
 c
       ierr=0
-      ntot=nx1*ny1*nz1*nelfld(ifield)
+      ntot=lx1*ly1*lz1*nelfld(ifield)
 c
       call axhelm  (approx(1,0),approx(1,k),h1,h2,1,1)
       call col2    (approx(1,0),vmk,ntot)
@@ -687,70 +507,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine updrhsh(approx,napprox,h1,h2,vml,vmk,ws,name4)
-c
-c     Reorthogonalize approx if dt has changed
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'MASS'
-      include 'TSTEP'
-c
-c
-      parameter  (lt=lx1*ly1*lz1*lelt)
-      real approx(lt,0:1),h1(1),h2(1),vml(1),vmk(1),ws(1)
-      integer napprox(2)
-      character*4 name4
-c
-      logical ifupdate
-      logical ifnewdt
-      save    ifnewdt
-      data    ifnewdt /.false./
-c
-      character*4 name_old
-      save    name_old
-      data    name_old/'DMIR'/
-c
-      real    dtold
-      save    dtold
-      data    dtold/0.0/
-c
-c     First, we have to decide if the dt has changed.
-c
-      ifupdate = .false.
-      if (dt.ne.dtold) then
-         dtold    = dt
-         name_old = name4
-         ifnewdt  = .true.
-         ifupdate = .true.
-      elseif (ifnewdt) then
-         if (name4.eq.name_old) then
-            ifnewdt = .false.
-         else
-            ifupdate = .true.
-         endif
-      endif
-      if (ifvarp(ifield)) ifupdate = .true.
-      if (iflomach)       ifupdate = .true.
-
-      if (ifupdate) then    ! reorthogonalize 
-         n_sav = napprox(2)
-         l     = 1
-         do k=1,n_sav
-c           Orthogonalize kth vector against {v_1,...,v_k-1}
-            if (k.ne.l) then
-               ntot = nx1*ny1*nz1*nelfld(ifield)
-               call copy(approx(1,l),approx(1,k),ntot)
-            endif
-            call hconj(approx,l,h1,h2,vml,vmk,ws,name4,ierr)
-            if (ierr.eq.0) l=l+1
-         enddo
-         napprox(2)=min(l,n_sav)
-      endif
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine hmhzpf(name,u,r,h1,h2,mask,mult,imesh,tli,maxit,isd,bi)
       include 'SIZE'
       include 'INPUT'
@@ -771,8 +527,8 @@ c
 c
       etime1=dnekclock()
 c
-      IF (IMESH.EQ.1) NTOT = NX1*NY1*NZ1*NELV
-      IF (IMESH.EQ.2) NTOT = NX1*NY1*NZ1*NELT
+      IF (IMESH.EQ.1) NTOT = lx1*ly1*lz1*NELV
+      IF (IMESH.EQ.2) NTOT = lx1*ly1*lz1*NELT
 c
       tol = tli
       if (param(22).ne.0) tol = abs(param(22))
@@ -786,7 +542,7 @@ c     if (name.eq.'TEMP') kfldfdm =  0
 c     if (name.eq.'VELX') kfldfdm =  1
 c     if (name.eq.'VELY') kfldfdm =  2
 c     if (name.eq.'VELZ') kfldfdm =  3
-      if (name.eq.'PRES') kfldfdm =  ndim+1
+      if (name.eq.'PRES') kfldfdm =  ldim+1
 
       if (ifdg) then
          call cggo_dg (u,r,h1,h2,bi,mask,name,tol,maxit)
@@ -831,23 +587,30 @@ c
       call chcopy(cname,name,4)
       call capit (cname,4)
 
+      ifstdh = .true. ! default is no projection
+      if (ifprojfld(ifield)) then
+         ifstdh = .false.
+      endif
 
       p945 = param(94)
-      if (cname.eq.'PRES') p945 = param(95)
+      if (cname.eq.'PRES') then
+         ifstdh = .false.
+         p945 = param(95)
+      endif
 
-                          ifstdh = .false.
-      if (param(93).eq.0) ifstdh = .true.
-      if (p945.eq.0)      ifstdh = .true.
-      if (istep.lt.p945)  ifstdh = .true.
+      if (ifield.gt.ldimt_proj+1) ifstdh = .true.
+      if (param(93).eq.0)         ifstdh = .true.
+      if (p945.eq.0)              ifstdh = .true.
+      if (istep.lt.p945)          ifstdh = .true.
 
       if (ifstdh) then
          call hmholtz(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
       else
 
-         n = nx1*ny1*nz1*nelfld(ifield)
+         n = lx1*ly1*lz1*nelfld(ifield)
 
          call col2   (r,vmk,n)
-         call dssum  (r,nx1,ny1,nz1)
+         call dssum  (r,lx1,ly1,lz1)
 
          call blank (name6,6)
          call chcopy(name6,name,4)
@@ -915,7 +678,7 @@ c     keeping the number of vectors, m, small.
       etime0 = dnekclock() 
 
       nn = n
-      if (ifvec) nn = n*ndim
+      if (ifvec) nn = n*ldim
 
       call proj_get_ivar
      $   (m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
@@ -933,15 +696,16 @@ c     Re-orthogonalize basis set w.r.t. new vectors if space has changed.
       if (ireset.eq.1) then
 
          do j=0,m-1         ! First, set B := A*X
-            jb = ib+j*nn
+            jb = ib+j*nn    !Iterate through xs and bs
             jx = ix+j*nn
             call proj_matvec (rvar(jb,1),rvar(jx,1),n,h1,h2,msk,name6)
          enddo
 
-c         if (nio.eq.0) write(6,'(13x,A)') 'Reorthogonalize Basis'
+         if (nio.eq.0 .and. loglevel.gt.2) 
+     $      write(6,'(13x,A)') 'Reorthogonalize Basis'
 
-         call proj_ortho    ! Orthogonalize X & B basis sets
-     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)
+         call proj_ortho_full
+     $      (rvar(ix,1),rvar(ib,1),n,m,w,ifwt,ifvec,name6)      
 
          ivar(2) = m ! Update number of saved vectors
 
@@ -956,17 +720,11 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
       baf = sqrt(baf)
       ratio = bb4/baf
 
-c      if (nio.eq.0) write(6,1) istep,bb4,baf,ratio,m,name6
-c    1 format(4x,i7,1p3e13.4,i4,1x,a6,' PROJECT')
-
-
       tproj = tproj + dnekclock() - etime0
 
       if (nio.eq.0) write(6,1) istep,'  Project ' // name6,
-     &                         bb4,baf,ratio,m,ireset
+     &                         baf,bb4,ratio,m,mmx
     1 format(i11,a,6x,1p3e13.4,i4,i4)
-
-
 
       return
       end
@@ -987,29 +745,42 @@ c     b <-- b - bbar
       parameter(lxyz=lx1*ly1*lz1)
       real tt(lxyz,lelt)
 
-      real alpha(mxprev),work(mxprev)
-
+      real work(mxprev),alpha(mxprev)
 
       if (m.le.0) return
 
-      call rzero(xbar,n)
-      call rzero(bbar,n)
-
-      do j=m,1,-1
-
-         if (ifwt) then
-            alpha(j)=glsc3(xx(1,j),w,b,n)
+      !First round of CGS
+      do k = 1, m 
+         if(ifwt) then
+            alpha(k) = vlsc3(xx(1,k),w,b,n)
          else
-            alpha(j)=glsc2(xx(1,j),b,n)
+            alpha(k) = vlsc2(xx(1,k),b,n)
          endif
-
-         call add2s2(xbar,xx(1,j),alpha(j),n)
-         call add2s2(bbar,bb(1,j),alpha(j),n)
-
-         alpham = -alpha(j)
-         call add2s2(b,bb(1,j),alpham,n)
-
       enddo
+      !First one outside loop to avoid zeroing xbar and bbar
+      call gop(alpha,work,'+  ',m)
+      call cmult2(xbar,xx(1,1),alpha(1),n)
+      call cmult2(bbar,bb(1,1),alpha(1),n)
+      call add2s2(b,bb(1,1),-alpha(1),n)
+      do k = 2,m
+         call add2s2(xbar,xx(1,k),alpha(k),n)
+         call add2s2(bbar,bb(1,k),alpha(k),n)
+         call add2s2(b,bb(1,k),-alpha(k),n)
+      enddo
+      !Second round of CGS
+      do k = 1, m
+         if(ifwt) then
+            alpha(k) = vlsc3(xx(1,k),w,b,n)
+         else
+            alpha(k) = vlsc2(xx(1,k),b,n)
+         endif
+      enddo
+      call gop(alpha,work,'+  ',m) 
+      do k = 1,m
+         call add2s2(xbar,xx(1,k),alpha(k),n)
+         call add2s2(bbar,bb(1,k),alpha(k),n)
+         call add2s2(b,bb(1,k),-alpha(k),n)
+      enddo 
 
       return
       end
@@ -1062,16 +833,126 @@ c     The code can later be updated to support different matvec
 c     implementations, which would be discriminated by the character
 c     string "name6"
 
+      isd  = 1    ! This probably won't work for axisymmetric
       imsh = 1
-      isd  = 1
+      if (iftmsh(ifield)) imsh=2
+
       call axhelm  (b,x,h1,h2,imsh,isd)       ! b = A x
-      call dssum   (b,nx1,ny1,nz1)
+      call dssum   (b,lx1,ly1,lz1)
       call col2    (b,msk,n)
 
       return
       end
 c-----------------------------------------------------------------------
+c     New proj_ortho version
       subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
+
+      include 'SIZE'      ! nio
+      include 'TSTEP'     ! istep
+      include 'PARALLEL'  ! wdsize
+
+      real xx(n,1), bb(n,1), w(n)
+      character*6 name6
+      logical ifwt, ifvec
+      real tol, nrm, scl1, scl2, c, s
+      real work(mxprev), alpha(mxprev), beta(mxprev)
+      integer h
+
+      if(m.le.0) return !No vectors to ortho-normalize 
+
+      ! AX = B
+      ! Calculate dx, db: dx = x-XX^Tb, db=b-BX^Tb     
+         
+      do k = 1, m !First round CGS
+         if(ifwt) then
+            alpha(k) = 0.5*(vlsc3(xx(1,k),w,bb(1,m),n)
+     $                 +    vlsc3(bb(1,k),w,xx(1,m),n))
+         else
+            alpha(k) = 0.5*(vlsc2(xx(1,k),bb(1,m),n)
+     $                 +    vlsc2(bb(1,k),xx(1,m),n))
+         endif
+      enddo
+      call gop(alpha,work,'+  ',m)
+      nrm = sqrt(alpha(m)) !Calculate A-norm of new vector
+      do k = 1,m-1
+         call add2s2(xx(1,m),xx(1,k),-alpha(k),n)
+         call add2s2(bb(1,m),bb(1,k),-alpha(k),n)
+      enddo
+      
+      do k = 1, m-1 !Second round CGS
+         if(ifwt) then
+            beta(k) = 0.5*(vlsc3(xx(1,k),w,bb(1,m),n)
+     $                 +   vlsc3(bb(1,k),w,xx(1,m),n))
+         else
+            beta(k) = 0.5*(vlsc2(xx(1,k),bb(1,m),n)
+     $                 +   vlsc2(bb(1,k),xx(1,m),n))
+         endif
+      enddo
+      call gop(beta,work,'+  ',m-1)
+      do k = 1,m-1
+         call add2s2(xx(1,m),xx(1,k),-beta(k),n)
+         call add2s2(bb(1,m),bb(1,k),-beta(k),n)
+         !While we're at it,
+         !Sum weights from each round to get the total alpha
+         alpha(k) = alpha(k) + beta(k)
+      enddo
+
+      !Calculate A-norm of newest solution
+      if(ifwt) then
+        alpha(m) = glsc3(xx(1,m), w, bb(1,m), n) 
+      else
+        alpha(m) = glsc2(xx(1,m), bb(1,m), n) 
+      endif
+      alpha(m) = sqrt(alpha(m))
+      !dx and db now stored in last column of xx and bb
+
+c     Set tolerance for linear independence
+      tol = 1.e-7
+      if (wdsize.eq.4) tol=1.e-3
+
+c     Check for linear independence.
+      if(alpha(m).gt.tol*nrm) then !New vector is linearly independent    
+       
+         !Normalize dx and db
+         scl1 = 1.0/alpha(m) 
+         call cmult(xx(1,m), scl1, n)   
+         call cmult(bb(1,m), scl1, n)   
+
+         !We want to throw away the oldest information
+         !The below propagates newest information to first vector.
+         !This will make the first vector a scalar 
+         !multiple of x.
+         do k = m, 2, -1
+            h = k - 1   
+            call givens_rotation(alpha(h),alpha(k),c,s,nrm)
+            alpha(h) = nrm     
+            do i = 1, n !Apply rotation to xx and bb
+               scl1 = c*xx(i,h) + s*xx(i,k)
+               xx(i,k) = -s*xx(i,h) + c*xx(i,k)
+               xx(i,h) = scl1       
+               scl2 = c*bb(i,h) + s*bb(i,k)
+               bb(i,k) = -s*bb(i,h) + c*bb(i,k)    
+               bb(i,h) = scl2        
+            enddo
+         enddo
+
+      else !New vector is not linearly independent, forget about it
+         k = m !location of rank deficient column
+
+         if (nio.eq.0 .and. loglevel.gt.2) 
+     $      write(6,1) istep,k,m,name6,alpha(m),tol
+
+    1       format(i9,'proj_ortho: ',2i4,1x,a6,
+     $             ' Detect rank deficiency:',1p2e12.4)
+         
+         m = m - 1 !Remove column
+      endif   
+
+      return
+      end
+c-----------------------------------------------------------------------
+c     Old version of projection code
+      subroutine proj_ortho_full(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
       include 'TSTEP'     ! istep
@@ -1081,7 +962,7 @@ c-----------------------------------------------------------------------
       character*6 name6
       logical ifwt,ifvec
       integer flag(mxprev)
-      real normk,normp
+      real normk,normp,alpha
 
       if (m.le.0) return
 
@@ -1128,13 +1009,13 @@ c-----------------------------------------------------------------------
            call cmult(bb(1,k),scale,n)
            flag(k) = 1
 c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
-    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
-     $           ,1p2e12.4)
+c    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
+c     $           ,1p2e12.4)
          else
            flag(k) = 0
-           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
-    1      format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:'
-     $           ,1p2e12.4)
+c           if (nio.eq.0) write(6,1) istep,k,m,name6,normp,normk
+c    1      format(i9,'proj_ortho: ',2i4,1x,a6,' Detect rank deficiency:'
+c     $           ,1p2e12.4)
          endif
 
       enddo
@@ -1156,7 +1037,7 @@ c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
 c-----------------------------------------------------------------------
       subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
 
-      include 'SIZE'
+
       include 'CTIMER'
 
       real x(n),b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
@@ -1166,7 +1047,8 @@ c-----------------------------------------------------------------------
 
       etime0 = dnekclock()
 
-      call proj_get_ivar(m,mmx,ixb,ibb,ix,ib,ih1,ih2,ivar,n,ifvec,name6)
+      call proj_get_ivar(m,mmx,ixb,ibb,ix,ib,ih1,ih2,
+     $                             ivar,n,ifvec,name6)
 
 c     ix  is pointer to X,     ib  is pointer to B
 c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
@@ -1189,21 +1071,24 @@ c-----------------------------------------------------------------------
       logical ifwt,ifvec
 
       nn = n
-      if (ifvec) nn=ndim*n
+      if (ifvec) nn=ldim*n
 
       if (m.gt.0) call add2(x,xbar,n)      ! Restore desired solution
 
-      if (m.eq.mmx) then ! Push old vector off the stack
-         do k=2,mmx
-            call copy (xx(1,k-1),xx(1,k),nn)
-            call copy (bb(1,k-1),bb(1,k),nn)
-         enddo
-      endif
+       !Need to uncomment this if using old version
+c      if (m.eq.mmx) then ! Push old vector off the stack
+c         do k=2,mmx
+c            call copy (xx(1,k-1),xx(1,k),nn)
+c            call copy (bb(1,k-1),bb(1,k),nn)
+c         enddo
+c      endif
 
       m = min(m+1,mmx)
+      !print *, "m", m
       call copy        (xx(1,m),x,nn)   ! Update (X,B)
       call proj_matvec (bb(1,m),xx(1,m),n,h1,h2,msk,name6)
-      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) ! w=mult array
+      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) !New version
+c      call proj_ortho2  (xx,bb,n,m,w,ifwt,ifvec,name6) !Old version
 
       return
       end
@@ -1228,7 +1113,7 @@ c-----------------------------------------------------------------------
       ivar(1) = mmx
 
       nn = n
-      if (ifvec) nn = n*ndim  ! Number of entries in a vector
+      if (ifvec) nn = n*ldim  ! Number of entries in a vector
 
 
       ih1  = 1
@@ -1295,7 +1180,7 @@ c
       imsh  = 1
       nel   = nelfld(ifld)
 
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call copy (ub,u,n)             ! ub = u on boundary
       call dsavg(ub)                 ! Make certain ub is in H1
@@ -1308,7 +1193,7 @@ c
          r(i)=-r(i)*mask(i)          ! r = -M*A*ub
       enddo
 
-      call dssum  (r,nx1,ny1,nz1)    ! dssum rhs
+      call dssum  (r,lx1,ly1,lz1)    ! dssum rhs
 
       call project1
      $    (r,n,approx,napprox,h1,h2,mask,mult,ifwt,ifvec,name6)
@@ -1327,3 +1212,42 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine givens_rotation(a, b, c, s, r)
+
+      real a, b, c, s, r
+      real h, d
+
+      if(b.ne.0.0) then
+         h = hypot(a,b) !Can use local or local implementation
+         d = 1.0/h
+         c = abs(a)*d
+         s = sign(d,a)*b
+         r = sign(1.0,a)*h
+      else
+         c = 1.0
+         s = 0.0
+         r = a
+      endif
+        
+      return
+      end
+c-----------------------------------------------------------------------
+      ! Most compilers probably have this implemented as a 
+      ! library function (gfortran and ifort do)
+      ! so this is probably not actually necessary.
+      real function hypot(a, b)
+
+      real a, b, t, x, c, d, ix
+
+      c = abs(a)
+      d = abs(b)
+      x = max(c,d)
+      ix = 1.0/x      
+      t = min(c,d)
+      t = ix*t
+
+      hypot = x*sqrt(1.0+t*t) 
+
+      return
+      end
+c-----------------------------------------------------------------------      

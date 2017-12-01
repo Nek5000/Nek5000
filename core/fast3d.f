@@ -23,9 +23,9 @@ c
 c
       integer lbr,rbr,lbs,rbs,lbt,rbt,e
 c
-      real x(nx1,ny1,nz1,nelv)
-      real y(nx1,ny1,nz1,nelv)
-      real z(nx1,ny1,nz1,nelv)
+      real x(lx1,ly1,lz1,nelv)
+      real y(lx1,ly1,lz1,nelv)
+      real z(lx1,ly1,lz1,nelv)
       real axwt(lx2)
 
       ierr = 0
@@ -42,23 +42,23 @@ c        Set up matrices for each element.
 c
          if (param(44).eq.1) then
            call set_up_fast_1D_fem( sr(1,e),lr,nr ,lbr,rbr
-     $                      ,llr(e),lmr(e),lrr(e),zgm2(1,1),nx2,e)
+     $                      ,llr(e),lmr(e),lrr(e),zgm2(1,1),lx2,e)
          else
            call set_up_fast_1D_sem( sr(1,e),lr,nr ,lbr,rbr
      $                      ,llr(e),lmr(e),lrr(e),e)
          endif
          if (ifaxis) then
-            xsum = vlsum(wxm2,nx2)
-            do i=1,ny2
-               yavg = vlsc2(y(1,i,1,e),wxm2,nx2)/xsum
+            xsum = vlsum(wxm2,lx2)
+            do i=1,ly2
+               yavg = vlsc2(y(1,i,1,e),wxm2,lx2)/xsum
                axwt(i) = yavg
             enddo
             call set_up_fast_1D_fem_ax( ss(1,e),ls,ns ,lbs,rbs
-     $                 ,lls(e),lms(e),lrs(e),zgm2(1,2),axwt,ny2,e)
+     $                 ,lls(e),lms(e),lrs(e),zgm2(1,2),axwt,ly2,e)
          else
             if (param(44).eq.1) then
                call set_up_fast_1D_fem( ss(1,e),ls,ns ,lbs,rbs
-     $                      ,lls(e),lms(e),lrs(e),zgm2(1,2),ny2,e)
+     $                      ,lls(e),lms(e),lrs(e),zgm2(1,2),ly2,e)
             else
                call set_up_fast_1D_sem( ss(1,e),ls,ns ,lbs,rbs
      $                      ,lls(e),lms(e),lrs(e),e)
@@ -67,7 +67,7 @@ c
          if (if3d) then
             if (param(44).eq.1) then
                call set_up_fast_1D_fem( st(1,e),lt,nt ,lbt,rbt
-     $                      ,llt(e),lmt(e),lrt(e),zgm2(1,3),nz2,e)
+     $                      ,llt(e),lmt(e),lrt(e),zgm2(1,3),lz2,e)
             else
                call set_up_fast_1D_sem( st(1,e),lt,nt ,lbt,rbt
      $                      ,llt(e),lmt(e),lrt(e),e)
@@ -162,9 +162,9 @@ c
 c
       integer lbr,rbr,lbs,rbs,lbt,rbt,e
 c
-      real x(nx1,ny1,nz1,nelv)
-      real y(nx1,ny1,nz1,nelv)
-      real z(nx1,ny1,nz1,nelv)
+      real x(lx1,ly1,lz1,nelv)
+      real y(lx1,ly1,lz1,nelv)
+      real z(lx1,ly1,lz1,nelv)
       real axwt(lx2)
 
       ierr = 0
@@ -173,8 +173,8 @@ c
 c                                    __ __ __
 c        Now, for each element, compute lr,ls,lt between specified planes
 c
-         n1 = nx2
-         n2 = nx2+1
+         n1 = lx2
+         n2 = lx2+1
          nz0 = 1
          nzn = 1
          if (if3d) then
@@ -610,7 +610,7 @@ c       left elem.         middle elem.         right elem.
 c                   -1                     +1
 c
 c
-c    "bl" = (extrapolated) location of Gauss point NX2-1 in left elem.
+c    "bl" = (extrapolated) location of Gauss point lx2-1 in left elem.
 c
 c    "br" = (extrapolated) location of Gauss point 2 in right elem.
 c
@@ -815,7 +815,7 @@ c     ibc = 1  <==>  Dirichlet, outflow (no extension)
 c     ibc = 2  <==>  Neumann,   
 
 
-      do iface=1,2*ndim
+      do iface=1,2*ldim
          ied = eface(iface)
          ibc = -1
 
@@ -989,7 +989,7 @@ c       left elem.         middle elem.         right elem.
 c                   -1                     +1
 c
 c
-c    "bl" = (extrapolated) location of Gauss point NX2-1 in left elem.
+c    "bl" = (extrapolated) location of Gauss point lx2-1 in left elem.
 c
 c    "br" = (extrapolated) location of Gauss point 2 in right elem.
 c
@@ -1189,7 +1189,7 @@ c
       include 'SIZE'
       include 'SEMHAT'
 c
-      nr = nx1-1
+      nr = lx1-1
       call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zglhat,dgl,jgl,nr,wh)
       call do_semhat_weight(jgl,dgl,bgl,nr)
 c
@@ -1241,7 +1241,7 @@ c
       real bgl(1:n-1),zgl(1:n-1)
       real dgl(1:n-1,0:n),jgl(1:n-1,0:n)
 c
-      real w(0:1)
+      real w(0:2*n+1)
 c
       np = n+1
       nm = n-1
@@ -1359,7 +1359,7 @@ c
       integer bb0,bb1,eb0,eb1,n,n1
       logical l,r
       
-      n=nx1-1
+      n=lx1-1
       !bcs on E are from normal vel component
       if(lbc.eq.2 .or. lbc.eq.3) then !wall,sym - dirichlet velocity
          eb0=1
@@ -1441,7 +1441,7 @@ c
       real gl,gm,gr,gll,glm,gmm,gmr,grr
       real fac
       integer n
-      n=nx1-1
+      n=lx1-1
 c
 c
 c     compute the scale factors for J      
@@ -1556,10 +1556,10 @@ c-----------------------------------------------------------------------
       real l,l2d
       integer e
 
-      n2 = nx1-1
+      n2 = lx1-1
       nz0 = 1
       nzn = 1
-      nx  = nx1-2
+      nx  = lx1-2
       if (if3d) then
          nz0 = 0
          nzn = n2

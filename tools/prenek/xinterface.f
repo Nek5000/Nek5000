@@ -3,7 +3,7 @@
       STOP
       END
       SUBROUTINE READER(VALUE,IERR)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       IERR=0
       REWIND(13)
       WRITE(13,'(A70)')LINE        
@@ -61,7 +61,7 @@ c        mverr=rename(file,newfile)
         END
 
         SUBROUTINE MOUSE(XMOUSE,YMOUSE,BUTTON)
-        INCLUDE 'basics.inc'
+#     include "basics.inc"
 	INTEGER*4 RECORD(3),SIZE,PET
 	INTEGER ERRIND,MODE,ESW,XFORM,LDR,RETSIZ,ISTAT,DEVNO
 	REAL LOCX,LOCY,EAREA(4)
@@ -350,7 +350,7 @@ c    $CALL GSWRIT(XSCR(X),YSCR(Y),SIZE,STRING)
       END
 
       SUBROUTINE DEVINI(DEVICE)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       
       IFNOSEG= .TRUE.
 
@@ -637,14 +637,14 @@ C     white text
       END
 
       FUNCTION SCOORDX(WORLDX)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 
       SCOORDX=WORLDX/1.3*WINDOWW
       RETURN
       END
 
       FUNCTION SCOORDY(WORLDY)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       SCOORDY=ABS(WORLDY-1.0)*(WINDOWH - 180.0)
       RETURN
       END
@@ -722,7 +722,7 @@ c     IFFMAT=.TRUE.
       END
 c-----------------------------------------------------------------------
       subroutine mouse2(xmouse,ymouse,button,ifout)
-      include 'basics.inc'
+#     include "basics.inc"
       integer*4 record(3),size,pet
       integer errind,mode,esw,xform,ldr,retsiz,istat,devno
       real locx,locy,earea(4)

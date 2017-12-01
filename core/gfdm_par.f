@@ -57,7 +57,6 @@ c-----------------------------------------------------------------------
             write(6,*) 'gfdm_array_check fail A:',lelg_sm,ltfdm2,lelg
             write(6,*) 'modify lelg_sm,ltfdm2 in ZPER; makenek clean'
          endif
-         nz1 = 1/(nx1-ny1)
          call exitt
       endif
 
@@ -72,7 +71,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_mappings(nx,ny,nz) ! Typ., nx2,ny2,nz2
+      subroutine gfdm_mappings(nx,ny,nz) ! Typ., lx2,ly2,lz2
 c
 c     This routine establishes SEM to FDM mappings for pressure arrays.
 c

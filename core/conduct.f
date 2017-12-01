@@ -27,10 +27,11 @@ C
       endif
 
 
-      napproxt(1) = laxtt  ! Fix this... pff 10/10/15
+      ifld1 = ifield-1
+      napproxt(1,ifld1) = laxtt
 
       nel    = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       if (igeom.eq.1) then   ! geometry at t^{n-1}
 
@@ -40,17 +41,10 @@ C
       else                   ! geometry at t^n
 
          IF (IFPRINT) THEN
-         IF (IFMODEL .AND. IFKEPS) THEN
-            NFLDT = NFIELD - 1
-            IF (IFIELD.EQ.NFLDT.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Turbulence Model - k/epsilon solution'
-            ENDIF
-         ELSE
-            IF (IFIELD.EQ.2.AND.NID.EQ.0) THEN
-               WRITE (6,*) ' Temperature/Passive scalar solution'
-            ENDIF
+            IF (IFIELD.EQ.2.AND.NID.EQ.0)
+     $          WRITE (6,*) ' Temperature/Passive scalar solution'
          ENDIF
-         ENDIF
+
          if1=ifield-1
          write(name4t,1) if1-1
     1    format('PS',i2)
@@ -86,13 +80,13 @@ c    $                 ,imesh,tolht(ifield),nmxh,isd)
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approxt,napproxt,bintm1)
+     $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
          else
            call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
      $                   ,imesh,tolht(ifield),nmxh,1
-     $                   ,approxt,napproxt,binvm1)
+     $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
          endif 
 
          call add2    (t(1,1,1,1,ifield-1),ta,n)
@@ -124,12 +118,14 @@ c     mass matrix on the Gauss-Lobatto mesh.
       include 'SOLN'
       include 'TSTEP'
 
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
 
       if (.not.ifcvfld(ifield)) time = time-dt ! Set time to t^n-1 for user function
 
-      call setqvol (bq(1,1,1,1,ifield-1))
-      call col2    (bq(1,1,1,1,ifield-1) ,bm1,n)
+      if (nio.eq.0.and.loglevel.gt.2) 
+     $   write(6,*) 'makeuq', ifield, time
+      call setqvol(bq(1,1,1,1,ifield-1))
+      call col2   (bq(1,1,1,1,ifield-1) ,bm1,n)
 
       if (.not.ifcvfld(ifield)) time = time+dt ! Restore time
 
@@ -153,7 +149,7 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 #endif
 
       nel   = nelfld(ifield)
-      nxyz1 = nx1*ny1*nz1
+      nxyz1 = lx1*ly1*lz1
       n     = nxyz1*nel
 
       do iel=1,nel
@@ -198,9 +194,9 @@ c
       real bql(lx1,ly1,lz1,lelt)
 c
       ielg = lglel(iel)
-      do 10 k=1,nz1
-      do 10 j=1,ny1
-      do 10 i=1,nx1
+      do 10 k=1,lz1
+      do 10 j=1,ly1
+      do 10 i=1,lx1
          if (optlevel.le.2) call nekasgn (i,j,k,iel)
          qvol = 0.0
          call userq   (i,j,k,ielg)
@@ -225,7 +221,7 @@ C---------------------------------------------------------------
       common /scruz/ ta (lx1*ly1*lz1*lelt)
 
       nel = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       call convop  (ta,t(1,1,1,1,ifield-1))
       do i=1,n
@@ -273,7 +269,7 @@ C-----------------------------------------------------------------------
       common /scrns/ tb(lt),h2(lt)
 
       nel   = nelfld(ifield)
-      n     = nx1*ny1*nz1*nel
+      n     = lx1*ly1*lz1*nel
    
       const = 1./dt
       do i=1,n
@@ -305,7 +301,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
 
       do ilag=nbdinp-1,2,-1
          call copy (tlag(1,1,1,1,ilag  ,ifield-1),
@@ -320,7 +316,7 @@ c-----------------------------------------------------------------------
       subroutine outfldrq (x,txt10,ichk)
       include 'SIZE'
       include 'TSTEP'
-      real x(nx1,ny1,nz1,lelt)
+      real x(lx1,ly1,lz1,lelt)
       character*10 txt10
 c
       integer idum,e
@@ -330,8 +326,8 @@ c
       if (idum.lt.0) return
 c
 C
-      mtot = nx1*ny1*nz1*nelv
-      if (nx1.gt.8.or.nelv.gt.16) return
+      mtot = lx1*ly1*lz1*nelv
+      if (lx1.gt.8.or.nelv.gt.16) return
       xmin = glmin(x,mtot)
       xmax = glmax(x,mtot)
 c
@@ -346,14 +342,14 @@ c
          write(6,116) txt10,k,ie,xmin,xmax,istep,time
          do l=0,1
             write(6,117) 
-            do j=ny1,1,-1
-              if (nx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
-              if (nx1.eq.8) write(6,118) ((x(i,j,k,e+l),i=1,nx1),e=1,1)
+            do j=ly1,1,-1
+              if (lx1.eq.2) write(6,102) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.3) write(6,103) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.4) write(6,104) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.5) write(6,105) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.6) write(6,106) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.7) write(6,107) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
+              if (lx1.eq.8) write(6,118) ((x(i,j,k,e+l),i=1,lx1),e=1,1)
             enddo
          enddo
       enddo
@@ -402,7 +398,7 @@ C
 c     QUESTIONABLE support for Robin BC's at this point! (5/15/08)
 
       nel    = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       if (igeom.eq.1) then   ! geometry at t^{n-1}
 
@@ -430,8 +426,8 @@ C        New geometry
          call bcneusc (tb,1)        ! Modify rhs for flux bc
          call add2    (bq(1,1,1,1,ifield-1),tb,n)
 
-         call dssum   (bq(1,1,1,1,ifield-1),nx1,ny1,nz1)
-         call dssum   (h2,nx1,ny1,nz1)
+         call dssum   (bq(1,1,1,1,ifield-1),lx1,ly1,lz1)
+         call dssum   (h2,lx1,ly1,lz1)
 
          call invcol3 (t(1,1,1,1,ifield-1),bq(1,1,1,1,ifield-1),h2,n)
 
@@ -458,7 +454,7 @@ c
      $              ,h2(lx1,ly1,lz1,lelt)
 
       nel = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       intype = 0
       if (iftran) intype = -1
@@ -489,8 +485,8 @@ c     Face weight: .5 interior, 1. boundary
 
       integer e,f,pf
 
-      nface = 2*ndim
-      call dsset(nx1,ny1,nz1)
+      nface = 2*ldim
+      call dsset(lx1,ly1,lz1)
 
       eta =  5         !   Semi-optimized value, single domain
 
@@ -569,7 +565,7 @@ c-----------------------------------------------------------------------
 
       if (ifany) then
 
-        call setup_dg_gs(dg_hndlx,nx1,ny1,nz1,nelt,nelgt,vertex)
+        call setup_dg_gs(dg_hndlx,lx1,ly1,lz1,nelt,nelgt,vertex)
         call dg_set_fc_ptr
 
         param(59)=1
@@ -578,7 +574,7 @@ c-----------------------------------------------------------------------
       endif
 
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       call invers2(binvdg,bm1,n)
 
       call set_dg_wgts
@@ -624,7 +620,7 @@ C
       call dg_setup2(tmask(1,1,1,1,ifield-1))
 
       nel = nelfld(ifield)
-      n   = nx1*ny1*nz1*nel
+      n   = lx1*ly1*lz1*nel
 
       if (igeom.eq.1) then   ! old geometry at t^{n-1}
 

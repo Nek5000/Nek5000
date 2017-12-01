@@ -71,14 +71,14 @@ c-----------------------------------------------------------------------
       nv = nx1*ny1*nz1*nelv
       nt = nx1*ny1*nz1*nelt
 
-      call sub3(terr,t,t(1,1,1,1,2),nt)
-      terrmax = glamax(terr,nt)
-
       if (mod(istep,10).eq.0) then
+         call sub3(terr,t,t(1,1,1,1,2),nt)
+         terrmax = glamax(terr,nt)
+
          tmax = glmax(t ,nt)
          smax = glmax(t(1,1,1,1,2),nt)
          umax = glmax(vx,nt)
-         if (nid.eq.0) write(6,1) istep,time,umax,tmax,terrmax
+         if (nid.eq.0) write(6,1) istep,time,smax,tmax,terrmax
    1     format(i9,1p4e12.5,' tmax')
       endif
 

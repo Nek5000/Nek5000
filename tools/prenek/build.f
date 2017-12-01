@@ -16,7 +16,7 @@ C
 c-----------------------------------------------------------------------
       subroutine build
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       if (ifconj_merge) then
 
@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
 
 c     Menu-based module that prompts the user to input corners.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -166,7 +166,7 @@ c-----------------------------------------------------------------------
 
 c     Menu-based module that prompts the user to input corners.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -293,7 +293,6 @@ C        MODEL and CURVE know about it, too
             ifundo = .false.
          else
             call prs('ERROR: Already at the original mesh$')
-            write(*,*) '(build)itsave=',itsave
          endif
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
@@ -496,7 +495,7 @@ c         construct elemental mesh.
 
 c     Call routines that set boundary conditions.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -595,7 +594,7 @@ c     All internal boundaries are set.  Query remaining bcs
       end
 c-----------------------------------------------------------------------
       subroutine readat
-      include 'basics.inc'
+#     include "basics.inc"
       logical iffold,ifhold
       character chtemp*3
       character*80 string
@@ -972,7 +971,7 @@ c-----------------------------------------------------------------------
       subroutine setscl
 C     Sets scale factors
 C     
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFMENU
       REAL XSC(4),YSC(4)
       GRID=PARAM(18)
@@ -1141,7 +1140,7 @@ C
 c-----------------------------------------------------------------------
       subroutine imp_mesh(ifquery_displace)
 
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 d
       character*1  fnam1(70)
       character*70 fname
@@ -1162,7 +1161,6 @@ c-----------------------------------------------------------------------
 
       call blank(fname,70)
 
-      write(*,*) '(imp_mesh)itsave=',itsave
       if (ifundo) then
          itsave=itsave-1
          if (itsave.le.9) then
@@ -1174,11 +1172,13 @@ c-----------------------------------------------------------------------
          endif
          write(fname,'(A4,A3)') 'tmp.',ntsave
       else
-         call prs('input name of new .rea file$')
+         if (ifconj_merge) then
+            call prs(' Enter name of the solid session$')
+         else
+            call prs('input name of new .rea file$')
+         endif
          call res  (fname,70)
       endif
-
-      write(*,*) 'fname=',fname
 
       ifdisplace  = .false.
       iftranslate = .false.
@@ -1584,7 +1584,7 @@ c-----------------------------------------------------------------------
 c
 c     Read a file until "key" is found or eof is found.
 c
-      include 'basics.inc'
+#     include "basics.inc"
 
       parameter (maxv = 8*nelm)
       real      xp(maxv),yp(maxv),zp(maxv)
@@ -1761,7 +1761,7 @@ c-----------------------------------------------------------------------
 c
 c     Read vtk-like unstructured mesh format
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       parameter (maxv = 8*nelm)
       integer        vv(8,nelm),vnum(maxv)
@@ -1909,7 +1909,7 @@ c-----------------------------------------------------------------------
 c
 c     Read vtk unstructured mesh format
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       parameter (maxv = 8*nelm)
       integer        vv(8,nelm),vnum(0:maxv-1)
@@ -2089,7 +2089,7 @@ c-----------------------------------------------------------------------
 c
 c     Check for split (parent) - join (child) nonconforming interfaces.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifclose,ifok
 c
       integer jvs(4,6)
@@ -2174,7 +2174,7 @@ c-----------------------------------------------------------------------
       logical function ifclose(ie,is,je,js)
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer jvs(4,6)
       save    jvs
@@ -2210,7 +2210,7 @@ c                  (g1,e1) = (0.,0.) and  (g2,e2) = (1.,0.),  or
 c                  (g1,e1) = (1.,0.) and  (g2,e2) = (0.,0.).
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer jvs(4,6)
       save    jvs
@@ -2259,7 +2259,7 @@ c
 c     Currently predicated on assumption that faces are PLANAR.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       logical ifok,ifxoeq0
 c
@@ -2380,7 +2380,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine chk_right_hand(nl)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real xyz(2,4)
 c
@@ -2423,7 +2423,7 @@ C            cyclic permutation (counter clock-wise):  reverse
       end
 c-----------------------------------------------------------------------
       subroutine special_delete
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer dflag(nelm),e,emin,ecount
 c
@@ -2476,7 +2476,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine list_delete
-      include 'basics.inc'
+#     include "basics.inc"
       character*80 dname
 
       common /idelt/ dflag(nelm)
@@ -2518,7 +2518,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine special_delete_cyls
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer dflag(nelm),e,emin,ecount
 c
@@ -2571,7 +2571,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_std_bcs(nelo)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       do e=nelo+1,nel
@@ -2655,7 +2655,7 @@ c-----------------------------------------------------------------------
 
 c***  BIG DECISION POINT  ****
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       nchoic = 0
 
@@ -2743,7 +2743,7 @@ c        nchoic = nchoic+1
 c-----------------------------------------------------------------------
       subroutine cell_cell_connectivity
 
-      include 'basics.inc'
+#     include "basics.inc"
 
 
       parameter(lpts=8*nelm)
@@ -3485,7 +3485,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine chker
 
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     character*1 ans
 
@@ -3557,7 +3557,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine delete  ! Query to delete elements
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical iftmp
 
       if (nel.eq.0) call prs('ERROR: No elements to delete$')
@@ -3704,7 +3704,7 @@ c150  continue
       end
 c-----------------------------------------------------------------------
       subroutine set_igroup(nelv_i,nelt_i)
-      include 'basics.inc'
+#     include "basics.inc"
 
       ncond=nelt_i - nelv_i ! recalculate ncond
       do i=nelv_i+1,nelt_i

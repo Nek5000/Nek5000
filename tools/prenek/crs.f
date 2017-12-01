@@ -65,7 +65,7 @@ c
 c     Adjust adjacency arrays and vertex to acct for
 c     periodic bcs.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer n,nv
@@ -149,7 +149,7 @@ c
 c     Return list of corresponding vertices when (iface,ie) is
 c     "periodic" with (jf,je).
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer vlist(4,2)
@@ -280,7 +280,7 @@ c
 c     Adjust adjacency arrays and vertex to acct for
 c     periodic bcs.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       nc       = 2**ndim
@@ -330,7 +330,7 @@ c
 c     Adjust adjacency arrays and vertex to acct for
 c     periodic bcs.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical if_any_per

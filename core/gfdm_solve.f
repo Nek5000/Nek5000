@@ -34,7 +34,7 @@ c     Set up diagonal for solver
       msfs = msp(pst2lex(2),mfld)
       msft = msp(pst2lex(3),mfld)
 
-      ntot  = nx2*ny2*nz2*nelv
+      ntot  = lx2*ly2*lz2*nelv
 
       m     = ntot/mp
       nwave = mcex

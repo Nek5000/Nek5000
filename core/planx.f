@@ -71,7 +71,7 @@ C--------------------------------------------------------------------
       common /cgeom/ igeom
 
       IF (NBDINP.EQ.3.and.igeom.le.2) THEN
-         NTOT2 = NX2*NY2*NZ2*NELV
+         NTOT2 = lx2*ly2*lz2*NELV
          CALL COPY (PRLAG,PR,NTOT2)
       ENDIF
       RETURN
@@ -96,8 +96,8 @@ C---------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      NTOT1 = NX1*NY1*NZ1*NELV
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT1 = lx1*ly1*lz1*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       CALL BCNEUTR

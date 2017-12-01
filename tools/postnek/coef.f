@@ -13,7 +13,7 @@ C            - GAUSS-LEGENDRE LOBATTO MESH (SUFFIX M1)
 C
 C-----------------------------------------------------------------
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       REAL PN(nxm)
 C
@@ -100,7 +100,7 @@ C         BM1                  -   Mass matrix
 C
 C------------------------------------------------------------------
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       PARAMETER (NXM3=NXM*NXM*NXM)
@@ -199,7 +199,7 @@ C
 C     Compute surface data: areas, normals and tangents
 C
 C--------------------------------------------------------------------
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       PARAMETER (NXM3=NXM*NXM*NXM)
@@ -232,7 +232,7 @@ C
 C     Compute areas, normals and tangents (3D geom.)
 C
 C--------------------------------------------------------------------
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       PARAMETER (NXM3=NXM*NXM*NXM)
       common /ctmp4/ xrm1,xsm1,xtm1,yrm1,ysm1,ytm1,zrm1,zsm1,ztm1
@@ -317,7 +317,7 @@ C
 C     Compute areas, normals and tangents (2D and Axisymmetric geom.)
 C
 C--------------------------------------------------------------------
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c
       real area(nx,4),unx(ny,4),uny(ny,4)
       real xrm1(nx,ny),xsm1(nx,ny),yrm1(ny,ny),ysm1(nx,ny)
@@ -378,7 +378,7 @@ C
 c-----------------------------------------------------------------------
       SUBROUTINE SETWGTR (WGTR1,WGTR2,WGTR3,WGTR4,ie)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.

@@ -8,7 +8,7 @@ C     (2) Check previous spatial discretization
 C     (3) Map (K1,N1) => (K2,N2) if necessary
 C
 C----------------------------------------------------------------------
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
  
       common /regularize/ regdir
@@ -768,7 +768,7 @@ C
 c-----------------------------------------------------------------------
       subroutine mapdmp(yd,xd,ieg,nxr,nyr,nzr,IF_BYTE_SW)
 C----------------------------------------------------------------------
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       PARAMETER (LXYZ1=NXM*NYM*NZM)
@@ -1113,7 +1113,7 @@ c     IFFMAT=.TRUE.
       END
 c-----------------------------------------------------------------------
       subroutine reset_xc
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       integer ied(8)

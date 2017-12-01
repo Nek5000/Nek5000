@@ -73,7 +73,7 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a .map file
 
-      include 'SIZE' 
+#     include "SIZE"
 
       parameter(lpts=8*lelm)
       common /carrayi/ cell (lpts) , pmap (lpts)
@@ -96,7 +96,6 @@ c     read nekton .rea file and make a .map file
 
       integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
       integer     e1,c1,f1
-
 
       wdsize=4
       eps=1.0e-12
@@ -207,8 +206,7 @@ c-----------------------------------------------------------------------
 
 c     read nekton .rea file and make a mesh
 
-      include 'SIZE'
-
+#     include "SIZE" 
 
       integer      cell(1)
       character*3  cbc (6,1)
@@ -373,8 +371,8 @@ c-----------------------------------------------------------------------
 c
 c     Scan for xyz data, read it, and set characteristic length, d2
 c
-      include 'SIZE'
 
+#     include "SIZE" 
      
       character*80 string
 c
@@ -1365,7 +1363,8 @@ c     c     - nv*nel
 c     w1    - nv*nel
 c     w2    - nv*nel
 c
-      include 'SIZE'
+
+#     include "SIZE"
 
       integer pmap(nel),order(1),elist(nel),cell(nv,1),part,c(nv,1)
       integer w1(1),w2(1)
@@ -1506,8 +1505,8 @@ c     elist - list of active elements
 c     cell  - list of vertices for each element (in global addr. space)
 c     mo    - current max(order)
 c
-      include 'SIZE'
 
+#     include "SIZE"
  
       integer elist(1),cell(nv,1),order(1)
       integer e,v
@@ -1623,7 +1622,7 @@ c
    3     format(2i8,1x,a6,20(10i9,/,10x))
       endif
       if (ic.eq.0) then
-         write(6,*) 'cont: ',name6,nid,'  ??'
+         write(6,*) 'cont: ',name6,nid
 c        read (5,*) adum
       endif
 
@@ -1664,7 +1663,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine dmp_mapfile (pmap,nel,depth,cell,nv,nrnk,npts,noutflow)
 
-      include 'SIZE'
+#     include "SIZE"
 
       common /sess/ session
       character*80 session
@@ -1964,8 +1963,8 @@ c-----------------------------------------------------------------------
 c
 c     Order outflow nodes last
 c
-      include 'SIZE'
 
+#     include "SIZE"
  
       integer cell(nv,nel),order(1)
       character*3      cbc(6,nel)
@@ -3080,8 +3079,7 @@ c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
 c-----------------------------------------------------------------------
       subroutine mult_chk(dx,ndim,nv,nel,cell,nrnk)
 
-      include 'SIZE'
-
+#     include "SIZE"
 
       real dx(0:ndim,nv,nel)
       integer cell(nv,nel)
@@ -3114,116 +3112,11 @@ c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
       return
       end
 c-----------------------------------------------------------------------
-c     subroutine out_geofile2(dx,ndim,nv,nel,cell,nrnk)
-
-c     include 'SIZE'
-
- 
-c     real dx(0:ndim,nv,nel)
-c     integer cell(nv,nel)
-
-c     parameter(lpts=8*lelm)
-c     common /carrayw/ w1   (lpts) , w2   (lpts)
-c    $               , w3   (lpts) , w4   (lpts)
-c    $               , w5   (lpts)
-
-c     integer e,v,emax,vmax
-
-c     call rzero(w4,nrnk)
-c     mult_max = 0
-c     do e=1,nel                     ! Get global vertex multiplicities
-c     do v=1,nv
-c        i = cell(v,e)
-c        if (i.gt.nrnk) then
-c           write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
-c   1       format(i9,i3,2i9,1p3e12.4,' i>nrnk! ERROR!')
-c        else
-c           w4(i)=w4(i)+1.
-c           mult = w4(i)
-c           mult_max = max(mult_max,mult)
-c        endif
-c     enddo
-c     enddo
-c     write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
-
-c     do i=1,nrnk
-c        if (w4(i).gt.0) then
-c           w4(i)=1./w4(i)
-c        else
-c           write(6,*) i,' detected blank index in geofile2'
-c        endif
-c     enddo
-
-c     call rzero(w1,nrnk)
-c     call rzero(w2,nrnk)
-c     call rzero(w3,nrnk)
-c     do e=1,nel
-c     do v=1,nv
-c        i = cell(v,e)
-c        if (i.le.nrnk) then           ! average global vertex coords
-c           w1(i)=w1(i)+dx(1,v,e)*w4(i)
-c           w2(i)=w2(i)+dx(2,v,e)*w4(i)
-c           w3(i)=w3(i)+dx(3,v,e)*w4(i)
-c        endif
-c     enddo
-c     enddo
-
-c     dmax = 0.
-c     do e=1,nel
-c     do v=1,nv
-c        i = cell(v,e)
-c        if (i.le.nrnk) then    ! check for global/local Euclidian variance
-c           ddx = dx(1,v,e)-w1(i)
-c           ddy = dx(2,v,e)-w2(i)
-c           ddz = dx(3,v,e)-w3(i)
-c           dd2 = ddx*ddx + ddy*ddy
-c           if (ndim.eq.3) dd2 = dd2 + ddz*ddz
-c           if (dd2.ge.dmax) then
-c              dmax = dd2
-c              imax = i
-c              emax = e
-c              vmax = v
-c           endif
-c        endif
-c     enddo
-c     enddo
-c     if (dmax.gt.0) dmax = sqrt(dmax)
-c     write(6,3) imax,emax,vmax,dmax
-c     write(6,4) w1(imax),w2(imax),w3(imax),' global xyz'
-c     write(6,4) (dx(k,vmax,emax),k=1,3)   ,' local  xyz'
-c   3 format(2i9,i3,1pe12.4,'dmax xyz')
-c   4 format(1p3e14.6,1x,a11)
-
-c
-c     Write coordinates to a file
-c
-c     write(6 ,*) 'Dumping vertex coordinates to unit 12'
-c     write(12,*) nrnk
-
-c     if (ndim.eq.3) then
-c      do i=1,nrnk
-c        if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i),w3(i)
-c        write(12,5) w1(i),w2(i),w3(i)
-c      enddo
-c     else
-c      do i=1,nrnk
-c        if (mod(i,10000).eq.0) write(6,6) i,w1(i),w2(i)
-c        write(12,5) w1(i),w2(i)
-c      enddo
-c     endif
-
-c   5 format(1p3e14.6)
-c   6 format(i9,1x,1p3e14.6)
-
-c     return
-c     end
-c-----------------------------------------------------------------------
       subroutine rd_bc_bin(cbc,bc,nelv,nelt,ifbswap)
 
 c     .Read Boundary Conditions (and connectivity data)
 
-      include 'SIZE'
-
+#     include "SIZE"
 
       character*3 cbc(6,lelm)
       real*8      bc (5,6,lelm)
@@ -3280,7 +3173,7 @@ c              write(6,*) k,' dobc1 ',nbc_max
 c-----------------------------------------------------------------------
       subroutine buf_to_bc(cbl,bl,buf,nelt)  ! version 1 of binary reader
 
-      include 'SIZE'
+#     include "SIZE"
 
       character*3 cbl(6,nelt)
       real*8      bl(5,6,nelt)
@@ -4042,8 +3935,8 @@ c geometric bisection if that fails do  non-geometric bisection
 c
 c Ensures that all graphs are connected(unless infinite loop occurred)
 c
-      include 'SIZE'
 
+#     include "SIZE"
     
       integer pmap(nel),n1,n2,ndim,elist(nel),w1(1),w2(1)
       integer cell(nv,1),c(nv,nel)      

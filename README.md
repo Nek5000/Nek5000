@@ -30,9 +30,6 @@ consistent place for users to place their problem cases.
 #### `examples`
 reserved for the Nek5000 example problems.
 
-#### `doc`
-contains the user documentation in HTML and PDF.
-
 #### `3rd_party`
 its purpose it to provide a consistent place for 3rd party code.
 
@@ -54,7 +51,7 @@ contains partioning data
 contains user specific code to initialize solver, set source terms and boundary conditions or to manipulate solver internals. 
 
 #### `foo.his`
-contains probing points
+contains probing points (on input) and data (on output)
 
 #### `foo.f00000`
 contains checkpoint data
@@ -104,7 +101,7 @@ visnek turbChannel; visit -o turbChannel.nek5000 # requires a VisIt installation
 
 ## Meshing
 
-Nek5000 is mainly a solver. However, simple box type meshes can be generated with the `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3`. We provide mesh converters like `exo2nek` and `msh2nek` which are quite handy if you want to use your favorite mesh generator. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party meshing tools. 
+Nek5000 is mainly a solver. However, simple box type meshes can be generated with the `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3`. We provide the `exo2nek` mesh converter which are quite handy if you want to use your favorite mesh generator. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party meshing tools. 
 
 ## Visualization
 
@@ -112,8 +109,7 @@ Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulatio
 
 ## Documentation
 
-Visit our online [User's Guide](http://Nek5000.github.io/NekDoc/) which is also available in [PDF](http://nek5000.github.io/NekDoc/Nek_users.pdf).
-
+Visit our online [User's Guide](http://Nek5000.github.io/NekDoc/).
 ## Troubleshooting
 
 If you run into problems compiling, installing, or running Nek5000, first check the User's Guide. If you are not able to find a solution to your problem there, please send a message to the User's Group [mailing list](https://lists.mcs.anl.gov/mailman/listinfo/nek5000-users).

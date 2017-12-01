@@ -1,27 +1,19 @@
 [GENERAL]
 startFrom = baseflow.restart
-stopat = numSteps #endTime
 numsteps = 1000
-perturbationmodes = 1
-userparam01 = 0 # 0-direct; 1-adjoint
+
 userparam02 = 0.01500 # PRANDTL number
 userparam03 = 45000.0 # RAYLEIGH number
+
 dt = -5.0e-03
-timestepper = bdf #char #steady
-torder = 2
-writecontrol = timeStep #runTime
 writeinterval = 90000
-dealiasing = yes
-filtering = no
-filterweight = 1e-02
 
 [PROBLEMTYPE]
-perturbations = yes
+equation = incompLinNS # incompLinAdjNS
 solveBaseflow = no
 variableProperties = yes
 
 [PRESSURE]
-preconditioner = semg
 residualtol = 1e-08
 residualproj = no
 
@@ -32,7 +24,6 @@ density = 1
 viscosity = 1.0
 
 [TEMPERATURE] # temperature with Hmholtz 
-conjugateHeatTransfer = no
 rhoCp = 1.0
 conductivity = 0.5
 residualTol = 1e-08

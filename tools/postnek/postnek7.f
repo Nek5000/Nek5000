@@ -1,6 +1,6 @@
       SUBROUTINE SRFPLOT
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INTEGER IERR
       INTEGER ICALLD,LOPEN
@@ -44,7 +44,7 @@ C
 C
 C     Surface plotting routines for surface (not volume) based data
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       LOGICAL IFCRV(4)
@@ -142,7 +142,7 @@ C
 C
 C     Write plot labels
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
@@ -278,7 +278,7 @@ C
 C     Extract a plane of data from array X and place into
 C     output array work, with stride NOUT.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XPLOT(NOUT,1),XX(1)
 C
       II=0
@@ -293,7 +293,7 @@ C
 C
 C     Set up WORK array according to current plotting state.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ WORK1(LXYZ),WORK2(LXYZ)
@@ -494,7 +494,7 @@ C
 C
 C     Sort plotting surfaces by zdepth
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /CTMPS/  SCRNAM(NELM,6) , IND(NELM,6)
       CHARACTER*16 SCRNAM
@@ -551,7 +551,7 @@ C
 C
 C     Get the surface data
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       INTEGER IERR
@@ -777,53 +777,14 @@ C
       endif
       RETURN
       END
-c     SUBROUTINE SURFCHK(IERR,mOPEN)
-C
-C     Check the file srfdata
-C
-c     INCLUDE 'basics.inc'
-c     INCLUDE 'basicsp.inc'
-c     CHARACTER*80 HEADER
-c     CHARACTER*1  HEADR1(80)
-c     EQUIVALENCE (HEADER,HEADR1)
-c     INTEGER ICALLD
-c     SAVE    ICALLD
-c     DATA    ICALLD /0/
-c     CHARACTER*8 LCKFLE
-c     CHARACTER*4 LOCK 
-c     SAVE        LOCK,LCKFLE
-c     DATA        LOCK /'Lock'/
-c
-c     IERR=1
-c     NPMAX=1
-C
-c     CALL GETNAM(LCKFLE,LOCK,mOPEN)
-c     OPEN(UNIT=39,FILE=LCKFLE,STATUS='OLD',ERR=2000)
-C
-C     Lock file was  found
-c     IERR=0
-c     ICALLD=ICALLD+1
-c     CLOSE(UNIT=39)
-c     CALL BLANK(S,80)
-c     WRITE(6,100) LCKFLE
-c     WRITE(S,100) LCKFLE
-c 100 FORMAT('rm -f ',A8)
-c     CALL SYSTEM(S)
-c     RETURN
-C     File wasn't found
-c2000 CONTINUE
-c     IERR=2
-c     RETURN
-c     END
+
       SUBROUTINE SRFILE(IERR,FILE1,JNID,IUNIT,mOPEN)
-C
-C     Try to see if we can open a surface data file
-C
-      INCLUDE 'basics.inc'
+
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
-C
-C
+
       CHARACTER*80  FILE1
+
 c     write(6,14) sesion
 c  14 format(2x,'session name:  ',a14)
 C
