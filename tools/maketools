@@ -85,8 +85,45 @@ if [ ! -d $bin_nek_tools  ]; then
   exit 1
 fi
 
+# trying to figure which compiler the wrapper is using
+FCok=0
+
+FCcomp_=`$FC -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
+FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+  FCok=1
+fi
+
+if [ $FCok -eq 0 ]; then
+  FCcomp_=`$FC -show 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
+  FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
+  fi
+fi
+
+if [ $FCok -eq 0 ]; then
+  FCcomp_=`$FC -craype-verbose 2>/dev/null 1>.tmp || true`
+  FCcomp=`cat .tmp | awk '{print $1}' | awk -F/ '{print $NF}' || true`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
+  fi
+fi
+
+if [ $FCok -eq 0 ]; then
+  FCcomp=`echo $FC | awk '{print $1}'`
+  if [ -f "`which $FCcomp 2>/dev/null`" ]; then
+    FCok=1
+  fi
+fi
+
+\rm -f .tmp
+if [ $FCok -eq 0 ]; then
+  FCcomp="unknown"
+fi
+
 PPPO=""
-case $FC in
+case $FCcomp in
   *pgf*)       R8="-r8"
                CPPF="-Mpreprocess"
                BIGMEM="-mcmodel=medium"
