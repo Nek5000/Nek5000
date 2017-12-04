@@ -9,16 +9,18 @@ c
 
       if (ifile.eq.1) then
 
-         nps  = 0
+         dnps  = 0
          call scanout(string,'PARAMETERS FOLLOW',17,10,11)
          call lineout(11,string,80)
          read(string,*) nparam
          do i=1,nparam
             call blank(string,80)
             read(10,'(a80)') string
-            if(i.eq.23) read(string,*) nps
+            write(6,*) string
+            if(i.eq.23) read(string,*) dnps
             call lineout(11,string,80) 
          enddo
+         nps = dnps
 
          call scanout(string,'LOGICAL',7,10,11)  ! output to 11
          call lineout(11,string,80)

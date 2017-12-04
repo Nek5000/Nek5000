@@ -630,8 +630,8 @@ C           -C IS Target Courant number
             DISCR=B**2-4*A*C
             DTOLD=DT
             IF(DISCR.LE.0.0)THEN
-               if (nio.eq.0) 
-     $         PRINT*,'Problem calculating new DT Discriminant=',discr
+c               if (nio.eq.0) 
+c     $         PRINT*,'Problem calculating new DT Discriminant=',discr
                DT=DT*(CTARG/COURNO)
 C               IF(DT.GT.DTOLD) DT=DTOLD
             ELSE IF(ABS((VCOUR-VOLD)/VCOUR).LT.0.001)THEN
@@ -1206,35 +1206,26 @@ C
       subroutine diagnos
       return
       end
-C
+
+c-----------------------------------------------------------------------
       subroutine setsolv
       include 'SIZE'
-      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-      IFSOLV = .FALSE.
-      return
-      end
 
-      subroutine mggo
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+
+      ifsolv = .false.
+
       return
       end
-      subroutine mginit
-      return
-      end
-C-----------------------------------------------------------------------
-C
-C     New files from LH on stress formulation (SFSUBS.FOR)
-C
-C-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine hmhzsf (name,u1,u2,u3,r1,r2,r3,h1,h2,
      $                   rmask1,rmask2,rmask3,rmult,
      $                   tol,maxit,matmod)
-C-----------------------------------------------------------------------
-C
-C     Compute solution to coupled Helmholtz equations 
-C     (stress formulation)
-C
-C-----------------------------------------------------------------------
+
+c     Solve coupled Helmholtz equations (stress formulation)
+
+
       include 'SIZE'
       include 'INPUT'
       include 'MASS'
@@ -1243,22 +1234,9 @@ C-----------------------------------------------------------------------
       include 'ORTHOSTRS'
       include 'CTIMER'
 
-      DIMENSION U1(LX1,LY1,LZ1,1)
-     $        , U2(LX1,LY1,LZ1,1)
-     $        , U3(LX1,LY1,LZ1,1)
-     $        , R1(LX1,LY1,LZ1,1)
-     $        , R2(LX1,LY1,LZ1,1)
-     $        , R3(LX1,LY1,LZ1,1)
-     $        , H1(LX1,LY1,LZ1,1)
-     $        , H2(LX1,LY1,LZ1,1)
-     $        , RMASK1(LX1,LY1,LZ1,1)
-     $        , RMASK2(LX1,LY1,LZ1,1)
-     $        , RMASK3(LX1,LY1,LZ1,1)
-     $        , RMULT (LX1,LY1,LZ1,1)
-      CHARACTER NAME*4
-
-      common /cpfjunk/ y(lx1*ly1*lz1*lelt,3)
-      common /cpfjun2/ v(lx1*ly1*lz1*lelt,3)
+      real u1(1),u2(1),u3(1),r1(1),r2(1),r3(1),h1(1),h2(1)
+      real rmask1(1),rmask2(1),rmask3(1),rmult(1)
+      character name*4
 
 #ifdef TIMER
       nhmhz = nhmhz + 1
@@ -1269,49 +1247,34 @@ C-----------------------------------------------------------------------
       vol = volfld(ifield)
       n   = lx1*ly1*lz1*nel
 
+      napproxstrs(1) = 0
+      iproj = 0
+      if (ifprojfld(ifield)) iproj = param(94)
+      if (iproj.gt.0.and.istep.ge.iproj) napproxstrs(1)=param(93)
+      napproxstrs(1)=min(napproxstrs(1),mxprev)
+
       call rmask   (r1,r2,r3,nel)
       call opdssum (r1,r2,r3)
       call rzero3  (u1,u2,u3,n)
-
-c     call set_up_h1_crs_strs(h1,h2,ifield,matmod)
 
       if (imesh.eq.1) then
          call chktcgs (r1,r2,r3,rmask1,rmask2,rmask3,rmult,binvm1
      $                ,vol,tol,nel)
 
-         if (matmod.lt.0) then
-          napproxstrs(1) = 0
-          iproj      = param(94)
-          if (iproj.gt.0.and.istep.gt.iproj) napproxstrs(1)=param(93)
-          napproxstrs(1)=min(napproxstrs(1),istep/3)
-          call strs_project_a(r1,r2,r3,h1,h2,rmult,ifield,ierr,matmod)
-
-c         call opcopy(y(1,1),y(1,2),y(1,3),xstrs(1),xstrs(1+n),xstrs(1+2*n))
-
-         endif
+         call strs_project_a(r1,r2,r3,h1,h2,rmult,ifield,ierr,matmod)
 
          call cggosf  (u1,u2,u3,r1,r2,r3,h1,h2,rmult,binvm1
      $                ,vol,tol,maxit,matmod)
 
-c        if (matmod.lt.0.and.istep.ge.11)
-c    $    call opcopy(v(1,1),v(1,2),v(1,3),u1,u2,u3)
-
-         if (matmod.lt.0)
-     $    call strs_project_b(u1,u2,u3,h1,h2,rmult,ifield,ierr)
-
-c        if (matmod.lt.0.and.istep.ge.11) then
-c         ifxyo = .true.
-c         call outpost(y(1,1),y(1,2),y(1,3),pr,t,'   ')
-c         call outpost(v(1,1),v(1,2),v(1,3),pr,t,'   ')
-c         call outpost(u1    ,u2    ,u3    ,pr,t,'   ')
-c         call exitti('quit$',matmod)
-c        endif
+         call strs_project_b(u1,u2,u3,h1,h2,rmult,ifield,ierr)
 
       else
+
          call chktcgs (r1,r2,r3,rmask1,rmask2,rmask3,rmult,bintm1
      $                ,vol,tol,nel)
          call cggosf  (u1,u2,u3,r1,r2,r3,h1,h2,rmult,bintm1
      $                ,vol,tol,maxit,matmod)
+
       endif
 
 #ifdef TIMER
@@ -1372,8 +1335,8 @@ C
       IF (TOL.LT.RMIN) THEN
        TOLOLD = TOL
        TOL = RMIN
-       IF (NIO.EQ.0 .AND. IFPRINT)
-     $ WRITE(6,*)'New CG1(stress)-tolerance (RINIT*epsm) = ',TOL,TOLOLD
+c       IF (NIO.EQ.0 .AND. IFPRINT)
+c     $ WRITE(6,*)'New CG1(stress)-tolerance (RINIT*epsm) = ',TOL,TOLOLD
       endif
 C
       IF (ldim.EQ.2) THEN
@@ -1395,8 +1358,8 @@ C
          IF (TOL .LT. TOLMIN) THEN
             TOLOLD = TOL
             TOL = TOLMIN
-            IF (NIO.EQ.0)
-     $      WRITE (6,*) 'New CG1(stress)-tolerance (OTR) = ',TOL,TOLOLD
+c            IF (NIO.EQ.0)
+c     $      WRITE (6,*) 'New CG1(stress)-tolerance (OTR) = ',TOL,TOLOLD
          endif
       endif
 C
@@ -1416,6 +1379,8 @@ C-----------------------------------------------------------------------
       include 'GEOM'
       include 'MASS'
       include 'TSTEP'
+      include 'CTIMER'
+
       common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
       logical ifdfrm, iffast, ifh2, ifsolv
 C
@@ -1427,6 +1392,9 @@ C
      $        , u3 (lx1*ly1*lz1*1)
      $        , h1 (lx1,ly1,lz1,1)
      $        , h2 (lx1,ly1,lz1,1)
+
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
 
       nel   = nelfld(ifield)
       ntot1 = lx1*ly1*lz1*nel
@@ -1470,6 +1438,8 @@ c     if (matmod.lt.0) icase=3 ! Block-diagonal Axhelm
         endif
 
       endif
+
+      taxhm=taxhm+(dnekclock()-etime1)
 
       return
       end
@@ -2086,18 +2056,6 @@ c     Given an input vector v, this generates the H1 coarse-grid solution
       call fgslib_crs_solve(xxth_strs,uc1,vc1)
       tcrsl=tcrsl+dnekclock()-etime1
 
-c     mm=m*ldim
-c     do j=1,mm
-c        call rzero(vc1,mm)
-c        vc1(j)=1
-c        call crs_solve(xxth_strs,uc1,vc1)
-c        write(55,55) (uc1(i),i=1,mm)
-c  55    format(1p1e22.13)
-c     enddo
-c     write(6,*) 'QUIT after io 55 write'
-c     stop
-
-
       k=0
       if (if3d) then
          do i=1,m
@@ -2555,6 +2513,7 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
       include 'SIZE'
       include 'TOTAL'
       include 'ORTHOSTRS'  ! Storage of approximation space
+      include 'CTIMER'
 
       real b1(1),b2(1),b3(1),h1(1),h2(1),wt(1)
       common /ctmp1/ w(lx1*ly1*lz1*lelt,ldim)
@@ -2565,14 +2524,25 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
       n    = lx1*ly1*lz1*nelv
       m    = n*ldim
 
-      l2a=opnorm2w(b1,b2,b3,binvm1)
-
-
       if (k.eq.0.or.kmax.eq.0) return
 
+      etime0 = dnekclock()
+
+      l2b=opnorm2w(b1,b2,b3,binvm1)
+
 c     Reorthogonalize basis
-      call strs_ortho_all(xstrs(1+m),bstrs(1+m),n,k,h1,h2,wt,ifld,w
+
+      dh1max=difmax(bstrs(1  ),h1,n)
+      dh2max=difmax(bstrs(1+n),h2,n)
+
+      if (dh1max.gt.0.or.dh2max.gt.0) then
+        call strs_ortho_all(xstrs(1+m),bstrs(1+m),n,k,h1,h2,wt,ifld,w
      $                   ,ierr,matmod)
+      else
+        call strs_ortho_one(xstrs(1+m),bstrs(1+m),n,k,h1,h2,wt,ifld,w
+     $                   ,ierr,matmod)
+      endif
+
       napproxstrs(2) = k
 
       call opcopy(bstrs(1),bstrs(1+n),bstrs(1+2*n),b1,b2,b3)
@@ -2584,18 +2554,31 @@ c     Reorthogonalize basis
          i3 = 1 + 2*n + (i-1)*m + m
          alpha=op_glsc2_wt(bstrs(1),bstrs(1+n),bstrs(1+2*n)
      $                    ,xstrs(i1),xstrs(i2),xstrs(i3),wt)
+
          alphm=-alpha
          call opadds(bstrs(1),bstrs(1+n),bstrs(1+2*n)
      $              ,bstrs(i1),bstrs(i2),bstrs(i3),alphm,n,2)
+
          call opadds(xstrs(1),xstrs(1+n),xstrs(1+2*n)
      $              ,xstrs(i1),xstrs(i2),xstrs(i3),alpha,n,2)
+
+
       enddo
 
       call opcopy(b1,b2,b3,bstrs(1),bstrs(1+n),bstrs(1+2*n))
-      l2b=opnorm2w(b1,b2,b3,binvm1)
+      l2a=opnorm2w(b1,b2,b3,binvm1)
 
-      if (nio.eq.0) write(6,6) istep,k,ierr,l2a,l2b
-    6 format(i9,2i3,1p2e12.4,' h3proj')
+      call copy(bstrs(1  ),h1,n)  ! Save h1 and h2 for comparison
+      call copy(bstrs(1+n),h2,n)
+
+      ratio=l2b/l2a
+      if (nio.eq.0) write(6,1) istep,'  Project ' // 'Helm3 ',
+     $              l2a,l2b,ratio,k,kmax
+    1 format(i11,a,6x,1p3e13.4,i4,i4)
+
+c     if (ierr.ne.0) call exitti(' h3proj quit$',ierr)
+
+      tproj = tproj + dnekclock() - etime0
 
       return
       end
@@ -2607,6 +2590,7 @@ c     Reconstruct solution; don't bother to orthonomalize bases
       include 'SIZE'
       include 'TOTAL'
       include 'ORTHOSTRS'  ! Storage of approximation space
+      include 'CTIMER'
 
       real x1(1),x2(1),x3(1),h1(1),h2(1),wt(1)
       common /cptst/ xs(lx1*ly1*lz1*lelt*ldim)
@@ -2618,11 +2602,7 @@ c     Reconstruct solution; don't bother to orthonomalize bases
 
       if (kmax.eq.0) return
 
-c     if (936.le.istep.and.istep.le.948) then
-c     if (16.le.istep.and.istep.le.18) then
-c        call outpost(x1,x2,x3,pr,vdiff,'tst')
-c        call outpost(xstrs(1),xstrs(1+3*n),xstrs(1+2*n),pr,t,'tst')
-c     endif
+      etime0 = dnekclock()
 
       if (k.eq.0) then                                          !      _
          call opadd2(x1,x2,x3,xstrs(1),xstrs(1+n),xstrs(1+2*n)) ! x=dx+x
@@ -2656,6 +2636,8 @@ c     if (k.eq.kmax) call opcopy(xs(1),xs(1+n),xs(1+2*n),x1,x2,x3) ! presave
 
       napproxstrs(2)=k
 
+      tproj = tproj + dnekclock() - etime0
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2679,6 +2661,10 @@ c     Orthonormalize the kth element of X against x_j, j < k.
 
       xax0 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,3,k)
      $                  ,x(1,1,k),x(1,2,k),x(1,3,k),wt)
+      ierr = 3
+
+      if (xax0.le.0.and.nio.eq.0)write(6,*)istep,ierr,k,xax0,'Proj3 ERR'
+      if (xax0.le.0) return
 
       s = 0.
       do j=1,k-1! Modifed Gram-Schmidt
@@ -2698,16 +2684,16 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       xax1 = xax0-s
       xax2 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,3,k)
      $                  ,x(1,1,k),x(1,2,k),x(1,3,k),wt)
-      xax2 = glsum(xax2,1)
       scale = xax2
 
       eps  = 1.e-8
       ierr = 0
       if (scale/xax0.lt.eps) ierr=1
 
-      if(nio.eq.0.and.(istep.lt.10.or.mod(istep,100).eq.0.or.ierr.gt.0))
-     $write(6,3) istep,k,ierr,xax1/xax0,xax2/xax0
-    3 format(i9,2i3,1p2e12.4,' scale ortho')
+c      if(nio.eq.0) write(6,*) istep,ierr,k,scale,xax0,' SCALE'
+c      if(nio.eq.0.and.(istep.lt.10.or.mod(istep,100).eq.0.or.ierr.gt.0))
+c     $write(6,3) istep,k,ierr,xax1/xax0,xax2/xax0
+c    3 format(i9,2i3,1p2e12.4,' scale ortho')
 
       if (scale.gt.0) then
          scale = 1./sqrt(scale)     
@@ -2716,6 +2702,26 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       else
          ierr=2
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine strs_ortho_one(x,b,n,k,h1,h2,wt,ifld,w,ierr,matmod)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      real x(n,ldim,k),b(n,ldim,k),h1(n),h2(n),wt(n),w(n,ldim)
+
+      m = n*ldim
+
+      js=k
+      do j=k,k
+         if (js.lt.j) call copy(x(1,1,js),x(1,1,j),m)
+         call strs_orthok(x,b,n,js,h1,h2,wt,ifld,w,ierr,matmod)
+         if (ierr.eq.0) js=js+1
+      enddo
+      k = js-1
 
       return
       end
@@ -2793,7 +2799,6 @@ csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
       tspro=tspro+(dnekclock()-etime1)
 #endif
 
-C
-      RETURN
-      END
-C-----------------------------------------------------------------------
+      return
+      end
+c-----------------------------------------------------------------------

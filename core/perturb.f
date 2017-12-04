@@ -904,23 +904,26 @@ C******************************************************************
       if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
 
       ! Most likely, the following can be commented out. (pff, 1/6/2010)
-      if (npert.gt.1.or.ifbase)            ifprjp=.false.
+c     if (npert.gt.1.or.ifbase)            ifprjp=.false.
+cpff  if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
 
-      if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
                     call esolver (dp,h1,h2,h2inv,intype)
-      if (ifprjp)   call gensoln (dp,h1,h2,h2inv)
 
+cpff  if (ifprjp)   call gensoln (dp,h1,h2,h2inv)
+
+cNOTE:  The "cpff" comments added 11/24/17 to avoid old-style projection,
+cNOTE:  which should be replaced with something more updated.
 
 C******************************************************************
 
       call opgradt (w1 ,w2 ,w3 ,dp)
       call opbinv  (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
       call opadd2  (ux ,uy ,uz ,dv1,dv2,dv3)
-c
+
       call extrapprp(prextr)
       call lagpresp
       call add3(up,prextr,dp,ntot2)
-c
+
       return
       end
 c------------------------------------------------------------------------

@@ -17,6 +17,7 @@ function make_3rd_party() {
 
 function clean_3rd_party() {
   cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
+  cd $CASEDIR
   cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
   cd $CASEDIR
 }
@@ -176,22 +177,17 @@ case $FCcomp in
                ;;
   *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
-  *pathf*)      FFLAGS+=" -r8 -cpp -fno-second-underscore"
-               ;;
-  *ftn*)        FFLAGS+=" -s real64 -eF"
-               ;;
-  *xlf*)       FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
+  *xlf*)        FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
                PPPO="-WF,"
                ;;
-  *)  echo "ERROR: Unable to detect compiler!"
-      echo "       Please edit the makefile and specify FFLAGS and CFLAGS"
+  *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
       NOCOMPILE=1
       read;;
 esac
 
 # initial clean-up
-rm -f nek5000 2>/dev/null
+rm -f $CASENAME.f nek5000 2>/dev/null
 rm -f ./obj/subuser.o 2>/dev/null
 
 # Check if the compiler adds an underscore to external functions
@@ -291,6 +287,7 @@ sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
+-e "s/^CVODE[ ]*=.*/CVODE:=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
 -e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
 -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
@@ -402,133 +399,6 @@ if ! cat SIZE | grep -qi 'ldimt_proj' ; then
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer ldimt_proj' >>SIZE
      echo '      parameter(ldimt_proj = 1) ! max auxiliary fields residual projection ' >>SIZE
-fi
-
-# tweak .usr (actually, .f ) file
-rm -f $CASENAME.f
-cp -pv $CASENAME.usr $CASENAME.f
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine usrsetvert(glo_num,nel,nx,ny,nz) ! to modify glo_num
-      integer*8 glo_num(1)
-
-      return
-      end
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*userqtl" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine userqtl
-
-      call userqtl_scig
-
-      return
-      end
-_ACEOF
-fi
-
-
-if [ $CVODE -ne 0 ]; then
-
-if ! cat $CASENAME.f | grep -qi "^#include.*cvode_aux.*\.h" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-#include "cvode_aux.h"
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "^#include.*cvode_jtimes.*\.h" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-#include "cvode_jtimes.h"
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "^#include.*cvode_preco.*\.h" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-#include "cvode_preco_dummy.h"
-_ACEOF
-fi
-
-fi
-
-if [ $CMT -ne 0 ]; then
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_usrflt(rmult) ! user defined filter
-      include 'SIZE'
-      real rmult(lx1)
-      call rone(rmult,lx1)
-      return
-      end
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userflux" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_userflux ! user defined flux
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-      include 'CMTDATA'
-      real fluxout(lx1*lz1)
-      return
-      end
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userEOS" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_userEOS ! user defined EOS 
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-      include 'CMTDATA'
-
-      return
-      end
-_ACEOF
-fi
-if [ -e "cmtparticles.usrp" ]
-then
-echo 'Particles found CMT'
-else
-cat >> $CASENAME.f << _ACEOF
-c
-c automatically added by makenek
-      subroutine usr_particles_init ! used for particles
-      return
-      end
-c
-c automatically added by makenek
-      subroutine usr_particles_solver ! used for particles
-      return
-      end
-c
-c automatically added by makenek
-      subroutine usr_particles_io(istep) ! used for particles
-      integer istep
-      return
-      end
-
-_ACEOF
-fi
 fi
 
 export FC

@@ -76,7 +76,7 @@ C
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
-      param(93) = 20   ! number of vectors for projection
+      param(93) = mxprev ! number of vectors for projection
 
       param(94) = 5    ! projection for helmholz solves 
       param(95) = 5    ! projection for pressure solve
@@ -480,6 +480,7 @@ c        stabilization type: none, explicit or hpfrt
          if (ifnd .eq. 1) then
             dtmp = anint(lx1*(1.0 - d_out)) 
             param(101) = max(dtmp-1,0.0)
+            if (abs(1.0 - d_out).lt.0.01) filterType = 0
          else
             write(6,*) 'general:filterCutoffRatio'
             write(6,*) 'is required for general:filtering!'

@@ -109,6 +109,9 @@ C
 
       integer e
 
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
+
       nel=nelt
       if (imesh.eq.1) nel=nelv
 
@@ -117,11 +120,6 @@ C
       NXZ=lx1*lz1
       NXYZ=lx1*ly1*lz1
       NTOT=NXYZ*NEL
-
-      if (icalld.eq.0) taxhm=0.0
-      icalld=icalld+1
-      naxhm=icalld
-      etime1=dnekclock()
 
       IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
       CALL RZERO (AU,NTOT)

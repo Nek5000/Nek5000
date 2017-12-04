@@ -3,15 +3,15 @@
 # Nek5000 config file
 #-------------------------------------------------------------------------------
 
-# source path (default $HOME/Nek5000) 
-#SOURCE_ROOT="change me" 
+# source path 
+#SOURCE_ROOT="$HOME/Nek5000" 
 
-# Fortran/C compiler (default mpif77/mpicc)
-#FC="change me"
-#CC="change me"
+# Fortran/C compiler
+#FC="mpif77"
+#CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-#PPLIST="" 
+#PPLIST="?" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -59,6 +59,7 @@ mver=17.0.4
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
+: ${PPLIST:=""}
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
