@@ -1686,7 +1686,7 @@ c-----------------------------------------------------------------------
                vx(i,j,k,e) = ux
                vy(i,j,k,e) = uy
                vz(i,j,k,e) = uz
-             elseif (ifield.eq.ifldmhd) then
+             elseif (ifield.eq.ifldmhd .and. ifmhd) then
                bx(i,j,k,e) = ux
                by(i,j,k,e) = uy
                bz(i,j,k,e) = uz
