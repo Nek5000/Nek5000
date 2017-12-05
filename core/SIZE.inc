@@ -107,7 +107,7 @@ c - - SIZE internals
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel
 
-      integer       nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
-     $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
-      common/dimn/ nelv,nelt,nx1,ny1,nz1,nx2,ny2,nz2
-     $ ,nx3,ny3,nz3,ndim,nfield,npert,nid,nxd,nyd,nzd
+      integer       nelv,nelt,nfield,npert,nid
+     $ ,nx1,ny1,nz1,nx2,ny2,nz2,nx3,ny3,nz3,nxd,nyd,nzd,ndim,ldimr
+      common/dimn/ nelv,nelt,nfield,npert,nid
+     $ ,nx1,ny1,nz1,nx2,ny2,nz2,nx3,ny3,nz3,nxd,nyd,nzd,ndim,ldimr

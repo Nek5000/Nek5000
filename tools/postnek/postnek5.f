@@ -35,7 +35,7 @@ C
 C     It is assumed (for no particularly good reason) that TWRK ranges
 C     from 0 to 1.
 C 
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION TPP(NX,NY),XPP(NX,NY),YPP(NX,NY),ZPP(NX,NY)
       LOGICAL   IFCRV(4)
@@ -285,7 +285,7 @@ C
       DIMENSION WRK(NCOL,NCOL)
       LOGICAL   IFCRV(4)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C     Two common blocks below are used in several subsequent routines.
       PARAMETER (NXX2M=NXXM*NXXM)
@@ -526,7 +526,7 @@ C     ----+----+--/ +    +
 C
       DIMENSION WRK(NCOL,NCOL)
       LOGICAL   IFEDGB,IFCRN
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 C     Two common blocks below are used in several subsequent routines.
@@ -696,7 +696,7 @@ C
 C     Plot a contour given by CRS which denotes the Contour points
 C     in the (R,S) plane.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION XPP(NX,NY),YPP(NX,NY),ZPP(NX,NY)
 C
@@ -755,7 +755,7 @@ C     Evaluate a scalar, SCAL, at position RRL and return the result in X0.
 C     RRL is assumed to be a 2 dimensional (R,S) point, and SCAL is assumed
 C     to be an (NX,NY) field.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION SCAL(1)
       DIMENSION RRL(3)
@@ -812,7 +812,7 @@ C
       END
 c-----------------------------------------------------------------------
       LOGICAL FUNCTION IFIN(VAL)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       PARAMETER (NXX2M=NXXM*NXXM)
@@ -865,7 +865,7 @@ C
 C     This is the new fishnet routine.
 C     10-10-90 pff (upgraded to include 3D, 1-12-91)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION TPP(NX,NY),XPP(NX,NY),YPP(NX,NY),ZPP(NX,NY)
       LOGICAL   IFCRV(4)
@@ -1059,7 +1059,7 @@ C
 c-----------------------------------------------------------------------
       subroutine setrstp(ivec)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
       DIMENSION VEC(3),VEC1(3),VEC2(3),VEC3(3)
@@ -1101,7 +1101,7 @@ c
 c-----------------------------------------------------------------------
       subroutine setrstp_ACT(ivec,XPT1,YPT1,ZPT1,XNRM1,YNRM1,ZNRM1)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
       DIMENSION VEC(3),VEC1(3),VEC2(3),VEC3(3)
@@ -1343,7 +1343,7 @@ c-----------------------------------------------------------------------
 C
 C     An array of arrows, with plane projections
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /CTMP1x/ VEC(3),VEC1(3),VEC2(3),VEC3(3)
       DIMENSION XPP (NXX,NXX),YPP (NXX,NXX),ZPP (NXX,NXX)
@@ -1489,7 +1489,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw a border around the requested element (or sub-plane in 3D)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       DIMENSION XPP(1),YPP(1),ZPP(1)
@@ -1576,7 +1576,7 @@ c-----------------------------------------------------------------------
 C
 C     Map from DIMENSIONAL Gauss-Lobatto to Regular 1D array 
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XF(1)
       DIMENSION XGL(1)
       PARAMETER (LXX=200*NXM)
@@ -1614,7 +1614,7 @@ C
 C     Map from Gauss-Lobatto to Regular mesh
 C     using interpolation matrix INTRP
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XMAP(MXX,MXX)
       DIMENSION YMAP(MX,MX)
       REAL INTRP(MXX,MX,2)
@@ -1643,7 +1643,7 @@ C     Set up interpolation matrix for 1-D interpolation operator
 C     from G-L mesh (MX) to regularly spaced grid (MXX).
 C
       REAL INTRP(MXX,MX,2),WRK(MXX)
-      include 'basics.inc'
+#     include "basics.inc"
 C
       DX=2.0/FLOAT(MXX-1)
       DO 10 I=1,MXX
@@ -1659,7 +1659,7 @@ C
 C     Map from Gauss-Lobatto to Regular mesh
 C     using interpolation matrix INTRP
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XMAP(MXX,MXX)
       DIMENSION YMAP(MX,MX)
       REAL INTRP(MXX,MX,2)
@@ -1696,7 +1696,7 @@ C     from G-L mesh (MX) to regularly spaced grid (MXX)
 C     with ranges (R1:R2) and (S1:S2).
 C
       REAL INTRP(MXX,MX,2),WRK(MXX)
-      include 'basics.inc'
+#     include "basics.inc"
 C
       DX=(R2-R1)/FLOAT(MXX-1)
       DO 10 I=1,MXX
@@ -1716,7 +1716,7 @@ C
 c-----------------------------------------------------------------------
       subroutine drwmsh
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 C     Arrays for mapping from coarse to fine 1-D arrays
@@ -1785,7 +1785,7 @@ C
 c-----------------------------------------------------------------------
       subroutine drwmsh2
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       parameter (mx2=nxm-2,my2=nym-2)
       COMMON /CTMP1x/ xpr(mx2*my2*nzm)
@@ -1845,7 +1845,7 @@ C
 c-----------------------------------------------------------------------
 C    03-08-99
       subroutine nekplanar
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C--------------------------
 C     INPUT
@@ -1950,7 +1950,7 @@ c
 C-----------------------------------------------------------------------
       subroutine setrstp_SET(ivec,XPT1,YPT1,ZPT1)
 C     Set up list of candidate RST planes
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,INEWTX
       DIMENSION VEC(3),VEC1(3),VEC2(3),VEC3(3)
@@ -2137,7 +2137,7 @@ C
 C     Map from Gauss-Lobatto to Regular mesh
 C     using interpolation matrix INTRP
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XMAP(MXX,MXX)
       DIMENSION YMAP(MX,MX)
       REAL INTRP(MXX,MX,2)
@@ -2166,7 +2166,7 @@ C     Set up interpolation matrix for 1-D interpolation operator
 C     from G-L mesh (MX) to regularly spaced grid (MXX).
 C
       REAL INTRP(MXX,MX,2),WRK(MXX)
-      include 'basics.inc'
+#     include "basics.inc"
 C
       call zwgll(wrk,intrp,mxx)
       CALL IGLLM (INTRP(1,1,1),INTRP(1,1,2),XXPTS,WRK,MX,MXX,MX,MXX)
@@ -2178,7 +2178,7 @@ c-----------------------------------------------------------------------
 c
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       logical ifbdpts

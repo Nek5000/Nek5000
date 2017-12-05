@@ -21,7 +21,7 @@ c     etc.
 c
 c
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       character*1 ans
@@ -44,7 +44,7 @@ c     this program will take a nek all-ascii rea file and
 c     extract geometry, bcs, and curve data to a new binary re2 file, plus
 c     an ascii rea file for just the parameters
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f
@@ -67,7 +67,6 @@ c     an ascii rea file for just the parameters
 
          call open_file_in  (ifile,iend)
          if (iend.eq.1) goto 99
-
 
          nelo = nelt_all
          call rw_param(nelt,nelv,ndim,nelt_all,nelv_all,nfld,ifile)
@@ -128,7 +127,7 @@ c-----------------------------------------------------------------------
       call chcopy(file1(len+1),'.rea',4)
 
       len = ltrunc(file,80)
-c      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
+      write(6,*) 'Opening input file: ',(file1(k),k=1,len)
 
       open(unit=10, file=file)
       iend = 0
@@ -184,7 +183,7 @@ c         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
 c-----------------------------------------------------------------------
       subroutine set_ee_bcs ! connectivity 
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       parameter (lf = 6*lelt)
@@ -409,7 +408,7 @@ c-----------------------------------------------------------------------
 
 c     output remainder of mesh: .rea/.re2 format
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       character*80 hdr
@@ -528,7 +527,7 @@ c-----------------------------------------------------------------------
 
 c     output remainder of mesh: ascii format
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       write(11,11) nelt, ndim, nelv
@@ -550,23 +549,19 @@ c     output remainder of mesh: ascii format
 c-----------------------------------------------------------------------
       subroutine out_xyz_ascii
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e
 
-
-      call blank(string,80)
-      write(string,1)
-c             123456789 123456789 123456789 123456789 123456789 
-    1 format('        E:         1 [    1a]    GROUP     0')
-      len = ltrunc(string,80)
-
+      igroup = 0
       do e=1,nelt
-
-         write(string1(15),'(i12)') e
-         write(11,81) (string1(k),k=1,len)
-   81    format(80a1)
+         if(nelt.lt.100000) then
+           write (11,12) e, e, 'a', igroup
+         else
+           write (11,'(A,I12,A,I1)')
+     &        '  ELEMENT ', e, '  GROUP  ', igroup
+         endif
 
          if (ndim.eq.2) then
             write(11,90)  (x(k,e),k=1,4)
@@ -580,7 +575,9 @@ c             123456789 123456789 123456789 123456789 123456789
             write(11,90)  (z(k,e),k=5,8)
          endif
       enddo
-c  90 format(1p4e14.6)
+
+   12 format(
+     $     '            ELEMENT',i12,' [',i5,a1,']    GROUP     ',i1)
    90 format(4e14.6)
 
       return
@@ -590,7 +587,7 @@ c-----------------------------------------------------------------------
 
 c     .Ouput curve side data in ascii to unit 11
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f
@@ -631,7 +628,7 @@ c-----------------------------------------------------------------------
 
 c     .Ouput bdry data
 
-      include 'SIZE'
+#     include "SIZE"
       include 'INPUT'
 
       integer e,f,fld

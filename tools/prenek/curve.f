@@ -15,7 +15,7 @@ C
 C------------------------------------------------------------------------------
 C
       subroutine curves
-      include 'basics.inc'
+#     include "basics.inc"
       integer icalld,e
       save    icalld
       data    icalld /0/
@@ -224,7 +224,7 @@ C         Export copies curve ICURVE to all overlapping sides
       GO TO 1
       END
       SUBROUTINE MESGEN
-      include 'basics.inc'
+#     include "basics.inc"
       DIMENSION DXCHEB(20),DYCHEB(20),XCHEB(20),YCHEB(20)
       REAL CSPACE(100),XCRVED(100),YCRVED(100),XFRAC(20)
       REAL XPTSEL(NXM,NYM),YPTSEL(NXM,NYM)
@@ -384,7 +384,7 @@ C              Draw curved sides for hardcopy
       END
 c-----------------------------------------------------------------------
       subroutine getedg(isid,iels)
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer eindx(12),v  ! index of 12 edges into 3x3x3 tensor
       save    eindx        ! Follows preprocessor notation..
@@ -457,7 +457,7 @@ c        dzh=zh-z27(v,iel)
       end
 c-----------------------------------------------------------------------
       subroutine export(iedge,iel) ! Problematic if edges messed up
-      include 'basics.inc'             ! pff 7/7/12
+#     include "basics.inc"
       integer iover(2,20),v1,v2,v3,v4,vi,vj
       integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
       save    eindx      ! Follows preprocessor notation..
@@ -562,7 +562,7 @@ c-----------------------------------------------------------------------
 c
 c     Stretch all points in spherical shell
 c
-      include 'basics.inc'
+#     include "basics.inc"
 C
       call prs(' Input sphere center (x,y,z):$')
       call rerrr(x0,y0,z0)
@@ -651,7 +651,7 @@ c
 c-----------------------------------------------------------------------
       subroutine find_long_edges ! Find long edge of a 2D element
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,en,et
 c
       do e=1,nel
@@ -662,7 +662,7 @@ c
 c-----------------------------------------------------------------------
       function long_edge_e(e) ! Find long edge of a 2D element
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,en,et
 c
 c
@@ -688,7 +688,7 @@ c-----------------------------------------------------------------------
 c
 c     Tile a 2D region w/ hexagons (2D only, pff 10/10/05)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real hexscale(8,2),hexbase(8,2)
       save hexscale,hexbase
 c
@@ -800,7 +800,7 @@ c
 c     Refine 3D hex prisms in transition zone, i.e. the zone between  
 c     coarse and fine 3D hex meshes
 c
-      include 'basics.inc'
+#     include "basics.inc"
       parameter (nxm3=nxm*nym*nzm)
       common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),rrl(3)
 
@@ -876,7 +876,7 @@ c
 c-----------------------------------------------------------------------              
       subroutine hex_transition_3d ! Refine 3D hexes in transition zone
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,en,et
 c
       integer icalld
@@ -898,7 +898,7 @@ c
 c-----------------------------------------------------------------------
       subroutine hexagon_refine_e(e,en) ! refine 2D hexes in a zone
 c
-      include 'basics.inc'
+#     include "basics.inc"
       common /chexb/ hexscale(8,2),hexbase(8,2)
       parameter (nxm3=nxm*nym*nzm)
       common /ctmp2/ xp(nxm3),yp(nxm3),zp(nxm3),rrl(3)
@@ -986,7 +986,7 @@ c
 c-----------------------------------------------------------------------
       subroutine hexagon_refine ! refine 2D hexes in a zone
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,en,et
 c
       integer elist(nelm),marked(nelm)
@@ -1060,7 +1060,7 @@ c     Rotate element e so that face kface is mapped to face 1
 c
 c     We assume that kface  is in [1,4]
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,et
 c
       if (kface.eq.1) return
@@ -1116,7 +1116,7 @@ c-----------------------------------------------------------------------
 c
 c     Grab a set of elements
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer elist(1),e,tlist(nelm)
 c
       call get_els(nlist,tlist)
@@ -1136,7 +1136,7 @@ c-----------------------------------------------------------------------
 c
 c     Grab a set of elements
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer elist(1),e
       logical iftmp
 C
@@ -1218,7 +1218,7 @@ c-----------------------------------------------------------------------
 c
 c     Grab a set of elements
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer elist(1),e
 c
       ifld = 2
@@ -1243,7 +1243,7 @@ c-----------------------------------------------------------------------
 
 c     Assign / repair curve-side info for edges
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       integer eindx(12)  ! index of 12 edges into 3x3x3 tensor
@@ -1271,7 +1271,7 @@ c-----------------------------------------------------------------------
 
 c     Assign / repair curve-side info for edges
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xyz(3,3)
 
@@ -1355,7 +1355,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine make_top(xl,yl,zl,r)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(3,3,3),yl(3,3,3),zl(3,3,3)
 
@@ -1407,7 +1407,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine make_core(xl,yl,zl,r)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(3,3,3),yl(3,3,3),zl(3,3,3)
 
@@ -1504,7 +1504,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine filled_sphere_oct ! Builds sphere or hemisphere of diameter 1
-      include 'basics.inc'
+#     include "basics.inc"
 
       common /sphoct/ sphctr(3),normal(3),xl(27),yl(27),zl(27)
       real normal
@@ -1557,7 +1557,7 @@ c     ro  = .6
       end
 c-----------------------------------------------------------------------
       subroutine make_top_2d(xl,yl,zl,r)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(3,3,3),yl(3,3,3),zl(3,3,3)
 
@@ -1617,7 +1617,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine make_core_2d(xl,yl,zl,r)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xl(3,3,3),yl(3,3,3),zl(3,3,3)
 
@@ -1693,7 +1693,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine filled_cyl_quadrant ! Builds filled cylinder quadrant
-      include 'basics.inc'
+#     include "basics.inc"
 
       common /sphoct/ sphctr(3),normal(3),xl(27),yl(27),zl(27)
       real normal
@@ -1825,7 +1825,7 @@ c     Compte barycentric coordinates
       end
 c-----------------------------------------------------------------------
       subroutine x27_to_e
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e
 
@@ -1856,7 +1856,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine std_transform(t0,t1)
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     Transforms existing 2D or 3D rectangular domain to a
 c     circular arc segment
@@ -1909,7 +1909,7 @@ c     Results are best if incoming domain is close to desired dimensions.
       end
 c-----------------------------------------------------------------------
       subroutine get_x27max(xmin,xmax,ymin,ymax,zmin,zmax)
-      include 'basics.inc'
+#     include "basics.inc"
 
       n = 27*nel
       xmin=glmin(x27,n)
@@ -1923,7 +1923,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine make_arc_circ
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
 c     Transforms existing 2D or 3D rectangular domain to a circular arc
@@ -1975,7 +1975,7 @@ c     call rer(dth)
       end
 c-----------------------------------------------------------------------
       subroutine circle_in_arc_transform_0(r1)
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     NOTE: Must call gencen first!
 

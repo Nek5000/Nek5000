@@ -6,7 +6,6 @@ c
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO'
       include 'SOLN'
 
       do jp=1,npert
@@ -147,8 +146,8 @@ C
      $ ,             TB2 (LX1*LY1*LZ1*LELV)
      $ ,             TB3 (LX1*LY1*LZ1*LELV)
 C
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv
+      ntot1 = lx1*ly1*lz1*nelv
+      ntot2 = lx2*ly2*lz2*nelv
 c
       if (if3d) then
          call opcopy  (tb1,tb2,tb3,vx,vy,vz)                   ! Save velocity
@@ -229,9 +228,9 @@ C
 
       real fact,factx,facty
 C
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv   !dimensionn arrays 
-      NTOT      = NX1*NY1*NZ1*NELT
+      ntot1 = lx1*ly1*lz1*nelv
+      ntot2 = lx2*ly2*lz2*nelv   !dimensionn arrays 
+      NTOT      = lx1*ly1*lz1*NELT
 
 c
       if (if3d) then
@@ -332,30 +331,30 @@ c--------------------------------------------------------------------
       real bdrx(1), bdry(1),bdrz (1)
 
       call set_dealias_rx
-      nxyz1 = nx1*ny1*nz1
+      nxyz1 = lx1*ly1*lz1
 c     AM DING DING 
       nxyzd = lxd*lyd*lzd
       nxyzu = nxyz1
       nxyzc = nxyz1
-      ntot1=nx1*ny1*nz1*nelv
+      ntot1=lx1*ly1*lz1*nelv
       ic = 1                    ! pointer to vector field C
       iu = 1                    ! pointer to scalar field u
       ib = 1                    ! pointer to scalar field Bdu
       if(if3d)then
          do e=1,nelv
                                 ! map coarse velocity to fine mesh (C-->F)
-            call intp_rstd(fx,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
-            call intp_rstd(fy,cy(ic),nx1,nxd,if3d,0) 
-            call intp_rstd(fz,cz(ic),nx1,nxd,if3d,0) 
+            call intp_rstd(fx,cx(ic),lx1,lxd,if3d,0) ! 0 --> forward
+            call intp_rstd(fy,cy(ic),lx1,lxd,if3d,0) 
+            call intp_rstd(fz,cz(ic),lx1,lxd,if3d,0) 
                
-            call intp_rstd(uf1,udx(iu),nx1,nxd,if3d,0) ! 0 --> forward
-            call grad_rst(urx,usx,utx,uf1,nxd,if3d)
+            call intp_rstd(uf1,udx(iu),lx1,lxd,if3d,0) ! 0 --> forward
+            call grad_rst(urx,usx,utx,uf1,lxd,if3d)
             
-            call intp_rstd(uf2,udy(iu),nx1,nxd,if3d,0) 
-            call grad_rst(ury,usy,uty,uf2,nxd,if3d)
+            call intp_rstd(uf2,udy(iu),lx1,lxd,if3d,0) 
+            call grad_rst(ury,usy,uty,uf2,lxd,if3d)
             
-            call intp_rstd(uf3,udz(iu),nx1,nxd,if3d,0) 
-            call grad_rst(urz,usz,utz,uf3,nxd,if3d)
+            call intp_rstd(uf3,udz(iu),lx1,lxd,if3d,0) 
+            call grad_rst(urz,usz,utz,uf3,lxd,if3d)
             
             do i=1,nxyzd        ! mass matrix included, per DFM (4.8.5)
                uf4(i)=fx(i)*(rx(i,1,e)*urx(i)+rx(i,4,e)*usx(i)
@@ -378,9 +377,9 @@ c     AM DING DING
      $              +rx(i,9,e)*utz(i))
             enddo
 
-            call intp_rstd(bdux(ib),uf4,nx1,nxd,if3d,1) ! Project back to coarse
-            call intp_rstd(bduy(ib),uf5,nx1,nxd,if3d,1)
-            call intp_rstd(bduz(ib),uf6,nx1,nxd,if3d,1)
+            call intp_rstd(bdux(ib),uf4,lx1,lxd,if3d,1) ! Project back to coarse
+            call intp_rstd(bduy(ib),uf5,lx1,lxd,if3d,1)
+            call intp_rstd(bduz(ib),uf6,lx1,lxd,if3d,1)
 
             ic = ic + nxyzc
             iu = iu + nxyzu
@@ -393,14 +392,14 @@ c     AM DING DING
          do e=1,nelv
 
                                ! map coarse velocity to fine mesh (C-->F)
-            call intp_rstd(fx,cx(ic),nx1,nxd,if3d,0) ! 0 --> forward
-            call intp_rstd(fy,cy(ic),nx1,nxd,if3d,0) 
+            call intp_rstd(fx,cx(ic),lx1,lxd,if3d,0) ! 0 --> forward
+            call intp_rstd(fy,cy(ic),lx1,lxd,if3d,0) 
 
-            call intp_rstd(uf1,udx(iu),nx1,nxd,if3d,0) 
-            call grad_rst(urx,usx,utx,uf1,nxd,if3d)
+            call intp_rstd(uf1,udx(iu),lx1,lxd,if3d,0) 
+            call grad_rst(urx,usx,utx,uf1,lxd,if3d)
 
-            call intp_rstd(uf2,udy(iu),nx1,nxd,if3d,0) 
-            call grad_rst(ury,usy,uty,uf2,nxd,if3d)
+            call intp_rstd(uf2,udy(iu),lx1,lxd,if3d,0) 
+            call grad_rst(ury,usy,uty,uf2,lxd,if3d)
 
             do i=1,nxyzd       
                uf4(i) = fx(i)*(rx(i,1,e)*urx(i)+rx(i,3,e)*usx(i))+
@@ -409,8 +408,8 @@ c     AM DING DING
      $              fy(i)*(rx(i,2,e)*ury(i)+rx(i,4,e)*usy(i))
             enddo
 
-            call intp_rstd(bdux(ib),uf4,nx1,nxd,if3d,1)
-            call intp_rstd(bduy(ib),uf5,nx1,nxd,if3d,1)
+            call intp_rstd(bdux(ib),uf4,lx1,lxd,if3d,1)
+            call intp_rstd(bduy(ib),uf5,lx1,lxd,if3d,1)
 
             ic = ic + nxyzc
             iu = iu + nxyzu
@@ -440,7 +439,7 @@ C
      $ ,             ta2 (lx1,ly1,lz1,lelv)
      $ ,             ta3 (lx1,ly1,lz1,lelv)
 c
-      ntot1 = nx1*ny1*nz1*nelv
+      ntot1 = lx1*ly1*lz1*nelv
 c
       ab0 = ab(1)
       ab1 = ab(2)
@@ -482,7 +481,7 @@ C
      $ ,             TB3(LX1,LY1,LZ1,LELV)
      $ ,             H2 (LX1,LY1,LZ1,LELV)
 C
-      ntot1 = nx1*ny1*nz1*nelv
+      ntot1 = lx1*ly1*lz1*nelv
       const = 1./dt
       call cmult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
       call opcolv3c (tb1,tb2,tb3
@@ -526,8 +525,8 @@ c
      $ ,             w3    (lx1,ly1,lz1,lelv)
      $ ,             prextr(lx2,ly2,lz2,lelv)
 c
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv
+      ntot1 = lx1*ly1*lz1*nelv
+      ntot2 = lx2*ly2*lz2*nelv
 c
       call bcdirvc (vxp(1,jp),vyp(1,jp),vzp(1,jp)
      $             ,v1mask,v2mask,v3mask)
@@ -556,7 +555,6 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
-      INCLUDE 'TURBO'
       INCLUDE 'SOLN'
 C
       do jp=1,npert
@@ -599,7 +597,8 @@ C
      $              ,H2(LX1,LY1,LZ1,LELT)
 c
       include 'ORTHOT'
-      napproxt(1) = laxtt
+      ifld1 = ifield-1
+      napproxt(1,ifld1) = laxtt
 C
       IF (IGEOM.EQ.1) THEN
 C
@@ -622,7 +621,7 @@ C
 C        New geometry
 C
          NEL    = NELFLD(IFIELD)
-         NTOT   = NX1*NY1*NZ1*NEL
+         NTOT   = lx1*ly1*lz1*NEL
 C
          INTYPE = 0
          IF (IFTRAN) INTYPE = -1
@@ -644,7 +643,7 @@ c        call hsolve  (name4t,TA,TB,H1,H2
 c    $                 ,TMASK(1,1,1,1,IFIELD-1)
 c    $                 ,TMULT(1,1,1,1,IFIELD-1)
 c    $                 ,IMESH,TOLHT(IFIELD),NMXH,1
-c    $                 ,approxt,napproxt,bintm1)
+c    $                 ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
 c
          CALL ADD2    (TP(1,IFIELD-1,jp),TA,NTOT)
 C
@@ -669,8 +668,6 @@ C----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
       include 'SOLN'
-      LOGICAL  IFTURB
-C
                                                        CALL MAKEUQP
       IF (IFADVC(IFIELD).AND.(.NOT.IFCHAR))            CALL CONVABP
       IF (IFTRAN)                                      CALL MAKEABQP
@@ -695,7 +692,7 @@ C---------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
 C
-      NTOT = NX1*NY1*NZ1*NELFLD(IFIELD)
+      NTOT = lx1*ly1*lz1*NELFLD(IFIELD)
 C
       time = time-dt                           ! time is tn
 c
@@ -728,7 +725,7 @@ c
       real coeff
 c
       nel = nelfld(ifield)
-      ntot1 = nx1*ny1*nz1*nel
+      ntot1 = lx1*ly1*lz1*nel
 c
       if (.not.ifadj) then
          call opcopy(ua,ub,uc,vx,vy,vz)
@@ -770,7 +767,7 @@ C
       AB1   = AB(2)
       AB2   = AB(3)
       NEL   = NELFLD(IFIELD)
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
 C
       CALL ADD3S2 (TA,VGRADT1P(1,IFIELD-1,jp),
      $                VGRADT2P(1,IFIELD-1,jp),AB1,AB2,NTOT1)
@@ -801,7 +798,7 @@ C
      $ ,             H2 (LX1,LY1,LZ1,LELT)
 C
       NEL   = NELFLD(IFIELD)
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
       CONST = 1./DT
       CALL COPY  (H2,VTRANS(1,1,1,1,IFIELD),NTOT1)
       CALL CMULT (H2,CONST,NTOT1)
@@ -837,7 +834,7 @@ C-----------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
 C
-      NTOT1 = NX1*NY1*NZ1*NELFLD(IFIELD)
+      NTOT1 = lx1*ly1*lz1*NELFLD(IFIELD)
 C
       DO 100 ILAG=NBDINP-1,2,-1
          CALL COPY (TLAGP(1,ILAG  ,IFIELD-1,jp),
@@ -884,8 +881,8 @@ c
       icalld=icalld+1
       npres=icalld
 c
-      ntot1  = nx1*ny1*nz1*nelv
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot1  = lx1*ly1*lz1*nelv
+      ntot2  = lx2*ly2*lz2*nelv
       intype = 1
       dtbd   = bd(1)/dt
 
@@ -907,23 +904,26 @@ C******************************************************************
       if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
 
       ! Most likely, the following can be commented out. (pff, 1/6/2010)
-      if (npert.gt.1.or.ifbase)            ifprjp=.false.
+c     if (npert.gt.1.or.ifbase)            ifprjp=.false.
+cpff  if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
 
-      if (ifprjp)   call setrhs  (dp,h1,h2,h2inv)
                     call esolver (dp,h1,h2,h2inv,intype)
-      if (ifprjp)   call gensoln (dp,h1,h2,h2inv)
 
+cpff  if (ifprjp)   call gensoln (dp,h1,h2,h2inv)
+
+cNOTE:  The "cpff" comments added 11/24/17 to avoid old-style projection,
+cNOTE:  which should be replaced with something more updated.
 
 C******************************************************************
 
       call opgradt (w1 ,w2 ,w3 ,dp)
       call opbinv  (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
       call opadd2  (ux ,uy ,uz ,dv1,dv2,dv3)
-c
+
       call extrapprp(prextr)
       call lagpresp
       call add3(up,prextr,dp,ntot2)
-c
+
       return
       end
 c------------------------------------------------------------------------
@@ -937,7 +937,7 @@ C
       COMMON /CTMP0/ DPR (LX2,LY2,LZ2,LELV)
       REAL        PREXTR (LX2,LY2,LZ2,LELV)
 C
-      ntot2 = nx2*ny2*nz2*nelv
+      ntot2 = lx2*ly2*lz2*nelv
       if (nbd.eq.1.or.nbd.eq.2) then
          call copy (prextr,prp(1,JP),ntot2)
       elseif (nbd.eq.3) then
@@ -962,7 +962,7 @@ C
       INCLUDE 'TSTEP'
 C
       if (nbdinp.eq.3) then
-         ntot2 = nx2*ny2*nz2*nelv
+         ntot2 = lx2*ly2*lz2*nelv
          call copy (prlagp(1,1,JP),prp(1,JP),ntot2)
       endif
       return
@@ -976,9 +976,9 @@ c
 c
       real sigma(0:lpert)
 c
-      ntotv = nx1*ny1*nz1*nelv
-      ntotp = nx2*ny2*nz2*nelv
-      ntott = nx1*ny1*nz1*nelt
+      ntotv = lx1*ly1*lz1*nelv
+      ntotp = lx2*ly2*lz2*nelv
+      ntott = lx1*ly1*lz1*nelt
 c
       do j=1,npert
          call normvc(h1,semi,pl2,plinf,vxp(1,j),vyp(1,j),vzp(1,j))
@@ -1044,9 +1044,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      ntotp = nx2*ny2*nz2*nelv
-      ntotv = nx1*ny1*nz1*nelv
-      ntott = nx1*ny1*nz1*nelt
+      ntotp = lx2*ly2*lz2*nelv
+      ntotv = lx1*ly1*lz1*nelv
+      ntott = lx1*ly1*lz1*nelt
 
       call add2s2(vxp(1,i),vxp(1,j),scale,ntotv)
       call add2s2(vyp(1,i),vyp(1,j),scale,ntotv)
@@ -1072,7 +1072,7 @@ c-----------------------------------------------------------------------
       if (ifheat) then
         do k=0,npscal
           k1=k+1
-          ntotk = nx1*ny1*nz1*nelfld(k+2)
+          ntotk = lx1*ly1*lz1*nelfld(k+2)
           call add2s2(tp(1,k1,i),tp(1,k1,j),scale,ntotk)
           do l=1,lorder-1
             call add2s2(tlagp(1,l,k1,i),tlagp(1,l,k1,j),scale,ntotk)
@@ -1091,8 +1091,8 @@ c-----------------------------------------------------------------------
 
       common/normset/pran, ray, rayc
 
-      ntotv=nx1*ny1*nz1*nelv
-      ntott=nx1*ny1*nz1*nelt
+      ntotv=lx1*ly1*lz1*nelv
+      ntott=lx1*ly1*lz1*nelt
 
       s1 = rayc*glsc3(vxp(1,i),bm1,vxp(1,j),ntotv)
       s2 = rayc*glsc3(vyp(1,i),bm1,vyp(1,j),ntotv)
@@ -1140,7 +1140,7 @@ c
       real v1(1) , v2(1), v3(1)
       real normsq1,normsq2,normsq3,opnorm
 c
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
       normsq1=glsc3(v1,bm1,v1,ntotv)
       normsq2=glsc3(v2,bm1,v2,ntotv)
       if(if3d) then
@@ -1161,7 +1161,7 @@ c-----------------------------------------------------------------------
 
       real temp(*)
 c
-      ntotv = nx1*ny1*nz1*nelv
+      ntotv = lx1*ly1*lz1*nelv
       Tnorm = sqrt( glsc3(temp,BM1,temp,ntotv) /voltm1)
 c
       return
@@ -1176,7 +1176,7 @@ c     Norm weighted by mass matrix
       real normsq1,normsq2,normsq3,normsqT,dMnorm
       common/normset/pran, ray, rayc
 
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
       normsq1=(rayc)*glsc3(v1,BM1,v1,ntotv)
       normsq2=(rayc)*glsc3(v2,BM1,v2,ntotv)
       if(if3d) then
@@ -1224,7 +1224,7 @@ c     v =  alpha*v
       real alpha
       real v1(*),v2(*),v3(*)
 
-      ntotv=nx1*ny1*nz1*nelv
+      ntotv=lx1*ly1*lz1*nelv
 
       call cmult(v1,alpha,ntotv)
       call cmult(v2,alpha,ntotv)
@@ -1336,7 +1336,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      ntotp = nx2*ny2*nz2*nelv
+      ntotp = lx2*ly2*lz2*nelv
 
       call opscale                     !normalize vectors to unit norm
      $      (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),pertinvnorm)

@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine newel(xmouse,ymouse,button,ierr) ! add new element
 
-      include 'basics.inc'
+#     include "basics.inc"
       dimension iobjs(8)
       integer e
 
@@ -134,7 +134,7 @@ c           First element corner already input
 c-----------------------------------------------------------------------
       subroutine set_auto_curve(e,iobjs) ! set curve sides
 
-      include 'basics.inc'
+#     include "basics.inc"
       dimension iobjs(8)
       integer e
 
@@ -152,7 +152,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine chk_polar (e)
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifcurv
       integer e
 
@@ -214,7 +214,7 @@ C        Now curve side and update element image.
       end
 c-----------------------------------------------------------------------
       subroutine chk_obj (e,iobjs)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,iobjs(4)
       logical ifcurv
 
@@ -302,7 +302,7 @@ c                 ccurve(ic,e)='C'
       end
 c-----------------------------------------------------------------------
       subroutine chk_neighbor(e) ! Check for shared curved sides
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       logical ifcurv
 
@@ -338,7 +338,7 @@ c              element.... pff 3/27/94:  only "C" curve sides for now.
       end
 c-----------------------------------------------------------------------
       subroutine clockw_chk(e,ierr) ! counter-clockwise check
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       logical ifcurv
       real xyz(2,4)
@@ -375,7 +375,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine getside(je,js,xp,yp) ! Find closest element/side to duplicate
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 
       rmin=1.e22
@@ -420,7 +420,7 @@ c-----------------------------------------------------------------------
       subroutine delelq(idel)
 C     Deletes element from mesh.  But really, it copies a null element to
 C     the one to be deleted.
-      include 'basics.inc'
+#     include "basics.inc"
 C
 c     CALL BLANK(S,80)
 c     WRITE(S,10,ERR=20) IDEL,NEL
@@ -449,7 +449,7 @@ c-----------------------------------------------------------------------
       subroutine delel(idel)
 C     Deletes element from mesh.  But really, it copies a null element to
 C     the one to be deleted.
-      include 'basics.inc'
+#     include "basics.inc"
 C
       CALL BLANK(S,80)
       WRITE(S,10,ERR=20) IDEL,NEL
@@ -494,7 +494,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine copyelbc_p(isrc,ides) ! Copies everything related to element
-      include 'basics.inc'
+#     include "basics.inc"
       character key,string*6
 
       nshift = ides-isrc
@@ -514,7 +514,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine copyelbc(isrc,ides) ! Copies everything related to element
-      include 'basics.inc'
+#     include "basics.inc"
       character key,string*6
 
       do 100 ifld=0,maxfld
@@ -531,7 +531,7 @@ c        if (cbc(i,ides,ifld).eq.'P  ') cbc(i,ides,ifld)='   '
       end
 c-----------------------------------------------------------------------
       subroutine copyel0(isrc,ides) ! Copies everything related to element
-      include 'basics.inc'
+#     include "basics.inc"
       character key,string*6
 
 c     if (ides.ge.nelm-2) then
@@ -545,7 +545,7 @@ c     if (ides.ge.nelm-2) then
       end
 c-----------------------------------------------------------------------
       subroutine copyel2(isrc,ides) ! Copies everything related to element
-      include 'basics.inc'
+#     include "basics.inc"
       character key,string*6
       do 200 i =1,6
       do 200 ii=1,4
@@ -602,7 +602,7 @@ c-----------------------------------------------------------------------
       subroutine model(iel)
 C     Modifies element by moving point in mesh
 C     Modified neighbor points iff they had been latched to point in questio
-      include 'basics.inc'
+#     include "basics.inc"
       dimension ielmov(nelm)
       real xcheck(8),ycheck(8)
       character key,string*6
@@ -850,7 +850,7 @@ C     Draw ISOMETRICALLY ONLY ELEMENT MOVED
       end
 c-----------------------------------------------------------------------
       subroutine blatch2(xm,ym,cm,em,ec,vc,nc)! close vertex
-      include 'basics.inc'
+#     include "basics.inc"
       integer cm,em,ec(nel),vc(nel)
       integer e,v,v0,v1
 
@@ -940,7 +940,7 @@ c-----------------------------------------------------------------------
 C     Modifies element by moving point in mesh
 C     Modified neighbor points iff they had been latched to point in questio
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       common /ctmps/ ec(nelm),vc(nelm)  ! Vertices close to moved point
       integer ec,vc,cm,em
@@ -1055,7 +1055,7 @@ C     DRaws ISometric EDge.  IFLIP CAuses to draw from end to beginning
 C     POSITIVE MEANS CCW; ON VERTICAL STRUTS 9-12, MEANS UPWARD
 C     Draws only.  No move or fill.
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
-      include 'basics.inc'
+#     include "basics.inc"
 C
 
       IF(IEDGE.GT.8)THEN
@@ -1109,7 +1109,7 @@ C        Draw curved side
       end
 c-----------------------------------------------------------------------
       subroutine drawis(iel)
-      include 'basics.inc'
+#     include "basics.inc"
       dimension xisom(8),yisom(8),cspace(100),xcrved(100),ycrved(100)
       iiel=iabs(iel)
       if (.not.if3d)   return
@@ -1156,7 +1156,7 @@ C        Draw Ceiling panel
 c-----------------------------------------------------------------------
       subroutine drawel(iel)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1370,7 +1370,7 @@ C HMT color TRACE - seems to be the outline
       end
 c-----------------------------------------------------------------------
       subroutine mkside_e(e) ! Define sides' midpoints
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 
       do f=1,nsides
@@ -1415,7 +1415,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine mkside
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Find Sides' Midpoints
 C
@@ -1506,7 +1506,7 @@ c        write(88,*) icalld,round,x,diff
 
 c-----------------------------------------------------------------------
       subroutine blatch(xmouse,ymouse,icmin,ielmin) ! Latch to closest vertex
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       xc=xmouse
@@ -1537,7 +1537,7 @@ c  1     format(i5,i3,i5,i3,1p5e12.4,' blatch')
       end
 c-----------------------------------------------------------------------
       subroutine sortel
-      include 'basics.inc'
+#     include "basics.inc"
 C     Sorts elements according to their visibility, i.e., ISRT (1) is behind
 C     all the others and gets drawn first; element ISRT (NEL) is in front
 C     and is most visible.
@@ -1574,7 +1574,7 @@ C----------------------------------------------------------------------
 C
       subroutine drawel_COLOR(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1778,7 +1778,7 @@ C----------------------------------------------------------------------
 C
       subroutine hmt_drawel_COLOR(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -1984,7 +1984,7 @@ C
       subroutine hmt_drawel_COLOR_NLN(iel,ICOLOR)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       integer icolor
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER STRING*6
       DIMENSION XISOM(8),YISOM(8),CSPACE(100),XCRVED(100),YCRVED(100)
       LOGICAL IFSPHR
@@ -2192,7 +2192,7 @@ c-----------------------------------------------------------------------
 c
 c     This routine flips about x, y, or z plane
 c
-      include 'basics.inc'
+#     include "basics.inc"
       character key,string*6
       character*1 fplane
       character*3 cbt
@@ -2377,7 +2377,7 @@ c-----------------------------------------------------------------------
 c
 c     Reflect about x-, y-, or z-plane
 c
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 fplane
 c
 1     CONTINUE
@@ -2408,7 +2408,7 @@ c
 c-----------------------------------------------------------------------
       subroutine substitute_el(xyzbox,nelold)
 C     Delete elements in xyzbox, provied e < nelold + 1
-      include 'basics.inc'
+#     include "basics.inc"
       real xyzbox(6)
 c
       common /cdell/ ifkeep(nelm)
@@ -2521,7 +2521,7 @@ c     if (abs(rad_circ).gt.max_ratio*x20) rad_circ=0
       end
 c-----------------------------------------------------------------------
       subroutine side_to_obj(iobj,xo,yo,e,side)
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     Is this side attached to object iobj ?
 
@@ -2549,7 +2549,7 @@ c     Is this side attached to object iobj ?
       end
 c-----------------------------------------------------------------------
       subroutine convert_m_to_c_e(f,e,rad_mx)
-      include 'basics.inc'
+#     include "basics.inc"
       integer f,e
 
       if (ccurve(f,e).ne.'m') return
@@ -2580,7 +2580,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine convert_m_to_c_all ! This works only for 2D at present
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer edge,e
 
       call prs('Input maxium radius:$')
@@ -2597,7 +2597,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine convert_m_to_c_allr(rmx) ! This works only for 2D at present
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer edge,e
 
       do e=1,nel

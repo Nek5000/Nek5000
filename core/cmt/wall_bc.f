@@ -14,8 +14,8 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
       include 'CMTDATA'
 
       integer nstate,f,e
-      real    facew(nx1*nz1,2*ndim,nelt,nstate)
-      real    wbc(nx1*nz1,2*ndim,nelt,nstate) 
+      real    facew(lx1*lz1,2*ldim,nelt,nstate)
+      real    wbc(lx1*lz1,2*ldim,nelt,nstate) 
       common /nekcb/ cb
       character*3 cb
 
@@ -26,7 +26,7 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
 ! JH031617 Collis (CTR 2002-ish), Hartmann & Houston (2006-8) probably BR
 !          and Dolejsi and Feistatuer (2015) (check that)
 !          all say YES, inviscid rind and viscous rind are different.
-      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
+      call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)    
       ieg=lglel(e)
       l=0
       do iz=k0,k1
@@ -93,8 +93,8 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
       include 'CMTBCDATA'
 
       integer nstate,f,e
-      real    facew(nx1*nz1,2*ndim,nelt,nstate)
-      real    wbc(nx1*nz1,2*ndim,nelt,nstate) 
+      real    facew(lx1*lz1,2*ldim,nelt,nstate)
+      real    wbc(lx1*lz1,2*ldim,nelt,nstate) 
 
 ! JH102016
 ! rind state for inviscid fluxes is different from viscous fluxes
@@ -116,21 +116,21 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
       integer  f,e
 ! JH091614 facew now has intent(inout)...
 ! JH031315 not anymore. nobody changes qminus here. that's dumb
-      real facew(nx1*nz1,2*ndim,nelt,nvar)
-      real wbc(nx1*nz1,2*ndim,nelt,nvar)
+      real facew(lx1*lz1,2*ldim,nelt,nvar)
+      real wbc(lx1*lz1,2*ldim,nelt,nvar)
       integer i, nxz, fdim
       real nx,ny,nz,rl,ul,vl,wl,pl,fs
       parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
 
-      nxz=nx1*nz1
-      nxzd=nxd*nzd
-      fdim=ndim-1
+      nxz=lx1*lz1
+      nxzd=lxd*lzd
+      fdim=ldim-1
       ieg=lglel(e)
       ifield=1
 
 ! I know this says slipwall, but to the inviscid terms all walls are
 ! slip. or something.
-      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
+      call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)    
       do l=1,nxz
          nx = unx(l,1,f,e)
          ny = uny(l,1,f,e)
@@ -189,9 +189,9 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
       integer  f,e
 ! JH091614 facew now has intent(inout)...
 ! JH031315 not anymore. nobody changes qminus here. that's dumb
-      real facew(nx1*nz1,2*ndim,nelt,nvar)
-      real wbc(nx1*nz1,2*ndim,nelt,nvar)
-      real fluxw(nx1*nz1,2*ndim,nelt,*)
+      real facew(lx1*lz1,2*ldim,nelt,nvar)
+      real wbc(lx1*lz1,2*ldim,nelt,nvar)
+      real fluxw(lx1*lz1,2*ldim,nelt,*)
       integer i, nxz, fdim
       real nx,ny,nz,rl,ul,vl,wl,pl,fs
       parameter (lfd1=lxd*lzd,lfc1=lx1*lz1)
@@ -201,15 +201,15 @@ C> @file wall_bc.f Dirichlet states for wall boundary conditions
      >               jaco_f(lfd1),dumminus(lfd1,5)
       real nxf,nyf,nzf,ufacel,ufacer,plc,prc,plf,jaco_c,jaco_f,dumminus
 
-      nxz=nx1*nz1
-      nxzd=nxd*nzd
-      fdim=ndim-1
+      nxz=lx1*lz1
+      nxzd=lxd*lzd
+      fdim=ldim-1
       ieg=lglel(e)
       ifield=1
 
 ! I know this says slipwall, but to the inviscid terms all walls are
 ! slip. or something.
-      call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)    
+      call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)    
       l=0
       do iz=k0,k1
       do iy=j0,j1
@@ -268,14 +268,14 @@ c                                     ! ux,uy,uz someday
 
 ! Inviscid flux at walls is due to pressure only. should probably just
 ! hardcode that instead of calling CentralInviscid so trivially
-      if (nxd.gt.nx1) then
-         call map_faced(nxf,unx(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nyf,uny(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(nzf,unz(1,1,f,e),nx1,nxd,fdim,0)
-         call map_faced(plf,plc,nx1,nxd,fdim,0)
+      if (lxd.gt.lx1) then
+         call map_faced(nxf,unx(1,1,f,e),lx1,lxd,fdim,0)
+         call map_faced(nyf,uny(1,1,f,e),lx1,lxd,fdim,0)
+         call map_faced(nzf,unz(1,1,f,e),lx1,lxd,fdim,0)
+         call map_faced(plf,plc,lx1,lxd,fdim,0)
 
          call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-         call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0)
+         call map_faced(jaco_f,jaco_c,lx1,lxd,fdim,0)
          call col2(jaco_f,wghtf,nxzd)
       else
          call copy(nxf,unx(1,1,f,e),nxz)
@@ -286,7 +286,7 @@ c                                     ! ux,uy,uz someday
          call copy(jaco_f,area(1,1,f,e),nxz)
       endif
       call rzero(dumminus,toteq*nxzd)
-      call map_faced(dumminus(1,1),facew(1,f,e,iu1),nx1,nxd,fdim,0)
+      call map_faced(dumminus(1,1),facew(1,f,e,iu1),lx1,lxd,fdim,0)
       call rzero(fs2,nxzd)
 ! START BY GETTING RID OF THESE TRIVIAL CENTRAL CALLS AND CENTRAL ALTOGETHER
       call CentralInviscid_FluxFunction(nxzd,nxf,nyf,nzf,fs2,dumminus,
@@ -296,12 +296,12 @@ c                                     ! ux,uy,uz someday
          call col2(flx(1,ieq),jaco_f,nxzd)
       enddo
 
-      if (nxd.gt.nx1) then
+      if (lxd.gt.lx1) then
          do j=1,toteq-1
-            call map_faced(fluxw(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
+            call map_faced(fluxw(1,f,e,j),flx(1,j),lx1,lxd,fdim,1)
          enddo
          if(cbc(f,e,ifield).ne.'I  ') call map_faced(fluxw(1,f,e,toteq),
-     >                              flx(1,toteq),nx1,nxd,fdim,1)
+     >                              flx(1,toteq),lx1,lxd,fdim,1)
       else
          do j=1,toteq-1
             call copy(fluxw(1,f,e,j),flx(1,j),nxz)

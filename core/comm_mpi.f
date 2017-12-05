@@ -8,11 +8,6 @@ c---------------------------------------------------------------------
 
       logical flag
 
-c      call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
-c      if ( mpi_is_initialized .eq. 0 ) then
-c         call mpi_init (ierr)
-c      endif
-
       ! set nek communicator
       call init_nek_comm(intracomm)
       nid  = nid_
@@ -25,9 +20,6 @@ c      endif
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-c     to avoid problems with MPI_TAG_UB on Cray we change
-c     tags from global (eg) to local (e) element number
-c      if (nval.lt.(10000+max(lp,lelg))) then
       if (nval.lt.(10000+lp)) then
          if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
@@ -534,7 +526,7 @@ c     Communicate unhappiness to the other session
       tstop  = dnekclock()
       ttotal = tstop-etimes
       tsol   = max(ttime - tprep,0.0)
-      nxyz   = nx1*ny1*nz1
+      nxyz   = lx1*ly1*lz1
 
       dtmp4 = glsum(getmaxrss(),1)/1e9
 

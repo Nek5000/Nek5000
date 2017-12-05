@@ -93,7 +93,7 @@ c
 c-----------------------------------------------------------------------
       subroutine selite(nelpf,se_to_face,nfcs,jclr)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       integer nelpf(1),se_to_face(nfcs,1)
 c
@@ -120,7 +120,7 @@ c-----------------------------------------------------------------------
 C
 C      Draw ISOMETRIC view of general 3D element number IE.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 CB1
       INTEGER IFIRST,NCSOLD,NCSEG1,NCSGM1
@@ -291,7 +291,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine out_rea
-      include 'basics.inc'
+#     include "basics.inc"
 c
 c     Make a copy of new .rea file
 c
@@ -437,7 +437,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine get_vert (vertex,nlv)
-      include 'basics.inc'
+#     include "basics.inc"
       integer vertex(nlv,nel)
 c
       character*80 mapname
@@ -488,7 +488,7 @@ c-----------------------------------------------------------------------
 c
 c     Assign a numbering to all element faces
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer se_to_face(nfcs,1)
       integer vertex(nlv,1),wrk(1)
       integer tmp_face(ndim,nfcs,1)
@@ -530,7 +530,7 @@ c
 c-----------------------------------------------------------------------
       subroutine surface_id(nelpf,nfctot,se_to_face,nfcs,vertex,nlv
      $                      ,srfef,srfvt,srfvx,nfc,vtxpt)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer nelpf(nfctot),se_to_face(nfcs,1)
@@ -698,7 +698,7 @@ c-----------------------------------------------------------------------
 c
 c     Suite of routines to clean up mesh imperfections
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer se_to_face(6*nelm)
       integer vertex(8*nelm)
@@ -788,7 +788,7 @@ c
 c-----------------------------------------------------------------------
       subroutine remap_xyz (nelpf,nfctot,se_to_face,nfcs,vertex,nlv
      $                      ,srfef,srfvt,srfvx,nfc,vtxpt)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer nelpf(nfctot),se_to_face(nfcs,1)
@@ -847,7 +847,7 @@ c
 c-----------------------------------------------------------------------
       subroutine remap_xyz1
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
 c
@@ -870,7 +870,7 @@ c-----------------------------------------------------------------------
      $              ,srfef,srfvt,srfvx,srfvn,nfc,nd,nvrt
      $              ,srfnb,phil,phihat,work)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer srfef(2,0:1),srfvt(nfc,1)
       real    srfvx(nd,nfc,1),srfvn(nd,nfc,1),srfnb(nd,nfc,1)
       real    phil(nfc,1),phihat(nfc,1)
@@ -1018,7 +1018,7 @@ c-----------------------------------------------------------------------
      $              ,srfnb,vtxpt,phil,phihat,phib,jk,wrk,n
      $              ,nelpf,se_to_face,nfcs)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer srfef(2,0:1),srfvt(nfc,1)
@@ -1112,7 +1112,7 @@ c
 c     Correct defect using transfinite interpolation
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer srfef(2,0:1),srfvt(nfc,1)
@@ -1308,7 +1308,7 @@ c
 c     Correct defect using transfinite interpolation
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer srfef(2,0:1),srfvt(nfc,1)
@@ -1453,7 +1453,7 @@ cqq        end
 c
 c-----------------------------------------------------------------------
       subroutine mesh_smooth
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer icalld
@@ -1588,7 +1588,7 @@ c
 c-----------------------------------------------------------------------
       subroutine find_bc_crv(b,nv,cell,nvc,ncell)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer cell(nvc,ncell),b(nv)
 c
       integer efc(4,6)
@@ -1723,7 +1723,7 @@ c-----------------------------------------------------------------------
 c
 c     Read a file until "key" is found or eof is found.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cfilold/ filold
@@ -1793,7 +1793,7 @@ c
 c-----------------------------------------------------------------------
       subroutine find_sm_box(b,nv,x0,x1,y0,y1,z0,z1)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer b(1)
@@ -1836,7 +1836,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine chk_jacob(vol,ratio,nebad,iebad,b,xp,yp,zp,cell,nvc)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer iebad(1),cell(nvc,1),b(1)
       real xp(1),yp(1),zp(1),vol(1),ratio(1)
@@ -2122,7 +2122,7 @@ c-----------------------------------------------------------------------
       subroutine smoother(cell,nvc,ia,ja,ww,b,g
      $                            ,x0,x1,y0,y1,z0,z1,ss,eps,idpth)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ww(0:1)
@@ -2384,7 +2384,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine show_plot
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       SUATTR = 'SCALAR PLOT'
@@ -2399,7 +2399,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_mesh(xyz)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real xyz(3,8,1)
 c
@@ -2415,7 +2415,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine reset_mesh(xyz)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real xyz(3,8,1)
 c
@@ -2433,7 +2433,7 @@ c-----------------------------------------------------------------------
       subroutine angle_smoother
      $              (cell,nvc,ia,ja,ww,b,g,x0,x1,y0,y1,z0,z1,ein)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ww(0:1)
@@ -2592,7 +2592,7 @@ c
 c-----------------------------------------------------------------------
       subroutine remap_xyz2(cell,nvc,b)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer cell(nvc,1),b(1)
@@ -2617,7 +2617,7 @@ c-----------------------------------------------------------------------
       subroutine build_graph(cell,nvc,ia,ja,ww,b,g
      $                           ,x0,x1,y0,y1,z0,z1)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       real ww(0:1)
@@ -2663,7 +2663,7 @@ c-----------------------------------------------------------------------
 c
 c     Suite of routines to make elements near to wall orthogonal to wall
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer cell(ncrnr,1)
@@ -2717,7 +2717,7 @@ c-----------------------------------------------------------------------
       subroutine mean_normal(srfnb,srfvn,srfef,srfvt,srfvx,nfc,nd,nvrt
      $              ,work)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       integer srfef(2,0:1),srfvt(nfc,1)
       real    srfvx(nd,nfc,1),srfvn(nd,nfc,1),srfnb(nd,nfc,1)
       real    work(nd,nvrt)
@@ -2752,7 +2752,7 @@ c-----------------------------------------------------------------------
 c
 c     Suite of routines to make elements near to wall orthogonal to wall
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer cell(1),b(1),ja(1),ia(1),ww(1),g(1)
@@ -2801,7 +2801,7 @@ c-----------------------------------------------------------------------
 c
 c     Suite of routines to clean up mesh imperfections
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       integer ia(1),ja(1),b(1)

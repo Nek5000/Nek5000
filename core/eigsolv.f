@@ -17,7 +17,7 @@ C-------------------------------------------------------------
       INCLUDE 'EIGEN'
       INCLUDE 'TSTEP'
 C
-      NTOT1=NX1*NY1*NZ1*NELFLD(IFIELD)
+      NTOT1=lx1*ly1*lz1*NELFLD(IFIELD)
       XMIN = GLMIN(XM1,NTOT1)
       XMAX = GLMAX(XM1,NTOT1)
       YMIN = GLMIN(YM1,NTOT1)
@@ -37,7 +37,7 @@ C
       RYX = YY/XX
       RMIN = RXY
       IF (RYX .LT. RMIN) RMIN = RYX
-      IF (NDIM .EQ. 3) THEN
+      IF (ldim .EQ. 3) THEN
          RXZ = XX/ZZ
          RZX = ZZ/XX
          RYZ = YY/ZZ
@@ -53,7 +53,7 @@ C
       XYZMIN = XX2
       XYZMAX = XX2+YY2
       IF (YY2 .LT. XYZMIN) XYZMIN = YY2
-      IF (NDIM .EQ. 3) THEN
+      IF (ldim .EQ. 3) THEN
          ZZ2 = 1./ZZ**2
          XYZMAX = XYZMAX+ZZ2
          IF (ZZ2 .LT. XYZMIN) XYZMIN = ZZ2
@@ -64,8 +64,8 @@ C
       RATIO  = XYZMIN/XYZMAX
       EIGAE  = PI*PI*XYZMIN
       EIGGE  = EIGGA
-      IF (NDIM .EQ. 2) EIGAA = PI*PI*(XX2+YY2)/2.
-      IF (NDIM .EQ. 3) EIGAA = PI*PI*(XX2+YY2+ZZ2)/3.
+      IF (ldim .EQ. 2) EIGAA = PI*PI*(XX2+YY2)/2.
+      IF (ldim .EQ. 3) EIGAA = PI*PI*(XX2+YY2+ZZ2)/3.
       IF (IFAXIS)      EIGAA = .25*PI*PI*YY2
       EIGAS  = 0.25*RATIO
       EIGGS  = 2.0
@@ -113,16 +113,16 @@ C
      $ ,             H2 (LX1,LY1,LZ1,LELT)
       COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
 C
-      NTOT1  = NX1*NY1*NZ1*NELV
+      NTOT1  = lx1*ly1*lz1*NELV
 C
       IF (IFAA) THEN
-         NTOT1  = NX1*NY1*NZ1*NELV
+         NTOT1  = lx1*ly1*lz1*NELV
          CALL RONE    (H1,NTOT1)
          CALL RZERO   (H2,NTOT1)
          CALL ALPHAM1 (EIGAA1,V1MASK,VMULT,H1,H2,1)
          CALL ALPHAM1 (EIGAA2,V2MASK,VMULT,H1,H2,2)
          EIGAA = MIN  (EIGAA1,EIGAA2)
-         IF (NDIM.EQ.3) THEN
+         IF (ldim.EQ.3) THEN
             CALL ALPHAM1 (EIGAA3,V3MASK,VMULT,H1,H2,3)
             EIGAA = MIN  (EIGAA,EIGAA3)
          ENDIF
@@ -182,14 +182,14 @@ C
       ENDIF
 C
       IF (IFGA) THEN
-         NTOT1  = NX1*NY1*NZ1*NELV
+         NTOT1  = lx1*ly1*lz1*NELV
          CALL RONE    (H1,NTOT1)
          CALL RZERO   (H2,NTOT1)
          IF (.NOT.IFSTRS) THEN
             CALL GAMMAM1 (EIGGA1,V1MASK,VMULT,H1,H2,1)
             CALL GAMMAM1 (EIGGA2,V2MASK,VMULT,H1,H2,2)
             EIGGA3 = 0.
-            IF (NDIM.EQ.3)
+            IF (ldim.EQ.3)
      $      CALL GAMMAM1 (EIGGA3,V3MASK,VMULT,H1,H2,3)
             EIGGA = MAX  (EIGGA1,EIGGA2,EIGGA3)
          ELSE
@@ -224,7 +224,7 @@ C
       IF (ISD  .EQ.2) NAME = 'EVVX'
       IF (ISD  .EQ.3) NAME = 'EVVX'
 C
-      NXYZ1  = NX1*NY1*NZ1
+      NXYZ1  = lx1*ly1*lz1
       NTOT1  = NXYZ1*NEL
       EVNEW  = 0.
       CALL STARTX1 (X1,Y1,MASK,MULT,NEL)
@@ -232,7 +232,7 @@ C
       DO 1000 ITER=1,NMXE
          CALL AXHELM (Y1,X1,H1,H2,IMESH,ISD)
          CALL COL2   (Y1,MASK,NTOT1)
-         CALL DSSUM  (Y1,NX1,NY1,NZ1)
+         CALL DSSUM  (Y1,lx1,ly1,lz1)
          RQ     = GLSC3 (X1,Y1,MULT,NTOT1)
          EVOLD  = EVNEW
          EVNEW  = RQ
@@ -243,7 +243,7 @@ C
          CALL HMHOLTZ ('NOMG',Y1,X1,H1,H2,MASK,MULT,
      $                              IMESH,TOLHE,NMXH,ISD)
          CALL COL3    (X1,BM1,Y1,NTOT1)
-         CALL DSSUM   (X1,NX1,NY1,NZ1)
+         CALL DSSUM   (X1,lx1,ly1,lz1)
          YY = GLSC3  (X1,Y1,MULT,NTOT1)
          YNORM = 1./SQRT(YY)
          CALL CMULT   (Y1,YNORM,NTOT1)
@@ -274,7 +274,7 @@ C
 C
       IF (IMESH.EQ.1) NEL = NELV
       IF (IMESH.EQ.2) NEL = NELT
-      NXYZ1  = NX1*NY1*NZ1
+      NXYZ1  = lx1*ly1*lz1
       NTOT1  = NXYZ1*NEL
       EVNEW  = 0.
 c     pff (2/15/96)
@@ -283,7 +283,7 @@ C
       DO 1000 ITER=1,NMXE
          CALL AXHELM (Y1,X1,H1,H2,IMESH,ISD)
          CALL COL2   (Y1,MASK,NTOT1)
-         CALL DSSUM  (Y1,NX1,NY1,NZ1)
+         CALL DSSUM  (Y1,lx1,ly1,lz1)
          RQ     = GLSC3 (X1,Y1,MULT,NTOT1)
          EVOLD  = EVNEW
          EVNEW  = RQ
@@ -326,7 +326,7 @@ C
       COMMON /SCREV/ X2   (LX2,LY2,LZ2,LELV)
      $ ,             Y2   (LX2,LY2,LZ2,LELV)
 C
-      NTOT2  = NX2*NY2*NZ2*NELV
+      NTOT2  = lx2*ly2*lz2*NELV
       EVNEW  = 0.
       CALL STARTX2 (X2,Y2)
 C
@@ -371,7 +371,7 @@ C
       COMMON /SCREV/ X2 (LX2,LY2,LZ2,LELV)
      $ ,             Y2 (LX2,LY2,LZ2,LELV)
 C
-      NTOT2  = NX2*NY2*NZ2*NELV
+      NTOT2  = lx2*ly2*lz2*NELV
       EVNEW  = 0.
       CALL STARTX2 (X2,Y2)
 C
@@ -407,7 +407,7 @@ c     Normalization: XT*B*X = 1
       REAL MASK (LX1,LY1,LZ1,1)
       REAL MULT (LX1,LY1,LZ1,1)
 
-      NTOT1 = NX1*NY1*NZ1*NEL
+      NTOT1 = lx1*ly1*lz1*NEL
       CALL COPY       (X1,BM1,NTOT1)
 
 
@@ -418,7 +418,7 @@ c     Normalization: XT*B*X = 1
 
       CALL COL2       (X1,MASK,NTOT1)
       CALL COL3       (Y1,BM1,X1,NTOT1)
-      CALL DSSUM      (Y1,NX1,NY1,NZ1)
+      CALL DSSUM      (Y1,lx1,ly1,lz1)
       XX     = GLSC3 (X1,Y1,MULT,NTOT1)
       XNORM  = 1./SQRT(XX)
       CALL CMULT      (X1,XNORM,NTOT1)
@@ -438,17 +438,17 @@ C
       REAL X2 (LX2,LY2,LZ2,LELV)
       REAL Y2 (LX2,LY2,LZ2,LELV)
 C
-      NXYZ2  = NX2*NY2*NZ2
+      NXYZ2  = lx2*ly2*lz2
       NTOT2  = NXYZ2*NELV
       ICONST = 0
-      IF ((NDIM .EQ. 2).AND.(NXYZ2 .EQ. 4)) ICONST = 1
-      IF ((NDIM .EQ. 3).AND.(NXYZ2 .EQ. 8)) ICONST = 1
+      IF ((ldim .EQ. 2).AND.(NXYZ2 .EQ. 4)) ICONST = 1
+      IF ((ldim .EQ. 3).AND.(NXYZ2 .EQ. 8)) ICONST = 1
 C
       IF (ICONST .EQ. 1) THEN
          DO 1000 IEL=1,NELV
-         DO 1000 K=1,NZ2
-         DO 1000 J=1,NY2
-         DO 1000 I=1,NX2
+         DO 1000 K=1,lz2
+         DO 1000 J=1,ly2
+         DO 1000 I=1,lx2
             X2(I,J,K,IEL) = I*J*K
  1000    CONTINUE
       ELSE

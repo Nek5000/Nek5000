@@ -1,4 +1,6 @@
+      real             tol, bb_t
       parameter(tol=5e-13, bb_t=0.01)
+      integer          ltots
       parameter(ltots=4*lx1*ly1*lz1*lelt) ! max source mesh size
 
       integer                fldh_gfldr,inth_gfldr
@@ -26,13 +28,13 @@
       common /vrthov/  bufr 
 
       ! interpolation working arrays 
-      real             rst   (  ldim*ltots)  
-      common /ctmp0/   rst   ! use ctmp0 as no other big CBs are left
+      real             grst   (  ldim*ltots)  
+      common /ctmp0/   grst   ! use ctmp0 as no other big CBs are left
 
-      real             dist  (       ltots)
-      common /scrvh/   dist 
+      real             gdist  (       ltots)
+      common /scrvh/   gdist 
 
-      integer          rcode (ltots)
-      integer          elid  (ltots)
-      integer          proc  (ltots)
-      common /scrns/   rcode,elid,proc
+      integer          grcode (ltots)
+      integer          gelid  (ltots)
+      integer          gproc  (ltots)
+      common /scrns/   grcode,gelid,gproc

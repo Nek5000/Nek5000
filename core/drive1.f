@@ -54,8 +54,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
  12      format(1X,A,4I12,/,/)
       endif 
 
-      ifsync_ = ifsync
-      ifsync = .true.
+c      ifsync_ = ifsync
+c      ifsync = .true.
 
       call setvar          ! Initialize most variables
 
@@ -101,7 +101,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
             ifemati = .true.
             kwave2  = 0.0
             if (ifsplit) ifemati = .false.
-            call gfdm_init(nx2,ny2,nz2,ifemati,kwave2)
+            call gfdm_init(lx2,ly2,lz2,ifemati,kwave2)
          elseif (solver_type.eq.'25D') then
             call g25d_init
          endif
@@ -118,8 +118,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics      !     Set initial conditions 
-      call setprop     !     Compute field properties
+      call setics   !     Set initial conditions 
+      call setprop  !     Compute field properties
 
       if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'
@@ -156,7 +156,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
      &              tinit, ' sec'
       endif
 
-      ifsync = ifsync_ ! restore initial value
+c      ifsync = ifsync_ ! restore initial value
 
       return
       end
@@ -195,6 +195,7 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
          call userchk
@@ -235,7 +236,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call nekgsync
 

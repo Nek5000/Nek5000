@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine midside_convert_all ! Convert all elements to midside
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       do e=1,nel
          call fix_m_curve(e) ! Convert all elements to midside
@@ -133,7 +133,7 @@ c     affine transformations.   pff 3/30/13
       end
 c-----------------------------------------------------------------------
       subroutine cirmesh
-      include 'basics.inc'
+#     include "basics.inc"
       common /ctmp0/ circtr(3),xcs(3,1),ycs(3,1),zcs(3,1)
       common /ctmpr/ radii(100)
       character*1 ctp,cir,YESNO,ctpo
@@ -328,7 +328,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine sphmesh
-      include 'basics.inc'
+#     include "basics.inc"
       common /ctmp0/ sphctr(3),xcs(4,24),ycs(4,24),zcs(4,24)
       common /ctmpr/ radii(100)
       character*1 SHELL,HEMI,YESNO
@@ -893,7 +893,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine genmesh
-      include 'basics.inc'
+#     include "basics.inc"
 C
       common /ctmp0/ sphctr(3),xcs(4,24),ycs(4,24),zcs(4,24)
       DIMENSION CUBE(3,8),CANON(3,8),XCTR(15),YCTR(15),XYZCTR(3)
@@ -950,7 +950,7 @@ C
 c-----------------------------------------------------------------------
       subroutine genele(xyz)
       DIMENSION XYZ(3,8)
-      include 'basics.inc'
+#     include "basics.inc"
 C
       nel=nel+1
       do 10 i=1,8
@@ -1254,7 +1254,7 @@ c-----------------------------------------------------------------------
 c
 c     Update SEM element data for diamond saddle
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real v(3,8,24),xdia(3,6)
 c
       integer e
@@ -1312,7 +1312,7 @@ c-----------------------------------------------------------------------
 c
 c     Update SEM element data for tet saddle
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real v(3,8,12),xtet(3,4)
 c
       integer e
@@ -1606,7 +1606,7 @@ c-----------------------------------------------------------------------
 c
 c     Build the void between 8 spheres on a regular diamond lattice
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real x0(3)
       real v(3,8,48),p(3,8),q(3,8)  ! 48 elements total (12 + 24 + 12)
       real a0(3)
@@ -1668,7 +1668,7 @@ c     (ulat_k, k=1,...,3) that are used to determine coincidence
 c     of periodic boundaries.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real x0(3),q(3,4)
 c
@@ -1730,7 +1730,7 @@ c-----------------------------------------------------------------------
 c
 c     Update SEM element data for dodec
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real v(3,8,4),xrhm(3,4)
 c
       integer e
@@ -1954,7 +1954,7 @@ c-----------------------------------------------------------------------
 c
 c     Build the void for an fcc lattice
 c
-      include 'basics.inc'
+#     include "basics.inc"
       real x0(3)
       real p(3,8,2) ! sphere centers 8 + 6
       real q(3,6)   ! permuted diamond sphere centers 6
@@ -2150,7 +2150,7 @@ c-----------------------------------------------------------------------
 c
 c     Place a sphere near a wall;   10/15/06  pff
 
-      include 'basics.inc'
+#     include "basics.inc"
       real xvi(3),zvi(5),tsph(3)
 
 c     tsph -- translation of sphere from base position
@@ -2311,7 +2311,7 @@ c-----------------------------------------------------------------------
 c
 c     Place a sphere near a wall;   10/15/06  pff
 c
-      include 'basics.inc'
+#     include "basics.inc"
 
       real r0,h0           ! radius and height of sphere from wall
       real xvi(3),zvi(5)   ! local coords of box vertices
@@ -2529,7 +2529,7 @@ c     Place a sphere near a wall;   10/15/06  pff
 c
 c     Top & Bottom parts
 c
-      include 'basics.inc'
+#     include "basics.inc"
 
       real r0,h0           ! radius and height of sphere from wall
       real xvi(3),zvi(5)   ! local coords of box vertices
@@ -2710,7 +2710,7 @@ c     Place a sphere near a wall;   10/15/06  pff
 c
 c     Bottom parts
 c
-      include 'basics.inc'
+#     include "basics.inc"
 
       real r0,h0           ! radius and height of sphere from wall
       real xvi(3),zvi(5)   ! local coords of box vertices
@@ -2997,7 +2997,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine el_convert (e,xr,yr,zr)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       real xr(8),yr(8),zr(8)
 
@@ -3014,7 +3014,7 @@ c  1     format(i8,3f9.4,i3,' ec')
       end
 c-----------------------------------------------------------------------
       subroutine el_convert_2to3(e,xr,yr,zr)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       real xr(8),yr(8),zr(8)
 
@@ -3033,7 +3033,7 @@ c  1     format(i8,3f9.4,i3,' ec2')
 c-----------------------------------------------------------------------
       subroutine sc_central_shell(r1,r2,e)
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -3070,7 +3070,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine sc_transition_shell(r1,r2,e) ! build 3 elements, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -3136,7 +3136,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine sc_std_shell(r1,r2,e) ! build 3 elements, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -3208,7 +3208,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine sc_cartesian_shell(r1,r2,e,ifsix) ! build 7 elements, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e1
 
       logical ifsix
@@ -3226,7 +3226,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine sc_cartesian_shell_a(r1,r2,e,ifsix) ! build 3 elements, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifsix
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
@@ -3290,7 +3290,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine sc_cartesian_shell_b(r1,r2,e,ifsix) ! build 3 elements, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifsix
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
@@ -3381,7 +3381,7 @@ c-----------------------------------------------------------------------
 
 c     build one element, use rotation
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifsix
 
       integer e,e1
@@ -3440,7 +3440,7 @@ c     build one element, use rotation
 c-----------------------------------------------------------------------
       subroutine sc_pipe_section (radii,nr,e,ifsix)
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifsix
 
       integer e,e1,e2
@@ -3603,7 +3603,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine convert_top_to_mid(e)
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e1,e2
       common /xyzr/ xr(100),yr(100),zr(100)
 
@@ -3631,7 +3631,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine rep_rotate_mesh2
-      include 'basics.inc'
+#     include "basics.inc"
       character*1 axisr
 
       call prs('Input rotation angle (deg):$')
@@ -3655,7 +3655,7 @@ c-----------------------------------------------------------------------
 
 c     Replicate & Rotate about general normal vector
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,e0,e1,e2,e3
       real normal(3)
 
@@ -3681,7 +3681,7 @@ c     Replicate & Rotate about general normal vector
       end
 c-----------------------------------------------------------------------
       subroutine do_rep_rotate_mesh(e0,e1,angle_deg,nrep,axisr)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e0,e1,e2,e3
       character*1 axisr
 
@@ -3704,7 +3704,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine octquad_split_submesh(e0,e1,ifoct)
-      include 'basics.inc'
+#     include "basics.inc"
       common /splitt/ enew(nelm),ind(nelm)
       dimension liste(8)
       integer e,e0,e1,en
@@ -3781,7 +3781,7 @@ c     call vertadj
 c-----------------------------------------------------------------------
       subroutine mesh4to3(p9,idir)
 
-      include 'basics.inc'
+#     include "basics.inc"
       real p9(3,9)
       integer ptr9(4,4),e
       save    ptr9
@@ -3858,7 +3858,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine build_corner_mesh(p9,nrefine) ! Here, we build the corner mesh
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f,e0,e1,e2,e3
 
       real pp(3,3,2),pl(3,2),p0(3),p9(3,9)
@@ -3917,7 +3917,7 @@ c     Now copy and rotate sub-block
 c-----------------------------------------------------------------------
       subroutine build_center_mesh(p9,nrefine) ! Build the center tet mesh
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f,e0,e1,e2,e3,e4
 
       real p0(3),p9(3,9),p5(3,5),pr(3,5),a(3,3),normal(3)
@@ -3995,7 +3995,7 @@ c     Now copy and rotate sub-block
 c-----------------------------------------------------------------------
       subroutine skin_fcc_spheres(rt,r0,nrefine) 
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f,e0,e1,e2,e3,e4
       real p0(3)
 
@@ -4047,7 +4047,7 @@ c     call prexit(0)  ! Definitely messed up
 c-----------------------------------------------------------------------
       subroutine fcc_x8 ! copy unit 1/2-cell to 4x-cell
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       call do_rep_rotate_mesh (1,nel, 90.,3,'X')
       call do_rep_rotate_mesh (1,nel,180.,1,'Z')
@@ -4056,7 +4056,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine fcc_base(p9,rt,r0,r1,nrefine)  ! Build fcc mesh
-      include 'basics.inc'
+#     include "basics.inc"
 
       real p9(3,9)
 
@@ -4137,7 +4137,7 @@ c
 c-----------------------------------------------------------------------
       subroutine fcc2  ! Build fcc mesh
 
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f,e0,e1,e2
 
       real pp(3,3,2),pl(3,2),p0(3)
@@ -4171,7 +4171,7 @@ c     NOTES:  Target R = .5*6 cm / 4.59619 = .652714
       end
 c-----------------------------------------------------------------------
       subroutine fcc_set_bcs(r0)  ! BCs for fcc mesh
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,f
 
@@ -4196,7 +4196,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine sc_set_bc_etc ! Extraneous spherical cap (SC) cleanup
-      include 'basics.inc'
+#     include "basics.inc"
       integer e,f
 
       do e=1,nel
@@ -4215,7 +4215,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine copy_el_to_safe_haven(e_safe) ! Cache element list
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,e0,e1,e_safe
 
@@ -4231,7 +4231,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine free_safe_haven(e_safe) ! Free (ALL) cached space
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,e0,e1,e_safe
 
@@ -4243,7 +4243,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine sc_make_sphere_cap(radii,nr)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real radii(nr)
 
@@ -4313,7 +4313,7 @@ c        call prexit(0)
       end
 c-----------------------------------------------------------------------
       subroutine sc_6x6_modification(radii,nr,ne_cap) ! 3x3 faces
-      include 'basics.inc'
+#     include "basics.inc"
 
       common /cisplit/ isplit(nelm)
 

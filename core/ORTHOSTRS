@@ -3,8 +3,10 @@
 
       real            xstrs(ldim*ktotstrs*(1+mxprev))
      $               ,bstrs(ldim*ktotstrs*(1+mxprev))
-      common /srthov/ xstrs                      
-     $               ,bstrs
+
+      common /wrthov/ xstrs  ! OVERLAPS WITH VPROJ
+     $               ,bstrs  ! OVERLAPS WITH VPROJ
+
 
       integer         napproxstrs(2)
       common /srthoi/ napproxstrs

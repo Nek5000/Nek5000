@@ -10,8 +10,11 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       logical  if_conv_std
       common /SCRUZ/ w1(lx1,ly1,lz1,lelt)
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
+
+      if (nio.eq.0.and.loglevel.gt.2)
+     $   write(6,*) 'makeq', ifield
 
       if_conv_std = .true.
       if (ifmhd.and.ifaxis) if_conv_std = .false. ! conv. treated in induct.f
@@ -45,7 +48,7 @@ C     !! NOTE: Do not change the content of the array BQ until the current
          if (ifcvfld(ifield)) then
 
            if (ifdiff(ifield)) then
-              ntot = nx1*ny1*nz1*nelfld(ifield)
+              ntot = lx1*ly1*lz1*nelfld(ifield)
               call wlaplacian(w1,t(1,1,1,1,ifield-1),
      &                        vdiff(1,1,1,1,ifield),ifield)
               call add2(bq(1,1,1,1,ifield-1),w1,ntot)

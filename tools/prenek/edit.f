@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
       subroutine mesh_edit   ! enter 2D mesh editor
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e
       logical ifdomdef
@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine dom_mv_vtx(ein,nin,ddom,xdom,npdom)
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,ein(nin)
       real ddom(npdom-1,nin),xdom(2,npdom)
@@ -119,7 +119,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine dom_def(ifdomdef) ! grab a polygon
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e
       logical ifdomdef
@@ -179,7 +179,7 @@ c     endif
 c-----------------------------------------------------------------------
       subroutine dom_el_inside(ein,nin,ddom,xdom,npdom)
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       integer e,ein(1)
       real ddom(npdom-1,1),xdom(2,npdom)
@@ -332,7 +332,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine dom_delete(ein,nin,ddom,xdom,npdom)
 
-      include 'basics.inc'
+#     include "basics.inc"
       common /deletei/ dflag(nelm)
       integer dflag
 

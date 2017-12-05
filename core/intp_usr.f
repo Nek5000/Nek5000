@@ -21,14 +21,14 @@ c
 
       n       = lx1*ly1*lz1*lelt 
       npt_max = 256
-      nxf     = 2*nx1 ! fine mesh for bb-test
-      nyf     = 2*ny1
-      nzf     = 2*nz1
+      nxf     = 2*lx1 ! fine mesh for bb-test
+      nyf     = 2*ly1
+      nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 c
       if(nidd.eq.0) write(6,*) 'call intp_setup(), tol=', tol
-      call fgslib_findpts_setup(ih_intp,nekcomm,npp,ndim,
-     &                          xm1,ym1,zm1,nx1,ny1,nz1,
+      call fgslib_findpts_setup(ih_intp,nekcomm,npp,ldim,
+     &                          xm1,ym1,zm1,lx1,ly1,lz1,
      &                          nelt,nxf,nyf,nzf,bb_t,n,n,
      &                          npt_max,tol)
 c       
@@ -82,7 +82,7 @@ c
      &                      iwk(1,1),1,
      &                      iwk(1,3),1,
      &                      iwk(1,2),1,
-     &                      rwk(1,2),ndim,
+     &                      rwk(1,2),ldim,
      &                      rwk(1,1),1,
      &                      xp,1,
      &                      yp,1,
@@ -119,7 +119,7 @@ c
      &                            iwk(1,1),1,
      &                            iwk(1,3),1,
      &                            iwk(1,2),1,
-     &                            rwk(1,2),ndim,n,
+     &                            rwk(1,2),ldim,n,
      &                            fldin(iin))
       enddo
 

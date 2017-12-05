@@ -2,23 +2,21 @@
 # nek parameter file
 #
 [GENERAL] 
-stopAt = numSteps 
 numSteps = 2000
-
 dt = 1e-03
-timeStepper = bdf   #char #steady
-
 dealiasing = no
-filtering = hpfrt   #explicit        
-filterWeight = 50   #0.05
-addFilterModes = 0
+filtering = hpfrt        # explicit        
+filterWeight = 50        # 0.05
+filterCutOffRatio = 0.9  # fraction of unfiltered modes
+
+[PROBLEMTYPE]
+equation = incompNS
 
 [PRESSURE]
-preconditioner = semg
 residualTol = 1e-08
 residualProj = yes
 
 [VELOCITY]
 residualTol = 1e-8
 density = 1.
-viscosity = -1.0E+5
+viscosity = -100000

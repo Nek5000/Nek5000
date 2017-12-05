@@ -1,5 +1,5 @@
       subroutine genadj
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c
       call izero(adje,6*nelm)
       call izero(adjf,6*nelm)

@@ -12,7 +12,7 @@ c
 c
       integer*8 tt
 
-#ifdef TIMER
+#ifdef TIMER2
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -80,7 +80,7 @@ c        .and. MOD(LOC(c),tt).eq.0 &
  101  call mxmf2(a,n1,b,n2,c,n3)
 
  111  continue
-#ifdef TIMER
+#ifdef TIMER2
       tmxmf = tmxmf + dnekclock() - etime1  
 #endif
       return
@@ -89,7 +89,7 @@ c-----------------------------------------------------------------------
       subroutine fgslib_mxm(a,n1,b,n2,c,n3)
       real a(n1,n2),b(n2,n3),c(n1,n3)
 
-      call mxm(a,n1,b,n2,c,n3)
+      call mxmf2(a,n1,b,n2,c,n3)
 
       return
       end

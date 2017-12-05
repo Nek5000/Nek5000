@@ -22,7 +22,7 @@ C     IEL - element number
 C
 C--------------------------------------------------------------
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       REAL  DU  (NX,NY,NZ)
       REAL  U   (NX,NY,NZ,1)
       REAL  RM1 (NX,NY,NZ,1)
@@ -86,7 +86,7 @@ C--------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       REAL FUNCTION HLEG (I,ZZ,ZLEG,NZZ)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       REAL ZLEG(NZZ)
       REAL    ALFAN,PNZZ(NXM)
       SAVE    ALFAN,PNZZ
@@ -114,7 +114,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE HLEGN(H,ZH,ZLEG,NZZ)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       REAL H(1)
       REAL ZLEG(1)
       REAL    ALFAN,PNZZ(NXM)

@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine n2tec_field_open
 
-      include 'basics.inc'
+#     include "basics.inc"
       include 'tecio.inc'
 
       character*1 title(80)
@@ -40,7 +40,7 @@ c
 c-----------------------------------------------------------------------
       subroutine n2tec_fezone_hdr(ncell,npts)
 
-      include 'basics.inc'
+#     include "basics.inc"
       include 'tecio.inc'
 
       character*1 nulchar
@@ -81,7 +81,7 @@ c   3=FEQUADRILATERAL, 4=FETETRAHEDRON, 5=FEBRICK
 c-----------------------------------------------------------------------
       subroutine n2tec_fezone_hdr(ncell,npts)
 
-      include 'basics.inc'
+#     include "basics.inc"
       include 'tecio.inc'
 
       character*1 nulchar
@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
       subroutine n2tec_xyz_out(npts,xm,ym,zm)
 
       include 'tecio.inc'
-      include 'basics.inc'
+#     include "basics.inc"
 
       real xm(npts),ym(npts),zm(npts)
       integer*4   disdouble
@@ -147,7 +147,7 @@ c-----------------------------------------------------------------------
       subroutine n2tec_scalar_out(npts,scalar)
 
       include 'tecio.inc'
-      include 'basics.inc'
+#     include "basics.inc"
 
       real scalar(npts)
       integer*4   disdouble
