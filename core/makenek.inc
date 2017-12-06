@@ -88,7 +88,7 @@ if [[ $1 = "clean" ]]; then
   done
   rm -rf compiler.out
   rm -rf makefile
-  rn -rf .state
+  rm -rf .state
   exit 0
 fi
 
