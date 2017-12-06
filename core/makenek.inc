@@ -88,6 +88,7 @@ if [[ $1 = "clean" ]]; then
   done
   rm -rf compiler.out
   rm -rf makefile
+  rn -rf .state
   exit 0
 fi
 
@@ -414,4 +415,33 @@ export GSLIB_OPT
 
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0
+fi
+
+declare -a varlist=(
+"SOURCE_ROOT"
+"FC"
+"FFLAGS"
+"CC"
+"CFLAGS"
+"MPI"
+"PROFILING"
+"VISIT"
+"PPLIST"
+)
+if [ ! -f .state ]; then
+  for i in "${varlist[@]}"
+  do
+    echo "$i=${!i}" >> .state
+  done ;
+else
+  for i in "${varlist[@]}"
+  do
+    if ! cat .state | grep -q "$i=${!i}" ; then
+      echo "state change detected, forcing full rebuild"
+      rm .state
+      clean_3rd_party; 
+      make clean;
+      break
+    fi
+  done ;
 fi
