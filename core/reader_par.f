@@ -78,8 +78,8 @@ C
       param(67) = 6    ! read in binary
       param(93) = mxprev ! number of vectors for projection
 
-      param(94) = 5    ! projection for helmholz solves 
-      param(95) = 5    ! projection for pressure solve
+      param(94) = 5    ! projection for helmholz solves (controled by ifprojfld) 
+      param(95) = 0    ! projection for pressure solve
       param(99) = 4    ! enable dealising
 
       param(101) = 0   ! no additional modes
