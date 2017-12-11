@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
+#include <string.h>
 #include "name.h"
 
 #define print_stack FORTRAN_UNPREFIXED(print_stack, PRINT_STACK)
 #define sizeOfLongInt FORTRAN_UNPREFIXED(sizeoflongint, SIZEOFLONGINT)
 #define getmaxrss FORTRAN_UNPREFIXED(getmaxrss, GETMAXRSS)
+#define set_stdout FORTRAN_UNPREFIXED(set_stdout, SET_STDOUT)
 
 #if defined __GLIBC__
 
@@ -41,4 +43,28 @@ double getmaxrss()
 int sizeOfLongInt()
 {
   return sizeof(long int);
+}
+
+void set_stdout(char *f, int flen)
+{
+  char* logfile;
+  int i;
+
+  logfile = (char *) malloc((flen+1)*sizeof(char));
+  strncpy(logfile, f, flen);
+
+  for (i=flen-1; i>=0; i--) if (logfile[i] != ' ') break;
+  logfile[i+1] = '\0';
+
+  if (flen != 0) {
+    printf("redirecting stdout to %s\n",logfile);
+    freopen(logfile, "a+", stdout);
+  } 
+  else {
+    const char* s = getenv("NEK_LOGFILE");
+    if (s != NULL ) {
+      printf("redirecting stdout to %s\n",s);
+      freopen(s, "w+", stdout);
+    }
+  }
 }

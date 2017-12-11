@@ -7,6 +7,7 @@ c---------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
+      character*132 logfile
 
       ! set nek communicator
       call init_nek_comm(intracomm)
@@ -14,9 +15,11 @@ c---------------------------------------------------------------------
       np   = np_
 
       nio = -1             ! Default io flag 
-      if(nid.eq.0) nio=0   ! Only node 0 writes
+      if (nid.eq.0) nio=0  ! Only node 0 writes
 
-      if(nid.eq.nio) call printHeader
+      if (nid.eq.nio) call set_stdout('') 
+
+      if (nid.eq.nio) call printHeader
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
