@@ -120,22 +120,16 @@ void byte_open(char *n,int *ierr,int nlen)
     *ierr=1;
     return;
   }
+  strncpy(name,n,nlen);
+  for (i=nlen-1; i>=0; i--) if (name[i] != ' ') break;
+  name[i+1] = '\0';
 
-  for (i=nlen-1; i>=0; i--) if (n[i] != ' ') break;
-  n[i+1] = '\0';
 
-  strcpy(name   ,n);
-  strcpy(dirname,n);
+  for (i=nlen-1; i>=0; i--) if (name[i] == '/') break;
+  strncpy(dirname,name,i);
+  dirname[i] = '\0';
+  istat = mkdir(dirname,0755);
 
-  for (i=1;dirname[i]!='\0';i++)
-  {
-     if (i>0 && dirname[i]=='/')
-     {
-       slash = name[i];
-       dirname[i] = '\0';
-       istat = mkdir(dirname,0755);
-     }
-  }
   *ierr=0;
 }
 
