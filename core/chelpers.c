@@ -45,7 +45,7 @@ int sizeOfLongInt()
   return sizeof(long int);
 }
 
-void set_stdout(char *f, int flen)
+void set_stdout(char *f, int *sid, int flen)
 {
   char* logfile;
   int i;
@@ -58,13 +58,19 @@ void set_stdout(char *f, int flen)
 
   if (flen != 0) {
     printf("redirecting stdout to %s\n",logfile);
-    freopen(logfile, "a+", stdout);
+    freopen(logfile, "w+", stdout);
   } 
   else {
-    const char* s = getenv("NEK_LOGFILE");
+    char* s = getenv("NEK_LOGFILE");
     if (s != NULL ) {
-      printf("redirecting stdout to %s\n",s);
-      freopen(s, "w+", stdout);
+      logfile = (char *) realloc(logfile, strlen(s)*sizeof(char));
+      if (*sid >= 0) {
+        logfile = (char *) realloc(logfile, (strlen(s+4))*sizeof(char));
+        sprintf(logfile, "s%02d_", *sid);
+      }
+      strcat(logfile + strlen(logfile), s);
+      printf("redirecting stdout to %s\n",logfile);
+      freopen(&logfile[0], "w+", stdout);
     }
   }
 }

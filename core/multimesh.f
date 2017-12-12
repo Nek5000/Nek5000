@@ -112,6 +112,9 @@ C     Intercommunications set up only for 2 sessions
 
       if (nsessions.gt.1) then
 
+         ifneknek   = .true.
+         ifneknekm  = .false.
+
          if (idsess.eq.0) idsess_neighbor=1
          if (idsess.eq.1) idsess_neighbor=0
  
@@ -128,13 +131,8 @@ C     Intercommunications set up only for 2 sessions
 c         call iniproc(intracomm)
 c         iglobalcomm = mpi_comm_world
 
-         ifneknek   = .true.
-         ifneknekm  = .false.
-
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
-
          icall = 0  ! Emergency exit call flag
-
       endif 
 
       return

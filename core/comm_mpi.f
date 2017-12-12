@@ -2,6 +2,8 @@ c---------------------------------------------------------------------
       subroutine iniproc(intracomm)
       include 'SIZE'
       include 'PARALLEL'
+      include 'GLOBALCOM'
+      include 'INPUT'
       include 'mpif.h'
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
@@ -17,7 +19,13 @@ c---------------------------------------------------------------------
       nio = -1             ! Default io flag 
       if (nid.eq.0) nio=0  ! Only node 0 writes
 
-      if (nid.eq.nio) call set_stdout('') 
+      if (nid.eq.nio) then
+         if (ifneknek) then
+           call set_stdout('',idsess) 
+         else
+           call set_stdout('',-1) 
+         endif
+      endif
 
       if (nid.eq.nio) call printHeader
 
