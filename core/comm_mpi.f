@@ -2,14 +2,12 @@ c---------------------------------------------------------------------
       subroutine iniproc(intracomm)
       include 'SIZE'
       include 'PARALLEL'
-      include 'GLOBALCOM'
       include 'INPUT'
       include 'mpif.h'
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
-      character*132 logfile
 
       ! set nek communicator
       call init_nek_comm(intracomm)
