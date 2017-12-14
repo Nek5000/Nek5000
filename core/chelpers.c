@@ -47,30 +47,26 @@ int sizeOfLongInt()
 
 void set_stdout(char *f, int *sid, int flen)
 {
-  char* logfile;
-  int i;
-
-  logfile = (char *) malloc((flen+1)*sizeof(char));
+  char *logfile = (char *) malloc((flen+2+5+1)*sizeof(char));
   strncpy(logfile, f, flen);
-
+  int i;
   for (i=flen-1; i>=0; i--) if (logfile[i] != ' ') break;
   logfile[i+1] = '\0';
 
-  if (flen != 0) {
+  int redirect = 0;
+  char *envvar;
+
+  if (logfile[0] != '\0') {
+    redirect = 1;
+  } 
+  else if (envvar = getenv("NEK_LOGFILE")) {
+    if (*sid >= 0) sprintf(logfile, "s%05d_", *sid);
+    strcat(logfile + strlen(logfile), envvar);
+    redirect = 1;
+  }
+
+  if (redirect) {
     printf("redirecting stdout to %s\n",logfile);
     freopen(logfile, "w+", stdout);
-  } 
-  else {
-    char* s = getenv("NEK_LOGFILE");
-    if (s != NULL ) {
-      logfile = (char *) realloc(logfile, strlen(s)*sizeof(char));
-      if (*sid >= 0) {
-        logfile = (char *) realloc(logfile, (strlen(s+4))*sizeof(char));
-        sprintf(logfile, "s%02d_", *sid);
-      }
-      strcat(logfile + strlen(logfile), s);
-      printf("redirecting stdout to %s\n",logfile);
-      freopen(&logfile[0], "w+", stdout);
-    }
   }
 }

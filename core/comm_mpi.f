@@ -19,9 +19,9 @@ c---------------------------------------------------------------------
 
       if (nid.eq.nio) then
          if (ifneknek) then
-           call set_stdout('',idsess) 
+           call set_stdout(' ',idsess) 
          else
-           call set_stdout('',-1) 
+           call set_stdout(' ',-1) 
          endif
       endif
 
