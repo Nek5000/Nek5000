@@ -138,7 +138,7 @@ lib:	objdir $(NOBJS)
 	ranlib ${LIBNAME}
 
 clean:
-	@echo "cleaning ..."
+	@echo "cleaning Nek5000 ..."
 	@rm -rf ${CASENAME}.f obj ${BINNAME}
 ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
