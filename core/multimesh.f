@@ -251,15 +251,10 @@ c     Special conditions set for flow-poro coupling
          etime = dnekclock() - etime1
          tsync = etime1 - etime0 
 
-         nekcomm_ = nekcomm
-         nekcomm  = mpi_comm_world
-         rimb     = glmax(tsync,1)/etime 
-         nekcomm  = nekcomm_
-
          if (nio.eq.0) write(6,99) istep, 
      $                 '  Multidomain data exchange done', 
-     $                 etime, tsync, rimb
- 99      format(i11,a,1p3e13.4)
+     $                 etime, etime+tsync
+ 99      format(i11,a,1p2e13.4)
       endif
 
       return
