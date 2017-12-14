@@ -219,8 +219,9 @@ c------------------------------------------------------------------------
       subroutine userchk_set_xfer
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
       include 'NEKNEK'
-      real l2,linf
+
       character*3 which_field(nfldmax_nn)
 
 c     nfld_neknek is the number of fields to interpolate.
@@ -234,13 +235,20 @@ c     nfld_neknek = ldim+2 for velocities+pressure+temperature
       if (nfld_neknek.gt.ldim+1) which_field(ldim+2)='t'
 c
 c     Special conditions set for flow-poro coupling
-      if(nfld_neknek.eq.1) then
+      if (nfld_neknek.eq.1) then
          if(session.eq.'flow') which_field(1)='pr'
          if(session.eq.'poro') which_field(1)='vy'
       endif
 
-      call neknekgsync()
-      if (nsessions.gt.1) call get_values2(which_field)
+      if (nsessions.gt.1) then
+         etime0 = dnekclock()
+         call get_values2(which_field)
+         call nekgsync()
+         if (nio.eq.0) write(6,99) istep, 
+     $                 '  Multidomain data exchange done', 
+     $                 dnekclock()-etime0
+ 99      format(i11,a,1p1e13.4)
+      endif
 
       return
       end
@@ -689,8 +697,6 @@ c-----------------------------------------------------------------------
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
 
-
-cccc
 c     Interpolate using findpts_eval
       do ifld=1,nfld_neknek
         if (which_field(ifld).eq.'vx') call copy(field,vx ,nt)
@@ -701,9 +707,7 @@ c     Interpolate using findpts_eval
 
         call field_eval(fieldout(1,ifld),1,field)
       enddo
-      call neknekgsync()
          
-cccc
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
        do i=1,npoints_nn
@@ -713,7 +717,6 @@ c     the information will go to the boundary points
         enddo
        enddo
 
-      call neknekgsync()
       return
       end
 C--------------------------------------------------------------------------
