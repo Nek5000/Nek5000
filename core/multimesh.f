@@ -128,11 +128,9 @@ C     Intercommunications set up only for 2 sessions
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
 
-c         call iniproc(intracomm)
-c         iglobalcomm = mpi_comm_world
-
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
          icall = 0  ! Emergency exit call flag
+
       endif 
 
       return
@@ -217,11 +215,15 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       end
 c------------------------------------------------------------------------
       subroutine userchk_set_xfer
+      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
       include 'NEKNEK'
 
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      real tsync
       character*3 which_field(nfldmax_nn)
 
 c     nfld_neknek is the number of fields to interpolate.
@@ -241,13 +243,23 @@ c     Special conditions set for flow-poro coupling
       endif
 
       if (nsessions.gt.1) then
-         etime0 = dnekclock()
+         etime0 = dnekclock_sync()
+         call neknekgsync()
+         etime1 = dnekclock()
          call get_values2(which_field)
          call nekgsync()
+         etime = dnekclock() - etime1
+         tsync = etime1 - etime0 
+
+         nekcomm_ = nekcomm
+         nekcomm  = mpi_comm_world
+         rimb     = glmax(tsync,1)/etime 
+         nekcomm  = nekcomm_
+
          if (nio.eq.0) write(6,99) istep, 
      $                 '  Multidomain data exchange done', 
-     $                 dnekclock()-etime0
- 99      format(i11,a,1p1e13.4)
+     $                 etime, tsync, rimb
+ 99      format(i11,a,1p3e13.4)
       endif
 
       return
