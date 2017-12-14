@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 92)
+      parameter(PARDICT_NKEYS = 94)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -97,3 +97,5 @@ c
      &  pardictkey(90) / 'TEMPERATURE:RESIDUALPROJ' /
      &  pardictkey(91) / 'SCALAR%%:RESIDUALPROJ' /
      &  pardictkey(92) / 'MESH:FIRSTBCFIELDINDEX' /
+     &  pardictkey(93) / 'PROBLEMTYPE:FIXEDFLOW' /
+     &  pardictkey(94) / 'PROBLEMTYPE:FLOWRATE' /
