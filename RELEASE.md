@@ -37,10 +37,7 @@
 
 ## Known Bugs 
 
-[65](https://github.com/Nek5000/Nek5000/issues/65),
-[407](https://github.com/Nek5000/Nek5000/issues/407),
-[430](https://github.com/Nek5000/Nek5000/issues/430),
-[457](https://github.com/Nek5000/Nek5000/issues/457),
+[65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors
 This release contains contributions from the Nek5000 core developers, as well as:
