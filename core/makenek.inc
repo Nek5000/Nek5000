@@ -2,7 +2,7 @@ function make_3rd_party() {
   if [ $NOCOMPILE -ne 0 ]; then
     return 0
   fi
-  echo "build 3rd-party code ..."
+  echo "build 3rd-party software ..."
 
   cd $SOURCE_ROOT/3rd_party/gslib
   ./install
@@ -16,6 +16,7 @@ function make_3rd_party() {
 }
 
 function clean_3rd_party() {
+  echo "cleaning 3rd-party software ..."
   cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
@@ -75,7 +76,7 @@ fi
 
 if [[ $1 = "clean" ]]; then
   while true; do
-    read -p "Clean all 3rd party code? [N]" yn
+    read -p "do you want to clean all 3rd party software? [N]" yn
     case $yn in
       [Yy]* )
         clean_3rd_party; 
@@ -88,6 +89,7 @@ if [[ $1 = "clean" ]]; then
   done
   rm -rf compiler.out
   rm -rf makefile
+  rm -rf .state
   exit 0
 fi
 
@@ -415,3 +417,39 @@ export GSLIB_OPT
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0
 fi
+
+declare -a varlist=(
+"SOURCE_ROOT"
+"FC"
+"FFLAGS"
+"CC"
+"CFLAGS"
+"PPLIST"
+)
+if [ -f .state ]; then
+  for i in "${varlist[@]}"
+  do
+    if ! cat .state | grep -q "$i=${!i}" ; then
+      echo "configuration change detected, forcing full rebuild"
+      rm -rf .state
+      while true; do
+        read -p "do you want to rebuild all 3rd party software? [N]" yn
+        case $yn in
+          [Yy]* )
+            clean_3rd_party;
+            break ;;
+          * )
+           break ;;
+        esac
+      done  
+      make clean;
+      break
+    fi
+  done ;
+fi
+
+rm -rf .state
+for i in "${varlist[@]}"
+do
+  echo "$i=${!i}" >> .state
+done ;

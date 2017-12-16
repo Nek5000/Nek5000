@@ -89,52 +89,8 @@ C        Compute velocity
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
-
-c Below is just for diagnostics...
-
-c        Calculate Divergence norms of new VX,VY,VZ
-         CALL OPDIV   (DVC,VX,VY,VZ)
-         CALL DSSUM   (DVC,lx1,ly1,lz1)
-         CALL COL2    (DVC,BINVM1,NTOT1)
-
-         CALL COL3    (DV1,DVC,BM1,NTOT1)
-         DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
-
-         CALL COL3    (DV2,DVC,DVC,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
-         DIV2 = SQRT  (DIV2)
-c        Calculate Divergence difference norms
-         CALL SUB3    (DFC,DVC,QTL,NTOT1)
-         CALL COL3    (DV1,DFC,BM1,NTOT1)
-         DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
-  
-         CALL COL3    (DV2,DFC,DFC,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
-         DIF2 = SQRT  (DIF2)
-
-         CALL COL3    (DV1,QTL,BM1,NTOT1)
-         QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
-  
-         CALL COL3    (DV2,QTL,QTL,NTOT1)
-         CALL COL2    (DV2,BM1   ,NTOT1)
-         QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
-         QTL2 = SQRT  (QTL2)
-
-         IF (NIO.EQ.0) THEN
-            WRITE(6,'(13X,A,1p2e13.4)')
-     &         'L1/L2 DIV(V)        ',DIV1,DIV2
-            WRITE(6,'(13X,A,1p2e13.4)') 
-     &         'L1/L2 QTL           ',QTL1,QTL2
-            WRITE(6,'(13X,A,1p2e13.4)')
-     &         'L1/L2 DIV(V)-QTL    ',DIF1,DIF2
-            IF (DIF2.GT.0.1) WRITE(6,'(13X,A)') 
-     &         'WARNING: DIV(V)-QTL too large!'
-         ENDIF
- 
       endif
- 
+
       return
       END
 
@@ -613,6 +569,63 @@ c
 
       call rzero(qtl,ntot)
       call userqtl()
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine printdiverr
+c
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      COMMON /SCRNS/ DVC  (LX1,LY1,LZ1,LELV),
+     $               DV1  (LX1,LY1,LZ1,LELV),
+     $               DV2  (LX1,LY1,LZ1,LELV),
+     $               DFC  (LX1,LY1,LZ1,LELV)
+ 
+      ntot1 = lx1*ly1*lz1*nelv
+
+      !Calculate Divergence norms of new VX,VY,VZ
+      CALL OPDIV   (DVC,VX,VY,VZ)
+      CALL DSSUM   (DVC,lx1,ly1,lz1)
+      CALL COL2    (DVC,BINVM1,NTOT1)
+
+      CALL COL3    (DV1,DVC,BM1,NTOT1)
+      DIV1 = GLSUM (DV1,NTOT1)/VOLVM1
+
+      CALL COL3    (DV2,DVC,DVC,NTOT1)
+      CALL COL2    (DV2,BM1   ,NTOT1)
+      DIV2 = GLSUM (DV2,NTOT1)/VOLVM1
+      DIV2 = SQRT  (DIV2)
+
+      !Calculate Divergence difference norms
+      CALL SUB3    (DFC,DVC,QTL,NTOT1)
+      CALL COL3    (DV1,DFC,BM1,NTOT1)
+      DIF1 = GLSUM (DV1,NTOT1)/VOLVM1
+
+      CALL COL3    (DV2,DFC,DFC,NTOT1)
+      CALL COL2    (DV2,BM1   ,NTOT1)
+      DIF2 = GLSUM (DV2,NTOT1)/VOLVM1
+      DIF2 = SQRT  (DIF2)
+
+      CALL COL3    (DV1,QTL,BM1,NTOT1)
+      QTL1 = GLSUM (DV1,NTOT1)/VOLVM1
+
+      CALL COL3    (DV2,QTL,QTL,NTOT1)
+      CALL COL2    (DV2,BM1   ,NTOT1)
+      QTL2 = GLSUM (DV2,NTOT1)/VOLVM1
+      QTL2 = SQRT  (QTL2)
+
+      IF (NIO.EQ.0) THEN
+         WRITE(6,'(13X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)        ',DIV1,DIV2
+         WRITE(6,'(13X,A,1p2e13.4)') 
+     &         'L1/L2 QTL           ',QTL1,QTL2
+         WRITE(6,'(13X,A,1p2e13.4)')
+     &         'L1/L2 DIV(V)-QTL    ',DIF1,DIF2
+         IF (DIF2.GT.0.1) WRITE(6,'(13X,A)') 
+     &         'WARNING: DIV(V)-QTL too large!'
+      ENDIF
 
       return
       end

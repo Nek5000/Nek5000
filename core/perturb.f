@@ -1167,7 +1167,7 @@ c
       return
       end
 c--------------------------------------------
-      function dmnorm(v1,v2,v3,temp)
+      function dmnorm1(v1,v2,v3,temp)
 c     Norm weighted by mass matrix
       include 'SIZE'
       include 'TOTAL'
@@ -1191,7 +1191,7 @@ c     Norm weighted by mass matrix
          normsqT = 0
       endif
 
-      dmnorm=sqrt((normsq1+normsq2+normsq3+normsqT)/volvm1)
+      dmnorm1=sqrt((normsq1+normsq2+normsq3+normsqT)/volvm1)
 
       return
       end
@@ -1276,7 +1276,7 @@ c
 c        For a  fresh simulation, then we wait 5 vertical diffusion 
 c        times before we start measuring, so in this case just rescale
 c
-         pertnorm = dmnorm(vxq,vyq,vzq,tq)
+         pertnorm = dmnorm1(vxq,vyq,vzq,tq)
          pertinvnorm = 1.0/pertnorm
          call rescalepert(pertnorm,pertinvnorm,jpp)
          lyap(3,jpp) = pertnorm !store latest norm
@@ -1293,7 +1293,7 @@ c
 
          lyapsum     = lyap(2,jpp)
          oldpertnorm = lyap(3,jpp)
-         pertnorm=dmnorm(vxq,vyq,vzq,tq)
+         pertnorm=dmnorm1(vxq,vyq,vzq,tq)
 c
          lyap(1,jpp) = log(pertnorm/oldpertnorm)/(time-timestart)
          lyapsum     = lyapSum + log(pertnorm/oldpertnorm)

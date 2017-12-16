@@ -2,6 +2,7 @@ c---------------------------------------------------------------------
       subroutine iniproc(intracomm)
       include 'SIZE'
       include 'PARALLEL'
+      include 'INPUT'
       include 'mpif.h'
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
@@ -14,9 +15,17 @@ c---------------------------------------------------------------------
       np   = np_
 
       nio = -1             ! Default io flag 
-      if(nid.eq.0) nio=0   ! Only node 0 writes
+      if (nid.eq.0) nio=0  ! Only node 0 writes
 
-      if(nid.eq.nio) call printHeader
+      if (nid.eq.nio) then
+         if (ifneknek) then
+           call set_stdout(' ',idsess) 
+         else
+           call set_stdout(' ',-1) 
+         endif
+      endif
+
+      if (nid.eq.nio) call printHeader
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
@@ -483,47 +492,57 @@ c     include 'CTIMER'
 c
 c-----------------------------------------------------------------------
       subroutine exitt0
+
       include 'SIZE'
       include 'TOTAL'
-      include 'CTIMER'
-      include 'mpif.h'
+      common /happycallflag/ icall
 
-      write(6,*) 'Emergency exit'
+      if (nid.eq.0) then
+         write(6,*) ' '
+         write(6,'(A)') 'run successful: dying ...'
+         write(6,*) ' '
+      endif
 
-c      call print_stack()
-      call flush_io
-
-      call mpi_finalize (ierr)
-#ifdef EXTBAR
-      call exit_(0)
-#else
-      call exit(0)
-#endif
- 
+      if (ifneknek.and.icall.eq.0) call happy_check(0)
+c      if (nid.eq.0) call close_files
+      call print_runtime_info
+      call nek_die(0) 
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine exitt
+
+      include 'SIZE'
+      include 'TOTAL'
+      common /happycallflag/ icall
+
+      if (nid.eq.0) then
+         write(6,*) ' '
+         write(6,'(A)') 'an error occured: dying ...'
+         write(6,*) ' '
+      endif
+
+c      call print_stack()
+      if (ifneknek.and.icall.eq.0) call happy_check(0)
+c      if (nid.eq.0) call close_files
+      call print_runtime_info
+      call nek_die(1) 
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine print_runtime_info
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
       include 'mpif.h'
-      common /happycallflag/ icall
-
-      logical ifopen              !check for opened files
-c
-
-c     Communicate unhappiness to the other session
-      if (ifneknek.and.icall.eq.0) call happy_check(0)
-
-      call nekgsync()
 
 #ifdef PAPI
       gflops = glsum(dnekgflops(),1)
 #endif
 
-      tstop  = dnekclock()
+      tstop  = dnekclock_sync()
       ttotal = tstop-etimes
       tsol   = max(ttime - tprep,0.0)
       nxyz   = lx1*ly1*lz1
@@ -531,7 +550,6 @@ c     Communicate unhappiness to the other session
       dtmp4 = glsum(getmaxrss(),1)/1e9
 
       if (nid.eq.0) then 
-         call close_files(ifopen)
          dtmp1 = 0
          dtmp2 = 0
          if(istep.gt.0) then
@@ -540,10 +558,6 @@ c     Communicate unhappiness to the other session
            dtmp1 = dgp/(np*(ttime-tprep))
            dtmp2 = (ttime-tprep)/max(istep,1)
          endif 
-         write(6,*) ' '
-         write(6,'(A)') 'call exitt: dying ...'
-         write(6,*) ' '
-c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
@@ -558,12 +572,20 @@ c         call print_stack()
       endif 
       call flush_io
 
-      call mpi_finalize (ierr)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nek_die(ierr)
+      include 'SIZE'
+      include 'mpif.h'
+
+      call mpi_finalize (ierr_)
 #ifdef EXTBAR
-      call exit_(0)
+      call exit_(ierr)
 #else
-      call exit(0)
+      call exit(ierr)
 #endif
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1269,7 +1291,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine close_files(ifopen)
+      subroutine close_files
       logical ifopen
 
       do ii=1,99
