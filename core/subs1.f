@@ -2573,7 +2573,7 @@ c     Reorthogonalize basis
       call col3(bstrs(1+n),bm1,h2,n)
 
       ratio=l2b/l2a
-      if (nio.eq.0) write(6,1) istep,'  Project ' // 'Helm3 ',
+      if (nio.eq.0) write(6,1) istep,'  Project ' // 'HELM3 ',
      $              l2a,l2b,ratio,k,kmax
     1 format(i11,a,6x,1p3e13.4,i4,i4)
 

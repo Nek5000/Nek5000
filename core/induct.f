@@ -1209,7 +1209,7 @@ c         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
    11    format(2i5,' alpha:',1p10e12.4)
    12    format(i6,i4,1p3e12.4,' alph12')
 
-         if (nio.eq.0) write(6,13) istep,'  Project Pres_2',
+         if (nio.eq.0) write(6,13) istep,'  Project PRES  ',
      &                         alpha2,alpha1,ratio,nprev,mxprev
    13    format(i11,a,6x,1p3e13.4,i4,i4)
       endif
