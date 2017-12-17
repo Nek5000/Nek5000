@@ -184,11 +184,12 @@ C     Increment solution set
       Nprev = Nprev+1
 C
       CALL COPY   (RHS(1,Nprev),Pnew,NTOT2)
-C
+
 C     Orthogonalize rhs against previous rhs and normalize
-C
-      CALL ECONJ (Nprev,H1,H2,H2INV,ierr)
-c     CALL ECHECK(Nprev,H1,H2,H2INV,INTETYPE)
+
+      write(6,*) istep,nprev,' call econj2'
+      call econj (nprev,h1,h2,h2inv,ierr)
+C     call echeck(nprev,h1,h2,h2inv,intetype)
 C
 c     Save last sol'n
       CALL COPY(Pnew,P,NTOT2)
@@ -252,7 +253,7 @@ C
 C    .Normalize new element in P~
 C
       if (ALPHAd.le.0.0) then
-         write(6,*) 'ERROR:  alphad .le. 0 in ECONJ',alphad,Kprev
+         write(6,*) 'ERROR:  alphad .le. 0 in econj',alphad,Kprev
          ierr = 1
          return
       endif
@@ -385,6 +386,7 @@ C
 
 C     First, we have to decide if the E matrix has changed.
 
+
       if (icalld.eq.0) then
          icalld=1
          dtlast=dt
@@ -399,7 +401,7 @@ C     First, we have to decide if the E matrix has changed.
          ifnewe=.true.
          dtlast=dt
       endif
-      if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
+c     if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
 
      
 C     
@@ -414,9 +416,9 @@ c
          Nprevt = Nprev
          DO 100 Iprev=1,Nprevt
 C           Orthogonalize this rhs w.r.t. previous rhs's
-            CALL ECONJ (Iprev,H1,H2,H2INV,ierr)
+            call econj (iprev,h1,h2,h2inv,ierr)
             if (ierr.eq.1) then
-               if (nio.eq.0) write(6,*) istep,ierr,' ECONJ error'
+               if (nio.eq.0) write(6,*) istep,ierr,' econj error'
                nprev = 0
                return
             endif

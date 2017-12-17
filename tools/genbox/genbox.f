@@ -459,9 +459,9 @@ c           write(998,*) (y(i,1),i=0,nely)
 
 
       if(nel.gt.maxel) then
-        write(6,*)
-     $       'ABORT: increase maxel and recompile!',nel,maxel
-             call exitt
+        write(6,*) 'Abort: number of elements too large',nel
+        write(6,*) 'change MAXNEL and recompile'
+        call exitt
       elseif (nelx.gt.maxx.or.nely.gt.maxx.or.nelz.gt.maxx) then
         write(6,*) 'ABORT, increase maxx and recompile',
      $       nelx,nely,nelz,maxx

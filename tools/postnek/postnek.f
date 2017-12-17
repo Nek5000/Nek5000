@@ -2547,13 +2547,12 @@ c
       ntot = nx*ny*nz*nel
       if (ntot.gt.maxpts) then
          CALL PRS(' ** ERROR **  Too many points!$')
-         WRITE(6,*) 'Increase maxpts to',ntot,' in basicsp.inc'
          WRITE(6,*) 'EXITING'
          CALL EXITT
       endif
       if (nel.gt.nelm) then
-         CALL PRS(' ** ERROR **  Too many elements!$')
-         WRITE(6,*) 'Increase NELM to',nel,' in basics.inc'
+         CALL PRS('Abort: number of elements too large!$')
+         WRITE(6,*) 'Change MAXNEL and recompile'
          WRITE(6,*) 'EXITING'
          CALL EXITT
       endif
