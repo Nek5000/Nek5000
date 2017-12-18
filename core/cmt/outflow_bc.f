@@ -60,10 +60,12 @@ C> @file outflow_bc.f Dirichlet states for outflow boundary conditions
 c        fs = 0.0
          if(outflsub)then
             pres= pinfty
+            idbc=1
          else
             pres= facew(l,f,e,ipr)
+            idbc=0
          endif
-         call BcondOutflowPerf(1,pres,sxn,syn,szn,cp,molarmass,
+         call BcondOutflowPerf(idbc,pres,sxn,syn,szn,cp,molarmass,
      >                         rho,rhou,rhov,rhow,rhoe,pl,
      >                         rhob,rhoub,rhovb,rhowb,rhoeb )
          wbc(l,f,e,irho)=rhob
