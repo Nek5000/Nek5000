@@ -1383,9 +1383,9 @@ c
       call drmenu('NOCOVER')
       call drgrid
 
-c     nelcap = min(nel,5000)
-      nelcap = nel
-      do ie=1,nelcap
+      nelcap_l = min(nelcap,nel)
+
+      do ie=1,nelcap_l
          call drawel(ie)
       enddo
 
@@ -1393,7 +1393,7 @@ c     nelcap = min(nel,5000)
 
       if (if3d) then       !  redraw all the isometric elements.
          call sortel
-         do i=1,nelcap
+         do i=1,nelcap_l
             call drawis(isrt(i))
          enddo
       endif
@@ -1408,9 +1408,9 @@ c
       call drmenu('NOCOVER')
       call drgrid
 
-c     nelcap = min(nel,500)
-      nelcap = nel
-      do ie=1,nelcap
+      nelcap_l = min(nelcap,nel)
+
+      do ie=1,nelcap_l
          call drawel(ie)
       enddo
 
@@ -1419,7 +1419,7 @@ c     nelcap = min(nel,500)
 
 C     Now redraw all the isometric elements.
       call sortel
-      do i=1,nelcap
+      do i=1,nelcap_l
          call drawis(isrt(i))
       enddo
       return

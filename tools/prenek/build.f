@@ -329,7 +329,10 @@ C     Only floor of elevator hilighted during modify
  160     continue
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
+         nelcap_save = nelcap
+         nelcap      = nel
          call redraw_mesh
+         nelcap      = nelcap_save
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
          call setzoom
          call redraw_mesh

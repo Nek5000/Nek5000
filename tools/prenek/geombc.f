@@ -84,7 +84,7 @@ c
                zmax          =0.
                z_centroid(ie)=0.
             endif
-            vertex(k) = 9999999
+            vertex(k) = 999999999
             start_pt(k) = k
             start_el(k) = ie
          enddo

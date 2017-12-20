@@ -1164,12 +1164,9 @@ C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
       DIMENSION IND(6)
 
       if (.not.ifgraf) then
-        if (nel.gt.90 .and. iel.eq.91) 
-     $   call prsi('Showing only 90 elements of$',nel)
-        if (nel.gt.90 .and. iel.gt.90) return
-c       if (nel.gt.900 .and. iel.eq.901) 
-c    $   call prsi('Showing only 900 elements of$',nel)
-c       if (nel.gt.900 .and. iel.gt.900) return
+        if (iel.eq.(nelcap+1))
+     $   call prsi('Showing only nelcap elements of$',nel)
+        if (iel.gt.nelcap) return
       endif
 
 
@@ -1313,15 +1310,12 @@ C        fill black (i.e., erase)
          CALL color(0)
          CALL fillp(0)
       ENDIF
-C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
+
       IC=4
       IF(IFCEIL)IC=8
-      IF(IEL.GT.10000)THEN
-         iiel=iiel-10000
-         call movec(x(ic,iiel),y(ic,iiel))
-      ELSE
-         call beginb(x(ic,iiel),y(ic,iiel))
-      ENDIF
+
+      call beginb(x(ic,iiel),y(ic,iiel))
+
       XCENTER=0.0
       YCENTER=0.0
       IF(IFCEIL)THEN
@@ -1347,8 +1341,9 @@ C            Draw curved side
 118          CONTINUE
           ENDIF
 6     CONTINUE
-      IF(IEL.LT.10000)CALL ENDP
-C
+      CALL ENDP
+
+
       IF(IEL.GT.0)THEN
 C        LABEL Element Center
 c        IF(IF3D)     WRITE(STRING,'(I3,A1)')NUMAPT(IEL),LETAPT(IEL)
@@ -1722,12 +1717,9 @@ C        fill black (i.e., erase)
 C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       IC=4
       IF(IFCEIL)IC=8
-      IF(IEL.GT.10000)THEN
-         iiel=iiel-10000
-         call movec(x(ic,iiel),y(ic,iiel))
-      ELSE
-         call beginb(x(ic,iiel),y(ic,iiel))
-      ENDIF
+
+      call beginb(x(ic,iiel),y(ic,iiel))
+
       XCENTER=0.0
       YCENTER=0.0
       IF(IFCEIL)THEN
@@ -1753,7 +1745,7 @@ C            Draw curved side
 118          continue
           endif
 6     continue
-      if (iel.lt.10000) call endp
+      call endp
 
       IF(IEL.GT.0)THEN
 C        LABEL Element Center
@@ -1925,12 +1917,9 @@ C        fill black (i.e., erase)
 C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       IC=4
       IF(IFCEIL)IC=8
-      IF(IEL.GT.10000)THEN
-         iiel=iiel-10000
-         call movec(X(ic,iiel),Y(ic,iiel))
-      ELSE
-         call beginb(X(ic,iiel),Y(ic,iiel))
-      ENDIF
+
+      call beginb(X(ic,iiel),Y(ic,iiel))
+
       XCENTER=0.0
       YCENTER=0.0
       IF(IFCEIL)THEN
@@ -1956,7 +1945,7 @@ C            Draw curved side
 118          continue
           endif
 6     CONTINUE
-      IF(IEL.LT.10000)CALL ENDP
+      CALL ENDP
 C
 C HMT
 C      IF(IEL.GT.0)THEN
@@ -2135,12 +2124,8 @@ C        fill black (i.e., erase)
 C     One more Kludge: if IEL is .GT. 10,000 then draw outline only
       ic=4
       if (ifceil) ic=8
-      if (iel.gt.10000) then
-         iiel=iiel-10000
-         call movec(x(ic,iiel),y(ic,iiel))
-      else
-         call beginb(x(ic,iiel),y(ic,iiel))
-      ENDIF
+      call beginb(x(ic,iiel),y(ic,iiel))
+
       XCENTER=0.0
       YCENTER=0.0
       IF(IFCEIL)THEN
@@ -2166,7 +2151,7 @@ C            Draw curved side
 118          continue
           endif
 6     continue
-      IF(IEL.LT.10000)CALL ENDP
+      CALL ENDP
 C
       IF(IEL.GT.0)THEN
 C        LABEL Element Center
