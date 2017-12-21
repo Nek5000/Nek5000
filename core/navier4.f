@@ -846,7 +846,7 @@ c     string "name6"
       return
       end
 c-----------------------------------------------------------------------
-      !O(nk) method for updating projection space
+      !O(nm) method for updating projection space
       !See James Lotte's note or Nicholas Christensen's master's thesis
       subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
 
