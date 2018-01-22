@@ -1,0 +1,20 @@
+pgf90 -c -g -mcmodel=medium -acc -Minfo=accel -ta=nvidia -O2 -r8 -Mpreprocess -DNOMPIIO -DUNDERSCORE -DTIMER -DGLOBAL_LONG_LONG -I/home/e/eotero/pfs/Nek5000_acc/Nek5000/short_tests/eddy3d -I/home/e/eotero/pfs/Nek5000_acc/Nek5000/core -I./ /home/e/eotero/pfs/Nek5000_acc/Nek5000/core/navier1.f -o obj/navier1.o
+ctolspl_acc:
+    213, Generating create(work(:,:,:,:))
+ortho_acc:
+    328, Generating present(respr(:))
+         Accelerator kernel generated
+         Generating Tesla code
+        329, !$acc loop gang, vector(128) ! blockidx%x threadidx%x
+    337, Generating present(respr(:))
+         Accelerator kernel generated
+         Generating Tesla code
+        338, !$acc loop gang, vector(128) ! blockidx%x threadidx%x
+pgf90 -c -g -mcmodel=medium -acc -Minfo=accel -ta=nvidia -O2 -r8 -Mpreprocess -DNOMPIIO -DUNDERSCORE -DTIMER -DGLOBAL_LONG_LONG -I/home/e/eotero/pfs/Nek5000_acc/Nek5000/short_tests/eddy3d -I/home/e/eotero/pfs/Nek5000_acc/Nek5000/core -I./ /home/e/eotero/pfs/Nek5000_acc/Nek5000/short_tests/eddy3d/eddy_dir443.f  -o obj/eddy_dir443.o 
+pgf90 -o nek5000 obj/eddy_dir443.o obj/drive.o obj/drive1.o obj/drive2.o obj/plan4.o obj/bdry.o obj/coef.o obj/conduct.o obj/connect1.o obj/connect2.o obj/dssum.o obj/edgec.o obj/eigsolv.o obj/gauss.o obj/genxyz.o obj/navier1.o obj/makeq.o obj/navier0.o obj/navier2.o obj/navier3.o obj/navier4.o obj/prepost.o obj/speclib.o obj/map2.o obj/turb.o obj/mvmesh.o obj/ic.o obj/ssolv.o obj/planx.o obj/math.o obj/mxm_wrapper.o obj/hmholtz.o obj/gfdm_par.o obj/gfdm_op.o obj/gfdm_solve.o obj/subs1.o obj/subs2.o obj/genbox.o obj/gmres.o obj/hsmg.o obj/convect.o obj/induct.o obj/perturb.o obj/navier5.o obj/navier6.o obj/navier7.o obj/navier8.o obj/fast3d.o obj/fasts.o obj/calcz.o obj/byte.o obj/chelpers.o obj/byte_mpi.o obj/postpro.o obj/cvode_driver.o obj/nek_comm.o obj/vprops.o obj/makeq_aux.o obj/papi.o obj/nek_in_situ.o obj/readat_new.o obj/reader_re2.o obj/finiparser.o obj/iniparser.o obj/dictionary.o obj/acc.o obj/mxm_std.o obj/comm_mpi.o obj/mpi_dummy.o obj/singlmesh.o obj/blas.o obj/dsygv.o obj/ssygv.o obj/jl_gs.o obj/jl_sort.o obj/jl_sarray_transfer.o obj/jl_sarray_sort.o obj/jl_gs_local.o obj/jl_crystal.o obj/jl_comm.o obj/jl_tensor.o obj/jl_fail.o obj/jl_fcrystal.o obj/jl_findpts.o obj/jl_findpts_local.o obj/jl_obbox.o obj/jl_poly.o obj/jl_lob_bnd.o obj/jl_findpts_el_3.o obj/jl_findpts_el_2.o obj/jl_sparse_cholesky.o obj/jl_xxt.o obj/jl_fcrs.o -g -mcmodel=medium -acc -Minfo=accel -ta=nvidia
+
+#############################################################
+#                  Compilation successful!                  #
+#############################################################
+
+

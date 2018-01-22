@@ -1,0 +1,15 @@
+ebase.rea
+3                      spatial dimension
+1                     number of fields
+#
+#    comments
+#
+#
+#========================================================
+#
+Box
+-8  -8 -3                       nelx,nely,nelz for Box)
+-1 1. 1.                           x0 x1 ratio 
+-1 1. 1.                           x0 x1 ratio 
+-1 1. 1.                           x0 x1 ratio 
+P  ,P  ,v  ,v  ,v  ,v              (bc's)
