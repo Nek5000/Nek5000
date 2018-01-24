@@ -499,7 +499,9 @@ C      Collocate with weights
          do k=1,nz2
          do j=1,ny2
          do i=1,nx2
-            ta1(i,j,k,e) = x(i,j,k,e)*rm2(i,j,k,e)*w3m2(i,j,k)
+            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
+            wx (i,j,k,e) = tmpwx
+            ta1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
          enddo
          enddo
          enddo
@@ -677,14 +679,13 @@ CCCCCCCCCCCCCCCCC step 3
       enddo
 
 !$ACC END DATA
-      
-C
+
 #ifdef TIMER
       tcdtp=tcdtp+(dnekclock()-etime1)
 #endif
       return
       end
-      
+     
 C     
 C-----------------------------------------------------------------------
       subroutine cdtp (dtx,x,rm2,sm2,tm2,isd)
@@ -853,8 +854,7 @@ C
             call mxm  (ta1,nxy1,dzm12,nz2,ta2,nz1)
             call add2 (dtx(1,e),ta2,nxyz1)
 
-         endif
-
+         endif         
        endif         
 C
 C     If axisymmetric, add an extra diagonal term in the radial 
@@ -894,8 +894,7 @@ C
 #endif
       return
       end
-C
-
+      
       subroutine multd (dx,x,rm2,sm2,tm2,isd,iflg)
 C---------------------------------------------------------------------
 C
@@ -4789,10 +4788,10 @@ C-----------------------------------------------------------------------
       real outz   (lx1,ly1,lz1,1)
       real inpfld (lx2,ly2,lz2,1)
 C
-      call cdtp (outx,inpfld,rxm2,sxm2,txm2,1)
-      call cdtp (outy,inpfld,rym2,sym2,tym2,2)
+      call cdtp_acc (outx,inpfld,rxm2,sxm2,txm2,1)
+      call cdtp_acc   (outy,inpfld,rym2,sym2,tym2,2)
       if (ndim.eq.3) 
-     $   call cdtp (outz,inpfld,rzm2,szm2,tzm2,3)
+     $   call cdtp_acc (outz,inpfld,rzm2,szm2,tzm2,3)
 C
       return
       end
