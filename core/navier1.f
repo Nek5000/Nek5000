@@ -487,7 +487,7 @@ C
       endif
 
 !$ACC  DATA  COPYIN(wx,w3m2,x,rm2,sm2,tm2)      
-!$ACC&       COPYIN(ixtm12,iytm12,izmtm12,dxtm12,dytm12,dztm12)
+!$ACC&       COPYIN(ixtm21,iytm21,izmtm21,dxtm12,dytm12,dztm12)
 !$ACC&       COPYOUT(dtx)
 !$ACC&       CREATE(ta1,ta2)
       
@@ -531,7 +531,7 @@ C      Collocate with weights
             tmp1 = 0.0
 !$ACC LOOP SEQ
             do l=1,nx2
-               tmp1 = tmp1+iytm12(j,l)*ta2(i,l,k,e)
+               tmp1 = tmp1+iytm21(l,j)*ta2(i,l,k,e)
             enddo
             ta1(i,j,k,e) = tmp1
          enddo
@@ -547,7 +547,7 @@ C      Collocate with weights
             dttmp = 0.0
 !$ACC LOOP SEQ
             do l=1,nx2
-               dttmp = dttmp+iztm12(k,l)*ta1(i,j,l,e)
+               dttmp = dttmp+iztm21(l,k)*ta1(i,j,l,e)
             enddo
             dtx(i,j,k,e) = dttmp
          enddo
@@ -577,7 +577,7 @@ CCCCCCCCCCCCCCCCC step 2
             tmp2 = 0.
 !$ACC LOOP SEQ
             do l=1,nz2
-               tmp2 = tmp2+ixtm12(i,l)*ta1(l,j,k,e)
+               tmp2 = tmp2+ixtm21(l,i)*ta1(l,j,k,e)
             enddo
             ta2(i,j,k,e) = tmp2
          enddo
@@ -606,12 +606,12 @@ CCCCCCCCCCCCCCCCC step 2
          do k=1,nz1
          do j=1,ny1
          do i=1,nx1
-            dttmp = 0.
+            dttmp = dtx(i,j,k,e)
 !$ACC LOOP SEQ
             do l=1,nz2
-               dttmp = dttmp+iztm12(k,l)*ta1(i,j,l,e)
+               dttmp = dttmp+iztm21(l,k)*ta1(i,j,l,e)
             enddo
-            dtx(i,j,k,e) = dtx(i,j,k,e) + dttmp
+             dtx(i,j,k,e) = dttmp
          enddo
          enddo
          enddo
@@ -638,7 +638,7 @@ CCCCCCCCCCCCCCCCC step 3
             tmp2 = 0.
 !$ACC LOOP SEQ
             do l=1,nz2
-               tmp2 = tmp2+ixtm12(i,l)*ta1(l,j,k,e)
+               tmp2 = tmp2+ixtm21(l,i)*ta1(l,j,k,e)
             enddo
             ta2(i,j,k,e) = tmp2
          enddo
@@ -654,7 +654,7 @@ CCCCCCCCCCCCCCCCC step 3
             tmp1 = 0.
 !$ACC LOOP SEQ
             do l=1,nz2
-               tmp1 = tmp1+iytm12(j,l)*ta2(i,l,k,e)
+               tmp1 = tmp1+iytm21(l,j)*ta2(i,l,k,e)
             enddo
             ta1(i,j,k,e) = tmp1
          enddo
@@ -667,12 +667,12 @@ CCCCCCCCCCCCCCCCC step 3
          do k=1,nz1
          do j=1,ny1
          do i=1,nx1
-            dttmp = 0.
+            dttmp = dtx(i,j,k,e)
 !$ACC LOOP SEQ
             do l=1,nz2
                dttmp = dttmp+dztm12(k,l)*ta1(i,j,l,e)
             enddo
-            dtx(i,j,k,e) = dtx(i,j,k,e) + dttmp
+            dtx(i,j,k,e) = dttmp
          enddo
          enddo
          enddo
