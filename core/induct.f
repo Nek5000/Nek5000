@@ -1036,7 +1036,6 @@ C
       real h1 (lx1,ly1,lz1,1) , h2 (lx1,ly1,lz1,1)
  
       ifproj = .false.
-      if (param(94).gt.0)    ifproj = .true.
       if (ifprojfld(ifield)) ifproj = .true.
  
       if (.not.ifproj) then
