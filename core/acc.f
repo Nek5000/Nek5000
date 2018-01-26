@@ -1,4 +1,60 @@
 c-----------------------------------------------------------------------
+      subroutine plan3_acc_data_copyin_istep0()
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'    
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+c      common /tdarray/ diagt(maxcg),upper(maxcg)
+c      common /scrcg/ d(lg), scalar(2)
+c      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+      common /ctmp0/ work (lx2,ly2,lz2,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+!$acc enter data create(work)
+!$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine plan3_acc_data_copyout_nstep()
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+      common /ctmp0/ work (lx2,ly2,lz2,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+!$acc exit data delete(work)
+!$acc exit data delete(tar1,tas1,tat1,tar2,tas2,tat2)
+
+      return
+      end
+
+c-----------------------------------------------------------------------
       subroutine plan4_acc_data_copyin_istep0()
 c-----------------------------------------------------------------------
       include 'SIZE'

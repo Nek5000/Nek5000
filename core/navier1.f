@@ -198,40 +198,6 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine ctolspl_acc (tolspl,respr)
-C
-C     Compute the pressure tolerance
-C
-      include 'SIZE'
-      include 'MASS'
-      include 'TSTEP'
-      REAL           RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
-C
-      NTOT1 = NX1*NY1*NZ1*NELV
-
-!$ACC DATA CREATE(work)  
-      call invcol3_acc (WORK,RESPR,BM1,NTOT1)
-      CALL col2_acc    (WORK,RESPR,NTOT1)
-      RINIT  = SQRT (GLSUM (WORK,NTOT1)/VOLVM1)
-      IF (TOLPDF.GT.0.) THEN
-         TOLSPL = TOLPDF
-         TOLMIN = TOLPDF
-      ELSE
-         TOLSPL = TOLPS/DT
-         TOLMIN = RINIT*PRELAX
-      ENDIF
-      IF (TOLSPL.LT.TOLMIN) THEN
-         TOLOLD = TOLSPL
-         TOLSPL = TOLMIN
-         IF (NIO.EQ.0)
-     $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
-      ENDIF
-!$ACC END DATA
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine ctolspl (tolspl,respr)
 C
 C     Compute the pressure tolerance
@@ -297,56 +263,6 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       return
       end
 
-c------------------------------------------------------------------------
-      subroutine ortho_acc (respr)
-!FIXME Temporarily made acc version of this routine to avoid
-!     crash in setup. Adding better version of glsum that
-!     checks for data locality will solve it
-C     Orthogonalize the residual in the pressure solver with respect
-C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'SOLN'
-      include 'TSTEP'
-      real respr (lx2*ly2*lz2*lelv)
-      integer*8 ntotg,nxyz2
-
-!FIXME ortho_acc doesn't work currently. The result of glsum_acc
-!     is different on the gpu and on the cpu - it is a bug and
-!     has yet to be solved
-      nxyz2 = nx2*ny2*nz2
-      ntot  = nxyz2*nelv
-      ntotg = nxyz2*nelgv
-! MJO - 3-17-17 - Inlined cadd function for acc
-      if (ifield.eq.1) then
-         if (ifvcor) then
-            rlam  = glsum_acc (respr,ntot)/ntotg
-            !call cadd (respr,-rlam,ntot)
-!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
-            do i=1,ntot
-               respr(i) = -rlam+respr(i)
-            enddo
-!$ACC END PARALLEL LOOP
-         endif
-       elseif (ifield.eq.ifldmhd) then
-         if (ifbcor) then
-            rlam = glsum_acc (respr,ntot)/ntotg
-!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
-            do i=1,ntot
-               respr(i) = -rlam+respr(i)
-            enddo
-!$ACC END PARALLEL LOOP
-!           call cadd (respr,-rlam,ntot)
-         endif
-       else
-         call exitti('ortho: unaccounted ifield = $',ifield)
-      endif
-
-      return
-      end
 c------------------------------------------------------------------------
       subroutine cdabdtp (ap,wp,h1,h2,h2inv,intype)
 
@@ -420,440 +336,6 @@ C
       return
       END
 
-c-----------------------------------------------------------------------
-      subroutine cdtp_acc2 (dtx,x,rm2,sm2,tm2,isd)
-C-------------------------------------------------------------
-C
-C     Compute DT*X (entire field)
-C
-C-------------------------------------------------------------
-      include 'SIZE'
-      include 'WZ'
-      include 'DXYZ'
-      include 'IXYZ'
-      include 'GEOM'
-      include 'MASS'
-      include 'INPUT'
-      include 'ESOLV'
-C
-      real dtx  (lx1,ly1,lz1,lelv)
-      real x    (lx2,ly2,lz2,lelv)
-      real rm2  (lx2,ly2,lz2,lelv)
-      real sm2  (lx2,ly2,lz2,lelv)
-      real tm2  (lx2,ly2,lz2,lelv)
-C
-C      common /ctmp1/ wx  (lx1,ly1,lz1,lelv)
-C     $ ,             ta1 (lx1,ly1,lz1,lelv)
-C     $ ,             ta2 (lx1,ly1,lz1,lelv)
-C     $ ,             ta3 (lx1,ly1,lz1,lelv)
-
-      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
-     $ ,              tas1 (lx1,ly1,lz1,lelv)
-     $ ,              tat1 (lx1,ly1,lz1,lelv)
-     $ ,              tar2 (lx1,ly1,lz1,lelv)
-     $ ,              tas2 (lx1,ly1,lz1,lelv)
-     $ ,              tat2 (lx1,ly1,lz1,lelv)
-
-
-      
-      REAL           DUAX(LX1)
-c
-      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-      include 'CTIMER'
-
-      integer e
-C
-#ifdef TIMER
-      if (icalld.eq.0) tcdtp=0.0
-      icalld=icalld+1
-      ncdtp=icalld
-      etime1=dnekclock()
-#endif
-
-      nxyz1 = nx1*ny1*nz1
-      nxyz2 = nx2*ny2*nz2
-      nxyzt2 = nxyz2*nelt
-      nyz2  = ny2*nz2
-      nxy1  = nx1*ny1
-
-      n1    = nx1*ny1
-      n2    = nx1*ny2
-
-      if ( ifaxis ) then
-         write(*,*) "OpenACC for IFAXIS is not implemented"
-         stop
-      endif
-
-      if ( ifsplit ) then
-         write(*,*) "OpenACC for IFSPLIT is not implemented"
-         stop
-      endif
-
-      if (ndim .eq. 2) then
-         write(*,*) "OpenACC for NDIM=2 is not implemented"
-         stop
-      endif
-
-!$ACC  DATA  COPYIN(wx,w3m2,x,rm2,sm2,tm2)      
-!$ACC&       COPYIN(ixtm21,iytm21,izmtm21,dxtm12,dytm12,dztm12)
-!$ACC&       COPYOUT(dtx)
-!$ACC&       CREATE(tar1,tas1,tat1,tar2,tas2,tat2)
-      
-C      Collocate with weights
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx2
-            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
-c            wx (i,j,k,e) = tmpwx
-            tar1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
-            tas1(i,j,k,e) = tmpwx*sm2(i,j,k,e)
-            tat1(i,j,k,e) = tmpwx*tm2(i,j,k,e)
-         enddo
-         enddo
-         enddo
-      enddo
-      
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx1
-            tmpr2 = 0.0
-            tmps2 = 0.0
-            tmpt2 = 0.0
-!$ACC LOOP SEQ 
-            do l=1,nx2
-               tmpr2 = tmpr2+dxtm12(i,l)*tar1(l,j,k,e)
-               tmps2 = tmps2+ixtm21(l,i)*tas1(l,j,k,e)
-               tmpt2 = tmpt2+ixtm21(l,i)*tat1(l,j,k,e)
-            enddo            
-            tar2(i,j,k,e) = tmpr2
-            tas2(i,j,k,e) = tmps2
-            tat2(i,j,k,e) = tmpt2
-         enddo
-         enddo
-         enddo
-      enddo
-
-      
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz2
-         do j=1,ny1
-         do i=1,nx1
-            tmpr1 = 0.0
-            tmps1 = 0.0
-            tmpt1 = 0.0
-!$ACC LOOP SEQ
-            do l=1,nx2
-               tmpr1 = tmpr1+iytm21(l,j)*tar2(i,l,k,e)
-               tmps1 = tmps1+dytm12(j,l)*tas2(i,l,k,e)
-               tmpt1 = tmpt1+iytm21(l,j)*tat2(i,l,k,e)
-            enddo
-            tar1(i,j,k,e) = tmpr1
-            tas1(i,j,k,e) = tmps1
-            tat1(i,j,k,e) = tmpt1
-         enddo
-         enddo
-         enddo
-      enddo
-          
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
-            dttmp = 0.0
-!$ACC LOOP SEQ
-            do l=1,nx2
-               dttmp = dttmp + iztm21(l,k)*tar1(i,j,l,e) +
-     $                         iztm21(l,k)*tas1(i,j,l,e) +
-     $                         dztm12(k,l)*tat1(i,j,l,e)
-            enddo
-            dtx(i,j,k,e) = dttmp
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC END DATA
-
-#ifdef TIMER
-      tcdtp=tcdtp+(dnekclock()-etime1)
-#endif
-      return
-      end
-
-c-----------------------------------------------------------------------
-      subroutine cdtp_acc (dtx,x,rm2,sm2,tm2,isd)
-C-------------------------------------------------------------
-C
-C     Compute DT*X (entire field)
-C
-C-------------------------------------------------------------
-      include 'SIZE'
-      include 'WZ'
-      include 'DXYZ'
-      include 'IXYZ'
-      include 'GEOM'
-      include 'MASS'
-      include 'INPUT'
-      include 'ESOLV'
-C
-      real dtx  (lx1,ly1,lz1,lelv)
-      real x    (lx2,ly2,lz2,lelv)
-      real rm2  (lx2,ly2,lz2,lelv)
-      real sm2  (lx2,ly2,lz2,lelv)
-      real tm2  (lx2,ly2,lz2,lelv)
-C
-      common /ctmp1/ wx  (lx1,ly1,lz1,lelv)
-     $ ,             ta1 (lx1,ly1,lz1,lelv)
-     $ ,             ta2 (lx1,ly1,lz1,lelv)
-     $ ,             ta3 (lx1,ly1,lz1,lelv)
-
-      REAL           DUAX(LX1)
-c
-      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-      include 'CTIMER'
-
-      integer e
-C
-#ifdef TIMER
-      if (icalld.eq.0) tcdtp=0.0
-      icalld=icalld+1
-      ncdtp=icalld
-      etime1=dnekclock()
-#endif
-
-      nxyz1 = nx1*ny1*nz1
-      nxyz2 = nx2*ny2*nz2
-      nxyzt2 = nxyz2*nelt
-      nyz2  = ny2*nz2
-      nxy1  = nx1*ny1
-
-      n1    = nx1*ny1
-      n2    = nx1*ny2
-
-      if ( ifaxis ) then
-         write(*,*) "OpenACC for IFAXIS is not implemented"
-         stop
-      endif
-
-      if ( ifsplit ) then
-         write(*,*) "OpenACC for IFSPLIT is not implemented"
-         stop
-      endif
-
-      if (ndim .eq. 2) then
-         write(*,*) "OpenACC for NDIM=2 is not implemented"
-         stop
-      endif
-
-!$ACC  DATA  COPYIN(wx,w3m2,x,rm2,sm2,tm2)      
-!$ACC&       COPYIN(ixtm21,iytm21,izmtm21,dxtm12,dytm12,dztm12)
-!$ACC&       COPYOUT(dtx)
-!$ACC&       CREATE(ta1,ta2)
-      
-CCCCCCCCCCCCCCCCCC Step 1 
-C      Collocate with weights
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx2
-            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
-            wx (i,j,k,e) = tmpwx
-            ta1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx1
-            tmp2 = 0.0
-!$ACC LOOP reduction(+:tmp2)
-            do l=1,nx2
-               tmp2 = tmp2+dxtm12(i,l)*ta1(l,j,k,e) 
-            enddo
-            ta2(i,j,k,e) = tmp2
-         enddo
-         enddo
-         enddo
-      enddo
-
-      
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz2
-         do j=1,ny1
-         do i=1,nx1
-            tmp1 = 0.0
-!$ACC LOOP SEQ
-            do l=1,nx2
-               tmp1 = tmp1+iytm21(l,j)*ta2(i,l,k,e)
-            enddo
-            ta1(i,j,k,e) = tmp1
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e=1,nelv
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
-            dttmp = 0.0
-!$ACC LOOP SEQ
-            do l=1,nx2
-               dttmp = dttmp+iztm21(l,k)*ta1(i,j,l,e)
-            enddo
-            dtx(i,j,k,e) = dttmp
-         enddo
-         enddo
-         enddo
-      enddo
-
-
-CCCCCCCCCCCCCCCCC step 2
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx2
-            ta1(i,j,k,e) = wx(i,j,k,e)*sm2(i,j,k,e)
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx1
-            tmp2 = 0.
-!$ACC LOOP SEQ
-            do l=1,nz2
-               tmp2 = tmp2+ixtm21(l,i)*ta1(l,j,k,e)
-            enddo
-            ta2(i,j,k,e) = tmp2
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny1
-         do i=1,nx1
-            tmp1 = 0.
-!$ACC LOOP SEQ
-            do l=1,nz2
-               tmp1 = tmp1+dytm12(j,l)*ta2(i,l,k,e)
-            enddo
-            ta1(i,j,k,e) = tmp1
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
-            dttmp = dtx(i,j,k,e)
-!$ACC LOOP SEQ
-            do l=1,nz2
-               dttmp = dttmp+iztm21(l,k)*ta1(i,j,l,e)
-            enddo
-             dtx(i,j,k,e) = dttmp
-         enddo
-         enddo
-         enddo
-      enddo
-
-CCCCCCCCCCCCCCCCC step 3
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx2
-            ta1(i,j,k,e) = wx(i,j,k,e)*tm2(i,j,k,e)
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny2
-         do i=1,nx1
-            tmp2 = 0.
-!$ACC LOOP SEQ
-            do l=1,nz2
-               tmp2 = tmp2+ixtm21(l,i)*ta1(l,j,k,e)
-            enddo
-            ta2(i,j,k,e) = tmp2
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz2
-         do j=1,ny1
-         do i=1,nx1
-            tmp1 = 0.
-!$ACC LOOP SEQ
-            do l=1,nz2
-               tmp1 = tmp1+iytm21(l,j)*ta2(i,l,k,e)
-            enddo
-            ta1(i,j,k,e) = tmp1
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
-            dttmp = dtx(i,j,k,e)
-!$ACC LOOP SEQ
-            do l=1,nz2
-               dttmp = dttmp+dztm12(k,l)*ta1(i,j,l,e)
-            enddo
-            dtx(i,j,k,e) = dttmp
-         enddo
-         enddo
-         enddo
-      enddo
-
-!$ACC END DATA
-
-#ifdef TIMER
-      tcdtp=tcdtp+(dnekclock()-etime1)
-#endif
-      return
-      end
       
 C     
 C-----------------------------------------------------------------------
@@ -4957,10 +4439,10 @@ C-----------------------------------------------------------------------
       real outz   (lx1,ly1,lz1,1)
       real inpfld (lx2,ly2,lz2,1)
 C
-      call cdtp_acc (outx,inpfld,rxm2,sxm2,txm2,1)
-      call cdtp_acc   (outy,inpfld,rym2,sym2,tym2,2)
+      call cdtp_acc2 (outx,inpfld,rxm2,sxm2,txm2,1)
+      call cdtp_acc2  (outy,inpfld,rym2,sym2,tym2,2)
       if (ndim.eq.3) 
-     $   call cdtp_acc (outz,inpfld,rzm2,szm2,tzm2,3)
+     $   call cdtp_acc2 (outz,inpfld,rzm2,szm2,tzm2,3)
 C
       return
       end
@@ -5759,3 +5241,697 @@ c           call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
       return
       end
 c-----------------------------------------------------------------------
+
+#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine ctolspl_acc (tolspl,respr)
+C
+C     Compute the pressure tolerance
+C
+      include 'SIZE'
+      include 'MASS'
+      include 'TSTEP'
+      REAL           RESPR (LX2,LY2,LZ2,LELV)
+      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
+
+!$ACC DATA CREATE(work)  
+      call invcol3_acc (WORK,RESPR,BM1,NTOT1)
+      CALL col2_acc    (WORK,RESPR,NTOT1)
+      RINIT  = SQRT (GLSUM (WORK,NTOT1)/VOLVM1)
+      IF (TOLPDF.GT.0.) THEN
+         TOLSPL = TOLPDF
+         TOLMIN = TOLPDF
+      ELSE
+         TOLSPL = TOLPS/DT
+         TOLMIN = RINIT*PRELAX
+      ENDIF
+      IF (TOLSPL.LT.TOLMIN) THEN
+         TOLOLD = TOLSPL
+         TOLSPL = TOLMIN
+         IF (NIO.EQ.0)
+     $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
+      ENDIF
+!$ACC END DATA
+
+      return
+      end
+
+c------------------------------------------------------------------------
+      subroutine ortho_acc (respr)
+!FIXME Temporarily made acc version of this routine to avoid
+!     crash in setup. Adding better version of glsum that
+!     checks for data locality will solve it
+C     Orthogonalize the residual in the pressure solver with respect
+C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'TSTEP'
+      real respr (lx2*ly2*lz2*lelv)
+      integer*8 ntotg,nxyz2
+
+!FIXME ortho_acc doesn't work currently. The result of glsum_acc
+!     is different on the gpu and on the cpu - it is a bug and
+!     has yet to be solved
+      nxyz2 = nx2*ny2*nz2
+      ntot  = nxyz2*nelv
+      ntotg = nxyz2*nelgv
+! MJO - 3-17-17 - Inlined cadd function for acc
+      if (ifield.eq.1) then
+         if (ifvcor) then
+            rlam  = glsum_acc (respr,ntot)/ntotg
+            !call cadd (respr,-rlam,ntot)
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+         endif
+       elseif (ifield.eq.ifldmhd) then
+         if (ifbcor) then
+            rlam = glsum_acc (respr,ntot)/ntotg
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+!           call cadd (respr,-rlam,ntot)
+         endif
+       else
+         call exitti('ortho: unaccounted ifield = $',ifield)
+      endif
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine cdtp_acc2 (dtx,x,rm2,sm2,tm2,isd)
+C-------------------------------------------------------------
+C
+C     Compute DT*X (entire field)
+C
+C-------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'ESOLV'
+C
+      real dtx  (lx1,ly1,lz1,lelv)
+      real x    (lx2,ly2,lz2,lelv)
+      real rm2  (lx2,ly2,lz2,lelv)
+      real sm2  (lx2,ly2,lz2,lelv)
+      real tm2  (lx2,ly2,lz2,lelv)
+C
+C      common /ctmp1/ wx  (lx1,ly1,lz1,lelv)
+C     $ ,             ta1 (lx1,ly1,lz1,lelv)
+C     $ ,             ta2 (lx1,ly1,lz1,lelv)
+C     $ ,             ta3 (lx1,ly1,lz1,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+
+      
+      REAL           DUAX(LX1)
+c
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+      include 'CTIMER'
+
+      integer e
+C
+#ifdef TIMER
+      if (icalld.eq.0) tcdtp=0.0
+      icalld=icalld+1
+      ncdtp=icalld
+      etime1=dnekclock()
+#endif
+
+      nxyz1 = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
+      nxyzt2 = nxyz2*nelt
+      nyz2  = ny2*nz2
+      nxy1  = nx1*ny1
+
+      n1    = nx1*ny1
+      n2    = nx1*ny2
+
+      if ( ifaxis .or. ifsplit .or. ndim .eq. 2) then
+         write(*,*) "OpenACC is not implemented for"
+         write(*,*) "ifaxis=true or ifsplit=true or ndim=2"
+         stop
+      endif
+
+!$ACC  DATA  COPYIN(w3m2,x,rm2,sm2,tm2)      
+!$ACC&       COPYIN(ixm12,iym12,izm12,dxm12,dym12,dzm12)
+!$ACC&       COPYOUT(dtx)
+!$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
+      
+C      Collocate with weights
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
+            tar1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
+            tas1(i,j,k,e) = tmpwx*sm2(i,j,k,e)
+            tat1(i,j,k,e) = tmpwx*tm2(i,j,k,e)
+         enddo
+         enddo
+         enddo
+      enddo
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx1
+            tmpr2 = 0.0
+            tmps2 = 0.0
+            tmpt2 = 0.0
+!$ACC LOOP SEQ 
+            do l=1,nx2
+               tmpr2 = tmpr2+dxm12(l,i)*tar1(l,j,k,e)
+               tmps2 = tmps2+ixm12(l,i)*tas1(l,j,k,e)
+               tmpt2 = tmpt2+ixm12(l,i)*tat1(l,j,k,e)
+            enddo            
+            tar2(i,j,k,e) = tmpr2
+            tas2(i,j,k,e) = tmps2
+            tat2(i,j,k,e) = tmpt2
+         enddo
+         enddo
+         enddo
+      enddo
+
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny1
+         do i=1,nx1
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               tmpr1 = tmpr1+iym12(l,j)*tar2(i,l,k,e)
+               tmps1 = tmps1+dym12(l,j)*tas2(i,l,k,e)
+               tmpt1 = tmpt1+iym12(l,j)*tat2(i,l,k,e)
+            enddo
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+            tat1(i,j,k,e) = tmpt1
+         enddo
+         enddo
+         enddo
+      enddo
+          
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            dttmp = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               dttmp = dttmp + izm12(l,k)*tar1(i,j,l,e) +
+     $                         izm12(l,k)*tas1(i,j,l,e) +
+     $                         dzm12(l,k)*tat1(i,j,l,e)
+            enddo
+            dtx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC END DATA
+
+#ifdef TIMER
+      tcdtp=tcdtp+(dnekclock()-etime1)
+#endif
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine cdtp_acc (dtx,x,rm2,sm2,tm2,isd)
+C-------------------------------------------------------------
+C
+C     Compute DT*X (entire field)
+C
+C-------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'ESOLV'
+C
+      real dtx  (lx1,ly1,lz1,lelv)
+      real x    (lx2,ly2,lz2,lelv)
+      real rm2  (lx2,ly2,lz2,lelv)
+      real sm2  (lx2,ly2,lz2,lelv)
+      real tm2  (lx2,ly2,lz2,lelv)
+C
+      common /ctmp1/ wx  (lx1,ly1,lz1,lelv)
+     $ ,             ta1 (lx1,ly1,lz1,lelv)
+     $ ,             ta2 (lx1,ly1,lz1,lelv)
+     $ ,             ta3 (lx1,ly1,lz1,lelv)
+
+      REAL           DUAX(LX1)
+c
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+      include 'CTIMER'
+
+      integer e
+C
+#ifdef TIMER
+      if (icalld.eq.0) tcdtp=0.0
+      icalld=icalld+1
+      ncdtp=icalld
+      etime1=dnekclock()
+#endif
+
+      nxyz1 = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
+      nxyzt2 = nxyz2*nelt
+      nyz2  = ny2*nz2
+      nxy1  = nx1*ny1
+
+      n1    = nx1*ny1
+      n2    = nx1*ny2
+
+      if ( ifaxis .or. ifsplit .or. ndim .eq. 2) then
+         write(*,*) "OpenACC is not implemented for"
+         write(*,*) "ifaxis=true or ifsplit=true or ndim=2"
+         stop
+      endif
+
+!$ACC  DATA  COPYIN(wx,w3m2,x,rm2,sm2,tm2)      
+!$ACC&       COPYIN(ixm12,iym12,izm12,dxm12,dym12,dzm12)
+!$ACC&       COPYOUT(dtx)
+!$ACC&       CREATE(ta1,ta2)
+      
+CCCCCCCCCCCCCCCCCC Step 1 
+C      Collocate with weights
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
+            wx (i,j,k,e) = tmpwx
+            ta1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx1
+            tmp2 = 0.0
+!$ACC LOOP reduction(+:tmp2)
+            do l=1,nx2
+               tmp2 = tmp2+dxm12(l,i)*ta1(l,j,k,e) 
+            enddo
+            ta2(i,j,k,e) = tmp2
+         enddo
+         enddo
+         enddo
+      enddo
+
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny1
+         do i=1,nx1
+            tmp1 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               tmp1 = tmp1+iym12(l,j)*ta2(i,l,k,e)
+            enddo
+            ta1(i,j,k,e) = tmp1
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            dttmp = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               dttmp = dttmp+izm12(l,k)*ta1(i,j,l,e)
+            enddo
+            dtx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+
+CCCCCCCCCCCCCCCCC step 2
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            ta1(i,j,k,e) = wx(i,j,k,e)*sm2(i,j,k,e)
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx1
+            tmp2 = 0.
+!$ACC LOOP SEQ
+            do l=1,nz2
+               tmp2 = tmp2+ixm12(l,i)*ta1(l,j,k,e)
+            enddo
+            ta2(i,j,k,e) = tmp2
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny1
+         do i=1,nx1
+            tmp1 = 0.
+!$ACC LOOP SEQ
+            do l=1,nz2
+               tmp1 = tmp1+dym12(l,j)*ta2(i,l,k,e)
+            enddo
+            ta1(i,j,k,e) = tmp1
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            dttmp = dtx(i,j,k,e)
+!$ACC LOOP SEQ
+            do l=1,nz2
+               dttmp = dttmp+izm12(l,k)*ta1(i,j,l,e)
+            enddo
+             dtx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+CCCCCCCCCCCCCCCCC step 3
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            ta1(i,j,k,e) = wx(i,j,k,e)*tm2(i,j,k,e)
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx1
+            tmp2 = 0.
+!$ACC LOOP SEQ
+            do l=1,nz2
+               tmp2 = tmp2+ixm12(l,i)*ta1(l,j,k,e)
+            enddo
+            ta2(i,j,k,e) = tmp2
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny1
+         do i=1,nx1
+            tmp1 = 0.
+!$ACC LOOP SEQ
+            do l=1,nz2
+               tmp1 = tmp1+iym12(l,j)*ta2(i,l,k,e)
+            enddo
+            ta1(i,j,k,e) = tmp1
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            dttmp = dtx(i,j,k,e)
+!$ACC LOOP SEQ
+            do l=1,nz2
+               dttmp = dttmp+dzm12(l,k)*ta1(i,j,l,e)
+            enddo
+            dtx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC END DATA
+
+#ifdef TIMER
+      tcdtp=tcdtp+(dnekclock()-etime1)
+#endif
+      return
+      end
+
+      subroutine multd_acc (dx,x,rm2,sm2,tm2,isd,iflg)
+C---------------------------------------------------------------------
+C
+C     Compute D*X
+C     X    : input variable, defined on M1
+C     DX   : output variable, defined on M2 (note: D is rectangular)   
+C     RM2 : RXM2, RYM2 or RZM2
+C     SM2 : SXM2, SYM2 or SZM2
+C     TM2 : TXM2, TYM2 or TZM2
+C     ISD : spatial direction (x=1,y=2,z=3)
+C     IFLG: OPGRAD (iflg=0) or OPDIV (iflg=1)
+C
+C---------------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'ESOLV'
+
+      real           dx   (lx2,ly2,lz2,lelv)
+      real           x    (lx1,ly1,lz1,lelv)
+      real           rm2  (lx2,ly2,lz2,lelv)
+      real           sm2  (lx2,ly2,lz2,lelv)
+      real           tm2  (lx2,ly2,lz2,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+      real           duax(lx1)
+
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+      include 'CTIMER'
+
+      integer e
+C
+#ifdef TIMER
+      if (icalld.eq.0) tmltd=0.0
+      icalld=icalld+1
+      nmltd=icalld
+      etime1=dnekclock()
+#endif
+
+      nyz1  = ny1*nz1
+      nxy2  = nx2*ny2
+      nxyz1 = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
+
+      n1    = nx2*ny1
+      n2    = nx2*ny2
+
+      if ( ifaxis .or. ifsplit .or. ndim .eq. 2) then
+         write(*,*) "OpenACC is not implemented for"
+         write(*,*) "ifaxis=true or ifsplit=true or ndim=2"
+         stop
+      endif
+
+!$ACC  DATA  COPYIN(w3m2,rm2,sm2,tm2)      
+!$ACC&       COPYIN(ixtm12,iytm12,izmtm12,dxtm12,dytm12,dztm12)
+!$ACC&       PRESENT(dx,x)
+!$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx2
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
+!$ACC LOOP SEQ 
+            do l=1,nx1
+               tmpx = x(l,j,k,e)
+               tmpr1 = tmpr1+dxtm12(l,i)*tmpx
+               tmps1 = tmps1+ixtm12(l,i)*tmpx
+C will be reused
+               tmpt1 = tmpt1+ixtm12(l,i)*tmpx
+            enddo            
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+            tat1(i,j,k,e) = tmpt1
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny2
+         do i=1,nx2
+            tmpr2 = 0.0
+            tmps2 = 0.0
+            tmpt2 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx1
+               tmpr2 = tmpr2+iytm12(l,j)*tar1(i,l,k,e)
+               tmps2 = tmps2+dytm12(l,j)*tas1(i,l,k,e)
+               tmpt2 = tmpt2+iytm12(l,j)*tat1(i,l,k,e)
+            enddo
+            tar2(i,j,k,e) = tmpr2
+            tas2(i,j,k,e) = tmps2
+            tat2(i,j,k,e) = tmpt2
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            dxtmp = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx1
+               dxtmp = dxtmp + iztm12(l,k)*tar2(i,j,l,e) +
+     $                         iztm12(l,k)*tas2(i,j,l,e) +
+     $                         dztm12(l,j)*tat2(i,j,l,e)
+            enddo
+            dx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            dx(i,j,k,e) = dx(i,j,k,e)* w3m2 (i,j,k) 
+         enddo
+         enddo
+         enddo
+      enddo
+!$ACC END DATA
+
+C
+#ifdef TIMER
+      tmltd=tmltd+(dnekclock()-etime1)
+#endif
+      return
+      END
+
+
+c-----------------------------------------------------------------------
+      subroutine opdiv_acc(outfld,inpx,inpy,inpz)
+C---------------------------------------------------------------------
+C
+C     Compute OUTFLD = SUMi Di*INPi, 
+C     the divergence of the vector field (INPX,INPY,INPZ)
+C
+C---------------------------------------------------------------------
+      include 'SIZE'
+      include 'GEOM'
+      real outfld (lx2,ly2,lz2,lelv)
+      real inpx   (lx1,ly1,lz1,lelv)
+      real inpy   (lx1,ly1,lz1,lelv)
+      real inpz   (lx1,ly1,lz1,lelv)
+      common /ctmp0/ work (lx2,ly2,lz2,lelv)
+C
+      iflg = 1
+
+      ntot2 = nx2*ny2*nz2*nelv
+
+!$acc data copyin(inpx) copyout(work)
+      call multd_acc (work,inpx,rxm2,sxm2,txm2,1,iflg)
+!$acc end data
+
+      call copy  (outfld,work,ntot2)
+      call multd (work,inpy,rym2,sym2,tym2,2,iflg)
+      call add2  (outfld,work,ntot2)
+      if (ndim.eq.3) then
+         call multd (work,inpz,rzm2,szm2,tzm2,3,iflg)
+         call add2  (outfld,work,ntot2)
+      endif
+
+C
+      return
+      end
+
+#endif

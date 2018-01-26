@@ -195,8 +195,13 @@ c-----------------------------------------------------------------------
       istep  = 0
       msteps = 1
 
+
       call plan4_acc_data_copyin_istep0
       call hsmg_acc_data_copyin_istep0
+
+#ifdef _OPENACC
+      call plan3_acc_data_copyin_istep0
+#endif 
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
@@ -210,9 +215,14 @@ c-----------------------------------------------------------------------
  1001 lastep=1
 
       call plan4_acc_data_copyout_nstep
-      call nek_comm_settings(isyc,0)
 
+#ifdef _OPENACC
+      call plan3_acc_data_copyout_nstep
+#endif 
+
+      call nek_comm_settings(isyc,0)
       call comment
+
 
 c     check for post-processing mode
       if (instep.eq.0) then
