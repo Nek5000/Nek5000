@@ -5810,7 +5810,7 @@ C
       endif
 
 !$ACC  DATA  COPYIN(w3m2,rm2,sm2,tm2)      
-!$ACC&       COPYIN(ixtm12,iytm12,izmtm12,dxtm12,dytm12,dztm12)
+!$ACC&       COPYIN(ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
 !$ACC&       PRESENT(dx,x)
 !$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
       
@@ -5860,35 +5860,46 @@ C will be reused
          enddo
       enddo
 
+
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
       do e=1,nelv
          do k=1,nz2
          do j=1,ny2
          do i=1,nx2
-            dxtmp = 0.0
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
 !$ACC LOOP SEQ
             do l=1,nx1
-               dxtmp = dxtmp + iztm12(l,k)*tar2(i,j,l,e) +
-     $                         iztm12(l,k)*tas2(i,j,l,e) +
-     $                         dztm12(l,j)*tat2(i,j,l,e)
+               tmpr1 = tmpr1 + iztm12(l,k)*tar2(i,j,l,e) 
+               tmps1 = tmps1 + iztm12(l,k)*tas2(i,j,l,e) 
+               tmpt1 = tmpt1 + dztm12(l,k)*tat2(i,j,l,e)
             enddo
-            dx(i,j,k,e) = dttmp
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+            tat1(i,j,k,e) = tmpt1
          enddo
          enddo
          enddo
       enddo
 
+
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
-      do e = 1,nelv
+      do e=1,nelv
          do k=1,nz2
          do j=1,ny2
          do i=1,nx2
-            dx(i,j,k,e) = dx(i,j,k,e)* w3m2 (i,j,k) 
+            dxtmp = rm2(i,j,k,e) * tar1(i,j,k,e) +
+     $              sm2(i,j,k,e) * tas1(i,j,k,e) +
+     $              tm2(i,j,k,e) * tat1(i,j,k,e) 
+            dx(i,j,k,e) = dxtmp * w3m2(i,j,k)
          enddo
          enddo
          enddo
       enddo
-!$ACC END DATA
+
+!$acc update host(dx)
+!$acc end data
 
 C
 #ifdef TIMER
@@ -5918,20 +5929,20 @@ C
 
       ntot2 = nx2*ny2*nz2*nelv
 
-!$acc data copyin(inpx) copyout(work)
+!$acc  data copyin(inpx,inpy,inpz)
+!$acc&      copyout(outfld)
       call multd_acc (work,inpx,rxm2,sxm2,txm2,1,iflg)
-!$acc end data
-
-      call copy  (outfld,work,ntot2)
-      call multd (work,inpy,rym2,sym2,tym2,2,iflg)
-      call add2  (outfld,work,ntot2)
+      call copy_acc  (outfld,work,ntot2)
+      call multd_acc (work,inpy,rym2,sym2,tym2,2,iflg)
+      call add2_acc  (outfld,work,ntot2)
       if (ndim.eq.3) then
-         call multd (work,inpz,rzm2,szm2,tzm2,3,iflg)
-         call add2  (outfld,work,ntot2)
+         call multd_acc (work,inpz,rzm2,szm2,tzm2,3,iflg)
+         call add2_acc  (outfld,work,ntot2)
       endif
-
+!$acc end data
 C
       return
       end
 
 #endif
+
