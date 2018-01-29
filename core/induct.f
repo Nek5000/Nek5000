@@ -1734,6 +1734,83 @@ c-----------------------------------------------------------------------
 
 
 #ifdef _OPENACC
+c--------------------------------------------------------------------
+      subroutine setrhsp_acc(p,h1,h2,h2inv,pset,nprev)
+C
+C     Project soln onto best fit in the "E" norm.
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'TSTEP'
+
+      real p    (lx2,ly2,lz2,lelv)
+      real h1   (lx1,ly1,lz1,lelv)
+      real h2   (lx1,ly1,lz1,lelv)
+      real h2inv(lx1,ly1,lz1,lelv)
+      real pset (lx2*ly2*lz2*lelv,mxprev)
+
+      parameter (ltot2=lx2*ly2*lz2*lelv)
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthos/ alpha(mxprev),work(mxprev)
+
+      if (nprev.eq.0) return
+
+
+c     Diag to see how much reduction in the residual is attained.
+      ntot2  = nx2*ny2*nz2*nelv
+
+!$ACC  DATA COPY(p,bm2inv)
+      alpha1 = glsc3_acc(p,p,bm2inv,ntot2)
+!$acc end data
+
+      if (alpha1.gt.0) then
+         alpha1 = sqrt(alpha1/volvm2)
+      else
+         return
+      endif
+
+
+      CALL UPDRHSE_ACC(P,H1,H2,H2INV,ierr) ! update rhs's if E-matrix has changed
+c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
+
+!$ACC DATA COPY(p,pset(:,1:nprev),pbar)
+      do i=1,nprev  ! Perform Gram-Schmidt for previous soln's.
+         alpha(i) = vlsc2_acc(p,pset(1,i),ntot2)
+      enddo
+      call gop(alpha,work,'+  ',nprev)
+
+      call rzero_acc(pbar,ntot2)
+      do i=1,nprev
+         call add2s2_acc(pbar,pset(1,i),alpha(i),ntot2)
+      enddo
+!$ACC END DATA
+C
+      intetype = 1
+
+      call cdabdtp_acc(pnew,pbar,h1,h2,h2inv,intetype)
+
+!$acc data copy(p,pnew,h1,h2,h2inv, bm2inv)
+      call sub2_acc   (p,pnew,ntot2)
+
+c    ................................................................
+      alpha2 = glsc3_acc(p,p,bm2inv,ntot2) ! Diagnostics
+!$acc end data
+
+      if (alpha2.gt.0) then
+         alpha2 = sqrt(alpha2/volvm2)
+         ratio  = alpha1/alpha2
+         n10=min(10,nprev)
+c         if (nio.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
+c         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
+   11    format(2i5,' alpha:',1p10e12.4)
+   12    format(i6,i4,1p3e12.4,' alph12')
+      endif
+c    ................................................................
+
+      return
+      end
 
 c--------------------------------------------------------------------
       subroutine incomprn_acc (ux,uy,uz,up)
@@ -1793,34 +1870,42 @@ c
       ntot2  = nx2*ny2*nz2*nelv
       intype = 1
 
-!!$ACC  DATA COPY(h1,h2,h2inv,vtrans)
-!!$ACC&      COPY(dp,ux,uy,uz)
-!$acc data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
+!$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
+!$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
-!$ACC END DATA
 
-!!$acc data copy(dp,ux,uy,uz)
       call opdiv_acc   (dp,ux,uy,uz)
-!!$acc end data
 
       bdti = -bd(1)/dt
-      call cmult   (dp,bdti,ntot2)
+      call cmult_acc   (dp,bdti,ntot2)
 
-      call add2col2(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
+      call add2col2_acc(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
 
-      call ortho   (dp)
+      call ortho_acc   (dp)
+
+!$acc end data
 
       i = 1 + ifield/ifldmhd
 
-      if (ifprjp)   call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-                    scaledt = dt/bd(1)
-                    scaledi = 1./scaledt
-                    call cmult(dp,scaledt,ntot2)        ! scale for tol
-                    call esolver  (dp,h1,h2,h2inv,intype)
-                    call cmult(dp,scaledi,ntot2)
-      if (ifprjp)   call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!!$acc data copy(dp,h1,h2,h2inv,pset,nprv)
+      if (ifprjp) then
+         call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+      endif
+!!$acc end data
+
+      scaledt = dt/bd(1)
+      scaledi = 1./scaledt
+!$acc data copy(dp)
+      call cmult_acc(dp,scaledt,ntot2) ! scale for tol
+!$acc end data
+
+      call esolver  (dp,h1,h2,h2inv,intype)
+      call cmult(dp,scaledi,ntot2)
+      if (ifprjp) then
+         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+      endif
 
       call add2(up,dp,ntot2)
 

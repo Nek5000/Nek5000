@@ -5929,8 +5929,6 @@ C
 
       ntot2 = nx2*ny2*nz2*nelv
 
-!$acc  data copyin(inpx,inpy,inpz)
-!$acc&      copyout(outfld)
       call multd_acc (work,inpx,rxm2,sxm2,txm2,1,iflg)
       call copy_acc  (outfld,work,ntot2)
       call multd_acc (work,inpy,rym2,sym2,tym2,2,iflg)
@@ -5939,10 +5937,188 @@ C
          call multd_acc (work,inpz,rzm2,szm2,tzm2,3,iflg)
          call add2_acc  (outfld,work,ntot2)
       endif
-!$acc end data
 C
       return
       end
+
+c-----------------------------------------------------------------------
+      subroutine opgradt_acc(outx,outy,outz,inpfld)
+C------------------------------------------------------------------------
+C
+C     Compute DTx, DTy, DTz of an input field INPFLD 
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      real outx   (lx1,ly1,lz1,1)
+      real outy   (lx1,ly1,lz1,1)
+      real outz   (lx1,ly1,lz1,1)
+      real inpfld (lx2,ly2,lz2,1)
+C
+      call cdtp_acc2 (outx,inpfld,rxm2,sxm2,txm2,1)
+      call cdtp_acc2  (outy,inpfld,rym2,sym2,tym2,2)
+      if (ndim.eq.3) 
+     $   call cdtp_acc2 (outz,inpfld,rzm2,szm2,tzm2,3)
+C
+      return
+      end
+
+      subroutine opmask_acc (res1,res2,res3)
+C----------------------------------------------------------------------
+C
+C     Mask the residual arrays. 
+C
+C----------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      REAL RES1(1),RES2(1),RES3(1)
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
+
+C
+c     sv=glsum(v3mask,ntot1)
+c     sb=glsum(b3mask,ntot1)
+c     write(6,*) istep,' ifld:',ifield,intype,sv,sb
+      IF (IFSTRS) THEN
+         write(*,*) "OpenACC is not implemented for ifstrs"
+         stop
+         CALL RMASK (RES1,RES2,RES3,NELV)
+      ELSE
+         if (ifield.eq.ifldmhd) then
+            CALL COL2_ACC (RES1,B1MASK,NTOT1)
+            CALL COL2_ACC (RES2,B2MASK,NTOT1)
+            IF (NDIM.EQ.3)
+     $      CALL COL2_ACC (RES3,B3MASK,NTOT1)
+         else
+            CALL COL2_ACC (RES1,V1MASK,NTOT1)
+            CALL COL2_ACC (RES2,V2MASK,NTOT1)
+            IF (NDIM.EQ.3)
+     $      CALL COL2_ACC (RES3,V3MASK,NTOT1)
+         endif
+      ENDIF
+C
+      return
+      END
+C
+
+c-----------------------------------------------------------------------
+      subroutine opbinv_acc (out1,out2,out3,inp1,inp2,inp3,h2inv)
+C--------------------------------------------------------------------
+C
+C     Compute OUT = (H2*B)-1 * INP   (explicit)
+C
+C--------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+C
+      PARAMETER(LTOT1=LX1*LY1*LZ1*LELV)
+      REAL OUT1  (LTOT1)
+      REAL OUT2  (LTOT1)
+      REAL OUT3  (LTOT1)
+      REAL INP1  (LTOT1)
+      REAL INP2  (LTOT1)
+      REAL INP3  (LTOT1)
+      REAL H2INV (LTOT1)
+C
+
+      include 'OPCTR'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'opbinv'
+      endif
+#endif
+C
+!$acc data copy(inp1,inp2,inp3)
+      call opmask_acc  (inp1,inp2,inp3)
+!$acc end data
+      call opdssum (inp1,inp2,inp3)
+C
+      NTOT=NX1*NY1*NZ1*NELV
+C
+#ifdef TIMER
+      isbcnt = ntot*(1+ndim)
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!$acc data copy(out1,h2inv) present(bm1)
+      call invcol3_acc (out1,bm1,h2inv,ntot)  ! this is expensive and should
+!$acc end data
+      call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
+      if (if3d) then
+
+!$acc data copy(out1,out2,out3) copyin(inp1,inp2,inp3)
+!$acc parallel loop
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+            out3(i)=inp3(i)*tmp
+         enddo
+!$acc end loop
+!$acc end data
+        
+      else
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+         enddo
+      endif
+
+      return
+      end
+
+c------------------------------------------------------------------------
+      subroutine cdabdtp_acc (ap,wp,h1,h2,h2inv,intype)
+
+C     INTYPE= 0  Compute the matrix-vector product    DA(-1)DT*p
+C     INTYPE= 1  Compute the matrix-vector product    D(B/DT)(-1)DT*p
+C     INTYPE=-1  Compute the matrix-vector product    D(A+B/DT)(-1)DT*p
+
+      include 'SIZE'
+      include 'TOTAL'
+      REAL           AP    (LX2,LY2,LZ2,LELV)
+      REAL           WP    (LX2,LY2,LZ2,1)
+      REAL           H1    (LX1,LY1,LZ1,1)
+      REAL           H2    (LX1,LY1,LZ1,1)
+      REAL           H2INV (LX1,LY1,LZ1,1)
+C
+      COMMON /SCRNS/ TA1 (LX1,LY1,LZ1,LELV)
+     $ ,             TA2 (LX1,LY1,LZ1,LELV)
+     $ ,             TA3 (LX1,LY1,LZ1,LELV)
+     $ ,             TB1 (LX1,LY1,LZ1,LELV)
+     $ ,             TB2 (LX1,LY1,LZ1,LELV)
+     $ ,             TB3 (LX1,LY1,LZ1,LELV)
+C
+      CALL OPGRADT_ACC (TA1,TA2,TA3,WP)
+      IF ((INTYPE.EQ.0).OR.(INTYPE.EQ.-1)) THEN
+         TOLHIN=TOLHS
+         CALL OPHINV_ACC (TB1,TB2,TB3,TA1,TA2,TA3,H1,H2,TOLHIN,NMXH)
+      ELSE
+         if (ifanls) then
+            dtbdi = dt/bd(1)   ! scale by dt*backwd-diff coefficient
+            CALL OPBINV1(TB1,TB2,TB3,TA1,TA2,TA3,dtbdi)
+         else
+            CALL OPBINV_ACC (TB1,TB2,TB3,TA1,TA2,TA3,H2INV)
+         endif
+      ENDIF
+
+!$ACC DATA COPY(AP,TB1,TB2,TB3)
+      CALL OPDIV_ACC  (AP,TB1,TB2,TB3)
+!$ACC END DATA
+C
+      return
+      END
 
 #endif
 

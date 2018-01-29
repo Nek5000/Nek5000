@@ -1443,3 +1443,90 @@ C
       return
       end
 c-----------------------------------------------------------------------
+
+
+#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine updrhse_acc(p,h1,h2,h2inv,ierr)
+C
+C     Update rhs's if E-matrix has changed
+C
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'TSTEP'
+C
+      PARAMETER (LTOT2=LX2*LY2*LZ2*LELV)
+      COMMON /ORTHOV/ RHS(LTOT2,MXPREV)
+      COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
+      COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
+      COMMON /ORTHOI/ Nprev,Mprev
+      COMMON /ORTHOL/ IFNEWE
+      REAL ALPHA,WORK
+      LOGICAL IFNEWE
+C
+C
+      REAL             P    (LX2,LY2,LZ2,LELV)
+      REAL             H1   (LX1,LY1,LZ1,LELV)
+      REAL             H2   (LX1,LY1,LZ1,LELV)
+      REAL             H2INV(LX1,LY1,LZ1,LELV)
+C
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      ntot2=nx2*ny2*nz2*nelv
+
+
+C     First, we have to decide if the E matrix has changed.
+
+      if (icalld.eq.0) then
+         icalld=1
+         dtlast=dt
+      endif
+
+      ifnewe=.false.
+      if (ifmvbd) then
+         ifnewe=.true.
+         call invers2_acc(bm2inv,bm2,ntot2)
+      endif
+      if (dtlast.ne.dt) then
+         ifnewe=.true.
+         dtlast=dt
+      endif
+      if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
+     
+C     
+C     Next, we reconstruct a new rhs set.
+C    
+      if (ifnewe) then
+         write(*,*) "OpenACC is not implemented for ifmvbd"
+         write(*,*) "  fixed later with dtlast .ne. dt"
+         stop
+      endif
+     
+      if (ifnewe) then
+c
+c        new idea...
+c        if (nprev.gt.0) nprev=1
+c        call copy(rhs,pnew,ntot2)
+c
+         Nprevt = Nprev
+         DO 100 Iprev=1,Nprevt
+C           Orthogonalize this rhs w.r.t. previous rhs's
+            CALL ECONJ (Iprev,H1,H2,H2INV,ierr)
+            if (ierr.eq.1) then
+               if (nio.eq.0) write(6,*) istep,ierr,' ECONJ error'
+               nprev = 0
+               return
+            endif
+  100    CONTINUE
+C
+      ENDIF
+C
+      RETURN
+      END
+
+
+#endif

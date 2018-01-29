@@ -2042,6 +2042,9 @@ c
       enddo
       return
       end
+
+#ifdef _OPENACC 
+
 c--------------------------------------------------------
       subroutine col2_acc(a,b,n)
       real a(n),b(n)
@@ -2260,6 +2263,7 @@ C
 
       return
       end
+
 c-----------------------------------------------------------------------
       function glsc2_acc(x,y,n)
 C
@@ -2362,6 +2366,8 @@ c-----------------------------------------------------------------------
       subroutine chsign_acc(a,n)
       REAL A(n)
 C
+      write(*,*) "No openacc? chsign_acc in math.f"
+      stop 
       DO I=1,N
          A(I) = -A(I)
       END DO
@@ -2369,6 +2375,94 @@ C
       END
 C
 c-----------------------------------------------------------------------
+      subroutine cmult_acc(a,const,n)
+      REAL A(n)
+C
+      include 'OPCTR'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'cmult '
+      endif
+      isbcnt = n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
 
+!$ACC PARALLEL LOOP PRESENT(A)
+      DO 100 I=1,N
+         A(I)=A(I)*CONST
+ 100  CONTINUE
+!$ACC END PARALLEL
+
+      return
+      END
+C
+c-----------------------------------------------------------------------
+      real function vlsc2_acc(x,y,n)
+      REAL X(n),Y(n)
+      include 'SIZE'
+      include 'OPCTR'
+      include 'PARALLEL'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC2 '
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+      s = 0.
+!$ACC PARALLEL LOOP REDUCTION(+:s) PRESENT(X,Y)
+      do i=1,n
+         s = s + x(i)*y(i)
+      enddo
+!$ACC END PARALLEL
+
+      vlsc2_acc=s
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine sub2_acc(a,b,n)
+      REAL A(N),B(N)
+C
+      include 'OPCTR'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'sub2  '
+      endif
+      isbcnt = n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+C
+!$ACC PARALLEL LOOP PRESENT(A,B)
+      DO 100 I=1,N
+         A(I)=A(I)-B(I)
+ 100  CONTINUE
+!$ACC END PARALLEL LOOP
+
+      return
+      END
+
+#endif
 
 
