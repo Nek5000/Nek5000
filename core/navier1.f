@@ -6120,4 +6120,78 @@ C
       return
       END
 
+      subroutine chktcg2_acc (tol,res,iconv)
+C-------------------------------------------------------------------
+C
+C     Check that the tolerances are not too small for the CG-solver.
+C     Important when calling the CG-solver (Gauss  mesh) with
+C     all Dirichlet velocity b.c. (zero Neumann for the pressure).
+C
+C-------------------------------------------------------------------
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'MASS'
+      include 'TSTEP'
+      REAL           RES (LX2,LY2,LZ2,LELV)
+      COMMON /CTMP0/ TA  (LX2,LY2,LZ2,LELV)
+     $ ,             TB  (LX2,LY2,LZ2,LELV)
+      COMMON /CPRINT/ IFPRINT
+      LOGICAL         IFPRINT
+C
+      ICONV = 0
+C
+C     Single or double precision???
+C
+      DELTA = 1.E-9
+      X     = 1.+DELTA
+      Y     = 1.
+      DIFF  = ABS(X-Y)
+      IF (DIFF.EQ.0.) EPS = 1.E-5
+      IF (DIFF.GT.0.) EPS = 1.E-10
+C
+C     Relaxed pressure iteration; maximum decrease in the residual (ER)
+C
+      IF (PRELAX.NE.0.) EPS = PRELAX
+C
+      NTOT2 = NX2*NY2*NZ2*NELV
+!$acc  data copyin(bm2,bm2inv)
+!$acc&      create(ta,tb)    
+      CALL COL3_ACC    (TA,RES,BM2INV,NTOT2)
+      CALL COL3_ACC     (TB,TA,TA,NTOT2)
+      CALL COL2_ACC     (TB,BM2,NTOT2)
+      RINIT = SQRT( GLSUM_ACC (TB,NTOT2)/VOLVM2 )
+!$acc end data
+
+      IF (RINIT.LT.TOL) THEN
+         ICONV = 1
+         return
+      ENDIF
+      IF (TOLPDF.GT.0.) THEN
+         RMIN = TOLPDF
+      ELSE
+         RMIN  = EPS*RINIT
+      ENDIF
+      IF (TOL.LT.RMIN) THEN
+         TOLOLD = TOL
+         TOL = RMIN
+         IF (NIO.EQ.0 .AND. IFPRINT) WRITE (6,*)
+     $   'New CG2-tolerance (RINIT*10-5/10-10) = ',TOL,TOLOLD
+      ENDIF
+      IF (IFVCOR) THEN
+         OTR = GLSUM (RES,NTOT2)
+         TOLMIN = ABS(OTR)*100.
+         IF (TOL .LT. TOLMIN) THEN
+             TOLOLD = TOL
+             TOL = TOLMIN
+             IF (NIO.EQ.0 .AND. IFPRINT)
+     $       WRITE (6,*) 'New CG2-tolerance (OTR) = ',TOLMIN,TOLOLD
+         ENDIF
+      ENDIF
+      return
+      END
+C
+
 #endif
+
+

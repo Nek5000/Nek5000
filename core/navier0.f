@@ -217,11 +217,15 @@ c     write(6,*) solver_type,' solver type',iesolv
             kwave2 = 0.
             call gfdm_pres_solv  (wk1,res,wk2,wk3,kwave2)
             call copy            (res,wk1,ntot2)
+            write(*,*) "OpenACC is not implemented for fdm"
+            stop
          else
             if (param(42).eq.1.or.solver_type.eq.'pdm') then
                CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
+               write(*,*) "OpenACC is not implemented for pdm"
+               stop
             else
-               call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
+               call uzawa_gmres_acc(res,h1,h2,h2inv,intype,icg)
             endif
          endif
       else

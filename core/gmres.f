@@ -1448,3 +1448,258 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
 
+
+#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine uzawa_gmres_acc(res,h1,h2,h2inv,intype,iter)
+
+c     Solve the pressure equation by right-preconditioned
+c     GMRES iteration.
+c     intype =  0  (steady)
+c     intype =  1  (explicit)
+c     intype = -1  (implicit)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'GMRES'
+      common  /ctolpr/ divex
+      common  /cprint/ ifprint
+      logical          ifprint
+      real             res  (lx2*ly2*lz2*lelv)
+      real             h1   (lx1,ly1,lz1,lelv)
+      real             h2   (lx1,ly1,lz1,lelv)
+      real             h2inv(lx1,ly1,lz1,lelv)
+
+      common /scrmg/    wp (lx2,ly2,lz2,lelv)
+
+      common /ctmp0/   wk1(lgmres),wk2(lgmres)
+      common /cgmres1/ y(lgmres)
+
+      real alpha, l, temp
+      integer j,m
+c
+      logical iflag
+      save    iflag
+      data    iflag /.false./
+      real    norm_fac
+      save    norm_fac
+c
+      real*8 etime1,dnekclock
+c
+      if(.not.iflag) then
+         iflag=.true.
+         call uzawa_gmres_split0(ml_gmres,mu_gmres,bm2,bm2inv,
+     $                           nx2*ny2*nz2*nelv)
+         norm_fac = 1./sqrt(volvm2)
+      endif
+c
+      etime1 = dnekclock()
+      etime_p = 0.
+      divex = 0.
+      iter  = 0
+      m = lgmres
+c
+!$acc data copy(res)
+      call chktcg2_acc(tolps,res,iconv)
+!$acc end data
+
+      if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
+     $   tolps = abs(param(21))
+c     if (param(21).lt.0) tolps = abs(param(21))
+      if (istep.eq.0) tolps = 1.e-4
+      tolpss = tolps
+c
+      ntot2  = nx2*ny2*nz2*nelv
+c
+      iconv = 0
+
+!$acc data copy(x_gmres)
+      call rzero_acc(x_gmres,ntot2)
+!$acc end data
+
+      do while(iconv.eq.0.and.iter.lt.100)
+
+         if(iter.eq.0) then
+!$acc data copy(r_gmres, ml_gmres,res)
+                                                        !      -1
+            call col3_acc(r_gmres,ml_gmres,res,ntot2)       ! r = L  res
+c           call copy(r_gmres,res,ntot2)
+!$acc end data
+         else
+            !update residual
+!$acc data copy(r_gmres,res,w_gmres,x_gmres,ml_gmres,h1,h2,h2inv)
+            call copy_acc(r_gmres,res,ntot2)                      ! r = res
+            call cdabdtp_acc(w_gmres,x_gmres,h1,h2,h2inv,intype)  ! w = A x
+            call add2s2_acc(r_gmres,w_gmres,-1.,ntot2)            ! r = r - w
+                                                              !      -1
+            call col2_acc(r_gmres,ml_gmres,ntot2)                 ! r = L   r
+!$acc end data
+         endif
+                                                            !            ______
+         gamma_gmres(1) = sqrt(glsc2(r_gmres,r_gmres,ntot2))! gamma  = \/ (r,r) 
+                                                            !      1
+         if(iter.eq.0) then
+            div0 = gamma_gmres(1)*norm_fac
+            if (param(21).lt.0) tolpss=abs(param(21))*div0
+         endif
+
+         !check for lucky convergence
+         rnorm = 0.
+         if(gamma_gmres(1) .eq. 0.) goto 9000
+         temp = 1./gamma_gmres(1)
+!$acc data copy(v_gmres(:,1),r_gmres)
+         call cmult2_acc(v_gmres(1,1),r_gmres,temp,ntot2)! v  = r / gamma
+                                                     !  1            1
+!$acc end data
+         do j=1,m
+            iter = iter+1
+!$acc data copy(w_gmres,mu_gmres,v_gmres(:,j))
+                                                           !       -1
+            call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),ntot2) ! w  = U   v
+                                                           !           j
+            
+!$acc end data
+            etime2 = dnekclock()
+            if(param(43).eq.1) then
+               call uzprec(z_gmres(1,j),w_gmres,h1,h2,intype,wp)
+            else                                        !       -1
+               call hsmg_solve(z_gmres(1,j),w_gmres)    ! z  = M   w
+c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
+            endif     
+            etime_p = etime_p + dnekclock()-etime2
+     
+!$acc data copy(w_gmres,z_gmres(:,j),ml_gmres,h1,h2,h2inv)
+            call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
+     $                       h1,h2,h2inv,intype)      !        j
+     
+                                                  !      -1
+            call col2_acc(w_gmres,ml_gmres,ntot2)     ! w = L   w
+!$acc end data
+
+c           !modified Gram-Schmidt
+c           do i=1,j
+c              h_gmres(i,j)=glsc2(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
+c                                                             !  i,j       i
+c              call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),ntot2) ! w = w - h    v
+c           enddo                                                    !          i,j  i
+
+
+c           2-PASS GS, 1st pass:
+
+            do i=1,j
+               h_gmres(i,j)=vlsc2(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
+            enddo                                             !  i,j       i
+
+            call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
+
+            do i=1,j
+               call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),ntot2) ! w = w - h    v
+            enddo                                                    !          i,j  i
+
+
+c           2-PASS GS, 2nd pass:
+c
+c           do i=1,j
+c              wk1(i)=vlsc2(w,v_gmres(1,i),ntot2) ! h    = (w,v )
+c           enddo                                 !  i,j       i
+c                                                 !
+c           call gop(wk1,wk2,'+  ',j)             ! sum over P procs
+c
+c           do i=1,j
+c              call add2s2(w,v_gmres(1,i),-wk1(i),ntot2) ! w = w - h    v
+c              h(i,j) = h(i,j) + wk1(i)                  !          i,j  i
+c           enddo
+
+
+            !apply Givens rotations to new column
+            do i=1,j-1
+               temp = h_gmres(i,j)                   
+               h_gmres(i  ,j)=  c_gmres(i)*temp 
+     $                        + s_gmres(i)*h_gmres(i+1,j)  
+               h_gmres(i+1,j)= -s_gmres(i)*temp 
+     $                        + c_gmres(i)*h_gmres(i+1,j)
+            enddo
+                                                              !            ______
+            alpha = sqrt(glsc2(w_gmres,w_gmres,ntot2))        ! alpha =  \/ (w,w)
+            rnorm = 0.
+            if(alpha.eq.0.) goto 900  !converged
+            l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
+            temp = 1./l
+            c_gmres(j) = h_gmres(j,j) * temp
+            s_gmres(j) = alpha  * temp
+            h_gmres(j,j) = l
+            gamma_gmres(j+1) = -s_gmres(j) * gamma_gmres(j)
+            gamma_gmres(j)   =  c_gmres(j) * gamma_gmres(j)
+
+c            call outmat(h,m,j,' h    ',j)
+            
+            rnorm = abs(gamma_gmres(j+1))*norm_fac
+            ratio = rnorm/div0
+            if (ifprint.and.nio.eq.0) 
+     $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
+   66       format(i5,1p4e12.5,i8,' Divergence')
+
+#ifndef TST_WSCAL
+            if (rnorm .lt. tolpss) goto 900  !converged
+#else
+            if (iter.gt.param(151)-1) goto 900
+#endif
+            if (j.eq.m) goto 1000 !not converged, restart
+
+            temp = 1./alpha
+            call cmult2(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
+                                                           !  j+1            
+         enddo
+  900    iconv = 1
+ 1000    continue
+         !back substitution
+         !     -1
+         !c = H   gamma
+         do k=j,1,-1
+            temp = gamma_gmres(k)
+            do i=j,k+1,-1
+               temp = temp - h_gmres(k,i)*c_gmres(i)
+            enddo
+            c_gmres(k) = temp/h_gmres(k,k)
+         enddo
+         !sum up Arnoldi vectors
+         do i=1,j
+            call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),ntot2) 
+                       ! x = x + c  z
+                       !          i  i
+         enddo
+c        if(iconv.eq.1) call dbg_write(x,nx2,ny2,nz2,nelv,'esol',3)
+      enddo
+ 9000 continue
+c
+      divex = rnorm
+c     iter = iter - 1
+c
+c     DIAGNOSTICS
+c      call copy   (w,x,ntot2)
+       call ortho  (w_gmres) ! Orthogonalize wrt null space, if present
+c      call copy(r,res,ntot2) !r = res
+c      call cdabdtp(r,w,h1,h2,h2inv,intype)  ! r = A w
+c      do i=1,ntot2
+c         r(i) = res(i) - r(i)               ! r = res - r
+c      enddo
+c      call uzawa_gmres_temp(r,bm2inv,ntot2)
+c                                               !            ______
+c      gamma(1) = sqrt(glsc2(r,r,ntot2)/volvm2) ! gamma  = \/ (r,r) 
+c                                               !      1
+c      print *, 'GMRES end resid:',gamma(1)
+c     END DIAGNOSTICS
+      call copy(res,x_gmres,ntot2)
+
+      call ortho (res)  ! Orthogonalize wrt null space, if present
+
+      etime1 = dnekclock()-etime1
+      if (nio.eq.0) write(6,9999) istep,'  U-PRES gmres  ', 
+     &                            iter,divex,div0,tolpss,etime_p,etime1
+c     call flush_hack
+ 9999 format(i11,a,I6,1p5e13.4)
+
+      return
+      end
+
+#endif
