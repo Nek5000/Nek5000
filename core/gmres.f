@@ -1513,30 +1513,35 @@ c
 c
       iconv = 0
 
-!$acc data copy(x_gmres)
-      call rzero_acc(x_gmres,ntot2)
-!$acc end data
+      call rzero(x_gmres,ntot2)
 
+!$acc  data copyin(h1,h2,h2inv,res)
+!$acc&      create(r_gmres)
+!$acc&      create(x_gmres)
+!$acc&      create(w_gmres)
+!$acc&      create(ml_gmres)
+!$acc&      create(v_gmres)
+!$acc&      copyin(mu_gmres)
       do while(iconv.eq.0.and.iter.lt.100)
 
          if(iter.eq.0) then
-!$acc data copy(r_gmres, ml_gmres,res)
+!$acc update device(r_gmres, ml_gmres)
                                                         !      -1
             call col3_acc(r_gmres,ml_gmres,res,ntot2)       ! r = L  res
 c           call copy(r_gmres,res,ntot2)
-!$acc end data
+!$acc update host(r_gmres,ml_gmres)
          else
             !update residual
-!$acc data copy(r_gmres,res,w_gmres,x_gmres,ml_gmres,h1,h2,h2inv)
+!$acc update device(r_gmres,res,w_gmres,x_gmres,ml_gmres)
             call copy_acc(r_gmres,res,ntot2)                      ! r = res
             call cdabdtp_acc(w_gmres,x_gmres,h1,h2,h2inv,intype)  ! w = A x
             call add2s2_acc(r_gmres,w_gmres,-1.,ntot2)            ! r = r - w
                                                               !      -1
             call col2_acc(r_gmres,ml_gmres,ntot2)                 ! r = L   r
-!$acc end data
+!$acc update host(r_gmres,res,w_gmres,x_gmres,ml_gmres)
          endif
                                                             !            ______
-         gamma_gmres(1) = sqrt(glsc2(r_gmres,r_gmres,ntot2))! gamma  = \/ (r,r) 
+         gamma_gmres(1) = sqrt(glsc2_acc(r_gmres,r_gmres,ntot2))! gamma  = \/ (r,r) 
                                                             !      1
          if(iter.eq.0) then
             div0 = gamma_gmres(1)*norm_fac
@@ -1547,18 +1552,17 @@ c           call copy(r_gmres,res,ntot2)
          rnorm = 0.
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
-!$acc data copy(v_gmres(:,1),r_gmres)
+
          call cmult2_acc(v_gmres(1,1),r_gmres,temp,ntot2)! v  = r / gamma
                                                      !  1            1
-!$acc end data
+!$acc update host(v_gmres(:,1))         
          do j=1,m
             iter = iter+1
-!$acc data copy(w_gmres,mu_gmres,v_gmres(:,j))
+!$acc update device(v_gmres(:,j))
                                                            !       -1
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),ntot2) ! w  = U   v
                                                            !           j
-            
-!$acc end data
+!$acc update host(w_gmres)           
             etime2 = dnekclock()
             if(param(43).eq.1) then
                call uzprec(z_gmres(1,j),w_gmres,h1,h2,intype,wp)
@@ -1567,14 +1571,13 @@ c           call copy(r_gmres,res,ntot2)
 c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
-     
-!$acc data copy(w_gmres,z_gmres(:,j),ml_gmres,h1,h2,h2inv)
-            call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
+!!$acc update device(w_gmres,z_gmres(:,j))     
+            call cdabdtp(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
      
                                                   !      -1
-            call col2_acc(w_gmres,ml_gmres,ntot2)     ! w = L   w
-!$acc end data
+            call col2(w_gmres,ml_gmres,ntot2)     ! w = L   w
+!!$acc updat host(w_gmres)
 
 c           !modified Gram-Schmidt
 c           do i=1,j
@@ -1699,6 +1702,7 @@ c     END DIAGNOSTICS
 c     call flush_hack
  9999 format(i11,a,I6,1p5e13.4)
 
+!$acc end data
       return
       end
 
