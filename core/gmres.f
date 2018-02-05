@@ -1506,7 +1506,7 @@ c
 !$acc&      create(ml_gmres)
 !$acc&      create(v_gmres)
 !$acc&      copyin(mu_gmres)
-
+!$acc&      create(z_gmres)
       call chktcg2_acc(tolps,res,iconv)
 
       if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
@@ -1571,7 +1571,7 @@ c           call copy(r_gmres,res,ntot2)
 c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
-!!!$acc update device(w_gmres,z_gmres(:,j))     
+!$acc update device(z_gmres(:,j))     
 !!! already copy to device.
             call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
@@ -1668,11 +1668,15 @@ c            call outmat(h,m,j,' h    ',j)
             c_gmres(k) = temp/h_gmres(k,k)
          enddo
          !sum up Arnoldi vectors
+
+!$acc update device(x_gmres)
          do i=1,j
-            call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),ntot2) 
+!$acc update device(z_gmres(:,i))
+            call add2s2_acc(x_gmres,z_gmres(1,i),c_gmres(i),ntot2) 
                        ! x = x + c  z
                        !          i  i
          enddo
+!$acc update host(x_gmres)
 c        if(iconv.eq.1) call dbg_write(x,nx2,ny2,nz2,nelv,'esol',3)
       enddo
  9000 continue
