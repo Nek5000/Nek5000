@@ -1501,10 +1501,8 @@ c
 c
 !$acc  data copyin(h1,h2,h2inv,res)
 !$acc&      copyin(ml_gmres,mu_gmres)
-!$acc&      create(r_gmres)
-!$acc&      create(x_gmres)
+!$acc&      create(r_gmres,x_gmres,v_gmres)
 !$acc&      create(w_gmres)
-!$acc&      create(v_gmres)
 !$acc&      create(z_gmres)
       call chktcg2_acc(tolps,res,iconv)
 
@@ -1549,11 +1547,9 @@ c           call copy(r_gmres,res,ntot2)
          temp = 1./gamma_gmres(1)
 
          call cmult2_acc(v_gmres(1,1),r_gmres,temp,ntot2)! v  = r / gamma
-                                                     !  1            1
-!$acc update host(v_gmres(:,1))         
+                                                         !  1            1
          do j=1,m
             iter = iter+1
-!$acc update device(v_gmres(:,j))
                                                            !       -1
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),ntot2) ! w  = U   v
                                                            !           j
@@ -1582,7 +1578,6 @@ c           enddo                                                    !          
 
 c           2-PASS GS, 1st pass:
             do i=1,j
-!$acc update device(v_gmres(:,i))
                h_gmres(i,j)=vlsc2_acc(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
             enddo                                             !  i,j       i
 
@@ -1644,7 +1639,6 @@ c            call outmat(h,m,j,' h    ',j)
             temp = 1./alpha
             call cmult2_acc(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
                                                            !  j+1            
-!$acc update host(v_gmres(:,j+1))            
          enddo
   900    iconv = 1
  1000    continue
@@ -1661,7 +1655,6 @@ c            call outmat(h,m,j,' h    ',j)
          !sum up Arnoldi vectors
 
          do i=1,j
-!$acc update device(z_gmres(:,i))
             call add2s2_acc(x_gmres,z_gmres(1,i),c_gmres(i),ntot2) 
                        ! x = x + c  z
                        !          i  i
