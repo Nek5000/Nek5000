@@ -1570,9 +1570,7 @@ c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
 !!! already copy to device.
             call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
-!$acc update host(w_gmres)     
-
-            call col2(w_gmres,ml_gmres,ntot2)     ! w = L   w
+            call col2_acc(w_gmres,ml_gmres,ntot2)     ! w = L   w
 
 c           !modified Gram-Schmidt
 c           do i=1,j
@@ -1583,9 +1581,8 @@ c           enddo                                                    !          
 
 
 c           2-PASS GS, 1st pass:
-
-!$acc update device(w_gmres,v_gmres(:,1:j))
             do i=1,j
+!$acc update device(v_gmres(:,i))
                h_gmres(i,j)=vlsc2_acc(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
             enddo                                             !  i,j       i
 
@@ -1594,7 +1591,6 @@ c           2-PASS GS, 1st pass:
             do i=1,j
                call add2s2_acc(w_gmres,v_gmres(1,i),-h_gmres(i,j),ntot2) ! w = w - h    v
             enddo                                                    !          i,j  i
-!$acc update host(w_gmres)
 
 c           2-PASS GS, 2nd pass:
 c
