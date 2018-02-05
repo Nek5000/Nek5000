@@ -1897,11 +1897,12 @@ c
 
       scaledt = dt/bd(1)
       scaledi = 1./scaledt
-!$acc data copy(dp)
+!$acc data copyin(dp)
       call cmult_acc(dp,scaledt,ntot2) ! scale for tol
+!$acc update host(dp)
+      call esolver_acc  (dp,h1,h2,h2inv,intype)
 !$acc end data
-
-      call esolver  (dp,h1,h2,h2inv,intype)
+  
       call cmult(dp,scaledi,ntot2)
       if (ifprjp) then
          call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))

@@ -181,3 +181,58 @@ c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
       return
       end
 c-----------------------------------------------------------------------
+
+#if _OPENACC
+      SUBROUTINE ESOLVER_ACC (RES,H1,H2,H2INV,INTYPE)
+C---------------------------------------------------------------------
+C
+C     Choose E-solver
+C
+C--------------------------------------------------------------------
+      INCLUDE 'SIZE'
+      INCLUDE 'ESOLV'
+      INCLUDE 'INPUT'
+C
+      REAL RES   (LX2,LY2,LZ2,LELV)
+      REAL H1    (LX1,LY1,LZ1,LELV)
+      REAL H2    (LX1,LY1,LZ1,LELV)
+      REAL H2INV (LX1,LY1,LZ1,LELV)
+      common /scruz/ wk1(lx2*ly2*lz2*lelv)
+     $             , wk2(lx2*ly2*lz2*lelv)
+     $             , wk3(lx2*ly2*lz2*lelv)
+
+      include 'CTIMER'
+      real kwave2
+
+      if (icalld.eq.0) teslv=0.0
+      icalld=icalld+1
+      neslv=icalld
+      etime1=dnekclock()
+
+c     write(6,*) solver_type,' solver type',iesolv
+
+      if (iesolv.eq.1) then
+         if (solver_type.eq.'fdm') then
+            ntot2 = nx2*ny2*nz2*nelv
+            kwave2 = 0.
+            call gfdm_pres_solv  (wk1,res,wk2,wk3,kwave2)
+            call copy            (res,wk1,ntot2)
+         else
+            if (param(42).eq.1.or.solver_type.eq.'pdm') then
+               CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
+            else
+               call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
+            endif
+         endif
+      else
+         WRITE(6,*) 'ERROR: E-solver does not exist',iesolv
+         WRITE(6,*) 'Stop in ESOLVER'
+         CALL EXITT
+      ENDIF
+
+      teslv=teslv+(dnekclock()-etime1)
+
+      RETURN
+      END
+
+#endif 

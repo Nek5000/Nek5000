@@ -2463,6 +2463,66 @@ C
       return
       END
 
+c-----------------------------------------------------------------------
+      real function vlsum_acc(vec,n)
+      REAL VEC(N)
+      include 'OPCTR'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'vlsum '
+      endif
+      isbcnt = n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
 #endif
+C
+      SUM = 0.
+C
+!$ACC PARALLEL LOOP PRESENT(VEC) REDUCTION(+:SUM)
+      DO 100 I=1,N
+         SUM=SUM+VEC(I)
+ 100  CONTINUE
+!$ACC END PARALLEL LOOP
+
+      VLSUM_ACC = SUM
+      return
+      END
+
+c-----------------------------------------------------------------------
+      subroutine addcol3_acc(a,b,c,n)
+      real a(1),b(1),c(1)
+      include 'OPCTR'
+
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'addcl3'
+      endif
+      isbcnt = 2*n
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+!xbm* unroll (10)
+!$acc parallel loop present(a,b,c)
+      do i=1,n
+         a(i)=a(i)+b(i)*c(i)
+      enddo
+!$acc end loop
+      return
+      end
+
+#endif
+
+
+
 
 

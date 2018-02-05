@@ -7,12 +7,12 @@ c=======================================================================
       include 'CTIMER'
 
       CHARACTER      NAME*4
-      REAL           U    (LX1,LY1,LZ1,1)
-      REAL           RHS  (LX1,LY1,LZ1,1)
-      REAL           H1   (LX1,LY1,LZ1,1)
-      REAL           H2   (LX1,LY1,LZ1,1)
-      REAL           MASK (LX1,LY1,LZ1,1)
-      REAL           MULT (LX1,LY1,LZ1,1)
+      REAL           U    (LX1,LY1,LZ1,Lelv)
+      REAL           RHS  (LX1,LY1,LZ1,lelv)
+      REAL           H1   (LX1,LY1,LZ1,lelv)
+      REAL           H2   (LX1,LY1,LZ1,lelv)
+      REAL           MASK (LX1,LY1,LZ1,lelv)
+      REAL           MULT (LX1,LY1,LZ1,lelv)
 
       logical iffdm
       character*3 nam3
@@ -64,8 +64,23 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
 
       if (tli.lt.0) tol=tli ! caller-specified relative tolerance
 
-      if (imsh.eq.1) call cggo_acc
-     $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+!!! Changed by Jing for Pn-Pn-2 2018-02-01
+#if 1 
+      if (imsh.eq.1) then 
+!$acc data   create(u,rhs,h1,h2)
+!$acc update device(rhs,h1,h2)
+         call cggo_acc
+     $        (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+!$acc update host(u)
+!$acc end data
+      endif
+#else
+      if (imsh.eq.1) then 
+         call cggo_acc
+     $        (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+      endif
+#endif 
+
       if (imsh.eq.2) call cggo_acc
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
@@ -108,8 +123,9 @@ C-----------------------------------------------------------------------
      $     binv(lx1*ly1*lz1*lelt)
 
       common /scrcg/ scrd(lg), scalar(2)
-      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+     
       common /tdarray/ diagt(maxcg),upper(maxcg)
       common /iterhm/ niterhm
       character*4 name
@@ -146,6 +162,18 @@ c     overrule tolerance for velocity
 
 c     Set up diag preconditioner.
 
+!!! changed by Jing for Pn-Pn-2 2018-02-01
+#if 1
+!!! scrd is already on device via /common/ ? 
+!$acc update device(scrd(1:n))
+      call setprec_acc(scrd,h1,h2,imsh,isd) 
+!acc update host(scrd(1:n))
+      
+      call dssum(scrd,nx1,ny1,nz1)
+      call invcol1(scrd,nx1*ny1*nz1*nelv)
+!$acc update device(scrd)
+
+#else
 !$acc update host(scrd)
       call setprec_acc(scrd,h1,h2,imsh,isd) ! needs to be ported
 !$acc update device(scrd)
@@ -154,6 +182,8 @@ c     Set up diag preconditioner.
       call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
 
 !$acc update host(scrd)
+
+#endif
 
       call copy_acc(r,f,n)
       call rzero_acc(x,n)
@@ -831,14 +861,15 @@ c     return
         DO 320 IX=1,NX1
            DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
      $                          G1M1(IQ,IY,IZ,IE) * DXTM1(IX,IQ)**2
-  320   CONTINUE
+
+ 320    CONTINUE
         DO 340 IQ=1,NY1
         DO 340 IZ=1,NZ1
         DO 340 IY=1,NY1
         DO 340 IX=1,NX1
            DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
      $                          G2M1(IX,IQ,IZ,IE) * DYTM1(IY,IQ)**2
-  340   CONTINUE
+ 340    CONTINUE
         IF (LDIM.EQ.3) THEN
            DO 360 IQ=1,NZ1
            DO 360 IZ=1,NZ1
@@ -846,10 +877,10 @@ c     return
            DO 360 IX=1,NX1
               DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
      $                             G3M1(IX,IY,IQ,IE) * DZTM1(IZ,IQ)**2
-  360      CONTINUE
-C
+ 360       CONTINUE
+
 C          Add cross terms if element is deformed.
-C
+
            IF (IFDFRM(IE)) THEN
               DO 600 IY=1,NY1,ny1-1
               DO 600 IZ=1,NZ1,nz1-1
@@ -899,8 +930,10 @@ C
            ENDIF
 
         ENDIF
+        
  1000 CONTINUE
 C
+
       CALL COL2    (DPCM1,HELM1,NTOT)
       CALL ADDCOL3 (DPCM1,HELM2,BM1,NTOT)
 C
@@ -929,6 +962,7 @@ C
  1190       CONTINUE
  1200    CONTINUE
       ENDIF
+
 C
       CALL DSSUM (DPCM1,NX1,NY1,NZ1)
       CALL INVCOL1 (DPCM1,NTOT)
@@ -2993,6 +3027,9 @@ c         otr = glsc3 (w1,res,mult,ntot1)
 
       return
       end
+
+#ifdef _OPENACC
+
 c-----------------------------------------------------------------------
       subroutine setprec_acc (dpcm1,helm1,helm2,imsh,isd)
 C-------------------------------------------------------------------
@@ -3007,7 +3044,7 @@ C-------------------------------------------------------------------
       include 'INPUT'
       include 'TSTEP'
       include 'MASS'
-      REAL            DPCM1 (LX1,LY1,LZ1,1)
+      REAL            DPCM1 (LX1,LY1,LZ1,LELV)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
       REAL            HELM1(NX1,NY1,NZ1,1), HELM2(NX1,NY1,NZ1,1)
@@ -3024,116 +3061,163 @@ c     if (ifield.eq.1) call copy(dpcm1,binvm1,ntot)
 c     if (ifield.eq.2) call copy(dpcm1,bintm1,ntot)
 c     return
 
-      CALL RZERO(DPCM1,NTOT)
-      DO 1000 IE=1,NEL
+      IF (IFAXIS) THEN 
+         write(*,*) "OpenACC is not implemented for IFAXIS=true"
+      ENDIF
 
-        IF (IFAXIS) CALL SETAXDY ( IFRZER(IE) )
+!$ACC  DATA PRESENT(DPCM1,HELM1,HELM2)      
+!$ACC& PRESENT(G1M1,G2M1,G3M1,G4M1,G5M1,G6M1)
+!$ACC& COPYIN(DXM1,DYM1,DZM1,DXTM1,DYTM1,DZTM1,BM1)
 
-        DO 320 IQ=1,NX1
-        DO 320 IZ=1,NZ1
-        DO 320 IY=1,NY1
-        DO 320 IX=1,NX1
-           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                          G1M1(IQ,IY,IZ,IE) * DXTM1(IX,IQ)**2
-  320   CONTINUE
-        DO 340 IQ=1,NY1
-        DO 340 IZ=1,NZ1
-        DO 340 IY=1,NY1
-        DO 340 IX=1,NX1
-           DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                          G2M1(IX,IQ,IZ,IE) * DYTM1(IY,IQ)**2
-  340   CONTINUE
-        IF (LDIM.EQ.3) THEN
-           DO 360 IQ=1,NZ1
-           DO 360 IZ=1,NZ1
-           DO 360 IY=1,NY1
-           DO 360 IX=1,NX1
-              DPCM1(IX,IY,IZ,IE) = DPCM1(IX,IY,IZ,IE) + 
-     $                             G3M1(IX,IY,IQ,IE) * DZTM1(IZ,IQ)**2
-  360      CONTINUE
+      CALL RZERO_acc(DPCM1,NTOT)
+
+!$ACC PARALLEL LOOP COLLAPSE(4)
+      DO IE=1,NEL
+        DO IZ=1,NZ1
+        DO IY=1,NY1
+        DO IX=1,NX1
+           TMPDP = 0.0
+!$ACC LOOP SEQ
+           DO IQ=1,NX1
+              TMPDP = TMPDP+G1M1(IQ,IY,IZ,IE)*DXM1(IQ,IX)*DXM1(IQ,IX)
+     $                     +G2M1(IX,IQ,IZ,IE)*DYM1(IQ,IY)*DYM1(IQ,IY)
+     $                     +G3M1(IX,IY,IQ,IE)*DZM1(IQ,IZ)*DZM1(IQ,IZ)
+           ENDDO
+           DPCM1(IX,IY,IZ,IE) = TMPDP
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDDO
+
 C
 C          Add cross terms if element is deformed.
 C
-           IF (IFDFRM(IE)) THEN
-              DO 600 IY=1,NY1,ny1-1
-              DO 600 IZ=1,NZ1,nz1-1
-              DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
-     $            + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
-     $            + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
-              DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
-     $            + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
-     $            + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
-  600         CONTINUE
-              DO 700 IX=1,NX1,nx1-1
-              DO 700 IZ=1,NZ1,nz1-1
-                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
-     $            + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
-     $            + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
-                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
-     $            + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
-     $            + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
-  700         CONTINUE
-              DO 800 IX=1,NX1,nx1-1
-              DO 800 IY=1,NY1,ny1-1
-                 DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
-     $                + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
-     $                + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
-                 DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
-     $                + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
-     $                + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
-  800         CONTINUE
-           ENDIF
+!$ACC PARALLEL LOOP
+      DO IE=1,NEL
+C           IF (IFDFRM(IE)) THEN
+C
+C        IY=1, IZ=1
+         IY=1
+         IZ=1
+         DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $        + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+     $        + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $        + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+     $        + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
+C
+C        IY=1,IZ=NZ1 
+         IZ=NZ1
+         DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $        + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+     $        + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $        + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+     $        + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
+C
+c        IY=NY1,IZ=NZ1
+         IY=NY1
+         DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $        + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+     $        + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $        + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+     $        + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
 
-        ELSE  ! 2D
+C        IY=NY1,IZ=1
+         IZ=1
+         DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
+     $        + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
+     $        + G5M1(1,IY,IZ,IE) * DXTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
+     $        + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
+     $        + G5M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DZTM1(IZ,IZ)
 
-           IZ=1
-           IF (IFDFRM(IE)) THEN
-              DO 602 IY=1,NY1,ny1-1
-                 DPCM1(1,IY,IZ,IE) = DPCM1(1,IY,IZ,IE)
-     $                + G4M1(1,IY,IZ,IE) * DXTM1(1,1)*DYTM1(IY,IY)
-                 DPCM1(NX1,IY,IZ,IE) = DPCM1(NX1,IY,IZ,IE)
-     $                + G4M1(NX1,IY,IZ,IE) * DXTM1(NX1,NX1)*DYTM1(IY,IY)
-  602         CONTINUE
-              DO 702 IX=1,NX1,nx1-1
-                 DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
-     $                + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
-                 DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
-     $                + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
-  702         CONTINUE
-           ENDIF
+CC
+C        IX=1,IZ=1
+         IX=1
+         IZ=1
+         DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $        + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $        + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+     $        + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
+C        IX=1,IZ=NZ1
+         IZ=NZ1
+         DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $        + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $        + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+     $        + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
 
-        ENDIF
- 1000 CONTINUE
+C        IX=NX1,IZ=NZ1
+         IX=NX1
+         DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $        + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $        + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+     $        + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
+C        IX=NX1,IZ=1
+         IZ=1
+         DPCM1(IX,1,IZ,IE) = DPCM1(IX,1,IZ,IE)
+     $        + G4M1(IX,1,IZ,IE) * DYTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,1,IZ,IE) * DYTM1(1,1)*DZTM1(IZ,IZ)
+         DPCM1(IX,NY1,IZ,IE) = DPCM1(IX,NY1,IZ,IE)
+     $        + G4M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DXTM1(IX,IX)
+     $        + G6M1(IX,NY1,IZ,IE) * DYTM1(NY1,NY1)*DZTM1(IZ,IZ)
 C
-      CALL COL2    (DPCM1,HELM1,NTOT)
-      CALL ADDCOL3 (DPCM1,HELM2,BM1,NTOT)
-C
-C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
-C
-      IF (IFAXIS.AND.(ISD.EQ.2)) THEN
-         DO 1200 IEL=1,NEL
-C
-            IF (IFRZER(IEL)) THEN
-               CALL MXM(YM1(1,1,1,IEL),NX1,DATM1,NY1,YSM1,1)
-            ENDIF
-C
-            DO 1190 J=1,NY1
-            DO 1190 I=1,NX1
-               IF (YM1(I,J,1,IEL).NE.0.) THEN
-                  TERM1 = BM1(I,J,1,IEL)/YM1(I,J,1,IEL)**2
-                  IF (IFRZER(IEL)) THEN
-                     TERM2 =  WXM1(I)*WAM1(1)*DAM1(1,J)
-     $                       *JACM1(I,1,1,IEL)/YSM1(I)
-                  ELSE
-                     TERM2 = 0.
-                  ENDIF
-                  DPCM1(I,J,1,IEL) = DPCM1(I,J,1,IEL)
-     $                             + HELM1(I,J,1,IEL)*(TERM1+TERM2)
-               ENDIF
- 1190       CONTINUE
- 1200    CONTINUE
-      ENDIF
+CC
 
+C        IX=1,IY=1
+         IX=1
+         IY=1         
+         DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
+     $        + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
+         DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
+     $        + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
+C        IX=1,IY=NY1
+         IY=NY1         
+         DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
+     $        + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
+         DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
+     $        + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
+C        IX=NX1,IY=NY1
+         IX=NX1         
+         DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
+     $        + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
+         DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
+     $        + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
+C        IX=NX1,IY=1
+         IY=1         
+         DPCM1(IX,IY,1,IE) = DPCM1(IX,IY,1,IE)
+     $        + G5M1(IX,IY,1,IE) * DZTM1(1,1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,1,IE) * DZTM1(1,1)*DYTM1(IY,IY)
+         DPCM1(IX,IY,NZ1,IE) = DPCM1(IX,IY,NZ1,IE)
+     $        + G5M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DXTM1(IX,IX)
+     $        + G6M1(IX,IY,NZ1,IE) * DZTM1(NZ1,NZ1)*DYTM1(IY,IY)
+
+c    ENDIF        
+C
+      ENDDO
+
+      CALL COL2_ACC    (DPCM1,HELM1,NTOT)
+      CALL ADDCOL3_ACC (DPCM1,HELM2,BM1,NTOT)
+
+!$acc update host(dpcm1)      
+
+!$ACC END DATA
+      
       return
       END
 c-----------------------------------------------------------------------
+
+#endif

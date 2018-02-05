@@ -559,7 +559,11 @@ C
           call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 c         CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
          else
-           CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
+!!$acc data create(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2)
+!!$acc   update device(resv1,resv2,resv3,h1,h2)
+        CALL OPHINV_ACC(DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
+!!$acc update host(dv1,dv2,dv3)
+!!$acc end data
          endif
 !$ACC DATA COPY(VX,VY,VZ,DV1,DV2,DV3)
          CALL OPADD2_ACC (VX,VY,VZ,DV1,DV2,DV3)
