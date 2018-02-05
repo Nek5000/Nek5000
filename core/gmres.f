@@ -1500,12 +1500,11 @@ c
       m = lgmres
 c
 !$acc  data copyin(h1,h2,h2inv,res)
+!$acc&      copyin(ml_gmres,mu_gmres)
 !$acc&      create(r_gmres)
 !$acc&      create(x_gmres)
 !$acc&      create(w_gmres)
-!$acc&      create(ml_gmres)
 !$acc&      create(v_gmres)
-!$acc&      copyin(mu_gmres)
 !$acc&      create(z_gmres)
       call chktcg2_acc(tolps,res,iconv)
 
@@ -1520,25 +1519,21 @@ c
       iconv = 0
 
       call rzero_acc(x_gmres,ntot2)
-!$acc update host(x_gmres)
 
       do while(iconv.eq.0.and.iter.lt.100)
 
-         if(iter.eq.0) then
-!$acc update device(r_gmres, ml_gmres)
-                                                        !      -1
+         if(iter.eq.0) then                                                        !      -1
             call col3_acc(r_gmres,ml_gmres,res,ntot2)       ! r = L  res
 c           call copy(r_gmres,res,ntot2)
-!$acc update host(r_gmres,ml_gmres)
          else
             !update residual
-!$acc update device(r_gmres,res,w_gmres,x_gmres,ml_gmres)
+!$acc update device(w_gmres)
             call copy_acc(r_gmres,res,ntot2)                      ! r = res
             call cdabdtp_acc(w_gmres,x_gmres,h1,h2,h2inv,intype)  ! w = A x
             call add2s2_acc(r_gmres,w_gmres,-1.,ntot2)            ! r = r - w
                                                               !      -1
             call col2_acc(r_gmres,ml_gmres,ntot2)                 ! r = L   r
-!$acc update host(r_gmres,res,w_gmres,x_gmres,ml_gmres)
+!$acc update host(w_gmres)
          endif
                                                             !            ______
          gamma_gmres(1) = sqrt(glsc2_acc(r_gmres,r_gmres,ntot2))! gamma  = \/ (r,r) 
@@ -1669,7 +1664,6 @@ c            call outmat(h,m,j,' h    ',j)
          enddo
          !sum up Arnoldi vectors
 
-!$acc update device(x_gmres)
          do i=1,j
 !$acc update device(z_gmres(:,i))
             call add2s2_acc(x_gmres,z_gmres(1,i),c_gmres(i),ntot2) 
