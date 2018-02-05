@@ -1520,7 +1520,7 @@ c
       iconv = 0
 
       call rzero_acc(x_gmres,ntot2)
-!!$acc update host(x_gmres)
+!$acc update host(x_gmres)
 
       do while(iconv.eq.0.and.iter.lt.100)
 
