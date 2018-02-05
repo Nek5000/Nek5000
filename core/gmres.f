@@ -1571,13 +1571,13 @@ c           call copy(r_gmres,res,ntot2)
 c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
-!!$acc update device(w_gmres,z_gmres(:,j))     
-            call cdabdtp(w_gmres,z_gmres(1,j),    ! w = A z
+!!!$acc update device(w_gmres,z_gmres(:,j))     
+!!! already copy to device.
+            call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
-     
-                                                  !      -1
+!$acc update host(w_gmres)     
+
             call col2(w_gmres,ml_gmres,ntot2)     ! w = L   w
-!!$acc updat host(w_gmres)
 
 c           !modified Gram-Schmidt
 c           do i=1,j
@@ -1589,16 +1589,17 @@ c           enddo                                                    !          
 
 c           2-PASS GS, 1st pass:
 
+!$acc update device(w_gmres,v_gmres(:,1:j))
             do i=1,j
-               h_gmres(i,j)=vlsc2(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
+               h_gmres(i,j)=vlsc2_acc(w_gmres,v_gmres(1,i),ntot2) ! h    = (w,v )
             enddo                                             !  i,j       i
 
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
 
             do i=1,j
-               call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),ntot2) ! w = w - h    v
+               call add2s2_acc(w_gmres,v_gmres(1,i),-h_gmres(i,j),ntot2) ! w = w - h    v
             enddo                                                    !          i,j  i
-
+!$acc update host(w_gmres)
 
 c           2-PASS GS, 2nd pass:
 c
@@ -1623,7 +1624,7 @@ c           enddo
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
                                                               !            ______
-            alpha = sqrt(glsc2(w_gmres,w_gmres,ntot2))        ! alpha =  \/ (w,w)
+            alpha = sqrt(glsc2_acc(w_gmres,w_gmres,ntot2))        ! alpha =  \/ (w,w)
             rnorm = 0.
             if(alpha.eq.0.) goto 900  !converged
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
@@ -1650,8 +1651,9 @@ c            call outmat(h,m,j,' h    ',j)
             if (j.eq.m) goto 1000 !not converged, restart
 
             temp = 1./alpha
-            call cmult2(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
+            call cmult2_acc(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
                                                            !  j+1            
+!$acc update host(v_gmres(:,j+1))            
          enddo
   900    iconv = 1
  1000    continue
