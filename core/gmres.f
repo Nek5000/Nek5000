@@ -1499,9 +1499,15 @@ c
       iter  = 0
       m = lgmres
 c
-!$acc data copy(res)
+!$acc  data copyin(h1,h2,h2inv,res)
+!$acc&      create(r_gmres)
+!$acc&      create(x_gmres)
+!$acc&      create(w_gmres)
+!$acc&      create(ml_gmres)
+!$acc&      create(v_gmres)
+!$acc&      copyin(mu_gmres)
+
       call chktcg2_acc(tolps,res,iconv)
-!$acc end data
 
       if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
      $   tolps = abs(param(21))
@@ -1513,15 +1519,9 @@ c
 c
       iconv = 0
 
-      call rzero(x_gmres,ntot2)
+      call rzero_acc(x_gmres,ntot2)
+!!$acc update host(x_gmres)
 
-!$acc  data copyin(h1,h2,h2inv,res)
-!$acc&      create(r_gmres)
-!$acc&      create(x_gmres)
-!$acc&      create(w_gmres)
-!$acc&      create(ml_gmres)
-!$acc&      create(v_gmres)
-!$acc&      copyin(mu_gmres)
       do while(iconv.eq.0.and.iter.lt.100)
 
          if(iter.eq.0) then
