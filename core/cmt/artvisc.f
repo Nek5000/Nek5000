@@ -21,7 +21,7 @@
       ntol=1.0e-10
 
       if (icalld .eq. 0) then
-         write(6,*) 'zeroing out entropy stack',istep
+         if (nio .eq. 0) write(6,*) 'zeroing out entropy stack',istep
          icalld=1
          call rzero(s,ntot)
          call rzero(s(1,1,2),ntot) ! s_{n-1}
