@@ -53,8 +53,8 @@ C> conserved unknowns U
      >                nxyz)
 ! JH020718 long-overdue sanity checks
          emin=vlmin(energy,nxyz)
-         if (vlmin .lt. 0.0) then
-            write(6,*) nid, ' HAS NEGATIVE ENERGY ',vlmin,lglel(e)
+         if (emin .lt. 0.0) then
+            write(6,*) nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
             call exitt
          endif
          call tdstate(e,energy)
