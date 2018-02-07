@@ -5809,10 +5809,10 @@ C
          stop
       endif
 
-!$ACC  DATA  COPYIN(w3m2,rm2,sm2,tm2)      
-!$ACC&       COPYIN(ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
+!$ACC  DATA  PRESENT(rm2,sm2,tm2)      
 !$ACC&       PRESENT(dx,x)
 !$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
+!$ACC&       PRESENT(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
       
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
       do e=1,nelv
@@ -5859,7 +5859,6 @@ C will be reused
          enddo
          enddo
       enddo
-
 
 !$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
       do e=1,nelv
