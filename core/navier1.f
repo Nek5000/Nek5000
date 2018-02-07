@@ -5827,12 +5827,12 @@ C
                tmpx = x(l,j,k,e)
                tmpr1 = tmpr1+dxtm12(l,i)*tmpx
                tmps1 = tmps1+ixtm12(l,i)*tmpx
-C will be reused
-               tmpt1 = tmpt1+ixtm12(l,i)*tmpx
+C will be reused tmpt1 = tmps1
+C               tmpt1 = tmpt1+ixtm12(l,i)*tmpx
             enddo            
             tar1(i,j,k,e) = tmpr1
             tas1(i,j,k,e) = tmps1
-            tat1(i,j,k,e) = tmpt1
+C            tat1(i,j,k,e) = tmpt1
          enddo
          enddo
          enddo
@@ -5850,7 +5850,7 @@ C will be reused
             do l=1,nx1
                tmpr2 = tmpr2+iytm12(l,j)*tar1(i,l,k,e)
                tmps2 = tmps2+dytm12(l,j)*tas1(i,l,k,e)
-               tmpt2 = tmpt2+iytm12(l,j)*tat1(i,l,k,e)
+               tmpt2 = tmpt2+iytm12(l,j)*tas1(i,l,k,e)
             enddo
             tar2(i,j,k,e) = tmpr2
             tas2(i,j,k,e) = tmps2
