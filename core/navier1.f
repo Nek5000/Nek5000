@@ -6093,7 +6093,7 @@ C     INTYPE=-1  Compute the matrix-vector product    D(A+B/DT)(-1)DT*p
       REAL           H2    (LX1,LY1,LZ1,1)
       REAL           H2INV (LX1,LY1,LZ1,1)
 C
-      COMMON /SCRNS/ TA1 (LX1,LY1,LZ1,LELV)
+      COMMON /SCRNS0/ TA1 (LX1,LY1,LZ1,LELV)
      $ ,             TA2 (LX1,LY1,LZ1,LELV)
      $ ,             TA3 (LX1,LY1,LZ1,LELV)
      $ ,             TB1 (LX1,LY1,LZ1,LELV)
@@ -6113,9 +6113,7 @@ C
          endif
       ENDIF
 
-!$ACC DATA COPY(AP,TB1,TB2,TB3)
       CALL OPDIV_ACC  (AP,TB1,TB2,TB3)
-!$ACC END DATA
 C
       return
       END
@@ -6193,5 +6191,3 @@ C
 C
 
 #endif
-
-

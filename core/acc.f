@@ -20,8 +20,17 @@ c      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
      $ ,              tas2 (lx1,ly1,lz1,lelv)
      $ ,              tat2 (lx1,ly1,lz1,lelv)
 
+      COMMON /SCRNS0/ TA1 (LX1,LY1,LZ1,LELV)
+     $ ,             TA2 (LX1,LY1,LZ1,LELV)
+     $ ,             TA3 (LX1,LY1,LZ1,LELV)
+     $ ,             TB1 (LX1,LY1,LZ1,LELV)
+     $ ,             TB2 (LX1,LY1,LZ1,LELV)
+     $ ,             TB3 (LX1,LY1,LZ1,LELV)
+C
+
 !$acc enter data create(work)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
+!$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
 
       return
       end

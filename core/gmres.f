@@ -1499,7 +1499,8 @@ c
       iter  = 0
       m = lgmres
 c
-!$acc  data copyin(h1,h2,h2inv,res)
+!$acc  data copyin(h1,h2,h2inv)
+!$acc&      copy(res)
 !$acc&      copyin(ml_gmres,mu_gmres)
 !$acc&      create(r_gmres,x_gmres,v_gmres)
 !$acc&      create(w_gmres)
@@ -1600,7 +1601,6 @@ c              call add2s2(w,v_gmres(1,i),-wk1(i),ntot2) ! w = w - h    v
 c              h(i,j) = h(i,j) + wk1(i)                  !          i,j  i
 c           enddo
 
-
             !apply Givens rotations to new column
             do i=1,j-1
                temp = h_gmres(i,j)                   
@@ -1670,6 +1670,7 @@ c
 c     DIAGNOSTICS
 c      call copy   (w,x,ntot2)
        call ortho  (w_gmres) ! Orthogonalize wrt null space, if present
+
 c      call copy(r,res,ntot2) !r = res
 c      call cdabdtp(r,w,h1,h2,h2inv,intype)  ! r = A w
 c      do i=1,ntot2
