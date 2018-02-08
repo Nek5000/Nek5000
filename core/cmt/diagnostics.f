@@ -91,44 +91,12 @@ c     ifxyo=.true.
 
       itmp = 3
       call outpost2(otvar(1,1,1,1,5),otvar(1,1,1,1,6),otvar(1,1,1,1,7)
-     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'fld')
+     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'SLN')
       return
       end
-c----------------------------------------------------------------------
-      subroutine out_pvar_nek
-      include 'SIZE'
-      include 'SOLN'
-      include 'CMTDATA'
-      include 'PERFECTGAS'
-      COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,6)
-      real                OTVAR
 
-      integer e,f
-      n = lx1*ly1*lz1*nelt
-      itmp = 1
-      if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
-
-      call outpost2(vx,vy,vz,vtrans(1,1,1,1,irho),t,itmp,'vdt')
-      do i=1,n
-         ux = vx(i,1,1,1)
-         uy = vy(i,1,1,1)
-         uz = vz(i,1,1,1)
-         cp = vtrans(i,1,1,1,icp)/vtrans(i,1,1,1,irho)
-c        cv = vtrans(i,1,1,1,icv)/vtrans(i,1,1,1,irho)
-         gma = MixtPerf_G_CpR(cp,rgasref) 
-         otvar(i,1,1,1,2) = sqrt(ux*ux+uy*uy+uz*uz)/csound(i,1,1,1)
-         otvar(i,1,1,1,3) = phig(i,1,1,1)
-         otvar(i,1,1,1,4) = MixtPerf_To_CpTUVW(cp,t(i,1,1,1,1),ux
-     $                                    ,uy,uz)
-         otvar(i,1,1,1,5) = MixtPerf_Po_GPTTo(gma,pr(i,1,1,1)
-     $                            ,t(i,1,1,1,1),otvar(i,1,1,1,4))
-      enddo
-      call copy(otvar(1,1,1,1,1),vtrans(1,1,1,1,irho),n)
-      call outpost2(otvar(1,1,1,1,1),otvar(1,1,1,1,2),otvar(1,1,1,1,3)
-     $             ,otvar(1,1,1,1,5),otvar(1,1,1,1,4),itmp,'dmt')
-      return
-      end
 c----------------------------------------------------------------------
+
       subroutine dumpresidue(wfnav,inmbr)
       include 'SIZE'
       include 'INPUT'

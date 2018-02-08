@@ -6,6 +6,7 @@ C> conserved unknowns U
       subroutine compute_primitive_vars
       include 'SIZE'
       include 'INPUT'
+      include 'PARALLEL'
       include 'GEOM'
       include 'CMTDATA'
       include 'SOLN'
@@ -19,6 +20,12 @@ C> conserved unknowns U
       ntot=nxyz*nelt
 
       do e=1,nelt
+! JH020718 long-overdue sanity checks
+         dmin=vlmin(u(1,1,1,irg,e),nxyz)
+         if (dmin .lt. 0.0) then
+            write(6,*) nid,'***NEGATIVE DENSITY***',dmin,lglel(e)
+            goto 333
+         endif
          call invcol3(vx(1,1,1,e),u(1,1,1,irpu,e),u(1,1,1,irg,e),nxyz)
          call invcol3(vy(1,1,1,e),u(1,1,1,irpv,e),u(1,1,1,irg,e),nxyz)
 !        if (if3d)
@@ -41,6 +48,12 @@ C> conserved unknowns U
 ! don't forget to get density where it belongs
          call invcol3(vtrans(1,1,1,e,irho),u(1,1,1,irg,e),phig(1,1,1,e),
      >                nxyz)
+! JH020718 long-overdue sanity checks
+         emin=vlmin(energy,nxyz)
+         if (emin .lt. 0.0) then
+            write(6,*) nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
+            goto 333
+         endif
          call tdstate(e,energy)
       enddo
 
@@ -62,6 +75,15 @@ C> conserved unknowns U
          call copy(vyd,vy,ntot) 
          call copy(vzd,vz,ntot) 
       endif
+
+      return
+
+333   continue
+      if (nio .eq. 0)
+     >   write(6,*) 'dumping solution after positivity violation.'
+      ifxyo=.true.
+      call out_fld_nek
+      call exitt
 
       return
       end
@@ -86,8 +108,14 @@ c We have perfect gas law. Cvg is stored full field
       do i=1,lx1
          call nekasgn(i,j,k,e)
          call cmtasgn(i,j,k,e)
-         e_internal=energy(i,j,k) !nekasgn should do this, but can't
+         e_internal=energy(i,j,k) !cmtasgn should do this, but can't
          call cmt_userEOS(i,j,k,eg)
+! JH020718 long-overdue sanity checks
+         if (temp .lt. 0.0) then
+            write(6,'(i6,a26,3i2,i8,e15.6)')
+     >      nid,' HAS NEGATIVE TEMPERATURE ', i,j,k,eg,temp
+            call exitt
+         endif
          vtrans(i,j,k,e,icp)= cp*rho
          vtrans(i,j,k,e,icv)= cv*rho
          t(i,j,k,e,1)       = temp
