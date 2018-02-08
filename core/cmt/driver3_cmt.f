@@ -19,16 +19,13 @@ C> conserved unknowns U
       nxyz= lx1*ly1*lz1
       ntot=nxyz*nelt
 
-! JH020718 long-overdue sanity checks
-      dmin=glmin(u,ntot) ! assumes irg .eq. 1
-      if (dmin .lt. 0.0) then
-         if (nio .eq. 0) write(6,*) '*******NEGATIVE DENSITY*****',dmin
-         ifxyo=.true.
-         call out_fld_nek
-         call exitt
-      endif
-
       do e=1,nelt
+! JH020718 long-overdue sanity checks
+         dmin=vlmin(u(1,1,1,irg,e),nxyz)
+         if (dmin .lt. 0.0) then
+            write(6,*) nid,'***NEGATIVE DENSITY***',dmin,lglel(e)
+            goto 333
+         endif
          call invcol3(vx(1,1,1,e),u(1,1,1,irpu,e),u(1,1,1,irg,e),nxyz)
          call invcol3(vy(1,1,1,e),u(1,1,1,irpv,e),u(1,1,1,irg,e),nxyz)
 !        if (if3d)
@@ -55,7 +52,7 @@ C> conserved unknowns U
          emin=vlmin(energy,nxyz)
          if (emin .lt. 0.0) then
             write(6,*) nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
-            call exitt
+            goto 333
          endif
          call tdstate(e,energy)
       enddo
@@ -78,6 +75,15 @@ C> conserved unknowns U
          call copy(vyd,vy,ntot) 
          call copy(vzd,vz,ntot) 
       endif
+
+      return
+
+333   continue
+      if (nio .eq. 0)
+     >   write(6,*) 'dumping solution after positivity violation.'
+      ifxyo=.true.
+      call out_fld_nek
+      call exitt
 
       return
       end
@@ -107,7 +113,7 @@ c We have perfect gas law. Cvg is stored full field
 ! JH020718 long-overdue sanity checks
          if (temp .lt. 0.0) then
             write(6,'(i6,a26,3i2,i8,e15.6)')
-     >      nid ' HAS NEGATIVE TEMPERATURE ', i,j,k,eg,temp
+     >      nid,' HAS NEGATIVE TEMPERATURE ', i,j,k,eg,temp
             call exitt
          endif
          vtrans(i,j,k,e,icp)= cp*rho
