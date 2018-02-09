@@ -36,6 +36,7 @@ C
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
 
 !$acc enter data copyin(bm2,bm2inv)
+!$acc enter data copyin(w3m2,ixm12,iym12,izm12,dxm12,dym12,dzm12)
 
       return
       end
