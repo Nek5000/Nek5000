@@ -6035,9 +6035,7 @@ C
       endif
 #endif
 C
-!$acc data copy(inp1,inp2,inp3)
       call opmask_acc  (inp1,inp2,inp3)
-!$acc end data
       call opdssum (inp1,inp2,inp3)
 C
       NTOT=NX1*NY1*NZ1*NELV
@@ -6049,22 +6047,20 @@ C
       dcount      =      dcount + (isbcnt)
 #endif
 
-!$acc data copy(out1,h2inv) present(bm1)
       call invcol3_acc (out1,bm1,h2inv,ntot)  ! this is expensive and should
-!$acc end data
       call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
       if (if3d) then
 
-!$acc data copy(out1,out2,out3) copyin(inp1,inp2,inp3)
-!$acc parallel loop
+!$ACC DATA PRESENT(out1,out2,out3,inp1,inp2,inp3)
+!$ACC PARALLEL LOOP
          do i=1,ntot
             tmp = 1./out1(i)
             out1(i)=inp1(i)*tmp
             out2(i)=inp2(i)*tmp
             out3(i)=inp3(i)*tmp
          enddo
-!$acc end loop
-!$acc end data
+!$ACC END LOOP
+!$ACC END DATA
         
       else
          do i=1,ntot

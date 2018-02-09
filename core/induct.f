@@ -1789,7 +1789,7 @@ c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
 C
       intetype = 1
 
-!$acc data copy(pnew)
+!$acc data copy(pnew,h2inv)
       call cdabdtp_acc(pnew,pbar,h1,h2,h2inv,intetype)
 !$acc end data
 
