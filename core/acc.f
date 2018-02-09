@@ -12,6 +12,8 @@ c      common /scrcg/ d(lg), scalar(2)
 c      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
       common /ctmp0/ work (lx2,ly2,lz2,lelv)
+     $ ,             TA  (LX2,LY2,LZ2,LELV)
+     $ ,             TB  (LX2,LY2,LZ2,LELV)
 
       common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
      $ ,              tas1 (lx1,ly1,lz1,lelv)
@@ -28,9 +30,12 @@ c      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
      $ ,             TB3 (LX1,LY1,LZ1,LELV)
 C
 
-!$acc enter data create(work)
+
+!$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
+
+!$acc enter data copyin(bm2,bm2inv)
 
       return
       end

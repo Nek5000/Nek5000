@@ -6148,13 +6148,10 @@ C
       IF (PRELAX.NE.0.) EPS = PRELAX
 C
       NTOT2 = NX2*NY2*NZ2*NELV
-!$acc  data copyin(bm2,bm2inv)
-!$acc&      create(ta,tb)    
       CALL COL3_ACC    (TA,RES,BM2INV,NTOT2)
       CALL COL3_ACC     (TB,TA,TA,NTOT2)
       CALL COL2_ACC     (TB,BM2,NTOT2)
       RINIT = SQRT( GLSUM_ACC (TB,NTOT2)/VOLVM2 )
-!$acc end data
 
       IF (RINIT.LT.TOL) THEN
          ICONV = 1
