@@ -379,11 +379,11 @@ C
 #endif
 C
       dt = 0.0
-!$acc parallel loop present(x,y,b) reduction(+:dt)
+!$ACC PARALLEL LOOP PRESENT(x,y,b) REDUCTION(+:dt)
       do i=1,n
          dt = dt+x(i)*y(i)*b(i)
       enddo
-!$acc end parallel loop
+!$ACC END PARALLEL LOOP
       t=dt
       vlsc3_acc = t
       return

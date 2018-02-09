@@ -1761,44 +1761,39 @@ C
 c     Diag to see how much reduction in the residual is attained.
       ntot2  = nx2*ny2*nz2*nelv
 
-!$ACC  DATA COPY(p,bm2inv)
       alpha1 = glsc3_acc(p,p,bm2inv,ntot2)
-!$acc end data
 
       if (alpha1.gt.0) then
          alpha1 = sqrt(alpha1/volvm2)
       else
          return
       endif
-
-
+    
       CALL UPDRHSE_ACC(P,H1,H2,H2INV,ierr) ! update rhs's if E-matrix has changed
 c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
 
-!$ACC DATA COPY(p,pset(:,1:nprev),pbar)
+
       do i=1,nprev  ! Perform Gram-Schmidt for previous soln's.
          alpha(i) = vlsc2_acc(p,pset(1,i),ntot2)
       enddo
       call gop(alpha,work,'+  ',nprev)
 
+!$ACC  DATA create(pbar,pnew) 
       call rzero_acc(pbar,ntot2)
       do i=1,nprev
          call add2s2_acc(pbar,pset(1,i),alpha(i),ntot2)
       enddo
-!$ACC END DATA
 C
       intetype = 1
 
-!$acc data copy(pnew,h2inv)
       call cdabdtp_acc(pnew,pbar,h1,h2,h2inv,intetype)
-!$acc end data
-
-!$acc data copy(p,pnew,h1,h2,h2inv, bm2inv)
       call sub2_acc   (p,pnew,ntot2)
+!$acc update host(pbar,pnew)
+!$acc end data
 
 c    ................................................................
       alpha2 = glsc3_acc(p,p,bm2inv,ntot2) ! Diagnostics
-!$acc end data
+
 
       if (alpha2.gt.0) then
          alpha2 = sqrt(alpha2/volvm2)
@@ -1891,11 +1886,11 @@ c
 
       i = 1 + ifield/ifldmhd
 
-!!$acc data copy(dp,h1,h2,h2inv,pset,nprv)
       if (ifprjp) then
+!$acc data copy(dp,h1,h2,h2inv,pset,nprv)
          call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc end data
       endif
-!!$acc end data
 
       scaledt = dt/bd(1)
       scaledi = 1./scaledt
