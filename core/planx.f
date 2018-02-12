@@ -560,6 +560,9 @@ C
          CALL SETHLM  (H1,H2,INTYPE)
          CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
 
+!$ACC DATA create(DV1,DV2,DV3)
+!$ACC& COPY(vx,vy,vz)
+
          mstep = abs(param(94))
          if (param(94).ne.0. .and. istep.ge.mstep) then
           call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
@@ -567,9 +570,7 @@ c         CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
          else
         CALL OPHINV_ACC(DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
          endif
-!$ACC DATA COPY(VX,VY,VZ,DV1,DV2,DV3)
          CALL OPADD2_ACC (VX,VY,VZ,DV1,DV2,DV3)
-!$ACC END DATA
 c
 c        Default Filtering
 c
@@ -581,6 +582,9 @@ c        CALL SSNORMD (DV1,DV2,DV3)
 c
          call incomprn_acc(vx,vy,vz,pr)
 C
+
+!$ACC END DATA
+
       ENDIF
 C
       RETURN

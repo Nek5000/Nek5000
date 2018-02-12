@@ -1868,8 +1868,9 @@ c
       intype = 1
 
 !$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
-!$ACC&      COPY(dp,up,ux,uy,uz)
+!$ACC&      PRESENT(ux,uy,uz)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
+!$acc&      copy(up,dp)
 !$acc&      create(pbar,pnew,pset)
 !$acc&      create(w1,w2,w3,dv1,dv2,dv3)
 
