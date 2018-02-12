@@ -1867,11 +1867,12 @@ c
       ntot2  = nx2*ny2*nz2*nelv
       intype = 1
 
-!$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
-!$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
+!$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
+!$ACC&      COPY(dp,up,ux,uy,uz)
+!$ACC&      PRESENT(h1,h2,h2inv,bm2)
 !$acc&      create(pbar,pnew,pset)
 !$acc&      create(w1,w2,w3,dv1,dv2,dv3)
-!$acc&      copy(up)
+
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)

@@ -37,6 +37,10 @@ C     $ ,             dv2   (lx1,ly1,lz1,lelv)
 C     $ ,             dv3   (lx1,ly1,lz1,lelv)
 C     $ ,             dp    (lx2,ly2,lz2,lelv)
 
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
+      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
+
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -47,6 +51,7 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
 C!$acc enter data create(w1,w2,w3,dv1,dv2,dv3)
 C!$acc enter data create(dp)
 
+!$acc enter data create(h1,h2,h2inv)
       return
       end
 
