@@ -1870,6 +1870,8 @@ c
 !$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
 !$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
 !$acc&      create(pbar,pnew,pset)
+!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
+!$acc&      copy(up)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -1887,17 +1889,10 @@ c
 
       if (ifprjp) then
          call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update host(pbar,pnew,pset)
       endif
-!$acc end data
 
       scaledt = dt/bd(1)
       scaledi = 1./scaledt
-
-!$acc  data copy(ux,uy,uz,up,dp)
-!$acc&      copy(pnew,pbar,pset) 
-!$acc&      copyin(h1,h2,h2inv) 
-!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
 
       call cmult_acc(dp,scaledt,ntot2) ! scale for tol
       call esolver_acc  (dp,h1,h2,h2inv,intype)
