@@ -1778,7 +1778,6 @@ c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
       enddo
       call gop(alpha,work,'+  ',nprev)
 
-!$ACC  DATA create(pbar,pnew) 
       call rzero_acc(pbar,ntot2)
       do i=1,nprev
          call add2s2_acc(pbar,pset(1,i),alpha(i),ntot2)
@@ -1788,9 +1787,6 @@ C
 
       call cdabdtp_acc(pnew,pbar,h1,h2,h2inv,intetype)
       call sub2_acc   (p,pnew,ntot2)
-!$acc update host(pbar,pnew)
-!$acc end data
-
 c    ................................................................
       alpha2 = glsc3_acc(p,p,bm2inv,ntot2) ! Diagnostics
 
@@ -1873,7 +1869,7 @@ c
 
 !$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
 !$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
-!$acc&      create(pnew,par,pset)
+!$acc&      create(pbar,pnew,pset)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -1891,7 +1887,7 @@ c
 
       if (ifprjp) then
          call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update host(pnew,par,pset)
+!$acc update host(pbar,pnew,pset)
       endif
 !$acc end data
 
