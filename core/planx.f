@@ -560,7 +560,7 @@ C
          CALL SETHLM  (H1,H2,INTYPE)
          CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
 
-!$ACC DATA create(DV1,DV2,DV3)
+!$ACC DATA CREATE(DV1,DV2,DV3)
 !$ACC& COPY(vx,vy,vz)
 
          mstep = abs(param(94))

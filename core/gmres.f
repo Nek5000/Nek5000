@@ -1526,13 +1526,11 @@ c
 c           call copy(r_gmres,res,ntot2)
          else
             !update residual
-!$acc update device(w_gmres)
             call copy_acc(r_gmres,res,ntot2)                      ! r = res
             call cdabdtp_acc(w_gmres,x_gmres,h1,h2,h2inv,intype)  ! w = A x
             call add2s2_acc(r_gmres,w_gmres,-1.,ntot2)            ! r = r - w
                                                               !      -1
             call col2_acc(r_gmres,ml_gmres,ntot2)                 ! r = L   r
-!$acc update host(w_gmres)
          endif
                                                             !            ______
          gamma_gmres(1) = sqrt(glsc2_acc(r_gmres,r_gmres,ntot2))! gamma  = \/ (r,r) 
@@ -1659,7 +1657,6 @@ c            call outmat(h,m,j,' h    ',j)
                        ! x = x + c  z
                        !          i  i
          enddo
-!$acc update host(x_gmres)
 c        if(iconv.eq.1) call dbg_write(x,nx2,ny2,nz2,nelv,'esol',3)
       enddo
  9000 continue
@@ -1669,7 +1666,7 @@ c     iter = iter - 1
 c
 c     DIAGNOSTICS
 c      call copy   (w,x,ntot2)
-       call ortho  (w_gmres) ! Orthogonalize wrt null space, if present
+       call ortho_acc  (w_gmres) ! Orthogonalize wrt null space, if present
 
 c      call copy(r,res,ntot2) !r = res
 c      call cdabdtp(r,w,h1,h2,h2inv,intype)  ! r = A w
@@ -1682,9 +1679,9 @@ c      gamma(1) = sqrt(glsc2(r,r,ntot2)/volvm2) ! gamma  = \/ (r,r)
 c                                               !      1
 c      print *, 'GMRES end resid:',gamma(1)
 c     END DIAGNOSTICS
-      call copy(res,x_gmres,ntot2)
+      call copy_acc(res,x_gmres,ntot2)
 
-      call ortho (res)  ! Orthogonalize wrt null space, if present
+      call ortho_acc (res)  ! Orthogonalize wrt null space, if present
 
       etime1 = dnekclock()-etime1
       if (nio.eq.0) write(6,9999) istep,'  U-PRES gmres  ', 
@@ -1692,7 +1689,7 @@ c     END DIAGNOSTICS
 c     call flush_hack
  9999 format(i11,a,I6,1p5e13.4)
 
-!$acc update device(res)
+!$acc update host(res)
 !$acc end data
       return
       end
