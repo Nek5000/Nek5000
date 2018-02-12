@@ -1692,6 +1692,7 @@ c     END DIAGNOSTICS
 c     call flush_hack
  9999 format(i11,a,I6,1p5e13.4)
 
+!$acc update device(res)
 !$acc end data
       return
       end

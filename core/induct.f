@@ -1854,9 +1854,9 @@ c
       common /orthbi/ nprv(2)
       logical ifprjp
 
-C      parameter (ltot2=lx2*ly2*lz2*lelv)
-C      common /orthox/ pbar(ltot2),pnew(ltot2)
-C      common /orthos/ alpha(mxprev),work(mxprev)
+      parameter (ltot2=lx2*ly2*lz2*lelv)
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthos/ alpha(mxprev),work(mxprev)
 
       ifprjp=.false.    ! Project out previous pressure solutions?
       istart=param(95)  
@@ -1873,7 +1873,7 @@ C      common /orthos/ alpha(mxprev),work(mxprev)
 
 !$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
 !$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
-!!$acc&      create(pnew,par,pset)
+!$acc&      create(pnew,par,pset)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -1889,31 +1889,27 @@ C      common /orthos/ alpha(mxprev),work(mxprev)
 
       i = 1 + ifield/ifldmhd
 
-!$acc end data
-
       if (ifprjp) then
-!$acc data copy(dp,h1,h2,h2inv,pset,nprv)
          call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc end data
+!$acc update host(pnew,par,pset)
       endif
+!$acc end data
 
       scaledt = dt/bd(1)
       scaledi = 1./scaledt
-!$acc data copyin(dp)
+
+!$acc  data copy(ux,uy,uz,up,dp)
+!$acc&      copy(pnew,pbar,pset) 
+!$acc&      copyin(h1,h2,h2inv) 
+!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
+
       call cmult_acc(dp,scaledt,ntot2) ! scale for tol
       call esolver_acc  (dp,h1,h2,h2inv,intype)
-!$acc update device(dp)  
       call cmult_acc(dp,scaledi,ntot2)
-!$acc update host(dp)
-!$acc end data
-
       if (ifprjp) then
          call gensolnp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
       endif
 
-!$acc  data copy(ux,uy,uz,up,dp)
-!$acc&      copyin(h2inv)    
-!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
       call add2_acc(up,dp,ntot2)
       call opgradt_acc  (w1 ,w2 ,w3 ,dp)
       call opbinv_acc   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
@@ -1955,12 +1951,10 @@ C
 
       if (nprev.lt.mprev) then
          nprev = nprev+1
-!$acc  data copy(pnew, pbar,pset(:,1:nprev),p)
-!$acc&      copyin(h1,h2,h2inv)
          call copy_acc  (pset(1,nprev),p,ntot2)        ! Save current solution
          call add2_acc  (p,pbar,ntot2)                 ! Reconstruct solution.
          call econjp_acc(pset,nprev,h1,h2,h2inv,ierr)  ! Orthonormalize set
-!$acc end data
+
          if (ierr.eq.1) then
           nprev = 1
           call copy_acc  (pset(1,nprev),p,ntot2)       ! Save current solution
