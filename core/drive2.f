@@ -1917,7 +1917,7 @@ c     Set istep=0 so that h1/h2 will be re-initialized in eprec
       call esolver (respr,h1,h2,h2inv,intype)
       istep = i_tmp
 c
-      call opgradt (rw1,rw2,rw3,respr)
+      call opgradt (rw1,rw2,rw3,respr)  
       call opbinv  (dv1,dv2,dv3,rw1,rw2,rw3,h2inv)
       call opadd2  (vxc,vyc,vzc,dv1,dv2,dv3)
 c

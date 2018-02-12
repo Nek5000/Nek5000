@@ -101,7 +101,6 @@ C---------------------------------------------------------------------
       if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       CALL BCNEUTR
-C
       call extrapp (pr,prlag)
       call opgradt (resv1,resv2,resv3,pr)
       CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
