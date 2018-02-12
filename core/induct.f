@@ -1854,6 +1854,10 @@ c
       common /orthbi/ nprv(2)
       logical ifprjp
 
+C      parameter (ltot2=lx2*ly2*lz2*lelv)
+C      common /orthox/ pbar(ltot2),pnew(ltot2)
+C      common /orthos/ alpha(mxprev),work(mxprev)
+
       ifprjp=.false.    ! Project out previous pressure solutions?
       istart=param(95)  
       if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
@@ -1869,6 +1873,7 @@ c
 
 !$acc  data copy(h1,h2,h2inv,vtrans(:,:,:,:,ifield))
 !$acc&      copy(dp,ux,uy,uz,bm2,usrdiv)
+!!$acc&      create(pnew,par,pset)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -1882,9 +1887,9 @@ c
 
       call ortho_acc   (dp)
 
-!$acc end data
-
       i = 1 + ifield/ifldmhd
+
+!$acc end data
 
       if (ifprjp) then
 !$acc data copy(dp,h1,h2,h2inv,pset,nprv)
@@ -1896,21 +1901,26 @@ c
       scaledi = 1./scaledt
 !$acc data copyin(dp)
       call cmult_acc(dp,scaledt,ntot2) ! scale for tol
-!$acc update host(dp)
       call esolver_acc  (dp,h1,h2,h2inv,intype)
+!$acc update device(dp)  
+      call cmult_acc(dp,scaledi,ntot2)
+!$acc update host(dp)
 !$acc end data
-  
-      call cmult(dp,scaledi,ntot2)
+
       if (ifprjp) then
-         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+         call gensolnp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
       endif
 
-      call add2(up,dp,ntot2)
+!$acc  data copy(ux,uy,uz,up,dp)
+!$acc&      copyin(h2inv)    
+!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
+      call add2_acc(up,dp,ntot2)
+      call opgradt_acc  (w1 ,w2 ,w3 ,dp)
+      call opbinv_acc   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
 
-      call opgradt  (w1 ,w2 ,w3 ,dp)
-      call opbinv   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
       dtb  = dt/bd(1)
-      call opadd2cm (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+      call opadd2cm_acc (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+!$acc end data 
 
       if (ifmhd)  call chkptol	! to avoid repetition
 
@@ -1918,4 +1928,114 @@ c
 
       return
       end
+
+c-----------------------------------------------------------------------
+      subroutine gensolnp_acc(p,h1,h2,h2inv,pset,nprev)
+C
+C     Reconstruct the solution to the original problem by adding back
+C     the previous solutions
+C
+      include 'SIZE'
+      include 'INPUT'
+
+      real p    (lx2,ly2,lz2,lelv)
+      real h1   (lx1,ly1,lz1,lelv)
+      real h2   (lx1,ly1,lz1,lelv)
+      real h2inv(lx1,ly1,lz1,lelv)
+      real pset (lx2*ly2*lz2*lelv,mxprev)
+
+      parameter (ltot2=lx2*ly2*lz2*lelv)
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthos/ alpha(mxprev),work(mxprev)
+
+      mprev=param(93)
+      mprev=min(mprev,mxprev)
+
+      ntot2=nx2*ny2*nz2*nelv
+
+      if (nprev.lt.mprev) then
+         nprev = nprev+1
+!$acc  data copy(pnew, pbar,pset(:,1:nprev),p)
+!$acc&      copyin(h1,h2,h2inv)
+         call copy_acc  (pset(1,nprev),p,ntot2)        ! Save current solution
+         call add2_acc  (p,pbar,ntot2)                 ! Reconstruct solution.
+         call econjp_acc(pset,nprev,h1,h2,h2inv,ierr)  ! Orthonormalize set
+!$acc end data
+         if (ierr.eq.1) then
+          nprev = 1
+          call copy_acc  (pset(1,nprev),p,ntot2)       ! Save current solution
+          call econjp_acc(pset,nprev,h1,h2,h2inv,ierr) !   and orthonormalize.
+        endif
+      else                                         !          (uses pnew).
+         nprev = 1
+         call add2_acc  (p,pbar,ntot2)                 ! Reconstruct solution.
+         call copy_acc  (pset(1,nprev),p,ntot2)        ! Save current solution
+         call econjp_acc(pset,nprev,h1,h2,h2inv,ierr)  !   and orthonormalize.
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine econjp_acc(pset,nprev,h1,h2,h2inv,ierr)
+
+c     Orthogonalize the soln wrt previous soln's for which we already
+c     know the soln.
+
+      include 'SIZE'
+      include 'INPUT'
+
+      real p    (lx2,ly2,lz2,lelv)
+      real h1   (lx1,ly1,lz1,lelv)
+      real h2   (lx1,ly1,lz1,lelv)
+      real h2inv(lx1,ly1,lz1,lelv)
+      real pset (lx2*ly2*lz2*lelv,mxprev)
+
+      parameter (ltot2=lx2*ly2*lz2*lelv)
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthos/ alpha(mxprev),work(mxprev)
+
+      ierr  = 0
+
+      ntot2=nx2*ny2*nz2*nelv
+
+C
+C     Gram Schmidt, w re-orthogonalization
+C
+      npass=1
+c     if (abs(param(105)).eq.2) npass=2
+
+      do ipass=1,npass
+         intetype=1
+         call cdabdtp_acc(pnew,pset(1,nprev),h1,h2,h2inv,intetype)
+
+         alphad = glsc2_acc(pnew,pset(1,nprev),ntot2) ! compute part of the norm
+
+         nprev1 = nprev-1
+
+         do i=1,nprev1   !   Gram-Schmidt
+            alpha(i) = vlsc2_acc(pnew,pset(1,i),ntot2)
+         enddo
+         if (nprev1.gt.0) call gop(alpha,work,'+  ',nprev1)
+
+         do i=1,nprev1
+            alpham = -alpha(i)
+            call add2s2_acc(pset(1,nprev),pset(1,i),alpham,ntot2)
+            alphad = alphad - alpha(i)**2
+         enddo
+
+      enddo
+C
+C    .Normalize new element in P~
+C
+      if (alphad.le.0) then
+         write(6,*) 'ERROR:  alphad .le. 0 in econjp',alphad,nprev
+         ierr = 1
+         return
+      endif
+      alphad = 1./sqrt(alphad)
+      call cmult_acc(pset(1,nprev),alphad,ntot2)
+
+      return
+      end
+
 #endif
