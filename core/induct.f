@@ -1998,9 +1998,8 @@ c
       i = 1 + ifield/ifldmhd
 
       if (ifprjp) then
-!$acc update device(pbar,pnew,pset)
+!$acc update device(pbar)
          call setrhsp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update host(pbar,pnew,pset)
       endif
 
       scaledt = dt/bd(1)
@@ -2011,9 +2010,8 @@ c
       call cmult_acc(dp,scaledi,ntot2)
 
       if (ifprjp) then
-!$acc update host(dp)
-         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update device(dp)
+         call gensolnp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update host(pbar)
       endif
 
       call add2_acc(up,dp,ntot2)
