@@ -2098,7 +2098,7 @@ c
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
 !!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
 !$acc&      copy(dp)
-!!$acc&      copy(up)
+!$acc&      copy(up)
 !$acc&      create(pbar,pnew,pset)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
@@ -2137,9 +2137,9 @@ c
 !$acc update device(dp)
       endif
 
+      call add2_acc(up,dp,ntot2)
 !$acc end data 
 
-      call add2(up,dp,ntot2)
       call opgradt  (w1 ,w2 ,w3 ,dp)
       call opbinv   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
 
