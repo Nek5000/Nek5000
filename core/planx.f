@@ -581,7 +581,7 @@ c        CALL SSNORMD (DV1,DV2,DV3)
 c
 !$ACC END DATA
 
-         call incomprn_acc2(vx,vy,vz,pr)
+         call incomprn_acc(vx,vy,vz,pr)
 C
 
 

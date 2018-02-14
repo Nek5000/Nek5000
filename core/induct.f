@@ -1805,123 +1805,6 @@ c    ................................................................
       return
       end
 
-c--------------------------------------------------------------------
-      subroutine incomprn_acc (ux,uy,uz,up)
-c
-c     Project U onto the closest incompressible field
-c
-c     Input:  U     := (ux,uy,uz)
-c
-c     Output: updated values of U, iproj, proj; and
-c             up    := pressure currection req'd to impose div U = 0
-c
-c
-c     Dependencies: ifield ==> which "density" (vtrans) is used.
-c
-c     Notes  1.  up is _not_ scaled by bd(1)/dt.  This should be done
-c                external to incompr().
-c
-c            2.  up accounts _only_ for the perturbation pressure,
-c                not the current pressure derived from extrapolation.
-c
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'CTIMER'
-c
-      common /scrns/ w1    (lx1,ly1,lz1,lelv)
-     $ ,             w2    (lx1,ly1,lz1,lelv)
-     $ ,             w3    (lx1,ly1,lz1,lelv)
-     $ ,             dv1   (lx1,ly1,lz1,lelv)
-     $ ,             dv2   (lx1,ly1,lz1,lelv)
-     $ ,             dv3   (lx1,ly1,lz1,lelv)
-     $ ,             dp    (lx2,ly2,lz2,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
-     $ ,             h2    (lx1,ly1,lz1,lelv)
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-
-      real ux(lx1,ly1,lz1,lelv)
-      real uy(lx1,ly1,lz1,lelv)
-      real uz(lx1,ly1,lz1,lelv)
-      real up(lx2,ly2,lz2,lelv)
-
-      parameter(nset = 1 + lbelv/lelv)
-      common /orthov/ pset(lx2*ly2*lz2*lelv*mxprev,nset)
-      common /orthbi/ nprv(2)
-      logical ifprjp
-
-      parameter (ltot2=lx2*ly2*lz2*lelv)
-      common /orthox/ pbar(ltot2),pnew(ltot2)
-      common /orthos/ alpha(mxprev),work(mxprev)
-
-      ifprjp=.false.    ! Project out previous pressure solutions?
-      istart=param(95)  
-      if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
-
-      if (icalld.eq.0) tpres=0.0
-      icalld = icalld+1
-      npres  = icalld
-      etime1 = dnekclock()
-
-      ntot1  = nx1*ny1*nz1*nelv
-      ntot2  = nx2*ny2*nz2*nelv
-      intype = 1
-
-!$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
-!$ACC&      PRESENT(ux,uy,uz)
-!$ACC&      PRESENT(h1,h2,h2inv,bm2)
-!$acc&      copy(up,dp)
-!$acc&      create(pbar,pnew,pset)
-!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
-
-      call rzero_acc   (h1,ntot1)
-      call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
-      call invers2_acc (h2inv,h2,ntot1)
-
-      call opdiv_acc   (dp,ux,uy,uz)
-
-      bdti = -bd(1)/dt
-      call cmult_acc   (dp,bdti,ntot2)
-
-      call add2col2_acc(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
-
-      call ortho_acc   (dp)
-
-      i = 1 + ifield/ifldmhd
-
-      if (ifprjp) then
-!$acc update host(dp,h1,h2,h2inv,pset(:,i))
-         call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update device(dp,pset(:,i))
-      endif
-
-      scaledt = dt/bd(1)
-      scaledi = 1./scaledt
-
-      call cmult_acc(dp,scaledt,ntot2) ! scale for tol
-      call esolver_acc  (dp,h1,h2,h2inv,intype)
-      call cmult_acc(dp,scaledi,ntot2)
-      if (ifprjp) then
-!$acc update host(dp,h1,h2,h2inv, pset(:,i))
-         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update device(dp,pset(:,i))
-      endif
-
-      call add2_acc(up,dp,ntot2)
-      call opgradt_acc  (w1 ,w2 ,w3 ,dp)
-      call opbinv_acc   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
-
-      dtb  = dt/bd(1)
-      call opadd2cm_acc (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
-!$acc end data 
-
-      if (ifmhd)  call chkptol	! to avoid repetition
-
-      tpres=tpres+(dnekclock()-etime1)
-
-      return
-      end
-
 c-----------------------------------------------------------------------
       subroutine gensolnp_acc(p,h1,h2,h2inv,pset,nprev)
 C
@@ -2029,10 +1912,8 @@ C
       return
       end
 
-#endif
-
 c--------------------------------------------------------------------
-      subroutine incomprn_acc2 (ux,uy,uz,up)
+      subroutine incomprn_acc (ux,uy,uz,up)
 c
 c     Project U onto the closest incompressible field
 c
@@ -2155,3 +2036,5 @@ c
 
       return
       end
+
+#endif
