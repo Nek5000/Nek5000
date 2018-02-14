@@ -579,10 +579,11 @@ c        call q_filter(alpha_filt)
 c
 c        CALL SSNORMD (DV1,DV2,DV3)
 c
-         call incomprn_acc(vx,vy,vz,pr)
+!$ACC END DATA
+
+         call incomprn_acc2(vx,vy,vz,pr)
 C
 
-!$ACC END DATA
 
       ENDIF
 C

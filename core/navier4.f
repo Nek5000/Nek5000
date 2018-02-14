@@ -351,44 +351,6 @@ C     local inner product, with weight
       RETURN
       END
 c-----------------------------------------------------------------------
-      function vlsc3_acc(x,y,b,n)
-C ROR, 05-12-2017: This does not give the correct results on GPU.
-C Inside the reduction clause, the values of X, Y, and B were simply
-C 0, rather than the correct values. This was confimred with cuda-gdb
-C Our workaround was to inline VLSC_ACC in gmres.f and use ACC KERNELS.
-C
-C     local inner product, with weight
-C
-      dimension x(n),y(n),b(n)
-      real dt
-C
-      include 'OPCTR'
-C
-#ifdef TIMER
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'VLSC3 '
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + dfloat(isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + dfloat(isbcnt)
-#endif
-C
-      dt = 0.0
-!$ACC PARALLEL LOOP PRESENT(x,y,b) REDUCTION(+:dt)
-      do i=1,n
-         dt = dt+x(i)*y(i)*b(i)
-      enddo
-!$ACC END PARALLEL LOOP
-c      t=dt
-      vlsc3_acc = dt
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
 C     Update rhs's if E-matrix has changed
@@ -1406,6 +1368,45 @@ c
       end
 
 #ifdef _OPENACC
+c-----------------------------------------------------------------------
+      function vlsc3_acc(x,y,b,n)
+C ROR, 05-12-2017: This does not give the correct results on GPU.
+C Inside the reduction clause, the values of X, Y, and B were simply
+C 0, rather than the correct values. This was confimred with cuda-gdb
+C Our workaround was to inline VLSC_ACC in gmres.f and use ACC KERNELS.
+C
+C     local inner product, with weight
+C
+      dimension x(n),y(n),b(n)
+      real dt
+C
+      include 'OPCTR'
+C
+#ifdef TIMER
+C
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'VLSC3 '
+      endif
+      isbcnt = 3*n
+      dct(myrout) = dct(myrout) + dfloat(isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + dfloat(isbcnt)
+#endif
+C
+      dt = 0.0
+!$ACC PARALLEL LOOP PRESENT(x,y,b) REDUCTION(+:dt)
+      do i=1,n
+         dt = dt+x(i)*y(i)*b(i)
+      enddo
+!$ACC END PARALLEL LOOP
+c      t=dt
+      vlsc3_acc = dt
+      return
+      end
+
 c-----------------------------------------------------------------------
       subroutine updrhse_acc(p,h1,h2,h2inv,ierr)
 C

@@ -5690,10 +5690,10 @@ C
 C-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
-      real outx   (lx1,ly1,lz1,1)
-      real outy   (lx1,ly1,lz1,1)
-      real outz   (lx1,ly1,lz1,1)
-      real inpfld (lx2,ly2,lz2,1)
+      real outx   (lx1,ly1,lz1,lelv)
+      real outy   (lx1,ly1,lz1,lelv)
+      real outz   (lx1,ly1,lz1,lelv)
+      real inpfld (lx2,ly2,lz2,lelv)
 C
       call cdtp_acc (outx,inpfld,rxm2,sxm2,txm2,1)
       call cdtp_acc  (outy,inpfld,rym2,sym2,tym2,2)

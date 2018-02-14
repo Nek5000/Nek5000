@@ -1890,7 +1890,9 @@ c
       i = 1 + ifield/ifldmhd
 
       if (ifprjp) then
-         call setrhsp_acc  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update host(dp,h1,h2,h2inv,pset(:,i))
+         call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update device(dp,pset(:,i))
       endif
 
       scaledt = dt/bd(1)
@@ -1900,7 +1902,9 @@ c
       call esolver_acc  (dp,h1,h2,h2inv,intype)
       call cmult_acc(dp,scaledi,ntot2)
       if (ifprjp) then
-         call gensolnp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update host(dp,h1,h2,h2inv, pset(:,i))
+         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update device(dp,pset(:,i))
       endif
 
       call add2_acc(up,dp,ntot2)
@@ -2026,3 +2030,123 @@ C
       end
 
 #endif
+
+c--------------------------------------------------------------------
+      subroutine incomprn_acc2 (ux,uy,uz,up)
+c
+c     Project U onto the closest incompressible field
+c
+c     Input:  U     := (ux,uy,uz)
+c
+c     Output: updated values of U, iproj, proj; and
+c             up    := pressure currection req'd to impose div U = 0
+c
+c
+c     Dependencies: ifield ==> which "density" (vtrans) is used.
+c
+c     Notes  1.  up is _not_ scaled by bd(1)/dt.  This should be done
+c                external to incompr().
+c
+c            2.  up accounts _only_ for the perturbation pressure,
+c                not the current pressure derived from extrapolation.
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+c
+      common /scrns/ w1    (lx1,ly1,lz1,lelv)
+     $ ,             w2    (lx1,ly1,lz1,lelv)
+     $ ,             w3    (lx1,ly1,lz1,lelv)
+     $ ,             dv1   (lx1,ly1,lz1,lelv)
+     $ ,             dv2   (lx1,ly1,lz1,lelv)
+     $ ,             dv3   (lx1,ly1,lz1,lelv)
+     $ ,             dp    (lx2,ly2,lz2,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
+      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
+
+      real ux(lx1,ly1,lz1,lelv)
+      real uy(lx1,ly1,lz1,lelv)
+      real uz(lx1,ly1,lz1,lelv)
+      real up(lx2,ly2,lz2,lelv)
+
+      parameter(nset = 1 + lbelv/lelv)
+      common /orthov/ pset(lx2*ly2*lz2*lelv*mxprev,nset)
+      common /orthbi/ nprv(2)
+      logical ifprjp
+
+      parameter (ltot2=lx2*ly2*lz2*lelv)
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthos/ alpha(mxprev),work(mxprev)
+
+      ifprjp=.false.    ! Project out previous pressure solutions?
+      istart=param(95)  
+      if (istep.ge.istart.and.istart.ne.0) ifprjp=.true.
+
+      if (icalld.eq.0) tpres=0.0
+      icalld = icalld+1
+      npres  = icalld
+      etime1 = dnekclock()
+
+      ntot1  = nx1*ny1*nz1*nelv
+      ntot2  = nx2*ny2*nz2*nelv
+      intype = 1
+
+!$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
+!$ACC&      copy(ux,uy,uz)
+!$ACC&      PRESENT(h1,h2,h2inv,bm2)
+!!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
+!$acc&      copy(dp)
+!!$acc&      copy(up)
+!!$acc&      create(pbar,pnew,pset)
+      call rzero_acc   (h1,ntot1)
+      call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
+      call invers2_acc (h2inv,h2,ntot1)
+
+      call opdiv_acc   (dp,ux,uy,uz)
+
+      bdti = -bd(1)/dt
+      call cmult_acc   (dp,bdti,ntot2)
+
+      call add2col2_acc(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
+
+      call ortho_acc   (dp)
+
+!$acc update host(dp)
+!$acc update host(h1,h2,h2inv)
+!$acc end data 
+
+      i = 1 + ifield/ifldmhd
+
+      if (ifprjp) then
+!!$acc update host(dp)
+         call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!!$acc update device(dp)
+      endif
+
+      scaledt = dt/bd(1)
+      scaledi = 1./scaledt
+
+      call cmult(dp,scaledt,ntot2) ! scale for tol
+      call esolver  (dp,h1,h2,h2inv,intype)
+      call cmult(dp,scaledi,ntot2)
+      if (ifprjp) then
+!!$acc update host(dp)
+         call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!!$acc update device(dp)
+      endif
+
+      call add2(up,dp,ntot2)
+      call opgradt  (w1 ,w2 ,w3 ,dp)
+      call opbinv   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
+
+      dtb  = dt/bd(1)
+      call opadd2cm (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+
+      if (ifmhd)  call chkptol	! to avoid repetition
+
+      tpres=tpres+(dnekclock()-etime1)
+
+      return
+      end
