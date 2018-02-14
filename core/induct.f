@@ -2113,24 +2113,25 @@ c
 
       call ortho_acc   (dp)
 
-!$acc update host(dp)
 !$acc update host(h1,h2,h2inv)
-!$acc end data 
+
 
       i = 1 + ifield/ifldmhd
 
       if (ifprjp) then
-!!$acc update host(dp)
+!$acc update host(dp)
          call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!!$acc update device(dp)
+!$acc update device(dp)
       endif
 
       scaledt = dt/bd(1)
       scaledi = 1./scaledt
 
-      call cmult(dp,scaledt,ntot2) ! scale for tol
-      call esolver  (dp,h1,h2,h2inv,intype)
-      call cmult(dp,scaledi,ntot2)
+      call cmult_acc(dp,scaledt,ntot2) ! scale for tol
+      call esolver_acc  (dp,h1,h2,h2inv,intype)
+      call cmult_acc(dp,scaledi,ntot2)
+!$acc end data 
+
       if (ifprjp) then
 !!$acc update host(dp)
          call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
