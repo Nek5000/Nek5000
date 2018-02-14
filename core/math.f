@@ -2512,11 +2512,11 @@ c-----------------------------------------------------------------------
 #endif
 
 !xbm* unroll (10)
-!$acc parallel loop present(a,b,c)
+!$ACC PARALLEL LOOP PRESENT(a,b,c)
       do i=1,n
          a(i)=a(i)+b(i)*c(i)
       enddo
-!$acc end loop
+!$ACC END LOOP
       return
       end
 
