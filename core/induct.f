@@ -2099,7 +2099,7 @@ c
 !!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
 !$acc&      copy(dp)
 !!$acc&      copy(up)
-!!$acc&      create(pbar,pnew,pset)
+!$acc&      create(pbar,pnew,pset)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -2130,13 +2130,14 @@ c
       call cmult_acc(dp,scaledt,ntot2) ! scale for tol
       call esolver_acc  (dp,h1,h2,h2inv,intype)
       call cmult_acc(dp,scaledi,ntot2)
-!$acc end data 
 
       if (ifprjp) then
-!!$acc update host(dp)
+!$acc update host(dp)
          call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!!$acc update device(dp)
+!$acc update device(dp)
       endif
+
+!$acc end data 
 
       call add2(up,dp,ntot2)
       call opgradt  (w1 ,w2 ,w3 ,dp)
