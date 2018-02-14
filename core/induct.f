@@ -2096,7 +2096,6 @@ c
 !$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
 !$ACC&      copy(ux,uy,uz)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
-!!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
 !$acc&      copy(dp)
 !$acc&      copy(up)
 !$acc&      create(pbar,pnew,pset)
@@ -2138,13 +2137,17 @@ c
       endif
 
       call add2_acc(up,dp,ntot2)
-!$acc end data 
+!$acc end data
 
-      call opgradt  (w1 ,w2 ,w3 ,dp)
-      call opbinv   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
+!$acc  data copy (ux,uy,uz)
+!$acc&  copyin(dp)
+!$acc&  create(w1,w2,w3,dv1,dv2,dv3)
+      call opgradt_acc  (w1 ,w2 ,w3 ,dp)
+      call opbinv_acc   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
 
       dtb  = dt/bd(1)
-      call opadd2cm (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+      call opadd2cm_acc (ux ,uy ,uz ,dv1,dv2,dv3, dtb )
+!$acc end data 
 
       if (ifmhd)  call chkptol	! to avoid repetition
 
