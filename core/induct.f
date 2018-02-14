@@ -1995,13 +1995,12 @@ c
 
 !$acc update host(h1,h2,h2inv)
 
-
       i = 1 + ifield/ifldmhd
 
       if (ifprjp) then
-!$acc update host(dp)
-         call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update device(dp)
+!$acc update device(pbar,pnew,pset)
+         call setrhsp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
+!$acc update host(pbar,pnew,pset)
       endif
 
       scaledt = dt/bd(1)
