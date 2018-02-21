@@ -1977,9 +1977,9 @@ c
 !$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
 !$ACC&      copy(ux,uy,uz)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
-!$acc&      copy(dp)
-!$acc&      copy(up)
+!$acc&      copy(dp,up)
 !$acc&      create(pbar,pnew,pset)
+!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -2015,11 +2015,6 @@ c
       endif
 
       call add2_acc(up,dp,ntot2)
-!$acc end data
-
-!$acc  data copy (ux,uy,uz)
-!$acc&  copyin(dp)
-!$acc&  create(w1,w2,w3,dv1,dv2,dv3)
       call opgradt_acc  (w1 ,w2 ,w3 ,dp)
       call opbinv_acc   (dv1,dv2,dv3,w1 ,w2 ,w3 ,h2inv)
 
