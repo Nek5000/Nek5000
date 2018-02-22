@@ -1111,20 +1111,24 @@ c-----------------------------------------------------------------------
         rfileo = nfileo
       endif
       ndigit = log10(rfileo) + 1
-     
-      k = 1
+
+      lenp = ltrunc(path,132)
+      call chcopy(fnam1(1),path,lenp)    
+      k = 1 + lenp 
+ 
       if (ifdiro) then                                  !  Add directory
-         call chcopy(fnam1(1),'A',1)
-         call chcopy(fnam1(2),six,ndigit)  ! put ???? in string
-         k = 2 + ndigit
+         call chcopy(fnam1(k),'A',1)
+         k = k + 1
+         call chcopy(fnam1(k),six,ndigit)  ! put ???? in string
+         k = k + ndigit
          call chcopy(fnam1(k),slash,1)
-         k = k+1
+         k = k + 1
       endif
 
       if (prefix(1).ne.' '.and.prefix(2).ne.' '.and.    !  Add prefix
      $    prefix(3).ne.' ') then
          call chcopy(fnam1(k),prefix,3)
-         k = k+3
+         k = k + 3
       endif
 
       len=ltrunc(session,132)                           !  Add SESSION

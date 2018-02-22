@@ -50,6 +50,7 @@ c     outpost arrays
       ncut = param(101)+1
 
       if(wght.le.0) return
+      if(ifaxis) call exitti('Filtering not supported w/ IFAXIS!$',1)
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
      $                                            ifield, ncut, wght
 

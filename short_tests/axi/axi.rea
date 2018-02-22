@@ -12,8 +12,8 @@
        5.000000         p08 CONDUCT
       0.0000000E+00
       0.0000000E+00     p10 FINTIME
-       1000.0000        p11 NSTEPS
-      0.5000000         p12 DT
+       2000.0000        p11 NSTEPS
+      0.0500000         p12 DT
       0.0000000E+00     p13 IOCOMM
        0.00000          p14 IOTIME
        0.00000          p15 IOSTEP
@@ -22,13 +22,13 @@
       0.0000000E+00
       0.0000000E+00
       0.0000000E+00
-      1.0000000E-08     p21 DIVERGENCE
-      1.0000000E-12     p22 HELMHOLTZ
+      1.0000000E-14     p21 DIVERGENCE
+      1.0000000E-14     p22 HELMHOLTZ
       0.0000000E+00     p23 NPSCAL
       0.0000000E-00     p24 TOLREL
       0.0000000E-00     p25 TOLABS
       1.0000000         p26 COURANT/NTAU
-       3.000000         p27 TORDER
+       2.000000         p27 TORDER
       0.0000000E+00     p28 TORDER: mesh velocity (0: p28=p27)
       0.0000000E+00     p29 magnetic visc if > 0, = -1/Rm if < 0
       0.0000000E+00     p30 > 0 ==> properties set in uservp()
@@ -104,7 +104,7 @@
       0.0000000E+00     p100 reserved
       0.0000000E+00     p101   No. of additional filter modes
       0.0000000E+00
-      1.0000000E-03     p103   weight of stabilizing filter (.01)
+-1      1.0000000E-03     p103   weight of stabilizing filter (.01)
       4  Lines of passive scalar data follows2 CONDUCT; 2RHOCP
    1.00000       1.00000       1.00000       1.00000       1.00000
    1.00000       1.00000       1.00000       1.00000

@@ -112,6 +112,9 @@ C     Intercommunications set up only for 2 sessions
 
       if (nsessions.gt.1) then
 
+         ifneknek   = .true.
+         ifneknekm  = .false.
+
          if (idsess.eq.0) idsess_neighbor=1
          if (idsess.eq.1) idsess_neighbor=0
  
@@ -125,14 +128,7 @@ C     Intercommunications set up only for 2 sessions
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
 
-c         call iniproc(intracomm)
-c         iglobalcomm = mpi_comm_world
-
-         ifneknek   = .true.
-         ifneknekm  = .false.
-
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
-
          icall = 0  ! Emergency exit call flag
 
       endif 
@@ -219,10 +215,15 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       end
 c------------------------------------------------------------------------
       subroutine userchk_set_xfer
+      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
       include 'NEKNEK'
-      real l2,linf
+
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      real tsync
       character*3 which_field(nfldmax_nn)
 
 c     nfld_neknek is the number of fields to interpolate.
@@ -236,13 +237,25 @@ c     nfld_neknek = ldim+2 for velocities+pressure+temperature
       if (nfld_neknek.gt.ldim+1) which_field(ldim+2)='t'
 c
 c     Special conditions set for flow-poro coupling
-      if(nfld_neknek.eq.1) then
+      if (nfld_neknek.eq.1) then
          if(session.eq.'flow') which_field(1)='pr'
          if(session.eq.'poro') which_field(1)='vy'
       endif
 
-      call neknekgsync()
-      if (nsessions.gt.1) call get_values2(which_field)
+      if (nsessions.gt.1) then
+         etime0 = dnekclock_sync()
+         call neknekgsync()
+         etime1 = dnekclock()
+         call get_values2(which_field)
+         call nekgsync()
+         etime = dnekclock() - etime1
+         tsync = etime1 - etime0 
+
+         if (nio.eq.0) write(6,99) istep, 
+     $                 '  Multidomain data exchange done', 
+     $                 etime, etime+tsync
+ 99      format(i11,a,1p2e13.4)
+      endif
 
       return
       end
@@ -691,8 +704,6 @@ c-----------------------------------------------------------------------
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
 
-
-cccc
 c     Interpolate using findpts_eval
       do ifld=1,nfld_neknek
         if (which_field(ifld).eq.'vx') call copy(field,vx ,nt)
@@ -703,9 +714,7 @@ c     Interpolate using findpts_eval
 
         call field_eval(fieldout(1,ifld),1,field)
       enddo
-      call neknekgsync()
          
-cccc
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
        do i=1,npoints_nn
@@ -715,7 +724,6 @@ c     the information will go to the boundary points
         enddo
        enddo
 
-      call neknekgsync()
       return
       end
 C--------------------------------------------------------------------------
