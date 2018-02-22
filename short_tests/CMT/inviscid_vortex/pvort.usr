@@ -190,8 +190,10 @@ c-----------------------------------------------------------------------
       outflsub=.true.
       IFRESTART=.false.
       IFCNTFILT=.false.
-      ifsip=.false.
-      gasmodel=1
+
+! Avoid overstepping bx bounds in nekuic with ldimt>3, lbelt=1
+      ifldmhd=9999
+
       return
       end
 c-----------------------------------------------------------------------

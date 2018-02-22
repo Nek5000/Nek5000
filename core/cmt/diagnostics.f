@@ -76,19 +76,22 @@ c----------------------------------------------------------------------
 
       n = lx1*ly1*lz1
       do e=1,nelt
-         call copy(otvar(1,1,1,e,1),u(1,1,1,1,e),n)
-         call copy(otvar(1,1,1,e,2),u(1,1,1,2,e),n)
-         call copy(otvar(1,1,1,e,3),u(1,1,1,3,e),n)
-         call copy(otvar(1,1,1,e,4),u(1,1,1,4,e),n)
-         call copy(otvar(1,1,1,e,5),u(1,1,1,5,e),n)
+         call copy(otvar(1,1,1,e,4),u(1,1,1,1,e),n)
+         call copy(otvar(1,1,1,e,5),u(1,1,1,2,e),n)
+         call copy(otvar(1,1,1,e,6),u(1,1,1,3,e),n)
+         call copy(otvar(1,1,1,e,7),u(1,1,1,4,e),n)
+         call copy(otvar(1,1,1,e,1),u(1,1,1,5,e),n)
       enddo
+
+      call copy(otvar(1,1,1,1,2),tlag(1,1,1,1,1,2),n*nelt) ! s_{n-1}
+      call copy(otvar(1,1,1,1,3),tlag(1,1,1,1,2,1),n*nelt) ! s_n
 
 c     ifxyo=.true.
       if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
 
-      itmp = 1
-      call outpost2(otvar(1,1,1,1,2),otvar(1,1,1,1,3),otvar(1,1,1,1,4)
-     $             ,otvar(1,1,1,1,1),otvar(1,1,1,1,5),itmp,'fld')
+      itmp = 3
+      call outpost2(otvar(1,1,1,1,5),otvar(1,1,1,1,6),otvar(1,1,1,1,7)
+     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'fld')
       return
       end
 c----------------------------------------------------------------------

@@ -496,29 +496,6 @@ c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
 c     multiply by pressure
       call col2(rdumz,pr(1,1,1,e),nxyz)
 
-c     gradphi.tauij !NOPE
-!     do i=1,nxyz !   ????????????SiGN??????
-!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,1)*
-!              (1.0d+0/JACM1(i,1,1,e)*
-!    >             (ur(i,1,1)*RXM1(i,1,1,e) +
-!    >              us(i,1,1)*SXM1(i,1,1,e) +
-!    >              ut(i,1,1)*TXM1(i,1,1,e)))
-!     enddo
-!     do i=1,nxyz !   ????????????SiGN??????
-!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,2)*
-!              (1.0d+0/JACM1(i,1,1,e)*
-!    >             (ur(i,1,1)*RYM1(i,1,1,e) +
-!    >              us(i,1,1)*SYM1(i,1,1,e) +
-!    >              ut(i,1,1)*TYM1(i,1,1,e)))
-!     enddo
-!     do i=1,nxyz !   ????????????SiGN??????
-!        rdumz(i,1,1)=rdumz(i,1,1)+diffh(i,3)*
-!              (1.0d+0/JACM1(i,1,1,e)*
-!    >             (ur(i,1,1)*RZM1(i,1,1,e) +
-!    >              us(i,1,1)*SZM1(i,1,1,e) +
-!    >              ut(i,1,1)*TZM1(i,1,1,e)))
-!     enddo
-
         if (eq_num.eq.4.and.ldim.eq.2)then
 
         else
@@ -556,8 +533,9 @@ c-----------------------------------------------------------------------
                usrf(i,j,k,2) = FFX
                usrf(i,j,k,3) = FFY
                usrf(i,j,k,4) = FFZ
-               usrf(i,j,k,5) = (U(i,j,k,2,e)*FFX + U(i,j,k,3,e)*FFY
-     &                       +  U(i,j,k,4,e)*FFZ)/ U(i,j,k,1,e)
+               usrf(i,j,k,5) = qvol
+c              usrf(i,j,k,5) = (U(i,j,k,2,e)*FFX + U(i,j,k,3,e)*FFY
+c    &                       +  U(i,j,k,4,e)*FFZ)/ U(i,j,k,1,e)
             enddo
          enddo
       enddo

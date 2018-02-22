@@ -41,7 +41,7 @@ class FsHydro(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=90., label='gmres')
 
         axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=14150., label='axhm')
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=19180., label='axhm')
 
         amp = self.get_value_from_log('AMP', column=-2, row=-1)
         self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=4e-05, label='AMP')
@@ -78,14 +78,11 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        pres = self.get_value_from_log('gmres ', column=-7)
-        self.assertAlmostEqualDelayed(pres, target_val=0., delta=70., label='PRES')
-
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(errmx, target_val=6.849547e-08, delta=1E-09, label='L2 err')
+        self.assertAlmostEqualDelayed(errmx, target_val=2.639593E-15, delta=1E-15, label='L2 err')
 
         errl2 = self.get_value_from_log('err ', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(errl2, target_val=3.091788e-07, delta=1E-08, label='MAX err')
+        self.assertAlmostEqualDelayed(errl2, target_val=1.043610E-14, delta=1E-15, label='MAX err')
 
         self.assertDelayedFailures()
 
@@ -96,14 +93,11 @@ class Axi(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        u_press = self.get_value_from_log('gmres ', column=-6)
-        self.assertAlmostEqualDelayed(u_press, target_val=0., delta=90., label='U-PRES')
-
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(errmx, target_val=7.904719e-08, delta=1E-09, label='L2 err')
+        self.assertAlmostEqualDelayed(errmx, target_val=3.963589E-15, delta=1E-15, label='L2 err')
 
         errl2 = self.get_value_from_log('err ', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(errl2, target_val=3.510415e-07, delta=1E-08, label='MAX err')
+        self.assertAlmostEqualDelayed(errl2, target_val=1.687539E-14, delta=1E-15, label='MAX err')
 
         self.assertDelayedFailures()
 

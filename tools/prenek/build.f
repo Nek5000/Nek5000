@@ -639,8 +639,8 @@ C     Read Elemental Mesh data
       READ(9,*,ERR=33,END=33)NEL,NDIM
 
       if (nel.ge.nelm) then
-         call prsii('NELM too small in basics.inc.$',nel,nelm)
-         call prs  ('Recompile prenek.  ABORT$')
+         call prsii('Abort: number of elements too large.$',nel,nelm)
+         call prs  ('change MAXNEL and recompile.  ABORT$')
       endif
      
       iffmtin = .true.

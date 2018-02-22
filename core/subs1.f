@@ -2533,7 +2533,8 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
 c     Reorthogonalize basis
 
       dh1max=difmax(bstrs(1  ),h1,n)
-      dh2max=difmax(bstrs(1+n),h2,n)
+      call col3(bstrs,h2,bm1,n)
+      dh2max=difmax(bstrs(1+n),bstrs,n)
 
       if (dh1max.gt.0.or.dh2max.gt.0) then
         call strs_ortho_all(xstrs(1+m),bstrs(1+m),n,k,h1,h2,wt,ifld,w
@@ -2569,10 +2570,10 @@ c     Reorthogonalize basis
       l2a=opnorm2w(b1,b2,b3,binvm1)
 
       call copy(bstrs(1  ),h1,n)  ! Save h1 and h2 for comparison
-      call copy(bstrs(1+n),h2,n)
+      call col3(bstrs(1+n),bm1,h2,n)
 
       ratio=l2b/l2a
-      if (nio.eq.0) write(6,1) istep,'  Project ' // 'Helm3 ',
+      if (nio.eq.0) write(6,1) istep,'  Project ' // 'HELM3 ',
      $              l2a,l2b,ratio,k,kmax
     1 format(i11,a,6x,1p3e13.4,i4,i4)
 

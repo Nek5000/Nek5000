@@ -459,6 +459,7 @@ c        stabilization type: none, explicit or hpfrt
          call capit(c_out,132)
          if (index(c_out,'NONE') .eq. 1) then
             filterType = 0
+            goto 101
          else if (index(c_out,'EXPLICIT') .eq. 1) then
             filterType = 1
          else if (index(c_out,'HPFRT') .eq. 1) then
@@ -485,7 +486,8 @@ c        stabilization type: none, explicit or hpfrt
             write(6,*) 'general:filterCutoffRatio'
             write(6,*) 'is required for general:filtering!'
             goto 999
-         endif 
+         endif
+ 101     continue 
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
