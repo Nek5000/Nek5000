@@ -3699,3 +3699,244 @@ c     stop
       return
       end
 c----------------------------------------------------------------------
+
+
+#ifdef _OPENACC
+c----------------------------------------------------------------------
+      subroutine hsmg_solve_acc(e,r)
+
+      include 'SIZE'
+      include 'HSMG'
+      include 'GEOM'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'CTIMER'
+      include 'PARALLEL'
+
+      real e(lx2*ly2*lz2*lelv)
+      real r(lx2*ly2*lz2*lelv)
+
+      common /quick/ ecrs  (2)  ! quick work array
+     $             , ecrs2 (2)  ! quick work array
+c     common /quick/ ecrs  (lx2*ly2*lz2*lelv)  ! quick work array
+c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
+
+      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
+     $               h2    (lx1,ly1,lz1,lelv)
+
+      integer ilstep,iter
+      save    ilstep,iter
+      data    ilstep,iter /0,0/
+
+      real    rhoavg,copt(2),copw(2)
+      save    rhoavg,copt1,copt2
+      data    rhoavg,copt1,copt2 /3*1./  ! Default copt = 1 for additive
+
+      integer l,nt
+      integer*8 ntotg,nxyz2
+
+      logical if_hybrid
+
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
+
+      if (istep.ne.ilstep) then
+         ilstep = istep
+         ntot1  = nx1*ny1*nz1*nelv
+         rhoavg = glsc2(vtrans,bm1,ntot1)/volvm1
+      endif
+
+      n = nx2*ny2*nz2*nelv
+c     call copy(e,r,n)
+c     return
+
+      if (icalld.eq.0) then
+
+         tddsl=0.0
+         nddsl=0
+
+         icalld = 1
+         taaaa = 0
+         tbbbb = 0
+         tcccc = 0
+         tdddd = 0
+         teeee = 0
+      endif
+
+      nddsl  = nddsl  + 1
+      etime1 = dnekclock()
+
+
+c     n = nx2*ny2*nz2*nelv
+c     rmax = glmax(r,n)
+c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
+
+!!$acc data present(e,r)
+!!$acc update host(r)
+
+      iter = iter + 1
+
+      l = mg_lmax
+      nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+      ! e := W M        r
+      !         Schwarz
+      time_0 = dnekclock()
+      call local_solves_fdm_acc(e,r)
+
+      time_1 = dnekclock()
+
+c     if (param(41).eq.1)y if_hybrid = .true.
+      if_hybrid = .false.
+
+      if (if_hybrid) then
+         ! w := E e
+         rbd1dt = rhoavg*bd(1)/dt ! Assumes constant density!!!
+         call cdabdtp(mg_work2,e,h1,h2,h2inv,1)
+         call cmult  (mg_work2,rbd1dt,nt)
+         time_2 = dnekclock()
+         if (istep.eq.1) then
+            copt(1)  = vlsc2(r       ,mg_work2,nt)
+            copt(2)  = vlsc2(mg_work2,mg_work2,nt)
+            call gop(copt,copw,'+  ', 2)
+            copt(1)  = copt(1)/copt(2)
+            avg2     = 1./iter
+            avg1     = 1.-avg2
+            copt1    = avg1*copt1 + avg2*copt(1)
+            if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt1,'cpt1'
+    1       format(2i6,1p3e14.5,2x,a4)
+         endif
+         ! w := r - w
+         do i = 1,nt
+            mg_work2(i) = r(i) - copt1*mg_work2(i)
+            e       (i) = copt1*e(i)
+            ecrs2   (i) = mg_work2(i)
+         enddo
+
+      else   ! Additive
+         ! w := r - w
+         do i = 1,nt
+            mg_work2(i) = r(i)
+         enddo
+         time_2 = dnekclock()
+      endif
+
+      do l = mg_lmax-1,2,-1
+
+c        rmax = glmax(mg_work2,nt)
+c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
+
+         nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+         !          T
+         ! r   :=  J w
+         !  l
+         call hsmg_rstr(mg_solve_r(mg_solve_index(l,mg_fld)),mg_work2,l)
+
+         ! w  := r
+         !        l
+         call copy(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
+         ! e  := M        w
+         !  l     Schwarz
+         call hsmg_schwarz(
+     $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
+
+         ! e  := W e
+         !  l       l
+         call hsmg_schwarz_wt(mg_solve_e(mg_solve_index(l,mg_fld)),l)
+
+c        call exitti('quit in mg$',l)
+
+         ! w  := r  - w
+         !        l
+         do i = 0,nt-1
+            mg_work2(i+1) = mg_solve_r(mg_solve_index(l,mg_fld)+i)
+     $         !-alpha*mg_work2(i+1)
+         enddo
+      enddo
+
+      call hsmg_rstr_no_dssum(
+     $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
+
+      nzw = ndim-1
+
+      call hsmg_do_wt(mg_solve_r(mg_solve_index(1,mg_fld)),
+     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+
+      !        -1
+      ! e  := A   r
+      !  1         1
+      call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                       mg_solve_r(mg_solve_index(1,mg_fld)))
+
+      call hsmg_do_wt(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+      time_3 = dnekclock()
+      do l = 2,mg_lmax-1
+         nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+         ! w   :=  J e
+         !            l-1
+         call hsmg_intp
+     $      (mg_work2,mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
+
+         ! e   :=  e  + w
+         !  l       l
+         do i = 0,nt-1
+            mg_solve_e(mg_solve_index(l,mg_fld)+i) =
+     $        + mg_solve_e(mg_solve_index(l,mg_fld)+i) + mg_work2(i+1)
+         enddo
+      enddo
+      l = mg_lmax
+      nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+      ! w   :=  J e
+      !            m-1
+
+      call hsmg_intp(mg_work2,
+     $   mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
+
+      if (if_hybrid.and.istep.eq.1) then
+         ! ecrs := E e_c
+         call cdabdtp(ecrs,mg_work2,h1,h2,h2inv,1)
+         call cmult  (ecrs,rbd1dt,nt)
+         copt(1)  = vlsc2(ecrs2,ecrs,nt)
+         copt(2)  = vlsc2(ecrs ,ecrs,nt)
+         call gop(copt,copw,'+  ', 2)
+         copt(1)  = copt(1)/copt(2)
+         avg2     = 1./iter
+         avg1     = 1.-avg2
+         copt2    = avg1*copt2 + avg2*copt(1)
+         if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt2,'cpt2'
+      endif
+      ! e := e + w
+
+      do i = 1,nt
+         e(i) = e(i) + copt2*mg_work2(i)
+      enddo
+      time_4 = dnekclock()
+c     print *, 'Did an MG iteration'
+c
+      taaaa = taaaa + (time_1 - time_0)
+      tbbbb = tbbbb + (time_2 - time_1)
+      tcccc = tcccc + (time_3 - time_2)
+      tdddd = tdddd + (time_4 - time_3)
+      teeee = teeee + (time_4 - time_0)
+c
+c     A typical time breakdown:
+c
+c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
+c
+c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
+c
+      call ortho (e)
+
+      tddsl  = tddsl + ( dnekclock()-etime1 )
+
+!!$acc update device(e)
+!!$acc end data
+
+      return
+      end
+
+
+#endif 

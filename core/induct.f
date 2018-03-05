@@ -1975,9 +1975,9 @@ c
       intype = 1
 
 !$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
-!$ACC&      copy(ux,uy,uz)
+!$ACC&      copy(ux,uy,uz,up)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
-!$acc&      copy(dp,up)
+!$acc&      copy(dp)
 !$acc&      create(pbar,pnew,pset)
 !$acc&      create(w1,w2,w3,dv1,dv2,dv3)
       call rzero_acc   (h1,ntot1)
@@ -1992,8 +1992,6 @@ c
       call add2col2_acc(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
 
       call ortho_acc   (dp)
-
-!$acc update host(h1,h2,h2inv)
 
       i = 1 + ifield/ifldmhd
 

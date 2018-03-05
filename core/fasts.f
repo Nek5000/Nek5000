@@ -451,3 +451,160 @@ c-----------------------------------------------------------------------
          enddo
       endif
       end
+
+
+#ifdef _OPENACC
+
+c-----------------------------------------------------------------------
+      subroutine local_solves_fdm_acc(u,v)
+c
+c     Given an input vector v, this returns the additive Schwarz solution
+c
+c                       -1
+c                  u = M   v
+c
+c                      T     -1  
+c     where M = sum ( R_i A_i    R_i )
+c                i
+c
+c     The R_i's are simply index_set restriction operators.
+c
+c     The local solves are performed with the fast diagonalization method.
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'DOMAIN'
+      include 'PARALLEL'
+c
+      include 'TSTEP'
+      include 'CTIMER'
+c
+      real u(lx2,ly2,lz2,lelv),v(lx2,ly2,lz2,lelv)
+      common /scrpre/ v1(lx1,ly1,lz1,lelv)
+     $               ,w1(lx1,ly1,lz1),w2(lx1,ly1,lz1)
+      common /scrover/ ar(lelv)
+
+      parameter(lxx=lx1*lx1, levb=lelv+lbelv)
+      common /fastd/  df(lx1*ly1*lz1,levb)
+     $             ,  sr(lxx*2,levb),ss(lxx*2,levb),st(lxx*2,levb)
+      integer e,eb,eoff
+
+c
+      if (icalld.eq.0) tsolv=0.0
+      icalld=icalld+1
+      nsolv=icalld
+c
+      ntot1 = nx1*ny1*nz1*nelv
+      ntot2 = nx2*ny2*nz2*nelv
+
+!$acc data copyin(v)
+!$acc&  copyout(v1)
+c
+c     Fill interiors
+      iz1 = 0
+      if (if3d) iz1=1
+      call rzero_acc(v1,ntot1)
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR 
+      do e=1,nelv
+         do iz=1,nz2
+         do iy=1,ny2
+         do ix=1,nx2
+            v1(ix+1,iy+1,iz+iz1,e) = v(ix,iy,iz,e)
+         enddo
+         enddo
+         enddo
+      enddo
+
+      call dface_ext_acc   (v1)
+
+!$acc end data
+
+      call dssum        (v1,nx1,ny1,nz1)
+      call dface_add1si (v1,-1.)
+c
+c     Now solve each subdomain problem:
+c
+      etime1=dnekclock()
+
+      eoff  = 0
+      if (ifield.gt.1) eoff  = nelv
+
+      do e = 1,nelv
+         eb = e + eoff
+         call fastdm1(v1(1,1,1,e),df(1,eb)
+     $                           ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2)
+      enddo
+      tsolv=tsolv+dnekclock()-etime1
+c
+c     Exchange/add elemental solutions
+c
+      call s_face_to_int (v1,-1.)
+      call dssum         (v1,nx1,ny1,nz1)
+      call s_face_to_int (v1, 1.)
+      if(param(42).eq.0) call do_weight_op(v1)
+c
+c     Map back to pressure grid (extract interior values)
+c
+      do e=1,nelv
+         do iz=1,nz2
+         do iy=1,ny2
+         do ix=1,nx2
+            u(ix,iy,iz,e) = v1(ix+1,iy+1,iz+iz1,e)
+         enddo
+         enddo
+         enddo
+      enddo
+c
+      return
+      end
+
+
+c-----------------------------------------------------------------------
+      subroutine dface_ext_acc(x)
+c     Extend interior to face of element     
+c
+      include 'SIZE'
+      include 'INPUT'
+      real x(nx1,ny1,nz1,1)
+
+      if (if3d .eq. .FALSE.)  then
+         write(*,*) "Only if3d=true available"
+         stop
+      endif
+c
+!$ACC DATA PRESENT(x)
+!$ACC PARALLEL LOOP COLLAPSE(1) GANG WORKER VECTOR
+      do ie=1,nelv
+c
+c
+          do iz=2,nz1-1
+          do ix=2,nx1-1
+            x(ix,1  ,iz,ie) = x(ix,2    ,iz,ie)
+            x(ix,ny1,iz,ie) = x(ix,ny1-1,iz,ie)
+          enddo
+          enddo
+c
+          do iz=2,nz1-1
+          do iy=2,ny1-1
+            x(1  ,iy,iz,ie) = x(2    ,iy,iz,ie)
+            x(nx1,iy,iz,ie) = x(nx1-1,iy,iz,ie)
+          enddo
+          enddo
+c
+          do iy=2,ny1-1
+          do ix=2,nx1-1
+            x(ix,iy,1  ,ie) = x(ix,iy,2    ,ie)
+            x(ix,iy,nz1,ie) = x(ix,iy,nz1-1,ie)
+          enddo
+          enddo
+c
+      enddo
+!$ACC END DATA
+      return
+      end
+
+
+#endif
+
+
