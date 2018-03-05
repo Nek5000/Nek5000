@@ -481,7 +481,7 @@ c
 c
       real u(lx2,ly2,lz2,lelv),v(lx2,ly2,lz2,lelv)
       common /scrpre/ v1(lx1,ly1,lz1,lelv)
-     $               ,w1(lx1,ly1,lz1),w2(lx1,ly1,lz1)
+     $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
       common /scrover/ ar(lelv)
 
       parameter(lxx=lx1*lx1, levb=lelv+lbelv)
@@ -518,10 +518,10 @@ c     Fill interiors
 
       call dface_ext_acc   (v1)
 
-!$acc end data
-
       call dssum        (v1,nx1,ny1,nz1)
-      call dface_add1si (v1,-1.)
+      call dface_add1si_acc (v1,-1.)
+
+!$acc end data
 c
 c     Now solve each subdomain problem:
 c
@@ -530,11 +530,19 @@ c
       eoff  = 0
       if (ifield.gt.1) eoff  = nelv
 
+#if 0
       do e = 1,nelv
          eb = e + eoff
          call fastdm1(v1(1,1,1,e),df(1,eb)
-     $                           ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2)
+     $                ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2,e)
       enddo
+#else
+!$acc data copy(v1,df,w1,w2)
+!$acc& copyin(sr(:,1:lelv),ss(:,1:lelv),st(:,1:lelv))
+         call fastdm1_acc(v1,df,sr,ss,st,w1,w2)
+!$acc end data
+#endif
+
       tsolv=tsolv+dnekclock()-etime1
 c
 c     Exchange/add elemental solutions
@@ -604,6 +612,180 @@ c
       return
       end
 
+
+c-----------------------------------------------------------------------
+      subroutine dface_add1si_acc(x,c)
+c     Scale interior and add to face of element     
+c
+      include 'SIZE'
+      include 'INPUT'
+      real x(nx1,ny1,nz1,1)
+c
+      if (if3d .eq. .FALSE.)  then
+        write(*,*) "Only if3d=true available"
+         stop
+      endif
+
+!$ACC DATA PRESENT(x)
+!$ACC PARALLEL LOOP COLLAPSE(1) GANG WORKER VECTOR
+      do ie=1,nelv
+c
+          do iz=2,nz1-1
+          do ix=2,nx1-1
+            x(ix,1  ,iz,ie) = x(ix,1  ,iz,ie) + c*x(ix,2    ,iz,ie)
+            x(ix,ny1,iz,ie) = x(ix,ny1,iz,ie) + c*x(ix,ny1-1,iz,ie)
+          enddo
+          enddo
+c
+          do iz=2,nz1-1
+          do iy=2,ny1-1
+            x(1  ,iy,iz,ie) = x(1  ,iy,iz,ie) + c*x(2    ,iy,iz,ie)
+            x(nx1,iy,iz,ie) = x(nx1,iy,iz,ie) + c*x(nx1-1,iy,iz,ie)
+          enddo
+          enddo
+c
+          do iy=2,ny1-1
+          do ix=2,nx1-1
+            x(ix,iy,1  ,ie) = x(ix,iy,1  ,ie) + c*x(ix,iy,2    ,ie)
+            x(ix,iy,nz1,ie) = x(ix,iy,nz1,ie) + c*x(ix,iy,nz1-1,ie)
+          enddo
+          enddo
+c
+      enddo
+!$ACC END DATA
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+!!!$ACC ROUTINE SEQ
+      subroutine fastdm1_acc(r,df,sr,ss,st,w1,w2)
+c
+c     Fast diagonalization solver for FEM on mesh 1
+c
+      include 'SIZE'
+      parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
+      parameter (lxyzt=lx1*ly1*lz1*lelv)
+
+      real r (lx1,ly1,lz1,lelv)
+      real df(lx1,ly1,lz1,lelv)
+      real sr(lx1,lx1,2,  lelv)
+      real ss(lx1,lx1,2,  lelv)
+      real st(lx1,lx1,2,  lelv)
+      real w1(lx1,ly1,lz1,lelv)
+      real w2(lx1,ly1,lz1,lelv)
+
+      real tmp, tmpw2
+
+      integer i,j,k,l,e
+
+!$ACC DATA PRESENT(r,df,sr,ss,st,w1,w2)
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+sr(l,i,1,e)*r(l,j,k,e)
+            enddo
+            w1(i,j,k,e) = tmp            
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+ss(l,j,1,e)*w1(i,l,k,e)
+            enddo
+            w2(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+st(l,k,1,e)*w2(i,j,l,e)
+            enddo
+            w1(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+c
+c     
+c      -1 T
+c     D  S  r
+c
+      call col2_acc  (w1,df,lxyzt)
+c
+c
+c        -1 T
+c     S D  S  r
+c
+c-----------------------------------------------------------------------
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+sr(l,i,2,e)*w1(l,j,k,e)
+            enddo
+            r(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+ss(l,j,2,e)*r(i,l,k,e)
+            enddo
+            w2(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+           
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+st(l,k,2,e)*w2(i,j,l,e)
+            enddo
+            r(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+c
+!$acc end data
+
+      return
+      end
 
 #endif
 
