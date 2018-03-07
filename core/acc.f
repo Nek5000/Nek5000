@@ -41,6 +41,9 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
       common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
 
+      common /scrpre/ v1(lx1,ly1,lz1,lelv)
+     $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
+
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -54,6 +57,7 @@ C!$acc enter data create(dp)
 !$acc enter data create(h1,h2,h2inv)
 !$ACC ENTER DATA COPYIN(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
 
+!$acc enter data create(v1,w1,w2)
       return
       end
 

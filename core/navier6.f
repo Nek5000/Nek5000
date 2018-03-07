@@ -481,7 +481,8 @@ c
          call set_up_h1_crs
 
       enddo
- 
+
+!$ACC ENTER DATA COPYIN(df,sr,ss,st)
       return
       end
 

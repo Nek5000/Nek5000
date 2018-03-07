@@ -498,10 +498,9 @@ c
       ntot2 = nx2*ny2*nz2*nelv
 
 !$acc data copyin(v)
-!$acc&  create(u,v1)
-!$acc&  copy(df,w1,w2)
-!$acc& copyin(sr(:,1:lelv),ss(:,1:lelv),st(:,1:lelv))
-
+!$acc&  create(u)
+!$acc&  present(v1,w1,w2)
+!$acc&  present(df,sr,ss,st)
 c
 c     Fill interiors
       iz1 = 0
