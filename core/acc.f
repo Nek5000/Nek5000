@@ -52,6 +52,8 @@ C!$acc enter data create(w1,w2,w3,dv1,dv2,dv3)
 C!$acc enter data create(dp)
 
 !$acc enter data create(h1,h2,h2inv)
+!$ACC ENTER DATA COPYIN(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
+
       return
       end
 

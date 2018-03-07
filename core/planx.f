@@ -547,9 +547,9 @@ C
 C
 C        Old geometry
 C
-         CALL MAKEF
+         CALL MAKEF  
 
-!$ACC ENTER DATA COPYIN(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
+
 C
       ELSE
 C
