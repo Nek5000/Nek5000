@@ -386,9 +386,15 @@ C
          call exitt
       endif
 
-      if (ifsplit .and. ifuservp) then
-         if(nid.eq.0) write(6,*)
-     $   'Switch on stress formulation to support PN/PN and IFUSERVP=T'
+      if (ifsplit .and. ifuservp .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support PN/PN and IFUSERVP=T'    
+         ifstrs = .true.
+      endif
+
+      if (ifcyclic .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support cyclic BC'               
          ifstrs = .true.
       endif
 

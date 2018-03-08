@@ -179,8 +179,8 @@ case $FCcomp in
                ;;
   *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
-  *xlf*)        FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
-               PPPO="-WF,"
+  *xlf*)        FFLAGS+=" -qfixed -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
+                PPPO="-WF,"
                ;;
   *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
