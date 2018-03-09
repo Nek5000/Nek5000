@@ -1650,9 +1650,11 @@ c----------------------------------------------------------------------
       real wt(n,n,4,3,nelv)
 
       integer ie,i,j,k
-!$ACC PARALLEL LOOP PRESENT(e,wt)
+
+!! Commented out by Jing 2018-03-09
+!!$ACC PARALLEL LOOP PRESENT(e,wt)
       do ie=1,nelv
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do j=1,n
             e(1  ,j,k,ie)=e(1  ,j,k,ie)*wt(j,k,1,1,ie)
@@ -1661,8 +1663,8 @@ c----------------------------------------------------------------------
             e(n  ,j,k,ie)=e(n  ,j,k,ie)*wt(j,k,4,1,ie)
          enddo
          enddo
-!$ACC END LOOP
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC END LOOP
+!!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do i=3,n-2
             e(i,1  ,k,ie)=e(i,1  ,k,ie)*wt(i,k,1,2,ie)
@@ -1671,8 +1673,8 @@ c----------------------------------------------------------------------
             e(i,n  ,k,ie)=e(i,n  ,k,ie)*wt(i,k,4,2,ie)
          enddo
          enddo
-!$ACC END LOOP
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC END LOOP
+!!$ACC LOOP VECTOR COLLAPSE(2)
          do j=3,n-2
          do i=3,n-2
             e(i,j,1  ,ie)=e(i,j,1  ,ie)*wt(i,j,1,3,ie)
@@ -1681,9 +1683,9 @@ c----------------------------------------------------------------------
             e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
          enddo
          enddo
-!$ACC END LOOP
+!!$ACC END LOOP
       enddo
-!$ACC END PARALLEL LOOP
+!!$ACC END PARALLEL LOOP
       return
       end
 c----------------------------------------------------------------------
@@ -3861,7 +3863,8 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
 
          ! e  := W e
          !  l       l
-         call hsmg_schwarz_wt(mg_solve_e(mg_solve_index(l,mg_fld)),l)
+         call hsmg_schwarz_wt_acc(mg_solve_e(mg_solve_index(l,mg_fld))
+     $                           ,l)
 
 c        call exitti('quit in mg$',l)
 
@@ -3878,17 +3881,19 @@ c        call exitti('quit in mg$',l)
 
       nzw = ndim-1
 
-      call hsmg_do_wt(mg_solve_r(mg_solve_index(1,mg_fld)),
-     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+      call hsmg_do_wt_acc(mg_solve_r(mg_solve_index(1,mg_fld)),
+     $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
 
       !        -1
       ! e  := A   r
       !  1         1
-      call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
+
+      !! CPU 2018-03-09 
+      call hsmg_coarse_solve_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                       mg_solve_r(mg_solve_index(1,mg_fld)))
 
-      call hsmg_do_wt(mg_solve_e(mg_solve_index(1,mg_fld)),
-     $                mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+      call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()
       do l = 2,mg_lmax-1
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
@@ -4250,6 +4255,102 @@ c----------------------------------------------------------------------
       enddo
       enddo
       enddo
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_wt_acc(e,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+
+      if(.not.if3d) call hsmg_schwarz_wt2d(
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
+      if(if3d) call hsmg_schwarz_wt3d_acc(
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_wt3d_acc(e,wt,n)
+      include 'SIZE'
+      integer n
+      real e(n,n,n,nelv)
+      real wt(n,n,4,3,nelv)
+
+      integer ie,i,j,k
+!$ACC PARALLEL LOOP PRESENT(e,wt)
+      do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do k=1,n
+         do j=1,n
+            e(1  ,j,k,ie)=e(1  ,j,k,ie)*wt(j,k,1,1,ie)
+            e(2  ,j,k,ie)=e(2  ,j,k,ie)*wt(j,k,2,1,ie)
+            e(n-1,j,k,ie)=e(n-1,j,k,ie)*wt(j,k,3,1,ie)
+            e(n  ,j,k,ie)=e(n  ,j,k,ie)*wt(j,k,4,1,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do k=1,n
+         do i=3,n-2
+            e(i,1  ,k,ie)=e(i,1  ,k,ie)*wt(i,k,1,2,ie)
+            e(i,2  ,k,ie)=e(i,2  ,k,ie)*wt(i,k,2,2,ie)
+            e(i,n-1,k,ie)=e(i,n-1,k,ie)*wt(i,k,3,2,ie)
+            e(i,n  ,k,ie)=e(i,n  ,k,ie)*wt(i,k,4,2,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do j=3,n-2
+         do i=3,n-2
+            e(i,j,1  ,ie)=e(i,j,1  ,ie)*wt(i,j,1,3,ie)
+            e(i,j,2  ,ie)=e(i,j,2  ,ie)*wt(i,j,2,3,ie)
+            e(i,j,n-1,ie)=e(i,j,n-1,ie)*wt(i,j,3,3,ie)
+            e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+      enddo
+!$ACC END PARALLEL LOOP
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_coarse_solve_acc(e,r)
+      include 'SIZE'
+      include 'DOMAIN'
+      include 'ESOLV'
+      include 'GEOM'
+      include 'SOLN'
+      include 'PARALLEL'
+      include 'HSMG'
+      include 'CTIMER'
+      include 'INPUT'
+      include 'TSTEP'
+      real e(1),r(1)
+c
+      integer n_crs_tot
+      save    n_crs_tot
+      data    n_crs_tot /0/
+c
+      if (icalld.eq.0) then ! timer info
+         ncrsl=0
+         tcrsl=0.0
+      endif
+      icalld = 1
+
+      if (ifsync) call nekgsync()
+
+      ncrsl  = ncrsl  + 1
+      etime1=dnekclock()
+
+
+      call crs_solve(xxth(ifield),e,r)
+
+      tcrsl=tcrsl+dnekclock()-etime1
+
+
       return
       end
 
