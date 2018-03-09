@@ -1305,6 +1305,7 @@ c     endif
          enddo
       else
          !FIXME: Consider changing to 3 collapse(3) loops
+!!  Commented out by Jing 2018-03-5
 !!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
          do ie=1,nelv
 !!$ACC LOOP VECTOR COLLAPSE(2)
@@ -2544,7 +2545,8 @@ c
       if (.not. if3d) then
          call hsmg_tnsr1_2d(v,nv,nu,A,At)
       else
-#ifdef _OPENACC
+! Changed by Jing Gong 2018-03-09
+#ifdef _OPENACC2
          call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #else
          call hsmg_tnsr1_3d     (v,nv,nu,A,At,At)
@@ -3954,12 +3956,96 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
       if(l.ne.mg_lmax-1)
-     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
+     $   call hsmg_do_wt_acc(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
      $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
-      call hsmg_tnsr(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
+      call hsmg_tnsr_acc(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l)
+     $                     ,mg_jh(1,l))
       call hsmg_dssum(uc,l)
       return
       end
 
+c----------------------------------------------------------------------
+c     u = wt .* u
+      subroutine hsmg_do_wt_acc(u,wt,nx,ny,nz)
+      include 'SIZE'
+      include 'INPUT'
+      integer nx,ny,nz
+      real u(nx,ny,nz,nelv)
+      real wt(nx,nz,2,ndim,nelv)
+
+      integer e
+
+c     if (nx.eq.2) then
+c        do e=1,nelv
+c           call outmat(wt(1,1,1,1,e),nx,nz,'wt 1-1',e)
+c           call outmat(wt(1,1,2,1,e),nx,nz,'wt 2-1',e)
+c           call outmat(wt(1,1,1,2,e),nx,nz,'wt 1-2',e)
+c           call outmat(wt(1,1,2,2,e),nx,nz,'wt 2-2',e)
+c        enddo
+c        call exitti('hsmg_do_wt quit$',nelv)
+c     endif
+
+      if (.not. if3d) then
+         do ie=1,nelv
+            do j=1,ny
+               u( 1,j,1,ie)=u( 1,j,1,ie)*wt(j,1,1,1,ie)
+               u(nx,j,1,ie)=u(nx,j,1,ie)*wt(j,1,2,1,ie)
+            enddo
+            do i=2,nx-1
+               u(i, 1,1,ie)=u(i, 1,1,ie)*wt(i,1,1,2,ie)
+               u(i,ny,1,ie)=u(i,ny,1,ie)*wt(i,1,2,2,ie)
+            enddo
+         enddo
+      else
+         !FIXME: Consider changing to 3 collapse(3) loops
+!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
+         do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=1,nz
+            do j=1,ny
+               u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
+               u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=1,nz
+            do i=2,nx-1
+               u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
+               u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do j=2,ny-1
+            do i=2,nx-1
+               u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
+               u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+         enddo
+!$ACC END PARALLEL LOOP
+        
+      endif
+      return
+      end
+
+c----------------------------------------------------------------------
+c     computes
+c     v = [A (x) A] u      or
+c     v = [A (x) A (x) A] u71
+      subroutine hsmg_tnsr_acc(v,nv,u,nu,A,At)
+      integer nv,nu
+      real v(1),u(1),A(1),At(1)
+      include 'SIZE'
+      include 'INPUT'
+      if (.not. if3d) then
+         call hsmg_tnsr2d(v,nv,u,nu,A,At)
+      else
+         call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
+      endif
+      return
+      end
 
 #endif 
