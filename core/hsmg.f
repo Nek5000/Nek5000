@@ -1305,34 +1305,35 @@ c     endif
          enddo
       else
          !FIXME: Consider changing to 3 collapse(3) loops
-!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
+!!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
          do ie=1,nelv
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do j=1,ny
                u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
                u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
             enddo
             enddo
-!$ACC END LOOP
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC END LOOP
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do i=2,nx-1
                u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
                u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
             enddo
             enddo
-!$ACC END LOOP
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC END LOOP
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do j=2,ny-1
             do i=2,nx-1
                u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
                u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
             enddo
             enddo
-!$ACC END LOOP
+!!$ACC END LOOP
          enddo
-!$ACC END PARALLEL LOOP
+!!$ACC END PARALLEL LOOP
+         
       endif
       return
       end
@@ -3784,10 +3785,13 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
       ! e := W M        r
       !         Schwarz
       time_0 = dnekclock()
+
       call local_solves_fdm_acc(e,r)
 
       time_1 = dnekclock()
 
+!$acc data create(mg_work2)
+!$acc& copyin(r)
 c     if (param(41).eq.1)y if_hybrid = .true.
       if_hybrid = .false.
 
@@ -3814,14 +3818,18 @@ c     if (param(41).eq.1)y if_hybrid = .true.
             e       (i) = copt1*e(i)
             ecrs2   (i) = mg_work2(i)
          enddo
-
+         stop
       else   ! Additive
          ! w := r - w
+!$acc parallel loop
          do i = 1,nt
             mg_work2(i) = r(i)
          enddo
          time_2 = dnekclock()
       endif
+
+!$acc update host(mg_work2(1:nt))
+!$acc end data
 
       do l = mg_lmax-1,2,-1
 
@@ -3832,7 +3840,8 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
          !          T
          ! r   :=  J w
          !  l
-         call hsmg_rstr(mg_solve_r(mg_solve_index(l,mg_fld)),mg_work2,l)
+         call hsmg_rstr_acc(mg_solve_r(mg_solve_index(l,mg_fld)),
+     $        mg_work2,l)
 
          ! w  := r
          !        l
@@ -3935,6 +3944,20 @@ c
 !!$acc update device(e)
 !!$acc end data
 
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_rstr_acc(uc,uf,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      if(l.ne.mg_lmax-1)
+     $   call hsmg_do_wt(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
+     $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
+      call hsmg_tnsr(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),mg_jh(1,l))
+      call hsmg_dssum(uc,l)
       return
       end
 
