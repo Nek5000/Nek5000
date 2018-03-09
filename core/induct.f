@@ -2012,7 +2012,6 @@ c
 
       if (ifprjp) then
          call gensolnp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
-!$acc update host(pbar)
       endif
 
       call add2_acc(up,dp,ntot2)
