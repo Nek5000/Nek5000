@@ -2277,7 +2277,6 @@ c     if_hybrid = .false.   ! to convergence efficiency
 
       if (if_hybrid) call h1mg_axm(r,z,op,om,l,w) ! r  := rhs - A z
                                                       !  l
-
       do l = mg_h1_lmax-1,2,-1                        ! DOWNWARD Leg of V-cycle
          is = is + n
          n  = mg_h1_n(l,mg_fld)
@@ -3899,11 +3898,13 @@ c        call exitti('quit in mg$',l)
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          ! w   :=  J e
          !            l-1
-         call hsmg_intp
+         call hsmg_intp_acc
      $      (mg_work2,mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
 
          ! e   :=  e  + w
          !  l       l
+
+!!$ACC PARALLEL LOOP
          do i = 0,nt-1
             mg_solve_e(mg_solve_index(l,mg_fld)+i) =
      $        + mg_solve_e(mg_solve_index(l,mg_fld)+i) + mg_work2(i+1)
@@ -3914,10 +3915,12 @@ c        call exitti('quit in mg$',l)
       ! w   :=  J e
       !            m-1
 
-      call hsmg_intp(mg_work2,
+      call hsmg_intp_acc(mg_work2,
      $   mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
 
       if (if_hybrid.and.istep.eq.1) then
+         write(*,*) "Will implement later. Jing 2018-03-09"
+         stop
          ! ecrs := E e_c
          call cdabdtp(ecrs,mg_work2,h1,h2,h2inv,1)
          call cmult  (ecrs,rbd1dt,nt)
@@ -3950,7 +3953,7 @@ c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
 c
 c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
-      call ortho (e)
+      call ortho_acc(e)
 
       tddsl  = tddsl + ( dnekclock()-etime1 )
 
@@ -4351,6 +4354,17 @@ c
       tcrsl=tcrsl+dnekclock()-etime1
 
 
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_intp_acc(uf,uc,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      call hsmg_tnsr_acc(uf,mg_nh(l+1),uc,mg_nh(l)
+     $                  ,mg_jh(1,l),mg_jht(1,l))
       return
       end
 
