@@ -98,7 +98,11 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
          call estrat                                       ! initialization.
          if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
+#ifdef _OPENACC
+            call set_overlap_acc                           ! as scratch!
+#else
             call set_overlap                               ! as scratch!
+#endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
             kwave2  = 0.0
