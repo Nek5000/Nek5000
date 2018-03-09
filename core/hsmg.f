@@ -264,7 +264,9 @@ c     v = [A (x) A (x) A] u71
       if (.not. if3d) then
          call hsmg_tnsr2d(v,nv,u,nu,A,At)
       else
-#ifdef _OPENACC
+       
+!! modified by Jing 2018-03-08
+#ifdef _OPENACC2
          call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
 #else
          call hsmg_tnsr3d    (v,nv,u,nu,A,At,At)
@@ -2247,8 +2249,7 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
       integer p_msk,p_b
-      logical if_hybrid
-
+      logical if_hybrid     
 
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
