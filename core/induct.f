@@ -1978,8 +1978,12 @@ c
 !$ACC&      copy(ux,uy,uz,up)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
 !$acc&      copy(dp)
-!$acc&      create(pbar,pnew,pset)
+!$acc&      create(pnew,pset)
 !$acc&      create(w1,w2,w3,dv1,dv2,dv3)
+      if (kstep==1) then
+!$acc enter data create(pbar)
+!$acc      update device(pbar)
+      endif
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)
@@ -1996,7 +2000,6 @@ c
       i = 1 + ifield/ifldmhd
 
       if (ifprjp) then
-!$acc update device(pbar)
          call setrhsp_acc (dp,h1,h2,h2inv,pset(1,i),nprv(i))
       endif
 
