@@ -538,9 +538,11 @@ c----------------------------------------------------------------------
          enddo
       else
          !FIXME: Possibly rewrite as 3 loops of collapse(3)
-!$ACC PARALLEL LOOP GANG PRESENT_OR_COPY(arr1,arr2)
+
+!! Commented out by Jing 2018-03-09
+!!$ACC PARALLEL LOOP GANG PRESENT_OR_COPY(arr1,arr2)
          do ie=1,nelv
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do j=i0,i1
                arr1(l1+1 ,j,k,ie) = f1*arr1(l1+1 ,j,k,ie)
@@ -549,9 +551,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(nx-l2,j,k,ie)
             enddo
             enddo
-!$ACC END LOOP
+!!$ACC END LOOP
 
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do i=i0,i1
                arr1(i,l1+1 ,k,ie) = f1*arr1(i,l1+1 ,k,ie)
@@ -560,9 +562,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,nx-l2,k,ie)
             enddo
             enddo
-!$ACC END LOOP
+!!$ACC END LOOP
 
-!$ACC LOOP VECTOR COLLAPSE(2)
+!!$ACC LOOP VECTOR COLLAPSE(2)
             do j=i0,i1
             do i=i0,i1
                arr1(i,j,l1+1 ,ie) = f1*arr1(i,j,l1+1 ,ie)
@@ -571,7 +573,7 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,j,nx-l2,ie)
             enddo
             enddo
-!$ACC END LOOP
+!!$ACC END LOOP
          enddo
       endif
       return
@@ -745,14 +747,15 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-#ifdef _OPENACC
+!! modified by Jing 2018-03-09
+#ifdef _OPENACC2
       call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
 #else
       call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
 #endif
 
-!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-!$ACC&              GANG VECTOR
+!!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+!!$ACC&              GANG VECTOR
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -762,7 +765,7 @@ c----------------------------------------------------------------------
       enddo
       enddo
       enddo
-!$ACC END LOOP
+!!$ACC END LOOP
 
       return
       end
@@ -789,8 +792,10 @@ c----------------------------------------------------------------------
       real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
 
       integer i,j,k,ie
-!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
-!$ACC&  PRESENT_OR_COPY(a,b)
+
+!! Commented out by Jing 2018-03-08
+!!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
+!!$ACC&  PRESENT_OR_COPY(a,b)
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -1060,7 +1065,8 @@ c     clobbers r
       include 'INPUT'
       include 'HSMG'
 
-#ifdef _OPENACC
+!! modified by Jing 2018-03-09
+#ifdef _OPENACC2
       call hsmg_do_fast_acc(e,r,
      $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
@@ -3847,10 +3853,10 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
 
          ! w  := r
          !        l
-         call copy(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
+         call copy_acc(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
          ! e  := M        w
          !  l     Schwarz
-         call hsmg_schwarz(
+         call hsmg_schwarz_acc(
      $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
 
          ! e  := W e
@@ -4045,6 +4051,205 @@ c     v = [A (x) A (x) A] u71
       else
          call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
       endif
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_acc(e,r,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+      real e(1),r(1)
+      integer l
+      integer enx,eny,enz
+      integer i
+
+      real zero,one,onem
+      zero =  0
+      one  =  1
+      onem = -1
+
+c     apply mask (zeros Dirichlet nodes)
+      !!!!! uncommenting
+      call hsmg_do_wt_acc(r,mg_mask(mg_mask_index(l,mg_fld)),
+     $                    mg_nh(l),mg_nh(l),mg_nhz(l))
+
+c     go to extended size array (room for overlap)
+      if (if3d) then
+         call hsmg_schwarz_toext3d_acc(mg_work,r,mg_nh(l))
+      else
+         call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
+      endif
+
+      enx=mg_nh(l)+2
+      eny=mg_nh(l)+2
+      enz=mg_nh(l)+2
+      if(.not.if3d) enz=1
+      i = enx*eny*enz*nelv+1
+
+c     exchange interior nodes
+      call hsmg_extrude_acc(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
+      call hsmg_schwarz_dssum(mg_work,l)
+      call hsmg_extrude_acc(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
+
+c     do the local solves
+      call hsmg_fdm_acc(mg_work(i),mg_work,l)
+c     sum overlap region (border excluded)
+      call hsmg_extrude_acc(mg_work,0,zero,mg_work(i),0,one
+     $                     ,enx,eny,enz)
+      call hsmg_schwarz_dssum(mg_work(i),l)
+      call hsmg_extrude_acc(mg_work(i),0,one ,mg_work,0,onem
+     $                     ,enx,eny,enz)
+      call hsmg_extrude_acc(mg_work(i),2,one,mg_work(i),0,one
+     $                     , enx,eny,enz)
+c     go back to regular size array
+      if(.not.if3d) then
+         call hsmg_schwarz_toreg2d(e,mg_work(i),mg_nh(l))
+      else
+         call hsmg_schwarz_toreg3d_acc(e,mg_work(i),mg_nh(l))
+      endif
+c     sum border nodes
+      call hsmg_dssum(e,l)
+c     apply mask (zeros Dirichlet nodes)
+      !!!!!! changing r to e
+      call hsmg_do_wt_acc(e,mg_mask(mg_mask_index(l,mg_fld)),
+     $                    mg_nh(l),mg_nh(l),mg_nhz(l))
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_toext3d_acc(a,b,n)
+      include 'SIZE'
+      integer n
+      real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
+
+      integer i,j,k,ie
+
+#ifdef _OPENACC
+      call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
+#else
+      call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+#endif
+
+!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+!$ACC&              GANG WORKER VECTOR
+      do ie=1,nelv
+      do k=1,n
+      do j=1,n
+      do i=1,n
+         a(i,j,k,ie)=b(i,j,k,ie)
+      enddo
+      enddo
+      enddo
+      enddo
+!$ACC END LOOP
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_extrude_acc(arr1,l1,f1,arr2,l2,f2,nx,ny,nz)
+      include 'SIZE'
+      include 'INPUT'
+      integer l1,l2,nx,ny,nz
+      real arr1(nx,ny,nz,nelv),arr2(nx,ny,nz,nelv)
+      real f1,f2
+
+      integer i,j,k,ie,i0,i1
+      i0=2
+      i1=nx-1
+
+      if(.not.if3d) then
+         !MJO - 3/15/17 - 2D not implemented for GPU
+         do ie=1,nelv
+            do j=i0,i1
+               arr1(l1+1 ,j,1,ie) = f1*arr1(l1+1 ,j,1,ie)
+     $                             +f2*arr2(l2+1 ,j,1,ie)
+               arr1(nx-l1,j,1,ie) = f1*arr1(nx-l1,j,1,ie)
+     $                             +f2*arr2(nx-l2,j,1,ie)
+            enddo
+            do i=i0,i1
+               arr1(i,l1+1 ,1,ie) = f1*arr1(i,l1+1 ,1,ie)
+     $                             +f2*arr2(i,l2+1 ,1,ie)
+               arr1(i,ny-l1,1,ie) = f1*arr1(i,ny-l1,1,ie)
+     $                             +f2*arr2(i,nx-l2,1,ie)
+            enddo
+         enddo
+      else
+         !FIXME: Possibly rewrite as 3 loops of collapse(3)
+!$ACC PARALLEL LOOP GANG PRESENT(arr1,arr2)
+         do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=i0,i1
+            do j=i0,i1
+               arr1(l1+1 ,j,k,ie) = f1*arr1(l1+1 ,j,k,ie)
+     $                             +f2*arr2(l2+1 ,j,k,ie)
+               arr1(nx-l1,j,k,ie) = f1*arr1(nx-l1,j,k,ie)
+     $                             +f2*arr2(nx-l2,j,k,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=i0,i1
+            do i=i0,i1
+               arr1(i,l1+1 ,k,ie) = f1*arr1(i,l1+1 ,k,ie)
+     $                             +f2*arr2(i,l2+1 ,k,ie)
+               arr1(i,nx-l1,k,ie) = f1*arr1(i,nx-l1,k,ie)
+     $                             +f2*arr2(i,nx-l2,k,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do j=i0,i1
+            do i=i0,i1
+               arr1(i,j,l1+1 ,ie) = f1*arr1(i,j,l1+1 ,ie)
+     $                             +f2*arr2(i,j,l2+1 ,ie)
+               arr1(i,j,nx-l1,ie) = f1*arr1(i,j,nx-l1,ie)
+     $                             +f2*arr2(i,j,nx-l2,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+         enddo
+      endif
+      return
+      end
+
+c----------------------------------------------------------------------
+c     clobbers r
+      subroutine hsmg_fdm_acc(e,r,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+
+      call hsmg_do_fast_acc(e,r,
+     $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
+     $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
+     $     mg_nh(l)+2)
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_toreg3d_acc(b,a,n)
+      include 'SIZE'
+      integer n
+      real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
+
+      integer i,j,k,ie
+
+!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
+!$ACC&  PRESENT_OR_COPY(a,b)
+      do ie=1,nelv
+      do k=1,n
+      do j=1,n
+      do i=1,n
+         b(i,j,k,ie)=a(i,j,k,ie)
+      enddo
+      enddo
+      enddo
+      enddo
       return
       end
 
