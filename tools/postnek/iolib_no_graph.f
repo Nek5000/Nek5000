@@ -638,11 +638,11 @@ c     par read for postnek
       if (param(2) .lt.0.0) param(2)  = -1.0/param(2)
 
       call finiparser_getDbl(d_out,'temperature:rhoCp',ifnd)
-      if(ifnd .eq. 1) cpfld(2,2) = d_out
+      if(ifnd .eq. 1) param(7) = d_out
 
       call finiparser_getDbl(d_out,'temperature:conductivity',ifnd)
-      if(ifnd .eq. 1) cpfld(2,1) = d_out
-      if (cpfld(2,1) .lt.0.0) cpfld(2,1)  = -1.0/cpfld(2,1)
+      if(ifnd .eq. 1) param(8) = d_out
+      if (param(8) .lt.0.0) param(8)  = -1.0/param(8)
 
       call finiparser_getString(c_out,'general:stopAt',ifnd)
       call capit(c_out,132)
@@ -668,14 +668,14 @@ c     par read for postnek
          if (ifnd .eq. 1) then
             j = j + 1
             ifpsco(i) = .true.
-            idpss(i+1) = 0 ! Helmholtz is default
+c           idpss(i+1) = 0 ! Helmholtz is default
          endif
       enddo
       param(23) = j
 
       j = 0
       do i = 1,ldimt
-         if (idpss(i).ge.0) j = j + 1
+c        if (idpss(i).ge.0) j = j + 1
       enddo
       if (j .ge. 1) then ! we have to solve for temp and/or ps
          ifheat = .true.
@@ -699,7 +699,7 @@ c set parameters
       if(ifnd .eq. 1) then
         ifheat = .true.
         ifto   = .true.
-        idpss(1) = 0 ! Helmholtz is default
+c       idpss(1) = 0 ! Helmholtz is default
       endif
 
       call finiparser_getBool(i_out,'general:write8Byte',ifnd)
@@ -756,6 +756,45 @@ c set mesh-field mapping
       enddo
 
       call finiparser_dump()
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine par_verify(ierr)
+
+      INCLUDE 'PARDICT'
+
+
+      character*132  key
+      character*1024 val
+
+      character*132 txt
+      character*1   tx1(132)
+      equivalence   (tx1,txt)
+
+      ierr = 0
+
+      call finiparser_getDictEntries(n)
+      do i = 1,n
+         call finiparser_getPair(key,val,i,ifnd)
+         call capit(key,132)
+
+         is = index(key,'_') ! ignore user keys
+         if (is.eq.1) goto 10
+
+         do j = 1,PARDICT_NKEYS ! do we find the key in the par-dictionary
+            if(index(pardictkey(j),key).eq.1) goto 10
+
+            is = index(key,'SCALAR')
+            if(is .eq. 1) then
+              call chcopy(txt,key,132)
+              call chcopy(tx1(is+6),'%%',2)
+              if(index(pardictkey(j),txt).eq.1) goto 10
+            endif
+         enddo
+         write(6,*) 'ERROR: Par file contains unknown key ', key
+         ierr = ierr + 1
+   10 enddo
 
       return
       end
