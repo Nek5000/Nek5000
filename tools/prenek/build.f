@@ -21,26 +21,26 @@ c-----------------------------------------------------------------------
       if (ifconj_merge) then
 
          call build0             ! Read in fluid mesh
-         nelv = nel
+         melv = nel + 0
 
          call imp_mesh(.false.)  ! Get thermal mesh
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
-         call set_igroup(nelv,nelt)
+         call set_igroup(melv,melt)
 
          call build2             ! Set bcs
 
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
       else          ! Std. menu-driven mesh construction
 
          call build0
          call build1
 
-         nelt = nel
-         nelv = nel
+         melt = nel
+         melv = nel
          call build2
 
       endif
