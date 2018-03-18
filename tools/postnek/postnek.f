@@ -1874,11 +1874,10 @@ c
       ENDIF
 
       if (ifpar) then
-         write (6,*) 'testing1'
          filenm(m:n)='.par'
-         call read_par(filenm,ierr)
+         call chcopy(parfle,filenm,n)
+         call read_par(ierr)
          filenm(m:n)='.re2'
-         write (6,*) 'testing2'
          goto 234
       else if (ifnorea) then
          ! prompt user for parameters and flags
