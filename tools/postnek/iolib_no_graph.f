@@ -606,7 +606,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_par(parfle,ierr)
+      subroutine read_par(ierr)
 c
 c     parse .par file and set run parameters
 c
@@ -621,7 +621,7 @@ c     - mhd support
 
       character*132 c_out,txt
 
-      call finiparser_load(parfle,ierr)
+      call finiparser_load(ierr)
       if(ierr .ne. 0) return
 
       call par_verify(ierr)
@@ -662,7 +662,7 @@ c     par read for postnek
 
       ! counts number of scalars
       j = 0
-      do i = 1,ldimt-1
+      do i = 1,mpscal-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
          if (ifnd .eq. 1) then
@@ -674,7 +674,7 @@ c           idpss(i+1) = 0 ! Helmholtz is default
       param(23) = j
 
       j = 0
-      do i = 1,ldimt
+      do i = 1,mpscal
 c        if (idpss(i).ge.0) j = j + 1
       enddo
       if (j .ge. 1) then ! we have to solve for temp and/or ps
@@ -746,7 +746,7 @@ c set mesh-field mapping
         if(i_out .eq. 1) iftmsh(2) = .true.
       endif
 
-      do i = 1,ldimt-1
+      do i = 1,mpscal-1
          write(txt,"('scalar',i2.2,a)") i,':writeToFieldFile'
          call finiparser_getBool(i_out,txt,ifnd)
          if(ifnd .eq. 1) then

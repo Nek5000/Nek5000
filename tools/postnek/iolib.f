@@ -610,7 +610,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_par(parfle,ierr)
+      subroutine read_par(ierr)
 c
 c     parse .par file and set run parameters
 c
@@ -663,7 +663,7 @@ c     - mhd support
 
       ! counts number of scalars
       j = 0
-      do i = 1,ldimt-1
+      do i = 1,mpscal-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
          if (ifnd .eq. 1) then
@@ -672,7 +672,6 @@ c     - mhd support
          endif
       enddo
       param(23) = j
-
 
 c set parameters
       d_out = param(15)
@@ -735,7 +734,7 @@ c set mesh-field mapping
         if(i_out .eq. 1) iftmsh(2) = .true.
       endif
 
-      do i = 1,ldimt-1
+      do i = 1,mpscal-1
          write(txt,"('scalar',i2.2,a)") i,':writeToFieldFile'
          call finiparser_getBool(i_out,txt,ifnd)
          if(ifnd .eq. 1) then
