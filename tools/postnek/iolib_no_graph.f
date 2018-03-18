@@ -606,7 +606,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_par(ierr)
+      subroutine par_read(ierr)
 c
 c     parse .par file and set run parameters
 c

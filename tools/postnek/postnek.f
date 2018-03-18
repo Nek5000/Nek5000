@@ -1876,7 +1876,7 @@ c
       if (ifpar) then
          filenm(m:n)='.par'
          call chcopy(parfle,filenm,n)
-         call read_par(ierr)
+         call par_read(ierr)
          filenm(m:n)='.re2'
          goto 234
       else if (ifnorea) then
