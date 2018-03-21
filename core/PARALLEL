@@ -38,9 +38,3 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       
       integer            dg_hndlx,ndg_facex
       common /xcdg_ints/ dg_hndlx,ndg_facex
-
-      logical dProcmapCache
-      common /cbProcMap_l/ dProcmapCache
-
-      integer win
-      common /cbwin_i/ win
