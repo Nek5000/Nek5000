@@ -9,13 +9,13 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer nelgt_max
       parameter(nelgt_max = 178956970)
 
+      integer gllel, gllnid
+
       integer*8 nvtot
       integer nelg(0:ldimt1)
      $       ,lglel(lelt)
-     $       ,gllel(lelg)
-     $       ,gllnid(lelg)
      $       ,nelgv,nelgt
-      common /hcglb/ nvtot,nelg,lglel,gllel,gllnid,nelgv,nelgt
+      common /hcglb/ nvtot,nelg,lglel,nelgv,nelgt
 
       logical         ifgprnt
       common /diagl/  ifgprnt
@@ -39,3 +39,8 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer            dg_hndlx,ndg_facex
       common /xcdg_ints/ dg_hndlx,ndg_facex
 
+      logical dProcmapCache
+      common /cbProcMap_l/ dProcmapCache
+
+      integer win
+      common /cbwin_i/ win

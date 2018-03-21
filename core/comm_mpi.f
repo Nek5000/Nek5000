@@ -9,6 +9,9 @@ c---------------------------------------------------------------------
 
       logical flag
 
+      integer*8 wsize, bptr
+      integer disp_unit
+
       ! set nek communicator
       call init_nek_comm(intracomm)
       nid  = nid_
@@ -89,6 +92,11 @@ C     Test timer accuracy
          WRITE(6,'(A,1pE8.2)') ' Timer accuracy      : ',edif
          WRITE(6,*) ' '
       endif
+
+      call MPI_Type_Extent(MPI_INTEGER,disp_unit,ierr)      
+      wsize = 2*lelt*disp_unit
+      call MPI_Win_allocate(wsize,disp_unit,MPI_INFO_NULL,
+     $                      nekcomm,bptr,win,ierr)
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
 

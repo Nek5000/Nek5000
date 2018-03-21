@@ -1,5 +1,5 @@
-c-----------------------------------------------------------------------
       subroutine mapelpr()
+
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -32,6 +32,7 @@ c     Distributed memory processor mapping
          ENDIF
          call exitt
       ENDIF
+
       call set_proc_map()
 c
       DO 1200 IFIELD=MFIELD,NFLDT
@@ -45,7 +46,7 @@ c
 C     Output the processor-element map:
       ifverbm=.true.
       if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
-      if (loglevel .gt. 2) ifverbm=.true.
+      if (loglevel .gt. 0) ifverbm=.true.
 
       if(ifverbm) then
         idum = 1
@@ -65,7 +66,7 @@ C     Output the processor-element map:
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
            call csend(mtype,nelt,4,0,0)            ! nelt
-           if (loglevel .gt. 2) then
+           if (loglevel .gt. 0) then
               N8 = min(8,nelt)
               write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
               if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
@@ -115,70 +116,42 @@ C
       include 'SCRCT'
       include 'TSTEP'
       include 'ZPER'
-      common /ctmp0/ iwork(lelt)
-c
-      REAL*8 dnekclock,t0
-c
-      t0 = dnekclock()
-c     if (.not.(ifgtp.or.ifgfdm)) then
+
+      dProcmapCache = .false.
+
       if (.not.ifgtp) then
-c
 c        rsb element to processor mapping 
-c
-         if (ifgfdm)       call gfdm_elm_to_proc(gllnid,np) ! gfdm w/ .map
-
+         if (ifgfdm)       call gfdm_elm_to_proc(np) ! gfdm w/ .map
          call get_map
-
       endif
 
-      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(gllnid,np) ! special processor map
+      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(np) ! special processor map
 
 c     compute global to local map (no processor info)
-c
-      IEL=0
-      CALL IZERO(GLLEL,NELGT)
-      DO IEG=1,NELGT
-         IF (GLLNID(IEG).EQ.NID) THEN
-            IEL = IEL + 1
-            GLLEL(IEG)=IEL
-            NELT = IEL
-            if (ieg.le.nelgv) NELV = IEL
-         ENDIF
-c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
-      ENDDO
-c
-c     dist. global to local map to all processors
-c
-      npass = 1 + nelgt/lelt
-      k=1
-      do ipass = 1,npass
-         m = nelgt - k + 1
-         m = min(m,lelt)
-         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
-         k = k+m
-      enddo
-c
-c     compute local to global map
-c     (i.e. returns global element number given local index and proc id)
-c
+      iel=0
       do ieg=1,nelgt
-         mid  =gllnid(ieg)
-         ie   =gllel (ieg)
-         if (mid.eq.nid) lglel(ie)=ieg
+         if (nid.eq.0) mid = gllnid(ieg)
+         call bcast(mid,isize)
+         if (mid.eq.nid) then
+            iel = iel + 1
+            lglel(iel) = ieg
+            call dProcmapPut(iel,1,1,ieg)
+            nelt = iel
+            if (ieg.le.nelgv) nelv = iel
+         endif
       enddo
-c
-c     All Done.
-c
+      call nekgsync() ! wait for pending puts
+
+      dProcmapCache = .true.
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_elm_to_proc(gllnid,np)
+      subroutine gfdm_elm_to_proc(np)
 c
 c
       include 'SIZE'
       include 'ZPER'
-c
-      integer gllnid(1)
 c
       common /ctmp1/  map_st(lelg_sm)
       common /vptsol/ iwork(0:lp)
@@ -202,8 +175,8 @@ c
 c
 c
       call gfdm_map_2d(map_st,nes,net,iwork,np)
-      call gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
+      call gfdm_build_global_el_map (map_st,nes,net,
+     $                               nelbox,nstride_box,ip,is,it)
 c
       return
       end
@@ -317,11 +290,10 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
+      subroutine gfdm_build_global_el_map (map_st,nes,net,
+     $                                     nelbox,nstride_box,ip,is,it)
 c
       include 'SIZE'
-      integer gllnid(1)
       integer map_st(nes,net)
       integer nelbox(3),nstride_box(3)
 c
@@ -334,10 +306,11 @@ c
             ieg = 1 + nstride_box(ip)*(jp-1)  ! nstride_p=nes*net
      $              + nstride_box(is)*(js-1)
      $              + nstride_box(it)*(jt-1)
-            gllnid(ieg) = proc
+            call dProcmapPut(proc,1,2,ieg)
          enddo
       enddo
       enddo
+      call nekgsync() ! wait pending puts
 c
       return
       end
@@ -452,6 +425,8 @@ c-----------------------------------------------------------------------
       integer e,eg,eg0,eg1
       integer itmp20(20)
 
+      integer ibuf(2)
+
       ierr   = 0
       ifma2  = .false.
       suffix = '.map'
@@ -493,12 +468,19 @@ c-----------------------------------------------------------------------
             if(ierr.ne.0) goto 100
          else
             open(unit=80,file=mapfle,status='old',err=100)
-            read(80,*,err=100) neli,nnzi
+            read(80,1,err=100) version,neli,nnzi
          endif
       endif
- 
+      call bcast(version, 5*CSIZE)
       call bcast(neli, ISIZE)
 
+      if (version .ne. '#v002') then
+         ierr = 1
+         if (nid.eq.0) write(6,*) 
+     $                 'Unsupported map file version - rerun genmap!'
+         goto 200
+      endif
+        
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
          if (nid.eq.0) write(6,*) npass,np,neli,ndw,'Error get_vert_map'
@@ -511,7 +493,7 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.0) then
          eg0 = 0
-         do ipass=1,npass
+         do ipass=1,npass ! loop over all "ranks"
             eg1 = min(eg0+ndw,neli)
 
             if (ifma2) then
@@ -538,8 +520,8 @@ c-----------------------------------------------------------------------
             m = 0
             do eg=eg0+1,eg1
                m = m + 1
-               if (.not.ifgfdm) gllnid(eg) = wk(1,m)  ! must still be divided
-               wk(mdw,m) = eg
+               wk(mdw,m) = wk(1,m) !eg
+               call dProcmapPut(wk(mdw,m),1,1,eg) ! store rank-sorted array
             enddo
     
             if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
@@ -565,16 +547,21 @@ c-----------------------------------------------------------------------
 
       endif
 
-      if (.not.ifgfdm) then ! gllnid is already assigned for gfdm
-        lng = isize*neli
-        call bcast(gllnid,lng)
-        call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
-      endif
+      call nekgsync()
 
-      nelt=0 !     Count number of elements on this processor
-      nelv=0
+      if (.not.ifgfdm) call assign_gllnid()
+
+      do i = 1,ntuple
+         eg = wk(mdw,i)
+         wk(1,i) = gllnid(eg)
+      enddo
+
+      nelt = 0 !     Count number of elements on this processor
+      nelv = 0
       do eg=1,neli
-         if (gllnid(eg).eq.nid) then
+         if (nid.eq.0) mid = gllnid(eg)
+         call bcast(mid,isize)
+         if (mid.eq.nid) then
             if (eg.le.nelgv) nelv=nelv+1
             if (eg.le.nelgt) nelt=nelt+1
          endif
@@ -590,19 +577,14 @@ c     NOW: crystal route vertex by processor id
          call exitt
       endif 
 
-      do i=1,ntuple
-         eg=wk(mdw,i)
-         wk(1,i)=gllnid(eg)        ! processor id for element eg
-      enddo
-
       key = 1  ! processor id is in wk(1,:)
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
-      if (.not.ifgfdm) then            ! no sorting for gfdm?
+c      if (.not.ifgfdm) then            ! no sorting for gfdm?
          key = mdw  ! Sort tuple list by eg
          nkey = 1
          call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
-      endif
+c      endif
 
       iflag = 0
       if (ntuple.ne.nelt) then
@@ -638,87 +620,196 @@ c     NOW: crystal route vertex by processor id
       return
       end
 c-----------------------------------------------------------------------
-      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
-c
-      integer gllnid(1),iunsort(1),nelgt,np 
-      integer e,eg
+      subroutine dProcmapPut(ibuf,lbuf,ioff,ieg)
 
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
 
-      log2p = log2(np)
-      np2   = 2**log2p
-      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+      integer ibuf(lbuf)
+      integer*8 disp
 
-         npstar = ivlmax(gllnid,nelgt)+1
-         nnpstr = npstar/np
-         do eg=1,nelgt
-            gllnid(eg) = gllnid(eg)/nnpstr
+      call dProcMapFind(iloc,nids,ieg)
+      disp = 2*(iloc-1) + ioff-1
+
+      call mpi_win_lock(MPI_LOCK_EXCLUSIVE,nids,0,win,ierr)
+      call mpi_put(ibuf,lbuf,MPI_INTEGER,nids,disp,1,MPI_INTEGER,
+     $             win,ierr)
+      call mpi_win_unlock(nids,win,ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine dProcmapGet(ibuf,ieg)
+
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      integer ibuf(2)
+
+      integer*8 disp
+
+      parameter (lc = 128) ! cache size for remote entries
+      parameter (lcache = lelt+lc+8-mod(lelt+lc,8)) ! multiple of 8
+      integer   cache(lcache,3)
+      save      cache
+
+      save icalld
+      data icalld /0/
+
+      save iran
+      parameter(im = 6075, ia = 106, ic = 1283)
+
+      if (icalld .eq. 0) then
+         do i = 1,lelt+lc
+            cache(i,1) = -1
          enddo
-
-         return
-
-      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
-
-c        Assign fluid elements
-         npstar = max(np,ivlmax(gllnid,nelgv)+1)
-         nnpstr = npstar/np
-         do eg=1,nelgv
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
-
-c        Assign solid elements
-         nelgs  = nelgt-nelgv  ! number of solid elements
-         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
-         nnpstr = npstar/np
-         do eg=nelgv+1,nelgt
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
-
-         return
-
-      elseif (nelgv.ne.nelgt) then
-         call exitti
-     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+         icalld = 1
       endif
 
+      ii = lsearch_ur(cache,lcache,ieg)
+      if (ii.gt.0 .and. ii.ne.lelt+lc) then ! cache hit
+c         write(6,*) nid, 'cache hit ', 'ieg:', ieg
+         ibuf(1) = cache(ii,2)
+         ibuf(2) = cache(ii,3)
+      else
+         call dProcmapFind(il,nidt,ieg)
+         disp = 2*(il-1)
+         call mpi_win_lock(MPI_LOCK_SHARED,nidt,0,win,ierr)
+         call mpi_get(ibuf,2,MPI_INTEGER,nidt,disp,2,MPI_INTEGER,
+     $                win,ierr)
+         call mpi_win_unlock(nidt,win,ierr)
 
-c  Below is the code for P a non-power of two:
+         if (dProcmapCache) then
+            ii = ibuf(1)
+            if (ibuf(2).ne.nid) then
+               iran = mod(iran*ia+ic,im)
+               ii = lelt + (lc*iran)/im + 1 ! randomize array location 
+            endif
+            cache(ii,1) = ieg
+            cache(ii,2) = ibuf(1)
+            cache(ii,3) = ibuf(2)
+         endif
+      endif
 
-c  Split the sorted gllnid array (read from .map file) 
-c  into np contiguous partitions. 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine dProcMapFind(il,nids,ieg)
 
-c  To load balance the partitions in case of mod(nelgt,np)>0 
-c  add 1 contiguous entry out of the sorted list to NODE_i 
-c  where i = np-mod(nelgt,np) ... np
+      include 'SIZE'
+      include 'PARALLEL'
 
+      ! distribute array in blocks across ranks
+      nstar = nelgt/np
+      nids = (ieg-1)/nstar
+      il = ieg - nids * nstar
+      if (ieg .gt. np*nstar) then
+         nids = mod(ieg,np) - 1
+         il = nstar + 1
+      endif
 
-      nel   = nelgt/np       ! number of elements per processor
-      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
-      npp   = np - nmod      ! how many paritions of size nel 
- 
-      ! sort gllnid  
-      call isort(gllnid,iunsort,nelgt)
+      return
+      end
+c-----------------------------------------------------------------------
+      integer function lsearch_ur(a, n, k)
 
-      ! setup partitions of size nel 
-      k   = 0
-      do ip = 0,npp-1
-         do e = 1,nel  
-            k = k + 1 
-            gllnid(k) = ip
+      integer a(n), n, k
+
+      parameter(lvec=8) ! unroll factor
+
+      slsearch = 0
+      do i = 1,n,lvec
+         do j = 0,lvec-1
+            if (a(i+j).eq.k) slsearch = i + j
          enddo
+         if (slsearch.gt.0) goto 10
       enddo
-      ! setup partitions of size nel+1
-      if(nmod.gt.0) then 
-        do ip = npp,np-1
-           do e = 1,nel+1  
-              k = k + 1 
-              gllnid(k) = ip
-           enddo
-        enddo 
-      endif
 
-      ! unddo sorting to restore initial ordering by
-      ! global element number
-      call iswapt_ip(gllnid,iunsort,nelgt)
+10    continue
+      end
+c-----------------------------------------------------------------------
+      integer function gllnid(ieg)
+
+      include 'mpif.h'
+
+      integer iegl, nidl
+      save    iegl, nidl
+      data    iegl, nidl /0,0/
+
+      integer ibuf(2)
+
+      if (ieg .eq. iegl) then
+         ibuf(2) = nidl
+         goto 100
+      endif
+      call dProcmapGet(ibuf,ieg)
+
+ 100  iegl   = ieg
+      nidl   = ibuf(2)
+      gllnid = ibuf(2)
+
+      end
+c-----------------------------------------------------------------------
+      integer function gllel(ieg)
+
+      include 'mpif.h'
+
+      integer iegl, iell
+      save    iegl, iell
+      data    iegl, iell /0,0/
+
+      integer ibuf(2)
+
+      if (ieg .eq. iegl) then
+         ibuf(1) = iell
+         goto 100
+      endif
+      call dProcmapGet(ibuf,ieg)
+
+ 100  iegl  = ieg
+      iell  = ibuf(1)
+      gllel = ibuf(1)
+
+      end
+c-----------------------------------------------------------------------
+      subroutine assign_gllnid()
+c
+c     pratition rank sorted element list into approximately equal-sized 
+c     chunks
+c
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      integer ibuf(2)
+      integer nel(2)
+
+      nel(1) = nelgv
+      nel(2) = nelgt - nelgv
+
+      if (nid .eq. 0) then
+         do imsh = 1,2 
+            n  = nel(imsh)/np
+            nn = np - mod(nel(imsh),np)
+            do ir = 1,nel(imsh) ! sweep through rank sorted array
+               if (ir .le. nn*n) then
+                  nid_el = (ir-1)/n
+               else
+                  nid_el = nn + (ir - nn*n - 1)/(n+1)
+               endif
+ 
+               ! store nid for ieg
+               irr = ir
+               if(imsh .eq. 2) irr = nelgv + irr 
+               call dProcmapGet(ibuf,irr)
+               ieg = ibuf(1) 
+               call dProcmapPut(nid_el,1,2,ieg)
+            enddo
+         enddo
+      endif
+      call nekgsync()
 
       return
       end
