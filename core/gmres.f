@@ -1552,16 +1552,16 @@ c           call copy(r_gmres,res,ntot2)
                                                            !       -1
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),ntot2) ! w  = U   v
                                                            !           j
-!$acc update host(w_gmres)           
+!!$acc update host(w_gmres)           
             etime2 = dnekclock()
             if(param(43).eq.1) then
                call uzprec(z_gmres(1,j),w_gmres,h1,h2,intype,wp)
             else                                        !       -1
-              call hsmg_solve_acc(z_gmres(1,j),w_gmres)    ! z  = M   w
-c              call copy_acc(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
+c              call hsmg_solve_acc(z_gmres(1,j),w_gmres)    ! z  = M   w
+              call copy_acc(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
-!$acc update device(z_gmres(:,j)) 
+!!$acc update device(z_gmres(:,j)) 
             call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
             call col2_acc(w_gmres,ml_gmres,ntot2)     ! w = L   w

@@ -43,7 +43,7 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
 
       common /scrpre/ v1(lx1,ly1,lz1,lelv)
      $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
-
+#if 1
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -58,6 +58,9 @@ C!$acc enter data create(dp)
 !$ACC ENTER DATA COPYIN(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
 
 !$acc enter data create(v1,w1,w2)
+
+#endif
+
       return
       end
 
@@ -99,7 +102,7 @@ c-----------------------------------------------------------------------
       parameter (maxcg=900)
 
       common /tdarray/ diagt(maxcg),upper(maxcg)
-      common /scrcg/ d(lg), scalar(2)
+      common /scrcg3/ scrd(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
 !$acc enter data copyin(xm1,ym1,zm1)
@@ -120,7 +123,9 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(cbc,bc)
 !$acc enter data copyin(param,nelfld)
 !$acc enter data copyin(diagt,upper)
-!$acc enter data copyin(d,scalar,r,w,p,z)
+
+!$acc enter data copyin(scrd,scalar)
+!$acc enter data copyin(r,w,p,z)
 
       return
       end
@@ -134,7 +139,7 @@ c-----------------------------------------------------------------------
       parameter (maxcg=900)
 
       common /tdarray/ diagt(maxcg),upper(maxcg)
-      common /scrcg/ d(lg), scalar(2)
+      common /scrcg3/ srcd(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
 !$acc exit data copyout(xm1,ym1,zm1)
@@ -155,7 +160,7 @@ c-----------------------------------------------------------------------
 !$acc exit data copyout(cbc,bc)
 !$acc exit data copyout(param,nelfld)
 !$acc exit data copyout(diagt,upper)
-!$acc exit data copyout(d,scalar,r,w,p,z)
+!$acc exit data copyout(src)
 
       return
       end
@@ -165,6 +170,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
+#if 0
 !$acc enter data copyin(mg_nx)
 !$acc enter data copyin(mg_ny,mg_nz)
 !$acc enter data copyin(mg_nh,mg_nhz)
@@ -206,7 +212,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_h1)
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
-
+#endif
       return
       end
 c-----------------------------------------------------------------------
@@ -227,7 +233,8 @@ c-----------------------------------------------------------------------
      $ ,             respr (lx2,ly2,lz2,lelv)
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
- 
+
+#if 0
 !$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
 !$acc enter data copyin(dv1,dv2,dv3)
  
@@ -244,7 +251,9 @@ c-----------------------------------------------------------------------
  
 !$acc enter data create (ibc_acc)
 !$acc enter data copyin (c_vx)
- 
+
+#endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -270,6 +279,7 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
+#if 0
 !$acc enter data create(work,work2)
 !$acc enter data copyin(mg_mask,mg_imask,pmask)
 !$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
@@ -284,6 +294,8 @@ c     endif
 !$acc enter data create(e,w,r)
 !$acc enter data create(w1,w2)
 !$acc enter data create(wk1,wk2)
+
+#endif
 
       return
       end
@@ -309,6 +321,7 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
 
+#if 0
 !$acc exit data delete(work,work2)
 !$acc exit data delete(w1,w2)
 !$acc exit data delete(e,w,r)
@@ -320,6 +333,7 @@ c-----------------------------------------------------------------------
 !$acc exit data copyout(ml_gmres,mu_gmres)
       endif
 
+#endif
       return
       end
 c-----------------------------------------------------------------------
@@ -336,7 +350,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
-
+#if 0
 !$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
@@ -352,6 +366,7 @@ c-----------------------------------------------------------------------
 
 !$acc update device(ibc_acc)
 !$acc update device(c_vx)
+#endif
 
       return
       end
@@ -360,6 +375,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
+#if 0
 !$acc update device(mg_nx)
 !$acc update device(mg_ny,mg_nz)
 !$acc update device(mg_nh,mg_nhz)
@@ -403,6 +419,7 @@ c-----------------------------------------------------------------------
 !$acc update device(p_mg_h1)
 !$acc update device(p_mg_b)
 !$acc update device(p_mg_msk)
+#endif
 
       return
       end
@@ -420,6 +437,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
+#if 0
 !$acc update host(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update host(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
@@ -433,6 +451,7 @@ c-----------------------------------------------------------------------
 
 !$acc update host(ibc_acc)
 !$acc update host(c_vx)
+#endif
 
       return
       end
@@ -471,8 +490,12 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+
+
+#ifdef _OPENACC 
 c-----------------------------------------------------------------------
-      subroutine global_grad3(d,u,u1,u2,u3)
+      subroutine global_grad3_acc(d,u,u1,u2,u3)
 c-----------------------------------------------------------------------
 
       include 'SIZE'
@@ -519,7 +542,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine global_div3(d,u1,u2,u3,v1,v2,v3)
+      subroutine global_div3_acc(d,u1,u2,u3,v1,v2,v3)
 c-----------------------------------------------------------------------
 
       include 'SIZE'
@@ -566,6 +589,88 @@ c-----------------------------------------------------------------------
 
 !$acc end data
       end
+
+
+#else
+c-----------------------------------------------------------------------
+      subroutine global_grad3(d,u,u1,u2,u3)
+c-----------------------------------------------------------------------
+
+      include 'SIZE'
+      integer i,j,k,l,e
+      real d (lx1,lx1)
+      real u (lx1,ly1,lz1,lelt)
+      real u1(lx1,ly1,lz1,lelt)
+      real u2(lx1,ly1,lz1,lelt)
+      real u3(lx1,ly1,lz1,lelt)
+      real tmpu1,tmpu2,tmpu3
+
+!! Modified by Jing 2018-03-20
+      do e=1,nelt
+         do k=1,nz1
+            do j=1,ny1
+               do i=1,nx1
+                  tmpu1 = 0.0
+                  tmpu2 = 0.0
+                  tmpu3 = 0.0
+                  do l=1,nx1
+                     tmpu1 = tmpu1 + d(i,l)*u(l,j,k,e)
+                     tmpu2 = tmpu2 + d(j,l)*u(i,l,k,e)
+                     tmpu3 = tmpu3 + d(k,l)*u(i,j,l,e)
+                  enddo
+                  u1(i,j,k,e) = tmpu1
+                  u2(i,j,k,e) = tmpu2
+                  u3(i,j,k,e) = tmpu3
+               enddo
+            enddo
+         enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine global_div3(d,u1,u2,u3,v1,v2,v3)
+c-----------------------------------------------------------------------
+
+      include 'SIZE'
+      integer i,j,k,l,e
+      real d (lx1,ly1)
+      real u1(lx1,ly1,lz1,lelt)
+      real u2(lx1,ly1,lz1,lelt)
+      real u3(lx1,ly1,lz1,lelt)
+      real v1(lx1,ly1,lz1,lelt)
+      real v2(lx1,ly1,lz1,lelt)
+      real v3(lx1,ly1,lz1,lelt)
+      real tmpu1,tmpu2,tmpu3
+
+      stop
+
+!! Modified by Jing 2018-03-20
+      do e=1,nelv
+      do k=1,nz1
+      do j=1,ny1
+      do i=1,nx1
+         tmpu1 = 0.0
+         tmpu2 = 0.0
+         tmpu3 = 0.0
+         do l=1,nx1
+            tmpu1 = tmpu1 + d(i,l)*u1(l,j,k,e)
+            tmpu2 = tmpu2 + d(j,l)*u2(i,l,k,e)
+            tmpu3 = tmpu3 + d(k,l)*u3(i,j,l,e)
+         enddo
+         v1(i,j,k,e) = tmpu1
+         v2(i,j,k,e) = tmpu2
+         v3(i,j,k,e) = tmpu3
+      enddo
+      enddo
+      enddo
+      enddo
+
+      end
+
+
+#endif
+
 c-----------------------------------------------------------------------
       subroutine cresvsp_acc (resv1,resv2,resv3,h1,h2)
       include 'SIZE'

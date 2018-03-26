@@ -122,7 +122,7 @@ C-----------------------------------------------------------------------
      $     mult(lx1*ly1*lz1*lelt),
      $     binv(lx1*ly1*lz1*lelt)
 
-      common /scrcg/ scrd(lg), scalar(2)
+      common /scrcg3/ scrd(lg), scalar(2)
 
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
      
@@ -162,17 +162,12 @@ c     overrule tolerance for velocity
 
 c     Set up diag preconditioner.
 
-!!! changed by Jing for Pn-Pn-2 2018-02-01
+!!! changed by Jing for Pn-Pn-2 2018-03-25
 #if 1
 !!! scrd is already on device via /common/ ? 
-!$acc update device(scrd(1:n))
-      call setprec_acc(scrd,h1,h2,imsh,isd) 
-!acc update host(scrd(1:n))
-      
+      call setprec_acc(scrd,h1,h2,imsh,isd)       
       call dssum(scrd,nx1,ny1,nz1)
-      call invcol1(scrd,nx1*ny1*nz1*nelv)
-!$acc update device(scrd)
-
+      call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
 #else
 !$acc update host(scrd)
       call setprec_acc(scrd,h1,h2,imsh,isd) ! needs to be ported
@@ -286,7 +281,6 @@ c
  9999 continue
       niterhm = niter
       ifsolv = .false.
- 
 
       return
       end
@@ -622,7 +616,7 @@ c
          call exitt()
       else
 
-         call global_grad3(dxm1,u,dudr,duds,dudt)
+         call global_grad3_acc(dxm1,u,dudr,duds,dudt)
 
 !$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
@@ -644,7 +638,7 @@ c
 !$ACC END PARALLEL LOOP
 
 !FIXME: Div should also include summation
-         CALL global_div3(dxtm1,tmp1,tmp2,tmp3,tm1,tm2,tm3)
+         CALL global_div3_acc(dxtm1,tmp1,tmp2,tmp3,tm1,tm2,tm3)
 
 !$ACC PARALLEL LOOP GANG VECTOR
          do i=1,ntot
@@ -1255,7 +1249,7 @@ c        Generate tridiagonal matrix for Lanczos scheme
             krylov = krylov+1
             diagt(iter)    = (beta**2 * rho0 + rho ) / rtz1
             upper(iter-1)  = -beta * rho0 / sqrt(rtz2 * rtz1)
-         endif
+         endif         
  1000 enddo
       niter = iter-1
 c
