@@ -852,18 +852,28 @@ c        vvy=vr(i)*rym1(i,1,1,e)+vs(i)*sym1(i,1,1,e)+vt(i)*tym1(i,1,1,e)
 c
 c    Avg at bndry
 c
+
       ifielt = ifield
       ifield = 1
+      if (ifheat) ifield = 2
       if (if3d) then
          do idim=1,ldim
             call col2  (vort(1,idim),bm1,ntot)
             call dssum (vort(1,idim),lx1,ly1,lz1)
-            call col2  (vort(1,idim),binvm1,ntot)
+            if (ifheat) then
+               call col2  (vort(1,idim),bintm1,ntot)
+            else
+               call col2  (vort(1,idim),binvm1,ntot)
+            endif
          enddo
       else
          call col2  (vort,bm1,ntot)
          call dssum (vort,lx1,ly1,lz1)
-         call col2  (vort,binvm1,ntot)
+         if (ifheat) then
+            call col2  (vort,bintm1,ntot)
+         else
+            call col2  (vort,binvm1,ntot)
+         endif
       endif
       ifield = ifielt
 c
