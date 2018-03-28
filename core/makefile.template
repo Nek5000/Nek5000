@@ -36,7 +36,7 @@ map2.o dprocmap.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
-byte.o chelpers.o byte_mpi.o postpro.o intp_usr.o \
+byte.o chelpers.o byte_mpi.o postpro.o \
 cvode_driver.o nek_comm.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \

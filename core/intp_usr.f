@@ -1,64 +1,100 @@
 c
 c interpolation wrapper for usage in .usr file
-c note: don't call outside
 c
+
+#ifndef INTP_NMAX
+#error "Define INTP_NMAX in usr file!"
+#endif
+
 c-----------------------------------------------------------------------
-      subroutine intp_setup(tolin)
-c
-c tolin ... stop point seach interation if 1-norm of the step in (r,s,t) 
-c           is smaller than tolin 
-c
+      subroutine intp_setup(tolin,nmsh)
+
       include 'SIZE'
+      include 'INPUT'
       include 'GEOM'
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-      common /intp/   tol
-      common /intp_h/ ih_intp
 
+      common /intp_h/ ih_intp1, ih_intp2
+      common /intp/   tol
+
+      real xmi, ymi, zmi
+      common /SCRMG/ xmi(lx1*ly1*lz1*lelt),
+     $               ymi(lx1*ly1*lz1*lelt),
+     $               zmi(lx1*ly1*lz1*lelt)
+ 
+      real w(2*lx1**3)
 
       tol = tolin
-      if (tolin.lt.0) tol = 5e-13 ! default tolerance 
-
-      n       = lx1*ly1*lz1*lelt 
+      if (tolin.lt.0) tol = 5e-13
       npt_max = 256
-      nxf     = 2*lx1 ! fine mesh for bb-test
-      nyf     = 2*ly1
-      nzf     = 2*lz1
-      bb_t    = 0.01 ! relative size to expand bounding boxes by
-c
-      if(nidd.eq.0) write(6,*) 'call intp_setup(), tol=', tol
-      call fgslib_findpts_setup(ih_intp,nekcomm,npp,ldim,
+      bb_t    = 0.01
+
+      if (nio.eq.0) 
+     $   write(6,*) 'call intp_setup() ','tol=', tol
+
+      ! setup handle for interpolation
+      nxi     = nx1
+      nyi     = ny1
+      nzi     = nz1
+      n       = nelt*nxi*nyi*nzi 
+      call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
-     &                          nelt,nxf,nyf,nzf,bb_t,n,n,
+     &                          nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
      &                          npt_max,tol)
-c       
+
+      ! setup handle for findpts
+      if (nmsh.gt.1 .and. nmsh.lt.lx1) then
+         if (nio.eq.0) write(6,*) 'Ngeom for findpts:',nmsh-1
+         nxi = nmsh
+         nyi = nxi
+         nzi = nxi
+         if (.not.if3d) nzi = 1
+         n   = nelt*nxi*nyi*nzi 
+         do ie = 1,nelt
+           call map_m_to_n(xmi((ie-1)*nxi**3 + 1),nxi,xm1(1,1,1,ie),lx1,
+     $                     if3d,w,size(w))
+           call map_m_to_n(ymi((ie-1)*nyi**3 + 1),nyi,ym1(1,1,1,ie),ly1,
+     $                     if3d,w,size(w))
+           if (if3d) 
+     $     call map_m_to_n(zmi((ie-1)*nzi**3 + 1),nzi,zm1(1,1,1,ie),lz1,
+     $                     if3d,w,size(w))
+         enddo
+  
+         call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
+     $                             xmi,ymi,zmi,nxi,nyi,nzi,
+     $                             nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
+     $                             npt_max,tol)
+      else
+         ih_intp2 = ih_intp1
+      endif
+ 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_do(fldout,fldin,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp)
+      subroutine intp_nfld(fldout,fldin,nfld,xp,yp,zp,n,iflp)
 c
-c fldout    ... output field(s) dim (*,nfld)
-c fldin     ... source field(s) dim (*,nfld)
+c fldout    ... interpolation value(s) dim (n,nfld)
+c fldin     ... source field(s) dim (lx1,ly1,lz1,lelt,nfld)
 c nfld      ... number of fields
 c xp,yp,zp  ... interpolation points dim (n)
 c n         ... number of points
-c iwk       ... integer working array dim > (nmax,3)
-c rwk       ... real working array dim > (nmax,ldim+1)
-c nmax      ... maximum number of points per MPI rank
-c iflp      ... look-up interpolation points
+c iflp      ... locate interpolation points (proc,el,r,s,t)
 c
       include 'SIZE'
 
       common /intp/   tol
-      common /intp_h/ ih_intp
+      common /intp_h/ ih_intp1, ih_intp2
 
       real    fldin(*),fldout(*)
       real    xp(*),yp(*),zp(*)
 
-      real    rwk(nmax,*)
-      integer iwk(nmax,*) 
-
       logical iflp
+
+      real    rwk(INTP_NMAX,ldim+1)
+      save    rwk
+      integer iwk(INTP_NMAX,3) 
+      save    iwk
 
       integer nn(2)
       logical ifot
@@ -66,19 +102,19 @@ c
 
       ifot = .false. ! transpose output field
 
-      if(nio.eq.0) write(6,*) 'call intp_do'
+      if(nio.eq.0) write(6,*) 'call intp_nfld'
 
-      if(n.gt.nmax) then
+      if(n.gt.INTP_NMAX) then
         write(6,*)
-     &   'ABORT: n>nmax in intp_do', n, nmax
+     &   'ABORT: n>INTP_NMAX in intp_nfld', n, INTP_NMAX
         call exitt
       endif
 
       ! locate points (iel,iproc,r,s,t)
       nfail = 0
       if(iflp) then
-        if(nio.eq.0) write(6,*) 'call findpts'
-        call fgslib_findpts(ih_intp,
+        if(nio.eq.0 .and. loglevel.gt.2) write(6,*) 'call findpts'
+        call fgslib_findpts(ih_intp2,
      &                      iwk(1,1),1,
      &                      iwk(1,3),1,
      &                      iwk(1,2),1,
@@ -115,7 +151,7 @@ c
            iout   = ifld
            is_out = nfld
          endif
-         call fgslib_findpts_eval(ih_intp,fldout(iout),is_out,
+         call fgslib_findpts_eval(ih_intp1,fldout(iout),is_out,
      &                            iwk(1,1),1,
      &                            iwk(1,3),1,
      &                            iwk(1,2),1,
@@ -128,7 +164,7 @@ c
       if(nio.eq.0) then
         write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
-     &         ,i12,/,' done :: intp_do')
+     &         ,i12,/,' done :: intp_nfld')
       endif
 
       return
@@ -136,11 +172,10 @@ c
 c-----------------------------------------------------------------------
       subroutine intp_free()
 
-      common /intp_h/ ih_intp
+      common /intp_h/ ih_intp1, ih_intp2
 
-
-      call fgslib_findpts_free(ih_intp)
+      call fgslib_findpts_free(ih_intp1)
+      call fgslib_findpts_free(ih_intp2)
 
       return
       end
-
