@@ -4692,7 +4692,7 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
-      subroutine plan_tensr_op(ua,u,gs_hndl,nelx,nely,nelz,ifld,idx,op)
+      subroutine gtp_gsop(ua,u,gs_hndl,nelx,nely,nelz,ifld,idx,op)
       include 'SIZE'
       include 'TOTAL'
       real u (lx1,ly1,lz1,lelt)
@@ -4728,10 +4728,10 @@ c      nely = 12
 c      nelz = 10
 c      ifld = 1  !velocity field
 c      idx  = 1  !x_direction
-c      call plan_tensr_op(vya,vx,gs_avg_hndl,nelx,nely,nelz,ifld,idx,
+c      call gtp_gsop(vya,vx,gs_avg_hndl,nelx,nely,nelz,ifld,idx,
 c     $                                                        'ave')
 c      idx = -2  !y_direction and reset the handle for y
-c      call plan_tensr_op(vxa,vya,gs_avg_hndl,nelx,nely,nelz,ifld,idx,
+c      call gtp_gsop(vxa,vya,gs_avg_hndl,nelx,nely,nelz,ifld,idx,
 c     $                                                        'ave')
 c      the output is vxa with vx averaged in x and y direction
 
@@ -4741,16 +4741,20 @@ c      the output is vxa with vx averaged in x and y direction
 
       if (gs_hndl.eq.0.or.idx.lt.0) then
        idir = abs(idx)
-       if (idir.eq.1) call set_gs_xavg_hndl(gs_hndl,nelx,nelyz,ifld)
-       if (idir.eq.2) call set_gs_yavg_hndl(gs_hndl,nelx,nely,nelz,ifld)
-       if (idir.eq.3) call set_gs_zavg_hndl(gs_hndl,nelxy,ifld)
+       if (idir.eq.1) call gtpgsop_get_xhndl(gs_hndl,nelx,nelyz,ifld)
+       if (idir.eq.2) call gtpgsop_get_yhndl(gs_hndl,nelx,nely,nelz,
+     $                                                             ifld)
+       if (idir.eq.3) call gtpgsop_get_zhndl(gs_hndl,nelxy,ifld)
       endif
 
       nel = nelfld(ifld)
       n   = nx1*ny1*nz1*nel
 
       if (op.eq.'ave') then
-         call plan_tensr_avg(ua,u,gs_hndl,ifld)
+         call gtpgsop_avg(ua,u,gs_hndl,ifld)
+      elseif (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(gs_hndl,ua,1,1,0)
       elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
          call copy(ua,u,n)
          call fgslib_gs_op(gs_hndl,ua,1,2,0)
@@ -4769,7 +4773,7 @@ c      the output is vxa with vx averaged in x and y direction
       return
       end
 c-----------------------------------------------------------------------
-      subroutine plan_tensr_avg(ua,u,gs_hndl,ifld)
+      subroutine gtpgsop_avg(ua,u,gs_hndl,ifld)
       include 'SIZE'
       include 'TOTAL'
       real u (lx1,ly1,lz1,lelt)
@@ -4791,7 +4795,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_gs_xavg_hndl(gs_avg_hndl,nelx,nelyz,ifld)
+      subroutine gtpgsop_get_xhndl(gs_avg_hndl,nelx,nelyz,ifld)
 c     Set the x-average handle
       include 'SIZE'
       include 'TOTAL'
@@ -4819,7 +4823,7 @@ c     Set the x-average handle
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_gs_yavg_hndl(gs_avg_hndl,nelx,nely,nelz,ifld)
+      subroutine gtpgsop_get_yhndl(gs_avg_hndl,nelx,nely,nelz,ifld)
 c     Set the y-average handle
       include 'SIZE'
       include 'TOTAL'
@@ -4847,7 +4851,7 @@ c     Set the y-average handle
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_gs_zavg_hndl(gs_avg_hndl,nelxy,ifld)
+      subroutine gtpgsop_get_zhndl(gs_avg_hndl,nelxy,ifld)
 c     Set the z-average handle
       include 'SIZE'
       include 'TOTAL'
@@ -4875,3 +4879,55 @@ c     Set the z-average handle
       return
       end
 c-----------------------------------------------------------------------
+      subroutine ms_gtp_gsop(ua,u,dir_hndl,ms_hndl,nelx,nely,nelz,
+     $                            nel,nx,ifld,idx,op)
+      include 'SIZE'
+      include 'TOTAL'
+      real u (lx1,ly1,lz1,lelt)
+      real ua(lx1,ly1,lz1,lelt)
+      real ub(lx1,ly1,lz1,lelt)
+      integer dir_hndl,e,ex,ey,ez,eg,ms_hndl
+      character*3 op
+
+      n = nel*(nx**ldim)
+
+      if (dir_hndl.eq.0.or.idx.lt.0) then
+       idir = abs(idx)
+       if (idir.eq.1) call gtpgsop_get_xhndl(dir_hndl,nelx,nelyz,ifld)
+       if (idir.eq.2) call gtpgsop_get_yhndl(dir_hndl,nelx,nely,nelz,
+     $                                                          ifld)
+       if (idir.eq.3) call gtpgsop_get_zhndl(dir_hndl,nelxy,ifld)
+      endif
+      if (ms_hndl.eq.0) then
+        call msgsop_get_hndl(ms_hndl,nel,nx,ny,nz)
+      endif
+
+      if (op.eq.'ave') then
+         call msgsop_avg(ub,u,n,ms_hndl)
+         call gtpgsop_avg(ua,ub,dir_hndl,ifld)
+      elseif (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(ms_hndl,ua,1,1,0)
+         call fgslib_gs_op(dir_hndl,ua,1,1,0)
+      elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(ms_hndl,ua,1,2,0)
+         call fgslib_gs_op(dir_hndl,ua,1,2,0)
+      elseif (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
+     &   .or. op.eq.'MIN' .or. op.eq.'MNA') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(ms_hndl,ua,1,3,0)
+         call fgslib_gs_op(dir_hndl,ua,1,3,0)
+      elseif (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &   .or. op.eq.'MAX' .or. op.eq.'MXA') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(ms_hndl,ua,1,4,0)
+         call fgslib_gs_op(dir_hndl,ua,1,4,0)
+      else
+         if (nid.eq.0) write(6,*) 'Please enter a valid operation'
+      endif
+
+
+      return
+      end
+c------------------------------------------------------------------------
