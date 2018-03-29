@@ -4751,10 +4751,15 @@ c      the output is vxa with vx averaged in x and y direction
 
       if (op.eq.'ave') then
          call plan_tensr_avg(ua,u,gs_hndl,ifld)
-      elseif (op.eq.'min') then
+      elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call copy(ua,u,n)
+         call fgslib_gs_op(gs_hndl,ua,1,2,0)
+      elseif (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
+     &   .or. op.eq.'MIN' .or. op.eq.'MNA') then
          call copy(ua,u,n)
          call fgslib_gs_op(gs_hndl,ua,1,3,0)
-      elseif (op.eq.'max') then
+      elseif (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &   .or. op.eq.'MAX' .or. op.eq.'MXA') then
          call copy(ua,u,n)
          call fgslib_gs_op(gs_hndl,ua,1,4,0)
       else
