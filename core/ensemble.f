@@ -97,7 +97,7 @@ C     Assign key for splitting into multiple groups
       return
       end
 c-----------------------------------------------------------------------
-      subroutine savg(ua,u,n,hndl)
+      subroutine msgsop_avg(ua,u,n,hndl)
 
 c     Compute the average of quantity u() across sessions
 
@@ -183,54 +183,6 @@ c     multi-session version of gsop
       if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
      &                .or. op.eq.'MAX' .or. op.eq.'MXA')
      &   call fgslib_gs_op(hndl,u,1,4,0)
-
-      return
-      end
-c------------------------------------------------------------------------
-      subroutine ms_plan_tensr_op(ua,u,dir_hndl,ms_hndl,nelx,nely,nelz,
-     $                            nel,nx,ifld,idx,op)
-      include 'SIZE'
-      include 'TOTAL'
-      real u (lx1,ly1,lz1,lelt)
-      real ua(lx1,ly1,lz1,lelt)
-      real ub(lx1,ly1,lz1,lelt)
-      integer dir_hndl,e,ex,ey,ez,eg,ms_hndl
-      character*3 op
-
-      n = nel*(nx**ldim)
-
-      if (dir_hndl.eq.0.or.idx.lt.0) then
-       idir = abs(idx)
-       if (idir.eq.1) call set_gs_xavg_hndl(dir_hndl,nelx,nelyz,ifld)
-       if (idir.eq.2) call set_gs_yavg_hndl(dir_hndl,nelx,nely,nelz,
-     $                                                          ifld)
-       if (idir.eq.3) call set_gs_zavg_hndl(dir_hndl,nelxy,ifld)
-      endif
-      if (ms_hndl.eq.0) then
-        call msgsop_get_hndl(ms_hndl,nel,nx,ny,nz)
-      endif
-
-      if (op.eq.'ave') then
-         call savg(ub,u,n,ms_hndl)
-         call plan_tensr_avg(ua,ub,dir_hndl,ifld)
-      elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
-         call copy(ua,u,n)
-         call msgsop(ua,op,ms_hndl)
-         call fgslib_gs_op(dir_hndl,ua,1,2,0)
-      elseif (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
-     &   .or. op.eq.'MIN' .or. op.eq.'MNA') then
-         call copy(ua,u,n)
-         call msgsop(ua,op,ms_hndl)
-         call fgslib_gs_op(dir_hndl,ua,1,3,0)
-      elseif (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
-     &   .or. op.eq.'MAX' .or. op.eq.'MXA') then
-         call copy(ua,u,n)
-         call msgsop(ua,op,ms_hndl)
-         call fgslib_gs_op(dir_hndl,ua,1,4,0)
-      else
-         if (nid.eq.0) write(6,*) 'Please enter a valid operation'
-      endif
-
 
       return
       end
