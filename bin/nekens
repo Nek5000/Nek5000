@@ -1,0 +1,26 @@
+
+echo $2  >  SESSION.NAME
+
+for i in `seq 1 $2`
+do
+
+	cp $1.rea $1_s$i.rea
+	cp $1.map $1_s$i.map
+	echo  $1_s$i   >>  SESSION.NAME
+	echo `pwd`'/'  >>  SESSION.NAME
+	echo  $3       >>  SESSION.NAME
+
+	mv $1_s$i.log $1_s$i.log1
+	mv $1_s$i.his $1_s$i.his1
+	mv $1_s$i.sch $1_s$i.sch1
+
+done
+
+rm -f ioinfo
+rm -f logfile
+NP=$(($2*$3))
+
+mpiexec -np $NP ./nek5000 > $1.log.$2.$3 &
+
+sleep 2
+ln $1.log.$2.$3 logfile

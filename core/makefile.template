@@ -50,11 +50,15 @@ MXM =
 # BLAS
 BLAS = 
 
-# YP NEKNEK SOLVER
+# YP NEKNEK SOLVER OR ENSEMBLE MODE
 ifeq ($(NEKNEK),0)
 NEKNEKO := singlmesh.o
-else
+endif
+ifeq ($(NEKNEK),1)
 NEKNEKO := multimesh.o
+endif
+ifeq ($(NEKNEK),2)
+NEKNEKO := ensemble.o
 endif
 
 COMM_MPI := comm_mpi.o
@@ -206,6 +210,7 @@ $(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/ensemble.o	:$S/ensemble.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_rea.o	:$S/reader_rea.f;	 	$(FC) -c $(FL2) $< -o $@

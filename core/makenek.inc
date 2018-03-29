@@ -38,6 +38,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
   echo "  NEKNEK      activate overlapping mesh solver (experimental)"
+  echo "  ENSEMBLE    run independent sessions in parallel"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   exit 1
 fi
@@ -235,6 +236,9 @@ for i in $PPLIST
 do
    if [ "$i" == "NEKNEK" ]; then
      NEKNEK=1
+   fi
+   if [ "$i" == "ENSEMBLE" ]; then
+     NEKNEK=2
    fi
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
