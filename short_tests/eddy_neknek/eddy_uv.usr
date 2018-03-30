@@ -192,16 +192,17 @@ c
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
 
-c    Global error calculation
+c     Global error calculation
       if (IFNEKNEK) then 
-      umx_gl = uglamax(vx,n)
-      vmx_gl = uglamax(vy,n)
-      uex_gl = uglamax(ue,n)
-      vex_gl = uglamax(ve,n)
-      udx_gl = uglamax(ud,n)
-      vdx_gl = uglamax(vd,n)
+        call setnekcomm(iglobalcomm)
+        umx_gl = glamax(vx,n)
+        vmx_gl = glamax(vy,n)
+        uex_gl = glamax(ue,n)
+        vex_gl = glamax(ve,n)
+        udx_gl = glamax(ud,n)
+        vdx_gl = glamax(vd,n)
+        call setnekcomm(intracomm)
       end if  
-
 
       if (nid.eq.0) then
           write(6,11) istep,time,udx,umx,uex,u0,'  X err', session

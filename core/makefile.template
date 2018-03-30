@@ -8,7 +8,6 @@ OPT_INCDIR=./
 OBJDIR=obj
 MPI=0 
 CMT=0 
-NEKNEK=
 FC=
 CC=
 FFLAGS=
@@ -37,7 +36,7 @@ hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o \
-cvode_driver.o nek_comm.o \
+cvode_driver.o nek_comm.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
@@ -49,17 +48,6 @@ MXM =
 ################################################################################
 # BLAS
 BLAS = 
-
-# YP NEKNEK SOLVER OR ENSEMBLE MODE
-ifeq ($(NEKNEK),0)
-NEKNEKO := singlmesh.o
-endif
-ifeq ($(NEKNEK),1)
-NEKNEKO := multimesh.o
-endif
-ifeq ($(NEKNEK),2)
-NEKNEKO := ensemble.o
-endif
 
 COMM_MPI := comm_mpi.o
 ifeq ($(MPI),0)
@@ -88,7 +76,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO) $(BLAS)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)

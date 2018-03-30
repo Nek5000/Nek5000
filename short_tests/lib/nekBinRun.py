@@ -72,7 +72,6 @@ def run_nek(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, step_limit=None, ver
     logfile      = os.path.join(cwd, '{0}.log.{1}{2}'.format(rea_file, n_procs, log_suffix))
     session_name = os.path.join(cwd, 'SESSION.NAME')
     ioinfo       = os.path.join(cwd, 'ioinfo')
-    sch_file     = os.path.join(cwd, '{0}.sch'.format(rea_file))
     if ifmpi:
         command = ['mpiexec', '-np', str(n_procs), nek5000]
     else:
@@ -82,15 +81,6 @@ def run_nek(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, step_limit=None, ver
     print('    Using command "{0}"'.format(' '.join(command)))
     print('    Using working directory "{0}"'.format(cwd))
     print('    Using .rea file "{0}"'.format(rea_file))
-
-    # An OSError here can be expected
-    # If the examples directory is clean, there will be no .sch file and
-    # os.remove(sch_file) will be expected to fail.
-    try:
-        os.remove(sch_file)
-    except OSError as E:
-        # TODO: Change to warnings.warning
-        print("    Could not remove {0}: {1}".format(sch_file, E))
 
     # Any error here is unexepected
     try:
@@ -117,7 +107,7 @@ def run_nek(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, step_limit=None, ver
     else:
         print('Finished running nek5000!')
 
-def run_neknek(cwd, inside, np_inside, outside, np_outside, step_limit=None, log_suffix='', verbose=False):
+def run_neknek(cwd, inside, np_inside, outside, np_outside, coupled=True, step_limit=None, log_suffix='', verbose=False):
 
     # Paths to executables, files
     nek5000 = os.path.join(cwd, 'nek5000')
@@ -129,9 +119,13 @@ def run_neknek(cwd, inside, np_inside, outside, np_outside, step_limit=None, log
         sfx = log_suffix
     ))
 
+    
+    ifcoupled = 'F'
+    if coupled :
+	ifcoupled = 'T'
+
     inside_log = os.path.join(cwd, '{0}.log'.format(inside))
     inside_his = os.path.join(cwd, '{0}.his'.format(inside))
-    inside_sch = os.path.join(cwd, '{0}.sch'.format(inside))
 
     outside_log = os.path.join(cwd, '{0}.log'.format(outside))
     outside_his = os.path.join(cwd, '{0}.his'.format(outside))
@@ -146,21 +140,13 @@ def run_neknek(cwd, inside, np_inside, outside, np_outside, step_limit=None, log
     print('    Using working directory "{0}"'.format(cwd))
     print('    Using .rea files "{0}", "{1}"'.format(inside, outside))
 
-    # An OSError here can be expected, if directory is clean and inside_sch or ioinfo don't exist
-    for f in (inside_sch, ioinfo):
-        try:
-            os.remove(f)
-        except OSError as E:
-            # TODO: Change to warnings.warning
-            print("    Could not remove {0}: {1}".format(f, E))
-
     # Any error here is unexpected
     try:
 
         # Create SESSION.NAME
         with open(session_name, 'w') as f:
             f.writelines([
-                "{0}\n".format(2),
+                "{0} {1}\n".format(2,ifcoupled),
                 "{0}\n".format(inside),
                 "{0}\n".format(cwd),
                 "{0}\n".format(np_inside),

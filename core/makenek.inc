@@ -37,8 +37,6 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
-  echo "  NEKNEK      activate overlapping mesh solver (experimental)"
-  echo "  ENSEMBLE    run independent sessions in parallel"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   exit 1
 fi
@@ -230,16 +228,9 @@ PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
 CMT=0
-NEKNEK=0
 MPIIO=1
 for i in $PPLIST
 do
-   if [ "$i" == "NEKNEK" ]; then
-     NEKNEK=1
-   fi
-   if [ "$i" == "ENSEMBLE" ]; then
-     NEKNEK=2
-   fi
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
    fi
@@ -295,7 +286,6 @@ sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE:=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
--e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
 -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \

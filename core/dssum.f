@@ -757,3 +757,182 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gtpp_gs_op(u,op,gs_hndl)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u (lx1,ly1,lz1,*)
+      character*3 op
+      integer hndl
+
+      integer e,ex,ey,ez,eg
+      common /SCRCG/ wrk(lx1,ly1,lz1,lelt)
+
+      if (op.eq.'AVG' .or. op.eq.'avg' .or.
+     &    op.eq.'AVE' .or. op.eq.'ave') then
+ctodo how to get n for a given hndl
+         call copy(wrk,bm1,n)
+         call fgslib_gs_op(hndl,wrk,1,1,0)
+         do i=1,n
+            u(i,1,1,1) = bm1(i,1,1,1)*u(i,1,1,1)/wrk(i,1,1,1)
+         enddo
+         call fgslib_gs_op(hndl,u,1,1,0) 
+      elseif (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+         call fgslib_gs_op(hndl,u,1,1,0)
+      elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call fgslib_gs_op(hndl,u,1,2,0)
+      elseif (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
+     &        .or. op.eq.'MIN' .or. op.eq.'MNA') then
+         call fgslib_gs_op(hndl,u,1,3,0)
+      elseif (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &        .or. op.eq.'MAX' .or. op.eq.'MXA') then
+         call fgslib_gs_op(hndl,u,1,4,0)
+      else
+         if (nid.eq.0) write(6,*) 'Please enter a valid operation'
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gtpp_gs_setup(hndl,nel,nelx,nely,nelz,idir)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer hndl,nelx,nely,enlz,idir
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
+      integer e,ex,ey,ez,eg
+      integer*8 glo_num,ex_g
+
+      nelxy = nelx*nely
+      nelyz = nely*nelz
+      nelzx = nelz*nelx
+
+      if (idir.eq.1) then
+         ! x-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelx,nelyz,1)
+            ex_g = ey       ! Ensure int*8 promotion
+            do k=1,nz1      ! Enumerate points in the y-z plane
+            do j=1,ny1
+            do i=1,nx1
+               glo_num(i,j,k,e) = j+ny1*(k-1) + ny1*nz1*(ex_g-1)
+            enddo
+            enddo
+            enddo
+         enddo
+      elseif (idir.eq.2) then
+         ! y-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)            
+            ex_g = (ez-1)*nelx+ex       ! Ensure int*8 promotion
+            do k=1,nz1      ! Enumerate points in the x-z plane
+            do j=1,ny1
+            do i=1,nx1
+                glo_num(i,j,k,e) = k+nz1*(i-1) + nx1*nz1*(ex_g-1) 
+            enddo
+            enddo
+            enddo
+         enddo
+      elseif (idir.eq.3) then
+         ! z-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelxy,1,1)
+            ex_g = ex       ! Ensure int*8 promotion
+            do k=1,nz1      ! Enumerate points in the x-y plane
+            do j=1,ny1
+            do i=1,nx1
+               glo_num(i,j,k,e) = i+nx1*(j-1) + nx1*ny1*(ex_g-1)
+            enddo
+            enddo
+            enddo
+         enddo
+      endif
+ 
+      n = nel*nx1*ny1*nz1
+      call fgslib_gs_setup(hndl,glo_num,n,nekcomm,mp)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ms_gs_setup(hndl,nel,lx,ly,lz)
+
+c     Get a multi-session gsop handle
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+
+      integer e,eg
+
+      common /c_is1/ glo_num(lx1*ly1*lz1*lelt)
+      integer*8 glo_num
+      integer hndl
+
+      integer hndl_data(2,10)
+
+      do e=1,nel
+         eg = lglel(e)
+         do k=1,lz      
+         do j=1,ly
+         do i=1,lx
+            ii = i + lx*(j-1) + lx*ly*(k-1) + lx*ly*lz*(e-1)
+            glo_num(ii) = i + lx*(j-1) + lx*ly*(k-1) + 
+     $                    lx*ly*lz*(eg-1)
+         enddo
+         enddo
+         enddo
+      enddo
+
+      call mpi_comm_size(mpi_comm_world,np_global,ierr)
+
+      n = nel*lx*ly*lz
+      call fgslib_gs_setup(hndl,glo_num,n,mpi_comm_world,np_global)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ms_gs_op(u,op,hndl)
+
+c     multi-session version of gsop
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'CTIMER'
+
+      real u(*)
+      character*3 op
+
+      if(ifsync) call nekgsync()
+
+      if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
+     &   call fgslib_gs_op(hndl,u,1,1,0)
+
+      if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL')
+     &   call fgslib_gs_op(hndl,u,1,2,0)
+
+      if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna' 
+     &                .or. op.eq.'MIN' .or. op.eq.'MNA')
+     &   call fgslib_gs_op(hndl,u,1,3,0)
+
+      if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &                .or. op.eq.'MAX' .or. op.eq.'MXA')
+     &   call fgslib_gs_op(hndl,u,1,4,0)
+
+      if (op.eq.'AVG' .or. op.eq.'avg' .or.
+     &    op.eq.'AVE' .or. op.eq.'ave') then
+         call fgslib_gs_op(hndl,u,1,1,0)
+         weight = 1./nsessions
+ctodo how to get n for a given hndl
+         call cmult(u,weight,n)
+      endif
+
+      return
+      end

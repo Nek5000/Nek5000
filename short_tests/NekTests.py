@@ -427,7 +427,7 @@ class Eddy_Neknek(NekTestCase):
 
         self.size_params['lx2'] = 'lx1'
         self.config_size()
-        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        self.build_nek()
         run_neknek(
             cwd = cwd,
             inside = 'inside',
@@ -435,6 +435,7 @@ class Eddy_Neknek(NekTestCase):
             np_inside = 1,
             np_outside = 1,
             step_limit = 1000,
+            coupled = True,
             log_suffix = self.log_suffix,
             verbose = self.verbose,
         )
@@ -486,7 +487,7 @@ class Eddy_Neknek(NekTestCase):
 
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        self.build_nek()
         run_neknek(
             cwd = cwd,
             inside = 'inside',
@@ -494,6 +495,7 @@ class Eddy_Neknek(NekTestCase):
             np_inside = 1,
             np_outside = 1,
             step_limit = 1000,
+            coupled = True,
             log_suffix = self.log_suffix,
             verbose = self.verbose,
         )
