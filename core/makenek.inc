@@ -373,6 +373,23 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
+  if ! cat SIZE | grep -qi 'nsessmax' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nsessmax=1)  ! max sessions to NEKNEK' >> SIZE
+  fi
+  if ! cat SIZE | grep -qi 'nmaxl_nn' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nmaxl_nn=' >> SIZE
+     echo '     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))' >>SIZE
+  fi
+  if ! cat SIZE | grep -qi 'nfldmax_nn' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nfldmax_nn=' >> SIZE
+     echo '     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))' >>SIZE
+  fi
   if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE

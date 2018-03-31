@@ -106,7 +106,7 @@ c     Assign key for splitting into multiple groups
       if (ifneknekc) then
          if (nessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',
-     $     nessions)
+     $     nsessions)
 
          if (idsess.eq.0) idsess_neighbor=1
          if (idsess.eq.1) idsess_neighbor=0
