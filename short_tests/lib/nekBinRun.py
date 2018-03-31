@@ -85,7 +85,11 @@ def run_nek(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, step_limit=None, ver
     # Any error here is unexepected
     try:
         with open(session_name, 'w') as f:
-            f.writelines([rea_file+"\n", cwd+'/\n'])
+            f.writelines([
+                "{0}\n".format(1),
+                "{0}\n".format(rea_file),
+                "{0}\n".format(cwd+'/'),
+            ])
 
         if step_limit:
             with open(ioinfo, 'w') as f:
@@ -146,7 +150,8 @@ def run_neknek(cwd, inside, np_inside, outside, np_outside, coupled=True, step_l
         # Create SESSION.NAME
         with open(session_name, 'w') as f:
             f.writelines([
-                "{0} {1}\n".format(2,ifcoupled),
+                "{0}\n".format(2),
+                "{0}\n".format(ifcoupled),
                 "{0}\n".format(inside),
                 "{0}\n".format(cwd),
                 "{0}\n".format(np_inside),

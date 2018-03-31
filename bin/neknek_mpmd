@@ -17,7 +17,8 @@ COUPLED="T"
 if [ "$5" == "uncoupled" ]; then COUPLED="F"; fi
 
 rm -rf SESSION.NAME >/dev/null
-echo  2 $COUPLED >>   SESSION.NAME                        
+echo  2          >>   SESSION.NAME                        
+echo  $COUPLED   >>   SESSION.NAME                        
 echo  $CASENAME1 >>   SESSION.NAME                     
 echo  $CASEDIR1  >>   SESSION.NAME                         
 echo  $NP1       >>   SESSION.NAME                      

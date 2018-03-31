@@ -5,7 +5,9 @@ c-----------------------------------------------------------------------
       include 'PARALLEL' 
       include 'TSTEP' 
       include 'INPUT' 
-     
+    
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+ 
       common /happycallflag/ icall
       integer nid_global_root(0:nsessmax-1)
       character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
@@ -27,6 +29,7 @@ c-----------------------------------------------------------------------
 
       ! set defaults
       nid         = nid_global
+      nekcomm     = MPI_COMM_WORLD
       iglobalcomm = MPI_COMM_WORLD 
       ifneknek    = .false.
       ifneknekc   = .false. ! session are uncoupled
@@ -36,13 +39,14 @@ c-----------------------------------------------------------------------
       if (nid .eq. 0) then
          write(6,*) 'Reading session file ...'
          open (unit=8,file='SESSION.NAME',status='old',err=24)
-         read(8,*) nsessions, ifneknekc 
+         read(8,*,err=24) nsessions
+         if (nsessions.gt.1) read(8,*,err=24) ifneknekc
          do n=0,nsessions-1
             call blank(session_mult(n),132)
             call blank(path_mult(n)   ,132)
-            read(8,10) session_mult(n)
-            read(8,10) path_mult(n)
-            if (nsessions.gt.1) read(8,*)  npsess(n)
+            read(8,10,err=24) session_mult(n)
+            read(8,10,err=24) path_mult(n)
+            if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
          enddo
  10      format(a132)
          close(unit=8)
@@ -51,16 +55,14 @@ c-----------------------------------------------------------------------
  24      ierr = 1
       endif
  23   continue
-      call err_chk(ierr,' Cannot open SESSION.NAME!$')
+      call err_chk(ierr,' Error while reading SESSION.NAME!$')
 
-      call mpi_bcast(nsessions,ISIZE,MPI_BYTE,0,MPI_COMM_WORLD,ierr)
-      call mpi_bcast(ifneknekc,LSIZE,MPI_BYTE,0,MPI_COMM_WORLD,ierr)
+      call bcast(nsessions,ISIZE)
+      call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
-         call mpi_bcast(npsess(n),ISIZE,MPI_BYTE,0,MPI_COMM_WORLD,ierr)
-         call mpi_bcast(session_mult(n),132*CSIZE,MPI_BYTE,0,
-     $                  MPI_COMM_WORLD,ierr)
-         call mpi_bcast(path_mult(n),132*CSIZE,MPI_BYTE,0,
-     $                  MPI_COMM_WORLD,ierr)
+         call bcast(npsess(n),ISIZE)
+         call bcast(session_mult(n),132*CSIZE)
+         call bcast(path_mult(n),132*CSIZE)
       enddo
 
       if (nsessions .gt. 1) ifneknek = .true.

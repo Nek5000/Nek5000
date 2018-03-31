@@ -9,13 +9,14 @@ COUPLED="T"
 if [ "$5" == "uncoupled" ]; then COUPLED="F"; fi
 
 rm -rf SESSION.NAME  2>/dev/null
-echo   2 $COUPLED >>   SESSION.NAME                        
-echo  $1      >>   SESSION.NAME                     
-echo `pwd`'/' >>   SESSION.NAME                         
-echo  $3      >>   SESSION.NAME                      
-echo  $2      >>   SESSION.NAME                      
-echo `pwd`'/' >>   SESSION.NAME                        
-echo  $4      >>   SESSION.NAME                       
+echo  2        >>   SESSION.NAME                        
+echo  $COUPLED >>   SESSION.NAME                        
+echo  $1       >>   SESSION.NAME                     
+echo `pwd`'/'  >>   SESSION.NAME                         
+echo  $3       >>   SESSION.NAME                      
+echo  $2       >>   SESSION.NAME                      
+echo `pwd`'/'  >>   SESSION.NAME                        
+echo  $4       >>   SESSION.NAME                       
 rm -rf ioinfo
 NP1=$3
 NP2=$4
