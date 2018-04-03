@@ -74,7 +74,7 @@ c                 ~ ~T
 c     This is the Q Q  part
 c
       if (gsh_fld(ifldt).ge.0) then
-         if (nio.eq.0.and.loglevel.gt.3)
+         if (nio.eq.0.and.loglevel.gt.5)
      $   write(6,*) 'dssum', ifldt 
          call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
       endif
@@ -757,27 +757,18 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gtpp_gs_op(u,op,gs_hndl)
+      subroutine gtpp_gs_op(u,op,hndl)
+c
+c     gather-scatter operation across global tensor product planes
+c
       include 'SIZE'
       include 'TOTAL'
 
-      real u (lx1,ly1,lz1,*)
+      real u(*)
       character*3 op
       integer hndl
 
-      integer e,ex,ey,ez,eg
-      common /SCRCG/ wrk(lx1,ly1,lz1,lelt)
-
-      if (op.eq.'AVG' .or. op.eq.'avg' .or.
-     &    op.eq.'AVE' .or. op.eq.'ave') then
-ctodo how to get n for a given hndl
-         call copy(wrk,bm1,n)
-         call fgslib_gs_op(hndl,wrk,1,1,0)
-         do i=1,n
-            u(i,1,1,1) = bm1(i,1,1,1)*u(i,1,1,1)/wrk(i,1,1,1)
-         enddo
-         call fgslib_gs_op(hndl,u,1,1,0) 
-      elseif (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+      if     (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
          call fgslib_gs_op(hndl,u,1,1,0)
       elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
          call fgslib_gs_op(hndl,u,1,2,0)
@@ -788,35 +779,41 @@ ctodo how to get n for a given hndl
      &        .or. op.eq.'MAX' .or. op.eq.'MXA') then
          call fgslib_gs_op(hndl,u,1,4,0)
       else
-         if (nid.eq.0) write(6,*) 'Please enter a valid operation'
+         call exitti('gtpp_gs_op: invalid operation!$',1)
       endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gtpp_gs_setup(hndl,nel,nelx,nely,nelz,idir)
+      subroutine gtpp_gs_setup(hndl,nelgx,nelgy,nelgz,idir)
 
       include 'SIZE'
       include 'TOTAL'
 
-      integer hndl,nelx,nely,enlz,idir
+      integer hndl,nelgx,nelgy,nelgz,idir
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
       integer e,ex,ey,ez,eg
       integer*8 glo_num,ex_g
 
-      nelxy = nelx*nely
-      nelyz = nely*nelz
-      nelzx = nelz*nelx
+      nelgxyz = nelgx*nelgy*nelgz
+      if (nelgxyz .ne. nelgv)
+     $ call exitti('gtpp_gs_setup: invalid gtp mesh dimensions!$',
+     $             nelgxyz) 
+
+      nel    = nelv 
+      nelgxy = nelgx*nelgy
+      nelgyz = nelgy*nelgz
+      nelgzx = nelgz*nelgx
 
       if (idir.eq.1) then
          ! x-direction
          do e=1,nel
             eg = lglel(e)
-            call get_exyz(ex,ey,ez,eg,nelx,nelyz,1)
-            ex_g = ey       ! Ensure int*8 promotion
-            do k=1,nz1      ! Enumerate points in the y-z plane
+            call get_exyz(ex,ey,ez,eg,nelgx,nelgyz,1)
+            ex_g = ey
+            do k=1,nz1 ! Enumerate points in the y-z plane
             do j=1,ny1
             do i=1,nx1
                glo_num(i,j,k,e) = j+ny1*(k-1) + ny1*nz1*(ex_g-1)
@@ -828,12 +825,12 @@ c-----------------------------------------------------------------------
          ! y-direction
          do e=1,nel
             eg = lglel(e)
-            call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)            
-            ex_g = (ez-1)*nelx+ex       ! Ensure int*8 promotion
-            do k=1,nz1      ! Enumerate points in the x-z plane
+            call get_exyz(ex,ey,ez,eg,nelgx,nelgy,nelgz)            
+            ex_g = (ez-1)*nelgx+ex
+            do k=1,nz1 ! Enumerate points in the x-z plane
             do j=1,ny1
             do i=1,nx1
-                glo_num(i,j,k,e) = k+nz1*(i-1) + nx1*nz1*(ex_g-1) 
+               glo_num(i,j,k,e) = k+nz1*(i-1) + nx1*nz1*(ex_g-1) 
             enddo
             enddo
             enddo
@@ -842,9 +839,9 @@ c-----------------------------------------------------------------------
          ! z-direction
          do e=1,nel
             eg = lglel(e)
-            call get_exyz(ex,ey,ez,eg,nelxy,1,1)
-            ex_g = ex       ! Ensure int*8 promotion
-            do k=1,nz1      ! Enumerate points in the x-y plane
+            call get_exyz(ex,ey,ez,eg,nelgxy,1,1)
+            ex_g = ex
+            do k=1,nz1 ! Enumerate points in the x-y plane
             do j=1,ny1
             do i=1,nx1
                glo_num(i,j,k,e) = i+nx1*(j-1) + nx1*ny1*(ex_g-1)
@@ -855,52 +852,46 @@ c-----------------------------------------------------------------------
       endif
  
       n = nel*nx1*ny1*nz1
-      call fgslib_gs_setup(hndl,glo_num,n,nekcomm,mp)
+      call fgslib_gs_setup(hndl,glo_num,n,nekcomm,np)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ms_gs_setup(hndl,nel,lx,ly,lz)
-
-c     Get a multi-session gsop handle
+      subroutine ms_gs_setup(hndl,nel,nx,ny,nz)
 
       include 'SIZE'
       include 'TOTAL'
       include 'mpif.h'
 
+      integer hndl
       integer e,eg
 
       common /c_is1/ glo_num(lx1*ly1*lz1*lelt)
       integer*8 glo_num
-      integer hndl
-
-      integer hndl_data(2,10)
 
       do e=1,nel
          eg = lglel(e)
-         do k=1,lz      
-         do j=1,ly
-         do i=1,lx
-            ii = i + lx*(j-1) + lx*ly*(k-1) + lx*ly*lz*(e-1)
-            glo_num(ii) = i + lx*(j-1) + lx*ly*(k-1) + 
-     $                    lx*ly*lz*(eg-1)
+         do k=1,nz      
+         do j=1,ny
+         do i=1,nx
+            ii = i + nx*(j-1) + nx*ny*(k-1) + nx*ny*nz*(e-1)
+            glo_num(ii) = i + nx*(j-1) + nx*ny*(k-1) + 
+     $                    nx*ny*nz*(eg-1)
          enddo
          enddo
          enddo
       enddo
 
-      call mpi_comm_size(mpi_comm_world,np_global,ierr)
-
-      n = nel*lx*ly*lz
-      call fgslib_gs_setup(hndl,glo_num,n,mpi_comm_world,np_global)
+      n = nel*nx*ny*nz
+      call fgslib_gs_setup(hndl,glo_num,n,iglobalcomm,np_global)
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine ms_gs_op(u,op,hndl)
-
-c     multi-session version of gsop
-
+c
+c     gather-scatter operation across sessions 
+c
       include 'SIZE'
       include 'PARALLEL'
       include 'INPUT'
@@ -912,26 +903,18 @@ c     multi-session version of gsop
 
       if(ifsync) call nekgsync()
 
-      if (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM')
-     &   call fgslib_gs_op(hndl,u,1,1,0)
-
-      if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL')
-     &   call fgslib_gs_op(hndl,u,1,2,0)
-
-      if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna' 
-     &                .or. op.eq.'MIN' .or. op.eq.'MNA')
-     &   call fgslib_gs_op(hndl,u,1,3,0)
-
-      if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
-     &                .or. op.eq.'MAX' .or. op.eq.'MXA')
-     &   call fgslib_gs_op(hndl,u,1,4,0)
-
-      if (op.eq.'AVG' .or. op.eq.'avg' .or.
-     &    op.eq.'AVE' .or. op.eq.'ave') then
+      if      (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
          call fgslib_gs_op(hndl,u,1,1,0)
-         weight = 1./nsessions
-ctodo how to get n for a given hndl
-         call cmult(u,weight,n)
+      else if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call fgslib_gs_op(hndl,u,1,2,0)
+      else if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna' 
+     &         .or. op.eq.'MIN' .or. op.eq.'MNA') then
+         call fgslib_gs_op(hndl,u,1,3,0)
+      else if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &         .or. op.eq.'MAX' .or. op.eq.'MXA') then
+         call fgslib_gs_op(hndl,u,1,4,0)
+      else
+         call exitti('ms_gs_op: invalid operation!$',1)
       endif
 
       return

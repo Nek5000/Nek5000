@@ -390,6 +390,58 @@ class Eddy_Rich(NekTestCase):
 
 #####################################################################
 
+
+class Eddy_NeknekU(NekTestCase):
+    example_subdir  = 'eddy_neknek'
+    case_name       = 'eddy_uv'
+
+    def setUp(self):
+
+        self.size_params = dict(
+            nsessmax='2',
+            lx2='lx1-2',
+        )
+
+        self.build_tools(['genmap'])
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        from lib.nekBinRun import run_neknek
+        from re import sub
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        self.run_genmap(rea_file='inside',tol='0.2')
+
+        self.build_nek()
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'inside',
+            np_inside = 1,
+            np_outside = 1,
+            coupled = False,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+        logfile = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+            inside = 'inside',
+            outside = 'inside',
+            np_in = 1,
+            np_out = 1,
+            sfx = self.log_suffix
+        ))
+
+        phrase = self.get_phrase_from_log('ms_gs_op test PASSED',logfile=logfile)
+        self.assertIsNotNullDelayed(phrase, label='ms_gs_op test PASSED')
+
+    def tearDown(self):
+        self.move_logs()
+
+####################################################################
+
 class Eddy_Neknek(NekTestCase):
     example_subdir  = 'eddy_neknek'
     case_name       = 'eddy_uv'
@@ -1062,6 +1114,7 @@ if __name__ == '__main__':
                FsHydro,
                Axi, 
                Eddy_Neknek,
+               Eddy_NeknekU,
                Eddy_EddyUv,
                Eddy_LegacySize, 
                Benard_Ray9, 

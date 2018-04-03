@@ -46,7 +46,7 @@ c
 C     Output the processor-element map:
       ifverbm=.true.
       if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
-      if (loglevel .gt. 0) ifverbm=.true.
+      if (loglevel .gt. 2) ifverbm=.true.
 
       if(ifverbm) then
         idum = 1
@@ -66,7 +66,7 @@ C     Output the processor-element map:
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
            call csend(mtype,nelt,4,0,0)            ! nelt
-           if (loglevel .gt. 0) then
+           if (loglevel .gt. 2) then
               N8 = min(8,nelt)
               write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
               if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)

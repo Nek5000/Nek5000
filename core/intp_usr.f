@@ -26,12 +26,12 @@ c-----------------------------------------------------------------------
       real w(2*lx1**3)
 
       tol = tolin
-      if (tolin.lt.0) tol = 5e-13
+      if (tolin.le.0) tol = 5e-13
       npt_max = 256
       bb_t    = 0.01
 
       if (nio.eq.0) 
-     $   write(6,*) 'call intp_setup() ','tol=', tol
+     $   write(6,*) 'call intp_setup ','tol=', tol
 
       ! setup handle for interpolation
       nxi     = nx1

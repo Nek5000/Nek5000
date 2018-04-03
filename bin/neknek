@@ -1,4 +1,4 @@
-if [ $# -eq 0 ] || [ $# -lt 5 ]; then
+if [ $# -eq 0 ] || [ $# -lt 3 ]; then
   echo ""
   echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
   echo ""
