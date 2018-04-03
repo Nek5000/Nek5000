@@ -1,8 +1,6 @@
 c
 c     Multimesh variables
 c
-      include 'GLOBALCOM' 	
-
       integer intflag(2*ldim,lelt)
       common /intflag/ intflag
 

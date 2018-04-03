@@ -184,6 +184,7 @@ c
       include 'MVGEOM'
       include 'INPUT'
       include 'TSTEP'
+      include 'PARALLEL'
 
       common /scruz/ cx(lx1*ly1*lz1*lelt)
      $ ,             cy(lx1,ly1,lz1,lelt)
@@ -304,7 +305,11 @@ C      endif
       COURNO = DT*UMAX
 
 ! synchronize time step for multiple sessions
-      if (ifneknek) dt=uglmin(dt,1)
+      if (ifneknek) then
+         call setnekcomm(iglobalcomm)
+         dt = glmin(dt,1)
+         call setnekcomm(intracomm)
+      endif
 c
       if (iffxdt.and.abs(courno).gt.10.*abs(ctarg)) then
          if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg

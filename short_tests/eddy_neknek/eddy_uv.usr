@@ -171,6 +171,31 @@ c
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
 
+      ! test multisession gs_op
+      if (nsessions.eq.2 .and. .not.ifneknekc) then
+        nxyz = nx1*ny1*nz1
+        call ms_gs_setup(ihms,nelv,nx1,ny1,nz1)
+        do iel = 1,nelv
+           ieg = lglel(iel)
+           do ixyz = 1,nxyz
+              ue(ixyz,1,1,iel) = ixyz + nxyz*(ieg-1)
+              if(idsess.eq.0) ue(ixyz,1,1,iel) = -ue(ixyz,1,1,iel)
+           enddo
+        enddo
+        call ms_gs_op(ue,'sum',ihms)
+        dmxs = glmax(ue,n)
+        dmns = glmin(ue,n)
+        call setnekcomm(iglobalcomm)
+        dmx  = glmax(dmxs,1)
+        dmn  = glmin(dmns,1)
+        call setnekcomm(intracomm)
+        if (dmx.eq.0 .and. dmn.eq.dmx) then
+           if (nid_global.eq.0) write(6,*) 'ms_gs_op test PASSED'
+        else
+           if (nid_global.eq.0) write(6,*) 'ms_gs_op test FAILED'
+        endif
+        call exitt0
+      endif
 
       ifield = 1  ! for outpost
 
@@ -192,16 +217,17 @@ c
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
 
-c    Global error calculation
+c     Global error calculation
       if (IFNEKNEK) then 
-      umx_gl = uglamax(vx,n)
-      vmx_gl = uglamax(vy,n)
-      uex_gl = uglamax(ue,n)
-      vex_gl = uglamax(ve,n)
-      udx_gl = uglamax(ud,n)
-      vdx_gl = uglamax(vd,n)
+        call setnekcomm(iglobalcomm)
+        umx_gl = glamax(vx,n)
+        vmx_gl = glamax(vy,n)
+        uex_gl = glamax(ue,n)
+        vex_gl = glamax(ve,n)
+        udx_gl = glamax(ud,n)
+        vdx_gl = glamax(vd,n)
+        call setnekcomm(intracomm)
       end if  
-
 
       if (nid.eq.0) then
           write(6,11) istep,time,udx,umx,uex,u0,'  X err', session
@@ -215,7 +241,6 @@ c    Global error calculation
      & 'global'
    11     format(i5,1p5e14.6,a7,2x,a7)
       endif
-
 
       if (istep.le.5) then        !  Reset velocity to eliminate 
          call copy (vx,ue,n)      !  start-up contributions to

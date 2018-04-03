@@ -39,3 +39,12 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer            dg_hndlx,ndg_facex
       common /xcdg_ints/ dg_hndlx,ndg_facex
 
+!     multisession
+      integer nid_global, idsess_neighbor, intracomm, intercomm
+     $      , iglobalcomm, npsess(0:nsessmax-1), np_neighbor, np_global
+      common /nekmpi_global/ nid_global, idsess_neighbor
+     $                     , intracomm, intercomm, iglobalcomm
+     $                     , npsess,np_neighbor,np_global
+
+      integer               nsessions
+      common /session_info/ nsessions
