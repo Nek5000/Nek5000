@@ -650,8 +650,8 @@ class Ethier(NekTestCase):
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
-        self.config_size()
-        self.build_nek()
+#        self.config_size()
+#        self.build_nek()
         self.run_nek(step_limit=1000)
 
         herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
@@ -665,6 +665,21 @@ class Ethier(NekTestCase):
 
         prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
         self.assertAlmostEqualDelayed(prerr, target_val=1.127384e-04, delta=1e-06, label='PR err')
+
+        if os.environ['PARALLEL_PROCS'] == '2': 
+        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc0, target_val=189, delta=0, label='pm0 chksum')
+        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc1, target_val=339, delta=0, label='pm1 chksum')
+        elif os.environ['PARALLEL_PROCS'] == '3':
+        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc0, target_val=119, delta=0, label='pm0 chksum')
+        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm1 chksum')
+        	pmc2 = self.get_value_from_log(label='pm2 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm2 chksum')
+
+
 
         self.assertDelayedFailures()
 
