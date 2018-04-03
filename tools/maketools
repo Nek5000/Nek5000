@@ -137,7 +137,7 @@ case $FCcomp in
                BIGMEM="-mcmodel=medium -shared-intel"
                ;;
   *xlf*)       R8="-qrealsize=8"
-               CPPF="-qsuffix=cpp=f"
+               CPPF="-qfixed -qsuffix=cpp=f"
                BIGMEM="-q64"
                PPPO="-WF,"
                ;;

@@ -744,65 +744,6 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine ophinv (out1,out2,out3,inp1,inp2,inp3,h1,h2,tolh,nmxi)
-
-c     OUT = (H1*A+H2*B)-1 * INP  (implicit)
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'TSTEP'
-
-      real out1(1),out2(1),out3(1),inp1(1),inp2(1),inp3(1),h1(1),h2(1)
-
-      imesh = 1
-
-
-      if (ifstrs) then
-         matmod = 0
-         if (ifield.eq.ifldmhd) then
-            call hmhzsf  ('NOMG',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     b1mask,b2mask,b3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         else
-            call hmhzsf  ('NOMG',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     v1mask,v2mask,v3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         endif
-      elseif (ifcyclic) then
-         matmod = 0
-         if (ifield.eq.ifldmhd) then
-            call hmhzsf  ('BXYZ',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     b1mask,b2mask,b3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         else
-            call hmhzsf  ('VXYZ',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     v1mask,v2mask,v3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         endif
-      else
-         if (ifield.eq.ifldmhd) then
-            call hmholtz ('BX  ',out1,inp1,h1,h2,b1mask,vmult,
-     $                                      imesh,tolh,nmxi,1)
-            call hmholtz ('BY  ',out2,inp2,h1,h2,b2mask,vmult,
-     $                                      imesh,tolh,nmxi,2)
-            if (ldim.eq.3) 
-     $      call hmholtz ('BZ  ',out3,inp3,h1,h2,b3mask,vmult,
-     $                                      imesh,tolh,nmxi,3)
-         else
-            call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
-     $                                      imesh,tolh,nmxi,1)
-            call hmholtz ('VELY',out2,inp2,h1,h2,v2mask,vmult,
-     $                                      imesh,tolh,nmxi,2)
-            if (ldim.eq.3) 
-     $      call hmholtz ('VELZ',out3,inp3,h1,h2,v3mask,vmult,
-     $                                      imesh,tolh,nmxi,3)
-         endif
-      endif
-C
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine ophx (out1,out2,out3,inp1,inp2,inp3,h1,h2)
 C----------------------------------------------------------------------
 C

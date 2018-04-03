@@ -1,5 +1,133 @@
+c-----------------------------------------------------------------------
+      subroutine setupcomm()
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL' 
+      include 'TSTEP' 
+      include 'INPUT' 
+    
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+ 
+      common /happycallflag/ icall
+      integer nid_global_root(0:nsessmax-1)
+      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
+
+      logical ifhigh
+
+      ! Init MPI
+      call mpi_initialized(mpi_is_initialized, ierr)
+      if (mpi_is_initialized .eq. 0 ) call mpi_init(ierr)
+      call mpi_comm_size(MPI_COMM_WORLD,np_global,ierr)
+      call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
+
+      ! check upper tag size limit
+      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
+      if (nval.lt.(10000+lp)) then
+         if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
+         call exitt
+      endif
+
+      ! set defaults
+      nid         = nid_global
+      nekcomm     = MPI_COMM_WORLD
+      iglobalcomm = MPI_COMM_WORLD 
+      ifneknek    = .false.
+      ifneknekc   = .false. ! session are uncoupled
+      ifneknekm   = .false. ! not moving
+
+      ierr = 0
+      if (nid .eq. 0) then
+         write(6,*) 'Reading session file ...'
+         open (unit=8,file='SESSION.NAME',status='old',err=24)
+         read(8,*,err=24) nsessions
+         if (nsessions.gt.1) read(8,*,err=24) ifneknekc
+         do n=0,nsessions-1
+            call blank(session_mult(n),132)
+            call blank(path_mult(n)   ,132)
+            read(8,10,err=24) session_mult(n)
+            read(8,10,err=24) path_mult(n)
+            if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
+         enddo
+ 10      format(a132)
+         close(unit=8)
+         write(6,*) 'Number of sessions:',nsessions
+         goto 23
+ 24      ierr = 1
+      endif
+ 23   continue
+      call err_chk(ierr,' Error while reading SESSION.NAME!$')
+
+      call bcast(nsessions,ISIZE)
+      call bcast(ifneknekc,LSIZE)
+      do n = 0,nsessions-1
+         call bcast(npsess(n),ISIZE)
+         call bcast(session_mult(n),132*CSIZE)
+         call bcast(path_mult(n),132*CSIZE)
+      enddo
+
+      if (nsessions .gt. 1) ifneknek = .true.
+
+      if (nsessions .gt. nsessmax) 
+     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
+
+      ! single session run
+      if (.not.ifneknek) then
+         ifneknekc = .false.
+         session   = session_mult(0)
+         path      = path_mult(0)
+         call mpi_comm_dup(mpi_comm_world,intracomm,ierr)
+         return
+      endif
+ 
+c     Check if specified number of ranks in each session is consistent 
+c     with the total number of ranks
+      npall=0
+      do n=0,nsessions-1
+         npall=npall+npsess(n)
+      enddo
+      if (npall.ne.np_global) 
+     &   call exitti('Number of ranks does not match!$',npall)
+
+c     Assign key for splitting into multiple groups
+      nid_global_root_next=0
+      do n=0,nsessions-1
+         nid_global_root(n)=nid_global_root_next
+         nid_global_root_next=nid_global_root(n)+npsess(n)
+         if (nid_global.ge.nid_global_root(n).and.
+     &       nid_global.lt.nid_global_root_next) idsess = n
+      enddo
+
+      call mpi_comm_split(mpi_comm_world,idsess,nid,intracomm,ierr)
+ 
+      session = session_mult(idsess)
+      path    = path_mult   (idsess)
+
+      ! setup intercommunication 
+      if (ifneknekc) then
+         if (nessions.gt.2) call exitti(
+     &     'More than 2 coupled sessions are currently not supported!$',
+     $     nsessions)
+
+         if (idsess.eq.0) idsess_neighbor=1
+         if (idsess.eq.1) idsess_neighbor=0
+ 
+         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
+     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
+
+         np_neighbor=npsess(idsess_neighbor)
+      
+         ifhigh=.true.
+         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
+
+         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
+      endif 
+
+      icall = 0  ! Emergency exit call flag
+
+      return
+      end
 c---------------------------------------------------------------------
-      subroutine iniproc(intracomm)
+      subroutine iniproc()
       include 'SIZE'
       include 'PARALLEL'
       include 'INPUT'
@@ -9,10 +137,10 @@ c---------------------------------------------------------------------
 
       logical flag
 
-      ! set nek communicator
-      call init_nek_comm(intracomm)
-      nid  = nid_
-      np   = np_
+      nid  = mynode()
+      nid_ = nid
+      np   = numnodes()
+      np_  = np
 
       nio = -1             ! Default io flag 
       if (nid.eq.0) nio=0  ! Only node 0 writes
@@ -27,13 +155,6 @@ c---------------------------------------------------------------------
 
       if (nid.eq.nio) call printHeader
 
-      ! check upper tag size limit
-      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-      if (nval.lt.(10000+lp)) then
-         if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
-         call exitt
-      endif
-
       IF (NP.GT.LP) THEN
          WRITE(6,*) 
      $   'ERROR: Code compiled for a max of',LP,' processors.'
@@ -44,29 +165,13 @@ c---------------------------------------------------------------------
          call exitt
       endif
 
-      ! set word size for REAL
-      wdsize=4
-      eps=1.0e-12
-      oneeps = 1.0+eps
-      if (oneeps.ne.1.0) then
-         wdsize=8
-      else
-         if(nid.eq.0) 
-     &     write(6,*) 'ABORT: single precision mode not supported!'
+      if (wdsize .eq. 4) then
+         if (nid.eq.0) 
+     &      write(6,*) 'ABORT: single precision mode not supported!'
          call exitt
       endif
       nekreal = mpi_real
       if (wdsize.eq.8) nekreal = mpi_double_precision
-
-      ! set word size for INTEGER
-      ! HARDCODED since there is no secure way to detect an int overflow
-      isize = 4
-
-      ! set word size for LOGICAL
-      lsize = 4
-
-      ! set word size for CHARACTER
-      csize = 1
 c
       PID = 0
       NULLPID=0
@@ -92,17 +197,6 @@ C     Test timer accuracy
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
 
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine init_nek_comm(intracomm)
-      include 'mpif.h'
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-C
-      nekcomm = intracomm
-      nid     = mynode()
-      np      = numnodes()
-c
       return
       end
 c-----------------------------------------------------------------------
@@ -526,7 +620,7 @@ c-----------------------------------------------------------------------
 c      call print_stack()
       if (ifneknek.and.icall.eq.0) call happy_check(0)
 c      if (nid.eq.0) call close_files
-      call print_runtime_info
+c      call print_runtime_info
       call nek_die(1) 
  
       return
@@ -1305,4 +1399,52 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+c----------------------------------------------------------------------
+      subroutine neknekgsync()
+
+      include 'SIZE'
+      include 'PARALLEL'
+
+      call mpi_barrier(intercomm,ierr)
+
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine happy_check(ihappy)
+
+      include 'SIZE'
+      include 'PARALLEL'
+
+      common /happycallflag/ icall
+
+      call setnekcomm(iglobalcomm)
+      iglhappy=iglmin(ihappy,1)
+      call setnekcomm(intracomm)
+      if (ihappy.eq.1.and.iglhappy.eq.0) then
+         if (nid.eq.0) then
+         write (6,*) '       '
+         write (6,'(A,1i7,A,1e13.5)')
+     $   ' Emergency exit due to the other session:',
+     $     ISTEP,'   time =',TIME
+         write (6,*)
+         endif
+         icall=1
+       call exitt
+      endif
+
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine setnekcomm(comm_in)
+
+      include 'SIZE'
+
+      integer comm_in
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      nekcomm = comm_in
+      call mpi_comm_size(nekcomm,mp,ierr)
+      np = mp
+
+      return
+      end

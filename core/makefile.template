@@ -8,7 +8,6 @@ OPT_INCDIR=./
 OBJDIR=obj
 MPI=0 
 CMT=0 
-NEKNEK=
 FC=
 CC=
 FFLAGS=
@@ -32,12 +31,12 @@ plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
-map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
+map2.o dprocmap.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
-byte.o chelpers.o byte_mpi.o postpro.o intp_usr.o \
-cvode_driver.o nek_comm.o \
+byte.o chelpers.o byte_mpi.o postpro.o \
+cvode_driver.o nek_comm.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
@@ -49,13 +48,6 @@ MXM =
 ################################################################################
 # BLAS
 BLAS = 
-
-# YP NEKNEK SOLVER
-ifeq ($(NEKNEK),0)
-NEKNEKO := singlmesh.o
-else
-NEKNEKO := multimesh.o
-endif
 
 COMM_MPI := comm_mpi.o
 ifeq ($(MPI),0)
@@ -84,7 +76,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO) $(BLAS)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
@@ -161,6 +153,7 @@ $(OBJDIR)/genxyz.o	:$S/genxyz.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs1.o	:$S/subs1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs2.o	:$S/subs2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/map2.o	:$S/map2.f;			$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/dprocmap.o	:$S/dprocmap.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/induct.o	:$S/induct.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/convect.o	:$S/convect.f;	      		$(FC) -c $(FL2) $< -o $@
@@ -206,7 +199,6 @@ $(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_rea.o	:$S/reader_rea.f;	 	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/reader_par.f $S/PARDICT;	$(FC) -c $(FL2) $< -o $@
