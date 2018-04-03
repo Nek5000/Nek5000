@@ -56,7 +56,7 @@ C     Read Mesh Info
      $   call exitti('Problem size requires .re2!$',1)
 
       ifgtp = .false.
-      if (ldim.lt.0) ifgtp = .true.
+      if (ldimr.lt.0) ifgtp = .true.
 
       if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes

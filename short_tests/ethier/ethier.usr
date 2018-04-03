@@ -137,6 +137,16 @@ c-----------------------------------------------------------------------
            write(6,*) 'hpts err:', errhpts
            close(50)
          endif
+ 
+         ! test processor element mapping 
+         isum = 0
+         do iel = 1,nelv
+            ieg = lglel(iel)
+            isum = isum + ieg 
+         enddo
+         if (nid.eq.0) write(6,*) isum, 'pm0 chksum'
+         if (nid.eq.1) write(6,*) isum, 'pm1 chksum'
+         if (nid.eq.2) write(6,*) isum, 'pm2 chksum'
       endif
 
       call chsign(pre,n2)

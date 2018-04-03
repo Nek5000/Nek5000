@@ -586,6 +586,7 @@ c
       integer MPI_SUCCESS
       parameter ( MPI_SUCCESS = 0 )
 
+      write(6,*) 'Initialize dummy MPI library'
       ierror = MPI_SUCCESS
 
       return
@@ -1056,6 +1057,21 @@ c
       subroutine mpi_comm_create(icomm,igroup,icommd,ierr)
 
       icommd = 1
+
+      return
+      end
+
+      subroutine mpi_intercomm_create(ilcomm,ill,ipcomm,irl,itag,
+     $                                newcomm,ierr)
+
+      call exitti('mpi_intercomm_create not supported!$',1)
+
+      return
+      end
+
+      subroutine mpi_intercomm_merge(icomm,ihigh,icommd,ierr)
+
+      call exitti('mpi_intercomm_merge not supported!$',1)
 
       return
       end
