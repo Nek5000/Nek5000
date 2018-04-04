@@ -650,8 +650,8 @@ class Ethier(NekTestCase):
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
         self.size_params['lx2'] = 'lx1-2'
-#        self.config_size()
-#        self.build_nek()
+        self.config_size()
+        self.build_nek()
         self.run_nek(step_limit=1000)
 
         herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)

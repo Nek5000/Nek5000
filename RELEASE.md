@@ -12,7 +12,6 @@
 ## Backwards-Incompatible Changes 
 
 * Eliminated PPLIST symbol `NEKNEK`
-* New `SESSION.NAME` format (consult the run scripts in bin for further details)
 * New `map/ma2` format (elements are sorted by its rank instead of its index)
 * New interface for usr interpolation wrapper defined in `intp_usr.f`
 * Interpolation wrapper not compiled by default (add `#include "intp_usr.f"` in usr file) 

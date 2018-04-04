@@ -34,22 +34,28 @@ c-----------------------------------------------------------------------
       ifneknek    = .false.
       ifneknekc   = .false. ! session are uncoupled
       ifneknekm   = .false. ! not moving
+      nsessions   = 1
 
       ierr = 0
+      nlin = 0
       if (nid .eq. 0) then
          write(6,*) 'Reading session file ...'
          open (unit=8,file='SESSION.NAME',status='old',err=24)
-         read(8,*,err=24) nsessions
+ 21      read (8,*,END=22)
+         nlin = nlin + 1 
+         goto 21
+ 22      rewind(8)
+         if (nlin.gt.2) read(8,*,err=24) nsessions
          if (nsessions.gt.1) read(8,*,err=24) ifneknekc
          do n=0,nsessions-1
             call blank(session_mult(n),132)
             call blank(path_mult(n)   ,132)
-            read(8,10,err=24) session_mult(n)
-            read(8,10,err=24) path_mult(n)
+            read(8,11,err=24) session_mult(n)
+            read(8,11,err=24) path_mult(n)
             if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
          enddo
- 10      format(a132)
-         close(unit=8)
+ 11      format(a132)
+         close(8)
          write(6,*) 'Number of sessions:',nsessions
          goto 23
  24      ierr = 1
