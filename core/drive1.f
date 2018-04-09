@@ -98,7 +98,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
          call estrat                                       ! initialization.
          if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
-#ifdef _OPENACC
+#ifdef _OPENACC2
             call set_overlap_acc                           ! as scratch!
 #else
             call set_overlap                               ! as scratch!
@@ -199,11 +199,9 @@ c-----------------------------------------------------------------------
       istep  = 0
       msteps = 1
 
-
+#ifdef _OPENACC
       call plan4_acc_data_copyin_istep0
       call hsmg_acc_data_copyin_istep0
-
-#ifdef _OPENACC
       call plan3_acc_data_copyin_istep0
 #endif 
 
@@ -218,9 +216,8 @@ c-----------------------------------------------------------------------
       enddo
  1001 lastep=1
 
-      call plan4_acc_data_copyout_nstep
-
 #ifdef _OPENACC
+      call plan4_acc_data_copyout_nstep
       call plan3_acc_data_copyout_nstep
 #endif 
 
