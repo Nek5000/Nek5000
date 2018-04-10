@@ -144,7 +144,6 @@ $(OBJDIR)/drive1.o	:$S/drive1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/drive2.o	:$S/drive2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/prepost.o	:$S/prepost.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/postpro.o	:$S/postpro.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/intp_usr.o	:$S/intp_usr.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gfldr.o	:$S/gfldr.f $S/GFLDR;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect1.o	:$S/connect1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect2.o	:$S/connect2.f;			$(FC) -c $(FL2) $< -o $@

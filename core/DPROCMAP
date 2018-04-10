@@ -5,4 +5,6 @@
       common /cbpmwinh/ dProcmapH 
 
       integer dProcmapWin ! only for no MPI
-      common /cbpmwd/ dProcmapWin(2*lelt)
+      common /cbpmwd/ dProcmapWin(3*lelt)
+ 
+      integer dProcmapStart, dProcmapEnd

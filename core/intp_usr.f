@@ -34,13 +34,9 @@ c-----------------------------------------------------------------------
      $   write(6,*) 'call intp_setup ','tol=', tol
 
       ! setup handle for interpolation
-      nxi     = nx1
-      nyi     = ny1
-      nzi     = nz1
-      n       = nelt*nxi*nyi*nzi 
       call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
-     &                          xm1,ym1,zm1,lx1,ly1,lz1,
-     &                          nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
+     &                          xm1,ym1,zm1,nx1,ny1,nz1,
+     &                          nelt,nx1,ny1,nz1,bb_t,nelt+2,nelt+2,
      &                          npt_max,tol)
 
       ! setup handle for findpts
@@ -49,7 +45,6 @@ c-----------------------------------------------------------------------
          nxi = nmsh
          nyi = nxi
          nzi = nxi
-         if (.not.if3d) nzi = 1
          n   = nelt*nxi*nyi*nzi 
          do ie = 1,nelt
            call map_m_to_n(xmi((ie-1)*nxi**3 + 1),nxi,xm1(1,1,1,ie),lx1,

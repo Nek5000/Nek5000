@@ -657,6 +657,9 @@ class Ethier(NekTestCase):
         herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
         self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
 
+        intperr = self.get_value_from_log(label='intp_usr err', column=-1, row=-1)
+        self.assertAlmostEqualDelayed(intperr, target_val=3e-15, delta=5e-14, label='intp err')
+
         gmres = self.get_value_from_log('gmres ', column=-6)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=7., label='gmres')
 
@@ -677,9 +680,7 @@ class Ethier(NekTestCase):
         	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
         	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm1 chksum')
         	pmc2 = self.get_value_from_log(label='pm2 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm2 chksum')
-
-
+        	self.assertAlmostEqualDelayed(pmc2, target_val=241, delta=0, label='pm2 chksum')
 
         self.assertDelayedFailures()
 
@@ -698,9 +699,6 @@ class Ethier(NekTestCase):
             f.writelines(lines)
 
         self.run_nek(step_limit=1000)
-
-        herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
-        self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
 
         gmres = self.get_value_from_log('gmres ', column=-7)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
