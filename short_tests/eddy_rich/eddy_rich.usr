@@ -294,7 +294,6 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
 
       n = nx1*ny1*nz1*nelv
       if (tlast.ne.time) then
-         write(*,*)'call exact at',time
          tlast = time
          visc = param(2)
          u0   = param(96)
