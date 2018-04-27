@@ -129,8 +129,6 @@ c        rsb element to processor mapping
 
       if(ifzper.or.ifgtp) call gfdm_elm_to_proc(np) ! special processor map
 
-      call nekgsync() ! wait for pending puts
-
       dProcmapCache = .true.
 
       return
@@ -431,13 +429,16 @@ c
       integer e,eg,eg0,eg1
       integer itmp20(20)
 
+      integer*8 offs0,offs
+
       ierr   = 0
       ifma2  = .false.
       suffix = '.map'
+      ntuple = 0
 
       if (nid.eq.0) then
-         lfname = ltrunc(reafle,132) - 4
-         call blank (mapfle,132)
+         lfname = ltrunc(reafle,sizeof(reafle)) - 4
+         call blank (mapfle,sizeof(mapfle))
          call chcopy(mapfle,reafle,lfname)
          call chcopy(mapfle1(lfname+1),suffix,4)
          inquire(file=mapfle, exist=ifmap)
@@ -452,15 +453,17 @@ c
       endif
       if(nid.eq.0) write(6,'(A,A)') ' Reading ', mapfle
       call err_chk(ierr,' Cannot find map file!$')
-      call bcast(ifma2,lsize)
+      call bcast(mapfle,sizeof(mapfle))
+      call bcast(ifma2,sizeof(ifma2))
 
+      ! just read header
       if (nid.eq.0) then
          if (ifma2) then         
             call byte_open(mapfle,ierr)
             if(ierr.ne.0) goto 100
 
-            call blank(hdr,132)
-            call byte_read(hdr,132/4,ierr)
+            call blank(hdr,sizeof(hdr))
+            call byte_read(hdr,sizeof(hdr)/4,ierr)
             if(ierr.ne.0) goto 100
 
             read (hdr,1) version,neli,nnzi
@@ -475,15 +478,59 @@ c
             read(80,1,err=100) version,neli,nnzi
          endif
       endif
-      call bcast(version, 5*CSIZE)
-      call bcast(neli   ,   ISIZE)
+      call bcast(version,sizeof(version))
+      call bcast(neli,sizeof(neli))
 
       if (version .ne. '#v002')
      $   call exitti('Unsupported map file version - rerun genmap!$',0)
        
        if (neli .ne. nelgt)
      $   call exitti('Element count of map file does not match!$',neli)
- 
+
+      ! read map file in parallel
+      ifmpiio = .true.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+      if (ifma2 .and. ifmpiio) then
+         if (nid.eq.0) call byte_close(ierr)
+         call byte_open_mpi(mapfle,ifh_map,.true.,ierr)
+         offs0 = sizeof(hdr) + sizeof(test)
+
+         nelr = neli/np
+         do i = 1,mod(neli,np)
+            if(np-i.eq.nid) nelr = nelr + 1
+         enddo
+         ntuple = nelr 
+         nelBr = igl_running_sum(nelr) - nelr
+         offs  = offs0 + int(nelBr,8)*(mdw-2)*ISIZE
+         call byte_set_view(offs,ifh_map)
+
+         call byte_read_mpi(wk,(mdw-2)*nelr,-1,ifh_map,ierr)
+         if (ifbswap) call byte_reverse(wk,(mdw-2)*nelr,ierr)
+
+         call byte_close_mpi(ifh_map,ierr)
+
+         m = nelr
+         do j = nelr,1,-1 ! reshuffle array
+            jj = (m-1)*(mdw-2) + 1
+            call icopy(itmp20,wk(jj,1),mdw-2)
+            call icopy(wk(1,m),itmp20 ,mdw-2)
+            m = m - 1
+         enddo
+
+         m = 0
+         do j = 1,nelr
+            eg = nelBr + j
+            m = m + 1
+            wk(mdw-1,m) = eg ! map file ordering index 
+            call dProcmapPut(wk(1,m),1,2,eg) ! store global element index
+         enddo
+
+         goto 50
+      endif
+
+      ! read map file through rank0
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
          if (nid.eq.0) write(6,*) npass,np,neli,ndw,'Error get_vert_map'
@@ -541,11 +588,9 @@ c
       elseif (nid.lt.npass) then
          call msgwait(msg_id)
          ntuple = ndw
-      else
-         ntuple = 0
       endif
 
-      call nekgsync()
+ 50   call nekgsync()
 
       if (.not.ifgfdm) call assign_gllnid()
 
@@ -631,7 +676,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine assign_gllnid()
 c
-c     pratition distributed array (ordering according to map file) 
+c     pratition distributed array (ordered according to map file) 
 c     into approximately equal-sized chunks 
 c
       include 'mpif.h'

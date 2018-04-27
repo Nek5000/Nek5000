@@ -78,6 +78,7 @@ c-----------------------------------------------------------------------
       endif
 
       ii = lsearch_ur(cache(1,3),lc,ieg)
+      if (ii.gt.lc) call exitti('lsearch_ur returns invalid index$',ii)
       if (ii.gt.0 .and. ii.ne.lelt+lcr) then ! cache hit
 c         write(6,*) nid, 'cache hit ', 'ieg:', ieg
          ibuf(1) = cache(ii,1)
@@ -130,12 +131,12 @@ c-----------------------------------------------------------------------
       integer a(n), n, k
       parameter(lvec = 8) ! unroll factor
 
-      slsearch = 0
+      lsearch_ur = 0
       do i = 1,n,lvec
          do j = 0,lvec-1
-            if (a(i+j).eq.k) slsearch = i + j
+            if (a(i+j).eq.k) slsearch_ur = i + j
          enddo
-         if (slsearch.gt.0) goto 10
+         if (lsearch_ur.gt.0) goto 10
       enddo
 
 10    continue
