@@ -1552,6 +1552,7 @@ c           call copy(r_gmres,res,ntot2)
                                                            !       -1
             call col3_acc(w_gmres,mu_gmres,v_gmres(1,j),ntot2) ! w  = U   v
                                                            !           j
+!To comment if Jacobi prec.
 !$acc update host(w_gmres)           
             etime2 = dnekclock()
             if(param(43).eq.1) then
@@ -1561,6 +1562,7 @@ c           call copy(r_gmres,res,ntot2)
 c              call copy_acc(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
+!To comment if Jacobi prec.
 !$acc update device(z_gmres(:,j)) 
             call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j

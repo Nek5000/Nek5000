@@ -6,6 +6,8 @@ c-----------------------------------------------------------------------
 
       parameter (lg=lx1*ly1*lz1*lelt)
       parameter (maxcg=900)
+      parameter(ltot2=lx2*ly2*lz2*lelv)
+      parameter(nset = 1 + lbelv/lelv)
 
 c      common /tdarray/ diagt(maxcg),upper(maxcg)
 c      common /scrcg/ d(lg), scalar(2)
@@ -29,13 +31,13 @@ C
      $ ,             TB2 (LX1,LY1,LZ1,LELV)
      $ ,             TB3 (LX1,LY1,LZ1,LELV)
 C
-C      common /scrns/ w1    (lx1,ly1,lz1,lelv)
-C     $ ,             w2    (lx1,ly1,lz1,lelv)
-C     $ ,             w3    (lx1,ly1,lz1,lelv)
-C     $ ,             dv1   (lx1,ly1,lz1,lelv)
-C     $ ,             dv2   (lx1,ly1,lz1,lelv)
-C     $ ,             dv3   (lx1,ly1,lz1,lelv)
-C     $ ,             dp    (lx2,ly2,lz2,lelv)
+      common /scrns1/ w1b    (lx1,ly1,lz1,lelv)
+     $ ,             w2b    (lx1,ly1,lz1,lelv)
+     $ ,             w3    (lx1,ly1,lz1,lelv)
+     $ ,             dv1   (lx1,ly1,lz1,lelv)
+     $ ,             dv2   (lx1,ly1,lz1,lelv)
+     $ ,             dv3   (lx1,ly1,lz1,lelv)
+     $ ,             dp    (lx2,ly2,lz2,lelv)
 
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
@@ -44,6 +46,9 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
       common /scrpre/ v1(lx1,ly1,lz1,lelv)
      $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
 
+      common /orthox/ pbar(ltot2),pnew(ltot2)
+      common /orthov/ pset(lx2*ly2*lz2*lelv*mxprev,nset)
+
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -51,15 +56,22 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
 !$acc enter data copyin(bm2,bm2inv)
 !$acc enter data copyin(w3m2,ixm12,iym12,izm12,dxm12,dym12,dzm12)
 
-C!$acc enter data create(w1,w2,w3,dv1,dv2,dv3)
-C!$acc enter data create(dp)
+!$acc enter data create(w1b,w2b,w3,dv1,dv2,dv3)
+c!$acc enter data create(dv1,dv2,dv3)
+!$acc enter data create(dp)
 
 !$acc enter data create(h1,h2,h2inv)
 !$ACC ENTER DATA COPYIN(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
 
-!!$acc enter data create(v1,w1,w2)
+c!$acc enter data create(v1,w1,w2) 
+!$acc enter data create(pbar)
+!$acc enter data create(pnew,pset)
 
-!$acc enter data create(w1,w2)
+!$acc enter data create(usrdiv)
+!$acc enter data create(w1,w2) 
+
+!$acc enter data copyin(vtrans,vdiff)
+c!$acc enter data copyin(vx,vy,vz,pr)
 
       return
       end
@@ -256,6 +268,87 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+c-----------------------------------------------------------------------
+      subroutine plan3_acc_data_copyin_istep1
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /scrns1/ res1  (lx1,ly1,lz1,lelv)
+     $ ,             res2  (lx1,ly1,lz1,lelv)
+     $ ,             res3  (lx1,ly1,lz1,lelv)
+     $ ,             dv1   (lx1,ly1,lz1,lelv)
+     $ ,             dv2   (lx1,ly1,lz1,lelv)
+     $ ,             dv3   (lx1,ly1,lz1,lelv)
+     $ ,             respr (lx2,ly2,lz2,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+     $ ,             h2    (lx1,ly1,lz1,lelv)
+
+
+c!$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
+c!$acc enter data copyin(dv1,dv2,dv3)
+ 
+c!$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+c!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
+      
+!$acc enter data copyin(vtrans,vdiff)
+c!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
+c!$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
+!$acc enter data copyin(vx,vy,vz,pr)
+c!$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
+c!$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
+ 
+c!$acc enter data copyin(ab,bd)
+!$acc enter data copyin(pmlag,prlag,qtl,usrdiv)
+c!$acc enter data copyin(vxd,vyd,vzd)
+ 
+c!$acc enter data create (ibc_acc)
+c!$acc enter data copyin (c_vx)
+
+
+      return
+      end 
+
+c-----------------------------------------------------------------------
+      subroutine plan3_acc_update_device_isteps
+c-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'    
+
+      parameter (lg=lx1*ly1*lz1*lelt)
+      parameter (maxcg=900)
+
+      common /tdarray/ diagt(maxcg),upper(maxcg)
+
+      common /scrcg/ d(lg), scalar(2)
+      common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
+
+
+c!$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+c!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
+!$acc update device(vtrans,vdiff)
+c!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
+c!$acc update device(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
+c!$acc update device(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
+c!$acc update device(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
+
+c!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2)
+c!$acc update device(ab,bd)
+c!$acc update device(pr,pmlag,prlag,qtl,usrdiv)
+
+c!$acc update device(vxd,vyd,vzd)
+
+c!$acc update device(ibc_acc)
+c!$acc update device(c_vx)
+
+
+      return
+      end
+
 c-----------------------------------------------------------------------
       subroutine hmh_gmres_acc_data_copyin_isteps()
 c-----------------------------------------------------------------------
@@ -1700,6 +1793,66 @@ c           du(i,j,1,e) = w1*b(i,j,1,e)
 !$acc    end loop
       enddo
 !$acc end parallel loop
+
+      return
+      end 
+
+c-----------------------------------------------------------------------
+      subroutine sethlm_acc (h1,h2,intloc)
+ 
+c     Set the variable property arrays H1 and H2
+c     in the Helmholtz equation.
+c     (associated with variable IFIELD)
+c     INTLOC =      integration type
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+
+      real h1(1),h2(1)
+
+      nel   = nelfld(ifield)
+      ntot1 = nx1*ny1*nz1*nel
+
+      if (iftran) then
+         dtbd = bd(1)/dt
+
+         call copy(h1,vdiff (1,1,1,1,ifield),ntot1)
+
+         if (intloc.eq.0) then
+            write(*,*)'****totot'
+            call rzero (h2,ntot1)
+         else
+            if (ifield.eq.1.or.param(107).eq.0) then 
+
+               call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
+
+            else   ! unsteady reaction-diffusion type equation
+
+               do i=1,ntot1
+                 h2(i) = dtbd*vtrans(i,1,1,1,ifield) + param(107)
+               enddo
+
+            endif
+
+         endif
+
+c        if (ifield.eq.1 .and. ifanls) then   ! this should be replaced
+c           const = 2.                        ! with a correct stress
+c           call cmult (h1,const,ntot1)       ! formulation
+c        endif
+
+      ELSE 
+            write(*,*)'****totot2'
+         CALL COPY  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
+         CALL RZERO (H2,NTOT1)
+         if (param(107).ne.0) then
+            write(6,*) 'SPECIAL SETHLM!!',param(107)
+c           call cfill (h2,param(107),ntot1)
+            call copy  (h2,vtrans(1,1,1,1,ifield),ntot1)
+         endif
+      endif
 
       return
       end
