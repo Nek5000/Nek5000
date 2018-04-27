@@ -904,7 +904,7 @@ c     add old pressure term because we solve for delta p
          ta2(i,1,1,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
          ta3(i,1,1,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
       enddo
-!$acc end parallel
+!$acc end parallel loop
 
       call dssum (ta1,nx1,ny1,nz1)
       call dssum (ta2,nx1,ny1,nz1)
@@ -916,7 +916,7 @@ c     add old pressure term because we solve for delta p
          ta2(i,1,1,1) = ta2(i,1,1,1)*binvm1(i,1,1,1)
          ta3(i,1,1,1) = ta3(i,1,1,1)*binvm1(i,1,1,1)
       enddo
-!$acc end parallel
+!$acc end parallel loop
 
       dtbd = bd(1)/dt  !! FOR NOW, no QTL support (pff, 7/31/17)
 c     call admcol3(respr,qtl,bm1,dtbd,ntot1)
@@ -981,7 +981,7 @@ c----------------------------------------------------------------------
       do i=1,n
          a(i)=1./a(i)
       enddo
-!$acc end parallel
+!$acc end parallel loop
       return
       end
 c-----------------------------------------------------------------------
