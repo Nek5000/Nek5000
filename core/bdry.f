@@ -117,29 +117,30 @@ C
   400 CONTINUE
 C
       IF (NIO.EQ.0) THEN
-         WRITE (6,*) 'IFTRAN   =',IFTRAN
-         WRITE (6,*) 'IFFLOW   =',IFFLOW
-         WRITE (6,*) 'IFHEAT   =',IFHEAT
-         WRITE (6,*) 'IFSPLIT  =',IFSPLIT
-         WRITE (6,*) 'IFLOMACH =',IFLOMACH
-         WRITE (6,*) 'IFUSERVP =',IFUSERVP
-         WRITE (6,*) 'IFUSERMV =',IFUSERMV
-         WRITE (6,*) 'IFPERT   =',IFPERT
-         WRITE (6,*) 'IFADJ    =',IFADJ
-         WRITE (6,*) 'IFSTRS   =',IFSTRS
-         WRITE (6,*) 'IFCHAR   =',IFCHAR
-         WRITE (6,*) 'IFCYCLIC =',IFCYCLIC
-         WRITE (6,*) 'IFAXIS   =',IFAXIS
-         WRITE (6,*) 'IFMVBD   =',IFMVBD
-         WRITE (6,*) 'IFMELT   =',IFMELT
-         WRITE (6,*) 'IFNEKNEK =',IFNEKNEK
-         WRITE (6,*) 'IFSYNC   =',IFSYNC
+         WRITE (6,*) 'IFTRAN    =',IFTRAN
+         WRITE (6,*) 'IFFLOW    =',IFFLOW
+         WRITE (6,*) 'IFHEAT    =',IFHEAT
+         WRITE (6,*) 'IFSPLIT   =',IFSPLIT
+         WRITE (6,*) 'IFLOMACH  =',IFLOMACH
+         WRITE (6,*) 'IFUSERVP  =',IFUSERVP
+         WRITE (6,*) 'IFUSERMV  =',IFUSERMV
+         WRITE (6,*) 'IFPERT    =',IFPERT
+         WRITE (6,*) 'IFADJ     =',IFADJ
+         WRITE (6,*) 'IFSTRS    =',IFSTRS
+         WRITE (6,*) 'IFCHAR    =',IFCHAR
+         WRITE (6,*) 'IFCYCLIC  =',IFCYCLIC
+         WRITE (6,*) 'IFAXIS    =',IFAXIS
+         WRITE (6,*) 'IFMVBD    =',IFMVBD
+         WRITE (6,*) 'IFMELT    =',IFMELT
+         WRITE (6,*) 'IFNEKNEK  =',IFNEKNEK
+         WRITE (6,*) 'IFNEKNEKC =',IFNEKNEKC
+         WRITE (6,*) 'IFSYNC    =',IFSYNC
          WRITE (6,*) '  '
-         WRITE (6,*) 'IFVCOR   =',IFVCOR
-         WRITE (6,*) 'IFINTQ   =',IFINTQ
-         WRITE (6,*) 'IFGEOM   =',IFGEOM
-         WRITE (6,*) 'IFSURT   =',IFSURT
-         WRITE (6,*) 'IFWCNO   =',IFWCNO
+         WRITE (6,*) 'IFVCOR    =',IFVCOR
+         WRITE (6,*) 'IFINTQ    =',IFINTQ
+         WRITE (6,*) 'IFGEOM    =',IFGEOM
+         WRITE (6,*) 'IFSURT    =',IFSURT
+         WRITE (6,*) 'IFWCNO    =',IFWCNO
 
          DO 500 IFIELD=1,NFIELD
             WRITE (6,*) '  '

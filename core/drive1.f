@@ -1,7 +1,6 @@
 c-----------------------------------------------------------------------
-      subroutine nek_init(intracomm)
+      subroutine nek_init(comm_out)
 c
-
       include 'SIZE'
       include 'TOTAL'
       include 'DOMAIN'
@@ -25,15 +24,35 @@ c      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
 c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
+
+      integer comm_out
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
   
       common /rdump/ ntdump
 
       real kwave2
       real*8 t0, tpp
 
-      logical ifemati,ifsync_
+      logical ifemati
 
-      call get_session_info(intracomm)
+      ! set word size for REAL
+      eps = 1.0e-12
+      if (1.0 + eps .ne. 1.0) then
+         wdsize = 8
+      else
+         wdsize = 4
+      endif
+      ! set word size for INTEGER
+      isize = 4
+      ! set word size for LOGICAL
+      lsize = 4
+      ! set word size for CHARACTER
+      csize = 1
+
+      call setupcomm()
+      nekcomm  = intracomm
+      comm_out = nekcomm
+      call iniproc()
 
       etimes = dnekclock()
       istep  = 0
@@ -47,15 +66,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       etime = dnekclock()
       call readat          ! Read .rea +map file
+
       etims0 = dnekclock_sync()
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12      format(1X,A,4I12,/,/)
       endif 
-
-c      ifsync_ = ifsync
-c      ifsync = .true.
 
       call setvar          ! Initialize most variables
 
@@ -155,8 +172,6 @@ c      ifsync = .true.
      &              ' Initialization successfully completed ',
      &              tinit, ' sec'
       endif
-
-c      ifsync = ifsync_ ! restore initial value
 
       return
       end
@@ -258,7 +273,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (igeom.gt.2) call userchk_set_xfer
+         if (ifneknek .and. igeom.gt.2) call userchk_set_xfer
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -287,7 +302,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (igeom.gt.2) call userchk_set_xfer
+            if (ifneknek .and. igeom.gt.2) call userchk_set_xfer
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -331,8 +346,9 @@ c-----------------------------------------------------------------------
       if(instep.ne.0)  call runstat
       if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
 
-   
       call in_situ_end()
+      call exitt0()
+
       return
       end
 c-----------------------------------------------------------------------

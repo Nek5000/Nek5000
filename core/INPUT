@@ -43,7 +43,7 @@ c
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
      $               ,ifmpiio,ifrich
 
@@ -59,7 +59,7 @@ c
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
      $               ,ifmpiio,ifrich
 

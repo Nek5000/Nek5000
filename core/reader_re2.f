@@ -177,8 +177,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) ' preading curved sides '
 
       ! read data from file
-      nr = nrg/np
-      do i = 0,mod(nrg,np)-1
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
       irankoff  = igl_running_sum(nr) - nr
@@ -284,8 +285,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) ' preading bc for ifld',ifield
 
       ! read data from file
-      nr = nrg/np
-      do i = 0,mod(nrg,np)-1
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
       irankoff  = igl_running_sum(nr) - nr

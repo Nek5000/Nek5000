@@ -390,6 +390,58 @@ class Eddy_Rich(NekTestCase):
 
 #####################################################################
 
+
+class Eddy_NeknekU(NekTestCase):
+    example_subdir  = 'eddy_neknek'
+    case_name       = 'eddy_uv'
+
+    def setUp(self):
+
+        self.size_params = dict(
+            nsessmax='2',
+            lx2='lx1-2',
+        )
+
+        self.build_tools(['genmap'])
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        from lib.nekBinRun import run_neknek
+        from re import sub
+
+        cls = self.__class__
+        cwd = os.path.join(self.examples_root, cls.example_subdir)
+
+        self.run_genmap(rea_file='inside',tol='0.2')
+
+        self.build_nek()
+        run_neknek(
+            cwd = cwd,
+            inside = 'inside',
+            outside = 'inside',
+            np_inside = 1,
+            np_outside = 1,
+            coupled = False,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
+        )
+
+        logfile = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
+            inside = 'inside',
+            outside = 'inside',
+            np_in = 1,
+            np_out = 1,
+            sfx = self.log_suffix
+        ))
+
+        phrase = self.get_phrase_from_log('ms_gs_op test PASSED',logfile=logfile)
+        self.assertIsNotNullDelayed(phrase, label='ms_gs_op test PASSED')
+
+    def tearDown(self):
+        self.move_logs()
+
+####################################################################
+
 class Eddy_Neknek(NekTestCase):
     example_subdir  = 'eddy_neknek'
     case_name       = 'eddy_uv'
@@ -427,7 +479,7 @@ class Eddy_Neknek(NekTestCase):
 
         self.size_params['lx2'] = 'lx1'
         self.config_size()
-        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        self.build_nek()
         run_neknek(
             cwd = cwd,
             inside = 'inside',
@@ -435,6 +487,7 @@ class Eddy_Neknek(NekTestCase):
             np_inside = 1,
             np_outside = 1,
             step_limit = 1000,
+            coupled = True,
             log_suffix = self.log_suffix,
             verbose = self.verbose,
         )
@@ -486,7 +539,7 @@ class Eddy_Neknek(NekTestCase):
 
         self.size_params['lx2'] = 'lx1-2'
         self.config_size()
-        self.build_nek(opts={'PPLIST':'NEKNEK'})
+        self.build_nek()
         run_neknek(
             cwd = cwd,
             inside = 'inside',
@@ -494,6 +547,7 @@ class Eddy_Neknek(NekTestCase):
             np_inside = 1,
             np_outside = 1,
             step_limit = 1000,
+            coupled = True,
             log_suffix = self.log_suffix,
             verbose = self.verbose,
         )
@@ -603,6 +657,9 @@ class Ethier(NekTestCase):
         herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
         self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
 
+        intperr = self.get_value_from_log(label='intp_usr err', column=-1, row=-1)
+        self.assertAlmostEqualDelayed(intperr, target_val=3e-15, delta=5e-14, label='intp err')
+
         gmres = self.get_value_from_log('gmres ', column=-6)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=7., label='gmres')
 
@@ -611,6 +668,19 @@ class Ethier(NekTestCase):
 
         prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
         self.assertAlmostEqualDelayed(prerr, target_val=1.127384e-04, delta=1e-06, label='PR err')
+
+        if os.environ['PARALLEL_PROCS'] == '2': 
+        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc0, target_val=189, delta=0, label='pm0 chksum')
+        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc1, target_val=339, delta=0, label='pm1 chksum')
+        elif os.environ['PARALLEL_PROCS'] == '3':
+        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc0, target_val=119, delta=0, label='pm0 chksum')
+        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm1 chksum')
+        	pmc2 = self.get_value_from_log(label='pm2 chksum', column=-3)
+        	self.assertAlmostEqualDelayed(pmc2, target_val=241, delta=0, label='pm2 chksum')
 
         self.assertDelayedFailures()
 
@@ -629,9 +699,6 @@ class Ethier(NekTestCase):
             f.writelines(lines)
 
         self.run_nek(step_limit=1000)
-
-        herr = self.get_value_from_log(label='hpts err', column=-1, row=-1)
-        self.assertAlmostEqualDelayed(herr, target_val=1.3776e-08, delta=1e-08, label='hpts err')
 
         gmres = self.get_value_from_log('gmres ', column=-7)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
@@ -1060,6 +1127,7 @@ if __name__ == '__main__':
                FsHydro,
                Axi, 
                Eddy_Neknek,
+               Eddy_NeknekU,
                Eddy_EddyUv,
                Eddy_LegacySize, 
                Benard_Ray9, 

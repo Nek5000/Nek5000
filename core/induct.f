@@ -892,7 +892,7 @@ c
       ifield = 1
       call sethlm   (h1,h2,intype)
 
-      call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
@@ -906,7 +906,7 @@ c
       ifield = ifldmhd
       call sethlm   (h1,h2,intype)
 
-      call ophinv_pr(dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
 
       call incomprn (bx,by,bz,pm) ! project B onto div-free space
@@ -1019,7 +1019,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ophinv_pr(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+      subroutine ophinv(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
 C
 C     Ok = (H1*A+H2*B)-1 * Ik  (implicit)
 C
@@ -1029,25 +1029,25 @@ C
       include 'SOLN'
       include 'VPROJ'
       include 'TSTEP'
-      logical ifproj
+c      logical ifproj
  
       real o1 (lx1,ly1,lz1,1) , o2 (lx1,ly1,lz1,1) , o3 (lx1,ly1,lz1,1)
       real i1 (lx1,ly1,lz1,1) , i2 (lx1,ly1,lz1,1) , i3 (lx1,ly1,lz1,1)
       real h1 (lx1,ly1,lz1,1) , h2 (lx1,ly1,lz1,1)
  
-      ifproj = .false.
-      if (param(94).gt.0)    ifproj = .true.
-      if (ifprojfld(ifield)) ifproj = .true.
+c      ifproj = .false.
+c      if (param(94).gt.0)    ifproj = .true.
+c      if (ifprojfld(ifield)) ifproj = .true.
+c 
+c      if (.not.ifproj) then
+c         if (ifield.eq.1) call ophinv
+c     $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+c         if (ifield.eq.ifldmhd) call ophinv
+c     $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+c         return
+c      endif
  
-      if (.not.ifproj) then
-         if (ifield.eq.1) call ophinv
-     $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
-         if (ifield.eq.ifldmhd) call ophinv
-     $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
-         return
-      endif
- 
-      mtmp        = param(93)
+      mtmp = param(93)
       do i=1,2*ldim
          ivproj(1,i) = min(mxprev,mtmp) - 1
       enddo
@@ -1071,7 +1071,7 @@ C
      $      call hsolve ('VELZ',o3,i3,h1,h2,v3mask,vmult
      $                         ,imesh,tolh,nmxhi,3
      $                         ,vproj(1,3),ivproj(1,3),binvm1)
-         else  ! B-field
+         elseif (ifield.eq.ifldmhd) then  ! B-field
             call hsolve (' BX ',o1,i1,h1,h2,b1mask,vmult
      $                         ,imesh,tolh,nmxhi,1
      $                         ,vproj(1,4),ivproj(1,4),binvm1)

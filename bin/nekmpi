@@ -1,4 +1,5 @@
-echo $1        >  SESSION.NAME
+echo 1         >  SESSION.NAME
+echo $1       >>  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 rm -f logfile
 rm -f ioinfo
