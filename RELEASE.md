@@ -8,6 +8,7 @@
 * Added gather scatter operations across sessions
 * Added gather scatter options across gtp-planes
 * Added par file support for postnek
+* Added parallel map file reader
 
 ## Backwards-Incompatible Changes 
 

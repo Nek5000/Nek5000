@@ -81,8 +81,7 @@ export VISIT_MESA_LIB=${VISIT}/lib/libOSMesa.so
 #echo "VISITPLUGINDIR=${VISITPLUGINDIR}"
 #echo "VISIT_MESA_LIB=${VISIT_MESA_LIB}"
 
-echo 1         >  SESSION.NAME
-echo $1       >>  SESSION.NAME
+echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 rm -f ioinfo logfile
 if [[ -f ${1}.log ]] ; then

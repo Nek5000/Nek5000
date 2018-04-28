@@ -346,8 +346,9 @@ c-----------------------------------------------------------------------
       if(instep.ne.0)  call runstat
       if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
 
-   
       call in_situ_end()
+      call exitt0()
+
       return
       end
 c-----------------------------------------------------------------------
