@@ -531,8 +531,6 @@ c
          goto 50
       endif
 
-      call exitt
-
       ! read map file through rank0
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
