@@ -134,7 +134,7 @@ c-----------------------------------------------------------------------
       lsearch_ur = 0
       do i = 1,n,lvec
          do j = 0,lvec-1
-            if (a(i+j).eq.k) slsearch_ur = i + j
+            if (a(i+j).eq.k) lsearch_ur = i + j
          enddo
          if (lsearch_ur.gt.0) goto 10
       enddo

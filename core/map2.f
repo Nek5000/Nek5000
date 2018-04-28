@@ -480,6 +480,7 @@ c
       endif
       call bcast(version,sizeof(version))
       call bcast(neli,sizeof(neli))
+      call bcast(ifbswap,sizeof(ifbswap))
 
       if (version .ne. '#v002')
      $   call exitti('Unsupported map file version - rerun genmap!$',0)
@@ -505,7 +506,7 @@ c
          nelBr = igl_running_sum(nelr) - nelr
          offs  = offs0 + int(nelBr,8)*(mdw-2)*ISIZE
          call byte_set_view(offs,ifh_map)
-
+      
          call byte_read_mpi(wk,(mdw-2)*nelr,-1,ifh_map,ierr)
          if (ifbswap) call byte_reverse(wk,(mdw-2)*nelr,ierr)
 
@@ -529,6 +530,8 @@ c
 
          goto 50
       endif
+
+      call exitt
 
       ! read map file through rank0
       npass = 1 + (neli/ndw)
@@ -594,16 +597,16 @@ c
 
       if (.not.ifgfdm) call assign_gllnid()
 
-      if (loglevel.gt.2) 
+      if (loglevel.gt.3) 
      $   write(6,*) nid,ntuple,nelv,nelt,nelgv,nelgt,' NELV'
-
-      do i = 1,ntuple
-         wk(mdw,i) = gllnid(wk(1,i))
-      enddo
 
       ntuple_sum = iglsum(ntuple,1)
       if (ntuple_sum.ne.nelgt)
      $   call exitti('Error invalid tuple sum!$',ntuple_sum)
+
+      do i = 1,ntuple
+         wk(mdw,i) = gllnid(wk(1,i))
+      enddo
 
       key = mdw ! processor id
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
@@ -611,8 +614,7 @@ c
       if (ntuple .ne. nelt)
      $   call exitti('Error invalid tuple sum after transfer!$',ntuple)
 
-      key = mdw-1         ! sort by map file ordering 
-      if (ifgfdm) key = 1 ! sort by global element index 
+      key = 1 ! sort by global element index 
       call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,1)
 
       do e = 1,nelt
@@ -685,6 +687,7 @@ c
 
       integer ibuf(3)
       integer nel(2)
+      integer iw1(lelt), iw2(lelt)
 
       nel(1) = nelgv
       nel(2) = nelgt - nelgv
@@ -715,11 +718,17 @@ c
                if (ieg.le.nelgv) nelv = nelv + 1
                if (ieg.le.nelgt) nelt = nelt + 1
 
-               ibuf(1) = iel
-               ibuf(2) = nid_el
-               call dProcmapPut(ibuf,2,0,ieg)
+               iw1(iel) = nid_el
             endif
          enddo
+      enddo
+
+      ! local-to-global mapping
+      call isort(lglel,iw2,nelt)
+      do i = 1,nelt
+         ibuf(1) = i 
+         ibuf(2) = iw1(iw2(i))
+         call dProcmapPut(ibuf,2,0,lglel(i))
       enddo
 
       call nekgsync() ! wait for pending puts
