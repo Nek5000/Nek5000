@@ -9,6 +9,7 @@
 * Added gather scatter options across gtp-planes
 * Added par file support for postnek
 * Added parallel map file reader
+* Added mkSIZE script to automatically create SIZE file
 
 ## Backwards-Incompatible Changes 
 

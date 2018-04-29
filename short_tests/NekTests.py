@@ -686,8 +686,9 @@ class Ethier(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        self.size_params['lx2'] = 'lx1'
-        self.config_size()
+#        self.size_params['lx2'] = 'lx1'
+#        self.config_size()
+        self.mkSIZE()
         self.build_nek()
 
         from re import sub
