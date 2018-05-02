@@ -70,7 +70,7 @@ c!$acc enter data create(v1,w1,w2)
 !$acc enter data create(usrdiv)
 !$acc enter data create(w1,w2) 
 
-!$acc enter data copyin(vtrans,vdiff)
+c!$acc enter data copyin(vtrans,vdiff)
 c!$acc enter data copyin(vx,vy,vz,pr)
 
       return
@@ -294,16 +294,17 @@ c!$acc enter data copyin(dv1,dv2,dv3)
  
 c!$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 c!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
-      
+
+!$acc enter data create(h1,h2)      
 !$acc enter data copyin(vtrans,vdiff)
 c!$acc enter data copyin(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
 c!$acc enter data copyin(bmnv,bmass,bdivw,bx,by,bz,pm,bmx,bmy,bmz)
-!$acc enter data copyin(vx,vy,vz,pr)
+c!$acc enter data copyin(vx,vy,vz,pr)
 c!$acc enter data copyin(vx,vy,vz,pr,t,vx_e,vy_e,vz_e)
 c!$acc enter data copyin(bbx1,bby1,bbz1,bbx2,bby2,bbz2,bxlag,bylag,bzlag)
  
 c!$acc enter data copyin(ab,bd)
-!$acc enter data copyin(pmlag,prlag,qtl,usrdiv)
+c!$acc enter data copyin(pmlag,prlag,qtl,usrdiv)
 c!$acc enter data copyin(vxd,vyd,vzd)
  
 c!$acc enter data create (ibc_acc)
@@ -1817,23 +1818,20 @@ c     INTLOC =      integration type
 
       if (iftran) then
          dtbd = bd(1)/dt
-
-         call copy(h1,vdiff (1,1,1,1,ifield),ntot1)
+         call copy_acc(h1,vdiff (1,1,1,1,ifield),ntot1)
 
          if (intloc.eq.0) then
-            write(*,*)'****totot'
-            call rzero (h2,ntot1)
+            call rzero_acc (h2,ntot1)
          else
             if (ifield.eq.1.or.param(107).eq.0) then 
-
-               call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
-
+               call cmult2_acc (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
             else   ! unsteady reaction-diffusion type equation
-
+               !$ACC PARALLEL LOOP PRESENT_OR_COPY(h2,vtrans,dtbd,param(107))
                do i=1,ntot1
                  h2(i) = dtbd*vtrans(i,1,1,1,ifield) + param(107)
                enddo
-
+               !$ACC END PARALLEL LOOP
+ 
             endif
 
          endif
@@ -1844,13 +1842,13 @@ c           call cmult (h1,const,ntot1)       ! formulation
 c        endif
 
       ELSE 
-            write(*,*)'****totot2'
-         CALL COPY  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
-         CALL RZERO (H2,NTOT1)
+            
+         CALL COPY_acc  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
+         CALL RZERO_acc (H2,NTOT1)
          if (param(107).ne.0) then
             write(6,*) 'SPECIAL SETHLM!!',param(107)
 c           call cfill (h2,param(107),ntot1)
-            call copy  (h2,vtrans(1,1,1,1,ifield),ntot1)
+            call copy_acc  (h2,vtrans(1,1,1,1,ifield),ntot1)
          endif
       endif
 

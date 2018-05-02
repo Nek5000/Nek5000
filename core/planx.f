@@ -545,7 +545,7 @@ C
 C
 
       if (istep.eq.1.and.igeom.eq.1) then
-c          call plan3_acc_data_copyin_istep1
+          call plan3_acc_data_copyin_istep1
       endif
 
       IF (IGEOM.EQ.1) THEN
@@ -560,11 +560,14 @@ C
 C
 C        New geometry, new b.c.
 C
-c         call plan3_acc_update_device_isteps
+         call plan3_acc_update_device_isteps
 
          INTYPE = -1
-         CALL SETHLM  (H1,H2,INTYPE)
+
+         CALL SETHLM_ACC  (H1,H2,INTYPE)
+!$acc    update host(h1,h2)   
          CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
+
 
 !$ACC DATA CREATE(DV1,DV2,DV3)
 !$ACC&   COPY(vx,vy,vz)
