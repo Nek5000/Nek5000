@@ -194,18 +194,11 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(mg_dht)
 !$acc enter data copyin(mg_zh)
 !$acc enter data copyin(mg_rstr_wt)
-!$acc enter data copyin(mg_mask)
-!$acc enter data copyin(mg_fast_s)
-!$acc enter data copyin(mg_fast_d)
-!$acc enter data copyin(mg_schwarz_wt)
-!$acc enter data copyin(mg_solve_e)
-!$acc enter data copyin(mg_solve_r)
 !$acc enter data copyin(mg_h1)
 !$acc enter data copyin(mg_h2)
 !$acc enter data copyin(mg_b)
 !$acc enter data copyin(mg_g)
-!$acc enter data copyin(mg_work)
-!$acc enter data copyin(mg_work2)
+
 !$acc enter data copyin(mg_worke)
 !$acc enter data copyin(mg_imask)
 !$acc enter data copyin(mg_h1_n)
@@ -213,6 +206,15 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
 #endif
+!$acc enter data copyin(mg_mask)
+!$acc enter data copyin(mg_solve_e)
+!$acc enter data copyin(mg_solve_r)
+!$acc enter data copyin(mg_work)
+!$acc enter data copyin(mg_work2)
+!$acc enter data copyin(mg_fast_s)
+!$acc enter data copyin(mg_fast_d)
+!$acc enter data copyin(mg_schwarz_wt)
+
       return
       end
 c-----------------------------------------------------------------------

@@ -3785,8 +3785,7 @@ c     n = nx2*ny2*nz2*nelv
 c     rmax = glmax(r,n)
 c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
 
-!!$acc data present(e,r)
-!!$acc update host(r)
+!$acc data present(e,r)
 
       iter = iter + 1
 
@@ -3797,16 +3796,14 @@ c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
       time_0 = dnekclock()
 
       call local_solves_fdm_acc(e,r)
-!!$acc update host(e)
 
       time_1 = dnekclock()
 
-!!$acc data create(mg_work2)
-!!$acc& copyin(r)
 c     if (param(41).eq.1)y if_hybrid = .true.
       if_hybrid = .false.
 
       if (if_hybrid) then
+         stop
          ! w := E e
          rbd1dt = rhoavg*bd(1)/dt ! Assumes constant density!!!
          call cdabdtp(mg_work2,e,h1,h2,h2inv,1)
@@ -3832,15 +3829,12 @@ c     if (param(41).eq.1)y if_hybrid = .true.
          stop
       else   ! Additive
          ! w := r - w
-!!$acc parallel loop
+!$acc parallel loop
          do i = 1,nt
             mg_work2(i) = r(i)
          enddo
          time_2 = dnekclock()
       endif
-
-!!$acc update host(mg_work2(1:nt))
-!!$acc end data
 
       do l = mg_lmax-1,2,-1
 
@@ -3851,40 +3845,38 @@ c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
          !          T
          ! r   :=  J w
          !  l
-         call hsmg_rstr(mg_solve_r(mg_solve_index(l,mg_fld)),
+         call hsmg_rstr_acc(mg_solve_r(mg_solve_index(l,mg_fld)),
      $        mg_work2,l)
-
          ! w  := r
          !        l
-         call copy(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
+         call copy_acc(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
          ! e  := M        w
          !  l     Schwarz
-         call hsmg_schwarz(
+         call hsmg_schwarz_acc(
      $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
-
          ! e  := W e
          !  l       l
-         call hsmg_schwarz_wt(mg_solve_e(mg_solve_index(l,mg_fld))
+         call hsmg_schwarz_wt_acc(mg_solve_e(mg_solve_index(l,mg_fld))
      $                           ,l)
-
 c        call exitti('quit in mg$',l)
 
          ! w  := r  - w
          !        l
+!$acc parallel loop
          do i = 0,nt-1
             mg_work2(i+1) = mg_solve_r(mg_solve_index(l,mg_fld)+i)
      $         !-alpha*mg_work2(i+1)
          enddo
       enddo
-
+!$acc update host(mg_solve_r,mg_work2,mg_solve_e)
       call hsmg_rstr_no_dssum(
      $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
 
       nzw = ndim-1
-
-      call hsmg_do_wt(mg_solve_r(mg_solve_index(1,mg_fld)),
+!$acc update device(mg_solve_r)
+      call hsmg_do_wt_acc(mg_solve_r(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
-
+!$acc update host(mg_solve_r)
       !        -1
       ! e  := A   r
       !  1         1
@@ -3893,33 +3885,33 @@ c        call exitti('quit in mg$',l)
       call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                       mg_solve_r(mg_solve_index(1,mg_fld)))
 
-      call hsmg_do_wt(mg_solve_e(mg_solve_index(1,mg_fld)),
+!$acc update device(mg_solve_e)
+      call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()
       do l = 2,mg_lmax-1
          nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
          ! w   :=  J e
          !            l-1
-         call hsmg_intp
+         call hsmg_intp_acc
      $      (mg_work2,mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
 
          ! e   :=  e  + w
          !  l       l
-
-!!$ACC PARALLEL LOOP
+!$ACC PARALLEL LOOP
          do i = 0,nt-1
             mg_solve_e(mg_solve_index(l,mg_fld)+i) =
      $        + mg_solve_e(mg_solve_index(l,mg_fld)+i) + mg_work2(i+1)
          enddo
       enddo
+
       l = mg_lmax
       nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
       ! w   :=  J e
       !            m-1
 
-      call hsmg_intp(mg_work2,
+      call hsmg_intp_acc(mg_work2,
      $   mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
-
       if (if_hybrid.and.istep.eq.1) then
          write(*,*) "Will implement later. Jing 2018-03-09"
          stop
@@ -3937,10 +3929,12 @@ c        call exitti('quit in mg$',l)
       endif
       ! e := e + w
 
+!$acc parallel loop
       do i = 1,nt
          e(i) = e(i) + copt2*mg_work2(i)
       enddo
       time_4 = dnekclock()
+
 c     print *, 'Did an MG iteration'
 c
       taaaa = taaaa + (time_1 - time_0)
@@ -3955,12 +3949,12 @@ c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
 c
 c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
 c
-      call ortho(e)
+      call ortho_acc(e)
 
       tddsl  = tddsl + ( dnekclock()-etime1 )
 
-!!$acc update device(e)
-!!$acc end data
+!$acc update host(e)
+!$acc end data
 
       return
       end
