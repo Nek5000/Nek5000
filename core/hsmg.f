@@ -3868,24 +3868,22 @@ c        call exitti('quit in mg$',l)
      $         !-alpha*mg_work2(i+1)
          enddo
       enddo
-!$acc update host(mg_solve_r,mg_work2,mg_solve_e)
-      call hsmg_rstr_no_dssum(
+      call hsmg_rstr_no_dssum_acc(
      $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
 
       nzw = ndim-1
-!$acc update device(mg_solve_r)
       call hsmg_do_wt_acc(mg_solve_r(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
-!$acc update host(mg_solve_r)
       !        -1
       ! e  := A   r
       !  1         1
 
       !! CPU 2018-03-09 
+!$acc update host(mg_solve_e,mg_solve_r)
       call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                       mg_solve_r(mg_solve_index(1,mg_fld)))
 
-!$acc update device(mg_solve_e)
+!$acc update device(mg_solve_e,mg_solve_r)
       call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()
@@ -3952,8 +3950,6 @@ c
       call ortho_acc(e)
 
       tddsl  = tddsl + ( dnekclock()-etime1 )
-
-!$acc update host(e)
 !$acc end data
 
       return
@@ -4363,5 +4359,20 @@ c----------------------------------------------------------------------
      $                  ,mg_jh(1,l),mg_jht(1,l))
       return
       end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_rstr_no_dssum_acc(uc,uf,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      if(l.ne.mg_lmax-1)
+     $   call hsmg_do_wt_acc(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
+     $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
+      call hsmg_tnsr_acc(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),
+     $     mg_jh(1,l))
+      return
+      end
+
 
 #endif 

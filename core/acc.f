@@ -193,7 +193,6 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(mg_dh)
 !$acc enter data copyin(mg_dht)
 !$acc enter data copyin(mg_zh)
-!$acc enter data copyin(mg_rstr_wt)
 !$acc enter data copyin(mg_h1)
 !$acc enter data copyin(mg_h2)
 !$acc enter data copyin(mg_b)
@@ -214,7 +213,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(mg_fast_s)
 !$acc enter data copyin(mg_fast_d)
 !$acc enter data copyin(mg_schwarz_wt)
-
+!$acc enter data copyin(mg_rstr_wt)
       return
       end
 c-----------------------------------------------------------------------
