@@ -97,7 +97,7 @@ c           call copy(r_gmres,res,ntot2)
             if(param(43).eq.1) then
                call uzprec(z_gmres(1,j),w_gmres,h1,h2,intype,wp)
             else                                        !       -1
-               call hsmg_solve(z_gmres(1,j),w_gmres)    ! z  = M   w
+              call hsmg_solve(z_gmres(1,j),w_gmres)    ! z  = M   w
 c              call copy(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
@@ -1557,7 +1557,7 @@ c           call copy(r_gmres,res,ntot2)
             if(param(43).eq.1) then
                call uzprec(z_gmres(1,j),w_gmres,h1,h2,intype,wp)
             else                                        !       -1
-              call hsmg_solve(z_gmres(1,j),w_gmres)    ! z  = M   w
+              call hsmg_solve_acc(z_gmres(1,j),w_gmres)    ! z  = M   w
 c              call copy_acc(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2

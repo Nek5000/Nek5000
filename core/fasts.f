@@ -454,7 +454,6 @@ c-----------------------------------------------------------------------
 
 
 #ifdef _OPENACC
-
 c-----------------------------------------------------------------------
       subroutine local_solves_fdm_acc(u,v)
 c
@@ -498,16 +497,15 @@ c
       ntot2 = nx2*ny2*nz2*nelv
 
 !$acc data copyin(v)
-!$acc&  create(u)
-!$acc&  present(v1,w1,w2)
-!$acc&  present(df,sr,ss,st)
+!$acc& create(u,v1)
+!$acc& present(w1,w2)
+!$acc& copy(df,sr,ss,st)
 c
 c     Fill interiors
       iz1 = 0
       if (if3d) iz1=1
       call rzero_acc(v1,ntot1)
-
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR 
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
       do e=1,nelv
          do iz=1,nz2
          do iy=1,ny2
@@ -517,10 +515,9 @@ c     Fill interiors
          enddo
          enddo
       enddo
-
-      call dface_ext_acc   (v1)
-
+      call dface_ext_acc    (v1)
       call dssum        (v1,nx1,ny1,nz1)
+
       call dface_add1si_acc (v1,-1.)
 c
 c     Now solve each subdomain problem:
@@ -531,42 +528,41 @@ c
       if (ifield.gt.1) eoff  = nelv
 
 #if 0
-!!  needed to be investigated, 2018-03-07
       do e = 1,nelv
          eb = e + eoff
          call fastdm1(v1(1,1,1,e),df(1,eb)
-     $                ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2,e)
+     $                           ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2)
       enddo
 #else
-      call fastdm1_acc(v1,df,sr,ss,st,w1,w2)
-#endif
-
+      call  fastdm1_acc(v1,df,sr,ss,st,w1,w2)
+#endif 
+     
       tsolv=tsolv+dnekclock()-etime1
 c
 c     Exchange/add elemental solutions
 c
       call s_face_to_int_acc (v1,-1.)
-
       call dssum         (v1,nx1,ny1,nz1)
       call s_face_to_int_acc (v1, 1.)
+
       if(param(42).eq.0) call do_weight_op_acc(v1)
 c
 c     Map back to pressure grid (extract interior values)
 c
-!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR  
       do e=1,nelv
          do iz=1,nz2
          do iy=1,ny2
          do ix=1,nx2
-            u(ix,iy,iz,e) = v1(ix+1,iy+1,iz+1,e)
+            u(ix,iy,iz,e) = v1(ix+1,iy+1,iz+iz1,e)
          enddo
          enddo
          enddo
       enddo
+c
 
 !$acc update host(u)
 !$acc end data
-c
 
       return
       end
@@ -959,7 +955,8 @@ c-----------------------------------------------------------------------
       endif
 
       if (if3d) then
-!$ACC DATA PRESENT(x,w)
+!$ACC DATA PRESENT(x)
+!$acc& copyin(w)
 !$ACC PARALLEL LOOP COLLAPSE(1)
          do e=1,nelv
             eb = e0 + e
