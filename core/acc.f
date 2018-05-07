@@ -205,6 +205,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
 #endif
+#if 1
 !$acc enter data copyin(mg_mask)
 !$acc enter data copyin(mg_solve_e)
 !$acc enter data copyin(mg_solve_r)
@@ -214,6 +215,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(mg_fast_d)
 !$acc enter data copyin(mg_schwarz_wt)
 !$acc enter data copyin(mg_rstr_wt)
+#endif
       return
       end
 c-----------------------------------------------------------------------

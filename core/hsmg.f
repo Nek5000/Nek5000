@@ -1719,7 +1719,6 @@ c
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
 
-
       call crs_solve(xxth(ifield),e,r)
 
       tcrsl=tcrsl+dnekclock()-etime1
@@ -3879,11 +3878,11 @@ c        call exitti('quit in mg$',l)
       !  1         1
 
       !! CPU 2018-03-09 
-!$acc update host(mg_solve_e,mg_solve_r)
+!$acc update host(mg_solve_e,mg_solve_r)     
       call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                       mg_solve_r(mg_solve_index(1,mg_fld)))
 
-!$acc update device(mg_solve_e,mg_solve_r)
+!$acc update device(mg_solve_e)
       call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()
@@ -4339,8 +4338,6 @@ c
 
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
-
-
       call crs_solve(xxth(ifield),e,r)
 
       tcrsl=tcrsl+dnekclock()-etime1
