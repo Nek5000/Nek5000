@@ -1114,6 +1114,7 @@ c     clobbers r
 !     $                         ,s(1,1,1,ie),s(1,2,2,ie))
 !         enddo
       else
+
 !$ACC PARALLEL LOOP GANG
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
          do ie=1,nelt
@@ -3750,6 +3751,8 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
 
       logical if_hybrid
 
+      integer ntco
+
       mg_fld = 1
       if (ifield.gt.1) mg_fld = 2
 
@@ -3871,6 +3874,7 @@ c        call exitti('quit in mg$',l)
      $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
 
       nzw = ndim-1
+      ntco = nelv*2*2*nzw
       call hsmg_do_wt_acc(mg_solve_r(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       !        -1
@@ -3878,11 +3882,10 @@ c        call exitti('quit in mg$',l)
       !  1         1
 
       !! CPU 2018-03-09 
-!$acc update host(mg_solve_e,mg_solve_r)     
+!$acc update host(mg_solve_e(0:ntco-1),mg_solve_r(0:ntco-1))     
       call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                       mg_solve_r(mg_solve_index(1,mg_fld)))
-
-!$acc update device(mg_solve_e)
+!$acc update device(mg_solve_e(0:ntco-1))
       call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
      $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
       time_3 = dnekclock()

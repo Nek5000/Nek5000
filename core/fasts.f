@@ -685,6 +685,7 @@ c
          do j = 1,ny1
          do i = 1,nx1
             tmp = 0.0
+!$ACC LOOP SEQ
             do l = 1,nx1
                tmp = tmp+sr(l,i,1,e)*r(l,j,k,e)
             enddo
@@ -700,6 +701,7 @@ c
          do j = 1,ny1
          do i = 1,nx1
             tmp = 0.0
+!$ACC LOOP SEQ
             do l = 1,nx1
                tmp = tmp+ss(l,j,1,e)*w1(i,l,k,e)
             enddo
@@ -715,6 +717,7 @@ c
          do j = 1,ny1
          do i = 1,nx1
             tmp = 0.0
+!$ACC LOOP SEQ
             do l = 1,nx1
                tmp = tmp+st(l,k,1,e)*w2(i,j,l,e)
             enddo

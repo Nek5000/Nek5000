@@ -583,8 +583,6 @@ c
 
          call incomprn_acc(vx,vy,vz,pr)
 C
-
-
       ENDIF
 C
       RETURN
