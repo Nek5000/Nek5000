@@ -44,6 +44,7 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
       common /scrpre/ v1(lx1,ly1,lz1,lelv)
      $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
 
+#if 0
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -60,7 +61,7 @@ C!$acc enter data create(dp)
 !!$acc enter data create(v1,w1,w2)
 
 !$acc enter data create(w1,w2)
-
+#endif
       return
       end
 
@@ -86,8 +87,10 @@ c-----------------------------------------------------------------------
      $ ,              tas2 (lx1,ly1,lz1,lelv)
      $ ,              tat2 (lx1,ly1,lz1,lelv)
 
+#if 0
 !$acc exit data delete(work)
 !$acc exit data delete(tar1,tas1,tat1,tar2,tas2,tat2)
+#endif
 
       return
       end
@@ -170,7 +173,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
-#if 0
+#if 1
 !$acc enter data copyin(mg_nx)
 !$acc enter data copyin(mg_ny,mg_nz)
 !$acc enter data copyin(mg_nh,mg_nhz)
@@ -193,11 +196,19 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(mg_dh)
 !$acc enter data copyin(mg_dht)
 !$acc enter data copyin(mg_zh)
+!$acc enter data copyin(mg_rstr_wt)
+!$acc enter data copyin(mg_mask)
+!$acc enter data copyin(mg_fast_s)
+!$acc enter data copyin(mg_fast_d)
+!$acc enter data copyin(mg_schwarz_wt)
+!$acc enter data copyin(mg_solve_e)
+!$acc enter data copyin(mg_solve_r)
 !$acc enter data copyin(mg_h1)
 !$acc enter data copyin(mg_h2)
 !$acc enter data copyin(mg_b)
 !$acc enter data copyin(mg_g)
-
+!$acc enter data copyin(mg_work)
+!$acc enter data copyin(mg_work2)
 !$acc enter data copyin(mg_worke)
 !$acc enter data copyin(mg_imask)
 !$acc enter data copyin(mg_h1_n)
@@ -205,7 +216,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
 #endif
-#if 1
+#if 0
 !$acc enter data copyin(mg_mask)
 !$acc enter data copyin(mg_solve_e)
 !$acc enter data copyin(mg_solve_r)
@@ -237,7 +248,7 @@ c-----------------------------------------------------------------------
       common /scrvh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
 
-#if 0
+#if 1
 !$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
 !$acc enter data copyin(dv1,dv2,dv3)
  
@@ -282,7 +293,7 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
 
-#if 0
+#if 1
 !$acc enter data create(work,work2)
 !$acc enter data copyin(mg_mask,mg_imask,pmask)
 !$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
@@ -324,7 +335,7 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
 
-#if 0
+#if 1
 !$acc exit data delete(work,work2)
 !$acc exit data delete(w1,w2)
 !$acc exit data delete(e,w,r)
@@ -353,7 +364,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
-#if 0
+#if 1
 !$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
@@ -378,7 +389,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
-#if 0
+#if 1
 !$acc update device(mg_nx)
 !$acc update device(mg_ny,mg_nz)
 !$acc update device(mg_nh,mg_nhz)
@@ -440,7 +451,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ d(lg), scalar(2)
       common /scrcg2/ r(lg), w(lg), p(lg), z(lg)
 
-#if 0
+#if 1
 !$acc update host(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
 !$acc update host(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc update host(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
@@ -495,8 +506,8 @@ c-----------------------------------------------------------------------
       end
 
 
-
-#ifdef _OPENACC 
+C JG - 2018-05-07 commented out for Pn-Pn-2
+c#ifdef _OPENACC 
 c-----------------------------------------------------------------------
       subroutine global_grad3_acc(d,u,u1,u2,u3)
 c-----------------------------------------------------------------------
@@ -593,8 +604,7 @@ c-----------------------------------------------------------------------
 !$acc end data
       end
 
-
-#else
+c#else
 c-----------------------------------------------------------------------
       subroutine global_grad3(d,u,u1,u2,u3)
 c-----------------------------------------------------------------------
@@ -608,7 +618,7 @@ c-----------------------------------------------------------------------
       real u3(lx1,ly1,lz1,lelt)
       real tmpu1,tmpu2,tmpu3
 
-!! Modified by Jing 2018-03-20
+!! Modified by JG 2018-03-20
       do e=1,nelt
          do k=1,nz1
             do j=1,ny1
@@ -648,7 +658,7 @@ c-----------------------------------------------------------------------
 
       stop
 
-!! Modified by Jing 2018-03-20
+!! Modified by JG 2018-03-20
       do e=1,nelv
       do k=1,nz1
       do j=1,ny1
@@ -671,8 +681,7 @@ c-----------------------------------------------------------------------
 
       end
 
-
-#endif
+c#endif
 
 c-----------------------------------------------------------------------
       subroutine cresvsp_acc (resv1,resv2,resv3,h1,h2)

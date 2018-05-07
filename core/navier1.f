@@ -5242,7 +5242,8 @@ c           call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
       end
 c-----------------------------------------------------------------------
 
-#ifdef _OPENACC
+C JG - 2018-05-07 commented out for Pn-Pn
+c#ifdef _OPENACC
 c-----------------------------------------------------------------------
       subroutine ctolspl_acc (tolspl,respr)
 C
@@ -5329,6 +5330,7 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       return
       end
 
+#ifdef _OPENACC
 c-----------------------------------------------------------------------
       subroutine cdtp_acc (dtx,x,rm2,sm2,tm2,isd)
 C-------------------------------------------------------------

@@ -3022,8 +3022,9 @@ c         otr = glsc3 (w1,res,mult,ntot1)
       return
       end
 
-#ifdef _OPENACC
-
+c# JG - 2018-05-07 commented out for Pn-Pn
+c#ifdef _OPENACC
+#if 1
 c-----------------------------------------------------------------------
       subroutine setprec_acc (dpcm1,helm1,helm2,imsh,isd)
 C-------------------------------------------------------------------

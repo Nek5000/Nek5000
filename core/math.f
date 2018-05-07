@@ -2043,8 +2043,9 @@ c
       return
       end
 
-#ifdef _OPENACC 
-
+C JG -2018-05-07 commented out for Pn-Pn, 
+c#ifdef _OPENACC 
+#if 1
 c--------------------------------------------------------
       subroutine col2_acc(a,b,n)
       real a(n),b(n)
@@ -2366,8 +2367,9 @@ c-----------------------------------------------------------------------
       subroutine chsign_acc(a,n)
       REAL A(n)
 C
-      write(*,*) "No openacc? chsign_acc in math.f"
-      stop 
+C JG - 2018-05-07 commented out for Pn-Pn
+C      write(*,*) "No openacc? chsign_acc in math.f"
+C      stop 
       DO I=1,N
          A(I) = -A(I)
       END DO

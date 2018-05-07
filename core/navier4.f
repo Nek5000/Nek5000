@@ -1367,7 +1367,9 @@ c
       return
       end
 
-#ifdef _OPENACC
+C JG - 2018-05-07, commented out for Pn-Pn
+C#ifdef _OPENACC
+
 c-----------------------------------------------------------------------
       function vlsc3_acc(x,y,b,n)
 C ROR, 05-12-2017: This does not give the correct results on GPU.
@@ -1407,6 +1409,7 @@ c      t=dt
       return
       end
 
+#ifdef _OPENACC
 c-----------------------------------------------------------------------
       subroutine updrhse_acc(p,h1,h2,h2inv,ierr)
 C
