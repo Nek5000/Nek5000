@@ -263,10 +263,8 @@ c     v = [A (x) A (x) A] u71
       include 'INPUT'
       if (.not. if3d) then
          call hsmg_tnsr2d(v,nv,u,nu,A,At)
-      else
-       
-!! modified by Jing 2018-03-08
-#ifdef _OPENACC2
+      else       
+#ifdef _OPENACC
          call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
 #else
          call hsmg_tnsr3d    (v,nv,u,nu,A,At,At)
@@ -540,11 +538,9 @@ c----------------------------------------------------------------------
          enddo
       else
          !FIXME: Possibly rewrite as 3 loops of collapse(3)
-
-!! Commented out by Jing 2018-03-09
-!!$ACC PARALLEL LOOP GANG PRESENT_OR_COPY(arr1,arr2)
+!$ACC PARALLEL LOOP GANG PRESENT_OR_COPY(arr1,arr2)
          do ie=1,nelv
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do j=i0,i1
                arr1(l1+1 ,j,k,ie) = f1*arr1(l1+1 ,j,k,ie)
@@ -553,9 +549,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(nx-l2,j,k,ie)
             enddo
             enddo
-!!$ACC END LOOP
+!$ACC END LOOP
 
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=i0,i1
             do i=i0,i1
                arr1(i,l1+1 ,k,ie) = f1*arr1(i,l1+1 ,k,ie)
@@ -564,9 +560,9 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,nx-l2,k,ie)
             enddo
             enddo
-!!$ACC END LOOP
+!$ACC END LOOP
 
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
             do j=i0,i1
             do i=i0,i1
                arr1(i,j,l1+1 ,ie) = f1*arr1(i,j,l1+1 ,ie)
@@ -575,7 +571,7 @@ c----------------------------------------------------------------------
      $                             +f2*arr2(i,j,nx-l2,ie)
             enddo
             enddo
-!!$ACC END LOOP
+!$ACC END LOOP
          enddo
       endif
       return
@@ -749,15 +745,14 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-!! modified by Jing 2018-03-09
-#ifdef _OPENACC2
+#ifdef _OPENACC
       call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
 #else
       call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
 #endif
 
-!!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-!!$ACC&              GANG VECTOR
+!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+!$ACC&              GANG VECTOR
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -767,7 +762,7 @@ c----------------------------------------------------------------------
       enddo
       enddo
       enddo
-!!$ACC END LOOP
+!$ACC END LOOP
 
       return
       end
@@ -795,9 +790,8 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-!! Commented out by Jing 2018-03-08
-!!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
-!!$ACC&  PRESENT_OR_COPY(a,b)
+!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
+!$ACC&  PRESENT_OR_COPY(a,b)
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -1067,8 +1061,7 @@ c     clobbers r
       include 'INPUT'
       include 'HSMG'
 
-!! modified by Jing 2018-03-09
-#ifdef _OPENACC2
+#ifdef _OPENACC
       call hsmg_do_fast_acc(e,r,
      $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
@@ -1314,35 +1307,34 @@ c     endif
          enddo
       else
          !FIXME: Consider changing to 3 collapse(3) loops
-!!  Commented out by Jing 2018-03-5
-!!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
+!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
          do ie=1,nelv
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do j=1,ny
                u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
                u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
             enddo
             enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do i=2,nx-1
                u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
                u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
             enddo
             enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
             do j=2,ny-1
             do i=2,nx-1
                u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
                u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
             enddo
             enddo
-!!$ACC END LOOP
+!$ACC END LOOP
          enddo
-!!$ACC END PARALLEL LOOP
+!$ACC END PARALLEL LOOP
          
       endif
       return
@@ -1654,10 +1646,9 @@ c----------------------------------------------------------------------
 
       integer ie,i,j,k
 
-!! Commented out by Jing 2018-03-09
-!!$ACC PARALLEL LOOP PRESENT(e,wt)
+!$ACC PARALLEL LOOP PRESENT(e,wt)
       do ie=1,nelv
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do j=1,n
             e(1  ,j,k,ie)=e(1  ,j,k,ie)*wt(j,k,1,1,ie)
@@ -1666,8 +1657,8 @@ c----------------------------------------------------------------------
             e(n  ,j,k,ie)=e(n  ,j,k,ie)*wt(j,k,4,1,ie)
          enddo
          enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do i=3,n-2
             e(i,1  ,k,ie)=e(i,1  ,k,ie)*wt(i,k,1,2,ie)
@@ -1676,8 +1667,8 @@ c----------------------------------------------------------------------
             e(i,n  ,k,ie)=e(i,n  ,k,ie)*wt(i,k,4,2,ie)
          enddo
          enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
          do j=3,n-2
          do i=3,n-2
             e(i,j,1  ,ie)=e(i,j,1  ,ie)*wt(i,j,1,3,ie)
@@ -1686,9 +1677,9 @@ c----------------------------------------------------------------------
             e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
          enddo
          enddo
-!!$ACC END LOOP
+!$ACC END LOOP
       enddo
-!!$ACC END PARALLEL LOOP
+!$ACC END PARALLEL LOOP
       return
       end
 c----------------------------------------------------------------------
@@ -2553,8 +2544,7 @@ c
       if (.not. if3d) then
          call hsmg_tnsr1_2d(v,nv,nu,A,At)
       else
-! Changed by Jing Gong 2018-03-09
-#ifdef _OPENACC2
+#ifdef _OPENACC
          call hsmg_tnsr1_3d_acc (v,nv,nu,A,At,At)
 #else
          call hsmg_tnsr1_3d     (v,nv,nu,A,At,At)
