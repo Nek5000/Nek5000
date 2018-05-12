@@ -5242,7 +5242,7 @@ c           call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
       end
 c-----------------------------------------------------------------------
 
-#ifdef _OPENACC
+c#ifdef _OPENACC
 c-----------------------------------------------------------------------
       subroutine ctolspl_acc (tolspl,respr)
 C
@@ -5923,4 +5923,4 @@ C
       END
 C
 
-#endif
+c#endif

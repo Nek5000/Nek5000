@@ -453,7 +453,7 @@ c-----------------------------------------------------------------------
       end
 
 
-#ifdef _OPENACC
+c#ifdef _OPENACC
 
 c-----------------------------------------------------------------------
       subroutine local_solves_fdm_acc(u,v)
@@ -539,7 +539,7 @@ c
       enddo
 #else
       call fastdm1_acc(v1,df,sr,ss,st,w1,w2)
-#endif
+c#endif
 
       tsolv=tsolv+dnekclock()-etime1
 c

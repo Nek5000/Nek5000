@@ -2999,7 +2999,7 @@ c         otr = glsc3 (w1,res,mult,ntot1)
       return
       end
 
-#ifdef _OPENACC
+c#ifdef _OPENACC
 
 c-----------------------------------------------------------------------
       subroutine setprec_acc (dpcm1,helm1,helm2,imsh,isd)
@@ -3191,4 +3191,4 @@ C
       END
 c-----------------------------------------------------------------------
 
-#endif
+c#endif
