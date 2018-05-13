@@ -539,7 +539,7 @@ c
       enddo
 #else
       call fastdm1_acc(v1,df,sr,ss,st,w1,w2)
-c#endif
+#endif
 
       tsolv=tsolv+dnekclock()-etime1
 c
@@ -998,6 +998,6 @@ c-----------------------------------------------------------------------
       endif
       end
 
-#endif
+c#endif
 
 
