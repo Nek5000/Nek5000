@@ -380,7 +380,7 @@ c
       include 'TOTAL'
       include 'ZPER'
 
-      parameter(mdw = 3 + 2**ldim)
+      parameter(mdw = 2 + 2**ldim) !ieg, verticies, nid
       parameter(ndw = 7*lx1*ly1*lz1*lelv/mdw)
       common /scrns/ wk(mdw,ndw)
       integer wk
@@ -504,19 +504,19 @@ c
          enddo
          ntuple = nelr 
          nelBr = igl_running_sum(nelr) - nelr
-         offs  = offs0 + int(nelBr,8)*(mdw-2)*ISIZE
+         offs  = offs0 + int(nelBr,8)*(mdw-1)*ISIZE
          call byte_set_view(offs,ifh_map)
       
-         call byte_read_mpi(wk,(mdw-2)*nelr,-1,ifh_map,ierr)
-         if (ifbswap) call byte_reverse(wk,(mdw-2)*nelr,ierr)
+         call byte_read_mpi(wk,(mdw-1)*nelr,-1,ifh_map,ierr)
+         if (ifbswap) call byte_reverse(wk,(mdw-1)*nelr,ierr)
 
          call byte_close_mpi(ifh_map,ierr)
 
          m = nelr
          do j = nelr,1,-1 ! reshuffle array
-            jj = (m-1)*(mdw-2) + 1
-            call icopy(itmp20,wk(jj,1),mdw-2)
-            call icopy(wk(1,m),itmp20 ,mdw-2)
+            jj = (m-1)*(mdw-1) + 1
+            call icopy(itmp20,wk(jj,1),mdw-1)
+            call icopy(wk(1,m),itmp20 ,mdw-1)
             m = m - 1
          enddo
 
@@ -524,7 +524,6 @@ c
          do j = 1,nelr
             eg = nelBr + j
             m = m + 1
-            wk(mdw-1,m) = eg ! map file ordering index 
             call dProcmapPut(wk(1,m),1,2,eg) ! store global element index
          enddo
 
@@ -548,30 +547,29 @@ c
             eg1 = min(eg0+ndw,neli)
 
             if (ifma2) then
-               nwds = (eg1 - eg0)*(mdw-2)
+               nwds = (eg1 - eg0)*(mdw-1)
                call byte_read(wk,nwds,ierr)
                if (ierr.ne.0) goto 200
                if (ifbswap) call byte_reverse(wk,nwds,ierr)
 
                m = eg1 - eg0
                do eg=eg1,eg0+1,-1 ! reshuffle array
-                  jj = (m-1)*(mdw-2) + 1
-                  call icopy(itmp20,wk(jj,1),mdw-2)
-                  call icopy(wk(1,m),itmp20 ,mdw-2)
+                  jj = (m-1)*(mdw-1) + 1
+                  call icopy(itmp20,wk(jj,1),mdw-1)
+                  call icopy(wk(1,m),itmp20 ,mdw-1)
                   m = m - 1
                enddo
             else
                m = 0
                do eg=eg0+1,eg1
                   m = m + 1
-                  read(80,*,err=200) (wk(k,m),k=1,mdw-2)
+                  read(80,*,err=200) (wk(k,m),k=1,mdw-1)
                enddo
             endif
             
             m = 0
             do eg=eg0+1,eg1
                m = m + 1
-               wk(mdw-1,m) = eg ! map file ordering index 
                call dProcmapPut(wk(1,m),1,2,eg) ! store global element index
             enddo
     
@@ -602,17 +600,18 @@ c
       if (ntuple_sum.ne.nelgt)
      $   call exitti('Error invalid tuple sum!$',ntuple_sum)
 
-      do i = 1,ntuple
-         wk(mdw,i) = gllnid(wk(1,i))
-      enddo
 
       key = mdw ! processor id
+      do i = 1,ntuple
+         wk(key,i) = gllnid(wk(1,i))
+      enddo
+
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
       if (ntuple .ne. nelt)
      $   call exitti('Error invalid tuple sum after transfer!$',ntuple)
 
-      key = 1 ! sort by global element index 
+      key = 1 ! sort acoording to lglel (global element index) 
       call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,1)
 
       do e = 1,nelt

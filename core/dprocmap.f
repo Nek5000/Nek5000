@@ -39,6 +39,7 @@ c-----------------------------------------------------------------------
       disp = 3*(iloc-1) + ioff
 
       call mpi_win_lock(MPI_LOCK_EXCLUSIVE,nids,0,dProcmapH,ierr)
+csk      call mpi_win_lock(MPI_LOCK_SHARED,nids,0,dProcmapH,ierr)
       call mpi_put(ibuf,lbuf,MPI_INTEGER,nids,disp,lbuf,MPI_INTEGER,
      $             dProcmapH,ierr)
       call mpi_win_unlock(nids,dProcmapH,ierr)
