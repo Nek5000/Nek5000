@@ -552,3 +552,27 @@ c     nfld_neknek - fields to interpolate
       return
       end
 C--------------------------------------------------------------------------
+      subroutine neknek_xfer_fld(u,ui,n)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
+      real fieldout(nmaxl_nn,nfldmax_nn)
+      real u(1),ui(1)
+      integer nv,nt
+
+cccc  Exchanges field u between the two neknek sessions and copies it 
+cccc  to ui
+c     Interpolate using findpts_eval
+      call field_eval(fieldout(1,1),1,u)
+cccc
+c     Now we can transfer this information to valint array from which
+c     the information will go to the boundary points
+       do i=1,npoints_nn
+        idx = iList(1,i)
+        ui(idx)=fieldout(i,1)
+       enddo
+      call neknekgsync()
+
+      return
+      end
+C--------------------------------------------------------------------------
