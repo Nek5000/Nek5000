@@ -258,9 +258,7 @@ c-----------------------------------------------------------------------
       if (ifmvbd) imove=0
       call neknekgsync()
 
-      call setnekcomm(iglobalcomm)
-      iglmove = iglmin(imove,1)
-      call setnekcomm(intracomm)
+      iglmove = uiglmin(imove,1)
 
       if (iglmove.eq.0) then
          ifneknekm=.true.
@@ -290,10 +288,8 @@ c     Get total number of processors and number of p
       enddo
 
 c     Get diamter of the domain
-      call setnekcomm(iglobalcomm)
-      mx_glob = glmax(xm1,lx1*ly1*lz1*nelt)
-      mn_glob = glmin(xm1,lx1*ly1*lz1*nelt)
-      call setnekcomm(intracomm)
+      mx_glob = uglmax(xm1,lx1*ly1*lz1*nelt)
+      mn_glob = uglmin(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
       dxf = 10.+dx1

@@ -1611,3 +1611,135 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+ccc Nek-Nek routines
+c-----------------------------------------------------------------------
+      function uglmin(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglmin=glmin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uglamin(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglamin=glamin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uglmax(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglmax=glmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function uglamax(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglamax=glamax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function uglsum(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglsum = glsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uiglsum(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1),n
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uiglsum = iglsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uglsc3(a,b,c,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1),c(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglsc3 = glsc3(a,b,c,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uglsc2(a,b,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uglsc2 = glsc2(a,b,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uiglmax(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uiglmax=iglmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function uiglmin(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call happy_check(1)
+      call setnekcomm(iglobalcomm)
+      uiglmin=iglmin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
