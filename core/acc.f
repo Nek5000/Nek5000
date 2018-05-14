@@ -293,6 +293,7 @@ c!$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
 c!$acc enter data copyin(dv1,dv2,dv3)
  
 c!$acc enter data copyin(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+!$acc enter data copyin(vxlag,vylag,vzlag)
 c!$acc enter data copyin(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 
 !$acc enter data create(h1,h2)      
@@ -330,6 +331,7 @@ c-----------------------------------------------------------------------
 
 
 c!$acc update device(vxlag,vylag,vzlag,tlag,vgradt1,vgradt2)
+!$acc update device(vxlag,vylag,vzlag)
 c!$acc update device(abx1,aby1,abz1,abx2,aby2,abz2,vdiff_e)
 !$acc update device(vtrans,vdiff)
 c!$acc update device(vtrans,vdiff,bfx,bfy,bfz,cflf,fw)
@@ -1854,6 +1856,50 @@ c           call cfill (h2,param(107),ntot1)
 
       return
       end
+
+      subroutine cresvif_acc (resv1,resv2,resv3,h1,h2)
+C---------------------------------------------------------------------
+C
+C     Compute startresidual/right-hand-side in the velocity solver
+C
+C---------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      REAL           RESV1 (LX1,LY1,LZ1,1)
+      REAL           RESV2 (LX1,LY1,LZ1,1)
+      REAL           RESV3 (LX1,LY1,LZ1,1)
+      REAL           H1    (LX1,LY1,LZ1,1)
+      REAL           H2    (LX1,LY1,LZ1,1)
+      COMMON /SCRUZ/ W1    (LX1,LY1,LZ1,LELV)
+     $ ,             W2    (LX1,LY1,LZ1,LELV)
+     $ ,             W3    (LX1,LY1,LZ1,LELV)
+
+      common /cgeom/ igeom
+
+      NTOT1 = NX1*NY1*NZ1*NELV
+      NTOT2 = NX2*NY2*NZ2*NELV
+      if (igeom.eq.2) then
+#if 0
+          CALL LAGVEL_ACC
+          !$acc    update host(vx,vy,vz)
+#else 
+          CALL LAGVEL
+#endif
+
+      endif
+
+      CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
+c!$acc    update device(vx,vy,vz) 
+      CALL BCNEUTR
+      call extrapp (pr,prlag)
+      call opgradt (resv1,resv2,resv3,pr)
+      CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
+      CALL OPHX    (W1,W2,W3,VX,VY,VZ,H1,H2)
+      CALL OPSUB2  (RESV1,RESV2,RESV3,W1,W2,W3)
+c!$acc    update device(vx,vy,vz) 
+C
+      RETURN
+      END
 c-----------------------------------------------------------------------
 c      subroutine convop_fst_3d_acc2(du,u,c1,c2,c3,b,jj,dd)
 cc-------------------------------------------------------------------

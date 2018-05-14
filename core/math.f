@@ -2366,8 +2366,8 @@ c-----------------------------------------------------------------------
       subroutine chsign_acc(a,n)
       REAL A(n)
 C
-      write(*,*) "No openacc? chsign_acc in math.f"
-      stop 
+c      write(*,*) "No openacc? chsign_acc in math.f"
+c      stop 
       DO I=1,N
          A(I) = -A(I)
       END DO

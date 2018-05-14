@@ -564,13 +564,16 @@ C
 
          INTYPE = -1
 
-         CALL SETHLM_ACC  (H1,H2,INTYPE)
-!$acc    update host(h1,h2)   
-         CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
-
-
 !$ACC DATA CREATE(DV1,DV2,DV3)
 !$ACC&   COPY(vx,vy,vz)
+
+         CALL SETHLM_ACC  (H1,H2,INTYPE)
+!$acc    update host(h1,h2)   
+         CALL CRESVIF_ACC (RESV1,RESV2,RESV3,H1,H2) !Just started 
+
+!$ACC update device (vx,vy,vz)
+c!$ACC DATA CREATE(DV1,DV2,DV3)
+c!$ACC&   COPY(vx,vy,vz)
 
          mstep = abs(param(94))
          if (param(94).ne.0. .and. istep.ge.mstep) then
