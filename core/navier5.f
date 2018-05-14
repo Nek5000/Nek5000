@@ -47,6 +47,8 @@ c     outpost arrays
 
       logical if_fltv
 
+      if(.not. iffilter(ifield)) return
+
       ncut = param(101)+1
 
       if(wght.le.0) return
@@ -4693,3 +4695,4 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
+

@@ -2,7 +2,12 @@
 # nek parameter file
 #
 [GENERAL] 
-#startFrom = restart.fld 
+polynomialOrder = 7
+PnPnFormulation = yes
+minNumProcesses = 1
+maxNumProcesses = 4
+
+#extrapolation = OIFS
 numSteps = 1000
 dt = 1e-04
 timeStepper = bdf3 #bdf2

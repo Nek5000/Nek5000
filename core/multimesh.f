@@ -1,141 +1,17 @@
 c-----------------------------------------------------------------------
-c
 c     Routines for multidomain (neknek) simulations.
 c
 c     References:
 c
-c     "A spectrally accurate method for overlapping grid solution of 
-c     incompressible Navier–Stokes equations" Brandon E. Merrill, 
+c     "A spectrally accurate method for overlapping grid solution of
+c     incompressible Navier–Stokes equations" Brandon E. Merrill,
 c     Yulia T. Peet, Paul F. Fischer, and James W. Lottes, J. Comp. Phys.
 c     307 (2016) 60-93.
 c
-c     "Stability analysis of interface temporal discretization in grid 
-c      overlapping methods," Y. Peet, P.F. Fischer, SIAM J. Numer. Anal. 
+c     "Stability analysis of interface temporal discretization in grid
+c      overlapping methods," Y. Peet, P.F. Fischer, SIAM J. Numer. Anal.
 c      50 (6) (2012) 3375–3401.
-c
-c
 c-----------------------------------------------------------------------
-      subroutine get_session_info(intracomm)
-      include 'mpif.h'
-      include 'SIZE'
-      include 'GLOBALCOM' 
-      include 'TSTEP' 
-      include 'INPUT' 
-      
-      common /happycallflag/ icall
-      common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal
-      integer nid_global_root(0:nsessmax-1)
-      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
-
-      logical ifhigh
-
-C     nsessmax = upper limit for number of sessions
-C     nfldmax_nn  = max number of fields to be interpolated
-C     nmaxl_nn = max number of points at the boundary
-
-
-C     Read from a file: number of sessions (nsessions), 
-C     session name (SESSION_MULT(n-1)),
-C     number of pocessors in each session (npsess(n-1)) 
-C     and path (PATH_MULT(n-1))
-
-
-      call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
-      if ( mpi_is_initialized .eq. 0 ) call mpi_init (ierr)
-
-      call mpi_comm_size(mpi_comm_world,np_global,ierr)
-      call mpi_comm_rank(mpi_comm_world,nid_global,ierr)
-
-      nid=nid_global
-      nekcomm=mpi_comm_world
-
-      ierr = 0
-      if (nid_global.eq.0) then
-         open (unit=8,file='SESSION.NAME',status='old',err=24)
-         read(8,*) nsessions
-         do n=0,nsessions-1
-            call blank(session_mult(n),132)
-            call blank(path_mult(n)   ,132)
-            read(8,10) session_mult(n)
-            read(8,10) path_mult(n)
-            read(8,*)  npsess(n)
-         enddo
- 10      format(a132)
-         close(unit=8)
-         goto 23
- 24      ierr = 1
-      endif
- 23   continue
-      
-      call err_chk(ierr,' Cannot open SESSION.NAME!$')
-
-      call bcast(nsessions,4)
-
-      if (nsessions.gt.2) 
-     &  call exitti('More than 2 sessions are currently 
-     &  not supported!$',1)
-
-      do n=0,nsessions-1
-         call bcast(npsess(n),4)
-         call bcast(session_mult(n),132)
-         call bcast(path_mult(n),132)
-      enddo
-
-      npall=0
-      do n=0,nsessions-1
-         npall=npall+npsess(n)
-      enddo
-     
-C     Check if number of processors in each session is consistent 
-C     with the total number of processors
-
-      if (npall.ne.np_global) 
-     &  call exitti('Wrong number of processors!$',1)
-
-C     Assign key for splitting into multiple groups
-
-      nid_global_root_next=0
-      do n=0,nsessions-1
-         nid_global_root(n)=nid_global_root_next
-         nid_global_root_next=nid_global_root(n)+npsess(n)
-         if (nid_global.ge.nid_global_root(n).and.
-     &   nid_global.lt.nid_global_root_next) 
-     &    idsess=n
-      enddo
-
-      call mpi_comm_split(mpi_comm_world,idsess,nid,intracomm,ierr)
- 
-      session = session_mult(idsess)
-      path    = path_mult   (idsess)
-
-C     Intercommunications set up only for 2 sessions 
-
-      if (nsessions.gt.1) then
-
-         ifneknek   = .true.
-         ifneknekm  = .false.
-
-         if (idsess.eq.0) idsess_neighbor=1
-         if (idsess.eq.1) idsess_neighbor=0
- 
-         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
-     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
-
-         np_neighbor=npsess(idsess_neighbor)
-      
-         call iniproc(intracomm)
-
-         ifhigh=.true.
-         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
-
-         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
-         icall = 0  ! Emergency exit call flag
-
-      endif 
-
-      return
-      end
-C-----------------------------------------------------------------------
       subroutine multimesh_create
 
       include 'SIZE'
@@ -147,9 +23,9 @@ C-----------------------------------------------------------------------
       data    icalld  /0/
 
       call neknekgsync()
-c   Do some sanity checks - just once at setup
-C     Set interpolation flag: points with bc = 'int' get intflag=1. 
-C     Boundary conditions are changed back to 'v' or 't'.
+c     Do some sanity checks - just once at setup
+c     Set interpolation flag: points with bc = 'int' get intflag=1. 
+c     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
          call nekneksanchk(1)
@@ -159,17 +35,16 @@ C     Boundary conditions are changed back to 'v' or 't'.
       endif 
       call neknekgsync()
 
-c   Figure out the displacement for the first mesh 
+c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 
-c    exchange_points2 finds the processor and element number at
-c    comm_world level and displaces the 1st mesh back
+c     exchange_points2 finds the processor and element number at
+c     comm_world level and displaces the 1st mesh back
       call exchange_points2(dxf,dyf,dzf)
-      
 
       return
       end
-C-------------------------------------------------------------
+c-------------------------------------------------------------
       subroutine set_intflag 
       include 'SIZE'
       include 'TOTAL'
@@ -179,10 +54,10 @@ C-------------------------------------------------------------
       equivalence (cb2,cb)
       integer j,e,f
 
-C     Set interpolation flag: points with boundary condition = 'int' 
+c     Set interpolation flag: points with boundary condition = 'int' 
 c     get intflag=1. 
 c
-C     Boundary conditions are changed back to 'v' or 't'.
+c     Boundary conditions are changed back to 'v' or 't'.
 
       ifield = 1
       if (ifheat) ifield = 2
@@ -210,7 +85,6 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       enddo
       enddo
 
-
       return
       end
 c------------------------------------------------------------------------
@@ -226,9 +100,7 @@ c------------------------------------------------------------------------
       real tsync
       character*3 which_field(nfldmax_nn)
 
-c     nfld_neknek is the number of fields to interpolate.
-c     nfld_neknek = ldim+1 for velocities+pressure 
-c     nfld_neknek = ldim+2 for velocities+pressure+temperature
+      if (.not.ifneknekc) return
 
       which_field(1)='vx'
       which_field(2)='vy'
@@ -242,20 +114,20 @@ c     Special conditions set for flow-poro coupling
          if(session.eq.'poro') which_field(1)='vy'
       endif
 
-      if (nsessions.gt.1) then
-         etime0 = dnekclock_sync()
-         call neknekgsync()
-         etime1 = dnekclock()
-         call get_values2(which_field)
-         call nekgsync()
-         etime = dnekclock() - etime1
-         tsync = etime1 - etime0 
+      etime0 = dnekclock_sync()
+      call neknekgsync()
+      etime1 = dnekclock()
 
-         if (nio.eq.0) write(6,99) istep, 
-     $                 '  Multidomain data exchange done', 
-     $                 etime, etime+tsync
- 99      format(i11,a,1p2e13.4)
-      endif
+      call get_values2(which_field)
+
+      call nekgsync()
+      etime = dnekclock() - etime1
+      tsync = etime1 - etime0 
+
+      if (nio.eq.0) write(6,99) istep, 
+     $              '  Multidomain data exchange done', 
+     $              etime, etime+tsync
+ 99   format(i11,a,1p2e13.4)
 
       return
       end
@@ -265,6 +137,8 @@ c------------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
       integer k,i,n
+
+      if (.not.ifneknekc) return
 
       n    = lx1*ly1*lz1*nelt
 
@@ -304,105 +178,11 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
 
       return
       end
-C---------------------------------------------------------------------
-      subroutine setintercomm(nekcommtrue,nptrue) 
-      include 'SIZE' 
-      include 'GLOBALCOM'
-      common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal 
-      
-      nekcommtrue=nekcomm
-      nekcomm=iglobalcomm
-
-      nptrue=np
-      np=np_global
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine unsetintercomm(nekcommtrue,nptrue)
-      include 'SIZE' 
-      include 'GLOBALCOM'
-      common /nekmpi/ nid_,np,nekcomm,nekgroup,nekreal 
-
-      nekcomm=nekcommtrue
-      np=nptrue
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function uglmin(a,n)
-      real a(1)
-
-      call happy_check(1)
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-      uglmin=glmin(a,n)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function uglamax(a,n)
-      real a(1)
-
-      call happy_check(1)
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-      uglamax=glamax(a,n)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-
-      return
-      end
-c------------------------------------------------------------------------
-      function uglmax(a,n)
-      real a(1)
-
-      call happy_check(1)
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-      uglmax=glmax(a,n)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine neknekgsync()
-      include 'SIZE' 
-      include 'GLOBALCOM'
-
-      call happy_check(1)
-      call mpi_barrier(intercomm,ierr)
-      return
-      end
-c------------------------------------------------------------------------
-      subroutine happy_check(ihappy)
-      include 'SIZE'
-      include 'TOTAL'
-      common /happycallflag/ icall
-
-c     Happy check
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-      iglhappy=iglmin(ihappy,1)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
-      if (ihappy.eq.1.and.iglhappy.eq.0) then
-         if (nid.eq.0) then
-         write (6,*) '       '
-         write (6,'(A,1i7,A,1e13.5)') 
-     $   ' Emergency exit due to the other session:',
-     $     ISTEP,'   time =',TIME
-         write (6,*)   
-         endif
-         icall=1
-       call exitt
-      endif 
-
-      return
-      end
-c------------------------------------------------------------------------
+c---------------------------------------------------------------------
       subroutine chk_outflow_short ! Assign neighbor velocity to outflow
-
 c
 c     This is just an experimental routine for PnPn only...
 c
-
-
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -478,9 +258,9 @@ c-----------------------------------------------------------------------
       if (ifmvbd) imove=0
       call neknekgsync()
 
-      call setintercomm(nekcommtrue,nptrue)    ! nekcomm=iglobalcomml
-      iglmove=iglmin(imove,1)
-      call unsetintercomm(nekcommtrue,nptrue)  ! nekcomm=nekcomm_original
+      call setnekcomm(iglobalcomm)
+      iglmove = iglmin(imove,1)
+      call setnekcomm(intracomm)
 
       if (iglmove.eq.0) then
          ifneknekm=.true.
@@ -502,7 +282,6 @@ c-----------------------------------------------------------------------
 c     THIS ROUTINE DISPLACES THE FIRST MESH AND SETUPS THE FINDPTS
 c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS2
 
-ccccc
 c     Get total number of processors and number of p
       npall = 0
       call neknekgsync()
@@ -510,18 +289,17 @@ c     Get total number of processors and number of p
        npall = npall+npsess(i-1)
       enddo
 
-ccccc
 c     Get diamter of the domain
-      call neknekgsync()
-      mx_glob=uglmax(xm1,lx1*ly1*lz1*nelt)
-      mn_glob=uglmin(xm1,lx1*ly1*lz1*nelt)
+      call setnekcomm(iglobalcomm)
+      mx_glob = glmax(xm1,lx1*ly1*lz1*nelt)
+      mn_glob = glmin(xm1,lx1*ly1*lz1*nelt)
+      call setnekcomm(intracomm)
       dx1 = mx_glob-mn_glob
-      call neknekgsync()
 
       dxf = 10.+dx1
       dyf = 0.
       dzf = 0.
-ccccc
+
 c     Displace MESH 1
       ntot = lx1*ly1*lz1*nelt
       if (idsess.eq.0) then
@@ -529,7 +307,7 @@ c     Displace MESH 1
       endif
 
       call neknekgsync()
-ccccc
+
 c     Setup findpts    
       tol     = 5e-13
       npt_max = 256
@@ -566,7 +344,6 @@ c-----------------------------------------------------------------------
       save    icalld
       data    icalld /0/
 
-cccc
 c     Look for boundary points with Diriclet b.c. (candidates for
 c     interpolation)
 
@@ -581,7 +358,6 @@ c     interpolation)
       nxy = lx1*ly1
       call izero(imask,ntot)
 
-cccc
 c     Setup arrays of x,y,zs to send to findpts and indices of boundary 
 c     points in jsend
       ip = 0
@@ -726,7 +502,7 @@ c     the information will go to the boundary points
 
       return
       end
-C--------------------------------------------------------------------------
+c--------------------------------------------------------------------------
       subroutine field_eval(fieldout,fieldstride,fieldin)
       include 'SIZE'
       include 'TOTAL'
@@ -734,7 +510,7 @@ C--------------------------------------------------------------------------
       real fieldout(1)
       real fieldin(1)
       integer fieldstride
-cccc
+
 c     Used for findpts_eval of various fields
       call fgslib_findpts_eval(inth_multi2,fieldout,fieldstride,
      &                         rcode,1,
@@ -745,7 +521,7 @@ c     Used for findpts_eval of various fields
 
       return
       end
-C--------------------------------------------------------------------------
+c--------------------------------------------------------------------------
       subroutine nekneksanchk(flag)
       include 'SIZE'
       include 'TOTAL'

@@ -20,6 +20,7 @@ env:
 
     - TEST_CASE=Ethier::test_PnPn_Parallel
     - TEST_CASE=Ethier::test_PnPn2_Parallel
+    - TEST_CASE=Ethier::test_PnPn2_Parallel PARALLEL_PROCS=3 
 
     - TEST_CASE=KovStokes::test_PnPn2_Parallel
     - TEST_CASE=KovStokes::test_PnPn_Parallel
@@ -31,9 +32,11 @@ env:
     - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel
 
     - TEST_CASE=MvCylCvode::test_PnPn_Parallel
+
     - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel
     - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel
-    
+    - TEST_CASE=Eddy_NeknekU::test_PnPn2_Parallel
+
     - TEST_CASE=IO_Test::test_PnPn2_Parallel
 
     - TEST_CASE=InclDef::test_PnPn_Parallel MPI=0 FC=gfortran CC=gcc

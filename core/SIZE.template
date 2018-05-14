@@ -14,7 +14,7 @@ c
       parameter (lxd=12)               ! GL  points for over-integration (dealiasing) 
       parameter (lx2=lx1-0)            ! GLL points for pressure (lx1 or lx1-2)
                                      
-      parameter (lelg=100000)          ! max total number of elements
+      parameter (lelg=1000)            ! max total number of elements
       parameter (lpmin=1)              ! min MPI ranks
       parameter (lpmax=1024)           ! max MPI ranks
       parameter (ldimt=1)              ! max auxiliary fields (temperature + scalars)
@@ -24,19 +24,19 @@ c
       parameter (lhis=1000)            ! max history/monitoring points
       parameter (maxobj=4)             ! max number of objects
       parameter (lpert=1)              ! max number of perturbations
-      parameter (toteq=5)              ! max number of conserved scalars in CMT
-      parameter (nsessmax=2)           ! max sessions to NEKNEK
+      parameter (toteq=1)              ! max number of conserved scalars in CMT
+      parameter (nsessmax=1)           ! max sessions to NEKNEK
       parameter (lxo=lx1)              ! max GLL points on output (lxo>=lx1)
       parameter (mxprev=20,lgmres=30)  ! max dim of projection & Krylov space
       parameter (lorder=3)             ! max order in time
-      parameter (lx1m=lx1)             ! GLL points mesh solver
-      parameter (lfdm=0)               ! set to 1 for fast diagonalization method
+      parameter (lx1m=1)               ! GLL points mesh solver
+      parameter (lfdm=0)               ! 1 for fast diagonalization method
       parameter (lelx=1,lely=1,lelz=1) ! global tensor mesh dimensions
 
       parameter (lelt=lelg/lpmin + 3)  ! max number of local elements per MPI rank
-      parameter (lbelt=1)              ! set to lelt for mhd
-      parameter (lpelt=1)              ! set to lelt for linear stability
-      parameter (lcvelt=lelt)          ! set to lelt for cvode
+      parameter (lbelt=1)              ! lelt for mhd
+      parameter (lpelt=1)              ! lelt for linear stability
+      parameter (lcvelt=1)             ! lelt for cvode
 
       ! INTERNALS
       include 'SIZE.inc'
