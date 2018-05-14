@@ -35,7 +35,7 @@ map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
-byte.o chelpers.o byte_mpi.o postpro.o dprocmap.o \
+byte.o chelpers.o byte_mpi.o postpro.o dprocmap.o intp.o \
 cvode_driver.o nek_comm.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
@@ -153,6 +153,7 @@ $(OBJDIR)/subs1.o	:$S/subs1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs2.o	:$S/subs2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/map2.o	:$S/map2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/dprocmap.o    :$S/dprocmap.f $S/DPROCMAP;     $(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/intp.o        :$S/intp.f;                     $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/induct.o	:$S/induct.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/convect.o	:$S/convect.f;	      		$(FC) -c $(FL2) $< -o $@

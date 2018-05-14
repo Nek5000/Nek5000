@@ -349,6 +349,7 @@ class Eddy_Rich(NekTestCase):
             lx1       = '8',
             lxd       = '12',
             lx2       = 'lx1-2',
+            lx1m      = 'lx1',
             lelg      = '500',
         )
 
@@ -812,6 +813,7 @@ class ConjHt(NekTestCase):
             lx2      = 'lx1-0',
             lelg     = '100',
             ldimt    = '2',
+            lx1m     = 'lx1',
             lcvelt   = 'lelt',
         )
 

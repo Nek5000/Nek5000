@@ -1,13 +1,11 @@
 c
-c interpolation wrapper for usage in .usr file
+c interpolation wrapper
 c
 
-#ifndef INTP_NMAX
-#error "Define INTP_NMAX in usr file!"
-#endif
+#define INTP_HMAX 10
 
 c-----------------------------------------------------------------------
-      subroutine intp_setup(tolin,nmsh)
+      subroutine intp_setup(tolin,nmsh,ih)
 
       include 'SIZE'
       include 'INPUT'
@@ -15,8 +13,11 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
-      common /intp_h/ ih_intp1, ih_intp2
+      common /intp_h/ ih_intp(2,INTP_HMAX)
       common /intp/   tol
+
+      data ihcounter /0/
+      save ihcounter
 
       real xmi, ymi, zmi
       common /SCRMG/ xmi(lx1*ly1*lz1*lelt),
@@ -63,45 +64,56 @@ c-----------------------------------------------------------------------
       else
          ih_intp2 = ih_intp1
       endif
- 
+
+      ihcounter = ihcounter + 1 
+      ih = ihcounter
+      if (ih .gt. INTP_HMAX)
+     $   call exitti('Maximum number of handles exceeded!$',INTP_HMAX)
+      ih_intp(1,ih) = ih_intp1
+      ih_intp(2,ih) = ih_intp2
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_nfld(fldout,fldin,nfld,xp,yp,zp,n,iflp)
+      subroutine intp_nfld(out,fld,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp,ih)
 c
-c fldout    ... interpolation value(s) dim (n,nfld)
-c fldin     ... source field(s) dim (lx1,ly1,lz1,lelt,nfld)
+c out       ... interpolation value(s) dim (n,nfld)
+c fld       ... source field(s)
 c nfld      ... number of fields
-c xp,yp,zp  ... interpolation points dim (n)
-c n         ... number of points
+c xp,yp,zp  ... interpolation points
+c n         ... number of points dim(xp,yp,zp)
+c iwk       ... integer working array dim(nmax,3)
+c rwk       ... real working array dim(nmax,ldim+1)
+c nmax      ... maximum number of local points
 c iflp      ... locate interpolation points (proc,el,r,s,t)
+c ih        ... handle
 c
       include 'SIZE'
 
       common /intp/   tol
-      common /intp_h/ ih_intp1, ih_intp2
+      common /intp_h/ ih_intp(2,INTP_HMAX)
 
-      real    fldin(*),fldout(*)
+      real    fld(*),out(*)
       real    xp(*),yp(*),zp(*)
 
       logical iflp
 
-      real    rwk(INTP_NMAX,ldim+1)
-      save    rwk
-      integer iwk(INTP_NMAX,3) 
-      save    iwk
+      real    rwk(nmax,*)
+      integer iwk(nmax,*) 
 
       integer nn(2)
       logical ifot
 
+      ih_intp1 = ih_intp(1,ih)
+      ih_intp2 = ih_intp(2,ih)
 
       ifot = .false. ! transpose output field
 
-      if(nio.eq.0) write(6,*) 'call intp_nfld'
+      if(nio.eq.0) write(6,*) 'call intp_nfld', ih, ih_intp1, ih_intp2
 
-      if(n.gt.INTP_NMAX) then
+      if(n.gt.nmax) then
         write(6,*)
-     &   'ABORT: n>INTP_NMAX in intp_nfld', n, INTP_NMAX
+     &   'ABORT: n>nmax in intp_nfld', n, nmax
         call exitt
       endif
 
@@ -146,12 +158,12 @@ c
            iout   = ifld
            is_out = nfld
          endif
-         call fgslib_findpts_eval(ih_intp1,fldout(iout),is_out,
+         call fgslib_findpts_eval(ih_intp1,out(iout),is_out,
      &                            iwk(1,1),1,
      &                            iwk(1,3),1,
      &                            iwk(1,2),1,
      &                            rwk(1,2),ldim,n,
-     &                            fldin(iin))
+     &                            fld(iin))
       enddo
 
       nn(1) = iglsum(n,1)
@@ -165,9 +177,12 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_free()
+      subroutine intp_free(ih)
 
-      common /intp_h/ ih_intp1, ih_intp2
+      common /intp_h/ ih_intp(2,INTP_HMAX)
+
+      ih_intp1 = ih_intp(1,ih)
+      ih_intp2 = ih_intp(2,ih)
 
       call fgslib_findpts_free(ih_intp1)
       call fgslib_findpts_free(ih_intp2)

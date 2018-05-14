@@ -7,9 +7,7 @@ PnPnFormulation = yes
 minNumProcesses = 1
 maxNumProcesses = 4
 
-dealiasing = no
-extrapolation = OIFS
-#startFrom = restart.fld 
+#extrapolation = OIFS
 numSteps = 1000
 dt = 1e-04
 timeStepper = bdf3 #bdf2

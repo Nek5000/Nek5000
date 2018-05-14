@@ -495,7 +495,7 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       filterType = 0
       if (param(103).gt.0) then 
          filterType = 1
-         call ltrue(iffilter,sizeof(iffilter)) 
+         call ltrue(iffilter,size(iffilter)) 
       endif
 
       return

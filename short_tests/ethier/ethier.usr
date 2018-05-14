@@ -14,9 +14,7 @@ c    from t = 0 to t = 0.1, with parameters a = PI/4 and d = PI/2,
 c    and with Dirichlet boundary conditions on all faces of the cube.
 c
 
-
-#define INTP_NMAX (lx1*ly1*lz1*lelt) /* number of maximmum interpolation points */
-#include "intp_usr.f"
+#define INTP_NMAX (lx1*ly1*lz1*lelt) /* maximum number of local points */
 
 C-----------------------------------------------------------------------
       subroutine uservp(ix,iy,iz,eg) ! set variable properties
@@ -113,6 +111,11 @@ c-----------------------------------------------------------------------
       real yint(INTP_NMAX)
       real zint(INTP_NMAX)
 
+      save    intp_h
+      real    rwk(INTP_NMAX,ldim+1)
+      integer iwk(INTP_NMAX,3)
+      save    rwk, iwk
+
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
 
@@ -149,14 +152,15 @@ c-----------------------------------------------------------------------
            close(50)
          endif
 
-         ! test interpolation wrappers
-         nxm = 3 ! quadratic mesh
-         call intp_setup(0.0,nxm)
+         ! test interpolation wrapper
+         nxm = 3 ! mesh is quadratic
+         call intp_setup(0.0,nxm,intp_h)
          nint = n
          call copy (xint,XM1,nint)
          call copy (yint,YM1,nint)
          call copy (zint,ZM1,nint)
-         call intp_nfld(uxi,vx,1,xint,yint,zint,nint,.true.) 
+         call intp_nfld(uxi,vx,1,xint,yint,zint,nint,
+     $                  iwk,rwk,INTP_NMAX,.true.,intp_h) 
          call exactu(uxe,uye,uze,xint,yint,zint,nint)
          call sub2(uxi,uxe,nint)
          err = glamax(uxi,nint)

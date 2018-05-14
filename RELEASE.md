@@ -13,10 +13,9 @@
 
 ## Backwards-Incompatible Changes 
 
-* Eliminated PPLIST symbol `NEKNEK`
-* New `map/ma2` format (elements are sorted by its rank instead of its index)
-* New interface for usr interpolation wrapper defined in `intp_usr.f`
-* Interpolation wrapper not compiled by default (add `#include "intp_usr.f"` in usr file) 
+* Eliminated PPLIST symbol `NEKNEK` (now a runtime parameter)
+* New `map/ma2` format (old versions are NOT supported)
+* Changed interface of interpolation wrapper, see `intp.f`
 
 ## Known Bugs 
 
