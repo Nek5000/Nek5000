@@ -88,50 +88,6 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       return
       end
 c------------------------------------------------------------------------
-      subroutine userchk_set_xfer
-      include 'mpif.h'
-      include 'SIZE'
-      include 'TOTAL'
-      include 'CTIMER'
-      include 'NEKNEK'
-
-      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
-
-      real tsync
-      character*3 which_field(nfldmax_nn)
-
-      if (.not.ifneknekc) return
-
-      which_field(1)='vx'
-      which_field(2)='vy'
-      which_field(3)='vz'
-      which_field(ldim+1)='pr'
-      if (nfld_neknek.gt.ldim+1) which_field(ldim+2)='t'
-c
-c     Special conditions set for flow-poro coupling
-      if (nfld_neknek.eq.1) then
-         if(session.eq.'flow') which_field(1)='pr'
-         if(session.eq.'poro') which_field(1)='vy'
-      endif
-
-      etime0 = dnekclock_sync()
-      call neknekgsync()
-      etime1 = dnekclock()
-
-      call get_values2(which_field)
-
-      call nekgsync()
-      etime = dnekclock() - etime1
-      tsync = etime1 - etime0 
-
-      if (nio.eq.0) write(6,99) istep, 
-     $              '  Multidomain data exchange done', 
-     $              etime, etime+tsync
- 99   format(i11,a,1p2e13.4)
-
-      return
-      end
-c------------------------------------------------------------------------
       subroutine bcopy
       include 'SIZE'
       include 'TOTAL'
@@ -459,33 +415,34 @@ c     zero out valint
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_values2(which_field)
+      subroutine get_values_neknek
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
+      include 'CTIMER'
 
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
       common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
 
-      character*3 which_field(nfld_neknek)
       real fieldout(nmaxl_nn,nfldmax_nn)
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
+
+      etime0 = dnekclock_sync()
+      call neknekgsync()
+      etime1 = dnekclock()
 
       call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
 
 c     Interpolate using findpts_eval
-      do ifld=1,nfld_neknek
-        if (which_field(ifld).eq.'vx') call copy(field,vx ,nt)
-        if (which_field(ifld).eq.'vy') call copy(field,vy ,nt)
-        if (which_field(ifld).eq.'vz') call copy(field,vz ,nt)
-        if (which_field(ifld).eq.'pr') call copy(field,pm1,nt)
-        if (which_field(ifld).eq.'t' ) call copy(field,t  ,nt)
-
-        call field_eval(fieldout(1,ifld),1,field)
-      enddo
+      call field_eval(fieldout(1,1),1,vx)
+      call field_eval(fieldout(1,2),1,vy)
+      if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
+      call field_eval(fieldout(1,ldim+1),1,pm1)
+      if (nfld_neknek.gt.ldim+1) 
+     $   call field_eval(fieldout(1,ldim+2),1,t)
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
@@ -495,6 +452,15 @@ c     the information will go to the boundary points
           valint(idx,1,1,1,ifld)=fieldout(i,ifld)
         enddo
        enddo
+
+      call nekgsync()
+      etime = dnekclock() - etime1
+      tsync = etime1 - etime0
+
+      if (nio.eq.0) write(6,99) istep,
+     $              '  Multidomain data exchange done',
+     $              etime, etime+tsync
+ 99   format(i11,a,1p2e13.4)
 
       return
       end
