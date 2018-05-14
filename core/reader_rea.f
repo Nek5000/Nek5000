@@ -100,10 +100,11 @@ C
       IFTMSH(0) = .false.
       IFPROJFLD(0) = .false.
       do i=1,NPSCL2
-         IFTMSH(i) = .false.
-         IFADVC(i) = .false. 
-         IFDIFF(i) = .true.
-         IFDEAL(i) = .true. ! still depends on param(99)
+         IFTMSH(i)    = .false.
+         IFADVC(i)    = .false. 
+         IFFILTER(i)  = .false.
+         IFDIFF(i)    = .true.
+         IFDEAL(i)    = .true. ! still depends on param(99)
          IFPROJFLD(i) = .false. 
          if (param(94).gt.0) IFPROJFLD(i) = .true. 
       enddo      
@@ -492,7 +493,10 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
       filterType = 0
-      if(param(103).gt.0) filterType = 1
+      if (param(103).gt.0) then 
+         filterType = 1
+         call ltrue(iffilter,sizeof(iffilter)) 
+      endif
 
       return
 

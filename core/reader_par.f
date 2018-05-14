@@ -120,6 +120,11 @@ C
          ifadvc(i+1) = .true.  
       enddo 
 
+      iffilter(1) = .false.  
+      do i=1,ldimt
+         iffilter(i+1) = .false.  
+      enddo 
+
       ifdiff(1) = .true.  
       do i=1,ldimt
          ifdiff(i+1) = .true.  
@@ -462,8 +467,10 @@ c        stabilization type: none, explicit or hpfrt
             goto 101
          else if (index(c_out,'EXPLICIT') .eq. 1) then
             filterType = 1
+            call ltrue(iffilter,sizeof(iffilter))
          else if (index(c_out,'HPFRT') .eq. 1) then
             filterType = 2
+            call ltrue(iffilter,sizeof(iffilter))
          else
            write(6,*) 'value: ',c_out
            write(6,*) 'is invalid for general:filtering!'
@@ -825,6 +832,7 @@ C
       call bcast(ifadvc ,  ldimt1*lsize)
       call bcast(ifdiff ,  ldimt1*lsize)
       call bcast(ifdeal ,  ldimt1*lsize)
+      call bcast(iffilter, ldimt1*lsize)
 
       call bcast(idpss    ,  ldimt*isize)
       call bcast(iftmsh   , (ldimt1+1)*lsize)
