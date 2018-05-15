@@ -264,7 +264,7 @@ c     v = [A (x) A (x) A] u71
       if (.not. if3d) then
          call hsmg_tnsr2d(v,nv,u,nu,A,At)
       else       
-#ifdef _OPENACC2
+#ifdef _OPENACC
          call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
 #else
          call hsmg_tnsr3d    (v,nv,u,nu,A,At,At)
@@ -745,14 +745,14 @@ c----------------------------------------------------------------------
 
       integer i,j,k,ie
 
-#ifdef _OPENACC2
+#ifdef _OPENACC
       call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
 #else
       call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
 #endif
 
-!!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
-!!$ACC&              GANG VECTOR
+!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+!$ACC&              GANG VECTOR
       do ie=1,nelv
       do k=1,n
       do j=1,n
@@ -762,7 +762,7 @@ c----------------------------------------------------------------------
       enddo
       enddo
       enddo
-!!$ACC END LOOP
+!$ACC END LOOP
 
       return
       end
@@ -1061,7 +1061,7 @@ c     clobbers r
       include 'INPUT'
       include 'HSMG'
 
-#ifdef _OPENACC2
+#ifdef _OPENACC
       call hsmg_do_fast_acc(e,r,
      $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
      $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
@@ -1307,35 +1307,35 @@ c     endif
          enddo
       else
          !FIXME: Consider changing to 3 collapse(3) loops
-!!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
+!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
          do ie=1,nelv
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do j=1,ny
                u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
                u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
             enddo
             enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
             do k=1,nz
             do i=2,nx-1
                u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
                u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
             enddo
             enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
             do j=2,ny-1
             do i=2,nx-1
                u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
                u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
             enddo
             enddo
-!!$ACC END LOOP
+!$ACC END LOOP
          enddo
-!!$ACC END PARALLEL LOOP
-         
+!$ACC END PARALLEL LOOP
+        
       endif
       return
       end
@@ -1646,9 +1646,9 @@ c----------------------------------------------------------------------
 
       integer ie,i,j,k
 
-!!$ACC PARALLEL LOOP PRESENT(e,wt)
+!$ACC PARALLEL LOOP PRESENT(e,wt)
       do ie=1,nelv
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do j=1,n
             e(1  ,j,k,ie)=e(1  ,j,k,ie)*wt(j,k,1,1,ie)
@@ -1657,8 +1657,8 @@ c----------------------------------------------------------------------
             e(n  ,j,k,ie)=e(n  ,j,k,ie)*wt(j,k,4,1,ie)
          enddo
          enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
          do k=1,n
          do i=3,n-2
             e(i,1  ,k,ie)=e(i,1  ,k,ie)*wt(i,k,1,2,ie)
@@ -1667,8 +1667,8 @@ c----------------------------------------------------------------------
             e(i,n  ,k,ie)=e(i,n  ,k,ie)*wt(i,k,4,2,ie)
          enddo
          enddo
-!!$ACC END LOOP
-!!$ACC LOOP VECTOR COLLAPSE(2)
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
          do j=3,n-2
          do i=3,n-2
             e(i,j,1  ,ie)=e(i,j,1  ,ie)*wt(i,j,1,3,ie)
@@ -1677,9 +1677,9 @@ c----------------------------------------------------------------------
             e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
          enddo
          enddo
-!!$ACC END LOOP
+!$ACC END LOOP
       enddo
-!!$ACC END PARALLEL LOOP
+!$ACC END PARALLEL LOOP
       return
       end
 c----------------------------------------------------------------------
