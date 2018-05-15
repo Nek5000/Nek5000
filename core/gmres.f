@@ -1562,6 +1562,7 @@ c              call copy_acc(z_gmres(1,j),w_gmres,ntot2)    ! z  = M   w
             endif     
             etime_p = etime_p + dnekclock()-etime2
 !!$acc update device(z_gmres(:,j)) 
+
             call cdabdtp_acc(w_gmres,z_gmres(1,j),    ! w = A z
      $                       h1,h2,h2inv,intype)      !        j
             call col2_acc(w_gmres,ml_gmres,ntot2)     ! w = L   w
