@@ -1936,7 +1936,7 @@ c
       include 'TOTAL'
       include 'CTIMER'
 c
-      common /scrns1/ w1    (lx1,ly1,lz1,lelv)
+      common /scrns/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
      $ ,             dv1   (lx1,ly1,lz1,lelv)
@@ -1973,10 +1973,17 @@ c
       ntot1  = nx1*ny1*nz1*nelv
       ntot2  = nx2*ny2*nz2*nelv
       intype = 1
-      
 
-!$ACC  DATA    copy(ux,uy,uz,up)
+      if (istep==1) then
+!$acc enter data create(pbar)
+      endif
+
+!$ACC  DATA COPYIN(vtrans(:,:,:,:,ifield),usrdiv)
+!$ACC&      copy(ux,uy,uz,up)
 !$ACC&      PRESENT(h1,h2,h2inv,bm2)
+!$acc&      copy(dp)
+!$acc&      create(pnew,pset)
+!$acc&      create(w1,w2,w3,dv1,dv2,dv3)
       call rzero_acc   (h1,ntot1)
       call copy_acc    (h2,vtrans(1,1,1,1,ifield),ntot1)
       call invers2_acc (h2inv,h2,ntot1)

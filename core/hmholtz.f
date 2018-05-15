@@ -63,7 +63,9 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
      $    call chktcg1 (tol,rhs,h1,h2,mask,mult,imsh,isd)
 
       if (tli.lt.0) tol=tli ! caller-specified relative tolerance
-  
+
+!!! Changed by Jing for Pn-Pn-2 2018-02-01
+#if 1 
       if (imsh.eq.1) then 
 !$acc data   create(u,rhs,h1,h2)
 !$acc update device(rhs,h1,h2)
@@ -71,7 +73,13 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
      $        (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
 !$acc update host(u)
 !$acc end data
-      endif 
+      endif
+#else
+      if (imsh.eq.1) then 
+         call cggo_acc
+     $        (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
+      endif
+#endif 
 
       if (imsh.eq.2) call cggo_acc
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
@@ -152,10 +160,25 @@ c     overrule tolerance for velocity
          ifsolv = .true.
       endif
 
-c     Set up diag preconditioner. 
+c     Set up diag preconditioner.
+
+!!! changed by Jing for Pn-Pn-2 2018-03-25
+#if 1
+!!! scrd is already on device via /common/ ? 
       call setprec_acc(scrd,h1,h2,imsh,isd)       
       call dssum(scrd,nx1,ny1,nz1)
       call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
+#else
+!$acc update host(scrd)
+      call setprec_acc(scrd,h1,h2,imsh,isd) ! needs to be ported
+!$acc update device(scrd)
+
+      call dssum(scrd,nx1,ny1,nz1)
+      call invcol1_acc(scrd,nx1*ny1*nz1*nelv)
+
+!$acc update host(scrd)
+
+#endif
 
       call copy_acc(r,f,n)
       call rzero_acc(x,n)
@@ -3001,6 +3024,7 @@ c         otr = glsc3 (w1,res,mult,ntot1)
 
 c# JG - 2018-05-07 commented out for Pn-Pn
 c#ifdef _OPENACC
+#if 1
 c-----------------------------------------------------------------------
       subroutine setprec_acc (dpcm1,helm1,helm2,imsh,isd)
 C-------------------------------------------------------------------
@@ -3191,4 +3215,4 @@ C
       END
 c-----------------------------------------------------------------------
 
-c#endif
+#endif

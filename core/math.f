@@ -2043,9 +2043,9 @@ c
       return
       end
 
-
 C JG -2018-05-07 commented out for Pn-Pn, 
 c#ifdef _OPENACC 
+#if 1
 c--------------------------------------------------------
       subroutine col2_acc(a,b,n)
       real a(n),b(n)
@@ -2522,7 +2522,7 @@ c-----------------------------------------------------------------------
       return
       end
 
-c#endif
+#endif
 
 
 

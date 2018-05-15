@@ -543,11 +543,6 @@ C
       COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
      $ ,              H2    (LX1,LY1,LZ1,LELV)
 C
-
-      if (istep.eq.1.and.igeom.eq.1) then
-          call plan3_acc_data_copyin_istep1
-      endif
-
       IF (IGEOM.EQ.1) THEN
 C
 C        Old geometry
@@ -560,20 +555,12 @@ C
 C
 C        New geometry, new b.c.
 C
-         call plan3_acc_update_device_isteps
-
          INTYPE = -1
+         CALL SETHLM  (H1,H2,INTYPE)
+         CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
 
 !$ACC DATA CREATE(DV1,DV2,DV3)
-!$ACC&   COPY(vx,vy,vz)
-
-         CALL SETHLM_ACC  (H1,H2,INTYPE)
-!$acc    update host(h1,h2)   
-         CALL CRESVIF_ACC (RESV1,RESV2,RESV3,H1,H2) !Just started 
-
-!$ACC update device (vx,vy,vz)
-c!$ACC DATA CREATE(DV1,DV2,DV3)
-c!$ACC&   COPY(vx,vy,vz)
+!$ACC& COPY(vx,vy,vz)
 
          mstep = abs(param(94))
          if (param(94).ne.0. .and. istep.ge.mstep) then
