@@ -122,18 +122,56 @@ c
      &              "num_nodes_per_elem = ", i8)')
      &              idblk(i), typ, num_elem_in_block(i),
      &              num_nodes_per_elem(i)
-        if (num_dim.eq.3.and.num_nodes_per_elem(i).ne.27) then
-          write(6,'(a)')
-     &     "ERROR: Only HEX27 elements are allowed in a 3D mesh!"
-          write(6,'(a,i3)') "num_nodes_per_elem= ",num_nodes_per_elem(i)
+
+        if (i.eq.1) then
+          nvert=num_nodes_per_elem(i)
+          if (num_dim.eq.2) then
+            if (nvert.ne.8) then
+              if (nvert.eq.9) then
+                write(6,*)
+                write(6,'(a)')
+     &          "WARNING: QUAD9 elements are not officially supported"
+                write(6,'(a)')
+     &          "as there is no exodus standard for this element type."
+                write(6,*)
+              else
+                write(6,*)
+                write(6,'(a)')
+     &          "ERROR: Only QUAD8 elements are allowed in a 2D mesh!"
+                STOP
+              endif
+            endif      
+          elseif (num_dim.eq.3) then
+            if (nvert.ne.20) then
+              if (nvert.eq.27) then
+                write(6,*)
+                write(6,'(a)')
+     &          "WARNING: HEX27 elements are not officially supported"
+                write(6,'(a)')
+     &          "as there is no exodus standard for this element type."
+                write(6,*)
+              else
+                write(6,*)
+                write(6,'(a)')
+     &          "ERROR: Only HEX20 elements are allowed in a 3D mesh!"
+                STOP
+              endif
+            endif      
+          else
+          write(6,'(a,i3)')  
+     &     "ERROR: Unknown number of dimensions! num_dim= ",num_dim
           STOP
-        elseif (num_dim.eq.2.and.num_nodes_per_elem(i).ne.9) then
-          write(6,'(a)')
-     &      "ERROR: Only QUAD9 elements are allowed in a 2D mesh!"
+          endif
+        endif
+
+        if (num_nodes_per_elem(i).ne.nvert) then
+          write(6,*)
+          write(6,'(a)') 
+     &     "ERROR: All blocks should contain elements of the same type!"
           write(6,'(a,i3)') "num_nodes_per_elem= ",num_nodes_per_elem(i)
+          write(6,'(a,i3)') "num_nodes_per_elem of block 1 ",nvert
           STOP
         endif
-        write (6,*)
       enddo
 c
 c read nodal coordinates values from database
@@ -243,8 +281,6 @@ c node and face conversion (it works at least for cubit):
 
       integer exo_to_nek_face2D(4)
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /          ! symmetric face numbering
-
-      nvert = 3**num_dim
 
       write(6,'(A)') ' '
       write(6,'(A)') 'Converting elements ... '

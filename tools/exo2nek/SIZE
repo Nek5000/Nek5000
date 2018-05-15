@@ -23,7 +23,7 @@ c
       integer side_list          (2*ldim*max_num_elem, max_num_sidesets)
       integer num_sides_in_set   (max_num_sidesets)
       integer idss               (max_num_sidesets)
-      integer num_dim, num_elem, num_elem_blk, num_side_sets
+      integer num_dim, num_elem, num_elem_blk, num_side_sets, nvert
 c
 c
 c NEK CORE variables:
@@ -56,6 +56,6 @@ c
       common /INPUT3/ num_dim,           num_elem,         num_elem_blk,
      &                num_side_sets,     num_sides_in_set, idss,
      &                elem_list,         side_list,        connect,
-     &                num_elem_in_block
+     &                num_elem_in_block, nvert
 
       common /INPUT4/ cbc, ccurve, exoname, re2name
