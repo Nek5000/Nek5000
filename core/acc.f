@@ -44,7 +44,7 @@ C     $ ,             dp    (lx2,ly2,lz2,lelv)
       common /scrpre/ v1(lx1,ly1,lz1,lelv)
      $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
 
-#if 0
+#if 1
 !$acc enter data create(work,TA,TB)
 !$acc enter data create(tar1,tas1,tat1,tar2,tas2,tat2)
 !$acc enter data create(TA1,TA2,TA3,TB1,TB2,TB3)
@@ -87,7 +87,7 @@ c-----------------------------------------------------------------------
      $ ,              tas2 (lx1,ly1,lz1,lelv)
      $ ,              tat2 (lx1,ly1,lz1,lelv)
 
-#if 0
+#if 1
 !$acc exit data delete(work)
 !$acc exit data delete(tar1,tas1,tat1,tar2,tas2,tat2)
 #endif

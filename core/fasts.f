@@ -527,12 +527,14 @@ c
       eoff  = 0
       if (ifield.gt.1) eoff  = nelv
 
-#if 0
+#if 1
+!$acc update host(v1)
       do e = 1,nelv
          eb = e + eoff
          call fastdm1(v1(1,1,1,e),df(1,eb)
      $                           ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2)
       enddo
+!$acc update device(v1)
 #else
       call  fastdm1_acc(v1,df,sr,ss,st,w1,w2)
 #endif 
