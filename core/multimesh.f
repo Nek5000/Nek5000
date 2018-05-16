@@ -418,7 +418,7 @@ c     zero out valint
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_values_neknek
+      subroutine xfer_bcs_neknek
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'

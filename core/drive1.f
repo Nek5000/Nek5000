@@ -140,7 +140,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'
-         if (ifneknek) call get_values_neknek
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
          call userchk
@@ -273,7 +273,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknek .and. igeom.gt.2) call get_values_neknek
+         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -302,7 +302,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknek .and. igeom.gt.2) call get_values_neknek
+            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -361,7 +361,7 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call get_values_neknek
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
 
