@@ -400,6 +400,9 @@ c     Make sure rcode_all is fine
 
  200  continue
 
+      ipg = iglsum(ip,1)
+      nbpg = iglsum(nbp,1)
+      if (nid.eq.0) write(6,*) idsess,ipg,nbpg,'Int pts foundt findpt'
       npoints_nn = ip
 
 c     zero out valint
@@ -407,7 +410,7 @@ c     zero out valint
        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
       enddo
 
-      call iglmax(ierror,1)
+      ierror = iglmax(ierror,1)
       if (ierror.eq.1) call exitt
  
       call neknekgsync()
