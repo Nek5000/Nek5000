@@ -556,7 +556,7 @@ c     nfld_neknek - fields to interpolate
       return
       end
 C--------------------------------------------------------------------------
-      subroutine neknek_xfer_fld(u,ui,n)
+      subroutine neknek_xfer_fld(u,ui)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
