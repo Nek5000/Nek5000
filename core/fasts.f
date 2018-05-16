@@ -497,8 +497,8 @@ c
       ntot2 = nx2*ny2*nz2*nelv
 
 !$acc data copyin(v)
-!$acc& create(u,v1)
-!$acc& present(w1,w2)
+!$acc& create(v1)
+!$acc& present(u,w1,w2)
 !$acc& copy(df,sr,ss,st)
 c
 c     Fill interiors
@@ -527,7 +527,7 @@ c
       eoff  = 0
       if (ifield.gt.1) eoff  = nelv
 
-#if 1
+#if 0
 !$acc update host(v1)
       do e = 1,nelv
          eb = e + eoff
@@ -562,8 +562,6 @@ c
          enddo
       enddo
 c
-
-!$acc update host(u)
 !$acc end data
 
       return
