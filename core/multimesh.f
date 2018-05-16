@@ -402,7 +402,8 @@ c     Make sure rcode_all is fine
 
       ipg = iglsum(ip,1)
       nbpg = iglsum(nbp,1)
-      if (nid.eq.0) write(6,*) idsess,ipg,nbpg,'Int pts foundt findpt'
+      if (nid.eq.0) write(6,*) 
+     $      idsess,ipg,nbpg,'int pts bcs found findpt'
       npoints_nn = ip
 
 c     zero out valint
