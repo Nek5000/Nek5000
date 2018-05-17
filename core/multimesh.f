@@ -214,7 +214,7 @@ c-----------------------------------------------------------------------
       if (ifmvbd) imove=0
       call neknekgsync()
 
-      iglmove = uiglmin(imove,1)
+      iglmove = ms_iglmin(imove,1)
 
       if (iglmove.eq.0) then
          ifneknekm=.true.
@@ -244,8 +244,8 @@ c     Get total number of processors and number of p
       enddo
 
 c     Get diamter of the domain
-      mx_glob = uglmax(xm1,lx1*ly1*lz1*nelt)
-      mn_glob = uglmin(xm1,lx1*ly1*lz1*nelt)
+      mx_glob = ms_glmax(xm1,lx1*ly1*lz1*nelt)
+      mn_glob = ms_glmin(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
       dxf = 10.+dx1
@@ -411,7 +411,7 @@ c     zero out valint
        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
       enddo
 
-      ierror = iglmax(ierror,1)
+      ierror = ms_iglmax(ierror,1)
       if (ierror.eq.1) call exitt
  
       call neknekgsync()
@@ -445,8 +445,11 @@ c     Interpolate using findpts_eval
       call field_eval(fieldout(1,2),1,vy)
       if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
       call field_eval(fieldout(1,ldim+1),1,pm1)
-      if (nfld_neknek.gt.ldim+1) 
-     $   call field_eval(fieldout(1,ldim+2),1,t)
+      if (nfld_neknek.gt.ldim+1) then 
+        do i=ldim+2,nfld_neknek  !do all passive scalars
+          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
+        enddo
+      endif
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
