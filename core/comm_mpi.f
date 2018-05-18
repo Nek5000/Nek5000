@@ -1423,7 +1423,9 @@ c------------------------------------------------------------------------
 
       common /happycallflag/ icall
 
-      iglhappy=ms_iglmin(ihappy,1)
+      call setnekcomm(iglobalcomm)
+      iglhappy=iglmin(ihappy,1)
+      call setnekcomm(intracomm)
       if (ihappy.eq.1.and.iglhappy.eq.0) then
          if (nid.eq.0) then
          write (6,*) '       '
