@@ -1618,7 +1618,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       real a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glmin=glmin(a,n)
       call setnekcomm(intracomm)
@@ -1631,7 +1630,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       real a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glamin=glamin(a,n)
       call setnekcomm(intracomm)
@@ -1644,7 +1642,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       real a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glmax=glmax(a,n)
       call setnekcomm(intracomm)
@@ -1657,7 +1654,6 @@ c------------------------------------------------------------------------
       include 'PARALLEL'
       real a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glamax=glamax(a,n)
       call setnekcomm(intracomm)
@@ -1670,7 +1666,6 @@ c------------------------------------------------------------------------
       include 'PARALLEL'
       real a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glsum = glsum(a,n)
       call setnekcomm(intracomm)
@@ -1683,7 +1678,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       integer a(1),n
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_iglsum = iglsum(a,n)
       call setnekcomm(intracomm)
@@ -1696,7 +1690,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       real a(1),b(1),c(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glsc3 = glsc3(a,b,c,n)
       call setnekcomm(intracomm)
@@ -1709,7 +1702,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       real a(1),b(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_glsc2 = glsc2(a,b,n)
       call setnekcomm(intracomm)
@@ -1722,7 +1714,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       integer a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_iglmax=iglmax(a,n)
       call setnekcomm(intracomm)
@@ -1735,7 +1726,6 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       integer a(1)
 
-      call happy_check(1)
       call setnekcomm(iglobalcomm)
       ms_iglmin=iglmin(a,n)
       call setnekcomm(intracomm)

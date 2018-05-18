@@ -111,3 +111,6 @@ c - - SIZE internals
      $ ,nx1,ny1,nz1,nx2,ny2,nz2,nx3,ny3,nz3,nxd,nyd,nzd,ndim,ldimr
       common/dimn/  nelv,nelt,nfield,npert,nid,idsess
      $ ,nx1,ny1,nz1,nx2,ny2,nz2,nx3,ny3,nz3,nxd,nyd,nzd,ndim,ldimr
+
+      real ms_glmin,ms_glmax,ms_glamin,ms_glamax,ms_glsum,ms_glsc3
+     $     ms_glsc2
