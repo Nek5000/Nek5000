@@ -3,7 +3,7 @@
 # Nek5000 build file
 #-------------------------------------------------------------------------------
 
-module load cuda/9.2.64
+module load cuda
 module load pgi
 
 # installation path 
