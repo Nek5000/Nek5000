@@ -2,8 +2,7 @@
 set -e
 
 PROJECT="CSC275MERZARI"
-#PROJECT="CSC262"
-REQ_WALLTIME="10"
+REQ_WALLTIME="60"
 REAFILE=$1
 CORECOUNT=$2
 NODECOUNT=$3
@@ -15,7 +14,7 @@ echo "*** running session $SESSION"
 echo $1        >  SESSION.NAME
 echo `pwd`'/' >>  SESSION.NAME
 
-OUTFILE="`pwd`/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`"
+OUTFILE="`pwd`/$SESSION.np=$CORECOUNT-summit-cpu-`date "+%F_%H_%M_%S"`"
 touch $SESSION.rea
 
 if ! bsubfile=`mktemp $SESSION.pbs.XXXXXX` ; then
@@ -28,16 +27,16 @@ chmod 777 $bsubfile
 echo "#!/bin/bash" >> $bsubfile
 echo "#BSUB -P $PROJECT" >> $bsubfile
 echo "#BSUB -J $SESSION" >> $bsubfile
-echo "#BSUB -o $PWD/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`.output" >> $bsubfile
-echo "#BSUB -e $PWD/$SESSION.np=$CORECOUNT-summitdev-cpu-`date "+%F_%H_%M_%S"`.error" >> $bsubfile
+echo "#BSUB -o $PWD/$SESSION.np=$CORECOUNT-summit-cpu-`date "+%F_%H_%M_%S"`.output" >> $bsubfile
+echo "#BSUB -e $PWD/$SESSION.np=$CORECOUNT-summit-cpu-`date "+%F_%H_%M_%S"`.error" >> $bsubfile
 echo "#BSUB -W $REQ_WALLTIME" >> $bsubfile
 echo "#BSUB -nnodes $NODECOUNT " >> $bsubfile
 #echo "export PGI_ACC_NOTIFY=1" >> $bsubfile
 
 echo " cd `pwd`">> $bsubfile
-echo " jsrun -n$CORECOUNT -a1 -c1 -g1 ./nek5000  ">> $bsubfile
+echo " jsrun -n$CORECOUNT -a1 -c1 ./nek5000  ">> $bsubfile
 
 bsub  $bsubfile
 rm $bsubfile
-echo "job submitted on OLCF Summitdev, #CPU Cores=$CORECOUNT, #nodes=$NODECOUNT"
+echo "job submitted on OLCF Summit, #CPU Cores=$CORECOUNT, #nodes=$NODECOUNT"
 
