@@ -13,9 +13,6 @@ c
       integer igeom
       common /cgeom/ igeom
 
-      real ubc(lx1,ly1,lz1,lelt,nfldmax_nn)
-      common /mybc/ ubc
-
       integer nfld_neknek
       common /inbc/ nfld_neknek
  

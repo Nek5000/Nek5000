@@ -131,7 +131,7 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
 
       do k=1,nfld_neknek
       do i=1,n
-         ubc(i,1,1,1,k) = 
+         valint(i,1,1,1,k) = 
      $      c0*bdrylg(i,k,0)+c1*bdrylg(i,k,1)+c2*bdrylg(i,k,2)
       enddo
       enddo
@@ -157,11 +157,11 @@ c     if (ifsplit) ipfld=ldim+1
 
       do i=1,n ! The below has not been checked for ifheat=.true., pff 6/27/15
          if (imask(i,1,1,1).eq.1) then
-            vx(i,1,1,1) = ubc(i,1,1,1,1)
-            vy(i,1,1,1) = ubc(i,1,1,1,2)
-            if (if3d)    vz(i,1,1,1)  = ubc(i,1,1,1,3)
-            if (ifsplit) pr(i,1,1,1)  = ubc(i,1,1,1,ipfld)
-            if (ifheat)  t(i,1,1,1,1) = ubc(i,1,1,1,itfld)
+            vx(i,1,1,1) = valint(i,1,1,1,1)
+            vy(i,1,1,1) = valint(i,1,1,1,2)
+            if (if3d)    vz(i,1,1,1)  = valint(i,1,1,1,3)
+            if (ifsplit) pr(i,1,1,1)  = valint(i,1,1,1,ipfld)
+            if (ifheat)  t(i,1,1,1,1) = valint(i,1,1,1,itfld)
          endif
       enddo
 

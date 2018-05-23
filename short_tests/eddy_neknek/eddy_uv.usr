@@ -256,25 +256,17 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       ie = gllel(ieg)
 
       if (imask(ix,iy,iz,ie).eq.0) then
-      ux=0.0
-      uy=0.0
-      uz=0.0
-      temp=0.0
+       ux=0.0
+       uy=0.0
+       uz=0.0
+       temp=0.0
       else      
-
-      if (igeom.le.2) then
-         ux = ubc(ix,iy,iz,ie,1)
-         uy = ubc(ix,iy,iz,ie,2)
-         uz = ubc(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = ubc(ix,iy,iz,ie,ldim+2)
-      else
-         ux = valint(ix,iy,iz,ie,1)
-         uy = valint(ix,iy,iz,ie,2)
-         uz = valint(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
-      endif
-
+       ux = valint(ix,iy,iz,ie,1)
+       uy = valint(ix,iy,iz,ie,2)
+       uz = valint(ix,iy,iz,ie,3)
+       if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
+
       return
       end
 c-----------------------------------------------------------------------
