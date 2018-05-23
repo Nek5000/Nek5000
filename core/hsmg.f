@@ -2588,7 +2588,7 @@ c----------------------------------------------------------------------
       integer nv,nu
       real A(nv,nu),Bt(nu,nv),Ct(nu,nv)
       real v(nv*nv*nv*nelt),tmp
-      real local_work(nv*nv*nv*nelt)
+      real local_work(lx1*ly1*lz1*lelt)
       parameter (lwk=(lx1+2)*(ly1+2)*(lz1+2))
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       integer e,e0,ee,es
