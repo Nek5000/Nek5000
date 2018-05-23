@@ -126,6 +126,7 @@ c     Assign key for splitting into multiple groups
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
 
+         ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
       endif 
 

@@ -22,12 +22,16 @@ c-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 
+      integer nfld_neknek
+      common /inbc/ nfld_neknek
+
       call neknekgsync()
 c     Do some sanity checks - just once at setup
 c     Set interpolation flag: points with bc = 'int' get intflag=1. 
 c     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
+         nfld_neknek = ldim+nfield
          call nekneksanchk(1)
          call set_intflag
          call neknekmv()
