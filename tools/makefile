@@ -41,6 +41,8 @@ all:
             echo "" ;                            \
             echo "ERROR: $${i} failed to compile!" ; \
             exit 1 ;                             \
+          else                                   \
+            echo "done!"                       ; \
           fi ;                                   \
           cd .. ;                                \
           echo "" ;                              \

@@ -1663,8 +1663,8 @@ c     in userf then the true FFX is given by ffx_userf + scale.
       scale = delta_flow/base_flow
       scale_vf(icvflow) = scale
       if (nio.eq.0) write(6,1) istep,chv(icvflow)
-     $   ,scale,delta_flow,current_flow,flow_rate
-    1    format(i11,'  volflow ',a1,11x,1p4e13.4)
+     $   ,time,scale,delta_flow,current_flow,flow_rate
+    1    format(i10,'  volflow ',a1,11x,1p5e12.4)
 
       call add2s2(vx,vxc,scale,ntot1)
       call add2s2(vy,vyc,scale,ntot1)

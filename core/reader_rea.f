@@ -100,10 +100,11 @@ C
       IFTMSH(0) = .false.
       IFPROJFLD(0) = .false.
       do i=1,NPSCL2
-         IFTMSH(i) = .false.
-         IFADVC(i) = .false. 
-         IFDIFF(i) = .true.
-         IFDEAL(i) = .true. ! still depends on param(99)
+         IFTMSH(i)    = .false.
+         IFADVC(i)    = .false. 
+         IFFILTER(i)  = .false.
+         IFDIFF(i)    = .true.
+         IFDEAL(i)    = .true. ! still depends on param(99)
          IFPROJFLD(i) = .false. 
          if (param(94).gt.0) IFPROJFLD(i) = .true. 
       enddo      
@@ -386,9 +387,15 @@ C
          call exitt
       endif
 
-      if (ifsplit .and. ifuservp) then
-         if(nid.eq.0) write(6,*)
-     $   'Switch on stress formulation to support PN/PN and IFUSERVP=T'
+      if (ifsplit .and. ifuservp .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support PN/PN and IFUSERVP=T'    
+         ifstrs = .true.
+      endif
+
+      if (ifcyclic .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support cyclic BC'               
          ifstrs = .true.
       endif
 
@@ -486,7 +493,10 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
       filterType = 0
-      if(param(103).gt.0) filterType = 1
+      if (param(103).gt.0) then 
+         filterType = 1
+         call ltrue(iffilter,size(iffilter)) 
+      endif
 
       return
 

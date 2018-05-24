@@ -77,7 +77,7 @@ C
 
       if (nelgv.eq.nelgt) then
          if (ifgtp) then
-            call gen_gtp_vertex    (vertex, ncrnr)
+            call gen_gtp_vertex(vertex, ncrnr)
          else
             call get_vert
          endif

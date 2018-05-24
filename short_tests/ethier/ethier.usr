@@ -13,6 +13,9 @@ c    [-1,1] cube centered at (0,0,0),
 c    from t = 0 to t = 0.1, with parameters a = PI/4 and d = PI/2,
 c    and with Dirichlet boundary conditions on all faces of the cube.
 c
+
+#define INTP_NMAX (lx1*ly1*lz1*lelt) /* maximum number of local points */
+
 C-----------------------------------------------------------------------
       subroutine uservp(ix,iy,iz,eg) ! set variable properties
       include 'SIZE'
@@ -91,17 +94,27 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      real uxe  (lx1,ly1,lz1,lelv)
-      real uye  (lx1,ly1,lz1,lelv)
-      real uze  (lx1,ly1,lz1,lelv)
-      real uxerr(lx1,ly1,lz1,lelv)
-      real uyerr(lx1,ly1,lz1,lelv)
-      real uzerr(lx1,ly1,lz1,lelv)
+      real uxe  (lx1*ly1*lz1*lelv)
+      real uye  (lx1*ly1*lz1*lelv)
+      real uze  (lx1*ly1*lz1*lelv)
+      real uxerr(lx1*ly1*lz1*lelv)
+      real uyerr(lx1*ly1*lz1*lelv)
+      real uzerr(lx1*ly1*lz1*lelv)
 
       real pre  (lx2,ly2,lz2,lelv)
       real prerr(lx2,ly2,lz2,lelv)
 
       real hxyz(ldim,lhis)
+
+      real uxi (INTP_NMAX)
+      real xint(INTP_NMAX)
+      real yint(INTP_NMAX)
+      real zint(INTP_NMAX)
+
+      save    intp_h
+      real    rwk(INTP_NMAX,ldim+1)
+      integer iwk(INTP_NMAX,3)
+      save    rwk, iwk
 
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
@@ -111,8 +124,9 @@ c-----------------------------------------------------------------------
       call exactu(uxe,uye,uze,xm1,ym1,zm1,n)
       call exactp(pre,xm2,ym2,zm2,n2)
 
-      ! test history point feature
       if (istep.eq.0) then
+
+         ! test history points
          call hpts
          close(50)
 
@@ -128,15 +142,40 @@ c-----------------------------------------------------------------------
               x = hxyz(1,i)
               y = hxyz(2,i)
               z = hxyz(3,i)
-              read(50,*) tt, ux_,uy_,uz_
-              call exactu(ux,uy,uz,x,y,z,1)
-              errhpts = max(abs(ux_-ux),errhpts)
-              errhpts = max(abs(uy_-uy),errhpts)
-              errhpts = max(abs(uz_-uz),errhpts)
+              read(50,*) tt, ux,uy,uz
+              call exactu(uxe,uye,uze,x,y,z,1)
+              err = max(abs(ux-uxe(1)),err)
+              err = max(abs(uy-uye(1)),err)
+              err = max(abs(uz-uze(1)),err)
            enddo
-           write(6,*) 'hpts err:', errhpts
+           write(6,*) 'hpts err:', err
            close(50)
          endif
+
+         ! test interpolation wrapper
+         nxm = 3 ! mesh is quadratic
+         call intp_setup(0.0,nxm,intp_h)
+         nint = n
+         call copy (xint,XM1,nint)
+         call copy (yint,YM1,nint)
+         call copy (zint,ZM1,nint)
+         call intp_nfld(uxi,vx,1,xint,yint,zint,nint,
+     $                  iwk,rwk,INTP_NMAX,.true.,intp_h) 
+         call exactu(uxe,uye,uze,xint,yint,zint,nint)
+         call sub2(uxi,uxe,nint)
+         err = glamax(uxi,nint)
+         if (nid.eq.0) write(6,*) 'intp_usr err:', err 
+ 
+         ! test processor element mapping 
+         isum = 0
+         do iel = 1,nelv
+            ieg = lglel(iel)
+            isum = isum + ieg 
+         enddo
+         if (nid.eq.0) write(6,*) isum, 'pm0 chksum'
+         if (nid.eq.1) write(6,*) isum, 'pm1 chksum'
+         if (nid.eq.2) write(6,*) isum, 'pm2 chksum'
+
       endif
 
       call chsign(pre,n2)

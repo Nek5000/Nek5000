@@ -1,0 +1,10 @@
+      logical dProcmapCache
+      common /cbpmlo/ dProcmapCache
+
+      integer dProcmapH ! window handle 
+      common /cbpmwinh/ dProcmapH 
+
+      integer dProcmapWin ! only for no MPI
+      common /cbpmwd/ dProcmapWin(3*lelt)
+ 
+      integer dProcmapStart, dProcmapEnd

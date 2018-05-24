@@ -1,5 +1,5 @@
-c-----------------------------------------------------------------------
       subroutine mapelpr()
+
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -32,6 +32,7 @@ c     Distributed memory processor mapping
          ENDIF
          call exitt
       ENDIF
+
       call set_proc_map()
 c
       DO 1200 IFIELD=MFIELD,NFLDT
@@ -45,7 +46,7 @@ c
 C     Output the processor-element map:
       ifverbm=.true.
       if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
-      if (loglevel .gt. 2) ifverbm=.true.
+      if (loglevel.gt.2) ifverbm=.true.
 
       if(ifverbm) then
         idum = 1
@@ -65,7 +66,7 @@ C     Output the processor-element map:
            mtype = nid
            call crecv(mtype,idum,4)                ! hand-shake
            call csend(mtype,nelt,4,0,0)            ! nelt
-           if (loglevel .gt. 2) then
+           if (loglevel.gt.2) then
               N8 = min(8,nelt)
               write(6 ,1310) node-1,(lglel(ie),ie=1,n8)
               if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
@@ -115,70 +116,29 @@ C
       include 'SCRCT'
       include 'TSTEP'
       include 'ZPER'
-      common /ctmp0/ iwork(lelt)
-c
-      REAL*8 dnekclock,t0
-c
-      t0 = dnekclock()
-c     if (.not.(ifgtp.or.ifgfdm)) then
+      include 'DPROCMAP'
+
+      dProcmapCache = .false.
+      call dProcmapInit()
+
       if (.not.ifgtp) then
-c
 c        rsb element to processor mapping 
-c
-         if (ifgfdm)       call gfdm_elm_to_proc(gllnid,np) ! gfdm w/ .map
-
+         if (ifgfdm) call gfdm_elm_to_proc(np) ! gfdm w/ .map
          call get_map
-
       endif
 
-      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(gllnid,np) ! special processor map
+      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(np) ! special processor map
 
-c     compute global to local map (no processor info)
-c
-      IEL=0
-      CALL IZERO(GLLEL,NELGT)
-      DO IEG=1,NELGT
-         IF (GLLNID(IEG).EQ.NID) THEN
-            IEL = IEL + 1
-            GLLEL(IEG)=IEL
-            NELT = IEL
-            if (ieg.le.nelgv) NELV = IEL
-         ENDIF
-c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
-      ENDDO
-c
-c     dist. global to local map to all processors
-c
-      npass = 1 + nelgt/lelt
-      k=1
-      do ipass = 1,npass
-         m = nelgt - k + 1
-         m = min(m,lelt)
-         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
-         k = k+m
-      enddo
-c
-c     compute local to global map
-c     (i.e. returns global element number given local index and proc id)
-c
-      do ieg=1,nelgt
-         mid  =gllnid(ieg)
-         ie   =gllel (ieg)
-         if (mid.eq.nid) lglel(ie)=ieg
-      enddo
-c
-c     All Done.
-c
+      dProcmapCache = .true.
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_elm_to_proc(gllnid,np)
+      subroutine gfdm_elm_to_proc(np)
 c
 c
       include 'SIZE'
       include 'ZPER'
-c
-      integer gllnid(1)
 c
       common /ctmp1/  map_st(lelg_sm)
       common /vptsol/ iwork(0:lp)
@@ -202,8 +162,8 @@ c
 c
 c
       call gfdm_map_2d(map_st,nes,net,iwork,np)
-      call gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
+      call gfdm_build_global_el_map (map_st,nes,net,
+     $                               nelbox,nstride_box,ip,is,it)
 c
       return
       end
@@ -317,16 +277,22 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
-c
+      subroutine gfdm_build_global_el_map (map_st,nes,net,
+     $                                     nelbox,nstride_box,ip,is,it)
+
       include 'SIZE'
-      integer gllnid(1)
+      include 'PARALLEL'
+
       integer map_st(nes,net)
       integer nelbox(3),nstride_box(3)
-c
+
       integer proc
-c
+      integer ibuf(2)
+
+      nelt = 0
+      nelv = 0
+      iel  = 0
+
       do jt=1,nelbox(it)
       do js=1,nelbox(is)
          proc = map_st(js,jt)
@@ -334,11 +300,22 @@ c
             ieg = 1 + nstride_box(ip)*(jp-1)  ! nstride_p=nes*net
      $              + nstride_box(is)*(js-1)
      $              + nstride_box(it)*(jt-1)
-            gllnid(ieg) = proc
+            if (proc.eq.nid) then
+               iel = iel + 1
+               lglel(iel) = ieg
+
+               if (ieg.le.nelgv) nelv = nelv + 1
+               if (ieg.le.nelgt) nelt = nelt + 1
+
+               ibuf(1) = iel
+               ibuf(2) = proc
+               call dProcmapPut(ibuf,2,0,ieg)
+            endif
          enddo
       enddo
       enddo
-c
+      call nekgsync() ! wait pending puts
+
       return
       end
 c-----------------------------------------------------------------------
@@ -403,8 +380,8 @@ c
       include 'TOTAL'
       include 'ZPER'
 
-      parameter(mdw=2+2**ldim)
-      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      parameter(mdw = 2 + 2**ldim) !ieg, verticies, nid
+      parameter(ndw = 7*lx1*ly1*lz1*lelv/mdw)
       common /scrns/ wk(mdw,ndw)
       integer wk
 
@@ -425,7 +402,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine get_vert_map(vertex,nlv,wk,mdw,ndw,ifgfdm)
-
+c
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -452,13 +429,16 @@ c-----------------------------------------------------------------------
       integer e,eg,eg0,eg1
       integer itmp20(20)
 
+      integer*8 offs0,offs
+
       ierr   = 0
       ifma2  = .false.
       suffix = '.map'
+      ntuple = 0
 
       if (nid.eq.0) then
-         lfname = ltrunc(reafle,132) - 4
-         call blank (mapfle,132)
+         lfname = ltrunc(reafle,sizeof(reafle)) - 4
+         call blank (mapfle,sizeof(mapfle))
          call chcopy(mapfle,reafle,lfname)
          call chcopy(mapfle1(lfname+1),suffix,4)
          inquire(file=mapfle, exist=ifmap)
@@ -473,15 +453,17 @@ c-----------------------------------------------------------------------
       endif
       if(nid.eq.0) write(6,'(A,A)') ' Reading ', mapfle
       call err_chk(ierr,' Cannot find map file!$')
-      call bcast(ifma2,lsize)
+      call bcast(mapfle,sizeof(mapfle))
+      call bcast(ifma2,sizeof(ifma2))
 
+      ! just read header
       if (nid.eq.0) then
          if (ifma2) then         
             call byte_open(mapfle,ierr)
             if(ierr.ne.0) goto 100
 
-            call blank(hdr,132)
-            call byte_read(hdr,132/4,ierr)
+            call blank(hdr,sizeof(hdr))
+            call byte_read(hdr,sizeof(hdr)/4,ierr)
             if(ierr.ne.0) goto 100
 
             read (hdr,1) version,neli,nnzi
@@ -493,25 +475,75 @@ c-----------------------------------------------------------------------
             if(ierr.ne.0) goto 100
          else
             open(unit=80,file=mapfle,status='old',err=100)
-            read(80,*,err=100) neli,nnzi
+            read(80,1,err=100) version,neli,nnzi
          endif
       endif
- 
-      call bcast(neli, ISIZE)
+      call bcast(version,sizeof(version))
+      call bcast(neli,sizeof(neli))
+      call bcast(ifbswap,sizeof(ifbswap))
 
+      if (version .ne. '#v002')
+     $   call exitti('Unsupported map file version - rerun genmap!$',0)
+       
+       if (neli .ne. nelgt)
+     $   call exitti('Element count of map file does not match!$',neli)
+
+      ! read map file in parallel
+      ifmpiio = .true.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+      if (ifma2 .and. ifmpiio) then
+         if (nid.eq.0) call byte_close(ierr)
+         call byte_open_mpi(mapfle,ifh_map,.true.,ierr)
+         offs0 = sizeof(hdr) + sizeof(test)
+
+         nelr = neli/np
+         do i = 1,mod(neli,np)
+            if(np-i.eq.nid) nelr = nelr + 1
+         enddo
+         ntuple = nelr 
+         nelBr = igl_running_sum(nelr) - nelr
+         offs  = offs0 + int(nelBr,8)*(mdw-1)*ISIZE
+         call byte_set_view(offs,ifh_map)
+      
+         call byte_read_mpi(wk,(mdw-1)*nelr,-1,ifh_map,ierr)
+         if (ifbswap) call byte_reverse(wk,(mdw-1)*nelr,ierr)
+
+         call byte_close_mpi(ifh_map,ierr)
+
+         m = nelr
+         do j = nelr,1,-1 ! reshuffle array
+            jj = (m-1)*(mdw-1) + 1
+            call icopy(itmp20,wk(jj,1),mdw-1)
+            call icopy(wk(1,m),itmp20 ,mdw-1)
+            m = m - 1
+         enddo
+
+         m = 0
+         do j = 1,nelr
+            eg = nelBr + j
+            m = m + 1
+            call dProcmapPut(wk(1,m),1,2,eg) ! store global element index
+         enddo
+
+         goto 50
+      endif
+
+      ! read map file through rank0
       npass = 1 + (neli/ndw)
       if (npass.gt.np) then
          if (nid.eq.0) write(6,*) npass,np,neli,ndw,'Error get_vert_map'
          call exitt
       endif 
 
-      len = 4*mdw*ndw
+      len = ISIZE*mdw*ndw
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
 
       if (nid.eq.0) then
          eg0 = 0
-         do ipass=1,npass
+         do ipass=1,npass ! sweep through map file
             eg1 = min(eg0+ndw,neli)
 
             if (ifma2) then
@@ -538,8 +570,7 @@ c-----------------------------------------------------------------------
             m = 0
             do eg=eg0+1,eg1
                m = m + 1
-               if (.not.ifgfdm) gllnid(eg) = wk(1,m)  ! must still be divided
-               wk(mdw,m) = eg
+               call dProcmapPut(wk(1,m),1,2,eg) ! store global element index
             enddo
     
             if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
@@ -553,79 +584,39 @@ c-----------------------------------------------------------------------
          else
             close(80)
          endif
-
       elseif (nid.lt.npass) then
-
          call msgwait(msg_id)
          ntuple = ndw
-
-      else
-
-         ntuple = 0
-
       endif
 
-      if (.not.ifgfdm) then ! gllnid is already assigned for gfdm
-        lng = isize*neli
-        call bcast(gllnid,lng)
-        call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
-      endif
+ 50   call nekgsync()
 
-      nelt=0 !     Count number of elements on this processor
-      nelv=0
-      do eg=1,neli
-         if (gllnid(eg).eq.nid) then
-            if (eg.le.nelgv) nelv=nelv+1
-            if (eg.le.nelgt) nelt=nelt+1
-         endif
-      enddo
+      if (.not.ifgfdm) call assign_gllnid()
 
-      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
-
-c     NOW: crystal route vertex by processor id
+      if (loglevel.gt.3) 
+     $   write(6,*) nid,ntuple,nelv,nelt,nelgv,nelgt,' NELV'
 
       ntuple_sum = iglsum(ntuple,1)
-      if (ntuple_sum .ne. nelgt) then
-         if (nid.eq.0) write(6,*) 'Error invalid tuple sum!'
-         call exitt
-      endif 
+      if (ntuple_sum.ne.nelgt)
+     $   call exitti('Error invalid tuple sum!$',ntuple_sum)
 
-      do i=1,ntuple
-         eg=wk(mdw,i)
-         wk(1,i)=gllnid(eg)        ! processor id for element eg
+
+      key = mdw ! processor id
+      do i = 1,ntuple
+         wk(key,i) = gllnid(wk(1,i))
       enddo
 
-      key = 1  ! processor id is in wk(1,:)
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
-      if (.not.ifgfdm) then            ! no sorting for gfdm?
-         key = mdw  ! Sort tuple list by eg
-         nkey = 1
-         call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
-      endif
+      if (ntuple .ne. nelt)
+     $   call exitti('Error invalid tuple sum after transfer!$',ntuple)
 
-      iflag = 0
-      if (ntuple.ne.nelt) then
-         write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FAIL'
-         write(6,*) 'Check that .map file and .rea file agree'
-         iflag=1
-      else
-         do e=1,nelt
-            call icopy(vertex(1,e),wk(2,e),nlv)
-         enddo
-      endif
+      key = 1 ! sort acoording to lglel (global element index) 
+      call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,1)
 
-      iflag = iglmax(iflag,1)
-      if (iflag.gt.0) then
-         do mid=0,np-1
-            call nekgsync
-            if (mid.eq.nid)
-     $      write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FB'
-            call nekgsync
-         enddo
-         call nekgsync
-         call exitt
-      endif
+      do e = 1,nelt
+         call icopy(vertex(1,e),wk(2,e),nlv)
+      enddo
 
       return
 
@@ -638,87 +629,106 @@ c     NOW: crystal route vertex by processor id
       return
       end
 c-----------------------------------------------------------------------
-      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
-c
-      integer gllnid(1),iunsort(1),nelgt,np 
-      integer e,eg
+      integer function gllnid(ieg)
 
+      include 'mpif.h'
 
-      log2p = log2(np)
-      np2   = 2**log2p
-      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+      integer iegl, nidl
+      save    iegl, nidl
+      data    iegl, nidl /0,0/
 
-         npstar = ivlmax(gllnid,nelgt)+1
-         nnpstr = npstar/np
-         do eg=1,nelgt
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
+      integer ibuf(3)
 
-         return
-
-      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
-
-c        Assign fluid elements
-         npstar = max(np,ivlmax(gllnid,nelgv)+1)
-         nnpstr = npstar/np
-         do eg=1,nelgv
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
-
-c        Assign solid elements
-         nelgs  = nelgt-nelgv  ! number of solid elements
-         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
-         nnpstr = npstar/np
-         do eg=nelgv+1,nelgt
-            gllnid(eg) = gllnid(eg)/nnpstr
-         enddo
-
-         return
-
-      elseif (nelgv.ne.nelgt) then
-         call exitti
-     $       ('Conjugate heat transfer requires P=power of 2.$',np)
+      if (ieg.eq.iegl) then
+         ibuf(2) = nidl
+         goto 100
       endif
+      call dProcmapGet(ibuf,ieg)
 
+ 100  iegl   = ieg
+      nidl   = ibuf(2)
+      gllnid = ibuf(2)
 
-c  Below is the code for P a non-power of two:
+      end
+c-----------------------------------------------------------------------
+      integer function gllel(ieg)
 
-c  Split the sorted gllnid array (read from .map file) 
-c  into np contiguous partitions. 
+      include 'mpif.h'
 
-c  To load balance the partitions in case of mod(nelgt,np)>0 
-c  add 1 contiguous entry out of the sorted list to NODE_i 
-c  where i = np-mod(nelgt,np) ... np
+      integer iegl, iell
+      save    iegl, iell
+      data    iegl, iell /0,0/
 
+      integer ibuf(3)
 
-      nel   = nelgt/np       ! number of elements per processor
-      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
-      npp   = np - nmod      ! how many paritions of size nel 
- 
-      ! sort gllnid  
-      call isort(gllnid,iunsort,nelgt)
+      if (ieg.eq.iegl) then
+         ibuf(1) = iell
+         goto 100
+      endif
+      call dProcmapGet(ibuf,ieg)
 
-      ! setup partitions of size nel 
-      k   = 0
-      do ip = 0,npp-1
-         do e = 1,nel  
-            k = k + 1 
-            gllnid(k) = ip
+ 100  iegl  = ieg
+      iell  = ibuf(1)
+      gllel = ibuf(1)
+
+      end
+c-----------------------------------------------------------------------
+      subroutine assign_gllnid()
+c
+c     pratition distributed array (ordered according to map file) 
+c     into approximately equal-sized chunks 
+c
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      integer ibuf(3)
+      integer nel(2)
+      integer iw1(lelt), iw2(lelt)
+
+      nel(1) = nelgv
+      nel(2) = nelgt - nelgv
+
+      nelt = 0
+      nelv = 0
+      iel  = 0
+
+      do imsh = 1,2 
+         n  = nel(imsh)/np
+         nn = np - mod(nel(imsh),np)
+         do ir = 1,nel(imsh)
+            if (ir.le.nn*n) then
+               nid_el = (ir-1)/n
+            else
+               nid_el = nn + (ir - nn*n - 1)/(n+1)
+            endif
+
+            if (nid_el.eq.nid) then
+               irr = ir
+               if (imsh.eq.2) irr = nelgv + irr
+               call dProcmapGet(ibuf,irr)
+               ieg = ibuf(3) 
+
+               iel = iel + 1
+               lglel(iel) = ieg
+
+               if (ieg.le.nelgv) nelv = nelv + 1
+               if (ieg.le.nelgt) nelt = nelt + 1
+
+               iw1(iel) = nid_el
+            endif
          enddo
       enddo
-      ! setup partitions of size nel+1
-      if(nmod.gt.0) then 
-        do ip = npp,np-1
-           do e = 1,nel+1  
-              k = k + 1 
-              gllnid(k) = ip
-           enddo
-        enddo 
-      endif
 
-      ! unddo sorting to restore initial ordering by
-      ! global element number
-      call iswapt_ip(gllnid,iunsort,nelgt)
+      ! local-to-global mapping
+      call isort(lglel,iw2,nelt)
+      do i = 1,nelt
+         ibuf(1) = i 
+         ibuf(2) = iw1(iw2(i))
+         call dProcmapPut(ibuf,2,0,lglel(i))
+      enddo
+
+      call nekgsync() ! wait for pending puts
 
       return
       end
