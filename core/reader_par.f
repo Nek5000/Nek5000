@@ -1001,7 +1001,7 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 
       IF(ldimr.NE.LDIM) THEN
          IF(NID.EQ.0) THEN
-           WRITE(6,10) LDIM,ldim
+           WRITE(6,10) LDIM,ldimr
    10      FORMAT(//,2X,'Error: Nek has been compiled'
      $             /,2X,'       for spatial dimension equal to',I2,'.'
      $             /,2X,'       The mesh file has dimension',I2,'.')
