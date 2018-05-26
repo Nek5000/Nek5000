@@ -95,6 +95,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
+      call fix_geom
+      
+      if (ifneknekc) call multimesh_create 
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -140,7 +143,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (instep.ne.0) then !USRCHK
         if(nio.eq.0) write(6,*) 'call userchk'
-         if (ifneknek) call userchk_set_xfer
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
          call userchk
@@ -273,7 +276,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknek .and. igeom.gt.2) call userchk_set_xfer
+         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -302,7 +305,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknek .and. igeom.gt.2) call userchk_set_xfer
+            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -361,7 +364,7 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call userchk_set_xfer
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
 

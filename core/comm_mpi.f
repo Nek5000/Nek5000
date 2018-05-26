@@ -81,7 +81,8 @@ c-----------------------------------------------------------------------
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
-         call mpi_comm_dup(mpi_comm_world,intracomm,ierr)
+         call mpi_comm_dup(mpi_comm_world,iglobalcomm,ierr)
+         intracomm = iglobalcomm
          return
       endif
  
@@ -125,6 +126,7 @@ c     Assign key for splitting into multiple groups
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
 
+         ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
       endif 
 
@@ -603,7 +605,6 @@ c-----------------------------------------------------------------------
          write(6,*) ' '
       endif
 
-      if (ifneknek.and.icall.eq.0) call happy_check(0)
 c      if (nid.eq.0) call close_files
       call print_runtime_info
       call nek_die(0) 
@@ -624,7 +625,6 @@ c-----------------------------------------------------------------------
       endif
 
 c      call print_stack()
-      if (ifneknek.and.icall.eq.0) call happy_check(0)
 c      if (nid.eq.0) call close_files
 c      call print_runtime_info
       call nek_die(1) 
@@ -1411,36 +1411,11 @@ c----------------------------------------------------------------------
       include 'SIZE'
       include 'PARALLEL'
 
-      call mpi_barrier(intercomm,ierr)
+      call mpi_barrier(iglobalcomm,ierr)
 
       return
       end
 c------------------------------------------------------------------------
-      subroutine happy_check(ihappy)
-
-      include 'SIZE'
-      include 'PARALLEL'
-
-      common /happycallflag/ icall
-
-      call setnekcomm(iglobalcomm)
-      iglhappy=iglmin(ihappy,1)
-      call setnekcomm(intracomm)
-      if (ihappy.eq.1.and.iglhappy.eq.0) then
-         if (nid.eq.0) then
-         write (6,*) '       '
-         write (6,'(A,1i7,A,1e13.5)')
-     $   ' Emergency exit due to the other session:',
-     $     ISTEP,'   time =',TIME
-         write (6,*)
-         endif
-         icall=1
-       call exitt
-      endif
-
-      return
-      end
-c---------------------------------------------------------------------
       subroutine setnekcomm(comm_in)
 
       include 'SIZE'
