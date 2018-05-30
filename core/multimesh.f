@@ -22,12 +22,16 @@ c-----------------------------------------------------------------------
       save    icalld
       data    icalld  /0/
 
+      integer nfld_neknek
+      common /inbc/ nfld_neknek
+
       call neknekgsync()
 c     Do some sanity checks - just once at setup
 c     Set interpolation flag: points with bc = 'int' get intflag=1. 
 c     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
+         nfld_neknek = ldim+nfield
          call nekneksanchk(1)
          call set_intflag
          call neknekmv()
@@ -88,50 +92,6 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       return
       end
 c------------------------------------------------------------------------
-      subroutine userchk_set_xfer
-      include 'mpif.h'
-      include 'SIZE'
-      include 'TOTAL'
-      include 'CTIMER'
-      include 'NEKNEK'
-
-      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
-
-      real tsync
-      character*3 which_field(nfldmax_nn)
-
-      if (.not.ifneknekc) return
-
-      which_field(1)='vx'
-      which_field(2)='vy'
-      which_field(3)='vz'
-      which_field(ldim+1)='pr'
-      if (nfld_neknek.gt.ldim+1) which_field(ldim+2)='t'
-c
-c     Special conditions set for flow-poro coupling
-      if (nfld_neknek.eq.1) then
-         if(session.eq.'flow') which_field(1)='pr'
-         if(session.eq.'poro') which_field(1)='vy'
-      endif
-
-      etime0 = dnekclock_sync()
-      call neknekgsync()
-      etime1 = dnekclock()
-
-      call get_values2(which_field)
-
-      call nekgsync()
-      etime = dnekclock() - etime1
-      tsync = etime1 - etime0 
-
-      if (nio.eq.0) write(6,99) istep, 
-     $              '  Multidomain data exchange done', 
-     $              etime, etime+tsync
- 99   format(i11,a,1p2e13.4)
-
-      return
-      end
-c------------------------------------------------------------------------
       subroutine bcopy
       include 'SIZE'
       include 'TOTAL'
@@ -171,7 +131,7 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
 
       do k=1,nfld_neknek
       do i=1,n
-         ubc(i,1,1,1,k) = 
+         valint(i,1,1,1,k) = 
      $      c0*bdrylg(i,k,0)+c1*bdrylg(i,k,1)+c2*bdrylg(i,k,2)
       enddo
       enddo
@@ -197,11 +157,11 @@ c     if (ifsplit) ipfld=ldim+1
 
       do i=1,n ! The below has not been checked for ifheat=.true., pff 6/27/15
          if (imask(i,1,1,1).eq.1) then
-            vx(i,1,1,1) = ubc(i,1,1,1,1)
-            vy(i,1,1,1) = ubc(i,1,1,1,2)
-            if (if3d)    vz(i,1,1,1)  = ubc(i,1,1,1,3)
-            if (ifsplit) pr(i,1,1,1)  = ubc(i,1,1,1,ipfld)
-            if (ifheat)  t(i,1,1,1,1) = ubc(i,1,1,1,itfld)
+            vx(i,1,1,1) = valint(i,1,1,1,1)
+            vy(i,1,1,1) = valint(i,1,1,1,2)
+            if (if3d)    vz(i,1,1,1)  = valint(i,1,1,1,3)
+            if (ifsplit) pr(i,1,1,1)  = valint(i,1,1,1,ipfld)
+            if (ifheat)  t(i,1,1,1,1) = valint(i,1,1,1,itfld)
          endif
       enddo
 
@@ -258,9 +218,7 @@ c-----------------------------------------------------------------------
       if (ifmvbd) imove=0
       call neknekgsync()
 
-      call setnekcomm(iglobalcomm)
-      iglmove = iglmin(imove,1)
-      call setnekcomm(intracomm)
+      iglmove = ms_iglmin(imove,1)
 
       if (iglmove.eq.0) then
          ifneknekm=.true.
@@ -290,10 +248,8 @@ c     Get total number of processors and number of p
       enddo
 
 c     Get diamter of the domain
-      call setnekcomm(iglobalcomm)
-      mx_glob = glmax(xm1,lx1*ly1*lz1*nelt)
-      mn_glob = glmin(xm1,lx1*ly1*lz1*nelt)
-      call setnekcomm(intracomm)
+      mx_glob = ms_glmax(xm1,lx1*ly1*lz1*nelt)
+      mn_glob = ms_glmin(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
       dxf = 10.+dx1
@@ -448,6 +404,10 @@ c     Make sure rcode_all is fine
 
  200  continue
 
+      ipg = iglsum(ip,1)
+      nbpg = iglsum(nbp,1)
+      if (nid.eq.0) write(6,*) 
+     $      idsess,ipg,nbpg,'int pts bcs found findpt'
       npoints_nn = ip
 
 c     zero out valint
@@ -455,7 +415,7 @@ c     zero out valint
        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
       enddo
 
-      call iglmax(ierror,1)
+      ierror = ms_iglmax(ierror,1)
       if (ierror.eq.1) call exitt
  
       call neknekgsync()
@@ -463,33 +423,37 @@ c     zero out valint
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_values2(which_field)
+      subroutine xfer_bcs_neknek
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
+      include 'CTIMER'
 
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
       common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
 
-      character*3 which_field(nfld_neknek)
       real fieldout(nmaxl_nn,nfldmax_nn)
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
+
+      etime0 = dnekclock_sync()
+      call neknekgsync()
+      etime1 = dnekclock()
 
       call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
 
 c     Interpolate using findpts_eval
-      do ifld=1,nfld_neknek
-        if (which_field(ifld).eq.'vx') call copy(field,vx ,nt)
-        if (which_field(ifld).eq.'vy') call copy(field,vy ,nt)
-        if (which_field(ifld).eq.'vz') call copy(field,vz ,nt)
-        if (which_field(ifld).eq.'pr') call copy(field,pm1,nt)
-        if (which_field(ifld).eq.'t' ) call copy(field,t  ,nt)
-
-        call field_eval(fieldout(1,ifld),1,field)
-      enddo
+      call field_eval(fieldout(1,1),1,vx)
+      call field_eval(fieldout(1,2),1,vy)
+      if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
+      call field_eval(fieldout(1,ldim+1),1,pm1)
+      if (nfld_neknek.gt.ldim+1) then 
+        do i=ldim+2,nfld_neknek  !do all passive scalars
+          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
+        enddo
+      endif
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
@@ -499,6 +463,15 @@ c     the information will go to the boundary points
           valint(idx,1,1,1,ifld)=fieldout(i,ifld)
         enddo
        enddo
+
+      call nekgsync()
+      etime = dnekclock() - etime1
+      tsync = etime1 - etime0
+
+      if (nio.eq.0) write(6,99) istep,
+     $              '  Multidomain data exchange done',
+     $              etime, etime+tsync
+ 99   format(i11,a,1p2e13.4)
 
       return
       end
@@ -587,6 +560,30 @@ c     Some sanity checks for neknek
 c     idsess - session number
 c     nfld_neknek - fields to interpolate
       if (nid.eq.0) write(6,*) ngeom,ninter,'Neknek log ngeom ninter' 
+      return
+      end
+C--------------------------------------------------------------------------
+      subroutine neknek_xfer_fld(u,ui)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
+      real fieldout(nmaxl_nn,nfldmax_nn)
+      real u(1),ui(1)
+      integer nv,nt
+
+cccc  Exchanges field u between the two neknek sessions and copies it 
+cccc  to ui
+c     Interpolate using findpts_eval
+      call field_eval(fieldout(1,1),1,u)
+cccc
+c     Now we can transfer this information to valint array from which
+c     the information will go to the boundary points
+       do i=1,npoints_nn
+        idx = iList(1,i)
+        ui(idx)=fieldout(i,1)
+       enddo
+      call neknekgsync()
+
       return
       end
 C--------------------------------------------------------------------------

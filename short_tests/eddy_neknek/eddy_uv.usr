@@ -185,10 +185,8 @@ c
         call ms_gs_op(ue,'sum',ihms)
         dmxs = glmax(ue,n)
         dmns = glmin(ue,n)
-        call setnekcomm(iglobalcomm)
-        dmx  = glmax(dmxs,1)
-        dmn  = glmin(dmns,1)
-        call setnekcomm(intracomm)
+        dmx  = ms_glmax(dmxs,1)
+        dmn  = ms_glmin(dmns,1)
         if (dmx.eq.0 .and. dmn.eq.dmx) then
            if (nid_global.eq.0) write(6,*) 'ms_gs_op test PASSED'
         else
@@ -219,14 +217,12 @@ c
 
 c     Global error calculation
       if (IFNEKNEK) then 
-        call setnekcomm(iglobalcomm)
-        umx_gl = glamax(vx,n)
-        vmx_gl = glamax(vy,n)
-        uex_gl = glamax(ue,n)
-        vex_gl = glamax(ve,n)
-        udx_gl = glamax(ud,n)
-        vdx_gl = glamax(vd,n)
-        call setnekcomm(intracomm)
+        umx_gl = ms_glamax(vx,n)
+        vmx_gl = ms_glamax(vy,n)
+        uex_gl = ms_glamax(ue,n)
+        vex_gl = ms_glamax(ve,n)
+        udx_gl = ms_glamax(ud,n)
+        vdx_gl = ms_glamax(vd,n)
       end if  
 
       if (nid.eq.0) then
@@ -260,25 +256,17 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       ie = gllel(ieg)
 
       if (imask(ix,iy,iz,ie).eq.0) then
-      ux=0.0
-      uy=0.0
-      uz=0.0
-      temp=0.0
+       ux=0.0
+       uy=0.0
+       uz=0.0
+       temp=0.0
       else      
-
-      if (igeom.le.2) then
-         ux = ubc(ix,iy,iz,ie,1)
-         uy = ubc(ix,iy,iz,ie,2)
-         uz = ubc(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = ubc(ix,iy,iz,ie,ldim+2)
-      else
-         ux = valint(ix,iy,iz,ie,1)
-         uy = valint(ix,iy,iz,ie,2)
-         uz = valint(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
-      endif
-
+       ux = valint(ix,iy,iz,ie,1)
+       uy = valint(ix,iy,iz,ie,2)
+       uz = valint(ix,iy,iz,ie,3)
+       if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
+
       return
       end
 c-----------------------------------------------------------------------
@@ -330,19 +318,6 @@ c     One could change it as
 c     Caution: if ninter greater than 1 is chosen, ngeom greater than 2 
 c     should be used for stability
 
-
-c     Set number of fields to interpolate
-c     nfld_neknek = ndim+1 (just velocity+pressure)
-c     nfld_neknek = ndim+2 (velocity + pressure + temperature)
-
-c     nfld_neknek = 3 - u,v,pr in 2D
-c     nfld_neknek = 4 - u,v,pr,t in 2D
-
-c     nfld_neknek = 4 - u,v,w,pr in 3D 
-c     nfld_neknek = 5 - u,v,w,pr,t in 3D 
-
-      nfld_neknek=3 !just velocity+pressure 
-
       return
       end
 c-----------------------------------------------------------------------
@@ -360,8 +335,6 @@ c-----------------------------------------------------------------------
 
 c     This routine initializes the mulitdomain coupling          
       
-      call multimesh_create
-
       return
       end
 c----------------------------------------------------------------------
