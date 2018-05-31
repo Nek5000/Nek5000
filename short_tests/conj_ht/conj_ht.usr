@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
          utrans  = param(7)        ! thermal properties
          udiff   = param(8)
 
-         if (ieg .gt. nelgv) then  ! properties in the solid
+         if (ieg .gt. nelv) then  ! properties in the solid
             udiff   = 0.1*param(8) ! conductivity
             utrans  = 1.0
          endif
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
 
       qvol = 0.0
-      if (ieg.gt.nelgv) qvol = 1.0
+      if (ieg.gt.nelv) qvol = 1.0
 
       return
       end
