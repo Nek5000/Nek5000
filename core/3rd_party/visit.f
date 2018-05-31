@@ -602,7 +602,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     domain, lname
       include "visitfortransimV2interface.inc"
-      visitgetmaterial = VISIT_ERROR
+      visitgetmaterial = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -675,7 +675,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     handle, lname
       include "visitfortransimV2interface.inc"
-      visitgetcurve = VISIT_ERROR
+      visitgetcurve = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -744,5 +744,5 @@ c---------------------------------------------------------------------
       character*8 name
       integer     domain, lname
       include "visitfortransimV2interface.inc"
-      visitgetmixedvariable = VISIT_ERROR
+      visitgetmixedvariable = VISIT_INVALID_HANDLE
       end
