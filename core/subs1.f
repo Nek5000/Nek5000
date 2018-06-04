@@ -215,6 +215,7 @@ C
          else
            call compute_cfl(umax,vx,vy,vz,1.0)
          endif
+
          goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
@@ -229,6 +230,9 @@ C
             dt=min(dt,param(12))
          endif
       endif
+
+      write(6,*) 'here', umax
+
 C
 C     Find DT=DTCFL based on CFL-condition (if applicable)
 C
@@ -303,6 +307,7 @@ C      endif
 
       if (iffxdt) dt=dtopf
       COURNO = DT*UMAX
+      write(6,*) 'COURNO', COURNO, UMAX, DT
 
 ! synchronize time step for multiple sessions
       if (ifneknek) dt = ms_glmin(dt,1)
@@ -548,13 +553,13 @@ C
  
       if (ifmvbd) then
         call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-        call cumax  (cx,cy,cz,umax)
+           call compute_cfl(umax,cx,cy,cz,1.0)
       else
-        call cumax  (vx,vy,vz,umax)
+           call compute_cfl(umax,vx,vy,vz,1.0)
       endif
 
 c      if (nio.eq.0) write(6,1) istep,time,umax,cmax
-c   1  format(i9,1p3e12.4,' cumax')
+c   1  format(i9,1p3e12.4,' cmax')
 
 C     Zero DT
 
@@ -670,122 +675,6 @@ c 939 format(' d5',4f9.5,4f10.6)
       endif
 C
       endif
-C
-      return
-      end
-C
-      subroutine cumax (v1,v2,v3,umax)
-C
-      include 'SIZE'
-      include 'WZ'
-      include 'GEOM'
-      include 'INPUT'
-C
-      common /scrns/ xrm1 (lx1,ly1,lz1,lelv)
-     $ ,             xsm1 (lx1,ly1,lz1,lelv)
-     $ ,             xtm1 (lx1,ly1,lz1,lelv)
-     $ ,             yrm1 (lx1,ly1,lz1,lelv)
-     $ ,             ysm1 (lx1,ly1,lz1,lelv)
-     $ ,             ytm1 (lx1,ly1,lz1,lelv)
-      common /scrmg/ zrm1 (lx1,ly1,lz1,lelv)
-     $ ,             zsm1 (lx1,ly1,lz1,lelv)
-     $ ,             ztm1 (lx1,ly1,lz1,lelv)
-      common /ctmp1/ u    (lx1,ly1,lz1,lelv)
-     $ ,             v    (lx1,ly1,lz1,lelv)
-     $ ,             w    (lx1,ly1,lz1,lelv)
-      common /ctmp0/ x    (lx1,ly1,lz1,lelv)
-     $ ,             r    (lx1,ly1,lz1,lelv)
-      common /delrst/ drst(lx1),drsti(lx1)
-C
-      DIMENSION V1(LX1,LY1,LZ1,1)
-     $        , V2(LX1,LY1,LZ1,1)
-     $        , V3(LX1,LY1,LZ1,1)
-      DIMENSION U3(3)
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /0/
-C
-      NTOT  = lx1*ly1*lz1*NELV
-      NTOTL = LX1*LY1*LZ1*LELV
-      NTOTD = NTOTL*ldim
-C
-C     Compute isoparametric partials.
-C
-      CALL XYZRST (XRM1,YRM1,ZRM1,XSM1,YSM1,ZSM1,XTM1,YTM1,ZTM1,
-     $             IFAXIS)
-C
-C     Compute maximum U/DX
-C
-      IF (ICALLD.EQ.0) THEN
-         ICALLD=1
-         DRST (1)=ABS(ZGM1(2,1)-ZGM1(1,1))
-         DRSTI(1)=1.0/DRST(1)
-         DO 400 I=2,lx1-1
-            DRST (I)=ABS(ZGM1(I+1,1)-ZGM1(I-1,1))/2.0
-            DRSTI(I)=1.0/DRST(I)
- 400     CONTINUE
-         DRST (lx1)=DRST(1)
-         DRSTI(lx1)=1.0/DRST(lx1)
-      endif
-C
-C     Zero out scratch arrays U,V,W for ALL declared elements...
-C
-      CALL RZERO3 (U,V,W,NTOTL)
-C
-      IF (ldim.EQ.2) THEN
-
-      CALL VDOT2  (U,V1  ,V2  ,RXM1,RYM1,NTOT)
-      CALL VDOT2  (R,RXM1,RYM1,RXM1,RYM1,NTOT)
-      CALL VDOT2  (X,XRM1,YRM1,XRM1,YRM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(U,R,NTOT)
-C
-      CALL VDOT2  (V,V1  ,V2  ,SXM1,SYM1,NTOT)
-      CALL VDOT2  (R,SXM1,SYM1,SXM1,SYM1,NTOT)
-      CALL VDOT2  (X,XSM1,YSM1,XSM1,YSM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(V,R,NTOT)
-C
-      ELSE
-C
-      CALL VDOT3  (U,V1  ,V2  ,V3  ,RXM1,RYM1,RZM1,NTOT)
-      CALL VDOT3  (R,RXM1,RYM1,RZM1,RXM1,RYM1,RZM1,NTOT)
-      CALL VDOT3  (X,XRM1,YRM1,ZRM1,XRM1,YRM1,ZRM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(U,R,NTOT)
-C
-      CALL VDOT3  (V,V1  ,V2  ,V3  ,SXM1,SYM1,SZM1,NTOT)
-      CALL VDOT3  (R,SXM1,SYM1,SZM1,SXM1,SYM1,SZM1,NTOT)
-      CALL VDOT3  (X,XSM1,YSM1,ZSM1,XSM1,YSM1,ZSM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(V,R,NTOT)
-C
-      CALL VDOT3  (W,V1  ,V2  ,V3  ,TXM1,TYM1,TZM1,NTOT)
-      CALL VDOT3  (R,TXM1,TYM1,TZM1,TXM1,TYM1,TZM1,NTOT)
-      CALL VDOT3  (X,XTM1,YTM1,ZTM1,XTM1,YTM1,ZTM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(W,R,NTOT)
-C
-      endif
-C
-      DO 500 IE=1,NELV
-      DO 500 IX=1,lx1
-      DO 500 IY=1,ly1
-      DO 500 IZ=1,lz1
-            U(IX,IY,IZ,IE)=ABS( U(IX,IY,IZ,IE)*DRSTI(IX) )
-            V(IX,IY,IZ,IE)=ABS( V(IX,IY,IZ,IE)*DRSTI(IY) )
-            W(IX,IY,IZ,IE)=ABS( W(IX,IY,IZ,IE)*DRSTI(IZ) )
-  500    CONTINUE
-C
-      U3(1)   = VLMAX(U,NTOT)
-      U3(2)   = VLMAX(V,NTOT)
-      U3(3)   = VLMAX(W,NTOT)
-      UMAX    = GLMAX(U3,3)
 C
       return
       end
