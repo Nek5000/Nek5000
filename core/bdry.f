@@ -309,8 +309,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
-      IF ( .NOT.IFALGN .AND.
-     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+c      IF ( .NOT.IFALGN .AND.
+c     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
 
       RETURN
 
