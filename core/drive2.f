@@ -1114,6 +1114,9 @@ c
       ttime=0.0
       tcvf =0.0
       tproj=0.0
+      tuchk=0.0
+      tmakf=0.0
+      tmakq=0.0
 C
       return
       end
@@ -1281,13 +1284,21 @@ c        E solver timings
          peslv=teslv/tttstp 
          write(6,*) 'eslv time',neslv,teslv,peslv
 
+c        makef timings
+         pmakf=tmakf/tttstp 
+         write(6,*) 'makf time',tmakf,pmakf
+
+c        makeq timings
+         pmakq=tmakq/tttstp 
+         write(6,*) 'makq time',tmakq,pmakq
+
 c        CVODE RHS timings
          pcvf=tcvf/tttstp
          if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        Resiual projection timings
          pproj=tproj/tttstp
-         write(6,*) 'proj time',0,tproj,pproj
+         write(6,*) 'proj time',tproj,pproj
 
 c        Variable properties timings
          pspro=tspro/tttstp
@@ -1303,6 +1314,10 @@ c        USERBC timings
          write(6,*) 'usbc min ',min_usbc 
          write(6,*) 'usbc max ',max_usbc 
          write(6,*) 'usb  avg ',avg_usbc 
+
+c        User check timings
+         puchk=tuchk/tttstp
+         write(6,*) 'uchk time',tuchk,puchk
 
 c        Operator timings
          pmltd=tmltd/tttstp

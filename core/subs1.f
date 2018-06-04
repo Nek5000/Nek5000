@@ -231,8 +231,6 @@ C
          endif
       endif
 
-      write(6,*) 'here', umax
-
 C
 C     Find DT=DTCFL based on CFL-condition (if applicable)
 C
@@ -307,7 +305,6 @@ C      endif
 
       if (iffxdt) dt=dtopf
       COURNO = DT*UMAX
-      write(6,*) 'COURNO', COURNO, UMAX, DT
 
 ! synchronize time step for multiple sessions
       if (ifneknek) dt = ms_glmin(dt,1)

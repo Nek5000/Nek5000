@@ -216,7 +216,9 @@ c-----------------------------------------------------------------------
          if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
+         etime1 = dnekclock()
          call userchk
+         tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001
