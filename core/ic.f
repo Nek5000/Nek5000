@@ -2415,7 +2415,7 @@ c      ifgtim  = .true.  ! always get time
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi(fname,ifile)
+      subroutine mfi(fname_in,ifile)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2434,7 +2434,11 @@ c
       include 'TOTAL'
       include 'RESTART'
       character*132 hdr
+      character*132  fname_in
+
       character*132  fname
+      character*1    fnam1(132)
+      equivalence   (fnam1,fname)
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2444,6 +2448,13 @@ c
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
 
       tiostart=dnekclock()
+
+      ! add path
+      call blank(fname,132)
+      lenp = ltrunc(path,132)
+      lenf = ltrunc(fname_in,132)
+      call chcopy(fnam1(1),path,lenp)
+      call chcopy(fnam1(lenp+1),fname_in,lenf)
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
