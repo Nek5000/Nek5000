@@ -8,15 +8,15 @@ c-----------------------------------------------------------------------
     
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
  
-      common /happycallflag/ icall
       integer nid_global_root(0:nsessmax-1)
       character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
 
       logical ifhigh
+      logical mpi_is_initialized
 
       ! Init MPI
       call mpi_initialized(mpi_is_initialized, ierr)
-      if (mpi_is_initialized .eq. 0 ) call mpi_init(ierr)
+      if (.not.mpi_is_initialized) call mpi_init(ierr)
       call mpi_comm_size(MPI_COMM_WORLD,np_global,ierr)
       call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
 
@@ -129,8 +129,6 @@ c     Assign key for splitting into multiple groups
          ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
          ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
       endif 
-
-      icall = 0  ! Emergency exit call flag
 
       return
       end
@@ -597,7 +595,6 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      common /happycallflag/ icall
 
       if (nid.eq.0) then
          write(6,*) ' '
@@ -616,7 +613,6 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      common /happycallflag/ icall
 
       if (nid.eq.0) then
          write(6,*) ' '

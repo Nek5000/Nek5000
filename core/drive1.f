@@ -221,6 +221,7 @@ c-----------------------------------------------------------------------
          tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
+         if (mod(kstep,100).eq.0 ..and. lastep.eq.0) call runstat
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1
@@ -344,12 +345,15 @@ c-----------------------------------------------------------------------
       subroutine nek_end
 
       include 'SIZE'
-      include 'TSTEP'
-      include 'PARALLEL'
-      include 'OPCTR'
+      include 'TOTAL'
 
-      if(instep.ne.0)  call runstat
-      if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
+      if(instep.ne.0) call runstat
+
+      if (ifstrs) then
+         call fgslib_crs_free(xxth_strs) 
+      else
+         call fgslib_crs_free(xxth(1))
+      endif
 
       call in_situ_end()
       call exitt0()
@@ -369,7 +373,6 @@ c-----------------------------------------------------------------------
          if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
-
       enddo
 
       return

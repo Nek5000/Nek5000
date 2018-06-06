@@ -1258,6 +1258,7 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nio.eq.0) then
+         write(6,*) ''
          write(6,'(A)') 'runtime statistics:'
 
          pinit=tinit/tttstp
@@ -1424,17 +1425,20 @@ c        MPI_Allreduce(sync) timings
          write(6,*) 'allreduce_sync  max ',max_gop_sync 
          write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
 #endif
+         write(6,*) ''
       endif
 
-      if (nio.eq.0)  ! header for timing
-     $ write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop',ifsync
-    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
+      if (lastep.eq.1) then
+        if (nio.eq.0)  ! header for timing
+     $    write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',
+     $               ' tgop',ifsync
+    1     format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
-      call blank(s132,132)
-      write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
-  132 format(i12,1p6e12.4,' qqq')
-      call pprint_all(s132,132,6)
-
+        call blank(s132,132)
+        write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
+  132   format(i12,1p6e12.4,' qqq')
+        call pprint_all(s132,132,6)
+      endif
 #endif
 
       return
