@@ -655,8 +655,8 @@ c     // Also need to get local domain index
           elseif(visitstrcmp("s", 1, name, 1).eq.0) then
 c             // Handle the user define variables.
               read( name(2:lname), '(i10)' ) k
-              k = k + 1
               if(IFPSCO(k)) then
+                  k = k + 1
                   err = visitvardatasetd(h, VISIT_OWNER_SIM, 1, nvals,
      .                                   T(1,1,1,domain,k))
               endif
