@@ -616,7 +616,7 @@ c     - print default value to screen
 c     - separate settings for tol, proj, dealiasing for ps
 c     - mhd support
 
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 
       character*132 c_out,txt
