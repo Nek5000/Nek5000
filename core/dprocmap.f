@@ -8,15 +8,17 @@
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       integer   disp_unit
-      integer*8 winsize, winptr
+      integer*8 winsize
+
+      parameter(lwin=4*3*lelt)
+      integer win(lwin)
+      common /cbwin/ win
 
 #ifdef MPI
-c      call MPI_Type_Extent(MPI_INTEGER,disp_unit,ierr)
       disp_unit = ISIZE
-
-      winsize = 3*lelt*disp_unit
-      call MPI_Win_allocate(winsize,disp_unit,MPI_INFO_NULL,
-     $                      nekcomm,winptr,dProcmapH,ierr)
+      winsize = lwin
+      call MPI_Win_create(win,winsize,disp_unit,MPI_INFO_NULL,
+     $                    nekcomm,dProcmapH,ierr)
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
 #endif
