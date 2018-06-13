@@ -185,12 +185,7 @@ C
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 
-      call blank (hcode ,11*lhis)
-      call izero (lochis, 4*lhis)
-
       call blank (initc,15*132)
-
-      nhis = 0
 
       return
       end
@@ -960,8 +955,6 @@ c
      $         ,/,2X,'This run requires:'
      $         ,/,2X,'   lelt >= ',i12,'  for np = ',i12
      $         ,/,2X,'   lelg >= ',i12,/)
-c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-c           write(6,*)'help:',lelt,lelv,lelgv
          endif
          call exitt
       endif
