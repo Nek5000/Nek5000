@@ -161,24 +161,27 @@ c---------------------------------------------------------------------
 
       if (nid.eq.nio) call printHeader
 
-      IF (NP.GT.LP) THEN
-         WRITE(6,*) 
-     $   'ERROR: Code compiled for a max of',LP,' processors.'
-         WRITE(6,*) 
-     $   'Recompile with LP =',NP,' or run with fewer processors.'
-         WRITE(6,*) 
-     $   'Aborting in routine INIPROC.'
-         call exitt
+      if (wdsize .eq. 4)
+     $   call exitti('Single precision mode not supported!',wdsize)
+
+      call MPI_Type_Extent(MPI_DOUBLE_PRECISION,isize_mpi,ierr)
+      if (isize_mpi .ne. wdsize) then
+         call exitti('MPI real size does not match$',isize_mpi)
       endif
 
-      if (wdsize .eq. 4) then
-         if (nid.eq.0) 
-     &      write(6,*) 'ABORT: single precision mode not supported!'
-         call exitt
+      call MPI_Type_Extent(MPI_INTEGER,isize_mpi,ierr)
+       if (isize_mpi .ne. isize) then
+         call exitti('MPI integer size does not match$',isize_mpi)
       endif
-      nekreal = mpi_real
-      if (wdsize.eq.8) nekreal = mpi_double_precision
-c
+
+      call MPI_Type_Extent(MPI_INTEGER8,isize_mpi,ierr)
+       if (isize_mpi .ne. isize8) then
+         call exitti('MPI integer8 size does not match$',isize_mpi)
+      endif
+
+      if (np.gt.lp)
+     $   call exitti('Increase LPMAX or run with fewer processors!$',np)
+
       PID = 0
       NULLPID=0
       NODE0=0
@@ -202,7 +205,6 @@ C     Test timer accuracy
       endif
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
-
       return
       end
 c-----------------------------------------------------------------------
@@ -231,16 +233,16 @@ c     Global vector commutative operation
 #endif
 c
       if (op.eq.'+  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_sum,nekcomm,ie)
       elseif (op.EQ.'M  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_max ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_max,nekcomm,ie)
       elseif (op.EQ.'m  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_min ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_min,nekcomm,ie)
       elseif (op.EQ.'*  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_prod,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_prod,nekcomm,ie)
       else
-         write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
-         call exitt
+      write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
+      call exitt
       endif
 
       call copy(x,w,n)

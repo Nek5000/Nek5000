@@ -31,23 +31,24 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /rdump/ ntdump
 
       real kwave2
-      real*8 t0, tpp
-
       logical ifemati
 
+      real rtest
+      integer itest
+      integer*8 itest8
+      character ctest
+      logical ltest 
+
       ! set word size for REAL
-      eps = 1.0e-12
-      if (1.0 + eps .ne. 1.0) then
-         wdsize = 8
-      else
-         wdsize = 4
-      endif
+      wdsize = sizeof(rtest)
       ! set word size for INTEGER
-      isize = 4
+      isize = sizeof(itest)
+      ! set word size for INTEGER*8
+      isize8 = sizeof(itest8) 
       ! set word size for LOGICAL
-      lsize = 4
+      lsize = sizeof(ltest) 
       ! set word size for CHARACTER
-      csize = 1
+      csize = sizeof(ctest)
 
       call setupcomm()
       nekcomm  = intracomm
@@ -56,7 +57,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       etimes = dnekclock()
       istep  = 0
-      tpp    = 0.0
 
       call opcount(1)
 

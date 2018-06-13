@@ -10,13 +10,13 @@
       integer   disp_unit
       integer*8 winsize
 
-      parameter(lwin=4*3*lelt)
+      parameter(lwin=3*lelt)
       integer win(lwin)
-      common /cbwin/ win
+      common /cbwin/ win ! just for internal purposes
 
 #ifdef MPI
       disp_unit = ISIZE
-      winsize = lwin
+      winsize = disp_unit*lwin
       call MPI_Win_create(win,winsize,disp_unit,MPI_INFO_NULL,
      $                    nekcomm,dProcmapH,ierr)
 
