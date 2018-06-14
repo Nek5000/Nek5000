@@ -36,7 +36,13 @@ c     Boundary conditions are changed back to 'v' or 't'.
          call set_intflag
          call neknekmv()
          icalld = icalld + 1
-      endif 
+      endif
+
+      nfld_min = ms_iglmin(nfld_neknek,1)
+      nfld_max = ms_iglmax(nfld_neknek,1)
+      if (nfld_min .ne. nfld_max)
+     $   call exitti('nfld_neknek does not match across sessions!$',1)
+ 
       call neknekgsync()
 
 c     Figure out the displacement for the first mesh 
