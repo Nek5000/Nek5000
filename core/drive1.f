@@ -138,17 +138,20 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics   !     Set initial conditions 
-      call setprop  !     Compute field properties
+      call setics
+      call setprop
 
-      if (instep.ne.0) then !USRCHK
-        if(nio.eq.0) write(6,*) 'call userchk'
+      if (instep.ne.0) then
          if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
+
+         if (nio.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
+
+      call setprop
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
