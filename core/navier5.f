@@ -1847,6 +1847,32 @@ c
          torqz (0) = torqz  (0) + torqz  (i)
       enddo
 
+      do i=1,nobj
+        if (nio.eq.0) then
+          if (if3d.or.ifaxis) then
+           if (ifdout) then
+            write(6,6) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
+            write(6,6) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
+            write(6,6) istep,time,dragz(i),dragpz(i),dragvz(i),i,'dragz'
+           endif
+           if (iftout) then
+            write(6,6) istep,time,torqx(i),torqpx(i),torqvx(i),i,'torqx'
+            write(6,6) istep,time,torqy(i),torqpy(i),torqvy(i),i,'torqy'
+            write(6,6) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
+           endif
+          else
+           if (ifdout) then
+            write(6,6) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
+            write(6,6) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
+           endif
+           if (iftout) then
+            write(6,6) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
+           endif
+          endif
+        endif
+    6   format(i8,1p4e19.11,2x,i5,a5)
+      enddo
+
       return
       end
 c-----------------------------------------------------------------------

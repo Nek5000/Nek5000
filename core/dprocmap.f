@@ -10,14 +10,10 @@
       integer   disp_unit
       integer*8 winsize
 
-      parameter(lwin=3*lelt)
-      integer win(lwin)
-      common /cbwin/ win ! just for internal purposes
-
 #ifdef MPI
       disp_unit = ISIZE
-      winsize = disp_unit*lwin
-      call MPI_Win_create(win,winsize,disp_unit,MPI_INFO_NULL,
+      winsize = disp_unit*size(dProcmapWin)
+      call MPI_Win_create(dProcmapWin,winsize,disp_unit,MPI_INFO_NULL,
      $                    nekcomm,dProcmapH,ierr)
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
@@ -35,6 +31,9 @@ c-----------------------------------------------------------------------
 
       integer ibuf(lbuf)
       integer*8 disp
+
+      if (lbuf.lt.l .or. lbuf.gt.3)
+     $   call exitti('invalid lbuf!',lbuf)
 
 #ifdef MPI
       call dProcMapFind(iloc,nids,ieg)

@@ -10,12 +10,15 @@
 * Added par file support for postnek
 * Added parallel map file reader
 * Added mkSIZE script to automatically create SIZE file
+* Refactored object and boundary handling
+* Added RANS and mesh-smoother as experimental features
 
 ## Backwards-Incompatible Changes 
 
-* Eliminated PPLIST symbol `NEKNEK` (now a runtime parameter)
-* New `map/ma2` format (old versions are NOT supported)
-* Changed interface of interpolation wrapper, see `intp.f`
+* Eliminated PPLIST symbol `NEKNEK` (not required anymore)
+* `map/ma2` format has changed, rerun with shipped genmap
+* Modified interpolation routine names and interface
+* Remove CB CTORQ from usr files (now part of OBJDATA included in TOTAL)
 
 ## Known Bugs 
 

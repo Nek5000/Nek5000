@@ -2358,6 +2358,11 @@ c      ifgtim  = .true.  ! always get time
          endif
       endif
 
+      if (nelr.gt.lelr) then
+         write(6,*) 'ERROR: increase lelr in RESTART!', lelr, nelr
+         call exitt
+      endif
+
       p0th = 1 
       if (p0thr.gt.0) p0th = p0thr
 
@@ -2654,7 +2659,7 @@ c-----------------------------------------------------------------------
            pid0r = nid
            pid1r = nid + stride
            fid0r = nid / stride
-           call blank     (hdr,iHeaderSize)
+           call blank(hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
            if(nid.eq.pid0r) write(6,*) '      FILE:',hname
@@ -2666,7 +2671,7 @@ c-----------------------------------------------------------------------
            call byte_read (bytetest,1,ierr) 
            if(ierr.ne.0) goto 102
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
-           call byte_read (er,nelr,ierr)     ! get element mapping
+           call byte_read (er,nelr,ierr)    ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
         else
            pid0r = 0
