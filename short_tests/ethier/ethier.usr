@@ -154,13 +154,13 @@ c-----------------------------------------------------------------------
 
          ! test interpolation wrapper
          nxm = 3 ! mesh is quadratic
-         call intp_setup(0.0,nxm,intp_h)
+         call interp_setup(0.0,nxm,intp_h)
          nint = n
          call copy (xint,XM1,nint)
          call copy (yint,YM1,nint)
          call copy (zint,ZM1,nint)
-         call intp_nfld(uxi,vx,1,xint,yint,zint,nint,
-     $                  iwk,rwk,INTP_NMAX,.true.,intp_h) 
+         call interp_nfld(uxi,vx,1,xint,yint,zint,nint,
+     $                    iwk,rwk,INTP_NMAX,.true.,intp_h) 
          call exactu(uxe,uye,uze,xint,yint,zint,nint)
          call sub2(uxi,uxe,nint)
          err = glamax(uxi,nint)
