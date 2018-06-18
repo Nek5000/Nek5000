@@ -110,8 +110,11 @@ if par.has_option('GENERAL', 'dealiasing'):
 else:
   lxd = int(1.5*lx1)
 
-if par['GENERAL']['extrapolation'].lower() == 'oifs':
-  lxd = max(lxd,lx1)
+try:
+  if par['GENERAL']['extrapolation'].lower() == 'oifs':
+    lxd = max(lxd,lx1)
+except:
+  pass
 
 try:
   lxd = int(par['GENERAL']['polynomialOrderDealias']) + 1
@@ -204,7 +207,7 @@ except:
   pass
 
 if (lelg*lx1**ldim)/lpmin > 2**19:
-     print("<INFO> Increase GENERAL:minNumProcesses to reduce memory usage")
+     print("<INFO> You may have to increase GENERAL:minNumProcesses to reduce memory usage")
 
 # generate SIZE file ###
 if os.path.exists('./SIZE'):

@@ -2358,6 +2358,11 @@ c      ifgtim  = .true.  ! always get time
          endif
       endif
 
+      if (nelr.gt.lelr) then
+         write(6,*) 'ERROR: increase lelr in RESTART!', lelr, nelr
+         call exitt
+      endif
+
       p0th = 1 
       if (p0thr.gt.0) p0th = p0thr
 
@@ -2415,7 +2420,7 @@ c      ifgtim  = .true.  ! always get time
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi(fname,ifile)
+      subroutine mfi(fname_in,ifile)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2434,7 +2439,11 @@ c
       include 'TOTAL'
       include 'RESTART'
       character*132 hdr
+      character*132  fname_in
+
       character*132  fname
+      character*1    fnam1(132)
+      equivalence   (fnam1,fname)
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2444,6 +2453,13 @@ c
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
 
       tiostart=dnekclock()
+
+      ! add path
+      call blank(fname,132)
+      lenp = ltrunc(path,132)
+      lenf = ltrunc(fname_in,132)
+      call chcopy(fnam1(1),path,lenp)
+      call chcopy(fnam1(lenp+1),fname_in,lenf)
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
@@ -2643,7 +2659,7 @@ c-----------------------------------------------------------------------
            pid0r = nid
            pid1r = nid + stride
            fid0r = nid / stride
-           call blank     (hdr,iHeaderSize)
+           call blank(hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
            if(nid.eq.pid0r) write(6,*) '      FILE:',hname
@@ -2655,7 +2671,7 @@ c-----------------------------------------------------------------------
            call byte_read (bytetest,1,ierr) 
            if(ierr.ne.0) goto 102
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
-           call byte_read (er,nelr,ierr)     ! get element mapping
+           call byte_read (er,nelr,ierr)    ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
         else
            pid0r = 0

@@ -13,6 +13,8 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
 
+      etime = dnekclock()      
+
       if (nio.eq.0.and.loglevel.gt.2)
      $   write(6,*) 'makeq', ifield
 
@@ -69,6 +71,8 @@ C     !! NOTE: Do not change the content of the array BQ until the current
          endif
 
       endif
+
+      tmakq=tmakq+(dnekclock()-etime1)
 
       return
       end

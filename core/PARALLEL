@@ -20,8 +20,8 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       logical         ifgprnt
       common /diagl/  ifgprnt
 
-      integer        wdsize,isize,lsize,csize,wdsizi
-      common/precsn/ wdsize,isize,lsize,csize,wdsizi
+      integer        wdsize,isize,isize8,lsize,csize,wdsizi
+      common/precsn/ wdsize,isize,isize8,lsize,csize,wdsizi
 
 !     crystal-router, gather-scatter, and xxt handles (xxt=csr grid solve)
 !

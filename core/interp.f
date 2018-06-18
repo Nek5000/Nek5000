@@ -1,11 +1,11 @@
 c
-c interpolation wrapper
+c generic interpolation wrapper
 c
 
-#define INTP_HMAX 10
+#define INTP_HMAX 20
 
 c-----------------------------------------------------------------------
-      subroutine intp_setup(tolin,nmsh,ih)
+      subroutine interp_setup(tolin,nmsh,ih)
 
       include 'SIZE'
       include 'INPUT'
@@ -75,7 +75,8 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_nfld(out,fld,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp,ih)
+      subroutine interp_nfld(out,fld,nfld,xp,yp,zp,n,iwk,rwk,nmax,
+     $                       iflp,ih)
 c
 c out       ... interpolation value(s) dim (n,nfld)
 c fld       ... source field(s)
@@ -104,17 +105,21 @@ c
       integer nn(2)
       logical ifot
 
+      if (ih.lt.1 .or. ih.gt.INTP_HMAX) 
+     $   call exitti('invalid intp handle!$',ih)
+
       ih_intp1 = ih_intp(1,ih)
       ih_intp2 = ih_intp(2,ih)
 
       ifot = .false. ! transpose output field
 
-      if(nio.eq.0) write(6,*) 'call intp_nfld', ih, ih_intp1, ih_intp2
+      if (nio.eq.0 .and. loglevel.gt.2) 
+     $   write(6,*) 'call intp_nfld', ih, ih_intp1, ih_intp2
 
-      if(n.gt.nmax) then
-        write(6,*)
-     &   'ABORT: n>nmax in intp_nfld', n, nmax
-        call exitt
+      if (n.gt.nmax) then
+         write(6,*)
+     &    'ABORT: n>nmax in intp_nfld', n, nmax
+         call exitt
       endif
 
       ! locate points (iel,iproc,r,s,t)
@@ -169,7 +174,7 @@ c
       nn(1) = iglsum(n,1)
       nn(2) = iglsum(nfail,1)
       if(nio.eq.0) then
-        write(6,1) nn(1),nn(2)
+        if(nfail.gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
      &         ,i12,/,' done :: intp_nfld')
       endif
@@ -177,7 +182,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_free(ih)
+      subroutine interp_free(ih)
 
       common /intp_h/ ih_intp(2,INTP_HMAX)
 

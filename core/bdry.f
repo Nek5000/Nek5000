@@ -91,22 +91,6 @@ C
 
       if (ifmhd) call set_ifbcor
 C
-      IF (NHIS.GT.0) THEN
-         IQ = 0
-         DO 300 IH=1,NHIS
-            IF ( HCODE(10,IH) .EQ. 'I' ) THEN
-               IFINTQ = .TRUE.
-               IOBJ   = LOCHIS(1,IH)
-               IQ     = IQ + 1
-               IF (IOBJ.GT.NOBJ .OR. IOBJ.LT.0)  THEN
-                  WRITE (6,*) 
-     $            'ERROR : Undefined Object for integral',IQ
-                  call exitt
-               ENDIF
-            ENDIF
-  300    CONTINUE
-      ENDIF
-C
 C     Establish global consistency of LOGICALS amongst all processors.
 C
       CALL GLLOG(IFVCOR , .FALSE.)
@@ -309,8 +293,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
-      IF ( .NOT.IFALGN .AND.
-     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+c      IF ( .NOT.IFALGN .AND.
+c     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
 
       RETURN
 
@@ -2126,3 +2110,60 @@ C
 C
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine create_obj(iobjo,sid_list,n)
+c
+c     defines an object for a given list of surface ids
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer sid_list(n)
+
+      integer e,f
+
+      nobj = nobj + 1
+      iobj = nobj
+
+      if (maxobj.lt.nobj)
+     $   call exitti('maxobj too small, increate in SIZE.$',ierr)
+
+      do e=1,nelv
+      do f=1,2*ndim
+      do i=1,n
+         if (boundaryIDList(f,e) .eq. sid_list(i)) then
+            nmember(iobj) = nmember(iobj) + 1
+            mem = nmember(iobj)
+            ieg = lglel(e)
+            object(iobj,mem,1) = ieg
+            object(iobj,mem,2) = f
+c            write(6,1) iobj,mem,f,ieg,e,nid,' OBJ'
+    1       format(6i9,a4)
+         endif
+      enddo
+      enddo
+      enddo
+
+      iobjo  = iobj
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setbc(sid,ifld,cbci)
+c
+c     sets boundary condition for a given surface id and field
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+
+      character*3 cbci
+
+      do iel = 1,nelt
+      do ifc = 1,2*ndim
+         if (boundaryIDList(ifc,iel).eq.sid) cbc(ifc,iel,ifld) = cbci
+      enddo
+      enddo
+
+      return
+      end

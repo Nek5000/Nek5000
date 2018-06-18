@@ -1449,9 +1449,10 @@ C----------------------------------------------------------------------
       include 'MASS'
       include 'INPUT'
       include 'TSTEP'
-
+      include 'CTIMER'
       include 'MVGEOM'
 
+      etime1 = dnekclock()
                                                 call makeuf
       if (filterType.eq.2)                      call make_hpf
       if (ifexplvis.and.ifsplit)                call makevis
@@ -1464,6 +1465,8 @@ C----------------------------------------------------------------------
 
 c     Adding this call allows prescribed pressure bc for PnPn-2
 c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
+      
+      tmakf=tmakf+(dnekclock()-etime1)
 
       return
       end

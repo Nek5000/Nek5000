@@ -5,10 +5,11 @@ if [ $# -eq 0 ] || [ $# -lt 3 ]; then
   exit 1
 fi
 
+
+
 COUPLED="T"
 if [ "$5" == "uncoupled" ]; then COUPLED="F"; fi
 
-mv SESSION.NAME  SESSION.NAME.1 2>/dev/null
 echo   2        >   SESSION.NAME 2>/dev/null
 echo  $COUPLED >>   SESSION.NAME 2>/dev/null
 echo  $1       >>   SESSION.NAME 2>/dev/null
@@ -17,15 +18,18 @@ echo  $3       >>   SESSION.NAME 2>/dev/null
 echo  $2       >>   SESSION.NAME 2>/dev/null 
 echo `pwd`'/'  >>   SESSION.NAME 2>/dev/null 
 echo  $4       >>   SESSION.NAME 2>/dev/null 
-rm ioinfo
-mv $1.log $1.log1 2>/dev/null
-mv $2.log $2.log1 2>/dev/null
+
+rm -f ioinfo
+
+export NEK_LOGFILE=logfile
+cp -f $1.logfile $1.logfile1 2>/dev/null
+cp -f $2.logfile $2.logfile1 2>/dev/null
+rm -f s00000_"$NEK_LOGFILE" s00001_"$NEK_LOGFILE" 
+ln -sf s00000_"$NEK_LOGFILE" $1.logfile
+ln -sf s00001_"$NEK_LOGFILE" $2.logfile
+
 NP1=$3
 NP2=$4
 NP=$(($NP1+$NP2))
-nohup mpiexec -np $NP ./nek5000 > $1.log &
-##nohup mpiexec -l -np $NP nek5000 > $1.log &
-sleep 1
-rm logfile
-ln $1.log logfile
-rm -f SESSION.NAME
+
+mpiexec -np $NP ./nek5000 &
