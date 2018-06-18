@@ -319,6 +319,17 @@ c set parameters
       endif
 
       j = 0
+      do i = 1,99
+         write(txt,"('scalar',i2.2)") i
+         call finiparser_find(i_out,txt,ifnd)
+         if (ifnd .eq. 1) j = j + 1
+      enddo
+      if (j.gt.ldimt-1) then
+         write(6,*) 'found more scalars than specified in SIZE!' 
+         goto 999
+      endif
+
+      j = 0
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
@@ -329,13 +340,14 @@ c set parameters
          endif
       enddo
       param(23) = j ! number of scalars 
-
       n = param(23)
-      if (ifheat) n = n+1 
-       
-      do i = 1,n
+ 
+      is = 2
+      if (ifheat) is = 1 
 
-      if (ifheat .and. i.eq.1) then
+      do i = is,n+1
+
+      if (i.eq.1) then
         txt = 'temperature'
       else
         write(txt,"('scalar',i2.2)") i-1
@@ -905,6 +917,7 @@ c set some internals
          endif
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
+
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
 c     This is here because it influence the mesh read, which follows.

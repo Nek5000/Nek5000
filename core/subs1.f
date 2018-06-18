@@ -2667,19 +2667,11 @@ C
 
       ifld = ifield
 
-      DO IFIELD=MFIELD,nfldt
-csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
-
-         CALL VPROPS
-
-         nel = nelfld(ifield)
-         vol = volfld(ifield)
-         ntot1 = nxyz1*nel
-
-csk         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
-csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
-
-      ENDDO
+      do ifield=mfield,nfldt
+         if (idpss(ifield-1).eq.-1) goto 100
+         call vprops
+ 100     continue
+      enddo
 
       ifield = ifld
 
