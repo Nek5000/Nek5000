@@ -207,6 +207,7 @@ c     - mhd support
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
+      INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
 
@@ -291,6 +292,10 @@ c set parameters
          else if (index(c_out,'TIMESTEP') .eq. 1) then
             param(14) = 0
             param(15) = d_out
+         else if (index(c_out,'ELAPSEDTIME') .eq. 1) then
+            param(14) = d_out
+            param(15) = 0
+            timeioe = 1
          else
             write(6,*) 'value: ',trim(c_out)
             write(6,*) 'is invalid for general:writeControl!'
@@ -787,6 +792,7 @@ C     Broadcast run parameters to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'TSTEP'
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
@@ -842,6 +848,8 @@ C
       call bcast(ifpsco, ldimt1*lsize)
 
       call bcast(initc, 15*132*csize) 
+
+      call bcast(timeioe,sizeof(timeioe))
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.
