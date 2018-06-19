@@ -45,16 +45,17 @@ c-----------------------------------------------------------------------
          if (nio.eq.0) write(6,*) 'Ngeom for findpts:',nmsh-1
          nxi = nmsh
          nyi = nxi
-         nzi = nxi
+         nzi = 1
+         if (if3d) nzi = nxi
          n   = nelt*nxi*nyi*nzi 
          do ie = 1,nelt
-           call map_m_to_n(xmi((ie-1)*nxi**3 + 1),nxi,xm1(1,1,1,ie),lx1,
-     $                     if3d,w,size(w))
-           call map_m_to_n(ymi((ie-1)*nyi**3 + 1),nyi,ym1(1,1,1,ie),ly1,
-     $                     if3d,w,size(w))
+           call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
+     $                     ,lx1,if3d,w,size(w))
+           call map_m_to_n(ymi((ie-1)*nxi*nyi*nzi + 1),nyi,ym1(1,1,1,ie)
+     $                     ,ly1,if3d,w,size(w))
            if (if3d) 
-     $     call map_m_to_n(zmi((ie-1)*nzi**3 + 1),nzi,zm1(1,1,1,ie),lz1,
-     $                     if3d,w,size(w))
+     $     call map_m_to_n(zmi((ie-1)*nxi*nyi*nzi + 1),nzi,zm1(1,1,1,ie)
+     $                     ,lz1,if3d,w,size(w))
          enddo
   
          call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
