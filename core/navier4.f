@@ -351,44 +351,6 @@ C     local inner product, with weight
       RETURN
       END
 c-----------------------------------------------------------------------
-      function vlsc3_acc(x,y,b,n)
-C ROR, 05-12-2017: This does not give the correct results on GPU.
-C Inside the reduction clause, the values of X, Y, and B were simply
-C 0, rather than the correct values. This was confimred with cuda-gdb
-C Our workaround was to inline VLSC_ACC in gmres.f and use ACC KERNELS.
-C
-C     local inner product, with weight
-C
-      dimension x(n),y(n),b(n)
-      real dt
-C
-      include 'OPCTR'
-C
-#ifdef TIMER
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'VLSC3 '
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + dfloat(isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + dfloat(isbcnt)
-#endif
-C
-      dt = 0.0
-!$acc parallel loop present(x,y,b) reduction(+:dt)
-      do i=1,n
-         dt = dt+x(i)*y(i)*b(i)
-      enddo
-!$acc end parallel loop
-      t=dt
-      vlsc3_acc = t
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine updrhse(p,h1,h2,h2inv,ierr)
 C
 C     Update rhs's if E-matrix has changed
@@ -1404,8 +1366,12 @@ c
 
       return
       end
+
+C JG - 2018-05-07, commented out for Pn-Pn
+C#ifdef _OPENACC
+
 c-----------------------------------------------------------------------
-      function vlsc3_acc2(x,y,b,n)
+      function vlsc3_acc(x,y,b,n)
 C ROR, 05-12-2017: This does not give the correct results on GPU.
 C Inside the reduction clause, the values of X, Y, and B were simply
 C 0, rather than the correct values. This was confimred with cuda-gdb
@@ -1433,13 +1399,98 @@ C
 #endif
 C
       dt = 0.0
-!$acc parallel loop present(x,y,b) reduction(+:dt)
+!$ACC PARALLEL LOOP PRESENT(x,y,b) REDUCTION(+:dt)
       do i=1,n
          dt = dt+x(i)*y(i)*b(i)
       enddo
-!$acc end parallel loop
-      t=dt
-      vlsc3_acc2 = t
+!$ACC END PARALLEL LOOP
+c      t=dt
+      vlsc3_acc = dt
       return
       end
+
+#ifdef _OPENACC
 c-----------------------------------------------------------------------
+      subroutine updrhse_acc(p,h1,h2,h2inv,ierr)
+C
+C     Update rhs's if E-matrix has changed
+C
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'TSTEP'
+C
+      PARAMETER (LTOT2=LX2*LY2*LZ2*LELV)
+      COMMON /ORTHOV/ RHS(LTOT2,MXPREV)
+      COMMON /ORTHOX/ Pbar(LTOT2),Pnew(LTOT2)
+      COMMON /ORTHOS/ ALPHA(Mxprev), WORK(Mxprev), ALPHAN, DTLAST
+      COMMON /ORTHOI/ Nprev,Mprev
+      COMMON /ORTHOL/ IFNEWE
+      REAL ALPHA,WORK
+      LOGICAL IFNEWE
+C
+C
+      REAL             P    (LX2,LY2,LZ2,LELV)
+      REAL             H1   (LX1,LY1,LZ1,LELV)
+      REAL             H2   (LX1,LY1,LZ1,LELV)
+      REAL             H2INV(LX1,LY1,LZ1,LELV)
+C
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      ntot2=nx2*ny2*nz2*nelv
+
+
+C     First, we have to decide if the E matrix has changed.
+
+      if (icalld.eq.0) then
+         icalld=1
+         dtlast=dt
+      endif
+
+      ifnewe=.false.
+      if (ifmvbd) then
+         ifnewe=.true.
+         call invers2_acc(bm2inv,bm2,ntot2)
+      endif
+      if (dtlast.ne.dt) then
+         ifnewe=.true.
+         dtlast=dt
+      endif
+      if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
+     
+C     
+C     Next, we reconstruct a new rhs set.
+C    
+      if (ifnewe) then
+         write(*,*) "OpenACC is not implemented for ifmvbd"
+         write(*,*) "  fixed later with dtlast .ne. dt"
+         stop
+      endif
+     
+      if (ifnewe) then
+c
+c        new idea...
+c        if (nprev.gt.0) nprev=1
+c        call copy(rhs,pnew,ntot2)
+c
+         Nprevt = Nprev
+         DO 100 Iprev=1,Nprevt
+C           Orthogonalize this rhs w.r.t. previous rhs's
+            CALL ECONJ (Iprev,H1,H2,H2INV,ierr)
+            if (ierr.eq.1) then
+               if (nio.eq.0) write(6,*) istep,ierr,' ECONJ error'
+               nprev = 0
+               return
+            endif
+  100    CONTINUE
+C
+      ENDIF
+C
+      RETURN
+      END
+
+
+#endif

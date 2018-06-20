@@ -198,40 +198,6 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine ctolspl_acc (tolspl,respr)
-C
-C     Compute the pressure tolerance
-C
-      include 'SIZE'
-      include 'MASS'
-      include 'TSTEP'
-      REAL           RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
-C
-      NTOT1 = NX1*NY1*NZ1*NELV
-
-!$ACC DATA CREATE(work)  
-      call invcol3_acc (WORK,RESPR,BM1,NTOT1)
-      CALL col2_acc    (WORK,RESPR,NTOT1)
-      RINIT  = SQRT (GLSUM (WORK,NTOT1)/VOLVM1)
-      IF (TOLPDF.GT.0.) THEN
-         TOLSPL = TOLPDF
-         TOLMIN = TOLPDF
-      ELSE
-         TOLSPL = TOLPS/DT
-         TOLMIN = RINIT*PRELAX
-      ENDIF
-      IF (TOLSPL.LT.TOLMIN) THEN
-         TOLOLD = TOLSPL
-         TOLSPL = TOLMIN
-         IF (NIO.EQ.0)
-     $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
-      ENDIF
-!$ACC END DATA
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine ctolspl (tolspl,respr)
 C
 C     Compute the pressure tolerance
@@ -297,56 +263,6 @@ C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
       return
       end
 
-c------------------------------------------------------------------------
-      subroutine ortho_acc (respr)
-!FIXME Temporarily made acc version of this routine to avoid
-!     crash in setup. Adding better version of glsum that
-!     checks for data locality will solve it
-C     Orthogonalize the residual in the pressure solver with respect
-C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'SOLN'
-      include 'TSTEP'
-      real respr (lx2*ly2*lz2*lelv)
-      integer*8 ntotg,nxyz2
-
-!FIXME ortho_acc doesn't work currently. The result of glsum_acc
-!     is different on the gpu and on the cpu - it is a bug and
-!     has yet to be solved
-      nxyz2 = nx2*ny2*nz2
-      ntot  = nxyz2*nelv
-      ntotg = nxyz2*nelgv
-! MJO - 3-17-17 - Inlined cadd function for acc
-      if (ifield.eq.1) then
-         if (ifvcor) then
-            rlam  = glsum_acc (respr,ntot)/ntotg
-            !call cadd (respr,-rlam,ntot)
-!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
-            do i=1,ntot
-               respr(i) = -rlam+respr(i)
-            enddo
-!$ACC END PARALLEL LOOP
-         endif
-       elseif (ifield.eq.ifldmhd) then
-         if (ifbcor) then
-            rlam = glsum_acc (respr,ntot)/ntotg
-!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
-            do i=1,ntot
-               respr(i) = -rlam+respr(i)
-            enddo
-!$ACC END PARALLEL LOOP
-!           call cadd (respr,-rlam,ntot)
-         endif
-       else
-         call exitti('ortho: unaccounted ifield = $',ifield)
-      endif
-
-      return
-      end
 c------------------------------------------------------------------------
       subroutine cdabdtp (ap,wp,h1,h2,h2inv,intype)
 
@@ -419,7 +335,10 @@ C---------------------------------------------------------------------
 C
       return
       END
-c-----------------------------------------------------------------------
+
+      
+C     
+C-----------------------------------------------------------------------
       subroutine cdtp (dtx,x,rm2,sm2,tm2,isd)
 C-------------------------------------------------------------
 C
@@ -586,8 +505,7 @@ C
             call mxm  (ta1,nxy1,dzm12,nz2,ta2,nz1)
             call add2 (dtx(1,e),ta2,nxyz1)
 
-         endif
-
+         endif         
        endif         
 C
 C     If axisymmetric, add an extra diagonal term in the radial 
@@ -627,7 +545,7 @@ C
 #endif
       return
       end
-C
+      
       subroutine multd (dx,x,rm2,sm2,tm2,isd,iflg)
 C---------------------------------------------------------------------
 C
@@ -4522,7 +4440,7 @@ C-----------------------------------------------------------------------
       real inpfld (lx2,ly2,lz2,1)
 C
       call cdtp (outx,inpfld,rxm2,sxm2,txm2,1)
-      call cdtp (outy,inpfld,rym2,sym2,tym2,2)
+      call cdtp  (outy,inpfld,rym2,sym2,tym2,2)
       if (ndim.eq.3) 
      $   call cdtp (outz,inpfld,rzm2,szm2,tzm2,3)
 C
@@ -5323,3 +5241,688 @@ c           call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
       return
       end
 c-----------------------------------------------------------------------
+
+C JG - 2018-05-07 commented out for Pn-Pn
+c#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine ctolspl_acc (tolspl,respr)
+C
+C     Compute the pressure tolerance
+C
+      include 'SIZE'
+      include 'MASS'
+      include 'TSTEP'
+      REAL           RESPR (LX2,LY2,LZ2,LELV)
+      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
+
+!$ACC DATA CREATE(work)  
+      call invcol3_acc (WORK,RESPR,BM1,NTOT1)
+      CALL col2_acc    (WORK,RESPR,NTOT1)
+      RINIT  = SQRT (GLSUM (WORK,NTOT1)/VOLVM1)
+      IF (TOLPDF.GT.0.) THEN
+         TOLSPL = TOLPDF
+         TOLMIN = TOLPDF
+      ELSE
+         TOLSPL = TOLPS/DT
+         TOLMIN = RINIT*PRELAX
+      ENDIF
+      IF (TOLSPL.LT.TOLMIN) THEN
+         TOLOLD = TOLSPL
+         TOLSPL = TOLMIN
+         IF (NIO.EQ.0)
+     $   WRITE (6,*) 'Relax the pressure tolerance ',TOLSPL,TOLOLD
+      ENDIF
+!$ACC END DATA
+
+      return
+      end
+
+c------------------------------------------------------------------------
+      subroutine ortho_acc (respr)
+!FIXME Temporarily made acc version of this routine to avoid
+!     crash in setup. Adding better version of glsum that
+!     checks for data locality will solve it
+C     Orthogonalize the residual in the pressure solver with respect
+C     to (1,1,...,1)T  (only if all Dirichlet b.c.).
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'TSTEP'
+      real respr (lx2*ly2*lz2*lelv)
+      integer*8 ntotg,nxyz2
+
+!FIXME ortho_acc doesn't work currently. The result of glsum_acc
+!     is different on the gpu and on the cpu - it is a bug and
+!     has yet to be solved
+      nxyz2 = nx2*ny2*nz2
+      ntot  = nxyz2*nelv
+      ntotg = nxyz2*nelgv
+! MJO - 3-17-17 - Inlined cadd function for acc
+      if (ifield.eq.1) then
+         if (ifvcor) then
+            rlam  = glsum_acc (respr,ntot)/ntotg
+            !call cadd (respr,-rlam,ntot)
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+         endif
+       elseif (ifield.eq.ifldmhd) then
+         if (ifbcor) then
+            rlam = glsum_acc (respr,ntot)/ntotg
+!$ACC PARALLEL LOOP GANG VECTOR PRESENT(respr)
+            do i=1,ntot
+               respr(i) = -rlam+respr(i)
+            enddo
+!$ACC END PARALLEL LOOP
+!           call cadd (respr,-rlam,ntot)
+         endif
+       else
+         call exitti('ortho: unaccounted ifield = $',ifield)
+      endif
+
+      return
+      end
+
+#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine cdtp_acc (dtx,x,rm2,sm2,tm2,isd)
+C-------------------------------------------------------------
+C
+C     Compute DT*X (entire field)
+C
+C-------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'ESOLV'
+C
+      real dtx  (lx1,ly1,lz1,lelv)
+      real x    (lx2,ly2,lz2,lelv)
+      real rm2  (lx2,ly2,lz2,lelv)
+      real sm2  (lx2,ly2,lz2,lelv)
+      real tm2  (lx2,ly2,lz2,lelv)
+C
+C      common /ctmp1/ wx  (lx1,ly1,lz1,lelv)
+C     $ ,             ta1 (lx1,ly1,lz1,lelv)
+C     $ ,             ta2 (lx1,ly1,lz1,lelv)
+C     $ ,             ta3 (lx1,ly1,lz1,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+
+      
+      REAL           DUAX(LX1)
+c
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+      include 'CTIMER'
+
+      integer e
+C
+#ifdef TIMER
+      if (icalld.eq.0) tcdtp=0.0
+      icalld=icalld+1
+      ncdtp=icalld
+      etime1=dnekclock()
+#endif
+
+      nxyz1 = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
+      nxyzt2 = nxyz2*nelt
+      nyz2  = ny2*nz2
+      nxy1  = nx1*ny1
+
+      n1    = nx1*ny1
+      n2    = nx1*ny2
+
+      if ( ifaxis .or. ifsplit .or. ndim .eq. 2) then
+         write(*,*) "OpenACC is not implemented for"
+         write(*,*) "ifaxis=true or ifsplit=true or ndim=2"
+         stop
+      endif
+      
+C      Collocate with weights
+!$ACC DATA PRESENT(x,dtx)
+!$ACC&       PRESENT(w3m2,rm2,sm2,tm2)      
+!$ACC&       PRESENT(ixm12,iym12,izm12,dxm12,dym12,dzm12)
+!$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            tmpwx = x(i,j,k,e)*w3m2(i,j,k)
+            tar1(i,j,k,e) = tmpwx*rm2(i,j,k,e)
+            tas1(i,j,k,e) = tmpwx*sm2(i,j,k,e)
+            tat1(i,j,k,e) = tmpwx*tm2(i,j,k,e)
+         enddo
+         enddo
+         enddo
+      enddo
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx1
+            tmpr2 = 0.0
+            tmps2 = 0.0
+            tmpt2 = 0.0
+!$ACC LOOP SEQ 
+            do l=1,nx2
+               tmpr2 = tmpr2+dxm12(l,i)*tar1(l,j,k,e)
+               tmps2 = tmps2+ixm12(l,i)*tas1(l,j,k,e)
+               tmpt2 = tmpt2+ixm12(l,i)*tat1(l,j,k,e)
+            enddo            
+            tar2(i,j,k,e) = tmpr2
+            tas2(i,j,k,e) = tmps2
+            tat2(i,j,k,e) = tmpt2
+         enddo
+         enddo
+         enddo
+      enddo
+
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny1
+         do i=1,nx1
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               tmpr1 = tmpr1+iym12(l,j)*tar2(i,l,k,e)
+               tmps1 = tmps1+dym12(l,j)*tas2(i,l,k,e)
+               tmpt1 = tmpt1+iym12(l,j)*tat2(i,l,k,e)
+            enddo
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+            tat1(i,j,k,e) = tmpt1
+         enddo
+         enddo
+         enddo
+      enddo
+          
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx1
+            dttmp = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx2
+               dttmp = dttmp + izm12(l,k)*tar1(i,j,l,e) +
+     $                         izm12(l,k)*tas1(i,j,l,e) +
+     $                         dzm12(l,k)*tat1(i,j,l,e)
+            enddo
+            dtx(i,j,k,e) = dttmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC END DATA
+
+#ifdef TIMER
+      tcdtp=tcdtp+(dnekclock()-etime1)
+#endif
+      return
+      end
+
+      subroutine multd_acc (dx,x,rm2,sm2,tm2,isd,iflg)
+C---------------------------------------------------------------------
+C
+C     Compute D*X
+C     X    : input variable, defined on M1
+C     DX   : output variable, defined on M2 (note: D is rectangular)   
+C     RM2 : RXM2, RYM2 or RZM2
+C     SM2 : SXM2, SYM2 or SZM2
+C     TM2 : TXM2, TYM2 or TZM2
+C     ISD : spatial direction (x=1,y=2,z=3)
+C     IFLG: OPGRAD (iflg=0) or OPDIV (iflg=1)
+C
+C---------------------------------------------------------------------
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'ESOLV'
+
+      real           dx   (lx2,ly2,lz2,lelv)
+      real           x    (lx1,ly1,lz1,lelv)
+      real           rm2  (lx2,ly2,lz2,lelv)
+      real           sm2  (lx2,ly2,lz2,lelv)
+      real           tm2  (lx2,ly2,lz2,lelv)
+
+      common /ctmp11/ tar1 (lx1,ly1,lz1,lelv)
+     $ ,              tas1 (lx1,ly1,lz1,lelv)
+     $ ,              tat1 (lx1,ly1,lz1,lelv)
+     $ ,              tar2 (lx1,ly1,lz1,lelv)
+     $ ,              tas2 (lx1,ly1,lz1,lelv)
+     $ ,              tat2 (lx1,ly1,lz1,lelv)
+
+      real           duax(lx1)
+
+      common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
+      logical ifdfrm, iffast, ifh2, ifsolv
+      include 'CTIMER'
+
+      integer e
+C
+#ifdef TIMER
+      if (icalld.eq.0) tmltd=0.0
+      icalld=icalld+1
+      nmltd=icalld
+      etime1=dnekclock()
+#endif
+
+      nyz1  = ny1*nz1
+      nxy2  = nx2*ny2
+      nxyz1 = nx1*ny1*nz1
+      nxyz2 = nx2*ny2*nz2
+
+      n1    = nx2*ny1
+      n2    = nx2*ny2
+
+      if ( ifaxis .or. ifsplit .or. ndim .eq. 2) then
+         write(*,*) "OpenACC is not implemented for"
+         write(*,*) "ifaxis=true or ifsplit=true or ndim=2"
+         stop
+      endif
+
+!$ACC  DATA  PRESENT(rm2,sm2,tm2)      
+!$ACC&       PRESENT(dx,x)
+!$ACC&       PRESENT(tar1,tas1,tat1,tar2,tas2,tat2)
+!$ACC&       PRESENT(w3m2,ixtm12,iytm12,iztm12,dxtm12,dytm12,dztm12)
+      
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny1
+         do i=1,nx2
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
+!$ACC LOOP SEQ 
+            do l=1,nx1
+               tmpx = x(l,j,k,e)
+               tmpr1 = tmpr1+dxtm12(l,i)*tmpx
+               tmps1 = tmps1+ixtm12(l,i)*tmpx
+C will be reused tmpt1 = tmps1
+C               tmpt1 = tmpt1+ixtm12(l,i)*tmpx
+            enddo            
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+C            tat1(i,j,k,e) = tmpt1
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz1
+         do j=1,ny2
+         do i=1,nx2
+            tmpr2 = 0.0
+            tmps2 = 0.0
+            tmpt2 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx1
+               tmpr2 = tmpr2+iytm12(l,j)*tar1(i,l,k,e)
+               tmps2 = tmps2+dytm12(l,j)*tas1(i,l,k,e)
+               tmpt2 = tmpt2+iytm12(l,j)*tas1(i,l,k,e)
+            enddo
+            tar2(i,j,k,e) = tmpr2
+            tas2(i,j,k,e) = tmps2
+            tat2(i,j,k,e) = tmpt2
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            tmpr1 = 0.0
+            tmps1 = 0.0
+            tmpt1 = 0.0
+!$ACC LOOP SEQ
+            do l=1,nx1
+               tmpr1 = tmpr1 + iztm12(l,k)*tar2(i,j,l,e) 
+               tmps1 = tmps1 + iztm12(l,k)*tas2(i,j,l,e) 
+               tmpt1 = tmpt1 + dztm12(l,k)*tat2(i,j,l,e)
+            enddo
+            tar1(i,j,k,e) = tmpr1
+            tas1(i,j,k,e) = tmps1
+            tat1(i,j,k,e) = tmpt1
+         enddo
+         enddo
+         enddo
+      enddo
+
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do k=1,nz2
+         do j=1,ny2
+         do i=1,nx2
+            dxtmp = rm2(i,j,k,e) * tar1(i,j,k,e) +
+     $              sm2(i,j,k,e) * tas1(i,j,k,e) +
+     $              tm2(i,j,k,e) * tat1(i,j,k,e) 
+            dx(i,j,k,e) = dxtmp * w3m2(i,j,k)
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$acc update host(dx)
+!$acc end data
+
+C
+#ifdef TIMER
+      tmltd=tmltd+(dnekclock()-etime1)
+#endif
+      return
+      END
+
+
+c-----------------------------------------------------------------------
+      subroutine opdiv_acc(outfld,inpx,inpy,inpz)
+C---------------------------------------------------------------------
+C
+C     Compute OUTFLD = SUMi Di*INPi, 
+C     the divergence of the vector field (INPX,INPY,INPZ)
+C
+C---------------------------------------------------------------------
+      include 'SIZE'
+      include 'GEOM'
+      real outfld (lx2,ly2,lz2,lelv)
+      real inpx   (lx1,ly1,lz1,lelv)
+      real inpy   (lx1,ly1,lz1,lelv)
+      real inpz   (lx1,ly1,lz1,lelv)
+      common /ctmp0/ work (lx2,ly2,lz2,lelv)
+C
+      iflg = 1
+
+      ntot2 = nx2*ny2*nz2*nelv
+
+      call multd_acc (work,inpx,rxm2,sxm2,txm2,1,iflg)
+      call copy_acc  (outfld,work,ntot2)
+      call multd_acc (work,inpy,rym2,sym2,tym2,2,iflg)
+      call add2_acc  (outfld,work,ntot2)
+      if (ndim.eq.3) then
+         call multd_acc (work,inpz,rzm2,szm2,tzm2,3,iflg)
+         call add2_acc  (outfld,work,ntot2)
+      endif
+C
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine opgradt_acc(outx,outy,outz,inpfld)
+C------------------------------------------------------------------------
+C
+C     Compute DTx, DTy, DTz of an input field INPFLD 
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      real outx   (lx1,ly1,lz1,lelv)
+      real outy   (lx1,ly1,lz1,lelv)
+      real outz   (lx1,ly1,lz1,lelv)
+      real inpfld (lx2,ly2,lz2,lelv)
+C
+      call cdtp_acc (outx,inpfld,rxm2,sxm2,txm2,1)
+      call cdtp_acc  (outy,inpfld,rym2,sym2,tym2,2)
+      if (ndim.eq.3) 
+     $   call cdtp_acc (outz,inpfld,rzm2,szm2,tzm2,3)
+C
+      return
+      end
+
+      subroutine opmask_acc (res1,res2,res3)
+C----------------------------------------------------------------------
+C
+C     Mask the residual arrays. 
+C
+C----------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      REAL RES1(1),RES2(1),RES3(1)
+C
+      NTOT1 = NX1*NY1*NZ1*NELV
+
+C
+c     sv=glsum(v3mask,ntot1)
+c     sb=glsum(b3mask,ntot1)
+c     write(6,*) istep,' ifld:',ifield,intype,sv,sb
+      IF (IFSTRS) THEN
+         write(*,*) "OpenACC is not implemented for ifstrs"
+         stop
+         CALL RMASK (RES1,RES2,RES3,NELV)
+      ELSE
+         if (ifield.eq.ifldmhd) then
+            CALL COL2_ACC (RES1,B1MASK,NTOT1)
+            CALL COL2_ACC (RES2,B2MASK,NTOT1)
+            IF (NDIM.EQ.3)
+     $      CALL COL2_ACC (RES3,B3MASK,NTOT1)
+         else
+            CALL COL2_ACC (RES1,V1MASK,NTOT1)
+            CALL COL2_ACC (RES2,V2MASK,NTOT1)
+            IF (NDIM.EQ.3)
+     $      CALL COL2_ACC (RES3,V3MASK,NTOT1)
+         endif
+      ENDIF
+C
+      return
+      END
+C
+
+c-----------------------------------------------------------------------
+      subroutine opbinv_acc (out1,out2,out3,inp1,inp2,inp3,h2inv)
+C--------------------------------------------------------------------
+C
+C     Compute OUT = (H2*B)-1 * INP   (explicit)
+C
+C--------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+C
+      PARAMETER(LTOT1=LX1*LY1*LZ1*LELV)
+      REAL OUT1  (LTOT1)
+      REAL OUT2  (LTOT1)
+      REAL OUT3  (LTOT1)
+      REAL INP1  (LTOT1)
+      REAL INP2  (LTOT1)
+      REAL INP3  (LTOT1)
+      REAL H2INV (LTOT1)
+C
+
+      include 'OPCTR'
+C
+#ifdef TIMER
+      if (isclld.eq.0) then
+          isclld=1
+          nrout=nrout+1
+          myrout=nrout
+          rname(myrout) = 'opbinv'
+      endif
+#endif
+C
+      call opmask_acc  (inp1,inp2,inp3)
+      call opdssum (inp1,inp2,inp3)
+C
+      NTOT=NX1*NY1*NZ1*NELV
+C
+#ifdef TIMER
+      isbcnt = ntot*(1+ndim)
+      dct(myrout) = dct(myrout) + (isbcnt)
+      ncall(myrout) = ncall(myrout) + 1
+      dcount      =      dcount + (isbcnt)
+#endif
+
+      call invcol3_acc (out1,bm1,h2inv,ntot)  ! this is expensive and should
+      call dssum   (out1,nx1,ny1,nz1)     ! be changed (pff, 3/18/09)
+      if (if3d) then
+
+!$ACC DATA PRESENT(out1,out2,out3,inp1,inp2,inp3)
+!$ACC PARALLEL LOOP
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+            out3(i)=inp3(i)*tmp
+         enddo
+!$ACC END LOOP
+!$ACC END DATA
+        
+      else
+         do i=1,ntot
+            tmp = 1./out1(i)
+            out1(i)=inp1(i)*tmp
+            out2(i)=inp2(i)*tmp
+         enddo
+      endif
+
+      return
+      end
+
+c------------------------------------------------------------------------
+      subroutine cdabdtp_acc (ap,wp,h1,h2,h2inv,intype)
+
+C     INTYPE= 0  Compute the matrix-vector product    DA(-1)DT*p
+C     INTYPE= 1  Compute the matrix-vector product    D(B/DT)(-1)DT*p
+C     INTYPE=-1  Compute the matrix-vector product    D(A+B/DT)(-1)DT*p
+
+      include 'SIZE'
+      include 'TOTAL'
+      REAL           AP    (LX2,LY2,LZ2,LELV)
+      REAL           WP    (LX2,LY2,LZ2,1)
+      REAL           H1    (LX1,LY1,LZ1,1)
+      REAL           H2    (LX1,LY1,LZ1,1)
+      REAL           H2INV (LX1,LY1,LZ1,1)
+C
+      COMMON /SCRNS0/ TA1 (LX1,LY1,LZ1,LELV)
+     $ ,             TA2 (LX1,LY1,LZ1,LELV)
+     $ ,             TA3 (LX1,LY1,LZ1,LELV)
+     $ ,             TB1 (LX1,LY1,LZ1,LELV)
+     $ ,             TB2 (LX1,LY1,LZ1,LELV)
+     $ ,             TB3 (LX1,LY1,LZ1,LELV)
+C
+      CALL OPGRADT_ACC (TA1,TA2,TA3,WP)
+      IF ((INTYPE.EQ.0).OR.(INTYPE.EQ.-1)) THEN
+         TOLHIN=TOLHS
+         CALL OPHINV_ACC (TB1,TB2,TB3,TA1,TA2,TA3,H1,H2,TOLHIN,NMXH)
+      ELSE
+         if (ifanls) then
+            dtbdi = dt/bd(1)   ! scale by dt*backwd-diff coefficient
+            CALL OPBINV1(TB1,TB2,TB3,TA1,TA2,TA3,dtbdi)
+         else
+            CALL OPBINV_ACC (TB1,TB2,TB3,TA1,TA2,TA3,H2INV)
+         endif
+      ENDIF
+
+      CALL OPDIV_ACC  (AP,TB1,TB2,TB3)
+C
+      return
+      END
+
+      subroutine chktcg2_acc (tol,res,iconv)
+C-------------------------------------------------------------------
+C
+C     Check that the tolerances are not too small for the CG-solver.
+C     Important when calling the CG-solver (Gauss  mesh) with
+C     all Dirichlet velocity b.c. (zero Neumann for the pressure).
+C
+C-------------------------------------------------------------------
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'MASS'
+      include 'TSTEP'
+      REAL           RES (LX2,LY2,LZ2,LELV)
+      COMMON /CTMP0/ TA  (LX2,LY2,LZ2,LELV)
+     $ ,             TB  (LX2,LY2,LZ2,LELV)
+      COMMON /CPRINT/ IFPRINT
+      LOGICAL         IFPRINT
+C
+      ICONV = 0
+C
+C     Single or double precision???
+C
+      DELTA = 1.E-9
+      X     = 1.+DELTA
+      Y     = 1.
+      DIFF  = ABS(X-Y)
+      IF (DIFF.EQ.0.) EPS = 1.E-5
+      IF (DIFF.GT.0.) EPS = 1.E-10
+C
+C     Relaxed pressure iteration; maximum decrease in the residual (ER)
+C
+      IF (PRELAX.NE.0.) EPS = PRELAX
+C
+      NTOT2 = NX2*NY2*NZ2*NELV
+      CALL COL3_ACC    (TA,RES,BM2INV,NTOT2)
+      CALL COL3_ACC     (TB,TA,TA,NTOT2)
+      CALL COL2_ACC     (TB,BM2,NTOT2)
+      RINIT = SQRT( GLSUM_ACC (TB,NTOT2)/VOLVM2 )
+
+      IF (RINIT.LT.TOL) THEN
+         ICONV = 1
+         return
+      ENDIF
+      IF (TOLPDF.GT.0.) THEN
+         RMIN = TOLPDF
+      ELSE
+         RMIN  = EPS*RINIT
+      ENDIF
+      IF (TOL.LT.RMIN) THEN
+         TOLOLD = TOL
+         TOL = RMIN
+         IF (NIO.EQ.0 .AND. IFPRINT) WRITE (6,*)
+     $   'New CG2-tolerance (RINIT*10-5/10-10) = ',TOL,TOLOLD
+      ENDIF
+      IF (IFVCOR) THEN
+         OTR = GLSUM (RES,NTOT2)
+         TOLMIN = ABS(OTR)*100.
+         IF (TOL .LT. TOLMIN) THEN
+             TOLOLD = TOL
+             TOL = TOLMIN
+             IF (NIO.EQ.0 .AND. IFPRINT)
+     $       WRITE (6,*) 'New CG2-tolerance (OTR) = ',TOLMIN,TOLOLD
+         ENDIF
+      ENDIF
+      return
+      END
+C
+
+#endif

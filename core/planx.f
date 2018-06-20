@@ -101,7 +101,6 @@ C---------------------------------------------------------------------
       if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       CALL BCNEUTR
-C
       call extrapp (pr,prlag)
       call opgradt (resv1,resv2,resv3,pr)
       CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
@@ -513,4 +512,80 @@ C     First, we have to decide if the E matrix has changed.
 
       return
       end
+
+#ifdef _OPENACC
+
 c-----------------------------------------------------------------------
+
+      SUBROUTINE PLAN3_ACC (IGEOM)
+C-----------------------------------------------------------------------
+C
+C     Compute pressure and velocity using consistent approximation spaces.     
+C     Operator splitting technique.
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'INPUT'
+      include 'EIGEN'
+      include 'SOLN'
+      include 'TSTEP'
+      
+      include 'WZ'
+      include 'DXYZ'
+      include 'IXYZ'
+C
+      COMMON /SCRNS/  RESV1 (LX1,LY1,LZ1,LELV)
+     $ ,              RESV2 (LX1,LY1,LZ1,LELV)
+     $ ,              RESV3 (LX1,LY1,LZ1,LELV)
+     $ ,              DV1   (LX1,LY1,LZ1,LELV)
+     $ ,              DV2   (LX1,LY1,LZ1,LELV)
+     $ ,              DV3   (LX1,LY1,LZ1,LELV)
+      COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
+     $ ,              H2    (LX1,LY1,LZ1,LELV)
+C
+      IF (IGEOM.EQ.1) THEN
+C
+C        Old geometry
+C
+         CALL MAKEF  
+
+
+C
+      ELSE
+C
+C        New geometry, new b.c.
+C
+         INTYPE = -1
+         CALL SETHLM  (H1,H2,INTYPE)
+         CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
+
+!$ACC DATA CREATE(DV1,DV2,DV3)
+!$ACC& COPY(vx,vy,vz)
+
+         mstep = abs(param(94))
+         if (param(94).ne.0. .and. istep.ge.mstep) then
+          call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+c         CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
+         else
+        CALL OPHINV_ACC(DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
+         endif
+         CALL OPADD2_ACC (VX,VY,VZ,DV1,DV2,DV3)
+c
+c        Default Filtering
+c
+c        alpha_filt = 0.05
+c        if (param(103).ne.0.) alpha_filt=param(103)
+c        call q_filter(alpha_filt)
+c
+c        CALL SSNORMD (DV1,DV2,DV3)
+c
+!$ACC END DATA
+
+         call incomprn_acc(vx,vy,vz,pr)
+C
+      ENDIF
+C
+      RETURN
+      END
+
+#endif

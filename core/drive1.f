@@ -98,7 +98,11 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
          call estrat                                       ! initialization.
          if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
+#ifdef _OPENACC2
+            call set_overlap_acc                           ! as scratch!
+#else
             call set_overlap                               ! as scratch!
+#endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
             kwave2  = 0.0
@@ -195,8 +199,11 @@ c-----------------------------------------------------------------------
       istep  = 0
       msteps = 1
 
+#ifdef _OPENACC
       call plan4_acc_data_copyin_istep0
       call hsmg_acc_data_copyin_istep0
+      call plan3_acc_data_copyin_istep0
+#endif 
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
@@ -209,10 +216,14 @@ c-----------------------------------------------------------------------
       enddo
  1001 lastep=1
 
+#ifdef _OPENACC
       call plan4_acc_data_copyout_nstep
-      call nek_comm_settings(isyc,0)
+      call plan3_acc_data_copyout_nstep
+#endif 
 
+      call nek_comm_settings(isyc,0)
       call comment
+
 
 c     check for post-processing mode
       if (instep.eq.0) then

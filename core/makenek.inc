@@ -389,7 +389,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
 fi
 
 # tweak .usr (actually, .f ) file
-rm -f $CASENAME.f
+#rm -f $CASENAME.f
 cp -pv $CASENAME.usr $CASENAME.f
 
 if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then

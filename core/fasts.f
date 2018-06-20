@@ -451,3 +451,553 @@ c-----------------------------------------------------------------------
          enddo
       endif
       end
+
+
+#ifdef _OPENACC
+c-----------------------------------------------------------------------
+      subroutine local_solves_fdm_acc(u,v)
+c
+c     Given an input vector v, this returns the additive Schwarz solution
+c
+c                       -1
+c                  u = M   v
+c
+c                      T     -1  
+c     where M = sum ( R_i A_i    R_i )
+c                i
+c
+c     The R_i's are simply index_set restriction operators.
+c
+c     The local solves are performed with the fast diagonalization method.
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'DOMAIN'
+      include 'PARALLEL'
+c
+      include 'TSTEP'
+      include 'CTIMER'
+c
+      real u(lx2,ly2,lz2,lelv),v(lx2,ly2,lz2,lelv)
+      common /scrpre/ v1(lx1,ly1,lz1,lelv)
+     $               ,w1(lx1,ly1,lz1,lelv),w2(lx1,ly1,lz1,lelv)
+      common /scrover/ ar(lelv)
+
+      parameter(lxx=lx1*lx1, levb=lelv+lbelv)
+      common /fastd/  df(lx1*ly1*lz1,levb)
+     $             ,  sr(lxx*2,levb),ss(lxx*2,levb),st(lxx*2,levb)
+      integer e,eb,eoff
+
+c
+      if (icalld.eq.0) tsolv=0.0
+      icalld=icalld+1
+      nsolv=icalld
+c
+      ntot1 = nx1*ny1*nz1*nelv
+      ntot2 = nx2*ny2*nz2*nelv
+
+!$acc data copyin(v)
+!$acc& create(v1)
+!$acc& present(u,w1,w2)
+!$acc& copy(df,sr,ss,st)
+c
+c     Fill interiors
+      iz1 = 0
+      if (if3d) iz1=1
+      call rzero_acc(v1,ntot1)
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e=1,nelv
+         do iz=1,nz2
+         do iy=1,ny2
+         do ix=1,nx2
+            v1(ix+1,iy+1,iz+iz1,e) = v(ix,iy,iz,e)
+         enddo
+         enddo
+         enddo
+      enddo
+      call dface_ext_acc    (v1)
+      call dssum        (v1,nx1,ny1,nz1)
+
+      call dface_add1si_acc (v1,-1.)
+c
+c     Now solve each subdomain problem:
+c
+      etime1=dnekclock()
+
+      eoff  = 0
+      if (ifield.gt.1) eoff  = nelv
+
+#if 0
+!$acc update host(v1)
+      do e = 1,nelv
+         eb = e + eoff
+         call fastdm1(v1(1,1,1,e),df(1,eb)
+     $                           ,sr(1,eb),ss(1,eb),st(1,eb),w1,w2)
+      enddo
+!$acc update device(v1)
+#else
+      call  fastdm1_acc(v1,df,sr,ss,st,w1,w2)
+#endif 
+     
+      tsolv=tsolv+dnekclock()-etime1
+c
+c     Exchange/add elemental solutions
+c
+      call s_face_to_int_acc (v1,-1.)
+      call dssum         (v1,nx1,ny1,nz1)
+      call s_face_to_int_acc (v1, 1.)
+
+      if(param(42).eq.0) call do_weight_op_acc(v1)
+c
+c     Map back to pressure grid (extract interior values)
+c
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR  
+      do e=1,nelv
+         do iz=1,nz2
+         do iy=1,ny2
+         do ix=1,nx2
+            u(ix,iy,iz,e) = v1(ix+1,iy+1,iz+iz1,e)
+         enddo
+         enddo
+         enddo
+      enddo
+c
+!$acc end data
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine dface_ext_acc(x)
+c     Extend interior to face of element     
+c
+      include 'SIZE'
+      include 'INPUT'
+      real x(nx1,ny1,nz1,1)
+
+      if (if3d .eq. .FALSE.)  then
+         write(*,*) "Only if3d=true available"
+         stop
+      endif
+c
+!$ACC DATA PRESENT(x)
+!$ACC PARALLEL LOOP COLLAPSE(1) GANG WORKER VECTOR
+      do ie=1,nelv
+c
+c
+          do iz=2,nz1-1
+          do ix=2,nx1-1
+            x(ix,1  ,iz,ie) = x(ix,2    ,iz,ie)
+            x(ix,ny1,iz,ie) = x(ix,ny1-1,iz,ie)
+          enddo
+          enddo
+c
+          do iz=2,nz1-1
+          do iy=2,ny1-1
+            x(1  ,iy,iz,ie) = x(2    ,iy,iz,ie)
+            x(nx1,iy,iz,ie) = x(nx1-1,iy,iz,ie)
+          enddo
+          enddo
+c
+          do iy=2,ny1-1
+          do ix=2,nx1-1
+            x(ix,iy,1  ,ie) = x(ix,iy,2    ,ie)
+            x(ix,iy,nz1,ie) = x(ix,iy,nz1-1,ie)
+          enddo
+          enddo
+c
+      enddo
+!$ACC END DATA
+      return
+      end
+
+
+c-----------------------------------------------------------------------
+      subroutine dface_add1si_acc(x,c)
+c     Scale interior and add to face of element     
+c
+      include 'SIZE'
+      include 'INPUT'
+      real x(nx1,ny1,nz1,1)
+c
+      if (if3d .eq. .FALSE.)  then
+        write(*,*) "Only if3d=true available"
+         stop
+      endif
+
+!$ACC DATA PRESENT(x)
+!$ACC PARALLEL LOOP COLLAPSE(1) GANG WORKER VECTOR
+      do ie=1,nelv
+c
+          do iz=2,nz1-1
+          do ix=2,nx1-1
+            x(ix,1  ,iz,ie) = x(ix,1  ,iz,ie) + c*x(ix,2    ,iz,ie)
+            x(ix,ny1,iz,ie) = x(ix,ny1,iz,ie) + c*x(ix,ny1-1,iz,ie)
+          enddo
+          enddo
+c
+          do iz=2,nz1-1
+          do iy=2,ny1-1
+            x(1  ,iy,iz,ie) = x(1  ,iy,iz,ie) + c*x(2    ,iy,iz,ie)
+            x(nx1,iy,iz,ie) = x(nx1,iy,iz,ie) + c*x(nx1-1,iy,iz,ie)
+          enddo
+          enddo
+c
+          do iy=2,ny1-1
+          do ix=2,nx1-1
+            x(ix,iy,1  ,ie) = x(ix,iy,1  ,ie) + c*x(ix,iy,2    ,ie)
+            x(ix,iy,nz1,ie) = x(ix,iy,nz1,ie) + c*x(ix,iy,nz1-1,ie)
+          enddo
+          enddo
+c
+      enddo
+!$ACC END DATA
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+!!!$ACC ROUTINE SEQ
+      subroutine fastdm1_acc(r,df,sr,ss,st,w1,w2)
+c
+c     Fast diagonalization solver for FEM on mesh 1
+c
+      include 'SIZE'
+      parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
+      parameter (lxyzt=lx1*ly1*lz1*lelv)
+
+      real r (lx1,ly1,lz1,lelv)
+      real df(lx1,ly1,lz1,lelv)
+      real sr(lx1,lx1,2,  lelv)
+      real ss(lx1,lx1,2,  lelv)
+      real st(lx1,lx1,2,  lelv)
+      real w1(lx1,ly1,lz1,lelv)
+      real w2(lx1,ly1,lz1,lelv)
+
+      real tmp, tmpw2
+
+      integer i,j,k,l,e
+
+!$ACC DATA PRESENT(r,df,sr,ss,st,w1,w2)
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+!$ACC LOOP SEQ
+            do l = 1,nx1
+               tmp = tmp+sr(l,i,1,e)*r(l,j,k,e)
+            enddo
+            w1(i,j,k,e) = tmp            
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+!$ACC LOOP SEQ
+            do l = 1,nx1
+               tmp = tmp+ss(l,j,1,e)*w1(i,l,k,e)
+            enddo
+            w2(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+!$ACC LOOP SEQ
+            do l = 1,nx1
+               tmp = tmp+st(l,k,1,e)*w2(i,j,l,e)
+            enddo
+            w1(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+c
+c     
+c      -1 T
+c     D  S  r
+c
+      call col2_acc  (w1,df,lxyzt)
+c
+c
+c        -1 T
+c     S D  S  r
+c
+c-----------------------------------------------------------------------
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+sr(l,i,2,e)*w1(l,j,k,e)
+            enddo
+            r(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+ss(l,j,2,e)*r(i,l,k,e)
+            enddo
+            w2(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+           
+!$ACC PARALLEL LOOP COLLAPSE(4) GANG WORKER VECTOR
+      do e = 1,nelv
+         do k = 1,nz1
+         do j = 1,ny1
+         do i = 1,nx1
+            tmp = 0.0
+            do l = 1,nx1
+               tmp = tmp+st(l,k,2,e)*w2(i,j,l,e)
+            enddo
+            r(i,j,k,e) = tmp
+         enddo
+         enddo
+         enddo
+      enddo
+c
+!$acc end data
+
+      return
+      end
+
+
+c-----------------------------------------------------------------------
+      subroutine s_face_to_int_acc(x,c)
+c
+c     Scale face and add to interior of element     
+c
+      include 'SIZE'
+      include 'INPUT'
+      real x(nx1,ny1,nz1,nelv)
+c
+
+      if (if3d .eq. .false.) then
+         write(*,*) "OpenACC is only implemented for If3d "
+         stop
+      endif
+
+!$ACC DATA PRESENT(x)
+!$ACC PARALLEL LOOP 
+      do ie=1,nelv
+c
+          do iz=2,nz1-1
+          do ix=2,nx1-1
+            x(ix,2    ,iz,ie) = c*x(ix,1  ,iz,ie) + x(ix,2    ,iz,ie)
+            x(ix,ny1-1,iz,ie) = c*x(ix,ny1,iz,ie) + x(ix,ny1-1,iz,ie)
+          enddo
+          enddo
+c
+          do iz=2,nz1-1
+          do iy=2,ny1-1
+            x(2    ,iy,iz,ie) = c*x(1  ,iy,iz,ie) + x(2    ,iy,iz,ie)
+            x(nx1-1,iy,iz,ie) = c*x(nx1,iy,iz,ie) + x(nx1-1,iy,iz,ie)
+          enddo
+          enddo
+c
+          do iy=2,ny1-1
+          do ix=2,nx1-1
+            x(ix,iy,2    ,ie) = c*x(ix,iy,1  ,ie) + x(ix,iy,2    ,ie)
+            x(ix,iy,nz1-1,ie) = c*x(ix,iy,nz1,ie) + x(ix,iy,nz1-1,ie)
+          enddo
+          enddo
+c
+      enddo
+
+!$ACC END DATA
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine init_weight_op_acc
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      parameter(levb=lelv+lbelv)
+      common /swaplengths/ l(lx1,ly1,lz1,lelv)
+      common /weightop/ w(lx2,lz2,2,3,levb)
+      real l
+      real w
+      integer e,e0,eb
+
+!$acc enter data create(w)
+
+      e0  = 0
+      if (ifield.gt.1) e0 = nelv
+
+      n=nx2+1
+      if (if3d) then
+         do e=1,nelv
+C            call rzero(l(1,1,1,e),nx1*ny1*nz1)
+            do k=2,n
+               do j=2,n
+                  l(2,j,k,e)=1
+                  l(n,j,k,e)=1
+               enddo
+            enddo
+            do k=2,n
+               do i=2,n
+                  l(i,2,k,e)=1
+                  l(i,n,k,e)=1
+               enddo
+            enddo
+            do j=2,n
+               do i=2,n
+                  l(i,j,2,e)=1
+                  l(i,j,n,e)=1
+               enddo
+            enddo
+         enddo
+      else
+         do e=1,nelv
+            call rzero(l(1,1,1,e),nx1*ny1*nz1)
+            do j=2,n
+               l(2,j,1,e)=1
+               l(n,j,1,e)=1
+            enddo
+            do i=2,n
+               l(i,2,1,e)=1
+               l(i,n,1,e)=1
+            enddo
+         enddo
+      endif
+      
+      call dface_ext(l)
+      call dssum(l,nx1,ny1,nz1)
+      call dface_add1si(l,-1.)
+      call s_face_to_int(l,1.)
+c     l now holds the count matrix C on the outer pressure nodes
+      if (if3d) then
+         do e=1,nelv
+            eb = e0+e
+            do k=1,nz2
+               do j=1,ny2
+                  w(j,k,1,1,eb)=1.0/l(2,j+1,k+1,e)
+                  w(j,k,2,1,eb)=1.0/l(n,j+1,k+1,e)
+               enddo
+            enddo
+            do k=1,nz2
+               do i=1,nx2
+                  w(i,k,1,2,eb)=1.0/l(i+1,2,k+1,e)
+                  w(i,k,2,2,eb)=1.0/l(i+1,n,k+1,e)
+               enddo
+            enddo
+            do j=1,ny2
+               do i=1,nx2
+                  w(i,j,1,3,eb)=1.0/l(i+1,j+1,2,e)
+                  w(i,j,2,3,eb)=1.0/l(i+1,j+1,n,e)
+               enddo
+            enddo
+         enddo
+      else
+         do e=1,nelv
+            eb = e0+e
+            do j=1,ny2
+               w(j,1,1,1,eb)=1.0/l(2,j+1,1,e)
+               w(j,1,2,1,eb)=1.0/l(n,j+1,1,e)
+            enddo
+            do i=1,nx2
+               w(i,1,1,2,eb)=1.0/l(i+1,2,1,e)
+               w(i,1,2,2,eb)=1.0/l(i+1,n,1,e)
+            enddo
+         enddo
+      endif
+
+!$acc update device(w)
+
+      end
+
+c-----------------------------------------------------------------------
+      subroutine do_weight_op_acc(x)
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      parameter(levb=lelv+lbelv)
+      common /weightop/ w(lx2,lz2,2,3,levb)
+      real w
+
+      real x(0:nx1-1,0:ny1-1,0:nz1-1,nelv)
+      integer e,e0,eb
+
+      e0  = 0
+      if (ifield.gt.1) e0 = nelv
+
+      if (if3d .eq. .false.) then
+         write(*,*) "OpenACC is only implemented for If3d "
+         stop
+      endif
+
+      if (if3d) then
+!$ACC DATA PRESENT(x)
+!$acc& copyin(w)
+!$ACC PARALLEL LOOP COLLAPSE(1)
+         do e=1,nelv
+            eb = e0 + e
+            do k=1,nz2
+               do j=1,ny2
+                  x(  1,j,k,e)=w(j,k,1,1,eb)*x(  1,j,k,e)
+                  x(nx2,j,k,e)=w(j,k,2,1,eb)*x(nx2,j,k,e)
+               enddo
+            enddo
+            do k=1,nz2
+               do i=2,nx2-1
+                  x(i,  1,k,e)=w(i,k,1,2,eb)*x(i,  1,k,e)
+                  x(i,ny2,k,e)=w(i,k,2,2,eb)*x(i,ny2,k,e)
+               enddo
+            enddo
+            do j=2,ny2-1
+               do i=2,nx2-1
+                  x(i,j,  1,e)=w(i,j,1,3,eb)*x(i,j,  1,e)
+                  x(i,j,nz2,e)=w(i,j,2,3,eb)*x(i,j,nz2,e)
+               enddo
+            enddo
+         enddo
+!$acc end data
+      else  
+         do e=1,nelv
+            eb = e0 + e
+            do j=1,ny2
+               x(  1,j,0,e)=w(j,1,1,1,eb)*x(  1,j,0,e)
+               x(nx2,j,0,e)=w(j,1,2,1,eb)*x(nx2,j,0,e)
+            enddo
+            do i=2,nx2-1
+               x(i,  1,0,e)=w(i,1,1,2,eb)*x(i,  1,0,e)
+               x(i,ny2,0,e)=w(i,1,2,2,eb)*x(i,ny2,0,e)
+            enddo
+         enddo
+      endif
+      end
+
+#endif
+
+

@@ -398,3 +398,92 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
+
+#ifdef _OPENACC
+      subroutine set_overlap_acc
+c
+c     Set up arrays for overlapping Schwartz algorithm *for pressure solver*
+c
+      include 'SIZE'
+      include 'DOMAIN'
+      include 'ESOLV'
+      include 'INPUT'
+      include 'TSTEP'
+c
+      REAL*8 dnekclock,t0
+c
+      parameter (          n_tri = 7*ltotd )
+      common /scrns/  tri (n_tri)
+      integer         tri,elem
+c
+      common /screv/ x(2*ltotd)
+      common /scrvh/ y(2*ltotd)
+      common /scrch/ z(2*ltotd)
+c
+      common /ctmp0/ nv_to_t(2*ltotd)
+c
+      parameter (lia = ltotd - 2 - 2*lelt)
+      common /scrcg/ ntri(lelt+1),nmask(lelt+1)
+     $             , ia(lia)
+c
+      common /scruz/ color   (4*ltotd)
+      common /scrmg/ ddmask  (4*ltotd)
+      common /ctmp1/ mask    (4*ltotd)
+
+      parameter(lxx=lx1*lx1, levb=lelv+lbelv)
+      common /fastd/  df(lx1*ly1*lz1,levb)
+     $             ,  sr(lxx*2,levb),ss(lxx*2,levb),st(lxx*2,levb)
+
+
+      integer e
+
+      if (lx1.eq.2) param(43)=1.
+      if (lx1.eq.2.and.nid.eq.0) write(6,*) 'No mgrid for lx1=2!'
+
+      if (ifaxis) ifmgrid = .false.
+      if (param(43).ne.0) ifmgrid = .false.
+
+      npass = 1
+      if (ifmhd) npass = 2
+      do ipass=1,npass
+         ifield = 1
+
+         if (ifsplit.and.ifmgrid) then
+
+            if (ipass.gt.1) ifield = ifldmhd
+
+            call swap_lengths
+            call gen_fast_spacing(x,y,z)
+ 
+            call hsmg_setup
+            call h1mg_setup
+
+         elseif (.not.ifsplit) then ! Pn-Pn-2
+
+            if (ipass.gt.1) ifield = ifldmhd
+
+            if (param(44).eq.1) then !  Set up local overlapping solves 
+               call set_fem_data_l2(nel_proc,ndom,n_o,x,y,z,tri)
+            else
+               call swap_lengths
+            endif
+ 
+            e = 1
+            if (ifield.gt.1) e = nelv+1
+
+            call gen_fast_spacing(x,y,z)
+            call gen_fast(df(1,e),sr(1,e),ss(1,e),st(1,e),x,y,z)
+
+            call init_weight_op_acc
+            if (param(43).eq.0) call hsmg_setup
+         endif
+
+         call set_up_h1_crs
+
+      enddo
+
+!$ACC ENTER DATA COPYIN(df,sr,ss,st)
+      return
+      end
+
+#endif

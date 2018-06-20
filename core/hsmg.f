@@ -263,7 +263,7 @@ c     v = [A (x) A (x) A] u71
       include 'INPUT'
       if (.not. if3d) then
          call hsmg_tnsr2d(v,nv,u,nu,A,At)
-      else
+      else       
 #ifdef _OPENACC
          call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
 #else
@@ -789,6 +789,7 @@ c----------------------------------------------------------------------
       real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
 
       integer i,j,k,ie
+
 !$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
 !$ACC&  PRESENT_OR_COPY(a,b)
       do ie=1,nelv
@@ -1106,6 +1107,7 @@ c     clobbers r
 !     $                         ,s(1,1,1,ie),s(1,2,2,ie))
 !         enddo
       else
+
 !$ACC PARALLEL LOOP GANG
 !$ACC&          PRESENT(e,r,s,d) PRIVATE(work,work2)
          do ie=1,nelt
@@ -1333,6 +1335,7 @@ c     endif
 !$ACC END LOOP
          enddo
 !$ACC END PARALLEL LOOP
+        
       endif
       return
       end
@@ -1642,6 +1645,7 @@ c----------------------------------------------------------------------
       real wt(n,n,4,3,nelv)
 
       integer ie,i,j,k
+
 !$ACC PARALLEL LOOP PRESENT(e,wt)
       do ie=1,nelv
 !$ACC LOOP VECTOR COLLAPSE(2)
@@ -1706,7 +1710,6 @@ c
 
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
-
 
       call crs_solve(xxth(ifield),e,r)
 
@@ -2237,8 +2240,7 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrmg/ e(2*lt),w(lt),r(lt)
       integer p_msk,p_b
-      logical if_hybrid
-
+      logical if_hybrid     
 
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
@@ -2267,7 +2269,6 @@ c     if_hybrid = .false.   ! to convergence efficiency
 
       if (if_hybrid) call h1mg_axm(r,z,op,om,l,w) ! r  := rhs - A z
                                                       !  l
-
       do l = mg_h1_lmax-1,2,-1                        ! DOWNWARD Leg of V-cycle
          is = is + n
          n  = mg_h1_n(l,mg_fld)
@@ -3699,3 +3700,669 @@ c     stop
       return
       end
 c----------------------------------------------------------------------
+
+
+#ifdef _OPENACC
+c----------------------------------------------------------------------
+      subroutine hsmg_solve_acc(e,r)
+
+      include 'SIZE'
+      include 'HSMG'
+      include 'GEOM'
+      include 'INPUT'
+      include 'MASS'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'CTIMER'
+      include 'PARALLEL'
+
+      real e(lx2*ly2*lz2*lelv)
+      real r(lx2*ly2*lz2*lelv)
+
+      common /quick/ ecrs  (2)  ! quick work array
+     $             , ecrs2 (2)  ! quick work array
+c     common /quick/ ecrs  (lx2*ly2*lz2*lelv)  ! quick work array
+c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
+
+      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
+      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
+     $               h2    (lx1,ly1,lz1,lelv)
+
+      integer ilstep,iter
+      save    ilstep,iter
+      data    ilstep,iter /0,0/
+
+      real    rhoavg,copt(2),copw(2)
+      save    rhoavg,copt1,copt2
+      data    rhoavg,copt1,copt2 /3*1./  ! Default copt = 1 for additive
+
+      integer l,nt
+      integer*8 ntotg,nxyz2
+
+      logical if_hybrid
+
+      integer ntco
+
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
+
+      if (istep.ne.ilstep) then
+         ilstep = istep
+         ntot1  = nx1*ny1*nz1*nelv
+         rhoavg = glsc2(vtrans,bm1,ntot1)/volvm1
+      endif
+
+      n = nx2*ny2*nz2*nelv
+c     call copy(e,r,n)
+c     return
+
+      if (icalld.eq.0) then
+
+         tddsl=0.0
+         nddsl=0
+
+         icalld = 1
+         taaaa = 0
+         tbbbb = 0
+         tcccc = 0
+         tdddd = 0
+         teeee = 0
+      endif
+
+      nddsl  = nddsl  + 1
+      etime1 = dnekclock()
+
+
+c     n = nx2*ny2*nz2*nelv
+c     rmax = glmax(r,n)
+c     if (nid.eq.0) write(6,*) istep,n,rmax,' rmax1'
+
+!$acc data present(e,r)
+
+      iter = iter + 1
+
+      l = mg_lmax
+      nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+      ! e := W M        r
+      !         Schwarz
+      time_0 = dnekclock()
+
+      call local_solves_fdm_acc(e,r)
+
+      time_1 = dnekclock()
+
+c     if (param(41).eq.1)y if_hybrid = .true.
+      if_hybrid = .false.
+
+      if (if_hybrid) then
+         stop
+         ! w := E e
+         rbd1dt = rhoavg*bd(1)/dt ! Assumes constant density!!!
+         call cdabdtp(mg_work2,e,h1,h2,h2inv,1)
+         call cmult  (mg_work2,rbd1dt,nt)
+         time_2 = dnekclock()
+         if (istep.eq.1) then
+            copt(1)  = vlsc2(r       ,mg_work2,nt)
+            copt(2)  = vlsc2(mg_work2,mg_work2,nt)
+            call gop(copt,copw,'+  ', 2)
+            copt(1)  = copt(1)/copt(2)
+            avg2     = 1./iter
+            avg1     = 1.-avg2
+            copt1    = avg1*copt1 + avg2*copt(1)
+            if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt1,'cpt1'
+    1       format(2i6,1p3e14.5,2x,a4)
+         endif
+         ! w := r - w
+         do i = 1,nt
+            mg_work2(i) = r(i) - copt1*mg_work2(i)
+            e       (i) = copt1*e(i)
+            ecrs2   (i) = mg_work2(i)
+         enddo
+         stop
+      else   ! Additive
+         ! w := r - w
+!$acc parallel loop
+         do i = 1,nt
+            mg_work2(i) = r(i)
+         enddo
+         time_2 = dnekclock()
+      endif
+
+      do l = mg_lmax-1,2,-1
+
+c        rmax = glmax(mg_work2,nt)
+c        if (nid.eq.0) write(6,*) l,nt,rmax,' rmax2'
+
+         nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+         !          T
+         ! r   :=  J w
+         !  l
+         call hsmg_rstr_acc(mg_solve_r(mg_solve_index(l,mg_fld)),
+     $        mg_work2,l)
+         ! w  := r
+         !        l
+         call copy_acc(mg_work2,mg_solve_r(mg_solve_index(l,mg_fld)),nt)
+         ! e  := M        w
+         !  l     Schwarz
+         call hsmg_schwarz_acc(
+     $          mg_solve_e(mg_solve_index(l,mg_fld)),mg_work2,l)
+         ! e  := W e
+         !  l       l
+         call hsmg_schwarz_wt_acc(mg_solve_e(mg_solve_index(l,mg_fld))
+     $                           ,l)
+c        call exitti('quit in mg$',l)
+
+         ! w  := r  - w
+         !        l
+!$acc parallel loop
+         do i = 0,nt-1
+            mg_work2(i+1) = mg_solve_r(mg_solve_index(l,mg_fld)+i)
+     $         !-alpha*mg_work2(i+1)
+         enddo
+      enddo
+      call hsmg_rstr_no_dssum_acc(
+     $   mg_solve_r(mg_solve_index(1,mg_fld)),mg_work2,1)
+
+      nzw = ndim-1
+      ntco = nelv*2*2*nzw
+      call hsmg_do_wt_acc(mg_solve_r(mg_solve_index(1,mg_fld)),
+     $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+      !        -1
+      ! e  := A   r
+      !  1         1
+
+      !! CPU 2018-03-09 
+!$acc update host(mg_solve_e(0:ntco-1),mg_solve_r(0:ntco-1))     
+      call hsmg_coarse_solve(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                       mg_solve_r(mg_solve_index(1,mg_fld)))
+!$acc update device(mg_solve_e(0:ntco-1))
+      call hsmg_do_wt_acc(mg_solve_e(mg_solve_index(1,mg_fld)),
+     $                    mg_mask(mg_mask_index(1,mg_fld)),2,2,nzw)
+      time_3 = dnekclock()
+      do l = 2,mg_lmax-1
+         nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+         ! w   :=  J e
+         !            l-1
+         call hsmg_intp_acc
+     $      (mg_work2,mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
+
+         ! e   :=  e  + w
+         !  l       l
+!$ACC PARALLEL LOOP
+         do i = 0,nt-1
+            mg_solve_e(mg_solve_index(l,mg_fld)+i) =
+     $        + mg_solve_e(mg_solve_index(l,mg_fld)+i) + mg_work2(i+1)
+         enddo
+      enddo
+
+      l = mg_lmax
+      nt = mg_nh(l)*mg_nh(l)*mg_nhz(l)*nelv
+      ! w   :=  J e
+      !            m-1
+
+      call hsmg_intp_acc(mg_work2,
+     $   mg_solve_e(mg_solve_index(l-1,mg_fld)),l-1)
+      if (if_hybrid.and.istep.eq.1) then
+         write(*,*) "Will implement later. Jing 2018-03-09"
+         stop
+         ! ecrs := E e_c
+         call cdabdtp(ecrs,mg_work2,h1,h2,h2inv,1)
+         call cmult  (ecrs,rbd1dt,nt)
+         copt(1)  = vlsc2(ecrs2,ecrs,nt)
+         copt(2)  = vlsc2(ecrs ,ecrs,nt)
+         call gop(copt,copw,'+  ', 2)
+         copt(1)  = copt(1)/copt(2)
+         avg2     = 1./iter
+         avg1     = 1.-avg2
+         copt2    = avg1*copt2 + avg2*copt(1)
+         if(nio.eq.0)write(6,1)istep,iter,rbd1dt,copt(1),copt2,'cpt2'
+      endif
+      ! e := e + w
+
+!$acc parallel loop
+      do i = 1,nt
+         e(i) = e(i) + copt2*mg_work2(i)
+      enddo
+      time_4 = dnekclock()
+
+c     print *, 'Did an MG iteration'
+c
+      taaaa = taaaa + (time_1 - time_0)
+      tbbbb = tbbbb + (time_2 - time_1)
+      tcccc = tcccc + (time_3 - time_2)
+      tdddd = tdddd + (time_4 - time_3)
+      teeee = teeee + (time_4 - time_0)
+c
+c     A typical time breakdown:
+c
+c  1.3540E+01  5.4390E+01  1.1440E+01  1.2199E+00  8.0590E+01 HSMG time
+c
+c  ==>  54/80 = 67 % of preconditioner time is in residual evaluation!
+c
+      call ortho_acc(e)
+
+      tddsl  = tddsl + ( dnekclock()-etime1 )
+!$acc end data
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_rstr_acc(uc,uf,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      if(l.ne.mg_lmax-1)
+     $   call hsmg_do_wt_acc(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
+     $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
+      call hsmg_tnsr_acc(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l)
+     $                     ,mg_jh(1,l))
+      call hsmg_dssum(uc,l)
+      return
+      end
+
+c----------------------------------------------------------------------
+c     u = wt .* u
+      subroutine hsmg_do_wt_acc(u,wt,nx,ny,nz)
+      include 'SIZE'
+      include 'INPUT'
+      integer nx,ny,nz
+      real u(nx,ny,nz,nelv)
+      real wt(nx,nz,2,ndim,nelv)
+
+      integer e
+
+c     if (nx.eq.2) then
+c        do e=1,nelv
+c           call outmat(wt(1,1,1,1,e),nx,nz,'wt 1-1',e)
+c           call outmat(wt(1,1,2,1,e),nx,nz,'wt 2-1',e)
+c           call outmat(wt(1,1,1,2,e),nx,nz,'wt 1-2',e)
+c           call outmat(wt(1,1,2,2,e),nx,nz,'wt 2-2',e)
+c        enddo
+c        call exitti('hsmg_do_wt quit$',nelv)
+c     endif
+
+      if (.not. if3d) then
+         do ie=1,nelv
+            do j=1,ny
+               u( 1,j,1,ie)=u( 1,j,1,ie)*wt(j,1,1,1,ie)
+               u(nx,j,1,ie)=u(nx,j,1,ie)*wt(j,1,2,1,ie)
+            enddo
+            do i=2,nx-1
+               u(i, 1,1,ie)=u(i, 1,1,ie)*wt(i,1,1,2,ie)
+               u(i,ny,1,ie)=u(i,ny,1,ie)*wt(i,1,2,2,ie)
+            enddo
+         enddo
+      else
+         !FIXME: Consider changing to 3 collapse(3) loops
+!$ACC PARALLEL LOOP GANG PRESENT(u,wt)
+         do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=1,nz
+            do j=1,ny
+               u( 1,j,k,ie)=u( 1,j,k,ie)*wt(j,k,1,1,ie)
+               u(nx,j,k,ie)=u(nx,j,k,ie)*wt(j,k,2,1,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=1,nz
+            do i=2,nx-1
+               u(i, 1,k,ie)=u(i, 1,k,ie)*wt(i,k,1,2,ie)
+               u(i,ny,k,ie)=u(i,ny,k,ie)*wt(i,k,2,2,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do j=2,ny-1
+            do i=2,nx-1
+               u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
+               u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+         enddo
+!$ACC END PARALLEL LOOP
+        
+      endif
+      return
+      end
+
+c----------------------------------------------------------------------
+c     computes
+c     v = [A (x) A] u      or
+c     v = [A (x) A (x) A] u71
+      subroutine hsmg_tnsr_acc(v,nv,u,nu,A,At)
+      integer nv,nu
+      real v(1),u(1),A(1),At(1)
+      include 'SIZE'
+      include 'INPUT'
+      if (.not. if3d) then
+         call hsmg_tnsr2d(v,nv,u,nu,A,At)
+      else
+         call hsmg_tnsr3d_acc(v,nv,u,nu,A,At,At)
+      endif
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_acc(e,r,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+      real e(1),r(1)
+      integer l
+      integer enx,eny,enz
+      integer i
+
+      real zero,one,onem
+      zero =  0
+      one  =  1
+      onem = -1
+
+c     apply mask (zeros Dirichlet nodes)
+      !!!!! uncommenting
+      call hsmg_do_wt_acc(r,mg_mask(mg_mask_index(l,mg_fld)),
+     $                    mg_nh(l),mg_nh(l),mg_nhz(l))
+
+c     go to extended size array (room for overlap)
+      if (if3d) then
+         call hsmg_schwarz_toext3d_acc(mg_work,r,mg_nh(l))
+      else
+         call hsmg_schwarz_toext2d(mg_work,r,mg_nh(l))
+      endif
+
+      enx=mg_nh(l)+2
+      eny=mg_nh(l)+2
+      enz=mg_nh(l)+2
+      if(.not.if3d) enz=1
+      i = enx*eny*enz*nelv+1
+
+c     exchange interior nodes
+      call hsmg_extrude_acc(mg_work,0,zero,mg_work,2,one,enx,eny,enz)
+      call hsmg_schwarz_dssum(mg_work,l)
+      call hsmg_extrude_acc(mg_work,0,one ,mg_work,2,onem,enx,eny,enz)
+
+c     do the local solves
+      call hsmg_fdm_acc(mg_work(i),mg_work,l)
+c     sum overlap region (border excluded)
+      call hsmg_extrude_acc(mg_work,0,zero,mg_work(i),0,one
+     $                     ,enx,eny,enz)
+      call hsmg_schwarz_dssum(mg_work(i),l)
+      call hsmg_extrude_acc(mg_work(i),0,one ,mg_work,0,onem
+     $                     ,enx,eny,enz)
+      call hsmg_extrude_acc(mg_work(i),2,one,mg_work(i),0,one
+     $                     , enx,eny,enz)
+c     go back to regular size array
+      if(.not.if3d) then
+         call hsmg_schwarz_toreg2d(e,mg_work(i),mg_nh(l))
+      else
+         call hsmg_schwarz_toreg3d_acc(e,mg_work(i),mg_nh(l))
+      endif
+c     sum border nodes
+      call hsmg_dssum(e,l)
+c     apply mask (zeros Dirichlet nodes)
+      !!!!!! changing r to e
+      call hsmg_do_wt_acc(e,mg_mask(mg_mask_index(l,mg_fld)),
+     $                    mg_nh(l),mg_nh(l),mg_nhz(l))
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_toext3d_acc(a,b,n)
+      include 'SIZE'
+      integer n
+      real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
+
+      integer i,j,k,ie
+
+#ifdef _OPENACC
+      call rzero_acc(a,(n+2)*(n+2)*(n+2)*nelv)
+#else
+      call rzero(a,(n+2)*(n+2)*(n+2)*nelv)
+#endif
+
+!$ACC PARALLEL LOOP COLLAPSE(4) PRESENT(a,b)
+!$ACC&              GANG WORKER VECTOR
+      do ie=1,nelv
+      do k=1,n
+      do j=1,n
+      do i=1,n
+         a(i,j,k,ie)=b(i,j,k,ie)
+      enddo
+      enddo
+      enddo
+      enddo
+!$ACC END LOOP
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_extrude_acc(arr1,l1,f1,arr2,l2,f2,nx,ny,nz)
+      include 'SIZE'
+      include 'INPUT'
+      integer l1,l2,nx,ny,nz
+      real arr1(nx,ny,nz,nelv),arr2(nx,ny,nz,nelv)
+      real f1,f2
+
+      integer i,j,k,ie,i0,i1
+      i0=2
+      i1=nx-1
+
+      if(.not.if3d) then
+         !MJO - 3/15/17 - 2D not implemented for GPU
+         do ie=1,nelv
+            do j=i0,i1
+               arr1(l1+1 ,j,1,ie) = f1*arr1(l1+1 ,j,1,ie)
+     $                             +f2*arr2(l2+1 ,j,1,ie)
+               arr1(nx-l1,j,1,ie) = f1*arr1(nx-l1,j,1,ie)
+     $                             +f2*arr2(nx-l2,j,1,ie)
+            enddo
+            do i=i0,i1
+               arr1(i,l1+1 ,1,ie) = f1*arr1(i,l1+1 ,1,ie)
+     $                             +f2*arr2(i,l2+1 ,1,ie)
+               arr1(i,ny-l1,1,ie) = f1*arr1(i,ny-l1,1,ie)
+     $                             +f2*arr2(i,nx-l2,1,ie)
+            enddo
+         enddo
+      else
+         !FIXME: Possibly rewrite as 3 loops of collapse(3)
+!$ACC PARALLEL LOOP GANG PRESENT(arr1,arr2)
+         do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=i0,i1
+            do j=i0,i1
+               arr1(l1+1 ,j,k,ie) = f1*arr1(l1+1 ,j,k,ie)
+     $                             +f2*arr2(l2+1 ,j,k,ie)
+               arr1(nx-l1,j,k,ie) = f1*arr1(nx-l1,j,k,ie)
+     $                             +f2*arr2(nx-l2,j,k,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do k=i0,i1
+            do i=i0,i1
+               arr1(i,l1+1 ,k,ie) = f1*arr1(i,l1+1 ,k,ie)
+     $                             +f2*arr2(i,l2+1 ,k,ie)
+               arr1(i,nx-l1,k,ie) = f1*arr1(i,nx-l1,k,ie)
+     $                             +f2*arr2(i,nx-l2,k,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+
+!$ACC LOOP VECTOR COLLAPSE(2)
+            do j=i0,i1
+            do i=i0,i1
+               arr1(i,j,l1+1 ,ie) = f1*arr1(i,j,l1+1 ,ie)
+     $                             +f2*arr2(i,j,l2+1 ,ie)
+               arr1(i,j,nx-l1,ie) = f1*arr1(i,j,nx-l1,ie)
+     $                             +f2*arr2(i,j,nx-l2,ie)
+            enddo
+            enddo
+!$ACC END LOOP
+         enddo
+      endif
+      return
+      end
+
+c----------------------------------------------------------------------
+c     clobbers r
+      subroutine hsmg_fdm_acc(e,r,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+
+      call hsmg_do_fast_acc(e,r,
+     $     mg_fast_s(mg_fast_s_index(l,mg_fld)),
+     $     mg_fast_d(mg_fast_d_index(l,mg_fld)),
+     $     mg_nh(l)+2)
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_toreg3d_acc(b,a,n)
+      include 'SIZE'
+      integer n
+      real a(0:n+1,0:n+1,0:n+1,nelv),b(n,n,n,nelv)
+
+      integer i,j,k,ie
+
+!$ACC   PARALLEL LOOP GANG VECTOR COLLAPSE(4)
+!$ACC&  PRESENT_OR_COPY(a,b)
+      do ie=1,nelv
+      do k=1,n
+      do j=1,n
+      do i=1,n
+         b(i,j,k,ie)=a(i,j,k,ie)
+      enddo
+      enddo
+      enddo
+      enddo
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_wt_acc(e,l)
+      include 'SIZE'
+      include 'INPUT'
+      include 'HSMG'
+
+      if(.not.if3d) call hsmg_schwarz_wt2d(
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
+      if(if3d) call hsmg_schwarz_wt3d_acc(
+     $    e,mg_schwarz_wt(mg_schwarz_wt_index(l,mg_fld)),mg_nh(l))
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_schwarz_wt3d_acc(e,wt,n)
+      include 'SIZE'
+      integer n
+      real e(n,n,n,nelv)
+      real wt(n,n,4,3,nelv)
+
+      integer ie,i,j,k
+!$ACC PARALLEL LOOP PRESENT(e,wt)
+      do ie=1,nelv
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do k=1,n
+         do j=1,n
+            e(1  ,j,k,ie)=e(1  ,j,k,ie)*wt(j,k,1,1,ie)
+            e(2  ,j,k,ie)=e(2  ,j,k,ie)*wt(j,k,2,1,ie)
+            e(n-1,j,k,ie)=e(n-1,j,k,ie)*wt(j,k,3,1,ie)
+            e(n  ,j,k,ie)=e(n  ,j,k,ie)*wt(j,k,4,1,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do k=1,n
+         do i=3,n-2
+            e(i,1  ,k,ie)=e(i,1  ,k,ie)*wt(i,k,1,2,ie)
+            e(i,2  ,k,ie)=e(i,2  ,k,ie)*wt(i,k,2,2,ie)
+            e(i,n-1,k,ie)=e(i,n-1,k,ie)*wt(i,k,3,2,ie)
+            e(i,n  ,k,ie)=e(i,n  ,k,ie)*wt(i,k,4,2,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+!$ACC LOOP VECTOR COLLAPSE(2)
+         do j=3,n-2
+         do i=3,n-2
+            e(i,j,1  ,ie)=e(i,j,1  ,ie)*wt(i,j,1,3,ie)
+            e(i,j,2  ,ie)=e(i,j,2  ,ie)*wt(i,j,2,3,ie)
+            e(i,j,n-1,ie)=e(i,j,n-1,ie)*wt(i,j,3,3,ie)
+            e(i,j,n  ,ie)=e(i,j,n  ,ie)*wt(i,j,4,3,ie)
+         enddo
+         enddo
+!$ACC END LOOP
+      enddo
+!$ACC END PARALLEL LOOP
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_coarse_solve_acc(e,r)
+      include 'SIZE'
+      include 'DOMAIN'
+      include 'ESOLV'
+      include 'GEOM'
+      include 'SOLN'
+      include 'PARALLEL'
+      include 'HSMG'
+      include 'CTIMER'
+      include 'INPUT'
+      include 'TSTEP'
+      real e(1),r(1)
+c
+      integer n_crs_tot
+      save    n_crs_tot
+      data    n_crs_tot /0/
+c
+      if (icalld.eq.0) then ! timer info
+         ncrsl=0
+         tcrsl=0.0
+      endif
+      icalld = 1
+
+      if (ifsync) call nekgsync()
+
+      ncrsl  = ncrsl  + 1
+      etime1=dnekclock()
+      call crs_solve(xxth(ifield),e,r)
+
+      tcrsl=tcrsl+dnekclock()-etime1
+
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_intp_acc(uf,uc,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      call hsmg_tnsr_acc(uf,mg_nh(l+1),uc,mg_nh(l)
+     $                  ,mg_jh(1,l),mg_jht(1,l))
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine hsmg_rstr_no_dssum_acc(uc,uf,l) ! l is coarse level
+      real uf(1),uc(1)
+      integer l
+      include 'SIZE'
+      include 'HSMG'
+      if(l.ne.mg_lmax-1)
+     $   call hsmg_do_wt_acc(uf,mg_rstr_wt(mg_rstr_wt_index(l+1,mg_fld))
+     $                     ,mg_nh(l+1),mg_nh(l+1),mg_nhz(l+1))
+      call hsmg_tnsr_acc(uc,mg_nh(l),uf,mg_nh(l+1),mg_jht(1,l),
+     $     mg_jh(1,l))
+      return
+      end
+
+
+#endif 
