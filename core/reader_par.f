@@ -157,7 +157,7 @@ C
       ifuservp  = .false.  
       ifcyclic  = .false.
       ifusermv  = .false.
-      ifmgrid   = .false.
+      ifmgrid   = .true.
       ifessr    = .false.
       ifreguo   = .false.
       ifbase    = .true.   
@@ -441,6 +441,8 @@ c set parameters
             param(40) = 1
          else if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
+         else if (index(c_out,'FEM_AMG_HYPRE') .eq. 1) then
+            param(40) = 3
          else
            write(6,*) 'value: ',trim(c_out)
            write(6,*) 'is invalid for pressure:preconditioner!'
@@ -867,7 +869,6 @@ c set some internals
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
       if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
-      if (ifsplit) ifmgrid   = .true.
 
       param(1) = cpfld(1,2)
       param(2) = cpfld(1,1)

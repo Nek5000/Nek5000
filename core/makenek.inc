@@ -13,6 +13,12 @@ function make_3rd_party() {
      ./install
   fi
   cd $CASEDIR
+
+  if [ $HYPRE -ne 0 ]; then
+     cd $SOURCE_ROOT/3rd_party/hypre
+     ./install
+  fi
+  cd $CASEDIR
 }
 
 function clean_3rd_party() {
@@ -20,6 +26,8 @@ function clean_3rd_party() {
   cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
+  cd $CASEDIR
+  cd $SOURCE_ROOT/3rd_party/hypre; ./install clean 2>/dev/null
   cd $CASEDIR
 }
 
@@ -35,6 +43,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  BGQ         use BGQ optimized mxm"
   echo "  XSMM        use libxsmm for mxm"
   echo "  CVODE       compile with CVODE support for scalars"
+  echo "  HYPRE       compile with HYPRE support for fem_amg preconditioner"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
@@ -255,6 +264,17 @@ else
    CVODE=0
 fi
 
+if echo $PPLIST | grep -q 'HYPRE' ; then 
+   HYPRE=1
+   if [ ! "$LIBPATH_HYPRE" ]; then
+     LIBPATH_HYPRE=$SOURCE_ROOT/3rd_party/hypre/lib
+     OPT_INCDIR+="$SOURCE_ROOT/3rd_party/hypre/include"
+   fi
+   USR_LFLAGS+=" -L$LIBPATH_HYPRE -lHYPRE"
+else
+   HYPRE=0
+fi
+
 MXM_USER="mxm_std.o"
 if echo $PPLIST | grep -q 'BGQ' ; then 
    MXM_USER+=" mxm_bgq.o" 
@@ -286,6 +306,7 @@ sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE:=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
+-e "s:^OPT_INCDIR[ ]*=.*:OPT_INCDIR\:=$OPT_INCDIR:" \
 -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \

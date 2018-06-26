@@ -39,6 +39,11 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       character ctest
       logical ltest 
 
+      common /c_is1/ glo_num(lx1 * ly1 * lz1, lelt)
+      common /ivrtx/ vertex((2 ** ldim) * lelt)
+      integer*8 glo_num, ngv
+      integer vertex
+
       ! set word size for REAL
       wdsize = sizeof(rtest)
       ! set word size for INTEGER
@@ -115,8 +120,21 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
          call estrat                                       ! initialization.
-         if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
-            call set_overlap                               ! as scratch!
+         if (iftran.and.solver_type.eq.'itr') then
+            isolver = param(40)
+            if (isolver.eq.0) then      ! semg_xxt
+                if (nelgt.gt.350000) call exitti(
+     $             'element count requires AMG preconditioner!$',0)
+                call set_overlap
+            else if (isolver.eq.1) then ! semg_amg
+                call set_overlap
+            else if (isolver.eq.3) then ! fem_amg_hypre
+                call set_vert(glo_num,ngv,nx1,nelt,vertex,.true.)
+                call matrix_distribution(glo_num)
+                call fem_amg_setup(1,0,nx1,ny1,nz1,nelv,ndim,
+     $                             xm1,ym1,zm1,glo_num,pmask,
+     $                             binvm1,nekcomm)
+            endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
             kwave2  = 0.0

@@ -4,7 +4,7 @@ CASENAME=
 CASEDIR=
 S=
 SCMT=
-OPT_INCDIR=./
+OPT_INCDIR=
 OBJDIR=obj
 MPI=0 
 CMT=0 
@@ -41,7 +41,8 @@ vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
 finiparser.o iniparser.o dictionary.o \
-hpf.o
+hpf.o \
+ranking.o fem_amg_preco.o
 ################################################################################
 # MXM 
 MXM =  
@@ -63,7 +64,7 @@ else
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o artvisc.o
 endif
-# VISIT ########################################################################
+
 ifneq ($(VISIT),0)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
@@ -93,9 +94,9 @@ FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) $(CFLAGS) $(PPS_C)
-cFL2   = $(L2) $(CFLAGS) $(PPS_C)
-cFL3   = $(L3) $(CFLAGS) $(PPS_C)
+cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
+cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
+cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 
 ################################################################################
 all : nek5000
@@ -203,7 +204,8 @@ $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_rea.o	:$S/reader_rea.f;	 	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/reader_par.f $S/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/reader_re2.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/ranking.o	:$S/ranking.f;         		$(FC) -c $(FL2) $< -o $@
 
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
@@ -235,6 +237,7 @@ $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/byte.o                 :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/fem_amg_preco.o        :$S/experimental/fem_amg_preco.c;     $(CC) -c $(cFL2) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
