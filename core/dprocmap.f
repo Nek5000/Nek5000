@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       integer ibuf(lbuf)
       integer*8 disp
 
-      if (lbuf.lt.l .or. lbuf.gt.3)
+      if (lbuf.lt.1 .or. lbuf.gt.3)
      $   call exitti('invalid lbuf!',lbuf)
 
 #ifdef MPI
