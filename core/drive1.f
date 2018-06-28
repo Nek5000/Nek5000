@@ -31,23 +31,24 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /rdump/ ntdump
 
       real kwave2
-      real*8 t0, tpp
-
       logical ifemati
 
+      real rtest
+      integer itest
+      integer*8 itest8
+      character ctest
+      logical ltest 
+
       ! set word size for REAL
-      eps = 1.0e-12
-      if (1.0 + eps .ne. 1.0) then
-         wdsize = 8
-      else
-         wdsize = 4
-      endif
+      wdsize = sizeof(rtest)
       ! set word size for INTEGER
-      isize = 4
+      isize = sizeof(itest)
+      ! set word size for INTEGER*8
+      isize8 = sizeof(itest8) 
       ! set word size for LOGICAL
-      lsize = 4
+      lsize = sizeof(ltest) 
       ! set word size for CHARACTER
-      csize = 1
+      csize = sizeof(ctest)
 
       call setupcomm()
       nekcomm  = intracomm
@@ -56,7 +57,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       etimes = dnekclock()
       istep  = 0
-      tpp    = 0.0
 
       call opcount(1)
 
@@ -138,17 +138,20 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics   !     Set initial conditions 
-      call setprop  !     Compute field properties
+      call setics
+      call setprop
 
-      if (instep.ne.0) then !USRCHK
-        if(nio.eq.0) write(6,*) 'call userchk'
+      if (instep.ne.0) then
          if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
+
+         if (nio.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
+
+      call setprop
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
@@ -216,9 +219,12 @@ c-----------------------------------------------------------------------
          if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
+         etime1 = dnekclock()
          call userchk
+         tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
+         if (mod(kstep,100).eq.0 ..and. lastep.eq.0) call runstat
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1
@@ -342,12 +348,15 @@ c-----------------------------------------------------------------------
       subroutine nek_end
 
       include 'SIZE'
-      include 'TSTEP'
-      include 'PARALLEL'
-      include 'OPCTR'
+      include 'TOTAL'
 
-      if(instep.ne.0)  call runstat
-      if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
+      if(instep.ne.0) call runstat
+
+c      if (ifstrs) then
+c         call fgslib_crs_free(xxth_strs) 
+c      else
+c         call fgslib_crs_free(xxth(1))
+c      endif
 
       call in_situ_end()
       call exitt0()
@@ -367,7 +376,6 @@ c-----------------------------------------------------------------------
          if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
-
       enddo
 
       return

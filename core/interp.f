@@ -1,11 +1,15 @@
-c
-c interpolation wrapper
-c
-
-#define INTP_HMAX 10
+#define INTP_HMAX 20
 
 c-----------------------------------------------------------------------
-      subroutine intp_setup(tolin,nmsh,ih)
+      subroutine interp_setup(tolin,nmsh,ih)
+c
+c input:
+c tolin ... tolerance newton solve (use 0 for default)
+c nmsh  ... polynomial order for mesh (use 0 to fallback to lx1-1)
+c 
+c output:
+c ih    ... handle
+c
 
       include 'SIZE'
       include 'INPUT'
@@ -27,7 +31,7 @@ c-----------------------------------------------------------------------
       real w(2*lx1**3)
 
       tol = tolin
-      if (tolin.le.0) tol = 5e-13
+      if (tolin.le.1e-14) tol = 5e-13
       npt_max = 256
       bb_t    = 0.01
 
@@ -41,20 +45,21 @@ c-----------------------------------------------------------------------
      &                          npt_max,tol)
 
       ! setup handle for findpts
-      if (nmsh.gt.1 .and. nmsh.lt.lx1) then
-         if (nio.eq.0) write(6,*) 'Ngeom for findpts:',nmsh-1
-         nxi = nmsh
+      if (nmsh.gt.1 .and. nmsh.lt.lx1-1) then
+         if (nio.eq.0) write(6,*) 'Ngeom for findpts:',nmsh
+         nxi = nmsh+1
          nyi = nxi
-         nzi = nxi
+         nzi = 1
+         if (if3d) nzi = nxi
          n   = nelt*nxi*nyi*nzi 
          do ie = 1,nelt
-           call map_m_to_n(xmi((ie-1)*nxi**3 + 1),nxi,xm1(1,1,1,ie),lx1,
-     $                     if3d,w,size(w))
-           call map_m_to_n(ymi((ie-1)*nyi**3 + 1),nyi,ym1(1,1,1,ie),ly1,
-     $                     if3d,w,size(w))
+           call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
+     $                     ,lx1,if3d,w,size(w))
+           call map_m_to_n(ymi((ie-1)*nxi*nyi*nzi + 1),nyi,ym1(1,1,1,ie)
+     $                     ,ly1,if3d,w,size(w))
            if (if3d) 
-     $     call map_m_to_n(zmi((ie-1)*nzi**3 + 1),nzi,zm1(1,1,1,ie),lz1,
-     $                     if3d,w,size(w))
+     $     call map_m_to_n(zmi((ie-1)*nxi*nyi*nzi + 1),nzi,zm1(1,1,1,ie)
+     $                     ,lz1,if3d,w,size(w))
          enddo
   
          call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
@@ -75,9 +80,13 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_nfld(out,fld,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp,ih)
+      subroutine interp_nfld(out,fld,nfld,xp,yp,zp,n,iwk,rwk,nmax,
+     $                       iflp,ih)
 c
+c output:
 c out       ... interpolation value(s) dim (n,nfld)
+c
+c input:
 c fld       ... source field(s)
 c nfld      ... number of fields
 c xp,yp,zp  ... interpolation points
@@ -104,17 +113,21 @@ c
       integer nn(2)
       logical ifot
 
+      if (ih.lt.1 .or. ih.gt.INTP_HMAX) 
+     $   call exitti('invalid intp handle!$',ih)
+
       ih_intp1 = ih_intp(1,ih)
       ih_intp2 = ih_intp(2,ih)
 
       ifot = .false. ! transpose output field
 
-      if(nio.eq.0) write(6,*) 'call intp_nfld', ih, ih_intp1, ih_intp2
+      if (nio.eq.0 .and. loglevel.gt.2) 
+     $   write(6,*) 'call intp_nfld', ih, ih_intp1, ih_intp2
 
-      if(n.gt.nmax) then
-        write(6,*)
-     &   'ABORT: n>nmax in intp_nfld', n, nmax
-        call exitt
+      if (n.gt.nmax) then
+         write(6,*)
+     &    'ABORT: n>nmax in intp_nfld', n, nmax
+         call exitt
       endif
 
       ! locate points (iel,iproc,r,s,t)
@@ -169,7 +182,7 @@ c
       nn(1) = iglsum(n,1)
       nn(2) = iglsum(nfail,1)
       if(nio.eq.0) then
-        write(6,1) nn(1),nn(2)
+        if(nfail.gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
      &         ,i12,/,' done :: intp_nfld')
       endif
@@ -177,7 +190,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine intp_free(ih)
+      subroutine interp_free(ih)
 
       common /intp_h/ ih_intp(2,INTP_HMAX)
 
@@ -186,6 +199,27 @@ c-----------------------------------------------------------------------
 
       call fgslib_findpts_free(ih_intp1)
       call fgslib_findpts_free(ih_intp2)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine intp_setup(tolin)
+
+      call exitti('intp_setup is deprecated, see release notes!!$',1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine intp_do(fldout,fldin,nfld,xp,yp,zp,n,iwk,rwk,nmax,iflp)
+
+      call exitti('intp_do is deprecated, see release notes!!$',1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine intp_free()
+
+      call exitti('intp_free is deprecated, see release notes!!$',1)
 
       return
       end

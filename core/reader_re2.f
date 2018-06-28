@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
-      if(ierr.gt.0) goto 100
+      if (ierr.gt.0) goto 100
 
       ! pack buffer
       do i = 1,nr
@@ -118,18 +118,21 @@ c-----------------------------------------------------------------------
      &                                   key)
 
       ! unpack buffer
-      if(n.gt.nrmax) goto 100
+      ierr = 0
+      if (n.gt.nrmax) then
+         ierr = 1
+         goto 100
+      endif
+
       do i = 1,n
          iel = gllel(vi(2,i)) 
          call icopy     (bufr,vi(3,i),lrs4)
          call buf_to_xyz(bufr,iel,ifbswap,ierr)
       enddo
 
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+
       return
-
- 100  ierr = 1
-      call err_chk(ierr,'Error reading .re2 mesh$')
-
       end
 c-----------------------------------------------------------------------
       subroutine readp_re2_curve(ifbswap)

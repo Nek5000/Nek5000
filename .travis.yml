@@ -29,7 +29,7 @@ env:
 
     - TEST_CASE=ConjHt::test_PnPn_Parallel
 
-    - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel
+#    - TEST_CASE=CmtInviscidVortex::test_PnPn_Parallel
 
     - TEST_CASE=MvCylCvode::test_PnPn_Parallel
 

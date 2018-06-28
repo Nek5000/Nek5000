@@ -174,7 +174,7 @@ fi
 case $FCcomp in
   *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
-  *gfortran*)   FFLAGS+=" -fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)   FFLAGS+=" -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
   *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;

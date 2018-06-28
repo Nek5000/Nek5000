@@ -185,12 +185,7 @@ C
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 
-      call blank (hcode ,11*lhis)
-      call izero (lochis, 4*lhis)
-
       call blank (initc,15*132)
-
-      nhis = 0
 
       return
       end
@@ -212,6 +207,7 @@ c     - mhd support
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
+      INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
 
@@ -332,6 +328,10 @@ c set parameters
          else if (index(c_out,'TIMESTEP') .eq. 1) then
             param(14) = 0
             param(15) = d_out
+         else if (index(c_out,'ELAPSEDTIME') .eq. 1) then
+            param(14) = d_out
+            param(15) = 0
+            timeioe = 1
          else
             write(6,*) 'value: ',trim(c_out)
             write(6,*) 'is invalid for general:writeControl!'
@@ -355,6 +355,17 @@ c set parameters
       endif
 
       j = 0
+      do i = 1,99
+         write(txt,"('scalar',i2.2)") i
+         call finiparser_find(i_out,txt,ifnd)
+         if (ifnd .eq. 1) j = j + 1
+      enddo
+      if (j.gt.ldimt-1) then
+         write(6,*) 'found more scalars than specified in SIZE!' 
+         goto 999
+      endif
+
+      j = 0
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
@@ -365,13 +376,14 @@ c set parameters
          endif
       enddo
       param(23) = j ! number of scalars 
-
       n = param(23)
-      if (ifheat) n = n+1 
-       
-      do i = 1,n
+ 
+      is = 2
+      if (ifheat) is = 1 
 
-      if (ifheat .and. i.eq.1) then
+      do i = is,n+1
+
+      if (i.eq.1) then
         txt = 'temperature'
       else
         write(txt,"('scalar',i2.2)") i-1
@@ -827,6 +839,7 @@ C     Broadcast run parameters to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'TSTEP'
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
@@ -883,6 +896,8 @@ C
 
       call bcast(initc, 15*132*csize) 
 
+      call bcast(timeioe,sizeof(timeioe))
+
 c set some internals 
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
@@ -937,6 +952,7 @@ c set some internals
          endif
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
+
 c
 c     Check here for global fast diagonalization method or z-homogeneity.
 c     This is here because it influence the mesh read, which follows.
@@ -995,8 +1011,6 @@ c
      $         ,/,2X,'This run requires:'
      $         ,/,2X,'   lelt >= ',i12,'  for np = ',i12
      $         ,/,2X,'   lelg >= ',i12,/)
-c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-c           write(6,*)'help:',lelt,lelv,lelgv
          endif
          call exitt
       endif
