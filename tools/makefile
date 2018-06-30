@@ -1,7 +1,8 @@
 SHELL = /bin/bash
 
 all:
-	@for i in $(MODULES) ; do                \
+	@n=0 ; \
+	for i in $(MODULES) ; do                 \
 	  if [ "$$i" == "amg_matlab2" ]; then    \
              continue;                           \
           fi ;                                   \
@@ -40,14 +41,17 @@ all:
           if test  $$? -ne 0 ; then              \
             echo "" ;                            \
             echo "ERROR: $${i} failed to compile!" ; \
-            exit 1 ;                             \
-          else                                   \
-            echo "" ;                            \
-            echo "done!"                       ; \
+	    let "n+=1" ;                         \
           fi ;                                   \
           cd .. ;                                \
           echo "" ;                              \
-	  done ;
+	done ;                                   \
+	if test  $$n -ne 0 ; then                \
+            echo "An unexpected error occurred while compiling!" ; \
+            exit 1 ;                             \
+        else                                     \
+            echo "Compilation successful!"     ; \
+        fi ;
 
 clean:
 	@for i in $(MODULES) ; do           \
