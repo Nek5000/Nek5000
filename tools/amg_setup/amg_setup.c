@@ -8,7 +8,7 @@
 #include "_hypre_parcsr_ls.h"
 #include "HYPRE_parcsr_ls.h"
 #include "HYPRE.h"
-#include "amg_hypre.h"
+#include "amg_setup.h"
 
 /* 
     Code for performing the AMG setup for Nek5000 using the linear algebra
@@ -19,8 +19,6 @@
     James Lottes. A thorough description of the original setup can be found in
     his Ph. D. thesis "Towards Robust Algebraic Multigrid Methods for 
     Nonsymmetric Problems".
-
-    - Last update: 30 June, 2017
 */
 
 int main(int argc, char *argv[])
