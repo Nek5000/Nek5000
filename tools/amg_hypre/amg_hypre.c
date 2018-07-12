@@ -20,7 +20,7 @@
     his Ph. D. thesis "Towards Robust Algebraic Multigrid Methods for 
     Nonsymmetric Problems".
 
-    - Last update: 30 June, 2017
+    - Last update: 12 July, 2018
 */
 
 int main(int argc, char *argv[])
@@ -64,6 +64,12 @@ int main(int argc, char *argv[])
     if (ret == -1)
     {
         maxlvls = 30; // default
+    }
+    if (maxlvls < 30)
+    {
+        maxlvls = 30;
+        printf("Warning: max. number of levels should only be increased if ");
+        printf("required. Default value [30] will be used.\n");
     }
 
     /* Interpolation strategy */
@@ -137,7 +143,7 @@ int main(int argc, char *argv[])
     memcpy(Ajd, v+1, (n-1) * sizeof (double));
     readfile(v,n,"amgdmp_p.dat");
     memcpy(Av , v+1, (n-1) * sizeof (double));
-    printf("done\n");
+    printf("Done.\n");
 
     int *Ai = malloc((n-1) * sizeof (int));
     int *Aj = malloc((n-1) * sizeof (int));
@@ -242,34 +248,41 @@ int main(int argc, char *argv[])
     /* Perform setup */
     printf("BoomerAMGSetup... ");
     HYPRE_BoomerAMGSetup(solver, A, b, x);
-    printf("done\n");
+    printf("Done.\n");
 
     /* Access solver data */
     hypre_ParAMGData *amg_data = (hypre_ParAMGData*) solver; 
             // structure hypre_ParAMGData is described in parcsr_lspar_amg.h
-    int numlvl = (amg_data)->num_levels; // number of levels
+    int numlvls = (amg_data)->num_levels; // number of levels
     hypre_ParCSRMatrix **A_array = (amg_data)->A_array; 
     hypre_ParCSRMatrix **P_array = (amg_data)->P_array;// Interpolation operator
     int **CF_marker_array        = (amg_data)->CF_marker_array;
 
-    /* Initialize data structure */
-    data->nlevels = numlvl;
-    data->n     = malloc( maxlvls    * sizeof (double));
-    data->nnz   = malloc( maxlvls    * sizeof (double));
-    data->nnzf  = malloc((maxlvls-1) * sizeof (double));
-    data->nnzfp = malloc((maxlvls-1) * sizeof (double));
-    data->m     = malloc((maxlvls-1) * sizeof (double));
-    data->rho   = malloc((maxlvls-1) * sizeof (double));
-    data->idc   = malloc( maxlvls    * sizeof (int*));
-    data->idf   = malloc( maxlvls    * sizeof (int*));
-    data->D     = malloc((maxlvls-1) * sizeof (double*));
-    data->Af    = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
-    data->W     = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
-    data->AfP   = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
+    /* Check if maxlvls is large enough */
+    if (A_array[numlvls-1]->diag->num_rows != 1)
+    {
+        printf("Error: increase maximum number of levels and run again.\n");
+	exit(0);
+    }
 
+    /* Initialize data structure */
+    data->nlevels = numlvls;
+    data->n     = malloc( numlvls    * sizeof (double));
+    data->nnz   = malloc( numlvls    * sizeof (double));
+    data->nnzf  = malloc((numlvls-1) * sizeof (double));
+    data->nnzfp = malloc((numlvls-1) * sizeof (double));
+    data->m     = malloc((numlvls-1) * sizeof (double));
+    data->rho   = malloc((numlvls-1) * sizeof (double));
+    data->idc   = malloc( numlvls    * sizeof (int*));
+    data->idf   = malloc( numlvls    * sizeof (int*));
+    data->D     = malloc((numlvls-1) * sizeof (double*));
+    data->Af    = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    data->W     = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    data->AfP   = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    
     /* Exctract data and compute smoother at each level */
     int lvl;
-    for (lvl=0;lvl<numlvl;lvl++)
+    for (lvl=0;lvl<numlvls;lvl++)
     {
         /* Save matrix A */
         hypre_ParCSRMatrix *Alvl = A_array[lvl];
@@ -282,7 +295,7 @@ int main(int argc, char *argv[])
         data->nnz[lvl] = num_nnzs_A;
 
         /* If not last level */
-        if (lvl < numlvl-1)
+        if (lvl < numlvls-1)
         {
             printf("--------\nLevel %d\n--------\n", lvl+1);
             /* Extract fine and coarse variables */
@@ -385,7 +398,7 @@ int main(int argc, char *argv[])
             diag(D, diagAff);
             vv_op(D, s, nF, ewmult);
             free(s);
-            printf("Done!\n");
+            printf("Done.\n");
 
             if (nF >= 2)
             {
@@ -444,7 +457,7 @@ int main(int argc, char *argv[])
 /* -------------------------------------------------------------------------- */ 
         }
 
-        if (lvl == (numlvl - 1))
+        if (lvl == (numlvls - 1))
         {
             data->alast = diagA->data[0];
             if (data->alast <= 1e-9) data->nullspace = 1;
@@ -624,6 +637,11 @@ static void savemats(int *len, const int n, const int nl, const int *lvl,
 {
     const double magic = 3.14159;
     FILE *f = fopen(filename,"w");
+    if (f == NULL)
+    {
+        printf("File %s not found.\n", filename);
+        exit(0);
+    }
     int max=0;
     int i;
     int *row;
@@ -709,6 +727,11 @@ static void savevec(const int nl, const struct amg_setup_data *data,
     }
 
     FILE *f = fopen(filename,"w");
+    if (f == NULL)
+    {
+        printf("File %s not found.\n", filename);
+        exit(0);
+    }
     fwrite(q,sizeof(double),ntot,f);
     fclose(f);
     free(q);
@@ -1236,6 +1259,11 @@ static long filesize(const char *name)
 {
   long n;
   FILE *f = fopen(name,"r");
+  if (f == NULL)
+  {
+      printf("File %s not found.\n", name);
+      exit(0);
+  }
   fseek(f,0,SEEK_END);
   n = ftell(f)/sizeof(double);
   fclose(f);
@@ -1250,6 +1278,11 @@ static long readfile(double *data, long max, const char *name)
   const double magic = 3.14159;
   long n;
   FILE *f = fopen(name,"r");
+  if (f == NULL)
+  {
+      printf("File %s not found.\n", name);
+      exit(0);
+  }  
   
   fseek(f,0,SEEK_END);
   n = ftell(f)/sizeof(double);
