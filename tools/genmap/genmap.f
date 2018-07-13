@@ -334,13 +334,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine exitti(name,ie)
       character*40 name
-      write(6,*) name
-      stop ie
+      write(6,*) name, ie
+      stop
       end
 c-----------------------------------------------------------------------
       subroutine exitt(ie)
-      write(6,*)
-      stop ie
+      write(6,*) 'exit status', ie
+      stop
       end
 c-----------------------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
