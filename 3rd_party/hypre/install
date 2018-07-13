@@ -16,5 +16,5 @@ fi
 rm -rf hypre-2.14.0
 tar -zxf *.tar.gz
 cd hypre*/src
-./configure --prefix=`pwd`/../.. 
+./configure --prefix=`pwd`/../.. --enable-bigint 
 make -j4 install

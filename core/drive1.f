@@ -124,7 +124,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
             isolver = param(40)
             if (isolver.eq.0) then      ! semg_xxt
                 if (nelgt.gt.350000) call exitti(
-     $             'element count requires AMG preconditioner!$',0)
+     $      'problem size too large for xxt - use different preco!$',0)
                 call set_overlap
             else if (isolver.eq.1) then ! semg_amg
                 call set_overlap
@@ -133,7 +133,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
                 call matrix_distribution(glo_num)
                 call fem_amg_setup(1,0,nx1,ny1,nz1,nelv,ndim,
      $                             xm1,ym1,zm1,glo_num,pmask,
-     $                             binvm1,nekcomm)
+     $                             binvm1,nekcomm,gsh_fld(1))
             endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
