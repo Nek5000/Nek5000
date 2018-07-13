@@ -1042,7 +1042,6 @@ c
      $   'WARNING: lgmres might be too low!'
       endif
 
-
       if (ifsplit) then
          if (lx1.ne.lx2) then
             if (nid.eq.0) write(6,43) lx1,lx2
@@ -1050,11 +1049,16 @@ c
             call exitt
          endif
       else
-         if (lx2.lt.lx1-2) then
+         if (lx2.ne.lx1-2) then
             if (nid.eq.0) write(6,44) lx1,lx2
    44    format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
            call exitt
          endif
+      endif
+
+      if (param(40).eq.3 .and. .not.ifsplit) then
+         call exitti
+     $    ('ERROR: Selected preconditioner requires lx2=lx1$',lx2)
       endif
 
       if (ifsplit .and. ifuservp .and. .not.ifstrs) then

@@ -2032,7 +2032,6 @@ c     Setup local SEM-based Neumann operators (for now, just full...)
 c     stop
 
       imode = param(40)
-
       call fgslib_crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
      $                      nnz,ia,ja,a,null_space)
 

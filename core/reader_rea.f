@@ -381,6 +381,11 @@ C
          endif
       endif
 
+      if (param(40).eq.3 .and. .not.ifsplit) then
+         call exitti
+     $    ('ERROR: Selected preconditioner requires lx2=lx1$',lx2)
+      endif
+
       if (ifcvode) then 
          if(nid.eq.0) write(6,*) 
      $   'ABORT: Using CVODE requires .par file!'
