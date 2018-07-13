@@ -104,7 +104,7 @@ c                                    irnk is # unique points
             endif
          enddo 
          write(6,*) "WARNING:Missing Face Connection Not Resolved"
-         call exit
+         call exitt(1) 
       endif
   15  continue
 
@@ -147,7 +147,9 @@ c     Clean up
      $                                           ,w1,w2,w3,w4,w5)
          call isort     (elist   ,w1,nels)
          call iswap_ip  (pmap(e1),w1,nels)
-         call icadd     (pmap(e1),nelv,nels)
+
+c         call maptest   (pmap,nelv,nelt,'map test A',w1,w2)
+
       endif
 
       npts = nv*nelt
@@ -160,14 +162,13 @@ c     Clean up
       call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
       call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
       if (nelv.eq.nelt) call reverse_p (pmap,nelt) ! lightly load node 0
+c      call maptest      (pmap,nelv,nelt,'map test B',w1,w2)
 
 c     Output to .map file:
 c     noutflow    = no    ! for now - no outflow bcs
       noutflow    = 0     ! for now - no outflow bcs  (handled in nek?)
-
-      ! sort output by element rank
-      call isort(pmap,w1,nelt)
-      call out_mapfile(w1,nelt,cell,nv,nrnk,noutflow)
+      call out_mapfile (pmap,nelt,cell,nv,nrnk,noutflow)
+c      call maptest     (pmap,nelv,nelt,'map test C',w1,w2)
 
       call mult_chk(dx,ndim,nv,nelt,cell,nrnk)
 
@@ -216,8 +217,9 @@ c     read nekton .rea file and make a mesh
       call getreafile('Input .rea / .re2 name:$',ifbinary,io,ierr)
       if (ierr.gt.0) then 
          write(6,'(A)') 'Error no .rea / .re2 file found!'
-         call linearmsh(cell,nelv,nelt,ndim)
-         return
+c         call linearmsh(cell,nelv,nelt,ndim)
+c         return
+         call exitt(1) 
       endif
 
       write(6,'(A)') 'Input mesh tolerance (default 0.2):'
@@ -333,18 +335,12 @@ c-----------------------------------------------------------------------
       subroutine exitti(name,ie)
       character*40 name
       write(6,*) name
-      write(6,*) ie,' quit'
-c     ke = 2*ie
-c     ff = 1./(ke-ie-ie)
-      stop
+      stop ie
       end
 c-----------------------------------------------------------------------
       subroutine exitt(ie)
       write(6,*)
-      write(6,*) ie,' quit'
-c     ke = 2*ie
-c     ff = 1./(ke-ie-ie)
-      stop
+      stop ie
       end
 c-----------------------------------------------------------------------
       subroutine cscan_dxyz (dx,nelt,nelv,ndim,ifbinary,ifbswap)
@@ -1664,7 +1660,7 @@ c-----------------------------------------------------------------------
 
       d2 = 2**depth
 
-      version = '#v002'
+      version = '#v001'
 
 c      write(6,*) 'DEPTH:',depth,d2,nel,nrnk,npts,noutflow
 
@@ -1691,23 +1687,21 @@ c      ifma2 = .false. ! force .map
             call byte_write(test,1,ierr) ! write the endian discriminator
          else
             open (unit=29,file=fname)
-            write(29,11) version,nel,nactive,depth,d2,npts,nrnk,noutflow
-   11       format(a5,7i12)
+            write(29,2) nel,nactive,depth,d2,npts,nrnk,noutflow
+    2       format(9i12)
         endif
       endif
 
       if (ifma2) then
-         do i=1,nel
-            ieg = pmap(i)
-            iwrk(1) = ieg
-            call icopy(iwrk(2),cell(1,ieg),nv)
+         do e=1,nel
+            iwrk(1) = pmap(e)-1
+            call icopy(iwrk(2),cell(1,e),nv)
             call byte_write(iwrk,nv+1,ierr)
          enddo
       else
-         do i=1,nel
-            ieg = pmap(i)
-            write(29,2) ieg,(cell(k,ieg),k=1,nv)
-    2       format(9i12)
+         do e=1,nel
+            p0 = pmap(e)-1
+            write(29,2) p0,(cell(k,e),k=1,nv)
          enddo
       endif
 
@@ -3571,6 +3565,7 @@ c   9   format(8i8,a6)
        if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p1st'
       enddo
 
+c      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
       call exitt(nelt)
 c
 c     Repeat first loop, using _anything_ to fill underloaded processors
@@ -3596,6 +3591,7 @@ c      if (nep0.ne.ne(p)) write(6,8) pp,p,nep0,ne(p),nepf_max,' p2nd'
   8    format(5i9,a5)
       enddo
 
+c      call maptest (pmap,nelv,nelt,'map test x',ep,ip)
       call exitt(nelt)
 
 c     Diagnostic - any underloaded left ? 
@@ -4286,6 +4282,117 @@ c-----------------------------------------------------------------------
       enddo
    10 continue
       n2 = nel - n1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine assign_gllnid(gllnid,iunsort,nelgt,nelgv,np)
+c
+      integer gllnid(1),iunsort(1),nelgt,np 
+      integer e,eg
+
+
+      log2p = log2(np)
+      np2   = 2**log2p
+      if (np2.eq.np.and.nelgv.eq.nelgt) then   ! std power of 2 case
+         npstar = ivlmax(gllnid,nelgt)+1
+         nnpstr = npstar/np
+         do eg=1,nelgt
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+         return
+      elseif (np2.eq.np) then   ! std power of 2 case, conjugate heat xfer
+         npstar = max(np,ivlmax(gllnid,nelgv)+1)
+         nnpstr = npstar/np
+         do eg=1,nelgv
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         nelgs  = nelgt-nelgv  ! number of solid elements
+         npstar = max(np,ivlmax(gllnid(nelgv+1),nelgs)+1)
+         nnpstr = npstar/np
+         do eg=nelgv+1,nelgt
+            ko=gllnid(eg)
+            if (gllnid(eg).ge.0) gllnid(eg) = gllnid(eg)/nnpstr
+         enddo
+
+         return
+      else
+         call exitti
+     $      ('Conjugate heat transfer requires P=power of 2 ',np)
+      endif
+
+
+c  Below is the code for P a non-power of two:
+
+c  Split the sorted gllnid array (read from .map file) 
+c  into np contiguous partitions. 
+
+c  To load balance the partitions in case of mod(nelgt,np)>0 
+c  add 1 contiguous entry out of the sorted list to NODE_i 
+c  where i = np-mod(nelgt,np) ... np
+
+
+      nel   = nelgt/np       ! number of elements per processor
+      nmod  = mod(nelgt,np)  ! bounded between 1 ... np-1
+      npp   = np - nmod      ! how many paritions of size nel 
+ 
+      ! sort gllnid  
+      call isort(gllnid,iunsort,nelgt)
+
+      ! setup partitions of size nel 
+      k   = 0
+      do ip = 0,npp-1
+         do e = 1,nel  
+            k = k + 1 
+            gllnid(k) = ip
+         enddo
+      enddo
+      ! setup partitions of size nel+1
+      if(nmod.gt.0) then 
+        do ip = npp,np-1
+           do e = 1,nel+1  
+              k = k + 1 
+              gllnid(k) = ip
+           enddo
+        enddo 
+      endif
+
+      ! unddo sorting to restore initial ordering by
+      ! global element number
+      call iswapt_ip(gllnid,iunsort,nelgt)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine maptest (pmap,nelgv,nelgt,name10,gllnid,wk)
+      integer pmap(1),gllnid(1),wk(2,0:1)
+      character*10 name10
+      integer e
+
+      np = 32  ! default test value for np
+
+      do e=1,nelgt
+         gllnid(e) = pmap(e)-1
+      enddo
+      call assign_gllnid(gllnid,wk,nelgt,nelgv,np)
+
+      call izero(wk,2*np)
+      do e=1,nelgt
+         mid = gllnid(e)
+         if (mid.ge.0) then
+           wk (2,mid) = wk(2,mid) + 1
+           if (e.le.nelgv) wk (1,mid) = wk(1,mid) + 1
+         endif
+c        write(6,2)e,mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
+c   2    format(4i8,2i9,' mid ',a10,' np =',i8)
+      enddo
+c      do mid=0,np-1
+c         write(6,1) mid,wk(1,mid),wk(2,mid),nelgv,nelgt,name10,np
+c    1    format(3i8,2i11,' NEL ',a10,' np =',i8)
+c      enddo
 
       return
       end
