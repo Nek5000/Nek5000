@@ -119,3 +119,99 @@ c     Helmholtz equations
       return
       end
 c-----------------------------------------------------------------------
+      subroutine setup_ceed(spec,ceed,op_diffusion,op_setup,
+     $  vec_p1,vec_ap1,vec_qdata)
+
+c     spec is given, everything else is setup by this routine
+      integer ceed,op_diffusion,op_setup
+      integer vec_p1,vec_ap1,vec_qdata,vec_coords
+      character*64 spec
+
+      integer*8 ndof
+      integer err
+      integer p,q,ncomp,edof,ldof
+      integer basisu,basisx
+      integer erstrctu,erstrctx
+      integer qdata
+      integer qf_diffusion,qf_setup
+      integer ii,i,e,ngeo,n
+      integer identity(lelt*(lx1**ldim))
+
+      external diffusion_ceed,setup_ceed
+
+c     Init ceed library
+      call ceedinit(trim(spec)//char(0),ceed,err)
+
+      n      = nx1*ny1*nz1*nelt
+      nzq    = nx1
+
+c     Create ceed basis for mesh and computation
+      p=nx1
+      q=p
+      ncomp=1
+      call ceedbasiscreatetensorh1lagrange(ceed,ldim,3*ncomp,p,q,
+     $  ceed_gauss_lobatto,basisx,err)
+      call ceedbasiscreatetensorh1lagrange(ceed,ldim,ncomp,p,q,
+     $  ceed_gauss_lobatto,basisu,err)
+
+      ncount=0
+      do i=1,nelt
+      do j=1,lx1**ldim
+        ncount = ncount+1
+        identity(ncount)=ncount-1
+      enddo
+      enddo
+c     Create ceed element restrictions for mesh and computation
+      edof=nx1**ldim
+      ldof=edof*nelt*ncomp
+      call ceedelemrestrictioncreate(ceed,nelt,edof,ldof,
+     $  ceed_mem_host,ceed_use_pointer,identity,
+     $  erstrctx,err)
+
+      edof=nx1**ldim
+      ldof=edof*nelt*ncomp
+      call ceedelemrestrictioncreate(ceed,nelt,edof,ldof,
+     $  ceed_mem_host,ceed_use_pointer,identity,
+     $  erstrctu,err)
+
+c     Create ceed qfunctions for setupf and diffusionf
+      ngeo=(ldim*(ldim+1))/2
+      call ceedqfunctioncreateinterior(ceed,1,ncomp,ngeo*8,
+     $  ior(ceed_eval_grad,ceed_eval_weight),ceed_eval_none,setupf,
+     $  __FILE__
+     $  //':setup_ceed'//char(0),qf_setup,err)
+
+      call ceedqfunctioncreateinterior(ceed,1,ncomp,ngeo*8,
+     $  ceed_eval_grad,ceed_eval_grad,diffusionf,
+     $  __FILE__
+     $  //':diffusion_ceed'//char(0),qf_diffusion,err)
+
+c     Create a ceed operator
+      call ceedoperatorcreate(ceed,erstrctx,basisx,qf_setup,
+     $  ceed_null,ceed_null,op_setup,err)
+      call ceedoperatorcreate(ceed,erstrctu,basisu,qf_diffusion,
+     $  ceed_null,ceed_null,op_diffusion,err)
+
+c     Create ceed vectors
+      call ceedvectorcreate(ceed,ldof,vec_p1,err)
+      call ceedvectorcreate(ceed,ldof,vec_ap1,err)
+      call ceedoperatorgetqdata(op_setup,vec_qdata,err)
+
+      ii=0
+      do j=0,nelt-1
+      do i=1,lx
+        ii=ii+1
+        coords(i+0*lx+3*j*lx)=xm1(ii,1,1,1)
+        coords(i+1*lx+3*j*lx)=ym1(ii,1,1,1)
+        coords(i+2*lx+3*j*lx)=zm1(ii,1,1,1)
+      enddo
+      enddo
+
+      call ceedvectorcreate(ceed,3*n,vec_coords,err)
+      call ceedvectorsetarray(vec_coords,ceed_mem_host,
+     $  ceed_use_pointer,coords,err)
+      call ceedoperatorapply(op_setup,vec_qdata,vec_coords,ceed_null,
+     $  ceed_request_immediate,err)
+
+      end
+c-----------------------------------------------------------------------
