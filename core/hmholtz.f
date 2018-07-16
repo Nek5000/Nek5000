@@ -5,6 +5,7 @@ c=======================================================================
       include 'TOTAL'
       include 'FDMH1'
       include 'CTIMER'
+      include 'ceedf.h'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,Lelv)
@@ -17,7 +18,15 @@ c=======================================================================
       logical iffdm
       character*3 nam3
 
+      integer ceed,op_diffusion,op_setup
+      integer vec_p1,vec_ap1,vec_qdata,vec_coords
+
+      call init_axhm1_ceed(spec,ceed,op_diffusion,op_setup,
+     $  vec_p1,vec_ap1,vec_qdata)
+c     call ceeddestroy(ceed,ierr)
+
       tol = abs(tli)
+
 
       if (icalld.eq.0) thmhz=0.0
 
@@ -290,7 +299,6 @@ c=======================================================================
       include 'TOTAL'
       include 'FDMH1'
       include 'CTIMER'
-      include 'ceedf.h'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
@@ -302,9 +310,6 @@ c=======================================================================
 
       logical iffdm
       character*3 nam3
-
-      integer ceed,ierr
-      call ceedinit('/cpu/occa',ceed,ierr)
 
       tol = abs(tli)
 
@@ -355,7 +360,6 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
 
       thmhz=thmhz+(dnekclock()-etime1)
 
-      call ceeddestroy(ceed,ierr)
       return
       END
 C

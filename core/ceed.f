@@ -119,8 +119,15 @@ c     Helmholtz equations
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setup_ceed(spec,ceed,op_diffusion,op_setup,
+      subroutine init_axhm1_ceed(spec,ceed,op_diffusion,op_setup,
      $  vec_p1,vec_ap1,vec_qdata)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ceedf.h'
+
+      parameter (lzq=lx1)
+      parameter (lx=lx1*ly1*lz1,lg=3+3*(ldim-2),lq=lzq**ldim)
 
 c     spec is given, everything else is setup by this routine
       integer ceed,op_diffusion,op_setup
@@ -136,6 +143,8 @@ c     spec is given, everything else is setup by this routine
       integer qf_diffusion,qf_setup
       integer ii,i,e,ngeo,n
       integer identity(lelt*(lx1**ldim))
+
+      real*8 coords(ldim*lx*lelt)
 
       external diffusion_ceed,setup_ceed
 
