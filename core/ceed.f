@@ -116,6 +116,7 @@ c     Helmholtz equations
          enddo
       enddo
 
+!$acc end data
       return
       end
 c-----------------------------------------------------------------------
@@ -222,5 +223,25 @@ c     Create ceed vectors
       call ceedoperatorapply(op_setup,vec_qdata,vec_coords,ceed_null,
      $  ceed_request_immediate,err)
 
+      end
+c-----------------------------------------------------------------------
+      subroutine test_ceed(ctx,qdata,q,u1,u2,u3,v1,v2,ierr)
+      integer q,ierr
+      real*8 ctx(1)
+      real*8 u1(1)
+      real*8 u2(1)
+      real*8 u3(1)
+      real*8 qdata(q)
+      real*8 jacmq
+      real*8 scl
+
+      do i=1,q
+        qdata(i)=9.0 
+      enddo
+
+      ierr=0
+      end
+c-----------------------------------------------------------------------
+      subroutine openacc_test_ceed()
       end
 c-----------------------------------------------------------------------
