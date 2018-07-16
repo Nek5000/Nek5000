@@ -290,6 +290,7 @@ c=======================================================================
       include 'TOTAL'
       include 'FDMH1'
       include 'CTIMER'
+      include 'ceedf.h'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
@@ -301,6 +302,9 @@ c=======================================================================
 
       logical iffdm
       character*3 nam3
+
+      integer ceed,ierr
+      call ceedinit('/cpu/occa',ceed,ierr)
 
       tol = abs(tli)
 
@@ -350,6 +354,8 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
 
 
       thmhz=thmhz+(dnekclock()-etime1)
+
+      call ceeddestroy(ceed,ierr)
       return
       END
 C
