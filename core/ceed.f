@@ -265,7 +265,7 @@ c     spec is given, everything else is setup by this routine
       integer ii,i,e,ngeo,n
       integer identity(lelt*(lx1**ldim))
 
-      real*8 coords(ldim*lx*lelt)
+      real*8 qio(lx*lelt)
 
       external test_ceed
 
@@ -287,8 +287,11 @@ c     Create ceed basis for mesh and computation
       do j=1,lx1**ldim
         ncount = ncount+1
         identity(ncount)=ncount-1
+        qio(ncount)=ncount-1
       enddo
       enddo
+
+!$acc enter data copyin(qio(1:ncount))
 
 c     Create ceed element restrictions for mesh and computation
       edof=nx1**ldim
@@ -311,10 +314,12 @@ c     Create ceed vectors
       call ceedoperatorgetqdata(op_test,vec_qdata,err)
 
 c     call ceedvectorcreate(ceed,3*n,vec_coords,err)
-c     call ceedvectorsetarray(vec_coords,ceed_mem_host,
-c    $  ceed_use_pointer,coords,err)
+      call ceedvectorsetarray(vec_qdata,ceed_mem_device,
+     $  ceed_use_pointer,qio,err)
       call ceedoperatorapply(op_test,vec_qdata,ceed_null,ceed_null,
      $  ceed_request_immediate,err)
+
+!$acc exit data copyout(qio(1:ncount))
 
       end
 c-----------------------------------------------------------------------
