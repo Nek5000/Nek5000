@@ -243,5 +243,78 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine openacc_test_ceed()
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ceedf.h'
+
+      parameter (lzq=lx1)
+      parameter (lx=lx1*ly1*lz1,lg=3+3*(ldim-2),lq=lzq**ldim)
+
+c     spec is given, everything else is setup by this routine
+      integer ceed,op_test
+      integer vec_qdata
+
+      integer*8 ndof
+      integer err
+      integer p,q,ncomp,edof,ldof
+      integer basisx
+      integer erstrctx
+      integer qdata
+      integer qf_test
+      integer ii,i,e,ngeo,n
+      integer identity(lelt*(lx1**ldim))
+
+      real*8 coords(ldim*lx*lelt)
+
+      external test_ceed
+
+c     Init ceed library
+      call ceedinit('/gpu/occa',ceed,err)
+
+      n      = nx1*ny1*nz1*nelt
+      nzq    = nx1
+
+c     Create ceed basis for mesh and computation
+      p=nx1
+      q=p
+      ncomp=1
+      call ceedbasiscreatetensorh1lagrange(ceed,ldim,ncomp,p,q,
+     $  ceed_gauss_lobatto,basisx,err)
+
+      ncount=0
+      do i=1,nelt
+      do j=1,lx1**ldim
+        ncount = ncount+1
+        identity(ncount)=ncount-1
+      enddo
+      enddo
+
+c     Create ceed element restrictions for mesh and computation
+      edof=nx1**ldim
+      ldof=edof*nelt*ncomp
+      call ceedelemrestrictioncreate(ceed,nelt,edof,ldof,
+     $  ceed_mem_device,ceed_use_pointer,identity,
+     $  erstrctx,err)
+
+c     Create ceed qfunctions for setupf and diffusionf
+      call ceedqfunctioncreateinterior(ceed,1,ncomp,8,
+     $  ceed_eval_none,ceed_eval_none,test_ceed,
+     $  __FILE__
+     $  //':test_ceed'//char(0),qf_test,err)
+
+c     Create a ceed operator
+      call ceedoperatorcreate(ceed,erstrctx,basisx,qf_test,
+     $  ceed_null,ceed_null,op_test,err)
+
+c     Create ceed vectors
+      call ceedoperatorgetqdata(op_setup,vec_qdata,err)
+
+c     call ceedvectorcreate(ceed,3*n,vec_coords,err)
+c     call ceedvectorsetarray(vec_coords,ceed_mem_host,
+c    $  ceed_use_pointer,coords,err)
+      call ceedoperatorapply(op_setup,vec_qdata,ceed_null,ceed_null,
+     $  ceed_request_immediate,err)
+
       end
 c-----------------------------------------------------------------------

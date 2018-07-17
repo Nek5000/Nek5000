@@ -1,0 +1,45 @@
+// Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at
+// the Lawrence Livermore National Laboratory. LLNL-CODE-734707. All Rights
+// reserved. See files LICENSE and NOTICE for details.
+//
+// This file is part of CEED, a collection of benchmarks, miniapps, software
+// libraries and APIs for efficient high-order finite element and spectral
+// element discretizations for exascale applications. For more information and
+// source code availability see http://github.com/ceed.
+//
+// The CEED research is supported by the Exascale Computing Project 17-SC-20-SC,
+// a collaborative effort of two U.S. Department of Energy organizations (Office
+// of Science and the National Nuclear Security Administration) responsible for
+// the planning and preparation of a capable exascale ecosystem, including
+// software, applications, hardware, advanced system engineering and early
+// testbed platforms, in support of the nation's exascale computing imperative.
+
+// *****************************************************************************
+typedef int CeedInt;
+typedef double CeedScalar;
+typedef __global double gCeedScalar;
+
+// *****************************************************************************
+kernel void test_ceed(void *ctx, void *qdata, const CeedInt e, CeedInt Q,
+                  const CeedScalar *u, const CeedScalar *bu,
+                  CeedScalar *v, CeedScalar *bv) {
+  for (CeedInt i=0; i<Q; i++; tile(TILE_SIZE)) {
+    if (i >= Q) continue;
+    gCeedScalar *w = ((gCeedScalar*)qdata);
+    w[i] = 9.0;
+  }
+}
+
+// *****************************************************************************
+kernel void massf(void *ctx, void *qdata, const CeedInt e, CeedInt Q,
+                 const CeedScalar *u, const CeedScalar *bu,
+                 CeedScalar *v, CeedScalar *bv) {
+  for (CeedInt i=0; i<Q; i++; tile(TILE_SIZE)) {
+    if (i >= Q) continue;
+    const gCeedScalar *w = ((gCeedScalar*)qdata)+e*Q;
+//    const CeedInt offset = e*(Q*NC*(DIM+2));
+//    const gCeedScalar *o_bu = bu+offset;
+//    if (fabs(u[i]-o_bu[i])>epsilon) continue;
+    v[i] = w[i] * u[i];
+  }
+}
