@@ -294,7 +294,7 @@ c     Create ceed element restrictions for mesh and computation
       edof=nx1**ldim
       ldof=edof*nelt*ncomp
       call ceedelemrestrictioncreate(ceed,nelt,edof,ldof,
-     $  ceed_mem_device,ceed_use_pointer,identity,
+     $  ceed_mem_host,ceed_use_pointer,identity,
      $  erstrctx,err)
 
 c     Create ceed qfunctions for setupf and diffusionf
@@ -308,12 +308,12 @@ c     Create a ceed operator
      $  ceed_null,ceed_null,op_test,err)
 
 c     Create ceed vectors
-      call ceedoperatorgetqdata(op_setup,vec_qdata,err)
+      call ceedoperatorgetqdata(op_test,vec_qdata,err)
 
 c     call ceedvectorcreate(ceed,3*n,vec_coords,err)
 c     call ceedvectorsetarray(vec_coords,ceed_mem_host,
 c    $  ceed_use_pointer,coords,err)
-      call ceedoperatorapply(op_setup,vec_qdata,ceed_null,ceed_null,
+      call ceedoperatorapply(op_test,vec_qdata,ceed_null,ceed_null,
      $  ceed_request_immediate,err)
 
       end

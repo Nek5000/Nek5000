@@ -197,12 +197,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'  
       include 'TOTAL' 
 
-      call openacc_test_ceed
+      common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
+      common /exacp/ pe(lx2,ly2,lz2,lelt)
+      common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
+     $              ,pd(lx2,ly2,lz2,lelt)
 
-c     common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
-c     common /exacp/ pe(lx2,ly2,lz2,lelt)
-c     common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
-c    $              ,pd(lx2,ly2,lz2,lelt)
+      call openacc_test_ceed
+      write(6,*) 'Done calling CEED'
 
 c     ifield = 1  ! for outpost
 
@@ -244,6 +245,7 @@ c        call copy (vy,ve,n)      !  temporal-accuracy behavior.
 c        call copy (pr,pe,n2)
 c     endif
 
+c     call exitt0
       return
       end
 c-----------------------------------------------------------------------
