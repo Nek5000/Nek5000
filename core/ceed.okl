@@ -43,3 +43,74 @@ kernel void massf(void *ctx, void *qdata, const CeedInt e, CeedInt Q,
     v[i] = w[i] * u[i];
   }
 }
+
+// *****************************************************************************
+kernel void setup_ceed(void *ctx, void *qdata, const CeedInt e, CeedInt Q,
+                  const CeedScalar *u, const CeedScalar *bu,
+                  CeedScalar *v, CeedScalar *bv) {
+  for (CeedInt i=0; i<Q; i++; tile(TILE_SIZE)) {
+    if (i >= Q) continue;
+    gCeedScalar *w = ((gCeedScalar*)qdata)+0*6*Q;
+    const gCeedScalar *u1 = u+Q*NC; // u2 in fortran
+    const gCeedScalar *u4 = u+Q*NC*(DIM+1); // u3 in fortran
+
+//  const CeedInt offset = e*(Q*NC*(DIM+2));
+//  const gCeedScalar *bu1 = bu+offset;
+//  const gCeedScalar *bu4 = bu+offset+Q*NC*DIM;
+//  if (fabs(u1[i]-bu1[i])>epsilon) continue;
+//  if (fabs(u4[i]-bu4[i])>epsilon) continue;
+
+    const gCeedScalar a11 = u1[i+Q*0];
+    const gCeedScalar a21 = u1[i+Q*1];
+    const gCeedScalar a31 = u1[i+Q*2];
+    const gCeedScalar a12 = u1[i+Q*3];
+    const gCeedScalar a22 = u1[i+Q*4];
+    const gCeedScalar a32 = u1[i+Q*5];
+    const gCeedScalar a13 = u1[i+Q*6];
+    const gCeedScalar a23 = u1[i+Q*7];
+    const gCeedScalar a33 = u1[i+Q*8];
+
+    const gCeedScalar jacmq = a11*(a22*a33-a23*a32) +
+                            - a12*(a21*a33-a23*a31)
+                            + a13*(a21*a32-a22*a31);
+
+    const gCeedScalar g11 = (a22*a33-a23*a32)/jacmq;
+    const gCeedScalar g12 = (a13*a32-a33*a12)/jacmq;
+    const gCeedScalar g13 = (a12*a23-a22*a13)/jacmq;
+
+    const gCeedScalar g21 = (a23*a31-a21*a33)/jacmq;
+    const gCeedScalar g22 = (a11*a33-a31*a13)/jacmq;
+    const gCeedScalar g23 = (a13*a21-a23*a11)/jacmq;
+
+    const gCeedScalar g31 = (a21*a32-a22*a31)/jacmq;
+    const gCeedScalar g32 = (a12*a31-a32*a11)/jacmq;
+    const gCeedScalar g33 = (a11*a22-a21*a12)/jacmq;
+
+    gCeedScalar scl = u4[i]*jacmq;
+    if(scl < 0) scl=-1*scl;
+
+    w[0+i*6] = scl*(g11*g11+g12*g12+g13*g13);
+    w[1+i*6] = scl*(g11*g21+g12*g22+g13*g23);
+    w[2+i*6] = scl*(g11*g31+g12*g32+g13*g33);
+    w[3+i*6] = scl*(g21*g21+g22*g22+g23*g23);
+    w[4+i*6] = scl*(g21*g31+g22*g32+g23*g33);
+    w[5+i*6] = scl*(g31*g31+g32*g32+g33*g33);
+  }
+}
+
+// *****************************************************************************
+kernel void diffusion_ceed(void *ctx, void *qdata, const CeedInt e, CeedInt Q,
+                 const CeedScalar *u, const CeedScalar *bu,
+                 CeedScalar *v, CeedScalar *bv) {
+  for (CeedInt i=0; i<Q; i++; tile(TILE_SIZE)) {
+    if (i >= Q) continue;
+    const gCeedScalar *w = ((gCeedScalar*)qdata)+0*6*Q;
+    const gCeedScalar *u1 = u+Q*NC; // u2 in fortran
+//  const CeedInt offset = e*(Q*NC*(DIM+2));
+//  const gCeedScalar *o_bu = bu+offset;
+//  if (fabs(u[i]-o_bu[i])>epsilon) continue;
+    v[i+0*Q]=w[0+6*i]*u1[i]+w[1+6*i]*u1[i+Q]+w[2+6*i]*u1[i+2*Q];
+    v[i+1*Q]=w[1+6*i]*u1[i]+w[3+6*i]*u1[i+Q]+w[4+6*i]*u1[i+2*Q];
+    v[i+2*Q]=w[2+6*i]*u1[i]+w[4+6*i]*u1[i+Q]+w[5+6*i]*u1[i+2*Q];
+  }
+}
