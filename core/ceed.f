@@ -146,6 +146,7 @@ c     spec is given, everything else is setup by this routine
       integer identity(lelt*(lx1**ldim))
 
       real*8 coords(ldim*lx*lelt)
+!$acc enter data copyin(coords(ldim*lx*nelt))
 
       external diffusion_ceed,setup_ceed
 
@@ -207,6 +208,10 @@ c     Create ceed vectors
       call ceedvectorcreate(ceed,ldof,vec_ap1,err)
       call ceedoperatorgetqdata(op_setup,vec_qdata,err)
 
+!$acc data present (xm1(nx1,ny1,nz1,nelt))
+!$acc&     present (ym1(nx1,ny1,nz1,nelt))
+!$acc&     present (zm1(nx1,ny1,nz1,nelt))
+
       ii=0
       do j=0,nelt-1
       do i=1,lx
@@ -222,6 +227,8 @@ c     Create ceed vectors
      $  ceed_use_pointer,coords,err)
       call ceedoperatorapply(op_setup,vec_qdata,vec_coords,ceed_null,
      $  ceed_request_immediate,err)
+
+!$acc end data
 
       end
 c-----------------------------------------------------------------------
