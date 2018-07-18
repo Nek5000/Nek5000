@@ -212,6 +212,7 @@ c     Create ceed vectors
 !$acc&     present (ym1(nx1,ny1,nz1,nelt))
 !$acc&     present (zm1(nx1,ny1,nz1,nelt))
 
+!$acc kernels
       ii=0
       do j=0,nelt-1
       do i=1,lx
@@ -221,6 +222,7 @@ c     Create ceed vectors
         coords(i+2*lx+3*j*lx)=zm1(ii,1,1,1)
       enddo
       enddo
+!$acc end kernels
 
       call ceedvectorcreate(ceed,3*n,vec_coords,err)
       call ceedvectorsetarray(vec_coords,ceed_mem_host,
