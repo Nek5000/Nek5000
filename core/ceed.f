@@ -145,10 +145,10 @@ c     spec is given, everything else is setup by this routine
       integer ii,i,e,ngeo,n
       integer identity(lelt*(lx1**ldim))
 
-      real*8 coords(ldim*lx*lelt)
-!$acc enter data copyin(coords(ldim*lx*nelt))
-
       external diffusion_ceed,setup_ceed
+      real*8 coords(ldim*lx*lelt)
+
+!$acc enter data create(coords(ldim*lx*nelt))
 
 c     Init ceed library
       call ceedinit(trim(spec)//char(0),ceed,err)
