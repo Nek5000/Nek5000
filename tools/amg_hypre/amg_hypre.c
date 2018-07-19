@@ -20,7 +20,7 @@
     his Ph. D. thesis "Towards Robust Algebraic Multigrid Methods for 
     Nonsymmetric Problems".
 
-    - Last update: 12 July, 2018
+    - Last update: 19 July, 2018
 */
 
 int main(int argc, char *argv[])
@@ -56,26 +56,12 @@ int main(int argc, char *argv[])
     else {printf("Not a valid choice.\n"); exit(0);}
 
     /* Max number of levels */
-    int maxlvls; 
-    char smaxlvls[30];
-    printf("Maximum number of levels [30]:\n");
-    fgets(smaxlvls, sizeof smaxlvls, stdin);
-    ret = sscanf(smaxlvls, "%d", &maxlvls);
-    if (ret == -1)
-    {
-        maxlvls = 30; // default
-    }
-    if (maxlvls < 30)
-    {
-        maxlvls = 30;
-        printf("Warning: max. number of levels should only be increased if ");
-        printf("required. Default value [30] will be used.\n");
-    }
+    int maxlvls = 50; 
 
     /* Interpolation strategy */
     printf("Choose an interpolation method. Available options are:\n");
     printf(" - 0: classical modified interpolation (default),\n");
-    printf(" - 1: LS interpolation,\n");
+    //    printf(" - 1: LS interpolation,\n");
     printf(" - 2: classical modified interpolation for hyperbolic PDEs,\n");
     printf(" - 3: direct interpolation,\n");
     printf(" - 4: multipass interpolation,\n");
@@ -84,8 +70,8 @@ int main(int argc, char *argv[])
     printf(" - 7: extended + i (if no common C neighbour) interpolation,\n");
     printf(" - 8: standard interpolation,\n");
     printf(" - 9: standard interpolation (with separation of weights),\n");
-    printf(" - 10: classical block interpolation,\n");
-    printf(" - 11: classical block interpolation with diagonalized diagonal blocks,\n");
+    //    printf(" - 10: classical block interpolation,\n");
+    //    printf(" - 11: classical block interpolation with diagonalized diagonal blocks,\n");
     printf(" - 12: FF interpolation,\n");
     printf(" - 13: FF1 interpolation,\n");
     printf(" - 14: extended interpolation,\n");
@@ -98,7 +84,7 @@ int main(int argc, char *argv[])
         interp_strat = 0; // default
     }
     if (interp_strat == 0) printf("classical modified interpolation\n");
-    else if (interp_strat == 1) printf("LS interpolation\n");
+    //    else if (interp_strat == 1) printf("LS interpolation\n");
     else if (interp_strat == 2) printf("classical modified interpolation for hyperbolic PDEs\n");
     else if (interp_strat == 3) printf("direct interpolation\n");
     else if (interp_strat == 4) printf("multipass interpolation\n");
@@ -107,8 +93,8 @@ int main(int argc, char *argv[])
     else if (interp_strat == 7) printf("extended + i (if no common C neighbour) interpolation\n");
     else if (interp_strat == 8) printf("standard interpolation\n");
     else if (interp_strat == 9) printf("standard interpolation (with separation of weights)\n");
-    else if (interp_strat == 10) printf("classical block interpolation\n");
-    else if (interp_strat == 11) printf("classical block interpolation with diagonalized diagonal blocks\n");
+    //    else if (interp_strat == 10) printf("classical block interpolation\n");
+    //    else if (interp_strat == 11) printf("classical block interpolation with diagonalized diagonal blocks\n");
     else if (interp_strat == 12) printf("FF interpolation\n");
     else if (interp_strat == 13) printf("FF1 interpolation\n");
     else if (interp_strat == 14) printf("extended interpolation\n");
@@ -124,7 +110,12 @@ int main(int argc, char *argv[])
     {
         tol = 0.5; // default
     }
-
+    if (tol <= 0.)
+    {
+        printf("Error: Smoother tolerance should be >0.\n");
+        exit(0);
+    }
+      
     /* Verbose level */
     int print_level = 3;  // Print solve info + parameters
 
@@ -258,10 +249,10 @@ int main(int argc, char *argv[])
     hypre_ParCSRMatrix **P_array = (amg_data)->P_array;// Interpolation operator
     int **CF_marker_array        = (amg_data)->CF_marker_array;
 
-    /* Check if maxlvls is large enough */
+    /* Check if last level is made of 1 element */
     if (A_array[numlvls-1]->diag->num_rows != 1)
     {
-        printf("Error: increase maximum number of levels and run again.\n");
+        printf("Error: Last level has more than one element. Run again with different setup options.\n");
 	exit(0);
     }
 
