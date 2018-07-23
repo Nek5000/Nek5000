@@ -8,7 +8,7 @@ if [ "$1" == "clean" ]; then
   exit 0
 fi
 
-if [ -f ./gslib-$VER/lib/libgs.a ]; then
+if [ -f ./lib/libgs.a ]; then
   exit 0
 fi
 
