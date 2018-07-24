@@ -27,8 +27,8 @@ c-----------------------------------------------------------------------
       ! number of fields to read
       if (param(32).gt.0) nfldt = ibc + int(param(32)) - 1
 
-      lcbc=18*lelt*(ldimt1 + 1)
-      call blank(cbc,lcbc)
+      call blank(cbc,3*size(cbc))
+      call rzero(bc ,size(bc))
 
 #ifndef NOMPIIO
       call fgslib_crystal_setup(cr_re2,nekcomm,np)

@@ -119,6 +119,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call dg_setup    !     Setup DG, if dg flag is set.
 
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
+         if(nio.eq.0) write(6,*) 'initialize pressure solver'
          call estrat                                       ! initialization.
          if (iftran.and.solver_type.eq.'itr') then
             isolver = param(40)
