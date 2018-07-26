@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
       character*100 zefmt
       write(zefmt,'(a1,i2,a6)') '(',nb,'e15.7)'
       do i=1,na
-         write(37,zefmt) (ab(i,j),j=1,nb)
+         write(6,zefmt) (ab(i,j),j=1,nb)
 !        write(6,*) i,'rowsum=',sum(ab(i,1:nb))
       enddo
       return
