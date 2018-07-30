@@ -48,8 +48,21 @@ c---------------------------------------------------------------------
       real                csound(lx1,ly1,lz1,lelt)
       common /cmtgasprop/ csound
 
-      real                cvgref,cpgref,gmaref,rgasref,molmass
-      common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
+      real            cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $   MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW
+
+      common /cmtgasref/cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $    MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW
 
       integer              stage,nstage
       common /tstepstage/ stage,nstage
