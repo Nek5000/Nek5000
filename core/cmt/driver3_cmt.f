@@ -120,7 +120,7 @@ c We have perfect gas law. Cvg is stored full field
             write(6,'(i6,a26,3i2,i8,e15.6)') ! might want to be less verbose
      >      nid,' HAS NEGATIVE TEMPERATURE ', i,j,k,eg,temp
          endif
-         vtrans(i,j,k,e,icp)= cp*rho
+         vtrans(i,j,k,e,icp)= e_internal
          vtrans(i,j,k,e,icv)= cv*rho
          t(i,j,k,e,1)       = temp
          pr(i,j,k,e)        = pres
@@ -141,16 +141,16 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
 
       integer e,eqnum
-
-      do eqnum=1,toteq
-         varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
-      enddo
+!     do eqnum=1,toteq
+!        varsic(eqnum)=u(ix,iy,iz,eqnum,e)  
+!     enddo
       phi  = phig  (ix,iy,iz,e)
       rho  = vtrans(ix,iy,iz,e,irho)
       pres = pr    (ix,iy,iz,e)
       if (rho.ne.0) then
          cv   = vtrans(ix,iy,iz,e,icv)/rho
-         cp   = vtrans(ix,iy,iz,e,icp)/rho
+!        cp   = vtrans(ix,iy,iz,e,icp)/rho
+         e_internal = vtrans(ix,iy,iz,e,icp)
       endif
       asnd = csound(ix,iy,iz,e)
       mu     = vdiff(ix,iy,iz,e,imu)
@@ -265,14 +265,14 @@ c     ! save velocity on fine mesh for dealiasing
             vz(i,j,k,e) = uz
             vtrans(i,j,k,e,irho)  = rho
             vtrans(i,j,k,e,icv)= rho*cv
-            vtrans(i,j,k,e,icp)= rho*cp
+            vtrans(i,j,k,e,icp)= e_internal
             phig(i,j,k,e)  = phi
             pr(i,j,k,e)    = pres
             u(i,j,k,irg,e) = phi*rho
             u(i,j,k,irpu,e)= phi*rho*ux
             u(i,j,k,irpv,e)= phi*rho*uy
             u(i,j,k,irpw,e)= phi*rho*uz
-            u(i,j,k,iret,e)= phi*rho*(cv*temp+0.5*(ux**2+uy**2+uz**2))
+            u(i,j,k,iret,e)=phi*rho*(e_internal+0.5*(ux**2+uy**2+uz**2))
             vdiff(i,j,k,e,imu) = mu
             vdiff(i,j,k,e,iknd)= udiff
             vdiff(i,j,k,e,ilam)= lambda

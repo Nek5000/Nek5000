@@ -67,6 +67,13 @@
 !
 !******************************************************************************
 
+      FUNCTION MixtJWL_Enthalpy(DE,PRES,VEL1,VEL2,VEL3,EN)
+      IMPLICIT NONE
+      REAL DE,PRES,VEL1,VEL2,VEL3,EN
+      REAL MixtJWL_Enthalpy
+      MixtJWL_Enthalpy = 0.5*(VEL1*VEL1+VEL2*VEL2+VEL3*VEL3)
+     >                  + EN+PRES/DE
+      END
       FUNCTION MixtPerf_C_Co2GUVW(Co2,G,U,V,W)
       IMPLICIT NONE
       REAL Co2,G,U,V,W ! INTENT(IN) W

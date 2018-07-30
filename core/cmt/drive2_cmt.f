@@ -57,7 +57,6 @@ c     gmaref     = param(105)
       cpgref     = MixtPerf_Cp_CvR(cvgref,rgasref)
       gmaref     = MixtPerf_G_CpR(cpgref,rgasref) 
 ! put these in rea file someday
-      ifsip = .false.
       return
       end
 c------------------------------------------------------------------------
