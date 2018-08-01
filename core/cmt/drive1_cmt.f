@@ -44,8 +44,10 @@ c     Solve the Euler equations
          call compute_primitive_vars ! get good mu
          call entropy_viscosity      ! for high diffno
          call compute_transport_props! at t=0
-
+         dt_cmt=param(12)
       endif
+      
+      call rzero(t,nxyz*nelt*ldimt)
 
       nstage = 3
       do stage=1,nstage
@@ -91,8 +93,10 @@ c-----------------------------------------------------------------------
       call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
       ftime = ftime + dnekclock() - ftime_dum
 
+!     if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
       if (mod(istep,iostep).eq.0.or.istep.eq.1)then
          call out_fld_nek
+         call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
          call mass_balance(if3d)
 c dump out particle information. 
          call usr_particles_io(istep)
@@ -155,7 +159,9 @@ C> Store it in res1
          call set_tstep_coef
       endif
 
-      call entropy_viscosity ! accessed through uservp. computes
+      call limiter
+! SO AS TO NOT OVERWRITE T3 in EBDG TESTING
+!     call entropy_viscosity ! accessed through uservp. computes
                              ! entropy residual and max wave speed
       call compute_transport_props ! everything inside rk stage
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file

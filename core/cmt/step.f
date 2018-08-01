@@ -48,7 +48,8 @@ C> @file step.f time stepping and mesh spacing routines
             call exitt
          endif
       else
-         dt_cmt=dt
+!        dt_cmt=dt
+         dt_cmt=param(12)
       endif
       if (timeio .gt. 0.0) then ! adjust dt for timeio. 
          zetime1=time_cmt

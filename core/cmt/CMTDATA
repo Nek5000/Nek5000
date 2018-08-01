@@ -31,9 +31,10 @@ C> each of lx1*ly1*lz1 grid points for all elements
       common /forcedata/ usrf 
 
       real c_sub_e,c_max,meshh(lelt),maxdiff,gridh(lx1*ly1*lz1,lelt),
-     $     nu_s,rhomax(lelt),maxres(lelt)
+     $     nu_s,rhomax(lelt),maxres(lelt),se0(lelt),avstate(toteq),
+     >     tauebdg(lelt)
       common /planned_Additions/ c_sub_e,c_max,meshh,maxdiff,
-     $        gridh,nu_s,rhomax,maxres
+     $        gridh,nu_s,rhomax,maxres,se0,avstate,tauebdg
 
 c We assume we will be working with one gas. Therefore Rgas need not be 
 c full filed. To begin with we assume calorically perfect gas.
@@ -54,7 +55,7 @@ c---------------------------------------------------------------------
      $    MWref,CWref,MCref,CCref,
      $    AAref,
      $    BBref,R1ref,R2ref,OMref,
-     $    AA,BB,OM,CC,CW
+     $    AA,BB,OM,CC,CW,se0const
 
       common /cmtgasref/cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
      $    MAref,MBref,CAref,CBref,   ! NTN for mixed model
@@ -62,10 +63,10 @@ c---------------------------------------------------------------------
      $    MWref,CWref,MCref,CCref,
      $    AAref,
      $    BBref,R1ref,R2ref,OMref,
-     $    AA,BB,OM,CC,CW
+     $    AA,BB,OM,CC,CW,se0const
 
-      integer              stage,nstage
-      common /tstepstage/ stage,nstage
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
 
       real                  tcoef(3,3),dt_cmt,time_cmt
       common /timestepcoef/ tcoef,dt_cmt,time_cmt

@@ -60,3 +60,72 @@ c     gmaref     = param(105)
       return
       end
 c------------------------------------------------------------------------
+
+      subroutine limiter
+! EBDG Stuff. WHERE'S PHI????
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+      include 'NEKUSE'
+      parameter (lxyz=lx1*ly1*lz1)
+      common /scrns/ scrent(lxyz,lelt)
+      real scrent
+      integer e,eg
+
+      nxyz=lx1*ly1*lz1
+      ntot=nxyz*nelt
+
+      rgam=rgasref/(gmaref-1.0)
+      do i=1,ntot
+         rho=max(vtrans(i,1,1,1,irho),1.0e-10)
+!        scrent(i,1)=rgam*log(pr(i,1,1,1)/(rho**gmaref))
+         scrent(i,1)=log(pr(i,1,1,1)/(rho**gmaref))
+      enddo
+!     call dsop(scrent,'MIN',lx1,ly1,lz1)
+      call copy(t(1,1,1,1,4),scrent,ntot)
+! elemental entropy minimum
+!     do e=1,nelt
+!        se0(e)=vlmin(scrent(1,e),nxyz)
+!     enddo
+      do e=1,nelt
+         do i=1,nxyz
+         scrent(i,e)=pr(i,1,1,e)-exp(se0const)*
+     >                         (vtrans(i,1,1,e,irho)**gmaref)
+         enddo
+      enddo
+      call copy(t(1,1,1,1,5),scrent,ntot)
+      do e=1,nelt
+         tauebdg(e)=vlmin(scrent(1,e),nxyz)
+         tauebdg(e)=min(tauebdg(e),0.0)
+         call cfill(t(1,1,1,e,6),tauebdg(e),nxyz)
+      enddo
+      
+      do e=1,nelt
+      
+         do m=1,toteq
+            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
+         enddo
+         rho=avstate(1)
+         e_internal=avstate(5)-
+     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
+     >                   rho
+         e_internal=e_internal/rho
+         eg=gllel(e)
+         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
+         epsebdg=tauebdg(e)/
+     >          (tauebdg(e)-(pres-exp(se0const)*rho**gmaref))
+         do i=1,nxyz
+            t(i,1,1,e,3)=epsebdg
+         enddo
+
+         do m=1,toteq
+            do i=1,nxyz
+               uold=u(i,1,1,m,e)
+               u(i,1,1,m,e)=uold+epsebdg*(avstate(m)-uold)
+            enddo
+         enddo
+
+      enddo
+      
+      return
+      end
