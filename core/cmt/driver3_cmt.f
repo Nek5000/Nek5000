@@ -3,7 +3,7 @@ C> and properties
 
 C> Compute primitive variables (velocity, thermodynamic state) from 
 C> conserved unknowns U
-      subroutine compute_primitive_vars
+      subroutine compute_primitive_vars(ilim)
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -15,19 +15,21 @@ C> conserved unknowns U
       parameter (lxyz=lx1*ly1*lz1)
       common /ctmp1/ energy(lx1,ly1,lz1),scr(lx1,ly1,lz1)
       integer e, eq
-      common /posflags/ ifailr,ifaile,ifailt
-      integer ifailr,ifaile,ifailt
+      common /posflags/ ifailr,ifaile,ifailt,ilimflag
+      integer ifailr,ifaile,ifailt,ilimflag
+      integer ilim
 
       nxyz= lx1*ly1*lz1
       ntot=nxyz*nelt
       ifailr=-1
       ifaile=-1
       ifailt=-1
+      ilimflag=ilim
 
       do e=1,nelt
 ! JH020918 long-overdue sanity checks
          dmin=vlmin(u(1,1,1,irg,e),nxyz)
-         if (dmin .lt. 0.0) then
+         if (dmin .lt. 0.0 .and. ilim .ne. 0) then
             ifailr=lglel(e)
             write(6,*) nid,'***NEGATIVE DENSITY***',dmin,lglel(e)
          endif
@@ -55,13 +57,14 @@ C> conserved unknowns U
      >                nxyz)
 ! JH020718 long-overdue sanity checks
          emin=vlmin(energy,nxyz)
-         if (emin .lt. 0.0) then
+         if (emin .lt. 0.0 .and. ilim .ne. 0) then
             ifaile=lglel(e)
             write(6,*) nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
          endif
          call tdstate(e,energy) ! compute state, fill ifailt
       enddo
 
+! Avoid during EBDG testing
       call poscheck(ifailr,'density    ')
       call poscheck(ifaile,'energy     ')
       call poscheck(ifailt,'temperature')
@@ -103,8 +106,8 @@ c We have perfect gas law. Cvg is stored full field
       integer   e,eg
       real energy(lx1,ly1,lz1)
 
-      common /posflags/ ifailr,ifaile,ifailt
-      integer ifailr,ifaile,ifailt
+      common /posflags/ ifailr,ifaile,ifailt,ilimflag
+      integer ifailr,ifaile,ifailt,ilimflag
 
       eg = lglel(e)
       do k=1,lz1
@@ -115,10 +118,10 @@ c We have perfect gas law. Cvg is stored full field
          e_internal=energy(i,j,k) !cmtasgn should do this, but can't
          call cmt_userEOS(i,j,k,eg)
 ! JH020718 long-overdue sanity checks
-         if (temp .lt. 0.0) then
+         if (temp .lt. 0.0 .and. ilimflag .ne. 0) then
             ifailt=eg
-            write(6,'(i6,a26,3i2,i8,e15.6)') ! might want to be less verbose
-     >      nid,' HAS NEGATIVE TEMPERATURE ', i,j,k,eg,temp
+            write(6,'(i6,a26,e12.4,3i2,i8,3e15.6)') ! might want to be less verbose
+     >      nid,' HAS NEGATIVE TEMPERATURE ', x,i,j,k,eg,temp,rho,pres
          endif
          vtrans(i,j,k,e,icp)= e_internal
          vtrans(i,j,k,e,icv)= cv*rho
@@ -288,6 +291,8 @@ c     ! save velocity on fine mesh for dealiasing
 
       subroutine poscheck(ifail,what)
       include 'SIZE'
+      include 'SOLN'
+      include 'CMTDATA'
       include 'PARALLEL'
       include 'INPUT'
 !JH020918 handles reporting, I/O and exit from failed positivity checks
@@ -300,7 +305,8 @@ c     ! save velocity on fine mesh for dealiasing
      >   write(6,*) 'dumping solution after negative ',what,'@ eg=',
      >             ifail0
          ifxyo=.true.
-         call out_fld_nek
+!        call out_fld_nek
+         call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
          call exitt
       endif
 

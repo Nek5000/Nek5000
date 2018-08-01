@@ -94,8 +94,8 @@ endif
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
 L0 = $(G) -O0
-L2 = $(G) -O2
-L3 = $(G) -O3
+L2 = $(G) -O0
+L3 = $(G) -O0
 
 FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR) 
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)

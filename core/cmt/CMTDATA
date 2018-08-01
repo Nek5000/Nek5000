@@ -31,8 +31,7 @@ C> each of lx1*ly1*lz1 grid points for all elements
       common /forcedata/ usrf 
 
       real c_sub_e,c_max,meshh(lelt),maxdiff,gridh(lx1*ly1*lz1,lelt),
-     $     nu_s,rhomax(lelt),maxres(lelt),se0(lelt),avstate(toteq),
-     >     tauebdg(lelt)
+     $     nu_s,rhomax(lelt),maxres(lelt),se0(lelt),avstate(toteq)
       common /planned_Additions/ c_sub_e,c_max,meshh,maxdiff,
      $        gridh,nu_s,rhomax,maxres,se0,avstate,tauebdg
 

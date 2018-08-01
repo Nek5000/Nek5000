@@ -41,13 +41,13 @@ c     Solve the Euler equations
          call userchk ! need more ifdefs
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
-         call compute_primitive_vars ! get good mu
+         call compute_primitive_vars(0) ! get good mu
          call entropy_viscosity      ! for high diffno
          call compute_transport_props! at t=0
          dt_cmt=param(12)
       endif
       
-      call rzero(t,nxyz*nelt*ldimt)
+      call rzero(t,nxyz1*nelt*ldimt)
 
       nstage = 3
       do stage=1,nstage
@@ -89,7 +89,7 @@ c-----------------------------------------------------------------------
          enddo
       enddo
 
-      call compute_primitive_vars ! for next time step? Not sure anymore
+      call compute_primitive_vars(0) ! for next time step? Not sure anymore
       call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
       ftime = ftime + dnekclock() - ftime_dum
 
@@ -148,7 +148,9 @@ C> Store it in res1
 !     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
 !        primitive vars = rho, u, v, w, p, T, phi_g
 
-      call compute_primitive_vars
+      call compute_primitive_vars(0)
+      call limiter
+      call compute_primitive_vars(1)
 
 !-----------------------------------------------------------------------
 ! JH072914 We can really only proceed with dt once we have current
@@ -159,7 +161,6 @@ C> Store it in res1
          call set_tstep_coef
       endif
 
-      call limiter
 ! SO AS TO NOT OVERWRITE T3 in EBDG TESTING
 !     call entropy_viscosity ! accessed through uservp. computes
                              ! entropy residual and max wave speed
