@@ -96,7 +96,7 @@ c-----------------------------------------------------------------------
 !     if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
       if (mod(istep,iostep).eq.0.or.istep.eq.1)then
          call out_fld_nek
-         call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
+!        call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
          call mass_balance(if3d)
 c dump out particle information. 
          call usr_particles_io(istep)
