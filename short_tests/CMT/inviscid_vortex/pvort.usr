@@ -1,4 +1,8 @@
       subroutine userchk
+      return
+      end
+
+      subroutine cmtchk
       include 'SIZE'
       include 'TOTAL'
       include 'CMTDATA'
@@ -18,7 +22,6 @@
       dt=dt_cmt
 
       if (mod(istep,iostep).eq.0) call comp_vort3(vrt,wk1,wk2,vx,vy,vz)
-      if (mod(istep,iostep).eq.0) call outpost(vx,vy,vz,vrt,t,'vrt')
 
       return
       end

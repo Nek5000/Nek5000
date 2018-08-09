@@ -108,7 +108,7 @@ c------------------------------------------------------------------------
             avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
          enddo
          rho=avstate(1)
-
+! Entropy-bounded limiter of Lv and Ihme
          e_internal=avstate(5)-
      >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
      >                   rho
@@ -123,9 +123,7 @@ c------------------------------------------------------------------------
          tau=min(tau,0.0)
          epsebdg=tau/
      >          (tau-(pres-exp(se0const)*rho**gmaref))
-         do i=1,nxyz
-            t(i,1,1,e,3)=epsebdg
-         enddo
+         call cfill(t(i,1,1,e,4),epsebdg,nxyz)
 
          do m=1,toteq
             do i=1,nxyz

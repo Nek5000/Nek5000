@@ -41,9 +41,10 @@ c     Solve the Euler equations
          call userchk ! need more ifdefs
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
-         call compute_primitive_vars(0) ! get good mu
-         call entropy_viscosity      ! for high diffno
-         call compute_transport_props! at t=0
+! JH080918 IC better be positive
+         call compute_primitive_vars(1) ! get good mu
+         call entropy_viscosity         ! for high diffno
+         call compute_transport_props   ! at t=0
          dt_cmt=param(12)
       endif
       
@@ -79,24 +80,38 @@ c multiply u with bm1 as res has been multiplied by bm1 in compute_rhs
 c              u(i,1,1,eq,e) = bm1(i,1,1,e)*u(i,1,1,eq,e) - DT *
 c    >                        (c1*res1(i,1,1,e,eq) + c2*res2(i,1,1,e,eq)
 c    >                       + c3*res3(i,1,1,e,eq))
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 ! JH111815 in fact, I'd like to redo the time marching stuff above and
 !          have an fbinvert call for res1
                u(i,1,1,eq,e) = u(i,1,1,eq,e)/bm1(i,1,1,e)
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
             enddo
             enddo
-         enddo
-      enddo
+         enddo ! nelt
+!-----------------------------------------------------------------------
+! JH080918 Now with solution limiters of Zhang & Shu (2010)
+!                                    and   Lv & Ihme (2015) 
+!          Also, FINALLY rewritten to consider solution at the
+!          END OF RK STAGES AND END OF TIME STEP AS THE SOLUTION OF INTEREST
+!-----------------------------------------------------------------------
+         call compute_primitive_vars(0)
+         call limiter
+         call compute_primitive_vars(1)
 
-      call compute_primitive_vars(0) ! for next time step? Not sure anymore
+      enddo ! RK stage loop
+
       call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
       ftime = ftime + dnekclock() - ftime_dum
 
+      if (mod(istep,iostep2).eq.0) then
 !     if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
-      if (mod(istep,iostep).eq.0.or.istep.eq.1)then
+!     if (mod(istep,iostep).eq.0.or.istep.eq.1)then
          call out_fld_nek
-!        call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
+! T2 S1 rho
+! T3 S2 wave visc
+! T4 S3 epsebdg
+         call cmtchk
+         call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
          call mass_balance(if3d)
 c dump out particle information. 
          call usr_particles_io(istep)
@@ -143,19 +158,6 @@ C> Store it in res1
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-!     filter the conservative variables before start of each
-!     time step
-!     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-!        primitive vars = rho, u, v, w, p, T, phi_g
-
-      call compute_primitive_vars(0)
-      call limiter
-      call compute_primitive_vars(1)
-
-!-----------------------------------------------------------------------
-! JH072914 We can really only proceed with dt once we have current
-!          primitive variables. Only then can we compute CFL and/or dt.
-!-----------------------------------------------------------------------
       if(stage.eq.1) then
          call setdtcmt
          call set_tstep_coef

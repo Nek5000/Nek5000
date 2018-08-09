@@ -83,6 +83,23 @@ c automatically added by makenek
 _ACEOF
 fi
 
+if ! cat $CASENAME.f | grep -qi "subroutine.*cmtchk" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine cmtchk
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+
+      ifxyo=.true.
+      if (istep.gt.1) ifxyo=.false.
+
+      return
+      end
+_ACEOF
+fi
+
 if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userflux" ; then
 cat >> $CASENAME.f << _ACEOF
 
