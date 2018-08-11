@@ -38,14 +38,14 @@ c     Solve the Euler equations
          endif
          call cmt_flow_ics
          call init_cmt_timers
-         call userchk ! need more ifdefs
+         dt_cmt=param(12)
+         call cmtchk ! need more ifdefs to use userchk
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu
          call entropy_viscosity         ! for high diffno
          call compute_transport_props   ! at t=0
-         dt_cmt=param(12)
       endif
       
       call rzero(t,nxyz1*nelt*ldimt)
@@ -93,29 +93,37 @@ c    >                       + c3*res3(i,1,1,e,eq))
 !                                    and   Lv & Ihme (2015) 
 !          Also, FINALLY rewritten to consider solution at the
 !          END OF RK STAGES AND END OF TIME STEP AS THE SOLUTION OF INTEREST
+! JH081018 OK I can't do that for some reason. CHECK SOLN COMMONS BETWEEN
+!          cmt_nek_advance and istep=istep+1
 !-----------------------------------------------------------------------
-         call compute_primitive_vars(0)
-         call limiter
-         call compute_primitive_vars(1)
+!        call compute_primitive_vars(0)
+!        call limiter
+!        call compute_primitive_vars(1)
 
       enddo ! RK stage loop
 
-      call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
       ftime = ftime + dnekclock() - ftime_dum
 
-      if (mod(istep,iostep2).eq.0) then
+!-----------------------------------------------------------------------
+! JH081018 I/O really should go here, but I don't want to call limiter
+!          and compute_primitive_variables needlessly.
+!          For now, tuck all this stuff in compute_rhs_and_dt and query
+!          iostep2 at stage==1.
+!-----------------------------------------------------------------------
+!     call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
+!     if (mod(istep,iostep2).eq.0) then
 !     if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
 !     if (mod(istep,iostep).eq.0.or.istep.eq.1)then
-         call out_fld_nek
+!        call out_fld_nek
 ! T2 S1 rho
 ! T3 S2 wave visc
 ! T4 S3 epsebdg
-         call cmtchk
-         call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
-         call mass_balance(if3d)
-c dump out particle information. 
-         call usr_particles_io(istep)
-      end if
+!        call cmtchk
+!        call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
+!        call mass_balance(if3d)
+! dump out particle information. 
+!        call usr_particles_io(istep)
+!     end if
 
 !     call print_cmt_timers ! NOT NOW
 
@@ -158,17 +166,40 @@ C> Store it in res1
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-      if(stage.eq.1) then
-         call setdtcmt
-         call set_tstep_coef
-      endif
+      call compute_primitive_vars(0)
+      call limiter
+      call compute_primitive_vars(1)
 
-! SO AS TO NOT OVERWRITE T3 in EBDG TESTING
-!     call entropy_viscosity ! accessed through uservp. computes
+      call entropy_viscosity ! accessed through uservp. computes
                              ! entropy residual and max wave speed
       call compute_transport_props ! everything inside rk stage
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
 ! you have GOT to figure out where phig goes!!!!
+
+      if(stage.eq.1) then
+!-----------------------------------------------------------------------
+! JH081018 a whole bunch of this stuff should really be done AFTER the
+!          RK loop at the END of the time step, but I lose custody
+!          of commons in SOLN between cmt_nek_advance and the rest of
+!          the time loop.
+         call setdtcmt
+         call set_tstep_coef
+         call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
+         call cmtchk
+
+!        if (mod(istep,iostep2).eq.0) then
+         if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
+!        if (mod(istep,iostep).eq.0.or.istep.eq.1)then
+            call out_fld_nek ! solution checkpoint for restart
+! T2 S1 rho
+! T3 S2 wave visc
+! T4 S3 epsebdg
+            call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
+            call mass_balance(if3d)
+! dump out particle information. 
+            call usr_particles_io(istep)
+         end if
+      endif
 
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
