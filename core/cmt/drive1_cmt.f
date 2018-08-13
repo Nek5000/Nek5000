@@ -176,6 +176,7 @@ C> Store it in res1
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
 ! you have GOT to figure out where phig goes!!!!
 
+      nxyz = lx1*ly1*lz1
       if(stage.eq.1) then
 !-----------------------------------------------------------------------
 ! JH081018 a whole bunch of this stuff should really be done AFTER the
@@ -184,7 +185,7 @@ C> Store it in res1
 !          the time loop.
          call setdtcmt
          call set_tstep_coef
-         call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
+         call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz*nelt)
          call cmtchk
 
 !        if (mod(istep,iostep2).eq.0) then

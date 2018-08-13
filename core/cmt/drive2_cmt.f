@@ -123,7 +123,7 @@ c------------------------------------------------------------------------
          tau=min(tau,0.0)
          epsebdg=tau/
      >          (tau-(pres-exp(se0const)*rho**gmaref))
-         call cfill(t(i,1,1,e,4),epsebdg,nxyz)
+         call cfill(t(1,1,1,e,4),epsebdg,nxyz)
 
          do m=1,toteq
             do i=1,nxyz
