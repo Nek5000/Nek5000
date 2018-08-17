@@ -184,7 +184,7 @@ c                                     !     ux,uy,uz
          endif
 
 ! find a smarter way of doing this. fold it into usr file if you must
-         wbc(l,f,e,iu5)  = phi*rho*cv*temp+0.5/rhob*(rhoub**2+rhovb**2+
+         wbc(l,f,e,iu5)  = phi*rho*e_internal+0.5/rhob*(rhoub**2+rhovb**2+
      >                                               rhowb**2)
 
       enddo

@@ -44,8 +44,10 @@ c     Solve the Euler equations
          call compute_grid_h(gridh,xm1,ym1,zm1)
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu
+!        if (1.eq.2) then
          call entropy_viscosity         ! for high diffno
          call compute_transport_props   ! at t=0
+!        endif
       endif
       
       call rzero(t,nxyz1*nelt*ldimt)
@@ -170,9 +172,11 @@ C> Store it in res1
       call limiter
       call compute_primitive_vars(1)
 
+!     if (1==2) then
       call entropy_viscosity ! accessed through uservp. computes
                              ! entropy residual and max wave speed
       call compute_transport_props ! everything inside rk stage
+!     endif
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
 ! you have GOT to figure out where phig goes!!!!
 
@@ -246,6 +250,7 @@ C> res1+=\f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
 ! CMTDATA BETTA REFLECT THIS!!!
 !***********************************************************************
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\mathbf{U}\right] dA\f$
+!     if (1.eq.2) then
       ium=(iu1-1)*nfq+iwm
       iup=(iu1-1)*nfq+iwp
       call   imqqtu(flux(iuj),flux(ium),flux(iup))
@@ -253,6 +258,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\ma
       call igtu_cmt(flux(iwm),flux(iuj),graduf) ! [[u]].{{gradv}}
       dumchars='after_igtu'
 !     call dumpresidue(dumchars,999)
+!     endif
 
 C> res1+=\f$\int \left(\nabla v\right) \cdot \left(\mathbf{H}^c+\mathbf{H}^d\right)dV\f$ 
 C> for each equation (inner), one element at a time (outer)
@@ -274,16 +280,19 @@ C> for each equation (inner), one element at a time (outer)
          call compute_gradients(e) ! gradU
          do eq=1,toteq
             call convective_cmt(e,eq)        ! convh & totalh -> res1
+!     if (1.eq.2) then
             call    viscous_cmt(e,eq) ! diffh -> half_iku_cmt -> res1
                                              !       |
                                              !       -> diffh2graduf
 ! Compute the forcing term in each of the 5 eqs
             call compute_forcing(e,eq)
+!     endif
          enddo
       enddo
       dumchars='after_elm'
 !     call dumpresidue(dumchars,999)
 
+!     if (1.eq.2) then
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\right] dA\f$
       call igu_cmt(flux(iwp),graduf,flux(iwm))
       do eq=1,toteq
@@ -291,6 +300,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\righ
 !Finally add viscous surface flux functions of derivatives to res1.
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
+!     endif
       dumchars='end_of_rhs'
 !     call dumpresidue(dumchars,999)
 
