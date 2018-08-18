@@ -69,10 +69,11 @@
       call cadd2(scrent,tlag,savg,ntot)
       maxdiff =     glamax(scrent,ntot)
       if (maxdiff.le.0.0) then
-         write(deathmessage,*) 'zero maxdiff usually means NAN$'
-         call exittr(deathmessage,maxdiff,istep)
-!     else
-!        if (nio .eq. 0) write (6,*) 'max(s-<s>)=',maxdiff, meshh(1)
+         write(6,*) 'zero maxdiff usually means NAN$'
+!        write(deathmessage,*) 'zero maxdiff usually means NAN$'
+!        call exittr(deathmessage,maxdiff,istep)
+      else
+         if (nio .eq. 0) write (6,*) 'max(s-<s>)=',maxdiff, meshh(1)
       endif
       call entropy_residual(tlag) ! fill res2
       call copy(res2(1,1,1,1,2),res2,ntot) ! raw residual in res2
@@ -86,6 +87,54 @@
 !     call evmsmooth(res2,t(1,1,1,1,3),.true.) ! And again.
       call dsavg(res2) ! you DEFINITELY don't want a min here
 
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine piecewiseAV(shock_detector)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+      integer e
+      character*132 deathmessage
+      common /scrvh/ avmask(lelt)
+      real avmask
+      external shock_detector
+
+      pi=4.0*atan(1.0)
+
+      nxyz=lx1*ly1*lz1
+      ntot=nxyz*nelt
+
+! old nu_max
+      call wavevisc(t(1,1,1,1,3))
+! diagnostic
+!      if (stage.gt.0)then
+!      do e=1,nelt
+!!         do i=1,nxyz
+!            write(stage*100+nid,*)xm1(i,1,1,e),ym1(i,1,1,e),t(i,1,1,e,3)
+!         enddo
+!      enddo
+!      endif
+!
+! shock detector
+      call shock_detector(avmask)
+      do e=1,nelt
+         call cmult(t(1,1,1,e,3),avmask(e),nxyz)
+      enddo
+! diagnostic
+!      if (stage.gt.0)then
+!      do e=1,nelt
+!         do i=1,nxyz
+!            write(stage*1000+nid,'(5e15.7)') xm1(i,1,1,e),ym1(i,1,1,e),
+!!     >        t(i,1,1,e,3),avmask(e),epsebdg(e)
+!         enddo
+!      enddo
+!      endif
+
+!     call max_to_trilin(t(1,1,1,1,3))
 
       return
       end
@@ -386,13 +435,14 @@ c-----------------------------------------------------------------------
      >      sqrt(vx(i,1,1,e)**2+vy(i,1,1,e)**2+vz(i,1,1,e)**2)
          enddo
          maxeig=vlamax(wavespeed,nxyz)
-         rhomax(e)=vlamax(vtrans(1,1,1,e,irho),nxyz)
+! Zingan (2015) only. not long for this world
+!        rhomax(e)=vlamax(vtrans(1,1,1,e,irho),nxyz)
          do i=1,nxyz
             numax(i,e)=c_max*maxeig*meshh(e)
          enddo
       enddo
 
-      call max_to_trilin(numax)
+      call max_to_trilin(t(1,1,1,1,3))
 
       return
       end
@@ -406,8 +456,6 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       real field(lx1,ly1,lz1,nelt)
       integer e
-
-      character*32 fname ! diagnostic
 
       nxyz=lx1*ly1*lz1
 

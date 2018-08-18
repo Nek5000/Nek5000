@@ -59,7 +59,7 @@ C> conserved unknowns U
          emin=vlmin(energy,nxyz)
          if (emin .lt. 0.0 .and. ilim .ne. 0) then
             ifaile=lglel(e)
-            write(6,*) nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
+            write(6,*) stage,nid, ' HAS NEGATIVE ENERGY ',emin,lglel(e)
          endif
          call tdstate(e,energy) ! compute state, fill ifailt
       enddo

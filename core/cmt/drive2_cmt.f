@@ -68,8 +68,8 @@ c------------------------------------------------------------------------
       include 'CMTDATA'
       include 'NEKUSE'
       parameter (lxyz=lx1*ly1*lz1)
-      common /scrns/ scratch(lxyz)
-      real scratch
+      common /scrns/ scratch(lxyz),avstate(toteq)
+      real scratch,avstate
       integer e,eg
 
       nxyz=lx1*ly1*lz1
@@ -121,18 +121,46 @@ c------------------------------------------------------------------------
          enddo
          tau=vlmin(scratch,nxyz)
          tau=min(tau,0.0)
-         epsebdg=tau/
+         epsebdg(e)=tau/
      >          (tau-(pres-exp(se0const)*rho**gmaref))
-         call cfill(t(1,1,1,e,4),epsebdg,nxyz)
+         epsebdg(e)=min(epsebdg(e),1.0)
+         epsebdg(e)=max(epsebdg(e),0.0)
+         call cfill(t(1,1,1,e,4),epsebdg(e),nxyz)
 
          do m=1,toteq
             do i=1,nxyz
                uold=u(i,1,1,m,e)
-               u(i,1,1,m,e)=uold+epsebdg*(avstate(m)-uold)
+               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
             enddo
          enddo
 
       enddo
       
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine limiter_only(shkdet)
+! first ad hoc shock detector ever. read a limiter function from CMTDATA
+! epsebdg is the only one we have so far. If it's bigger than some threshold,
+! light up AV there too.
+      include 'SIZE'
+      include 'CMTDATA'
+      real shkdet(nelt)
+      integer e
+
+      call rzero(shkdet,nelt)
+      tol=1.0e-5
+
+      if (time4av) then
+         do e=1,nelt
+            if (abs(epsebdg(e)) .gt. tol) shkdet(e)=1.0
+         enddo
+      endif
+
+      emax=glamax(shkdet,nelt)
+      if (nio.eq.0) write(6,*) 'max shock detector =',emax
+
       return
       end
