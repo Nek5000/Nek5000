@@ -130,7 +130,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
             else if (isolver.eq.1) then ! semg_amg
                 call set_overlap
             else if (isolver.eq.3) then ! fem_amg_hypre
-                call set_vert(glo_num,ngv,nx1,nelt,vertex,.true.)
                 call matrix_distribution(glo_num)
                 call fem_amg_setup(1,0,nx1,ny1,nz1,nelv,ndim,
      $                             xm1,ym1,zm1,glo_num,pmask,

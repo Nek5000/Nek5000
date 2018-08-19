@@ -8,7 +8,7 @@ typedef void (*DBasis)(double**, double*);
 void fem_amg_setup(int *precond_type_, int *meshing_type_,
                    int *n_x_, int *n_y_, int *n_z_, int *n_elem_, int *n_dim_,
                    double *x_m_, double *y_m_, double *z_m_,
-                   long *glo_num_, double *pmask_, double* binv_,
+                   long long *glo_num_, double *pmask_, double* binv_,
                    const MPI_Fint *ce, const int *gsh);
 void fem_amg_solve(double *z, double *w);
 

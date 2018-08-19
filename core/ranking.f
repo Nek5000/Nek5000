@@ -152,7 +152,7 @@ c-----------------------------------------------------------------------
       parameter (lt = lx1 * ly1 * lz1 * lelv)
       common /nekmpi/ mid, mp, nekcomm, nekgroup, nekreal
 
-      integer*8 rank(n), icount8, input_max
+      integer*8 rank(n), icount8, input_max, rlast
       integer ind(ldw), wk(2, ldw), col(2)
 
       integer*4 cr_hndl
@@ -172,14 +172,15 @@ c-----------------------------------------------------------------------
 
       input_max = i8glmax(rank, n)                    ! Data range for binning
 
+
       do i = 1, n
          wk(1, i) = (np * (rank(i) - 1)) / input_max  ! Target processor
          wk(2, i) = i                                 ! Local position
       enddo
 
-      nmax = ldw + 1 ! Bound on # of returns. (From declaration of wk)
+      nmax = ldw ! Bound on # of returns. (From declaration of wk)
       call fgslib_crystal_tuple_transfer 
-     &        (cr_hndl, n, nmax, wk, 2, dummy, 0, rank, 1, 1)
+     &        (cr_hndl, n, nmax, wk, 2, rank, 1, dummy, 0, 1)
       nmx = iglmax(n, 1)
 
       if (nmx .gt. ldw) then
@@ -202,7 +203,13 @@ c-----------------------------------------------------------------------
       call i8cadd(rank, icount8, n)
 
       call fgslib_crystal_tuple_transfer !  Restore rank-ordered lists
-     &        (cr_hndl, n, nmax, wk, 2, dummy, 0, rank, 1, 1)
+     &        (cr_hndl, n, nmax, wk, 2, rank, 1, dummy, 0, 1)
+
+      nmx = iglmax(n, 1)
+
+      if (nmx .gt. ldw) then
+         call exitti('ABORT: glob_rank_i8 nmax>ldw.$', ldw)
+      endif
 
       call isortcols(wk, 2, 2, col, ind, n) ! Sort by original global number 
       call iswap8_ip(rank, ind, n)          ! Swap new rank back to original
@@ -226,7 +233,7 @@ c-----------------------------------------------------------------------
       common /ctmp0/ iwk(2, 2 * lt), ind(2 * lt)
 
       nxyz = nx1 * ny1 * nz1
-      n = nx1 * ny1 * nz1 * nelv
+      n = nxyz * nelv
 
       call set_vert(mat_dist, ngv, nx1, nelv, vertex, .true.) ! std glo_num
       call fgslib_gs_setup(gsl, mat_dist, n, nekcomm, np)     ! Need centers > 0.

@@ -37,7 +37,7 @@ int meshing_type;
 int n_x, n_y, n_z, n_elem, n_dim;
 int n_xyz, n_xyze;
 double *x_m, *y_m, *z_m;
-long *glo_num;
+long long *glo_num;
 double *pmask;
 double *binv;
 int num_loc_dofs;
@@ -70,7 +70,7 @@ struct gs_data *gsh;
 void fem_amg_setup(int *precond_type_, int *meshing_type_, 
                    int *n_x_, int *n_y_, int *n_z_, int *n_elem_, int *n_dim_, 
                    double *x_m_, double *y_m_, double *z_m_, 
-                   long *glo_num_, double *pmask_, double* binv_,
+                   long long *glo_num_, double *pmask_, double* binv_,
                    const MPI_Fint *ce, const int *gshf)
 {
     // Parallel run information
@@ -150,7 +150,6 @@ void fem_amg_setup(int *precond_type_, int *meshing_type_,
     HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, 0.25); // Strength threshold
     HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50); // maximum number of rows in coarse level
     HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, 3); // G-S/Jacobi hybrid relaxation, 3 means SOR
-    HYPRE_BoomerAMGSetPrintLevel(amg_preconditioner, 0);  // print solve info + parameters
     HYPRE_BoomerAMGSetMaxIter(amg_preconditioner, 1); // maximum number of V-cycles
     HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); // convergence tolerance
     HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, 0.1); // Non-Galerkin tolerance
@@ -183,6 +182,12 @@ void fem_amg_solve(double *z, double *w)
         if (proc_id == 0)
             printf("ERROR: AMG hasn't been setup. Call the amg_setup function first before calling this function\n");
 
+        exit(EXIT_FAILURE);
+    }
+
+    if (sizeof(long long) != sizeof(HYPRE_Int)) {
+        if (proc_id == 0)
+          fail(1,__FILE__,__LINE__,"incompatible HYPRE_Int size");
         exit(EXIT_FAILURE);
     }
 
@@ -268,9 +273,7 @@ void fem_assembly()
     HYPRE_Int *ranking = mem_alloc_1D_long(n_xyze);
 
     // Ranking fix: If there are no Dirichlet pressure nodes offset is 1, otherwise is 2
-    long one = 1;
-    long offset = 1;
-
+    int offset = 1;
     for (idx = 0; idx < n_xyze; idx++)
     {
         if (pmask[idx] == 0.0)
@@ -280,10 +283,10 @@ void fem_assembly()
         }
     }
 
-    offset = maximum(offset, one);
+    MPI_Allreduce(MPI_IN_PLACE,&offset,1,MPI_INT,MPI_MAX,comm);
 
     for (idx = 0; idx < n_xyze; idx++)
-        ranking[idx] = glo_num[idx] - offset;
+        ranking[idx] = glo_num[idx] - (long long)offset;
 
     row_start = 0;
     row_end = 0;
@@ -291,21 +294,24 @@ void fem_assembly()
     for (idx = 0; idx < n_xyze; idx++)
         if (ranking[idx] >= 0) row_end = maximum(row_end, ranking[idx]);
 
-    MPI_Request send_request, receive_request;
-    MPI_Status communication_status;
+    MPI_Request req[2];
+
+    if (proc_id > 0)
+      MPI_Irecv(&row_start, 1, MPI_LONG_LONG, proc_id - 1, 0, comm, &req[0]);
 
     if (proc_id < num_procs - 1)
-    {
-        MPI_Isend(&row_end, 1, MPI_LONG, proc_id + 1, 0, comm, &send_request);
-        MPI_Wait(&send_request, &communication_status);
+      MPI_Isend(&row_end, 1, MPI_LONG_LONG, proc_id + 1, 0, comm, &req[1]);
+
+    if (proc_id == 0) {
+      MPI_Waitall(1, &req[1], MPI_STATUSES_IGNORE);
+    } else if (proc_id == num_procs - 1) {
+      MPI_Waitall(1, &req[0], MPI_STATUSES_IGNORE);
+    } else {
+      MPI_Waitall(2, req, MPI_STATUSES_IGNORE);
     }
 
     if (proc_id > 0)
-    {
-        MPI_Irecv(&row_start, 1, MPI_LONG, proc_id - 1, 0, comm, &receive_request);
-        MPI_Wait(&receive_request, &communication_status);
-        row_start += 1;
-    }
+      row_start += 1;
 
     num_loc_dofs = row_end - row_start + 1;
     dof_map = mem_alloc_1D_long(num_loc_dofs);
@@ -933,7 +939,7 @@ void mem_free_2D_double(double ***array, int n, int m)
 void fem_amg_setup(int *precond_type_, int *meshing_type_, 
                    int *n_x_, int *n_y_, int *n_z_, int *n_elem_, int *n_dim_, 
                    double *x_m_, double *y_m_, double *z_m_, 
-                   long *glo_num_, double *pmask_, double* binv_,
+                   long long *glo_num_, double *pmask_, double* binv_,
                    const MPI_Fint *ce, const int *gsh)
 {
      fail(1,__FILE__,__LINE__,"please recompile with HYPRE support");
