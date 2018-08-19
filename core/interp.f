@@ -30,8 +30,7 @@ c
  
       real w(2*lx1**3)
 
-      tol = tolin
-      if (tolin.le.1e-14) tol = 5e-13
+      tol = max(5e-13,tolin)
       npt_max = 256
       bb_t    = 0.01
 
@@ -46,7 +45,7 @@ c
 
       ! setup handle for findpts
       if (nmsh.gt.1 .and. nmsh.lt.lx1-1) then
-         if (nio.eq.0) write(6,*) 'Ngeom for findpts:',nmsh
+         if (nio.eq.0) write(6,*) 'Nmsh for findpts:',nmsh
          nxi = nmsh+1
          nyi = nxi
          nzi = 1
