@@ -29,6 +29,9 @@ all:
           if [ "$$i" == "genbox" ]; then         \
             export FFLAGS+=" ${R8}" ;            \
 	  fi ;                                   \
+          if [ "$$i" == "n2to3" ]; then          \
+            export FFLAGS+=" ${R8}" ;            \
+	  fi ;                                   \
           if [ "$$i" == "prenek" ]; then         \
              export CFLAGS+=" -Dr8";             \
           fi ;                                   \
