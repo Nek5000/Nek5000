@@ -108,22 +108,31 @@
       nxyz=lx1*ly1*lz1
       ntot=nxyz*nelt
 
+! toggle shock detector with AV application Lv, See & Ihme (2016) JCP 322
+
+      if (time4av) then
+         call shock_detector(avmask)
+
 ! old nu_max
-      call wavevisc(t(1,1,1,1,3))
+         call wavevisc(t(1,1,1,1,3))
 ! diagnostic
-!      if (stage.gt.0)then
-!      do e=1,nelt
-!!         do i=1,nxyz
-!            write(stage*100+nid,*)xm1(i,1,1,e),ym1(i,1,1,e),t(i,1,1,e,3)
-!         enddo
-!      enddo
-!      endif
-!
-! shock detector
-      call shock_detector(avmask)
-      do e=1,nelt
-         call cmult(t(1,1,1,e,3),avmask(e),nxyz)
-      enddo
+!        if (stage.gt.0)then
+!        do e=1,nelt
+!!           do i=1,nxyz
+!              write(stage*100+nid,*)xm1(i,1,1,e),ym1(i,1,1,e),t(i,1,1,e,3)
+!           enddo
+!        enddo
+!        endif
+         do e=1,nelt
+            call cmult(t(1,1,1,e,3),avmask(e),nxyz)
+            if (avmask(e).ne.1.0) write(6,*) 'duh sir'
+         enddo
+
+      else
+         call rzero(t(1,1,1,1,3),ntot)
+!        call shock_detector(avmask)
+      endif
+
 ! diagnostic
 !      if (stage.gt.0)then
 !      do e=1,nelt

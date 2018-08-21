@@ -125,6 +125,7 @@ c------------------------------------------------------------------------
      >          (tau-(pres-exp(se0const)*rho**gmaref))
          epsebdg(e)=min(epsebdg(e),1.0)
          epsebdg(e)=max(epsebdg(e),0.0)
+! diagnostic
          call cfill(t(1,1,1,e,4),epsebdg(e),nxyz)
 
          do m=1,toteq
@@ -140,11 +141,22 @@ c------------------------------------------------------------------------
       end
 
 !-----------------------------------------------------------------------
+! JH082118 shock detectors. Test shock detectors in usr file extensively.
+!          port them here after they have earned our trust.
+!-----------------------------------------------------------------------
+
+      subroutine AVeverywhere(shkdet)
+      include 'SIZE'
+      include 'TOTAL'
+      real shkdet(nelt)
+      call rone(shkdet,nelt)
+      return
+      end
 
       subroutine limiter_only(shkdet)
-! first ad hoc shock detector ever. read a limiter function from CMTDATA
+! worst ad hoc shock detector ever. read a limiter function from CMTDATA
 ! epsebdg is the only one we have so far. If it's bigger than some threshold,
-! light up AV there too.
+! apply AV there too.
       include 'SIZE'
       include 'CMTDATA'
       real shkdet(nelt)
@@ -153,7 +165,7 @@ c------------------------------------------------------------------------
       call rzero(shkdet,nelt)
       tol=1.0e-5
 
-      if (time4av) then
+      if (.not.time4av) then
          do e=1,nelt
             if (abs(epsebdg(e)) .gt. tol) shkdet(e)=1.0
          enddo
