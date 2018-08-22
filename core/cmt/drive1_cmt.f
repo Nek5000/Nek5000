@@ -32,6 +32,8 @@ c     Solve the Euler equations
 
       if(istep.eq.1) then
          time4av=.true.
+         call compute_mesh_h(meshh,xm1,ym1,zm1)
+         call compute_grid_h(gridh,xm1,ym1,zm1)
          call cmt_ics
          if (ifrestart) then
             time_cmt=time
@@ -42,8 +44,6 @@ c     Solve the Euler equations
          call init_cmt_timers
          dt_cmt=param(12)
          call cmtchk ! need more ifdefs to use userchk
-         call compute_mesh_h(meshh,xm1,ym1,zm1)
-         call compute_grid_h(gridh,xm1,ym1,zm1)
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu
          call limiter
