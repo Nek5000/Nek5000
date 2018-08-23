@@ -90,7 +90,7 @@ c ----------------------
       common /new_gpr/ rdxgp, rdygp, rdzgp, binb
       common /nlastbin/ nbin_save,nbin_now
 
-      parameter (nfldpm = 8)
+      parameter (nfldpm = 9)
       real xm1b(lx1,ly1,lz1,3,lbmax),ptwb(lx1,ly1,lz1,nfldpm,lbmax)
       common /lb_meshr/ xm1b
       integer er_map(6,lbmax), er_mapc(6,lbmax),er_maps(6,lbmax)

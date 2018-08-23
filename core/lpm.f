@@ -3582,6 +3582,12 @@ c-----------------------------------------------------------------------
      &                             ipart(je0,1)   ,ni,
      &                             rpart(jr,1)    ,nr,n,
      &                             vtrans)
+      call fgslib_findpts_eval(i_fp_hndl,rpart(jtempf,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             t)
       call fgslib_findpts_eval(i_fp_hndl,rpart(jDuDt+0,1) ,nr,
      &                             ipart(jrc,1)  ,ni,
      &                             ipart(jpt,1)  ,ni,
@@ -3754,14 +3760,15 @@ c-----------------------------------------------------------------------
       nxyz = lx1*ly1*lz1
       do ie=1,neltbb
          iee = er_maps(1,ie)
-         call copy(ptwb(1,1,1,1,ie),vx(1,1,1,iee),nxyz)
-         call copy(ptwb(1,1,1,2,ie),vy(1,1,1,iee),nxyz)
-         call copy(ptwb(1,1,1,3,ie),vz(1,1,1,iee),nxyz)
-         call copy(ptwb(1,1,1,4,ie),vtrans(1,1,1,iee,1),nxyz)
-         call copy(ptwb(1,1,1,5,ie),rhs_fluidp(1,1,1,iee,1),nxyz)
-         call copy(ptwb(1,1,1,6,ie),rhs_fluidp(1,1,1,iee,2),nxyz)
-         call copy(ptwb(1,1,1,7,ie),rhs_fluidp(1,1,1,iee,3),nxyz)
-         call copy(ptwb(1,1,1,8,ie),ptw(1,1,1,iee,4),nxyz)
+         call copy(ptwb(1,1,1,1,ie),vx(1,1,1,iee)          ,nxyz)
+         call copy(ptwb(1,1,1,2,ie),vy(1,1,1,iee)          ,nxyz)
+         call copy(ptwb(1,1,1,3,ie),vz(1,1,1,iee)          ,nxyz)
+         call copy(ptwb(1,1,1,4,ie),vtrans(1,1,1,iee,1)    ,nxyz)
+         call copy(ptwb(1,1,1,5,ie),t(1,1,1,iee,1)         ,nxyz)
+         call copy(ptwb(1,1,1,6,ie),rhs_fluidp(1,1,1,iee,1),nxyz)
+         call copy(ptwb(1,1,1,7,ie),rhs_fluidp(1,1,1,iee,2),nxyz)
+         call copy(ptwb(1,1,1,8,ie),rhs_fluidp(1,1,1,iee,3),nxyz)
+         call copy(ptwb(1,1,1,9,ie),ptw(1,1,1,iee,4)       ,nxyz)
       enddo
 
       neltbc = neltbb
@@ -3795,10 +3802,11 @@ c-----------------------------------------------------------------------
             call baryinterp(ptwb(1,1,1,2,ie),rpart(ju0+1,i)  ,nxyz)
             call baryinterp(ptwb(1,1,1,3,ie),rpart(ju0+2,i)  ,nxyz)
             call baryinterp(ptwb(1,1,1,4,ie),rpart(jrho,i)   ,nxyz)
-            call baryinterp(ptwb(1,1,1,5,ie),rpart(jDuDt+0,i),nxyz)
-            call baryinterp(ptwb(1,1,1,6,ie),rpart(jDuDt+1,i),nxyz)
-            call baryinterp(ptwb(1,1,1,7,ie),rpart(jDuDt+2,i),nxyz)
-            call baryinterp(ptwb(1,1,1,8,ie),rpart(jvol1,i)  ,nxyz)
+            call baryinterp(ptwb(1,1,1,5,ie),rpart(jtempf,i) ,nxyz)
+            call baryinterp(ptwb(1,1,1,6,ie),rpart(jDuDt+0,i),nxyz)
+            call baryinterp(ptwb(1,1,1,7,ie),rpart(jDuDt+1,i),nxyz)
+            call baryinterp(ptwb(1,1,1,8,ie),rpart(jDuDt+2,i),nxyz)
+            call baryinterp(ptwb(1,1,1,9,ie),rpart(jvol1,i)  ,nxyz)
 
             endif
             endif
@@ -3996,6 +4004,12 @@ c-----------------------------------------------------------------------
      &                             ipart_nf(je0,1)   ,ni,
      &                             rpart_nf(jr,1)    ,nr,nfpts1,
      &                             vtrans)
+      call fgslib_findpts_eval(i_fp_hndl,rpart(jtempf,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             t)
       call fgslib_findpts_eval(i_fp_hndl,rpart_nf(jDuDt+0,1) ,nr,
      &                             ipart_nf(jrc,1)  ,ni,
      &                             ipart_nf(jpt,1)  ,ni,
