@@ -1,0 +1,137 @@
+c ------------------------
+c MAIN PARTICLE STRUCTURES
+c ------------------------
+      parameter (lr=85,li=12)
+      common  /cpartr/ rpart(lr,llpart) 
+      common  /cparti/ ipart(li,llpart) 
+      common  /iparti/ n,nr,ni
+
+      common /ptpointers/ jrc,jpt,je0,jps,jpid1,jpid2,jpid3
+     >                   ,jai,jicx,jicy,jicz,jicn,nai
+     >                   ,jr,jd,jx,jy,jz,jv0,ju0,jf0,jfusr,jfcol
+     >                   ,jfqs,jfun,jfiu,jtaup,jcd,jdrhodt,jre,jDuDt
+     >                   ,jtemp,jrho,jrhop,ja,jvol,jdp,jar,jx1,jx2,jx3
+     >                   ,jv1,jv2,jv3,ju1,ju2,ju3,nar,jvol1,jgam,jspl
+     >                   ,jtempf,jq0,jg0,jqqs,jquu,jcmiu,jrpe
+
+c -------------------------
+c GHOST PARTICLE STRUCTURES
+c -------------------------
+      parameter (llpart_gp=26*llpart)
+      parameter (lrgp=14,ligp=10)
+      common /gp_pointsr/ rptsgp(lrgp,llpart_gp)
+      common /gp_pointsi/ iptsgp(ligp,llpart_gp)
+      common /gp_lens/ nfptsgp,nigp,nrgp
+
+      common /gp_ptpointers/ jgpiic,jgpps,jgppt,jgpes,jgpicx,jgpicy
+     >                      ,jgpicz,jgppid1,jgppid2,jgppid3
+     >                      ,jgpx,jgpy,jgpz,jgpfh,jgpvol,jgpspl,jgpg0
+     >                      ,jgpq0,jgpv0,jgprpe
+
+c ----------------
+c PARTICLE OPTIONS
+c ----------------
+      common /part_options/ bc_part, two_way, red_interp,time_integ,
+     >                      part_force,time_delay,inject_rate,
+     >                      ipart_restartr,npro_method,npio_method,
+     >                      icmtp,ifrectp
+      integer bc_part(6),two_way, red_interp,time_integ,part_force(5)
+     >       ,time_delay,inject_rate,ipart_restartr,npro_method
+     >       ,npio_method,icmtp,ifrectp
+
+c -------------------
+c PARTICLE PARAMETERS
+c -------------------
+      common /part_paramsr/ dp, rho_p, tau_p,mu_0,tp_0,rsig,dfilt,
+     >                     ralphdecay,rxbo,rxco,cp_p,ksp,dt_part,
+     >                     e_rest,rspl,dp_std,ksp_wall,e_rest_wall,
+     >                     zlpart,zrpart
+      common /part_paramsi/ nw,nrandseed,nwe,lpm_endian
+      common /part_paramsl/ if3dpart
+      real   dp(2),rho_p,tau_p,mu_0,rsig,dfilt,ralphdecay,rxbo(2,3)
+     >      ,rxco(9),cp_p,tp_0,ksp,dt_part,e_rest, dp_std,ksp_wall
+     >      ,e_rest_wall, zlpart, zrpart
+      integer nw,nrandseed,nwe,lpm_endian
+      logical if3dpart
+
+c -------------------
+c USER AND OTHER DATA
+c -------------------
+      parameter (iptlen=11)
+      real   pttime(iptlen),ptdum(iptlen),xdrange(2,3),d2chk(3)
+      common /lpm_other/ pttime,ptdum,xdrange,d2chk
+      real   lpmx_p(3),lpmvol_p,lpmvolfrac_p,lpmvolfrac_f,
+     >       lpmtau_p,lpmv_p(3),lpmv_f(3),lpmre_p,lpmmach_p,lpmvisc_f,
+     >       lpmdiam_p,lpmdens_p,lpmdens_f,lpmDuDt(3),lpmkappa_f,
+     >       lpmvdiff_pf,lpmforce(3),lpmheat,lpmtemp_p,lpmtemp_f,
+     >       lpmforcec(3)
+      common /lpm_partuser/ lpmx_p,lpmvol_p,lpmvolfrac_p,
+     >                      lpmvolfrac_f,lpmtau_p,lpmv_p,lpmv_f,lpmre_p,
+     >                      lpmmach_p,lpmvisc_f,lpmdiam_p,lpmdens_p,
+     >                      lpmdens_f,lpmDuDt,lpmkappa_f,lpmvdiff_pf,
+     >                      lpmforce,lpmheat,lpmtemp_p,lpmtemp_f,
+     >                      lpmforcec
+      integer lpmi
+      common /lpm_partusei/ lpmi
+
+c ----------------------
+c GHOST PARTICLE MAPPING
+c ----------------------
+      integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
+     >                            nfacegp, nedgegp, ncornergp
+      common /neighbor_el_number/ el_face_num,el_edge_num,el_corner_num,
+     >                            nfacegp, nedgegp, ncornergp
+
+      parameter (lbmax = 50*lelt)
+      parameter (ngpvc  = 6)
+      integer ndxgp,ndygp,ndzgp, mod_gp_grid(lx1,ly1,lz1,lbmax,4)
+      common /new_gpi/ ndxgp,ndygp,ndzgp,mod_gp_grid
+      real    rdxgp, rdygp, rdzgp , binb(6)
+      common /new_gpr/ rdxgp, rdygp, rdzgp, binb
+      common /nlastbin/ nbin_save,nbin_now
+
+      parameter (nfldpm = 8)
+      real xm1b(lx1,ly1,lz1,3,lbmax),ptwb(lx1,ly1,lz1,nfldpm,lbmax)
+      common /lb_meshr/ xm1b
+      integer er_map(6,lbmax), er_mapc(6,lbmax),er_maps(6,lbmax)
+     >                       ,neltb,neltbb,nreach
+      common /lb_meshi/ er_map, er_mapc,er_maps,neltb,neltbb,nreach
+
+      integer lpm_el_map(8,lbmax)
+      common /lpm_el_ignore/ lpm_el_map
+
+      integer lpm_binsort(3,lpmax)
+      common /lpm_nid_sort/ lpm_binsort
+
+      
+c ----------------------------------------------
+c EULERIAN FIELD PROPERTIES FOR TWO-WAY COUPLING
+c ----------------------------------------------
+      common /part_two_way/  ptw
+      real                   ptw(lx1,ly1,lz1,lelt,7)
+
+      common /fundpart/ rhs_fluidp
+      real rhs_fluidp(lx1,ly1,lz1,lelt,8)
+
+c ---------------
+c FOR EASY MPI IO
+c ---------------
+      parameter (lrf=42,lif=4)
+      integer nfpts,nrf,nif,ifpts(lif,llpart)
+      real*4 rfpts(lrf,llpart)
+      common /fptspartr/ rfpts
+      common /fptsparti/ ifpts
+      common /fptspartn/ nrf,nif
+
+c --------------------------------
+c DEM WALLS - PLANES AND CYLINDERS
+c --------------------------------
+      parameter (n_walls = 9)
+      character*16 mystringpart
+      integer np_walls,nc_walls
+      real    plane_wall_coords(6,n_walls)
+     >       ,cyl_wall_coords(7,n_walls)
+      common /rbc_part/ plane_wall_coords,cyl_wall_coords
+      common /ibc_part/ np_walls,nc_walls
+      common /cbc_part/ mystringpart
+

@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
       character*100 zefmt
       write(zefmt,'(a1,i2,a6)') '(',nb,'e15.7)'
       do i=1,na
-         write(6,zefmt) (ab(i,j),j=1,nb)
+         write(37,zefmt) (ab(i,j),j=1,nb)
 !        write(6,*) i,'rowsum=',sum(ab(i,1:nb))
       enddo
       return
@@ -72,6 +72,8 @@ c----------------------------------------------------------------------
       COMMON /solnconsvar/ U(LX1,LY1,LZ1,TOTEQ,lelt) 
       COMMON /SCRNS/      OTVAR(LX1,LY1,LZ1,lelt,7)
       real                OTVAR
+      real               phig(lx1,ly1,lz1,lelt)
+      common /otherpvar/ phig
       integer e,f
 
       n = lx1*ly1*lz1
@@ -83,8 +85,8 @@ c----------------------------------------------------------------------
          call copy(otvar(1,1,1,e,1),u(1,1,1,5,e),n)
       enddo
 
-      call copy(otvar(1,1,1,1,2),tlag(1,1,1,1,1,2),n*nelt) ! s_{n-1}
-      call copy(otvar(1,1,1,1,3),tlag(1,1,1,1,2,1),n*nelt) ! s_n
+      call copy(otvar(1,1,1,1,2),phig(1,1,1,1),n*nelt) ! s_{n-1}
+      call copy(otvar(1,1,1,1,3),pr(1,1,1,1),n*nelt) ! s_n
 
 c     ifxyo=.true.
       if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)

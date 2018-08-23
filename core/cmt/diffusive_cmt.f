@@ -143,7 +143,7 @@ C> and \f$\nu_s \nabla \left(\rho e\right)\f$.  \f$\nu_s=0\f$ for Navier-Stokes
       call fluxj_evm(flux,du,e,eq)
 
 ! no idea where phi goes. put it out front
-!     call col2(flux,phig(1,1,1,e),lx1*ly1*lz1)
+      call col2(flux,phig(1,1,1,e),lx1*ly1*lz1)
 
 C> @}
       return

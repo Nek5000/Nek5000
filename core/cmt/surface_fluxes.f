@@ -320,7 +320,7 @@ C> @}
          call rzero(fs,nxzd) ! moving grid stuff later
 
          call AUSM_FluxFunction(nxzd,nx,ny,nz,jaco_f,fs,rl,ul,vl,wl,pl,
-     >                          al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
+     >                       al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
 
          do j=1,toteq
             call col2(flx(1,j),phl,nxzd)

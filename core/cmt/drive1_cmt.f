@@ -45,6 +45,10 @@ c     Solve the Euler equations
          call entropy_viscosity      ! for high diffno
          call compute_transport_props! at t=0
 
+#ifdef LPM
+         call spread_props_grid           
+#endif
+
       endif
 
       nstage = 3
@@ -58,7 +62,9 @@ c particle equations of motion are solved (also includes forcing)
 c In future this subroutine may compute the back effect of particles
 c on the fluid and suitably modify the residue computed by 
 c compute_rhs_dt for the 5 conserved variables
-         call usr_particles_solver
+#ifdef LPM
+         call lpm_usr_particles_solver
+#endif
 
 ! JH111815 soon....
 ! JH082316 someday...maybe?
@@ -95,7 +101,9 @@ c-----------------------------------------------------------------------
          call out_fld_nek
          call mass_balance(if3d)
 c dump out particle information. 
-         call usr_particles_io(istep)
+#ifdef LPM
+         call lpm_usr_particles_io(istep)
+#endif
       end if
 
 !     call print_cmt_timers ! NOT NOW

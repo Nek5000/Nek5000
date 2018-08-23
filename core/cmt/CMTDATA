@@ -10,9 +10,7 @@ C> each of lx1*ly1*lz1 grid points for all elements
      $                , ifcntfilt, ifrestart
 
       real               phig(lx1,ly1,lz1,lelt)
-!     real               ja(lx1*ly1*lz1,ldim*ldim,lelv)
-! I really want to set lxd=1 and declare a new rx and call it ja
-      common /otherpvar/ phig!,ja
+      common /otherpvar/ phig
 
       real res1(lx1,ly1,lz1,lelt,toteq)
      $   , res2(lx1,ly1,lz1,lelt,toteq)
@@ -51,26 +49,24 @@ c---------------------------------------------------------------------
       real                cvgref,cpgref,gmaref,rgasref,molmass
       common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
 
+      real                  cip(2*ldim,lelt)
+      common /cmttransprop/ cip
+
+      real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc
+      common /cmttransref/ muref, coeflambda, suthcoef, reftemp, prlam
+     $                   , cip_adhoc
+
       integer              stage,nstage
       common /tstepstage/ stage,nstage
 
       real                  tcoef(3,3),dt_cmt,time_cmt
       common /timestepcoef/ tcoef,dt_cmt,time_cmt
       
-! particle stuff for rk3 low storage tvd
-      common /PARTRESTART/ ifpartrestart, partrestartfile
-     >        ,partrestartdata, partrestartno
-      logical ifpartrestart
-      character*15 partrestartfile
-      character*13 partrestartdata
-      integer partrestartno
+      integer            res_freq
+      common /cmtioflgs/ res_freq
 
-! JH011417 removed for now. lpart stuff needs to be somewhere else
-!     common /PARTRK3/ kv_stage_p, kx_stage_p
-!     real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
-
-!     common /partrkstuff/ xlocp, vlocp
-!     real xlocp(lpart,ldim), vlocp(lpart,ldim)
+      logical           ifsip
+      common /cmtvisco/ ifsip
 
       real              varsic(10),rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
