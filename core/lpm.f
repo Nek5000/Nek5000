@@ -37,6 +37,9 @@ c----------------------------------------------------------------------
       include 'CTIMER'
       include 'LPM'
 
+c     common /elementload/ gfirst, inoassignd, resetFindpts, pload(lelg)
+c     integer gfirst, inoassignd, resetFindpts, pload
+
       icmtp = idum
 
       ! for 2d cases
@@ -49,7 +52,9 @@ c----------------------------------------------------------------------
       call place_particles
       call move_particles_inproc
 
+c     call move_particles_inproc          
       if (two_way.gt.1) then
+c        call compute_neighbor_el_proc    
          call create_extra_particles
          call send_ghost_particles
          call spread_props_grid           
@@ -59,6 +64,11 @@ c----------------------------------------------------------------------
 
       if (time_integ .lt. 0) call pre_sim_collisions ! e.g., settling p
    
+c     resetFindpts = 0
+c     call computeRatio
+c     call reinitialize
+c     call printVerify
+
       return
       end
 c----------------------------------------------------------------------
@@ -304,7 +314,12 @@ c
       include 'TOTAL'
       include 'LPM'
 
+c     common /elementload/ gfirst, inoassignd, resetFindpts, pload(lelg)
+c     integer gfirst, inoassignd, resetFindpts, pload
+
+
       if(istep.eq.0.or.istep.eq.1)then
+c     if((istep.eq.0) .or. (istep.eq.1).or.(resetFindpts.eq.1)) then 
         call domain_size(xdrange(1,1),xdrange(2,1),xdrange(1,2)
      $                  ,xdrange(2,2),xdrange(1,3),xdrange(2,3))
 
@@ -598,15 +613,22 @@ c
          pttime(1) = pttime(1) + dnekclock() - ptdum(1)
       endif
 
+      icalld = icalld + 1
+
+c     should we inject particles at this time step?
+      ifinject = .false.
+      if (inject_rate .gt. 0) then
+      if ((mod(istep,inject_rate).eq.0)) then 
+         ifinject = .true. 
+      endif
+      endif
+
       if (istep .gt. time_delay) then
 
       if (stage.eq.1) then
 
-         icalld = icalld + 1
-
          ! Inject particles if needed
-         if (modulo(icalld,inject_rate) .eq. 0)
-     >      call place_particles
+         if (ifinject) call place_particles
 
          ! Update where particle is stored at
          ptdum(3) = dnekclock()
