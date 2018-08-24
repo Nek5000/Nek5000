@@ -4905,9 +4905,9 @@ c----------------------------------------------------------------------
 
       character*10 filename
 
-! ------------------------------
-! LOAD TOTAL NUMBER OF PARTICLES
-! ------------------------------
+      ntotal = iglsum(n,1)
+      if (ntotal .gt. ntotal) return
+
       write(filename,'(A5,I5.5)') 'rpart', abs(ipart_restartr)
       if (nid .eq. 0) then
          iread = 753
