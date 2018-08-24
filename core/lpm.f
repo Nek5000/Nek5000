@@ -4906,7 +4906,7 @@ c----------------------------------------------------------------------
       character*10 filename
 
       ntotal = iglsum(n,1)
-      if (ntotal .gt. ntotal) return
+      if (ntotal .gt. nw) return
 
       write(filename,'(A5,I5.5)') 'rpart', abs(ipart_restartr)
       if (nid .eq. 0) then
