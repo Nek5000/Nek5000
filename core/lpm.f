@@ -565,8 +565,8 @@ c
 
       if (stage.eq.1) then
 
-         if ( modulo(istep,inject_rate) .eq. 0) then
-             call place_particles
+         if (inject_rate .gt. 0) then
+            if ( modulo(istep,inject_rate) .eq. 0) call place_particles
          endif
 
          ! Update where particle is stored at
