@@ -451,7 +451,7 @@ c-----------------------------------------------------------------------
          enddo
       enddo
 
-      call max_to_trilin(t(1,1,1,1,3))
+!     call max_to_trilin(t(1,1,1,1,3))
 
       return
       end
@@ -501,6 +501,67 @@ c-----------------------------------------------------------------------
      >                          c4*deltax*deltay+c5*deltay*deltaz+
      >                       c6*deltaz*deltax+c7*deltay*deltaz*deltax
          enddo
+      enddo
+
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine perssonperaire(shkdet,var,shtmp)
+! Peraire & Persson (2006) Eq. 7
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+      parameter (lxyz=lx1*ly1*lz1)
+      common /scrns/ fvar (lxyz,lelt)
+!    $ ,             ytm1 (lx1,ly1,lz1,lelv)
+      real shkdet(lxyz,nelt),var(lxyz,*),shtmp(lxyz,*)
+      integer e
+! this whole common block is atrocious
+      common /CMTFILTERS/  intv(lx1,lx1),intt(lx1,lx1)
+     $                  ,  intvd(lxd,lxd),inttd(lxd,lxd)
+     $                  ,  wk1(lx1,lx1,lz1),wk2(lx1,lx1,lz1)
+     $                  ,  wkd1(lxd,lxd,lzd),wkd2(lxd,lxd,lzd)
+      real                 intv, intt, intvd, inttd
+      real kappa
+      integer icalld
+      save    icalld
+      data    icalld/0/
+
+      if (icalld.eq.0) then
+         ncut=-110
+         icalld=1
+         call userfilt(intv,zgm1,lx1,nio)
+      endif
+
+      n=lx1*ly1*lz1
+      ntot=n*nelt
+
+! JH082418 Hardcoded threshold
+      cpp=0.001
+
+      call copy(fvar,var,ntot)
+      call filterq(fvar,intv,lx1,lz1,wk1,wk2,intt,if3d,dmax)
+
+      do e=1,nelt
+         call sub3(shkdet(1,e),var(1,e),fvar(1,e),n) ! store u-u^ in shkdet
+         shock_or_not=vlsc3(shkdet(1,e),shkdet(1,e),bm1(1,1,1,e),n)
+         denom=vlsc3(var(1,e),var(1,e),bm1(1,1,1,e),n)
+         if (denom .gt. 0.0) then ! mask this somehow. ifs are bad
+            shock_or_not=(shock_or_not/denom)*(lx1-1)**4
+!           shock_or_not=log10(shock_or_not)
+            if (shock_or_not .gt. cpp) then
+!              call cfill(shkdet(1,e),shock_or_not,n)
+               call rone(shkdet(1,e),n)
+            else
+               call rzero(shkdet(1,e),n)
+            endif
+         else
+            write(6,*) 'nid,iel=',nid,e
+            write(6,*) 'variables that change sign are bad for shox'
+            call exitt
+         endif
       enddo
 
       return

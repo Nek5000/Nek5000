@@ -483,3 +483,54 @@ C> @}
 
       return
       end
+
+!-----------------------------------------------------------------------
+!      subroutine ihu(hu,uminus,uplus,flxscr,eta,he) ! INTERIOR PENALTY
+!      include 'SIZE'
+!      include 'TOTAL'
+!      include 'CMTDATA'
+!      include 'DG'
+!      
+!      real uminus(lx1*lz1*2*ldim*nelt),uplus(lx1*lz1*2*ldim*nelt),
+!     >     flxscr(lx1*lz1*2*ldim*nelt),hu(lx1*lz1*lz1*nelt),
+!     >     eta(lx1*lz1*2*ldim*nelt),he(lx1*lz1*lz1*nelt)
+!      integer  e, n, npl, nf, f, i, k
+!      integer eg
+!
+!      n  = lx1*ny1*lz1*nelt
+!      nfaces=2*ldim
+!      nxz=lx1*lz1
+!      npl = lx1 - 1
+!      nf = lx1*lz1*2*ldim*nelt
+!         
+!c   . R     
+!      call add3(flxscr,uminus,uplus,nf) ! {{u}}
+!      const=-0.5 
+!      call cmult(flxscr,const,nf)  !       -
+!      
+!      call add2(flxscr,uminus,nf)     !flxscr = u -{{u}}
+!      ifield=1 ! FIX THIS NOW  
+!      ifield=2 ! FIX THIS NOW
+!      
+!c   . area, eta, he
+!      k = 0
+!      do e=1,nelt
+!         eg = lglel(e)
+!         do f=1,nfaces
+!         do i=1,nxz
+!            k=k+1
+!            if (cbc(f,e,ifield).eq.'W  ') then ! unfuck this loop and if-statement
+!               flxscr(k)=(uminus(k)-uplus(k))*area(i,1,f,e)*eta(k)/he(k)
+!            else
+!               flxscr(k)=flxscr(k)*area(i,1,f,e)*eta(k)/he(k)*2.0 ! universal fred at boundary?
+!            endif
+!         enddo
+!         enddo
+!      enddo
+!
+!      call add_face2full_cmt(nelt,lx1,ny1,lz1,iface_flux,hu,flxscr)
+!c     write(6,*) 'done in ihu'
+!
+!      return
+!      end
+!
