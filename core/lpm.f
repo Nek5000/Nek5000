@@ -317,15 +317,12 @@ c     setup items
 
       ! do nothing, no spreading
       if (npro_method .eq. 0) then
-         d2chk(1) = 0.0
+         d2chk(2) = 0.0
       ! gaussian set by user input parameters
       elseif (npro_method .eq. 1) then
          rsig = dfilt/(2.*sqrt(2.*log(2.))) ! gaussian filter std. * DP
-         d2chk(1) = dfilt/2.*sqrt(-log(ralphdecay)/log(2.))
+         d2chk(2) = dfilt/2.*sqrt(-log(ralphdecay)/log(2.))
       endif
-
-      d2chk(2) = d2chk(1)
-      d2chk(3) = d2chk(1)
 
       mu_0   = abs(param(2))
 
@@ -346,15 +343,10 @@ c----------------------------------------------------------------------
       rdeff_max = glmax(rdeff_max,1)
       rdeff_max = rdeff_max*2. ! to get diameter
 
-      rtmp_col = rdeff_max*0.6
+      d2chk(2) = d2chk(2)*rdeff_max
+      d2chk(3) = 0.6     *rdeff_max
 
-      d2chk(1)  = d2chk(1)*rdeff_max
-      d2chk(2)  = d2chk(2)*rdeff_max
-      d2chk(3)  = d2chk(3)*rdeff_max
-
-      d2chk(1) = max(d2chk(1),rtmp_col)
-      d2chk(2) = d2chk(2)
-      d2chk(3) = rtmp_col
+      d2chk(1) = max(d2chk(2),d2chk(3))
 
       return
       end
@@ -828,15 +820,15 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
           
             do ie=1,neltb
          
-               if (lpm_el_map(1,ie) .gt. ndum) cycle 
-               if (lpm_el_map(2,ie) .lt. ndum) cycle 
-         
-               if (lpm_el_map(3,ie) .gt. ihigh) cycle
-               if (lpm_el_map(4,ie) .lt. ilow)  cycle
-               if (lpm_el_map(5,ie) .gt. jhigh) cycle
-               if (lpm_el_map(6,ie) .lt. jlow)  cycle
-               if (lpm_el_map(7,ie) .gt. khigh) cycle
-               if (lpm_el_map(8,ie) .lt. klow)  cycle
+c              if (lpm_el_map(1,ie) .gt. ndum) cycle 
+c              if (lpm_el_map(2,ie) .lt. ndum) cycle 
+c        
+c              if (lpm_el_map(3,ie) .gt. ihigh) cycle
+c              if (lpm_el_map(4,ie) .lt. ilow)  cycle
+c              if (lpm_el_map(5,ie) .gt. jhigh) cycle
+c              if (lpm_el_map(6,ie) .lt. jlow)  cycle
+c              if (lpm_el_map(7,ie) .gt. khigh) cycle
+c              if (lpm_el_map(8,ie) .lt. klow)  cycle
          
                do i=1,nxyz
                   if (mod_gp_grid(i,1,1,ie,4).ne.iproj(4,ip)) cycle
@@ -1888,7 +1880,7 @@ c
       include 'LPM'
 
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
-      integer iadd(3),ntypesl(7),iadd2(3)
+      integer iadd(3),ntypesl(7),iadd2(3),gpsave(27)
 
 ! ------------------------
 c CREATING GHOST PARTICLES
@@ -1919,6 +1911,17 @@ c CREATING GHOST PARTICLES
          jjp  = ipart(jicy,ip)
          kkp  = ipart(jicz,ip)
 
+         rxl = binb(1) + rdxgp*iip
+         rxr = rxl + rdxgp
+         ryl = binb(3) + rdygp*jjp
+         ryr = ryl + rdygp
+         rzl = 0.0
+         rzr = 0.0
+         if (if3d) then
+            rzl = binb(5) + rdzgp*kkp
+            rzr = rzl + rdzgp
+         endif
+
          isave = 0
 
          ! faces
@@ -1931,6 +1934,29 @@ c CREATING GHOST PARTICLES
             iig = ii1
             jjg = jj1
             kkg = kk1
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
 
             iflgx = 0
             iflgy = 0
@@ -1960,7 +1986,13 @@ c           if (iflgsum .eq. 2 .or. iflgsum .eq. 3) cycle
             ndumn = ndum/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 111
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -1998,6 +2030,29 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             jjg = jj1
             kkg = kk1
 
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+
             iflgx = 0
             iflgy = 0
             iflgz = 0
@@ -2026,7 +2081,13 @@ c           if (iflgsum .eq. 1 .or. iflgsum .eq. 3) cycle
             ndumn = ndum/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 222
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -2064,6 +2125,29 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             jjg = jj1
             kkg = kk1
 
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+
             iflgx = 0
             iflgy = 0
             iflgz = 0
@@ -2092,7 +2176,13 @@ c           if (iflgsum .eq. 1 .or. iflgsum .eq. 2) cycle
             ndumn = ndum/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 333
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -2138,7 +2228,8 @@ c
       include 'LPM'
 
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
-      integer iadd(3),ntypesl(7),iadd2(3)
+      integer iadd(3),ntypesl(7),iadd2(3),gpsave(27)
+
 
 ! ------------------------
 c CREATING GHOST PARTICLES
@@ -2157,17 +2248,26 @@ c CREATING GHOST PARTICLES
 
       nfptsgp = 0
 
-      if (npro_method .eq. 0) return ! only for projection
-
       do ip=1,n
          rxval = rpart(jx,ip)
          ryval = rpart(jy,ip)
          rzval = 0.
          if(if3d) rzval = rpart(jz,ip)
 
-         iip  = ipart(jicx,ip)
-         jjp  = ipart(jicy,ip)
-         kkp  = ipart(jicz,ip)
+         iip = ipart(jicx,ip) 
+         jjp = ipart(jicy,ip) 
+         kkp = ipart(jicz,ip) 
+
+         rxl = binb(1) + rdxgp*iip
+         rxr = rxl + rdxgp
+         ryl = binb(3) + rdygp*jjp
+         ryr = ryl + rdygp
+         rzl = 0.0
+         rzr = 0.0
+         if (if3d) then
+            rzl = binb(5) + rdzgp*kkp
+            rzr = rzl + rdzgp
+         endif
 
          isave = 0
 
@@ -2177,6 +2277,30 @@ c CREATING GHOST PARTICLES
             ii1 = iip + el_face_num(ist+1) 
             jj1 = jjp + el_face_num(ist+2)
             kk1 = kkp + el_face_num(ist+3)
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+               
 
             iig = ii1
             jjg = jj1
@@ -2206,11 +2330,18 @@ c CREATING GHOST PARTICLES
             iflgsum = iflgx + iflgy + iflgz
 c           if (iflgsum .eq. 2 .or. iflgsum .eq. 3) cycle
 
-            ndum  = iig + ndxgp*jjg + ndxgp*ndygp*kkg
-            ndumn = ndum/nreach
+            ndumn = iig + ndxgp*jjg + ndxgp*ndygp*kkg
+            ndumn = ndumn/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 111
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
+
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -2228,9 +2359,26 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             iadd(2)  = nrank
             iadd(3)  = ipart(ip,je0)
 
-            iadd2(1) = iig
-            iadd2(2) = jjg
-            iadd2(3) = kkg
+            idum = iip
+            jdum = jjp
+            kdum = kkp
+
+            if (iflgx .eq. 1) then
+            if (iip .eq. 0)       idum = ndxgp
+            if (iip .eq. ndxgp-1) idum = -1
+            endif
+            if (iflgy .eq. 1) then
+            if (jjp .eq. 0)       jdum = ndygp
+            if (jjp .eq. ndygp-1) jdum = -1
+            endif
+            if (iflgz .eq. 1) then
+            if (kkp .eq. 0)       kdum = ndzgp
+            if (kkp .eq. ndzgp-1) kdum = -1
+            endif
+
+            iadd2(1) = idum
+            iadd2(2) = jdum
+            iadd2(3) = kdum
             
             call add_a_ghost_particle(rxnew,iadd,iadd2,ip)
                         
@@ -2243,6 +2391,29 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             ii1 = iip + el_edge_num(ist+1) 
             jj1 = jjp + el_edge_num(ist+2)
             kk1 = kkp + el_edge_num(ist+3)
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
 
             iig = ii1
             jjg = jj1
@@ -2272,11 +2443,17 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             iflgsum = iflgx + iflgy + iflgz
 c           if (iflgsum .eq. 1 .or. iflgsum .eq. 3) cycle
 
-            ndum  = iig + ndxgp*jjg + ndxgp*ndygp*kkg
-            ndumn = ndum/nreach
+            ndumn = iig + ndxgp*jjg + ndxgp*ndygp*kkg
+            ndumn = ndumn/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 222
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -2294,9 +2471,27 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             iadd(2)  = nrank
             iadd(3)  = ipart(ip,je0)
             
-            iadd2(1) = iig
-            iadd2(2) = jjg
-            iadd2(3) = kkg
+            idum = iip
+            jdum = jjp
+            kdum = kkp
+
+            if (iflgx .eq. 1) then
+            if (iip .eq. 0)       idum = ndxgp
+            if (iip .eq. ndxgp-1) idum = -1
+            endif
+            if (iflgy .eq. 1) then
+            if (jjp .eq. 0)       jdum = ndygp
+            if (jjp .eq. ndygp-1) jdum = -1
+            endif
+            if (iflgz .eq. 1) then
+            if (kkp .eq. 0)       kdum = ndzgp
+            if (kkp .eq. ndzgp-1) kdum = -1
+            endif
+
+            iadd2(1) = idum
+            iadd2(2) = jdum
+            iadd2(3) = kdum
+
             
             call add_a_ghost_particle(rxnew,iadd,iadd2,ip)
                         
@@ -2309,6 +2504,29 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             ii1 = iip + el_corner_num(ist+1) 
             jj1 = jjp + el_corner_num(ist+2)
             kk1 = kkp + el_corner_num(ist+3)
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (if3d) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
 
             iig = ii1
             jjg = jj1
@@ -2338,11 +2556,17 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             iflgsum = iflgx + iflgy + iflgz
 c           if (iflgsum .eq. 1 .or. iflgsum .eq. 2) cycle
 
-            ndum  = iig + ndxgp*jjg + ndxgp*ndygp*kkg
-            ndumn = ndum/nreach
+            ndumn = iig + ndxgp*jjg + ndxgp*ndygp*kkg
+            ndumn = ndumn/nreach
             nrank = modulo(ndumn,np)
 
-c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 333
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
 
             ibctype = iflgx+iflgy+iflgz
                  
@@ -2360,10 +2584,27 @@ c           if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
             iadd(2)  = nrank
             iadd(3)  = ipart(ip,je0)
             
-            iadd2(1) = iig
-            iadd2(2) = jjg
-            iadd2(3) = kkg
-            
+            idum = iip
+            jdum = jjp
+            kdum = kkp
+
+            if (iflgx .eq. 1) then
+            if (iip .eq. 0)       idum = ndxgp
+            if (iip .eq. ndxgp-1) idum = -1
+            endif
+            if (iflgy .eq. 1) then
+            if (jjp .eq. 0)       jdum = ndygp
+            if (jjp .eq. ndygp-1) jdum = -1
+            endif
+            if (iflgz .eq. 1) then
+            if (kkp .eq. 0)       kdum = ndzgp
+            if (kkp .eq. ndzgp-1) kdum = -1
+            endif
+
+            iadd2(1) = idum
+            iadd2(2) = jdum
+            iadd2(3) = kdum
+
             call add_a_ghost_particle(rxnew,iadd,iadd2,ip)
                         
   333 continue
@@ -2905,8 +3146,8 @@ c-----------------------------------------------------------------------
       common /myparth/ i_fp_hndl, i_cr_hndl
 
       real pfx,pfy,pfz,vol,qgqf,rvx,rvy,rvz,rexp,multfc,multfci,rx2(3)
-     >     ,rxyzp(6,3)
-      integer ntypesl(7), ngp_trim(lbmax)
+     >     ,rxyzp(6,3),d2new(3)
+      integer ntypesl(7), ngp_trim(lbmax), ifac(3)
 
       real    rxnew(3), rxdrng(3)
       integer iadd(3)
@@ -2986,30 +3227,39 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
          binb(6) = xdrange(2,3)
       endif
 
-      if (npro_method .eq. 0) then
-         nmax = floor(np**(1./3.)) + 1
-         d2chk(1) = d2chk(3)
-         do i = 1,nmax
-            rfac = 2**i
-            rxval = (binb(2) - binb(1))/rfac
-            ryval = (binb(4) - binb(3))/rfac
-            rzval = (binb(6) - binb(5))/rfac
-            rval = min(rxval,ryval)
-            if (if3d) rval = min(rval,rzval)
-            if (rval .lt. d2chk(3)) exit
-            d2chk(1) = rval
-         enddo
-      endif
-            
+      ifac(1) = 1
+      ifac(2) = 1
+      ifac(3) = 1
+      d2new(1) = d2chk(1)
+      d2new(2) = d2chk(1)
+      d2new(3) = d2chk(1)
+
+      nmax = floor(np**(1./3.)) + 1
+      d2chk_save = d2chk(1)
+
+      do i=1,nmax
+      do j=0,ndim-1
+         ifac(j+1) = 1 + i
+         d2new(j+1) = (binb(2+2*j) - binb(1+2*j))/ifac(j+1)
+         nbb = ifac(1)*ifac(2)*ifac(3)
+         if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) then
+            ifac(j+1) = ifac(j+1) - 1
+            d2new(j+1) = (binb(2+2*j) - binb(1+2*j))/ifac(j+1)
+            goto 1511
+         endif
+      enddo
+      enddo
+ 1511 continue
+
 
 ! -------------------------------------------------------
 c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 ! -------------------------------------------------------
       ! how many spacings in each direction
-      ndxgp = floor( (binb(2) - binb(1))/d2chk(1))
-      ndygp = floor( (binb(4) - binb(3))/d2chk(1))
+      ndxgp = floor( (binb(2) - binb(1))/d2new(1))
+      ndygp = floor( (binb(4) - binb(3))/d2new(2))
       ndzgp = 1
-      if (if3d) ndzgp = floor( (binb(6) - binb(5))/d2chk(1))
+      if (if3d) ndzgp = floor( (binb(6) - binb(5))/d2new(3))
 
       ! grid spacing for that many spacings
       rdxgp = (binb(2) - binb(1))/real(ndxgp)
@@ -3017,22 +3267,52 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       rdzgp = 1.
       if (if3d) rdzgp = (binb(6) - binb(5))/real(ndzgp)
 
-      ninc = 8
+      ninc = 2
       if (bc_part(1) .ne. 0) then
          binb(1) = binb(1) - ninc/2*rdxgp
          binb(2) = binb(2) + ninc/2*rdxgp
          ndxgp = ndxgp + ninc
+         ic = 0
+         if (binb(1) .lt. xdrange(1,1)) then
+            ic = ic + 1
+            binb(1) = xdrange(1,1)
+         endif
+         if (binb(2) .gt. xdrange(2,1)) then
+            ic = ic + 1
+            binb(2) = xdrange(2,1)
+         endif
+         ndxgp = ndxgp - ic
       endif
       if (bc_part(3) .ne. 0) then
          binb(3) = binb(3) - ninc/2*rdygp
          binb(4) = binb(4) + ninc/2*rdygp
          ndygp = ndygp + ninc
+         ic = 0
+         if (binb(3) .lt. xdrange(1,2)) then
+            ic = ic + 1
+            binb(3) = xdrange(1,2)
+         endif
+         if (binb(4) .gt. xdrange(2,2)) then
+            ic = ic + 1
+            binb(4) = xdrange(2,2)
+         endif
+         ndygp = ndygp - ic
       endif
       if (bc_part(5) .ne. 0) then
       if (if3d) then
          binb(5) = binb(5) - ninc/2*rdzgp
          binb(6) = binb(6) + ninc/2*rdzgp
          ndzgp = ndzgp + ninc
+         ic = 0
+         if (binb(5) .lt. xdrange(1,3)) then
+            ic = ic + 1
+            binb(5) = xdrange(1,3)
+         endif
+         if (binb(6) .gt. xdrange(2,3)) then
+            ic = ic + 1
+            binb(6) = xdrange(2,3)
+         endif
+         ndzgp = ndzgp - ic
       endif
       endif
 
