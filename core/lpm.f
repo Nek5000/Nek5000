@@ -346,7 +346,7 @@ c----------------------------------------------------------------------
       rdeff_max = glmax(rdeff_max,1)
       rdeff_max = rdeff_max*2. ! to get diameter
 
-      rtmp_col = rdeff_max*1.5
+      rtmp_col = rdeff_max*0.6
 
       d2chk(1)  = d2chk(1)*rdeff_max
       d2chk(2)  = d2chk(2)*rdeff_max
@@ -565,8 +565,8 @@ c
 
       if (stage.eq.1) then
 
-         if ( modulo(istep,inject_rate) .eq. 0) then
-             call place_particles
+         if (inject_rate .gt. 0) then
+            if ( modulo(istep,inject_rate) .eq. 0) call place_particles
          endif
 
          ! Update where particle is stored at
@@ -590,6 +590,8 @@ c
                call spread_props_grid
             pttime(6) = pttime(6) + dnekclock() - ptdum(6)
    
+         endif
+      endif
             ptdum(4) = dnekclock()
             call create_ghost_particles_col
             pttime(4) = pttime(4) + dnekclock() - ptdum(4)
@@ -597,8 +599,6 @@ c
             ptdum(5) = dnekclock()
             call send_ghost_particles
             pttime(5) = pttime(5) + dnekclock() - ptdum(5)
-         endif
-      endif
 
       ! Interpolate Eulerian properties to particle location
       ptdum(7) = dnekclock()
@@ -1496,6 +1496,8 @@ c
 
       integer col_list(llpart,3),ncol
 
+      common /myparts/ times(0:3),alpha(0:3),beta(0:3)
+
 
       ptdum(11) = dnekclock()
 
@@ -1515,6 +1517,18 @@ c
       rv1(1) = rpart(jv0  ,i)
       rv1(2) = rpart(jv0+1,i)
       rv1(3) = rpart(jv0+2,i)
+c     rx1(1) = alpha(1)*rpart(jx1  ,i) +alpha(2)*rpart(jx2  ,i)+
+c    >         alpha(3)*rpart(jx3  ,i)
+c     rx1(2) = alpha(1)*rpart(jx1+1,i)+alpha(2)*rpart(jx2+1,i)+
+c    >         alpha(3)*rpart(jx3+1,i)
+c     rx1(3) = alpha(1)*rpart(jx1+2,i)+alpha(2)*rpart(jx2+2,i)+
+c    >         alpha(3)*rpart(jx3+2,i)
+c     rv1(1) = alpha(1)*rpart(jv1  ,i) +alpha(2)*rpart(jv2  ,i)+
+c    >         alpha(3)*rpart(jv3  ,i)
+c     rv1(2) = alpha(1)*rpart(jv1+1,i)+alpha(2)*rpart(jv2+1,i)+
+c    >         alpha(3)*rpart(jv3+1,i)
+c     rv1(3) = alpha(1)*rpart(jv1+2,i)+alpha(2)*rpart(jv2+2,i)+
+c    >         alpha(3)*rpart(jv3+2,i)
 
       icx1 = ipart(jicx,i)
       icy1 = ipart(jicy,i)
@@ -2900,6 +2914,25 @@ c-----------------------------------------------------------------------
 
       logical partl
 
+c     face, edge, and corner number, x,y,z are all inline, so stride=3
+      el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
+      el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,
+     >                  0,-1,-1, 1,0,-1, 0,1,-1, -1,0,-1,
+     >                  0,-1,1 , 1,0,1 , 0,1,1 , -1,0,1  /)
+      el_corner_num = (/
+     >                 -1,-1,-1, 1,-1,-1, 1,1,-1, -1,1,-1,
+     >                 -1,-1,1,  1,-1,1,  1,1,1,  -1,1,1 /)
+
+      nfacegp   = 4  ! number of faces
+      nedgegp   = 4  ! number of edges
+      ncornergp = 0  ! number of corners
+
+      if (if3d) then
+         nfacegp   = 6  ! number of faces
+         nedgegp   = 12 ! number of edges
+         ncornergp = 8  ! number of corners
+      endif
+
       ! compute binb
       xmin = 1E8
       ymin = 1E8
@@ -2952,25 +2985,22 @@ c-----------------------------------------------------------------------
          binb(5) = xdrange(1,3)
          binb(6) = xdrange(2,3)
       endif
-         
-c     face, edge, and corner number, x,y,z are all inline, so stride=3
-      el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
-      el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,
-     >                  0,-1,-1, 1,0,-1, 0,1,-1, -1,0,-1,
-     >                  0,-1,1 , 1,0,1 , 0,1,1 , -1,0,1  /)
-      el_corner_num = (/
-     >                 -1,-1,-1, 1,-1,-1, 1,1,-1, -1,1,-1,
-     >                 -1,-1,1,  1,-1,1,  1,1,1,  -1,1,1 /)
 
-      nfacegp   = 4  ! number of faces
-      nedgegp   = 4  ! number of edges
-      ncornergp = 0  ! number of corners
-
-      if (if3d) then
-         nfacegp   = 6  ! number of faces
-         nedgegp   = 12 ! number of edges
-         ncornergp = 8  ! number of corners
+      if (npro_method .eq. 0) then
+         nmax = floor(np**(1./3.)) + 1
+         d2chk(1) = d2chk(3)
+         do i = 1,nmax
+            rfac = 2**i
+            rxval = (binb(2) - binb(1))/rfac
+            ryval = (binb(4) - binb(3))/rfac
+            rzval = (binb(6) - binb(5))/rfac
+            rval = min(rxval,ryval)
+            if (if3d) rval = min(rval,rzval)
+            if (rval .lt. d2chk(3)) exit
+            d2chk(1) = rval
+         enddo
       endif
+            
 
 ! -------------------------------------------------------
 c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
@@ -4956,14 +4986,22 @@ c----------------------------------------------------------------------
                rpart(jgam,n)  = 1.
                rpart(jrpe,n)  = rpart(jspl,n)**(1./3.)*rpart(jdp,n)/2.
             endif
-            rfac = 1E-3
-            rfac = rfac*rpart(jrpe,n)
-            rdum = unif_random(-rfac,rfac)
-            rpart(jx,n) = rpart(jx,n) + rdum
-            rdum = unif_random(-rfac,rfac)
-            rpart(jy,n) = rpart(jy,n) + rdum
-            rdum = unif_random(-rfac,rfac)
-            rpart(jz,n) = rpart(jz,n) + rdum
+
+            rfluc = 1E-2
+            rfluc = rfluc*rpart(jrpe,n)
+            rpart(jx,n) = rpart(jx,n) + unif_random(-rfluc,rfluc)
+            rpart(jy,n) = rpart(jy,n) + unif_random(-rfluc,rfluc)
+            rpart(jz,n) = rpart(jz,n) + unif_random(-rfluc,rfluc)
+
+            do j=0,2
+               rpart(jx1+j,n) = rpart(jx+j,n)
+               rpart(jx2+j,n) = rpart(jx+j,n)
+               rpart(jx3+j,n) = rpart(jx+j,n)
+               rpart(jv1+j,n) = rpart(jv0+j,n)
+               rpart(jv2+j,n) = rpart(jv0+j,n)
+               rpart(jv3+j,n) = rpart(jv0+j,n)
+            enddo
+
          enddo
          close(iread)
       endif
@@ -4998,13 +5036,6 @@ c----------------------------------------------------------------------
      >              ptw(1,1,1,1,4),         ! phi_p
      >              itmp          ,        
      >              'ptw')
-      call outpost2(phigdum(1,1,1,1,1),         ! fhyd_x
-     >              phigdum(1,1,1,1,2),         ! fhyd_y
-     >              phigdum(1,1,1,1,3),         ! fhyd_z
-     >              phigvdum,         ! phi_p (but not if lx1!=lx2
-     >              phigvdum,         ! phi_p
-     >              itmp          ,        
-     >              'grd')
 
 c     eulerian integrations -----------------------------------------
 c     fluid momentum 
