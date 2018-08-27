@@ -10,7 +10,6 @@ c----------------------------------------------------------------------
       nstage_part = 3
       if (abs(time_integ) .eq. 2) nstage_part = 1
 
-
       if (istep.eq.0) then
          call lpm_init(0)
       else
@@ -5181,8 +5180,7 @@ c----------------------------------------------------------------------
          rpart(ju3+1,i) =  rfpts(35,ii)
          rpart(ju3+2,i) =  rfpts(36,ii)
                                         
-         rpart(jdp,i)   =  dp(1)
-c        rpart(jdp,i)   =  rfpts(37,ii)
+         rpart(jdp,i)   =  rfpts(37,ii)
          rpart(jspl,i)  =  rfpts(38,ii)
          rpart(jtemp,i) =  rfpts(39,ii)
          ipart(jpid1,i) =  nint(rfpts(40,ii))
@@ -5196,9 +5194,6 @@ c        rpart(jdp,i)   =  rfpts(37,ii)
          rpart(jgam,i)  = 1.          ! initial integration correction
          rpart(jrpe,i) = rpart(jspl,i)**(1./3.)*rpart(jdp,i)/2.
 
-         call get_part_use_block(i,0)
-         call lpm_usr_f  ! can overwrite particle properties at init
-         call get_part_use_block(i,1)
       enddo
       n = i
 
@@ -5305,9 +5300,6 @@ c----------------------------------------------------------------------
 
       real rfpfluid(3),rfpfluidl(3),msum,msum_tot(3,2)
 
-      common /lpm_fix/ phigdum,phigvdum
-      real phigdum(lx1,ly1,lz1,lelt,3),phigvdum(lx1,ly1,lz1,lelt)
-
       itmp = 1
       call outpost2(ptw(1,1,1,1,1),         ! fhyd_x
      >              ptw(1,1,1,1,2),         ! fhyd_y
@@ -5382,7 +5374,6 @@ c     print properties to logfile
 c----------------------------------------------------------------------
       subroutine lpm_input_defaults
       include 'SIZE'
-c     include 'INPUT'
       include 'LPM'
 
       ! set some defaults
@@ -6309,7 +6300,6 @@ c----------------------------------------------------------------------
       integer ix,iy,iz,e
 
       real ffxp,ffyp,ffzp,qvolp
-
 
       ! particle forcing
       if (two_way .ge.2) then
