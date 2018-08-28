@@ -3276,8 +3276,6 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       ndzgp = 1
       if (if3d) ndzgp = floor( (binb(6) - binb(5))/d2new(3))
 
-      if (nid .eq. 0) write(6,*) ndxgp, ndygp, ndzgp, ifac, d2new
-
       ! grid spacing for that many spacings
       rdxgp = (binb(2) - binb(1))/real(ndxgp)
       rdygp = (binb(4) - binb(3))/real(ndygp)
