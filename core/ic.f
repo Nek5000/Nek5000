@@ -1654,6 +1654,9 @@ C
 C
       CALL SETPROP
       CALL SETSOLV
+
+      mmxh = nmxh
+      nmxh = 1000
 C
       IF (NIO.EQ.0) WRITE (6,*) 'Steady Stokes problem'
       DO 100 IGEOM=1,2
@@ -1663,6 +1666,7 @@ C
 C     Set IFTRAN to true again
 C     Turn convection on again
 C
+      nmxh = mmxh
       IFTRAN = IFSAV1
       IFADVC(IFIELD) = IFSAV2
 C
