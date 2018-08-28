@@ -819,15 +819,15 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
           
             do ie=1,neltb
          
-c              if (lpm_el_map(1,ie) .gt. ndum) cycle 
-c              if (lpm_el_map(2,ie) .lt. ndum) cycle 
-c        
-c              if (lpm_el_map(3,ie) .gt. ihigh) cycle
-c              if (lpm_el_map(4,ie) .lt. ilow)  cycle
-c              if (lpm_el_map(5,ie) .gt. jhigh) cycle
-c              if (lpm_el_map(6,ie) .lt. jlow)  cycle
-c              if (lpm_el_map(7,ie) .gt. khigh) cycle
-c              if (lpm_el_map(8,ie) .lt. klow)  cycle
+               if (lpm_el_map(1,ie) .gt. ndum) cycle 
+               if (lpm_el_map(2,ie) .lt. ndum) cycle 
+         
+               if (lpm_el_map(3,ie) .gt. ihigh) cycle
+               if (lpm_el_map(4,ie) .lt. ilow)  cycle
+               if (lpm_el_map(5,ie) .gt. jhigh) cycle
+               if (lpm_el_map(6,ie) .lt. jlow)  cycle
+               if (lpm_el_map(7,ie) .gt. khigh) cycle
+               if (lpm_el_map(8,ie) .lt. klow)  cycle
          
                do i=1,nxyz
                   if (mod_gp_grid(i,1,1,ie,4).ne.iproj(4,ip)) cycle
@@ -3146,7 +3146,7 @@ c-----------------------------------------------------------------------
 
       real pfx,pfy,pfz,vol,qgqf,rvx,rvy,rvz,rexp,multfc,multfci,rx2(3)
      >     ,rxyzp(6,3),d2new(3)
-      integer ntypesl(7), ngp_trim(lbmax), ifac(3)
+      integer ntypesl(7), ngp_trim(lbmax), ifac(3), icount(3)
 
       real    rxnew(3), rxdrng(3)
       integer iadd(3)
@@ -3229,26 +3229,42 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       ifac(1) = 1
       ifac(2) = 1
       ifac(3) = 1
+      icount(1) = 0
+      icount(2) = 0
+      icount(3) = 0
       d2new(1) = d2chk(1)
       d2new(2) = d2chk(1)
       d2new(3) = d2chk(1)
 
-      nmax = floor(np**(1./3.)) + 1
-      d2chk_save = d2chk(1)
+      ndxgp = floor( (binb(2) - binb(1))/d2new(1))
+      ndygp = floor( (binb(4) - binb(3))/d2new(2))
+      ndzgp = 1
+      if (if3d) ndzgp = floor( (binb(6) - binb(5))/d2new(3))
 
-      do i=1,nmax
-      do j=0,ndim-1
-         ifac(j+1) = 1 + i
-         d2new(j+1) = (binb(2+2*j) - binb(1+2*j))/ifac(j+1)
-         nbb = ifac(1)*ifac(2)*ifac(3)
-         if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) then
-            ifac(j+1) = ifac(j+1) - 1
+      if (ndxgp*ndygp*ndzgp .gt. np) then
+         nmax = 1000
+         d2chk_save = d2chk(1)
+         
+         do i=1,nmax
+         do j=0,ndim-1
+            ifac(j+1) = 1 + i
             d2new(j+1) = (binb(2+2*j) - binb(1+2*j))/ifac(j+1)
-            goto 1511
-         endif
-      enddo
-      enddo
- 1511 continue
+            nbb = ifac(1)*ifac(2)*ifac(3)
+            if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) then
+               icount(j+1) = icount(j+1) + 1
+               ifac(j+1) = ifac(j+1) - icount(j+1)
+               d2new(j+1) = (binb(2+2*j) - binb(1+2*j))/ifac(j+1)
+            endif
+         enddo
+            if (icount(1) .gt. 0) then
+            if (icount(2) .gt. 0) then
+            if (icount(3) .gt. 0) then
+               exit
+            endif
+            endif
+            endif
+         enddo
+      endif
 
 
 ! -------------------------------------------------------
@@ -3259,6 +3275,8 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       ndygp = floor( (binb(4) - binb(3))/d2new(2))
       ndzgp = 1
       if (if3d) ndzgp = floor( (binb(6) - binb(5))/d2new(3))
+
+      if (nid .eq. 0) write(6,*) ndxgp, ndygp, ndzgp, ifac, d2new
 
       ! grid spacing for that many spacings
       rdxgp = (binb(2) - binb(1))/real(ndxgp)
