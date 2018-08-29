@@ -3283,51 +3283,77 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (if3d) rdzgp = (binb(6) - binb(5))/real(ndzgp)
 
       ninc = 2
-      if (bc_part(1) .ne. 0) then
-         binb(1) = binb(1) - ninc/2*rdxgp
-         binb(2) = binb(2) + ninc/2*rdxgp
-         ndxgp = ndxgp + ninc
-         ic = 0
-         if (binb(1) .lt. xdrange(1,1)) then
-            ic = ic + 1
-            binb(1) = xdrange(1,1)
-         endif
-         if (binb(2) .gt. xdrange(2,1)) then
-            ic = ic + 1
-            binb(2) = xdrange(2,1)
-         endif
-         ndxgp = ndxgp - ic
+c     if (bc_part(1) .ne. 0) then
+c        binb(1) = binb(1) - ninc/2*rdxgp
+c        binb(2) = binb(2) + ninc/2*rdxgp
+c        ndxgp = ndxgp + ninc
+c        ic = 0
+c        if (binb(1) .lt. xdrange(1,1)) then
+c           ic = ic + 1
+c           binb(1) = xdrange(1,1)
+c        endif
+c        if (binb(2) .gt. xdrange(2,1)) then
+c           ic = ic + 1
+c           binb(2) = xdrange(2,1)
+c        endif
+c        ndxgp = ndxgp - ic
+c     endif
+c     if (bc_part(3) .ne. 0) then
+c        binb(3) = binb(3) - ninc/2*rdygp
+c        binb(4) = binb(4) + ninc/2*rdygp
+c        ndygp = ndygp + ninc
+c        ic = 0
+c        if (binb(3) .lt. xdrange(1,2)) then
+c           ic = ic + 1
+c           binb(3) = xdrange(1,2)
+c        endif
+c        if (binb(4) .gt. xdrange(2,2)) then
+c           ic = ic + 1
+c           binb(4) = xdrange(2,2)
+c        endif
+c        ndygp = ndygp - ic
+c     endif
+c     if (bc_part(5) .ne. 0) then
+c     if (if3d) then
+c        binb(5) = binb(5) - ninc/2*rdzgp
+c        binb(6) = binb(6) + ninc/2*rdzgp
+c        ndzgp = ndzgp + ninc
+c        ic = 0
+c        if (binb(5) .lt. xdrange(1,3)) then
+c           ic = ic + 1
+c           binb(5) = xdrange(1,3)
+c        endif
+c        if (binb(6) .gt. xdrange(2,3)) then
+c           ic = ic + 1
+c           binb(6) = xdrange(2,3)
+c        endif
+c        ndzgp = ndzgp - ic
+c     endif
+c     endif
+      rxlbin = binb(1)
+      rxrbin = binb(2)
+      rylbin = binb(3)
+      ryrbin = binb(4)
+      rzlbin = binb(5)
+      rzrbin = binb(6)
+      if (bc_part(1) .eq. 0) then
+         rxlbin = rxlbin - ninc/2*rdxgp
+         rxrbin = rxrbin + ninc/2*rdxgp
+         rxlbin = max(rxlbin,xdrange(1,1))
+         rxrbin = min(rxrbin,xdrange(2,1))
       endif
-      if (bc_part(3) .ne. 0) then
-         binb(3) = binb(3) - ninc/2*rdygp
-         binb(4) = binb(4) + ninc/2*rdygp
-         ndygp = ndygp + ninc
-         ic = 0
-         if (binb(3) .lt. xdrange(1,2)) then
-            ic = ic + 1
-            binb(3) = xdrange(1,2)
-         endif
-         if (binb(4) .gt. xdrange(2,2)) then
-            ic = ic + 1
-            binb(4) = xdrange(2,2)
-         endif
-         ndygp = ndygp - ic
+      if (bc_part(3) .eq. 0) then
+         rylbin = rylbin - ninc/2*rdygp
+         ryrbin = ryrbin + ninc/2*rdygp
+         rylbin = max(rylbin,xdrange(1,2))
+         ryrbin = min(ryrbin,xdrange(2,2))
       endif
-      if (bc_part(5) .ne. 0) then
+      if (bc_part(3) .eq. 0) then
       if (if3d) then
-         binb(5) = binb(5) - ninc/2*rdzgp
-         binb(6) = binb(6) + ninc/2*rdzgp
-         ndzgp = ndzgp + ninc
-         ic = 0
-         if (binb(5) .lt. xdrange(1,3)) then
-            ic = ic + 1
-            binb(5) = xdrange(1,3)
-         endif
-         if (binb(6) .gt. xdrange(2,3)) then
-            ic = ic + 1
-            binb(6) = xdrange(2,3)
-         endif
-         ndzgp = ndzgp - ic
+         rzlbin = rzlbin - ninc/2*rdzgp
+         rzrbin = rzrbin + ninc/2*rdzgp
+         rzlbin = max(rzlbin,xdrange(1,3))
+         rzrbin = min(rzrbin,xdrange(2,3))
       endif
       endif
 
