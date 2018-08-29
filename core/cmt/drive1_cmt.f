@@ -33,9 +33,12 @@ c     Solve the Euler equations
       nfldpart = ldim*npart
 
       if(istep.eq.1) then
+
          time4av=.true. ! not used yet
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
+         iostep2=iostep
+         iostep=9999999
          call cmt_ics
          if (ifrestart) then
             time_cmt=time
