@@ -835,7 +835,7 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
      >                      (xm1b(i,1,1,2,ie) - rproj(3,ip))**2
                   if(if3d) rdist2 = rdist2                      +
      >                      (xm1b(i,1,1,3,ie) - rproj(4,ip))**2
-                  if (rdist2 .gt. d2chk2_sq) cycle
+c                 if (rdist2 .gt. d2chk2_sq) cycle
                
                   rexp = exp(rdist2*rproj(1,ip))
                   
