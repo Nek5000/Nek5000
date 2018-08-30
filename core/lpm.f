@@ -561,56 +561,66 @@ c
          endif
 
          ! Update where particle is stored at
-         ptdum(3) = dnekclock()
+         if (npio_method .lt. 0) ptdum(3) = dnekclock_sync()
             call move_particles_inproc
-         pttime(3) = pttime(3) + dnekclock() - ptdum(3)
+         if (npio_method .lt. 0) pttime(3) = pttime(3) + dnekclock() 
+     >                                       - ptdum(3)
 
          if (two_way.gt.1) then
             ! Create ghost/wall particles
-            ptdum(4) = dnekclock()
+            if (npio_method .lt. 0) ptdum(4) = dnekclock_sync()
                call create_extra_particles
-            pttime(4) = pttime(4) + dnekclock() - ptdum(4)
+            if (npio_method .lt. 0) pttime(4) = pttime(4) + dnekclock() 
+     >                                          - ptdum(4)
 
             ! Send ghost particles
-            ptdum(5) = dnekclock()
+            if (npio_method .lt. 0) ptdum(5) = dnekclock_sync()
                call send_ghost_particles
-            pttime(5) = pttime(5) + dnekclock() - ptdum(5)
+            if (npio_method .lt. 0) pttime(5) = pttime(5) + dnekclock() 
+     >                                         - ptdum(5)
    
             ! Projection to Eulerian grid
-            ptdum(6) = dnekclock()
+            if (npio_method .lt. 0) ptdum(6) = dnekclock_sync()
                call spread_props_grid
-            pttime(6) = pttime(6) + dnekclock() - ptdum(6)
+            if (npio_method .lt. 0) pttime(6) = pttime(6) + dnekclock() 
+     >                                          - ptdum(6)
    
          endif
       endif
-            ptdum(4) = dnekclock()
+            if (npio_method .lt. 0) ptdum(4) = dnekclock_sync()
             call create_ghost_particles_col
-            pttime(4) = pttime(4) + dnekclock() - ptdum(4)
+            if (npio_method .lt. 0) pttime(4) = pttime(4) + dnekclock() 
+     >                                          - ptdum(4)
 
-            ptdum(5) = dnekclock()
+            if (npio_method .lt. 0) ptdum(5) = dnekclock_sync()
             call send_ghost_particles
-            pttime(5) = pttime(5) + dnekclock() - ptdum(5)
+            if (npio_method .lt. 0) pttime(5) = pttime(5) + dnekclock() 
+     >                                          - ptdum(5)
 
       ! Interpolate Eulerian properties to particle location
-      ptdum(7) = dnekclock()
+      if (npio_method .lt. 0) ptdum(7) = dnekclock_sync()
          call interp_props_part_location
-      pttime(7) = pttime(7) + dnekclock() - ptdum(7)
+      if (npio_method .lt. 0) pttime(7) = pttime(7) + dnekclock() 
+     >                                    - ptdum(7)
 
       ! Evaluate particle force models
-      ptdum(8) = dnekclock()
+      if (npio_method .lt. 0) ptdum(8) = dnekclock_sync()
          call usr_particles_forcing  
-      pttime(8) = pttime(8) + dnekclock() - ptdum(8)
+      if (npio_method .lt. 0) pttime(8) = pttime(8) + dnekclock() 
+     >                                    - ptdum(8)
 
       ! Integrate in time
-      ptdum(9) = dnekclock()
+      if (npio_method .lt. 0) ptdum(9) = dnekclock_sync()
          if (abs(time_integ) .eq. 1) call rk3_integrate
          if (abs(time_integ) .eq. 2) call bdf_integrate
-      pttime(9) = pttime(9) + dnekclock() - ptdum(9)
+      if (npio_method .lt. 0) pttime(9) = pttime(9) + dnekclock() 
+     >                                    - ptdum(9)
 
       ! Update forces
-      ptdum(10) = dnekclock()
+      if (npio_method .lt. 0) ptdum(10) = dnekclock_sync()
          call compute_forcing_post_part
-      pttime(10) = pttime(10) + dnekclock() - ptdum(10)
+      if (npio_method .lt. 0) pttime(10) = pttime(10) + dnekclock() 
+     >                                     - ptdum(10)
 
       endif ! time_delay
 
@@ -754,7 +764,7 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
           
             do ie=1,neltb
          
-               if (lpm_el_map(1,ie) .gt. ndum) cycle
+               if (lpm_el_map(1,ie) .gt. ndum) exit
                if (lpm_el_map(2,ie) .lt. ndum) cycle 
          
                if (lpm_el_map(3,ie) .gt. ihigh) cycle
@@ -787,8 +797,10 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
                   if (yrune(j) .lt. 0) cycle
                   rdum1 = yrun(j) + zrun(k)
                do i=1,nx1
-               if (mod_gp_grid(i,j,k,ie,4).ne.iproj(4,ip)) cycle
-               rdist2 = rdum1 + xrun(i)
+                  if (mod_gp_grid(i,j,k,ie,4).ne.iproj(4,ip)) cycle
+                  rdist2 = rdum1 + xrun(i)
+                  if (rdist2 .gt. d2chk2_sq) cycle
+
                   rexp = exp(rdist2*rproj(1,ip))
                   
                   do jj=1,7
@@ -819,7 +831,7 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
           
             do ie=1,neltb
          
-               if (lpm_el_map(1,ie) .gt. ndum) cycle 
+               if (lpm_el_map(1,ie) .gt. ndum) exit
                if (lpm_el_map(2,ie) .lt. ndum) cycle 
          
                if (lpm_el_map(3,ie) .gt. ihigh) cycle
@@ -835,7 +847,7 @@ c        rproj(9 ,ip+n) = -(rptsgp(jgpg0,ip) + rptsgp(jgpq0,ip))*multfc
      >                      (xm1b(i,1,1,2,ie) - rproj(3,ip))**2
                   if(if3d) rdist2 = rdist2                      +
      >                      (xm1b(i,1,1,3,ie) - rproj(4,ip))**2
-c                 if (rdist2 .gt. d2chk2_sq) cycle
+                  if (rdist2 .gt. d2chk2_sq) cycle
                
                   rexp = exp(rdist2*rproj(1,ip))
                   
@@ -1490,7 +1502,7 @@ c
       common /myparts/ times(0:3),alpha(0:3),beta(0:3)
 
 
-      ptdum(11) = dnekclock()
+      if (npio_method .lt. 0) ptdum(11) = dnekclock()
 
       mcfac       = 2.*sqrt(ksp)*log(e_rest)/
      >              sqrt(log(e_rest)**2+pi**2)
@@ -1711,7 +1723,8 @@ c           col_list(ncol,3) = iptsgp(jgppid3,j)
       endif
 
 
-      pttime(11) = pttime(11) + dnekclock() - ptdum(11)
+      if (npio_method .lt. 0) pttime(11) = pttime(11) + dnekclock() 
+     >                                     - ptdum(11)
 
       return
       end
@@ -4403,8 +4416,6 @@ c----------------------------------------------------------------------
       include 'TSTEP'
       include 'LPM'
 
-      rdumt = dnekclock()
-
 c     always output fields if 2 or 4 way coupled 
       if (two_way .gt. 1) then
          call output_two_way_io
@@ -4418,8 +4429,6 @@ c     output diagnostics to logfile
 
       call output_parallel_part
       call output_parallel_restart_part
-
-      pttime(1) = pttime(1) - (dnekclock() - rdumt)
 
       return
       end
