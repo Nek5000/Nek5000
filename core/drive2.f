@@ -397,27 +397,6 @@ c        Take direct stiffness avg of mesh
 c
          ifieldo = ifield
          if (.not.ifneknekm) CALL GENCOOR (XM3,YM3,ZM3)
-         if (ifheat) then
-            ifield = 2
-            CALL dssum(xm3,lx3,ly3,lz3)
-            call col2 (xm3,tmult,ntot3)
-            CALL dssum(ym3,lx3,ly3,lz3)
-            call col2 (ym3,tmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,lx3,ly3,lz3)
-               call col2 (xm3,tmult,ntot3)
-            endif
-         else
-            ifield = 1
-            CALL dssum(xm3,lx3,ly3,lz3)
-            call col2 (xm3,vmult,ntot3)
-            CALL dssum(ym3,lx3,ly3,lz3)
-            call col2 (ym3,vmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,lx3,ly3,lz3)
-               call col2 (xm3,vmult,ntot3)
-            endif
-         endif
          CALL GEOM1 (XM3,YM3,ZM3)
          CALL GEOM2
          CALL UPDMSYS (1)
