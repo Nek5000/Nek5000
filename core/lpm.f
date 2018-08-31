@@ -5842,23 +5842,11 @@ c----------------------------------------------------------------------
       endif
 
       do i = 1,iptlen
-         rdum  = pttime(i)/istep
-         dtime = glsum(rdum,1)
-         rtime = dtime/mp
-         if(nid.eq.0)  write(6,*) 'TIMER #:',i,rtime
-
-         ! fluid and particle total time: note i == iptlen is f_col
-         if (i .eq. 1) rftime_t = rtime
-         if ((i .gt. 1) .and. (i.ne.iptlen)) rptime_t = rptime_t +
-     >                                                  rtime
+         rdum      = pttime(i)/istep
+         dtime_max = glmax(rdum,1)
+         dtime_min = glmin(rdum,1)
+         if(nid.eq.0)  write(6,*) 'TIMER #:',i,dtime_min,dtime_max
       enddo
-
-      
-      if (nid.eq.0) then
-         write (6,*) 'TOTAL F:', rftime_t
-         write (6,*) 'TOTAL P:', rptime_t
-      endif
-
 
       return
       end
