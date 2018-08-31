@@ -4971,7 +4971,7 @@ c----------------------------------------------------------------------
 
       integer vtu,vtu1,prevs(3,mp)
       integer*4 iint
-      integer stride_len
+      integer stride_len*8
 
       integer*8 disp
       integer*4 nptot
