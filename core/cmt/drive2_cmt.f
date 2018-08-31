@@ -77,7 +77,6 @@ c------------------------------------------------------------------------
 
       epslon=1.0e-9
 
-      rhomin=glmin(vtrans(1,1,1,1,irho),ntot)
 
       rgam=rgasref/(gmaref-1.0)
 !      do i=1,ntot
@@ -93,11 +92,13 @@ c------------------------------------------------------------------------
 !!     enddo
 
       do e=1,nelt
+
+         rhomin=vlmin(vtrans(1,1,1,e,irho),nxyz)
       
          rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
 ! positivity-presering limiter of Zhang and Shu
          if (abs(rho-rhomin) .gt. epslon) then
-            theta=min((rho-epslon)/(rho-rhomin),1.0)
+            theta=min((rho-epslon)/(rho-rhomin+epslon),1.0)
             do i=1,nxyz
                uold=u(i,1,1,1,e)
                u(i,1,1,1,e)=rho+theta*(uold-rho)
