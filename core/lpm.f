@@ -664,6 +664,7 @@ c
 
       logical partl
 
+      if (npro_method .eq. 0 .or. two_way .lt. 2) return
 
       nxyz = lx1*ly1*lz1
 
@@ -4460,7 +4461,7 @@ c     output diagnostics to logfile
 
       integer vtu,vtu1,prevs(2,np)
       integer*4 iint
-      real stride_len
+      integer*8 stride_len
 
       icalld = icalld+1
 
@@ -4971,7 +4972,7 @@ c----------------------------------------------------------------------
 
       integer vtu,vtu1,prevs(3,mp)
       integer*4 iint
-      integer stride_len*8
+      integer*8 stride_len
 
       integer*8 disp
       integer*4 nptot
@@ -5134,7 +5135,7 @@ c----------------------------------------------------------------------
 
       integer vtu,vtu1,prevs(2,mp)
       integer*4 iint
-      integer stride_len
+      integer*8 stride_len
 
       integer*8 disp
       integer*4 nptot

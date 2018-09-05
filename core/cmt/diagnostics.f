@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
       character*100 zefmt
       write(zefmt,'(a1,i2,a6)') '(',nb,'e15.7)'
       do i=1,na
-         write(37,zefmt) (ab(i,j),j=1,nb)
+         write(6,zefmt) (ab(i,j),j=1,nb)
 !        write(6,*) i,'rowsum=',sum(ab(i,1:nb))
       enddo
       return
@@ -85,6 +85,8 @@ c----------------------------------------------------------------------
          call copy(otvar(1,1,1,e,1),u(1,1,1,5,e),n)
       enddo
 
+c     call copy(otvar(1,1,1,1,2),tlag(1,1,1,1,1,2),n*nelt) ! s_{n-1}
+c     call copy(otvar(1,1,1,1,3),tlag(1,1,1,1,2,1),n*nelt) ! s_n
       call copy(otvar(1,1,1,1,2),phig(1,1,1,1),n*nelt) ! s_{n-1}
       call copy(otvar(1,1,1,1,3),pr(1,1,1,1),n*nelt) ! s_n
 

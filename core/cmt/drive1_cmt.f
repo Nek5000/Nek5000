@@ -23,13 +23,23 @@ c     Solve the Euler equations
       
       integer e,eq
       character*32 dumchars
+      external perssonperaire
+      common /scrvh/ scrent(lx1*ly1*lz1*lelt)
+      real scrent
 
       ftime_dum = dnekclock()
-      nxyz1=lx1*ly1*lz1
-      n = nxyz1*lelt*toteq
+      nxyz=lx1*ly1*lz1
+      n = nxyz*lelt*toteq
       nfldpart = ldim*npart
 
       if(istep.eq.1) then
+
+         time4av=.true. ! not used yet
+         call compute_mesh_h(meshh,xm1,ym1,zm1)
+         call compute_grid_h(gridh,xm1,ym1,zm1)
+         iostep2=param(15)
+         iostep=param(15)
+c        iostep=9999999
          call cmt_ics
          if (ifrestart) then
             time_cmt=time
@@ -38,25 +48,36 @@ c     Solve the Euler equations
          endif
          call cmt_flow_ics
          call init_cmt_timers
-         call userchk ! need more ifdefs
-         call compute_mesh_h(meshh,xm1,ym1,zm1)
-         call compute_grid_h(gridh,xm1,ym1,zm1)
-         call compute_primitive_vars ! get good mu
-         call entropy_viscosity      ! for high diffno
-         call compute_transport_props! at t=0
+         dt_cmt=abs(param(12))
+         call cmtchk ! need more ifdefs to use userchk
+! JH080918 IC better be positive
+         call compute_primitive_vars(1) ! get good mu
+! JH082718 do shock detection on unlimited field. Store 0/1 mask in t(:,5)
+!! JH090518 Shock detector is not ready for prime time. Lean on EVM for
+!!          sane default 
+!!        call perssonperaire(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
+c        call limiter
+!!        call wavevisc(t(1,1,1,1,3))
+!! JH082718 mask viscosity in t(:,3)
+!!        call col2(t(1,1,1,1,3),t(1,1,1,1,5),nxyz*nelt)
+!!        call max_to_trilin(t(1,1,1,1,3))
+         call entropy_viscosity         ! for high diffno
+         call compute_transport_props   ! at t=0
 
 #ifdef LPM
          call spread_props_grid           
 #endif
 
       endif
+      
+      call rzero(t,nxyz*nelt*ldimt)
 
       nstage = 3
       do stage=1,nstage
          if (stage.eq.1) call copy(res3(1,1,1,1,1),U(1,1,1,1,1),n)
 
          rhst_dum = dnekclock()
-         call compute_rhs_and_dt
+         call compute_rhs_and_dt(perssonperaire)
          rhst = rhst + dnekclock() - rhst_dum
 c particle equations of motion are solved (also includes forcing)
 c In future this subroutine may compute the back effect of particles
@@ -74,7 +95,7 @@ c compute_rhs_dt for the 5 conserved variables
 
          do e=1,nelt
             do eq=1,toteq
-            do i=1,nxyz1
+            do i=1,nxyz
 c multiply u with bm1 as res has been multiplied by bm1 in compute_rhs
                u(i,1,1,eq,e) = bm1(i,1,1,e)*tcoef(1,stage)
      >                     *res3(i,1,1,eq,e)+bm1(i,1,1,e)*
@@ -83,28 +104,50 @@ c multiply u with bm1 as res has been multiplied by bm1 in compute_rhs
 c              u(i,1,1,eq,e) = bm1(i,1,1,e)*u(i,1,1,eq,e) - DT *
 c    >                        (c1*res1(i,1,1,e,eq) + c2*res2(i,1,1,e,eq)
 c    >                       + c3*res3(i,1,1,e,eq))
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 ! JH111815 in fact, I'd like to redo the time marching stuff above and
 !          have an fbinvert call for res1
                u(i,1,1,eq,e) = u(i,1,1,eq,e)/bm1(i,1,1,e)
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
             enddo
             enddo
-         enddo
-      enddo
+         enddo ! nelt
+!-----------------------------------------------------------------------
+! JH080918 Now with solution limiters of Zhang & Shu (2010)
+!                                    and   Lv & Ihme (2015) 
+!          Also, FINALLY rewritten to consider solution at the
+!          END OF RK STAGES AND END OF TIME STEP AS THE SOLUTION OF INTEREST
+! JH081018 OK I can't do that for some reason. CHECK SOLN COMMONS BETWEEN
+!          cmt_nek_advance and istep=istep+1
+!-----------------------------------------------------------------------
+!        call compute_primitive_vars(0)
+!        call limiter
+!        call compute_primitive_vars(1)
 
-      call compute_primitive_vars ! for next time step? Not sure anymore
-      call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz1*nelt)
+      enddo ! RK stage loop
+
+!     time4av=.not.time4av
+
       ftime = ftime + dnekclock() - ftime_dum
 
-      if (mod(istep,iostep).eq.0.or.istep.eq.1)then
-         call out_fld_nek
-         call mass_balance(if3d)
-c dump out particle information. 
-#ifdef LPM
-         call lpm_usr_particles_io(istep)
-#endif
-      end if
+!-----------------------------------------------------------------------
+! JH081018 I/O really should go here, but I don't want to call limiter
+!          and compute_primitive_variables needlessly.
+!          For now, tuck all this stuff in compute_rhs_and_dt and query
+!          iostep2 at stage==1.
+!-----------------------------------------------------------------------
+!     call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz*nelt)
+!     if (mod(istep,iostep2).eq.0) then
+!     if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
+!     if (mod(istep,iostep).eq.0.or.istep.eq.1)then
+!        call out_fld_nek
+! T2 S1 rho
+! T3 S2 wave visc
+! T4 S3 epsebdg
+!        call cmtchk
+!        call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
+!        call mass_balance(if3d)
+!     end if
 
 !     call print_cmt_timers ! NOT NOW
 
@@ -116,7 +159,7 @@ c-----------------------------------------------------------------------
 
 C> Compute right-hand-side of the semidiscrete conservation law
 C> Store it in res1
-      subroutine compute_rhs_and_dt
+      subroutine compute_rhs_and_dt(shock_detector)
       include 'SIZE'
       include 'TOTAL'
       include 'DG'
@@ -134,9 +177,14 @@ C> Store it in res1
       integer e,eq
       real wkj(lx1+lxd)
       character*32  dumchars
+      external shock_detector
+      common /scrvh/ scrent(lx1*ly1*lz1*lelt)
+      real scrent
 
       call compute_mesh_h(meshh,xm1,ym1,zm1)
       call compute_grid_h(gridh,xm1,ym1,zm1)
+
+      nxyz = lx1*ly1*lz1
 
       if (lxd.gt.lx1) then
          call set_dealias_face
@@ -147,27 +195,52 @@ C> Store it in res1
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-!     filter the conservative variables before start of each
-!     time step
-!     if(IFFLTR)  call filter_cmtvar(IFCNTFILT)
-!        primitive vars = rho, u, v, w, p, T, phi_g
+c     call compute_primitive_vars(0)
+!! JH090518 Shock detector is not ready for prime time. Lean on EVM for
+!!          sane default 
+!!     if (stage.eq.1)
+!!    >call shock_detector(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
+c     call limiter
+      call compute_primitive_vars(1)
 
-      call compute_primitive_vars
-
-!-----------------------------------------------------------------------
-! JH072914 We can really only proceed with dt once we have current
-!          primitive variables. Only then can we compute CFL and/or dt.
-!-----------------------------------------------------------------------
-      if(stage.eq.1) then
-         call setdtcmt
-         call set_tstep_coef
-      endif
-
-      call entropy_viscosity ! accessed through uservp. computes
-                             ! entropy residual and max wave speed
+!!     if (1==2) then
+!! JH090518 Shock detector is not ready for prime time. Lean on EVM for
+!!          sane default 
+!!     call wavevisc(t(1,1,1,1,3))
+!! JH082718 mask viscosity in t(:,3)
+!!     call col2(t(1,1,1,1,3),t(1,1,1,1,5),nxyz*nelt)
+!!     call max_to_trilin(t(1,1,1,1,3))
+      call entropy_viscosity
       call compute_transport_props ! everything inside rk stage
+!!     endif
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
 ! you have GOT to figure out where phig goes!!!!
+
+      if(stage.eq.1) then
+!-----------------------------------------------------------------------
+! JH081018 a whole bunch of this stuff should really be done AFTER the
+!          RK loop at the END of the time step, but I lose custody
+!          of commons in SOLN between cmt_nek_advance and the rest of
+!          the time loop.
+         call setdtcmt
+         call set_tstep_coef
+         call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz*nelt)
+         call cmtchk
+
+!        if (mod(istep,iostep2).eq.0) then
+         if (mod(istep,iostep2).eq.0.or.istep.eq.1)then
+!        if (mod(istep,iostep).eq.0.or.istep.eq.1)then
+            call out_fld_nek ! solution checkpoint for restart
+! T2 S1 rho
+! T3 S2 wave visc
+! T4 S3 epsebdg
+            call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
+            call mass_balance(if3d)
+#ifdef LPM
+         call lpm_usr_particles_io(istep)
+#endif
+         end if
+      endif
 
       ntot = lx1*ly1*lz1*lelt*toteq
       call rzero(res1,ntot)
@@ -213,6 +286,7 @@ C> res1+=\f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
 ! CMTDATA BETTA REFLECT THIS!!!
 !***********************************************************************
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\mathbf{U}\right] dA\f$
+!     if (1.eq.2) then
       ium=(iu1-1)*nfq+iwm
       iup=(iu1-1)*nfq+iwp
       call   imqqtu(flux(iuj),flux(ium),flux(iup))
@@ -220,6 +294,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\ma
       call igtu_cmt(flux(iwm),flux(iuj),graduf) ! [[u]].{{gradv}}
       dumchars='after_igtu'
 !     call dumpresidue(dumchars,999)
+!     endif
 
 C> res1+=\f$\int \left(\nabla v\right) \cdot \left(\mathbf{H}^c+\mathbf{H}^d\right)dV\f$ 
 C> for each equation (inner), one element at a time (outer)
@@ -241,16 +316,19 @@ C> for each equation (inner), one element at a time (outer)
          call compute_gradients(e) ! gradU
          do eq=1,toteq
             call convective_cmt(e,eq)        ! convh & totalh -> res1
+!     if (1.eq.2) then
             call    viscous_cmt(e,eq) ! diffh -> half_iku_cmt -> res1
                                              !       |
                                              !       -> diffh2graduf
 ! Compute the forcing term in each of the 5 eqs
             call compute_forcing(e,eq)
+!     endif
          enddo
       enddo
       dumchars='after_elm'
 !     call dumpresidue(dumchars,999)
 
+!     if (1.eq.2) then
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\right] dA\f$
       call igu_cmt(flux(iwp),graduf,flux(iwm))
       do eq=1,toteq
@@ -258,6 +336,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\righ
 !Finally add viscous surface flux functions of derivatives to res1.
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
+!     endif
       dumchars='end_of_rhs'
 !     call dumpresidue(dumchars,999)
 

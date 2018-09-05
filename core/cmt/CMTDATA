@@ -10,7 +10,9 @@ C> each of lx1*ly1*lz1 grid points for all elements
      $                , ifcntfilt, ifrestart
 
       real               phig(lx1,ly1,lz1,lelt)
-      common /otherpvar/ phig
+!     real               ja(lx1*ly1*lz1,ldim*ldim,lelv)
+! I really want to set lxd=1 and declare a new rx and call it ja
+      common /otherpvar/ phig!,ja
 
       real res1(lx1,ly1,lz1,lelt,toteq)
      $   , res2(lx1,ly1,lz1,lelt,toteq)
@@ -29,9 +31,9 @@ C> each of lx1*ly1*lz1 grid points for all elements
       common /forcedata/ usrf 
 
       real c_sub_e,c_max,meshh(lelt),maxdiff,gridh(lx1*ly1*lz1,lelt),
-     $     nu_s,rhomax(lelt),maxres(lelt)
+     $     nu_s,epsebdg(lelt),maxres(lelt),se0(lelt)
       common /planned_Additions/ c_sub_e,c_max,meshh,maxdiff,
-     $        gridh,nu_s,rhomax,maxres
+     $        gridh,nu_s,epsebdg,maxres,se0
 
 c We assume we will be working with one gas. Therefore Rgas need not be 
 c full filed. To begin with we assume calorically perfect gas.
@@ -46,31 +48,32 @@ c---------------------------------------------------------------------
       real                csound(lx1,ly1,lz1,lelt)
       common /cmtgasprop/ csound
 
-      real                cvgref,cpgref,gmaref,rgasref,molmass
-      common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
+      real            cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $   MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW,se0const
 
-      real                  cip(2*ldim,lelt)
-      common /cmttransprop/ cip
+      common /cmtgasref/cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $    MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW,se0const
 
-      real muref,coeflambda,suthcoef,reftemp,prlam,cip_adhoc
-      common /cmttransref/ muref, coeflambda, suthcoef, reftemp, prlam
-     $                   , cip_adhoc
-
-      integer              stage,nstage
-      common /tstepstage/ stage,nstage
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
 
       real                  tcoef(3,3),dt_cmt,time_cmt
       common /timestepcoef/ tcoef,dt_cmt,time_cmt
       
-      integer            res_freq
-      common /cmtioflgs/ res_freq
 
-      logical           ifsip
-      common /cmtvisco/ ifsip
-
-      real              varsic(10),rho,phi,pres,cv,e_internal
+      real              rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
-      common /nekuscmt/ varsic    ,rho,phi,pres,cv,e_internal
+      common /nekuscmt/ rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
 ! let kond=udiff
 
@@ -115,3 +118,6 @@ c---------------------------------------------------------------------
       parameter (iu4=17)   ! U4
       parameter (iu5=18)   ! U5
       parameter (nqq=18)
+
+      logical time4av
+      common /cmtflags/ time4av

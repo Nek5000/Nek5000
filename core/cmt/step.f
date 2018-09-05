@@ -42,6 +42,7 @@ C> @file step.f time stepping and mesh spacing routines
       call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
       call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
       call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
+      if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cfl, dt1,dt2,dt3
       dt_dum = min(dt_dum,dt_cfl,dt1,dt2,dt3)
 c     dt_dum = min(dt_dum,dt_cfl)
       if (dt_dum .gt. 10.0) then
@@ -88,7 +89,6 @@ c     dt_dum = min(dt_dum,dt_cfl)
      >   diffno1,diffno2,diffno3
  100  FORMAT('CMT ',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',1pE12.5,', Dmu,knd,art=',3(1pE11.4))
-
 
       return
       end
