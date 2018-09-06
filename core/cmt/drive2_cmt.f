@@ -68,8 +68,8 @@ c------------------------------------------------------------------------
       include 'CMTDATA'
       include 'NEKUSE'
       parameter (lxyz=lx1*ly1*lz1)
-      common /scrns/ scratch(lxyz),avstate(toteq)
-      real scratch,avstate
+      common /scrns/ scr(lxyz),avstate(toteq)
+      real scr,avstate
       integer e,eg
 
       nxyz=lx1*ly1*lz1
@@ -81,23 +81,23 @@ c------------------------------------------------------------------------
       rgam=rgasref/(gmaref-1.0)
 !      do i=1,ntot
 !         rho=max(vtrans(i,1,1,1,irho),1.0e-10)
-!!        scratch(i,1)=rgam*log(pr(i,1,1,1)/(rho**gmaref))
-!         scratch(i,1)=log(pr(i,1,1,1)/(rho**gmaref))
+!!        scr(i,1)=rgam*log(pr(i,1,1,1)/(rho**gmaref))
+!         scr(i,1)=log(pr(i,1,1,1)/(rho**gmaref))
 !      enddo
-!!     call dsop(scratch,'MIN',lx1,ly1,lz1)
-!      call copy(t(1,1,1,1,4),scratch,ntot)
+!!     call dsop(scr,'MIN',lx1,ly1,lz1)
+!      call copy(t(1,1,1,1,4),scr,ntot)
 !! elemental entropy minimum
 !!     do e=1,nelt
-!!        se0(e)=vlmin(scratch(1,e),nxyz)
+!!        se0(e)=vlmin(scr(1,e),nxyz)
 !!     enddo
 
       do e=1,nelt
 
 !        rhomin=vlmin(vtrans(1,1,1,e,irho),nxyz)
          rhomin=vlmin(u(1,1,1,1,e),nxyz)
-      
+
+! positivity-preserving limiter of Zhang and Shu: density
          rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
-! positivity-presering limiter of Zhang and Shu
          if (abs(rho-rhomin) .gt. epslon) then
             theta=min((rho-epslon)/(rho-rhomin+epslon),1.0)
             do i=1,nxyz
@@ -108,6 +108,33 @@ c------------------------------------------------------------------------
             theta=1.0
          endif
          call cfill(t(1,1,1,e,4),theta,nxyz)
+
+! positivity-preserving limiter of Zhang and Shu: internal energy???
+         emin=vlmin(u(1,1,1,5,e),nxyz)
+! first kinetic energy
+         if (if3d) then
+            call vdot3(scr,
+     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),
+     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),nxyz)
+         else
+            call vdot2(scr,u(1,1,1,irpu,e),u(1,1,1,irpv,e),
+     >                     u(1,1,1,irpu,e),u(1,1,1,irpv,e),nxyz)
+         endif
+         call invcol2(scr,u(1,1,1,irg,e),nxyz)
+         call cmult(scr,0.5,nxyz)
+         energy_eps=vlmax(scr,nxyz)
+      
+         rhoe=vlsc2(bm1(1,1,1,e),u(1,1,1,iret,e),nxyz)/volel(e)
+!        if (abs(rhoe-emin) .gt. energy_eps) then
+            theta=min((rhoe-energy_eps)/(rhoe-emin+epslon),1.0)
+            do i=1,nxyz
+               uold=u(i,1,1,iret,e)
+               u(i,1,1,iret,e)=rhoe+theta*(uold-rhoe)
+            enddo
+!        else
+!           theta=1.0
+!        endif
+         call cfill(t(1,1,1,e,5),theta,nxyz)
 
 !         do m=1,toteq
 !            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
@@ -121,10 +148,10 @@ c------------------------------------------------------------------------
 !         eg=gllel(e)
 !         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
 !         do i=1,nxyz
-!            scratch(i)=pr(i,1,1,e)-exp(se0const)*
+!            scr(i)=pr(i,1,1,e)-exp(se0const)*
 !     >                         (u(i,1,1,1,e)**gmaref)
 !         enddo
-!         tau=vlmin(scratch,nxyz)
+!         tau=vlmin(scr,nxyz)
 !         tau=min(tau,0.0)
 !         epsebdg(e)=tau/
 !     >          (tau-(pres-exp(se0const)*rho**gmaref))
