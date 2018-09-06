@@ -184,11 +184,12 @@ C     Increment solution set
       Nprev = Nprev+1
 C
       CALL COPY   (RHS(1,Nprev),Pnew,NTOT2)
-C
+
 C     Orthogonalize rhs against previous rhs and normalize
-C
-      CALL ECONJ (Nprev,H1,H2,H2INV,ierr)
-c     CALL ECHECK(Nprev,H1,H2,H2INV,INTETYPE)
+
+      write(6,*) istep,nprev,' call econj2'
+      call econj (nprev,h1,h2,h2inv,ierr)
+C     call echeck(nprev,h1,h2,h2inv,intetype)
 C
 c     Save last sol'n
       CALL COPY(Pnew,P,NTOT2)
@@ -252,7 +253,7 @@ C
 C    .Normalize new element in P~
 C
       if (ALPHAd.le.0.0) then
-         write(6,*) 'ERROR:  alphad .le. 0 in ECONJ',alphad,Kprev
+         write(6,*) 'ERROR:  alphad .le. 0 in econj',alphad,Kprev
          ierr = 1
          return
       endif
@@ -385,6 +386,7 @@ C
 
 C     First, we have to decide if the E matrix has changed.
 
+
       if (icalld.eq.0) then
          icalld=1
          dtlast=dt
@@ -399,7 +401,7 @@ C     First, we have to decide if the E matrix has changed.
          ifnewe=.true.
          dtlast=dt
       endif
-      if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
+c     if (ifnewe.and.nio.eq.0) write(6,*) istep,'reorthogo:',nprev
 
      
 C     
@@ -414,9 +416,9 @@ c
          Nprevt = Nprev
          DO 100 Iprev=1,Nprevt
 C           Orthogonalize this rhs w.r.t. previous rhs's
-            CALL ECONJ (Iprev,H1,H2,H2INV,ierr)
+            call econj (iprev,h1,h2,h2inv,ierr)
             if (ierr.eq.1) then
-               if (nio.eq.0) write(6,*) istep,ierr,' ECONJ error'
+               if (nio.eq.0) write(6,*) istep,ierr,' econj error'
                nprev = 0
                return
             endif
@@ -660,7 +662,7 @@ c     B := A*X are stored in rvar, as well as h1old and h2old and a
 c     couple of other auxiliary arrays.
 
 c     In this new code, we retain both X and B=A*X and we re-orthogonalize
-c     at each timestep (with no extra matrix-vector products, but O(n m^2)
+c     at each timestep (with no extra matrix-vector products, but O(nm)
 c     work.   The idea is to retain fresh vectors by injecting the most 
 c     recent solution and pushing the oldest off the stack, hopefully 
 c     keeping the number of vectors, m, small.
@@ -844,7 +846,8 @@ c     string "name6"
       return
       end
 c-----------------------------------------------------------------------
-c     New proj_ortho version
+      !O(nm) method for updating projection space
+      !See James Lotte's note or Nicholas Christensen's master's thesis
       subroutine proj_ortho(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
@@ -949,10 +952,26 @@ c     Check for linear independence.
       endif   
 
       return
-      end
+      end      
 c-----------------------------------------------------------------------
-c     Old version of projection code
+      !Function to switch between mgs and cgs2 full reorthogonalization
       subroutine proj_ortho_full(xx,bb,n,m,w,ifwt,ifvec,name6)
+
+      include 'SIZE'
+
+      real xx(n,1),bb(n,1),w(n)
+      character*6 name6
+      logical ifwt,ifvec
+      integer flag(mxprev)
+ 
+      !call proj_ortho_full_mgs(xx,bb,n,m,w,ifwt,ifvec,name6)
+      call proj_ortho_full_cgs2(xx,bb,n,m,w,ifwt,ifvec,name6)
+     
+      return
+      end      
+c-----------------------------------------------------------------------
+c     Full MGS reorthogonalization
+      subroutine proj_ortho_full_mgs(xx,bb,n,m,w,ifwt,ifvec,name6)
 
       include 'SIZE'      ! nio
       include 'TSTEP'     ! istep
@@ -1035,8 +1054,78 @@ c     $           ,1p2e12.4)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
+      !CGS2 version of full reorthogonalization, possibly more stable in
+      !certain instances. Much faster for large m.
+      subroutine proj_ortho_full_cgs2(xx,bb,n,m,w,ifwt,ifvec,name6)
 
+      include 'SIZE'      ! nio
+      include 'TSTEP'     ! istep
+      include 'PARALLEL'  ! wdsize
+            
+      real xx(n,1),bb(n,1),w(n)
+      character*6 name6
+      logical ifwt,ifvec
+      integer flag(mxprev)
+      real normk,normp,alpha(mxprev),work(mxprev),scl1,tol
+
+      if (m.le.0) return
+
+      tol = 1.e-7
+      if (wdsize.eq.4) tol=1.e-3
+
+      do i = 1, 2 !Do this twice for CGS2
+
+      do k = m, 1, -1
+         do j = m, k, -1
+            alpha(j) = 0.0
+            if(ifwt) then
+                  alpha(j) = .5*(vlsc3(xx(1,j),w,bb(1,k),n)
+     $                       +     vlsc3(bb(1,j),w,xx(1,k),n))
+            else
+                  alpha(j) = .5*(vlsc2(xx(1,j),bb(1,k),n)
+     $                       +     vlsc2(bb(1,j),xx(1,k),n))
+            endif
+         enddo
+         call gop(alpha(k), work,'+  ',(m - k) + 1)
+         do j = m, k+1, -1
+            call add2s2(xx(1,k),xx(1,j),-alpha(j),n)
+            call add2s2(bb(1,k),bb(1,j),-alpha(j),n)
+         enddo
+         normp = sqrt(alpha(k))
+         if(ifwt) then
+            normk = glsc3(xx(1,k),w,bb(1,k),n)
+         else
+            normk = glsc2(xx(1,k),bb(1,k),n)
+         endif
+         normk = sqrt(normk)
+         if(normk.gt.tol*normp) then
+            scl1 = 1.0/normk
+            call cmult(xx(1,k), scl1, n)
+            call cmult(bb(1,k), scl1, n)
+            flag(k) = 1
+         else
+            flag(k) = 0
+         endif
+      enddo
+
+      enddo
+
+      k=0
+      do j=1,m
+         if (flag(j).eq.1) then
+            k=k+1
+            if (k.lt.j) then
+               call copy(xx(1,k),xx(1,j),n)
+               call copy(bb(1,k),bb(1,j),n)
+            endif
+         endif
+      enddo
+      m = k
+
+      return
+      end      
+c-----------------------------------------------------------------------
+      subroutine project2(x,n,rvar,ivar,h1,h2,msk,w,ifwt,ifvec,name6)
 
       include 'CTIMER'
 
@@ -1075,7 +1164,7 @@ c-----------------------------------------------------------------------
 
       if (m.gt.0) call add2(x,xbar,n)      ! Restore desired solution
 
-       !Need to uncomment this if using old version
+       !Uncomment this if using full reorthogonalization
 c      if (m.eq.mmx) then ! Push old vector off the stack
 c         do k=2,mmx
 c            call copy (xx(1,k-1),xx(1,k),nn)
@@ -1087,8 +1176,9 @@ c      endif
       !print *, "m", m
       call copy        (xx(1,m),x,nn)   ! Update (X,B)
       call proj_matvec (bb(1,m),xx(1,m),n,h1,h2,msk,name6)
-      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) !New version
-c      call proj_ortho2  (xx,bb,n,m,w,ifwt,ifvec,name6) !Old version
+      call proj_ortho  (xx,bb,n,m,w,ifwt,ifvec,name6) !Update orthogonalization
+      !Uncomment the if block above if using full reorthogonalization
+c      call proj_ortho_full  (xx,bb,n,m,w,ifwt,ifvec,name6) !Fully reorthogonalize
 
       return
       end
@@ -1214,11 +1304,10 @@ c
 c-----------------------------------------------------------------------
       subroutine givens_rotation(a, b, c, s, r)
 
-      real a, b, c, s, r
-      real h, d
+      real a, b, c, s, r, h, d
 
       if(b.ne.0.0) then
-         h = hypot(a,b) !Can use local or local implementation
+         h = hypot(a,b) !Can use library version or below implementation
          d = 1.0/h
          c = abs(a)*d
          s = sign(d,a)*b
@@ -1232,10 +1321,10 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      ! Most compilers probably have this implemented as a 
-      ! library function (gfortran and ifort do)
-      ! so this is probably not actually necessary.
-      real function hypot(a, b)
+      ! Compilers with Fortran 2008 support should have a 
+      ! library implementation of this (gfortran and ifort do).
+      
+      real function hypot(a, b) !Does not handle a = b = 0 case
 
       real a, b, t, x, c, d, ix
 
@@ -1250,4 +1339,4 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------         

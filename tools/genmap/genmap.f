@@ -38,12 +38,6 @@ c   6)  Output the results
 c   
 c-----------------------------------------------------------------------
 c
-c  This code no longer relies on Metis to do the partitioning.
-c
-c  For large problems ( nel > 1e6 ), compile with -mcmodel=medium and
-c  change parameter lelm (maximum number of elements)
-c
-c
 c  genmap() uses the symmetric vertex ordering
 c
 c      3 ----- 4
@@ -54,19 +48,6 @@ c      1 ----- 2
 c
 c  which can be extended to an arbitrary number of space dimensions
 c  (like 3).
-c
-c
-c
-c  7/27/07 -- add self-connected check
-c  7/27/07 -- verify that don't double-check periodic faces
-c
-c  1/13/09 -- added support for conjugate heat transfer;
-c             Main features:
-c
-c             .recursive bisection only on fluid graph
-c             .remaining solid elements distributed round-robin/greedy
-c
-c             Will need to later modify for case nel_mhd > nelv.
 c
 c-----------------------------------------------------------------------
       program genmap
@@ -411,8 +392,9 @@ c
 
 c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
 
-      if (nelt.gt.lelm) then 
-        write(6,*) 'ABORT: NELT>LELM, modify LELM in SIZE and recompile'
+      if (nelt.gt.lelm) then
+        write(6,*) 'Abort: number of elements too large', nelt
+        write(6,*) 'change MAXNEL and recompile' 
         call exitt(1)
       endif
 

@@ -181,12 +181,14 @@ c-----------------------------------------------------------------------
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
       ntotcv=lelt*nxyz1*toteq
-      call rzero(phig,ltott)
+      call rone(phig,ltott)
       call rzero(csound,ltott)
       call rzero(vtrans,ltott*ldimt1)
       call rzero(vdiff ,ltott*ldimt1)
       call rzero(u,ntotcv)
-      call usr_particles_init
+#ifdef LPM
+      call lpm_init(1)
+#endif
       call cmtuic
       if(ifrestart) call my_full_restart !  Check restart files. soon...
 
@@ -307,6 +309,9 @@ c     ! save velocity on fine mesh for dealiasing
          ifxyo=.true.
 !        call out_fld_nek
          call outpost2(vx,vy,vz,pr,t,ldimt,'EBL')
+#ifdef LPM
+         call lpm_usr_particles_io(istep)
+#endif
          call exitt
       endif
 

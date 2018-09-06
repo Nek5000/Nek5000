@@ -93,7 +93,8 @@ c------------------------------------------------------------------------
 
       do e=1,nelt
 
-         rhomin=vlmin(vtrans(1,1,1,e,irho),nxyz)
+!        rhomin=vlmin(vtrans(1,1,1,e,irho),nxyz)
+         rhomin=vlmin(u(1,1,1,1,e),nxyz)
       
          rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
 ! positivity-presering limiter of Zhang and Shu
@@ -103,38 +104,41 @@ c------------------------------------------------------------------------
                uold=u(i,1,1,1,e)
                u(i,1,1,1,e)=rho+theta*(uold-rho)
             enddo
+         else
+            theta=1.0
          endif
+         call cfill(t(1,1,1,e,4),theta,nxyz)
 
-         do m=1,toteq
-            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
-         enddo
-         rho=avstate(1)
-! Entropy-bounded limiter of Lv and Ihme
-         e_internal=avstate(5)-
-     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
-     >                   rho
-         e_internal=e_internal/rho
-         eg=gllel(e)
-         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
-         do i=1,nxyz
-            scratch(i)=pr(i,1,1,e)-exp(se0const)*
-     >                         (u(i,1,1,1,e)**gmaref)
-         enddo
-         tau=vlmin(scratch,nxyz)
-         tau=min(tau,0.0)
-         epsebdg(e)=tau/
-     >          (tau-(pres-exp(se0const)*rho**gmaref))
-         epsebdg(e)=min(epsebdg(e),1.0)
-         epsebdg(e)=max(epsebdg(e),0.0)
-! diagnostic
-         call cfill(t(1,1,1,e,4),epsebdg(e),nxyz)
-
-         do m=1,toteq
-            do i=1,nxyz
-               uold=u(i,1,1,m,e)
-               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
-            enddo
-         enddo
+!         do m=1,toteq
+!            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
+!         enddo
+!         rho=avstate(1)
+!! Entropy-bounded limiter of Lv and Ihme
+!         e_internal=avstate(5)-
+!     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
+!     >                   rho
+!         e_internal=e_internal/rho
+!         eg=gllel(e)
+!         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
+!         do i=1,nxyz
+!            scratch(i)=pr(i,1,1,e)-exp(se0const)*
+!     >                         (u(i,1,1,1,e)**gmaref)
+!         enddo
+!         tau=vlmin(scratch,nxyz)
+!         tau=min(tau,0.0)
+!         epsebdg(e)=tau/
+!     >          (tau-(pres-exp(se0const)*rho**gmaref))
+!         epsebdg(e)=min(epsebdg(e),1.0)
+!         epsebdg(e)=max(epsebdg(e),0.0)
+!! diagnostic
+!         call cfill(t(1,1,1,e,4),epsebdg(e),nxyz)
+!
+!         do m=1,toteq
+!            do i=1,nxyz
+!               uold=u(i,1,1,m,e)
+!               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
+!            enddo
+!         enddo
 
       enddo
       

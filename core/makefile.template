@@ -8,6 +8,7 @@ OPT_INCDIR=./
 OBJDIR=obj
 MPI=0 
 CMT=0 
+LPM=0
 NEKNEK=
 FC=
 CC=
@@ -89,6 +90,9 @@ TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
 OPT_INCDIR += -I$(SCMT)
+endif
+ifeq ($(LPM),1)
+  TMP1 += lpm.o 
 endif
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
@@ -233,6 +237,9 @@ $(OBJDIR)/outflow_bc.o	:$(SCMT)/outflow_bc.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/wall_bc.o	:$(SCMT)/wall_bc.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/filters_cmt.o	:$(SCMT)/filters_cmt.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/diagnostics.o	:$(SCMT)/diagnostics.f;		$(FC) -c $(FL2) $< -o $@
+
+# LPM CORE     ##################################################################
+$(OBJDIR)/lpm.o  	:$S/lpm.f $S/LPM;             	$(FC) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(FC) -c $(FL2) $< -o $@ 

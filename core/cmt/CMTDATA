@@ -70,21 +70,6 @@ c---------------------------------------------------------------------
       real                  tcoef(3,3),dt_cmt,time_cmt
       common /timestepcoef/ tcoef,dt_cmt,time_cmt
       
-! particle stuff for rk3 low storage tvd
-      common /PARTRESTART/ ifpartrestart, partrestartfile
-     >        ,partrestartdata, partrestartno
-      logical ifpartrestart
-      character*15 partrestartfile
-      character*13 partrestartdata
-      integer partrestartno
-
-! JH011417 removed for now. lpart stuff needs to be somewhere else
-!     common /PARTRK3/ kv_stage_p, kx_stage_p
-!     real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
-
-!     common /partrkstuff/ xlocp, vlocp
-!     real xlocp(lpart,ldim), vlocp(lpart,ldim)
-
       real              rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
       common /nekuscmt/ rho,phi,pres,cv,e_internal
