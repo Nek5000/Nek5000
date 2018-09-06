@@ -1893,6 +1893,11 @@ C       Perpendicular to above two
          letapt(i)='a'
       enddo
 
+      call setgraph(ifgraf)
+
+      nelcap = 90               ! Max number of elements for pretex
+      if (ifgraf) nelcap = nelm ! Max number of elements for prex
+
       return
       end
 c-----------------------------------------------------------------------

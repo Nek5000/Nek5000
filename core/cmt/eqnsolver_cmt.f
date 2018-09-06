@@ -438,6 +438,7 @@ C> @}
       include  'SIZE'
       include  'INPUT'
       include  'GEOM'
+      include  'PARALLEL'
       include  'MASS'
       include  'SOLN'
       include  'CMTDATA'
@@ -445,68 +446,38 @@ C> @}
       
       integer e,eq_num
       parameter (ldd=lxd*lyd*lzd)
-c     common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
-      real ur(lx1,ly1,lz1),us(lx1,ly1,lz1),ut(lx1,ly1,lz1),
-     >    rdumz(lx1,ly1,lz1)
+
+      common /lpm_fix/ phigdum,phigvdum
+      real phigdum(lx1,ly1,lz1,lelt,3),phigvdum(lx1,ly1,lz1,lelt)
 
       nxyz=lx1*ly1*lz1
       if(eq_num.ne.1.and.eq_num.ne.5)then
 
-        call gradl_rst(ur(1,1,1),us(1,1,1),ut(1,1,1),
-     >                                        phig(1,1,1,e),lx1,if3d)
-        if(if3d) then ! 3d
-          if(eq_num.eq.2) then
-            do i=1,nxyz
-              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (ur(i,1,1)*RXM1(i,1,1,e) +
-     >              us(i,1,1)*SXM1(i,1,1,e) +
-     >              ut(i,1,1)*TXM1(i,1,1,e))
-            enddo
-          elseif(eq_num.eq.3) then
-            do i=1,nxyz
-              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (ur(i,1,1)*RYM1(i,1,1,e) +
-     >              us(i,1,1)*SYM1(i,1,1,e) +
-     >              ut(i,1,1)*TYM1(i,1,1,e))
-            enddo
-          elseif(eq_num.eq.4) then
-            do i=1,nxyz
-              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (ur(i,1,1)*RZM1(i,1,1,e) +
-     >              us(i,1,1)*SZM1(i,1,1,e) +
-     >              ut(i,1,1)*TZM1(i,1,1,e))
-            enddo
-          endif
-        else ! end 3d, 2d
-          if(eq_num.eq.2) then
-            do i=1,nxyz
-              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (ur(i,1,1)*RXM1(i,1,1,e) +
-     >              us(i,1,1)*SXM1(i,1,1,e))
-            enddo
-          elseif(eq_num.eq.3) then
-            do i=1,nxyz
-              rdumz(i,1,1) = 1.0d+0/JACM1(i,1,1,e)*
-     >             (ur(i,1,1)*RYM1(i,1,1,e) +
-     >              us(i,1,1)*SYM1(i,1,1,e))
-            enddo
-          endif ! end 2d
-      endif ! eqn nums 2-4
-
-c     multiply by pressure
-      call col2(rdumz,pr(1,1,1,e),nxyz)
 
         if (eq_num.eq.4.and.ldim.eq.2)then
 
+#ifdef LPM
+c          call subcol3(res1(1,1,1,e,eq_num),phigvdum(1,1,1,e)
+c    >                  ,bm1(1,1,1,e),nxyz)
+#endif
+
         else
-           call subcol3(res1(1,1,1,e,eq_num),rdumz(1,1,1)
+#ifdef LPM
+           call subcol3(res1(1,1,1,e,eq_num),phigdum(1,1,1,e,eq_num-1)
      >                  ,bm1(1,1,1,e),nxyz)
+#endif
            call subcol3(res1(1,1,1,e,eq_num),usrf(1,1,1,eq_num)
      $                  ,bm1(1,1,1,e),nxyz) 
         endif
       elseif(eq_num.eq.5)then
-           call subcol3(res1(1,1,1,e,eq_num),usrf(1,1,1,eq_num)
-     $                  ,bm1(1,1,1,e),nxyz) 
+
+#ifdef LPM
+c          call subcol3(res1(1,1,1,e,eq_num),phigvdum(1,1,1,e)
+c    >                  ,bm1(1,1,1,e),nxyz)
+#endif
+c          call subcol3(res1(1,1,1,e,eq_num),usrf(1,1,1,eq_num)
+c    $                  ,bm1(1,1,1,e),nxyz) 
+
       endif
       return
       end
@@ -530,10 +501,19 @@ c-----------------------------------------------------------------------
             do i=1,lx1
                call NEKASGN(i,j,k,e)
                call userf(i,j,k,eg)
-               usrf(i,j,k,2) = FFX
-               usrf(i,j,k,3) = FFY
-               usrf(i,j,k,4) = FFZ
-               usrf(i,j,k,5) = qvol
+               rdum4 = 0.
+#ifdef LPM
+               call lpm_userf(I,J,K,e,rdum1,rdum2,rdum3,rdum4)
+               FFX  = FFX + rdum1
+               FFY  = FFY + rdum2
+               FFZ  = FFZ + rdum3
+#endif
+               ! note fx,fy,fz multiply by density to stay 
+               ! consistent with nek5000 units. Same for phig (cancels)
+               usrf(i,j,k,2) = FFX*u(i,j,k,1,e)*phig(i,j,k,e)
+               usrf(i,j,k,3) = FFY*u(i,j,k,1,e)*phig(i,j,k,e)
+               usrf(i,j,k,4) = FFZ*u(i,j,k,1,e)*phig(i,j,k,e)
+               usrf(i,j,k,5) = 0.0
 c              usrf(i,j,k,5) = (U(i,j,k,2,e)*FFX + U(i,j,k,3,e)*FFY
 c    &                       +  U(i,j,k,4,e)*FFZ)/ U(i,j,k,1,e)
             enddo

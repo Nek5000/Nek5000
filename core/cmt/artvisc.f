@@ -451,7 +451,7 @@ c-----------------------------------------------------------------------
          enddo
       enddo
 
-!     call max_to_trilin(t(1,1,1,1,3))
+      call max_to_trilin(t(1,1,1,1,3))
 
       return
       end

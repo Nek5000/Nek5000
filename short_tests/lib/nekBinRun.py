@@ -5,7 +5,7 @@ from subprocess import call, check_call, PIPE, STDOUT, Popen, CalledProcessError
 def run_meshgen(command, stdin, cwd, verbose=False):
 
     logfile = os.path.join(cwd, '{0}.out'.format(os.path.basename(command)))
-    stdin_bytes   = bytes("\n".join(stdin))
+    stdin_bytes   = bytes("\n".join(stdin)+"\n")
 
     print('Running "{0}"...'.format(os.path.basename(command)))
     print('    Using command "{0}"'.format(command))

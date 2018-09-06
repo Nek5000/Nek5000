@@ -41,7 +41,7 @@ class FsHydro(NekTestCase):
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=90., label='gmres')
 
         axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=14150., label='axhm')
+        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=19180., label='axhm')
 
         amp = self.get_value_from_log('AMP', column=-2, row=-1)
         self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=4e-05, label='AMP')

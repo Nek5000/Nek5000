@@ -24,7 +24,8 @@ NOBJS = postnek.o postnek2.o postnek3.o postnek5.o postnek6.o tsort.o \
 	postnek8.o postnek9.o plot.o getfld.o legend.o userf.o revert.o \
 	trap.o animate.o genxyz.o screen.o g3d.o subs.o xinterface.o \
 	locglob.o postnek5a.o blas.o \
-	xdriver.o scrdmp.o coef.o postnek7.o speclib.o mxm.o byte.o ssyev.o
+	xdriver.o scrdmp.o coef.o postnek7.o speclib.o mxm.o byte.o ssyev.o \
+	finiparser.o iniparser.o dictionary.o
 
 all: postx postex
 
@@ -75,6 +76,10 @@ trap.o     : trap.f	basics.inc basicsp.inc	; $(FC) -c $(FFLAGS)  trap.f
 xinterface.o	: xinterface.f 	basics.inc	; $(FC) -c $(FFLAGS)  xinterface.f
 reverc.o	: revert.f			; $(FC) -c $(FFLAGS)  revert.f
 blas.o	   : ../../core/3rd_party/blas.f	; $(FC) -c $(FFLAGS)  ../../core/3rd_party/blas.f
+
+finiparser.o	   : ../../core/3rd_party/finiparser.c	; $(CC) -c $(CFLAGS)  ../../core/3rd_party/finiparser.c
+iniparser.o	   : ../../core/3rd_party/iniparser.c	; $(CC) -c $(CFLAGS)  ../../core/3rd_party/iniparser.c
+dictionary.o	   : ../../core/3rd_party/dictionary.c	; $(CC) -c $(CFLAGS)  ../../core/3rd_party/dictionary.c
 
 revert.o	: revert.c			; $(CC)  -c $(CFLAGS)  revert.c
 byte.o   	: byte.c   			; $(CC)  -c $(CFLAGS)  byte.c

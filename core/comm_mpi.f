@@ -555,7 +555,9 @@ c-----------------------------------------------------------------------
          if(istep.gt.0) then
            dgp   = nvtot
            dgp   = max(dgp,1.)*max(istep,1)
-           dtmp1 = dgp/(np*(ttime-tprep))
+           dtmp0 = np*(ttime-tprep)
+           dtmp1 = 0
+           if (dtmp0.gt.0) dtmp1 = dgp/dtmp0 
            dtmp2 = (ttime-tprep)/max(istep,1)
          endif 
          write(6,*) ' '

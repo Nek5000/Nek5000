@@ -39,15 +39,13 @@ C
       ENDIF
 C
       IF (IFFLOW) THEN
-
-csk         call check_cyclic  ! fow now; set in .rea file 
-
+         IERR = 0
          IFIELD = 1
          DO 100 IEL=1,NELV
          DO 100 IFC=1,NFACE
             CB = CBC(IFC,IEL,IFIELD)
             CALL CHKNORD (IFALGN,IFNORX,IFNORY,IFNORZ,IFC,IEL)
-            IF ( .NOT.IFSTRS ) CALL CHKCBC  (CB,IEL,IFC,IFALGN)
+            CALL CHKCBC  (CB,IEL,IFC,IFALGN,IERR)
             IF  (CB.EQ.'O  ' .OR. CB.EQ.'o  ' .OR.
      $           CB.EQ.'ON ' .OR. CB.EQ.'on ' .OR.
      $           CB.EQ.'S  ' .OR. CB.EQ.'s  ' .OR.
@@ -73,6 +71,9 @@ csk         call check_cyclic  ! fow now; set in .rea file
                                               IFSURT          = .TRUE.
             ENDIF
   100    CONTINUE
+
+         ierr = iglsum(ierr,1)
+         if (ierr.gt.0) call exitt 
       ENDIF
 C
       IF (IFHEAT) THEN
@@ -284,20 +285,21 @@ C
 C
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE CHKCBC (CB,IEL,IFC,IFALGN)
+      SUBROUTINE CHKCBC (CB,IEL,IFC,IFALGN,IERR)
       include 'SIZE' 
       include 'PARALLEL' 
+      include 'INPUT' 
 C
 C     Check for illegal boundary conditions
 C
       CHARACTER CB*3
       LOGICAL IFALGN
 
-      ieg = lglel(iel)
+      ieg  = lglel(iel)
 
-C
+      if (ifstrs .and. .not.ifsplit) return
+
 C     Laplacian formulation only
-C
       IF  (CB.EQ.'SH ' .OR.  CB.EQ.'sh ' .OR.
      $     CB.EQ.'SHL' .OR.  CB.EQ.'shl' .OR.
      $     CB.EQ.'S  ' .OR.  CB.EQ.'s  ' .OR.
@@ -305,19 +307,23 @@ C
      $     CB.EQ.'MM ' .OR.  CB.EQ.'mm ' .OR.
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
+
       IF ( .NOT.IFALGN .AND.
      $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+
       RETURN
-C
+
  9001 WRITE (6,*) ' Illegal traction boundary conditions detected for'
       GOTO 9999
+
  9010 WRITE (6,*) ' Mixed B.C. on a side nonaligned with either the X,Y,
      $ or Z axis detected for'
- 9999 WRITE (6,*) ' Element',ieg,'   side',IFC,'.'
-      WRITE (6,*) ' Selected option only allowed for STRESS FORMULATION'
-      WRITE (6,*) ' Execution terminates'
 
-      call exitt
+ 9999 WRITE (6,*) ' Element',ieg,'   side',IFC
+      WRITE (6,*) ' Requires PN/PN-2 STRESS FORMULATION'
+
+      ierr = err + 1
+
       END
 c-----------------------------------------------------------------------
       SUBROUTINE BCMASK

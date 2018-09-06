@@ -50,6 +50,7 @@ C     BASICS.INC
      $         ,igroup(nelm),isobj
      $         ,ibc(6,nelm,0:maxfld) ! For periodic with nel>1e6
      $         ,matype(-5:10,0:maxfld)
+     $         ,nelcap
 
       COMMON /CHAAR/LINE,SESION,ITEM,CHOICE,OLDVER,CMD(500),RSTV,RSTT
      $,X13,CPARAM(500),HCODE(11,MAXHIS),OCODE(20),CBC1,CBC3,DARROW
