@@ -48,6 +48,3 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
 
       integer               nsessions
       common /session_info/ nsessions
-
-      real ms_glmin,ms_glmax,ms_glamin,ms_glamax,ms_glsum,ms_glsc3
-     $     ,ms_glsc2
