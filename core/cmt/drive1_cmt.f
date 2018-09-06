@@ -37,14 +37,8 @@ c     Solve the Euler equations
          time4av=.true. ! not used yet
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
-<<<<<<< HEAD
          iostep2=iostep
          iostep=9999999
-=======
-         iostep2=param(15)
-         iostep=param(15)
-c        iostep=9999999
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
          call cmt_ics
          if (ifrestart) then
             time_cmt=time
@@ -53,25 +47,10 @@ c        iostep=9999999
          endif
          call cmt_flow_ics
          call init_cmt_timers
-<<<<<<< HEAD
-         dt_cmt=param(12)
-=======
          dt_cmt=abs(param(12))
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
          call cmtchk ! need more ifdefs to use userchk
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu
-! JH082718 do shock detection on unlimited field. Store 0/1 mask in t(:,5)
-<<<<<<< HEAD
-         call perssonperaire(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
-         call limiter
-!        call entropy_viscosity         ! for high diffno
-         call wavevisc(t(1,1,1,1,3))
-! JH082718 mask viscosity in t(:,3)
-         call col2(t(1,1,1,1,3),t(1,1,1,1,5),nxyz*nelt)
-         call max_to_trilin(t(1,1,1,1,3))
-         call compute_transport_props   ! at t=0
-=======
 !! JH090518 Shock detector is not ready for prime time. Lean on EVM for
 !!          sane default 
 !!        call perssonperaire(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
@@ -87,7 +66,6 @@ c        call limiter
          call spread_props_grid           
 #endif
 
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
       endif
       
       call rzero(t,nxyz*nelt*ldimt)
@@ -167,11 +145,8 @@ c    >                       + c3*res3(i,1,1,e,eq))
 !        call cmtchk
 !        call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
 !        call mass_balance(if3d)
-<<<<<<< HEAD
 ! dump out particle information. 
 !        call usr_particles_io(istep)
-=======
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
 !     end if
 
 !     call print_cmt_timers ! NOT NOW
@@ -220,22 +195,6 @@ C> Store it in res1
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-<<<<<<< HEAD
-      call compute_primitive_vars(0)
-      if (stage.eq.1)
-     >call shock_detector(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
-      call limiter
-      call compute_primitive_vars(1)
-
-!     if (1==2) then
-      call wavevisc(t(1,1,1,1,3))
-! JH082718 mask viscosity in t(:,3)
-      call col2(t(1,1,1,1,3),t(1,1,1,1,5),nxyz*nelt)
-      call max_to_trilin(t(1,1,1,1,3))
-!     call entropy_viscosity
-      call compute_transport_props ! everything inside rk stage
-!     endif
-=======
 c     call compute_primitive_vars(0)
 !! JH090518 Shock detector is not ready for prime time. Lean on EVM for
 !!          sane default 
@@ -254,7 +213,6 @@ c     call limiter
       call entropy_viscosity
       call compute_transport_props ! everything inside rk stage
 !!     endif
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
 !     call smoothing(vdiff(1,1,1,1,imu)) ! still done in usr file
 ! you have GOT to figure out where phig goes!!!!
 
@@ -278,14 +236,9 @@ c     call limiter
 ! T4 S3 epsebdg
             call outpost2(vx,vy,vz,pr,t,ldimt,'CMT')
             call mass_balance(if3d)
-<<<<<<< HEAD
-! dump out particle information. 
-            call usr_particles_io(istep)
-=======
 #ifdef LPM
          call lpm_usr_particles_io(istep)
 #endif
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
          end if
       endif
 
@@ -333,11 +286,7 @@ C> res1+=\f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
 ! CMTDATA BETTA REFLECT THIS!!!
 !***********************************************************************
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\mathbf{U}\right] dA\f$
-<<<<<<< HEAD
-      if (1.eq.2) then
-=======
 !     if (1.eq.2) then
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
       ium=(iu1-1)*nfq+iwm
       iup=(iu1-1)*nfq+iwp
       call   imqqtu(flux(iuj),flux(ium),flux(iup))
@@ -345,11 +294,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}^{\intercal}\nabla v\}\} \cdot \left[\ma
       call igtu_cmt(flux(iwm),flux(iuj),graduf) ! [[u]].{{gradv}}
       dumchars='after_igtu'
 !     call dumpresidue(dumchars,999)
-<<<<<<< HEAD
-      endif
-=======
 !     endif
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
 
 C> res1+=\f$\int \left(\nabla v\right) \cdot \left(\mathbf{H}^c+\mathbf{H}^d\right)dV\f$ 
 C> for each equation (inner), one element at a time (outer)
@@ -383,11 +328,7 @@ C> for each equation (inner), one element at a time (outer)
       dumchars='after_elm'
 !     call dumpresidue(dumchars,999)
 
-<<<<<<< HEAD
-      if (1.eq.2) then
-=======
 !     if (1.eq.2) then
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
 C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\right] dA\f$
       call igu_cmt(flux(iwp),graduf,flux(iwm))
       do eq=1,toteq
@@ -395,11 +336,7 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\righ
 !Finally add viscous surface flux functions of derivatives to res1.
          call surface_integral_full(res1(1,1,1,1,eq),flux(ieq))
       enddo
-<<<<<<< HEAD
-      endif
-=======
 !     endif
->>>>>>> 9d1ba88f1828a40c3417555c47783c1a39f2e55e
       dumchars='end_of_rhs'
 !     call dumpresidue(dumchars,999)
 
