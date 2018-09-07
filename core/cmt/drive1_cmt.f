@@ -54,7 +54,7 @@ c     Solve the Euler equations
 !! JH090518 Shock detector is not ready for prime time. Lean on EVM for
 !!          sane default 
 !!        call perssonperaire(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
-c        call limiter
+         call limiter
 !!        call wavevisc(t(1,1,1,1,3))
 !! JH082718 mask viscosity in t(:,3)
 !!        call col2(t(1,1,1,1,3),t(1,1,1,1,5),nxyz*nelt)
@@ -195,12 +195,12 @@ C> Store it in res1
 !     call set_dealias_rx ! done in set_convect_cons,
 ! JH113015                ! now called from compute_primitive_variables
 
-c     call compute_primitive_vars(0)
+      call compute_primitive_vars(0)
 !! JH090518 Shock detector is not ready for prime time. Lean on EVM for
 !!          sane default 
 !!     if (stage.eq.1)
 !!    >call shock_detector(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
-c     call limiter
+      call limiter
       call compute_primitive_vars(1)
 
 !!     if (1==2) then
