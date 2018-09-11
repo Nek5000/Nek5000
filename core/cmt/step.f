@@ -37,19 +37,39 @@ C> @file step.f time stepping and mesh spacing routines
          vtmp(i,1,1,1) = abs(vy(i,1,1,1))+csound(i,1,1,1)
          wtmp(i,1,1,1) = abs(vz(i,1,1,1))+csound(i,1,1,1)
       enddo
-      call compute_cfl (umax,utmp,vtmp,wtmp,dt_dum)
-      dt_cfl=ctarg/umax*dt_dum
-      call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
-      call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
-      call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
-      if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cfl, dt1,dt2,dt3
-      dt_dum = min(dt_dum,dt_cfl,dt1,dt2,dt3)
-c     dt_dum = min(dt_dum,dt_cfl)
-      if (dt_dum .gt. 10.0) then
-         if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
-     >      dt_dum
-         call exitt
+
+      if (ctarg .gt.0.0) then
+         call compute_cfl (umax,utmp,vtmp,wtmp,1.0)
+         dt_cfl=ctarg/umax
+         call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
+         call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
+         call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
+         dt_cmt=min(dt_cfl,dt1,dt2,dt3)
+         if (dt_cmt .gt. 10.0) then
+            if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
+     >         dt_cmt
+            call exitt
+         endif
+      else
+!        dt_cmt=dt
+         dt_cmt=param(12)
       endif
+         dt_dum=dt_cmt
+
+      call compute_cfl (umax,utmp,vtmp,wtmp,dt_dum)
+!!     dt_cfl=ctarg/umax*dt_dum
+!      call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
+!      call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
+!      call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
+!!     if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cfl, dt1,dt2,dt3
+!      if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cmt, dt1,dt2,dt3
+!      dt_dum = min(dt_dum,dt_cmt,dt1,dt2,dt3)
+!!     dt_dum = min(dt_dum,dt_cfl,dt1,dt2,dt3)
+!      if (dt_dum .gt. 10.0) then
+!         if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
+!     >      dt_dum
+!         call exitt
+!      endif
 
 #ifdef LPM
       call lpm_set_dt(dt_dum) ! particle time step
@@ -72,9 +92,7 @@ c     dt_dum = min(dt_dum,dt_cfl)
          endif
       endif
       call compute_cfl (courno,utmp,vtmp,wtmp,dt_dum) ! sanity?
-      param(12) = -dt_dum
       dt_cmt    = dt_dum
-      dt        = -dt_dum
 
 ! diffusion number based on viscosity.
 

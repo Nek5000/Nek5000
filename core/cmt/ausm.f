@@ -73,6 +73,8 @@ C> Computes inviscid numerical surface flux from AUSM+ Riemann solver
 ! ******************************************************************************
 ! Start, compute face state
 ! ******************************************************************************
+!      call invcol2(cpl,rl,ntot)
+!      call invcol2(cpr,rr,ntot)
 
       do i=1,ntot
 !        Change the Enthalpy 
