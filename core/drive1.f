@@ -127,6 +127,12 @@ c      ifsync = .true.
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
          call userchk
+#ifdef LPM
+#ifdef CMTNEK
+#else
+         call lpm_stokes_particles_solver
+#endif
+#endif
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
@@ -199,6 +205,12 @@ c-----------------------------------------------------------------------
          call check_ioinfo  
          call set_outfld
          call userchk
+#ifdef LPM
+#ifdef CMTNEK
+#else
+         call lpm_stokes_particles_solver
+#endif
+#endif
          call prepost (ifoutfld,'his')
          call in_situ_check()
          if (lastep .eq. 1) goto 1001

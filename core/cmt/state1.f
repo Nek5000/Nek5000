@@ -67,6 +67,13 @@
 !
 !******************************************************************************
 
+      FUNCTION MixtJWL_Enthalpy(DE,PRES,VEL1,VEL2,VEL3,EN)
+      IMPLICIT NONE
+      REAL DE,PRES,VEL1,VEL2,VEL3,EN
+      REAL MixtJWL_Enthalpy
+      MixtJWL_Enthalpy = 0.5*(VEL1*VEL1+VEL2*VEL2+VEL3*VEL3)
+     >                  + EN+PRES/DE
+      END
       FUNCTION MixtPerf_C_Co2GUVW(Co2,G,U,V,W)
       IMPLICIT NONE
       REAL Co2,G,U,V,W ! INTENT(IN) W
@@ -357,3 +364,47 @@
 ! Initial revision
 !
 !******************************************************************************
+!NTN-----------JWL
+      FUNCTION MixtJWL_SO(DE,EN,pres,AA,BB,R1,R2,MW,MA,MB,OM,rho0)
+      IMPLICIT NONE
+      REAL DE,EN,pres,AA,BB,R1,R2,MW,MA,MB,OM,rho0
+      REAL MixtJWL_SO
+      MixtJWL_SO =SQRT((AA*(R1*(rho0/DE)/DE-OM/DE-OM/(R1*rho0)-
+     >                MW/(R1*rho0/DE))+
+     >        MA*pres/(DE*DE)*(1.-OM/(R1*rho0/DE)))*exp(-R1*rho0/DE)+
+     >        (BB*(R2*(rho0/DE)/DE-OM/DE-OM/(R2*rho0)-MW/(R2*rho0/DE))+
+     >        MB*pres/(DE*DE)*(1.-OM/(R2*rho0/DE)))*exp(-R2*rho0/DE)+
+     >        OM*(EN+pres/DE)+MW*DE*EN)
+      END
+
+      FUNCTION MixtJWL_PR(DE,EN,AA,BB,R1,R2,OM,rho0)
+      IMPLICIT NONE
+      REAL DE,EN,AA,BB,R1,R2,OM,rho0
+      REAL MixtJWL_PR
+      MixtJWL_PR =AA*(1.-(OM*DE)/(R1*rho0))*exp(-R1*rho0/DE)+
+     >            BB*(1.-(OM*DE)/(R2*rho0))*exp(-R2*rho0/DE)+OM*DE*EN
+      END
+
+      FUNCTION MixtJWL_TE(cv,DE,EN,AA,BB,R1,R2,rho0)
+      IMPLICIT NONE
+      REAL cv,DE,EN,AA,R1,R2,rho0,BB
+      REAL MixtJWL_TE
+      MixtJWL_TE = 1./cv*(EN-AA/(R1*rho0)*exp(-R1*rho0/DE)-
+     >             BB/(R2*rho0)*exp(-R2*rho0/DE))
+      END
+!Temperature as a function of pressure and density
+!      FUNCTION MixtJWL_TE(cv,DE,pres,AA,BB,R1,R2,rho0,OM)  
+!      IMPLICIT NONE
+!      REAL cv,DE,pres,AA,BB,R1,R2,rho0,OM  
+!      REAL MixtJWL_TE 
+!      MixtJWL_TE=1./OM/cv/DE*(pres-AA*exp(-R1*rho0/DE)-
+!     >           BB*exp(-R2*rho0/DE))
+!      END
+      FUNCTION MixtJWL_I_ENE(DE,PRES,AA,BB,R1,R2,rho0,OM)
+      IMPLICIT NONE
+      REAL DE,PRES,AA,BB,R1,R2,rho0,OM
+      REAL  MixtJWL_I_ENE
+      MixtJWL_I_ENE =(pres-(AA*(1.-OM/(R1*rho0/DE))
+     > *exp(-R1*rho0/DE)+BB*(1.-OM/(R2*rho0/DE))
+     > *exp(-R2*rho0/DE)))/(OM*DE)
+      END

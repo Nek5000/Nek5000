@@ -8,6 +8,7 @@ OPT_INCDIR=./
 OBJDIR=obj
 MPI=0 
 CMT=0 
+LPM=0
 NEKNEK=
 FC=
 CC=
@@ -67,7 +68,7 @@ ifeq ($(CMT),0)
   CMTCORE := 
 else
   CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
-   face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
+   face.o ausm.o  state1.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o artvisc.o
 endif
@@ -88,14 +89,17 @@ TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
-OPT_INCDIR += -I $(SCMT)
+OPT_INCDIR += -I$(SCMT)
+endif
+ifeq ($(LPM),1)
+  TMP1 += lpm.o 
 endif
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
 L0 = $(G) -O0
-L2 = $(G) -O2
-L3 = $(G) -O3
+L2 = $(G) -O0
+L3 = $(G) -O0
 
 FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR) 
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
@@ -226,13 +230,16 @@ $(OBJDIR)/face.o	:$(SCMT)/face.f;  		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/bc.o		:$(SCMT)/bc.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/surface_fluxes.o	:$(SCMT)/surface_fluxes.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/diffusive_cmt.o	:$(SCMT)/diffusive_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/MixtPerf.o	:$(SCMT)/MixtPerf.f;		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/state1.o	:$(SCMT)/state1.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/intpdiff.o	:$(SCMT)/intpdiff.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/inflow_bc.o	:$(SCMT)/inflow_bc.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/outflow_bc.o	:$(SCMT)/outflow_bc.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/wall_bc.o	:$(SCMT)/wall_bc.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/filters_cmt.o	:$(SCMT)/filters_cmt.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/diagnostics.o	:$(SCMT)/diagnostics.f;		$(FC) -c $(FL2) $< -o $@
+
+# LPM CORE     ##################################################################
+$(OBJDIR)/lpm.o  	:$S/lpm.f $S/LPM;             	$(FC) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(FC) -c $(FL2) $< -o $@ 

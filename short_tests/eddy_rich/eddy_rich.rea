@@ -22,7 +22,7 @@
       0.0000000E+00
       0.0000000E+00
       0.0000000E+00
-      1.0000000E-11     p21 DIVERGENCE
+      0.10000E-08
       1.0000000E-12     p22 HELMHOLTZ
   0              p23 NPSCAL
       1.0000000E-10     p24 TOLREL
@@ -95,7 +95,7 @@
       0.0000000E+00
       0.0000000E+00
        20.00000         p93 Numbr of prev pressure solns saved
-0       5.000000         p94 start projecting vel. after p94 step
+       5.000000         p94 start projecting vel. after p94 step
        5.000000         p95 start projecting pr after p95 step
        1.00000          p96 u0 translational velocity (in .usr)
         0.30000          p97 v0 translational velocity (in .usr)
