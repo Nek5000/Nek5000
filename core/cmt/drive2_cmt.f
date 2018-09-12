@@ -109,63 +109,40 @@ c------------------------------------------------------------------------
          endif
          call cfill(t(1,1,1,e,4),theta,nxyz)
 
-!! positivity-preserving limiter of Zhang and Shu: internal energy???
-!         emin=vlmin(u(1,1,1,5,e),nxyz)
-!! first kinetic energy
-!         if (if3d) then
-!            call vdot3(scr,
-!     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),
-!     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),nxyz)
-!         else
-!            call vdot2(scr,u(1,1,1,irpu,e),u(1,1,1,irpv,e),
-!     >                     u(1,1,1,irpu,e),u(1,1,1,irpv,e),nxyz)
-!         endif
-!         call invcol2(scr,u(1,1,1,irg,e),nxyz)
-!         call cmult(scr,0.5,nxyz)
-!         energy_eps=vlmax(scr,nxyz)
-!      
-!         rhoe=vlsc2(bm1(1,1,1,e),u(1,1,1,iret,e),nxyz)/volel(e)
-!!        if (abs(rhoe-emin) .gt. energy_eps) then
-!            theta=min((rhoe-energy_eps)/(rhoe-emin+epslon),1.0)
+!         do m=1,toteq
+!            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
+!         enddo
+!         rho=avstate(1)
+!! Entropy-bounded limiter of Lv and Ihme
+!-----------------------------------------------------------------------
+! JH091118 This isn't ready for non-ideal state equations or volume fraction
+!-----------------------------------------------------------------------
+!         e_internal=avstate(5)-
+!     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
+!     >                   rho
+!         e_internal=e_internal/rho
+!         eg=gllel(e)
+!         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
+!         do i=1,nxyz
+!            scr(i)=pr(i,1,1,e)-exp(se0const)*
+!     >                         (u(i,1,1,1,e)**gmaref)
+!         enddo
+!         tau=vlmin(scr,nxyz)
+!         tau=min(tau,0.0)
+!         epsebdg(e)=tau/
+!     >          (tau-(pres-exp(se0const)*rho**gmaref))
+!         epsebdg(e)=min(epsebdg(e),1.0)
+!         epsebdg(e)=max(epsebdg(e),0.0)
+!! diagnostic
+!         call cfill(t(1,1,1,e,5),epsebdg(e),nxyz)
+!
+!         do m=1,toteq
 !            do i=1,nxyz
-!               uold=u(i,1,1,iret,e)
-!               u(i,1,1,iret,e)=rhoe+theta*(uold-rhoe)
+!               uold=u(i,1,1,m,e)
+!               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
 !            enddo
-!!        else
-!!           theta=1.0
-!!        endif
-!         call cfill(t(1,1,1,e,5),theta,nxyz)
-
-         do m=1,toteq
-            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
-         enddo
-         rho=avstate(1)
-! Entropy-bounded limiter of Lv and Ihme
-         e_internal=avstate(5)-
-     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
-     >                   rho
-         e_internal=e_internal/rho
-         eg=gllel(e)
-         call cmt_userEOS(1,1,1,eg) ! assigns elm avg to  pres and temp
-         do i=1,nxyz
-            scr(i)=pr(i,1,1,e)-exp(se0const)*
-     >                         (u(i,1,1,1,e)**gmaref)
-         enddo
-         tau=vlmin(scr,nxyz)
-         tau=min(tau,0.0)
-         epsebdg(e)=tau/
-     >          (tau-(pres-exp(se0const)*rho**gmaref))
-         epsebdg(e)=min(epsebdg(e),1.0)
-         epsebdg(e)=max(epsebdg(e),0.0)
-! diagnostic
-         call cfill(t(1,1,1,e,5),epsebdg(e),nxyz)
-
-         do m=1,toteq
-            do i=1,nxyz
-               uold=u(i,1,1,m,e)
-               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
-            enddo
-         enddo
+!         enddo
+!-----------------------------------------------------------------------
 
       enddo
       

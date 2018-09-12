@@ -72,8 +72,6 @@
          write(6,*) 'zero maxdiff usually means NAN$'
 !        write(deathmessage,*) 'zero maxdiff usually means NAN$'
 !        call exittr(deathmessage,maxdiff,istep)
-      else
-         if (nio .eq. 0) write (6,*) 'max(s-<s>)=',maxdiff, meshh(1)
       endif
       call entropy_residual(tlag) ! fill res2
       call copy(res2(1,1,1,1,2),res2,ntot) ! raw residual in res2
