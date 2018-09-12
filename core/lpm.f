@@ -4,8 +4,8 @@ c----------------------------------------------------------------------
       include 'TOTAL'
       include 'LPM'
 
-      integer             stage,nstage
-      common /tstepstage/ stage,nstage
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
 
       nstage_part = 3
       if (abs(time_integ) .eq. 2) nstage_part = 1
@@ -21,7 +21,7 @@ c----------------------------------------------------------------------
          call compute_phig_qtl(dt,usrdiv) ! nek5000 (see Zwick 2018)
       endif
 
-      if(mod(istep,iostep).eq.0.or. istep.eq.1) then
+      if(mod(istep,iostep2).eq.0.or. istep.eq.1) then
          call lpm_usr_particles_io
       endif
 
@@ -38,6 +38,13 @@ c----------------------------------------------------------------------
 
 c     common /elementload/ gfirst, inoassignd, resetFindpts, pload(lelg)
 c     integer gfirst, inoassignd, resetFindpts, pload
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
+
+#ifdef CMTNEK
+#else
+      iostep2=iostep
+#endif
 
       icmtp = idum
 
@@ -996,8 +1003,8 @@ c----------------------------------------------------------------------
 
       integer              stage,nstage
       common /tstepstage/ stage,nstage
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
 
       common /myparts/ times(0:3),alpha(0:3),beta(0:3)
 
@@ -4444,8 +4451,8 @@ c     output diagnostics to logfile
       include 'PARALLEL'
       include 'LPM'
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
 
       common /myparth/ i_fp_hndl, i_cr_hndl
 
@@ -6141,22 +6148,22 @@ c----------------------------------------------------------------------
 C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
       subroutine set_tstep_coef_part(dt_in)
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
 
       real dt_in
 
-      dt_cmt = dt_in
+      dt = dt_in
 
       tcoef(1,1) = 0.0
       tcoef(2,1) = 1.0 
-      tcoef(3,1) = dt_cmt
+      tcoef(3,1) = dt
       tcoef(1,2) = 3.0/4.0
       tcoef(2,2) = 1.0/4.0 
-      tcoef(3,2) = dt_cmt/4.0 
+      tcoef(3,2) = dt/4.0 
       tcoef(1,3) = 1.0/3.0
       tcoef(2,3) = 2.0/3.0 
-      tcoef(3,3) = dt_cmt*2.0/3.0 
+      tcoef(3,3) = dt*2.0/3.0 
 
       return
       end
@@ -6289,10 +6296,10 @@ c
       include 'CTIMER'
       include 'LPM'
 
-      integer              stage,nstage
-      common /tstepstage/ stage,nstage
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
 
       nstage_part = 3
       if (abs(time_integ) .eq. 2) nstage_part = 1
@@ -6300,7 +6307,7 @@ c
       ! pre simulation iteration for packed bed
       do istep=0,nsteps
 
-         if(modulo(istep,iostep).eq.0) then
+         if(modulo(istep,iostep2).eq.0) then
             call lpm_usr_particles_io
          endif
 
@@ -6309,14 +6316,13 @@ c
             if (stage .eq. 1) then
                rdt_part = abs(param(12))
                call lpm_set_dt(rdt_part)
-               dt_cmt     = rdt_part
-               dt         = dt_cmt
-               time       = time + dt_cmt
-               time_cmt   = time_cmt + dt_cmt
+               dt     = rdt_part
+               time       = time + dt
+               time_cmt   = time_cmt + dt
                if (abs(time_integ).eq.1)
      >            call set_tstep_coef_part(rdt_part)
                if (nid.eq. 0) 
-     >            write(6,*) 'pre-sim_io time',istep,time,dt_cmt
+     >            write(6,*) 'pre-sim_io time',istep,time,dt
             endif
 
             call lpm_usr_particles_solver

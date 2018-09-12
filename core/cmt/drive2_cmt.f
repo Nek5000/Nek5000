@@ -15,6 +15,9 @@ c-----------------------------------------------------------------------
          ifheat = .true. ! almost certainly incorrect
       endif
       call setup_cmt_commo
+
+      iostep2=iostep
+      iostep=9999999
       
 c     call setup_cmt_param
       return

@@ -67,8 +67,8 @@ c---------------------------------------------------------------------
       integer              stage,nstage,iostep2
       common /tstepstage/ stage,nstage,iostep2
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
       
       real              rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass

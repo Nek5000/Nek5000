@@ -34,8 +34,6 @@ c     Solve the Euler equations
          time4av=.true.
          call compute_mesh_h(meshh,xm1,ym1,zm1)
          call compute_grid_h(gridh,xm1,ym1,zm1)
-         iostep2=iostep
-         iostep=9999999
          call cmt_ics
          if (ifrestart) then
             time_cmt=time
@@ -44,7 +42,7 @@ c     Solve the Euler equations
          endif
          call cmt_flow_ics
          call init_cmt_timers
-         dt_cmt=abs(param(12))
+         dt=abs(param(12))
          call cmtchk ! need more ifdefs to use userchk
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu
@@ -211,8 +209,6 @@ C> Store it in res1
 !          RK loop at the END of the time step, but I lose custody
 !          of commons in SOLN between cmt_nek_advance and the rest of
 !          the time loop.
-         call setdtcmt
-         call set_tstep_coef
          call copy(t(1,1,1,1,2),vtrans(1,1,1,1,irho),nxyz*nelt)
          call cmtchk
 
@@ -230,6 +226,8 @@ C> Store it in res1
             call lpm_usr_particles_io(istep)
 #endif
          end if
+         call setdtcmt
+         call set_tstep_coef
       endif
 
       ntot = lx1*ly1*lz1*lelt*toteq
@@ -335,19 +333,19 @@ C> res1+=\f$\int_{\Gamma} \{\{\mathbf{A}\nabla \mathbf{U}\}\} \cdot \left[v\righ
 !-----------------------------------------------------------------------
 C> Compute coefficients for Runge-Kutta stages \cite{TVDRK}
       subroutine set_tstep_coef
-
-      real tcoef(3,3),dt_cmt,time_cmt
-      COMMON /TIMESTEPCOEF/ tcoef,dt_cmt,time_cmt
+      include 'SIZE'
+      include 'TSTEP'
+      include 'CMTDATA'
 
       tcoef(1,1) = 0.0
       tcoef(2,1) = 1.0 
-      tcoef(3,1) = dt_cmt
+      tcoef(3,1) = dt
       tcoef(1,2) = 3.0/4.0
       tcoef(2,2) = 1.0/4.0 
-      tcoef(3,2) = dt_cmt/4.0 
+      tcoef(3,2) = dt/4.0 
       tcoef(1,3) = 1.0/3.0
       tcoef(2,3) = 2.0/3.0 
-      tcoef(3,3) = dt_cmt*2.0/3.0 
+      tcoef(3,3) = dt*2.0/3.0 
 
       return
       end
