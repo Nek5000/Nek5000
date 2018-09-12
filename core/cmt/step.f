@@ -29,8 +29,6 @@ C> @file step.f time stepping and mesh spacing routines
       real strof
       data strof /1.0e-8/
 
-      dt_dum = abs(param(12))
-
       NTOT   = lx1*ly1*lz1*NELV
       do i=1,ntot
          utmp(i,1,1,1) = abs(vx(i,1,1,1))+csound(i,1,1,1)
@@ -38,7 +36,11 @@ C> @file step.f time stepping and mesh spacing routines
          wtmp(i,1,1,1) = abs(vz(i,1,1,1))+csound(i,1,1,1)
       enddo
 
-      if (ctarg .gt.0.0) then
+! JH091118 DefaultParameters means we don't have direct control over
+!          this variable anymore. If it's lower than its default value,
+!          we trust it to set the time step
+!     if (ctarg .gt.0.0) then
+      if (ctarg .lt.0.5) then
          call compute_cfl (umax,utmp,vtmp,wtmp,1.0)
          dt_cfl=ctarg/umax
          call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
@@ -51,29 +53,14 @@ C> @file step.f time stepping and mesh spacing routines
             call exitt
          endif
       else
-!        dt_cmt=dt
-         dt_cmt=param(12)
-      endif
-
-      call compute_cfl (umax,utmp,vtmp,wtmp,dt_dum)
-!     dt_cfl=ctarg/umax*dt_dum
-      call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
-      call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
-      call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
-!     if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cfl, dt1,dt2,dt3
-      if (nid .eq. 0) write(6,*) 'HIA', dt_dum, dt_cmt, dt1,dt2,dt3
-      dt_dum = min(dt_dum,dt_cmt,dt1,dt2,dt3)
-!     dt_dum = min(dt_dum,dt_cfl,dt1,dt2,dt3)
-      if (dt_dum .gt. 10.0) then
-         if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
-     >      dt_dum
-         call exitt
+         dt_cmt = abs(param(12))
       endif
 
 #ifdef LPM
-      call lpm_set_dt(dt_dum) ! particle time step
+      call lpm_set_dt(dt_ptcle) ! particle time step
+      dt_cmt=min(dt_cmt,dt_ptcle)
 #endif
-        
+
       if (timeio .gt. 0.0) then ! adjust dt for timeio. 
          zetime1=time_cmt
          zetime2=time_cmt+dt_cmt
@@ -90,8 +77,11 @@ C> @file step.f time stepping and mesh spacing routines
             dt_cmt=(it2*timeio)-time_cmt
          endif
       endif
-      call compute_cfl (courno,utmp,vtmp,wtmp,dt_dum) ! sanity?
-      dt_cmt    = dt_dum
+
+      param(12)=-dt_cmt
+      dt       =-dt_cmt
+
+      call compute_cfl (courno,utmp,vtmp,wtmp,dt_cmt) ! sanity?
 
 ! diffusion number based on viscosity.
 
