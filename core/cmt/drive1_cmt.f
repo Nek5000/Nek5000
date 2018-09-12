@@ -44,7 +44,7 @@ c     Solve the Euler equations
          endif
          call cmt_flow_ics
          call init_cmt_timers
-         dt_cmt=param(12)
+         dt_cmt=abs(param(12))
          call cmtchk ! need more ifdefs to use userchk
 ! JH080918 IC better be positive
          call compute_primitive_vars(1) ! get good mu

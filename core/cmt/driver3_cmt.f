@@ -181,12 +181,12 @@ c-----------------------------------------------------------------------
       ntotv=nelv*nxyz1
       ltott=lelt*nxyz1
       ntotcv=lelt*nxyz1*toteq
-      call rzero(phig,ltott)
+      call rone(phig,ltott)
       call rzero(csound,ltott)
       call rzero(vtrans,ltott*ldimt1)
       call rzero(vdiff ,ltott*ldimt1)
       call rzero(u,ntotcv)
-!NTN      call usr_particles_init
+
 #ifdef LPM
       call lpm_init(1)
 #endif
