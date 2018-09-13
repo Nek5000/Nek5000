@@ -57,12 +57,11 @@ c     Solve the Euler equations
          call entropy_viscosity         ! for high diffno
 !        call piecewiseAV(AVeverywhere)
          call compute_transport_props   ! at t=0
-      endif
 
 #ifdef LPM
       call spread_props_grid
 #endif
-      
+      endif      
       call rzero(t,nxyz1*nelt*ldimt)
 
       nstage = 3
