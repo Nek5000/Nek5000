@@ -190,7 +190,9 @@ C> Store it in res1
 !!          sane default 
 !!     if (stage.eq.1)
 !!    >call shock_detector(t(1,1,1,1,5),vtrans(1,1,1,1,irho),scrent)
+!     if (1.eq.2) then
       call limiter
+!     endif
       call compute_primitive_vars(1)
 
 !     if (1==2) then

@@ -101,20 +101,45 @@ c------------------------------------------------------------------------
 
 ! positivity-preserving limiter of Zhang and Shu: density
          rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
-         if (abs(rho-rhomin) .gt. epslon) then
-            theta=min((rho-epslon)/(rho-rhomin+epslon),1.0)
-            do i=1,nxyz
-               uold=u(i,1,1,1,e)
-               u(i,1,1,1,e)=rho+theta*(uold-rho)
-            enddo
-         else
-            theta=1.0
-         endif
+!        if (abs(rho-rhomin) .gt. epslon) then
+         theta=min((rho-epslon)/(rho-rhomin+epslon),1.0)
+         do i=1,nxyz
+            uold=u(i,1,1,1,e)
+            u(i,1,1,1,e)=rho+theta*(uold-rho)
+         enddo
+!        else
+!           theta=1.0
+!        endif
          call cfill(t(1,1,1,e,4),theta,nxyz)
 
-!         do m=1,toteq
-!            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
-!         enddo
+
+! positivity-preserving limiter of Zhang and Shu: internal energy
+! first kinetic energy
+         if (if3d) then
+            call vdot3(scr,
+     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),
+     >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),nxyz)
+         else
+            call vdot2(scr,u(1,1,1,irpu,e),u(1,1,1,irpv,e),
+     >                     u(1,1,1,irpu,e),u(1,1,1,irpv,e),nxyz)
+         endif
+         call invcol2(scr,u(1,1,1,irg,e),nxyz)
+         call cmult(scr,0.5,nxyz)
+! then to internal energy density
+         call sub2(scr,u(1,1,1,iret,e),nxyz)
+         call chsign(scr,nxyz)
+         rhoe=vlsc2(bm1(1,1,1,e),scr,nxyz)/volel(e)
+         rhoemin=vlmin(scr,nxyz)
+         theta=min((rhoe-epslon)/(rhoe-rhoemin+epslon),1.0)
+         do m=1,toteq
+            av=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
+            do i=1,nxyz
+               uold=u(i,1,1,m,e)
+               u(i,1,1,m,e)=av+theta*(uold-av)
+            enddo
+         enddo
+         call cfill(t(1,1,1,e,5),theta,nxyz)
+
 !         rho=avstate(1)
 !! Entropy-bounded limiter of Lv and Ihme
 !-----------------------------------------------------------------------
