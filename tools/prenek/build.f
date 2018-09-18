@@ -21,26 +21,26 @@ c-----------------------------------------------------------------------
       if (ifconj_merge) then
 
          call build0             ! Read in fluid mesh
-         nelv = nel
+         melv = nel + 0
 
          call imp_mesh(.false.)  ! Get thermal mesh
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
-         call set_igroup(nelv,nelt)
+         call set_igroup(melv,melt)
 
          call build2             ! Set bcs
 
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
       else          ! Std. menu-driven mesh construction
 
          call build0
          call build1
 
-         nelt = nel
-         nelv = nel
+         melt = nel
+         melv = nel
          call build2
 
       endif
@@ -329,7 +329,10 @@ C     Only floor of elevator hilighted during modify
  160     continue
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
+         nelcap_save = nelcap
+         nelcap      = nel
          call redraw_mesh
+         nelcap      = nelcap_save
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
          call setzoom
          call redraw_mesh
@@ -639,8 +642,8 @@ C     Read Elemental Mesh data
       READ(9,*,ERR=33,END=33)NEL,NDIM
 
       if (nel.ge.nelm) then
-         call prsii('NELM too small in basics.inc.$',nel,nelm)
-         call prs  ('Recompile prenek.  ABORT$')
+         call prsii('Abort: number of elements too large.$',nel,nelm)
+         call prs  ('change MAXNEL and recompile.  ABORT$')
       endif
      
       iffmtin = .true.
@@ -1214,8 +1217,10 @@ c     Successfully opened file, scan until 'MESH DATA' is found
       call get_flow_heat(iflow,iheat,nlogic,47) ! iflow/iheat _local_ logicals
 
       call readscan('MESH DATA',9,47)
-      read (47,*) nelin,ndimn
-      neln = nelin + nel
+      read (47,*) nelint,ndimn,nelinv
+
+      nelnv = nelinv + nel  ! With velocity
+      nelnt = nelint + nel  ! With temperature
 
       if (ndimn.ne.ndim) then
          call prs('Dimension must match dimension of current session.$')
@@ -1224,10 +1229,10 @@ c     Successfully opened file, scan until 'MESH DATA' is found
          return
       endif
 
-      if (neln.ge.nelm) then
+      if (nelnt.ge.nelm) then
          call prs('Sorry, number of elements would exceed nelm.$')
          call prs('Returning.$')
-         call prii(neln,nelm)
+         call prii(nelnt,nelm)
          close(47)
          return
       endif
@@ -1240,14 +1245,22 @@ c     Read geometry
 
       ierr=imp_geom(x(1,nels),y(1,nels),z(1,nels),nelm
      $             ,numapt(nels),letapt(nels),igroup(nels)
-     $             ,ndim,nelin,47)
+     $             ,ndim,nelint,47)
       if (ierr.ne.0) then
          call prs('Error reading geometry... returning.$')
          close(47)
          return
       endif
-c
-      ierr=imp_curv(nc,ccurve,curve,ndim,nelin,nel,47)
+
+c     Check group number for Conjugate Heat Transfer import
+
+      if (nelint.gt.nelinv) then
+         do e=nelnv+1,nelnt
+            igroup(e)=1
+         enddo
+      endif
+
+      ierr=imp_curv(nc,ccurve,curve,ndim,nelint,nel,47)
       if (ierr.ne.0) then
          call prs('Error reading curve side info... returning.$')
          close(47)
@@ -1260,17 +1273,22 @@ c
 c
       read(47,3) d
     3 format(a3)
-c
+
       ifld0 = 1
       if (.not.iflow) ifld0=2
-      write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
-c
+c     write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
+
       do ifld=ifld0,nflds
          if (.not.iflow) read(47,*) ans  ! dummy read
+
+         nelget=nelint
+         if (ifld.eq.1) nelget=nelinv
+c        write(6,*) nelget,nelinv,nelint,' nelget'
+
          ierr=imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ibc(1,nels,ifld)
-     $      ,ndim,nelin,nel,47)
+     $      ,ndim,nelget,nel,47)
          if (ierr.ne.0) then
-            call prsii('nelin,ifld:$',nelin,ifld)
+            call prsii('nelget,ifld:$',nelget,ifld)
             call prs('Error reading boundary conditions. Returning.$')
             close(47)
             return
@@ -1291,14 +1309,18 @@ c
         endif
 
         ie0=nel+1
-        ie1=neln
+        ie1=nelnt
         call translate_sub_mesh(ie0,ie1,xt,yt,zt)
       endif
 
-      write(6,*) 'This is nel,ncurve old:',nel,ncurve
-      nel  = neln
+c     write(6,*) 'This is nel,ncurve old:',nel,ncurve
+
+      nel  = nelnt
+      nelt = nelnt
+      nelv = nelnv
+
       ncurve = ncurve + nc
-      write(6,*) 'This is nel,ncurve new:',nel,ncurve
+c     write(6,*) 'This is nel,ncurve new:',nel,ncurve
 
       call gencen
 

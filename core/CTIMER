@@ -11,13 +11,15 @@ c
      $               ,tsett,tslvb,tusbc,tddsl,tcrsl,tdsmx,tdsmn
      $               ,tgsmn,tgsmx,teslv,tbbbb,tcccc,tdddd,teeee
      $               ,tvdss,tschw,tadvc,tspro,tgop_sync,tsyc
-     $               ,twal,tgp2,tcvf,tproj,tusfq
+     $               ,twal,tgp2,tcvf,tproj,tusfq,tuchk
+     $               ,tmakf,tmakq
       common /ctime2/ tsolv,tgsum,tdsnd,tdadd,tcdtp,tmltd,tprep
      $               ,tpres,thmhz,tgop ,tgop1,tdott,tbsol,tbso2
      $               ,tsett,tslvb,tusbc,tddsl,tcrsl,tdsmx,tdsmn
      $               ,tgsmn,tgsmx,teslv,tbbbb,tcccc,tdddd,teeee
      $               ,tvdss,tschw,tadvc,tspro,tgop_sync,tsyc
-     $               ,twal,tgp2,tcvf,tproj,tusfq
+     $               ,twal,tgp2,tcvf,tproj,tusfq,tuchk
+     $               ,tmakf,tmakq
 c
       integer nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3
       common /itimer/ nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3

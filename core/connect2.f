@@ -5,6 +5,7 @@ C     Read in data from preprocessor input file (.rea)
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'GEOM'
       INCLUDE 'PARALLEL'
       INCLUDE 'ZPER'
       INCLUDE 'CTIMER'
@@ -22,7 +23,7 @@ C
       if (parfound) then
          if(nio.eq.0) write(6,'(A,A)') ' Reading ', parfle
          call readat_par
-         return
+         goto 99
       endif  
 
       etime0 = dnekclock_sync()
@@ -56,7 +57,7 @@ C     Read Mesh Info
      $   call exitti('Problem size requires .re2!$',1)
 
       ifgtp = .false.
-      if (ldim.lt.0) ifgtp = .true.
+      if (ldimr.lt.0) ifgtp = .true.
 
       if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes
@@ -111,6 +112,12 @@ C     End of input data, close read file.
         write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
      $                             dnekclock()-etime0,' sec'
       endif
+
+ 99   do iel = 1,nelt
+      do ifc = 1,2*ndim   
+         boundaryIDList(ifc,iel) = bc(5,ifc,iel,1)
+      enddo
+      enddo 
 
       return
       END

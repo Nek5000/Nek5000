@@ -171,6 +171,29 @@ c
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
 
+      ! test multisession gs_op
+      if (nsessions.eq.2 .and. .not.ifneknekc) then
+        nxyz = nx1*ny1*nz1
+        call ms_gs_setup(ihms,nelv,nx1,ny1,nz1)
+        do iel = 1,nelv
+           ieg = lglel(iel)
+           do ixyz = 1,nxyz
+              ue(ixyz,1,1,iel) = ixyz + nxyz*(ieg-1)
+              if(idsess.eq.0) ue(ixyz,1,1,iel) = -ue(ixyz,1,1,iel)
+           enddo
+        enddo
+        call ms_gs_op(ue,'sum',ihms)
+        dmxs = glmax(ue,n)
+        dmns = glmin(ue,n)
+        dmx  = ms_glmax(dmxs,1)
+        dmn  = ms_glmin(dmns,1)
+        if (dmx.eq.0 .and. dmn.eq.dmx) then
+           if (nid_global.eq.0) write(6,*) 'ms_gs_op test PASSED'
+        else
+           if (nid_global.eq.0) write(6,*) 'ms_gs_op test FAILED'
+        endif
+        call exitt0
+      endif
 
       ifield = 1  ! for outpost
 
@@ -192,16 +215,15 @@ c
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
 
-c    Global error calculation
+c     Global error calculation
       if (IFNEKNEK) then 
-      umx_gl = uglamax(vx,n)
-      vmx_gl = uglamax(vy,n)
-      uex_gl = uglamax(ue,n)
-      vex_gl = uglamax(ve,n)
-      udx_gl = uglamax(ud,n)
-      vdx_gl = uglamax(vd,n)
+        umx_gl = ms_glamax(vx,n)
+        vmx_gl = ms_glamax(vy,n)
+        uex_gl = ms_glamax(ue,n)
+        vex_gl = ms_glamax(ve,n)
+        udx_gl = ms_glamax(ud,n)
+        vdx_gl = ms_glamax(vd,n)
       end if  
-
 
       if (nid.eq.0) then
           write(6,11) istep,time,udx,umx,uex,u0,'  X err', session
@@ -215,7 +237,6 @@ c    Global error calculation
      & 'global'
    11     format(i5,1p5e14.6,a7,2x,a7)
       endif
-
 
       if (istep.le.5) then        !  Reset velocity to eliminate 
          call copy (vx,ue,n)      !  start-up contributions to
@@ -235,25 +256,17 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       ie = gllel(ieg)
 
       if (imask(ix,iy,iz,ie).eq.0) then
-      ux=0.0
-      uy=0.0
-      uz=0.0
-      temp=0.0
+       ux=0.0
+       uy=0.0
+       uz=0.0
+       temp=0.0
       else      
-
-      if (igeom.le.2) then
-         ux = ubc(ix,iy,iz,ie,1)
-         uy = ubc(ix,iy,iz,ie,2)
-         uz = ubc(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = ubc(ix,iy,iz,ie,ldim+2)
-      else
-         ux = valint(ix,iy,iz,ie,1)
-         uy = valint(ix,iy,iz,ie,2)
-         uz = valint(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
-      endif
-
+       ux = valint(ix,iy,iz,ie,1)
+       uy = valint(ix,iy,iz,ie,2)
+       uz = valint(ix,iy,iz,ie,3)
+       if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
+
       return
       end
 c-----------------------------------------------------------------------
@@ -305,19 +318,6 @@ c     One could change it as
 c     Caution: if ninter greater than 1 is chosen, ngeom greater than 2 
 c     should be used for stability
 
-
-c     Set number of fields to interpolate
-c     nfld_neknek = ndim+1 (just velocity+pressure)
-c     nfld_neknek = ndim+2 (velocity + pressure + temperature)
-
-c     nfld_neknek = 3 - u,v,pr in 2D
-c     nfld_neknek = 4 - u,v,pr,t in 2D
-
-c     nfld_neknek = 4 - u,v,w,pr in 3D 
-c     nfld_neknek = 5 - u,v,w,pr,t in 3D 
-
-      nfld_neknek=3 !just velocity+pressure 
-
       return
       end
 c-----------------------------------------------------------------------
@@ -335,8 +335,6 @@ c-----------------------------------------------------------------------
 
 c     This routine initializes the mulitdomain coupling          
       
-      call multimesh_create
-
       return
       end
 c----------------------------------------------------------------------

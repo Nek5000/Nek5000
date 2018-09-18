@@ -9,19 +9,19 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer nelgt_max
       parameter(nelgt_max = 178956970)
 
+      integer gllel, gllnid
+
       integer*8 nvtot
       integer nelg(0:ldimt1)
      $       ,lglel(lelt)
-     $       ,gllel(lelg)
-     $       ,gllnid(lelg)
      $       ,nelgv,nelgt
-      common /hcglb/ nvtot,nelg,lglel,gllel,gllnid,nelgv,nelgt
+      common /hcglb/ nvtot,nelg,lglel,nelgv,nelgt
 
       logical         ifgprnt
       common /diagl/  ifgprnt
 
-      integer        wdsize,isize,lsize,csize,wdsizi
-      common/precsn/ wdsize,isize,lsize,csize,wdsizi
+      integer        wdsize,isize,isize8,lsize,csize,wdsizi
+      common/precsn/ wdsize,isize,isize8,lsize,csize,wdsizi
 
 !     crystal-router, gather-scatter, and xxt handles (xxt=csr grid solve)
 !
@@ -39,3 +39,15 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer            dg_hndlx,ndg_facex
       common /xcdg_ints/ dg_hndlx,ndg_facex
 
+!     multisession
+      integer nid_global, idsess_neighbor, intracomm, intercomm
+     $      , iglobalcomm, npsess(0:nsessmax-1), np_neighbor, np_global
+      common /nekmpi_global/ nid_global, idsess_neighbor
+     $                     , intracomm, intercomm, iglobalcomm
+     $                     , npsess,np_neighbor,np_global
+
+      integer               nsessions
+      common /session_info/ nsessions
+
+      real ms_glmin,ms_glmax,ms_glamin,ms_glamax,ms_glsum,ms_glsc3
+     $     ms_glsc2

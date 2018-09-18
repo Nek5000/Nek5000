@@ -74,7 +74,7 @@ c                 ~ ~T
 c     This is the Q Q  part
 c
       if (gsh_fld(ifldt).ge.0) then
-         if (nio.eq.0.and.loglevel.gt.3)
+         if (nio.eq.0.and.loglevel.gt.5)
      $   write(6,*) 'dssum', ifldt 
          call fgslib_gs_op(gsh_fld(ifldt),u,1,1,0)  ! 1 ==> +
       endif
@@ -757,3 +757,165 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gtpp_gs_op(u,op,hndl)
+c
+c     gather-scatter operation across global tensor product planes
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u(*)
+      character*3 op
+      integer hndl
+
+      if     (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+         call fgslib_gs_op(hndl,u,1,1,0)
+      elseif (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call fgslib_gs_op(hndl,u,1,2,0)
+      elseif (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna'
+     &        .or. op.eq.'MIN' .or. op.eq.'MNA') then
+         call fgslib_gs_op(hndl,u,1,3,0)
+      elseif (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &        .or. op.eq.'MAX' .or. op.eq.'MXA') then
+         call fgslib_gs_op(hndl,u,1,4,0)
+      else
+         call exitti('gtpp_gs_op: invalid operation!$',1)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gtpp_gs_setup(hndl,nelgx,nelgy,nelgz,idir)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer hndl,nelgx,nelgy,nelgz,idir
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      common /c_is1/ glo_num(lx1,ly1,lz1,lelv)
+      integer e,ex,ey,ez,eg
+      integer*8 glo_num,ex_g
+
+      nelgxyz = nelgx*nelgy*nelgz
+      if (nelgxyz .ne. nelgv)
+     $ call exitti('gtpp_gs_setup: invalid gtp mesh dimensions!$',
+     $             nelgxyz) 
+
+      nel    = nelv 
+      nelgxy = nelgx*nelgy
+      nelgyz = nelgy*nelgz
+      nelgzx = nelgz*nelgx
+
+      if (idir.eq.1) then
+         ! x-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelgx,nelgyz,1)
+            ex_g = ey
+            do k=1,nz1 ! Enumerate points in the y-z plane
+            do j=1,ny1
+            do i=1,nx1
+               glo_num(i,j,k,e) = j+ny1*(k-1) + ny1*nz1*(ex_g-1)
+            enddo
+            enddo
+            enddo
+         enddo
+      elseif (idir.eq.2) then
+         ! y-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelgx,nelgy,nelgz)            
+            ex_g = (ez-1)*nelgx+ex
+            do k=1,nz1 ! Enumerate points in the x-z plane
+            do j=1,ny1
+            do i=1,nx1
+               glo_num(i,j,k,e) = k+nz1*(i-1) + nx1*nz1*(ex_g-1) 
+            enddo
+            enddo
+            enddo
+         enddo
+      elseif (idir.eq.3) then
+         ! z-direction
+         do e=1,nel
+            eg = lglel(e)
+            call get_exyz(ex,ey,ez,eg,nelgxy,1,1)
+            ex_g = ex
+            do k=1,nz1 ! Enumerate points in the x-y plane
+            do j=1,ny1
+            do i=1,nx1
+               glo_num(i,j,k,e) = i+nx1*(j-1) + nx1*ny1*(ex_g-1)
+            enddo
+            enddo
+            enddo
+         enddo
+      endif
+ 
+      n = nel*nx1*ny1*nz1
+      call fgslib_gs_setup(hndl,glo_num,n,nekcomm,np)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ms_gs_setup(hndl,nel,nx,ny,nz)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+
+      integer hndl
+      integer e,eg
+
+      common /c_is1/ glo_num(lx1*ly1*lz1*lelt)
+      integer*8 glo_num
+
+      do e=1,nel
+         eg = lglel(e)
+         do k=1,nz      
+         do j=1,ny
+         do i=1,nx
+            ii = i + nx*(j-1) + nx*ny*(k-1) + nx*ny*nz*(e-1)
+            glo_num(ii) = i + nx*(j-1) + nx*ny*(k-1) + 
+     $                    nx*ny*nz*(eg-1)
+         enddo
+         enddo
+         enddo
+      enddo
+
+      n = nel*nx*ny*nz
+      call fgslib_gs_setup(hndl,glo_num,n,iglobalcomm,np_global)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ms_gs_op(u,op,hndl)
+c
+c     gather-scatter operation across sessions 
+c
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'CTIMER'
+
+      real u(*)
+      character*3 op
+
+      if(ifsync) call nekgsync()
+
+      if      (op.eq.'+  ' .or. op.eq.'sum' .or. op.eq.'SUM') then
+         call fgslib_gs_op(hndl,u,1,1,0)
+      else if (op.eq.'*  ' .or. op.eq.'mul' .or. op.eq.'MUL') then
+         call fgslib_gs_op(hndl,u,1,2,0)
+      else if (op.eq.'m  ' .or. op.eq.'min' .or. op.eq.'mna' 
+     &         .or. op.eq.'MIN' .or. op.eq.'MNA') then
+         call fgslib_gs_op(hndl,u,1,3,0)
+      else if (op.eq.'M  ' .or. op.eq.'max' .or. op.eq.'mxa'
+     &         .or. op.eq.'MAX' .or. op.eq.'MXA') then
+         call fgslib_gs_op(hndl,u,1,4,0)
+      else
+         call exitti('ms_gs_op: invalid operation!$',1)
+      endif
+
+      return
+      end

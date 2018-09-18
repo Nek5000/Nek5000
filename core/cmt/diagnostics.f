@@ -91,7 +91,7 @@ c     ifxyo=.true.
 
       itmp = 3
       call outpost2(otvar(1,1,1,1,5),otvar(1,1,1,1,6),otvar(1,1,1,1,7)
-     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'SLN')
+     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'fld')
       return
       end
 

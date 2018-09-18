@@ -208,19 +208,6 @@ C     Ensure that initial field is continuous!
          ntot = lx1*ly1*lz1*nelfld(i+2)
          psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
       enddo
-
-c     small=1.0E-20      ! THIS WAS ONCE IMPORTANT ON CERTAIN ARCHITECTURES.
-c     ifldsave = ifield  ! IT AVOIDS DENORMALIZED ARITHMETIC.
-c     if (vxmax.eq.0.0) call perturb(vx,1,small)
-c     if (vymax.eq.0.0) call perturb(vy,1,small)
-c     if (vzmax.eq.0.0) call perturb(vz,1,small)
-c     if (prmax.eq.0.0.and.ifsplit) call perturb(pr,1,small)
-c     if (ttmax.eq.0.0) call perturb(t ,2,small)
-c     do i=1,npscal
-c        ntot = nxyz1*nelfld(i+2)
-c        if(psmax(i).eq.0) call perturb(t(1,1,1,1,1+i),i+2,small)
-c     enddo
-c     ifield = ifldsave
     
       if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
          ifield = 1
@@ -1295,12 +1282,23 @@ C
       INTEGER NOLD
       SAVE    NOLD
       DATA    NOLD /0/
-C
+
+C     Bounds checking on mapped data.
+      if (nxr.gt.lxr) then
+         if (nid.eq.0) write(6,20) nxr,lx1
+   20    FORMAT(//,2X,
+     $   'ABORT:  Attempt to map from',I3,
+     $   ' to N=',I3,'.',/,2X,
+     $   'NEK5000 currently supports mapping from N+6 or less.'
+     $   ,/,2X,'Increase N')
+         call exitt
+      endif
+
       NZR = NXR
       IF(lz1.EQ.1) NZR=1
       NYZR = NXR*NZR
       NXY1 = lx1*ly1
-C
+
       IF (NXR.NE.NOLD) THEN
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
@@ -1357,12 +1355,23 @@ C
       SAVE    NOLD
       DATA    NOLD /0/
 
+C     Bounds checking on mapped data.
+      if (nxr.gt.lxr) then
+         if (nid.eq.0) write(6,20) nxr,lx1
+   20    FORMAT(//,2X,
+     $   'ABORT:  Attempt to map from',I3,
+     $   ' to N=',I3,'.',/,2X,
+     $   'NEK5000 currently supports mapping from N+6 or less.'
+     $   ,/,2X,'Increase N')
+         call exitt
+      endif
+
       NZR = NXR
       IF(lz1.EQ.1) NZR=1
       NYZR = NXR*NZR
       NXY1 = lx1*ly1
       nxyzr = nxr*nxr*nzr
-C
+
       IF (NXR.NE.NOLD) THEN
          NOLD=NXR
          CALL ZWGLL   (ZGMR,WGTR,NXR)
@@ -2232,7 +2241,7 @@ c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
                call mapab4r(u(1,ei),wk(l        ),nxr,1)
                call mapab4r(v(1,ei),wk(l+  nxyzw),nxr,1)
                if (if3d) 
-     $         call mapab4r(w(1,e),wk(l+2*nxyzw),nxr,1)
+     $         call mapab4r(w(1,ei),wk(l+2*nxyzw),nxr,1)
             else
                call mapab  (u(1,ei),wk(l        ),nxr,1)
                call mapab  (v(1,ei),wk(l+  nxyzw),nxr,1)
@@ -2349,6 +2358,11 @@ c      ifgtim  = .true.  ! always get time
          endif
       endif
 
+      if (nelr.gt.lelr) then
+         write(6,*) 'ERROR: increase lelr in RESTART!', lelr, nelr
+         call exitt
+      endif
+
       p0th = 1 
       if (p0thr.gt.0) p0th = p0thr
 
@@ -2406,7 +2420,7 @@ c      ifgtim  = .true.  ! always get time
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfi(fname,ifile)
+      subroutine mfi(fname_in,ifile)
 c
 c     (1) Open restart file(s)
 c     (2) Check previous spatial discretization 
@@ -2425,7 +2439,11 @@ c
       include 'TOTAL'
       include 'RESTART'
       character*132 hdr
+      character*132  fname_in
+
       character*132  fname
+      character*1    fnam1(132)
+      equivalence   (fnam1,fname)
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2435,6 +2453,13 @@ c
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
 
       tiostart=dnekclock()
+
+      ! add path
+      call blank(fname,132)
+      lenp = ltrunc(path,132)
+      lenf = ltrunc(fname_in,132)
+      call chcopy(fnam1(1),path,lenp)
+      call chcopy(fnam1(lenp+1),fname_in,lenf)
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
@@ -2634,7 +2659,7 @@ c-----------------------------------------------------------------------
            pid0r = nid
            pid1r = nid + stride
            fid0r = nid / stride
-           call blank     (hdr,iHeaderSize)
+           call blank(hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
            if(nid.eq.pid0r) write(6,*) '      FILE:',hname
@@ -2646,7 +2671,7 @@ c-----------------------------------------------------------------------
            call byte_read (bytetest,1,ierr) 
            if(ierr.ne.0) goto 102
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
-           call byte_read (er,nelr,ierr)     ! get element mapping
+           call byte_read (er,nelr,ierr)    ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
         else
            pid0r = 0

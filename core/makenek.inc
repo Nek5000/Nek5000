@@ -37,7 +37,6 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
-  echo "  NEKNEK      activate overlapping mesh solver (experimental)"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
   exit 1
 fi
@@ -175,12 +174,12 @@ fi
 case $FCcomp in
   *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
-  *gfortran*)   FFLAGS+=" -fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)   FFLAGS+=" -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp"
                ;;
   *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
-  *xlf*)        FFLAGS+=" -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
-               PPPO="-WF,"
+  *xlf*)        FFLAGS+=" -qfixed -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
+                PPPO="-WF,"
                ;;
   *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
@@ -229,13 +228,9 @@ PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
 CMT=0
-NEKNEK=0
 MPIIO=1
 for i in $PPLIST
 do
-   if [ "$i" == "NEKNEK" ]; then
-     NEKNEK=1
-   fi
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
    fi
@@ -291,7 +286,6 @@ sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE:=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
--e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
 -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS\:=$USR_LFLAGS:" \
@@ -378,6 +372,23 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
+  fi
+  if ! cat SIZE | grep -qi 'nsessmax' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nsessmax=1)  ! max sessions to NEKNEK' >> SIZE
+  fi
+  if ! cat SIZE | grep -qi 'nmaxl_nn' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nmaxl_nn=' >> SIZE
+     echo '     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))' >>SIZE
+  fi
+  if ! cat SIZE | grep -qi 'nfldmax_nn' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (nfldmax_nn=' >> SIZE
+     echo '     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE

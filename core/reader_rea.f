@@ -100,10 +100,11 @@ C
       IFTMSH(0) = .false.
       IFPROJFLD(0) = .false.
       do i=1,NPSCL2
-         IFTMSH(i) = .false.
-         IFADVC(i) = .false. 
-         IFDIFF(i) = .true.
-         IFDEAL(i) = .true. ! still depends on param(99)
+         IFTMSH(i)    = .false.
+         IFADVC(i)    = .false. 
+         IFFILTER(i)  = .false.
+         IFDIFF(i)    = .true.
+         IFDEAL(i)    = .true. ! still depends on param(99)
          IFPROJFLD(i) = .false. 
          if (param(94).gt.0) IFPROJFLD(i) = .true. 
       enddo      
@@ -386,9 +387,15 @@ C
          call exitt
       endif
 
-      if (ifsplit .and. ifuservp) then
-         if(nid.eq.0) write(6,*)
-     $   'Switch on stress formulation to support PN/PN and IFUSERVP=T'
+      if (ifsplit .and. ifuservp .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support PN/PN and IFUSERVP=T'    
+         ifstrs = .true.
+      endif
+
+      if (ifcyclic .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support cyclic BC'               
          ifstrs = .true.
       endif
 
@@ -486,7 +493,10 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
 
       filterType = 0
-      if(param(103).gt.0) filterType = 1
+      if (param(103).gt.0) then 
+         filterType = 1
+         call ltrue(iffilter,size(iffilter)) 
+      endif
 
       return
 
@@ -996,56 +1006,15 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
 C
-      CALL BLANK (HCODE ,11*lhis)
-      CALL IZERO (LOCHIS, 4*lhis)
-
       ierr=0
-      IF(NID.EQ.0) THEN
-C       Read history data
-        READ (9,*)
-        READ (9,*,ERR=200,END=200) NHIS
-        if (nhis.gt.lhis) then
-           write(6,*) nid,' Too many history pts. RESET LHIS.',nhis,lhis
-           ierr=1
-        endif
- 
-        if(ierr.eq.0) then
-C       HCODE(10) IS WHETHER IT IS HISTORY, STREAKLINE, PARTICLE, ETC.
-        if (nhis.gt.0) then
-           do i=1,nhis
-              if (nelgt.lt.100000) then
-                 read(9,130,err=200,end=200)
-     $           (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
-  130            format(1x,11a1,1x,4i5)
-              else
-                 read(9,131,err=200,end=200)
-     $           (hcode(ii,i),ii=1,11),(lochis(i2,i),i2=1,4)
-  131            format(1x,11a1,1x,3i5,i10)
-              endif
-c
-c           threshold lochis locations to allow easy specification of "NX,NY,NZ"
-c           pff 1/7/97
-c
-              if (hcode(10,i).eq.'H') then
-                 lochis(1,i) = min(lochis(1,i),lx1)
-                 lochis(2,i) = min(lochis(2,i),ly1)
-                 lochis(3,i) = min(lochis(3,i),lz1)
-c
-c              if lochis_k = -1, set it to nxk/2   pff 8/21/03
-c
-                 if (lochis(1,i).eq.-1) lochis(1,i) = (lx1+1)/2
-                 if (lochis(2,i).eq.-1) lochis(2,i) = (ly1+1)/2
-                 if (lochis(3,i).eq.-1) lochis(3,i) = (lz1+1)/2
-              endif
-           enddo
-        endif
-        endif
-      ENDIF
-      call err_chk(ierr,' Too many histroy pts. RESET LHIS$')
-
-      call bcast(NHIS  ,ISIZE)
-      call bcast(HCODE ,11*LHIS*CSIZE)
-      call bcast(LOCHIS,4*LHIS*ISIZE)
+      if(nid.eq.0) then
+c       read history data
+        read (9,*)
+        read (9,*,err=200,end=200) nhis
+        do i = 1,nhis   
+           read (9,*)
+        enddo
+      endif
 
       return
 C
