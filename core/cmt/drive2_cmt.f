@@ -74,6 +74,7 @@ c------------------------------------------------------------------------
       common /scrns/ scr(lxyz),avstate(toteq)
       real scr,avstate
       integer e,eg
+      real kemax
 
       nxyz=lx1*ly1*lz1
       ntot=nxyz*nelt
@@ -81,7 +82,7 @@ c------------------------------------------------------------------------
       epslon=1.0e-9
 
 
-      rgam=rgasref/(gmaref-1.0)
+!     rgam=rgasref/(gmaref-1.0)
 !      do i=1,ntot
 !         rho=max(vtrans(i,1,1,1,irho),1.0e-10)
 !!        scr(i,1)=rgam*log(pr(i,1,1,1)/(rho**gmaref))
@@ -103,18 +104,24 @@ c------------------------------------------------------------------------
          rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
 !        if (abs(rho-rhomin) .gt. epslon) then
          theta=min((rho-epslon)/(rho-rhomin+epslon),1.0)
-         do i=1,nxyz
-            uold=u(i,1,1,1,e)
-            u(i,1,1,1,e)=rho+theta*(uold-rho)
-         enddo
-!        else
-!           theta=1.0
-!        endif
+         if (rho .lt. epslon) then
+            write(6,'(a33,2i5,1p3e15.7)')
+     >        'rho<epslon,nid,e,rho,rhomin,theta',nid,e,rho,rhomin,theta
+            do i=1,nxyz
+               uold=u(i,1,1,1,e)
+               u(i,1,1,1,e)=rho+theta*(uold-rho)
+            enddo
+         else
+            do i=1,nxyz
+               uold=u(i,1,1,1,e)
+               u(i,1,1,1,e)=rho+abs(theta)*(uold-rho)
+            enddo
+         endif
          call cfill(t(1,1,1,e,4),theta,nxyz)
+!        rho=vlsc2(bm1(1,1,1,e),u(1,1,1,1,e),nxyz)/volel(e)
 
-
-! positivity-preserving limiter of Zhang and Shu: internal energy
-! first kinetic energy
+! positivity-preserving limiter of Lv & Ihme: internal energy
+! first compute kinetic energy density
          if (if3d) then
             call vdot3(scr,
      >             u(1,1,1,irpu,e),u(1,1,1,irpv,e),u(1,1,1,irpw,e),
@@ -125,20 +132,48 @@ c------------------------------------------------------------------------
          endif
          call invcol2(scr,u(1,1,1,irg,e),nxyz)
          call cmult(scr,0.5,nxyz)
-! then to internal energy density
+! JH091818 thinking about limiter pegged to max KE
+         kemax=vlmax(scr,nxyz)
+! then subtract it off to get internal energy density in scr
          call sub2(scr,u(1,1,1,iret,e),nxyz)
          call chsign(scr,nxyz)
-         rhoe=vlsc2(bm1(1,1,1,e),scr,nxyz)/volel(e)
-         rhoemin=vlmin(scr,nxyz)
-         theta=min((rhoe-epslon)/(rhoe-rhoemin+epslon),1.0)
+! violation if negative energy density
+         tau=vlmin(scr,nxyz)
+         tau=min(tau,0.0)
+
+! now for rhoe(avstate)
          do m=1,toteq
-            av=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
-            do i=1,nxyz
-               uold=u(i,1,1,m,e)
-               u(i,1,1,m,e)=av+theta*(uold-av)
-            enddo
+            avstate(m)=vlsc2(bm1(1,1,1,e),u(1,1,1,m,e),nxyz)/volel(e)
          enddo
-         call cfill(t(1,1,1,e,5),theta,nxyz)
+         rhoeavg=avstate(5)-
+     >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
+     >                   avstate(1)
+!    >                   rho
+
+         if (rhoeavg .lt. 0.0) then
+            write(6,*) 'duh sir , can''t get positive e(avg)',e,rhoeavg,
+     >                 tau,nid
+            epsebdg(e)=1.0
+         else
+            epsebdg(e)=tau/(tau-rhoeavg)
+            do m=1,toteq
+               do i=1,nxyz
+                  uold=u(i,1,1,m,e)
+                  u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
+               enddo
+            enddo
+         endif
+
+! diagnostics
+         call cfill(t(1,1,1,e,5),epsebdg(e),nxyz)
+! JH091818
+! alternate limiter trying to keep U5 > kemax (at best ultraconservative)
+         kemax=-kemax
+         call cadd2(scr,u(1,1,1,5,e),kemax,nxyz)
+         tau=vlmin(scr,nxyz)
+         tau=min(tau,0.0)
+         epsalot=tau/(tau-(avstate(5)+kemax))
+         call cfill(t(1,1,1,e,6),epsalot,nxyz)
 
 !         rho=avstate(1)
 !! Entropy-bounded limiter of Lv and Ihme
