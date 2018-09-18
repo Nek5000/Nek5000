@@ -135,7 +135,7 @@ c------------------------------------------------------------------------
 !-----------------------------------------------------------------------
 ! JH091818 thinking about limiter pegged to max KE. explore this alternate
 !          diagnostically
-         kemax=vlmax(scr,nxyz)
+!         kemax=vlmax(scr,nxyz)
 !-----------------------------------------------------------------------
 ! then subtract it off to get internal energy density in scr
          call sub2(scr,u(1,1,1,iret,e),nxyz)
@@ -147,8 +147,8 @@ c------------------------------------------------------------------------
 ! JH091818
 ! overwrite scr to explore alternate limiter below
 !-----------------------------------------------------------------------
-         kemax=-kemax
-         call cadd2(scr,u(1,1,1,5,e),kemax,nxyz)
+!         kemax=-kemax
+!         call cadd2(scr,u(1,1,1,5,e),kemax,nxyz)
 !-----------------------------------------------------------------------
 
 ! now for rhoe(avstate)
@@ -179,10 +179,10 @@ c------------------------------------------------------------------------
          call cfill(t(1,1,1,e,5),epsebdg(e),nxyz)
 ! JH091818
 ! alternate limiter trying to keep U5 > kemax (at best ultraconservative)
-         tau=vlmin(scr,nxyz)
-         tau=min(tau,0.0)
-         epsalot=tau/(tau-(avstate(5)+kemax))
-         call cfill(t(1,1,1,e,6),epsalot,nxyz)
+!         tau=vlmin(scr,nxyz)
+!         tau=min(tau,0.0)
+!         epsalot=tau/(tau-(avstate(5)+kemax))
+!         call cfill(t(1,1,1,e,5),epsalot,nxyz)
 !-----------------------------------------------------------------------
 
 !         rho=avstate(1)
