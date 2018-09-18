@@ -132,14 +132,24 @@ c------------------------------------------------------------------------
          endif
          call invcol2(scr,u(1,1,1,irg,e),nxyz)
          call cmult(scr,0.5,nxyz)
-! JH091818 thinking about limiter pegged to max KE
+!-----------------------------------------------------------------------
+! JH091818 thinking about limiter pegged to max KE. explore this alternate
+!          diagnostically
          kemax=vlmax(scr,nxyz)
+!-----------------------------------------------------------------------
 ! then subtract it off to get internal energy density in scr
          call sub2(scr,u(1,1,1,iret,e),nxyz)
          call chsign(scr,nxyz)
 ! violation if negative energy density
          tau=vlmin(scr,nxyz)
          tau=min(tau,0.0)
+!-----------------------------------------------------------------------
+! JH091818
+! overwrite scr to explore alternate limiter below
+!-----------------------------------------------------------------------
+         kemax=-kemax
+         call cadd2(scr,u(1,1,1,5,e),kemax,nxyz)
+!-----------------------------------------------------------------------
 
 ! now for rhoe(avstate)
          do m=1,toteq
@@ -148,7 +158,6 @@ c------------------------------------------------------------------------
          rhoeavg=avstate(5)-
      >              0.5*(avstate(2)**2+avstate(3)**2+avstate(4)**2)/
      >                   avstate(1)
-!    >                   rho
 
          if (rhoeavg .lt. 0.0) then
             write(6,*) 'duh sir , can''t get positive e(avg)',e,rhoeavg,
@@ -164,16 +173,17 @@ c------------------------------------------------------------------------
             enddo
          endif
 
+!-----------------------------------------------------------------------
 ! diagnostics
+!-----------------------------------------------------------------------
          call cfill(t(1,1,1,e,5),epsebdg(e),nxyz)
 ! JH091818
 ! alternate limiter trying to keep U5 > kemax (at best ultraconservative)
-         kemax=-kemax
-         call cadd2(scr,u(1,1,1,5,e),kemax,nxyz)
          tau=vlmin(scr,nxyz)
          tau=min(tau,0.0)
          epsalot=tau/(tau-(avstate(5)+kemax))
          call cfill(t(1,1,1,e,6),epsalot,nxyz)
+!-----------------------------------------------------------------------
 
 !         rho=avstate(1)
 !! Entropy-bounded limiter of Lv and Ihme
