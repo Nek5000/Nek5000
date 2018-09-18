@@ -24,7 +24,7 @@ c
       save ihcounter
 
       real xmi, ymi, zmi
-      common /SCRMG/ xmi(lx1*ly1*lz1*lelt),
+      common /INTERP_BLOCK/ xmi(lx1*ly1*lz1*lelt),
      $               ymi(lx1*ly1*lz1*lelt),
      $               zmi(lx1*ly1*lz1*lelt)
  
