@@ -167,7 +167,7 @@ c curved sides
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
             call byte_read(buf,nwds)
-            call buf_to_curve(buf,ifbswap,wdsizi)
+            call buf_to_curve(buf,nel,ifbswap,wdsizi)
  50      CONTINUE
       endif
 
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
-      subroutine buf_to_curve(buf,ifbswap,wdsizi)
+      subroutine buf_to_curve(buf,nel,ifbswap,wdsizi)
 
       integer e,f,wdsizi,buf(30)
       logical ifbswap

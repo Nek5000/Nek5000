@@ -2158,6 +2158,7 @@ c
       include 'GEOM'
 
       character*3 cbci
+      integer sid
 
       do iel = 1,nelt
       do ifc = 1,2*ndim

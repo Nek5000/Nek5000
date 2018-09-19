@@ -157,7 +157,7 @@ C
       ifuservp  = .false.  
       ifcyclic  = .false.
       ifusermv  = .false.
-      ifmgrid   = .false.
+      ifmgrid   = .true.
       ifessr    = .false.
       ifreguo   = .false.
       ifbase    = .true.   
@@ -181,6 +181,8 @@ C
 
       ifdp0dt   = .false.
       ifreguo   = .false.   ! dump on the GLL mesh
+
+      fem_amg_param(0) = 0
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
@@ -441,6 +443,8 @@ c set parameters
             param(40) = 1
          else if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
+         else if (index(c_out,'FEM_AMG_HYPRE') .eq. 1) then
+            param(40) = 3
          else
            write(6,*) 'value: ',trim(c_out)
            write(6,*) 'is invalid for pressure:preconditioner!'
@@ -867,7 +871,6 @@ c set some internals
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
       if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
-      if (ifsplit) ifmgrid   = .true.
 
       param(1) = cpfld(1,2)
       param(2) = cpfld(1,1)
@@ -1041,7 +1044,6 @@ c
      $   'WARNING: lgmres might be too low!'
       endif
 
-
       if (ifsplit) then
          if (lx1.ne.lx2) then
             if (nid.eq.0) write(6,43) lx1,lx2
@@ -1049,11 +1051,16 @@ c
             call exitt
          endif
       else
-         if (lx2.lt.lx1-2) then
+         if (lx2.ne.lx1-2) then
             if (nid.eq.0) write(6,44) lx1,lx2
    44    format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
            call exitt
          endif
+      endif
+
+      if (param(40).eq.3 .and. .not.ifsplit) then
+         call exitti
+     $    ('ERROR: Selected preconditioner requires lx2=lx1$',lx2)
       endif
 
       if (ifsplit .and. ifuservp .and. .not.ifstrs) then
