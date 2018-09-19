@@ -174,7 +174,7 @@ c
       ! test multisession gs_op
       if (nsessions.eq.2 .and. .not.ifneknekc) then
         nxyz = nx1*ny1*nz1
-        call ms_gs_setup(ihms,nelv,nx1,ny1,nz1)
+        call gs_setup_ms(ihms,nelv,nx1,ny1,nz1)
         do iel = 1,nelv
            ieg = lglel(iel)
            do ixyz = 1,nxyz
@@ -182,15 +182,15 @@ c
               if(idsess.eq.0) ue(ixyz,1,1,iel) = -ue(ixyz,1,1,iel)
            enddo
         enddo
-        call ms_gs_op(ue,'sum',ihms)
+        call gs_op_ms(ue,'sum',ihms)
         dmxs = glmax(ue,n)
         dmns = glmin(ue,n)
-        dmx  = ms_glmax(dmxs,1)
-        dmn  = ms_glmin(dmns,1)
+        dmx  = glmax_ms(dmxs,1)
+        dmn  = glmin_ms(dmns,1)
         if (dmx.eq.0 .and. dmn.eq.dmx) then
-           if (nid_global.eq.0) write(6,*) 'ms_gs_op test PASSED'
+           if (nid_global.eq.0) write(6,*) 'gs_op_ms test PASSED'
         else
-           if (nid_global.eq.0) write(6,*) 'ms_gs_op test FAILED'
+           if (nid_global.eq.0) write(6,*) 'gs_op_ms test FAILED'
         endif
         call exitt0
       endif
@@ -217,12 +217,12 @@ c
 
 c     Global error calculation
       if (IFNEKNEK) then 
-        umx_gl = ms_glamax(vx,n)
-        vmx_gl = ms_glamax(vy,n)
-        uex_gl = ms_glamax(ue,n)
-        vex_gl = ms_glamax(ve,n)
-        udx_gl = ms_glamax(ud,n)
-        vdx_gl = ms_glamax(vd,n)
+        umx_gl = glamax_ms(vx,n)
+        vmx_gl = glamax_ms(vy,n)
+        uex_gl = glamax_ms(ue,n)
+        vex_gl = glamax_ms(ve,n)
+        udx_gl = glamax_ms(ud,n)
+        vdx_gl = glamax_ms(vd,n)
       end if  
 
       if (nid.eq.0) then

@@ -435,8 +435,8 @@ class Eddy_NeknekU(NekTestCase):
             sfx = self.log_suffix
         ))
 
-        phrase = self.get_phrase_from_log('ms_gs_op test PASSED',logfile=logfile)
-        self.assertIsNotNullDelayed(phrase, label='ms_gs_op test PASSED')
+        phrase = self.get_phrase_from_log('gs_op_ms test PASSED',logfile=logfile)
+        self.assertIsNotNullDelayed(phrase, label='gs_op_ms test PASSED')
 
     def tearDown(self):
         self.move_logs()
