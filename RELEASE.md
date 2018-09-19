@@ -23,9 +23,13 @@
 * Remove multimesh_create call from `usr` file (not required anymore)
 * Change to modified interpolation routines (see interp.f)
 * Remove CB CTORQ from usr files (now part of OBJDATA included in TOTAL)
-* Use amg_setup instead of amg_hypre (tool was renamed) 
+* Use amg_setup instead of amg_hypre (only required for semg_amg preconditioner) 
 
 ## Bug Fixes
+[529](https://github.com/Nek5000/Nek5000/issues/527),
+[527](https://github.com/Nek5000/Nek5000/issues/527),
+[525](https://github.com/Nek5000/Nek5000/issues/525),
+[522](https://github.com/Nek5000/Nek5000/issues/522),
 [511](https://github.com/Nek5000/Nek5000/issues/511),
 [497](https://github.com/Nek5000/Nek5000/issues/497),
 [470](https://github.com/Nek5000/Nek5000/issues/470),
@@ -40,9 +44,5 @@
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors
-This release contains contributions from the Nek5000 core developers, as well as:
 
-@perrunchin, @ggiannako, @kmittal2, @kentO
-
-
-We are also grateful to all who filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.
+We are grateful to all who added new features, filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.

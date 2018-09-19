@@ -3,9 +3,6 @@ SHELL = /bin/bash
 all:
 	@n=0 ; \
 	for i in $(MODULES) ; do                 \
-	  if [ "$$i" == "amg_matlab2" ]; then    \
-             continue;                           \
-          fi ;                                   \
 	  if test ! -f $${i}/makefile ; then     \
            echo "" ;                             \
            echo "ERROR: $${i} does not exist!" ; \
@@ -23,6 +20,9 @@ all:
              if [ ! -z $(DOALL) ]; then          \
                 continue;                        \
              fi ;                                \
+          fi ;                                   \
+          if [ "$$i" == "n2to3" ]; then          \
+             export FFLAGS+=" ${R8}" ;           \
           fi ;                                   \
           if [ "$$i" == "genmap" ]; then         \
              export FFLAGS+=" ${R8}" ;           \
