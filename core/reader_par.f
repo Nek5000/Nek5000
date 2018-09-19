@@ -182,6 +182,8 @@ C
       ifdp0dt   = .false.
       ifreguo   = .false.   ! dump on the GLL mesh
 
+      fem_amg_param(0) = 0
+
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 

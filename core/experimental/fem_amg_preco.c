@@ -1,8 +1,6 @@
 /*
- * Low-Order finite element preconditioner computed with AMG and Hypre
- *
- * Author: Pedro D. Bello-Maldonado (belloma2@illinois.edu)
- */
+ * Low-Order finite element preconditioner computed with HYPRE's AMG solver
+*/
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -13,17 +11,21 @@
 #include "name.h"
 #include "fail.h"
 #include "types.h"
-#include "comm.h"
 #include "mem.h"
 #include "gs_defs.h"
+#include "comm.h"
 #include "gs.h"
+#include "crystal.h"
+#include "sarray_transfer.h"
+#include "sort.h"
+#include "sarray_sort.h"
 
 #define fem_amg_setup FORTRAN_UNPREFIXED(fem_amg_setup, FEM_AMG_SETUP)
 #define fem_amg_solve FORTRAN_UNPREFIXED(fem_amg_solve, FEM_AMG_SOLVE)
 
 #ifdef HYPRE
 
-// Headers
+/* Headers */
 #include "_hypre_utilities.h"
 #include "HYPRE_parcsr_ls.h"
 #include "_hypre_parcsr_ls.h"
@@ -31,7 +33,7 @@
 
 #include "fem_amg_preco.h"
 
-// Global variables
+/* Global variables */
 int precond_type;
 int meshing_type;
 int n_x, n_y, n_z, n_elem, n_dim;
@@ -41,10 +43,10 @@ long long *glo_num;
 double *pmask;
 double *binv;
 int num_loc_dofs;
-HYPRE_Int *dof_map;
-bool amg_ready = false;
-HYPRE_Int row_start;
-HYPRE_Int row_end;
+long long *dof_map;
+int amg_ready = 0;
+long long row_start;
+long long row_end;
 HYPRE_IJMatrix A_bc;
 HYPRE_ParCSRMatrix A_fem;
 HYPRE_IJMatrix B_bc;
@@ -61,74 +63,74 @@ HYPRE_IJVector Binv_sem_bc;
 HYPRE_ParVector Binv_sem;
 HYPRE_Solver amg_preconditioner;
 
-MPI_Comm comm;
-int num_procs;
-int proc_id;
+struct comm comm;
 struct gs_data *gsh;
 
-// Interface definition
-void fem_amg_setup(int *precond_type_, int *meshing_type_, 
-                   int *n_x_, int *n_y_, int *n_z_, int *n_elem_, int *n_dim_, 
+#define NPARAM 7
+double HYPREsettings[NPARAM]; 
+
+/* Interface definition */
+void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_, 
+                   const sint *n_elem_, const sint *n_dim_, 
                    double *x_m_, double *y_m_, double *z_m_, 
-                   long long *glo_num_, double *pmask_, double* binv_,
-                   const MPI_Fint *ce, const int *gshf)
+                   double *pmask_, double *binv_,
+                   const sint *gshf, double *param)
 {
-    // Parallel run information
-    MPI_Comm_dup(MPI_Comm_f2c(*ce),&comm);
-    MPI_Comm_size(comm, &num_procs);
-    MPI_Comm_rank(comm, &proc_id);
-
-    double time0 = MPI_Wtime();
-    if (proc_id == 0) printf("fem_amg_setup ...\n");
-    setbuf(stdout, NULL);
-
-    // Mesh structure
-    precond_type = *precond_type_;
-    meshing_type = *meshing_type_;
+    precond_type = 1;
+    meshing_type = 0;
     n_x = *n_x_;
     n_y = *n_y_;
     n_z = *n_z_;
     n_elem = *n_elem_;
     n_dim = *n_dim_;
-    n_xyz = n_x * n_y * n_z;
-    n_xyze = n_x * n_y * n_z * n_elem;
     x_m = x_m_;
     y_m = y_m_;
     z_m = z_m_;
-    glo_num = glo_num_;
     pmask = pmask_;
     binv = binv_;
 
-    // GSLib setup
-    gsh = gs_hf2c(*gshf);
+    n_xyz = n_x * n_y * n_z;
+    n_xyze = n_x * n_y * n_z * n_elem;
 
-    // Assemble FEM matrices and vectors
+    setbuf(stdout, NULL);
+    gsh = gs_hf2c(*gshf);
+    comm_init(&comm, gsh->comm.c);
+
+    if (comm.id == 0) printf("fem_amg_setup ...\n");
+
+    if (sizeof(HYPRE_Int) != sizeof(long long)) {
+        if (comm.id == 0)
+          fail(1,__FILE__,__LINE__,"incompatible long long size");
+        exit(EXIT_FAILURE);
+    }
+
+    double time0 = comm_time();
+    matrix_distribution();
     fem_assembly();
 
-    // Initialize preconditioning vectors
-    HYPRE_Int row;
-    HYPRE_Int row_start = hypre_ParCSRMatrixFirstRowIndex(A_fem);
-    HYPRE_Int row_end = hypre_ParCSRMatrixLastRowIndex(A_fem);
+    long long row;
+    long long row_start = hypre_ParCSRMatrixFirstRowIndex(A_fem);
+    long long row_end = hypre_ParCSRMatrixLastRowIndex(A_fem);
 
-    HYPRE_IJVectorCreate(comm, row_start, row_end, &u_bc);
+    HYPRE_IJVectorCreate(comm.c, row_start, row_end, &u_bc);
     HYPRE_IJVectorSetObjectType(u_bc, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(u_bc);
     HYPRE_IJVectorAssemble(u_bc);
     HYPRE_IJVectorGetObject(u_bc, (void**) &u_fem);
 
-    HYPRE_IJVectorCreate(comm, row_start, row_end, &f_bc);
+    HYPRE_IJVectorCreate(comm.c, row_start, row_end, &f_bc);
     HYPRE_IJVectorSetObjectType(f_bc, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(f_bc);
     HYPRE_IJVectorAssemble(f_bc);
     HYPRE_IJVectorGetObject(f_bc, (void**) &f_fem);
 
-    HYPRE_IJVectorCreate(comm, row_start, row_end, &Bf_bc);
+    HYPRE_IJVectorCreate(comm.c, row_start, row_end, &Bf_bc);
     HYPRE_IJVectorSetObjectType(Bf_bc, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(Bf_bc);
     HYPRE_IJVectorAssemble(Bf_bc);
     HYPRE_IJVectorGetObject(Bf_bc, (void**) &Bf_fem);
 
-    HYPRE_IJVectorCreate(comm, row_start, row_end, &Binv_sem_bc);
+    HYPRE_IJVectorCreate(comm.c, row_start, row_end, &Binv_sem_bc);
     HYPRE_IJVectorSetObjectType(Binv_sem_bc, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(Binv_sem_bc);
 
@@ -138,72 +140,75 @@ void fem_amg_setup(int *precond_type_, int *meshing_type_,
     HYPRE_IJVectorAssemble(Binv_sem_bc);
     HYPRE_IJVectorGetObject(Binv_sem_bc, (void**) &Binv_sem);
 
-    // AMG parameters
     HYPRE_BoomerAMGCreate(&amg_preconditioner);
 
-    // Set some parameters (See Reference Manual for more parameters)
-    HYPRE_BoomerAMGSetMaxRowSum(amg_preconditioner, 1); // Don't check for maximum row sum
-    HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, 10); // 0 for CLJP, 6 for Falgout, 10, HMIS
-    HYPRE_BoomerAMGSetInterpType(amg_preconditioner, 6); // Interpolation type, 0 for classical modified interpolation, 6 for extended+i interpolation
-    HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4); // Maximum number of elements per row for interpolation
-    HYPRE_BoomerAMGSetAggNumLevels(amg_preconditioner, 0); // 0 for no-aggressive coarsening
-    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, 0.25); // Strength threshold
-    HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50); // maximum number of rows in coarse level
-    HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, 3); // G-S/Jacobi hybrid relaxation, 3 means SOR
-    HYPRE_BoomerAMGSetMaxIter(amg_preconditioner, 1); // maximum number of V-cycles
-    HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); // convergence tolerance
-    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, 0.1); // Non-Galerkin tolerance
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, 0.0, 0); // Skip first level when droping entries
+    HYPREsettings[0] = 6;     /* Falgout      */
+    HYPREsettings[1] = 6;     /* Extended+i   */
+    HYPREsettings[2] = 3;     /* SOR          */
+    HYPREsettings[3] = 1;     /* V-cycles     */
+    HYPREsettings[4] = 0.05;  /* default NonGalerkinTol */
+    HYPREsettings[5] = 0.01;  /* 2nd level NonGalerkinTol */
+    HYPREsettings[6] = 0.05;  /* 3nd level NonGalerkinTol */
+
+    int i;
+    if (param[0] != 0) {
+       for (i=0; i < NPARAM; i++) { 
+           HYPREsettings[i] = param[i+1];
+           if (comm.id == 0) 
+              printf("Custom HYPREsettings[%d]: %.2f\n", i, HYPREsettings[i]); 
+       }
+    }
+
+    HYPRE_BoomerAMGSetMaxRowSum(amg_preconditioner, 1); /* Don't check for maximum row sum */
+    HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, HYPREsettings[0]); 
+    HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
+    HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4); /* Max number of elements per row for interpolation */
+    HYPRE_BoomerAMGSetAggNumLevels(amg_preconditioner, 0); /* 0 for no-aggressive coarsening */
+    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, 0.25);/* Strength threshold */
+    HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50); /* maximum number of rows in coarse level */
+    HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
+    HYPRE_BoomerAMGSetMaxIter(amg_preconditioner, HYPREsettings[3]);
+    HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); /* convergence tolerance */
+
+    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[4]); 
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, 0.0 , 0);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[5], 1);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[6], 2);
+
     HYPRE_BoomerAMGSetPrintLevel(amg_preconditioner, 1);
 
-    // Setup preconditioner
     HYPRE_BoomerAMGSetup(amg_preconditioner, A_fem, NULL, NULL);
-    double time1 = MPI_Wtime();
-    if (proc_id == 0) printf("fem_amg_setup: done %fs\n",time1-time0);
-    setbuf(stdout, NULL);
-    amg_ready = true;
+
+    double time1 = comm_time();
+    if (comm.id == 0) printf("fem_amg_setup: done %fs\n",time1-time0);
+    amg_ready = 1;
 }
 
 void fem_amg_solve(double *z, double *w)
 {
-    /*
-     * Solves the system $\boldsymbol{M} \boldsymbol{z} = \boldsymbol{w}$ using Algebraic Multigrid
-     */
-
-    // Variables
-    HYPRE_Int row;
+    long long row;
     int idx;
 
-    // Check if the AMG matrices have been setup correctly
-    if (!amg_ready)
+    if (amg_ready == 0)
     {
-        MPI_Barrier(comm);
-
-        if (proc_id == 0)
-            printf("ERROR: AMG hasn't been setup. Call the amg_setup function first before calling this function\n");
-
+        if (comm.id == 0)
+          fail(1,__FILE__,__LINE__,"AMG hasn't been setup");
         exit(EXIT_FAILURE);
     }
 
-    if (sizeof(long long) != sizeof(HYPRE_Int)) {
-        if (proc_id == 0)
-          fail(1,__FILE__,__LINE__,"incompatible HYPRE_Int size");
-        exit(EXIT_FAILURE);
-    }
-
-    // Choose preconditioner type
+    /* Choose preconditioner type */
     HYPRE_IJVectorInitialize(f_bc);
 
     switch (precond_type)
     {
-        // No mass operator
+        /* No mass operator */
         case 1:
             for (row = row_start; row <= row_end; row++)
                 HYPRE_IJVectorSetValues(f_bc, 1, &row, &(w[dof_map[row - row_start]]));
 
             break;
 
-        // Diagonal mass operator
+        /* Diagonal mass operator */
         case 2:
             for (row = row_start; row <= row_end; row++)
             {
@@ -220,7 +225,7 @@ void fem_amg_solve(double *z, double *w)
 
             break;
 
-        // Full mass operator
+        /* Full mass operator */
         case 3:
             for (row = row_start; row <= row_end; row++)
             {
@@ -240,10 +245,10 @@ void fem_amg_solve(double *z, double *w)
 
     HYPRE_IJVectorAssemble(f_bc);
 
-    // Solve preconditioned system
+    /* Solve preconditioned system */
     HYPRE_BoomerAMGSolve(amg_preconditioner, A_fem, f_fem, u_fem);
 
-    // Map data back to SEM mesh
+    /* Map data back to SEM mesh */
     for (idx = 0; idx < n_xyze; idx++)
         z[idx] = 0.0;
 
@@ -253,7 +258,116 @@ void fem_amg_solve(double *z, double *w)
     gs(z, gs_double, gs_add, 0, gsh, 0);
 }
 
-// FEM Assembly definition
+/* FEM Assembly definition */
+void matrix_distribution()
+{
+    /*
+     * Ranks the global numbering array after removing the Dirichlet nodes
+     * which is then used in the assembly of the matrices to map degrees of 
+     * freedom to rows of the matrix
+     */
+
+    int idx;
+    buffer my_buffer;
+    long long idx_start = n_xyze;
+    long long scan_out[2], scan_buf[2];
+    comm_scan(scan_out, &comm, gs_long_long, gs_add, &idx_start, 1, scan_buf);
+    idx_start = scan_out[0];
+
+    glo_num = mem_alloc_1D_long(n_xyze);
+
+    for (idx = 0; idx < n_xyze; idx++)
+    {
+        if (pmask[idx] > 0.0)
+            glo_num[idx] = idx_start + (long long)idx;
+        else
+            glo_num[idx] = -1;
+    }
+
+    gs(glo_num, gs_long_long, gs_min, 0, gsh, 0);
+
+    /* Rank ids */
+    long long maximum_value_local = 0;
+    long long maximum_value = 0;
+
+    for (idx = 0; idx < n_xyze; idx++)
+    {
+        maximum_value_local = (glo_num[idx] > maximum_value_local) ? glo_num[idx] : maximum_value_local;
+    }
+
+    comm_allreduce(&comm, gs_long_long, gs_max, &maximum_value_local, 1, &maximum_value);
+    const long long nstar = maximum_value/comm.np + 1;
+
+    struct ranking_tuple
+    {
+        long long rank;
+        unsigned int proc;
+        unsigned int idx;
+    };
+
+    struct array ranking_transfer;
+    array_init(struct ranking_tuple, &ranking_transfer, n_xyze);
+    ranking_transfer.n = n_xyze;
+    struct ranking_tuple *ranking_tuple_array = ranking_transfer.ptr;
+
+    for (idx = 0; idx < ranking_transfer.n; idx++)
+    {
+       ranking_tuple_array[idx].rank = glo_num[idx];
+       ranking_tuple_array[idx].proc = glo_num[idx] / nstar;
+       ranking_tuple_array[idx].idx = idx;
+    }
+
+    struct crystal crystal_router_handle;
+    crystal_init(&crystal_router_handle, &comm);
+    sarray_transfer(struct ranking_tuple, &ranking_transfer, proc, 1, &crystal_router_handle);
+    ranking_tuple_array = ranking_transfer.ptr;
+
+    buffer_init(&my_buffer, 1);
+    sarray_sort(struct ranking_tuple, ranking_transfer.ptr, ranking_transfer.n, rank, 1, &my_buffer);
+
+    long long current_rank = ranking_tuple_array[0].rank;
+    long long current_count = 0;
+    ranking_tuple_array[0].rank = current_count;
+
+    for (idx = 1; idx < ranking_transfer.n; idx++) {
+
+        if (ranking_tuple_array[idx].rank > current_rank) {
+            current_count++;
+            current_rank = ranking_tuple_array[idx].rank;
+            ranking_tuple_array[idx].rank = current_count;
+        } else if (ranking_tuple_array[idx].rank == current_rank) {
+            ranking_tuple_array[idx].rank = current_count;
+        } else {
+            break;
+        }
+    }
+
+    current_count += 1;
+
+    long long rank_start;
+    comm_scan(scan_out, &comm, gs_long_long, gs_add, &current_count, 1, scan_buf);
+    rank_start = scan_out[0];
+
+    for (idx = 0; idx < ranking_transfer.n; idx++)
+    {
+        ranking_tuple_array[idx].rank += rank_start;
+    }
+
+    sarray_transfer(struct ranking_tuple, &ranking_transfer, proc, 1, &crystal_router_handle);
+    ranking_tuple_array = ranking_transfer.ptr;
+
+    buffer_init(&my_buffer, 1);
+    sarray_sort(struct ranking_tuple, ranking_transfer.ptr, ranking_transfer.n, idx, 0, &my_buffer);
+
+    for (idx = 0; idx < n_xyze; idx++)
+    {
+        glo_num[idx] = ranking_tuple_array[idx].rank;
+    }
+
+    array_free(&ranking_transfer);
+    crystal_free(&crystal_router_handle);
+}
+
 void fem_assembly()
 {
     /*
@@ -262,31 +376,20 @@ void fem_assembly()
      * Returns A_fem and B_fem
      */
 
-    // Variables
+    /* Variables */
     int i, j, k, e, d, t, q;
     int idx;
-    HYPRE_Int row;
+    long long row;
 
-    // Rank and prepare data to be mapped to rows of the matrix so it can 
-    // be solved with Hypre (Ranking done on the Fortran side since here it fails
-    // for some reason I couldn't figure out)
-    HYPRE_Int *ranking = mem_alloc_1D_long(n_xyze);
-
-    // Ranking fix: If there are no Dirichlet pressure nodes offset is 1, otherwise is 2
-    int offset = 1;
-    for (idx = 0; idx < n_xyze; idx++)
-    {
-        if (pmask[idx] == 0.0)
-        {
-            offset = 2;
-            break;
-        }
-    }
-
-    MPI_Allreduce(MPI_IN_PLACE,&offset,1,MPI_INT,MPI_MAX,comm);
+    /*
+     * Rank and prepare data to be mapped to rows of the matrix so it can 
+     * be solved with Hypre (Ranking done on the Fortran side since here it fails
+     * for some reason I couldn't figure out)
+     */
+    long long *ranking = mem_alloc_1D_long(n_xyze);
 
     for (idx = 0; idx < n_xyze; idx++)
-        ranking[idx] = glo_num[idx] - (long long)offset;
+        ranking[idx] = glo_num[idx];
 
     row_start = 0;
     row_end = 0;
@@ -294,26 +397,12 @@ void fem_assembly()
     for (idx = 0; idx < n_xyze; idx++)
         if (ranking[idx] >= 0) row_end = maximum(row_end, ranking[idx]);
 
-    MPI_Request req[2];
-
-    if (proc_id > 0)
-      MPI_Irecv(&row_start, 1, MPI_LONG_LONG, proc_id - 1, 0, comm, &req[0]);
-
-    if (proc_id < num_procs - 1)
-      MPI_Isend(&row_end, 1, MPI_LONG_LONG, proc_id + 1, 0, comm, &req[1]);
-
-    if (proc_id == 0) {
-      MPI_Waitall(1, &req[1], MPI_STATUSES_IGNORE);
-    } else if (proc_id == num_procs - 1) {
-      MPI_Waitall(1, &req[0], MPI_STATUSES_IGNORE);
-    } else {
-      MPI_Waitall(2, req, MPI_STATUSES_IGNORE);
-    }
-
-    if (proc_id > 0)
-      row_start += 1;
+    long long scan_out[2], scan_buf[2];
+    comm_scan(scan_out, &comm, gs_long_long, gs_max, &row_end, 1, scan_buf);
+    if (comm.id > 0) row_start = scan_out[0] + 1;
 
     num_loc_dofs = row_end - row_start + 1;
+
     dof_map = mem_alloc_1D_long(num_loc_dofs);
 
     for (idx = 0; idx < n_xyze; idx++)
@@ -324,30 +413,30 @@ void fem_assembly()
         }
     }
 
-    // Assemble FE matrices with boundary conditions applied
-    HYPRE_IJMatrixCreate(comm, row_start, row_end, row_start, row_end, &A_bc);
+    /* Assemble FE matrices with boundary conditions applied */
+    HYPRE_IJMatrixCreate(comm.c, row_start, row_end, row_start, row_end, &A_bc);
     HYPRE_IJMatrixSetObjectType(A_bc, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(A_bc);
 
-    HYPRE_IJMatrixCreate(comm, row_start, row_end, row_start, row_end, &B_bc);
+    HYPRE_IJMatrixCreate(comm.c, row_start, row_end, row_start, row_end, &B_bc);
     HYPRE_IJMatrixSetObjectType(B_bc, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(B_bc);
 
-    HYPRE_IJVectorCreate(comm, row_start, row_end, &Bd_bc);
+    HYPRE_IJVectorCreate(comm.c, row_start, row_end, &Bd_bc);
     HYPRE_IJVectorSetObjectType(Bd_bc, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(Bd_bc);
 
     double *Bd_sum = mem_alloc_1D_double(n_xyze);
     for (i = 0; i < n_xyze; i++) Bd_sum[i] = 0.0;
 
-    // Set quadrature rule
+    /* Set quadrature rule */
     int n_quad = (n_dim == 2) ? 3 : 4;
     double **q_r;
     double *q_w;
 
     quadrature_rule(&q_r, &q_w, n_quad, n_dim);
 
-    // Mesh connectivity (Can be changed to fill-out or one-per-vertex)
+    /* Mesh connectivity (Can be changed to fill-out or one-per-vertex) */
     int num_fem;
     int **v_coord;
     int **t_map;
@@ -359,7 +448,7 @@ void fem_assembly()
 
     mesh_connectivity(&v_coord, &t_map, num_fem, n_dim);
 
-    // Finite element assembly
+    /* Finite element assembly */
     double **A_loc = mem_alloc_2D_double(n_dim + 1, n_dim + 1);
     double **B_loc = mem_alloc_2D_double(n_dim + 1, n_dim + 1);
     double **J_xr = mem_alloc_2D_double(n_dim, n_dim);
@@ -389,14 +478,14 @@ void fem_assembly()
 
     for (e = 0; e < n_elem; e++)
     {
-        // Cycle through collocated quads/hexes
+        /* Cycle through collocated quads/hexes */
         for (s_z = 0; s_z < E_z; s_z++)
         {
             for (s_y = 0; s_y < E_y; s_y++)
             {
                 for (s_x = 0; s_x < E_x; s_x++)
                 {
-                    // Get indices
+                    /* Get indices */
                     int s[n_dim];
 
                     if (n_dim == 2)
@@ -420,10 +509,10 @@ void fem_assembly()
                         }
                     }
 
-                    // Cycle through collocated triangles/tets
+                    /* Cycle through collocated triangles/tets */
                     for (t = 0; t < num_fem; t++)
                     {
-                        // Get vertices
+                        /* Get vertices */
                         for (i = 0; i < n_dim + 1; i++)
                         {
                             if (n_dim == 2)
@@ -439,8 +528,8 @@ void fem_assembly()
                             }
                         }
 
-                        // Local FEM matrices
-                        // Reset local stiffness and mass matrices
+                        /* Local FEM matrices */
+                        /* Reset local stiffness and mass matrices */
                         for (i = 0; i < n_dim + 1; i++)
                         {
                             for (j = 0; j < n_dim + 1; j++)
@@ -450,16 +539,16 @@ void fem_assembly()
                             }
                         }
 
-                        // Build local stiffness matrices by applying quadrature rules
+                        /* Build local stiffness matrices by applying quadrature rules */
                         for (q = 0; q < n_quad; q++)
                         {
-                            // From r to x
+                            /* From r to x */
                             x_map(&q_x, q_r[q], x_t, n_dim, phi);
                             J_xr_map(&J_xr, q_r[q], x_t, n_dim, dphi);
                             inverse(&J_rx, J_xr, n_dim);
                             double det_J_xr = determinant(J_xr, n_dim);
 
-                            // Integrand
+                            /* Integrand */
                             for (i = 0; i < n_dim + 1; i++)
                             {
                                 for (j = 0; j < n_dim + 1; j++)
@@ -489,20 +578,20 @@ void fem_assembly()
                             }
                         }
 
-                        // Add to global matrix
+                        /* Add to global matrix */
                         for (i = 0; i < n_dim + 1; i++)
                         {
                             for (j = 0; j < n_dim + 1; j++)
                             {
                                 if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) && (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0))
                                 {
-                                    HYPRE_Int row = ranking[idx[t_map[t][i]] + e * n_xyz];
-                                    HYPRE_Int col = ranking[idx[t_map[t][j]] + e * n_xyz];
+                                    long long row = ranking[idx[t_map[t][i]] + e * n_xyz];
+                                    long long col = ranking[idx[t_map[t][j]] + e * n_xyz];
 
                                     double A_val = A_loc[i][j];
                                     double B_val = B_loc[i][j];
 
-                                    HYPRE_Int ncols = 1;
+                                    long long ncols = 1;
                                     int insert_error;
 
                                     if (fabs(A_val) > 1.0e-14)
@@ -517,8 +606,8 @@ void fem_assembly()
 
                                     if (insert_error != 0)
                                     {
-                                        if (proc_id == 0)
-                                            printf("There was an error with entry A(%d, %d) = %f or B(%d, %d) = %f\n", row, col, A_val, row, col, B_val);
+                                        if (comm.id == 0)
+                                            printf("There was an error with entry A(%lld, %lld) = %f or B(%lld, %lld) = %f\n", row, col, A_val, row, col, B_val);
 
                                         exit(EXIT_FAILURE);
                                     }
@@ -553,8 +642,9 @@ void fem_assembly()
     HYPRE_IJVectorAssemble(Bd_bc);
     HYPRE_IJVectorGetObject(Bd_bc, (void**) &Bd_fem);
 
-    // Free memory
+    /* Free memory */
     mem_free_1D_long(&ranking, n_xyze);
+    mem_free_1D_long(&glo_num, n_xyze);
     mem_free_1D_double(&Bd_sum, n_xyze);
     mem_free_2D_double(&q_r, n_quad, n_dim);
     mem_free_1D_double(&q_w, n_quad);
@@ -750,7 +840,7 @@ void J_xr_map(double ***J_xr, double *r, double **x_t, int n_dim, DBasis *dphi)
     mem_free_1D_double(&deriv, n_dim);
 }
 
-// Basis functions and derivatives in 2D
+/* Basis functions and derivatives in 2D */
 double phi_2D_1(double *r) { return r[0]; }
 double phi_2D_2(double *r) { return r[1]; }
 double phi_2D_3(double *r) { return 1.0 - r[0] - r[1]; }
@@ -758,7 +848,7 @@ void dphi_2D_1(double **dp, double *r) { (*dp)[0] = 1.0; (*dp)[1] = 0.0; }
 void dphi_2D_2(double **dp, double *r) { (*dp)[0] = 0.0; (*dp)[1] = 1.0; }
 void dphi_2D_3(double **dp, double *r) { (*dp)[0] = -1.0; (*dp)[1] = -1.0; }
 
-// Basis functions and derivatives in 3D
+/* Basis functions and derivatives in 3D */
 double phi_3D_1(double *r) { return r[0]; }
 double phi_3D_2(double *r) { return r[1]; }
 double phi_3D_3(double *r) { return r[2]; }
@@ -768,8 +858,8 @@ void dphi_3D_2(double **dp, double *r) { (*dp)[0] = 0.0; (*dp)[1] = 1.0; (*dp)[2
 void dphi_3D_3(double **dp, double *r) { (*dp)[0] = 0.0; (*dp)[1] = 0.0; (*dp)[2] = 1.0; }
 void dphi_3D_4(double **dp, double *r) { (*dp)[0] = -1.0; (*dp)[1] = -1.0; (*dp)[2] = -1.0; }
 
-// Math functions
-HYPRE_Int maximum(HYPRE_Int a, HYPRE_Int b)
+/* Math functions */
+long long maximum(long long a, long long b)
 {
     return a > b ? a : b;
 }
@@ -857,7 +947,7 @@ void inverse(double*** inv_A, double** A, int n)
     }
 }
 
-// Memory management
+/* Memory management */
 int* mem_alloc_1D_int(int n)
 {
     int *array = (int*) malloc(n * sizeof(int));
@@ -865,9 +955,9 @@ int* mem_alloc_1D_int(int n)
     return array;
 }
 
-HYPRE_Int* mem_alloc_1D_long(int n)
+long long* mem_alloc_1D_long(int n)
 {
-    HYPRE_Int *array = (HYPRE_Int*) malloc(n * sizeof(HYPRE_Int));
+    long long *array = (long long*) malloc(n * sizeof(long long));
 
     return array;
 }
@@ -906,7 +996,7 @@ void mem_free_1D_int(int **array, int n)
     free((*array));
 }
 
-void mem_free_1D_long(HYPRE_Int **array, int n)
+void mem_free_1D_long(long long **array, int n)
 {
     free((*array));
 }
@@ -936,13 +1026,16 @@ void mem_free_2D_double(double ***array, int n, int m)
     free((*array));
 }
 #else
-void fem_amg_setup(int *precond_type_, int *meshing_type_, 
-                   int *n_x_, int *n_y_, int *n_z_, int *n_elem_, int *n_dim_, 
-                   double *x_m_, double *y_m_, double *z_m_, 
-                   long long *glo_num_, double *pmask_, double* binv_,
-                   const MPI_Fint *ce, const int *gsh)
+void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
+                   const sint *n_elem_, const sint *n_dim_,
+                   double *x_m_, double *y_m_, double *z_m_,
+                   double *pmask_, double *binv_,
+                   const sint *gshf)
 {
      fail(1,__FILE__,__LINE__,"please recompile with HYPRE support");
 }
-void fem_amg_solve(double *z, double *w){};
+void fem_amg_solve(double *z, double *w)
+{
+     fail(1,__FILE__,__LINE__,"please recompile with HYPRE support");
+}
 #endif
