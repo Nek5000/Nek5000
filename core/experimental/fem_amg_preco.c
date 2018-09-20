@@ -66,7 +66,7 @@ HYPRE_Solver amg_preconditioner;
 struct comm comm;
 struct gs_data *gsh;
 
-#define NPARAM 7
+#define NPARAM 10
 double HYPREsettings[NPARAM]; 
 
 /* Interface definition */
@@ -142,20 +142,21 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
 
     HYPRE_BoomerAMGCreate(&amg_preconditioner);
 
-    HYPREsettings[0] = 6;     /* Falgout      */
+    HYPREsettings[0] = 10;    /* Falgout      */
     HYPREsettings[1] = 6;     /* Extended+i   */
     HYPREsettings[2] = 3;     /* SOR          */
     HYPREsettings[3] = 1;     /* V-cycles     */
-    HYPREsettings[4] = 0.05;  /* default NonGalerkinTol */
-    HYPREsettings[5] = 0.01;  /* 2nd level NonGalerkinTol */
-    HYPREsettings[6] = 0.05;  /* 3nd level NonGalerkinTol */
+    HYPREsettings[4] = 0.25;  /* threshold    */
+    HYPREsettings[5] = 0.05;  /* default NonGalerkinTol */
+    HYPREsettings[6] = 0.01;  /* 2nd level NonGalerkinTol */
+    HYPREsettings[7] = 0.05;  /* 3nd level NonGalerkinTol */
 
     int i;
     if (param[0] != 0) {
-       for (i=0; i < NPARAM; i++) { 
-           HYPREsettings[i] = param[i+1];
+       for (i=1; i < NPARAM; i++) { 
+           HYPREsettings[i-1] = param[i];
            if (comm.id == 0) 
-              printf("Custom HYPREsettings[%d]: %.2f\n", i, HYPREsettings[i]); 
+              printf("Custom HYPREsettings[%d]: %.2f\n", i, HYPREsettings[i-1]); 
        }
     }
 
@@ -164,16 +165,16 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
     HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4); /* Max number of elements per row for interpolation */
     HYPRE_BoomerAMGSetAggNumLevels(amg_preconditioner, 0); /* 0 for no-aggressive coarsening */
-    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, 0.25);/* Strength threshold */
+    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, HYPREsettings[4]);/* Strength threshold */
     HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50); /* maximum number of rows in coarse level */
     HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
     HYPRE_BoomerAMGSetMaxIter(amg_preconditioner, HYPREsettings[3]);
     HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); /* convergence tolerance */
 
-    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[4]); 
+    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[5]); 
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, 0.0 , 0);
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[5], 1);
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[6], 2);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[6], 1);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[7], 2);
 
     HYPRE_BoomerAMGSetPrintLevel(amg_preconditioner, 1);
 

@@ -18,7 +18,7 @@ c
      $    ,uparam(20)
      $    ,atol(0:ldimt1)
      $    ,restol(0:ldimt1)
-     $    ,fem_amg_param(7)
+     $    ,fem_amg_param(10)
      $    ,filterType
 
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
