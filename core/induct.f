@@ -1148,7 +1148,7 @@ c
 c      return
 c      end
 c--------------------------------------------------------------------
-      subroutine setrhsp(p,h1,h2,h2inv,pset,nprev)
+      subroutine setrhsp(p,h1,h2,h2inv,pset,niprev)
 C
 C     Project soln onto best fit in the "E" norm.
 C
@@ -1167,7 +1167,9 @@ C
       parameter (ltot2=lx2*ly2*lz2*lelv)
       common /orthox/ pbar(ltot2),pnew(ltot2)
       common /orthos/ alpha(mxprev),work(mxprev)
+      common /orthoi/ nprev,mprev
 
+      nprev = niprev
       if (nprev.eq.0) return
 
 c     Diag to see how much reduction in the residual is attained.
@@ -1179,7 +1181,7 @@ c     Diag to see how much reduction in the residual is attained.
          return
       endif
 
-      CALL UPDRHSE(P,H1,H2,H2INV,ierr) ! update rhs's if E-matrix has changed
+      call updrhse(p,h1,h2,h2inv,ierr) ! Update rhs's if E-matrix has changed
 c     if (ierr.eq.1) Nprev=0           ! Doesn't happen w/ new formulation
 
       do i=1,nprev  ! Perform Gram-Schmidt for previous soln's.
@@ -1206,6 +1208,10 @@ c         if (nio.eq.0) write(6,11) istep,nprev,(alpha(i),i=1,n10)
 c         if (nio.eq.0) write(6,12) istep,nprev,alpha1,alpha2,ratio
    11    format(2i5,' alpha:',1p10e12.4)
    12    format(i6,i4,1p3e12.4,' alph12')
+
+         if (nio.eq.0) write(6,13) istep,'  Project PRES  ',
+     &                         alpha2,alpha1,ratio,nprev,mxprev
+   13    format(i11,a,6x,1p3e13.4,i4,i4)
       endif
 c    ................................................................
 

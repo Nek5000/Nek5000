@@ -68,9 +68,8 @@ c     an ascii rea file for just the parameters
    11 format(i12,2x,i1,2x,i12,5x,'NELT,NDIM,NELV')
    
       if(nel.ge.lelt) then
-        write(6,*) 'Abort: number of elements too large'
-        write(6,*) 'maximum number of elements ',lelt
-        write(6,*) 'change lelt and recompile'
+        write(6,*) 'Abort: number of elements too large',nel
+        write(6,*) 'change MAXNEL and recompile'
         stop
       endif
 

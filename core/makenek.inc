@@ -39,6 +39,7 @@ if [ "$PPLIST" == "?" ]; then
   echo "  EXTBAR      add underscore to exit call (for BGQ)"
   echo "  NEKNEK      activate overlapping mesh solver (experimental)"
   echo "  CMTNEK      activate DG compressible-flow solver (experimental)"
+  echo "  LPM         activate Lagrangian Particles (experimental)"
   exit 1
 fi
 
@@ -239,6 +240,9 @@ do
    if [ "$i" == "CMTNEK" ]; then
      CMT=1
    fi
+   if [ "$i" == "LPM" ]; then
+     LPM=1
+   fi
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
    fi
@@ -291,6 +295,7 @@ sed -e "s:^FC[ ]*=.*:FC\:=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI:=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE:=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT:=$CMT/" \
+-e "s/^LPM[ ]*=.*/LPM:=$LPM/" \
 -e "s/^NEKNEK[ ]*=.*/NEKNEK:=$NEKNEK/" \
 -e "s/^VISIT[ ]*=.*/VISIT:=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR\:=$USR:" \
@@ -401,6 +406,15 @@ if ! cat SIZE | grep -qi 'ldimt_proj' ; then
      echo 'c automatically added by makenek' >>SIZE
      echo '      integer ldimt_proj' >>SIZE
      echo '      parameter(ldimt_proj = 1) ! max auxiliary fields residual projection ' >>SIZE
+fi
+
+if ! cat SIZE | grep -qi 'llpart' ; then
+if [ $LPM -ne 0 ]; then
+    echo >>SIZE
+    echo 'c automatically added by makenek' >>SIZE
+    echo '      integer llpart' >> SIZE
+    echo '      parameter(llpart = 10000 ) ! Allocation for particles '  >>SIZE
+fi
 fi
 
 export FC

@@ -31,9 +31,9 @@ C> each of lx1*ly1*lz1 grid points for all elements
       common /forcedata/ usrf 
 
       real c_sub_e,c_max,meshh(lelt),maxdiff,gridh(lx1*ly1*lz1,lelt),
-     $     nu_s,rhomax(lelt),maxres(lelt)
+     $     nu_s,epsebdg(lelt),maxres(lelt),se0(lelt)
       common /planned_Additions/ c_sub_e,c_max,meshh,maxdiff,
-     $        gridh,nu_s,rhomax,maxres
+     $        gridh,nu_s,epsebdg,maxres,se0
 
 c We assume we will be working with one gas. Therefore Rgas need not be 
 c full filed. To begin with we assume calorically perfect gas.
@@ -48,33 +48,31 @@ c---------------------------------------------------------------------
       real                csound(lx1,ly1,lz1,lelt)
       common /cmtgasprop/ csound
 
-      real                cvgref,cpgref,gmaref,rgasref,molmass
-      common /cmtgasref/  cvgref,cpgref,gmaref,rgasref,molmass
+      real            cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $   MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW,se0const
 
-      integer              stage,nstage
-      common /tstepstage/ stage,nstage
+      common /cmtgasref/cpgref,cvgref,cvjref,gmaref,rgasref,molmass,
+     $    MAref,MBref,CAref,CBref,   ! NTN for mixed model
+     $    rhoidref,rho0ref,EN_IDref,EN_Oref,
+     $    MWref,CWref,MCref,CCref,
+     $    AAref,
+     $    BBref,R1ref,R2ref,OMref,
+     $    AA,BB,OM,CC,CW,se0const
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      integer              stage,nstage,iostep2
+      common /tstepstage/ stage,nstage,iostep2
+
+      real                  tcoef(3,3),time_cmt
+      common /timestepcoef/ tcoef,time_cmt
       
-! particle stuff for rk3 low storage tvd
-      common /PARTRESTART/ ifpartrestart, partrestartfile
-     >        ,partrestartdata, partrestartno
-      logical ifpartrestart
-      character*15 partrestartfile
-      character*13 partrestartdata
-      integer partrestartno
-
-! JH011417 removed for now. lpart stuff needs to be somewhere else
-!     common /PARTRK3/ kv_stage_p, kx_stage_p
-!     real kv_stage_p(lpart,4,ldim), kx_stage_p(lpart,4,ldim)
-
-!     common /partrkstuff/ xlocp, vlocp
-!     real xlocp(lpart,ldim), vlocp(lpart,ldim)
-
-      real              varsic(10),rho,phi,pres,cv,e_internal
+      real              rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
-      common /nekuscmt/ varsic    ,rho,phi,pres,cv,e_internal
+      common /nekuscmt/ rho,phi,pres,cv,e_internal
      $                 ,t0in,p0in,asnd,rgas,cp,mu,lambda,molarmass
 ! let kond=udiff
 
@@ -119,3 +117,6 @@ c---------------------------------------------------------------------
       parameter (iu4=17)   ! U4
       parameter (iu5=18)   ! U5
       parameter (nqq=18)
+
+      logical time4av
+      common /cmtflags/ time4av

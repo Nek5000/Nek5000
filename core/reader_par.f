@@ -207,6 +207,9 @@ c     - mhd support
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
       INCLUDE 'ZPER'
+#ifdef LPM
+      INCLUDE 'LPM'
+#endif
 
       character*132 c_out,txt, txt2
 
@@ -768,6 +771,201 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
+c set particle options
+#ifdef LPM
+      call lpm_input_defaults
+
+      call finiparser_getDbl(d_out,'particle:npart',ifnd)
+      if(ifnd .eq. 1) then
+         nw = int(d_out)
+      endif
+      call finiparser_getDbl(d_out,'particle:temperature',ifnd)
+      if(ifnd .eq. 1) tp_0 = d_out
+      call finiparser_getDbl(d_out,'particle:density',ifnd)
+      if(ifnd .eq. 1) rho_p = d_out
+      call finiparser_getDbl(d_out,'particle:specificheat',ifnd)
+      if(ifnd .eq. 1) cp_p = d_out
+      call finiparser_getDbl(d_out,'particle:forceqs',ifnd)
+      if(ifnd .eq. 1) part_force(1) = int(d_out)
+      call finiparser_getDbl(d_out,'particle:forceun',ifnd)
+      if(ifnd .eq. 1) part_force(2) = int(d_out)
+      call finiparser_getDbl(d_out,'particle:forceiu',ifnd)
+      if(ifnd .eq. 1) part_force(3) = int(d_out)
+      call finiparser_getDbl(d_out,'particle:heatqs',ifnd)
+      if(ifnd .eq. 1) part_force(4) = int(d_out)
+      call finiparser_getDbl(d_out,'particle:heatun',ifnd)
+      if(ifnd .eq. 1) part_force(5) = int(d_out)
+      call finiparser_getDbl(d_out,'particle:io',ifnd)
+      if(ifnd .eq. 1) npio_method = int(d_out)
+      call finiparser_getDbl(d_out,'particle:injectionstep',ifnd)
+      if(ifnd .eq. 1) inject_rate = int(d_out)
+      call finiparser_getDbl(d_out,'particle:delaystep',ifnd)
+      if(ifnd .eq. 1) time_delay = int(d_out)
+      call finiparser_getDbl(d_out,'particle:seed',ifnd)
+      if(ifnd .eq. 1) nrandseed = int(d_out)
+      call finiparser_getDbl(d_out,'particle:coarsegrain',ifnd)
+      if(ifnd .eq. 1) rspl = d_out
+      call finiparser_getDbl(d_out,'particle:filter',ifnd)
+      if(ifnd .eq. 1) dfilt = d_out
+      call finiparser_getDbl(d_out,'particle:alpha',ifnd)
+      if(ifnd .eq. 1) ralphdecay = d_out
+      call finiparser_getDbl(d_out,'particle:restartstep',ifnd)
+      if(ifnd .eq. 1) ipart_restartr = int(d_out)
+      call finiparser_getDbl(d_out,'particle:spring',ifnd)
+      if(ifnd .eq. 1) then
+         ksp      = d_out
+         ksp_wall = d_out
+      endif
+      call finiparser_getDbl(d_out,'particle:springwall',ifnd)
+      if(ifnd .eq. 1) ksp_wall = d_out
+      call finiparser_getDbl(d_out,'particle:restitution',ifnd)
+      if(ifnd .eq. 1) then
+         e_rest      = d_out
+         e_rest_wall = d_out
+      endif
+      call finiparser_getDbl(d_out,'particle:restitutionwall',ifnd)
+      if(ifnd .eq. 1) e_rest_wall = d_out
+      call finiparser_getDbl(d_out,'particle:nwallplane',ifnd)
+      if(ifnd .eq. 1) np_walls = int(d_out)
+      call finiparser_getDbl(d_out,'particle:nwallcyl',ifnd)
+      if(ifnd .eq. 1) nc_walls = int(d_out)
+      call finiparser_getDbl(d_out,'particle:timestepper',ifnd)
+      if(ifnd .eq. 1) time_integ = int(d_out)
+      call finiparser_getDbl(d_out,'particle:coupling',ifnd)
+      if(ifnd .eq. 1) two_way = int(d_out)
+
+      call finiparser_findTokens('particle:distributebox',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         if (i.eq.1) rxbo(1,1) = d_out
+         if (i.eq.2) rxbo(2,1) = d_out
+         if (i.eq.3) rxbo(1,2) = d_out
+         if (i.eq.4) rxbo(2,2) = d_out
+         if (i.eq.5) rxbo(1,3) = d_out
+         if (i.eq.6) rxbo(2,3) = d_out
+      enddo
+      call finiparser_findTokens('particle:distributecylinder',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         rxco(i) = d_out
+      enddo
+      call finiparser_findTokens('particle:distributesphere',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         rxco(i) = d_out
+      enddo
+      call finiparser_findTokens('particle:binb',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         binb(i) = d_out
+      enddo
+
+      call finiparser_getDbl(d_out,'particle:diameter',ifnd)
+      if(ifnd .eq. 1) then
+         dp(1) = d_out
+         dp(2) = d_out
+      endif
+      call finiparser_findTokens('particle:diameteruniform',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         if (i.eq.1) dp(1) = d_out
+         if (i.eq.2) dp(2) = d_out
+      enddo
+      call finiparser_findTokens('particle:diametergaussian',',',ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         read(initc(i),*) d_out
+         if (i.eq.1) then
+            dp(1) = d_out
+            dp(2) = d_out
+         endif
+         if (i.eq.2) dp_std = d_out
+      enddo
+
+      call finiparser_getBool(i_out,'particle:rectp',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+            ifrectp = 1
+        elseif(i_out .eq. 0) then 
+            ifrectp = 0
+        endif
+      endif
+      call finiparser_getBool(i_out,'particle:interpolation',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+           red_interp = 1
+        elseif(i_out .eq. 0) then 
+           red_interp = 0
+        endif
+      endif
+      call finiparser_getBool(i_out,'particle:projection',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+           npro_method = 1
+        elseif(i_out .eq. 0) then 
+           npro_method = 0
+        endif
+      endif
+      call finiparser_getBool(i_out,'particle:bigendian',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+           lpm_endian = 1
+        elseif(i_out .eq. 0) then 
+           lpm_endian = 0
+        endif
+      endif
+
+      call finiparser_getBool(i_out,'particle:periodicx',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+            bc_part(1) = 0
+            bc_part(2) = 0
+        endif
+      endif
+      call finiparser_getBool(i_out,'particle:periodicy',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+            bc_part(3) = 0
+            bc_part(4) = 0
+        endif
+      endif
+      call finiparser_getBool(i_out,'particle:periodicz',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 1) then
+            bc_part(5) = 0
+            bc_part(6) = 0
+        endif
+      endif
+
+      do j=1,np_walls
+         write(mystringpart,'(A14,I2.2)') 'particle:wallp',j
+         call finiparser_findTokens(mystringpart,',',ifnd)
+         do i = 1,min(ifnd,15)
+            call finiparser_getToken(initc(i),i)
+            read(initc(i),*) d_out
+            plane_wall_coords(i,j) = d_out
+         enddo
+      enddo
+      do j=1,nc_walls
+         write(mystringpart,'(A14,I2.2)') 'particle:wallc',j
+         call finiparser_findTokens(mystringpart,',',ifnd)
+         do i = 1,min(ifnd,15)
+            call finiparser_getToken(initc(i),i)
+            read(initc(i),*) d_out
+            cyl_wall_coords(i,j) = d_out
+         enddo
+      enddo
+
+      do i=1,15
+         call blank(initc(i),132)
+      enddo
+#endif
+
 
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -791,6 +989,9 @@ C
       INCLUDE 'ZPER'
       INCLUDE 'ADJOINT'
       INCLUDE 'CVODE'
+#ifdef LPM
+      INCLUDE 'LPM'
+#endif
 
       call bcast(loglevel, isize)
       call bcast(optlevel, isize)
@@ -839,6 +1040,42 @@ C
       call bcast(ifpsco, ldimt1*lsize)
 
       call bcast(initc, 15*132*csize) 
+#ifdef LPM
+      call bcast(rxbo , 6*wdsize)
+      call bcast(rxco , 9*wdsize)
+      call bcast(binb , 6*wdsize)
+      call bcast(dp , 2*wdsize)
+      call bcast(dp_std , wdsize)
+      call bcast(tp_0 , wdsize)
+      call bcast(rho_p , wdsize)
+      call bcast(cp_p , wdsize)
+      call bcast(rspl , wdsize)
+      call bcast(dfilt , wdsize)
+      call bcast(ralphdecay , wdsize)
+      call bcast(ksp, wdsize)
+      call bcast(ksp_wall, wdsize)
+      call bcast(e_rest, wdsize)
+      call bcast(e_rest_wall, wdsize)
+      call bcast(plane_wall_coords, 6*n_walls*wdsize)
+      call bcast(cyl_wall_coords, 7*n_walls*wdsize)
+
+      call bcast(nw, isize)
+      call bcast(part_force , 5*isize)
+      call bcast(time_integ , isize)
+      call bcast(ifrectp , isize)
+      call bcast(two_way , isize)
+      call bcast(red_interp , isize)
+      call bcast(npio_method , isize)
+      call bcast(inject_rate, isize)
+      call bcast(time_delay, isize)
+      call bcast(nrandseed, isize)
+      call bcast(lpm_endian, isize)
+      call bcast(npro_method, isize)
+      call bcast(bc_part, 6*isize)
+      call bcast(ipart_restartr, isize)
+      call bcast(np_walls, isize)
+      call bcast(nc_walls, isize)
+#endif
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.

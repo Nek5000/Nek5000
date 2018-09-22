@@ -201,22 +201,22 @@ C> @}
 ! tl       : temperature
 ! al       : sound speed
 ! pl       : pressure, then phi
-! cpl      : rho*cp
+! el      : rho*cp
 ! State on the exterior (+, "right") side of the face
 ! rr       : density
 ! ur,vr,wr : velocity
 ! tr       : temperature
 ! ar       : sound speed
 ! pr       : pressure
-! cpr      : rho*cp
+! er      : rho*cp
 
       COMMON /SCRNS/ nx(lfd), ny(lfd), nz(lfd), rl(lfd), ul(lfd),
      >               vl(lfd), wl(lfd), pl(lfd), tl(lfd), al(lfd),
-     >               cpl(lfd),rr(lfd), ur(lfd), vr(lfd), wr(lfd),
-     >               pr(lfd),tr(lfd), ar(lfd),cpr(lfd),phl(lfd),fs(lfd),
+     >               el(lfd),rr(lfd), ur(lfd), vr(lfd), wr(lfd),
+     >               pr(lfd),tr(lfd), ar(lfd),er(lfd),phl(lfd),fs(lfd),
      >               jaco_f(lfd),flx(lfd,toteq),jaco_c(lx1*lz1)
-      real nx, ny, nz, rl, ul, vl, wl, pl, tl, al, cpl, rr, ur, vr, wr,
-     >                pr,tr, ar,cpr,phl,fs,jaco_f,flx,jaco_c
+      real nx, ny, nz, rl, ul, vl, wl, pl, tl, al, el, rr, ur, vr, wr,
+     >                pr,tr, ar,er,phl,fs,jaco_f,flx,jaco_c
 
 !     REAL vf(3)
       real nTol
@@ -273,7 +273,7 @@ C> @}
             call map_faced(pl,wminus(1,f,e,ipr),lx1,lxd,fdim,0)
             call map_faced(tl,wminus(1,f,e,ithm),lx1,lxd,fdim,0)
             call map_faced(al,wminus(1,f,e,isnd),lx1,lxd,fdim,0)
-            call map_faced(cpl,wminus(1,f,e,icpf),lx1,lxd,fdim,0)
+            call map_faced(el,wminus(1,f,e,icpf),lx1,lxd,fdim,0)
 
             call map_faced(rr,wplus(1,f,e,irho),lx1,lxd,fdim,0)
             call map_faced(ur,wplus(1,f,e,iux),lx1,lxd,fdim,0)
@@ -282,7 +282,7 @@ C> @}
             call map_faced(pr,wplus(1,f,e,ipr),lx1,lxd,fdim,0)
             call map_faced(tr,wplus(1,f,e,ithm),lx1,lxd,fdim,0)
             call map_faced(ar,wplus(1,f,e,isnd),lx1,lxd,fdim,0)
-            call map_faced(cpr,wplus(1,f,e,icpf),lx1,lxd,fdim,0)
+            call map_faced(er,wplus(1,f,e,icpf),lx1,lxd,fdim,0)
 
             call map_faced(phl,wminus(1,f,e,iph),lx1,lxd,fdim,0)
 
@@ -302,7 +302,7 @@ C> @}
             call copy(pl,wminus(1,f,e,ipr),nxz)
             call copy(tl,wminus(1,f,e,ithm),nxz)
             call copy(al,wminus(1,f,e,isnd),nxz)
-            call copy(cpl,wminus(1,f,e,icpf),nxz)
+            call copy(el,wminus(1,f,e,icpf),nxz)
 
             call copy(rr,wplus(1,f,e,irho),nxz)
             call copy(ur,wplus(1,f,e,iux),nxz)
@@ -311,7 +311,7 @@ C> @}
             call copy(pr,wplus(1,f,e,ipr),nxz)
             call copy(tr,wplus(1,f,e,ithm),nxz)
             call copy(ar,wplus(1,f,e,isnd),nxz)
-            call copy(cpr,wplus(1,f,e,icpf),nxz)
+            call copy(er,wplus(1,f,e,icpf),nxz)
 
             call copy(phl,wminus(1,f,e,iph),nxz)
 
@@ -320,7 +320,7 @@ C> @}
          call rzero(fs,nxzd) ! moving grid stuff later
 
          call AUSM_FluxFunction(nxzd,nx,ny,nz,jaco_f,fs,rl,ul,vl,wl,pl,
-     >                          al,tl,rr,ur,vr,wr,pr,ar,tr,flx,cpl,cpr)
+     >                          al,tl,rr,ur,vr,wr,pr,ar,tr,flx,el,er)
 
          do j=1,toteq
             call col2(flx(1,j),phl,nxzd)
@@ -483,3 +483,54 @@ C> @}
 
       return
       end
+
+!-----------------------------------------------------------------------
+!      subroutine ihu(hu,uminus,uplus,flxscr,eta,he) ! INTERIOR PENALTY
+!      include 'SIZE'
+!      include 'TOTAL'
+!      include 'CMTDATA'
+!      include 'DG'
+!      
+!      real uminus(lx1*lz1*2*ldim*nelt),uplus(lx1*lz1*2*ldim*nelt),
+!     >     flxscr(lx1*lz1*2*ldim*nelt),hu(lx1*lz1*lz1*nelt),
+!     >     eta(lx1*lz1*2*ldim*nelt),he(lx1*lz1*lz1*nelt)
+!      integer  e, n, npl, nf, f, i, k
+!      integer eg
+!
+!      n  = lx1*ny1*lz1*nelt
+!      nfaces=2*ldim
+!      nxz=lx1*lz1
+!      npl = lx1 - 1
+!      nf = lx1*lz1*2*ldim*nelt
+!         
+!c   . R     
+!      call add3(flxscr,uminus,uplus,nf) ! {{u}}
+!      const=-0.5 
+!      call cmult(flxscr,const,nf)  !       -
+!      
+!      call add2(flxscr,uminus,nf)     !flxscr = u -{{u}}
+!      ifield=1 ! FIX THIS NOW  
+!      ifield=2 ! FIX THIS NOW
+!      
+!c   . area, eta, he
+!      k = 0
+!      do e=1,nelt
+!         eg = lglel(e)
+!         do f=1,nfaces
+!         do i=1,nxz
+!            k=k+1
+!            if (cbc(f,e,ifield).eq.'W  ') then ! unfuck this loop and if-statement
+!               flxscr(k)=(uminus(k)-uplus(k))*area(i,1,f,e)*eta(k)/he(k)
+!            else
+!               flxscr(k)=flxscr(k)*area(i,1,f,e)*eta(k)/he(k)*2.0 ! universal fred at boundary?
+!            endif
+!         enddo
+!         enddo
+!      enddo
+!
+!      call add_face2full_cmt(nelt,lx1,ny1,lz1,iface_flux,hu,flxscr)
+!c     write(6,*) 'done in ihu'
+!
+!      return
+!      end
+!

@@ -88,10 +88,8 @@ c
 c perform some checks
 c
       if (num_elem.gt.max_num_elem) then
-        write(6,'(a)')
-     &    "ERROR: number of elements larger that max_num_elem! "
-        write(6,'(a,i8,a)') "Set max_num_elem >= ", num_elem,
-     &                      " and recompile exo2nek. "
+        write(6,*) 'Abort: number of elements too large',num_elem
+        write(6,*) 'change MAXNEL and recompile'
         STOP
       endif
       if (num_side_sets.gt.max_num_sidesets) then
